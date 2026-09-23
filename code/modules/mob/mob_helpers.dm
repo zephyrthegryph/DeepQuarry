@@ -59,21 +59,21 @@
 /proc/iscuffed(A)
 	if(istype(A, /mob/living/carbon))
 		var/mob/living/carbon/C = A
-		if(C.handcuffed)
+		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			return 1
 	return 0
 
 /proc/hassensorlevel(A, level)
 	var/mob/living/carbon/human/H = A
-	if(istype(H) && istype(H.w_uniform, /obj/item/clothing/under))
-		var/obj/item/clothing/under/U = H.w_uniform
+	if(istype(H) && istype(H.get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
+		var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
 		return U.sensor_mode >= level
 	return 0
 
 /proc/getsensorlevel(A)
 	var/mob/living/carbon/human/H = A
-	if(istype(H) && istype(H.w_uniform, /obj/item/clothing/under))
-		var/obj/item/clothing/under/U = H.w_uniform
+	if(istype(H) && istype(H.get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
+		var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
 		return U.sensor_mode
 	return SUIT_SENSOR_OFF
 
@@ -526,7 +526,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	return 0
 
 /mob/living/carbon/assess_perp(obj/access_obj, check_access, auth_weapons, check_records, check_arrest)
-	if(handcuffed)
+	if(get_equipped_item(SLOT_ID_HANDCUFFED))
 		return SAFE_PERP
 
 	return ..()
@@ -548,13 +548,13 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		threatcount += 4
 
 	if(auth_weapons && !access_obj.allowed(src))
-		if(istype(l_hand, /obj/item/gun) || istype(l_hand, /obj/item/melee) && !istype(l_hand, /obj/item/gun/energy/floragun) && !istype(l_hand, /obj/item/gun/energy/sizegun) && !istype(l_hand, /obj/item/gun/launcher/confetti_cannon) && !istype(l_hand, /obj/item/gun/energy/lasertag)) //Specific guns to the exclusion list.
+		if(istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/melee) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/floragun) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/sizegun) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/launcher/confetti_cannon) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/lasertag)) //Specific guns to the exclusion list.
 			threatcount += 4
 
-		if(istype(r_hand, /obj/item/gun) || istype(r_hand, /obj/item/melee))
+		if(istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/melee))
 			threatcount += 4
 
-		if(istype(belt, /obj/item/gun) || istype(belt, /obj/item/melee))
+		if(istype(get_equipped_item(SLOT_ID_BELT), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_BELT), /obj/item/melee))
 			threatcount += 2
 
 		if(species.name != SPECIES_HUMAN)

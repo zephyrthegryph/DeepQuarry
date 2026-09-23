@@ -135,7 +135,7 @@
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/ion
 	name = "alien Ionic praetorian"
 	color = "#004cff"
-	armor = list(melee = 0,bullet = 25,laser = 0,energy = 0,bomb = 0,bio = 100,rad = 100)
+	armor_spec = "bullet=25;bio=100;rad=100"
 	endurance = 350
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/arc/emp_blast
@@ -146,7 +146,7 @@
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/blaze
 	name = "alien blazing praetorian"
 	color = "Red"
-	armor = list(melee = 0, bullet = 0, laser = 25, energy = 0, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "laser=25;bio=100;rad=100"
 	endurance = 450
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/energy/fireball
@@ -164,7 +164,7 @@
 
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/tank
 	name = "alien Tankerling"
-	armor = list(melee = -25, bullet = 20, laser = 20, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=-25;bullet=20;laser=20"
 	base_attack_cooldown = 25
 	color = "#ff8214"
 	endurance = 700
@@ -184,7 +184,7 @@
 	base_attack_cooldown = 15
 	color = "#38b9ff"
 	endurance = 500
-	armor = list(melee = -20, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=-20;bullet=20;laser=10"
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	movement_cooldown = 12
@@ -201,7 +201,7 @@
 	base_attack_cooldown = 25
 	color = "#4a4a4a"
 	endurance = 1250
-	armor = list(melee = -20, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=-20;bullet=20;laser=10"
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	movement_cooldown = 12
@@ -215,7 +215,7 @@
 	name = "alien Electrosentinel"
 	color = "#ccff4a"
 	endurance = 200
-	armor = list(melee = 0, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "bullet=10;laser=10"
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/beam/stun/electric_spider
 	reload_max = 5
@@ -224,7 +224,7 @@
 
 /mob/living/simple_mob/animal/space/alien/sentinel/pyro
 	name = "alien Pyrosentinel"
-	armor = list (melee = 0, bullet = 0, laser = 15, energy = 0, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "laser=15;bio=100;rad=100"
 	base_attack_cooldown = 15
 	color = "#ff7373"
 	endurance = 250
@@ -235,7 +235,7 @@
 
 /mob/living/simple_mob/animal/space/alien/sentinel/cyro
 	name = "alien cryosentinel"
-	armor = list(melee = 0, bullet = 15, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "bullet=15;bio=100;rad=100"
 	color = "#4f83ff"
 	endurance = 200
 	needs_reload = 1

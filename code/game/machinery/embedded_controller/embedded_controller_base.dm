@@ -5,7 +5,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 	var/datum/embedded_program/program	//the currently executing program
-	var/list/valid_actions = list()
+	var/list/valid_actions
 	var/on = 1
 
 /obj/machinery/embedded_controller/Initialize(mapload)
@@ -64,11 +64,23 @@
 /obj/machinery/embedded_controller
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/embedded_controller/attack_hand(mob/user as mob)
-	if(!user.IsAdvancedToolUser())
-		return 0
+/obj/machinery/embedded_controller/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/embedded_controller_open_ui,
+	)
+	..()
 
+/datum/interaction/machine_hand/ungated/embedded_controller_open_ui
+	id = "embedded_controller_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/embedded_controller/proc/interaction_open_ui_impl
+
+/obj/machinery/embedded_controller/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.IsAdvancedToolUser())
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/embedded_controller/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

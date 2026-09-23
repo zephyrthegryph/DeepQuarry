@@ -2,7 +2,7 @@
 	announceWhen	= 50
 	endWhen 		= 900
 
-	var/list/spawned_spider = list()
+	var/list/spawned_spider
 
 /datum/event/spider_migration/setup()
 	announceWhen = rand(40, 60)
@@ -13,7 +13,7 @@
 	if(severity == EVENT_LEVEL_MAJOR)
 		announcement = "Massive migration of unknown biological entities has been detected near [station_name()], please stand-by." // Restore original message.
 	else
-		announcement = "Unknown biological [spawned_spider.len == 1 ? "entity has" : "entities have"] been detected near [station_name()], please stand-by." // Restore original message.
+		announcement = "Unknown biological [length(spawned_spider) == 1 ? "entity has" : "entities have"] been detected near [station_name()], please stand-by." // Restore original message.
 	GLOB.command_announcement.Announce(announcement, "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 
 /datum/event/spider_migration/start()
@@ -37,7 +37,7 @@
 	while (i <= num_groups)
 		var/group_size = rand(group_size_min, group_size_max)
 		for (var/j = 1, j <= group_size, j++)
-			spawned_spider.Add(new /mob/living/simple_mob/animal/giant_spider/frost/event(spawn_locations[i]))
+			LAZYADD(spawned_spider, new /mob/living/simple_mob/animal/giant_spider/frost/event(spawn_locations[i]))
 		i++
 
 /datum/event/spider_migration/end()

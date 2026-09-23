@@ -27,10 +27,10 @@ SUBSYSTEM_DEF(planets)
 		var/datum/planet/NP = new P()
 		planets += NP
 		for(var/index in 1 to length(NP.expected_z_levels))
-			var/Z = NP.expected_z_levels[index]
+			var/Z = LAZYACCESS(NP.expected_z_levels, index)
 			if(!isnum(Z))
 				Z = GLOB.map_templates_loaded[Z]
-				NP.expected_z_levels[index] = Z
+				LAZYSET(NP.expected_z_levels, index, Z)
 			if(Z > length(z_to_planet))
 				z_to_planet.len = Z
 			if(z_to_planet[Z])
@@ -47,9 +47,9 @@ SUBSYSTEM_DEF(planets)
 		if(!istype(P))
 			return
 		if(istype(T, /turf/unsimulated/wall/planetary))
-			P.planet_walls += T
+			LAZYADD(P.planet_walls, T)
 		else if(istype(T, /turf/simulated) && T.is_outdoors())
-			P.planet_floors += T
+			LAZYADD(P.planet_floors, T)
 			P.weather_holder.apply_to_turf(T)
 
 /datum/controller/subsystem/planets/proc/removeTurf(turf/T,is_edge)
@@ -58,9 +58,9 @@ SUBSYSTEM_DEF(planets)
 		if(!P)
 			return
 		if(istype(T, /turf/unsimulated/wall/planetary))
-			P.planet_walls -= T
+			LAZYREMOVE(P.planet_walls, T)
 		else
-			P.planet_floors -= T
+			LAZYREMOVE(P.planet_floors, T)
 			P.weather_holder.remove_from_turf(T)
 			P.sun_holder.remove_from_turf(T)
 
@@ -109,7 +109,7 @@ SUBSYSTEM_DEF(planets)
 
 /datum/controller/subsystem/planets/proc/updateSunlight(datum/planet/P)
 	var/new_brightness = P.sun["brightness"]
-	P.sun_holder.update_brightness(new_brightness, P.planet_floors)
+	P.sun_holder.update_brightness(new_brightness, P.planet_floors || list())
 
 	var/new_color = P.sun["color"]
 	P.sun_holder.update_color(new_color)
@@ -127,5 +127,5 @@ SUBSYSTEM_DEF(planets)
 		count--
 		for(var/datum/planet/P as anything in planets)
 			if(P.weather_holder)
-				P.weather_holder.change_weather(pick(P.weather_holder.allowed_weather_types))
+				P.weather_holder.change_weather(DEFAULTPICK(P.weather_holder.allowed_weather_types, null))
 		sleep(3)

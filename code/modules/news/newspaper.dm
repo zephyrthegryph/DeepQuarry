@@ -12,7 +12,7 @@
 	var/screen = 0
 	var/pages = 0
 	var/curr_page = 0
-	var/list/datum/feed_channel/news_content = list()
+	var/list/datum/feed_channel/news_content
 	var/datum/feed_message/important_message = null
 	var/scribble=""
 	var/scribble_page = null

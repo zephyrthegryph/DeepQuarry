@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 		T.time = pick("", stationtime2text(), time2)
 		T.source_terminal = pick("","[pick("Biesel","New Gibson")] GalaxyNet Terminal #[rand(111,999)]","your mums place","nantrasen high CommanD")
 
-		affected_account.transaction_log.Add(T)
+		LAZYADD(affected_account.transaction_log, T)
 
 	else
 		//crew wins

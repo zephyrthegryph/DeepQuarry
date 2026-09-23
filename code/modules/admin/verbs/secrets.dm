@@ -103,7 +103,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 					continue
 				H.Paralyse(5)
 				H.Sleeping(5)
-				if(H.wear_id)
+				if(H.get_equipped_item(SLOT_ID_ID))
 					var/obj/item/card/id/id = H.get_idcard()
 					for(var/A in id.GetAccess())
 						if(A == ACCESS_SECURITY)

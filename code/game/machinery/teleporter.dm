@@ -44,71 +44,87 @@
 	QDEL_NULL(teleport_control)
 	return ..()
 
-/obj/machinery/computer/teleporter/attackby(I as obj, mob/living/user as mob)
-	if(istype(I, /obj/item/card/data/))
-		var/obj/item/card/data/C = I
-		if(stat & (NOPOWER|BROKEN) & (C.function != "teleporter"))
-			attack_hand()
+/obj/machinery/computer/teleporter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/teleporter_computer_insert_card,
+		/datum/interaction/machine_hand/ungated/teleporter_computer_use,
+		/datum/interaction/machine_verb/teleporter_computer_set_id,
+	)
+	..()
 
-		var/obj/L = null
+/datum/interaction/machine_item/teleporter_computer_insert_card
+	id = "teleporter_computer_insert_card"
+	name = "Insert data card"
+	held_type = /obj/item/card/data
+	effect = /obj/machinery/computer/teleporter/proc/interaction_insert_card
 
-		for(var/obj/effect/landmark/sloc in GLOB.landmarks_list)
-			if(sloc.name != C.data) continue
-			if(locate(/mob/living) in sloc.loc) continue
-			L = sloc
-			break
+/obj/machinery/computer/teleporter/proc/interaction_insert_card(mob/user, obj/item/card/data/C, datum/interaction/interaction)
+	if(stat & (NOPOWER|BROKEN) & (C.function != "teleporter"))
+		attack_hand()
 
-		if(!L)
-			L = locate("landmark*[C.data]") // use old stype
+	var/obj/L = null
 
-		if(istype(L, /obj/effect/landmark/) && istype(L.loc, /turf))
-			to_chat(user, "You insert the coordinates into the machine.")
-			to_chat(user, "A message flashes across the screen, reminding the user that the nuclear authentication disk is not transportable via insecure means.")
-			user.drop_item()
-			qdel(I)
+	for(var/obj/effect/landmark/sloc in GLOB.landmarks_list)
+		if(sloc.name != C.data) continue
+		if(locate(/mob/living) in sloc.loc) continue
+		L = sloc
+		break
 
-			if(C.data == "Clown Land")
-				//whoops
-				for(var/mob/O in hearers(src, null))
-					O.show_message(span_warning("Incoming bluespace portal detected, unable to lock in."), 2)
+	if(!L)
+		L = locate("landmark*[C.data]") // use old stype
 
-				for(var/obj/machinery/teleport/hub/H in range(1))
-					var/amount = rand(2,5)
-					for(var/i=0;i<amount;i++)
-						new /mob/living/simple_mob/animal/space/carp(get_turf(H))
-				//
-			else
-				for(var/mob/O in hearers(src, null))
-					O.show_message(span_notice("Locked In"), 2)
-				teleport_control.locked = L
-				one_time_use = 1
+	if(istype(L, /obj/effect/landmark/) && istype(L.loc, /turf))
+		to_chat(user, "You insert the coordinates into the machine.")
+		to_chat(user, "A message flashes across the screen, reminding the user that the nuclear authentication disk is not transportable via insecure means.")
+		user.drop_item()
+		qdel(C)
 
-			add_fingerprint(user)
-	else
-		..()
+		if(C.data == "Clown Land")
+			//whoops
+			for(var/mob/O in hearers(src, null))
+				O.show_message(span_warning("Incoming bluespace portal detected, unable to lock in."), 2)
 
-	return
+			for(var/obj/machinery/teleport/hub/H in range(1))
+				var/amount = rand(2,5)
+				for(var/i=0;i<amount;i++)
+					new /mob/living/simple_mob/animal/space/carp(get_turf(H))
+			//
+		else
+			for(var/mob/O in hearers(src, null))
+				O.show_message(span_notice("Locked In"), 2)
+			teleport_control.locked = L
+			one_time_use = 1
+
+		add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/computer/teleporter/attack_ai(mob/user)
 	teleport_control.tgui_interact(user)
 
-/obj/machinery/computer/teleporter/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/teleporter_computer_use
+	id = "teleporter_computer_use"
+	name = "Use"
+	effect = /obj/machinery/computer/teleporter/proc/interaction_use
+
+/obj/machinery/computer/teleporter/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	teleport_control.tgui_interact(user)
+	return TRUE
 
-/obj/machinery/computer/teleporter/verb/set_id(t as text)
-	set category = "Object"
-	set name = "Set teleporter ID"
-	set src in oview(1)
-	set desc = "ID Tag:"
+/datum/interaction/machine_verb/teleporter_computer_set_id
+	id = "teleporter_computer_set_id"
+	name = "Set teleporter ID"
+	effect = /obj/machinery/computer/teleporter/proc/interaction_set_id
 
-	if(stat & (NOPOWER|BROKEN) || !isliving(usr))
-		return
+/obj/machinery/computer/teleporter/proc/interaction_set_id(mob/user, obj/item/held, datum/interaction/interaction)
+	if(stat & (NOPOWER|BROKEN) || !isliving(user))
+		return TRUE
+	var/t = input(user, "ID Tag:", "Set teleporter ID") as text|null
 	if(t)
 		id = t
-	return
+	return TRUE
 
 //////
 //////  Root of all the machinery

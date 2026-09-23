@@ -9,9 +9,9 @@
 	actions_types = list(/datum/action/item_action/toggle_uv_light)
 	MATERIAL_BULK(MAT_STEEL, 150)
 
-	var/list/scanned = list()
-	var/list/stored_alpha = list()
-	var/list/reset_objects = list()
+	var/list/scanned
+	var/list/stored_alpha
+	var/list/reset_objects
 
 	var/range = 3
 	var/on = 0
@@ -35,21 +35,21 @@
 		icon_state = "uv_off"
 
 /obj/item/uv_light/proc/clear_last_scan()
-	if(scanned.len)
+	if(length(scanned))
 		for(var/atom/O in scanned)
-			O.invisibility = scanned[O]
+			O.invisibility = LAZYACCESS(scanned, O)
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
-		scanned.Cut()
-	if(stored_alpha.len)
+		LAZYCLEARLIST(scanned)
+	if(length(stored_alpha))
 		for(var/atom/O in stored_alpha)
-			O.alpha = stored_alpha[O]
+			O.alpha = LAZYACCESS(stored_alpha, O)
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
-		stored_alpha.Cut()
-	if(reset_objects.len)
+		LAZYCLEARLIST(stored_alpha)
+	if(length(reset_objects))
 		for(var/obj/item/I in reset_objects)
 			I.cut_overlay(I.blood_overlay)
 			if(dq_get_fluorescent(I) == 2) dq_set_fluorescent(I, 1)
-		reset_objects.Cut()
+		LAZYCLEARLIST(reset_objects)
 
 /obj/item/uv_light/process()
 	clear_last_scan()
@@ -64,12 +64,12 @@
 				if(dq_get_fluorescent(A) == 1)
 					dq_set_fluorescent(A, 2) //To prevent light crosstalk.
 					if(A.invisibility)
-						scanned[A] = A.invisibility
+						LAZYSET(scanned, A, A.invisibility)
 						A.invisibility = INVISIBILITY_NONE
-						stored_alpha[A] = A.alpha
+						LAZYSET(stored_alpha, A, A.alpha)
 						A.alpha = use_alpha
 					if(istype(A, /obj/item))
 						var/obj/item/O = A
 						if(dq_get_was_bloodied(O) && !(O.blood_overlay in O.overlays))
 							O.add_overlay(O.blood_overlay)
-							reset_objects |= O
+							LAZYOR(reset_objects, O)

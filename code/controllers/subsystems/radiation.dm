@@ -231,7 +231,7 @@ SUBSYSTEM_DEF(radiation)
 				protected_limbs++
 				break
 
-			var/rad_resistance = clothing.armor["rad"]
+			var/rad_resistance = clothing.get_armor().value("rad")
 			if(prob(rad_resistance))
 				protected_limbs++
 				break

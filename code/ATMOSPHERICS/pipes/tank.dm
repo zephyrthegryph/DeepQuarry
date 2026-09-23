@@ -67,9 +67,21 @@
 
 	return null
 
-/obj/machinery/atmospherics/pipe/tank/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/pipe_painter))
-		return
+/obj/machinery/atmospherics/pipe/tank/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/tank_swallow_attackby,
+	)
+	..()
+
+/// Old attackby: any item used on the tank did nothing and the base attackby was never reached.
+/datum/interaction/machine_item/tank_swallow_attackby
+	id = "tank_swallow_attackby"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/atmospherics/pipe/tank/proc/interaction_swallow_attackby
+
+/obj/machinery/atmospherics/pipe/tank/proc/interaction_swallow_attackby(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/atmospherics/pipe/tank/air
 	name = "Pressure Tank (Air)"

@@ -78,14 +78,14 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 		break
 	if(!survivor)
 		feedback_set_details("round_end_result","loss - technomancer killed")
-		to_chat(world, span_boldannounce(span_large("The [(current_antagonists.len>1)?"[role_text_plural] have":"[role_text] has"] been killed!")))
+		to_chat(world, span_boldannounce(span_large("The [(length(current_antagonists)>1)?"[role_text_plural] have":"[role_text] has"] been killed!")))
 
 /datum/antagonist/technomancer/print_player_summary()
 	..()
 	for(var/obj/item/technomancer_core/core in GLOB.technomancer_belongings)
 		if(core.wearer)
 			continue // Only want abandoned cores.
-		if(!core.spells.len)
+		if(!length(core.spells))
 			continue // Cores containing spells only.
 		to_chat(world, span_filter_system("Abandoned [core] had [english_list(core.spells)].<br>"))
 

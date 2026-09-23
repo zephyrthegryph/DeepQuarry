@@ -57,11 +57,11 @@
 	mood.appearance_flags |= RESET_COLOR
 	. += mood
 	// Hat simulator: whatever is on the head stays there.
-	if(H.head)
-		var/hat_state = H.head.item_state ? H.head.item_state : H.head.icon_state
+	if(H.get_equipped_item(SLOT_ID_HEAD))
+		var/hat_state = H.get_equipped_item(SLOT_ID_HEAD).item_state ? H.get_equipped_item(SLOT_ID_HEAD).item_state : H.get_equipped_item(SLOT_ID_HEAD).icon_state
 		var/image/hat = image('icons/inventory/head/mob.dmi', hat_state)
 		hat.pixel_y = -7
-		hat.color = H.head.color
+		hat.color = H.get_equipped_item(SLOT_ID_HEAD).color
 		hat.appearance_flags |= (RESET_COLOR | KEEP_APART)
 		. += hat
 

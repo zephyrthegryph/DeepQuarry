@@ -12,6 +12,7 @@
 
 /datum/property_provider/material/melting_point
 	property = PROP_MELTING_POINT
+	applies_to = /obj
 	unit = PROP_UNIT_KELVIN
 
 /datum/property_provider/material/melting_point/fold(datum/material/M, amount, acc)
@@ -29,12 +30,84 @@
 
 /datum/property_provider/material/ignition_point
 	property = PROP_IGNITION_POINT
+	applies_to = /obj
 	unit = PROP_UNIT_KELVIN
 
 /datum/property_provider/material/ignition_point/fold(datum/material/M, amount, acc)
 	if(isnull(M.ignition_point))
 		return acc
 	return isnull(acc) ? M.ignition_point : min(acc, M.ignition_point)
+
+/// A FLAMMABLE object with no flammable material catches where fire can exist.
+/datum/property_provider/material/ignition_point/type_value(path, list/variant_vars)
+	. = ..()
+	if(isnull(.))
+		var/obj/O = path
+		if(initial(O.resistance_flags) & FLAMMABLE)
+			return FIRE_MINIMUM_TEMPERATURE_TO_EXIST
+
+/datum/property_provider/material/ignition_point/instance_value(datum/D)
+	. = ..()
+	if(isnull(.))
+		var/obj/O = D
+		if(O.resistance_flags & FLAMMABLE)
+			return FIRE_MINIMUM_TEMPERATURE_TO_EXIST
+
+// ---- Per-type heat limits with no material to read them from (H3) ----
+// Each replaces a fire_act() override that turned temperature into damage;
+// the overheating rule (code/datums/rules/declarations.dm) reads them.
+
+/// A window starts taking heat damage above its maximal_heat.
+/datum/property_provider/type_var/window_melting_point
+	property = PROP_MELTING_POINT
+	applies_to = /obj/structure/window
+	unit = PROP_UNIT_KELVIN
+	overrides = list(/datum/property_provider/material/melting_point)
+
+/datum/property_provider/type_var/window_melting_point/read_initial(path)
+	var/obj/structure/window/W = path
+	return initial(W.maximal_heat)
+
+/// An exosuit's hull limit is its max_temperature.
+/datum/property_provider/type_var/mecha_melting_point
+	property = PROP_MELTING_POINT
+	applies_to = /obj/mecha
+	unit = PROP_UNIT_KELVIN
+	overrides = list(/datum/property_provider/material/melting_point)
+
+/datum/property_provider/type_var/mecha_melting_point/read_initial(path)
+	var/obj/mecha/M = path
+	return initial(M.max_temperature)
+
+/datum/property_provider/constant/weeds_melting_point
+	property = PROP_MELTING_POINT
+	applies_to = /obj/effect/alien/weeds
+	unit = PROP_UNIT_KELVIN
+	value = T0C + 300
+	overrides = list(/datum/property_provider/material/melting_point)
+
+/datum/property_provider/constant/web_melting_point
+	property = PROP_MELTING_POINT
+	applies_to = /obj/effect/spider
+	unit = PROP_UNIT_KELVIN
+	value = T0C + 300
+	overrides = list(/datum/property_provider/material/melting_point)
+
+/// Energy shields take heat damage from any fire.
+/datum/property_provider/constant/shield_melting_point
+	property = PROP_MELTING_POINT
+	applies_to = /obj/effect/shield
+	unit = PROP_UNIT_KELVIN
+	value = FIRE_MINIMUM_TEMPERATURE_TO_EXIST
+	overrides = list(/datum/property_provider/material/melting_point)
+
+/// Rock: the top of the 600-1600 C range.
+/datum/property_provider/constant/gargoyle_melting_point
+	property = PROP_MELTING_POINT
+	applies_to = /obj/structure/gargoyle
+	unit = PROP_UNIT_KELVIN
+	value = T0C + 1600
+	overrides = list(/datum/property_provider/material/melting_point)
 
 /datum/property_def/max_heat_protection
 	id = PROP_MAX_HEAT_PROTECTION

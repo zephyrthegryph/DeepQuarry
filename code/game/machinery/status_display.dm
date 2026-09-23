@@ -65,8 +65,21 @@
 		SSradio.remove_object(src,frequency)
 	return ..()
 
-/obj/machinery/status_display/attackby(I as obj, user as mob)
-	return attack_hand(user)
+/obj/machinery/status_display/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/status_display_use,
+	)
+	..()
+
+/datum/interaction/machine_item/status_display_use
+	id = "status_display_use"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/status_display/proc/interaction_attackby
+
+/obj/machinery/status_display/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
 
 /obj/machinery/status_display/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)

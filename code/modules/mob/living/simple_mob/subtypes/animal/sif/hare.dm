@@ -26,15 +26,7 @@
 
 	endurance = 20
 
-	armor = list(
-		"melee" = 30,
-		"bullet" = 5,
-		"laser" = 5,
-		"energy" = 0,
-		"bomb" = 10,
-		"bio" = 0,
-		"rad" = 0
-		)
+	armor_spec = "melee=30;bullet=5;laser=5;bomb=10"
 
 	movement_cooldown = -1
 

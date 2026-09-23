@@ -214,8 +214,12 @@
 
 
 
-/obj/machinery/lapvend/attack_hand(mob/user)
-	tgui_interact(user)
+/obj/machinery/lapvend/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/open_ui,
+		/datum/interaction/machine_item/lapvend_pay,
+	)
+	..()
 
 /obj/machinery/lapvend/tgui_interact(mob/user, datum/tgui/ui)
 	if(stat & (BROKEN | NOPOWER | MAINT))
@@ -246,7 +250,14 @@
 
 	return data
 
-/obj/machinery/lapvend/attackby(obj/item/W as obj, mob/user as mob)
+/// The old attackby: while awaiting payment, swiped a card; else fell through to ..().
+/datum/interaction/machine_item/lapvend_pay
+	id = "lapvend_pay"
+	name = "Pay"
+	held_type = /obj/item
+	effect = /obj/machinery/lapvend/proc/interaction_pay
+
+/obj/machinery/lapvend/proc/interaction_pay(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/card/id/I = W.GetID()
 	// Awaiting payment state
 	if(state == 2)
@@ -269,9 +280,9 @@
 				fabricated_tablet = null
 			ping("Enjoy your new product!")
 			state = 3
-			return 1
-		return 0
-	return ..()
+			return TRUE
+		return TRUE
+	return FALSE
 
 // Simplified payment processing, returns 1 on success.
 /obj/machinery/lapvend/proc/process_payment(mob/user, obj/item/card/id/I, obj/item/ID_container)

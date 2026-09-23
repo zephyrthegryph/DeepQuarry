@@ -56,17 +56,22 @@
 	return vg_heat_body_add(heat_body, joules) ? joules : 0
 
 /// list(heat capacity J/K, conductance to the surroundings W/K, emissivity).
-/// Items derive a default from their size; H3 derives these from materials.
+/// Items take theirs from their materials (heat_objects.dm).
 /atom/proc/thermal_properties()
 	return list(THERMAL_CAPACITY_DEFAULT, THERMAL_CONDUCTANCE_DEFAULT, THERMAL_EMISSIVITY_DEFAULT)
 
-/obj/item/thermal_properties()
-	var/size = max(w_class, 1)
-	return list(size * THERMAL_CAPACITY_PER_W_CLASS, size * THERMAL_CONDUCTANCE_PER_W_CLASS, THERMAL_EMISSIVITY_DEFAULT)
+
+/// This atom's heat capacity changed (reagents added or removed): update its body.
+/atom/proc/heat_capacity_changed()
+	if(isnull(heat_body))
+		return
+	var/list/properties = thermal_properties()
+	if(properties[THERMAL_CAPACITY] > 0)
+		vg_heat_body_capacity(heat_body, properties[THERMAL_CAPACITY])
 
 /// Creates this atom's heat body at its surroundings' temperature, coupled to
 /// them. Returns TRUE on success.
-/atom/proc/create_heat_body(keep = FALSE)
+/atom/proc/create_heat_body(keep = FALSE, start_temperature = null)
 	if(!isnull(heat_body))
 		return TRUE
 	var/list/properties = thermal_properties()
@@ -74,8 +79,13 @@
 	if(!(capacity > 0))
 		return FALSE
 	var/list/coupling = heat_coupling()
-	heat_body = vg_heat_body_create(capacity, get_ambient_temperature(), coupling[1], coupling[2], properties[THERMAL_CONDUCTANCE], keep)
-	return !isnull(heat_body)
+	heat_body = vg_heat_body_create(capacity, isnull(start_temperature) ? get_ambient_temperature() : start_temperature, coupling[1], coupling[2], heat_path_conductance(properties[THERMAL_CONDUCTANCE]), keep)
+	if(isnull(heat_body))
+		return FALSE
+	// Rules watching this object's temperature subscribe to the new body.
+	if(dq_rules_for_type(type))
+		dq_rules_heat_body_created(src)
+	return TRUE
 
 /// list(HEAT_TARGET_*, target) this atom's body couples to: its turf's air (or
 /// the turf's solid when it has none), or its container's body, or else the
@@ -97,8 +107,13 @@
 		return
 	var/list/coupling = heat_coupling()
 	var/list/properties = thermal_properties()
-	if(!vg_heat_body_couple(heat_body, 0, coupling[1], coupling[2], properties[THERMAL_CONDUCTANCE]))
+	if(!vg_heat_body_couple(heat_body, 0, coupling[1], coupling[2], heat_path_conductance(properties[THERMAL_CONDUCTANCE])))
 		heat_body = null
+		return
+	// Moving off a burning tile ends the fire coupling.
+	var/atom/movable/self = src
+	if(istype(self) && !isnull(self.heat_fire_turf) && self.heat_fire_turf != loc)
+		self.decouple_from_fire()
 
 /// Releases this atom's heat body: its excess heat goes to its surroundings.
 /atom/proc/release_heat_body()
@@ -138,7 +153,7 @@
 /turf/heat_coupling()
 	return list(HEAT_TARGET_NONE, 0)
 
-/turf/create_heat_body(keep = FALSE)
+/turf/create_heat_body(keep = FALSE, start_temperature = null)
 	return FALSE
 
 /// HEAT_CELL_* kind of this turf's solid.

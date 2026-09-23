@@ -36,3 +36,14 @@
 	return ITEM_INTERACT_BLOCKING
 
 // Because they cannot be rebuilt, they are hard to destroy
+
+GLOBAL_LIST_EMPTY(cable_ender_link_ids)
+
+/obj/structure/cable/ender/power_link_id()
+	if(!id)
+		return 0
+	var/link = GLOB.cable_ender_link_ids["[id]"]
+	if(!link)
+		link = length(GLOB.cable_ender_link_ids) + 1
+		GLOB.cable_ender_link_ids["[id]"] = link
+	return link

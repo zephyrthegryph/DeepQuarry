@@ -15,10 +15,11 @@
 	var/stop = 0.0
 	var/screen = 0 // 0 - No Access Denied, 1 - Access allowed
 
-/obj/machinery/computer/prisoner/attack_hand(mob/user)
-	if(..())
-		return
-	tgui_interact(user)
+/obj/machinery/computer/prisoner/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/computer/prisoner/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

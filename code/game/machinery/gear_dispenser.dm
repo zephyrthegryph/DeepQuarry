@@ -172,9 +172,21 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		one_setting = new one_setting
 	dispenses = real_gear_list
 
-/obj/machinery/gear_dispenser/attack_hand(mob/living/carbon/human/user)
+/obj/machinery/gear_dispenser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/gear_dispenser_use,
+	)
+	..()
+
+/// The old attack_hand: never called ..(), picked and dispensed gear.
+/datum/interaction/machine_hand/ungated/gear_dispenser_use
+	id = "gear_dispenser_use"
+	name = "Use"
+	effect = /obj/machinery/gear_dispenser/proc/interaction_use
+
+/obj/machinery/gear_dispenser/proc/interaction_use(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(!can_use(user))
-		return
+		return TRUE
 	dispenser_flags |= GD_BUSY
 	if(!(dispenser_flags & GD_ONEITEM))
 		var/list/gear_list = get_gear_list(user)
@@ -182,17 +194,18 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		if(!LAZYLEN(gear_list))
 			to_chat(user, span_warning("\The [src] doesn't have anything to dispense for you!"))
 			dispenser_flags &= ~GD_BUSY
-			return
+			return TRUE
 
 		var/choice = tgui_input_list(user, "Select equipment to dispense.", "Equipment Dispenser", gear_list)
 
 		if(!choice)
 			dispenser_flags &= ~GD_BUSY
-			return
+			return TRUE
 
 		dispense(gear_list[choice],user)
 	else
 		dispense(one_setting,user)
+	return TRUE
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
@@ -332,7 +345,20 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		if(operable())
 			add_overlay("light2")
 
-/obj/machinery/gear_dispenser/suit_fancy/attack_hand(mob/living/carbon/human/user)
+/obj/machinery/gear_dispenser/suit_fancy/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/gear_dispenser_suit_fancy_take,
+	)
+	..()
+
+/// The old attack_hand: took the held gear if any, else fell through to ..() (the base gear_dispenser use).
+/datum/interaction/machine_hand/ungated/gear_dispenser_suit_fancy_take
+	id = "gear_dispenser_suit_fancy_take"
+	name = "Take"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take
+
+/obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(held_gear_disp)
 		var/turf/T = get_turf(user)
 		var/list/spawned = held_gear_disp.spawn_gear(T, user)
@@ -341,8 +367,8 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		to_chat(user, span_notice("You remove the equipment from [src]."))
 		held_gear_disp = null
 		animate_close()
-		return
-	return ..()
+		return TRUE
+	return FALSE
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense(datum/gear_disp/S,mob/living/carbon/human/user,greet=TRUE)
 	if(!S.amount && !(dispenser_flags & GD_UNLIMITED))

@@ -44,3 +44,19 @@ GLOBAL_LIST_EMPTY(string_lists)
 		return
 	cache[key] = values
 	return values
+
+/**
+ * Caches read-only lists of any shape (nested lists, typepaths, numbers) by their
+ * JSON form, so types whose instances all carry the same constant table share one
+ * list. The result is shared: never edit it in place, assign a new list instead.
+ */
+/proc/intern_list(list/values)
+	if(!islist(values))
+		return values
+	var/static/list/cache = list()
+	var/key = json_encode(values)
+	. = cache[key]
+	if(.)
+		return
+	cache[key] = values
+	return values

@@ -38,10 +38,6 @@
 /obj/item/latexballon/bullet_act()
 	burst()
 
-/obj/item/latexballon/fire_act(temperature, volume)
-	if(temperature > T0C+100)
-		burst()
-	return
 
 /obj/item/latexballon/attackby(obj/item/W as obj, mob/user as mob)
 	if (can_puncture(W))

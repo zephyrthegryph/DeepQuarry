@@ -19,15 +19,7 @@
 	melee_damage_upper = 0
 	attacktext = list("honked")
 
-	armor = list(
-				"melee" = 80,
-				"bullet" = 20,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0,
-				"bio" = 0,
-				"rad" = 0
-				)
+	armor_spec = "melee=80;bullet=20"
 
 	has_langs = list(LANGUAGE_ANIMAL)
 
@@ -60,15 +52,7 @@
 	melee_damage_upper = 0
 	attacktext = list("...")
 
-	armor = list(
-				"melee" = 80,
-				"bullet" = 20,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0,
-				"bio" = 0,
-				"rad" = 0
-				)
+	armor_spec = "melee=80;bullet=20"
 
 /mob/living/simple_mob/animal/passive/mimepet/attack_hand(mob/living/user as mob)
 	if(IS_DISARMING(user))

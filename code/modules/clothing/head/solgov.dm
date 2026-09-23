@@ -66,14 +66,14 @@
 	name = "fleet utility cover"
 	desc = "A navy blue utility cover bearing the crest of a USDF Fleet."
 	icon_state = "navyutility"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 10, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "energy=10"
 	siemens_coefficient = 0.7
 
 /obj/item/clothing/head/utility/army
 	name = "marine utility cover"
 	desc = "A green utility cover bearing the crest of the USDF Marines."
 	icon_state = "greenutility"
-	armor = list(melee = 10, bullet = 0, laser = 10,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;laser=10"
 
 /obj/item/clothing/head/utility/army/tan
 	name = "tan utility cover"

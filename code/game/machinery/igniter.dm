@@ -10,15 +10,24 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
-/obj/machinery/igniter/attack_hand(mob/user as mob)
-	if(..())
-		return
-	add_fingerprint(user)
+/obj/machinery/igniter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/igniter_toggle,
+	)
+	..()
 
+/datum/interaction/machine_hand/igniter_toggle
+	id = "igniter_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/igniter/proc/interaction_toggle
+
+/obj/machinery/igniter/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
 	use_power(50)
 	on = !(on)
 	icon_state = text("igniter[]", on)
-	return
+	return TRUE
 
 /obj/machinery/igniter/process()	//ugh why is this even in process()?
 	if(on && !(stat & NOPOWER))
@@ -112,15 +121,23 @@
 	name = "ignition switch"
 	desc = "A remote control switch for a mounted igniter."
 
-/obj/machinery/button/ignition/attack_hand(mob/user)
+/obj/machinery/button/ignition/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ignition_button_trigger,
+	)
+	..()
 
-	if(..())
-		return
+/datum/interaction/machine_hand/ignition_button_trigger
+	id = "ignition_button_trigger"
+	name = "Trigger"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/button/ignition/proc/interaction_trigger
 
+/obj/machinery/button/ignition/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	use_power(5)
 
 	if(active)
-		return
+		return TRUE
 
 	active = TRUE
 	icon_state = "launcheract"
@@ -136,6 +153,7 @@
 			M.icon_state = text("igniter[]", M.on)
 
 	addtimer(CALLBACK(src, PROC_REF(finish_trigger)), 5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	return TRUE
 
 /obj/machinery/button/ignition/proc/finish_trigger()
 	PRIVATE_PROC(TRUE)

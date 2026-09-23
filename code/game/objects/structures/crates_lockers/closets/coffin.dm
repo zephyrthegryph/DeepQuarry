@@ -112,7 +112,7 @@
 				if(use_tool(user, W, src, delay = 4 SECONDS, volume = 0))
 					user.visible_message(span_notice("[user] finishes smoothing out \the [src.name]."), \
 											span_notice("You finish smoothing out \the [src.name]."))
-					if(LAZYLEN(contents))
+					if(LAZYLEN(contents) || has_latent())
 						alpha = 40	// If we've got stuff inside, like maybe a person, just make it hard to see us
 					else
 						qdel(src)	// Else, go away

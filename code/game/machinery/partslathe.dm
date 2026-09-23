@@ -81,32 +81,45 @@
 			flick("partslathe-lidopen", src)
 		icon_state = "partslathe-idle"
 
-/obj/machinery/partslathe/attackby(obj/item/O, mob/user)
+/obj/machinery/partslathe/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/partslathe_attackby,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
+
+/// Old attackby: kept whole (the busy/inoperable/panel_open guards apply to every branch, including the part replacer).
+/datum/interaction/machine_item/partslathe_attackby
+	id = "partslathe_attackby"
+	name = "Use item"
+	held_type = /obj/item
+	effect = /obj/machinery/partslathe/proc/interaction_attackby
+
+/obj/machinery/partslathe/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 	if(busy)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return 1
+		return TRUE
 	if(default_part_replacement(user, O))
-		return
+		return TRUE
 	if(inoperable())
-		return
+		return TRUE
 	if(panel_open)
 		to_chat(user, span_notice("You can't load \the [src] while it's opened."))
-		return
+		return TRUE
 	if(istype(O, /obj/item/circuitboard))
 		if(copy_board)
 			to_chat(user, span_warning("There is already a board inserted in \the [src]."))
-			return
+			return TRUE
 		if(!user.unEquip(O))
-			return
+			return TRUE
 		copy_board = O
 		O.forceMove(src)
 		user.visible_message("[user] inserts [O] into \the [src]'s circuit reader.", span_notice("You insert [O] into \the [src]'s circuit reader."))
-		return
+		return TRUE
 	if(try_load_materials(user, O))
-		return
-	else
-		to_chat(user, span_notice("You cannot insert this item into \the [src]!"))
-		return
+		return TRUE
+	to_chat(user, span_notice("You cannot insert this item into \the [src]!"))
+	return TRUE
 
 // Attept to load materials.  Returns 0 if item wasn't a stack of materials, otherwise 1 (even if failed to load)
 /obj/machinery/partslathe/proc/try_load_materials(mob/user, obj/item/stack/material/S)
@@ -216,11 +229,6 @@
 	materials[material] -= ejected * S.perunit
 	if(recursive && materials[material] >= S.perunit)
 		eject_materials(material, -1)
-
-/obj/machinery/partslathe/attack_hand(mob/user)
-	if(..())
-		return
-	tgui_interact(user)
 
 /obj/machinery/partslathe/ui_assets(mob/user)
 	return list(

@@ -51,7 +51,7 @@
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)
 	for(var/obj/item/I in hold.contents)
-		hold.remove_from_storage(I, T)
+		hold.remove_from_storage(I, T, user)
 	add_fingerprint(user)
 
 /obj/item/clothing/accessory/storage/webbing

@@ -19,11 +19,24 @@
 	crew_monitor = null
 	. = ..()
 
-/obj/machinery/computer/crew/attack_hand(mob/user)
+/obj/machinery/computer/crew/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/crew_monitor_use,
+	)
+	..()
+
+/// Old attack_hand: `add_fingerprint(user); if(stat & (BROKEN|NOPOWER)) return; tgui_interact(user)`.
+/datum/interaction/machine_hand/ungated/crew_monitor_use
+	id = "crew_monitor_use"
+	name = "Use"
+	effect = /obj/machinery/computer/crew/proc/interaction_use
+
+/obj/machinery/computer/crew/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/crew/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

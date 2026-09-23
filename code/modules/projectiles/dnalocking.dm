@@ -5,14 +5,14 @@
 	desc = "A state of the art technological chip that can be installed in a firearm. It allows the user to store their DNA and lock the gun's use from unwanted users."
 	w_class = ITEMSIZE_TINY
 
-	var/list/stored_dna = list()	//list of the dna stored in the gun, used to allow users to use it or not
+	var/list/stored_dna	//list of the dna stored in the gun, used to allow users to use it or not
 	var/safety_level = 0			//either 0 or 1, at 0 the game buzzes and tells the user they can't use it, at 1 it self destructs after 10 seconds
 	var/controller_dna = null		//The dna of the person who is the primary controller of the gun
 	var/controller_lock = 0			//whether or not the gun is locked by the primar controller, 0 or 1, at 1 it is locked and does not allow
 	var/exploding = 0
 
 /obj/item/dnalockingchip/Destroy(force, ...)
-	stored_dna.Cut()
+	LAZYCLEARLIST(stored_dna)
 	. = ..()
 
 /obj/item/gun/proc/get_dna(mob/user)
@@ -30,7 +30,7 @@
 				to_chat(human, span_warning("\The [src] buzzes and displays an NO DNA DETECTED symbol."))
 				return FALSE
 		else
-			attached_lock.stored_dna += M.dna.unique_enzymes
+			LAZYADD(attached_lock.stored_dna, M.dna.unique_enzymes)
 			to_chat(M, span_notice("\The [src] pings and a needle flicks out from the grip, taking a DNA sample from you."))
 			if(!attached_lock.controller_dna)
 				attached_lock.controller_dna = M.dna.unique_enzymes
@@ -53,7 +53,7 @@
 			to_chat(M, span_warning("\The [src] buzzes and displays an invalid user symbol."))
 			return FALSE
 		else
-			attached_lock.stored_dna -= user.dna.unique_enzymes
+			LAZYREMOVE(attached_lock.stored_dna, user.dna.unique_enzymes)
 			to_chat(M, span_notice("\The [src] beeps and clears the DNA it has stored."))
 			if(M.dna.unique_enzymes == attached_lock.controller_dna)
 				to_chat(M, span_notice("\The [src] beeps and removes you as the primary controller."))
@@ -89,7 +89,7 @@
 	toggledna(usr)
 
 /obj/item/gun/proc/authorized_user(mob/user)
-	if(!attached_lock.stored_dna || !attached_lock.stored_dna.len)
+	if(!attached_lock.stored_dna || !length(attached_lock.stored_dna))
 		return TRUE
 	if(!(user.dna.unique_enzymes in attached_lock.stored_dna))
 		return FALSE

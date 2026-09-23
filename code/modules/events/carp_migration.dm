@@ -3,7 +3,7 @@
 	announceWhen	= 45	// Adjusted by setup
 	endWhen			= 75	// Adjusted by setup
 	var/carp_cap	= 10
-	var/list/spawned_carp = list()
+	var/list/spawned_carp
 
 /datum/event/carp_migration/setup()
 	if(prob(50))
@@ -23,7 +23,7 @@
 	if(severity == EVENT_LEVEL_MAJOR)
 		announcement = "Massive migration of unknown biological entities has been detected near [location_name()], please stand-by."
 	else
-		announcement = "Unknown biological [spawned_carp.len == 1 ? "entity has" : "entities have"] been detected near [location_name()], please stand-by."
+		announcement = "Unknown biological [length(spawned_carp) == 1 ? "entity has" : "entities have"] been detected near [location_name()], please stand-by."
 	GLOB.command_announcement.Announce(announcement, "Lifesign Alert")
 
 /datum/event/carp_migration/tick()
@@ -75,7 +75,7 @@
 /datum/event/carp_migration/proc/spawn_one_carp(loc)
 	var/mob/living/simple_mob/animal/carp_to_spawn = new /mob/living/simple_mob/animal/space/carp/event(loc)
 	RegisterSignal(carp_to_spawn, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_carp_destruction))
-	spawned_carp.Add(carp_to_spawn)
+	LAZYADD(spawned_carp, carp_to_spawn)
 	return carp_to_spawn
 
 // Counts living carp spawned by this event.
@@ -88,7 +88,7 @@
 // If carp is bomphed, remove it from the list.
 /datum/event/carp_migration/proc/on_carp_destruction(datum/source, mob/carp_to_remove)
 	SIGNAL_HANDLER
-	spawned_carp -= carp_to_remove
+	LAZYREMOVE(spawned_carp, carp_to_remove)
 	UnregisterSignal(carp_to_remove, COMSIG_OBSERVER_DESTROYED)
 
 /datum/event/carp_migration/end()

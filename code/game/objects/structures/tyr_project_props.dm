@@ -33,7 +33,7 @@
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad
 	icon_state_closed = "star_door"
 	var/list/code = list()
-	var/list/lastattempt = list()
+	var/list/lastattempt
 	var/codelen = 6
 
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad/multitool_act(mob/user, obj/item/tool)
@@ -66,10 +66,10 @@
 		return 0
 
 	. = 1
-	lastattempt.Cut()
+	LAZYCLEARLIST(lastattempt)
 	for(var/i in 1 to codelen)
 		var/guesschar = copytext(input, i, i+1)
-		lastattempt += guesschar
+		LAZYADD(lastattempt, guesschar)
 		if(guesschar != code[i])
 			. = 0
 

@@ -41,3 +41,25 @@
 #define ROBOT_USE_HAND (1<<2)
 /// A cyborg's empty-gripper Use is the hand's Use when adjacent, and does nothing otherwise.
 #define ROBOT_USE_HAND_ADJACENT (1<<3)
+
+// Legacy input entries (I7). A converted handler's interactions keep the entry
+// point the old proc had, so every caller of that proc still reaches them, in
+// the same order: the most specific type first, then its parents, as an
+// override chain did. Resolver-native interactions have no entry.
+/// Used with an item: /atom/proc/attackby.
+#define INTERACTION_ENTRY_ITEM "item"
+/// Touched with an empty hand (or a silicon's Use through silicon_use): /atom/proc/attack_hand.
+#define INTERACTION_ENTRY_HAND "hand"
+/// The held item used on itself: /obj/item/proc/attack_self.
+#define INTERACTION_ENTRY_SELF "self"
+/// Alt-click: /atom/proc/click_alt.
+#define INTERACTION_ENTRY_ALT "alt"
+/// Something dragged onto the target (held is the dragged atom): /atom/proc/MouseDrop_T.
+#define INTERACTION_ENTRY_DRAG "drag"
+
+/// run_interaction_entry(): the entry's gate (hand_gate()) stopped the input before any interaction.
+#define INTERACTION_GATE_STOPPED "gate_stopped"
+
+/// Requirement: in reach. Adjacent, or a silicon the target lets use it remotely (silicon_use),
+/// or already dispatched by the legacy entry (which decided reach itself: telekinesis, the AI).
+#define REQ_INTERACTION_REACH REQ_PROC(/proc/dq_interaction_reach, "too far away")

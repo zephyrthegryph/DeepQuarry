@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Items, reagents and fire run on real heat: objects get heat bodies when they heat up, and ignition, melting, overheating, cooking and cook-off are temperature rules."
+  - balance: "Burning objects release heat, use the room's oxygen and go out when they run out of fuel or oxygen or cool down."
+  - balance: "Cookers, the bunsen burner and the distillery are real heat sources; distilling reactions now depend on the machine's temperature."

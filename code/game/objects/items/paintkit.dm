@@ -8,7 +8,7 @@
 	var/new_icon_file
 	var/new_icon_override_file
 	var/uses = 1        // Uses before the kit deletes itself.
-	var/list/allowed_types = list()
+	var/list/allowed_types
 
 /obj/item/kit/examine()
 	. = ..()
@@ -32,7 +32,7 @@
 	new_icon_override_file = kit_icon_override_file
 
 	for(var/path in splittext(additional_data, ", "))
-		allowed_types |= text2path(path)
+		LAZYOR(allowed_types, text2path(path))
 
 /obj/item/kit/proc/customize(obj/item/I, mob/user)
 	if(can_customize(I))

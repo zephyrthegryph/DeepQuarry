@@ -1,5 +1,6 @@
 //This enables you to load mag to mag too. This includes from box to mag.
 /obj/item/ammo_magazine/attackby(obj/item/W as obj, mob/user as mob)
+	make_rounds_real()
 	if(istype(W, /obj/item/ammo_magazine))
 		var/obj/item/ammo_magazine/L = W
 		if(L.caliber != caliber)

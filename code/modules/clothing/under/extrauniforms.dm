@@ -17,7 +17,7 @@
 	icon_state = "blueshield2"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "blueshield2"
-	armor = list(melee = 15, bullet = 10, laser = 10,energy = 5, bomb = 15, bio = 0, rad = 0)
+	armor_spec = "melee=15;bullet=10;laser=10;energy=5;bomb=15"
 
 /obj/item/clothing/accessory/storage/webbing/combatpilot //redefined to change the name and keep it loaded in the event the sc files are disabled in future
 	name = "combat pilot harness"
@@ -30,7 +30,7 @@
 /obj/item/clothing/under/rank/khi/sec/pilot //yes, we're inheriting from the khi version; that one has full rolldown sprites
 	name = "security pilot uniform"
 	desc = "A lightweight uniform intended for vehicle and powersuit operators, designed to allow free movement and maximum comfort in hot, cramped cockpits. Comes prefitted with a harness and webbing for gear."
-	armor = list(melee = 0, bullet = 10, laser = 10, energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bullet=10;laser=10;bomb=10"
 	//we probably won't get hit by melee attacks as a pilot, but logically you'd want protection against anything that might penetrate the armor
 	starting_accessories = list(/obj/item/clothing/accessory/storage/webbing/combatpilot)
 	//come prefitted with some snappy extra webbing
@@ -42,7 +42,7 @@
 	icon_state = "securityformal"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "securityformal"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 
 /obj/item/clothing/under/yw/rank/warden/formal
 	name = "warden's suit"
@@ -51,7 +51,7 @@
 	icon_state = "wardenformal"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "wardenformal"
-	armor = list(melee = 10, bullet = 5, laser = 5,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=5;laser=5"
 
 /obj/item/clothing/under/yw/rank/head_of_security/formal
 	name = "head of security's suit"
@@ -60,7 +60,7 @@
 	icon_state = "hosformal"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "hosformal"
-	armor = list(melee = 10, bullet = 10, laser = 10,energy = 5, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
 
 //Brig Physician
 /obj/item/clothing/under/yw/rank/security/brigphys
@@ -71,7 +71,7 @@
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "brigphysician"
 	permeability_coefficient = 0.50
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "melee=10;bio=10"
 
 /obj/item/clothing/under/yw/rank/security/brigphys/skirt
 	desc = "A skirted Brig Physician uniform. It has both security and medical protection."
@@ -81,7 +81,7 @@
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "brigphysicianf"
 	permeability_coefficient = 0.50
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "melee=10;bio=10"
 
 
 /obj/item/clothing/under/yw/robotics //fancy blueshield suit,
@@ -99,7 +99,7 @@
 	icon = 'icons/obj/clothing/uniforms_yw.dmi'
 	icon_state = "blackutility_crew"
 	icon_override = 'icons/mob/uniform_yw.dmi'
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 10)
+	armor_spec = "bio=10;rad=10"
 
 /obj/item/clothing/under/explorer/utility/command
 	name = "\improper explorer command uniform"
@@ -129,7 +129,7 @@
 	icon = 'icons/obj/clothing/uniforms_yw.dmi'
 	icon_state = "navyutility"
 	icon_override = 'icons/mob/uniform_yw.dmi'
-	armor = list(melee = 10, bullet = 10, laser = 10,energy = 5, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
 
 /obj/item/clothing/under/away/patrol/medical
 	name = "\improper nanotrasen fleet medical uniform"
@@ -171,7 +171,7 @@
 	icon_state = "greyutility"
 	worn_state = "greyutility"
 	icon_override = 'icons/mob/uniform_yw.dmi'
-	armor = list(melee = 10, bullet = 10, laser = 10,energy = 5, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
 
 /obj/item/clothing/under/away/daedalus/engineering
 	name = "\improper daedalus engineering uniform"

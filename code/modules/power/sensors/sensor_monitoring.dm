@@ -46,12 +46,24 @@
 	return ..()
 
 // On user click opens the UI of this computer.
-/obj/machinery/computer/power_monitor/attack_hand(mob/user)
-	add_fingerprint(user)
+/obj/machinery/computer/power_monitor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/power_monitor_use,
+	)
+	..()
 
+/// Old attack_hand: never called ..(), so ungated.
+/datum/interaction/machine_hand/ungated/power_monitor_use
+	id = "power_monitor_use"
+	name = "Use"
+	effect = /obj/machinery/computer/power_monitor/proc/interaction_use
+
+/obj/machinery/computer/power_monitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/power_monitor/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

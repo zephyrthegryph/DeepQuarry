@@ -10,6 +10,7 @@
  */
 
 /obj/item/clothing/suit/fire
+	armor_spec = "fire=100"
 	name = "emergency firesuit"
 	desc = "A suit that protects against fire and heat."
 	icon_state = "firesuit"
@@ -51,7 +52,7 @@
 	name = "bomb hood"
 	desc = "Use in case of bomb."
 	icon_state = "bombsuit"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 100, bio = 0, rad = 0)
+	armor_spec = "bomb=100"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
 	siemens_coefficient = 0
@@ -65,7 +66,7 @@
 	gas_transfer_coefficient = 0.01
 	permeability_coefficient = 0.01
 	slowdown = 2
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 100, bio = 0, rad = 0)
+	armor_spec = "bomb=100"
 	flags_inv = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	heat_protection = CHEST|LEGS|FEET|ARMS|HANDS
 	cold_protection = CHEST|LEGS|FEET|ARMS|HANDS
@@ -95,7 +96,7 @@
 	flags_inv = BLOCKHAIR
 	item_flags = THICKMATERIAL
 	body_parts_covered = HEAD|FACE|EYES
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 60, rad = 100)
+	armor_spec = "bio=60;rad=100"
 
 
 /obj/item/clothing/head/radiation/Initialize(mapload)
@@ -111,7 +112,7 @@
 	permeability_coefficient = 0.50
 	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
 	slowdown = 1.5
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 60, rad = 100)
+	armor_spec = "bio=60;rad=100"
 	flags_inv = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	item_flags = THICKMATERIAL
 
@@ -160,7 +161,7 @@
 	blood_overlay_type = "coat"
 	body_parts_covered = UPPER_TORSO
 	flags_inv = HIDEHOLSTER
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50"
 
 /obj/item/clothing/suit/storage/toggle/paramedic/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)

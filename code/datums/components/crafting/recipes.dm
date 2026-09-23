@@ -8,16 +8,16 @@
 	/// type paths of items consumed associated with how many are needed
 	/// Note that stacks have special handling: the logic accounts for having '23' available
 	/// in the case of just having one stack of 23 amount, so stack/steel = 23 is fine
-	var/list/reqs = list()
-	var/list/blacklist = list() //type paths of items explicitly not allowed as an ingredient
+	var/list/reqs
+	var/list/blacklist //type paths of items explicitly not allowed as an ingredient
 	var/result //type path of item resulting from this craft
 	/// String defines of items needed but not consumed. Lazy list.
 	var/list/tool_behaviors
 	/// Type paths of items needed but not consumed. Lazy list.
 	var/list/tool_paths
 	var/time = 30 //time in deciseconds
-	var/list/parts = list() //type paths of items that will be placed in the result
-	var/list/chem_catalysts = list() //like tool_behaviors but for reagents
+	var/list/parts //type paths of items that will be placed in the result
+	var/list/chem_catalysts //like tool_behaviors but for reagents
 	var/category = CAT_NONE //where it shows up in the crafting UI
 	var/subcategory = CAT_NONE
 	var/always_available = TRUE //Set to FALSE if it needs to be learned first.
@@ -51,7 +51,7 @@
 			src.material_total = material_total
 			reqs = remaining_requirements
 	if(!(result in reqs))
-		blacklist += result
+		LAZYADD(blacklist, result)
 	if(tool_behaviors)
 		tool_behaviors = string_list(tool_behaviors)
 	if(tool_paths)

@@ -160,7 +160,7 @@
 	description_info = "The capsule contains pockets of compressed space in a super position stabilized by a miniscule supermatter crystal. \
 	NanoTrasen stresses the safety of this model over previous prototypes but assumes no liability for sub-kiloton explosions."
 	template_id = null
-	var/list/template_ids = list()
+	var/list/template_ids
 	var/pod_initialized = FALSE
 
 // Override since the parent proc has a sanity check to delete the capsule if no template is found, which doesn't exactly work with this item considering examining calls this proc.
@@ -176,7 +176,7 @@
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.superpose))) // Limits map templates to those marked for the superpose capsule.
 				continue
-			template_ids += initial(shelter_type.shelter_id)
+			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
 		var/answer = tgui_input_list(user, "Which template would you like to load?","Available Templates", template_ids)
@@ -209,7 +209,7 @@
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter/))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.shuttle)))
 				continue
-			template_ids += initial(shelter_type.shelter_id)
+			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
 		var/answer = tgui_input_list(user, "Which template would you like to load?","Available Templates", template_ids)
@@ -641,22 +641,45 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	id = "placeholder_id_do_not_use" //This has to be this way, otherwise it will control ALL doors if left blank.
 	var/obj/machinery/door/airlock/voidcraft/survival_pod/door
 
-/obj/machinery/button/remote/airlock/survival_pod/attack_hand(obj/item/W, mob/user as mob)
-	if(..()) return 1 //1 is failure on machines (for whatever reason)
+/obj/machinery/button/remote/airlock/survival_pod/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/survival_pod_button_glass,
+	)
+	..()
+
+/datum/interaction/machine_hand/survival_pod_button_glass
+	id = "survival_pod_button_glass"
+	name = "Use"
+	effect = /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass
+
+/obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!door)
 		var/turf/dT = get_step(src,dir)
 		door = locate() in dT
 	if(door)
 		door.glass = !door.glass
 		door.opacity = !door.opacity
+	return TRUE
 
 //Subtype that actually bolts doors!
 /obj/machinery/button/remote/airlock/survival_pod/bolts
 	name = "shelter privacy control"
 	desc = "You can ensure some privacy with this."
 
-/obj/machinery/button/remote/airlock/survival_pod/bolts/attack_hand(obj/item/W, mob/user as mob)
-	if(..()) return 1 //1 is failure on machines (for whatever reason)
+/obj/machinery/button/remote/airlock/survival_pod/bolts/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/survival_pod_button_bolts,
+	)
+	..()
+
+/// Old attack_hand chained ..() into the parent's glass toggle before doing its own bolt logic; reproduce that order explicitly.
+/datum/interaction/machine_hand/survival_pod_button_bolts
+	id = "survival_pod_button_bolts"
+	name = "Use"
+	effect = /obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts
+
+/obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_glass(user, held, interaction)
 	if(door)
 		if(door.locked)
 			door.unlock()
@@ -665,6 +688,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 			door.lock()
 			// Block light when bolted, since the door is effectively functioning like polarized glass
 			door.AddElement(/datum/element/light_blocking)
+	return TRUE
 
 // Capsule-specific light switch
 // Turns off only one light in a given direction from its source turf.
@@ -674,7 +698,19 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 
 
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
-/obj/machinery/light_switch/survival_pod/attack_hand(obj/item/W, mob/user as mob)
+/obj/machinery/light_switch/survival_pod/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/survival_pod_light_switch,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/survival_pod_light_switch
+	id = "survival_pod_light_switch"
+	name = "Use"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl
+
+/obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 	if(!target_light)
@@ -694,6 +730,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	update_icon()
 
 	GLOB.lights_switched_on_roundstat++
+	return TRUE
 
 //Windows
 /obj/structure/window/reinforced/survival_pod

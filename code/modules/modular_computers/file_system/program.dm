@@ -216,7 +216,7 @@
 					return
 
 				var/mob/user = ui.user
-				computer.idle_threads.Add(computer.active_program)
+				LAZYADD(computer.idle_threads, computer.active_program)
 				program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 
 				computer.active_program = null

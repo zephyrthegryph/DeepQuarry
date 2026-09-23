@@ -6,6 +6,7 @@
 
 // Winter coats
 /obj/item/clothing/head/hood/winter
+	armor_spec = "cold=40"
 	name = "winter hood"
 	desc = "A hood attached to a heavy winter jacket."
 	icon_state = "winterhood"
@@ -15,7 +16,7 @@
 	name = "site manager's winter hood"
 	desc = "A blue and yellow hood attached to a heavy winter jacket."
 	icon_state = "winterhood_captain"
-	armor = list(melee = 20, bullet = 15, laser = 20, energy = 10, bomb = 15, bio = 0, rad = 0)
+	armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"
 
 /obj/item/clothing/head/hood/winter/hop
 	name = "head of personnel's winter hood"
@@ -26,86 +27,86 @@
 	name = "security winter hood"
 	desc = "A red, armor-padded winter hood."
 	icon_state = "winterhood_security"
-	armor = list(melee = 25, bullet = 20, laser = 20, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/security/hos
 	name = "head of security's winter hood"
 	desc = "A red, armor-padded winter hood, lovingly woven with a Kevlar interleave. Definitely not bulletproof, especially not the part where your face goes."
 	icon_state = "winterhood_hos"
-	armor = list(melee = 25, bullet = 20, laser = 20, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical
 	name = "medical winter hood"
 	desc = "A white winter coat hood."
 	icon_state = "winterhood_medical"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/alt
 	name = "medical winter hood, alt"
 	desc = "A white winter coat hood. It's warm."
 	icon_state = "winterhood_medicalalt"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/viro
 	name = "virologist winter hood"
 	desc = "A white winter coat hood with green markings."
 	icon_state = "winterhood_viro"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/para
 	name = "paramedic winter hood"
 	desc = "A white winter coat hood with blue markings."
 	icon_state = "winterhood_medicalalt" //winterhood_para didn't exist, so...Sorry, paramedic.
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/chemist
 	name = "chemist winter hood"
 	desc = "A white winter coat hood."
 	icon_state = "winterhood_chemist"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/cmo
 	name = "chief medical officer's winter hood"
 	desc = "A white winter coat hood."
 	icon_state = "winterhood_cmo"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/science
 	name = "science winter hood"
 	desc = "A white winter coat hood. This one will keep your brain warm. About as much as the others, really."
 	icon_state = "winterhood_science"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10;cold=40"
 
 /obj/item/clothing/head/hood/winter/science/robotics
 	name = "science winter hood"
 	desc = "A black winter coat hood. You can pull it down over your eyes and pretend that you're an outdated, late 1980s interpretation of a futuristic mechanized police force. They'll fix you. They fix everything."
 	icon_state = "winterhood_robotics"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10;cold=40"
 
 /obj/item/clothing/head/hood/winter/science/rd
 	name = "research director's winter hood"
 	desc = "A white winter coat hood. It smells faintly of slightly unethical ideas."
 	icon_state = "winterhood_rd"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10;cold=40"
 
 
 /obj/item/clothing/head/hood/winter/engineering
 	name = "engineering winter hood"
 	desc = "A yellow winter coat hood. Definitely not a replacement for a hard hat."
 	icon_state = "winterhood_engineer"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/engineering/atmos
 	name = "atmospherics winter hood"
 	desc = "A yellow and blue winter coat hood."
 	icon_state = "winterhood_atmos"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/engineering/ce
 	name = "chief engineer's winter hood"
 	desc = "A white winter coat hood. Feels surprisingly heavy. The tag says that it's not child safe."
 	icon_state = "winterhood_ce"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/hydro
 	name = "hydroponics winter hood"
@@ -121,7 +122,7 @@
 	name = "mining winter hood"
 	desc = "A dusty winter coat hood."
 	icon_state = "winterhood_miner"
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;cold=40"
 
 /obj/item/clothing/head/hood/winter/cargo/qm
 	name = "quartermaster's winter hood"
@@ -180,7 +181,7 @@
 	flags = THICKMATERIAL
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0.9
-	armor = list(melee = 30, bullet = 20, laser = 20, energy = 20, bomb = 35, bio = 75, rad = 35)
+	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
 
 // Costumes
 /obj/item/clothing/head/hood/carp_hood
@@ -243,27 +244,27 @@
 
 /obj/item/clothing/head/hood/techpriest
 	name = "techpriest hood"
-	armor = list(melee = 20, bullet = 10, laser = 10, energy = 10, bomb = 25, bio = 50, rad = 25)
+	armor_spec = "melee=20;bullet=10;laser=10;energy=10;bomb=25;bio=50;rad=25"
 
 // Armor versions here
 /obj/item/clothing/head/hood/galahad
 	name = "galahad hood"
-	armor = list(melee = 80, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=10;laser=10"
 	siemens_coefficient = 2
 
 /obj/item/clothing/head/hood/lancelot
 	name = "lancelot hood"
-	armor = list(melee = 80, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=10;laser=10"
 	siemens_coefficient = 2
 
 /obj/item/clothing/head/hood/robin
 	name = "robin hood"
-	armor = list(melee = 80, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=10;laser=10"
 	siemens_coefficient = 3
 
 /obj/item/clothing/head/hood/chain
 	name = "robin hood"
-	armor = list(melee = 60, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=60;bullet=10;laser=10"
 	siemens_coefficient = 3
 
 // Costume Versions Here
@@ -294,14 +295,14 @@
 	name = "centcom winter hood"
 	desc = "A cozy winter hood attached to a heavy winter jacket."
 	icon_state = "winterhood_centcom"
-	armor = list(melee = 40, bullet = 45, laser = 45, energy = 35, bomb = 40, bio = 25, rad = 25, fire = 35, acid = 50)
+	armor_spec = "melee=40;bullet=45;laser=45;energy=35;bomb=40;bio=25;rad=25;fire=35;acid=50;cold=40"
 
 // SAR Winter Hood
 /obj/item/clothing/head/hood/winter/medical/sar
 	name = "search and rescue winter hood"
 	desc = "A cozy winter hood attached to a heavy winter jacket."
 	icon_state = "winterhood_sar"
-	armor = list(melee = 15, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 5)
+	armor_spec = "melee=15;bio=50;rad=5;cold=40"
 
 //Food costumes
 // Hotdog suit hood
@@ -341,25 +342,25 @@
 
 /obj/item/clothing/head/hood/winter/snowsuit/command
 	name = "colony director's winter hood"
-	armor = list(melee = 20, bullet = 15, laser = 20, energy = 10, bomb = 15, bio = 0, rad = 0)
+	armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"
 	icon_state = "commandhood"
 /obj/item/clothing/head/hood/winter/snowsuit/security
 	name = "security winter hood"
-	armor = list(melee = 25, bullet = 20, laser = 20, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"
 	icon_state = "sechood"
 /obj/item/clothing/head/hood/winter/snowsuit/medical
 	name = "medical winter hood"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50;cold=40"
 	icon_state = "medihood"
 /obj/item/clothing/head/hood/winter/snowsuit/science
 	name = "science winter hood"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10;cold=40"
 	icon_state = "scihood"
 /obj/item/clothing/head/hood/winter/snowsuit/engineering
 	name = "engineering winter hood"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20;cold=40"
 	icon_state = "engihood"
 /obj/item/clothing/head/hood/winter/snowsuit/cargo
 	name = "cargo winter hood"
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;cold=40"
 	icon_state = "cargohood"

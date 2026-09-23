@@ -77,8 +77,22 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 	var/emotion = "Neutral"
 
-/obj/machinery/ai_status_display/attackby(I as obj, user as mob)
-	return attack_hand(user)
+/obj/machinery/ai_status_display/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/ai_status_display_touch,
+	)
+	..()
+
+/// Old attackby: dispatched straight to attack_hand for any item.
+/datum/interaction/machine_item/ai_status_display_touch
+	id = "ai_status_display_touch"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/ai_status_display/proc/interaction_touch
+
+/obj/machinery/ai_status_display/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
 
 /obj/machinery/ai_status_display/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)

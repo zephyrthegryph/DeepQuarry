@@ -77,6 +77,10 @@
 		if(!holder)
 			mismatch("[holder_name]: can't be created any more")
 			continue
+		// A holder may keep mapped starts_with as latent entries (C5);
+		// materialize before clearing so none of it counts against capacity.
+		if(holder.has_latent())
+			holder.latent_materialize_all()
 		for(var/atom/movable/A in holder)
 			qdel(A)
 		var/hex = patterns[holders[holder_name] + 1]
@@ -153,6 +157,10 @@
 				var/index = everything ? n : indices[n] + 1
 				var/obj/item/I = items[index]
 				if(!I)
+					continue
+				// Self-deleting items (shoes/none): the legacy backpack took a
+				// deleted item; the storage slot (C4) refuses it.
+				if(QDELETED(I))
 					continue
 				var/expected = text2num(masks[n], 36)
 				var/actual = 0

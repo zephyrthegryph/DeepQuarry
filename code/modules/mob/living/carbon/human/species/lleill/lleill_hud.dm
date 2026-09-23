@@ -8,7 +8,6 @@
 	name = "Lleill Abilities"
 	icon = 'icons/mob/screen_spells.dmi'
 	icon_state = "grey_spell_ready"
-	ability_objects = list()
 	showing = 0
 
 	open_state = "master_open"
@@ -43,6 +42,6 @@
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	ability_objects.Add(A)
+	LAZYADD(ability_objects, A)
 	if(my_mob && my_mob.client)
 		toggle_open(2)

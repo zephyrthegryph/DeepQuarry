@@ -1,6 +1,6 @@
 /datum/event/electrified_door
 	var/obj/machinery/door/airlock/chosen_door
-	var/list/area/excluded = list(
+	var/static/list/area/excluded = list(
 		/area/shuttle,
 		/area/crew_quarters
 	)

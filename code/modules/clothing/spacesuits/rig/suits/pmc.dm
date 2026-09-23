@@ -11,7 +11,7 @@
 
 	req_access = list(ACCESS_CENT_SPECOPS)
 
-	armor = list(melee = 60, bullet = 50, laser = 35,energy = 15, bomb = 30, bio = 100, rad = 95)
+	armor_spec = "melee=60;bullet=50;laser=35;energy=15;bomb=30;bio=100;rad=95"
 
 /obj/item/rig/pmc/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT, /obj/item/storage/firstaid)
@@ -48,7 +48,7 @@
 	desc = "A suit worn by private military contractors. This one is setup for engineering. Armoured and space ready."
 	suit_type = "PMC engineer"
 	icon_state = "pmc_engineergrey_rig"
-	armor = list(melee = 60, bullet = 50, laser = 35,energy = 15, bomb = 30, bio = 100, rad = 100)
+	armor_spec = "melee=60;bullet=50;laser=35;energy=15;bomb=30;bio=100;rad=100"
 	siemens_coefficient = 0
 
 /obj/item/rig/pmc/engineer/grey/equipped

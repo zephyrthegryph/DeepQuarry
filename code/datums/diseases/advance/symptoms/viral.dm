@@ -155,7 +155,7 @@ BONUS
 	level = 4
 	symptom_delay_min = 1
 	symptom_delay_max = 1
-	var/list/captives = list()
+	var/list/captives
 	var/used = FALSE
 
 /datum/symptom/viralincubate/Activate(datum/disease/advance/A)
@@ -164,7 +164,7 @@ BONUS
 	if(A.stage >= 5)
 		for(var/datum/symptom/S as anything in captives)
 			S.stopped = FALSE
-			captives -= S
+			LAZYREMOVE(captives, S)
 		if(!LAZYLEN(captives))
 			stopped = TRUE
 	else if(!used)
@@ -174,5 +174,5 @@ BONUS
 			if(S == src)
 				continue
 			S.stopped = TRUE
-			captives += S
+			LAZYADD(captives, S)
 		used = TRUE

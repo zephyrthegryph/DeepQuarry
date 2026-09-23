@@ -117,7 +117,14 @@
 	// Sleeping devices are held through weakrefs, but their subscription buckets
 	// and arena watches must be removed synchronously. Leaving these until the
 	// next dirty publication kept deleted injectors alive in GC diagnostics.
-	unregister_gas_dependencies(WEAKREF(src))
+	var/datum/weakref/self_ref = WEAKREF(src)
+	unregister_gas_dependencies(self_ref)
+	// A device destroyed while asleep must also drop out of the sleeping/hibernating
+	// registries directly -- those are only cleared on wake, and Destroy() is not
+	// guaranteed to route through a wake first.
+	if(self_ref?.reference)
+		SSmachines.sleeping_gas_devices -= self_ref.reference
+		SSmachines.hibernating_vents -= self_ref.reference
 	// Disconnect/qdel BEFORE ..() so node deref is valid.
 	var/datum/pipe_network/old_network = network
 	if(old_network?.normal_members)

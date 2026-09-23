@@ -3,7 +3,7 @@
 	announceWhen	= 45	// Adjusted by setup
 	endWhen			= 75	// Adjusted by setup
 	var/ray_cap	= 10
-	var/list/spawned_ray = list()
+	var/list/spawned_ray
 
 /datum/event/ray_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
@@ -19,7 +19,7 @@
 	if(severity == EVENT_LEVEL_MAJOR)
 		announcement = "Massive migration of unknown biological entities has been detected near [location_name()], please stand-by."
 	else
-		announcement = "Unknown biological [spawned_ray.len == 1 ? "entity has" : "entities have"] been detected near [location_name()], please stand-by."
+		announcement = "Unknown biological [length(spawned_ray) == 1 ? "entity has" : "entities have"] been detected near [location_name()], please stand-by."
 	GLOB.command_announcement.Announce(announcement, "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 
 /datum/event/ray_migration/tick()
@@ -71,7 +71,7 @@
 /datum/event/ray_migration/proc/spawn_one_ray(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/ray(loc)
 	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_ray_destruction))
-	spawned_ray.Add(M)
+	LAZYADD(spawned_ray, M)
 	return M
 
 // Counts living ray spawned by this event.
@@ -84,7 +84,7 @@
 // If ray is bomphed, remove it from the list.
 /datum/event/ray_migration/proc/on_ray_destruction(mob/M)
 	SIGNAL_HANDLER
-	spawned_ray -= M
+	LAZYREMOVE(spawned_ray, M)
 	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
 
 /datum/event/ray_migration/end()

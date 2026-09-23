@@ -275,11 +275,11 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		data["connected"] = FALSE
 
 	data["maskConnected"] = FALSE
-	if(C.wear_mask && (C.wear_mask.item_flags & AIRTIGHT))
+	if(C.get_equipped_item(SLOT_ID_MASK) && (C.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
 		data["maskConnected"] = TRUE
 	else if(ishuman(C))
 		var/mob/living/carbon/human/H = C
-		if(H.head && (H.head.item_flags & AIRTIGHT))
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
 			data["maskConnected"] = TRUE
 
 	return data
@@ -321,11 +321,11 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				location.internals.icon_state = "internal0"
 		else
 			var/can_open_valve
-			if(location.wear_mask && (location.wear_mask.item_flags & AIRTIGHT))
+			if(location.get_equipped_item(SLOT_ID_MASK) && (location.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
 				can_open_valve = 1
 			else if(ishuman(location))
 				var/mob/living/carbon/human/H = location
-				if(H.head && (H.head.item_flags & AIRTIGHT))
+				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
 					can_open_valve = 1
 
 			if(can_open_valve)

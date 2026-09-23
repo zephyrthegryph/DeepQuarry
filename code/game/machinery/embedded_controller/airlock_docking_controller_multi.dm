@@ -5,7 +5,7 @@
 	program = /datum/embedded_program/docking/multi
 	var/child_tags_txt
 	var/child_names_txt
-	var/list/child_names = list()
+	var/list/child_names
 
 /obj/machinery/embedded_controller/radio/docking_port_multi/Initialize(mapload)
 	. = ..()
@@ -13,15 +13,15 @@
 	var/list/tags = splittext(child_tags_txt, ";")
 	if (names.len == tags.len)
 		for (var/i = 1; i <= tags.len; i++)
-			child_names[tags[i]] = names[i]
+			LAZYSET(child_names, tags[i], names[i])
 
 /obj/machinery/embedded_controller/radio/docking_port_multi/tgui_data(mob/user)
 	var/datum/embedded_program/docking/multi/docking_program = program // Cast to proper type
 
-	var/list/airlocks[child_names.len]
+	var/list/airlocks[length(child_names)]
 	var/i = 1
 	for (var/child_tag in child_names)
-		airlocks[i++] = list("name"=child_names[child_tag], "override_enabled"=(docking_program.children_override[child_tag] == "enabled"))
+		airlocks[i++] = list("name"=LAZYACCESS(child_names, child_tag), "override_enabled"=(docking_program.children_override[child_tag] == "enabled"))
 
 	. = list(
 		"docking_status" = docking_program.get_docking_status(),

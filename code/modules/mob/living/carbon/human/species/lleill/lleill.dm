@@ -136,6 +136,9 @@
 
 // Shapeshifters have some behaviour that doesn't play well with this species so I have taken the main parts needed for here.
 
+/datum/species/lleill/shared_table_vars()
+	return ..() + "valid_transform_species"
+
 /datum/species/lleill/get_valid_shapeshifter_forms(mob/living/carbon/human/H)
 	return valid_transform_species
 

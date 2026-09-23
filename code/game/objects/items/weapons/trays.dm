@@ -12,7 +12,7 @@
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 3000)
-	var/list/carrying = list() // List of things on the tray. - Doohl
+	var/list/carrying // List of things on the tray. - Doohl
 	var/max_carry = 10
 	var/min_bonus_damage = 3
 	var/max_bonus_damage = 5
@@ -27,7 +27,7 @@
 	cut_overlays()
 	for(var/obj/item/I in carrying)
 		I.loc = M.loc
-		carrying.Remove(I)
+		LAZYREMOVE(carrying, I)
 		if(isturf(I.loc))
 			spawn()
 				for(var/i = 1, i <= rand(1,2), i++)
@@ -69,14 +69,14 @@
 				M.Weaken(2)
 		else
 			to_chat(M, span_warning("You get slammed in the face with the tray, against your mask!"))
-			if(M.wear_mask && prob(33))
-				M.wear_mask.add_blood(M)
+			if(M.get_equipped_item(SLOT_ID_MASK) && prob(33))
+				M.get_equipped_item(SLOT_ID_MASK).add_blood(M)
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
-				if(H.head && prob(33))
-					H.head.add_blood(H)
-				if(H.glasses && prob(33))
-					H.glasses.add_blood(H)
+				if(H.get_equipped_item(SLOT_ID_HEAD) && prob(33))
+					H.get_equipped_item(SLOT_ID_HEAD).add_blood(H)
+				if(H.get_equipped_item(SLOT_ID_EYES) && prob(33))
+					H.get_equipped_item(SLOT_ID_EYES).add_blood(H)
 
 			if(prob(10))
 				M.Stun(rand(1,3))
@@ -140,7 +140,7 @@
 				break
 			var/image/Img = new(src.icon)
 			I.loc = src
-			carrying.Add(I)
+			LAZYADD(carrying, I)
 			Img.icon = I.icon
 			Img.icon_state = I.icon_state
 			Img.layer = layer + I.layer*0.01
@@ -164,7 +164,7 @@
 			cut_overlays()
 			for(var/obj/item/I in carrying)
 				I.forceMove(loc)
-				carrying.Remove(I)
+				LAZYREMOVE(carrying, I)
 				if(noTable)
 					for(var/i = 1, i <= rand(1,2), i++)
 						if(I)

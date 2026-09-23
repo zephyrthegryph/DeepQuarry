@@ -88,19 +88,40 @@
 	text = replacetext(text, "\n", "<BR>")
 	return text
 
-/obj/machinery/computer/attackby(obj/item/W, mob/user)
-	if(istype(W,/obj/item/gripper)) //Behold, Grippers and their horribleness. If ..() is called by any computers' attackby() now or in the future, this should let grippers work with them appropriately.
-		var/obj/item/gripper/B = W	//B, for Borg.
-		var/obj/item/wrapped = B.get_wrapped_item()
-		if(!wrapped)
-			to_chat(user, "\The [B] is not holding anything.")
-			return
-		var/B_held = wrapped
-		to_chat(user, "You use \the [B] to use \the [B_held] with \the [src].")
-		playsound(src, clicksound, 100, 1, 0)
-		return
+/obj/machinery/computer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/computer_gripper,
+		/datum/interaction/machine_item/computer_use_item,
+	)
+	..()
+
+/// Behold, Grippers and their horribleness.
+/datum/interaction/machine_item/computer_gripper
+	id = "computer_gripper"
+	name = "Use with gripper"
+	held_type = /obj/item/gripper
+	effect = /obj/machinery/computer/proc/interaction_gripper
+
+/obj/machinery/computer/proc/interaction_gripper(mob/user, obj/item/gripper/B, datum/interaction/interaction)
+	var/obj/item/wrapped = B.get_wrapped_item()
+	if(!wrapped)
+		to_chat(user, "\The [B] is not holding anything.")
+		return TRUE
+	var/B_held = wrapped
+	to_chat(user, "You use \the [B] to use \the [B_held] with \the [src].")
+	playsound(src, clicksound, 100, 1, 0)
+	return TRUE
+
+/// Old attackby's fallback: any other item just triggers the hand entry.
+/datum/interaction/machine_item/computer_use_item
+	id = "computer_use_item"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/computer/proc/interaction_use_item
+
+/obj/machinery/computer/proc/interaction_use_item(mob/user, obj/item/held, datum/interaction/interaction)
 	attack_hand(user)
-	return
+	return TRUE
 
 /obj/machinery/computer/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)

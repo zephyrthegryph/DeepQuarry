@@ -153,20 +153,32 @@
 			attack_hand(M)
 	return 0
 
-/obj/machinery/door/firedoor/attack_hand(mob/user as mob)
+/obj/machinery/door/firedoor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/firedoor_use,
+	)
+	..()
+
+/// The old attack_hand: never called ..(), prompted to open/close the firedoor.
+/datum/interaction/machine_hand/ungated/firedoor_use
+	id = "firedoor_use"
+	name = "Use"
+	effect = /obj/machinery/door/firedoor/proc/interaction_use
+
+/obj/machinery/door/firedoor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(operating)
-		return//Already doing something.
+		return TRUE//Already doing something.
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/X = user
 		if(istype(X.species, /datum/species/xenos))
 			src.attack_alien(user)
-			return
+			return TRUE
 
 	if(blocked)
 		to_chat(user, span_warning("\The [src] is welded solid!"))
-		return
+		return TRUE
 
 	var/alarmed = lockdown
 	for(var/area/A in areas_added)		//Checks if there are fire alarms in any areas associated with that firedoor
@@ -176,17 +188,17 @@
 	var/answer = tgui_alert(user, "Would you like to [density ? "open" : "close"] this [src.name]?[ alarmed && density ? "\nNote that by doing so, you acknowledge any damages from opening this\n[src.name] as being your own fault, and you will be held accountable under the law." : ""]",\
 	"\The [src]", list("Yes, [density ? "open" : "close"]", "No"))
 	if(!answer || answer == "No")
-		return
+		return TRUE
 	if(user.incapacitated() || (get_dist(src, user) > 1 && !issilicon(user)))
 		to_chat(user, "Sorry, you must remain able bodied and close to \the [src] in order to use it.")
-		return
+		return TRUE
 	if(density && (stat & (BROKEN|NOPOWER))) //can still close without power
 		to_chat(user, "\The [src] is not functioning, you'll have to force it open manually.")
-		return
+		return TRUE
 
 	if(alarmed && density && lockdown && !allowed(user))
 		to_chat(user, span_warning("Access denied. Please wait for authorities to arrive, or for the alert to clear."))
-		return
+		return TRUE
 	else
 		user.visible_message(span_notice("\The [src] [density ? "open" : "close"]s for \the [user]."),\
 		"\The [src] [density ? "open" : "close"]s.",\
@@ -213,6 +225,7 @@
 			if(alarmed)
 				nextstate = FIREDOOR_CLOSED
 				close()
+	return TRUE
 
 /obj/machinery/door/firedoor/attack_alien(mob/user) //Familiar, right? Doors.
 	if(ishuman(user))
@@ -264,28 +277,41 @@
 		return
 	..()
 
-/obj/machinery/door/firedoor/attackby(obj/item/C as obj, mob/user as mob)
+/obj/machinery/door/firedoor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/firedoor_use_item,
+	)
+	..()
+
+/// The old attackby: unwelds/tape/pry handling, then fell through to ..().
+/datum/interaction/machine_item/firedoor_use_item
+	id = "firedoor_use_item"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/door/firedoor/proc/interaction_use_item
+
+/obj/machinery/door/firedoor/proc/interaction_use_item(mob/user, obj/item/C, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(istype(C, /obj/item/taperoll))
-		return //Don't open the door if we're putting tape on it to tell people 'don't open the door'.
+		return TRUE //Don't open the door if we're putting tape on it to tell people 'don't open the door'.
 	if(operating)
-		return//Already doing something.
+		return TRUE//Already doing something.
 	if(blocked)
 		to_chat(user, span_danger("\The [src] is welded shut!"))
-		return
+		return TRUE
 
 	if(C.pry == 1)
 		if(operating)
-			return
+			return TRUE
 
 		if(istype(C,/obj/item/material/twohanded/fireaxe))
 			var/obj/item/material/twohanded/fireaxe/F = C
 			if(!F.wielded)
-				return
+				return TRUE
 
 		if(prying)
 			to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
-			return
+			return TRUE
 
 		prying = 1
 		update_icon()
@@ -303,9 +329,9 @@
 					close()
 		prying = 0
 		update_icon()
-		return
+		return TRUE
 
-	return ..()
+	return FALSE
 
 /obj/machinery/door/firedoor/welder_act(mob/user, obj/item/tool)
 	if(operating)

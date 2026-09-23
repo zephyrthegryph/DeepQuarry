@@ -209,7 +209,7 @@ GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 	if(world.time < next_lightning_strike)
 		return // It's too soon to strike again.
 	next_lightning_strike = world.time + rand(min_lightning_cooldown, max_lightning_cooldown)
-	var/turf/T = pick(holder.our_planet.planet_floors) // This has the chance to 'strike' the sky, but that might be a good thing, to scare reckless pilots.
+	var/turf/T = DEFAULTPICK(holder.our_planet.planet_floors, null) // This has the chance to 'strike' the sky, but that might be a good thing, to scare reckless pilots.
 	lightning_strike(T)
 
 /turf/unsimulated/wall/planetary/normal/tyr

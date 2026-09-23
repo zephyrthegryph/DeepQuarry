@@ -23,7 +23,7 @@
 
 /datum/material/glass/build_windows(mob/living/user, obj/item/stack/used_stack)
 
-	if(!user || !used_stack || !created_window || !created_fulltile_window || !window_options.len)
+	if(!user || !used_stack || !created_window || !created_fulltile_window || !length(window_options))
 		return 0
 
 	if(!user.IsAdvancedToolUser())
@@ -74,7 +74,7 @@
 		return 1
 
 	var/build_path = /obj/structure/windoor_assembly
-	var/sheets_needed = window_options[choice]
+	var/sheets_needed = LAZYACCESS(window_options, choice)
 	if(choice == "Windoor")
 		if(is_reinforced())
 			build_path = /obj/structure/windoor_assembly/secure

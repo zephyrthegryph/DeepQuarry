@@ -15,7 +15,7 @@
 	..()
 	var/list/selector_uniforms = list(
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 */
 
 //Command/Specific
@@ -36,7 +36,7 @@
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/command,
 		"TG&C black command gorka"=/obj/item/clothing/under/rank/neo_gorka/black_command
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/site_manager_selector
 	display_name = "Command - " + JOB_SITE_MANAGER + "'s Uniforms"
@@ -61,7 +61,7 @@
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/command,
 		"TG&C black command gorka"=/obj/item/clothing/under/rank/neo_gorka/black_command
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/head_of_personnel_selector
 	display_name = "Command - " + JOB_HEAD_OF_PERSONNEL + "'s Uniforms"
@@ -88,7 +88,7 @@
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/command,
 		"TG&C black command gorka"=/obj/item/clothing/under/rank/neo_gorka/black_command
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/pilot_uniform_selector
 	display_name = "Civilian - " + JOB_PILOT+ "'s Uniforms"
@@ -109,7 +109,7 @@
 		"Major Bill's flightsuit"=/obj/item/clothing/under/mbill_flight,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/pilot
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/janitor_uniform_selector
 	display_name = "Civilian - " + JOB_JANITOR + "'s Uniforms"
@@ -127,7 +127,7 @@
 		"TG&C janitor's uniform w/ skirt"=/obj/item/clothing/under/rank/neo_janitor_skirt,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/janitor
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/civvie_uniform_selector
 	display_name = "Civilian - Basic Uniforms"
@@ -172,7 +172,7 @@
 		"TG&C gorka suit (service)"=/obj/item/clothing/under/rank/neo_gorka/service,
 		"TG&C gorka suit (civilian)"=/obj/item/clothing/under/rank/neo_gorka/civilian
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/undersuit
 	display_name = "Civilian - Void Undersuits"
@@ -193,7 +193,7 @@
 		if(undersuit_type in blacklisted_types)
 			continue
 		suits[initial(undersuit_type.name)] = undersuit_type
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(suits))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(suits)))
 
 //Security
 
@@ -237,7 +237,7 @@
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/sec,
 		"ACE security undersuit"=/obj/item/clothing/under/rank/security/aces
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/security_warden_selector
 	display_name = "Security - "+ JOB_WARDEN + "'s Uniforms"
@@ -259,7 +259,7 @@
 		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_warden_red_skirt,
 		"TG&C blue jumpsuit"=/obj/item/clothing/under/rank/neo_warden_blue
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/security_detective_selector
 	display_name = "Security - " + JOB_DETECTIVE + "'s Uniforms"
@@ -276,7 +276,7 @@
 		"skirt"=/obj/item/clothing/under/det/skirt,
 		"corporate"=/obj/item/clothing/under/det/corporate
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/security_head_selector
 	display_name = "Security - Head's Uniforms"
@@ -308,7 +308,7 @@
 		"TG&C blue parade uniform, feminine"=/obj/item/clothing/under/rank/neo_hos_parade_blue_fem,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/hos
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 //Cargo
 
@@ -336,7 +336,7 @@
 		"TG&C turtleneck w/ skirt"=/obj/item/clothing/under/rank/neo_qm_turtle_skirt,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/qm,
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/cargo_general_selector
 	display_name = "Cargo - Basic Uniforms"
@@ -364,7 +364,7 @@
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/cargo,
 		"customs officer"=/obj/item/clothing/under/rank/neo_cargo_customs
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/cargo_miner_selector
 	display_name = "Cargo - Miner's Uniforms"
@@ -381,7 +381,7 @@
 		"TG&C miner's uniform"=/obj/item/clothing/under/rank/neo_miner,
 		"TG&C hunter's uniform"=/obj/item/clothing/under/rank/neo_miner_fauna
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 //Engineering
 
@@ -402,7 +402,7 @@
 		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_chiefengi_skirt,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/ce
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/engineer_selector
 	display_name = "Engineering - Basic Uniforms"
@@ -424,7 +424,7 @@
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/engi,
 		"hazard jumpsuit"=/obj/item/clothing/under/hazard
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/engi_atmos_selector
 	display_name = "Engineering - Atmos Tech's Uniforms"
@@ -442,7 +442,7 @@
 		"TG&C jumpsuit"=/obj/item/clothing/under/rank/neo_atmos,
 		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_atmos_skirt
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 //Medical
 
@@ -471,7 +471,7 @@
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/med,
 		"sterile jumpsuit"=/obj/item/clothing/under/sterile
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/chemist_selector
 	display_name = "Medical - " + JOB_CHEMIST + "'s Uniforms"
@@ -491,7 +491,7 @@
 		"TG&C pharmacy jumpsuit"=/obj/item/clothing/under/rank/neo_pharma,
 		"TG&C pharmacy jumpskirt"=/obj/item/clothing/under/rank/neo_pharma_skirt
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/paramedic_selector
 	display_name = "Medical - " + JOB_PARAMEDIC + "'s Uniforms"
@@ -514,7 +514,7 @@
 		"TG&C light jumpsuit"=/obj/item/clothing/under/rank/neo_para_light,
 		"TG&C light jumpskirt"=/obj/item/clothing/under/rank/neo_para_light_skirt
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/chief_medical_selector
 	display_name = "Medical - " + JOB_CHIEF_MEDICAL_OFFICER + "'s Uniforms"
@@ -535,7 +535,7 @@
 		"TG&C turtleneck w/ skirt"=/obj/item/clothing/under/rank/neo_cmo_turtle_skirt,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/cmo
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 //Science
 
@@ -557,7 +557,7 @@
 		"TG&C turtleneck w/ skirt"=/obj/item/clothing/under/rank/neo_rd_turtle_skirt,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/rd
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/science_dept_selector
 	display_name = "Science - Basic Uniforms"
@@ -576,7 +576,7 @@
 		"TG&C utility"=/obj/item/clothing/under/rank/neo_util_sci,
 		"TG&C gorka suit"=/obj/item/clothing/under/rank/neo_gorka/sci
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/science_robotics_selector
 	display_name = "Science - " + JOB_ROBOTICIST + "'s Uniforms"
@@ -594,7 +594,7 @@
 		"TG&C jumpsuit"=/obj/item/clothing/under/rank/neo_robo,
 		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_robo_skirt
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 //Replikant & Signalis-themed human-wear
 
@@ -617,7 +617,7 @@
 		"Eagle"=/obj/item/clothing/under/replika/adlr,
 		"Magpie, Alternate"=/obj/item/clothing/under/replika/lstr_alt
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/gestalt_selector
 	display_name = "Sleek Uniform Selection"
@@ -634,7 +634,7 @@
 		"Sleek, feminine"=/obj/item/clothing/under/gestalt/sleek_fem,
 		"Sleek, sleeveless"=/obj/item/clothing/under/gestalt/sleeveless
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 // New Talon Uniforms
 
@@ -652,7 +652,7 @@
 		"Refreshed Talon crew Uniform"=/obj/item/clothing/under/rank/talon/basic/refreshed,
 		"Old Talon crew Uniform"=/obj/item/clothing/under/rank/talon/basic,
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/talon_captain
 	display_name = "Talon - Captain's Uniforms"
@@ -668,7 +668,7 @@
 		"Refreshed Talon Command Uniform"=/obj/item/clothing/under/rank/talon/command/refreshed,
 		"Old Talon Command Uniform"=/obj/item/clothing/under/rank/talon/command,
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/talon_pilot
 	display_name = "Talon - Pilot's Uniforms"
@@ -684,7 +684,7 @@
 		"Refreshed Talon Pilot Uniform"=/obj/item/clothing/under/rank/talon/pilot/refreshed,
 		"Old Talon Pilot Uniform"=/obj/item/clothing/under/rank/talon/pilot,
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/talon_security
 	display_name = "Talon - Guard's Uniforms"
@@ -700,7 +700,7 @@
 		"Refreshed Talon Guard Uniform"=/obj/item/clothing/under/rank/talon/security/refreshed,
 		"Old Talon Security Uniform"=/obj/item/clothing/under/rank/talon/security,
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/uniform/talon_medical
 	display_name = "Talon - Doctor's Uniforms"
@@ -716,4 +716,4 @@
 		"Refreshed Talon Doctor Uniform"=/obj/item/clothing/under/rank/talon/proper/refreshed,
 		"Old Talon Doctor Uniform"=/obj/item/clothing/under/rank/talon/proper,
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))

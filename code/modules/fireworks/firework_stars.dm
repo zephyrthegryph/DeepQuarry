@@ -24,7 +24,7 @@
 	if(weather_type && (weather_type in w_holder.allowed_weather_types))
 		w_holder.message_all_outdoor_players("Something seems to flash in the sky, as weather starts to rapidly shift!")
 		w_holder.queue_imminent_weather(weather_type)
-		var/datum/weather/our_weather = w_holder.allowed_weather_types[weather_type]
+		var/datum/weather/our_weather = LAZYACCESS(w_holder.allowed_weather_types, weather_type)
 		w_holder.message_all_outdoor_players(our_weather.imminent_transition_message)
 
 /obj/item/firework_star/weather/clear

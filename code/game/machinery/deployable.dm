@@ -24,35 +24,58 @@ Deployable items
 	. = ..()
 	icon_state = "barrier[locked]"
 
-/obj/machinery/deployable/barrier/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/deployable/barrier/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/barrier_swipe_id,
+		/datum/interaction/machine_item/barrier_hit,
+	)
+	..()
+
+/// Old attackby: the ID-card branch. Every path inside returns, so nothing ever fell through.
+/datum/interaction/machine_item/barrier_swipe_id
+	id = "barrier_swipe_id"
+	name = "Swipe ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/deployable/barrier/proc/interaction_swipe_id
+
+/obj/machinery/deployable/barrier/proc/interaction_swipe_id(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(istype(W, /obj/item/card/id/))
-		if(allowed(user))
-			if	(emagged < 2.0)
-				locked = !locked
-				anchored = !anchored
-				icon_state = "barrier[locked]"
-				if((locked == 1.0) && (emagged < 2.0))
-					to_chat(user, "Barrier lock toggled on.")
-					return
-				else if((locked == 0.0) && (emagged < 2.0))
-					to_chat(user, "Barrier lock toggled off.")
-					return
-			else
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(2, 1, src)
-				s.start()
-				visible_message(span_warning("BZZzZZzZZzZT"))
-				return
-		return
-	else
-		switch(W.obj_damage_type())
-			if(BURN)
-				receive_weapon_hit(W, user, W.force * 0.75, INJURY_BURN)
-			if(BRUTE)
-				receive_weapon_hit(W, user, W.force * 0.5)
-		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
-		..()
+	if(allowed(user))
+		if(emagged < 2.0)
+			locked = !locked
+			anchored = !anchored
+			icon_state = "barrier[locked]"
+			if((locked == 1.0) && (emagged < 2.0))
+				to_chat(user, "Barrier lock toggled on.")
+				return TRUE
+			else if((locked == 0.0) && (emagged < 2.0))
+				to_chat(user, "Barrier lock toggled off.")
+				return TRUE
+		else
+			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
+			s.set_up(2, 1, src)
+			s.start()
+			visible_message(span_warning("BZZzZZzZZzZT"))
+			return TRUE
+	return TRUE
+
+/// Old attackby: the "anything else" branch. Ends in `..()`, so the effect always declines afterwards.
+/datum/interaction/machine_item/barrier_hit
+	id = "barrier_hit"
+	name = "Hit"
+	category = INTERACTION_CAT_ATTACK
+	held_type = /obj/item
+	effect = /obj/machinery/deployable/barrier/proc/interaction_hit
+
+/obj/machinery/deployable/barrier/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	switch(W.obj_damage_type())
+		if(BURN)
+			receive_weapon_hit(W, user, W.force * 0.75, INJURY_BURN)
+		if(BRUTE)
+			receive_weapon_hit(W, user, W.force * 0.5)
+	playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+	return FALSE
 
 /obj/machinery/deployable/barrier/wrench_act(mob/user, obj/item/tool)
 	if(get_integrity() >= max_integrity && !emagged)

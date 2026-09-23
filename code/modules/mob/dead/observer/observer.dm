@@ -695,7 +695,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	var/ghosts_can_write
 	if(SSticker.mode.name == "cult")
-		if(GLOB.cult.current_antagonists.len > CONFIG_GET(number/cult_ghostwriter_req_cultists))
+		if(length(GLOB.cult.current_antagonists) > CONFIG_GET(number/cult_ghostwriter_req_cultists))
 			ghosts_can_write = 1
 
 	if(!ghosts_can_write && !check_rights(R_ADMIN|R_EVENT|R_FUN, 0)) //Let's allow for admins to write in blood for events and the such.

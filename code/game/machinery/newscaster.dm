@@ -56,7 +56,7 @@
 	update()
 
 /datum/feed_network
-	var/list/datum/feed_channel/network_channels = list()
+	var/list/datum/feed_channel/network_channels
 	var/datum/feed_message/wanted_issue
 
 /datum/feed_network/proc/CreateFeedChannel(channel_name, author, locked, adminChannel = 0, announcement_message)
@@ -69,7 +69,7 @@
 		newChannel.announcement = announcement_message
 	else
 		newChannel.announcement = "Breaking news from [channel_name]!"
-	network_channels += newChannel
+	LAZYADD(network_channels, newChannel)
 
 /datum/feed_network/proc/SubmitArticle(msg, author, channel_name, obj/item/photo/photo, adminMessage = 0, message_type = "", title)
 	var/datum/feed_message/newMsg = new /datum/feed_message
@@ -246,9 +246,22 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	. = ..()
 
 
-/obj/machinery/newscaster/attack_hand(mob/user)
+/obj/machinery/newscaster/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/newscaster_open,
+		/datum/interaction/machine_item/newscaster_item_open,
+	)
+	..()
+
+/// Old attack_hand (never called ..()): open the newscaster's interface.
+/datum/interaction/machine_hand/ungated/newscaster_open
+	id = "newscaster_open"
+	name = "Use"
+	effect = /obj/machinery/newscaster/proc/interaction_open
+
+/obj/machinery/newscaster/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ispowered || isbroken)
-		return
+		return TRUE
 
 	if(!node)
 		node = get_exonet_node()
@@ -256,12 +269,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	if(!node || !node.on || !node.allow_external_newscasters)
 		to_chat(user, span_danger("Error: Cannot connect to external content.  Please try again in a few minutes.  If this error persists, please \
 		contact the system administrator."))
-		return 0
+		return TRUE
 
 	if(!user.IsAdvancedToolUser())
-		return 0
+		return TRUE
 
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/newscaster/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -605,8 +619,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			viewing_channel = FC
 			return TRUE
 
-/obj/machinery/newscaster/attackby(I as obj, user)
-	return attack_hand(user)
+/// Old attackby: any item used on the newscaster just forwarded to attack_hand().
+/datum/interaction/machine_item/newscaster_item_open
+	id = "newscaster_item_open"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/newscaster/proc/interaction_item_open
+
+/obj/machinery/newscaster/proc/interaction_item_open(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
 
 /obj/machinery/newscaster/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
@@ -670,7 +692,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	feedback_inc("newscaster_newspapers_printed",1)
 	var/obj/item/newspaper/NEWSPAPER = new /obj/item/newspaper
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-		NEWSPAPER.news_content += FC
+		LAZYADD(NEWSPAPER.news_content, FC)
 	if(GLOB.news_network.wanted_issue)
 		NEWSPAPER.important_message = GLOB.news_network.wanted_issue
 	NEWSPAPER.loc = get_turf(src)

@@ -9,8 +9,8 @@
 	icon_state = ""
 	item_state = "autopsy_scanner"
 	w_class = ITEMSIZE_SMALL
-	var/list/datum/autopsy_data_scanner/wdata = list()
-	var/list/datum/autopsy_data_scanner/chemtraces = list()
+	var/list/datum/autopsy_data_scanner/wdata
+	var/list/datum/autopsy_data_scanner/chemtraces
 	var/target_name = null
 	var/timeofdeath = null
 	drop_sound = 'sound/items/drop/device.ogg'
@@ -18,7 +18,7 @@
 
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used
-	var/list/organs_scanned = list()	// this maps a number of scanned organs to
+	var/list/organs_scanned	// this maps a number of scanned organs to
 										// the wounds to those organs with this data's weapon type
 	var/organ_names = ""
 
@@ -47,24 +47,24 @@
 		if(!W.pretend_weapon)
 			W.pretend_weapon = W.weapon
 
-		var/datum/autopsy_data_scanner/D = wdata[V]
+		var/datum/autopsy_data_scanner/D = LAZYACCESS(wdata, V)
 		if(!D)
 			D = new()
 			D.weapon = W.weapon
-			wdata[V] = D
+			LAZYSET(wdata, V, D)
 
-		if(!D.organs_scanned[O.name])
+		if(!LAZYACCESS(D.organs_scanned, O.name))
 			if(D.organ_names == "")
 				D.organ_names = O.name
 			else
 				D.organ_names += ", [O.name]"
 
-		qdel(D.organs_scanned[O.name])
-		D.organs_scanned[O.name] = W.copy()
+		qdel(LAZYACCESS(D.organs_scanned, O.name))
+		LAZYSET(D.organs_scanned, O.name, W.copy())
 
 	for(var/V in O.trace_chemicals)
-		if(O.trace_chemicals[V] > 0 && !chemtraces.Find(V))
-			chemtraces += V
+		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
+			LAZYADD(chemtraces, V)
 
 /obj/item/autopsy_scanner/verb/print_data()
 	set category = "Object"
@@ -81,14 +81,14 @@
 
 	var/n = 1
 	for(var/wdata_idx in wdata)
-		var/datum/autopsy_data_scanner/D = wdata[wdata_idx]
+		var/datum/autopsy_data_scanner/D = LAZYACCESS(wdata, wdata_idx)
 		var/total_hits = 0
 		var/total_score = 0
 		var/list/weapon_chances = list() // maps weapon names to a score
 		var/age = 0
 
 		for(var/wound_idx in D.organs_scanned)
-			var/datum/autopsy_data/W = D.organs_scanned[wound_idx]
+			var/datum/autopsy_data/W = LAZYACCESS(D.organs_scanned, wound_idx)
 			total_hits += W.hits
 
 			var/wname = W.pretend_weapon
@@ -118,7 +118,7 @@
 			if(30 to 1000)
 				damage_desc = span_red("severe")
 
-		if(!total_score) total_score = D.organs_scanned.len
+		if(!total_score) total_score = length(D.organs_scanned)
 
 		scan_data += span_bold("Weapon #[n]") + "<br>"
 		if(damaging_weapon)
@@ -134,7 +134,7 @@
 
 		n++
 
-	if(chemtraces.len)
+	if(length(chemtraces))
 		scan_data += span_bold("Trace Chemicals: ") + "<br>"
 		for(var/chemID in chemtraces)
 			scan_data += chemID

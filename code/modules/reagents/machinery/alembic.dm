@@ -31,40 +31,77 @@
 		icon_state = "alembic-bubble"
 	return
 
-/obj/machinery/alembic/attackby(obj/item/potion_material/O, mob/user)
-	if(istype(O,/obj/item/potion_material))
-		if(potion_reagent != 0 )
-			to_chat(user, span_warning("There is already a reagent in the alembic!"))
-			return
-		else
-			src.potion_reagent = O
-			src.expected_base = O.base_reagent
-			src.product_potion = O.product_potion
-			user.drop_item()
-			O.loc = src
-			update_icon()
-			to_chat(user, span_notice("You place the [O] in the alembic."))
-			return
-	else if(istype(O,/obj/item/potion_base))
-		if(base_reagent != 0 )
-			to_chat(user, span_warning("There is already a base in the alembic!"))
-			return
-		else
-			src.base_reagent = O
-			user.drop_item()
-			O.loc = src
-			update_icon()
-			to_chat(user, span_notice("You place the [O] in the alembic."))
-			return
-	else
-		to_chat(user, span_warning("This item is no use in the alembic."))
-		return
+/obj/machinery/alembic/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/alembic_load_reagent,
+		/datum/interaction/machine_item/alembic_load_base,
+		/datum/interaction/machine_item/alembic_no_use,
+		/datum/interaction/machine_hand/ungated/alembic_brew,
+		/datum/interaction/machine_alt/alembic_take_reagent,
+	)
+	..()
 
-/obj/machinery/alembic/attack_hand(mob/user)
+/// Old attackby: load the potion reagent.
+/datum/interaction/machine_item/alembic_load_reagent
+	id = "alembic_load_reagent"
+	name = "Place reagent"
+	held_type = /obj/item/potion_material
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/alembic/proc/alembic_no_reagent, "there is already a reagent in the alembic"))
+	effect = /obj/machinery/alembic/proc/interaction_load_reagent
 
+/obj/machinery/alembic/proc/alembic_no_reagent(mob/actor, atom/target, obj/item/held)
+	return !potion_reagent
+
+/obj/machinery/alembic/proc/interaction_load_reagent(mob/user, obj/item/potion_material/O, datum/interaction/interaction)
+	src.potion_reagent = O
+	src.expected_base = O.base_reagent
+	src.product_potion = O.product_potion
+	user.drop_item()
+	O.loc = src
+	update_icon()
+	to_chat(user, span_notice("You place the [O] in the alembic."))
+	return TRUE
+
+/// Old attackby: load the potion base.
+/datum/interaction/machine_item/alembic_load_base
+	id = "alembic_load_base"
+	name = "Place base"
+	held_type = /obj/item/potion_base
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/alembic/proc/alembic_no_base, "there is already a base in the alembic"))
+	effect = /obj/machinery/alembic/proc/interaction_load_base
+
+/obj/machinery/alembic/proc/alembic_no_base(mob/actor, atom/target, obj/item/held)
+	return !base_reagent
+
+/obj/machinery/alembic/proc/interaction_load_base(mob/user, obj/item/O, datum/interaction/interaction)
+	src.base_reagent = O
+	user.drop_item()
+	O.loc = src
+	update_icon()
+	to_chat(user, span_notice("You place the [O] in the alembic."))
+	return TRUE
+
+/// Old attackby: anything else.
+/datum/interaction/machine_item/alembic_no_use
+	id = "alembic_no_use"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/alembic/proc/interaction_no_use
+
+/obj/machinery/alembic/proc/interaction_no_use(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_warning("This item is no use in the alembic."))
+	return TRUE
+
+/// Old attack_hand (never called ..()): boil the loaded reagents.
+/datum/interaction/machine_hand/ungated/alembic_brew
+	id = "alembic_brew"
+	name = "Boil"
+	effect = /obj/machinery/alembic/proc/interaction_brew
+
+/obj/machinery/alembic/proc/interaction_brew(mob/user, obj/item/held, datum/interaction/interaction)
 	if(potion_reagent == 0 || base_reagent == 0) //If there is nothing in there
 		to_chat(user, span_warning("The alembic is not yet full!"))
-		return
+		return TRUE
 	else if(potion_reagent != 0 && base_reagent != 0 && !bubbling) //if there is something in there and it's not bubbling yet
 		bubbling = 1
 		update_icon()
@@ -76,25 +113,33 @@
 		potion_reagent = 0
 		base_reagent = 0
 		update_icon()
-		return
+		return TRUE
 	else if(bubbling)
 		to_chat(user, span_warning("The alembic is already boiling!"))
-		return
+		return TRUE
+	return TRUE
 
-/obj/machinery/alembic/click_alt(mob/user)
+/// Old click_alt (never called ..()): take the loaded reagent back out.
+/datum/interaction/machine_alt/alembic_take_reagent
+	id = "alembic_take_reagent"
+	name = "Take reagent"
+	effect = /obj/machinery/alembic/proc/interaction_take_reagent
+
+/obj/machinery/alembic/proc/interaction_take_reagent(mob/user, obj/item/held, datum/interaction/interaction)
 	if(potion_reagent == 0)
 		to_chat(user, span_warning("There is nothing in the alembic!"))
-		return
+		return TRUE
 	else if(potion_reagent != 0 && !bubbling) //if there is something in there and it's not bubbling yet
 		if(!user.incapacitated() && Adjacent(user))
 			user.put_in_hands(potion_reagent)
 			potion_reagent = 0
 			update_icon()
 		else
-			return
+			return TRUE
 	else if(bubbling)
 		to_chat(user, span_warning("The alembic is already boiling, it's too late to get your reagent back!"))
-		return
+		return TRUE
+	return TRUE
 
 /obj/machinery/alembic/proc/spawn_potion()
 	if(istype(base_reagent,expected_base))

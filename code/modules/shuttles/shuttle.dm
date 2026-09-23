@@ -311,11 +311,6 @@
 	//to_world("area_coming_from: [origin]")
 	//to_world("destination: [destination]")
 	ASSERT(current_location != destination)
-	// Turf translation is synchronous and authoritative. Do not let a detached
-	// atmos generation or queued equalization retain the pre-move graph while
-	// these turf identities and gas handles are relocated.
-	vg_topology_barrier()
-
 	// If shuttle has no internal gravity, update our gravity with destination gravity
 	if((flags & SHUTTLE_FLAGS_ZERO_G))
 		var/new_grav = 1
@@ -346,7 +341,6 @@
 				else
 					qdel(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
 	var/list/radios = list()
-	var/list/powernets = list()
 	for(var/area/A in shuttle_area)
 		// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving
 		if(ceiling_type && HasAbove(current_location.z))
@@ -371,9 +365,6 @@
 						M.Weaken(3)
 						if(move_direction)
 							throw_a_mob(M,move_direction)
-		// We only need to rebuild powernets for our cables. No need to check machines because they are on top of cables.
-		for(var/obj/structure/cable/C in A)
-			powernets |= C.powernet
 		for(var/obj/item/radio/intercom/I in A)
 			radios |= I
 
@@ -384,10 +375,6 @@
 
 	// Actually do the movement of everything - This replaces origin.move_contents_to(destination)
 	translate_turfs(turf_translation, current_location.base_area, current_location.base_turf)
-	// translate_turfs republishes the completed footprint, but those topology
-	// updates may be queued while an atmos generation is finishing. Commit them
-	// before exposing the moved shuttle to another processing cycle.
-	vg_topology_barrier()
 	current_location = destination
 
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air
@@ -400,14 +387,12 @@
 						continue
 					TA.ChangeTurf(ceiling_type, TRUE, TRUE, TRUE)
 
-	// Power-related checks. If shuttle contains power related machinery, update powernets.
-	// Note: Old way was to rebuild ALL powernets: if(powernets.len) SSmachines.makepowernets()
-	// New way only rebuilds the powernets we have to
-	var/list/cables = list()
-	for(var/datum/powernet/P in powernets)
-		cables |= P.cables
-		qdel(P)
-	SSmachines.setup_powernets_for_cables(cables)
+	// translate_turfs() moves objects by loc, so cables and power machines send
+	// their new turfs to the power network here (one commit).
+	var/list/moved_turfs = list()
+	for(var/turf/source in turf_translation)
+		moved_turfs += turf_translation[source]
+	SSmachines.power_reregister(moved_turfs)
 	for(var/obj/item/radio/intercom/I in radios)
 		if(istype(I))
 			I.update_broadcast_tiles()

@@ -55,7 +55,7 @@
 	if(!dq_linear)
 		var/datum/error_viewer/error_source/error_source
 		for(var/erroruid in error_sources)
-			error_source = error_sources[erroruid]
+			error_source = LAZYACCESS(error_sources, erroruid)
 			items += list(list(
 				"ref" = "[REF(error_source)]",
 				"name" = error_source.name,

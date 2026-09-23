@@ -124,7 +124,7 @@
 		if(!(preference.type in recently_updated_keys))
 			continue
 
-		recently_updated_keys -= preference.type
+		LAZYREMOVE(recently_updated_keys, preference.type)
 
 		if(preference_type in value_cache)
 			write_preference(preference, preference.pref_serialize(value_cache[preference_type]))
@@ -208,7 +208,7 @@
 		if(!(preference.type in recently_updated_keys) && !first_save && !override)
 			continue
 
-		recently_updated_keys -= preference.type
+		LAZYREMOVE(recently_updated_keys, preference.type)
 
 		if(preference.type in value_cache)
 			write_preference(preference, preference.pref_serialize(value_cache[preference.type]))

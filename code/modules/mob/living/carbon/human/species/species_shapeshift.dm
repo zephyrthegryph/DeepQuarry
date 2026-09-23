@@ -11,11 +11,14 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		/mob/living/carbon/human/proc/shapeshifter_select_gender
 		)
 
-	var/list/valid_transform_species = list()
+	var/list/valid_transform_species
 	// var/default_form = SPECIES_HUMAN //
 
 	base_species = SPECIES_HUMAN
 	selects_bodytype = SELECTS_BODYTYPE_SHAPESHIFTER
+
+/datum/species/shapeshifter/shared_table_vars()
+	return ..() + "valid_transform_species"
 
 /datum/species/shapeshifter/get_valid_shapeshifter_forms(mob/living/carbon/human/H)
 	return list(vanity_base_fit)|valid_transform_species

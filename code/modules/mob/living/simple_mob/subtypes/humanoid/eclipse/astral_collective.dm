@@ -26,7 +26,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	projectile_dispersion = 0
-	armor = list(melee = 20, bullet = 20, laser = 20, energy = 60, bomb = 20, bio = 100, rad = 100)	// Simple mob immunuties plus minour armor
+	armor_spec = "melee=20;bullet=20;laser=20;energy=60;bomb=20;bio=100;rad=100" // Simple mob immunuties plus minour armor
 
 	can_be_drop_prey = FALSE
 	can_be_drop_pred = TRUE

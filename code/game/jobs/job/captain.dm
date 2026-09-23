@@ -18,7 +18,6 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 	selection_color = "#2F2F7F"
 	req_admin_notify = 1
 	access = list() 			//See get_access()
-	minimal_access = list() 	//See get_access()
 	minimal_player_age = 31
 	economic_modifier = 20
 

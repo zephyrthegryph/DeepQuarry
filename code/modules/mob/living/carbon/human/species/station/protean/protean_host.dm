@@ -64,8 +64,8 @@
 		return
 	if(QDELETED(G) || G.loc != H || G.state < GRAB_AGGRESSIVE || !can_use(H, F))
 		return
-	if(target.back)
-		target.drop_from_inventory(target.back)
+	if(target.get_equipped_item(SLOT_ID_BACK))
+		target.drop_from_inventory(target.get_equipped_item(SLOT_ID_BACK))
 	H.visible_message(span_danger("[H] latched onto [target]!"), span_danger("You latch yourself onto [target]!"))
 	target.Weaken(3)
 	if(!F.enter_rig())

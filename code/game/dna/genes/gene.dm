@@ -118,7 +118,7 @@
 			linked_trait.apply( H.species, H, H.species.traits[linked_trait.type])
 			H.species.traits.Add(linked_trait.type)
 			if(!(linked_trait.type in H.dna.species_traits)) // Set species traits too
-				H.dna.species_traits.Add(linked_trait.type)
+				LAZYADD(H.dna.species_traits, linked_trait.type)
 			// message player with change
 			if(!(mut_flags & MUTCHK_HIDEMSG))
 				linked_trait.send_message( H, TRUE)
@@ -134,7 +134,7 @@
 			linked_trait.remove(H.species) // Does nothing, but may as well call it because it exists and has a place now
 			H.species.traits.Remove(linked_trait.type)
 			if(linked_trait.type in H.dna.species_traits) // Clear species traits too
-				H.dna.species_traits.Remove(linked_trait.type)
+				LAZYREMOVE(H.dna.species_traits, linked_trait.type)
 			// message player with change
 			if(!(mut_flags & MUTCHK_HIDEMSG))
 				linked_trait.send_message( H, FALSE)

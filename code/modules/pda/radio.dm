@@ -19,7 +19,7 @@
 
 /obj/item/radio/integrated/Initialize(mapload)
 	..()
-	if(istype(loc.loc, /obj/item/pda))
+	if(istype(loc?.loc, /obj/item/pda))
 		hostpda = loc.loc
 	return INITIALIZE_HINT_LATELOAD
 
@@ -108,10 +108,9 @@
 
 /obj/item/radio/integrated/signal/Initialize(mapload)
 	. = ..()
-	if(SSradio)
-		if(src.frequency < PUBLIC_LOW_FREQ || src.frequency > PUBLIC_HIGH_FREQ)
-			src.frequency = sanitize_frequency(src.frequency)
-		set_frequency(frequency)
+	// Just the data; on_materialize() (C5) registers it with SSradio.
+	if(src.frequency < PUBLIC_LOW_FREQ || src.frequency > PUBLIC_HIGH_FREQ)
+		src.frequency = sanitize_frequency(src.frequency)
 
 /obj/item/radio/integrated/signal/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)

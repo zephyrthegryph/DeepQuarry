@@ -19,6 +19,6 @@
 	. = ..()
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
-		var/obj/item/clothing/mask/smokable/mask = H.wear_mask
+		var/obj/item/clothing/mask/smokable/mask = H.get_equipped_item(SLOT_ID_MASK)
 		if(istype(mask) && H.unEquip(mask))
 			mask.forceMove(get_turf(H))

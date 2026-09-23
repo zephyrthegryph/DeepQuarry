@@ -48,12 +48,12 @@
 	var/is_default = FALSE           // Should this entry be considered the default for its type?
 	var/icon = 'icons/mob/human.dmi' // Which icon to get the underwear from
 	var/icon_state                   // And the particular item state
-	var/list/tweaks = list()         // Underwear customizations.
+	var/list/tweaks         // Underwear customizations.
 	var/has_color = FALSE
 
 /datum/category_item/underwear/New()
 	if(has_color)
-		tweaks += GLOB.gear_tweak_free_color_choice
+		LAZYADD(tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/category_item/underwear/dd_SortValue()
 	if(always_last)

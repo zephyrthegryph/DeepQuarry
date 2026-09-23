@@ -21,7 +21,7 @@
 	if(changeling.is_on_cooldown(ESCAPE_RESTRAINTS))
 		to_chat(src, span_notice("We are still recovering from our last escape. We will be able to escape again in [(changeling.get_cooldown(ESCAPE_RESTRAINTS) - world.time)/10] seconds."))
 		return FALSE
-	if(!(C.handcuffed || C.legcuffed || istype(C.wear_suit,/obj/item/clothing/suit/straight_jacket)))	// No need to waste chems if there's nothing to break out of
+	if(!(C.get_equipped_item(SLOT_ID_HANDCUFFED) || C.get_equipped_item(SLOT_ID_LEGCUFFED) || istype(C.get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/straight_jacket)))	// No need to waste chems if there's nothing to break out of
 		to_chat(C, span_warning("We are are not restrained in a way we can escape..."))
 		return FALSE
 
@@ -29,33 +29,12 @@
 
 	to_chat(C,span_notice("We contort our extremities and slip our cuffs."))
 	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
-	if(C.handcuffed)
-		var/obj/item/W = C.handcuffed
-		C.handcuffed = null
-		if(C.buckled && C.buckled.buckle_require_restraints)
-			C.buckled.unbuckle_mob()
-		C.update_handcuffed()
-		if (C.client)
-			C.client.screen -= W
-		W.forceMove(C.loc)
-		W.dropped(C)
-		if(W)
-			W.layer = initial(W.layer)
-	if(C.legcuffed)
-		var/obj/item/W = C.legcuffed
-		C.legcuffed = null
-		C.update_inv_legcuffed()
-		if(C.client)
-			C.client.screen -= W
-		W.forceMove(C.loc)
-		W.dropped(C)
-		if(W)
-			W.layer = initial(W.layer)
-	if(istype(C.wear_suit, /obj/item/clothing/suit/straight_jacket))
-		var/obj/item/clothing/suit/straight_jacket/SJ = C.wear_suit
-		SJ.forceMove(C.loc)
-		SJ.dropped(C)
-		C.wear_suit = null
+	if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
+		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_HANDCUFFED), C.loc)
+	if(C.get_equipped_item(SLOT_ID_LEGCUFFED))
+		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_LEGCUFFED), C.loc)
+	if(istype(C.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket))
+		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_SUIT), C.loc)
 		escape_cooldown *= 1.5	// Straight jackets are tedious compared to cuffs.
 
 	if(changeling.recursive_enhancement)

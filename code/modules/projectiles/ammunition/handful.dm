@@ -49,6 +49,7 @@
 	return H
 
 /obj/item/ammo_magazine/handful/attackby(obj/item/W, mob/user)
+	make_rounds_real()
 	// Merge two handfuls: pour the other one into this, up to capacity.
 	if(istype(W, /obj/item/ammo_magazine/handful))
 		var/obj/item/ammo_magazine/handful/other = W
@@ -84,6 +85,7 @@
 // When a handful empties through normal use, get rid of it rather than leaving an
 // invisible empty stack lying around.
 /obj/item/ammo_magazine/handful/attack_hand(mob/user)
+	make_rounds_real()
 	..()
 	if(!QDELETED(src) && !stored_ammo.len && loc == user)
 		qdel(src)

@@ -117,15 +117,20 @@
 
 	return 1
 
-/obj/machinery/atmospherics/trinary/atmos_filter/attack_hand(user) // -- TLE
-	if(..())
-		return
+/obj/machinery/atmospherics/trinary/atmos_filter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/atmos_filter_use,
+	)
+	..()
 
-	if(!src.allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return
+/datum/interaction/machine_hand/atmos_filter_use
+	id = "atmos_filter_use"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/trinary/atmos_filter/proc/lets_in, "access denied"))
+	effect = /obj/machinery/proc/interaction_open_ui
 
-	tgui_interact(user)
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
 
 /obj/machinery/atmospherics/trinary/atmos_filter/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

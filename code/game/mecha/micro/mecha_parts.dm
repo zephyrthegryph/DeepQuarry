@@ -9,12 +9,8 @@
 /obj/item/mecha_parts/micro/chassis
 	name="Mecha Chassis"
 	icon_state = "backbone"
-	var/datum/construction/construct
-
-/obj/item/mecha_parts/micro/chassis/attackby(obj/item/W as obj, mob/user as mob)
-	if(!construct || !construct.action(W, user))
-		..()
-	return
+	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
+	var/construction_state = "p0"
 
 /obj/item/mecha_parts/micro/chassis/attack_hand()
 	return
@@ -23,10 +19,7 @@
 /obj/item/mecha_parts/micro/chassis/gopher
 	name = "Gopher Chassis"
 	icon_state = "gopher-chassis"
-
-/obj/item/mecha_parts/micro/chassis/gopher/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/gopher_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/micro/gopher
 
 /obj/item/mecha_parts/micro/part/gopher_torso
 	name="Gopher Torso"
@@ -57,10 +50,7 @@
 /obj/item/mecha_parts/micro/chassis/polecat
 	name = "Polecat Chassis"
 	icon_state = "polecat-chassis"
-
-/obj/item/mecha_parts/micro/chassis/polecat/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/polecat_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/micro/polecat
 
 /obj/item/mecha_parts/micro/part/polecat_torso
 	name="Polecat Torso"
@@ -90,10 +80,7 @@
 /obj/item/mecha_parts/micro/chassis/weasel
 	name = "Weasel Chassis"
 	icon_state = "weasel-chassis"
-
-/obj/item/mecha_parts/micro/chassis/weasel/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/weasel_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/micro/weasel
 
 /obj/item/mecha_parts/micro/part/weasel_torso
 	name="Weasel Torso"

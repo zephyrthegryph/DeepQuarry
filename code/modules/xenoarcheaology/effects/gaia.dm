@@ -3,7 +3,7 @@
 	name = "Plant Rejuvenation"
 	effect_type = EFFECT_GAIA
 
-	var/list/my_glitterflies = list()
+	var/list/my_glitterflies
 
 	effect_color = "#8cd448"
 
@@ -39,7 +39,7 @@
 		if(prob(30))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			my_glitterflies |= G
+			LAZYOR(my_glitterflies, G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -53,7 +53,7 @@
 		if(prob(2))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			my_glitterflies |= G
+			LAZYOR(my_glitterflies, G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -67,7 +67,7 @@
 		if(prob(10))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			my_glitterflies |= G
+			LAZYOR(my_glitterflies, G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -82,6 +82,6 @@
 
 	for(var/mob/living/L in my_glitterflies)
 		if(L.stat == DEAD)
-			my_glitterflies -= L
+			LAZYREMOVE(my_glitterflies, L)
 
 		L.ai_brain.home_turf = get_turf(holder)

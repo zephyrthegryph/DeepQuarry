@@ -25,15 +25,7 @@
 
 	endurance = 400
 	deflect_chance = 20
-	armor = list(
-				"melee"		= 50,
-				"bullet"	= 35,
-				"laser"		= 15,
-				"energy"	= 10,
-				"bomb"		= 20,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=50;bullet=35;laser=15;energy=10;bomb=20;bio=100;rad=100"
 	melee_damage_lower = 40
 	melee_damage_upper = 40
 	base_attack_cooldown = 2 SECONDS

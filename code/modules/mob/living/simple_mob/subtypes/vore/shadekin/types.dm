@@ -6,14 +6,7 @@
 	//animal = TRUE
 	//stop_when_pulled = FALSE
 	//destroy_surroundings = TRUE
-	armor = list(
-			"melee" = 30,
-			"bullet" = 20,
-			"laser" = 20,
-			"energy" = 50,
-			"bomb" = 10,
-			"bio" = 100,
-			"rad" = 100)
+	armor_spec = "melee=30;bullet=20;laser=20;energy=50;bomb=10;bio=100;rad=100"
 
 	eye_desc = "red eyes"
 
@@ -52,14 +45,7 @@
 	swallowTime = 4 SECONDS //A little longer to compensate for the above
 	vore_ignores_undigestable = FALSE
 	attacktext = list("shoved")
-	armor = list(
-			"melee" = 5,
-			"bullet" = 5,
-			"laser" = 5,
-			"energy" = 5,
-			"bomb" = 0,
-			"bio" = 100,
-			"rad" = 100)
+	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"
 
 	eye_desc = "blue eyes"
 	shy_approach = TRUE
@@ -96,14 +82,7 @@
 	vore_default_mode = DM_HOLD
 	vore_digest_chance = 25
 	vore_absorb_chance = 25
-	armor = list(
-		"melee" = 15,
-		"bullet" = 15,
-		"laser" = 15,
-		"energy" = 15,
-		"bomb" = 15,
-		"bio" = 100,
-		"rad" = 100)
+	armor_spec = "melee=15;bullet=15;laser=15;energy=15;bomb=15;bio=100;rad=100"
 
 	eye_desc = "purple eyes"
 	shy_approach = TRUE
@@ -140,14 +119,7 @@
 	vore_default_mode = DM_DRAIN
 	vore_digest_chance = 5
 	vore_ignores_undigestable = FALSE
-	armor = list(
-		"melee" = 5,
-		"bullet" = 5,
-		"laser" = 5,
-		"energy" = 5,
-		"bomb" = 0,
-		"bio" = 100,
-		"rad" = 100)
+	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"
 
 	eye_desc = "yellow eyes"
 	stalker = FALSE
@@ -194,14 +166,7 @@
 	vore_default_mode = DM_DRAIN
 	vore_digest_chance = 0
 	vore_ignores_undigestable = FALSE
-	armor = list(
-		"melee" = 5,
-		"bullet" = 5,
-		"laser" = 5,
-		"energy" = 5,
-		"bomb" = 0,
-		"bio" = 100,
-		"rad" = 100)
+	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"
 
 	eye_desc = "green eyes"
 	stalker = TRUE
@@ -234,14 +199,7 @@
 	//animal = TRUE
 	//stop_when_pulled = FALSE
 	//destroy_surroundings = TRUE
-	armor = list(
-			"melee" = 20,
-			"bullet" = 15,
-			"laser" = 15,
-			"energy" = 25,
-			"bomb" = 10,
-			"bio" = 100,
-			"rad" = 100)
+	armor_spec = "melee=20;bullet=15;laser=15;energy=25;bomb=10;bio=100;rad=100"
 
 	eye_desc = "orange eyes"
 

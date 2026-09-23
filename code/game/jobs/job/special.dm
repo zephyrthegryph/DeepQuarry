@@ -8,7 +8,6 @@
 	supervisors = "company officials and Corporate Regulations"
 	selection_color = "#1D1D4F"
 	access = list()
-	minimal_access = list()
 	minimal_player_age = 14
 	economic_modifier = 20
 	whitelist_only = 1
@@ -39,7 +38,6 @@
 	supervisors = "company officials and Corporate Regulations"
 	selection_color = "#1D1D4F"
 	access = list()
-	minimal_access = list()
 	minimal_player_age = 14
 	economic_modifier = 20
 	whitelist_only = 1

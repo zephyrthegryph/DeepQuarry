@@ -36,7 +36,7 @@
 	/// For legacy instruments, our file extension
 	var/legacy_instrument_ext
 	/// What songs are using us
-	var/list/datum/song/songs_using = list()
+	var/list/datum/song/songs_using
 	/// Don't touch this
 	var/static/HIGHEST_KEY = 127
 	/// Don't touch this x2

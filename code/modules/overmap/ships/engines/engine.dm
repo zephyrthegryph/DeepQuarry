@@ -40,6 +40,6 @@ GLOBAL_LIST_EMPTY(ship_engines)
 /datum/ship_engine/Destroy()
 	GLOB.ship_engines -= src
 	for(var/obj/effect/overmap/visitable/ship/S in SSshuttles.ships)
-		S.engines -= src
+		LAZYREMOVE(S.engines, src)
 	holder = null
 	. = ..()

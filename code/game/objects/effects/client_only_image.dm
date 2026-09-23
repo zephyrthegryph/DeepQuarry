@@ -3,11 +3,11 @@
 * This is a wrapper for handling it safely. Mostly used by self deleting effects.
 */
 /image/client_only
-	var/list/clients = list()
+	var/list/clients
 
 /image/client_only/proc/append_client(client/C)
 	C.images += src
-	clients.Add(WEAKREF(C))
+	LAZYADD(clients, WEAKREF(C))
 
 /image/client_only/Destroy(force)
 	. = ..()
@@ -15,7 +15,7 @@
 		var/client/C = CW?.resolve()
 		if(C)
 			C.images -= src
-	clients.Cut()
+	LAZYCLEARLIST(clients)
 
 // Mostly for motion echos, but someone will probably find another use for it... So parent type gets it instead!
 /image/client_only/proc/place_from_root(turf/At)

@@ -3,7 +3,7 @@
 	desc = "A strange robotic creature."
 	endurance = 900
 
-	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 30, bio = 100, rad = 100)
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 	mob_class = MOB_CLASS_ABERRATION
 	pilot_type = /mob/living/simple_mob/humanoid/cultist/tesh

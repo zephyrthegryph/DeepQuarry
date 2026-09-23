@@ -11,12 +11,12 @@
 	_abstract = /datum/asset/spritesheet_batched
 	var/name
 	/// list("32x32")
-	var/list/sizes = list()
+	var/list/sizes
 	/// "foo_bar" -> list("32x32", 5, entry_obj)
-	var/list/sprites = list()
+	var/list/sprites
 
 	// "foo_bar" -> entry_obj
-	var/list/entries = list()
+	var/list/entries
 
 	/// JSON encoded version of entries.
 	var/entries_json = null
@@ -129,7 +129,7 @@
 		CRASH("Invalid sprite_name \"[sprite_name]\" given to insert_icon()! Providing non-strings will break icon generation.")
 	if(!istype(entry))
 		CRASH("Invalid type provided to insert_icon()! Value: [entry] (type: [entry?.type])")
-	entries[sprite_name] = entry.to_list()
+	LAZYSET(entries, sprite_name, entry.to_list())
 
 /datum/asset/spritesheet_batched/register()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -287,7 +287,7 @@
 		out += ".[name][size_id]{display:inline-block;width:[width]px;height:[height]px;background-image:url('[get_background_url("[name]_[size_id].png")]');background-repeat:no-repeat;}"
 
 	for (var/sprite_id in sprites)
-		var/sprite = sprites[sprite_id]
+		var/sprite = LAZYACCESS(sprites, sprite_id)
 		var/size_id = sprite[SPR_SIZE]
 		var/idx = sprite[SPR_IDX]
 
@@ -333,8 +333,8 @@
 	var/list/cache_data = list(
 		"input_hash" = input_hash,
 		"dmi_hashes" = dmi_hashes,
-		"sizes" = sizes,
-		"sprites" = sprites,
+		"sizes" = (sizes || list()),
+		"sprites" = (sprites || list()),
 		"rustg_version" = rustg_get_version(),
 		"dm_version" = SPRITESHEET_SYSTEM_VERSION,
 	)
@@ -352,14 +352,14 @@
 	return SSassets.transport.get_asset_url("spritesheet_[name].css")
 
 /datum/asset/spritesheet_batched/proc/icon_tag(sprite_name)
-	var/sprite = sprites[sprite_name]
+	var/sprite = LAZYACCESS(sprites, sprite_name)
 	if (!sprite)
 		return null
 	var/size_id = sprite[SPR_SIZE]
 	return "<span class='[name][size_id] [sprite_name]'></span>"
 
 /datum/asset/spritesheet_batched/proc/icon_class_name(sprite_name)
-	var/sprite = sprites[sprite_name]
+	var/sprite = LAZYACCESS(sprites, sprite_name)
 	if (!sprite)
 		return null
 	var/size_id = sprite[SPR_SIZE]
@@ -372,7 +372,7 @@
  * * sprite_name - The sprite to get the size of
  */
 /datum/asset/spritesheet_batched/proc/icon_size_id(sprite_name)
-	var/sprite = sprites[sprite_name]
+	var/sprite = LAZYACCESS(sprites, sprite_name)
 	if (!sprite)
 		return null
 	var/size_id = sprite[SPR_SIZE]

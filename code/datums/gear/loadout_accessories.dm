@@ -20,7 +20,7 @@
 	var/list/armbands = list()
 	for(var/obj/item/clothing/accessory/armband_type as anything in (typesof(/obj/item/clothing/accessory/armband) - typesof(/obj/item/clothing/accessory/armband/med/color)))
 		armbands[initial(armband_type.name)] = armband_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(armbands))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(armbands)))
 
 /datum/gear/accessory/armband/colored
 	display_name = "armband"
@@ -28,7 +28,7 @@
 
 /datum/gear/accessory/armband/colored/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/wallet
 	display_name = "wallet, orange"
@@ -46,7 +46,7 @@
 
 /datum/gear/accessory/wallet/womens/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/clutch
 	display_name = "clutch bag"
@@ -55,7 +55,7 @@
 
 /datum/gear/accessory/clutch/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/purse
 	display_name = "purse"
@@ -64,7 +64,7 @@
 
 /datum/gear/accessory/purse/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/wcoat
 	display_name = "waistcoat selection"
@@ -76,7 +76,7 @@
 	var/list/wcoats = list()
 	for(var/obj/item/clothing/accessory/wcoat_type as anything in typesof(/obj/item/clothing/accessory/wcoat))
 		wcoats[initial(wcoat_type.name)] = wcoat_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(wcoats))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(wcoats)))
 
 /datum/gear/accessory/holster
 	display_name = "holster selection"
@@ -98,7 +98,7 @@
 		"leg holster, black"=/obj/item/clothing/accessory/holster/leg/black,
 		"baton lanyard"=/obj/item/clothing/accessory/holster/waist/lanyard
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(selector_holsters))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(selector_holsters)))
 
 /datum/gear/accessory/tie
 	display_name = "tie selection"
@@ -110,7 +110,7 @@
 	var/list/ties = list()
 	for(var/obj/item/clothing/accessory/tie_type as anything in typesof(/obj/item/clothing/accessory/tie))
 		ties[initial(tie_type.name)] = tie_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(ties))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(ties)))
 
 /datum/gear/accessory/bowtie
 	display_name = "bowtie selection"
@@ -122,7 +122,7 @@
 	var/list/bowties = list()
 	for(var/obj/item/clothing/accessory/bowtie_type as anything in typesof(/obj/item/clothing/accessory/bowtie))
 		bowties[initial(bowtie_type.name)] = bowtie_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(bowties))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(bowties)))
 
 /datum/gear/accessory/scarf
 	display_name = "scarf selection"
@@ -134,7 +134,7 @@
 	var/list/scarfs = list()
 	for(var/obj/item/clothing/accessory/scarf_type as anything in typesof(/obj/item/clothing/accessory/scarf))
 		scarfs[initial(scarf_type.name)] = scarf_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(scarfs))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(scarfs)))
 
 /datum/gear/accessory/scarfcolor
 	display_name = "scarf (recolorable)"
@@ -143,7 +143,7 @@
 
 /datum/gear/accessory/scarfcolor/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/jacket
 	display_name = "jacket selection (accessory)"
@@ -155,7 +155,7 @@
 	var/list/jackets = list()
 	for(var/obj/item/clothing/accessory/jacket_type as anything in typesof(/obj/item/clothing/accessory/jacket))
 		jackets[initial(jacket_type.name)] = jacket_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(jackets))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(jackets)))
 
 /datum/gear/accessory/suitvest
 	display_name = "suit vest"
@@ -185,7 +185,7 @@
 		"pilot's harness"=/obj/item/clothing/accessory/storage/webbing/pilot1,
 		"pilot's harness, alt"=/obj/item/clothing/accessory/storage/webbing/pilot2
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(selector_loadbearinggear))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(selector_loadbearinggear)))
 
 /datum/gear/accessory/fannypack
 	display_name = "fannypack selection"
@@ -197,7 +197,7 @@
 	var/list/fannys = list()
 	for(var/obj/item/storage/belt/fannypack/fanny_type as anything in typesof(/obj/item/storage/belt/fannypack))
 		fannys[initial(fanny_type.name)] = fanny_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(fannys))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(fannys)))
 
 /datum/gear/accessory/chaps
 	display_name = "chaps, brown"
@@ -217,7 +217,7 @@
 	for(var/sweater in typesof(/obj/item/clothing/accessory/sweater))
 		var/obj/item/clothing/suit/sweater_type = sweater
 		sweaters[initial(sweater_type.name)] = sweater_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(sweaters))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(sweaters)))
 
 /datum/gear/accessory/virginkiller
 	display_name = "virgin killer sweater (colorable)"
@@ -225,7 +225,7 @@
 
 /datum/gear/accessory/virginkiller/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/bracelet/material
 	display_name = "bracelet selection"
@@ -244,7 +244,7 @@
 	bracelettype["bracelet, glass"] = /obj/item/clothing/accessory/bracelet/material/glass
 	bracelettype["bracelet, wood"] = /obj/item/clothing/accessory/bracelet/material/wood
 	bracelettype["bracelet, plastic"] = /obj/item/clothing/accessory/bracelet/material/plastic
-	gear_tweaks += new/datum/gear_tweak/variant(bracelettype)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(bracelettype))
 
 /datum/gear/accessory/bracelet/friendship
 	display_name = "friendship bracelet"
@@ -273,7 +273,7 @@
 
 /datum/gear/accessory/sash/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/asym
 	display_name = "asymmetric jacket selection"
@@ -285,7 +285,7 @@
 	var/list/asyms = list()
 	for(var/obj/item/clothing/accessory/asymmetric_type as anything in typesof(/obj/item/clothing/accessory/asymmetric))
 		asyms[initial(asymmetric_type.name)] = asymmetric_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(asyms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(asyms)))
 
 /datum/gear/accessory/cowledvest
 	display_name = "cowled vest"
@@ -308,7 +308,7 @@
 	"Red Hawaiian shirt" = /obj/item/clothing/accessory/hawaiian/red,
 	"Yellow Hawaiian shirt" = /obj/item/clothing/accessory/hawaiian/yellow
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(hawaiian_shirts)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(hawaiian_shirts))
 
 /datum/gear/accessory/cowboy_vest
 	display_name = "cowboy vest selection"
@@ -321,7 +321,7 @@
 	"Brown Vest" = /obj/item/clothing/accessory/cowboy_vest/brown,
 	"Grey Vest" = /obj/item/clothing/accessory/cowboy_vest/grey
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(cowboy_vests)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(cowboy_vests))
 
 /datum/gear/accessory/pride
 	display_name = "pride pin selection"
@@ -333,7 +333,7 @@
 	for(var/pridepin in typesof(/obj/item/clothing/accessory/pride))
 		var/obj/item/clothing/accessory/pridepin_type = pridepin
 		pridepins[initial(pridepin_type.name)] = pridepin_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(pridepins))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(pridepins)))
 
 /datum/gear/accessory/badge
 	display_name = "sheriff badge (Security)"
@@ -359,7 +359,7 @@
 
 /datum/gear/accessory/wristband/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/wristband_collection
 	display_name = "wristbands (selection)"
@@ -376,7 +376,7 @@
 	"Black, White and Grey" = /obj/item/clothing/accessory/wristband/collection/ace,
 	"Spiked" = /obj/item/clothing/accessory/wristband/spiked
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(wristband_lists)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(wristband_lists))
 
 // Collars
 
@@ -388,7 +388,7 @@
 
 /datum/gear/choker/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/collar
 	display_name = "collar, silver"
@@ -398,7 +398,7 @@
 
 /datum/gear/collar/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_collar_tag
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_collar_tag)
 
 /datum/gear/collar/golden
 	display_name = "collar, golden"
@@ -443,7 +443,7 @@
 
 /datum/gear/accessory/flops/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/dosimeter
 	display_name = "Dosimeter"
@@ -503,7 +503,7 @@ Talon pin
 	"security-controller replikant chestplate" = "stcr",
 	"security-technician replikant chestplate" = "star"
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(replika_vests)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(replika_vests))
 
 /datum/gear/accessory/insignia
 	display_name = "Insignia Selection"
@@ -541,7 +541,7 @@ Talon pin
 	"Service - Bands" = /obj/item/clothing/accessory/solgov/department/service/fleet,
 	"Service - Echelons" = /obj/item/clothing/accessory/solgov/department/service/army
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(insignia)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(insignia))
 
 /datum/gear/accessory/belt_selection
 	display_name = "belts (selection, colorable)"
@@ -555,8 +555,8 @@ Talon pin
 	"Strap Belt" = /obj/item/clothing/accessory/belt/strap,
 	"Studded Belt" = /obj/item/clothing/accessory/belt/studded
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(wristband_lists)
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(wristband_lists))
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/bunny_tail
 	display_name = "bunny tail, colorable"
@@ -564,7 +564,7 @@ Talon pin
 
 /datum/gear/accessory/bunny_tail/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/legwarmer_selection
 	display_name = "legwarmers (selection, colorable)"
@@ -577,5 +577,5 @@ Talon pin
 	"Legwarmers, medium" = /obj/item/clothing/accessory/legwarmersmedium,
 	"Legwarmers, short" = /obj/item/clothing/accessory/legwarmersshort
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(legwarmer_lists)
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(legwarmer_lists))
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)

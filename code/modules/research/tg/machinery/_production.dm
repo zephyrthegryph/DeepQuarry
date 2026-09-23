@@ -359,7 +359,7 @@
 			var/design_id = params["ref"]
 			if(!design_id)
 				return
-			var/datum/design_techweb/design = stored_research.researched_designs[design_id] ? SSresearch.techweb_design_by_id(design_id) : null
+			var/datum/design_techweb/design = LAZYACCESS(stored_research.researched_designs, design_id) ? SSresearch.techweb_design_by_id(design_id) : null
 			if(!istype(design))
 				return FALSE
 			if(!(isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)))

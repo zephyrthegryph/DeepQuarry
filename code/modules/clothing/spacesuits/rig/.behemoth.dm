@@ -4,7 +4,7 @@
 	suit_type = "aegis hardsuit"
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "aegis_rig"
-	armor = list(melee = 60, bullet = 60, laser = 60, energy = 30, bomb = 10, bio = 100, rad = 100)
+	armor_spec = "melee=60;bullet=60;laser=60;energy=30;bomb=10;bio=100;rad=100"
 
 	slowdown = 6
 

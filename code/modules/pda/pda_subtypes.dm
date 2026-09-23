@@ -169,7 +169,7 @@
 	programs = list(
 		new/datum/data/pda/app/messenger/multicast
 	)
-	var/list/cartridges_to_send_to = list()
+	var/list/cartridges_to_send_to
 
 /obj/item/pda/multicaster/command/Initialize(mapload)
 	. = ..()

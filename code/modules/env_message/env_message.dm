@@ -6,7 +6,7 @@
 	plane = PLANE_LIGHTING_ABOVE
 	mouse_opacity = TRUE
 	anchored = TRUE
-	var/list/message_list = list()
+	var/list/message_list
 	var/combined_message = DEVELOPER_WARNING_NAME
 
 REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
@@ -20,15 +20,15 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 /obj/effect/env_message/examine(mob/user)
 	. = ..()
 	for(var/tckey in message_list)
-		. += message_list[tckey]
+		. += LAZYACCESS(message_list, tckey)
 
 /obj/effect/env_message/proc/add_message(tckey, message)
-	message_list[tckey] = message
+	LAZYSET(message_list, tckey, message)
 	update_message()
 
 /obj/effect/env_message/proc/remove_message(tckey)
-	message_list -= tckey
-	if(!message_list.len)
+	LAZYREMOVE(message_list, tckey)
+	if(!length(message_list))
 		qdel(src)
 	else
 		update_message()
@@ -37,9 +37,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 	combined_message = ""
 	var/count = 0
 	for(var/tckey in message_list)
-		combined_message += message_list[tckey]
+		combined_message += LAZYACCESS(message_list, tckey)
 		count++
-		if(!(count == message_list.len))
+		if(!(count == length(message_list)))
 			combined_message += "<br><br>"
 
 /obj/effect/env_message/MouseEntered(location, control, params)
@@ -103,7 +103,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 	if(EM)
 		var/answer = tgui_alert(src, "Do you want to remove this env message? (Note: Selecting 'Yes' will remove other players' messages on this tyle too. Please don't remove other players' messages for no reason. Use 'Only My Message' to remove yours only.)", "Env Message", list("Yes", "Only My Message", "No"))
 		if(answer == "Yes")
-			if(!(src.ckey in EM.message_list) || EM.message_list.len > 1)
+			if(!(src.ckey in EM.message_list) || length(EM.message_list) > 1)
 				log_game("[key_name(src)] deleted an Env Message that contained other players' entries at ([EM.x], [EM.y], [EM.z])")
 			qdel(EM)
 		else if(answer == "Only My Message")

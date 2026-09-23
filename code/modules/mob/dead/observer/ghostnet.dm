@@ -51,7 +51,7 @@
 	if(C)
 
 		for(var/datum/chunk/c as anything in chunks_post_seen)
-			C.images += c.obscured
+			if(length(c.obscured)) C.images += c.obscured
 
 // Removes a area from a chunk.
 /datum/visualnet/ghost/proc/removeArea(area/A)
@@ -74,7 +74,7 @@
 	if(choice == 2)
 		return
 	for(var/entry in chunks)
-		var/datum/chunk/ghost/gchunk = chunks[entry]
+		var/datum/chunk/ghost/gchunk = LAZYACCESS(chunks, entry)
 		for(var/turf/T in gchunk.turfs)
 			if(T.loc == A)
 				onMajorChunkChange(A, choice, gchunk)
@@ -86,7 +86,7 @@
 	if(istype(c, /area))
 		if(choice == 0)
 			// Remove the area.
-			chunk.hidden_areas -= c
+			LAZYREMOVE(chunk.hidden_areas, c)
 		else if(choice == 1)
 			// You can't have the same area in the list twice.
-			chunk.hidden_areas |= c
+			LAZYOR(chunk.hidden_areas, c)

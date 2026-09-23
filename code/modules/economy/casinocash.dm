@@ -13,7 +13,20 @@
 // exact-integer float range (2**24 - 1) and can't lose precision or overflow.
 #define CHIPMACHINE_MAX_WORTH 16777215
 
-/obj/machinery/chipmachine/attackby(obj/item/I as obj, mob/user as mob)
+/obj/machinery/chipmachine/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/chipmachine_exchange,
+	)
+	..()
+
+/// Old attackby: cash -> chips, or chips -> cash. Never called `..()`, so any item is consumed.
+/datum/interaction/machine_item/chipmachine_exchange
+	id = "chipmachine_exchange"
+	name = "Exchange"
+	held_type = /obj/item
+	effect = /obj/machinery/chipmachine/proc/interaction_exchange
+
+/obj/machinery/chipmachine/proc/interaction_exchange(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/spacecash))
 		var/obj/item/spacecash/cash = I
 		var/worth = clamp(cash.worth, 0, CHIPMACHINE_MAX_WORTH)
@@ -43,6 +56,7 @@
 		spawn_money(round(worth * 5), src.loc)
 		src.attack_hand(user)
 		qdel(I)
+	return TRUE
 
 /obj/item/spacecasinocash
 	name = "broken casino chip"

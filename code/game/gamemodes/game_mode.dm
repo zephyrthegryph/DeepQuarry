@@ -17,14 +17,14 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/ert_disabled = 0                     // ERT cannot be called.
 	var/deny_respawn = 0	                 // Disable respawn during this round.
 
-	var/list/disabled_jobs = list()           // Mostly used for Malf.  This check is performed in job_controller so it doesn't spawn a regular AI.
+	var/list/disabled_jobs           // Mostly used for Malf.  This check is performed in job_controller so it doesn't spawn a regular AI.
 
 	var/shuttle_delay = 1                    // Shuttle transit time is multiplied by this.
 	var/auto_recall_shuttle = 0              // Will the shuttle automatically be recalled?
 
-	var/list/antag_tags = list()             // Core antag templates to spawn.
+	var/list/antag_tags             // Core antag templates to spawn.
 	var/list/antag_templates                 // Extra antagonist types to include.
-	var/list/latejoin_templates = list()
+	var/list/latejoin_templates
 	var/round_autoantag = 0                  // Will this round attempt to periodically spawn more antagonists?
 	var/antag_scaling_coeff = 5              // Coefficient for scaling max antagonists to player count.
 	var/require_all_templates = 0            // Will only start if all templates are checked and can spawn.
@@ -153,14 +153,14 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		return 1
 
 	var/enemy_count = 0
-	if(antag_tags && antag_tags.len)
+	if(antag_tags && length(antag_tags))
 		for(var/antag_tag in antag_tags)
 			var/datum/antagonist/antag = SSantag_job.all_antag_types[antag_tag]
 			if(!antag)
 				continue
 			var/list/potential = list()
 			if(antag.flags & ANTAG_OVERRIDE_JOB)
-				potential = antag.pending_antagonists
+				potential = antag.pending_antagonists || list()
 			else
 				potential = antag.candidates
 			if(islist(potential))
@@ -207,7 +207,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			antag.attempt_spawn() //select antags to be spawned
 		antag.finalize_spawn() //actually spawn antags
 		if(antag.is_latejoin_template())
-			latejoin_templates |= antag
+			LAZYOR(latejoin_templates, antag)
 
 	if(SSemergency_shuttle && auto_recall_shuttle)
 		SSemergency_shuttle.auto_recall = TRUE
@@ -450,7 +450,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	if(!CONFIG_GET(flag/traitor_scaling))
 		antag_scaling_coeff = 0
 
-	if(antag_tags && antag_tags.len)
+	if(antag_tags && length(antag_tags))
 		antag_templates = list()
 		for(var/antag_tag in antag_tags)
 			var/datum/antagonist/antag = SSantag_job.all_antag_types[antag_tag]

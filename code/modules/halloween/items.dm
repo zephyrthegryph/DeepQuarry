@@ -78,7 +78,7 @@
 		/obj/item/reagent_containers/food/snacks/hakarl
 	)
 
-	var/list/treated = list()
+	var/list/treated
 
 /obj/structure/candybowl/attack_hand(mob/user)
 
@@ -100,7 +100,7 @@
 
 	searching = FALSE
 
-	if(treated[user.ckey])
+	if(LAZYACCESS(treated, user.ckey))
 		var/choice = tgui_alert(user, "You already took one! Take more?", "Take another...", list("Reach in...", "Leave it!"))
 		if(!choice)
 			return
@@ -113,7 +113,7 @@
 				thegoods = pick(candy)
 	else
 		thegoods = pick(candy)
-		treated[user.ckey] = TRUE
+		LAZYSET(treated, user.ckey, TRUE)
 
 	add_fingerprint(user)
 	if(!thegoods)
@@ -211,7 +211,7 @@
 
 	anchored = TRUE
 
-	var/list/ckeys_that_took = list()
+	var/list/ckeys_that_took
 	var/list/costumes
 
 /obj/structure/boxpile/Initialize(mapload)
@@ -224,10 +224,10 @@
 		return
 	if(!user.ckey)
 		return
-	if(ckeys_that_took[user.ckey])
+	if(LAZYACCESS(ckeys_that_took, user.ckey))
 		to_chat(user, span_notice("Nothing else fits you here!"))
 		return
 	to_chat(user, span_notice("After looking around, you found a costume that fits you!"))
-	ckeys_that_took[user.ckey] = TRUE
+	LAZYSET(ckeys_that_took, user.ckey, TRUE)
 	var/obj/item/box = pick(costumes)
 	new box(loc)

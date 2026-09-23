@@ -16,11 +16,11 @@
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/computer/drone_control/attack_hand(mob/user as mob)
-	if(..())
-		return
-
-	tgui_interact(user)
+/obj/machinery/computer/drone_control/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/computer/drone_control/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

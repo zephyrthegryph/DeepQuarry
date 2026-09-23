@@ -94,7 +94,7 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 /obj/effect/shut_controller
 	name = "shut controller"
 	var/moving = null
-	var/list/parts = list(  )
+	var/list/parts
 
 /obj/structure/showcase
 	name = "Showcase"

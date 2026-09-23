@@ -162,7 +162,7 @@
  * copying the temperature and handling the colouring.
  * If the reaction is too small it will perform like the first tick.
  *
- * Also calls fire_act() which handles burning.
+ * Also heats the tile's contents through their heat nodes (heat_tile()).
  * Returns TRUE if exposed successfully, and FALSE if the hotspot should delete itself
  */
 /obj/effect/hotspot/proc/perform_exposure()
@@ -206,10 +206,8 @@
 	if(cold_fire)
 		return TRUE
 
-	for(var/A in location)
-		var/atom/AT = A
-		if(!QDELETED(AT) && AT != src)
-			AT.fire_act(temperature, volume)
+	// Objects on the tile are heated through their heat nodes (H3).
+	heat_tile(location)
 	return TRUE
 
 /// Mathematics to be used for color calculation.
@@ -285,7 +283,7 @@
 /**
  * Regular process proc for hotspots governed by the controller.
  * Handles the calling of perform_exposure() which handles the bulk of temperature processing.
- * Burning or fire_act() are also called by perform_exposure().
+ * Heating the tile's contents is also done by perform_exposure().
  * Also handles the dying and qdeletion of the hotspot and hotspot creations on adjacent cardinal turfs.
  * And some visual stuffs too! Colors and fainter icons for specific conditions.
  */
@@ -362,6 +360,8 @@
 /obj/effect/hotspot/Destroy()
 	SSair.hotspots -= src
 	var/turf/open/cur_turf = loc
+	if(istype(cur_turf))
+		cool_tile(cur_turf)
 	if(our_hot_group)
 		our_hot_group.remove_from_group(src)
 		our_hot_group = null
@@ -371,9 +371,13 @@
 
 /obj/effect/hotspot/proc/on_entered(datum/source, atom/movable/arrived, atom/old_loc, list/atom/old_locs)
 	SIGNAL_HANDLER
-	if(isliving(arrived) && !cold_fire)
+	if(cold_fire)
+		return
+	if(isliving(arrived))
 		var/mob/living/immolated = arrived
 		immolated.fire_act(temperature, volume)
+	else if(arrived.heats_in_fire())
+		arrived.couple_to_fire(loc)
 
 /obj/effect/hotspot/singularity_pull(atom/singularity, current_size)
 	return

@@ -38,12 +38,24 @@
 		FG2.cleanup()
 	. = ..()
 
-/obj/machinery/containment_field/attack_hand(mob/user as mob)
-	if(get_dist(src, user) > 1)
-		return 0
-	else
-		shock(user)
-		return 1
+/obj/machinery/containment_field/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/containment_field_shock,
+	)
+	..()
+
+/// Old attack_hand (never called ..()): shock whoever touches it.
+/datum/interaction/machine_hand/ungated/containment_field_shock
+	id = "containment_field_shock"
+	name = "Touch"
+	category = INTERACTION_CAT_ATTACK
+	tags = list(INTERACTION_TAG_HOSTILE)
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/machinery/containment_field/proc/interaction_shock
+
+/obj/machinery/containment_field/proc/interaction_shock(mob/user, obj/item/held, datum/interaction/interaction)
+	shock(user)
+	return TRUE
 
 
 /obj/machinery/containment_field/Crossed(atom/A)

@@ -3,7 +3,7 @@
 	faction = FACTION_ECLIPSE
 	icon = 'icons/mob/eclipse.dmi'
 	has_repair_droid = TRUE
-	armor = list(melee = 50, bullet = 50, laser = 50, energy = 50, bomb = 50, bio = 100, rad = 100)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=100;rad=100"
 	special_attack_cooldown = 10 //This things attack soley via speical attacks hence basically no cooldown
 	grab_resist = 100
 	shock_resist = -0.2

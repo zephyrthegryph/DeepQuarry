@@ -11,7 +11,19 @@
 	var/chargesa = 1
 	var/insistinga = 0
 
-/obj/machinery/wish_granter/attack_hand(mob/living/carbon/human/user as mob)
+/obj/machinery/wish_granter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/wish_granter_touch,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/wish_granter_touch
+	id = "wish_granter_touch"
+	name = "Touch"
+	effect = /obj/machinery/wish_granter/proc/interaction_touch
+
+/obj/machinery/wish_granter/proc/interaction_touch(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(chargesa <= 0)
 		to_chat(user, span_infoplain("The Wish Granter lies silent."))
 		return
@@ -61,6 +73,7 @@
 				for(var/mob/living/simple_mob/faithless/F in GLOB.living_mob_list)
 					F.set_stat(DEAD)
 					F.icon_state = "faithless_dead"
+	return TRUE
 
 /obj/machinery/wish_granter/proc/gib_wisher(mob/living/carbon/human/user)
 	if(user)

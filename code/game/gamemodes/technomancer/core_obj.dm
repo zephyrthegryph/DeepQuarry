@@ -20,16 +20,16 @@
 	var/energy_cost_modifier = 1.0	// Multiplier on how much spells will cost.
 	var/spell_power_modifier = 1.0	// Multiplier on how strong spells are.
 	var/cooldown_modifier 	 = 1.0	// Multiplier on cooldowns for spells.
-	var/list/spells = list()		// This contains the buttons used to make spells in the user's hand.
-	var/list/appearances = list(	// Assoc list containing possible icon_states that the wiz can change the core to.
+	var/list/spells		// This contains the buttons used to make spells in the user's hand.
+	var/static/list/appearances = list(	// Assoc list containing possible icon_states that the wiz can change the core to.
 		"default"			= "technomancer_core",
 		"wizard's cloak"	= "wizard_cloak"
 		)
 
 	// Some spell-specific variables go here, since spells themselves are temporary.  Cores are more long term and more accessable than
 	// mind datums.  It may also allow creative players to try to pull off a 'soul jar' scenario.
-	var/list/summoned_mobs = list()	// Maintained horribly with maintain_summon_list().
-	var/list/wards_in_use = list()	// Wards don't count against the cap for other summons.
+	var/list/summoned_mobs	// Maintained horribly with maintain_summon_list().
+	var/list/wards_in_use	// Wards don't count against the cap for other summons.
 	var/max_summons = 10			// Maximum allowed summoned entities.  Some cores will have different caps.
 	var/universal = FALSE // Allows non-technomancers to use the core -
 
@@ -61,8 +61,8 @@
 	return 0
 
 /mob/living/carbon/human/technomancer_pay_energy(amount)
-	if(istype(back, /obj/item/technomancer_core))
-		var/obj/item/technomancer_core/TC = back
+	if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core))
+		var/obj/item/technomancer_core/TC = get_equipped_item(SLOT_ID_BACK)
 		return TC.pay_energy(amount)
 	return 0
 
@@ -98,24 +98,24 @@
 
 // We pay for on-going effects here.
 /obj/item/technomancer_core/proc/pay_dues()
-	if(summoned_mobs.len)
-		pay_energy( round(summoned_mobs.len * 5) )
+	if(length(summoned_mobs))
+		pay_energy( round(length(summoned_mobs) * 5) )
 
 // Because sometimes our summoned mobs will stop existing and leave a null entry in the list, we need to do cleanup every
 // so often so .len remains reliable.
 /obj/item/technomancer_core/proc/maintain_summon_list()
-	if(!summoned_mobs.len) // No point doing work if there's no work to do.
+	if(!length(summoned_mobs)) // No point doing work if there's no work to do.
 		return
 	for(var/A in summoned_mobs)
 		// First, a null check.
 		if(isnull(A))
-			summoned_mobs -= A
+			LAZYREMOVE(summoned_mobs, A)
 			continue
 		// Now check for dead mobs who shouldn't be on the list.
 		if(isliving(A))
 			var/mob/living/L = A
 			if(L.stat == DEAD)
-				summoned_mobs -= L
+				LAZYREMOVE(summoned_mobs, L)
 				spawn(1)
 					L.visible_message(span_infoplain(span_bold("\The [L]") + " begins to fade away..."))
 					animate(L, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
@@ -124,10 +124,10 @@
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()
 	for(var/mob/living/L in summoned_mobs)
-		summoned_mobs -= L
+		LAZYREMOVE(summoned_mobs, L)
 		qdel(L)
 	for(var/mob/living/ward in wards_in_use)
-		wards_in_use -= ward
+		LAZYREMOVE(wards_in_use, ward)
 		qdel(ward)
 
 // This is what is clicked on to place a spell in the user's hands.
@@ -158,8 +158,8 @@
 /mob/living/carbon/human/get_status_tab_items()
 	. = ..()
 
-	if(. && istype(back,/obj/item/technomancer_core))
-		var/obj/item/technomancer_core/core = back
+	if(. && istype(get_equipped_item(SLOT_ID_BACK),/obj/item/technomancer_core))
+		var/obj/item/technomancer_core/core = get_equipped_item(SLOT_ID_BACK)
 		. += setup_technomancer_stat(core)
 
 /mob/living/carbon/human/proc/setup_technomancer_stat(obj/item/technomancer_core/core)
@@ -180,13 +180,13 @@
 		The path supplied was [path].")
 		return
 	var/obj/spellbutton/spell = new(src, path, new_name, ability_icon_state)
-	spells.Add(spell)
+	LAZYADD(spells, spell)
 	if(wearer)
 		wearer.ability_master.add_technomancer_ability(spell, ability_icon_state)
 
 /obj/item/technomancer_core/proc/remove_spell(obj/spellbutton/spell_to_remove)
 	if(spell_to_remove in spells)
-		spells.Remove(spell_to_remove)
+		LAZYREMOVE(spells, spell_to_remove)
 		if(wearer)
 			var/atom/movable/screen/ability/obj_based/technomancer/A = wearer.ability_master.get_ability_by_instance(spell_to_remove)
 			if(A)
@@ -195,7 +195,7 @@
 
 /obj/item/technomancer_core/proc/remove_all_spells()
 	for(var/obj/spellbutton/spell in spells)
-		spells.Remove(spell)
+		LAZYREMOVE(spells, spell)
 		qdel(spell)
 
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)
@@ -206,8 +206,8 @@
 
 /mob/living/carbon/human/proc/wiz_energy_update_hud()
 	if(client && hud_used)
-		if(istype(back, /obj/item/technomancer_core)) //I reckon there's a better way of doing this.
-			var/obj/item/technomancer_core/core = back
+		if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core)) //I reckon there's a better way of doing this.
+			var/obj/item/technomancer_core/core = get_equipped_item(SLOT_ID_BACK)
 			wiz_energy_display.invisibility = INVISIBILITY_NONE
 			var/ratio = core.energy / core.max_energy
 			ratio = max(round(ratio, 0.05) * 100, 5)
@@ -301,8 +301,8 @@
 	spell_power_modifier = 1.2
 
 /obj/item/technomancer_core/summoner/pay_dues()
-	if(summoned_mobs.len)
-		pay_energy( round(summoned_mobs.len) )
+	if(length(summoned_mobs))
+		pay_energy( round(length(summoned_mobs)) )
 
 // For those who hate instability.
 /obj/item/technomancer_core/safety

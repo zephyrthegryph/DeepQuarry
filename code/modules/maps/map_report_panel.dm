@@ -16,12 +16,12 @@
 	data["loadable"] = !!loadable
 	var/list/path_rows = list()
 	for(var/path in bad_paths)
-		var/list/keys = bad_paths[path]
+		var/list/keys = LAZYACCESS(bad_paths, path)
 		path_rows += list(list("path" = "[path]", "keys" = keys.Copy()))
 	data["bad_paths"] = path_rows
 	var/list/key_rows = list()
 	for(var/key in bad_keys)
-		var/list/messages = bad_keys[key]
+		var/list/messages = LAZYACCESS(bad_keys, key)
 		key_rows += list(list("key" = "[key]", "messages" = messages.Copy()))
 	data["bad_keys"] = key_rows
 	return data

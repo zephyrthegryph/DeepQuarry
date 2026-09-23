@@ -16,18 +16,32 @@
 	. = ..()
 	activate()
 
-/obj/machinery/holoplant/attack_hand(mob/living/user)
+/obj/machinery/holoplant/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/holoplant_toggle,
+	)
+	..()
+
+/datum/interaction/machine_hand/holoplant_toggle
+	id = "holoplant_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null))
+	effect = /obj/machinery/holoplant/proc/interaction_toggle
+
+/obj/machinery/holoplant/proc/interaction_toggle(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || interference)
-		return
+		return TRUE
 
 	if(!anchored)
 		to_chat(user,span_warning("\The [src] must be anchored before activation!"))
-		return
+		return TRUE
 
 	if(!plant)
 		activate()
 	else
 		deactivate()
+	return TRUE
 
 /obj/machinery/holoplant/wrench_act(mob/user, obj/item/tool)
 	. = ..()

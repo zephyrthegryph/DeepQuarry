@@ -7,7 +7,7 @@ GLOBAL_LIST_EMPTY(weighted_mundaneevent_locations)
 	var/description = ""
 	var/distance = 0
 	var/can_shuttle_here = 0		//one day crew from the station will be able to travel to this destination
-	var/list/viable_random_events = list()
+	var/list/viable_random_events
 	var/list/temp_price_change[BIOMEDICAL]
 	var/mundane_probability = 0
 

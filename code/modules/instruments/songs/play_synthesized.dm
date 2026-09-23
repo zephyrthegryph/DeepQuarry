@@ -57,7 +57,7 @@
 	copy.frequency = K.frequency
 	copy.volume = volume
 	var/channel_text = num2text(channel)
-	channels_playing[channel_text] = 100
+	LAZYSET(channels_playing, channel_text, 100)
 	last_channel_played = channel_text
 	for(var/i in hearing_mobs)
 		var/mob/M = i
@@ -74,8 +74,8 @@
 	for(var/i in hearing_mobs)
 		terminate_sound_mob(i)
 	if(clear_channels)
-		channels_playing.len = 0
-		channels_idle.len = 0
+		LAZYCLEARLIST(channels_playing)
+		LAZYCLEARLIST(channels_idle)
 		SSinstruments.current_instrument_channels -= using_sound_channels
 		using_sound_channels = 0
 		SSsounds.free_datum_channels(src)
@@ -92,7 +92,7 @@
  */
 /datum/song/proc/pop_channel()
 	if(length(channels_idle)) //just pop one off of here if we have one available
-		. = text2num(channels_idle[1])
+		. = text2num(LAZYACCESS(channels_idle, 1))
 		channels_idle.Cut(1,2)
 		return
 	if(using_sound_channels >= max_sound_channels)
@@ -113,18 +113,18 @@
 	for(var/channel in channels_playing)
 		if(full_sustain_held_note && (channel == last_channel_played))
 			continue
-		var/current_volume = channels_playing[channel]
+		var/current_volume = LAZYACCESS(channels_playing, channel)
 		switch(sustain_mode)
 			if(SUSTAIN_LINEAR)
 				current_volume -= linear_dropoff
 			if(SUSTAIN_EXPONENTIAL)
 				current_volume /= exponential_dropoff
-		channels_playing[channel] = current_volume
+		LAZYSET(channels_playing, channel, current_volume)
 		var/dead = current_volume <= sustain_dropoff_volume
 		var/channelnumber = text2num(channel)
 		if(dead)
-			channels_playing -= channel
-			channels_idle += channel
+			LAZYREMOVE(channels_playing, channel)
+			LAZYADD(channels_idle, channel)
 			for(var/i in hearing_mobs)
 				var/mob/M = i
 				M.stop_sound_channel(channelnumber)

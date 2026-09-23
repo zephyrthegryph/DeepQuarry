@@ -8,7 +8,7 @@
 	desc = "View communication logs here. Translation not guaranteed."
 	icon_screen = "comm_logs"
 
-	var/list/servers = list()	// the servers located by the computer
+	var/list/servers	// the servers located by the computer
 	var/obj/machinery/telecomms/server/SelectedServer
 	circuit = /obj/item/circuitboard/comm_server
 
@@ -64,10 +64,23 @@
 
 	return data
 
-/obj/machinery/computer/telecomms/server/attack_hand(mob/user)
+/obj/machinery/computer/telecomms/server/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/telecomms_server_open_ui,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/telecomms_server_open_ui
+	id = "telecomms_server_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/telecomms/server/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/telecomms/server/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/telecomms/server/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -99,18 +112,18 @@
 			. = TRUE
 
 		if("scan")
-			if(servers.len > 0)
+			if(length(servers) > 0)
 				set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
 				return TRUE
 
 			for(var/obj/machinery/telecomms/server/T in range(25, src))
 				if(T.network == network)
-					servers.Add(T)
+					LAZYADD(servers, T)
 
-			if(!servers.len)
+			if(!length(servers))
 				set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
 			else
-				set_temp("[servers.len] SERVERS PROBED & BUFFERED", "good")
+				set_temp("[length(servers)] SERVERS PROBED & BUFFERED", "good")
 			. = TRUE
 
 		if("delete")
@@ -122,9 +135,9 @@
 				var/idx = text2num(params["id"])
 				if(!idx || idx < 1 || idx > length(SelectedServer.log_entries))
 					return
-				var/datum/comm_log_entry/D = SelectedServer.log_entries[idx]
+				var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer.log_entries, idx)
 				set_temp("DELETED ENTRY: [D.name]", "bad")
-				SelectedServer.log_entries.Remove(D)
+				LAZYREMOVE(SelectedServer.log_entries, D)
 				qdel(D)
 			else
 				set_temp("FAILED: NO SELECTED MACHINE", "bad")

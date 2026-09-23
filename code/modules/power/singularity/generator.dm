@@ -23,18 +23,35 @@
 		new creation_type(T, 50)
 		if(src) qdel(src)
 
-/obj/machinery/the_singularitygen/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/smes_coil/super_io) && panel_open)
-		visible_message(span_infoplain(span_bold("\The [user]") + " begins to modify \the [src] with \the [W]."))
-		if(do_after(user, 30 SECONDS, target = src))
-			user.drop_from_inventory(W)
-			visible_message(span_infoplain(span_bold("\The [user]") + " installs \the [W] onto \the [src]."))
-			qdel(W)
-			var/turf/T = get_turf(src)
-			var/new_machine = /obj/machinery/particle_smasher
-			new new_machine(T)
-			qdel(src)
-	return ..()
+/obj/machinery/the_singularitygen/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/singularitygen_install_particle_accelerator,
+	)
+	..()
+
+/datum/interaction/machine_item/singularitygen_install_particle_accelerator
+	id = "singularitygen_install_particle_accelerator"
+	name = "Install"
+	held_type = /obj/item/smes_coil/super_io
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/the_singularitygen/proc/panel_is_open, null))
+	effect = /obj/machinery/the_singularitygen/proc/interaction_install
+
+/obj/machinery/the_singularitygen/proc/panel_is_open(mob/actor, atom/target, obj/item/held)
+	return panel_open
+
+/// The old attackby always chained to ..() at the end regardless of branch, so this always
+/// declines (returns FALSE) after doing its work, letting the base attackby chain still run.
+/obj/machinery/the_singularitygen/proc/interaction_install(mob/user, obj/item/W, datum/interaction/interaction)
+	visible_message(span_infoplain(span_bold("\The [user]") + " begins to modify \the [src] with \the [W]."))
+	if(do_after(user, 30 SECONDS, target = src))
+		user.drop_from_inventory(W)
+		visible_message(span_infoplain(span_bold("\The [user]") + " installs \the [W] onto \the [src]."))
+		qdel(W)
+		var/turf/T = get_turf(src)
+		var/new_machine = /obj/machinery/particle_smasher
+		new new_machine(T)
+		qdel(src)
+	return FALSE
 
 /obj/machinery/the_singularitygen/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored

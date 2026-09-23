@@ -21,7 +21,7 @@
 /obj/item/clothing/under/undersuit/sec
 	name = "security undersuit"
 	desc = "A reinforced undersuit, intended for wearing under a voidsuit or other EVA equipment. This one is specifically made for those in Security, and has slight protective capabilities against simple melee attacks."
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	icon_state = "bodysuit_sec"
 	item_state = "bodysuit_sec"
@@ -35,7 +35,7 @@
 /obj/item/clothing/under/undersuit/hazard
 	name = "hazard undersuit"
 	desc = "An undersuit, intended for wearing under a voidsuit or other EVA equipment. This one is specifically made for Engineering crew, and comes with slight radiation absorption capabilities. Not a lot, but it's there."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 	icon_state = "bodysuit_haz"
 	item_state = "bodysuit_haz"
 

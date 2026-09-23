@@ -174,11 +174,25 @@
 /obj/machinery/atmospherics/unary/outlet_injector/hide(i)
 	update_underlays()
 
-/obj/machinery/atmospherics/unary/outlet_injector/attack_hand(mob/user as mob)
-	to_chat(user, span_notice("You toggle \the [src]."))
+/obj/machinery/atmospherics/unary/outlet_injector/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/outlet_injector_toggle,
+	)
+	..()
+
+/// The old attack_hand: never called ..(), so it stays ungated.
+/datum/interaction/machine_hand/ungated/outlet_injector_toggle
+	id = "outlet_injector_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	message_self = "You toggle %TARGET%."
+	effect = /obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle
+
+/obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	injecting = !injecting
 	update_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
 	update_icon()
+	return TRUE
 
 /obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)
 	var/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")

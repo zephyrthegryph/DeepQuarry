@@ -14,18 +14,19 @@
 //! drains the domain watches, and returns the lanes' wakes for the tick as a
 //! flat list of [`REACT_WAKE_STRIDE`] numbers per wake.
 //!
-//! Domains: until the real domains run on `vg-core` (M1b for gas), the only
-//! watched domain is the **probe** ([`REACT_DOMAIN_PROBE`]), a small field of
-//! pressure/temperature cells DM writes directly. It exists so the watch path
+//! Domains: the **probe** ([`REACT_DOMAIN_PROBE`]) is a small field of
+//! pressure/temperature cells DM writes directly, so the watch path
 //! (registration checks, frame evaluation, stale filtering, lanes) is
-//! exercised end to end from DM tests; a real domain adds its port here.
+//! exercised end to end from DM tests. Domains that live in other crates
+//! (gas, [`REACT_DOMAIN_GAS`]) register an [`ExternalDomain`] with
+//! [`register_domain`]; their wakes are collected at every step.
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::time::Instant;
 
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
-use vg_core::channel::{ChannelId, Quantity, channel_infos};
+use vg_core::channel::{ChannelId, ChannelInfo, Quantity, channel_infos};
 use vg_core::channels;
 use vg_core::cow::{ChunkLayout, CowStore};
 use vg_core::outbox::{Lane, MAX_SUBSCRIBER, Outbox, Subscriber, Wake, WatchId, reason};
@@ -63,6 +64,48 @@ pub const DOMAIN_PROBE: u32 = 1;
 /// Cells in the probe domain.
 /// @dm-define REACT_PROBE_CELLS
 pub const PROBE_CELLS: u32 = 256;
+/// Gas: turf gas and main-owned mixtures, by gas handle (vg-gas).
+/// @dm-define REACT_DOMAIN_GAS
+pub const DOMAIN_GAS: u32 = 2;
+
+// --- External domains ---------------------------------------------------------
+
+/// A watchable domain that lives in another crate. It keeps its own watch
+/// ports; the reactor host only routes registrations and collects wakes.
+pub trait ExternalDomain {
+    /// The domain's channel table (checks channel ids and units).
+    fn channels(&self) -> Vec<ChannelInfo>;
+    /// Registers a watch; returns the domain's sub-port and the watch id.
+    ///
+    /// # Errors
+    /// If the condition names invalid cells or is rejected.
+    fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId)>;
+    fn unwatch(&mut self, port: u8, id: WatchId);
+    /// Moves the wakes produced since the last call into `out`.
+    fn take_wakes(&mut self, out: &mut Vec<Wake>);
+}
+
+thread_local! {
+    static EXTERNAL: RefCell<HashMap<u32, Box<dyn ExternalDomain>>> = RefCell::new(HashMap::new());
+}
+
+/// Registers (or replaces) an external domain under a `REACT_DOMAIN_*` id.
+pub fn register_domain(id: u32, domain: Box<dyn ExternalDomain>) {
+    EXTERNAL.with_borrow_mut(|e| {
+        e.insert(id, domain);
+    });
+}
+
+fn external<T>(id: u32, f: impl FnOnce(&mut dyn ExternalDomain) -> T) -> Option<T> {
+    EXTERNAL.with_borrow_mut(|e| e.get_mut(&id).map(|d| f(d.as_mut())))
+}
+
+fn channel_table(domain: u32) -> Result<Vec<ChannelInfo>> {
+    if domain == DOMAIN_PROBE {
+        return Ok(channel_infos::<Probe>());
+    }
+    external(domain, |d| d.channels()).ok_or_else(|| eyre!("domain {domain} has no watch port"))
+}
 
 const _: () = {
     assert!(REASON_CONDITION == reason::CONDITION);
@@ -133,7 +176,7 @@ enum Sub {
     Timer(TimerId),
     Key(u64),
     Rate { model: ModelId, token: u32 },
-    Watch { domain: u32, id: WatchId },
+    Watch { domain: u32, port: u8, id: WatchId },
 }
 
 #[derive(Debug)]
@@ -305,11 +348,7 @@ impl Host {
             Sub::Rate { model, token } => {
                 self.reactor.unwatch_model(model, token);
             }
-            Sub::Watch { domain, id } => {
-                if domain == DOMAIN_PROBE {
-                    let _ = self.probe.port.unwatch(id);
-                }
-            }
+            Sub::Watch { domain, port, id } => unwatch(&mut self.probe, domain, port, id),
         }
         self.tokens.release(index);
     }
@@ -318,10 +357,10 @@ impl Host {
         let indices = self.tokens.by_sub.remove(&sub).unwrap_or_default();
         let n = indices.len();
         for index in indices {
-            if let Some((_, Sub::Watch { domain, id })) = self.tokens.slots[index as usize].live {
-                if domain == DOMAIN_PROBE {
-                    let _ = self.probe.port.unwatch(id);
-                }
+            if let Some((_, Sub::Watch { domain, port, id })) =
+                self.tokens.slots[index as usize].live
+            {
+                unwatch(&mut self.probe, domain, port, id);
             }
             let slot = &mut self.tokens.slots[index as usize];
             if slot.live.take().is_some() {
@@ -353,6 +392,14 @@ impl Host {
             }
         }
         self.watch_wakes += self.probe.frame(&mut self.reactor) as u64;
+        let mut external_wakes = Vec::new();
+        EXTERNAL.with_borrow_mut(|e| {
+            for d in e.values_mut() {
+                d.take_wakes(&mut external_wakes);
+            }
+        });
+        self.watch_wakes += external_wakes.len() as u64;
+        self.reactor.ingest(&external_wakes);
         self.wakes.clear();
         self.reactor.drain(budget, &mut self.wakes);
         let mut flat = Vec::with_capacity(self.wakes.len() * WAKE_STRIDE as usize);
@@ -476,17 +523,24 @@ fn key(kind: &ByondValue, id: &ByondValue) -> Result<u64> {
     Ok(u64::from(kind) << 24 | u64::from(id))
 }
 
-fn channel(v: &ByondValue) -> Result<ChannelId> {
+fn unwatch(probe: &mut ProbeDomain, domain: u32, port: u8, id: WatchId) {
+    if domain == DOMAIN_PROBE {
+        let _ = probe.port.unwatch(id);
+    } else {
+        external(domain, |d| d.unwatch(port, id));
+    }
+}
+
+fn channel(chans: &[ChannelInfo], v: &ByondValue) -> Result<ChannelId> {
     let ch = int(v, "channel")?;
-    let n = channel_infos::<Probe>().len();
-    if ch as usize >= n {
+    if ch as usize >= chans.len() {
         bail!("bad channel {ch}");
     }
     Ok(ChannelId(u8::try_from(ch)?))
 }
 
-fn quantity(ch: ChannelId, value: f32) -> Quantity {
-    Quantity::new(value, channel_infos::<Probe>()[ch.index()].unit)
+fn quantity(chans: &[ChannelInfo], ch: ChannelId, value: f32) -> Quantity {
+    Quantity::new(value, chans[ch.index()].unit)
 }
 
 fn hysteresis(v: &ByondValue) -> Result<Option<f32>> {
@@ -495,17 +549,19 @@ fn hysteresis(v: &ByondValue) -> Result<Option<f32>> {
 }
 
 fn level(
+    domain: &ByondValue,
     ch: &ByondValue,
     cmp_v: &ByondValue,
     value: &ByondValue,
     h: &ByondValue,
     both: bool,
 ) -> Result<Level> {
-    let ch = channel(ch)?;
+    let chans = channel_table(int(domain, "domain")?)?;
+    let ch = channel(&chans, ch)?;
     Ok(Level {
         ch,
         cmp: cmp(cmp_v)?,
-        limit: quantity(ch, num(value)?),
+        limit: quantity(&chans, ch, num(value)?),
         hysteresis: hysteresis(h)?,
         edge: if both { Edge::Both } else { Edge::Enter },
     })
@@ -522,18 +578,30 @@ fn watch(
     cond: &Cond,
 ) -> Result<ByondValue> {
     let domain = int(domain, "domain")?;
-    if domain != DOMAIN_PROBE {
-        bail!("domain {domain} has no watch port yet");
-    }
     let sub = subscriber(sub)?;
     let lane = lane(lane_v)?;
+    // External domains register outside the host borrow (they keep their own
+    // ports and never call back into the reactor).
+    let external_id = if domain == DOMAIN_PROBE {
+        None
+    } else {
+        Some(
+            external(domain, |d| d.watch(sub, lane, cond))
+                .ok_or_else(|| eyre!("domain {domain} has no watch port"))??,
+        )
+    };
     with(|h| {
-        let id = h
-            .probe
-            .port
-            .watch(sub, lane, cond)
-            .map_err(|e| eyre!("{e:?}"))?;
-        let index = h.tokens.add(sub, Sub::Watch { domain, id })?;
+        let (port, id) = match external_id {
+            Some(pid) => pid,
+            None => (
+                0,
+                h.probe
+                    .port
+                    .watch(sub, lane, cond)
+                    .map_err(|e| eyre!("{e:?}"))?,
+            ),
+        };
+        let index = h.tokens.add(sub, Sub::Watch { domain, port, id })?;
         Ok(ByondValue::from(h.tokens.token(index)))
     })
 }
@@ -736,7 +804,7 @@ fn react_watch_threshold(
 ) -> Result<ByondValue> {
     let cond = Cond::Threshold {
         cell: int(&cell, "cell")?,
-        level: level(&ch, &cmp, &value, &hysteresis, truthy(&both_edges))?,
+        level: level(&domain, &ch, &cmp, &value, &hysteresis, truthy(&both_edges))?,
     };
     watch(&domain, &sub, &lane, &cond)
 }
@@ -753,7 +821,8 @@ fn react_watch_band(
     levels: ByondValue,
     hysteresis: ByondValue,
 ) -> Result<ByondValue> {
-    let ch_id = channel(&ch)?;
+    let chans = channel_table(int(&domain, "domain")?)?;
+    let ch_id = channel(&chans, &ch)?;
     let levels = levels
         .get_list_values()?
         .iter()
@@ -762,7 +831,7 @@ fn react_watch_band(
     let cond = Cond::Band {
         cell: int(&cell, "cell")?,
         ch: ch_id,
-        unit: channel_infos::<Probe>()[ch_id.index()].unit,
+        unit: chans[ch_id.index()].unit,
         levels,
         hysteresis: self::hysteresis(&hysteresis)?,
     };
@@ -787,7 +856,7 @@ fn react_watch_difference(
     let cond = Cond::Difference {
         a: int(&a, "cell a")?,
         b: int(&b, "cell b")?,
-        level: level(&ch, &cmp, &value, &hysteresis, false)?,
+        level: level(&domain, &ch, &cmp, &value, &hysteresis, false)?,
         abs: truthy(&abs),
     };
     watch(&domain, &sub, &lane, &cond)

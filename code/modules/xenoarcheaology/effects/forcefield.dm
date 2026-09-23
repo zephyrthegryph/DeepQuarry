@@ -1,7 +1,7 @@
 /// Verified to work with the Artifact Harvester
 /datum/artifact_effect/forcefield
 	name = "Forcefield"
-	var/list/created_field = list()
+	var/list/created_field
 	effect_type = EFFECT_FORCEFIELD
 
 	effect_state = "shield-old"
@@ -14,15 +14,15 @@
 /datum/artifact_effect/forcefield/ToggleActivate()
 	var/atom/holder = get_master_holder()
 	..()
-	if(created_field.len)
+	if(length(created_field))
 		for(var/obj/effect/energy_field/F in created_field)
-			created_field.Remove(F)
+			LAZYREMOVE(created_field, F)
 			qdel(F)
 	else if(holder)
 		var/turf/T = get_turf(holder)
-		while(created_field.len < 16)
+		while(length(created_field) < 16)
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T.z))
-			created_field.Add(E)
+			LAZYADD(created_field, E)
 			E.set_strength(1)
 			E.density = TRUE
 			E.anchored = TRUE
@@ -42,45 +42,45 @@
 
 /datum/artifact_effect/forcefield/UpdateMove()
 	var/atom/holder = get_master_holder()
-	if(created_field.len && holder)
+	if(length(created_field) && holder)
 		var/turf/T = get_turf(holder)
-		while(created_field.len < 16)
+		while(length(created_field) < 16)
 			//for now, just instantly respawn the fields when they get destroyed
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T))
-			created_field.Add(E)
+			LAZYADD(created_field, E)
 			E.anchored = TRUE
 			E.density = TRUE
 			E.invisibility = INVISIBILITY_NONE
 
-		var/obj/effect/energy_field/E = created_field[1]
+		var/obj/effect/energy_field/E = LAZYACCESS(created_field, 1)
 		E.loc = locate(T.x + 2,T.y + 2,T.z)
-		E = created_field[2]
+		E = LAZYACCESS(created_field, 2)
 		E.loc = locate(T.x + 2,T.y + 1,T.z)
-		E = created_field[3]
+		E = LAZYACCESS(created_field, 3)
 		E.loc = locate(T.x + 2,T.y,T.z)
-		E = created_field[4]
+		E = LAZYACCESS(created_field, 4)
 		E.loc = locate(T.x + 2,T.y - 1,T.z)
-		E = created_field[5]
+		E = LAZYACCESS(created_field, 5)
 		E.loc = locate(T.x + 2,T.y - 2,T.z)
-		E = created_field[6]
+		E = LAZYACCESS(created_field, 6)
 		E.loc = locate(T.x + 1,T.y + 2,T.z)
-		E = created_field[7]
+		E = LAZYACCESS(created_field, 7)
 		E.loc = locate(T.x + 1,T.y - 2,T.z)
-		E = created_field[8]
+		E = LAZYACCESS(created_field, 8)
 		E.loc = locate(T.x,T.y + 2,T.z)
-		E = created_field[9]
+		E = LAZYACCESS(created_field, 9)
 		E.loc = locate(T.x,T.y - 2,T.z)
-		E = created_field[10]
+		E = LAZYACCESS(created_field, 10)
 		E.loc = locate(T.x - 1,T.y + 2,T.z)
-		E = created_field[11]
+		E = LAZYACCESS(created_field, 11)
 		E.loc = locate(T.x - 1,T.y - 2,T.z)
-		E = created_field[12]
+		E = LAZYACCESS(created_field, 12)
 		E.loc = locate(T.x - 2,T.y + 2,T.z)
-		E = created_field[13]
+		E = LAZYACCESS(created_field, 13)
 		E.loc = locate(T.x - 2,T.y + 1,T.z)
-		E = created_field[14]
+		E = LAZYACCESS(created_field, 14)
 		E.loc = locate(T.x - 2,T.y,T.z)
-		E = created_field[15]
+		E = LAZYACCESS(created_field, 15)
 		E.loc = locate(T.x - 2,T.y - 1,T.z)
-		E = created_field[16]
+		E = LAZYACCESS(created_field, 16)
 		E.loc = locate(T.x - 2,T.y - 2,T.z)

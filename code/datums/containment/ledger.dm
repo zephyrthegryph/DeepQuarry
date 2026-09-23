@@ -31,7 +31,19 @@
 			return null
 		L = new /datum/ledger(holder, defs)
 		holder.ledger = L
+		// Building the ledger is the first exact question: resolve the generator (C5).
+		if(holder.latent_contents)
+			dq_latent_resolve(holder, L)
 	L.sync()
+	return L
+
+/// The existing ledger for `holder`, synced, or null. Unlike dq_ledger(), never
+/// creates one -- for read paths (rolling up a nested holder's contribution,
+/// walking a holder's children) that must not be what makes an empty holder
+/// start owning a ledger of its own.
+/proc/dq_ledger_peek(atom/holder)
+	var/datum/ledger/L = holder?.ledger
+	L?.sync()
 	return L
 
 /// The measures the ledger aggregates: every registered measure with an
@@ -72,7 +84,7 @@
 	var/count = length(ids)
 	var/words = dq_ledger_tag_words()
 	var/list/nested
-	var/datum/ledger/inner = dq_ledger(thing)
+	var/datum/ledger/inner = dq_ledger_peek(thing)
 	if(inner)
 		nested = from_scratch ? inner.recompute() : inner.totals()
 	var/list/snapshot = new /list(count + words)
@@ -179,6 +191,9 @@
 		id = pending_slot
 		pending_thing = null
 		pending_slot = null
+	else if(pending_new_slot)
+		id = pending_new_slot
+		pending_new_slot = null
 	var/datum/slot_def/def = def_by_id(id)
 	var/cost = def.cost(holder, thing)
 	var/list/snapshot = dq_ledger_contribution(thing)
@@ -292,6 +307,10 @@
 			continue
 		for(var/i in 1 to length(snapshot))
 			.[i] = dq_property_combine(dq_ledger_aggregator(i), .[i], snapshot[i])
+	for(var/datum/latent_entry/entry as anything in latent_list())
+		var/list/snapshot = entry.snapshot
+		for(var/i in 1 to length(snapshot))
+			.[i] = dq_property_combine(dq_ledger_aggregator(i), .[i], snapshot[i])
 
 /// Aggregate of measure `id` over everything inside, or null.
 /datum/ledger/proc/aggregate(id)
@@ -334,6 +353,10 @@
 				. += "[holder] slot [id] lists [thing], which is in [thing.loc]"
 			var/list/entry = entries[thing]
 			sum += entry ? entry[LEDGER_E_COST] : 0
+		for(var/datum/latent_entry/latent_entry as anything in latent?[id])
+			sum += latent_entry.unit_cost * latent_entry.count
+			if(latent_entry.count <= 0)
+				. += "[holder] slot [id] keeps an empty latent entry [latent_entry.path]"
 		if(abs(sum - used[id]) > 1e-4)
 			. += "[holder] slot [id] used [used[id]], entries sum to [sum]"
 	if(total != tracked || total != length(entries))

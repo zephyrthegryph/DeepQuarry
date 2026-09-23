@@ -91,7 +91,7 @@
 /obj/item/weldpack/attack_hand(mob/user as mob)
 	if(ishuman(user))
 		var/mob/living/carbon/human/wearer = user
-		if(wearer.back == src)
+		if(wearer.get_equipped_item(SLOT_ID_BACK) == src)
 			if(nozzle && nozzle_attached)
 				if(!wearer.incapacitated())
 					get_nozzle(user)
@@ -139,10 +139,8 @@
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.u_equip(src)
 				usr.put_in_r_hand(src)
 			if("l_hand")
-				usr.u_equip(src)
 				usr.put_in_l_hand(src)
 		src.add_fingerprint(usr)
 

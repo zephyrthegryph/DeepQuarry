@@ -15,7 +15,7 @@
 /datum/event2/event/gravity
 	length_lower_bound = 5 MINUTES
 	length_upper_bound = 20 MINUTES
-	var/list/generators = list()
+	var/list/generators
 
 /datum/event2/event/gravity/announce()
 	GLOB.command_announcement.Announce("Feedback surge detected in mass-distributions systems. Artificial gravity has been disabled. Please wait for the system to reinitialize, or contact your engineering department.", "Gravity Failure", ANNOUNCER_MSG_GRAVITY_OFF)
@@ -25,7 +25,7 @@
 
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if((GG.z in get_location_z_levels()) && GG.on)
-			generators += GG
+			LAZYADD(generators, GG)
 			GG.breaker = FALSE
 			GG.set_power()
 			GG.charge_count = 10

@@ -275,10 +275,10 @@
 	complication_amount = 0
 
 /datum/surgical_step/cut_hardsuit/proc/locked_rig(mob/living/carbon/human/target)
-	if(istype(target.back, /obj/item/rig) && !target.back.canremove)
-		return target.back
-	if(istype(target.belt, /obj/item/rig) && !target.belt.canremove)
-		return target.belt
+	if(istype(target.get_equipped_item(SLOT_ID_BACK), /obj/item/rig) && !target.get_equipped_item(SLOT_ID_BACK).canremove)
+		return target.get_equipped_item(SLOT_ID_BACK)
+	if(istype(target.get_equipped_item(SLOT_ID_BELT), /obj/item/rig) && !target.get_equipped_item(SLOT_ID_BELT).canremove)
+		return target.get_equipped_item(SLOT_ID_BELT)
 	return null
 
 /// The rig is in the way of everything else, so it doesn't care about access.

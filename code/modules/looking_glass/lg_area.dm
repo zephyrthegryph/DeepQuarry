@@ -2,8 +2,8 @@
 	name = "make a subtype"
 
 	var/obj/effect/landmark/looking_glass/our_landmark
-	var/list/our_turfs = list()
-	var/list/our_optional_turfs = list()
+	var/list/our_turfs
+	var/list/our_optional_turfs
 
 	var/lg_id
 
@@ -15,13 +15,13 @@
 	if(!our_landmark)
 		log_mapping("Looking glass area [name] couldn't find a landmark")
 	for(var/turf/simulated/floor/looking_glass/lgt in src)
-		our_turfs += lgt
+		LAZYADD(our_turfs, lgt)
 		if(lgt.optional)
-			our_optional_turfs += lgt
+			LAZYADD(our_optional_turfs, lgt)
 
 /area/looking_glass/Destroy()
 	our_landmark = null
-	our_turfs.Cut()
+	LAZYCLEARLIST(our_turfs)
 	return ..()
 
 /area/looking_glass/Entered(atom/movable/AM)

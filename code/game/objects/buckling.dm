@@ -11,7 +11,7 @@
 	var/max_buckled_mobs = 1
 
 
-/atom/movable/attack_hand(mob/living/user)
+/atom/movable/hand_gate(mob/living/user)
 	. = ..()
 //	if(can_buckle && buckled_mob)
 //		user_unbuckle_mob(user)
@@ -35,6 +35,8 @@
 
 /atom/movable/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
 	. = ..()
+	if(.)
+		return
 	var/mob/living/M = dropping
 	if(can_buckle && istype(M))
 		if(user_buckle_mob(M, user))

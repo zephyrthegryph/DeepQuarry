@@ -66,7 +66,7 @@
 		return PROXIMITY_OFF_CAMERANET
 
 	// Check if the AI eye is able to see us, or if it's almost able to.
-	if(chunk.seenby.len)
+	if(length(chunk.seenby))
 		for(var/mob/observer/eye/aiEye/A in chunk.seenby)
 			var/turf/detect_turf = get_turf(A)
 			if(get_dist(T, detect_turf) <= range_alert)

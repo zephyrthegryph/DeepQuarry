@@ -1,9 +1,9 @@
 /datum/antagonist
 
 	// Text shown when becoming this antagonist.
-	var/list/restricted_jobs =     list()   // Jobs that cannot be this antagonist (depending on config)
-	var/list/protected_jobs =      list()   // As above.
-	var/list/roundstart_restricted =      list()	//Jobs that can be this antag, but not at roundstart
+	var/list/restricted_jobs   // Jobs that cannot be this antagonist (depending on config)
+	var/list/protected_jobs   // As above.
+	var/list/roundstart_restricted	//Jobs that can be this antag, but not at roundstart
 	var/avoid_silicons = FALSE				// If we won't hand this antag role to silicons (AI, borg, etc)
 
 	// Strings.
@@ -54,19 +54,19 @@
 	var/flags = NONE                           // Various runtime options.
 
 	// Used for setting appearance.
-	var/list/valid_species =       list(SPECIES_UNATHI,SPECIES_TAJARAN,SPECIES_SKRELL,SPECIES_HUMAN,SPECIES_DIONA,SPECIES_TESHARI)
+	var/static/list/valid_species =       list(SPECIES_UNATHI,SPECIES_TAJARAN,SPECIES_SKRELL,SPECIES_HUMAN,SPECIES_DIONA,SPECIES_TESHARI)
 
 	// Runtime vars.
 	var/datum/mind/leader                   // Current leader, if any.
 	var/cur_max = 0                         // Autotraitor current effective maximum.
 	var/spawned_nuke                        // Has a bomb been spawned?
 	var/nuke_spawn_loc                      // If so, where should it be placed?
-	var/list/current_antagonists = list()   // All marked antagonists for this type.
-	var/list/pending_antagonists = list()   // Candidates that are awaiting finalized antag status.
-	var/list/starting_locations =  list()   // Spawn points.
-	var/list/global_objectives =   list()   // Universal objectives if any.
+	var/list/current_antagonists   // All marked antagonists for this type.
+	var/list/pending_antagonists   // Candidates that are awaiting finalized antag status.
+	var/list/starting_locations   // Spawn points.
+	var/list/global_objectives   // Universal objectives if any.
 	var/list/candidates =          list()   // Potential candidates.
-	var/list/faction_members =     list()   // Semi-antags (in-round revs, borer thralls)
+	var/list/faction_members   // Semi-antags (in-round revs, borer thralls)
 
 	var/allow_latejoin = 0					//Determines whether or not the game mode will allow for the template to spawn try_latespawn
 
@@ -92,7 +92,7 @@
 	if(!role_text_plural)
 		role_text_plural = role_text
 	if(CONFIG_GET(flag/protect_roles_from_antagonist))
-		restricted_jobs |= protected_jobs
+		if(length(protected_jobs)) LAZYOR(restricted_jobs, protected_jobs)
 	if(antaghud_indicator)
 		if(!GLOB.hud_icon_reference)
 			GLOB.hud_icon_reference = list()
@@ -170,7 +170,7 @@
 		return 0
 
 	//Grab candidates randomly until we have enough.
-	while(candidates.len && pending_antagonists.len < initial_spawn_target)
+	while(candidates.len && length(pending_antagonists) < initial_spawn_target)
 		var/datum/mind/player = pick(candidates)
 		candidates -= player
 		draft_antagonist(player)
@@ -189,7 +189,7 @@
 		log_game("[player.key] was selected for [role_text] by lottery, but they have not joined the game.")
 		return 0
 
-	pending_antagonists |= player
+	LAZYOR(pending_antagonists, player)
 	log_game("[player.key] has been selected for [role_text] by lottery.")
 
 	//Ensure that antags with ANTAG_OVERRIDE_JOB do not occupy job slots.
@@ -207,7 +207,7 @@
 		return
 
 	for(var/datum/mind/player in pending_antagonists)
-		pending_antagonists -= player
+		LAZYREMOVE(pending_antagonists, player)
 		add_antagonist(player,0,0,1)
 
 //Resets all pending_antagonists, clearing their special_role (and assigned_role if ANTAG_OVERRIDE_JOB is set)
@@ -216,4 +216,4 @@
 		if(flags & ANTAG_OVERRIDE_JOB)
 			player.assigned_role = null
 		player.special_role = null
-	pending_antagonists.Cut()
+	LAZYCLEARLIST(pending_antagonists)

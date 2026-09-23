@@ -29,8 +29,8 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/r_hand = null
 	var/l_hand = null
 	// In the list(path=count,otherpath=count) format
-	var/list/uniform_accessories = list() // webbing, armbands etc - fits in slot_tie
-	var/list/backpack_contents = list()
+	var/list/uniform_accessories // webbing, armbands etc - fits in slot_tie
+	var/list/backpack_contents
 
 	var/id_type
 	var/id_desc
@@ -99,7 +99,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	equip_pda(H, rank, assignment)
 
 	for(var/path in backpack_contents)
-		var/number = backpack_contents[path]
+		var/number = LAZYACCESS(backpack_contents, path)
 		for(var/i=0,i<number,i++)
 			H.equip_to_slot_or_del(new path(H), slot_in_backpack)
 
@@ -155,7 +155,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		H.put_in_r_hand(new r_hand(H))
 
 	for(var/path in uniform_accessories)
-		var/number = uniform_accessories[path]
+		var/number = LAZYACCESS(uniform_accessories, path)
 		for(var/i=0,i<number,i++)
 			H.equip_to_slot_or_del(new path(H), slot_tie)
 

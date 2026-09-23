@@ -101,10 +101,10 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), slot_wear_mask)
 	if(H.backbag == 1)
 		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_back)
-		H.internal = H.back
+		H.internal = H.get_equipped_item(SLOT_ID_BACK)
 	else
 		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_r_hand)
-		H.internal = H.r_hand
+		H.internal = H.get_equipped_item(SLOT_ID_HAND_R)
 	H.internal = locate(/obj/item/tank) in H.contents
 	if(istype(H.internal,/obj/item/tank) && H.internals)
 		H.internals.icon_state = "internal1"

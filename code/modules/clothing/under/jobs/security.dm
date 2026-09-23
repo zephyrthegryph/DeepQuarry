@@ -13,7 +13,7 @@
 	name = "warden's jumpsuit"
 	icon_state = "warden"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 
@@ -22,7 +22,7 @@
 	desc = "It's made of a slightly sturdier material than standard jumpsuits, to allow for robust protection."
 	icon_state = "security"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 
@@ -31,7 +31,7 @@
 	desc = "A snug but comfortable undersuit with removable arm sleeves, originally developed for the ACE Security Group. Includes a wrist-mounted minicomp."
 	icon_state = "aces_undersuit"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0	//sleeves can be removed, but this disables the minicomp
 	rolled_down = -1	//can't be rolled down
@@ -69,7 +69,7 @@
 	desc = "A dress shirt and khakis with a security patch sewn on."
 	icon_state = "dispatch"
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	body_parts_covered = CHEST|LEGS
 	siemens_coefficient = 0.9
 
@@ -78,7 +78,7 @@
 	desc = "It's made of a slightly sturdier material, to allow for robust protection."
 	icon_state = "redshirt2"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 
@@ -97,7 +97,7 @@
 	desc = "It's made of a slightly sturdier material than standard jumpsuits, to allow for robust protection."
 	icon_state = "swatunder"
 	item_state_slots = list(slot_r_hand_str = "green", slot_l_hand_str = "green")
-	armor = list(melee = 10, bullet = 5, laser = 5,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=5;laser=5"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 	rolled_down = 0
@@ -109,7 +109,7 @@
 	name = "detective's suit"
 	desc = "A rumpled white dress shirt paired with well-worn grey slacks."
 	icon_state = "detective"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 	starting_accessories = list(/obj/item/clothing/accessory/tie/blue_clip)
@@ -160,7 +160,7 @@
 	name = "head of security's jumpsuit"
 	icon_state = "hos"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 

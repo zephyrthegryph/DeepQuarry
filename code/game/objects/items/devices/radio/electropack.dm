@@ -17,7 +17,7 @@
 	electric_pack = TRUE
 
 /obj/item/radio/electropack/attack_hand(mob/living/user as mob)
-	if(src == user.back)
+	if(src == user.get_equipped_item(SLOT_ID_BACK))
 		to_chat(user, span_notice("You need help taking this off!"))
 		return
 	..()

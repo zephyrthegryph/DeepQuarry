@@ -7,6 +7,11 @@
 
 	var/datum/tgui_module/agentcard/agentcard_module
 
+// agentcard_module is rebuilt fresh by Initialize() every time (like reset_icon());
+// registered_user is a mob ref (and a live observer registration) (C5).
+/obj/item/card/id/syndicate/state_exclude()
+	return ..() + list("agentcard_module", "registered_user")
+
 /obj/item/card/id/syndicate/Initialize(mapload)
 	. = ..()
 	agentcard_module = new(src)

@@ -36,9 +36,22 @@
 
 // TGUI migration. attack_hand opens LibraryVisitor.tsx;
 // filter prompts and search execution move to tgui_act.
-/obj/machinery/librarypubliccomp/attack_hand(mob/user)
+/obj/machinery/librarypubliccomp/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/librarypubliccomp_open_ui,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/librarypubliccomp_open_ui
+	id = "librarypubliccomp_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl
+
+/obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/librarypubliccomp/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -130,8 +143,8 @@
 	var/buffer_book
 	var/buffer_mob
 	var/upload_category = "Fiction"
-	var/list/checkouts = list()
-	var/list/inventory = list()
+	var/list/checkouts
+	var/list/inventory
 	var/checkoutperiod = 5 // In minutes
 	var/obj/machinery/libraryscanner/scanner // Book scanner that will be used when uploading books to the Archive
 
@@ -177,12 +190,39 @@
 
 // TGUI migration. attack_hand and attack_ghost open
 // LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher
-// move to tgui_data + tgui_act. The legacy attack_hand body below is
-// retained only for reference and is unreachable.
-/obj/machinery/librarycomp/attack_hand(mob/user)
+// move to tgui_data + tgui_act.
+/obj/machinery/librarycomp/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/librarycomp_link_scanner,
+		/datum/interaction/machine_hand/ungated/librarycomp_open_ui,
+	)
+	..()
+
+/datum/interaction/machine_item/librarycomp_link_scanner
+	id = "librarycomp_link_scanner"
+	name = "Link scanner"
+	held_type = /obj/item/barcodescanner
+	effect = /obj/machinery/librarycomp/proc/interaction_link_scanner
+
+/obj/machinery/librarycomp/proc/interaction_link_scanner(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/barcodescanner/scanner = held
+	scanner.computer = src
+	to_chat(user, "[scanner]'s associated machine has been set to [src].")
+	for(var/mob/V in hearers(src))
+		V.show_message("[src] lets out a low, short blip.", 2)
+	return TRUE
+
+/datum/interaction/machine_hand/ungated/librarycomp_open_ui
+	id = "librarycomp_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/librarycomp/proc/interaction_open_ui_impl
+
+/obj/machinery/librarycomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	is_admin_view = FALSE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/librarycomp/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -326,17 +366,17 @@
 			b.mobname = sanitize(buffer_mob)
 			b.getdate = world.time
 			b.duedate = world.time + (checkoutperiod * 600)
-			checkouts.Add(b)
+			LAZYADD(checkouts, b)
 			return TRUE
 		if("checkin")
 			var/datum/borrowbook/b = locate(params["ref"])
 			if(b)
-				checkouts.Remove(b)
+				LAZYREMOVE(checkouts, b)
 			return TRUE
 		if("delbook")
 			var/obj/item/book/b = locate(params["ref"])
 			if(b)
-				inventory.Remove(b)
+				LAZYREMOVE(inventory, b)
 			return TRUE
 		if("setauthor")
 			var/newauthor = tgui_input_text(usr, "Enter the author's name:", "", "", MAX_MESSAGE_LEN)
@@ -459,16 +499,6 @@
 		src.emagged = 1
 		return 1
 
-/obj/machinery/librarycomp/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/barcodescanner))
-		var/obj/item/barcodescanner/scanner = W
-		scanner.computer = src
-		to_chat(user, "[scanner]'s associated machine has been set to [src].")
-		for (var/mob/V in hearers(src))
-			V.show_message("[src] lets out a low, short blip.", 2)
-	else
-		..()
-
 /*
  * Library Scanner
  */
@@ -481,16 +511,36 @@
 	density = TRUE
 	var/obj/item/book/cache		// Last scanned book
 
-/obj/machinery/libraryscanner/attackby(obj/O, mob/user)
-	if(istype(O, /obj/item/book))
-		user.drop_item()
-		O.loc = src
+/obj/machinery/libraryscanner/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/libraryscanner_insert_book,
+		/datum/interaction/machine_hand/ungated/libraryscanner_open_ui,
+	)
+	..()
+
+/datum/interaction/machine_item/libraryscanner_insert_book
+	id = "libraryscanner_insert_book"
+	name = "Insert book"
+	held_type = /obj/item/book
+	effect = /obj/machinery/libraryscanner/proc/interaction_insert_book
+
+/obj/machinery/libraryscanner/proc/interaction_insert_book(mob/user, obj/item/held, datum/interaction/interaction)
+	user.drop_item()
+	held.loc = src
+	return TRUE
 
 // TGUI migration. attack_hand opens LibraryScanner.tsx;
 // scan/clear/eject move to tgui_act.
-/obj/machinery/libraryscanner/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/libraryscanner_open_ui
+	id = "libraryscanner_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/libraryscanner/proc/interaction_open_ui_impl
+
+/obj/machinery/libraryscanner/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/libraryscanner/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -544,37 +594,47 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/bookbinder/attackby(obj/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/paper) || istype(O, /obj/item/paper_bundle))
-		if(istype(O, /obj/item/paper))
-			user.drop_item()
-			O.loc = src
-			user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
-			src.visible_message("[src] begins to hum as it warms up its printing drums.")
-			sleep(rand(200,400))
-			src.visible_message("[src] whirs as it prints and binds a new book.")
-			var/obj/item/book/b = new(src.loc)
-			var/obj/item/paper/source_paper = O
-			b.dat = source_paper.info
-			b.name = "Print Job #" + "[rand(100, 999)]"
-			b.icon_state = "book[rand(1,7)]"
-			qdel(O)
-		else
-			user.drop_item()
-			O.loc = src
-			user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
-			src.visible_message("[src] begins to hum as it warms up its printing drums.")
-			sleep(rand(300,500))
-			src.visible_message("[src] whirs as it prints and binds a new book.")
-			var/obj/item/book/bundle/b = new(src.loc)
-			var/obj/item/paper_bundle/source_bundle = O
-			b.pages = source_bundle.pages
-			for(var/obj/item/paper/P in O.contents)
-				P.forceMove(b)
-			for(var/obj/item/photo/P in O.contents)
-				P.forceMove(b)
-			b.name = "Print Job #" + "[rand(100, 999)]"
-			b.icon_state = "book[rand(1,7)]"
-			qdel(O)
+/obj/machinery/bookbinder/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/bookbinder_bind,
+	)
+	..()
+
+/datum/interaction/machine_item/bookbinder_bind
+	id = "bookbinder_bind"
+	name = "Bind"
+	held_type = list(/obj/item/paper, /obj/item/paper_bundle)
+	effect = /obj/machinery/bookbinder/proc/interaction_bind
+
+/obj/machinery/bookbinder/proc/interaction_bind(mob/user, obj/item/held, datum/interaction/interaction)
+	if(istype(held, /obj/item/paper))
+		user.drop_item()
+		held.loc = src
+		user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
+		src.visible_message("[src] begins to hum as it warms up its printing drums.")
+		sleep(rand(200,400))
+		src.visible_message("[src] whirs as it prints and binds a new book.")
+		var/obj/item/book/b = new(src.loc)
+		var/obj/item/paper/source_paper = held
+		b.dat = source_paper.info
+		b.name = "Print Job #" + "[rand(100, 999)]"
+		b.icon_state = "book[rand(1,7)]"
+		qdel(held)
 	else
-		..()
+		user.drop_item()
+		held.loc = src
+		user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
+		src.visible_message("[src] begins to hum as it warms up its printing drums.")
+		sleep(rand(300,500))
+		src.visible_message("[src] whirs as it prints and binds a new book.")
+		var/obj/item/book/bundle/b = new(src.loc)
+		var/obj/item/paper_bundle/source_bundle = held
+		b.pages = source_bundle.pages
+		for(var/obj/item/paper/P in held.contents)
+			P.forceMove(b)
+		for(var/obj/item/photo/P in held.contents)
+			P.forceMove(b)
+		b.name = "Print Job #" + "[rand(100, 999)]"
+		b.icon_state = "book[rand(1,7)]"
+		qdel(held)
+	return TRUE

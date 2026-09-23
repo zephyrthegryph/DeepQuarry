@@ -208,59 +208,43 @@
 
 	rust_apply_pipe_topology(operations)
 
+/// Applies one topology transaction to the Rust pipe network (R7) and rebuilds
+/// the compatibility wrappers of every region whose membership changed. Gas
+/// never passes through DM: the network pools, splits and releases it, and
+/// each region's air datum is bound to the region's gas handle.
 /datum/controller/subsystem/air/proc/rust_apply_pipe_topology(operations)
 	var/list/result = vg_pipenet_topology_batch(operations)
 	if(!islist(result))
-		CRASH("Rust pipenet topology did not return a station specification")
+		CRASH("Rust pipenet topology did not return a region list")
 	var/list/transitions = list()
-	var/publications = ""
+	var/list/retired_regions = list()
 	var/cursor = 1
 	while(cursor <= length(result))
-		if(length(result) - cursor + 1 < 5)
+		if(length(result) - cursor + 1 < 4)
 			CRASH("Rust pipenet topology returned a truncated region header")
 		var/region = result[cursor++]
 		var/port_count = result[cursor++]
 		var/prior_count = result[cursor++]
-		var/source_count = result[cursor++]
 		var/volume = result[cursor++]
 		var/list/ports = result.Copy(cursor, cursor + port_count)
 		cursor += port_count
-		var/list/prior_regions = list()
-		for(var/prior_index = 1 to prior_count)
-			prior_regions += result[cursor]
-			cursor += 2
-		var/list/sources = result.Copy(cursor, cursor + source_count * 2)
-		cursor += source_count * 2
-		if(region == 0)
-			var/target_mixture = ports[1]
-			publications += "0,[target_mixture],[volume],[source_count]"
-			for(var/source_index = 1, source_index < length(sources), source_index += 2)
-				publications += ",[sources[source_index]],[sources[source_index + 1]]"
-			publications += ";"
-			continue
-		if(volume < 0)
-			transitions += list(list("region" = region, "ports" = ports, "prior_regions" = prior_regions, "retired" = TRUE))
-			continue
-		var/datum/gas_mixture/region_air = new(max(volume, 1))
-		publications += "[region],[region_air.arena_id()],[volume],[source_count]"
-		for(var/source_index = 1, source_index < length(sources), source_index += 2)
-			publications += ",[sources[source_index]],[sources[source_index + 1]]"
-		publications += ";"
-		transitions += list(list("region" = region, "ports" = ports, "prior_regions" = prior_regions, "volume" = volume, "air" = region_air))
-
-	if(length(publications) && !vg_pipenet_publish_regions(publications))
-		CRASH("Rust pipenet gas publication failed")
-	var/list/retired_regions = list()
-	for(var/list/transition as anything in transitions)
-		for(var/prior_region in transition["prior_regions"])
+		var/list/prior_regions = result.Copy(cursor, cursor + prior_count)
+		cursor += prior_count
+		for(var/prior_region in prior_regions)
 			retired_regions["[prior_region]"] = TRUE
+		if(volume < 0)
+			retired_regions["[region]"] = TRUE
+			continue
+		transitions += list(list("region" = region, "ports" = ports, "volume" = volume))
+
 	for(var/prior_key in retired_regions)
 		var/datum/pipe_network/old_network = rust_pipe_region_networks[prior_key]
 		rust_pipe_region_networks.Remove(prior_key)
 		rust_retire_pipe_network(old_network)
 	for(var/list/transition as anything in transitions)
-		if(transition["retired"])
-			continue
+		var/datum/gas_mixture/region_air = new(max(transition["volume"], 1))
+		vg_bind_handle(region_air, transition["region"])
+		transition["air"] = region_air
 		rust_materialize_pipe_region(transition)
 
 /datum/controller/subsystem/air/proc/rust_retire_pipe_network(datum/pipe_network/network)
@@ -276,6 +260,7 @@
 	network.air = null
 	network.gases = null
 	network.leaks = null
+	// The region's gas lives in the Rust network; the datum is only a handle.
 	for(var/obj/machinery/atmospherics/member as anything in old_members)
 		member.unregister_network_membership(network)
 		member.material_service?.environment_changed()

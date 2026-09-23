@@ -8,6 +8,8 @@
 	var/reagent_state = SOLID
 	var/list/data = null
 	var/volume = 0
+	/// Heat capacity per unit, J/K (holders sum it: /datum/reagents/proc/heat_capacity()).
+	var/specific_heat = REAGENT_SPECIFIC_HEAT_DEFAULT
 	var/metabolism = REM // This would be 0.2 normally
 	var/list/filtered_organs	// Organs that will slow the processing of this chemical.
 	var/mrate_static = FALSE	//If the reagent should always process at the same speed, regardless of species, make this TRUE

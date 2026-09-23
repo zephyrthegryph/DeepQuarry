@@ -205,7 +205,7 @@ REMOVAL
 	//icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "chainsaw0"
 	var/processing = FALSE // So I heard you like processing.
-	var/list/to_be_processed = list()
+	var/list/to_be_processed
 	var/monkeys_recycled = 0
 	description_info = "Click a monkey or slime to begin processing."
 

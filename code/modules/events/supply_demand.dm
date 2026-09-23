@@ -5,7 +5,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 //
 /datum/event/supply_demand
 	var/my_department = "Supply Division"
-	var/list/required_items = list()
+	var/list/required_items
 	var/end_time
 	announceWhen = 1
 	startWhen = 2
@@ -33,7 +33,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 			if(DEPARTMENT_CIVILIAN) // Would be nice to separate out chef/gardener/bartender
 				choose_food_items(roll(severity, 2))
 				choose_bar_items(roll(severity, 2))
-	if(required_items.len == 0)
+	if(length(required_items) == 0)
 		choose_bar_items(rand(5, 10)) // Really? Well add drinks. If a crew can't even get the bar open they suck.
 	var/total_quantity = 0
 	for(var/datum/supply_demand_order/order in required_items)
@@ -70,14 +70,14 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 	RegisterSignal(SSdcs, COMSIG_GLOB_SUPPLY_SHUTTLE_DEPART, PROC_REF(handle_supply_demand_sell_shuttle))
 
 /datum/event/supply_demand/tick()
-	if(required_items.len == 0)
+	if(length(required_items) == 0)
 		endWhen = activeFor  // End early becuase we're done already!
 
 /datum/event/supply_demand/end()
 	GLOB.running_demand_events -= src
 	UnregisterSignal(SSdcs, COMSIG_GLOB_SUPPLY_SHUTTLE_DEPART)
 	// Check if the crew succeeded or failed!
-	if(required_items.len == 0)
+	if(length(required_items) == 0)
 		// Success!
 		SSsupply.adjust_budget(SSsupply.export_revenue(100 * severity), "Supply demand windfall")
 		var/msg = "Great work! With those items you delivered our inventory levels all match up. "
@@ -86,7 +86,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		GLOB.command_announcement.Announce(msg, my_department)
 	else
 		// Fail!
-		var/datum/supply_demand_order/random = pick(required_items)
+		var/datum/supply_demand_order/random = DEFAULTPICK(required_items, null)
 		GLOB.command_announcement.Announce("What happened? Accounting is here right now and they're already asking where that [random.name] is. Damn, I gotta go", my_department)
 		var/message = "The delivery deadline was reached with the following needs outstanding:<hr>"
 		for(var/datum/supply_demand_order/req in required_items)
@@ -120,7 +120,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 			// Otherwise check it against our list
 			match_found |= match_item(MA)
 
-	if(match_found && required_items.len >= 1)
+	if(match_found && length(required_items) >= 1)
 		// Okay we delivered SOME.  Lets give an update, but only if not finished.
 		var/message = "Shipment Received.  As a reminder, the following items are still requried:"
 		message += "<hr>"
@@ -147,7 +147,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 				"detail" = "Delivered [delivered_quantity] [meta.name] toward the live shortage response.",
 			), "supply-shortage-delivery:[REF(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
 			if(meta.qty_need <= 0)
-				required_items -= meta
+				LAZYREMOVE(required_items, meta)
 			return 1
 	return 0 // Nothing found if we get here
 
@@ -283,7 +283,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		types -= R // Don't pick the same thing twice
 		var/chosen_path = initial(R.result)
 		var/chosen_qty = rand(1, 5)
-		required_items += new /datum/supply_demand_order/thing(chosen_qty, chosen_path)
+		LAZYADD(required_items, new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 
 /datum/event/supply_demand/proc/choose_chemistry_items(differentTypes)
@@ -297,7 +297,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		var/datum/reagent/R = pick(medicineReagents)
 		medicineReagents -= R // Don't pick the same thing twice
 		var/chosen_qty = rand(1, 20) * 5
-		required_items += new /datum/supply_demand_order/reagent(chosen_qty, R)
+		LAZYADD(required_items, new /datum/supply_demand_order/reagent(chosen_qty, R))
 	return
 
 /datum/event/supply_demand/proc/choose_bar_items(differentTypes)
@@ -310,7 +310,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		var/datum/reagent/R = pick(drinkReagents)
 		drinkReagents -= R // Don't pick the same thing twice
 		var/chosen_qty = rand(1, 20) * 5
-		required_items += new /datum/supply_demand_order/reagent(chosen_qty, R)
+		LAZYADD(required_items, new /datum/supply_demand_order/reagent(chosen_qty, R))
 	return
 
 /datum/event/supply_demand/proc/choose_robotics_items(differentTypes)
@@ -323,7 +323,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 	for(var/i in 1 to differentTypes)
 		var/T = pick(types)
 		types -= T // Don't pick the same thing twice
-		required_items += new /datum/supply_demand_order/thing(rand(1, 2), T)
+		LAZYADD(required_items, new /datum/supply_demand_order/thing(rand(1, 2), T))
 	return
 
 /datum/event/supply_demand/proc/choose_atmos_items(differentTypes)
@@ -340,7 +340,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
 	O.mixture = mixture
-	required_items += O
+	LAZYADD(required_items, O)
 	return
 
 /datum/event/supply_demand/proc/choose_alloy_items(differentTypes)
@@ -350,5 +350,5 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 		types -= A // Don't pick the same thing twice
 		var/chosen_path = initial(A.product)
 		var/chosen_qty = FLOOR(rand(5, 100) * initial(A.product_mod), 1)
-		required_items += new /datum/supply_demand_order/thing(chosen_qty, chosen_path)
+		LAZYADD(required_items, new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return

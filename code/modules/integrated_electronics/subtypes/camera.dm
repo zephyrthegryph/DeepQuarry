@@ -73,10 +73,10 @@
 	if(istype(W, /obj/item/integrated_circuit/input/video_camera_input))
 		var/obj/item/integrated_circuit/input/video_camera_input/input = W
 		if(src in input.paired_cameras)
-			input.paired_cameras -= src
+			LAZYREMOVE(input.paired_cameras, src)
 			to_chat(user, span_notice("You unpair \the [input] from \the [src]."))
 		else
-			input.paired_cameras += src
+			LAZYADD(input.paired_cameras, src)
 			to_chat(user, span_notice("You pair \the [input] with \the [src]. The input circuit will now receive this camera's feed."))
 		return
 	return ..()
@@ -158,7 +158,7 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	category_text = "Input"
 
-	var/list/obj/item/integrated_circuit/output/video_camera/paired_cameras = list()
+	var/list/obj/item/integrated_circuit/output/video_camera/paired_cameras
 	var/datum/tgui_module/camera/intcircuit/camera_module
 
 /obj/item/integrated_circuit/input/video_camera_input/Initialize(mapload)
@@ -166,12 +166,12 @@
 	camera_module = new(src)
 
 /obj/item/integrated_circuit/input/video_camera_input/Destroy()
-	paired_cameras.Cut()
+	LAZYCLEARLIST(paired_cameras)
 	QDEL_NULL(camera_module)
 	return ..()
 
 /obj/item/integrated_circuit/input/video_camera_input/ask_for_input(mob/user)
-	if(!paired_cameras.len)
+	if(!length(paired_cameras))
 		to_chat(user, span_warning("No cameras are paired to this circuit! Hold this circuit and click on camera output circuits to pair them."))
 		return
 	// Check if any cameras are actually available
@@ -189,7 +189,7 @@
 
 /obj/item/integrated_circuit/input/video_camera_input/examine(mob/user)
 	. = ..()
-	. += span_notice("Paired cameras: [paired_cameras.len]")
+	. += span_notice("Paired cameras: [length(paired_cameras)]")
 	for(var/obj/item/integrated_circuit/output/video_camera/cam in paired_cameras)
 		var/status_text = cam.camera?.can_use() ? "ACTIVE" : "INACTIVE"
 		. += span_notice(" - [cam.camera?.c_tag || "Unknown"] ([status_text])")

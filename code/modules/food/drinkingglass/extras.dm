@@ -1,10 +1,10 @@
 /obj/item/reagent_containers/food/drinks/glass2/attackby(obj/item/I as obj, mob/user as mob)
-	if(extras.len >= 2) return ..() // max 2 extras, one on each side of the drink
+	if(length(extras) >= 2) return ..() // max 2 extras, one on each side of the drink
 
 	if(istype(I, /obj/item/glass_extra))
 		var/obj/item/glass_extra/GE = I
 		if(can_add_extra(GE))
-			extras += GE
+			LAZYADD(extras, GE)
 			user.remove_from_mob(GE)
 			GE.loc = src
 			to_chat(user, span_notice("You add \the [GE] to \the [src]."))
@@ -16,7 +16,7 @@
 			to_chat(user, span_warning("There's no space to put \the [I] on \the [src]!"))
 			return
 		var/obj/item/reagent_containers/food/snacks/fruit_slice/FS = I
-		extras += FS
+		LAZYADD(extras, FS)
 		user.remove_from_mob(FS)
 		FS.pixel_x = 0 // Reset its pixel offsets so the icons work!
 		FS.pixel_y = 0
@@ -30,7 +30,7 @@
 	if(src != user.get_inactive_hand())
 		return ..()
 
-	if(!extras.len)
+	if(!length(extras))
 		to_chat(user, span_warning("There's nothing on the glass to remove!"))
 		return
 
@@ -40,7 +40,7 @@
 
 	if(user.put_in_active_hand(choice))
 		to_chat(user, span_notice("You remove \the [choice] from \the [src]."))
-		extras -= choice
+		LAZYREMOVE(extras, choice)
 	else
 		to_chat(user, span_warning("Something went wrong, please try again."))
 

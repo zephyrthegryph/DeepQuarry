@@ -17,7 +17,7 @@
 	var/able_to_unpetrify = TRUE
 	var/discard_clothes = TRUE
 	var/mob/living/carbon/human/target
-	var/list/remotes = list()
+	var/list/remotes
 
 /obj/machinery/petrification/Initialize(mapload)
 	. = ..()
@@ -141,10 +141,11 @@
 	SStgui.update_uis(src)
 	return TRUE
 
-/obj/machinery/petrification/attack_hand(mob/user as mob)
-	if(..())
-		return
-	tgui_interact(user)
+/obj/machinery/petrification/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/petrification/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -233,7 +234,7 @@
 			return TRUE
 		if("remote")
 			if (is_valid_target(target) && istext(material) && istext(identifier) && istext(adjective) && istext(tint))
-				var/obj/item/petrifier/PE = remotes[target]
+				var/obj/item/petrifier/PE = LAZYACCESS(remotes, target)
 				if (!QDELETED(PE))
 					PE.visible_message(span_warning("\The [PE] disappears!"))
 					qdel(PE)
@@ -245,7 +246,7 @@
 				P.able_to_unpetrify = able_to_unpetrify
 				P.discard_clothes = discard_clothes
 				P.target = target
-				remotes[target] = P
+				LAZYSET(remotes, target, P)
 				ui.user.put_in_hands(P)
 			return TRUE
 	return TRUE

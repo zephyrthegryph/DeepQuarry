@@ -86,7 +86,7 @@ GLOBAL_LIST_EMPTY(cached_maps)
 	var/list/gridSets = list()
 	/// List of area types we've loaded AS A PART OF THIS MAP
 	/// We do this to allow non unique areas, so we'll only load one per map
-	var/list/area/loaded_areas = list()
+	var/list/area/loaded_areas
 
 	var/list/modelCache
 
@@ -915,7 +915,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	if(members[index] != /area/template_noop)
 		if(members_attributes[index] != default_list)
 			world.preloader_setup(members_attributes[index], members[index])//preloader for assigning  set variables on atom creation
-		var/area/area_instance = loaded_areas[members[index]]
+		var/area/area_instance = LAZYACCESS(loaded_areas, members[index])
 		if(!area_instance)
 			var/area_type = members[index]
 			// If this parsed map doesn't have that area already, we check the global cache
@@ -925,7 +925,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 				area_instance = new area_type(null)
 				if(!area_instance)
 					CRASH("[area_type] failed to be new'd, what'd you do?")
-			loaded_areas[area_type] = area_instance
+			LAZYSET(loaded_areas, area_type, area_instance)
 
 		area_instance.contents.Add(crds)
 

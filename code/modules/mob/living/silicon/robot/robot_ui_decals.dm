@@ -14,8 +14,8 @@
 	if(!R.sprite_datum)
 		return data
 
-	data["all_decals"] = R.sprite_datum.sprite_decals
-	data["all_animations"] = R.sprite_datum.sprite_animations
+	data["all_decals"] = (R.sprite_datum.sprite_decals || list())
+	data["all_animations"] = (R.sprite_datum.sprite_animations || list())
 
 	return data
 

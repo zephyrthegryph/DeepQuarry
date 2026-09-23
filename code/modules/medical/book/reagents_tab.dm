@@ -188,7 +188,7 @@
 		reqs += list(list(
 			"id"     = RQ,
 			"name"   = dq_reagent_display_name(RQ),
-			"amount" = CR.required_reagents[RQ],
+			"amount" = LAZYACCESS(CR.required_reagents, RQ),
 		))
 	entry["required"] = reqs
 	var/list/catal = list()

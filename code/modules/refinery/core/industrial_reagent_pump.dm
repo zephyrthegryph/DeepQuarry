@@ -48,8 +48,20 @@
 		filling.color = reagents.get_color()
 		add_overlay(filling)
 
-/obj/machinery/reagent_refinery/pump/attack_hand(mob/user)
-	set_APTFT()
+/obj/machinery/reagent_refinery/pump/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/reagent_pump_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/reagent_pump_use
+	id = "reagent_pump_use"
+	name = "Use"
+	effect = /obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use
+
+/obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_set_transfer_amount(user, held, interaction)
+	return TRUE
 
 /obj/machinery/reagent_refinery/pump/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

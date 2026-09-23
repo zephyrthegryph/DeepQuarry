@@ -206,9 +206,9 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/ui_alpha
 
 	// TGMC Ammo HUD Port
-	var/list/atom/movable/screen/ammo_hud_list = list()
+	var/list/atom/movable/screen/ammo_hud_list
 
-	var/list/minihuds = list()
+	var/list/minihuds
 
 /datum/hud/New(mob/owner)
 	mymob = owner
@@ -260,43 +260,43 @@ GLOBAL_LIST_INIT(global_huds, list(
 			if(inventory_shown && hud_shown)
 				switch(hud_data["slot"])
 					if(slot_head)
-						if(H.head)      H.head.screen_loc =      hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_HEAD))      H.get_equipped_item(SLOT_ID_HEAD).screen_loc =      hud_data["loc"]
 					if(slot_shoes)
-						if(H.shoes)     H.shoes.screen_loc =     hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_SHOES))     H.get_equipped_item(SLOT_ID_SHOES).screen_loc =     hud_data["loc"]
 					if(slot_l_ear)
-						if(H.l_ear)     H.l_ear.screen_loc =     hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_EAR_L))     H.get_equipped_item(SLOT_ID_EAR_L).screen_loc =     hud_data["loc"]
 					if(slot_r_ear)
-						if(H.r_ear)     H.r_ear.screen_loc =     hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_EAR_R))     H.get_equipped_item(SLOT_ID_EAR_R).screen_loc =     hud_data["loc"]
 					if(slot_gloves)
-						if(H.gloves)    H.gloves.screen_loc =    hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_GLOVES))    H.get_equipped_item(SLOT_ID_GLOVES).screen_loc =    hud_data["loc"]
 					if(slot_glasses)
-						if(H.glasses)   H.glasses.screen_loc =   hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_EYES))   H.get_equipped_item(SLOT_ID_EYES).screen_loc =   hud_data["loc"]
 					if(slot_w_uniform)
-						if(H.w_uniform) H.w_uniform.screen_loc = hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_UNIFORM)) H.get_equipped_item(SLOT_ID_UNIFORM).screen_loc = hud_data["loc"]
 					if(slot_wear_suit)
-						if(H.wear_suit) H.wear_suit.screen_loc = hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_SUIT)) H.get_equipped_item(SLOT_ID_SUIT).screen_loc = hud_data["loc"]
 					if(slot_wear_mask)
-						if(H.wear_mask) H.wear_mask.screen_loc = hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = hud_data["loc"]
 			else
 				switch(hud_data["slot"])
 					if(slot_head)
-						if(H.head)      H.head.screen_loc =      null
+						if(H.get_equipped_item(SLOT_ID_HEAD))      H.get_equipped_item(SLOT_ID_HEAD).screen_loc =      null
 					if(slot_shoes)
-						if(H.shoes)     H.shoes.screen_loc =     null
+						if(H.get_equipped_item(SLOT_ID_SHOES))     H.get_equipped_item(SLOT_ID_SHOES).screen_loc =     null
 					if(slot_l_ear)
-						if(H.l_ear)     H.l_ear.screen_loc =     null
+						if(H.get_equipped_item(SLOT_ID_EAR_L))     H.get_equipped_item(SLOT_ID_EAR_L).screen_loc =     null
 					if(slot_r_ear)
-						if(H.r_ear)     H.r_ear.screen_loc =     null
+						if(H.get_equipped_item(SLOT_ID_EAR_R))     H.get_equipped_item(SLOT_ID_EAR_R).screen_loc =     null
 					if(slot_gloves)
-						if(H.gloves)    H.gloves.screen_loc =    null
+						if(H.get_equipped_item(SLOT_ID_GLOVES))    H.get_equipped_item(SLOT_ID_GLOVES).screen_loc =    null
 					if(slot_glasses)
-						if(H.glasses)   H.glasses.screen_loc =   null
+						if(H.get_equipped_item(SLOT_ID_EYES))   H.get_equipped_item(SLOT_ID_EYES).screen_loc =   null
 					if(slot_w_uniform)
-						if(H.w_uniform) H.w_uniform.screen_loc = null
+						if(H.get_equipped_item(SLOT_ID_UNIFORM)) H.get_equipped_item(SLOT_ID_UNIFORM).screen_loc = null
 					if(slot_wear_suit)
-						if(H.wear_suit) H.wear_suit.screen_loc = null
+						if(H.get_equipped_item(SLOT_ID_SUIT)) H.get_equipped_item(SLOT_ID_SUIT).screen_loc = null
 					if(slot_wear_mask)
-						if(H.wear_mask) H.wear_mask.screen_loc = null
+						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = null
 
 
 /datum/hud/proc/persistant_inventory_update()
@@ -310,31 +310,31 @@ GLOBAL_LIST_INIT(global_huds, list(
 			if(hud_shown)
 				switch(hud_data["slot"])
 					if(slot_s_store)
-						if(H.s_store) H.s_store.screen_loc = hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) H.get_equipped_item(SLOT_ID_SUIT_STORAGE).screen_loc = hud_data["loc"]
 					if(slot_wear_id)
-						if(H.wear_id) H.wear_id.screen_loc = hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_ID)) H.get_equipped_item(SLOT_ID_ID).screen_loc = hud_data["loc"]
 					if(slot_belt)
-						if(H.belt)    H.belt.screen_loc =    hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_BELT))    H.get_equipped_item(SLOT_ID_BELT).screen_loc =    hud_data["loc"]
 					if(slot_back)
-						if(H.back)    H.back.screen_loc =    hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_BACK))    H.get_equipped_item(SLOT_ID_BACK).screen_loc =    hud_data["loc"]
 					if(slot_l_store)
-						if(H.l_store) H.l_store.screen_loc = hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_POCKET_L)) H.get_equipped_item(SLOT_ID_POCKET_L).screen_loc = hud_data["loc"]
 					if(slot_r_store)
-						if(H.r_store) H.r_store.screen_loc = hud_data["loc"]
+						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = hud_data["loc"]
 			else
 				switch(hud_data["slot"])
 					if(slot_s_store)
-						if(H.s_store) H.s_store.screen_loc = null
+						if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) H.get_equipped_item(SLOT_ID_SUIT_STORAGE).screen_loc = null
 					if(slot_wear_id)
-						if(H.wear_id) H.wear_id.screen_loc = null
+						if(H.get_equipped_item(SLOT_ID_ID)) H.get_equipped_item(SLOT_ID_ID).screen_loc = null
 					if(slot_belt)
-						if(H.belt)    H.belt.screen_loc =    null
+						if(H.get_equipped_item(SLOT_ID_BELT))    H.get_equipped_item(SLOT_ID_BELT).screen_loc =    null
 					if(slot_back)
-						if(H.back)    H.back.screen_loc =    null
+						if(H.get_equipped_item(SLOT_ID_BACK))    H.get_equipped_item(SLOT_ID_BACK).screen_loc =    null
 					if(slot_l_store)
-						if(H.l_store) H.l_store.screen_loc = null
+						if(H.get_equipped_item(SLOT_ID_POCKET_L)) H.get_equipped_item(SLOT_ID_POCKET_L).screen_loc = null
 					if(slot_r_store)
-						if(H.r_store) H.r_store.screen_loc = null
+						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = null
 
 
 /datum/hud/proc/instantiate()
@@ -408,7 +408,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 /datum/hud/proc/apply_minihud(datum/mini_hud/MH)
 	if(MH in minihuds)
 		return
-	minihuds += MH
+	LAZYADD(minihuds, MH)
 	if(mymob.client)
 		mymob.client.screen -= miniobjs
 	miniobjs += MH.get_screen_objs()
@@ -418,7 +418,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 /datum/hud/proc/remove_minihud(datum/mini_hud/MH)
 	if(!(MH in minihuds))
 		return
-	minihuds -= MH
+	LAZYREMOVE(minihuds, MH)
 	if(mymob.client)
 		mymob.client.screen -= miniobjs
 	miniobjs -= MH.get_screen_objs()
@@ -583,7 +583,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
 		return
 	var/atom/movable/screen/ammo/ammo_hud = new
-	ammo_hud_list[G] = ammo_hud
+	LAZYSET(ammo_hud_list, G, ammo_hud)
 	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
 	ammo_hud.our_gun = WEAKREF(G)
 	ammo_hud.add_hud(user, G)
@@ -591,22 +591,22 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 ///Remove the ammo hud related to the gun G from the user
 /datum/hud/proc/remove_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_list[G]
+	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, G)
 	if(isnull(ammo_hud))
 		return
 	ammo_hud.our_gun = null
 	ammo_hud.remove_hud(user, G)
 	qdel(ammo_hud)
-	ammo_hud_list -= G
+	LAZYREMOVE(ammo_hud_list, G)
 	var/i = 1
 	for(var/key in ammo_hud_list)
-		ammo_hud = ammo_hud_list[key]
+		ammo_hud = LAZYACCESS(ammo_hud_list, key)
 		ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[i]
 		i++
 
 ///Update the ammo hud related to the gun G
 /datum/hud/proc/update_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_list[G]
+	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, G)
 	ammo_hud?.update_hud(user, G)
 
 #undef MAX_AMMO_HUD_POSSIBLE

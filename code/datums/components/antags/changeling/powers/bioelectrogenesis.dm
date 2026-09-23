@@ -34,7 +34,7 @@
 
 	else
 		// Handle glove conductivity.
-		var/obj/item/clothing/gloves/gloves = src.gloves
+		var/obj/item/clothing/gloves/gloves = get_equipped_item(SLOT_ID_GLOVES)
 		var/siemens = 1
 		if(gloves)
 			siemens = gloves.siemens_coefficient //Funnily enough, this means things like Knights Gloves will make you stun 2x harder and charge 2x more!
@@ -118,7 +118,7 @@
 		return
 
 	// Handle glove conductivity.
-	var/obj/item/clothing/gloves/gloves = user.gloves
+	var/obj/item/clothing/gloves/gloves = user.get_equipped_item(SLOT_ID_GLOVES)
 	var/siemens = 1
 	if(gloves)
 		siemens = gloves.siemens_coefficient

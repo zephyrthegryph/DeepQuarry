@@ -21,7 +21,7 @@
 	extra_info += span_filter_notice("Load: [num2text(powernet.viewload, 20)] W")
 	extra_info += span_filter_notice("Has alert: [powernet.problem ? "YES" : "NO"]")
 	extra_info += span_filter_notice("Cables: [powernet.cables.len]")
-	extra_info += span_filter_notice("Nodes: [powernet.nodes.len]")
+	extra_info += span_filter_notice("Nodes: [length(powernet.nodes)]")
 
 	return extra_info
 

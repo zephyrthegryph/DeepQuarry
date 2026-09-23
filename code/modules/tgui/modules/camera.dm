@@ -68,10 +68,10 @@
 
 	var/access_based = FALSE
 	var/list/network = list()
-	var/list/additional_networks = list()
+	var/list/additional_networks
 
 	var/obj/machinery/camera/active_camera
-	var/list/concurrent_users = list()
+	var/list/concurrent_users
 
 	// Stuff needed to render the map
 	var/map_name
@@ -117,7 +117,7 @@
 		// Ghosts shouldn't count towards concurrent users, which produces
 		// an audible terminal_on click.
 		if(is_living)
-			concurrent_users += user_ref
+			LAZYADD(concurrent_users, user_ref)
 		// Turn on the console
 		if(length(concurrent_users) == 1 && is_living)
 			playsound(tgui_host(), 'sound/machines/terminal_on.ogg', 25, FALSE)
@@ -254,7 +254,7 @@
 		all_networks = network.Copy()
 
 	if(additional_networks)
-		all_networks += additional_networks
+		if(length(additional_networks)) all_networks += additional_networks
 
 	var/list/D = list()
 	for(var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
@@ -284,7 +284,7 @@
 	var/user_ref = REF(user)
 	var/is_living = isliving(user)
 	// living creature or not, we remove you anyway.
-	concurrent_users -= user_ref
+	LAZYREMOVE(concurrent_users, user_ref)
 	// Unregister map objects
 	cam_screen_tg?.hide_from(user)
 	// Turn off the console

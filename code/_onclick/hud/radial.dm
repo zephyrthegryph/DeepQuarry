@@ -77,22 +77,22 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 /datum/radial_menu
 	/// List of choice IDs
-	var/list/choices = list()
+	var/list/choices
 
 	/// choice_id -> icon
-	var/list/choices_icons = list()
+	var/list/choices_icons
 
 	/// choice_id -> choice
-	var/list/choices_values = list()
+	var/list/choices_values
 
 	/// choice_id -> /datum/radial_menu_choice
-	var/list/choice_datums = list()
+	var/list/choice_datums
 
-	var/list/page_data = list() //list of choices per page
+	var/list/page_data //list of choices per page
 
 
 	var/selected_choice
-	var/list/atom/movable/screen/elements = list()
+	var/list/atom/movable/screen/elements
 	var/atom/movable/screen/radial/center/close_button
 	var/client/current_user
 	var/atom/anchor
@@ -156,24 +156,24 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		zone = 360 - starting_angle + ending_angle
 
 	max_elements = round(zone / min_angle)
-	var/paged = max_elements < choices.len
-	if(elements.len < max_elements)
-		var/elements_to_add = max_elements - elements.len
+	var/paged = max_elements < length(choices)
+	if(length(elements) < max_elements)
+		var/elements_to_add = max_elements - length(elements)
 		for(var/i in 1 to elements_to_add) //Create all elements
 			var/atom/movable/screen/radial/slice/new_element = new /atom/movable/screen/radial/slice
 			new_element.tooltips = use_tooltips
 			new_element.set_parent(src)
-			elements += new_element
+			LAZYADD(elements, new_element)
 
 	var/page = 1
 	page_data = list(null)
 	var/list/current = list()
-	var/list/choices_left = choices.Copy()
+	var/list/choices_left = LAZYCOPY(choices)
 	while(choices_left.len)
 		if(current.len == max_elements)
-			page_data[page] = current
+			LAZYSET(page_data, page, current)
 			page++
-			page_data.len++
+			LAZYINITLIST(page_data); page_data.len++
 			current = list()
 		if(paged && current.len == max_elements - 1)
 			current += NEXT_PAGE_ID
@@ -183,16 +183,16 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	if(paged && current.len < max_elements)
 		current += NEXT_PAGE_ID
 
-	page_data[page] = current
+	LAZYSET(page_data, page, current)
 	pages = page
 	current_page = clamp(set_page, 1, pages)
 	update_screen_objects(entry_animation, click_on_hover)
 
 /datum/radial_menu/proc/update_screen_objects(anim = FALSE, click_on_hover = FALSE)
-	var/list/page_choices = page_data[current_page]
+	var/list/page_choices = LAZYACCESS(page_data, current_page)
 	var/angle_per_element = round(zone / page_choices.len)
-	for(var/i in 1 to elements.len)
-		var/atom/movable/screen/radial/element = elements[i]
+	for(var/i in 1 to length(elements))
+		var/atom/movable/screen/radial/element = LAZYACCESS(elements, i)
 		var/angle = WRAP(starting_angle + (i - 1) * angle_per_element,0,360)
 		if(i > page_choices.len)
 			HideElement(element)
@@ -244,22 +244,22 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		E.add_overlay("radial_next")
 	else
 		//This isn't granted to exist, so use the ?. operator for conditionals that use it.
-		var/datum/radial_menu_choice/choice_datum = choice_datums[choice_id]
+		var/datum/radial_menu_choice/choice_datum = LAZYACCESS(choice_datums, choice_id)
 		if(choice_datum?.name)
 			E.name = choice_datum.name
-		else if(istext(choices_values[choice_id]))
-			E.name = choices_values[choice_id]
-		else if(ispath(choices_values[choice_id],/atom))
-			var/atom/A = choices_values[choice_id]
+		else if(istext(LAZYACCESS(choices_values, choice_id)))
+			E.name = LAZYACCESS(choices_values, choice_id)
+		else if(ispath(LAZYACCESS(choices_values, choice_id),/atom))
+			var/atom/A = LAZYACCESS(choices_values, choice_id)
 			E.name = initial(A.name)
 		else
-			var/atom/movable/AM = choices_values[choice_id] //Movables only
+			var/atom/movable/AM = LAZYACCESS(choices_values, choice_id) //Movables only
 			E.name = AM.name
 		E.choice = choice_id
 		E.maptext = null
 		E.next_page = FALSE
-		if(choices_icons[choice_id])
-			E.add_overlay(choices_icons[choice_id])
+		if(LAZYACCESS(choices_icons, choice_id))
+			E.add_overlay(LAZYACCESS(choices_icons, choice_id))
 		if (choice_datum?.info)
 			var/obj/effect/abstract/info/info_button = new(E, choice_datum.info)
 			info_button.plane = PLANE_PLAYER_HUD_ABOVE
@@ -271,32 +271,32 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	close_button.set_parent(src)
 
 /datum/radial_menu/proc/Reset()
-	choices.Cut()
-	choices_icons.Cut()
-	choices_values.Cut()
-	choice_datums.Cut()
+	LAZYCLEARLIST(choices)
+	LAZYCLEARLIST(choices_icons)
+	LAZYCLEARLIST(choices_values)
+	LAZYCLEARLIST(choice_datums)
 	current_page = 1
 
 /datum/radial_menu/proc/element_chosen(choice_id,mob/user)
-	selected_choice = choices_values[choice_id]
+	selected_choice = LAZYACCESS(choices_values, choice_id)
 
 /datum/radial_menu/proc/get_next_id()
-	return "c_[choices.len]"
+	return "c_[length(choices)]"
 
 /datum/radial_menu/proc/set_choices(list/new_choices, use_tooltips, click_on_hover = FALSE, set_page = 1)
-	if(choices.len)
+	if(length(choices))
 		Reset()
 	for(var/E in new_choices)
 		var/id = get_next_id()
-		choices += id
-		choices_values[id] = E
+		LAZYADD(choices, id)
+		LAZYSET(choices_values, id, E)
 		if(new_choices[E])
 			var/I = extract_image(new_choices[E])
 			if(I)
-				choices_icons[id] = I
+				LAZYSET(choices_icons, id, I)
 
 			if (istype(new_choices[E], /datum/radial_menu_choice))
-				choice_datums[id] = new_choices[E]
+				LAZYSET(choice_datums, id, new_choices[E])
 	setup_menu(use_tooltips, set_page, click_on_hover)
 
 /datum/radial_menu/proc/extract_image(to_extract_from)

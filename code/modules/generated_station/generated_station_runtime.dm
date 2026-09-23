@@ -36,15 +36,31 @@
 	if(captured)
 		. += span_notice("Control authority has been captured by [captured_by || "an expedition team"].")
 
-/obj/machinery/generated_station_department_control/attack_hand(mob/user)
-	if(!user || captured || get_integrity() <= 0)
-		return ..()
+/obj/machinery/generated_station_department_control/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/department_control_override,
+	)
+	..()
+
+/datum/interaction/machine_hand/department_control_override
+	id = "department_control_override"
+	name = "Override"
+	behind_gate = FALSE
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/generated_station_department_control/proc/capturable, null))
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/generated_station_department_control/proc/interaction_override
+
+/obj/machinery/generated_station_department_control/proc/capturable(mob/actor, atom/target, obj/item/held)
+	return !captured && get_integrity() > 0
+
+/obj/machinery/generated_station_department_control/proc/interaction_override(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("[user] begins overriding [src]."), span_notice("You begin overriding [src]."))
 	if(!do_after(user, 3 SECONDS, target = src) || QDELETED(src) || get_integrity() <= 0)
-		return
+		return TRUE
 	captured = TRUE
 	captured_by = user.ckey || user.name
 	visible_message(span_notice("[src] accepts the new control authority."))
+	return TRUE
 
 /obj/machinery/generated_station_department_control/Destroy()
 	captured_by = null

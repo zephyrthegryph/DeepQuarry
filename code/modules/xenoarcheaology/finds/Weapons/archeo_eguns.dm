@@ -4,7 +4,6 @@
 	desc = "An anomalous rifle that shoots abnormal types of beams."
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	one_handed_penalty = FALSE
-	firemodes = list() //none
 
 /obj/item/gun/energy/laser/xenoarch/update_icon()
 		return

@@ -45,4 +45,4 @@ GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
 		var/datum/objective/protect/loyal_obj = new
 		loyal_obj.target = player.mind
 		loyal_obj.explanation_text = "Protect [player.real_name], the [player.mind.assigned_role]."
-		global_objectives += loyal_obj
+		LAZYADD(global_objectives, loyal_obj)

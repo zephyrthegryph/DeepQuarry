@@ -45,6 +45,8 @@
 #define LAZYINITLIST(L) do { if (!L) { L = list(); } } while(0)
 ///Returns the key of the submitted item in the list
 #define LAZYFIND(L, V) (L ? L.Find(V) : 0)
+///Returns a copy of the lazylist, or a new empty list if it is null
+#define LAZYCOPY(L) (L ? L.Copy() : list())
 
 /// Returns the top (last) element from the list, does not remove it from the list. Stack functionality.
 /proc/peek(list/target_list)
@@ -56,7 +58,7 @@
 /proc/english_list(list/input, nothing_text = "nothing", and_text = " and ", comma_text = ", ", final_comma_text = ",")
 	// this proc cannot be merged with counting_english_list to maintain compatibility
 	// with shoddy use of this proc for code logic and for cases that require original order
-	switch(input.len)
+	switch(length(input))
 		if(0) return nothing_text
 		if(1) return "[input[1]]"
 		if(2) return "[input[1]][and_text][input[2]]"

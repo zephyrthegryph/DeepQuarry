@@ -1,6 +1,6 @@
 /datum/event/rogue_drone
 	endWhen = 1000
-	var/list/drones_list = list()
+	var/list/drones_list
 
 /datum/event/rogue_drone/start()
 	//spawn them at the same place as carp
@@ -19,7 +19,7 @@
 		return
 	for(var/i=0, i<num, i++)
 		var/mob/living/simple_mob/mechanical/combat_drone/event/D = new(get_turf(pick(possible_spawns)))
-		drones_list.Add(D)
+		LAZYADD(drones_list, D)
 
 /datum/event/rogue_drone/announce()
 	var/msg
@@ -51,7 +51,7 @@
 		qdel(D)
 		num_recovered++
 
-	if(num_recovered > drones_list.len * 0.75)
+	if(num_recovered > length(drones_list) * 0.75)
 		GLOB.command_announcement.Announce("The drones that were malfunctioning have been recovered safely.", "Rogue drone alert")
 	else
 		GLOB.command_announcement.Announce("We're disappointed at the loss of the drones, but the survivors have been recovered.", "Rogue drone alert")

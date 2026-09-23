@@ -18,7 +18,7 @@
 	var/list/data = get_header_data()
 
 	data["ntnetstatus"] = GLOB.ntnet_global.check_function()
-	data["ntnetrelays"] = GLOB.ntnet_global.relays.len
+	data["ntnetrelays"] = length(GLOB.ntnet_global.relays)
 	data["idsstatus"] = GLOB.ntnet_global.intrusion_detection_enabled
 	data["idsalarm"] = GLOB.ntnet_global.intrusion_detection_alarm
 
@@ -31,7 +31,7 @@
 	data["minlogs"] = MIN_NTNET_LOGS
 	data["maxlogs"] = MAX_NTNET_LOGS
 
-	data["banned_nids"] = list(GLOB.ntnet_global.banned_nids)
+	data["banned_nids"] = list(GLOB.ntnet_global.banned_nids || list())
 
 	for(var/i in GLOB.ntnet_global.logs)
 		data["ntnetlogs"] += list(list("entry" = i))
@@ -83,12 +83,12 @@
 				return
 			var/nid = tgui_input_number(ui.user,"Enter NID of device which you want to block from the network:", "Enter NID")
 			if(nid && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-				GLOB.ntnet_global.banned_nids |= nid
+				LAZYOR(GLOB.ntnet_global.banned_nids, nid)
 			return TRUE
 		if("unban_nid")
 			if(!GLOB.ntnet_global)
 				return
 			var/nid = tgui_input_number(ui.user,"Enter NID of device which you want to unblock from the network:", "Enter NID")
 			if(nid && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-				GLOB.ntnet_global.banned_nids -= nid
+				LAZYREMOVE(GLOB.ntnet_global.banned_nids, nid)
 			return TRUE

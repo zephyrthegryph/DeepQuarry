@@ -18,7 +18,7 @@
 	movement_cooldown = 3
 	movement_sound = 'sound/effects/houndstep.ogg'
 	// To promote a more diverse weapon selection.
-	armor = list(melee = 25, bullet = 25, laser = -20, bio = 100, rad = 100)
+	armor_spec = "melee=25;bullet=25;laser=-20;bio=100;rad=100"
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	say_list_type = /datum/say_list/cyber_horror
@@ -55,7 +55,7 @@
 	icon_dead = "plasma_cyber_horror_dead"
 	say_list_type = /datum/say_list/cyber_horror/plasma
 
-	armor = list(melee = 40, bullet = -10, laser = 40, bio = 100, rad = 100)
+	armor_spec = "melee=40;bullet=-10;laser=40;bio=100;rad=100"
 	endurance = 75
 
 	melee_damage_lower = 5
@@ -109,7 +109,7 @@
 
 
 // You do NOT Want to get in touchy range of this thing.
-	armor = list(melee = 75, bullet = -10, laser = -25, bio = 100, rad = 100)
+	armor_spec = "melee=75;bullet=-10;laser=-25;bio=100;rad=100"
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 
@@ -190,7 +190,7 @@
 	icon_dead = "vox_cyber_horror_dead"
 	say_list_type = /datum/say_list/cyber_horror/vox
 
-	armor = list(melee = 40, bullet = 30, laser = 30, bio = 100, rad = 100)
+	armor_spec = "melee=40;bullet=30;laser=30;bio=100;rad=100"
 
 /datum/say_list/cyber_horror/vox
 	threaten_sound = 'sound/mob/robots/cyber_horror_vox.ogg'
@@ -286,7 +286,7 @@
 	projectiletype = /obj/item/projectile/arc/blue_energy
 	projectilesound = 'sound/weapons/plasmaNEW.ogg'
 
-	armor = list(melee = -30, bullet = 10, laser = 10, bio = 100, rad = 100)
+	armor_spec = "melee=-30;bullet=10;laser=10;bio=100;rad=100"
 
 /datum/say_list/cyber_horror/grey
 	threaten_sound = 'sound/mob/robots/cyber_horror_grey.ogg'

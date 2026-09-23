@@ -10,7 +10,7 @@
 	. = ..()
 	if(source_projector)
 		projector = source_projector
-		projector.signs += src
+		LAZYADD(projector.signs, src)
 /*	if(overlays) // Fucking god damnit why do we have to have an entire different subsystem for this shit from other codebases.
 		overlays.add_overlay(src, icon, icon_state, ABOVE_MOB_LAYER, plane, dir, alpha, RESET_ALPHA) //you see mobs under it, but you hit them like they are above it
 		alpha = 0
@@ -18,7 +18,7 @@
 
 /obj/structure/holosign/Destroy()
 	if(projector)
-		projector.signs -= src
+		LAZYREMOVE(projector.signs, src)
 		projector = null
 	return ..()
 

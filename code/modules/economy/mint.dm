@@ -8,13 +8,27 @@
 	anchored = TRUE
 	var/coinsToProduce = 6	//how many coins do we make per sheet? a sheet is 2000 units whilst a coin is 250, and some material should be lost in the process
 
-/obj/machinery/mineral/mint/attackby(obj/item/stack/material/M, mob/user)
+/obj/machinery/mineral/mint/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/mint_press,
+	)
+	..()
+
+/// Old attackby: feed a material sheet through the press.
+/datum/interaction/machine_item/mint_press
+	id = "mint_press"
+	name = "Press coins"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/stack/material
+	effect = /obj/machinery/mineral/mint/proc/interaction_press
+
+/obj/machinery/mineral/mint/proc/interaction_press(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
 	if(!anchored)
 		user.visible_message(span_warning("\The [src] must be properly secured to operate!"))
-		return
+		return TRUE
 	if(!M.coin_type)
 		user.visible_message(span_notice("You can't make coins out of that."))
-		return
+		return TRUE
 	else if(M.coin_type)
 		user.visible_message("[user] starts to feed a sheet of [M.default_type] into \the [src].")
 		while(M.amount > 0)
@@ -34,3 +48,4 @@
 				to_chat(user,span_warning("\The [src] is hand-operated and requires your full attention!"))
 				icon_state = "coinpress0"
 				break
+	return TRUE

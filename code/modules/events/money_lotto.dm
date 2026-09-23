@@ -18,7 +18,7 @@
 			T.date = GLOB.current_date_string
 			T.time = stationtime2text()
 			T.source_terminal = "Sif TCD Terminal #[rand(111,333)]"
-			D.transaction_log.Add(T)
+			LAZYADD(D.transaction_log, T)
 
 			deposit_success = 1
 

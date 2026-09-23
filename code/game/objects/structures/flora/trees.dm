@@ -171,7 +171,7 @@
 	desc = "A wondrous decorated Christmas tree. It has presents!"
 	indestructable = TRUE
 	var/gift_type = /obj/item/a_gift
-	var/list/ckeys_that_took = list()
+	var/list/ckeys_that_took
 
 /obj/structure/flora/tree/pine/xmas/presents/choose_icon_state()
 	return "pinepresents"
@@ -183,11 +183,11 @@
 	if(!user.ckey)
 		return
 
-	if(ckeys_that_took[user.ckey])
+	if(LAZYACCESS(ckeys_that_took, user.ckey))
 		to_chat(user, span_warning("There are no presents with your name on."))
 		return
 	to_chat(user, span_notice("After a bit of rummaging, you locate a gift with your name on it!"))
-	ckeys_that_took[user.ckey] = TRUE
+	LAZYSET(ckeys_that_took, user.ckey, TRUE)
 	var/obj/item/G = new gift_type(src)
 	user.put_in_hands(G)
 

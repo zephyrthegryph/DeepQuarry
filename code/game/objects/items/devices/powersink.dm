@@ -123,7 +123,4 @@
 		explosion(src.loc, 3,6,9,12)
 		qdel(src)
 		return
-	if(attached && attached.powernet)
-		PN = attached.powernet
-	else
-		PN = null
+	PN = attached?.get_powernet()

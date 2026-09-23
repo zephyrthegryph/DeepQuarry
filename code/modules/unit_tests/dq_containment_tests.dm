@@ -117,7 +117,7 @@
 
 /datum/unit_test/dq_containment_conservation_fuzz/Run()
 	floor = dq_containment_floor()
-	var/list/holder_types = list(/obj/structure/closet, /obj/structure/closet/crate, /obj/item/folder, /obj/item/dq_containment_box)
+	var/list/holder_types = list(/obj/structure/closet, /obj/structure/closet/crate, /obj/item/folder, /obj/item/dq_containment_box, /obj/item/storage/backpack)
 	for(var/path in holder_types)
 		for(var/i in 1 to 3)
 			add_holder(path)
@@ -280,6 +280,12 @@
 	holders -= H
 	things -= H
 	qdel(H)
+	// A delete policy takes nested holders with it (a folder in a bag).
+	for(var/atom/movable/nested as anything in holders.Copy())
+		if(QDELETED(nested))
+			holders -= nested
+			things -= nested
+			add_holder(nested.type)
 	for(var/atom/movable/T as anything in expected)
 		switch(expected[T])
 			if(SLOT_DROP_DELETE)

@@ -46,14 +46,7 @@
 
 	loot_list = list(/obj/random/underdark/uncertain = 25)
 
-	armor = list(
-			"melee" = 100,
-			"bullet" = 100,
-			"laser" = 100,
-			"energy" = 100,
-			"bomb" = 0,
-			"bio" = 100,
-			"rad" = 100)
+	armor_spec = "melee=100;bullet=100;laser=100;energy=100;bio=100;rad=100"
 
 	speak_emote = list("rumbles")
 
@@ -118,25 +111,11 @@
 
 /mob/living/simple_mob/vore/alienanimals/startreader/proc/handle_flip()
 	if(flipped)
-		armor = list(
-			"melee" = 0,
-			"bullet" = 0,
-			"laser" = 0,
-			"energy" = 0,
-			"bomb" = 0,
-			"bio" = 0,
-			"rad" = 0)
+		set_armor(dq_armor_none())
 		icon_living = "startreader_flipped"
 		AdjustStunned(flip_cooldown)
 	else
-		armor = list(
-			"melee" = 100,
-			"bullet" = 100,
-			"laser" = 100,
-			"energy" = 100,
-			"bomb" = 0,
-			"bio" = 100,
-			"rad" = 100)
+		set_armor(dq_armor(list(MELEE = 100, BULLET = 100, LASER = 100, ENERGY = 100, BIO = 100, ARMOR_RAD = 100)))
 		icon_living = "startreader"
 		SetStunned(0)
 

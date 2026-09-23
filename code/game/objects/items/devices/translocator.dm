@@ -14,17 +14,17 @@
 	var/longrange = 0 //Can teleport very long distances
 	var/abductor = 0 //Can be used on teleportation blocking turfs
 
-	var/list/beacons = list()
+	var/list/beacons
 	var/loc_network = null //Used if you want to create pre-made beacons on the maps
 	var/ready = 1
 	var/beacons_left = 3
 	var/failure_chance = 5 //Percent
 	var/obj/item/perfect_tele_beacon/destination
 	var/datum/effect/effect/system/spark_spread/spk
-	var/list/warned_users = list()
-	var/list/logged_events = list()
+	var/list/warned_users
+	var/list/logged_events
 
-	var/list/radial_images = list()
+	var/list/radial_images
 
 	var/static/radial_plus = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_plus")
 	var/static/radial_set = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_set")
@@ -54,7 +54,7 @@
 	// Must clear the beacon's backpointer or we won't GC. Someday maybe do something nicer even.
 	for(var/obj/item/perfect_tele_beacon/B in beacons)
 		B.tele_hand = null
-	beacons.Cut()
+	LAZYCLEARLIST(beacons)
 	QDEL_NULL(power_source)
 	QDEL_NULL(spk)
 	return ..()
@@ -70,26 +70,26 @@
 	..()
 
 /obj/item/perfect_tele/proc/rebuild_radial_images()
-	radial_images.Cut()
+	LAZYCLEARLIST(radial_images)
 
 	var/index = 1
 	for(var/bcn in beacons) //Grumble
 		var/image/I = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]")
 
-		var/obj/item/perfect_tele_beacon/beacon = beacons[bcn]
+		var/obj/item/perfect_tele_beacon/beacon = LAZYACCESS(beacons, bcn)
 		if(destination == beacon)
 			I.add_overlay(radial_seton)
 		else
 			I.add_overlay(radial_set)
 
-		radial_images[bcn] = I
+		LAZYSET(radial_images, bcn, I)
 
 		index++
 
 	if(beacons_left)
 		var/image/I = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]")
 		I.add_overlay(radial_plus)
-		radial_images["New Beacon"] = I
+		LAZYSET(radial_images, "New Beacon", I)
 
 /obj/item/perfect_tele/attack_hand(mob/user)
 	if(user.get_inactive_hand() == src)
@@ -128,11 +128,11 @@
 	if(loc_network)
 		for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
 			if(nb.tele_network == loc_network)
-				beacons[nb.tele_name] = nb
+				LAZYSET(beacons, nb.tele_name, nb)
 		loc_network = null //Consumed
 
 	if(!(user.ckey in warned_users))
-		warned_users |= user.ckey
+		LAZYOR(warned_users, user.ckey)
 		tgui_alert_async(user,{"
 This device can be easily used to break ERP preferences due to the nature of teleporting and tele-vore.
 Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.
@@ -164,7 +164,7 @@ This device records all warnings given and teleport events for admin review in c
 		nb.tele_name = new_name
 		nb.tele_hand = src
 		nb.creator = user.ckey
-		beacons[new_name] = nb
+		LAZYSET(beacons, new_name, nb)
 		beacons_left--
 		if(isliving(user))
 			var/mob/living/L = user
@@ -172,7 +172,7 @@ This device records all warnings given and teleport events for admin review in c
 		rebuild_radial_images()
 
 	else
-		destination = beacons[choice]
+		destination = LAZYACCESS(beacons, choice)
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/attackby(obj/W, mob/user)
@@ -188,7 +188,7 @@ This device records all warnings given and teleport events for admin review in c
 		var/obj/item/perfect_tele_beacon/tb = W
 		if(tb.tele_name in beacons)
 			to_chat(user,span_notice("You re-insert \the [tb] into \the [src]."))
-			beacons -= tb.tele_name
+			LAZYREMOVE(beacons, tb.tele_name)
 			user.unEquip(tb)
 			qdel(tb)
 			beacons_left++
@@ -291,10 +291,10 @@ This device records all warnings given and teleport events for admin review in c
 
 	//Failure chance
 	if (!ignore_fail_chance)
-		if(prob(failure_chance) && beacons.len >= 2)
+		if(prob(failure_chance) && length(beacons) >= 2)
 			var/list/wrong_choices = beacons - destination.tele_name
 			var/wrong_name = pick(wrong_choices)
-			destination = beacons[wrong_name]
+			destination = LAZYACCESS(beacons, wrong_name)
 			to_chat(user,span_warning("\The [src] malfunctions and sends you to the wrong beacon!"))
 
 	//Destination beacon vore checking
@@ -349,7 +349,7 @@ This device records all warnings given and teleport events for admin review in c
 	update_icon()
 	addtimer(CALLBACK(src, PROC_REF(translocator_ready)), 30 SECONDS)
 
-	logged_events["[world.time]"] = "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]"
+	LAZYSET(logged_events, "[world.time]", "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]")
 
 /obj/item/perfect_tele/proc/translocator_ready()
 	ready = 1

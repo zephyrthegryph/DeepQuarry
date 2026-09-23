@@ -35,7 +35,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 
 	for(var/loc_type in subtypesof(/datum/trade_destination))
 		var/datum/trade_destination/D = new loc_type
-		GLOB.weighted_randomevent_locations[D] = D.viable_random_events.len
+		GLOB.weighted_randomevent_locations[D] = length(D.viable_random_events)
 		GLOB.weighted_mundaneevent_locations[D] = D.mundane_probability
 
 	create_station_account()
@@ -79,7 +79,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 		T.source_terminal = "Biesel GalaxyNet Terminal #277"
 
 		//add the account
-		GLOB.station_account.transaction_log.Add(T)
+		LAZYADD(GLOB.station_account.transaction_log, T)
 		GLOB.all_money_accounts.Add(GLOB.station_account)
 
 /proc/create_department_account(department)
@@ -103,7 +103,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	T.source_terminal = "Biesel GalaxyNet Terminal #277"
 
 	//add the account
-	department_account.transaction_log.Add(T)
+	LAZYADD(department_account.transaction_log, T)
 	GLOB.all_money_accounts.Add(department_account)
 
 	GLOB.department_accounts[department] = department_account

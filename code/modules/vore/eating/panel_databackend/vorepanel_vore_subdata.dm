@@ -668,7 +668,7 @@
 		var/list/primary_transfer = list(
 			"autotransferchance" = selected.autotransferchance,
 			"autotransferlocation" = selected.autotransferlocation,
-			"autotransferextralocation" = selected.autotransferextralocation,
+			"autotransferextralocation" = (selected.autotransferextralocation || list()),
 			"autotransfer_whitelist" = at_whitelist,
 			"autotransfer_blacklist" = at_blacklist,
 			"autotransfer_whitelist_items" = at_whitelist_items,
@@ -677,7 +677,7 @@
 		var/list/secondary_transfer = list(
 			"autotransferchance" = selected.autotransferchance_secondary,
 			"autotransferlocation" = selected.autotransferlocation_secondary,
-			"autotransferextralocation" = selected.autotransferextralocation_secondary,
+			"autotransferextralocation" = (selected.autotransferextralocation_secondary || list()),
 			"autotransfer_whitelist" = at_secondary_whitelist,
 			"autotransfer_blacklist" = at_secondary_blacklist,
 			"autotransfer_whitelist_items" = at_secondary_whitelist_items,

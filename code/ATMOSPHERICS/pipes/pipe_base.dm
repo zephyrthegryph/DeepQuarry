@@ -259,12 +259,27 @@
 	material_sorbed_moles = 0
 	material_sorbed_thermal_energy = 0
 
-/obj/machinery/atmospherics/pipe/attackby(obj/item/W as obj, mob/user as mob)
-	if (istype(src, /obj/machinery/atmospherics/pipe/tank))
-		return ..()
-	if(istype(W,/obj/item/pipe_painter))
-		return 0
-	return ..()
+/obj/machinery/atmospherics/pipe/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/pipe_painter_passthrough,
+	)
+	..()
+
+/// Old attackby: for non-tank pipes, a pipe painter did nothing here (didn't call ..()),
+/// letting the painter's own afterattack recolor the pipe without the default hit message.
+/datum/interaction/machine_item/pipe_painter_passthrough
+	id = "pipe_painter_passthrough"
+	name = "Paint"
+	held_type = /obj/item/pipe_painter
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/pipe/proc/not_a_tank, null))
+	consumes_input = FALSE
+	effect = /obj/machinery/atmospherics/pipe/proc/interaction_pipe_painter_noop
+
+/obj/machinery/atmospherics/pipe/proc/not_a_tank(mob/actor, atom/target, obj/item/held)
+	return !istype(target, /obj/machinery/atmospherics/pipe/tank)
+
+/obj/machinery/atmospherics/pipe/proc/interaction_pipe_painter_noop(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/atmospherics/pipe/welder_act(mob/user, obj/item/W)
 	if(!damaged_leak)

@@ -14,32 +14,46 @@
 	/// Variable dictating if we are in the process of restoring the occupier AI
 	var/restoring = FALSE
 
-/obj/machinery/computer/aifixer/attackby(obj/item/I, mob/living/user)
-	if(istype(I, /obj/item/aicard))
-		if(stat & (NOPOWER|BROKEN))
-			to_chat(user, span_warning("This terminal isn't functioning right now."))
-			return
-		if(restoring)
-			to_chat(user, span_danger("Terminal is busy restoring [occupier] right now."))
-			return
+/obj/machinery/computer/aifixer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/aifixer_card,
+		/datum/interaction/machine_hand/ungated/aifixer_use,
+	)
+	..()
 
-		var/obj/item/aicard/card = I
-		if(occupier)
-			if(card.grab_ai(occupier, user))
-				occupier = null
-		else if(card.carded_ai)
-			var/mob/living/silicon/ai/new_occupant = card.carded_ai
-			to_chat(new_occupant, span_notice("You have been transferred into a stationary terminal. Sadly there is no remote access from here."))
-			to_chat(user, span_notice("Transfer Successful:") + " [new_occupant] placed within stationary terminal.")
-			new_occupant.forceMove(src)
-			new_occupant.cancel_camera()
-			new_occupant.control_disabled = TRUE
-			occupier = new_occupant
-			card.clear()
-			update_icon()
-		else
-			to_chat(user, span_notice("There is no AI loaded onto this computer, and no AI loaded onto [I]. What exactly are you trying to do here?"))
-	return ..()
+/// Old attackby's aicard branch. Always falls through to ..() afterwards (base attackby still runs).
+/datum/interaction/machine_item/aifixer_card
+	id = "aifixer_card"
+	name = "Use AI card"
+	held_type = /obj/item/aicard
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/computer/aifixer/proc/can_use_card, null))
+	effect = /obj/machinery/computer/aifixer/proc/interaction_use_card
+
+/obj/machinery/computer/aifixer/proc/can_use_card(mob/actor, atom/target, obj/item/held)
+	if(stat & (NOPOWER|BROKEN))
+		return "this terminal isn't functioning right now"
+	if(restoring)
+		return "terminal is busy restoring [occupier] right now"
+	return TRUE
+
+/obj/machinery/computer/aifixer/proc/interaction_use_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
+	if(occupier)
+		if(card.grab_ai(occupier, user))
+			occupier = null
+	else if(card.carded_ai)
+		var/mob/living/silicon/ai/new_occupant = card.carded_ai
+		to_chat(new_occupant, span_notice("You have been transferred into a stationary terminal. Sadly there is no remote access from here."))
+		to_chat(user, span_notice("Transfer Successful:") + " [new_occupant] placed within stationary terminal.")
+		new_occupant.forceMove(src)
+		new_occupant.cancel_camera()
+		new_occupant.control_disabled = TRUE
+		occupier = new_occupant
+		card.clear()
+		update_icon()
+	else
+		to_chat(user, span_notice("There is no AI loaded onto this computer, and no AI loaded onto [card]. What exactly are you trying to do here?"))
+	// Old code always fell through to ..() after handling the card; decline so the base attackby still runs.
+	return FALSE
 
 /obj/machinery/computer/aifixer/screwdriver_act(mob/user, obj/item/tool)
 	if(!occupier)
@@ -50,10 +64,17 @@
 		to_chat(user, span_warning("The screws on [name]'s screen won't budge and it emits a warning beep."))
 	return ITEM_INTERACT_BLOCKING
 
-/obj/machinery/computer/aifixer/attack_hand(mob/user)
+/// Old attack_hand (never called ..()): opens the UI, silently doing nothing when unpowered/broken.
+/datum/interaction/machine_hand/ungated/aifixer_use
+	id = "aifixer_use"
+	name = "Use"
+	effect = /obj/machinery/computer/aifixer/proc/interaction_use
+
+/obj/machinery/computer/aifixer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/aifixer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

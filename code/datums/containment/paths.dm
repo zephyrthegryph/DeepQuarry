@@ -86,17 +86,12 @@
 /proc/dq_path_insulation(atom/A)
 	return clamp(PROPERTY(A, PROP_INSULATION) || 0, 0, 1)
 
-/// Fraction of a hit of armour key `key` that `A` stops, 0..1. Items read
-/// their armour list; nothing else has armour until D2 interns it.
+/// Fraction of a hit of armour key `key` that `A` stops, 0..1: its armour's
+/// deterministic soak (get_armor(), damage.md §4) after `penetration`.
 /proc/dq_path_armor(atom/A, key, penetration = 0)
-	if(!key || !isitem(A))
+	if(!key || !A)
 		return 0
-	var/obj/item/I = A
-	var/armor = I.armor?[key]
-	if(!armor)
-		return 0
-	armor = clamp(PENETRATE_ARMOUR(armor, penetration), 0, 100)
-	return armor / 100
+	return dq_armor_average_percent(A.get_armor().effective(key, penetration)) / 100
 
 /// What `A`, covering something, lets through of `effect`, 0..1.
 /proc/dq_path_attenuation(atom/A, effect, kind, penetration = 0)

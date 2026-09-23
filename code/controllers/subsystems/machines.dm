@@ -1,10 +1,10 @@
 #define SSMACHINES_MACHINERY     2
 #define SSMACHINES_POWERNETS     3
 #define SSMACHINES_POWER_OBJECTS 4
-#define POWER_TOPOLOGY_WORK_SLICE 32
 
 //
-// SSmachines subsystem - Processing machines and powernets.
+// SSmachines subsystem - Processing machines and the power step (M3: the
+// power network itself runs in Rust, see code/modules/power/power_bridge.dm).
 // (Pipenets moved to SSair under the LINDA migration.)
 //
 
@@ -91,25 +91,7 @@ SUBSYSTEM_DEF(machines)
 	var/machine_run_cursor = 0
 	/// Increments once per machinery pass; see /obj/machinery/var/machine_processing_pass.
 	var/machine_run_pass = 1
-	var/list/powernets = list()
-	/// Powernets with a live accounting window. `powernets` remains the complete
-	/// topology registry for rebuilds/admin tools.
-	var/list/active_powernets = list()
-	/// Networks which received dynamic APC usage in the preceding machinery
-	/// generation. Only these need their old transaction cleared and finalized.
-	var/list/accounting_powernets = list()
-	var/list/current_accounting_powernets = list()
 	var/list/powerobjs = list()
-	/// Targeted cable topology transactions. A wire interaction only records the
-	/// severed edge; connected components are discovered and published in bounded
-	/// slices here instead of flood-filling the station inside attackby().
-	var/list/powernet_topology_jobs = list()
-	var/list/powernet_topology_jobs_by_net = list()
-	var/powernet_topology_last_work = 0
-	var/powernet_topology_last_ms = 0
-	/// Generation used to expire a producer only when its own process() stopped
-	/// publishing, preserving legacy add_avail() omission semantics.
-	var/power_supply_generation = 0
 	/// Enables low-overhead concrete-type timing for machine polling audits.
 	// Concrete-type timing performs extra high-resolution clock reads inside the
 	// hot machine loop. Enable it explicitly for benchmark runs; production keeps
@@ -140,158 +122,17 @@ SUBSYSTEM_DEF(machines)
 	var/machine_profile_detail_limit = 8
 	var/adaptive_profile_threshold_ms = 25
 
-	// Wait to rebuild powernets
-	VAR_PRIVATE/defering_powernets = FALSE
-	/// world.time when defer_powernet_rebuild() was last called. Used to
-	/// auto-release the defer after powernet_defer_max_age if a matching
-	/// release_powernet_defer() was never called (e.g. shuttle code crashed).
-	VAR_PRIVATE/powernet_defer_started = 0
-	/// Powernets that lost a cable while deferred; each gets a targeted topology job on release.
-	var/list/deferred_powernet_splits = list()
-	/// Cables placed or rotated while deferred; their merges replay on release.
-	var/list/deferred_powernet_cables = list()
-	/// Power machines that tried to connect while deferred; they retry on release.
-	var/list/deferred_powernet_machines = list()
-	/// Maximum time (deciseconds) a powernet defer may remain active before
-	/// SSmachines auto-releases it.  Default: 5 minutes.  Keeps a missed
-	/// release() from leaving powernets stale indefinitely.
-	VAR_PRIVATE/powernet_defer_max_age = 5 MINUTES
-
 /datum/controller/subsystem/machines/Initialize()
-	makepowernets()
+	process_power()
 	fire()
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/machines/fire(resumed = 0)
 	var/timer = TICK_USAGE
-	if(!process_powernet_topology_jobs())
-		return
-
-	// Auto-release stale powernet defers. If a caller called defer_powernet_rebuild()
-	// but never called release_powernet_defer() (e.g. due to an exception in the
-	// shuttling code), powernets stay unbuilt indefinitely.  After
-	// powernet_defer_max_age deciseconds, force a rebuild and log so the
-	// responsible code can be found and fixed.
-	if(defering_powernets && (world.time - powernet_defer_started) >= powernet_defer_max_age)
-		log_game("SSmachines: powernet defer exceeded max age ([powernet_defer_max_age / 10]s); auto-releasing. Check for a missing release_powernet_defer() call.")
-		message_admins("WARNING: Powernet generation defer auto-released after timeout -- check logs.")
-		release_powernet_defer()
-
 	// SSMACHINES_PIPENETS step removed; pipenets dispatch via SSair.
 	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_POWER_OBJECTS,FALSE,process_power_objects,cost_power_objects,last_cost_power_objects,current_cost_power_objects,SSMACHINES_MACHINERY) // Higher priority, damnit
 	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_MACHINERY,FALSE,process_machinery,cost_machinery,last_cost_machinery,current_cost_machinery,SSMACHINES_POWERNETS)
 	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_POWERNETS,FALSE,process_powernets,cost_powernets,last_cost_powernets,current_cost_powernets,SSMACHINES_POWER_OBJECTS)
-
-// Call when you need the network rebuilt, but we should wait until we have a good time to do it
-/datum/controller/subsystem/machines/proc/defer_powernet_rebuild()
-	if(!SSticker.HasRoundStarted())
-		return
-	// While deferred, cable and machine edits record what they touched; release
-	// repairs only those networks.
-	if(!defering_powernets)
-		defering_powernets = TRUE
-		powernet_defer_started = world.time
-		message_admins("Powernet generation deferred...")
-
-
-/// Ends a defer_powernet_rebuild() window. Only the networks edited during the
-/// window are repaired: split networks get a topology job, and deferred cable
-/// merges and machine connections are replayed in the order they happened.
-/datum/controller/subsystem/machines/proc/release_powernet_defer()
-	if(!defering_powernets)
-		return
-	defering_powernets = FALSE
-	var/list/splits = deferred_powernet_splits
-	var/list/cables = deferred_powernet_cables
-	var/list/machines = deferred_powernet_machines
-	deferred_powernet_splits = list()
-	deferred_powernet_cables = list()
-	deferred_powernet_machines = list()
-	message_admins("Powernet generation resumed. Repairing [length(splits)] network\s...")
-	for(var/datum/powernet/network as anything in splits)
-		queue_powernet_topology(network)
-	for(var/obj/structure/cable/cable as anything in cables)
-		if(QDELETED(cable) || !isturf(cable.loc))
-			continue
-		cable.replay_deferred_merges(cables[cable])
-	for(var/obj/machinery/power/machine as anything in machines)
-		if(QDELETED(machine) || machine.powernet)
-			continue
-		machine.connect_to_network()
-
-/datum/controller/subsystem/machines/proc/note_deferred_powernet_split(datum/powernet/network)
-	if(network && !QDELETED(network))
-		deferred_powernet_splits[network] = TRUE
-
-/// Records a merge request made while deferred. `merge` is a CABLE_DEFERRED_* flag.
-/datum/controller/subsystem/machines/proc/note_deferred_powernet_cable(obj/structure/cable/cable, merge)
-	deferred_powernet_cables[cable] |= merge
-
-/datum/controller/subsystem/machines/proc/note_deferred_powernet_machine(obj/machinery/power/machine)
-	deferred_powernet_machines[machine] = TRUE
-
-/datum/controller/subsystem/machines/proc/powernet_is_defered()
-	return defering_powernets
-
-/// Queue one connected network for a targeted split/rebind. Repeated edits to
-/// the same network coalesce by invalidating the in-flight snapshot.
-/datum/controller/subsystem/machines/proc/queue_powernet_topology(datum/powernet/network)
-	if(!network || QDELETED(network))
-		return
-	network.topology_generation++
-	network.topology_pending = TRUE
-	network.avail = 0
-	network.newavail = 0
-	network.netexcess = -network.load
-	STOP_PROCESSING_POWERNET(network)
-	var/datum/powernet_topology_job/job = powernet_topology_jobs_by_net[network]
-	if(job)
-		job.restart_requested = TRUE
-		return
-	job = new(network)
-	powernet_topology_jobs += job
-	powernet_topology_jobs_by_net[network] = job
-
-/// Spend only the current subsystem slice on topology. A large station split
-/// may span several ticks, but player interaction returns immediately.
-/datum/controller/subsystem/machines/proc/process_powernet_topology_jobs()
-	if(!length(powernet_topology_jobs))
-		powernet_topology_last_work = 0
-		powernet_topology_last_ms = 0
-		return TRUE
-	var/started = TICK_USAGE
-	var/work_done = 0
-	while(length(powernet_topology_jobs))
-		var/datum/powernet_topology_job/job = powernet_topology_jobs[1]
-		work_done += job.process_slice()
-		if(job.complete)
-			powernet_topology_jobs.Cut(1, 2)
-			powernet_topology_jobs_by_net.Remove(job.source_net)
-			qdel(job)
-		if(MC_TICK_CHECK)
-			powernet_topology_last_work = work_done
-			powernet_topology_last_ms = TICK_DELTA_TO_MS(TICK_USAGE - started)
-			return FALSE
-	powernet_topology_last_work = work_done
-	powernet_topology_last_ms = TICK_DELTA_TO_MS(TICK_USAGE - started)
-	return TRUE
-
-// rebuild all power networks from scratch - Called when major network changes happen, like shuttles/turbolifts with wires moving, or huge explosions, where doing it per-wire does not make sense.
-/datum/controller/subsystem/machines/proc/makepowernets()
-	// TODO - check to not run while in the middle of a tick!
-	for(var/datum/powernet/PN as anything in powernets)
-		qdel(PN)
-	powernets.Cut()
-	setup_powernets_for_cables(REGISTRY_MEMBERS(REGISTRY_CABLES))
-
-/datum/controller/subsystem/machines/proc/setup_powernets_for_cables(list/cables)
-	for(var/obj/structure/cable/PC as anything in cables)
-		if(!PC.powernet)
-			var/datum/powernet/NewPN = new()
-			NewPN.begin_topology_batch()
-			NewPN.add_cable(PC)
-			propagate_network(PC,PC.powernet)
-			NewPN.end_topology_batch()
 
 // (Submap loads call /obj/machinery/atmospherics/atmos_init() directly,
 //  main-map load runs through SSair.Initialize → setup_atmos_machinery.)
@@ -303,7 +144,7 @@ SUBSYSTEM_DEF(machines)
 	msg += "PO:[round(last_cost_power_objects,1)]/[round(cost_power_objects,1)]"
 	msg += "} "
 	msg += "MC:[length(SSmachines.processing_machines)]|"
-	msg += "PN:[length(SSmachines.active_powernets)]/[length(SSmachines.powernets)][defering_powernets ? " - !!DEFER!!" : ""]|"
+	msg += "PN:[length(power_regions)] ev:[power_last_events][power_batch_depth ? " - BATCH" : ""]|"
 	msg += "PO:[length(SSmachines.powerobjs)]|"
 	msg += "HV:[length(SSmachines.hibernating_vents)]|"
 	msg += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]|"
@@ -314,12 +155,6 @@ SUBSYSTEM_DEF(machines)
 	if (!resumed)
 		machine_run_pass++
 		machine_run_cursor = length(processing_machines)
-		power_supply_generation++
-		current_accounting_powernets = accounting_powernets.Copy()
-		accounting_powernets.Cut()
-		for(var/datum/powernet/PN as anything in current_accounting_powernets)
-			if(PN && !QDELETED(PN))
-				PN.begin_accounting_window()
 		machine_profile_run_index = 0
 		gas_wake_complete = FALSE
 		current_gas_wake_scan_ms = 0
@@ -369,10 +204,6 @@ SUBSYSTEM_DEF(machines)
 					machine_profile_kills[machine_type] += machine_profile_sample_stride
 			else
 				process_result = M.process(wait)
-			if(istype(M, /obj/machinery/power))
-				var/obj/machinery/power/power_machine = M
-				if(power_machine.powernet && power_machine.powernet.registered_sources[power_machine] && power_machine.power_supply_generation != power_supply_generation)
-					power_machine.clear_power_supply()
 		if(QDELETED(M) || process_result == PROCESS_KILL)
 			if(process_result == PROCESS_KILL)
 				machine_noop_counts["[M.type]"]++
@@ -380,10 +211,6 @@ SUBSYSTEM_DEF(machines)
 		if(MC_TICK_CHECK)
 			flush_pump_transfers()
 			return
-	for(var/datum/powernet/PN as anything in current_accounting_powernets)
-		if(PN && !QDELETED(PN))
-			PN.finalize_accounting_window()
-	current_accounting_powernets.Cut()
 	flush_pump_transfers()
 	if(profile_machine_types && world.time >= next_machine_profile_dump)
 		dump_machine_profile()
@@ -419,18 +246,6 @@ SUBSYSTEM_DEF(machines)
 		processing_machines[index] = moved
 		moved.machine_processing_index = index
 	processing_machines.len--
-
-/// Enroll a powernet in the current completed-demand transaction. The first
-/// report from a previously idle network establishes its window lazily.
-/datum/controller/subsystem/machines/proc/touch_accounting_powernet(datum/powernet/PN)
-	if(!PN || QDELETED(PN))
-		return
-	if(!(PN in current_accounting_powernets))
-		PN.begin_accounting_window()
-		current_accounting_powernets |= PN
-	// It must be revisited once next generation to remove this generation's
-	// dynamic contribution even if every reporting machine goes to sleep.
-	accounting_powernets |= PN
 
 /datum/controller/subsystem/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)
 	if(!M || !source || !sink || requested_moles <= 0)
@@ -557,11 +372,7 @@ SUBSYSTEM_DEF(machines)
 		if(++rank >= 50)
 			break
 	log_runtime("MACHINE_PROFILE_SUMMARY active=[length(processing_machines)] concrete_types=[length(current_counts)]")
-	var/powernets_logged = 0
-	for(var/datum/powernet/PN as anything in active_powernets)
-		if(!PN || QDELETED(PN) || powernets_logged++ >= machine_profile_detail_limit)
-			continue
-		log_runtime("MACHINE_PROFILE_POWERNET nodes=[length(PN.nodes)] cables=[length(PN.cables)] load=[round(PN.load, 0.01)] supply=[round(PN.registered_supply_total, 0.01)] storage_demand=[round(PN.registered_storage_demand_total, 0.01)] custom=[PN.material_graph?.has_custom_conductors || FALSE] superconductors=[PN.material_graph?.has_superconductors || FALSE] wake=[PN.last_accounting_wake_reason] wakes=[PN.accounting_wake_count]")
+	log_runtime("MACHINE_PROFILE_POWER regions=[length(power_regions)] events=[power_last_events] edits_sent=[power_edits_sent]")
 	var/list/sorted_predicates = gas_predicate_profile_cost.Copy()
 	sortTim(sorted_predicates, /proc/cmp_numeric_desc, TRUE)
 	rank = 0
@@ -621,23 +432,9 @@ SUBSYSTEM_DEF(machines)
 	machine_profile_one_shot = TRUE
 	next_machine_profile_dump = world.time + 10 SECONDS
 
+/// The power step: one Rust call for every network, APC and SMES.
 /datum/controller/subsystem/machines/proc/process_powernets(resumed = 0)
-	if (!resumed)
-		src.current_run = active_powernets.Copy()
-
-	var/wait = src.wait
-	var/list/current_run = src.current_run
-	while(length(current_run))
-		var/datum/powernet/PN = current_run[length(current_run)]
-		current_run.len--
-		if(!PN || QDELETED(PN))
-			powernets.Remove(PN)
-			active_powernets.Remove(PN)
-			DISABLE_BITFIELD(PN?.datum_flags, DF_ISPROCESSING)
-		else if(PN.reset(wait) == PROCESS_KILL)
-			STOP_PROCESSING_POWERNET(PN)
-		if(MC_TICK_CHECK)
-			return
+	process_power()
 
 // Actually only processes power DRAIN objects.
 // Currently only used by powersinks. These items get priority processed before machinery
@@ -666,18 +463,16 @@ SUBSYSTEM_DEF(machines)
 		recovered_machines += M
 		M.machine_processing_index = length(recovered_machines)
 	SSmachines.processing_machines = recovered_machines
-	for(var/datum/D as anything in SSmachines.powernets)
-		if(!istype(D, /datum/powernet))
-			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.powernets, item=[D], type=[D?.type]")
-			SSmachines.powernets -= D
 	for(var/datum/D as anything in SSmachines.powerobjs)
 		if(!istype(D, /obj/item))
 			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.powerobjs, item=[D], type=[D?.type]")
 			SSmachines.powerobjs -= D
 
 	processing_machines = SSmachines.processing_machines
-	powernets = SSmachines.powernets
-	active_powernets = SSmachines.active_powernets
+	power_ops = SSmachines.power_ops
+	power_regions = SSmachines.power_regions
+	power_dirty_areas = SSmachines.power_dirty_areas
+	power_material_cables = SSmachines.power_material_cables
 	powerobjs = SSmachines.powerobjs
 	current_run = SSmachines.current_run
 	pending_pump_transfers = SSmachines.pending_pump_transfers
@@ -694,149 +489,6 @@ SUBSYSTEM_DEF(machines)
 	pending_dirty_gas_mixtures = SSmachines.pending_dirty_gas_mixtures
 	pending_dirty_gas_index = SSmachines.pending_dirty_gas_index
 	gas_wake_complete = SSmachines.gas_wake_complete
-	powernet_topology_jobs = SSmachines.powernet_topology_jobs
-	powernet_topology_jobs_by_net = SSmachines.powernet_topology_jobs_by_net
-	deferred_powernet_splits = SSmachines.deferred_powernet_splits
-	deferred_powernet_cables = SSmachines.deferred_powernet_cables
-	deferred_powernet_machines = SSmachines.deferred_powernet_machines
-
-/// Incremental connected-component rebuild for a single edited powernet.
-/datum/powernet_topology_job
-	var/datum/powernet/source_net
-	var/captured_generation
-	var/restart_requested = FALSE
-	var/complete = FALSE
-	var/phase = 1
-	var/list/remaining = list()
-	var/list/frontier = list()
-	var/list/current_component
-	var/list/components = list()
-	var/list/target_nets = list()
-	var/list/old_nodes
-	var/component_index = 1
-	var/member_index = 1
-	var/node_index = 1
-
-/datum/powernet_topology_job/New(datum/powernet/network)
-	source_net = network
-	restart_snapshot()
-	..()
-
-/datum/powernet_topology_job/Destroy()
-	source_net = null
-	remaining = null
-	frontier = null
-	current_component = null
-	components = null
-	target_nets = null
-	old_nodes = null
-	return ..()
-
-/datum/powernet_topology_job/proc/restart_snapshot()
-	captured_generation = source_net?.topology_generation
-	restart_requested = FALSE
-	phase = 1
-	remaining = list()
-	frontier = list()
-	current_component = null
-	components = list()
-	target_nets = list()
-	old_nodes = null
-	component_index = 1
-	member_index = 1
-	node_index = 1
-	for(var/obj/structure/cable/cable as anything in source_net?.cables)
-		if(cable && !QDELETED(cable) && cable.powernet == source_net)
-			remaining[cable] = TRUE
-
-/datum/powernet_topology_job/proc/start_component()
-	var/obj/structure/cable/seed
-	for(var/obj/structure/cable/candidate as anything in remaining)
-		seed = candidate
-		break
-	if(!seed)
-		return FALSE
-	remaining.Remove(seed)
-	current_component = list(seed)
-	components += list(current_component)
-	frontier += seed
-	return TRUE
-
-/datum/powernet_topology_job/proc/process_slice()
-	var/work_done = 0
-	if(!source_net || QDELETED(source_net))
-		complete = TRUE
-		return work_done
-	if(restart_requested || captured_generation != source_net.topology_generation)
-		restart_snapshot()
-	while(!complete)
-		if(phase == 1)
-			if(!length(frontier))
-				if(!start_component())
-					phase = 2
-					continue
-			var/obj/structure/cable/cable = frontier[length(frontier)]
-			frontier.len--
-			for(var/obj/structure/cable/neighbor as anything in cable.get_connections())
-				if(remaining[neighbor] && neighbor.powernet == source_net)
-					remaining.Remove(neighbor)
-					current_component += neighbor
-					frontier += neighbor
-			work_done++
-		else if(phase == 2)
-			old_nodes = source_net.nodes.Copy()
-			source_net.prepare_topology_rebind()
-			if(!length(components))
-				qdel(source_net)
-				complete = TRUE
-				continue
-			var/largest_index = 1
-			for(var/i in 2 to length(components))
-				if(length(components[i]) > length(components[largest_index]))
-					largest_index = i
-			for(var/i in 1 to length(components))
-				var/datum/powernet/target = (i == largest_index) ? source_net : new()
-				target.topology_pending = TRUE
-				STOP_PROCESSING_POWERNET(target)
-				target_nets += target
-			source_net.cables = list()
-			phase = 3
-		else if(phase == 3)
-			var/list/component = components[component_index]
-			var/datum/powernet/target = target_nets[component_index]
-			var/obj/structure/cable/cable = component[member_index]
-			cable.powernet = target
-			target.cables += cable
-			member_index++
-			work_done++
-			if(member_index > length(component))
-				component_index++
-				member_index = 1
-				if(component_index > length(components))
-					phase = 4
-		else if(phase == 4)
-			if(node_index <= length(old_nodes))
-				var/obj/machinery/power/machine = old_nodes[node_index++]
-				if(machine && !QDELETED(machine))
-					var/turf/location = get_turf(machine)
-					var/obj/structure/cable/node = location?.get_cable_node()
-					var/datum/powernet/target = node?.powernet
-					if(target && (target in target_nets))
-						target.bind_machine_after_topology(machine)
-					else
-						machine.powernet = null
-				work_done++
-			else
-				phase = 5
-		else
-			for(var/datum/powernet/target as anything in target_nets)
-				target.topology_pending = FALSE
-				target.invalidate_material_cache()
-				target.publish_dependency()
-			complete = TRUE
-		if(work_done >= POWER_TOPOLOGY_WORK_SLICE)
-			break
-	return work_done
 
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/scan_started = TICK_USAGE

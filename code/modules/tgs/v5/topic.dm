@@ -19,7 +19,7 @@
 		var/payload_id = chunks[1][DMAPI5_CHUNK][DMAPI5_CHUNK_PAYLOAD_ID]
 		var/cache_key = ResponseTopicChunkCacheKey(payload_id)
 
-		chunked_topics[cache_key] = chunks
+		LAZYSET(chunked_topics, cache_key, chunks)
 
 		response_json = json_encode(chunks[1])
 
@@ -180,7 +180,7 @@
 			reattach_response[DMAPI5_PARAMETER_TOPIC_PORT] = GetTopicPort()
 
 			for(var/eventId in pending_events)
-				pending_events[eventId] = TRUE
+				LAZYSET(pending_events, eventId, TRUE)
 
 			return reattach_response
 
@@ -212,19 +212,19 @@
 				return TopicResponse("[DMAPI5_CHUNK_PAYLOAD] is not text!")
 
 			var/cache_key = "request[payload_id]"
-			var/payloads = chunked_topics[cache_key]
+			var/payloads = LAZYACCESS(chunked_topics, cache_key)
 
 			if(!payloads)
 				payloads = new /list(total_chunks)
-				chunked_topics[cache_key] = payloads
+				LAZYSET(chunked_topics, cache_key, payloads)
 
 			if(total_chunks != length(payloads))
-				chunked_topics -= cache_key
+				LAZYREMOVE(chunked_topics, cache_key)
 				return TopicResponse("Received differing total chunks for same [DMAPI5_CHUNK_PAYLOAD_ID]! Invalidating [DMAPI5_CHUNK_PAYLOAD_ID]!")
 
 			var/pre_existing_chunk = payloads[sequence_id + 1]
 			if(pre_existing_chunk && pre_existing_chunk != payload)
-				chunked_topics -= cache_key
+				LAZYREMOVE(chunked_topics, cache_key)
 				return TopicResponse("Received differing payload for same [DMAPI5_CHUNK_SEQUENCE_ID]! Invalidating [DMAPI5_CHUNK_PAYLOAD_ID]!")
 
 			payloads[sequence_id + 1] = payload
@@ -237,7 +237,7 @@
 			if(length(missing_sequence_ids))
 				return list(DMAPI5_MISSING_CHUNKS = missing_sequence_ids)
 
-			chunked_topics -= cache_key
+			LAZYREMOVE(chunked_topics, cache_key)
 			var/full_json = jointext(payloads, "")
 
 			return ProcessRawTopic(full_json, FALSE)
@@ -259,7 +259,7 @@
 				return TopicResponse("[DMAPI5_MISSING_CHUNKS] contained a non-number!")
 
 			var/cache_key = ResponseTopicChunkCacheKey(payload_id)
-			var/list/chunks = chunked_topics[cache_key]
+			var/list/chunks = LAZYACCESS(chunked_topics, cache_key)
 			if(!chunks)
 				return TopicResponse("Unknown response chunk set: P[payload_id]!")
 
@@ -270,7 +270,7 @@
 
 			if(length(missing_chunks) == 1)
 				// sending last chunk, purge the cache
-				chunked_topics -= cache_key
+				LAZYREMOVE(chunked_topics, cache_key)
 
 			return chunk_to_send
 
@@ -288,7 +288,7 @@
 				return TopicResponse("Invalid or missing [DMAPI5_EVENT_ID]")
 
 			TGS_DEBUG_LOG("Completing event ID [event_id]...")
-			pending_events[event_id] = TRUE
+			LAZYSET(pending_events, event_id, TRUE)
 			return TopicResponse()
 
 	return TopicResponse("Unknown command: [command]")

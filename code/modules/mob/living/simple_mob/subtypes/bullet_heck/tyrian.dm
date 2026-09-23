@@ -46,7 +46,7 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments
 	mob_class = MOB_CLASS_ABERRATION
 	endurance = 2100
-	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 30, bio = 100, rad = 100)
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 	movement_cooldown = 40
 
 //Watch the ground. No seriously, 2/3s of it is glowing red

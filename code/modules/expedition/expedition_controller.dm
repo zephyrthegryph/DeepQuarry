@@ -516,7 +516,6 @@ SUBSYSTEM_DEF(expedition)
 // Clear every movable off a z and reset it to vacuum for the next generated
 // station. Never deletes a connected player (defensive).
 /datum/controller/subsystem/expedition/proc/wipe_z(z, datum/expedition_teardown_job/job)
-	vg_topology_transaction_begin()
 	var/wiped = 0
 	var/area/space/space_area = generated_station_space_area()
 	for(var/turf/T in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
@@ -544,7 +543,6 @@ SUBSYSTEM_DEF(expedition)
 			job.checkpoint()
 		else if(wiped % 1000 == 0)
 			CHECK_TICK
-	vg_topology_transaction_commit()
 
 // ---- Helpers --------------------------------------------------------------
 

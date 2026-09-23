@@ -14,7 +14,6 @@
 
 	name = "automatic shutoff valve"
 	desc = "An automatic valve with control circuitry and pipe integrity sensor, capable of automatically isolating damaged segments of the pipe network."
-	description_info = "Clicking this will toggle the automatic control. Alt-clicking this when the automatic control is disabled will manually open or close the valve."
 	var/close_on_leaks = TRUE	// If false it will be always open
 	level = 1
 	/// REACT_KEY_PIPE_NETWORK subscriptions: the global key, and one per bordering network
@@ -47,8 +46,22 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 /obj/machinery/atmospherics/valve/shutoff/attack_ai(mob/user as mob)
 	return src.attack_hand(user)
 
-/obj/machinery/atmospherics/valve/shutoff/attack_hand(mob/user)
-	src.add_fingerprint(user)
+/obj/machinery/atmospherics/valve/shutoff/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/shutoff_toggle_auto,
+		/datum/interaction/machine_alt/shutoff_manual,
+	)
+	..()
+
+/// Toggle the automatic shutoff circuit.
+/datum/interaction/machine_hand/ungated/shutoff_toggle_auto
+	id = "shutoff_toggle_auto"
+	name = "Toggle automatic control"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/atmospherics/valve/shutoff/proc/interaction_toggle_auto
+
+/obj/machinery/atmospherics/valve/shutoff/proc/interaction_toggle_auto(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
 	update_icon(1)
 	close_on_leaks = !close_on_leaks
 	if(close_on_leaks)
@@ -56,15 +69,21 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	to_chat(user, "You [close_on_leaks ? "enable" : "disable"] the automatic shutoff circuit.")
 	return TRUE
 
-// Alt+Click now toggles the open/close function, when the autoseal is disabled
-/obj/machinery/atmospherics/valve/shutoff/click_alt(mob/user)
+/// Alt+Click toggles the open/close function, when the autoseal is disabled.
+/datum/interaction/machine_alt/shutoff_manual
+	id = "shutoff_manual"
+	name = "Manually toggle valve"
+	consumes_input = FALSE
+	effect = /obj/machinery/atmospherics/valve/shutoff/proc/interaction_manual_toggle
+
+/obj/machinery/atmospherics/valve/shutoff/proc/interaction_manual_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isliving(user))
 		if(close_on_leaks)
 			to_chat(user, "You try to manually [open ? "close" : "open"] the valve, but it [open ? "opens" : "closes"] automatically again.")
-			return
-
+			return TRUE
 		open ? close() : open()
 		to_chat(user, "You manually [open ? "open" : "close"] the valve.")
+	return TRUE
 
 /// Subscribes to the keys of the networks on each side (again, if they changed).
 /obj/machinery/atmospherics/valve/shutoff/proc/subscribe_network_keys()

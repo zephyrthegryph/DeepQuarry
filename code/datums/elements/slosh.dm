@@ -75,10 +75,10 @@
 	if(ishuman(source))
 		var/mob/living/carbon/human/human_source = source
 
-		if(!human_source.shoes || human_source.m_intent == I_WALK)
+		if(!human_source.get_equipped_item(SLOT_ID_SHOES) || human_source.m_intent == I_WALK)
 			volume = CONFIG_GET(number/vorefootstep_volume) * (vore_footstep_volume/100) * 0.75
-		else if(human_source.shoes)
-			var/obj/item/clothing/shoes/feet = human_source.shoes
+		else if(human_source.get_equipped_item(SLOT_ID_SHOES))
+			var/obj/item/clothing/shoes/feet = human_source.get_equipped_item(SLOT_ID_SHOES)
 			if(istype(feet))
 				volume = feet.step_volume_mod * CONFIG_GET(number/vorefootstep_volume) * (vore_footstep_volume/100) * 0.75
 		if(!human_source.has_organ(BP_L_FOOT) && !human_source.has_organ(BP_R_FOOT))

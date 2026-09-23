@@ -25,10 +25,10 @@
 						H.put_in_hands(first_item)
 						return
 
-			if(H.l_store == src && !H.get_active_hand()) //overrides
+			if(H.get_equipped_item(SLOT_ID_POCKET_L) == src && !H.get_active_hand()) //overrides
 				open(user)
 				return
-			if(H.r_store == src && !H.get_active_hand())
+			if(H.get_equipped_item(SLOT_ID_POCKET_R) == src && !H.get_active_hand())
 				open(user)
 				return
 	..() //Nothing special happened, go call the other proc

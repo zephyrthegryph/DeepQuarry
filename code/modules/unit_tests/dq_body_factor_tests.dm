@@ -273,7 +273,7 @@
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench)
 	H.put_in_l_hand(W)
 	H.body.life_tick()
-	TEST_ASSERT(H.l_hand != W, "a blocked left hand should drop what it holds")
+	TEST_ASSERT(H.get_equipped_item(SLOT_ID_HAND_L) != W, "a blocked left hand should drop what it holds")
 
 
 /// Energy shields keep their charge-dependent resistance (injure() stage 2, COMSIG_LIVING_SHIELD_INJURY).

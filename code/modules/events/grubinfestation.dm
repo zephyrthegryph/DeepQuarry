@@ -2,7 +2,7 @@
 	announceWhen	= 90
 	endWhen			= 200
 	var/spawncount = 1
-	var/list/vents = list()
+	var/list/vents
 	var/give_positions = 0
 
 /datum/event/grub_infestation/setup()
@@ -16,19 +16,19 @@
 			continue
 		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
 			if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
-				vents += temp_vent
+				LAZYADD(vents, temp_vent)
 
 /datum/event/grub_infestation/announce()
 	GLOB.command_announcement.Announce("Solargrubs detected coming aboard [station_name()]. Please clear them out before this starts to affect productivity. All crew efforts are appreciated and encouraged.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 
 /datum/event/grub_infestation/start()
-	while((spawncount >= 1) && vents.len)
-		var/obj/vent = pick(vents)
+	while((spawncount >= 1) && length(vents))
+		var/obj/vent = DEFAULTPICK(vents, null)
 		var/mob/living/simple_mob/animal/solargrub_larva/larva = new(get_turf(vent))
 		larva.tracked = TRUE
-		vents -= vent
+		LAZYREMOVE(vents, vent)
 		spawncount--
-	vents.Cut()
+	LAZYCLEARLIST(vents)
 
 /datum/event/grub_infestation/end()
 	var/list/area_names = list()

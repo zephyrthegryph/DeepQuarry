@@ -12,14 +12,14 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	del_on_map_removal = FALSE
 
 	// Weakrefs of all our viewers
-	var/list/datum/weakref/viewing_clients = list()
+	var/list/datum/weakref/viewing_clients
 	var/list/popup_plane_masters
 
 /atom/movable/screen/map_view_tg/Destroy()
 	for(var/datum/weakref/client_ref in viewing_clients)
 		hide_from_client(client_ref.resolve())
 	QDEL_LIST_NULL(popup_plane_masters)
-	viewing_clients.Cut()
+	LAZYCLEARLIST(viewing_clients)
 	return ..()
 
 /atom/movable/screen/map_view_tg/proc/generate_view(map_key)
@@ -65,7 +65,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	for(var/plane in popup_plane_masters)
 		show_to.register_map_obj(plane)
 
-	viewing_clients |= WEAKREF(show_to)
+	LAZYOR(viewing_clients, WEAKREF(show_to))
 
 /atom/movable/screen/map_view_tg/proc/hide_from(mob/hide_from)
 	// hide_from_client(hide_from?.canon_client)

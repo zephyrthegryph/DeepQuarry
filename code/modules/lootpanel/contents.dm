@@ -2,7 +2,7 @@
 /datum/lootpanel/proc/add_to_index(datum/search_object/index)
 	RegisterSignal(index, COMSIG_QDELETING, PROC_REF(on_searchable_deleted))
 	if(isnull(index.icon))
-		to_image += index
+		LAZYADD(to_image, index)
 
 	contents += index
 
@@ -45,7 +45,7 @@
 /datum/lootpanel/proc/reset_contents()
 	for(var/datum/search_object/index as anything in contents)
 		contents -= index
-		to_image -= index
+		LAZYREMOVE(to_image, index)
 
 		if(QDELETED(index))
 			continue

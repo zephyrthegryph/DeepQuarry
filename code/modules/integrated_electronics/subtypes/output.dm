@@ -177,13 +177,13 @@
 	outputs = list()
 	activators = list("play sound" = IC_PINTYPE_PULSE_IN)
 	power_draw_per_use = 20
-	var/list/sounds = list()
+	var/list/sounds
 
 /obj/item/integrated_circuit/output/sound/Initialize(mapload)
 	. = ..()
 	extended_desc = list()
 	extended_desc += "The first input pin determines which sound is used. The choices are; "
-	extended_desc += jointext(sounds, ", ")
+	extended_desc += jointext(sounds || list(), ", ")
 	extended_desc += ". The second pin determines the volume of sound that is played"
 	extended_desc += ", and the third determines if the frequency of the sound will vary with each activation."
 	extended_desc = jointext(extended_desc, null)
@@ -193,7 +193,7 @@
 	var/vol = get_pin_data(IC_INPUT, 2)
 	var/freq = get_pin_data(IC_INPUT, 3)
 	if(!isnull(ID) && !isnull(vol))
-		var/selected_sound = sounds[ID]
+		var/selected_sound = LAZYACCESS(sounds, ID)
 		if(!selected_sound)
 			return
 		vol = between(0, vol, 100)

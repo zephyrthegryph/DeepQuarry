@@ -1,6 +1,6 @@
 /datum/antagonist/proc/update_leader()
-	if(!leader && current_antagonists.len && (flags & ANTAG_HAS_LEADER))
-		leader = current_antagonists[1]
+	if(!leader && length(current_antagonists) && (flags & ANTAG_HAS_LEADER))
+		leader = LAZYACCESS(current_antagonists, 1)
 
 /datum/antagonist/proc/update_antag_mob(datum/mind/player, preserve_appearance)
 

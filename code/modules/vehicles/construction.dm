@@ -1,5 +1,10 @@
-/*
- * Construction!
+/**
+ * Vehicle assembly construction graphs (doc/rewrite/interactions.md §10).
+ *
+ * Each `/obj/item/vehicle_assembly` builds up through a sequence of item and
+ * tool steps, tracked by `build_stage` (the graph's `state_var`). The last
+ * step (a wrench or a screwdriver) turns the assembly into the finished
+ * vehicle and moves the installed cell across.
  */
 
 /obj/item/vehicle_assembly
@@ -21,13 +26,22 @@
 	icon_state = "[initial(icon_state)][build_stage]"
 	update_icon()
 
-/obj/item/vehicle_assembly/proc/increase_step(new_name = null)
-	build_stage++
+/// Sets the numbered icon_state for `stage` and, when given, the display name.
+/obj/item/vehicle_assembly/proc/set_build_visuals(stage, new_name)
 	if(new_name)
 		name = new_name
-	icon_state = "[initial(icon_state)][build_stage]"
-	update_icon()
-	return 1
+	if(isnum(stage))
+		icon_state = "[initial(icon_state)][stage]"
+
+/datum/construction_graph/vehicle
+	state_var = "build_stage"
+
+/datum/construction_graph/vehicle/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
+	if(!QDELETED(target))
+		target.update_icon()
+
+/datum/interaction/construction/vehicle
+	tool_volume = 50
 
 /*
  * Quadbike and trailer.
@@ -38,170 +52,245 @@
 	desc = "The frame of an ATV."
 	icon_state = "quad-frame"
 	pixel_x = -16
+	construction_graph = /datum/construction_graph/vehicle/quadbike
 
-/obj/item/vehicle_assembly
-	var/focused_tool_stage
+/datum/construction_graph/vehicle/quadbike
+	id = "quadbike"
+	states = list(0, 1, 2, 3, 4, 5, 6, 7)
+	initial_states = list(0)
+	edge_types = list(
+		/datum/interaction/construction/vehicle/quadbike/tires,
+		/datum/interaction/construction/vehicle/quadbike/lights,
+		/datum/interaction/construction/vehicle/quadbike/controls,
+		/datum/interaction/construction/vehicle/quadbike/to_trailer,
+		/datum/interaction/construction/vehicle/quadbike/wire,
+		/datum/interaction/construction/vehicle/quadbike/power,
+		/datum/interaction/construction/vehicle/quadbike/motor,
+		/datum/interaction/construction/vehicle/quadbike/reinforce,
+		/datum/interaction/construction/vehicle/quadbike/finish_wrench,
+		/datum/interaction/construction/vehicle/quadbike/finish_screwdriver,
+	)
 
-/obj/item/vehicle_assembly/wrench_act(mob/user, obj/item/tool)
-	focused_tool_stage = TOOL_WRENCH
-	attackby(tool, user)
-	focused_tool_stage = null
-	return ITEM_INTERACT_SUCCESS
+/datum/interaction/construction/vehicle/quadbike
 
-/obj/item/vehicle_assembly/screwdriver_act(mob/user, obj/item/tool)
-	focused_tool_stage = TOOL_SCREWDRIVER
-	attackby(tool, user)
-	focused_tool_stage = null
-	return ITEM_INTERACT_SUCCESS
+/datum/interaction/construction/vehicle/quadbike/tires
+	from_state = 0
+	to_state = 1
+	step_text = "add tires to it"
+	item_type = /obj/item/stack/material/plastic
+	item_amount = 8
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to add tires to %TARGET%."
 
-/obj/item/vehicle_assembly/quadbike/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/datum/interaction/construction/vehicle/quadbike/tires/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	assembly.set_build_visuals(after, "wheeled [initial(assembly.name)]")
+	to_chat(actor, span_notice("You add tires to \the [assembly]."))
+	return TRUE
 
-	switch(build_stage)
-		if(0)
-			if(istype(W, /obj/item/stack/material/plastic))
-				var/obj/item/stack/material/plastic/P = W
-				if (P.get_amount() < 8)
-					to_chat(user, span_warning("You need eight sheets of plastic to add tires to \the [src]."))
-					return
-				to_chat(user, span_notice("You start to add tires to [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 0)
-					if(P.use(8))
-						to_chat(user, span_notice("You add tires to \the [src]."))
-						increase_step("wheeled [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/quadbike/lights
+	from_state = 1
+	to_state = 2
+	step_text = "add the lights"
+	item_type = /obj/item/stock_parts/console_screen
+	item_use = CONSTRUCTION_ITEM_DELETE
 
-		if(1)
-			if(istype(W, /obj/item/stock_parts/console_screen))
-				user.drop_item()
-				qdel(W)
-				to_chat(user, span_notice("You add the lights to \the [src]."))
-				increase_step()
-				return
+/datum/interaction/construction/vehicle/quadbike/lights/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	assembly.set_build_visuals(after)
+	to_chat(actor, span_notice("You add the lights to \the [assembly]."))
+	return TRUE
 
-		if(2)
-			if(istype(W, /obj/item/stock_parts/spring))
-				user.drop_item()
-				qdel(W)
-				to_chat(user, span_notice("You add the control system to \the [src]."))
-				increase_step()
-				return
-			if(istype(W, /obj/item/stack/material/steel))
-				var/obj/item/stack/material/steel/S = W
-				if(S.get_amount() < 5)
-					to_chat(user, span_warning("You need five sheets of steel to convert \the [src] into a trailer."))
-				if(do_after(user, 8 SECONDS, target = src) && build_stage == 2)
-					if(S.use(5))
-						var/obj/item/vehicle_assembly/quadtrailer/Trailer = new(src)
-						Trailer.forceMove(get_turf(src))
-						Trailer.increase_step("framed [initial(Trailer.name)]")
-						to_chat(user, span_notice("You convert \the [src] into \the [Trailer]."))
-						user.drop_from_inventory(src)
-						qdel(src)
-				return
+/datum/interaction/construction/vehicle/quadbike/controls
+	from_state = 2
+	to_state = 3
+	step_text = "add the control system"
+	item_type = /obj/item/stock_parts/spring
+	item_use = CONSTRUCTION_ITEM_DELETE
 
-		if(3)
-			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C = W
-				if (C.get_amount() < 2)
-					to_chat(user, span_warning("You need two coils of wire to wire [src]."))
-					return
-				to_chat(user, span_notice("You start to wire [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 3)
-					if(C.use(2))
-						to_chat(user, span_notice("You wire \the [src]."))
-						increase_step("wired [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/quadbike/controls/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	assembly.set_build_visuals(after)
+	to_chat(actor, span_notice("You add the control system to \the [assembly]."))
+	return TRUE
 
-		if(4)
-			if(istype(W, /obj/item/cell))
-				user.drop_item()
-				W.forceMove(src)
-				cell = W
-				to_chat(user, span_notice("You add the power supply to \the [src]."))
-				increase_step("powered [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/quadbike/to_trailer
+	from_state = 2
+	to_state = CONSTRUCTION_DONE
+	step_text = "convert it into a trailer"
+	item_type = /obj/item/stack/material/steel
+	item_amount = 5
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 8 SECONDS
+	tool_scaled = FALSE
 
-		if(5)
-			if(istype(W, /obj/item/stock_parts/motor))
-				user.drop_item()
-				qdel(W)
-				to_chat(user, span_notice("You add the motor to \the [src]."))
-				increase_step()
-				return
+/datum/interaction/construction/vehicle/quadbike/to_trailer/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	var/obj/item/vehicle_assembly/quadtrailer/trailer = new(assembly)
+	trailer.forceMove(get_turf(assembly))
+	trailer.build_stage = 1
+	trailer.set_build_visuals(1, "framed [initial(trailer.name)]")
+	to_chat(actor, span_notice("You convert \the [assembly] into \the [trailer]."))
+	actor.drop_from_inventory(assembly)
+	qdel(assembly)
+	return TRUE
 
-		if(6)
-			if(istype(W, /obj/item/stack/material/plasteel))
-				var/obj/item/stack/material/plasteel/PL = W
-				if (PL.get_amount() < 2)
-					to_chat(user, span_warning("You need two sheets of plasteel to add reinforcement to \the [src]."))
-					return
-				to_chat(user, span_notice("You start to add reinforcement to [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 6)
-					if(PL.use(2))
-						to_chat(user, span_notice("You add reinforcement to \the [src]."))
-						increase_step("reinforced [initial(name)]")
-					return
+/datum/interaction/construction/vehicle/quadbike/wire
+	from_state = 3
+	to_state = 4
+	step_text = "wire it"
+	item_type = /obj/item/stack/cable_coil
+	item_amount = 2
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to wire %TARGET%."
 
-		if(7)
-			if(focused_tool_stage == TOOL_WRENCH || focused_tool_stage == TOOL_SCREWDRIVER)
-				playsound(src, W.usesound, 50, 1)
-				to_chat(user, span_notice("You begin your finishing touches on \the [src]."))
-				if(do_after(user, 2 SECONDS, target = src) && build_stage == 7)
-					playsound(src, W.usesound, 30, 1)
-					var/obj/vehicle/train/engine/quadbike/built/product = new(src)
-					to_chat(user, span_notice("You finish \the [product]"))
-					product.loc = get_turf(src)
-					product.cell = cell
-					cell.forceMove(product)
-					cell = null
-					user.drop_from_inventory(src)
-					qdel(src)
-				return
-	..()
+/datum/interaction/construction/vehicle/quadbike/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	assembly.set_build_visuals(after, "wired [initial(assembly.name)]")
+	to_chat(actor, span_notice("You wire \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/quadbike/power
+	from_state = 4
+	to_state = 5
+	step_text = "add the power supply"
+	item_type = /obj/item/cell
+	item_use = CONSTRUCTION_ITEM_INSERT
+
+/datum/interaction/construction/vehicle/quadbike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	assembly.cell = held
+	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
+	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/quadbike/motor
+	from_state = 5
+	to_state = 6
+	step_text = "add the motor"
+	item_type = /obj/item/stock_parts/motor
+	item_use = CONSTRUCTION_ITEM_DELETE
+
+/datum/interaction/construction/vehicle/quadbike/motor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	assembly.set_build_visuals(after)
+	to_chat(actor, span_notice("You add the motor to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/quadbike/reinforce
+	from_state = 6
+	to_state = 7
+	step_text = "add reinforcement"
+	item_type = /obj/item/stack/material/plasteel
+	item_amount = 2
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to add reinforcement to %TARGET%."
+
+/datum/interaction/construction/vehicle/quadbike/reinforce/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	assembly.set_build_visuals(after, "reinforced [initial(assembly.name)]")
+	to_chat(actor, span_notice("You add reinforcement to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/quadbike/finish
+	from_state = 7
+	to_state = CONSTRUCTION_DONE
+	step_text = "finish it"
+	duration = 2 SECONDS
+	tool_scaled = FALSE
+	start_self = "You begin your finishing touches on %TARGET%."
+
+/datum/interaction/construction/vehicle/quadbike/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/assembly = target
+	playsound(assembly, held.usesound, 30, TRUE)
+	var/obj/vehicle/train/engine/quadbike/built/product = new(assembly)
+	to_chat(actor, span_notice("You finish \the [product]"))
+	product.loc = get_turf(assembly)
+	product.cell = assembly.cell
+	assembly.cell.forceMove(product)
+	assembly.cell = null
+	actor.drop_from_inventory(assembly)
+	qdel(assembly)
+	return TRUE
+
+/datum/interaction/construction/vehicle/quadbike/finish_wrench
+	parent_type = /datum/interaction/construction/vehicle/quadbike/finish
+	tool = TOOL_WRENCH
+
+/datum/interaction/construction/vehicle/quadbike/finish_screwdriver
+	parent_type = /datum/interaction/construction/vehicle/quadbike/finish
+	tool = TOOL_SCREWDRIVER
 
 /obj/item/vehicle_assembly/quadtrailer
 	name = "all terrain trailer"
 	desc = "The frame of a small trailer."
 	icon_state = "quadtrailer-frame"
 	pixel_x = -16
+	construction_graph = /datum/construction_graph/vehicle/quadtrailer
 
-/obj/item/vehicle_assembly/quadtrailer/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/datum/construction_graph/vehicle/quadtrailer
+	id = "quadtrailer"
+	states = list(0, 1, 2)
+	initial_states = list(0)
+	edge_types = list(
+		/datum/interaction/construction/vehicle/quadtrailer/frame,
+		/datum/interaction/construction/vehicle/quadtrailer/wire,
+		/datum/interaction/construction/vehicle/quadtrailer/finish,
+	)
 
-	switch(build_stage)
-		if(0)
-			if(istype(W, /obj/item/vehicle_assembly/quadbike))
-				var/obj/item/vehicle_assembly/quadbike/Q = W
-				if(Q.build_stage > 2)
-					to_chat(user, span_notice("\The [Q] is too advanced to be of use with \the [src]"))
-					return
-				user.drop_item()
-				qdel(W)
-				increase_step("framed [initial(name)]")
+/datum/interaction/construction/vehicle/quadtrailer/frame
+	from_state = 0
+	to_state = 1
+	step_text = "assemble it from a spare quadbike frame"
+	item_type = /obj/item/vehicle_assembly/quadbike
+	item_use = CONSTRUCTION_ITEM_DELETE
 
-		if(1)
-			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C = W
-				if (C.get_amount() < 2)
-					to_chat(user, span_warning("You need two coils of wire to wire [src]."))
-					return
-				to_chat(user, span_notice("You start to wire [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 1)
-					if(C.use(2))
-						to_chat(user, span_notice("You wire \the [src]."))
-						increase_step("wired [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/quadtrailer/frame/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadbike/quad = held
+	var/obj/item/vehicle_assembly/quadtrailer/trailer = target
+	if(quad.build_stage > 2)
+		to_chat(actor, span_notice("\The [quad] is too advanced to be of use with \the [trailer]"))
+		return FALSE
+	trailer.set_build_visuals(after, "framed [initial(trailer.name)]")
+	return TRUE
 
-		if(2)
-			if(focused_tool_stage == TOOL_SCREWDRIVER)
-				playsound(src, W.usesound, 50, 1)
-				to_chat(user, span_notice("You close up \the [src]."))
-				var/obj/vehicle/train/trolley/trailer/product = new(src)
-				product.loc = get_turf(src)
-				user.drop_from_inventory(src)
-				qdel(src)
-				return
+/datum/interaction/construction/vehicle/quadtrailer/wire
+	from_state = 1
+	to_state = 2
+	step_text = "wire it"
+	item_type = /obj/item/stack/cable_coil
+	item_amount = 2
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to wire %TARGET%."
+
+/datum/interaction/construction/vehicle/quadtrailer/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadtrailer/trailer = target
+	trailer.set_build_visuals(after, "wired [initial(trailer.name)]")
+	to_chat(actor, span_notice("You wire \the [trailer]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/quadtrailer/finish
+	from_state = 2
+	to_state = CONSTRUCTION_DONE
+	step_text = "close it up"
+	tool = TOOL_SCREWDRIVER
+
+/datum/interaction/construction/vehicle/quadtrailer/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/quadtrailer/trailer = target
+	to_chat(actor, span_notice("You close up \the [trailer]."))
+	var/obj/vehicle/train/trolley/trailer/product = new(trailer)
+	product.loc = get_turf(trailer)
+	actor.drop_from_inventory(trailer)
+	qdel(trailer)
+	return TRUE
 
 /*
  * Space bike.
@@ -214,81 +303,137 @@
 	icon_state = "bike-frame"
 
 	pixel_x = 0
+	construction_graph = /datum/construction_graph/vehicle/spacebike
 
-/obj/item/vehicle_assembly/spacebike/attackby(obj/item/W as obj, mob/user as mob)
-	switch(build_stage)
-		if(0)
-			if(istype(W, /obj/item/tank/jetpack) || istype(W, /obj/item/borg/upgrade/advanced/jetpack))
-				user.drop_item()
-				qdel(W)
-				increase_step()
+/datum/construction_graph/vehicle/spacebike
+	id = "spacebike"
+	states = list(0, 1, 2, 3, 4, 5, 6)
+	initial_states = list(0)
+	edge_types = list(
+		/datum/interaction/construction/vehicle/spacebike/jetpack,
+		/datum/interaction/construction/vehicle/spacebike/wire,
+		/datum/interaction/construction/vehicle/spacebike/seat,
+		/datum/interaction/construction/vehicle/spacebike/lights,
+		/datum/interaction/construction/vehicle/spacebike/controls,
+		/datum/interaction/construction/vehicle/spacebike/power,
+		/datum/interaction/construction/vehicle/spacebike/finish_wrench,
+		/datum/interaction/construction/vehicle/spacebike/finish_screwdriver,
+	)
 
-		if(1)
-			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C = W
-				if (C.get_amount() < 2)
-					to_chat(user, span_warning("You need two coils of wire to wire [src]."))
-					return
-				to_chat(user, span_notice("You start to wire [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 1)
-					if(C.use(2))
-						to_chat(user, span_notice("You wire \the [src]."))
-						increase_step("wired [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/spacebike/jetpack
+	from_state = 0
+	to_state = 1
+	step_text = "add a jetpack"
+	item_type = list(/obj/item/tank/jetpack, /obj/item/borg/upgrade/advanced/jetpack)
+	item_use = CONSTRUCTION_ITEM_DELETE
 
-		if(2)
-			if(istype(W, /obj/item/stack/material/plastic))
-				var/obj/item/stack/material/plastic/P = W
-				if (P.get_amount() < 3)
-					to_chat(user, span_warning("You need three sheets of plastic to add a seat to \the [src]."))
-					return
-				to_chat(user, span_notice("You start to add a seat to [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 2)
-					if(P.use(3))
-						to_chat(user, span_notice("You add a seat to \the [src]."))
-						increase_step("seated [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/spacebike/jetpack/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/spacebike/assembly = target
+	assembly.set_build_visuals(after)
+	return TRUE
 
-		if(3)
-			if(istype(W, /obj/item/stock_parts/console_screen))
-				user.drop_item()
-				qdel(W)
-				to_chat(user, span_notice("You add the lights to \the [src]."))
-				increase_step()
-				return
+/datum/interaction/construction/vehicle/spacebike/wire
+	from_state = 1
+	to_state = 2
+	step_text = "wire it"
+	item_type = /obj/item/stack/cable_coil
+	item_amount = 2
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to wire %TARGET%."
 
-		if(4)
-			if(istype(W, /obj/item/stock_parts/spring))
-				user.drop_item()
-				qdel(W)
-				to_chat(user, span_notice("You add the control system to \the [src]."))
-				increase_step()
-				return
+/datum/interaction/construction/vehicle/spacebike/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/spacebike/assembly = target
+	assembly.set_build_visuals(after, "wired [initial(assembly.name)]")
+	to_chat(actor, span_notice("You wire \the [assembly]."))
+	return TRUE
 
-		if(5)
-			if(istype(W, /obj/item/cell))
-				user.drop_item()
-				W.forceMove(src)
-				cell = W
-				to_chat(user, span_notice("You add the power supply to \the [src]."))
-				increase_step("powered [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/spacebike/seat
+	from_state = 2
+	to_state = 3
+	step_text = "add a seat"
+	item_type = /obj/item/stack/material/plastic
+	item_amount = 3
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to add a seat to %TARGET%."
 
-		if(6)
-			if(focused_tool_stage == TOOL_WRENCH || focused_tool_stage == TOOL_SCREWDRIVER)
-				playsound(src, W.usesound, 50, 1)
-				to_chat(user, span_notice("You begin your finishing touches on \the [src]."))
-				if(do_after(user, 2 SECONDS, target = src) && build_stage == 6)
-					playsound(src, W.usesound, 30, 1)
-					var/obj/vehicle/bike/built/product = new(src)
-					to_chat(user, span_notice("You finish \the [product]"))
-					product.loc = get_turf(src)
-					product.cell = cell
-					cell.forceMove(product)
-					cell = null
-					user.drop_from_inventory(src)
-					qdel(src)
-				return
+/datum/interaction/construction/vehicle/spacebike/seat/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/spacebike/assembly = target
+	assembly.set_build_visuals(after, "seated [initial(assembly.name)]")
+	to_chat(actor, span_notice("You add a seat to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/spacebike/lights
+	from_state = 3
+	to_state = 4
+	step_text = "add the lights"
+	item_type = /obj/item/stock_parts/console_screen
+	item_use = CONSTRUCTION_ITEM_DELETE
+
+/datum/interaction/construction/vehicle/spacebike/lights/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/spacebike/assembly = target
+	assembly.set_build_visuals(after)
+	to_chat(actor, span_notice("You add the lights to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/spacebike/controls
+	from_state = 4
+	to_state = 5
+	step_text = "add the control system"
+	item_type = /obj/item/stock_parts/spring
+	item_use = CONSTRUCTION_ITEM_DELETE
+
+/datum/interaction/construction/vehicle/spacebike/controls/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/spacebike/assembly = target
+	assembly.set_build_visuals(after)
+	to_chat(actor, span_notice("You add the control system to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/spacebike/power
+	from_state = 5
+	to_state = 6
+	step_text = "add the power supply"
+	item_type = /obj/item/cell
+	item_use = CONSTRUCTION_ITEM_INSERT
+
+/datum/interaction/construction/vehicle/spacebike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/spacebike/assembly = target
+	assembly.cell = held
+	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
+	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/spacebike/finish
+	from_state = 6
+	to_state = CONSTRUCTION_DONE
+	step_text = "finish it"
+	duration = 2 SECONDS
+	tool_scaled = FALSE
+	start_self = "You begin your finishing touches on %TARGET%."
+
+/datum/interaction/construction/vehicle/spacebike/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/spacebike/assembly = target
+	playsound(assembly, held.usesound, 30, TRUE)
+	var/obj/vehicle/bike/built/product = new(assembly)
+	to_chat(actor, span_notice("You finish \the [product]"))
+	product.loc = get_turf(assembly)
+	product.cell = assembly.cell
+	assembly.cell.forceMove(product)
+	assembly.cell = null
+	actor.drop_from_inventory(assembly)
+	qdel(assembly)
+	return TRUE
+
+/datum/interaction/construction/vehicle/spacebike/finish_wrench
+	parent_type = /datum/interaction/construction/vehicle/spacebike/finish
+	tool = TOOL_WRENCH
+
+/datum/interaction/construction/vehicle/spacebike/finish_screwdriver
+	parent_type = /datum/interaction/construction/vehicle/spacebike/finish
+	tool = TOOL_SCREWDRIVER
 
 /*
  * Snowmobile.
@@ -299,94 +444,153 @@
 	desc = "The frame of a snowmobile."
 	icon = 'icons/obj/vehicles.dmi'
 	icon_state = "snowmobile-frame"
+	construction_graph = /datum/construction_graph/vehicle/snowmobile
 
-/obj/item/vehicle_assembly/snowmobile/attackby(obj/item/W as obj, mob/user as mob)
-	switch(build_stage)
-		if(0)
-			if(istype(W, /obj/item/stack/material/steel))
-				var/obj/item/stack/material/steel/S = W
-				if (S.get_amount() < 6)
-					to_chat(user, span_warning("You need six sheets of steel to add treads to \the [src]."))
-					return
-				to_chat(user, span_notice("You start to add treads to [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 0)
-					if(S.use(6))
-						to_chat(user, span_notice("You add treads to \the [src]."))
-						increase_step("tracked [initial(name)]")
-				return
+/datum/construction_graph/vehicle/snowmobile
+	id = "snowmobile"
+	states = list(0, 1, 2, 3, 4, 5, 6, 7)
+	initial_states = list(0)
+	edge_types = list(
+		/datum/interaction/construction/vehicle/snowmobile/treads,
+		/datum/interaction/construction/vehicle/snowmobile/lights,
+		/datum/interaction/construction/vehicle/snowmobile/controls,
+		/datum/interaction/construction/vehicle/snowmobile/wire,
+		/datum/interaction/construction/vehicle/snowmobile/power,
+		/datum/interaction/construction/vehicle/snowmobile/motor,
+		/datum/interaction/construction/vehicle/snowmobile/reinforce,
+		/datum/interaction/construction/vehicle/snowmobile/finish_wrench,
+		/datum/interaction/construction/vehicle/snowmobile/finish_screwdriver,
+	)
 
-		if(1)
-			if(istype(W, /obj/item/stock_parts/console_screen))
-				user.drop_item()
-				qdel(W)
-				to_chat(user, span_notice("You add the lights to \the [src]."))
-				increase_step()
-				return
+/datum/interaction/construction/vehicle/snowmobile/treads
+	from_state = 0
+	to_state = 1
+	step_text = "add treads to it"
+	item_type = /obj/item/stack/material/steel
+	item_amount = 6
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to add treads to %TARGET%."
 
-		if(2)
-			if(istype(W, /obj/item/stock_parts/spring))
-				user.drop_item()
-				qdel(W)
-				to_chat(user, span_notice("You add the control system to \the [src]."))
-				increase_step()
-				return
+/datum/interaction/construction/vehicle/snowmobile/treads/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/snowmobile/assembly = target
+	assembly.set_build_visuals(after, "tracked [initial(assembly.name)]")
+	to_chat(actor, span_notice("You add treads to \the [assembly]."))
+	return TRUE
 
-		if(3)
-			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C = W
-				if (C.get_amount() < 2)
-					to_chat(user, span_warning("You need two coils of wire to wire [src]."))
-					return
-				to_chat(user, span_notice("You start to wire [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 3)
-					if(C.use(2))
-						to_chat(user, span_notice("You wire \the [src]."))
-						increase_step("wired [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/snowmobile/lights
+	from_state = 1
+	to_state = 2
+	step_text = "add the lights"
+	item_type = /obj/item/stock_parts/console_screen
+	item_use = CONSTRUCTION_ITEM_DELETE
 
-		if(4)
-			if(istype(W, /obj/item/cell))
-				user.drop_item()
-				W.forceMove(src)
-				cell = W
-				to_chat(user, span_notice("You add the power supply to \the [src]."))
-				increase_step("powered [initial(name)]")
-				return
+/datum/interaction/construction/vehicle/snowmobile/lights/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/snowmobile/assembly = target
+	assembly.set_build_visuals(after)
+	to_chat(actor, span_notice("You add the lights to \the [assembly]."))
+	return TRUE
 
-		if(5)
-			if(istype(W, /obj/item/stock_parts/motor))
-				user.drop_item()
-				qdel(W)
-				to_chat(user, span_notice("You add the motor to \the [src]."))
-				increase_step()
-				return
+/datum/interaction/construction/vehicle/snowmobile/controls
+	from_state = 2
+	to_state = 3
+	step_text = "add the control system"
+	item_type = /obj/item/stock_parts/spring
+	item_use = CONSTRUCTION_ITEM_DELETE
 
-		if(6)
-			if(istype(W, /obj/item/stack/material/plasteel))
-				var/obj/item/stack/material/plasteel/PL = W
-				if (PL.get_amount() < 2)
-					to_chat(user, span_warning("You need two sheets of plasteel to add reinforcement to \the [src]."))
-					return
-				to_chat(user, span_notice("You start to add reinforcement to [src]."))
-				if(do_after(user, 4 SECONDS, target = src) && build_stage == 6)
-					if(PL.use(2))
-						to_chat(user, span_notice("You add reinforcement to \the [src]."))
-						increase_step("reinforced [initial(name)]")
-					return
+/datum/interaction/construction/vehicle/snowmobile/controls/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/snowmobile/assembly = target
+	assembly.set_build_visuals(after)
+	to_chat(actor, span_notice("You add the control system to \the [assembly]."))
+	return TRUE
 
-		if(7)
-			if(focused_tool_stage == TOOL_WRENCH || focused_tool_stage == TOOL_SCREWDRIVER)
-				playsound(src, W.usesound, 50, 1)
-				to_chat(user, span_notice("You begin your finishing touches on \the [src]."))
-				if(do_after(user, 2 SECONDS, target = src) && build_stage == 7)
-					playsound(src, W.usesound, 30, 1)
-					var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = new(src)
-					to_chat(user, span_notice("You finish \the [product]"))
-					product.loc = get_turf(src)
-					product.cell = cell
-					cell.forceMove(product)
-					cell = null
-					user.drop_from_inventory(src)
-					qdel(src)
-				return
-	..()
+/datum/interaction/construction/vehicle/snowmobile/wire
+	from_state = 3
+	to_state = 4
+	step_text = "wire it"
+	item_type = /obj/item/stack/cable_coil
+	item_amount = 2
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to wire %TARGET%."
+
+/datum/interaction/construction/vehicle/snowmobile/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/snowmobile/assembly = target
+	assembly.set_build_visuals(after, "wired [initial(assembly.name)]")
+	to_chat(actor, span_notice("You wire \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/snowmobile/power
+	from_state = 4
+	to_state = 5
+	step_text = "add the power supply"
+	item_type = /obj/item/cell
+	item_use = CONSTRUCTION_ITEM_INSERT
+
+/datum/interaction/construction/vehicle/snowmobile/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/snowmobile/assembly = target
+	assembly.cell = held
+	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
+	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/snowmobile/motor
+	from_state = 5
+	to_state = 6
+	step_text = "add the motor"
+	item_type = /obj/item/stock_parts/motor
+	item_use = CONSTRUCTION_ITEM_DELETE
+
+/datum/interaction/construction/vehicle/snowmobile/motor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/snowmobile/assembly = target
+	assembly.set_build_visuals(after)
+	to_chat(actor, span_notice("You add the motor to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/snowmobile/reinforce
+	from_state = 6
+	to_state = 7
+	step_text = "add reinforcement"
+	item_type = /obj/item/stack/material/plasteel
+	item_amount = 2
+	item_use = CONSTRUCTION_ITEM_USE
+	duration = 4 SECONDS
+	tool_scaled = FALSE
+	start_self = "You start to add reinforcement to %TARGET%."
+
+/datum/interaction/construction/vehicle/snowmobile/reinforce/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/snowmobile/assembly = target
+	assembly.set_build_visuals(after, "reinforced [initial(assembly.name)]")
+	to_chat(actor, span_notice("You add reinforcement to \the [assembly]."))
+	return TRUE
+
+/datum/interaction/construction/vehicle/snowmobile/finish
+	from_state = 7
+	to_state = CONSTRUCTION_DONE
+	step_text = "finish it"
+	duration = 2 SECONDS
+	tool_scaled = FALSE
+	start_self = "You begin your finishing touches on %TARGET%."
+
+/datum/interaction/construction/vehicle/snowmobile/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/vehicle_assembly/snowmobile/assembly = target
+	playsound(assembly, held.usesound, 30, TRUE)
+	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = new(assembly)
+	to_chat(actor, span_notice("You finish \the [product]"))
+	product.loc = get_turf(assembly)
+	product.cell = assembly.cell
+	assembly.cell.forceMove(product)
+	assembly.cell = null
+	actor.drop_from_inventory(assembly)
+	qdel(assembly)
+	return TRUE
+
+/datum/interaction/construction/vehicle/snowmobile/finish_wrench
+	parent_type = /datum/interaction/construction/vehicle/snowmobile/finish
+	tool = TOOL_WRENCH
+
+/datum/interaction/construction/vehicle/snowmobile/finish_screwdriver
+	parent_type = /datum/interaction/construction/vehicle/snowmobile/finish
+	tool = TOOL_SCREWDRIVER

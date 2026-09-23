@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			break
 
 	if(!target) //didn't find any new targets
-		if(!converting.len)
+		if(!length(converting))
 			fizzle(user)
 		else
 			to_chat(user, span_danger("You sense that the power of the dark one is already working away at them."))
@@ -116,12 +116,12 @@ GLOBAL_LIST_EMPTY(sacrificed)
 
 	user.say("Mah[pick("'","`")]weyh pleggh at e'ntrath!")
 
-	converting |= target
+	LAZYOR(converting, target)
 	var/list/waiting_for_input = list(target = 0) //need to box this up in order to be able to reset it again from inside spawn, apparently
 	var/initial_message = 0
 	while(target in converting)
 		if(target.loc != src.loc || target.stat == DEAD)
-			converting -= target
+			LAZYREMOVE(converting, target)
 			if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
 				target.hallucination = min(target.hallucination, 500)
 			return 0
@@ -175,7 +175,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				waiting_for_input[target] = 0
 				if(choice == "Submit") //choosing 'Resist' does nothing of course.
 					GLOB.cult.add_antagonist(target.mind)
-					converting -= target
+					LAZYREMOVE(converting, target)
 					target.hallucination = 0 //sudden clarity
 
 		sleep(100) //proc once every 10 seconds
@@ -822,8 +822,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		if (cultist == user) //just to be sure.
 			return
 		if(!(cultist.buckled || \
-			cultist.handcuffed || \
-			istype(cultist.wear_mask, /obj/item/clothing/mask/muzzle) || \
+			cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || \
+			istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle) || \
 			(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded) || \
 			(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked) || \
 			(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked) \
@@ -831,12 +831,12 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			to_chat(user, span_warning("The [cultist] is already free."))
 			return
 		cultist.buckled = null
-		if (cultist.handcuffed)
-			cultist.drop_from_inventory(cultist.handcuffed)
-		if (cultist.legcuffed)
-			cultist.drop_from_inventory(cultist.legcuffed)
-		if (istype(cultist.wear_mask, /obj/item/clothing/mask/muzzle))
-			cultist.drop_from_inventory(cultist.wear_mask)
+		if (cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
+			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
+		if (cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
+			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
+		if (istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle))
+			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_MASK))
 		if(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded)
 			cultist.loc:welded = 0
 		if(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked)
@@ -866,7 +866,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			return fizzle(user)
 		if (cultist == user) //just to be sure.
 			return
-		if(cultist.buckled || cultist.handcuffed || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
+		if(cultist.buckled || cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
 			to_chat(user, span_warning("You cannot summon \the [cultist], for [cultist.p_their()] shackles of blood are strong."))
 			return fizzle(user)
 		cultist.forceMove(src.loc)

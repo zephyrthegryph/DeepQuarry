@@ -15,7 +15,7 @@
 	if (I && I.obj_damage_type() == BRUTE && !I.anchored && !is_robot_module(I) && I.embed_chance > 0)
 		var/weapon_sharp = is_sharp(I)
 		var/hit_embed_chance = I.embed_chance
-		if(prob(blocked)) // Armour that turns the edge also keeps the blade from lodging.
+		if(dq_armor_turns_edge(INJURY_CUT, blocked)) // Armour that turns the edge also keeps the blade from lodging.
 			weapon_sharp = FALSE
 			hit_embed_chance = I.force/(I.w_class*3)
 		var/damage = effective_force
@@ -64,7 +64,7 @@
 	var/obj/item/clothing/head/helmet = get_equipped_item(slot_head)
 	if(istype(helmet) && (helmet.body_parts_covered & HEAD) && (helmet.min_pressure_protection != null)) // Both min- and max_pressure_protection must be set for it to function at all, so we can just check that one is set.
 		//we don't do an armor_check here because this is not an impact effect like a weapon swung with momentum, that either penetrates or glances off.
-		damage_mod = 1.0 - (helmet.armor["melee"]/100)
+		damage_mod = 1.0 - (helmet.get_armor().value("melee")/100)
 
 	var/total_damage = 0
 	for(var/i in 1 to 3)
@@ -125,15 +125,15 @@
 	if(get_equipped_item(slot_wear_suit))
 		worn_suit = get_equipped_item(slot_wear_suit)
 		//worn_suit = get_equipped_item(slot_wear_suit)
-		worn_suit_armor = worn_suit.armor["melee"]
+		worn_suit_armor = worn_suit.get_armor().value("melee")
 	else
 		worn_suit_armor = 0
 
 	//if(slot_w_uniform)
 	if(get_equipped_item(slot_w_uniform))
 		worn_under = get_equipped_item(slot_w_uniform)
-		//worn_under_armor = slot_w_uniform.armor["melee"]
-		worn_under_armor = worn_under.armor["melee"]
+		//worn_under_armor = slot_w_uniform.get_armor().value("melee")
+		worn_under_armor = worn_under.get_armor().value("melee")
 	else
 		worn_under_armor = 0
 

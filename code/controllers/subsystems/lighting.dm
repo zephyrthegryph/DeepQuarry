@@ -149,7 +149,7 @@ SUBSYSTEM_DEF(lighting)
 /datum/controller/subsystem/lighting/proc/update_sunlight(datum/planet_sunlight_handler/pshandler)
 	if(istype(pshandler))
 		pshandler.update_sun()
-		sunlight_queue_active |= pshandler.shandlers
+		if(length(pshandler.shandlers)) sunlight_queue_active |= pshandler.shandlers
 	else
 		for(var/datum/planet/planet in planet_shandlers)
 			var/datum/planet_sunlight_handler/planet_shandler = planet_shandlers[planet]

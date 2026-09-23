@@ -102,9 +102,6 @@
 	for(var/obj/machinery/atmospherics/AM as anything in atmos_machines)
 		AM.atmos_init()
 
-	admin_notice(span_danger("Rebuilding powernets due to submap creation."), R_DEBUG)
-	SSmachines.setup_powernets_for_cables(cables)
-
 	// Ensure all machines in loaded areas get notified of power status
 	for(var/area/A as anything in areas)
 		A.power_change()
@@ -122,9 +119,6 @@
 	admin_notice(span_danger("Submap initializations finished."), R_DEBUG)
 
 /datum/map_template/proc/load_new_z(centered = FALSE)
-	var/atmos_transaction = SSair?.initialized
-	if(atmos_transaction)
-		vg_topology_transaction_begin()
 	var/x = 1
 	var/y = 1
 
@@ -162,8 +156,6 @@
 	var/t_loadmap = REALTIMEOFDAY
 	var/list/bounds = parsed.bounds
 	if(!bounds)
-		if(atmos_transaction)
-			vg_topology_transaction_commit()
 		return FALSE
 
 //	repopulate_sorted_areas()
@@ -176,8 +168,6 @@
 	log_world("load_new_z timing: maxz++=[(t_incz - t_start) / 10]s load_map=[(t_loadmap - t_incz) / 10]s initTemplateBounds=[(REALTIMEOFDAY - t_loadmap) / 10]s")
 	log_game("Z-level [name] loaded at at [x],[y],[new_z]")
 	on_map_loaded(new_z)
-	if(atmos_transaction)
-		vg_topology_transaction_commit()
 	return new_z
 
 /datum/map_template/proc/load(turf/T, centered = FALSE)

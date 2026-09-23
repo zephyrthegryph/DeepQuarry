@@ -129,116 +129,147 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	return loaded
 
-/obj/machinery/suit_cycler/attackby(obj/item/I, mob/user)
+/obj/machinery/suit_cycler/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/suit_cycler_insert_grab,
+		/datum/interaction/machine_item/suit_cycler_insert_helmet,
+		/datum/interaction/machine_item/suit_cycler_insert_suit,
+		/datum/interaction/machine_hand/suit_cycler_use,
+		/datum/interaction/machine_verb/suit_cycler_leave,
+	)
+	..()
 
+/// Put a grabbed mob inside the cycler.
+/datum/interaction/machine_item/suit_cycler_insert_grab
+	id = "suit_cycler_insert_grab"
+	name = "Put in cycler"
+	held_type = /obj/item/grab
+	effect = /obj/machinery/suit_cycler/proc/interaction_insert_grab
+
+/obj/machinery/suit_cycler/proc/interaction_insert_grab(mob/user, obj/item/grab/G, datum/interaction/interaction)
 	if(electrified != 0)
 		if(shock(user, 100))
-			return
+			return TRUE
 
-	//Other interface stuff.
-	if(istype(I, /obj/item/grab))
-		var/obj/item/grab/G = I
+	if(!(ismob(G.affecting)))
+		return TRUE
 
-		if(!(ismob(G.affecting)))
-			return
+	if(locked)
+		to_chat(user, span_danger("The suit cycler is locked."))
+		return TRUE
 
-		if(locked)
-			to_chat(user, span_danger("The suit cycler is locked."))
-			return
+	if(contents.len > 0)
+		to_chat(user, span_danger("There is no room inside the cycler for [G.affecting.name]."))
+		return TRUE
 
-		if(contents.len > 0)
-			to_chat(user, span_danger("There is no room inside the cycler for [G.affecting.name]."))
-			return
+	visible_message(span_notice("[user] starts putting [G.affecting.name] into the suit cycler."), 3)
 
-		visible_message(span_notice("[user] starts putting [G.affecting.name] into the suit cycler."), 3)
+	if(do_after(user, 2 SECONDS, target = src))
+		if(!G || !G.affecting)
+			return TRUE
+		var/mob/M = G.affecting
+		M.forceMove(src)
+		occupant = M
 
-		if(do_after(user, 2 SECONDS, target = src))
-			if(!G || !G.affecting) return
-			var/mob/M = G.affecting
-			M.forceMove(src)
-			occupant = M
+		add_fingerprint(user)
+		qdel(G)
 
-			add_fingerprint(user)
-			qdel(G)
+	return TRUE
 
-			return
-	else if(istype(I,/obj/item/clothing/head/helmet/space/void) && !istype(I, /obj/item/clothing/head/helmet/space/rig))
-		var/obj/item/clothing/head/helmet/space/void/IH = I
+/// Fit a helmet, excluding hardsuit (rig) helmets.
+/datum/interaction/machine_item/suit_cycler_insert_helmet
+	id = "suit_cycler_insert_helmet"
+	name = "Fit helmet"
+	held_type = /obj/item/clothing/head/helmet/space/void
+	offered_when = list(REQ_NOT(REQ_TYPE(PRED_HELD, list(/obj/item/clothing/head/helmet/space/rig))))
+	effect = /obj/machinery/suit_cycler/proc/interaction_insert_helmet
 
-		if(locked)
-			to_chat(user, span_danger("The suit cycler is locked."))
-			return
+/obj/machinery/suit_cycler/proc/interaction_insert_helmet(mob/user, obj/item/clothing/head/helmet/space/void/IH, datum/interaction/interaction)
+	if(electrified != 0)
+		if(shock(user, 100))
+			return TRUE
 
-		if(helmet)
-			to_chat(user, span_danger("The cycler already contains a helmet."))
-			return
+	if(locked)
+		to_chat(user, span_danger("The suit cycler is locked."))
+		return TRUE
 
-		if(IH.no_cycle)
-			to_chat(user, span_danger("That item is not compatible with the cycler's protocols."))
-			return
+	if(helmet)
+		to_chat(user, span_danger("The cycler already contains a helmet."))
+		return TRUE
 
-		if(I.icon_override == CUSTOM_ITEM_MOB)
-			to_chat(user, "You cannot refit a customised voidsuit.")
-			return
+	if(IH.no_cycle)
+		to_chat(user, span_danger("That item is not compatible with the cycler's protocols."))
+		return TRUE
 
-		//Make it so autolok suits can't be refitted in a cycler
-		if(istype(I,/obj/item/clothing/head/helmet/space/void/autolok))
-			to_chat(user, "You cannot refit an autolok helmet. In fact you shouldn't even be able to remove it in the first place. Inform an admin!")
-			return
+	if(IH.icon_override == CUSTOM_ITEM_MOB)
+		to_chat(user, "You cannot refit a customised voidsuit.")
+		return TRUE
 
-		//Ditto the Mk7
-		if(istype(I,/obj/item/clothing/head/helmet/space/void/responseteam))
-			to_chat(user, "The cycler indicates that the Mark VII Emergency Response Helmet is not compatible with the refitting system. How did you manage to detach it anyway? Inform an admin!")
-			return
+	//Make it so autolok suits can't be refitted in a cycler
+	if(istype(IH,/obj/item/clothing/head/helmet/space/void/autolok))
+		to_chat(user, "You cannot refit an autolok helmet. In fact you shouldn't even be able to remove it in the first place. Inform an admin!")
+		return TRUE
 
-		to_chat(user, "You fit \the [I] into the suit cycler.")
-		user.drop_item()
-		I.forceMove(src)
-		helmet = I
+	//Ditto the Mk7
+	if(istype(IH,/obj/item/clothing/head/helmet/space/void/responseteam))
+		to_chat(user, "The cycler indicates that the Mark VII Emergency Response Helmet is not compatible with the refitting system. How did you manage to detach it anyway? Inform an admin!")
+		return TRUE
 
-		update_icon()
-		return
+	to_chat(user, "You fit \the [IH] into the suit cycler.")
+	user.drop_item()
+	IH.forceMove(src)
+	helmet = IH
 
-	else if(istype(I,/obj/item/clothing/suit/space/void))
-		var/obj/item/clothing/suit/space/void/IS = I
+	update_icon()
+	return TRUE
 
-		if(locked)
-			to_chat(user, span_danger("The suit cycler is locked."))
-			return
+/// Fit a voidsuit.
+/datum/interaction/machine_item/suit_cycler_insert_suit
+	id = "suit_cycler_insert_suit"
+	name = "Fit voidsuit"
+	held_type = /obj/item/clothing/suit/space/void
+	effect = /obj/machinery/suit_cycler/proc/interaction_insert_suit
 
-		if(suit)
-			to_chat(user, span_danger("The cycler already contains a voidsuit."))
-			return
+/obj/machinery/suit_cycler/proc/interaction_insert_suit(mob/user, obj/item/clothing/suit/space/void/IS, datum/interaction/interaction)
+	if(electrified != 0)
+		if(shock(user, 100))
+			return TRUE
 
-		if(IS.no_cycle)
-			to_chat(user, span_danger("That item is not compatible with the cycler's protocols."))
-			return
+	if(locked)
+		to_chat(user, span_danger("The suit cycler is locked."))
+		return TRUE
 
-		if(I.icon_override == CUSTOM_ITEM_MOB)
-			to_chat(user, "You cannot refit a customised voidsuit.")
-			return
+	if(suit)
+		to_chat(user, span_danger("The cycler already contains a voidsuit."))
+		return TRUE
 
-		// BEGINS
-		//Make it so autolok suits can't be refitted in a cycler
-		if(istype(I,/obj/item/clothing/suit/space/void/autolok))
-			to_chat(user, "You cannot refit an autolok suit.")
-			return
+	if(IS.no_cycle)
+		to_chat(user, span_danger("That item is not compatible with the cycler's protocols."))
+		return TRUE
 
-		//Ditto the Mk7
-		if(istype(I,/obj/item/clothing/suit/space/void/responseteam))
-			to_chat(user, "The cycler indicates that the Mark VII Emergency Response Suit is not compatible with the refitting system.")
-			return
-		// S
+	if(IS.icon_override == CUSTOM_ITEM_MOB)
+		to_chat(user, "You cannot refit a customised voidsuit.")
+		return TRUE
 
-		to_chat(user, "You fit \the [I] into the suit cycler.")
-		user.drop_item()
-		I.forceMove(src)
-		suit = I
+	// BEGINS
+	//Make it so autolok suits can't be refitted in a cycler
+	if(istype(IS,/obj/item/clothing/suit/space/void/autolok))
+		to_chat(user, "You cannot refit an autolok suit.")
+		return TRUE
 
-		update_icon()
-		return
+	//Ditto the Mk7
+	if(istype(IS,/obj/item/clothing/suit/space/void/responseteam))
+		to_chat(user, "The cycler indicates that the Mark VII Emergency Response Suit is not compatible with the refitting system.")
+		return TRUE
+	// S
 
-	..()
+	to_chat(user, "You fit \the [IS] into the suit cycler.")
+	user.drop_item()
+	IS.forceMove(src)
+	suit = IS
+
+	update_icon()
+	return TRUE
 
 /obj/machinery/suit_cycler/proc/hacking_tool_act(mob/user)
 	if(electrified && shock(user, 100))
@@ -274,19 +305,27 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	req_access = list()
 	return 1
 
-/obj/machinery/suit_cycler/attack_hand(mob/user as mob)
-	add_fingerprint(user)
-	if(..() || stat & (BROKEN|NOPOWER))
-		return
+/// Old attack_hand. The framework's hand_gate() now adds the fingerprint that used to
+/// be added before ..() was called; the stat check folds into the effect since the rest
+/// of the body has its own distinct checks.
+/datum/interaction/machine_hand/suit_cycler_use
+	id = "suit_cycler_use"
+	name = "Use"
+	effect = /obj/machinery/suit_cycler/proc/interaction_use
+
+/obj/machinery/suit_cycler/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(stat & (BROKEN|NOPOWER))
+		return TRUE
 
 	if(!user.IsAdvancedToolUser())
-		return 0
+		return TRUE
 
 	if(electrified != 0)
 		if(shock(user, 100))
-			return
+			return TRUE
 
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/suit_cycler/tgui_state(mob/user)
 	return GLOB.tgui_notcontained_state
@@ -494,15 +533,16 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	return
 
-/obj/machinery/suit_cycler/verb/leave()
-	set name = "Eject Cycler"
-	set category = "Object"
-	set src in oview(1)
+/// Old verb/leave().
+/datum/interaction/machine_verb/suit_cycler_leave
+	id = "suit_cycler_leave"
+	name = "Eject Cycler"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/suit_cycler/proc/interaction_leave
 
-	if(usr.stat != 0)
-		return
-
-	eject_occupant(usr)
+/obj/machinery/suit_cycler/proc/interaction_leave(mob/user, obj/item/held, datum/interaction/interaction)
+	eject_occupant(user)
+	return TRUE
 
 /obj/machinery/suit_cycler/proc/eject_occupant(mob/user)
 

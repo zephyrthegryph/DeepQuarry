@@ -1,11 +1,4 @@
-#define MECHA_OPERATING     0
-#define MECHA_BOLTS_SECURED 1
-#define MECHA_PANEL_LOOSE   2
-#define MECHA_CELL_OPEN     3
-#define MECHA_CELL_OUT      4
-
 /obj/mecha
-	var/focused_tool_stage
 	name = "Mecha"
 	desc = "Exosuit"
 	description_info = "Alt click to strafe."
@@ -39,7 +32,7 @@
 	var/add_req_access = 1
 	var/maint_access = 1
 	var/dna								//Dna-locking the mech
-	var/list/proc_res = list() 			//Stores proc owners, like proc_res["functionname"] = owner reference
+	var/list/proc_res 			//Stores proc owners, like proc_res["functionname"] = owner reference
 	var/datum/effect/effect/system/spark_spread/spark_system
 	var/lights = 0
 	var/lights_power = 6
@@ -88,11 +81,11 @@
 	var/current_processes = MECHA_PROC_INT_TEMP
 
 //mechaequipt2 stuffs
-	var/list/hull_equipment = list()
-	var/list/weapon_equipment = list()
-	var/list/utility_equipment = list()
-	var/list/universal_equipment = list()
-	var/list/special_equipment = list()
+	var/list/hull_equipment
+	var/list/weapon_equipment
+	var/list/utility_equipment
+	var/list/universal_equipment
+	var/list/special_equipment
 	var/max_hull_equip = 2
 	var/max_weapon_equip = 2
 	var/max_utility_equip = 2
@@ -118,7 +111,7 @@
 		)
 
 //Working exosuit vars
-	var/list/cargo = list()
+	var/list/cargo
 	var/cargo_capacity = 3
 
 	var/static/image/radial_image_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
@@ -182,8 +175,8 @@
 	//Micro Mech Code
 	var/max_micro_utility_equip = 0
 	var/max_micro_weapon_equip = 0
-	var/list/micro_utility_equipment = list()
-	var/list/micro_weapon_equipment = list()
+	var/list/micro_utility_equipment
+	var/list/micro_weapon_equipment
 
 REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
@@ -278,14 +271,14 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	if(wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
-		hull_equipment.Cut()
-		weapon_equipment.Cut()
-		utility_equipment.Cut()
-		universal_equipment.Cut()
-		special_equipment.Cut()
+		LAZYCLEARLIST(hull_equipment)
+		LAZYCLEARLIST(weapon_equipment)
+		LAZYCLEARLIST(utility_equipment)
+		LAZYCLEARLIST(universal_equipment)
+		LAZYCLEARLIST(special_equipment)
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
-				WR.crowbar_salvage += E
+				LAZYADD(WR.crowbar_salvage, E)
 				E.forceMove(WR)
 				E.equip_ready = TRUE
 			else
@@ -297,15 +290,15 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			if(istype(C))
 				C.damage_part(rand(10, 20))
 				C.detach()
-				WR.crowbar_salvage += C
+				LAZYADD(WR.crowbar_salvage, C)
 				C.forceMove(WR)
 
 		if(cell)
-			WR.crowbar_salvage += cell
+			LAZYADD(WR.crowbar_salvage, cell)
 			cell.forceMove(WR)
 			cell.charge = rand(0, cell.charge)
 		if(internal_tank)
-			WR.crowbar_salvage += internal_tank
+			LAZYADD(WR.crowbar_salvage, internal_tank)
 			internal_tank.forceMove(WR)
 	else
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
@@ -518,7 +511,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return 0
 
 	return 1
-
 
 
 /obj/mecha/proc/check_for_support()
@@ -770,7 +762,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /obj/mecha/proc/domove(direction)
 
-	return call((proc_res["dyndomove"]||src), "dyndomove")(direction)
+	return call((LAZYACCESS(proc_res, "dyndomove")||src), "dyndomove")(direction)
 
 /obj/mecha/proc/get_step_delay()
 	var/tally = 0
@@ -1077,7 +1069,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		return AC.damage_absorption
 
 /obj/mecha/proc/absorbDamage(damage,damage_type)
-	return call((proc_res["dynabsorbdamage"]||src), "dynabsorbdamage")(damage,damage_type)
+	return call((LAZYACCESS(proc_res, "dynabsorbdamage")||src), "dynabsorbdamage")(damage,damage_type)
 
 /obj/mecha/proc/dynabsorbdamage(damage,damage_type)
 	return damage*(listgetindex(get_damage_absorption(),damage_type) || 1)
@@ -1167,7 +1159,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			if(amount <= 0)
 				continue
 		var/before = get_integrity()
-		take_damage(amount, packet.armor_flag || damage_kind_armor_key(kind))
+		take_damage(amount, damage_kind_obj_damage_type(kind))
 		if(QDELETED(src))
 			return . + before
 		. += before - get_integrity()
@@ -1183,7 +1175,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/hitby(atom/movable/source, datum/thrownthing/throwingdatum) //wrapper
 	..()
 	src.mecha_log_message("Hit by [source].",1)
-	call((proc_res["dynhitby"]||src), "dynhitby")(source)
+	call((LAZYACCESS(proc_res, "dynhitby")||src), "dynhitby")(source)
 	return
 
 //I think this is relative to throws.
@@ -1238,7 +1230,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				pass_damage_reduc_mod = 1
 
 
-
 			for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 				pass_damage = ME.handle_ranged_contact(A, pass_damage)
 
@@ -1252,11 +1243,11 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/bullet_act(obj/item/projectile/Proj) //wrapper
 	if(istype(Proj, /obj/item/projectile/test))
 		var/obj/item/projectile/test/Test = Proj
-		Test.hit |= occupant // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
+		LAZYOR(Test.hit, occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
 		return
 
 	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)
-	call((proc_res["dynbulletdamage"]||src), "dynbulletdamage")(Proj) //calls equipment
+	call((LAZYACCESS(proc_res, "dynbulletdamage")||src), "dynbulletdamage")(Proj) //calls equipment
 	..()
 	return
 
@@ -1387,12 +1378,10 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(prob(80))
 		check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
-/obj/mecha/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature>src.max_temperature)
-		src.mecha_log_message("Exposed to dangerous temperature.",1)
-		src.take_damage(5,"fire")	//The take_damage() proc handles armor values
-		src.check_for_internal_damage(list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL))
-	return
+/// Hull past max_temperature (the overheating rule): log it and risk internal damage.
+/obj/mecha/on_overheat()
+	mecha_log_message("Exposed to dangerous temperature.", 1)
+	check_for_internal_damage(list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL))
 
 /obj/mecha/proc/dynattackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
@@ -1451,22 +1440,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 ////// AttackBy //////
 //////////////////////
 
-/obj/mecha/proc/run_focused_tool(mob/user, obj/item/tool, quality)
-	focused_tool_stage = quality
-	attackby(tool, user)
-	focused_tool_stage = null
-	return ITEM_INTERACT_SUCCESS
-
-/obj/mecha/screwdriver_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_SCREWDRIVER)
-/obj/mecha/crowbar_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_CROWBAR)
-/obj/mecha/wrench_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_WRENCH)
-/obj/mecha/welder_act(mob/user, obj/item/tool)
-	if(user.a_intent == I_HURT)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
-	return run_focused_tool(user, tool, TOOL_WELDER)
+// Maintenance steps and weld repairs: mecha_maintenance.dm.
 
 /obj/mecha/attackby(obj/item/W as obj, mob/user as mob)
 
@@ -1521,37 +1495,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				to_chat(user, span_warning("Invalid ID: Access denied."))
 		else
 			to_chat(user, span_warning("Maintenance protocols disabled by operator."))
-	else if(focused_tool_stage == TOOL_WRENCH)
-		if(state==MECHA_BOLTS_SECURED)
-			state = MECHA_PANEL_LOOSE
-			to_chat(user, "You undo the securing bolts.")
-		else if(state==MECHA_PANEL_LOOSE)
-			state = MECHA_BOLTS_SECURED
-			to_chat(user, "You tighten the securing bolts.")
-		return
-	else if(focused_tool_stage == TOOL_CROWBAR)
-		if(state==MECHA_PANEL_LOOSE)
-			state = MECHA_CELL_OPEN
-			to_chat(user, "You open the hatch to the power unit")
-		else if(state==MECHA_CELL_OPEN)
-			state=MECHA_PANEL_LOOSE
-			to_chat(user, "You close the hatch to the power unit")
-		else if(state==MECHA_CELL_OUT)
-			var/list/removable_components = list()
-			for(var/slot in internal_components)
-				var/obj/item/mecha_parts/component/MC = internal_components[slot]
-				if(istype(MC))
-					removable_components[MC.name] = MC
-				else
-					to_chat(user, span_notice("\The [src] appears to be missing \the [slot]."))
-
-			var/remove = tgui_input_list(user, "Which component do you want to pry out?", "Remove Component", removable_components)
-			if(!remove)
-				return
-
-			var/obj/item/mecha_parts/component/RmC = removable_components[remove]
-			RmC.detach()
-
+	// Tool steps are the maintenance graph (mecha_maintenance.dm); a tool it has no step for does nothing.
+	else if(W.has_tool_quality(TOOL_WRENCH) || W.has_tool_quality(TOOL_CROWBAR) || W.has_tool_quality(TOOL_SCREWDRIVER))
 		return
 	else if(istype(W, /obj/item/stack/cable_coil))
 		if(state >= MECHA_CELL_OPEN && hasInternalDamage(MECHA_INT_SHORT_CIRCUIT))
@@ -1562,21 +1507,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			else
 				to_chat(user, "There's not enough wire to finish the task.")
 		return
-	else if(focused_tool_stage == TOOL_SCREWDRIVER)
-		if(hasInternalDamage(MECHA_INT_TEMP_CONTROL))
-			clearInternalDamage(MECHA_INT_TEMP_CONTROL)
-			to_chat(user, "You repair the damaged temperature controller.")
-		else if(state==MECHA_CELL_OPEN && src.cell)
-			src.cell.forceMove(src.loc)
-			src.cell = null
-			state = MECHA_CELL_OUT
-			to_chat(user, "You unscrew and pry out the powercell.")
-			src.mecha_log_message("Powercell removed")
-		else if(state==MECHA_CELL_OUT && src.cell)
-			state=MECHA_CELL_OPEN
-			to_chat(user, "You screw the cell in place")
-		return
-
 	else if(istype(W, /obj/item/multitool))
 		if(state>=MECHA_CELL_OPEN && src.occupant)
 			to_chat(user, "You attempt to eject the pilot using the maintenance controls.")
@@ -1601,32 +1531,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				to_chat(user, "There's already a powercell installed.")
 		return
 
-	else if(focused_tool_stage == TOOL_WELDER && !IS_HARMING(user))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
-		var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
-		if (WT.remove_fuel(0,user))
-			if (hasInternalDamage(MECHA_INT_TANK_BREACH))
-				clearInternalDamage(MECHA_INT_TANK_BREACH)
-				to_chat(user, span_notice("You repair the damaged gas tank."))
-		else
-			return
-		if((get_integrity()<max_integrity) || (HC.get_integrity()<HC.max_integrity) || (AC.get_integrity()<AC.max_integrity))
-			if(get_integrity()<max_integrity)
-				to_chat(user, span_notice("You repair some damage to [src.name]."))
-				repair_damage(min(10, max_integrity - get_integrity()))
-				update_damage_alerts()
-			else	if(HC.get_integrity()<HC.max_integrity)
-				to_chat(user, span_notice("You repair some damage to [HC.name]."))
-				HC.repair_damage(10)
-				update_damage_alerts()
-			else	if(AC.get_integrity()<AC.max_integrity)
-				to_chat(user, span_notice("You repair some damage to [AC.name]."))
-				AC.repair_damage(10)
-				update_damage_alerts()
-
-		else
-			to_chat(user, "The [src.name] is at full integrity")
+	else if(W.has_tool_quality(TOOL_WELDER) && !IS_HARMING(user))
 		return
 
 	else if(istype(W, /obj/item/mecha_parts/mecha_tracking))
@@ -1670,7 +1575,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return
 
 	else
-		call((proc_res["dynattackby"]||src), "dynattackby")(W,user)
+		call((LAZYACCESS(proc_res, "dynattackby")||src), "dynattackby")(W,user)
 /*
 		src.mecha_log_message("Attacked by [W]. Attacker - [user]")
 		if(prob(src.deflect_chance))
@@ -1688,7 +1593,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 */
 	return
-
 
 
 /*
@@ -2009,7 +1913,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	src.mecha_log_message("[user] tries to move in.")
 	if(iscarbon(user))
 		var/mob/living/carbon/C = user
-		if(C.handcuffed)
+		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			to_chat(user, span_danger("Kinda hard to climb in while handcuffed don't you think?"))
 			return
 	if (src.occupant)
@@ -2203,7 +2107,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /////////////////////////
 
 /obj/mecha/proc/operation_allowed(mob/living/carbon/human/H)
-	for(var/ID in list(H.get_active_hand(), H.wear_id, H.belt))
+	for(var/ID in list(H.get_active_hand(), H.get_equipped_item(SLOT_ID_ID), H.get_equipped_item(SLOT_ID_BELT)))
 		if(src.check_access(ID,src.operation_req_access))
 			return 1
 	return 0
@@ -2211,7 +2115,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /obj/mecha/proc/internals_access_allowed(mob/living/carbon/human/H)
 	if(istype(H))
-		for(var/atom/ID in list(H.get_active_hand(), H.wear_id, H.belt))
+		for(var/atom/ID in list(H.get_active_hand(), H.get_equipped_item(SLOT_ID_ID), H.get_equipped_item(SLOT_ID_BELT)))
 			if(src.check_access(ID,src.internals_req_access))
 				return 1
 	else if(isrobot(H))
@@ -2415,13 +2319,13 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	data["equipment"] = equip
 	// Slot capacity.
 	data["slots"] = list(
-		list("label" = "Hull",          "used" = hull_equipment.len,          "max" = max_hull_equip),
-		list("label" = "Weapon",        "used" = weapon_equipment.len,        "max" = max_weapon_equip),
-		list("label" = "Micro Weapon",  "used" = micro_weapon_equipment.len,  "max" = max_micro_weapon_equip),
-		list("label" = "Utility",       "used" = utility_equipment.len,       "max" = max_utility_equip),
-		list("label" = "Micro Utility", "used" = micro_utility_equipment.len, "max" = max_micro_utility_equip),
-		list("label" = "Universal",     "used" = universal_equipment.len,     "max" = max_universal_equip),
-		list("label" = "Special",       "used" = special_equipment.len,       "max" = max_special_equip),
+		list("label" = "Hull",          "used" = length(hull_equipment),          "max" = max_hull_equip),
+		list("label" = "Weapon",        "used" = length(weapon_equipment),        "max" = max_weapon_equip),
+		list("label" = "Micro Weapon",  "used" = length(micro_weapon_equipment),  "max" = max_micro_weapon_equip),
+		list("label" = "Utility",       "used" = length(utility_equipment),       "max" = max_utility_equip),
+		list("label" = "Micro Utility", "used" = length(micro_utility_equipment), "max" = max_micro_utility_equip),
+		list("label" = "Universal",     "used" = length(universal_equipment),     "max" = max_universal_equip),
+		list("label" = "Special",       "used" = length(special_equipment),       "max" = max_special_equip),
 	)
 	data["can_eject"] = (/obj/mecha/verb/eject in verbs)
 	return data
@@ -2574,7 +2478,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 //Cargo components. Keep this last otherwise it does weird alignment issues.
 	output += span_bold("Cargo Compartment Contents:") + "<div style=\"margin-left: 15px;\">"
-	if(src.cargo.len)
+	if(length(src.cargo))
 		for(var/obj/O in src.cargo)
 			output += "<a href='byond://?src=\ref[src];drop_from_cargo=\ref[O]'>Unload</a> : [O]<br>"
 	else
@@ -2642,13 +2546,13 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			output += "Micro Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
 		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_weapon_equipment)
 			output += "Micro Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-	output += {"<b>Available hull slots:</b> [max_hull_equip-hull_equipment.len]<br>
-		<b>Available weapon slots:</b> [max_weapon_equip-weapon_equipment.len]<br>
-		<b>Available micro weapon slots:</b> [max_micro_weapon_equip-micro_weapon_equipment.len]<br>
-		<b>Available utility slots:</b> [max_utility_equip-utility_equipment.len]<br>
-		<b>Available micro utility slots:</b> [max_micro_utility_equip-micro_utility_equipment.len]<br>
-		<b>Available universal slots:</b> [max_universal_equip-universal_equipment.len]<br>
-		<b>Available special slots:</b> [max_special_equip-special_equipment.len]<br>
+	output += {"<b>Available hull slots:</b> [max_hull_equip-length(hull_equipment)]<br>
+		<b>Available weapon slots:</b> [max_weapon_equip-length(weapon_equipment)]<br>
+		<b>Available micro weapon slots:</b> [max_micro_weapon_equip-length(micro_weapon_equipment)]<br>
+		<b>Available utility slots:</b> [max_utility_equip-length(utility_equipment)]<br>
+		<b>Available micro utility slots:</b> [max_micro_utility_equip-length(micro_utility_equipment)]<br>
+		<b>Available universal slots:</b> [max_universal_equip-length(universal_equipment)]<br>
+		<b>Available special slots:</b> [max_special_equip-length(special_equipment)]<br>
 		</div></div>
 	"}
 	return output
@@ -2938,11 +2842,11 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		if(O && (O in src.cargo))
 			src.occupant_message(span_notice("You unload [O]."))
 			O.forceMove(get_turf(src))
-			src.cargo -= O
+			LAZYREMOVE(src.cargo, O)
 			var/turf/T = get_turf(O)
 			if(T)
 				T.Entered(O)
-			src.mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - src.cargo.len]")
+			src.mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - length(src.cargo)]")
 	return
 
 	//debug
@@ -2954,7 +2858,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			clearInternalDamage(top_filter.getNum("clear_i_dam"))
 		return
 	*/
-
 
 
 /*
@@ -3004,14 +2907,14 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return (get_charge()>=amount)
 
 /obj/mecha/proc/get_charge()
-	return call((proc_res["dyngetcharge"]||src), "dyngetcharge")()
+	return call((LAZYACCESS(proc_res, "dyngetcharge")||src), "dyngetcharge")()
 
 /obj/mecha/proc/dyngetcharge()//returns null if no powercell, else returns cell.charge
 	if(!src.cell) return
 	return max(0, src.cell.charge)
 
 /obj/mecha/proc/use_power(amount)
-	return call((proc_res["dynusepower"]||src), "dynusepower")(amount)
+	return call((LAZYACCESS(proc_res, "dynusepower")||src), "dynusepower")(amount)
 
 /obj/mecha/proc/dynusepower(amount)
 	update_cell_alerts()
@@ -3111,7 +3014,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return ..()
 
 
-
 /obj/mecha/proc/update_cell_alerts()
 	if(occupant && cell)
 		var/cellcharge = cell.charge/cell.maxcharge
@@ -3152,11 +3054,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	return TRUE
 
-#undef MECHA_OPERATING
-#undef MECHA_BOLTS_SECURED
-#undef MECHA_PANEL_LOOSE
-#undef MECHA_CELL_OPEN
-#undef MECHA_CELL_OUT
 
 
 // === merged from mecha_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===

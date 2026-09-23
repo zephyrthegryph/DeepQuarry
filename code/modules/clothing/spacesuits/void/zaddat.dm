@@ -5,7 +5,7 @@
 	item_state_slots = list(slot_r_hand_str = "syndicate", slot_l_hand_str = "syndicate")
 	body_parts_covered = HEAD|FACE|EYES
 	slowdown = 0.5
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 70) //realistically would have some armor but balance.
+	armor_spec = "bio=100;rad=70;cold=60" //realistically would have some armor but balance.
 	siemens_coefficient = 1
 
 /obj/item/clothing/head/helmet/space/void/zaddat/fit_constraint()
@@ -17,7 +17,7 @@
 	name = "\improper Hegemony Shroud"
 	desc = "A Hegemony environment suit, still favored by the Spacer Zaddat because of its durability and ease of manufacture."
 	slowdown = 1
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 70)
+	armor_spec = "bio=100;rad=70;cold=60"
 	siemens_coefficient = 1
 	icon_state = "zaddat_hegemony"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat //shrouds come with helmets built-in
@@ -135,7 +135,7 @@
 /obj/item/clothing/suit/space/void/zaddat/engineer
 	name = "\improper Engineer's Guild Shroud"
 	desc = "This rugged Shroud was created by the Xozi Engineering Guild."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "bio=100;rad=100;cold=60"
 	icon_state = "zaddat_engie"
 	item_state = "zaddat_engie"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat/engineer
@@ -146,12 +146,12 @@
 	desc = "A Shroud helmet designed for good visibility in low-light environments."
 	icon_state = "zaddat_engie"
 	item_state = "zaddat_engie"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "bio=100;rad=100;cold=60"
 
 /obj/item/clothing/suit/space/void/zaddat/security
 	name = "\improper Security Knight's Shroud"
 	desc = "This distinctive steel-plated Shroud was popularized by the Noble Guild."
-	armor = list(melee = 30, bullet = 20, laser = 20,energy = 10, bomb = 10, bio = 100, rad = 30)
+	armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=30;cold=60"
 	icon_state = "zaddat_knight"
 	item_state = "zaddat_knight"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat/security
@@ -161,7 +161,7 @@
 	desc = "This spaceworthy helmet was patterned after the knight's helmets used by Zaddat before their discovery by the Unathi."
 	icon_state = "zaddat_knight"
 	item_state = "zaddat_knight"
-	armor = list(melee = 30, bullet = 20, laser = 20, energy = 10, bomb = 10, bio = 100, rad = 30)
+	armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=30;cold=60"
 
 
 

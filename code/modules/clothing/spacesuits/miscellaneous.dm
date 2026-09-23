@@ -6,7 +6,7 @@
 	item_flags = 0
 	flags_inv = HIDEFACE|BLOCKHAIR
 	permeability_coefficient = 0.01
-	armor = list(melee = 65, bullet = 50, laser = 50,energy = 25, bomb = 50, bio = 100, rad = 50)
+	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50;cold=60"
 
 //Captain's space suit This is not the proper path but I don't currently know enough about how this all works to mess with it.
 /obj/item/clothing/suit/armor/captain
@@ -19,7 +19,7 @@
 	item_flags = 0
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	slowdown = 1.5
-	armor = list(melee = 65, bullet = 50, laser = 50, energy = 25, bomb = 50, bio = 100, rad = 50)
+	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50"
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL
 	min_pressure_protection = 0
 	max_pressure_protection = 2 * ONE_ATMOSPHERE
@@ -37,7 +37,7 @@
 	desc = "That's not red paint. That's real blood."
 	icon_state = "deathsquad"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black-red", slot_l_hand_str = "syndicate-helm-black-red")
-	armor = list(melee = 65, bullet = 55, laser = 35,energy = 20, bomb = 30, bio = 100, rad = 60)
+	armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=100;rad=60;cold=60"
 	item_flags = THICKMATERIAL
 	flags_inv = BLOCKHAIR
 	siemens_coefficient = 0.6
@@ -48,7 +48,7 @@
 	desc = "An armored beret commonly used by special operations officers."
 	icon_state = "beret_black_security" //old sprite was lost, this is the next closest.
 	item_state_slots = list(slot_r_hand_str = "beret", slot_l_hand_str = "beret")
-	armor = list(melee = 65, bullet = 55, laser = 35,energy = 20, bomb = 30, bio = 30, rad = 30)
+	armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=30;rad=30;cold=60"
 	item_flags = 0
 	flags_inv = BLOCKHAIR
 	siemens_coefficient = 0.9
@@ -78,7 +78,7 @@
 	name = "pirate hat"
 	desc = "Yarr."
 	icon_state = "pirate"
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 30, bio = 30, rad = 30)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 	item_flags = 0
 	flags_inv = BLOCKHAIR
 	body_parts_covered = 0
@@ -90,7 +90,7 @@
 	icon_state = "pirate"
 	w_class = ITEMSIZE_NORMAL
 	slowdown = 0
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 30, bio = 30, rad = 30)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 	siemens_coefficient = 0.9
 	flags_inv = HIDETAIL|HIDEHOLSTER
 	body_parts_covered = UPPER_TORSO|ARMS

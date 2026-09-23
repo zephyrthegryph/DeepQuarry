@@ -4,16 +4,16 @@
 // Allows ghosts to see turfs of non AREA_BLOCK_GHOST_SIGHT flagged areas within these chunks.
 
 /datum/chunk/ghost
-	var/list/hidden_areas = list()
+	var/list/hidden_areas
 
 /datum/chunk/ghost/add(mob/observer/dead/ghost, add_images = TRUE)
 	if(add_images)
 		var/client/client = ghost.client
 		if(client)
-			client.images += obscured
+			if(length(obscured)) client.images += obscured
 	ghost.visibleChunks += src
 	visible++
-	seenby += ghost
+	LAZYADD(seenby, ghost)
 	if(changed && !updating)
 		update()
 
@@ -23,7 +23,7 @@
 		if(client)
 			client.images -= obscured
 	ghost.visibleChunks -= src
-	seenby -= ghost
+	LAZYREMOVE(seenby, ghost)
 	if(visible > 0)
 		visible--
 
@@ -38,7 +38,7 @@
 /datum/chunk/ghost/New(loc, x, y, z)
 	for(var/area/A in range(16, locate(x + 8, y + 8, z)))
 		if(A.flag_check(AREA_BLOCK_GHOST_SIGHT))
-			hidden_areas += A
+			LAZYADD(hidden_areas, A)
 
 	// 0xf = 15
 	x &= ~0xf
@@ -65,7 +65,7 @@
 			var/image/ob_image = image(obfuscation.icon, t, obfuscation.icon_state, OBFUSCATION_LAYER)
 			ob_image.plane = PLANE_FULLSCREEN
 			t.obfuscations[obfuscation.type] = ob_image
-		obscured += t.obfuscations[obfuscation.type]
+		LAZYADD(obscured, t.obfuscations[obfuscation.type])
 
 /datum/chunk/ghost/update()
 
@@ -85,7 +85,7 @@
 
 	for(var/turf/t as anything in visAdded)
 		if(LAZYLEN(t.obfuscations) && t.obfuscations[obfuscation.type])
-			obscured -= t.obfuscations[obfuscation.type]
+			LAZYREMOVE(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/dead/m as anything in seenby)
 				if(!m)
 					continue
@@ -101,10 +101,10 @@
 				ob_image.plane = PLANE_FULLSCREEN
 				t.obfuscations[obfuscation.type] = ob_image
 
-			obscured += t.obfuscations[obfuscation.type]
+			LAZYADD(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/dead/m as anything in seenby)
 				if(!m)
-					seenby -= m
+					LAZYREMOVE(seenby, m)
 					continue
 				if(!m.checkStatic())
 					continue

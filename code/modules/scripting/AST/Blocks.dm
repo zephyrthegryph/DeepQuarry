@@ -9,9 +9,9 @@
 	and not just in the global scope as in many languages.
 */
 /datum/node/BlockDefinition
-	var/list/statements = list()
+	var/list/statements
 	var/list/functions  = list()
-	var/list/initial_variables = list()
+	var/list/initial_variables
 
 /*
 	Proc: SetVar
@@ -25,7 +25,7 @@
 	- <n_Interpreter.SetVar()>
 */
 /datum/node/BlockDefinition/proc/SetVar(name, value)
-	initial_variables[name]=value
+	LAZYSET(initial_variables, name, value)
 
 
 /*
@@ -34,7 +34,7 @@
 */
 //
 /datum/node/BlockDefinition/GlobalBlock/New()
-	initial_variables["null"]=null
+	LAZYSET(initial_variables, "null", null)
 	return ..()
 
 /*

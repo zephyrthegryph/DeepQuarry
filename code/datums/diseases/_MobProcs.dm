@@ -102,34 +102,34 @@
 
 		switch(target_zone)
 			if(BP_HEAD)
-				if(isobj(H.head) && !istype(H.head, /obj/item/paper))
-					Cl = H.head
+				if(isobj(H.get_equipped_item(SLOT_ID_HEAD)) && !istype(H.get_equipped_item(SLOT_ID_HEAD), /obj/item/paper))
+					Cl = H.get_equipped_item(SLOT_ID_HEAD)
 					passed = prob((Cl.permeability_coefficient*100) - 1)
-				if(passed && isobj(H.wear_mask))
-					Cl = H.wear_mask
+				if(passed && isobj(H.get_equipped_item(SLOT_ID_MASK)))
+					Cl = H.get_equipped_item(SLOT_ID_MASK)
 					passed = prob((Cl.permeability_coefficient*100) - 1)
 			if(BP_TORSO)
-				if(isobj(H.wear_suit))
-					Cl = H.wear_suit
+				if(isobj(H.get_equipped_item(SLOT_ID_SUIT)))
+					Cl = H.get_equipped_item(SLOT_ID_SUIT)
 					passed = prob((Cl.permeability_coefficient*100) - 1)
-				if(passed && isobj(H.w_uniform))
-					Cl = H.w_uniform
+				if(passed && isobj(H.get_equipped_item(SLOT_ID_UNIFORM)))
+					Cl = H.get_equipped_item(SLOT_ID_UNIFORM)
 					passed = prob((Cl.permeability_coefficient*100) - 1)
 			if(BP_L_HAND, BP_R_HAND)
-				if(isobj(H.wear_suit) && H.wear_suit.body_parts_covered & HANDS)
-					Cl = H.wear_suit
+				if(isobj(H.get_equipped_item(SLOT_ID_SUIT)) && H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & HANDS)
+					Cl = H.get_equipped_item(SLOT_ID_SUIT)
 					passed = prob((Cl.permeability_coefficient*100) - 1)
 
-				if(passed && isobj(H.gloves))
-					Cl = H.gloves
+				if(passed && isobj(H.get_equipped_item(SLOT_ID_GLOVES)))
+					Cl = H.get_equipped_item(SLOT_ID_GLOVES)
 					passed = prob((Cl.permeability_coefficient*100) - 1)
 			if(BP_L_FOOT, BP_R_FOOT)
-				if(isobj(H.wear_suit) && H.wear_suit.body_parts_covered & FEET)
-					Cl = H.wear_suit
+				if(isobj(H.get_equipped_item(SLOT_ID_SUIT)) && H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET)
+					Cl = H.get_equipped_item(SLOT_ID_SUIT)
 					passed = prob((Cl.permeability_coefficient*100) - 1)
 
-				if(passed && isobj(H.shoes))
-					Cl = H.shoes
+				if(passed && isobj(H.get_equipped_item(SLOT_ID_SHOES)))
+					Cl = H.get_equipped_item(SLOT_ID_SHOES)
 					passed = prob((Cl.permeability_coefficient*100) - 1)
 
 	if(passed)
@@ -168,7 +168,7 @@
 /mob/living/carbon/human/monkey/CanContractDisease(datum/disease/D)
 	. = ..()
 	if(. == -1)
-		if(D.viable_mobtypes.Find(/mob/living/carbon/human))
+		if(LAZYFIND(D.viable_mobtypes, /mob/living/carbon/human))
 			return
 
 /mob/living/proc/CanSpreadAirborneDisease()

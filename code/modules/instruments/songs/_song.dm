@@ -69,9 +69,9 @@
 	/// Current chord we're on.
 	var/current_chord
 	/// Channel as text = current volume percentage but it's 0 to 100 instead of 0 to 1.
-	var/list/channels_playing = list()
+	var/list/channels_playing
 	/// List of channels that aren't being used, as text. This is to prevent unnecessary freeing and reallocations from SSsounds/SSinstruments.
-	var/list/channels_idle = list()
+	var/list/channels_idle
 	/// Who or what's playing us
 	var/atom/music_player
 	//////////////////////////////////////////////////////
@@ -140,7 +140,7 @@
 	SSinstruments.on_song_del(src)
 	lines = null
 	if(using_instrument)
-		using_instrument.songs_using -= src
+		LAZYREMOVE(using_instrument.songs_using, src)
 		using_instrument = null
 	allowed_instrument_ids = null
 	parent = null
@@ -170,7 +170,7 @@
 	terminate_all_sounds()
 	var/old_legacy
 	if(using_instrument)
-		using_instrument.songs_using -= src
+		LAZYREMOVE(using_instrument.songs_using, src)
 		old_legacy = (using_instrument.instrument_flags & INSTRUMENT_LEGACY)
 	using_instrument = null
 	cached_samples = null
@@ -181,7 +181,7 @@
 		I = SSinstruments.instrument_data[I]
 	if(istype(I))
 		using_instrument = I
-		I.songs_using += src
+		LAZYADD(I.songs_using, src)
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
 			cached_legacy_ext = I.legacy_instrument_ext

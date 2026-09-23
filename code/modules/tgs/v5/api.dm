@@ -25,9 +25,9 @@
 	var/datum/tgs_version/interop_version
 
 	var/chunked_requests = 0
-	var/list/chunked_topics = list()
+	var/list/chunked_topics
 
-	var/list/pending_events = list()
+	var/list/pending_events
 
 	var/detached = FALSE
 
@@ -286,11 +286,11 @@
 
 	TGS_DEBUG_LOG("Waiting for completion of event ID: [event_id]")
 
-	while(!pending_events[event_id])
+	while(!LAZYACCESS(pending_events, event_id))
 		sleep(world.tick_lag)
 
 	TGS_DEBUG_LOG("Completed wait on event ID: [event_id]")
-	pending_events -= event_id
+	LAZYREMOVE(pending_events, event_id)
 
 	return TRUE
 

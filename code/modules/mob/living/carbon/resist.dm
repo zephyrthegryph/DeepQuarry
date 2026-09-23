@@ -17,10 +17,10 @@
 
 /mob/living/carbon/resist_restraints()
 	var/obj/item/I = null
-	if(handcuffed)
-		I = handcuffed
-	else if(legcuffed)
-		I = legcuffed
+	if(get_equipped_item(SLOT_ID_HANDCUFFED))
+		I = get_equipped_item(SLOT_ID_HANDCUFFED)
+	else if(get_equipped_item(SLOT_ID_LEGCUFFED))
+		I = get_equipped_item(SLOT_ID_LEGCUFFED)
 
 	if(I)
 		setClickCooldown(100)
@@ -52,12 +52,7 @@
 				span_warning("You successfully break your [I]."))
 			say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))
 
-			if(I == handcuffed)
-				handcuffed = null
-				update_handcuffed()
-			else if(I == legcuffed)
-				legcuffed = null
-				update_inv_legcuffed()
+			drop_from_inventory(I)
 
 			if(buckled && buckled.buckle_require_restraints)
 				buckled.unbuckle_mob()

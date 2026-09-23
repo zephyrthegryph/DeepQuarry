@@ -19,7 +19,7 @@
 	"Alternate Navy Plate Carrier" = /obj/item/clothing/suit/armor/pcarrier/modarm/blue,
 	"Alternate Light Blue Plate Carrier" = /obj/item/clothing/suit/armor/pcarrier/modarm/lightblue
 	)
-	gear_tweaks += new/datum/gear_tweak/path(pcarriers)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(pcarriers))
 
 
 /datum/gear/suit/winterhood

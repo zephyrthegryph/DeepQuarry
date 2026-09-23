@@ -809,7 +809,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 		if(!P.ico)
 			P.ico = new
-		P.ico += "paper_stamp-cent"
+		LAZYADD(P.ico, "paper_stamp-cent")
 		stampoverlay.icon_state = "paper_stamp-cent"
 
 		if(!P.stamped)

@@ -44,7 +44,7 @@
 			N.remove_creature(src)
 		if(istype(nest, /obj/structure/blob/factory))
 			var/obj/structure/blob/factory/F = nest
-			F.spores -= src
+			LAZYREMOVE(F.spores, src)
 		if(istype(nest, /obj/structure/mob_spawner))
 			var/obj/structure/mob_spawner/S = nest
 			S.get_death_report(src)
@@ -406,13 +406,8 @@
 	if(iscarbon(src))
 		var/mob/living/carbon/C = src
 
-		if (C.handcuffed && !initial(C.handcuffed))
-			C.drop_from_inventory(C.handcuffed)
-		C.handcuffed = initial(C.handcuffed)
-
-		if (C.legcuffed && !initial(C.legcuffed))
-			C.drop_from_inventory(C.legcuffed)
-		C.legcuffed = initial(C.legcuffed)
+		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_HANDCUFFED))
+		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_LEGCUFFED))
 	BITSET(hud_updateflag, HEALTH_HUD)
 	BITSET(hud_updateflag, STATUS_HUD)
 	BITSET(hud_updateflag, LIFE_HUD)
@@ -613,10 +608,10 @@
 	return !(W in internal_organs) && ..()
 
 /mob/living/proc/drop_both_hands()
-	if(l_hand)
-		unEquip(l_hand)
-	if(r_hand)
-		unEquip(r_hand)
+	if(get_equipped_item(SLOT_ID_HAND_L))
+		unEquip(get_equipped_item(SLOT_ID_HAND_L))
+	if(get_equipped_item(SLOT_ID_HAND_R))
+		unEquip(get_equipped_item(SLOT_ID_HAND_R))
 	return
 
 /mob/living/touch_map_edge()
@@ -862,7 +857,7 @@
 
 // Mob holders in these slots will be spilled if the mob goes prone.
 /mob/living/proc/get_mob_riding_slots()
-	return list(back)
+	return list(get_equipped_item(SLOT_ID_BACK))
 
 // Adds overlays for specific modifiers.
 // You'll have to add your own implementation for non-humans currently, just override this proc.
@@ -952,7 +947,7 @@
 
 /mob/living/swap_hand()
 	src.hand = !( src.hand )
-	if(hud_used.l_hand_hud_object && hud_used.r_hand_hud_object)
+	if(hud_used?.l_hand_hud_object && hud_used.r_hand_hud_object)
 		if(hand)	//This being 1 means the left hand is in use
 			hud_used.l_hand_hud_object.icon_state = "l_hand_active"
 			hud_used.r_hand_hud_object.icon_state = "r_hand_inactive"

@@ -32,53 +32,75 @@
 	update_icon()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/papershredder/attackby(obj/item/W, mob/user)
+/obj/machinery/papershredder/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/papershredder_empty_into,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_item/papershredder_shred,
+		/datum/interaction/machine_verb/papershredder_empty,
+	)
+	..()
 
-	if(istype(W, /obj/item/storage))
-		empty_bin(user, W)
-		return
-	else if(default_part_replacement(user, W))
-		return
-	else
-		var/paper_result
-		for(var/shred_type in shred_amounts)
-			if(istype(W, shred_type))
-				paper_result = shred_amounts[shred_type]
-		if(paper_result)
-			if(inoperable())
-				return // Need powah!
-			if(paperamount == max_paper)
-				to_chat(user, span_warning("\The [src] is full; please empty it before you continue."))
-				return
-			paperamount += paper_result
-			user.drop_from_inventory(W)
-			qdel(W)
-			playsound(src, 'sound/items/pshred.ogg', 75, 1)
-			flick(shred_anim, src)
-			if(paperamount > max_paper)
-				to_chat(user,span_danger("\The [src] was too full, and shredded paper goes everywhere!"))
-				for(var/i=(paperamount-max_paper);i>0;i--)
-					var/obj/item/shreddedp/SP = get_shredded_paper()
-					SP.loc = get_turf(src)
-					SP.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),1,5)
-				paperamount = max_paper
-			update_icon()
-			return
-	return ..()
+/datum/interaction/machine_item/papershredder_empty_into
+	id = "papershredder_empty_into"
+	name = "Empty into"
+	category = INTERACTION_CAT_EJECT
+	held_type = /obj/item/storage
+	effect = /obj/machinery/papershredder/proc/interaction_empty_into
 
-/obj/machinery/papershredder/verb/empty_contents()
-	set name = "Empty bin"
-	set category = "Object"
-	set src in range(1)
+/obj/machinery/papershredder/proc/interaction_empty_into(mob/living/user, obj/item/storage/W, datum/interaction/interaction)
+	empty_bin(user, W)
+	return TRUE
 
-	if(usr.stat || usr.restrained() || usr.weakened || usr.paralysis || usr.lying || usr.stunned)
-		return
+/datum/interaction/machine_item/papershredder_shred
+	id = "papershredder_shred"
+	name = "Shred"
+	held_type = list(/obj/item/photo, /obj/item/shreddedp, /obj/item/paper, /obj/item/newspaper, /obj/item/card/id, /obj/item/paper_bundle)
+	effect = /obj/machinery/papershredder/proc/interaction_shred
 
-	if(!paperamount)
-		to_chat(usr, span_notice("\The [src] is empty."))
-		return
+/obj/machinery/papershredder/proc/interaction_shred(mob/living/user, obj/item/W, datum/interaction/interaction)
+	var/paper_result
+	for(var/shred_type in shred_amounts)
+		if(istype(W, shred_type))
+			paper_result = shred_amounts[shred_type]
+	if(paper_result)
+		if(inoperable())
+			return TRUE // Need powah!
+		if(paperamount == max_paper)
+			to_chat(user, span_warning("\The [src] is full; please empty it before you continue."))
+			return TRUE
+		paperamount += paper_result
+		user.drop_from_inventory(W)
+		qdel(W)
+		playsound(src, 'sound/items/pshred.ogg', 75, 1)
+		flick(shred_anim, src)
+		if(paperamount > max_paper)
+			to_chat(user,span_danger("\The [src] was too full, and shredded paper goes everywhere!"))
+			for(var/i=(paperamount-max_paper);i>0;i--)
+				var/obj/item/shreddedp/SP = get_shredded_paper()
+				SP.loc = get_turf(src)
+				SP.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),1,5)
+			paperamount = max_paper
+		update_icon()
+		return TRUE
+	return FALSE
 
-	empty_bin(usr)
+/datum/interaction/machine_verb/papershredder_empty
+	id = "papershredder_empty"
+	name = "Empty bin"
+	category = INTERACTION_CAT_EJECT
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/papershredder/proc/actor_can_empty, "you can't do that right now"), REQ_ON(PRED_TARGET, /obj/machinery/papershredder/proc/has_paper, "it is empty"))
+	effect = /obj/machinery/papershredder/proc/interaction_empty
+
+/obj/machinery/papershredder/proc/actor_can_empty(mob/actor, atom/target, obj/item/held)
+	return !(actor.stat || actor.restrained() || actor.weakened || actor.paralysis || actor.lying || actor.stunned)
+
+/obj/machinery/papershredder/proc/has_paper(mob/actor, atom/target, obj/item/held)
+	return paperamount > 0
+
+/obj/machinery/papershredder/proc/interaction_empty(mob/user, obj/item/held, datum/interaction/interaction)
+	empty_bin(user)
+	return TRUE
 
 /obj/machinery/papershredder/proc/empty_bin(mob/living/user, obj/item/storage/empty_into)
 
@@ -94,7 +116,8 @@
 		var/obj/item/shreddedp/SP = get_shredded_paper()
 		if(!SP) break
 		if(empty_into)
-			empty_into.handle_item_insertion(SP)
+			if(!empty_into.insert_item(SP, user, TRUE))
+				break
 			if(empty_into.contents.len >= empty_into.storage_slots)
 				break
 	if(empty_into)

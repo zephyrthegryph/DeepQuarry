@@ -27,7 +27,7 @@
 	var/duration = 0 //how long the spell lasts
 
 	var/list/spell_levels = list(Sp_SPEED = 0, Sp_POWER = 0) //the current spell levels - total spell levels can be obtained by just adding the two values
-	var/list/level_max = list(Sp_TOTAL = 4, Sp_SPEED = 4, Sp_POWER = 0) //maximum possible levels in each category. Total does cover both.
+	var/static/list/level_max = list(Sp_TOTAL = 4, Sp_SPEED = 4, Sp_POWER = 0) //maximum possible levels in each category. Total does cover both.
 	var/cooldown_reduc = 0		//If set, defines how much charge_max drops by every speed upgrade
 	var/delay_reduc = 0
 	var/cooldown_min = 0 //minimum possible cooldown for a charging spell

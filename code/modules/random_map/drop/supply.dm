@@ -14,7 +14,7 @@
 	if(!drop_type) drop_type = pick(GLOB.supply_drop)
 
 	if(drop_type == "custom")
-		if(supplied_drop_types.len)
+		if(length(supplied_drop_types))
 			var/obj/structure/largecrate/C = locate() in T
 			for(var/drop_type in supplied_drop_types)
 				var/atom/movable/A = new drop_type(T)

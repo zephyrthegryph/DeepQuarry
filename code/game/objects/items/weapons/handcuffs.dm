@@ -38,7 +38,7 @@
 		attempt_to_cuff(user, user)
 		return ITEM_INTERACT_SUCCESS
 
-	if(!C.handcuffed)
+	if(!C.get_equipped_item(SLOT_ID_HANDCUFFED))
 		if (C == user)
 			attempt_to_cuff(user, user)
 			return ITEM_INTERACT_SUCCESS
@@ -70,12 +70,12 @@
 	if(!istype(human_victim))
 		return 0
 
-	if (!human_victim.has_organ_for_slot(slot_handcuffed))
+	if (!human_victim.body_slot_usable(SLOT_ID_HANDCUFFED))
 		to_chat(user, span_danger("\The [victim] needs at least two wrists before you can cuff them together!"))
 		return 0
 
-	if(istype(human_victim.gloves,/obj/item/clothing/gloves/gauntlets/rig) && !elastic) // Can't cuff someone who's in a deployed hardsuit.
-		to_chat(user, span_danger("\The [src] won't fit around \the [human_victim.gloves]!"))
+	if(istype(human_victim.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig) && !elastic) // Can't cuff someone who's in a deployed hardsuit.
+		to_chat(user, span_danger("\The [src] won't fit around \the [human_victim.get_equipped_item(SLOT_ID_GLOVES)]!"))
 		return 0
 
 	user.visible_message(span_danger("\The [user] is attempting to put [cuff_type] on \the [victim]!"))
@@ -100,9 +100,7 @@
 		cuffs = new(get_turf(user))
 	else
 		user.drop_from_inventory(cuffs)
-	cuffs.loc = victim
-	victim.handcuffed = cuffs
-	victim.update_handcuffed()
+	victim.equip_to_slot(cuffs, slot_handcuffed)
 	victim.drop_r_hand()
 	victim.drop_l_hand()
 	victim.stop_pulling()
@@ -120,13 +118,13 @@
 	if (last_chew + 26 > world.time) return
 
 	var/mob/living/carbon/human/H = A
-	if (!H.handcuffed) return
+	if (!H.get_equipped_item(SLOT_ID_HANDCUFFED)) return
 	if (!IS_HARMING(H)) return
 	if (H.zone_sel.selecting != O_MOUTH) return
-	if (H.wear_mask) return
-	if (istype(H.wear_suit, /obj/item/clothing/suit/straight_jacket)) return
-	if (istype(H.wear_suit, /obj/item/clothing/suit/shibari))
-		var/obj/item/clothing/suit/shibari/s = wear_suit
+	if (H.get_equipped_item(SLOT_ID_MASK)) return
+	if (istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket)) return
+	if (istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/shibari))
+		var/obj/item/clothing/suit/shibari/s = get_equipped_item(SLOT_ID_SUIT)
 		if(s.rope_mode == "Arms" || s.rope_mode == "Arms and Legs")
 			return
 
@@ -226,7 +224,7 @@
 		place_legcuffs(user, user)
 		return ITEM_INTERACT_SUCCESS
 
-	if(!C.legcuffed)
+	if(!C.get_equipped_item(SLOT_ID_LEGCUFFED))
 		if (C == user)
 			place_legcuffs(user, user)
 			return ITEM_INTERACT_SUCCESS
@@ -246,12 +244,12 @@
 	if(!istype(H))
 		return 0
 
-	if (!H.has_organ_for_slot(slot_legcuffed))
+	if (!H.body_slot_usable(SLOT_ID_LEGCUFFED))
 		to_chat(user, span_danger("\The [H] needs at least two ankles before you can cuff them together!"))
 		return 0
 
-	if(istype(H.shoes,/obj/item/clothing/shoes/magboots/rig) && !elastic) // Can't cuff someone who's in a deployed hardsuit.
-		to_chat(user, span_danger("\The [src] won't fit around \the [H.shoes]!"))
+	if(istype(H.get_equipped_item(SLOT_ID_SHOES),/obj/item/clothing/shoes/magboots/rig) && !elastic) // Can't cuff someone who's in a deployed hardsuit.
+		to_chat(user, span_danger("\The [src] won't fit around \the [H.get_equipped_item(SLOT_ID_SHOES)]!"))
 		return 0
 
 	user.visible_message(span_danger("\The [user] is attempting to put [cuff_type] on \the [H]!"))
@@ -276,9 +274,7 @@
 		lcuffs = new(get_turf(user))
 	else
 		user.drop_from_inventory(lcuffs)
-	lcuffs.loc = target
-	target.legcuffed = lcuffs
-	target.update_inv_legcuffed()
+	target.equip_to_slot(lcuffs, slot_legcuffed)
 	if(target.m_intent != I_WALK)
 		target.m_intent = I_WALK
 		if(target.hud_used && target.hud_used.move_intent)
@@ -321,7 +317,7 @@
 		src.dropped(user)
 		return 0
 
-	if(!H.has_organ_for_slot(slot_legcuffed))
+	if(!H.body_slot_usable(SLOT_ID_LEGCUFFED))
 		H.visible_message(span_infoplain(span_bold("\The [src]") + " slams into [H], but slides off!"))
 		src.dropped(user)
 		return 0
@@ -330,9 +326,7 @@
 
 	// Apply cuffs.
 	var/obj/item/handcuffs/legcuffs/lcuffs = src
-	lcuffs.loc = target
-	target.legcuffed = lcuffs
-	target.update_inv_legcuffed()
+	target.equip_to_slot(lcuffs, slot_legcuffed)
 	if(target.m_intent != I_WALK)
 		target.m_intent = I_WALK
 		if(target.hud_used && target.hud_used.move_intent)

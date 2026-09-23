@@ -106,11 +106,11 @@
 	var/outside_shareholders = 10000		// The amount of offstation people holding shares in this company. The higher it is, the more fluctuation it causes.
 	var/available_shares = 500000
 
-	var/list/borrow_brokers = list()
-	var/list/shareholders = list()
-	var/list/borrows = list()
+	var/list/borrow_brokers
+	var/list/shareholders
+	var/list/borrows
 	var/list/events = list()
-	var/list/articles = list()
+	var/list/articles
 	var/fluctuation_rate = 15
 	var/fluctuation_counter = 0
 	var/datum/industry/industry = null
@@ -120,7 +120,7 @@
 
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
-		articles.Insert(1, A)
+		LAZYINITLIST(articles); articles.Insert(1, A)
 	A.ticks = world.time
 
 /datum/stock/proc/generateEvents()
@@ -231,13 +231,13 @@
 
 /datum/stock/proc/unifyShares()
 	for (var/I in shareholders)
-		var/shr = shareholders[I]
+		var/shr = LAZYACCESS(shareholders, I)
 		if (shr % 2)
 			sellShares(I, 1)
 		shr -= 1
 		shareholders[I] /= 2
-		if (!shareholders[I])
-			shareholders -= I
+		if (!LAZYACCESS(shareholders, I))
+			LAZYREMOVE(shareholders, I)
 	for (var/datum/borrow/B in borrow_brokers)
 		B.share_amount = round(B.share_amount / 2)
 		B.share_debt = round(B.share_debt / 2)
@@ -264,11 +264,11 @@
 		fluctuate()
 
 /datum/stock/proc/generateBrokers()
-	if (borrow_brokers.len > 2)
+	if (length(borrow_brokers) > 2)
 		return
-	if (!GLOB.stockExchange.stockBrokers.len)
+	if (!length(GLOB.stockExchange.stockBrokers))
 		GLOB.stockExchange.generateBrokers()
-	var/broker = pick(GLOB.stockExchange.stockBrokers)
+	var/broker = DEFAULTPICK(GLOB.stockExchange.stockBrokers, null)
 	var/datum/borrow/B = new
 	B.broker = broker
 	B.stock = src
@@ -278,7 +278,7 @@
 	B.deposit = rand(20, 70) / 100
 	B.share_debt = B.share_amount
 	B.offer_expires = rand(5, 10) * 600 + world.time
-	borrow_brokers += B
+	LAZYADD(borrow_brokers, B)
 	B.reschedule()
 
 /datum/stock/proc/modifyAccount(whose, by, force=0)
@@ -302,11 +302,11 @@
 		return 0
 	B.deposit = d_amt
 	if (!(who in shareholders))
-		shareholders[who] = B.share_amount
+		LAZYSET(shareholders, who, B.share_amount)
 	else
-		shareholders[who] += B.share_amount
-	borrow_brokers -= B
-	borrows += B
+		LAZYADDASSOC(shareholders, who, B.share_amount)
+	LAZYREMOVE(borrow_brokers, B)
+	LAZYADD(borrows, B)
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	B.reschedule()
@@ -326,9 +326,9 @@
 	if (modifyAccount(who, -loss))
 		supplyDrop(howmany)
 		if (!(who in shareholders))
-			shareholders[who] = howmany
+			LAZYSET(shareholders, who, howmany)
 		else
-			shareholders[who] += howmany
+			LAZYADDASSOC(shareholders, who, howmany)
 		return 1
 	return 0
 
@@ -337,13 +337,13 @@
 		return
 	howmany = round(howmany)
 	var/gain = howmany * current_value
-	if (shareholders[whose] < howmany)
+	if (LAZYACCESS(shareholders, whose) < howmany)
 		return 0
 	if (modifyAccount(whose, gain))
 		supplyGrowth(howmany)
 		shareholders[whose] -= howmany
-		if (shareholders[whose] <= 0)
-			shareholders -= whose
+		if (LAZYACCESS(shareholders, whose) <= 0)
+			LAZYREMOVE(shareholders, whose)
 		return 1
 	return 0
 

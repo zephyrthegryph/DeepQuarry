@@ -20,7 +20,7 @@
 	var/download_completion = 0
 	var/download_netspeed = 0
 	var/downloaderror = ""
-	var/list/downloads_queue[0]
+	var/list/downloads_queue
 
 	var/file_info
 	var/server
@@ -96,9 +96,9 @@
 		return
 	if(download_completion >= downloaded_file.size)
 		complete_file_download()
-		if(downloads_queue.len > 0)
-			begin_file_download(downloads_queue[1])
-			downloads_queue.Remove(downloads_queue[1])
+		if(length(downloads_queue) > 0)
+			begin_file_download(LAZYACCESS(downloads_queue, 1))
+			LAZYREMOVE(downloads_queue, LAZYACCESS(downloads_queue, 1))
 
 	// Download speed according to connectivity state. NTNet server is assumed to be on unlimited speed so we're limited by our local connectivity
 	download_netspeed = 0
@@ -119,11 +119,11 @@
 		if("PRG_downloadfile")
 			if(!downloaded_file)
 				begin_file_download(params["filename"])
-			else if(check_file_download(params["filename"]) && !downloads_queue.Find(params["filename"]) && downloaded_file.filename != params["filename"])
-				downloads_queue += params["filename"]
+			else if(check_file_download(params["filename"]) && !LAZYFIND(downloads_queue, params["filename"]) && downloaded_file.filename != params["filename"])
+				LAZYADD(downloads_queue, params["filename"])
 			return TRUE
 		if("PRG_removequeued")
-			downloads_queue.Remove(params["filename"])
+			LAZYREMOVE(downloads_queue, params["filename"])
 			return TRUE
 		if("PRG_reseterror")
 			if(downloaderror)
@@ -185,7 +185,7 @@
 		data["hacked_programs"] = hacked_programs
 
 	data["downloadable_programs"] = all_entries
-	data["downloads_queue"] = downloads_queue
+	data["downloads_queue"] = (downloads_queue || list())
 
 	return data
 

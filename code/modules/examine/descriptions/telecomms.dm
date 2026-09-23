@@ -1,9 +1,5 @@
 //This is not strictly a telecomms machine but conceptually it is.
 /obj/machinery/exonet_node
-	description_info = "This machine is needed for several machines back at the colony to interact with systems beyond this region of space, such as \
-	communicators, external PDA messages, and even newscaster units, which host their content externally.  You can fiddle with the device with \
-	just your hands, due to the integrated monitor and keyboard.  Synthetic units can interface with it as well, just like most other machines."
-
 	description_fluff = "This is one of many nodes that make up the Exonet, which services trillions of devices across space.  This particular node \
 	is referred to as a terminal node, servicing the station.<br>\
 	<br>\

@@ -577,3 +577,25 @@ why (`beyond_repair_perception()`) and nothing heals. Synthetic and nanoform
 parts use the same steps with repair tags; a step's `part_biology` defaults to
 the biologies its tags work on. `/datum/dq_surgery` records are the medical
 book's entries and name the steps that perform them.
+
+## 12. Equipment slots & worn protection
+
+**Slots.** A mob's slots belong to its body plan: `/datum/body/proc/slot_def_types()`
+returns the plan's `/datum/slot_def/body` paths, and the mob keys its ledger slot
+set by `"[mob type]|[plan type]"` (`code/modules/body/slots.dm`). Humanoids and
+nanoforms have the full human inventory; simple bodies have two hands (usable only
+by mobs with hands); cyborgs and drones have three module slots; other machines and
+AI cores have none. Every plan with slots also has `body`, the default internal slot
+for organs, implants and bellies. A slot refuses when its body part is missing (the
+part map at the top of `slots.dm`), when the species has no such slot, and when P3's
+equip slot predicate (its `accepts`, evaluated with the wearer as actor) says no.
+Slot roles (`BODY_SLOT_WORN / _ARMOR / _INSULATION`) say which slots feed worn
+factors, armour and insulation.
+
+**Worn protection.** The body caches, per external-limb `body_part` flag, the worn
+armour per key, the siemens product and the heat and cold limits
+(`code/modules/body/worn_protection.dm`). It holds numbers only and rebuilds on the
+first read after `BODY_DIRTY_ARMOR`. `injury_armor()`, `get_siemens_coefficient_organ()`
+and `get_heat/cold_protection_flags()` read it instead of scanning slots. Anything
+that changes a worn item's armour, coverage, conductivity or thermal protection in
+place calls `item.worn_protection_changed()`.

@@ -9,6 +9,7 @@
 	var/obj/item/clothing/suit/space/holder // Suit containing the list of breaches holding this instance.
 
 /obj/item/clothing/suit/space
+	armor_spec = "cold=60"
 
 	var/can_breach = 1                      // Set to 0 to disregard all breaching.
 	var/list/breaches                       // Breach datum container (lazylist; empty for an undamaged suit).

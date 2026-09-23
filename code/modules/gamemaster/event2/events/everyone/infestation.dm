@@ -25,9 +25,9 @@
 /datum/event2/event/infestation
 	var/vermin_string = null
 	var/max_vermin = 0
-	var/list/things_to_spawn = list()
+	var/list/things_to_spawn
 
-	var/list/turfs = list()
+	var/list/turfs
 
 /datum/event2/event/infestation/rodents
 	vermin_string = "rodents"
@@ -57,13 +57,13 @@
 
 /datum/event2/event/infestation/set_up()
 	turfs = find_random_turfs(max_vermin)
-	if(!turfs.len)
+	if(!length(turfs))
 		log_game("Infestation event failed to find any valid turfs. Aborting.")
 		abort()
 		return
 
 /datum/event2/event/infestation/announce()
-	var/turf/T = turfs[1]
+	var/turf/T = LAZYACCESS(turfs, 1)
 	GLOB.command_announcement.Announce("Bioscans indicate that [vermin_string] have been breeding \
 	in \the [T.loc]. Clear them out, before this starts to affect productivity.", "Vermin infestation", ANNOUNCER_MSG_VERMIN_INFESTATION)
 
@@ -71,7 +71,7 @@
 /datum/event2/event/infestation/start()
 	var/vermin_to_spawn = rand(2, max_vermin)
 	for(var/i = 1 to vermin_to_spawn)
-		var/turf/T = pick(turfs)
-		turfs -= T
-		var/spawn_type = pick(things_to_spawn)
+		var/turf/T = DEFAULTPICK(turfs, null)
+		LAZYREMOVE(turfs, T)
+		var/spawn_type = DEFAULTPICK(things_to_spawn, null)
 		new spawn_type(T)

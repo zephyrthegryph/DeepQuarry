@@ -195,8 +195,7 @@
 	var/obj/structure/cable/C = T.get_cable_node()
 	if(C)
 		if(electrocute_mob(user, C, src))
-			if(C.powernet)
-				C.powernet.trigger_warning()
+			C.get_powernet()?.trigger_warning()
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 			s.set_up(3, 1, src)
 			s.start()
@@ -206,11 +205,6 @@
 			return 0
 	return 0
 
-/obj/structure/grille/fire_act(exposed_temperature, exposed_volume)
-	if(!destroyed)
-		if(exposed_temperature > T0C + 1500)
-			deal_damage(DAMAGE_THERMAL, 1, FIRE)
-	..()
 
 /obj/structure/grille/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))

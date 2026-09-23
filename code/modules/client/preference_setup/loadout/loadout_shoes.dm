@@ -11,4 +11,4 @@
 	"extra large jackboots" = /obj/item/clothing/shoes/mech_shoes/mister_x,
 	"visible extra large jackboots" = /obj/item/clothing/shoes/mech_shoes/mister_x/visible
 	)
-	gear_tweaks += new/datum/gear_tweak/path(mechshoes)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(mechshoes))

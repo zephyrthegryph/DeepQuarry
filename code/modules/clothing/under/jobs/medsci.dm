@@ -5,20 +5,20 @@
 	desc = "It's a jumpsuit worn by those with the know-how to achieve the position of \"" + JOB_RESEARCH_DIRECTOR + "\". Its fabric provides minor protection from biological contaminants."
 	name = "research director's jumpsuit"
 	icon_state = "director"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/research_director/rdalt
 	desc = "A dress suit and slacks stained with hard work and dedication to science. Perhaps other things as well, but mostly hard work and dedication."
 	name = "head researcher uniform"
 	icon_state = "rdalt"
 	item_state_slots = list(slot_r_hand_str = "director", slot_l_hand_str = "director")
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/research_director/dress_rd
 	name = "research director dress uniform"
 	desc = "Feminine fashion for the style conscious RD. Its fabric provides minor protection from biological contaminants."
 	icon_state = "dress_rd"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	body_parts_covered = CHEST|ARMS
 
 /obj/item/clothing/under/rank/scientist
@@ -27,7 +27,7 @@
 	icon_state = "science"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/scientist/turtleneck
@@ -44,7 +44,7 @@
 	icon_state = "chemistry"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /*
@@ -56,7 +56,7 @@
 	icon_state = "cmo"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/geneticist
@@ -65,7 +65,7 @@
 	icon_state = "genetics"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/virologist
@@ -74,7 +74,7 @@
 	icon_state = "virology"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/nursesuit
@@ -82,7 +82,7 @@
 	name = "nurse's suit"
 	icon_state = "nursesuit"
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	body_parts_covered = CHEST
 	rolled_sleeves = -1
 
@@ -92,7 +92,7 @@
 	icon_state = "nurse"
 	item_state_slots = list(slot_r_hand_str = "nursesuit", slot_l_hand_str = "nursesuit")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	body_parts_covered = CHEST
 	rolled_sleeves = -1
 
@@ -102,7 +102,7 @@
 	icon_state = "orderly"
 	item_state_slots = list(slot_r_hand_str = "nursesuit", slot_l_hand_str = "nursesuit")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/medical
@@ -111,7 +111,7 @@
 	icon_state = "medical"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/medical/turtleneck
@@ -223,7 +223,7 @@
 	icon_state = "genetics_new"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/chemist_new
@@ -232,7 +232,7 @@
 	icon_state = "chemist_new"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/scientist_new
@@ -241,7 +241,7 @@
 	icon_state = "scientist_new"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/virologist_new
@@ -250,5 +250,5 @@
 	icon_state = "virologist_new"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	rolled_sleeves = 0

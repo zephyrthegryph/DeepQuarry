@@ -80,14 +80,14 @@
 		//Set temperature of oil reagent
 		var/datum/reagent/nutriment/triglyceride/oil/OL = oil.get_master_reagent()
 		if (OL && istype(OL))
-			OL.data["temperature"] = temperature
+			OL.data["temperature"] = get_temperature()
 
 /obj/machinery/appliance/cooker/fryer/equalize_temperature()
 	if (..())
 		//Set temperature of oil reagent
 		var/datum/reagent/nutriment/triglyceride/oil/OL = oil.get_master_reagent()
 		if (OL && istype(OL))
-			OL.data["temperature"] = temperature
+			OL.data["temperature"] = get_temperature()
 
 /obj/machinery/appliance/cooker/fryer/update_cooking_power()
 	..()//In addition to parent temperature calculation

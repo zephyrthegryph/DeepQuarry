@@ -9,7 +9,7 @@
 	/// The list of all search objects indexed.
 	var/list/datum/search_object/contents = list()
 	/// The list of search_objects needing processed
-	var/list/datum/search_object/to_image = list()
+	var/list/datum/search_object/to_image
 	/// We've been notified about client version
 	var/notified = FALSE
 	/// The turf being searched

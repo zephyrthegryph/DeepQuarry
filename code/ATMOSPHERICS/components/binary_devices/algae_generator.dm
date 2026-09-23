@@ -122,19 +122,51 @@
 		icon_state = "algae-on"
 	return 1
 
-/obj/machinery/atmospherics/binary/algae_farm/attackby(obj/item/W as obj, mob/user as mob)
-	add_fingerprint(user)
-	if(default_part_replacement(user, W))
-		return
-	if(try_load_materials(user, W))
-		return
-	to_chat(user, span_notice("You cannot insert this item into \the [src]!"))
-	return
+/obj/machinery/atmospherics/binary/algae_farm/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/algae_farm_part_replacement,
+		/datum/interaction/machine_item/algae_farm_load_materials,
+		/datum/interaction/machine_item/algae_farm_reject,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
-/obj/machinery/atmospherics/binary/algae_farm/attack_hand(mob/user)
-	if(..())
-		return 1
-	tgui_interact(user)
+/// Old attackby: default_part_replacement branch, kept with its add_fingerprint.
+/datum/interaction/machine_item/algae_farm_part_replacement
+	id = "algae_farm_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	effect = /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_part_replacement_impl
+
+/obj/machinery/atmospherics/binary/algae_farm/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	return default_part_replacement(user, held) ? TRUE : FALSE
+
+/// Old attackby: try_load_materials branch.
+/datum/interaction/machine_item/algae_farm_load_materials
+	id = "algae_farm_load_materials"
+	name = "Insert materials"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/stack/material
+	effect = /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_load_materials
+
+/obj/machinery/atmospherics/binary/algae_farm/proc/interaction_load_materials(mob/user, obj/item/stack/material/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	try_load_materials(user, held)
+	return TRUE
+
+/// Old attackby: the final "anything else" branch.
+/datum/interaction/machine_item/algae_farm_reject
+	id = "algae_farm_reject"
+	name = "Insert"
+	held_type = /obj/item
+	effect = /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_reject
+
+/obj/machinery/atmospherics/binary/algae_farm/proc/interaction_reject(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	to_chat(user, span_notice("You cannot insert this item into \the [src]!"))
+	return TRUE
 
 /obj/machinery/atmospherics/binary/algae_farm/RefreshParts()
 	..()

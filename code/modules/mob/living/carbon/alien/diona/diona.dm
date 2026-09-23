@@ -57,7 +57,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	add_verb(src, /mob/living/carbon/alien/diona/proc/merge)
 
 /mob/living/carbon/alien/diona/put_in_hands(obj/item/W) // No hands.
-	W.loc = get_turf(src)
+	W.forceMove(get_turf(src))
 	return 1
 
 /mob/living/carbon/alien/diona/proc/wear_hat(obj/item/new_hat)

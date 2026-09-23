@@ -347,7 +347,7 @@
 	desc = "A pair of olde knight boots."
 	icon_state = "knight_boots1"
 	item_state = "knight_boots1"
-	armor = list(melee = 80, bullet = 50, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=50;laser=10"
 
 /obj/item/clothing/shoes/knight/black
 	name = "knight boots"
@@ -393,7 +393,7 @@
 	desc = "Thud thud."
 	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0) // Same as loadout jackboots.
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20" // Same as loadout jackboots.
 	siemens_coefficient = 0.7 // Same as loadout jackboots.
 	can_hold_knife = 1
 	force = 2
@@ -429,7 +429,7 @@
 	icon_state = "jackboots"
 
 /obj/item/clothing/shoes/clown_shoes
-	var/list/squeak_sound = list("clownstep"=1)
+	var/static/list/squeak_sound = list("clownstep"=1)
 
 /obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
 	.=..()

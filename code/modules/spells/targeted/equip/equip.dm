@@ -3,9 +3,9 @@
 /datum/spell/targeted/equip_item
 	name = "equipment spell"
 
-	var/list/equipped_summons = list() //assoc list of text ids and paths to spawn
+	var/list/equipped_summons //assoc list of text ids and paths to spawn
 
-	var/list/summoned_items = list() //list of items we summoned and will dispose when the spell runs out
+	var/list/summoned_items //list of items we summoned and will dispose when the spell runs out
 
 	var/delete_old = 1 //if the item previously in the slot is deleted - otherwise, it's dropped
 
@@ -13,7 +13,7 @@
 	..()
 	for(var/mob/living/L in targets)
 		for(var/slot_id in equipped_summons)
-			var/to_create = equipped_summons[slot_id]
+			var/to_create = LAZYACCESS(equipped_summons, slot_id)
 			slot_id = text2num(slot_id) //because the index is text, we access this instead
 			var/obj/item/new_item = summon_item(to_create)
 			var/obj/item/old_item = L.get_equipped_item(slot_id)
@@ -26,7 +26,7 @@
 					old_item.loc = L.loc
 
 			if(duration)
-				summoned_items += new_item //we store it in a list to remove later
+				LAZYADD(summoned_items, new_item) //we store it in a list to remove later
 
 	if(duration)
 		spawn(duration)

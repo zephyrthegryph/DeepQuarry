@@ -33,7 +33,7 @@
 	melee_damage_lower = 20		//Vox Hunting rifle blade damage
 	melee_damage_upper = 20
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 100)	// Matching Merc voidsuit stats to represent toughness.
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100" // Matching Merc voidsuit stats to represent toughness.
 
 	min_oxy = 0 //Vox are spaceproof.
 	max_oxy = 0
@@ -174,7 +174,7 @@
 	icon_dead = "voxsuppresor_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/suppressor)
 
-	armor = list(melee = 30, bullet = 50, laser = 60, energy = 30, bomb = 35, bio = 100, rad = 100)	// Boosted armor to represent Tank role.
+	armor_spec = "melee=30;bullet=50;laser=60;energy=30;bomb=35;bio=100;rad=100" // Boosted armor to represent Tank role.
 
 	projectiletype = /obj/item/projectile/sonic/weak
 	projectilesound = 'sound/effects/basscannon.ogg'
@@ -205,7 +205,7 @@
 	icon_dead = "voxcaptain_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/captain)
 
-	armor = list(melee = 60, bullet = 50, laser = 40, energy = 15, bomb = 30, bio = 100, rad = 100)	// Vox RIG armor values.
+	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=100" // Vox RIG armor values.
 
 	projectiletype = /obj/item/projectile/beam/darkmatter
 	projectilesound = 'sound/weapons/eLuger.ogg'

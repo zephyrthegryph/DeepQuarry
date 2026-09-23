@@ -19,7 +19,7 @@
 	var/unidentified_description_info = "This object is unidentified, and as such its properties are unknown. Using this object may be dangerous."
 
 	// Lists of lists for generating names by combining one from each.
-	var/list/naming_lists = list()
+	var/list/naming_lists
 
 	// What 'identification type' is needed to identify this.
 	var/identification_type = IDENTITY_TYPE_NONE

@@ -40,20 +40,20 @@
 /// Returns the currently active /datum/firemode, or null if no firemodes set.
 /datum/gun_firemode_selector/proc/current_mode()
 	var/obj/item/gun/gun = gun_ref?.resolve()
-	if(!gun || !gun.firemodes.len)
+	if(!gun || !length(gun.firemodes))
 		return null
-	return gun.firemodes[gun.sel_mode]
+	return LAZYACCESS(gun.firemodes, gun.sel_mode)
 
 /// Advance to the next mode (wrapping).  Applies the mode to the gun and
 /// notifies user.  Returns the new mode or null if no change.
 /datum/gun_firemode_selector/proc/cycle(mob/user)
 	var/obj/item/gun/gun = gun_ref?.resolve()
-	if(!gun || gun.firemodes.len <= 1)
+	if(!gun || length(gun.firemodes) <= 1)
 		return null
 	gun.sel_mode++
-	if(gun.sel_mode > gun.firemodes.len)
+	if(gun.sel_mode > length(gun.firemodes))
 		gun.sel_mode = 1
-	var/datum/firemode/new_mode = gun.firemodes[gun.sel_mode]
+	var/datum/firemode/new_mode = LAZYACCESS(gun.firemodes, gun.sel_mode)
 	new_mode.apply_to(gun)
 	if(user)
 		to_chat(user, span_notice("\The [gun] is now set to [new_mode.name]."))

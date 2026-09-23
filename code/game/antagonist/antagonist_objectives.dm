@@ -1,15 +1,15 @@
 /datum/antagonist/proc/create_global_objectives()
 	if(CONFIG_GET(flag/objectives_disabled))
 		return 0
-	if(global_objectives && global_objectives.len)
+	if(global_objectives && length(global_objectives))
 		return 0
 	return 1
 
 /datum/antagonist/proc/create_objectives(datum/mind/player)
 	if(CONFIG_GET(flag/objectives_disabled))
 		return 0
-	if(create_global_objectives() || global_objectives.len)
-		player.objectives |= global_objectives
+	if(create_global_objectives() || length(global_objectives))
+		if(length(global_objectives)) player.objectives |= global_objectives
 	return 1
 
 /datum/antagonist/proc/get_special_objective_text()
@@ -19,7 +19,7 @@
 	var/result = 1
 	if(CONFIG_GET(flag/objectives_disabled))
 		return 1
-	if(global_objectives && global_objectives.len)
+	if(global_objectives && length(global_objectives))
 		for(var/datum/objective/O in global_objectives)
 			if(!O.completed && !O.check_completion())
 				result = 0

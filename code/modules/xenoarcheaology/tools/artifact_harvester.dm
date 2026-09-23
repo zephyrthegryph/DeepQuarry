@@ -48,20 +48,33 @@
 				if(5)
 					harvesting_speed += 100
 
-/obj/machinery/artifact_harvester/attackby(obj/I as obj, mob/user as mob)
-	if(istype(I,/obj/item/anobattery))
+/obj/machinery/artifact_harvester/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/artifact_harvester_use_item,
+		/datum/interaction/machine_hand/artifact_harvester_use,
+	)
+	..()
+
+/datum/interaction/machine_item/artifact_harvester_use_item
+	id = "artifact_harvester_use_item"
+	name = "Use"
+	effect = /obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item
+
+/obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item(mob/user, obj/item/held, datum/interaction/interaction)
+	if(istype(held,/obj/item/anobattery))
 		if(!inserted_battery)
-			to_chat(user, span_blue("You insert [I] into [src]."))
+			to_chat(user, span_blue("You insert [held] into [src]."))
 			user.drop_item()
-			I.loc = src
-			src.inserted_battery = I
+			held.loc = src
+			src.inserted_battery = held
 			SStgui.update_uis(src)
 		else
 			to_chat(user, span_red("There is already a battery in [src]."))
-	if(default_part_replacement(user, I))
-		return
+	if(default_part_replacement(user, held))
+		return TRUE
 	if(inserted_battery)
-		return..()
+		return FALSE
+	return TRUE
 
 /obj/machinery/artifact_harvester/screwdriver_act(mob/user, obj/item/tool)
 	if(inserted_battery)
@@ -73,13 +86,17 @@
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
-/obj/machinery/artifact_harvester/attack_hand(mob/user as mob)
-	if(..())
-		return 1
+/datum/interaction/machine_hand/artifact_harvester_use
+	id = "artifact_harvester_use"
+	name = "Use"
+	effect = /obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use
+
+/obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/artifact_harvester/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -263,10 +263,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			target.module_reset(FALSE)
 			return TRUE
 		if("add_compatibility")
-			target.module.supported_upgrades |= text2path(params["upgrade"])
+			LAZYOR(target.module.supported_upgrades, text2path(params["upgrade"]))
 			return TRUE
 		if("rem_compatibility")
-			target.module.supported_upgrades.Remove(text2path(params["upgrade"]))
+			LAZYREMOVE(target.module.supported_upgrades, text2path(params["upgrade"]))
 			return TRUE
 		if("add_upgrade")
 			var/new_upgrade = text2path(params["upgrade"])
@@ -282,7 +282,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 					UN.heldname = new_name
 				U = UN
 			if(istype(U, /obj/item/borg/upgrade/restricted))
-				target.module.supported_upgrades |= new_upgrade
+				LAZYOR(target.module.supported_upgrades, new_upgrade)
 			if(!U.action(ui.user, target))
 				return FALSE
 			U.loc = target
@@ -297,7 +297,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 		if("remove_modkit")
 			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target.module.modules
 			var/obj/item/rem_kit = locate(params["modkit"])
-			kin.modkits.Remove(rem_kit)
+			LAZYREMOVE(kin.modkits, rem_kit)
 			qdel(rem_kit)
 			return TRUE
 		if("select_multibelt")

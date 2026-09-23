@@ -53,11 +53,16 @@ GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Se
 	var/em_block = FALSE
 
 	/// What body parts we hide when this accessory is worn. Only blocks the body part if the accompanying organ in body_parts is also enabled.
-	var/list/hide_body_parts = list() //Uses organ tag defines. Bodyparts in this list do not have their icons rendered, allowing for more spriter freedom when doing taur/digitigrade stuff.
+	var/list/hide_body_parts //Uses organ tag defines. Bodyparts in this list do not have their icons rendered, allowing for more spriter freedom when doing taur/digitigrade stuff.
 
 /**
  * Gets the number of color channels we have.
  */
+// Most accessories keep the default species list; share identical tables (read-only).
+/datum/sprite_accessory/New()
+	species_allowed = intern_list(species_allowed)
+	return ..()
+
 /datum/sprite_accessory/proc/get_color_channel_count()
 	return do_colouration ? 1 : 0
 

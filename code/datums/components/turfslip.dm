@@ -119,7 +119,7 @@
 		return FALSE
 	if(ishuman(M))
 		var/mob/living/carbon/human/humie = M
-		if(humie.shoes && (humie.shoes.item_flags & NOSLIP)) // Includes activated magboots too
+		if(humie.get_equipped_item(SLOT_ID_SHOES) && (humie.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP)) // Includes activated magboots too
 			return FALSE
 		if(humie.species && (humie.species.flags & NO_SLIP))
 			return FALSE

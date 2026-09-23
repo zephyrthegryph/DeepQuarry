@@ -14,21 +14,26 @@
 	var/tgui_subtemplate = "ShuttleControlConsoleDefault"
 	var/ai_control = TRUE // AI/Borgs shouldn't really be flying off in ships without crew help //ChompStation Edit: Flying is better prevented by restricting the helm console if wanted. This is only an unnecessary nuisance that also breaks various other uses for the shuttle console.
 
-/obj/machinery/computer/shuttle_control/attack_hand(user as mob)
-	if(..(user))
-		return
-	// ition Start
-	if(!ai_control && issilicon(user))
-		to_chat(user, span_warning("Access Denied."))
-		return TRUE
-	// ition End
+/obj/machinery/computer/shuttle_control/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/shuttle_control_open_ui,
+	)
+	..()
 
-	//src.add_fingerprint(user)	//shouldn't need fingerprints just for looking at it.
-	if(!allowed(user))
-		to_chat(user, span_warning("Access Denied."))
-		return 1
+/datum/interaction/machine_hand/shuttle_control_open_ui
+	id = "shuttle_control_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/computer/shuttle_control/proc/lets_silicon_in, "access denied"), REQ_ON(PRED_ACTOR, /obj/machinery/computer/shuttle_control/proc/lets_in, "access denied"))
+	effect = /obj/machinery/proc/interaction_open_ui
 
-	tgui_interact(user)
+//src.add_fingerprint(user)	//shouldn't need fingerprints just for looking at it.
+/obj/machinery/computer/shuttle_control/proc/lets_silicon_in(mob/actor, atom/target, obj/item/held)
+	if(!ai_control && issilicon(actor))
+		return FALSE
+	return TRUE
+
+/obj/machinery/computer/shuttle_control/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
 
 /obj/machinery/computer/shuttle_control/proc/shuttlerich_tgui_data(datum/shuttle/autodock/shuttle)
 	var/shuttle_state

@@ -34,11 +34,24 @@
 /obj/machinery/computer/security/tgui_state(mob/user)
 	return GLOB.tgui_camera_view
 
-/obj/machinery/computer/security/attack_hand(mob/user)
+/obj/machinery/computer/security/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/security_open_ui,
+	)
+	..()
+
+/// The old attack_hand: never called ..(), so it stays ungated.
+/datum/interaction/machine_hand/ungated/security_open_ui
+	id = "security_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/security/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/security/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/security/attack_robot(mob/user)
 	if(isrobot(user))

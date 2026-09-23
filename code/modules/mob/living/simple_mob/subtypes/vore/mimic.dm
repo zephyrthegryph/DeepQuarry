@@ -50,15 +50,17 @@
 		return ..()
 
 /obj/structure/closet/crate/mimic/ex_act(severity)
-	for(var/obj/O in src.contents)
+	latent_discard()
+	for(var/obj/O in src.contents) // latent-ok: discarded above
 		qdel(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len)
+	if(contents.len || has_latent()) // latent-ok
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
-		for(var/obj/O in src.contents)
+		latent_discard()
+		for(var/obj/O in src.contents) // latent-ok: discarded above
 			qdel(O)
 	return ..()
 
@@ -182,15 +184,17 @@
 		return ..()
 
 /obj/structure/closet/crate/mimic/airlock/ex_act(severity) //Stores Mimic Contents for later
-	for(var/obj/O in src.contents)
+	latent_discard()
+	for(var/obj/O in src.contents) // latent-ok: discarded above
 		qdel(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len)
+	if(contents.len || has_latent()) // latent-ok
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
-		for(var/obj/O in src.contents)
+		latent_discard()
+		for(var/obj/O in src.contents) // latent-ok: discarded above
 			qdel(O)
 	return ..()
 
@@ -219,14 +223,7 @@
 	melee_damage_upper = 8
 	attack_armor_pen = 0
 
-	armor = list(
-				"melee" = 10,
-				"bullet" = 10,
-				"laser" = 10,
-				"energy" = 10,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100) //Its an airlock.
+	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100" //Its an airlock.
 
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/will_show_tooltip()
 	return FALSE
@@ -275,15 +272,17 @@
 		return ..()
 
 /obj/structure/closet/crate/mimic/closet/ex_act(severity) //Stores Mimic Contents for later
-	for(var/obj/O in src.contents)
+	latent_discard()
+	for(var/obj/O in src.contents) // latent-ok: discarded above
 		qdel(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/closet/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len)
+	if(contents.len || has_latent()) // latent-ok
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
-		for(var/obj/O in src.contents)
+		latent_discard()
+		for(var/obj/O in src.contents) // latent-ok: discarded above
 			qdel(O)
 	return ..()
 
@@ -313,14 +312,7 @@
 	melee_damage_upper = 8
 	attack_armor_pen =  25 // NOM NOM
 
-	armor = list(
-				"melee" = 10,
-				"bullet" = 20,
-				"laser" = 20,
-				"energy" = 20,
-				"bomb" = 20,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=10;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 
 /mob/living/simple_mob/vore/aggressive/mimic/closet/will_show_tooltip()
 	return FALSE

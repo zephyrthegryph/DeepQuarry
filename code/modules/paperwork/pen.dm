@@ -217,7 +217,7 @@
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 	catchable = FALSE
 
-	attack_verb |= list(\
+	attack_verb = attack_verb | list(\
 		"slashed",\
 		"cut",\
 		"shredded",\

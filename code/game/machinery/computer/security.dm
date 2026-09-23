@@ -56,38 +56,62 @@
 	active2 = null
 	return ..()
 
-/obj/machinery/computer/secure_data/verb/eject_id()
-	set category = "Object"
-	set name = "Eject ID Card"
-	set src in oview(1)
+/obj/machinery/computer/secure_data/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_verb/secure_data_eject_id,
+		/datum/interaction/machine_item/secure_data_insert_id,
+		/datum/interaction/machine_hand/secure_data_use,
+	)
+	..()
 
-	if(!usr || usr.stat || usr.lying)	return
+/datum/interaction/machine_verb/secure_data_eject_id
+	id = "secure_data_eject_id"
+	name = "Eject ID Card"
+	category = INTERACTION_CAT_EJECT
+	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
+	effect = /obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id
 
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(scan)
-		to_chat(usr, "You remove \the [scan] from \the [src].")
+		to_chat(user, "You remove \the [scan] from \the [src].")
 		scan.loc = get_turf(src)
-		if(!usr.get_active_hand() && ishuman(usr))
-			usr.put_in_hands(scan)
+		if(!user.get_active_hand() && ishuman(user))
+			user.put_in_hands(scan)
 		scan = null
 	else
-		to_chat(usr, "There is nothing to remove from the console.")
-	return
+		to_chat(user, "There is nothing to remove from the console.")
+	return TRUE
 
-/obj/machinery/computer/secure_data/attackby(obj/item/O, mob/user)
-	if(istype(O, /obj/item/card/id) && !scan && user.unEquip(O))
-		O.loc = src
-		scan = O
-		to_chat(user, "You insert \the [O].")
-		tgui_interact(user)
-	else
-		..()
+/// The old attackby: insert an ID card into the free slot.
+/datum/interaction/machine_item/secure_data_insert_id
+	id = "secure_data_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/secure_data/proc/has_free_slot, null))
+	effect = /obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id
+
+/obj/machinery/computer/secure_data/proc/has_free_slot(mob/actor, atom/target, obj/item/held)
+	return !scan
+
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.unEquip(held))
+		return FALSE
+	held.loc = src
+	scan = held
+	to_chat(user, "You insert \the [held].")
+	tgui_interact(user)
+	return TRUE
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
-/obj/machinery/computer/secure_data/attack_hand(mob/user as mob)
-	if(..())
-		return
+/datum/interaction/machine_hand/secure_data_use
+	id = "secure_data_use"
+	name = "Use"
+	effect = /obj/machinery/computer/secure_data/proc/interaction_secure_data_use
+
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/secure_data/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

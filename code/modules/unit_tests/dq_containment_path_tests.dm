@@ -29,7 +29,7 @@
 /obj/item/dq_path_probe/padded
 	name = "padded path probe"
 	insulation = 0.5
-	armor = list("melee" = 50, "bullet" = 50, "laser" = 50, "energy" = 50, "bomb" = 50, "bio" = 50, "rad" = 50)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=50;rad=50"
 
 /// A bag: one internal slot with the default damage shares.
 /obj/item/dq_path_bag
@@ -47,7 +47,7 @@
 
 /// The same bag lined with armour.
 /obj/item/dq_path_bag/armored
-	armor = list("melee" = 50, "bullet" = 50, "laser" = 50, "energy" = 50, "bomb" = 50, "bio" = 50, "rad" = 50)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=50;rad=50"
 
 /// A canister-like holder with a sealed slot and an internal one.
 /obj/item/dq_path_sealed

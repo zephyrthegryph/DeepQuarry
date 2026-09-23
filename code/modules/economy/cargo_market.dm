@@ -1080,7 +1080,7 @@
 				outbound_crates.Add(list(list(
 					"ref" = REF(crate),
 					"name" = crate.name,
-					"contents" = length(crate.contents),
+					"contents" = length(crate.contents) + crate.latent_count(), // latent-ok
 					"bid_id" = assigned_active ? assigned_bid.id : null,
 					"route" = assigned_active ? "[market_display_name(assigned_counterparty, user, assigned_bid.cover_name)] — [assigned_bid.profile.name]" : (assigned_bid && !assigned_visible ? "Encrypted private route" : "Spot market"),
 				)))

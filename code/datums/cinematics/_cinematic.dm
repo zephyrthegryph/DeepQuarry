@@ -31,7 +31,7 @@
 /// Cinematic datum. Used to show an animation to everyone.
 /datum/cinematic
 	/// A list of all clients watching the cinematic
-	var/list/client/watching = list()
+	var/list/client/watching
 	/// A list of all mobs who have TRAIT_NO_TRANSFORM set while watching the cinematic
 	var/list/datum/weakref/locked = list()
 	/// Whether the cinematic is a global cinematic or not
@@ -55,7 +55,7 @@
 /datum/cinematic/Destroy()
 	QDEL_NULL(screen)
 	special_callback = null
-	watching.Cut()
+	LAZYCLEARLIST(watching)
 	locked.Cut()
 	return ..()
 
@@ -115,7 +115,7 @@
 	if(!watching_client || (watching_client in watching))
 		return
 
-	watching += watching_client
+	LAZYADD(watching, watching_client)
 	watching_mob.overlay_fullscreen("cinematic", /atom/movable/screen/fullscreen/cinematic_backdrop)
 	watching_client.screen += screen
 	RegisterSignal(watching_client, COMSIG_QDELETING, PROC_REF(remove_watcher))
@@ -173,6 +173,6 @@
 	no_longer_watching.mob?.clear_fullscreen("cinematic")
 	no_longer_watching.screen -= screen
 
-	watching -= no_longer_watching
+	LAZYREMOVE(watching, no_longer_watching)
 
 #undef CINEMATIC_SOURCE

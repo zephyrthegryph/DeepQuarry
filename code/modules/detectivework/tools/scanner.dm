@@ -25,7 +25,7 @@
 	var/mob/living/carbon/human/target = M
 
 	if(reveal_fingerprints)
-		if((!( istype(target.dna, /datum/dna) ) || target.gloves))
+		if((!( istype(target.dna, /datum/dna) ) || target.get_equipped_item(SLOT_ID_GLOVES)))
 			to_chat(user, span_notice("No fingerprints found on [target]"))
 			flick("[icon_state]0",src)
 			return ITEM_INTERACT_FAILURE

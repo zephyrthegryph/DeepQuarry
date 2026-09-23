@@ -82,7 +82,7 @@
 /datum/unit_test/dq_harm_armor_by_kind/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
-	vest.armor = list("melee" = 40, "bullet" = 30, "laser" = 20, "energy" = 10, "bomb" = 5, "bio" = 50, "rad" = 60)
+	vest.set_armor(dq_armor(list("melee" = 40, "bullet" = 30, "laser" = 20, "energy" = 10, "bomb" = 5, "bio" = 50, "rad" = 60)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, slot_wear_suit, disable_warning = TRUE), "the vest should equip")
 
 	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, BP_TORSO), 40, "blunt reads melee armour")
@@ -104,7 +104,7 @@
 		TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, heart), 40, "an organ target reads its limb's armour")
 	TEST_ASSERT_EQUAL(H.armor_against(INJURY_PIERCE, BP_TORSO, 25), 5, "penetration ignores armour points")
 
-	// Burn armour 20 (+/-25% variance) mitigates 15-25% of an armoured hit only.
+	// Burn armour 20 mitigates exactly 20% of an armoured hit, and only an armoured one.
 	// Read the armour stage itself: what the body does with the rest depends on its prior wounds.
 	RegisterSignal(H, COMSIG_LIVING_INJURY_EXPLAINED, PROC_REF(on_explained))
 	H.injure(INJURY_BURN, 10, BP_TORSO, flags = INJURE_SILENT)
@@ -113,7 +113,7 @@
 	var/list/armour_stage = explained[1]
 	TEST_ASSERT_EQUAL(armour_stage[1], INJURY_STAGE_ARMOR, "an armoured hit should meet armour first")
 	var/kept = armour_stage[3] / armour_stage[2]
-	TEST_ASSERT(kept >= 0.75 - 0.01 && kept <= 0.85 + 0.01, "20 burn armour should stop 15-25% of an armoured burn, kept [kept]")
+	TEST_ASSERT(dq_near(kept, 0.8), "20 burn armour should stop 20% of an armoured burn, kept [kept]")
 	H.injure(INJURY_BURN, 10, BP_TORSO, armor_pen = 20, flags = INJURE_SILENT | INJURE_ARMORED)
 	armour_stage = explained[1]
 	TEST_ASSERT(dq_near(armour_stage[3], armour_stage[2]), "20 penetration should defeat 20 burn armour ([armour_stage[3]] of [armour_stage[2]])")
@@ -121,7 +121,7 @@
 
 	// Simple mobs read their natural armour list the same way.
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
-	M.armor = list("melee" = 35, "bullet" = 15, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)
+	M.set_armor(dq_armor(list("melee" = 35, "bullet" = 15, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 	TEST_ASSERT_EQUAL(M.injury_armor(INJURY_CUT), 35, "a simple mob's cut armour is its melee armour")
 	TEST_ASSERT_EQUAL(M.injury_armor(INJURY_PIERCE), 15, "a simple mob's pierce armour is its bullet armour")
 	TEST_ASSERT_EQUAL(M.injury_armor(INJURY_BURN), 0, "a simple mob's burn armour is its laser armour")
@@ -141,7 +141,7 @@
 /datum/unit_test/dq_harm_mitigation_pipeline/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
-	vest.armor = list("melee" = 40, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)
+	vest.set_armor(dq_armor(list("melee" = 40, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, slot_wear_suit, disable_warning = TRUE), "the vest should equip")
 	var/datum/modifier/shield_projection/bruteburn/weak/shield = H.add_modifier(/datum/modifier/shield_projection/bruteburn/weak)
 	TEST_ASSERT_NOTNULL(shield, "the shield modifier should apply")
@@ -160,7 +160,7 @@
 	var/list/armour = explained[1]
 	TEST_ASSERT(dq_near(armour[2], 40), "the armour stage should see the raw 40")
 	var/armour_kept = armour[3] / armour[2]
-	TEST_ASSERT(armour_kept >= 0.5 - 0.01 && armour_kept <= 0.7 + 0.01, "40 melee armour should stop 30-50% of the blow, kept [armour_kept]")
+	TEST_ASSERT(dq_near(armour_kept, 0.6), "40 melee armour should stop 40% of the blow, kept [armour_kept]")
 	for(var/i in 2 to length(explained))
 		var/list/previous = explained[i - 1]
 		var/list/stage = explained[i]

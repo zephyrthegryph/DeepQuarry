@@ -57,13 +57,34 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 	update_brightness()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/floor_light/attackby(obj/item/W, mob/user)
-	if(W.force && IS_HARMING(user))
+/obj/machinery/floor_light/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/floor_light_harm,
+		/datum/interaction/machine_hand/ungated/floor_light_use,
+	)
+	..()
+
+/// The old attackby: if a harmful item is used in combat mode, run the attack_hand
+/// smash behavior, but always fall through to the base attack chain (it never stopped it).
+/datum/interaction/machine_item/floor_light_harm
+	id = "floor_light_harm"
+	name = "Hit"
+	offered_when = list(REQ_COMBAT_MODE)
+	tags = list(INTERACTION_TAG_HOSTILE)
+	consumes_input = FALSE
+	effect = /obj/machinery/floor_light/proc/interaction_harm
+
+/obj/machinery/floor_light/proc/interaction_harm(mob/user, obj/item/held, datum/interaction/interaction)
+	if(held?.force)
 		attack_hand(user)
-	return ..()
+	return FALSE
 
-/obj/machinery/floor_light/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/floor_light_use
+	id = "floor_light_use"
+	name = "Use"
+	effect = /obj/machinery/floor_light/proc/interaction_use
 
+/obj/machinery/floor_light/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user) && !issmall(user))
 		if(!isnull(damaged) && !(stat & BROKEN))
 			visible_message(span_danger("\The [user] smashes \the [src]!"))
@@ -74,26 +95,26 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
 			if(isnull(damaged)) damaged = 0
 		update_brightness()
-		return
+		return TRUE
 	else
 
 		if(!anchored)
 			to_chat(user, span_warning("\The [src] must be screwed down first."))
-			return
+			return TRUE
 
 		if(stat & BROKEN)
 			to_chat(user, span_warning("\The [src] is too damaged to be functional."))
-			return
+			return TRUE
 
 		if(stat & NOPOWER)
 			to_chat(user, span_warning("\The [src] is unpowered."))
-			return
+			return TRUE
 
 		on = !on
 		if(on) update_use_power(USE_POWER_ACTIVE)
 		// visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) // No thankouuuu. Too spammy.
 		update_brightness()
-		return
+		return TRUE
 
 /obj/machinery/floor_light/process()
 	..()

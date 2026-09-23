@@ -3,7 +3,7 @@
 	desc = "It's a very shiny and somewhat protective suit, built to help carry cores on the user's back."
 	icon_state = "technomancer"
 	body_parts_covered = CHEST|ARMS|LEGS|FEET|HANDS
-	armor = list(melee = 50, bullet = 20, laser = 30, energy = 30, bomb = 10, bio = 0, rad = 40)
+	armor_spec = "melee=50;bullet=20;laser=30;energy=30;bomb=10;rad=40"
 	siemens_coefficient = 0.75
 
 /obj/item/clothing/suit/technomancer/suit_storage_constraint()
@@ -15,7 +15,7 @@
 	desc = "It's a blue colored jumpsuit.  There appears to be light-weight armor padding underneath, providing some protection.  \
 	There is also a healthy amount of insulation underneath."
 	icon_state = "initiate"
-	armor = list(melee = 10, bullet = 5, laser = 5, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=5;laser=5"
 	siemens_coefficient = 0.3
 
 /obj/item/clothing/under/technomancer/apprentice
@@ -34,7 +34,7 @@
 	name = "initiate's hat"
 	desc = "It's a somewhat silly looking blue pointed hat."
 	icon_state = "initiate"
-	armor = list(melee = 10, bullet = 5, laser = 5, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=5;laser=5"
 	siemens_coefficient = 0.3
 
 /obj/item/clothing/head/technomancer/apprentice

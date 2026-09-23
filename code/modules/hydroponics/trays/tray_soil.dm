@@ -7,33 +7,49 @@
 	tray_light = 0
 	frozen = -1
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O,/obj/item/tank))
-		return
-	if(istype(O,/obj/item/shovel))
-		if(IS_HARMING(user))
-			user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
-			if(do_after(user, 3 SECONDS, target = src) && !QDELETED(src))
-				user.visible_message(span_notice("\The [user] fills in \the [src]."))
-				qdel(src)
-			return
-		if(!seed)
-			var/choice= tgui_alert(user, "Do you want to destroy the growplot?", "Destroy growplot?" , list("Yes", "No"))
-			if(!choice||choice=="No")
-				return
-			user.visible_message("[user] starts dispersing the [src]...", runemessage = "disperses the [src]")
-			if(do_after(user, 5 SECONDS, target = src))
-				qdel(src)
-		else
-			to_chat(user, span_notice("There is something growing here."))
+/obj/machinery/portable_atmospherics/hydroponics/soil/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/soil_tank_block,
+		/datum/interaction/machine_item/soil_shovel,
+	)
+	..()
+
+/// Old attackby: a tank silently did nothing (never fell through to ..()).
+/datum/interaction/machine_item/soil_tank_block
+	id = "soil_tank_block"
+	name = "Use"
+	held_type = /obj/item/tank
+	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_tank_block
+
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_tank_block(mob/user, obj/item/O, datum/interaction/interaction)
+	return TRUE
+
+/datum/interaction/machine_item/soil_shovel
+	id = "soil_shovel"
+	name = "Dig"
+	held_type = /obj/item/shovel
+	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel
+
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
+	if(IS_HARMING(user))
+		user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
+		if(do_after(user, 3 SECONDS, target = src) && !QDELETED(src))
+			user.visible_message(span_notice("\The [user] fills in \the [src]."))
+			qdel(src)
+		return TRUE
+	if(!seed)
+		var/choice= tgui_alert(user, "Do you want to destroy the growplot?", "Destroy growplot?" , list("Yes", "No"))
+		if(!choice||choice=="No")
+			return TRUE
+		user.visible_message("[user] starts dispersing the [src]...", runemessage = "disperses the [src]")
+		if(do_after(user, 5 SECONDS, target = src))
+			qdel(src)
 	else
-		return ..()
+		to_chat(user, span_notice("There is something growing here."))
+	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/Initialize(mapload)
 	. = ..()
-	verbs -= /obj/machinery/portable_atmospherics/hydroponics/verb/close_lid_verb
-	verbs -= /obj/machinery/portable_atmospherics/hydroponics/verb/remove_label
-	verbs -= /obj/machinery/portable_atmospherics/hydroponics/verb/setlight
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/CanPass()
 	return 1

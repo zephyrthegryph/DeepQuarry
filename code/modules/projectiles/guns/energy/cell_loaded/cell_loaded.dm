@@ -145,9 +145,10 @@
 	var/chargename = "nsfw_mag" //as above
 	mag_type = MAGAZINE
 
-	var/list/modes = list()
+	var/list/modes
 
 /obj/item/ammo_magazine/cell_mag/attackby(obj/item/W as obj, mob/user as mob)
+	make_rounds_real()
 	if(istype(W, /obj/item/ammo_casing/microbattery))
 		var/obj/item/ammo_casing/microbattery/B = W
 		if(!istype(B, ammo_type))

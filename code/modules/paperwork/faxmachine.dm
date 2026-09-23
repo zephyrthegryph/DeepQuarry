@@ -35,41 +35,65 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 		GLOB.alldepartments |= department
 
-/obj/machinery/photocopier/faxmachine/attack_hand(mob/user)
+/obj/machinery/photocopier/faxmachine/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/faxmachine_insert_id,
+		/datum/interaction/machine_item/faxmachine_insert_toner,
+		/datum/interaction/machine_hand/ungated/faxmachine_open_ui,
+		/datum/interaction/machine_verb/faxmachine_remove_card,
+		/datum/interaction/machine_verb/faxmachine_request_roles,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/faxmachine_open_ui
+	id = "faxmachine_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_open_ui_impl
+
+/obj/machinery/photocopier/faxmachine/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(issilicon(user)) // this allows borgs to use fax machines, meant for the Unity and Clerical modules.
 		authenticated = user.name
-		tgui_interact(user)
-	else
-		tgui_interact(user)
+	tgui_interact(user)
+	return TRUE
 
-/obj/machinery/photocopier/faxmachine/verb/remove_card()
-	set name = "Remove ID card"
-	set category = "Object"
-	set src in oview(1)
+/datum/interaction/machine_verb/faxmachine_remove_card
+	id = "faxmachine_remove_card"
+	name = "Remove ID card"
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_remove_card
 
-	var/mob/living/L = usr
+/obj/machinery/photocopier/faxmachine/proc/interaction_remove_card(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/living/L = user
 
 	if(!L || !isturf(L.loc) || !isliving(L))
-		return
+		return TRUE
 	if(!ishuman(L) && !issilicon(L))
-		return
+		return TRUE
 	if(L.stat || L.restrained())
-		return
+		return TRUE
 	if(!scan)
 		to_chat(L, span_notice("There is no I.D card to remove!"))
-		return
+		return TRUE
 
 	scan.forceMove(loc)
 	if(ishuman(L) && !L.get_active_hand())
 		L.put_in_hands(scan)
 		scan = null
 	authenticated = null
+	return TRUE
 
-/obj/machinery/photocopier/faxmachine/verb/request_roles()
-	set name = "Staff Request Form"
-	set category = "Object"
-	set src in oview(1)
+/datum/interaction/machine_verb/faxmachine_request_roles
+	id = "faxmachine_request_roles"
+	name = "Staff Request Form"
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_request_roles
 
+/obj/machinery/photocopier/faxmachine/proc/interaction_request_roles(mob/user, obj/item/held, datum/interaction/interaction)
+	request_roles()
+	return TRUE
+
+/obj/machinery/photocopier/faxmachine/proc/request_roles()
 	var/mob/living/L = usr
 
 	if(!L || !isturf(L.loc) || !isliving(L))
@@ -291,25 +315,40 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		copyitem.name = new_name
 
 
-/obj/machinery/photocopier/faxmachine/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/card/id) && !scan)
-		user.drop_from_inventory(O)
-		O.forceMove(src)
-		scan = O
-	else if(istype(O, /obj/item/toner))
-		if(toner <= 10) //allow replacing when low toner is affecting the print darkness
-			user.drop_item()
-			to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
-			playsound(loc, 'sound/machines/click.ogg', 50, 1)
-			var/obj/item/toner/T = O
-			toner += T.toner_amount
-			qdel(O)
-		else
-			to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
-			playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
-		return
+/datum/interaction/machine_item/faxmachine_insert_id
+	id = "faxmachine_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/photocopier/faxmachine/proc/no_id_inserted, null))
+	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_insert_id
 
-	return ..()
+/obj/machinery/photocopier/faxmachine/proc/no_id_inserted(mob/actor, atom/target, obj/item/held)
+	return !scan
+
+/obj/machinery/photocopier/faxmachine/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
+	user.drop_from_inventory(held)
+	held.forceMove(src)
+	scan = held
+	return TRUE
+
+/datum/interaction/machine_item/faxmachine_insert_toner
+	id = "faxmachine_insert_toner"
+	name = "Insert toner"
+	held_type = /obj/item/toner
+	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_insert_toner_impl
+
+/obj/machinery/photocopier/faxmachine/proc/interaction_insert_toner_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
+		user.drop_item()
+		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
+		playsound(loc, 'sound/machines/click.ogg', 50, 1)
+		var/obj/item/toner/T = held
+		toner += T.toner_amount
+		qdel(held)
+	else
+		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
+		playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
+	return TRUE
 
 /obj/machinery/photocopier/faxmachine/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)

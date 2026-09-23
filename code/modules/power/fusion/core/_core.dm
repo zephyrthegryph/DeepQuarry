@@ -53,7 +53,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		material_sample.forceMove(get_turf(src))
 	material_sample = null
 	for(var/obj/machinery/computer/fusion_core_control/FCC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		FCC.connected_devices -= src
+		LAZYREMOVE(FCC.connected_devices, src)
 		if(FCC.cur_viewed_device == src)
 			FCC.cur_viewed_device = null
 	return ..()
@@ -133,9 +133,70 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		if(owned_field)
 			owned_field.ChangeFieldStrength(value)
 
-/obj/machinery/power/fusion_core/attack_hand(mob/user)
-	if(!Adjacent(user)) // As funny as it was for the AI to hug-kill the tokamak field from a distance...
-		return
+/obj/machinery/power/fusion_core/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/fusion_core_material_insert,
+		/datum/interaction/machine_item/fusion_core_part_replacement,
+		/datum/interaction/machine_item/fusion_core_set_ident,
+		/datum/interaction/machine_hand/ungated/fusion_core_use,
+	)
+	..()
+
+/// Whether the fusion field is off (the material cradle and internals can be reached).
+/obj/machinery/power/fusion_core/proc/fusion_field_off(mob/actor, atom/target, obj/item/held)
+	return !owned_field
+
+/// Old attackby: load a processed alloy stack into the material cradle.
+/datum/interaction/machine_item/fusion_core_material_insert
+	id = "fusion_core_material_insert"
+	name = "Load material cradle"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/stack/material/processed_alloy
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/fusion_core/proc/fusion_field_off, "the fusion field must be shut down before opening the material cradle"))
+	effect = /obj/machinery/power/fusion_core/proc/interaction_material_insert
+
+/obj/machinery/power/fusion_core/proc/interaction_material_insert(mob/user, obj/item/stack/material/processed_alloy/stock, datum/interaction/interaction)
+	if(material_sample)
+		to_chat(user, span_warning("The material cradle is already occupied."))
+		return TRUE
+	user.drop_from_inventory(stock)
+	stock.forceMove(src)
+	material_sample = stock
+	visible_message(span_notice("[user] secures [stock] in [src]'s shielded treatment cradle."))
+	return TRUE
+
+/// Old attackby: `if(default_part_replacement(user, W)) return`, gated on the fusion field being off.
+/datum/interaction/machine_item/fusion_core_part_replacement
+	id = "fusion_core_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/fusion_core/proc/fusion_field_off, "the fusion field must be shut down before opening the material cradle"))
+	effect = /obj/machinery/proc/interaction_part_replacement
+
+/// Old attackby: a multitool sets the ident tag.
+/datum/interaction/machine_item/fusion_core_set_ident
+	id = "fusion_core_set_ident"
+	name = "Set ident tag"
+	category = INTERACTION_CAT_CONFIGURE
+	tool = TOOL_MULTITOOL
+	tool_volume = 0
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/fusion_core/proc/fusion_field_off, "the fusion field must be shut down before opening the material cradle"))
+	effect = /obj/machinery/power/fusion_core/proc/interaction_set_ident
+
+/obj/machinery/power/fusion_core/proc/interaction_set_ident(mob/user, obj/item/held, datum/interaction/interaction)
+	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Fusion Core", id_tag, MAX_NAME_LEN)
+	if(new_ident && user.Adjacent(src))
+		id_tag = new_ident
+	return TRUE
+
+/// Old attack_hand, which never called ..(): no gate. `Adjacent` is now REQ_INTERACTION_REACH.
+/datum/interaction/machine_hand/ungated/fusion_core_use
+	id = "fusion_core_use"
+	name = "Use"
+	effect = /obj/machinery/power/fusion_core/proc/interaction_use
+
+/obj/machinery/power/fusion_core/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(owned_field)
 		visible_message(span_notice("[user] initiates an emergency shutdown of [src]'s fusion field."))
 		Shutdown()
@@ -147,34 +208,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		visible_message(span_notice("[user] releases [finished_sample] from [src]'s material cradle."))
 	else
 		to_chat(user, span_notice("The fusion field is off and the material cradle is empty."))
-
-/obj/machinery/power/fusion_core/attackby(obj/item/W, mob/user)
-
-	if(owned_field)
-		to_chat(user,span_warning("The fusion field must be shut down before opening the material cradle."))
-		return
-
-	if(istype(W, /obj/item/stack/material/processed_alloy))
-		if(material_sample)
-			to_chat(user, span_warning("The material cradle is already occupied."))
-			return
-		var/obj/item/stack/material/processed_alloy/stock = W
-		user.drop_from_inventory(stock)
-		stock.forceMove(src)
-		material_sample = stock
-		visible_message(span_notice("[user] secures [stock] in [src]'s shielded treatment cradle."))
-		return
-
-	if(default_part_replacement(user, W))
-		return
-
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Fusion Core", id_tag, MAX_NAME_LEN)
-		if(new_ident && user.Adjacent(src))
-			id_tag = new_ident
-		return
-
-	return ..()
+	return TRUE
 
 /obj/machinery/power/fusion_core/examine(mob/user)
 	. = ..()
@@ -195,7 +229,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 	if(!batch)
 		return
 	var/field_work = clamp(round(field_strength / 25 + owned_field.plasma_temperature / 2500), 2, 30)
-	var/old_fusion_strength = batch.field_treatments[MATERIAL_FIELD_FUSION] || 0
+	var/old_fusion_strength = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0
 	batch.add_field_treatment(MATERIAL_FIELD_FUSION, field_work)
 	batch.homogeneity = clamp(batch.homogeneity + round(field_work / 6), 0, 100)
 	batch.add_thermal_energy(max(100, owned_field.plasma_temperature * batch.amount * 0.04))
@@ -220,7 +254,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 	material_sample = replacement
 	if(material_sample)
 		material_sample.forceMove(src)
-	if(round(old_fusion_strength / 25) != round((batch.field_treatments[MATERIAL_FIELD_FUSION] || 0) / 25))
+	if(round(old_fusion_strength / 25) != round((LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0) / 25))
 		visible_message(span_notice("Colored bands crawl across [src]'s sample cradle as the fusion field changes the stock's lattice."))
 	qdel(batch)
 

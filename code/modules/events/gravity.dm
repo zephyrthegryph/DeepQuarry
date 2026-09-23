@@ -1,7 +1,7 @@
 /datum/event/gravity
 	announceWhen = 5
 	var/list/zLevels
-	var/list/generators = list()
+	var/list/generators
 
 /datum/event/gravity/setup()
 	// Setup which levels we will disrupt gravit on.
@@ -11,7 +11,7 @@
 
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if((GG.z in zLevels) && GG.on)
-			generators += GG
+			LAZYADD(generators, GG)
 
 	if(length(generators))
 		endWhen = rand(5 MINUTES, 20 MINUTES)
@@ -28,7 +28,7 @@
 
 /datum/event/gravity/start()
 	GLOB.gravity_is_on = FALSE
-	if(generators.len)
+	if(length(generators))
 		for(var/obj/machinery/gravity_generator/main/GG in generators)
 			if((GG.z in zLevels) && GG.on)
 				GG.breaker = FALSE

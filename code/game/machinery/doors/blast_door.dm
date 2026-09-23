@@ -147,21 +147,42 @@
 	else
 		src.force_close()
 
-//Proc: attack_hand
-//Description: Attacked with empty hand. Only to allow special attack_bys.
-/obj/machinery/door/blast/attack_hand(mob/user as mob)
-	if(ishuman(user))
-		var/mob/living/carbon/human/X = user
-		if(istype(X.species, /datum/species/xenos))
-			src.attack_alien(user)
-			return
+/obj/machinery/door/blast/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/blast_door_alien,
+		/datum/interaction/machine_item/blast_door_attack,
+	)
 	..()
+
+/// Old attack_hand: only to allow xenos to force it, everything else falls to the base.
+/datum/interaction/machine_hand/blast_door_alien
+	id = "blast_door_alien"
+	name = "Force"
+	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/door/blast/proc/actor_is_xenos, null))
+	effect = /obj/machinery/door/blast/proc/interaction_alien
+
+/obj/machinery/door/blast/proc/actor_is_xenos(mob/actor, atom/target, obj/item/held)
+	if(!ishuman(actor))
+		return FALSE
+	var/mob/living/carbon/human/human_actor = actor
+	return istype(human_actor.species, /datum/species/xenos)
+
+/obj/machinery/door/blast/proc/interaction_alien(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_alien(user)
+	return TRUE
 
 // Proc: attackby()
 // Parameters: 2 (C - Item this object was clicked with, user - Mob which clicked this object)
 // Description: If we are clicked with crowbar, wielded fire axe, or armblade, try to manually open the door.
 // This only works on broken doors or doors without power. Also allows repair with Plasteel.
-/obj/machinery/door/blast/attackby(obj/item/C as obj, mob/user as mob)
+/datum/interaction/machine_item/blast_door_attack
+	id = "blast_door_attack"
+	name = "Use"
+	category = INTERACTION_CAT_ATTACK
+	held_type = /obj/item
+	effect = /obj/machinery/door/blast/proc/interaction_attackby
+
+/obj/machinery/door/blast/proc/interaction_attackby(mob/user, obj/item/C, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	if(istype(C, /obj/item)) // For reasons unknown, sometimes C is actually not what it is advertised as, like a mob.
 		if(C.pry == 1 && (!IS_HARMING(user) || (stat & BROKEN))) // Can we pry it open with something, like a crowbar/fireaxe/lingblade?
@@ -169,7 +190,7 @@
 				var/obj/item/material/twohanded/fireaxe/F = C
 				if(!F.wielded)
 					to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
-					return
+					return TRUE
 
 			// If we're at this point, it's a fireaxe in both hands or something else that doesn't care for twohanding.
 			if(((stat & NOPOWER) || (stat & BROKEN)) && !( src.operating ))
@@ -177,7 +198,7 @@
 
 			else
 				to_chat(user, span_notice("[src]'s motors resist your effort."))
-			return
+			return TRUE
 
 		else if(src.density && (IS_HARMING(user))) //If we can't pry it open and it's a weapon, let's hit it.
 			var/obj/item/W = C
@@ -190,17 +211,17 @@
 					user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 					playsound(src, hitsound, 100, 1)
 					receive_weapon_hit(W, user, W.force * 0.35, silent = FALSE) //it's a blast door, it should take a while. -Luke
-				return
+				return TRUE
 
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_PLASTEEL) // Repairing.
 		var/amt = CEILING((max_integrity - get_integrity())/150, 1)
 		if(!amt)
 			to_chat(user, span_notice("\The [src] is already fully repaired."))
-			return
+			return TRUE
 		var/obj/item/stack/P = C
 		if(P.get_amount() < amt)
 			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
-			return
+			return TRUE
 		to_chat(user, span_notice("You begin repairing [src]..."))
 		if(do_after(user, 3 SECONDS, target = src))
 			if(P.use(amt))
@@ -220,7 +241,8 @@
 				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 				playsound(src, hitsound, 100, 1)
 				receive_weapon_hit(W, user, W.force * 0.15, silent = FALSE) //If the item isn't a weapon, let's make this take longer than usual to break it down.
-			return
+			return TRUE
+	return TRUE
 
 // Proc: attack_alien()
 // Parameters: Attacking Xeno mob.
@@ -314,8 +336,6 @@
 	max_integrity = 600
 	heat_proof = 1 //just so repairing them doesn't try to fireproof something that never takes fire damage
 
-/obj/machinery/door/blast/regular/fire_act(exposed_temperature, exposed_volume)
-	return // blast doors are immune to fire completely.
 
 /obj/machinery/door/blast/regular/open
 	icon_state = "pdoor0"

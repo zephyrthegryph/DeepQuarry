@@ -153,7 +153,10 @@
 	else
 		return
 
-	T.forceMove(get_turf(src))
+	// A valve in nullspace (or a tank being deleted) has nowhere to put it.
+	var/turf/drop = get_turf(src)
+	if(drop && !QDELETED(T))
+		T.forceMove(drop)
 	update_icon()
 
 /obj/item/transfer_valve/proc/merge_gases()

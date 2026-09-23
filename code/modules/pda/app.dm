@@ -42,12 +42,12 @@
 
 	if(blink && !(src in pda.notifying_programs))
 		pda.add_overlay("pda-r")
-		pda.notifying_programs |= src
+		LAZYOR(pda.notifying_programs, src)
 
 /datum/data/pda/proc/unnotify()
 	if(src in pda.notifying_programs)
-		pda.notifying_programs -= src
-		if(!pda.notifying_programs.len)
+		LAZYREMOVE(pda.notifying_programs, src)
+		if(!length(pda.notifying_programs))
 			pda.cut_overlay("pda-r")
 
 // An app has a button on the home screen and its own UI

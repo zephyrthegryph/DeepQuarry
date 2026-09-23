@@ -12,5 +12,5 @@
 
 /datum/game_mode/infestation/create_antagonists()
 	// Two of the three.
-	antag_tags -= pick(antag_tags)
+	LAZYREMOVE(antag_tags, DEFAULTPICK(antag_tags, null))
 	..()

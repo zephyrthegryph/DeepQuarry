@@ -116,17 +116,39 @@
 		E += M.rating
 	efficiency = E / 6
 
-/obj/machinery/compressor/attackby(obj/item/W, mob/user)
-	src.add_fingerprint(user)
+/obj/machinery/compressor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/compressor_fingerprint,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_item/compressor_set_ident,
+	)
+	..()
 
-	if(default_part_replacement(user, W))
-		return
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, comp_id, MAX_NAME_LEN)
-		if(new_ident && user.Adjacent(src))
-			comp_id = new_ident
-		return
-	return ..()
+/// Old attackby: added a fingerprint for any item before trying the part replacer.
+/datum/interaction/machine_item/compressor_fingerprint
+	id = "compressor_fingerprint"
+	name = "Touch"
+	held_type = /obj/item
+	effect = /obj/machinery/compressor/proc/interaction_fingerprint
+
+/obj/machinery/compressor/proc/interaction_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	return FALSE
+
+/// Old attackby: a multitool sets the comp ident tag.
+/datum/interaction/machine_item/compressor_set_ident
+	id = "compressor_set_ident"
+	name = "Set ident tag"
+	category = INTERACTION_CAT_CONFIGURE
+	tool = TOOL_MULTITOOL
+	tool_volume = 0
+	effect = /obj/machinery/compressor/proc/interaction_set_ident
+
+/obj/machinery/compressor/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
+	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, comp_id, MAX_NAME_LEN)
+	if(new_ident && user.Adjacent(src))
+		comp_id = new_ident
+	return TRUE
 
 /obj/machinery/compressor/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
@@ -213,12 +235,16 @@
 	if(compressor)
 		compressor.locate_machinery()
 
-/obj/machinery/power/turbine/attackby(obj/item/W, mob/user)
-	src.add_fingerprint(user)
+/// Old attackby: added a fingerprint for any item before trying the part replacer.
+/datum/interaction/machine_item/turbine_fingerprint
+	id = "turbine_fingerprint"
+	name = "Touch"
+	held_type = /obj/item
+	effect = /obj/machinery/power/turbine/proc/interaction_fingerprint
 
-	if(default_part_replacement(user, W))
-		return
-	return ..()
+/obj/machinery/power/turbine/proc/interaction_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	return FALSE
 
 /obj/machinery/power/turbine/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
@@ -266,10 +292,13 @@
 	if(lastgen > 100)
 		add_overlay(image('icons/obj/pipes.dmi', "turb-o", FLY_LAYER))
 
-/obj/machinery/power/turbine/attack_hand(mob/user as mob)
-	if((. = ..()))
-		return
-	tgui_interact(user)
+/obj/machinery/power/turbine/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/turbine_fingerprint,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/power/turbine/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	. = ..()
@@ -324,17 +353,38 @@
 		if(P.id == id) //This will never work because the ID on the blast doors is a number while the ID on the turbine (if set mid-round) is a string.
 			doors += P
 
-/obj/machinery/computer/turbine_computer/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, id, MAX_NAME_LEN)
-		if(new_ident && user.Adjacent(src))
-			id = new_ident
-		return
+/obj/machinery/computer/turbine_computer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/turbine_computer_set_ident,
+		/datum/interaction/machine_item/turbine_computer_swallow_item,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
-/obj/machinery/computer/turbine_computer/attack_hand(mob/user as mob)
-	if((. = ..()))
-		return
-	tgui_interact(user)
+/// Old attackby: a multitool sets the ident tag.
+/datum/interaction/machine_item/turbine_computer_set_ident
+	id = "turbine_computer_set_ident"
+	name = "Set ident tag"
+	category = INTERACTION_CAT_CONFIGURE
+	tool = TOOL_MULTITOOL
+	tool_volume = 0
+	effect = /obj/machinery/computer/turbine_computer/proc/interaction_set_ident
+
+/obj/machinery/computer/turbine_computer/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
+	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, id, MAX_NAME_LEN)
+	if(new_ident && user.Adjacent(src))
+		id = new_ident
+	return TRUE
+
+/// Old attackby: never called ..(), so any other item did nothing (no signal, no base attack).
+/datum/interaction/machine_item/turbine_computer_swallow_item
+	id = "turbine_computer_swallow_item"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/computer/turbine_computer/proc/interaction_swallow_item
+
+/obj/machinery/computer/turbine_computer/proc/interaction_swallow_item(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/computer/turbine_computer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

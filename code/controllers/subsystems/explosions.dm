@@ -382,7 +382,10 @@ SUBSYSTEM_DEF(explosions)
 			var/severity = resolved_atoms[AM]
 			if(!severity)
 				continue
-			var/contents_severity = length(AM.contents) ? AM.explosion_contents_severity(severity) : 0
+			var/has_latent = AM.has_latent()
+			var/contents_severity = (length(AM.contents) || has_latent) ? AM.explosion_contents_severity(severity) : 0
+			if(contents_severity && has_latent)
+				AM.latent_blast(contents_severity) // entries resolve as data (C5)
 			if(contents_severity)
 				for(var/atom/movable/inner as anything in AM.contents)
 					queue_blast(inner, contents_severity)
@@ -484,12 +487,15 @@ SUBSYSTEM_DEF(explosions)
 	return TRUE
 
 /datum/controller/subsystem/explosions/proc/wake_and_defer_subsystem_updates()
-	// Even a small blast can destroy a cell, cable, or pipe.  Keep one rebuild
-	// transaction open for the complete nested explosion epoch.
-	SSmachines.defer_powernet_rebuild()
+	// Even a small blast can destroy a cell, cable, or pipe.  Keep one
+	// transaction open for the complete nested explosion epoch: every cable
+	// the blast removes reaches Rust as one power commit. Gas geometry needs
+	// no matching begin/commit here (unlike master's old turf-adjacency-graph
+	// atmos, M1b's field applies the whole epoch's turf commands in order at
+	// its next frame) -- only the power side batches.
 	if(!atmos_topology_batch_open)
 		atmos_topology_batch_open = TRUE
-		vg_topology_batch_begin()
+		SSmachines.power_batch_begin()
 	// waking from sleep, we are absolutely not resuming, and INSTANT feedback to players is required here.
 	if(can_fire) // already awake
 		return
@@ -522,11 +528,9 @@ SUBSYSTEM_DEF(explosions)
 	// Resolve all the stuff we put off for after the explosion resolved
 	if(atmos_topology_batch_open)
 		atmos_topology_batch_open = FALSE
-		vg_topology_batch_commit()
 		SSair.rust_commit_pending_pipenets()
+		SSmachines.power_batch_end()
 	SSmachines.flush_gas_watch_updates()
-	// Awaiting the rust powernet rebuild so this can be called normally...
-	INVOKE_ASYNC(SSmachines, TYPE_PROC_REF(/datum/controller/subsystem/machines,release_powernet_defer))
 	// we've finished. Pause because was have no more work to do.
 	if(!can_fire) // already asleep
 		return

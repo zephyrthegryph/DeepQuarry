@@ -118,7 +118,7 @@
 
 	if(iscarbon(usr))
 		var/mob/living/carbon/C = usr
-		if(C.handcuffed)
+		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			to_chat(usr, span_danger("Kinda hard to climb in while handcuffed don't you think?"))
 			return
 

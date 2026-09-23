@@ -65,7 +65,7 @@
 
 	//Dark Maw Vars (Unused on Virgo)
 	///Our current active dark maws
-	var/list/active_dark_maws = list()
+	var/list/active_dark_maws
 
 	//Ability Vars
 	///The innate abilities we start with
@@ -73,7 +73,7 @@
 										/datum/power/shadekin/regenerate_other,
 										/datum/power/shadekin/create_shade)
 	///Datum holder. Largely ignore this.
-	var/list/shadekin_ability_datums = list()
+	var/list/shadekin_ability_datums
 
 	//Misc Vars
 	///Eyecolor
@@ -148,9 +148,9 @@
 		if(owner.shadekin_display)
 			owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT //hide it
 		replace_shadekin_master()
-	active_dark_maws.Cut()
+	LAZYCLEARLIST(active_dark_maws)
 	shadekin_abilities.Cut()
-	shadekin_ability_datums.Cut()
+	LAZYCLEARLIST(shadekin_ability_datums)
 	owner = null
 	. = ..()
 

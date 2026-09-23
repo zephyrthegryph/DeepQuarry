@@ -2,9 +2,10 @@
 //!
 //! This replaces `superconduct.rs`. The physics lives in `vg-heat` (host
 //! tested); this module owns the one [`HeatWorld`] (a main-thread value, kept
-//! in a thread local because BYOND calls every bind on its one thread), and
-//! implements [`GasExchange`] over the turf gas arena so the heat frame's
-//! coupling tasks can move energy into and out of gas.
+//! in a thread local because BYOND calls every bind on its one thread). The
+//! heat frames reach gas through `world::HeatGas`, an exchange buffer over the
+//! turf gas field's views: energy they move is applied to gas as commands at
+//! the next gas tick.
 //!
 //! DM pushes each turf's thermal values (`vg_heat_set_turf`, or the bulk
 //! form at round start) instead of Rust reading turf vars, reads turf and
@@ -12,123 +13,26 @@
 //! registers temperature watches. SSair drives the frames with
 //! `vg_heat_tick(seconds)` and drains wakes and crossings afterwards.
 
-use super::*;
-use crate::gas::constants::TCMB as GAS_TCMB;
+use byondapi::prelude::*;
+use eyre::Result;
 use std::cell::RefCell;
 use std::sync::Arc;
+use vg_core::grid::GridDims;
 use vg_core::outbox::Lane;
 use vg_core::watch::Cmp;
 use vg_heat::body::{BodyCmd, Coupling, Phase, Target};
 use vg_heat::consts as hc;
 use vg_heat::world::{CellKind, CellSpec, HeatConfig, WatchCond, WatchTarget};
-use vg_heat::{Body, GasExchange, GasProbe, GasRef, HeatWorld};
+use vg_heat::{Body, GasRef, HeatWorld};
+
+use crate::world::{with_world, HeatGas};
 
 thread_local! {
 	static HEAT: RefCell<Option<HeatWorld>> = const { RefCell::new(None) };
 }
 
-/// Gas mixtures whose temperature moved (fed from `mark_dirty_if_changed`),
-/// turned into turf cells for the solid ↔ gas coupling.
-static GAS_TEMPERATURE_CHANGED: Mutex<Vec<usize>> = const_mutex(Vec::new());
-
-/// Called by the gas arena when a mixture's temperature moves past its dirty
-/// threshold (was `superconduct::mark_heat_dirty`).
-pub(crate) fn gas_temperature_changed(mix: usize) {
-	GAS_TEMPERATURE_CHANGED.lock().push(mix);
-}
-
 fn with_heat<T>(f: impl FnOnce(&mut HeatWorld) -> T) -> Option<T> {
 	HEAT.with_borrow_mut(|h| h.as_mut().map(f))
-}
-
-/// The heat domain's view of the gas arena. Never blocks a frame thread on
-/// a busy gas: every lock is a `try`, and a miss retries next frame.
-struct ArenaGas;
-
-impl ArenaGas {
-	/// The mixture id of a gas reference.
-	fn mix_of(gas: GasRef) -> Option<usize> {
-		match gas {
-			GasRef::Mixture(id) => Some(id as usize),
-			GasRef::Turf(cell) => {
-				let arena = TURF_GASES.try_read()?;
-				let arena = arena.as_ref()?;
-				let node = arena.get_id(cell)?;
-				let turf = arena.get(node)?;
-				turf.enabled().then_some(turf.mix)
-			}
-		}
-	}
-
-	fn probe_mixture(gas: &Mixture) -> GasProbe {
-		GasProbe {
-			temperature: gas.get_temperature(),
-			capacity: gas.heat_capacity(),
-			reservoir: gas.is_immutable(),
-		}
-	}
-}
-
-impl GasExchange for ArenaGas {
-	fn probe(&self, gas: GasRef) -> Option<GasProbe> {
-		let mix = Self::mix_of(gas)?;
-		GasArena::with_all_mixtures(|all| {
-			let entry = all.get(mix)?.try_read()?;
-			Some(Self::probe_mixture(&entry))
-		})
-	}
-
-	fn exchange(&self, gas: GasRef, f: &mut dyn FnMut(GasProbe) -> f32) -> Option<f32> {
-		// Topology changes take TASKS for writing; hold it shared so a turf's
-		// mixture cannot be swapped under the exchange (as superconduct did).
-		let _topology = TASKS.try_read()?;
-		let mix = Self::mix_of(gas)?;
-		let _single_writer = GasArena::try_begin_solver_transaction()?;
-		GasArena::with_all_mixtures(|all| {
-			let mut entry = all.get(mix)?.try_write()?;
-			let probe = Self::probe_mixture(&entry);
-			let e = f(probe);
-			if e == 0.0 || !e.is_finite() {
-				return Some(0.0);
-			}
-			if probe.reservoir {
-				// Immutable space/planet air: the energy leaves the books.
-				return Some(e);
-			}
-			let capacity = probe.capacity;
-			if capacity <= 0.0 {
-				return Some(0.0);
-			}
-			let before = GasArena::change_signature(&entry);
-			let t = (probe.temperature + e / capacity).max(GAS_TCMB);
-			entry.set_temperature(t);
-			let applied = (entry.get_temperature() - probe.temperature) * capacity;
-			let after = GasArena::change_signature(&entry);
-			let changed = GasArena::signature_changed(&before, &after);
-			drop(entry);
-			if GasArena::mark_dirty_if_changed(mix, before, after) {
-				GasArena::bump_revision(mix);
-			} else if changed {
-				GasArena::bump_revision_only(mix);
-			}
-			Some(applied)
-		})
-	}
-
-	fn take_changed(&self, out: &mut Vec<u32>) {
-		let mixes = std::mem::take(&mut *GAS_TEMPERATURE_CHANGED.lock());
-		if mixes.is_empty() {
-			return;
-		}
-		let Some(map) = MIX_TO_TURF.try_read() else {
-			// Busy: put them back for the next frame.
-			GAS_TEMPERATURE_CHANGED.lock().extend(mixes);
-			return;
-		};
-		if let Some(map) = map.as_ref() {
-			out.extend(mixes.iter().filter_map(|m| map.get(m).map(|h| h.id)));
-		}
-	}
 }
 
 /// Headroom for z-levels created at run time (expeditions): the grid is
@@ -138,7 +42,7 @@ fn z_capacity(max_z: u32) -> u32 {
 }
 
 /// Creates or grows the heat world (called by `auxmos_configure_world`).
-pub(super) fn configure_heat(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
+pub(crate) fn configure_heat(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
 	HEAT.with_borrow_mut(|h| {
 		if let Some(world) = h.as_ref() {
 			let d = world.dims();
@@ -149,7 +53,8 @@ pub(super) fn configure_heat(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
 		let Some(dims) = GridDims::new(max_x.max(1), max_y.max(1), z_capacity(max_z)) else {
 			eyre::bail!("heat grid {max_x}x{max_y}x{max_z} does not fit a u32 index");
 		};
-		let world = HeatWorld::new(HeatConfig::new(dims), Arc::new(ArenaGas))
+		let exchange = with_world(|w| Arc::clone(&w.exchange));
+		let world = HeatWorld::new(HeatConfig::new(dims), Arc::new(HeatGas(exchange)))
 			.map_err(|e| eyre::eyre!("heat sim failed to build: {e:?}"))?;
 		*h = Some(world);
 		Ok(())
@@ -161,7 +66,6 @@ pub(super) fn configure_heat(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
 #[auxmacros::bind("/proc/heat_reset")]
 fn heat_reset() -> Result<ByondValue> {
 	HEAT.with_borrow_mut(|h| *h = None);
-	GAS_TEMPERATURE_CHANGED.lock().clear();
 	Ok(ByondValue::null())
 }
 
@@ -642,6 +546,8 @@ fn heat_debug_run_frames(frames: ByondValue) -> Result<ByondValue> {
 		w.settle();
 		w.run_frames(n);
 	});
+	// Apply the energy the frames moved into gas (normally the next gas tick).
+	with_world(crate::world::GasWorld::exchange_heat);
 	Ok(ByondValue::null())
 }
 

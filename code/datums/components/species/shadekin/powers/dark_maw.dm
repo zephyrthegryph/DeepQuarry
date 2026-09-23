@@ -99,7 +99,7 @@
 		QDEL_IN(src, 3 SECONDS)
 	else
 		if(SK)
-			SK.active_dark_maws += src
+			LAZYADD(SK.active_dark_maws, src)
 		flick("dark_maw", src)
 		REACT_PROCESS(src, 2 SECONDS, "watches ambient light on its turf every tick to dispel when lit")
 
@@ -115,7 +115,7 @@
 			UnregisterSignal(owner, COMSIG_QDELETING)
 		var/datum/component/shadekin/SK = owner.get_shadekin_component()
 		if(SK)
-			SK.active_dark_maws -= src
+			LAZYREMOVE(SK.active_dark_maws, src)
 	owner = null
 	target = null
 	return ..()

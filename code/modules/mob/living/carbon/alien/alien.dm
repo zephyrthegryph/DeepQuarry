@@ -39,9 +39,6 @@
 
 	gender = NEUTER
 
-/mob/living/carbon/alien/u_equip(obj/item/W as obj)
-	return
-
 /mob/living/carbon/alien/restrained()
 	return 0
 

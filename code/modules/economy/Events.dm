@@ -3,15 +3,15 @@
 	endWhen = 50			//this will be set randomly, later
 	announceWhen = 15
 	var/event_type = 0
-	var/list/cheaper_goods = list()
-	var/list/dearer_goods = list()
+	var/list/cheaper_goods
+	var/list/dearer_goods
 	var/datum/trade_destination/affected_dest
 
 /datum/event/economic_event/start()
 	affected_dest = pickweight(GLOB.weighted_randomevent_locations)
-	if(affected_dest.viable_random_events.len)
+	if(length(affected_dest.viable_random_events))
 		endWhen = rand(60,300)
-		event_type = pick(affected_dest.viable_random_events)
+		event_type = DEFAULTPICK(affected_dest.viable_random_events, null)
 
 		if(!event_type)
 			return

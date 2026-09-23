@@ -9,17 +9,17 @@
 	var/accepts = "coin"				// "coin" - "money" - "item" - determines the 'kind' of thing the machine will accept
 	var/accepted_itemtype				//only for use with "item" mode - if set to a type path, it will count anything with that type path
 	var/accepted_item_worth = 1			//only for use with "item" mode - when counted, things of the appropriate type will add this much to the banked funds
-	var/list/bank = list()					//Anything accepted by "money" or "item" mode will be marked down here
+	var/list/bank					//Anything accepted by "money" or "item" mode will be marked down here
 	var/coinbalance = 0					//only for use with coin mode - when you put a curious coin in, it adds the coins value to this number
-	var/list/start_products = list()	//Type paths entered here will spawn inside the trader and add themselves to the products list.
+	var/list/start_products	//Type paths entered here will spawn inside the trader and add themselves to the products list.
 	var/list/products = list()			//Anything in this list will be listed for sale
-	var/list/prices = list()			//Enter a type path with an associated number, and if the trader tries to sell something of that type, it will expect the number as the cost for that product
-	var/list/multiple = list()			//Enter a type path with an associated number, and the trader will have however many of that type to sell as the number you entered
+	var/list/prices			//Enter a type path with an associated number, and if the trader tries to sell something of that type, it will expect the number as the cost for that product
+	var/list/multiple			//Enter a type path with an associated number, and the trader will have however many of that type to sell as the number you entered
 	var/trading = FALSE					//'Busy' - Only one person can trade at a time.
 	var/welcome_msg = "This machine accepts"	//The first part of the welcome message
 	var/welcome_accepts_name = "curious coins"	//The name of the kind of thing the trader expects, automatically set except on "item" mode, where if you enter a value it will not change it.
 	var/welcome_msg_finish = ". Would you like to browse the wares?"	//The final part of the welcome message.
-	var/list/interact_sound = list()	//The sounds that may play when you click it. It will pick one at random from this list. It only thinks about this if there's anything in the list.
+	var/list/interact_sound	//The sounds that may play when you click it. It will pick one at random from this list. It only thinks about this if there's anything in the list.
 	var/sound_cooldown = 0				//The sound can only play this often in deciseconds. Use '10 SECONDS' format to make it easier to read
 	var/sound_lastplayed = 0			//Automatically set when the sound is played.
 	var/pick_inventory = FALSE			//If true, when initialized the trader will randomly pick things from its start products list to set up
@@ -30,16 +30,16 @@
 	. = ..()
 	if(pick_inventory)
 		while(pick_inventory_quantity > 0)
-			var/t = pickweight(start_products)
+			var/t = pickweight(start_products || list())
 			var/i = new t(src)
-			start_products -= t
+			LAZYREMOVE(start_products, t)
 			products += i
 			pick_inventory_quantity --
 	else
 		for(var/item in start_products)
 			var/obj/p = new item(src)
 			products += p
-			start_products -= item
+			LAZYREMOVE(start_products, item)
 	if(move_trader)
 		move_trader()
 
@@ -86,9 +86,9 @@
 			to_chat(user, span_notice("You decided not to get anything."))
 			trading = FALSE
 			return
-		if(interact_sound.len > 0)
+		if(length(interact_sound) > 0)
 			if((world.time- sound_lastplayed) > sound_cooldown)
-				var/sound = pick(interact_sound)
+				var/sound = DEFAULTPICK(interact_sound, null)
 				playsound(src, sound, 25, FALSE, ignore_walls = FALSE)
 				sound_lastplayed = world.time
 		var/obj/input = tgui_input_list(user, "What would you like? You have [coin_value] banked with this trader.", "Trader", products, timeout = 30 SECONDS)
@@ -99,7 +99,7 @@
 		var/p = 0
 		var/t = input.type
 		if(t in prices)
-			p = prices[t]
+			p = LAZYACCESS(prices, t)
 		if(p > 0)
 			if(tgui_alert(user, "Are you sure? This costs [p].", "Confirm",list("Yes","No")) != "Yes")
 				to_chat(user, span_notice("You decided not to."))
@@ -119,7 +119,7 @@
 			multiple[t] -= 1
 			var/temp = input
 			input = new t(get_turf(user))
-			if(multiple[t] <= 0)
+			if(LAZYACCESS(multiple, t) <= 0)
 				for(var/obj/d in products)
 					if(istype(d, temp))
 						d.forceMove(get_turf(loc))
@@ -163,13 +163,13 @@
 					return
 				user.drop_item()
 				w.forceMove(src.contents)
-				bank += w
+				LAZYADD(bank, w)
 				visible_message(span_notice("\The [src] accepts \the [user]'s [w]."))
 		if("item")
 			if(istype(O, /obj))
 				user.drop_item()
 				O.forceMove(src.contents)
-				bank += O
+				LAZYADD(bank, O)
 				visible_message(span_notice("\The [src] accepts \the [user]'s [O]."))
 
 /obj/trader/proc/get_value(kind)
@@ -205,7 +205,7 @@
 					a.worth -= amount
 					a.update_icon()
 					if(a.worth <= 0)
-						bank -= a
+						LAZYREMOVE(bank, a)
 						qdel(a)
 		if("item")
 			// Guard against a non-positive item worth, which would never decrement v
@@ -249,12 +249,12 @@
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				bank -= c
+				LAZYREMOVE(bank, c)
 		if("item")
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				bank -= c
+				LAZYREMOVE(bank, c)
 	if(u_get_refund)
 		visible_message(span_notice("\The [src] drops the banked [welcome_accepts_name]."))
 	else

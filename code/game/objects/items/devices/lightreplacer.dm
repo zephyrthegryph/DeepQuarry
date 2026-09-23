@@ -183,6 +183,7 @@
 					playsound(src, 'sound/machines/ding.ogg', 50, 1)
 				target.status = LIGHT_EMPTY
 				target.installed_light = null //Remove the light!
+				target.latent_bulb = FALSE
 				target.update()
 
 			var/obj/item/light/L2 = new target.light_type()

@@ -132,7 +132,7 @@
 
 	var/total_item_slowdown = 0
 	var/slowdown_mod = species.item_slowdown_mod //HIGHER = MAKES YOU SLOWER
-	for(var/slot in list(back, belt, l_ear, r_ear, glasses, gloves, head, shoes, wear_id, wear_mask, wear_suit, w_uniform)) //Two things to note here. ONE: If you add a new inventory slot, ADD IT HERE. Two: If we ever get a global list on human of all the inventory slots (MINUS HANDS) add it here.
+	for(var/slot in list(get_equipped_item(SLOT_ID_BACK), get_equipped_item(SLOT_ID_BELT), get_equipped_item(SLOT_ID_EAR_L), get_equipped_item(SLOT_ID_EAR_R), get_equipped_item(SLOT_ID_EYES), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_SHOES), get_equipped_item(SLOT_ID_ID), get_equipped_item(SLOT_ID_MASK), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_UNIFORM))) //Two things to note here. ONE: If you add a new inventory slot, ADD IT HERE. Two: If we ever get a global list on human of all the inventory slots (MINUS HANDS) add it here.
 		if(!slot) //ZOOM
 			continue
 		var/obj/item/I = slot
@@ -148,7 +148,7 @@
 				else if(slowdown_mod < 0 && item_slowdown > 0)
 					item_slowdown = item_slowdown + slowdown_mod //Yes, this is + (Adding a negative), not multiplied. You are not making the 5 slowdown rigsuit give you 5*X speed. You're getting 5-X slowdown instead.
 			total_item_slowdown += item_slowdown
-	for(var/hands in list(l_hand, r_hand)) //Hands get special treatment. We want slowdown_mod
+	for(var/hands in list(get_equipped_item(SLOT_ID_HAND_L), get_equipped_item(SLOT_ID_HAND_R))) //Hands get special treatment. We want slowdown_mod
 		if(!hands)
 			continue
 		var/obj/item/H = hands
@@ -175,16 +175,16 @@
 		if(istype(T, /turf/simulated/floor/water))
 			if(species.water_movement)
 				turf_move_cost = CLAMP(turf_move_cost + species.water_movement, HUMAN_LOWEST_SLOWDOWN, 15)
-			if(istype(shoes, /obj/item/clothing/shoes))
-				var/obj/item/clothing/shoes/feet = shoes
+			if(istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes))
+				var/obj/item/clothing/shoes/feet = get_equipped_item(SLOT_ID_SHOES)
 				if(istype(feet) && feet.water_speed)
 					turf_move_cost = CLAMP(turf_move_cost + feet.water_speed, HUMAN_LOWEST_SLOWDOWN, 15)
 			. += turf_move_cost
 		else if(istype(T, /turf/simulated/floor/outdoors/snow))
 			if(species.snow_movement)
 				turf_move_cost = CLAMP(turf_move_cost + species.snow_movement, HUMAN_LOWEST_SLOWDOWN, 15)
-			if(istype(shoes, /obj/item/clothing/shoes))
-				var/obj/item/clothing/shoes/feet = shoes
+			if(istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes))
+				var/obj/item/clothing/shoes/feet = get_equipped_item(SLOT_ID_SHOES)
 				if(istype(feet) && feet.snow_speed)
 					turf_move_cost = CLAMP(turf_move_cost + feet.snow_speed, HUMAN_LOWEST_SLOWDOWN, 15)
 			. += turf_move_cost
@@ -198,17 +198,17 @@
 
 ///Gets whatever jetpack we may have and returns it. Checks back -> rig -> suit storage -> suit
 /mob/living/carbon/human/get_jetpack()
-	if(back)
-		if(istype(back, /obj/item/tank/jetpack))
-			return back
+	if(get_equipped_item(SLOT_ID_BACK))
+		if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/tank/jetpack))
+			return get_equipped_item(SLOT_ID_BACK)
 		var/obj/item/rig/rig = get_rig()
 		if(istype(rig))
 			for(var/obj/item/rig_module/maneuvering_jets/module in rig.installed_modules)
 				return module.jets
-	if(s_store && istype(s_store, /obj/item/tank/jetpack))
-		return s_store
-	if(wear_suit && istype(wear_suit, /obj/item/clothing/suit/space/void))
-		var/obj/item/clothing/suit/space/void/v = wear_suit
+	if(get_equipped_item(SLOT_ID_SUIT_STORAGE) && istype(get_equipped_item(SLOT_ID_SUIT_STORAGE), /obj/item/tank/jetpack))
+		return get_equipped_item(SLOT_ID_SUIT_STORAGE)
+	if(get_equipped_item(SLOT_ID_SUIT) && istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space/void))
+		var/obj/item/clothing/suit/space/void/v = get_equipped_item(SLOT_ID_SUIT)
 		if(v.tank && istype(v.tank, /obj/item/tank/jetpack))
 			return v.tank
 
@@ -237,8 +237,8 @@
 
 // Handle footstep sounds
 /mob/living/carbon/human/handle_footstep(turf/T)
-	if(shoes && loc == T && get_gravity(loc) && !flying)
-		if(SEND_SIGNAL(shoes, COMSIG_SHOES_STEP_ACTION, m_intent))
+	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !flying)
+		if(SEND_SIGNAL(get_equipped_item(SLOT_ID_SHOES), COMSIG_SHOES_STEP_ACTION, m_intent))
 			return
 	return
 

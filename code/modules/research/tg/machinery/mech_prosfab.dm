@@ -81,35 +81,64 @@
 				manufacturer = new_manufacturer
 			return TRUE
 
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/attackby(obj/item/I, mob/user, attack_modifier, click_parameters)
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/prosfab_fingerprint_marker,
+		/datum/interaction/machine_item/prosfab_limb_disk,
+		/datum/interaction/machine_item/prosfab_species_disk,
+	)
+	..()
+
+/// Old attackby's unconditional first line. Always runs first and declines.
+/datum/interaction/machine_item/prosfab_fingerprint_marker
+	id = "prosfab_fingerprint_marker"
+	name = "Use"
+	held_type = /obj/item
+	consumes_input = FALSE
+	effect = /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_fingerprint_marker
+
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_fingerprint_marker(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
+	return FALSE
 
-	if(istype(I,/obj/item/disk/limb))
-		var/obj/item/disk/limb/D = I
-		if(!D.company || !(D.company in GLOB.all_robolimbs))
-			to_chat(user, span_warning("This disk seems to be corrupted!"))
-		else
-			to_chat(user, span_notice("Installing blueprint files for [D.company]..."))
-			if(do_after(user, 5 SECONDS, target = src))
-				var/datum/robolimb/R = GLOB.all_robolimbs[D.company]
-				R.unavailable_to_build = 0
-				to_chat(user, span_notice("Installed [D.company] blueprints!"))
-				qdel(I)
-		return TRUE
+/// Old attackby: install limb blueprint files from a disk.
+/datum/interaction/machine_item/prosfab_limb_disk
+	id = "prosfab_limb_disk"
+	name = "Install blueprints"
+	held_type = /obj/item/disk/limb
+	effect = /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_limb_disk
 
-	if(istype(I,/obj/item/disk/species))
-		var/obj/item/disk/species/D = I
-		if(!D.species || !(D.species in GLOB.all_species))
-			to_chat(user, span_warning("This disk seems to be corrupted!"))
-		else
-			to_chat(user, span_notice("Uploading modification files for [D.species]..."))
-			if(do_after(user, 5 SECONDS, target = src))
-				species_types |= D.species
-				to_chat(user, span_notice("Uploaded [D.species] files!"))
-				qdel(I)
-		return TRUE
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_limb_disk(mob/user, obj/item/I, datum/interaction/interaction)
+	var/obj/item/disk/limb/D = I
+	if(!D.company || !(D.company in GLOB.all_robolimbs))
+		to_chat(user, span_warning("This disk seems to be corrupted!"))
+	else
+		to_chat(user, span_notice("Installing blueprint files for [D.company]..."))
+		if(do_after(user, 5 SECONDS, target = src))
+			var/datum/robolimb/R = GLOB.all_robolimbs[D.company]
+			R.unavailable_to_build = 0
+			to_chat(user, span_notice("Installed [D.company] blueprints!"))
+			qdel(I)
+	return TRUE
 
-	return ..()
+/// Old attackby: upload species modification files from a disk.
+/datum/interaction/machine_item/prosfab_species_disk
+	id = "prosfab_species_disk"
+	name = "Upload species files"
+	held_type = /obj/item/disk/species
+	effect = /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_species_disk
+
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_species_disk(mob/user, obj/item/I, datum/interaction/interaction)
+	var/obj/item/disk/species/D = I
+	if(!D.species || !(D.species in GLOB.all_species))
+		to_chat(user, span_warning("This disk seems to be corrupted!"))
+	else
+		to_chat(user, span_notice("Uploading modification files for [D.species]..."))
+		if(do_after(user, 5 SECONDS, target = src))
+			species_types |= D.species
+			to_chat(user, span_notice("Uploaded [D.species] files!"))
+			qdel(I)
+	return TRUE
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/create_new_part(datum/design_techweb/dispensed_design)
 	if(istype(dispensed_design, /datum/design_techweb/prosfab/pros/torso))

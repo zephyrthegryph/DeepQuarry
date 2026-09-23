@@ -18,7 +18,7 @@
 	dir = EAST
 	density = TRUE
 	var/obj/structure/m_tray/connected = null
-	var/list/occupants = list()
+	var/list/occupants
 	anchored = TRUE
 	unacidable = TRUE
 
@@ -29,11 +29,11 @@
 	return ..()
 
 /obj/structure/morgue/proc/get_occupants()
-	occupants.Cut()
+	LAZYCLEARLIST(occupants)
 	for(var/mob/living/carbon/human/H in contents)
-		occupants += H
+		LAZYADD(occupants, H)
 	for(var/obj/structure/closet/body_bag/B in contents)
-		occupants += B.get_occupants()
+		LAZYADD(occupants, B.get_occupants())
 
 /obj/structure/morgue/proc/update(broadcast=0)
 	if (src.connected)
@@ -321,20 +321,32 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 	req_access = list(ACCESS_CREMATORIUM)
 	id = 1
 
-/obj/machinery/button/crematorium/attack_hand(mob/user as mob)
-	if(..())
-		return
-	if(src.allowed(user))
-		for (var/obj/structure/morgue/crematorium/C in REGISTRY_MEMBERS(REGISTRY_CREMATORIUMS))
-			if (C.id == id)
-				if (!C.cremating)
-					C.cremate(null, user)
-	else
-		to_chat(user, span_warning("Access denied."))
+/obj/machinery/button/crematorium/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/crematorium_button_trigger,
+	)
+	..()
+
+/datum/interaction/machine_hand/crematorium_button_trigger
+	id = "crematorium_button_trigger"
+	name = "Trigger"
+	category = INTERACTION_CAT_TOGGLE
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/button/crematorium/proc/allows_access, "access denied"))
+	effect = /obj/machinery/button/crematorium/proc/interaction_trigger
+
+/obj/machinery/button/crematorium/proc/allows_access(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
+
+/obj/machinery/button/crematorium/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
+	for (var/obj/structure/morgue/crematorium/C in REGISTRY_MEMBERS(REGISTRY_CREMATORIUMS))
+		if (C.id == id)
+			if (!C.cremating)
+				C.cremate(null, user)
+	return TRUE
 
 
 /obj/structure/morgue/crematorium/vr
-	var/list/allowed_items = list(/obj/item/organ,
+	var/static/list/allowed_items = list(/obj/item/organ,
 			/obj/item/implant,
 			/obj/item/material/shard/shrapnel,
 			/mob/living)

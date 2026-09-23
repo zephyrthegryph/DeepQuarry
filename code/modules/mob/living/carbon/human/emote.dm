@@ -562,7 +562,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		return
 	else //They got a tail. Let's make sure it ain't hiding stuff!
 		var/datum/sprite_accessory/tail/current_tail = tail_style
-		if((current_tail.hide_body_parts && current_tail.hide_body_parts.len) || current_tail.clip_mask_state || current_tail.clip_mask)
+		if((current_tail.hide_body_parts && length(current_tail.hide_body_parts)) || current_tail.clip_mask_state || current_tail.clip_mask)
 			to_chat(src,span_notice("Your current tail is too considerable to hide!"))
 			return
 	if(species.tail) //If they're using this verb, they already have a custom tail. This prevents their species tail from showing.

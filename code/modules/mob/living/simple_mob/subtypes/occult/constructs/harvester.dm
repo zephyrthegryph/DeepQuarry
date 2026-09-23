@@ -20,14 +20,7 @@
 
 	attack_sound = 'sound/weapons/pierce.ogg'
 
-	armor = list(
-				"melee" = 10,
-				"bullet" = 20,
-				"laser" = 20,
-				"energy" = 20,
-				"bomb" = 20,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=10;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 
 	construct_spells = list(
 			/datum/spell/aoe_turf/knock/harvester,

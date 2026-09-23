@@ -31,7 +31,7 @@
 
 	// These should be subtypes of /obj/item/organ
 	// Costs roughly 20u Phoron (1 sheet) per internal organ, limbs are 60u for limb and extremity
-	var/list/products = list(
+	var/static/list/products = list(
 		"Heart"   = list(/obj/item/organ/internal/heart,  20),
 		"Lungs"   = list(/obj/item/organ/internal/lungs,  20),
 		"Kidneys" = list(/obj/item/organ/internal/kidneys,20),
@@ -51,20 +51,20 @@
 		"Organ Lattice" = list(/obj/item/organ/internal/malignant/engineered/lattice,  30) // Bioprinting engineered lattice organs
 		)
 
-	var/list/complex_products = list(
+	var/static/list/complex_products = list(
 		"Brain" = list(/obj/item/organ/internal/brain, 60),
 		"Larynx" = list(/obj/item/organ/internal/voicebox, 20),
 		"Head" = list(/obj/item/organ/external/head, 40)
 		)
 
-	var/list/anomalous_products = list(
+	var/static/list/anomalous_products = list(
 		"Lymphatic Complex" = list(/obj/item/organ/internal/immunehub, 120),
 		"Respiration Nexus" = list(/obj/item/organ/internal/lungs/replicant/mending, 80),
 		"Adrenal Valve Cluster" = list(/obj/item/organ/internal/heart/replicant/rage, 80)
 		)
 
 	// begin - engineered organs
-	var/list/engineered_products = list(
+	var/static/list/engineered_products = list(
 		"Phoroketic Gland"  = list(/obj/item/organ/internal/malignant/engineered/chemorgan/phoron, 90),
 		"Trioketic Gland"  	= list(/obj/item/organ/internal/malignant/engineered/chemorgan/tricord, 90),
 		"Tramoketic Gland"  = list(/obj/item/organ/internal/malignant/engineered/chemorgan/tramadol, 90),

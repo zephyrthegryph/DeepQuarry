@@ -31,7 +31,7 @@
 		"red"=/obj/item/clothing/gloves/red,
 		"white"=/obj/item/clothing/gloves/white
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/gloves/latex
 	display_name = "gloves, latex"
@@ -49,7 +49,7 @@
 
 /datum/gear/gloves/evening/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/gloves/duty
 	display_name = "gloves, work"
@@ -78,8 +78,8 @@
 		"recolourable, midlength"=/obj/item/clothing/gloves/fingerless_recolourable/mid,
 		"recolourable, long"=/obj/item/clothing/gloves/fingerless_recolourable/long
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/gloves/ring
 	display_name = "ring selection"
@@ -106,7 +106,7 @@
 	ringtype["ring, gold"] = /obj/item/clothing/accessory/ring/material/gold
 	ringtype["ring, platinum"] = /obj/item/clothing/accessory/ring/material/platinum
 
-	gear_tweaks += new/datum/gear_tweak/path(ringtype)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(ringtype))
 
 /datum/gear/gloves/circuitry
 	display_name = "gloves, circuitry (empty)"
@@ -125,7 +125,7 @@
 		"gold"=/obj/item/clothing/accessory/watch/gold,
 		"survival"=/obj/item/clothing/accessory/watch/survival
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_watches))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_watches)))
 
 /datum/gear/gloves/goldring
 	display_name = "wedding ring, gold"
@@ -141,7 +141,7 @@
 
 /datum/gear/gloves/colored/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/gloves/latex/colorable
 	display_name = "gloves, latex, colorable"
@@ -149,7 +149,7 @@
 
 /datum/gear/gloves/latex/colorable/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/gloves/maid_arms
 	display_name = "maid arm covers"

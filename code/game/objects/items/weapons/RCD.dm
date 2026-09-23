@@ -352,7 +352,7 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
 	var/ammostate
-	var/list/effects = list()
+	var/list/effects
 
 	var/static/image/radial_image_airlock = image(icon = 'icons/mob/radial.dmi', icon_state = "airlock")
 	var/static/image/radial_image_decon = image(icon= 'icons/mob/radial.dmi', icon_state = "delete")
@@ -394,12 +394,12 @@
 	add_overlay("[initial(icon_state)]_charge[nearest_ten]")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
-	effects[A] = new /obj/effect/constructing_effect(get_turf(A), time_taken, modes[mode_index])
+	LAZYSET(effects, A, new /obj/effect/constructing_effect(get_turf(A), time_taken, modes[mode_index]))
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)
-		qdel(effects[A])
-		effects -= A
+		qdel(LAZYACCESS(effects, A))
+		LAZYREMOVE(effects, A)
 
 /* moved this block to code\game\objects\items\weapons\rcd.dm
 /obj/item/rcd/attackby(obj/item/W, mob/user)

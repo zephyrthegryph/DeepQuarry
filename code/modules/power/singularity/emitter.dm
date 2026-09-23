@@ -40,9 +40,25 @@
 	investigate_log(span_red("deleted") + " at ([x],[y],[z])","singulo")
 	. = ..()
 
-/obj/machinery/power/emitter/attack_hand(mob/user as mob)
-	src.add_fingerprint(user)
+/obj/machinery/power/emitter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/emitter_repair,
+		/datum/interaction/machine_item/emitter_toggle_lock,
+		/datum/interaction/machine_item/emitter_toggle_anomalous,
+		/datum/interaction/machine_hand/ungated/emitter_use,
+	)
+	..()
+
+/// Old attack_hand, which never called ..(): no gate.
+/datum/interaction/machine_hand/ungated/emitter_use
+	id = "emitter_use"
+	name = "Use"
+	effect = /obj/machinery/power/emitter/proc/interaction_use
+
+/obj/machinery/power/emitter/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
 	activate(user)
+	return TRUE
 
 /obj/machinery/power/emitter/proc/activate(mob/user as mob)
 	if(state == 2)
@@ -185,48 +201,71 @@
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/emitter/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
-		var/amt = CEILING((max_integrity - get_integrity()) / 10, 1)
-		if(!amt)
-			to_chat(user, span_notice("\The [src] is already fully repaired."))
-			return
-		var/obj/item/stack/P = W
-		if(!P.can_use(amt))
-			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
-			return
-		to_chat(user, span_notice("You begin repairing \the [src]..."))
-		if(do_after(user, 3 SECONDS, target = src))
-			if(P.use(amt))
-				to_chat(user, span_notice("You have repaired \the [src]."))
-				repair_damage(max_integrity)
-				return
-			else
-				to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
-				return
+/// Old attackby: repairing with steel sheets. `held_type` shows any material stack; `offered_when`
+/// restricts to steel, so a non-steel stack falls through (to the id/pda and scanner branches, then ..()).
+/datum/interaction/machine_item/emitter_repair
+	id = "emitter_repair"
+	name = "Repair with steel"
+	category = INTERACTION_CAT_REPAIR
+	held_type = /obj/item/stack/material
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/emitter/proc/repair_material_ok, null))
+	effect = /obj/machinery/power/emitter/proc/interaction_repair
 
-	if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))
-		if(emagged)
-			to_chat(user, span_warning("The lock seems to be broken."))
-			return
-		if(src.allowed(user))
-			src.locked = !src.locked
-			to_chat(user, "The controls are now [src.locked ? "locked." : "unlocked."]")
-			update_icon()
+/// Whether `held` is a steel material stack.
+/obj/machinery/power/emitter/proc/repair_material_ok(mob/actor, atom/target, obj/item/held)
+	var/obj/item/stack/material/stack = held
+	return istype(stack) && stack.get_material_name() == MAT_STEEL
+
+/obj/machinery/power/emitter/proc/interaction_repair(mob/user, obj/item/stack/material/P, datum/interaction/interaction)
+	var/amt = CEILING((max_integrity - get_integrity()) / 10, 1)
+	if(!amt)
+		to_chat(user, span_notice("\The [src] is already fully repaired."))
+		return TRUE
+	if(!P.can_use(amt))
+		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+		return TRUE
+	to_chat(user, span_notice("You begin repairing \the [src]..."))
+	if(do_after(user, 3 SECONDS, target = src))
+		if(P.use(amt))
+			to_chat(user, span_notice("You have repaired \the [src]."))
+			repair_damage(max_integrity)
 		else
-			to_chat(user, span_warning("Access denied."))
-		return
-	if(istype(W, /obj/item/anomaly_scanner))
-		anomalous = !anomalous
-		burst_delay = anomalous ? 3 : 8
-		to_chat(user, span_notice("The beam is now set to [anomalous ? "anomalous." : "normal."]"))
-		if(anomalous)
-			description_info = "Use a multitool to change the particle type."
-		else
-			description_info = initial(description_info)
-		return
-	..()
-	return
+			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+	return TRUE
+
+/// Old attackby: an ID card or PDA toggles the console lock.
+/datum/interaction/machine_item/emitter_toggle_lock
+	id = "emitter_toggle_lock"
+	name = "Toggle lock"
+	category = INTERACTION_CAT_LOCK
+	held_type = list(/obj/item/card/id, /obj/item/pda)
+	effect = /obj/machinery/power/emitter/proc/interaction_toggle_lock
+
+/obj/machinery/power/emitter/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
+	if(emagged)
+		to_chat(user, span_warning("The lock seems to be broken."))
+		return TRUE
+	if(allowed(user))
+		locked = !locked
+		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")
+		update_icon()
+	else
+		to_chat(user, span_warning("Access denied."))
+	return TRUE
+
+/// Old attackby: an anomaly scanner toggles anomalous particle mode.
+/datum/interaction/machine_item/emitter_toggle_anomalous
+	id = "emitter_toggle_anomalous"
+	name = "Toggle anomalous mode"
+	category = INTERACTION_CAT_CONFIGURE
+	held_type = /obj/item/anomaly_scanner
+	effect = /obj/machinery/power/emitter/proc/interaction_toggle_anomalous
+
+/obj/machinery/power/emitter/proc/interaction_toggle_anomalous(mob/user, obj/item/held, datum/interaction/interaction)
+	anomalous = !anomalous
+	burst_delay = anomalous ? 3 : 8
+	to_chat(user, span_notice("The beam is now set to [anomalous ? "anomalous." : "normal."]"))
+	return TRUE
 
 /obj/machinery/power/emitter/wrench_act(mob/user, obj/item/W)
 	return construction_tool_act(user, W, TOOL_WRENCH)

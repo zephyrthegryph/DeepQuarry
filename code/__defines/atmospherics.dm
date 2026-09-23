@@ -41,18 +41,13 @@
 #define SSAIR_HIGHPRESSURE 6
 #define SSAIR_SUPERCONDUCTIVITY 7 // process_turf_heat (Rust auxmos heat conduction)
 // SSAIR_PROCESS_ATOMS (8) deleted alongside atom_process / process_exposure.
-// auxmos turf-processing steps. These run in a fixed order each fire(); the
-// fire() switch checkpoints on them so a mid-tick MC pause resumes correctly.
-#define SSAIR_TURFS 9              // process_turfs_auxtools (Rust FDM sharing)
-#define SSAIR_FINALIZE_TURFS 11   // drain Rust->DM callbacks (react/set_visuals/pressure)
+// The turf gas step: pin the gas field's newest frame, start the next, and
+// dispatch the frame's events (react / set_visuals / spacewind). Resumable.
+#define SSAIR_TURFS 9
 
-// Milliseconds of tick budget still available to hand an auxmos turf-processing
-// bind. TICK_USAGE and Master.current_ticklimit are both percentages of a tick
-// (0-100); TICK_DELTA_TO_MS converts a percentage to milliseconds using
-// world.tick_lag. Clamped to a small positive floor so we never hand the Rust
-// side a zero/negative budget (it would parse as 50ms via unwrap_or, over-running
-// the tick). The Rust binds internally checkpoint against this and return
-// "overtimed" so SSair pauses/resumes cleanly.
+// Milliseconds of tick budget still available, for binds that take a budget
+// (the Rust->DM callback queue). TICK_USAGE and Master.current_ticklimit are
+// percentages of a tick; clamped to a small positive floor.
 #define SSAIR_REMAINING_MS (max(TICK_DELTA_TO_MS(Master.current_ticklimit - TICK_USAGE), 1))
 
 // Pipeline rebuild helper subtasks.

@@ -64,9 +64,18 @@
 	icon = 'icons/obj/power.dmi'
 	icon_state = "crema_switch"
 
-/obj/machinery/button/holosign/attack_hand(mob/user as mob)
-	if(..())
-		return
+/obj/machinery/button/holosign/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/holosign_toggle,
+	)
+	..()
+
+/datum/interaction/machine_hand/holosign_toggle
+	id = "holosign_toggle"
+	name = "Toggle"
+	effect = /obj/machinery/button/holosign/proc/interaction_toggle
+
+/obj/machinery/button/holosign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	use_power(5)
@@ -77,6 +86,7 @@
 	for(var/obj/machinery/holosign/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.toggle()
+	return TRUE
 
 
 /obj/machinery/holosign/chemistry

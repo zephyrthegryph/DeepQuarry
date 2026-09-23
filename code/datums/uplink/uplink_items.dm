@@ -93,7 +93,7 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 /datum/uplink_item/proc/purchase_log(mob/M)
 	feedback_add_details("traitor_uplink_items_bought", "[src]")
 	log_and_message_admins("\the [M] bought \a [src] through the uplink")
-	M.mind.purchase_log[src] += 1
+	LAZYADDASSOC(M.mind.purchase_log, src, 1)
 
 /datum/uplink_item/dd_SortValue()
 	return item_cost
@@ -152,7 +152,7 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 /datum/uplink_item/crated
 	var/crate_path = /obj/structure/largecrate
-	var/list/paths = list()	// List of paths to be spawned into the crate.
+	var/list/paths	// List of paths to be spawned into the crate.
 
 /datum/uplink_item/crated/get_goods(obj/item/uplink/U, location, mob/user)
 	var/obj/L = new crate_path(get_turf(location))

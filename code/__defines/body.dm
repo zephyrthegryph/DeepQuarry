@@ -146,8 +146,11 @@
 /// The physiology (ventilation, oxygenation, perfusion, delivery) must be
 /// recomputed: a factor, support, organ, breath or blood volume changed.
 #define BODY_DIRTY_PHYSIOLOGY (1<<6)
+/// Worn protection (code/modules/body/worn_protection.dm): something worn, or
+/// a worn item's armour, coverage, conductivity or insulation, changed.
+#define BODY_DIRTY_ARMOR     (1<<7)
 #define BODY_DIRTY_CONDITIONS (BODY_DIRTY_ORGANS | BODY_DIRTY_METRICS | BODY_DIRTY_CHEMS)
-#define BODY_DIRTY_ALL       (BODY_DIRTY_VITALS | BODY_DIRTY_CONDITIONS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS | BODY_DIRTY_PHYSIOLOGY)
+#define BODY_DIRTY_ALL       (BODY_DIRTY_VITALS | BODY_DIRTY_CONDITIONS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS | BODY_DIRTY_PHYSIOLOGY | BODY_DIRTY_ARMOR)
 
 // --- Natural regeneration (TREAT_REGENERATION) ---------------------------------------------
 /// Regeneration level of a fed, awake, living humanoid.

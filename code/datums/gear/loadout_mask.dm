@@ -75,7 +75,7 @@
 	for(var/gaiter in typesof(/obj/item/clothing/accessory/gaiter))
 		var/obj/item/clothing/accessory/gaiter_type = gaiter
 		gaiters[initial(gaiter_type.name)] = gaiter_type
-	gear_tweaks += new/datum/gear_tweak/path(sortTim(gaiters, GLOBAL_PROC_REF(cmp_text_asc)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortTim(gaiters, GLOBAL_PROC_REF(cmp_text_asc))))
 
 // Put this mask in loadout
 /datum/gear/mask/death
@@ -89,7 +89,7 @@
 
 /datum/gear/mask/lace/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/mask/half
 	display_name = "black half-mask"
@@ -101,7 +101,7 @@
 
 /datum/gear/mask/wrestling/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/mask/masquerade
 	display_name = "masquerade mask selection"
@@ -113,7 +113,7 @@
 	for(var/mask in typesof(/obj/item/clothing/mask/masquerade))
 		var/obj/item/clothing/mask/mask_type = mask
 		masks[initial(mask_type.name)] = mask_type
-	gear_tweaks += new/datum/gear_tweak/path(sortTim(masks, GLOBAL_PROC_REF(cmp_text_asc)))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortTim(masks, GLOBAL_PROC_REF(cmp_text_asc))))
 
 /datum/gear/mask/gas/half
 	display_name = "black gas half-mask"

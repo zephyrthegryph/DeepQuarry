@@ -9,7 +9,7 @@
 	desc = "A cheap NT knock-off of an Unathi battle-rig. Uses softer, but lighter, armour plating, producing a still-useful suit"
 	suit_type = "\improper NT breacher"
 	icon_state = "breacher_rig_cheap"
-	armor = list(melee = 60, bullet = 45, laser = 45, energy = 10, bomb = 50, bio = 100, rad = 20)
+	armor_spec = "melee=60;bullet=45;laser=45;energy=10;bomb=50;bio=100;rad=20"
 	emp_protection = -20
 	slowdown = 3  //This is too much, reducing from 6 to 3.  May edit again in the future.
 	offline_slowdown = 5
@@ -29,7 +29,7 @@
 	desc = "An authentic Unathi breacher chassis. Huge, bulky and absurdly heavy. It must be like wearing a tank."
 	suit_type = "breacher chassis"
 	icon_state = "breacher_rig"
-	armor = list(melee = 85, bullet = 80, laser = 80, energy = 40, bomb = 80, bio = 100, rad = 60) //Still a tank just not indestructable
+	armor_spec = "melee=85;bullet=80;laser=80;energy=40;bomb=80;bio=100;rad=60" //Still a tank just not indestructable
 	vision_restriction = 0
 	siemens_coefficient = 0.2
 	slowdown = 6
@@ -65,7 +65,7 @@
 	desc = "This metal box writhes and squirms as if it were alive..."
 	suit_type = "alien"
 	icon_state = "vox_rig"
-	armor = list(melee = 60, bullet = 50, laser = 40, energy = 15, bomb = 30, bio = 100, rad = 50)
+	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.2
@@ -119,7 +119,7 @@
 /obj/item/rig/vox/carapace
 	name = "dense alien control module"
 	suit_type = "dense alien"
-	armor = list(melee = 60, bullet = 50, laser = 40, energy = 15, bomb = 30, bio = 100, rad = 50)
+	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"
 	emp_protection = 40 //change this to 30 if too high.
 
 	req_access = list(ACCESS_SYNDICATE)
@@ -139,7 +139,7 @@
 	name = "sinister alien control module"
 	suit_type = "sinister alien"
 	icon_state = "voxstealth_rig"
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 15, bomb = 30, bio = 100, rad = 50)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=15;bomb=30;bio=100;rad=50"
 	emp_protection = 40 //change this to 30 if too high.
 
 	req_access = list(ACCESS_SYNDICATE)
@@ -188,7 +188,7 @@
 	suit_type = "\improper industrial alien"
 	icon_state = "vox_engineer_rig"
 	desc = "A lightweight, alien rig dedicated for construction and engineering tasks. Not reccomended for hostile engagement."
-	armor = list(melee = 25, bullet = 5, laser = 40, energy = 45, bomb = 50, bio = 100, rad = 100) //CE suit values but shuffled to a tighter focus on the job hazards
+	armor_spec = "melee=25;bullet=5;laser=40;energy=45;bomb=50;bio=100;rad=100" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0
@@ -227,7 +227,7 @@
 	suit_type = "\improper sturdy alien"
 	icon_state = "vox_sec_rig"
 	desc = "A medium weight, alien control module. Built sturdy for security engagements."
-	armor = list (melee = 60, bullet = 50, laser = 40, energy = 10, bomb = 20, bio = 100, rad = 50) //CE suit values but shuffled to a tighter focus on the job hazards
+	armor_spec = "melee=60;bullet=50;laser=40;energy=10;bomb=20;bio=100;rad=50" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.5

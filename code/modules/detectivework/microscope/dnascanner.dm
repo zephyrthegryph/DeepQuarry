@@ -20,15 +20,29 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/dnaforensics/attackby(obj/item/W, mob/user)
-	if(bloodsamp)
-		to_chat(user, span_warning("There is a sample in the machine."))
-		return
+/obj/machinery/dnaforensics/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/dnaforensics_insert_swab,
+		/datum/interaction/machine_hand/ungated/dnaforensics_open_ui,
+	)
+	..()
 
-	if(scanning)
-		to_chat(user, span_warning("[src] is busy scanning right now."))
-		return
+/// Old attackby: insert a used blood swab for analysis.
+/datum/interaction/machine_item/dnaforensics_insert_swab
+	id = "dnaforensics_insert_swab"
+	name = "Insert swab"
+	requires = list(REQ_INTERACTION_REACH,
+		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/no_sample_loaded, "there is a sample in the machine"),
+		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/not_currently_scanning, "it is busy scanning right now"))
+	effect = /obj/machinery/dnaforensics/proc/interaction_insert_swab
 
+/obj/machinery/dnaforensics/proc/no_sample_loaded(mob/actor, atom/target, obj/item/held)
+	return !bloodsamp
+
+/obj/machinery/dnaforensics/proc/not_currently_scanning(mob/actor, atom/target, obj/item/held)
+	return !scanning
+
+/obj/machinery/dnaforensics/proc/interaction_insert_swab(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/forensics/swab/swab = W
 	if(istype(swab) && swab.is_used())
 		user.unEquip(W)
@@ -38,7 +52,13 @@
 		update_icon()
 	else
 		to_chat(user, span_warning("\The [src] only accepts used swabs."))
-		return
+	return TRUE
+
+/// Old attack_hand: `tgui_interact(user)`, no gate (never called ..()).
+/datum/interaction/machine_hand/ungated/dnaforensics_open_ui
+	id = "dnaforensics_open_ui"
+	name = "Use"
+	effect = /obj/machinery/proc/interaction_open_ui
 
 /obj/machinery/dnaforensics/tgui_interact(mob/user, datum/tgui/ui)
 	if(stat & (NOPOWER))
@@ -127,9 +147,6 @@
 
 /obj/machinery/dnaforensics
 	silicon_use = SILICON_USE_UI
-
-/obj/machinery/dnaforensics/attack_hand(mob/user)
-	tgui_interact(user)
 
 /obj/machinery/dnaforensics/update_icon()
 	..()

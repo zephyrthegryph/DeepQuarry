@@ -57,7 +57,7 @@
 /obj/item/gun/launcher/pneumatic/proc/unload_hopper(mob/user)
 	if(item_storage.contents.len > 0)
 		var/obj/item/removing = item_storage.contents[item_storage.contents.len]
-		item_storage.remove_from_storage(removing, src.loc)
+		item_storage.remove_from_storage(removing, src.loc, user)
 		user.put_in_hands(removing)
 		to_chat(user, "You remove [removing] from the hopper.")
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
@@ -77,11 +77,7 @@
 		user.visible_message("[user] jams [W] into [src]'s valve and twists it closed.","You jam [W] into [src]'s valve and twist it closed.")
 		update_icon()
 	else if(istype(W))
-		var/refusal = item_storage.insert_refusal(W, user)
-		if(refusal)
-			item_storage.refuse_insert(W, user, refusal)
-		else
-			item_storage.handle_item_insertion(W)
+		item_storage.try_insert(W, user)
 
 /obj/item/gun/launcher/pneumatic/attack_self(mob/user)
 	. = ..(user)

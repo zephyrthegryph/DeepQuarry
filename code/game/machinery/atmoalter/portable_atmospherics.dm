@@ -144,18 +144,33 @@
 	if (network)
 		network.mark_dirty()
 
-/obj/machinery/portable_atmospherics/attackby(obj/item/W as obj, mob/user as mob)
-	if ((istype(W, /obj/item/tank) && !( src.destroyed )))
-		if (src.holding)
-			return
-		var/obj/item/tank/T = W
-		user.drop_item()
-		T.loc = src
-		src.holding = T
-		update_icon()
-		return
+/obj/machinery/portable_atmospherics/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/portable_atmos_insert_tank,
+	)
+	..()
 
-	return
+/// The old attackby's tank branch: `istype(W, /obj/item/tank) && !destroyed`.
+/datum/interaction/machine_item/portable_atmos_insert_tank
+	id = "portable_atmos_insert_tank"
+	name = "Insert tank"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/tank
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/proc/not_destroyed, null))
+	effect = /obj/machinery/portable_atmospherics/proc/interaction_insert_tank
+
+/obj/machinery/portable_atmospherics/proc/not_destroyed(mob/actor, atom/target, obj/item/held)
+	return !destroyed
+
+/obj/machinery/portable_atmospherics/proc/interaction_insert_tank(mob/user, obj/item/W, datum/interaction/interaction)
+	if(holding)
+		return TRUE
+	var/obj/item/tank/T = W
+	user.drop_item()
+	T.loc = src
+	holding = T
+	update_icon()
+	return TRUE
 
 /obj/machinery/portable_atmospherics/wrench_act(mob/user, obj/item/tool)
 	if(destroyed)
@@ -200,23 +215,38 @@
 /obj/machinery/portable_atmospherics/powered/Initialize(mapload)
 	. = ..()
 
-/obj/machinery/portable_atmospherics/powered/attackby(obj/item/I, mob/user)
-	if(use_cell && istype(I, /obj/item/cell))
-		if(cell)
-			to_chat(user, "There is already a power cell installed.")
-			return
-
-		var/obj/item/cell/C = I
-
-		user.drop_item()
-		C.add_fingerprint(user)
-		cell = C
-		C.loc = src
-		user.visible_message(span_notice("[user] opens the panel on [src] and inserts [C]."), span_notice("You open the panel on [src] and insert [C]."))
-		power_change()
-		return
-
+/obj/machinery/portable_atmospherics/powered/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/portable_atmos_insert_cell,
+	)
 	..()
+
+/// The old attackby's cell branch, before it fell to `..()` (the tank branch).
+/datum/interaction/machine_item/portable_atmos_insert_cell
+	id = "portable_atmos_insert_cell"
+	name = "Insert power cell"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/cell
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/powered/proc/wants_cell, null))
+	effect = /obj/machinery/portable_atmospherics/powered/proc/interaction_insert_cell
+
+/obj/machinery/portable_atmospherics/powered/proc/wants_cell(mob/actor, atom/target, obj/item/held)
+	return use_cell
+
+/obj/machinery/portable_atmospherics/powered/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
+	if(cell)
+		to_chat(user, "There is already a power cell installed.")
+		return TRUE
+
+	var/obj/item/cell/C = I
+
+	user.drop_item()
+	C.add_fingerprint(user)
+	cell = C
+	C.loc = src
+	user.visible_message(span_notice("[user] opens the panel on [src] and inserts [C]."), span_notice("You open the panel on [src] and insert [C]."))
+	power_change()
+	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/screwdriver_act(mob/user, obj/item/tool)
 	if(!removeable_cell)

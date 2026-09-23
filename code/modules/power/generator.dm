@@ -126,9 +126,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 /obj/machinery/power/generator/process()
 	if(!anchored)
 		stored_energy = 0
+		set_power_supply(0)
 		return PROCESS_KILL
 	if(!circ1 || !circ2 || stat & (BROKEN|NOPOWER))
 		stored_energy = 0
+		set_power_supply(0)
 		return PROCESS_KILL
 
 	var/datum/gas_mixture/air1 = circ1.return_transfer_air()
@@ -198,8 +200,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	if(genlev != lastgenlev)
 		lastgenlev = genlev
 		update_icon()
-	add_avail(effective_gen)
+	// A supply rate, not a per-tick pulse: the TEG is a steady generator (M3).
+	set_power_supply(effective_gen)
 	if(!air1 && !air2 && stored_energy < 0.01 && effective_gen < 0.01)
+		set_power_supply(0)
 		SSmachines.hibernate_generator(src)
 		return PROCESS_KILL
 
@@ -222,12 +226,26 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/generator/attack_hand(mob/user)
+/obj/machinery/power/generator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/generator_open_ui,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/generator_open_ui
+	id = "generator_open_ui"
+	name = "Use"
+	effect = /obj/machinery/power/generator/proc/interaction_open_ui_impl
+
+/obj/machinery/power/generator/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER) || !anchored) return
+	if(stat & (BROKEN|NOPOWER) || !anchored)
+		return TRUE
 	if(!circ1 || !circ2) //Just incase the middle part of the TEG was not wrenched last.
 		reconnect()
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/power/generator/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -284,11 +302,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	if(!(effective_gen >= max_power / 2 && powernet)) // Don't make a spike if we're not making a whole lot of power.
 		return
 
-	var/list/powernet_union = powernet.nodes.Copy()
+	var/list/powernet_union = LAZYCOPY(powernet.nodes)
 	for(var/obj/machinery/power/terminal/T in powernet.nodes)
 		if(T.master && istype(T.master, /obj/machinery/power/smes))
 			var/obj/machinery/power/smes/S = T.master
-			powernet_union |= S.powernet.nodes
+			if(length(S.powernet.nodes)) powernet_union |= S.powernet.nodes
 
 	var/found_grid_checker = FALSE
 	for(var/obj/machinery/power/grid_checker/G in powernet_union)

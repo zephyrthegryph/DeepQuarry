@@ -51,15 +51,7 @@
 	shiny = TRUE
 	coretype = /obj/item/slime_extract/metal
 	endurance = 250
-	armor = list(
-				"melee" = 35,
-				"bullet" = 35,
-				"laser" = 35,
-				"energy" = 50,
-				"bomb" = 80,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=35;bullet=35;laser=35;energy=50;bomb=80;bio=100;rad=100"
 
 /mob/living/simple_mob/slime/feral/yellow
 	desc = "This slime is very conductive, and is known to use electricity as a means of defense moreso than usual for slimes."

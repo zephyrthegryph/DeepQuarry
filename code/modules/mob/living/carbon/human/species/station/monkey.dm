@@ -71,8 +71,8 @@
 				var/datum/trait/T = GLOB.all_traits[pick(H.species.traits)]
 				if(T)
 					var/geneexpression
-					if(T.primitive_expression_messages.len)
-						geneexpression = pick(T.primitive_expression_messages)
+					if(length(T.primitive_expression_messages))
+						geneexpression = DEFAULTPICK(T.primitive_expression_messages, null)
 					if(geneexpression)
 						H.automatic_custom_emote(VISIBLE_MESSAGE, "[geneexpression]", check_stat = TRUE)
 					else

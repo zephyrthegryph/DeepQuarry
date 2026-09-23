@@ -47,34 +47,60 @@
 		if(charging)
 			. += "Current charge: [charging.charge] / [charging.maxcharge]"
 
-/obj/machinery/cell_charger/attackby(obj/item/W, mob/user)
-	if(stat & BROKEN)
-		return
+/obj/machinery/cell_charger/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/cell_charger_insert,
+		/datum/interaction/machine_item/cell_charger_part_replacement,
+		/datum/interaction/machine_hand/ungated/cell_charger_take,
+	)
+	..()
 
-	if(istype(W, /obj/item/cell) && anchored)
-		if(istype(W, /obj/item/cell/device))
-			to_chat(user, span_warning("\The [src] isn't fitted for that type of cell."))
-			return
-		if(charging)
-			to_chat(user, span_warning("There is already [charging] in [src]."))
-			return
-		else
-			var/area/a = loc.loc // Gets our locations location, like a dream within a dream
-			if(!isarea(a))
-				return
-			if(a.power_equip == 0) // There's no APC in this area, don't try to cheat power!
-				to_chat(user, span_warning("\The [src] blinks red as you try to insert [W]!"))
-				return
+/// Old attackby's `if(stat & BROKEN) return` guarded both branches: part_replacement too.
+/datum/interaction/machine_item/cell_charger_part_replacement
+	id = "cell_charger_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_working, "it isn't working"))
+	effect = /obj/machinery/proc/interaction_part_replacement
 
-			user.drop_item()
-			W.loc = src
-			charging = W
-			START_MACHINE_PROCESSING(src)
-			user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
-			chargelevel = -1
-		update_icon()
-	else if(default_part_replacement(user, W))
-		return
+/// Insert a cell to charge it.
+/datum/interaction/machine_item/cell_charger_insert
+	id = "cell_charger_insert"
+	name = "Insert cell"
+	held_type = /obj/item/cell
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_working, "it isn't working"))
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_anchored, "it isn't anchored"))
+	effect = /obj/machinery/cell_charger/proc/interaction_insert
+
+/obj/machinery/cell_charger/proc/is_working(mob/actor, atom/target, obj/item/held)
+	return !(stat & BROKEN)
+
+/obj/machinery/cell_charger/proc/is_anchored(mob/actor, atom/target, obj/item/held)
+	return anchored
+
+/obj/machinery/cell_charger/proc/interaction_insert(mob/user, obj/item/W, datum/interaction/interaction)
+	if(istype(W, /obj/item/cell/device))
+		to_chat(user, span_warning("\The [src] isn't fitted for that type of cell."))
+		return TRUE
+	if(charging)
+		to_chat(user, span_warning("There is already [charging] in [src]."))
+		return TRUE
+	var/area/a = loc.loc // Gets our locations location, like a dream within a dream
+	if(!isarea(a))
+		return TRUE
+	if(a.power_equip == 0) // There's no APC in this area, don't try to cheat power!
+		to_chat(user, span_warning("\The [src] blinks red as you try to insert [W]!"))
+		return TRUE
+
+	user.drop_item()
+	W.loc = src
+	charging = W
+	START_MACHINE_PROCESSING(src)
+	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
+	chargelevel = -1
+	update_icon()
+	return TRUE
 
 /obj/machinery/cell_charger/wrench_act(mob/user, obj/item/tool)
 	if(charging)
@@ -86,7 +112,14 @@
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/cell_charger/attack_hand(mob/user)
+/// Take the charging cell out.
+/datum/interaction/machine_hand/ungated/cell_charger_take
+	id = "cell_charger_take"
+	name = "Take out"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/cell_charger/proc/interaction_take
+
+/obj/machinery/cell_charger/proc/interaction_take(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(charging)
@@ -97,6 +130,7 @@
 		charging = null
 		chargelevel = -1
 		update_icon()
+	return TRUE
 
 /obj/machinery/cell_charger/attack_ai(mob/user)
 	if(isrobot(user) && Adjacent(user)) // Borgs can remove the cell if they are near enough

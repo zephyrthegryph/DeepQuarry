@@ -118,7 +118,6 @@ Whatever you did that made the last camera window disappear-- don't do that agai
 	name = "AI Multicam Room"
 	icon_state = "ai_camera_room"
 	dynamic_lighting = FALSE
-	ambience = list()
 
 GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 

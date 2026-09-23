@@ -205,7 +205,7 @@ SUBSYSTEM_DEF(transcore)
 
 /datum/transcore_db
 	var/list/datum/transhuman/mind_record/backed_up = list()	// All known mind records, indexed by MR.mindname/mind.name
-	var/list/datum/transhuman/mind_record/has_left = list()		// Why do we even have this?
+	var/list/datum/transhuman/mind_record/has_left		// Why do we even have this?
 	var/list/datum/transhuman/body_record/body_scans = list()	// All known body records, indexed by BR.mydna.name
 	var/list/obj/item/implant/backup/implants = list()	// All OPERATING implants that are being ticked
 
@@ -265,7 +265,7 @@ SUBSYSTEM_DEF(transcore)
 // Remove a mind_record from the backup-checking list.  Keeps track of it in has_left // Why do we do that? ~Leshana
 /datum/transcore_db/proc/stop_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	has_left[MR.mindname] = MR
+	LAZYSET(has_left, MR.mindname, MR)
 	backed_up.Remove("[MR.mindname]")
 	MR.cryo_at = world.time
 

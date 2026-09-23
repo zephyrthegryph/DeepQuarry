@@ -28,7 +28,7 @@
 	attack_armor_pen = 20
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 100, rad = 100)	// Same armor values as the vest they drop, plus simple mob immunities
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10;bio=100;rad=100" // Same armor values as the vest they drop, plus simple mob immunities
 
 	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier
 	loot_list = list(/obj/item/material/knife/tacknife = 100)	// Might as well give it the knife
@@ -374,7 +374,7 @@
 
 	movement_cooldown = -1
 
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 100)	// Same armor as their voidsuit
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100" // Same armor as their voidsuit
 
 	min_oxy = 0
 	max_oxy = 0
@@ -397,7 +397,7 @@
 	desc = "A tough looking individual, armed with a submachine gun."
 	icon_state = "syndicatespace-ranged"
 	icon_living = "syndicatespceace-ranged"
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 100)	// Same armor as their voidsuit.
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100" // Same armor as their voidsuit.
 	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 20
 	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
@@ -484,7 +484,7 @@
 	desc = "Geeze, weren't shotgun ops bad enough? At least when you fade these jerks you get a flashbang to the face."
 	icon_state = "syndi-ranged-space-sup"
 	icon_living = "syndi-ranged-space-sup"
-	armor = list(melee = 80, bullet = 65, laser = 50, energy = 15, bomb = 80, bio = 100, rad = 100) // this is the merc rig's stats
+	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=100" // this is the merc rig's stats
 	say_list_type = /datum/say_list/merc/elite
 	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor // it's high velocity
 	projectilesound = 'sound/weapons/doompistol.ogg' // converted from .wavs extracted from doom 2
@@ -500,7 +500,7 @@
 	desc = "Geeze, weren't normal suppressors bad enough? At least if you fade this jerk, you'll have an awful time anyway."
 	icon_state = "syndi-ranged-space-sup-elite"
 	icon_living = "syndi-ranged-space-sup-elite"
-	armor = list(melee = 80, bullet = 70, laser = 55, energy = 15, bomb = 80, bio = 100, rad = 100) // see code for military hardsuit
+	armor_spec = "melee=80;bullet=70;laser=55;energy=15;bomb=80;bio=100;rad=100" // see code for military hardsuit
 	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor/turbo // fuck it, fast bullets
 	grenade_type = /obj/item/grenade/shooter/rubber // don't group up
 	grenade_timer = 30 // well, look what you've done, you've grouped up

@@ -12,16 +12,13 @@
 //   dq_rx_rate_linear/read/set_rate/remove, dq_rx_on_rate    RATE_LINEAR ... / REACT_RATE
 //   dq_rx_cancel(D, token), dq_rx_clear(D), dq_rx_id(D)      REACT_CANCEL / REACT_CLEAR / REACT_ID
 //
-// Heat nodes. Objects have no node in a Rust heat domain yet, and the only
-// watchable domain is S1's probe (REACT_PROBE_CELLS cells, DM-written). So an
-// object's heat node is DM-mirrored, and borrows a probe cell only while it is
-// away from ambient (dq_rx_node_write promotes it, dq_rx_node_idle returns the
-// cell). While it holds a cell its watches are real REACT_WHEN watches in
-// Rust. At rest they exist only here, so a resting object costs SSreactor
-// nothing (and round-trips materialize/dematerialize); if every cell is taken,
-// a write wakes the watchers directly and the rule re-checks its predicate. When items get heat nodes in the heat domain,
-// dq_rx_node_* become thin wrappers over that domain's handles and the pool
-// and the fallback go away.
+// Heat nodes (H3). An object's heat node is its heat body in the heat domain
+// (M4, code/modules/heat/heat.dm). A body exists only while the object
+// diverges from its surroundings: add_heat() creates it, and Rust releases it
+// at equilibrium (dropping its watches). A node's watches are kept here and
+// registered as Threshold/Band watches on the body whenever the object has
+// one (dq_rx_heat_body_created() relinks them when a body is made). At rest
+// the object reads its surroundings' temperature and costs nothing.
 
 /// A rule_binding receives SSreactor wakes here.
 /datum/rule_binding/on_react(reason, source, source_kind)
@@ -55,6 +52,7 @@
 
 /proc/dq_rx_clear(datum/D)
 	REACT_CLEAR(D)
+	D.heat_unsubscribe()
 
 /proc/dq_rx_rate_linear(v0, per_second, lo, hi)
 	return RATE_LINEAR(v0, per_second, lo, hi)
@@ -74,6 +72,18 @@
 
 // ---- Heat nodes ----
 
+#define DQ_RX_WATCH_OWNER 1
+#define DQ_RX_WATCH_NODE 2
+#define DQ_RX_WATCH_KIND 3
+#define DQ_RX_WATCH_PARAMS 4
+#define DQ_RX_WATCH_LIVE 5
+#define DQ_RX_WATCH_BODY 6
+
+
+/// A heat watch fired on a node's body.
+/datum/rule_binding/on_heat_wake(watch, reason, source)
+	rule_wake(DQ_RX_REASON_CONDITION, source)
+
 /proc/dq_rx_when_threshold(datum/D, node, ch, above, level, edges)
 	return dq_rx_nodes().watch(D, node, ch, RULE_TRIGGER_THRESHOLD, list(above, level, edges))
 
@@ -83,26 +93,38 @@
 /proc/dq_rx_on_change(datum/D, node, ch)
 	return dq_rx_nodes().watch(D, node, ch, RULE_TRIGGER_DIFFERENCE, null)
 
-/proc/dq_rx_node_new(list/start)
-	return dq_rx_nodes().create(start)
+/// A heat node for atom `A`.
+/proc/dq_rx_node_new(atom/A)
+	return dq_rx_nodes().create(A)
 
+/// Sets the node's temperature (tests and DM authority): the atom gets a body
+/// at `value`, isolated from its surroundings so the value holds.
 /proc/dq_rx_node_write(node, ch, value)
-	dq_rx_nodes().set_value(node, ch, value)
+	dq_rx_nodes().set_value(node, value)
 
 /proc/dq_rx_node_read(node, ch)
-	return dq_rx_nodes().value_of(node, ch)
-
-/// The node is back at rest: give its probe cell back.
-/proc/dq_rx_node_idle(node)
-	dq_rx_nodes().demote(node)
+	return dq_rx_nodes().value_of(node)
 
 /proc/dq_rx_node_free(node)
 	dq_rx_nodes().destroy_node(node)
 
-/// Whether the node's watches are live Rust watches right now (tests).
-/proc/dq_rx_node_in_rust(node)
+/// Whether the node's watches are live heat-domain watches right now (tests).
+/proc/dq_rx_node_live(node)
 	var/datum/dq_rx_nodes/nodes = dq_rx_nodes()
-	return !isnull(nodes.cells["[node]"])
+	for(var/token in nodes.node_watches["[node]"])
+		var/list/entry = nodes.watches[token]
+		if(entry && !isnull(entry[DQ_RX_WATCH_LIVE]))
+			return TRUE
+	return FALSE
+
+/// `A` just got a heat body: move its node's watches onto it.
+/proc/dq_rx_heat_body_created(atom/A)
+	var/datum/dq_rx_nodes/nodes = dq_rx_nodes()
+	var/node = nodes.by_atom[REF(A)]
+	if(isnull(node))
+		return
+	for(var/token in nodes.node_watches["[node]"])
+		nodes.relink(token)
 
 /proc/dq_rx_nodes()
 	var/static/datum/dq_rx_nodes/nodes
@@ -110,137 +132,107 @@
 		nodes = new
 	return nodes
 
-/// Probe cells rules may borrow. S1's own tests use cells below 64.
-#define DQ_RX_FIRST_CELL 128
-/// Pressure written with a borrowed cell's temperature.
-#define DQ_RX_NODE_KPA 101.325
-
 /datum/dq_rx_nodes
 	var/next_node = 1
 	var/next_watch = 1
-	/// "[node]" -> list("[ch]" -> value). The DM mirror, always current.
-	var/list/values = list()
-	/// "[node]" -> borrowed probe cell.
-	var/list/cells = list()
-	var/list/free_cells
+	/// "[node]" -> weakref to its atom.
+	var/list/owners = list()
+	/// REF(atom) -> node, and back.
+	var/list/by_atom = list()
+	var/list/keys = list()
 	/// "[node]" -> its watch tokens.
 	var/list/node_watches = list()
-	/// token -> list(D, node, ch, kind, params, live token).
+	/// token -> list(D, node, kind, params, live heat watch, body it is on).
 	var/list/watches = list()
 
-/datum/dq_rx_nodes/New()
-	..()
-	free_cells = list()
-	for(var/cell in REACT_PROBE_CELLS - 1 to DQ_RX_FIRST_CELL step -1)
-		free_cells += cell
-
-/datum/dq_rx_nodes/proc/create(list/start)
+/datum/dq_rx_nodes/proc/create(atom/A)
+	var/key = REF(A)
+	if(!isnull(by_atom[key]))
+		return by_atom[key]
 	var/node = next_node++
-	values["[node]"] = start ? start.Copy() : list()
+	owners["[node]"] = WEAKREF(A)
+	by_atom[key] = node
+	keys["[node]"] = key
 	return node
 
-/datum/dq_rx_nodes/proc/value_of(node, ch)
-	var/list/node_values = values["[node]"]
-	return node_values ? node_values["[ch]"] : null
+/datum/dq_rx_nodes/proc/atom_of(node)
+	var/datum/weakref/ref = owners["[node]"]
+	var/atom/A = ref?.resolve()
+	return (A && !QDELETED(A)) ? A : null
 
-/datum/dq_rx_nodes/proc/set_value(node, ch, value)
-	var/list/node_values = values["[node]"]
-	if(!node_values || node_values["[ch]"] == value)
+/datum/dq_rx_nodes/proc/value_of(node)
+	var/atom/A = atom_of(node)
+	return A ? A.get_temperature() : null
+
+/datum/dq_rx_nodes/proc/set_value(node, value)
+	var/atom/A = atom_of(node)
+	if(!A || !A.create_heat_body())
 		return
-	node_values["[ch]"] = value
-	var/cell = cells["[node]"]
-	if(isnull(cell) && length(node_watches["[node]"]) && length(free_cells))
-		promote(node)
-		return
-	if(isnull(cell))
-		wake_all(node)
-	else
-		set_cell(cell, node_values)
-
-/datum/dq_rx_nodes/proc/set_cell(cell, list/node_values)
-	var/kelvin = node_values["[DQ_RX_CH_TEMPERATURE]"]
-	vg_react_probe_set(cell, DQ_RX_NODE_KPA, isnull(kelvin) ? T20C : kelvin)
-
-/// Borrow a probe cell and move the node's watches onto it. A watch whose
-/// condition already holds fires on its first evaluation.
-/datum/dq_rx_nodes/proc/promote(node)
-	var/cell = free_cells[length(free_cells)]
-	free_cells.len--
-	cells["[node]"] = cell
-	set_cell(cell, values["[node]"])
-	for(var/token in node_watches["[node]"])
-		relink(token)
-
-/// Give the cell back; the node's watches fall back to its key.
-/datum/dq_rx_nodes/proc/demote(node)
-	var/cell = cells["[node]"]
-	if(isnull(cell))
-		return
-	cells -= "[node]"
-	for(var/token in node_watches["[node]"])
-		relink(token)
-	free_cells += cell
+	vg_heat_body_couple(A.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
+	vg_heat_body_set_temperature(A.heat_body, value)
+	dq_rx_heat_body_created(A)
 
 /datum/dq_rx_nodes/proc/destroy_node(node)
 	var/list/tokens = node_watches["[node]"]
 	if(tokens)
 		for(var/token in tokens.Copy())
 			unwatch(token)
-	demote(node)
-	values -= "[node]"
+	by_atom -= keys["[node]"]
+	keys -= "[node]"
+	owners -= "[node]"
 	node_watches -= "[node]"
 
 /datum/dq_rx_nodes/proc/watch(datum/D, node, ch, kind, params)
 	var/token = "n[next_watch++]"
-	watches[token] = list(D, node, ch, kind, params, null)
+	watches[token] = list(D, node, kind, params, null, null)
 	LAZYADD(node_watches["[node]"], token)
 	relink(token)
 	return token
 
-/// (Re)register a node watch on the node's current backing: a Rust watch on
-/// its probe cell, or its DM key.
+/// (Re)register a node watch on the atom's current heat body, if it has one
+/// and the watch is not already on it.
 /datum/dq_rx_nodes/proc/relink(token)
 	var/list/entry = watches[token]
-	var/datum/D = entry[1]
-	if(!isnull(entry[6]))
-		REACT_CANCEL(D, entry[6])
-		entry[6] = null
-	if(QDELETED(D))
-		return
-	var/node = entry[2]
-	var/cell = cells["[node]"]
-	if(isnull(cell))
-		return // at rest: DM-only, woken directly by write()
-	var/handle = REACT_HANDLE(REACT_DOMAIN_PROBE, cell)
-	var/ch = entry[3] == DQ_RX_CH_TEMPERATURE ? CH_PROBE_TEMPERATURE : entry[3]
-	var/list/params = entry[5]
-	switch(entry[4])
+	var/datum/D = entry[DQ_RX_WATCH_OWNER]
+	var/atom/A = atom_of(entry[DQ_RX_WATCH_NODE])
+	var/body = A?.heat_body
+	if(!isnull(body) && isnull(vg_heat_body_temperature(body)))
+		A.heat_body = null
+		body = null
+	if(!isnull(entry[DQ_RX_WATCH_LIVE]))
+		if(entry[DQ_RX_WATCH_BODY] == body)
+			return
+		vg_heat_unwatch(entry[DQ_RX_WATCH_LIVE])
+		entry[DQ_RX_WATCH_LIVE] = null
+		entry[DQ_RX_WATCH_BODY] = null
+	if(isnull(body) || QDELETED(D))
+		return // at rest: the object reads its surroundings
+	var/list/params = entry[DQ_RX_WATCH_PARAMS]
+	var/live
+	switch(entry[DQ_RX_WATCH_KIND])
 		if(RULE_TRIGGER_THRESHOLD)
-			entry[6] = REACT_WHEN(D, list(REACT_COND_THRESHOLD, handle, ch, params[1] ? REACT_CMP_ABOVE : REACT_CMP_BELOW, params[2], -1, params[3] ? TRUE : FALSE))
+			live = vg_heat_watch(TRUE, body, D.heat_subscriber_index(), HEAT_LANE_NORMAL, params[1] ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, params[2], params[3] ? TRUE : FALSE)
 		if(RULE_TRIGGER_BAND)
-			entry[6] = REACT_WHEN(D, COND_BAND(handle, ch, params))
+			live = vg_heat_watch(TRUE, body, D.heat_subscriber_index(), HEAT_LANE_NORMAL, HEAT_WATCH_BAND, params, FALSE)
 		else
-			entry[6] = REACT_ON(D, handle, CH_BIT(ch))
-
-/// No cell (every cell taken): wake the node's watchers directly.
-/datum/dq_rx_nodes/proc/wake_all(node)
-	var/list/tokens = node_watches["[node]"]
-	if(!tokens)
-		return
-	for(var/token in tokens.Copy())
-		var/list/entry = watches[token]
-		var/datum/D = entry ? entry[1] : null
-		if(D && !QDELETED(D))
-			D.rule_wake(DQ_RX_REASON_CONDITION, node)
+			// A change watch between two heat nodes: woken when either gets a body.
+			D.rule_wake(DQ_RX_REASON_CONDITION, entry[DQ_RX_WATCH_NODE])
+			return
+	entry[DQ_RX_WATCH_LIVE] = live
+	entry[DQ_RX_WATCH_BODY] = body
 
 /datum/dq_rx_nodes/proc/unwatch(token)
 	var/list/entry = watches[token]
 	if(!entry)
 		return
-	if(!isnull(entry[6]))
-		REACT_CANCEL(entry[1], entry[6])
+	if(!isnull(entry[DQ_RX_WATCH_LIVE]))
+		vg_heat_unwatch(entry[DQ_RX_WATCH_LIVE])
 	watches -= token
-	LAZYREMOVE(node_watches["[entry[2]]"], token)
+	LAZYREMOVE(node_watches["[entry[DQ_RX_WATCH_NODE]]"], token)
 
-#undef DQ_RX_FIRST_CELL
-#undef DQ_RX_NODE_KPA
+#undef DQ_RX_WATCH_OWNER
+#undef DQ_RX_WATCH_NODE
+#undef DQ_RX_WATCH_KIND
+#undef DQ_RX_WATCH_PARAMS
+#undef DQ_RX_WATCH_LIVE
+#undef DQ_RX_WATCH_BODY

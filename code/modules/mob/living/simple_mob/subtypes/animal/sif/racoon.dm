@@ -41,15 +41,7 @@
 	attacktext = list("nipped", "bit", "cut", "clawed")
 	meat_amount = 3
 
-	armor = list(
-		"melee" = 15,
-		"bullet" = 5,
-		"laser" = 5,
-		"energy" = 0,
-		"bomb" = 10,
-		"bio" = 100,
-		"rad" = 100
-		)
+	armor_spec = "melee=15;bullet=5;laser=5;bomb=10;bio=100;rad=100"
 
 	say_list_type = /datum/say_list/sakimm
 

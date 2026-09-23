@@ -138,7 +138,7 @@
 	color = "#F13C00"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 /obj/item/clothing/suit/armor/firecloak/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(istype(damage_source, /obj/item/projectile))
@@ -230,7 +230,7 @@
 	desc = "A strange cloak, something about it feels off."
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "seccloak" //custom sprite for this for sure.
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	block_chance = 35
 	slowdown = -0.5
 
@@ -261,7 +261,7 @@
 
 /obj/item/clothing/gloves/toxinregen/equipped(mob/user, slot)
 	var/mob/living/carbon/human/H = wearer?.resolve()
-	if(H && H.gloves == src)
+	if(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel a stabbing sensation in your hands as you slide \the [src] on!"))
 			H.custom_pain("You feel a sharp pain in your hands!",1)

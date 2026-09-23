@@ -216,8 +216,8 @@
 		stop_pulling()
 		if(SK.normal_phase && SK.drop_items_on_phase)
 			drop_both_hands()
-			if(back)
-				unEquip(back)
+			if(get_equipped_item(SLOT_ID_BACK))
+				unEquip(get_equipped_item(SLOT_ID_BACK))
 
 		can_pull_size = 0
 		can_pull_mobs = MOB_PULL_NONE

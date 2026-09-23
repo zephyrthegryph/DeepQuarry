@@ -84,9 +84,11 @@
 		charging = null
 		return PROCESS_KILL
 
-/obj/machinery/mech_recharger/attackby(obj/item/I, mob/user)
-	if(default_part_replacement(user, I))
-		return
+/obj/machinery/mech_recharger/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+	)
+	..()
 
 /obj/machinery/mech_recharger/proc/start_charging(atom/movable/M)
 

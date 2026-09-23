@@ -8,8 +8,6 @@
 
 	// total amount of wounds on mob, used to spread out healing and the like over all wounds
 	var/number_wounds = 0
-	var/obj/item/handcuffed = null //Whether or not the mob is handcuffed
-	var/obj/item/legcuffed = null  //Same as handcuffs but for legs. Bear traps use this.
 	/// Zones a surgical step is currently being performed on (lazy).
 	var/list/surgery_zones_in_progress
 	//Active emote/pose
@@ -33,14 +31,5 @@
 	var/last_taste_time = 0
 	var/last_taste_text = ""
 
-	///only used by humans
-	var/obj/item/gloves = null
-	///only used by humans.
-	var/obj/item/shoes = null
-	///only used by humans.
-	var/obj/item/glasses = null
-	///only used by humans.
-	var/obj/item/l_ear = null
-	var/obj/item/r_ear = null
-	///Only used by humans.
+	///Only used by humans. Kept by the slot signals (inventory_slot_changed()).
 	var/list/worn_clothing = list()	//Contains all CLOTHING items worn

@@ -1,17 +1,17 @@
 /datum/antagonist/proc/print_player_summary()
 
-	if(!current_antagonists.len)
+	if(!length(current_antagonists))
 		return FALSE
 
 	var/text = "<br><br>"
-	text += span_normal(span_bold("The [current_antagonists.len == 1 ? "[role_text] was" : "[role_text_plural] were"]:"))
+	text += span_normal(span_bold("The [length(current_antagonists) == 1 ? "[role_text] was" : "[role_text_plural] were"]:"))
 	for(var/datum/mind/P in current_antagonists)
 		text += print_player_full(P)
 		text += get_special_objective_text(P)
 		if(P.ambitions)
 			text += "<br>Their goals for today were...<br>"
 			text += span_notice("[P.ambitions]")
-		if(!global_objectives.len && P.objectives && P.objectives.len)
+		if(!length(global_objectives) && P.objectives && P.objectives.len)
 			var/failed
 			var/num = 1
 			for(var/datum/objective/O in P.objectives)
@@ -29,7 +29,7 @@
 			else
 				text += "<br>" + span_green(span_bold("The [role_text] was successful!"))
 
-	if(global_objectives && global_objectives.len)
+	if(global_objectives && length(global_objectives))
 		text += "<br>"
 		text += span_normal("Their objectives were:")
 		var/num = 1
@@ -88,5 +88,5 @@
 /proc/get_uplink_purchases(datum/mind/M)
 	var/list/refined_log = new()
 	for(var/datum/uplink_item/UI in M.purchase_log)
-		refined_log.Add("[M.purchase_log[UI]]x[UI.log_icon()][UI.name]")
+		refined_log.Add("[LAZYACCESS(M.purchase_log, UI)]x[UI.log_icon()][UI.name]")
 	. = english_list(refined_log, nothing_text = "")

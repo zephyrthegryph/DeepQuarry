@@ -8,9 +8,9 @@
 	icon = 'icons/obj/machines/power/fusion.dmi'
 	icon_state = "mag_trap0"
 	anchored = TRUE
-	var/list/things_in_range = list()//what is in a radius of us?
-	var/list/fields_in_range = list()//What EM fields are in that radius?
-	var/list/active_field = list()//Our active field.
+	var/list/things_in_range//what is in a radius of us?
+	var/list/fields_in_range//What EM fields are in that radius?
+	var/list/active_field//Our active field.
 	var/active = 0 //are we even on?
 	var/id_tag //needed for !!rasins!!
 	circuit = /obj/item/circuitboard/hydromagnetic_trap
@@ -32,34 +32,34 @@
 
 	else
 		if(powernet)
-			active_field.Cut()
+			LAZYCLEARLIST(active_field)
 			disconnect_from_network()
 		return PROCESS_KILL
 
 /obj/machinery/power/hydromagnetic_trap/proc/Search()//let's not have +100 instances of the same field in active_field.
 	things_in_range = range(7, src)
-	fields_in_range.Cut() // rebuild fresh each tick so in-range fields don't accumulate as duplicates
+	LAZYCLEARLIST(fields_in_range) // rebuild fresh each tick so in-range fields don't accumulate as duplicates
 	for (var/obj/effect/fusion_em_field/FFF in things_in_range)
-		fields_in_range.Add(FFF)
+		LAZYADD(fields_in_range, FFF)
 
 	listclearnulls(active_field)
 	listclearnulls(fields_in_range)
 
 	for (var/obj/effect/fusion_em_field/FFF in fields_in_range)
 		if(get_dist(src, FFF) > 7)
-			fields_in_range.Remove(FFF)
+			LAZYREMOVE(fields_in_range, FFF)
 			continue
 
-		if (active_field.len > 0)
+		if (length(active_field) > 0)
 			return
-		else if (active_field.len == 0)
+		else if (length(active_field) == 0)
 			Link()
 	return
 
 /obj/machinery/power/hydromagnetic_trap/proc/Link() //discover our EM field
 	var/obj/effect/fusion_em_field/FFF
 	for(FFF in fields_in_range)
-		active_field += FFF
+		LAZYADD(active_field, FFF)
 		active = 1
 	return
 

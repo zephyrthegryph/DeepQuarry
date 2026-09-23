@@ -442,7 +442,7 @@
 	icon_dead = "slainouroboros"
 
 	endurance = 200
-	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 20, bio = 100, rad = 100) //armor cause boss
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=20;bio=100;rad=100" //armor cause boss
 	movement_cooldown = 0
 	melee_attack_delay = 1 SECOND
 	can_be_drop_prey = TRUE

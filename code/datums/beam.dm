@@ -2,7 +2,7 @@
 /datum/beam
 	var/atom/origin = null
 	var/atom/target = null
-	var/list/elements = list()
+	var/list/elements
 	var/icon/base_icon = null
 	var/icon
 	var/icon_state = "" //icon state of the main segments of the beam
@@ -53,7 +53,7 @@
 /datum/beam/proc/Reset()
 	for(var/obj/effect/ebeam/B in elements)
 		qdel(B)
-	elements.Cut()
+	LAZYCLEARLIST(elements)
 
 /datum/beam/Destroy()
 	Reset()
@@ -89,7 +89,7 @@
 			X.color = beam_color
 
 		X.owner = src
-		elements |= X
+		LAZYOR(elements, X)
 
 		//Assign icon, for main segments it's base_icon, for the end, it's icon+icon_state
 		//cropped by a transparent box of length-N pixel size

@@ -9,7 +9,7 @@
 
 	var/list/filling_states // List of percentages full that have icons
 
-	var/list/extras = list() // List of extras. Two extras maximum
+	var/list/extras // List of extras. Two extras maximum
 
 	var/rim_pos
 

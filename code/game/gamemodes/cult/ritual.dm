@@ -31,7 +31,7 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 	var/word2
 	var/word3
 	var/image/blood_image
-	var/list/converting = list()
+	var/list/converting
 
 // Places these combos are mentioned: this file - twice in the rune code, once in imbued tome, once in tome's HTML runes.dm - in the imbue rune code. If you change a combination - dont forget to change it everywhere.
 
@@ -332,7 +332,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 			to_chat(user, span_warning("You do not have enough space to write a proper rune."))
 			return
 
-		if (C>=26 + GLOB.runedec + GLOB.cult.current_antagonists.len) //including the useless rune at the secret room, shouldn't count against the limit of 25 runes - Urist
+		if (C>=26 + GLOB.runedec + length(GLOB.cult.current_antagonists)) //including the useless rune at the secret room, shouldn't count against the limit of 25 runes - Urist
 			tgui_alert_async(user, "The cloth of reality can't take that much of a strain. Remove some runes first!")
 			return
 		else

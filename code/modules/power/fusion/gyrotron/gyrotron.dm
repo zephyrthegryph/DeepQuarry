@@ -51,14 +51,23 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
 	else
 		icon_state = "emitter-off"
 
-/obj/machinery/power/emitter/gyrotron/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Gyrotron", id_tag, MAX_NAME_LEN)
-		if(new_ident && user.Adjacent(src))
-			id_tag = new_ident
-		return
+/obj/machinery/power/emitter/gyrotron/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/gyrotron_set_ident,
+		/datum/interaction/machine_item/part_replacement,
+	)
+	..()
 
-	if(default_part_replacement(user, W))
-		return
+/datum/interaction/machine_item/gyrotron_set_ident
+	id = "gyrotron_set_ident"
+	name = "Set ident tag"
+	category = INTERACTION_CAT_CONFIGURE
+	tool = TOOL_MULTITOOL
+	tool_volume = 0
+	effect = /obj/machinery/power/emitter/gyrotron/proc/interaction_set_ident
 
-	return ..()
+/obj/machinery/power/emitter/gyrotron/proc/interaction_set_ident(mob/user, obj/item/held, datum/interaction/interaction)
+	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Gyrotron", id_tag, MAX_NAME_LEN)
+	if(new_ident && user.Adjacent(src))
+		id_tag = new_ident
+	return TRUE

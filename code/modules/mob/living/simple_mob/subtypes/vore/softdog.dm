@@ -190,14 +190,7 @@
 
 /mob/living/simple_mob/vore/woof/hostile/horrible
 
-	armor = list(
-			"melee" = 75,
-			"bullet" = 75,
-			"laser" = 75,
-			"energy" = 75,
-			"bomb" = 75,
-			"bio" = 75,
-			"rad" = 75)
+	armor_spec = "melee=75;bullet=75;laser=75;energy=75;bomb=75;bio=75;rad=75"
 
 	projectiletype = /obj/item/projectile/awoo_missile/heavy
 	projectilesound = 'sound/voice/long_awoo.ogg'

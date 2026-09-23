@@ -411,14 +411,28 @@
 	icon = 'icons/obj/doors/Doorphoron.dmi'
 	mineral = MAT_PHORON
 
-/obj/machinery/door/airlock/phoron/attackby(obj/C, mob/user)
-	if(C)
-		ignite(is_hot(C))
-	. = ..()
+/obj/machinery/door/airlock/phoron/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/phoron_airlock_ignite,
+	)
+	..()
 
-/obj/machinery/door/airlock/phoron/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature > 300)
-		PhoronBurn(exposed_temperature)
+/// Old attackby: any item held against the phoron airlock can ignite it if it's hot,
+/// then the rest of the attack chain (the base airlock's own handling) still runs.
+/datum/interaction/machine_item/phoron_airlock_ignite
+	id = "phoron_airlock_ignite"
+	name = "Touch"
+	held_type = /obj/item
+	consumes_input = FALSE
+	effect = /obj/machinery/door/airlock/phoron/proc/interaction_ignite
+
+/obj/machinery/door/airlock/phoron/proc/interaction_ignite(mob/user, obj/item/held, datum/interaction/interaction)
+	ignite(is_hot(held))
+	return FALSE
+
+/// Heat behaviour rule: a phoron airlock over fire temperature burns.
+/obj/machinery/door/airlock/phoron/proc/rule_burn(datum/rule/rule)
+	PhoronBurn(get_temperature())
 
 /obj/machinery/door/airlock/phoron/proc/ignite(exposed_temperature)
 	if(exposed_temperature > 300)

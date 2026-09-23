@@ -101,7 +101,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 		if(jobban_isbanned(usr, JOB_SYNDICATE) || jobban_isbanned(usr, JOB_EMERGENCY_RESPONSE_TEAM) || jobban_isbanned(usr, JOB_SECURITY_OFFICER))
 			to_chat(usr, span_danger("You are jobbanned from the emergency reponse team!"))
 			return
-		if(GLOB.ert.current_antagonists.len >= GLOB.ert.hard_cap)
+		if(length(GLOB.ert.current_antagonists) >= GLOB.ert.hard_cap)
 			to_chat(usr, "The emergency response team is already full!")
 			return
 		GLOB.ert.create_default(usr)

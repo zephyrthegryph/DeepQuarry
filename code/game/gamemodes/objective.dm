@@ -140,7 +140,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 /datum/objective/anti_revolution/demote/check_completion()
 	if(target && target.current && ishuman(target.current))
 		var/mob/living/carbon/human/H = target.current
-		var/obj/item/card/id/I = H.wear_id
+		var/obj/item/card/id/I = H.get_equipped_item(SLOT_ID_ID)
 		if(istype(I, /obj/item/pda))
 			var/obj/item/pda/P = I
 			I = P.id
@@ -296,7 +296,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	if(istype(location, /turf/simulated/shuttle/floor4)) // Fails traitors if they are in the shuttle brig -- Polymorph
 		if(istype(owner.current, /mob/living/carbon))
 			var/mob/living/carbon/C = owner.current
-			if (!C.handcuffed)
+			if (!C.get_equipped_item(SLOT_ID_HANDCUFFED))
 				return 1
 		return 0
 

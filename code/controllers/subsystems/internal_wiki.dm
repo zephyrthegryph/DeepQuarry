@@ -389,9 +389,9 @@ SUBSYSTEM_DEF(internal_wiki)
 
 		var/list/scan_list = list()
 		if(length(D.required_reagents))
-			scan_list += D.required_reagents
+			if(length(D.required_reagents)) scan_list += D.required_reagents
 		if(length(D.catalysts))
-			scan_list += D.catalysts
+			if(length(D.catalysts)) scan_list += D.catalysts
 
 		if(R.id in scan_list)
 			display_reactions.Add(D.name)

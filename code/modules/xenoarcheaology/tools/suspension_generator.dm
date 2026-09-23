@@ -37,7 +37,20 @@
 		if(cell.charge <= 0)
 			deactivate()
 
-/obj/machinery/suspension_gen/attack_hand(mob/user)
+/obj/machinery/suspension_gen/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/suspension_gen_insert_cell,
+		/datum/interaction/machine_item/suspension_gen_swipe_card,
+		/datum/interaction/machine_hand/ungated/suspension_gen_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/suspension_gen_use
+	id = "suspension_gen_use"
+	name = "Use"
+	effect = /obj/machinery/suspension_gen/proc/interaction_use
+
+/obj/machinery/suspension_gen/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!panel_open)
 		tgui_interact(user)
 	else if(cell)
@@ -48,6 +61,7 @@
 		icon_state = "suspension"
 		cell = null
 		to_chat(user, span_info("You remove the power cell"))
+	return TRUE
 
 /obj/machinery/suspension_gen/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -111,28 +125,39 @@
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/suspension_gen/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/cell))
-		if(panel_open)
-			if(cell)
-				to_chat(user, span_warning("There is a power cell already installed."))
-			else
-				user.drop_item()
-				W.loc = src
-				cell = W
-				to_chat(user, span_info("You insert the power cell."))
-				icon_state = "suspension"
-	else if(istype(W, /obj/item/card))
-		var/obj/item/card/I = W
-		if(!auth_card)
-			if(attempt_unlock(I, user))
-				to_chat(user, span_info("You swipe [I], the console flashes \'<i>Access granted.</i>\'"))
-			else
-				to_chat(user, span_warning("You swipe [I], console flashes \'<i>Access denied.</i>\'"))
+/datum/interaction/machine_item/suspension_gen_insert_cell
+	id = "suspension_gen_insert_cell"
+	name = "Insert power cell"
+	held_type = /obj/item/cell
+	effect = /obj/machinery/suspension_gen/proc/interaction_insert_cell
+
+/obj/machinery/suspension_gen/proc/interaction_insert_cell(mob/user, obj/item/W, datum/interaction/interaction)
+	if(panel_open)
+		if(cell)
+			to_chat(user, span_warning("There is a power cell already installed."))
 		else
-			to_chat(user, span_warning("Remove [auth_card] first."))
+			user.drop_item()
+			W.loc = src
+			cell = W
+			to_chat(user, span_info("You insert the power cell."))
+			icon_state = "suspension"
+	return TRUE
+
+/datum/interaction/machine_item/suspension_gen_swipe_card
+	id = "suspension_gen_swipe_card"
+	name = "Swipe card"
+	held_type = /obj/item/card
+	effect = /obj/machinery/suspension_gen/proc/interaction_swipe_card
+
+/obj/machinery/suspension_gen/proc/interaction_swipe_card(mob/user, obj/item/card/I, datum/interaction/interaction)
+	if(!auth_card)
+		if(attempt_unlock(I, user))
+			to_chat(user, span_info("You swipe [I], the console flashes \'<i>Access granted.</i>\'"))
+		else
+			to_chat(user, span_warning("You swipe [I], console flashes \'<i>Access denied.</i>\'"))
 	else
-		return ..()
+		to_chat(user, span_warning("Remove [auth_card] first."))
+	return TRUE
 
 /obj/machinery/suspension_gen/proc/attempt_unlock(obj/item/card/C, mob/user)
 	if(!panel_open)

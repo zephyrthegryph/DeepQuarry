@@ -179,7 +179,7 @@
 /datum/element/climbable/cliff/can_climb(obj/climbed_thing, mob/living/user, post_climb_check=0)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		var/obj/item/clothing/shoes/shoes = H.shoes
+		var/obj/item/clothing/shoes/shoes = H.get_equipped_item(SLOT_ID_SHOES)
 		if(shoes && shoes.rock_climbing)
 			return ..() // Do the other checks too.
 

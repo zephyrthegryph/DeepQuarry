@@ -7,13 +7,13 @@
 	cast_methods = CAST_RANGED | CAST_USE
 	aspect = ASPECT_TELE
 	var/mob/living/summoned_mob_type = null // The type to use when making new mobs when summoned.
-	var/list/summon_options = list()
+	var/list/summon_options
 	var/energy_cost = 0
 	var/instability_cost = 0
 
 /obj/item/spell/summon/on_ranged_cast(atom/hit_atom, mob/living/user)
 	var/turf/T = get_turf(hit_atom)
-	if(summoned_mob_type && core.summoned_mobs.len < core.max_summons && within_range(hit_atom) && pay_energy(energy_cost))
+	if(summoned_mob_type && length(core.summoned_mobs) < core.max_summons && within_range(hit_atom) && pay_energy(energy_cost))
 		var/obj/effect/E = new(T)
 		E.icon = 'icons/obj/objects.dmi'
 		E.icon_state = "anom"
@@ -21,7 +21,7 @@
 		qdel(E)
 		if(owner) // We might've been dropped.
 			var/mob/living/L = new summoned_mob_type(T)
-			core.summoned_mobs |= L
+			LAZYOR(core.summoned_mobs, L)
 			L.summoned = 1
 			var/image/summon_underlay = image('icons/obj/objects.dmi',"anom")
 			summon_underlay.alpha = 127
@@ -33,10 +33,10 @@
 			user.adjust_instability(instability_cost)
 
 /obj/item/spell/summon/on_use_cast(mob/living/user)
-	if(summon_options.len)
+	if(length(summon_options))
 		var/choice = tgui_input_list(user, "Choose a creature to kidnap from somewhere!", "Summon", summon_options)
 		if(choice)
-			summoned_mob_type = summon_options[choice]
+			summoned_mob_type = LAZYACCESS(summon_options, choice)
 
 // Called when a new mob is summoned, override for special behaviour.
 /obj/item/spell/summon/proc/on_summon(mob/living/summoned)

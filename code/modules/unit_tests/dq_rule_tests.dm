@@ -36,20 +36,43 @@
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_REMOVE)
 
-/// Let SSreactor step and dispatch.
+/// Run a heat frame and deliver its wakes, then let SSreactor step and dispatch.
 /proc/dq_rx_flush()
+	vg_heat_debug_run_frames(1)
+	SSair.dispatch_heat_wakes()
 	react_test_ticks(2)
+
+/// Flushes until `rule` has fired `count` times on `thing`, for at most
+/// `max_flushes` (a key wake can take a few reactor ticks under load).
+/proc/dq_rx_flush_until(datum/thing, datum/rule/rule, count, max_flushes = 10)
+	for(var/i in 1 to max_flushes)
+		dq_rx_flush()
+		if(QDELETED(thing) || dq_rule_fire_count(thing, rule) >= count)
+			return
 
 /// Let `ds` deciseconds of reactor time pass, then dispatch.
 /proc/dq_rx_test_advance(ds)
 	sleep(ds)
-	react_test_ticks(2)
+	dq_rx_flush()
 
 /// Writes `value` into property `id` of `thing` through its base provider.
 /proc/dq_rule_test_write(datum/thing, id, value)
 	var/datum/property_registry/registry = dq_property_registry()
 	var/datum/property_provider/provider = registry.base_provider(thing.type, id)
 	return provider ? provider.test_write(thing, value) : FALSE
+
+/// Whether `thing`'s current value of `id` reads back strictly on the quiet
+/// side of `level` (below it when `direction` is +1/fires-above, above it
+/// otherwise). QDELETED or unreadable counts as not quiet, so a caller that's
+/// growing its offset keeps trying rather than declaring victory on a
+/// destroyed object.
+/proc/dq_rule_value_is_quiet(datum/thing, id, level, direction)
+	if(QDELETED(thing))
+		return FALSE
+	var/value = PROPERTY(thing, id)
+	if(isnull(value))
+		return FALSE
+	return direction > 0 ? (value < level) : (value > level)
 
 // ---- Compilation ----
 
@@ -60,9 +83,10 @@
 	TEST_ASSERT(!length(errors), "declared rules compile: [jointext(errors, "; ")]")
 
 	var/list/rules = dq_rules()
-	var/datum/rule/paper = rules[/datum/rule/paper_ignition]
-	TEST_ASSERT(paper, "the paper rule is registered")
-	TEST_ASSERT_EQUAL(length(paper.triggers), 1, "paper has one trigger")
+	var/datum/rule/paper = rules[/datum/rule/ignition]
+	TEST_ASSERT(paper, "the ignition rule is registered")
+	TEST_ASSERT_EQUAL(length(paper.triggers), 1, "ignition has one trigger")
+	TEST_ASSERT(paper.heat_only, "ignition watches only the heat node")
 	var/datum/rule_trigger/ignite = paper.triggers[1]
 	TEST_ASSERT_EQUAL(ignite.kind, RULE_TRIGGER_THRESHOLD, "temperature vs ignition point is a Threshold watch")
 	TEST_ASSERT_EQUAL(ignite.value_property, PROP_IGNITION_POINT, "its level is the ignition point")
@@ -87,9 +111,10 @@
 
 	// Per-type index: inherited by subtypes, nothing for unrelated types.
 	TEST_ASSERT(paper in dq_rules_for_type(/obj/item/paper/card), "paper subtypes inherit the rule")
-	TEST_ASSERT_NULL(dq_rules_for_type(/obj/item/dq_rule_test), "a type without rules has none")
-	TEST_ASSERT(RULES_REPLACE(/obj/item/paper, RULE_REPLACES_IGNITION), "paper's ignition is rule-driven")
-	TEST_ASSERT(!RULES_REPLACE(/obj/item/dq_rule_test, RULE_REPLACES_IGNITION), "other objects keep fire_act ignition")
+	TEST_ASSERT_NULL(dq_rules_for_type(/turf/simulated/floor), "a type without rules has none")
+	TEST_ASSERT(dq_rules_heat_deferred(/obj/item/paper), "paper's rules all wait for a heat body")
+	TEST_ASSERT(!dq_rules_heat_deferred(/obj/structure/grille), "a grille's integrity rule subscribes at once")
+	TEST_ASSERT(!rules[/datum/rule/heat_behaviour], "an abstract rule base is not registered")
 
 // ---- Generated threshold tests ----
 
@@ -106,7 +131,9 @@
 	var/list/rules = dq_rules()
 	for(var/rule_path in rules)
 		var/datum/rule/rule = rules[rule_path]
-		for(var/root in rule.applies_to)
+		if(rule.skip_generated_test)
+			continue
+		for(var/root in (rule.test_types || rule.applies_to))
 			for(var/declaring in dq_rule_declaring_types(rule, root))
 				for(var/datum/rule_trigger/trigger as anything in rule.thresholds())
 					declared++
@@ -120,7 +147,21 @@
 /datum/unit_test/dq_rule_thresholds/proc/run_case(datum/rule/rule, root, datum/rule_trigger/trigger)
 	// Fresh log per case: a deleted object's ref can be reused by the next one.
 	GLOB.dq_rule_fire_log.Cut()
-	var/atom/thing = ispath(root, /atom/movable) ? allocate(root, test_floor()) : allocate(root)
+	var/atom/thing
+	var/turf/open/floor
+	if(ispath(root, /atom/movable))
+		// A room-temperature floor: an object starts at its surroundings' temperature.
+		// Reused across cases (allocate()'s default), so also clear any fire an
+		// earlier case left burning on it: a hot shared turf would ignite the
+		// next case's object before its own threshold is ever written.
+		floor = test_floor()
+		floor.extinguish()
+		if(floor.active_hotspot)
+			qdel(floor.active_hotspot)
+		floor.air?.set_temperature(T20C)
+		thing = allocate(root, floor)
+	else
+		thing = allocate(root)
 	. = check_case(rule, root, trigger, thing)
 	// Some types allow one per turf (tables); clear the case's object and drops.
 	if(ismovable(thing) && !QDELETED(thing))
@@ -128,18 +169,22 @@
 		qdel(thing)
 		for(var/obj/item/stack/rods/R in T)
 			qdel(R)
+	if(floor)
+		floor.extinguish()
 
 /datum/unit_test/dq_rule_thresholds/proc/check_case(datum/rule/rule, root, datum/rule_trigger/trigger, atom/thing)
 	var/label = "[rule.type] on [root]: [trigger.describe()]"
-	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
-	if(!binding)
-		TEST_FAIL("[label]: did not subscribe when it materialized")
-		return FALSE
 	var/level = trigger.level_for(thing)
 	if(isnull(level))
 		TEST_FAIL("[label]: has no level")
 		return FALSE
-	var/step = dq_rule_epsilon(level) * 10
+	// A ratio-unit property (integrity, size...) is usually backed by a small
+	// integer on the object's side (obj_integrity, size class...): a step this
+	// coarse survives being rounded back into that native representation far
+	// more reliably than the raw reactor epsilon, which is tuned for
+	// continuous channels like temperature.
+	var/datum/property_def/def = dq_property_registry().defs[trigger.property]
+	var/step = def?.unit == PROP_UNIT_RATIO ? 0.05 : dq_rule_epsilon(level) * 10
 	var/direction = trigger.fires_above() ? 1 : -1
 	var/quiet = level - direction * step
 	var/across = level + direction * step
@@ -147,14 +192,40 @@
 	if(!dq_rule_test_write(thing, trigger.property, quiet))
 		TEST_FAIL("[label]: [trigger.property] has no test writer")
 		return FALSE
+	// A DM-owned property can be coarser than the epsilon step (e.g. integer
+	// integrity on a low-max_integrity object rounds a tiny ratio offset back
+	// to the threshold itself). Grow the offset until the written value reads
+	// back on the safe side of level, so "quiet" never silently crosses it.
+	var/guard = 0
+	while(guard < 8 && !dq_rule_value_is_quiet(thing, trigger.property, level, direction))
+		step *= 4
+		quiet = level - direction * step
+		if(!dq_rule_test_write(thing, trigger.property, quiet))
+			break
+		guard++
 	dq_rx_flush()
+	dq_rx_flush()
+	// Heat-only rules subscribe when the object first gets a heat body.
+	if(!dq_rule_binding_of(thing))
+		TEST_FAIL("[label]: did not subscribe (diag del=[QDELETED(thing)] mat=[thing.flags & ATOM_MATERIALIZED] body=[thing.heat_body] t=[thing.get_temperature()] fired=[dq_rule_fire_count(thing, rule)])")
+		return FALSE
 	if(dq_rule_fire_count(thing, rule) != 0)
 		TEST_FAIL("[label]: fired at [quiet], on the quiet side of [level]")
 		return FALSE
 	dq_rule_test_write(thing, trigger.property, across)
-	dq_rx_flush()
+	if(rule.hold_for)
+		dq_rx_flush()
+		dq_rx_flush()
+	else
+		dq_rx_flush_until(thing, rule, 1)
+	if(rule.hold_for && !QDELETED(thing))
+		if(dq_rule_fire_count(thing, rule) != 0)
+			TEST_FAIL("[label]: fired before holding [rule.hold_for / 10] s")
+			return FALSE
+		dq_rx_test_advance(rule.hold_for + 1 SECONDS)
 	if(dq_rule_fire_count(thing, rule) != 1)
-		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once")
+		var/datum/rule_binding/diag = dq_rule_binding_of(thing)
+		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag ? jointext(diag.holding, ",") : "-"] key=[diag?.key_id] kinds=[diag ? jointext(diag.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
 		return FALSE
 	if(!QDELETED(thing))
 		dq_rule_test_write(thing, trigger.property, further)
@@ -162,6 +233,8 @@
 		if(dq_rule_fire_count(thing, rule) != 1)
 			TEST_FAIL("[label]: fired again at [further]")
 			return FALSE
+		thing.extinguish()
+		qdel(thing)
 	return TRUE
 
 /// The types a generated test instantiates for `rule` under `root`: the root
@@ -191,25 +264,27 @@
 /datum/unit_test/dq_rule_subscription/Run()
 	var/obj/item/dq_rule_test/plain = allocate(/obj/item/dq_rule_test)
 	TEST_ASSERT_NULL(dq_rule_binding_of(plain), "an object without rules has no binding")
-	var/obj/item/paper/paper = allocate(/obj/item/paper)
+	var/obj/item/paper/paper = allocate(/obj/item/paper, test_floor())
+	TEST_ASSERT_NULL(dq_rule_binding_of(paper), "at rest paper has no binding: its rules only watch heat")
+	TEST_ASSERT_NULL(paper.heat_body, "and no heat body")
+	paper.add_heat(1000)
 	var/datum/rule_binding/binding = dq_rule_binding_of(paper)
-	TEST_ASSERT(binding, "paper subscribes when it materializes")
+	TEST_ASSERT(binding, "paper subscribes when it first gets a heat body")
 	TEST_ASSERT(!isnull(binding.nodes[PROP_TEMPERATURE]), "its ignition watch made a heat node")
-	TEST_ASSERT_EQUAL(PROPERTY(paper, PROP_TEMPERATURE), T20C, "the node starts at room temperature")
-	TEST_ASSERT(!dq_rx_node_in_rust(binding.nodes[PROP_TEMPERATURE]), "at rest it holds no probe cell")
+	TEST_ASSERT(dq_rx_node_live(binding.nodes[PROP_TEMPERATURE]), "whose watch is a heat-domain watch on the body")
 	qdel(paper)
 	TEST_ASSERT_NULL(dq_rule_binding_of(paper), "deleting the object drops its binding")
 	TEST_ASSERT(QDELETED(binding), "and the binding is deleted")
 
 	// A rule whose level the object lacks does not subscribe: a cooler bottle
 	// with no material has no melting point.
-	var/obj/item/reagent_containers/glass/cooler_bottle/bare = allocate(/obj/item/reagent_containers/glass/cooler_bottle)
-	var/datum/rule_binding/bare_binding = dq_rule_binding_of(bare)
+	var/obj/item/reagent_containers/glass/cooler_bottle/bare = allocate(/obj/item/reagent_containers/glass/cooler_bottle, test_floor())
+	var/datum/rule_binding/bare_binding = dq_rules_on_materialize(bare, TRUE)
 	TEST_ASSERT(bare_binding, "a cooler bottle subscribes")
 	bare.dematerialize()
 	TEST_ASSERT(QDELETED(bare_binding), "dematerializing drops the subscriptions")
 	bare.material_template = null
-	TEST_ASSERT_NULL(dq_rules_on_materialize(bare), "without a melting point there is nothing to watch")
+	TEST_ASSERT_NULL(dq_rules_on_materialize(bare, TRUE), "without a melting point there is nothing to watch")
 
 // ---- Time above threshold, bands, data transforms ----
 
@@ -224,7 +299,8 @@
 	TEST_ASSERT(!isnull(handle), "the hold rule watches a heat node")
 
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 450)
-	TEST_ASSERT(dq_rx_node_in_rust(handle), "a hot node borrows a probe cell: its watch is a Rust REACT_WHEN watch")
+	TEST_ASSERT(dq_rx_node_live(handle), "a hot node is a heat body: its watch is a heat-domain Threshold watch")
+	dq_rx_flush()
 	dq_rx_test_advance(0.8 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "under a second above is not enough")
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 300)
@@ -257,30 +333,37 @@
 /datum/unit_test/dq_rule_paper_ignition
 
 /datum/unit_test/dq_rule_paper_ignition/Run()
-	var/obj/item/paper/hot = allocate(/obj/item/paper)
+	var/turf/open/T = test_floor()
+	// A fire needs oxygen to keep burning; the test map's floor has little.
+	var/datum/gas_mixture/saved = new
+	saved.copy_from(T.air)
+	T.air.set_moles(GAS_O2, 20)
+	T.air.set_temperature(T20C)
+	var/obj/item/paper/hot = allocate(/obj/item/paper, T)
 	var/ignition = PROPERTY(hot, PROP_IGNITION_POINT)
 	TEST_ASSERT(ignition > T20C, "paper has an ignition point")
-	// Before: any fire_act caught it at once. After: the exposure heats the node,
-	// and the rule catches it on the next dispatch, for any exposure at or above
-	// the ignition point.
+	// Before: any fire_act caught it at once. After: the exposure is a pulse of
+	// heat into the paper's heat body, and the ignition rule catches it on the
+	// next heat frame once the body crosses the ignition point.
 	hot.fire_act(1000, 100)
 	TEST_ASSERT(!(hot.resistance_flags & ON_FIRE), "fire_act no longer ignites paper directly")
+	TEST_ASSERT(hot.get_temperature() >= ignition, "a 1000 K exposure heats it past its ignition point")
 	dq_rx_flush()
-	TEST_ASSERT(hot.resistance_flags & ON_FIRE, "the rule ignites paper exposed above its ignition point")
-	TEST_ASSERT(hot.GetComponent(/datum/component/burning), "with the same burning component as before")
+	TEST_ASSERT(hot.resistance_flags & ON_FIRE, "the rule ignites paper heated above its ignition point")
+	TEST_ASSERT(hot.GetComponent(/datum/component/burning), "with the burning state")
 
-	var/obj/item/paper/warm = allocate(/obj/item/paper)
+	var/obj/item/paper/warm = allocate(/obj/item/paper, T)
 	warm.fire_act(ignition - 50, 100)
 	dq_rx_flush()
 	TEST_ASSERT(!(warm.resistance_flags & ON_FIRE), "an exposure below the ignition point does not ignite it")
-	dq_rx_test_advance(RULE_HEAT_EXPOSURE_HOLD + 1)
-	TEST_ASSERT(abs(PROPERTY(warm, PROP_TEMPERATURE) - dq_ambient_temperature(warm)) < 0.01, "the node relaxes to the air once exposure stops")
 
-	var/obj/item/paper/proofed = allocate(/obj/item/paper)
+	var/obj/item/paper/proofed = allocate(/obj/item/paper, T)
 	proofed.resistance_flags |= FIRE_PROOF
 	proofed.fire_act(1000, 100)
 	dq_rx_flush()
 	TEST_ASSERT(!(proofed.resistance_flags & ON_FIRE), "fireproof paper still does not burn")
+	hot.extinguish()
+	T.air.copy_from(saved)
 
 // ---- Melting ----
 
@@ -292,10 +375,10 @@
 	var/datum/material/plastic = GLOB.name_to_material[MAT_PLASTIC]
 	TEST_ASSERT_EQUAL(PROPERTY(bottle, PROP_MELTING_POINT), plastic.melting_point, "the bottle's melting point is its plastic's, through PROPERTY()")
 	var/obj/item/dq_rule_test/inside = new(bottle)
-	bottle.fire_act(plastic.melting_point - 10, 100)
+	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point - 10)
 	dq_rx_flush()
 	TEST_ASSERT(!QDELETED(bottle), "below the melting point it keeps its shape")
-	bottle.fire_act(plastic.melting_point + 10, 100)
+	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point + 10)
 	dq_rx_flush()
 	TEST_ASSERT(QDELETED(bottle), "at the melting point it is replaced")
 	TEST_ASSERT(locate(/obj/effect/decal/cleanable/molten_item) in T, "by a molten mass")

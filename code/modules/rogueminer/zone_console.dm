@@ -32,11 +32,24 @@
 	if(!GLOB.rm_controller)
 		GLOB.rm_controller = new /datum/controller/rogue()
 
-/obj/machinery/computer/roguezones/attack_hand(mob/user as mob)
+/obj/machinery/computer/roguezones/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/roguezones_use,
+	)
+	..()
+
+/// Old attack_hand (never called ..()).
+/datum/interaction/machine_hand/ungated/roguezones_use
+	id = "roguezones_use"
+	name = "Use"
+	effect = /obj/machinery/computer/roguezones/proc/interaction_use
+
+/obj/machinery/computer/roguezones/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/roguezones/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

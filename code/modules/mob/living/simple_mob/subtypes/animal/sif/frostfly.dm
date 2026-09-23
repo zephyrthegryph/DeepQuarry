@@ -54,15 +54,7 @@
 	special_attack_min_range = 0
 	special_attack_max_range = 4
 
-	armor = list(
-		"melee" = 20,
-		"bullet" = 10,
-		"laser" = 5,
-		"energy" = 0,
-		"bomb" = 10,
-		"bio" = 100,
-		"rad" = 100
-		)
+	armor_spec = "melee=20;bullet=10;laser=5;bomb=10;bio=100;rad=100"
 
 	var/datum/effect/effect/system/smoke_spread/frost/smoke_special
 

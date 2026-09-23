@@ -4,12 +4,6 @@
 	name = "fluid pump"
 	desc = "A fluid pumping machine."
 
-	description_info = "A machine that can pump fluid from certain turfs.<br>\
-	Water can be pumped from any body of water. Certain locations or environmental\
-	conditions can cause different byproducts to be produced.<br>\
-	Magma or Lava can be pumped to produce mineralized fluid.<br>\
-	Deep bore mining drills can create boreholes that can be fracked for fluids."
-
 	anchored = TRUE
 	density = TRUE
 
@@ -127,7 +121,48 @@
 	if(!set_state(!on))
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
 
-/obj/machinery/pump/attack_hand(mob/user)
+/obj/machinery/pump/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/pump_insert_cell,
+		/datum/interaction/machine_hand/ungated/pump_use,
+	)
+	..()
+
+/// Old attackby: insert a power cell into the open battery panel.
+/datum/interaction/machine_item/pump_insert_cell
+	id = "pump_insert_cell"
+	name = "Insert power cell"
+	held_type = /obj/item/cell
+	effect = /obj/machinery/pump/proc/interaction_insert_cell
+
+/**
+ * The old attackby returned early (skipping the trailing RefreshParts()/update_icon()) when the
+ * panel was closed or already held a cell; those calls only ran after a successful insert.
+ */
+/obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
+	if(!open)
+		if(unlocked)
+			to_chat(user, span_notice("The battery panel is screwed shut."))
+		else
+			to_chat(user, span_notice("The battery panel is watertight and cannot be opened without a crowbar."))
+		return TRUE
+	if(istype(cell))
+		to_chat(user, span_notice("There is a power cell already installed."))
+		return TRUE
+	user.drop_from_inventory(W, src)
+	cell = W // Link the cell to us
+	to_chat(user, span_notice("You insert the power cell."))
+	RefreshParts() // Handles cell assignment
+	update_icon()
+	return TRUE
+
+/// Old attack_hand, which never called ..(): no gate.
+/datum/interaction/machine_hand/ungated/pump_use
+	id = "pump_use"
+	name = "Use"
+	effect = /obj/machinery/pump/proc/interaction_use
+
+/obj/machinery/pump/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(open && istype(cell))
 		user.put_in_hands(cell)
 		cell.add_fingerprint(user)
@@ -135,32 +170,11 @@
 		cell = null
 		set_state(FALSE)
 		to_chat(user, span_notice("You remove the power cell."))
-		return
+		return TRUE
 
 	if(!set_state(!on))
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
-
-/obj/machinery/pump/attackby(obj/item/W, mob/user)
-	. = TRUE
-	if(istype(W, /obj/item/cell))
-		if(!open)
-			if(unlocked)
-				to_chat(user, span_notice("The battery panel is screwed shut."))
-			else
-				to_chat(user, span_notice("The battery panel is watertight and cannot be opened without a crowbar."))
-			return FALSE
-		if(istype(cell))
-			to_chat(user, span_notice("There is a power cell already installed."))
-			return FALSE
-		user.drop_from_inventory(W, src)
-		cell = W // Link the cell to us
-		to_chat(user, span_notice("You insert the power cell."))
-
-	else
-		. = ..()
-
-	RefreshParts() // Handles cell assignment
-	update_icon()
+	return TRUE
 
 /obj/machinery/pump/screwdriver_act(mob/user, obj/item/tool)
 	if(open)

@@ -15,7 +15,7 @@
 	underlays.Cut()
 	if(syringe)
 		underlays += image(syringe.icon, src, syringe.icon_state)
-		underlays += syringe.filling
+		if(length(syringe.filling)) underlays += syringe.filling
 
 /obj/item/syringe_cartridge/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/reagent_containers/syringe))
@@ -85,7 +85,7 @@
 	release_force = 10
 	throw_distance = 10
 
-	var/list/darts = list()
+	var/list/darts
 	var/max_darts = 1
 	var/obj/item/syringe_cartridge/next
 
@@ -99,7 +99,7 @@
 
 /obj/item/gun/launcher/syringe/handle_post_fire()
 	..()
-	darts -= next
+	LAZYREMOVE(darts, next)
 	next = null
 
 /obj/item/gun/launcher/syringe/attack_self(mob/user)
@@ -109,22 +109,22 @@
 	if(next)
 		user.visible_message("[user] unlatches and carefully relaxes the bolt on [src].", span_warning("You unlatch and carefully relax the bolt on [src], unloading the spring."))
 		next = null
-	else if(darts.len)
+	else if(length(darts))
 		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 		user.visible_message("[user] draws back the bolt on [src], clicking it into place.", span_warning("You draw back the bolt on the [src], loading the spring!"))
-		next = darts[1]
+		next = LAZYACCESS(darts, 1)
 	add_fingerprint(user)
 
 /obj/item/gun/launcher/syringe/attack_hand(mob/living/user as mob)
 	if(user.get_inactive_hand() == src)
-		if(!darts.len)
+		if(!length(darts))
 			to_chat(user, span_warning("[src] is empty."))
 			return
 		if(next)
 			to_chat(user, span_warning("[src]'s cover is locked shut."))
 			return
-		var/obj/item/syringe_cartridge/C = darts[1]
-		darts -= C
+		var/obj/item/syringe_cartridge/C = LAZYACCESS(darts, 1)
+		LAZYREMOVE(darts, C)
 		user.put_in_hands(C)
 		user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
@@ -134,12 +134,12 @@
 /obj/item/gun/launcher/syringe/attackby(obj/item/A as obj, mob/user as mob)
 	if(istype(A, /obj/item/syringe_cartridge))
 		var/obj/item/syringe_cartridge/C = A
-		if(darts.len >= max_darts)
+		if(length(darts) >= max_darts)
 			to_chat(user, span_warning("[src] is full!"))
 			return
 		user.remove_from_mob(C)
 		C.loc = src
-		darts += C //add to the end
+		LAZYADD(darts, C) //add to the end
 		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
 	else
 		..()

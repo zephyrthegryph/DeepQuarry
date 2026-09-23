@@ -24,12 +24,11 @@
 	rcon = null
 	. = ..()
 
-// Proc: attack_hand()
-// Parameters: 1 (user - Person which clicked this computer)
-// Description: Opens UI of this machine.
-/obj/machinery/computer/rcon/attack_hand(mob/user as mob)
+/obj/machinery/computer/rcon/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
 	..()
-	tgui_interact(user)
 
 // Proc: ui_interact()
 // Description: Uses dark magic (TGUI) to render this machine's UI

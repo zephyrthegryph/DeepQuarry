@@ -34,14 +34,19 @@
 	var/is_whitelisted = FALSE
 	var/whitelist_ckey
 	var/whitelist_charname
-	var/list/belly_light_list = list() // Support multiple sleepers with r/g light "sleeper"
-	var/list/belly_capacity_list = list() //Support multiple bellies with multiple sizes, default: "sleeper" = 1
-	var/list/sprite_decals = list() // Allow extra decals
-	var/list/sprite_animations = list() // Allows to flick animations
+	var/list/belly_light_list = list() // Support multiple sleepers with r/g light "sleeper". Kept: code tests it for truth, so empty and null differ.
+	var/list/belly_capacity_list = list() //Support multiple bellies with multiple sizes, default: "sleeper" = 1. Kept, as above.
+	var/list/sprite_decals // Allow extra decals
+	var/list/sprite_animations // Allows to flick animations
 
 	var/list/hat_offset = list("north" = list(0, -3), "south" = list(0, -3), "east" = list(4, -3), "west" = list(-4, -3))
 
 /// Determines if the borg has the proper flags to show an overlay.
+// Most sprites use one of a few hat offset tables; share identical ones (read-only).
+/datum/robot_sprite/New()
+	hat_offset = intern_list(hat_offset)
+	return ..()
+
 /datum/robot_sprite/proc/sprite_flag_check(flag_to_check)
 	return (sprite_flags & flag_to_check)
 
@@ -106,9 +111,9 @@
 
 /datum/robot_sprite/proc/get_belly_overlay(mob/living/silicon/robot/ourborg, size = 1, b_class)
 	//Size
-	if(has_sleeper_light_indicator || belly_light_list.len)
-		if(belly_light_list.len)
-			if(belly_light_list.Find(b_class))
+	if(has_sleeper_light_indicator || length(belly_light_list))
+		if(length(belly_light_list))
+			if(LAZYFIND(belly_light_list, b_class))
 				//First, Sleeper base icon is input. Second the belly class, supposedly taken from the borg's vore_fullness_ex list.
 				//The belly class should be the same as the belly sprite's name, with as many size values as you defined in the
 				//vore_capacity_ex list. Finally, if the borg has a red/green light sleeper, it'll use g or r appended to the end.

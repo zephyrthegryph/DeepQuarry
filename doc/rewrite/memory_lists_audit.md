@@ -71,30 +71,92 @@ section:
   initializer (item `armor`, hud `gear`, unarmed verbs): the eager allocation
   is dropped after interning. Removing it needs getters per subtype.
 
-## Not converted (backlog)
+## Pass 2 (memlists2)
 
-- **Lighting**: `/datum/lighting_corner/affecting` (3,834) and
-  `/datum/light_source/effect_str` (205) hold live data. Leave them.
-- **Signals**: `_listen_lookup`, `_signal_procs` and `_status_traits` exist only
-  when used.
-- **Snacks** `nutriment_desc` (subtype overrides on every snack): class c, but
-  the list is passed as reagent `data` and may be stored by reference, so
-  sharing it needs `mix_data` checked first.
-- **Species** (~54 datums × ~25 lists: `has_organ`, `has_limbs`,
-  `unarmed_types`, `genders`, discomfort strings and more): per-subtype
-  constants. They want getters, but species code is shared with the body
-  rewrite.
-- **Vending** `products`, `contraband`, `premium`, `prices`: about 100 vendors
-  on the full map. The product tables are consumed at init and could be nulled
-  after it. (`log`, `ads_list` and `slogan_list` are now lazy.)
-- **Mobs** (98 lint entries; 15 mobs at boot): `languages`, `mutations`,
-  `organs*` and similar, all per-mob state.
-- **Guns** `burst_accuracy`/`dispersion` `list(0)`: constant defaults, and only
-  a handful at boot.
-- The remaining ~1,180 declarations on rare types are allowlisted as a
-  baseline. The lint stops new ones.
+Pass 2 cleared the backlog. Every declaration that was in the baseline section
+of the allowlist is now converted or classified with its own reason.
+
+### Measured result (minitest boot_memory)
+
+Both runs are on `Virgo_minitest`, one before and one after, from the same
+tree (the base run used the tree at `0786dbab42`).
+
+| Metric | Before | After |
+|---|---|---|
+| `var_lists_total` | 78,376 | 66,385 (-15.3%) |
+| `var_lists_empty` | 12,968 | 5,176 (-60.1%) |
+| `var_list_entries` | 406,400 | 350,620 (-13.7%) |
+
+The instance count was unchanged (94,506 after) and no runtimes were logged.
+The full map (Southern Cross) boots, but its `boot_memory` census did not
+finish inside the runner's time limit, so there is no full-map number. The
+first full-map boot did find eight null-list runtimes, which are fixed.
+
+### Changes
+
+| Area | Class | Change |
+|---|---|---|
+| Species datums | c / b | 11 per-subtype tables (`has_organ`, `unarmed_types`, `genders`, `assisted_langs`, discomfort strings, `secondary_langs`, `inherent_verbs`, `default_emotes`, `speech_sounds`, `species_component`, shapeshifter `valid_transform_species`) are shared per type in `share_type_tables()`, called first in `New()`. `give_numbing_bite()` now assigns a new `unarmed_types`. `env_traits` and `food_preference` are lazy (`LAZYADD`/`LAZYREMOVE`/`LAZYOR` in the trait code); `skin_overlays` (unused) and `species_language` (never read as a list) lost their lists. `has_limbs` stays per copy: organ creation writes `"descriptor"` and `"has_children"` into its nested lists. `traits` stays per copy (genes `Add`/`Remove` it). |
+| Vending | b / c | `products`, `contraband`, `premium` and `prices` have no initializer and are dropped after `build_inventory()` (hydroseeds too). The default refill table is the products list itself, not a copy, and identical refill tables are shared (`share_refill_table()`, keyed by type and contents). `product_records` stays per vendor; C9 turns stock into slots. |
+| Vore bellies | c | 49 message tables and `generated_reagents` are shared per belly type in `share_default_tables()`, called from `New()` so callers that customise a new belly still win. The legacy `/datum/belly/copy()` assigns copies. |
+| Guns | b | `burst_accuracy` and `dispersion` default to null (0 for every shot); readers use `LAZYACCESS(...) \|\| 0`. |
+| 677 rare-type lists | b | Lazy. Every reader and writer was rewritten with `LAZYADD`/`LAZYREMOVE`/`LAZYOR`/`LAZYSET`/`LAZYADDASSOC`, `LAZYACCESS`, `length()`, `LAZYCOPY` (new), `LAZYFIND`, `DEFAULTPICK`, or `\|\| list()` where the list goes to TGUI or JSON. `english_list()`, `pick_mobless_turf_if_exists()` and `has_all_reagents()` accept null. |
+| 27 constant tables | a | `var/static/list`: no writer, no assignment, no subtype override (event exclusion lists, organ printer products, multitool/RMS modes, contraband scanner list, holodeck programs, ...). |
+| Interned by contents | c | New `intern_list()` (JSON-keyed cache for read-only lists of any shape): sprite accessory `species_allowed`, robot `hat_offset`, drug message tables, item `attack_verb` and `tool_qualities`, and `atom_colours` (copy-on-write in `add_atom_colour()`/`remove_atom_colour()`). Structure `connections`/`other_connections` go through `string_list()`, as wall connections did in pass 1. |
+| Unit-test probes | d | Six new lint hits from other branches (test fixtures, and the interaction resolver) are allowlisted. |
+
+### Snack `nutriment_desc`: not shared
+
+`add_reagent()` passes `nutriment_desc` as the nutriment's `data`, and
+`/datum/reagent/initialize_data()` stores it by reference, so each snack's list
+already is its nutriment's taste data: one list per snack either way.
+`/datum/reagent/nutriment/mix_data()` then edits that list in place
+(`data[taste] += ...`, `data -= taste`). Sharing the snack table would make
+every snack's taste data one list. It could be shared only with copy-on-write
+in `mix_data()` plus an audit of every other writer of reagent `data`, and even
+then the saving is zero: the reagent needs its own list once tastes mix. It is
+kept as class d.
+
+### What was kept, and why
+
+The allowlist's kept section gives the reason on every line. The main groups:
+
+- **Per-instance state (d)**: stock, queues, logs, board state, access lists
+  (where an empty list and null differ for access checks), fixed-size
+  `list/x[N]` tables, lists written through an alias (`var/list/L = member`
+  then `L[k] = v`), and lists that code tests for truth where the negative
+  branch does something different.
+- **Singletons (d)**: subsystem, controller, registry and decl lists. One
+  instance, so there is nothing to share.
+- **Read-only per-subtype tables on rare types (c)**: 47 tables with subtype
+  overrides. A getter would share them; not worth it for the instance counts.
+- **Generic names (d)**: `data`, `contents`, `fields`, `name`, `log`, `errors`
+  and similar have hundreds of ambiguous call sites; the lists are live state.
+- **Never instantiated**: `/datum/belly` (legacy; nothing creates it or calls
+  `copy()`). Delete the type rather than convert it.
+
+### Still open
+
+- The remaining top holders at minitest boot belong to other areas:
+  `atmos_adjacent_turfs`, lighting (`affecting`, `effect_str`, `light_sources`),
+  reagent holders, `internal_wiki` page `data`, `rust_pipe_port_ids`, `matter`,
+  `treatment_tags`, signal lists (`_listen_lookup`, `_signal_procs`).
+- Turf `decals` (one list of images per decorated turf) could be interned by
+  appearance, but images are not JSON-able; it needs its own cache.
+- Tank and clothing `sprite_sheets` are edited in place (`LAZYSET` in space
+  suits), so they cannot be interned without copy-on-write there.
+- The 47 class-c tables could become getters if their types become common.
+- `code/modules/medical/book/reagents_tab.dm` got one read fix
+  (`LAZYACCESS(CR.required_reagents, RQ)`) because reaction tables are lazy
+  now; nothing else in the medical area was edited.
 
 ## For other active areas (listed, not edited)
+
+Pass 2 also lists here: omni filter/mixer and trinary filter device lists,
+`pipeline/leaks`, `SSair` shutoff queue and LINDA `hot_group/spot_list`
+(atmos); `design_techweb/materials` (composition); blood, mucus and vomit decal
+`viruses` and drip `drips` (medical); the interaction resolver's `available`
+and `blocked` lists (interaction work).
 
 - **M1a (atmos adjacency)**: `atmos_adjacent_turfs` is the largest list holder
   (26,194 at minitest boot, one per turf including `/turf/space`). Space and
@@ -135,12 +197,26 @@ and were not edited here:
 Allocation") flags any type-level list var with an initializer (`list(...)`,
 `new/list`, `new()`, `list/x[N]`) that is not in
 `tools/ci/instance_list_allowlist.txt`. It also rejects entries without a
-reason and entries that no longer match anything. At the time of writing it
-flags 1,308 declarations, all of them allowlisted: 11 kept, 19 medical, 98 mob
-and 1,180 baseline.
+reason and entries that no longer match anything. After pass 2 it flags 589
+declarations, all allowlisted: 455 kept (class d per-instance state, class c
+read-only per-subtype tables, or shared at runtime), 17 owned by other areas,
+19 medical and 98 mob. The baseline section is gone.
 
 ## Hazards introduced
 
 Shared lists must not be edited in place. Admin VV edits of an interned
 `armor` or `req_access` list would change every object sharing it. Code paths
 that edit these lists now copy first.
+
+Pass 2 adds more shared lists under the same rule: species tables
+(`share_type_tables()`), belly message tables (`share_default_tables()`),
+vending refill tables, and everything passed through `intern_list()` or
+`string_list()` (`atom_colours`, structure `connections`, item `attack_verb`
+and `tool_qualities`, sprite accessory `species_allowed`, robot `hat_offset`,
+drug messages). Writers assign a new list.
+
+Lazy lists change one thing besides memory: an empty list is true in DM and
+null is not, so checks like `if(!L)` that were dead code become live. Pass 2
+reviewed the truth tests on converted vars. Where the negative branch did real
+work (hard drive `store_file()`, the chat client, targeted spells, robot belly
+tables) the check was fixed or the list was kept eager.

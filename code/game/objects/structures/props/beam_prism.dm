@@ -33,7 +33,7 @@
 
 /obj/structure/prop/prism/Destroy()
 	if(remote_dial)
-		remote_dial.my_turrets -= src
+		LAZYREMOVE(remote_dial.my_turrets, src)
 		remote_dial = null
 	. = ..()
 
@@ -151,7 +151,7 @@
 	anchored = TRUE
 
 	interaction_message = span_notice("The dial pulses as your hand nears it.")
-	var/list/my_turrets = list()
+	var/list/my_turrets
 	var/dialID = null
 
 /obj/structure/prop/prismcontrol/attack_hand(mob/living/user)
@@ -164,7 +164,7 @@
 			span_notice("You decide not to try turning \the [src]."))
 		return
 
-	if(!my_turrets || !my_turrets.len)
+	if(!my_turrets || !length(my_turrets))
 		to_chat(user, span_notice("\The [src] doesn't seem to do anything."))
 		return
 
@@ -199,7 +199,7 @@
 
 /obj/structure/prop/prismcontrol/Initialize(mapload)
 	. = ..()
-	if(my_turrets.len) //Preset controls.
+	if(length(my_turrets)) //Preset controls.
 		for(var/obj/structure/prop/prism/P in my_turrets)
 			P.remote_dial = src
 	else
@@ -208,7 +208,7 @@
 /obj/structure/prop/prismcontrol/LateInitialize()
 	for(var/obj/structure/prop/prism/P in orange(src, world.view)) //Don't search a huge area.
 		if(P.dialID == dialID && !P.remote_dial && P.external_control_lock)
-			my_turrets |= P
+			LAZYOR(my_turrets, P)
 			P.remote_dial = src
 
 /obj/structure/prop/prismcontrol/Destroy()

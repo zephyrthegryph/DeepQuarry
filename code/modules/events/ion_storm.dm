@@ -6,7 +6,7 @@
 	var/botEmagChance = 0
 	var/ionBorgs = TRUE
 	var/cloud_hueshift
-	var/list/players = list()
+	var/list/players
 
 /datum/event/ionstorm/get_skybox_image()
 	if(!cloud_hueshift)
@@ -29,7 +29,7 @@
 	for (var/mob/living/carbon/human/player in GLOB.player_list)
 		if(	!player.mind || SSantag_job.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
 			continue
-		players += player.real_name
+		LAZYADD(players, player.real_name)
 
 	// Flomph synthetics
 	for(var/mob/living/carbon/S in GLOB.living_mob_list)

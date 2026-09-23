@@ -19,9 +19,9 @@
 	var/mode = null
 
 	//Used for logging people entering cryosleep and important items they are carrying.
-	var/list/frozen_crew = list()
-	var/list/frozen_items = list()
-	var/list/_admin_logs = list() // _ so it shows first in VV
+	var/list/frozen_crew
+	var/list/frozen_items
+	var/list/_admin_logs // _ so it shows first in VV
 
 	var/storage_type = "crewmembers"
 	var/storage_name = "Cryogenic Oversight Control"
@@ -75,11 +75,23 @@
 /obj/machinery/computer/cryopod/attack_ai(mob/user)
 	attack_hand(user)
 
-/obj/machinery/computer/cryopod/attack_hand(mob/user)
-	if(stat & (NOPOWER|BROKEN))
-		return
+/obj/machinery/computer/cryopod/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/cryopod_console_open_ui,
+	)
+	..()
 
+/// Old attack_hand, which never called ..(): no gate.
+/datum/interaction/machine_hand/ungated/cryopod_console_open_ui
+	id = "cryopod_console_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/cryopod/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	if(stat & (NOPOWER|BROKEN))
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/cryopod/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -92,7 +104,7 @@
 
 	data["real_name"] = user.real_name
 	data["allow_items"] = allow_items
-	data["crew"] = frozen_crew
+	data["crew"] = (frozen_crew || list())
 
 	var/list/items = list()
 	if(allow_items)
@@ -133,7 +145,7 @@
 			visible_message(span_notice("The console beeps happily as it disgorges [I]."))
 
 			I.forceMove(get_turf(src))
-			frozen_items -= I
+			LAZYREMOVE(frozen_items, I)
 		if("allitems")
 			if(!allow_items)
 				return
@@ -146,7 +158,7 @@
 
 			for(var/obj/item/I in frozen_items)
 				I.forceMove(get_turf(src))
-				frozen_items -= I
+				LAZYREMOVE(frozen_items, I)
 	*/
 
 /obj/item/circuitboard/cryopodcontrol
@@ -447,7 +459,7 @@
 			log_special_item(W,to_despawn)
 			/* We do our own thing.
 			if(control_computer && control_computer.allow_items)
-				control_computer.frozen_items += W
+				LAZYADD(control_computer.frozen_items, W)
 				W.loc = control_computer
 			else
 				W.forceMove(src.loc)
@@ -520,8 +532,8 @@
 
 
 		//Make an announcement and log the person entering storage.
-		control_computer.frozen_crew += "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]"
-		control_computer._admin_logs += "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]"
+		LAZYADD(control_computer.frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]")
+		LAZYADD(control_computer._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
 		log_and_message_admins("([to_despawn.mind.role_alt_title]) entered cryostorage.", to_despawn)
 
 		var/depart_announce = TRUE
@@ -552,29 +564,40 @@
 	qdel(to_despawn)
 	set_occupant(null)
 
-/obj/machinery/cryopod/attackby(obj/item/G as obj, mob/user as mob)
+/obj/machinery/cryopod/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/cryopod_insert_grab,
+		/datum/interaction/machine_verb/cryopod_eject,
+		/datum/interaction/machine_verb/cryopod_enter,
+		/datum/interaction/machine_drag/cryopod_drag_in,
+	)
+	..()
 
-	if(istype(G, /obj/item/grab))
+/// Old attackby: only a grab was ever handled (no `..()` fallback for anything else).
+/datum/interaction/machine_item/cryopod_insert_grab
+	id = "cryopod_insert_grab"
+	name = "Put grabbed victim in"
+	held_type = /obj/item/grab
+	effect = /obj/machinery/cryopod/proc/interaction_insert_grab
 
-		var/obj/item/grab/grab = G
-		if(occupant)
-			to_chat(user, span_notice("\The [src] is in use."))
-			return
+/obj/machinery/cryopod/proc/interaction_insert_grab(mob/user, obj/item/grab/grab, datum/interaction/interaction)
+	if(occupant)
+		to_chat(user, span_notice("\The [src] is in use."))
+		return TRUE
 
-		if(!ismob(grab.affecting))
-			return
-		else
-			go_in(grab.affecting,user)
+	if(!ismob(grab.affecting))
+		return TRUE
+	go_in(grab.affecting, user)
+	return TRUE
 
+/// Old object verb.
+/datum/interaction/machine_verb/cryopod_eject
+	id = "cryopod_eject"
+	name = "Eject Pod"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/cryopod/proc/interaction_eject
 
-
-/obj/machinery/cryopod/verb/eject()
-	set name = "Eject Pod"
-	set category = "Object"
-	set src in oview(1)
-	if(usr.stat != 0)
-		return
-
+/obj/machinery/cryopod/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	icon_state = base_icon_state
 
 	//Eject any items that aren't meant to be in the pod.
@@ -589,65 +612,83 @@
 		S.forceMove(get_turf(src))
 
 	go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 
 	name = initial(name)
-	return
+	return TRUE
 
-/obj/machinery/cryopod/verb/move_inside()
-	set name = "Enter Pod"
-	set category = "Object"
-	set src in oview(1)
+/// Old object verb. `check_occupant_allowed` also ran in the verb's guard clause, so it's kept
+/// inline in the effect rather than moved to `requires` (it has no side effects, but this keeps
+/// the exact old ordering with the `occupant`/`has_buckled_mobs` checks that follow it).
+/datum/interaction/machine_verb/cryopod_enter
+	id = "cryopod_enter"
+	name = "Enter Pod"
+	effect = /obj/machinery/cryopod/proc/interaction_enter
 
-	if(usr.stat != 0 || !check_occupant_allowed(usr))
-		return
+/obj/machinery/cryopod/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!check_occupant_allowed(user))
+		return TRUE
 
 	if(occupant)
-		to_chat(usr, span_boldnotice("\The [src] is in use."))
-		return
+		to_chat(user, span_boldnotice("\The [src] is in use."))
+		return TRUE
 
-	if(isliving(usr))
-		var/mob/living/L = usr
+	if(isliving(user))
+		var/mob/living/L = user
 		if(L.has_buckled_mobs())
 			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
-			return
+			return TRUE
 
-	visible_message("[usr] [on_enter_visible_message] [src].", 3)
+	visible_message("[user] [on_enter_visible_message] [src].", 3)
 
-	if(do_after(usr, 2 SECONDS, target = src))
+	if(do_after(user, 2 SECONDS, target = src))
 
-		if(!usr || !usr.client)
-			return
+		if(!user || !user.client)
+			return TRUE
 
 		if(occupant)
-			to_chat(usr, span_boldnotice("\The [src] is in use."))
-			return
+			to_chat(user, span_boldnotice("\The [src] is in use."))
+			return TRUE
 
-		usr.stop_pulling()
-		usr.forceMove(src)
-		set_occupant(usr)
-		if(isliving(usr) && applies_stasis)
+		user.stop_pulling()
+		user.forceMove(src)
+		set_occupant(user)
+		if(isliving(user) && applies_stasis)
 			var/mob/living/L = occupant
 			L.set_stasis(/datum/modifier/stasis/total, src)
-		if(usr.buckled && istype(usr.buckled, /obj/structure/bed/chair/wheelchair))
-			usr.buckled.loc = usr.loc
+		if(user.buckled && istype(user.buckled, /obj/structure/bed/chair/wheelchair))
+			user.buckled.loc = user.loc
 
 		icon_state = occupied_icon_state
 
-		to_chat(usr, span_notice("[on_enter_occupant_message]"))
-		to_chat(usr, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
+		to_chat(user, span_notice("[on_enter_occupant_message]"))
+		to_chat(user, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
 
 		time_entered = world.time
 
-		add_fingerprint(usr)
+		add_fingerprint(user)
 
-	return
+	return TRUE
 
-/obj/machinery/cryopod/robot/door/gateway/move_inside()
-	..()
+/// Old MouseDrop_T: silent guard clauses (no message), so kept inside the effect.
+/datum/interaction/machine_drag/cryopod_drag_in
+	id = "cryopod_drag_in"
+	name = "Put in pod"
+	held_type = /mob
+	effect = /obj/machinery/cryopod/proc/interaction_drag_in
+
+/obj/machinery/cryopod/proc/interaction_drag_in(mob/user, mob/target, datum/interaction/interaction)
+	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))
+		return TRUE
+	go_in(target, user)
+	return TRUE
+
+/obj/machinery/cryopod/robot/door/gateway/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	//locate(/obj/machinery/computer/cryopod) in range(6,src)
 	for(var/obj/machinery/gateway/G in range(1,src))
 		G.icon_state = "on"
+	return .
 
 /obj/machinery/cryopod/robot/door/gateway/go_out(skip_move = FALSE)
 	..(skip_move)
@@ -677,11 +718,6 @@
 	name = initial(name)
 	if(occupant)
 		name = "[name] ([occupant])"
-
-/obj/machinery/cryopod/MouseDrop_T(mob/target, mob/user)
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))
-		return
-	go_in(target, user)
 
 /obj/machinery/cryopod/proc/go_in(mob/M, mob/user)
 	if(!check_occupant_allowed(M))
@@ -812,7 +848,7 @@
 	qdel(item)
 
 	if(control_computer && control_computer.allow_items)
-		control_computer.frozen_items += "[item_name] ([char_name])"
+		LAZYADD(control_computer.frozen_items, "[item_name] ([char_name])")
 
 
 /obj/machinery/cryopod/robot/door/gateway/quiet

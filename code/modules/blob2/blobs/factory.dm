@@ -9,7 +9,7 @@
 	max_integrity = 40
 	health_regen = 1
 	point_return = 25
-	var/list/spores = list()
+	var/list/spores
 	var/max_spores = 3
 	var/spore_delay = 0
 	var/spore_cooldown = 8 SECONDS
@@ -26,7 +26,7 @@
 
 /obj/structure/blob/factory/pulsed()
 	. = ..()
-	if(spores.len >= max_spores)
+	if(length(spores) >= max_spores)
 		return
 	if(spore_delay > world.time)
 		return
@@ -46,7 +46,7 @@
 				S.projectile_dispersion = overmind.blob_type.spore_dispersion
 		else //Other mobs don't add themselves in New. Ew.
 			S.nest = src
-			spores += S
+			LAZYADD(spores, S)
 		S.update_icons()
 
 /obj/structure/blob/factory/sluggish // Capable of producing MORE spores, but quite a bit slower than normal.

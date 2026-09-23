@@ -31,4 +31,4 @@
 
 /datum/experiment/scanning/people/serialize_progress_stage(atom/target, list/seen_instances)
 	return EXPERIMENT_PROG_INT("Scan unique individuals with [required_traits_desc].", \
-		seen_instances.len, required_atoms[target])
+		seen_instances.len, LAZYACCESS(required_atoms, target))

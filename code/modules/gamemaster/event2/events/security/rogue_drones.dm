@@ -64,7 +64,7 @@
 			qdel(D)
 			number_recovered++
 
-		if(number_recovered > spawned_mobs.len * 0.75)
+		if(number_recovered > length(spawned_mobs) * 0.75)
 			GLOB.command_announcement.Announce("The drones that were malfunctioning have been recovered safely.", "Rogue drone alert")
 		else
 			GLOB.command_announcement.Announce("We're disappointed at the loss of the drones, but the survivors have been recovered.", "Rogue drone alert")

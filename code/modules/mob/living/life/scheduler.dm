@@ -285,4 +285,5 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 	return
 
 /mob/living/on_equipment_changed()
+	body?.invalidate(BODY_DIRTY_ARMOR)
 	life_wake(LIFE_WAKE_EQUIPMENT, "equipment")

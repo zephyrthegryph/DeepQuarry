@@ -96,9 +96,9 @@
 // Used to allow the AI is write in mob names/camera name from the CMD line.
 /datum/trackable
 	var/list/names = list()
-	var/list/namecounts = list()
-	var/list/humans = list()
-	var/list/others = list()
+	var/list/namecounts
+	var/list/humans
+	var/list/others
 	var/list/cameras = list()
 
 /mob/living/silicon/ai/proc/trackable_mobs()
@@ -114,17 +114,17 @@
 
 		var/name = M.name
 		if (name in TB.names)
-			TB.namecounts[name]++
-			name = text("[] ([])", name, TB.namecounts[name])
+			LAZYADDASSOC(TB.namecounts, name, 1)
+			name = text("[] ([])", name, LAZYACCESS(TB.namecounts, name))
 		else
 			TB.names.Add(name)
-			TB.namecounts[name] = 1
+			LAZYSET(TB.namecounts, name, 1)
 		if(ishuman(M))
-			TB.humans[name] = M
+			LAZYSET(TB.humans, name, M)
 		else
-			TB.others[name] = M
+			LAZYSET(TB.others, name, M)
 
-	var/list/targets = sortList(TB.humans) + sortList(TB.others)
+	var/list/targets = sortList(TB.humans || list()) + sortList(TB.others || list())
 	src.track = TB
 	return targets
 
@@ -139,7 +139,7 @@
 	if(!target_name)
 		src.cameraFollow = null
 
-	var/mob/target = (isnull(track.humans[target_name]) ? track.others[target_name] : track.humans[target_name])
+	var/mob/target = (isnull(LAZYACCESS(track.humans, target_name)) ? LAZYACCESS(track.others, target_name) : LAZYACCESS(track.humans, target_name))
 	src.track = null
 	ai_actual_track(target)
 
@@ -251,8 +251,8 @@
 
 /mob/living/carbon/human/tracking_status()
 	//Cameras can't track people wearing an agent card or a ninja hood.
-	if(istype(head, /obj/item/clothing/head/helmet/space/rig))
-		var/obj/item/clothing/head/helmet/space/rig/helmet = head
+	if(istype(get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space/rig))
+		var/obj/item/clothing/head/helmet/space/rig/helmet = get_equipped_item(SLOT_ID_HEAD)
 		if(helmet.prevent_track())
 			return TRACKING_TERMINATE
 

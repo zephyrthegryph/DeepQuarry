@@ -37,7 +37,7 @@
 			to_chat(src, span_notice("[icon2html(origin_atom,src.client)] Receiving communicator request from [origin_atom].  To answer, use the " + span_bold("Call Communicator") + "\
 			verb, and select that name to answer the call."))
 			src << 'sound/machines/defib_SafetyOn.ogg'
-			comm.voice_invites |= src
+			LAZYOR(comm.voice_invites, src)
 	if(message == "ping")
 		if(client && client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			var/random = rand(450,700)
@@ -58,19 +58,19 @@
 	if(isobserver(candidate))
 		var/mob/observer/dead/ghost = candidate
 		who = ghost.name
-		im_list += list(list("address" = origin_address, "to_address" = exonet.address, "im" = text))
+		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		comm.im_contacts |= src
-		im_list += list(list("address" = origin_address, "to_address" = exonet.address, "im" = text))
+		LAZYOR(comm.im_contacts, src)
+		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else if(istype(candidate, /obj/item/integrated_circuit))
 		var/obj/item/integrated_circuit/CIRC = candidate
 		who = CIRC
-		im_list += list(list("address" = origin_address, "to_address" = exonet.address, "im" = text))
+		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else return
 
-	im_contacts |= candidate
+	LAZYOR(im_contacts, candidate)
 
 	if(!who)
 		return
@@ -108,7 +108,7 @@
 
 			if(message)
 				exonet.send_message(comm.exonet.address, "text", message)
-				im_list += list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message))
+				LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
 				usr.client.mob.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
 				to_chat(usr, span_notice("[icon2html(src,usr.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
 

@@ -44,7 +44,7 @@
 	announce_delay_upper_bound = 40 SECONDS
 	var/announce_odds = 0
 	var/doors_to_break = 1
-	var/list/affected_areas = list()
+	var/list/affected_areas
 
 /datum/event2/event/airlock_failure/emag
 	announce_odds = 10 // To make people wonder if the emagged door was from a baddie or from this event.
@@ -74,7 +74,7 @@
 				door.visible_message(span_danger("\The [door]'s panel sparks!"))
 				playsound(door, "sparks", 50, 1)
 				log_game("Airlock Failure event has broken \the [door] airlock in [area].")
-				affected_areas |= area
+				LAZYOR(affected_areas, area)
 				doors_to_break--
 
 			if(doors_to_break <= 0)

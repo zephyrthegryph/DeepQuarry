@@ -18,10 +18,10 @@
 	AddComponent(/datum/component/hose_connector/input)
 	AddComponent(/datum/component/hose_connector/output)
 
-/obj/machinery/pump_relay/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_part_replacement(user, O))
-		return
-
+/obj/machinery/pump_relay/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+	)
 	..()
 
 /obj/machinery/pump_relay/on_reagent_change(changetype)

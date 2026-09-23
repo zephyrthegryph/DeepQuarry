@@ -124,7 +124,7 @@
 			var/needed_amount = requirement[requirement_path]
 			for(var/content_item_path in contents)
 				// Right path and not blacklisted
-				if(!ispath(content_item_path, requirement_path) || R.blacklist.Find(content_item_path))
+				if(!ispath(content_item_path, requirement_path) || LAZYFIND(R.blacklist, content_item_path))
 					continue
 
 				needed_amount -= contents[content_item_path]
@@ -187,7 +187,7 @@
 /datum/component/personal_crafting/proc/check_reagents(atom/source, datum/crafting_recipe/R, list/surroundings)
 	var/list/reagents = surroundings["other"]
 	for(var/requirement_path in R.chem_catalysts)
-		if(reagents[requirement_path] < R.chem_catalysts[requirement_path])
+		if(reagents[requirement_path] < LAZYACCESS(R.chem_catalysts, requirement_path))
 			return FALSE
 	return TRUE
 
@@ -326,7 +326,7 @@
 		// If the path is in R.parts, we want to grab those to stuff into the product
 		var/amt_to_transfer = 0
 		if(is_path_in_list(path_key, R.parts))
-			amt_to_transfer = R.parts[path_key]
+			amt_to_transfer = LAZYACCESS(R.parts, path_key)
 
 
 		// Reagent: gotta go sniffing in all the beakers
@@ -566,13 +566,13 @@
 		req_text += L.Join(" OR ")
 
 	for(var/obj/machinery/content as anything in R.machinery)
-		req_text += "[R.reqs[content]] [initial(content.name)]"
+		req_text += "[LAZYACCESS(R.reqs, content)] [initial(content.name)]"
 	if(R.additional_req_text)
 		req_text += R.additional_req_text
 	data["req_text"] = req_text.Join(", ")
 
 	for(var/atom/req_catalyst as anything in R.chem_catalysts)
-		catalyst_text += "[R.chem_catalysts[req_catalyst]] [initial(req_catalyst.name)]"
+		catalyst_text += "[LAZYACCESS(R.chem_catalysts, req_catalyst)] [initial(req_catalyst.name)]"
 	data["catalyst_text"] = catalyst_text.Join(", ")
 
 	for(var/required_quality in R.tool_behaviors)

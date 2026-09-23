@@ -626,18 +626,18 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/mob/living/carbon/human/M = unfortunate_soul
 
 	//First, check if we're already wearing the armor, and if so, take it off.
-	if(istype(M.wear_suit, armor_type) || istype(M.head, helmet_type) || istype(M.shoes, boot_type) || istype(M.gloves, glove_type))
-		M.visible_message(span_warning("[M] casts off their [M.wear_suit ? M.wear_suit.name : "armor"]!"),
-		span_warning("We cast off our [M.wear_suit ? M.wear_suit.name : "armor"]"),
+	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type) || istype(M.get_equipped_item(SLOT_ID_GLOVES), glove_type))
+		M.visible_message(span_warning("[M] casts off their [M.get_equipped_item(SLOT_ID_SUIT) ? M.get_equipped_item(SLOT_ID_SUIT).name : "armor"]!"),
+		span_warning("We cast off our [M.get_equipped_item(SLOT_ID_SUIT) ? M.get_equipped_item(SLOT_ID_SUIT).name : "armor"]"),
 		span_warningplain("You hear the organic matter ripping and tearing!"))
-		if(istype(M.wear_suit, armor_type))
-			qdel(M.wear_suit)
-		if(istype(M.head, helmet_type))
-			qdel(M.head)
-		if(istype(M.shoes, boot_type))
-			qdel(M.shoes)
-		if(istype(M.gloves, glove_type))
-			qdel(M.gloves)
+		if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type))
+			qdel(M.get_equipped_item(SLOT_ID_SUIT))
+		if(istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type))
+			qdel(M.get_equipped_item(SLOT_ID_HEAD))
+		if(istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
+			qdel(M.get_equipped_item(SLOT_ID_SHOES))
+		if(istype(M.get_equipped_item(SLOT_ID_GLOVES), glove_type))
+			qdel(M.get_equipped_item(SLOT_ID_GLOVES))
 		M.update_inv_wear_suit()
 		M.update_inv_head()
 		M.update_hair()
@@ -646,23 +646,23 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return TRUE
 
 	var/obj/item/clothing/suit/A = new armor_type(M)
-	if(M.wear_suit)
-		M.unEquip(M.wear_suit, TRUE)
+	if(M.get_equipped_item(SLOT_ID_SUIT))
+		M.unEquip(M.get_equipped_item(SLOT_ID_SUIT), TRUE)
 	M.equip_to_slot_or_del(A, slot_wear_suit)
 
 	var/obj/item/clothing/suit/H = new helmet_type(M)
-	if(M.head)
-		M.unEquip(M.head, TRUE)
+	if(M.get_equipped_item(SLOT_ID_HEAD))
+		M.unEquip(M.get_equipped_item(SLOT_ID_HEAD), TRUE)
 	M.equip_to_slot_or_del(H, slot_head)
 
 	var/obj/item/clothing/shoes/B = new boot_type(M)
-	if(M.shoes)
-		M.unEquip(M.shoes, TRUE)
+	if(M.get_equipped_item(SLOT_ID_SHOES))
+		M.unEquip(M.get_equipped_item(SLOT_ID_SHOES), TRUE)
 	M.equip_to_slot_or_del(B, slot_shoes)
 
 	var/obj/item/clothing/gloves/G = new glove_type(M)
-	if(M.gloves)
-		M.unEquip(M.gloves, TRUE)
+	if(M.get_equipped_item(SLOT_ID_GLOVES))
+		M.unEquip(M.get_equipped_item(SLOT_ID_GLOVES), TRUE)
 	M.equip_to_slot_or_del(G, slot_gloves)
 
 	playsound(M, 'sound/effects/blobattack.ogg', 30, 1)

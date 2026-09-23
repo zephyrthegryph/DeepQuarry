@@ -58,7 +58,7 @@
 
 /obj/item/clothing/accessory/ring/reagent/equipped(mob/living/carbon/human/H)
 	..()
-	if(istype(H) && H.gloves==src)
+	if(istype(H) && H.get_equipped_item(SLOT_ID_GLOVES)==src)
 
 		if(reagents.total_volume)
 			to_chat(H, span_danger("You feel a prick as you slip on \the [src]."))

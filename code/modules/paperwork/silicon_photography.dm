@@ -4,7 +4,7 @@
 /obj/item/camera/siliconcam
 	var/in_camera_mode = 0
 	var/photos_taken = 0
-	var/list/obj/item/photo/aipictures = list()
+	var/list/obj/item/photo/aipictures
 
 /obj/item/camera/siliconcam/ai_camera //camera AI can take pictures with
 	name = "AI photo camera"
@@ -23,7 +23,7 @@
 	p.loc = src
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
-	aipictures += p
+	LAZYADD(aipictures, p)
 
 /obj/item/camera/siliconcam/proc/injectmasteralbum(mob/user, obj/item/photo/p) //stores image information to a list similar to that of the datacore
 	var/mob/living/silicon/robot/C = user
@@ -42,7 +42,7 @@
 
 	var/list/nametemp = list()
 	var/find
-	if(cam.aipictures.len == 0)
+	if(length(cam.aipictures) == 0)
 		to_chat(user, span_userdanger("No images saved"))
 		return
 	for(var/obj/item/photo/t in cam.aipictures)
@@ -72,7 +72,7 @@
 	if(!selection)
 		return
 
-	aipictures -= selection
+	LAZYREMOVE(aipictures, selection)
 	qdel(selection)
 	to_chat(user, span_unconscious("Local image deleted"))
 

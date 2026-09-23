@@ -53,7 +53,7 @@
 	var/activate_string = "Activate"
 	var/deactivate_string = "Deactivate"
 
-	var/list/stat_modules = new()
+	var/list/stat_modules
 
 /obj/item/rig_module/examine()
 	. = ..()
@@ -129,14 +129,14 @@
 
 		charges = processed_charges
 
-	stat_modules +=	new/atom/movable/stat_rig_module/activate(src)
-	stat_modules +=	new/atom/movable/stat_rig_module/deactivate(src)
-	stat_modules +=	new/atom/movable/stat_rig_module/engage(src)
-	stat_modules +=	new/atom/movable/stat_rig_module/select(src)
-	stat_modules +=	new/atom/movable/stat_rig_module/charge(src)
+	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/activate(src))
+	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/deactivate(src))
+	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/engage(src))
+	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/select(src))
+	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/charge(src))
 
 /obj/item/rig_module/Destroy()
-	holder?.installed_modules -= src
+	LAZYREMOVE(holder?.installed_modules, src)
 	holder = null
 	QDEL_NULL_LIST(stat_modules)
 	. = ..()

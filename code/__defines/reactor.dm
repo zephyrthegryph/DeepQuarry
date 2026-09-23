@@ -20,10 +20,24 @@
 #define CH_PROBE_TEMPERATURE 1
 #define CH_BIT(ch) (1 << (ch))
 
+// --- Gas domain channels (verdigris/domains/gas/src/cell.rs, the same for turf gas and
+// main-owned mixtures).
+#define CH_GAS_PRESSURE 0
+#define CH_GAS_TEMPERATURE 1
+#define CH_GAS_MOLES 2
+#define CH_GAS_OXYGEN 3
+#define CH_GAS_PLASMA 4
+#define CH_GAS_CARBON_DIOXIDE 5
+
 // --- Rust entity handles: a domain and a cell in one exact number (domain < 16, cell < 2^20).
+// Gas handles are negative: -(gas handle + 1), where the gas handle (< 2^24) is a
+// /datum/gas_mixture's arena_id(): a turf's air names its gas field cell, anything
+// else a main-owned mixture.
 #define REACT_HANDLE(domain, cell) ((domain) * 1048576 + (cell))
-#define REACT_HANDLE_DOMAIN(handle) round((handle) / 1048576)
-#define REACT_HANDLE_CELL(handle) ((handle) % 1048576)
+#define REACT_HANDLE_DOMAIN(handle) ((handle) < 0 ? REACT_DOMAIN_GAS : round((handle) / 1048576))
+#define REACT_HANDLE_CELL(handle) ((handle) < 0 ? (-(handle) - 1) : (handle) % 1048576)
+/// The watch handle of a gas mixture (a turf's air, a tank, a canister).
+#define REACT_GAS(mixture) (-((mixture).arena_id() + 1))
 
 // --- DM-owned key kinds (§4). A key is (kind, id); the id is a registry id, never a string.
 /// Keys used only by the reactor's own tests.

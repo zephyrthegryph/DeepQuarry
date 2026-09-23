@@ -12,7 +12,7 @@
 
 /datum/gear/suit/apron_white/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/greatcoat
 	display_name = "greatcoat"
@@ -42,7 +42,7 @@
 		"classic alternative"=/obj/item/clothing/suit/storage/bomber,
 		"retro"=/obj/item/clothing/suit/storage/toggle/bomber/retro
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(selector_uniforms)))
 
 /datum/gear/suit/leather_jacket
 	display_name = "leather jacket and vest selection"
@@ -62,7 +62,7 @@
 		"brown jacket, corporate"=/obj/item/clothing/suit/storage/toggle/brown_jacket/nanotrasen,
 		"brown vest, corporate"=/obj/item/clothing/suit/storage/toggle/brown_jacket/nanotrasen/sleeveless
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(selector_uniforms)))
 
 // BEGINS
 /datum/gear/suit/mil
@@ -76,7 +76,7 @@
 	for(var/military_style in typesof(/obj/item/clothing/suit/storage/miljacket))
 		var/obj/item/clothing/suit/storage/miljacket/miljacket = military_style
 		mil_jackets[initial(miljacket.name)] = miljacket
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(mil_jackets))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(mil_jackets)))
 // S
 
 /datum/gear/suit/greyjacket
@@ -97,7 +97,7 @@
 
 /datum/gear/suit/duster/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/duster_sleeveless
 	display_name = "cowboy duster, colorable, sleeveless"
@@ -105,7 +105,7 @@
 
 /datum/gear/suit/duster_sleeveless/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/hazard_vest
 	display_name = "hazard vest selection"
@@ -117,7 +117,7 @@
 	for(var/hazard_style in typesof(/obj/item/clothing/suit/storage/hazardvest))
 		var/obj/item/clothing/suit/storage/hazardvest/hazardvest = hazard_style
 		hazards[initial(hazardvest.name)] = hazardvest
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(hazards))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(hazards)))
 
 /datum/gear/suit/hoodie
 	display_name = "hoodie selection"
@@ -129,7 +129,7 @@
 	for(var/hoodie_style in typesof(/obj/item/clothing/suit/storage/toggle/hoodie))
 		var/obj/item/clothing/suit/storage/toggle/hoodie/hoodie = hoodie_style
 		hoodies[initial(hoodie.name)] = hoodie
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(hoodies))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(hoodies)))
 
 /datum/gear/suit/labcoat
 	display_name = "labcoat selection, public"
@@ -149,7 +149,7 @@
 	"Modern labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/modern,
 	"Long labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_labcoat
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(labcoats)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(labcoats))
 
 /datum/gear/suit/labcoat_cmo
 	display_name = "labcoat selection, cmo"
@@ -164,7 +164,7 @@
 	"CMO labcoat (alt)" = /obj/item/clothing/suit/storage/toggle/labcoat/cmoalt,
 	"CMO labcoat (modern)" = /obj/item/clothing/suit/storage/toggle/labcoat/modern/cmo
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(labcoats)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(labcoats))
 
 /datum/gear/suit/labcoat_emt
 	display_name = "labcoat selection, EMT"
@@ -179,7 +179,7 @@
 	"Neo Red" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_redemt,
 	"Neo Blue" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_blueemt
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(labcoats_emt)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(labcoats_emt))
 
 /datum/gear/suit/labcoat_rd
 	display_name = "labcoat, research director"
@@ -223,7 +223,7 @@
 		"red"=/obj/item/clothing/suit/storage/puffyred,
 		"purple"=/obj/item/clothing/suit/storage/puffypurple
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(selector_uniforms)))
 
 /datum/gear/suit/poncho
 	display_name = "poncho selection"
@@ -236,7 +236,7 @@
 	for(var/poncho_style in (typesof(/obj/item/clothing/accessory/poncho) - typesof(/obj/item/clothing/accessory/poncho/roles)))
 		var/obj/item/clothing/accessory/poncho/poncho = poncho_style
 		ponchos[initial(poncho.name)] = poncho
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(ponchos))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(ponchos)))
 
 /datum/gear/suit/roles/poncho
 	display_name = "poncho selection, departments"
@@ -252,7 +252,7 @@
 		"Engineering poncho" = /obj/item/clothing/accessory/poncho/roles/engineering,
 		"Science poncho" = /obj/item/clothing/accessory/poncho/roles/science
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(ponchos)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(ponchos))
 
 /datum/gear/suit/roles/cloak
 	display_name = "cloak selection, departments"
@@ -271,7 +271,7 @@
 		"Research cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/research,
 		"Medical cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/medical
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(cloaks)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(cloaks))
 
 /datum/gear/suit/roles/cloak_hos
 	display_name = "cloak, head of security"
@@ -329,7 +329,7 @@
 
 /datum/gear/suit/cloak_custom/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/ranger_poncho
 	display_name = "ranger poncho selection"
@@ -349,7 +349,7 @@
 		"charcoal ranger poncho" = "charcoal",
 		"white ranger poncho" = "snow"
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(ranger_ponchos)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(ranger_ponchos))
 
 /datum/gear/suit/neo_ranger //colorable ranger poncho
 	display_name = "ranger poncho, colorable"
@@ -358,7 +358,7 @@
 
 /datum/gear/suit/neo_ranger/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/unathi_robe
 	display_name = "roughspun robe"
@@ -376,7 +376,7 @@
 		"Blue suit jacket" = /obj/item/clothing/suit/storage/toggle/lawyer/bluejacket,
 		"Purple suit jacket" = /obj/item/clothing/suit/storage/toggle/lawyer/purpjacket
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(jackets)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(jackets))
 
 /datum/gear/suit/suspenders
 	display_name = "suspenders"
@@ -395,7 +395,7 @@
 		"Red, short uniform" = /obj/item/clothing/suit/storage/forensics/red,
 		"Blue, short uniform" = /obj/item/clothing/suit/storage/forensics/blue
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(uniforms)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(uniforms))
 
 /datum/gear/suit/qm_coat
 	display_name = "coat, quartermaster"
@@ -583,7 +583,7 @@
 	for(var/varsity_style in typesof(/obj/item/clothing/suit/varsity))
 		var/obj/item/clothing/suit/varsity/varsity = varsity_style
 		varsities[initial(varsity.name)] = varsity
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(varsities))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(varsities)))
 
 /datum/gear/suit/track
 	display_name = "track jacket selection"
@@ -595,7 +595,7 @@
 	for(var/track_style in typesof(/obj/item/clothing/suit/storage/toggle/track))
 		var/obj/item/clothing/suit/storage/toggle/track/track = track_style
 		tracks[initial(track.name)] = track
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(tracks))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(tracks)))
 
 /datum/gear/suit/flannel
 	display_name = "flannel jacket selection"
@@ -609,7 +609,7 @@
 		"Aqua flannel" = /obj/item/clothing/suit/storage/flannel/aqua,
 		"Brown flannel" = /obj/item/clothing/suit/storage/flannel/brown
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(flannel)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(flannel))
 
 /datum/gear/suit/flannelrecolour
 	display_name = "flannel jacket, recolourable"
@@ -617,7 +617,7 @@
 
 /datum/gear/suit/flannelrecolour/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/denim_jacket
 	display_name = "denim jacket and vest selection"
@@ -632,7 +632,7 @@
 		"denim vest"=/obj/item/clothing/suit/storage/toggle/denim_jacket/sleeveless,
 		"denim vest, corporate"=/obj/item/clothing/suit/storage/toggle/denim_jacket/nanotrasen/sleeveless
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(selector_uniforms)))
 
 /datum/gear/suit/miscellaneous/dep_jacket
 	display_name = "department jacket selection"
@@ -647,7 +647,7 @@
 		"Science department jacket" = /obj/item/clothing/suit/storage/toggle/sci_dep_jacket,
 		"Medical department jacket" = /obj/item/clothing/suit/storage/toggle/med_dep_jacket
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(jacket)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(jacket))
 
 /datum/gear/suit/miscellaneous/light_jacket
 	display_name = "light jacket selection"
@@ -659,7 +659,7 @@
 		"grey light jacket" = /obj/item/clothing/suit/storage/toggle/light_jacket,
 		"dark blue light jacket" = /obj/item/clothing/suit/storage/toggle/light_jacket/blue
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(jacket)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(jacket))
 
 /datum/gear/suit/miscellaneous/peacoat
 	display_name = "peacoat, colorable"
@@ -667,7 +667,7 @@
 
 /datum/gear/suit/miscellaneous/peacoat/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/snowsuit
 	display_name = "snowsuit"
@@ -715,7 +715,7 @@
 
 /datum/gear/suit/miscellaneous/cardigan/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/cmddressjacket
 	display_name = "command dress jacket"
@@ -729,7 +729,7 @@
 
 /datum/gear/suit/miscellaneous/kimono/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/miscellaneous/kamishimo
 	display_name = "traditional kamishimo, colorable"
@@ -737,7 +737,7 @@
 
 /datum/gear/suit/miscellaneous/kamishimo/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/miscellaneous/kimono_select
 	display_name = "kimono selection"
@@ -756,7 +756,7 @@
 	"Pink kimono" = /obj/item/clothing/suit/kimono/pink,
 	"Earth kimono" = /obj/item/clothing/suit/kimono/earth
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(kimonos)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(kimonos))
 
 //cropped hoodies
 /datum/gear/suit/roles/croppedhoodies
@@ -771,8 +771,8 @@
 		"very high cropped hoodie"=/obj/item/clothing/suit/storage/croppedhoodie/croppierer,
 		"super high cropped hoodie"=/obj/item/clothing/suit/storage/croppedhoodie/croppiest
 	)
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
-	gear_tweaks += new/datum/gear_tweak/variant(croppedhoodies)
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(croppedhoodies))
 
 /datum/gear/suit/drive
 	display_name = "relatable jacket"
@@ -803,7 +803,7 @@
 		"hooded asymmetric cloak"=/obj/item/clothing/suit/storage/hooded/cloak/asymmetric,
 		"hooded fancy cloak"=/obj/item/clothing/suit/storage/hooded/cloak/fancy
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(hoodedcloaks)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(hoodedcloaks))
 
 //oversized shirts
 /datum/gear/suit/nerdshirt
@@ -828,7 +828,7 @@
 
 /datum/gear/suit/labcoat_colorable/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/labcoat_old
 	display_name = "labcoat, old-school"
@@ -850,7 +850,7 @@
 	"Oldschool Virologist's Labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/old/vir,
 	"Oldschool Chemist's Labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/old/chem
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(labcoats)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(labcoats))
 
 /datum/gear/suit/roles/neo_robo_coat
 	display_name = "robotics labcoat"
@@ -885,7 +885,7 @@
 		"Modern coat (black)" = /obj/item/clothing/suit/storage/det_trench/alt/black,
 		"Modern coat (long, black)" = /obj/item/clothing/suit/storage/det_trench/alt2/black
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(coats)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(coats))
 
 //EMT coats, jackets and vest
 /datum/gear/suit/paramedic_coat
@@ -904,7 +904,7 @@
 		"Red EMT jacket" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_redemt,
 		"Dark Blue EMT jacket" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_blueemt
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(paramedicCoats)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(paramedicCoats))
 
 //greek thing
 /datum/gear/suit/chiton
@@ -918,7 +918,7 @@
 
 /datum/gear/suit/oversize/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /*
 Talon winter coat
@@ -949,8 +949,8 @@ Talon winter coat
 	for(var/hoodie_style in typesof(/obj/item/clothing/suit/storage/hooded/hoodie))
 		var/obj/item/clothing/suit/storage/toggle/hoodie/hoodie = hoodie_style
 		hoodies[initial(hoodie.name)] = hoodie
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(hoodies))
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(hoodies)))
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/cyberpunk_recolorable
 	display_name = "cyberpunk jacket (recolorable)"
@@ -959,7 +959,7 @@ Talon winter coat
 
 /datum/gear/suit/cyberpunk_recolorable/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/shrine_maiden
 	display_name = "shrine maiden costume"
@@ -990,7 +990,7 @@ Talon winter coat
 
 /datum/gear/suit/cloak_half/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 //Shoulder cloak
 /datum/gear/suit/cloak_shoulder
@@ -1000,7 +1000,7 @@ Talon winter coat
 
 /datum/gear/suit/cloak_shoulder/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/cloak_shoulder_right
 	display_name = "cloak, shoulder right"
@@ -1009,7 +1009,7 @@ Talon winter coat
 
 /datum/gear/suit/cloak_shoulder_right/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 //Mantles, mostly for heads of staff
 /datum/gear/suit/roles/mantle
@@ -1019,7 +1019,7 @@ Talon winter coat
 
 /datum/gear/suit/roles/mantle/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/roles/mantles
 	display_name = "mantle selection"
@@ -1038,7 +1038,7 @@ Talon winter coat
 		"blue mantle" = "hop",
 		"gold mantle" = "cap"
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(mantles)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(mantles))
 
 //Boat cloaks
 /datum/gear/suit/roles/boatcloak
@@ -1047,7 +1047,7 @@ Talon winter coat
 
 /datum/gear/suit/roles/boatcloak/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/roles/capboatcloak
 	display_name = "boat cloak, site manager"
@@ -1079,7 +1079,7 @@ Talon winter coat
 		"mining boat cloak" = "mining",
 		"research boat cloak" = "science"
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(boatcloaks)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(boatcloaks))
 
 //Shrouds
 /datum/gear/suit/roles/shroud
@@ -1088,7 +1088,7 @@ Talon winter coat
 
 /datum/gear/suit/roles/shroud/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/roles/capshroud
 	display_name = "shroud, site manager"
@@ -1120,7 +1120,7 @@ Talon winter coat
 		"mining shroud" = "mining",
 		"research shroud" = "science"
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(shrouds)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(shrouds))
 
 /datum/gear/suit/roles/cropjackets
 	display_name = "crop jacket selection"
@@ -1139,7 +1139,7 @@ Talon winter coat
 		"faded reflec crop jacket" = "marine",
 		"drab crop jacket" = "drab"
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(shrouds)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(shrouds))
 
 //Actually colorable hoodies
 /datum/gear/suit/roles/choodies
@@ -1154,8 +1154,8 @@ Talon winter coat
 		"cropped hoodie"=/obj/item/clothing/suit/storage/hooded/toggle/colorable/cropped,
 		"shortsleeve hoodie"=/obj/item/clothing/suit/storage/hooded/toggle/colorable/shortsleeve
 	)
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
-	gear_tweaks += new/datum/gear_tweak/variant(choodies)
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(choodies))
 
 //ABOUT TIME SOMEONE ADDED THIS TO A LOADOUT
 /datum/gear/suit/bladerunnercoat

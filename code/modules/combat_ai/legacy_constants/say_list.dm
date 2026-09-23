@@ -22,16 +22,16 @@
 
 /datum/say_list
 	var/list/speak = list()				// Things the mob might say if it talks while idle.
-	var/list/emote_hear = list()		// Hearable emotes it might perform
-	var/list/emote_see = list()			// Unlike speak_emote, the list of things in this variable only show by themselves with no spoken text. IE: Ian barks, Ian yaps
+	var/list/emote_hear		// Hearable emotes it might perform
+	var/list/emote_see			// Unlike speak_emote, the list of things in this variable only show by themselves with no spoken text. IE: Ian barks, Ian yaps
 
-	var/list/say_understood = list()	// When accepting an order.
-	var/list/say_cannot = list()		// When they cannot comply.
-	var/list/say_maybe_target = list()	// When they briefly see something.
-	var/list/say_got_target = list()	// When a target is first assigned.
-	var/list/say_threaten = list()		// When threatening someone.
-	var/list/say_stand_down = list()	// When the threatened thing goes away.
-	var/list/say_escalate = list()		// When the threatened thing doesn't go away.
+	var/list/say_understood	// When accepting an order.
+	var/list/say_cannot		// When they cannot comply.
+	var/list/say_maybe_target	// When they briefly see something.
+	var/list/say_got_target	// When a target is first assigned.
+	var/list/say_threaten		// When threatening someone.
+	var/list/say_stand_down	// When the threatened thing goes away.
+	var/list/say_escalate		// When the threatened thing doesn't go away.
 
 	var/threaten_sound = null			// Sound file played when the mob's AI calls threaten_target() for the first time.
 	var/stand_down_sound = null			// Sound file played when the mob's AI loses sight of the threatened target.

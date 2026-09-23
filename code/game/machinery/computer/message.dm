@@ -146,12 +146,26 @@
 
 	return data
 
-/obj/machinery/computer/message_monitor/attack_hand(mob/living/user as mob)
+/obj/machinery/computer/message_monitor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/message_monitor_open_ui,
+	)
+	..()
+
+/// Open the message monitor interface.
+/datum/interaction/machine_hand/ungated/message_monitor_open_ui
+	id = "message_monitor_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	if(!istype(user))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/message_monitor/proc/BruteForce(mob/user as mob)
 	if(isnull(linkedServer))
@@ -254,9 +268,9 @@
 		//Delete the log.
 		if("delete")
 			if(params["type"] == "pda")
-				linkedServer.pda_msgs -= locate(params["id"])
+				LAZYREMOVE(linkedServer.pda_msgs, locate(params["id"]))
 			else
-				linkedServer.rc_msgs -= locate(params["id"])
+				LAZYREMOVE(linkedServer.rc_msgs, locate(params["id"]))
 			set_temp("NOTICE: Log Deleted!", "average")
 			. = TRUE
 		//Fake messaging selection - KEY REQUIRED

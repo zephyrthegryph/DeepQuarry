@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // APC (Area Power Controller) global defines
 //
-// Pulled out of apc.dm so that the delegate datums (apc_power_distributor,
+// Pulled out of apc.dm so that the delegate datums (the icon renderer,
 // apc_icon_renderer) can reference them without depending on include order.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -58,7 +58,4 @@
 // EMP protection factor for "critical" APCs.
 #define CRITICAL_APC_EMP_PROTECTION 10
 
-// Return bitfield from /datum/apc_power_distributor/proc/process().
-// Used by apc.dm to decide whether to queue icon / area updates.
-#define ADIST_CHANGED_CHANNELS 1
-#define ADIST_CHANGED_CHARGING 2
+

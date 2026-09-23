@@ -66,20 +66,20 @@
 
 		TEST_ASSERT(CR.result_amount >= 0, "[CR.type]: Reagents - chemical reaction ID \"[CR.name]\" had less than 0 as as result_amount?")
 
-		if(CR.required_reagents && CR.required_reagents.len)
+		if(CR.required_reagents && length(CR.required_reagents))
 			for(var/RR in CR.required_reagents)
 				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(CR.required_reagents[RR] > 0, "[CR.type]: Reagents - chemical reaction had invalid required reagent amount or in invalid format \"[CR.required_reagents[RR]]\".")
+				TEST_ASSERT(LAZYACCESS(CR.required_reagents, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid required reagent amount or in invalid format \"[LAZYACCESS(CR.required_reagents, RR)]\".")
 
-		if(CR.catalysts && CR.catalysts.len)
+		if(CR.catalysts && length(CR.catalysts))
 			for(var/RR in CR.catalysts)
 				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(CR.catalysts[RR] > 0, "[CR.type]: Reagents - chemical reaction had invalid catalysts amount or in invalid format \"[CR.catalysts[RR]]\".")
+				TEST_ASSERT(LAZYACCESS(CR.catalysts, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid catalysts amount or in invalid format \"[LAZYACCESS(CR.catalysts, RR)]\".")
 
-		if(CR.inhibitors && CR.inhibitors.len)
+		if(CR.inhibitors && length(CR.inhibitors))
 			for(var/RR in CR.inhibitors)
 				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(CR.inhibitors[RR] > 0, "[CR.type]: Reagents - chemical reaction had invalid inhibitors amount or in invalid format \"[CR.inhibitors[RR]]\".")
+				TEST_ASSERT(LAZYACCESS(CR.inhibitors, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid inhibitors amount or in invalid format \"[LAZYACCESS(CR.inhibitors, RR)]\".")
 
 		if(CR.result)
 			TEST_ASSERT(SSchemistry.chemical_reagents[CR.result], "[CR.type]: Reagents - chemical reaction had invalid result reagent ID \"[CR.result]\".")
@@ -112,7 +112,7 @@
 /datum/unit_test/chemical_reactions_shall_not_conflict
 	var/obj/fake_beaker = null
 	var/obj/instant_beaker = null // For distilling only
-	var/list/result_reactions = list()
+	var/list/result_reactions
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/Run()
 	var/failed = FALSE
@@ -183,17 +183,17 @@
 	do
 		// clear for inhibitor searches
 		fake_beaker.reagents.clear_reagents()
-		result_reactions.Cut()
+		LAZYCLEARLIST(result_reactions)
 
 		if(inhib.len) // taken from argument and not reaction! Put in FIRST!
 			for(var/RR in inhib)
 				fake_beaker.reagents.add_reagent(RR, inhib[RR]) // Does not need to scale
 		if(CR.catalysts) // Required for reaction
 			for(var/RR in CR.catalysts)
-				fake_beaker.reagents.add_reagent(RR, CR.catalysts[RR]) // Does not need to scale
+				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.catalysts, RR)) // Does not need to scale
 		if(CR.required_reagents)
 			for(var/RR in CR.required_reagents)
-				fake_beaker.reagents.add_reagent(RR, CR.required_reagents[RR] * scale)
+				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.required_reagents, RR) * scale)
 
 		if(!istype(CR, /datum/decl/chemical_reaction/distilling))
 			fake_beaker.reagents.handle_reactions()
@@ -220,7 +220,7 @@
 		// So we've absolutely failed this time. There is no way to make this...
 		return RESULT_REACTION_FAILED
 
-	if(!result_reactions.len)
+	if(!length(result_reactions))
 		// Nothing to check for inhibitors...
 		for(var/datum/decl/chemical_reaction/test_react in result_reactions)
 		return RESULT_REACTION_FAILED
@@ -229,7 +229,7 @@
 	for(var/datum/decl/chemical_reaction/test_react in result_reactions)
 		if(!test_react)
 			continue
-		if(!test_react.inhibitors.len)
+		if(!length(test_react.inhibitors))
 			continue
 		// Test one by one
 		for(var/each in test_react.inhibitors)
@@ -246,7 +246,7 @@
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(atom/source, list/data = list())
 	SIGNAL_HANDLER
-	result_reactions += data // Append the reactions that happened, then use that to check their inhibitors
+	LAZYADD(result_reactions, data) // Append the reactions that happened, then use that to check their inhibitors
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/check_instants()
 	instant_beaker.reagents.clear_reagents()

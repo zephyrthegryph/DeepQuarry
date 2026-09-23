@@ -13,7 +13,7 @@
 	var/inuse = 0
 	var/obj/item/reagent_containers/beaker = null
 	var/limit = 10
-	var/list/holdingitems = list()
+	var/list/holdingitems
 
 	var/static/radial_examine = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_examine")
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
@@ -53,27 +53,42 @@
 	icon_state = "juicer"+num2text(!isnull(beaker))
 	return
 
-/obj/machinery/reagentgrinder/attackby(obj/item/O, mob/user)
+/obj/machinery/reagentgrinder/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/reagentgrinder_attackby,
+		/datum/interaction/machine_alt/reagentgrinder_replace_beaker,
+		/datum/interaction/machine_hand/ungated/reagentgrinder_interact,
+	)
+	..()
+
+/// Old attackby, kept whole: every branch returns without ever calling ..().
+/datum/interaction/machine_item/reagentgrinder_attackby
+	id = "reagentgrinder_attackby"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/reagentgrinder/proc/interaction_attackby
+
+/obj/machinery/reagentgrinder/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 	if (istype(O,/obj/item/reagent_containers/glass) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/glass2) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/shaker))
 
 		if (beaker)
-			return 1
+			return TRUE
 		else
 			beaker =  O
 			user.drop_item()
 
 			O.loc = src
 			update_icon()
-			return 0
+			return TRUE
 
-	if(holdingitems && holdingitems.len >= limit)
+	if(holdingitems && length(holdingitems) >= limit)
 		to_chat(user, "The machine cannot hold anymore items.")
-		return 1
+		return TRUE
 
 	if(!istype(O))
-		return
+		return TRUE
 
 	if(istype(O,/obj/item/storage/bag/plants))
 		var/obj/item/storage/bag/plants/bag = O
@@ -83,46 +98,46 @@
 				continue
 			failed = 0
 			bag.remove_from_storage(G, src)
-			holdingitems += G
-			if(holdingitems && holdingitems.len >= limit)
+			LAZYADD(holdingitems, G)
+			if(holdingitems && length(holdingitems) >= limit)
 				break
 
 		if(failed)
 			to_chat(user, "Nothing in the plant bag is usable.")
-			return 1
+			return TRUE
 
 		if(!O.contents.len)
 			to_chat(user, "You empty \the [O] into \the [src].")
 		else
 			to_chat(user, "You fill \the [src] from \the [O].")
 
-		return 0
+		return TRUE
 
 	if(istype(O,/obj/item/gripper))
 		var/obj/item/gripper/B = O	//B, for Borg.
 		var/obj/item/wrapped = B.get_wrapped_item()
 		if(!wrapped)
 			to_chat(user, "\The [B] is not holding anything.")
-			return 0
+			return TRUE
 		else
 			to_chat(user, "You use \the [B] to load \the [src] with \the [wrapped].")
 
-		return 0
+		return TRUE
 
 	if(!GLOB.sheet_reagents[O.type] && !GLOB.ore_reagents[O.type] && (!O.reagents || !O.reagents.total_volume))
 		to_chat(user, "\The [O] is not suitable for blending.")
-		return 1
+		return TRUE
 
 	user.remove_from_mob(O)
 	O.loc = src
-	holdingitems += O
+	LAZYADD(holdingitems, O)
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O
 		set_light(l_range = max(1, S.get_amount()/10), l_power = max(1, S.get_amount()/10), l_color = "#8A8A00")
 		addtimer(CALLBACK(src, PROC_REF(puny_protons)), 30 SECONDS)
 	// end
-	return 0
+	return TRUE
 
 /obj/machinery/reagentgrinder/screwdriver_act(mob/user, obj/item/tool)
 	if(!beaker)
@@ -134,14 +149,28 @@
 		return ..()
 	return ..()
 
-/obj/machinery/reagentgrinder/click_alt(mob/user)
-	. = ..()
-	if(user.incapacitated() || !Adjacent(user))
-		return
-	replace_beaker(user)
+/// Old click_alt: `. = ..()` was never checked, so its own logic always ran afterward.
+/datum/interaction/machine_alt/reagentgrinder_replace_beaker
+	id = "reagentgrinder_replace_beaker"
+	name = "Replace beaker"
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/machinery/reagentgrinder/proc/interaction_replace_beaker
 
-/obj/machinery/reagentgrinder/attack_hand(mob/user)
+/obj/machinery/reagentgrinder/proc/interaction_replace_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.incapacitated() || !Adjacent(user))
+		return TRUE
+	replace_beaker(user)
+	return TRUE
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/reagentgrinder_interact
+	id = "reagentgrinder_interact"
+	name = "Use"
+	effect = /obj/machinery/reagentgrinder/proc/interaction_use
+
+/obj/machinery/reagentgrinder/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
+	return TRUE
 
 /obj/machinery/reagentgrinder/interact(mob/user) // The microwave Menu //I am reasonably certain that this is not a microwave
 	if(inuse || user.incapacitated())
@@ -180,8 +209,8 @@
 		return
 	for(var/obj/item/O in holdingitems)
 		O.loc = src.loc
-		holdingitems -= O
-	holdingitems.Cut()
+		LAZYREMOVE(holdingitems, O)
+	LAZYCLEARLIST(holdingitems)
 	if(beaker)
 		replace_beaker(user)
 

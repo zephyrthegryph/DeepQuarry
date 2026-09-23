@@ -5,8 +5,8 @@
 	lifespan = ANOMALY_COUNTDOWN_TIMER * 2.5
 	var/telegraph_percent = 7
 
-	var/list/area/affected_areas = list()
-	var/list/turf/affected_turfs = list()
+	var/list/area/affected_areas
+	var/list/turf/affected_turfs
 
 	var/datum/anomalous_weather/selected_weather
 
@@ -15,7 +15,7 @@
 /obj/effect/anomaly/weather/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
 
-	affected_areas.Add(impact_area)
+	LAZYADD(affected_areas, impact_area)
 
 	if(selected_weather)
 		selected_weather = new selected_weather
@@ -30,15 +30,15 @@
 			continue
 		if(istype(nearby, /area/space))
 			continue
-		affected_areas |= nearby
+		LAZYOR(affected_areas, nearby)
 
 	for(var/area/area in affected_areas)
 		for(var/mob/mob in area)
 			to_chat(mob, span_notice(selected_weather.telegraph_message))
 		for(var/turf/turf in area)
 			if(isopenturf(turf))
-				affected_turfs.Add(GetBelow(turf))
-			affected_turfs.Add(turf)
+				LAZYADD(affected_turfs, GetBelow(turf))
+			LAZYADD(affected_turfs, turf)
 
 	apply_wibbly_filters(src)
 
@@ -48,7 +48,7 @@
 	for(var/turf/turf in to_add)
 		if(isspace(turf))
 			continue
-		affected_turfs.Add(turf)
+		LAZYADD(affected_turfs, turf)
 
 /obj/effect/anomaly/weather/proc/find_adjacent_impacted_area(check_dir)
 	var/limit = 10
@@ -135,11 +135,11 @@
 			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
 			sparks.set_up(3, 1, src)
 			sparks.start()
-			affected_areas.Cut()
-			affected_turfs.Cut()
+			LAZYCLEARLIST(affected_areas)
+			LAZYCLEARLIST(affected_turfs)
 		if(16 to 33)
 			clear_weather()
-			affected_turfs.Cut()
+			LAZYCLEARLIST(affected_turfs)
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
 				selected_weather = new /datum/anomalous_weather/rain
 			update_reagent(REAGENT_ID_WATER)
@@ -147,7 +147,7 @@
 			start_weather()
 		if(34 to 65)
 			clear_weather()
-			affected_turfs.Cut()
+			LAZYCLEARLIST(affected_turfs)
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
 				selected_weather = new /datum/anomalous_weather/rain
 			update_reagent(pick(REAGENT_ID_WATER, REAGENT_ID_ICE, REAGENT_ID_ORANGEJUICE))
@@ -155,7 +155,7 @@
 			start_weather()
 		else
 			clear_weather()
-			affected_turfs.Cut()
+			LAZYCLEARLIST(affected_turfs)
 			if(!istype(selected_weather, /datum/anomalous_weather/rain/storm))
 				selected_weather = new /datum/anomalous_weather/rain/storm
 

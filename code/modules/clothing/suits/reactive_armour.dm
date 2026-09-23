@@ -34,7 +34,7 @@
 	desc = "Doesn't seem to do much for some reason."
 	icon_state = "reactiveoff"
 	blood_overlay_type = "armor"
-	armor = list(melee = 40, bullet = 35, laser = 35, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=35;laser=35;energy=10;bomb=10"
 	var/hit_reaction_chance = 50
 	///Whether the armor will try to react to hits (is it on)
 	var/active = FALSE

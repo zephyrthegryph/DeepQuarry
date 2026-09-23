@@ -17,15 +17,7 @@
 
 	organ_names = /datum/decl/mob_organ_names/mecha
 
-	armor = list(
-				"melee"		= 20,
-				"bullet"	= 10,
-				"laser"		= 0,
-				"energy"	= 0,
-				"bomb"		= 0,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=20;bullet=10;bio=100;rad=100"
 
 	response_help = "taps on"
 	response_disarm = "knocks on"

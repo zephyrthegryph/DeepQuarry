@@ -4,8 +4,8 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 	for(var/datum/decl/chemical_reaction/instant/drinks/CR in SSchemistry.chemical_reactions)
 		drink_recipes[CR.type] = list("Result" = CR.name,
 								"ResAmt" = CR.result_amount,
-								"Reagents" = CR.required_reagents,
-								"Catalysts" = CR.catalysts)
+								"Reagents" = (CR.required_reagents || list()),
+								"Catalysts" = (CR.catalysts || list()))
 
 	//////////////////////// FOOD
 	var/list/food_recipes = subtypesof(/datum/recipe)
@@ -37,8 +37,8 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 	for(var/datum/decl/chemical_reaction/instant/food/CR in SSchemistry.chemical_reactions)
 		food_recipes[CR.type] = list("Result" = CR.name,
 								"ResAmt" = CR.result_amount,
-								"Reagents" = CR.required_reagents,
-								"Catalysts" = CR.catalysts,
+								"Reagents" = (CR.required_reagents || list()),
+								"Catalysts" = (CR.catalysts || list()),
 								"Fruit" = list(),
 								"Ingredients" = list(),
 								"Image" = null)

@@ -27,16 +27,16 @@
 				return FALSE
 
 			var/key = validated_data[1]
-			if(placed_chips_pone[key] || placed_chips_ptwo[key])
+			if(LAZYACCESS(placed_chips_pone, key) || LAZYACCESS(placed_chips_ptwo, key))
 				return FALSE
 
 			var/x_loc = validated_data[2]
 			var/y_loc = validated_data[3]
 
 			if(game_state == GAME_PLAYER_ONE)
-				placed_chips_pone[key] = TRUE
+				LAZYSET(placed_chips_pone, key, TRUE)
 			else
-				placed_chips_ptwo[key] = TRUE
+				LAZYSET(placed_chips_ptwo, key, TRUE)
 
 			validate_victory(x_loc, y_loc, user.name)
 			return TRUE

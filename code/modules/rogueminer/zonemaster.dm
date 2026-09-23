@@ -22,13 +22,13 @@
 	var/scored = 0
 
 	//for scoring
-	var/list/mineral_rocks = list()
-	var/list/spawned_mobs = list()
+	var/list/mineral_rocks
+	var/list/spawned_mobs
 	var/original_mobs = 0
 
 	//in-use spawns from the area
-	var/list/obj/asteroid_spawner/rockspawns = list()
-	var/list/obj/rogue_mobspawner/mobspawns = list()
+	var/list/obj/asteroid_spawner/rockspawns
+	var/list/obj/rogue_mobspawner/mobspawns
 
 /datum/rogue/zonemaster/New(area/A)
 	ASSERT(A)
@@ -182,7 +182,7 @@
 		else
 			M.turf_resource_types |= TURF_HAS_ORE
 			M.make_ore()
-		mineral_rocks += M
+		LAZYADD(mineral_rocks, M)
 		//If above difficulty threshold make rare ore instead (M.turf_resource_types |= TURF_HAS_RARE_ORE)
 	//Increase with difficulty etc
 
@@ -281,7 +281,7 @@
 
 	GLOB.rm_controller.dbg("ZM(p): Randomizing spawns.")
 	randomize_spawns()
-	GLOB.rm_controller.dbg("ZM(p): [rockspawns.len] picked.")
+	GLOB.rm_controller.dbg("ZM(p): [length(rockspawns)] picked.")
 	for(var/obj/asteroid_spawner/SP in rockspawns)
 		GLOB.rm_controller.dbg("ZM(p): Creating asteroid for [SP.x],[SP.y],[SP.z].")
 		var/datum/rogue/asteroid/A = generate_asteroid()
@@ -295,7 +295,7 @@
 		//Make sure we can spawn a spacemob here
 		if(!istype(get_turf(SP),/turf/space))
 			GLOB.rm_controller.dbg("ZM(p): Turf blocking mob spawn at [SP.x],[SP.y],[SP.z].")
-			mobspawns -= SP
+			LAZYREMOVE(mobspawns, SP)
 			for(var/obj/rogue_mobspawner/NS in myarea.mob_spawns)
 				if(NS in mobspawns)
 					continue
@@ -308,34 +308,34 @@
 			GLOB.rm_controller.dbg("ZM(p): Picked [mobchoice] to spawn.")
 			var/mob/living/newmob = new mobchoice(get_turf(SP))
 			newmob.faction = FACTION_ASTEROID_BELT
-			spawned_mobs += newmob
+			LAZYADD(spawned_mobs, newmob)
 			if(delay)
 				sleep(delay)
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
-	log_world("RM(stats): PREP [myarea] at [world.time] with [spawned_mobs.len] mobs, [mineral_rocks.len] minrocks, total of [rockspawns.len] rockspawns, [mobspawns.len] mobspawns.") //DEBUG code for playtest stats gathering.
+	log_world("RM(stats): PREP [myarea] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
 	prepared_at = world.time
 	GLOB.rm_controller.mark_ready(src)
 	return myarea
 
 //Randomize the landmarks that are enabled
 /datum/rogue/zonemaster/proc/randomize_spawns(chance = 50)
-	GLOB.rm_controller.dbg("ZM(rs): Previously [rockspawns.len] rockspawns.")
-	rockspawns.Cut()
-	GLOB.rm_controller.dbg("ZM(rs): Now [rockspawns.len] rockspawns.")
+	GLOB.rm_controller.dbg("ZM(rs): Previously [length(rockspawns)] rockspawns.")
+	LAZYCLEARLIST(rockspawns)
+	GLOB.rm_controller.dbg("ZM(rs): Now [length(rockspawns)] rockspawns.")
 	for(var/obj/asteroid_spawner/SP in myarea.asteroid_spawns)
 		if(prob(chance))
-			rockspawns += SP
-	GLOB.rm_controller.dbg("ZM(rs): Picked [rockspawns.len] new rockspawns with [chance]% chance.")
+			LAZYADD(rockspawns, SP)
+	GLOB.rm_controller.dbg("ZM(rs): Picked [length(rockspawns)] new rockspawns with [chance]% chance.")
 
-	GLOB.rm_controller.dbg("ZM(rs): Previously [mobspawns.len] mobspawns.")
-	mobspawns.Cut()
-	GLOB.rm_controller.dbg("ZM(rs): Now [mobspawns.len] mobspawns.")
+	GLOB.rm_controller.dbg("ZM(rs): Previously [length(mobspawns)] mobspawns.")
+	LAZYCLEARLIST(mobspawns)
+	GLOB.rm_controller.dbg("ZM(rs): Now [length(mobspawns)] mobspawns.")
 	for(var/obj/rogue_mobspawner/SP in myarea.mob_spawns)
 		if(prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep]))
-			mobspawns += SP
+			LAZYADD(mobspawns, SP)
 			original_mobs++
-	GLOB.rm_controller.dbg("ZM(rs): Picked [mobspawns.len] new mobspawns with [chance]% chance.")
+	GLOB.rm_controller.dbg("ZM(rs): Picked [length(mobspawns)] new mobspawns with [chance]% chance.")
 	return myarea
 
 ///////////////////////////////
@@ -356,19 +356,19 @@
 		if(has_minerals == 0)
 			tally += RM_DIFF_VALUE_ORE
 
-	mineral_rocks.Cut() //For good measure, to prevent rescoring.
+	LAZYCLEARLIST(mineral_rocks) //For good measure, to prevent rescoring.
 
-	for(var/I = 1, I <= spawned_mobs.len, I++)
-		if(isnull(spawned_mobs[I]))
+	for(var/I = 1, I <= length(spawned_mobs), I++)
+		if(isnull(LAZYACCESS(spawned_mobs, I)))
 			tally += RM_DIFF_VALUE_MOB //Mobs so annihilated they were deleted
 			GLOB.rm_controller.dbg("ZM(sz): Scoring one mob annihilated.")
-		if(istype(spawned_mobs[I],/mob))
-			var/mob/M = spawned_mobs[I]
+		if(istype(LAZYACCESS(spawned_mobs, I),/mob))
+			var/mob/M = LAZYACCESS(spawned_mobs, I)
 			if(M.stat > 0) //Knocked out or dead or anything other than normal
 				tally += RM_DIFF_VALUE_MOB
 				GLOB.rm_controller.dbg("ZM(sz): Scoring one mob dead.")
 
-	spawned_mobs.Cut()
+	LAZYCLEARLIST(spawned_mobs)
 	original_mobs = 0
 
 	GLOB.rm_controller.adjust_difficulty(tally)
@@ -383,10 +383,10 @@
 	GLOB.rm_controller.unmark_ready(src)
 
 	//Cut these lists so qdel can dereference the things properly
-	mineral_rocks.Cut()
-	spawned_mobs.Cut()
-	rockspawns.Cut()
-	mobspawns.Cut()
+	LAZYCLEARLIST(mineral_rocks)
+	LAZYCLEARLIST(spawned_mobs)
+	LAZYCLEARLIST(rockspawns)
+	LAZYCLEARLIST(mobspawns)
 
 	var/ignored = list(
 	/obj/asteroid_spawner,

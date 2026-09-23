@@ -1,7 +1,7 @@
 /obj/item/tool/transforming
 	name = "transforming tool"
 	desc = "You should never see this..."
-	var/list/possible_tooltypes = list()
+	var/list/possible_tooltypes
 	var/current_tooltype = 1
 	var/obj/item/weldingtool/welder
 	var/weldertype = /obj/item/weldingtool/dummy
@@ -24,9 +24,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(!possible_tooltypes.len || possible_tooltypes.len < 2)
+	if(!length(possible_tooltypes) || length(possible_tooltypes) < 2)
 		return
-	if(current_tooltype == possible_tooltypes.len)
+	if(current_tooltype == length(possible_tooltypes))
 		current_tooltype = 1
 	else
 		current_tooltype++
@@ -53,7 +53,7 @@
 	possible_tooltypes = list(TOOL_CROWBAR,TOOL_WIRECUTTER)
 
 /obj/item/tool/transforming/jawsoflife/on_tool_switch(mob/user)
-	switch(possible_tooltypes[current_tooltype])
+	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
 		if(TOOL_CROWBAR)
 			desc = initial(desc) + " It's fitted with a prying head."
 			icon_state = "jaws_pry"
@@ -91,7 +91,7 @@
 	possible_tooltypes = list(TOOL_WRENCH,TOOL_SCREWDRIVER)
 
 /obj/item/tool/transforming/powerdrill/on_tool_switch(mob/user)
-	switch(possible_tooltypes[current_tooltype])
+	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
 		if(TOOL_WRENCH)
 			desc = initial(desc) + " It's fitted with a bolt driver."
 			icon_state = "drill_bolt"
@@ -131,7 +131,7 @@
 	weldertype = /obj/item/weldingtool/dummy/altevian
 
 /obj/item/tool/transforming/altevian/on_tool_switch(mob/user)
-	switch(possible_tooltypes[current_tooltype])
+	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
 		if(TOOL_WRENCH)
 			desc = initial(desc) + " It's currently in bolting mode."
 			icon_state = "altevian-wrench"

@@ -19,7 +19,7 @@
 
 	var/max_transfer_rate = 0							// Maximal input/output rate. Determined by used capacitors when building the device.
 	var/mode = PSU_OFFLINE								// Current inputting/outputting mode
-	var/list/internal_cells = list()					// Cells stored in this PSU
+	var/list/internal_cells					// Cells stored in this PSU
 	var/max_cells = 3									// Maximal amount of stored cells at once. Capped at 9.
 	var/previous_charge = 0								// Charge previous tick.
 	var/equalise = 0									// If true try to equalise charge between cells
@@ -161,10 +161,10 @@
 	if(!istype(C))
 		return 0
 
-	if(internal_cells.len >= max_cells)
+	if(length(internal_cells) >= max_cells)
 		return 0
 
-	internal_cells.Add(C)
+	LAZYADD(internal_cells, C)
 	if(user)
 		user.drop_from_inventory(C)
 	C.forceMove(src)
@@ -212,28 +212,42 @@
 /obj/machinery/power/smes/batteryrack/dismantle()
 	for(var/obj/item/cell/C in internal_cells)
 		C.forceMove(get_turf(src))
-		internal_cells -= C
+		LAZYREMOVE(internal_cells, C)
 	return ..()
 
-/obj/machinery/power/smes/batteryrack/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/cell)) // ID Card, try to insert it.
-		if(insert_cell(W, user))
-			to_chat(user, span_filter_notice("You insert \the [W] into \the [src]."))
-		else
-			to_chat(user, span_filter_notice("\The [src] has no empty slot for \the [W]"))
-	if(!..())
-		return 0
-	if(default_part_replacement(user, W))
-		return
+/obj/machinery/power/smes/batteryrack/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/batteryrack_insert_cell,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
+
+/**
+ * Old attackby: cell handling ran, then the proc always fell through to ..()
+ * (base attackby / signal) and default_part_replacement regardless of the
+ * outcome. consumes_input is FALSE / the effect declines so the entry moves
+ * on to the declared part_replacement candidate and then the base, matching.
+ */
+/datum/interaction/machine_item/batteryrack_insert_cell
+	id = "batteryrack_insert_cell"
+	name = "Insert cell"
+	held_type = /obj/item/cell
+	consumes_input = FALSE
+	effect = /obj/machinery/power/smes/batteryrack/proc/interaction_insert_cell
+
+/obj/machinery/power/smes/batteryrack/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
+	if(insert_cell(W, user))
+		to_chat(user, span_filter_notice("You insert \the [W] into \the [src]."))
+	else
+		to_chat(user, span_filter_notice("\The [src] has no empty slot for \the [W]"))
+	return FALSE
 
 /obj/machinery/power/smes/batteryrack/inputting()
 	return
 
 /obj/machinery/power/smes/batteryrack/outputting()
 	return
-
-/obj/machinery/power/smes/batteryrack/attack_hand(mob/user)
-	tgui_interact(user)
 
 /obj/machinery/power/smes/batteryrack/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -252,7 +266,7 @@
 	data["equalise"] = equalise
 	data["blink_tick"] = ui_tick
 	data["cells_max"] = max_cells
-	data["cells_cur"] = internal_cells.len
+	data["cells_cur"] = length(internal_cells)
 	var/list/cells = list()
 	var/cell_index = 0
 	for(var/obj/item/cell/C in internal_cells)
@@ -308,7 +322,7 @@
 				return TRUE
 
 			C.forceMove(get_turf(src))
-			internal_cells -= C
+			LAZYREMOVE(internal_cells, C)
 			update_icon()
 			RefreshParts()
 			update_maxcharge()

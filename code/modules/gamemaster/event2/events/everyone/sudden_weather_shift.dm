@@ -32,7 +32,7 @@
 	// Using the roundstart weather list is handy, because it avoids the chance of choosing a bus-only weather.
 	// It also makes this event generic and suitable for other planets besides the main one, with no additional code needed.
 	// Only flaw is that roundstart weathers are -usually- safe ones, but we can fix that by tweaking a copy of it.
-	var/list/weather_choices = chosen_planet.weather_holder.roundstart_weather_chances.Copy()
+	var/list/weather_choices = LAZYCOPY(chosen_planet.weather_holder.roundstart_weather_chances)
 	var/list/new_weather_weights = list()
 
 	// A lazy way of inverting the odds is to use some division.

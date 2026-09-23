@@ -354,7 +354,6 @@
 	supervisors = "the " + JOB_HEAD_OF_PERSONNEL
 	selection_color = "#515151"
 	access = list()
-	minimal_access = list()
 	pto_type = PTO_CIVILIAN
 
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/entrepreneur

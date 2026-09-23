@@ -15,9 +15,21 @@
 	QDEL_NULL(monitor)
 	. = ..()
 
-/obj/machinery/computer/shutoff_monitor/attack_hand(mob/user as mob)
+/obj/machinery/computer/shutoff_monitor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/shutoff_monitor_use,
+	)
 	..()
+
+/// The old attack_hand: called ..() then always opened the monitor, regardless of the result.
+/datum/interaction/machine_hand/shutoff_monitor_use
+	id = "shutoff_monitor_use"
+	name = "Use"
+	effect = /obj/machinery/computer/shutoff_monitor/proc/interaction_use
+
+/obj/machinery/computer/shutoff_monitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	monitor.tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/shutoff_monitor/update_icon()
 	..()

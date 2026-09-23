@@ -145,25 +145,48 @@ Pipelines + Other Objects -> Pipe network
 /obj/machinery/atmospherics/proc/check_connectable(obj/machinery/atmospherics/target)
 	return (src.connect_types & target.connect_types)
 
-/obj/machinery/atmospherics/attackby(atom/A, mob/user as mob)
-	if(istype(A, /obj/item/stack/material))
-		if(!supports_engineered_material())
-			return ..()
-		var/obj/item/stack/material/stock = A
-		if(engineered_material_id)
-			to_chat(user, span_warning("[src] already has an engineered material shell."))
-			return
-		if(stock.get_amount() < 1 || !stock.material)
-			return
-		var/datum/material/material = stock.material
-		engineered_material_id = material.name
-		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
-		stock.use(1)
-		to_chat(user, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
-		return
-	if(istype(A, /obj/item/pipe_painter))
-		return
+/obj/machinery/atmospherics/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/atmospherics_fit_material,
+		/datum/interaction/machine_item/atmospherics_pipe_painter,
+	)
 	..()
+
+/// Fitting an engineered material shell (stack of material) onto pipe/device structure.
+/datum/interaction/machine_item/atmospherics_fit_material
+	id = "atmospherics_fit_material"
+	name = "Fit engineered material"
+	held_type = /obj/item/stack/material
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/proc/offer_fit_material, null))
+	effect = /obj/machinery/atmospherics/proc/interaction_fit_material
+
+/// The pipe painter recolors this on afterattack; the attackby branch itself does nothing but must not fall through to ..().
+/datum/interaction/machine_item/atmospherics_pipe_painter
+	id = "atmospherics_pipe_painter"
+	name = "Paint"
+	held_type = /obj/item/pipe_painter
+	consumes_input = FALSE
+	effect = /obj/machinery/atmospherics/proc/interaction_pipe_painter
+
+/// Whether A stack of material could be fitted at all (falls through to ..() otherwise).
+/obj/machinery/atmospherics/proc/offer_fit_material(mob/actor, atom/target, obj/item/held)
+	return supports_engineered_material()
+
+/obj/machinery/atmospherics/proc/interaction_fit_material(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
+	if(engineered_material_id)
+		to_chat(user, span_warning("[src] already has an engineered material shell."))
+		return TRUE
+	if(stock.get_amount() < 1 || !stock.material)
+		return TRUE
+	var/datum/material/material = stock.material
+	engineered_material_id = material.name
+	apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
+	stock.use(1)
+	to_chat(user, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
+	return TRUE
+
+/obj/machinery/atmospherics/proc/interaction_pipe_painter(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/atmospherics/proc/add_underlay(turf/T, obj/machinery/atmospherics/node, direction, icon_connect_type)
 	if(node)

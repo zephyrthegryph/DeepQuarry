@@ -14,7 +14,7 @@
 	for(var/pipe_style in typesof(/obj/item/clothing/mask/smokable/pipe))
 		var/obj/item/clothing/mask/smokable/pipe/pipe = pipe_style
 		pipes[initial(pipe.name)] = pipe
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(pipes))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(pipes)))
 
 /datum/gear/matchbook
 	display_name = "matchbook"
@@ -34,7 +34,7 @@
 	for(var/zippo in typesof(/obj/item/flame/lighter/zippo))
 		var/obj/item/flame/lighter/zippo/zippo_type = zippo
 		zippos[initial(zippo_type.name)] = zippo_type
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(zippos))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(zippos)))
 
 /datum/gear/ashtray
 	display_name = "ashtray, plastic"
@@ -53,4 +53,4 @@
 	var/list/cigarettes = list()
 	for(var/obj/item/storage/fancy/cigarettes/cigarette_brand as anything in (typesof(/obj/item/storage/fancy/cigarettes)))
 		cigarettes[initial(cigarette_brand.name)] = cigarette_brand
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(cigarettes))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(cigarettes)))

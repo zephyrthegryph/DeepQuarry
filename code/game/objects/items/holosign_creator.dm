@@ -9,7 +9,7 @@
 	throwforce = 0
 	throw_speed = 3
 	throw_range = 7
-	var/list/signs = list()
+	var/list/signs
 	var/max_signs = 10
 	var/creation_time = 0 //time to create a holosign in deciseconds.
 	var/holosign_type = /obj/structure/holosign/wetsign
@@ -28,7 +28,7 @@
 		if(holocreator_busy)
 			to_chat(user, span_notice("[src] is busy creating a hologram."))
 			return
-		if(signs.len < max_signs)
+		if(length(signs) < max_signs)
 			playsound(src.loc, 'sound/machines/click.ogg', 20, 1)
 			if(creation_time)
 				holocreator_busy = TRUE
@@ -36,7 +36,7 @@
 					holocreator_busy = FALSE
 					return
 				holocreator_busy = FALSE
-				if(signs.len >= max_signs)
+				if(length(signs) >= max_signs)
 					return
 				if(is_blocked_turf(T, TRUE)) //don't try to sneak dense stuff on our tile during the wait.
 					return
@@ -49,7 +49,7 @@
 	. = ..(user)
 	if(.)
 		return
-	if(signs.len)
+	if(length(signs))
 		for(var/H in signs)
 			qdel(H)
 		to_chat(user, span_notice("You clear all active holograms."))

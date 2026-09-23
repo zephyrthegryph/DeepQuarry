@@ -9,7 +9,7 @@
 	icon_state = "doppler"
 	circuit = /obj/item/circuitboard/doppler_array
 
-	var/list/detected_explosions = list()
+	var/list/detected_explosions
 
 /obj/machinery/doppler_array/Initialize(mapload)
 	//Explosive analysis
@@ -57,7 +57,7 @@
 		return
 	atom_say("Explosive disturbance detected - Epicenter at: grid ([x0],[y0],[z0]). Epicenter radius: [devastation_range]. Outer radius: [heavy_impact_range]. Shockwave radius: [light_impact_range]. Temporal displacement of tachyons: [seconds_taken] seconds.")
 	SEND_SIGNAL(src, COMSIG_MACHINERY_EXPLOSION_DETECTED, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
-	detected_explosions += list(
+	LAZYINITLIST(detected_explosions); detected_explosions += list(
 		list(
 			"index" = length(detected_explosions),
 			"time" = stationtime2text(),
@@ -79,11 +79,20 @@
 	else
 		icon_state = "[initial(icon_state)]_off"
 
-/obj/machinery/doppler_array/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
-	add_fingerprint(user)
-	if(default_part_replacement(user, W))
-		return
+/obj/machinery/doppler_array/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/doppler_part_replacement,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
-/obj/machinery/doppler_array/attack_hand(mob/user)
-	. = ..()
-	tgui_interact(user)
+/datum/interaction/machine_item/doppler_part_replacement
+	id = "doppler_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	effect = /obj/machinery/doppler_array/proc/interaction_part_replacement_impl
+
+/obj/machinery/doppler_array/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	return default_part_replacement(user, held) ? TRUE : FALSE

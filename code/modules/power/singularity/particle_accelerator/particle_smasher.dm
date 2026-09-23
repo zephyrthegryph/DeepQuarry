@@ -50,47 +50,100 @@
 /obj/machinery/particle_smasher/atmosanalyze(mob/user)
 	return list(span_notice("\The [src] reads an energy level of [energy]."))
 
-/obj/machinery/particle_smasher/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.type == /obj/item/analyzer)
-		return
-	else if(istype(W, /obj/item/stack/material))
-		if(target)
-			to_chat(user, span_notice("\The [src] already contains a target."))
-			return
-		var/obj/item/stack/material/M = W
-		if(M.uses_charge)
-			to_chat(user, span_notice("You cannot fill \the [src] with a synthesizer!"))
-			return
-		target = M.split(1)
-		target.forceMove(src)
-		update_icon()
-	else if(istype(W, beaker_type))
-		if(reagent_container)
-			to_chat(user, span_notice("\The [src] already has a container attached."))
-			return
-		if(isrobot(user) && istype(W.loc, /obj/item/gripper))
-			var/obj/item/gripper/G = W.loc
-			G.drop_item()
-		else
-			user.drop_from_inventory(W)
-		reagent_container = W
-		reagent_container.forceMove(src)
-		to_chat(user, span_notice("You add \the [reagent_container] to \the [src]."))
-		update_icon()
-		return
-	else if(istype(W, /obj/item/card/id))
-		to_chat(user, span_notice("Swiping \the [W] on \the [src] doesn't seem to do anything..."))
-		return ..()
-	else if(((isrobot(user) && istype(W.loc, /obj/item/gripper)) || (!isrobot(user) && W.canremove)) && storage.len < max_storage)
-		if(isrobot(user) && istype(W.loc, /obj/item/gripper))
-			var/obj/item/gripper/G = W.loc
-			G.drop_item()
-		else
-			user.drop_from_inventory(W)
-		W.forceMove(src)
-		storage += W
+/obj/machinery/particle_smasher/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/particle_smasher_analyzer,
+		/datum/interaction/machine_item/particle_smasher_fill_target,
+		/datum/interaction/machine_item/particle_smasher_attach_beaker,
+		/datum/interaction/machine_item/particle_smasher_swipe_id,
+		/datum/interaction/machine_item/particle_smasher_store,
+		/datum/interaction/machine_verb/particle_smasher_eject_contents,
+	)
+	..()
+
+/// Analyzers do nothing here; the old attackby swallowed the click without falling through.
+/datum/interaction/machine_item/particle_smasher_analyzer
+	id = "particle_smasher_analyzer"
+	name = "Use"
+	held_type = /obj/item/analyzer
+	effect = /obj/machinery/particle_smasher/proc/interaction_analyzer
+
+/obj/machinery/particle_smasher/proc/interaction_analyzer(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
+
+/datum/interaction/machine_item/particle_smasher_fill_target
+	id = "particle_smasher_fill_target"
+	name = "Fill target"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/stack/material
+	effect = /obj/machinery/particle_smasher/proc/interaction_fill_target
+
+/obj/machinery/particle_smasher/proc/interaction_fill_target(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
+	if(target)
+		to_chat(user, span_notice("\The [src] already contains a target."))
+		return TRUE
+	if(M.uses_charge)
+		to_chat(user, span_notice("You cannot fill \the [src] with a synthesizer!"))
+		return TRUE
+	target = M.split(1)
+	target.forceMove(src)
+	update_icon()
+	return TRUE
+
+/datum/interaction/machine_item/particle_smasher_attach_beaker
+	id = "particle_smasher_attach_beaker"
+	name = "Attach container"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/reagent_containers/glass/beaker
+	effect = /obj/machinery/particle_smasher/proc/interaction_attach_beaker
+
+/obj/machinery/particle_smasher/proc/interaction_attach_beaker(mob/user, obj/item/W, datum/interaction/interaction)
+	if(reagent_container)
+		to_chat(user, span_notice("\The [src] already has a container attached."))
+		return TRUE
+	if(isrobot(user) && istype(W.loc, /obj/item/gripper))
+		var/obj/item/gripper/G = W.loc
+		G.drop_item()
 	else
-		return ..()
+		user.drop_from_inventory(W)
+	reagent_container = W
+	reagent_container.forceMove(src)
+	to_chat(user, span_notice("You add \the [reagent_container] to \the [src]."))
+	update_icon()
+	return TRUE
+
+/// Swiping an ID does nothing but the message; the old code fell through to ..() afterward.
+/datum/interaction/machine_item/particle_smasher_swipe_id
+	id = "particle_smasher_swipe_id"
+	name = "Swipe"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/particle_smasher/proc/interaction_swipe_id
+
+/obj/machinery/particle_smasher/proc/interaction_swipe_id(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user, span_notice("Swiping \the [W] on \the [src] doesn't seem to do anything..."))
+	return TRUE
+
+/// Jam an item into the smasher's fabrication storage.
+/datum/interaction/machine_item/particle_smasher_store
+	id = "particle_smasher_store"
+	name = "Store"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/particle_smasher/proc/can_store_item, null))
+	effect = /obj/machinery/particle_smasher/proc/interaction_store
+
+/obj/machinery/particle_smasher/proc/can_store_item(mob/actor, atom/target, obj/item/held)
+	return ((isrobot(actor) && istype(held.loc, /obj/item/gripper)) || (!isrobot(actor) && held.canremove)) && storage.len < max_storage
+
+/obj/machinery/particle_smasher/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
+	if(isrobot(user) && istype(W.loc, /obj/item/gripper))
+		var/obj/item/gripper/G = W.loc
+		G.drop_item()
+	else
+		user.drop_from_inventory(W)
+	W.forceMove(src)
+	storage += W
+	return TRUE
 
 /obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored
@@ -280,15 +333,15 @@
 		new result(get_turf(src))
 	update_icon()
 
-/obj/machinery/particle_smasher/verb/eject_contents()
-	set src in view(1)
-	set category = "Object"
-	set name = "Eject Particle Focus Contents"
+/datum/interaction/machine_verb/particle_smasher_eject_contents
+	id = "particle_smasher_eject_contents"
+	name = "Eject Particle Focus Contents"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/particle_smasher/proc/interaction_eject_contents
 
-	if(usr.incapacitated())
-		return
-
+/obj/machinery/particle_smasher/proc/interaction_eject_contents(mob/user, obj/item/held, datum/interaction/interaction)
 	DumpContents()
+	return TRUE
 
 /obj/machinery/particle_smasher/proc/DumpContents()
 	target = null

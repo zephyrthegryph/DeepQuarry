@@ -47,7 +47,7 @@
 	var/const/ROOM_ERR_TOOLARGE = -2
 	var/const/ROOM_ERR_FORBIDDEN = -3
 
-	var/list/areaColor_turfs = list()
+	var/list/areaColor_turfs
 	var/legend = 0 //If viewing wires or not.
 
 /obj/item/areaeditor/examine(mob/user)
@@ -259,7 +259,7 @@
 		return ..()
 	..()
 	//clear_viewer()
-	if(areaColor_turfs.len)
+	if(length(areaColor_turfs))
 		seeAreaColors_remove()
 	legend = FALSE
 
@@ -651,7 +651,7 @@
 	var/icon/green = new('icons/misc/debug_group.dmi', "green")
 	for(var/turf/T in res)
 		usr << image(green, T, "blueprints", TURF_LAYER)
-		areaColor_turfs += T
+		LAZYADD(areaColor_turfs, T)
 	to_chat(usr, span_notice("The space covered by the new area is highlighted in green."))
 
 /obj/item/areaeditor/verb/seeAreaColors()
@@ -671,14 +671,14 @@
 		to_chat(usr, "- [A] as [i]")
 		for(var/turf/T in A.contents)
 			usr << image(areaColor, T, "blueprints", TURF_LAYER)
-			areaColor_turfs += T
+			LAZYADD(areaColor_turfs, T)
 
 /obj/item/areaeditor/verb/seeAreaColors_remove()
 	set src in usr
 	set category = "Blueprints"
 	set name = "Remove Area Colors"
 
-	areaColor_turfs.Cut()
+	LAZYCLEARLIST(areaColor_turfs)
 	if(usr.client.images.len)
 		for(var/image/i in usr.client.images)
 			if(i.icon_state == "blueprints")

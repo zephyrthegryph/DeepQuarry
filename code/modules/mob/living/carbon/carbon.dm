@@ -244,7 +244,7 @@
 				else
 					src.show_message("My [org.name] is " + span_notice("OK."),1)
 
-			if((SKELETON in H.mutations) && (!H.w_uniform) && (!H.wear_suit))
+			if((SKELETON in H.mutations) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
 				H.play_xylophone()
 		else if (on_fire)
 			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
@@ -271,8 +271,8 @@
 		else
 			if (ishuman(src))
 				var/mob/living/carbon/human/H = src
-				if(H.w_uniform)
-					H.w_uniform.add_fingerprint(M)
+				if(H.get_equipped_item(SLOT_ID_UNIFORM))
+					H.get_equipped_item(SLOT_ID_UNIFORM).add_fingerprint(M)
 
 			var/show_ssd
 			var/mob/living/carbon/human/H = src
@@ -340,31 +340,28 @@
 	bodytemperature += temp_inc
 
 /mob/living/carbon/can_use_hands()
-	if(handcuffed)
+	if(get_equipped_item(SLOT_ID_HANDCUFFED))
 		return 0
 	if(buckled && istype(buckled, /obj/structure/bed/nest)) // buckling does not restrict hands
 		return 0
 	return 1
 
 /mob/living/carbon/restrained()
-	if (handcuffed)
+	if (get_equipped_item(SLOT_ID_HANDCUFFED))
 		return 1
 	return
 
-/mob/living/carbon/u_equip(obj/item/W as obj)
-	if(!W)	return 0
+/mob/living/carbon/equipped_to_slot(obj/item/W, slot)
+	..()
+	if(slot == slot_handcuffed)
+		update_handcuffed()
 
-	else if (W == handcuffed)
-		handcuffed = null
+/mob/living/carbon/slot_vacated(slot_id, obj/item/I)
+	..()
+	if(slot_id == SLOT_ID_HANDCUFFED)
 		update_handcuffed()
 		if(buckled && buckled.buckle_require_restraints)
 			buckled.unbuckle_mob()
-
-	else if (W == legcuffed)
-		legcuffed = null
-		update_inv_legcuffed()
-	else
-		..()
 
 
 //generates realistic-ish pulse output based on preset levels
@@ -444,11 +441,11 @@
 	return ..()
 
 /mob/living/carbon/proc/update_handcuffed()
-	if(handcuffed)
+	if(get_equipped_item(SLOT_ID_HANDCUFFED))
 		drop_l_hand()
 		drop_r_hand()
 		stop_pulling()
-		throw_alert("handcuffed", /atom/movable/screen/alert/restrained/handcuffed, new_master = handcuffed)
+		throw_alert("handcuffed", /atom/movable/screen/alert/restrained/handcuffed, new_master = get_equipped_item(SLOT_ID_HANDCUFFED))
 	else
 		clear_alert("handcuffed")
 	update_mob_action_buttons() //some of our action buttons might be unusable when we're handcuffed.
@@ -457,12 +454,12 @@
 // Clears blood overlays
 /mob/living/carbon/wash(clean_types)
 	. = ..()
-	if(src.r_hand)
-		src.r_hand.wash(clean_types)
-	if(src.l_hand)
-		src.l_hand.wash(clean_types)
-	if(src.back)
-		if(src.back.wash(clean_types))
+	if(get_equipped_item(SLOT_ID_HAND_R))
+		get_equipped_item(SLOT_ID_HAND_R).wash(clean_types)
+	if(get_equipped_item(SLOT_ID_HAND_L))
+		get_equipped_item(SLOT_ID_HAND_L).wash(clean_types)
+	if(get_equipped_item(SLOT_ID_BACK))
+		if(get_equipped_item(SLOT_ID_BACK).wash(clean_types))
 			src.update_inv_back(0)
 
 	if(ishuman(src))
@@ -473,64 +470,64 @@
 		var/washears = 1
 		var/washglasses = 1
 
-		if(H.wear_suit)
-			washgloves = !(H.wear_suit.flags_inv & HIDEGLOVES)
-			washshoes = !(H.wear_suit.flags_inv & HIDESHOES)
+		if(H.get_equipped_item(SLOT_ID_SUIT))
+			washgloves = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEGLOVES)
+			washshoes = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESHOES)
 
-		if(H.head)
-			washmask = !(H.head.flags_inv & HIDEMASK)
-			washglasses = !(H.head.flags_inv & HIDEEYES)
-			washears = !(H.head.flags_inv & HIDEEARS)
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			washmask = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEMASK)
+			washglasses = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES)
+			washears = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEARS)
 
-		if(H.wear_mask)
+		if(H.get_equipped_item(SLOT_ID_MASK))
 			if (washears)
-				washears = !(H.wear_mask.flags_inv & HIDEEARS)
+				washears = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEARS)
 			if (washglasses)
-				washglasses = !(H.wear_mask.flags_inv & HIDEEYES)
+				washglasses = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEYES)
 
-		if(H.head)
-			if(H.head.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			if(H.get_equipped_item(SLOT_ID_HEAD).wash(clean_types))
 				H.update_inv_head()
 
-		if(H.wear_suit)
-			if(H.wear_suit.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_SUIT))
+			if(H.get_equipped_item(SLOT_ID_SUIT).wash(clean_types))
 				H.update_inv_wear_suit()
 
-		else if(H.w_uniform)
-			if(H.w_uniform.wash(clean_types))
+		else if(H.get_equipped_item(SLOT_ID_UNIFORM))
+			if(H.get_equipped_item(SLOT_ID_UNIFORM).wash(clean_types))
 				H.update_inv_w_uniform()
 
-		if(H.gloves && washgloves)
-			if(H.gloves.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_GLOVES) && washgloves)
+			if(H.get_equipped_item(SLOT_ID_GLOVES).wash(clean_types))
 				H.update_inv_gloves(0)
 
-		if(H.shoes && washshoes)
-			if(H.shoes.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_SHOES) && washshoes)
+			if(H.get_equipped_item(SLOT_ID_SHOES).wash(clean_types))
 				H.update_inv_shoes(0)
 
-		if(H.wear_mask && washmask)
-			if(H.wear_mask.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_MASK) && washmask)
+			if(H.get_equipped_item(SLOT_ID_MASK).wash(clean_types))
 				H.update_inv_wear_mask(0)
 
-		if(H.glasses && washglasses)
-			if(H.glasses.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_EYES) && washglasses)
+			if(H.get_equipped_item(SLOT_ID_EYES).wash(clean_types))
 				H.update_inv_glasses(0)
 
-		if(H.l_ear && washears)
-			if(H.l_ear.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_EAR_L) && washears)
+			if(H.get_equipped_item(SLOT_ID_EAR_L).wash(clean_types))
 				H.update_inv_ears(0)
 
-		if(H.r_ear && washears)
-			if(H.r_ear.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_EAR_R) && washears)
+			if(H.get_equipped_item(SLOT_ID_EAR_R).wash(clean_types))
 				H.update_inv_ears(0)
 
-		if(H.belt)
-			if(H.belt.wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_BELT))
+			if(H.get_equipped_item(SLOT_ID_BELT).wash(clean_types))
 				H.update_inv_belt(0)
 
 	else
-		if(src.wear_mask)						//if the mob is not human, it cleans the mask without asking for bitflags
-			if(src.wear_mask.wash(clean_types))
+		if(get_equipped_item(SLOT_ID_MASK))						//if the mob is not human, it cleans the mask without asking for bitflags
+			if(get_equipped_item(SLOT_ID_MASK).wash(clean_types))
 				src.update_inv_wear_mask(0)
 
 /mob/living/carbon/proc/food_preference(allergen_type) //RS edit
@@ -677,7 +674,7 @@
 		return TRUE
 	if(HAS_TRAIT(src, TRAIT_RESISTHEAT) || HAS_TRAIT(src, TRAIT_RESISTHEATHANDS))
 		return TRUE
-	if(gloves?.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE)
+	if(get_equipped_item(SLOT_ID_GLOVES)?.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE)
 		return TRUE
 	for(var/obj/item/clothing/clothing in worn_clothing)
 		if(clothing.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE && (clothing.heat_protection & HANDS) && (clothing.body_parts_covered & HANDS))

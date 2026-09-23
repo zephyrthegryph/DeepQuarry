@@ -90,7 +90,7 @@
 
 /atom/movable/Destroy()
 	// Contents go where each slot's drop policy says (containment ledger, C1).
-	if(length(contents) && (ledger || dq_slot_defs_for(src)))
+	if((length(contents) || has_latent()) && (ledger || dq_slot_defs_for(src)))
 		ledger_apply_drop_policies()
 	if(em_block)
 		cut_overlay(em_block)

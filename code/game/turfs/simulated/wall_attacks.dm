@@ -1,23 +1,5 @@
-//Interactions
-/turf/simulated/wall
-	var/focused_tool_stage
-
-/turf/simulated/wall/proc/run_focused_tool(mob/user, obj/item/tool, quality)
-	focused_tool_stage = quality
-	attackby(tool, user)
-	focused_tool_stage = null
-	return ITEM_INTERACT_SUCCESS
-
-/turf/simulated/wall/screwdriver_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_SCREWDRIVER)
-/turf/simulated/wall/crowbar_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_CROWBAR)
-/turf/simulated/wall/wrench_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_WRENCH)
-/turf/simulated/wall/wirecutter_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_WIRECUTTER)
-/turf/simulated/wall/welder_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_WELDER)
+// Tool work on walls (cutting, the reinforced layers, repair) is the wall
+// construction graph and its interactions: wall_construction.dm.
 
 /turf/simulated/wall/proc/toggle_open(mob/user)
 
@@ -200,29 +182,16 @@
 				user.visible_message(span_notice("[user] roofs \the [src], shielding it from the elements."), span_notice("You roof \the [src] tile, shielding it from the elements."))
 		return
 
+	// Welders reach the wall's interactions (wall_construction.dm) before attackby.
 	if(locate(/obj/effect/overlay/wallrot) in src)
-		if(focused_tool_stage == TOOL_WELDER)
-			var/obj/item/weldingtool/WT = W.get_welder()
-			if( WT.remove_fuel(0,user) )
-				to_chat(user, span_notice("You burn away the fungi with \the [WT]."))
-				playsound(src, WT.usesound, 10, 1)
-				for(var/obj/effect/overlay/wallrot/WR in src)
-					qdel(WR)
-				return
-		else if(!is_sharp(W) && W.force >= 10 || W.force >= 20)
+		if(!is_sharp(W) && W.force >= 10 || W.force >= 20)
 			to_chat(user, span_notice("\The [src] crumbles away under the force of your [W.name]."))
 			src.dismantle_wall(1)
 			return
 
 	//THERMITE related stuff. Calls src.thermitemelt() which handles melting simulated walls and the relevant effects
 	if(thermite)
-		if(focused_tool_stage == TOOL_WELDER)
-			var/obj/item/weldingtool/WT = W.get_welder()
-			if( WT.remove_fuel(0,user) )
-				thermitemelt(user)
-				return
-
-		else if(istype(W, /obj/item/pickaxe/plasmacutter))
+		if(istype(W, /obj/item/pickaxe/plasmacutter))
 			thermitemelt(user)
 			return
 
@@ -237,188 +206,9 @@
 			thermitemelt(user)
 			return
 
-	var/turf/T = user.loc	//get user's location for delay checks
-
-	if(get_integrity() < max_integrity && focused_tool_stage == TOOL_WELDER)
-
-		var/obj/item/weldingtool/WT = W.get_welder()
-
-		if(!WT.isOn())
-			return
-
-		if(WT.remove_fuel(0,user))
-			to_chat(user, span_notice("You start repairing the damage to [src]."))
-			playsound(src, WT.usesound, 100, 1)
-			if(do_after(user, max(5, (max_integrity - get_integrity()) / 5) * WT.toolspeed, target = src) && WT && WT.isOn())
-				to_chat(user, span_notice("You finish repairing the damage to [src]."))
-				repair_damage(max_integrity)
-		else
-			to_chat(user, span_notice("You need more welding fuel to complete this task."))
-			return
-		user.update_examine_panel(src)
+	// Plasma cutters, energy blades and pickaxes stand in for the welder on the graph's cutting steps.
+	if(try_construction_alt(user, src, W))
 		return
-
-	// Basic dismantling.
-	//var/dismantle_toolspeed = 0
-	if(isnull(construction_stage) || !reinf_material)
-
-		var/cut_delay = 60 - material.cut_delay
-		var/dismantle_verb
-		var/dismantle_sound
-
-		if(focused_tool_stage == TOOL_WELDER)
-			var/obj/item/weldingtool/WT = W.get_welder()
-			if(!WT.isOn())
-				return
-			if(!WT.remove_fuel(0,user))
-				to_chat(user, span_notice("You need more welding fuel to complete this task."))
-				return
-			dismantle_verb = "cutting"
-			dismantle_sound = W.usesound
-		//	cut_delay *= 0.7 // Tools themselves now can shorten the time it takes.
-		else if(istype(W,/obj/item/melee/energy/blade))
-			dismantle_sound = "sparks"
-			dismantle_verb = "slicing"
-			//dismantle_toolspeed = 1
-			cut_delay *= 0.5
-		else if(istype(W,/obj/item/pickaxe))
-			var/obj/item/pickaxe/P = W
-			dismantle_verb = P.drill_verb
-			dismantle_sound = P.drill_sound
-			cut_delay -= P.digspeed
-
-		if(dismantle_verb)
-
-			to_chat(user, span_notice("You begin [dismantle_verb] through the outer plating."))
-			if(dismantle_sound)
-				playsound(src, dismantle_sound, 100, 1)
-
-			if(cut_delay < 0)
-				cut_delay = 0
-
-			if(!do_after(user, cut_delay * W.toolspeed, target = src))
-				return
-
-			to_chat(user, span_notice("You remove the outer plating."))
-			dismantle_wall()
-			user.visible_message(span_warning("The wall was torn open by [user]!"))
-			return
-
-	//Reinforced dismantling.
-	else
-		switch(construction_stage)
-			if(6)
-				if (focused_tool_stage == TOOL_WIRECUTTER)
-					playsound(src, W.usesound, 100, 1)
-					construction_stage = 5
-					user.update_examine_panel(src)
-					to_chat(user, span_notice("You cut through the outer grille."))
-					update_icon()
-					return
-			if(5)
-				if (focused_tool_stage == TOOL_SCREWDRIVER)
-					to_chat(user, span_notice("You begin removing the support lines."))
-					playsound(src, W.usesound, 100, 1)
-					if(!do_after(user, 4 SECONDS * W.toolspeed, target = src) || !istype(src, /turf/simulated/wall) || construction_stage != 5)
-						return
-					construction_stage = 4
-					user.update_examine_panel(src)
-					update_icon()
-					to_chat(user, span_notice("You unscrew the support lines."))
-					return
-				else if (focused_tool_stage == TOOL_WIRECUTTER)
-					construction_stage = 6
-					user.update_examine_panel(src)
-					to_chat(user, span_notice("You mend the outer grille."))
-					playsound(src, W.usesound, 100, 1)
-					update_icon()
-					return
-			if(4)
-				var/cut_cover
-				if(focused_tool_stage == TOOL_WELDER)
-					var/obj/item/weldingtool/WT = W.get_welder()
-					if(!WT.isOn())
-						return
-					if(WT.remove_fuel(0,user))
-						cut_cover=1
-					else
-						to_chat(user, span_notice("You need more welding fuel to complete this task."))
-						return
-				else if (istype(W, /obj/item/pickaxe/plasmacutter))
-					cut_cover = 1
-				if(cut_cover)
-					to_chat(user, span_notice("You begin slicing through the metal cover."))
-					playsound(src, W.usesound, 100, 1)
-					if(!do_after(user, 6 SECONDS * W.toolspeed, target = src) || !istype(src, /turf/simulated/wall) || construction_stage != 4)
-						return
-					construction_stage = 3
-					user.update_examine_panel(src)
-					update_icon()
-					to_chat(user, span_notice("You press firmly on the cover, dislodging it."))
-					return
-				else if (focused_tool_stage == TOOL_SCREWDRIVER)
-					to_chat(user, span_notice("You begin screwing down the support lines."))
-					playsound(src, W.usesound, 100, 1)
-					if(!do_after(user, 4 SECONDS * W.toolspeed, target = src) || !istype(src, /turf/simulated/wall) || construction_stage != 4)
-						return
-					construction_stage = 5
-					user.update_examine_panel(src)
-					update_icon()
-					to_chat(user, span_notice("You screw down the support lines."))
-					return
-			if(3)
-				if (focused_tool_stage == TOOL_CROWBAR)
-					to_chat(user, span_notice("You struggle to pry off the cover."))
-					playsound(src, W.usesound, 100, 1)
-					if(!do_after(user, 10 SECONDS * W.toolspeed, target = src) || !istype(src, /turf/simulated/wall) || construction_stage != 3)
-						return
-					construction_stage = 2
-					user.update_examine_panel(src)
-					update_icon()
-					to_chat(user, span_notice("You pry off the cover."))
-					return
-			if(2)
-				if (focused_tool_stage == TOOL_WRENCH)
-					to_chat(user, span_notice("You start loosening the anchoring bolts which secure the support rods to their frame."))
-					playsound(src, W.usesound, 100, 1)
-					if(!do_after(user, 4 SECONDS * W.toolspeed, target = src) || !istype(src, /turf/simulated/wall) || construction_stage != 2)
-						return
-					construction_stage = 1
-					user.update_examine_panel(src)
-					update_icon()
-					to_chat(user, span_notice("You remove the bolts anchoring the support rods."))
-					return
-			if(1)
-				var/cut_cover
-				if(focused_tool_stage == TOOL_WELDER)
-					var/obj/item/weldingtool/WT = W.get_welder()
-					if( WT.remove_fuel(0,user) )
-						cut_cover=1
-					else
-						to_chat(user, span_notice("You need more welding fuel to complete this task."))
-						return
-				else if(istype(W, /obj/item/pickaxe/plasmacutter))
-					cut_cover = 1
-				if(cut_cover)
-					to_chat(user, span_notice("You begin slicing through the support rods."))
-					playsound(src, W.usesound, 100, 1)
-					if(!do_after(user, 7 SECONDS * W.toolspeed, target = src) || !istype(src, /turf/simulated/wall) || construction_stage != 1)
-						return
-					construction_stage = 0
-					user.update_examine_panel(src)
-					update_icon()
-					to_chat(user, span_notice("You slice through the support rods."))
-					return
-			if(0)
-				if(focused_tool_stage == TOOL_CROWBAR)
-					to_chat(user, span_notice("You struggle to pry off the outer sheath."))
-					playsound(src, W.usesound, 100, 1)
-					if(!do_after(user, 10 SECONDS * W.toolspeed, target = src) || !istype(src, /turf/simulated/wall) || !user || !W || !T )
-						return
-					if(user.loc == T && user.get_active_hand() == W )
-						to_chat(user, span_notice("You pry off the outer sheath."))
-						dismantle_wall()
-					return
 
 	if(istype(W,/obj/item/frame))
 		var/obj/item/frame/F = W

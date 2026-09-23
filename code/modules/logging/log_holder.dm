@@ -22,7 +22,7 @@ GLOBAL_REAL(logger, /datum/log_holder)
 	var/human_readable_enabled = FALSE
 
 	/// Cached ui_data
-	var/list/data_cache = list()
+	var/list/data_cache
 
 	/// Last time the ui_data was updated
 	var/last_data_update = 0
@@ -31,7 +31,7 @@ GLOBAL_REAL(logger, /datum/log_holder)
 	var/shutdown = FALSE
 
 	/// Log file path -> world.time it was last confirmed to exist. Saves an fexists() per entry (Q8).
-	var/list/verified_log_files = list()
+	var/list/verified_log_files
 
 GENERAL_PROTECT_DATUM(/datum/log_holder)
 
@@ -74,7 +74,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 /datum/log_holder/tgui_data(mob/user)
 	if(!last_data_update || (world.time - last_data_update) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()
-	return data_cache
+	return data_cache || list()
 
 /datum/log_holder/proc/cache_ui_data()
 	var/list/category_map = list()
@@ -87,11 +87,11 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 		category_map[category.category] = category_data
 
-	data_cache.Cut()
+	LAZYCLEARLIST(data_cache)
 	last_data_update = world.time
 
-	data_cache["categories"] = category_map
-	data_cache["last_data_update"] = last_data_update
+	LAZYSET(data_cache, "categories", category_map)
+	LAZYSET(data_cache, "last_data_update", last_data_update)
 
 /datum/log_holder/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()

@@ -75,7 +75,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	can_speak = 1
-	var/list/voice_mobs = list() //The curse of the sword is that it has someone trapped inside.
+	var/list/voice_mobs //The curse of the sword is that it has someone trapped inside.
 
 
 /obj/item/melee/cursedblade/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -96,7 +96,7 @@
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
 	new_voice.name = "cursed sword"			//Cursed swords shouldn't be known characters.
 	new_voice.real_name = "cursed sword"
-	voice_mobs.Add(new_voice)
+	LAZYADD(voice_mobs, new_voice)
 	GLOB.listening_objects |= src
 
 

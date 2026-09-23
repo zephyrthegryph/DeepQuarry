@@ -20,9 +20,9 @@
 	tgui_id = "AppearanceChanger"
 	var/flags = APPEARANCE_ALL_HAIR
 	var/mob/living/carbon/human/owner = null
-	var/list/valid_species = list()
-	var/list/valid_hairstyles = list()
-	var/list/valid_facial_hairstyles = list()
+	var/list/valid_species
+	var/list/valid_hairstyles
+	var/list/valid_facial_hairstyles
 
 	var/check_whitelist
 	var/list/whitelist
@@ -39,10 +39,10 @@
 	// Stuff for moving cameras
 	var/turf/last_camera_turf
 
-	var/list/valid_earstyles = list()
-	var/list/valid_tailstyles = list()
-	var/list/valid_wingstyles = list()
-	var/list/valid_gradstyles = list()
+	var/list/valid_earstyles
+	var/list/valid_tailstyles
+	var/list/valid_wingstyles
+	var/list/valid_gradstyles
 	var/list/markings = null
 	var/cooldown //Anti-spam. If spammed, this can be REALLY laggy.
 
@@ -704,9 +704,9 @@
 			var/datum/sprite_accessory/hair/S = GLOB.hair_styles_list[hair_style]
 			hair_styles[++hair_styles.len] = list("name" = hair_style, "icon" = S.icon, "icon_state" = "[S.icon_state]_s")
 		data["hair_styles"] = hair_styles
-		data["ear_styles"] = valid_earstyles
-		data["tail_styles"] = valid_tailstyles
-		data["wing_styles"] = valid_wingstyles
+		data["ear_styles"] = (valid_earstyles || list())
+		data["tail_styles"] = (valid_tailstyles || list())
+		data["wing_styles"] = (valid_wingstyles || list())
 
 		markings = owner.get_prioritised_markings()
 		var/list/usable_markings = markings.Copy() ^ GLOB.body_marking_styles_list.Copy()
@@ -729,7 +729,7 @@
 		data["facial_hair_styles"] = facial_hair_styles
 
 	if(can_change(owner, APPEARANCE_HAIR_COLOR))
-		data["hair_grads"] = valid_gradstyles
+		data["hair_grads"] = (valid_gradstyles || list())
 
 	data["mapRef"] = map_name
 
@@ -910,12 +910,12 @@
 
 /datum/tgui_module/appearance_changer/proc/cut_data()
 	// Making the assumption that the available species remain constant
-	valid_hairstyles.Cut()
-	valid_facial_hairstyles.Cut()
-	valid_earstyles.Cut()
-	valid_tailstyles.Cut()
-	valid_wingstyles.Cut()
-	valid_gradstyles.Cut()
+	LAZYCLEARLIST(valid_hairstyles)
+	LAZYCLEARLIST(valid_facial_hairstyles)
+	LAZYCLEARLIST(valid_earstyles)
+	LAZYCLEARLIST(valid_tailstyles)
+	LAZYCLEARLIST(valid_wingstyles)
+	LAZYCLEARLIST(valid_gradstyles)
 
 /datum/tgui_module/appearance_changer/proc/generate_data(mob/user, mob/living/carbon/human/target)
 	if(!ishuman(target))
@@ -932,7 +932,7 @@
 		for(var/path in GLOB.ear_styles_list)
 			var/datum/sprite_accessory/ears/instance = GLOB.ear_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				valid_earstyles.Add(list(list(
+				LAZYINITLIST(valid_earstyles); valid_earstyles.Add(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,
@@ -945,7 +945,7 @@
 		for(var/path in GLOB.tail_styles_list)
 			var/datum/sprite_accessory/tail/instance = GLOB.tail_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				valid_tailstyles.Add(list(list(
+				LAZYINITLIST(valid_tailstyles); valid_tailstyles.Add(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,
@@ -958,7 +958,7 @@
 		for(var/path in GLOB.wing_styles_list)
 			var/datum/sprite_accessory/wing/instance = GLOB.wing_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				valid_wingstyles.Add(list(list(
+				LAZYINITLIST(valid_wingstyles); valid_wingstyles.Add(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,
@@ -969,7 +969,7 @@
 
 	if(!LAZYLEN(valid_gradstyles))
 		for(var/key in GLOB.hair_gradients)
-			valid_gradstyles.Add(list(list(key)))
+			LAZYADD(valid_gradstyles, list(list(key)))
 
 /datum/tgui_module/appearance_changer/proc/get_genders(mob/living/carbon/human/target)
 	var/datum/species/S = target.species

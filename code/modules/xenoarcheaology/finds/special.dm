@@ -22,7 +22,7 @@
 
 //a talking gas mask!
 /obj/item/clothing/mask/gas/poltergeist
-	var/list/heard_talk = list()
+	var/list/heard_talk
 	var/last_twitch = 0
 	var/max_stored_messages = 100
 
@@ -35,15 +35,15 @@
 	. = ..()
 
 /obj/item/clothing/mask/gas/poltergeist/process()
-	if(heard_talk.len && isliving(src.loc) && prob(10))
+	if(length(heard_talk) && isliving(src.loc) && prob(10))
 		var/mob/living/M = src.loc
-		M.say(pick(heard_talk))
+		M.say(DEFAULTPICK(heard_talk, null))
 
 /obj/item/clothing/mask/gas/poltergeist/hear_talk(mob/M, list/message_pieces, verb)
 	..()
-	if(heard_talk.len > max_stored_messages)
-		heard_talk.Remove(pick(heard_talk))
-	heard_talk.Add(multilingual_to_message(message_pieces))
+	if(length(heard_talk) > max_stored_messages)
+		LAZYREMOVE(heard_talk, DEFAULTPICK(heard_talk, null))
+	LAZYADD(heard_talk, multilingual_to_message(message_pieces))
 	if(isliving(src.loc) && world.time - last_twitch > 50)
 		last_twitch = world.time
 
@@ -54,13 +54,13 @@
 	icon_state = "statuette"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	var/charges = 0
-	var/list/nearby_mobs = list()
+	var/list/nearby_mobs
 	var/last_bloodcall = 0
 	var/bloodcall_interval = 50
 	var/last_eat = 0
 	var/eat_interval = 100
 	var/wight_check_index = 1
-	var/list/shadow_wights = list()
+	var/list/shadow_wights
 
 	/// REACT_AT token for the next bloodcall check; null when there's no nearby mob queued.
 	var/tmp/bloodcall_timer
@@ -139,8 +139,8 @@
 			playsound(src, pick('sound/hallucinations/growl1.ogg','sound/hallucinations/growl2.ogg','sound/hallucinations/growl3.ogg'), 50, 1, -3)
 
 	if(charges >= 1)
-		if(shadow_wights.len < 5 && prob(5))
-			shadow_wights.Add(new /obj/effect/shadow_wight(src.loc))
+		if(length(shadow_wights) < 5 && prob(5))
+			LAZYADD(shadow_wights, new /obj/effect/shadow_wight(src.loc))
 			playsound(src, 'sound/effects/ghost.ogg', 50, 1, -3)
 			charges -= 0.1
 
@@ -150,18 +150,18 @@
 			charges -= 0.1
 
 	//check on our shadow wights
-	if(shadow_wights.len)
+	if(length(shadow_wights))
 		wight_check_index++
-		if(wight_check_index > shadow_wights.len)
+		if(wight_check_index > length(shadow_wights))
 			wight_check_index = 1
 
-		var/obj/effect/shadow_wight/W = shadow_wights[wight_check_index]
+		var/obj/effect/shadow_wight/W = LAZYACCESS(shadow_wights, wight_check_index)
 		if(isnull(W))
-			shadow_wights.Remove(W)
+			LAZYREMOVE(shadow_wights, W)
 		else if(isnull(W.loc))
-			shadow_wights.Remove(W)
+			LAZYREMOVE(shadow_wights, W)
 		else if(get_dist(W, src) > 10)
-			shadow_wights.Remove(W)
+			LAZYREMOVE(shadow_wights, W)
 
 /obj/item/vampiric/hear_talk(mob/M, list/message_pieces, verb)
 	..()

@@ -777,7 +777,7 @@
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/obj/item/card/id/customer_id = new(customer)
 	customer_id.associated_account_number = producer.account_number
-	customer.wear_id = customer_id
+	dq_test_wear_id(customer, customer_id)
 	scanner.scan_item_price(prototype, customer)
 	TEST_ASSERT_EQUAL(scanner.transaction_amount, 500, "R&D prototype did not receive a crew-facing Thaler price")
 	var/research_before_crew_sale = research.money
@@ -946,7 +946,7 @@
 	var/obj/item/card/id/collaborator_id = new(collaborator)
 	collaborator_id.associated_account_number = collaborator_account.account_number
 	collaborator_id.access = list(ACCESS_CARGO)
-	collaborator.wear_id = collaborator_id
+	dq_test_wear_id(collaborator, collaborator_id)
 
 	TEST_ASSERT(!SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "unapproved account could see the covert market feed")
 	var/datum/faction_agent_record/record = new
@@ -1040,7 +1040,7 @@
 	var/obj/item/card/id/auditor_id = new(auditor)
 	auditor_id.associated_account_number = auditor_account.account_number
 	auditor_id.access = list(ACCESS_SECURITY)
-	auditor.wear_id = auditor_id
+	dq_test_wear_id(auditor, auditor_id)
 	TEST_ASSERT(SSsupply.market_security_auditor(auditor), "test Security ID did not authorize market forensics")
 	transaction.trace_strength = FACTION_AGENT_INVESTIGATION_THRESHOLD
 	TEST_ASSERT(SSsupply.audit_market_transaction(transaction.id, auditor), "authorized Security account could not audit a covert settlement")
@@ -1097,7 +1097,7 @@
 	var/obj/item/card/id/contact_id = new(contact)
 	contact_id.associated_account_number = contact_account.account_number
 	contact_id.access = list(ACCESS_CARGO)
-	contact.wear_id = contact_id
+	dq_test_wear_id(contact, contact_id)
 
 	var/datum/faction_agent_record/record = new
 	record.account_number = principal_account.account_number
@@ -1157,7 +1157,7 @@
 	var/obj/item/card/id/auditor_id = new(auditor)
 	auditor_id.associated_account_number = auditor_account.account_number
 	auditor_id.access = list(ACCESS_SECURITY)
-	auditor.wear_id = auditor_id
+	dq_test_wear_id(auditor, auditor_id)
 	contract.record_contribution(auditor_account.account_number, 10, "Authenticated third-department work", auditor_account.owner_name)
 	var/list/reward_weights = contract.reward_recipient_weights()
 	TEST_ASSERT(reward_weights["[auditor_account.account_number]"] > 0, "authenticated operation performer received no settlement weight")
@@ -1234,7 +1234,7 @@
 	customer_mob.forceMove(customer_turf)
 	var/obj/item/card/id/customer_id = new(customer_mob)
 	customer_id.associated_account_number = customer.account_number
-	customer_mob.wear_id = customer_id
+	dq_test_wear_id(customer_mob, customer_id)
 	var/obj/machinery/department_storefront/research/store = new(test_turf)
 	var/obj/item/store_item = new(store)
 	store_item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, 0)
@@ -1282,3 +1282,10 @@
 	qdel(extra)
 
 #endif
+
+/// Puts `id` in `H`'s ID slot, with a jumpsuit first if `H` has none (the ID
+/// slot needs one).
+/proc/dq_test_wear_id(mob/living/carbon/human/H, obj/item/card/id/id)
+	if(!H.get_equipped_item(SLOT_ID_UNIFORM))
+		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), slot_w_uniform)
+	H.equip_to_slot(id, slot_wear_id)

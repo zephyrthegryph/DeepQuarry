@@ -11,7 +11,7 @@
 	var/slot = ACCESSORY_SLOT_DECOR
 	var/can_remove = TRUE						// Can it be taken off once attached?
 	var/obj/item/clothing/has_suit = null		// The suit the tie may be attached to
-	var/image/inv_overlay = null				// Overlay used when attached to clothing.
+	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
 	var/image/mob_overlay = null
 	var/overlay_state = null
 	var/punch_force	= 0							// added melee damage

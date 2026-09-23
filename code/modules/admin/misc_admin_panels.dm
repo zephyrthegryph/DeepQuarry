@@ -632,6 +632,18 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 		SStgui.update_uis(src)
 		return TRUE
 
-/obj/machinery/syndicate_beacon/virgo/attack_hand(mob/user)
+/obj/machinery/syndicate_beacon/virgo/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/syndicate_beacon_virgo_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/syndicate_beacon_virgo_use
+	id = "syndicate_beacon_virgo_use"
+	name = "Use"
+	effect = /obj/machinery/syndicate_beacon/virgo/proc/interaction_use
+
+/obj/machinery/syndicate_beacon/virgo/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
+	return TRUE

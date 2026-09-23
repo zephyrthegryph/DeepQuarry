@@ -69,15 +69,7 @@
 
 	organ_names = /datum/decl/mob_organ_names/leech
 
-	armor = list(
-		"melee" = 10,
-		"bullet" = 15,
-		"laser" = -10,
-		"energy" = 0,
-		"bomb" = 10,
-		"bio" = 100,
-		"rad" = 100
-		)
+	armor_spec = "melee=10;bullet=15;laser=-10;bomb=10;bio=100;rad=100"
 
 	say_list_type = /datum/say_list/leech
 
@@ -264,7 +256,7 @@
 
 		var/list/covering_clothing = E.get_covering_clothing()
 		for(var/obj/item/clothing/C in covering_clothing)
-			if(C.armor["melee"] >= 20 + attack_armor_pen)
+			if(C.get_armor().value("melee") >= 20 + attack_armor_pen)
 				to_chat(user, span_notice("We cannot get through that host's protective gear."))
 				return
 
@@ -367,7 +359,7 @@
 
 	var/list/covering_clothing = E.get_covering_clothing()
 	for(var/obj/item/clothing/C in covering_clothing)
-		if(C.armor["melee"] >= 40 + attack_armor_pen)
+		if(C.get_armor().value("melee") >= 40 + attack_armor_pen)
 			to_chat(user, span_notice("You cannot get through that host's protective gear."))
 			return
 

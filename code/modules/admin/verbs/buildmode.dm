@@ -204,7 +204,7 @@
 	var/obj/effect/bmode/buildmode/buildmode = null
 	var/obj/effect/bmode/buildquit/buildquit = null
 	var/atom/movable/throw_atom = null
-	var/list/selected_mobs = list()
+	var/list/selected_mobs
 	var/copied_faction = null
 	var/warned = 0
 
@@ -225,16 +225,16 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	throw_atom = null
 	for(var/mob/living/unit in selected_mobs)
 		deselect_AI_mob(cl, unit)
-	selected_mobs.Cut()
+	LAZYCLEARLIST(selected_mobs)
 	cl = null
 	return ..()
 
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
-	selected_mobs += unit
+	LAZYADD(selected_mobs, unit)
 	C.images += unit.selected_image
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)
-	selected_mobs -= unit
+	LAZYREMOVE(selected_mobs, unit)
 	C.images -= unit.selected_image
 
 /obj/effect/bmode/buildmode

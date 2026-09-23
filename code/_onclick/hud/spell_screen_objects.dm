@@ -2,7 +2,7 @@
 	name = "Spells"
 	icon = 'icons/mob/screen_spells.dmi'
 	icon_state = "wiz_spell_ready"
-	var/list/atom/movable/screen/spell/spell_objects = list()
+	var/list/atom/movable/screen/spell/spell_objects
 	var/showing = 0
 
 	var/open_state = "master_open"
@@ -16,7 +16,7 @@
 	. = ..()
 	for(var/atom/movable/screen/spell/spells in spell_objects)
 		spells.spellmaster = null
-	spell_objects.Cut()
+	LAZYCLEARLIST(spell_objects)
 	if(spell_holder)
 		spell_holder.spell_masters -= src
 		if(spell_holder.client && spell_holder.client.screen)
@@ -30,7 +30,7 @@
 	return ..()
 
 /atom/movable/screen/movable/spell_master/Click()
-	if(!spell_objects.len)
+	if(!length(spell_objects))
 		qdel(src)
 		return
 
@@ -65,8 +65,8 @@
 	var/y_position = decode_screen_Y(screen_loc_Y[1])
 	var/y_pix = screen_loc_Y[2]
 
-	for(var/i = 1; i <= spell_objects.len; i++)
-		var/atom/movable/screen/spell/S = spell_objects[i]
+	for(var/i = 1; i <= length(spell_objects); i++)
+		var/atom/movable/screen/spell/S = LAZYACCESS(spell_objects, i)
 		var/xpos = x_position + (x_position < 8 ? 1 : -1)*(i%7)
 		var/ypos = y_position + (y_position < 8 ? round(i/7) : -round(i/7))
 		if(spell_holder && spell_holder.client)
@@ -81,7 +81,7 @@
 		if(spell.connected_button in spell_objects)
 			return
 		else
-			spell_objects.Add(spell.connected_button)
+			LAZYADD(spell_objects, spell.connected_button)
 			if(spell_holder.client)
 				toggle_open(2)
 			return
@@ -104,7 +104,7 @@
 		newscreen.spell_base = spell.override_base
 	newscreen.name = spell.name
 	newscreen.update_charge(1)
-	spell_objects.Add(newscreen)
+	LAZYADD(spell_objects, newscreen)
 	if(spell_holder.client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -113,7 +113,7 @@
 
 	spell.connected_button = null
 
-	if(spell_objects.len)
+	if(length(spell_objects))
 		toggle_open(showing + 1)
 	else
 		qdel(src)
@@ -166,10 +166,10 @@
 	spell = null
 	last_charged_icon = null
 	if(spellmaster)
-		spellmaster.spell_objects -= src
+		LAZYREMOVE(spellmaster.spell_objects, src)
 		if(spellmaster.spell_holder && spellmaster.spell_holder.client)
 			spellmaster.spell_holder.client.screen -= src
-	if(spellmaster && !spellmaster.spell_objects.len)
+	if(spellmaster && !length(spellmaster.spell_objects))
 		qdel(spellmaster)
 	spellmaster = null
 

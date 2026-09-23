@@ -529,7 +529,8 @@ SUBSYSTEM_DEF(supply)
 					base_value = CR.points_per_crate
 
 				// For each thing in the crate, get the value and quantity
-				for(var/atom/A in CR)
+				CR.latent_materialize_all() // selling needs real things (C5)
+				for(var/atom/A in CR) // latent-ok
 					if(SEND_SIGNAL(A,COMSIG_ITEM_EXPORTED,EC,TRUE))
 						things_sold_successfully += A
 			else

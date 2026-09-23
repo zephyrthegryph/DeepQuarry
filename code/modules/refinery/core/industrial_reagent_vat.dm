@@ -16,8 +16,6 @@
 /obj/machinery/reagent_refinery/vat/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Can't be set on these
-	src.verbs -= /obj/machinery/reagent_refinery/verb/set_APTFT
 
 /obj/machinery/reagent_refinery/vat/process()
 	if(buckled_mobs && buckled_mobs.len && reagents.total_volume > 0)
@@ -67,22 +65,56 @@
 		return 0
 	. = ..(origin_machine, RT, source_forward_dir, transfer_rate, filter_id)
 
-/obj/machinery/reagent_refinery/vat/MouseDrop_T(atom/movable/C, mob/user as mob)
-	if(user.buckled || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
-		return
-	if(istype(C,/obj/vehicle/train/trolley_tank))
-		// Drain it!
-		C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
-		visible_message("\The [user] drains \the [C] into \the [src].")
-		update_icon()
-		return
-	if(istype(C,/obj/item/reagent_containers/glass) || \
-		istype(C,/obj/item/reagent_containers/food/drinks/glass2) || \
-		istype(C,/obj/item/reagent_containers/food/drinks/shaker) || \
-		istype(C,/obj/item/reagent_containers/chem_canister))
-		// Drain it!
-		C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
-		visible_message("\The [user] dumps \the [C] into \the [src].")
-		update_icon()
-		return
+/obj/machinery/reagent_refinery/vat/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_drag/reagent_vat_drain_trolley,
+		/datum/interaction/machine_drag/reagent_vat_drain_container,
+	)
+	..()
+
+/// The old MouseDrop_T's guard clause, shared by both drag branches.
+/obj/machinery/reagent_refinery/vat/proc/mousedrop_allowed(mob/user, atom/movable/C)
+	return !(user.buckled || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
+
+/// The old MouseDrop_T's first branch: drains a trolley tank into the vat.
+/datum/interaction/machine_drag/reagent_vat_drain_trolley
+	id = "reagent_vat_drain_trolley"
+	name = "Drain into vat"
+	held_type = /obj/vehicle/train/trolley_tank
+	effect = /obj/machinery/reagent_refinery/vat/proc/interaction_drain_trolley
+
+/obj/machinery/reagent_refinery/vat/proc/interaction_drain_trolley(mob/user, atom/movable/dropping, datum/interaction/interaction)
+	if(!mousedrop_allowed(user, dropping))
+		return TRUE
+	var/atom/movable/C = dropping
+	// Drain it!
+	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
+	visible_message("\The [user] drains \the [C] into \the [src].")
+	update_icon()
+	return TRUE
+
+/// The old MouseDrop_T's second branch: dumps a reagent container into the vat.
+/datum/interaction/machine_drag/reagent_vat_drain_container
+	id = "reagent_vat_drain_container"
+	name = "Dump into vat"
+	held_type = list(
+		/obj/item/reagent_containers/glass,
+		/obj/item/reagent_containers/food/drinks/glass2,
+		/obj/item/reagent_containers/food/drinks/shaker,
+		/obj/item/reagent_containers/chem_canister,
+	)
+	effect = /obj/machinery/reagent_refinery/vat/proc/interaction_drain_container
+
+/obj/machinery/reagent_refinery/vat/proc/interaction_drain_container(mob/user, atom/movable/dropping, datum/interaction/interaction)
+	if(!mousedrop_allowed(user, dropping))
+		return TRUE
+	var/atom/movable/C = dropping
+	// Drain it!
+	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
+	visible_message("\The [user] dumps \the [C] into \the [src].")
+	update_icon()
+	return TRUE
+
+/obj/machinery/reagent_refinery/vat/declare_interactions(list/into)
 	. = ..()
+	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

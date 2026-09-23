@@ -137,15 +137,23 @@
 	name = "flasher button"
 	desc = "A remote control switch for a mounted flasher."
 
-/obj/machinery/button/flasher/attack_hand(mob/user as mob)
+/obj/machinery/button/flasher/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/flasher_button_trigger,
+	)
+	..()
 
-	if(..())
-		return
+/// Old attack_hand: trigger the linked flashers.
+/datum/interaction/machine_hand/flasher_button_trigger
+	id = "flasher_button_trigger"
+	name = "Press"
+	effect = /obj/machinery/button/flasher/proc/interaction_trigger
 
+/obj/machinery/button/flasher/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	use_power(5)
 
 	if(active)
-		return
+		return TRUE
 
 	active = TRUE
 	icon_state = "launcheract"
@@ -155,6 +163,7 @@
 			M.flash()
 
 	addtimer(CALLBACK(src, PROC_REF(finish_trigger)), 5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	return TRUE
 
 /obj/machinery/button/flasher/proc/finish_trigger()
 	PRIVATE_PROC(TRUE)

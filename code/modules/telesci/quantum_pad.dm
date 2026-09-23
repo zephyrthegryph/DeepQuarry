@@ -61,18 +61,29 @@
 	teleport_cooldown = initial(teleport_cooldown)
 	teleport_cooldown = max(50, (teleport_cooldown - (E * 100)))
 
-/obj/machinery/power/quantumpad/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/quantum_pad_booster))
-		var/obj/item/quantum_pad_booster/booster = I
-		visible_message("[user] violently jams [booster] into the side of [src]. [src] beeps, quietly.", \
-		"You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
-		playsound(src, 'sound/items/rped.ogg', 25, 1)
-		boosted = TRUE
-		qdel(I)
-		return
-	if(default_part_replacement(user, I))
-		return
-	return ..()
+/obj/machinery/power/quantumpad/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/quantumpad_boost,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_hand/quantumpad_use,
+	)
+	..()
+
+/// Old attackby: install a particle booster.
+/datum/interaction/machine_item/quantumpad_boost
+	id = "quantumpad_boost"
+	name = "Install booster"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/quantum_pad_booster
+	effect = /obj/machinery/power/quantumpad/proc/interaction_boost
+
+/obj/machinery/power/quantumpad/proc/interaction_boost(mob/user, obj/item/quantum_pad_booster/booster, datum/interaction/interaction)
+	visible_message("[user] violently jams [booster] into the side of [src]. [src] beeps, quietly.", \
+	"You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
+	playsound(src, 'sound/items/rped.ogg', 25, 1)
+	boosted = TRUE
+	qdel(booster)
+	return TRUE
 
 /obj/machinery/power/quantumpad/multitool_act(mob/user, obj/item/tool)
 	if(istype(get_area(src), /area/shuttle))
@@ -116,13 +127,16 @@
 		update_icon()
 	return result
 
-/obj/machinery/power/quantumpad/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return
+/// Old attack_hand: standard gated pattern (`. = ..(); if(.) return`).
+/datum/interaction/machine_hand/quantumpad_use
+	id = "quantumpad_use"
+	name = "Use"
+	effect = /obj/machinery/power/quantumpad/proc/interaction_use
+
+/obj/machinery/power/quantumpad/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(panel_open)
 		to_chat(user, span_warning("The panel must be closed before operating this machine!"))
-		return
+		return TRUE
 
 	if(istype(get_area(src), /area/shuttle))
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
@@ -130,34 +144,35 @@
 		if(linked_pad)
 			linked_pad.linked_pad = null
 		// ition End
-		return
+		return TRUE
 
 	if(!powernet)
 		to_chat(user, span_warning("[src] is not attached to a powernet!"))
-		return
+		return TRUE
 
 	if(!linked_pad || QDELETED(linked_pad))
 		if(!map_pad_link_id || !initMappedLink())
 			to_chat(user, span_warning("There is no linked pad!"))
-			return
+			return TRUE
 
 	if(world.time < last_teleport + teleport_cooldown)
 		to_chat(user, span_warning("[src] is recharging power. Please wait [round((last_teleport + teleport_cooldown - world.time)/10)] seconds."))
-		return
+		return TRUE
 
 	if(teleporting)
 		to_chat(user, span_warning("[src] is charging up. Please wait."))
-		return
+		return TRUE
 
 	if(linked_pad.teleporting)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
-		return
+		return TRUE
 
 	if(linked_pad.inoperable())
 		to_chat(user, span_warning("Linked pad is not responding to ping."))
-		return
+		return TRUE
 	src.add_fingerprint(user)
 	doteleport(user)
+	return TRUE
 
 /obj/machinery/power/quantumpad/attack_ghost(mob/observer/dead/ghost)
 	. = ..()

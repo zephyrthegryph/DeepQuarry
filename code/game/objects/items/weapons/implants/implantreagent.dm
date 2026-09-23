@@ -158,7 +158,7 @@
 	var/list/full_message = "You feel as though your internal reagent implant is full."
 	var/list/emote_descriptor = list("tranfers something") //In format of [x] [emote_descriptor] into [container]
 	var/list/self_emote_descriptor = list("transfer") //In format of You [self_emote_descriptor] some [generated_reagent] into [container]
-	var/list/random_emote = list() //An emote the person with the implant may be forced to perform after a prob check, such as [X] meows.
+	var/list/random_emote //An emote the person with the implant may be forced to perform after a prob check, such as [X] meows.
 	var/assigned_proc = /mob/living/carbon/human/proc/use_reagent_implant
 	var/verb_name = "Transfer From Reagent Implant"
 	var/verb_desc = "Remove reagents from an internal reagent into a container"

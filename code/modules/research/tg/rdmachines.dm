@@ -55,22 +55,39 @@
 /obj/machinery/rnd/proc/reset_busy()
 	busy = FALSE
 
-/obj/machinery/rnd/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/rnd/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/rnd_part_replace,
+		/datum/interaction/machine_hand/rnd_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/rnd_use
+	id = "rnd_use"
+	name = "Use"
+	effect = /obj/machinery/rnd/proc/interaction_rnd_use
+
+/obj/machinery/rnd/proc/interaction_rnd_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(wires && panel_open)
-		return wires.Interact(user)
+		wires.Interact(user)
+		return TRUE
 	if(disabled)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
-/obj/machinery/rnd/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
+/datum/interaction/machine_item/rnd_part_replace
+	id = "rnd_part_replace"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	effect = /obj/machinery/rnd/proc/interaction_rnd_part_replace
+
+/obj/machinery/rnd/proc/interaction_rnd_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-
-	if(default_part_replacement(user, W))
-		return
-	return ..()
+	if(default_part_replacement(user, held))
+		return TRUE
+	return FALSE
 
 /obj/machinery/rnd/screwdriver_act(mob/user, obj/item/tool)
 	var/result = ..()

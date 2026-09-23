@@ -131,7 +131,7 @@
 	for(var/datum/affliction/A as anything in harm)
 		TEST_ASSERT(QDELETED(A), "[A.type] should be deleted by robot rejuvenate")
 	for(var/slot in R.components)
-		var/datum/robot_component/C = R.components[slot]
+		var/datum/robot_component/C = LAZYACCESS(R.components, slot)
 		TEST_ASSERT_EQUAL(length(B.afflictions_at(C)), 0, "component [slot] should carry nothing after rejuvenate")
 	var/fault = dq_test_body_continuity_fault(R)
 	TEST_ASSERT_NULL(fault, "robot body after rejuvenate: [fault]")

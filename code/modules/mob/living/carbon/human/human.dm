@@ -122,8 +122,8 @@
 		. += "Phoron Stored: [P.stored_plasma]/[P.max_plasma]"
 
 
-	if(back && istype(back,/obj/item/rig))
-		var/obj/item/rig/suit = back
+	if(get_equipped_item(SLOT_ID_BACK) && istype(get_equipped_item(SLOT_ID_BACK),/obj/item/rig))
+		var/obj/item/rig/suit = get_equipped_item(SLOT_ID_BACK)
 		var/cell_status = "ERROR"
 		if(suit.cell) cell_status = "[suit.cell.charge]/[suit.cell.maxcharge]"
 		. += "Suit charge: [cell_status]"
@@ -138,7 +138,7 @@
 
 
 /mob/proc/RigPanel(obj/item/rig/R)
-	if(R && !R.canremove && R.installed_modules.len)
+	if(R && !R.canremove && length(R.installed_modules))
 		var/list/L = list()
 		var/cell_status = R.cell ? "[R.cell.charge]/[R.cell.maxcharge]" : "ERROR"
 		L[++L.len] = list("Suit charge: [cell_status]", null, null, null, null)
@@ -162,12 +162,12 @@
 	if(species)
 		species.update_misc_tabs(src)
 
-	if(istype(back,/obj/item/rig))
-		var/obj/item/rig/R = back
+	if(istype(get_equipped_item(SLOT_ID_BACK),/obj/item/rig))
+		var/obj/item/rig/R = get_equipped_item(SLOT_ID_BACK)
 		RigPanel(R)
 
-	else if(istype(belt,/obj/item/rig))
-		var/obj/item/rig/R = belt
+	else if(istype(get_equipped_item(SLOT_ID_BELT),/obj/item/rig))
+		var/obj/item/rig/R = get_equipped_item(SLOT_ID_BELT)
 		RigPanel(R)
 
 /mob/living/carbon/human/ex_act(severity)
@@ -270,12 +270,12 @@
 	return 0
 
 /mob/living/carbon/human/restrained()
-	if (handcuffed)
+	if (get_equipped_item(SLOT_ID_HANDCUFFED))
 		return 1
-	if (istype(wear_suit, /obj/item/clothing/suit/straight_jacket))
+	if (istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket))
 		return 1
-	if (istype(wear_suit, /obj/item/clothing/suit/shibari))
-		var/obj/item/clothing/suit/shibari/s = wear_suit
+	if (istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/shibari))
+		var/obj/item/clothing/suit/shibari/s = get_equipped_item(SLOT_ID_SUIT)
 		if(s.rope_mode == "Arms" || s.rope_mode == "Arms and Legs")
 			return 1
 	return 0
@@ -295,7 +295,7 @@
 
 // Get rank from ID, ID inside PDA, PDA, ID in wallet, etc.
 /mob/living/carbon/human/proc/get_authentification_rank(if_no_id = "No id", if_no_job = "No job")
-	var/obj/item/pda/pda = wear_id
+	var/obj/item/pda/pda = get_equipped_item(SLOT_ID_ID)
 	if (istype(pda))
 		if (pda.id)
 			return pda.id.rank ? pda.id.rank : if_no_job
@@ -311,7 +311,7 @@
 //gets assignment from ID or ID inside PDA or PDA itself
 //Useful when player do something with computers
 /mob/living/carbon/human/proc/get_assignment(if_no_id = "No id", if_no_job = "No job")
-	var/obj/item/pda/pda = wear_id
+	var/obj/item/pda/pda = get_equipped_item(SLOT_ID_ID)
 	if (istype(pda))
 		if (pda.id)
 			return pda.id.assignment
@@ -327,7 +327,7 @@
 //gets name from ID or ID inside PDA or PDA itself
 //Useful when player do something with computers
 /mob/living/carbon/human/proc/get_authentification_name(if_no_id = "Unknown")
-	var/obj/item/pda/pda = wear_id
+	var/obj/item/pda/pda = get_equipped_item(SLOT_ID_ID)
 	if (istype(pda))
 		if (pda.id)
 			return pda.id.registered_name
@@ -347,9 +347,9 @@
 		if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VISIBLE_NAME, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
 			return name_data[1]
 
-	if(wear_mask && (wear_mask.flags_inv&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
+	if(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
 		return get_id_name("Unknown")
-	if(head && (head.flags_inv&HIDEFACE))
+	if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv&HIDEFACE))
 		return get_id_name("Unknown")		//Likewise for hats
 	var/face_name = get_face_name()
 	var/id_name = get_id_name("")
@@ -368,19 +368,19 @@
 //Useful when player is being seen by other mobs
 /mob/living/carbon/human/proc/get_id_name(if_no_id = "Unknown")
 	. = if_no_id
-	if(istype(wear_id,/obj/item/pda))
-		var/obj/item/pda/P = wear_id
+	if(istype(get_equipped_item(SLOT_ID_ID),/obj/item/pda))
+		var/obj/item/pda/P = get_equipped_item(SLOT_ID_ID)
 		return P.owner ? P.owner : if_no_id
-	if(wear_id)
-		var/obj/item/card/id/I = wear_id.GetID()
+	if(get_equipped_item(SLOT_ID_ID))
+		var/obj/item/card/id/I = get_equipped_item(SLOT_ID_ID).GetID()
 		if(I)
 			return I.registered_name
 	return
 
 //gets ID card object from special clothes slot or null.
 /mob/living/carbon/human/proc/get_idcard()
-	if(wear_id)
-		return wear_id.GetID()
+	if(get_equipped_item(SLOT_ID_ID))
+		return get_equipped_item(SLOT_ID_ID).GetID()
 
 //Removed the horrible safety parameter. It was only being used by ninja code anyways.
 //Now checks siemens_coefficient of the affected area by default
@@ -815,12 +815,12 @@
 /mob/living/carbon/human/proc/get_equipment_flash_protection()
 	var/flash_protection = 0
 
-	if(istype(src.head, /obj/item/clothing/head))
-		add_clothing_protection(head)
-	if(istype(src.glasses, /obj/item/clothing/glasses))
-		add_clothing_protection(glasses)
-	if(istype(src.wear_mask, /obj/item/clothing/mask))
-		add_clothing_protection(wear_mask)
+	if(istype(get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head))
+		add_clothing_protection(get_equipped_item(SLOT_ID_HEAD))
+	if(istype(get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses))
+		add_clothing_protection(get_equipped_item(SLOT_ID_EYES))
+	if(istype(get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask))
+		add_clothing_protection(get_equipped_item(SLOT_ID_MASK))
 
 	return flash_protection
 
@@ -857,10 +857,10 @@
 	return 0
 
 /mob/living/carbon/human/abiotic(full_body = 0)
-	if(full_body && ((src.l_hand && !( src.l_hand.abstract )) || (src.r_hand && !( src.r_hand.abstract )) || (src.back || src.wear_mask || src.head || src.shoes || src.w_uniform || src.wear_suit || src.glasses || src.l_ear || src.r_ear || src.gloves)))
+	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK) || get_equipped_item(SLOT_ID_HEAD) || get_equipped_item(SLOT_ID_SHOES) || get_equipped_item(SLOT_ID_UNIFORM) || get_equipped_item(SLOT_ID_SUIT) || get_equipped_item(SLOT_ID_EYES) || get_equipped_item(SLOT_ID_EAR_L) || get_equipped_item(SLOT_ID_EAR_R) || get_equipped_item(SLOT_ID_GLOVES))))
 		return 1
 
-	if( (src.l_hand && !src.l_hand.abstract) || (src.r_hand && !src.r_hand.abstract) )
+	if( (get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_L).abstract) || (get_equipped_item(SLOT_ID_HAND_R) && !get_equipped_item(SLOT_ID_HAND_R).abstract) )
 		return 1
 
 	return 0
@@ -1034,7 +1034,7 @@
 		if(VISIBLE_GENDER_FORCE_BIOLOGICAL)
 			return gender
 		else
-			if(((wear_mask?.flags_inv & HIDEFACE) || (head?.flags_inv & HIDEMASK) || (head?.flags_inv & HIDEFACE)) && (wear_suit?.flags_inv & HIDEJUMPSUIT))
+			if(((get_equipped_item(SLOT_ID_MASK)?.flags_inv & HIDEFACE) || (get_equipped_item(SLOT_ID_HEAD)?.flags_inv & HIDEMASK) || (get_equipped_item(SLOT_ID_HEAD)?.flags_inv & HIDEFACE)) && (get_equipped_item(SLOT_ID_SUIT)?.flags_inv & HIDEJUMPSUIT))
 				return PLURAL
 			if(species?.ambiguous_genders && user)
 				if(ishuman(user))
@@ -1046,8 +1046,8 @@
 			return get_gender()
 
 /mob/living/carbon/human/proc/increase_germ_level(n)
-	if(gloves)
-		gloves.germ_level += n
+	if(get_equipped_item(SLOT_ID_GLOVES))
+		get_equipped_item(SLOT_ID_GLOVES).germ_level += n
 	else
 		germ_level += n
 
@@ -1156,18 +1156,18 @@
 	LAZYCLEARLIST(body_writing)
 
 	//Always do hands (or whatever's on our hands)
-	if(gloves)
-		gloves.wash(clean_types)
+	if(get_equipped_item(SLOT_ID_GLOVES))
+		get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
 		update_inv_gloves()
-		gloves.germ_level = 0
+		get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 	else
 		bloody_hands = 0
 		germ_level = 0
 
-	if(shoes)
-		shoes.wash(clean_types)
+	if(get_equipped_item(SLOT_ID_SHOES))
+		get_equipped_item(SLOT_ID_SHOES).wash(clean_types)
 		update_inv_shoes()
-		shoes.germ_level = 0
+		get_equipped_item(SLOT_ID_SHOES).germ_level = 0
 	else if(feet_blood_color || LAZYLEN(feet_blood_DNA))
 		LAZYCLEARLIST(feet_blood_DNA)
 		feet_blood_DNA = null
@@ -1311,6 +1311,8 @@
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
 		QDEL_NULL(body)
 		body = new body_type(src)
+		// The slot set is keyed by body plan.
+		rebuild_slot_ledger()
 
 	species.handle_post_spawn(src)
 
@@ -1368,8 +1370,8 @@
 	if (!bloody_hands)
 		remove_verb(src, /mob/living/carbon/human/proc/bloody_doodle)
 
-	if (src.gloves)
-		to_chat(src, span_warning("Your [src.gloves] are getting in the way."))
+	if (get_equipped_item(SLOT_ID_GLOVES))
+		to_chat(src, span_warning("Your [get_equipped_item(SLOT_ID_GLOVES)] are getting in the way."))
 		return
 
 	var/turf/simulated/T = src.loc
@@ -1435,10 +1437,10 @@
 	else
 		switch(target_zone)
 			if(BP_HEAD)
-				if(head && (head.item_flags & THICKMATERIAL) && !ignore_thickness)
+				if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & THICKMATERIAL) && !ignore_thickness)
 					. = 0
 			else
-				if(wear_suit && (wear_suit.item_flags & THICKMATERIAL) && !ignore_thickness)
+				if(get_equipped_item(SLOT_ID_SUIT) && (get_equipped_item(SLOT_ID_SUIT).item_flags & THICKMATERIAL) && !ignore_thickness)
 					. = 0
 	if(!. && error_msg && user)
 		if(!fail_msg)
@@ -1446,7 +1448,7 @@
 		to_chat(user, span_warning("[fail_msg]"))
 
 /mob/living/carbon/human/print_flavor_text(shrink = 1)
-	var/list/equipment = list(src.head,src.wear_mask,src.glasses,src.w_uniform,src.wear_suit,src.gloves,src.shoes)
+	var/list/equipment = list(get_equipped_item(SLOT_ID_HEAD),get_equipped_item(SLOT_ID_MASK),get_equipped_item(SLOT_ID_EYES),get_equipped_item(SLOT_ID_UNIFORM),get_equipped_item(SLOT_ID_SUIT),get_equipped_item(SLOT_ID_GLOVES),get_equipped_item(SLOT_ID_SHOES))
 	var/head_exposed = 1
 	var/face_exposed = 1
 	var/eyes_exposed = 1
@@ -1515,7 +1517,7 @@
 	return FALSE
 
 /mob/living/carbon/human/slip(slipped_on, stun_duration=8)
-	var/list/equipment = list(src.w_uniform,src.wear_suit,src.shoes)
+	var/list/equipment = list(get_equipped_item(SLOT_ID_UNIFORM),get_equipped_item(SLOT_ID_SUIT),get_equipped_item(SLOT_ID_SHOES))
 	var/footcoverage_check = FALSE
 	for(var/obj/item/clothing/C in equipment)
 		if(C.body_parts_covered & FEET)
@@ -1525,7 +1527,7 @@
 		playsound(src, 'sound/misc/slip.ogg', 25, 1, -1)
 		drop_both_hands()
 		return FALSE
-	if((species.flags & NO_SLIP && !footcoverage_check) || (shoes && (shoes.item_flags & NOSLIP))) //Footwear negates a species' natural traction.
+	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))) //Footwear negates a species' natural traction.
 		return FALSE
 	if(..(slipped_on,stun_duration))
 		drop_both_hands()
@@ -1591,7 +1593,7 @@
 	return ..()
 
 /mob/living/carbon/human/Check_Shoegrip()
-	if(shoes && (shoes.item_flags & NOSLIP) && istype(shoes, /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
+	if(get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
 		return 1
 	if(flying) // Checks to see if they have wings and are flying.
 		return 1
@@ -1618,26 +1620,6 @@
 		return 1
 	else
 		return ..()
-
-/mob/living/carbon/human/put_in_l_hand(obj/item/W)
-	if(!..() || l_hand)
-		return 0
-	W.forceMove(src)
-	l_hand = W
-	W.equipped(src,slot_l_hand)
-	W.add_fingerprint(src)
-	update_inv_l_hand()
-	return 1
-
-/mob/living/carbon/human/put_in_r_hand(obj/item/W)
-	if(!..() || r_hand)
-		return 0
-	W.forceMove(src)
-	r_hand = W
-	W.equipped(src,slot_r_hand)
-	W.add_fingerprint(src)
-	update_inv_r_hand()
-	return 1
 
 /mob/living/carbon/human/can_stand_overridden()
 	if(wearing_rig && wearing_rig.ai_can_move_suit(check_for_ai = 1))
@@ -1738,7 +1720,7 @@
 	return ..()
 
 /mob/living/carbon/human/is_muzzled()
-	return (wear_mask && (istype(wear_mask, /obj/item/clothing/mask/muzzle) || istype(src.wear_mask, /obj/item/grenade)))
+	return (get_equipped_item(SLOT_ID_MASK) && (istype(get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle) || istype(get_equipped_item(SLOT_ID_MASK), /obj/item/grenade)))
 
 /mob/living/carbon/human/get_fire_icon_state()
 	return species.fire_icon_state
@@ -1816,7 +1798,7 @@
 	return msg
 
 /mob/living/carbon/human/reduce_cuff_time()
-	if(istype(gloves, /obj/item/clothing/gloves/gauntlets/rig))
+	if(istype(get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves/gauntlets/rig))
 		return 2
 	return ..()
 
@@ -1866,8 +1848,8 @@
 // Certain stuff like genetic xray vision is allowed to be kept on.
 /mob/living/carbon/human/disable_spoiler_vision()
 	// Glasses.
-	if(istype(glasses, /obj/item/clothing/glasses))
-		var/obj/item/clothing/glasses/goggles = glasses
+	if(istype(get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses))
+		var/obj/item/clothing/glasses/goggles = get_equipped_item(SLOT_ID_EYES)
 		if(goggles.active && (goggles.vision_flags & (SEE_TURFS|SEE_OBJS)))
 			goggles.toggle_active(src)
 			to_chat(src, span_warning("Your [goggles.name] have suddenly turned off!"))
@@ -1881,7 +1863,7 @@
 			to_chat(src, span_warning("\The [rig]'s visor has shuddenly deactivated!"))
 
 /mob/living/carbon/human/get_mob_riding_slots()
-	return list(back, head, wear_suit)
+	return list(get_equipped_item(SLOT_ID_BACK), get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_SUIT))
 
 /mob/living/carbon/human/verb/flip_lying()
 	set name = "Flip Resting Direction"

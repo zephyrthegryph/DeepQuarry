@@ -17,9 +17,6 @@
 
 	var/datum/component/artifact_master/artifact_master = /datum/component/artifact_master
 
-/obj/machinery/artifact/fire_act(exposed_temperature, exposed_volume) //If we get too hot, we burst!
-	if(exposed_temperature >= ARTIFACT_HEAT_BREAK) ///2500K
-		qdel(src)
 
 /obj/machinery/artifact/process() //Air too hot! We break!
 	var/turf/T = get_turf(src)

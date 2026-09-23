@@ -109,10 +109,10 @@
 	if(chambered.leaves_residue)
 		var/mob/living/carbon/human/H = loc
 		if(istype(H))
-			if(!istype(H.gloves, /obj/item/clothing))
+			if(!istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing))
 				H.add_gunshotresidue(chambered)
 			else
-				var/obj/item/clothing/G = H.gloves
+				var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				G.add_gunshotresidue(chambered)
 
 	switch(handle_casings)
@@ -187,7 +187,7 @@
 	if(manual_chamber) // Gun Rework
 		if(do_after(user, 0.4 SECONDS, src)) // Gun Rework
 			bolt_handle(user) // Gun Rework
-	else if(firemodes.len > 1) // Gun Rework
+	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
 		unload_ammo(user)
@@ -531,6 +531,9 @@
 	if(loaded.len >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return
+	// The handful may still hold its rounds as a count (C5) if it was
+	// picked straight off a turf or out of a latent holder.
+	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
 	var/count = 0
 	while(!QDELETED(H) && H.stored_ammo.len && loaded.len < max_shells)
@@ -568,6 +571,10 @@
 		if(!(load_method & AM.mag_type) || caliber != AM.caliber || allowed_magazines && !is_type_in_list(A, allowed_magazines))
 			to_chat(user, span_warning("[AM] won't load into [src]!"))
 			return
+		// Legacy gun code reads stored_ammo directly below (C5); a magazine
+		// picked straight off a turf or out of a latent holder still holds
+		// its rounds as a count until now.
+		AM.make_rounds_real()
 		var/loading_method = AM.mag_type & load_method
 		if(loading_method == (MAGAZINE & SPEEDLOADER)) loading_method = MAGAZINE //Default to magazine if both are valid
 		switch(loading_method)

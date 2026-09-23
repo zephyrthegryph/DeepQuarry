@@ -157,18 +157,50 @@
 	SHOULD_CALL_PARENT(FALSE)
 	shatter()
 
-/obj/machinery/door/window/attack_hand(mob/user as mob)
-	src.add_fingerprint(user)
+/obj/machinery/door/window/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/windowdoor_emag,
+		/datum/interaction/machine_item/windowdoor_smash,
+		/datum/interaction/machine_item/windowdoor_item_toggle,
+		/datum/interaction/machine_hand/windowdoor_shred,
+		/datum/interaction/machine_hand/windowdoor_toggle,
+	)
+	..()
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		if(H.species.can_shred(H, FALSE, 15))
-			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-			visible_message(span_danger("[user] smashes against the [src.name]."), 1)
-			user.do_attack_animation(src)
-			user.setClickCooldown(user.get_attack_speed())
-			take_damage(25, BRUTE, MELEE)
-			return
+/datum/interaction/machine_hand/windowdoor_shred
+	id = "windowdoor_shred"
+	name = "Smash"
+	category = INTERACTION_CAT_ATTACK
+	behind_gate = FALSE
+	tags = list(INTERACTION_TAG_HOSTILE)
+	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/door/window/proc/actor_can_shred, null))
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/door/window/proc/interaction_shred
+
+/obj/machinery/door/window/proc/actor_can_shred(mob/actor, atom/target, obj/item/held)
+	if(!ishuman(actor))
+		return FALSE
+	var/mob/living/carbon/human/H = actor
+	return H.species.can_shred(H, FALSE, 15)
+
+/obj/machinery/door/window/proc/interaction_shred(mob/user, obj/item/held, datum/interaction/interaction)
+	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	visible_message(span_danger("[user] smashes against the [src.name]."), 1)
+	user.do_attack_animation(src)
+	user.setClickCooldown(user.get_attack_speed())
+	take_damage(25, BRUTE, MELEE)
+	return TRUE
+
+/datum/interaction/machine_hand/windowdoor_toggle
+	id = "windowdoor_toggle"
+	name = "Open/close"
+	category = INTERACTION_CAT_TOGGLE
+	behind_gate = FALSE
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/door/window/proc/interaction_toggle
+
+/obj/machinery/door/window/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	src.add_fingerprint(user)
 
 	if (src.allowed(user))
 		if (src.density)
@@ -179,7 +211,7 @@
 	else if (src.density)
 		flick(text("[]deny", src.base_state), src)
 
-	return
+	return TRUE
 
 /obj/machinery/door/window/emag_act(remaining_charges, mob/user)
 	if (density && operable())
@@ -189,35 +221,59 @@
 		open()
 		return 1
 
-/obj/machinery/door/window/attackby(obj/item/I as obj, mob/user as mob)
+/datum/interaction/machine_item/windowdoor_emag
+	id = "windowdoor_emag"
+	name = "Slice open"
+	held_type = /obj/item/melee/energy/blade
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/proc/not_operating, null))
+	effect = /obj/machinery/door/window/proc/interaction_emag_slice
 
-	//If it's in the process of opening/closing, ignore the click
-	if (src.operating == 1)
-		return
+/obj/machinery/door/window/proc/not_operating(mob/actor, atom/target, obj/item/held)
+	return operating != 1
 
-	if(istype(I))
-		//Emags and ninja swords? You may pass.
-		if (istype(I, /obj/item/melee/energy/blade))
-			if(emag_act(10, user))
-				var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-				spark_system.set_up(5, 0, src.loc)
-				spark_system.start()
-				playsound(src, "sparks", 50, 1)
-				playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
-				visible_message(span_warning("The glass door was sliced open by [user]!"))
-			return 1
+/obj/machinery/door/window/proc/interaction_emag_slice(mob/user, obj/item/I, datum/interaction/interaction)
+	if(emag_act(10, user))
+		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
+		spark_system.set_up(5, 0, src.loc)
+		spark_system.start()
+		playsound(src, "sparks", 50, 1)
+		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		visible_message(span_warning("The glass door was sliced open by [user]!"))
+	return TRUE
 
-		//If it's a weapon, smash windoor. Unless it's an id card, agent card, ect.. then ignore it (Cards really shouldnt damage a door anyway)
-		if(src.density && istype(I, /obj/item) && !istype(I, /obj/item/card))
-			user.setClickCooldown(user.get_attack_speed(I))
-			var/aforce = I.force
-			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-			visible_message(span_danger("[src] was hit by [I]."))
-			if(I.obj_damage_type())
-				take_damage(aforce, I.obj_damage_type(), MELEE)
-			return
+/datum/interaction/machine_item/windowdoor_smash
+	id = "windowdoor_smash"
+	name = "Smash"
+	category = INTERACTION_CAT_ATTACK
+	held_type = /obj/item
+	tags = list(INTERACTION_TAG_HOSTILE)
+	offered_when = list(
+		REQ_ON(PRED_TARGET, /obj/machinery/door/window/proc/not_operating, null),
+		REQ_ON(PRED_TARGET, /obj/machinery/door/window/proc/is_open_or_closed_smashable, null),
+	)
+	effect = /obj/machinery/door/window/proc/interaction_smash
 
+/// density && !istype(card): whether the held item can smash the windoor.
+/obj/machinery/door/window/proc/is_open_or_closed_smashable(mob/actor, atom/target, obj/item/held)
+	return density && istype(held, /obj/item) && !istype(held, /obj/item/card)
 
+/obj/machinery/door/window/proc/interaction_smash(mob/user, obj/item/I, datum/interaction/interaction)
+	user.setClickCooldown(user.get_attack_speed(I))
+	var/aforce = I.force
+	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	visible_message(span_danger("[src] was hit by [I]."))
+	if(I.obj_damage_type())
+		take_damage(aforce, I.obj_damage_type(), MELEE)
+	return TRUE
+
+/datum/interaction/machine_item/windowdoor_item_toggle
+	id = "windowdoor_item_toggle"
+	name = "Open/close"
+	held_type = /obj/item
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/proc/not_operating, null))
+	effect = /obj/machinery/door/window/proc/interaction_item_toggle
+
+/obj/machinery/door/window/proc/interaction_item_toggle(mob/user, obj/item/I, datum/interaction/interaction)
 	src.add_fingerprint(user)
 
 	if (src.allowed(user))
@@ -229,7 +285,7 @@
 	else if (src.density)
 		flick(text("[]deny", src.base_state), src)
 
-	return
+	return TRUE
 
 /obj/machinery/door/window/welder_act(mob/user, obj/item/tool)
 	if(operating == 1 || user.a_intent != I_HELP)

@@ -207,7 +207,7 @@
 	if(istype(M))
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			if(istype(H.gloves, /obj/item/clothing/gloves/bluespace))
+			if(istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves/bluespace))
 				M.visible_message(span_warning("\The [H]'s bracelet flashes and absorbs the beam!"),span_notice("Your bracelet flashes and absorbs the beam!"))
 				return
 		if(!M.resize(set_size, uncapped = M.has_large_resize_bounds(), ignore_prefs = ignoring_prefs, allow_stripping = TRUE))

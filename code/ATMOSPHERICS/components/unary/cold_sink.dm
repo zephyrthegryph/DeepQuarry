@@ -64,8 +64,12 @@
 /obj/machinery/atmospherics/unary/freezer
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/atmospherics/unary/freezer/attack_hand(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/atmospherics/unary/freezer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/open_ui,
+		/datum/interaction/machine_item/part_replacement,
+	)
+	..()
 
 /obj/machinery/atmospherics/unary/freezer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -194,12 +198,6 @@
 /obj/machinery/atmospherics/unary/freezer/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
 	power_rating = max_power_rating * (power_setting/100)
-
-/obj/machinery/atmospherics/unary/freezer/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_part_replacement(user, O))
-		return
-
-	..()
 
 /obj/machinery/atmospherics/unary/freezer/examine(mob/user)
 	. = ..()

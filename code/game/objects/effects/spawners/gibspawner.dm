@@ -12,7 +12,7 @@
 
 /obj/effect/gibspawner/human/Initialize(mapload)
 	gibdirections = list(list(NORTH, NORTHEAST, NORTHWEST),list(SOUTH, SOUTHEAST, SOUTHWEST),list(WEST, NORTHWEST, SOUTHWEST),list(EAST, NORTHEAST, SOUTHEAST), GLOB.alldirs, GLOB.alldirs, list())
-	gibamounts[6] = pick(0,1,2)
+	LAZYSET(gibamounts, 6, pick(0,1,2))
 	. = ..()
 
 /obj/effect/gibspawner/robot
@@ -22,5 +22,5 @@
 
 /obj/effect/gibspawner/robot/Initialize(mapload)
 	gibdirections = list(list(NORTH, NORTHEAST, NORTHWEST),list(SOUTH, SOUTHEAST, SOUTHWEST),list(WEST, NORTHWEST, SOUTHWEST),list(EAST, NORTHEAST, SOUTHEAST), GLOB.alldirs, GLOB.alldirs)
-	gibamounts[6] = pick(0,1,2)
+	LAZYSET(gibamounts, 6, pick(0,1,2))
 	. = ..()

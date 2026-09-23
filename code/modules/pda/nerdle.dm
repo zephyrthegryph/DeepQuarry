@@ -10,9 +10,9 @@
 	template = "pda_nerdle"
 
 	var/target_word
-	var/list/guesses = list() //raw text input for guesses
+	var/list/guesses //raw text input for guesses
 
-	var/list/serialized_guesses = list() //shortcut for tgui serialization
+	var/list/serialized_guesses //shortcut for tgui serialization
 
 	var/max_guesses = 6
 
@@ -90,8 +90,8 @@
 	LAZYADD(serialized_guesses, list(out)) // Wrap it in a list so it stays a list
 
 /datum/data/pda/app/nerdle/update_ui(mob/user, list/data)
-	data["guesses"] = serialized_guesses
-	data["guesses_raw"] = guesses
+	data["guesses"] = (serialized_guesses || list())
+	data["guesses_raw"] = (guesses || list())
 	data["max"] = max_guesses
 	data["used_guesses"] = LAZYLEN(guesses)
 	data["target_word"] = target_word //if people fuck around with tgui to cheat at nerdle then I can't really be assed enough to care. we'll know who you are.

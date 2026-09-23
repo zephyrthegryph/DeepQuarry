@@ -131,8 +131,8 @@
 		last_throw = world.time
 		if(ishuman(user))
 			var/mob/living/carbon/human/H_user = user
-			if(istype(H_user.gloves,/obj/item/clothing/gloves/telekinetic))
-				var/obj/item/clothing/gloves/telekinetic/TKG = H_user.gloves
+			if(istype(H_user.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/telekinetic))
+				var/obj/item/clothing/gloves/telekinetic/TKG = H_user.get_equipped_item(SLOT_ID_GLOVES)
 				TKG.use_grip_power(user,TRUE)
 				if(!TKG.has_grip_power())
 					qdel(src) // Drop TK

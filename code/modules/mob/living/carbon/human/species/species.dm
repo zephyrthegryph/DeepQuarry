@@ -67,10 +67,10 @@
 	// Language/culture vars.
 	var/default_language = LANGUAGE_GALCOM					// Default language is used when 'say' is used without modifiers.
 	var/language = LANGUAGE_GALCOM							// Default racial language, if any.
-	var/list/species_language = list(LANGUAGE_GALCOM)		// Used on the Character Setup screen
-	var/list/secondary_langs = list()						// The names of secondary languages that are available to this species.
-	var/list/speech_sounds = list()							// A list of sounds to potentially play when speaking.
-	var/list/speech_chance = list()							// The likelihood of a speech sound playing.
+	var/species_language = LANGUAGE_GALCOM		// Used on the Character Setup screen (not read; subtypes set a single language)
+	var/list/secondary_langs												// The names of secondary languages that are available to this species.
+	var/list/speech_sounds													// A list of sounds to potentially play when speaking.
+	var/speech_chance									// The likelihood (percent) of a speech sound playing.
 	var/num_alternate_languages = 0							// How many secondary languages are available to select at character creation
 	var/name_language = LANGUAGE_GALCOM						// The language to use when determining names for this species, or null to use the first name/last name generator
 
@@ -218,7 +218,7 @@
 	var/health_hud_intensity = 1							// This modifies how intensely the health hud is colored.
 
 	// Body/form vars.
-	var/list/inherent_verbs = list()									// Species-specific verbs.
+	var/list/inherent_verbs									// Species-specific verbs.
 	var/has_fine_manipulation = 1							// Can use small items.
 	var/siemens_coefficient = 1								// The lower, the thicker the skin and better the insulation.
 	var/darksight = 2										// Native darksight distance.
@@ -227,7 +227,7 @@
 	var/spawn_flags = 0										// Flags that specify who can spawn as this species
 
 	var/obj/effect/decal/cleanable/blood/tracks/move_trail = /obj/effect/decal/cleanable/blood/tracks/footprints // What marks are left when walking
-	var/list/skin_overlays = list()
+	var/list/skin_overlays
 	var/has_floating_eyes = 0								// Whether the eyes can be shown above other icons
 	var/has_glowing_eyes = 0								// Whether the eyes are shown above all lighting
 	var/water_movement = 0									// How much faster or slower the species is in water
@@ -247,7 +247,7 @@
 	var/soft_landing = FALSE								// Can fall down and land safely on small falls.
 
 	var/crit_mod = 1										// Used for when we go unconscious. Used downstream.
-	var/list/env_traits = list()
+	var/list/env_traits /// Lazy: traits with environment effects (trait/apply adds them).
 	var/pixel_offset_x = 0									// Used for offsetting 64x64 and up icons.
 	var/pixel_offset_y = 0									// Used for offsetting 64x64 and up icons.
 	var/rad_levels = NORMAL_RADIATION_RESISTANCE			//For handle_radiation
@@ -264,7 +264,7 @@
 
 	var/vore_belly_default_variant = "H"
 
-	var/list/default_emotes = list()
+	var/list/default_emotes
 
 	// Determines the organs that the species spawns with and
 	var/list/has_organ = list(								// which required-organ checks are conducted.
@@ -360,10 +360,10 @@
 	var/can_climb = FALSE
 	var/climbing_delay = 1.5	// We climb with a quarter delay
 
-	var/list/food_preference = list() //RS edit
+	var/list/food_preference //RS edit. Lazy.
 	var/food_preference_bonus = 0
 
-	var/list/species_component = list() // The component that this species uses. Example: Xenochimera use /datum/component/xenochimera
+	var/list/species_component // The component that this species uses. Example: Xenochimera use /datum/component/xenochimera
 	var/component_requires_late_recalc = FALSE // If TRUE, the component will do special recalculation stuff at the end of update_icons_body()
 
 	// For Lleill and Hanner
@@ -388,6 +388,7 @@
 		unarmed_attacks += new u_type()
 
 /datum/species/New()
+	share_type_tables()
 	if(hud_type)
 		hud = new hud_type()
 	else
@@ -401,11 +402,26 @@
 	for(var/u_type in unarmed_types)
 		unarmed_attacks += new u_type()
 
-	if(gluttonous)
-		if(!inherent_verbs)
-			inherent_verbs = list()
-
 	update_sort_hint()
+
+/// Names of list vars that subtypes override but nothing edits in place. Every
+/// instance of a species type shares the first instance's lists (one per human
+/// plus one in GLOB.all_species), so writers must assign a new list, never edit.
+/datum/species/proc/shared_table_vars()
+	var/static/list/names = list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component")
+	return names
+
+/datum/species/proc/share_type_tables()
+	var/static/list/tables_by_type = list()
+	var/list/shared = tables_by_type[type]
+	if(shared)
+		for(var/name in shared)
+			vars[name] = shared[name]
+		return
+	shared = list()
+	for(var/name in shared_table_vars())
+		shared[name] = vars[name]
+	tables_by_type[type] = shared
 
 /datum/species/proc/get_footsep_sounds()
 	return footstep
@@ -533,11 +549,11 @@
 	var/covered_mouth = FALSE
 	if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && ishuman(target)) // No need to test this for now if they don't have the trait
 		var/mob/living/carbon/human/M = target
-		if(M.head)
-			if((M.head.body_parts_covered & FACE) || (M.head.flags_inv & HIDEFACE)) // Need to check both because a lot of items set one or the other, rather than both as you'd expect
+		if(M.get_equipped_item(SLOT_ID_HEAD))
+			if((M.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) || (M.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)) // Need to check both because a lot of items set one or the other, rather than both as you'd expect
 				covered_mouth = TRUE
-		if(M.wear_mask)
-			if((M.wear_mask.body_parts_covered & FACE) || (M.wear_mask.flags_inv & HIDEFACE))
+		if(M.get_equipped_item(SLOT_ID_MASK))
+			if((M.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE) || (M.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEFACE))
 				covered_mouth = TRUE
 	if(target.is_muzzled())
 		covered_mouth = TRUE
@@ -658,7 +674,7 @@
 
 // Impliments different trails for species depending on if they're wearing shoes.
 /datum/species/proc/get_move_trail(mob/living/carbon/human/H)
-	if( H.shoes || ( H.wear_suit && (H.wear_suit.body_parts_covered & FEET) ) )
+	if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
 		return /obj/effect/decal/cleanable/blood/tracks/footprints
 	else
 		return move_trail
@@ -776,7 +792,7 @@
 
 /datum/species/proc/give_numbing_bite() //Holy SHIT this is hacky, but it works. Updating a mob's attacks mid game is insane.
 	unarmed_attacks = list()
-	unarmed_types += /datum/unarmed_attack/bite/sharp/numbing
+	unarmed_types = unarmed_types + /datum/unarmed_attack/bite/sharp/numbing // copy: the table is shared per type
 	for(var/u_type in unarmed_types)
 		unarmed_attacks += new u_type()
 

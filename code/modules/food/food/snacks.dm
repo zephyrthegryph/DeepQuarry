@@ -9174,7 +9174,7 @@
 	nutriment_amt = 1
 	bitesize = 2
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5)
-	var/list/color_options = list("saucer_pink","saucer_blue","saucer_orange","saucer_green","saucer_yellow")
+	var/static/list/color_options = list("saucer_pink","saucer_blue","saucer_orange","saucer_green","saucer_yellow")
 
 /obj/item/reagent_containers/food/snacks/saucer/Initialize(mapload)
 	. = ..()
@@ -9326,7 +9326,7 @@
 	nutriment_amt = 1
 	bitesize = 2
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5, PLANT_ROSE = 2, "custard" = 2)
-	var/list/color_options = list("rhubarbcustard_1","rhubarbcustard_2")
+	var/static/list/color_options = list("rhubarbcustard_1","rhubarbcustard_2")
 
 /obj/item/reagent_containers/food/snacks/rhubarbcustard/Initialize(mapload)
 	. = ..()
