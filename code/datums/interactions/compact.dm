@@ -54,7 +54,19 @@
  * for every entry in a type's `interactions` list.
  */
 /proc/dq_interaction_from_spec(owner_type, list/spec)
+	// Keyed by the spec list's own reference identity, not its printed content:
+	// PROC_REF(x) is nameof(.proc/x), a bare proc NAME with no type prefix, so two
+	// unrelated types that happen to name their effect proc the same thing (e.g.
+	// two different "interaction_self" procs) would collide on a string key. A
+	// spec's identity is stable across calls that share it though: get_interactions()
+	// returns a var/static/list, computed once per declaring proc and reused by
+	// every subtype that inherits it unchanged (the assembly hierarchy's shared
+	// assembly_self spec) - and distinct for two types that each build their own
+	// list (aicard vs bodysnatcher), even if the content looks similar.
 	var/static/list/cache = list()
+	var/datum/interaction/generic/cached_by_ref = cache[spec]
+	if(cached_by_ref)
+		return cached_by_ref
 
 	var/kind = spec[1]
 	var/name = spec[2]
@@ -91,17 +103,17 @@
 	if(!name)
 		name = (kind == INTERACT_KIND_INSERT) ? dq_interaction_insert_name(held_type) : dq_interaction_name_from_effect(effect_key)
 
-	var/key = "[kind]|[effect_key]|[held_type]|[length(requires)]"
-	var/datum/interaction/generic/cached = cache[key]
-	if(cached)
-		return cached
-
+	// Id disambiguation only: several distinct specs (different spec objects) can
+	// still want the same auto-generated id text (two "interaction_self" procs on
+	// unrelated types); this seed just needs to vary between them, not to be a
+	// lookup key on its own.
+	var/id_seed = "[kind]|[effect_key]|[held_type]|[length(requires)]|\ref[spec]"
 	var/id = "gen_[dq_interaction_slug(kind)]_[dq_interaction_slug(effect_key)]"
 	if(interaction_by_id(id) || cache_has_id(cache, id))
-		id = "[id]_[md5(key)]"
+		id = "[id]_[md5(id_seed)]"
 
 	var/datum/interaction/generic/interaction = new(id, name, category, /* priority */ 0, default_action, requires, effect, entry, held_type, /* offered_when */ null, /* consumes_input */ TRUE, /* behind_gate */ TRUE, always_handled)
-	cache[key] = interaction
+	cache[spec] = interaction
 	return interaction
 
 /// Whether any interned generic interaction already uses this id (id collision guard).

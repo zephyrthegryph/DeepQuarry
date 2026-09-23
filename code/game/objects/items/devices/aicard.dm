@@ -22,20 +22,14 @@
 		to_chat(user, span_infoplain(span_bold("ERROR ERROR ERROR")))
 		return ITEM_INTERACT_SUCCESS
 
-/obj/item/aicard/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_self/aicard_self,
-	)
-	..()
+/obj/item/aicard/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
 
-/datum/interaction/entry_self/aicard_self
-	id = "aicard_self"
-	name = "Use"
-	effect = /obj/item/aicard/proc/interaction_self
-
+/// tgui_interact()'s own signature doesn't match the (actor, held, interaction) effect
+/// contract (its 2nd/3rd args are the UI and its state), so this stays a thin wrapper.
 /obj/item/aicard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
-	return TRUE
 
 /obj/item/aicard/tgui_interact(mob/user, datum/tgui/ui = null, datum/tgui_state/custom_state)
 	ui = SStgui.try_update_ui(user, src, ui)

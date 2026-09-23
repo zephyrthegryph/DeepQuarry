@@ -61,19 +61,14 @@
 	else
 		add_overlay("[initial(icon_state)]-nocell")
 
-/obj/item/defib_kit/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/defib_kit_hand,
-		/datum/interaction/entry_item/defib_kit_load,
+/obj/item/defib_kit/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ITEM("Load", PROC_REF(interaction_item)),
 	)
-	..()
+	return L
 
 /// Old attack_hand: let tethered_item swap the paddles into hand before falling through to pickup.
-/datum/interaction/entry_hand/defib_kit_hand
-	id = "defib_kit_hand"
-	name = "Use"
-	effect = /obj/item/defib_kit/proc/interaction_hand
-
 /obj/item/defib_kit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	// See important note in tethered_item.dm
 	if(SEND_SIGNAL(src,COMSIG_ITEM_ATTACK_SELF,user) & COMPONENT_CANCEL_ATTACK_CHAIN)
@@ -90,11 +85,6 @@
 		src.add_fingerprint(usr)
 		M.put_in_any_hand_if_possible(src)
 
-
-/datum/interaction/entry_item/defib_kit_load
-	id = "defib_kit_load"
-	name = "Load"
-	effect = /obj/item/defib_kit/proc/interaction_item
 
 /obj/item/defib_kit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))

@@ -256,6 +256,16 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
  * singletons by declare_interactions() below (dq_interaction_from_spec(),
  * compact.dm) - one singleton per distinct spec, shared further across types
  * whose get_interactions() names the same inherited proc.
+ *
+ * A subtype's override REPLACES its parent's, like any other proc override -
+ * it does not merge. A subtype that wants both its own specs and its parent's
+ * uses declare_interactions() instead (its ..() chain is the proven one every
+ * full-form interaction already relies on) and builds its own entry directly
+ * with dq_interaction_from_spec():
+ *
+ *   /obj/item/assembly/signaler/declare_interactions(list/into)
+ *       into += dq_interaction_from_spec(type, INTERACT_ITEM("Transfer", PROC_REF(interaction_transfer)))
+ *       ..()
  */
 /atom/proc/get_interactions()
 	return null

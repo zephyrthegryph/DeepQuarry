@@ -76,18 +76,14 @@
 		i_beams |= I
 		I.visible = visible
 
+/// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven
+/// chain, ..() and all) and builds its own entry directly with dq_interaction_from_spec() -
+/// see doc/rewrite/interactions.md §5a for why get_interactions() itself doesn't chain here.
 /obj/item/assembly/infra/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/infra_hand,
-	)
+	into += dq_interaction_from_spec(type, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 	..()
 
 /// Old attack_hand: clear the beams before falling through to normal pickup.
-/datum/interaction/entry_hand/infra_hand
-	id = "infra_hand"
-	name = "Use"
-	effect = /obj/item/assembly/infra/proc/interaction_hand
-
 /obj/item/assembly/infra/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	QDEL_LIST_NULL(i_beams)
 	return FALSE

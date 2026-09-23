@@ -23,18 +23,13 @@
 /obj/item/gps/emergency_beacon
 	gps_tag = "EMERGENCY BEACON"
 
-/obj/item/emergency_beacon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_self/emergency_beacon_self,
-		/datum/interaction/entry_hand/emergency_beacon_hand,
-		/datum/interaction/entry_item/emergency_beacon_disassemble,
+/obj/item/emergency_beacon/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE("Activate", PROC_REF(interaction_self)),
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ITEM("Disassemble", PROC_REF(interaction_item)),
 	)
-	..()
-
-/datum/interaction/entry_self/emergency_beacon_self
-	id = "emergency_beacon_self"
-	name = "Activate"
-	effect = /obj/item/emergency_beacon/proc/interaction_self
+	return L
 
 /obj/item/emergency_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/T = user.loc
@@ -69,11 +64,6 @@
 	return TRUE
 
 /// Old attack_hand: block pickup while the beacon is active.
-/datum/interaction/entry_hand/emergency_beacon_hand
-	id = "emergency_beacon_hand"
-	name = "Use"
-	effect = /obj/item/emergency_beacon/proc/interaction_hand
-
 /obj/item/emergency_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(beacon_active)
 		to_chat(user,span_warning("The beacon is already active and cannot be moved!"))
@@ -81,11 +71,6 @@
 	return FALSE
 
 /// Old attackby: wrench it apart once active.
-/datum/interaction/entry_item/emergency_beacon_disassemble
-	id = "emergency_beacon_disassemble"
-	name = "Disassemble"
-	effect = /obj/item/emergency_beacon/proc/interaction_item
-
 /obj/item/emergency_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
 		gps.tracking = FALSE

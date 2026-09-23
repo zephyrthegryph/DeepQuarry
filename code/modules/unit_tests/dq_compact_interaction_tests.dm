@@ -40,6 +40,18 @@
 /// to check interning: get_interactions() returning the same spec shares one singleton.
 /obj/dq_compact_probe/child
 
+/// A subtype that adds its own compact spec on top of the parent's: get_interactions()
+/// overrides replace, they don't merge, so this uses declare_interactions() (which already
+/// chains ..() reliably) and builds its own entry directly with dq_interaction_from_spec().
+/obj/dq_compact_probe/extended
+
+/obj/dq_compact_probe/extended/declare_interactions(list/into)
+	into += dq_interaction_from_spec(type, INTERACT_USE("Wave", PROC_REF(wave)))
+	..()
+
+/obj/dq_compact_probe/extended/proc/wave()
+	log += "wave"
+
 /**
  * INTERACT_HAND/INTERACT_ALT respect their effect's own TRUE/FALSE, unlike
  * INTERACT_USE: attack_hand falls through to hand_gate()/pickup and click_alt
@@ -117,6 +129,29 @@
 	probe.log = list()
 	probe.click_alt(H)
 	TEST_ASSERT("eject" in probe.log, "click_alt() reaches the compact alt interaction")
+
+/// A get_interactions() override that chains ..() keeps its parent's specs alongside its own.
+/datum/unit_test/dq_compact_interaction_subtype_chain
+
+/datum/unit_test/dq_compact_interaction_subtype_chain/Run()
+	var/turf/T = test_floor()
+	var/obj/dq_compact_probe/extended/probe = allocate(/obj/dq_compact_probe/extended, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+
+	var/list/self_interactions = list()
+	for(var/datum/interaction/candidate as anything in interaction_candidates(probe))
+		if(candidate.entry == INTERACTION_ENTRY_SELF)
+			self_interactions += candidate
+	TEST_ASSERT_EQUAL(length(self_interactions), 2, "the subtype offers both its own Use interaction and its parent's, got [length(self_interactions)]")
+
+	var/list/names = list()
+	for(var/datum/interaction/candidate as anything in self_interactions)
+		names += candidate.name
+		candidate.perform(H, probe, null)
+	TEST_ASSERT("Wave" in names, "the subtype's own compact interaction is present")
+	TEST_ASSERT("Zoom" in names, "the parent's compact interaction is still present (..() was chained)")
+	TEST_ASSERT("wave" in probe.log, "wave() ran")
+	TEST_ASSERT("zoom" in probe.log, "zoom() ran")
 
 /datum/unit_test/dq_compact_interaction_decline
 

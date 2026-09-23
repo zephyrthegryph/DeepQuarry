@@ -21,17 +21,9 @@
 
 	supply = new(max = 60, A = src)
 
-/obj/item/nifrepairer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/nifrepairer_load,
-	)
-	..()
-
-/// Old attackby: feed nanopaste into the repairer's supply.
-/datum/interaction/entry_item/nifrepairer_load
-	id = "nifrepairer_load"
-	name = "Load"
-	effect = /obj/item/nifrepairer/proc/interaction_item
+/obj/item/nifrepairer/get_interactions()
+	var/static/list/L = list(INTERACT_ITEM("Load", PROC_REF(interaction_item)))
+	return L
 
 /obj/item/nifrepairer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack/nanopaste))

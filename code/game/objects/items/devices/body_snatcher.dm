@@ -82,16 +82,9 @@
 		to_chat(user,span_warning(" A warning pops up on the LED display on the side of the device, informing you that the target is not able to have their mind swapped with!"))
 		return ITEM_INTERACT_FAILURE
 
-/obj/item/bodysnatcher/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_self/bodysnatcher_self,
-	)
-	..()
-
-/datum/interaction/entry_self/bodysnatcher_self
-	id = "bodysnatcher_self"
-	name = "Use"
-	effect = /obj/item/bodysnatcher/proc/interaction_self
+/obj/item/bodysnatcher/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
 
 /obj/item/bodysnatcher/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user,span_warning(" A message pops up on the LED display, informing you that you that the mind transfer to yourself was successful... Wait, did that even do anything?"))
