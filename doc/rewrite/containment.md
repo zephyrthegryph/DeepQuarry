@@ -373,8 +373,32 @@ is the single read that decides whether `A` may be latent right now:
 - `A` is not pinned (`dq_latent_pinned(A)`: no explicit pin, an empty
   `state_collapse_blockers()`, and it is not sitting directly on a turf);
 - nobody has an open `tgui`/`browse` window on `A`'s holder itself;
-- `A` has been idle (no materialize, move or interaction) for at least the
-  holder's configured delay.
+- `A` has been idle for at least the holder's configured delay.
+
+**Idle tracking: one seam, not scattered hooks.** `dq_latent_touch(A)`
+(`latency_policy.dm`) is the only place `latent_last_touch` is written, and it
+is called from exactly one place: `note_enter()`, the ledger's own move path
+(`ledger.dm`), which already covers an ordinary move, a slot transaction
+(`move_into()`/`slot_transfer()`, §2) and adoption on `sync()` -- which is what
+a materialized atom's arrival goes through, since `dq_latent_create()` places
+it straight into the holder. Nothing else calls it directly, so "idle" for now
+means "hasn't moved," not "hasn't been interacted with" (an item examined or
+clicked in place without moving keeps no fresher a timer than one nobody has
+looked at — acceptable for now; a viewer or a click still pins it separately,
+above). **This moves onto the joint ledger before/after-move transaction hook
+once DQ Medical and the lead land it** (`medical_frameworks.md`): that hook is
+shared with DQ Medical's holder-provided clocks, which settle time-based state
+before a holder change, on the same SSreactor-aligned design. Swapping this one
+call site onto it is meant to be the whole migration.
+
+**Ordered destruction (planned, not built here).** A ledger-owned pre-destroy
+phase before subtype `Destroy()`, with spill as a real ledger transaction, is
+planned alongside the joint move hook (same coordination). C10 does not build
+it and does not depend on the current `forceMove`-based spill for correctness:
+the sweep only ever calls `latent_collapse()` on atoms it has just checked are
+real and in a slot, and it forgets a holder the moment `QDELETED()` is true
+rather than assuming anything about how that holder's `Destroy()` disposed of
+its contents.
 
 **Sweep and hysteresis.** Materializing stays event-driven — the existing
 triggers (§4.3) plus a viewer arriving. Collapsing is a budgeted, low-priority

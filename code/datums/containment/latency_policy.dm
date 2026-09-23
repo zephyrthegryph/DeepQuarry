@@ -18,16 +18,20 @@
 /// global kill switch, disables the policy just for this holder's contents.
 /atom/var/latency_policy_disabled = FALSE
 
-/// Marks `A` as touched now, giving it a fresh idle timer. Call on
-/// materialize, on entering a holder's slot, and on any direct interaction
-/// (examine, attack, use) that a holder wants to count as "not idle".
+/**
+ * Marks `A` as touched now, giving it a fresh idle timer. This is the one
+ * seam idle tracking goes through -- called only from the ledger's own move
+ * path (note_enter(), ledger.dm), which already covers an ordinary move, a
+ * slot transaction (move_into()/slot_transfer(), api.dm) and adoption on
+ * sync() (which is what a materialized atom's arrival goes through, since
+ * dq_latent_create() makes it straight into the holder). Nothing else calls
+ * this directly, so when DQ Medical's joint ledger before/after-move
+ * transaction hook lands (medical_frameworks.md), swapping this one call
+ * site onto it is the whole migration -- see containment.md §4.7.
+ */
 /proc/dq_latent_touch(atom/movable/A)
 	if(A)
 		A.latent_last_touch = world.time
-
-/atom/movable/on_materialize()
-	. = ..()
-	dq_latent_touch(src)
 
 // ---- Policy ----
 

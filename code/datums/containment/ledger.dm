@@ -206,7 +206,11 @@
 	tracked++
 	add_snapshot(snapshot)
 	propagate()
-	// Entering a slot is an interaction, not idle time (roadmap C10).
+	// The one idle-tracking seam (roadmap C10, containment.md §4.7): this is
+	// the ledger's own move path, which also covers adoption (sync()) and
+	// materialization, so nothing else needs its own touch call. Moves onto
+	// DQ Medical's joint before/after-move transaction hook in one place
+	// once that lands (medical_frameworks.md).
 	dq_latent_touch(thing)
 	holder.on_slot_changed(id, thing, TRUE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, id)
