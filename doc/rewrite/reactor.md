@@ -18,19 +18,46 @@ DCS signals stay for synchronous behaviour hooks (§8).
 ## 1. API
 
 ```dm
-/// Called when a subscription fires. `reason` is a mask of channels or event kinds;
-/// `source` identifies what changed (a handle, key or timer id).
-/datum/proc/react(reason, source)
+/// Called when a subscription fires. `reason` is REACT_REASON_* class bits OR-ed with channel
+/// bits (a change watch) or the key's mask (a key); `source` is the first reason's source (the
+/// cell, the timer's token, the key id with `source_kind` its kind, or the rate model).
+/datum/proc/on_react(reason, source, source_kind)
+/// A continuous-lane run: scale by `seconds`, the real time since the last run.
+/datum/proc/react_every(seconds, token)
 
-REACT_ON(src, handle, CH_GAS_PRESSURE|CH_GAS_TEMPERATURE)   // channel change on a Rust entity
-REACT_WHEN(src, CONDITION)                                   // a condition watch (Threshold, Band, Difference, …)
+REACT_ON(src, handle, CH_BIT(CH_GAS_PRESSURE)|CH_BIT(CH_GAS_TEMPERATURE)) // channel change on a Rust entity
+REACT_WHEN(src, COND_ABOVE(handle, CH_GAS_PRESSURE, 5000))  // a condition watch (COND_ABOVE/BELOW/BAND/DIFFERENCE)
 REACT_AT(src, world.time + 10 SECONDS)                      // one-shot timer at tick precision
 REACT_EVERY(src, 2 SECONDS, "why this is continuous")      // declared continuous work
-REACT_PUBLISH(key, mask)                                     // DM-owned state changed
-REACT_ON_KEY(src, key, mask)                                 // subscribe to DM-owned state
-REACT_CANCEL(src, token)                                     // drop one subscription or timer
+REACT_PUBLISH(kind, id, mask)                                // DM-owned state changed
+REACT_ON_KEY(src, kind, id, mask)                            // subscribe to DM-owned state
+REACT_RATE(src, model, REACT_CMP_ABOVE, level)              // a rate model crosses a level
+REACT_CANCEL(src, token)                                     // drop one subscription, timer or declaration
 REACT_CLEAR(src)                                             // drop everything; called by the base Destroy()
 ```
+
+As built (S1): `code/__defines/reactor.dm`, `code/controllers/subsystems/reactor.dm`, and the
+binds in `verdigris/ffi/src/reactor.rs`.
+- The handler is `on_react`, not `react`: `/datum/gas_mixture` and `/datum/gas_reaction` already
+  own a `react()` with another meaning.
+- Every subscribing macro returns a **token** for `REACT_CANCEL`. Rust tokens are
+  `index * 16 + (generation & 15)`, so a stale token never cancels a newer subscription.
+  Continuous declarations have negative tokens and live in DM.
+- A **handle** is `REACT_HANDLE(domain, cell)`: a domain (< 16) and a cell (< 2^20) in one exact
+  number. Until the real domains move onto `vg-core` (M1b for gas), the only watched domain is
+  the **probe** (`REACT_DOMAIN_PROBE`): DM-written pressure/temperature cells that exercise the
+  whole watch path (registration checks, frame evaluation, stale filtering, lanes) from DM tests.
+  A real domain adds its `WatchPort` to the host in `reactor.rs`.
+- A **key** is a kind (`REACT_KEY_*`, < 256) and an id (< 2^24, normally the owner's
+  `REACT_ID`), passed as two numbers so both stay exact.
+- Lanes: `SSreactor.on_key(D, kind, id, mask, REACT_LANE_URGENT)` and the other procs take a lane;
+  the macros use the normal lane.
+- Per tick SSreactor makes **one** bind call, `vg_react_step(tick, budget)`: it fires timers and
+  rate crossings, dispatches key publications, evaluates the domain watches and returns the
+  tick's wakes as one flat list, `REACT_WAKE_STRIDE` numbers per wake. Dispatch pauses on
+  `MC_TICK_CHECK` and resumes on the same list.
+- Registry ids freed by `REACT_CLEAR` are reused only from the next tick, so a wake already
+  returned for an id never reaches the datum that inherits it.
 
 - **One registry index per subscriber.** A subscriber holds only that index, a single number. The subscriptions themselves live in Rust ([rust_core.md §6-7](rust_core.md#6-channels-and-watches)), so datums carry no lists.
 - **Idempotent `react()`.** The same subscriber is woken at most once per lane per tick, with its reasons merged. Handlers must cope with spurious and merged wakes: read the current state, never count wakes.
@@ -44,12 +71,23 @@ A few things really do change every tick while they are active: the supermatter,
 - **Scaled by elapsed seconds** (AGENTS.md §3e), so sleeping and waking never change rates.
 - **Self-cancelling.** It stops itself with `REACT_CANCEL` once its sleep condition holds.
 
+As built: the continuous lane lives in DM (`SSreactor.continuous`), because it runs DM code every
+period anyway and few declarations exist. Each runs `react_every(seconds, token)` after the tick's
+wakes, where `seconds` is the real time since its last run; its cost is recorded by type.
+
 ## 3. Timers
 
 - The timer wheel lives on the main side, in Rust. Inserting and cancelling take constant time, and no datum is created per timer.
 - Timers fire at tick precision.
 - `REACT_AT` replaces deadline polling: airlock `close_door_at`, `main_power_lost_until` and `electrified_until`, camera EMP recovery, cooldowns.
 - SStimer stays for general callbacks until S4 moves the heavy users. Its per-insert debug list is fixed first (fixes.md Q10).
+
+As built: the wheel is R5's `TimerWheel` inside the main-side `Reactor`, reached through
+`vg_react_at`/`vg_react_cancel`. It runs in DM ticks (`SSreactor.tick_of(time)` is the first tick
+at or after `time`); a past deadline fires at the next step. Keeping it in Rust costs no datum,
+list entry or DM loop per timer, and timers share the lanes with watch and key wakes, so a timer
+and a watch landing in one tick merge into one `on_react()`. A DM wheel would need a per-timer
+record and a bucket scan per tick, which is what SStimer already pays for.
 
 ## 4. DM-owned keys
 
@@ -72,6 +110,28 @@ Quantities that change at a known rate use the main-side rate models ([rust_core
 
 Agree this interface with the body rewrite before S2 migrates any caller.
 
+**The hook (agreed with the body rewrite).** The body rewrite's only wake is
+`/mob/living/proc/life_wake(bits = LIFE_SYS_ALL, reason, partial = FALSE)` and its only hibernate
+is `life_hibernate(reason)`; its lint forbids writing `life_hibernating`, `life_awake` or
+`hibernating_mobs` outside `scheduler.dm`. The reactor reaches mob Life through exactly one
+proc, `/mob/living/proc/reactor_wake(bits, what)` (in `code/controllers/subsystems/reactor.dm`),
+which becomes `life_wake(bits, "reactor:[what]")` after the body rewrite's wave-4 merge (until
+then it calls the scheduler's current `wake(bits)`). The flow:
+1. A life system's `attach()` subscribes the mob:
+   `REACT_WHEN(mob, COND_BAND(turf_gas, CH_GAS_PRESSURE, comfort_levels))`, the same for
+   temperature, and `REACT_AT` for its timers.
+2. The mob's `on_react(reason, source)` maps the reason to its systems' wake bits (gas channels
+   to the `LIFE_WAKE_BODY` systems, timers to the system that set them) and calls
+   `reactor_wake(bits, "gas")` once, with the bits merged.
+3. `life_hibernate()` never talks to the reactor: the subscriptions stay while the mob sleeps,
+   which is the point.
+
+The first user is the body rewrite's known gap: atmos changes around a standing mob are not an
+event yet (a 15 s timer covers it). A pressure/temperature `Band` watch on the mob's turf
+mixture replaces that timer once gas is a watched domain (M1b). Moving to another mixture
+re-registers the watch (`REACT_CANCEL` the old token, `REACT_WHEN` on the new one) instead of
+re-subscribing on every `Moved()`.
+
 ## 7. Missed-wake safety and metrics
 
 - **Wake tests.** Every subscriber type gets a wake test: change its input and check it woke; hold the input steady and check it stays asleep. This extends the pattern the body rewrite uses.
@@ -83,6 +143,20 @@ Agree this interface with the body rewrite before S2 migrates any caller.
   - Dispatch time.
 
   The profiler and the benchmarks read them. Today's `machine_wake_reason_counts`, which grows all round (B4), is replaced.
+
+As built:
+- `SSreactor.performance_diagnostics()` gives wakes by type and reason class (`changed`,
+  `condition`, `timer`, `key`, `rate`, `every`; at most `max_metric_types` types, the rest
+  under `other`), continuous-lane declarations with their justification and cost, dispatch time,
+  and the Rust counters (`vg_react_stats`). The profiler's `PERF_PROFILE` record has it under
+  `subsystems.reactor`; each benchmark window records it as `<window>_reactor`, plus the metric
+  `<window>_reactor_wakes`. The Rust counters are also in `verdigris_metrics()` as `reactor.*`.
+- `SSreactor.audit(sample)` asks sampled subscribers `react_sleep_violation()` (null while the
+  sleep condition holds). It runs every `audit_interval` only in test and dev builds (UNIT_TESTS/TESTING,
+  where a finding is a runtime that fails the run) or, on servers, with the `reactor_audit` config
+  flag (off by default; an admin can enable it for one round). Findings log as `REACTOR_AUDIT`.
+- `react_wake_test(D, change)` (unit tests) is the wake test for any subscriber type: held
+  steady it must not wake, after `change` it must.
 
 ## 8. Signals or the reactor?
 
