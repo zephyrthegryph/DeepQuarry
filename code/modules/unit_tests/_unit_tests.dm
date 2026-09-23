@@ -177,6 +177,7 @@
 #include "dq_predicate_tests.dm"
 #include "dq_constraint_tests.dm"
 #include "dq_containment_tests.dm"
+#include "dq_inventory_tests.dm"
 #include "dq_rule_tests.dm"
 #include "dq_containment_path_tests.dm"
 #include "dq_stock_tests.dm"
