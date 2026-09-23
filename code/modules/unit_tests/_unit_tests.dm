@@ -108,6 +108,7 @@
 #include "material_tests.dm"
 #include "nuke_cinematic.dm"
 #include "pai_tests.dm"
+#include "preview_async_tests.dm"
 #include "poster_tests.dm"
 #include "special_roles.dm"
 #include "preferences.dm"

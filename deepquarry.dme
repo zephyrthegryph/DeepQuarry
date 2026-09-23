@@ -5045,6 +5045,7 @@
 #include "code\modules\client\preferences\editors\underwear.dm"
 #include "code\modules\client\preferences\editors\vore_messages.dm"
 #include "code\modules\client\preferences\play_mode_preview.dm"
+#include "code\modules\client\preferences\preview_async.dm"
 #include "code\modules\client\preferences\types\character\directory.dm"
 #include "code\modules\client\preferences\types\character\equipment.dm"
 #include "code\modules\client\preferences\types\character\antagonism.dm"
