@@ -1364,7 +1364,8 @@ impl GasWorld {
 			} else {
 				(rev_region_before, rev_cell_before)
 			};
-			if self.pipes.device_asleep(key, rev_a_before, rev_b_before) {
+			let idx = id.index();
+			if self.pipes.device_asleep(idx, rev_a_before, rev_b_before) {
 				continue;
 			}
 
@@ -1409,7 +1410,7 @@ impl GasWorld {
 			} else {
 				(rev_region_after, rev_cell_after)
 			};
-			self.pipes.set_device_activity(key, settled, rev_a_after, rev_b_after);
+			self.pipes.set_device_activity(idx, settled, rev_a_after, rev_b_after);
 
 			out.push(pipes::DeviceStep { key, report });
 		}

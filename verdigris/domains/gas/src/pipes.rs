@@ -285,20 +285,6 @@ pub struct DeviceStep {
 	pub report: StepReport,
 }
 
-/// A device edge's idle-skip state (M2 follow-up: settled regions put their
-/// device edges to sleep the same way M1b's field idle-skip does for
-/// cells). `asleep` once a step moved nothing and drew no power; woken by a
-/// setting change (`add_device`/`add_turf_device`/`set_device`) or by
-/// either endpoint's revision moving since the last step (another device
-/// on the same region, a DM write, or - for a turf endpoint - a dirty
-/// field cell).
-#[derive(Clone, Copy, Debug, Default)]
-struct DeviceActivity {
-	asleep: bool,
-	rev_a: u32,
-	rev_b: u32,
-}
-
 /// The main-owned pipe network: ports by DM id, and stable small slots for
 /// regions (a region's DM gas handle is `PIPE_BASE + slot`).
 #[derive(Default)]
@@ -308,8 +294,26 @@ pub struct PipeNet {
 	targets: HashMap<u32, u32>,
 	/// Device edges (M2) by DM id.
 	devices: HashMap<u32, DeviceId<Pipes>>,
-	/// Idle-skip state per device, keyed the same as `devices`.
-	activity: HashMap<u32, DeviceActivity>,
+	/// Idle-skip: which device edges are due to step (M2 follow-up: settled
+	/// regions put their device edges to sleep the same way M1b's field
+	/// idle-skip does for cells) - `vg_core`'s canonical per-law sleep
+	/// bitset (`rust_architecture.md` §4.4), dense by device arena index
+	/// (`DeviceId::index()`, not the sparse DM id `devices` keys on).
+	awake: vg_core::activity::Activity,
+	/// The endpoint revisions each currently-asleep device last saw
+	/// (dense, parallel to `awake`). `Activity` is only ever a bool per
+	/// index, so this is the extra bookkeeping an asleep device needs to
+	/// notice an external write: another device sharing its region (or,
+	/// for a turf endpoint, a dirty field cell) moves that side's revision
+	/// without going through this device's own step, and nothing yet
+	/// pushes a wake for that - `payload_mut` is a raw accessor with no
+	/// touched-tracking side effect, unlike a topological change (which
+	/// `Network::drain_touched` already covers). A woken index re-checks
+	/// its revisions every step regardless of `seen`, so this only matters
+	/// while asleep. Fan-out wake-on-write onto `Activity` alone is Core
+	/// C's `NetworkHost` job (`rust_architecture.md` §7's migration table),
+	/// not rebuilt here.
+	seen: Vec<(u32, u32)>,
 	slots: Vec<Option<RawHandle>>,
 	slot_of: HashMap<RawHandle, u32>,
 	free: Vec<u32>,
@@ -475,7 +479,7 @@ impl PipeNet {
 		{
 			Ok(d) => {
 				self.devices.insert(id, d);
-				self.activity.remove(&id);
+				self.wake_device(d);
 				true
 			}
 			Err(_) => false,
@@ -500,7 +504,7 @@ impl PipeNet {
 		{
 			Ok(d) => {
 				self.devices.insert(id, d);
-				self.activity.remove(&id);
+				self.wake_device(d);
 				true
 			}
 			Err(_) => false,
@@ -512,7 +516,6 @@ impl PipeNet {
 		let Some(d) = self.devices.remove(&id) else {
 			return false;
 		};
-		self.activity.remove(&id);
 		self.net.remove_device(d).is_ok()
 	}
 
@@ -522,8 +525,25 @@ impl PipeNet {
 		let Some(&d) = self.devices.get(&id) else {
 			return false;
 		};
-		self.activity.remove(&id);
+		self.wake_device(d);
 		self.net.set_device_data(d, params).is_ok()
+	}
+
+	/// Wakes a device edge (a fresh or just-reconfigured one), growing the
+	/// activity set to cover it if needed. A woken device ignores `seen`
+	/// (it always re-steps and re-checks next `step_devices`/
+	/// `GasWorld::step_turf_devices`), so resetting `seen` here is just
+	/// hygiene against a reused arena slot's stale revisions.
+	fn wake_device(&mut self, d: DeviceId<Pipes>) {
+		let idx = d.index();
+		if idx >= self.awake.capacity() {
+			self.awake.grow(idx + 1);
+		}
+		if (idx as usize) >= self.seen.len() {
+			self.seen.resize(idx as usize + 1, (0, 0));
+		}
+		self.awake.wake(idx);
+		self.seen[idx as usize] = (0, 0);
 	}
 
 	/// The change-revision of a region, for device idle-skip: the DM slot
@@ -538,34 +558,48 @@ impl PipeNet {
 			.map_or(0, |&s| self.revision(s))
 	}
 
-	/// Whether a device edge is asleep given its endpoints' current
-	/// revisions - the same idle-skip state `step_devices` tracks for
-	/// region<->region edges, shared with `GasWorld::step_turf_devices` for
-	/// region<->turf edges (a vent pump or scrubber), which resolves its own
-	/// "region" (`region_revision`) and "turf" (the field cell's own
-	/// revision) sides and calls this directly since it steps outside
-	/// `PipeNet`.
+	/// Whether device (arena index `idx`) is asleep given its endpoints'
+	/// current revisions - the same idle-skip state `step_devices` tracks
+	/// for region<->region edges, shared with `GasWorld::step_turf_devices`
+	/// for region<->turf edges (a vent pump or scrubber), which resolves
+	/// its own "region" (`region_revision`) and "turf" (the field cell's
+	/// own revision) sides and calls this directly since it steps outside
+	/// `PipeNet`. An index `awake` has never seen (out of range for
+	/// `seen`) is never asleep: `wake_device` always grows both together,
+	/// so this only happens for an index this `PipeNet` has never known.
 	#[must_use]
-	pub(crate) fn device_asleep(&self, id: u32, rev_a: u32, rev_b: u32) -> bool {
-		self.activity
-			.get(&id)
-			.is_some_and(|a| a.asleep && a.rev_a == rev_a && a.rev_b == rev_b)
+	pub(crate) fn device_asleep(&self, idx: u32, rev_a: u32, rev_b: u32) -> bool {
+		if self.awake.is_awake(idx) {
+			return false;
+		}
+		self.seen.get(idx as usize).is_some_and(|&(a, b)| a == rev_a && b == rev_b)
 	}
 
 	/// Records a device edge's idle-skip state after a step (or after
 	/// deciding not to step it because it was already asleep).
-	pub(crate) fn set_device_activity(&mut self, id: u32, asleep: bool, rev_a: u32, rev_b: u32) {
-		self.activity.insert(id, DeviceActivity { asleep, rev_a, rev_b });
+	pub(crate) fn set_device_activity(&mut self, idx: u32, asleep: bool, rev_a: u32, rev_b: u32) {
+		if idx >= self.awake.capacity() {
+			self.awake.grow(idx + 1);
+		}
+		if (idx as usize) >= self.seen.len() {
+			self.seen.resize(idx as usize + 1, (0, 0));
+		}
+		if asleep {
+			self.awake.sleep(idx);
+		} else {
+			self.awake.wake(idx);
+		}
+		self.seen[idx as usize] = (rev_a, rev_b);
 	}
 
 	/// Runs every awake device edge's flow law once (`device.rs`), moving
 	/// gas between the regions on each side and bumping their DM slot
 	/// revisions. A device that settled (moved nothing, drew no power) on
 	/// its last step and whose endpoints haven't changed since is asleep
-	/// and costs nothing but a `HashMap` lookup this tick - the same
-	/// idle-skip M1b's field already does for settled cells. Edges with a
-	/// field-cell (turf) endpoint are skipped; `GasWorld::step_turf_devices`
-	/// runs those.
+	/// and costs nothing but an `Activity` bit and a dense `seen` read this
+	/// tick - the same idle-skip M1b's field already does for settled
+	/// cells. Edges with a field-cell (turf) endpoint are skipped;
+	/// `GasWorld::step_turf_devices` runs those.
 	pub fn step_devices(&mut self, dt: f32) -> Vec<DeviceStep> {
 		let ids: Vec<DeviceId<Pipes>> = self.net.devices().map(|(id, _)| id).collect();
 		let mut out = Vec::with_capacity(ids.len());
@@ -588,10 +622,10 @@ impl PipeNet {
 			if ra == rb {
 				continue;
 			}
+			let idx = id.index();
 			let rev_a = self.region_revision(ra);
 			let rev_b = self.region_revision(rb);
-			let activity = self.activity.entry(key).or_default();
-			if activity.asleep && activity.rev_a == rev_a && activity.rev_b == rev_b {
+			if self.device_asleep(idx, rev_a, rev_b) {
 				continue;
 			}
 			let params = dev.data;
@@ -616,14 +650,7 @@ impl PipeNet {
 					rev_b = self.revision(sb);
 				}
 			}
-			self.activity.insert(
-				key,
-				DeviceActivity {
-					asleep: settled,
-					rev_a,
-					rev_b,
-				},
-			);
+			self.set_device_activity(idx, settled, rev_a, rev_b);
 			out.push(DeviceStep { key, report });
 		}
 		out
