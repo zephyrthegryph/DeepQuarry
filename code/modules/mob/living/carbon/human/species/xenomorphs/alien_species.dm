@@ -113,7 +113,7 @@
 
 	..()
 
-/datum/species/xenos/handle_environment_special(mob/living/carbon/human/H)
+/datum/species/xenos/environment_effects(mob/living/carbon/human/H)
 
 	var/turf/T = H.loc
 	if(!T) return

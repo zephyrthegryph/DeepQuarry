@@ -664,20 +664,23 @@ I think I covered everything.
 ///		AI handling stuff
 ///
 
-/mob/living/simple_mob/vore/bigdragon/handle_special()
-	if(!noenrage)
-		if(!enraged)
-			if(vitality() <= 0.5)
-				enraged = 1
-				say("No more games. COME HERE.")
-		if(enraged)
-			if(vitality() >= 0.5)
-				enraged = 0
-	if(resting)	//Give them a way to slowly heal over time while player controlled
-		mend(TREAT_TISSUE_REPAIR, 2.5)
-		mend(TREAT_BURN_CARE, 2.5)
-		mend(TREAT_ANTITOXIN, 5)
-		mend(TREAT_OXYGENATION, 5)
+/datum/life_system/special/vore/bigdragon
+	mob_type = /mob/living/simple_mob/vore/bigdragon
+
+/datum/life_system/special/vore/bigdragon/tick(mob/living/simple_mob/vore/bigdragon/self, datum/life_context/ctx)
+	if(!self.noenrage)
+		if(!self.enraged)
+			if(self.vitality() <= 0.5)
+				self.enraged = 1
+				self.say("No more games. COME HERE.")
+		if(self.enraged)
+			if(self.vitality() >= 0.5)
+				self.enraged = 0
+	if(self.resting)	//Give them a way to slowly heal over time while player controlled
+		self.mend(TREAT_TISSUE_REPAIR, 2.5)
+		self.mend(TREAT_BURN_CARE, 2.5)
+		self.mend(TREAT_ANTITOXIN, 5)
+		self.mend(TREAT_OXYGENATION, 5)
 
 /mob/living/simple_mob/vore/bigdragon/do_special_attack(atom/A)
 	. = TRUE

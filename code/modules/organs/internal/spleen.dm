@@ -67,7 +67,7 @@
 		if(target)
 			target.add_wound(new /datum/affliction/wound/internal_bleeding(target, round(20 * spleen_efficiency)))
 			target.update_damages()
-		owner.handle_organs(TRUE) //Force an update so we start processing the internal bleeding.
+		owner.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 
 /obj/item/organ/internal/spleen/minor
 	name = "vestigial spleen"

@@ -1033,13 +1033,19 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	GLOB.silicon_mob_list -= src
 	QDEL_NULL(eyeobj)
 
-/mob/living/silicon/ai/announcer/Life()
-	GLOB.mob_list -= src
-	GLOB.living_mob_list -= src
-	GLOB.dead_mob_list -= src
-	GLOB.ai_list -= src
-	GLOB.silicon_mob_list -= src
-	QDEL_NULL(eyeobj)
+/mob/living/silicon/ai/announcer
+	life_set = LIFE_SET_DELIST
+
+/datum/life_system/delist/silicon/ai/announcer
+	mob_type = /mob/living/silicon/ai/announcer
+
+/datum/life_system/delist/silicon/ai/announcer/tick(mob/living/silicon/ai/announcer/self, datum/life_context/ctx)
+	GLOB.mob_list -= self
+	GLOB.living_mob_list -= self
+	GLOB.dead_mob_list -= self
+	GLOB.ai_list -= self
+	GLOB.silicon_mob_list -= self
+	QDEL_NULL(self.eyeobj)
 
 #undef AI_CHECK_WIRELESS
 #undef AI_CHECK_RADIO

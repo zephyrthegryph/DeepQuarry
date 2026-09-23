@@ -8,6 +8,3 @@
 	traumatic_shock = current_pain()
 	return traumatic_shock
 
-
-/mob/living/carbon/proc/handle_shock()
-	updateshock()

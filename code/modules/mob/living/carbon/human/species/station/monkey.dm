@@ -56,7 +56,7 @@
 		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right)
 		)
 
-/datum/species/monkey/handle_npc(mob/living/carbon/human/H)
+/datum/species/monkey/npc_behaviour(mob/living/carbon/human/H)
 	if(H.stat != CONSCIOUS)
 		return
 	// Traitgenes Monkeys perform emotes based on their traits

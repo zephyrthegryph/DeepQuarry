@@ -243,9 +243,12 @@
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/is_cloaked()
 	return dq_get_cloaked(src)
 
-/mob/living/simple_mob/mechanical/cyber_horror/tajaran/handle_special()
-	if(!dq_get_cloaked(src) && can_cloak())
-		cloak()
+/datum/life_system/special/mechanical/cyber_horror/tajaran
+	mob_type = /mob/living/simple_mob/mechanical/cyber_horror/tajaran
+
+/datum/life_system/special/mechanical/cyber_horror/tajaran/tick(mob/living/simple_mob/mechanical/cyber_horror/tajaran/self, datum/life_context/ctx)
+	if(!dq_get_cloaked(self) && self.can_cloak())
+		self.cloak()
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(dq_get_cloaked(src))

@@ -98,46 +98,49 @@
 		that_one.resize(prev_size, ignore_prefs = TRUE)
 		return ..()
 
-/mob/living/simple_mob/vore/overmap/stardog/Life()
+/datum/life_system/type_post/simple_mob/vore/overmap/stardog
+	mob_type = /mob/living/simple_mob/vore/overmap/stardog
+
+/datum/life_system/type_post/simple_mob/vore/overmap/stardog/tick(mob/living/simple_mob/vore/overmap/stardog/self, datum/life_context/ctx)
 	. = ..()
-	if(admin_override)
-		affinity = 9999
-		nutrition = 9999
-	if(devourable)	//This will cause problems probably so please do not eat the dog
-		devourable = FALSE
-		digestable = FALSE
-	if(ckey && control_node)
-		if(nutrition <= 200)
-			adjust_affinity(-10)
-		else if(nutrition < 500)
-			adjust_affinity(-3)
+	if(self.admin_override)
+		self.affinity = 9999
+		self.nutrition = 9999
+	if(self.devourable)	//This will cause problems probably so please do not eat the dog
+		self.devourable = FALSE
+		self.digestable = FALSE
+	if(self.ckey && self.control_node)
+		if(self.nutrition <= 200)
+			self.adjust_affinity(-10)
+		else if(self.nutrition < 500)
+			self.adjust_affinity(-3)
 		else
-			adjust_affinity(-1)
-		if(!affinity)
-			control_node.eject()
-	if(!ckey && resting)
-		lay_down()
+			self.adjust_affinity(-1)
+		if(!self.affinity)
+			self.control_node.eject()
+	if(!self.ckey && self.resting)
+		self.lay_down()
 
-	if(istype(loc, /turf/unsimulated/map))
-		if(!invisibility)
-			invisibility = INVISIBILITY_ABSTRACT
-			child_om_marker.invisibility = INVISIBILITY_NONE
+	if(istype(self.loc, /turf/unsimulated/map))
+		if(!self.invisibility)
+			self.invisibility = INVISIBILITY_ABSTRACT
+			self.child_om_marker.invisibility = INVISIBILITY_NONE
 			//legacy ai_holder wander tuning removed.
-			melee_damage_lower = 50
-			melee_damage_upper = 100
-			mob_size = MOB_HUGE
-			child_om_marker.set_light(5, 1, "#ff8df5")
-			movement_cooldown = 5
+			self.melee_damage_lower = 50
+			self.melee_damage_upper = 100
+			self.mob_size = MOB_HUGE
+			self.child_om_marker.set_light(5, 1, "#ff8df5")
+			self.movement_cooldown = 5
 
-	else if(invisibility)
-		invisibility = INVISIBILITY_NONE
-		child_om_marker.invisibility = INVISIBILITY_ABSTRACT
+	else if(self.invisibility)
+		self.invisibility = INVISIBILITY_NONE
+		self.child_om_marker.invisibility = INVISIBILITY_ABSTRACT
 		//legacy ai_holder wander tuning removed.
-		melee_damage_lower = 1
-		melee_damage_upper = 5
-		mob_size = MOB_SMALL
-		child_om_marker.set_light(0)
-		movement_cooldown = 0
+		self.melee_damage_lower = 1
+		self.melee_damage_upper = 5
+		self.mob_size = MOB_SMALL
+		self.child_om_marker.set_light(0)
+		self.movement_cooldown = 0
 
 /mob/living/simple_mob/vore/overmap/stardog/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
 	to_chat(src, span_warning("You can't do that."))	//The dog can move back and forth between the overmap.

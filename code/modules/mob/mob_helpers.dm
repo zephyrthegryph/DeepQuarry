@@ -711,20 +711,6 @@ GLOBAL_LIST_INIT(organ_rel_size, list(
 		vis_enabled -= VIS_SOULCATCHER
 	return
 
-/// General HUD updates done regularly (health puppet things, etc). Returns true if the mob has a client and is allowed to update its hud.
-/mob/proc/handle_regular_hud_updates()
-	SHOULD_CALL_PARENT(TRUE)
-	if(!client)
-		return FALSE
-	if(SEND_SIGNAL(src,COMSIG_MOB_HANDLE_HUD) & COMSIG_COMPONENT_HANDLED_HUD)
-		return FALSE
-	return TRUE
-
-/// Handle eye things like the Byond SEE_TURFS, SEE_OBJS, etc.
-/mob/proc/handle_vision()
-	SHOULD_CALL_PARENT(TRUE)
-	SEND_SIGNAL(src,COMSIG_MOB_HANDLE_VISION)
-
 //Icon is used to occlude things like huds from the faulty byond context menu.
 //   http://www.byond.com/forum/?post=2336679
 GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())

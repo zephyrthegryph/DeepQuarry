@@ -200,9 +200,10 @@
 			return M
 	return 0
 
-/mob/proc/Life()
-//	if(organStructure)
-//		organStructure.ProcessOrgans()
+/// One upkeep cycle, called by SSmobs. `seconds` is the time since the previous call;
+/// `profile` is TRUE when SSmobs samples this call. Living mobs run their life systems
+/// (code/modules/mob/living/life/scheduler.dm).
+/mob/proc/Life(seconds, profile)
 	return
 
 #define UNBUCKLED 0
@@ -1059,7 +1060,7 @@
 		if(prob(selection.w_class * 5) && (affected.robotic < ORGAN_ROBOT)) //I'M SO ANEMIC I COULD JUST -DIE-.
 			affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, min(selection.w_class * 5, 15)))
 			affected.update_damages()
-			H.handle_organs(TRUE) //Force an update so we start processing the internal bleeding.
+			H.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 			H.custom_pain("Something tears wetly in your [affected] as [selection] is pulled free!", 50)
 
 		if (ishuman(U))

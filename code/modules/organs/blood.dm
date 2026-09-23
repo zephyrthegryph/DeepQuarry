@@ -54,36 +54,39 @@ BLOOD_VOLUME_SURVIVE = 40
 			B.name = B.data["blood_name"]
 
 // Takes care blood loss and regeneration
-/mob/living/carbon/human/handle_blood()
-	if(inStasisNow())
+/datum/life_system/blood/carbon/human
+	mob_type = /mob/living/carbon/human
+
+/datum/life_system/blood/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+	if(self.inStasisNow())
 		return
 
-	if(!should_have_organ(O_HEART))
+	if(!self.should_have_organ(O_HEART))
 		return
 
-	if(stat != DEAD && bodytemperature >= 170)	//Dead or cryosleep people do not pump the blood.
+	if(self.stat != DEAD && self.bodytemperature >= 170)	//Dead or cryosleep people do not pump the blood.
 
-		var/blood_volume_raw = vessel.get_reagent_amount(REAGENT_ID_BLOOD)
-		var/blood_volume = round((blood_volume_raw/species.blood_volume)*100) // Percentage.
+		var/blood_volume_raw = self.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
+		var/blood_volume = round((blood_volume_raw/self.species.blood_volume)*100) // Percentage.
 
 		//Blood regeneration if there is some space
-		if(blood_volume_raw < species.blood_volume)
-			var/datum/reagent/blood/B = locate() in vessel.reagent_list //Grab some blood
+		if(blood_volume_raw < self.species.blood_volume)
+			var/datum/reagent/blood/B = locate() in self.vessel.reagent_list //Grab some blood
 			if(B) // Make sure there's some blood at all
-				if(B.data["donor"] != src) //If it's not theirs, then we look for theirs
-					for(var/datum/reagent/blood/D in vessel.reagent_list)
-						if(D.data["donor"] == src)
+				if(B.data["donor"] != self) //If it's not theirs, then we look for theirs
+					for(var/datum/reagent/blood/D in self.vessel.reagent_list)
+						if(D.data["donor"] == self)
 							B = D
 							break
 
-				B.volume += 0.1 + factor(BF_BLOOD_REGEN) // regenerate blood VERY slowly, faster with iron and friends
+				B.volume += 0.1 + self.factor(BF_BLOOD_REGEN) // regenerate blood VERY slowly, faster with iron and friends
 
 		// Damaged heart virtually reduces the blood volume, as the blood isn't
 		// being pumped properly anymore.
-		if(species && should_have_organ(O_HEART))
-			var/obj/item/organ/internal/heart/heart = internal_organs_by_name[O_HEART]
+		if(self.species && self.should_have_organ(O_HEART))
+			var/obj/item/organ/internal/heart/heart = self.internal_organs_by_name[O_HEART]
 
-			if(has_modifier_of_type(/datum/modifier/bloodpump))
+			if(self.has_modifier_of_type(/datum/modifier/bloodpump))
 				blood_volume_raw *= 1
 				blood_volume *= 1
 			else if(!heart)
@@ -105,7 +108,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		var/dmg_coef = 1				//Lower means less damage taken
 		var/threshold_coef = 1			//Lower means the damage caps off lower
 
-		if(factor(BF_STABILIZATION))
+		if(self.factor(BF_STABILIZATION))
 			dmg_coef = 0.5
 			threshold_coef = 0.75
 
@@ -118,43 +121,43 @@ BLOOD_VOLUME_SURVIVE = 40
 		// spam and skip the eye_blurry overrides (our symptoms own
 		// blurred_vision). Reasoning: DQ conditions provide messaging
 		// via /datum/affliction_symptom; doubled messages were confusing.
-		if(blood_volume_raw >= species.blood_volume*species.blood_level_safe)
-			if(pale)
-				pale = 0
-				update_icons_body()
-		else if(blood_volume_raw >= species.blood_volume*species.blood_level_warning)
-			if(!pale)
-				pale = 1
-				update_icons_body()
-			if(injury_load(INJURY_CATEGORY_ASPHYXIA) < 20 * threshold_coef)
-				injure(INJURY_ASPHYXIA, 3 * dmg_coef)
-		else if(blood_volume_raw >= species.blood_volume*species.blood_level_danger)
-			if(!pale)
-				pale = 1
-				update_icons_body()
-			if(injury_load(INJURY_CATEGORY_ASPHYXIA) < 50 * threshold_coef)
-				injure(INJURY_ASPHYXIA, 10 * dmg_coef)
-			injure(INJURY_ASPHYXIA, 1 * dmg_coef)
-		else if(blood_volume_raw >= species.blood_volume*species.blood_level_fatal)
-			injure(INJURY_ASPHYXIA, 5 * dmg_coef)
+		if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_safe)
+			if(self.pale)
+				self.pale = 0
+				self.update_icons_body()
+		else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_warning)
+			if(!self.pale)
+				self.pale = 1
+				self.update_icons_body()
+			if(self.injury_load(INJURY_CATEGORY_ASPHYXIA) < 20 * threshold_coef)
+				self.injure(INJURY_ASPHYXIA, 3 * dmg_coef)
+		else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_danger)
+			if(!self.pale)
+				self.pale = 1
+				self.update_icons_body()
+			if(self.injury_load(INJURY_CATEGORY_ASPHYXIA) < 50 * threshold_coef)
+				self.injure(INJURY_ASPHYXIA, 10 * dmg_coef)
+			self.injure(INJURY_ASPHYXIA, 1 * dmg_coef)
+		else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_fatal)
+			self.injure(INJURY_ASPHYXIA, 5 * dmg_coef)
 		else //Not enough blood to survive (usually)
-			if(!pale)
-				pale = 1
-				update_icons_body()
-			Paralyse(3)
-			Sleeping(3)
-			injure(INJURY_TOXIN, 3 * dmg_coef, flags = INJURE_SILENT)
-			injure(INJURY_ASPHYXIA, 75 * dmg_coef)
+			if(!self.pale)
+				self.pale = 1
+				self.update_icons_body()
+			self.Paralyse(3)
+			self.Sleeping(3)
+			self.injure(INJURY_TOXIN, 3 * dmg_coef, flags = INJURE_SILENT)
+			self.injure(INJURY_ASPHYXIA, 75 * dmg_coef)
 
 		// Without enough blood you slowly go hungry.
-		if(blood_volume_raw < species.blood_volume*species.blood_level_safe)
-			if(nutrition >= 300)
-				adjust_nutrition(-10)
-			else if(nutrition >= 200)
-				adjust_nutrition(-3)
+		if(blood_volume_raw < self.species.blood_volume*self.species.blood_level_safe)
+			if(self.nutrition >= 300)
+				self.adjust_nutrition(-10)
+			else if(self.nutrition >= 200)
+				self.adjust_nutrition(-3)
 
 		//Bleeding out
-		caculate_bloodloss_and_bleed(bleed = TRUE)
+		self.caculate_bloodloss_and_bleed(bleed = TRUE)
 
 ///Calculates our bloodloss divisor and returns what it is.
 /mob/living/carbon/human/proc/calculate_bloodloss_divisor()

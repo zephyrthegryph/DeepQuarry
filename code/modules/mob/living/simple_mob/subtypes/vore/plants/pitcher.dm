@@ -122,31 +122,34 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		"%pred's stomach shifts and slushes as someone inside of it tries in vain to escape. It doesn't look like they can, though.",
 		"%pred seems unpertubed by the stubborn movement of its prey. They clearly aren't getting out on their own.")
 
-/mob/living/simple_mob/vore/pitcher_plant/Life()
+/datum/life_system/type_post/simple_mob/vore/pitcher_plant
+	mob_type = /mob/living/simple_mob/vore/pitcher_plant
+
+/datum/life_system/type_post/simple_mob/vore/pitcher_plant/tick(mob/living/simple_mob/vore/pitcher_plant/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
 
-	var/lastmeat = meat //If Life procs every 2 seconds that means it takes 20 seconds to digest a steak
-	meat = max(0,meat - meatspeed) //Clamp it to zero
-	adjust_nutrition(lastmeat - meat) //If there's no meat, this will just be zero.
-	if(nutrition >= PITCHER_SATED + NUTRITION_FRUIT)
+	var/lastmeat = self.meat //If Life procs every 2 seconds that means it takes 20 seconds to digest a steak
+	self.meat = max(0,self.meat - self.meatspeed) //Clamp it to zero
+	self.adjust_nutrition(lastmeat - self.meat) //If there's no meat, this will just be zero.
+	if(self.nutrition >= PITCHER_SATED + NUTRITION_FRUIT)
 		if(prob(10)) //Should be about once every 20 seconds.
-			grow_fruit()
-	var/lastnutrition = nutrition
-	adjust_nutrition(-pitcher_metabolism)
-	var/digested = lastnutrition - nutrition // Metabolising nutrients heals the pitcher.
+			self.grow_fruit()
+	var/lastnutrition = self.nutrition
+	self.adjust_nutrition(-self.pitcher_metabolism)
+	var/digested = lastnutrition - self.nutrition // Metabolising nutrients heals the pitcher.
 	if(digested > 0)
-		mend(TREAT_TISSUE_REPAIR, digested)
-		mend(TREAT_ANTITOXIN, digested * 3)
-	if(nutrition < pitcher_metabolism) // Starving.
-		injure(INJURY_TOXIN, pitcher_metabolism, flags = INJURE_SILENT)
-	if(world.time > last_lifechecks + 30 SECONDS)
-		last_lifechecks = world.time
-		vore_checks()
-		handle_hungry()
-	if (!anchored)
-		anchored = 1 // If it's alive, it should root itself back down and once again be impossible to move.
+		self.mend(TREAT_TISSUE_REPAIR, digested)
+		self.mend(TREAT_ANTITOXIN, digested * 3)
+	if(self.nutrition < self.pitcher_metabolism) // Starving.
+		self.injure(INJURY_TOXIN, self.pitcher_metabolism, flags = INJURE_SILENT)
+	if(world.time > self.last_lifechecks + 30 SECONDS)
+		self.last_lifechecks = world.time
+		self.vore_checks()
+		self.handle_hungry()
+	if (!self.anchored)
+		self.anchored = 1 // If it's alive, it should root itself back down and once again be impossible to move.
 
 /mob/living/simple_mob/vore/pitcher_plant/Initialize(mapload)
 	. = ..()

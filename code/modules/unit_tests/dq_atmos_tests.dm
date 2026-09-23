@@ -404,7 +404,7 @@
 	var/initial_o2 = breath.get_moles(/datum/gas/oxygen)
 	var/initial_co2 = breath.get_moles(/datum/gas/carbon_dioxide)
 
-	H.handle_breath(breath)
+	life_test_breath(H, breath)
 
 	var/final_o2 = breath.get_moles(/datum/gas/oxygen)
 	var/final_co2 = breath.get_moles(/datum/gas/carbon_dioxide)
@@ -460,7 +460,7 @@
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 
 	// Drive the production breath path.
-	H.breathe()
+	life_test_breathe(H)
 
 	var/final_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 	TEST_ASSERT(final_toxin > initial_toxin, \
@@ -502,7 +502,7 @@
 
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 
-	H.handle_breath(breath)
+	life_test_breath(H, breath)
 
 	var/final_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 	TEST_ASSERT(final_toxin > initial_toxin, \
@@ -3425,7 +3425,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	breath.set_temperature(T20C)
 	var/initial_hypoxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
 
-	H.handle_breath(breath)
+	life_test_breath(H, breath)
 
 	var/final_hypoxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
 	TEST_ASSERT(final_hypoxia > initial_hypoxia, \
@@ -3440,7 +3440,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// No base species in GLOB.all_species declares a phoron/plasma breath_type
 	// on this build — phoron-breathing is only ever a custom-species trait
 	// (/datum/trait/negative/breathes/phoron, which var-changes breath_type to
-	// GAS_PHORON). handle_breath() reads species.breath_type and consumes that
+	// GAS_PHORON). The breathing system's exchange() reads species.breath_type and consumes that
 	// exact gas. To exercise that consumption path deterministically we allocate
 	// a normal human and temporarily flip its species' breath_type to GAS_PHORON
 	// — the same value the phoron-breather trait applies — restoring it after so
@@ -3460,7 +3460,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/initial_plasma = breath.get_moles(/datum/gas/plasma)
 
-	H.handle_breath(breath)
+	life_test_breath(H, breath)
 
 	var/final_plasma = breath.get_moles(/datum/gas/plasma)
 
@@ -3779,7 +3779,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/initial_brute = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	for(var/i in 1 to 5)
-		H.handle_environment(turf_air)
+		life_test_environment(H, turf_air)
 	var/final_brute = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 
 	TEST_ASSERT(final_brute > initial_brute, \
@@ -3818,7 +3818,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Cold exposure → frostbite (thermal injury).
 	var/initial_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	for(var/i in 1 to 10)
-		H.handle_environment(turf_air)
+		life_test_environment(H, turf_air)
 	var/final_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 
 	TEST_ASSERT(final_thermal > initial_thermal, \
@@ -5069,7 +5069,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			breath.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
 			breath.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 			breath.set_temperature(T20C)
-			H.handle_breath(breath)
+			life_test_breath(H, breath)
 		qdel(H)
 	TEST_ASSERT(species_tested >= 5, \
 		"only tested [species_tested] species — expected at least 5 (something is wrong with set_species or the species registry)")

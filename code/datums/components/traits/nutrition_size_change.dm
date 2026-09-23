@@ -18,7 +18,7 @@
 	if(!isliving(parent))
 		return COMPONENT_INCOMPATIBLE
 	owner = parent
-	RegisterSignal(owner, COMSIG_LIVING_LIFE, PROC_REF(process_component))
+	add_trait_life_system(owner, /datum/life_system/trait/nutrition_size_change)
 
 /datum/component/nutrition_size_change/proc/process_component()
 	SIGNAL_HANDLER
@@ -46,7 +46,7 @@
 		return SHRINK_MULTIPLIER
 
 /datum/component/nutrition_size_change/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_LIVING_LIFE)
+	remove_trait_life_system(owner, /datum/life_system/trait/nutrition_size_change)
 	owner = null
 	. = ..()
 
@@ -55,3 +55,11 @@
 
 #undef GROW_MULTIPLIER
 #undef SHRINK_MULTIPLIER
+
+/// Trait system: size change from nutrition. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/nutrition_size_change
+	name = "nutrition size change"
+	component_type = /datum/component/nutrition_size_change
+
+/datum/life_system/trait/nutrition_size_change/tick_component(mob/living/self, datum/component/nutrition_size_change/component)
+	component.process_component()

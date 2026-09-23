@@ -311,45 +311,53 @@
 	nif = null
 	return ..()
 
-/mob/living/carbon/brain/caught_soul/Life()
-	if(!mind || !key)
-		qdel(src)
-		return
+/datum/life_system/type_pre/carbon/brain/caught_soul
+	mob_type = /mob/living/carbon/brain/caught_soul
 
+/datum/life_system/type_pre/carbon/brain/caught_soul/tick(mob/living/carbon/brain/caught_soul/self, datum/life_context/ctx)
+	if(!self.mind || !self.key)
+		qdel(self)
+		return LIFE_HALT
+	return ..()
+
+/datum/life_system/type_post/carbon/brain/caught_soul
+	mob_type = /mob/living/carbon/brain/caught_soul
+
+/datum/life_system/type_post/carbon/brain/caught_soul/tick(mob/living/carbon/brain/caught_soul/self, datum/life_context/ctx)
 	. = ..()
 
-	if(!parent_mob && !transient &&(life_tick % 150 == 0) && soulcatcher?.setting_flags & NIF_SC_BACKUPS)
-		SStranscore.m_backup(mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
+	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.soulcatcher?.setting_flags & NIF_SC_BACKUPS)
+		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
-	life_tick++
+	self.life_tick++
 
-	if(!client)
-		if(++client_missing == 300)
-			qdel(src)
+	if(!self.client)
+		if(++self.client_missing == 300)
+			qdel(self)
 		return
 	else
-		client_missing = 0
+		self.client_missing = 0
 
-	if(parent_mob) return
+	if(self.parent_mob) return
 
 	//If they're blinded
-	if(soulcatcher) // needs it's own handling to allow vore_fx
-		if(ext_blind)
-			eye_blind = 5
-			client.screen.Remove(GLOB.global_hud.whitense)
-			overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+	if(self.soulcatcher) // needs it's own handling to allow vore_fx
+		if(self.ext_blind)
+			self.eye_blind = 5
+			self.client.screen.Remove(GLOB.global_hud.whitense)
+			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			eye_blind = 0
-			clear_fullscreens()
-			client.screen.Add(GLOB.global_hud.whitense)
+			self.eye_blind = 0
+			self.clear_fullscreens()
+			self.client.screen.Add(GLOB.global_hud.whitense)
 
 	//If they're deaf
-	if(ext_deaf)
-		ear_deaf = 5
-		deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
+	if(self.ext_deaf)
+		self.ear_deaf = 5
+		self.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
 	else
-		ear_deaf = 0
-		deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
+		self.ear_deaf = 0
+		self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
 
 /mob/living/carbon/brain/caught_soul/hear_say()
 	if(ext_deaf || !client)

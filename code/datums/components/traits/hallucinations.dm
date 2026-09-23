@@ -29,10 +29,10 @@
 	episode["next_episode_end"] = world.time + 9000
 
 /datum/component/schizophrenia/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(process_component))
+	add_trait_life_system(parent, /datum/life_system/trait/schizophrenia)
 
 /datum/component/schizophrenia/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE))
+	remove_trait_life_system(parent, /datum/life_system/trait/schizophrenia)
 
 /datum/component/schizophrenia/proc/process_component()
 	SIGNAL_HANDLER
@@ -84,3 +84,11 @@
 		if(istype(reagent,/datum/reagent/tercozolam))
 			total_vol += reagent.volume
 	return total_vol
+
+/// Trait system: hallucination episodes. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/schizophrenia
+	name = "schizophrenia"
+	component_type = /datum/component/schizophrenia
+
+/datum/life_system/trait/schizophrenia/tick_component(mob/living/self, datum/component/schizophrenia/component)
+	component.process_component()

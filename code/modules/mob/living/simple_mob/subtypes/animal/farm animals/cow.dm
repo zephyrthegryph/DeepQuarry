@@ -43,11 +43,14 @@
 	else
 		..()
 
-/mob/living/simple_mob/animal/passive/cow/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/cow
+	mob_type = /mob/living/simple_mob/animal/passive/cow
+
+/datum/life_system/type_post/simple_mob/animal/passive/cow/tick(mob/living/simple_mob/animal/passive/cow/self, datum/life_context/ctx)
 	. = ..()
-	if(stat == CONSCIOUS)
-		if(udder && prob(5))
-			udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
+	if(self.stat == CONSCIOUS)
+		if(self.udder && prob(5))
+			self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
 /mob/living/simple_mob/animal/passive/cow/attack_hand(mob/living/carbon/M as mob)
 	if(!stat && M.a_intent == I_DISARM && icon_state != icon_dead)

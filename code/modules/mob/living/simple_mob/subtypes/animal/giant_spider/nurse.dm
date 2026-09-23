@@ -145,13 +145,16 @@
 
 	return TRUE
 
-/mob/living/simple_mob/animal/giant_spider/nurse/handle_special()
+/datum/life_system/special/animal/giant_spider/nurse
+	mob_type = /mob/living/simple_mob/animal/giant_spider/nurse
+
+/datum/life_system/special/animal/giant_spider/nurse/tick(mob/living/simple_mob/animal/giant_spider/nurse/self, datum/life_context/ctx)
 	set waitfor = FALSE
-	if((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(ai_brain && ai_brain.busy) && isturf(loc))
-		if(fed && can_lay_eggs)
-			lay_eggs(loc)
+	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
+		if(self.fed && self.can_lay_eggs)
+			self.lay_eggs(self.loc)
 		else
-			web_tile(loc)
+			self.web_tile(self.loc)
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_tile(turf/T)
 	if(!istype(T))

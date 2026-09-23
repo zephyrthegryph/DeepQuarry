@@ -89,7 +89,7 @@
 
 //Called during handle_environment in Life() ticks.
 // Return: Not used.
-/datum/species/custom/handle_environment_special(mob/living/carbon/human/H)
+/datum/species/custom/environment_effects(mob/living/carbon/human/H)
 	return ..()
 
 //Called when spawning to equip them with special things.

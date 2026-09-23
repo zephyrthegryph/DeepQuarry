@@ -3,12 +3,15 @@
 	var/amount_grown = 0
 	faction = "lizard"
 
-/mob/living/simple_mob/animal/passive/lizard/event/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/lizard/event
+	mob_type = /mob/living/simple_mob/animal/passive/lizard/event
+
+/datum/life_system/type_post/simple_mob/animal/passive/lizard/event/tick(mob/living/simple_mob/animal/passive/lizard/event/self, datum/life_context/ctx)
 	. = ..()
-	if(amount_grown >= 0)
-		amount_grown += rand(0,4)
-	if(amount_grown >= 100 && icon_state != icon_dead)
-		man()
+	if(self.amount_grown >= 0)
+		self.amount_grown += rand(0,4)
+	if(self.amount_grown >= 100 && self.icon_state != self.icon_dead)
+		self.man()
 		return
 
 /mob/living/simple_mob/animal/passive/lizard/event/proc/man()

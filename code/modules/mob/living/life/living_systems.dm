@@ -1,0 +1,597 @@
+// Living core systems: the old /mob/living/Life() sequence, one system per step
+// (doc/mob_life_architecture.md §4.5). Orders and segments reproduce the old control flow:
+//
+//	type_pre variants          (subtype code that ran before ..())
+//	trait systems              (the old COMSIG_LIVING_LIFE listeners)
+//	upkeep, instability
+//	gate: transforming         -> LIFE_SEG_LIVING
+//	modifiers
+//	gate: placed (!loc)        -> LIFE_SEG_LIVING, captures the environment
+//	light
+//	gate: alive                -> LIFE_SEG_LIVING_ALIVE
+//	breathing, mutations, radiation, blood, random events, AFK      (alive only)
+//	chemicals, diseases, environment, ambience, movement
+//	status (regular status updates) -> LIFE_SEG_LIVING_STATUS
+//	disabilities, addictions, statuses                             (status only)
+//	canmove, HUD, vision, TF holder, VR derez
+//	subtype tails (carbon germs, human, alien, simple mob, bot), then type_post variants
+
+// --- Per-type pre and post chains ---------------------------------------------------------------
+
+/// Code a mob subtype ran before calling ..() in its old Life() override. A variant runs its own
+/// code, then `return ..()`. Returning LIFE_HALT without calling ..() ends the cycle, as the old
+/// early `return` before ..() did.
+/datum/life_system/type_pre
+	name = "type pre"
+	bit = LIFE_SYS_BEHAVIOUR
+	phase = LIFE_PHASE_INPUT
+	order = 0
+
+/datum/life_system/type_pre/tick(mob/living/self, datum/life_context/ctx)
+	return
+
+/// Code a mob subtype ran after ..() in its old Life() override. A variant starts with
+/// `. = ..()`, which runs its parent's post code and yields what the parent's old Life()
+/// returned, then runs its own code. The roots yield the core's legacy return value.
+/datum/life_system/type_post
+	name = "type post"
+	bit = LIFE_SYS_BEHAVIOUR
+	phase = LIFE_PHASE_TAIL
+	order = 1000
+
+/datum/life_system/type_post/tick(mob/living/self, datum/life_context/ctx)
+	return ctx?.living_result
+
+/// Carbon Life() returned nothing.
+/datum/life_system/type_post/carbon
+	mob_type = /mob/living/carbon
+
+/datum/life_system/type_post/carbon/tick(mob/living/carbon/self, datum/life_context/ctx)
+	return
+
+/// Mobs whose Life() only takes them out of the mob lists (preview dummies, announcers).
+/datum/life_system/delist
+	name = "delist"
+	bit = LIFE_SYS_UPKEEP
+	phase = LIFE_PHASE_INPUT
+	life_sets = LIFE_SET_DELIST
+
+/datum/life_system/delist/tick(mob/living/self, datum/life_context/ctx)
+	return
+
+// --- Trait systems ------------------------------------------------------------------------------
+
+/// Category for component-provided systems (the old COMSIG_LIVING_LIFE listeners). A component
+/// adds its system with add_life_system() when it attaches and removes it when it detaches.
+/datum/life_system/trait
+	category = TRUE
+	extra = TRUE
+	bit = LIFE_SYS_TRAITS
+	phase = LIFE_PHASE_INPUT
+	order = 10
+	/// The component type this system ticks.
+	var/component_type
+
+/datum/life_system/trait/tick(mob/living/self, datum/life_context/ctx)
+	for(var/datum/component/C as anything in self.GetComponents(component_type))
+		tick_component(self, C)
+
+/// Tick one instance of the component.
+/datum/life_system/trait/proc/tick_component(mob/living/self, datum/component/C)
+	return
+
+// --- Upkeep ---------------------------------------------------------------------------------------
+
+/// Every mob's base upkeep (the old /mob/Life() chain): followers and spell buttons.
+/datum/life_system/upkeep
+	name = "upkeep"
+	phase = LIFE_PHASE_INPUT
+	order = 20
+
+/datum/life_system/upkeep/tick(mob/living/self, datum/life_context/ctx)
+	// to catch teleports etc which directly set loc
+	self.update_following()
+	self.update_spell_masters()
+
+// --- Gates ------------------------------------------------------------------------------------------
+
+/// Category for gates. A gate evaluates one old `if(...) return` (or an `if` around a block of
+/// hooks) once per cycle and blocks the segment that code guarded.
+/datum/life_system/gate
+	category = TRUE
+	bit = LIFE_SYS_GATE
+
+/// `if(transforming) return` in /mob/living/Life().
+/datum/life_system/gate/transforming
+	name = "gate: transforming"
+	phase = LIFE_PHASE_INPUT
+	order = 40
+
+/datum/life_system/gate/transforming/tick(mob/living/self, datum/life_context/ctx)
+	if(self.transforming)
+		ctx.blocked |= LIFE_SEG_LIVING
+
+/// `if(!loc) return` in /mob/living/Life(); captures the environment for the cycle.
+/datum/life_system/gate/placed
+	name = "gate: placed"
+	phase = LIFE_PHASE_INPUT
+	order = 60
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/gate/placed/tick(mob/living/self, datum/life_context/ctx)
+	if(!self.loc)
+		ctx.blocked |= LIFE_SEG_LIVING
+		return
+	if(isbelly(self.loc))
+		ctx.environment = self.loc.return_air_for_internal_lifeform(self)
+	else
+		ctx.environment = self.loc.return_air()
+
+/// `if(stat != DEAD)` around breathing .. AFK in /mob/living/Life().
+/datum/life_system/gate/alive
+	name = "gate: alive"
+	phase = LIFE_PHASE_INPUT
+	order = 80
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/gate/alive/tick(mob/living/self, datum/life_context/ctx)
+	if(self.stat == DEAD)
+		ctx.blocked |= LIFE_SEG_LIVING_ALIVE
+	else
+		ctx.living_result = 1
+
+// --- Light --------------------------------------------------------------------------------------
+
+/// Mob glow (glow_toggle, technomancer instability). Also run on demand by refresh_glow().
+/datum/life_system/light
+	name = "light"
+	phase = LIFE_PHASE_INPUT
+	order = 70
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/light/tick(mob/living/self, datum/life_context/ctx)
+	if(self.glow_override)
+		return FALSE
+
+	// Determine the desired light params, then only call set_light() if they changed
+	// since last tick (this runs every Life() tick for every glowing mob).
+	var/want_range
+	var/want_intensity
+	var/want_color
+	. = FALSE
+
+	if(self.instability >= TECHNOMANCER_INSTABILITY_MIN_GLOW)
+		var/distance = round(sqrt(self.instability / 2))
+		if(distance)
+			want_range = distance
+			want_intensity = distance * 4
+			want_color = "#660066"
+			. = TRUE
+		else
+			return FALSE // Preserve old behavior: distance 0 leaves the existing light untouched.
+
+	else if(self.glow_toggle && !self.is_ventcrawling) // Hide the light in vents
+		want_range = self.glow_range
+		want_intensity = self.glow_intensity
+		want_color = self.glow_color
+
+	else
+		want_range = 0
+
+	if(want_range != self.last_glow_range || want_intensity != self.last_glow_intensity || want_color != self.last_glow_color)
+		if(want_range)
+			self.set_light(want_range, want_intensity, want_color)
+		else
+			self.set_light(0)
+		self.last_glow_range = want_range
+		self.last_glow_intensity = want_intensity
+		self.last_glow_color = want_color
+
+/// Re-evaluates this mob's glow now (light system).
+/mob/living/proc/refresh_glow()
+	return run_life_system(/datum/life_system/light)
+
+// --- Alive block -----------------------------------------------------------------------------------
+
+/// Breathing. The carbon variant takes a breath on its own cadence (breathe()).
+/datum/life_system/breathing
+	name = "breathing"
+	bit = LIFE_SYS_BREATHING
+	phase = LIFE_PHASE_INPUT
+	order = 90
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+
+/datum/life_system/breathing/tick(mob/living/self, datum/life_context/ctx)
+	return
+
+/// Genetic mutation effects.
+/datum/life_system/mutations
+	name = "mutations"
+	bit = LIFE_SYS_GENETICS
+	phase = LIFE_PHASE_INPUT
+	order = 100
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+
+/datum/life_system/mutations/tick(mob/living/self, datum/life_context/ctx)
+	SHOULD_CALL_PARENT(TRUE)
+	..()
+	if(SEND_SIGNAL(self, COMSIG_HANDLE_MUTATIONS) & COMPONENT_BLOCK_LIVING_MUTATIONS)
+		return COMPONENT_BLOCK_LIVING_MUTATIONS
+
+/// Radiation dose decay and effects.
+/datum/life_system/radiation
+	name = "radiation"
+	bit = LIFE_SYS_RADIATION
+	phase = LIFE_PHASE_INPUT
+	order = 110
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+
+/datum/life_system/radiation/tick(mob/living/self, datum/life_context/ctx)
+	SHOULD_CALL_PARENT(TRUE)
+	..()
+	if(SEND_SIGNAL(self, COMSIG_HANDLE_RADIATION) & COMPONENT_BLOCK_LIVING_RADIATION)
+		return COMPONENT_BLOCK_LIVING_RADIATION
+
+/// Blood volume and bleeding.
+/datum/life_system/blood
+	name = "blood"
+	bit = LIFE_SYS_BLOOD
+	phase = LIFE_PHASE_BODY
+	order = 10
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+
+/datum/life_system/blood/tick(mob/living/self, datum/life_context/ctx)
+	return
+
+/// Random episodes (vomiting, ...).
+/datum/life_system/random_events
+	name = "random events"
+	bit = LIFE_SYS_GENETICS
+	phase = LIFE_PHASE_BODY
+	order = 20
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+
+/datum/life_system/random_events/tick(mob/living/self, datum/life_context/ctx)
+	return
+
+/// Automatic AFK marking for idle clients.
+/datum/life_system/afk
+	name = "afk"
+	bit = LIFE_SYS_CLIENT
+	phase = LIFE_PHASE_BODY
+	order = 30
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+
+/datum/life_system/afk/tick(mob/living/self, datum/life_context/ctx)
+	var/client/C = self.client
+	if(!C)
+		return
+	var/idle_limit = 10 MINUTES
+	if(C.inactivity >= idle_limit && !self.away_from_keyboard && C.prefs?.read_preference(/datum/preference/toggle/auto_afk))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
+		self.add_status_indicator("afk")
+		to_chat(self, span_notice("You have been idle for too long, and automatically marked as AFK."))
+		self.away_from_keyboard = TRUE
+	else if(self.away_from_keyboard && C.inactivity < idle_limit && !self.manual_afk) //if we're afk but we do something AND we weren't manually flagged as afk, unmark it
+		self.remove_status_indicator("afk")
+		to_chat(self, span_notice("You have been automatically un-marked as AFK."))
+		self.away_from_keyboard = FALSE
+
+// --- Core -------------------------------------------------------------------------------------
+
+/// Chemicals in the body. Runs dead or alive, so blood can be added after death.
+/datum/life_system/chemicals
+	name = "chemicals"
+	bit = LIFE_SYS_METABOLISM
+	phase = LIFE_PHASE_BODY
+	order = 40
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/chemicals/tick(mob/living/self, datum/life_context/ctx)
+	return
+
+/// Runs the chemicals system now (extra circulation from CPR, horror modifiers, ...).
+/mob/living/proc/process_chemicals()
+	return run_life_system(/datum/life_system/chemicals)
+
+/// Environment: temperature and pressure differences between body and surroundings.
+/datum/life_system/environment
+	name = "environment"
+	bit = LIFE_SYS_THERMAL
+	phase = LIFE_PHASE_BODY
+	order = 60
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/environment/tick(mob/living/self, datum/life_context/ctx)
+	if(ctx?.environment)
+		exchange(self, ctx.environment)
+
+/// Handle temperature/pressure differences between body and environment.
+/datum/life_system/environment/proc/exchange(mob/living/self, datum/gas_mixture/environment)
+	return
+
+/// Re-plays area ambience to a client that has stayed in one area.
+/datum/life_system/ambience
+	name = "ambience"
+	bit = LIFE_SYS_CLIENT
+	phase = LIFE_PHASE_BODY
+	order = 70
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/ambience/tick(mob/living/self, datum/life_context/ctx)
+	if(!self.client)
+		return
+	// If you're in an ambient area and have not moved out of it for x time as configured per-client, and do not have it disabled, we're going to play ambience again to you, to help break up the silence.
+	var/pref = self.read_preference(/datum/preference/numeric/ambience_freq)
+	if(!pref)
+		return
+
+	if(world.time >= (self.lastareachange + pref MINUTES)) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
+		var/area/A = get_area(self)
+		if(A)
+			self.lastareachange = world.time // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
+			A.play_ambience(self, initial = FALSE)
+
+/// Gravity, pulling and grabs.
+/datum/life_system/movement
+	name = "movement"
+	bit = LIFE_SYS_MOVEMENT
+	phase = LIFE_PHASE_BODY
+	order = 80
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/movement/tick(mob/living/self, datum/life_context/ctx)
+	self.update_gravity(self.mob_get_gravity())
+
+	self.update_pulling()
+
+	for(var/obj/item/grab/G in self)
+		G.process()
+
+/// Status & health update: are we dead or alive, conscious or not. When it returns false the
+/// disabilities, addictions and statuses systems skip this cycle.
+/datum/life_system/status
+	name = "status"
+	bit = LIFE_SYS_BODY
+	phase = LIFE_PHASE_BODY
+	order = 90
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/status/tick(mob/living/self, datum/life_context/ctx)
+	if(!update_status(self))
+		ctx?.blocked |= LIFE_SEG_LIVING_STATUS
+
+/// This updates the health and status of the mob (conscious, unconscious, dead).
+/datum/life_system/status/proc/update_status(mob/living/self)
+	self.body?.life_tick()
+	if(self.stat != DEAD)
+		self.set_stat(CONSCIOUS)
+		return TRUE
+
+// --- Status block -----------------------------------------------------------------------------
+
+/// Eye and ear damage recovery.
+/datum/life_system/disabilities
+	name = "disabilities"
+	bit = LIFE_SYS_GENETICS
+	phase = LIFE_PHASE_MIND
+	order = 10
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
+
+/datum/life_system/disabilities/tick(mob/living/self, datum/life_context/ctx)
+	SEND_SIGNAL(self, COMSIG_HANDLE_DISABILITIES)
+	//Eyes
+	if(self.sdisabilities & BLIND || self.stat)	//blindness from disability or unconsciousness doesn't get better on its own
+		self.SetBlinded(1)
+		self.throw_alert("blind", /atom/movable/screen/alert/blind)
+	else if(self.eye_blind)			//blindness, heals slowly over time
+		self.AdjustBlinded(-1)
+		self.throw_alert("blind", /atom/movable/screen/alert/blind)
+	else
+		self.clear_alert("blind")
+
+	if(self.eye_blurry)			//blurry eyes heal slowly
+		self.eye_blurry = max(self.eye_blurry-1, 0)
+
+	//Ears
+	if(self.sdisabilities & DEAF)		//disabled-deaf, doesn't get better on its own
+		self.setEarDamage(-1, max(self.ear_deaf, 1))
+	else
+		// deafness heals slowly over time, unless ear_damage is over 100
+		if(self.ear_damage < 100)
+			self.adjustEarDamage(-0.05,-1)
+
+/// Stun, weaken, paralysis, confusion and speech impairments wear off. Its helpers are also
+/// called on their own by mobs that run only some of them (simple mobs, the AI, pAIs).
+/datum/life_system/statuses
+	name = "statuses"
+	bit = LIFE_SYS_STATUS
+	phase = LIFE_PHASE_MIND
+	order = 30
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
+	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI
+
+/datum/life_system/statuses/tick(mob/living/self, datum/life_context/ctx)
+	stunned(self)
+	weakened(self)
+	paralysed(self)
+	stuttering(self)
+	silent(self)
+	drugged(self)
+	slurring(self)
+	confused(self)
+
+/datum/life_system/statuses/proc/stunned(mob/living/self)
+	if(self.stunned)
+		self.AdjustStunned(-1)
+		if(!self.alert_state_stunned)
+			self.alert_state_stunned = TRUE
+			self.throw_alert("stunned", /atom/movable/screen/alert/stunned)
+	else if(self.alert_state_stunned)
+		self.alert_state_stunned = FALSE
+		self.clear_alert("stunned")
+	return self.stunned
+
+/datum/life_system/statuses/proc/weakened(mob/living/self)
+	if(self.weakened)
+		self.AdjustWeakened(-1)
+		if(!self.alert_state_weakened)
+			self.alert_state_weakened = TRUE
+			self.throw_alert("weakened", /atom/movable/screen/alert/weakened)
+	else if(self.alert_state_weakened)
+		self.alert_state_weakened = FALSE
+		self.clear_alert("weakened")
+	return self.weakened
+
+/datum/life_system/statuses/proc/stuttering(mob/living/self)
+	if(self.stuttering)
+		self.stuttering = max(self.stuttering-1, 0)
+	return self.stuttering
+
+/datum/life_system/statuses/proc/silent(mob/living/self)
+	if(self.silent)
+		self.silent = max(self.silent-1, 0)
+	return self.silent
+
+/datum/life_system/statuses/proc/drugged(mob/living/self)
+	if(self.druggy)
+		self.druggy = max(self.druggy-1, 0)
+		if(!self.alert_state_drugged)
+			self.alert_state_drugged = TRUE
+			self.throw_alert("high", /atom/movable/screen/alert/high)
+	else if(self.alert_state_drugged)
+		self.alert_state_drugged = FALSE
+		self.clear_alert("high")
+	return self.druggy
+
+/datum/life_system/statuses/proc/slurring(mob/living/self)
+	if(self.slurring)
+		self.slurring = max(self.slurring-1, 0)
+	return self.slurring
+
+/datum/life_system/statuses/proc/paralysed(mob/living/self)
+	if(self.paralysis)
+		self.AdjustParalysis(-1)
+		if(!self.alert_state_paralysed)
+			self.alert_state_paralysed = TRUE
+			self.throw_alert("paralyzed", /atom/movable/screen/alert/paralyzed)
+	else if(self.alert_state_paralysed)
+		self.alert_state_paralysed = FALSE
+		self.clear_alert("paralyzed")
+	return self.paralysis
+
+/datum/life_system/statuses/proc/confused(mob/living/self)
+	if(self.confused)
+		self.AdjustConfused(-1)
+		if(!self.alert_state_confused)
+			self.alert_state_confused = TRUE
+			self.throw_alert("confused", /atom/movable/screen/alert/confused)
+	else if(self.alert_state_confused)
+		self.alert_state_confused = FALSE
+		self.clear_alert("confused")
+	return self.confused
+
+/datum/life_system/statuses/proc/sleeping(mob/living/self)
+	if(self.stat != DEAD && self.toggled_sleeping)
+		self.Sleeping(2)
+	if(self.sleeping)
+		if(iscarbon(self))
+			var/mob/living/carbon/C = self
+			self.AdjustSleeping(-1 * C.species.waking_speed)
+		else
+			self.AdjustSleeping(-1)
+		self.throw_alert("asleep", /atom/movable/screen/alert/asleep)
+	else
+		self.clear_alert("asleep")
+	return self.sleeping
+
+/// The shared statuses helpers (stunned(), sleeping(), ...) for code outside the statuses tick.
+/proc/life_statuses()
+	RETURN_TYPE(/datum/life_system/statuses)
+	var/static/datum/life_system/statuses/statuses
+	if(!statuses)
+		statuses = get_life_system(/datum/life_system/statuses)
+	return statuses
+
+// --- Output -----------------------------------------------------------------------------------
+
+/// Whether the mob can move (lying, stunned, buckled, ...).
+/datum/life_system/canmove
+	name = "canmove"
+	bit = LIFE_SYS_MOVEMENT
+	phase = LIFE_PHASE_OUTPUT
+	order = 10
+	segment = LIFE_SEG_LIVING
+	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
+
+/datum/life_system/canmove/tick(mob/living/self, datum/life_context/ctx)
+	self.update_canmove()
+
+/// The player HUD. Returns FALSE when there is no HUD to update. Also run by refresh_hud().
+/datum/life_system/hud
+	name = "hud"
+	bit = LIFE_SYS_HUD
+	phase = LIFE_PHASE_OUTPUT
+	order = 20
+	segment = LIFE_SEG_LIVING
+	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
+
+/datum/life_system/hud/tick(mob/living/self, datum/life_context/ctx)
+	SHOULD_CALL_PARENT(TRUE)
+	..()
+	if(!self.hud_available())
+		return FALSE
+	darksight(self)
+	health_icons(self)
+	return TRUE
+
+/// Health doll / health icon. Returns FALSE when a component draws it instead.
+/datum/life_system/hud/proc/health_icons(mob/living/self)
+	SHOULD_CALL_PARENT(TRUE)
+	if(SEND_SIGNAL(self,COMSIG_MOB_HANDLE_HUD_HEALTH_ICON) & COMSIG_COMPONENT_HANDLED_HEALTH_ICON)
+		return FALSE
+	return TRUE
+
+/// Adapts the darkness overlay to the light level and the mob's darksight.
+/datum/life_system/hud/proc/darksight(mob/living/self)
+	SEND_SIGNAL(self,COMSIG_MOB_HANDLE_HUD_DARKSIGHT)
+	if(!self.seedarkness) //Cheap 'always darksight' var
+		self.dsoverlay.alpha = 255
+		return
+
+	var/darksightedness = min(self.see_in_dark/world.view,1.0)	//A ratio of how good your darksight is, from 'nada' to 'really darn good'
+	var/current = self.dsoverlay.alpha/255						//Our current adjustedness
+
+	var/brightness = 0.0 //We'll assume it's superdark if we can't find something else.
+
+	if(isturf(self.loc))
+		var/turf/T = self.loc //Will be true 99% of the time, thus avoiding the whole elif chain
+		brightness = T.get_lumcount()
+
+	//Snowflake treatment of potential locations
+	else if(istype(self.loc,/obj/mecha)) //I imagine there's like displays and junk in there. Use the lights!
+		brightness = 1
+	else if(istype(self.loc,/obj/item/holder)) //Poor carried teshari and whatnot should adjust appropriately
+		var/turf/T = get_turf(self)
+		brightness = T.get_lumcount()
+
+	var/darkness = 1-brightness					//Silly, I know, but 'alpha' and 'darkness' go the same direction on a number line
+	var/adjust_to = min(darkness,darksightedness)//Capped by how darksighted they are
+	var/distance = abs(current-adjust_to)		//Used for how long to animate for
+	if(distance < 0.01) return					//We're already all set
+
+	animate(self.dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
+
+/// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Also run by refresh_vision().
+/datum/life_system/vision
+	name = "vision"
+	bit = LIFE_SYS_SENSES
+	phase = LIFE_PHASE_OUTPUT
+	order = 30
+	segment = LIFE_SEG_LIVING
+	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
+
+/// Variants set their sight, then call ..() last to send the vision signal.
+/datum/life_system/vision/tick(mob/living/self, datum/life_context/ctx)
+	SHOULD_CALL_PARENT(TRUE)
+	..()
+	SEND_SIGNAL(self,COMSIG_MOB_HANDLE_VISION)

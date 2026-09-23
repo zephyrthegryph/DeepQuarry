@@ -5,14 +5,17 @@
 
 
 //Larvae regenerate health and nutrition from plasma and alien weeds.
-/mob/living/carbon/alien/larva/handle_environment(datum/gas_mixture/environment)
+/datum/life_system/environment/carbon/alien/larva
+	mob_type = /mob/living/carbon/alien/larva
+
+/datum/life_system/environment/carbon/alien/larva/exchange(mob/living/carbon/alien/larva/self, datum/gas_mixture/environment)
 
 	if(!environment) return
 
-	var/turf/T = get_turf(src)
+	var/turf/T = get_turf(self)
 	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || (T && locate(/obj/effect/alien/weeds) in T.contents))
-		update_progression()
-		mend(TREAT_TISSUE_REPAIR, 1)
-		mend(TREAT_BURN_CARE, 1)
-		mend(TREAT_ANTITOXIN, 1)
-		mend(TREAT_OXYGENATION, 1)
+		self.update_progression()
+		self.mend(TREAT_TISSUE_REPAIR, 1)
+		self.mend(TREAT_BURN_CARE, 1)
+		self.mend(TREAT_ANTITOXIN, 1)
+		self.mend(TREAT_OXYGENATION, 1)

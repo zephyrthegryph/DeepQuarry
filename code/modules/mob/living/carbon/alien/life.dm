@@ -1,23 +1,34 @@
 // Alien larva are quite simple.
-/mob/living/carbon/alien/Life()
+/datum/life_system/type_pre/carbon/alien
+	mob_type = /mob/living/carbon/alien
 
-	set invisibility = INVISIBILITY_NONE
+/datum/life_system/type_pre/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
+	if (self.transforming)	return LIFE_HALT
+	if(!self.loc)			return LIFE_HALT
+	return ..()
 
-	if (transforming)	return
-	if(!loc)			return
+/// Growth, blindness reset and icons after the living core (the old alien Life() tail).
+/datum/life_system/alien_growth
+	name = "alien growth"
+	bit = LIFE_SYS_BODY
+	phase = LIFE_PHASE_TAIL
+	order = 100
+	mob_type = /mob/living/carbon/alien
 
-	..()
-
-	if (stat != DEAD) //still breathing
+/datum/life_system/alien_growth/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
+	if (self.stat != DEAD) //still breathing
 		// GROW!
-		update_progression()
+		self.update_progression()
 
-	blinded = null
+	self.blinded = null
 
 	//Status updates, death etc.
-	update_icons()
+	self.update_icons()
 
-/mob/living/carbon/alien/handle_radiation()
+/datum/life_system/radiation/carbon/alien
+	mob_type = /mob/living/carbon/alien
+
+/datum/life_system/radiation/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
 	. = ..()
 	if(.)
 		return
@@ -25,131 +36,143 @@
 	// Currently both Dionaea and larvae like to eat radiation, so I'm defining the
 	// rad absorbtion here. This will need to be changed if other baby aliens are added.
 
-	if(!radiation)
+	if(!self.radiation)
 		return
 
-	var/rads = radiation/25
-	radiation -= rads
+	var/rads = self.radiation/25
+	self.radiation -= rads
 	//adjust_nutrition(rads) //Commented out to prevent alien obesity.
-	mend(TREAT_TISSUE_REPAIR, rads)
-	mend(TREAT_BURN_CARE, rads)
-	mend(TREAT_OXYGENATION, rads)
-	mend(TREAT_ANTITOXIN, rads)
+	self.mend(TREAT_TISSUE_REPAIR, rads)
+	self.mend(TREAT_BURN_CARE, rads)
+	self.mend(TREAT_OXYGENATION, rads)
+	self.mend(TREAT_ANTITOXIN, rads)
 	return
 
-/mob/living/carbon/alien/handle_regular_status_updates()
+/datum/life_system/status/carbon/alien
+	mob_type = /mob/living/carbon/alien
 
-	if(SEND_SIGNAL(src, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL) //I don't want to go in and do HUD stuff imediately, so... no.
+/datum/life_system/status/carbon/alien/update_status(mob/living/carbon/alien/self)
+
+	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL) //I don't want to go in and do HUD stuff imediately, so... no.
 		return 0	// Cancelled by a component
 
 	// Death from injury is decided by the (simple) body.
-	if(stat != DEAD)
-		body?.life_tick()
+	if(self.stat != DEAD)
+		self.body?.life_tick()
 
-	if(stat == DEAD)
-		blinded = 1
-		silent = 0
-		deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
+	if(self.stat == DEAD)
+		self.blinded = 1
+		self.silent = 0
+		self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
-		if(paralysis && paralysis > 0)
-			blinded = 1
-			set_stat(UNCONSCIOUS)
+		if(self.paralysis && self.paralysis > 0)
+			self.blinded = 1
+			self.set_stat(UNCONSCIOUS)
 
-		if(sleeping)
-			if (mind)
-				if(mind.active && client != null)
-					AdjustSleeping(-1)
-			blinded = 1
-			set_stat(UNCONSCIOUS)
-		else if(!resting)
-			set_stat(CONSCIOUS)
+		if(self.sleeping)
+			if (self.mind)
+				if(self.mind.active && self.client != null)
+					self.AdjustSleeping(-1)
+			self.blinded = 1
+			self.set_stat(UNCONSCIOUS)
+		else if(!self.resting)
+			self.set_stat(CONSCIOUS)
 
 		// Eyes and blindness.
-		if(!has_eyes())
-			SetBlinded(1)
-			blinded =    1
-			eye_blurry = 1
-		else if(eye_blind)
-			AdjustBlinded(-1)
-			blinded =    1
-		else if(eye_blurry)
-			eye_blurry = max(eye_blurry-1, 0)
+		if(!self.has_eyes())
+			self.SetBlinded(1)
+			self.blinded =    1
+			self.eye_blurry = 1
+		else if(self.eye_blind)
+			self.AdjustBlinded(-1)
+			self.blinded =    1
+		else if(self.eye_blurry)
+			self.eye_blurry = max(self.eye_blurry-1, 0)
 
-		update_icons()
+		self.update_icons()
 
 	return 1
 
-/mob/living/carbon/alien/handle_vision()
-	if (stat == 2 || (XRAY in src.mutations))
-		sight |= SEE_TURFS
-		sight |= SEE_MOBS
-		sight |= SEE_OBJS
-		see_in_dark = 8
-		see_invisible = SEE_INVISIBLE_LEVEL_TWO
-	else if (stat != 2)
-		sight &= ~SEE_TURFS
-		sight &= ~SEE_MOBS
-		sight &= ~SEE_OBJS
-		see_in_dark = 2
-		see_invisible = SEE_INVISIBLE_LIVING
+/datum/life_system/vision/carbon/alien
+	mob_type = /mob/living/carbon/alien
+
+/datum/life_system/vision/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
+	if (self.stat == 2 || (XRAY in self.mutations))
+		self.sight |= SEE_TURFS
+		self.sight |= SEE_MOBS
+		self.sight |= SEE_OBJS
+		self.see_in_dark = 8
+		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+	else if (self.stat != 2)
+		self.sight &= ~SEE_TURFS
+		self.sight &= ~SEE_MOBS
+		self.sight &= ~SEE_OBJS
+		self.see_in_dark = 2
+		self.see_invisible = SEE_INVISIBLE_LIVING
 
 	// Call parent to handle signals
 	..()
 
-/mob/living/carbon/alien/handle_regular_hud_updates()
+/datum/life_system/hud/carbon/alien
+	mob_type = /mob/living/carbon/alien
+
+/datum/life_system/hud/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
 
-	client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
+	self.client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
 
-	if ( stat != 2)
-		if ((blinded))
-			overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+	if ( self.stat != 2)
+		if ((self.blinded))
+			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			clear_fullscreen("blind")
-			set_fullscreen(disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			set_fullscreen(eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-			set_fullscreen(druggy, "high", /atom/movable/screen/fullscreen/high)
+			self.clear_fullscreen("blind")
+			self.set_fullscreen(self.disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
+			self.set_fullscreen(self.eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
+			self.set_fullscreen(self.druggy, "high", /atom/movable/screen/fullscreen/high)
 
-/mob/living/carbon/alien/handle_hud_icons_health()
+/datum/life_system/hud/carbon/alien/health_icons(mob/living/carbon/alien/self)
 	. = ..()
-	if(!. || !healths)
+	if(!. || !self.healths)
 		return
 
-	if(stat == DEAD || (status_flags & FAKEDEATH))
-		healths.icon_state = "health7"
+	if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+		self.healths.icon_state = "health7"
 		return
 
-	switch(vitality() * 100)
+	switch(self.vitality() * 100)
 		if(100 to INFINITY)
-			healths.icon_state = "health0"
+			self.healths.icon_state = "health0"
 		if(80 to 100)
-			healths.icon_state = "health1"
+			self.healths.icon_state = "health1"
 		if(60 to 80)
-			healths.icon_state = "health2"
+			self.healths.icon_state = "health2"
 		if(40 to 60)
-			healths.icon_state = "health3"
+			self.healths.icon_state = "health3"
 		if(20 to 40)
-			healths.icon_state = "health4"
+			self.healths.icon_state = "health4"
 		if(0 to 20)
-			healths.icon_state = "health5"
+			self.healths.icon_state = "health5"
 		else
-			healths.icon_state = "health6"
+			self.healths.icon_state = "health6"
 
-/mob/living/carbon/alien/handle_environment(datum/gas_mixture/environment)
+/datum/life_system/environment/carbon/alien
+	mob_type = /mob/living/carbon/alien
+
+/datum/life_system/environment/carbon/alien/exchange(mob/living/carbon/alien/self, datum/gas_mixture/environment)
 	// Both alien subtypes survive in vaccum and suffer in high temperatures,
 	// so I'll just define this once, for both (see radiation comment above)
 	if(!environment) return
 
 	var/environment_temp = environment.return_temperature()
 	if(environment_temp > (T0C+66))
-		injure(INJURY_BURN, (environment_temp - (T0C+66))/5, null, null, 0, null, INJURE_SILENT) // Might be too high, check in testing.
-		throw_alert("alien_fire", /atom/movable/screen/alert/alien_fire)
+		self.injure(INJURY_BURN, (environment_temp - (T0C+66))/5, null, null, 0, null, INJURE_SILENT) // Might be too high, check in testing.
+		self.throw_alert("alien_fire", /atom/movable/screen/alert/alien_fire)
 		if(prob(20))
-			to_chat(src, span_red("You feel a searing heat!"))
+			to_chat(self, span_red("You feel a searing heat!"))
 	else
-		clear_alert("alien_fire")
+		self.clear_alert("alien_fire")
 
 /mob/living/carbon/alien/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
 	bodytemperature += BODYTEMP_HEATING_MAX

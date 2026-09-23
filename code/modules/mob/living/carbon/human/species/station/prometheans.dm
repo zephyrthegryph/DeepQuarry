@@ -247,11 +247,12 @@
 /datum/component/promethean_biology/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
 	RegisterSignal(parent, COMSIG_MOB_EQUIPPED_ITEM, PROC_REF(on_equipped))
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(on_life))
+	add_trait_life_system(parent, /datum/life_system/trait/promethean_biology)
 	restart_stillness()
 
 /datum/component/promethean_biology/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_MOVABLE_MOVED, COMSIG_MOB_EQUIPPED_ITEM, COMSIG_LIVING_LIFE))
+	UnregisterSignal(parent, list(COMSIG_MOVABLE_MOVED, COMSIG_MOB_EQUIPPED_ITEM))
+	remove_trait_life_system(parent, /datum/life_system/trait/promethean_biology)
 	if(still_timer)
 		deltimer(still_timer)
 		still_timer = null
@@ -402,3 +403,11 @@
 #undef PROMETHEAN_STILLNESS_TIME
 #undef PROMETHEAN_PAIN_CAP
 #undef PROMETHEAN_STARVING_PAIN_CAP
+
+/// Trait system: promethean biology. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/promethean_biology
+	name = "promethean biology"
+	component_type = /datum/component/promethean_biology
+
+/datum/life_system/trait/promethean_biology/tick_component(mob/living/self, datum/component/promethean_biology/component)
+	component.on_life(self)

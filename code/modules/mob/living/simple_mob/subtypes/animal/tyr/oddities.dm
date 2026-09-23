@@ -30,9 +30,12 @@
 	splatter = TRUE
 	my_chems = list(REAGENT_ID_CRYPTOBIOLIN)
 
-/mob/living/simple_mob/animal/tyr/rainbow_fly/handle_special()
-	if(stat != DEAD)
-		painbow_aura()
+/datum/life_system/special/animal/tyr/rainbow_fly
+	mob_type = /mob/living/simple_mob/animal/tyr/rainbow_fly
+
+/datum/life_system/special/animal/tyr/rainbow_fly/tick(mob/living/simple_mob/animal/tyr/rainbow_fly/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.painbow_aura()
 	..()
 
 /mob/living/simple_mob/animal/tyr/rainbow_fly/proc/painbow_aura()

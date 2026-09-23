@@ -41,7 +41,7 @@
 			owner.injure(INJURY_TOXIN, 25, flags = INJURE_SILENT)
 			groin.add_wound(new /datum/affliction/wound/internal_bleeding(groin, 20))
 			groin.update_damages()
-			owner.handle_organs(TRUE) //Force an update so we start processing the internal bleeding.
+			owner.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 			inflamed = 1
 */
 /obj/item/organ/internal/appendix/removed()

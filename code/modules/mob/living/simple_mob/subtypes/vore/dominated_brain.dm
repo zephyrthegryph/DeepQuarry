@@ -28,12 +28,15 @@
 	lets_register_our_signals()
 	add_verb(src, /mob/living/dominated_brain/proc/resist_control)
 
-/mob/living/dominated_brain/Life()
+/datum/life_system/type_post/dominated_brain
+	mob_type = /mob/living/dominated_brain
+
+/datum/life_system/type_post/dominated_brain/tick(mob/living/dominated_brain/self, datum/life_context/ctx)
 	. = ..()
-	if(!isliving(loc))
-		qdel(src)
-	if(!ckey)
-		qdel(src)
+	if(!isliving(self.loc))
+		qdel(self)
+	if(!self.ckey)
+		qdel(self)
 
 /mob/living/dominated_brain/say_understands(mob/other, datum/language/speaking = null)
 	if(pred_body.say_understands(other, speaking))

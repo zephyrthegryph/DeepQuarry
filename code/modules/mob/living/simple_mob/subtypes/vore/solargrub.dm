@@ -70,45 +70,48 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	. = ..()
 	GLOB.existing_solargrubs += src
 
-/mob/living/simple_mob/vore/solargrub/Life()
+/datum/life_system/type_post/simple_mob/vore/solargrub
+	mob_type = /mob/living/simple_mob/vore/solargrub
+
+/datum/life_system/type_post/simple_mob/vore/solargrub/tick(mob/living/simple_mob/vore/solargrub/self, datum/life_context/ctx)
 	. = ..()
 	if(!.) return
 
-	if(!ai_brain.primary_threat)
+	if(!self.ai_brain.primary_threat)
 			//first, check for potential cables nearby to powersink
-		var/turf/S = loc
-		attached = locate(/obj/structure/cable) in S
-		if(attached)
-			if(ai_brain) ai_brain.busy = TRUE
+		var/turf/S = self.loc
+		self.attached = locate(/obj/structure/cable) in S
+		if(self.attached)
+			if(self.ai_brain) self.ai_brain.busy = TRUE
 			if(prob(2))
-				src.visible_message(span_infoplain(span_bold("\The [src]") + " begins to sink power from the net."))
+				self.visible_message(span_infoplain(span_bold("\The [self]") + " begins to sink power from the net."))
 			if(prob(5))
 				var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-				sparks.set_up(5, 0, get_turf(src))
+				sparks.set_up(5, 0, get_turf(self))
 				sparks.start()
-			anchored = TRUE
-			PN = attached.powernet
-			PN.draw_power(powerdraw)
-			charge = charge + (powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
+			self.anchored = TRUE
+			self.PN = self.attached.powernet
+			self.PN.draw_power(self.powerdraw)
+			self.charge = self.charge + (self.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
 			var/apc_drain_rate = 750 //Going to see if grubs are better as a minimal bother. previous value : 4000
-			for(var/obj/machinery/power/terminal/T in PN.nodes)
+			for(var/obj/machinery/power/terminal/T in self.PN.nodes)
 				if(istype(T.master, /obj/machinery/power/apc))
 					var/obj/machinery/power/apc/A = T.master
 					if(A.operating && A.cell)
 						var/cur_charge = A.cell.charge / CELLRATE
 						var/drain_val = min(apc_drain_rate, cur_charge)
 						A.cell.use(drain_val * CELLRATE)
-		else if(!attached && anchored)
-			anchored = FALSE
-			PN = null
-		if(prob(1) && charge >= 32000 && can_evolve == 1 && GLOB.moth_amount < 1) //it's reading from the moth_amount global list to determine if it can evolve. There should only ever be a maxcap of 1 existing solar moth alive at any time. TODO: make the code decrease the list after 1 has spawned this shift.
-			anchored = 0
-			PN = null
-			release_vore_contents()
-			if(prey_excludes)
-				prey_excludes.Cut()
+		else if(!self.attached && self.anchored)
+			self.anchored = FALSE
+			self.PN = null
+		if(prob(1) && self.charge >= 32000 && self.can_evolve == 1 && GLOB.moth_amount < 1) //it's reading from the moth_amount global list to determine if it can evolve. There should only ever be a maxcap of 1 existing solar moth alive at any time. TODO: make the code decrease the list after 1 has spawned this shift.
+			self.anchored = 0
+			self.PN = null
+			self.release_vore_contents()
+			if(self.prey_excludes)
+				self.prey_excludes.Cut()
 			GLOB.moth_amount = GLOB.moth_amount + 1
-			death_star()
+			self.death_star()
 
 /mob/living/simple_mob/vore/solargrub/proc/death_star()
 	visible_message(span_warning("\The [src]'s shell rips open and evolves!"))
@@ -163,13 +166,16 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	GLOB.existing_solargrubs -= src
 	. = ..()
 
-/mob/living/simple_mob/vore/solargrub/handle_light()
+/datum/life_system/light/simple_mob/vore/solargrub
+	mob_type = /mob/living/simple_mob/vore/solargrub
+
+/datum/life_system/light/simple_mob/vore/solargrub/tick(mob/living/simple_mob/vore/solargrub/self, datum/life_context/ctx)
 	. = ..()
-	if(. == 0 && !is_dead())
-		set_light(2.5, 1, COLOR_YELLOW)
+	if(. == 0 && !self.is_dead())
+		self.set_light(2.5, 1, COLOR_YELLOW)
 		return 1
-	else if(is_dead())
-		glow_override = FALSE
+	else if(self.is_dead())
+		self.glow_override = FALSE
 
 /mob/living/simple_mob/vore/solargrub/load_default_bellies()
 	. = ..()

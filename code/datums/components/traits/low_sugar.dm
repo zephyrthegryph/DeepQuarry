@@ -11,10 +11,10 @@
 		return COMPONENT_INCOMPATIBLE
 
 /datum/component/diabetic/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(process_component))
+	add_trait_life_system(parent, /datum/life_system/trait/diabetic)
 
 /datum/component/diabetic/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE))
+	remove_trait_life_system(parent, /datum/life_system/trait/diabetic)
 
 /datum/component/diabetic/proc/process_component()
 	SIGNAL_HANDLER
@@ -36,3 +36,11 @@
 		living_guy.hallucination = min(30,living_guy.hallucination+8)
 	if((living_guy.nutrition < nutrition_critical) && prob(5))
 		living_guy.drowsyness = min(100,living_guy.drowsyness+30)
+
+/// Trait system: low blood sugar. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/diabetic
+	name = "diabetic"
+	component_type = /datum/component/diabetic
+
+/datum/life_system/trait/diabetic/tick_component(mob/living/self, datum/component/diabetic/component)
+	component.process_component()

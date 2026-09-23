@@ -81,12 +81,15 @@
 		playsound(src, pick('sound/h_sounds/headcrab.ogg', 'sound/h_sounds/holla.ogg', 'sound/h_sounds/lynx.ogg', 'sound/h_sounds/mumble.ogg', 'sound/h_sounds/yell.ogg'), 50, 1)
 
 //Plays the sound every ~4 seconds.
-/mob/living/simple_mob/humanoid/possessed/Life()
+/datum/life_system/type_post/simple_mob/humanoid/possessed
+	mob_type = /mob/living/simple_mob/humanoid/possessed
+
+/datum/life_system/type_post/simple_mob/humanoid/possessed/tick(mob/living/simple_mob/humanoid/possessed/self, datum/life_context/ctx)
 	. = ..()
-	if(idle <= 0 && silenced == 0)
-		playsound(src, 'sound/h_sounds/breathing.ogg', 60, 1)
-		idle = 4
-	idle--
+	if(self.idle <= 0 && self.silenced == 0)
+		playsound(self, 'sound/h_sounds/breathing.ogg', 60, 1)
+		self.idle = 4
+	self.idle--
 
 //Dies with a variety of messages, a disgusting sound, then drops the control module, bones, blood, gibs, and a cloud of miasma.
 /mob/living/simple_mob/humanoid/possessed/Destroy()

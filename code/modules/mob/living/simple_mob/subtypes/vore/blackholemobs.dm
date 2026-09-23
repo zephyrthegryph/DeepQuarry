@@ -737,13 +737,16 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	explosion_delay_lower	= 5 SECOND	// Lower bound for explosion delay.
 	explosion_delay_upper	= 8 SECONDS	// Upper bound.
 
-/mob/living/simple_mob/vore/blackhole_obelisk/Life()
+/datum/life_system/type_post/simple_mob/vore/blackhole_obelisk
+	mob_type = /mob/living/simple_mob/vore/blackhole_obelisk
+
+/datum/life_system/type_post/simple_mob/vore/blackhole_obelisk/tick(mob/living/simple_mob/vore/blackhole_obelisk/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
-	if(world.time > last_lifechecks + 15 SECONDS)
-		last_lifechecks = world.time
-		handle_hungry()
+	if(world.time > self.last_lifechecks + 15 SECONDS)
+		self.last_lifechecks = world.time
+		self.handle_hungry()
 
 // hackified shitcode poached from the pitcher plant for ~~cool flavor text~~ when you're near either 'structure'
 

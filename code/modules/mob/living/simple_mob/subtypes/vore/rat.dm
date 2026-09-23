@@ -104,17 +104,20 @@
 	var/mob/living/carbon/human/food
 	var/hunger = 0
 /*
-/mob/living/simple_mob/vore/aggressive/rat/tame/Life()
+/datum/life_system/type_post/simple_mob/vore/aggressive/rat/tame
+	mob_type = /mob/living/simple_mob/vore/aggressive/rat/tame
+
+/datum/life_system/type_post/simple_mob/vore/aggressive/rat/tame/tick(mob/living/simple_mob/vore/aggressive/rat/tame/self, datum/life_context/ctx)
 	. = ..()
 	if(!. || ai_inactive)
 		return
 
 	if(hunger > 0 && life_since_foodscan++ > 5) //Only look for floor food when hungry.
 		life_since_foodscan = 0
-		for(var/obj/item/reagent_containers/food/snacks/S in oview(src,3)) //Accept thrown offerings and scavenge surroundings.
-			if(get_dist(src,S) <=1)
+		for(var/obj/item/reagent_containers/food/snacks/S in oview(self,3)) //Accept thrown offerings and scavenge surroundings.
+			if(get_dist(self,S) <=1)
 				visible_emote("hungrily devours \the [S].")
-				playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
+				playsound(self,'sound/items/eatfood.ogg', rand(10,50), 1)
 				qdel(S)
 				hunger = 0
 				food = null
@@ -125,7 +128,7 @@
 	if(!food)
 		return
 
-	var/food_dist = get_dist(src,food)
+	var/food_dist = get_dist(self,food)
 
 	if(food_dist > world.view) //Lose interest on this person.
 		food = null
@@ -169,7 +172,7 @@
 				hunger += 5
 		else
 			food.Weaken(5)
-			food.visible_message(span_danger("\The [src] pounces on \the [food]!"))
+			food.visible_message(span_danger("\The [self] pounces on \the [food]!"))
 			target_mob = food
 			EatTarget()
 			hunger = 0

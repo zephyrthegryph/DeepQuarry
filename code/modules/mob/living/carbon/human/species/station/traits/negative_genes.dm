@@ -66,7 +66,7 @@
 	activation_message="Your throat feels strange..."
 	primitive_expression_messages=list("screams without a sound.")
 
-/datum/trait/negative/disability_mute/handle_environment_special(mob/living/carbon/human/H)
+/datum/trait/negative/disability_mute/environment_effects(mob/living/carbon/human/H)
 	H.sdisabilities |= sdisability 		// In space, no one can hear you scream
 
 /datum/trait/negative/disability_deaf
@@ -82,7 +82,7 @@
 	activation_message="It's kinda quiet."
 	primitive_expression_messages=list("stares blanky.")
 
-/datum/trait/negative/disability_deaf/handle_environment_special(mob/living/carbon/human/H)
+/datum/trait/negative/disability_deaf/environment_effects(mob/living/carbon/human/H)
 	H.sdisabilities |= sdisability 		// In space, I can't hear shit
 
 /datum/trait/negative/disability_deaf/apply(datum/species/S,mob/living/carbon/human/H)

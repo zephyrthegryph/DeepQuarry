@@ -594,27 +594,12 @@
 /datum/species/proc/handle_death(mob/living/carbon/human/H) //Handles any species-specific death events (such as dionaea nymph spawns).
 	return
 
-// Used for traits and species that have special environmental effects.
-/datum/species/proc/handle_environment_special(mob/living/carbon/human/H)
+// Strategy called by the human environment system for species and traits with special
+// environmental effects.
+/datum/species/proc/environment_effects(mob/living/carbon/human/H)
 	for(var/datum/trait/env_trait in env_traits)
-		env_trait.handle_environment_special(H)
+		env_trait.environment_effects(H)
 	return
-
-/datum/species/proc/handle_species_components(mob/living/carbon/human/H)
-	SHOULD_NOT_OVERRIDE(TRUE)
-
-	//Xenochimera Species Component
-	var/datum/component/xenochimera/xc = H.get_xenochimera_component()
-	if(xc)
-		if(!H.stat || !(xc.revive_ready == REVIVING_NOW || xc.revive_ready == REVIVING_DONE))
-			SEND_SIGNAL(H, COMSIG_XENOCHIMERA_COMPONENT)
-
-	//Shadekin Species Component.
-	//For when shadekin actually have their component control everything.
-	var/datum/component/shadekin/sk = H.get_shadekin_component()
-	if(sk)
-		if(!H.stat)
-			SEND_SIGNAL(H, COMSIG_SHADEKIN_COMPONENT)
 
 // Used to update alien icons for aliens.
 /datum/species/proc/handle_login_special(mob/living/carbon/human/H)
@@ -655,8 +640,8 @@
 		shreds += damage
 	return shreds
 
-// Called in life() when the mob has no client.
-/datum/species/proc/handle_npc(mob/living/carbon/human/H)
+// Strategy called by the human NPC system each cycle the mob has no client.
+/datum/species/proc/npc_behaviour(mob/living/carbon/human/H)
 	if(H.stat == CONSCIOUS && H.ai_brain)
 		if(H.resting)
 			H.resting = FALSE

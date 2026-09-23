@@ -136,27 +136,30 @@
 
 	var/turns_since_scan = 0
 
-/mob/living/simple_mob/animal/passive/snake/python/noodle/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/snake/python/noodle
+	mob_type = /mob/living/simple_mob/animal/passive/snake/python/noodle
+
+/datum/life_system/type_post/simple_mob/animal/passive/snake/python/noodle/tick(mob/living/simple_mob/animal/passive/snake/python/noodle/self, datum/life_context/ctx)
 	..()
 
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
 
 	//Feeding, chasing food, FOOOOODDDD
-	if(!stat && !resting && !buckled)
-		turns_since_scan++
-		if(turns_since_scan > 5)
-			turns_since_scan = 0
-			if((movement_target) && !(isturf(movement_target.loc) || ishuman(movement_target.loc) ))
-				movement_target = null
-			if(!movement_target || !(movement_target.loc in oview(src, 7)) )
-				movement_target = null
-				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(src,7))
+	if(!self.stat && !self.resting && !self.buckled)
+		self.turns_since_scan++
+		if(self.turns_since_scan > 5)
+			self.turns_since_scan = 0
+			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
+				self.movement_target = null
+			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
+				self.movement_target = null
+				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(self,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						movement_target = S
-						visible_emote("turns towards \the [movement_target] and slithers towards it.")
+						self.movement_target = S
+						self.visible_emote("turns towards \the [self.movement_target] and slithers towards it.")
 						break
-			if(movement_target)
-				chase_target()
+			if(self.movement_target)
+				self.chase_target()
 
 /mob/living/simple_mob/animal/passive/snake/python/noodle/apply_melee_effects(atom/A)
 	if(ismouse(A))

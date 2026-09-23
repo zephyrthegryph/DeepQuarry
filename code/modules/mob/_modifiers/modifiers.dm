@@ -86,14 +86,22 @@
 	var/list/modifiers = list() // A list of modifier datums, which can adjust certain mob numbers.
 
 // Called by Life().
-/mob/living/proc/handle_modifiers()
-	if(!modifiers.len) // No work to do.
+/datum/life_system/modifiers
+	name = "modifiers"
+	phase = LIFE_PHASE_INPUT
+	order = 50
+	segment = LIFE_SEG_LIVING
+	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
+
+/// Modifier expiry and ticks. Runs even in nullspace.
+/datum/life_system/modifiers/tick(mob/living/self, datum/life_context/ctx)
+	if(!self.modifiers.len) // No work to do.
 		return
 	// Get rid of anything we shouldn't have.
-	for(var/datum/modifier/M in modifiers)
+	for(var/datum/modifier/M in self.modifiers)
 		M.check_if_valid()
 	// Remaining modifiers will now receive a tick().  This is in a second loop for safety in order to not tick() an expired modifier.
-	for(var/datum/modifier/M in modifiers)
+	for(var/datum/modifier/M in self.modifiers)
 		M.tick()
 
 // Call this to add a modifier to a mob. First argument is the modifier type you want, second is how long it should last, in ticks.

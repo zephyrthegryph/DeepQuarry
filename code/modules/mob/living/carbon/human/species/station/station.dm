@@ -678,7 +678,7 @@
 
 	H.visible_message(span_danger("\The [H] splits apart with a wet slithering noise!"))
 
-/datum/species/diona/handle_environment_special(mob/living/carbon/human/H)
+/datum/species/diona/environment_effects(mob/living/carbon/human/H)
 	if(H.inStasisNow())
 		return
 
@@ -1561,7 +1561,7 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/vasilissan)
 
 	hazard_low_pressure = 20 //Prevents them from dying normally in space. Special code handled below.
-	cold_level_1 = -1    // All cold debuffs are handled below in handle_environment_special
+	cold_level_1 = -1    // All cold debuffs are handled below in environment_effects
 	cold_level_2 = -1
 	cold_level_3 = -1
 
@@ -1579,7 +1579,7 @@
 
 	climb_mult = 0.75
 
-/datum/species/spider/handle_environment_special(mob/living/carbon/human/H)
+/datum/species/spider/environment_effects(mob/living/carbon/human/H)
 	if(H.stat == DEAD) // If they're dead they won't need anything.
 		return
 
@@ -1703,7 +1703,7 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/xenochimera)
 
 	hazard_low_pressure = -1 //Prevents them from dying normally in space. Special code handled below.
-	cold_level_1 = -1     // All cold debuffs are handled below in handle_environment_special
+	cold_level_1 = -1     // All cold debuffs are handled below in environment_effects
 	cold_level_2 = -1
 	cold_level_3 = -1
 
@@ -1736,7 +1736,7 @@
 
 	species_component = list(/datum/component/xenochimera)
 
-/datum/species/xenochimera/handle_environment_special(mob/living/carbon/human/H)
+/datum/species/xenochimera/environment_effects(mob/living/carbon/human/H)
 	//Cold/pressure effects when not regenerating
 	if(!isturf(H.loc))
 		return
@@ -1981,7 +1981,7 @@
 	var/weeds_plasma_rate = 3 	// Plasma regen. Much lower than actual xenos. Faster on weeds.
 	var/weeds_heal_rate = 0.5   // Health regen on weeds. No healing unless resting.
 
-/datum/species/xenomorph_hybrid/handle_environment_special(mob/living/carbon/human/H)
+/datum/species/xenomorph_hybrid/environment_effects(mob/living/carbon/human/H)
 
 	var/turf/T = H.loc
 	if(!T) return

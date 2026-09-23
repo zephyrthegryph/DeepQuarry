@@ -30,27 +30,30 @@
 	udder = new(50)
 	udder.my_atom = src
 
-/mob/living/simple_mob/animal/goat/Life()
+/datum/life_system/type_post/simple_mob/animal/goat
+	mob_type = /mob/living/simple_mob/animal/goat
+
+/datum/life_system/type_post/simple_mob/animal/goat/tick(mob/living/simple_mob/animal/goat/self, datum/life_context/ctx)
 	. = ..()
 	if(.)
-		if(stat == CONSCIOUS)
-			if(udder && prob(5))
-				udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
+		if(self.stat == CONSCIOUS)
+			if(self.udder && prob(5))
+				self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
-		if(locate(/obj/effect/plant) in loc)
-			var/obj/effect/plant/SV = locate() in loc
+		if(locate(/obj/effect/plant) in self.loc)
+			var/obj/effect/plant/SV = locate() in self.loc
 			SV.die_off(1)
 
-		if(locate(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible) in loc)
-			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate() in loc
+		if(locate(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible) in self.loc)
+			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate() in self.loc
 			qdel(SP)
 
-		if(!pulledby)
+		if(!self.pulledby)
 			var/obj/effect/plant/food
-			food = locate(/obj/effect/plant) in oview(5,loc)
+			food = locate(/obj/effect/plant) in oview(5,self.loc)
 			if(food)
-				var/step = get_step_to(src, food, 0)
-				Move(step)
+				var/step = get_step_to(self, food, 0)
+				self.Move(step)
 
 /mob/living/simple_mob/animal/goat/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

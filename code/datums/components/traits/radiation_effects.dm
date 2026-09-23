@@ -134,12 +134,13 @@
 
 /datum/component/radiation_effects/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_HANDLE_RADIATION, PROC_REF(process_component))
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(process_glow))
+	add_trait_life_system(parent, /datum/life_system/trait/radiation_glow)
 	RegisterSignal(parent, COMSIG_LIVING_IRRADIATE_EFFECT, PROC_REF(handle_irradiate_effect))
 	RegisterSignal(parent, COMSIG_GEIGER_COUNTER_SCAN, PROC_REF(on_geiger_counter_scan))
 
 /datum/component/radiation_effects/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_HANDLE_RADIATION, COMSIG_LIVING_LIFE, COMSIG_LIVING_IRRADIATE_EFFECT))
+	UnregisterSignal(parent, list(COMSIG_HANDLE_RADIATION, COMSIG_LIVING_IRRADIATE_EFFECT))
+	remove_trait_life_system(parent, /datum/life_system/trait/radiation_glow)
 
 /datum/component/radiation_effects/proc/process_glow()
 	SIGNAL_HANDLER
@@ -397,3 +398,11 @@
 	glows = FALSE
 	glow_toggle = FALSE
 	radiation_immunity = TRUE
+
+/// Trait system: radiation glow. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/radiation_glow
+	name = "radiation glow"
+	component_type = /datum/component/radiation_effects
+
+/datum/life_system/trait/radiation_glow/tick_component(mob/living/self, datum/component/radiation_effects/component)
+	component.process_glow()

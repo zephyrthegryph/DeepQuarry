@@ -175,10 +175,13 @@
 		if(L.hallucination <= 100)
 			L.hallucination += rand(1,10)
 
-/mob/living/simple_mob/vore/alienanimals/spooky_ghost/Life()
+/datum/life_system/type_post/simple_mob/vore/alienanimals/spooky_ghost
+	mob_type = /mob/living/simple_mob/vore/alienanimals/spooky_ghost
+
+/datum/life_system/type_post/simple_mob/vore/alienanimals/spooky_ghost/tick(mob/living/simple_mob/vore/alienanimals/spooky_ghost/self, datum/life_context/ctx)
 	. = ..()
-	var/turf/T = get_turf(src)
+	var/turf/T = get_turf(self)
 	if(!T)
 		return
 	if(T.get_lumcount() >= 0.5)
-		injure(INJURY_BURN, 1, source = T) // Light sears it.
+		self.injure(INJURY_BURN, 1, source = T) // Light sears it.

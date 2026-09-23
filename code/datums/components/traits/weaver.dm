@@ -36,10 +36,10 @@
 	. = ..()
 
 /datum/component/weaver/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(process_component))
+	add_trait_life_system(parent, /datum/life_system/trait/weaver)
 
 /datum/component/weaver/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE))
+	remove_trait_life_system(parent, /datum/life_system/trait/weaver)
 
 /datum/component/weaver/proc/process_weaver_silk()
 	if(silk_reserve < silk_max_reserve && silk_production == TRUE && owner.nutrition > 100)
@@ -176,3 +176,11 @@
 		var/atom/object = new weaved_object(owner.loc)
 		object.color = silk_color
 		return
+
+/// Trait system: silk production. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/weaver
+	name = "weaver"
+	component_type = /datum/component/weaver
+
+/datum/life_system/trait/weaver/tick_component(mob/living/self, datum/component/weaver/component)
+	component.process_component()
