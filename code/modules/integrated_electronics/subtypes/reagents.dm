@@ -180,7 +180,7 @@
 					else
 						activate_pin(3)
 					return
-				if(NOCLONE in T.mutations) //target done been et, no more blood in him
+				if(T.has_mutation(NOCLONE)) //target done been et, no more blood in him
 					if(T.reagents.trans_to_obj(src, tramount))
 						activate_pin(2)
 					else

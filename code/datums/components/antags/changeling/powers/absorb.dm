@@ -31,7 +31,7 @@
 
 	var/datum/component/antag/changeling/target_changeling = is_changeling(T) //If the target is a changeling
 
-	if(HUSK in T.mutations) //Lings can always absorb other lings, unless someone beat them to it first.
+	if(T.has_mutation(HUSK)) //Lings can always absorb other lings, unless someone beat them to it first.
 		if(!target_changeling || target_changeling && target_changeling.geneticpoints < 0)
 			to_chat(src, span_warning("This creature's DNA is ruined beyond useability!"))
 			return

@@ -48,7 +48,7 @@
 		H.species.create_organs(H)
 		H.restore_all_organs(ignore_prosthetic_prefs=1) //Covers things like fractures and other things not covered by the above.
 		H.restore_blood()
-		H.mutations.Remove(HUSK)
+		H.remove_mutation(HUSK)
 		H.status_flags &= ~DISFIGURED
 		H.update_icons_body()
 		for(var/limb in H.organs_by_name)

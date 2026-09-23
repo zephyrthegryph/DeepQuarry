@@ -254,7 +254,7 @@
 
 	// Hot air hurts :(
 	var/breath_temperature = breath.return_temperature()
-	if((breath_temperature < breath_cold_level_1 || breath_temperature > breath_heat_level_1) && !(COLD_RESISTANCE in H.mutations))
+	if((breath_temperature < breath_cold_level_1 || breath_temperature > breath_heat_level_1) && !(H.has_mutation(COLD_RESISTANCE)))
 
 		if(breath_temperature <= breath_cold_level_1)
 			if(prob(20))

@@ -133,6 +133,9 @@
 	/// The slot the next note_enter() of `pending_thing` goes to (api.dm).
 	var/tmp/atom/movable/pending_thing
 	var/pending_slot
+	/// Keyed slots only (J4): slot id -> (key -> thing). Lazy; a holder with
+	/// no keyed slot never allocates this.
+	var/tmp/list/keys
 
 /datum/ledger/New(atom/holder, list/defs)
 	..()
@@ -159,6 +162,7 @@
 	slots = null
 	entries = null
 	accumulators = null
+	keys = null
 	return ..()
 
 /datum/ledger/proc/def_by_id(id)
@@ -166,6 +170,52 @@
 		if(def.id == id)
 			return def
 	return null
+
+// ---- Keyed slots (J4) ----
+
+/datum/ledger/proc/index_key(slot_id, key, atom/movable/thing)
+	LAZYINITLIST(keys)
+	var/list/slot_keys = keys[slot_id]
+	if(!slot_keys)
+		slot_keys = list()
+		keys[slot_id] = slot_keys
+	slot_keys[key] = thing
+
+/datum/ledger/proc/unindex_key(slot_id, key, atom/movable/thing)
+	if(isnull(key) || !keys)
+		return
+	var/list/slot_keys = keys[slot_id]
+	if(!slot_keys)
+		return
+	if(slot_keys[key] == thing)
+		slot_keys -= key
+		if(!length(slot_keys))
+			keys -= slot_id
+	UNSETEMPTY(keys)
+
+/// The thing keyed `key` in `slot_id`, or null. O(1).
+/datum/ledger/proc/slot_lookup(slot_id, key)
+	if(isnull(key) || !keys)
+		return null
+	var/list/slot_keys = keys[slot_id]
+	return slot_keys ? slot_keys[key] : null
+
+/// Re-reads `thing`'s key in whichever of our slots it is in, and re-indexes
+/// it. Called when something that changes `slot_key()`'s answer happens to a
+/// thing already inserted (its holder doesn't know on its own).
+/datum/ledger/proc/rekey(atom/movable/thing)
+	var/list/entry = entries[thing]
+	if(!entry)
+		return
+	var/id = entry[LEDGER_E_SLOT]
+	var/datum/slot_def/def = def_by_id(id)
+	if(!def?.keyed)
+		return
+	unindex_key(id, entry[LEDGER_E_KEY], thing)
+	var/key = thing.slot_key()
+	entry[LEDGER_E_KEY] = key
+	if(!isnull(key))
+		index_key(id, key, thing)
 
 // ---- Sync ----
 
@@ -197,7 +247,10 @@
 	var/datum/slot_def/def = def_by_id(id)
 	var/cost = def.cost(holder, thing)
 	var/list/snapshot = dq_ledger_contribution(thing)
-	entries[thing] = list(id, ++next_serial, cost, snapshot)
+	var/key = def.keyed ? thing.slot_key() : null
+	entries[thing] = list(id, ++next_serial, cost, snapshot, key)
+	if(def.keyed && !isnull(key))
+		index_key(id, key, thing)
 	var/list/things = slots[id]
 	things += thing
 	used[id] += cost
@@ -206,12 +259,17 @@
 	propagate()
 	holder.on_slot_changed(id, thing, TRUE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, id)
+	if(thing.has_slot_hooks)
+		thing.on_slotted(holder, id)
 
 /datum/ledger/proc/note_exit(atom/movable/thing)
 	var/list/entry = entries[thing]
 	if(!entry)
 		return
 	var/id = entry[LEDGER_E_SLOT]
+	var/datum/slot_def/def = def_by_id(id)
+	if(def?.keyed)
+		unindex_key(id, entry[LEDGER_E_KEY], thing)
 	entries -= thing
 	var/list/things = slots[id]
 	things -= thing
@@ -221,6 +279,8 @@
 	propagate()
 	holder.on_slot_changed(id, thing, FALSE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_REMOVED, thing, id)
+	if(thing.has_slot_hooks)
+		thing.on_unslotted(holder, id)
 
 /// Moves a thing already inside between two of the holder's slots.
 /datum/ledger/proc/reslot(atom/movable/thing, new_id)
@@ -231,17 +291,28 @@
 	var/list/old_things = slots[old_id]
 	old_things -= thing
 	used[old_id] -= entry[LEDGER_E_COST]
+	var/datum/slot_def/old_def = def_by_id(old_id)
+	if(old_def?.keyed)
+		unindex_key(old_id, entry[LEDGER_E_KEY], thing)
 	holder.on_slot_changed(old_id, thing, FALSE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_REMOVED, thing, old_id)
+	if(thing.has_slot_hooks)
+		thing.on_unslotted(holder, old_id)
 	var/datum/slot_def/def = def_by_id(new_id)
 	entry[LEDGER_E_SLOT] = new_id
 	entry[LEDGER_E_SERIAL] = ++next_serial
 	entry[LEDGER_E_COST] = def.cost(holder, thing)
+	var/key = def.keyed ? thing.slot_key() : null
+	entry[LEDGER_E_KEY] = key
+	if(def.keyed && !isnull(key))
+		index_key(new_id, key, thing)
 	var/list/new_things = slots[new_id]
 	new_things += thing
 	used[new_id] += entry[LEDGER_E_COST]
 	holder.on_slot_changed(new_id, thing, TRUE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, new_id)
+	if(thing.has_slot_hooks)
+		thing.on_slotted(holder, new_id)
 
 /// Re-reads one thing's contribution, e.g. after its own contents changed.
 /// Changes to a child's own properties reach here through the reactor later
@@ -363,6 +434,42 @@
 		. += "[holder] tracks [tracked], slots list [total], entries [length(entries)]"
 	if(total != length(holder.contents))
 		. += "[holder] holds [length(holder.contents)] but the ledger lists [total]"
+	. += verify_keys()
+
+/// Recomputes the key index from the entries and compares it to `keys`.
+/datum/ledger/proc/verify_keys()
+	. = list()
+	var/list/want = list()
+	for(var/atom/movable/thing as anything in entries)
+		var/list/entry = entries[thing]
+		var/id = entry[LEDGER_E_SLOT]
+		var/datum/slot_def/def = def_by_id(id)
+		if(!def?.keyed)
+			continue
+		var/key = entry[LEDGER_E_KEY]
+		if(isnull(key))
+			continue
+		LAZYINITLIST(want)
+		var/list/slot_keys = want[id]
+		if(!slot_keys)
+			slot_keys = list()
+			want[id] = slot_keys
+		if(slot_keys[key])
+			. += "[holder] slot [id] key [key] is used by more than one thing"
+			continue
+		slot_keys[key] = thing
+	for(var/id in want)
+		var/list/slot_keys = want[id]
+		var/list/have_keys = keys?[id]
+		for(var/key in slot_keys)
+			if(have_keys?[key] != slot_keys[key])
+				. += "[holder] slot [id] key [key] should index [slot_keys[key]], indexes [have_keys?[key]]"
+	for(var/id in keys)
+		var/list/have_keys = keys[id]
+		var/list/slot_keys = want[id]
+		for(var/key in have_keys)
+			if(!slot_keys || !slot_keys[key])
+				. += "[holder] slot [id] indexes stale key [key] -> [have_keys[key]]"
 
 // ---- Entry ids ----
 
@@ -395,6 +502,38 @@
 /// Runs inside the move, so it must not sleep.
 /atom/proc/on_slot_changed(slot_id, atom/movable/thing, inserted)
 	return
+
+// ---- Thing-side commit hooks (J6) ----
+
+/// Set on a type that overrides on_slotted()/on_unslotted(), so a plain
+/// thing that never will skips the proc call on every insert and remove.
+/atom/movable/var/tmp/has_slot_hooks = FALSE
+
+/// Called on `thing` right after it commits into `slot_id` on `holder`:
+/// from note_enter() and from reslot() (a move between two of the same
+/// holder's slots). Runs inside the move, so it must not sleep, move or
+/// qdel anything. Only called when `has_slot_hooks` is set.
+/atom/movable/proc/on_slotted(atom/holder, slot_id)
+	return
+
+/// Called on `thing` right after it leaves `slot_id` on `holder`: from
+/// note_exit() and from reslot(). Same constraints as on_slotted().
+/atom/movable/proc/on_unslotted(atom/holder, slot_id)
+	return
+
+// ---- Keyed slots (J4) ----
+
+/// The key a keyed slot stores for `thing` at insert, or null. Override per
+/// type (a body part returns its organ_tag).
+/atom/movable/proc/slot_key()
+	return null
+
+/// Re-reads and re-indexes `thing`'s key in whichever of its holder's slots
+/// it is in. Call this after something changes what slot_key() answers for
+/// a thing that is already inserted into a keyed slot.
+/atom/movable/proc/ledger_rekey()
+	var/datum/ledger/L = dq_ledger_peek(loc)
+	L?.rekey(src)
 
 /// References this ledger holds to `thing` (for the collapse refcount check).
 /datum/ledger/proc/refs_to(atom/movable/thing)

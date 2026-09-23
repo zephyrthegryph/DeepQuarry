@@ -46,10 +46,10 @@
 // Called if above proc happens while below a nutrition threshold.
 /mob/living/simple_mob/slime/xenobio/proc/handle_starvation()
 	if(nutrition < get_starve_nutrition() && !client) // if a slime is starving, it starts losing its friends
-		if(friends.len && prob(1))
+		if(LAZYLEN(friends) && prob(1))
 			var/mob/nofriend = pick(friends)
 			if(nofriend)
-				friends -= nofriend
+				LAZYREMOVE(friends, nofriend)
 				say("[nofriend]... food now...")
 
 	if(nutrition <= 0)

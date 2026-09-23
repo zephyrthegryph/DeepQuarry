@@ -5,6 +5,7 @@
 //! set of binds below.
 
 pub mod cell;
+pub mod device;
 pub mod gas;
 pub mod gate;
 #[cfg(feature = "heat")]
@@ -131,6 +132,94 @@ fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
 	})?;
 	let list = ByondValue::new_list()?;
 	list.write_list(&result.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
+	Ok(list)
+}
+
+/// Applies one DM device-edge transaction (M2, `device.rs`) and returns
+/// nothing; call `pipenet_step_devices` to run them. Input is
+/// semicolon-delimited fixed-width records of nine comma-separated numbers:
+/// `opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3`. Opcodes: add or
+/// replace between two pipe ports = 1 (`port_a`/`port_b` are pipe port ids;
+/// `law_kind`/`p0..p3` decode via [`device::DeviceParams::decode`]), remove
+/// = 2 (only `id` is read), add or replace between a pipe port and a turf
+/// = 3 (`port_a` is a pipe port id, `port_b` is the turf's gas-mixture
+/// handle - a vent pump or scrubber, stepped by
+/// `GasWorld::step_turf_devices`).
+#[auxmacros::bind("/proc/auxmos_pipenet_device_batch")]
+fn pipenet_device_batch(operations: ByondValue) -> Result<ByondValue> {
+	let encoded = operations.get_string()?;
+	let mut parsed = Vec::new();
+	for (operation_index, record) in encoded.split_terminator(';').enumerate() {
+		let fields = record.split(',').collect::<Vec<_>>();
+		if fields.len() != 9 {
+			eyre::bail!("device operation {operation_index} does not contain nine fields: {record}");
+		}
+		let mut n = [0.0f32; 9];
+		for (i, f) in fields.iter().enumerate() {
+			n[i] = f.parse::<f32>().map_err(|error| {
+				eyre::eyre!("invalid device number '{f}' at operation {operation_index}: {error}")
+			})?;
+		}
+		parsed.push(n);
+	}
+	with_world(|w| -> Result<()> {
+		for fields in parsed {
+			let [opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3] = fields;
+			let id = id as u32;
+			match opcode as u8 {
+				1 => {
+					let params = device::DeviceParams::decode(law_kind as u8, [p0, p1, p2, p3]);
+					if !w.pipes.add_device(id, port_a as u32, port_b as u32, params) {
+						eyre::bail!("device {id} could not bind ports {port_a}<->{port_b}");
+					}
+				}
+				2 => {
+					w.pipes.remove_device(id);
+				}
+				3 => {
+					// A pipe port <-> turf device (a vent pump/scrubber): `port_b`
+					// carries the turf's gas-mixture handle, not a pipe port id.
+					let Some(MixRef::Turf(cell)) = MixRef::from_f32(port_b) else {
+						eyre::bail!("device {id}'s turf side is not a turf gas handle: {port_b}");
+					};
+					let params = device::DeviceParams::decode(law_kind as u8, [p0, p1, p2, p3]);
+					if !w.pipes.add_turf_device(id, port_a as u32, cell, params) {
+						eyre::bail!("device {id} could not bind port {port_a} to turf cell {cell}");
+					}
+				}
+				other => eyre::bail!("unknown device opcode {other}"),
+			}
+		}
+		Ok(())
+	})?;
+	Ok(ByondValue::null())
+}
+
+/// Runs every device edge's flow law once (M2, `device.rs`) for `dt`
+/// seconds — region<->region edges (`PipeNet::step_devices`) and
+/// region<->turf edges (`GasWorld::step_turf_devices`, a vent pump or
+/// scrubber facing the R6 gas field) alike — and returns a flat list of
+/// `id, moles, power_w, target_reached` per device that had a law set. `dt`
+/// is normally `SSair`'s tick length in seconds.
+#[auxmacros::bind("/proc/auxmos_pipenet_step_devices")]
+fn pipenet_step_devices(dt: ByondValue) -> Result<ByondValue> {
+	let dt = dt.get_number()?;
+	let steps = with_world(|w| {
+		let mut steps = w.pipes.step_devices(dt);
+		steps.extend(w.step_turf_devices(dt));
+		steps
+	});
+	let mut out = Vec::with_capacity(steps.len() * 4);
+	for s in steps {
+		out.extend([
+			ByondValue::from(s.key as f32),
+			ByondValue::from(s.report.moles as f32),
+			ByondValue::from(s.report.power_w),
+			ByondValue::from(if s.report.target_reached { 1.0 } else { 0.0 }),
+		]);
+	}
+	let list = ByondValue::new_list()?;
+	list.write_list(&out)?;
 	Ok(list)
 }
 

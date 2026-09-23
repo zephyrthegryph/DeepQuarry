@@ -40,7 +40,7 @@
 	if(shock(user, 70))
 		return
 
-	if(HULK in user.mutations)
+	if(user.has_mutation(HULK))
 		damage_dealt += 5
 	else
 		damage_dealt += 1

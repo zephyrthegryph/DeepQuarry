@@ -16,6 +16,28 @@
 /// A storage item's interior (/obj/item/storage, C4).
 #define CONTAINER_SLOT_STORAGE "storage"
 
+// ---- Occupant machines (C8, containment.md §10) ----
+/// The sealed occupant slot of a cryopod-family despawner.
+#define OCCUPANT_SLOT_CRYOPOD "cryopod_occupant"
+/// The sealed occupant slot of a resleeving pod.
+#define OCCUPANT_SLOT_RESLEEVER "resleever_occupant"
+/// The sealed occupant slot of an implant chair.
+#define OCCUPANT_SLOT_IMPLANT_CHAIR "implant_chair_occupant"
+/// The sealed occupant slot of a gibber.
+#define OCCUPANT_SLOT_GIBBER "gibber_occupant"
+/// The sealed occupant slot of a cyborg recharge station.
+#define OCCUPANT_SLOT_RECHARGE_STATION "recharge_occupant"
+/// The sealed occupant slot of a DNA modifier scanner.
+#define OCCUPANT_SLOT_DNA_SCANNER "dna_scanner_occupant"
+/// The sealed occupant slot of a suit storage unit.
+#define OCCUPANT_SLOT_SUIT_STORAGE "suit_storage_occupant"
+/// A mecha's sealed pilot slot.
+#define MECHA_SLOT_PILOT "mecha_pilot"
+/// A mecha's external hardpoint slot for attached equipment.
+#define MECHA_SLOT_EQUIPMENT "mecha_equipment"
+/// A mecha's internal cargo compartment slot.
+#define MECHA_SLOT_CARGO "mecha_cargo"
+
 // ---- Body slots (C3, code/modules/body/slots.dm): a mob's slots, per body plan ----
 /// Everything inside a mob that isn't equipment: organs, implants, bellies,
 /// held abilities. The default slot, so legacy moves into a mob land here.
@@ -110,7 +132,18 @@
 /// Snapshot of the thing's contribution to the aggregates: measure values in
 /// the ledger's measure order, then tag words.
 #define LEDGER_E_SNAPSHOT 4
-#define LEDGER_E_LEN 4
+/// The thing's `slot_key()` at insert time, for a keyed slot (J4). Null for
+/// an unkeyed slot, or a keyed slot whose thing has no key right now.
+#define LEDGER_E_KEY 5
+#define LEDGER_E_LEN 5
 
 /// Separates a slot id from the serial in an entry id: "interior#12".
 #define LEDGER_ENTRY_SEPARATOR "#"
+
+// ---- slot_remove() flags (J2) ----
+/// Skip the removal refusal, the acceptance refusal and both pre signals.
+/// The commit bookkeeping (note_exit/note_enter, COMSIG_SLOT_*, on_slotted/
+/// on_unslotted) still runs. Used to spill or transfer a holder's contents
+/// while it is being destroyed (ledger_apply_drop_policies()), where the
+/// move must not be refusable.
+#define LEDGER_MOVE_FORCED (1<<0)

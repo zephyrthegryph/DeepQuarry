@@ -22,26 +22,67 @@
 			return "abdominal"
 	return ""
 
+// --- What may go into a cavity --------------------------------------------------------------
+// Opt-out per type: anything with a use of its own on a patient (instruments, tools,
+// reagent containers) must never be swallowed by the cavity step instead of being used.
+
+/// Whether the Implant Object surgical step may place this item in a body cavity.
+/obj/item/var/cavity_implantable = TRUE
+
+/obj/item/surgical
+	cavity_implantable = FALSE
+/obj/item/organ
+	cavity_implantable = FALSE
+/obj/item/stack
+	cavity_implantable = FALSE
+/obj/item/tool
+	cavity_implantable = FALSE
+/obj/item/weldingtool
+	cavity_implantable = FALSE
+/obj/item/autopsy_scanner
+	cavity_implantable = FALSE
+/obj/item/mmi
+	cavity_implantable = FALSE
+/obj/item/robot_parts
+	cavity_implantable = FALSE
+/obj/item/holder
+	cavity_implantable = FALSE
+/obj/item/material/knife
+	cavity_implantable = FALSE
+/obj/item/flame/lighter
+	cavity_implantable = FALSE
+/obj/item/clothing/mask/smokable/cigarette
+	cavity_implantable = FALSE
+/obj/item/reagent_containers
+	cavity_implantable = FALSE
+/obj/item/decompression_needle
+	cavity_implantable = FALSE
+/obj/item/airway_kit
+	cavity_implantable = FALSE
+/obj/item/bag_valve_mask
+	cavity_implantable = FALSE
+/obj/item/tourniquet
+	cavity_implantable = FALSE
+/obj/item/shockpaddles
+	cavity_implantable = FALSE
+/obj/item/healthanalyzer
+	cavity_implantable = FALSE
+/obj/item/analyzer
+	cavity_implantable = FALSE
+/obj/item/reagent_scanner
+	cavity_implantable = FALSE
+/obj/item/gene_scanner
+	cavity_implantable = FALSE
+/obj/item/slime_scanner
+	cavity_implantable = FALSE
+/obj/item/robotanalyzer
+	cavity_implantable = FALSE
+
 /datum/surgical_step/place_item
 	name = "Implant Object"
 	phase = SURGERY_PHASE_OPERATE
 	priority = -1
 	allowed_tools = list(/obj/item = 100)
-	// Tools with procedures of their own never go in the cavity by accident.
-	excluded_tools = list(
-		/obj/item/surgical,
-		/obj/item/organ,
-		/obj/item/stack,
-		/obj/item/tool,
-		/obj/item/weldingtool,
-		/obj/item/autopsy_scanner,
-		/obj/item/mmi,
-		/obj/item/robot_parts,
-		/obj/item/holder,
-		/obj/item/material/knife,
-		/obj/item/flame/lighter,
-		/obj/item/clothing/mask/smokable/cigarette,
-	)
 	zones = list(BP_HEAD, BP_TORSO, BP_GROIN)
 	part_biology = BIOLOGY_ALL
 	needs_full_access = TRUE
@@ -67,7 +108,25 @@
 		tool = gripper.get_wrapped_item()
 		if(!tool)
 			return 0
+	if(!tool.cavity_implantable)
+		return 0
 	return ..(tool)
+
+/datum/surgical_step/place_item/confirm(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+	var/obj/item/placed = placed_item(user, tool)
+	if(!placed)
+		return FALSE
+	var/zone = part.organ_tag
+	if(tgui_alert(user, "Implant 	he [placed] into [target]'s [surgical_cavity_name(part)] cavity?", "Confirm Cavity Implant", list("Implant", "Cancel")) != "Implant")
+		return FALSE
+	// The alert may have waited a long time: check everything again.
+	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool) || QDELETED(placed))
+		return FALSE
+	if(user.get_active_hand() != tool || placed_item(user, tool) != placed || !user.Adjacent(target))
+		return FALSE
+	if(target.get_organ(zone) != part || can_use(user, target, zone, tool) != TRUE)
+		return FALSE
+	return TRUE
 
 /datum/surgical_step/place_item/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/obj/item/placed = placed_item(user, tool)

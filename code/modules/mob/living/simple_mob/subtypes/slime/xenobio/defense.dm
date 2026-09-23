@@ -33,7 +33,7 @@
 
 			if(user in friends) // Friend attacking us for no reason.
 				if(prob(25))
-					friends -= user
+					LAZYREMOVE(friends, user)
 					say("[user]... not friend...")
 
 		else // We're actually being bad.

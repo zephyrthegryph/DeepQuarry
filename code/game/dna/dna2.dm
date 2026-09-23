@@ -21,15 +21,19 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	return G
 
 /datum/dna
-	// READ-ONLY, GETS OVERWRITTEN
-	// DO NOT FUCK WITH THESE OR BYOND WILL EAT YOUR FACE
-	var/uni_identity="" // Encoded UI
-	var/struc_enzymes="" // Encoded SE
+	// unique_enzymes is the only piece of "encoded" identity actually stored: the
+	// hex-encoded uni_identity/struc_enzymes strings used to be materialized here
+	// too, duplicating the SE[]/UI[] block arrays below (the canonical storage) in
+	// string form. They are now derived on demand -- see GetUniIdentity() /
+	// GetStrucEnzymes() / SetUniIdentity() / SetStrucEnzymes() further down. Do not
+	// re-add uni_identity/struc_enzymes as stored vars; route through those procs.
 	var/unique_enzymes="" // MD5 of player name
 
-	// Internal dirtiness checks
-	var/dirtyUI=0
-	var/dirtySE=0
+	/// TRUE once SE[]/UI[] hold real data (via ResetSE()/ResetUIFrom()/ready_dna()/
+	/// SetStrucEnzymes()/SetUniIdentity()). Replaces the old check of whether the
+	/// now-removed struc_enzymes/uni_identity cache strings were still their blank
+	/// "" default -- see check_integrity() below.
+	var/dna_ready = FALSE
 
 	// Okay to read, but you're an idiot if you do.
 	// BLOCK = VALUE
@@ -57,8 +61,8 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	var/custom_ask
 	var/custom_whisper
 	var/custom_exclaim
-	var/list/custom_heat = list()
-	var/list/custom_cold = list()
+	var/list/custom_heat
+	var/list/custom_cold
 	var/digitigrade = 0 //0, Not FALSE, for future use as indicator for digitigrade types
 	var/custom_footstep = FOOTSTEP_MOB_SHOE
 
@@ -75,12 +79,6 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 		switch(A)
 			if(BLACKLISTED_COPY_VARS)
 				continue
-			if("dirtyUI")
-				dirtyUI=1
-				continue
-			if("dirtySE")
-				dirtySE=1
-				continue
 			if("body_markings")
 				var/list/body_markings_genetic = LAZYCOPY(body_markings)
 				body_markings_genetic -= GLOB.body_marking_nopersist_list
@@ -91,9 +89,9 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 			new_dna.vars[A] = L.Copy()
 			continue
 		new_dna.vars[A] = vars[A]
-	// Finish up by updating enzymes/identity from our UI/SEs
-	new_dna.UpdateUI()
-	new_dna.UpdateSE()
+	// uni_identity/struc_enzymes are derived from UI[]/SE[] on demand (see
+	// GetUniIdentity()/GetStrucEnzymes() below) and were copied above along with
+	// the rest of vars, so there is nothing further to refresh here.
 	return new_dna
 
 ///////////////////////////////////////
@@ -277,6 +275,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 			LAZYSET(body_markings, E.organ_tag, E.markings.Copy())
 
 	UpdateUI()
+	dna_ready = TRUE
 
 /datum/dna/proc/ApplyToMob(mob/living/carbon/human/H)
 	////////////////////////////////////////////////////////////////////////////////
@@ -458,7 +457,6 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	ASSERT(value>=0)
 	ASSERT(value<=4095)
 	UI[block]=value
-	dirtyUI=1
 	if(!defer)
 		UpdateUI()
 
@@ -537,6 +535,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	for(var/i = 1, i <= DNA_SE_LENGTH, i++)
 		SetSEValue(i,rand(1,1024),1)
 	UpdateSE()
+	dna_ready = TRUE
 
 // Set a DNA SE block's raw value.
 /datum/dna/proc/SetSEValue(block,value,defer=0)
@@ -544,7 +543,6 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	ASSERT(value>=0)
 	ASSERT(value<=4095)
 	SE[block]=value
-	dirtySE=1
 	if(!defer)
 		UpdateSE()
 
@@ -634,39 +632,70 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 /proc/EncodeDNABlock(value)
 	return num2hex(value, 3)
 
+/**
+ * These used to be maintained eagerly: every SetUIValue()/SetSEValue() (unless
+ * deferred) rebuilt and stored a full hex-encoded copy of the whole UI/SE block
+ * array in uni_identity/struc_enzymes, so each /datum/dna carried its genetic
+ * data twice -- once as SE[93]/UI[65] int blocks (the canonical storage) and
+ * once as ~279/195-byte hex strings. The strings are now derived on demand
+ * instead of stored; SE[]/UI[] is the only storage. UpdateUI()/UpdateSE() are
+ * kept as harmless no-ops for API stability (some callers still call them after
+ * a deferred Set*Value(..., defer=1) run; there's simply nothing left to flush).
+ */
 /datum/dna/proc/UpdateUI()
-	src.uni_identity=""
-	for(var/block in UI)
-		uni_identity += EncodeDNABlock(block)
-	//testing("New UI: [uni_identity]")
-	dirtyUI=0
+	return
 
 /datum/dna/proc/UpdateSE()
-	//var/oldse=struc_enzymes
-	struc_enzymes=""
+	return
+
+/// Returns the full hex-encoded Unique Identity string, built fresh from UI[].
+/// Route external reads of the old uni_identity var through this proc.
+/datum/dna/proc/GetUniIdentity()
+	var/result = ""
+	for(var/block in UI)
+		result += EncodeDNABlock(block)
+	return result
+
+/// Returns the full hex-encoded Structural Enzymes string, built fresh from SE[].
+/// Route external reads of the old struc_enzymes var through this proc.
+/datum/dna/proc/GetStrucEnzymes()
+	var/result = ""
 	for(var/block in SE)
-		struc_enzymes += EncodeDNABlock(block)
-	//testing("Old SE: [oldse]")
-	//testing("New SE: [struc_enzymes]")
-	dirtySE=0
+		result += EncodeDNABlock(block)
+	return result
+
+/// Decodes a full hex-encoded UI string (as produced by GetUniIdentity()) back
+/// into UI[]. Used only for the "detached dna datum" backwards-compat default
+/// in check_integrity() below -- prefer SetUIValue()/SetUIBlock() elsewhere.
+/datum/dna/proc/SetUniIdentity(hex)
+	for(var/i = 1, i <= DNA_UI_LENGTH, i++)
+		var/pos = (i - 1) * 3 + 1
+		SetUIValue(i, hex2num(copytext(hex, pos, pos + 3)), 1)
+	dna_ready = TRUE
+
+/// Decodes a full hex-encoded SE string (as produced by GetStrucEnzymes()) back
+/// into SE[]. Used only for the "detached dna datum" backwards-compat default
+/// in check_integrity() below -- prefer SetSEValue()/SetSEBlock() elsewhere.
+/datum/dna/proc/SetStrucEnzymes(hex)
+	for(var/i = 1, i <= DNA_SE_LENGTH, i++)
+		var/pos = (i - 1) * 3 + 1
+		SetSEValue(i, hex2num(copytext(hex, pos, pos + 3)), 1)
+	dna_ready = TRUE
 
 // BACK-COMPAT!
 //  Just checks our character has all the crap it needs.
 /datum/dna/proc/check_integrity(mob/living/carbon/human/character)
 	if(character)
-		if(UI.len != DNA_UI_LENGTH)
+		if(!dna_ready)
 			ResetUIFrom(character)
-
-		if(length(struc_enzymes)!= 3*DNA_SE_LENGTH)
 			ResetSE()
 
 		if(length(unique_enzymes) != 32)
 			unique_enzymes = md5(character.real_name)
 	else
-		if(length(uni_identity) != 3*DNA_UI_LENGTH)
-			uni_identity = "00600200a00e0110148fc01300b0095bd7fd3f4"
-		if(length(struc_enzymes)!= 3*DNA_SE_LENGTH)
-			struc_enzymes = "43359156756131e13763334d1c369012032164d4fe4cd61544b6c03f251b6c60a42821d26ba3b0fd6"
+		if(!dna_ready)
+			SetUniIdentity("00600200a00e0110148fc01300b0095bd7fd3f4")
+			SetStrucEnzymes("43359156756131e13763334d1c369012032164d4fe4cd61544b6c03f251b6c60a42821d26ba3b0fd6")
 
 // BACK-COMPAT!
 //  Initial DNA setup.  I'm kind of wondering why the hell this doesn't just call the above.

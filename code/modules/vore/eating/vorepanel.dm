@@ -1222,7 +1222,7 @@
 						var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 						should_proceed_with_revive &&= !H.should_have_organ(O_BRAIN) || (brain && (!istype(brain) || brain.defib_timer > 0))
 						if(!H.isSynthetic())
-							should_proceed_with_revive &&= !(HUSK in H.mutations) && H.can_defib
+							should_proceed_with_revive &&= !(H.has_mutation(HUSK)) && H.can_defib
 						if(should_proceed_with_revive)
 							for(var/organ_tag in H.species.has_organ)
 								var/obj/item/organ/O = H.species.has_organ[organ_tag]

@@ -1,0 +1,11 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Sleepers only inject the chemicals they list; crafted requests are refused and logged to admins."
+  - bugfix: "Amputation needs the limb opened to retracted flesh and asks for confirmation, with a stronger warning for vital limbs."
+  - bugfix: "Cavity implanting no longer swallows syringes, hyposprays, medical instruments, analyzers, tools or surgical tools, and asks before implanting."
+  - bugfix: "A dormant protean with no control cluster can be repaired on its body, and going dormant inside a belly, closet, mech or holder no longer escapes it."
+  - bugfix: "Changing species removes the old species' components; a folded protean unfolds first."
+  - bugfix: "Destroying an MMI's brain tissue no longer revives a dead mind, and an empty MMI accepts a new brain."
+  - bugfix: "A cyborg destroyed with no turf no longer leaves its mind inside the deleted mob."
+  - bugfix: "Syndicate cyborgs no longer leak a HUD image every tick."

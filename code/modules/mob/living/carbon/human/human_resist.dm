@@ -71,7 +71,7 @@
 #undef RESIST_ATTACK_BITE
 
 /mob/living/carbon/human/proc/can_break_straight_jacket()
-	if((HULK in mutations) || species.can_shred(src,1))
+	if((has_mutation(HULK)) || species.can_shred(src,1))
 		return 1
 
 /mob/living/carbon/human/proc/break_straight_jacket()
@@ -89,7 +89,7 @@
 			span_warning("You successfully rip your [get_equipped_item(SLOT_ID_SUIT).name].")
 			)
 
-		if(HULK in mutations)
+		if(has_mutation(HULK))
 			say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!", "RAAAAAAAARGH!", "HNNNNNNNNNGGGGGGH!", "GWAAAAAAAARRRHHH!", "AAAAAAARRRGH!" ))
 
 		var/obj/item/ripped = get_equipped_item(SLOT_ID_SUIT)

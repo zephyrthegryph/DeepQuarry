@@ -230,7 +230,7 @@
 					attached_lock.exploding = 1
 					addtimer(CALLBACK(src, PROC_REF(lock_explosion)), 10 SECONDS, TIMER_DELETE_ME)
 					return FALSE
-	if(HULK in M.mutations)
+	if(M.has_mutation(HULK))
 		to_chat(M, span_danger("Your fingers are much too large for the trigger guard!"))
 		return FALSE
 	if(CLUMSY_HARM_CHANCE(M)) //Clumsy handling
@@ -642,7 +642,7 @@
 	//determine multiplier due to the target being grabbed
 	if(ismob(target))
 		var/mob/M = target
-		if(M.grabbed_by.len)
+		if(LAZYLEN(M.grabbed_by))
 			var/grabstate = 0
 			for(var/obj/item/grab/G in M.grabbed_by)
 				grabstate = max(grabstate, G.state)

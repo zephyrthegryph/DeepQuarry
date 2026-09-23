@@ -342,7 +342,7 @@
 	f_style = "Shaved"
 	if(dna.species == "Human") //no more xenos losing ears/tentacles
 		h_style = pick("Bedhead", "Bedhead 2", "Bedhead 3")
-	all_underwear.Cut()
+	LAZYCLEARLIST(all_underwear)
 	regenerate_icons()
 
 /atom/movable/screen/ling

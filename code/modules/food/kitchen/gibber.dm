@@ -43,6 +43,15 @@
 	occupant = null
 	return ..()
 
+/obj/machinery/gibber/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/occupant/gibber, /datum/slot_def/machine_internals)
+	return types
+
+/// Sealed occupant slot (C8a, containment.md §10).
+/datum/slot_def/occupant/gibber
+	id = OCCUPANT_SLOT_GIBBER
+	name = "gibber"
+
 /obj/machinery/gibber/autogibber/Destroy()
 	input_plate = null
 	return ..()
@@ -144,8 +153,9 @@
 	user.visible_message(span_danger("[user] starts to put [victim] into the gibber!"))
 	src.add_fingerprint(user)
 	if(do_after(user, 3 SECONDS, target = src) && victim.Adjacent(src) && user.Adjacent(src) && victim.Adjacent(user) && !occupant)
+		if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
+			return
 		user.visible_message(span_danger("[user] stuffs [victim] into the gibber!"))
-		victim.forceMove(src)
 		src.occupant = victim
 		update_icon()
 
@@ -165,7 +175,7 @@
 		return
 	for(var/obj/O in src)
 		O.loc = src.loc
-	src.occupant.forceMove(get_turf(src))
+	slot_remove(src.occupant, get_turf(src))
 	src.occupant = null
 	update_icon()
 	return
