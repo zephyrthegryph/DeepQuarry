@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Latency policy for latent contents (roadmap C10): a generic pin model decides when a real item can safely collapse back into stored data, replacing ad-hoc rules; a budgeted background sweep does the collapsing, and a CI sandbox now verifies which item types are safe to store as data instead of trusting a hand-kept list."
