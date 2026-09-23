@@ -51,6 +51,14 @@ split-debuginfo = "packed"
 # Must be "unwind" (the default) so #[auxmacros::panic_safe] can catch panics
 # across the FFI boundary. Auxmos's original "abort" was removed when vendoring.
 
+# Benches only need optimized code, not the DLL's LTO and full debug info,
+# which made every bench build relink the whole workspace slowly.
+[profile.bench]
+inherits = "release"
+lto = false
+debug = "line-tables-only"
+incremental = true
+
 [profile.dev]
 debug = "full"
 opt-level = 0
