@@ -354,7 +354,7 @@
 // start: Allows removing resin doors.
 /obj/structure/simple_door/resin/attack_hand(mob/user as mob)
 	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if (HULK in usr.mutations)
+	if (usr.has_mutation(HULK))
 		visible_message(span_warning("[usr] destroys the [name]!"))
 		Dismantle(1)
 		return

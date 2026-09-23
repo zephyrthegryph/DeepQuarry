@@ -66,7 +66,7 @@
 	if(dna)
 		id_card.blood_type		= dna.b_type
 		id_card.dna_hash		= dna.unique_enzymes
-		id_card.fingerprint_hash= md5(dna.uni_identity)
+		id_card.fingerprint_hash= md5(dna.GetUniIdentity())
 	id_card.update_name()
 
 /mob/living/carbon/human/set_id_info(obj/item/card/id/id_card)

@@ -195,6 +195,8 @@
 #include "dq_robot_machine_tests.dm"
 #include "dq_life_scheduler_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
+#include "dq_mutation_tests.dm"
+#include "dq_dna_storage_tests.dm"
 #include "dq_lesion_tests.dm"
 #include "dq_stabilisation_tests.dm"
 #include "dq_vital_systems_tests.dm"

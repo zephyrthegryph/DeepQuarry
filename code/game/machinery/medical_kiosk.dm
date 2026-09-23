@@ -155,7 +155,7 @@
 			problems |= WEIRD_ORGANS
 		// end
 
-	if(HUSK in user.mutations)
+	if(user.has_mutation(HUSK))
 		problems |= HUSKED_BODY
 
 	// The kiosk's own triage sensors: what the detected conditions respond to.

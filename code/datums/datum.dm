@@ -47,7 +47,6 @@
 
 	/// Datum level flags
 	var/tmp/datum_flags = NONE
-	var/tmp/status_traits
 
 	/// A weak reference to another datum
 	var/tmp/datum/weakref/weak_reference

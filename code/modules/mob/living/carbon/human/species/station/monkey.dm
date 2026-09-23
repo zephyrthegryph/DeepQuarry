@@ -78,8 +78,8 @@
 					else
 						H.emote(pick("scratch","jump","roll","tail"))
 		// More... intense, expressions...
-		if(prob(5) && H.mutations.len)
-			if((LASER_EYES in H.mutations))
+		if(prob(5) && H.mutation_count())
+			if((H.has_mutation(LASER_EYES)))
 				// zappy monkeys
 				var/list/targs = list()
 				for(var/atom/X in orange(7, H))
