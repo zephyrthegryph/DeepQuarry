@@ -124,7 +124,7 @@
 /datum/map_template/proc/load_new_z(centered = FALSE)
 	var/atmos_transaction = SSair?.initialized
 	if(atmos_transaction)
-		SSair.auxmos_topology_transaction_begin()
+		vg_topology_transaction_begin()
 	var/x = 1
 	var/y = 1
 
@@ -163,7 +163,7 @@
 	var/list/bounds = parsed.bounds
 	if(!bounds)
 		if(atmos_transaction)
-			SSair.auxmos_topology_transaction_commit()
+			vg_topology_transaction_commit()
 		return FALSE
 
 //	repopulate_sorted_areas()
@@ -177,7 +177,7 @@
 	log_game("Z-level [name] loaded at at [x],[y],[new_z]")
 	on_map_loaded(new_z)
 	if(atmos_transaction)
-		SSair.auxmos_topology_transaction_commit()
+		vg_topology_transaction_commit()
 	return new_z
 
 /datum/map_template/proc/load(turf/T, centered = FALSE)

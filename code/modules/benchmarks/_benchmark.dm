@@ -127,7 +127,7 @@
 /// Records a named point in time with process and Rust heap memory.
 /datum/benchmark/proc/mark(name)
 	var/list/process = benchmark_process_memory()
-	var/list/allocator = SSair.verdigris_allocator_diagnostics()
+	var/list/allocator = vg_verdigris_allocator_diagnostics()
 	phases += list(list(
 		"name" = name,
 		"world_time" = world.time,
@@ -137,7 +137,7 @@
 	))
 	if(islist(process) && !isnull(process["private_mb"]))
 		metric("[name]_private_mb", process["private_mb"], "MB")
-	// verdigris_allocator_diagnostics() returns list(current_bytes, peak_bytes).
+	// vg_verdigris_allocator_diagnostics() returns list(current_bytes, peak_bytes).
 	if(islist(allocator) && length(allocator) >= 2)
 		metric("[name]_rust_heap_mb", allocator[1] / (1024 * 1024), "MB")
 		metric("[name]_rust_heap_peak_mb", allocator[2] / (1024 * 1024), "MB")

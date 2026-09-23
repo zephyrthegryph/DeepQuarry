@@ -37,8 +37,8 @@ and linked into the single Verdigris library (`verdigris.dll` /
 `libverdigris.so`). There is no separate `libauxmos`.
 
 - `auxmos_init_bridge.dm` is the hand-written DM side. It registers the gas
-  registry and reaction tables with Rust at `SSair` init and routes lifecycle
-  calls through `call_ext(VERDIGRIS, ...)`. Gases are registered under their
+  registry and reaction tables with Rust at `SSair` init. Every call into Rust goes
+  through a generated `vg_*` proc (`code/__defines/verdigris/_bindings.dm`). Gases are registered under their
   type-path text (`"/datum/gas/plasma"`), because LINDA keys gases by type.
 - Each `/datum/gas_mixture` is a handle into the Rust gas arena. The handle is
   stored in `_extools_pointer_gasmixture` and is null until registered.

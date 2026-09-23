@@ -41,7 +41,7 @@
 
 /datum/material_power_graph/Destroy()
 	if(rust_handle)
-		VERDIGRIS_CALL("drop_material_power_graph_ffi", rust_handle)
+		vg_drop_material_power_graph(rust_handle)
 		rust_handle = 0
 	vertices = null
 	indices = null
@@ -259,7 +259,7 @@
 	var/list/core_loads = reduced.Copy()
 	for(var/list/step as anything in leaf_order)
 		core_loads[step[1]] = 0
-	var/list/solution = VERDIGRIS_CALL("solve_material_power_graph_ffi", numeric_topology, core_loads, voltages)
+	var/list/solution = vg_solve_material_power_graph(numeric_topology, core_loads, voltages)
 	if(!islist(solution) || length(solution) != count + 2)
 		residual = INFINITY
 		return FALSE
@@ -299,7 +299,7 @@
 			numeric_topology += list(edge[MATERIAL_POWER_EDGE_A], edge[MATERIAL_POWER_EDGE_B], edge[MATERIAL_POWER_EDGE_R])
 		topology = numeric_topology
 	solve_generation++
-	var/handle = VERDIGRIS_CALL("submit_material_power_graph_ffi", rust_handle, topology, core_loads, voltages, solve_generation)
+	var/handle = vg_submit_material_power_graph(rust_handle, topology, core_loads, voltages, solve_generation)
 	if(!handle)
 		return FALSE
 	rust_handle = handle
@@ -316,7 +316,7 @@
 /datum/material_power_graph/proc/poll_async_solve()
 	if(!solve_pending || !rust_handle)
 		return FALSE
-	var/list/solution = VERDIGRIS_CALL("poll_material_power_graph_ffi", rust_handle)
+	var/list/solution = vg_poll_material_power_graph(rust_handle)
 	if(!islist(solution) || !length(solution))
 		return null
 	solve_pending = FALSE

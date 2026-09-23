@@ -176,7 +176,7 @@ SUBSYSTEM_DEF(air)
 
 
 /datum/controller/subsystem/air/stat_entry(msg)
-	var/list/arena_diag = auxmos_diagnostics()
+	var/list/arena_diag = vg_auxmos_diagnostics()
 	msg += "\n  Cost:{"
 	msg += "AT:[round(cost_turfs,1)]|"
 	msg += "PP:[round(cost_post_process,1)]|"
@@ -241,7 +241,7 @@ SUBSYSTEM_DEF(air)
 	// turf neighbours by coordinate id. MUST precede setup_allturfs(), whose turf
 	// adjacency registration reads these; reading world vars from Rust is unreliable
 	// on BYOND 516 so DM pushes them in.
-	auxmos_set_world_dims(world.maxx, world.maxy)
+	vg_set_world_dims(world.maxx, world.maxy)
 
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.
@@ -302,7 +302,7 @@ SUBSYSTEM_DEF(air)
 	// empties, so this floor only actually spends time when there IS a backlog.
 	if(initialized)
 		timer = TICK_USAGE_REAL
-		finish_turf_processing_auxtools(min(max(SSAIR_REMAINING_MS, 1), 3))
+		vg_finish_process_turfs(min(max(SSAIR_REMAINING_MS, 1), 3))
 		cost_finalize_last = TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer)
 		cost_finalize = cost_finalize ? MC_AVERAGE(cost_finalize, cost_finalize_last) : cost_finalize_last
 
@@ -363,9 +363,9 @@ SUBSYSTEM_DEF(air)
 		// else queued (both return TRUE on overtime). These invoke DM
 		// air.react(turf) / turf.set_visuals(...) / turf.consider_pressure_difference().
 		var/callback_budget = min(max(SSAIR_REMAINING_MS, 1), 3)
-		var/overtimed = finish_turf_processing_auxtools(callback_budget)
+		var/overtimed = vg_finish_process_turfs(callback_budget)
 		if(!overtimed)
-			overtimed = process_atmos_callbacks(callback_budget)
+			overtimed = vg_atmos_callback_handle(callback_budget)
 		if(state != SS_RUNNING)
 			return
 		if(overtimed)
@@ -645,7 +645,7 @@ SUBSYSTEM_DEF(air)
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
 	for(var/start = 1, start <= total, start += chunk)
-		auxmos_update_adjacencies_bulk(open_turfs.Copy(start, min(start + chunk, total + 1)))
+		vg_hook_infos_bulk(open_turfs.Copy(start, min(start + chunk, total + 1)))
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
 

@@ -97,7 +97,7 @@
 			leak_operations[operation_offset + 1] = leak.parent.air
 			leak_operations[operation_offset + 2] = environment
 			leak_operations[operation_offset + 3] = leak.volume
-		var/list/leak_residuals = length(leak_operations) ? call_ext(VERDIGRIS, "byond:batch_mingle_hook_ffi")(leak_operations) : null
+		var/list/leak_residuals = length(leak_operations) ? vg_batch_mingle_hook(leak_operations) : null
 		for(var/i = 1 to length(valid_leaks))
 			var/obj/machinery/atmospherics/pipe/leak = valid_leaks[i]
 			if(i <= length(leak_residuals) && leak_residuals[i])

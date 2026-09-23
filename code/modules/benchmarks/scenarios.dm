@@ -4,11 +4,11 @@
 
 /// Records the Rust atmos arena counters as metrics under `prefix`.
 /datum/benchmark/proc/record_atmos_arena(prefix)
-	// Layout of auxmos_diagnostics() (verdigris/atmos/src/lib.rs):
+	// Layout of vg_auxmos_diagnostics() (verdigris/atmos/src/lib.rs):
 	// gas slots, gas capacity, free gas slots, baselines, baseline capacity, dirty,
 	// turf map len, turf map capacity, graph nodes, graph edges, pending turfs,
 	// pending callbacks, heat state x3, node capacity, edge capacity.
-	var/list/arena = SSair.auxmos_diagnostics()
+	var/list/arena = vg_auxmos_diagnostics()
 	if(!islist(arena) || length(arena) < 10)
 		return
 	metric("[prefix]_gas_mixtures", arena[1] - arena[3], "mixtures")

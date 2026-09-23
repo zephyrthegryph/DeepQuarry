@@ -55,6 +55,11 @@ bitflags! {
 	}
 }
 
+/// Registration flag DM passes for a simulated turf (`SimulationFlags::SIMULATION_ANY`).
+/// @dm-define SIMULATION_ANY
+pub const DM_SIMULATION_ANY: u8 = 3;
+const _: () = assert!(DM_SIMULATION_ANY == SimulationFlags::SIMULATION_ANY.bits());
+
 #[allow(unused)]
 const fn adj_flag_to_idx(adj_flag: Directions) -> u8 {
 	match adj_flag {
@@ -751,8 +756,7 @@ pub fn wait_for_tasks() {
 /// with no diffusion/equalization generation still referring to the old turf
 /// graph. These operations are rare, so a bounded barrier is preferable to
 /// publishing any result across a moving topology.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_barrier")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_topology_barrier")]
 fn topology_barrier() -> Result<ByondValue> {
 	wait_for_tasks();
 	apply_pending_topology_updates();
@@ -761,8 +765,7 @@ fn topology_barrier() -> Result<ByondValue> {
 
 /// Opens a synchronous world-topology transaction. Atmos workers are drained
 /// before DM begins mutating turfs and cannot start again until commit.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_transaction_begin")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_topology_transaction_begin")]
 fn topology_transaction_begin() -> Result<ByondValue> {
 	wait_for_tasks();
 	apply_pending_topology_updates();
@@ -773,10 +776,9 @@ fn topology_transaction_begin() -> Result<ByondValue> {
 
 /// Atomically applies every registration and edge replacement accumulated by
 /// the matching begin call, then exposes one new topology generation.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_transaction_commit")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_topology_transaction_commit")]
 fn topology_transaction_commit() -> Result<ByondValue> {
-	// panic_safe catches unwinds outside this function. This guard ensures a
+	// The bind macro catches unwinds outside this function. This guard ensures a
 	// failed commit can never strand atmos processing in the paused state.
 	struct TransactionReset;
 	impl Drop for TransactionReset {
@@ -810,16 +812,14 @@ fn topology_transaction_commit() -> Result<ByondValue> {
 /// transactions this never waits for the worker: it invalidates its generation,
 /// queues every topology mutation, and lets the worker cancel at its next budget
 /// checkpoint.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_batch_begin")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_topology_batch_begin")]
 fn topology_batch_begin() -> Result<ByondValue> {
 	TOPOLOGY_BATCH_OPEN.store(true, Ordering::Release);
 	TURF_TOPOLOGY_GENERATION.fetch_add(1, Ordering::AcqRel);
 	Ok(ByondValue::null())
 }
 
-#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_batch_commit")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_topology_batch_commit")]
 fn topology_batch_commit() -> Result<ByondValue> {
 	TOPOLOGY_BATCH_OPEN.store(false, Ordering::Release);
 	TURF_TOPOLOGY_GENERATION.fetch_add(1, Ordering::AcqRel);
@@ -975,8 +975,7 @@ pub(super) fn pending_active_turf_queue_counts() -> (usize, usize, usize) {
 /// Diagnostic/test query for one authoritative cell. Gameplay never polls this;
 /// it exists so convergence tests can distinguish their local frontier from
 /// unrelated map activity.
-#[byondapi::bind("/turf/proc/auxmos_is_atmos_active")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/turf/proc/auxmos_is_atmos_active")]
 fn turf_active_hook(src: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
 	let handle = with_turf_gases_read(|arena| {
@@ -1222,8 +1221,7 @@ where
 }
 
 /// Returns: null. Updates turf air infos, whether the turf is closed, is space or a regular turf, or even a planet turf is decided here.
-#[byondapi::bind("/turf/proc/update_air_ref")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/turf/proc/update_air_ref")]
 fn hook_register_turf(src: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 	let flag = flag.get_number()? as i32;
 	let visibility = crate::gas::visibility_copies();
@@ -1233,8 +1231,7 @@ fn hook_register_turf(src: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 
 /// Monotonic revision of this turf's gas mixture. Consumers can skip expensive
 /// polling while the value is unchanged.
-#[byondapi::bind("/turf/proc/air_revision")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/turf/proc/air_revision")]
 fn hook_air_revision(src: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
 	let revision = with_turf_gases_read(|arena| {
@@ -1250,8 +1247,7 @@ fn hook_air_revision(src: ByondValue) -> Result<ByondValue> {
 /// with the given flag in ONE FFI entry. Roundstart setup_allturfs used to make
 /// one call_ext per turf (~327k on a 5-z station) — the call dispatch overhead
 /// alone dominated SSair init.
-#[byondapi::bind("/proc/_auxmos_register_turfs_bulk")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/_auxmos_register_turfs_bulk")]
 fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 	let flag = flag.get_number()? as i32;
 	let visibility = crate::gas::visibility_copies();
@@ -1375,8 +1371,7 @@ fn determine_turf_flag(src: &ByondValue) -> i32 {
 }
 */
 /// Updates adjacency infos for turfs, only use this in immediateupdateturfs.
-#[byondapi::bind("/turf/proc/__update_auxtools_turf_adjacency_info")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/turf/proc/__update_auxtools_turf_adjacency_info")]
 fn hook_infos(src: ByondValue) -> Result<ByondValue> {
 	infos_impl(src)?;
 	Ok(ByondValue::null())
@@ -1384,8 +1379,7 @@ fn hook_infos(src: ByondValue) -> Result<ByondValue> {
 
 /// Bulk form of hook_infos: pushes the adjacency graph for a whole /list of
 /// turfs in one FFI entry (see hook_register_turfs_bulk for why).
-#[byondapi::bind("/proc/_auxmos_update_adjacencies_bulk")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/_auxmos_update_adjacencies_bulk")]
 fn hook_infos_bulk(list: ByondValue) -> Result<ByondValue> {
 	// Publish the entire graph first. infos_impl() activates both endpoints of
 	// each changed edge, so pruning inline is order-dependent: a later neighbor
@@ -1467,8 +1461,7 @@ fn infos_impl(src: ByondValue) -> Result<ByondValue> {
 
 /// Diagnostic invariant used by shuttle/atmos tests: Rust's authoritative
 /// outgoing edge set for this turf must exactly match DM's published list.
-#[byondapi::bind("/proc/_auxmos_topology_matches")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/_auxmos_topology_matches")]
 fn topology_matches(src: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
 	let expected_mix = src

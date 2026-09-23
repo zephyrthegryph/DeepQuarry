@@ -160,7 +160,7 @@ SUBSYSTEM_DEF(statpanels)
 
 /datum/controller/subsystem/statpanels/proc/generate_mc_metrics()
 	var/list/history = Master.perf_tick_usage
-	var/list/rust_allocator = SSair.verdigris_allocator_diagnostics()
+	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
 	var/history_start = max(1, history.len - 119)
 	var/list/graph = history.len ? history.Copy(history_start) : list()
 	var/list/subsystems = list()

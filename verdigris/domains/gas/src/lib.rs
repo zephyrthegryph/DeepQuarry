@@ -34,8 +34,7 @@ static _SIMD_DETECTED: ::std::sync::OnceLock<bool> = ::std::sync::OnceLock::new(
 /// prior_region/volume pairs...,
 /// source_mixture/ratio pairs...`. No gas rebinding is visible until the entire
 /// batch commits.
-#[byondapi::bind("/proc/auxmos_pipenet_topology_batch")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/auxmos_pipenet_topology_batch")]
 fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
 	let encoded = operations.get_string()?;
 	let mut topology = PIPE_TOPOLOGY.lock();
@@ -143,8 +142,7 @@ fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
 /// `region, target_mixture, volume, source_count, source_mixture/ratio pairs...`.
 /// Every source is snapshotted before any target changes and all bindings become
 /// authoritative only after the gas transaction succeeds.
-#[byondapi::bind("/proc/auxmos_pipenet_publish_regions")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/auxmos_pipenet_publish_regions")]
 fn pipenet_publish_regions(publications: ByondValue) -> Result<ByondValue> {
 	let encoded = publications.get_string()?;
 	let mut recipes = Vec::new();
@@ -201,14 +199,12 @@ pub fn init_eyre() {
 }
 
 /// Args: (ms). Runs callbacks until time limit is reached. If time limit is omitted, runs all callbacks.
-#[byondapi::bind("/proc/process_atmos_callbacks")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/process_atmos_callbacks")]
 fn atmos_callback_handle(remaining: ByondValue) -> Result<ByondValue> {
 	auxcallback::callback_processing_hook(remaining)
 }
 
-#[byondapi::bind("/proc/drain_dirty_gas_mixtures")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/drain_dirty_gas_mixtures")]
 fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
 	let changes = GasArena::take_dirty_mixtures()
 		.into_iter()
@@ -219,13 +215,16 @@ fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
 	Ok(list)
 }
 
+/// Floats per record returned by `drain_dirty_gas_observations`.
+/// @dm-define GAS_DEPENDENCY_OBSERVATION_STRIDE
+pub const GAS_OBSERVATION_STRIDE: usize = 15;
+
 /// Drains dirty notifications and captures the control-relevant gas state under
 /// one publication read transaction. This lets hundreds of sleeping air alarms
 /// evaluate thresholds without each crossing the FFI boundary seven times.
 /// Flat stride: id, mask, revision, pressure, temperature, volume,
 /// o2, co2, plasma, methane, n2o, volatile_fuel, miasma, zauker, total_moles.
-#[byondapi::bind("/proc/drain_dirty_gas_observations")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/drain_dirty_gas_observations")]
 fn drain_dirty_gas_observations() -> Result<ByondValue> {
 	let changes = GasArena::take_dirty_mixtures();
 	let gas_indices = [
@@ -239,7 +238,7 @@ fn drain_dirty_gas_observations() -> Result<ByondValue> {
 		gas_idx_from_string("/datum/gas/zauker")?,
 	];
 	let values = GasArena::with_all_mixtures(|gases| {
-		let mut values = Vec::with_capacity(changes.len() * 15);
+		let mut values = Vec::with_capacity(changes.len() * GAS_OBSERVATION_STRIDE);
 		for &(id, mask) in &changes {
 			let Some(mixture) = gases.get(id) else {
 				continue;
@@ -263,23 +262,20 @@ fn drain_dirty_gas_observations() -> Result<ByondValue> {
 	Ok(list)
 }
 
-#[byondapi::bind("/proc/watch_dirty_gas_mixture")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/watch_dirty_gas_mixture")]
 fn watch_dirty_gas_mixture(id: ByondValue, interest_mask: ByondValue) -> Result<ByondValue> {
 	GasArena::watch_dirty_mixture(id.get_number()? as usize, interest_mask.get_number()? as u8);
 	Ok(ByondValue::null())
 }
 
-#[byondapi::bind("/proc/unwatch_dirty_gas_mixture")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/unwatch_dirty_gas_mixture")]
 fn unwatch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
 	GasArena::unwatch_dirty_mixture(id.get_number()? as usize);
 	Ok(ByondValue::null())
 }
 
 #[cfg(feature = "turf_processing")]
-#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
 fn auxmos_diagnostics() -> Result<ByondValue> {
 	let gas = GasArena::diagnostics();
 	let turf = turfs::turf_arena_diagnostics();
@@ -315,31 +311,27 @@ fn auxmos_diagnostics() -> Result<ByondValue> {
 }
 
 /// Fills in the first unused slot in the gas mixtures vector, or adds another one, then sets the argument ByondValue to point to it.
-#[byondapi::bind("/datum/gas_mixture/proc/__gasmixture_register")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_register")]
 fn register_gasmixture_hook(src: ByondValue) -> Result<ByondValue> {
 	gas::GasArena::register_mix(src)
 }
 
 /// Adds the gas mixture's ID to the queue of mixtures that have been deleted, to be reused later.
 /// This version is only if auxcleanup is not being used; it should be called from /datum/gas_mixture/Del.
-#[byondapi::bind("/datum/gas_mixture/proc/__gasmixture_unregister")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_unregister")]
 fn unregister_gasmixture_hook(src: ByondValue) -> Result<ByondValue> {
 	gas::GasArena::unregister_mix(&src);
 	Ok(ByondValue::null())
 }
 
 /// Returns: Heat capacity, in J/K (probably).
-#[byondapi::bind("/datum/gas_mixture/proc/heat_capacity")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/heat_capacity")]
 fn heat_cap_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| Ok(mix.heat_capacity().into()))
 }
 
 /// Args: (min_heat_cap). Sets the mix's minimum heat capacity.
-#[byondapi::bind("/datum/gas_mixture/proc/set_min_heat_capacity")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/set_min_heat_capacity")]
 fn min_heat_cap_hook(src: ByondValue, arg_min: ByondValue) -> Result<ByondValue> {
 	let min = arg_min.get_number()?;
 	with_mix_mut(&src, |mix| {
@@ -349,43 +341,37 @@ fn min_heat_cap_hook(src: ByondValue, arg_min: ByondValue) -> Result<ByondValue>
 }
 
 /// Returns: Amount of substance, in moles.
-#[byondapi::bind("/datum/gas_mixture/proc/total_moles")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/total_moles")]
 fn total_moles_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| Ok(mix.total_moles().into()))
 }
 
 /// Returns: the mix's pressure, in kilopascals.
-#[byondapi::bind("/datum/gas_mixture/proc/return_pressure")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/return_pressure")]
 fn return_pressure_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| Ok(mix.return_pressure().into()))
 }
 
 /// Returns: the mix's temperature, in kelvins.
-#[byondapi::bind("/datum/gas_mixture/proc/return_temperature")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/return_temperature")]
 fn return_temperature_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| Ok(mix.get_temperature().into()))
 }
 
 /// Returns: the mix's volume, in liters.
-#[byondapi::bind("/datum/gas_mixture/proc/return_volume")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/return_volume")]
 fn return_volume_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| Ok(mix.volume.into()))
 }
 
 /// Returns: the mix's thermal energy, the product of the mixture's heat capacity and its temperature.
-#[byondapi::bind("/datum/gas_mixture/proc/thermal_energy")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/thermal_energy")]
 fn thermal_energy_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| Ok(mix.thermal_energy().into()))
 }
 
 /// Args: (mixture). Merges the gas from the giver into src, without modifying the giver mix.
-#[byondapi::bind("/datum/gas_mixture/proc/merge")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/merge")]
 fn merge_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
 	with_mixes_custom(&src, &giver, |src_mix, giver_mix| {
 		src_mix.write().merge(&giver_mix.read());
@@ -394,8 +380,7 @@ fn merge_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture, ratio). Takes the given ratio of gas from src and puts it into the argument mixture. Ratio is a number between 0 and 1.
-#[byondapi::bind("/datum/gas_mixture/proc/__remove_ratio")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/__remove_ratio")]
 fn remove_ratio_hook(
 	src: ByondValue,
 	into: ByondValue,
@@ -409,8 +394,7 @@ fn remove_ratio_hook(
 }
 
 /// Args: (mixture, amount). Takes the given amount of gas from src and puts it into the argument mixture. Amount is amount of substance in moles.
-#[byondapi::bind("/datum/gas_mixture/proc/__remove")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/__remove")]
 fn remove_hook(src: ByondValue, into: ByondValue, amount_arg: ByondValue) -> Result<ByondValue> {
 	let amount = amount_arg.get_number().unwrap_or_default();
 	with_mixes_mut(&src, &into, |src_mix, into_mix| {
@@ -420,8 +404,7 @@ fn remove_hook(src: ByondValue, into: ByondValue, amount_arg: ByondValue) -> Res
 }
 
 /// Arg: (mixture). Makes src into a copy of the argument mixture.
-#[byondapi::bind("/datum/gas_mixture/proc/copy_from")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/copy_from")]
 fn copy_from_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
 	with_mixes_custom(&src, &giver, |src_mix, giver_mix| {
 		src_mix.write().copy_from_mutable(&giver_mix.read());
@@ -430,8 +413,7 @@ fn copy_from_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (src, mixture, conductivity) or (src, conductivity, temperature, heat_capacity). Adjusts temperature of src based on parameters. Returns: temperature of sharer after sharing is complete.
-#[byondapi::bind_raw_args("/datum/gas_mixture/proc/temperature_share")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind_raw_args("/datum/gas_mixture/proc/temperature_share")]
 fn temperature_share_hook() -> Result<ByondValue> {
 	let arg_num = args.len();
 	match arg_num {
@@ -454,8 +436,7 @@ fn temperature_share_hook() -> Result<ByondValue> {
 }
 
 /// Returns: a list of the gases in the mixture, associated with their IDs.
-#[byondapi::bind("/datum/gas_mixture/proc/get_gases")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/get_gases")]
 fn get_gases_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| {
 		let mut gases_list = ByondValue::new_list()?;
@@ -471,8 +452,7 @@ fn get_gases_hook(src: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (temperature). Sets the temperature of the mixture. Will be set to 2.7 if it's too low.
-#[byondapi::bind("/datum/gas_mixture/proc/set_temperature")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/set_temperature")]
 fn set_temperature_hook(src: ByondValue, arg_temp: ByondValue) -> Result<ByondValue> {
 	let v = arg_temp.get_number()?;
 	if v.is_finite() {
@@ -488,8 +468,7 @@ fn set_temperature_hook(src: ByondValue, arg_temp: ByondValue) -> Result<ByondVa
 }
 
 /// Args: (gas_id). Returns the heat capacity from the given gas, in J/K (probably).
-#[byondapi::bind("/datum/gas_mixture/proc/partial_heat_capacity")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/partial_heat_capacity")]
 fn partial_heat_capacity(src: ByondValue, gas_id: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| {
 		Ok(mix
@@ -499,8 +478,7 @@ fn partial_heat_capacity(src: ByondValue, gas_id: ByondValue) -> Result<ByondVal
 }
 
 /// Args: (volume). Sets the volume of the gas.
-#[byondapi::bind("/datum/gas_mixture/proc/set_volume")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/set_volume")]
 fn set_volume_hook(src: ByondValue, vol_arg: ByondValue) -> Result<ByondValue> {
 	let volume = vol_arg.get_number()?;
 	with_mix_mut(&src, |mix| {
@@ -510,8 +488,7 @@ fn set_volume_hook(src: ByondValue, vol_arg: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (gas_id). Returns: the amount of substance of the given gas, in moles.
-#[byondapi::bind("/datum/gas_mixture/proc/get_moles")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/get_moles")]
 fn get_moles_hook(src: ByondValue, gas_id: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| {
 		Ok(mix.get_moles(gas_idx_from_value(&gas_id)?).into())
@@ -519,8 +496,7 @@ fn get_moles_hook(src: ByondValue, gas_id: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (gas_id, moles). Sets the amount of substance of the given gas, in moles.
-#[byondapi::bind("/datum/gas_mixture/proc/set_moles")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/set_moles")]
 fn set_moles_hook(src: ByondValue, gas_id: ByondValue, amt_val: ByondValue) -> Result<ByondValue> {
 	let vf = amt_val.get_number()?;
 	if !vf.is_finite() {
@@ -535,8 +511,7 @@ fn set_moles_hook(src: ByondValue, gas_id: ByondValue, amt_val: ByondValue) -> R
 	})
 }
 /// Args: (gas_id, moles). Adjusts the given gas's amount by the given amount, e.g. (GAS_O2, -0.1) will remove 0.1 moles of oxygen from the mixture.
-#[byondapi::bind("/datum/gas_mixture/proc/adjust_moles")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/adjust_moles")]
 fn adjust_moles_hook(
 	src: ByondValue,
 	id_val: ByondValue,
@@ -550,8 +525,7 @@ fn adjust_moles_hook(
 }
 
 /// Args: (gas_id, moles, temp). Adjusts the given gas's amount by the given amount, with that gas being treated as if it is at the given temperature.
-#[byondapi::bind("/datum/gas_mixture/proc/adjust_moles_temp")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/adjust_moles_temp")]
 fn adjust_moles_temp_hook(
 	src: ByondValue,
 	id_val: ByondValue,
@@ -578,8 +552,7 @@ fn adjust_moles_temp_hook(
 }
 
 /// Args: (gas_id_1, amount_1, gas_id_2, amount_2, ...). As adjust_moles, but with variadic arguments.
-#[byondapi::bind_raw_args("/datum/gas_mixture/proc/adjust_multi")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind_raw_args("/datum/gas_mixture/proc/adjust_multi")]
 fn adjust_multi_hook() -> Result<ByondValue> {
 	if args.len() % 2 == 0 {
 		Err(eyre::eyre!(
@@ -608,8 +581,7 @@ fn adjust_multi_hook() -> Result<ByondValue> {
 }
 
 /// Args: (amount). Adds the given amount to each gas.
-#[byondapi::bind("/datum/gas_mixture/proc/add")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/add")]
 fn add_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 	let vf = num_val.get_number().unwrap_or_default();
 	with_mix_mut(&src, |mix| {
@@ -619,8 +591,7 @@ fn add_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (amount). Subtracts the given amount from each gas.
-#[byondapi::bind("/datum/gas_mixture/proc/subtract")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/subtract")]
 fn subtract_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 	let vf = num_val.get_number().unwrap_or_default();
 	with_mix_mut(&src, |mix| {
@@ -630,8 +601,7 @@ fn subtract_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (coefficient). Multiplies all gases by this amount.
-#[byondapi::bind("/datum/gas_mixture/proc/multiply")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/multiply")]
 fn multiply_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 	let vf = num_val.get_number().unwrap_or(1.0);
 	with_mix_mut(&src, |mix| {
@@ -641,8 +611,7 @@ fn multiply_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (coefficient). Divides all gases by this amount.
-#[byondapi::bind("/datum/gas_mixture/proc/divide")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/divide")]
 fn divide_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 	let vf = num_val.get_number().unwrap_or(1.0).recip();
 	with_mix_mut(&src, |mix| {
@@ -652,8 +621,7 @@ fn divide_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture, flag, amount). Takes `amount` from src that have the given `flag` and puts them into the given `mixture`. Returns: 0 if gas didn't have any with that flag, 1 if it did.
-#[byondapi::bind("/datum/gas_mixture/proc/__remove_by_flag")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/__remove_by_flag")]
 fn remove_by_flag_hook(
 	src: ByondValue,
 	into: ByondValue,
@@ -679,8 +647,7 @@ fn remove_by_flag_hook(
 	})
 }
 /// Args: (flag). As get_gases(), but only returns gases with the given flag.
-#[byondapi::bind("/datum/gas_mixture/proc/get_by_flag")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/get_by_flag")]
 fn get_by_flag_hook(src: ByondValue, flag_val: ByondValue) -> Result<ByondValue> {
 	let flag = flag_val.get_number().map_or(0, |n: f32| n as u32);
 	let pertinent_gases = with_gas_info(|gas_info| {
@@ -702,8 +669,7 @@ fn get_by_flag_hook(src: ByondValue, flag_val: ByondValue) -> Result<ByondValue>
 }
 
 /// Args: (mixture, ratio, gas_list). Takes gases given by `gas_list` and moves `ratio` amount of those gases from `src` into `mixture`.
-#[byondapi::bind("/datum/gas_mixture/proc/scrub_into")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/scrub_into")]
 fn scrub_into_hook(
 	src: ByondValue,
 	into: ByondValue,
@@ -728,8 +694,7 @@ fn scrub_into_hook(
 }
 
 /// Marks the mix as immutable, meaning it will never change. This cannot be undone.
-#[byondapi::bind("/datum/gas_mixture/proc/mark_immutable")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/mark_immutable")]
 fn mark_immutable_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix_mut(&src, |mix| {
 		mix.mark_immutable();
@@ -738,8 +703,7 @@ fn mark_immutable_hook(src: ByondValue) -> Result<ByondValue> {
 }
 
 /// Clears the gas mixture my removing all of its gases.
-#[byondapi::bind("/datum/gas_mixture/proc/clear")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/clear")]
 fn clear_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix_mut(&src, |mix| {
 		mix.clear();
@@ -748,8 +712,7 @@ fn clear_hook(src: ByondValue) -> Result<ByondValue> {
 }
 
 /// Returns: true if the two mixtures are different enough for processing, false otherwise.
-#[byondapi::bind("/datum/gas_mixture/proc/compare")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/compare")]
 fn compare_hook(src: ByondValue, other: ByondValue) -> Result<ByondValue> {
 	with_mixes(&src, &other, |gas_one, gas_two| {
 		Ok((gas_one.temperature_compare(gas_two)
@@ -759,8 +722,7 @@ fn compare_hook(src: ByondValue, other: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
-#[byondapi::bind("/datum/gas_mixture/proc/react")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/react")]
 fn react_hook(src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
 	let mut ret = ReactionReturn::NO_REACTION;
 	let reactions = with_mix(&src, |mix| Ok(mix.all_reactable()))?;
@@ -778,8 +740,7 @@ fn react_hook(src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (heat). Adds a given amount of heat to the mixture, i.e. in joules taking into account capacity.
-#[byondapi::bind("/datum/gas_mixture/proc/adjust_heat")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/adjust_heat")]
 fn adjust_heat_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue> {
 	with_mix_mut(&src, |mix| {
 		mix.adjust_heat(temp.get_number()?);
@@ -788,8 +749,7 @@ fn adjust_heat_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture, amount). Takes the `amount` given and transfers it from `src` to `mixture`.
-#[byondapi::bind("/datum/gas_mixture/proc/transfer_to")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/transfer_to")]
 fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Result<ByondValue> {
 	with_mixes_mut(&src, &other, |our_mix, other_mix| {
 		other_mix.merge(&our_mix.remove(moles.get_number()?));
@@ -799,8 +759,7 @@ fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Resul
 
 /// Flat operation list: source arena ID, sink arena ID, requested moles. Returns
 /// one actual mole count per operation after shared-source clamping.
-#[byondapi::bind("/proc/auxmos_batch_transfer")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/auxmos_batch_transfer")]
 fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
 	// Arena ID zero is valid. `ByondValue::iter()` also probes each element as
 	// an associative-list key; probing list[0] terminates that iterator, making
@@ -826,8 +785,7 @@ fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
 
 /// Flat operation list: pipe mixture, environment mixture, exposed pipe
 /// volume. Returns one boolean residual per exposed face.
-#[byondapi::bind("/proc/auxmos_batch_mingle")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/auxmos_batch_mingle")]
 fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
 	let values = operations
 		.iter()?
@@ -855,8 +813,7 @@ fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture, ratio). Transfers `ratio` of `src` to `mixture`.
-#[byondapi::bind("/datum/gas_mixture/proc/transfer_ratio_to")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/transfer_ratio_to")]
 fn transfer_ratio_hook(
 	src: ByondValue,
 	other: ByondValue,
@@ -869,8 +826,7 @@ fn transfer_ratio_hook(
 }
 
 /// Args: (mixture). Makes `src` a copy of `mixture`, with volumes taken into account.
-#[byondapi::bind("/datum/gas_mixture/proc/equalize_with")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/equalize_with")]
 fn equalize_with_hook(src: ByondValue, total: ByondValue) -> Result<ByondValue> {
 	with_mixes_custom(&src, &total, |src_lock, total_lock| {
 		let src_gas = &mut src_lock.write();
@@ -883,8 +839,7 @@ fn equalize_with_hook(src: ByondValue, total: ByondValue) -> Result<ByondValue> 
 }
 
 /// Args: (temperature). Returns: how much fuel for fire is in the mixture at the given temperature. If temperature is omitted, just uses current temperature instead.
-#[byondapi::bind("/datum/gas_mixture/proc/get_fuel_amount")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/get_fuel_amount")]
 fn fuel_amount_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |air| {
 		Ok(temp
@@ -903,8 +858,7 @@ fn fuel_amount_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (temperature). Returns: how much oxidizer for fire is in the mixture at the given temperature. If temperature is omitted, just uses current temperature instead.
-#[byondapi::bind("/datum/gas_mixture/proc/get_oxidation_power")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/get_oxidation_power")]
 fn oxidation_power_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |air| {
 		Ok(temp
@@ -924,8 +878,7 @@ fn oxidation_power_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue>
 
 /// Args: (mixture, ratio, one_way). Shares the given `ratio` of `src` with `mixture`, and, unless `one_way` is truthy, vice versa.
 #[cfg(feature = "zas_hooks")]
-#[byondapi::bind("/datum/gas_mixture/proc/share_ratio")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/share_ratio")]
 fn share_ratio_hook(
 	other_gas: ByondValue,
 	ratio_val: ByondValue,
@@ -1016,8 +969,7 @@ fn equalize_mixture_ids(gas_list: &[usize]) {
 }
 
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
-#[byondapi::bind("/proc/equalize_all_gases_in_list")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/equalize_all_gases_in_list")]
 fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
 	let gas_list = mixture_ids_from_byond_list(gas_list)?;
 	equalize_mixture_ids(&gas_list);
@@ -1025,21 +977,18 @@ fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
 }
 
 /// Returns: the amount of gas mixtures that are attached to a byond gas mixture.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/get_amt_gas_mixes")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/get_amt_gas_mixes")]
 fn hook_amt_gas_mixes() -> Result<ByondValue> {
 	Ok((amt_gases() as f32).into())
 }
 
 /// Returns: the total amount of gas mixtures in the arena, including "free" ones.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/get_max_gas_mixes")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/get_max_gas_mixes")]
 fn hook_max_gas_mixes() -> Result<ByondValue> {
 	Ok((tot_gases() as f32).into())
 }
 /// Returns: true. Parses gas strings like "o2=2500;plasma=5000;TEMP=370" and turns src mixes into the parsed gas mixture, invalid patterns will be ignored
-#[byondapi::bind("/datum/gas_mixture/proc/__auxtools_parse_gas_string")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/__auxtools_parse_gas_string")]
 fn parse_gas_string(src: ByondValue, string: ByondValue) -> Result<ByondValue> {
 	let actual_string = string.get_string()?;
 

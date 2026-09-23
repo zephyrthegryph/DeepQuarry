@@ -4,7 +4,7 @@
  * Gas data no longer lives in a DM assoc list. Each /datum/gas_mixture is a
  * HANDLE into the Rust auxmos arena (index stored in _extools_pointer_gasmixture).
  * All moles/temperature/volume math runs in Rust; the DM procs below are thin
- * routes over the auxmos FFI binds (call_ext(VERDIGRIS, "byond:<hook>_ffi")(...)),
+ * routes over the auxmos FFI binds (the generated vg_<hook>(...) procs in code/__defines/verdigris/_bindings.dm),
  * or DM logic layered on top of the arena-backed getters.
  *
  * OPAQUE HANDLE (/tg/ auxmos model): there is NO public temperature/volume var. The
@@ -75,11 +75,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	reaction_results = new
 	// Register the mixture in the Rust arena. Reads initial_volume, writes
 	// _extools_pointer_gasmixture.
-	call_ext(VERDIGRIS, "byond:register_gasmixture_hook_ffi")(src)
+	vg_register_gasmixture_hook(src)
 
 /datum/gas_mixture/Destroy()
 	// Free the arena slot for reuse.
-	call_ext(VERDIGRIS, "byond:unregister_gasmixture_hook_ffi")(src)
+	vg_unregister_gasmixture_hook(src)
 	reaction_results = null
 	..()
 	// Gas mixtures are opaque handles with no post-Destroy cleanup dependency.
@@ -114,52 +114,43 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 
 ///joules per kelvin
 /datum/gas_mixture/proc/heat_capacity(data = MOLES)
-	return call_ext(VERDIGRIS, "byond:heat_cap_hook_ffi")(src)
+	return vg_heat_cap_hook(src)
 
 /// Same as above except vacuums return HEAT_CAPACITY_VACUUM
 /datum/gas_mixture/turf/heat_capacity(data = MOLES)
-	. = call_ext(VERDIGRIS, "byond:heat_cap_hook_ffi")(src)
+	. = vg_heat_cap_hook(src)
 	if(!.)
 		. += HEAT_CAPACITY_VACUUM //we want vacuums in turfs to have the same heat capacity as space
 
 /// Returns the heat capacity of a single gas in the mixture, in J/K.
 /datum/gas_mixture/proc/partial_heat_capacity(gas_id)
-	return call_ext(VERDIGRIS, "byond:partial_heat_capacity_ffi")(src, "[gas_id]")
+	return vg_partial_heat_capacity(src, "[gas_id]")
 
 /// Calculate moles
 /datum/gas_mixture/proc/revision()
-	return call_ext(VERDIGRIS, "byond:hook_mix_revision_ffi")(src)
+	return vg_hook_mix_revision(src)
 
 /// Stable Rust arena ID used for dependency subscriptions.
 /datum/gas_mixture/proc/arena_id()
 	return _extools_pointer_gasmixture
 
-/proc/drain_dirty_gas_mixtures()
-	return call_ext(VERDIGRIS, "byond:drain_dirty_gas_mixtures_ffi")()
-
-/proc/drain_dirty_gas_observations()
-	return call_ext(VERDIGRIS, "byond:drain_dirty_gas_observations_ffi")()
-
 /proc/watch_dirty_gas_mixture(mixture_id, interest_mask = GAS_DEPENDENCY_ALL)
-	return call_ext(VERDIGRIS, "byond:watch_dirty_gas_mixture_ffi")(mixture_id, interest_mask)
-
-/proc/unwatch_dirty_gas_mixture(mixture_id)
-	return call_ext(VERDIGRIS, "byond:unwatch_dirty_gas_mixture_ffi")(mixture_id)
+	return vg_watch_dirty_gas_mixture(mixture_id, interest_mask)
 
 /datum/gas_mixture/proc/total_moles()
-	return call_ext(VERDIGRIS, "byond:total_moles_hook_ffi")(src)
+	return vg_total_moles_hook(src)
 
 /// Returns the moles of a single gas in the mixture.
 /datum/gas_mixture/proc/get_moles(gas_id)
-	return call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, "[gas_id]")
+	return vg_get_moles_hook(src, "[gas_id]")
 
 /// Sets the moles of a single gas in the mixture.
 /datum/gas_mixture/proc/set_moles(gas_id, amount)
-	return call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(src, "[gas_id]", amount)
+	return vg_set_moles_hook(src, "[gas_id]", amount)
 
 /// Adjusts the moles of a single gas by the given (signed) amount.
 /datum/gas_mixture/proc/adjust_moles(gas_id, amount)
-	return call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[gas_id]", amount)
+	return vg_adjust_moles_hook(src, "[gas_id]", amount)
 
 /// Returns the list of gas ids present in the mixture (assoc id -> moles).
 /// Returns the /datum/gas TYPE PATHS present in the mixture. The Rust bind
@@ -168,7 +159,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /// type-path contract the old DM gases[] keys had (meta_gas_info/get_moles all
 /// key by type path).
 /datum/gas_mixture/proc/get_gases()
-	var/list/ids = call_ext(VERDIGRIS, "byond:get_gases_hook_ffi")(src)
+	var/list/ids = vg_get_gases_hook(src)
 	. = list()
 	if(!islist(ids))
 		return
@@ -182,23 +173,23 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	for(var/id in ids)
 		var/gas_path = text2path(id)
 		if(gas_path)
-			.[gas_path] = call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, id)
+			.[gas_path] = vg_get_moles_hook(src, id)
 
 /// Checks to see if gas amount exists in mixture.
 /datum/gas_mixture/proc/has_gas(gas_id, amount=0)
-	return amount < (call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, "[gas_id]") || 0)
+	return amount < (vg_get_moles_hook(src, "[gas_id]") || 0)
 
 /// Calculate pressure in kilopascals
 /datum/gas_mixture/proc/return_pressure()
-	return call_ext(VERDIGRIS, "byond:return_pressure_hook_ffi")(src)
+	return vg_return_pressure_hook(src)
 
 /// Calculate temperature in kelvins
 /datum/gas_mixture/proc/return_temperature()
-	return call_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")(src)
+	return vg_return_temperature_hook(src)
 
 /// Calculate volume in liters
 /datum/gas_mixture/proc/return_volume()
-	return max(0, call_ext(VERDIGRIS, "byond:return_volume_hook_ffi")(src))
+	return max(0, vg_return_volume_hook(src))
 
 /// Gets the gas visuals for everything in this mixture
 /datum/gas_mixture/proc/return_visuals(turf/z_context)
@@ -220,13 +211,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 
 /// Calculate thermal energy in joules
 /datum/gas_mixture/proc/thermal_energy()
-	return call_ext(VERDIGRIS, "byond:thermal_energy_hook_ffi")(src)
+	return vg_thermal_energy_hook(src)
 
 ///Merges all air from giver into self. Does NOT modify giver. Returns: TRUE if we are mutable.
 /datum/gas_mixture/proc/merge(datum/gas_mixture/giver)
 	if(!giver)
 		return FALSE
-	. = call_ext(VERDIGRIS, "byond:merge_hook_ffi")(src, giver)
+	. = vg_merge_hook(src, giver)
 
 /// Atomically transfers a mole quantity between two authoritative arena
 /// mixtures. This avoids the temporary DM gas datum and the second FFI crossing
@@ -234,47 +225,47 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /datum/gas_mixture/proc/transfer_to(datum/gas_mixture/other, moles)
 	if(!other || other == src || moles <= 0)
 		return FALSE
-	call_ext(VERDIGRIS, "byond:transfer_hook_ffi")(src, other, moles)
+	vg_transfer_hook(src, other, moles)
 	return TRUE
 
 // Set the gas specie within the gas mix to a set amount, if there is none it will be created at the target temp
 /datum/gas_mixture/proc/set_gas(gas_specie, amount)
-	return call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(src, "[gas_specie]", amount)
+	return vg_set_moles_hook(src, "[gas_specie]", amount)
 
 /datum/gas_mixture/proc/set_temperature(target_temp)
 	// Arena is authoritative (and clamps to TCMB). No DM mirror to refresh.
-	return call_ext(VERDIGRIS, "byond:set_temperature_hook_ffi")(src, target_temp)
+	return vg_set_temperature_hook(src, target_temp)
 
 /datum/gas_mixture/proc/set_volume(vol)
-	return call_ext(VERDIGRIS, "byond:set_volume_hook_ffi")(src, vol)
+	return vg_set_volume_hook(src, vol)
 
 /// Add a specific amount of moles to specified gas or add a new gas to the mix
 /// amount is added so make it negative to remove
 /datum/gas_mixture/proc/adjust_gas(gas, amount)
-	return call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[gas]", QUANTIZE(amount))
+	return vg_adjust_moles_hook(src, "[gas]", QUANTIZE(amount))
 
 /// Add a specific amount of moles to all the gasses present or add a new gas to the mix
 ///gases_moles is an associative list of gas species to their amount to be added
 /datum/gas_mixture/proc/adjust_multiple_gases(list/gases_moles)
 	for(var/gas_specie in gases_moles)
-		call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[gas_specie]", gases_moles[gas_specie])
+		vg_adjust_moles_hook(src, "[gas_specie]", gases_moles[gas_specie])
 
 /// Modify the gas list as to convert moles of gas species A to gas species B
 /// reactant and product are the gas species to convert and conversion_amount is the amount to be converted
 /datum/gas_mixture/proc/convert_gas(datum/gas/reactant, datum/gas/product, conversion_amount)
 	var/amount = QUANTIZE(conversion_amount)
-	call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[reactant]", -amount)
-	call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[product]", amount)
+	vg_adjust_moles_hook(src, "[reactant]", -amount)
+	vg_adjust_moles_hook(src, "[product]", amount)
 
 ///Proportionally removes amount of gas from the gas_mixture.
 ///Returns: gas_mixture with the gases removed
 /datum/gas_mixture/proc/remove(amount)
-	var/sum = call_ext(VERDIGRIS, "byond:total_moles_hook_ffi")(src)
+	var/sum = vg_total_moles_hook(src)
 	amount = min(amount, sum) //Can not take more air than tile has!
 	if(amount <= 0)
 		return null
 	var/datum/gas_mixture/removed = new type(return_volume())
-	call_ext(VERDIGRIS, "byond:remove_hook_ffi")(src, removed, amount)
+	vg_remove_hook(src, removed, amount)
 	return removed
 
 ///Proportionally removes ratio of gas from the gas_mixture.
@@ -284,19 +275,19 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	if(ratio <= 0)
 		return removed
 	ratio = min(ratio, 1)
-	call_ext(VERDIGRIS, "byond:remove_ratio_hook_ffi")(src, removed, ratio)
+	vg_remove_ratio_hook(src, removed, ratio)
 	return removed
 
 ///Removes an amount of a specific gas from the gas_mixture.
 ///Returns: gas_mixture with the gas removed
 /datum/gas_mixture/proc/remove_specific(gas_id, amount)
-	amount = min(amount, call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, "[gas_id]"))
+	amount = min(amount, vg_get_moles_hook(src, "[gas_id]"))
 	if(amount <= 0)
 		return null
 	var/datum/gas_mixture/removed = new type
 	removed.set_temperature(return_temperature())
-	call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(removed, "[gas_id]", amount)
-	call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[gas_id]", -amount)
+	vg_set_moles_hook(removed, "[gas_id]", amount)
+	vg_adjust_moles_hook(src, "[gas_id]", -amount)
 	return removed
 
 /datum/gas_mixture/proc/remove_specific_ratio(gas_id, ratio)
@@ -305,41 +296,41 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	ratio = min(ratio, 1)
 	var/datum/gas_mixture/removed = new type
 	removed.set_temperature(return_temperature())
-	var/amount = QUANTIZE(call_ext(VERDIGRIS, "byond:get_moles_hook_ffi")(src, "[gas_id]") * ratio)
-	call_ext(VERDIGRIS, "byond:set_moles_hook_ffi")(removed, "[gas_id]", amount)
-	call_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")(src, "[gas_id]", -amount)
+	var/amount = QUANTIZE(vg_get_moles_hook(src, "[gas_id]") * ratio)
+	vg_set_moles_hook(removed, "[gas_id]", amount)
+	vg_adjust_moles_hook(src, "[gas_id]", -amount)
 	return removed
 
 ///Distributes the contents of two mixes equally between themselves
 //Returns: bool indicating whether gases moved between the two mixes
 /datum/gas_mixture/proc/equalize(datum/gas_mixture/other)
-	return call_ext(VERDIGRIS, "byond:equalize_with_hook_ffi")(src, other)
+	return vg_equalize_with_hook(src, other)
 
 ///Creates new, identical gas mixture
 ///Returns: duplicate gas mixture
 /datum/gas_mixture/proc/copy()
 	var/datum/gas_mixture/copy = new type
-	call_ext(VERDIGRIS, "byond:copy_from_hook_ffi")(copy, src)
+	vg_copy_from_hook(copy, src)
 	return copy
 
 ///Copies variables from sample
 ///Returns: TRUE if we are mutable, FALSE otherwise
 /datum/gas_mixture/proc/copy_from(datum/gas_mixture/sample)
-	call_ext(VERDIGRIS, "byond:copy_from_hook_ffi")(src, sample)
+	vg_copy_from_hook(src, sample)
 	return TRUE
 
 ///Copies variables from sample, moles multiplicated by partial
 ///Returns: TRUE if we are mutable, FALSE otherwise
 /datum/gas_mixture/proc/copy_from_ratio(datum/gas_mixture/sample, partial = 1)
-	call_ext(VERDIGRIS, "byond:copy_from_hook_ffi")(src, sample)
+	vg_copy_from_hook(src, sample)
 	if(partial != 1)
-		call_ext(VERDIGRIS, "byond:multiply_hook_ffi")(src, partial)
+		vg_multiply_hook(src, partial)
 	return TRUE
 
 ///Compares sample to self to see if within acceptable ranges that group processing may be enabled
 ///Returns: TRUE if the mixtures differ enough to warrant processing, FALSE otherwise
 /datum/gas_mixture/proc/compare(datum/gas_mixture/sample)
-	return call_ext(VERDIGRIS, "byond:compare_hook_ffi")(src, sample)
+	return vg_compare_hook(src, sample)
 
 ///Performs various reactions such as combustion and fabrication
 /// Runs DM gas reactions against this mixture. Reactions stay in DM (user
@@ -409,7 +400,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	var/resulting_energy = output_air.thermal_energy() + (MOLAR_ACCURACY / our_moles * thermal_energy())
 	var/resulting_capacity = output_air.heat_capacity() + (MOLAR_ACCURACY / our_moles * heat_capacity())
 	return (output_air.total_moles() + MOLAR_ACCURACY) * R_IDEAL_GAS_EQUATION * (resulting_energy / resulting_capacity) / output_air.return_volume()
-
 
 /** Returns the amount of gas to be pumped to a specific container.
  * Args:

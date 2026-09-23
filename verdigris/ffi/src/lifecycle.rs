@@ -23,24 +23,20 @@ const VERSION_STRING: &str = const_format!(
     git_hash = GIT_HASH,
 );
 
-// `#[auxmacros::panic_safe]` (below each bind) wraps the body in catch_unwind
-// so a panic surfaces to DM as a runtime instead of unwinding across the FFI
-// boundary and aborting DreamDaemon. This is the same panic guard auxmos uses
-// on its own binds — one unified mechanism across the whole library.
-#[byondapi::bind("/proc/verdigris_version")]
-#[auxmacros::panic_safe]
+// `#[auxmacros::bind]` wraps each body in catch_unwind so a panic surfaces to
+// DM as a runtime instead of unwinding across the FFI boundary and aborting
+// DreamDaemon.
+#[auxmacros::bind("/proc/verdigris_version")]
 fn verdigris_version() -> Result<ByondValue> {
     Ok(ByondValue::new_str(VERSION_STRING)?)
 }
 
-#[byondapi::bind("/proc/verdigris_features")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/verdigris_features")]
 fn verdigris_features() -> Result<ByondValue> {
     Ok(ByondValue::new_str(CRATE_FEATURES)?)
 }
 
-#[byondapi::bind("/proc/verdigris_allocator_diagnostics")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/verdigris_allocator_diagnostics")]
 fn verdigris_allocator_diagnostics() -> Result<ByondValue> {
     let (current, peak) = crate::allocator::diagnostics();
     let values = [current, peak]
@@ -52,18 +48,26 @@ fn verdigris_allocator_diagnostics() -> Result<ByondValue> {
     Ok(list)
 }
 
-/// One-time global state init. DM should call this in `/world/New()` before
-/// any other verdigris call.
-#[byondapi::bind("/proc/verdigris_init")]
-#[auxmacros::panic_safe]
-fn verdigris_init() -> Result<ByondValue> {
-    Ok(ByondValue::null())
+/// One-time global state init and the version handshake. DM calls this in
+/// `/world/New()` before any other verdigris call, passing its generated
+/// `VERDIGRIS_ABI`. Returns the library's ABI string; DM stops the boot when it
+/// differs (a DLL and a DM build from different bind sets).
+#[auxmacros::bind("/proc/verdigris_init")]
+fn verdigris_init(dm_abi: ByondValue) -> Result<ByondValue> {
+    let dm_abi = dm_abi.get_string().unwrap_or_default();
+    if dm_abi != crate::abi::ABI {
+        eyre::bail!(
+            "verdigris ABI mismatch: library {} vs DM {:?}; rebuild the DLL and the DM from the same tree",
+            crate::abi::ABI,
+            dm_abi
+        );
+    }
+    Ok(ByondValue::new_str(crate::abi::ABI)?)
 }
 
 /// Drop transient Rust-side state. Currently a no-op; once the gas-mixture
 /// arena needs an explicit drain for a clean `/world/New()`, it lands here.
-#[byondapi::bind("/proc/verdigris_cleanup")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/verdigris_cleanup")]
 fn verdigris_cleanup() -> Result<ByondValue> {
     // future: arena.drain(); reaction_registry.clear(); etc.
     Ok(ByondValue::null())

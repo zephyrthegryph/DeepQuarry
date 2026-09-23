@@ -223,7 +223,7 @@
 	rust_apply_pipe_topology(operations)
 
 /datum/controller/subsystem/air/proc/rust_apply_pipe_topology(operations)
-	var/list/result = call_ext(VERDIGRIS, "byond:pipenet_topology_batch_ffi")(operations)
+	var/list/result = vg_pipenet_topology_batch(operations)
 	if(!islist(result))
 		CRASH("Rust pipenet topology did not return a station specification")
 	var/list/transitions = list()
@@ -262,7 +262,7 @@
 		publications += ";"
 		transitions += list(list("region" = region, "ports" = ports, "prior_regions" = prior_regions, "volume" = volume, "air" = region_air))
 
-	if(length(publications) && !call_ext(VERDIGRIS, "byond:pipenet_publish_regions_ffi")(publications))
+	if(length(publications) && !vg_pipenet_publish_regions(publications))
 		CRASH("Rust pipenet gas publication failed")
 	var/list/retired_regions = list()
 	for(var/list/transition as anything in transitions)

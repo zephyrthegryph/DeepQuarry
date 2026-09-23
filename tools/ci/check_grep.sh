@@ -115,6 +115,19 @@ fi;
 
 section "code issues"
 
+part "call_ext outside generated bindings"
+# Verdigris is reached only through the generated vg_* procs in
+# code/__defines/verdigris/_bindings.dm (tools/build/lib/verdigris_bindings.ts).
+# The allowlisted files bind other libraries (rust_g, tracy, the debugger,
+# vchatlog, TGS) or define the LIBCALL compat alias.
+if $grep -n 'call_ext|load_ext|VERDIGRIS_CALL' $code_files \
+	| $grep -v '^code/(__defines/verdigris/_bindings\.dm|__defines/rust_g\.dm|__defines/vchatlog\.dm|__byond_version_compat\.dm|modules/debugging/(tracy|debugger)\.dm|modules/tgs/)' \
+	| $grep -v ':\s*//|:\s*\*|// .*call_ext'; then
+	echo
+	echo -e "${RED}ERROR: call_ext/load_ext outside the generated verdigris bindings. Declare the Rust function with #[auxmacros::bind], run tools/build/build.sh verdigris-bindings, and call the generated vg_* proc.${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`

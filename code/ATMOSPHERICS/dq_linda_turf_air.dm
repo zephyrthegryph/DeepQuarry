@@ -14,74 +14,32 @@
 
 // === auxmos turf-processing FFI routes ===
 // Gas args never appear here (these are turf/SSair hooks, not gas ops), so no
-// "[gas_type]" stringification is needed. Every route is call_ext(VERDIGRIS, ...).
-// process_atmos_callbacks / auxtools_atmos_init live in auxmos_init_bridge.dm;
-// don't redeclare them here.
+// "[gas_type]" stringification is needed. Every route calls a generated vg_* proc
+// (code/__defines/verdigris/_bindings.dm); pure passthroughs were deleted in
+// favour of calling vg_* directly.
 
 /// Starts or polls an asynchronous Rust turf-sharing generation.
 /// Returns TRUE while the worker is computing so SSair resumes this step.
 /datum/controller/subsystem/air/proc/process_turfs_auxtools(remaining)
-	return call_ext(VERDIGRIS, "byond:process_turf_hook_ffi")(src, remaining)
+	return vg_process_turf_hook(src, remaining)
 
 /// Diagnostic/test query: whether this exact turf is in either Rust activation queue.
 /turf/proc/auxmos_is_atmos_active()
-	return call_ext(VERDIGRIS, "byond:turf_active_hook_ffi")(src)
-
-/// Drains the turf-processing callback queue on the main thread (react /
-/// set_visuals / consider_pressure_difference). Returns TRUE if overtimed.
-/datum/controller/subsystem/air/proc/finish_turf_processing_auxtools(time_remaining)
-	return call_ext(VERDIGRIS, "byond:finish_process_turfs_ffi")(time_remaining)
-
-/// Pushes world.maxx / world.maxy into the Rust superconductivity arena so it can
-/// compute turf neighbours by coordinate id. Call once before setup_allturfs().
-/datum/controller/subsystem/air/proc/auxmos_set_world_dims(max_x, max_y)
-	return call_ext(VERDIGRIS, "byond:set_world_dims_ffi")(max_x, max_y)
-
-/// Sizes Rust atmos arenas for the currently allocated world without reserving
-/// capacity for z-levels that may never be loaded.
-/proc/configure_auxmos_world(max_x, max_y, max_z)
-	return call_ext(VERDIGRIS, "byond:configure_world_ffi")(max_x, max_y, max_z)
-
-/// Returns arena capacities, active work, callback backlog, and heat-worker state.
-/datum/controller/subsystem/air/proc/auxmos_diagnostics()
-	return call_ext(VERDIGRIS, "byond:auxmos_diagnostics_ffi")()
-
-/// Wait for detached atmos work to release the current topology before a
-/// synchronous shuttle/map mutation begins.
-/datum/controller/subsystem/air/proc/auxmos_topology_barrier()
-	return call_ext(VERDIGRIS, "byond:topology_barrier_ffi")()
-
-/// Begin/commit an atomic Rust-owned atmosphere topology replacement.
-/datum/controller/subsystem/air/proc/auxmos_topology_transaction_begin()
-	return call_ext(VERDIGRIS, "byond:topology_transaction_begin_ffi")()
-
-/datum/controller/subsystem/air/proc/auxmos_topology_transaction_commit()
-	return call_ext(VERDIGRIS, "byond:topology_transaction_commit_ffi")()
-
-/// Non-blocking destructive topology batch used by explosions.
-/datum/controller/subsystem/air/proc/auxmos_topology_batch_begin()
-	return call_ext(VERDIGRIS, "byond:topology_batch_begin_ffi")()
-
-/datum/controller/subsystem/air/proc/auxmos_topology_batch_commit()
-	return call_ext(VERDIGRIS, "byond:topology_batch_commit_ffi")()
-
-/// Returns current and peak bytes requested through Rust's global allocator.
-/datum/controller/subsystem/air/proc/verdigris_allocator_diagnostics()
-	return call_ext(VERDIGRIS, "byond:verdigris_allocator_diagnostics_ffi")()
+	return vg_turf_active_hook(src)
 
 /// Fires the Rust superconductivity (heat-conduction) pass on a detached thread;
 /// results land via the atmos callback queue drained in SSAIR_FINALIZE_TURFS.
 /// cost_superconductivity is written back from the worker thread.
 /datum/controller/subsystem/air/proc/process_turf_heat()
-	return call_ext(VERDIGRIS, "byond:process_heat_notify_ffi")(src)
+	return vg_process_heat_notify(src)
 
 /// Rust arena heat temperature (K) for this turf, or a sentinel if untracked.
 /turf/proc/return_temperature()
-	return call_ext(VERDIGRIS, "byond:hook_turf_temperature_ffi")(src)
+	return vg_hook_turf_temperature(src)
 
 /// Monotonic gas revision used by sensors to avoid rescanning unchanged air.
 /turf/proc/air_revision()
-	return call_ext(VERDIGRIS, "byond:hook_air_revision_ffi")(src)
+	return vg_hook_air_revision(src)
 
 /// Set this turf's temperature. The superconductivity arena OWNS turf heat (it seeds
 /// from the `temperature` var only at registration, then runs its own conduction), so
@@ -90,7 +48,7 @@
 /// Use it for any external heat injection (pipe-to-wall exchange, holodeck programs).
 /turf/proc/set_temperature(temp)
 	temperature = temp
-	return call_ext(VERDIGRIS, "byond:hook_set_turf_temperature_ffi")(src, temp)
+	return vg_hook_set_turf_temperature(src, temp)
 
 /// Registers / refreshes (flag >= 0) or removes (flag < 0) this turf's air ref in
 /// the Rust arena. Rust reads blocks_air / air._extools_pointer_gasmixture /
@@ -112,7 +70,6 @@
 // gas never moves.
 #define SIMULATION_DIFFUSE 1
 #define SIMULATION_ALL 2
-#define SIMULATION_ANY 3
 
 /turf/open/update_air_ref(flag)
 	// Airless open turfs that don't block air (rare, but the reparent made walls
@@ -124,7 +81,7 @@
 		return
 	// Register (flag>=0) with SIMULATION_ANY so the Rust FDM actually processes
 	// this turf; unregister passes the negative flag straight through.
-	return call_ext(VERDIGRIS, "byond:hook_register_turf_ffi")(src, flag >= 0 ? SIMULATION_ANY : flag)
+	return vg_hook_register_turf(src, flag >= 0 ? SIMULATION_ANY : flag)
 
 /// Bulk arena registration: one FFI entry for a whole list of turfs (Rust
 /// iterates). Callers MUST pre-filter with the same rule /turf/open/update_air_ref
@@ -132,16 +89,7 @@
 /// errors reading their air var. Used by SSair.setup_allturfs; runtime
 /// single-turf paths keep using update_air_ref.
 /proc/auxmos_register_turfs_bulk(list/turf/turfs)
-	return call_ext(VERDIGRIS, "byond:hook_register_turfs_bulk_ffi")(turfs, SIMULATION_ANY)
-
-/// Bulk adjacency push: one FFI entry for a whole list of registered turfs.
-/proc/auxmos_update_adjacencies_bulk(list/turf/turfs)
-	return call_ext(VERDIGRIS, "byond:hook_infos_bulk_ffi")(turfs)
-
-/// Test/debug invariant: TRUE when Rust's outgoing edge set exactly matches
-/// the adjacency list DM most recently intended for this turf.
-/proc/auxmos_topology_matches(turf/target)
-	return call_ext(VERDIGRIS, "byond:topology_matches_ffi")(target)
+	return vg_hook_register_turfs_bulk(turfs, SIMULATION_ANY)
 
 /// Pushes this turf's atmos_adjacent_turfs graph into the Rust arena. Both the
 /// turf and every neighbour must already be registered (update_air_ref) or the
@@ -151,7 +99,7 @@
 	return
 
 /turf/open/__update_auxtools_turf_adjacency_info()
-	return call_ext(VERDIGRIS, "byond:hook_infos_ffi")(src)
+	return vg_hook_infos(src)
 
 // /turf/open is what SSair.setup_allturfs() expects to walk and call
 // Initalize_Atmos() on. The base /turf/proc/Initalize_Atmos in
@@ -180,7 +128,6 @@
 	// saved on a 5-z roundstart).
 	if(register)
 		update_air_ref(0)
-
 
 // === CHOMP lingering-fire bridge ===
 //

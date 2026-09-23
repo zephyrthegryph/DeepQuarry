@@ -38,8 +38,8 @@ SUBSYSTEM_DEF(profiler)
 	// Periodic collection therefore records only the inexpensive native diagnostics;
 	// profile dumps are requested explicitly or by the MC drift outlier detector.
 	SSmachines.request_adaptive_profile()
-	var/list/atmos_arena = SSair.auxmos_diagnostics()
-	var/list/rust_allocator = SSair.verdigris_allocator_diagnostics()
+	var/list/atmos_arena = vg_auxmos_diagnostics()
+	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
 	var/list/subsystems = list(
 		"atmos" = subsystem_diagnostics(SSair),
 		"machines" = subsystem_diagnostics(SSmachines),
