@@ -74,31 +74,52 @@
 	src.add_fingerprint(user)
 	return
 
-/obj/structure/bed/nest/attackby(obj/item/W as obj, mob/user as mob)
+// Nest's Use and item overrides fully replace bed's (the original overrides never called
+// ..() into it either), so it declares its own interactions.
+/obj/structure/bed/nest/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/nest_item,
+		/datum/interaction/entry_hand/nest_hand,
+	)
+
+/// Old attackby: hit the nest.
+/datum/interaction/entry_item/nest_item
+	id = "nest_item"
+	name = "Use"
+	effect = /obj/structure/bed/nest/proc/interaction_nest_item
+
+/obj/structure/bed/nest/proc/interaction_nest_item(mob/user, obj/item/W, datum/interaction/interaction)
 	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
 	for(var/mob/M in viewers(src, 7))
 		M.show_message(span_warning("[user] hits [src] with [W]!"), 1)
 	receive_weapon_hit(W, user)
+	return TRUE
 
 /obj/structure/bed/nest/atom_destruction(damage_flag)
 	density = FALSE
 	return ..()
 
 // start - Allows xenos to clean nests.
-/obj/structure/bed/nest/attack_hand(mob/user as mob)
-	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if (HULK in usr.mutations)
-		visible_message(span_warning("[usr] destroys the [name]!"))
+/// Old attack_hand: a Hulk destroys it, or a xenomorph melts through it.
+/datum/interaction/entry_hand/nest_hand
+	id = "nest_hand"
+	name = "Use"
+	effect = /obj/structure/bed/nest/proc/interaction_hand
+
+/obj/structure/bed/nest/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if (HULK in user.mutations)
+		visible_message(span_warning("[user] destroys the [name]!"))
 		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
 
 		// Aliens can get straight through these.
-		if(istype(usr,/mob/living/carbon))
+		if(istype(user,/mob/living/carbon))
 			if(IS_HARMING(user))
-				var/mob/living/carbon/M = usr
+				var/mob/living/carbon/M = user
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
-					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
+					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
-					return
-	return
+					return TRUE
+	return TRUE
 // end.
