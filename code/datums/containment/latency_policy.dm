@@ -42,6 +42,8 @@
  *   - it is not pinned (dq_latent_pinned(): no explicit pin, an empty
  *     state_collapse_blockers(), not sitting directly on a turf);
  *   - nobody has an open tgui/browse window on its holder;
+ *   - it is not in a holder's CONTAINER_SLOT_STOCK slot (C9's own
+ *     collapse, not this one);
  *   - it has been idle at least its holder's configured delay;
  *   - neither the holder nor `A` itself opted out (latency_policy_disabled).
  * Does not check latent_collapse_refusal()'s slot/ledger bookkeeping; the
@@ -62,6 +64,16 @@
 	if(dq_latent_pinned(A))
 		return FALSE
 	if(LAZYLEN(A.loc.open_tguis))
+		return FALSE
+	// The stock slot (C9) is stock.dm's own: a vended item with unique
+	// state lives in /datum/stored_item.instances, a bespoke collapse
+	// the generic latent_entry API (latent_add()) doesn't know about.
+	// /obj/machinery now sets latent_contents = TRUE for C6's machine
+	// internals, and vending/smartfridge are machinery, so this can't
+	// be a holder-level exclusion any more -- it has to be per slot.
+	var/datum/ledger/L = dq_ledger_peek(A.loc)
+	var/list/record = L?.entries[A]
+	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
 		return FALSE
 	var/delay = A.loc.latent_idle_delay
 	if(world.time < A.latent_last_touch + delay)

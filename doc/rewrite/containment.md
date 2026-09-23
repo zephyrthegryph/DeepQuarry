@@ -427,22 +427,23 @@ offered to the sweep.
 
 **Rollout.** The sweep (`dq_latency_sweep_register()`) enrolls a holder the
 moment its ledger is built, for any holder with `latent_contents = TRUE` --
-which closets, crates, lockers and mapped storage (C4) already declare, so
-they are covered without any further change. Vending and smartfridge stock
-(C9) is deliberately **not** enrolled: its stock instances live in
-`/datum/stored_item.instances`, collapsed and materialized through their own
-bespoke API (`dq_stock_blob()`, not the general ledger's `latent_entry`), so
-`can_be_latent()`'s `latent_contents` check already skips it correctly rather
-than by omission. Folding stock onto the same `latent_entry` mechanism, so
-the general sweep can collapse a vended item with unique state back into its
-record, is left as a TODO (`dq_latency_policy_machinery_todo`, `stock.dm`) for
-whoever lands C6's move of machine internals onto the shared framework
-(`rewrite/c6`) -- that's also why machinery itself isn't enrolled yet: its
-`machine_internals` slot doesn't declare `latent_contents`, and enabling it
-before C6 lands would fight that branch over the same slot. A future pass
-should also replace `latent_contents` as a type-level opt-in a maintainer sets
-by hand with automatic qualification from `tools/ci/latent_lint.py` (no raw
-`contents` walk); C10 did not change that lint or its allowlist.
+closets, crates, lockers, mapped storage (C4), and now, with C6's machine
+internals landed, every `/obj/machinery`, since `/obj/machinery` itself sets
+`latent_contents = TRUE` for its `CONTAINER_SLOT_INTERNALS` slot (boards and
+parts, `machinery.dm`). That makes vending and smartfridge stock (C9) a
+per-**slot** exclusion rather than a per-holder one, since vending machines
+are machinery too: `can_be_latent()` refuses anything in a holder's
+`CONTAINER_SLOT_STOCK` slot (`stock.dm`'s own), because a vended item with
+unique state lives in `/datum/stored_item.instances`, collapsed and
+materialized through its own bespoke API (`dq_stock_blob()`), not the general
+ledger's `latent_entry`. Machine internals in `CONTAINER_SLOT_INTERNALS` are
+not excluded, so they get the sweep. Folding stock onto the same
+`latent_entry` mechanism, so a vended item's collapse goes through one path
+instead of two, is left as a TODO (`stock.dm`) rather than something this
+pass needed to unify. A future pass should also replace `latent_contents` as
+a type-level opt-in a maintainer sets by hand with automatic qualification
+from `tools/ci/latent_lint.py` (no raw `contents` walk); C10 did not change
+that lint or its allowlist.
 
 ## 5. Machine internals (C6)
 

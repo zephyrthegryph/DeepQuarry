@@ -34,6 +34,22 @@
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_INTERNAL
 
+/// A machinery-shaped holder with both an internals slot (eligible for the
+/// sweep, like C6's real machine internals) and a stock slot (C9's own,
+/// excluded per containment.md §4.7 "Rollout" since vending machines are
+/// machinery too and can't be excluded by holder any more).
+/obj/item/dq_latency_test_machine
+	name = "latency test machine"
+	icon = 'icons/obj/weapons.dmi'
+	icon_state = "toolbox"
+	w_class = ITEMSIZE_NORMAL
+	latent_contents = TRUE
+	latent_idle_delay = 1 SECONDS
+
+/obj/item/dq_latency_test_machine/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/machine_internals, /datum/slot_def/stock)
+	return types
+
 /// Something that holds a weakref to a test item, standing in for a callback
 /// or an external list entry that shouldn't be invisible to collapse.
 /datum/dq_latency_weakref_holder
@@ -153,6 +169,25 @@
 	TEST_ASSERT(length(item.state_collapse_blockers(2)) == 0, "releasing the outside weakref reference should clear the blocker")
 	TEST_ASSERT(can_be_latent(item), "can_be_latent should accept the item again")
 	qdel(box)
+
+/// Rollout (containment.md §4.7): machine internals are eligible, the stock
+/// slot is not, on the same holder -- proves the exclusion is per slot, not
+/// per holder type, now that /obj/machinery sets latent_contents = TRUE.
+/datum/unit_test/dq_latency_stock_slot_excluded
+
+/datum/unit_test/dq_latency_stock_slot_excluded/Run()
+	var/turf/floor = dq_latency_floor()
+	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
+	var/obj/item/dq_latency_test_machine/machine = new(floor)
+	var/obj/item/dq_latency_test_item/part = new(machine)
+	var/obj/item/dq_latency_test_item/product = new(floor)
+	TEST_ASSERT(product.move_into(machine, CONTAINER_SLOT_STOCK), "the product should move into the stock slot")
+	dq_ledger(machine)
+	part.latent_last_touch = world.time - (machine.latent_idle_delay * 2)
+	product.latent_last_touch = world.time - (machine.latent_idle_delay * 2)
+	TEST_ASSERT(can_be_latent(part), "an idle item in the internals slot should be latent-eligible")
+	TEST_ASSERT(!can_be_latent(product), "an idle item in the stock slot must not be latent-eligible (C9 owns it)")
+	qdel(machine)
 
 // ---- Collapse/materialize round trip, and the audit ----
 
