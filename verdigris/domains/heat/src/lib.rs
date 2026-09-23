@@ -24,12 +24,14 @@
 pub mod body;
 pub mod consts;
 pub mod couple;
+pub mod mob;
 pub mod regulator;
 pub mod solid;
 pub mod world;
 
 pub use body::{Bodies, Body, BodyCmd, Coupling, Phase, Target};
 pub use couple::{GasExchange, GasProbe, GasRef};
+pub use mob::{MobHandle, MobHeatBody, MobHeatCmd, MobHeatConfig, MobHeatWorld};
 pub use regulator::{Regulator, RegulatorMode, RegulatorStep};
 pub use solid::{SolidCell, SolidCmd, SolidHeat};
 pub use world::{BodyHandle, CellKind, CellSpec, HeatConfig, HeatWorld, WatchTarget};
