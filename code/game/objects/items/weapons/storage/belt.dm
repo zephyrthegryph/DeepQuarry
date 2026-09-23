@@ -33,8 +33,8 @@
 //Some belts have sprites to show icons
 /obj/item/storage/belt/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer = 0,icon/clip_mask = null)
 	var/image/standing = ..()
-	if(!inhands && contents.len)
-		for(var/obj/item/i in contents)
+	if(!inhands && length(slot_contents(CONTAINER_SLOT_STORAGE)))
+		for(var/obj/item/i in slot_contents(CONTAINER_SLOT_STORAGE))
 			var/i_state = i.item_state
 			if(!i_state) i_state = i.icon_state
 			var/image/add_icon = image(icon = INV_BELT_DEF_ICON, icon_state = i_state)

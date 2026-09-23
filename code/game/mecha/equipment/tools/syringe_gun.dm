@@ -46,7 +46,8 @@
 	if(istype(target,/obj/item/reagent_containers/syringe))
 		return load_syringe(target)
 	if(istype(target,/obj/item/storage))//Loads syringes from boxes
-		for(var/obj/item/reagent_containers/syringe/S in target.contents)
+		var/obj/item/storage/box = target
+		for(var/obj/item/reagent_containers/syringe/S in box.slot_contents())
 			load_syringe(S)
 		return
 	if(mode)

@@ -19,8 +19,8 @@
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
 			if(quickmode)
-				if(length(contents))
-					var/first_item = contents[1]
+				if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
+					var/first_item = slot_contents(CONTAINER_SLOT_STORAGE)[1]
 					if(first_item && !H.get_active_hand()) //Do we have anything to give you?
 						H.put_in_hands(first_item)
 						return

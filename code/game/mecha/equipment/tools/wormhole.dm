@@ -22,7 +22,7 @@
 	for(var/turf/T in get_area_turfs(thearea.type))
 		if(!T.density && pos.z == T.z)
 			var/clear = 1
-			for(var/obj/O in T)
+			for(var/obj/O in turf_contents_of_type(T, /obj))
 				if(O.density)
 					clear = 0
 					break

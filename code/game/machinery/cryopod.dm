@@ -620,7 +620,7 @@
 	for(var/obj/item/W in items)
 		W.forceMove(get_turf(src))
 
-	for(var/obj/structure/bed/S in src.contents)
+	for(var/obj/structure/bed/S in slot_contents())
 		S.forceMove(get_turf(src))
 
 	go_out()

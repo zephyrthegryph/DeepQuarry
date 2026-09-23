@@ -54,7 +54,7 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 /obj/item/storage/box/donut/update_icon()
 	cut_overlays()
 	var/x_offset = 0
-	for(var/obj/item/reagent_containers/food/snacks/donut/D in contents)
+	for(var/obj/item/reagent_containers/food/snacks/donut/D in slot_contents(CONTAINER_SLOT_STORAGE))
 		var/mutable_appearance/ma = mutable_appearance(icon = icon, icon_state = D.overlay_state)
 		ma.pixel_x = x_offset
 		add_overlay(ma)
@@ -84,7 +84,7 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	update_icon()
 
 /obj/item/storage/box/wormcan/update_icon(itemremoved = 0)
-	if (contents.len == 0)
+	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty"
 
 /obj/item/storage/box/wormcan/sickly
@@ -95,7 +95,7 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormsickly = 6)
 
 /obj/item/storage/box/wormcan/sickly/update_icon(itemremoved = 0)
-	if (contents.len == 0)
+	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty_sickly"
 
 /obj/item/storage/box/wormcan/deluxe
@@ -106,5 +106,5 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormdeluxe = 6)
 
 /obj/item/storage/box/wormcan/deluxe/update_icon(itemremoved = 0)
-	if (contents.len == 0)
+	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "wormcan_empty_deluxe"
