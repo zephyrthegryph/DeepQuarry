@@ -82,7 +82,7 @@ section:
   `unarmed_types`, `genders`, discomfort strings and more): per-subtype
   constants. They want getters, but species code is shared with the body
   rewrite.
-- **Vending** `products`, `contraband`, `premium`, `prices`, `log`, `ads_list`,
+- **Vending** `products`, `contraband`, `premium`, `prices` (`log`, `ads_list`, `slogan_list` are now lazy):
   `slogan_list`: about 100 vendors on the full map. `log`, `ads_list` and
   `slogan_list` should be lazy, and the product tables are consumed at init.
 - **Mobs** (98 lint entries; 15 mobs at boot): `languages`, `mutations`,

@@ -57,10 +57,10 @@
 	var/product_slogans = "" //String of slogans spoken out loud, separated by semicolons
 	var/product_ads = "" //String of small ad messages in the vending screen
 
-	var/list/ads_list = list()
+	var/list/ads_list // Lazy
 
 	// Stuff relating vocalizations
-	var/list/slogan_list = list()
+	var/list/slogan_list // Lazy
 	var/shut_up = 1 //Stop spouting those godawful pitches!
 	var/vend_reply //Thank you for shopping!
 	var/last_reply = 0
@@ -76,7 +76,7 @@
 	var/scan_id = 1
 	var/obj/item/coin/coin
 
-	var/list/log = list()
+	var/list/log // Lazy: purchase log entries.
 	var/req_log_access = ACCESS_CARGO //default access for checking logs is cargo
 	var/has_logs = 0 //defaults to 0, set to anything else for vendor to have logs
 	var/can_rotate = 1 //Defaults to yes, can be set to 0 for vendors without or with unwanted directionals.
@@ -86,7 +86,7 @@
 	. = ..()
 	set_wires(new /datum/wires/vending(src))
 	if(product_slogans)
-		slogan_list += splittext(product_slogans, ";")
+		LAZYADD(slogan_list, splittext(product_slogans, ";"))
 
 		// So not all machines speak at the exact same time.
 		// The first time this machine says something will be at slogantime + this random value,
@@ -94,7 +94,7 @@
 		last_slogan = world.time + rand(0, slogan_delay)
 
 	if(product_ads)
-		ads_list += splittext(product_ads, ";")
+		LAZYADD(ads_list, splittext(product_ads, ";"))
 
 	build_inventory()
 	power_change()
@@ -599,7 +599,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		list_item += tempid.registered_name
 		list_item += stationtime2text()
 		list_item += R.item_name
-		log[++log.len] = list_item
+		LAZYADD(log, list(list_item))
 
 /obj/machinery/vending/proc/show_log(mob/user as mob)
 	if(user.GetIdCard())
@@ -651,7 +651,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		seconds_electrified--
 
 	//Pitch to the people!  Really sell it!
-	if(((last_slogan + slogan_delay) <= world.time) && (slogan_list.len > 0) && (!shut_up) && prob(5))
+	if(((last_slogan + slogan_delay) <= world.time) && length(slogan_list) && (!shut_up) && prob(5))
 		var/slogan = pick(slogan_list)
 		speak(slogan)
 		last_slogan = world.time
