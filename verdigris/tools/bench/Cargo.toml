@@ -24,3 +24,7 @@ harness = false
 [[bench]]
 name = "sim"
 harness = false
+
+[[bench]]
+name = "propagate"
+harness = false

@@ -17,6 +17,7 @@ pub mod intern;
 pub mod mailbox;
 pub mod overlay;
 pub mod owner;
+pub mod propagate;
 pub mod rng;
 pub mod sim;
 pub mod thermo;
