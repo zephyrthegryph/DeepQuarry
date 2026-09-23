@@ -316,7 +316,7 @@
 /datum/song/proc/should_stop_playing(atom/player)
 	if(QDELETED(player) || !using_instrument || !playing)
 		return STOP_PLAYING
-	return SEND_SIGNAL(parent, COMSIG_INSTRUMENT_SHOULD_STOP_PLAYING, player)
+	return NONE
 
 /// Sets and sanitizes the repeats variable.
 /datum/song/proc/set_repeats(new_repeats_value)

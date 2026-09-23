@@ -44,8 +44,6 @@
 
 //from /obj/machinery/door/airlock/open(): (forced)
 //from /obj/machinery/door/airlock/close(): (forced)
-///from /obj/machinery/door/airlock/set_bolt():
-#define COMSIG_AIRLOCK_SET_BOLT "airlock_set_bolt"
 
 // /obj/item signals
 
@@ -57,8 +55,6 @@
 #define COMSIG_MOB_UNEQUIPPED_ITEM "mob_unequipped_item"
 ///from base of obj/item/dropped(): (mob/user)
 #define COMSIG_ITEM_DROPPED "item_drop"
-///a mob has just dropped an item
-#define COMSIG_MOB_DROPPED_ITEM "mob_dropped_item"
 ///from base of obj/item/pickup(): (/mob/taker)
 #define COMSIG_ITEM_PICKUP "item_pickup"
 
@@ -136,16 +132,8 @@
 ///from base of obj/item/attack_self(): (/mob)
 #define COMSIG_ITEM_ATTACK_SELF "item_attack_self"
 //from base of obj/item/attack_self_secondary(): (/mob)
-#define COMSIG_ITEM_ATTACK_SELF_SECONDARY "item_attack_self_secondary"
 ///from base of obj/item/pre_attack(): (atom/target, mob/user, list/modifiers, list/attack_modifiers)
 #define COMSIG_ITEM_PRE_ATTACK "item_pre_attack"
-/// From base of [/obj/item/proc/pre_attack_secondary()]: (atom/target, mob/user, list/modifiers, list/attack_modifiers)
-#define COMSIG_ITEM_PRE_ATTACK_SECONDARY "item_pre_attack_secondary"
-	#define COMPONENT_SECONDARY_CANCEL_ATTACK_CHAIN (1<<0)
-	#define COMPONENT_SECONDARY_CONTINUE_ATTACK_CHAIN (1<<1)
-	#define COMPONENT_SECONDARY_CALL_NORMAL_ATTACK_CHAIN (1<<2)
-///from base of obj/item/pre_attack_secondary(): (obj/item/weapon, atom/target, list/modifiers, list/attack_modifiers)
-#define COMSIG_USER_PRE_ITEM_ATTACK_SECONDARY "user_pre_item_attack_secondary"
 
 
 /*

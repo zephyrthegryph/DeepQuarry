@@ -6,17 +6,11 @@
 #define COMSIG_MOB_LOGOUT "mob_logout"
 ///from base of mob/set_stat(): (new_stat, old_stat)
 #define COMSIG_MOB_STATCHANGE "mob_statchange"
-///from base of mob/AltClickOn(): (atom/A)
-#define COMSIG_MOB_ALTCLICKON "mob_altclickon"
 	#define COMSIG_MOB_CANCEL_CLICKON (1<<0)
-///from base of mob/alt_click_on_secodary(): (atom/A)
-#define COMSIG_MOB_ALTCLICKON_SECONDARY "mob_altclickon_secondary"
 
 
 /// From base of /mob/proc/reset_perspective() : ()
 #define COMSIG_MOB_RESET_PERSPECTIVE "mob_reset_perspective"
-/// from base of /client/proc/set_eye() : (atom/old_eye, atom/new_eye)
-#define COMSIG_CLIENT_SET_EYE "client_set_eye"
 
 /// Sent from /proc/do_after if someone starts a do_after action bar.
 #define COMSIG_DO_AFTER_BEGAN "mob_do_after_began"
@@ -33,16 +27,11 @@
 #define COMSIG_MOB_APPLY_DAMAGE "mob_apply_damage"
 
 
-
 ///sent when a mob/login() finishes: (client)
 #define COMSIG_MOB_CLIENT_LOGIN "comsig_mob_client_login"
 //from base of client/MouseDown(): (/client, object, location, control, params)
 //from base of client/MouseUp(): (/client, object, location, control, params)
 //from base of client/MouseUp(): (/client, object, location, control, params)
-///From base of /mob/base_click_ctrl: (atom/A)
-#define COMSIG_MOB_CTRL_CLICKED "mob_ctrl_clicked"
-///From base of /mob/base_click_ctrl_shift: (atom/A)
-#define COMSIG_MOB_CTRL_SHIFT_CLICKED "mob_ctrl_shift_clicked"
 
 
 ///from /obj/item/crusher_trophy/on_mark_activate(): (trophy, user)

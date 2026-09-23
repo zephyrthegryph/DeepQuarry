@@ -146,7 +146,6 @@ SUBSYSTEM_DEF(admin_verbs)
 	if(IsAdminAdvancedProcCall())
 		return
 
-	UnregisterSignal(admin, COMSIG_CLIENT_MOB_LOGIN)
 	for(var/datum/admin_verb/verb_type as anything in admin_verbs_by_type)
 		admin_verbs_by_type[verb_type].unassign_from_client(admin)
 	admin_visibility_flags -= list(admin.ckey)
