@@ -172,6 +172,10 @@
 	initialize_components()
 	setup_cell()
 
+	// This mob (not a component) is the source: every robot has this
+	// (code/modules/mob/living/silicon/robot/robot_abilities.dm), revoked in Destroy().
+	grant_ability(ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
+
 	. = ..()
 
 	add_robot_verbs()
@@ -277,6 +281,7 @@
 //If there's an MMI in the robot, have it ejected when the mob goes away. --NEO
 //Improved /N
 /mob/living/silicon/robot/Destroy()
+	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
 		if(mind)
 			var/turf/T = get_turf(loc)//To hopefully prevent run time errors.
@@ -530,16 +535,6 @@
 	refresh_glow()
 	recompute_power_demand()
 	update_icon()
-
-/mob/living/silicon/robot/verb/toggle_lights()
-	set category = "Abilities.Silicon"
-	set name = "Toggle Lights"
-
-	if(!lights_on && !has_power)
-		to_chat(src, span_warning("There isn't enough power to run your integrated light."))
-		return
-	set_lights(!lights_on)
-	to_chat(src, span_filter_notice("You [lights_on ? "enable" : "disable"] your integrated light."))
 
 /datum/life_system/light/silicon/robot
 	mob_type = /mob/living/silicon/robot
