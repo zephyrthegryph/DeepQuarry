@@ -251,12 +251,14 @@
 	if(src)
 		qdel(src)
 
-/obj/structure/reagent_dispensers/fueltank/fire_act(temperature, volume)
-	if (modded)
+/// Heat behaviour rule: a fuel tank explodes above 500 C.
+/obj/structure/reagent_dispensers/fueltank/proc/rule_explode(datum/rule/rule)
+	explode()
+
+/// Heat behaviour rule: a leaking (modded) tank explodes in any fire.
+/obj/structure/reagent_dispensers/fueltank/proc/rule_modded_explode(datum/rule/rule)
+	if(modded)
 		explode()
-	else if (temperature > T0C+500)
-		explode()
-	return ..()
 
 /obj/structure/reagent_dispensers/fueltank/Move(atom/newloc, direct, movetime)
 	if (..() && modded)

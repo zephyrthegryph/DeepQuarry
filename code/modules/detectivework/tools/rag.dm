@@ -162,14 +162,16 @@
 			wipe_down(A, user)
 		return
 
-/obj/item/reagent_containers/glass/rag/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature >= 50 + T0C)
-		src.ignite()
-	if(exposed_temperature >= 900 + T0C)
-		var/turf/T = get_turf(src)
-		T?.feed_lingering_fire(0.1) // Lingering fire, feeding fires
-		new /obj/effect/decal/cleanable/ash(get_turf(src))
-		qdel(src)
+/// Heat behaviour rule: a soaked rag lights at 50 C.
+/obj/item/reagent_containers/glass/rag/proc/rule_ignite_rag(datum/rule/rule)
+	ignite()
+
+/// Heat behaviour rule: at 900 C the rag burns to ash and feeds the fire.
+/obj/item/reagent_containers/glass/rag/proc/rule_ash(datum/rule/rule)
+	var/turf/T = get_turf(src)
+	T?.feed_lingering_fire(0.1)
+	new /obj/effect/decal/cleanable/ash(T)
+	qdel(src)
 
 //rag must have a minimum of 2 units welder fuel or ehtanol based reagents and at least 80% of the reagents must so.
 /obj/item/reagent_containers/glass/rag/proc/can_ignite()

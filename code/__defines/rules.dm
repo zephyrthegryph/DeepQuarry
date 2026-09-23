@@ -33,17 +33,12 @@
 #define RULE_TRIGGER_KEY "Key"
 
 // ---- Legacy paths a rule replaces. The old code checks these and stands down. ----
-/// /obj/fire_act's "FLAMMABLE catches fire on any exposure" branch.
-#define RULE_REPLACES_IGNITION (1<<0)
 /// take_damage()/repair_damage()'s integrity_failure crossing -> atom_break()/atom_fix().
 #define RULE_REPLACES_INTEGRITY_BREAK (1<<1)
 
 // ---- DM-owned keys (reactor.md §4). Kinds past S1's own (1-3). ----
 /// An atom's integrity changed. Id: the atom's reactor id.
 #define RULE_KEY_INTEGRITY 16
-
-/// Seconds without fresh exposure before an exposed heat node relaxes to ambient.
-#define RULE_HEAT_EXPOSURE_HOLD (3 SECONDS)
 
 /// hold_for bookkeeping: the rule fired during the current spell. Rate model ids can be 0.
 #define RULE_HOLD_SPENT "spent"

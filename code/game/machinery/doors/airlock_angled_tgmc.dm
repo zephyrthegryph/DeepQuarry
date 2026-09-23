@@ -151,8 +151,6 @@
 	max_integrity = 600
 	heat_proof = 1 //just so repairing them doesn't try to fireproof something that never takes fire damage
 
-/obj/machinery/door/blast/angled/fire_act(exposed_temperature, exposed_volume)
-	return // blast doors are immune to fire completely.
 
 /obj/machinery/door/blast/angled/open
 	icon_state = "pdoor0"

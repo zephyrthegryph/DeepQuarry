@@ -206,11 +206,6 @@
 			return 0
 	return 0
 
-/obj/structure/grille/fire_act(exposed_temperature, exposed_volume)
-	if(!destroyed)
-		if(exposed_temperature > T0C + 1500)
-			deal_damage(DAMAGE_THERMAL, 1, FIRE)
-	..()
 
 /obj/structure/grille/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))

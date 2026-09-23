@@ -266,7 +266,6 @@
 		update_icon()
 
 
-
 /obj/machinery/door/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
 	visible_message(span_danger("[name] was hit by [source]."))
@@ -641,22 +640,6 @@
 /obj/machinery/door/morgue
 	icon = 'icons/obj/doors/doormorgue.dmi'
 
-
-/obj/machinery/door/fire_act(exposed_temperature, exposed_volume)
-	for(var/obj/machinery/door/blast/B in loc.contents)
-		if(B.density)
-			return
-
-	var/maxtemperature = 1800 //same as a normal steel wall
-	if(heat_proof)
-		maxtemperature = 6000 //same as a plasteel rwall
-
-	if(exposed_temperature > maxtemperature)
-		var/burndamage = log(RAND_F(0.9, 1.1) * (exposed_temperature - maxtemperature))
-		if(burndamage)
-			deal_damage(DAMAGE_THERMAL, burndamage, FIRE)
-
-	return ..()
 
 /obj/machinery/door/proc/toggle()
 	if(glass)

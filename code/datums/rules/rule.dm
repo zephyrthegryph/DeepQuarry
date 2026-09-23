@@ -48,6 +48,12 @@
 	var/replaces = NONE
 	/// Test fixtures: skipped by the type index and boot validation.
 	var/test_only = FALSE
+	/// Concrete types the generated threshold test instantiates; default applies_to.
+	var/list/test_types
+	/// Every trigger watches the object's heat node (set by compile()). An
+	/// object whose rules are all heat-only subscribes when it first gets a
+	/// heat body, not when it materializes: at rest it cannot cross anything.
+	var/heat_only = FALSE
 
 	// Compiled
 	var/datum/predicate/predicate
@@ -86,6 +92,10 @@
 		errors += compiler.errors
 		if(!length(triggers))
 			errors += "has no trigger: no clause reads a channel-backed or DM-owned property"
+		heat_only = length(triggers) > 0
+		for(var/datum/rule_trigger/trigger as anything in triggers)
+			if(trigger.kind == RULE_TRIGGER_KEY)
+				heat_only = FALSE
 	if(!length(errors))
 		errors = null
 	return !errors
@@ -299,7 +309,7 @@
 		rules = list()
 		for(var/path in subtypesof(/datum/rule))
 			var/datum/rule/rule = new path
-			if(rule.test_only)
+			if(rule.test_only || rule.abstract_type == path)
 				continue
 			if(!rule.compile())
 				stack_trace("rule [path] failed to compile: [jointext(rule.errors, "; ")]")
@@ -334,6 +344,20 @@
 	cache[path] = found || FALSE
 	return found
 
+/// Whether every rule on `path` watches only its heat node: such objects
+/// subscribe when they first get a heat body (dq_rules_heat_body_created()).
+/proc/dq_rules_heat_deferred(path)
+	var/static/list/cache = list()
+	. = cache[path]
+	if(!isnull(.))
+		return .
+	. = TRUE
+	for(var/datum/rule/rule as anything in dq_rules_for_type(path))
+		if(!rule.heat_only)
+			. = FALSE
+			break
+	cache[path] = .
+
 /proc/dq_rule_applies(datum/rule/rule, path)
 	for(var/root in rule.applies_to)
 		if(ispath(path, root))
@@ -359,7 +383,7 @@
 	. = list()
 	for(var/path in subtypesof(/datum/rule))
 		var/datum/rule/rule = new path
-		if(rule.test_only)
+		if(rule.test_only || rule.abstract_type == path)
 			continue
 		if(!rule.compile())
 			for(var/error in rule.errors)

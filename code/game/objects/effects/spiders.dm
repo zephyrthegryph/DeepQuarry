@@ -48,9 +48,6 @@
 	die()
 	return ..()
 
-/obj/effect/spider/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature > 300 + T0C)
-		deal_damage(DAMAGE_THERMAL, 5, FIRE)
 
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"
@@ -328,7 +325,6 @@
 
 /obj/effect/spider/eggcluster/royal/broodling
 	spider_type = /obj/effect/spider/spiderling/varied/broodling
-
 
 
 //Spiderling types

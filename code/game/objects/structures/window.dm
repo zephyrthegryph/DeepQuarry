@@ -454,12 +454,6 @@
 
 	return
 
-/obj/structure/window/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature > maximal_heat)
-		hit(damage_per_fire_tick, 0)
-	..()
-
-
 
 /obj/structure/window/basic
 	desc = "It looks thin and flimsy. A few knocks with... almost anything, really should shatter it."

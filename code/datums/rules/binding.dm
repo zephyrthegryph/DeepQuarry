@@ -10,16 +10,33 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	return GLOB.dq_rule_bindings[REF(thing)]
 
 /// ---- Lifecycle (L2) ----
-/// Subscribes `A`'s rules. /atom/on_materialize() calls it.
-/proc/dq_rules_on_materialize(atom/A)
+/// Subscribes `A`'s rules. /atom/on_materialize() calls it. Types whose rules
+/// all watch the heat node wait for their first heat body (`force` skips that).
+/proc/dq_rules_on_materialize(atom/A, force = FALSE)
 	var/list/rules = dq_rules_for_type(A.type)
-	if(!rules || GLOB.dq_rule_bindings[REF(A)])
+	if(!rules || (!force && dq_rules_heat_deferred(A.type)))
+		return
+	if(GLOB.dq_rule_bindings[REF(A)])
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
 		qdel(binding)
 		return
 	return binding
+
+/// `A` just got a heat body (/atom/create_heat_body()): subscribe its deferred
+/// rules, or move its existing heat watches onto the body.
+/proc/dq_rules_heat_body_created(atom/A)
+	if(QDELETED(A) || !(A.flags & ATOM_MATERIALIZED))
+		return
+	if(GLOB.dq_rule_bindings[REF(A)])
+		dq_rx_heat_body_created(A)
+		return
+	// At rest the object followed its surroundings, unwatched: a rule whose
+	// condition holds now crossed while nothing watched it, so it fires.
+	var/datum/rule_binding/binding = dq_rules_on_materialize(A, TRUE)
+	if(binding)
+		binding.fire_holding()
 
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
@@ -47,25 +64,8 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 		return null
 	. = binding.nodes ? binding.nodes[property] : null
 	if(isnull(.) && provider)
-		var/list/start = list()
-		start["[provider.channel]"] = provider.initial_value(thing)
-		. = dq_rx_node_new(start)
+		. = dq_rx_node_new(thing)
 		LAZYSET(binding.nodes, property, .)
-
-/// fire_act() exposure: the object's heat node takes the exposure temperature,
-/// and relaxes to the surrounding air RULE_HEAT_EXPOSURE_HOLD after the last one.
-/// Only objects whose rules made a heat node are touched.
-/proc/dq_rule_expose_heat(obj/O, temperature)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(O)]
-	if(!binding || isnull(temperature))
-		return
-	var/handle = binding.nodes ? binding.nodes[PROP_TEMPERATURE] : null
-	if(isnull(handle))
-		return
-	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, temperature)
-	binding.exposed_at = dq_rx_now()
-	if(isnull(binding.cool_token))
-		binding.cool_token = dq_rx_at(binding, binding.exposed_at + RULE_HEAT_EXPOSURE_HOLD)
 
 /datum/rule_binding
 	var/datum/weakref/owner_ref
@@ -83,15 +83,12 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	/// Per rule: hold_for rate model (RULE_HOLD_SPENT once fired this spell) and its watch token.
 	var/list/hold_models
 	var/list/hold_tokens
-	/// property -> node handle (channel-backed properties without a domain node yet).
+	/// property -> heat node handle (the owner's heat body, while it has one).
 	var/list/nodes
 	/// Key kinds the owner must publish.
 	var/list/key_kinds
 	/// This binding's reactor id: the id of the owner's DM-owned keys.
 	var/key_id
-	/// Heat exposure bookkeeping (dq_rule_expose_heat).
-	var/exposed_at
-	var/cool_token
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
@@ -197,22 +194,13 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /datum/rule_binding/rule_wake(reason, source)
 	if(!resolve())
 		return
-	if(!isnull(cool_token) && (reason & DQ_RX_REASON_TIMER))
-		cool_down()
 	evaluate()
 
-/// Heat exposure stopped long enough: relax the node to the surrounding air.
-/datum/rule_binding/proc/cool_down()
-	var/now = dq_rx_now()
-	if(now - exposed_at < RULE_HEAT_EXPOSURE_HOLD)
-		cool_token = dq_rx_at(src, exposed_at + RULE_HEAT_EXPOSURE_HOLD)
-		return
-	cool_token = null
-	var/handle = nodes ? nodes[PROP_TEMPERATURE] : null
-	if(!isnull(handle))
-		dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, dq_ambient_temperature(owner))
-		dq_rx_node_idle(handle)
-	owner = null
+/// Forget the baseline and evaluate: every rule whose condition holds fires.
+/datum/rule_binding/proc/fire_holding()
+	for(var/i in 1 to length(holding))
+		holding[i] = FALSE
+	evaluate()
 
 /// Look at every live rule: fire on false -> true edges, run exits on true -> false.
 /datum/rule_binding/proc/evaluate()

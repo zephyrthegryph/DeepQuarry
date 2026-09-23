@@ -496,7 +496,9 @@
 
 	//Final step. Cook function just cooks batter for now.
 	for (var/obj/item/reagent_containers/food/snacks/S in CI.container)
-		S.cook()
+		if(!S.heat_cooked)
+			S.heat_cooked = TRUE
+			S.cook()
 
 
 //Combination cooking involves combining the names and reagents of ingredients into a predefined output object

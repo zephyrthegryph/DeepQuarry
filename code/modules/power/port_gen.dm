@@ -747,7 +747,8 @@
 	else
 		asplod()
 
-/obj/machinery/power/rtg/abductor/fire_act(exposed_temperature, exposed_volume)
+/// Heat behaviour rule: fire sets off a void core.
+/obj/machinery/power/rtg/abductor/proc/rule_asplod(datum/rule/rule)
 	asplod()
 
 // Comes with an installed cell
@@ -801,7 +802,8 @@
 /obj/machinery/power/rtg/kugelblitz/ex_act()
 	asplod()
 
-/obj/machinery/power/rtg/kugelblitz/fire_act(exposed_temperature, exposed_volume)
+/// Heat behaviour rule: fire sets off a kugelblitz.
+/obj/machinery/power/rtg/kugelblitz/proc/rule_asplod(datum/rule/rule)
 	asplod()
 
 /obj/machinery/power/rtg/kugelblitz/bullet_act(obj/item/projectile/Proj)
@@ -1053,8 +1055,6 @@
 /obj/machinery/power/rtg/antimatter_core/ex_act()
 	asplod()
 
-/obj/machinery/power/rtg/antimatter_core/fire_act(exposed_temperature, exposed_volume)
-	return
 
 /obj/machinery/power/rtg/antimatter_core/bullet_act(obj/item/projectile/Proj)
 	. = ..()

@@ -122,11 +122,10 @@ FIRE ALARM
 
 	add_overlay(.)
 
-/obj/machinery/firealarm/fire_act(temperature, volume)
+/// Heat behaviour rule: the detector trips above 200 C.
+/obj/machinery/firealarm/proc/rule_heat_alarm(datum/rule/rule)
 	if(detecting)
-		if(temperature > T0C + 200)
-			alarm()			// added check of detector status here
-	return
+		alarm()
 
 /obj/machinery/firealarm/bullet_act(obj/item/projectile/Proj, def_zone)
 	alarm()

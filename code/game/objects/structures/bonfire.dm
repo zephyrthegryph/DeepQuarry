@@ -271,7 +271,8 @@
 
 				env.merge(removed)
 
-/obj/structure/bonfire/fire_act(exposed_temperature, exposed_volume)
+/// Heat behaviour rule: fire lights the bonfire.
+/obj/structure/bonfire/proc/rule_light(datum/rule/rule)
 	ignite()
 
 /obj/structure/bonfire/water_act(amount)
@@ -444,7 +445,8 @@
 
 				env.merge(removed)
 
-/obj/structure/fireplace/fire_act(exposed_temperature, exposed_volume)
+/// Heat behaviour rule: fire lights the fireplace.
+/obj/structure/fireplace/proc/rule_light(datum/rule/rule)
 	ignite()
 
 /obj/structure/fireplace/water_act(amount)

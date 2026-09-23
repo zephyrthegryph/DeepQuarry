@@ -249,9 +249,10 @@
 
 
 // Fire
-/obj/effect/shield/fire_act(exposed_temperature, exposed_volume)
+/// Overheating: fire drains the shield.
+/obj/effect/shield/apply_heat_damage(amount)
 	if(!disabled_for)
-		take_damage(rand(5,10), SHIELD_DAMTYPE_HEAT)
+		take_damage(amount, SHIELD_DAMTYPE_HEAT)
 
 
 // Projectiles

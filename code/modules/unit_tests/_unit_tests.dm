@@ -176,6 +176,7 @@
 #include "dq_predicate_tests.dm"
 #include "dq_containment_tests.dm"
 #include "dq_rule_tests.dm"
+#include "dq_h3_heat_tests.dm"
 #include "dq_containment_path_tests.dm"
 #include "dq_stock_tests.dm"
 #include "dq_damage_packet_tests.dm"

@@ -156,10 +156,9 @@
 		can_revert = TRUE //something's gone wrong, they escaped, lets not qdel them
 		unpetrify(deal_damage = FALSE, deleting = TRUE)
 
-/obj/structure/gargoyle/fire_act(temperature, volume)
-	if(temperature > T0C + 1600) //Bingle says the burning point of rock is between 600 to 1600C...Let's use the highest range.
-		damage(temperature/(T0C + 1600)) //1 damage per 1600C
-	return
+/// Overheating (above 1600 C): the stone cracks.
+/obj/structure/gargoyle/apply_heat_damage(amount)
+	damage(amount * 0.1)
 
 /obj/structure/gargoyle/examine_icon()
 	var/icon/examine_icon = icon(icon=src.icon, icon_state=src.icon_state, dir=SOUTH, frame=1, moving=0)

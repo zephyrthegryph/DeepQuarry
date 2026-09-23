@@ -54,10 +54,9 @@
 	..()
 
 
-/obj/item/taperecorder/fire_act()
-	if(mytape)
-		mytape.ruin() //Fires destroy the tape
-	return ..()
+/// Heat behaviour rule: fire ruins the tape inside.
+/obj/item/taperecorder/proc/rule_ruin_tape(datum/rule/rule)
+	mytape?.ruin()
 
 
 /obj/item/taperecorder/attack_hand(mob/user)
@@ -371,7 +370,6 @@
 		icon_state = "taperecorder_idle"
 
 
-
 /obj/item/rectape
 	name = "tape"
 	desc = "A magnetic tape that can hold up to ten minutes of content."
@@ -394,9 +392,6 @@
 	if(ruined)
 		add_overlay("ribbonoverlay")
 
-
-/obj/item/rectape/fire_act()
-	ruin()
 
 /obj/item/rectape/attack_self(mob/user)
 	. = ..(user)

@@ -1048,9 +1048,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 // called when on fire
 
-/obj/machinery/light/fire_act(exposed_temperature, exposed_volume)
-	if(prob(max(0, exposed_temperature - 673)))   //0% at <400C, 100% at >500C
-		broken()
+/// Heat behaviour rule: the tube breaks above 450 C.
+/obj/machinery/light/proc/rule_break_light(datum/rule/rule)
+	broken()
 
 // explode the light
 
