@@ -108,7 +108,7 @@
 	var/turf/T = get_turf(src)
 	var/obj/structure/cable/C = T.get_cable_node()
 	if (C && anchored) //Make sure its anchored too.
-		PN = C.powernet
+		PN = C.get_powernet()
 
 	if (PN)
 		var/power_draw = between(0, max_charge - stored_charge, charge_rate) //what we are trying to draw
@@ -164,6 +164,7 @@
 		return null
 	var/turf/T = get_turf(src)
 	var/obj/structure/cable/C = T?.get_cable_node()
-	if(C?.powernet && C.powernet.avail - C.powernet.load > 0)
-		return "asleep below full charge on a grid with [C.powernet.avail - C.powernet.load] W spare"
+	var/datum/powernet/PN = C?.get_powernet()
+	if(PN && PN.avail - PN.load > 0)
+		return "asleep below full charge on a grid with [PN.avail - PN.load] W spare"
 	return null

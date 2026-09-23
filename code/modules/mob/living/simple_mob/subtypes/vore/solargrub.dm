@@ -90,7 +90,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 				sparks.set_up(5, 0, get_turf(self))
 				sparks.start()
 			self.anchored = TRUE
-			self.PN = self.attached.powernet
+			self.PN = self.attached.get_powernet()
 			self.PN.draw_power(self.powerdraw)
 			self.charge = self.charge + (self.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
 			var/apc_drain_rate = 750 //Going to see if grubs are better as a minimal bother. previous value : 4000

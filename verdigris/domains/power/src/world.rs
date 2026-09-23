@@ -36,7 +36,8 @@ pub const MAX_KEY: u32 = vg_core::handle::MAX_SLOTS;
 /// Event record types in [`PowerWorld::step`]'s output. Every record is
 /// `[type, n, n values...]`.
 pub mod ev {
-    /// A machine node's region changed: `key, region` (0 = none).
+    /// A machine node's region changed: `key, region, members` (region 0:
+    /// on no cable).
     pub const BIND: u32 = 1;
     /// A region's published numbers changed: `region, avail, load,
     /// viewavail, viewload, netexcess`.
@@ -169,10 +170,15 @@ pub struct PowerWorld {
     steps: u64,
 }
 
-/// Region id as DM sees it: the raw handle bits (24 bits, exact in f32).
+/// Region id as DM sees it: the raw handle bits plus one, so no region is 0
+/// (DM's null); at most 2^24, exact in f32.
 #[must_use]
 pub fn region_id(r: RegionId<Cables>) -> u32 {
-    r.raw().bits()
+    raw_id(r.raw())
+}
+
+fn raw_id(r: RawHandle) -> u32 {
+    r.bits() + 1
 }
 
 fn push(out: &mut Vec<f32>, kind: u32, values: &[f64]) {
@@ -296,7 +302,7 @@ impl PowerWorld {
             })
             .unwrap_or_default();
         self.at.entry(pos).or_default().push(key);
-        self.bound.entry(key).or_insert(0);
+        self.bound.entry(key).or_insert(u32::MAX);
         self.connect_all(key, node, &peers);
         Ok(())
     }
@@ -391,7 +397,7 @@ impl PowerWorld {
         }
         for r in retired {
             if !self.ledgers.contains_key(&r) {
-                push(&mut self.out, ev::RETIRED, &[f64::from(r.bits())]);
+                push(&mut self.out, ev::RETIRED, &[f64::from(raw_id(r))]);
             }
         }
         // Topology changed supply: re-plan what each touched region offers
@@ -401,38 +407,33 @@ impl PowerWorld {
         if !touched_regions.is_empty() {
             self.plan_supply(Some(&touched_regions));
         }
-        // Machine rebinds.
+        // Machine rebinds: a machine is bound to its region while that
+        // region holds more than the machine itself (a cable reached it).
+        // Machines are few, so every commit checks them all.
         self.touched.clear();
         self.net
             .drain_touched(&mut self.touched, &mut self.scratch_devices);
         self.scratch_devices.clear();
-        let mut keys: Vec<u32> = Vec::new();
-        for &n in &self.touched {
-            if let Ok(node) = self.net.node(n)
-                && node.kind == 1
-            {
-                keys.push(node.key);
-            }
-        }
-        keys.extend(
-            self.bound
-                .iter()
-                .filter(|&(_, &v)| v == u32::MAX)
-                .map(|(&k, _)| k),
-        );
-        keys.sort_unstable();
-        keys.dedup();
+        let keys: Vec<u32> = self.bound.keys().copied().collect();
         for key in keys {
-            let region = self
+            let (region, members) = self
                 .obj(key)
                 .and_then(|o| self.net.node(o.node).ok())
-                .map_or(0, |n| region_id(n.region()));
-            let shown = self.bound.get(&key).copied();
-            if shown != Some(region) {
-                push(&mut self.out, ev::BIND, &[f64::from(key), f64::from(region)]);
+                .map(|n| {
+                    let r = n.region();
+                    (region_id(r), self.net.region(r).map_or(0, |x| x.members()))
+                })
+                .unwrap_or((0, 0));
+            let bound = if members > 1 { region } else { 0 };
+            if self.bound.get(&key) != Some(&bound) {
+                push(
+                    &mut self.out,
+                    ev::BIND,
+                    &[f64::from(key), f64::from(bound), f64::from(members)],
+                );
             }
             if self.obj(key).is_some() {
-                self.bound.insert(key, region);
+                self.bound.insert(key, bound);
             } else {
                 self.bound.remove(&key);
             }
@@ -821,7 +822,7 @@ impl PowerWorld {
         for r in &regions {
             let l = self.ledgers.get_mut(&r.raw()).expect("entered above");
             let shown = [l.avail, l.load, l.viewavail, l.viewload, l.netexcess];
-            let id = f64::from(r.raw().bits());
+            let id = f64::from(region_id(*r));
             if !l.fresh {
                 l.shown_brown = l.brown;
             }

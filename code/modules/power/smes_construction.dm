@@ -188,6 +188,7 @@
 			input_level_max += C.IOCapacity
 			output_level_max += C.IOCapacity
 		charge = between(0, charge, capacity)
+		power_sync()
 		return 1
 	return 0
 

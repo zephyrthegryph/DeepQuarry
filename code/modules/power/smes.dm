@@ -1,5 +1,11 @@
 // the SMES
 // stores power
+//
+// M3: charge, input and output run in Rust (verdigris/domains/power/src/smes.rs)
+// every power step: the output is a supply on the SMES node's network, the input
+// a demand on each terminal's. The SMES never polls; power_sync() sends its
+// settings (settings changes wake it for one process() that does that), and
+// power_event() applies the charge and the shown state.
 
 
 //# define SMESMAXCHARGELEVEL 250000 Unused
@@ -54,6 +60,8 @@
 	var/list/terminals // Lazy
 	var/should_be_mapped = 0 // If this is set to 0 it will send out warning on New()
 	var/grid_check = FALSE // If true, suspends all I/O.
+	/// Power events applied (tests check that an idle SMES hears none).
+	var/power_event_count = 0
 
 	// More humming noises
 	var/datum/looping_sound/generator/soundloop
@@ -66,6 +74,7 @@
 
 	var/smes_amt = min((amount * SMESRATE), charge)
 	charge -= smes_amt
+	power_sync()
 	return smes_amt / SMESRATE
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
@@ -81,7 +90,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		return
 	update_icon()
 	if(!powernet)
-		connect_to_network()
+		connect_to_network(!mapload)
+	power_sync()
 	if(!should_be_mapped)
 		WARNING("Non-buildable or Non-magical SMES at [src.x]X [src.y]Y [src.z]Z")
 	if(mapload)
@@ -90,6 +100,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/LateInitialize()
 	apply_mapped_upgrades()
 	apply_mapped_settings()
+	power_sync()
 
 // Only the buildable smes type checks for mapped updates
 /obj/machinery/power/smes/buildable/apply_mapped_upgrades()
@@ -123,8 +134,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return
 
 /obj/machinery/power/smes/Destroy()
+	if(power_key)
+		SSmachines.power_queue(list(POWER_OP_REMOVE_STORAGE, 1, power_key))
 	for(var/obj/machinery/power/terminal/T in terminals)
-		T.powernet?.unregister_storage_terminal(T)
 		T.master = null
 	terminals = null
 	QDEL_NULL(soundloop)
@@ -137,24 +149,70 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 			if(term && term.dir == turn(d, 180) && !term.master)
 				LAZYOR(terminals, term)
 				term.master = src
-				term.connect_to_network()
+				term.connect_to_network(FALSE)
+	power_sync()
 
 /obj/machinery/power/smes/proc/check_terminals()
 	if(!LAZYLEN(terminals))
 		return FALSE
 	return TRUE
 
-/obj/machinery/power/smes/add_avail(amount)
-	if(powernet)
-		power_supply_generation = SSmachines.power_supply_generation
-		powernet.register_power_supply(src, amount, TRUE)
-		return 1
-	return 0
-
 /obj/machinery/power/smes/disconnect_terminal(obj/machinery/power/terminal/term)
-	term.powernet?.unregister_storage_terminal(term)
 	LAZYREMOVE(terminals, term)
 	term.master = null
+	power_sync()
+
+/obj/machinery/power/smes/power_registered()
+	power_sync()
+
+/// Sends settings, charge and terminals to Rust. DM's charge is current (every
+/// power step writes it back), so sending it is always safe.
+/obj/machinery/power/smes/proc/power_sync()
+	if(QDELETED(src))
+		return
+	if(!power_key)
+		power_key = power_key_alloc(src)
+	var/flags = 0
+	var/working = !(stat & BROKEN) && !grid_check
+	if(working && input_attempt && !input_pulsed && !input_cut)
+		flags |= POWER_SMES_INPUT
+	if(working && output_attempt && !output_pulsed && !output_cut)
+		flags |= POWER_SMES_OUTPUT
+	var/list/op = list(POWER_OP_SMES, 0, power_key, flags, capacity, input_level, output_level, charge)
+	for(var/obj/machinery/power/terminal/term as anything in terminals)
+		if(term.power_key)
+			op += term.power_key
+	op[2] = length(op) - 2
+	SSmachines.power_queue(op)
+
+/// A POWER_EV_SMES record at `at`: key, charge, inputting, outputting,
+/// output_used, input_available, display.
+/obj/machinery/power/smes/proc/power_event(list/events, at)
+	power_event_count++
+	charge = events[at + 1]
+	output_used = events[at + 4]
+	input_available = events[at + 5]
+	var/new_inputting = events[at + 2]
+	var/new_outputting = events[at + 3]
+	if(new_inputting != inputting || new_outputting != outputting || last_disp != chargedisplay())
+		inputting = new_inputting
+		outputting = new_outputting
+		last_disp = chargedisplay()
+		last_chrg = inputting
+		last_onln = outputting
+		update_icon()
+	update_soundloop()
+
+/obj/machinery/power/smes/proc/update_soundloop()
+	if(outputting == 2)
+		if(!noisy)
+			soundloop.start()
+			noisy = TRUE
+		// Capped to 40 volume since higher volumes get annoying and it sounds worse.
+		soundloop.volume = CLAMP((output_used / 1000), 1, 40)
+	else if(noisy)
+		soundloop.stop()
+		noisy = FALSE
 
 /obj/machinery/power/smes/update_icon()
 	cut_overlays()
@@ -195,99 +253,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 // Mostly in place due to child types that may store power in other way (PSUs)
 /obj/machinery/power/smes/proc/add_charge(amount)
 	charge += amount*SMESRATE
+	power_sync()
 
 /obj/machinery/power/smes/proc/remove_charge(amount)
 	charge -= amount*SMESRATE
+	power_sync()
 
+/// SMES units do not poll: Rust charges and discharges them. A wake (a
+/// settings change, damage, a new terminal) resends the settings once.
 /obj/machinery/power/smes/process()
 	if(stat & BROKEN)
 		soundloop.stop()
 		noisy = FALSE
-		clear_power_supply()
-		for(var/obj/machinery/power/terminal/term in terminals)
-			term.powernet?.register_storage_demand(src, term, 0)
-		return PROCESS_KILL
-
-	// only update icon if state changed
-	if(last_disp != chargedisplay() || last_chrg != inputting || last_onln != outputting)
-		update_icon()
-	//store machine state to see if we need to update the icon overlays
-	last_disp = chargedisplay()
-	last_chrg = inputting
-	last_onln = outputting
-	input_available = 0
-	target_load = 0
-	inputting = 0
-
-	//inputting
-	if(input_attempt && (!input_pulsed && !input_cut) && !grid_check)
-		target_load = CLAMP((capacity-charge)/SMESRATE, 0, input_level)	// Amount we will request from the powernet.
-		var/input_available = FALSE
-		for(var/obj/machinery/power/terminal/term in terminals)
-			if(!term.powernet)
-				continue
-			input_available = TRUE
-			term.powernet.register_storage_demand(src, term, target_load)
-		if(!input_available)
-			target_load = 0 // We won't input any power without powernet connection.
-		inputting = 0
-	else
-		for(var/obj/machinery/power/terminal/term in terminals)
-			term.powernet?.register_storage_demand(src, term, 0)
-
-	output_used = 0
-	//outputting
-	if(output_attempt && (!output_pulsed && !output_cut) && powernet && charge && !grid_check)
-		output_used = min( charge/SMESRATE, output_level)		//limit output to that stored
-		add_avail(output_used)				// add output to powernet (smes side)
-		outputting = 2
-	else if(!powernet || !charge)
-		outputting = 1
-	else
-		output_used = 0
-
-	if(!noisy && outputting) // Are we actually outputting power?
-		soundloop.start()
-		noisy = TRUE
-	if(noisy && outputting)
-		// Capped to 40 volume since higher volumes get annoying and it sounds worse.
-		// Formula previously was min(round(power/10)+1, 20)
-		soundloop.volume = CLAMP((output_used / 1000), 1, 40)
-	if(!outputting)
-		soundloop.stop()
-		noisy = FALSE
-	// Both directions are retained as powernet rates. Storage settlement wakes
-	// this machine exactly at a full/empty boundary; settings and topology wake it
-	// explicitly, so no charge-state polling remains.
+	power_sync()
 	return PROCESS_KILL
-
-/// Debit the portion of a stable registered output rate that the network
-/// actually consumed over elapsed machinery intervals.
-/obj/machinery/power/smes/proc/consume_registered_output(used_rate, elapsed_ticks)
-	if(used_rate <= 0 || elapsed_ticks <= 0)
-		return
-	output_used = min(used_rate, output_level)
-	remove_charge(output_used * elapsed_ticks)
-	charge = max(charge, 0)
-	if((input_attempt && charge < capacity) || !charge)
-		START_MACHINE_PROCESSING(src)
-
-/obj/machinery/power/smes/proc/receive_registered_input(input_rate, elapsed_ticks)
-	if(input_rate <= 0 || elapsed_ticks <= 0)
-		return
-	add_charge(input_rate * elapsed_ticks)
-	charge = min(charge, capacity)
-	if(charge >= capacity)
-		START_MACHINE_PROCESSING(src)
-
-/obj/machinery/power/smes/proc/set_registered_input(input_rate, requested_rate)
-	input_available = input_rate
-	if(input_rate <= 0)
-		inputting = 0
-	else if(input_rate + 0.01 >= requested_rate)
-		inputting = 2
-	else
-		inputting = 1
 
 // Compatibility hook for callers outside the persistent ledger.
 /obj/machinery/power/smes/proc/restore(percent_load)
@@ -325,6 +304,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		term.master = src
 		term.connect_to_network()
 		LAZYOR(terminals, term)
+		power_sync()
 		return 0
 	return 1
 
@@ -531,7 +511,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	output_attempt = do_output
 	if(!output_attempt)
 		outputting = 0
-		clear_power_supply()
 	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/power/smes/atom_destruction(damage_flag)
@@ -556,6 +535,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	charge -= 1e6/severity
 	if (charge < 0)
 		charge = 0
+	power_sync()
 	update_icon()
 
 /obj/machinery/power/smes/examine(mob/user)
@@ -640,6 +620,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		add_overlay("smes-og[clevel]")
 	return
 
+/// Hybrid units make their own charge every tick, so they stay awake.
 /obj/machinery/power/smes/buildable/hybrid/process()
 	charge += min(recharge_rate, capacity - charge)
-	..()
+	power_sync()

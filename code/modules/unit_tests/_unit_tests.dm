@@ -197,6 +197,7 @@
 #include "dq_quick_fix_tests.dm"
 #include "dq_reactor_tests.dm"
 #include "dq_reactor_s2_tests.dm"
+#include "dq_power_tests.dm"
 #include "dq_reactor_poller_tests.dm"
 #include "dq_actor_adapter_tests.dm"
 #include "dq_combat_mode_tests.dm"

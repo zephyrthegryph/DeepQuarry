@@ -29,6 +29,8 @@ verdigris/                  <- workspace root (this dir)
 │   │                          See domains/gas/UPSTREAM.md.
 │   ├── heat/               <- vg-heat: the heat domain (M4): turf solid field,
 │   │                          heat bodies, couplings, regulator. Host-buildable.
+│   ├── power/              <- vg-power: the power domain (M3): cables as an R7
+│   │                          network kind, the ledger, APC and SMES models.
 │   └── layout/             <- vg-layout: station layout planner, cave generator,
 │                              and the offline station-layout tools (src/bin/)
 ├── ffi/                    <- vg-ffi: BYOND binds (lifecycle, layout, cave gen)
@@ -54,6 +56,7 @@ verdigris/                  <- workspace root (this dir)
 | `vg-ffi` `allocator` | Tracking allocator: live/peak Rust heap overall and per `AllocTag`, with a thread-local tag scope (`allocator::tagged`); each block carries its tag in a small header so frees are charged correctly. |
 | `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
 | `vg-gas` | Gas arena, turf adjacency (built from DM air-block masks), turf diffusion, decompression. Numeric gas registry in `gas/ids.rs`. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. | `turfs/heat.rs` holds the heat domain's binds and implements `vg_heat::GasExchange` over the arena. |
+| `vg-power` | The power domain (M3, `simulation.md` §6): `kind` (`Cables`, the R7 network kind: summary = supply, demand per APC channel, storage capacity; payload = pooled storage split by capacity), `geom` (the `get_connections()` rule, so Rust derives the graph from each piece's turf and directions), `apc` (the APC distributor), `smes` (SMES units) and `world` (`PowerWorld`: keys, batched edits, the ledger, one `step()` per machinery tick returning DM's events). Binds in `vg-ffi` (`ffi/src/power.rs`). |
 | `vg-heat` | The heat domain (M4, `simulation.md` §7, `temperature.md`): `solid` (the turf solid heat field on R6's framework, with conduction, Stefan–Boltzmann radiation to space reservoirs and planet reservoirs), `body` (heat bodies created on first divergence, analytic relaxation on reservoirs, exact two-body steps otherwise, phase plateau, power, two couplings), `couple` (the `GasExchange` trait, exact pair exchange, the energy ledger, the solid ↔ turf gas task), `regulator` (the thermal regulator primitive) and `world` (`HeatWorld`, the main-thread host with watches). Replaces `superconduct.rs`. |
 | `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic, 16x16 chunked layers, per-kind blocked-direction layers (`Grid`). |
 | `vg-core` `handle` / `arena` | 20-bit index + 4-bit generation handles (exact as f32); `Arena<T>` with 4096-slot chunks, stale-handle rejection, rayon iteration. |
@@ -94,6 +97,40 @@ verdigris/                  <- workspace root (this dir)
 - **Sleep.** Commands, geometry changes and other tasks' writes wake chunks by CoW pointer diff; an edge into a sleeping chunk flows only once it is unsettled (so sleeping chunks are never written); a chunk sleeps when all its live edges are `settled` or the whole step left it `quiet` (the f32 fixed point).
 - **Channels need capacity.** Extractors see only the cell, so a kind caches intensive values (temperature, pressure) in `refresh`, which runs on every touched cell after a step.
 - **Precision.** Cells are f32: each step conserves to rounding (checked per step at 2e-6 relative), and long near-equilibrium runs random-walk at roughly 1e-8 relative per step.
+
+### M3 notes (for S5, H4 and material power)
+
+- **Wiring.** DM owns dense power keys (`power_key_alloc`). Cables send
+  `POWER_OP_CABLE` (turf, `d1`, `d2`, the z-levels above/below for vertical
+  pieces, an ender link id); power machines send `POWER_OP_MACHINE` and join
+  every knot on their turf. Edits queue in `SSmachines.power_ops` and go in one
+  `vg_power_edit()`; an explosion epoch holds them (`power_batch_begin/end`),
+  so a blast is one commit. `vg_power_step()` runs once per machinery tick
+  (the `SSMACHINES_POWERNETS` stage) and returns `POWER_EV_*` records: machine
+  rebinds, region numbers, retirements, APC and SMES state, brownouts.
+- **Ledger.** Per region and step: `avail` = registered supply
+  (`set_power_supply`, persistent) + pulses (`add_avail`, one step) + SMES
+  output offered; draws (`vg_power_draw`) never exceed `avail - load`. APCs run
+  the distributor in key order, then SMES input shares the leftover by request,
+  then SMES output pays what non-storage supply did not cover. Rust tests:
+  conservation (property test over random edits, supplies, pulses and draws),
+  exact SMES books, APC drain/brownout/restore/charge, idle silence.
+- **Sleeping.** APCs and SMES never poll: Rust steps them and reports only
+  shown changes (channels, charging, status, alarm, charge; SMES charge, I/O
+  state). A DM-side change (UI, wires, cell swap, damage) resends the settings
+  (`power_sync()`), directly or through one `process()` that returns
+  `PROCESS_KILL`. DM's copies are current after every step, so a sync never
+  loses Rust's progress. Trend counters that cycle on a settled APC
+  (`longtermpower`, `chargecount`) are not reported.
+- **Areas.** Static loads and one-offs are flushed per dirty area once per step.
+  An APC channel change calls `area.power_change()` once; subscribed machines
+  (not lights, which use the reactor key) re-check power and the base
+  `power_change()` sends `COMSIG_MACHINERY_POWER_LOST`/`_RESTORED`.
+- **Not built here.** Storage charge is stepped, not solved by rate-model
+  crossings (a settled APC reports nothing, so DM cost is already zero); the TEG
+  still computes its output in DM and registers it as a supply rate (the gas
+  view/exchange buffer coupling waits for M1b); network batches are not in the
+  flight recorder (no `Codec` for `Edit<Cables>` yet).
 
 ### M4 notes (for H1–H4, M1b and material science)
 

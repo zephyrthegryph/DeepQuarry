@@ -177,10 +177,10 @@ ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instance
 		message_admins("[key_name_admin(user)] has deleted all instances of [hsbitem].", 0)
 	feedback_add_details("admin_verb","DELA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_debug_make_powernets, R_DEBUG, "Make Powernets", "Rebuild all powernets.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
-	SSmachines.makepowernets()
-	log_admin("[key_name(user)] has remade the powernet. SSmachines.makepowernets() called.")
-	message_admins("[key_name_admin(user)] has remade the powernets. SSmachines.makepowernets() called.")
+ADMIN_VERB(cmd_debug_make_powernets, R_DEBUG, "Make Powernets", "Send every cable and power machine to the power network again.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
+	SSmachines.power_reregister_all()
+	log_admin("[key_name(user)] has remade the power network.")
+	message_admins("[key_name_admin(user)] has remade the power network.")
 	feedback_add_details("admin_verb","MPWN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_debug_tog_aliens, R_DEBUG, "Toggle Aliens", "Toggle if aliens are allowed.", ADMIN_CATEGORY_SERVER_GAME)

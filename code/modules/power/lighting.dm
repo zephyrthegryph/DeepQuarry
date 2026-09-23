@@ -1046,6 +1046,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/power_change()
 	return
 
+/obj/machinery/light
+	power_subscriber = FALSE
+
 // called when on fire
 
 /obj/machinery/light/fire_act(exposed_temperature, exposed_volume)

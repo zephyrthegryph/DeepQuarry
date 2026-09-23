@@ -306,8 +306,8 @@
 	var/turf/T = get_turf(src)
 	var/obj/structure/cable/C = T.get_cable_node()
 	if(C)
-		if(C.powernet)
-			var/datum/powernet/PN = C.powernet
+		var/datum/powernet/PN = C.get_powernet()
+		if(PN)
 
 			if(PN)
 				PN.trigger_warning()
