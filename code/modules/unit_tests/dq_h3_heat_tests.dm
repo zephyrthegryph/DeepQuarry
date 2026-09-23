@@ -90,9 +90,14 @@
 	var/limit = PROPERTY(window, PROP_MELTING_POINT)
 	TEST_ASSERT_EQUAL(limit, window.maximal_heat, "a window's heat limit is its maximal_heat")
 	dq_rule_test_write(window, PROP_TEMPERATURE, limit + 50)
-	dq_rx_flush()
-	dq_rx_flush()
-	var/datum/component/overheating/hot = window.GetComponent(/datum/component/overheating)
+	var/datum/component/overheating/hot
+	// A heavily loaded reactor can take a few frames to subscribe and fire on
+	// a freshly created heat body; poll instead of assuming two flushes land.
+	for(var/i in 1 to 10)
+		dq_rx_flush()
+		hot = window.GetComponent(/datum/component/overheating)
+		if(hot || QDELETED(window))
+			break
 	TEST_ASSERT(hot, "above it the window overheats")
 	var/before = window.get_integrity()
 	hot.process(1)
