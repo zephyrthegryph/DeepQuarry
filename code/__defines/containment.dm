@@ -7,8 +7,31 @@
 #define CONTAINER_SLOT_PAGES "pages"
 
 // ---- Exposure (containment.md §3.1) ----
+/// Outside the holder's shell: held, worn outer layer, mounted. Sees the
+/// holder's surroundings; the holder's own insulation and armour don't cover it.
 #define SLOT_EXPOSURE_EXTERNAL 1
+/// Inside the holder's shell: pocket, bag interior, closet, belly, machine
+/// internals. Shares the holder's surroundings' air.
 #define SLOT_EXPOSURE_INTERNAL 2
+/// Inside, with its own interior: blocks gas from the surroundings.
+#define SLOT_EXPOSURE_SEALED 3
+
+// ---- Layers (containment.md §3.1): order among slots at the same place ----
+/// Not layered.
+#define SLOT_LAYER_NONE 0
+#define SLOT_LAYER_UNDERSUIT 10
+#define SLOT_LAYER_UNIFORM 20
+#define SLOT_LAYER_SUIT 30
+#define SLOT_LAYER_HARDSUIT 40
+#define SLOT_LAYER_PLATE 50
+
+// ---- Propagation paths (containment.md §3.2, roadmap C2) ----
+#define PATH_EFFECT_HEAT 1
+#define PATH_EFFECT_DAMAGE 2
+#define PATH_EFFECT_GAS 3
+#define PATH_EFFECT_RADIATION 4
+/// Shares below this are dropped rather than delivered.
+#define PATH_MIN_SHARE 0.001
 
 // ---- Capacity models ----
 /// No limit.

@@ -51,6 +51,8 @@
 #define PROP_TEMPERATURE "temperature"
 #define PROP_INTEGRITY_RATIO "integrity_ratio"
 #define PROP_INTEGRITY_FAILURE "integrity_failure"
+/// Fraction of heat a holder's shell (or a worn layer) keeps from what it covers, 0..1.
+#define PROP_INSULATION "insulation"
 // Tag ids.
 #define TAG_SHARP "sharp"
 #define TAG_FLAMMABLE "flammable"

@@ -118,6 +118,59 @@ Heat, damage, pressure and radiation all walk the same path:
 
 Each step on the path carries its couplings: thermal conductance, damage pass-through and armour, pressure sealing, radiation shielding. No type writes its own "does heat reach the pockets" code. In Rust, only containers that matter thermally get a heat node, and its coupling to the parent node comes from that step ([simulation.md §7](simulation.md#7-heat-m4)).
 
+### 3.3 As built (C2)
+
+The code is in `code/datums/containment/paths.dm`, with the heat coupling in `heat_adapter.dm`; defines are in `code/__defines/containment.dm`.
+
+- **Exposure.** `SLOT_EXPOSURE_EXTERNAL`, `SLOT_EXPOSURE_INTERNAL` and `SLOT_EXPOSURE_SEALED`. Internal and sealed slots are inside the holder's shell, so the holder's insulation and armour cover them. A sealed slot has its own interior and blocks gas.
+- **Slot data.** Each `/datum/slot_def` also carries:
+  - `layer`: a `SLOT_LAYER_*` value, higher is further out; `SLOT_LAYER_NONE` means the slot is not layered;
+  - `heat_transmission` and `radiation_transmission`: what crosses the slot's own boundary;
+  - `damage_transmission`: the share of each `DAMAGE_*` kind that passes from a hit on the holder. Null takes the exposure's default from `dq_path_default_damage()`;
+  - `reaches_mobs`: off by default, so living contents take no heat or damage along the path. They get heat from their environment (H2) and hits through occupant rules (C8).
+- **Default damage shares.** They are conservative:
+  - External slots get 0 for every kind; equipment zones decide (C3, D2).
+  - Internal slots let through 0.5 of pierce and 0.25 of corrosive. Sealed slots let through 0.5 of pierce and no corrosive.
+  - Thermal and cold go by the heat path, and radiation by its own path.
+  - Ionic and blast get 0, because `emp_act` recursion and D5's `explosion_contents_severity()` already reach contents.
+- **One step,** `dq_path_step(holder, child, effect, kind, penetration)`, multiplies three factors:
+  1. the slot's own transmission;
+  2. for internal and sealed slots, the holder's attenuation: `1 - PROP_INSULATION` for heat, or `1 - armour` for damage (the kind's armour key, after penetration) and for radiation (`"rad"`);
+  3. the same attenuation from every thing in the holder's layers further out, outermost first.
+
+  Gas crosses a step unless the slot is sealed. `dq_path_share(child, from, ...)` multiplies the steps down a nested chain. A holder without slots passes nothing.
+- **Damage.** `/atom/receive_damage()` ends with `propagate_damage(packet)`, and each child gets a packet of its own through its own `receive_damage()`, so nested holders pass it on in turn. Point kinds (blunt, sharp, pierce) land on one thing per slot; the other kinds reach every thing. A holder destroyed by the hit has already spilled its contents, so they get nothing.
+- **Heat.** `/obj/fire_act()` calls `propagate_fire()` first. Each child is exposed at `ambient + (T - ambient) × share`, where the ambient temperature comes from `dq_heat_path_ambient()`. When M4 lands, `heat_coupling()`, `create_heat_body()` and `heat_recouple()` should pass the body's conductance through `heat_path_conductance()`, and `dq_heat_path_ambient()` becomes `get_interior_temperature()`. Latent entries get no bodies.
+- **Insulation** is `PROP_INSULATION`, a P1 property on a ratio scale, read from the `/obj/var/insulation` type var.
+- **Declared holders:**
+
+  | Holder | Slot exposure | Insulation | Damage that passes |
+  |---|---|---|---|
+  | Closets, crates, lockers | internal (they share the room's air) | 0.5 | pierce 0.25, corrosive 0.25 |
+  | Folders | internal | 0.1 | sharp 0.5, pierce 1, corrosive 0.5 |
+
+- **Tests** are in `dq_containment_path_tests.dm`:
+  - a closet and a freezer in a fire protect their contents per their insulation;
+  - the path through a closet and then a folder;
+  - weapon hits on a bag: blunt and cutting blows stay on the bag, a stab goes through, and armour and penetration change how much;
+  - a closet, and a bag inside it, reached through the real `receive_weapon_hit()`;
+  - a sealed slot blocks gas, including when nested;
+  - three worn layers attenuate heat and blows in order.
+
+**What later items need**
+- **C3 (equipment).**
+  - Declare body-part equipment slots with `layer` (`SLOT_LAYER_UNDERSUIT` .. `SLOT_LAYER_PLATE`) and external exposure. Pockets and the inside of a suit storage are internal.
+  - Clothing sets `insulation` from its heat-protection data. `worn_factors` and zone armour then read the path instead of scanning.
+  - Route mob hits to the covering layers through `dq_path_step`, with zones (`zones covered` in §3 is not built yet).
+  - Decide `reaches_mobs` for anything that holds a mob.
+- **C4 (storage).** `/obj/item/storage` gets an internal slot, and bags then take the default shares. Until then a bag passes nothing.
+- **C5 (latent).** A damage share that reaches a slot holding entries resolves them, with one roll per group (§4.2). Heat stays on the container's body.
+- **C6 (machine internals).** Internals are internal slots. Circuit boards and parts expressed as tiers take shares only once they are materialized.
+- **C7 (vore).** A belly is a sealed slot with `reaches_mobs = TRUE` and its own damage and heat rules, replacing digestion's direct damage.
+- **C8 (occupants and mechs).** Occupant slots set `reaches_mobs` and their shares, such as a pod's glass. D5's `explosion_contents_severity()` overrides become blast shares on those slots.
+- **D2** interns armour. `dq_path_armor()` is the single read to switch over.
+- **H2 and M4** wire in `heat_path_conductance()` as described above.
+
 ## 4. Latent contents
 
 ### 4.1 Three stages
