@@ -205,19 +205,69 @@
 		/obj/item/seeds/wurmwoad = 3
 		)
 
-/obj/machinery/seed_storage/attack_hand(mob/user as mob)
+/obj/machinery/seed_storage/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/seed_storage_insert_seeds,
+		/datum/interaction/machine_item/seed_storage_insert_bag,
+		/datum/interaction/machine_hand/ungated/seed_storage_use,
+	)
+	..()
+
+/obj/machinery/seed_storage/proc/not_locked_down(mob/actor, atom/target, obj/item/held)
+	return !lockdown
+
+/// Insert loose seeds.
+/datum/interaction/machine_item/seed_storage_insert_seeds
+	id = "seed_storage_insert_seeds"
+	name = "Insert seeds"
+	held_type = /obj/item/seeds
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/seed_storage/proc/not_locked_down, "it's locked down"))
+	effect = /obj/machinery/seed_storage/proc/interaction_insert_seeds
+
+/obj/machinery/seed_storage/proc/interaction_insert_seeds(mob/user, obj/item/seeds/O, datum/interaction/interaction)
+	add(O)
+	user.visible_message(span_filter_notice("[user] puts \the [O.name] into \the [src]."), span_filter_notice("You put \the [O] into \the [src]."))
+	return TRUE
+
+/// Empty a seed bag into storage.
+/datum/interaction/machine_item/seed_storage_insert_bag
+	id = "seed_storage_insert_bag"
+	name = "Empty seed bag"
+	held_type = /obj/item/storage/bag/plants
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/seed_storage/proc/not_locked_down, "it's locked down"))
+	effect = /obj/machinery/seed_storage/proc/interaction_insert_bag
+
+/obj/machinery/seed_storage/proc/interaction_insert_bag(mob/user, obj/item/storage/P, datum/interaction/interaction)
+	var/loaded = 0
+	for(var/obj/item/seeds/G in P.contents)
+		++loaded
+		add(G)
+	if (loaded)
+		user.visible_message(span_filter_notice("[user] puts the seeds from \the [P.name] into \the [src]."), span_filter_notice("You put the seeds from \the [P.name] into \the [src]."))
+	else
+		to_chat(user, span_notice("There are no seeds in \the [P.name]."))
+	return TRUE
+
+/// Old attack_hand (never called ..()).
+/datum/interaction/machine_hand/ungated/seed_storage_use
+	id = "seed_storage_use"
+	name = "Use"
+	effect = /obj/machinery/seed_storage/proc/interaction_use
+
+/obj/machinery/seed_storage/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 
 	if(seconds_electrified != 0)
 		if(shock(user, 100))
-			return
+			return TRUE
 
 	if(panel_open)
 		wires.Interact(user)
 	if(lockdown)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/seed_storage/tgui_interact(mob/user, datum/tgui/ui)
 	if(!seeds_initialized)
@@ -387,24 +437,6 @@
 				qdel(N)
 				return TRUE
 			break
-
-/obj/machinery/seed_storage/attackby(obj/item/O as obj, mob/user as mob)
-	if (istype(O, /obj/item/seeds) && !lockdown)
-		add(O)
-		user.visible_message(span_filter_notice("[user] puts \the [O.name] into \the [src]."), span_filter_notice("You put \the [O] into \the [src]."))
-		return
-	else if (istype(O, /obj/item/storage/bag/plants) && !lockdown)
-		var/obj/item/storage/P = O
-		var/loaded = 0
-		for(var/obj/item/seeds/G in P.contents)
-			++loaded
-			add(G)
-		if (loaded)
-			user.visible_message(span_filter_notice("[user] puts the seeds from \the [O.name] into \the [src]."), span_filter_notice("You put the seeds from \the [O.name] into \the [src]."))
-		else
-			to_chat(user, span_notice("There are no seeds in \the [O.name]."))
-		return
-	return ..()
 
 /obj/machinery/seed_storage/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)

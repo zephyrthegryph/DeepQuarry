@@ -184,6 +184,3 @@
 
 /obj/machinery/meter/turf/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
 	return ITEM_INTERACT_BLOCKING
-
-/obj/machinery/meter/turf/attackby(obj/item/item, mob/user)
-	return

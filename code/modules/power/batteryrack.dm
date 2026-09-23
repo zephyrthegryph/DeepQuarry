@@ -215,25 +215,39 @@
 		LAZYREMOVE(internal_cells, C)
 	return ..()
 
-/obj/machinery/power/smes/batteryrack/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/cell)) // ID Card, try to insert it.
-		if(insert_cell(W, user))
-			to_chat(user, span_filter_notice("You insert \the [W] into \the [src]."))
-		else
-			to_chat(user, span_filter_notice("\The [src] has no empty slot for \the [W]"))
-	if(!..())
-		return 0
-	if(default_part_replacement(user, W))
-		return
+/obj/machinery/power/smes/batteryrack/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/batteryrack_insert_cell,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
+
+/**
+ * Old attackby: cell handling ran, then the proc always fell through to ..()
+ * (base attackby / signal) and default_part_replacement regardless of the
+ * outcome. consumes_input is FALSE / the effect declines so the entry moves
+ * on to the declared part_replacement candidate and then the base, matching.
+ */
+/datum/interaction/machine_item/batteryrack_insert_cell
+	id = "batteryrack_insert_cell"
+	name = "Insert cell"
+	held_type = /obj/item/cell
+	consumes_input = FALSE
+	effect = /obj/machinery/power/smes/batteryrack/proc/interaction_insert_cell
+
+/obj/machinery/power/smes/batteryrack/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
+	if(insert_cell(W, user))
+		to_chat(user, span_filter_notice("You insert \the [W] into \the [src]."))
+	else
+		to_chat(user, span_filter_notice("\The [src] has no empty slot for \the [W]"))
+	return FALSE
 
 /obj/machinery/power/smes/batteryrack/inputting()
 	return
 
 /obj/machinery/power/smes/batteryrack/outputting()
 	return
-
-/obj/machinery/power/smes/batteryrack/attack_hand(mob/user)
-	tgui_interact(user)
 
 /obj/machinery/power/smes/batteryrack/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -65,34 +65,36 @@
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
-/obj/machinery/slot_machine/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/slot_machine/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/slot_machine_use,
+	)
+	..()
+
+/datum/interaction/machine_item/slot_machine_use
+	id = "slot_machine_use"
+	name = "Insert chip"
+	held_type = /obj/item
+	effect = /obj/machinery/slot_machine/proc/interaction_attackby
+
+/obj/machinery/slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
 	if(busy)
-		to_chat(user,span_notice("The slot machine is currently running."))
-		return
+		to_chat(user, span_notice("The slot machine is currently running."))
+		return TRUE
 
 	if(!anchored)
-		to_chat(user,span_notice(" The slot machine isn't secured."))
-		return
+		to_chat(user, span_notice(" The slot machine isn't secured."))
+		return TRUE
 
-	var/handled = 0
-	var/paid = 0
-
-	if(istype(W, /obj/item/spacecasinocash))
-		var/obj/item/spacecasinocash/C = W
-		paid = insert_chip(C, user)
-		handled = 1
-
+	if(istype(held, /obj/item/spacecasinocash))
+		var/obj/item/spacecasinocash/C = held
+		var/paid = insert_chip(C, user)
 		if(paid)
-			return
-		if(handled)
-			SStgui.update_uis(src)
-			return // don't smack that machine with your 2 chips
+			return TRUE
+		SStgui.update_uis(src)
+		return TRUE // don't smack that machine with your 2 chips
 
-	else if(!(stat & NOPOWER))
-		return
-
-	else if(isbroken)
-		return
+	return TRUE
 
 /obj/machinery/slot_machine/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user)
 	if (ispowered == 0)
@@ -281,33 +283,36 @@
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
-/obj/machinery/station_slot_machine/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/station_slot_machine/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/station_slot_machine_use,
+	)
+	..()
+
+/datum/interaction/machine_item/station_slot_machine_use
+	id = "station_slot_machine_use"
+	name = "Insert cash"
+	held_type = /obj/item
+	effect = /obj/machinery/station_slot_machine/proc/interaction_attackby
+
+/obj/machinery/station_slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
 	if(busy)
-		to_chat(user,span_notice("The slot machine is currently running."))
-		return
+		to_chat(user, span_notice("The slot machine is currently running."))
+		return TRUE
 
 	if(!anchored)
-		to_chat(user,span_notice(" The slot machine isn't secured."))
-		return
+		to_chat(user, span_notice(" The slot machine isn't secured."))
+		return TRUE
 
-	var/handled = 0
-	var/paid = 0
-
-	if(istype(W, /obj/item/spacecash))
-		var/obj/item/spacecash/C = W
-		paid = insert_cash(C, user)
-		handled = 1
+	if(istype(held, /obj/item/spacecash))
+		var/obj/item/spacecash/C = held
+		var/paid = insert_cash(C, user)
 		if(paid)
-			return
-		if(handled)
-			SStgui.update_uis(src)
-			return // don't smack that machine with your 2 chips
+			return TRUE
+		SStgui.update_uis(src)
+		return TRUE // don't smack that machine with your 2 chips
 
-	else if(!(stat & NOPOWER))
-		return
-
-	else if(isbroken)
-		return
+	return TRUE
 
 /obj/machinery/station_slot_machine/proc/insert_cash(obj/item/spacecash/cashmoney, mob/user)
 	if (ispowered == 0)

@@ -32,33 +32,22 @@
 
 	return formatted
 
-/obj/machinery/computer/card/verb/eject_id()
-	set category = "Object"
-	set name = "Eject ID Card"
-	set src in oview(1)
+/obj/machinery/computer/card/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/card_insert_id,
+		/datum/interaction/machine_verb/card_eject_id,
+		/datum/interaction/machine_hand/card_open_ui,
+	)
+	..()
 
-	if(!usr || usr.stat || usr.lying)	return
+/// Old attackby: an ID card scanned or set to be modified.
+/datum/interaction/machine_item/card_insert_id
+	id = "card_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/computer/card/proc/interaction_insert_id
 
-	if(scan)
-		to_chat(usr, "You remove \the [scan] from \the [src].")
-		scan.forceMove(get_turf(src))
-		if(!usr.get_active_hand() && ishuman(usr))
-			usr.put_in_hands(scan)
-		scan = null
-	else if(modify)
-		to_chat(usr, "You remove \the [modify] from \the [src].")
-		modify.forceMove(get_turf(src))
-		if(!usr.get_active_hand() && ishuman(usr))
-			usr.put_in_hands(modify)
-		modify = null
-	else
-		to_chat(usr, "There is nothing to remove from the console.")
-	return
-
-/obj/machinery/computer/card/attackby(obj/item/card/id/id_card, mob/user)
-	if(!istype(id_card))
-		return ..()
-
+/obj/machinery/computer/card/proc/interaction_insert_id(mob/user, obj/item/card/id/id_card, datum/interaction/interaction)
 	if(!scan && (ACCESS_CHANGE_IDS in id_card.GetAccess()) && (user.unEquip(id_card) || (id_card.loc == user && istype(user,/mob/living/silicon/robot)))) //Grippers. Again. ~Mechoid
 		user.drop_item()
 		id_card.forceMove(src)
@@ -70,11 +59,43 @@
 
 	SStgui.update_uis(src)
 	attack_hand(user)
+	return TRUE
 
-/obj/machinery/computer/card/attack_hand(mob/user as mob)
-	if(..()) return
-	if(stat & (NOPOWER|BROKEN)) return
+/// Old object verb.
+/datum/interaction/machine_verb/card_eject_id
+	id = "card_eject_id"
+	name = "Eject ID Card"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/computer/card/proc/interaction_eject_id
+
+/obj/machinery/computer/card/proc/interaction_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
+	if(scan)
+		to_chat(user, "You remove \the [scan] from \the [src].")
+		scan.forceMove(get_turf(src))
+		if(!user.get_active_hand() && ishuman(user))
+			user.put_in_hands(scan)
+		scan = null
+	else if(modify)
+		to_chat(user, "You remove \the [modify] from \the [src].")
+		modify.forceMove(get_turf(src))
+		if(!user.get_active_hand() && ishuman(user))
+			user.put_in_hands(modify)
+		modify = null
+	else
+		to_chat(user, "There is nothing to remove from the console.")
+	return TRUE
+
+/// Old attack_hand: `if(..()) return; if(stat & (NOPOWER|BROKEN)) return; tgui_interact(user)`.
+/datum/interaction/machine_hand/card_open_ui
+	id = "card_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/card/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/card/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	if(stat & (NOPOWER|BROKEN))
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/card/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

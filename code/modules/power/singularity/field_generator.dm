@@ -94,24 +94,37 @@
 	return PROCESS_KILL
 
 
-/obj/machinery/field_generator/attack_hand(mob/user as mob)
-	if(state == 2)
-		if(get_dist(src, user) <= 1)//Need to actually touch the thing to turn it on
-			if(src.active >= 1)
-				to_chat(user, "You are unable to turn off the [src.name] once it is online.")
-				return 1
-			else
-				user.visible_message("[user.name] turns on the [src.name]", \
-					"You turn on the [src.name].", \
-					"You hear heavy droning")
-				turn_on()
-				log_game("FIELDGEN([x],[y],[z]) Activated by [key_name(user)]")
-				investigate_log(span_green("activated") + " by [user.key].","singulo")
+/obj/machinery/field_generator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/field_generator_activate,
+	)
+	..()
 
-				src.add_fingerprint(user)
-	else
-		to_chat(user, "The [src] needs to be firmly secured to the floor first.")
-		return
+/// Old attack_hand (never called ..()). The old dist > 1 case did nothing silently;
+/// here it's folded into the reach requirement, which shows a reach message instead.
+/datum/interaction/machine_hand/ungated/field_generator_activate
+	id = "field_generator_activate"
+	name = "Activate"
+	category = INTERACTION_CAT_TOGGLE
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/field_generator/proc/is_secured, "needs to be firmly secured to the floor first"), REQ_ON(PRED_TARGET, /obj/machinery/field_generator/proc/is_off, "you are unable to turn off the field generator once it is online"))
+	effect = /obj/machinery/field_generator/proc/interaction_activate
+
+/obj/machinery/field_generator/proc/is_secured(mob/actor, atom/target, obj/item/held)
+	return state == 2
+
+/obj/machinery/field_generator/proc/is_off(mob/actor, atom/target, obj/item/held)
+	return active < 1
+
+/obj/machinery/field_generator/proc/interaction_activate(mob/user, obj/item/held, datum/interaction/interaction)
+	user.visible_message("[user.name] turns on the [name]", \
+		"You turn on the [name].", \
+		"You hear heavy droning")
+	turn_on()
+	log_game("FIELDGEN([x],[y],[z]) Activated by [key_name(user)]")
+	investigate_log(span_green("activated") + " by [user.key].","singulo")
+
+	add_fingerprint(user)
+	return TRUE
 
 
 /obj/machinery/field_generator/proc/construction_tool_act(mob/user, obj/item/W, tool_quality)

@@ -57,31 +57,43 @@ Nothing else in the console has ID requirements.
 		d_disk = null
 	return ..()
 
-/obj/machinery/computer/rdconsole_tg/attackby(obj/item/D, mob/user, list/modifiers, list/attack_modifiers)
-	//Loading a disk into it.
-	if(istype(D, /obj/item/disk))
-		if(istype(D, /obj/item/disk/tech_disk))
-			if(t_disk)
-				to_chat(user, span_warning("A technology disk is already loaded!"))
-				return
-			if(!user.unEquip(D, target = src))
-				to_chat(user, span_warning("[D] is stuck to your hand!"))
-				return
-			t_disk = D
-		else if (istype(D, /obj/item/disk/design_disk))
-			if(d_disk)
-				to_chat(user, span_warning("A design disk is already loaded!"))
-				return
-			if(!user.unEquip(D, target = src))
-				to_chat(user, span_warning("[D] is stuck to your hand!"))
-				return
-			d_disk = D
-		else
-			to_chat(user, span_warning("Machine cannot accept disks in that format."))
-			return
-		to_chat(user, span_notice("You insert [D] into \the [src]!"))
-		return
-	return ..()
+/obj/machinery/computer/rdconsole_tg/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/rdconsole_insert_disk,
+		/datum/interaction/machine_hand/ungated/rdconsole_open_ui,
+	)
+	..()
+
+/// Old attackby: load a tech or design disk.
+/datum/interaction/machine_item/rdconsole_insert_disk
+	id = "rdconsole_insert_disk"
+	name = "Insert disk"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/disk
+	effect = /obj/machinery/computer/rdconsole_tg/proc/interaction_insert_disk
+
+/obj/machinery/computer/rdconsole_tg/proc/interaction_insert_disk(mob/user, obj/item/D, datum/interaction/interaction)
+	if(istype(D, /obj/item/disk/tech_disk))
+		if(t_disk)
+			to_chat(user, span_warning("A technology disk is already loaded!"))
+			return TRUE
+		if(!user.unEquip(D, target = src))
+			to_chat(user, span_warning("[D] is stuck to your hand!"))
+			return TRUE
+		t_disk = D
+	else if (istype(D, /obj/item/disk/design_disk))
+		if(d_disk)
+			to_chat(user, span_warning("A design disk is already loaded!"))
+			return TRUE
+		if(!user.unEquip(D, target = src))
+			to_chat(user, span_warning("[D] is stuck to your hand!"))
+			return TRUE
+		d_disk = D
+	else
+		to_chat(user, span_warning("Machine cannot accept disks in that format."))
+		return TRUE
+	to_chat(user, span_notice("You insert [D] into \the [src]!"))
+	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/enqueue_node(id, mob/user)
 	if(!stored_research || !LAZYACCESS(stored_research.available_nodes, id) || LAZYACCESS(stored_research.researched_nodes, id))
@@ -151,11 +163,19 @@ Nothing else in the console has ID requirements.
 	atom_say("Not enough research points...")
 	return FALSE
 
-/obj/machinery/computer/rdconsole_tg/attack_hand(mob/user as mob)
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/rdconsole_open_ui
+	id = "rdconsole_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/tgui_interact(mob/user, datum/tgui/ui = null)
 	. = ..()

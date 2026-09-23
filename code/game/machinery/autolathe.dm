@@ -106,8 +106,23 @@
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/autolathe/attack_hand(mob/user as mob)
+/obj/machinery/autolathe/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/autolathe_interact,
+		/datum/interaction/machine_alt/autolathe_reset_drop,
+		/datum/interaction/machine_item/autolathe_attackby,
+	)
+	..()
+
+/// Old attack_hand: `interact(user)`, never called ..().
+/datum/interaction/machine_hand/ungated/autolathe_interact
+	id = "autolathe_interact"
+	name = "Use"
+	effect = /obj/machinery/autolathe/proc/interaction_use
+
+/obj/machinery/autolathe/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
+	return TRUE
 
 /obj/machinery/autolathe/interact(mob/user)
 	if(panel_open)
@@ -404,36 +419,53 @@
 	drop_direction = direction
 	balloon_alert(usr, "dropping [dir2text(drop_direction)]")
 
-/obj/machinery/autolathe/click_alt(mob/user)
+/// Old click_alt: kept whole (BLOCKING and SUCCESS both consume the input; neither falls through).
+/datum/interaction/machine_alt/autolathe_reset_drop
+	id = "autolathe_reset_drop"
+	name = "Reset drop direction"
+	effect = /obj/machinery/autolathe/proc/interaction_reset_drop
+
+/obj/machinery/autolathe/proc/interaction_reset_drop(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!drop_direction)
-		return CLICK_ACTION_BLOCKING
+		return TRUE
 	if(busy)
 		balloon_alert(user, "busy printing!")
-		return CLICK_ACTION_SUCCESS
+		return TRUE
 	balloon_alert(user, "drop direction reset")
 	drop_direction = 0
-	return CLICK_ACTION_SUCCESS
+	return TRUE
 
-/obj/machinery/autolathe/attackby(obj/item/O as obj, mob/user as mob)
+/**
+ * Old attackby, kept whole. The robot-module/busy/part-replacement/stat/panel_open guards
+ * swallow ANY item (they ran before the disk istype check); a non-disk item that passes
+ * them falls through (effect returns FALSE) exactly as the old `return ..()` did.
+ */
+/datum/interaction/machine_item/autolathe_attackby
+	id = "autolathe_attackby"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/autolathe/proc/interaction_attackby
+
+/obj/machinery/autolathe/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 	if(is_robot_module(O))
-		return
+		return TRUE
 
 	if(busy)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return
+		return TRUE
 
 	if(default_part_replacement(user, O))
-		return
+		return TRUE
 
 	if(stat)
-		return
+		return TRUE
 
 	if(panel_open)
 		to_chat(user, "close the panel first!")
-		return
+		return TRUE
 
 	if(!istype(O, /obj/item/disk/design_disk) && !istype(O, /obj/item/disk/tech_disk))
-		return ..()
+		return FALSE
 
 	// The rest has to do with loading from design disks
 	user.visible_message(span_notice("[user] begins to load \the [O] in \the [src]..."),
@@ -445,7 +477,7 @@
 		busy = FALSE
 		update_static_data_for_all_viewers()
 		balloon_alert(user, "interrupted!")
-		return
+		return TRUE
 
 	var/list/not_imported
 	var/design_count = 0

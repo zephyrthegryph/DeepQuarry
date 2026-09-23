@@ -29,12 +29,28 @@
 		E += C.rating
 	efficiency = E
 
-/obj/machinery/telepad/attackby(obj/item/W as obj, mob/user as mob)
-	src.add_fingerprint(user)
+/obj/machinery/telepad/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/telepad_part_replacement,
+	)
+	..()
 
-	if(default_part_replacement(user, W))
-		return
-	return ..()
+/**
+ * Old attackby: fingerprinted on any item, then tried a part replacement,
+ * falling through to the base attackby (the signal, etc.) otherwise. The
+ * fingerprint applies even when the item isn't a part replacer, so this
+ * can't reuse the shared /datum/interaction/machine_item/part_replacement.
+ */
+/datum/interaction/machine_item/telepad_part_replacement
+	id = "telepad_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item
+	effect = /obj/machinery/telepad/proc/interaction_part_replacement_impl
+
+/obj/machinery/telepad/proc/interaction_part_replacement_impl(mob/user, obj/item/W, datum/interaction/interaction)
+	add_fingerprint(user)
+	return default_part_replacement(user, W) ? TRUE : FALSE
 
 /obj/machinery/telepad/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)

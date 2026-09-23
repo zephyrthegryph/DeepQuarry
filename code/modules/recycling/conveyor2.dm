@@ -151,13 +151,26 @@
 			if(items_moved >= 10)
 				break
 
-// attack with item, place item on conveyor
-/obj/machinery/conveyor/attackby(obj/item/I, mob/user)
-	if(isrobot(user))	return //Carn: fix for borgs dropping their modules on conveyor belts
-	if(I.loc != user)	return // This should stop mounted modules ending up outside the module.
+/obj/machinery/conveyor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/conveyor_drop_item,
+		/datum/interaction/machine_hand/ungated/conveyor_push_pulled,
+	)
+	..()
+
+// attack with item, place item on conveyor. Old attackby never called ..(), so the whole thing stays in the effect.
+/datum/interaction/machine_item/conveyor_drop_item
+	id = "conveyor_drop_item"
+	name = "Drop on belt"
+	held_type = /obj/item
+	effect = /obj/machinery/conveyor/proc/interaction_drop_item
+
+/obj/machinery/conveyor/proc/interaction_drop_item(mob/user, obj/item/I, datum/interaction/interaction)
+	if(isrobot(user))	return TRUE //Carn: fix for borgs dropping their modules on conveyor belts
+	if(I.loc != user)	return TRUE // This should stop mounted modules ending up outside the module.
 
 	user.drop_item(get_turf(src))
-	return
+	return TRUE
 
 /obj/machinery/conveyor/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
@@ -172,14 +185,19 @@
 			C.conveyors |= src
 	return ITEM_INTERACT_SUCCESS
 
-// attack with hand, move pulled object onto conveyor
-/obj/machinery/conveyor/attack_hand(mob/user as mob)
+// attack with hand, move pulled object onto conveyor. Old attack_hand never called ..(), so ungated.
+/datum/interaction/machine_hand/ungated/conveyor_push_pulled
+	id = "conveyor_push_pulled"
+	name = "Push pulled object"
+	effect = /obj/machinery/conveyor/proc/interaction_push_pulled
+
+/obj/machinery/conveyor/proc/interaction_push_pulled(mob/user, obj/item/held, datum/interaction/interaction)
 	if ((!( user.canmove ) || user.restrained() || !( user.pulling )))
-		return
+		return TRUE
 	if (user.pulling.anchored)
-		return
+		return TRUE
 	if ((user.pulling.loc != user.loc && get_dist(user, user.pulling) > 1))
-		return
+		return TRUE
 	if (ismob(user.pulling))
 		var/mob/M = user.pulling
 		M.stop_pulling()
@@ -188,7 +206,7 @@
 	else
 		step(user.pulling, get_dir(user.pulling.loc, src))
 		user.stop_pulling()
-	return
+	return TRUE
 
 
 // make the conveyor broken
@@ -298,12 +316,23 @@
 		C.set_operating(position)
 	return PROCESS_KILL
 
-// attack with hand, switch position
-/obj/machinery/conveyor_switch/attack_hand(mob/user)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return
+/obj/machinery/conveyor_switch/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/conveyor_switch_toggle,
+	)
+	..()
 
+// attack with hand, switch position. Old attack_hand never called ..(), so ungated.
+/datum/interaction/machine_hand/ungated/conveyor_switch_toggle
+	id = "conveyor_switch_toggle"
+	name = "Toggle"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/conveyor_switch/proc/lets_in, "access denied"))
+	effect = /obj/machinery/conveyor_switch/proc/interaction_toggle
+
+/obj/machinery/conveyor_switch/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
+
+/obj/machinery/conveyor_switch/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(position == 0)
 		if(last_pos < 0 || oneway == 1)
 			position = 1
@@ -324,9 +353,7 @@
 		if(S.id == src.id)
 			S.position = position
 			S.update()
-
-/obj/machinery/conveyor_switch/attackby(obj/item/I, mob/user)
-	return ..()
+	return TRUE
 
 /obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
 	if(!panel_open)

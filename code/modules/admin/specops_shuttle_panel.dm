@@ -1,13 +1,24 @@
 // Special Operations Shuttle console — structured TGUI.
 
-/obj/machinery/computer/specops_shuttle/attack_hand(mob/user as mob)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access Denied."))
-		return
-	if(..())
-		return
+/obj/machinery/computer/specops_shuttle/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/specops_shuttle_open_ui,
+	)
+	..()
+
+/datum/interaction/machine_hand/specops_shuttle_open_ui
+	id = "specops_shuttle_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/computer/specops_shuttle/proc/lets_in, "access denied"))
+	effect = /obj/machinery/computer/specops_shuttle/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/specops_shuttle/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
+
+/obj/machinery/computer/specops_shuttle/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/specops_shuttle/tgui_state(mob/user)
 	return GLOB.tgui_default_state

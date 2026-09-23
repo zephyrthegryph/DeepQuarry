@@ -97,8 +97,11 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/attack_ghost(mob/user)
 	return src.attack_hand(user)
 
-/obj/machinery/portable_atmospherics/powered/scrubber/attack_hand(mob/user)
-	tgui_interact(user)
+/obj/machinery/portable_atmospherics/powered/scrubber/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -179,8 +182,22 @@
 	// Not climbable!
 	RemoveElement(/datum/element/climbable)
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/attack_hand(mob/user as mob)
-		to_chat(user, span_notice("You can't directly interact with this machine. Use the scrubber control console."))
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/scrubber_huge_no_hand,
+		/datum/interaction/machine_item/scrubber_huge_reject_cell_tank,
+	)
+	..()
+
+/// Old attack_hand: always refuses, never calls ..().
+/datum/interaction/machine_hand/ungated/scrubber_huge_no_hand
+	id = "scrubber_huge_no_hand"
+	name = "Use"
+	effect = /obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/interaction_no_hand
+
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/interaction_no_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("You can't directly interact with this machine. Use the scrubber control console."))
+	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/update_icon()
 	src.overlays = 0
@@ -224,16 +241,15 @@
 		use_power(power_draw)
 		update_connected_network()
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/attackby(obj/item/I as obj, mob/user as mob)
-	//doesn't use power cells
-	if(istype(I, /obj/item/cell))
-		return
+/// Old attackby: silently swallows cells and tanks (doesn't use power cells or hold tanks); anything else falls through to ..().
+/datum/interaction/machine_item/scrubber_huge_reject_cell_tank
+	id = "scrubber_huge_reject_cell_tank"
+	name = "Use"
+	held_type = list(/obj/item/cell, /obj/item/tank)
+	effect = /obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/interaction_reject_cell_tank
 
-	//doesn't hold tanks
-	if(istype(I, /obj/item/tank))
-		return
-
-	..()
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/interaction_reject_cell_tank(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/wrench_act(mob/user, obj/item/tool)
 	if(on)

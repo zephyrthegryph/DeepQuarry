@@ -44,15 +44,30 @@ Possible to do for anyone motivated enough:
 	var/last_request = 0 //to prevent request spam. ~Carn
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
-/obj/machinery/hologram/holopad/attackby(obj/item/I as obj, user as mob)
-	return attack_hand(user)
+/obj/machinery/hologram/holopad/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/holopad_request,
+		/datum/interaction/machine_hand/ungated/holopad_request,
+	)
+	..()
+
+/datum/interaction/machine_item/holopad_request
+	id = "holopad_request_item"
+	name = "Request AI presence"
+	held_type = /obj/item
+	effect = /obj/machinery/hologram/holopad/proc/interaction_request
+
+/datum/interaction/machine_hand/ungated/holopad_request
+	id = "holopad_request_hand"
+	name = "Request AI presence"
+	effect = /obj/machinery/hologram/holopad/proc/interaction_request
 
 /obj/machinery/hologram/holopad/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
 
-/obj/machinery/hologram/holopad/attack_hand(mob/living/carbon/human/user) //Carn: Hologram requests.
+/obj/machinery/hologram/holopad/proc/interaction_request(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Carn: Hologram requests.
 	if(!istype(user))
-		return
+		return TRUE
 	if(tgui_alert(user,"Would you like to request an AI's presence?","Request AI",list("Yes","No")) == "Yes")
 		if(last_request + 200 < world.time) //don't spam the AI with requests you jerk!
 			last_request = world.time
@@ -63,6 +78,7 @@ Possible to do for anyone motivated enough:
 				to_chat(AI, span_info("Your presence is requested at <a href='byond://?src=\ref[AI];jumptoholopad=\ref[src]'>\the [area]</a>."))
 		else
 			to_chat(user, span_notice("A request for AI presence was already sent recently."))
+	return TRUE
 
 /obj/machinery/hologram/holopad/attack_ai(mob/living/silicon/ai/user)
 	if(!istype(user))

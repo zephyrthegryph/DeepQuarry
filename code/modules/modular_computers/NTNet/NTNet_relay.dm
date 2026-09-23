@@ -79,8 +79,11 @@
 	data["dos_crashed"] = dos_failure
 	return data
 
-/obj/machinery/ntnet_relay/attack_hand(mob/living/user)
-	tgui_interact(user)
+/obj/machinery/ntnet_relay/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
 
 /obj/machinery/ntnet_relay/tgui_act(action, params)
 	if(..())

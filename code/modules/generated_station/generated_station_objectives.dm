@@ -76,13 +76,25 @@
 	var/station_id
 	var/uploaded = FALSE
 
-/obj/machinery/generated_station_upload_terminal/attack_hand(mob/user)
+/obj/machinery/generated_station_upload_terminal/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/generated_station_upload,
+	)
+	..()
+
+/// The old attack_hand: never called ..(), uploaded the control payload.
+/datum/interaction/machine_hand/ungated/generated_station_upload
+	id = "generated_station_upload"
+	name = "Upload payload"
+	effect = /obj/machinery/generated_station_upload_terminal/proc/interaction_upload
+
+/obj/machinery/generated_station_upload_terminal/proc/interaction_upload(mob/user, obj/item/held, datum/interaction/interaction)
 	if(uploaded)
 		to_chat(user, span_notice("The payload is already resident."))
-		return
+		return TRUE
 	user.visible_message(span_notice("[user] begins uploading a control payload."), span_notice("You begin uploading the malware payload."))
 	if(!do_after(user, 5 SECONDS, target = src) || QDELETED(src))
-		return
+		return TRUE
 	uploaded = TRUE
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
 	for(var/key in SSexpedition?.sites)
@@ -91,6 +103,7 @@
 			candidate.station_director?.set_department_connected("ai-1", FALSE)
 			break
 	visible_message(span_warning("[src] reports: DIRECTOR NETWORK OVERRIDE ACCEPTED."))
+	return TRUE
 
 /obj/item/generated_station_command_asset
 	name = "station command cryptographic core"

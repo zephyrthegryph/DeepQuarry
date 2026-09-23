@@ -25,18 +25,37 @@
 /**
  * Generic procs common to all
  */
-/obj/machinery/recycling/attackby(obj/item/O, mob/user)
+/obj/machinery/recycling/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/recycling_feed,
+	)
+	..()
+
+/**
+ * Old attackby: several silent guards (actor must be living and adjacent, not busy), then
+ * part replacement, then hand-feeding. Kept as one interaction with the whole old body since
+ * it never called ..() (unconditionally intercepts every item) and the guards mix silent
+ * returns with messaged refusals.
+ */
+/datum/interaction/machine_item/recycling_feed
+	id = "recycling_feed"
+	name = "Feed"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item
+	effect = /obj/machinery/recycling/proc/interaction_feed
+
+/obj/machinery/recycling/proc/interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!isliving(user) || !Adjacent(user))
-		return
+		return TRUE
 
 	if(working)
 		to_chat(user, span_warning("\The [src] is busy! Wait until it's idle."))
-		return
+		return TRUE
 
 	if(default_part_replacement(user, O))
-		return
+		return TRUE
 	if(!hand_fed)
-		return
+		return TRUE
 	var/mob/living/M = user
 	if(can_accept_item(O))
 		M.drop_from_inventory(O)
@@ -44,6 +63,7 @@
 		M.visible_message(span_infoplain(span_bold("[M]") + " inserts [O] into [src]."), span_info("You insert [O] into [src]."))
 	else
 		to_chat(user, span_warning("\The [src] can't accept [O] for recycling."))
+	return TRUE
 
 // Conveyors etc
 /obj/machinery/recycling/Bumped(atom/A)
@@ -66,7 +86,6 @@
 /obj/machinery/recycling/crusher
 	name = "recycling crusher"
 	desc = "This machine is designed to break things into their constituient parts via the application of directed kinetic force. A.K.A. it crushes things into bits."
-	description_info = "This machine is the first step in turning things back into their materials. There's a bit of loss, depending on how upgraded it is. The output of this machine goes into the sorter."
 	icon = 'icons/obj/recycling.dmi'
 	icon_state = "crusher"
 	circuit = /obj/item/circuitboard/recycler_crusher
@@ -133,7 +152,6 @@
 /obj/machinery/recycling/sorter
 	name = "debris sorter"
 	desc = "A machine for retaining debris and sorting it until enough of a similar material have accumulated to warrant conversion into sheets or ingots."
-	description_info = "The output of the recycling crusher should go into this machine, and it will output material dust, which can go into the sheet stamper to make sheets."
 	icon = 'icons/obj/recycling.dmi'
 	icon_state = "sorter"
 	circuit = /obj/item/circuitboard/recycler_sorter
@@ -180,7 +198,6 @@
 /obj/machinery/recycling/stamper
 	name = "sheet stamper"
 	desc = "A machine to press homogenous material particulate into more solid portable units of production. A.K.A. it compacts dust into sheets."
-	description_info = "This machine is the last step in the recycling process. The output of a debris sorter should be fed into this machine and it will produce material sheets."
 	icon = 'icons/obj/recycling.dmi'
 	icon_state = "stamper"
 	circuit = /obj/item/circuitboard/recycler_stamper

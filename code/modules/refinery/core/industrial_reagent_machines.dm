@@ -37,21 +37,34 @@
 		visible_message(span_danger("\The [src] splashes everywhere as it is disassembled!"))
 		reagents.splash_area(get_turf(src),2)
 
-/obj/machinery/reagent_refinery/attackby(obj/item/O as obj, mob/user as mob)
-	if(reagents && (istype(O,/obj/item/reagent_containers/glass) || \
-		istype(O,/obj/item/reagent_containers/food/drinks/glass2) || \
-		istype(O,/obj/item/reagent_containers/food/drinks/shaker)))
-		// Transfer FROM internal beaker to this.
-		if (reagents.total_volume <= 0)
-			to_chat(usr,"\The [src] is empty. There is nothing to drain into \the [O].")
-			return
-		// Fill up the whole volume if we can, DUMP IT OUT
-		var/obj/item/reagent_containers/C = O
-		reagents.trans_to_obj(C, reagents.total_volume)
-		playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
-		to_chat(usr,"You drain \the [src] into \the [C].")
-		return
-	. = ..()
+/obj/machinery/reagent_refinery/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/reagent_refinery_drain,
+		/datum/interaction/machine_verb/reagent_refinery_set_transfer_amount,
+	)
+	..()
+
+/datum/interaction/machine_item/reagent_refinery_drain
+	id = "reagent_refinery_drain"
+	name = "Drain"
+	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker)
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/reagent_refinery/proc/has_reagents_holder, null))
+	effect = /obj/machinery/reagent_refinery/proc/interaction_drain
+
+/obj/machinery/reagent_refinery/proc/has_reagents_holder(mob/actor, atom/target, obj/item/held)
+	return !!reagents
+
+/obj/machinery/reagent_refinery/proc/interaction_drain(mob/user, obj/item/held, datum/interaction/interaction)
+	// Transfer FROM internal beaker to this.
+	if(reagents.total_volume <= 0)
+		to_chat(user, "\The [src] is empty. There is nothing to drain into \the [held].")
+		return TRUE
+	// Fill up the whole volume if we can, DUMP IT OUT
+	var/obj/item/reagent_containers/C = held
+	reagents.trans_to_obj(C, reagents.total_volume)
+	playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
+	to_chat(user, "You drain \the [src] into \the [C].")
+	return TRUE
 
 /obj/machinery/reagent_refinery/wrench_act(mob/user, obj/item/tool)
 	if(!anchored)
@@ -76,15 +89,18 @@
 			other.update_icon()
 
 /// Changes the transfer rate of reagents from this machine to the next
-/obj/machinery/reagent_refinery/verb/set_APTFT() //set amount_per_transfer_from_this
-	PROTECTED_PROC(TRUE)
-	set name = "Set transfer amount"
-	set category = "Object"
-	set src in view(1)
-	var/N = tgui_input_list(usr, "Amount per transfer from this:","[src]", possible_transfer_amounts)
-	if(N && Adjacent(usr))
+/datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+	id = "reagent_refinery_set_transfer_amount"
+	name = "Set transfer amount"
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount
+
+/obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount(mob/user, obj/item/held, datum/interaction/interaction)
+	var/N = tgui_input_list(user, "Amount per transfer from this:","[src]", possible_transfer_amounts)
+	if(N && Adjacent(user))
 		amount_per_transfer_from_this = N
 		update_icon()
+	return TRUE
 
 /// Transfers reagents from us to the next machine. Calls handle_transfer() on any target machines to check if they can accept reagents.
 /obj/machinery/reagent_refinery/proc/transfer_tank( datum/reagents/RT, obj/machinery/reagent_refinery/target, source_forward_dir, filter_id = "")

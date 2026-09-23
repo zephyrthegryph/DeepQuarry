@@ -54,23 +54,85 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		else
 			. += "It's completely empty."
 
-/obj/machinery/cash_register/attack_hand(mob/user)
+/obj/machinery/cash_register/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/cash_register_pay,
+		/datum/interaction/machine_alt/cash_register_open_box_alt,
+		/datum/interaction/machine_hand/ungated/cash_register_use,
+		/datum/interaction/machine_verb/cash_register_open_box_verb,
+	)
+	..()
+
+/// Old attack_hand, which never called ..(): no gate.
+/datum/interaction/machine_hand/ungated/cash_register_use
+	id = "cash_register_use"
+	name = "Use"
+	effect = /obj/machinery/cash_register/proc/interaction_use
+
+/obj/machinery/cash_register/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	// Don't be accessible from the wrong side of the machine
-	if(get_dir(src, user) & GLOB.reverse_dir[src.dir]) return
+	if(get_dir(src, user) & GLOB.reverse_dir[src.dir])
+		return TRUE
 
 	if(cash_open)
 		if(cash_stored)
 			spawn_money(cash_stored, loc, user)
 			cash_stored = 0
 			cut_overlay("register_cash")
-			return
+			return TRUE
 		open_cash_box(user)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
-/obj/machinery/cash_register/click_alt(mob/user)
-	if(Adjacent(user))
-		open_cash_box(user)
+/// Old click_alt: `if(Adjacent(user)) open_cash_box(user)`.
+/datum/interaction/machine_alt/cash_register_open_box_alt
+	id = "cash_register_open_box_alt"
+	name = "Open cash box"
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/machinery/cash_register/proc/interaction_open_box_alt
+
+/obj/machinery/cash_register/proc/interaction_open_box_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	open_cash_box(user)
+	return TRUE
+
+/**
+ * Old attackby: paying methods (ID/e-wallet/cash) or a price scan for anything else. An emag
+ * declined (returns FALSE) so dispatch falls through to `..()`, exactly as the old
+ * `else if(istype(O, /obj/item/card/emag)) return ..()` branch did.
+ */
+/datum/interaction/machine_item/cash_register_pay
+	id = "cash_register_pay"
+	name = "Pay / scan"
+	held_type = /obj/item
+	effect = /obj/machinery/cash_register/proc/interaction_pay
+
+/obj/machinery/cash_register/proc/interaction_pay(mob/user, obj/item/O, datum/interaction/interaction)
+	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)
+	var/obj/item/card/id/I = O.GetID()
+	if(I)
+		scan_card(I, O, user)
+	else if (istype(O, /obj/item/spacecash/ewallet))
+		var/obj/item/spacecash/ewallet/E = O
+		scan_wallet(E, user)
+	else if (istype(O, /obj/item/spacecash))
+		var/obj/item/spacecash/SC = O
+		if(cash_open)
+			to_chat(user, "You neatly sort the cash into the box.")
+			cash_stored += SC.worth
+			add_overlay("register_cash")
+			if(ishuman(user))
+				var/mob/living/carbon/human/H = user
+				H.drop_from_inventory(SC)
+			qdel(SC)
+		else
+			scan_cash(SC, user)
+	else if(istype(O, /obj/item/card/emag))
+		return FALSE
+	// Not paying: Look up price and add it to transaction_amount
+	else
+		scan_item_price(O, user)
+	return TRUE
 
 /obj/machinery/cash_register/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	. = ..()
@@ -229,32 +291,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 			LAZYCLEARLIST(transaction_logs)
 			to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 			return TRUE
-
-/obj/machinery/cash_register/attackby(obj/item/O, mob/user)
-	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)
-	var/obj/item/card/id/I = O.GetID()
-	if(I)
-		scan_card(I, O, user)
-	else if (istype(O, /obj/item/spacecash/ewallet))
-		var/obj/item/spacecash/ewallet/E = O
-		scan_wallet(E, user)
-	else if (istype(O, /obj/item/spacecash))
-		var/obj/item/spacecash/SC = O
-		if(cash_open)
-			to_chat(user, "You neatly sort the cash into the box.")
-			cash_stored += SC.worth
-			add_overlay("register_cash")
-			if(ishuman(user))
-				var/mob/living/carbon/human/H = user
-				H.drop_from_inventory(SC)
-			qdel(SC)
-		else
-			scan_cash(SC, user)
-	else if(istype(O, /obj/item/card/emag))
-		return ..()
-	// Not paying: Look up price and add it to transaction_amount
-	else
-		scan_item_price(O, user)
 
 /obj/machinery/cash_register/wrench_act(mob/user, obj/item/tool)
 	toggle_anchors(tool, user)
@@ -531,12 +567,18 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	service_staff_name = null
 	ticket_changed()
 
-/obj/machinery/cash_register/verb/open_cash_box(mob/user)
-	set category = "Object"
-	set name = "Open Cash Box"
-	set desc = "Open/closes the register's cash box."
-	set src in view(1)
+/// Old object verb, now a plain proc: still called directly by interaction_use(),
+/// interaction_open_box_alt() and emag_act().
+/datum/interaction/machine_verb/cash_register_open_box_verb
+	id = "cash_register_open_box_verb"
+	name = "Open Cash Box"
+	effect = /obj/machinery/cash_register/proc/interaction_open_box_verb
 
+/obj/machinery/cash_register/proc/interaction_open_box_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	open_cash_box(user)
+	return TRUE
+
+/obj/machinery/cash_register/proc/open_cash_box(mob/user)
 	if(user.stat) return
 
 	if(cash_open)

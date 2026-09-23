@@ -233,7 +233,19 @@
 	else
 		icon_state = "airlock_sensor_off"
 
-/obj/machinery/airlock_sensor/attack_hand(mob/user)
+/obj/machinery/airlock_sensor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/airlock_sensor_cycle,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/airlock_sensor_cycle
+	id = "airlock_sensor_cycle"
+	name = "Use"
+	effect = /obj/machinery/airlock_sensor/proc/interaction_cycle
+
+/obj/machinery/airlock_sensor/proc/interaction_cycle(mob/user, obj/item/held, datum/interaction/interaction)
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
 	signal.data["tag"] = master_tag
@@ -241,6 +253,7 @@
 
 	radio_connection.post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 	flick("airlock_sensor_cycle", src)
+	return TRUE
 
 /obj/machinery/airlock_sensor/process()
 	if(on)
@@ -291,9 +304,6 @@
 		. += "It has a command of \"[command]\"."
 		if(panel_open)
 			. += "It's panel is open."
-
-/obj/machinery/airlock_sensor/attackby(obj/item/I, mob/user)
-	return ..()
 
 /obj/machinery/airlock_sensor/multitool_act(mob/user, obj/item/tool)
 	var/choice = tgui_alert(user, "What would you like to configure?", "[src] Configuration", list("Master Tag", "ID Tag", "Frequency", "Command", "None"))
@@ -370,12 +380,23 @@
 		if(panel_open)
 			. += "It's panel is open."
 
-/obj/machinery/access_button/attackby(obj/item/I as obj, mob/user as mob)
-	//Swiping ID on the access button
-	if (istype(I, /obj/item/card/id) || istype(I, /obj/item/pda))
-		attack_hand(user)
-		return
-	return ..()
+/obj/machinery/access_button/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/access_button_swipe,
+		/datum/interaction/machine_hand/ungated/access_button_use,
+	)
+	..()
+
+/// Old attackby: swiping an ID or PDA is treated as an attack_hand.
+/datum/interaction/machine_item/access_button_swipe
+	id = "access_button_swipe"
+	name = "Swipe"
+	held_type = list(/obj/item/card/id, /obj/item/pda)
+	effect = /obj/machinery/access_button/proc/interaction_swipe
+
+/obj/machinery/access_button/proc/interaction_swipe(mob/user, obj/item/I, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
 
 /obj/machinery/access_button/multitool_act(mob/user, obj/item/tool)
 	var/choice = tgui_alert(user, "What would you like to change?", "[src] Settings", list("Tag", "Frequency", "Command", "None"))
@@ -396,7 +417,12 @@
 
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/access_button/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/access_button_use
+	id = "access_button_use"
+	name = "Use"
+	effect = /obj/machinery/access_button/proc/interaction_use
+
+/obj/machinery/access_button/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(!allowed(user))
 		to_chat(user, span_warning("Access Denied"))
@@ -409,6 +435,7 @@
 
 		radio_connection.post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 	flick("access_button_cycle", src)
+	return TRUE
 
 /obj/machinery/access_button/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

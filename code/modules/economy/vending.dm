@@ -215,53 +215,113 @@ GLOBAL_LIST_EMPTY(vending_products)
 		to_chat(user, span_filter_notice("You short out \the [src]'s product lock."))
 		return 1
 
-/obj/machinery/vending/attackby(obj/item/W as obj, mob/user as mob)
-	var/obj/item/card/id/I = W.GetID()
+/obj/machinery/vending/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/vending_id_dispatch,
+		/datum/interaction/machine_item/vending_refill,
+		/datum/interaction/machine_item/vending_fake_coin,
+		/datum/interaction/machine_item/vending_coin,
+		/datum/interaction/machine_item/vending_stock,
+		/datum/interaction/machine_hand/ungated/vending_use,
+		/datum/interaction/machine_verb/vending_check_logs,
+	)
+	..()
 
-	if(I || istype(W, /obj/item/spacecash))
-		attack_hand(user)
-		return
-	else if(istype(W, /obj/item/refill_cartridge))
-		if(stat & (BROKEN|NOPOWER))
-			to_chat(user, span_notice("You cannot refill [src] while it is not functioning."))
-			return
-		if(!anchored)
-			to_chat(user, span_notice("You cannot refill [src] while it is not secured."))
-			return
-		if(panel_open)
-			to_chat(user, span_notice("You cannot refill [src] while it's panel is open."))
-			return
-		if(!refillable)
-			to_chat(user, span_notice("\the [src] does not have a refill port."))
-			return
-		var/obj/item/refill_cartridge/RC = W
-		if(RC.can_refill(src))
-			to_chat(user, span_notice("You refill [src] using [RC]."))
-			user.drop_from_inventory(RC)
-			qdel(RC)
-			refill_inventory()
-			return
-		else
-			to_chat(user, span_notice("You cannot refill [src] with [RC]."))
-			return
-	else if(istype(W, /obj/item/fake_coin) && has_premium)
-		to_chat(user, span_notice("\The [W] doesn't fit into the coin slot on \the [src]."))
-		return
-	else if(istype(W, /obj/item/coin) && has_premium)
-		user.drop_item()
-		W.forceMove(src)
-		coin = W
-		categories |= CAT_COIN
-		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
-		SStgui.update_uis(src)
-		return
+/// Old attackby: an ID card (via GetID()) or spacecash dispatches straight to attack_hand.
+/datum/interaction/machine_item/vending_id_dispatch
+	id = "vending_id_dispatch"
+	name = "Use"
+	held_type = /obj/item
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/vending/proc/wants_hand_dispatch, null))
+	effect = /obj/machinery/vending/proc/interaction_id_dispatch
+
+/// No side effects: whether attackby would have dispatched to attack_hand for this item.
+/obj/machinery/vending/proc/wants_hand_dispatch(mob/actor, atom/target, obj/item/held)
+	return held.GetID() || istype(held, /obj/item/spacecash)
+
+/obj/machinery/vending/proc/interaction_id_dispatch(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
+
+/// Old attackby: refill cartridge branch.
+/datum/interaction/machine_item/vending_refill
+	id = "vending_refill"
+	name = "Refill"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/refill_cartridge
+	effect = /obj/machinery/vending/proc/interaction_refill
+
+/obj/machinery/vending/proc/interaction_refill(mob/user, obj/item/refill_cartridge/RC, datum/interaction/interaction)
+	if(stat & (BROKEN|NOPOWER))
+		to_chat(user, span_notice("You cannot refill [src] while it is not functioning."))
+		return TRUE
+	if(!anchored)
+		to_chat(user, span_notice("You cannot refill [src] while it is not secured."))
+		return TRUE
+	if(panel_open)
+		to_chat(user, span_notice("You cannot refill [src] while it's panel is open."))
+		return TRUE
+	if(!refillable)
+		to_chat(user, span_notice("\the [src] does not have a refill port."))
+		return TRUE
+	if(RC.can_refill(src))
+		to_chat(user, span_notice("You refill [src] using [RC]."))
+		user.drop_from_inventory(RC)
+		qdel(RC)
+		refill_inventory()
+		return TRUE
 	else
+		to_chat(user, span_notice("You cannot refill [src] with [RC]."))
+		return TRUE
 
-		for(var/datum/stored_item/vending_product/R in product_records)
-			if(istype(W, R.item_path) && (W.name == R.item_name))
-				stock(W, R, user)
-				return
-		..()
+/// Old attackby: fake coins are rejected when we take real coins.
+/datum/interaction/machine_item/vending_fake_coin
+	id = "vending_fake_coin"
+	name = "Insert coin"
+	held_type = /obj/item/fake_coin
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/vending/proc/has_premium_slot, null))
+	effect = /obj/machinery/vending/proc/interaction_fake_coin
+
+/// No side effects.
+/obj/machinery/vending/proc/has_premium_slot(mob/actor, atom/target, obj/item/held)
+	return has_premium
+
+/obj/machinery/vending/proc/interaction_fake_coin(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user, span_notice("\The [W] doesn't fit into the coin slot on \the [src]."))
+	return TRUE
+
+/// Old attackby: insert a premium coin.
+/datum/interaction/machine_item/vending_coin
+	id = "vending_coin"
+	name = "Insert coin"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/coin
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/vending/proc/has_premium_slot, null))
+	effect = /obj/machinery/vending/proc/interaction_coin
+
+/obj/machinery/vending/proc/interaction_coin(mob/user, obj/item/W, datum/interaction/interaction)
+	user.drop_item()
+	W.forceMove(src)
+	coin = W
+	categories |= CAT_COIN
+	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
+	SStgui.update_uis(src)
+	return TRUE
+
+/// Old attackby: the final "anything else" branch: restock a matching product, else fall through to ..().
+/datum/interaction/machine_item/vending_stock
+	id = "vending_stock"
+	name = "Stock"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item
+	effect = /obj/machinery/vending/proc/interaction_stock
+
+/obj/machinery/vending/proc/interaction_stock(mob/user, obj/item/W, datum/interaction/interaction)
+	for(var/datum/stored_item/vending_product/R in product_records)
+		if(istype(W, R.item_path) && (W.name == R.item_name))
+			stock(W, R, user)
+			return TRUE
+	return FALSE
 
 /obj/machinery/vending/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -353,16 +413,23 @@ GLOBAL_LIST_EMPTY(vending_products)
 /obj/machinery/vending/attack_ghost(mob/user)
 	return attack_hand(user)
 
-/obj/machinery/vending/attack_hand(mob/user as mob)
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/vending_use
+	id = "vending_use"
+	name = "Use"
+	effect = /obj/machinery/vending/proc/interaction_use
+
+/obj/machinery/vending/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 
 	if(seconds_electrified != 0)
 		if(shock(user, 100))
-			return
+			return TRUE
 
 	wires.Interact(user)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/vending/ui_assets(mob/user)
 	return list(
@@ -642,12 +709,15 @@ GLOBAL_LIST_EMPTY(vending_products)
 	else
 		to_chat(user,span_warning("You do not have the required access to view the vending logs for this machine."))
 
-/obj/machinery/vending/verb/check_logs()
-	set name = "Check Vending Logs"
-	set category = "Object"
-	set src in oview(1)
+/// Old object verb: `set src in oview(1)`.
+/datum/interaction/machine_verb/vending_check_logs
+	id = "vending_check_logs"
+	name = "Check Vending Logs"
+	effect = /obj/machinery/vending/proc/interaction_check_logs
 
-	show_log(usr)
+/obj/machinery/vending/proc/interaction_check_logs(mob/user, obj/item/held, datum/interaction/interaction)
+	show_log(user)
+	return TRUE
 
 /**
  * Add item to the machine

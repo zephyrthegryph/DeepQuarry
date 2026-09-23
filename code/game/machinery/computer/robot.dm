@@ -11,12 +11,22 @@
 /obj/machinery/computer/robotics
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/computer/robotics/attack_hand(mob/user as mob)
-	if(..())
-		return
+/obj/machinery/computer/robotics/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/robotics_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/robotics_use
+	id = "robotics_use"
+	name = "Use"
+	effect = /obj/machinery/computer/robotics/proc/interaction_use
+
+/obj/machinery/computer/robotics/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/robotics/proc/is_authenticated(mob/user)
 	if(!istype(user))

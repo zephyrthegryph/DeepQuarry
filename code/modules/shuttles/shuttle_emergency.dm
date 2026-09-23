@@ -186,6 +186,19 @@
 		emagged = 1
 		return 1
 
-/obj/machinery/computer/shuttle_control/emergency/attackby(obj/item/W as obj, mob/user as mob)
-	read_authorization(W)
+/obj/machinery/computer/shuttle_control/emergency/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shuttle_control_emergency_scan_id,
+	)
 	..()
+
+/// Old attackby: always called ..() regardless of the item.
+/datum/interaction/machine_item/shuttle_control_emergency_scan_id
+	id = "shuttle_control_emergency_scan_id"
+	name = "Scan ID"
+	held_type = /obj/item
+	effect = /obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id
+
+/obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id(mob/user, obj/item/W, datum/interaction/interaction)
+	read_authorization(W)
+	return FALSE

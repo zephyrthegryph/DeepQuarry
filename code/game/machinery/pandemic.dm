@@ -183,30 +183,41 @@
 /obj/machinery/computer/pandemic/attack_ai(mob/user)
 	return attack_hand(user)
 
-/obj/machinery/computer/pandemic/attack_hand(mob/user)
-	if(..())
-		return
-	tgui_interact(user)
+/obj/machinery/computer/pandemic/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/pandemic_insert_beaker,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
+
+/// Insert a beaker/syringe of blood.
+/datum/interaction/machine_item/pandemic_insert_beaker
+	id = "pandemic_insert_beaker"
+	name = "Insert beaker"
+	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/computer/pandemic/proc/is_beaker_or_syringe, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/computer/pandemic/proc/beaker_slot_empty, "a beaker is already loaded"))
+	effect = /obj/machinery/computer/pandemic/proc/interaction_insert_beaker
+
+/obj/machinery/computer/pandemic/proc/is_beaker_or_syringe(mob/actor, atom/target, obj/item/held)
+	return (istype(held, /obj/item/reagent_containers/glass) && held.is_open_container()) || istype(held, /obj/item/reagent_containers/syringe)
+
+/obj/machinery/computer/pandemic/proc/beaker_slot_empty(mob/actor, atom/target, obj/item/held)
+	return !beaker
+
+/// The old stat check was silent (no message), so it stays in the effect.
+/obj/machinery/computer/pandemic/proc/interaction_insert_beaker(mob/user, obj/item/I, datum/interaction/interaction)
+	if(stat & (NOPOWER|BROKEN))
+		return TRUE
+	user.drop_item()
+	beaker = I
+	beaker.loc = src
+	to_chat(user, span_notice("You add \the [I] to the machine."))
+	update_tgui_static_data(user)
+	icon_state = "pandemic1"
+	return TRUE
 
 /obj/machinery/computer/pandemic/attack_ghost(mob/user)
 	tgui_interact(user)
-
-/obj/machinery/computer/pandemic/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/reagent_containers/glass) && I.is_open_container() || istype(I, /obj/item/reagent_containers/syringe))
-		if(stat & (NOPOWER|BROKEN))
-			return
-		if(beaker)
-			to_chat(user, span_warning("A [beaker] is already loaded into the machine!"))
-			return
-
-		user.drop_item()
-		beaker = I
-		beaker.loc = src
-		to_chat(user, span_notice("You add \the [I] to the machine."))
-		update_tgui_static_data(user)
-		icon_state = "pandemic1"
-	else
-		return ..()
 
 /obj/machinery/computer/pandemic/screwdriver_act(mob/user, obj/item/tool)
 	eject_beaker()

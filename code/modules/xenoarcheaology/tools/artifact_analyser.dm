@@ -34,11 +34,24 @@
 	if(!owned_scanner)
 		owned_scanner = locate(/obj/machinery/artifact_scanpad) in orange(1, src)
 
-/obj/machinery/artifact_analyser/attack_hand(mob/user)
+/obj/machinery/artifact_analyser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/artifact_analyser_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/artifact_analyser_use
+	id = "artifact_analyser_use"
+	name = "Use"
+	requires = list()
+	effect = /obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use
+
+/obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (NOPOWER|BROKEN) || get_dist(src, user) > 1)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/artifact_analyser/tgui_interact(mob/user, datum/tgui/ui)
 	if(!owned_scanner)

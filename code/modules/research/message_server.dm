@@ -159,23 +159,45 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 			Console.set_light(2)
 
 
-/obj/machinery/message_server/attack_hand(mob/living/user)
-//	to_chat(user, span_blue("There seem to be some parts missing from this server. They should arrive on the station in a few days, give or take a few CentCom delays."))
+/obj/machinery/message_server/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/message_server_upgrade,
+		/datum/interaction/machine_hand/ungated/message_server_toggle,
+	)
+	..()
+
+/// Old attack_hand: never called ..(), so it works even unpowered/broken.
+/datum/interaction/machine_hand/ungated/message_server_toggle
+	id = "message_server_toggle"
+	name = "Toggle PDA relay"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/message_server/proc/interaction_toggle
+
+/obj/machinery/message_server/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
 	active = !active
 	update_icon()
+	return TRUE
 
-	return
+/// Old attackby: the message-monitor upgrade branch. offered_when falls through to the base attackby otherwise.
+/datum/interaction/machine_item/message_server_upgrade
+	id = "message_server_upgrade"
+	name = "Install memory upgrade"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/circuitboard/message_monitor
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/message_server/proc/can_upgrade, null))
+	effect = /obj/machinery/message_server/proc/interaction_upgrade
 
-/obj/machinery/message_server/attackby(obj/item/O, mob/living/user)
-	if (active && !(stat & (BROKEN|NOPOWER)) && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2) && \
-		istype(O,/obj/item/circuitboard/message_monitor))
-		spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)
-		user.drop_item()
-		qdel(O)
-		to_chat(user, span_filter_notice("You install additional memory and processors into message server. Its filtering capabilities been enhanced."))
-	else
-		..(O, user)
+/// No side effects: whether this server can currently take the upgrade board.
+/obj/machinery/message_server/proc/can_upgrade(mob/actor, atom/target, obj/item/held)
+	return active && !(stat & (BROKEN|NOPOWER)) && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
+
+/obj/machinery/message_server/proc/interaction_upgrade(mob/user, obj/item/O, datum/interaction/interaction)
+	spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)
+	user.drop_item()
+	qdel(O)
+	to_chat(user, span_filter_notice("You install additional memory and processors into message server. Its filtering capabilities been enhanced."))
+	return TRUE
 
 /obj/machinery/message_server/update_icon()
 	if((stat & (BROKEN|NOPOWER)))

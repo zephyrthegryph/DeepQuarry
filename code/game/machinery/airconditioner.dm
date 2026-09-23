@@ -168,9 +168,22 @@
 	wake_for_state_change()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/thermoregulator/attack_hand(mob/user)
+/obj/machinery/power/thermoregulator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/thermoregulator_interact,
+	)
+	..()
+
+/// Old attack_hand: `add_fingerprint(user); interact(user)`.
+/datum/interaction/machine_hand/ungated/thermoregulator_interact
+	id = "thermoregulator_interact"
+	name = "Use"
+	effect = /obj/machinery/power/thermoregulator/proc/interaction_use
+
+/obj/machinery/power/thermoregulator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	interact(user)
+	return TRUE
 
 /obj/machinery/power/thermoregulator/interact(mob/user)
 	if(!anchored)

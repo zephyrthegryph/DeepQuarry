@@ -124,8 +124,11 @@
 /obj/machinery/portable_atmospherics/powered/pump/attack_ghost(mob/user)
 	return src.attack_hand(user)
 
-/obj/machinery/portable_atmospherics/powered/pump/attack_hand(mob/user)
-	tgui_interact(user)
+/obj/machinery/portable_atmospherics/powered/pump/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
 
 /obj/machinery/portable_atmospherics/powered/pump/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -222,8 +225,23 @@
 
 	name = "[name] (ID [id])"
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/attack_hand(mob/user)
+/obj/machinery/portable_atmospherics/powered/pump/huge/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/pump_huge_no_interact,
+		/datum/interaction/machine_item/pump_huge_reject_item,
+	)
+	..()
+
+/// The huge pump can't be used by hand at all; direct the player to the console.
+/datum/interaction/machine_hand/ungated/pump_huge_no_interact
+	id = "pump_huge_no_interact"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_no_interact
+
+/obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_no_interact(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You can't directly interact with this machine. Use the pump control console."))
+	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/update_icon()
 	cut_overlays()
@@ -283,16 +301,16 @@
 		use_power(power_draw)
 		update_connected_network()
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/attackby(obj/item/I, mob/user)
-	//doesn't use power cells
-	if(istype(I, /obj/item/cell))
-		return
+/// The huge pump doesn't use power cells or hold tanks; using either on it does nothing.
+/datum/interaction/machine_item/pump_huge_reject_item
+	id = "pump_huge_reject_item"
+	name = "Use"
+	category = INTERACTION_CAT_INSERT
+	held_type = list(/obj/item/cell, /obj/item/tank)
+	effect = /obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_reject_item
 
-	//doesn't hold tanks
-	if(istype(I, /obj/item/tank))
-		return
-
-	..()
+/obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_reject_item(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/wrench_act(mob/user, obj/item/tool)
 	if(on)

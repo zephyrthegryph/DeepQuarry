@@ -61,31 +61,51 @@
 	if(primary)
 		primary.attack_ghost(ghost)
 
-/obj/machinery/hyperpad/centre/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/hyperpad/centre/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/hyperpad_centre_teleport,
+	)
+	..()
+
+/datum/interaction/machine_hand/hyperpad_centre_teleport
+	id = "hyperpad_centre_teleport"
+	name = "Activate"
+	effect = /obj/machinery/hyperpad/centre/proc/interaction_teleport
+
+/obj/machinery/hyperpad/centre/proc/interaction_teleport(mob/user, obj/item/held, datum/interaction/interaction)
 	detect(user)
 	if(!linked_pad || QDELETED(linked_pad))
 		if(!map_pad_link_id || !initMappedLink())
 			to_chat(user, span_warning("There is no linked pad!"))
-			return
+			return TRUE
 	if(teleporting)
 		to_chat(user, span_warning("[src] is charging up. Please wait."))
-		return
+		return TRUE
 	if(world.time < last_teleport + teleport_cooldown)
 		to_chat(user, span_warning("[src] is recharging power. Please wait [round((last_teleport + teleport_cooldown - world.time)/10)] seconds."))
-		return
+		return TRUE
 	if(linked_pad.teleporting)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
-		return
+		return TRUE
 	src.add_fingerprint(user)
 	startteleport(user)
+	return TRUE
 
-/obj/machinery/hyperpad/attack_hand(mob/user)
-	. = ..()
+/obj/machinery/hyperpad/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/hyperpad_delegate,
+	)
+	..()
+
+/datum/interaction/machine_hand/hyperpad_delegate
+	id = "hyperpad_delegate"
+	name = "Activate"
+	effect = /obj/machinery/hyperpad/proc/interaction_delegate
+
+/obj/machinery/hyperpad/proc/interaction_delegate(mob/user, obj/item/held, datum/interaction/interaction)
 	if(primary)
 		primary.attack_hand(user)
+	return TRUE
 
 /obj/machinery/hyperpad/centre/proc/initMappedLink()
 	. = FALSE
