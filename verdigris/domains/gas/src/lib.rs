@@ -1,42 +1,45 @@
+//! vg-gas: the gas domain (`simulation.md` §4). Turf gas runs on the R6
+//! field framework (`cell.rs`, `world.rs`), pipes on the R7 network
+//! framework (`pipes.rs`), and every `/datum/gas_mixture` is a handle into
+//! the gas world (`world.rs`), whoever owns the gas. The DM gas API is the
+//! set of binds below.
+
+pub mod cell;
 pub mod gas;
+pub mod gate;
+#[cfg(feature = "heat")]
+pub(crate) mod heat;
 mod parser;
-pub mod pipenets;
+pub mod pipes;
 mod reaction;
-#[cfg(feature = "turf_processing")]
-pub mod turfs;
+pub mod turf;
+pub mod world;
 
 use byondapi::prelude::*;
 use eyre::Result;
 use gas::constants::{ReactionReturn, GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
 use gas::{
 	amt_gases, constants, gas_idx_from_string, gas_idx_from_value, tot_gases, types, with_gas_info,
-	with_mix, with_mix_mut, with_mixes, with_mixes_custom, with_mixes_mut, GasArena, Mixture,
+	with_mix, with_mix_mut, with_mixes, with_mixes_mut, Mixture,
 };
-use pipenets::PIPE_TOPOLOGY;
 use reaction::react_by_id;
+use world::{with_world, MixRef};
 
-// global_allocator declaration removed (was mimalloc::MiMalloc). A cdylib
-// can have only one global_allocator and auxmos is now linked as an rlib into
-// libverdigris.so; the verdigris crate sets the allocator (or the system default
-// applies). See code/ATMOSPHERICS/README.md.
-
-static _SIMD_DETECTED: ::std::sync::OnceLock<bool> = ::std::sync::OnceLock::new();
-
-/// Apply one complete DM pipe-topology transaction and return the authoritative
-/// connected regions. Input is compact text with semicolon-delimited,
-/// comma-separated four-number records:
-/// `opcode, first, second_or_mixture, volume` where opcodes are upsert=1,
-/// remove=2, connect=3, disconnect=4, clear=5, bind-region-mixture=6,
-/// remove-to-mixture=7. Output
-/// repeats a variable record:
-/// `region, port_count, prior_count, source_count, volume, ports...,
-/// prior_region/volume pairs...,
-/// source_mixture/ratio pairs...`. No gas rebinding is visible until the entire
-/// batch commits.
+/// Applies one DM pipe-topology transaction to the pipe network and returns
+/// the regions DM must rebuild. Input is semicolon-delimited records of four
+/// comma-separated numbers, `opcode, first, second_or_mixture, volume`, with
+/// opcodes upsert=1, remove=2, connect=3, disconnect=4, clear=5,
+/// remove-to-mixture=7 (`RUST_PIPE_OP_*`). An upserted port's gas moves out
+/// of the mixture it names into the network; a removed port's share of its
+/// region is released into the mixture `remove-to-mixture` names.
+///
+/// Output repeats `region handle, port_count, prior_count, volume, ports...,
+/// prior region handles...`; a volume of -1 marks a region that is gone.
 #[auxmacros::bind("/proc/auxmos_pipenet_topology_batch")]
 fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
+	use pipes::op;
 	let encoded = operations.get_string()?;
-	let mut topology = PIPE_TOPOLOGY.lock();
+	let mut parsed = Vec::new();
 	for (operation_index, record) in encoded.split_terminator(';').enumerate() {
 		let fields = record.split(',').collect::<Vec<_>>();
 		if fields.len() != 4 {
@@ -44,146 +47,110 @@ fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
 				"pipenet operation {operation_index} does not contain four fields: {record}"
 			);
 		}
-		let parse = |index: usize| -> Result<f32> {
-			fields[index].parse::<f32>().map_err(|error| {
-				eyre::eyre!(
-					"invalid pipenet number '{}' at operation {operation_index}: {error}",
-					fields[index]
-				)
-			})
-		};
-		let opcode = parse(0)? as u8;
-		match opcode {
-			1 => topology.upsert_port(parse(1)? as u32, parse(2)? as usize, parse(3)?),
-			2 => topology.remove_port(parse(1)? as u32),
-			3 => {
-				let first = parse(1)? as u32;
-				let second = parse(2)? as u32;
-				if !topology.connect(first, second) {
-					eyre::bail!("invalid pipenet connection {first}<->{second}");
-				}
-			}
-			4 => topology.disconnect(parse(1)? as u32, parse(2)? as u32),
-			5 => topology.clear(),
-			6 => {
-				let first = parse(1)? as u32;
-				let second = parse(2)? as usize;
-				if !topology.bind_region_mixture(first, second) {
-					eyre::bail!("cannot bind missing pipenet region {first}");
-				}
-			}
-			7 => topology.remove_port_to(parse(1)? as u32, parse(2)? as usize, parse(3)?),
-			_ => eyre::bail!(
-				"unknown pipenet topology opcode {opcode} at operation {operation_index}: {record}"
-			),
+		let mut n = [0.0f32; 4];
+		for (i, f) in fields.iter().enumerate() {
+			n[i] = f.parse::<f32>().map_err(|error| {
+				eyre::eyre!("invalid pipenet number '{f}' at operation {operation_index}: {error}")
+			})?;
 		}
+		parsed.push(n);
 	}
-	let transitions = topology.commit();
-	let mut result = Vec::new();
-	for transition in transitions {
-		if let Some(detached_target) = transition.detached_target {
-			result.extend([
-				ByondValue::from(0.0),
-				ByondValue::from(1.0),
-				ByondValue::from(0.0),
-				ByondValue::from(transition.sources.len() as f32),
-				ByondValue::from(transition.total_volume),
-				ByondValue::from(detached_target as f32),
+	let result = with_world(|w| -> Result<Vec<f32>> {
+		for [opcode, first, second, volume] in parsed {
+			let port = first as u32;
+			match opcode as u8 {
+				op::UPSERT => {
+					let gas = match MixRef::from_f32(second) {
+						Some(MixRef::Main(slot)) => match w.mains.get_mut(slot) {
+							Some(mix) => {
+								let amounts = world::amounts_of(mix);
+								let t = mix.get_temperature();
+								if w.pipes.port(port).is_none() {
+									mix.clear();
+								}
+								pipes::PipeGas::from_amounts(&amounts, t)
+							}
+							None => pipes::PipeGas::default(),
+						},
+						_ => pipes::PipeGas::default(),
+					};
+					let fresh = w.pipes.port(port).is_none();
+					w.pipes.upsert(
+						port,
+						0,
+						volume,
+						if fresh {
+							gas
+						} else {
+							pipes::PipeGas::default()
+						},
+					);
+				}
+				op::REMOVE => {
+					w.pipes.remove(port, None);
+				}
+				op::CONNECT => {
+					if !w.pipes.connect(port, second as u32) {
+						eyre::bail!("invalid pipenet connection {port}<->{}", second as u32);
+					}
+				}
+				op::DISCONNECT => w.pipes.disconnect(port, second as u32),
+				op::CLEAR => {
+					w.pipes.clear();
+				}
+				op::REMOVE_TO_MIXTURE => {
+					let target = MixRef::from_f32(second).map(MixRef::id);
+					w.pipes.remove(port, target);
+				}
+				other => eyre::bail!("unknown pipenet topology opcode {other}"),
+			}
+		}
+		let (transitions, releases) = w.pipes.commit();
+		for release in releases {
+			let Some(target) = release.target.and_then(MixRef::from_id) else {
+				continue;
+			};
+			let amounts = release.gas.amounts();
+			w.add_amounts(target, &amounts, release.gas.temperature);
+		}
+		let mut out = Vec::new();
+		for t in transitions {
+			#[allow(clippy::cast_precision_loss)]
+			out.extend([
+				MixRef::Pipe(t.slot).id() as f32,
+				t.ports.len() as f32,
+				t.prior.len() as f32,
+				if t.retired { -1.0 } else { t.volume },
 			]);
-			result.extend(transition.sources.into_iter().flat_map(|source| {
-				[
-					ByondValue::from(source.mixture as f32),
-					ByondValue::from(source.ratio),
-				]
-			}));
-			continue;
+			#[allow(clippy::cast_precision_loss)]
+			out.extend(t.ports.iter().map(|&p| p as f32));
+			#[allow(clippy::cast_precision_loss)]
+			out.extend(t.prior.iter().map(|&p| MixRef::Pipe(p).id() as f32));
 		}
-		result.extend([
-			ByondValue::from(transition.region as f32),
-			ByondValue::from(transition.ports.len() as f32),
-			ByondValue::from(transition.prior_regions.len() as f32),
-			ByondValue::from(transition.sources.len() as f32),
-			ByondValue::from(if transition.retired {
-				-1.0
-			} else {
-				transition.total_volume
-			}),
-		]);
-		result.extend(
-			transition
-				.ports
-				.into_iter()
-				.map(|value| ByondValue::from(value as f32)),
-		);
-		result.extend(
-			transition
-				.prior_regions
-				.into_iter()
-				.flat_map(|(region, volume)| {
-					[ByondValue::from(region as f32), ByondValue::from(volume)]
-				}),
-		);
-		result.extend(transition.sources.into_iter().flat_map(|source| {
-			[
-				ByondValue::from(source.mixture as f32),
-				ByondValue::from(source.ratio),
-			]
-		}));
-	}
+		Ok(out)
+	})?;
 	let list = ByondValue::new_list()?;
-	list.write_list(&result)?;
+	list.write_list(&result.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
 	Ok(list)
 }
 
-/// Materialize the gas recipes returned by `auxmos_pipenet_topology_batch` and
-/// bind their public arena mixtures. Input is semicolon-delimited text and each
-/// comma-separated record repeats:
-/// `region, target_mixture, volume, source_count, source_mixture/ratio pairs...`.
-/// Every source is snapshotted before any target changes and all bindings become
-/// authoritative only after the gas transaction succeeds.
-#[auxmacros::bind("/proc/auxmos_pipenet_publish_regions")]
-fn pipenet_publish_regions(publications: ByondValue) -> Result<ByondValue> {
-	let encoded = publications.get_string()?;
-	let mut recipes = Vec::new();
-	let mut bindings = Vec::new();
-	for (record_index, record) in encoded.split_terminator(';').enumerate() {
-		let fields = record.split(',').collect::<Vec<_>>();
-		if fields.len() < 4 {
-			eyre::bail!("truncated pipenet publication header at record {record_index}");
-		}
-		let parse = |index: usize| -> Result<f32> {
-			fields[index].parse::<f32>().map_err(|error| {
-				eyre::eyre!(
-					"invalid pipenet publication number '{}' at record {record_index}: {error}",
-					fields[index]
-				)
-			})
-		};
-		let region = parse(0)? as u32;
-		let target = parse(1)? as usize;
-		let volume = parse(2)?;
-		let source_count = parse(3)? as usize;
-		if fields.len() != 4 + source_count.saturating_mul(2) {
-			eyre::bail!("pipenet publication {record_index} has the wrong source field count");
-		}
-		let mut sources = Vec::with_capacity(source_count);
-		for source_index in 0..source_count {
-			let offset = 4 + source_index * 2;
-			sources.push((parse(offset)? as usize, parse(offset + 1)?));
-		}
-		recipes.push((target, volume, sources));
-		if region != 0 {
-			bindings.push((region, target));
-		}
+/// Binds a gas mixture datum to a pipe region's gas (the handle from
+/// `auxmos_pipenet_topology_batch`). The datum's own slot is freed.
+#[auxmacros::bind("/datum/gas_mixture/proc/__bind_handle")]
+fn bind_handle(mut src: ByondValue, handle: ByondValue) -> Result<ByondValue> {
+	let Some(target) = MixRef::from_f32(handle.get_number()?) else {
+		eyre::bail!("invalid gas handle {handle:?}");
+	};
+	if !matches!(target, MixRef::Pipe(_)) {
+		eyre::bail!("only pipe region handles can be bound");
 	}
-	let mut topology = PIPE_TOPOLOGY.lock();
-	GasArena::rebalance_pipe_regions(&recipes)?;
-	for (region, mixture) in bindings {
-		if !topology.bind_region_mixture(region, mixture) {
-			eyre::bail!("cannot publish missing pipenet region {region}");
+	with_world(|w| {
+		if let Ok(MixRef::Main(slot)) = MixRef::of(&src) {
+			w.mains.free(slot);
 		}
-	}
-	Ok(ByondValue::from(true))
+	});
+	target.store(&mut src)?;
+	Ok(ByondValue::null())
 }
 
 #[cfg(feature = "tracy")]
@@ -205,9 +172,15 @@ fn atmos_callback_handle(remaining: ByondValue) -> Result<ByondValue> {
 
 #[auxmacros::bind("/proc/drain_dirty_gas_mixtures")]
 fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
-	let changes = GasArena::take_dirty_mixtures()
+	#[allow(clippy::cast_precision_loss)]
+	let changes = with_world(world::GasWorld::drain_dirty)
 		.into_iter()
-		.flat_map(|(id, mask)| [ByondValue::from(id as f32), ByondValue::from(mask as f32)])
+		.flat_map(|(id, mask)| {
+			[
+				ByondValue::from(id as f32),
+				ByondValue::from(f32::from(mask)),
+			]
+		})
 		.collect::<Vec<_>>();
 	let list = ByondValue::new_list()?;
 	list.write_list(&changes)?;
@@ -218,44 +191,14 @@ fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
 /// @dm-define GAS_DEPENDENCY_OBSERVATION_STRIDE
 pub const GAS_OBSERVATION_STRIDE: usize = 15;
 
-/// Drains dirty notifications and captures the control-relevant gas state under
-/// one publication read transaction. This lets hundreds of sleeping air alarms
-/// evaluate thresholds without each crossing the FFI boundary seven times.
-/// Flat stride: id, mask, revision, pressure, temperature, volume,
-/// o2, co2, plasma, methane, n2o, volatile_fuel, miasma, zauker, total_moles.
+/// Drains dirty notifications and captures the control-relevant gas state in
+/// one call, so sleeping air alarms evaluate thresholds without crossing the
+/// FFI once per value. Flat stride: id, mask, revision, pressure,
+/// temperature, volume, o2, co2, plasma, methane, n2o, volatile_fuel,
+/// miasma, zauker, total_moles.
 #[auxmacros::bind("/proc/drain_dirty_gas_observations")]
 fn drain_dirty_gas_observations() -> Result<ByondValue> {
-	let changes = GasArena::take_dirty_mixtures();
-	let gas_indices = [
-		gas::GAS_OXYGEN,
-		gas::GAS_CARBON_DIOXIDE,
-		gas::GAS_PLASMA,
-		gas::GAS_METHANE,
-		gas::GAS_NITROUS_OXIDE,
-		gas::GAS_VOLATILE_FUEL,
-		gas::GAS_MIASMA,
-		gas::GAS_ZAUKER,
-	];
-	let values = GasArena::with_all_mixtures(|gases| {
-		let mut values = Vec::with_capacity(changes.len() * GAS_OBSERVATION_STRIDE);
-		for &(id, mask) in &changes {
-			let Some(mixture) = gases.get(id) else {
-				continue;
-			};
-			let mixture = mixture.read();
-			values.extend([
-				id as f32,
-				mask as f32,
-				GasArena::revision(id) as f32,
-				mixture.return_pressure(),
-				mixture.get_temperature(),
-				mixture.volume,
-			]);
-			values.extend(gas_indices.iter().map(|&gas| mixture.get_moles(gas)));
-			values.push(mixture.total_moles());
-		}
-		values
-	});
+	let values = with_world(world::GasWorld::drain_observations);
 	let list = ByondValue::new_list()?;
 	list.write_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
 	Ok(list)
@@ -263,64 +206,75 @@ fn drain_dirty_gas_observations() -> Result<ByondValue> {
 
 #[auxmacros::bind("/proc/watch_dirty_gas_mixture")]
 fn watch_dirty_gas_mixture(id: ByondValue, interest_mask: ByondValue) -> Result<ByondValue> {
-	GasArena::watch_dirty_mixture(id.get_number()? as usize, interest_mask.get_number()? as u8);
+	let (id, mask) = (id.get_number()? as u32, interest_mask.get_number()? as u8);
+	with_world(|w| w.watch_dirty(id, mask));
 	Ok(ByondValue::null())
 }
 
 #[auxmacros::bind("/proc/unwatch_dirty_gas_mixture")]
 fn unwatch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
-	GasArena::unwatch_dirty_mixture(id.get_number()? as usize);
+	let id = id.get_number()? as u32;
+	with_world(|w| w.unwatch_dirty(id));
 	Ok(ByondValue::null())
 }
 
-#[cfg(feature = "turf_processing")]
+/// `list(main mixtures live, main slots, pipe regions, pipe ports,
+/// registered turf cells, gas frames, pending callbacks, heat frames, heat
+/// bodies, heat frame us)` for SSair's stat panel.
 #[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
 fn auxmos_diagnostics() -> Result<ByondValue> {
-	let gas = GasArena::diagnostics();
-	let turf = turfs::turf_arena_diagnostics();
+	let gas = turf::diagnostics();
 	#[cfg(feature = "heat")]
-	let heat = turfs::heat::heat_diagnostics();
+	let heat = heat::heat_diagnostics();
 	#[cfg(not(feature = "heat"))]
 	let heat = (0, 0, 0);
-	let values = [
-		gas.0,
-		gas.1,
-		gas.2,
-		gas.3,
-		gas.4,
-		gas.5,
-		turf.0,
-		turf.1,
-		turf.2,
-		turf.3,
-		turfs::pending_active_turfs(),
-		auxcallback::pending_callbacks(),
-		heat.0,
-		heat.1,
-		heat.2 as usize,
-		turf.4,
-		turf.5,
-	]
-	.into_iter()
-	.map(|value| ByondValue::from(value as f32))
-	.collect::<Vec<_>>();
+	#[allow(clippy::cast_precision_loss)]
+	let values = gas
+		.into_iter()
+		.chain([
+			auxcallback::pending_callbacks(),
+			heat.0,
+			heat.1,
+			heat.2 as usize,
+		])
+		.map(|value| ByondValue::from(value as f32))
+		.collect::<Vec<_>>();
 	let list = ByondValue::new_list()?;
 	list.write_list(&values)?;
 	Ok(list)
 }
 
-/// Fills in the first unused slot in the gas mixtures vector, or adds another one, then sets the argument ByondValue to point to it.
+/// Gives a new `/datum/gas_mixture` a main-owned slot sized from its
+/// `initial_volume`, and writes the handle into it.
 #[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_register")]
-fn register_gasmixture_hook(src: ByondValue) -> Result<ByondValue> {
-	gas::GasArena::register_mix(src)
+fn register_gasmixture_hook(mut src: ByondValue) -> Result<ByondValue> {
+	let volume = src.read_number_id(byond_string!("initial_volume"))?;
+	let slot = with_world(|w| w.mains.alloc(Mixture::from_vol(volume)))?;
+	MixRef::Main(slot).store(&mut src)?;
+	Ok(ByondValue::null())
 }
 
-/// Adds the gas mixture's ID to the queue of mixtures that have been deleted, to be reused later.
-/// This version is only if auxcleanup is not being used; it should be called from /datum/gas_mixture/Del.
+/// Frees a mixture's main-owned slot. Turf and pipe gas outlive their datums
+/// (the cell and the region own it).
 #[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_unregister")]
 fn unregister_gasmixture_hook(src: ByondValue) -> Result<ByondValue> {
-	gas::GasArena::unregister_mix(&src);
+	if let Ok(r) = MixRef::of(&src) {
+		with_world(|w| {
+			if let MixRef::Main(slot) = r {
+				w.unwatch_dirty(r.id());
+				w.mains.free(slot);
+			}
+		});
+	}
 	Ok(ByondValue::null())
+}
+
+/// The mixture's gas revision (bumped whenever its gas changes).
+#[auxmacros::bind("/datum/gas_mixture/proc/revision")]
+fn hook_mix_revision(src: ByondValue) -> Result<ByondValue> {
+	let r = MixRef::of(&src)?;
+	#[allow(clippy::cast_precision_loss)]
+	Ok(with_world(|w| (w.revision(r) & 0x00FF_FFFF) as f32).into())
 }
 
 /// Returns: Heat capacity, in J/K (probably).
@@ -372,8 +326,8 @@ fn thermal_energy_hook(src: ByondValue) -> Result<ByondValue> {
 /// Args: (mixture). Merges the gas from the giver into src, without modifying the giver mix.
 #[auxmacros::bind("/datum/gas_mixture/proc/merge")]
 fn merge_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
-	with_mixes_custom(&src, &giver, |src_mix, giver_mix| {
-		src_mix.write().merge(&giver_mix.read());
+	with_mixes_mut(&src, &giver, |src_mix, giver_mix| {
+		src_mix.merge(giver_mix);
 		Ok(ByondValue::null())
 	})
 }
@@ -405,8 +359,8 @@ fn remove_hook(src: ByondValue, into: ByondValue, amount_arg: ByondValue) -> Res
 /// Arg: (mixture). Makes src into a copy of the argument mixture.
 #[auxmacros::bind("/datum/gas_mixture/proc/copy_from")]
 fn copy_from_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
-	with_mixes_custom(&src, &giver, |src_mix, giver_mix| {
-		src_mix.write().copy_from_mutable(&giver_mix.read());
+	with_mixes_mut(&src, &giver, |src_mix, giver_mix| {
+		src_mix.copy_from_mutable(giver_mix);
 		Ok(ByondValue::null())
 	})
 }
@@ -444,24 +398,19 @@ pub const GAS_READ_HEADER: usize = 5;
 #[auxmacros::bind("/proc/read_mixtures")]
 fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
 	// get_list_values, not iter(): iter() stops at the first null entry.
-	let ids = mixtures
+	let refs = mixtures
 		.get_list_values()?
 		.iter()
-		.map(|mix| {
-			mix.read_number_id(byond_string!("_extools_pointer_gasmixture"))
-				.ok()
-				.map(|n| n as usize)
-		})
+		.map(|mix| MixRef::of(mix).ok())
 		.collect::<Vec<_>>();
 	let stride = GAS_READ_HEADER + gas::GAS_COUNT;
-	let values = GasArena::with_all_mixtures(|all| {
-		let mut values = Vec::with_capacity(ids.len() * stride);
-		for id in &ids {
-			let Some(mix) = id.and_then(|id| all.get(id)) else {
+	let values = with_world(|w| {
+		let mut values = Vec::with_capacity(refs.len() * stride);
+		for r in &refs {
+			let Some(mix) = r.and_then(|r| w.load(r)) else {
 				values.extend(std::iter::repeat_n(0.0, stride));
 				continue;
 			};
-			let mix = mix.read();
 			values.extend([
 				mix.return_pressure(),
 				mix.get_temperature(),
@@ -784,27 +733,45 @@ fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Resul
 	})
 }
 
-/// Flat operation list: source arena ID, sink arena ID, requested moles. Returns
+/// Flat operation list: source handle, sink handle, requested moles. Returns
 /// one actual mole count per operation after shared-source clamping.
 #[auxmacros::bind("/proc/auxmos_batch_transfer")]
 fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
-	// Arena ID zero is valid. `ByondValue::iter()` also probes each element as
-	// an associative-list key; probing list[0] terminates that iterator, making
-	// any batch whose first source is arena slot zero appear empty. `values()`
-	// walks the numbered list positions directly and accepts every valid ID.
+	// `values()` walks the numbered positions directly (handle 0 is valid).
 	let values = operations.values()?.collect::<Vec<_>>();
 	let parsed = values
 		.chunks_exact(3)
 		.map(|operation| {
-			let source = operation[0].get_number().unwrap_or(-1.0) as usize;
-			let sink = operation[1].get_number().unwrap_or(-1.0) as usize;
+			let source = MixRef::from_f32(operation[0].get_number().unwrap_or(-1.0));
+			let sink = MixRef::from_f32(operation[1].get_number().unwrap_or(-1.0));
 			(source, sink, operation[2].get_number().unwrap_or(0.0))
 		})
 		.collect::<Vec<_>>();
-	let results = GasArena::batch_transfer(&parsed)
-		.into_iter()
-		.map(ByondValue::from)
-		.collect::<Vec<_>>();
+	let results = with_world(|w| {
+		parsed
+			.into_iter()
+			.map(|(source, sink, requested)| {
+				let (Some(source), Some(sink)) = (source, sink) else {
+					return 0.0;
+				};
+				if source == sink || requested <= 0.0 {
+					return 0.0;
+				}
+				let (Some(src_before), Some(sink_before)) = (w.load(source), w.load(sink)) else {
+					return 0.0;
+				};
+				let actual = requested.min(src_before.total_moles()).max(0.0);
+				if actual > 0.0 {
+					let (mut a, mut b) = (src_before.clone(), sink_before.clone());
+					b.merge(&a.remove(actual));
+					w.store(source, &src_before, &a);
+					w.store(sink, &sink_before, &b);
+				}
+				actual
+			})
+			.map(ByondValue::from)
+			.collect::<Vec<_>>()
+	});
 	let list = ByondValue::new_list()?;
 	list.write_list(&results)?;
 	Ok(list)
@@ -821,19 +788,56 @@ fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
 	let parsed = values
 		.chunks_exact(3)
 		.map(|operation| {
-			let pipe = operation[0]
-				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
-				.unwrap_or(-1.0) as usize;
-			let environment = operation[1]
-				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
-				.unwrap_or(-1.0) as usize;
-			(pipe, environment, operation[2].get_number().unwrap_or(0.0))
+			(
+				MixRef::of(&operation[0]).ok(),
+				MixRef::of(&operation[1]).ok(),
+				operation[2].get_number().unwrap_or(0.0),
+			)
 		})
 		.collect::<Vec<_>>();
-	let results = GasArena::batch_mingle(&parsed)
-		.into_iter()
-		.map(|residual| ByondValue::from(residual as u8 as f32))
-		.collect::<Vec<_>>();
+	let results = with_world(|w| {
+		parsed
+			.into_iter()
+			.map(|(pipe_ref, env_ref, share_volume)| {
+				let (Some(pipe_ref), Some(env_ref)) = (pipe_ref, env_ref) else {
+					return false;
+				};
+				if pipe_ref == env_ref || share_volume <= 0.0 {
+					return false;
+				}
+				let (Some(pipe_before), Some(env_before)) = (w.load(pipe_ref), w.load(env_ref))
+				else {
+					return false;
+				};
+				let (mut pipe, mut environment) = (pipe_before.clone(), env_before.clone());
+				let pipe_volume = pipe.volume.max(1.0);
+				let environment_volume = environment.volume.max(1.0);
+				let sample = pipe.remove_ratio((share_volume / pipe_volume).clamp(0.0, 1.0));
+				environment.merge(&sample);
+				let reclaimed = environment.remove_ratio(
+					(share_volume / (share_volume + environment_volume)).clamp(0.0, 1.0),
+				);
+				pipe.merge(&reclaimed);
+				let pipe_moles = pipe.total_moles();
+				let environment_moles = environment.total_moles();
+				let pressure_residual =
+					(pipe.return_pressure() - environment.return_pressure()).abs() > 0.1;
+				let temperature_residual =
+					(pipe.get_temperature() - environment.get_temperature()).abs() > 0.1;
+				let composition_residual = pipe_moles > GAS_MIN_MOLES
+					&& environment_moles > GAS_MIN_MOLES
+					&& (0..gas::GAS_COUNT).any(|gas| {
+						(pipe.get_moles(gas) / pipe_moles
+							- environment.get_moles(gas) / environment_moles)
+							.abs() > 0.001
+					});
+				w.store(pipe_ref, &pipe_before, &pipe);
+				w.store(env_ref, &env_before, &environment);
+				pressure_residual || temperature_residual || composition_residual
+			})
+			.map(|residual| ByondValue::from(f32::from(u8::from(residual))))
+			.collect::<Vec<_>>()
+	});
 	let list = ByondValue::new_list()?;
 	list.write_list(&results)?;
 	Ok(list)
@@ -855,11 +859,9 @@ fn transfer_ratio_hook(
 /// Args: (mixture). Makes `src` a copy of `mixture`, with volumes taken into account.
 #[auxmacros::bind("/datum/gas_mixture/proc/equalize_with")]
 fn equalize_with_hook(src: ByondValue, total: ByondValue) -> Result<ByondValue> {
-	with_mixes_custom(&src, &total, |src_lock, total_lock| {
-		let src_gas = &mut src_lock.write();
+	with_mixes_mut(&src, &total, |src_gas, total_gas| {
 		let vol = src_gas.volume;
-		let total_gas = total_lock.read();
-		src_gas.copy_from_mutable(&total_gas);
+		src_gas.copy_from_mutable(total_gas);
 		src_gas.multiply(vol / total_gas.volume);
 		Ok(ByondValue::null())
 	})
@@ -903,103 +905,34 @@ fn oxidation_power_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue>
 	})
 }
 
-/// Args: (mixture, ratio, one_way). Shares the given `ratio` of `src` with `mixture`, and, unless `one_way` is truthy, vice versa.
-#[cfg(feature = "zas_hooks")]
-#[auxmacros::bind("/datum/gas_mixture/proc/share_ratio")]
-fn share_ratio_hook(
-	other_gas: ByondValue,
-	ratio_val: ByondValue,
-	one_way_val: ByondValue,
-) -> Result<ByondValue> {
-	let one_way = one_way_val.as_bool().unwrap_or(false);
-	let ratio = ratio_val.as_number().ok().map_or(0.6);
-	let mut inbetween = Mixture::new();
-	if one_way {
-		with_mixes_custom(src, other_gas, |src_lock, other_lock| {
-			let src_mix = src_lock.write();
-			let other_mix = other_lock.read();
-			inbetween.copy_from_mutable(other_mix);
-			inbetween.multiply(ratio);
-			inbetween.merge(&src_mix.remove_ratio(ratio));
-			inbetween.multiply(0.5);
-			src_mix.merge(inbetween);
-			Ok(ByondValue::from(
-				src_mix.temperature_compare(other_mix)
-					|| src_mix.compare_with(other_mix, MINIMUM_MOLES_DELTA_TO_MOVE),
-			))
-		})
-	} else {
-		with_mixes_mut(src, other_gas, |src_mix, other_mix| {
-			src_mix.remove_ratio_into(ratio, &mut inbetween);
-			inbetween.merge(&other_mix.remove_ratio(ratio));
-			inbetween.multiply(0.5);
-			src_mix.merge(inbetween);
-			other_mix.merge(inbetween);
-			Ok(ByondValue::from(
-				src_mix.temperature_compare(other_mix)
-					|| src_mix.compare_with(other_mix, MINIMUM_MOLES_DELTA_TO_MOVE),
-			))
-		})
-	}
-}
-
-fn mixture_ids_from_byond_list(gas_list: ByondValue) -> Result<Vec<usize>> {
-	use std::collections::BTreeSet;
-	Ok(gas_list
-		.iter()?
-		.filter_map(|(value, _)| {
-			value
-				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
-				.ok()
-				.map(|f| f as usize)
-		})
-		.collect::<BTreeSet<_>>()
-		.into_iter()
-		.collect())
-}
-
-/// B14: this used to write through `with_all_mixtures`, which skips the mutation
-/// gate, so a concurrent solver publication could overwrite (or be overwritten by)
-/// the equalized values. It now holds the gate for the read, the writes and the
-/// revision bumps.
-fn equalize_mixture_ids(gas_list: &[usize]) {
-	GasArena::with_all_mixtures_mut(move |all_mixtures| {
-		let mut tot = gas::Mixture::new();
-		let mut tot_vol: f64 = 0.0;
-		gas_list
-			.iter()
-			.filter_map(|&id| all_mixtures.get(id))
-			.for_each(|src_gas_lock| {
-				let src_gas = src_gas_lock.read();
-				tot.merge(&src_gas);
-				tot_vol += f64::from(src_gas.volume);
-			});
-		if tot_vol <= 0.0 {
-			return;
-		}
-		for (id, dest_gas_lock) in gas_list
-			.iter()
-			.filter_map(|&id| all_mixtures.get(id).map(|mixture| (id, mixture)))
-		{
-			let (before, after) = {
-				let dest_gas = &mut dest_gas_lock.write();
-				let before = GasArena::change_signature(dest_gas);
-				let vol = dest_gas.volume; // don't wanna borrow it in the below
-				dest_gas.copy_from_mutable(&tot);
-				dest_gas.multiply((f64::from(vol) / tot_vol) as f32);
-				(before, GasArena::change_signature(dest_gas))
-			};
-			GasArena::bump_revision(id);
-			GasArena::mark_dirty_if_changed(id, before, after);
-		}
-	});
-}
-
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
 #[auxmacros::bind("/proc/equalize_all_gases_in_list")]
 fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
-	let gas_list = mixture_ids_from_byond_list(gas_list)?;
-	equalize_mixture_ids(&gas_list);
+	let mut refs = gas_list
+		.iter()?
+		.filter_map(|(value, _)| MixRef::of(&value).ok())
+		.collect::<Vec<_>>();
+	refs.sort_unstable_by_key(|r| r.id());
+	refs.dedup();
+	with_world(|w| {
+		let loaded: Vec<(MixRef, Mixture)> =
+			refs.iter().filter_map(|&r| Some((r, w.load(r)?))).collect();
+		let mut tot = Mixture::new();
+		let mut tot_vol: f64 = 0.0;
+		for (_, m) in &loaded {
+			tot.merge(m);
+			tot_vol += f64::from(m.volume);
+		}
+		if tot_vol <= 0.0 {
+			return;
+		}
+		for (r, before) in loaded {
+			let mut after = before.clone();
+			after.copy_from_mutable(&tot);
+			after.multiply((f64::from(before.volume) / tot_vol) as f32);
+			w.store(r, &before, &after);
+		}
+	});
 	Ok(ByondValue::null())
 }
 
@@ -1043,3 +976,6 @@ fn parse_gas_string(src: ByondValue, string: ByondValue) -> Result<ByondValue> {
 	})?;
 	Ok(true.into())
 }
+
+#[cfg(test)]
+mod tests;

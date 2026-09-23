@@ -4,18 +4,18 @@
 
 /// Records the Rust atmos arena counters as metrics under `prefix`.
 /datum/benchmark/proc/record_atmos_arena(prefix)
-	// Layout of vg_auxmos_diagnostics() (verdigris/atmos/src/lib.rs):
-	// gas slots, gas capacity, free gas slots, baselines, baseline capacity, dirty,
-	// turf map len, turf map capacity, graph nodes, graph edges, pending turfs,
-	// pending callbacks, heat state x3, node capacity, edge capacity.
+	// Layout of vg_auxmos_diagnostics() (verdigris/domains/gas/src/lib.rs):
+	// main mixtures live, main slots, pipe regions, pipe ports, registered turf
+	// cells, gas frames, pending callbacks, heat frames, heat bodies, heat frame us.
 	var/list/arena = vg_auxmos_diagnostics()
 	if(!islist(arena) || length(arena) < 10)
 		return
-	metric("[prefix]_gas_mixtures", arena[1] - arena[3], "mixtures")
+	metric("[prefix]_gas_mixtures", arena[1], "mixtures")
 	metric("[prefix]_gas_slots", arena[2], "slots")
-	metric("[prefix]_atmos_turfs", arena[7], "turfs")
-	metric("[prefix]_atmos_edges", arena[10], "edges")
+	metric("[prefix]_atmos_turfs", arena[5], "turfs")
+	metric("[prefix]_pipe_regions", arena[3], "regions")
 	detail("[prefix]_atmos_arena", arena)
+	detail("[prefix]_gas_field", vg_gas_stats())
 
 /// Boot memory: what a freshly booted world holds, where the memory goes.
 /datum/benchmark/boot_memory
@@ -117,39 +117,35 @@
 	wait_for_assets()
 	measure_atmos_cycles("atmos_idle", param("cycles", 120))
 
-/// Runs `cycles` SSair cycles inside a window and records worker maxima.
+/// Runs `cycles` SSair cycles inside a window and records the gas field's
+/// maxima and SSair's main-thread time.
 /datum/benchmark/proc/measure_atmos_cycles(prefix, cycles)
 	begin_window()
 	var/start_cycle = SSair.times_fired
+	var/list/stats_before = vg_gas_stats()
 	var/list/maxima = list(
-		"active_turfs" = 0,
-		"seed_turfs" = 0,
-		"retained_turfs" = 0,
-		"pending_turfs" = 0,
-		"snapshot_mixtures" = 0,
-		"published_mixtures" = 0,
-		"compute_ms" = 0,
-		"high_pressure_turfs" = 0,
-		"equalized_turfs" = 0,
+		"events" = 0,
+		"reactions" = 0,
+		"visuals" = 0,
+		"pressure_pushes" = 0,
 	)
 	var/deadline = REALTIMEOFDAY + 3000
 	while(SSair.times_fired < start_cycle + cycles)
 		if(REALTIMEOFDAY > deadline)
 			fail("SSair ran [SSair.times_fired - start_cycle]/[cycles] cycles in 300s")
 		stoplag()
-		maxima["active_turfs"] = max(maxima["active_turfs"], SSair.async_active_turfs)
-		maxima["seed_turfs"] = max(maxima["seed_turfs"], SSair.async_seed_turfs)
-		maxima["retained_turfs"] = max(maxima["retained_turfs"], SSair.async_retained_turfs)
-		maxima["pending_turfs"] = max(maxima["pending_turfs"], SSair.async_pending_turfs)
-		maxima["snapshot_mixtures"] = max(maxima["snapshot_mixtures"], SSair.async_snapshot_mixtures)
-		maxima["published_mixtures"] = max(maxima["published_mixtures"], SSair.async_published_mixtures)
-		maxima["compute_ms"] = max(maxima["compute_ms"], SSair.async_compute_cost)
-		maxima["high_pressure_turfs"] = max(maxima["high_pressure_turfs"], SSair.high_pressure_turfs)
-		maxima["equalized_turfs"] = max(maxima["equalized_turfs"], SSair.num_equalize_processed)
+		maxima["events"] = max(maxima["events"], SSair.gas_events_last)
+		maxima["reactions"] = max(maxima["reactions"], SSair.gas_reactions_last)
+		maxima["visuals"] = max(maxima["visuals"], SSair.gas_visuals_last)
+		maxima["pressure_pushes"] = max(maxima["pressure_pushes"], SSair.gas_pressure_last)
 	end_window(prefix)
+	var/list/stats_after = vg_gas_stats()
 	metric("[prefix]_cycles", SSair.times_fired - start_cycle, "cycles", "none")
+	metric("[prefix]_gas_commands", stats_after[2] - stats_before[2], "commands")
+	metric("[prefix]_gas_frames_skipped", stats_after[13] - stats_before[13], "frames")
+	metric("[prefix]_gas_last_frame_ms", stats_after[9] / 1000, "ms")
 	for(var/key in maxima)
-		metric("[prefix]_max_[key]", maxima[key], key == "compute_ms" ? "ms" : "count")
+		metric("[prefix]_max_[key]", maxima[key], "count")
 	record_atmos_arena(prefix)
 
 /// Builds a walled width x width floor fixture on a fresh z-level and returns

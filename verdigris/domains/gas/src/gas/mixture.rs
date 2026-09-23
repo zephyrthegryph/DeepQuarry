@@ -1,6 +1,4 @@
-use super::{
-	constants::*, gas_visibility, total_num_gases, with_reactions, with_specific_heats, GasIDX,
-};
+use super::{constants::*, gas_visibility, total_num_gases, with_reactions, GasIDX};
 use crate::reaction::{Reaction, ReactionPriority};
 use atomic_float::AtomicF32;
 use eyre::Result;
@@ -76,37 +74,42 @@ pub struct Mixture {
 }
 
 impl Mixture {
-	pub(crate) fn composition_moles(&self) -> Vec<f32> {
-		self.moles.to_vec()
+	/// A mixture from a full mole vector (trailing zeroes dropped).
+	#[must_use]
+	pub fn from_parts(moles: &[f32], temperature: f32, volume: f32, immutable: bool) -> Self {
+		let mut mix = Self::from_vol(volume);
+		let last = moles.iter().rposition(|&m| m > 0.0).map_or(0, |i| i + 1);
+		mix.moles.extend_from_slice(&moles[..last]);
+		mix.temperature = if temperature.is_normal() {
+			temperature
+		} else {
+			TCMB
+		};
+		mix.immutable = immutable;
+		mix
 	}
 
-	/// Replace this mixture from conserved extensive quantities. Turf diffusion
-	/// keeps moles and thermal energy in f64 component-local buffers and performs
-	/// this single conversion only when the completed transaction is published
-	/// into its private snapshot. Repeatedly deriving temperature while merging
-	/// neighboring f32 mixtures was the source of measurable energy drift.
-	pub(crate) fn replace_conserved(&mut self, moles: &[f64], thermal_energy: f64) {
-		if self.immutable {
-			return;
+	/// Every gas's moles, by gas ID.
+	#[must_use]
+	pub fn moles_array(&self) -> [f32; crate::gas::ids::GAS_COUNT] {
+		let mut out = [0.0; crate::gas::ids::GAS_COUNT];
+		for (o, &m) in out.iter_mut().zip(self.moles.iter()) {
+			*o = m;
 		}
-		self.moles.clear();
-		self.moles.reserve(moles.len());
-		for &amount in moles {
-			// The conservative solver guarantees non-negative values. Clamp only
-			// sub-float numerical residue and retain trace gases instead of invoking
-			// garbage_collect() inside the diffusion transaction.
-			self.moles.push(amount.max(0.0) as f32);
-		}
-		self.cached_heat_capacity.invalidate();
-		let heat_capacity = self.slow_heat_capacity() as f64;
-		if heat_capacity > MINIMUM_HEAT_CAPACITY as f64 {
-			self.temperature = (thermal_energy / heat_capacity)
-				.max(TCMB as f64)
-				.min(f32::MAX as f64) as f32;
-		} else {
-			self.temperature = TCMB;
-		}
-		self.cached_heat_capacity.set(heat_capacity as f32);
+		out
+	}
+
+	/// Whether two mixtures hold exactly the same gas at the same temperature.
+	#[must_use]
+	pub fn same_state(&self, other: &Self) -> bool {
+		self.temperature == other.temperature
+			&& self.volume == other.volume
+			&& self.moles_array() == other.moles_array()
+	}
+
+	#[must_use]
+	pub fn min_heat_capacity(&self) -> f32 {
+		self.min_heat_capacity
 	}
 }
 
@@ -258,14 +261,12 @@ impl Mixture {
 	}
 	#[inline(never)] // mostly this makes it so that heat_capacity itself is inlined
 	fn slow_heat_capacity(&self) -> f32 {
-		with_specific_heats(|heats| {
-			self.moles
-				.iter()
-				.copied()
-				.zip(heats.iter())
-				.fold(0.0, |acc, (amt, cap)| cap.mul_add(amt, acc))
-		})
-		.max(self.min_heat_capacity)
+		self.moles
+			.iter()
+			.copied()
+			.zip(crate::cell::SPECIFIC_HEATS.iter())
+			.fold(0.0, |acc, (amt, cap)| cap.mul_add(amt, acc))
+			.max(self.min_heat_capacity)
 	}
 	/// The heat capacity of the material. [joules?]/mole-kelvin.
 	pub fn heat_capacity(&self) -> f32 {
@@ -277,7 +278,9 @@ impl Mixture {
 		self.moles
 			.get(idx)
 			.filter(|amt| amt.is_normal())
-			.map_or(0.0, |amt| amt * with_specific_heats(|heats| heats[idx]))
+			.map_or(0.0, |amt| {
+				amt * crate::cell::SPECIFIC_HEATS.get(idx).copied().unwrap_or(0.0)
+			})
 	}
 	/// The total mole count of the mixture. Moles.
 	pub fn total_moles(&self) -> f32 {
@@ -340,16 +343,15 @@ impl Mixture {
 		let ratio = r.clamp(0.0, 1.0);
 		let initial_energy = into.thermal_energy();
 		let mut heat_transfer = 0.0;
-		with_specific_heats(|heats| {
-			for i in gases.iter().copied() {
-				if let Some(orig) = self.moles.get_mut(i) {
-					let delta = *orig * ratio;
-					heat_transfer += delta * self.temperature * heats[i];
-					*orig -= delta;
-					into.adjust_moles(i, delta);
-				}
+		let heats = &crate::cell::SPECIFIC_HEATS;
+		for i in gases.iter().copied() {
+			if let Some(orig) = self.moles.get_mut(i) {
+				let delta = *orig * ratio;
+				heat_transfer += delta * self.temperature * heats[i];
+				*orig -= delta;
+				into.adjust_moles(i, delta);
 			}
-		});
+		}
 		self.cached_heat_capacity.invalidate();
 		into.cached_heat_capacity.invalidate();
 		into.set_temperature((initial_energy + heat_transfer) / into.heat_capacity());
@@ -683,7 +685,7 @@ mod tests {
 		set_gas_statics_manually();
 		register_gas_manually("o2", 20.0);
 		register_gas_manually("n2", 20.0);
-		register_gas_manually("n2o", 20.0);
+		register_gas_manually("co2", 30.0);
 	}
 
 	#[test]
@@ -701,21 +703,15 @@ mod tests {
 		// make sure that the merge successfuly moved the moles
 		assert_eq!(into.get_moles(2), 100.0);
 		assert_eq!(source.get_moles(2), 100.0); // source is not modified by merge
-										  /*
-										  make sure that the merge successfuly changed the temperature of the mix merged into:
-										  test gases have heat capacities of (82 * 20 + 22 * 20) and (100 * 20) respectively, so total thermal energies of
-										  (82 * 20 + 22 * 20) * 293.15 and (100 * 20) * 313.15 respectively once multiplied by temperatures. add those together,
-										  then divide by new total heat capacity:
-										  (609,752 + 626,300)/(2,080 + 2,000) =
-										  ~
-										  302.953
-										  so we compare to see if it's relatively close to 302.953, cause of floating point precision
-										  */
+										  // Heat capacities come from cell.rs SPECIFIC_HEATS: gases 0 and 1 are
+										  // 20 J/(mol K), gas 2 (CO2) is 30. Energies (82 + 22) * 20 * 293.15 =
+										  // 609,752 and 100 * 30 * 313.15 = 939,450 over 2,080 + 3,000 J/K give
+										  // about 304.961 K.
 		assert!(
-			(into.get_temperature() - 302.953).abs() < 0.01,
-			"{} should be near 302.953, is {}",
+			(into.get_temperature() - 304.961).abs() < 0.01,
+			"{} should be near 304.961, is {}",
 			into.get_temperature(),
-			(into.get_temperature() - 302.953)
+			(into.get_temperature() - 304.961)
 		);
 
 		// test merges

@@ -120,6 +120,17 @@ impl Reaction {
 		})?;
 		Ok(our_reaction)
 	}
+	/// The requirements the turf field checks (`gate.rs`).
+	#[must_use]
+	pub fn requirement(&self) -> crate::gate::Requirement {
+		crate::gate::Requirement {
+			min_temp: self.min_temp_req,
+			max_temp: self.max_temp_req,
+			min_energy: self.min_ener_req,
+			min_fire: self.min_fire_req,
+			gases: self.min_gas_reqs.clone(),
+		}
+	}
 	/// Gets the reaction's identifier.
 	#[must_use]
 	pub fn get_id(&self) -> ReactionIdentifier {

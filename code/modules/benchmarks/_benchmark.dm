@@ -124,6 +124,10 @@
 			"tick_overrun" = subsystem.tick_overrun,
 		)
 	detail("[prefix]_subsystems", subsystems)
+	// SSair's main-thread time over the window (M1b's "Air time"), from the same
+	// estimate as the subsystem details.
+	var/list/air = subsystems[SSair.name]
+	metric("[prefix]_air_ms", air ? air["estimated_total_ms"] : 0, "ms")
 	// Reactor wake reasons by type (cumulative since boot) and this window's wake count.
 	var/list/reactor = SSreactor.performance_diagnostics()
 	reactor["window_wakes"] = SSreactor.total_wakes - window_reactor_wakes

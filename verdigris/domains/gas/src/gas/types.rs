@@ -4,12 +4,8 @@ use auxcallback::byond_callback_sender;
 use byondapi::prelude::*;
 use eyre::{Context, Result};
 use parking_lot::{const_rwlock, RwLock};
-use std::{
-	collections::BTreeMap,
-	sync::atomic::{AtomicUsize, Ordering},
-};
+use std::collections::BTreeMap;
 
-static TOTAL_NUM_GASES: AtomicUsize = AtomicUsize::new(0);
 static REACTION_INFO: RwLock<Option<BTreeMap<ReactionPriority, Reaction>>> = const_rwlock(None);
 
 /// The temperature at which this gas can oxidize and how much fuel it can oxidize when it can.
@@ -205,19 +201,13 @@ impl GasType {
 
 static GAS_INFO_BY_IDX: RwLock<Option<Vec<GasType>>> = const_rwlock(None);
 
-static GAS_SPECIFIC_HEATS: RwLock<Option<Vec<f32>>> = const_rwlock(None);
-
 #[byondapi::init]
 pub fn initialize_gas_info_structs() {
 	*GAS_INFO_BY_IDX.write() = Some(Vec::new());
-	*GAS_SPECIFIC_HEATS.write() = Some(Vec::new());
 }
 
 pub fn destroy_gas_info_structs() {
-	crate::turfs::wait_for_tasks();
 	GAS_INFO_BY_IDX.write().as_mut().unwrap().clear();
-	GAS_SPECIFIC_HEATS.write().as_mut().unwrap().clear();
-	TOTAL_NUM_GASES.store(0, Ordering::Release);
 }
 
 /// Installs the gas roster. Each gas lands at the fixed ID of its type path
@@ -240,9 +230,17 @@ fn install_gases(mut gases: Vec<GasType>) -> Result<()> {
 			super::ids::GAS_COUNT
 		));
 	}
-	*GAS_SPECIFIC_HEATS.write() = Some(gases.iter().map(|g| g.specific_heat).collect());
+	for gas in &gases {
+		let expected = crate::cell::SPECIFIC_HEATS[gas.idx];
+		if gas.specific_heat != expected {
+			return Err(eyre::eyre!(
+				"{} has specific_heat {} in DM but {expected} in verdigris cell.rs SPECIFIC_HEATS",
+				gas.id,
+				gas.specific_heat
+			));
+		}
+	}
 	*GAS_INFO_BY_IDX.write() = Some(gases);
-	TOTAL_NUM_GASES.store(super::ids::GAS_COUNT, Ordering::Release);
 	Ok(())
 }
 
@@ -270,6 +268,7 @@ fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
 		.wrap_err("auxtools_atmos_init failed to register gas")?;
 	install_gases(gases)?;
 	*REACTION_INFO.write() = Some(get_reaction_info());
+	install_gate();
 	Ok(true.into())
 }
 
@@ -310,7 +309,41 @@ fn get_reaction_info() -> BTreeMap<ReactionPriority, Reaction> {
 #[auxmacros::bind("/datum/controller/subsystem/air/proc/auxtools_update_reactions")]
 fn update_reactions() -> Result<ByondValue> {
 	*REACTION_INFO.write() = Some(get_reaction_info());
+	install_gate();
 	Ok(true.into())
+}
+
+/// Publishes the reaction requirements and gas visibility the turf field
+/// reads on frame threads (`gate.rs`).
+pub fn install_gate() {
+	let mut gate = crate::gate::Gate::default();
+	if let Some(reactions) = REACTION_INFO.read().as_ref() {
+		gate.reactions = reactions
+			.values()
+			.rev()
+			.map(Reaction::requirement)
+			.collect();
+	}
+	if let Some(gases) = GAS_INFO_BY_IDX.read().as_ref() {
+		for gas in gases {
+			if gas.idx >= super::ids::GAS_COUNT {
+				continue;
+			}
+			gate.visible[gas.idx] = gas.moles_visible;
+			gate.fire[gas.idx] = match gas.fire_info {
+				FireInfo::Oxidation(o) => crate::gate::Fire::Oxidizer {
+					temperature: o.temperature(),
+					power: o.power(),
+				},
+				FireInfo::Fuel(f) => crate::gate::Fire::Fuel {
+					temperature: f.temperature(),
+					burn_rate: f.burn_rate(),
+				},
+				FireInfo::None => crate::gate::Fire::None,
+			};
+		}
+	}
+	crate::gate::install(gate);
 }
 
 /// Calls the given closure with all reaction info as an argument.
@@ -326,16 +359,10 @@ where
 		.unwrap_or_else(|| panic!("Reactions not loaded yet! Uh oh!")))
 }
 
-/// Runs the given closure with the global specific heats vector locked.
-/// # Panics
-/// If gas info isn't loaded yet.
-pub fn with_specific_heats<T>(f: impl FnOnce(&[f32]) -> T) -> T {
-	f(GAS_SPECIFIC_HEATS.read().as_ref().unwrap().as_slice())
-}
-
 /// Returns the total number of gases in use. Only used by gas mixtures; should probably stay that way.
 pub fn total_num_gases() -> GasIDX {
-	TOTAL_NUM_GASES.load(Ordering::Acquire)
+	// Gas IDs are fixed at compile time (ids.rs).
+	super::ids::GAS_COUNT
 }
 
 /// Gets the gas visibility threshold for the given gas ID.
@@ -437,7 +464,7 @@ pub fn gas_idx_from_value(value: &ByondValue) -> Result<GasIDX> {
 #[cfg(test)]
 pub fn register_gas_manually(gas_id: &'static str, specific_heat: f32) {
 	let gas_cache = GasType {
-		idx: total_num_gases(),
+		idx: GAS_INFO_BY_IDX.read().as_ref().map_or(0, Vec::len),
 		id: gas_id.into(),
 		name: gas_id.into(),
 		flags: 0,
@@ -449,13 +476,7 @@ pub fn register_gas_manually(gas_id: &'static str, specific_heat: f32) {
 		fire_info: FireInfo::None,
 		fire_products: None,
 	};
-	GAS_SPECIFIC_HEATS
-		.write()
-		.as_mut()
-		.unwrap()
-		.push(gas_cache.specific_heat);
 	GAS_INFO_BY_IDX.write().as_mut().unwrap().push(gas_cache);
-	TOTAL_NUM_GASES.fetch_add(1, Ordering::Release); // this is the only thing that stores it other than shutdown
 }
 
 #[cfg(test)]
