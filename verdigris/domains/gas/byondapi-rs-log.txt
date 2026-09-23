@@ -1,0 +1,7 @@
+byondcore is not loaded into the process as expected: GetModuleHandleExW {
+    source: Os {
+        code: 126,
+        kind: Uncategorized,
+        message: "The specified module could not be found.",
+    },
+}
