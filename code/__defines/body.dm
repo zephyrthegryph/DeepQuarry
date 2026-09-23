@@ -40,6 +40,12 @@
 /// object, animal, trap, falling debris): injure() applies armour for the hit
 /// part and kind as mitigation stage 1.
 #define INJURE_ARMORED           (1<<3)
+/// Continuous harm: this call is one tick's share (rate x dt) of harm that
+/// goes on over time (digestion, heat, cold, pressure, radiation). It grows an
+/// existing wound or lesion additively, with no per-hit rounding, thresholds
+/// or rolls, so the total over a stretch of time doesn't depend on how often
+/// it ticks. Implies INJURE_SILENT for the per-hit pain flash.
+#define INJURE_CONTINUOUS        (1<<4)
 
 // --- Armour kinds -------------------------------------------------------------
 // Armour is asked for by the INJURY_* kind it resists (injury_armor(kind, zone)),

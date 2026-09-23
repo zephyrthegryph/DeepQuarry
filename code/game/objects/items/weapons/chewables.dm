@@ -299,8 +299,8 @@
 					to_chat(F, span_warning("You manage to pull yourself free of \the [src] at the last second!"))
 					to_chat(M, span_notice("[F] barely escapes from your mouth!"))
 					F.forceMove(get_turf(src))
-				else
-					F.forceMove(M.vore_selected)
+				else if(!F.move_into(M.vore_selected, BELLY_SLOT_INTERIOR, M))
+					F.forceMove(get_turf(src))
 				victims -= F
 	return ..()
 

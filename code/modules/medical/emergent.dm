@@ -310,9 +310,9 @@
 	existing._apply_stage(new_stage)
 
 
-/// The patient's normal core temperature (species), 37°C when unknown.
+/// The patient's normal core temperature (species), BODYTEMP_NORMAL when unknown.
 /mob/living/carbon/human/proc/dq_normal_body_temperature()
-	return species?.body_temperature || T0C + 37
+	return species?.body_temperature || BODYTEMP_NORMAL
 
 /mob/living/carbon/human/proc/dq_get_metric(metric_name)
 	switch(metric_name)

@@ -373,10 +373,12 @@
 
 /datum/life_system/environment/tick(mob/living/self, datum/life_context/ctx)
 	if(ctx?.environment)
-		exchange(self, ctx.environment)
+		exchange(self, ctx.environment, ctx.seconds)
 
-/// Handle temperature/pressure differences between body and environment.
-/datum/life_system/environment/proc/exchange(mob/living/self, datum/gas_mixture/environment)
+/// Handle temperature/pressure differences between body and environment, over
+/// `seconds` of game time: harm here is a rate per LIFE_NOMINAL_SECONDS, applied
+/// as continuous harm (INJURE_CONTINUOUS) scaled by the cycle's length.
+/datum/life_system/environment/proc/exchange(mob/living/self, datum/gas_mixture/environment, seconds = LIFE_NOMINAL_SECONDS)
 	return
 
 /datum/life_system/environment/idle(mob/living/self)

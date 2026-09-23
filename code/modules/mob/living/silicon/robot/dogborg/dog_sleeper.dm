@@ -1,4 +1,6 @@
 #define SLEEPER_INJECT_COST 600 // Note that this has unlimited supply unlike a borg hypo, so should be balanced accordingly
+/// Longest gap (in baseline belly ticks) one digestion pass catches up on.
+#define DOGBORG_DIGEST_MAX_CATCHUP 3
 
 //Sleeper
 /obj/item/dogborg/sleeper
@@ -38,6 +40,8 @@
 	var/datum/matter_synth/plastic/plastic = null
 	var/datum/matter_synth/water = null
 	var/digest_brute = 2
+	/// world.time of the last digestion pass (0: none yet).
+	var/tmp/last_digest_time = 0
 	var/digest_burn = 3
 	var/digest_multiplier = 1
 	var/recycles = FALSE
@@ -196,7 +200,8 @@
 				micro.held_mob = null
 				qdel(micro)
 			return
-		to_eat.forceMove(belly)
+		if(!to_eat.move_into(belly, BELLY_SLOT_INTERIOR, hound))
+			return
 		log_admin("VORE: [hound] used their [src] to swallow [to_eat].")
 
 /obj/item/dogborg/sleeper/proc/ingest_living(mob/living/victim, obj/belly/belly)
@@ -498,6 +503,11 @@
 	//If the timing is right, and there are items to be touched
 	if(SSair.times_fired%3==1 && length(touchable_items))
 
+		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
+		// continuous harm for the time since the last digestion pass.
+		var/delta_factor = last_digest_time ? clamp((world.time - last_digest_time) / BELLY_BASELINE_TICK, 0, DOGBORG_DIGEST_MAX_CATCHUP) : 1
+		last_digest_time = world.time
+
 		//Burn all the mobs or add them to the exclusion list
 		var/volume = 0
 		for(var/mob/living/T in (touchable_items))
@@ -507,8 +517,8 @@
 			else if(!T.digestable)
 				items_preserved |= T
 			else
-				var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier, null, hound)
-				damage_gain += T.injure(INJURY_CORROSIVE, digest_burn * digest_multiplier, null, hound)
+				var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
+				damage_gain += T.injure(INJURY_CORROSIVE, digest_burn * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
 				hound.adjust_nutrition(2.5 * damage_gain) //drain(-25 * damage_gain) //25*total loss as with voreorgan stats.
 				if(water)
 					water.add_charge(damage_gain)
@@ -642,3 +652,4 @@
 	return GetComponent(/datum/component/experiment_handler)
 
 #undef SLEEPER_INJECT_COST
+#undef DOGBORG_DIGEST_MAX_CATCHUP

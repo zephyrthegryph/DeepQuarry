@@ -29,7 +29,7 @@ Later tracks will replace some of this code, but the bugs still get fixed now: t
 | B19 | `code/modules/vore/eating/belly_obj.dm:1611-1631` `update_belly_surrounding` | Allocates a new list for every empty belly on every tick, and `process()` runs even for empty bellies | Skip empty bellies | C7 |
 | B20 | 62 `take_damage` calls with one argument | No damage type or armour flag | Pass both | D1 |
 | B21 | `interface/skin.dmf:1284` | The map element doesn't set `right-click=true`, so right-click probably opens BYOND's verb menu and the secondary click chain never fires. **Confirm in the client first.** | Enable it with I1 | I1 |
-| B22 | `code/modules/body/…/emergent.dm:312-324` (body rewrite's code) | The thermal metric hardcodes 310.15 K instead of the species' `body_temperature` | **Report to the body rewrite; don't edit** | — |
+| B22 | `code/modules/body/…/emergent.dm:312-324` (body rewrite's code) | The thermal metric hardcodes 310.15 K instead of the species' `body_temperature` | Fixed (wave 5 harm): the species' `body_temperature`, else `BODYTEMP_NORMAL`; the lint exemption is gone | — |
 
 ## 2. Boot quick wins
 

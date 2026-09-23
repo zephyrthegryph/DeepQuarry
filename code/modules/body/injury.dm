@@ -116,7 +116,7 @@
 		return
 	BITSET(hud_updateflag, HEALTH_HUD)
 	life_wake(LIFE_WAKE_BODY, "injure")
-	if(!(flags & INJURE_SILENT))
+	if(!(flags & (INJURE_SILENT | INJURE_CONTINUOUS)))
 		flash_weak_pain()
 	body.on_status_changed()
 	SEND_SIGNAL(src, COMSIG_LIVING_INJURED, kind, ., zone, source, flags)

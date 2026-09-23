@@ -202,7 +202,7 @@
 	return TRUE
 
 /// Handle interacting with and taking damage from atmos.
-/datum/life_system/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment)
+/datum/life_system/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment, seconds = LIFE_NOMINAL_SECONDS)
 
 	if(self.inStasisNow())
 		return 1 // return early to skip atmos checks
@@ -263,10 +263,10 @@
 
 	//Atmos effect
 	if(self.bodytemperature < self.minbodytemp)
-		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick, source = self.loc)
+		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick * seconds / LIFE_NOMINAL_SECONDS, source = self.loc, flags = INJURE_CONTINUOUS)
 		self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
 	else if(self.bodytemperature > self.maxbodytemp)
-		self.injure(INJURY_BURN, self.heat_damage_per_tick, source = self.loc)
+		self.injure(INJURY_BURN, self.heat_damage_per_tick * seconds / LIFE_NOMINAL_SECONDS, source = self.loc, flags = INJURE_CONTINUOUS)
 		self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 	else
 		self.clear_alert("temp")

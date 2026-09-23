@@ -228,7 +228,7 @@
 	// Previously, the temperature would enter equilibrium at 26C or 294K.
 	// Only would happen if both sides (all 2 square meters of surface area) were exposed to sunlight.  We now assume it aligned edge on.
 	// It currently should stabilise at 129.6K or -143.6C
-	heat_gain -= surface * STEFAN_BOLTZMANN_CONSTANT * thermal_conductivity * (air.return_temperature() - COSMIC_RADIATION_TEMPERATURE) ** 4
+	heat_gain -= surface * STEFAN_BOLTZMANN_CONSTANT * thermal_conductivity * (air.return_temperature() - TCMB) ** 4
 
 	air.add_thermal_energy(heat_gain)
 	if(network)
