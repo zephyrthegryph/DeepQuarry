@@ -95,6 +95,52 @@ pub fn exchange(a: &mut ThermalBody, b: &mut ThermalBody, coefficient: f32) -> J
     }
 }
 
+/// `1/C`, with a non-positive or infinite capacity counting as a reservoir
+/// (contributes nothing to the combined `1/C`, so it never changes
+/// temperature no matter how much energy crosses it).
+fn inverse(capacity: f64) -> f64 {
+    if capacity.is_finite() && capacity > 0.0 {
+        1.0 / capacity
+    } else {
+        0.0
+    }
+}
+
+/// Exact energy moved from `a` to `b` over `dt` seconds by conductance `g`
+/// (W/K): `ΔT · h · (1 − e^(−g (1/Ca + 1/Cb) dt))` with `h = 1 / (1/Ca +
+/// 1/Cb)`. A reservoir side (`Ca`/`Cb` non-positive or infinite) never
+/// overshoots regardless of `g` or `dt`; this is the continuous-time
+/// integral of Newton's law of cooling, not a fixed-step approximation of
+/// it. The one pair-exchange law every domain that moves heat over a
+/// conductance and a timestep should use (`rust_core.md` §15) -- if you're
+/// about to write `ΔT * conductance * dt` or similar, use this instead so
+/// large conductances/timesteps can't push a pair past equilibrium.
+#[must_use]
+pub fn pair_exchange(a: ThermalBody, b: ThermalBody, conductance: f32, dt: f32) -> Joules {
+    let inv = inverse(f64::from(a.capacity.0)) + inverse(f64::from(b.capacity.0));
+    if inv <= 0.0 || conductance.is_nan() || conductance <= 0.0 || dt.is_nan() || dt <= 0.0 {
+        return Joules::ZERO;
+    }
+    let fraction = -(-f64::from(conductance) * inv * f64::from(dt)).exp_m1();
+    let moved = f64::from(a.temperature.0 - b.temperature.0) / inv * fraction;
+    #[allow(clippy::cast_possible_truncation)]
+    Joules(if moved.is_finite() { moved as f32 } else { 0.0 })
+}
+
+/// As [`pair_exchange`], with the pair's relaxation rate (1/s) given
+/// directly instead of a conductance: `ΔT · h · (1 − e^(−rate dt))`.
+#[must_use]
+pub fn pair_exchange_at_rate(a: ThermalBody, b: ThermalBody, rate: f32, dt: f32) -> Joules {
+    let inv = inverse(f64::from(a.capacity.0)) + inverse(f64::from(b.capacity.0));
+    if inv <= 0.0 || rate.is_nan() || rate <= 0.0 || dt.is_nan() || dt <= 0.0 {
+        return Joules::ZERO;
+    }
+    let fraction = -(-f64::from(rate) * f64::from(dt)).exp_m1();
+    let moved = f64::from(a.temperature.0 - b.temperature.0) / inv * fraction;
+    #[allow(clippy::cast_possible_truncation)]
+    Joules(if moved.is_finite() { moved as f32 } else { 0.0 })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -186,6 +232,51 @@ mod tests {
             }
             let after = total(&bodies);
             prop_assert!((before - after).abs() / before < 1e-4, "{before} vs {after}");
+        }
+    }
+
+    /// Carried over from vg-heat `couple.rs`, where `pair_exchange`/
+    /// `pair_exchange_at_rate` lived before the dedup (`rust_core.md` §15).
+    #[test]
+    fn exact_exchange_matches_the_closed_form() {
+        // Equal capacities: the gap halves at rate 2g/C.
+        let a = ThermalBody::new(HeatCapacity(100.0), Kelvin(400.0));
+        let b = ThermalBody::new(HeatCapacity(100.0), Kelvin(200.0));
+        let moved = pair_exchange(a, b, 10.0, 3.0);
+        let expect = 200.0 * 50.0 * (1.0 - (-0.6f64).exp());
+        assert!(
+            (f64::from(moved.0) - expect).abs() < 1e-3,
+            "{} vs {expect}",
+            moved.0
+        );
+        // A reservoir: harmonic -> the body's capacity.
+        let a = ThermalBody::new(HeatCapacity(100.0), Kelvin(400.0));
+        let b = ThermalBody::new(HeatCapacity(f32::INFINITY), Kelvin(300.0));
+        let moved = pair_exchange(a, b, 10.0, 1e6);
+        assert!((moved.0 - 10_000.0).abs() < 1e-2);
+    }
+
+    proptest! {
+        /// Any step size: never overshoots, and applying +/-moved conserves.
+        #[test]
+        fn pair_exchange_never_overshoots(
+            ta in 3.0f32..5000.0, tb in 3.0f32..5000.0,
+            ca in 0.01f32..1e6, cb in 0.01f32..1e6,
+            g in 0.0f32..1e5, dt in 0.0f32..1e4,
+        ) {
+            let a = ThermalBody::new(HeatCapacity(ca), Kelvin(ta));
+            let b = ThermalBody::new(HeatCapacity(cb), Kelvin(tb));
+            let m = pair_exchange(a, b, g, dt).0;
+            let (na, nb) = (ta - m / ca, tb + m / cb);
+            let (lo, hi) = (ta.min(tb), ta.max(tb));
+            let slack = hi * 1e-5;
+            prop_assert!(na >= lo - slack && na <= hi + slack);
+            prop_assert!(nb >= lo - slack && nb <= hi + slack);
+            if ta >= tb { prop_assert!(na + slack >= nb); } else { prop_assert!(nb + slack >= na); }
+            let before = f64::from(ca) * f64::from(ta) + f64::from(cb) * f64::from(tb);
+            let after = (f64::from(ca) * f64::from(ta) - f64::from(m))
+                + (f64::from(cb) * f64::from(tb) + f64::from(m));
+            prop_assert!((before - after).abs() <= before * 1e-12);
         }
     }
 }
