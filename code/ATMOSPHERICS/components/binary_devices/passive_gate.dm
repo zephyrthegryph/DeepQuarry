@@ -31,10 +31,6 @@
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
-	var/sleeping_input_mixture_id
-	var/sleeping_input_revision = -1
-	var/sleeping_output_mixture_id
-	var/sleeping_output_revision = -1
 
 /obj/machinery/atmospherics/binary/passive_gate/Initialize(mapload)
 	. = ..()
@@ -42,14 +38,50 @@
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP * 2.5)
 	if(frequency)
 		set_frequency(frequency)
+	// M2: the base /obj/machinery/Initialize() always schedules new machines
+	// onto SSmachines; this one has no process() at all (its flow law is a
+	// Rust device edge, stepped from SSair, not DM's process() scheduler).
+	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/binary/passive_gate/Destroy()
-	clear_gas_dependencies()
 	unregister_radio(src, frequency)
 	. = ..()
 
+// M2 (simulation.md §5): the flow law lives on the Rust device edge and runs
+// every gas tick regardless of DM's process() scheduling. rust_bind_pipe_port
+// fires once per port, after that port's region exists in Rust (map setup's
+// setup_rust_pipenets() and runtime construction's rust_register_pipe_topology()
+// both commit topology before binding), so re-publishing the device edge once
+// the second port is bound is the earliest point both of its ports are live.
+/obj/machinery/atmospherics/binary/passive_gate/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 2)
+		update_rust_device()
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/update_rust_device()
+	if(!unlocked)
+		rust_unregister_device()
+		flowing = FALSE
+		return
+	var/mode
+	switch(regulate_mode)
+		if(REGULATE_INPUT)
+			mode = RUST_REGULATE_INPUT
+		if(REGULATE_OUTPUT)
+			mode = RUST_REGULATE_OUTPUT
+		else
+			mode = RUST_REGULATE_EQUALIZE
+	rust_set_device(1, 2, RUST_DEVICE_LAW_PASSIVE_GATE, mode, target_pressure, set_flow_rate)
+
+/obj/machinery/atmospherics/binary/passive_gate/rust_device_stepped(moles, power_w, target_reached)
+	last_flow_rate = abs(moles)
+	var/new_flowing = (moles != 0)
+	if(new_flowing != flowing)
+		flowing = new_flowing
+		update_icon()
+
 /obj/machinery/atmospherics/binary/passive_gate/disconnect(obj/machinery/atmospherics/reference)
-	wake_for_state_change()
+	update_rust_device()
 	return ..()
 
 /obj/machinery/atmospherics/binary/passive_gate/update_icon()
@@ -67,151 +99,12 @@
 /obj/machinery/atmospherics/binary/passive_gate/hide(i)
 	update_underlays()
 
-/obj/machinery/atmospherics/binary/passive_gate/process()
-	..()
-
-	last_flow_rate = 0
-
-	if(!unlocked)
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
-
-	var/output_starting_pressure = air2.return_pressure()
-	var/input_starting_pressure = air1.return_pressure()
-
-	var/pressure_delta
-	switch (regulate_mode)
-		if (REGULATE_INPUT)
-			pressure_delta = input_starting_pressure - target_pressure
-		if (REGULATE_OUTPUT)
-			pressure_delta = target_pressure - output_starting_pressure
-		if (REGULATE_NONE)
-			pressure_delta = input_starting_pressure - output_starting_pressure
-
-	//-1 if pump_gas() did not move any gas, >= 0 otherwise
-	var/returnval = -1
-	if((regulate_mode == REGULATE_NONE || pressure_delta > 0.01) && (air1.return_temperature() > 0 || air2.return_temperature() > 0))	//since it's basically a valve, it makes sense to check both temperatures
-		flowing = 1
-
-		//flow rate limit
-		var/transfer_moles = (set_flow_rate/air1.return_volume())*air1.total_moles()
-
-		//Figure out how much gas to transfer to meet the target pressure.
-		switch (regulate_mode)
-			if (REGULATE_INPUT)
-				transfer_moles = min(transfer_moles, calculate_transfer_moles(air2, air1, pressure_delta, (network1)? network1.volume : 0))
-			if (REGULATE_OUTPUT)
-				transfer_moles = min(transfer_moles, calculate_transfer_moles(air1, air2, pressure_delta, (network2)? network2.volume : 0))
-			if (REGULATE_NONE)
-				var/source = air1
-				var/sink = air2
-				// If node1 is a network of more than 1 pipe, we want to transfer from that whole network, otw use just node1, as current
-				if(istype(node1, /obj/machinery/atmospherics/pipe))
-					var/obj/machinery/atmospherics/pipe/p = node1
-					if(istype(p.parent, /datum/pipeline)) // Nested if-blocks to avoid the mystical :
-						var/datum/pipeline/l = p.parent
-						if(istype(l.air, /datum/gas_mixture))
-							source = l.air
-				// If node2 is a network of more than 1 pipe, we want to transfer to that whole network, otw use just node2, as current
-				if(istype(node2, /obj/machinery/atmospherics/pipe))
-					var/obj/machinery/atmospherics/pipe/p = node2
-					if(istype(p.parent, /datum/pipeline))
-						var/datum/pipeline/l = p.parent
-						if(istype(l.air, /datum/gas_mixture))
-							sink = l.air
-				transfer_moles = max(0, calculate_equalize_moles(source, sink)) // Not regulated, don't care about flow rate
-
-		//pump_gas() will return a negative number if no flow occurred
-		if(regulate_mode == REGULATE_NONE) // ACTUALLY move gases from the whole network, not just the immediate pipes
-			var/source = air1
-			var/sink = air2
-			// If node1 is a network of more than 1 pipe, we want to transfer from that whole network, otw use just node1, as current
-			if(istype(node1, /obj/machinery/atmospherics/pipe))
-				var/obj/machinery/atmospherics/pipe/p = node1
-				if(istype(p.parent, /datum/pipeline)) // Nested if-blocks to avoid the mystical :
-					var/datum/pipeline/l = p.parent
-					if(istype(l.air, /datum/gas_mixture))
-						source = l.air
-			// If node2 is a network of more than 1 pipe, we want to transfer to that whole network, otw use just node2, as current
-			if(istype(node2, /obj/machinery/atmospherics/pipe))
-				var/obj/machinery/atmospherics/pipe/p = node2
-				if(istype(p.parent, /datum/pipeline))
-					var/datum/pipeline/l = p.parent
-					if(istype(l.air, /datum/gas_mixture))
-						sink = l.air
-			returnval = pump_gas_passive(src, source, sink, transfer_moles)
-		else
-			returnval = pump_gas_passive(src, air1, air2, transfer_moles)
-
-	if (returnval >= 0)
-		if(network1)
-			network1.mark_dirty()
-
-		if(network2)
-			network2.mark_dirty()
-
-	if (last_flow_rate)
-		flowing = 1
-	else
-		flowing = 0
-		hibernate_until_gas_changes()
-		update_icon()
-		return PROCESS_KILL
-
-	update_icon()
-	return 1
-
-/obj/machinery/atmospherics/binary/passive_gate/proc/pressure_delta()
-	switch(regulate_mode)
-		if(REGULATE_INPUT)
-			return air1.return_pressure() - target_pressure
-		if(REGULATE_OUTPUT)
-			return target_pressure - air2.return_pressure()
-	return air1.return_pressure() - air2.return_pressure()
-
-/obj/machinery/atmospherics/binary/passive_gate/proc/hibernate_until_gas_changes()
-	var/datum/weakref/WR = WEAKREF(src)
-	sleeping_input_mixture_id = air1?.arena_id()
-	sleeping_input_revision = air1?.revision() || -1
-	sleeping_output_mixture_id = air2?.arena_id()
-	sleeping_output_revision = air2?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
-	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
-	STOP_MACHINE_PROCESSING(src)
-
-/obj/machinery/atmospherics/binary/passive_gate/proc/clear_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
-	SSmachines.unsubscribe_gas_dependency(sleeping_input_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_output_mixture_id, WR)
-	sleeping_input_mixture_id = null
-	sleeping_input_revision = -1
-	sleeping_output_mixture_id = null
-	sleeping_output_revision = -1
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
-
-/obj/machinery/atmospherics/binary/passive_gate/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !unlocked)
-		return FALSE
-	if(mixture_id == sleeping_input_mixture_id)
-		if(!air1 || air1.arena_id() != sleeping_input_mixture_id)
-			return TRUE
-		if(air1.revision() == sleeping_input_revision)
-			return FALSE
-	else if(mixture_id == sleeping_output_mixture_id)
-		if(!air2 || air2.arena_id() != sleeping_output_mixture_id)
-			return TRUE
-		if(air2.revision() == sleeping_output_revision)
-			return FALSE
-	else
-		return FALSE
-	return (regulate_mode == REGULATE_NONE || pressure_delta() > 0.01) && air1.total_moles() >= MINIMUM_MOLES_TO_PUMP
-
-/obj/machinery/atmospherics/binary/passive_gate/proc/wake_for_state_change()
-	clear_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
-
+// process() is deleted (M2, simulation.md §5): the flow law is a Rust
+// device edge (device.rs's PassiveGate), stepped every gas tick from
+// SSair.fire()'s process_pipenets() regardless of DM's process()
+// scheduling, so there is nothing left for this proc to do, and nothing to
+// hibernate — an idle Rust edge costs one struct comparison per tick, not a
+// DM process() slot.
 
 //Radio remote control
 
@@ -266,7 +159,7 @@
 		spawn(2)
 			broadcast_status()
 			return //do not update_icon
-	wake_for_state_change()
+	update_rust_device()
 
 	spawn(2)
 		broadcast_status()
@@ -347,7 +240,7 @@
 
 	update_icon()
 	if(.)
-		wake_for_state_change()
+		update_rust_device()
 	add_fingerprint(ui.user)
 
 /obj/machinery/atmospherics/binary/passive_gate/wrench_act(mob/user, obj/item/W)

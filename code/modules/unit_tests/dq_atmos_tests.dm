@@ -3157,8 +3157,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 
 /// Passive gate (one-way pressure regulator): seed air1 with high pressure,
-/// air2 empty, set REGULATE_NONE so it free-flows, unlock, run process(),
-/// verify gas moved from air1 to air2.
+/// air2 empty, set REGULATE_NONE so it free-flows, unlock, run the Rust
+/// device edge's flow law (M2: passive_gate has no process() any more —
+/// SSair.rust_step_pipe_devices() is what runs it), verify gas moved from
+/// air1 to air2.
 /datum/unit_test/dq_passive_gate_one_way_flow
 
 /datum/unit_test/dq_passive_gate_one_way_flow/Run()
@@ -3171,6 +3173,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/obj/machinery/atmospherics/binary/passive_gate/G = new(T)
 	TEST_ASSERT_NOTNULL(G, "passive_gate construction failed")
+	G.unlocked = TRUE
+	G.regulate_mode = 0  // REGULATE_NONE — free flow (Rust: Regulate::Equalize)
+	G.rust_register_pipe_topology() // allocates ports, binds air1/air2, registers the device edge
 	TEST_ASSERT_NOTNULL(G.air1, "passive_gate has no air1")
 	TEST_ASSERT_NOTNULL(G.air2, "passive_gate has no air2")
 
@@ -3178,12 +3183,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	G.air1.adjust_gas(/datum/gas/oxygen, 500)
 	G.air1.set_temperature(T20C)
 	G.air2.set_temperature(T20C)
-	G.unlocked = TRUE
-	G.regulate_mode = 0  // REGULATE_NONE — free flow
+	G.update_rust_device()
 
 	var/air1_before = G.air1.total_moles()
 	var/air2_before = G.air2.total_moles()
-	G.process()
+	for(var/i in 1 to 30)
+		SSair.rust_step_pipe_devices()
 	var/air1_after = G.air1.total_moles()
 	var/air2_after = G.air2.total_moles()
 
@@ -4570,14 +4575,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[outlet_ref.reference], "outlet injector did not subscribe before sleeping")
 	outlet.update_use_power(USE_POWER_IDLE)
 	TEST_ASSERT(outlet in SSmachines.processing_machines, "enabling an outlet injector did not wake it")
+	// M2 (simulation.md §5): the passive gate's flow law is a Rust device
+	// edge stepped every gas tick from SSair, not a DM process() subscriber,
+	// so it is never in SSmachines.processing_machines regardless of state.
 	var/obj/machinery/atmospherics/binary/passive_gate/gate = new(T)
 	gate.unlocked = FALSE
-	TEST_ASSERT_EQUAL(gate.process(), PROCESS_KILL, "closed passive gate remained scheduled")
-	var/datum/weakref/gate_ref = WEAKREF(gate)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[gate_ref.reference], "passive gate did not subscribe before sleeping")
+	gate.update_rust_device()
+	TEST_ASSERT(!(gate in SSmachines.processing_machines), "closed passive gate should never be a DM process() subscriber")
 	gate.unlocked = TRUE
-	gate.wake_for_state_change()
-	TEST_ASSERT(gate in SSmachines.processing_machines, "opening a passive gate did not wake it")
+	gate.update_rust_device()
+	TEST_ASSERT(!(gate in SSmachines.processing_machines), "opening a passive gate must not add DM process() scheduling")
 	var/obj/machinery/atmospherics/binary/dp_vent_pump/dual_vent = new(T)
 	dual_vent.update_use_power(USE_POWER_OFF)
 	TEST_ASSERT_EQUAL(dual_vent.process(), PROCESS_KILL, "switched-off dual-port vent remained scheduled")

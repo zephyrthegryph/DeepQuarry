@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "314b31657aef5c3e"
+#define VERDIGRIS_ABI "f5ded72d37220b60"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1004,6 +1004,28 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:partial_heat_capacity_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, gas_id)
+
+/// Applies one DM device-edge transaction (M2, `device.rs`) and returns
+/// nothing; call `pipenet_step_devices` to run them. Input is
+/// semicolon-delimited fixed-width records of nine comma-separated numbers:
+/// `opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3`. Opcodes: add or
+/// replace = 1 (`port_a`/`port_b` are read; `law_kind`/`p0..p3` decode via
+/// [`device::DeviceParams::decode`]), remove = 2 (only `id` is read).
+// /proc/auxmos_pipenet_device_batch (verdigris/domains/gas/src/lib.rs)
+/proc/vg_pipenet_device_batch(operations)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipenet_device_batch_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(operations)
+
+/// Runs every pipe-network device edge's flow law once (M2, `device.rs`) for
+/// `dt` seconds and returns a flat list of `id, moles, power_w,
+/// target_reached` per device that had a law set. `dt` is normally
+/// `SSair`'s tick length in seconds.
+// /proc/auxmos_pipenet_step_devices (verdigris/domains/gas/src/lib.rs)
+/proc/vg_pipenet_step_devices(dt)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipenet_step_devices_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(dt)
 
 /// Applies one DM pipe-topology transaction to the pipe network and returns
 /// the regions DM must rebuild. Input is semicolon-delimited records of four
