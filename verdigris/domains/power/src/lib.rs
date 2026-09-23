@@ -1,25 +1,25 @@
-//! `vg-power`: the power domain (`simulation.md` §6, roadmap M3).
-//! Host-buildable: it depends on `vg-core` only; the binds are in `vg-ffi`
-//! (`ffi/src/power.rs`).
+//! `vg-power`: the power domain (`rust_architecture.md` §6). Declarations
+//! and laws only, host-buildable (`vg-core` only) -- no `Sim`, no key
+//! tables, no display state (`rust_architecture.md` §2, §4.5).
 //!
-//! - [`kind`]: [`Cables`], the R7 network kind. A region's summary is its
-//!   supply, demand per APC channel and storage capacity; its payload is
-//!   pooled storage, split by capacity.
-//! - [`geom`]: the cable connection rule (`get_connections()`), so the
-//!   graph is derived from each piece's turf and directions.
-//! - [`apc`]: the APC distributor (channels, cell charging, shedding).
-//! - [`smes`]: SMES units.
-//! - [`world`]: [`PowerWorld`], the ledger and the step DM calls once per
-//!   machinery tick.
+//! - [`components`]: `Cable`, `Apc`, `Smes`, `Consumer`, `Producer` --
+//!   plain data.
+//! - [`kind`]: [`kind::Cables`], the R7 network kind. All region state is
+//!   in [`kind::PowerLedger`], the payload.
+//! - [`geom`]: turf position packing and BYOND direction math, what the
+//!   connection rule ([`kind::Cables`]'s `connects`/`reach`) builds on.
+//! - [`laws`]: `apc_tick`, `smes_plan`/`smes_charge_in`/`smes_discharge_out`,
+//!   `consumer_draw`, `brownout` -- pure functions, tested directly; the
+//!   per-`Law`-trait scheduler wiring lands once Core B's component stores
+//!   do (`rust_architecture.md` §4.3, §7).
+//! - [`events`][mod@events]: [`events::PowerEvent`].
 
-pub mod apc;
+pub mod components;
+pub mod events;
 pub mod geom;
 pub mod kind;
-pub mod smes;
-pub mod world;
+pub mod laws;
 
-pub use kind::{Cables, Load};
-pub use world::{Books, PowerWorld, RegionInfo, ev};
-
-#[cfg(test)]
-mod tests;
+pub use components::{Apc, Cable, Channel, Consumer, Producer, Smes};
+pub use events::PowerEvent;
+pub use kind::{Cables, PowerLedger, PowerNode};
