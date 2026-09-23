@@ -99,8 +99,8 @@ that on its clock. The clock turns its earliest pending event into one `REACT_AT
 reactor. When the clock's speed changes, it recomputes that one wake. Objects don't reschedule
 anything, because their events are stored in clock time.
 
-**Holder change.** The ledger's move hook (section 5, J5) calls `clock_rebind()` on the moving
-thing and on every clocked descendant: settle at the old clock, cancel its handles, bind the new
+**Holder change.** The ledger's move hook (section 5, J5; gated by the `move_hooks` bit on the moving thing) calls
+`clock_rebind()` on the moving thing and on every clocked descendant: settle at the old clock, cancel its handles, bind the new
 clock, then reschedule. There is no per-tick process for unowned objects at all. A severed hand
 on a floor costs nothing until someone reads it or its necrosis threshold fires.
 
@@ -188,7 +188,7 @@ holders):
 	var/tmp/clock_handles
 
 /// Types that carry clocked state return TRUE (a static per-type answer; also adds TAG_CLOCKED
-/// to the ledger aggregates so containers know to walk them on moves).
+/// (dynamic; ledger_refresh_contribution() on change, J7) and sets MOVE_HOOK_CLOCK in move_hooks, J5).
 /atom/movable/proc/is_clocked()
 /// Bind to the holder clock now (Initialize, or the first read).
 /atom/movable/proc/clock_bind()
@@ -511,9 +511,17 @@ first; include order is from `deepquarry.dme` lines 3207, 3232, 3271, 5189 and 5
    torn down.
 
 The coordinator's gaps, confirmed against the code: subtype `Destroy()` runs before the
-ledger's drop policies (gap 1); spilling uses a raw `forceMove` (`api.dm:212-213`), so the
-ledger's move hooks don't fire (gap 2); and `SLOT_DROP_HOLDER` contents are deleted after the
-holder is gone (gap 3).
+ledger's drop policies (gap 1); spilling uses a raw `forceMove` (`api.dm:212-213`) (gap 2,
+which is narrower than first reported: the `forceMove` goes through `doMove` →
+`note_exit`/`note_enter` at `atoms_movable.dm:366-369`, so `COMSIG_SLOT_REMOVED` and
+`on_slot_changed` do fire; only the removal refusal and the pre-signals are skipped); and
+`SLOT_DROP_HOLDER` contents are deleted after the holder is gone (gap 3).
+
+**User decisions recorded.**
+- The limb tree is physically nested (a hand is inside its arm, and the arm inside the torso),
+  and `owner` is derived, not stored.
+- The reagent adapter (4.7) exists only on the working branch. W3 and W4 merge to `master`
+  together, so `master` never contains it.
 
 ### 2.2 The target hierarchy
 
@@ -656,26 +664,40 @@ never asks "am I being deleted?".
 	...                                              // existing type checks (garbage.dm:406-424)
 	if(to_delete.datum_flags & DF_PRE_DESTROYING)
 		return                                       // re-entrant qdel during the pre phase: ignored
-	if(to_delete.datum_flags & DF_HAS_PRE_DESTROY)   // set per type at boot for holders and pre_destroy() overriders
-		to_delete.datum_flags |= DF_PRE_DESTROYING
+	var/datum/qdel_item/trash = SSgarbage.items[to_delete.type]   // already fetched above (garbage.dm:416)
+	if(trash.has_pre_destroy)                        // per-type, on /datum/qdel_item, computed once
+		to_delete.datum_flags |= DF_PRE_DESTROYING   // the only instance bit
 		SEND_SIGNAL(to_delete, COMSIG_PRE_QDELETING, force)
-		to_delete.pre_destroy(force)
+		to_delete.pre_destroy(force)                 // must NOT set gc_destroyed
 		to_delete.datum_flags &= ~DF_PRE_DESTROYING
 		if(!isnull(to_delete.gc_destroyed))
-			return                                       // (defensive) something finished it meanwhile
+			return                                       // qdel(src) inside pre_destroy completed it
 	to_delete.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 	...                                              // unchanged: COMSIG_QDELETING, Destroy(), hints
 ```
 - During `pre_destroy()` the holder is **not** `QDELETED`, so `dq_ledger()`, `move_into()`,
   `slot_remove()`, `attach`/`detach` hooks, `owner.body` and signals all work normally.
+  `pre_destroy()` never sets `gc_destroyed`. The `QDELETED` bypass in
+  `ledger_apply_drop_policies()` (`api.dm:178-192`) is deleted, because release no longer runs
+  inside `Destroy()`.
 - `dq_ledger_refusal()` refuses moves **into** a holder with `DF_PRE_DESTROYING` ("it is being
-  destroyed"), so nothing refills it while it empties.
+  destroyed"), and `latent_add()` refuses it too, so nothing refills it while it empties.
+- `ledger.sync()` skips holders with `DF_PRE_DESTROYING`. The alternative, which also works, is
+  that every release is a real move out, so `sync()` finds nothing to re-add.
 - `/datum/proc/pre_destroy(force)` is a no-op by default. `/atom/movable/pre_destroy()` calls
-  `ledger_release_contents(force)`, which is today's `ledger_apply_drop_policies()` moved out of
-  `Destroy()` (`atoms_movable.dm:93-94`, `obj_defense.dm:96` and `smartfridge.dm:69` call sites
-  are converted). It also calls `bound_clock?.cancel_all(src)` (framework 1).
-- `DF_HAS_PRE_DESTROY` is a per-type flag, computed at boot (`typesof` over types with
-  `slot_def_types()` or a `pre_destroy()` override), so non-holders pay one bit test.
+  `ledger_release_contents(force)`, which drops both the real contents and the **latent
+  entries** (today's `drop_latent()` and `ledger_drop_latent()`), and `bound_clock?.cancel_all(src)`
+  (framework 1). The call at `atoms_movable.dm:93-94` moves here. `obj_defense.dm:96` is
+  `deconstruct(!disassembled)`, not `Destroy`, and does **not** move into `pre_destroy()`.
+  `smartfridge.dm:69` is deliberately early, and is simply deleted after J1.
+- `qdel_item.has_pre_destroy` is computed per type the first time the type is qdel'd (types with
+  `slot_def_types()` or a `pre_destroy()` override), so non-holders pay one field read on an
+  object `qdel()` already fetches.
+- A unit test proves that `qdel(src)` called inside `pre_destroy()` completes the deletion.
+- **Audit of `Destroy()` overrides that read contents.** Before J1 lands, the other session
+  lists every holder `Destroy()` that reads its own contents (mech `go_out()`, `component_parts`
+  loops, and others). Each one either moves into a CUSTOM drop policy (J3) or is shown not to
+  need contents.
 - **Hints.** `pre_destroy()` runs whatever `Destroy()` returns later. A holder type that
   returns `QDEL_HINT_LETMELIVE` has already had its contents dropped. None does today: the
   current `LETMELIVE` returners (`datum_pipeline.dm:40`, `weakrefs.dm:66`, `_element.dm:43`,
@@ -687,20 +709,25 @@ never asks "am I being deleted?".
   entirely. A movable with contents but no slots keeps the legacy contents loop
   (`atoms_movable.dm:111-112`) until C11 converts it.
 
-**Spill is a ledger transaction** (J2). `ledger_release_contents()` moves each thing with
-`slot_remove(thing, drop, null, LEDGER_MOVE_FORCED)`. `FORCED` skips removal refusals (no-drop,
-a held item that can't be let go) and pre-signals, but runs the commit hooks: `note_exit`,
-`COMSIG_SLOT_REMOVED`, `on_slot_changed`, the move hook (J5) and the part hooks. A thing that
-can't be placed at all is qdel'd, as today.
+**Spill goes through the API** (J2). Today's spill `forceMove` already reaches the commit
+bookkeeping through `doMove` (`atoms_movable.dm:366-369`), so `COMSIG_SLOT_REMOVED` and
+`on_slot_changed` fire. What it skips is the removal refusal and the pre-signals. J2 gives
+`slot_remove()` a `flags` argument with a `LEDGER_MOVE_FORCED` path, and
+`ledger_release_contents()` calls `slot_remove(thing, drop, null, LEDGER_MOVE_FORCED)`.
+`FORCED` skips refusals and pre-signals by design, and it runs the same commit bookkeeping plus
+the move hook (J5) and the thing hooks (J6). A thing that can't be placed at all is qdel'd, as
+today.
 
-**`SLOT_DROP_HOLDER` is removed** (J3). Its users become:
-- **Body equipment slots** (`body/slots.dm:42`) → `SLOT_DROP_DELETE`, which is today's
-  behaviour (the comment at `slots.dm:39-41`). Equipment is now deleted in the pre-phase while
-  the mob is valid, so `unequipped()` hooks see a live wearer.
-- **Mech cargo and equipment** (`mecha.dm:281,289`), **vending internals** (`stock.dm:19`) →
-  `SLOT_DROP_CUSTOM`, with the holder's loop moved into
-  `/datum/slot_def/proc/drop_custom(atom/holder, atom/movable/thing, atom/drop)`. These are
-  theirs (C6/C8a).
+**`SLOT_DROP_HOLDER` is phased out** (J3):
+- `SLOT_DROP_CUSTOM` and `/datum/slot_def/proc/drop_custom(atom/holder, atom/movable/thing, atom/drop)`
+  land now.
+- **Body equipment slots** (`body/slots.dm:42`) → `SLOT_DROP_DELETE` (ours). This is today's
+  behaviour (the comment at `slots.dm:39-41`), except that equipment is now deleted in the
+  pre-phase while the mob is valid, so `unequipped()` hooks see a live wearer.
+- **Mech equipment and cargo** (`mecha.dm:281,289`) → `SLOT_DROP_CUSTOM`. Only the spill and
+  detach loops move out of the mech's `Destroy()`; `go_out()` stays there.
+- **Machine internals** (`stock.dm:19`) convert inside the other session's C6.
+- The `SLOT_DROP_HOLDER` define is removed last, together with a lint.
 
 **Destroy ordering for the body**, as the contract every type in our areas follows:
 ```
@@ -1298,9 +1325,9 @@ data.
 `effective_dose()`, the dose triggers, the effect datums and an **adapter**: while a reagent
 still has an `affect_*` override, the chemicals system calls it with
 `removed = amount absorbed/cleared this settle` and `alien = reagent_tag`, exactly as
-`on_mob_life()` did, but gated by `effective_dose() > 0`. This adapter is the migration
-scaffold, and it is deleted in the same wave as the last override (AGENTS.md "no shims" is
-satisfied because the adapter doesn't outlive the wave).
+`on_mob_life()` did, but gated by `effective_dose() > 0`. The adapter is migration scaffolding
+that exists **only on the working branch**. The user has decided that W3 and W4 merge to
+`master` together, so `master` never contains the adapter (AGENTS.md "no shims").
 
 **Phase B: an automated codemod,** `tools/dq_reagent_codemod/` (Python). It parses each
 `/datum/reagent/<path>/affect_(blood|ingest|touch)` and `overdose` body and classifies each
@@ -1402,29 +1429,33 @@ These are exact requests. The ID is what our slices cite as a dependency.
 
 | ID | Request | Their files | Needed by |
 |---|---|---|---|
-| **J1** | **Pre-destroy phase** in `qdel()` as specified in 2.4: `DF_PRE_DESTROYING`, `DF_HAS_PRE_DESTROY` (boot-computed per type), `COMSIG_PRE_QDELETING`, `/datum/proc/pre_destroy(force)`, `/atom/movable/pre_destroy()` → `ledger_release_contents(force)`. Refuse inserts into a pre-destroying holder. A thing in a slot is first removed from its holder's slot through the hooks as step one of its own PRE phase. Boot check: slot holders never return `LETMELIVE`. Remove the drop-policy call from `atoms_movable.dm:93-94`, `obj_defense.dm:96` and `smartfridge.dm:69` | `garbage.dm`, `containment/api.dm`, `atoms_movable.dm`, `obj_defense.dm`, `smartfridge.dm`, `__defines/qdel.dm` | O2, O4, N1-N4, K1 (cancel in PRE) |
-| **J2** | **Spill as a ledger transaction**: `slot_remove(thing, dest, actor, flags)` with `LEDGER_MOVE_FORCED` (skips refusals and pre-signals, runs every commit hook). `ledger_release_contents()` uses it for SPILL and TRANSFER | `containment/api.dm`, `ledger.dm` | O2 |
-| **J3** | **Remove `SLOT_DROP_HOLDER`**; add `SLOT_DROP_CUSTOM` and `/datum/slot_def/proc/drop_custom(holder, thing, drop)`, run in the PRE phase. Convert `mecha.dm:281,289` and `stock.dm:19`. We convert `body/slots.dm:42` (to DELETE) | `containment/*`, `mecha.dm`, `stock.dm` | O2, O4 |
-| **J4** | **Keyed slots**: `/datum/slot_def/var/keyed`, `/atom/movable/proc/slot_key()` (a part returns `organ_tag`), `holder.slot_lookup(slot_id, key)` in O(1), maintained on insert and remove, and checked by `verify()`. One entry per key; a duplicate key is refused with a reason | `containment/{slot_def,ledger,api}.dm` | O2 |
-| **J5** | **One ledger move hook**, shared by our clocks and their C10 collapse sweep. In `doMove()` (so legacy `forceMove`s are covered too): before the `loc` write, `thing.ledger_before_move(old_holder, new_holder, flags)`; after `note_enter`, `thing.ledger_after_move(old_holder, new_holder, flags)`. Both are called **only** when the thing's own `move_hooks` bitfield (a tmp var) or its subtree aggregate carries `TAG_MOVE_HOOKED`. The ledger then walks only the tagged descendants (`contents_has_tag(TAG_MOVE_HOOKED)` prunes). Bits: `MOVE_HOOK_CLOCK` (ours: settle on the old clock before; rebind after) and `MOVE_HOOK_LATENCY` (theirs: C10 cancels a pending collapse before, re-evaluates eligibility after). Handlers are `SIGNAL_HANDLER`-style (no sleeping), may call `REACT_AT`/`REACT_CANCEL`, and must not start another move. Order within one move: before-hooks outermost-first, commit, after-hooks outermost-first. On a failed transaction, no hooks fire. This is a joint design: we write the clock handlers, they write the latency handlers and the walk | `atoms_movable.dm` (`doMove`), `containment/ledger.dm`, `__defines/containment.dm` | K1, K3, and their C10 |
-| **J6** | **Commit hooks on the thing**, not only the holder: after a committed move, call `thing.on_slotted(holder, slot_id, old_holder)` and `thing.on_unslotted(holder, slot_id, new_holder)` (alongside the existing `COMSIG_SLOT_INSERTED`/`REMOVED` and `on_slot_changed`). Parts implement `on_attached`/`on_detached` through these | `containment/ledger.dm` | O2 |
-| **J7** | **Aggregate tags** `TAG_CLOCKED` and `TAG_MOVE_HOOKED` registered with the ledger aggregates (P1 tag registry), so `contents_has_tag()` answers without a walk | `datums/properties/*`, `containment/ledger.dm` | K1, J5 |
-| **J8** | **C11 accessors are sufficient** for our queries: `slot_contents`, `slot_item(slot_id)` (the first entry or null; new), `slot_lookup` (J4). No raw `contents` walks in our part code | `containment/api.dm` | O2 |
-| **J9** | **Edits in their files for clock providers**: the freezer procs in `crates.dm:319-333`, `boxes.dm:524-538` and `bodybag.dm:216-242`, and the gripper in `robot_simple_items.dm:712-726`. We delete the `preserved` writers and add `clock_speed`; they review | `crates.dm`, `boxes.dm`, `bodybag.dm` | K4 |
-| **J10** | **Reagents as fluid stores** (containment §11): (a) `store.transfer(to_store, id, amount, flags)` with a no-reactions flag, for compartment absorption; (b) lazily created stores keyed per route or organ; (c) **keyed-data entries** for reagents that set `REAGENT_KEYED_DATA`: entries with the same id and different `data_key()` stay separate (blood, R5) | `modules/reagents/holder/holder.dm` (the holder is theirs in §11, and ours for exposure; X1 edits it only after they agree the API) | X1, R5 |
-| **J11** | **H2 heat API** for reagents: `owner.body_heat_add(watts)` and `owner.body_heat_toward(target_k, watts)`, usable before H2's Rust body node exists (DM fallback), plus the `bodytemperature` write lint | temperature track | X5 (R8) |
-| **J12** | **P5 abilities** for cooldown-bearing organ and species powers that today use `addtimer` (`heart_anomalock.dm:75`, `shadekin.dm:186-192`): an ability with a cooldown as a rate model. We provide the ability definitions in wave E | rules track | wave E |
-| **J13** | **P1 properties** for reagent type data (absorption, clearance, biology, immune species) so predicates can ask "is this safe for a diona", and the book can list reagents by property | `datums/properties/*` | X6, wave E |
-| **J14** | **Radiation M5** calls `exposure.irradiate(gray)` on mobs instead of writing `radiation` | simulation track | X3 |
-| **J15** | **Nullspace lint and the "theirs" rows** in 3.2, plus `NULLSPACE_NATIVE` | various | N6 |
-| **J16** | **Radio speaker datum**: radio broadcast accepts a `/datum/speaker` in place of a mob for `autosay` (3.2 B) | `radio.dm`, `communications.dm` | N5 |
+| **J1** | **Pre-destroy phase** in `qdel()`, as specified in 2.4. The per-type flag lives on `/datum/qdel_item` (`SSgarbage.items[type].has_pre_destroy`), and `DF_PRE_DESTROYING` is the only instance bit. Adds `COMSIG_PRE_QDELETING`, `/datum/proc/pre_destroy(force)`, and `/atom/movable/pre_destroy()` → `ledger_release_contents(force)`, which drops real contents **and latent entries**. `pre_destroy` never sets `gc_destroyed`. Refuse inserts and `latent_add()` into a pre-destroying holder. `ledger.sync()` skips `DF_PRE_DESTROYING` holders (or every release is a real move out). Delete the `QDELETED` bypass at `api.dm:178-192`. A thing in a slot leaves its holder's slot through the hooks as step one of its own PRE phase. Boot check: slot holders never return `LETMELIVE`. Move the call from `atoms_movable.dm:93-94`. `obj_defense.dm:96` (`deconstruct`, not `Destroy`) stays where it is. `smartfridge.dm:69` is deleted after J1. Test: `qdel(src)` inside `pre_destroy` completes. Audit: every holder `Destroy()` that reads contents (mech `go_out`, `component_parts`) | `garbage.dm`, `containment/{api,ledger,latent}.dm`, `atoms_movable.dm`, `smartfridge.dm`, `__defines/qdel.dm` | O2, O4, N1-N4, K1 (cancel in PRE) |
+| **J2** | **Flags plus a FORCED path in `slot_remove()`**: `slot_remove(thing, dest, actor, flags)`. `LEDGER_MOVE_FORCED` skips refusals and pre-signals; the commit bookkeeping (already reached through `doMove`, `atoms_movable.dm:366-369`) is unchanged. `ledger_release_contents()` uses it for SPILL and TRANSFER | `containment/api.dm` | O2 |
+| **J3** | **CUSTOM now, HOLDER removed last.** Add `SLOT_DROP_CUSTOM` and `drop_custom(holder, thing, drop)`, run in the PRE phase. Body slots → DELETE (ours, `body/slots.dm:42`). Mech equipment and cargo (`mecha.dm:281,289`) → CUSTOM; only the spill and detach loops leave `Destroy()`, and `go_out` stays. Machine internals (`stock.dm:19`) convert inside their C6. The `SLOT_DROP_HOLDER` define is removed last, with a lint | `containment/*`, `mecha.dm`, `stock.dm` | O2, O4 |
+| **J4** | **Keyed slots.** `/datum/slot_def/var/keyed`. The key (`thing.slot_key()`; a part returns `organ_tag`) is **stored on the ledger entry at insert**. `ledger_rekey(thing)` is called when a key changes. The index is a lazy `keys[slot_id]` assoc, looked up with `holder.slot_lookup(slot_id, key)` in O(1). A duplicate key is refused through the normal refusal path, with a reason. `verify()` recomputes the index | `containment/{slot_def,ledger,api}.dm` | O2 |
+| **J5** | **One ledger move hook**, shared by our clocks and their C10. The gate is **one var test on the moving thing**: `src.move_hooks`, a tmp bitfield holding its own bits (`MOVE_HOOK_CLOCK` ours, `MOVE_HOOK_LATENCY` theirs) plus `MOVE_HOOK_SUBTREE`, which ledger `propagate()` keeps set on any holder with a hooked descendant. There is no P1 query and no peek per move. In `doMove()`: the before-hook runs **before `loc =`**, and the after-hook runs **right after `note_enter`, before `Exited`/`Uncrossed`**. A thing with `MOVE_HOOK_SUBTREE` walks its hooked descendants, pruning on the same bit. Hooks must not move, qdel or sleep, which a debug assert enforces. They may call `REACT_AT`/`REACT_CANCEL` and clock procs. The nullspace branch (`atoms_movable.dm:427`) is handled too: deletion moves run the before-hook, so clocks settle and cancel. Bench `idle` and `major_events` before and after. C10's `dq_latent_touch` stays unconditional; only its collapse-cancel uses `MOVE_HOOK_LATENCY`. We write the clock handlers; they write the gate, the walk and the latency handlers | `atoms_movable.dm` (`doMove`), `containment/ledger.dm`, `__defines/containment.dm` | K1, K3, their C10 |
+| **J6** | **Thing-side commit hooks**: `thing.on_slotted(holder, slot_id, old_holder)` and `thing.on_unslotted(holder, slot_id, new_holder)` after a committed move, gated by a per-type or `move_hooks` bit. They **also fire from `reslot`** (`ledger.dm:221`). Parts implement `on_attached`/`on_detached` through these | `containment/ledger.dm` | O2 |
+| **J7** | **`TAG_CLOCKED` as a dynamic tag.** When a thing's clocked status changes, it calls `ledger_refresh_contribution(thing)`. `TAG_MOVE_HOOKED` is dropped in favour of J5's `MOVE_HOOK_SUBTREE` bit | `datums/properties/*`, `containment/ledger.dm` | K1 |
+| **J8** | **`slot_item(slot_id)` lands now** (the first entry, or null), with the existing `slot_contents` and J4's `slot_lookup`. No raw `contents` walks in our part code | `containment/api.dm` | O2 |
+| **J9** | **Clock providers in their files**: the freezer procs in `crates.dm:319-333`, `boxes.dm:524-538` and `bodybag.dm:216-242`, and the gripper in `robot_simple_items.dm:712-726`. We delete the `preserved` writers and add `clock_speed`; they review. In our W2 | `crates.dm`, `boxes.dm`, `bodybag.dm` | K4 |
+| **J10** | **Reagents as fluid stores** (containment §11). (a) `store.transfer(to_store, id, amount, flags)` with a no-reactions flag; (b) lazily created stores keyed per route or organ. (a) and (b) are in W3, with the **API agreed before X1 starts**. (c) keyed-data entries (`REAGENT_KEYED_DATA`, blood, R5) are in W4, behind a flag | `modules/reagents/holder/holder.dm` | X1 (a, b), R5 (c) |
+| **J11** | **Heat procs for reagents**: `owner.body_heat_add(watts)` and `owner.body_heat_toward(target_k, watts)`, shipped with a single-setter fallback until H2's body node exists. The `bodytemperature` write lint waits until H2. In W4 | temperature track | X5 (R8) |
+| **J12** | **P5 abilities**, on P5's schedule, for cooldown-bearing organ and species powers (`heart_anomalock.dm:75`, `shadekin.dm:186-192`). We provide the ability definitions | rules track | W5 |
+| **J13** | **P1 property definitions** for reagent type data (absorption, clearance, biology, immune species) | `datums/properties/*` | X6, W5 |
+| **J14** | **Radiation M5** calls `exposure.irradiate(gray)` on mobs instead of writing `radiation`. In W3 | simulation track | X3 |
+| **J15** | **Nullspace lint** as a **ratcheted allowlist**, plus `NULLSPACE_NATIVE` and the "theirs" rows in 3.2. `dropInto` (`_atom.dm:448`, 31 callers) keeps its behaviour behind a `stack_trace` until audited. §3.2 #29 folds into C6. In our W2 | various | N6 |
+| **J16** | **Radio speaker datum**: radio broadcast accepts a `/datum/speaker` in place of a mob for `autosay` (3.2 B). In our W2 | `radio.dm`, `communications.dm` | N5 |
+
+**Their delivery order:** J2, J4, J6 and `slot_item` (J8) first, on branch
+`rewrite/ledger-joint`, then J1, then J7, then J5, then J3. J9, J15 and J16 land in our W2.
+J10(a, b) and J14 land in W3. J10(c) and J11 land in W4.
 
 What C1 and C11 already provide: C1 as built (`containment.md` §2.1, `api.dm`) gives the
 transaction API, `note_exit`/`note_enter` bookkeeping in `doMove`, `COMSIG_SLOT_*` signals,
-`on_slot_changed()`, the drop policies (run inside base `Destroy`, which is gap 1) and
-`verify()`. C3 gives body slots, and the interior slot `SLOT_ID_BODY` that currently holds
+`on_slot_changed()` (these fire for spill too, through `doMove`), the drop policies (run
+inside base `Destroy`, which is gap 1) and `verify()`. C3 gives body slots, and the interior slot `SLOT_ID_BODY` that currently holds
 organs untracked. C8a gives occupant slots (`occupant_slot.dm`). C11 is planned (`roadmap.md`
-C11) and has no code on `master`, so J8's `slot_item` is new work.
+C11) and has no code on `master`; `slot_item` (J8) lands now on `rewrite/ledger-joint`.
 
 ---
 
@@ -1435,16 +1466,16 @@ other session's; we schedule around them.
 
 | Wave | Ours | Theirs (requests) | Gate |
 |---|---|---|---|
-| **W1** | **K1** clock core; **O2** part slots and hooks (against J1-J6 stubs agreed in advance); **O5** `return_from_death` (no dependencies) | J1, J2, J3, J4, J5, J6, J7 | `dq_clock_tests`; `dq_part_lifecycle_tests` for attach and detach; the revive lint on |
-| **W2** | **K2** body time and stasis; **K3** organs on clocks; **K4** providers (with J9); **K5** misc timers; **O3a-d** list → query and moves; **O4** destroy and mind; **O6** harness, codemod for readers, lints; **N1-N4** nullspace (ours); **N5** speakers (with J16) | J8, J9, J15, J16 | Full lifecycle matrix green; stasis parity; `dq_nullspace_audit` = 0 for ours; body_time and part_moves lints on; hard deletes per round not up (bench `major_events`, `idle`) |
-| **W3** | **X1** exposure engine and adapter; **X2** dose afflictions, addiction, effects; **X3** radiation; **X4** codemod and parity recorder | J10 (a, b), J14 | `dq_exposure_tests`; R1, R2, R3, R4, R7 and R9 regressions |
-| **W4** | **X5.1-X5.8** per-file reagent migration; **X6** UI; step 9 deletions; R5 blood with J10(c); R8 with J11 | J10(c), J11 | Parity suite green; override count 0; adapter deleted |
+| **W1** | **K1** clock core (the move-hook wiring follows J5); **O2** part slots and hooks on `rewrite/ledger-joint` (J2, J4, J6, J8), then against J1; **O5** `return_from_death` (no dependencies) | J2, J4, J6, J8 → J1 → J7 → J5 → J3 | `dq_clock_tests`; `dq_part_lifecycle_tests` for attach and detach; the revive lint on; `idle` and `major_events` benched before and after J5 |
+| **W2** | **K2** body time and stasis; **K3** organs on clocks (needs J5); **K4** providers (with J9); **K5** misc timers; **O3a-d** list → query and moves; **O4** destroy and mind (needs J1, J3); **O6** harness, reader codemod, lints; **N1-N4** nullspace (ours); **N5** speakers (with J16) | J9, J15, J16 | Full lifecycle matrix green; stasis parity; `dq_nullspace_audit` = 0 for ours; body_time and part_moves lints on; hard deletes per round not up (bench `major_events`, `idle`) |
+| **W3** | **X1** exposure engine and adapter (the adapter is branch-only); **X2** dose afflictions, addiction, effects; **X3** radiation; **X4** codemod and parity recorder. Not merged on its own | J10(a, b) (API agreed before X1), J14 | `dq_exposure_tests`; R1, R2, R3, R4, R7 and R9 regressions |
+| **W4** | **X5.1-X5.8** per-file reagent migration; **X6** UI; step 9 deletions; R5 blood with J10(c); R8 with J11. **W3 and W4 merge to `master` together**, so `master` never has the adapter | J10(c) (behind a flag), J11 | Parity suite green; override count 0; adapter gone |
 | **W5** | **Grants and capabilities**: organs, implants, traits and equipment grant abilities, languages, verbs and factors through the attach hooks (O2) instead of `organ_verbs`/`handle_organ_mod_special` and `refresh_modular_limb_verbs`; P5 ability definitions for organ powers and cooldowns | J12, J13 | Grant parity tests; no `add_verb` in organ code |
 | **W6** | **Traits and genes**: traits as factor sources and grants; genes as heritable trait sets on the body; species built from them | — | — |
 | **W7** | **Breath profiles**: `/datum/breath_profile` (required, toxic and exhaled gases, exposures hook from 4.5), replacing `species.breath_type`/`poison_type`/`exhale_type` and the breathing branches in `human/life.dm:660-820` | M1b gas watches (reactor §6 comfort bands) | Breathing parity tests (`dq_atmos_tests.dm:483-487,3327-3356`) |
 | **W8** | **Mech body host (C8b)**: `/datum/body` owned by an object through a body host interface (`README.md` coordination table; `body.dm:41`); mech damage through `injure()`. **Occupant behaviour**: sleepers, scanners, cryo, the dogborg sleeper and the mech sleeper as clock providers (stasis speed) plus exposure routes (sleeper injection into ROUTE_BLOOD, cryo cooling via J11) | C8a (done), D3 | C8b "done when" (`roadmap.md`) |
 
-**Critical path:** J1 and J5 → O2 and K1 → K2 → X1 → X5 → W5. Clocks (K) and ownership (O)
+**Critical path:** J2/J4/J6/J8 → J1 → O2 and O4; J7 → J5 → K3; K1 → K2 → X1 → X5 → W5. Clocks (K) and ownership (O)
 run in parallel in W1 and W2. Exposure starts after the body clock (K2) because compartments
 settle on it. Nullspace (N) rides W2 because its anchors are slots from O2.
 
