@@ -15,6 +15,16 @@ import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
+  BALANCE_RESULTS_FILE,
+  BALANCE_RUNS_DIR,
+  type BalanceRun,
+  type BalanceWorldDocument,
+  balanceFailures,
+  compareBalance,
+  formatBalanceChanges,
+  readBalanceResults,
+} from './lib/balance';
+import {
   BENCH_RUNS_DIR,
   type BenchIteration,
   type BenchRun,
@@ -859,6 +869,72 @@ export const BenchReportTarget = new Juke.Target({
   executes: async () => {
     const { runs, tests } = renderReport('data/bench/report.html');
     Juke.logger.info(`Wrote data/bench/report.html (${runs} benchmark runs, ${tests} test runs).`);
+  },
+});
+
+/**
+ * Runs the medical and combat balance harness (code/modules/balance) in a
+ * -DBENCHMARK world, stores the results in data/balance/runs/ and lists what
+ * changed since the previous run. `--arg scenarios=ttk,bleedout` runs a subset.
+ * doc/balance_baseline.md explains the numbers.
+ */
+export const BalanceTarget = new Juke.Target({
+  parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, ArgParameter, LabelParameter, ThresholdParameter],
+  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  executes: async ({ get }) => {
+    const worldParams: Record<string, string> = { bench: 'balance' };
+    for (const arg of get(ArgParameter)) {
+      const [key, ...rest] = arg.split('=');
+      worldParams[`bench_${key}`] = rest.join('=');
+    }
+    await compileDerived(`${DME_NAME}.bench.dme`, get, [...TEST_DEFINES, 'BENCHMARK']);
+    const identity = runIdentity(get(LabelParameter));
+    Juke.rm(BALANCE_RESULTS_FILE);
+    await runTestWorld(`${DME_NAME}.bench.dmb`, get(DmVersionParameter), worldParams, false);
+    await removeDerivedArtifacts('*.bench.*');
+    let world: BalanceWorldDocument;
+    try {
+      world = readBalanceResults();
+    } catch {
+      printLogTails();
+      Juke.logger.error(`The world wrote no ${BALANCE_RESULTS_FILE}.`);
+      throw new Juke.ExitCode(1);
+    }
+    const failures = balanceFailures(world);
+    const record: BalanceRun = { ...identity, kind: 'balance', label: get(LabelParameter), world, failures };
+    const previous = listRuns(BALANCE_RUNS_DIR).map((f) => readJson<BalanceRun>(f)).filter((r) => r.world.map === world.map);
+    const file = `${BALANCE_RUNS_DIR}/${record.id}.json`;
+    writeJson(file, record);
+    for (const scenario of Object.values(world.scenarios)) {
+      console.log(`${scenario.id.padEnd(12)} ${scenario.status.padEnd(8)} ${Object.keys(scenario.results ?? {}).length} values in ${scenario.duration_seconds ?? '?'}s`);
+    }
+    Juke.logger.info(`Saved ${file}`);
+    if (previous.length) {
+      const base = previous[previous.length - 1];
+      console.log(`
+Changed since ${base.id}:`);
+      console.log(formatBalanceChanges(compareBalance(base.world, world, get(ThresholdParameter) ?? 0)));
+    }
+    if (failures.length) {
+      for (const failure of failures) Juke.logger.error(failure);
+      throw new Juke.ExitCode(1);
+    }
+  },
+});
+
+/** Diffs two stored balance runs (default: previous against latest). */
+export const BalanceCompareTarget = new Juke.Target({
+  parameters: [BaseParameter, HeadParameter, ThresholdParameter],
+  executes: async ({ get }) => {
+    const base = readJson<BalanceRun>(resolveRun(BALANCE_RUNS_DIR, get(BaseParameter) || 'previous'));
+    const head = readJson<BalanceRun>(resolveRun(BALANCE_RUNS_DIR, get(HeadParameter) || 'latest'));
+    if (base.world.map !== head.world.map) Juke.logger.warn(`Comparing different maps: ${base.world.map} vs ${head.world.map}`);
+    const changes = compareBalance(base.world, head.world, get(ThresholdParameter) ?? 0);
+    console.log(`Base ${base.id}
+Head ${head.id}
+`);
+    console.log(formatBalanceChanges(changes));
+    Juke.logger.info(`${changes.length} balance number(s) changed.`);
   },
 });
 
