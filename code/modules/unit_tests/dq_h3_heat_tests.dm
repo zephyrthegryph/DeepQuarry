@@ -84,6 +84,12 @@
 	TEST_ASSERT(QDELETED(bottle), "a kelvin above, it melts")
 	for(var/obj/effect/decal/cleanable/molten_item/goo in T)
 		qdel(goo)
+	// The bottle's release dumped its excess heat into the shared floor;
+	// reset it so the window's own heat body starts at room temperature.
+	// Otherwise its baseline rule check already reads "above the melting
+	// point" before the write below, so the write is never seen as a
+	// crossing and the overheating rule never fires.
+	dq_h3_cool_floor(T)
 
 	// Structures overheat instead: a damage stream while above the limit.
 	var/obj/structure/window/basic/window = allocate(/obj/structure/window/basic, T)
