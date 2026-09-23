@@ -479,9 +479,6 @@
 		else
 			return FALSE
 
-/obj/machinery/chem_master/attack_ai(mob/user)
-	return attack_hand(user)
-
 /obj/machinery/chem_master/proc/isgoodnumber(num)
 	if(isnum(num))
 		if(num > 200)

@@ -10,9 +10,6 @@
 	var/screen = 0
 	var/list/stored_data
 
-/obj/machinery/computer/mecha/attack_ai(mob/user)
-	return attack_hand(user)
-
 /obj/machinery/computer/mecha/attack_hand(mob/user)
 	if(..())
 		return

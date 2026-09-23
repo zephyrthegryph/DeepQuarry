@@ -273,9 +273,6 @@ Thus, the two variables affect pump operation are set in New():
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/pump/attack_ghost(mob/user)
-	tgui_interact(user)
-
 /obj/machinery/atmospherics/binary/pump/attack_hand(mob/user)
 	if(..())
 		return

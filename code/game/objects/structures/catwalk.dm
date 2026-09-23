@@ -74,9 +74,8 @@
 			new /obj/item/stack/rods(src.loc, 2)
 			qdel(src)
 
-/obj/structure/catwalk/attack_robot(mob/user)
-	if(Adjacent(user))
-		attack_hand(user)
+/obj/structure/catwalk
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /obj/structure/catwalk/atom_deconstruct(disassembled = TRUE, mob/user)
 	playsound(src, 'sound/items/Welder.ogg', 100, 1)

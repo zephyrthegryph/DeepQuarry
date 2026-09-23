@@ -718,8 +718,8 @@
 
 	frequency.post_signal(src, alert_signal)
 
-/obj/machinery/alarm/attack_ai(mob/user)
-	tgui_interact(user)
+/obj/machinery/alarm
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/alarm/attack_hand(mob/user)
 	. = ..()

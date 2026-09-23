@@ -79,8 +79,8 @@
 		breather = null
 		update_use_power(USE_POWER_IDLE)
 
-/obj/machinery/oxygen_pump/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/oxygen_pump
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/oxygen_pump/proc/attach_mask(mob/living/carbon/C)
 	if(C && istype(C))

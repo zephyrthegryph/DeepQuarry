@@ -32,9 +32,6 @@
 	if(!GLOB.rm_controller)
 		GLOB.rm_controller = new /datum/controller/rogue()
 
-/obj/machinery/computer/roguezones/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/computer/roguezones/attack_hand(mob/user as mob)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))

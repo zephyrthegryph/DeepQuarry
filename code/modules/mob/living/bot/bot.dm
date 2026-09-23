@@ -176,8 +176,8 @@
 	ejectpai(user)
 	return ITEM_INTERACT_SUCCESS
 
-/mob/living/bot/attack_ai(mob/user)
-	return attack_hand(user)
+/mob/living/bot
+	silicon_use = SILICON_USE_HAND
 
 /mob/living/bot/say_quote(message, datum/language/speaking = null)
 	return "beeps"

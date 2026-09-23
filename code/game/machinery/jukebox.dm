@@ -245,9 +245,6 @@
 				StopPlaying()
 			SSmedia_tracks.remove_track(ui.user, track_to_remove)
 
-/obj/machinery/media/jukebox/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
-
 /obj/machinery/media/jukebox/attack_hand(mob/user as mob)
 	interact(user)
 

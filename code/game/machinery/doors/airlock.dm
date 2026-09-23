@@ -428,11 +428,8 @@ About the new airlock wires panel:
 				playsound(src, denied_sound, 50, 0, 3)
 	return
 
-/obj/machinery/door/airlock/attack_ai(mob/user)
-	tgui_interact(user)
-
-/obj/machinery/door/airlock/attack_ghost(mob/user)
-	tgui_interact(user)
+/obj/machinery/door/airlock
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/door/airlock/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, datum/tgui_state/custom_state)
 	ui = SStgui.try_update_ui(user, src, ui)

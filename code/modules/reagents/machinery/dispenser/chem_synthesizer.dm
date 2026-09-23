@@ -470,9 +470,6 @@
 		return
 	tgui_interact(user)
 
-/obj/machinery/chemical_synthesizer/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/chemical_synthesizer/attack_hand(mob/user)
 	if(stat & (BROKEN|NOPOWER))
 		return

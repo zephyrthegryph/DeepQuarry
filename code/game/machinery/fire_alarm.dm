@@ -128,9 +128,6 @@ FIRE ALARM
 			alarm()			// added check of detector status here
 	return
 
-/obj/machinery/firealarm/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/firealarm/bullet_act(obj/item/projectile/Proj, def_zone)
 	alarm()
 	return ..()

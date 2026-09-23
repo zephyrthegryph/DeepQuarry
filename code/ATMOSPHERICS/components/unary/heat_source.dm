@@ -99,8 +99,8 @@
 		return FALSE
 	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature
 
-/obj/machinery/atmospherics/unary/heater/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/atmospherics/unary/heater
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/atmospherics/unary/heater/attack_hand(mob/user as mob)
 	tgui_interact(user)

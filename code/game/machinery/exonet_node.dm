@@ -101,15 +101,6 @@
 /obj/machinery/exonet_node/process()
 	update_power()
 
-// Proc: attackby()
-// Parameters: 2 (I - the item being whacked against the machine, user - the person doing the whacking)
-// Description: Handles deconstruction.
-// Proc: attack_ai()
-// Parameters: 1 (user - the AI clicking on the machine)
-// Description: Redirects to attack_hand()
-/obj/machinery/exonet_node/attack_ai(mob/user)
-	attack_hand(user)
-
 // Proc: attack_hand()
 // Parameters: 1 (user - the person clicking on the machine)
 // Description: Opens the TGUI interface with tgui_interact()

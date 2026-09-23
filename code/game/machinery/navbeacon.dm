@@ -59,8 +59,8 @@ GLOBAL_LIST_EMPTY(navbeacons) // no I don't like putting this in, but it will do
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/navbeacon/attack_ai(mob/user)
-	tgui_interact(user)
+/obj/machinery/navbeacon
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/navbeacon/attack_hand(mob/user)
 

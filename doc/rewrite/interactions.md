@@ -80,6 +80,13 @@ Every interaction is a definition, not a proc override. So every interaction can
 - `hover.dm`: `/atom/MouseEntered` returns early unless the client has a category key bound. Category keys (`.input-category`) are unbound by default and do nothing until I2.
 - `keybind_editor.dm` with `KeybindingEditor.tsx`: the Keybindings verb.
 
+**As built (I3).**
+- The adapters produce the hands' actions, filtered by `allows_interaction()`: the AI gets tool-less `INTERACTION_TAG_REMOTE` interactions on what it can see (`has_camera_sight()`: its view, or the camera network when in a core; the rule of its tgui state); cyborgs get everything except observer-only (their modules are their held items, so tool interactions come through `resolve_attackby` as for hands); ghosts get only `INTERACTION_TAG_OBSERVER`; telekinesis gets tool-less ones (`interactions_for()`/`try_interaction()` take an `adapter` argument so telekinesis can act for a human). Every non-hand Use tries the resolver first (`use_interaction()`), then the legacy proc.
+- `/atom/var/silicon_use` (a type var; `code/__defines/interactions.dm`) replaces the forwarding overrides: `SILICON_USE_HAND` (the AI's Use is `attack_hand`; `/obj/machinery` sets it), `SILICON_USE_UI` (the AI's Use opens tgui), `ROBOT_USE_HAND` and `ROBOT_USE_HAND_ADJACENT` (a cyborg's empty-gripper Use is `attack_hand`, always or when adjacent). The base `attack_ai` and `attack_robot` read it, so a type's own override still wins. `/obj/machinery/attack_ai` keeps only its gate (a cyborg without a client, or looking through a camera, can't control machines remotely) and calls `..()`. Ghost UI openers are covered by `/obj/attack_ghost`, which opens tgui.
+- Deleted: 79 `attack_ai`, 9 `attack_robot` and 6 `attack_ghost` overrides that only forwarded. Behaviour changes, all small: machines whose own `attack_ai` forwarded now get the machinery gate for remote-viewing or clientless cyborgs; ghosts with inquisitive ghost on also get the examine on those six types, as on every other object; the privacy switch's `attack_hand()` gets its user.
+- Kept, with real behaviour or owned by another track: the digital and shutoff valves and `light/flamp` (an ancestor overrides `attack_ai` differently); the medical, cloning, cryo, resleeving and sleeper consoles and the medical stand (the body track's files). `tools/ci/actor_forwarding_lint.py` (CI: Check Actor Forwarding) forbids new forwarding-only overrides and allowlists these.
+- Tests: `code/modules/unit_tests/dq_actor_adapter_tests.dm` (the filter per actor, Use through the resolver per actor, and parity per actor type on converted types: button, fire alarm, privacy switch, airlock, turret control, ladder, closet).
+
 ## 5. Interaction definitions
 
 ```dm

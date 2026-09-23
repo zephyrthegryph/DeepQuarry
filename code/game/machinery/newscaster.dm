@@ -612,9 +612,6 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 /obj/machinery/newscaster/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
 
-/obj/machinery/newscaster/attack_ai(mob/user)
-	return attack_hand(user) //or maybe it'll have some special functions? No idea.
-
 /datum/news_photo
 	var/is_synth = 0
 	var/obj/item/photo/photo = null

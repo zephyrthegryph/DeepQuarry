@@ -581,8 +581,8 @@
 		tgui_interact(user)
 	return
 
-/obj/machinery/power/supermatter/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/power/supermatter
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/power/supermatter/attack_hand(mob/user as mob)
 	user.visible_message(span_warning("\The [user] reaches out and touches \the [src], inducing a resonance... [user.p_Their()] body starts to glow and bursts into flames before flashing into ash."),\

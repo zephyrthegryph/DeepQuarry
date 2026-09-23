@@ -190,9 +190,8 @@
 			S.gather_all(src, user)
 	return ..()
 
-/turf/attack_robot(mob/user)
-	if(!isAI(user))
-		attack_hand(user)
+/turf
+	silicon_use = ROBOT_USE_HAND
 
 // Hits a mob on the tile.
 /turf/proc/attack_tile(obj/item/W, mob/living/user)

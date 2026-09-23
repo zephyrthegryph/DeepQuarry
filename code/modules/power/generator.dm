@@ -204,9 +204,6 @@ GLOBAL_LIST_EMPTY(all_turbines)
 		SSmachines.hibernate_generator(src)
 		return PROCESS_KILL
 
-/obj/machinery/power/generator/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/power/generator/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 75, 1)
 	anchored = !anchored

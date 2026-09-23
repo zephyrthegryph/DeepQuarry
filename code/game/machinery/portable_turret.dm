@@ -405,11 +405,8 @@
 		return TRUE
 	return FALSE
 
-/obj/machinery/porta_turret/attack_ai(mob/user)
-	tgui_interact(user)
-
-/obj/machinery/porta_turret/attack_ghost(mob/user)
-	tgui_interact(user)
+/obj/machinery/porta_turret
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/porta_turret/attack_hand(mob/user)
 	tgui_interact(user)

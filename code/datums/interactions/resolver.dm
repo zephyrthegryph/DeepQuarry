@@ -65,12 +65,13 @@
  * Everything `actor` could do to `target` holding `held`, sorted by priority.
  * The actor's capability adapter drops what that kind of actor can never do.
  * `modifiers` is the click's modifier list; nothing reads it yet (combat mode, I6).
+ * `adapter` overrides the actor's own, e.g. telekinesis acting for a human.
  */
-/proc/interactions_for(mob/actor, atom/target, obj/item/held, list/modifiers)
+/proc/interactions_for(mob/actor, atom/target, obj/item/held, list/modifiers, datum/input_adapter/adapter)
 	var/datum/interaction_resolution/resolution = new(actor, target, held)
 	if(!actor || !target)
 		return resolution
-	var/datum/input_adapter/adapter = actor.input_adapter()
+	adapter ||= actor.input_adapter()
 	var/list/available = list()
 	var/list/blocked = list()
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
@@ -109,11 +110,12 @@
  *
  * `quality` limits it to interactions needing that tool quality (the tool_act
  * path); `no_tool` limits it to interactions needing no tool (the generic path).
+ * `adapter` overrides the actor's own capability adapter (telekinesis).
  */
-/proc/try_interaction(mob/actor, atom/target, obj/item/held, action, quality, no_tool = FALSE)
+/proc/try_interaction(mob/actor, atom/target, obj/item/held, action, quality, no_tool = FALSE, datum/input_adapter/adapter)
 	if(!actor || !target)
 		return null
-	var/datum/interaction_resolution/resolution = interactions_for(actor, target, held)
+	var/datum/interaction_resolution/resolution = interactions_for(actor, target, held, null, adapter)
 	var/list/best = list()
 	for(var/datum/interaction/interaction as anything in resolution.best_for_action(action))
 		if(quality && interaction.tool != quality)

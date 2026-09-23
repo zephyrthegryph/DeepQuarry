@@ -33,8 +33,8 @@
 	. = ..()
 	lift = _lift
 
-/obj/structure/lift/attack_ai(mob/user)
-	return attack_hand(user)
+/obj/structure/lift
+	silicon_use = SILICON_USE_HAND
 
 /obj/structure/lift/attack_generic(mob/user)
 	return attack_hand(user)

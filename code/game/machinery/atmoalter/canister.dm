@@ -372,9 +372,6 @@ update_flag
 		qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/portable_atmospherics/canister/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
-
 /obj/machinery/portable_atmospherics/canister/attack_hand(mob/user as mob)
 	return tgui_interact(user)
 
