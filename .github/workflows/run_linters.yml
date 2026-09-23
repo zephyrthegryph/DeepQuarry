@@ -116,6 +116,9 @@ jobs:
       - name: Check Latent Contents Walks
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/latent_lint.py
+      - name: Check Raw Contents/Spatial Reads
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        run: python3 tools/ci/spatial_lint.py
       - name: Check Lifecycle
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/lifecycle_lint.py

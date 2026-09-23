@@ -89,6 +89,85 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
   - Material stacks don't serialize yet (`recipes` has no codec), so sheet storage keeps them real.
 - **Lint.** `tools/ci/containment_lint.py` checks `tools/ci/containment_allowlist.txt`, which holds per-file counts of the legacy sites (681 in 310 files at C1). A file may not gain sites.
 
+## 2a. No raw contents access (C11)
+
+C1 stopped raw *writes* (`loc =`, `contents +=`/`-=`). C11 does the same for raw
+*reads*: `in X.contents` and implicit `in src`/`in loc`/`in T` loops,
+`contents.len`/`length(contents)`, and `locate(...) in` searches. At the start of
+C11 that's about 1,866 sites (318 explicit contents loops, 607 implicit loops,
+184 length checks, 757 `locate() in` searches) across 681 files — most of it in
+code nobody has touched since before the ledger existed.
+
+Two APIs cover every legitimate read:
+
+- **The ledger read API**, for a holder's own contents: `slot_contents()`,
+  `latent_entries()`, `latent_count()`, `latent_materialize_all()`,
+  `get_all_contents()`, `contents_property()`, `contents_has_tag()` and friends
+  (`code/datums/containment/api.dm`, §2). These already exist from C1/C5 — most
+  of the conversion work is switching call sites over to them, not building new
+  API surface.
+- **The spatial API**, for tile queries: "what's on this turf", "find a `T` on
+  this tile", "for each atom of type X here". `locate(TYPE) in loc`/`in turf` and
+  `for(var/T in loc)` on a turf are spatial reads, not holder reads — a turf's
+  contents are the engine's own atom list, not a ledger-tracked holder.
+
+**Where the spatial API lives.** A turf's contents are engine-maintained; BYOND
+updates them on every move, and nothing in this codebase can intercept that (the
+same reason C1's write lint only covers ledger holders, not turfs). So there is
+nothing to gain by backing turf queries with the Rust grid (`vg-core::Grid`)
+today — the source of truth is still BYOND's own turf contents list, and a Rust
+mirror would just be a second thing to keep in sync with the first. The spatial
+API starts DM-side, as one central, typed wrapper over the existing turf
+contents, so call sites stop hand-rolling `locate(TYPE) in loc` and
+`for(var/atom/A in loc)`:
+
+- `turf_contents_of_type(T, type)` returns every atom of `type` (and subtypes) on
+  turf `T`, as a list. Equivalent to `for(var/type/A in T)`, but named, so a lint
+  can find and count call sites instead of every bare loop.
+- `locate_on(T, type)` returns the first atom of `type` on turf `T`, or null.
+  Equivalent to `locate(type) in T`.
+- `turf_each(T, type, callback)` walks matching atoms without allocating a list,
+  for hot paths that only need a side effect per atom (radiation, EMP,
+  explosion falloff) and would otherwise call `turf_contents_of_type()` and
+  throw the list away.
+
+Because every caller goes through these three procs, the *implementation* can
+change later — e.g. to consult a Rust-side spatial index for a specific hot
+query — without touching any of the ~475 call sites again. That's the same
+reason the ledger API was built before C2 through C9 migrated types onto it:
+centralize first, optimize the center later.
+
+**What doesn't move to the spatial API.** A holder's own contents (a closet's
+interior, a bag, a belly, a mob's inventory) are not tile queries — those read
+sites convert to the ledger read API above, not `turf_contents_of_type()`.
+`locate(type) in some_holder.contents` and `in some_holder` (when `some_holder`
+is a slot holder, not a turf) are ledger reads; `locate(type) in loc` and
+`in loc` where `loc` is a turf are spatial reads. Call sites are converted
+according to what the receiver actually is, not by pattern-matching the source
+text.
+
+### As built (C11)
+
+- **Lint.** `tools/ci/spatial_lint.py` checks `tools/ci/spatial_allowlist.txt`
+  (1,866 sites in 681 files at the start of C11). Same ratchet shape as C1's
+  write lint: a file may not exceed its allowlisted count, an unlisted file may
+  have none, and `--update` only lowers counts (never silently raises one). Both
+  lints exempt `code/datums/containment/` itself, since that's the
+  implementation the ratchet is steering everyone else towards. Wired into
+  `.github/workflows/run_linters.yml` alongside the existing containment,
+  latent-contents and state-schema lints.
+- **Conversion is by domain, one commit per domain**, prioritizing the holder
+  types that then qualify for latency (closets, storage, machines, crates,
+  vending, mecha — §4.4's eligibility list) and hot paths (movement, damage and
+  heat propagation, §12). Behaviour must not change: a converted site reads the
+  same set of atoms in the same order it did before, through the new API
+  instead of a raw loop.
+- **Domains explicitly left alone** for this pass, to avoid fighting other
+  in-flight work: I7's interaction conversions (structures/items/mobs/turfs),
+  M2 (`code/ATMOSPHERICS/`), C6 (machine parts), mobmem/mobsrc (mob list vars),
+  traitmem (`code/game/dna`, mutations), and DQ Medical's areas beyond
+  mechanical API renames.
+
 ## 3. Slots
 
 **A slot definition** is a shared `/datum/slot_def` that holder types declare. It holds:
