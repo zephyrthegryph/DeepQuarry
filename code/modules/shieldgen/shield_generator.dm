@@ -739,12 +739,16 @@
 	current_energy = max_energy
 
 // Best coil and capacitor, as data (roadmap C6) -- no eager objects.
+// `list(circuit = 1, ...)` would use the literal identifier "circuit" as the
+// key (DM's named-argument list syntax), not circuit's value -- the key
+// must be set by index instead to be the board's actual type path.
 /obj/machinery/power/shield_generator/upgraded/latent_generator()
-	return list(
-		circuit = 1,
+	var/list/gen = list(
 		/obj/item/stock_parts/capacitor = 1,
 		/obj/item/smes_coil/super_capacity = 1,
 	)
+	gen[circuit] = 1
+	return gen
 
 // Starts with the best SMES coil and capacitor (and fully charged)
 /obj/machinery/power/shield_generator/upgraded/Initialize(mapload)

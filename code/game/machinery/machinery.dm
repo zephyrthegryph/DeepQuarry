@@ -282,9 +282,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	var/cache_key = "[path]#[var_name]"
 	if(cache_key in cache)
 		return cache[cache_key]
-	var/atom/instance = new path
+	// The probe instance is kept alive (never qdel'd), one per path, reused
+	// across every var_name asked of it. A list-valued var (req_components)
+	// is very often the SAME shared list reference as every other instance
+	// of that type gets by default (DM does not deep-copy a `list(...)`
+	// compile-time default per instance) -- qdel'ing the probe could run
+	// Destroy() cleanup that clears that list in place and corrupt it for
+	// every real instance of the type, not just this throwaway one.
+	var/static/list/probes = list()
+	var/atom/instance = probes[path]
+	if(!instance)
+		instance = new path
+		probes[path] = instance
 	var/value = instance.vars[var_name]
-	qdel(instance)
 	cache[cache_key] = value
 	return value
 
