@@ -1,0 +1,10 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Surgery rebuilt on the body model: opening a limb leaves a surgical incision that bleeds until clamped and gathers infection (faster on a dirty surface) until it is closed."
+  - rscadd: "Surgical steps are treatments: organ sutures close tears and bruises, resection removes dead tissue, vessel repair stops arterial and internal bleeds, decompression relieves compartment syndrome, a collapsed lung or a subdural bleed."
+  - balance: "Surgical success now depends on the tool, the surface (operating table, bed, floor), the surgeon, and the patient: a conscious patient without pain relief or sedation flinches."
+  - balance: "A failed step causes a specific complication: a slipped suture lacerates the organ, a slipped vessel repair tears an artery."
+  - rscadd: "Prosthetic limbs use the same procedures with repair tools: unscrew and open the hatch, weld plating, rewire, repair components, close the hatch."
+  - qol: "Surgery describes what the surgeon sees instead of refusing with rules text."
+  - rscdel: "Removed the old multi-stage bone, face, brainstem, necrosis and dehusk step chains; each is now a single step."
