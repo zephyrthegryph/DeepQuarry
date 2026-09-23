@@ -74,7 +74,38 @@ class MapStudioTests(unittest.TestCase):
         self.assertEqual(ports(cable, "power"), {1, 4})
         self.assertEqual(ports(atmos, "atmos"), {1, 4})
         self.assertEqual(ports(disposal, "disposals"), {1, 4})
+        self.assertEqual(ports('/obj/machinery/atmospherics/pipe/cap/hidden/fuel{dir = 2}', "atmos"), {2})
+        self.assertEqual(ports('/obj/machinery/atmospherics/binary/circulator{dir = 1}', "atmos"), {1, 2})
         self.assertIn('icon_state = "pipe-c"', disposal)
+
+    def test_pipe_and_disposal_drags_make_bends_and_branches(self):
+        for layer, atom, junction in (
+            ("atmos", "/obj/machinery/atmospherics/pipe/simple/hidden/supply", "/pipe/manifold/"),
+            ("disposals", "/obj/structure/disposalpipe/segment", "/disposalpipe/junction/yjunction"),
+        ):
+            with self.subTest(layer=layer):
+                bend = {"action": "route", "layer": layer, "atom": atom,
+                        "points": [{"x": 1, "y": 1, "z": 1}, {"x": 2, "y": 1, "z": 1},
+                                   {"x": 2, "y": 2, "z": 1}],
+                        "snap_start": False, "snap_end": False, "auto_join_neighbors": False}
+                preview = self.studio.preview(self.relative, [bend])
+                center = next(d for d in preview["diff"] if d["x"] == 2 and d["y"] == 1)
+                self.assertTrue(any(ports(a, layer) == {1, 8} for a in center["after"]))
+                horizontal = {"action": "route", "layer": layer, "atom": atom,
+                              "points": [{"x": 1, "y": 2, "z": 1}, {"x": 2, "y": 2, "z": 1},
+                                         {"x": 3, "y": 2, "z": 1}],
+                              "snap_start": False, "snap_end": False, "auto_join_neighbors": False}
+                branch = {"action": "route", "layer": layer, "atom": atom,
+                          "points": [{"x": 2, "y": 2, "z": 1}, {"x": 2, "y": 3, "z": 1}],
+                          "snap_start": False, "snap_end": False, "auto_join_neighbors": False}
+                preview = self.studio.preview(self.relative, [horizontal, branch])
+                center = next(d for d in preview["diff"] if d["x"] == 2 and d["y"] == 2)
+                fitting = next(a for a in center["after"] if junction in a and
+                               ports(a, layer) == {1, 4, 8})
+                component = self.studio.network_component(
+                    self.relative, {"x": 2, "y": 2, "z": 1}, fitting, [horizontal, branch])
+                self.assertTrue({(1, 2), (2, 2), (3, 2), (2, 3)} <=
+                                {(member["x"], member["y"]) for member in component["members"]})
 
     def test_turf_sprite_resolves_and_renders(self):
         self.assertTrue(sprites.url("/turf/simulated/floor/tiled").startswith("/sprite?atom="))
@@ -141,6 +172,50 @@ class MapStudioTests(unittest.TestCase):
         m.to_file(self.path)
         result = self.studio.network_component(self.relative, point._asdict(), horizontal)
         self.assertEqual([item['atom'] for item in result['members']], [horizontal])
+
+    def test_route_straight_across_cable_keeps_crossing_separate(self):
+        _, m, _ = self.studio.load(self.relative)
+        center = Coordinate(3, 3, 1)
+        horizontal = '/obj/structure/cable/green{icon_state = "4-8"}'
+        vertical = '/obj/structure/cable/blue{icon_state = "1-2"}'
+        m.set_tile(center, tuple(m.get_tile(center)) + (horizontal,))
+        m.to_file(self.path)
+        points = [Coordinate(3, y, 1)._asdict() for y in (2, 3, 4)]
+        operation = {"action": "route", "layer": "power", "atom": "/obj/structure/cable/blue",
+                     "points": points}
+        result = self.studio.preview(self.relative, [operation])
+        crossing = next(d for d in result['diff'] if (d['x'], d['y']) == (3, 3))
+        self.assertEqual({a for a in crossing['after'] if '/cable/' in a}, {horizontal, vertical})
+        component = self.studio.network_component(self.relative, center._asdict(), horizontal, [operation])
+        self.assertEqual([item['atom'] for item in component['members']], [horizontal])
+
+    def test_route_opposite_corners_share_tile_without_merging(self):
+        _, m, _ = self.studio.load(self.relative)
+        center = Coordinate(3, 3, 1)
+        northwest = '/obj/structure/cable/green{icon_state = "1-8"}'
+        southeast = '/obj/structure/cable/blue{icon_state = "2-4"}'
+        m.set_tile(center, tuple(m.get_tile(center)) + (northwest,))
+        m.to_file(self.path)
+        points = [Coordinate(x, y, 1)._asdict() for x, y in [(3, 2), (3, 3), (4, 3)]]
+        operation = {"action": "route", "layer": "power", "atom": "/obj/structure/cable/blue",
+                     "points": points}
+        result = self.studio.preview(self.relative, [operation])
+        corner = next(d for d in result['diff'] if (d['x'], d['y']) == (3, 3))
+        self.assertEqual({a for a in corner['after'] if '/cable/' in a}, {northwest, southeast})
+        component = self.studio.network_component(self.relative, center._asdict(), northwest, [operation])
+        self.assertEqual([item['atom'] for item in component['members']], [northwest])
+
+    def test_diagonal_cables_select_byond_side_connections(self):
+        _, m, _ = self.studio.load(self.relative)
+        start, north, east = (Coordinate(x, y, 1) for x, y in [(2, 2), (2, 3), (3, 2)])
+        atoms = ['/obj/structure/cable/green{icon_state = "0-5"}',
+                 '/obj/structure/cable/blue{icon_state = "0-6"}',
+                 '/obj/structure/cable/yellow{icon_state = "0-9"}']
+        for point, atom in zip((start, north, east), atoms):
+            m.set_tile(point, tuple(m.get_tile(point)) + (atom,))
+        m.to_file(self.path)
+        component = self.studio.network_component(self.relative, start._asdict(), atoms[0])
+        self.assertEqual({item['atom'] for item in component['members']}, set(atoms))
 
     def test_network_draft_does_not_replace_pending_preview(self):
         first = {"action": "route", "layer": "power", "atom": "/obj/structure/cable/green",
@@ -346,6 +421,64 @@ class MapStudioTests(unittest.TestCase):
             "atom": green, "points": points, "end_port": 8}])
         changed = next(d for d in result['diff'] if (d['x'], d['y']) == (3, 2))
         self.assertIn(f'{green}{{icon_state = "1-8"}}', changed['after'])
+
+    def test_route_can_end_as_separate_stub_on_network_center(self):
+        _, m, _ = self.studio.load(self.relative)
+        green = '/obj/structure/cable/green'
+        end = Coordinate(3, 2, 1)
+        straight = f'{green}{{icon_state = "4-8"}}'
+        m.set_tile(end, tuple(m.get_tile(end)) + (straight,))
+        m.to_file(self.path)
+        points = [Coordinate(3, 3, 1)._asdict(), end._asdict()]
+        result = self.studio.preview(self.relative, [{"action": "route", "layer": "power",
+            "atom": green, "points": points, "snap_end": False, "end_stub": True}])
+        changed = next(d for d in result['diff'] if (d['x'], d['y']) == (3, 2))
+        self.assertIn(straight, changed['after'])
+        self.assertIn(f'{green}{{icon_state = "0-1"}}', changed['after'])
+        self.assertNotIn(f'{green}{{icon_state = "1-8"}}', changed['after'])
+
+    def test_pointer_route_only_joins_explicit_end_target(self):
+        _, m, _ = self.studio.load(self.relative)
+        green = '/obj/structure/cable/green'
+        network = Coordinate(4, 2, 1)
+        m.set_tile(network, tuple(m.get_tile(network)) + (f'{green}{{icon_state = "4-8"}}',))
+        m.to_file(self.path)
+        points = [Coordinate(x, 3, 1)._asdict() for x in (2, 3, 4)]
+        route = {"action": "route", "layer": "power", "atom": green,
+                 "points": points, "snap_end": False}
+        unsnapped = self.studio.preview(self.relative, [route])
+        self.assertFalse(any((d['x'], d['y']) == (4, 2) for d in unsnapped['diff']))
+        snapped = self.studio.preview(self.relative, [{**route,
+            "points": points + [network._asdict()], "end_port": 8}])
+        join = next(d for d in snapped['diff'] if (d['x'], d['y']) == (4, 2))
+        self.assertIn(f'{green}{{icon_state = "1-8"}}', join['after'])
+
+    def test_unselected_route_starts_as_nub_next_to_network(self):
+        _, m, _ = self.studio.load(self.relative)
+        green = '/obj/structure/cable/green'
+        network = Coordinate(1, 2, 1)
+        m.set_tile(network, tuple(m.get_tile(network)) + (f'{green}{{icon_state = "4-8"}}',))
+        m.to_file(self.path)
+        points = [Coordinate(x, 2, 1)._asdict() for x in (2, 3)]
+        route = {"action": "route", "layer": "power", "atom": "/obj/structure/cable/blue",
+                 "points": points, "snap_start": False, "snap_end": False,
+                 "auto_join_neighbors": False}
+        result = self.studio.preview(self.relative, [route])
+        self.assertFalse(any((d['x'], d['y']) == (1, 2) for d in result['diff']))
+        start = next(d for d in result['diff'] if (d['x'], d['y']) == (2, 2))
+        self.assertIn('/obj/structure/cable/blue{icon_state = "0-4"}', start['after'])
+
+    def test_cable_route_can_loop_over_earlier_tile(self):
+        points = [Coordinate(x, y, 1)._asdict() for x, y in
+                  [(2, 2), (3, 2), (3, 3), (2, 3), (2, 2)]]
+        route = {"action": "route", "layer": "power", "atom": "/obj/structure/cable/blue",
+                 "points": points, "snap_start": False, "snap_end": False,
+                 "auto_join_neighbors": False}
+        result = self.studio.preview(self.relative, [route])
+        origin = next(d for d in result['diff'] if (d['x'], d['y']) == (2, 2))
+        cables = [atom for atom in origin['after'] if atom.startswith('/obj/structure/cable/blue')]
+        self.assertTrue(any(4 in ports(atom, 'power') for atom in cables))
+        self.assertTrue(any(1 in ports(atom, 'power') for atom in cables))
 
     def test_new_three_way_cable_junction_keeps_all_bridges(self):
         _, m, _ = self.studio.load(self.relative)

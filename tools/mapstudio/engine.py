@@ -16,6 +16,7 @@ import uuid
 from pathlib import Path
 
 from sprites import sprites
+import rust_bridge
 
 ROOT = Path(__file__).resolve().parents[2]
 PARSER = ROOT / "tools/mapmerge2/dmm.py"
@@ -65,9 +66,25 @@ def ports(atom, layer):
         state = var_edit(atom, "icon_state", "0-1")
         match = re.fullmatch(r"(\d+)-(\d+)", state)
         return {int(x) for x in match.groups() if int(x) in OPPOSITE} if match else set()
-    direction = int(var_edit(atom, "dir", "2" if layer == "atmos" else "0"))
+    direction = int(var_edit(atom, "dir", "2" if layer == "atmos" or "/junction" in path else "0"))
+    if layer == "atmos" and "/binary/circulator" in path:
+        return {1, 2} if direction in (1, 2) else {4, 8} if direction in (4, 8) else set()
+    if layer == "atmos" and "/pipe/cap/" in path:
+        return {direction} if direction in (1, 2, 4, 8) else set()
+    if layer == "atmos" and "/pipe/manifold4w/" in path:
+        return {1, 2, 4, 8}
+    if layer == "atmos" and "/pipe/manifold/" in path:
+        return {1, 2, 4, 8} - {direction}
     if layer == "atmos" and "/pipe/simple/" in path:
         return {1, 2} if direction in (1, 2) else {4, 8} if direction in (4, 8) else {d for d in (1, 2, 4, 8) if direction & d}
+    if layer == "disposals" and "/junction" in path:
+        clockwise = {1: 4, 4: 2, 2: 8, 8: 1}
+        counterclockwise = {value: key for key, value in clockwise.items()}
+        state = var_edit(atom, "icon_state", "pipe-y" if "/yjunction" in path else "pipe-j1")
+        sides = {direction, OPPOSITE[direction]}
+        if state == "pipe-y":
+            return {direction, clockwise[direction], counterclockwise[direction]}
+        return sides | {counterclockwise[direction] if state == "pipe-j2" else clockwise[direction]}
     if layer == "disposals" and "/segment" in path:
         state = var_edit(atom, "icon_state", "pipe-s")
         if state == "pipe-s":
@@ -77,23 +94,49 @@ def ports(atom, layer):
     return set()
 
 
+def power_link_targets(point, direction):
+    """Neighbor ports BYOND accepts for one cable port, including diagonal bends."""
+    dx, dy = next(delta for delta, value in DIRS.items() if value == direction)
+    yield Coordinate(point.x + dx, point.y + dy, point.z), OPPOSITE[direction]
+    if direction in (5, 6, 9, 10):
+        for axis in (3, 12):
+            side = direction & axis
+            sx, sy = next(delta for delta, value in DIRS.items() if value == side)
+            yield Coordinate(point.x + sx, point.y + sy, point.z), direction ^ axis
+
+
 def route_atom(atom, layer, directions):
     if layer == "power":
         values = sorted(directions)
         state = f"0-{values[0]}" if len(values) == 1 else f"{values[0]}-{values[1]}"
         return f'{atom}{{icon_state = "{state}"}}'
     if layer == "atmos":
-        if "/pipe/simple/" not in atom:
+        if not any(part in atom for part in ("/pipe/simple/", "/pipe/manifold/", "/pipe/manifold4w/")):
             raise ValueError("Automated atmos routes require a simple pipe subtype.")
         values = set(directions)
+        if len(values) >= 3:
+            lane = atom.rsplit("/", 1)[-1]
+            if len(values) == 4:
+                return f"/obj/machinery/atmospherics/pipe/manifold4w/hidden/{lane}"
+            missing = next(iter({1, 2, 4, 8} - values))
+            return f"/obj/machinery/atmospherics/pipe/manifold/hidden/{lane}{{dir = {missing}}}"
+        if "/pipe/simple/" not in atom:
+            raise ValueError("A two-way atmos route needs a simple pipe subtype.")
         if len(values) == 1:
             values.add(OPPOSITE[next(iter(values))])
         direction = 1 if values == {1, 2} else 4 if values == {4, 8} else sum(values)
         return f"{atom}{{dir = {direction}}}"
     if layer == "disposals":
-        if not atom.endswith("/segment"):
+        if not atom.endswith(("/segment", "/junction", "/junction/yjunction")):
             raise ValueError("Automated disposal routes require /disposalpipe/segment.")
         values = set(directions)
+        if len(values) == 3:
+            missing = next(iter({1, 2, 4, 8} - values))
+            return f"/obj/structure/disposalpipe/junction/yjunction{{dir = {OPPOSITE[missing]}}}"
+        if len(values) > 3:
+            raise ValueError("Disposals have no four-way connected fitting.")
+        if not atom.endswith("/segment"):
+            raise ValueError("A two-way disposal route needs a segment subtype.")
         if len(values) == 1:
             values.add(OPPOSITE[next(iter(values))])
         if values in ({1, 2}, {4, 8}):
@@ -226,8 +269,7 @@ class MapStudio:
 
     def tile(self, m, c):
         atoms = m.get_tile(c)
-        return {"x": c.x, "y": c.y, "z": c.z, "atoms": list(atoms),
-                "layers": {layer: [a for a in atoms if kind(a) == layer] for layer in LAYERS}}
+        return {"x": c.x, "y": c.y, "z": c.z, "atoms": list(atoms)}
 
     def network_component(self, path, at, atom, operations=None):
         _, m, revision = self.read(path)
@@ -264,12 +306,14 @@ class MapStudio:
             for (dx, dy), direction in DIRS.items():
                 if direction not in ports(segment, layer):
                     continue
-                neighbor = Coordinate(current.x + dx, current.y + dy, current.z)
-                if not (1 <= neighbor.x <= m.size.x and 1 <= neighbor.y <= m.size.y):
-                    continue
-                for other in m.get_tile(neighbor):
-                    if compatible(other) and OPPOSITE[direction] in ports(other, layer):
-                        queue.append((neighbor, other))
+                targets = power_link_targets(current, direction) if layer == "power" else [
+                    (Coordinate(current.x + dx, current.y + dy, current.z), OPPOSITE[direction])]
+                for neighbor, required in targets:
+                    if not (1 <= neighbor.x <= m.size.x and 1 <= neighbor.y <= m.size.y):
+                        continue
+                    for other in m.get_tile(neighbor):
+                        if compatible(other) and required in ports(other, layer):
+                            queue.append((neighbor, other))
         return {"revision": revision, "layer": layer, "members": [
             {"x": c.x, "y": c.y, "z": c.z, "atom": segment} for c, segment in sorted(seen)]}
 
@@ -296,7 +340,10 @@ class MapStudio:
                         issues.append(f"{layer} at ({c.x},{c.y},{c.z}) points off-map.")
                         continue
                     adjacent = m.get_tile(neighbor)
-                    connected = any(OPPOSITE[direction] in ports(other, layer) for other in adjacent if kind(other) == layer)
+                    targets = power_link_targets(c, direction) if layer == "power" else [(neighbor, OPPOSITE[direction])]
+                    connected = any(1 <= target.x <= m.size.x and 1 <= target.y <= m.size.y and
+                                    any(required in ports(other, layer) for other in m.get_tile(target)
+                                        if kind(other) == layer) for target, required in targets)
                     if not connected:
                         connected = any(not ports(other, layer) for other in adjacent if kind(other) == layer)
                     if not connected and layer == "atmos":
@@ -417,19 +464,10 @@ class MapStudio:
                     directions.add(direction)
             if len(directions) < 2:
                 raise ValueError("Join needs at least two matching neighboring endpoints.")
-            if len(directions) <= 2:
-                current.append(route_atom(atom, layer, directions))
-            elif layer == "power":
+            if layer == "power" and len(directions) > 2:
                 current.extend(route_atom(atom, layer, {direction}) for direction in sorted(directions))
-            elif layer == "atmos" and directions <= {1, 2, 4, 8}:
-                lane = atom.rsplit("/", 1)[-1]
-                if len(directions) == 3:
-                    missing = next(iter({1, 2, 4, 8} - directions))
-                    current.append(f"/obj/machinery/atmospherics/pipe/manifold/hidden/{lane}{{dir = {missing}}}")
-                else:
-                    current.append(f"/obj/machinery/atmospherics/pipe/manifold4w/hidden/{lane}")
             else:
-                raise ValueError("Use a mapped junction fitting for this disposal or pipe branch.")
+                current.append(route_atom(atom, layer, directions))
             m.set_tile(c, dmm_module.fix_atom_ordering(current))
             return [c]
         if action == "paste_atom":
@@ -528,121 +566,29 @@ class MapStudio:
                     m.set_tile(s, (floor, area))
             return src + dst
         if action == "route":
-            layer = op["layer"]
-            if layer not in NETWORKS:
-                raise ValueError("Routes support power, atmos, or disposals.")
-            atom = op["atom"]
+            layer, atom = op["layer"], op["atom"]
+            if layer not in NETWORKS or kind(atom) != layer:
+                raise ValueError("Route atom does not match the network layer.")
             validate_atom(atom, catalog)
-            if kind(atom) != layer:
-                raise ValueError("Route type does not match its layer.")
-            anchor_port = op.get("anchor_port")
-            if anchor_port is not None and (layer != "power" or not isinstance(anchor_port, int) or
-                                            anchor_port not in OPPOSITE):
-                raise ValueError("Choose a valid cable connection port.")
-            end_port = op.get("end_port")
-            if end_port is not None and (layer != "power" or not isinstance(end_port, int) or
-                                         end_port not in OPPOSITE):
-                raise ValueError("Choose a valid cable connection port.")
-            pts = [coord(p, *m.size) for p in op["points"]]
-            if len(pts) < 2 or len(pts) > 500:
+            points = [coord(p, *m.size) for p in op["points"]]
+            if not 2 <= len(points) <= 500:
                 raise ValueError("A route needs 2 to 500 points.")
-            if any(a.z != b.z or (max(abs(a.x - b.x), abs(a.y - b.y)) != 1 if layer == "power"
-                                    else abs(a.x - b.x) + abs(a.y - b.y) != 1) for a, b in zip(pts, pts[1:])):
-                raise ValueError("Route points must be adjacent on one deck.")
-            if len(set(pts)) != len(pts):
-                raise ValueError("A route cannot visit the same tile twice.")
-            def compatible(existing_atom):
-                if kind(existing_atom) != layer:
-                    return False
-                if layer == "power":
-                    return True
-                if layer == "atmos":
-                    return "/pipe/simple/" in base(existing_atom) and base(existing_atom).split("/")[-1] == atom.split("/")[-1]
-                return base(existing_atom).endswith("/segment") and atom.endswith("/segment")
-
-            # A drag can begin or end on the empty tile next to a mapped endpoint.
-            # Include that endpoint so its port is updated along with the new route.
-            for at_start in (True, False):
-                end = pts[0] if at_start else pts[-1]
-                if any(kind(a) == layer for a in m.get_tile(end)):
-                    continue
-                neighbor_candidates = []
-                for (dx, dy), _direction in DIRS.items():
-                    if layer != "power" and dx and dy:
-                        continue
-                    neighbor = Coordinate(end.x + dx, end.y + dy, end.z)
-                    if neighbor in pts or not (1 <= neighbor.x <= m.size.x and 1 <= neighbor.y <= m.size.y):
-                        continue
-                    if any(compatible(a) for a in m.get_tile(neighbor)):
-                        neighbor_candidates.append(neighbor)
-                if len(neighbor_candidates) == 1:
-                    if at_start:
-                        pts.insert(0, neighbor_candidates[0])
-                    else:
-                        pts.append(neighbor_candidates[0])
-            if len(set(pts)) != len(pts):
-                raise ValueError("A route cannot loop back into the same network tile.")
-            route_set = set(pts)
-            for i, c in enumerate(pts):
-                existing = [a for a in m.get_tile(c) if kind(a) == layer]
-                if existing:
-                    candidates = [a for a in existing if compatible(a)]
-                    if not candidates:
-                        raise ValueError(f"The existing {layer} at ({c.x}, {c.y}) is incompatible with this route.")
-                    wanted = {DIRS[(n.x-c.x,n.y-c.y)] for n in (pts[i-1:i]+pts[i+1:i+2])}
-                    present = set().union(*(ports(a, layer) for a in candidates))
-                    missing = wanted - present
-                    if not missing:
-                        continue
-                    current = list(m.get_tile(c))
-                    preferred_port = anchor_port if i == 0 else end_port if i == len(pts) - 1 else None
-                    chosen = next((candidate for candidate in candidates
-                                   if preferred_port in ports(candidate, layer)), candidates[0])
-                    directions = ports(chosen, layer) | missing
-                    if layer == "power" and (len(candidates) > 1 or len(directions) > 2):
-                        # BYOND joins cables on the same turf only when they share
-                        # a direction. A 0-newdir stub beside a straight cable
-                        # looks connected, but forms a separate powernet.
-                        for direction in sorted(missing):
-                            bridge = chosen if ports(chosen, layer) else next((candidate for candidate in candidates
-                                           if ports(candidate, layer)), chosen)
-                            bridge_ports = ports(bridge, layer)
-                            shared_route_ports = (wanted - missing) & bridge_ports
-                            bridge_port = (preferred_port if preferred_port in bridge_ports else
-                                           next(iter(sorted(shared_route_ports)), None) if shared_route_ports else
-                                           OPPOSITE[direction] if OPPOSITE[direction] in bridge_ports
-                                           else next(iter(sorted(bridge_ports)), None))
-                            current.append(route_atom(base(bridge), layer,
-                                                      {direction, bridge_port} if bridge_port else {direction}))
-                    elif len(directions) > 2:
-                        raise ValueError(f"A junction fitting is needed at ({c.x}, {c.y}).")
-                    else:
-                        current.remove(chosen)
-                        current.append(route_atom(base(chosen), layer, directions))
-                    m.set_tile(c, dmm_module.fix_atom_ordering(current))
-                    continue
-                directions = set()
-                for adjacent in (pts[i - 1:i] + pts[i + 1:i + 2]):
-                    directions.add(DIRS[(adjacent.x - c.x, adjacent.y - c.y)])
-                for (dx, dy), direction in DIRS.items():
-                    if layer != "power" and dx and dy:
-                        continue
-                    neighbor = Coordinate(c.x + dx, c.y + dy, c.z)
-                    if neighbor in route_set or not (1 <= neighbor.x <= m.size.x and 1 <= neighbor.y <= m.size.y):
-                        continue
-                    if any(OPPOSITE[direction] in ports(a, layer) for a in m.get_tile(neighbor) if kind(a) == layer):
-                        directions.add(direction)
-                if len(directions) > 2 and layer != "power":
-                    raise ValueError(f"Route branches at ({c.x}, {c.y}); use a mapped junction or separate segment.")
-                if len(directions) > 2:
-                    anchor = min(directions)
-                    current = [existing_atom for existing_atom in m.get_tile(c) if kind(existing_atom) != layer]
-                    for direction in sorted(directions - {anchor}):
-                        current.append(route_atom(atom, layer, {anchor, direction}))
-                    m.set_tile(c, dmm_module.fix_atom_ordering(current))
-                else:
-                    self._replace(m, c, layer, route_atom(atom, layer, directions))
-            return pts
+            nearby = set(points)
+            for point in points:
+                for dx, dy in DIRS:
+                    if 1 <= point.x + dx <= m.size.x and 1 <= point.y + dy <= m.size.y:
+                        nearby.add(Coordinate(point.x + dx, point.y + dy, point.z))
+            tiles = [{"x": p.x, "y": p.y, "z": p.z, "atoms": list(m.get_tile(p))}
+                     for p in sorted(nearby)]
+            payload = {key: value for key, value in op.items() if key != "action"}
+            payload["tiles"] = tiles
+            diff = rust_bridge.call("route", payload)
+            changed = []
+            for tile in diff:
+                p = Coordinate(tile["x"], tile["y"], tile["z"])
+                m.set_tile(p, tuple(tile["after"]))
+                changed.append(p)
+            return changed
         raise ValueError("Unknown action. Use paint, place, erase, copy, move, or route.")
 
     def preview(self, path, operations):

@@ -1,10 +1,15 @@
 const $ = (id) => document.getElementById(id);
 const canvas = $('canvas');
-const displayCtx = canvas.getContext('2d', { alpha: false });
+const displayCtx = canvas.getContext('2d', { alpha: true });
 const backCanvas = document.createElement('canvas');
-let ctx = backCanvas.getContext('2d', { alpha: false });
+let ctx = backCanvas.getContext('2d', { alpha: true });
 const sceneCanvas = document.createElement('canvas');
 const sceneCtx = sceneCanvas.getContext('2d', { alpha: false });
+let gpu = null;
+try { gpu = new MapGpuViewport($('gpu-canvas')); }
+catch (error) { $('gpu-canvas').hidden = true; console.warn('GPU viewport unavailable:',error); }
+const mapcore = new MapcoreClient();
+mapcore.load();
 const state = {
   map: '', size: [1, 1, 1], tiles: new Map(), sprites: {}, atlas: null, images: new Map(),
   bounds: null, selection: null, drag: null, pan: null, route: [], preview: null, cell: 24,
@@ -12,9 +17,12 @@ const state = {
   camera: { x: 1, y: 1 }, frameIndex: new Map(), appearance: {}, selectionHistory: [], clipboard: null,
   mode: 'select', activeLayer: 'turf', selectedAtom: null, lastPoint: null, stroke: null,
   sceneDirty: true, previewQueue: Promise.resolve(),
+  sceneAtoms: new Set(),
+  warmPower: new Set(),
   hitMasks: new Map(), temporaryLayer: null,
   hitBoxes: new Map(),
   selectedNetwork: null, networkSelectionId: 0, strokeAnchorPort: null, strokeEndPort: null,
+  strokeEndTarget: null, strokeEndStub: false,
   draft: null, draftId: 0,
 };
 const key = (x, y, z) => `${x},${y},${z}`;
@@ -125,15 +133,22 @@ function imageFor(atom) {
   const crop = frame?.crop;
   const url = frame?.url || state.sprites[atom];
   if (!url) return { loaded: false, failed: false };
-  if (!state.images.has(url)) {
+  const load = (source) => {
+    if (state.images.has(source)) return state.images.get(source);
     const img = new Image();
     const record = { img, loaded: false, failed: false };
-    state.images.set(url, record);
-    img.onload = () => { record.loaded = true; state.sceneDirty = true; scheduleDraw(); };
-    img.onerror = () => { record.failed = true; state.sceneDirty = true; scheduleDraw(); };
-    img.src = url;
+    state.images.set(source, record);
+    img.onload = () => { record.loaded = true; if (state.sceneAtoms.has(atom)) state.sceneDirty = true; scheduleDraw(); };
+    img.onerror = () => { record.failed = true; if (state.sceneAtoms.has(atom)) state.sceneDirty = true; scheduleDraw(); };
+    img.src = source;
+    return record;
+  };
+  const record = load(url);
+  if (frame && !record.loaded && state.sprites[atom] && state.sprites[atom] !== url) {
+    const fallback = load(state.sprites[atom]);
+    if (fallback.loaded) return { ...fallback, crop: null };
   }
-  return { ...state.images.get(url), crop };
+  return { ...record, crop };
 }
 function visible(atom) {
   const layer = atomLayer(atom);
@@ -190,29 +205,25 @@ function drawNetworkBlueprint(points, layer, atom, originX, originY) {
 function buildScene() {
   if (!state.bounds) return;
   const b = state.bounds, width = (b.x2 - b.x1 + 1) * 32, height = (b.y2 - b.y1 + 1) * 32;
-  if (sceneCanvas.width !== width || sceneCanvas.height !== height) {
+  if (!gpu && (sceneCanvas.width !== width || sceneCanvas.height !== height)) {
     sceneCanvas.width = width; sceneCanvas.height = height;
   }
   const oldCtx = ctx, oldCell = state.cell;
-  ctx = sceneCtx; state.cell = 32;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = '#10191b'; ctx.fillRect(0, 0, width, height);
-  const proposed = new Map((state.preview?.map === state.map ? state.preview.diff : [])
-    .filter((d) => d.z === b.z).map((d) => [key(d.x, d.y, d.z), d]));
-  for (const tile of state.draft?.diff || []) if (tile.z === b.z)
-    proposed.set(key(tile.x,tile.y,tile.z),tile);
-  const draftTiles = new Map((state.draft?.diff || []).map((tile) => [key(tile.x,tile.y,tile.z),tile]));
-  const drawables = [];
+  if (!gpu) {
+    ctx = sceneCtx; state.cell = 32;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#10191b'; ctx.fillRect(0, 0, width, height);
+  }
+  const drawables = [], tiles = [];
   for (let y = b.y2; y >= b.y1; y--) for (let x = b.x1; x <= b.x2; x++) {
     const sx = (x - b.x1) * 32, sy = (b.y2 - y) * 32;
-    const atoms = proposed.get(key(x, y, b.z))?.after || state.tiles.get(key(x, y, b.z))?.atoms || [];
-    ctx.fillStyle = classify(atoms); ctx.fillRect(sx, sy, 32, 32);
+    const atoms = state.tiles.get(key(x, y, b.z))?.atoms || [];
+    if (gpu) tiles.push({x,y,atoms});
+    else { ctx.fillStyle = classify(atoms); ctx.fillRect(sx, sy, 32, 32); }
     atoms.forEach((atom, index) => {
-      if (atomLayer(atom) !== 'area') drawables.push({ atom, sx, sy, index, order: renderOrder(atom),
-        alphaScale: draftTiles.get(key(x,y,b.z))?.before.includes(atom) ? 1 :
-          draftTiles.has(key(x,y,b.z)) && ['power','atmos','disposals'].includes(atomLayer(atom)) ? .72 : 1 });
+      if (atomLayer(atom) !== 'area') drawables.push({ atom, sx, sy, index, order: renderOrder(atom) });
     });
-    if ($('show-areas').checked) {
+    if (!gpu && $('show-areas').checked) {
       const area = atoms.find((atom) => atom.startsWith('/area/'));
       if (area) { ctx.fillStyle = areaColor(area); ctx.fillRect(sx, sy, 32, 32); }
     }
@@ -220,15 +231,69 @@ function buildScene() {
   drawables.sort((a, b) => a.order - b.order ||
     (state.appearance[a.atom]?.layer || 0) - (state.appearance[b.atom]?.layer || 0) ||
     a.sy - b.sy || a.sx - b.sx || a.index - b.index);
-  for (const { atom, sx, sy, alphaScale } of drawables) drawAtom(atom, sx, sy, alphaScale);
-  ctx.strokeStyle = '#26393c';
-  for (let y = b.y2; y >= b.y1; y--) for (let x = b.x1; x <= b.x2; x++)
-    ctx.strokeRect((x - b.x1) * 32 + .5, (b.y2 - y) * 32 + .5, 32, 32);
-  if (state.selectedNetwork) for (const member of state.selectedNetwork.members) {
+  state.sceneAtoms = new Set(drawables.map(({atom}) => atom));
+  if (gpu) gpu.setScene(b,tiles,drawables,{classify,areaColor,areas:$('show-areas').checked,
+    visible,imageFor,appearance:state.appearance,atomLayer});
+  else for (const { atom, sx, sy } of drawables) drawAtom(atom, sx, sy);
+  if (!gpu && state.selectedNetwork) for (const member of state.selectedNetwork.members) {
     if (member.z !== b.z || member.x < b.x1 || member.x > b.x2 || member.y < b.y1 || member.y > b.y2) continue;
     highlightNetworkAtom(member.atom,(member.x-b.x1)*32,(b.y2-member.y)*32);
   }
   ctx = oldCtx; state.cell = oldCell; state.sceneDirty = false;
+}
+function visibleDraftDiff() {
+  const previous = state.preview?.map === state.map ? state.preview.diff || [] : [];
+  const current = state.draft?.diff || [];
+  if (!current.length) return previous;
+  const combined = new Map(previous.map((tile) => [key(tile.x,tile.y,tile.z),tile]));
+  for (const tile of current) {
+    const id=key(tile.x,tile.y,tile.z), original=combined.get(id);
+    combined.set(id,original ? {...tile,before:original.before} : tile);
+  }
+  return [...combined.values()];
+}
+function drawDraftTiles(originX,originY,z,changes) {
+  if (!changes?.length) return;
+  ctx.save(); ctx.imageSmoothingEnabled = false;
+  for (const tile of changes) {
+    if (tile.z !== z) continue;
+    const sx = Math.round(originX+(tile.x-1)*state.cell);
+    const sy = Math.round(originY-tile.y*state.cell);
+    if (sx+state.cell<0 || sy+state.cell<0 || sx>canvas.clientWidth || sy>canvas.clientHeight) continue;
+    ctx.fillStyle = classify(tile.after); ctx.fillRect(sx,sy,state.cell,state.cell);
+    if ($('show-areas').checked) {
+      const area = tile.after.find((atom) => atom.startsWith('/area/'));
+      if (area) { ctx.fillStyle = areaColor(area); ctx.fillRect(sx,sy,state.cell,state.cell); }
+    }
+    const atoms = tile.after.map((atom,index) => ({atom,index})).filter(({atom}) => atomLayer(atom) !== 'area');
+    atoms.sort((a,b) => renderOrder(a.atom)-renderOrder(b.atom) ||
+      (state.appearance[a.atom]?.layer || 0)-(state.appearance[b.atom]?.layer || 0) || a.index-b.index);
+    for (const {atom} of atoms) drawAtom(atom,sx,sy,
+      !tile.before.includes(atom) && ['power','atmos','disposals'].includes(atomLayer(atom)) ? .72 : 1);
+    const selected = state.selectedNetwork?.byTile.get(key(tile.x,tile.y,z));
+    if (selected) {
+      const updated = tile.after.find((atom) => selected.some((old) => atomLayer(old) === atomLayer(atom)));
+      if (updated) highlightNetworkAtom(updated,sx,sy);
+    }
+  }
+  ctx.restore();
+}
+function drawGpuDraft(changes) {
+  const bounds=state.bounds, tiles=[], drawables=[];
+  if (bounds) for (const tile of changes) {
+    if (tile.z !== bounds.z || tile.x < bounds.x1 || tile.x > bounds.x2 ||
+        tile.y < bounds.y1 || tile.y > bounds.y2) continue;
+    tiles.push({x:tile.x,y:tile.y,atoms:tile.after});
+    const sx=(tile.x-bounds.x1)*32, sy=(bounds.y2-tile.y)*32;
+    tile.after.forEach((atom,index) => {
+      if (atomLayer(atom) !== 'area') drawables.push({atom,sx,sy,index,order:renderOrder(atom)});
+    });
+  }
+  drawables.sort((a,b) => a.order-b.order ||
+    (state.appearance[a.atom]?.layer || 0)-(state.appearance[b.atom]?.layer || 0) ||
+    a.sy-b.sy || a.sx-b.sx || a.index-b.index);
+  gpu.setDraftScene(bounds,tiles,drawables,{classify,areaColor,areas:$('show-areas').checked,
+    visible,imageFor,appearance:state.appearance,atomLayer});
 }
 function draw() {
   const ratio = devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
@@ -241,9 +306,15 @@ function draw() {
     canvas.width = pixelWidth; canvas.height = pixelHeight;
   }
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  ctx.fillStyle = '#10191b'; ctx.fillRect(0, 0, w, h);
+  if (gpu) ctx.clearRect(0, 0, w, h);
+  else { ctx.fillStyle = '#10191b'; ctx.fillRect(0, 0, w, h); }
   if (!state.bounds) return;
   if (state.sceneDirty) buildScene();
+  const visibleChanges=visibleDraftDiff();
+  if (gpu) {
+    drawGpuDraft(visibleChanges);
+    gpu.draw(state.camera,state.cell,w,h,ratio);
+  }
   const z = +$('z').value;
   const originX = w / 2 - (state.camera.x - .5) * state.cell;
   const originY = h / 2 + (state.camera.y - .5) * state.cell;
@@ -259,11 +330,17 @@ function draw() {
   const sourceY = Math.max(0, Math.floor((b.y2 - y2) * 32));
   const sourceW = Math.min(sceneCanvas.width - sourceX, Math.max(0, (x2 - x1 + 1) * 32));
   const sourceH = Math.min(sceneCanvas.height - sourceY, Math.max(0, (y2 - y1 + 1) * 32));
-  if (sourceW > 0 && sourceH > 0) ctx.drawImage(sceneCanvas, sourceX, sourceY, sourceW, sourceH,
+  if (!gpu && sourceW > 0 && sourceH > 0) ctx.drawImage(sceneCanvas, sourceX, sourceY, sourceW, sourceH,
     Math.round(originX + (b.x1 - 1 + sourceX / 32) * state.cell),
     Math.round(originY - (b.y2 - sourceY / 32) * state.cell),
     sourceW * state.cell / 32, sourceH * state.cell / 32);
   ctx.restore();
+  if (gpu && state.selectedNetwork) for (const member of state.selectedNetwork.members) {
+    if (member.z !== z || member.x < x1 || member.x > x2 || member.y < y1 || member.y > y2) continue;
+    highlightNetworkAtom(member.atom,
+      Math.round(originX+(member.x-1)*state.cell),Math.round(originY-member.y*state.cell));
+  }
+  if (!gpu) drawDraftTiles(originX,originY,z,visibleChanges);
   if (proposed.size || state.selected.size || state.selectedAtom || state.selectedNetwork)
   for (let y = y2; y >= y1; y--) for (let x = x1; x <= x2; x++) {
     const sx = Math.round(originX + (x - 1) * state.cell), sy = Math.round(originY - y * state.cell);
@@ -308,7 +385,7 @@ function draw() {
     const stroke = activeStroke.points;
     const atom = brushAtom().split('{')[0];
     const network = activeStroke.mode === 'place' && ['power','atmos','disposals'].includes(activeStroke.layer);
-    // Network drafts draw their actual sprite states in the cached scene.
+    // Network drafts draw their actual sprite states over the cached scene.
     for (const p of network ? [] : stroke) {
       const sx = Math.round(originX + (p.x - 1) * state.cell), sy = Math.round(originY - p.y * state.cell);
       const previewAtom = atom;
@@ -324,6 +401,7 @@ function draw() {
     }
   }
   displayCtx.setTransform(1, 0, 0, 1, 0, 0);
+  if (gpu) displayCtx.clearRect(0,0,canvas.width,canvas.height);
   displayCtx.drawImage(backCanvas, 0, 0);
 }
 function coordinate(event) {
@@ -544,6 +622,7 @@ function selectAtom(point, atom) {
   const selectionId = ++state.networkSelectionId;
   $('atom').value = atom.split('{')[0];
   $('brush-type').value = atom.split('{')[0];
+  warmPowerSprites();
   const appearance = state.appearance[atom] || {};
   for (const [id, value] of [['brush-dir', appearance.dir], ['brush-state', appearance.icon_state],
     ['brush-color', appearance.color], ['brush-pixel-x', appearance.pixel_x], ['brush-pixel-y', appearance.pixel_y]])
@@ -620,6 +699,7 @@ function selectLayer(layer) {
   if (layer === 'apc') $('atom').value = '/obj/machinery/power/apc';
   if (previous !== layer && ['turf', 'area', 'objects'].includes(layer)) $('atom').value = '';
   $('brush-type').value = $('atom').value;
+  warmPowerSprites();
   $('tool-config').hidden = !['power', 'atmos'].includes(layer);
   $('wire-config').hidden = layer !== 'power';
   $('atmos-config').hidden = layer !== 'atmos';
@@ -654,8 +734,22 @@ function appendStroke(point) {
   if (!state.stroke) return false;
   const originalLength = state.stroke.length;
   const originalEnd = state.stroke.at(-1);
+  if (originalEnd && point.x === originalEnd.x && point.y === originalEnd.y &&
+      point.z === originalEnd.z) return false;
   let last = state.stroke.at(-1);
   const network = state.strokeMode === 'place' && ['power','atmos','disposals'].includes(state.activeLayer);
+  if (network && state.activeLayer === 'power' && last) {
+    const dx = point.x-last.x, dy = point.y-last.y;
+    const steps = Math.max(Math.abs(dx),Math.abs(dy));
+    for (let i=1;i<=steps && state.stroke.length<2500;i++) {
+      const next = {x:last.x+Math.round(dx*i/steps),y:last.y+Math.round(dy*i/steps),z:point.z};
+      const previous = state.stroke.at(-2), current = state.stroke.at(-1);
+      if (current?.x === next.x && current?.y === next.y) continue;
+      if (previous?.x === next.x && previous?.y === next.y) state.stroke.pop();
+      else state.stroke.push(next);
+    }
+    return state.stroke.length !== originalLength || state.stroke.at(-1) !== originalEnd;
+  }
   let steps = 0;
   while (last && (last.x !== point.x || last.y !== point.y) && state.stroke.length < 2500 && steps++ < 2500) {
     let dx = Math.sign(point.x-last.x), dy = Math.sign(point.y-last.y);
@@ -663,10 +757,11 @@ function appendStroke(point) {
       if (Math.abs(point.x-last.x) >= Math.abs(point.y-last.y)) dy = 0; else dx = 0;
     }
     const next = {x:last.x+dx,y:last.y+dy,z:point.z};
+    const previous = state.stroke.at(-2);
     const prior = state.stroke.findIndex((p) => p.x === next.x && p.y === next.y && p.z === next.z);
-    if (network && prior >= 0) state.stroke.splice(prior+1);
-    else if (prior >= 0) break;
-    else if (prior < 0) state.stroke.push(next);
+    if (network && previous?.x === next.x && previous?.y === next.y) state.stroke.pop();
+    else if (prior >= 0 && !network) break;
+    else state.stroke.push(next);
     last = state.stroke.at(-1);
   }
   return state.stroke.length !== originalLength || state.stroke.at(-1) !== originalEnd;
@@ -675,9 +770,26 @@ function scheduleNetworkDraft() {
   if (!state.stroke || state.strokeMode !== 'place' || state.stroke.length < 2 ||
       !['power','atmos','disposals'].includes(state.activeLayer)) return;
   state.draftOperation = {action:'route',layer:state.activeLayer,atom:brushAtom().split('{')[0],
-    points:state.stroke.map((point) => ({...point})),
+    points:[...state.stroke, ...(state.strokeEndTarget ? [state.strokeEndTarget] : [])].map((point) => ({...point})),
+    snap_start:false, snap_end:false, auto_join_neighbors:false,
+    ...(state.activeLayer === 'power' && state.strokeEndStub ? {end_stub:true} : {}),
     ...(state.activeLayer === 'power' && state.strokeAnchorPort ? {anchor_port:state.strokeAnchorPort} : {}),
     ...(state.activeLayer === 'power' && state.strokeEndPort ? {end_port:state.strokeEndPort} : {})};
+  if (mapcore.exports) {
+    try {
+      const diff = mapcore.route(state.draftOperation,atomsAt,(point) =>
+        state.tiles.has(key(point.x,point.y,point.z)) ||
+        state.previewTiles?.has(key(point.x,point.y,point.z)));
+      if (diff) {
+        clearTimeout(state.draftTimer); state.draftTimer = null;
+        state.draft = {diff};
+        for (const tile of diff) for (const atom of tile.after)
+          state.sprites[atom] ||= `/sprite?atom=${encodeURIComponent(atom)}`;
+        scheduleDraw();
+        return;
+      }
+    } catch { state.draft = null; scheduleDraw(); return; }
+  }
   if (state.draftTimer || state.draftLoading) return;
   const draftId = state.draftId;
   state.draftTimer = setTimeout(async () => {
@@ -690,7 +802,6 @@ function scheduleNetworkDraft() {
       if (draftId !== state.draftId || operation !== state.draftOperation) return;
       state.draft = result;
       Object.assign(state.sprites,result.sprites || {});
-      state.sceneDirty = true;
       scheduleDraw();
     } catch { /* Final preview reports route errors. */ }
     finally {
@@ -698,16 +809,33 @@ function scheduleNetworkDraft() {
       if (draftId === state.draftId && state.stroke && operation !== state.draftOperation)
         scheduleNetworkDraft();
     }
-  },25);
+  },0);
 }
 function clearNetworkDraft(preserve = false) {
   ++state.draftId;
   clearTimeout(state.draftTimer);
   state.draftTimer = null;
   state.draftOperation = null;
-  if (state.draft && !preserve) { state.draft = null; state.sceneDirty = true; }
+  if (state.draft && !preserve) { state.draft = null; scheduleDraw(); }
 }
 function brushAtom() { return $('brush-type').value.trim() || $('atom').value.trim(); }
+async function warmPowerSprites() {
+  if (state.activeLayer !== 'power') return;
+  const base = brushAtom().split('{')[0];
+  if (!base.startsWith('/obj/structure/cable') || state.warmPower.has(base)) return;
+  state.warmPower.add(base);
+  const dirs = [1,2,4,8,5,6,9,10];
+  const atoms = dirs.map((dir) => `${base}{icon_state = "0-${dir}"}`);
+  for (let i=0;i<dirs.length;i++) for (let j=i+1;j<dirs.length;j++)
+    atoms.push(`${base}{icon_state = "${Math.min(dirs[i],dirs[j])}-${Math.max(dirs[i],dirs[j])}"}`);
+  try {
+    const atlas = await api('atlas',{atoms});
+    for (const [atom,crop] of Object.entries(atlas.frames || {}))
+      state.frameIndex.set(atom,{url:atlas.url,crop});
+    Object.assign(state.appearance,atlas.appearance || {});
+    if (Object.keys(atlas.frames || {}).length) imageFor(Object.keys(atlas.frames)[0]);
+  } catch { state.warmPower.delete(base); }
+}
 function nearestNetworkMember(candidates, mouseX, mouseY, originX, originY) {
   let best = null;
   for (const member of candidates) {
@@ -743,11 +871,12 @@ function nearestPowerPort(member, mouseX, mouseY, originX, originY) {
   const ports = iconState.match(/^(\d+)-(\d+)$/)?.slice(1).map(Number).filter(Boolean) || [];
   const deltas = {1:[0,-1],2:[0,1],4:[1,0],8:[-1,0],5:[1,-1],6:[1,1],9:[-1,-1],10:[-1,1]};
   const cx = originX+(member.x-.5)*state.cell, cy = originY-(member.y-.5)*state.cell;
-  return ports.reduce((best,port) => {
+  const nearest = ports.reduce((best,port) => {
     const delta = deltas[port]; if (!delta) return best;
     const distance = Math.hypot(cx+delta[0]*state.cell/2-mouseX,cy+delta[1]*state.cell/2-mouseY);
     return !best || distance < best.distance ? {port,distance} : best;
-  },null)?.port || null;
+  },null);
+  return nearest && nearest.distance <= state.cell*.3 ? nearest.port : null;
 }
 function powerPortAtPointer(event, point) {
   if (!point || state.activeLayer !== 'power') return null;
@@ -760,6 +889,73 @@ function powerPortAtPointer(event, point) {
   const originY = canvas.clientHeight / 2 + (state.camera.y - .5) * state.cell;
   const nearest = nearestNetworkMember(candidates,mouseX,mouseY,originX,originY);
   return nearestPowerPort(nearest?.point,mouseX,mouseY,originX,originY);
+}
+function powerEndStub(event, point) {
+  return state.activeLayer === 'power' && state.selectedNetwork?.layer === 'power' && point &&
+    state.selectedNetwork.byTile.has(key(point.x,point.y,point.z)) && !powerPortAtPointer(event,point);
+}
+function updateStrokeCornerIntent(sample, previous, last) {
+  if (!sample || !previous || !last || !state.strokeSegmentStartPointer ||
+      Math.abs(last.x-previous.x)+Math.abs(last.y-previous.y) !== 1 ||
+      state.strokeCardinalCommitted) return;
+  const start = state.strokeSegmentStartPointer;
+  const horizontal = last.x !== previous.x;
+  const along = Math.abs((horizontal ? sample.x-start.x : sample.y-start.y));
+  const across = Math.abs((horizontal ? sample.y-start.y : sample.x-start.x));
+  if (along > .22 && across < Math.max(.09,along*.24)) {
+    state.strokeCardinalCommitted = true;
+    state.strokeCornerEntry = false;
+  } else if (across > .08 && across > along*.22) state.strokeCornerEntry = true;
+}
+function strokePointAtPointer(event, point) {
+  if (!point || state.activeLayer !== 'power' || !state.stroke?.length || !state.strokePointerOrigin)
+    return point;
+  const origin = state.strokePointerOrigin;
+  const offsetX = (event.clientX-origin.x)/state.cell;
+  const offsetY = (origin.y-event.clientY)/state.cell;
+  const target = point;
+  const previous = state.stroke.at(-2), last = state.stroke.at(-1);
+  const retreat = state.strokeDiagonalRetreat;
+  if (retreat && previous?.x === retreat.diagonal.x && previous?.y === retreat.diagonal.y &&
+      last?.x === retreat.middle.x && last?.y === retreat.middle.y &&
+      target.x === retreat.anchor.x && target.y === retreat.anchor.y) {
+    state.stroke.pop();
+    state.stroke.pop();
+    state.strokeDiagonalRetreat = null;
+    return target;
+  }
+  if (retreat && (target.x !== retreat.middle.x || target.y !== retreat.middle.y))
+    state.strokeDiagonalRetreat = null;
+  updateStrokeCornerIntent({x:offsetX,y:offsetY},previous,last);
+  if (previous && last && Math.abs(target.x-previous.x) === 1 &&
+      Math.abs(target.y-previous.y) === 1 &&
+      Math.abs(last.x-previous.x)+Math.abs(last.y-previous.y) === 1 &&
+      state.strokeCornerEntry)
+    state.stroke.pop();
+  else if (previous && last && Math.abs(last.x-previous.x) === 1 &&
+      Math.abs(last.y-previous.y) === 1 &&
+      Math.abs(target.x-previous.x)+Math.abs(target.y-previous.y) === 1) {
+    // A diagonal retrace often passes through a side tile one axis at a time.
+    // Remember that side tile so reaching the prior tile removes both steps.
+    // Leaving the side tile elsewhere keeps it as a deliberate turn.
+    state.strokeDiagonalRetreat = {anchor:previous,diagonal:last,middle:target};
+  }
+  return target;
+}
+function networkEndTarget(event, point) {
+  if (!point || state.selectedNetwork?.layer !== state.activeLayer) return null;
+  const candidates = (state.selectedNetwork.byTile.get(key(point.x,point.y,point.z)) || [])
+    .map((atom) => ({...point,atom}));
+  if (!candidates.length) return null;
+  const bounds = canvas.getBoundingClientRect();
+  const mouseX = event.clientX-bounds.left, mouseY = event.clientY-bounds.top;
+  const originX = canvas.clientWidth/2-(state.camera.x-.5)*state.cell;
+  const originY = canvas.clientHeight/2+(state.camera.y-.5)*state.cell;
+  const nearest = nearestNetworkMember(candidates,mouseX,mouseY,originX,originY);
+  if (!nearest || nearest.distance > state.cell*.3) return null;
+  const port = state.activeLayer === 'power' ? nearestPowerPort(nearest.point,mouseX,mouseY,originX,originY) : null;
+  if (state.activeLayer === 'power' && !port) return null;
+  return {point:{x:nearest.point.x,y:nearest.point.y,z:nearest.point.z},port};
 }
 function brushVars() {
   const fields = {dir:$('brush-dir').value, icon_state:$('brush-state').value,
@@ -777,10 +973,14 @@ function operationForStroke(points, mode) {
   if (['power', 'atmos', 'disposals'].includes(state.activeLayer)) {
     const atom = brushAtom().split('{')[0];
     if (points.length >= 2) return {action:'route', layer:state.activeLayer, atom, points,
+      snap_start:false, snap_end:false, auto_join_neighbors:false,
+      ...(state.activeLayer === 'power' && state.strokeEndStub ? {end_stub:true} : {}),
       ...(state.activeLayer === 'power' && state.strokeAnchorPort ? {anchor_port:state.strokeAnchorPort} : {}),
       ...(state.activeLayer === 'power' && state.strokeEndPort ? {end_port:state.strokeEndPort} : {})};
     const p = points[0];
     if (atomsAt(p).some((a) => atomLayer(a) === state.activeLayer)) return null;
+    if (state.selectedNetwork?.layer !== state.activeLayer) return {action:'place_atom',
+      layer:state.activeLayer,atom,vars:brushVars(),points};
     const offsets = state.activeLayer === 'power' ?
       [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]] : [[1,0],[-1,0],[0,1],[0,-1]];
     const neighbors = offsets.map(([dx,dy]) => ({x:p.x+dx,y:p.y+dy,z:p.z})).filter((n) =>
@@ -815,17 +1015,8 @@ function showPreview(result) {
   state.preview = result;
   clearNetworkDraft();
   state.previewTiles = new Map(result.diff.map((tile) => [key(tile.x,tile.y,tile.z),tile]));
-  state.sceneDirty = true;
   state.dismissedPreview = null;
   Object.assign(state.sprites, result.sprites || {});
-  const atoms = [...new Set(result.diff.flatMap((d) => [...d.before, ...d.after]).filter((a) => atomLayer(a) !== 'area'))];
-  api('atlas', { atoms }).then((atlas) => {
-    if (state.preview?.preview_id !== result.preview_id) return;
-    for (const [atom, crop] of Object.entries(atlas.frames || {})) state.frameIndex.set(atom, { url: atlas.url, crop });
-    Object.assign(state.appearance, atlas.appearance || {});
-    state.sceneDirty = true;
-    scheduleDraw();
-  }).catch(() => {});
   $('change-review').hidden = false;
   $('save').disabled = result.map !== state.map;
   $('discard').disabled = false;
@@ -855,6 +1046,27 @@ function viewNeedsFetch() {
   const b = state.bounds, r = viewRect();
   return !b || b.z !== r.z || r.x1 < b.x1 || r.y1 < b.y1 || r.x2 > b.x2 || r.y2 > b.y2;
 }
+function uncoveredViewRects(next, previous) {
+  if (!previous || previous.z !== next.z || next.x2 < previous.x1 || next.x1 > previous.x2 ||
+      next.y2 < previous.y1 || next.y1 > previous.y2) return [next];
+  const result = [];
+  const left = Math.max(next.x1, previous.x1), right = Math.min(next.x2, previous.x2);
+  const bottom = Math.max(next.y1, previous.y1), top = Math.min(next.y2, previous.y2);
+  if (next.x1 < left) result.push({...next, x2:left-1});
+  if (right < next.x2) result.push({...next, x1:right+1});
+  if (next.y1 < bottom) result.push({...next, x1:left, x2:right, y2:bottom-1});
+  if (top < next.y2) result.push({...next, x1:left, x2:right, y1:top+1});
+  return result;
+}
+function boundedViewRects(regions, maxTiles = 12000) {
+  return regions.flatMap((region) => {
+    const rows = Math.max(1, Math.floor(maxTiles / (region.x2 - region.x1 + 1)));
+    const result = [];
+    for (let y = region.y1; y <= region.y2; y += rows)
+      result.push({...region, y1:y, y2:Math.min(region.y2, y + rows - 1)});
+    return result;
+  });
+}
 async function loadView(force = false) {
   try {
     const viewId = ++state.viewId;
@@ -862,29 +1074,30 @@ async function loadView(force = false) {
     if (z < 1 || z > state.size[2]) throw Error('Deck out of range.');
     if (!force && !viewNeedsFetch()) return;
     const rect = viewRect();
-    const data = await api('inspect', { map: state.map, rect });
+    const regions = boundedViewRects(force ? [rect] : uncoveredViewRects(rect, state.bounds));
+    const responses = await Promise.all(regions.map((region) => api('inspect', {map:state.map,rect:region})));
     if (viewId !== state.viewId) return;
     state.bounds = rect;
-    for (const tile of data.tiles) state.tiles.set(key(tile.x, tile.y, tile.z), tile);
-    Object.assign(state.sprites, data.sprites || {});
+    for (const data of responses) for (const tile of data.tiles)
+      state.tiles.set(key(tile.x, tile.y, tile.z), tile);
     state.atlasLoading = true;
     state.sceneDirty = true;
-    status(`${state.map} · deck ${z} · ${data.tiles.length} tiles`);
+    status(`${state.map} · deck ${z} · ${responses.reduce((sum, data) => sum + data.tiles.length, 0)} new tiles`);
     draw();
-    const missing = data.sprite_atoms.filter((atom) => !state.frameIndex.has(atom));
+    const missing = [...new Set(responses.flatMap((data) => data.sprite_atoms))]
+      .filter((atom) => !state.frameIndex.has(atom));
     if (!missing.length) { state.atlasLoading = false; return; }
-    api('atlas', { atoms: missing }).then((atlas) => {
-      for (const [atom, crop] of Object.entries(atlas.frames || {}))
-        if (!state.frameIndex.has(atom)) state.frameIndex.set(atom, { url: atlas.url, crop });
-      Object.assign(state.appearance, atlas.appearance || {});
-      state.atlasLoading = false;
-      state.sceneDirty = true;
-      scheduleDraw();
-    }).catch((error) => {
-      state.atlasLoading = false;
-      status(`Map loaded; sprites unavailable: ${error.message}`);
-      scheduleDraw();
-    });
+    for (let start = 0; start < missing.length; start += 96) {
+      const batch = missing.slice(start, start + 96);
+      api('atlas', {atoms:batch}).then((atlas) => {
+        for (const [atom, crop] of Object.entries(atlas.frames || {}))
+          if (!state.frameIndex.has(atom)) state.frameIndex.set(atom, {url:atlas.url,crop});
+        Object.assign(state.appearance, atlas.appearance || {});
+        state.sceneDirty = true;
+        scheduleDraw();
+      }).catch((error) => status(`Map loaded; sprites unavailable: ${error.message}`));
+    }
+    state.atlasLoading = false;
   } catch (error) { status(error.message); }
 }
 function clampCamera() {
@@ -944,9 +1157,8 @@ canvas.addEventListener('pointerdown', (event) => {
   if (state.mode === 'fill') { fillAt(point); return; }
   if (state.mode === 'place') {
     const members = state.selectedNetwork?.layer === state.activeLayer ? state.selectedNetwork.members : [];
-    const candidates = members.length ? members :
-      state.selectedAtom && atomLayer(state.selectedAtom.atom) === state.activeLayer ?
-        [{...state.selectedAtom.point,atom:state.selectedAtom.atom}] : [];
+    const candidates = members.filter((member) => member.z === point.z &&
+      Math.max(Math.abs(member.x-point.x),Math.abs(member.y-point.y)) <= 1);
     const bounds = canvas.getBoundingClientRect();
     const mouseX = event.clientX - bounds.left, mouseY = event.clientY - bounds.top;
     const originX = canvas.clientWidth / 2 - (state.camera.x - .5) * state.cell;
@@ -960,9 +1172,18 @@ canvas.addEventListener('pointerdown', (event) => {
     const anchor = adjacent && (nearest.point.x !== point.x || nearest.point.y !== point.y) && nearest.point.z === point.z ?
       {x:nearest.point.x,y:nearest.point.y,z:nearest.point.z} : point;
     state.stroke = [anchor]; state.strokeMode = 'place';
+    state.strokePointerOrigin = {x:event.clientX,y:event.clientY,point};
+    state.strokePointerSample = {x:0,y:0};
+    state.strokeNodePointer = {x:0,y:0};
+    state.strokeSegmentStartPointer = null;
+    state.strokeCornerEntry = false;
+    state.strokeCardinalCommitted = false;
+    state.strokeDiagonalRetreat = null;
     state.strokeAnchorPort = adjacent && state.activeLayer === 'power' ?
       nearestPowerPort(nearest.point,mouseX,mouseY,originX,originY) : null;
     state.strokeEndPort = null;
+    state.strokeEndTarget = null;
+    state.strokeEndStub = false;
     if (anchor !== point) { appendStroke(point); scheduleNetworkDraft(); }
     canvas.setPointerCapture(event.pointerId); scheduleDraw(); return;
   }
@@ -995,12 +1216,43 @@ canvas.addEventListener('pointermove', (event) => {
     $('map-coord').textContent = `${point.x}, ${point.y}, ${point.z}${area ? ' · ' + area.split('/').slice(-2).join('/') : ''}`;
   }
   if (state.stroke) {
-    const moved = point && appendStroke(point);
-    const endPort = powerPortAtPointer(event,point);
+    const oldLength = state.stroke.length, oldEnd = state.stroke.at(-1);
+    const oldNodePointer = state.strokeNodePointer;
+    const next = point && strokePointAtPointer(event,point);
+    if (point && state.strokePointerOrigin) state.strokePointerSample = {
+      x:(event.clientX-state.strokePointerOrigin.x)/state.cell,
+      y:(state.strokePointerOrigin.y-event.clientY)/state.cell};
+    const moved = next && (appendStroke(next) || state.stroke.length !== oldLength ||
+      state.stroke.at(-1) !== oldEnd);
+    if (moved) {
+      const last = state.stroke.at(-1), previous = state.stroke.at(-2);
+      const sample = state.strokePointerSample;
+      if (sample && oldNodePointer) {
+        state.strokeSegmentStartPointer = oldNodePointer;
+        state.strokeCornerEntry = false;
+        state.strokeCardinalCommitted = false;
+        updateStrokeCornerIntent(sample,previous,last);
+        state.strokeNodePointer = sample;
+      }
+    }
+    const strokeEnd = state.stroke.at(-1);
+    const endTarget = state.strokeMode === 'place' ? networkEndTarget(event,point) : null;
+    const snapped = endTarget && (endTarget.point.x !== strokeEnd.x || endTarget.point.y !== strokeEnd.y) &&
+      !state.stroke.some((p) => p.x === endTarget.point.x && p.y === endTarget.point.y && p.z === endTarget.point.z);
+    const target = snapped ? endTarget.point : null;
+    const changedTarget = key(target?.x,target?.y,target?.z) !==
+      key(state.strokeEndTarget?.x,state.strokeEndTarget?.y,state.strokeEndTarget?.z);
+    state.strokeEndTarget = target;
+    const endPort = endTarget?.port || (state.selectedNetwork?.layer === state.activeLayer &&
+      point && strokeEnd.x === point.x && strokeEnd.y === point.y ?
+      powerPortAtPointer(event,point) : null);
     const changedPort = state.strokeEndPort !== endPort;
     state.strokeEndPort = endPort;
-    if (moved || changedPort) scheduleNetworkDraft();
-    if (point) scheduleDraw();
+    const endStub = !endTarget && powerEndStub(event,point);
+    const changedStub = state.strokeEndStub !== endStub;
+    state.strokeEndStub = endStub;
+    if (moved || changedPort || changedTarget || changedStub) scheduleNetworkDraft();
+    if (moved || changedPort || changedTarget || changedStub) scheduleDraw();
     return;
   }
   if (point && state.routeDraw) { extendRoute(point); return; }
@@ -1020,13 +1272,27 @@ canvas.addEventListener('pointerup', (event) => {
   }
   if (state.stroke) {
     const releasePoint = coordinate(event);
-    if (releasePoint) appendStroke(releasePoint);
-    state.strokeEndPort = powerPortAtPointer(event,releasePoint);
+    if (releasePoint) appendStroke(strokePointAtPointer(event,releasePoint));
+    const endTarget = state.strokeMode === 'place' ? networkEndTarget(event,releasePoint) : null;
+    if (endTarget && !state.stroke.some((p) => p.x === endTarget.point.x &&
+        p.y === endTarget.point.y && p.z === endTarget.point.z)) appendStroke(endTarget.point);
+    state.strokeEndPort = endTarget?.port || (state.selectedNetwork?.layer === state.activeLayer ?
+      powerPortAtPointer(event,releasePoint) : null);
+    state.strokeEndStub = !endTarget && powerEndStub(event,releasePoint);
     const points = state.stroke, mode = state.strokeMode; state.stroke = null;
     clearNetworkDraft(true);
     const op = operationForStroke(points, mode);
     state.strokeAnchorPort = null;
     state.strokeEndPort = null;
+    state.strokeEndTarget = null;
+    state.strokeEndStub = false;
+    state.strokePointerOrigin = null;
+    state.strokePointerSample = null;
+    state.strokeNodePointer = null;
+    state.strokeSegmentStartPointer = null;
+    state.strokeCornerEntry = false;
+    state.strokeCardinalCommitted = false;
+    state.strokeDiagonalRetreat = null;
     if (op) {
       const pending = {points,mode,layer:state.activeLayer,atom:brushAtom().split('{')[0]};
       state.pendingStroke = pending;
@@ -1204,6 +1470,7 @@ $('wire-color').onchange = () => {
   $('atom').value = '/obj/structure/cable' + ($('wire-color').value ? '/' + $('wire-color').value : '');
   $('brush-type').value = $('atom').value;
   $('active-tool').textContent = `Cable · ${$('wire-color').selectedOptions[0].textContent}`;
+  warmPowerSprites();
   scheduleDraw();
 };
 $('atmos-type').onchange = () => {
@@ -1339,7 +1606,11 @@ for (const eye of document.querySelectorAll('[data-layer-eye]')) {
 }
 $('brush-type').oninput = () => {
   const value = $('brush-type').value.trim();
-  if (value.startsWith('/')) $('atom').value = value;
+  if (value.startsWith('/')) {
+    $('atom').value = value;
+    clearTimeout(state.warmPowerTimer);
+    state.warmPowerTimer = setTimeout(warmPowerSprites,150);
+  }
   else { $('search').value = value; clearTimeout(state.brushSearchTimer); state.brushSearchTimer = setTimeout(catalog, 180); }
 };
 for (const [id, action] of [['network-join','network_join'],['network-cross','network_cross']])

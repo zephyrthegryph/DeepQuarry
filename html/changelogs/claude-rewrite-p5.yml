@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "Added the ability framework (roadmap P5): abilities are self-targeted interactions, so they're listed and bound to keys through the same code as everything else in the interaction menu."
+  - bugfix: "Ported shadekin phase shift onto the ability framework. Fixed the bug where a failed shift could still cost energy (its cost is now committed only after every requirement passes), and the watcher count is computed once per attempt instead of once per watcher."
+  - code_imp: "Deleted the old phase shift verb and per-mob ability-master wiring for it; every shadekin now offers it automatically instead of it being granted through the shadekin_abilities list."

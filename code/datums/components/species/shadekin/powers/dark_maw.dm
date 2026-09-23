@@ -1,60 +1,60 @@
-/datum/power/shadekin/dark_maw
-	name = "Dark Maw (20)"
-	desc = "Create a trap to capture others, or steal people from phase"
-	verbpath = /mob/living/proc/dark_maw
-	ability_icon_state = "dark_maw_ic"
+// Ported to the ability framework (doc/rewrite/rules.md §5). The 1-second
+// channel is the time cost (pay_cost()); the trap only spawns and the energy
+// only spends in the effect, together, once the channel finishes and every
+// requirement still holds.
 
-/mob/living/proc/dark_maw()
-	set name = "Dark Maw (20)"
-	set desc = "Create a trap to capture others, or steal people from phase"
-	set category = "Abilities.Shadekin"
+/datum/interaction/ability/self/shadekin_dark_maw
+	id = ABILITY_ID_SHADEKIN_DARK_MAW
+	name = "Dark maw"
+	category = ABILITY_CAT_OFFENSE
+	requires = list(
+		REQ_CONSCIOUS,
+		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_vr, "the VR systems cannot comprehend this power"),
+		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"),
+		REQ_ON_TURF,
+		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_dark_maw_dark_enough, "there is too much light here for your trap to last"),
+		REQ_RESOURCE(/mob/living/proc/dq_dark_maw_afford),
+	)
+	effect = /mob/living/proc/dq_do_dark_maw
 
-	var/ability_cost = 20
+/datum/interaction/ability/self/shadekin_dark_maw/pay_cost(mob/actor, atom/target, obj/item/held)
+	return do_after(actor, 1 SECOND, target = actor)
 
-	var/datum/component/shadekin/SK = get_shadekin_component()
+/mob/living/proc/dq_pred_dark_maw_dark_enough(mob/living/actor, atom/target, obj/item/held)
+	var/turf/T = get_turf(actor)
+	return (T.get_lumcount() < 0.5) || "there is too much light here for your trap to last"
+
+/mob/living/proc/dq_dark_maw_afford(mob/living/actor, atom/target, obj/item/held)
+	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	if(!SK)
+		return "you aren't shadekin"
+	return (SK.shadekin_get_energy() >= 20) || "not enough energy for that ability"
+
+/mob/living/proc/dq_do_dark_maw(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
+	var/datum/component/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return FALSE
-	if(SK.special_considerations())
-		return FALSE
-	if(stat)
-		to_chat(src, span_warning("Can't use that ability in your state!"))
-		return FALSE
+	if(SK.in_phase)
+		new /obj/effect/abstract/dark_maw(actor.loc, actor, TRUE)
+	else
+		new /obj/effect/abstract/dark_maw(actor.loc, actor)
+	SK.shadekin_adjust_energy(-20)
+	return TRUE
 
-	if(SK.shadekin_get_energy() < ability_cost)
-		to_chat(src, span_warning("Not enough energy for that ability!"))
-		return FALSE
+/datum/interaction/ability/self/shadekin_dark_maw/clear
+	id = "shadekin_clear_dark_maws"
+	name = "Dispel dark maws"
+	category = ABILITY_CAT_OFFENSE
+	requires = list(REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"))
+	effect = /mob/living/proc/dq_do_clear_dark_maws
 
-	var/turf/T = get_turf(src)
-	if(!istype(T))
-		to_chat(src, span_warning("You don't seem to be able to set a trap here!"))
-		return FALSE
-
-	if(T.get_lumcount() >= 0.5)
-		to_chat(src, span_warning("There is too much light here for your trap to last!"))
-		return FALSE
-
-	if(do_after(src, 1 SECOND, target = src))
-		if(SK.in_phase)
-			new /obj/effect/abstract/dark_maw(loc, src, TRUE)
-		else
-			new /obj/effect/abstract/dark_maw(loc, src)
-		SK.shadekin_adjust_energy(-ability_cost)
-
-		return TRUE
-	return FALSE
-
-/mob/living/proc/clear_dark_maws()
-	set name = "Dispel dark maws"
-	set desc = "Dispel any active dark maws in place"
-	set category = "Abilities.Shadekin"
-
-	var/datum/component/shadekin/SK = get_shadekin_component()
+/mob/living/proc/dq_do_clear_dark_maws(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
+	var/datum/component/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
-		to_chat(src, span_warning("Only a shadekin can use that!"))
 		return FALSE
-
-	for(var/obj/effect/abstract/dark_maw/dm in SK.active_dark_maws)
+	for(var/obj/effect/abstract/dark_maw/dm as anything in SK.active_dark_maws)
 		dm.dispel()
+	return TRUE
 
 /obj/effect/abstract/dark_maw
 	var/mob/living/owner = null

@@ -111,9 +111,7 @@
 		turbine.locate_machinery()
 
 /obj/machinery/compressor/RefreshParts()
-	var/E = 0
-	for(var/obj/item/stock_parts/manipulator/M in component_parts)
-		E += M.rating
+	var/E = get_part_rating(/obj/item/stock_parts/manipulator)
 	efficiency = E / 6
 
 /obj/machinery/compressor/declare_interactions(list/into)
@@ -223,9 +221,7 @@
 		stat |= BROKEN
 
 /obj/machinery/power/turbine/RefreshParts()
-	var/P = 0
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		P += C.rating
+	var/P = get_part_rating(/obj/item/stock_parts/capacitor)
 	productivity = P / 6
 
 /obj/machinery/power/turbine/proc/locate_machinery()
