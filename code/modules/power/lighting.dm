@@ -148,6 +148,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	finished_light.set_dir(dir)
 	transfer_fingerprints_to(finished_light)
 	if(cell)
+		finished_light.latent_cell_charge = null
 		finished_light.cell = cell
 		cell.forceMove(finished_light)
 		cell = null
@@ -209,7 +210,13 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	power_channel = LIGHT //Lights are calc'd via area so they dont need to be in the machine list
 	max_integrity = 20
 	integrity_failure = 0.5
-	var/obj/item/light/installed_light //What light is currently in the socket! Updated in new()
+	var/obj/item/light/installed_light //What light is currently in the socket! Use bulb() to read it.
+	/// A pristine light_type bulb held as data (C5): its status, switchcount and
+	/// rigged are the fixture's own. bulb() makes it real.
+	var/latent_bulb = FALSE
+	/// Charge of a pristine emergency cell held as data (C5), or null for none.
+	/// emergency_cell() makes it real.
+	var/latent_cell_charge = null
 	var/on = 0					// 1 if on, 0 if off
 	var/brightness_range
 	var/brightness_power
@@ -406,7 +413,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return
 
 	current_alert = null
-	var/obj/item/light/L = installed_light //This ensures any special bulbs will stay special!
+	var/obj/item/light/L = bulb() //This ensures any special bulbs will stay special!
 
 	if(L)
 		update_from_bulb(L)
@@ -503,7 +510,42 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	update()
 
 /obj/machinery/light/get_cell()
+	return emergency_cell()
+
+/// Whether a bulb is fitted, real or latent.
+/obj/machinery/light/proc/has_bulb()
+	return installed_light || latent_bulb
+
+/// The fitted bulb, made real if it was latent (C5). Null when empty.
+/obj/machinery/light/proc/bulb()
+	if(latent_bulb)
+		latent_bulb = FALSE
+		installed_light = new light_type(src)
+		installed_light.status = status
+		installed_light.switchcount = switchcount
+		installed_light.rigged = rigged
+		installed_light.update_icon()
+	return installed_light
+
+/// Whether an emergency cell is fitted, real or latent.
+/obj/machinery/light/proc/has_cell()
+	return cell || !isnull(latent_cell_charge)
+
+/// The emergency cell, made real if it was latent (C5). Null when none.
+/obj/machinery/light/proc/emergency_cell()
+	if(!isnull(latent_cell_charge))
+		var/charge = latent_cell_charge
+		latent_cell_charge = null
+		cell = new /obj/item/cell/emergency_light(src)
+		cell.charge = charge
 	return cell
+
+/// A pristine emergency cell as data: what /obj/item/cell/emergency_light's
+/// Initialize() would give here (no charge in a naturally depowered area).
+/obj/machinery/light/proc/declare_emergency_cell()
+	var/area/A = get_area(src)
+	var/obj/item/cell/emergency_light/typed = /obj/item/cell/emergency_light
+	latent_cell_charge = (!A?.lightswitch || !A?.light_power) ? 0 : initial(typed.charge)
 
 // examine verb
 /obj/machinery/light/examine(mob/user)
@@ -518,8 +560,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			. += "The [fitting] is burnt out."
 		if(LIGHT_BROKEN)
 			. += "The [fitting] has been smashed."
-	if(cell)
-		. += "Its backup power charge meter reads [round((cell.charge / cell.maxcharge) * 100, 0.1)]%."
+	if(has_cell())
+		var/obj/item/cell/C = emergency_cell()
+		. += "Its backup power charge meter reads [round((C.charge / C.maxcharge) * 100, 0.1)]%."
 
 /obj/machinery/light/proc/get_fitting_name()
 	var/obj/item/light/L = light_type
@@ -543,6 +586,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L)
 	update_from_bulb(L)
+	latent_bulb = FALSE
 	installed_light = L
 	L.loc = src //Move it into the socket!
 
@@ -561,6 +605,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 	switchcount = 0
 	installed_light = null
+	latent_bulb = FALSE
 	status = LIGHT_EMPTY
 	update()
 
@@ -648,9 +693,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light/multitool_act(mob/user, obj/item/tool)
-	if(status == LIGHT_BROKEN || status == LIGHT_EMPTY || !installed_light)
+	if(status == LIGHT_BROKEN || status == LIGHT_EMPTY || !has_bulb())
 		return NONE
-	return installed_light.multitool_act(user, tool)
+	return bulb().multitool_act(user, tool)
 
 /obj/machinery/light/flamp/wrench_act(mob/user, obj/item/tool)
 	anchored = !anchored
@@ -690,9 +735,10 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 // returns whether this light has emergency power
 // can also return if it has access to a certain amount of that power
 /obj/machinery/light/proc/has_emergency_power(pwr)
-	if(no_emergency || !cell)
+	if(no_emergency || !has_cell())
 		return FALSE
-	if(pwr ? cell.charge >= pwr : cell.charge)
+	var/charge = cell ? cell.charge : latent_cell_charge
+	if(pwr ? charge >= pwr : charge)
 		return status == LIGHT_OK
 
 // attempts to use power from the installed emergency cell, returns true if it does and false if it doesn't
@@ -701,13 +747,15 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return FALSE
 	if(!has_emergency_power(pwr))
 		return FALSE
-	if(cell.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
+	var/obj/item/cell/C = emergency_cell()
+	if(C.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
 		visible_message(span_warning("[src] short-circuits from too powerful of a power cell!"))
 		status = LIGHT_BURNED
-		installed_light.status = status
+		if(installed_light)
+			installed_light.status = status
 		return FALSE
-	cell.use(pwr)
-	var/emergency_power = max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (cell.charge / cell.maxcharge))
+	C.use(pwr)
+	var/emergency_power = max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (C.charge / C.maxcharge))
 	set_light(brightness_range * bulb_emergency_brightness_mul, round(emergency_power, LIGHT_EMERGENCY_POWER_STEP), bulb_emergency_colour)
 	return TRUE
 
@@ -804,9 +852,10 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		to_chat(user, "You remove the light [get_fitting_name()].")
 
 	//Let's actually put the real bulb in their hand.
-	installed_light.status = status //Update the bulb they're being given. If it's broken, the bulb should be as well!
-	user.put_in_active_hand(installed_light)	//puts it in our active hand
-	installed_light.update_icon()
+	var/obj/item/light/B = bulb()
+	B.status = status //Update the bulb they're being given. If it's broken, the bulb should be as well!
+	user.put_in_active_hand(B)	//puts it in our active hand
+	B.update_icon()
 	remove_bulb()
 
 /obj/machinery/light/flamp/attack_hand(mob/user)
@@ -830,13 +879,14 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return
 
 	to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
-	installed_light.status = status
-	installed_light.forceMove(src.loc)
+	var/obj/item/light/B = bulb()
+	B.status = status
+	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
 	O.host = user
-	O.focus_object(installed_light)
-	installed_light.update_icon()
+	O.focus_object(B)
+	B.update_icon()
 	remove_bulb()
 
 // break the light and make sparks if was on
@@ -853,8 +903,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			s.set_up(3, 1, src)
 			s.start()
 	status = LIGHT_BROKEN //This occasionally runtimes when it occurs midround after build mode spawns a broken light. No idea why.
-	installed_light.status = status
-	installed_light.update_icon()
+	if(installed_light) // a latent bulb takes the fixture's status
+		installed_light.status = status
+		installed_light.update_icon()
 	update()
 
 /obj/machinery/light/atom_break(damage_flag)
@@ -965,7 +1016,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/begin_emergency_discharge()
-	if(!emergency_mode || !cell || emergency_discharge_at)
+	if(!emergency_mode || !has_cell() || emergency_discharge_at)
 		return
 	// Set the initial emergency appearance immediately, then account for charge
 	// in coarse time-based batches: one timer per fixture every 10 seconds.
@@ -975,17 +1026,17 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/settle_emergency_discharge()
-	if(!emergency_discharge_started || !cell)
+	if(!emergency_discharge_started || !has_cell())
 		return
 	var/elapsed = max(0, world.time - emergency_discharge_started)
 	emergency_discharge_started = world.time
 	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
-		use_emergency_power(min(amount, cell.charge))
+		use_emergency_power(min(amount, emergency_cell().charge))
 
 /obj/machinery/light/proc/continue_emergency_discharge()
 	emergency_discharge_at = 0
-	if(has_power() || !emergency_mode || !cell)
+	if(has_power() || !emergency_mode || !has_cell())
 		emergency_discharge_started = 0
 		update(FALSE)
 		return
@@ -1026,7 +1077,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	flicker_check_at = 0
 
 /obj/machinery/light/proc/auto_flicker_check()
-	if(!auto_flicker || !cell || has_power())
+	if(!auto_flicker || !has_cell() || has_power())
 		stop_flicker_watch()
 		schedule_light_timer()
 		return
@@ -1332,14 +1383,14 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		update_icon()
 	else
 		if(start_with_cell && !no_emergency)
-			cell = new/obj/item/cell/emergency_light(src)
+			declare_emergency_cell()
 
 // create a new lighting fixture
 /obj/machinery/light/Initialize(mapload, obj/machinery/light_construct/construct = null)
 	. = ..()
 
 	if(start_with_cell && !no_emergency)
-		cell = new/obj/item/cell/emergency_light(src)
+		declare_emergency_cell()
 	if(construct)
 		start_with_cell = FALSE
 		status = LIGHT_EMPTY
@@ -1347,7 +1398,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		construct.transfer_fingerprints_to(src)
 		set_dir(construct.dir)
 	else
-		installed_light = new light_type(src)
+		latent_bulb = TRUE // the bulb is data until someone takes it (C5)
 		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
 		update_from_bulb(L)
 		if(prob(L.broken_chance))

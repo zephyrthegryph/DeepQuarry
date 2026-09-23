@@ -4286,7 +4286,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.stat |= NOPOWER
 	L.emergency_mode = FALSE
 	L.auto_flicker = FALSE
-	L.cell.charge = 0
+	var/obj/item/cell/emergency = L.emergency_cell()
+	emergency.charge = 0
 	L.continue_emergency_discharge()
 	TEST_ASSERT(!L.emergency_discharge_at && !L.flicker_chunk_tokens, "unpowered light without emergency charge kept a timer or chunk keys")
 	qdel(L)

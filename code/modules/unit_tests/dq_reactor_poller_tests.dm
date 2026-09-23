@@ -98,7 +98,7 @@
 	A.power_light = FALSE
 	A.power_change()
 	react_test_ticks(4)
-	if(was_powered && L.cell && L.has_emergency_power(0.2) && L.status == LIGHT_OK && !L.no_emergency)
+	if(was_powered && L.has_cell() && L.has_emergency_power(0.2) && L.status == LIGHT_OK && !L.no_emergency)
 		TEST_ASSERT(L.emergency_mode, "an unpowered charged light did not go to emergency power")
 		TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency discharge has no timer")
 	TEST_ASSERT_NULL(L.react_sleep_violation(), "an unpowered light's audit failed")

@@ -355,3 +355,54 @@
 		box.make_contents_real()
 		TEST_ASSERT_EQUAL(dq_latent_census(box), "/obj/item/dq_containment_test=1;/obj/item/paper=1;/obj/item/pen=2", "each box holds its contents")
 		qdel(box)
+
+// ---- Step 3: lights ----
+
+/// A fixture holds its bulb and emergency cell as data; making them real gives
+/// the same bulb and cell an eager fixture would have had.
+/datum/unit_test/dq_latent_light_parts
+
+/datum/unit_test/dq_latent_light_parts/Run()
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, test_floor())
+	TEST_ASSERT(L.latent_bulb, "a new fixture's bulb is latent")
+	TEST_ASSERT(isnull(L.installed_light), "no bulb atom yet")
+	var/expect_cell = L.start_with_cell && !L.no_emergency
+	TEST_ASSERT_EQUAL(!!L.has_cell(), !!expect_cell, "the cell is declared")
+	TEST_ASSERT(isnull(L.cell), "no cell atom yet")
+	for(var/atom/movable/thing as anything in L.contents)
+		TEST_ASSERT(!istype(thing, /obj/item/light) && !istype(thing, /obj/item/cell), "no parts in contents: [thing.type]")
+	var/latent_charge = L.latent_cell_charge
+	L.status = LIGHT_BURNED
+	L.switchcount = 7
+	var/obj/item/light/B = L.bulb()
+	TEST_ASSERT(istype(B, L.light_type), "bulb() makes the fitted type")
+	TEST_ASSERT_EQUAL(B.loc, L, "inside the fixture")
+	TEST_ASSERT_EQUAL(B.status, LIGHT_BURNED, "with the fixture's status")
+	TEST_ASSERT_EQUAL(B.switchcount, 7, "and switch count")
+	TEST_ASSERT_EQUAL(L.bulb(), B, "only once")
+	if(expect_cell)
+		var/obj/item/cell/C = L.emergency_cell()
+		TEST_ASSERT(istype(C, /obj/item/cell/emergency_light), "emergency_cell() makes the cell")
+		TEST_ASSERT_EQUAL(C.charge, latent_charge, "with the declared charge")
+		var/obj/item/cell/emergency_light/eager = new(L.loc)
+		TEST_ASSERT_EQUAL(C.charge, eager.charge, "the same charge an eager cell gets here")
+		qdel(eager)
+		TEST_ASSERT_EQUAL(L.emergency_cell(), C, "only once")
+
+/// Emergency power runs off a latent cell and makes it real only when drawn on.
+/datum/unit_test/dq_latent_light_emergency
+
+/datum/unit_test/dq_latent_light_emergency/Run()
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, test_floor())
+	if(!L.has_cell())
+		return
+	L.latent_cell_charge = 100
+	L.status = LIGHT_OK
+	TEST_ASSERT(L.has_emergency_power(0.2), "a charged latent cell gives emergency power")
+	TEST_ASSERT(isnull(L.cell), "checking doesn't materialize")
+	L.stat |= NOPOWER
+	if(L.turned_off())
+		return
+	L.use_emergency_power(1)
+	TEST_ASSERT(L.cell, "drawing on it does")
+	TEST_ASSERT(abs(L.cell.charge - 99) < 0.01, "from the declared charge: [L.cell.charge]")
