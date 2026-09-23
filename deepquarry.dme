@@ -1039,6 +1039,7 @@
 #include "code\game\atom\atom_defense.dm"
 #include "code\game\atom\damage_packet.dm"
 #include "code\game\atom\atom_vv.dm"
+#include "code\game\atom\atom_materialize.dm"
 #include "code\game\atom\atoms_initializing_EXPENSIVE.dm"
 #include "code\game\dna\dna2.dm"
 #include "code\game\dna\dna2_domutcheck.dm"
