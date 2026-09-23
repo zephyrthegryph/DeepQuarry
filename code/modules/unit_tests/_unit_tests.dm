@@ -223,6 +223,7 @@
 #include "dq_construction_mech_tests.dm"
 #include "dq_construction_assembly_tests.dm"
 #include "xgm_total_moles_test.dm"
+#include "dq_w6_critical_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
