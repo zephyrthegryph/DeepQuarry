@@ -17,6 +17,9 @@
 /// data/unit_tests.json), so a sharded run's N worlds don't clobber each
 /// other's results file.
 #define TEST_RESULTS_FILE_PARAMETER "unit-tests-file"
+/// Path to a file listing (one per line) an explicit test selection from
+/// `dm-test --domains=`/`--tier=`/`--affected`. See TEST_SHARD_INDEX_PARAMETER.
+#define TEST_SELECT_FILE_PARAMETER "test-select"
 
 GLOBAL_VAR(restart_counter)
 

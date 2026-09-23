@@ -56,11 +56,42 @@ GLOBAL_VAR_INIT(dq_test_shard_count, 1)
 /// than pinning them to one shard.
 GLOBAL_VAR(dq_test_shard_names)
 
-/// Reads shard-index/shard-count/shard-tests from world params into the
-/// globals above. Called once, early, from world/proc/HandleTestRun().
-/// Missing shard-index/shard-count params leave the "not sharded" default in
-/// place; malformed ones fall back to it too (loud, via stack_trace())
-/// rather than silently running a wrong slice.
+/// Explicit test selection from `dm-test --domains=`/`--tier=`/`--affected`
+/// (see doc/testing.md "Domains, tiers and --affected"), or null to run
+/// every test that survives shard/focus filtering. Unlike dq_test_shard_names,
+/// this applies to sweep tests too: a domain filter can legitimately exclude
+/// a sweep unrelated to the requested domains, so there's no is_sweep_test
+/// bypass here.
+GLOBAL_VAR(dq_test_select_names)
+
+/// Reads a newline-separated list of test type paths from `file` into an
+/// assoc list (path -> TRUE), for the shard-tests/test-select world params.
+/// Null (not an empty list) if the param was absent; stack_trace()s and
+/// returns null if the file is missing, so a bad path fails loud instead of
+/// silently running every test.
+/proc/dq_test_read_name_list(param_name, file)
+	if(isnull(file))
+		return null
+	if(!fexists(file))
+		stack_trace("dq_test_read_name_list: [param_name] file [file] does not exist")
+		return null
+	var/list/names = list()
+	for(var/line in splittext(file2text(file), "\n"))
+		line = trim(line)
+		if(!length(line))
+			continue
+		var/path = text2path(line)
+		if(!path)
+			stack_trace("dq_test_read_name_list: [param_name] file [file] names an unknown type [line]")
+			continue
+		names[path] = TRUE
+	return names
+
+/// Reads shard-index/shard-count/shard-tests/test-select from world params
+/// into the globals above. Called once, early, from
+/// world/proc/HandleTestRun(). Missing shard-index/shard-count params leave
+/// the "not sharded" default in place; malformed ones fall back to it too
+/// (loud, via stack_trace()) rather than silently running a wrong slice.
 /proc/dq_test_shard_init()
 	var/count_text = world.params[TEST_SHARD_COUNT_PARAMETER]
 	var/index_text = world.params[TEST_SHARD_INDEX_PARAMETER]
@@ -73,23 +104,8 @@ GLOBAL_VAR(dq_test_shard_names)
 			GLOB.dq_test_shard_count = count
 			GLOB.dq_test_shard_index = index
 
-	var/tests_file = world.params[TEST_SHARD_TESTS_FILE_PARAMETER]
-	if(isnull(tests_file))
-		return
-	if(!fexists(tests_file))
-		stack_trace("dq_test_shard_init: shard-tests file [tests_file] does not exist")
-		return
-	var/list/names = list()
-	for(var/line in splittext(file2text(tests_file), "\n"))
-		line = trim(line)
-		if(!length(line))
-			continue
-		var/path = text2path(line)
-		if(!path)
-			stack_trace("dq_test_shard_init: [tests_file] names an unknown type [line]")
-			continue
-		names[path] = TRUE
-	GLOB.dq_test_shard_names = names
+	GLOB.dq_test_shard_names = dq_test_read_name_list(TEST_SHARD_TESTS_FILE_PARAMETER, world.params[TEST_SHARD_TESTS_FILE_PARAMETER])
+	GLOB.dq_test_select_names = dq_test_read_name_list(TEST_SELECT_FILE_PARAMETER, world.params[TEST_SELECT_FILE_PARAMETER])
 
 /datum/unit_test
 	//Bit of metadata for the future maybe
@@ -525,6 +541,16 @@ GLOBAL_VAR(dq_test_shard_names)
 			if(initial(test_to_run.is_sweep_test) || GLOB.dq_test_shard_names[test_to_run])
 				sharded += test_to_run
 		tests_to_run = sharded
+
+	// dm-test --domains=/--tier=/--affected: an explicit selection, applied
+	// to every test including sweeps (a domain filter can legitimately
+	// exclude a sweep it has nothing to do with).
+	if(GLOB.dq_test_select_names)
+		var/list/selected = list()
+		for(var/_test_to_run in tests_to_run)
+			if(GLOB.dq_test_select_names[_test_to_run])
+				selected += _test_to_run
+		tests_to_run = selected
 
 	sortTim(tests_to_run, GLOBAL_PROC_REF(cmp_unit_test_priority))
 

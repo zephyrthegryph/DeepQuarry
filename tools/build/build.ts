@@ -8,11 +8,13 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
+import { acquireDdSlot } from './lib/dd_slot';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BENCH_RUNS_DIR,
@@ -423,6 +425,8 @@ export const ScenarioParameter = new Juke.Parameter({ type: 'string[]', alias: '
 export const ArgParameter = new Juke.Parameter({ type: 'string[]' });
 export const ProfileParameter = new Juke.Parameter({ type: 'boolean' });
 export const LabelParameter = new Juke.Parameter({ type: 'string' });
+/** `dm-test --shards=N`: boots N DreamDaemon worlds instead of one. See doc/testing.md "Sharded sweeps". */
+export const ShardsParameter = new Juke.Parameter({ type: 'number' });
 export const BaseParameter = new Juke.Parameter({ type: 'string' });
 export const HeadParameter = new Juke.Parameter({ type: 'string' });
 export const ThresholdParameter = new Juke.Parameter({ type: 'number' });
@@ -460,20 +464,114 @@ function writeDerivedDme(target: string): void {
   fs.writeFileSync(target, text);
 }
 
+// Where compileDerived() records the content hash it compiled a .dmb/.rsc
+// pair from, so a later call (a rerun on an unchanged tree: flake reruns,
+// focused reruns) can skip DreamMaker() entirely. Lives under data/, so it's
+// per-worktree like everything else there -- never shared between worktrees.
+const DMB_CACHE_DIR = 'data/dmb-cache';
+
+/**
+ * The .dm files transitively #include'd from `dmeText` (paths relative to
+ * the repo root). A small, self-contained walk of the same #include graph
+ * ValidateDmeTarget checks, kept separate (rather than shared) so this cache
+ * addition stays a minimal, independent diff.
+ */
+function resolveDmeIncludes(dmeText: string): string[] {
+  const resolveInclude = (baseDir: string, raw: string): string => {
+    const combined = baseDir === '.' ? raw : `${baseDir}/${raw}`;
+    const out: string[] = [];
+    for (const seg of combined.replace(/\\/g, '/').split('/')) {
+      if (seg === '' || seg === '.') continue;
+      if (seg === '..') { out.pop(); continue; }
+      out.push(seg);
+    }
+    return out.join('/');
+  };
+  const dirOf = (file: string): string => {
+    const i = file.lastIndexOf('/');
+    return i === -1 ? '.' : file.slice(0, i);
+  };
+  const ACTIVE_INCLUDE = /^[ \t]*#include\s+"([^"]+\.dm)"/gm;
+  const reachable = new Set<string>();
+  const queue: string[] = [];
+  const seed = (content: string, baseDir: string) => {
+    for (const m of content.matchAll(ACTIVE_INCLUDE)) {
+      queue.push(resolveInclude(baseDir, m[1]));
+    }
+  };
+  seed(dmeText, '.');
+  while (queue.length > 0) {
+    const file = queue.pop() as string;
+    if (reachable.has(file)) continue;
+    reachable.add(file);
+    if (!fs.existsSync(file)) continue; // missing include: DreamMaker will report it
+    seed(fs.readFileSync(file, 'utf-8'), dirOf(file));
+  }
+  return [...reachable].sort();
+}
+
+/**
+ * Content hash of everything that determines a derived-dme compile's
+ * output: the derived .dme text itself, the full content of every .dm file
+ * it transitively includes, the define list, and the DM compiler version.
+ * Order-independent in the define list; file order is fixed (sorted) so the
+ * hash is stable across runs.
+ */
+function computeCompileHash(dmeText: string, defines: string[], dmVersion: string | null): string {
+  const hash = createHash('sha256');
+  hash.update(dmeText);
+  for (const file of resolveDmeIncludes(dmeText)) {
+    hash.update(file);
+    try {
+      hash.update(fs.readFileSync(file));
+    } catch {
+      hash.update('<unreadable>');
+    }
+  }
+  hash.update(JSON.stringify([...defines].sort()));
+  hash.update(dmVersion ?? '');
+  return hash.digest('hex');
+}
+
 async function compileDerived(dme: string, get: any, defines: string[]): Promise<void> {
   writeDerivedDme(dme);
+  const dmeText = fs.readFileSync(dme, 'utf-8');
+  const allDefines = [...defines, ...get(DefineParameter)];
+  const dmVersion = get(DmVersionParameter);
+  const dmbFile = dme.replace(/\.dme$/, '.dmb');
+  const rscFile = dme.replace(/\.dme$/, '.rsc');
+  const cacheFile = `${DMB_CACHE_DIR}/${path.basename(dme)}.hash.json`;
+  const hash = computeCompileHash(dmeText, allDefines, dmVersion);
+  if (fs.existsSync(dmbFile) && fs.existsSync(rscFile)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+      if (cached.hash === hash) {
+        Juke.logger.info(`compileDerived: reusing ${dmbFile} (compile inputs unchanged since ${cached.compiledAt}).`);
+        return;
+      }
+    } catch {
+      // No cache record yet, or it's unreadable/stale-format: fall through and recompile.
+    }
+  }
   try {
     await DreamMaker(dme, {
-      defines: [...defines, ...get(DefineParameter)],
+      defines: allDefines,
       warningsAsErrors: get(WarningParameter).includes('error'),
       ignoreWarningCodes: get(NoWarningParameter),
-      namedDmVersion: get(DmVersionParameter),
+      namedDmVersion: dmVersion,
     });
   } catch (error) {
     // Don't leave a half-built derived dme/rsc lying around after a failed compile.
     await removeDerivedArtifacts(dme.replace(/\.dme$/, '.*'));
+    try {
+      fs.rmSync(cacheFile, { force: true });
+    } catch {
+      // best-effort
+    }
     throw error;
   }
+  fs.mkdirSync(DMB_CACHE_DIR, { recursive: true });
+  writeJson(cacheFile, { hash, defines: allDefines, dmVersion, compiledAt: new Date().toISOString() });
 }
 
 type WorldRun = {
@@ -483,6 +581,12 @@ type WorldRun = {
   durationSeconds: number;
   process: ProcessSummary | null;
   samples: ProcessSample[];
+  /** TRUE when the DreamDaemon watchdog had to force-kill this world for
+   * still running past its hard timeout (as opposed to the routine
+   * post-completion zombie cleanup) -- see DDResult.killedByWatchdog. Its
+   * results are likely missing or incomplete; always logged as an explicit
+   * error rather than folded into an ordinary "not clean". */
+  killedByWatchdog: boolean;
 };
 
 /**
@@ -504,8 +608,9 @@ async function runTestWorld(
   const sampler = sample ? new ProcessSampler('data/bench/process.json') : null;
   const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams }).toString();
   const started = Date.now();
+  let killedByWatchdog = false;
   try {
-    await DreamDaemon(
+    const result = await DreamDaemon(
       {
         dmbFile,
         namedDmVersion: dmVersion,
@@ -518,6 +623,7 @@ async function runTestWorld(
       '-params',
       params,
     );
+    killedByWatchdog = !!result.killedByWatchdog;
   } catch {
     // DreamDaemon exits non-zero even on clean runs; the files below decide.
   }
@@ -541,6 +647,7 @@ async function runTestWorld(
     durationSeconds: (Date.now() - started) / 1000,
     process: processSummary,
     samples: sampler?.samples ?? [],
+    killedByWatchdog,
   };
 }
 
@@ -581,6 +688,12 @@ function reportFocus(): void {
 
 /** Stores a test run under data/test-runs/ and prints its summary. */
 function recordTestRun(run: WorldRun, label: string | null, defines: string[]): TestRun | null {
+  if (run.killedByWatchdog) {
+    Juke.logger.error(
+      'Unit-test summary: the DreamDaemon watchdog force-killed this world for running past its hard '
+        + `timeout (DQ_DD_WATCHDOG_MINUTES to raise it). ${run.results ? 'Partial' : 'No'} results were captured.`,
+    );
+  }
   if (!run.results) return null;
   const record = testRunRecord(runIdentity(label), label, defines, run.clean, run.durationSeconds, run.results);
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
@@ -588,7 +701,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
     `Unit-test summary: ${record.counts.passed} passed, ${record.counts.failed} failed, ${record.counts.skipped} skipped `
       + `in ${Math.round(record.duration_seconds)}s (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
   );
-  console.log(testHotspots(run.results));
+  console.log(testHotspots(run.results, 20));
   for (const name of record.failed) {
     Juke.logger.error(`FAILED ${name}: ${run.results[name].message ?? ''}`);
   }
@@ -597,8 +710,441 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
 
 const TEST_DEFINES = ['CBT', 'CIBUILDING', 'CITESTING'];
 
+// ---------------------------------------------------------------------------
+// Domains, tiers and `--affected` (`dm-test --domains=a,b`, `--tier=fast`,
+// `--affected`). See doc/testing.md "Domains, tiers and --affected".
+//
+// This is a lightweight, best-effort classifier: a file/path keyword ->
+// domain table, not a hand-maintained per-test registry. It's meant to
+// shrink "which tests should I run for this change" from "the whole suite"
+// to "probably these", not to be authoritative -- a domain-filtered or
+// --affected run is for fast local iteration; CI and the merge-to-master run
+// always use --full (no filter at all).
+
+/** Path/filename keyword -> domain, first match wins (most specific first).
+ * Checked against both unit-test file paths (to tag a test) and changed
+ * source file paths (for --affected). Unmatched -> domain "misc". */
+const DOMAIN_PATTERNS: [RegExp, string][] = [
+  [/atmos/i, 'atmos'],
+  [/\bheat\b|thermal/i, 'heat'],
+  [/\bpower\b|reactor|solars?|smes|electric/i, 'power'],
+  [/contain(ment|er)/i, 'containment'],
+  [/\binteraction\b/i, 'interaction'],
+  [/medical|surgery|disease|genetics|\borgan\b|\bbody\b|physiology|stabilisation|diagnosis/i, 'medical'],
+  [/vore|belly/i, 'vore'],
+  [/\brule/i, 'rules'],
+  [/\bstate\b|latent/i, 'state'],
+  [/\bmob\b|\blife\b|hibernat/i, 'mobs'],
+  [/tgui|\bui_|interface/i, 'ui'],
+  [/construction|assembly|\bmech\b/i, 'construction'],
+  [/combat|weapon|armor|armour|melee/i, 'combat'],
+  [/expedition|flight_operations|generated_station/i, 'expedition'],
+  [/material/i, 'materials'],
+  [/economy|\bstock\b|contract/i, 'economy'],
+];
+
+function classifyDomain(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, '/');
+  for (const [pattern, domain] of DOMAIN_PATTERNS) {
+    if (pattern.test(normalized)) return domain;
+  }
+  return 'misc';
+}
+
+/** Every declared unit-test type, the file it's declared in, and its
+ * inferred domain -- a source scan (see enumerateUnitTestTypes()'s doc), not
+ * a world boot. */
+function enumerateUnitTestsWithDomain(): { name: string; file: string; domain: string }[] {
+  const TYPE_DECL = /^\/datum\/unit_test\/[A-Za-z0-9_/]+$/;
+  const out: { name: string; file: string; domain: string }[] = [];
+  for (const file of Juke.glob('code/modules/unit_tests/*.dm')) {
+    const domain = classifyDomain(file);
+    for (const line of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (TYPE_DECL.test(trimmed)) out.push({ name: trimmed, file, domain });
+    }
+  }
+  return out;
+}
+
+/** Files changed since the merge-base with master (falls back to the working
+ * tree's own uncommitted changes if there's no `master` ref to diff
+ * against -- e.g. a shallow clone). */
+function changedFiles(): string[] {
+  const run = (args: string[]) => spawnSync('git', args, { encoding: 'utf-8', cwd: process.cwd() });
+  const base = run(['merge-base', 'master', 'HEAD']);
+  if (base.status === 0) {
+    const diff = run(['diff', '--name-only', base.stdout.trim()]);
+    if (diff.status === 0) return diff.stdout.split(/\r?\n/).filter(Boolean);
+  }
+  const status = run(['status', '--porcelain']);
+  if (status.status === 0) {
+    return status.stdout
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => line.slice(3).trim());
+  }
+  return [];
+}
+
+/** Domains touched by files changed since master (or the working tree, as a
+ * fallback -- see changedFiles()). Empty only when nothing changed or git
+ * itself is unavailable; the caller falls back to the full suite in that case
+ * rather than silently running nothing. */
+function affectedDomains(): Set<string> {
+  const domains = new Set<string>();
+  for (const file of changedFiles()) domains.add(classifyDomain(file));
+  return domains;
+}
+
+export const DomainsParameter = new Juke.Parameter({ type: 'string[]' });
+export const TierParameter = new Juke.Parameter({ type: 'string' });
+export const AffectedParameter = new Juke.Parameter({ type: 'boolean' });
+
+/** Resolves --domains/--tier/--affected into an explicit test selection (null
+ * = no filter, run everything), and reports what it picked. `--tier=sweep`
+ * selects only the type-sweep tests; `--tier=fast` (default) excludes them;
+ * `--domains=a,b` (any tier) keeps only tests in those domains; `--affected`
+ * unions in every domain touched by changed files. Combining `--affected`
+ * with explicit `--domains` unions both. */
+function resolveTestSelection(get: any): string[] | null {
+  const tierRaw = get(TierParameter) as string | null;
+  const explicitDomains = new Set(get(DomainsParameter) as string[]);
+  const affected = get(AffectedParameter) as boolean;
+  // No --tier/--domains/--affected at all: run everything, unfiltered. This
+  // must stay a real "no filter" (return null, not a computed full list) --
+  // a plain `dm-test`/`dm-test --shards=N` with no flags is the default path
+  // every existing caller (CI, the merge-to-master run, dq_focused_test.sh)
+  // uses, and it must never silently drop tests.
+  if (!tierRaw && !explicitDomains.size && !affected) return null;
+  const tier = tierRaw ?? 'fast';
+
+  const domains = new Set(explicitDomains);
+  if (affected) {
+    const touched = affectedDomains();
+    if (!touched.size) {
+      Juke.logger.warn('--affected: no changed files found against master; falling back to --tier only.');
+    }
+    for (const d of touched) domains.add(d);
+  }
+
+  const includeSweeps = tier === 'sweep' || tier === 'full';
+  const includeNonSweeps = tier !== 'sweep';
+  const all = enumerateUnitTestsWithDomain();
+  const selected = all
+    .filter((t) => (SWEEP_TEST_NAMES.has(t.name) ? includeSweeps : includeNonSweeps))
+    .filter((t) => (domains.size ? domains.has(t.domain) : true))
+    .map((t) => t.name);
+
+  Juke.logger.info(
+    `Test selection: tier=${tier}${domains.size ? `, domains=${[...domains].join(',')}` : ''} `
+      + `-> ${selected.length}/${all.length} test(s).`,
+  );
+  return selected;
+}
+
+// ---------------------------------------------------------------------------
+// Sharded dm-test (`dm-test --shards=N`): one compile, N DreamDaemon worlds,
+// merged into one result. See doc/testing.md "Sharded sweeps".
+
+/**
+ * Type-sweep tests, excluded from the bin-packer below: sweep_types()
+ * already spreads each one's cost evenly across every shard's world, so
+ * pinning one to a single shard (as if it were a normal test) would both
+ * double-count its historical duration in that shard's load estimate and
+ * under-count it everywhere else. Keep this in sync with each test's
+ * `is_sweep_test = TRUE` in code/modules/unit_tests/*.dm.
+ */
+const SWEEP_TEST_NAMES = new Set([
+  '/datum/unit_test/dq_lifecycle_sandbox',
+  '/datum/unit_test/dq_state_latent_round_trip',
+  '/datum/unit_test/dq_property_type_values_valid',
+  '/datum/unit_test/all_clothing_shall_be_valid',
+  '/datum/unit_test/dq_constraint_parity/equip',
+  '/datum/unit_test/dq_constraint_parity/storage',
+  '/datum/unit_test/dq_constraint_parity/suit_storage',
+  '/datum/unit_test/dq_constraint_parity/holster',
+]);
+
+const SHARD_DIR = 'data/test-shards';
+
+/** Every `/datum/unit_test/...` type declared under code/modules/unit_tests,
+ * by scanning source (a bare `/datum/unit_test/foo` line, not a proc/var
+ * line under it) rather than booting a world -- used to seed shard
+ * assignment for tests with no historical duration yet (new tests, or a
+ * fresh checkout with no data/test-runs/ history). */
+function enumerateUnitTestTypes(): string[] {
+  const TYPE_DECL = /^\/datum\/unit_test\/[A-Za-z0-9_/]+$/;
+  const names: string[] = [];
+  for (const file of Juke.glob('code/modules/unit_tests/*.dm')) {
+    for (const line of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (TYPE_DECL.test(trimmed)) names.push(trimmed);
+    }
+  }
+  return names;
+}
+
+/** Greedy bin-packing of every known non-sweep test onto `shardCount`
+ * shards by historical duration (from the latest stored test run, if any),
+ * heaviest first onto the currently lightest shard. Tests with no
+ * historical record get a small default weight, so new tests still balance
+ * instead of piling onto shard 0. */
+function assignTestShards(shardCount: number, selection: Set<string> | null): string[][] {
+  const shards: string[][] = Array.from({ length: shardCount }, () => []);
+  const loads = new Array(shardCount).fill(0);
+  const durations = new Map<string, number>();
+  const runs = listRuns(TEST_RUNS_DIR);
+  if (runs.length) {
+    const latest = readJson<TestRun>(runs[runs.length - 1]);
+    for (const [name, entry] of Object.entries(latest.tests)) {
+      if (!SWEEP_TEST_NAMES.has(name)) durations.set(name, entry.duration_ds ?? 1);
+    }
+  }
+  const known = new Set(durations.keys());
+  for (const name of enumerateUnitTestTypes()) {
+    if (!SWEEP_TEST_NAMES.has(name)) known.add(name);
+  }
+  if (selection) for (const name of [...known]) if (!selection.has(name)) known.delete(name);
+  const DEFAULT_WEIGHT_DS = 5; // ~0.5s: most non-sweep tests are quick
+  const sorted = [...known].sort(
+    (a, b) => (durations.get(b) ?? DEFAULT_WEIGHT_DS) - (durations.get(a) ?? DEFAULT_WEIGHT_DS),
+  );
+  for (const name of sorted) {
+    let lightest = 0;
+    for (let i = 1; i < shardCount; i++) if (loads[i] < loads[lightest]) lightest = i;
+    shards[lightest].push(name);
+    loads[lightest] += durations.get(name) ?? DEFAULT_WEIGHT_DS;
+  }
+  return shards;
+}
+
+type ShardRun = WorldRun & { index: number };
+
+/** Boots one shard's world: its own log directory, results file and process
+ * sampler (data/logs/shardN, data/unit_tests-shardN.json,
+ * data/bench/process-shardN.json) so N concurrent worlds in the same
+ * worktree never share a path, and its own machine-wide dd-slot (see
+ * lib/dd_slot.ts) so shards throttle against the same budget as every other
+ * DreamDaemon on this machine. The slot is released the moment this
+ * shard's daemon exits, not when every shard finishes. */
+async function runShardWorld(
+  dmbFile: string,
+  dmVersion: string | null,
+  shardIndex: number,
+  shardCount: number,
+  testsFile: string,
+  priority: boolean,
+  selectFile: string | null,
+): Promise<ShardRun> {
+  const tag = `shard${shardIndex}`;
+  Juke.rm(`data/logs/${tag}`, { recursive: true });
+  const resultsFile = `data/unit_tests-${tag}.json`;
+  Juke.rm(resultsFile);
+  fs.mkdirSync('data/bench', { recursive: true });
+  const sampler = new ProcessSampler(`data/bench/process-${tag}.json`);
+  const slot = await acquireDdSlot(priority);
+  const params = new URLSearchParams({
+    'log-directory': tag,
+    'unit-tests-file': resultsFile,
+    'shard-index': String(shardIndex),
+    'shard-count': String(shardCount),
+    'shard-tests': testsFile,
+    ...(selectFile ? { 'test-select': selectFile } : {}),
+  }).toString();
+  // Each shard does roughly 1/shardCount of the suite's work (sweeps
+  // self-divide via sweep_types(), non-sweep tests are bin-packed), so its
+  // watchdog backstop scales down with shard count too -- sqrt rather than
+  // linear, since per-world boot/settle overhead and any single still-heavy
+  // sweep slice don't shrink that fast. Floored at 12 minutes;
+  // DQ_DD_WATCHDOG_MINUTES (read in lib/byond.ts) overrides this entirely.
+  const shardWatchdogMs = Math.max(Math.round((45 / Math.sqrt(shardCount)) * 60 * 1000), 12 * 60 * 1000);
+  const started = Date.now();
+  let killedByWatchdog = false;
+  try {
+    const result = await DreamDaemon(
+      {
+        dmbFile,
+        namedDmVersion: dmVersion,
+        watchdogFile: resultsFile,
+        onSpawn: (pid) => sampler.start(pid),
+        watchdogTimeoutMs: shardWatchdogMs,
+      },
+      '-close',
+      ddSecurityFlag(),
+      '-verbose',
+      '-params',
+      params,
+    );
+    killedByWatchdog = !!result.killedByWatchdog;
+  } catch {
+    // DreamDaemon exits non-zero even on clean runs; the files below decide.
+  } finally {
+    slot.release();
+  }
+  const processSummary = sampler.stop();
+  let cleanText: string | null = null;
+  try {
+    cleanText = fs.readFileSync(`data/logs/${tag}/clean_run.lk`, 'utf-8');
+  } catch {
+    // not clean
+  }
+  let results: Record<string, UnitTestEntry> | null = null;
+  try {
+    results = JSON.parse(fs.readFileSync(resultsFile, 'utf-8'));
+  } catch {
+    // the world died before finishing
+  }
+  return {
+    index: shardIndex,
+    clean: cleanText !== null,
+    cleanText,
+    results,
+    durationSeconds: (Date.now() - started) / 1000,
+    process: processSummary,
+    samples: sampler.samples,
+    killedByWatchdog,
+  };
+}
+
+function statusPriority(status: number): number {
+  if (status === 1) return 2; // failed: always wins
+  if (status === 0) return 0; // passed: loses to anything else recorded
+  return 1; // skipped
+}
+
+/** Merges every shard's results into one summary. A sweep test's entries
+ * (one per shard, each its own slice) sum durations/runtimes/tick counts and
+ * take the worst status; a non-sweep test should only ever appear in the one
+ * shard it was assigned to, but is merged the same defensive way. */
+function mergeShardResults(runs: ShardRun[]): {
+  results: Record<string, UnitTestEntry>;
+  clean: boolean;
+  totalCpuSeconds: number;
+} {
+  const merged: Record<string, UnitTestEntry> = {};
+  let clean = true;
+  let totalCpuSeconds = 0;
+  for (const run of runs) {
+    if (!run.clean) clean = false;
+    totalCpuSeconds += run.process?.cpu_seconds ?? 0;
+    if (!run.results) continue;
+    for (const [name, entry] of Object.entries(run.results)) {
+      const existing = merged[name];
+      if (!existing) {
+        merged[name] = { ...entry };
+        continue;
+      }
+      const existingWins = statusPriority(existing.status) >= statusPriority(entry.status);
+      merged[name] = {
+        status: existingWins ? existing.status : entry.status,
+        message: existingWins ? existing.message : entry.message,
+        name,
+        duration_ds: (existing.duration_ds ?? 0) + (entry.duration_ds ?? 0),
+        runtimes: (existing.runtimes ?? 0) + (entry.runtimes ?? 0),
+        ticks:
+          existing.ticks && entry.ticks
+            ? {
+                samples: existing.ticks.samples + entry.ticks.samples,
+                overruns: existing.ticks.overruns + entry.ticks.overruns,
+                max: Math.max(existing.ticks.max, entry.ticks.max),
+              }
+            : (entry.ticks ?? existing.ticks),
+      };
+    }
+  }
+  return { results: merged, clean, totalCpuSeconds };
+}
+
+/** The `--shards=N` path for DmTestTarget: compiles once, boots N worlds in
+ * parallel (each racing the same dd-slot budget as everything else on the
+ * machine), and merges their results into one data/test-runs/ record. */
+async function runSharded(shardCount: number, get: any): Promise<void> {
+  reportFocus();
+  await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+  const priority = process.env.DQ_DD_PRIORITY === '1';
+  fs.mkdirSync(SHARD_DIR, { recursive: true });
+  const selection = resolveTestSelection(get);
+  const selectionSet = selection ? new Set(selection) : null;
+  let selectFile: string | null = null;
+  if (selection) {
+    selectFile = `${SHARD_DIR}/select.txt`;
+    fs.writeFileSync(selectFile, selection.length ? `${selection.join('\n')}\n` : '');
+  }
+  const assignment = assignTestShards(shardCount, selectionSet);
+  const testFiles: string[] = [];
+  for (let i = 0; i < shardCount; i++) {
+    const file = `${SHARD_DIR}/shard-${i}-of-${shardCount}.txt`;
+    fs.writeFileSync(file, assignment[i].length ? `${assignment[i].join('\n')}\n` : '');
+    testFiles.push(file);
+  }
+  Juke.logger.info(
+    `dm-test --shards=${shardCount}: `
+      + `${assignment.map((a, i) => `shard ${i}: ${a.length} test(s)`).join(', ')}, `
+      + `plus every sweep test in each shard${selection ? ' that matches the selection' : ''}.`,
+  );
+  const shardWatchdogMinutes = Math.max(45 / Math.sqrt(shardCount), 12);
+  const started = Date.now();
+  const runs = await Promise.all(
+    Array.from({ length: shardCount }, (_, i) =>
+      runShardWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), i, shardCount, testFiles[i], priority, selectFile)),
+  );
+  const wallSeconds = (Date.now() - started) / 1000;
+  for (const run of runs) {
+    if (run.killedByWatchdog) {
+      Juke.logger.error(
+        `Shard ${run.index}: the DreamDaemon watchdog force-killed this world for running past its `
+          + `${Math.round(shardWatchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). `
+          + `${run.results ? 'Partial' : 'No'} results were captured.`,
+      );
+    }
+    if (!run.clean) {
+      Juke.logger.error(`Shard ${run.index} was not clean:`);
+      for (const logFile of [`data/logs/shard${run.index}/tests.log`, `data/logs/shard${run.index}/runtime.log`]) {
+        if (!fs.existsSync(logFile)) continue;
+        const lines = fs.readFileSync(logFile, 'utf-8').trim().split(/\r?\n/);
+        console.error(lines.slice(-40).join('\n'));
+      }
+    }
+  }
+  const { results, clean, totalCpuSeconds } = mergeShardResults(runs);
+  const record = testRunRecord(
+    runIdentity(get(LabelParameter)),
+    get(LabelParameter),
+    [...TEST_DEFINES, ...get(DefineParameter)],
+    clean,
+    wallSeconds,
+    results,
+  );
+  writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
+  Juke.logger.info(
+    `Unit-test summary (${shardCount} shards): ${record.counts.passed} passed, ${record.counts.failed} failed, `
+      + `${record.counts.skipped} skipped in ${Math.round(wallSeconds)}s wall / ~${Math.round(totalCpuSeconds)}s `
+      + `summed CPU (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
+  );
+  console.log(testHotspots(results, 20));
+  for (const name of record.failed) {
+    Juke.logger.error(`FAILED ${name}: ${results[name].message ?? ''}`);
+  }
+  await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+  if (!clean) {
+    Juke.logger.error('Sharded test run was not clean, exiting');
+    throw new Juke.ExitCode(1);
+  }
+}
+
 export const DmTestTarget = new Juke.Target({
-  parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, LabelParameter],
+  parameters: [
+    DefineParameter,
+    DmVersionParameter,
+    WarningParameter,
+    NoWarningParameter,
+    LabelParameter,
+    ShardsParameter,
+    DomainsParameter,
+    TierParameter,
+    AffectedParameter,
+  ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
@@ -607,12 +1153,30 @@ export const DmTestTarget = new Juke.Target({
     MapBoundsTarget, // tests boot the world, which reads template bounds
   ],
   executes: async ({ get }) => {
+    const shardCount = Math.max(get(ShardsParameter) ?? 1, 1);
+    if (shardCount > 1) {
+      await runSharded(shardCount, get);
+      return;
+    }
     reportFocus();
     await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
-    const run = await runTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), {}, false);
+    const selection = resolveTestSelection(get);
+    let worldParams: Record<string, string> = {};
+    if (selection) {
+      fs.mkdirSync(SHARD_DIR, { recursive: true });
+      const selectFile = `${SHARD_DIR}/select.txt`;
+      fs.writeFileSync(selectFile, selection.length ? `${selection.join('\n')}\n` : '');
+      worldParams = { 'test-select': selectFile };
+    }
+    const run = await runTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, false);
     if (!run.clean) printLogTails();
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
-    await removeDerivedArtifacts('*.test.*');
+    // Keep deepquarry.test.dmb/.rsc (only drop the derived .dme text) so an
+    // unchanged rerun -- a flake recheck, a focused rerun while iterating --
+    // can reuse them via compileDerived()'s content-hash cache instead of
+    // recompiling. removeDerivedArtifacts() in compileDerived()'s catch
+    // already cleans up fully on a failed compile.
+    await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
     if (!run.clean) {
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);
@@ -641,7 +1205,8 @@ export const TestRepeatTarget = new Juke.Target({
         (outcomes[name] ??= []).push(result.status);
       }
     }
-    await removeDerivedArtifacts('*.test.*');
+    // See the matching comment in DmTestTarget: keep the .dmb/.rsc for reuse.
+    await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
     const consistent = Object.entries(outcomes).filter(([, s]) => s.length === runs && s.every((v) => v === 1));
     const flaky = Object.entries(outcomes).filter(([, s]) => s.includes(1) && !s.every((v) => v === 1));
     Juke.logger.info(`Across ${runs} runs: ${consistent.length} consistent failure(s), ${flaky.length} flaky test(s).`);

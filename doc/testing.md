@@ -93,6 +93,123 @@ Drive the thing under test directly instead of sleeping for game time:
 contains a focus line, or if a `TEST_FOCUS` anywhere else is not inside an
 `#if`/`#ifdef` block.
 
+### Sharded sweeps
+
+A handful of tests sweep every subtype of some root (every latent-safe
+`/atom/movable`, every clothing item, every property-provider type, ...) and
+dominate the suite's wall time. `/datum/unit_test/proc/sweep_types(list/types)`
+splits such a list by round-robin index across `GLOB.dq_test_shard_count`
+worlds, keyed by `GLOB.dq_test_shard_index` -- pass it whatever you'd
+otherwise iterate:
+
+```dm
+for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
+```
+
+With no sharding configured (a plain `dm-test` or focused run, the default)
+`sweep_types()` returns its input unchanged, so adopting it costs nothing.
+Under a sharded run, each world reads its position from world params
+(`-params shard-index=K&shard-count=N`, read once by `dq_test_shard_init()` in
+`world/proc/HandleTestRun()`) and every shard ends up with a similar-cost
+slice of each sweep automatically -- round-robin, not a contiguous range, so a
+slice stays representative even when `types` is clustered (e.g. many cheap
+subtypes of one branch followed by a few costly ones from another).
+
+Tests already using it: `dq_lifecycle_sandbox`, `dq_state_latent_round_trip`,
+`dq_property_type_values_valid`, `all_clothing_shall_be_valid`, and (via
+`dq_constraint_parity/run_holders()`) `dq_constraint_parity/equip`,
+`dq_constraint_parity/storage` and `dq_constraint_parity/suit_storage`.
+
+### `dm-test --shards=N`
+
+`tools/build/build.sh dm-test --shards=N` compiles once, then boots N
+DreamDaemon worlds in parallel and merges their results into one
+`data/test-runs/` record:
+
+- Every sweep test runs in **every** shard, each doing its own slice via
+  `sweep_types()` (see above) -- `is_sweep_test = TRUE` on the test type
+  marks it as one, so the shard test-selection filter below never excludes
+  it.
+- The other ~1000 non-sweep tests are greedy bin-packed across shards by
+  historical duration (from the latest `data/test-runs/` record; tests with
+  no history get a small default weight), heaviest first onto the lightest
+  shard. Each shard gets a `data/test-shards/shard-<i>-of-<N>.txt` list (one
+  test type path per line) passed via `-params shard-tests=<path>`, read by
+  `dq_test_shard_init()` into `GLOB.dq_test_shard_names`; `RunUnitTests()`
+  keeps a test only if it's in that list or is a sweep test.
+- Each shard world is fully isolated: its own `data/logs/shard<i>/`
+  (`-params log-directory=shard<i>`), its own results file
+  (`data/unit_tests-shard<i>.json`, `-params unit-tests-file=<path>` --
+  `TEST_RESULTS_FILE_PARAMETER`, defaulting to `data/unit_tests.json`
+  unchanged when unset) and its own process/CPU sampler file, so N worlds in
+  one worktree never clobber each other.
+- Each shard's DreamDaemon boot acquires its own slot from the same
+  machine-wide `dd-slot.sh` budget everything else on the machine uses
+  (`tools/build/lib/dd_slot.ts`: a TypeScript-native port of the same
+  mkdir-lock-directory protocol, same lock paths, same priority lane), and
+  releases it the moment that shard exits -- shards are "sized by dd-slot
+  availability" in the sense that however many slots are actually free is
+  how many shards run concurrently; the rest queue.
+- The merged summary reports wall time (when every shard finished) and
+  summed CPU (each shard's `ProcessSampler` total, added up) side by side,
+  plus the slowest 20 tests suite-wide (`testHotspots(..., 20)`) -- a sweep
+  test's entries across shards are summed into one duration, matching what a
+  single unsharded world would have reported for it.
+
+Non-sharded (`dm-test`, no `--shards`) is unaffected: `GLOB.dq_test_shard_count`
+defaults to 1, `sweep_types()` returns its input unchanged, and no shard-tests
+file is ever written or read.
+
+### Domains, tiers and `--affected`
+
+`dm-test --domains=atmos,heat`, `--tier=fast|sweep|full` and `--affected`
+narrow which tests run, for fast local iteration -- **CI and the
+merge-to-master run always use the full, unfiltered suite** (no flags), since
+this filter is a best-effort keyword classifier, not an authoritative
+per-test registry:
+
+- Every test is tagged with a domain inferred from the unit-test source file
+  it's declared in (a path/filename keyword table in `build.ts`,
+  `DOMAIN_PATTERNS` -- `atmos`, `heat`, `power`, `medical`, `mobs`, `rules`,
+  ..., falling back to `misc`). The same table classifies a changed *source*
+  file for `--affected`.
+- `--tier=fast` (the default whenever any of these flags is used) runs every
+  non-sweep test; `--tier=sweep` runs only the sweep tests; `--tier=full`
+  runs both (still subject to `--domains` if also given).
+- `--domains=a,b` keeps only tests in those domains (any tier).
+- `--affected` maps files changed since `git merge-base master HEAD` (falling
+  back to the working tree's own uncommitted changes if there's no `master`
+  ref) through the same domain table and unions those domains in; combine it
+  with explicit `--domains` to union both.
+- With none of these flags, nothing is filtered -- the exact behavior of
+  today's plain `dm-test`.
+
+The selection is written to `data/test-shards/select.txt` and passed via
+`-params test-select=<path>` (`TEST_SELECT_FILE_PARAMETER`), read into
+`GLOB.dq_test_select_names`. Unlike shard-tests, this filter applies to sweep
+tests too -- a domain filter can legitimately exclude a sweep that has
+nothing to do with the requested domains. It composes with `--shards=N`: the
+domain/tier selection narrows the pool bin-packing draws from, and the same
+selection file is passed to every shard so sweeps are filtered there too.
+
+Not implemented: `--incremental` (skipping a sweep's unchanged types via a
+per-type definition hash) is still on the roadmap, not built yet.
+
+### Watchdog timeout
+
+DreamDaemon sometimes fails to exit after `-close` finishes (a known Windows
+zombie-process issue), so every test/bench boot runs under a watchdog: once
+the results file appears, it gets `watchdogGraceMs` (30s) to self-close, then
+is force-killed. Separately, a **hard timeout** (default 45 minutes,
+`DQ_DD_WATCHDOG_MINUTES=<n>` overrides it, taking precedence over everything
+including a caller's own estimate) force-kills a world that's still running
+at all -- genuinely stuck, or just slower than expected under load. Only the
+hard-timeout kill is logged as an explicit error (`killedByWatchdog` in the
+run record) and called out by name in the summary; the routine post-completion
+zombie cleanup is just an info line. `dm-test --shards=N` scales each shard's
+hard timeout down from the 45-minute default by `1/sqrt(N)`, floored at 12
+minutes, since each shard does roughly `1/N` of the suite's work.
+
 ### Test records, flakes and baselines
 
 Every `dm-test` run is saved to `data/test-runs/<timestamp>_<commit>.json`: pass,
@@ -109,6 +226,20 @@ runtimes.
 
 `test-baseline` leaves its worktree in the system temp folder so the next run is
 fast; it prints the command to remove it.
+
+### Compile caching
+
+`dm-test`/`test-repeat` skip the DreamMaker compile when nothing that would
+change its output has changed: a content hash of the derived `.dme` text,
+every `.dm` file it transitively includes, the define list and the DM
+compiler version is compared against the record from the last successful
+compile (`data/dmb-cache/<dme>.hash.json`, per worktree like everything else
+under `data/`). A flake recheck or a focused rerun on an otherwise-unchanged
+tree reuses `deepquarry.test.dmb`/`.rsc` straight away instead of
+recompiling; any change to the tracked inputs (or a missing/corrupt cache
+record) recompiles as before. This is why `deepquarry.test.dmb`/`.rsc` are no
+longer deleted after a run — only the derived `.dme` text is, since it's
+cheap to regenerate.
 
 ### Working tree with someone else's unfinished work
 
