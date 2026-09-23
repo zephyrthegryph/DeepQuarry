@@ -104,7 +104,7 @@
 	if(!T)
 		return null
 	var/fdir = turn(dir, 180)	// flip the movement direction
-	for(var/obj/structure/disposalpipe/P in T)
+	for(var/obj/structure/disposalpipe/P in turf_contents_of_type(T, /obj/structure/disposalpipe))
 		if(fdir & P.dpdir)		// find pipe direction mask that matches flipped dir
 			return P
 	// if no matching pipe, return null

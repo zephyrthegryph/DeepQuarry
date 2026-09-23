@@ -280,9 +280,9 @@
 	H.next_click = 0
 	GLOB.input_router.route_click(H, lathe, "left=1")
 	TEST_ASSERT(QDELETED(lathe), "Use with a crowbar on an open panel deconstructs")
-	for(var/obj/structure/frame/frame in T)
+	for(var/obj/structure/frame/frame in turf_contents_of_type(T, /obj/structure/frame))
 		qdel(frame)
-	for(var/obj/item/item in T)
+	for(var/obj/item/item in turf_contents_of_type(T, /obj/item))
 		if(!(item in allocated))
 			qdel(item)
 

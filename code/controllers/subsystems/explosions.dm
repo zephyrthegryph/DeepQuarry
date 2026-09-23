@@ -441,7 +441,7 @@ SUBSYSTEM_DEF(explosions)
 	if(!isnull(.))
 		return
 	. = T.explosion_resistance
-	for(var/obj/O in T)
+	for(var/obj/O in turf_contents_of_type(T, /obj))
 		. += O.explosion_resistance
 	explosion_resistance_cache[T] = .
 

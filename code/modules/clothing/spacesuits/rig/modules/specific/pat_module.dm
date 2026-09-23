@@ -51,7 +51,7 @@
 		current = get_step(current,direction)
 		if(!current) break
 
-		var/obj/machinery/door/airlock/A = locate(/obj/machinery/door/airlock) in current
+		var/obj/machinery/door/airlock/A = locate_on(current, /obj/machinery/door/airlock)
 		if(!A || !A.density) continue
 
 		if(A.allowed(user) && A.operable())

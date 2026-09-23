@@ -182,7 +182,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 
 /obj/effect/meteor/proc/ram_turf(turf/T)
 	//first bust whatever is in the turf
-	for(var/atom/A in T)
+	for(var/atom/A in turf_contents_of_type(T, /atom))
 		if(A == src) // Don't hit ourselves.
 			continue
 		if(isturf(A)) // Don't hit floors. We'll deal with walls later.

@@ -316,7 +316,7 @@
 			var/list/sent_atoms = list()
 			flick("pad-beam", telepad)
 			playsound(telepad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
-			for(var/atom/movable/ROI in source)
+			for(var/atom/movable/ROI in turf_contents_of_type(source, /atom/movable))
 				// if is anchored, don't let through
 				if(ROI.anchored)
 					if(isliving(ROI))

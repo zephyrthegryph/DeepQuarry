@@ -42,7 +42,7 @@
 		box.reloading = TRUE
 		var/boolets = 0
 		var/turf/floor = loc
-		for(var/obj/item/ammo_casing/bullet in floor)
+		for(var/obj/item/ammo_casing/bullet in turf_contents_of_type(floor, /obj/item/ammo_casing))
 			if(box.stored_ammo.len >= box.max_ammo)
 				break
 			if(box.caliber == bullet.caliber && bullet.BB)

@@ -46,7 +46,7 @@
 	if(!metal && reagents)
 		var/turf/T = get_turf(src)
 		reagents.touch_turf(T)
-		for(var/obj/O in T)
+		for(var/obj/O in turf_contents_of_type(T, /obj))
 			reagents.touch_obj(O)
 
 /obj/effect/effect/foam/process()

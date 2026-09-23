@@ -132,7 +132,7 @@
 	var/datum/interaction/construction/finish = dq_edge(trailer, "2>done:screwdriver")
 	TEST_ASSERT(dq_walk(H, trailer, finish, screwdriver), "closing it up succeeds")
 	TEST_ASSERT(QDELETED(trailer), "the trailer assembly is gone")
-	TEST_ASSERT(locate(/obj/vehicle/train/trolley/trailer) in T, "the finished trailer is on the turf")
+	TEST_ASSERT(locate_on(T, /obj/vehicle/train/trolley/trailer), "the finished trailer is on the turf")
 
 /// A quadbike too advanced (past stage 2) can't be turned into a trailer frame.
 /datum/unit_test/dq_construction_quadtrailer_rejects_advanced_quadbike

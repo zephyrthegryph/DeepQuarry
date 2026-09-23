@@ -84,7 +84,7 @@
 
 
 	var/mob/living/target_user = null
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		if(L != owner && !L.is_incorporeal())
 			target_user = L
 			break

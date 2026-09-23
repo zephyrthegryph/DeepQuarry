@@ -42,10 +42,10 @@
 		return PROCESS_KILL
 	for(var/direction in GLOB.cardinal)
 		var/turf/simulated/shielded_tile = get_step(get_turf(src), direction)
-		for(var/obj/effect/shield/S in shielded_tile)
+		for(var/obj/effect/shield/S in turf_contents_of_type(shielded_tile, /obj/effect/shield))
 			S.diffuse(5)
 		// Legacy shield support
-		for(var/obj/effect/energy_field/S in shielded_tile)
+		for(var/obj/effect/energy_field/S in turf_contents_of_type(shielded_tile, /obj/effect/energy_field))
 			qdel(S)
 	return PROCESS_KILL
 
@@ -100,7 +100,7 @@
 		return FALSE
 	for(var/direction in GLOB.cardinal)
 		var/turf/neighbor = get_step(center, direction)
-		for(var/obj/machinery/shield_diffuser/D in neighbor)
+		for(var/obj/machinery/shield_diffuser/D in turf_contents_of_type(neighbor, /obj/machinery/shield_diffuser))
 			if(D.enabled && !D.alarm && !(D.stat & (NOPOWER | BROKEN)))
 				return TRUE
 	return FALSE

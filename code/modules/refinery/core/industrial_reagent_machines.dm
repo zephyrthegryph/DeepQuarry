@@ -84,7 +84,7 @@
 	// Update icons and neighbour icons to avoid loss of sanity
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(get_turf(src),direction)
-		var/obj/machinery/other = locate(/obj/machinery/reagent_refinery) in T
+		var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
 		if(other && other.anchored)
 			other.update_icon()
 

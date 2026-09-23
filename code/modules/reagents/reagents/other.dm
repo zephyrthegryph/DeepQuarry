@@ -557,14 +557,14 @@
 			var/turf/simulated/S = T
 			S.dirt = 0
 		T.wash(CLEAN_SCRUB)
-		for(var/obj/effect/O in T)
+		for(var/obj/effect/O in turf_contents_of_type(T, /obj/effect))
 			if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
 				qdel(O)
 
-		for(var/mob/living/simple_mob/slime/M in T)
+		for(var/mob/living/simple_mob/slime/M in turf_contents_of_type(T, /mob/living/simple_mob/slime))
 			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)
 
-		for(var/mob/living/simple_mob/vore/aggressive/macrophage/virus in T)
+		for(var/mob/living/simple_mob/vore/aggressive/macrophage/virus in turf_contents_of_type(T, /mob/living/simple_mob/vore/aggressive/macrophage))
 			virus.injure(INJURY_TOXIN, rand(5, 10), source = src)
 
 	T.apply_fire_protection() // Apply fire protection
@@ -1166,7 +1166,7 @@
 
 /datum/reagent/firefighting_foam/touch_turf(turf/T, reac_volume)
 	if(reac_volume >= 1)
-		var/obj/effect/effect/foam/firefighting/F = (locate(/obj/effect/effect/foam/firefighting) in T)
+		var/obj/effect/effect/foam/firefighting/F = (locate_on(T, /obj/effect/effect/foam/firefighting))
 		if(!F)
 			F = new(T)
 		else if(istype(F))

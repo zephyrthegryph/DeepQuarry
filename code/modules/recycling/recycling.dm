@@ -230,7 +230,7 @@
 
 	var/stacktype = M.stack_type
 	var/turf/T = get_step(src, dir)
-	var/obj/item/stack/S = locate(stacktype) in T
+	var/obj/item/stack/S = locate_on(T, stacktype)
 	if(S && S.get_amount() < S.max_amount)
 		S.add(1)
 	else

@@ -705,9 +705,9 @@
 /// Returns whether a generated furnishing can move here without consuming an
 /// airlock approach, utility fixture, or another blocking object's footprint.
 /datum/generated_station_materializer/proc/generated_station_furnishing_access_tile(turf/simulated/floor/candidate)
-	if(!candidate || candidate.density || locate(/obj/machinery/door) in candidate)
+	if(!candidate || candidate.density || locate_on(candidate, /obj/machinery/door))
 		return FALSE
-	for(var/atom/movable/occupant in candidate)
+	for(var/atom/movable/occupant in turf_contents_of_type(candidate, /atom/movable))
 		if(occupant.density || istype(occupant, /obj/machinery))
 			return FALSE
 	for(var/direction in GLOB.cardinal)
@@ -957,7 +957,7 @@
 		var/turf/T = world_turf(intent.local_x, intent.local_y)
 		if(!T)
 			return FALSE
-		for(var/atom/movable/occupant in T)
+		for(var/atom/movable/occupant in turf_contents_of_type(T, /atom/movable))
 			if(!ismob(occupant))
 				qdel(occupant)
 		switch(intent.structure_kind)
@@ -1114,7 +1114,7 @@
 			return TRUE
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor = get_step(T, direction)
-			if(generated_station_architectural_passable(neighbor) && locate(/obj/machinery/door) in neighbor)
+			if(generated_station_architectural_passable(neighbor) && locate_on(neighbor, /obj/machinery/door))
 				return TRUE
 	return FALSE
 
@@ -1154,7 +1154,7 @@
 		for(var/y in 1 to spec.grid_height)
 			var/turf/T = world_turf(x, y)
 			if(T)
-				for(var/atom/movable/occupant in T)
+				for(var/atom/movable/occupant in turf_contents_of_type(T, /atom/movable))
 					if(!ismob(occupant))
 						qdel(occupant)
 				T.ChangeTurf(/turf/space, tell_universe = FALSE)
@@ -1533,7 +1533,7 @@
 	if(!T)
 		var/area/generated_station/docking/docking_area = department_areas[docking.id]
 		for(var/turf/simulated/floor/candidate in docking_area)
-			if(!candidate.density && !(locate(/obj/machinery/door) in candidate))
+			if(!candidate.density && !(locate_on(candidate, /obj/machinery/door)))
 				T = candidate
 				break
 	if(T)

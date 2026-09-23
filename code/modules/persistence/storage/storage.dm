@@ -53,7 +53,7 @@
 	return list() // Subtypes define list structure
 
 /datum/persistent/storage/proc/find_specific_instance(turf/T)
-	return locate(target_type) in T
+	return locate_on(T, target_type)
 
 /datum/persistent/storage/CheckTurfContents(turf/T, list/token)
 	return istype(find_specific_instance(T), target_type)

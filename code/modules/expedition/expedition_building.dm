@@ -72,7 +72,7 @@
 			var/turf/T = locate(x, y, z)
 			if(!T)
 				continue
-			for(var/atom/movable/AM in T)
+			for(var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
 				if(ismob(AM))
 					var/mob/M = AM
 					if(M.client)
@@ -150,7 +150,7 @@
 	if(was_wall)
 		T.ChangeTurf(turf_floor, tell_universe = FALSE)
 		// A wall tile on a room's perimeter that a corridor breaches becomes a door.
-		if(on_room_ring(x, y) && !(locate(/obj/machinery/door) in T))
+		if(on_room_ring(x, y) && !(locate_on(T, /obj/machinery/door)))
 			new door_type(T)
 
 // TRUE if (x, y) is on the one-tile wall border of any carved room.
@@ -191,7 +191,7 @@
 	if(!edge)
 		return FALSE
 	edge.ChangeTurf(turf_floor, tell_universe = FALSE)
-	if(!(locate(/obj/machinery/door) in edge))
+	if(!(locate_on(edge, /obj/machinery/door)))
 		new door_type(edge)
 	// Tunnel from just inside the edge to the nearest room centre.
 	var/inx = x - dx

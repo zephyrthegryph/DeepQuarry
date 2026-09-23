@@ -130,14 +130,14 @@
 			if(!(neighbor.loc in shuttle.shuttle_area))
 				var/list/current_contents = list()
 				var/list/neighbor_contents = list()
-				for(var/obj/current_object in current)
+				for(var/obj/current_object in turf_contents_of_type(current, /obj))
 					current_contents += "[current_object.type](density=[current_object.density],atmos=[current_object.can_atmos_pass])"
 				for(var/obj/neighbor_object in neighbor)
 					neighbor_contents += "[neighbor_object.type](density=[neighbor_object.density],atmos=[neighbor_object.can_atmos_pass])"
 				return "[current.x],[current.y],[current.z] [current.type] -> external turf [neighbor.x],[neighbor.y],[neighbor.z] ([neighbor.type], area [neighbor.loc?.type]); current=[current_contents.Join(", ")]; external=[neighbor_contents.Join(", ")]"
 			if(istype(neighbor, /turf/space))
 				var/list/blockers = list()
-				for(var/obj/O in current)
+				for(var/obj/O in turf_contents_of_type(current, /obj))
 					blockers += "[O.type](density=[O.density],atmos=[O.can_atmos_pass])"
 				return "[current.x],[current.y],[current.z] -> space [neighbor.x],[neighbor.y],[neighbor.z]; contents=[blockers.Join(", ")]"
 			visited[neighbor] = TRUE

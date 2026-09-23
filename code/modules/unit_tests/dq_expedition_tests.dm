@@ -169,7 +169,7 @@
 		if(exterior[current] || current.density)
 			continue
 		var/blocked = FALSE
-		for(var/atom/movable/blocker in current)
+		for(var/atom/movable/blocker in turf_contents_of_type(current, /atom/movable))
 			if(blocker.density)
 				blocked = TRUE
 				break
@@ -227,7 +227,7 @@
 	for(var/obj/machinery/door/door in site.station_materialization.doors)
 		var/turf/door_turf = get_turf(door)
 		TEST_ASSERT(istype(door_turf, /turf/simulated/floor), "Seed [seed] door occupies non-floor [generated_station_coordinate(door)]")
-		for(var/atom/movable/occupant in door_turf)
+		for(var/atom/movable/occupant in turf_contents_of_type(door_turf, /atom/movable))
 			if(occupant != door)
 				TEST_ASSERT(!occupant.density && !istype(occupant, /obj/machinery/power/apc) && !istype(occupant, /obj/machinery/alarm), "Seed [seed] door shares its tile with [occupant.type] at [generated_station_coordinate(door)]")
 
@@ -269,7 +269,7 @@
 
 /datum/unit_test/dq_generated_station_physical_regressions/proc/pressure_context(turf/simulated/floor)
 	var/list/parts = list("area=[get_area(floor)?.type]")
-	for(var/atom/movable/occupant in floor)
+	for(var/atom/movable/occupant in turf_contents_of_type(floor, /atom/movable))
 		parts += "occupant=[occupant.type]/dense=[occupant.density]"
 	for(var/direction in GLOB.cardinal)
 		var/turf/neighbor = get_step(floor, direction)

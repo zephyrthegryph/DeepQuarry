@@ -21,7 +21,7 @@
 	//Used to give the right message.
 	var/grabbed_something = FALSE
 
-	for(var/mob/M in T)
+	for(var/mob/M in turf_contents_of_type(T, /mob))
 		if(HAS_TRAIT(M, TRAIT_AMBIENT_PEST_MOB))
 			src.loc.visible_message(span_danger("[src.loc] sucks [M] into its decompiler. There's a horrible crunching noise."),span_danger("It's a bit of a struggle, but you manage to suck [M] into your decompiler. It makes a series of visceral crunching noises."))
 			new/obj/effect/decal/cleanable/blood/splatter(get_turf(src))
@@ -63,7 +63,7 @@
 		else
 			continue
 
-	for(var/obj/W in T)
+	for(var/obj/W in turf_contents_of_type(T, /obj))
 		//Different classes of items give different commodities.
 		if(istype(W,/obj/structure/girder))
 			if(metal)

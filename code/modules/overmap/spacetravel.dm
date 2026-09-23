@@ -135,7 +135,7 @@
 
 	var/turf/map = locate(M.x,M.y,using_map.overmap_z)
 	var/obj/effect/overmap/visitable/TM
-	for(var/obj/effect/overmap/visitable/O in map)
+	for(var/obj/effect/overmap/visitable/O in turf_contents_of_type(map, /obj/effect/overmap/visitable))
 		if(O != M && O.in_space && prob(50))
 			TM = O
 			break

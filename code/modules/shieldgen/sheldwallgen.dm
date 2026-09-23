@@ -164,8 +164,8 @@
 		T = get_step(T2, NSEW)
 		T2 = T
 		steps += 1
-		if(locate(/obj/machinery/shieldwallgen) in T)
-			G = (locate(/obj/machinery/shieldwallgen) in T)
+		if(locate_on(T, /obj/machinery/shieldwallgen))
+			G = (locate_on(T, /obj/machinery/shieldwallgen))
 			steps -= 1
 			if(!G.active)
 				return
@@ -230,12 +230,12 @@
 	for(var/dist = 0, dist <= 9, dist += 1) // checks out to 8 tiles away for fields
 		T = get_step(T2, NSEW)
 		T2 = T
-		if(locate(/obj/machinery/shieldwall) in T)
-			F = (locate(/obj/machinery/shieldwall) in T)
+		if(locate_on(T, /obj/machinery/shieldwall))
+			F = (locate_on(T, /obj/machinery/shieldwall))
 			qdel(F)
 
-		if(locate(/obj/machinery/shieldwallgen) in T)
-			G = (locate(/obj/machinery/shieldwallgen) in T)
+		if(locate_on(T, /obj/machinery/shieldwallgen))
+			G = (locate_on(T, /obj/machinery/shieldwallgen))
 			if(!G.active)
 				break
 

@@ -95,7 +95,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 	if(dest == get_turf(linked_portal))
 		return FALSE
 	var/windows = 0
-	for(var/obj/struct in dest)
+	for(var/obj/struct in turf_contents_of_type(dest, /obj))
 		var/obj/structure/window/window = struct
 		if(istype(window))
 			windows++

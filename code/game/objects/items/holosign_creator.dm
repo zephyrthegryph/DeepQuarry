@@ -20,7 +20,7 @@
 	if(!check_allowed_items(target, 1))
 		return
 	var/turf/T = get_turf(target)
-	var/obj/structure/holosign/H = locate(holosign_type) in T
+	var/obj/structure/holosign/H = locate_on(T, holosign_type)
 	if(H)
 		to_chat(user, span_notice("You use [src] to deactivate [H]."))
 		qdel(H)

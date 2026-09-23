@@ -1329,7 +1329,7 @@
 	T.germ_level -= min(volume*200, T.germ_level)
 	for(var/obj/item/I in T.contents)
 		dq_set_was_bloodied(I, null)
-	for(var/obj/effect/decal/cleanable/blood/B in T)
+	for(var/obj/effect/decal/cleanable/blood/B in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood))
 		qdel(B)
 
 	if(istype(T, /turf/simulated))

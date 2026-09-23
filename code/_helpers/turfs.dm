@@ -23,7 +23,7 @@
 	return (istype(T, /turf/simulated/floor) || istype(T, /turf/unsimulated/floor) || istype(T, /turf/simulated/shuttle/floor))
 
 /proc/turf_clear(turf/T)
-	for(var/atom/A in T)
+	for(var/atom/A in turf_contents_of_type(T, /atom))
 		if(A.simulated)
 			return 0
 	return 1
@@ -167,7 +167,7 @@
 		z_level_change = TRUE
 
 	//Move the objects. Not forceMove because the object isn't "moving" really, it's supposed to be on the "same" turf.
-	for(var/obj/O in T)
+	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(O.simulated)
 			O.loc = X
 			if(O.light_system == STATIC_LIGHT)
@@ -176,7 +176,7 @@
 				O.onTransitZ(T.z, X.z)
 
 	//Move the mobs unless it's an AI eye or other eye type.
-	for(var/mob/M in T)
+	for(var/mob/M in turf_contents_of_type(T, /mob))
 		if(isEye(M)) continue // If we need to check for more mobs, I'll add a variable
 		M.loc = X
 

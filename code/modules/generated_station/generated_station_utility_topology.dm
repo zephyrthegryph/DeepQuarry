@@ -218,7 +218,7 @@
 			continue
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor_turf = get_step(pipe, direction)
-			for(var/obj/machinery/atmospherics/pipe/neighbor in neighbor_turf)
+			for(var/obj/machinery/atmospherics/pipe/neighbor in turf_contents_of_type(neighbor_turf, /obj/machinery/atmospherics/pipe))
 				if(neighbor.piping_layer == PIPING_LAYER_SUPPLY && neighbor.parent?.network && neighbor.parent.network != pipe.parent.network)
 					parts += "[generated_station_coordinate(pipe)] [pipe.type] dir=[pipe.dir] net=[REF(pipe.parent.network)] beside [generated_station_coordinate(neighbor)] [neighbor.type] dir=[neighbor.dir] net=[REF(neighbor.parent.network)]"
 	return jointext(parts, "; ")

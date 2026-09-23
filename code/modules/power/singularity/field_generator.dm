@@ -298,7 +298,7 @@
 				if((istype(A,/obj/machinery/door)||istype(A,/obj/machinery/the_singularitygen))&&(A.density))
 					return 0
 		steps += 1
-		G = locate(/obj/machinery/field_generator) in T
+		G = locate_on(T, /obj/machinery/field_generator)
 		if(!isnull(G))
 			steps -= 1
 			if(!G.active)
@@ -310,7 +310,7 @@
 	for(var/dist = 0, dist < steps, dist += 1) // creates each field tile
 		var/field_dir = get_dir(T,get_step(G.loc, NSEW))
 		T = get_step(T, NSEW)
-		if(!locate(/obj/machinery/containment_field) in T)
+		if(!locate_on(T, /obj/machinery/containment_field))
 			var/obj/machinery/containment_field/CF = new/obj/machinery/containment_field(T)
 			CF.set_master(src,G)
 			fields += CF

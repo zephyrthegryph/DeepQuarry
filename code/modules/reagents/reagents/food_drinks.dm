@@ -187,7 +187,7 @@
 
 	..()
 
-	var/hotspot = (locate(/obj/effect/hotspot) in T)
+	var/hotspot = (locate_on(T, /obj/effect/hotspot))
 	if(hotspot && !istype(T, /turf/space))
 		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T:air:total_moles → LINDA helper
 		var/lowertemp_temperature = lowertemp.return_temperature()

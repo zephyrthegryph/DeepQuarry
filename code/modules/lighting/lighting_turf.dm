@@ -147,6 +147,6 @@
 /// (REACT_KEY_AREA_POWER). Paths that move turfs with a bare `area.contents +=` skip this
 /// until M3's area channel event replaces the key.
 /turf/proc/reactor_area_changed()
-	for(var/obj/machinery/light/L in src)
+	for(var/obj/machinery/light/L in turf_contents_of_type(src, /obj/machinery/light))
 		L.subscribe_area_power()
 		L.area_power_changed()

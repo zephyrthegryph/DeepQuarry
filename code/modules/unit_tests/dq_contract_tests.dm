@@ -865,7 +865,7 @@
 	TEST_ASSERT_EQUAL(trial.observation_requirement.progress, 1, "faxed signed observation did not advance the study")
 	TEST_ASSERT(trial.print_consent_revocation(test_turf, identity.id, owner.account_number), "submitted participant could not obtain a withdrawal form")
 	var/obj/item/paper/submitted_withdrawal
-	for(var/obj/item/paper/page in test_turf)
+	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
 		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
 		if(document?.contract_id == trial.id && document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION && document.payload["subject_id"] == identity.id)
 			submitted_withdrawal = page
@@ -884,7 +884,7 @@
 	TEST_ASSERT(withdrawing_participant, "second consenting subject was not enrolled")
 	TEST_ASSERT(trial.print_consent_revocation(test_turf, withdrawing_identity.id, owner.account_number), "unsubmitted participant could not obtain a withdrawal form")
 	var/obj/item/paper/unsubmitted_withdrawal
-	for(var/obj/item/paper/page in test_turf)
+	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
 		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
 		if(document?.contract_id == trial.id && document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION && document.payload["subject_id"] == withdrawing_identity.id)
 			unsubmitted_withdrawal = page
@@ -971,7 +971,7 @@
 	TEST_ASSERT(trial.enter_grace(), "test study could not enter its evidence grace period")
 	TEST_ASSERT(trial.print_consent_revocation(test_turf, grace_identity.id, owner.account_number), "participant could not print a withdrawal during evidence grace")
 	var/obj/item/paper/grace_withdrawal
-	for(var/obj/item/paper/page in test_turf)
+	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
 		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
 		if(document?.contract_id == trial.id && document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION && document.payload["subject_id"] == grace_identity.id)
 			grace_withdrawal = page
@@ -1050,7 +1050,7 @@
 	TEST_ASSERT(report.print_case_forms(test_turf), "rare-case forms did not print (state [report.state], consent time [report.consent_time], location [test_turf])")
 	var/obj/item/paper/consent
 	var/obj/item/paper/narrative
-	for(var/obj/item/paper/page in test_turf)
+	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
 		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
 		if(document?.contract_id != report.id)
 			continue
@@ -1111,7 +1111,7 @@
 	TEST_ASSERT(report.accept(), "rare-case withdrawal report could not be accepted")
 	TEST_ASSERT(report.print_case_forms(test_turf), "rare-case withdrawal forms could not be printed")
 	var/obj/item/paper/consent
-	for(var/obj/item/paper/page in test_turf)
+	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
 		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
 		if(document?.contract_id == report.id && document.document_kind == CONTRACT_DOCUMENT_RARE_CASE_CONSENT)
 			consent = page
@@ -1120,7 +1120,7 @@
 	var/consent_evidence_id = report.consent_evidence_id
 	TEST_ASSERT(report.print_consent_revocation(test_turf), "rare-case patient could not obtain a withdrawal form")
 	var/obj/item/paper/withdrawal
-	for(var/obj/item/paper/page in test_turf)
+	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
 		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
 		if(document?.contract_id == report.id && document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION)
 			withdrawal = page

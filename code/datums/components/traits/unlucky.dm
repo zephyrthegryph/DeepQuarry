@@ -142,7 +142,7 @@
 	if(!our_guy_pos)
 		return
 	if(evil)
-		for(var/obj/machinery/door/airlock/darth_airlock in our_guy_pos)
+		for(var/obj/machinery/door/airlock/darth_airlock in turf_contents_of_type(our_guy_pos, /obj/machinery/door/airlock))
 			if(darth_airlock.locked || !darth_airlock.arePowerSystemsOn())
 				continue
 			to_chat(living_guy, span_warning("The airlock suddenly closes on you!"))

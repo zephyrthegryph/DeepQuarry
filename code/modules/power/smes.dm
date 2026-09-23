@@ -145,7 +145,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/proc/add_nearby_terminals()
 	for(var/d in GLOB.cardinal)
 		var/turf/T = get_step(src, d)
-		for(var/obj/machinery/power/terminal/term in T)
+		for(var/obj/machinery/power/terminal/term in turf_contents_of_type(T, /obj/machinery/power/terminal))
 			if(term && term.dir == turn(d, 180) && !term.master)
 				LAZYOR(terminals, term)
 				term.master = src
@@ -309,7 +309,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return 1
 
 /obj/machinery/power/smes/proc/check_terminal_exists(turf/location, mob/user, direction)
-	for(var/obj/machinery/power/terminal/term in location)
+	for(var/obj/machinery/power/terminal/term in turf_contents_of_type(location, /obj/machinery/power/terminal))
 		if(term.dir == direction)
 			to_chat(user, span_filter_notice(span_notice("There is already a terminal here.")))
 			return 1

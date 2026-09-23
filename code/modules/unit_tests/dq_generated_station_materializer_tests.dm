@@ -124,7 +124,7 @@
 		var/center_y = origin_y + round((module.y1 + module.y2) / 2) - 1
 		var/turf/module_center = locate(center_x, center_y, world.maxz)
 		TEST_ASSERT(!module_center.density, "A functional module center became impassable")
-		for(var/atom/movable/occupant in module_center)
+		for(var/atom/movable/occupant in turf_contents_of_type(module_center, /atom/movable))
 			TEST_ASSERT(!occupant.density, "Furnishing blocked a functional module's reserved aisle")
 	TEST_ASSERT(irregular_modules >= 2, "Department subdivision did not produce rectilinear bays or alcoves")
 	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)

@@ -38,7 +38,7 @@
 		if(below.density)
 			meteor_impact()
 			return
-		for(var/atom/movable/A in current)
+		for(var/atom/movable/A in turf_contents_of_type(current, /atom/movable))
 			A.ex_act(2) //Let's have it be heavy, but not devistation in case it hits walls or something.
 		forceMove(below)
 		meteor_fall()

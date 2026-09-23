@@ -64,7 +64,7 @@
 /turf/simulated/floor/proc/make_plating(place_product, defer_icon_update)
 	cut_overlays()
 
-	for(var/obj/effect/decal/writing/W in src)
+	for(var/obj/effect/decal/writing/W in turf_contents_of_type(src, /obj/effect/decal/writing))
 		qdel(W)
 
 	name = base_name
@@ -94,7 +94,7 @@
 
 /turf/simulated/floor/levelupdate()
 	var/floored_over = !is_plating()
-	for(var/obj/O in src)
+	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(O.hides_under_flooring() && floored_over)
 
 /turf/simulated/floor/can_engrave()

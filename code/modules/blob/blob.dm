@@ -75,10 +75,10 @@
 	if(GR)
 		qdel(GR)
 		return
-	for(var/obj/structure/reagent_dispensers/fueltank/Fuel in T)
+	for(var/obj/structure/reagent_dispensers/fueltank/Fuel in turf_contents_of_type(T, /obj/structure/reagent_dispensers/fueltank))
 		Fuel.ex_act(2)
 		return
-	for(var/obj/machinery/door/D in T) // There can be several - and some of them can be open, locate() is not suitable
+	for(var/obj/machinery/door/D in turf_contents_of_type(T, /obj/machinery/door)) // There can be several - and some of them can be open, locate() is not suitable
 		if(D.density)
 			D.ex_act(2)
 			return
@@ -102,7 +102,7 @@
 		return
 
 	// Above things, we destroy completely and thus can use locate. Mobs are different.
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		if(L.stat == DEAD)
 			continue
 		L.visible_message(span_danger("The blob attacks \the [L]!"), span_danger("The blob attacks you!"))

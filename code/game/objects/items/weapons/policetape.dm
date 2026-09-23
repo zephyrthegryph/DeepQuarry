@@ -20,7 +20,7 @@
 		var/turf/T = get_turf(src)
 		if(!T)
 			return
-		var/obj/machinery/door/door = locate(/obj/machinery/door) in T
+		var/obj/machinery/door/door = locate_on(T, /obj/machinery/door)
 		if(istype(door, /obj/machinery/door/airlock) || istype(door, /obj/machinery/door/firedoor))
 			afterattack(door, null, TRUE)
 		return INITIALIZE_HINT_QDEL
@@ -204,7 +204,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			else if (istype(cur, /turf/space))
 				can_place = 0
 			else
-				for(var/obj/O in cur)
+				for(var/obj/O in turf_contents_of_type(cur, /obj))
 					if(istype(O, /obj/structure/window))
 						var/obj/structure/window/window = O
 						if(window.is_fulltile())
@@ -249,23 +249,23 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 				var/turf/T = get_step(start, GLOB.reverse_dir[orientation])
 				if(T && !T.density)
 					tape_dir = orientation
-					for(var/obj/structure/window/W in T)
+					for(var/obj/structure/window/W in turf_contents_of_type(T, /obj/structure/window))
 						if(W.is_fulltile() || W.dir == orientation)
 							tape_dir = dir
-				for(var/obj/structure/window/window in cur)
+				for(var/obj/structure/window/window in turf_contents_of_type(cur, /obj/structure/window))
 					if(istype(window) && !window.is_fulltile() && window.dir == GLOB.reverse_dir[orientation])
 						tape_dir = dir
 			else if(cur == end)
 				var/turf/T = get_step(end, orientation)
 				if(T && !T.density)
 					tape_dir = GLOB.reverse_dir[orientation]
-					for(var/obj/structure/window/W in T)
+					for(var/obj/structure/window/W in turf_contents_of_type(T, /obj/structure/window))
 						if(W.is_fulltile() || W.dir == GLOB.reverse_dir[orientation])
 							tape_dir = dir
-				for(var/obj/structure/window/window in cur)
+				for(var/obj/structure/window/window in turf_contents_of_type(cur, /obj/structure/window))
 					if(istype(window) && !window.is_fulltile() && window.dir == orientation)
 						tape_dir = dir
-			for(var/obj/item/tape/T in cur)
+			for(var/obj/item/tape/T in turf_contents_of_type(cur, /obj/item/tape))
 				if((T.tape_dir == tape_dir) && (T.icon_base == icon_base))
 					tapetest = 1
 					break
@@ -370,7 +370,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 		var/not_found = 0
 		while (!not_found)
 			not_found = 1
-			for (var/obj/item/tape/T in cur)
+			for (var/obj/item/tape/T in turf_contents_of_type(cur, /obj/item/tape))
 				tapeline += T
 				not_found = 0
 			cur = get_step(cur, dir)

@@ -127,5 +127,5 @@
 	SortStacks()
 
 /obj/machinery/floorlayer/proc/CollectTiles(turf/w_turf)
-	for(var/obj/item/stack/tile/tile in w_turf)
+	for(var/obj/item/stack/tile/tile in turf_contents_of_type(w_turf, /obj/item/stack/tile))
 		TakeTile(tile)

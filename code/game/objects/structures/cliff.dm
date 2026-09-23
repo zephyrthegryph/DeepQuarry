@@ -188,7 +188,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	if(dir in list(EAST, WEST)) // Apply an offset if flying sideways, to help maintain the illusion of depth.
 		for(var/i = 1 to 2)
 			var/turf/new_T = locate(T.x, T.y - i, T.z)
-			if(!new_T || locate(/obj/structure/cliff) in new_T)
+			if(!new_T || locate_on(new_T, /obj/structure/cliff))
 				break
 			T = new_T
 			displaced = TRUE

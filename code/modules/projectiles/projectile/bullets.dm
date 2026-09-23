@@ -335,7 +335,7 @@
 
 	var/turf/T = get_turf(src)
 	if(istype(T))
-		for(var/obj/effect/plant/Victim in T)
+		for(var/obj/effect/plant/Victim in turf_contents_of_type(T, /obj/effect/plant))
 			if(prob(max(20, 100 - (Victim.seed.get_trait(TRAIT_ENDURANCE)))))	// Chance to immediately kill a vine or rampant growth, minimum of 20%.
 				Victim.die_off()
 

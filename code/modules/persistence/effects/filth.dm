@@ -24,13 +24,13 @@
 
 /datum/persistent/filth/CheckTurfContents(turf/T, list/token)
 	var/_path = token["path"]
-	// return (locate(_path) in T) ? FALSE : TRUE
+	// return (locate_on(T, _path)) ? FALSE : TRUE
 	if(!ispath(_path, /obj/effect/decal/cleanable/crayon))
-		return (locate(_path) in T) ? FALSE : TRUE
+		return (locate_on(T, _path)) ? FALSE : TRUE
 
 // Crayon drawings aren't handled in graffiti, so we need to check if someone made "art" seperately from blood, dirt, etc.
 	var/too_much_crayon = 0
-	for(var/obj/effect/decal/cleanable/crayon/C in T)
+	for(var/obj/effect/decal/cleanable/crayon/C in turf_contents_of_type(T, /obj/effect/decal/cleanable/crayon))
 		too_much_crayon++
 		if(too_much_crayon >= 5)
 			return FALSE

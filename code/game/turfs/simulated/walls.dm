@@ -30,7 +30,7 @@
 
 // Walls always hide the stuff below them.
 /turf/simulated/wall/levelupdate()
-	for(var/obj/O in src)
+	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(1)
 
 /turf/simulated/wall/Initialize(mapload, materialtype, rmaterialtype, girdertype)
@@ -115,7 +115,7 @@
 	return ..()
 
 /turf/simulated/wall/proc/clear_plants()
-	for(var/obj/effect/overlay/wallrot/WR in src)
+	for(var/obj/effect/overlay/wallrot/WR in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
 		qdel(WR)
 	for(var/obj/effect/plant/plant in range(src, 1))
 		if(!plant.floor) //shrooms drop to the floor
@@ -137,7 +137,7 @@
 	if(band)
 		. += damage_flavour_text(band)
 
-	if(locate(/obj/effect/overlay/wallrot) in src)
+	if(locate_on(src, /obj/effect/overlay/wallrot))
 		. += span_warning("There is fungus growing on [src].")
 
 //Damage
@@ -173,7 +173,7 @@
 /// Wall-rot leaves a tenth of the wall: every hit on a rotting wall counts ten times.
 /turf/simulated/wall/run_atom_armor(damage_amount, damage_type, damage_flag = 0, attack_dir, armour_penetration = 0)
 	. = ..()
-	if(. > 0 && (locate(/obj/effect/overlay/wallrot) in src))
+	if(. > 0 && (locate_on(src, /obj/effect/overlay/wallrot)))
 		. *= 10
 
 /turf/simulated/wall/on_update_integrity(old_value, new_value)
@@ -202,7 +202,7 @@
 			else
 				material.place_dismantled_product(src, 2)
 
-	for(var/obj/O in src.contents) //Eject contents!
+	for(var/obj/O in turf_contents_of_type(src, /obj)) //Eject contents!
 		if(istype(O,/obj/structure/sign/poster))
 			var/obj/structure/sign/poster/P = O
 			P.roll_and_drop(src)
@@ -235,7 +235,7 @@
 
 // Wall-rot effect, a nasty fungus that destroys walls.
 /turf/simulated/wall/proc/rot()
-	if(locate(/obj/effect/overlay/wallrot) in src)
+	if(locate_on(src, /obj/effect/overlay/wallrot))
 		return FALSE
 
 	// Wall-rot can't go onto walls that are surrounded in all four GLOB.cardinal directions.

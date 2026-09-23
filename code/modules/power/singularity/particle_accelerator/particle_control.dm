@@ -186,7 +186,7 @@
 	if(!(T)||!(type))
 		return 0
 
-	var/obj/structure/particle_accelerator/PA = locate(/obj/structure/particle_accelerator) in T
+	var/obj/structure/particle_accelerator/PA = locate_on(T, /obj/structure/particle_accelerator)
 	if(istype(PA, type) && PA.connect_master(src) && PA.report_ready(src))
 		src.connected_parts.Add(PA)
 		return 1

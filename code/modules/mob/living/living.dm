@@ -762,12 +762,12 @@
 	for(var/type in obj_list)
 		// check standing on
 		var/turf/T = get_turf(src)
-		var/obj/O = locate(type) in T
+		var/obj/O = locate_on(T, type)
 		if(O)
 			return O
 		// check ahead of us
 		T = get_turf(get_step(T,dir))
-		O = locate(type) in T
+		O = locate_on(T, type)
 		if(O && O.Adjacent(src))
 			return O
 	return null

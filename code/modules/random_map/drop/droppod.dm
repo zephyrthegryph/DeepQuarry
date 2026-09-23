@@ -112,7 +112,7 @@
 
 	// Splatter anything under us that survived the explosion.
 	if(value != SD_EMPTY_TILE && T.contents.len)
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
 			if(AM.simulated && !istype(AM, /mob/observer))
 				qdel(AM)
 

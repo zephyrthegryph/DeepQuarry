@@ -144,7 +144,7 @@
 					else if(length(living_user.vore_organs))
 						belly_dest = pick(living_user.vore_organs)
 					if(belly_dest)
-						for(var/mob/living/prey in ToTurf)
+						for(var/mob/living/prey in turf_contents_of_type(ToTurf, /mob/living))
 							if(can_drop_vore(user, prey))
 								prey.forceMove(belly_dest)
 								vore_happened = TRUE
@@ -152,7 +152,7 @@
 								to_chat(living_user, span_vnotice("You materialize around [prey] as they end up in your [belly_dest]!"))
 				if(can_dropnom && !vore_happened && living_user.can_be_drop_prey)
 					var/mob/living/pred
-					for(var/mob/living/potential_pred in ToTurf)
+					for(var/mob/living/potential_pred in turf_contents_of_type(ToTurf, /mob/living))
 						if(potential_pred != user && potential_pred.can_be_drop_pred)
 							pred = potential_pred
 					if(pred)
@@ -167,7 +167,7 @@
 							to_chat(living_user, span_vdanger("You materialize inside [pred] as you end up in their [belly_dest]!"))
 
 	else
-		for(var/obj/O in FromTurf)
+		for(var/obj/O in turf_contents_of_type(FromTurf, /obj))
 			if(O.anchored) continue
 			if(prob(recievefailchance))
 				O.forceMove(pick(trange(24,user)))
@@ -176,7 +176,7 @@
 
 		var/user_vored = FALSE
 
-		for(var/mob/living/M in FromTurf)
+		for(var/mob/living/M in turf_contents_of_type(FromTurf, /mob/living))
 			if(prob(recievefailchance))
 				M.forceMove(pick(trange(24,user)))
 			else

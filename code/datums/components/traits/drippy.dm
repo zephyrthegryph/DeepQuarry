@@ -36,14 +36,14 @@
 	// Are we dripping or splattering?
 	var/list/drips = list()
 	// Only a certain number of drips (or one large splatter) can be on a given turf.
-	for(var/obj/effect/decal/cleanable/blood/drip/drop in T)
+	for(var/obj/effect/decal/cleanable/blood/drip/drop in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood/drip))
 		drips |= drop.drips
 		qdel(drop)
 	if(drips.len < 4)
 		decal_type = /obj/effect/decal/cleanable/blood/drip
 
 	// Find a blood decal or create a new one.
-	B = locate(decal_type) in T
+	B = locate_on(T, decal_type)
 	if(!B)
 		B = new decal_type(T)
 

@@ -1113,7 +1113,7 @@
 					ok = FALSE
 					break
 				var/turf/simulated/floor/nf = nxt
-				if(!nf.air || nf.blocks_air || (locate(/obj/machinery/atmospherics) in nf))
+				if(!nf.air || nf.blocks_air || (locate_on(nf, /obj/machinery/atmospherics)))
 					ok = FALSE
 					break
 				run += nf

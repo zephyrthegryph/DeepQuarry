@@ -113,8 +113,8 @@
 	if(!istype(O))
 		return FALSE
 
-	T = locate(/obj/structure/stairs/top)    in T2
-	M = locate(/obj/structure/stairs/middle) in B2
+	T = locate_on(T2, /obj/structure/stairs/top)
+	M = locate_on(B2, /obj/structure/stairs/middle)
 
 	// If you set the dir, that's the dir it *wants* to connect in. It only chooses the others if that doesn't work
 	// Everything is simply linked in our original direction
@@ -128,8 +128,8 @@
 		if(!istype(B2) || !istype(T2))
 			continue
 
-		T = locate(/obj/structure/stairs/top)    in T2
-		M = locate(/obj/structure/stairs/middle) in B2
+		T = locate_on(T2, /obj/structure/stairs/top)
+		M = locate_on(B2, /obj/structure/stairs/middle)
 		if(..(src, M, T, O))
 			return TRUE
 
@@ -283,8 +283,8 @@
 	O = GetAbove(B1)
 	var/turf/T2 = GetAbove(src)
 
-	B = locate(/obj/structure/stairs/bottom) in B1
-	T = locate(/obj/structure/stairs/top)    in T2
+	B = locate_on(B1, /obj/structure/stairs/bottom)
+	T = locate_on(T2, /obj/structure/stairs/top)
 
 	// Top is static for Middle stair, if it's invalid we can't do much
 	if(!istype(T))
@@ -302,7 +302,7 @@
 		if(!istype(B1) || !istype(O))
 			continue
 
-		B = locate(/obj/structure/stairs/bottom) in B1
+		B = locate_on(B1, /obj/structure/stairs/bottom)
 		if(..(B, src, T, O))
 			return TRUE
 
@@ -368,8 +368,8 @@
 	var/turf/B1 = GetBelow(O)
 	var/turf/B2 = GetBelow(src)
 
-	B = locate(/obj/structure/stairs/bottom) in B1
-	M = locate(/obj/structure/stairs/middle) in B2
+	B = locate_on(B1, /obj/structure/stairs/bottom)
+	M = locate_on(B2, /obj/structure/stairs/middle)
 
 	// Middle stair is static for Top stair, so if it's invalid we can't do much
 	if(!istype(M))
@@ -387,7 +387,7 @@
 		if(!istype(B1) || !istype(O))
 			continue
 
-		B = locate(/obj/structure/stairs/bottom) in B1
+		B = locate_on(B1, /obj/structure/stairs/bottom)
 		if((. = ..(B, M, src, O)))
 			return
 

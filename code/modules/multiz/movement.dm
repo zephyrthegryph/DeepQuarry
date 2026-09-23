@@ -142,7 +142,7 @@
 				to_chat(src, span_warning("Gravity stops you from moving upward."))
 				return 0
 
-	for(var/atom/A in destination)
+	for(var/atom/A in turf_contents_of_type(destination, /atom))
 		if(!A.CanPass(src, start, 1.5, 0))
 			to_chat(src, span_warning("\The [A] blocks you."))
 			return 0
@@ -372,7 +372,7 @@
 
 	var/turf/below = GetBelow(src)
 	// zpipe type deleted; only check disposal pipes for now.
-	if(locate(/obj/structure/disposalpipe/up) in below)
+	if(locate_on(below, /obj/structure/disposalpipe/up))
 		return FALSE
 
 /mob/living/can_fall()
@@ -393,7 +393,7 @@
 		if(!O.CanFallThru(src, landing))
 			return FALSE
 	// See if something in turf below prevents us from falling into it.
-	for(var/atom/A in landing)
+	for(var/atom/A in turf_contents_of_type(landing, /atom))
 		if(ismob(A))
 			continue
 		if(!A.CanPass(src, src.loc, 1, 0))
@@ -466,7 +466,7 @@
 		return landing
 
 	// First hit objects in the turf!
-	for(var/atom/movable/A in landing)
+	for(var/atom/movable/A in turf_contents_of_type(landing, /atom/movable))
 		if(A != src && A.CheckFall(src))
 			return A
 
@@ -701,8 +701,8 @@
 /mob/living/handle_fall(turf/landing)
 	var/mob/living/drop_mob = locate(/mob/living, landing)
 
-	if(locate(/obj/structure/stairs) in landing)
-		for(var/atom/A in landing)
+	if(locate_on(landing, /obj/structure/stairs))
+		for(var/atom/A in turf_contents_of_type(landing, /atom))
 			if(!A.CanPass(src, src.loc))
 				return FALSE
 		Move(landing)

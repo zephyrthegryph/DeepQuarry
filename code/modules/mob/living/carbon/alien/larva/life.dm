@@ -13,7 +13,7 @@
 	if(!environment) return
 
 	var/turf/T = get_turf(self)
-	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || (T && locate(/obj/effect/alien/weeds) in T.contents))
+	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || (T && locate_on(T, /obj/effect/alien/weeds)))
 		self.update_progression()
 		self.mend(TREAT_TISSUE_REPAIR, 1)
 		self.mend(TREAT_BURN_CARE, 1)

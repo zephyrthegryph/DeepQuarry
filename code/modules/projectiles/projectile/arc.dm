@@ -125,7 +125,7 @@
 	injury_kind = INJURY_BURN
 
 /obj/item/projectile/arc/blue_energy/on_impact(turf/T)
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		attack_mob(L) // Everything on the turf it lands gets hit.
 
 // Fragmentation arc shot
@@ -186,7 +186,7 @@
 	arc_height_multiplier = 0.5
 
 /obj/item/projectile/arc/spore/on_impact(turf/T)
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		attack_mob(L)
 
 	spawn()

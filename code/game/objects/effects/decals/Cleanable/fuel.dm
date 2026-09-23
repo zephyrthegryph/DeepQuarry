@@ -71,7 +71,7 @@
 
 	for(var/d in list(turn(dir,90),turn(dir,-90), dir))
 		var/turf/simulated/O = get_step(S,d)
-		if(locate(/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel) in O)
+		if(locate_on(O, /obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel))
 			continue
 		if(O.CanPass(src, S) && S.CanPass(src, O))
 			var/new_pool_amount = amount * 0.25

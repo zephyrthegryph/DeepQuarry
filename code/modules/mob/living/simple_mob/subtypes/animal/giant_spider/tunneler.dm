@@ -106,7 +106,7 @@
 	var/overshoot = TRUE
 
 	// Test if something is at destination.
-	for(var/mob/living/L in destination)
+	for(var/mob/living/L in turf_contents_of_type(destination, /mob/living))
 		if(L == src)
 			continue
 
@@ -163,7 +163,7 @@
 			return FALSE // Hit a wall.
 
 		// Stun anyone in our way.
-		for(var/mob/living/L in T)
+		for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 			playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
 			L.Weaken(2)
 

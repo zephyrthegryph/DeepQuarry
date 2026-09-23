@@ -189,7 +189,7 @@
 
 //Splatter a turf.
 /datum/seed/proc/splatter(turf/T,obj/item/thrown)
-	if(splat_type && !(locate(/obj/effect/plant) in T))
+	if(splat_type && !(locate_on(T, /obj/effect/plant)))
 		var/obj/effect/plant/splat = new splat_type(T, src)
 		if(!istype(splat)) // Plants handle their own stuff.
 			splat.name = "[thrown.name] [pick("smear","smudge","splatter")]"
@@ -326,7 +326,7 @@
 
 		if(get_trait(TRAIT_SPORING))
 			var/can_spore = TRUE
-			var/obj/machinery/portable_atmospherics/hydroponics/hometray = locate(/obj/machinery/portable_atmospherics/hydroponics) in current_turf
+			var/obj/machinery/portable_atmospherics/hydroponics/hometray = locate_on(current_turf, /obj/machinery/portable_atmospherics/hydroponics)
 
 			if(health_change > 2 || (hometray && hometray.closed_system))
 				can_spore = FALSE

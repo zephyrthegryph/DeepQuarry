@@ -132,7 +132,7 @@
 				//reverse directions for automated cycling
 				var/turf/next_loc = get_step(loc, pod.dir)
 				var/obj/structure/transit_tube/nexttube
-				for(var/obj/structure/transit_tube/tube in next_loc)
+				for(var/obj/structure/transit_tube/tube in turf_contents_of_type(next_loc, /obj/structure/transit_tube))
 					if(tube.has_entrance(pod.dir))
 						nexttube = tube
 						break

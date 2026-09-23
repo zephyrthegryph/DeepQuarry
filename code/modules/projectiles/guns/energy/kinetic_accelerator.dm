@@ -580,7 +580,7 @@
 
 /obj/item/borg/upgrade/modkit/resonator_blasts/projectile_strike(obj/item/projectile/kinetic/K, turf/target_turf, atom/target, obj/item/gun/energy/kinetic_accelerator/KA)
 	if(target_turf && !ismineralturf(target_turf)) //Don't make fields on mineral turfs.
-		var/obj/effect/resonance/R = locate(/obj/effect/resonance) in target_turf
+		var/obj/effect/resonance/R = locate_on(target_turf, /obj/effect/resonance)
 		if(R)
 			R.resonance_damage *= modifier
 			R.burst()

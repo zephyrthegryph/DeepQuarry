@@ -22,7 +22,7 @@
 	if(S.is_infesting)
 		return // Don't make blobs if they were on someone's head.
 	var/turf/T = get_turf(S)
-	var/obj/structure/blob/B = locate(/obj/structure/blob) in T
+	var/obj/structure/blob/B = locate_on(T, /obj/structure/blob)
 	if(B) // Is there already a blob here?  If so, just heal it.
 		B.adjust_integrity(10)
 	else

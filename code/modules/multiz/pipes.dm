@@ -143,7 +143,7 @@
 
 	var/turf/above = GetAbove(src)
 	if(above)
-		for(var/obj/machinery/atmospherics/target in above)
+		for(var/obj/machinery/atmospherics/target in turf_contents_of_type(above, /obj/machinery/atmospherics))
 			if(istype(target, /obj/machinery/atmospherics/pipe/zpipe/down))
 				if (check_connectable(target) && target.check_connectable(src))
 					node2 = target
@@ -180,7 +180,7 @@
 
 	var/turf/below = GetBelow(src)
 	if(below)
-		for(var/obj/machinery/atmospherics/target in below)
+		for(var/obj/machinery/atmospherics/target in turf_contents_of_type(below, /obj/machinery/atmospherics))
 			if(istype(target, /obj/machinery/atmospherics/pipe/zpipe/up))
 				if (check_connectable(target) && target.check_connectable(src))
 					node2 = target

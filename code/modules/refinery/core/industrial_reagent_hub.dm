@@ -38,7 +38,7 @@
 /obj/machinery/reagent_refinery/hub/update_icon()
 	cut_overlays()
 	var/turf/T = get_step(get_turf(src),dir)
-	var/obj/machinery/other = locate(/obj/machinery/reagent_refinery) in T
+	var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
 	var/intake = FALSE
 	if(other && other.anchored)// Waste processors do not connect to anything as outgoing
 		if(istype(other,/obj/machinery/reagent_refinery/splitter))

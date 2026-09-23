@@ -6,7 +6,7 @@
 	var/requires_noticeboard = TRUE
 
 /datum/persistent/paper/CheckTurfContents(turf/T, list/token)
-	if(requires_noticeboard && !(locate(/obj/structure/noticeboard) in T))
+	if(requires_noticeboard && !(locate_on(T, /obj/structure/noticeboard)))
 		new /obj/structure/noticeboard(T)
 	. = ..()
 

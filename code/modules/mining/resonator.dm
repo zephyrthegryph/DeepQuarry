@@ -28,7 +28,7 @@
 
 /obj/item/resonator/proc/CreateResonance(target, creator)
 	var/turf/T = get_turf(target)
-	if(locate(/obj/effect/resonance) in T)
+	if(locate_on(T, /obj/effect/resonance))
 		return
 
 	if(fieldsactive > fieldlimit || cascading)

@@ -80,7 +80,7 @@
 			our_turf.dirt = rand(51, 100)
 		var/calcalpha = our_turf.dirt > 50 ? min((our_turf.dirt - 50) * 5, 255) : 0
 		var/alreadyfound = FALSE
-		for (var/obj/effect/decal/cleanable/dirt/alreadythere in our_turf) //in case of multiple
+		for (var/obj/effect/decal/cleanable/dirt/alreadythere in turf_contents_of_type(our_turf, /obj/effect/decal/cleanable/dirt)) //in case of multiple
 			if (alreadythere == src)
 				continue
 			else if (alreadyfound)

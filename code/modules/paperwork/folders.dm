@@ -84,7 +84,7 @@
 
 /obj/item/folder/update_icon()
 	cut_overlays()
-	if(contents.len)
+	if(length(slot_contents(CONTAINER_SLOT_PAGES)))
 		add_overlay("folder_paper")
 	return
 
@@ -104,7 +104,7 @@
 	return
 
 /obj/item/folder/afterattack(turf/T as turf, mob/user as mob)
-	for(var/obj/item/paper/P in T)
+	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
 		if(P.move_into(src, CONTAINER_SLOT_PAGES, user))
 			to_chat(user, span_notice("You tuck the [P] into \the [src]."))
 
@@ -128,11 +128,11 @@
 	var/list/data = list()
 	data["folder_name"] = name
 	var/list/items = list()
-	for(var/obj/item/paper/P in src)
+	for(var/obj/item/paper/P in slot_contents(CONTAINER_SLOT_PAGES))
 		items += list(list("ref" = "\ref[P]", "name" = P.name, "kind" = "paper"))
-	for(var/obj/item/photo/Ph in src)
+	for(var/obj/item/photo/Ph in slot_contents(CONTAINER_SLOT_PAGES))
 		items += list(list("ref" = "\ref[Ph]", "name" = Ph.name, "kind" = "photo"))
-	for(var/obj/item/paper_bundle/Pb in src)
+	for(var/obj/item/paper_bundle/Pb in slot_contents(CONTAINER_SLOT_PAGES))
 		items += list(list("ref" = "\ref[Pb]", "name" = Pb.name, "kind" = "bundle"))
 	data["items"] = items
 	return data
