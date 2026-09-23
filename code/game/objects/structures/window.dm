@@ -260,55 +260,7 @@
 		..()
 	return
 
-/obj/structure/window/welder_act(mob/user, obj/item/W)
-	if(user.a_intent != I_HELP)
-		return ..()
-	if(get_integrity() >= max_integrity)
-		to_chat(user, span_warning("[src] is already in good condition!"))
-		return TRUE
-	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1,
-			message_self = "You begin repairing [src]..."))
-		repair_damage(max_integrity)
-		update_icon()
-		to_chat(user, span_notice("You repair [src]."))
-	return TRUE
-
-/obj/structure/window/screwdriver_act(mob/user, obj/item/W)
-	if(reinf && state >= 1)
-		state = 3 - state
-		update_nearby_icons()
-		playsound(src, W.usesound, 75, 1)
-		to_chat(user, span_notice("You have [state == 1 ? "un" : ""]fastened the window [state ? "from" : "to"] the frame."))
-	else
-		anchored = !anchored
-		update_nearby_tiles(need_rebuild = TRUE)
-		update_nearby_icons()
-		update_verbs()
-		playsound(src, W.usesound, 75, 1)
-		to_chat(user, span_notice("You have [anchored ? "" : "un"]fastened the [reinf ? "frame" : "window"] [anchored ? "to" : "from"] the floor."))
-	return TRUE
-
-/obj/structure/window/crowbar_act(mob/user, obj/item/W)
-	if(!reinf || state > 1)
-		return ..()
-	state = 1 - state
-	playsound(src, W.usesound, 75, 1)
-	to_chat(user, span_notice("You have pried the window [state ? "into" : "out of"] the frame."))
-	return TRUE
-
-/obj/structure/window/wrench_act(mob/user, obj/item/W)
-	if(anchored || (state && reinf))
-		return ..()
-	if(!glasstype)
-		to_chat(user, span_notice("You're not sure how to dismantle \the [src] properly."))
-		return TRUE
-	playsound(src, W.usesound, 75, 1)
-	visible_message(span_notice("[user] dismantles \the [src]."))
-	var/obj/item/stack/material/mats = new glasstype(loc)
-	if(is_fulltile())
-		mats.set_amount(4)
-	qdel(src)
-	return TRUE
+// Tool steps and weld repair: window_construction.dm.
 
 /obj/structure/window/proc/hit(damage, sound_effect = 1)
 	if(damage < force_threshold || force_threshold < 0)

@@ -90,6 +90,9 @@
 	var/turf/simulated/wall/wall = target
 	return max(0, 60 - wall.material.cut_delay)
 
+/datum/interaction/construction/wall/cut_plain/base_duration(mob/actor, atom/target)
+	return cut_delay(target)
+
 /datum/interaction/construction/wall/cut_plain/duration_for(mob/actor, atom/target, obj/item/held)
 	return tool_delay(actor, held, cut_delay(target), tool)
 
