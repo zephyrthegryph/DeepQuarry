@@ -200,13 +200,15 @@
 	if(held())
 		duration = max(duration, world.time + STATUS_COUNTER_TICK * 2)
 
-/// The sleeper chose to sleep (the Sleep verb), or is a mind with no player behind it.
+/// The sleeper chose to sleep (the Sleep verb), or is a human with no player behind it
+/// (space sleep disorder): it stays asleep until someone logs in.
 /datum/status_effect/counter/sleeping/proc/held()
 	if(owner.stat == DEAD)
 		return FALSE
 	if(owner.toggled_sleeping)
 		return TRUE
-	return ishuman(owner) && owner.mind && !owner.client
+	var/mob/living/carbon/human/H = owner
+	return istype(H) && !H.client && !H.teleop && H.species?.get_ssd(H)
 
 /datum/status_effect/counter/confused
 	id = "confused"

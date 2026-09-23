@@ -958,7 +958,24 @@
 	return !isSynthetic()
 
 /mob/living/proc/adjust_nutrition(amount)
+	var/before = nutrition
 	nutrition = between(0, nutrition + amount, max_nutrition)
+	// The nutrition alert, weight change and digestion noises follow bands: wake them when
+	// one is crossed.
+	if(nutrition_band(before) != nutrition_band(nutrition))
+		life_wake(LIFE_SYS_HUD | LIFE_SYS_NUTRITION | LIFE_SYS_METABOLISM, "nutrition band")
+
+/// The band of a nutrition value: starving, hungry, fed, fattening, overfull.
+/proc/nutrition_band(value)
+	if(value <= MAX_NUTRITION_TO_LOSE)
+		return 0
+	if(value < 250)
+		return 1
+	if(value <= MIN_NUTRITION_TO_GAIN)
+		return 2
+	if(value <= 500)
+		return 3
+	return 4
 
 /mob/living/proc/nutrition_percent()
 	return 100 * nutrition / max_nutrition

@@ -339,7 +339,6 @@
 /// Threshold is hypoxia severity 30 (the old "oxyloss >= 30% of max health"
 /// gate), full rate at 60. Rates are deliberately slow: organs accumulate
 /// damage only over minutes of unresolved hypoxia, not seconds.
-#define DQ_ISCHEMIA_HYPOXIA_THRESHOLD 30
 /mob/living/carbon/human/proc/dq_check_ischemic_damage()
 	if(stat == DEAD)
 		return

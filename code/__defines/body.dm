@@ -250,3 +250,6 @@
 
 /// Default endurance for a living mob that doesn't set one.
 #define DEFAULT_ENDURANCE 100
+
+/// Oxygen debt above which non-brain organs take ischemic damage (medical/emergent.dm).
+#define DQ_ISCHEMIA_HYPOXIA_THRESHOLD 30

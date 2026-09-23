@@ -475,6 +475,17 @@
 /datum/body/proc/life_settled()
 	return !always_evaluate && !LAZYLEN(afflictions) && !factors && !(dirty & (BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS))
 
+/// A humanoid evaluates every tick while anything is stale or wrong. Organ and limb changes
+/// outside the body invalidate BODY_DIRTY_ORGANS, which keeps it unsettled until the
+/// medical system has checked them; held items only matter while hands are blocked or
+/// motor control is poor.
+/datum/body/humanoid/life_settled()
+	if(LAZYLEN(afflictions) || (dirty & (BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS | BODY_DIRTY_CONDITIONS)))
+		return FALSE
+	if(factors && ((factors[BF_ACTION_BLOCKS] & (ACTION_BLOCK_HOLD_LEFT | ACTION_BLOCK_HOLD_RIGHT)) || factors[BF_MOTOR_CONTROL] < 1))
+		return FALSE
+	return TRUE
+
 /// The simple plan's life_tick() ignores factors: it works only on afflictions and vitals.
 /datum/body/simple/life_settled()
 	return !LAZYLEN(afflictions) && !(dirty & BODY_DIRTY_VITALS)

@@ -269,7 +269,8 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 // --- Producers ----------------------------------------------------------------------------
 // Hooks on /mob that the generic mob code calls; living mobs turn them into life_wake().
 
-/// Stun, weaken, paralysis, sleep, confusion and blindness setters call this.
+/// Starting or stopping a pull calls this. (The status counters wake the mob themselves when
+/// they start and end; see life/status_counters.dm.)
 /mob/proc/on_status_counter_changed(reason)
 	return
 

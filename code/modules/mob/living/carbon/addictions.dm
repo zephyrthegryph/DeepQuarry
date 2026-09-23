@@ -54,6 +54,11 @@
 /datum/life_system/addictions/carbon/tick(mob/living/carbon/self, datum/life_context/ctx)
 	self.process_addictions()
 
+/// Continuous while addicted or while an addictive reagent is in the blood or gut; a
+/// reagent wakes it through the body.
+/datum/life_system/addictions/carbon/idle(mob/living/carbon/self)
+	return !LAZYLEN(self.addictions) && !self.bloodstr?.total_volume && !self.ingested?.total_volume
+
 /// Builds, feeds and withdraws addictions from the reagents in the blood and gut.
 /mob/living/carbon/proc/process_addictions()
 	// Don't process during vore stuff... It was originally just absorbed, but lets give some mercy to rp focused servers.

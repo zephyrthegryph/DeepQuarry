@@ -470,9 +470,9 @@
 		fail("cached and by-name hash_string disagree")
 
 /// Idle mob Life cost with mob hibernation off, then on (doc/mob_life_architecture.md §4.9).
-/// Spawns idle mice (every system has a sleep rule, so they hibernate) and humans (partly
-/// asleep until the physiology systems gain sleep rules) on a fixture, then measures SSmobs
-/// with GLOB.mob_hibernation_enabled FALSE and TRUE.
+/// Spawns idle mice and humans on a fixture (every system of both has a sleep rule, and the
+/// status counters run on their own timers, so both hibernate), then measures SSmobs with
+/// GLOB.mob_hibernation_enabled FALSE and TRUE. Reports how many of each hibernated.
 /datum/benchmark/idle_mobs
 	id = "idle_mobs"
 	description = "Idle mob Life cost with mob hibernation off and on"
@@ -512,6 +512,19 @@
 	end_window("hibernation_on")
 	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
 	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
+	var/list/humans_spawned = list()
+	for(var/mob/living/carbon/human/H in mobs)
+		humans_spawned += H
+	metric("hibernation_on_humans_hibernating", benchmark_count_hibernating(humans_spawned), "mobs", "higher")
+	var/list/busy_human_systems = list()
+	for(var/mob/living/carbon/human/H as anything in humans_spawned)
+		if(H.life_hibernating)
+			continue
+		var/datum/life_composition/comp = H.life_composition
+		for(var/datum/life_system/S as anything in comp?.ordered)
+			if(S.bit != LIFE_SYS_GATE && H.life_system_wants_run(S))
+				busy_human_systems["[S.type]"] += 1
+	detail("hibernation_on_busy_human_systems", busy_human_systems)
 	var/list/awake_bits = list()
 	for(var/mob/living/L as anything in mobs)
 		if(!L.life_hibernating)

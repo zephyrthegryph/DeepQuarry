@@ -16,6 +16,10 @@
 /mob/living/carbon/human
 	var/heartbeat = 0
 	var/chemical_darksight = 0
+	/// world.time of the last nutrition drain (the chemicals system integrates hunger over naps).
+	var/nutrition_drained_at = 0
+	/// TRUE when the last environment exchange found comfortable air (its sleep rule).
+	var/environment_steady = FALSE
 	/// world.time of the next periodic full HUD refresh (hud refresh system).
 	var/hud_full_refresh_at = 0
 
@@ -40,6 +44,10 @@
 	self.life_tick++
 	return ..()
 
+/// Only counts cycles; transforming halts through the transforming gate's no_sleep.
+/datum/life_system/type_pre/carbon/human/idle(mob/living/carbon/human/self)
+	return TRUE
+
 /// Periodic safety refresh of every HUD.
 /datum/life_system/hud_refresh
 	name = "hud refresh"
@@ -55,6 +63,7 @@
 	if(world.time >= self.hud_full_refresh_at)
 		self.hud_full_refresh_at = world.time + 1 MINUTES
 		self.hud_updateflag = (1 << TOTAL_HUDS) - 1
+		self.life_wake(LIFE_SYS_HUD, "hud refresh")
 
 /// Lazy: sleeps until the next refresh is due.
 /datum/life_system/hud_refresh/idle(mob/living/carbon/human/self)
@@ -96,6 +105,10 @@
 	if(self.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
 		self.Sleeping(20)
 
+/// Woken by factor changes (body invalidate).
+/datum/life_system/stasis_sleep/idle(mob/living/carbon/human/self)
+	return self.factor(BF_STASIS) <= STASIS_SLEEP_THRESHOLD
+
 /// Falling (prevents people from floating).
 /datum/life_system/fall
 	name = "fall"
@@ -106,6 +119,14 @@
 
 /datum/life_system/fall/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	self.fall()
+
+/// Event-driven: moving wakes it. A floor removed from under a standing player is caught by
+/// the timer.
+/datum/life_system/fall/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/life_system/fall/rewake_delay(mob/living/carbon/human/self)
+	return self.client ? 10 SECONDS : 0
 
 /// `if(!stasis) if(stat != DEAD) ... else if(stat == DEAD) ...` in the old human Life().
 /// No need to update all of the living-only systems if the guy is dead.
@@ -139,6 +160,15 @@
 	self.dq_check_ischemic_damage()
 	self.dq_process_dirty_medical_conditions()
 
+/// Idle with no allergy, no medication side effects, no ischemia and no medical domain
+/// (organs, metrics, chemicals) left to check.
+/datum/life_system/medical/idle(mob/living/carbon/human/self)
+	if(self.body && (self.body.dirty & BODY_DIRTY_CONDITIONS))
+		return FALSE
+	if(LAZYLEN(self.side_effects) || self.factor(BF_ALLERGY) > 0)
+		return FALSE
+	return self.oxygen_debt() < DQ_ISCHEMIA_HYPOXIA_THRESHOLD
+
 /// Species NPC behaviour for client-less humans.
 /datum/life_system/npc
 	name = "npc"
@@ -151,6 +181,13 @@
 /datum/life_system/npc/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(!self.client)
 		self.species.npc_behaviour(self)
+
+/// The base behaviour only gets a resting brain-driven NPC back up; monkeys act on their own.
+/datum/life_system/npc/idle(mob/living/carbon/human/self)
+	var/static/list/active_npc_species = typecacheof(list(/datum/species/monkey))
+	if(self.client || self.stat != CONSCIOUS || !self.ai_brain)
+		return TRUE
+	return !self.resting && !is_type_in_typecache(self.species, active_npc_species)
 
 /// The name others see: obscured or disfigured faces hide it.
 /datum/life_system/visible_name
@@ -291,6 +328,12 @@
 				to_chat(self, span_danger("Your legs won't respond properly, you fall down!"))
 				self.Weaken(10)
 
+/// The root's rule, plus brain damage episodes while conscious outside a belly.
+/datum/life_system/disabilities/carbon/human/idle(mob/living/carbon/human/self)
+	if(!base_idle(self))
+		return FALSE
+	return self.stat != CONSCIOUS || isbelly(self.loc) || self.injury_load(INJURY_CATEGORY_NEURAL) < 5
+
 /datum/life_system/mutations/carbon/human
 	mob_type = /mob/living/carbon/human
 
@@ -317,6 +360,14 @@
 		else
 			self.mend(TREAT_TISSUE_REPAIR, heal)
 			self.mend(TREAT_BURN_CARE, heal)
+
+/// Busy while wounded (slow natural healing) or regenerating; injury wakes it.
+/datum/life_system/mutations/carbon/human/idle(mob/living/carbon/human/self)
+	if(self._listen_lookup?[COMSIG_HANDLE_MUTATIONS])
+		return FALSE
+	if(mRegen in self.mutations)
+		return FALSE
+	return !self.injury_load(INJURY_CATEGORY_THERMAL) && !self.injury_load(INJURY_CATEGORY_PHYSICAL)
 
 
 // RADIATION! Everyone's favorite thing in the world! So let's get some numbers down off the bat.
@@ -567,6 +618,13 @@
 
 		else //The synthetic effects!
 			return //Nothing for now.
+
+/// Continuous while there is dose or accumulated dose to decay. irradiate() and the
+/// IRRADIATE effect wake it.
+/datum/life_system/radiation/carbon/human/idle(mob/living/carbon/human/self)
+	if(self._listen_lookup?[COMSIG_HANDLE_RADIATION])
+		return FALSE
+	return !self.radiation && !self.accumulated_rads && !self.alerts?["irradiated"]
 
 
 
@@ -938,10 +996,39 @@
 		if(!self.stat)
 			SEND_SIGNAL(self, COMSIG_SHADEKIN_COMPONENT)
 
+/datum/life_system/species_components/idle(mob/living/carbon/human/self)
+	return !self.get_xenochimera_component() && !self.get_shadekin_component()
+
 /datum/life_system/environment/carbon/human
 	mob_type = /mob/living/carbon/human
+	woken_by = "Moved; equipment; body invalidate; its own timer (air changing in place)"
+
+/// Idle after an exchange that found comfortable air on a turf (the pressure inside the
+/// warning band, the air within 20 K of the body, the body inside its comfort band). Only the
+/// mob's own state is read, so the air is re-sampled by the timer; moving, equipment and the
+/// body wake it sooner. Species and traits with their own environment effects stay awake.
+/datum/life_system/environment/carbon/human/idle(mob/living/carbon/human/self)
+	var/static/list/active_environment_species = typecacheof(list(
+		/datum/species/alraune,
+		/datum/species/grey,
+		/datum/species/diona,
+		/datum/species/spider,
+		/datum/species/xenochimera,
+		/datum/species/xenomorph_hybrid,
+		/datum/species/xenos,
+		/datum/species/shapeshifter/promethean/avatar,
+	))
+	if(!self.environment_steady || !isturf(self.loc) || self.alerts?["pressure"])
+		return FALSE
+	if(LAZYLEN(self.species.env_traits) || is_type_in_typecache(self.species, active_environment_species))
+		return FALSE
+	return self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1
+
+/datum/life_system/environment/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return ENVIRONMENT_STEADY_RESAMPLE
 
 /datum/life_system/environment/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/environment)
+	self.environment_steady = FALSE
 	if(!environment)
 		return
 
@@ -985,6 +1072,7 @@
 
 		if(adjusted_pressure < self.species.warning_high_pressure && adjusted_pressure > self.species.warning_low_pressure && abs(loc_temp - self.bodytemperature) < 20 && self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1 && (!isbelly(self.loc) || !self.allowtemp))
 			self.clear_alert("pressure")
+			self.environment_steady = TRUE
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 
 		//Body temperature adjusts depending on surrounding atmosphere based on your thermal protection (convection)
@@ -1170,6 +1258,15 @@
 		//to_world("Hot. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
 		self.bodytemperature += recovery_amt
 
+/// Idle at the species' set point with no heat source of its own (passive gain, a prosthetic
+/// body running hot). The environment, reagents and the body wake it.
+/datum/life_system/thermoregulation/idle(mob/living/carbon/human/self)
+	if(self.species.passive_temp_gain || self.species.body_temperature == null)
+		return !self.species.passive_temp_gain
+	if(self.robobody_count && self.stat != DEAD)
+		return FALSE
+	return abs(self.species.body_temperature - self.bodytemperature) < 0.5
+
 	//This proc returns a number made up of the flags for body parts which you are protected on. (such as HEAD, UPPER_TORSO, LOWER_TORSO, etc. See setup.dm for the full list)
 //Read from the body's worn protection cache (code/modules/body/worn_protection.dm), not by scanning the slots.
 /mob/living/carbon/human/proc/get_heat_protection_flags(temperature) //Temperature is the temperature you're being exposed to.
@@ -1261,11 +1358,13 @@
 	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
 		return 0	// Cancelled by a component
 
-	// nutrition decrease
-	// Species controls hunger rate for humans, otherwise use defaults
+	// nutrition decrease, for the whole time since the last one (the system sleeps between
+	// reagents and wakes on a timer to catch up). Species controls hunger rate for humans.
+	var/hunger_cycles = self.nutrition_drained_at ? clamp((world.time - self.nutrition_drained_at) / (LIFE_NOMINAL_SECONDS SECONDS), 0, NUTRITION_CATCHUP_CYCLES) : 1
+	self.nutrition_drained_at = world.time
 	if(self.nutrition > 0 && self.stat != DEAD)
-		var/nutrition_reduction = DEFAULT_HUNGER_FACTOR
-		nutrition_reduction = self.species.hunger_factor
+		var/nutrition_reduction = DEFAULT_HUNGER_FACTOR * hunger_cycles
+		nutrition_reduction = self.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
 		// covers the species) raises or lowers nutrition cost.
 		var/species_metabolism = self.species.baseline_factor(BF_METABOLISM)
@@ -1299,9 +1398,25 @@
 
 	return
 
+/// Idle with nothing to metabolise and no digestion noises due. Hunger itself is integrated
+/// over the time asleep when the timer wakes it.
+/datum/life_system/chemicals/carbon/human/idle(mob/living/carbon/human/self)
+	if(self.touching?.total_volume || self.ingested?.total_volume || self.bloodstr?.total_volume)
+		return FALSE
+	if(!self.factor(BF_DARKSIGHT) != !self.chemical_darksight)
+		return FALSE
+	if((self.noisy && self.nutrition < 250) || (self.noisy_full && self.nutrition > 500))
+		return FALSE
+	return TRUE
+
+/datum/life_system/chemicals/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return self.stat == DEAD ? 0 : NUTRITION_RESAMPLE
+
+
 //DO NOT run the statuses system from this proc: it runs after this one as long as this returns a true value.
 /datum/life_system/status/carbon/human
 	mob_type = /mob/living/carbon/human
+	woken_by = "body invalidate; set_stat; equipment; sleep and blindness counters; Login and Logout"
 
 /datum/life_system/status/carbon/human/update_status(mob/living/carbon/human/self)
 
@@ -1422,20 +1537,23 @@
 
 	return 1
 
-/// Sleeps once the body is settled and nothing above has work: no sleep, fear, hallucination
-/// or tiredness to wear off, eyes and ears healthy, no earmuffs resting the ears, clean
-/// gloves. Woken by the body (injure, mend, afflictions, factors, reagents), set_stat,
+/// Sleeps once the body is settled and nothing above has work: no fear, hallucination or
+/// tiredness to wear off, eyes and ears healthy, no earmuffs resting the ears. Asleep counts
+/// as settled for a mob with no player to dream. (Gloves pick up germs while it is awake.)
+/// Woken by the body (injure, mend, afflictions, factors, reagents), set_stat,
 /// equipment, the sleep counter and Login/Logout (SSD sleep).
 /datum/life_system/status/carbon/human/idle(mob/living/carbon/human/self)
 	if(self.stat == DEAD)
 		return TRUE
-	if(self.stat == UNCONSCIOUS || self.get_sleeping())
+	var/asleep = self.get_sleeping()
+	// Asleep means unconscious and awake means conscious; a player's sleep dreams and snores.
+	if(self.stat != (asleep ? UNCONSCIOUS : CONSCIOUS) || (asleep && self.client))
+		return FALSE
+	if(!asleep && !self.client && !self.teleop && self.species.get_ssd(self))
 		return FALSE
 	if(self.body && !self.body.life_settled())
 		return FALSE
 	if(self.hallucination || self.tiredness || self.fear || self.embedded_flag)
-		return FALSE
-	if(!self.client && !self.teleop && self.species.get_ssd(self))
 		return FALSE
 	if(self.species.vision_organ)
 		var/obj/item/organ/vision = self.internal_organs_by_name[self.species.vision_organ]
@@ -1450,9 +1568,6 @@
 			return FALSE
 		if(self.ear_damage > 0 && self.ear_damage < 25)
 			return FALSE
-	var/obj/item/gloves = self.get_equipped_item(SLOT_ID_GLOVES)
-	if(gloves && self.germ_level > gloves.germ_level)
-		return FALSE
 	return TRUE
 
 /// Whether this human can see, from its state: stat, sleep, a blinding rig visor, the vision
@@ -1895,6 +2010,16 @@
 			*/
 			self.playsound_local(self,pick(GLOB.scarySounds),50, 1, -1)
 
+/// Busy only while toxins are high enough to act on. The scary sound in the dark is an
+/// ambience roll for players; the timer gives it its chances.
+/datum/life_system/random_events/carbon/human/idle(mob/living/carbon/human/self)
+	if(self.stat || isbelly(self.loc))
+		return TRUE
+	return self.injury_load(INJURY_CATEGORY_TOXIC) < 30
+
+/datum/life_system/random_events/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return self.client ? 30 SECONDS : 0
+
 /datum/life_system/changeling
 	name = "changeling"
 	bit = LIFE_SYS_TRAITS
@@ -1902,6 +2027,10 @@
 	order = 140
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+
+/// Only changelings regenerate chemicals.
+/datum/life_system/changeling/idle(mob/living/carbon/human/self)
+	return !is_changeling(self)
 
 /// Updates the number of stored chemicals for powers.
 /datum/life_system/changeling/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -1958,6 +2087,10 @@
 	order = 180
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+
+/// Idle without pain or shock; pain comes from the body, whose changes wake it.
+/datum/life_system/shock/idle(mob/living/carbon/human/self)
+	return !self.shock_stage && !self.traumatic_shock
 
 /// Traumatic shock stages from pain.
 /datum/life_system/shock/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -2035,9 +2168,12 @@
 /datum/life_system/pulse/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	self.pulse = compute(self)
 
-/// The pulse this body should show now (updates every 5 life ticks).
+/// Event-driven: the heart, blood, factors, reagents and stat all reach it through the body.
+/datum/life_system/pulse/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/// The pulse this body should show now.
 /datum/life_system/pulse/proc/compute(mob/living/carbon/human/self)
-	if(self.life_tick % 5) return self.pulse	//update pulse every 5 life ticks (~1 tick/sec, depending on server load)
 
 	var/temp = PULSE_NORM
 
@@ -2120,6 +2256,12 @@
 	order = 240
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+
+/// Only a fast pulse, shock, or a player in space hears their heart.
+/datum/life_system/heartbeat/idle(mob/living/carbon/human/self)
+	if(self.pulse == PULSE_NONE)
+		return TRUE
+	return self.pulse < PULSE_2FAST && self.shock_stage < 10 && !(self.client && istype(get_turf(self), /turf/space))
 
 /// Heartbeat sound for fast pulses, shock or space.
 /datum/life_system/heartbeat/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -2335,6 +2477,13 @@
 	segment = LIFE_SEG_HUMAN_DEAD
 	mob_type = /mob/living/carbon/human
 
+/// Busy while dead with a defibrillation window still open.
+/datum/life_system/defib_timer/idle(mob/living/carbon/human/self)
+	if(self.stat != DEAD || !self.should_have_organ(O_BRAIN))
+		return TRUE
+	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
+	return !brain || brain.defib_timer <= 0
+
 /// Brain decay while dead, which closes the defibrillation window.
 /datum/life_system/defib_timer/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(!self.should_have_organ(O_BRAIN))
@@ -2376,6 +2525,15 @@
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
 
+/// Busy only while fed enough to gain or starved enough to lose; the chemicals system wakes
+/// it when nutrition crosses those bands.
+/datum/life_system/weight/idle(mob/living/carbon/human/self)
+	if(self.stat == DEAD || self.nutrition < 0)
+		return TRUE
+	if(self.nutrition > MIN_NUTRITION_TO_GAIN && self.weight < MAX_MOB_WEIGHT && self.weight_gain)
+		return FALSE
+	return !(self.nutrition <= MAX_NUTRITION_TO_LOSE && self.weight > MIN_MOB_WEIGHT && self.weight_loss)
+
 /// Weight gain and loss from nutrition.
 /datum/life_system/weight/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if (self.nutrition >= 0 && self.stat != 2)
@@ -2393,6 +2551,10 @@
 	order = 250
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
+
+/// Only a human with a NIF; implanting one wakes it.
+/datum/life_system/nif/idle(mob/living/carbon/human/self)
+	return !self.nif
 
 /// Our call for the NIF to do whatever.
 /datum/life_system/nif/tick(mob/living/carbon/human/self, datum/life_context/ctx)

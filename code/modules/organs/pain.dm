@@ -59,6 +59,10 @@
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
 
+/// Pain messages need a hurt limb, which is an affliction; the body wakes it.
+/datum/life_system/pain/idle(mob/living/carbon/human/self)
+	return self.stat || !LAZYLEN(self.body?.afflictions)
+
 /// Pain messages from limbs and organs.
 /datum/life_system/pain/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(self.stat)

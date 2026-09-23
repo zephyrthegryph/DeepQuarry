@@ -127,6 +127,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 		human = H
 		human.nif = src
+		human.life_wake(LIFE_SYS_TRAITS, "nif implanted")
 		stat = NIF_INSTALLING
 		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
 		menu = H.AddComponent(/datum/component/nif_menu)

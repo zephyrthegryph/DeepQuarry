@@ -12,7 +12,7 @@
 
 	cozyloop = new(list(src), FALSE)
 
-/// Skin germs creep up to the ambient level. Runs every cycle, even while transforming or in
+/// Skin germs creep up to the ambient level, on a timer. Runs even while transforming or in
 /// nullspace (it followed ..() in the old carbon Life()).
 /datum/life_system/germs
 	name = "germs"
@@ -22,9 +22,27 @@
 	mob_type = /mob/living/carbon
 
 /datum/life_system/germs/tick(mob/living/carbon/self, datum/life_context/ctx)
-	// Increase germ_level regularly
-	if(self.germ_level < GERM_LEVEL_AMBIENT && prob(30))	//if you're just standing there, you shouldn't get more germs beyond an ambient level
-		self.germ_level++
+	// Increase germ_level regularly: a 30% chance per cycle, charged for the whole time since
+	// the last roll (the system sleeps and wakes on a timer).
+	var/cycles = self.germs_rolled_at ? clamp((world.time - self.germs_rolled_at) / (LIFE_NOMINAL_SECONDS SECONDS), 1, GERM_CATCHUP_CYCLES) : 1
+	self.germs_rolled_at = world.time
+	if(self.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
+		return
+	var/expected = cycles * 0.3
+	var/gain = round(expected) + (prob((expected - round(expected)) * 100) ? 1 : 0)
+	if(gain)
+		self.germ_level = min(GERM_LEVEL_AMBIENT, self.germ_level + gain)
+
+/// Lazy: germs creep up on a timer; washing lowers them, and the next roll resumes the creep.
+/datum/life_system/germs/idle(mob/living/carbon/self)
+	return TRUE
+
+/datum/life_system/germs/rewake_delay(mob/living/carbon/self)
+	return self.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
+
+/mob/living/carbon
+	/// world.time of the germs system's last roll.
+	var/germs_rolled_at = 0
 
 /mob/living/carbon/Destroy()
 	QDEL_NULL(ingested)
