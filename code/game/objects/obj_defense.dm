@@ -18,7 +18,7 @@
 	// every atom on a turf, including landmarks/effects that opt out of the
 	// damage system. Without this guard, fires runtime-error in CI maps.
 	if(exposed_temperature && uses_integrity && !(resistance_flags & FIRE_PROOF) && (potential_damage > damage_deflection))
-		take_damage(clamp(potential_damage, 0, 20), BURN, FIRE, 0)
+		deal_damage(DAMAGE_THERMAL, clamp(potential_damage, 0, 20), FIRE, flags = DAMAGE_PACKET_SILENT)
 	if(QDELETED(src)) // take_damage() can send our obj to an early grave, let's stop here if that happens
 		return
 	if(!(resistance_flags & ON_FIRE) && (resistance_flags & FLAMMABLE) && !(resistance_flags & FIRE_PROOF))
@@ -26,6 +26,21 @@
 		SEND_SIGNAL(src, COMSIG_ATOM_FIRE_ACT, exposed_temperature, exposed_volume)
 		return TRUE
 	return ..()
+
+/// Explosion adapter: blast from the propagated severity. Structures and items
+/// still run their own "prob then qdel" ladders until D5 batches explosions.
+/obj/ex_act(severity)
+	if(..())
+		return
+	receive_explosion(severity)
+
+/// EMP adapter: an ionic packet from the shared ladder. Only types with an
+/// emp_integrity_factor lose integrity to it.
+/obj/emp_act(severity, recursive)
+	. = ..()
+	if(. & EMP_PROTECT_SELF || !emp_integrity_factor)
+		return
+	receive_emp(severity)
 
 /// Returns a custom fire overlay, if any
 /obj/proc/custom_fire_overlay()

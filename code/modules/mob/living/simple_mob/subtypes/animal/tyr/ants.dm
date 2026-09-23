@@ -451,6 +451,7 @@ ANT STRUCTURES
 	simultaneous_spawns = 2
 
 /obj/effect/ant_structure
+	uses_integrity = TRUE
 	name = "organic structure"
 	desc = "A creation of metal ants."
 	icon = 'icons/obj/tribal_gear.dmi'
@@ -478,10 +479,6 @@ ANT STRUCTURES
 
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 
-
-/obj/effect/ant_structure/bullet_act(obj/item/projectile/Proj)
-	..()
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
 
 /obj/effect/ant_structure/proc/die()
 	qdel(src)

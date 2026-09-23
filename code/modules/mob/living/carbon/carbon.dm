@@ -145,10 +145,10 @@
 	if (shock_damage<1)
 		return 0
 
-	injure(INJURY_ELECTRIC, 0.2 * shock_damage, def_zone, source) //shock the target organ
-	injure(INJURY_ELECTRIC, 0.4 * shock_damage, BP_TORSO, source) //shock the torso more
-	injure(INJURY_ELECTRIC, 0.2 * shock_damage, null, source) //shock a random part!
-	injure(INJURY_ELECTRIC, 0.2 * shock_damage, null, source) //shock a random part!
+	receive_shock(0.2 * shock_damage, source, def_zone) //shock the target organ
+	receive_shock(0.4 * shock_damage, source, BP_TORSO) //shock the torso more
+	receive_shock(0.2 * shock_damage, source) //shock a random part!
+	receive_shock(0.2 * shock_damage, source) //shock a random part!
 
 	playsound(src, "sparks", 50, 1, -1)
 	if (shock_damage > 15)

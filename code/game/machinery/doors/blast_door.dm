@@ -189,7 +189,7 @@
 				else
 					user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 					playsound(src, hitsound, 100, 1)
-					take_damage(W.force*0.35, BRUTE, MELEE) //it's a blast door, it should take a while. -Luke
+					receive_weapon_hit(W, user, W.force * 0.35, BRUTE, silent = FALSE) //it's a blast door, it should take a while. -Luke
 				return
 
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_PLASTEEL) // Repairing.
@@ -219,7 +219,7 @@
 			else
 				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 				playsound(src, hitsound, 100, 1)
-				take_damage(W.force*0.15, BRUTE, MELEE) //If the item isn't a weapon, let's make this take longer than usual to break it down.
+				receive_weapon_hit(W, user, W.force * 0.15, BRUTE, silent = FALSE) //If the item isn't a weapon, let's make this take longer than usual to break it down.
 			return
 
 // Proc: attack_alien()

@@ -52,7 +52,7 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			visible_message(span_danger("\The [user] smashes into [src]!"))
 			playsound(src, S.attack_sound, 75, 1)
-			take_damage(damage, BRUTE, MELEE)
+			receive_generic_attack(user, damage)
 		else
 			visible_message(span_infoplain(span_bold("\The [user]") + " bonks \the [src] harmlessly."))
 	user.do_attack_animation(src)
@@ -233,20 +233,7 @@
 /obj/machinery/door/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
 	visible_message(span_danger("[name] was hit by [source]."))
-	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
-	var/tforce = 0
-	if(ismob(source))
-		tforce = 15 * (speed/THROWFORCE_SPEED_DIVISOR)
-	else if(isobj(source))
-		var/obj/object = source
-		if(isitem(object))
-			var/obj/item/our_item = object
-			tforce = our_item.throwforce * (speed/THROWFORCE_SPEED_DIVISOR)
-		else
-			tforce = object.w_class * (speed/THROWFORCE_SPEED_DIVISOR)
 	playsound(src, hitsound, 100, 1)
-	take_damage(tforce, BRUTE, MELEE)
-
 /obj/machinery/door/attack_ai(mob/user)
 	return attack_hand(user)
 
@@ -310,7 +297,7 @@
 			else
 				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 				playsound(src, hitsound, 100, 1)
-				take_damage(W.force, BRUTE, MELEE)
+				receive_weapon_hit(W, user, W.force, BRUTE, silent = FALSE)
 		return
 
 	try_to_activate_door(user)
@@ -440,12 +427,12 @@
 	if(prob(20/severity) && (istype(src,/obj/machinery/door/airlock) || istype(src,/obj/machinery/door/window)) )
 		open()
 
-/obj/machinery/door/blob_act()
+/obj/machinery/door/blob_act(obj/structure/blob/B)
 	if(density) // If it's closed.
 		if(stat & BROKEN)
 			open(1)
 		else
-			take_damage(100, BRUTE, MELEE)
+			receive_blob(B)
 
 /obj/machinery/door/update_icon()
 	if(density)
@@ -632,7 +619,7 @@
 	if(exposed_temperature > maxtemperature)
 		var/burndamage = log(RAND_F(0.9, 1.1) * (exposed_temperature - maxtemperature))
 		if(burndamage)
-			take_damage(burndamage, BURN, FIRE)
+			deal_damage(DAMAGE_THERMAL, burndamage, FIRE)
 
 	return ..()
 

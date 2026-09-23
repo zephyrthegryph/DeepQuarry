@@ -25,6 +25,7 @@
 #define WEED_NODE_BASE "nodebase"
 
 /obj/effect/alien/weeds
+	uses_integrity = TRUE
 	name = "growth"
 	desc = "Weird organic growth."
 	icon_state = "weeds"
@@ -203,15 +204,9 @@
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/effect/alien/weeds/attack_generic(mob/user, damage, attack_verb)
-	visible_message(span_danger("[user] [attack_verb] the [src]!"))
-	user.do_attack_animation(src)
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
-	return
-
 /obj/effect/alien/weeds/fire_act(exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300 + T0C)
-		take_damage(5, BURN)
+		deal_damage(DAMAGE_THERMAL, 5, FIRE)
 
 // start - Smaller-ranged nodes for Xenomorph Hybrids, node/weed deletion.
 /obj/effect/alien/weeds/attack_hand(mob/user as mob)

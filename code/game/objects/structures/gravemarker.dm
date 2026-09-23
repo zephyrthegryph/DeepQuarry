@@ -75,16 +75,6 @@
 		dismantle()
 	return TRUE
 
-/obj/structure/gravemarker/bullet_act(obj/item/projectile/Proj)
-	var/proj_damage = Proj.get_structure_damage()
-	if(!proj_damage)
-		return
-
-	..()
-	take_damage(proj_damage, Proj.damage_type, BULLET)
-
-	return
-
 /obj/structure/gravemarker/ex_act(severity)
 	switch(severity)
 		if(1.0)

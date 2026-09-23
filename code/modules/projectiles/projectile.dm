@@ -695,16 +695,18 @@
 /obj/item/projectile/proc/inflict_injury(mob/living/target, def_zone, armor = 0, proj_sharp = sharp, proj_edge = edge)
 	if(nodamage || !damage || !istype(target))
 		return 0
-	if(!injury_kind)
-		switch(damage_type)
-			if(ELECTROMAG)
-				electromagnetic_hit(target, damage * (100 - armor) / 100)
-				return 0
-			if(SEARING)
-				. = target.injure(INJURY_BURN, damage / 3, def_zone, src, armor, null, INJURE_PROJECTILE)
-				. += target.injure(INJURY_BLUNT, damage * 2 / 3, def_zone, src, armor, null, INJURE_PROJECTILE)
-				return
-	return target.injure(get_injury_kind(proj_sharp, proj_edge), damage, def_zone, src, armor, null, INJURE_PROJECTILE)
+	if(!injury_kind && damage_type == ELECTROMAG)
+		electromagnetic_hit(target, damage * (100 - armor) / 100)
+		return 0
+	var/datum/damage_packet/packet = damage_packet_for(target, def_zone, proj_sharp, proj_edge)
+	packet.blocked = armor
+	if(packet.total() > 0)
+		. = target.receive_damage(packet)
+	else
+		// Asphyxia, cellular, OXY and CLONE rounds have no packet kind; they
+		// stay direct injuries until the body rewrite retires those kinds.
+		. = target.injure(get_injury_kind(proj_sharp, proj_edge), damage, def_zone, src, armor, null, INJURE_PROJECTILE)
+	packet.release()
 
 /// ELECTROMAG projectiles pulse the target instead of injuring it; strength
 /// scales with the unblocked damage.

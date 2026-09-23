@@ -48,11 +48,18 @@
 // "Stun" weapons can cause minor damage to components (short-circuits?)
 // "Burn" damage is equally strong against internal components and exterior casing
 // "Brute" damage mostly damages the casing.
-/obj/item/modular_computer/bullet_act(obj/item/projectile/Proj)
-	switch(Proj.damage_type)
-		if(BRUTE)
-			take_damage(Proj.damage, Proj.damage / 2)
-		if(HALLOSS)
-			take_damage(Proj.damage, Proj.damage / 3, 0)
-		if(BURN)
-			take_damage(Proj.damage, Proj.damage / 1.5)
+/// Packet sink for the casing/component pool. Stun rounds cause minor
+/// component damage (short-circuits), burns hit components and casing
+/// equally, and physical damage mostly hits the casing.
+/obj/item/modular_computer/receive_damage(datum/damage_packet/packet)
+	var/list/amounts = packet.amounts
+	var/physical = amounts[DAMAGE_BLUNT] + amounts[DAMAGE_SHARP] + amounts[DAMAGE_PIERCE] + amounts[DAMAGE_BLAST]
+	var/thermal = amounts[DAMAGE_THERMAL] + amounts[DAMAGE_CORROSIVE]
+	var/pain = amounts[DAMAGE_PAIN]
+	if(physical > 0)
+		take_damage(physical, physical / 2)
+	if(thermal > 0)
+		take_damage(thermal, thermal / 1.5)
+	if(pain > 0)
+		take_damage(pain, pain / 3, 0)
+	return physical + thermal

@@ -81,6 +81,29 @@
 /mob/living/proc/getarmor(def_zone, type)
 	return 0
 
+/// The mob sink: each packet kind becomes an injure() kind through the
+/// mapping agreed with the body rewrite (damage.md §2). Mob mitigation stays
+/// inside injure(). Until /mob/living/proc/injury_armor(kind, zone) exists,
+/// the armour percentage is resolved here from the packet's armour category
+/// and penetration, unless the adapter already resolved it (packet.blocked).
+/mob/living/receive_damage(datum/damage_packet/packet)
+	if(isnull(packet.blocked))
+		packet.blocked = packet.armor_flag ? run_armor_check(packet.zone, packet.armor_flag, packet.penetration) : 0
+	var/injure_flags = NONE
+	if(packet.flags & DAMAGE_PACKET_PROJECTILE)
+		injure_flags |= INJURE_PROJECTILE
+	if(packet.flags & DAMAGE_PACKET_SILENT)
+		injure_flags |= INJURE_SILENT
+	if(packet.flags & DAMAGE_PACKET_IGNORE_RESISTANCE)
+		injure_flags |= INJURE_IGNORE_RESISTANCE
+	var/list/amounts = packet.amounts
+	var/atom/injury_source = packet.source || packet.weapon || packet.attacker
+	. = 0
+	for(var/kind in 1 to DAMAGE_KIND_COUNT)
+		var/amount = amounts[kind]
+		if(amount > 0)
+			. += injure(injury_kind_for_damage(kind), amount, packet.zone, injury_source, packet.blocked, null, injure_flags)
+
 // Clicking with an empty hand
 /mob/living/attack_hand(mob/living/L)
 	..()
@@ -203,7 +226,11 @@
 	if(ai_brain)
 		ai_brain.react_to_attack(B)
 
-	injure_by_damtype(damage_type, damage, def_zone, B, absorb)
+	var/datum/damage_packet/packet = damage_packet(armor_check, B, B?.overmind, null, def_zone, NONE, armor_pen)
+	packet.blocked = absorb
+	packet.add_damtype(damage_type, damage)
+	receive_damage(packet)
+	packet.release()
 
 /mob/living/proc/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
 	return target_zone
@@ -241,20 +268,23 @@
 
 	return 1
 
-/// Harm from a legacy-damtype source (weapon, thrown object, blob):
-/// resolves the injury kind (sharp/edge honoured) and the two damtypes that
-/// are not a single injury â€” SEARING (a burn plus a blunt/cut injury) and
-/// ELECTROMAG (an EMP scaled by the unblocked amount). Returns the amount applied.
+/// Packet adapter for legacy-damtype hits (weapon, thrown object, unarmed
+/// attack) whose caller already resolved armour: builds the packet (sharp and
+/// edge honoured, SEARING split into thermal and physical) and delivers it.
+/// ELECTROMAG pulses the mob instead, scaled by the unblocked amount.
+/// OXY and CLONE have no packet kind and stay direct injuries until the body
+/// rewrite retires them. Returns the amount applied.
 /mob/living/proc/injure_by_damtype(damtype, amount, zone = null, atom/source = null, armor = 0, sharp = FALSE, edge = FALSE, flags = NONE)
-	switch(damtype)
-		if(ELECTROMAG)
-			electromagnetic_hit(amount * (100 - armor) / 100)
-			return 0
-		if(SEARING)
-			. = injure(INJURY_BURN, amount / 3, zone, source, armor, null, flags)
-			. += injure(injury_kind_for(BRUTE, sharp, edge), amount * 2 / 3, zone, source, armor, null, flags)
-			return
-	return injure(injury_kind_for(damtype, sharp, edge), amount, zone, source, armor, null, flags)
+	if(damtype == ELECTROMAG)
+		electromagnetic_hit(amount * (100 - armor) / 100)
+		return 0
+	var/datum/damage_packet/packet = damage_packet(null, source, null, isitem(source) ? source : null, zone, (flags & INJURE_SILENT) ? DAMAGE_PACKET_SILENT : NONE)
+	packet.blocked = armor
+	if(packet.add_damtype(damtype, amount, sharp, edge))
+		. = receive_damage(packet)
+	else
+		. = injure(injury_kind_for(damtype, sharp, edge), amount, zone, source, armor, null, flags)
+	packet.release()
 
 /// Electromagnetic "damage" pulses the mob instead of injuring it.
 /mob/living/proc/electromagnetic_hit(amount)
@@ -383,21 +413,13 @@
 	if(!damage)
 		return
 
-	injure(generic_attack_injury_kind(user), damage, null, user)
+	receive_generic_attack(user, damage)
 	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_mob attacks
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
 	src.visible_message(span_danger("[user] has [attack_message] [src]!"))
 	user.do_attack_animation(src)
 	return 1
-
-/// What kind of wound a generic (usually animal) attack from `user` leaves:
-/// simple mobs declare their melee sharpness; anything else is a blunt blow.
-/mob/living/proc/generic_attack_injury_kind(mob/user)
-	var/mob/living/simple_mob/S = user
-	if(istype(S))
-		return injury_kind_for(BRUTE, S.attack_sharp, S.attack_edge)
-	return INJURY_BLUNT
 
 /mob/living/proc/get_cold_protection()
 	return 0

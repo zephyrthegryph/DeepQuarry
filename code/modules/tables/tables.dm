@@ -62,9 +62,6 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	break_to_parts()
 	return ..()
 
-/obj/structure/table/blob_act()
-	take_damage(100, BRUTE, MELEE)
-
 /obj/structure/table/Initialize(mapload)
 	. = ..()
 
@@ -194,7 +191,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	if(damage >= 10)
 		if(reinforced && prob(70))
 			visible_message(span_danger("\The [user] smashes against \the [src]!"))
-			take_damage(damage/2, BRUTE, MELEE)
+			receive_generic_attack(user, damage / 2)
 			user.do_attack_animation(src)
 			..()
 		else

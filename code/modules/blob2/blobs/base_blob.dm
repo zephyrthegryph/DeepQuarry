@@ -349,6 +349,11 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	adjust_integrity(-damage)
 	return
 
+/// Blobs keep their own integrity pool (adjust_integrity) until D3; the base
+/// adapters' packets stop here so a hit is not applied twice.
+/obj/structure/blob/receive_damage(datum/damage_packet/packet)
+	return 0
+
 /obj/structure/blob/bullet_act(obj/item/projectile/P)
 	if(!P)
 		return

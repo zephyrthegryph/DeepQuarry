@@ -92,10 +92,6 @@
 		shatter(M)
 	return ..()
 
-/obj/structure/closet/statue/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
-	return
-
 /obj/structure/closet/statue/attack_generic(mob/user, damage, attacktext, environment_smash)
 	if(damage && environment_smash)
 		for(var/mob/M in src)
@@ -104,12 +100,12 @@
 /obj/structure/closet/statue/ex_act(severity)
 	for(var/mob/M in src)
 		M.ex_act(severity)
-	take_damage(60 / severity, BRUTE, BOMB)
+	deal_damage(DAMAGE_BLAST, 60 / severity, BOMB)
 
 /obj/structure/closet/statue/attackby(obj/item/I as obj, mob/user as mob)
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] strikes [src] with [I]."))
-	take_damage(I.force, I.damtype, MELEE, sound_effect = FALSE)
+	receive_weapon_hit(I, user)
 
 /obj/structure/closet/statue/MouseDrop_T()
 	return

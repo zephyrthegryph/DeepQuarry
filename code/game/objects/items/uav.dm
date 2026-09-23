@@ -328,19 +328,12 @@
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[msg]"))))
 		master.show_message(rendered, type)
 
-/obj/item/uav/attack_generic(mob/user, damage, attack_verb)
-	visible_message(span_danger("[user] [attack_verb] the [src]!"))
-	playsound(src, 'sound/weapons/smash.ogg', 50, 1)
-	user.do_attack_animation(src)
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
-	return
-
 /obj/item/uav/ex_act(severity)
 	switch(severity)
 		if(1.0)
 			die()
 		if(2.0)
-			take_damage(25, BRUTE, BOMB)
+			deal_damage(DAMAGE_BLAST, 25, BOMB)
 
 /obj/item/uav/atom_destruction(damage_flag)
 	. = ..()

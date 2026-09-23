@@ -442,9 +442,15 @@
 
 	var/dam_zone = pick(organs_by_name)
 	var/obj/item/organ/external/affecting = get_organ(ran_zone(dam_zone))
-	var/armor_block = run_armor_check(affecting, armor_type, armor_pen)
-	var/kind = (a_sharp || a_edge) ? injury_kind_for(BRUTE, a_sharp, a_edge) : generic_attack_injury_kind(user)
-	injure(kind, damage, affecting?.organ_tag, user, armor_block)
+	var/datum/damage_packet/packet = damage_packet(armor_type, user, user, null, affecting?.organ_tag, NONE, armor_pen, get_dir(user, src))
+	packet.blocked = run_armor_check(affecting, armor_type, armor_pen)
+	var/mob/living/simple_mob/S = user
+	if(!a_sharp && !a_edge && istype(S))
+		a_sharp = S.attack_sharp
+		a_edge = S.attack_edge
+	packet.add(physical_damage_kind(a_sharp, a_edge), damage)
+	receive_damage(packet)
+	packet.release()
 	return TRUE
 
 //Used to attack a joint through grabbing

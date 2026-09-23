@@ -49,14 +49,6 @@
 	update_nearby_tiles()
 	return ..()
 
-/obj/structure/inflatable/bullet_act(obj/item/projectile/Proj)
-	var/proj_damage = Proj.get_structure_damage()
-	if(!proj_damage) return
-
-	take_damage(proj_damage, Proj.damage_type, BULLET)
-	..()
-	return
-
 /obj/structure/inflatable/ex_act(severity)
 	switch(severity)
 		if(1.0)
@@ -85,7 +77,7 @@
 		puncture()
 	if(W.damtype == BRUTE || W.damtype == BURN)
 		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+		receive_weapon_hit(W, user)
 		..()
 	return
 
@@ -135,7 +127,7 @@
 		user.visible_message(span_danger("[user] [attack_verb] open the [src]!"))
 	else
 		user.visible_message(span_danger("[user] [attack_verb] at [src]!"))
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
+	receive_generic_attack(user, damage)
 	return 1
 
 // Reaching 0 integrity tears the membrane open.

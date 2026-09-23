@@ -11,45 +11,17 @@
 	set_density(0)
 	return ..()
 
-/obj/structure/alien/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.damage, Proj.damage_type, BULLET)
-	return ..()
-
 /obj/structure/alien/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			take_damage(50, BRUTE, BOMB)
-		if(2.0)
-			take_damage(50, BRUTE, BOMB)
-		if(3.0)
-			if (prob(50))
-				take_damage(50, BRUTE, BOMB)
-			else
-				take_damage(25, BRUTE, BOMB)
-	return
-
+	deal_damage(DAMAGE_BLAST, severity == 3 && prob(50) ? 25 : 50, BOMB)
 /obj/structure/alien/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	visible_message(span_danger("\The [src] was hit by \the [source]."))
-	var/tforce
-	if(ismob(source))
-		tforce = 15
-	else if(isobj(source))
-		var/obj/object = source
-		if(isitem(object))
-			var/obj/item/our_item = object
-			tforce = our_item.throwforce
-		else
-			tforce = object.w_class
 	playsound(loc, 'sound/effects/attackblob.ogg', 100, 1)
-	take_damage(tforce, BRUTE, MELEE, sound_effect = FALSE)
 	..()
-	return
-
 /obj/structure/alien/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
 	user.do_attack_animation(src)
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
+	receive_generic_attack(user, damage)
 	return
 
 /obj/structure/alien/attackby(obj/item/W as obj, mob/user as mob)
@@ -57,7 +29,7 @@
 	user.setClickCooldown(user.get_attack_speed(W))
 	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
 	visible_message(span_danger("[user] attacks the [src]!"))
-	take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+	receive_weapon_hit(W, user)
 	..()
 	return
 

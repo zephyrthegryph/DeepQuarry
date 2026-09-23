@@ -173,10 +173,10 @@
 			broken(0)
 			return
 		if(2.0)
-			take_damage(rand(5,15), BRUTE, BOMB)
+			deal_damage(DAMAGE_BLAST, rand(5,15), BOMB)
 			return
 		if(3.0)
-			take_damage(rand(0,15), BRUTE, BOMB)
+			deal_damage(DAMAGE_BLAST, rand(0,15), BOMB)
 			return
 
 // Light damage leaves broken pipe segments in place.
