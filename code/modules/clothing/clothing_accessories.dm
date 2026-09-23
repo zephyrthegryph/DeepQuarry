@@ -100,6 +100,7 @@
 	src.verbs |= /obj/item/clothing/proc/removetie_verb
 	update_accessory_slowdown()
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/proc/remove_accessory(mob/user, obj/item/clothing/accessory/A)
 	if(!LAZYLEN(accessories) || !(A in accessories))
@@ -109,6 +110,7 @@
 	accessories -= A
 	update_accessory_slowdown()
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/proc/update_accessory_slowdown()
 	slowdown = initial(slowdown)

@@ -1311,6 +1311,8 @@
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
 		QDEL_NULL(body)
 		body = new body_type(src)
+		// The slot set is keyed by body plan.
+		rebuild_slot_ledger()
 
 	species.handle_post_spawn(src)
 

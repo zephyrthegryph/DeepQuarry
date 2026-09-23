@@ -189,6 +189,7 @@
 
 		if(!isnull(material.conductivity))
 			siemens_coefficient = between(0, material.conductivity / 10, 10)
+		worn_protection_changed()
 
 		var/slowdownModified = between(0, round(material.density / 10, 0.1), 6) // weight renamed to density.
 

@@ -1286,6 +1286,7 @@
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
 		to_chat(usr, span_notice("You roll up your [src]."))
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/under/verb/rollsleeves()
 	set name = "Roll Up Sleeves"
@@ -1322,6 +1323,7 @@
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
 		to_chat(usr, span_notice("You roll down your [src]'s sleeves."))
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/under/rank/Initialize(mapload)
 	sensor_mode = pick(0,1,2,3)

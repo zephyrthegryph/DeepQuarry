@@ -1177,22 +1177,13 @@
 		self.bodytemperature += recovery_amt
 
 	//This proc returns a number made up of the flags for body parts which you are protected on. (such as HEAD, UPPER_TORSO, LOWER_TORSO, etc. See setup.dm for the full list)
+//Read from the body's worn protection cache (code/modules/body/worn_protection.dm), not by scanning the slots.
 /mob/living/carbon/human/proc/get_heat_protection_flags(temperature) //Temperature is the temperature you're being exposed to.
-	. = 0
-	//Handle normal clothing
-	for(var/obj/item/clothing/C in list(head,wear_suit,w_uniform,shoes,gloves,wear_mask))
-		if(C)
-			if(C.handle_high_temperature(temperature))
-				. |= C.get_heat_protection_flags()
+	return body ? body.worn_heat_flags(temperature) : 0
 
 //See proc/get_heat_protection_flags(temperature) for the description of this proc.
 /mob/living/carbon/human/proc/get_cold_protection_flags(temperature)
-	. = 0
-	//Handle normal clothing
-	for(var/obj/item/clothing/C in list(head,wear_suit,w_uniform,shoes,gloves,wear_mask))
-		if(C)
-			if(C.handle_low_temperature(temperature))
-				. |= C.get_cold_protection_flags()
+	return body ? body.worn_cold_flags(temperature) : 0
 
 /mob/living/carbon/human/get_heat_protection(temperature) //Temperature is the temperature you're being exposed to.
 	var/thermal_protection_flags = get_heat_protection_flags(temperature)

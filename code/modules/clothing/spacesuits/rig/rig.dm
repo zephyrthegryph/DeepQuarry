@@ -355,6 +355,7 @@
 						piece.armor["bio"] = 100
 					else
 						piece.armor["bio"] = src.armor["bio"]
+					piece.worn_protection_changed()
 					playsound(src,'sound/machines/rig/rigservo.ogg', 10, FALSE)
 
 				else

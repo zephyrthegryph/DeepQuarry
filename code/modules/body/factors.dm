@@ -391,17 +391,25 @@
 	/// Body factors applied while this item is equipped outside the hands.
 	var/alist/worn_factors
 
+// LEGACY equip path (C3): until equip and unequip are ledger moves, which reach
+// /mob/living/on_slot_changed() (code/modules/body/slots.dm), these two keep
+// the body factors and the worn protection cache current. Delete both with
+// the u_equip chain.
 /obj/item/equipped(mob/user, slot)
 	. = ..()
-	if(worn_factors && isliving(user))
+	if(isliving(user))
 		var/mob/living/L = user
-		L.invalidate_factors()
+		L.worn_protection_changed()
+		if(worn_factors)
+			L.invalidate_factors()
 
 /obj/item/dropped(mob/user)
 	. = ..()
-	if(worn_factors && isliving(user))
+	if(isliving(user))
 		var/mob/living/L = user
-		L.invalidate_factors()
+		L.worn_protection_changed()
+		if(worn_factors)
+			L.invalidate_factors()
 
 
 // --- Book text -------------------------------------------------------------------------

@@ -968,6 +968,7 @@
 		body_parts_covered = initial(body_parts_covered)
 		to_chat(usr, span_notice("You roll down the sleeves of your [src]."))
 	update_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/suit/storage/flannel/verb/tuck()
 	set name = "Toggle Shirt Tucking"

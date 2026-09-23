@@ -56,6 +56,7 @@
 			armor_owned = FALSE
 			to_chat(user, "You pull the mask up to cover your face.")
 		update_clothing_icon()
+		worn_protection_changed()
 
 /obj/item/clothing/mask/surgical/verb/toggle()
 	set category = "Object"

@@ -118,15 +118,8 @@ emp_act
 /mob/living/carbon/human/proc/get_siemens_coefficient_organ(obj/item/organ/external/def_zone)
 	if (!def_zone)
 		return 1.0
-
-	var/siemens_coefficient = max(species.siemens_coefficient,0)
-
-	var/list/clothing_items = list(head, wear_mask, wear_suit, w_uniform, gloves, shoes) // What all are we checking?
-	for(var/obj/item/clothing/C in clothing_items)
-		if(istype(C) && (C.body_parts_covered & def_zone.body_part)) // Is that body part being targeted covered?
-			siemens_coefficient *= C.siemens_coefficient
-
-	return siemens_coefficient * factor(BF_SIEMENS)
+	// What covers the part: the body's worn protection cache (code/modules/body/worn_protection.dm).
+	return max(species.siemens_coefficient, 0) * body.worn_siemens(def_zone.body_part) * factor(BF_SIEMENS)
 
 // Similar to above but is for the mob's overall protection, being the average of all slots.
 /mob/living/carbon/human/proc/get_siemens_coefficient_average()
@@ -159,14 +152,12 @@ emp_act
 	return results
 
 /// Worn armour points on one external limb for a worn-armour list key
-/// ("melee", "bullet", ...; see injury_armor_key()).
+/// ("melee", "bullet", ...; see injury_armor_key()), from the body's worn
+/// protection cache (code/modules/body/worn_protection.dm).
 /mob/living/carbon/human/proc/worn_armor_organ(obj/item/organ/external/def_zone, key)
 	if(!key || !def_zone)
 		return 0
-	var/protection = 0
-	for(var/obj/item/clothing/gear in def_zone.get_covering_clothing())
-		protection += gear.armor[key]
-	return protection
+	return body.worn_armor(def_zone.body_part, key)
 
 // Checked in borer code
 /mob/living/carbon/human/proc/check_head_coverage()
