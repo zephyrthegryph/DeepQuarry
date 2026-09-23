@@ -362,6 +362,13 @@ export const VerdigrisTarget = new Juke.Target({
 });
 // DQAdd End
 
+// DreamDaemon security for test, bench and run worlds. -trusted makes BYOND show a
+// "Proceed with trusted mode?" dialog for any .dmb path it hasn't been told to
+// trust, which hangs headless runs in new worktrees forever. DQ_DD_SECURITY=safe
+// runs without it (safe mode still allows files and DLLs inside the world folder).
+// Test, bench and autowiki worlds default to safe; the server keeps trusted.
+const ddSecurityFlag = (fallback = 'safe') => `-${process.env.DQ_DD_SECURITY || fallback}`;
+
 export const DmTarget = new Juke.Target({
   parameters: [
     DefineParameter,
@@ -506,7 +513,7 @@ async function runTestWorld(
         onSpawn: (pid) => sampler?.start(pid),
       },
       '-close',
-      '-trusted',
+      ddSecurityFlag(),
       '-verbose',
       '-params',
       params,
@@ -887,7 +894,7 @@ export const AutowikiTarget = new Juke.Target({
     await DreamDaemon(
       options,
       '-close',
-      '-trusted',
+      ddSecurityFlag(),
       '-verbose',
       '-params',
       'log-directory=ci',
@@ -1200,7 +1207,7 @@ export const ServerTarget = new Juke.Target({
       await DreamDaemon(
         options,
         port,
-        '-trusted',
+        ddSecurityFlag('trusted'),
         '-invisible',
         '-params',
         'config-directory=config/example',
