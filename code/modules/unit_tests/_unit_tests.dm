@@ -161,6 +161,7 @@
 #include "dq_focus.dm"
 #include "dq_gc_tests.dm"
 #include "dq_medical_tests.dm"
+#include "dq_mob_size_source_tests.dm"
 #include "dq_body_continuity_tests.dm"
 #include "dq_mind_host_tests.dm"
 #include "dq_mind_moves_tests.dm"

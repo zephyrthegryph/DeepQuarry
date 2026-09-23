@@ -168,7 +168,11 @@
 
 					var/size_mul = params["size_multiplier"]
 					if(isnum(size_mul))
-						M.size_multiplier = size_mul
+						if(isliving(M))
+							var/mob/living/L = M
+							L.resize(size_mul, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
+						else
+							M.size_multiplier = size_mul
 						M.update_icon()
 					else
 						to_chat(ui.user, span_warning("Size Multiplier not applied: ([size_mul]) is not a valid input."))

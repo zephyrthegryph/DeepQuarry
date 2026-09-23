@@ -523,8 +523,7 @@
 		if("size_scale")
 			var/new_size = tgui_input_number(ui.user, "Choose size, ranging from [RESIZE_MINIMUM * 100]% to [RESIZE_MAXIMUM * 100]%", "Set Size", null, RESIZE_MAXIMUM * 100, RESIZE_MINIMUM * 100)
 			if(new_size && ISINRANGE(new_size,RESIZE_MINIMUM * 100,RESIZE_MAXIMUM * 100) && can_change(owner, APPEARANCE_MISC))
-				owner.size_multiplier = new_size / 100
-				owner.update_transform(TRUE)
+				owner.resize(new_size / 100, animate = FALSE, ignore_prefs = TRUE)
 				owner.regenerate_icons()
 				owner.set_dir(owner.dir) // Causes a visual update for fuzzy/offset
 				changed_hook(APPEARANCECHANGER_CHANGED_RACE)
