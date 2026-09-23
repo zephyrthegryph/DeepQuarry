@@ -7,11 +7,16 @@ use std::time::Duration;
 
 use proptest::prelude::*;
 use vg_core::Arena;
+use vg_core::channel::{Quantity, Unit};
+use vg_core::channels;
 use vg_core::cow::ChunkLayout;
 use vg_core::frame::Task;
+use vg_core::outbox::{Lane, reason};
 use vg_core::owner::{Applied, Domain, DomainKey, View};
+use vg_core::reactor::{RateModel, Reactor};
 use vg_core::rng::{Rng, StreamId};
 use vg_core::sim::{Mode, Sim, SimBuilder, SimConfig};
+use vg_core::watch::{Cmp, Cond, Level};
 
 /// One cell of the toy field.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -50,6 +55,10 @@ impl Domain for HeatDomain {
         }
     }
 }
+
+channels! { mod heat_ch for HeatDomain {
+    ENERGY: Scalar<Joules> hysteresis 0.5 => |c, o| o[0] = c.energy,
+}}
 
 /// A second domain that only frame tasks write: per-frame statistics read
 /// from heat's previous view (an exchange buffer, §3.6).
@@ -474,4 +483,196 @@ proptest! {
             prop_assert_eq!(port.pinned().get(c).unwrap(), reference[c as usize], "cell {}", c);
         }
     }
+}
+
+// --- Watches, the outbox and the reactor end to end (R5) ------------------
+
+fn joules(v: f32) -> Quantity {
+    Quantity::new(v, Unit::Joules)
+}
+
+#[test]
+fn watches_wake_subscribers_through_the_outbox_and_reactor() {
+    let (mut builder, keys) = toy_builder(config(2), true);
+    let watches = builder.add_watches(keys.heat);
+    builder.declare_condition(
+        keys.heat,
+        "hot cell",
+        Cond::Threshold {
+            cell: 0,
+            level: Level::above(heat_ch::ENERGY, joules(1.0)),
+        },
+    );
+    let mut sim = builder.build().unwrap();
+    let mut reactor = Reactor::new(0);
+    sim.begin_tick();
+    // Subscriber 1: cell 100 gets hot. Subscriber 2: any change at cell 101.
+    // Subscriber 3: the gradient across a door between cells 10 and 190.
+    let hot = sim
+        .watches(watches)
+        .watch(
+            1,
+            Lane::Urgent,
+            &Cond::Threshold {
+                cell: 100,
+                level: Level::above(heat_ch::ENERGY, joules(20.0)),
+            },
+        )
+        .unwrap();
+    sim.watches(watches)
+        .watch(
+            2,
+            Lane::Normal,
+            &Cond::Changed {
+                cell: 101,
+                mask: heat_ch::ENERGY.bit(),
+            },
+        )
+        .unwrap();
+    sim.watches(watches)
+        .watch(
+            3,
+            Lane::Background,
+            &Cond::Difference {
+                a: 10,
+                b: 190,
+                level: Level::above(heat_ch::ENERGY, joules(50.0)),
+                abs: true,
+            },
+        )
+        .unwrap();
+    assert!(
+        sim.watches(watches)
+            .check(&Cond::Changed {
+                cell: CELLS,
+                mask: 1
+            })
+            .is_err()
+    );
+    sim.port(keys.heat)
+        .put(100, Heat { energy: 400.0 })
+        .unwrap();
+    sim.port(keys.heat).put(10, Heat { energy: 400.0 }).unwrap();
+
+    let mut woken: Vec<(u32, u32)> = Vec::new();
+    for tick in 1..=40u64 {
+        sim.wait_for_frame();
+        sim.begin_tick();
+        let out = sim.drain(keys.heat);
+        reactor.ingest(out.wakes());
+        reactor.tick(tick);
+        let mut wakes = Vec::new();
+        reactor.drain(64, &mut wakes);
+        woken.extend(wakes.iter().map(|w| (w.subscriber, w.reason)));
+        sim.dispatch_frame();
+    }
+    let count = |s: u32| woken.iter().filter(|w| w.0 == s).count();
+    assert_eq!(count(1), 1, "the threshold fires once and stays inside");
+    assert!(count(2) >= 2, "diffusion keeps changing cell 101");
+    assert_eq!(count(3), 1, "the door gradient appeared once");
+    assert!(
+        woken
+            .iter()
+            .any(|&(s, r)| s == 1 && r == reason::CONDITION | heat_ch::ENERGY.bit())
+    );
+    // Removing a watch silences it.
+    sim.watches(watches).unwatch(hot).unwrap();
+    sim.port(keys.heat).put(100, Heat { energy: 0.0 }).unwrap();
+    sim.settle();
+    sim.port(keys.heat)
+        .put(100, Heat { energy: 900.0 })
+        .unwrap();
+    sim.settle();
+    assert!(
+        sim.drain(keys.heat)
+            .wakes()
+            .iter()
+            .all(|w| w.subscriber != 1)
+    );
+}
+
+#[test]
+fn take_results_make_transfer_out_conserve() {
+    let (builder, keys) = toy_builder(config(2), true);
+    let mut sim = builder.build().unwrap();
+    sim.begin_tick();
+    for cell in 0..CELLS {
+        sim.port(keys.heat)
+            .put(
+                cell,
+                Heat {
+                    energy: f32::from(u16::try_from(cell % 7).unwrap()) * 10.0,
+                },
+            )
+            .unwrap();
+    }
+    sim.settle();
+    let _ = sim.drain(keys.heat);
+    let total = |sim: &mut Sim| -> f64 {
+        let v = Arc::clone(sim.port(keys.heat).pinned());
+        (0..CELLS)
+            .map(|i| f64::from(v.get(i).unwrap().energy))
+            .sum()
+    };
+    let before = total(&mut sim);
+    let first_frame = sim.metrics().frames_completed;
+    let mut seen = 0.0f64;
+    let mut actual = 0.0f64;
+    let mut takes = 0;
+    for tick in 0..60u32 {
+        sim.begin_tick();
+        if tick % 3 == 0 {
+            // DM takes what its pinned view shows; the worker has moved on.
+            let cell = (tick * 37) % CELLS;
+            seen += f64::from(sim.port(keys.heat).take(cell).unwrap().get().energy);
+            takes += 1;
+        }
+        for t in sim.drain(keys.heat).takes() {
+            actual += f64::from(t.value.energy);
+        }
+        sim.dispatch_frame();
+    }
+    sim.settle();
+    let out = sim.drain(keys.heat);
+    actual += out
+        .takes()
+        .iter()
+        .map(|t| f64::from(t.value.energy))
+        .sum::<f64>();
+    let after = total(&mut sim);
+    // Sparks add 1.0 on frames divisible by 3; count them in the frames run.
+    let last_frame = sim.metrics().frames_completed;
+    let sparks = (first_frame..last_frame).filter(|f| f % 3 == 0).count();
+    let sparks = f64::from(u32::try_from(sparks).unwrap());
+    let conserved = (after + actual - before - sparks).abs();
+    assert!(takes > 10);
+    assert!(
+        conserved < 1e-2,
+        "field + taken = before + sparks (off by {conserved})"
+    );
+    assert!(
+        (seen - actual).abs() > 1e-3,
+        "the pinned view lagged the worker, so the seen total alone does not conserve"
+    );
+}
+
+#[test]
+fn rate_models_schedule_crossings_on_the_wheel() {
+    // A cell's worth of rot on the main side: no domain, no polling.
+    let mut reactor = Reactor::new(1000);
+    let rot = reactor.add_model(RateModel::linear(0.0, 0.25, 1000.0));
+    reactor
+        .watch_model(rot, 42, Lane::Background, Cmp::Above, 10.0)
+        .unwrap();
+    let mut fired_at = None;
+    for tick in 1001..=1100 {
+        reactor.tick(tick);
+        let mut w = Vec::new();
+        reactor.drain(8, &mut w);
+        if !w.is_empty() {
+            assert_eq!(w[0].reason, reason::RATE);
+            fired_at.get_or_insert(tick);
+        }
+    }
+    assert_eq!(fired_at, Some(1040));
 }

@@ -26,6 +26,7 @@ use crate::cow::{ChunkLayout, CowStore};
 use crate::frame::{Res, TaskCtx};
 use crate::handle::Handle;
 use crate::mailbox::Latest;
+use crate::outbox::{Outbox, OutboxSlot, TakeResult};
 use crate::overlay::{CellMap, Overlay};
 
 /// A simulation domain: the value type of one cell and the commands DM can
@@ -175,19 +176,40 @@ pub struct DomainState<D: Domain> {
     applied_through: Seq,
     version: u64,
     shortfall_total: f64,
-    outbox: Arc<Latest<Arc<View<D::Value>>>>,
+    views: Arc<Latest<Arc<View<D::Value>>>>,
+    /// This frame's records (wakes, events, take results), published with
+    /// the view.
+    outbox: Outbox<D::Value>,
+    outbox_slot: Arc<OutboxSlot<D::Value>>,
 }
 
 impl<D: Domain> DomainState<D> {
-    pub(crate) fn new(layout: ChunkLayout, outbox: Arc<Latest<Arc<View<D::Value>>>>) -> Self {
+    pub(crate) fn new(
+        layout: ChunkLayout,
+        views: Arc<Latest<Arc<View<D::Value>>>>,
+        outbox_slot: Arc<OutboxSlot<D::Value>>,
+    ) -> Self {
         Self {
             store: CowStore::new(layout),
             pending: Vec::new(),
             applied_through: Seq(0),
             version: 0,
             shortfall_total: 0.0,
-            outbox,
+            views,
+            outbox: Outbox::default(),
+            outbox_slot,
         }
+    }
+
+    /// This frame's outbox, for tasks that emit domain events (§8).
+    pub fn outbox_mut(&mut self) -> &mut Outbox<D::Value> {
+        &mut self.outbox
+    }
+
+    /// The live store and the outbox at once (watch evaluation reads one
+    /// and writes the other).
+    pub fn store_and_outbox(&mut self) -> (&CowStore<D::Value>, &mut Outbox<D::Value>) {
+        (&self.store, &mut self.outbox)
     }
 
     /// Applies every queued command in sequence order (§3.9). The built-in
@@ -199,6 +221,15 @@ impl<D: Domain> DomainState<D> {
                 .store
                 .get_mut(cmd.target)
                 .expect("the port range-checks every command");
+            if matches!(cmd.op, Op::Take) {
+                // Transfer-out conserves: report exactly what was removed,
+                // which may differ from what DM's pinned view showed (§3.10).
+                self.outbox.push_take(TakeResult {
+                    seq: cmd.seq,
+                    cell: cmd.target,
+                    value: cell.clone(),
+                });
+            }
             let applied = apply_op::<D>(cell, &cmd.op);
             self.shortfall_total += f64::from(applied.shortfall);
             self.applied_through = cmd.seq;
@@ -235,7 +266,10 @@ impl<D: Domain> DomainState<D> {
             applied_through: state.applied_through,
             shortfall_total: state.shortfall_total,
         });
-        state.outbox.put(Arc::clone(&view));
+        state.views.put(Arc::clone(&view));
+        let mut outbox = std::mem::take(&mut state.outbox);
+        outbox.stamp(state.version);
+        state.outbox_slot.publish(outbox);
         view
     }
 }
@@ -332,6 +366,9 @@ pub struct MainPort<D: Domain> {
     overlay: Overlay<D::Value>,
     pinned: Arc<View<D::Value>>,
     inbox: Arc<Latest<Arc<View<D::Value>>>>,
+    outbox_inbox: Arc<OutboxSlot<D::Value>>,
+    /// Outbox records collected at pin time and not yet drained.
+    collected: Outbox<D::Value>,
     state: Res<DomainState<D>>,
     fallback: Option<Fallback<D::Value>>,
     ticks_since_view: u32,
@@ -342,6 +379,7 @@ impl<D: Domain> MainPort<D> {
     pub(crate) fn new(
         layout: ChunkLayout,
         inbox: Arc<Latest<Arc<View<D::Value>>>>,
+        outbox_inbox: Arc<OutboxSlot<D::Value>>,
         state: Res<DomainState<D>>,
         fallback: bool,
     ) -> Self {
@@ -351,6 +389,8 @@ impl<D: Domain> MainPort<D> {
             overlay: Overlay::new(),
             pinned: Arc::new(View::empty(layout)),
             inbox,
+            outbox_inbox,
+            collected: Outbox::default(),
             state,
             fallback: fallback.then(|| Fallback {
                 live: CowStore::new(layout),
@@ -455,6 +495,15 @@ impl<D: Domain> MainPort<D> {
         Ok(apply_op::<D>(value, op))
     }
 
+    /// Everything the domain's frames sent since the last drain: wakes,
+    /// events and `Take` results (§8). Unfiltered; [`Sim::drain`] also drops
+    /// stale watch records.
+    ///
+    /// [`Sim::drain`]: crate::sim::Sim::drain
+    pub fn take_outbox(&mut self) -> Outbox<D::Value> {
+        std::mem::take(&mut self.collected)
+    }
+
     /// The view pinned for this tick.
     #[must_use]
     pub fn pinned(&self) -> &Arc<View<D::Value>> {
@@ -523,6 +572,11 @@ impl<D: Domain> MainPort<D> {
     /// what fits in `budget` cells.
     pub(crate) fn begin_tick(&mut self, budget: &mut usize) {
         let new_view = self.inbox.take();
+        // Collect after the view: a batch published with a view is always
+        // collected no later than that view is pinned.
+        if let Some(batch) = self.outbox_inbox.collect() {
+            self.collected.append(batch);
+        }
         match &new_view {
             Some(_) => self.ticks_since_view = 0,
             None => self.ticks_since_view = self.ticks_since_view.saturating_add(1),

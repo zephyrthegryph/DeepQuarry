@@ -8,6 +8,7 @@
 pub mod alloc;
 pub mod arena;
 pub mod bitset;
+pub mod channel;
 pub mod command;
 pub mod cow;
 pub mod frame;
@@ -15,12 +16,16 @@ pub mod grid;
 pub mod handle;
 pub mod intern;
 pub mod mailbox;
+pub mod outbox;
 pub mod overlay;
 pub mod owner;
+pub mod reactor;
 pub mod rng;
 pub mod sim;
 pub mod thermo;
+pub mod timer;
 pub mod units;
+pub mod watch;
 
 pub use arena::Arena;
 pub use handle::{Handle, RawHandle};
