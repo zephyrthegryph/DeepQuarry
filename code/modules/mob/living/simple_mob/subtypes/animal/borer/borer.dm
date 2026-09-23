@@ -241,7 +241,7 @@
 		head.implants -= src
 	controlling = FALSE
 
-	host.remove_language("Cortical Link")
+	revoke(host, GRANT_KIND_LANGUAGE, "Cortical Link", src)
 	remove_verb(host, /mob/living/carbon/proc/release_control)
 	remove_verb(host, /mob/living/carbon/proc/punish_host)
 	remove_verb(host, /mob/living/carbon/proc/spawn_larvae)

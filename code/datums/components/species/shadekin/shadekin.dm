@@ -113,7 +113,7 @@
 	// (code/datums/abilities/ability.dm); revoked with the component in
 	// Destroy() below, whatever kind of shadekin this is.
 	for(var/ability_id in shadekin_granted_abilities)
-		owner.grant_ability(ability_id, src)
+		grant(owner, GRANT_KIND_ABILITY, ability_id, src)
 
 	handle_comp() //First hit is free!
 
@@ -127,7 +127,7 @@
 /datum/component/shadekin/Destroy(force)
 	if(owner)
 		for(var/ability_id in shadekin_granted_abilities)
-			owner.revoke_ability(ability_id, src)
+			revoke(owner, GRANT_KIND_ABILITY, ability_id, src)
 	if(ishuman(owner))
 		UnregisterSignal(owner, COMSIG_SHADEKIN_COMPONENT)
 	else

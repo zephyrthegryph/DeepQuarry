@@ -1471,6 +1471,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	VV_DROPDOWN_OPTION(VV_HK_REMOVEVERB, "Remove Verb")
 	VV_DROPDOWN_OPTION(VV_HK_ADDORGAN, "Add Organ")
 	VV_DROPDOWN_OPTION(VV_HK_REMOVEORGAN, "Remove Organ")
+	VV_DROPDOWN_OPTION(VV_HK_DUMP_GRANTS, "Dump Grants")
 	//VV_DROPDOWN_OPTION(VV_HK_GIVE_MOB_ACTION, "Give Mob Ability")
 	//VV_DROPDOWN_OPTION(VV_HK_REMOVE_MOB_ACTION, "Remove Mob Ability")
 	//VV_DROPDOWN_OPTION(VV_HK_GIVE_DISEASE, "Give Disease")
@@ -1560,6 +1561,12 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			return
 
 		to_chat(usr, "Mob doesn't know that language.")
+
+	if(href_list[VV_HK_DUMP_GRANTS])
+		if(!check_rights(R_DEBUG))
+			return
+		to_chat(usr, "<pre>[html_encode(dump_grants())]</pre>")
+		return
 
 	if(href_list[VV_HK_ADDVERB])
 		if(!check_rights(R_DEBUG))

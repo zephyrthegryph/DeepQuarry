@@ -143,6 +143,7 @@
 #define VV_HK_REMOVEVERB "remverb"
 #define VV_HK_ADDORGAN "addorgan"
 #define VV_HK_REMOVEORGAN "remorgan"
+#define VV_HK_DUMP_GRANTS "dumpgrants"
 
 // /mob/living
 #define VV_HK_GIVE_SPEECH_IMPEDIMENT "impede_speech"

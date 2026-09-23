@@ -111,12 +111,12 @@
 
 /obj/item/organ/internal/xenos/hivenode/replaced(mob/living/carbon/human/target,obj/item/organ/external/affected)
 	..()
-	target.add_language(LANGUAGE_HIVEMIND) //You need this to speak the language, so...
+	grant(target, GRANT_KIND_LANGUAGE, LANGUAGE_HIVEMIND, src) //You need this to speak the language, so...
 
 /obj/item/organ/internal/xenos/hivenode/removed(mob/living/user)
 	if(ishuman(user))
 		var/mob/living/carbon/human/human = user
-		human.remove_language(LANGUAGE_HIVEMIND)
+		revoke(human, GRANT_KIND_LANGUAGE, LANGUAGE_HIVEMIND, src)
 	..()
 
 /obj/item/organ/internal/xenos/hivenode/grey

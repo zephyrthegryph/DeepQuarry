@@ -108,6 +108,10 @@
 		else
 			new_character.bind_identity(identity)
 	if(old_character)
+		// Grants sourced from the mind itself (learned languages, species memory, ...)
+		// move with it; body-sourced grants (organs, implants, items) stay on the body
+		// that physically holds them (doc/rewrite/grants.md's holder semantics).
+		transfer_grants(old_character, new_character, /datum/mind)
 		SEND_SIGNAL(old_character, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, new_character)
 	SEND_SIGNAL(new_character, COMSIG_MOB_MIND_TRANSFERRED_INTO, old_character)
 

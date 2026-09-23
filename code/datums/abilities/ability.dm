@@ -9,20 +9,21 @@
  * ---- Grants and sources ----
  *
  * An ability only runs for an actor who has been granted it. A grant is
- * source-tracked: `grant_ability(actor, id, source)` records that `source`
- * (a species datum, a trait, an item, a component instance, ...) grants `id`;
- * `revoke_ability(actor, id, source)` removes just that source's claim. The
- * ability stays available as long as ANY source remains - two traits granting
- * the same ability, or an item and an innate grant overlapping, don't fight
- * each other or need reference counting by the caller. Whoever creates a
- * grant owns revoking it: a component revokes in its Destroy()/UnregisterFromParent,
+ * source-tracked, via the generic grant system (code/datums/grants/,
+ * doc/rewrite/grants.md): `grant(actor, GRANT_KIND_ABILITY, id, source)` records
+ * that `source` (a species datum, a trait, an item, a component instance, ...)
+ * grants `id`; `revoke(actor, GRANT_KIND_ABILITY, id, source)` removes just that
+ * source's claim. The ability stays available as long as ANY source remains - two
+ * traits granting the same ability, or an item and an innate grant overlapping,
+ * don't fight each other or need reference counting by the caller. Whoever creates
+ * a grant owns revoking it: a component revokes in its Destroy()/UnregisterFromParent,
  * an item revokes on unequip, a status revokes on its own removal - the same
- * discipline as signals and modifiers.
+ * discipline as signals and modifiers. Deleting the source auto-revokes it.
  *
  *	// Granting (species, trait, item, component, ...):
- *	L.grant_ability(ABILITY_ID_SHADEKIN_PHASE_SHIFT, SK) // SK is the source
+ *	grant(L, GRANT_KIND_ABILITY, ABILITY_ID_SHADEKIN_PHASE_SHIFT, SK) // SK is the source
  *	// ... and on that source's removal:
- *	L.revoke_ability(ABILITY_ID_SHADEKIN_PHASE_SHIFT, SK)
+ *	revoke(L, GRANT_KIND_ABILITY, ABILITY_ID_SHADEKIN_PHASE_SHIFT, SK)
  *
  *	// Reading (rare - why_not()/attempt() already check this):
  *	L.has_ability(id)          // any source grants it right now?
@@ -30,8 +31,8 @@
  *
  * Species `inherent_verbs` grants and item/trait ability grants are meant to
  * move onto this same API (DQ Medical's protean powers registry is the first
- * consumer built on it): call grant_ability()/revoke_ability() from wherever
- * the source is added/removed, same as above.
+ * consumer built on it): call grant()/revoke() with GRANT_KIND_ABILITY from
+ * wherever the source is added/removed, same as above.
  *
  * ---- Requirements, cost and effect (rules.md's "Requirements / Cost / Commit") ----
  * - Requirements are `requires` clauses, same as any interaction, plus one
@@ -111,33 +112,17 @@
 
 // ---------------------------------------------------------------------------
 // Grants: source-tracked, so an ability stays available while any source remains.
-
-/// id -> list of sources currently granting it. LAZYLIST: null for a mob with no grants.
-/mob/living/var/list/ability_grants
-
-/// `source` now grants `id`. Idempotent: granting the same (id, source) twice is a no-op.
-/mob/living/proc/grant_ability(id, source)
-	if(!id || !source)
-		CRASH("grant_ability() needs both an id and a source")
-	LAZYINITLIST(ability_grants)
-	LAZYINITLIST(ability_grants[id])
-	ability_grants[id] |= source
-
-/// `source` no longer grants `id`. The ability stays available if another source still does.
-/mob/living/proc/revoke_ability(id, source)
-	if(!ability_grants || !ability_grants[id])
-		return
-	ability_grants[id] -= source
-	if(!length(ability_grants[id]))
-		ability_grants -= id
+// Backed by the generic grant system (code/datums/grants/, doc/rewrite/grants.md) -
+// grant(L, GRANT_KIND_ABILITY, id, source) / revoke(...) directly work too; these are
+// thin readability wrappers used by why_not(), tests and callers below.
 
 /// TRUE if any source currently grants `id`.
 /mob/living/proc/has_ability(id)
-	return length(ability_grants?[id]) > 0
+	return has_grant(GRANT_KIND_ABILITY, id)
 
 /// The sources currently granting `id` (for UI/debugging), or null.
 /mob/living/proc/ability_sources(id)
-	return ability_grants?[id]
+	return grant_sources(GRANT_KIND_ABILITY, id)
 
 // ---------------------------------------------------------------------------
 // Shared requirement helpers (code/__defines/abilities.dm's REQ_CONSCIOUS, REQ_ON_TURF).

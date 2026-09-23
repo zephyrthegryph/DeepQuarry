@@ -30,7 +30,7 @@
 
 	to_chat(src, span_alien("You plunge your probosci deep into the cortex of the host brain, interfacing directly with their nervous system."))
 	to_chat(host, span_danger("You feel a strange shifting sensation behind your eyes as an alien consciousness displaces yours."))
-	host.add_language("Cortical Link")
+	grant(host, GRANT_KIND_LANGUAGE, "Cortical Link", src)
 
 	// host -> brain
 	var/h2b_id = host.computer_id

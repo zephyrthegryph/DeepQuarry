@@ -180,7 +180,7 @@
 
 	// This mob (not a component) is the source: every robot has this
 	// (code/modules/mob/living/silicon/robot/robot_abilities.dm), revoked in Destroy().
-	grant_ability(ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
+	grant(src, GRANT_KIND_ABILITY, ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
 
 	. = ..()
 
@@ -287,7 +287,7 @@
 //If there's an MMI in the robot, have it ejected when the mob goes away. --NEO
 //Improved /N
 /mob/living/silicon/robot/Destroy()
-	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
+	revoke(src, GRANT_KIND_ABILITY, ABILITY_ID_ROBOT_TOGGLE_LIGHTS, src)
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
 		if(mind)
 			// The MMI lands on the borg's turf (get_turf() sees through any container). The
