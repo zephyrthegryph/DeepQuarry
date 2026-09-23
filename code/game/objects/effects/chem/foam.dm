@@ -166,7 +166,7 @@
 		qdel(src)
 
 /obj/structure/foamedmetal/attack_hand(mob/user)
-	if ((HULK in user.mutations) || (prob(75 - metal * 25)))
+	if ((user.has_mutation(HULK)) || (prob(75 - metal * 25)))
 		user.visible_message(span_warning("[user] smashes through the foamed metal."), span_notice("You smash through the metal foam wall."))
 		qdel(src)
 	else

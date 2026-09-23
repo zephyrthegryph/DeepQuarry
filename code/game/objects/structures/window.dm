@@ -153,7 +153,7 @@
 
 /obj/structure/window/attack_hand(mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed())
-	if(HULK in user.mutations)
+	if(user.has_mutation(HULK))
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!"))
 		user.visible_message(span_danger("[user] smashes through [src]!"))
 		user.do_attack_animation(src)

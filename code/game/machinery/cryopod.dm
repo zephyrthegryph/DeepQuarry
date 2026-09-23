@@ -293,11 +293,23 @@
 
 	time_till_despawn = 60 //1 second, because gateway.
 
+// C8a: the occupant's a sealed slot (containment.md §10); the base Destroy()
+// spills it through the ledger's drop policy, so this just keeps the
+// pre-eject "let them fall asleep, not collapse" behaviour.
 /obj/machinery/cryopod/Destroy()
 	if(occupant)
-		occupant.forceMove(loc)
 		occupant.resting = 1
 	return ..()
+
+/obj/machinery/cryopod/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/occupant/cryopod, /datum/slot_def/machine_internals)
+	return types
+
+/// Sealed: cryosleep is its own environment, same as before (a mob whose loc
+/// became the pod took no heat or damage path either way).
+/datum/slot_def/occupant/cryopod
+	id = OCCUPANT_SLOT_CRYOPOD
+	name = "cryopod"
 
 /obj/machinery/cryopod/Initialize(mapload)
 	. = ..()
@@ -651,7 +663,8 @@
 			return TRUE
 
 		user.stop_pulling()
-		user.forceMove(src)
+		if(!user.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
+			return TRUE
 		set_occupant(user)
 		if(isliving(user) && applies_stasis)
 			var/mob/living/L = occupant
@@ -701,7 +714,7 @@
 		return
 
 	if(!skip_move)
-		occupant.forceMove(get_turf(src))
+		slot_remove(occupant, get_turf(src))
 	if(isliving(occupant) && applies_stasis)
 		var/mob/living/L = occupant
 		L.set_stasis(null, src)
@@ -748,7 +761,9 @@
 			if(occupant)
 				to_chat(user, span_warning("\The [src] is already occupied."))
 				return
-			M.forceMove(src)
+			if(!M.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
+				to_chat(user, span_warning("\The [src] won't take [M]."))
+				return
 		else return
 
 		icon_state = occupied_icon_state

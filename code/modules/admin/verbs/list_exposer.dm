@@ -53,7 +53,7 @@
 			continue
 		rows += list(list(
 			"[subject]",
-			"[md5(subject.dna?.uni_identity)]",
+			"[md5(subject.dna?.GetUniIdentity())]",
 		))
 	dq_admin_report_table(usr, "Fingerprint Log", list("Name", "Fingerprints"), rows, "<b>Showing Fingerprints.</b>")
 

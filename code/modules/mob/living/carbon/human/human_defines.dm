@@ -48,7 +48,7 @@
 
 	var/datum/robolimb/synthetic		//If they are a synthetic (aka synthetic torso). Also holds the datum for the type of robolimb.
 
-	var/list/all_underwear = list()
+	var/list/all_underwear	// Lazy.
 	var/list/all_underwear_metadata = list()
 	var/list/hide_underwear = list()
 	var/headset = 1		//Which headset type the player has chosen.
@@ -75,7 +75,7 @@
 
 	var/hand_blood_color
 
-	var/list/flavor_texts = list()
+	var/list/flavor_texts	// Lazy.
 	var/robolimb_count = 0 // Total number of external robot parts.
 	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
 

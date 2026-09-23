@@ -31,7 +31,7 @@
 	return ..()
 
 /obj/machinery/optable/attack_hand(mob/user as mob)
-	if(HULK in user.mutations)
+	if(user.has_mutation(HULK))
 		visible_message(span_danger("\The [user] destroys \the [src]!"))
 		density = FALSE
 		qdel(src)

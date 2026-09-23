@@ -472,7 +472,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	D.r_eyes = 200
 	D.g_eyes = 200
 	D.update_eyes()
-	D.all_underwear.Cut()
+	LAZYCLEARLIST(D.all_underwear)
 	D.key = ghost.key
 	GLOB.cult.add_antagonist(D.mind)
 
@@ -1055,7 +1055,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
 				C.flash_eyes()
-				if(C.stuttering < 1 && (!(HULK in C.mutations)))
+				if(C.stuttering < 1 && (!(C.has_mutation(HULK))))
 					C.stuttering = 1
 				C.Weaken(1)
 				C.Stun(1)
@@ -1084,7 +1084,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			else if(iscarbon(T))
 				var/mob/living/carbon/C = T
 				C.flash_eyes()
-				if (!(HULK in C.mutations))
+				if (!(C.has_mutation(HULK)))
 					C.silent += 15
 				C.Weaken(25)
 				C.Stun(25)

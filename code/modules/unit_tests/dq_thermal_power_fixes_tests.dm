@@ -8,6 +8,11 @@
 
 /datum/unit_test/dq_fire_act_reads_temperature/Run()
 	// H3: an exposure heats the object's body; damage comes from its rules.
+	// The shared test floor (test_floor() always returns the same turf) can
+	// be left hot by an earlier heat test; reset it so "before" is a known
+	// room-temperature baseline and the exposure is guaranteed to be an
+	// actual increase.
+	dq_h3_cool_floor(test_floor())
 	var/obj/structure/window/hot = allocate(/obj/structure/window, test_floor())
 	var/before = hot.get_temperature()
 	hot.fire_act(hot.maximal_heat + 500, 1)

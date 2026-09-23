@@ -97,7 +97,7 @@
 			if(default == initial(S.fingerprint_hash) && ishuman(ui.user))
 				var/mob/living/carbon/human/H = ui.user
 				if(H.dna)
-					default = md5(H.dna.uni_identity)
+					default = md5(H.dna.GetUniIdentity())
 			var/new_fingerprint_hash = tgui_input_text(ui.user,"What fingerprint hash would you like to be written on this card?","Agent Card Fingerprint Hash",default, MAX_MESSAGE_LEN)
 			if(!isnull(new_fingerprint_hash) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.fingerprint_hash = new_fingerprint_hash

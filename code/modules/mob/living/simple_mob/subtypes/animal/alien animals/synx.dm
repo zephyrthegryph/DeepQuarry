@@ -561,6 +561,7 @@
 		melee_damage_lower = 1 //Hopefully this will make all brute damage not apply while stomach is distended. I don't see a better way to do this.
 		melee_damage_upper = 1
 		icon_living = stomach_distended_state
+		attacktext = attacktext.Copy()
 		attacktext += distend_attacktext
 		attacktext -= initial_attacktext
 
@@ -578,6 +579,7 @@
 		melee_damage_lower = SYNX_LOWER_DAMAGE //This is why I'm using a define
 		melee_damage_upper = SYNX_UPPER_DAMAGE
 		icon_living = initial(icon_living)
+		attacktext = attacktext.Copy()
 		attacktext += initial_attacktext
 		attacktext -= distend_attacktext
 		update_icons()

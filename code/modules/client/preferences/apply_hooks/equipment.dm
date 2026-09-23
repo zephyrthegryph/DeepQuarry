@@ -8,7 +8,7 @@
 /datum/preference_apply_hook/equipment/apply(mob/living/carbon/human/target, datum/preferences/preferences)
 	if(!ishuman(target))
 		return
-	target.all_underwear.Cut()
+	LAZYCLEARLIST(target.all_underwear)
 	target.all_underwear_metadata.Cut()
 
 	var/list/all_underwear = preferences.read_preference(/datum/preference/all_underwear)
@@ -23,6 +23,6 @@
 			all_underwear -= underwear_category_name
 			continue
 		var/underwear_item_name = all_underwear[underwear_category_name]
-		target.all_underwear[underwear_category_name] = underwear_category.items_by_name[underwear_item_name]
+		LAZYSET(target.all_underwear, underwear_category_name, underwear_category.items_by_name[underwear_item_name])
 		if(all_underwear_metadata[underwear_category_name])
 			target.all_underwear_metadata[underwear_category_name] = all_underwear_metadata[underwear_category_name]
