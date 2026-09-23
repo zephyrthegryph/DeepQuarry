@@ -288,18 +288,55 @@ to the type in the generated file's companion opt-out table
 overrides); it no longer asserts `latent_safe = TRUE` for anything the sandbox can
 verify itself.
 
-**Slot facts.** Two more `/datum/slot_def` vars, set once per slot definition
-(§3.3's table): `rendered` (the contents are shown to whoever is looking — worn
-layers, open storage, a closet's interior once opened) and `interactive` (something
-in the slot can be clicked, dragged or otherwise acted on directly while latent
-would hide it — held items, open storage). A sealed interior, a machine's internal
-parts slot, a closed container's interior and a belly are neither: nothing renders
-them or reaches into them without going through a materializing action first.
+**Pins, not slot flags.** An earlier draft of this section put `rendered` and
+`interactive` facts on `/datum/slot_def`, so a slot's *kind* decided whether its
+contents could ever be latent. That special-cases every slot and still doesn't
+answer the real question: what an atom needs is not fixed by which slot it's in,
+it's demanded moment to moment by whatever actually needs it real. So C10 uses a
+generic demand model instead:
 
-**Viewers.** A holder with anyone actively looking at its contents keeps them
-real regardless of idle time: an open storage HUD (`storage_hud`, one per viewer,
-C4) or an open `tgui`/`browse` window on the holder itself (`length(holder.open_tguis)`).
-`dq_latent_has_viewers(atom/holder)` is the single read.
+- **Pins.** Anything that needs `A` to be a real atom takes a pin on it:
+  `A.latent_pin(reason)` / `A.latent_unpin(reason)` (`code/datums/containment/pin.dm`),
+  a reason-keyed refcount so independent holders of the same reason don't stomp
+  each other. `A` stays real while any pin is held, full stop — `can_be_latent()`
+  never has to know why. Explicit pin sources: rendering `A` as its own object in
+  `vis_contents`, a click target (a storage screen's catcher, C4), an open
+  screen or viewer on `A`'s holder, and a component or behaviour that specifically
+  needs a live atom rather than an entry (registered the same place the behaviour
+  itself is: `RegisterComponent`/`Initialize` pins, `Destroy`/removal unpins).
+  A slot may declare *default* pin sources for what it typically holds (a body
+  slot's equip signal registration pins on equip, unpins on unequip) — the rule
+  lives with the consumer, the slot just wires the common case up once.
+- **Implicit pins.** Two sources never need an explicit pin call because they're
+  cheap to compute on demand and always accurate: `state_collapse_blockers()`
+  is non-empty (running behaviour, an outside reference, the weakref gap, §4.7
+  below), and `isturf(A.loc)` (sitting directly on a tile is itself being
+  rendered to everyone nearby — nobody needs to remember to pin it, leaving a
+  turf is nobody's job to unpin either). `dq_latent_pinned(A)` is the single read
+  combining both kinds: any explicit pin, or a non-empty `state_collapse_blockers()`,
+  or `isturf(A.loc)`.
+- **Appearance-only consumers don't pin.** A mob overlay, an inventory HUD icon
+  or a storage screen's icon can be drawn from the entry alone: type plus state
+  blob gives a cached appearance (`dq_latent_entry_appearance()`), same as any
+  other derived state (`state.md §1`). Clicking such a representation resolves
+  the slot to its entry and materializes on demand, then acts — the icon itself
+  never pinned anything. This means a worn or held item with no other pin *can*
+  collapse while its equipped overlay still draws from the entry; §13's fuzz
+  test exercises exactly that (a pinless worn item collapses and re-materializes
+  without its overlay ever glitching).
+- **First consumers.** C4's storage screen (`storage_hud`) pins/unpins each shown
+  item for as long as anyone has the storage open, wired at `show_to()`/`hide_from()`
+  and every `on_slot_changed()` layout pass. Turf rendering is implicit, as above,
+  so nothing new pins for it. Worn/held overlays sourced straight from entries
+  (skipping a pin) are correct under this model and cheap (about 15 items per
+  player), but are optional follow-up, not required for C10 to land — until then,
+  a worn/held item's own behaviour hooks (equip signals, most clothing) pin it
+  the ordinary way, so nothing regresses.
+
+**Viewers.** Covered by the pin model: `storage_hud`'s pin (above) and an open
+`tgui`/`browse` window on the holder itself (`length(holder.open_tguis)`, checked
+directly in `can_be_latent()` since a tgui window is not per-item) both keep
+contents real for as long as anyone is looking.
 
 **Refs, closing the weakref gap.** Collapse already requires
 `state_collapse_blockers()` to be empty: no collapse blockers, no signal
@@ -319,10 +356,9 @@ above that blocks collapse, same as any other outside reference.
 is the single read that decides whether `A` may be latent right now:
 
 - `A`'s type is storable (`dq_latent_eligible(A.type)`);
-- `A`'s slot on its holder is neither rendered nor interactive;
-- nobody is viewing the holder (`dq_latent_has_viewers`);
-- `state_collapse_blockers()` is empty (running behaviour, outside refs, the
-  weakref gap above);
+- `A` is not pinned (`dq_latent_pinned(A)`: no explicit pin, an empty
+  `state_collapse_blockers()`, and it is not sitting directly on a turf);
+- nobody has an open `tgui`/`browse` window on `A`'s holder itself;
 - `A` has been idle (no materialize, move or interaction) for at least the
   holder's configured delay.
 
