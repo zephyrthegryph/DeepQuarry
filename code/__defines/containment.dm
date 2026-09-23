@@ -11,6 +11,8 @@
 #define CONTAINER_SLOT_STOCK "stock"
 /// A machine's legacy internals: parts, circuit, coin. The machine's Destroy owns them.
 #define CONTAINER_SLOT_INTERNALS "internals"
+/// A storage item's interior (/obj/item/storage, C4).
+#define CONTAINER_SLOT_STORAGE "storage"
 
 // ---- Exposure (containment.md §3.1) ----
 /// Outside the holder's shell: held, worn outer layer, mounted. Sees the

@@ -395,8 +395,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 			for(var/obj/item/B in R.contents)
 				if(istype(B, P) && istype(A, P))
 					if(B.get_rating() > A.get_rating())
-						R.remove_from_storage(B, src)
-						R.handle_item_insertion(A, 1)
+						R.remove_from_storage(B, src, user)
+						R.insert_item(A, user, TRUE)
 						component_parts -= A
 						component_parts += B
 						B.loc = null

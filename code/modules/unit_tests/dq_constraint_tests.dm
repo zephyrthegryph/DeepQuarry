@@ -154,6 +154,10 @@
 				var/obj/item/I = items[index]
 				if(!I)
 					continue
+				// Self-deleting items (shoes/none): the legacy backpack took a
+				// deleted item; the storage slot (C4) refuses it.
+				if(QDELETED(I))
+					continue
 				var/expected = text2num(masks[n], 36)
 				var/actual = 0
 				for(var/slot in 1 to SLOT_TOTAL)
