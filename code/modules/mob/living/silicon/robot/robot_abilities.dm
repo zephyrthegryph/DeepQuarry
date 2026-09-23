@@ -203,3 +203,97 @@
 	hud_used.toggle_vtec_control()
 	to_chat(src, span_filter_notice("VTEC module [vtec_active ? "enabled" : "disabled"]."))
 	return TRUE
+
+// ---------------------------------------------------------------------------
+// Targeted, picked abilities (code/datums/abilities/ability.dm's /picker):
+// the legacy verb argument syntax (`mob/living/T in living_mobs(1)`) gave a
+// native target picker for free; these ask for one explicitly instead.
+
+/datum/interaction/ability/picker/robot_nom
+	id = ABILITY_ID_ROBOT_NOM
+	name = "Robot nom"
+	category = ABILITY_CAT_UTILITY
+	picker_title = "Robot Nom"
+	picker_prompt = "Eat whom?"
+	requires = list(REQ_CONSCIOUS)
+	effect = /mob/living/proc/dq_do_robot_nom
+
+/datum/interaction/ability/picker/robot_nom/candidates(mob/living/actor)
+	return actor.living_mobs_in_view(1) - actor
+
+/// Allows you to eat someone.
+/mob/living/proc/dq_do_robot_nom(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
+	return actor.feed_grabbed_to_self(actor, src)
+
+/datum/interaction/ability/picker/robot_mount
+	id = ABILITY_ID_ROBOT_MOUNT
+	name = "Robot mount/dismount"
+	category = ABILITY_CAT_UTILITY
+	picker_title = "Robot Mount"
+	picker_prompt = "Let ride:"
+	requires = list(
+		REQ_CONSCIOUS,
+		REQ_ON(PRED_ACTOR, /mob/living/silicon/robot/proc/dq_pred_can_buckle, "you can't carry riders"),
+	)
+	effect = /mob/living/proc/dq_do_robot_mount
+
+/mob/living/silicon/robot/proc/dq_pred_can_buckle(mob/living/silicon/robot/actor, atom/target, obj/item/held)
+	return actor.can_buckle || "you can't carry riders"
+
+/**
+ * Dismounts everyone already riding instead of picking a new rider - the
+ * same "the ability toggles between two different actions" shape the legacy
+ * verb had. When nobody's riding, picks from adjacent, unbuckled living mobs.
+ */
+/datum/interaction/ability/picker/robot_mount/pick_target(mob/living/silicon/robot/actor)
+	if(LAZYLEN(actor.buckled_mobs))
+		for(var/rider in actor.buckled_mobs)
+			actor.riding_datum?.force_dismount(rider)
+		return null
+	return ..()
+
+/datum/interaction/ability/picker/robot_mount/candidates(mob/living/silicon/robot/actor)
+	. = list()
+	for(var/mob/living/candidate as anything in actor.living_mobs(1))
+		if(candidate != actor && candidate.Adjacent(actor) && !candidate.buckled)
+			. += candidate
+
+/// Let people ride on you. Runs on the rider (the picked target); `actor` is the robot.
+/mob/living/proc/dq_do_robot_mount(mob/living/silicon/robot/actor, obj/item/held, datum/interaction/ability/interaction)
+	if(actor.buckle_mob(src))
+		actor.visible_message(span_notice("[src] starts riding [actor.name]!"))
+	return TRUE
+
+// ---------------------------------------------------------------------------
+// Module select: one ability per slot (1-3), sharing an effect that reads the
+// slot off the ability singleton itself (a fixed, per-subtype argument - the
+// simplest shape for "argument-supplying" abilities: subtype vars, read
+// through the `interaction` the effect is already handed).
+
+/datum/interaction/ability/self/robot_toggle_module
+	category = ABILITY_CAT_UTILITY
+	effect = /mob/living/silicon/robot/proc/dq_do_toggle_module
+	/// Which module slot (1-3) this instance selects.
+	var/module_index
+
+/datum/interaction/ability/self/robot_toggle_module/applies_to(atom/target)
+	return isrobot(target)
+
+/datum/interaction/ability/self/robot_toggle_module/module_1
+	id = ABILITY_ID_ROBOT_TOGGLE_MODULE_1
+	name = "Module 1"
+	module_index = 1
+
+/datum/interaction/ability/self/robot_toggle_module/module_2
+	id = ABILITY_ID_ROBOT_TOGGLE_MODULE_2
+	name = "Module 2"
+	module_index = 2
+
+/datum/interaction/ability/self/robot_toggle_module/module_3
+	id = ABILITY_ID_ROBOT_TOGGLE_MODULE_3
+	name = "Module 3"
+	module_index = 3
+
+/mob/living/silicon/robot/proc/dq_do_toggle_module(mob/actor, obj/item/held, datum/interaction/ability/self/robot_toggle_module/interaction)
+	toggle_module(interaction.module_index)
+	return TRUE

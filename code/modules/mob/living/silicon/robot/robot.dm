@@ -136,11 +136,11 @@
 		ABILITY_ID_ROBOT_TOGGLE_GRABBABILITY,
 		ABILITY_ID_ROBOT_PURGE_NUTRITION,
 		ABILITY_ID_ROBOT_TOGGLE_DECALS,
+		ABILITY_ID_ROBOT_NOM,
 	)
 
 	var/static/list/robot_verbs_default = list(
 		/mob/living/silicon/robot/proc/robot_checklaws,
-		/mob/living/silicon/robot/proc/robot_mount,
 		/mob/living/silicon/robot/proc/take_image,
 		/mob/living/silicon/robot/proc/view_images,
 		/mob/living/silicon/robot/proc/delete_images,
@@ -1465,6 +1465,10 @@
 	add_verb(src, robot_verbs_default)
 	add_verb(src, silicon_subsystems)
 	grant_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
+	grant_ability(ABILITY_ID_ROBOT_MOUNT, src)
+	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
+	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_2, src)
+	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_3, src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
 		grant_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
 
@@ -1472,6 +1476,10 @@
 	remove_verb(src, robot_verbs_default)
 	remove_verb(src, silicon_subsystems)
 	revoke_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
+	revoke_ability(ABILITY_ID_ROBOT_MOUNT, src)
+	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
+	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_2, src)
+	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_3, src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
 		revoke_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
 
@@ -1691,15 +1699,6 @@
 
 	update_icon()
 
-/mob/living/silicon/robot/verb/robot_nom(mob/living/T in living_mobs_in_view(1))
-	set name = "Robot Nom"
-	set category = "Abilities.Vore"
-	set desc = "Allows you to eat someone."
-
-	if (stat != CONSCIOUS)
-		return
-	return feed_grabbed_to_self(src,T)
-
 /// Riding is provided by the belly component; without it the chassis can't be mounted.
 /mob/living/silicon/robot/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
 	if(forced)
@@ -1735,21 +1734,6 @@
 /mob/living/silicon/robot/MouseDrop_T(mob/living/M, mob/living/user) //Prevention for forced relocation caused by can_buckle. Base proc has no other use.
 	return
 
-/mob/living/silicon/robot/proc/robot_mount(mob/living/M in living_mobs(1))
-	set name = "Robot Mount/Dismount"
-	set category = "Abilities.General"
-	set desc = "Let people ride on you."
-
-	if(LAZYLEN(buckled_mobs))
-		for(var/rider in buckled_mobs)
-			riding_datum?.force_dismount(rider)
-		return
-	if (stat != CONSCIOUS)
-		return
-	if(!can_buckle || !istype(M) || !M.Adjacent(src) || M.buckled)
-		return
-	if(buckle_mob(M))
-		visible_message(span_notice("[M] starts riding [name]!"))
 
 /mob/living/silicon/robot/get_scooped(mob/living/carbon/grabber, self_drop)
 	var/obj/item/holder/H = ..(grabber, self_drop)

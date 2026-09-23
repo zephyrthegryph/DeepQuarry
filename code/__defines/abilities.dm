@@ -64,3 +64,8 @@
 #define ABILITY_ID_ROBOT_PICK_SHELL "robot_pick_shell"
 #define ABILITY_ID_ROBOT_SET_MAIL_TAG "robot_set_mail_tag"
 #define ABILITY_ID_ROBOT_EJECT_CARGO "robot_eject_cargo"
+#define ABILITY_ID_ROBOT_NOM "robot_nom"
+#define ABILITY_ID_ROBOT_MOUNT "robot_mount"
+#define ABILITY_ID_ROBOT_TOGGLE_MODULE_1 "robot_toggle_module_1"
+#define ABILITY_ID_ROBOT_TOGGLE_MODULE_2 "robot_toggle_module_2"
+#define ABILITY_ID_ROBOT_TOGGLE_MODULE_3 "robot_toggle_module_3"

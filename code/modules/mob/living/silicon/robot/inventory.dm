@@ -19,11 +19,6 @@
 	set hidden = 1
 	uneq_active()
 
-/mob/living/silicon/robot/verb/cmd_toggle_module(module as num)
-	set name = "toggle-module"
-	set hidden = 1
-	toggle_module(module)
-
 // --- Module slots ------------------------------------------------------------------------
 // The three module slots are ledger slots on the robot, SLOT_ID_MODULE(1..3)
 // (the machine body plan declares them, code/modules/body/slots.dm). An inactive module lives in the
