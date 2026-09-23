@@ -108,12 +108,12 @@
 	id = "shield_gen_open_ui"
 	name = "Use"
 	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/shield_gen/proc/shield_gen_not_broken, null))
-	effect = /obj/machinery/shield_gen/proc/interaction_open_ui
+	effect = /obj/machinery/shield_gen/proc/interaction_open_ui_impl
 
 /obj/machinery/shield_gen/proc/shield_gen_not_broken(mob/actor, atom/target, obj/item/held)
 	return !(stat & BROKEN)
 
-/obj/machinery/shield_gen/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shield_gen/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

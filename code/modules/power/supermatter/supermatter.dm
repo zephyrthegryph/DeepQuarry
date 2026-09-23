@@ -646,7 +646,9 @@
 	user.drop_from_inventory(W)
 	Consume(W)
 
-	user.apply_effect(150, IRRADIATE)
+	if(isliving(user))
+		var/mob/living/L = user
+		L.apply_effect(150, IRRADIATE)
 	return TRUE
 
 

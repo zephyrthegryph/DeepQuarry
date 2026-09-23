@@ -170,12 +170,12 @@
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharge_station/proc/is_vacant, null))
-	effect = /obj/machinery/recharge_station/proc/interaction_part_replacement
+	effect = /obj/machinery/recharge_station/proc/interaction_part_replacement_impl
 
 /obj/machinery/recharge_station/proc/is_vacant(mob/actor, atom/target, obj/item/held)
 	return !occupant
 
-/obj/machinery/recharge_station/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/recharge_station/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	return default_part_replacement(user, held) ? TRUE : FALSE
 
 /datum/interaction/machine_item/recharge_station_insert_grab

@@ -708,9 +708,9 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	id = "survival_pod_light_switch"
 	name = "Use"
 	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/light_switch/survival_pod/proc/interaction_toggle
+	effect = /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl
 
-/obj/machinery/light_switch/survival_pod/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 	if(!target_light)

@@ -52,7 +52,7 @@
 /obj/machinery/alembic/proc/alembic_no_reagent(mob/actor, atom/target, obj/item/held)
 	return !potion_reagent
 
-/obj/machinery/alembic/proc/interaction_load_reagent(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/alembic/proc/interaction_load_reagent(mob/user, obj/item/potion_material/O, datum/interaction/interaction)
 	src.potion_reagent = O
 	src.expected_base = O.base_reagent
 	src.product_potion = O.product_potion

@@ -22,8 +22,6 @@
 	. = ..()
 	default_apply_parts()
 	beaker = new /obj/item/reagent_containers/glass/beaker/bluespace(src) // Get it all out as fast as possible
-	// Can't be set on these
-	src.verbs -= /obj/machinery/reagent_refinery/verb/set_APTFT
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
@@ -231,3 +229,7 @@
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u. It is currently [filter]."
 	. += "The sintering mold is [ (beaker.reagents.total_volume / REAGENTS_PER_SHEET) * 100 ]% full."
 	tutorial(REFINERY_TUTORIAL_INPUT, .)
+
+/obj/machinery/reagent_refinery/furnace/declare_interactions(list/into)
+	. = ..()
+	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

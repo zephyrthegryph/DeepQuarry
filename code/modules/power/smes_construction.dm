@@ -380,10 +380,10 @@
 	id = "smes_buildable_install_coil"
 	name = "Install coil"
 	held_type = /obj/item/smes_coil
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/buildable/proc/panel_is_open, null))
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/buildable/proc/panel_is_open_impl, null))
 	effect = /obj/machinery/power/smes/buildable/proc/interaction_install_coil
 
-/obj/machinery/power/smes/buildable/panel_is_open(mob/actor, atom/target, obj/item/held)
+/obj/machinery/power/smes/buildable/proc/panel_is_open_impl(mob/actor, atom/target, obj/item/held)
 	return panel_open
 
 /obj/machinery/power/smes/buildable/proc/interaction_install_coil(mob/user, obj/item/W, datum/interaction/interaction)

@@ -263,9 +263,9 @@
 /datum/interaction/machine_hand/ungated/jukebox_interact
 	id = "jukebox_interact"
 	name = "Use"
-	effect = /obj/machinery/media/jukebox/proc/interaction_interact
+	effect = /obj/machinery/media/jukebox/proc/interaction_interact_impl
 
-/obj/machinery/media/jukebox/interaction_interact(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/media/jukebox/proc/interaction_interact_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
 	return TRUE
 

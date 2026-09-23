@@ -49,9 +49,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	id = "faxmachine_open_ui"
 	name = "Use"
 	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_open_ui
+	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_open_ui_impl
 
-/obj/machinery/photocopier/faxmachine/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/photocopier/faxmachine/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(issilicon(user)) // this allows borgs to use fax machines, meant for the Unity and Clerical modules.
 		authenticated = user.name
 	tgui_interact(user)
@@ -335,9 +335,9 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	id = "faxmachine_insert_toner"
 	name = "Insert toner"
 	held_type = /obj/item/toner
-	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_insert_toner
+	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_insert_toner_impl
 
-/obj/machinery/photocopier/faxmachine/interaction_insert_toner(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/photocopier/faxmachine/proc/interaction_insert_toner_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
 		user.drop_item()
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))

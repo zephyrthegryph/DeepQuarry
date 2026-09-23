@@ -12,8 +12,6 @@
 /obj/machinery/reagent_refinery/splitter/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Can't be set on these
-	src.verbs -= /obj/machinery/reagent_refinery/verb/set_APTFT
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
@@ -69,3 +67,7 @@
 	. = ..()
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 	tutorial(REFINERY_TUTORIAL_SPLITTEROUTPUT|REFINERY_TUTORIAL_INPUT, .)
+
+/obj/machinery/reagent_refinery/splitter/declare_interactions(list/into)
+	. = ..()
+	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

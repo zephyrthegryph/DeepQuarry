@@ -57,9 +57,9 @@
 /datum/interaction/machine_hand/pod_open_ui
 	id = "pod_open_ui"
 	name = "Use"
-	effect = /obj/machinery/computer/pod/proc/interaction_open_ui
+	effect = /obj/machinery/computer/pod/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/pod/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/pod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user) && !issilicon(user))
 		return TRUE
 	tgui_interact(user)
@@ -155,7 +155,7 @@
 	id = "pod_syndicate_open_ui"
 	name = "Use"
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/computer/pod/old/syndicate/proc/lets_in, "access denied"))
-	effect = /obj/machinery/computer/pod/proc/interaction_open_ui
+	effect = /obj/machinery/computer/pod/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/pod/old/syndicate/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)

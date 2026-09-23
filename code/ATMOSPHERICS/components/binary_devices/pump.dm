@@ -286,13 +286,13 @@ Thus, the two variables affect pump operation are set in New():
 	id = "pump_open_ui"
 	name = "Use"
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/pump/proc/lets_in, "access denied"))
-	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui
+	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl
 
 /// Old click_alt access check, shared with the hand entry.
 /obj/machinery/atmospherics/binary/pump/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/atmospherics/binary/pump/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
 	return TRUE

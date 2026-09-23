@@ -225,9 +225,9 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 /datum/interaction/machine_hand/ungated/garbosystem_button_press
 	id = "garbosystem_button_press"
 	name = "Press"
-	effect = /obj/machinery/button/garbosystem/proc/interaction_press
+	effect = /obj/machinery/button/garbosystem/proc/interaction_press_impl
 
-/obj/machinery/button/garbosystem/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/garbosystem/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(grinder)
 		grinder.attack_hand(user)
 	return TRUE

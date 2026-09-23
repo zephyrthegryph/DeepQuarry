@@ -82,9 +82,9 @@
 /datum/interaction/machine_hand/ungated/botany_open_ui
 	id = "botany_open_ui"
 	name = "Use"
-	effect = /obj/machinery/botany/proc/interaction_open_ui
+	effect = /obj/machinery/botany/proc/interaction_open_ui_impl
 
-/obj/machinery/botany/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/botany/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 
@@ -141,12 +141,12 @@
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_not_active, null))
-	effect = /obj/machinery/botany/proc/interaction_part_replacement
+	effect = /obj/machinery/botany/proc/interaction_part_replacement_impl
 
 /obj/machinery/botany/proc/botany_not_active(mob/actor, atom/target, obj/item/held)
 	return !active
 
-/obj/machinery/botany/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/botany/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	return default_part_replacement(user, held) ? TRUE : FALSE
 
 /// Old attackby: load a botany data disk.

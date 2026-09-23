@@ -41,9 +41,9 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 /datum/interaction/machine_hand/prison_shuttle_open_ui
 	id = "prison_shuttle_open_ui"
 	name = "Use"
-	effect = /obj/machinery/computer/prison_shuttle/proc/interaction_open_ui
+	effect = /obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/prison_shuttle/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!src.allowed(user) && (!hacked))
 		to_chat(user, span_warning("Access Denied."))
 		return TRUE

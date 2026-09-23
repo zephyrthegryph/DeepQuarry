@@ -226,14 +226,14 @@
 	id = "skills_open_ui"
 	name = "Use"
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/computer/skills/proc/within_contact_range, "you're too far away from the station!"))
-	effect = /obj/machinery/computer/skills/proc/interaction_open_ui
+	effect = /obj/machinery/computer/skills/proc/interaction_open_ui_impl
 
 /// Requirement clause: no message (like the old check) beyond the reason text.
 /obj/machinery/computer/skills/proc/within_contact_range(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/computer/skills/machine = target
 	return !using_map || (machine.z in using_map.contact_levels)
 
-/obj/machinery/computer/skills/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/skills/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

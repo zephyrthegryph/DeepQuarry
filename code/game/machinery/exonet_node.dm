@@ -114,9 +114,9 @@
 /datum/interaction/machine_hand/ungated/exonet_open_ui
 	id = "exonet_open_ui"
 	name = "Use"
-	effect = /obj/machinery/exonet_node/proc/interaction_open_ui
+	effect = /obj/machinery/exonet_node/proc/interaction_open_ui_impl
 
-/obj/machinery/exonet_node/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/exonet_node/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

@@ -328,12 +328,12 @@
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/pacman/proc/pacman_not_active, null))
-	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_part_replacement
+	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_part_replacement_impl
 
 /obj/machinery/power/port_gen/pacman/proc/pacman_not_active(mob/actor, atom/target, obj/item/held)
 	return !active
 
-/obj/machinery/power/port_gen/pacman/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/port_gen/pacman/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	return default_part_replacement(user, held) ? TRUE : FALSE
 
 /obj/machinery/power/port_gen/pacman/screwdriver_act(mob/user, obj/item/O)
@@ -364,12 +364,12 @@
 	id = "pacman_open_ui"
 	name = "Use"
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/pacman/proc/pacman_anchored, null))
-	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_open_ui
+	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_open_ui_impl
 
 /obj/machinery/power/port_gen/pacman/proc/pacman_anchored(mob/actor, atom/target, obj/item/held)
 	return !!anchored
 
-/obj/machinery/power/port_gen/pacman/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/port_gen/pacman/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

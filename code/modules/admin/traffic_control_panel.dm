@@ -10,9 +10,9 @@
 /datum/interaction/machine_hand/ungated/traffic_control_open_ui
 	id = "traffic_control_open_ui"
 	name = "Use"
-	effect = /obj/machinery/computer/telecomms/traffic/proc/interaction_open_ui
+	effect = /obj/machinery/computer/telecomms/traffic/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/telecomms/traffic/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/telecomms/traffic/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
 		return TRUE
 	user.set_machine(src)

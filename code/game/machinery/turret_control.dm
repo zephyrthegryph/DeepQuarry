@@ -136,9 +136,9 @@
 /datum/interaction/machine_hand/ungated/turretid_open_ui
 	id = "turretid_open_ui"
 	name = "Use"
-	effect = /obj/machinery/turretid/proc/interaction_open_ui
+	effect = /obj/machinery/turretid/proc/interaction_open_ui_impl
 
-/obj/machinery/turretid/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/turretid/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

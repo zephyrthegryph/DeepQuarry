@@ -95,12 +95,12 @@
 	id = "chem_master_open_ui"
 	name = "Use"
 	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/chem_master/proc/chem_master_not_broken, null))
-	effect = /obj/machinery/chem_master/proc/interaction_open_ui
+	effect = /obj/machinery/chem_master/proc/interaction_open_ui_impl
 
 /obj/machinery/chem_master/proc/chem_master_not_broken(mob/actor, atom/target, obj/item/held)
 	return !(stat & BROKEN)
 
-/obj/machinery/chem_master/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/chem_master/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

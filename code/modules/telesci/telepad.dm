@@ -46,9 +46,9 @@
 	name = "Replace parts"
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item
-	effect = /obj/machinery/telepad/proc/interaction_part_replacement
+	effect = /obj/machinery/telepad/proc/interaction_part_replacement_impl
 
-/obj/machinery/telepad/interaction_part_replacement(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/telepad/proc/interaction_part_replacement_impl(mob/user, obj/item/W, datum/interaction/interaction)
 	add_fingerprint(user)
 	return default_part_replacement(user, W) ? TRUE : FALSE
 

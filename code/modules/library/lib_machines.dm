@@ -46,9 +46,9 @@
 	id = "librarypubliccomp_open_ui"
 	name = "Use"
 	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/librarypubliccomp/proc/interaction_open_ui
+	effect = /obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl
 
-/obj/machinery/librarypubliccomp/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
@@ -216,9 +216,9 @@
 	id = "librarycomp_open_ui"
 	name = "Use"
 	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/librarycomp/proc/interaction_open_ui
+	effect = /obj/machinery/librarycomp/proc/interaction_open_ui_impl
 
-/obj/machinery/librarycomp/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarycomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	is_admin_view = FALSE
 	tgui_interact(user)
@@ -535,9 +535,9 @@
 	id = "libraryscanner_open_ui"
 	name = "Use"
 	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/libraryscanner/proc/interaction_open_ui
+	effect = /obj/machinery/libraryscanner/proc/interaction_open_ui_impl
 
-/obj/machinery/libraryscanner/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/libraryscanner/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE

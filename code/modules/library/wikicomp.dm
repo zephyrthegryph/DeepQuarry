@@ -32,9 +32,9 @@
 /datum/interaction/machine_hand/wikicomp_open_ui
 	id = "wikicomp_open_ui"
 	name = "Use"
-	effect = /obj/machinery/librarywikicomp/proc/interaction_open_ui
+	effect = /obj/machinery/librarywikicomp/proc/interaction_open_ui_impl
 
-/obj/machinery/librarywikicomp/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarywikicomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(crash)
 		user.visible_message("[user] performs percussive maintenance on \the [src].", "You try to smack some sense into \the [src].")
 		if(prob(10))

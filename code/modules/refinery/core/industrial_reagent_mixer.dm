@@ -17,8 +17,6 @@
 	mixer_angle = dir2angle(dir)
 	. = ..()
 	default_apply_parts()
-	// Can't be set on these
-	src.verbs -= /obj/machinery/reagent_refinery/verb/set_APTFT
 
 /obj/machinery/reagent_refinery/mixer/process()
 	if(!anchored)
@@ -128,3 +126,7 @@
 	if(.)
 		got_input = TRUE
 		update_icon()
+
+/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
+	. = ..()
+	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

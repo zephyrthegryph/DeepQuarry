@@ -82,9 +82,9 @@
 	name = "Replace parts"
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/anomaly_harvester/proc/interaction_part_replacement
+	effect = /obj/machinery/anomaly_harvester/proc/interaction_part_replacement_impl
 
-/obj/machinery/anomaly_harvester/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/anomaly_harvester/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	return default_part_replacement(user, held) ? TRUE : FALSE
 

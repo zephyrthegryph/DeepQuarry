@@ -59,12 +59,12 @@
 	id = "processing_console_open_ui"
 	name = "Use"
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/mineral/processing_unit_console/proc/lets_in, "access denied"))
-	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui
+	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl
 
 /obj/machinery/mineral/processing_unit_console/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/mineral/processing_unit_console/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

@@ -43,9 +43,9 @@
 /datum/interaction/machine_hand/ungated/station_alert_open_ui
 	id = "station_alert_open_ui"
 	name = "Use"
-	effect = /obj/machinery/computer/station_alert/proc/interaction_open_ui
+	effect = /obj/machinery/computer/station_alert/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/station_alert/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/station_alert/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
 		return TRUE

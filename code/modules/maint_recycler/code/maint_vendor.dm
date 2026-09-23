@@ -78,9 +78,9 @@
 /datum/interaction/machine_hand/maint_vendor_open_ui
 	id = "maint_vendor_open_ui"
 	name = "Use"
-	effect = /obj/machinery/maint_vendor/proc/interaction_open_ui
+	effect = /obj/machinery/maint_vendor/proc/interaction_open_ui_impl
 
-/obj/machinery/maint_vendor/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/maint_vendor/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
 

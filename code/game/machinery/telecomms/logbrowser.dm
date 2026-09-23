@@ -74,9 +74,9 @@
 /datum/interaction/machine_hand/ungated/telecomms_server_open_ui
 	id = "telecomms_server_open_ui"
 	name = "Use"
-	effect = /obj/machinery/computer/telecomms/server/proc/interaction_open_ui
+	effect = /obj/machinery/computer/telecomms/server/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/telecomms/server/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/telecomms/server/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
 		return TRUE
 	tgui_interact(user)

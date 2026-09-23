@@ -14,8 +14,6 @@
 /obj/machinery/reagent_refinery/grinder/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Can't be set on these
-	src.verbs -= /obj/machinery/reagent_refinery/verb/set_APTFT
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
@@ -159,3 +157,7 @@
 /obj/machinery/reagent_refinery/grinder/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// Grinder forbids input
 	return 0
+
+/obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
+	. = ..()
+	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

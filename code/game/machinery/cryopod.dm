@@ -85,9 +85,9 @@
 /datum/interaction/machine_hand/ungated/cryopod_console_open_ui
 	id = "cryopod_console_open_ui"
 	name = "Use"
-	effect = /obj/machinery/computer/cryopod/proc/interaction_open_ui
+	effect = /obj/machinery/computer/cryopod/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/cryopod/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
 		return TRUE
 	tgui_interact(user)

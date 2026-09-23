@@ -33,8 +33,8 @@
 /datum/interaction/machine_hand/comms_open_ui
 	id = "comms_open_ui"
 	name = "Use"
-	effect = /obj/machinery/computer/communications/proc/interaction_open_ui
+	effect = /obj/machinery/computer/communications/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/communications/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/communications/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	communications.tgui_interact(user)
 	return TRUE

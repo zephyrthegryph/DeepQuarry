@@ -168,9 +168,9 @@ Nothing else in the console has ID requirements.
 	id = "rdconsole_open_ui"
 	name = "Use"
 	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui
+	effect = /obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/rdconsole_tg/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
 		return TRUE
 

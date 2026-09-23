@@ -89,9 +89,9 @@
 /datum/interaction/machine_hand/card_open_ui
 	id = "card_open_ui"
 	name = "Use"
-	effect = /obj/machinery/computer/card/proc/interaction_open_ui
+	effect = /obj/machinery/computer/card/proc/interaction_open_ui_impl
 
-/obj/machinery/computer/card/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/card/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
 		return TRUE
 	tgui_interact(user)

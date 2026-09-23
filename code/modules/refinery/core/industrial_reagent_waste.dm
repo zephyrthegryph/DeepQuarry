@@ -13,8 +13,6 @@
 /obj/machinery/reagent_refinery/waste_processor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Can't be set on these
-	src.verbs -= /obj/machinery/reagent_refinery/verb/set_APTFT
 	AddElement(/datum/element/climbable)
 	flags |= NOREACT
 
@@ -86,3 +84,7 @@
 	visible_message("\The [user] dumps \the [C] into \the [src].")
 	update_icon()
 	return TRUE
+
+/obj/machinery/reagent_refinery/waste/declare_interactions(list/into)
+	. = ..()
+	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

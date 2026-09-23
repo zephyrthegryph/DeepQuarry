@@ -60,7 +60,7 @@
 	effect = /obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use
 
 /obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use(mob/user, obj/item/held, datum/interaction/interaction)
-	set_APTFT()
+	interaction_set_transfer_amount(user, held, interaction)
 	return TRUE
 
 /obj/machinery/reagent_refinery/pump/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")

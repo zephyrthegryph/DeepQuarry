@@ -93,9 +93,9 @@
 /datum/interaction/machine_hand/ungated/keycard_auth_open_ui
 	id = "keycard_auth_open_ui"
 	name = "Use"
-	effect = /obj/machinery/keycard_auth/proc/interaction_open_ui
+	effect = /obj/machinery/keycard_auth/proc/interaction_open_ui_impl
 
-/obj/machinery/keycard_auth/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/keycard_auth/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || stat & (NOPOWER|BROKEN))
 		to_chat(user, "This device is not powered.")
 		return TRUE

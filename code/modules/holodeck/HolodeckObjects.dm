@@ -269,12 +269,12 @@
 	name = "Use"
 	held_type = /obj/item
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/holowindoor/proc/toggle_offered, null))
-	effect = /obj/machinery/door/window/holowindoor/proc/interaction_toggle
+	effect = /obj/machinery/door/window/holowindoor/proc/interaction_toggle_impl
 
 /obj/machinery/door/window/holowindoor/proc/toggle_offered(mob/actor, atom/target, obj/item/held)
 	return operating != 1
 
-/obj/machinery/door/window/holowindoor/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/door/window/holowindoor/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	if (!src.requiresID())
 		user = null

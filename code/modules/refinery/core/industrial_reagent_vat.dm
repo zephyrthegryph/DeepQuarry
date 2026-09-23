@@ -16,8 +16,6 @@
 /obj/machinery/reagent_refinery/vat/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	// Can't be set on these
-	src.verbs -= /obj/machinery/reagent_refinery/verb/set_APTFT
 
 /obj/machinery/reagent_refinery/vat/process()
 	if(buckled_mobs && buckled_mobs.len && reagents.total_volume > 0)
@@ -116,3 +114,7 @@
 	visible_message("\The [user] dumps \the [C] into \the [src].")
 	update_icon()
 	return TRUE
+
+/obj/machinery/reagent_refinery/vat/declare_interactions(list/into)
+	. = ..()
+	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
