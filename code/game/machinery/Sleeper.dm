@@ -191,10 +191,9 @@
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
 		occupantData["critical"] = occupant.is_critical()
-		occupantData["physicalLoad"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-		occupantData["asphyxiaLoad"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
-		occupantData["toxicLoad"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
-		occupantData["thermalLoad"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
+		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
+		occupantData["diagnosis"] = D.tgui_data()
+		qdel(D)
 		occupantData["paralysis"] = occupant.paralysis
 		occupantData["hasBlood"] = 0
 		occupantData["bodyTemperature"] = occupant.bodytemperature

@@ -126,6 +126,12 @@
 	describe = TRUE
 	scanner_machine = TRUE
 
+/// Bedside vitals monitor: every vital sign, no findings.
+/datum/diagnostic_profile/vitals_monitor
+	name = "vitals monitor"
+	senses = NONE
+	vitals = VITALS_ALL
+
 /// Cyborg analyzer: the synthetic diagnostic bus.
 /datum/diagnostic_profile/robot_analyzer
 	name = "cyborg analyzer"
