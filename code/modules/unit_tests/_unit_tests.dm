@@ -169,6 +169,7 @@
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_lesion_tests.dm"
 #include "dq_vital_systems_tests.dm"
+#include "dq_physiology_tests.dm"
 #include "dq_melee_swing_tests.dm"
 #include "dq_movement_tests.dm"
 #include "dq_material_science_tests.dm"

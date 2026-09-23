@@ -18,10 +18,11 @@
 
 	H.failed_last_breath = 0
 	H.losebreath = 0
-	var/hypoxia_before = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/debt_before = H.oxygen_debt()
 	life_test_breathe(H)
 	TEST_ASSERT(H.failed_last_breath, "breathing through a closed airway should fail")
-	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_ASPHYXIA) > hypoxia_before, "a failed breath should build tissue hypoxia")
+	H.body.physiology_tick(2)
+	TEST_ASSERT(H.oxygen_debt() > debt_before, "a closed airway should build oxygen debt")
 	TEST_ASSERT_EQUAL(H.get_respiratory_rate(), 0, "a choking patient should have no respiratory rate")
 
 	// Abdominal thrusts / an airway kit.
@@ -43,12 +44,12 @@
 
 	var/obj/item/bag_valve_mask/bvm = allocate(/obj/item/bag_valve_mask)
 	TEST_ASSERT(bvm.apply_ventilation(H), "the bag-valve mask should ventilate an open airway")
-	TEST_ASSERT(R.is_ventilated(), "the patient should be ventilated after bagging")
+	TEST_ASSERT(H.body.is_supported(BF_RESP_DRIVE), "bagging should support the breathing drive")
 	TEST_ASSERT(!H.breath_blocked(), "a bagged patient should get breaths")
 	TEST_ASSERT(!QDELETED(R) && R.is_apneic(), "ventilation breathes for the patient; it doesn't cure the arrest")
 
 	// Rescue breaths ventilate too; a closed airway defeats both.
-	R.ventilated_until = 0
+	H.body.remove_supports(bvm)
 	H.body.afflict(/datum/affliction/airway_obstruction)
 	TEST_ASSERT(!bvm.apply_ventilation(H), "the bag should not empty into a blocked airway")
 	TEST_ASSERT(H.breath_blocked(), "an obstructed, apneic patient should not breathe")
@@ -96,7 +97,8 @@
 	TEST_ASSERT_EQUAL(A.rhythm, CARDIAC_RHYTHM_VF, "CPR with a vasopressor should coarsen asystole into VF")
 	TEST_ASSERT(H.defibrillate_heart(), "the resulting VF should be shockable")
 
-/// No cardiac output kills the brain; CPR slows it.
+/// No cardiac output builds oxygen debt that kills the brain; CPR (a cardiac
+/// output support) slows it.
 /datum/unit_test/dq_vital_cpr_slows_ischemia
 
 /datum/unit_test/dq_vital_cpr_slows_ischemia/Run()
@@ -109,16 +111,19 @@
 	var/obj/item/organ/internal/brain/B2 = with_cpr.internal_organs_by_name[O_BRAIN]
 	TEST_ASSERT(B1 && B2, "both patients need brains")
 
-	for(var/i in 1 to 10)
-		with_cpr.mend(TREAT_CHEST_COMPRESSION, 1)
-		A1.arrest_tick()
-		A2.arrest_tick()
+	var/obj/item/rescuer = allocate(/obj/item/bag_valve_mask)
+	for(var/i in 1 to 60)
+		with_cpr.body.add_support(rescuer, BF_PUMP, SUPPORT_CPR_PUMP, CPR_COMPRESSION_WINDOW)
+		without_cpr.body.physiology_tick(2)
+		with_cpr.body.physiology_tick(2)
 
+	TEST_ASSERT(without_cpr.body.perfusion() <= 0, "VF should not perfuse ([without_cpr.body.perfusion()])")
+	TEST_ASSERT(with_cpr.body.perfusion() > 0, "CPR should hold perfusion above nothing")
 	TEST_ASSERT(B1.damage > 0, "a stopped heart should injure the brain")
 	TEST_ASSERT_NOTNULL(B1.find_lesion(/datum/affliction/lesion/ischemic_injury), "arrest brain injury should be an ischemic lesion")
-	TEST_ASSERT(B2.damage > 0, "CPR only gives partial perfusion")
 	TEST_ASSERT(B2.damage < B1.damage, "CPR should slow brain ischemia ([B2.damage] vs [B1.damage])")
-	TEST_ASSERT(with_cpr.injury_load(INJURY_CATEGORY_ASPHYXIA) < without_cpr.injury_load(INJURY_CATEGORY_ASPHYXIA), "CPR should slow the oxygen debt")
+	TEST_ASSERT(with_cpr.oxygen_debt() > 0, "CPR only gives partial perfusion")
+	TEST_ASSERT(with_cpr.oxygen_debt() < without_cpr.oxygen_debt(), "CPR should slow the oxygen debt ([with_cpr.oxygen_debt()] vs [without_cpr.oxygen_debt()])")
 
 /// A decompression needle vents a tension pneumothorax.
 /datum/unit_test/dq_vital_pneumothorax_decompression

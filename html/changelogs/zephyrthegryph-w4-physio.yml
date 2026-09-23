@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Bodies now have a physiology: ventilation, oxygen saturation, perfusion and oxygen delivery are computed from the airway, breathing, heart rhythm, blood volume, the air breathed and the chemicals in the blood."
+  - rscadd: "Suffocation is now an oxygen debt that builds when delivery falls short. It knocks patients out and grows ischemic brain lesions; restoring delivery repays it."
+  - rscadd: "Bag-valve masks, CPR, oxygen pumps and chokeholds act as supports and restrictions on the physiology. A mask can't push air past a blocked airway."
+  - rscdel: "Removed asphyxiation damage. Cyanide now blocks tissue oxygen use (normal saturation, climbing debt), carbon monoxide rounds lower oxygen carriage, and dexalin raises it."
+  - balance: "Species resistances to asphyxiation are now lower metabolic oxygen demand."
