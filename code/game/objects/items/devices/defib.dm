@@ -339,7 +339,7 @@
 
 /obj/item/shockpaddles/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || user.a_intent == I_HURT)
+	if(!istype(H) || IS_HARMING(user))
 		return ..() //Do a regular attack. Harm intent shocking happens as a hit effect
 
 	if(can_use(user, H))

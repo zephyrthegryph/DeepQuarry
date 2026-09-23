@@ -1193,7 +1193,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(!proximity) return
 	if(istype(target, /obj/machinery/light))
 		return
-	if(user.a_intent != I_HURT)
+	if(!IS_HARMING(user))
 		return
 
 	shatter()

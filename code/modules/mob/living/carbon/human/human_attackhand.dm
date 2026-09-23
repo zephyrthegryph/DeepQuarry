@@ -79,7 +79,7 @@
 			if(D.spread_flags & DISEASE_SPREAD_CONTACT)
 				ContractDisease(D)
 
-	switch(M.a_intent)
+	switch(M.use_stance())
 		//VARS:  (Placed here for your convenience, because it's confusing)
 		// H = THE PERSON DOING THE ATTACK, BUT DEFINED AS A HUMAN. (This is for human specific interactions, such as CPR.)
 		// M = THE PERSON DOING THE ATTACK, AGAIN, DEFINED AS A MOB
@@ -299,7 +299,7 @@
 		to_chat(M, span_danger("They are missing that limb!"))
 		return FALSE
 
-	switch(a_intent)
+	switch(use_stance())
 		if(I_HELP)
 			// We didn't see this coming, so we get the full blow
 			rand_damage = 5

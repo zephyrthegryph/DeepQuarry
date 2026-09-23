@@ -40,7 +40,7 @@
 	return
 
 /obj/item/spell/flame_tongue/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
-	if(isliving(hit_atom) && user.a_intent != I_HELP)
+	if(isliving(hit_atom) && !IS_HELPING(user))
 		var/mob/living/L = hit_atom
 		if(pay_energy(1000))
 			visible_message(span_danger("\The [user] reaches out towards \the [L] with the flaming hand, and they ignite!"))

@@ -69,7 +69,7 @@
 	icon_state = "whitecane"
 
 /obj/item/cane/white/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		user.visible_message(span_notice("\The [user] has lightly tapped [M] on the ankle with their white cane!"))
 		return ITEM_INTERACT_SUCCESS
 	else

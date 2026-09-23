@@ -417,7 +417,7 @@
 			playsound(src, sound_chamber, 50, 0)
 			if(unlocked)
 				if(bolt_release)
-					if(user.a_intent == I_HURT && CHECK_BITFIELD(auto_loading_type,LOCK_SLAPPABLE))
+					if(IS_HARMING(user) && CHECK_BITFIELD(auto_loading_type,LOCK_SLAPPABLE))
 						user.visible_message(span_notice("[user] slaps the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!"), \
 						span_notice("You slap the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!"))
 					else

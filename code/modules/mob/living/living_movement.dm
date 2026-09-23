@@ -95,7 +95,7 @@ default behaviour is:
 			now_pushing = FALSE
 			return
 
-		if((tmob.mob_always_swap || (tmob.a_intent == I_HELP || tmob.restrained()) && (a_intent == I_HELP || src.restrained())) && tmob.canmove && canmove && !tmob.buckled && !buckled && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
+		if((tmob.mob_always_swap || (IS_HELPING(tmob) || tmob.restrained()) && (IS_HELPING(src) || src.restrained())) && tmob.canmove && canmove && !tmob.buckled && !buckled && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
 			var/turf/oldloc = loc
 
 			//check bumpnom chance, if it's a simplemob that's doing the bumping
@@ -124,7 +124,7 @@ default behaviour is:
 			tmob.forceMove(oldloc)
 			now_pushing = FALSE
 			return
-		else if((tmob.mob_always_swap || (tmob.a_intent == I_HELP || tmob.restrained()) && (a_intent == I_HELP || src.restrained())) && canmove && can_swap && handle_micro_bump_helping(tmob))
+		else if((tmob.mob_always_swap || (IS_HELPING(tmob) || tmob.restrained()) && (IS_HELPING(src) || src.restrained())) && canmove && can_swap && handle_micro_bump_helping(tmob))
 			forceMove(tmob.loc)
 			now_pushing = FALSE
 			return
@@ -132,7 +132,7 @@ default behaviour is:
 		if(!can_move_mob(tmob, FALSE, FALSE))
 			now_pushing = FALSE
 			return
-		if(a_intent == I_HELP || src.restrained())
+		if(IS_HELPING(src) || src.restrained())
 			now_pushing = FALSE
 			return
 		// Plow that nerd.
@@ -145,7 +145,7 @@ default behaviour is:
 				H.Weaken(5)
 				now_pushing = FALSE
 				return
-			if(H.species.lightweight_light == 1 && H.a_intent == I_HELP)
+			if(H.species.lightweight_light == 1 && IS_HELPING(H))
 				H.visible_message(span_warning("[src] bumps into [H], knocking them off balance!"))
 				H.Weaken(5)
 				now_pushing = FALSE

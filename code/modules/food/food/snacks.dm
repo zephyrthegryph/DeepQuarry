@@ -202,7 +202,7 @@
 				to_chat(eater, span_danger("Nope. That's it. You literally cannot force any more of [src] to go down your throat. It's fair to say you're full."))
 				return ITEM_INTERACT_FAILURE
 
-		else if(user.a_intent == I_HURT)
+		else if(IS_HARMING(user))
 			return ..()
 
 		else

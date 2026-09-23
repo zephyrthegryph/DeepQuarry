@@ -73,7 +73,7 @@
 			phorontanks++
 		else
 			full = TRUE
-	else if(user.a_intent != I_HURT)
+	else if(!IS_HARMING(user))
 		to_chat(user, span_notice("[I] does not fit into [src]."))
 		return
 	else

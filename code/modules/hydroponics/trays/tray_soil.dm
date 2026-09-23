@@ -11,7 +11,7 @@
 	if(istype(O,/obj/item/tank))
 		return
 	if(istype(O,/obj/item/shovel))
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
 			if(do_after(user, 3 SECONDS, target = src) && !QDELETED(src))
 				user.visible_message(span_notice("\The [user] fills in \the [src]."))

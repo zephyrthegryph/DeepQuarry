@@ -12,8 +12,8 @@
 //         always when always_stun is set;
 //       GRAB (eat) a downed victim it can consume (juvenile + can_consume + lying);
 //       else HURT.
-//     The mob's apply_attack() reads a_intent to apply the matching effect, so
-//     the behavior just sets a_intent then runs the normal attack.
+//     The mob's apply_attack() reads use_stance() to apply the matching effect, so
+//     the behavior just calls set_use_stance() then runs the normal attack.
 //   closest_distance(): treated monkeys and downed/dying targets as melee range
 //     so ranged metroids would walk up and eat instead of shooting.
 //   can_attack(): monkeys (incl. alien monkeys) are always valid food.
@@ -38,7 +38,7 @@
 		/datum/ai_behavior/approach_threat,
 		// NOTE: no generic maul_unconscious — metroid_smart_attack's GRAB branch
 		// already eats downed prey with the correct (consume) intent. The generic
-		// maul would attack with the wrong a_intent and skip consumption.
+		// maul would attack with the wrong stance and skip consumption.
 		/datum/ai_behavior/retaliate_to_attacker,
 		/datum/ai_behavior/follow_leader,
 		/datum/ai_behavior/idle_wander,
@@ -106,11 +106,11 @@
 	var/mob/living/L = target
 	// Intent selection, faithful to legacy pre_melee_attack():
 	if((!L.lying && prob(30 + (MJ.power_charge * 7))) || (!L.lying && MJ.always_stun))
-		MJ.a_intent = I_DISARM           // Stun the standing target first.
+		MJ.set_use_stance(I_DISARM)           // Stun the standing target first.
 	else if(MJ.is_juvenile && MJ.can_consume(L) && L.lying)
-		MJ.a_intent = I_GRAB             // Then eat the downed target.
+		MJ.set_use_stance(I_GRAB)             // Then eat the downed target.
 	else
-		MJ.a_intent = I_HURT             // Otherwise just hurt it.
+		MJ.set_use_stance(I_HURT)             // Otherwise just hurt it.
 	MJ.attack_target(L)
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE

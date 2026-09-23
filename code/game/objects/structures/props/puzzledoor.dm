@@ -64,7 +64,7 @@
 
 /obj/machinery/door/blast/puzzle/attackby(obj/item/C as obj, mob/user as mob)
 	if(istype(C, /obj/item))
-		if(C.pry == 1 && (user.a_intent != I_HURT || (stat & BROKEN)))
+		if(C.pry == 1 && (!IS_HARMING(user) || (stat & BROKEN)))
 			if(istype(C,/obj/item/material/twohanded/fireaxe))
 				var/obj/item/material/twohanded/fireaxe/F = C
 				if(!F.wielded)
@@ -78,7 +78,7 @@
 				to_chat(user, span_notice("[src]'s arcane workings resist your effort."))
 			return
 
-		else if(src.density && (user.a_intent == I_HURT))
+		else if(src.density && (IS_HARMING(user)))
 			var/obj/item/W = C
 			user.setClickCooldown(user.get_attack_speed(W))
 			if(W.obj_damage_type())

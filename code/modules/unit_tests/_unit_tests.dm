@@ -185,6 +185,7 @@
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_reactor_tests.dm"
+#include "dq_combat_mode_tests.dm"
 #include "dq_input_tests.dm"
 #include "dq_interaction_tests.dm"
 #include "xgm_total_moles_test.dm"

@@ -283,7 +283,7 @@
 	if(istype(user.loc,/turf/space))
 		return
 
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		user.visible_message(span_danger("\The [user] squashes \the [src]!"))
 		seed.thrown_at(src,user)
 		sleep(-1)

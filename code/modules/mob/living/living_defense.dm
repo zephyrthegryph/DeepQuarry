@@ -2,7 +2,7 @@
 // Clicking with an empty hand
 /mob/living/attack_hand(mob/living/L)
 	..()
-	if(istype(L) && L.a_intent != I_HELP)
+	if(istype(L) && !IS_HELPING(L))
 		if(ai_brain) // Using disarm, grab, or harm intent is considered a hostile action to the mob's AI.
 			ai_brain.react_to_attack(L)
 	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)

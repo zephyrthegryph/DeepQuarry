@@ -326,7 +326,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 		add_fingerprint(M)
 		if(!allowed(M))	//only select few learn art of not crumpling the tape
 			to_chat(M, span_warning("You are not supposed to go past \the [src]..."))
-			if(M.a_intent == I_HELP && !(isanimal(M)))
+			if(IS_HELPING(M) && !(isanimal(M)))
 				return FALSE
 			crumple()
 	return ..()
@@ -335,7 +335,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	breaktape(user)
 
 /obj/item/tape/attack_hand(mob/user as mob)
-	if (user.a_intent == I_HELP && src.allowed(user))
+	if (IS_HELPING(user) && src.allowed(user))
 		user.show_viewers(span_infoplain(span_bold("\The [user]") + " lifts \the [src], allowing passage."))
 		for(var/obj/item/tape/T in gettapeline())
 			T.lift(100) //~10 seconds
@@ -377,7 +377,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	return tapeline
 
 /obj/item/tape/proc/breaktape(mob/user)
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		to_chat(user, span_warning("You refrain from breaking \the [src]."))
 		return
 	user.visible_message(span_bold("\The [user]") + " breaks \the [src]!",span_notice("You break \the [src]."))

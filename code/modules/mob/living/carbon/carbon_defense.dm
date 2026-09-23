@@ -33,7 +33,7 @@
 
 // Attacking someone with a weapon while they are neck-grabbed
 /mob/living/carbon/proc/check_neckgrab_attack(obj/item/W, mob/user, hit_zone)
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		for(var/obj/item/grab/G in src.grabbed_by)
 			if(G.assailant == user)
 				if(G.state >= GRAB_AGGRESSIVE)

@@ -82,7 +82,7 @@
 	playsound(src, 'sound/items/Welder.ogg', 100, 1)
 	to_chat(user, span_notice("Slicing \the [src] joints ..."))
 	//Lattice would delete itself, but let's save ourselves a new obj
-	if(isopenspace(loc) && user.a_intent == I_HELP)
+	if(isopenspace(loc) && IS_HELPING(user))
 		new /obj/structure/lattice/(src.loc)
 		new /obj/item/stack/rods(src.loc, 1)
 	else

@@ -31,7 +31,7 @@
 		return
 	if(can_fill && !filled)
 		if(istype(A, /obj/structure/sink) || istype(A, /turf/simulated/floor/water))
-			if(contains && user.a_intent == I_HELP)
+			if(contains && IS_HELPING(user))
 				to_chat(user, span_warning("That probably isn't the best idea."))
 				return
 
@@ -70,7 +70,7 @@
 	//For the fish jars
 	if(can_fill && filled)
 		if(contains == JAR_ANIMAL)
-			if(user.a_intent == I_HELP)
+			if(IS_HELPING(user))
 				to_chat(user, span_notice("Maybe you shouldn't empty the water..."))
 				return
 

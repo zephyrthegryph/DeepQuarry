@@ -114,7 +114,7 @@
 				var/obj/item/clothing/head/newhat = H.get_active_hand()
 				H.drop_from_inventory(newhat, get_turf(src))
 				if(!stat)
-					a_intent = I_HELP
+					set_use_stance(I_HELP)
 					newhat.attack_hand(src)
 			else if(src.get_active_hand())
 				to_chat(user, span_notice("\The [src] seems busy with \the [get_active_hand()] already!"))

@@ -13,7 +13,7 @@
 
 	var/icon_sprite_tag			// This is where we put stuff like _Horse, so we can assign icons easier.
 
-	//Could do nested lists but it started becoming a nightmare. It'd be more fun for lookups of a_intent and m_intent, but then subtypes need to
+	//Could do nested lists but it started becoming a nightmare. It'd be more fun for lookups of combat mode and m_intent, but then subtypes need to
 	//duplicate all the messages, and it starts getting awkward. These are singletons, anyway!
 
 	//Messages to owner when stepping on/over

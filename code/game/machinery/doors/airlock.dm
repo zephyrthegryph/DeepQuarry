@@ -572,7 +572,7 @@ About the new airlock wires panel:
 	if(!Adjacent(user))
 		return CLICK_ACTION_BLOCKING
 
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
 		add_fingerprint(user)
 		if(icon_state == "door_closed" && arePowerSystemsOn())
@@ -580,7 +580,7 @@ About the new airlock wires panel:
 		playsound(src, knock_hammer_sound, 50, 0, 3)
 		return CLICK_ACTION_SUCCESS
 
-	if(user.a_intent == I_GRAB) //Hold door open
+	if(IS_GRABBING(user)) //Hold door open
 		hold_open = user
 		visible_message(span_info("[user] begins holding \the [src] open."), span_info("Someone has started holding \the [src] open."))
 		attack_hand(user)

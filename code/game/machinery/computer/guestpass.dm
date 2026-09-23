@@ -48,7 +48,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		if(icon_state == "guest-invalid")
 			to_chat(user, span_warning("This guest pass is already deactivated!"))
 			return

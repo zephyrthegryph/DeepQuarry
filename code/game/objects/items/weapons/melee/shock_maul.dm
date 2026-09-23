@@ -251,7 +251,7 @@
 
 /obj/item/melee/shock_maul/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		launch_force *= launch_force_disarm
 		weaken_force *= weaken_force_disarm
 

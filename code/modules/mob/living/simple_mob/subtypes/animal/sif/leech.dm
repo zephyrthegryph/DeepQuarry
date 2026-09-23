@@ -55,7 +55,6 @@
 	var/feeding_delay = 30 SECONDS	// How long do we have to wait to bite our host's organs?
 	var/last_feeding = 0
 
-	a_intent = I_HELP
 
 	holder_type = /obj/item/holder/leech
 
@@ -119,7 +118,7 @@
 /mob/living/simple_mob/animal/sif/leech/do_special_attack(atom/A)
 	. = TRUE
 	if(istype(A, /mob/living/carbon))
-		switch(a_intent)
+		switch(use_stance())
 			if(I_DISARM) // Poison
 				if(ai_brain) ai_brain.busy = TRUE
 				poison_inject(src, A)

@@ -125,7 +125,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/broodmother/do_special_attack(atom/A)
 	. = TRUE
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM)
 			spawn_brood(A)
 		if(I_HURT)

@@ -183,7 +183,7 @@
 		user.do_attack_animation(src)
 		shatter()
 
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user

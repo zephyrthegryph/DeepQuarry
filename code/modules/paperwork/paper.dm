@@ -323,7 +323,7 @@
 		return TRUE
 	if(occult)
 		return
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		if(icon_state == "scrap")
 			user.show_message(span_warning("\The [src] is already crumpled."))
 			return

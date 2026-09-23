@@ -14,6 +14,8 @@
 	var/list/available = list()
 	/// Blocked interactions -> reason, highest priority first.
 	var/list/blocked = list()
+	/// Interaction -> its priority for this actor (combat mode shifts hostile ones).
+	var/list/priorities = list()
 
 /datum/interaction_resolution/New(mob/actor, atom/target, obj/item/held)
 	src.actor = actor
@@ -43,11 +45,17 @@
 			continue
 		if(category && interaction.category != category)
 			continue
+		var/priority = priority_of(interaction)
 		if(isnull(best_priority))
-			best_priority = interaction.priority
-		else if(interaction.priority < best_priority)
+			best_priority = priority
+		else if(priority < best_priority)
 			break
 		. += interaction
+
+/// The interaction's priority for this actor.
+/datum/interaction_resolution/proc/priority_of(datum/interaction/interaction)
+	var/priority = priorities[interaction]
+	return isnull(priority) ? interaction.priority : priority
 
 /// The first blocked interaction answering `action` whose tool the held item has: what the player meant.
 /datum/interaction_resolution/proc/intended_blocked(action, quality)
@@ -64,7 +72,10 @@
 /**
  * Everything `actor` could do to `target` holding `held`, sorted by priority.
  * The actor's capability adapter drops what that kind of actor can never do.
- * `modifiers` is the click's modifier list; nothing reads it yet (combat mode, I6).
+ * Combat mode (I6) orders the list: with it on, hostile interactions come
+ * before the rest; with it off, after. `modifiers` is the click's modifier
+ * list; the router has already turned modifiers into the action, so the
+ * resolver itself needs none of them.
  */
 /proc/interactions_for(mob/actor, atom/target, obj/item/held, list/modifiers)
 	var/datum/interaction_resolution/resolution = new(actor, target, held)
@@ -73,29 +84,44 @@
 	var/datum/input_adapter/adapter = actor.input_adapter()
 	var/list/available = list()
 	var/list/blocked = list()
+	var/list/priorities = resolution.priorities
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
 		if(!interaction.applies_to(target) || !adapter.allows_interaction(actor, target, interaction))
 			continue
+		priorities[interaction] = interaction_priority_for(actor, interaction)
 		var/reason = interaction.why_not(actor, target, held)
 		if(reason)
 			blocked[interaction] = reason
 		else
 			available += interaction
-	resolution.available = sort_interactions(available)
+	resolution.available = sort_interactions(available, priorities)
 	var/list/sorted_blocked = list()
-	for(var/datum/interaction/interaction as anything in sort_interactions(blocked))
+	for(var/datum/interaction/interaction as anything in sort_interactions(blocked, priorities))
 		sorted_blocked[interaction] = blocked[interaction]
 	resolution.blocked = sorted_blocked
 	return resolution
 
-/// Stable sort by priority, highest first. Lists are short: insertion sort.
-/proc/sort_interactions(list/interactions)
+/**
+ * An interaction's priority for an actor. Combat mode (I6) moves hostile
+ * interactions above everything else when on, and below when off, so Use
+ * picks an attack only in combat mode.
+ */
+/proc/interaction_priority_for(mob/actor, datum/interaction/interaction)
+	. = interaction.priority
+	if(!(INTERACTION_TAG_HOSTILE in interaction.tags))
+		return
+	return . + (actor?.combat_mode ? COMBAT_MODE_PRIORITY_SHIFT : -COMBAT_MODE_PRIORITY_SHIFT)
+
+/// Stable sort by priority (from `priorities` when given), highest first. Lists are short: insertion sort.
+/proc/sort_interactions(list/interactions, list/priorities)
 	var/list/sorted = list()
 	for(var/datum/interaction/interaction as anything in interactions)
+		var/priority = (priorities && !isnull(priorities[interaction])) ? priorities[interaction] : interaction.priority
 		var/position = length(sorted) + 1
 		for(var/i in 1 to length(sorted))
 			var/datum/interaction/other = sorted[i]
-			if(interaction.priority > other.priority)
+			var/other_priority = (priorities && !isnull(priorities[other])) ? priorities[other] : other.priority
+			if(priority > other_priority)
 				position = i
 				break
 		sorted.Insert(position, interaction)
@@ -127,7 +153,7 @@
 		for(var/datum/interaction/interaction as anything in resolution.available)
 			if(interaction.default_action != action || interaction.tool != quality)
 				continue
-			if(first && interaction.priority < first.priority)
+			if(first && resolution.priority_of(interaction) < resolution.priority_of(first))
 				break
 			first ||= interaction
 			best += interaction
@@ -175,11 +201,12 @@
 	for(var/atom/candidate as anything in targets)
 		var/datum/interaction_resolution/resolution = interactions_for(actor, candidate, held)
 		for(var/datum/interaction/interaction as anything in resolution.best_in_category(category))
-			if(isnull(best_priority) || interaction.priority > best_priority)
-				best_priority = interaction.priority
+			var/priority = resolution.priority_of(interaction)
+			if(isnull(best_priority) || priority > best_priority)
+				best_priority = priority
 				best = list()
 				best_targets = list()
-			else if(interaction.priority < best_priority)
+			else if(priority < best_priority)
 				continue
 			best += interaction
 			best_targets += candidate

@@ -77,13 +77,13 @@
 
 // Allow dissipating ai holograms by attacking them
 /obj/effect/overlay/aiholo/attack_hand(mob/living/user)
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		to_chat(user, span_attack("You dissipate [src]."))
 		master?.holo?.clear_holo(master)
 	return ..()
 
 /obj/effect/overlay/aiholo/attackby(obj/item/I, mob/user)
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		to_chat(user, span_attack("You dissipate [src] with [I]."))
 		master?.holo?.clear_holo(master)
 	return ..()

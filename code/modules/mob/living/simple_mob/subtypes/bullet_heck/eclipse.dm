@@ -11,7 +11,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/do_special_attack(atom/A)
 	rng_cycle = rand(1,3)
-	switch(a_intent)
+	switch(use_stance())
 		if(I_HURT) //phase1
 			switch(attackcycle)
 				if(1)
@@ -80,7 +80,7 @@
 	pilot_type = /mob/living/simple_mob/humanoid/astral_collective/purity
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo/do_special_attack(atom/A)
-	switch(a_intent)
+	switch(use_stance())
 		if(I_HURT) //phase1
 			switch(attackcycle)
 				if(1)
@@ -144,7 +144,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/janus/do_special_attack(atom/A)
 	rng_cycle = rand(1,3)
-	switch(a_intent)
+	switch(use_stance())
 		if(I_HURT) //phase1
 			switch(attackcycle)
 				if(1)

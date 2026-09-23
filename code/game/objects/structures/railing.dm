@@ -178,7 +178,7 @@
 				to_chat(user, span_danger("There's \a [occupied] in the way."))
 				return
 			if (G.state < 2)
-				if(user.a_intent == I_HURT)
+				if(IS_HARMING(user))
 					if (prob(15))	M.Weaken(5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)

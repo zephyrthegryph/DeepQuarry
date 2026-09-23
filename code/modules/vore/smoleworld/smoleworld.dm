@@ -75,7 +75,7 @@
 	AddElement(/datum/element/rotatable)
 
 /obj/structure/smoletrack/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
@@ -156,7 +156,7 @@
 
 //makes it so buildings can be dismaintaled or GodZilla style attacked
 /obj/structure/smolebuilding/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
@@ -166,7 +166,7 @@
 			new /obj/item/stack/material/smolebricks(loc)
 		qdel(src)
 
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
@@ -219,7 +219,7 @@
 
 //get material from ruins
 /obj/structure/smoleruins/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))

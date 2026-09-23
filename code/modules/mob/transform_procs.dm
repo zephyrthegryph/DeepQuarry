@@ -211,7 +211,7 @@
 	var/alien_caste = pick("Hunter","Sentinel","Drone")
 	var/mob/living/carbon/human/new_xeno = create_new_xenomorph(alien_caste,loc)
 
-	new_xeno.a_intent = I_HURT
+	new_xeno.set_use_stance(I_HURT)
 	move_player(src, new_xeno, "alienized")
 
 	to_chat(new_xeno, span_infoplain(span_bold("You are now an alien.")))
@@ -233,7 +233,7 @@
 		qdel(t)
 
 	var/mob/living/simple_mob/animal/passive/dog/corgi/new_corgi = new /mob/living/simple_mob/animal/passive/dog/corgi (loc)
-	new_corgi.a_intent = I_HURT
+	new_corgi.set_use_stance(I_HURT)
 	move_player(src, new_corgi, "corgized")
 
 	to_chat(new_corgi, span_infoplain(span_bold("You are now a Corgi. Yap Yap!")))
@@ -266,7 +266,7 @@
 	var/mob/new_mob = new mobpath(src.loc)
 
 	move_player(src, new_mob, "animalized by [key_name(user)]")
-	new_mob.a_intent = I_HURT
+	new_mob.set_use_stance(I_HURT)
 
 
 	to_chat(new_mob, "You suddenly feel more... animalistic.")
@@ -289,7 +289,7 @@
 		move_player(src, new_mob, "animalized by [key_name(user)]")
 	else
 		new_mob.key = key // admin tool on an observer: first assignment
-	new_mob.a_intent = I_HURT
+	new_mob.set_use_stance(I_HURT)
 	to_chat(new_mob, "You feel more... animalistic")
 
 	qdel(src)

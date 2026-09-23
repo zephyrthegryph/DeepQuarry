@@ -95,13 +95,13 @@
 	else if(isliving(target))
 		var/mob/living/M = target
 		if(M.stat>1) return
-		if(chassis.occupant.a_intent == I_HURT || istype(chassis.occupant,/mob/living/carbon/brain)) //No tactile feedback for brains
+		if(IS_HARMING(chassis.occupant) || istype(chassis.occupant,/mob/living/carbon/brain)) //No tactile feedback for brains
 			M.injure(INJURY_BLUNT, dam_force, null, chassis)
 			M.injure(INJURY_ASPHYXIA, round(dam_force/2), null, chassis)
 			occupant_message(span_warning("You squeeze [target] with [src.name]. Something cracks."))
 			playsound(src, "fracture", 5, 1, -2) //CRACK
 			chassis.visible_message(span_warning("[chassis] squeezes [target]."))
-		else if(chassis.occupant.a_intent == I_DISARM && enable_special)
+		else if(IS_DISARMING(chassis.occupant) && enable_special)
 			playsound(src, 'sound/mecha/hydraulic.ogg', 10, 1, -2)
 			M.injure(INJURY_BLUNT, dam_force/2, null, chassis)
 			M.injure(INJURY_ASPHYXIA, round(dam_force/3), null, chassis)
@@ -157,10 +157,10 @@
 	else if(isliving(target))
 		var/mob/living/M = target
 		if(M.stat>1) return
-		if(chassis.occupant.a_intent == I_HURT)
+		if(IS_HARMING(chassis.occupant))
 			chassis.occupant_message(span_danger("You obliterate [target] with [src.name], leaving blood and guts everywhere."))
 			chassis.visible_message(span_danger("[chassis] destroys [target] in an unholy fury."))
-		else if(chassis.occupant.a_intent == I_DISARM)
+		else if(IS_DISARMING(chassis.occupant))
 			chassis.occupant_message(span_danger("You tear [target]'s limbs off with [src.name]."))
 			chassis.visible_message(span_danger("[chassis] rips [target]'s arms off."))
 		else

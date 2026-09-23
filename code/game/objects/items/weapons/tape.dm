@@ -22,7 +22,7 @@
 /obj/item/tape_roll/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(user.a_intent == I_HELP)
+		if(IS_HELPING(user))
 			return ITEM_INTERACT_FAILURE
 		if(!can_place(H, user))
 			to_chat(user, span_danger("You need to have a firm grip on [H] before you can use \the [src]!"))

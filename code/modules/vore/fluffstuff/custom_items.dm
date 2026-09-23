@@ -1580,13 +1580,13 @@ End */
 
 	if(world.time - last_message <= 5 SECONDS)
 		return
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
 		icon_state = "pandorba"
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
 		icon_state = "pandorba_h"
-	else if (user.a_intent == I_GRAB)
+	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 		icon_state = "pandorba_g"
 	else

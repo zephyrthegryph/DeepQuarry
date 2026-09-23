@@ -21,7 +21,7 @@
 
 // ---------------------------------------------------------------------------
 // Intent bitflags for behavior filtering on player-controlled mobs.
-// Behaviors declare which a_intents they're eligible for.
+// Behaviors declare which use stances (combat mode, Disarm, Grab) they're eligible for.
 // AI mobs ignore these (consider all behaviors).
 // ---------------------------------------------------------------------------
 #define DQ_INTENT_HURT_FLAG       (1<<0)

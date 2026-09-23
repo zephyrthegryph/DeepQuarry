@@ -7,11 +7,11 @@
 
 //	setClickCooldown(get_attack_speed())
 
-	if(has_hands && istype(A,/obj) && a_intent != I_HURT)
+	if(has_hands && istype(A,/obj) && !IS_HARMING(src))
 		var/obj/O = A
 		return O.attack_hand(src)
 
-	switch(a_intent)
+	switch(use_stance())
 		if(I_HELP)
 
 			if(isliving(A))

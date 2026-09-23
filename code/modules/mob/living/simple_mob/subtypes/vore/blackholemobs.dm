@@ -662,7 +662,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	icon_dead = "obelisk-dead"
 	icon = 'icons/blackhole/blackhole64x64.dmi'
 	faction = FACTION_BLACKHOLE
-	a_intent = I_HURT
+	combat_mode = TRUE
 	anchored = 1
 	endurance = 400
 	response_help = "touches"
@@ -786,7 +786,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 /mob/living/simple_mob/vore/blackhole_obelisk/attack_hand(mob/living/L)
 	..()
 
-	switch(L.a_intent)
+	switch(L.use_stance())
 		if(I_HELP)
 			if(stat != DEAD)
 				if(L.zone_sel.selecting == BP_GROIN)

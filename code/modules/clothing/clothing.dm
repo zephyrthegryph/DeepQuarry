@@ -804,7 +804,7 @@
 	var/message_pred = null
 	var/message_prey = null
 
-	switch(pred.a_intent)
+	switch(pred.use_stance())
 		if(I_HELP)
 			if(prob(10)) //Reducing spam exclusively on I_HELP. Still more frequent than old pitiful prob(1)
 				if(pred.m_intent == I_RUN)

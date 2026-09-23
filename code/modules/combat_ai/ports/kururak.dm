@@ -11,7 +11,7 @@
 //     buff (via pack_gauge()/detect_instinct()), everyone else follows the ace,
 //     and ONLY an ace becomes hostile (hunts on sight). Non-aces stay passive
 //     and only retaliate.
-//   pre_special_attack(): chose a_intent — GRAB if adjacent (rending strike),
+//   pre_special_attack(): chose the stance — GRAB if adjacent (rending strike),
 //     DISARM if the target is a flashable carbon/silicon (tail flash), else HURT.
 //   do_special_attack(): I_DISARM -> tail_flash, I_GRAB -> rending_strike. Gated
 //     by should_special_attack() == has the ace buff.
@@ -120,17 +120,17 @@
 	//   GRAB (rending strike) if adjacent — armor-ignoring agonizing wound.
 	//   DISARM (tail flash) if the victim has unprotected eyes / is a borg.
 	//   else HURT.
-	K.a_intent = I_HURT
+	K.set_use_stance(I_HURT)
 	if(K.Adjacent(L))
-		K.a_intent = I_GRAB
+		K.set_use_stance(I_GRAB)
 	if(iscarbon(L))
 		var/mob/living/carbon/C = L
-		if(!C.eyecheck() && K.a_intent != I_GRAB)
-			K.a_intent = I_DISARM
-	if(issilicon(L) && K.a_intent != I_GRAB)
-		K.a_intent = I_DISARM
+		if(!C.eyecheck() && !IS_GRABBING(K))
+			K.set_use_stance(I_DISARM)
+	if(issilicon(L) && !IS_GRABBING(K))
+		K.set_use_stance(I_DISARM)
 	K.special_attack_target(L)
-	K.a_intent = I_HURT  // legacy post_special_attack reset
+	K.set_use_stance(I_HURT)  // legacy post_special_attack reset
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 

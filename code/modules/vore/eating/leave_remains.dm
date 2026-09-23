@@ -153,7 +153,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		to_chat(user,span_warning("As you squeeze the [name], it crumbles into dust and falls apart into nothing!"))
 		qdel(src)
 

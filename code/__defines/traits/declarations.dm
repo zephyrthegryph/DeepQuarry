@@ -98,6 +98,6 @@ Remember to update _globalvars/traits.dm if you're adding/removing/renaming trai
  *
  * This is only checked by certain items explicitly so you can't just add the trait and expect it to work.
  * (This may be changed later but I chose to do it this way to avoid messing up interactions which require combat mode)
- * While /tg/ calls it combat mode, we just specifiy it as having your a_intent set to I_HURT
+ * That is, when the user has combat mode on (IS_HARMING, code/__defines/combat_mode.dm).
  */
 #define TRAIT_COMBAT_MODE_SKIP_INTERACTION "combat_mode_skip_interaction"

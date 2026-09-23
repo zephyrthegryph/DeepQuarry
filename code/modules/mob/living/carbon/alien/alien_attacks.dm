@@ -7,7 +7,7 @@
 
 	..()
 
-	switch(M.a_intent)
+	switch(M.use_stance())
 
 		if (I_HELP)
 			help_shake_act(M)

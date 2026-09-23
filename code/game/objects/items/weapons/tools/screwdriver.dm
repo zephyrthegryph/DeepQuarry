@@ -56,7 +56,7 @@
 		pixel_y = rand(0, 16)
 
 /obj/item/tool/screwdriver/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!istype(M) || user.a_intent == I_HELP)
+	if(!istype(M) || IS_HELPING(user))
 		return ..()
 	if(user.zone_sel.selecting != O_EYES && user.zone_sel.selecting != BP_HEAD)
 		return ..()

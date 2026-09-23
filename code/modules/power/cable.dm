@@ -654,7 +654,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 //you can use wires to heal robotics
 /obj/item/stack/cable_coil/attack(mob/living/A, mob/living/user, target_zone, attack_modifier)
-	if(ishuman(A) && user.a_intent == I_HELP)
+	if(ishuman(A) && IS_HELPING(user))
 		var/mob/living/carbon/human/H = A
 		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
 

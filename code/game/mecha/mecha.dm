@@ -1593,7 +1593,7 @@
 				to_chat(user, "There's already a powercell installed.")
 		return
 
-	else if(focused_tool_stage == TOOL_WELDER && user.a_intent != I_HURT)
+	else if(focused_tool_stage == TOOL_WELDER && !IS_HARMING(user))
 		var/obj/item/weldingtool/WT = W.get_welder()
 		var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
 		var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]

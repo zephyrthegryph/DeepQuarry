@@ -86,7 +86,7 @@
 // metroid attacks change based on intent.
 /mob/living/simple_mob/metroid/juvenile/apply_attack(mob/living/L, damage_to_do)
 	if(istype(L))
-		switch(a_intent)
+		switch(use_stance())
 			if(I_HELP) // This shouldn't happen but just in case.
 				return FALSE
 
@@ -150,7 +150,7 @@
 		return ..() // Do the regular stuff if we're hitting a window/mech/etc.
 
 /mob/living/simple_mob/metroid/juvenile/apply_melee_effects(mob/living/L)
-	if(istype(L) && a_intent == I_HURT)
+	if(istype(L) && IS_HARMING(src))
 		// Feed off of their flesh, if able.
 		consume(L, 5)
 
