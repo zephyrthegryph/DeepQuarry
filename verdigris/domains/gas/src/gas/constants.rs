@@ -4,15 +4,16 @@ use bitflags::bitflags;
 pub const R_IDEAL_GAS_EQUATION: f32 = 8.31;
 /// kPa
 pub const ONE_ATMOSPHERE: f32 = 101.325;
-///  -270.3degC. Single source is `vg_heat::consts::TCMB` (H1 dedup); this is
-/// a re-export so existing gas call sites are unaffected.
-pub use vg_heat::consts::TCMB;
+///  -270.3degC. Single source is `vg_core::units::TCMB` (`rust_core.md` §15
+/// core consolidation; H1 dedup audit finding) -- both gas and heat
+/// re-export it rather than gas depending on vg-heat for a bare constant.
+pub use vg_core::units::TCMB;
 ///  -48.15degC
 pub const TCRYO: f32 = 225.0;
-///  0degC. Re-exported from `vg_heat::consts::T0C` (H1 dedup).
-pub use vg_heat::consts::T0C;
-///  20degC. Re-exported from `vg_heat::consts::T20C` (H1 dedup).
-pub use vg_heat::consts::T20C;
+///  0degC. Re-exported from `vg_core::units::T0C`.
+pub use vg_core::units::T0C;
+///  20degC. Re-exported from `vg_core::units::T20C`.
+pub use vg_core::units::T20C;
 /// Amount of gas below which any amounts will be truncated to 0.
 pub const GAS_MIN_MOLES: f32 = 0.0001;
 /// Heat capacities below which heat will be considered 0.
@@ -35,7 +36,7 @@ pub const BREATH_VOLUME: f32 = 0.5;
 /// Amount of air to take a from a tile
 pub const BREATH_PERCENTAGE: f32 = BREATH_VOLUME / CELL_VOLUME;
 
-/// EXCITED GROUPS
+// EXCITED GROUPS
 
 /// number of FULL air controller ticks before an excited group breaks down (averages gas contents across turfs)
 pub const EXCITED_GROUP_BREAKDOWN_CYCLES: i32 = 4;
@@ -65,7 +66,7 @@ pub const GAS_LOSS_CONSTANT: f32 = 1.0 / GAS_DIFFUSION_CONSTANT;
 
 // Solid heat transfer constants live in vg-heat (domains/heat/src/consts.rs).
 
-/// FIRE
+// FIRE
 
 pub const FIRE_MINIMUM_TEMPERATURE_TO_SPREAD: f32 = 150.0 + T0C;
 pub const FIRE_MINIMUM_TEMPERATURE_TO_EXIST: f32 = 100.0 + T0C;
@@ -77,7 +78,7 @@ pub const PLASMA_UPPER_TEMPERATURE: f32 = 1370.0 + T0C;
 pub const PLASMA_OXYGEN_FULLBURN: f32 = 10.0;
 pub const FIRE_MAXIMUM_BURN_RATE: f32 = 0.2;
 
-/// GASES
+// GASES
 
 pub const MIN_TOXIC_GAS_DAMAGE: i32 = 1;
 pub const MAX_TOXIC_GAS_DAMAGE: i32 = 10;
@@ -89,7 +90,7 @@ pub const FACTOR_GAS_VISIBLE_MAX: f32 = 20.0;
 /// Mole step for alpha updates. This means alpha can update at 0.25, 0.5, 0.75 and so on
 pub const MOLES_GAS_VISIBLE_STEP: f32 = 0.25;
 
-/// REACTIONS
+// REACTIONS
 
 // Maximum amount of ReactionIdentifiers in the TinyVec that all_reactions returns.
 // We can't guarantee the max number of reactions that will ever be registered,

@@ -2,6 +2,9 @@
 //! slots, turf field cells, pipe regions) is `world.rs`; the helpers below
 //! give DM binds a mixture by its datum, whoever owns it.
 
+// Physical/tuning constants mirrored from DM (`SPECIFIC_HEATS`, fire/reaction
+// thresholds, ...); many are read from DM or by other gas submodules rather
+// than from within `constants` itself, so per-constant dead_code is noise.
 #[allow(dead_code)]
 pub mod constants;
 pub mod ids;

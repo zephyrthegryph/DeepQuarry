@@ -367,6 +367,9 @@ fn bulk(a: &Side<'_, GasCell>, b: &Side<'_, GasCell>, e: &Edge, dt: f32) -> [f32
 	let equalizing = if slope > 0.0 { dp.abs() / slope } else { nu };
 	let moved = equalizing * relax(e.bulk_rate * dt);
 	let fraction = (moved / nu).min(up.share * 0.5).min(1.0);
+	// Deliberately `!(x > 0.0)` rather than `x <= 0.0`: this must also bail out
+	// on NaN (e.g. from a `0.0 / 0.0` upstream), which `<=` would not catch.
+	#[allow(clippy::neg_cmp_op_on_partial_ord)]
 	if !(fraction > 0.0) {
 		return out;
 	}

@@ -260,8 +260,8 @@ proptest! {
 			}
 			let (_, rel) = w.pipes.commit();
 			for r in rel {
-				for g in 0..N {
-					released[g] += r.gas.moles[g];
+				for (slot, &moles) in released.iter_mut().zip(r.gas.moles.iter()).take(N) {
+					*slot += moles;
 				}
 				released[N] += r.gas.energy;
 			}

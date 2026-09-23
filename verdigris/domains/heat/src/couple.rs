@@ -76,42 +76,33 @@ impl GasExchange for NoGas {
     }
 }
 
-/// `1/C`, with a non-positive or infinite capacity counting as a reservoir.
-fn inverse(capacity: f64) -> f64 {
-    if capacity.is_finite() && capacity > 0.0 {
-        1.0 / capacity
-    } else {
-        0.0
-    }
-}
-
-/// As [`pair_exchange_at_rate`], with the pair's relaxation rate derived
-/// from a conductance `g` (W/K): `rate = g (1/Ca + 1/Cb)`. A reservoir side
-/// passes `f32::INFINITY`.
+/// Exact energy moved from `a` to `b` over `dt` by conductance `g` (W/K):
+/// `ΔT · h · (1 − e^(−g (1/Ca + 1/Cb) dt))` with `h = 1 / (1/Ca + 1/Cb)`.
+/// A reservoir side passes `f32::INFINITY`. Never overshoots, for any `dt`.
+///
+/// A thin wrapper over `vg_core::thermo::pair_exchange` (the one
+/// pair-exchange law every domain shares, `rust_core.md` §15): kept as a
+/// raw-`f32` function here so existing callers in this crate don't need to
+/// wrap their temperatures/capacities in `ThermalBody`.
 #[must_use]
 pub fn pair_exchange(ta: f32, ca: f32, tb: f32, cb: f32, g: f32, dt: f32) -> f32 {
-    if g.is_nan() || g <= 0.0 {
-        return 0.0;
-    }
-    let inv = inverse(f64::from(ca)) + inverse(f64::from(cb));
-    #[allow(clippy::cast_possible_truncation)]
-    let rate = (f64::from(g) * inv) as f32;
-    pair_exchange_at_rate(ta, ca, tb, cb, rate, dt)
+    use vg_core::thermo::{self, ThermalBody};
+    use vg_core::units::{HeatCapacity, Kelvin};
+    let a = ThermalBody::new(HeatCapacity(ca), Kelvin(ta));
+    let b = ThermalBody::new(HeatCapacity(cb), Kelvin(tb));
+    thermo::pair_exchange(a, b, g, dt).0
 }
 
-/// Exact energy moved from `a` to `b` over `dt` at relaxation rate `rate`
-/// (1/s): `ΔT · h · (1 − e^(−rate dt))` with `h = 1 / (1/Ca + 1/Cb)`. Never
-/// overshoots, for any `dt`.
+/// As [`pair_exchange`], with the pair's relaxation rate (1/s) given
+/// directly: `ΔT · h · (1 − e^(−rate dt))`. See [`pair_exchange`]'s note:
+/// wraps `vg_core::thermo::pair_exchange_at_rate`.
 #[must_use]
 pub fn pair_exchange_at_rate(ta: f32, ca: f32, tb: f32, cb: f32, rate: f32, dt: f32) -> f32 {
-    let inv = inverse(f64::from(ca)) + inverse(f64::from(cb));
-    if inv <= 0.0 || rate.is_nan() || rate <= 0.0 || dt.is_nan() || dt <= 0.0 {
-        return 0.0;
-    }
-    let fraction = -(-f64::from(rate) * f64::from(dt)).exp_m1();
-    let moved = f64::from(ta - tb) / inv * fraction;
-    #[allow(clippy::cast_possible_truncation)]
-    if moved.is_finite() { moved as f32 } else { 0.0 }
+    use vg_core::thermo::{self, ThermalBody};
+    use vg_core::units::{HeatCapacity, Kelvin};
+    let a = ThermalBody::new(HeatCapacity(ca), Kelvin(ta));
+    let b = ThermalBody::new(HeatCapacity(cb), Kelvin(tb));
+    thermo::pair_exchange_at_rate(a, b, rate, dt).0
 }
 
 /// Where energy went that no store kept. Cells of the [`HeatLedger`]
@@ -317,11 +308,13 @@ pub fn add_field_ledger_mirror(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use proptest::prelude::*;
 
+    // The exhaustive closed-form and never-overshoots properties now live
+    // with the law itself in `vg_core::thermo` (`rust_core.md` §15); this is
+    // just a smoke test that the wrapper actually delegates (right sign,
+    // right ballpark) rather than re-deriving its own copy.
     #[test]
-    fn exact_exchange_matches_the_closed_form() {
-        // Equal capacities: the gap halves at rate 2g/C.
+    fn wraps_core_thermo_pair_exchange() {
         let moved = pair_exchange(400.0, 100.0, 200.0, 100.0, 10.0, 3.0);
         let expect = 200.0 * 50.0 * (1.0 - (-0.6f64).exp());
         assert!(
@@ -333,25 +326,13 @@ mod tests {
         assert!((moved - 10_000.0).abs() < 1e-2);
     }
 
-    proptest! {
-        /// Any step size: never overshoots, and applying ±moved conserves.
-        #[test]
-        fn pair_exchange_never_overshoots(
-            ta in 3.0f32..5000.0, tb in 3.0f32..5000.0,
-            ca in 0.01f32..1e6, cb in 0.01f32..1e6,
-            g in 0.0f32..1e5, dt in 0.0f32..1e4,
-        ) {
-            let m = pair_exchange(ta, ca, tb, cb, g, dt);
-            let (na, nb) = (ta - m / ca, tb + m / cb);
-            let (lo, hi) = (ta.min(tb), ta.max(tb));
-            let slack = hi * 1e-5;
-            prop_assert!(na >= lo - slack && na <= hi + slack);
-            prop_assert!(nb >= lo - slack && nb <= hi + slack);
-            if ta >= tb { prop_assert!(na + slack >= nb); } else { prop_assert!(nb + slack >= na); }
-            let before = f64::from(ca) * f64::from(ta) + f64::from(cb) * f64::from(tb);
-            let after = (f64::from(ca) * f64::from(ta) - f64::from(m))
-                + (f64::from(cb) * f64::from(tb) + f64::from(m));
-            prop_assert!((before - after).abs() <= before * 1e-12);
-        }
+    #[test]
+    fn wraps_core_thermo_pair_exchange_at_rate() {
+        let moved = pair_exchange_at_rate(400.0, 100.0, 200.0, 100.0, 0.2, 3.0);
+        let expect = 200.0 * 50.0 * (1.0 - (-0.6f64).exp());
+        assert!(
+            (f64::from(moved) - expect).abs() < 1e-3,
+            "{moved} vs {expect}"
+        );
     }
 }

@@ -10,14 +10,14 @@
 #[allow(clippy::excessive_precision, clippy::unreadable_literal)]
 pub const STEFAN_BOLTZMANN: f64 = 0.000_000_056_703_744_19;
 /// Cosmic microwave background, K. The floor of every body and gas.
-/// @dm-define TCMB
-pub const TCMB: f32 = 2.7;
-/// 0 °C, K.
-/// @dm-define T0C
-pub const T0C: f32 = 273.15;
-/// 20 °C, K.
-/// @dm-define T20C
-pub const T20C: f32 = 293.15;
+/// Single source is `vg_core::units::TCMB` (`rust_core.md` §15); re-exported
+/// here (no second `@dm-define` -- the generator would reject a duplicate
+/// name) so existing `vg_heat::consts::TCMB` call sites are unaffected.
+pub use vg_core::units::TCMB;
+/// 0 °C, K. Single source is `vg_core::units::T0C`.
+pub use vg_core::units::T0C;
+/// 20 °C, K. Single source is `vg_core::units::T20C`.
+pub use vg_core::units::T20C;
 
 /// The effective radiative sink temperature of space, K.
 ///

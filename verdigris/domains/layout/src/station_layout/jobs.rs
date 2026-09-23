@@ -74,7 +74,7 @@ pub fn generate_catalog_plan(payload: &str) -> eyre::Result<String> {
     let (request, mapping) = decode_catalog(payload)?;
     let layout = generate_catalog_layout(&request, &mapping)
         .map_err(|error| eyre::eyre!(error.to_string()))?;
-    Ok(encode_plan(&layout, &mapping)?)
+    encode_plan(&layout, &mapping)
 }
 
 /// One section of a finished plan: `header` (every non-array field) or a slice

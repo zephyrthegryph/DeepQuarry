@@ -374,8 +374,6 @@ pub fn encode_plan(layout: &StationLayout, mapping: &CatalogMapping) -> Result<S
             .unwrap_or_else(|| node.clone());
         door.to_zone = if native.connects_public {
             "public-circulation".into()
-        } else if native.connects_maintenance {
-            node.clone()
         } else {
             node.clone()
         };

@@ -619,7 +619,7 @@ fn adjust_moles_temp_hook(
 /// Args: (gas_id_1, amount_1, gas_id_2, amount_2, ...). As adjust_moles, but with variadic arguments.
 #[auxmacros::bind_raw_args("/datum/gas_mixture/proc/adjust_multi")]
 fn adjust_multi_hook() -> Result<ByondValue> {
-	if args.len() % 2 == 0 {
+	if args.len().is_multiple_of(2) {
 		Err(eyre::eyre!(
 			"Incorrect arg len for adjust_multi (is even, must be odd to account for src)."
 		))
