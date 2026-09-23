@@ -15,7 +15,6 @@ GLOBAL_LIST_EMPTY(cleanbot_reserved_turfs)			//List of all turfs currently targe
 GLOBAL_LIST_EMPTY(cable_list)						//Index for all cables, so that powernets don't have to look through the entire world all the time
 GLOBAL_LIST_EMPTY(landmarks_list)					//list of all landmarks created
 GLOBAL_LIST_EMPTY(event_triggers)					//Associative list of creator_ckey:list(landmark references) for event triggers
-GLOBAL_LIST_EMPTY(surgery_steps)					//list of all surgery steps  |BS12
 
 GLOBAL_LIST_EMPTY(mechas_list)						//list of all mechs. Used by hostile mobs target tracking.
 GLOBAL_LIST_EMPTY_TYPED(PDAs, /obj/item/pda)
@@ -164,13 +163,6 @@ GLOBAL_LIST_EMPTY(mannequins)
 		GLOB.body_marking_styles_list[M.name] = M
 		if(!M.genetic)
 			GLOB.body_marking_nopersist_list[M.name] = M
-
-	//Surgery Steps - Initialize all /datum/surgery_step into a list
-	paths = subtypesof(/datum/surgery_step)
-	for(var/T in paths)
-		var/datum/surgery_step/S = new T
-		GLOB.surgery_steps += S
-	sort_surgeries()
 
 	//Languages
 	paths = subtypesof(/datum/language)

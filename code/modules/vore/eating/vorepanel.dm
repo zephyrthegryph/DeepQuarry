@@ -1281,7 +1281,7 @@
 						MMI.loc = R
 						R.mmi = MMI
 						R.add_language(LANGUAGE_ROBOT_TALK)
-					else //reference /datum/surgery_step/robotics/install_mmi/end_step
+					else //reference /datum/surgical_step/organ/install_mmi/perform
 						var/obj/item/organ/internal/mmi_holder/holder
 						if(istype(MMI, /obj/item/mmi/digital/posibrain))
 							var/obj/item/organ/internal/mmi_holder/posibrain/holdertmp = new(body_backup, 1)
