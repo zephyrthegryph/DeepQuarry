@@ -23,9 +23,21 @@
 			load_vehicle(I)
 	update_icon()
 
-/obj/structure/vehiclecage/attack_hand(mob/user as mob)
+/obj/structure/vehiclecage/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/vehiclecage_hand,
+	)
+	..()
+
+/// Old attack_hand: a hint that you need a wrench.
+/datum/interaction/entry_hand/vehiclecage_hand
+	id = "vehiclecage_hand"
+	name = "Use"
+	effect = /obj/structure/vehiclecage/proc/interaction_hand
+
+/obj/structure/vehiclecage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You need a wrench to take this apart!"))
-	return
+	return TRUE
 
 /obj/structure/vehiclecage/proc/tool_disassemble(mob/user, obj/item/W, delay, quality)
 	var/turf/T = get_turf(src)

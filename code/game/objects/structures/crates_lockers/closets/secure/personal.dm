@@ -32,10 +32,11 @@
 		/obj/item/radio/headset
 		)
 
-/obj/structure/closet/secure_closet/personal/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides secure_closet's interaction_item(): swipe an ID to register/lock, or slice open.
+/obj/structure/closet/secure_closet/personal/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (src.opened)
 		if(istype(W, /obj/item/storage/laundry_basket))
-			return ..(W,user)
+			return ..()
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
 			if(large)
@@ -43,9 +44,9 @@
 			else
 				to_chat(user, span_notice("The locker is too small to stuff [G.affecting] into!"))
 		if(isrobot(user))
-			return
+			return TRUE
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return
+			return TRUE
 		user.drop_item()
 		if(W)
 			W.forceMove(loc)
@@ -54,8 +55,8 @@
 
 		if(src.broken)
 			to_chat(user, span_warning("It appears to be broken."))
-			return
-		if(!I || !I.registered_name)	return
+			return TRUE
+		if(!I || !I.registered_name)	return TRUE
 		if(src.allowed(user) || !src.registered_name || (istype(I) && (src.registered_name == I.registered_name)))
 			//they can open all lockers, or nobody owns this, or they own this locker
 			src.locked = !( src.locked )
@@ -75,6 +76,7 @@
 	else
 		to_chat(user, span_warning("Access Denied"))
 	update_icon()
+	return TRUE
 
 /obj/structure/closet/secure_closet/personal/emag_act(remaining_charges, mob/user, visual_feedback, audible_feedback)
 	if(!broken)
