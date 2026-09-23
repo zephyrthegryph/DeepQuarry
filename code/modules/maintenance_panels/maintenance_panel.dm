@@ -78,7 +78,7 @@
 		return
 	var/burndamage = log(RAND_F(0.9, 1.1) * (exposed_temperature - maximal_heat))
 	if(burndamage)
-		take_damage(burndamage, BURN, FIRE)
+		deal_damage(DAMAGE_THERMAL, burndamage, FIRE)
 
 /obj/structure/window/maintenance_panel/examine(mob/user)
 	. = ..()

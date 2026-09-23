@@ -105,36 +105,37 @@
 	if(Proj.original != src && !prob(cover))
 		return PROJECTILE_CONTINUE //pass through
 
-	var/damage = Proj.get_structure_damage()
-	if(!damage)
+	if(!Proj.get_structure_damage())
 		return
 
-	if(!istype(Proj, /obj/item/projectile/beam))
-		damage *= 0.4 //non beams do reduced damage
+	. = ..()
+	if(!istype(Proj, /obj/item/projectile/beam) || !girder_is_reflective())
+		return
 
-	else if(girder_material && girder_material.reflectivity >= 0.5) // Reflect lasers.
-		var/new_damage = damage * girder_material.reflectivity
-		var/outgoing_damage = damage - new_damage
-		damage = round(new_damage)
-		Proj.damage = outgoing_damage
+	// Reflect lasers: the girder kept its share of the beam in projectile_damage().
+	Proj.damage -= Proj.damage * girder_material.reflectivity
+	visible_message(span_danger("\The [src] reflects \the [Proj]!"))
 
-		visible_message(span_danger("\The [src] reflects \the [Proj]!"))
+	// Find a turf near or on the original location to bounce to
+	var/new_x = Proj.starting.x + pick(0, 0, 0, -1, 1, -2, 2)
+	var/new_y = Proj.starting.y + pick(0, 0, 0, -1, 1, -2, 2)
+	var/turf/curloc = get_step(src, get_dir(src, Proj.starting))
 
-		// Find a turf near or on the original location to bounce to
-		var/new_x = Proj.starting.x + pick(0, 0, 0, -1, 1, -2, 2)
-		var/new_y = Proj.starting.y + pick(0, 0, 0, -1, 1, -2, 2)
-		//var/turf/curloc = get_turf(src)
-		var/turf/curloc = get_step(src, get_dir(src, Proj.starting))
+	Proj.penetrating += 1 // Needed for the beam to get out of the girder.
 
-		Proj.penetrating += 1 // Needed for the beam to get out of the girder.
+	// redirect the projectile
+	Proj.redirect(new_x, new_y, curloc, null)
 
-		// redirect the projectile
-		Proj.redirect(new_x, new_y, curloc, null)
+/obj/structure/girder/proc/girder_is_reflective()
+	return girder_material && girder_material.reflectivity >= 0.5
 
-	..()
-	take_damage(damage, Proj.obj_damage_type(), BULLET)
-
-	return
+/// Non-beams mostly pass through the frame; a reflective girder keeps only its share of a beam.
+/obj/structure/girder/projectile_damage(obj/item/projectile/P, def_zone)
+	if(!istype(P, /obj/item/projectile/beam))
+		return receive_projectile(P, def_zone, 0.4)
+	if(girder_is_reflective())
+		return receive_projectile(P, def_zone, girder_material.reflectivity)
+	return receive_projectile(P, def_zone)
 
 /obj/structure/girder/blob_act()
 	dismantle()

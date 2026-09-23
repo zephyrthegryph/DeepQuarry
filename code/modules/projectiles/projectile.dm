@@ -689,7 +689,7 @@
 	if(emp_on_hit)
 		target.electromagnetic_hit(damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
 		return 0
-	return target.injure_by(src, damage, def_zone, flags = INJURE_PROJECTILE)
+	return target.receive_projectile(src, def_zone)
 
 //called when the projectile stops flying because it Bump'd with something
 /obj/item/projectile/proc/on_impact(atom/A)

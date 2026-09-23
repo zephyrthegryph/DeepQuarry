@@ -260,9 +260,6 @@
 		user.visible_message("[user.name] emags [src].",span_warning("You short out the lock."))
 		return 1
 
-/obj/machinery/power/emitter/blob_act()
-	take_damage(max_integrity, BRUTE, MELEE, FALSE)
-
 /obj/machinery/power/emitter/atom_destruction(damage_flag)
 	if(powernet && avail(active_power_usage))
 		visible_message(src, span_danger("\The [src] explodes violently!"), span_danger("You hear an explosion!"))

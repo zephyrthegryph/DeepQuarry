@@ -488,11 +488,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return
 	visible_message(span_danger("[user] smashes the light!"))
 	user.do_attack_animation(src)
-	take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
+	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 	return 1
-
-/obj/machinery/light/blob_act()
-	take_damage(max_integrity, BRUTE, MELEE)
 
 // attempt to set the light's on/off status
 // will not switch on if broken/burned/empty

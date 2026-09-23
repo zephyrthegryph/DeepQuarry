@@ -53,7 +53,7 @@
 
 	//Calculate damage
 	if(W.obj_damage_type())
-		take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
+		receive_weapon_hit(W, user)
 
 	set_opacity(1)
 	spawn(20) if(!QDELETED(src)) set_opacity(0)
@@ -87,30 +87,17 @@
 	//Let everyone know we've been hit!
 	visible_message(span_danger("\The [src] was hit by [source]."))
 
-	//Super realistic, resource-intensive, real-time damage calculations.
-	var/tforce = 0
-	if(ismob(source))
-		tforce = 40
-	if(isobj(source))
-		var/obj/object = source
-		if(isitem(object))
-			var/obj/item/our_item = object
-			tforce = our_item.throwforce
-		else
-			tforce = object.w_class
-
 	//This seemed to be the best sound for hitting a force field.
 	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
-
-	take_damage(tforce, BRUTE, sound_effect = FALSE)
 
 	//The shield becomes dense to absorb the blow.. purely asthetic.
 	set_opacity(1)
 	spawn(20) if(!QDELETED(src)) set_opacity(0)
 
 	..()
-	return
+
 /obj/machinery/shieldgen
+	emp_integrity_factor = 1
 	name = "Emergency shield projector"
 	desc = "Used to seal minor hull breaches."
 	icon = 'icons/obj/objects.dmi'
@@ -233,18 +220,16 @@
 		malfunction = TRUE
 	return ..()
 
-/obj/machinery/shieldgen/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+/// EMPs eat into the generator's remaining integrity and scramble it.
+/obj/machinery/shieldgen/receive_emp(severity)
 	switch(severity)
 		if(1)
-			take_damage(get_integrity() / 2, BURN, ENERGY) //cut health in half
+			. = deal_damage(DAMAGE_IONIC, get_integrity() / 2, flags = DAMAGE_PACKET_SILENT) //cut health in half
 			malfunction = 1
 			locked = pick(0,1)
 		if(2)
 			if(prob(50))
-				take_damage(get_integrity() * 0.7, BURN, ENERGY) //chop off a third of the health
+				. = deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
 				malfunction = 1
 
 /obj/machinery/shieldgen/attack_hand(mob/user as mob)

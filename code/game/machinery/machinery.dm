@@ -262,18 +262,6 @@ Class Procs:
 		pulse2.set_dir(pick(GLOB.cardinal))
 		QDEL_IN(pulse2, 1 SECOND)
 
-/obj/machinery/ex_act(severity)
-	if(..())
-		return
-	if(!uses_integrity || (resistance_flags & INDESTRUCTIBLE))
-		return
-	var/explosion_damage = max_integrity
-	switch(severity)
-		if(2)
-			explosion_damage *= 0.5
-		if(3)
-			explosion_damage *= 0.25
-	take_damage(explosion_damage, BRUTE, BOMB, FALSE)
 
 /obj/machinery/vv_edit_var(var_name, new_value)
 	if(var_name == NAMEOF(src, use_power))
@@ -553,12 +541,6 @@ Class Procs:
 	component_parts = null
 	circuit = null
 	return ..()
-
-/obj/machinery/bullet_act(obj/item/projectile/P, def_zone)
-	. = ..()
-	var/structure_damage = P.get_structure_damage()
-	if(structure_damage)
-		take_damage(structure_damage, P.obj_damage_type(), BULLET, FALSE)
 
 /obj/machinery/atom_destruction(damage_flag)
 	playsound(src, 'sound/machines/machine_die_short.ogg', 50, TRUE)

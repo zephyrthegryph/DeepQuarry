@@ -12,6 +12,33 @@
 				span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
 				span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
 
+/// The mob sink: each packet kind goes to injure() through the mapping agreed
+/// with the body rewrite (damage.md §2), with the packet's penetration as
+/// armor_pen. injure() is the one mob mitigation pipeline: armour
+/// (injury_armor(kind, zone)), shields, resistance factors, species.
+/mob/living/receive_damage(datum/damage_packet/packet)
+	var/injure_flags = (packet.flags & DAMAGE_PACKET_UNARMORED) ? NONE : INJURE_ARMORED
+	if(packet.flags & DAMAGE_PACKET_PROJECTILE)
+		injure_flags |= INJURE_PROJECTILE
+	if(packet.flags & DAMAGE_PACKET_SILENT)
+		injure_flags |= INJURE_SILENT
+	if(packet.flags & DAMAGE_PACKET_IGNORE_RESISTANCE)
+		injure_flags |= INJURE_IGNORE_RESISTANCE
+	var/list/amounts = packet.amounts
+	var/atom/injury_source = packet.source || packet.weapon || packet.attacker
+	. = 0
+	for(var/kind in 1 to DAMAGE_KIND_COUNT)
+		var/amount = amounts[kind]
+		if(amount > 0)
+			. += injure(injury_kind_for_damage(kind), amount, packet.zone, injury_source, packet.penetration, null, injure_flags)
+
+/// Kinds the packet can't carry (asphyxia, cellular...) land directly.
+/mob/living/receive_internal_injury(datum/damage_packet/packet, injury_kind, alist/injury_kinds, amount)
+	var/injure_flags = (packet.flags & DAMAGE_PACKET_UNARMORED) ? NONE : INJURE_ARMORED
+	if(packet.flags & DAMAGE_PACKET_PROJECTILE)
+		injure_flags |= INJURE_PROJECTILE
+	return injure_split(injury_kind, injury_kinds, amount, packet.zone, packet.source || packet.weapon || packet.attacker, packet.penetration, injure_flags)
+
 /mob/living/bullet_act(obj/item/projectile/P, def_zone)
 	// begin, re-adds stealth removed feature
 	if(istype(get_active_hand(),/obj/item/assembly/signaler))
@@ -113,7 +140,7 @@
 	if(ai_brain)
 		ai_brain.react_to_attack(B)
 
-	injure_split(kind, kinds, damage, def_zone, B, armor_pen, INJURE_ARMORED)
+	receive_split(damage_packet(B, B?.overmind, null, def_zone, NONE, armor_pen), kind, kinds, damage)
 
 /mob/living/proc/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
 	return target_zone
@@ -140,7 +167,7 @@
 	if(!effective_force || blocked >= 100)
 		return 0
 	// Apply weapon damage: armour (and its chance to turn an edge) is applied in injure().
-	injure_by(I, effective_force, hit_zone)
+	receive_weapon_hit(I, user, effective_force, zone = hit_zone, silent = FALSE)
 
 	return 1
 
@@ -176,8 +203,6 @@
 
 	if(isitem(source))
 		var/obj/item/O = source
-		var/throw_damage = O.throwforce*(speed/THROWFORCE_SPEED_DIVISOR)
-
 		/*var/miss_chance = 15
 		if (O.throw_source)
 			var/distance = get_dist(O.throw_source, loc)
@@ -188,7 +213,7 @@
 			return*/
 		// removing baymiss
 		src.visible_message(span_filter_warning("[span_red("[src] has been hit by [O].")]"))
-		injure_by(O, throw_damage)
+		receive_thrown(O, throwingdatum)
 
 		if(ismob(thrower))
 			var/client/assailant = thrower.client
@@ -268,7 +293,7 @@
 	if(!damage)
 		return
 
-	injure(generic_attack_injury_kind(user), damage, null, user)
+	receive_generic_attack(user, damage)
 	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_mob attacks
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
@@ -279,10 +304,7 @@
 /// What kind of wound a generic (usually animal) attack from `user` leaves:
 /// simple mobs declare their melee kind; anything else is a blunt blow.
 /mob/living/proc/generic_attack_injury_kind(mob/user)
-	var/mob/living/simple_mob/S = user
-	if(istype(S))
-		return S.attack_injury_kind
-	return INJURY_BLUNT
+	return generic_attack_kind(user)
 
 /mob/living/proc/get_cold_protection()
 	return 0

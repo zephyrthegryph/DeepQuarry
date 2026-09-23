@@ -247,19 +247,6 @@
 					A.forceMove(loc)
 				qdel(src)
 
-/obj/structure/closet/blob_act()
-	take_damage(100, BRUTE, MELEE)
-
-/obj/structure/closet/bullet_act(obj/item/projectile/Proj)
-	var/proj_damage = Proj.get_structure_damage()
-	if(!proj_damage)
-		return
-
-	..()
-	take_damage(proj_damage, Proj.obj_damage_type(), BULLET)
-
-	return
-
 /obj/structure/closet/attackby(obj/item/W as obj, mob/user as mob)
 	if(opened)
 		if(istype(W, /obj/item/grab))

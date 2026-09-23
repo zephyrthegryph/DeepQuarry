@@ -108,9 +108,9 @@
 		user.setClickCooldown(user.get_attack_speed(W))
 		switch(W.obj_damage_type())
 			if(BURN)
-				take_damage(W.force * fire_dam_coeff, BURN, MELEE)
+				receive_weapon_hit(W, user, W.force * fire_dam_coeff, INJURY_BURN, silent = FALSE)
 			if(BRUTE)
-				take_damage(W.force * brute_dam_coeff, BRUTE, MELEE)
+				receive_weapon_hit(W, user, W.force * brute_dam_coeff, silent = FALSE)
 		..()
 	else
 		..()
@@ -148,10 +148,6 @@
 	user.visible_message(span_red("[user] repairs [src]!"), span_blue("You repair [src]!"))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/vehicle/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
-	..()
-
 /obj/vehicle/proc/adjust_health(amount)
 	if(amount < 0)
 		take_damage(-amount, BRUTE, MELEE)
@@ -164,11 +160,11 @@
 			explode()
 			return
 		if(2.0)
-			take_damage(rand(5,10)*fire_dam_coeff + rand(10,20)*brute_dam_coeff, BRUTE, BOMB)
+			deal_damage(DAMAGE_BLAST, rand(5,10)*fire_dam_coeff + rand(10,20)*brute_dam_coeff)
 			return
 		if(3.0)
 			if (prob(50))
-				take_damage(rand(1,5)*fire_dam_coeff + rand(1,5)*brute_dam_coeff, BRUTE, BOMB)
+				deal_damage(DAMAGE_BLAST, rand(1,5)*fire_dam_coeff + rand(1,5)*brute_dam_coeff)
 				return
 	return
 
@@ -423,7 +419,7 @@
 	visible_message(span_danger("[user] [attack_message] the [src]!"))
 	add_attack_logs(user, src, "attacked")
 	user.do_attack_animation(src)
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
+	receive_generic_attack(user, damage)
 	return 1
 
 // Thin override so any damage source leaks a little oil on mechanical vehicles.

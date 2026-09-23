@@ -89,7 +89,8 @@
 		damage = between(0, (damage - Proj.damage)*(Proj.obj_damage_type() == BRUTE? 0.4 : 1), 10) //if the bullet passes through then the grille avoids most of the damage
 
 	if(damage > 0)
-		take_damage(damage * 0.2, Proj.obj_damage_type(), BULLET)
+		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, Proj.armor_penetration, Proj.dir)
+		receive_split(packet, Proj.injury_kind, Proj.injury_kinds, damage * 0.2)
 
 /obj/structure/grille/attackby(obj/item/W as obj, mob/user as mob)
 	if(!istype(W))
@@ -145,9 +146,9 @@
 		playsound(src, 'sound/effects/grillehit.ogg', 80, 1)
 		switch(W.obj_damage_type())
 			if(BURN)
-				take_damage(W.force, BURN, MELEE, sound_effect = FALSE)
+				receive_weapon_hit(W, user, W.force, INJURY_BURN)
 			if(BRUTE)
-				take_damage(W.force * 0.1, BRUTE, MELEE, sound_effect = FALSE)
+				receive_weapon_hit(W, user, W.force * 0.1)
 	..()
 	return
 
@@ -211,13 +212,13 @@
 /obj/structure/grille/fire_act(exposed_temperature, exposed_volume)
 	if(!destroyed)
 		if(exposed_temperature > T0C + 1500)
-			take_damage(1, BURN)
+			deal_damage(DAMAGE_THERMAL, 1, FIRE)
 	..()
 
 /obj/structure/grille/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	user.do_attack_animation(src)
-	take_damage(damage, BRUTE, MELEE)
+	receive_generic_attack(user, damage)
 	return 1
 
 // Used in mapping to avoid

@@ -399,7 +399,7 @@ emp_act
 
 		var/armor = armor_against(thrown_object.injury_kind, affecting, thrown_object.armor_penetration)
 		if(armor < 100)
-			injure_by(thrown_object, throw_damage, zone)
+			receive_thrown(thrown_object, throwingdatum, zone = zone)
 
 		//thrown weapon embedded object code.
 		if(thrown_object.obj_damage_type() == BRUTE)

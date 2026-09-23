@@ -128,10 +128,10 @@
 
 	return ..()
 
-/obj/machinery/camera/blob_act()
+/obj/machinery/camera/blob_act(obj/structure/blob/B)
 	if((stat & BROKEN) || invuln)
 		return
-	take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
+	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = B)
 
 /obj/machinery/camera/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
@@ -140,7 +140,6 @@
 	var/obj/item/O = source
 	if(O.throwforce >= src.toughness)
 		visible_message(span_boldwarning("[src] was hit by [O]."))
-	take_damage(O.throwforce, BRUTE, MELEE)
 
 /obj/machinery/camera/proc/setViewRange(num = 7)
 	src.view_range = num
@@ -157,7 +156,7 @@
 		visible_message(span_warning("\The [user] slashes at [src]!"))
 		playsound(src, 'sound/weapons/slash.ogg', 100, 1)
 		add_hiddenprint(user)
-		take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
+		deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 
 /obj/machinery/camera/attack_generic(mob/user as mob)
 	if(isanimal(user))
@@ -168,8 +167,9 @@
 		visible_message(span_warning("\The [user] [pick(S.attacktext)] \the [src]!"))
 		playsound(src, S.attack_sound, 100, 1)
 		add_hiddenprint(user)
-		take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
-	..()
+		deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
+		return 1
+	return 0
 
 /obj/machinery/camera/screwdriver_act(mob/user, obj/item/tool)
 	update_coverage()
@@ -264,7 +264,7 @@
 				var/obj/item/I = W
 				if (I.hitsound)
 					playsound(src, I.hitsound, 50, 1, -1)
-		take_damage(W.force, BRUTE, MELEE)
+		receive_weapon_hit(W, user, silent = FALSE)
 
 	else
 		..()

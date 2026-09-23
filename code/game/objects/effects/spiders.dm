@@ -1,5 +1,6 @@
 //generic procs copied from obj/effect/alien
 /obj/effect/spider
+	uses_integrity = TRUE
 	name = "web"
 	desc = "it's stringy and sticky"
 	icon = 'icons/effects/effects.dmi'
@@ -28,9 +29,7 @@
 	else
 		visible_message(span_warning("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
 
-	var/damage = W.force / 4.0
-
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
+	receive_weapon_hit(W, user, W.force / 4)
 
 /obj/effect/spider/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/welder = tool.get_welder()
@@ -54,10 +53,6 @@
 	visible_message(span_warning("\The [user] stomps \the [src] dead!"))
 	die()
 
-/obj/effect/spider/bullet_act(obj/item/projectile/Proj)
-	. = ..()
-	take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
-
 /obj/effect/spider/proc/die()
 	qdel(src)
 
@@ -67,7 +62,7 @@
 
 /obj/effect/spider/fire_act(exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300 + T0C)
-		take_damage(5, BURN)
+		deal_damage(DAMAGE_THERMAL, 5, FIRE)
 
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"

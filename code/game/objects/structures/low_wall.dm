@@ -251,25 +251,15 @@
 			I.color = main_color
 			add_overlay(I)
 
-/obj/structure/low_wall/bullet_act(obj/item/projectile/Proj)
-	var/proj_damage = Proj.get_structure_damage()
-	var/damage = min(proj_damage, 100)
-	take_damage(damage, Proj.obj_damage_type(), BULLET)
-	return
-
-/obj/structure/low_wall/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	..()
-	var/tforce = 0
-	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
-	if(ismob(source)) // All mobs have a multiplier and a size according to mob_defines.dm
-		var/mob/I = source
-		tforce = I.mob_size * (speed/THROWFORCE_SPEED_DIVISOR)
-	else if(isitem(source))
-		var/obj/item/O = source
-		tforce = O.throwforce * (speed/THROWFORCE_SPEED_DIVISOR)
-	if (tforce < 15)
-		return
-	take_damage(tforce, BRUTE, MELEE)
+/// Emitters and the like can't take a low wall down in one shot.
+/obj/structure/low_wall/projectile_damage(obj/item/projectile/P, def_zone)
+	var/structure_damage = P.get_structure_damage()
+	return receive_projectile(P, def_zone, structure_damage > 100 ? 100 / structure_damage : 1)
+/// Light throws bounce off.
+/obj/structure/low_wall/thrown_damage(atom/movable/source, datum/thrownthing/throwingdatum)
+	if(source.thrown_impact_force(throwingdatum) < 15)
+		return 0
+	return ..()
 
 /obj/structure/low_wall/atom_destruction(damage_flag)
 	dismantle()
@@ -278,7 +268,7 @@
 /obj/structure/low_wall/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	user.do_attack_animation(src)
-	take_damage(damage, BRUTE, MELEE)
+	receive_generic_attack(user, damage)
 	return ..()
 
 /obj/structure/low_wall/proc/dismantle()

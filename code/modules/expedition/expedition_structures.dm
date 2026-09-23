@@ -105,31 +105,24 @@
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
-		take_damage(W.force, W.obj_damage_type(), MELEE)
+		receive_weapon_hit(W, user, silent = FALSE)
 		return
 	return ..()
-
-/obj/structure/expedition_demo_target/bullet_act(obj/item/projectile/Proj)
-	var/proj_damage = Proj.get_structure_damage()
-	if(!proj_damage)
-		return
-	..()
-	take_damage(proj_damage, Proj.obj_damage_type(), BULLET)
 
 /obj/structure/expedition_demo_target/ex_act(severity)
 	switch(severity)
 		if(1.0)
-			take_damage(max_integrity, BRUTE, BOMB)
+			deal_damage(DAMAGE_BLAST, max_integrity)
 		if(2.0)
-			take_damage(80, BRUTE, BOMB, sound_effect = FALSE)
+			deal_damage(DAMAGE_BLAST, 80, flags = DAMAGE_PACKET_SILENT)
 		if(3.0)
-			take_damage(30, BRUTE, BOMB, sound_effect = FALSE)
+			deal_damage(DAMAGE_BLAST, 30, flags = DAMAGE_PACKET_SILENT)
 
 /obj/structure/expedition_demo_target/attack_generic(mob/user, damage)
 	user.setClickCooldown(user.get_attack_speed())
 	if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		visible_message(span_danger("[user] smashes into [src]!"))
-		take_damage(damage, BRUTE, MELEE)
+		receive_generic_attack(user, damage)
 	user.do_attack_animation(src)
 	return 1
 

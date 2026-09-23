@@ -25,17 +25,12 @@
 /obj/structure/barricade/get_material()
 	return material
 
-/obj/structure/barricade/bullet_act(obj/item/projectile/P, def_zone)
-	. = ..()
-	var/barricade_damage = P.get_structure_damage()
-	if(!barricade_damage)
-		return
-	var/base_multiplier
-	if(barricade_damage > 30)
-		base_multiplier = P.obj_damage_type() == BURN ? 0.5 : 0.25
-	else
-		base_multiplier = P.obj_damage_type() == BURN ? 0.25 : 0.1
-	take_damage(barricade_damage * base_multiplier, P.obj_damage_type(), BULLET)
+/// Barricades are cover: small rounds mostly bury themselves, heavy ones and beams bite.
+/obj/structure/barricade/projectile_damage(obj/item/projectile/P, def_zone)
+	var/heavy = P.get_structure_damage() > 30
+	if(P.obj_damage_type() == BURN)
+		return receive_projectile(P, def_zone, heavy ? 0.5 : 0.25)
+	return receive_projectile(P, def_zone, heavy ? 0.25 : 0.1)
 
 /obj/structure/barricade/attackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
@@ -61,9 +56,9 @@
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 	switch(W.obj_damage_type())
 		if(BURN)
-			take_damage(W.force, BURN, MELEE, sound_effect = FALSE)
+			receive_weapon_hit(W, user, W.force, INJURY_BURN)
 		if(BRUTE)
-			take_damage(W.force * 0.75, BRUTE, MELEE, sound_effect = FALSE)
+			receive_weapon_hit(W, user, W.force * 0.75)
 	..()
 
 /obj/structure/barricade/atom_destruction(damage_flag)
@@ -81,7 +76,7 @@
 	else
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 	user.do_attack_animation(src)
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
+	receive_generic_attack(user, damage)
 	return
 
 /obj/structure/barricade/proc/dismantle()
@@ -95,7 +90,7 @@
 		if(1.0)
 			dismantle()
 		if(2.0)
-			take_damage(25, BRUTE, BOMB)
+			deal_damage(DAMAGE_BLAST, 25)
 
 /obj/structure/barricade/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
 	if(istype(mover) && mover.checkpass(PASSTABLE))

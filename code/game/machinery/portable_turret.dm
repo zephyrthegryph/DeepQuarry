@@ -180,18 +180,9 @@
 	max_integrity = 200
 	turret_type = "industrial"
 
-/obj/machinery/porta_turret/industrial/bullet_act(obj/item/projectile/Proj)
-	var/damage = round(Proj.get_structure_damage() * 1.33)
-
-	if(!damage)
-		return
-
-	if(enabled)
-		if(!attacked && !emagged)
-			attacked = TRUE
-			VARSET_IN(src, attacked, FALSE, 6 SECONDS)
-
-	take_damage(damage, Proj.obj_damage_type(), injury_armor_key(Proj.injury_kind))
+/// Industrial turrets have exposed workings: they catch a third more of a round.
+/obj/machinery/porta_turret/industrial/projectile_damage(obj/item/projectile/P, def_zone)
+	return receive_projectile(P, def_zone, 1.33)
 
 /obj/machinery/porta_turret/industrial/attack_generic(mob/living/L, damage)
 	return ..(L, damage * 0.8)
@@ -603,7 +594,7 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			var/incoming_damage = round(damage - (damage / 5)) //Turrets are slightly armored, assumedly.
 			visible_message(span_danger("\The [S] [pick(S.attacktext)] \the [src]!"))
-			take_damage(incoming_damage, BRUTE, MELEE)
+			receive_generic_attack(S, incoming_damage)
 			S.do_attack_animation(src)
 			attempt_retaliate(incoming_damage)
 			return 1

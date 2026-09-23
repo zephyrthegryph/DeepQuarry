@@ -117,20 +117,12 @@
 	PROTECTED_PROC(TRUE)
 	return TRUE
 
-/obj/structure/window/bullet_act(obj/item/projectile/Proj)
-
-	var/proj_damage = Proj.get_structure_damage()
-	if(!proj_damage) return
-
-	..()
-	take_damage(proj_damage, Proj.obj_damage_type(), BULLET)
-	return
-
 /obj/structure/window/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
 	return ..() || (!fulltile && (src.dir) != dir)
 
 /obj/structure/window/can_pathfinding_exit(atom/movable/actor, dir, datum/pathfinding/search)
 	return ..() || (!fulltile && (src.dir != dir))
+
 /obj/structure/window/ex_act(severity)
 	switch(severity)
 		if(1.0)
@@ -143,9 +135,6 @@
 			if(prob(50))
 				shatter(0)
 				return
-
-/obj/structure/window/blob_act()
-	take_damage(50, BRUTE, MELEE)
 
 /obj/structure/window/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -171,24 +160,16 @@
 	return TRUE // Don't stop airflow from the other sides.
 
 /obj/structure/window/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	..()
 	visible_message(span_danger("[src] was hit by [source]."))
-	var/tforce = 0
-	if(ismob(source))
-		tforce = 40
-	else if(isitem(source))
-		var/obj/item/I = source
-		tforce = I.throwforce
-	else if(isobj(source))
-		var/obj/hitting_object = source
-		tforce = hitting_object.w_class * 5
-	if(reinf) tforce *= 0.25
-	if(get_integrity() - tforce <= 7 && !reinf)
+	if(!reinf && get_integrity() - source.thrown_impact_force(throwingdatum) <= 7)
 		anchored = FALSE
 		update_verbs()
 		update_nearby_icons()
 		step(src, get_dir(source, src))
-	take_damage(tforce, BRUTE, MELEE)
+	..()
+
+/obj/structure/window/thrown_damage(atom/movable/source, datum/thrownthing/throwingdatum)
+	return receive_thrown(source, throwingdatum, reinf ? 0.25 : 1)
 
 /obj/structure/window/attack_tk(mob/user as mob)
 	user.visible_message(span_notice("Something knocks on [src]."))
@@ -231,7 +212,7 @@
 		visible_message(span_danger("[user] smashes into [src]!"))
 		if(reinf)
 			damage = damage / 2
-		take_damage(damage, BRUTE, MELEE)
+		receive_generic_attack(user, damage)
 	else
 		visible_message(span_infoplain(span_bold("\The [user]") + " bonks \the [src] harmlessly."))
 	user.do_attack_animation(src)

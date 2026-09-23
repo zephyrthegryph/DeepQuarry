@@ -334,7 +334,11 @@ accident or assume they work:
   machinery, doors, vehicles, mechs) now takes damage through the TG integrity system in
   `code/game/atom/atom_defense.dm`: `take_damage(amount, damage_type, damage_flag, …)`,
   `get_integrity()`, `repair_damage()`, and the `atom_break()`/`atom_fix()`/`atom_destruction()`
-  hooks. The old parallel `var/health`/`var/maxhealth` + `healthcheck()`/`CheckHealth()` model is
+  hooks. Hits reach it through one path: an entry point (`bullet_act`, `hitby`, `ex_act`, `emp_act`,
+  `fire_act`, `blob_act`, `attack_generic`, weapon `attackby`, `electrocute_act`) builds a pooled damage
+  packet and calls `receive_damage(packet)` (`code/game/atom/damage_packet.dm`, doc/rewrite/damage.md);
+  use the `receive_*`/`deal_damage` helpers there instead of calling `take_damage()` from an entry point.
+  The old parallel `var/health`/`var/maxhealth` + `healthcheck()`/`CheckHealth()` model is
   **gone** — don't reintroduce it; set `max_integrity` (and `integrity_failure` for a "broken
   but not destroyed" state) and route damage through `take_damage()`. Turfs/walls keep their own
   `damage`-var model (as upstream TG does). A few entities run self-contained damage backed by

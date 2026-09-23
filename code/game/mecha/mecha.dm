@@ -1031,6 +1031,9 @@
 ////////////////////////////////////////
 
 /obj/mecha/take_damage(amount, type=BRUTE)
+	// Mech armour tables key burn absorption as "fire".
+	if(type == BURN)
+		type = FIRE
 	update_damage_alerts()
 	if(amount)
 		var/damage = absorbDamage(amount,type)
@@ -1141,6 +1144,12 @@
 		user.visible_message(span_infoplain((span_red(span_bold("[user] hits [src.name]. Nothing happens.")))),span_infoplain(span_red(span_bold("You hit [src.name] with no visible effect."))))
 		src.log_append_to_last("Armor saved.")
 	return
+
+/// Mechs take damage through their own model (dynbulletdamage, dynhitby,
+/// absorbDamage) until D3 moves them onto the body model; the base adapters'
+/// packets stop here so a hit is not applied twice.
+/obj/mecha/receive_damage(datum/damage_packet/packet)
+	return 0
 
 /obj/mecha/hitby(atom/movable/source, datum/thrownthing/throwingdatum) //wrapper
 	..()

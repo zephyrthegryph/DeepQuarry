@@ -509,7 +509,7 @@
 				M.GetDrilled(TRUE)
 	if(modifier)
 		for(var/mob/living/L in range(1, target_turf) - K.firer - target)
-			L.injure_by(K, K.damage*modifier, K.def_zone)
+			L.receive_projectile(K, K.def_zone, modifier)
 			to_chat(L, span_userdanger("You're struck by a [K.name]!"))
 
 /obj/item/borg/upgrade/modkit/aoe/turfs
@@ -615,7 +615,7 @@
 			var/kill_modifier = 1
 			if(K.pressure_decrease_active)
 				kill_modifier *= K.pressure_decrease
-			L.injure_by(K, bounties_reaped[L.type]*kill_modifier, K.def_zone)
+			L.receive_split(damage_packet(K, K.firer, null, K.def_zone, DAMAGE_PACKET_PROJECTILE, K.armor_penetration), K.injury_kind, K.injury_kinds, bounties_reaped[L.type] * kill_modifier)
 /obj/item/borg/upgrade/modkit/bounty/proc/get_kill(mob/living/L)
 	var/bonus_mod = 1
 	if(ismegafauna(L)) //megafauna reward

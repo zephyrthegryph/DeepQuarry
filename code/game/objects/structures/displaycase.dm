@@ -20,16 +20,11 @@
 			qdel(src)
 		if (2)
 			if (prob(50))
-				take_damage(15, BRUTE, BOMB)
+				deal_damage(DAMAGE_BLAST, 15)
 		if (3)
 			if (prob(50))
-				take_damage(5, BRUTE, BOMB)
+				deal_damage(DAMAGE_BLAST, 5)
 
-
-/obj/structure/displaycase/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
-	..()
-	return
 
 // Glass-on-glass hit sound while the case still stands.
 /obj/structure/displaycase/play_attack_sound(damage_amount, damage_type, damage_flag)
@@ -57,7 +52,7 @@
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
-	take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
+	receive_weapon_hit(W, user)
 	..()
 	return
 

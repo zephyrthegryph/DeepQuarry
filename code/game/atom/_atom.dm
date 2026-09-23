@@ -156,10 +156,17 @@
 
 	P.on_hit(src, 0, def_zone)
 	. = 0
+	if(!QDELETED(src))
+		projectile_damage(P, def_zone)
+
+/// The projectile adapter: how much of a round this atom catches. Types whose
+/// shape changes that (grilles, girders, barricades) override this, not bullet_act().
+/atom/proc/projectile_damage(obj/item/projectile/P, def_zone)
+	return receive_projectile(P, def_zone)
 
 // Called when a blob expands onto the tile the atom occupies.
-/atom/proc/blob_act()
-	return
+/atom/proc/blob_act(obj/structure/blob/B)
+	receive_blob(B)
 
 /atom/proc/in_contents_of(container)//can take class or object instance as argument
 	if(ispath(container))
@@ -303,7 +310,12 @@
 
 /atom/proc/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	SEND_SIGNAL(src, COMSIG_ATOM_HITBY, source)
-	return
+	thrown_damage(source, throwingdatum)
+
+/// The thrown-impact adapter. Types whose shape changes how hard a throw lands
+/// (reinforced windows, low walls) override this, not hitby().
+/atom/proc/thrown_damage(atom/movable/source, datum/thrownthing/throwingdatum)
+	return receive_thrown(source, throwingdatum)
 
 //returns 1 if made bloody, returns 0 otherwise
 /atom/proc/add_blood(mob/living/carbon/human/M as mob)

@@ -1,15 +1,15 @@
 //Called when the mob is hit with an item in combat.
-/mob/living/carbon/resolve_item_attack(obj/item/I, mob/living/user, effective_force, hit_zone)
-	if(check_neckgrab_attack(I, user, hit_zone))
+/mob/living/carbon/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
+	if(check_neckgrab_attack(I, user, target_zone))
 		return null
-	..()
+	return ..()
 
 /mob/living/carbon/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone)
 	if(!effective_force || blocked >= 100)
 		return 0
 
 	// The harm goes through injure(), whose armour stage can also turn the edge.
-	injure_by(I, effective_force, hit_zone)
+	receive_weapon_hit(I, user, effective_force, zone = hit_zone, silent = FALSE)
 
 	//Melee weapon embedded object code.
 	if (I && I.obj_damage_type() == BRUTE && !I.anchored && !is_robot_module(I) && I.embed_chance > 0)
@@ -69,7 +69,7 @@
 	var/total_damage = 0
 	for(var/i in 1 to 3)
 		var/damage = min(W.force*1.5, 20)*damage_mod
-		injure_split(W.injury_kind, W.injury_kinds, damage, BP_HEAD, W)
+		receive_weapon_hit(W, user, damage, zone = BP_HEAD, silent = FALSE, armored = FALSE)
 		total_damage += damage
 
 	var/asphyxia = total_damage
@@ -102,7 +102,7 @@
 	user.visible_message(span_danger("\The [user] plunges \the [W] into \the [src]!"))
 
 	var/damage = shank_armor_helper(W, G, user)
-	injure_split(W.injury_kind, W.injury_kinds, damage, BP_TORSO, W)
+	receive_weapon_hit(W, user, damage, zone = BP_TORSO, silent = FALSE, armored = FALSE)
 
 	if(W.hitsound)
 		playsound(src, W.hitsound, 50, 1, -1)

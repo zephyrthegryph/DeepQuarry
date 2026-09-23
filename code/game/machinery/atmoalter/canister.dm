@@ -212,7 +212,7 @@ update_flag
 /obj/machinery/portable_atmospherics/canister/fire_act(exposed_temperature, exposed_volume)
 	var/datum/material/exterior = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
 	if(exterior && exposed_temperature >= exterior.melting_point)
-		take_damage(max(1, round((exposed_temperature - exterior.melting_point) / 100)), BURN, FIRE)
+		deal_damage(DAMAGE_THERMAL, max(1, round((exposed_temperature - exterior.melting_point) / 100)), FIRE)
 
 // At zero integrity the canister ruptures: dumps its gas into the environment,
 // frees any connected port, and becomes a non-dense wreck (it is NOT qdel'd).
@@ -306,13 +306,9 @@ update_flag
 		return GM.return_pressure()
 	return 0
 
-/obj/machinery/portable_atmospherics/canister/bullet_act(obj/item/projectile/Proj)
-	if(!(Proj.obj_damage_type() == BRUTE || Proj.obj_damage_type() == BURN))
-		return
-
-	if(Proj.damage)
-		take_damage(round(Proj.damage / 2), Proj.obj_damage_type(), BULLET)
-	..()
+/// Canisters are thick-walled: they catch half of a round.
+/obj/machinery/portable_atmospherics/canister/projectile_damage(obj/item/projectile/P, def_zone)
+	return receive_projectile(P, def_zone, 0.5)
 
 /obj/machinery/portable_atmospherics/canister/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/stack/material))
@@ -339,7 +335,7 @@ update_flag
 	if(!istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
 		visible_message(span_warning("\The [user] hits \the [src] with \a [W]!"))
 		src.add_fingerprint(user)
-		take_damage(W.force, W.obj_damage_type(), MELEE)
+		receive_weapon_hit(W, user, silent = FALSE)
 
 	if(isrobot(user) && istype(W, /obj/item/tank/jetpack))
 		var/obj/item/tank/jetpack/the_jetpack_tank = W

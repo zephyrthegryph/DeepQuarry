@@ -2,7 +2,7 @@
 // is declared as INJURY_* kinds; an object's damage type is derived from the
 // kind by injury_kind_obj_damage_type().
 #define BRUTE     "brute"
-#define BURN      "fire"
+#define BURN      "burn" // Not "fire": that is the FIRE armour flag, and objects burn down only on FIRE damage (B17).
 
 #define CUT       "cut"
 #define BRUISE    "bruise"

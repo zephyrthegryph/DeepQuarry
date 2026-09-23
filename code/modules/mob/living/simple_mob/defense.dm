@@ -191,7 +191,7 @@
 	if(shock_damage < 1)
 		return 0
 
-	injure(INJURY_ELECTRIC, shock_damage * (100 - resistance) / 100, null, source)
+	receive_shock(shock_damage * (100 - resistance) / 100, source)
 	playsound(src, "sparks", 50, 1, -1)
 
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -232,15 +232,12 @@
 	if(!(biology & BIOLOGY_SYNTHETIC))
 		return
 	var/endurance_scale = get_endurance()
-	switch(severity)
-		if(1)
-			injure(INJURY_ELECTRIC, min(60, endurance_scale * 0.5)) // Weak mobs will always take two direct EMP hits to kill. Stronger ones might take more.
-		if(2)
-			injure(INJURY_ELECTRIC, min(30, endurance_scale * 0.25))
-		if(3)
-			injure(INJURY_ELECTRIC, min(15, endurance_scale * 0.125))
-		if(4)
-			injure(INJURY_ELECTRIC, min(7, endurance_scale * 0.0625))
+	// Scaled to endurance: weak mobs always take two direct EMP hits to kill; stronger ones may take more.
+	var/static/list/cap_by_severity = list(60, 30, 15, 7)
+	var/static/list/share_by_severity = list(0.5, 0.25, 0.125, 0.0625)
+	var/band = round(severity)
+	if(band >= 1 && band <= length(cap_by_severity))
+		deal_damage(DAMAGE_IONIC, min(cap_by_severity[band], endurance_scale * share_by_severity[band]), flags = DAMAGE_PACKET_UNARMORED)
 
 // Water
 /mob/living/simple_mob/get_water_protection()

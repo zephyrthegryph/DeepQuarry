@@ -91,13 +91,12 @@
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	visible_message(span_warning("\The [src] has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with \the [I] by [user]."))
-	take_damage(I.force, I.obj_damage_type(), MELEE)
+	receive_weapon_hit(I, user, silent = FALSE)
 
-/obj/structure/mob_spawner/bullet_act(obj/item/projectile/Proj)
-	..()
-	if(destructible)
-		take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
-
+/obj/structure/mob_spawner/receive_damage(datum/damage_packet/packet)
+	if(!destructible)
+		return 0
+	return ..()
 // Reaching 0 integrity breaks the spawner apart.
 /obj/structure/mob_spawner/atom_destruction(damage_flag)
 	visible_message(span_warning("\The [src] breaks apart!"))

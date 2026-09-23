@@ -443,8 +443,7 @@
 
 	var/dam_zone = pick(organs_by_name)
 	var/obj/item/organ/external/affecting = get_organ(ran_zone(dam_zone))
-	var/mob/living/simple_mob/animal = user
-	injure(generic_attack_injury_kind(user), damage, affecting?.organ_tag, user, istype(animal) ? animal.attack_armor_pen : 0, flags = INJURE_ARMORED)
+	receive_generic_attack(user, damage, affecting?.organ_tag, armored = TRUE)
 	return TRUE
 
 //Used to attack a joint through grabbing

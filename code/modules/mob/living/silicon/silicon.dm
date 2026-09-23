@@ -105,7 +105,7 @@
 		s.start()
 
 		shock_damage *= siemens_coeff	//take reduced damage
-		injure(INJURY_ELECTRIC, shock_damage, null, source)
+		receive_shock(shock_damage, source)
 		visible_message(span_warning("[src] was shocked by \the [source]!"), \
 			span_danger("Energy pulse detected, system damaged!"), \
 			span_warning("You hear an electrical crack."))
