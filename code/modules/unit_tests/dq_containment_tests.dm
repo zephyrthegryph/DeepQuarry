@@ -79,10 +79,18 @@
 /// An open floor turf with open floor to its east (the test map has no
 /// run_loc landmarks).
 /datum/unit_test/proc/dq_containment_floor()
-	var/static/turf/floor
-	if(!floor)
-		floor = dq_pred_open_row()
-	return floor
+	// Earlier tests leave litter; a closet made closed takes in whatever lies on
+	// its turf, so look for a clean pair every time.
+	for(var/turf/simulated/floor/T in world)
+		var/turf/east = get_step(T, EAST)
+		if(T.density || !istype(east, /turf/simulated/floor) || east.density)
+			continue
+		if((locate(/obj/item) in T) || (locate(/obj/structure) in T) || (locate(/mob) in T))
+			continue
+		if((locate(/obj/item) in east) || (locate(/obj/structure) in east) || (locate(/mob) in east))
+			continue
+		return T
+	return null
 
 /// Fails with every mismatch the ledger's own verification finds.
 /datum/unit_test/proc/dq_verify_ledger(atom/holder, label)
@@ -252,7 +260,7 @@
 				C.close()
 				return TRUE
 			for(var/atom/movable/T as anything in inside)
-				if(T.loc != C.loc)
+				if(!QDELETED(T) && T.loc != C.loc) // stacks may merge on landing
 					TEST_FAIL("step [step]: opening [C] left [T] in [T.loc]")
 					return FALSE
 			C.close()
