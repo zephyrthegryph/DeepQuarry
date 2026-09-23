@@ -168,6 +168,10 @@
 /datum/affliction/lesion/proc/heal(amount, full = FALSE)
 	if(amount <= 0 || damage <= 0)
 		return 0
+	// A dead brain (is_brain_dead()) needs a resleeve: no mechanism repairs it.
+	var/obj/item/organ/internal/organ = location
+	if(istype(organ) && organ.is_beyond_repair())
+		return 0
 	var/floor = full ? 0 : peak_damage * drug_floor
 	var/healed = clamp(damage - floor, 0, amount)
 	if(healed <= 0)

@@ -52,7 +52,7 @@
 	if(buckled)
 		buckled.unbuckle_mob(src, TRUE)
 	if(tf_mob_holder && tf_mob_holder.loc == src)
-		tf_mob_holder.ckey = ckey
+		return_player_to_tf_holder("transformed form destroyed")
 		if(isbelly(loc))
 			tf_mob_holder.loc = loc
 			tf_mob_holder.forceMove(loc)

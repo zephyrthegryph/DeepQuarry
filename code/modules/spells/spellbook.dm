@@ -283,15 +283,14 @@
 	var/mob/observer/dead/ghost = stored_swap.ghostize(0)
 	ghost.spell_list = stored_swap.spell_list
 
-	user.mind.transfer_to(stored_swap)
+	move_player(user, stored_swap, "spellbook body swap")
 	stored_swap.spell_list = user.spell_list
 
 	if(stored_swap.mind.special_verbs.len)
 		for(var/V in user.mind.special_verbs)
 			add_verb(user, V)
 
-	ghost.mind.transfer_to(user)
-	user.key = ghost.key
+	transfer_mind(ghost.mind, user, "spellbook body swap", force = TRUE)
 	user.spell_list = ghost.spell_list
 
 	if(user.mind.special_verbs.len)

@@ -120,9 +120,8 @@
 				else
 					return 0
 
-	for(var/modifier_type in BR.genetic_modifiers)	//Can't be cloned, even if they had a previous scan
-		if(ispath(modifier_type, /datum/modifier/no_clone))
-			return 0
+	if(clonemind.get_identity()?.has_genetic_modifier(/datum/modifier/no_clone))	//Can't be cloned: a persistent trait of the character
+		return 0
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out
 	remove_biomass(CLONE_BIOMASS)
@@ -149,8 +148,7 @@
 	H.set_cloned_appearance()
 
 	// Move mind to body along with key
-	clonemind.transfer_to(H)
-	H.ckey = BR.ckey
+	transfer_mind(clonemind, H, "cloned from a body record", force = TRUE)
 	to_chat(H, span_warning(span_bold("Consciousness slowly creeps over you as your body regenerates.") + "<br>" + span_bold(span_large("Your recent memories are fuzzy, and it's hard to remember anything from today...")) + \
 		"<br>" + span_notice(span_italics("So this is what cloning feels like?"))))
 

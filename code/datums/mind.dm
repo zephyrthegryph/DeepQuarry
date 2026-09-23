@@ -76,7 +76,10 @@
 	original_character = null
 	identity = null
 
-/datum/mind/proc/transfer_to(mob/living/new_character, force = FALSE)
+/// Low level: link this mind to `new_character`. Use transfer_mind() (or
+/// move_player_mind()), which logs. `share_identity` has the body wear the
+/// mind's identity without syncing its vars from it (temporary control).
+/datum/mind/proc/transfer_to(mob/living/new_character, force = FALSE, share_identity = FALSE)
 	if(!istype(new_character))
 		log_world("## DEBUG: transfer_to(): Some idiot has tried to transfer_to() a non mob/living mob. Please inform Carn")
 	// The identity follows the mind: adopt the old body's if the mind has none
@@ -100,7 +103,10 @@
 	current = new_character		//link ourself to our new body
 	new_character.mind = src	//and link our new body to ourself
 	if(isliving(new_character))
-		new_character.bind_identity(identity)
+		if(share_identity)
+			new_character.share_identity(identity)
+		else
+			new_character.bind_identity(identity)
 	if(old_character)
 		SEND_SIGNAL(old_character, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, new_character)
 	SEND_SIGNAL(new_character, COMSIG_MOB_MIND_TRANSFERRED_INTO, old_character)

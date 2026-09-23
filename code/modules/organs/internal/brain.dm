@@ -96,6 +96,10 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 /obj/item/organ/internal/brain/proc/is_brain_dead()
 	return (status & ORGAN_DEAD) || (max_damage && damage >= max_damage)
 
+/// A brain-dead brain is not repaired back: revival goes through resleeving.
+/obj/item/organ/internal/brain/is_beyond_repair()
+	return is_brain_dead()
+
 /obj/item/organ/internal/brain/examine(mob/user) // -- TLE
 	. = ..()
 	var/mob/living/carbon/brain/view = hosted_view()

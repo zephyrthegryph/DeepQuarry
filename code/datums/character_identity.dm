@@ -77,21 +77,31 @@
 		identity.real_name = real_name
 
 /// A human embodies the character: the identity references the body's DNA
-/// and flavour text (what the character looks like now), and the body speaks
-/// the character's languages. The name stays the character's: a body swap
-/// doesn't rename anyone.
+/// (the body the character lives in now), and the body takes the character's
+/// flavour text, languages and persistent traits. A new character adopts its
+/// first body's flavour and languages. The name stays the character's: a body
+/// swap doesn't rename anyone. Body records never carry any of this; a sleeve
+/// printed from one gets it here, when its mind arrives.
 /mob/living/carbon/human/on_identity_bound()
 	..()
 	identity.dna = dna
-	identity.flavor_texts = flavor_texts
+	if(identity.flavor_texts)
+		flavor_texts = identity.flavor_texts
+	else
+		identity.flavor_texts = flavor_texts
 	if(identity.languages)
 		languages = identity.languages
 	else
 		identity.languages = languages
+	if(!isSynthetic())
+		var/list/traits = identity.genetic_modifiers?.Copy()
+		for(var/modifier_type in traits)
+			add_modifier(modifier_type)
 
-/// Point this mob (and its mind) at `I` WITHOUT syncing body vars: a player
-/// moved by key into a body they temporarily control (dominate prey) shows
-/// their own identity there, while the body keeps its own name and languages.
+/// Point this mob (and its mind) at `I` WITHOUT syncing body vars: a mind
+/// that temporarily controls another body (dominate prey, a mob transform, a
+/// borer) shows its own identity there, while the body keeps its own name,
+/// DNA, flavour and languages. transfer_mind(share = TRUE) uses this.
 /mob/living/proc/share_identity(datum/character_identity/I)
 	if(!I)
 		return
@@ -125,11 +135,39 @@
 // --- Moving minds --------------------------------------------------------------------
 
 /// THE way to move a mind between bodies and mind hosts. Logs the move and
-/// lets the identity follow the mind. Returns TRUE when `dest` now holds `M`.
-/proc/transfer_mind(datum/mind/M, mob/living/dest, reason = "unspecified")
+/// lets the identity follow the mind. `force` moves the key even while the
+/// player is disconnected. `share` has `dest` wear the mind's identity without
+/// syncing its body vars from it (temporary control; see share_identity()).
+/// Returns TRUE when `dest` now holds `M`.
+/proc/transfer_mind(datum/mind/M, mob/living/dest, reason = "unspecified", force = FALSE, share = FALSE)
 	if(!M || !istype(dest) || QDELETED(dest))
 		return FALSE
 	var/mob/from = M.current
-	log_game("MIND: [M.key] ([M.name]) moved from [from ? "[from] ([from.type])" : "nowhere"] to [dest] ([dest.type]): [reason]")
-	M.transfer_to(dest)
+	log_game("MIND: [M.key] ([M.name]) moved from [from ? "[from] ([from.type])" : "nowhere"] to [dest] ([dest.type])[share ? ", identity shared" : ""][force ? ", key forced" : ""]: [reason]")
+	M.transfer_to(dest, force, share)
 	return dest.mind == M
+
+/// Move a PLAYER's mind (the replacement for `dest.key = source.key`). The
+/// key comes along even while the player is disconnected, as a key move did,
+/// but only when the mind's body holds it: a ghosted player is never dragged
+/// back. Returns TRUE when `dest` now holds `M`.
+/proc/move_player_mind(datum/mind/M, mob/living/dest, reason = "unspecified", share = FALSE)
+	if(!M)
+		return FALSE
+	var/holds_key = M.key && M.current?.key == M.key
+	return transfer_mind(M, dest, reason, holds_key, share)
+
+/// Move whoever plays `source` into `dest` through their mind. A keyed mob
+/// without a mind gets one first (ensure_mind()). FALSE when nobody plays it.
+/proc/move_player(mob/living/source, mob/living/dest, reason = "unspecified", share = FALSE)
+	if(!istype(source) || source == dest)
+		return FALSE
+	return move_player_mind(source.ensure_mind(), dest, reason, share)
+
+/// This mob's mind, created the usual way (mind_initialize()) if a player
+/// (a key) is in a mob that has none yet. Null for an unplayed, mindless mob.
+/mob/living/proc/ensure_mind()
+	if(!mind && key)
+		mind_initialize()
+		log_game("MIND: created a mind for [key] in [src] ([type]) to move it")
+	return mind

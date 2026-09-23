@@ -1156,7 +1156,6 @@
 	// Update some specifics from the current record
 	owner.dna.blood_reagents = current_project.mydna.dna.blood_reagents
 	owner.dna.blood_color = current_project.mydna.dna.blood_color
-	owner.flavor_texts = current_project.mydna.flavor.Copy()
 	owner.resize(current_project.sizemult, FALSE)
 	owner.appearance_flags = current_project.aflags
 	owner.weight = current_project.weight

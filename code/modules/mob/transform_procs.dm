@@ -100,11 +100,11 @@
 	O.invisibility = INVISIBILITY_NONE
 	O.aiRestorePowerRoutine = 0
 
-	if(mind)
-		mind.transfer_to(O)
-		O.mind.original_character = WEAKREF(O)
+	if(isliving(src))
+		if(move_player(src, O, "AIized"))
+			O.mind.original_character = WEAKREF(O)
 	else
-		O.key = key
+		O.key = key // admin-made AI from an observer: first assignment
 
 	//Languages
 	add_language(LANGUAGE_ROBOT_TALK, 1)
@@ -162,14 +162,11 @@
 	O.gender = gender
 	O.invisibility = INVISIBILITY_NONE
 
-	if(mind)		//TODO
-		mind.transfer_to(O)
+	if(move_player(src, O, "robotized"))
 		if(O.mind.assigned_role == JOB_CYBORG)
 			O.mind.original_character = WEAKREF(O)
-		else if(mind && mind.special_role)
+		else if(O.mind.special_role)
 			O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
-	else
-		O.key = key
 
 	O.loc = loc
 	O.job = JOB_CYBORG
@@ -215,7 +212,7 @@
 	var/mob/living/carbon/human/new_xeno = create_new_xenomorph(alien_caste,loc)
 
 	new_xeno.a_intent = I_HURT
-	new_xeno.key = key
+	move_player(src, new_xeno, "alienized")
 
 	to_chat(new_xeno, span_infoplain(span_bold("You are now an alien.")))
 	qdel(src)
@@ -237,7 +234,7 @@
 
 	var/mob/living/simple_mob/animal/passive/dog/corgi/new_corgi = new /mob/living/simple_mob/animal/passive/dog/corgi (loc)
 	new_corgi.a_intent = I_HURT
-	new_corgi.key = key
+	move_player(src, new_corgi, "corgized")
 
 	to_chat(new_corgi, span_infoplain(span_bold("You are now a Corgi. Yap Yap!")))
 	qdel(src)
@@ -268,7 +265,7 @@
 
 	var/mob/new_mob = new mobpath(src.loc)
 
-	new_mob.key = key
+	move_player(src, new_mob, "animalized by [key_name(user)]")
 	new_mob.a_intent = I_HURT
 
 
@@ -288,7 +285,10 @@
 
 	var/mob/new_mob = new mobpath(src.loc)
 
-	new_mob.key = key
+	if(isliving(src))
+		move_player(src, new_mob, "animalized by [key_name(user)]")
+	else
+		new_mob.key = key // admin tool on an observer: first assignment
 	new_mob.a_intent = I_HURT
 	to_chat(new_mob, "You feel more... animalistic")
 

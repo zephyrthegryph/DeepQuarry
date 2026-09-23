@@ -298,7 +298,7 @@
 				continue
 			if(I.damage > 0)
 				mend(TREAT_RESTORATION, 30, I) //Repair functionally half of a dead internal organ.
-				I.status = 0	// Wipe status, as it's being regenerated from possibly dead.
+				I.restore_status()	// Wipe status, as it's being regenerated from possibly dead (a dead brain stays dead).
 				to_chat(src, span_notice("You feel a soothing sensation within your [I.name]..."))
 
 		// Replace completely missing limbs.

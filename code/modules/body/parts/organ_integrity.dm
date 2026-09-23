@@ -52,6 +52,19 @@
 /obj/item/organ/internal/proc/natural_heal_ceiling()
 	return min_bruised_damage
 
+/// Is this organ past any repair (surgery, drugs, mend(), regeneration)? A
+/// dead brain is: brain death needs a resleeve, not a repair.
+/obj/item/organ/proc/is_beyond_repair()
+	return FALSE
+
+/// Clear ORGAN_DEAD (and the organ's other status flags) on a successful
+/// repair, unless the organ is beyond repair. Returns TRUE if it was cleared.
+/obj/item/organ/proc/restore_status()
+	if(is_beyond_repair())
+		return FALSE
+	status = 0
+	return TRUE
+
 /// Lesion afflictions on this organ, attached or detached.
 /obj/item/organ/internal/proc/get_lesions()
 	. = list()

@@ -64,7 +64,18 @@
 	if(add_to_db)
 		SStranscore.add_backup(src, database_key = database_key)
 
+/// The character this record restores: name, flavour text, languages, OOC
+/// notes and persistent traits all come from the mind's identity (by
+/// reference), never from a body record.
+/datum/transhuman/mind_record/proc/get_identity()
+	return mind_ref?.get_identity()
+
 /////// Body Record ///////
+// A body record holds the BODY only: species, appearance, DNA (UI/SE blocks),
+// markings, size, limbs and organs. Everything about the character (name,
+// flavour text, languages, OOC notes, persistent traits) lives in the
+// /datum/character_identity the mind carries, and reaches a printed sleeve
+// when a mind is transferred into it (bind_identity()).
 /datum/transhuman/body_record
 	var/datum/dna2/record/mydna
 
@@ -79,7 +90,6 @@
 	var/bodygender
 	var/list/limb_data = list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO)
 	var/list/organ_data = list(O_HEART, O_EYES, O_LUNGS, O_BRAIN)
-	var/list/genetic_modifiers = list()
 	var/toocomplex
 	var/sizemult
 	var/weight
@@ -140,7 +150,6 @@
 	mydna.id = copytext(md5(M.real_name), 2, 6)
 	mydna.name = M.dna.real_name
 	mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE
-	mydna.flavor = M.flavor_texts.Copy()
 
 	//My stuff
 	client_ref = M.client
@@ -186,11 +195,6 @@
 
 		//Just set the data to this. 0:normal, 1:assisted, 2:mechanical, 3:digital
 		organ_data[org] = I.robotic
-
-	//Genetic modifiers
-	for(var/datum/modifier/mod as anything in M.modifiers)
-		if(mod.flags & MODIFIER_GENETIC)
-			genetic_modifiers.Add(mod.type)
 
 	if(add_to_db)
 		SStranscore.add_body(src, database_key = database_key)
@@ -243,8 +247,6 @@
 		mydna.dna.real_name = backup_name
 	H.real_name = mydna.dna.real_name
 	H.name = H.real_name
-	for(var/datum/language/L in mydna.languages)
-		H.add_language(L.name)
 	H.suiciding = 0
 	H.losebreath = 0
 	H.mind = null
@@ -302,7 +304,8 @@
 		else if(status == 3) //Digital organ
 			I.digitize()
 
-/// Transfers dna data to mob, and reinits traits and appearance from it
+/// Transfers dna data to mob, and reinits traits and appearance from it.
+/// Persistent traits are the character's: they arrive with the mind.
 /datum/transhuman/body_record/proc/internal_producebody_updatednastate(mob/living/carbon/human/H,is_synthfab)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
@@ -312,11 +315,6 @@
 		mydna.dna = new /datum/dna()
 	QDEL_SWAP(H.dna, mydna.dna.Clone())
 	H.original_player = ckey
-
-	//Apply genetic modifiers, synths don't use these
-	if(!is_synthfab)
-		for(var/modifier_type in mydna.genetic_modifiers)
-			H.add_modifier(modifier_type)
 
 	//Update appearance, remake icons
 	H.UpdateAppearance()
@@ -328,7 +326,6 @@
 /datum/transhuman/body_record/proc/internal_producebody_misc(mob/living/carbon/human/H)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	H.flavor_texts = mydna.flavor.Copy()
 	H.resize(sizemult, FALSE)
 	H.appearance_flags = aflags
 	H.weight = weight

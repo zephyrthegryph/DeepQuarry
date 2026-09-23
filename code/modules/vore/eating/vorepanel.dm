@@ -1243,7 +1243,7 @@
 					body_backup.forceMove(T.loc)
 					body_backup.enabled = TRUE
 					body_backup.ajourn = 0
-					body_backup.key = T.key
+					transfer_mind(T.mind, body_backup, "reformed in [host]", force = TRUE)
 					body_backup.teleop = null
 					T.body_backup = null
 					host.vore_selected.release_specific_contents(T, TRUE)

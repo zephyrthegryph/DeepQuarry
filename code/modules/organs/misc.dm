@@ -40,7 +40,7 @@
 	var/mob/living/simple_mob/animal/borer/B = prev_owner?.has_brain_worms()
 	if(B)
 		B.leave_host()
-		B.ckey = prev_owner.ckey
+		move_player(prev_owner, B, "borer organ removed from [prev_owner]")
 
 	spawn(0)
 		qdel(src)

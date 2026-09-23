@@ -244,7 +244,8 @@
 // Realign tissues
 /////////////////////////////
 
-///This step isn't essential BUT does heal brain loss and heals a dead brain.
+///This step isn't essential BUT does heal brain loss. A brain-dead brain
+///(is_brain_dead()) can't be realigned back: it needs a resleeve.
 /datum/surgery_step/brainstem/realign_tissue
 	surgery_name = "Realign Tissue"
 	priority = 3 //Do this instead of searching for objects in the skull.
@@ -258,7 +259,14 @@
 	max_duration = 100
 
 /datum/surgery_step/brainstem/realign_tissue/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	return ..() && target.op_stage.brainstem == 5
+	if(!..() || target.op_stage.brainstem != 5)
+		return FALSE
+	for(var/obj/item/organ/internal/brain/sponge in target.internal_organs)
+		if(sponge.is_beyond_repair())
+			to_chat(user, span_warning("[target]'s brain is dead. No surgery can bring it back; [target.p_they()] must be resleeved."))
+			user.balloon_alert(user, "the brain is dead, resleeving required")
+			return SURGERY_FAILURE
+	return TRUE
 
 /datum/surgery_step/brainstem/realign_tissue/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	user.visible_message(span_filter_notice("[user] starts to realign the tissues in [target]'s skull with \the [tool]."), \
@@ -272,7 +280,9 @@
 	user.balloon_alert_visible("realigned the tissues in [target]'s skull back in place", "realigned the tissues in the skull back into place")
 	target.AdjustParalysis(5) //I n v a s i v e
 	for(var/obj/item/organ/internal/brain/sponge in target.internal_organs) //in case they have multiple brains. weirdo.
-		sponge.status = 0
+		if(!sponge.restore_status())
+			to_chat(user, span_warning("[target]'s brain is dead and can't be realigned; [target.p_they()] must be resleeved."))
+			continue
 		target.surgically_repair_organ(sponge)
 
 

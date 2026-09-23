@@ -835,7 +835,7 @@
 	visible_message(span_warning("\The [src] accepts \the [controller], submerging them beneath the surface of the flesh!"))
 	user.stop_pulling()
 	user.forceMove(src)
-	host.ckey = user.ckey
+	move_player(user, host, "took control of [host] through [src]", share = TRUE)
 	log_admin("[host.ckey] has taken contol of \the [host].")
 	icon_state = "control_node1"
 	plane = ABOVE_MOB_PLANE
@@ -844,7 +844,7 @@
 /obj/structure/control_pod/proc/eject()
 	to_chat(host, span_warning("You feel your control over \the [host] slip away from you!"))
 	controller.forceMove(get_turf(src))
-	controller.ckey = host.ckey
+	move_player(host, controller, "ejected from [host] through [src]")
 	visible_message(span_warning("\The [controller] is ejected from \the [src], tumbling free!"))
 	log_admin("[controller.ckey] is no longer controlling [host], they have been returned to their body, [controller].")
 	icon_state = "control_node0"
