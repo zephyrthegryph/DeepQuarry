@@ -81,7 +81,9 @@
 		log_world("## DEBUG: transfer_to(): Some idiot has tried to transfer_to() a non mob/living mob. Please inform Carn")
 	// The identity follows the mind: adopt the old body's if the mind has none
 	// yet, else the new body's (a brand-new character).
-	var/datum/character_identity/carried_identity = get_identity() || new_character.identity
+	var/datum/character_identity/carried_identity = get_identity()
+	if(!carried_identity && isliving(new_character))
+		carried_identity = new_character.identity
 	identity = carried_identity
 	var/datum/component/antag/changeling/changeling_comp
 	var/mob/living/old_character = current
@@ -97,7 +99,8 @@
 
 	current = new_character		//link ourself to our new body
 	new_character.mind = src	//and link our new body to ourself
-	new_character.bind_identity(identity)
+	if(isliving(new_character))
+		new_character.bind_identity(identity)
 	if(old_character)
 		SEND_SIGNAL(old_character, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, new_character)
 	SEND_SIGNAL(new_character, COMSIG_MOB_MIND_TRANSFERRED_INTO, old_character)
