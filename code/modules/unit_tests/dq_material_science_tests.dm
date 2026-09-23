@@ -2,7 +2,6 @@
 
 /datum/unit_test/dq_material_slots_resolve_defaults/Run()
 	var/datum/material_template/slots = material_template_for_application(MATERIAL_APPLICATION_CELL)
-	var/slots_total = SHEET_MATERIAL_AMOUNT * 2
 	var/list/resolved = slots.resolve(list(MATERIAL_ROLE_CONDUCTOR = MAT_SILVER))
 	TEST_ASSERT_EQUAL(resolved[MATERIAL_ROLE_CONDUCTOR], MAT_SILVER, "An explicit role choice must override its default")
 	TEST_ASSERT_EQUAL(resolved[MATERIAL_ROLE_ELECTRODE], MAT_COPPER, "Unchanged roles must retain their sensible defaults")
@@ -101,7 +100,6 @@
 
 /datum/unit_test/dq_material_blueprint_has_no_category_gate/Run()
 	var/datum/material_template/slots = material_template_for_application(MATERIAL_APPLICATION_CELL)
-	var/slots_total = SHEET_MATERIAL_AMOUNT * 2
 	var/list/unusual = list(
 		MATERIAL_ROLE_CONDUCTOR = MAT_CLOTH,
 		MATERIAL_ROLE_ELECTRODE = MAT_GLASS,

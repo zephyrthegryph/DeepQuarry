@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Item composition is one system: every object's materials come from a per-type blueprint (template plus total) instead of a separate per-item matter list. Recycling, digestion and lathes read the same parts that material science simulates."
+  - balance: "Cells, cable coils, standard tools and surgical instruments now recycle into their blueprint's parts (for example copper and plastic for cable) with the same total amount as before."
+  - bugfix: "Plastic toy handcuffs are made of plastic again; their materials used a key that named no material."
+  - code_imp: "Items no longer allocate a material list each; boot creates far fewer lists."
