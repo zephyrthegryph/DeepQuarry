@@ -42,6 +42,11 @@
 	var/list/hat_offset = list("north" = list(0, -3), "south" = list(0, -3), "east" = list(4, -3), "west" = list(-4, -3))
 
 /// Determines if the borg has the proper flags to show an overlay.
+// Most sprites use one of a few hat offset tables; share identical ones (read-only).
+/datum/robot_sprite/New()
+	hat_offset = intern_list(hat_offset)
+	return ..()
+
 /datum/robot_sprite/proc/sprite_flag_check(flag_to_check)
 	return (sprite_flags & flag_to_check)
 

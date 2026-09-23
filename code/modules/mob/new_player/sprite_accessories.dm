@@ -58,6 +58,11 @@ GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Se
 /**
  * Gets the number of color channels we have.
  */
+// Most accessories keep the default species list; share identical tables (read-only).
+/datum/sprite_accessory/New()
+	species_allowed = intern_list(species_allowed)
+	return ..()
+
 /datum/sprite_accessory/proc/get_color_channel_count()
 	return do_colouration ? 1 : 0
 

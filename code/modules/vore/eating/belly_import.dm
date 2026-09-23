@@ -1189,7 +1189,7 @@
 				new_belly.set_messages(new_fullness5_messages,BELLY_LIQUID_MESSAGE5, limit = BELLIES_MESSAGE_MAX)
 
 		// After import updates
-		new_belly.items_preserved.Cut()
+		LAZYCLEARLIST(new_belly.items_preserved)
 		new_belly.update_internal_overlay()
 
 	host.handle_belly_update()

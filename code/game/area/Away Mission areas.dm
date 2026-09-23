@@ -2,7 +2,7 @@
 	name = "\improper Unknown Location"
 	icon_state = "away"
 	var/list/valid_spawn_turfs
-	var/list/valid_mobs = list()
+	var/list/valid_mobs
 	var/list/valid_flora
 	var/mobcountmax = 0
 	var/floracountmax = 0
@@ -38,7 +38,7 @@
 		spawn_flora_on_turf()
 
 /area/proc/spawn_mob_on_turf()
-	if(!valid_mobs.len)
+	if(!length(valid_mobs))
 		log_mapping("[src] does not have a set valid mobs list!")
 		return TRUE
 
@@ -46,7 +46,7 @@
 	var/turf/Turf
 	if(semirandom)
 		for(var/groupscount = 1 to semirandom_groups)
-			var/ourgroup = pickweight(valid_mobs)
+			var/ourgroup = pickweight(valid_mobs || list())
 			var/goodnum = rand(semirandom_group_min, semirandom_group_max)
 			for(var/mobscount = 1 to goodnum)
 				if(!length(valid_spawn_turfs))
@@ -60,7 +60,7 @@
 		for(var/mobscount = 1 to mobcountmax)
 			if(!length(valid_spawn_turfs))
 				break
-			M = pickweight(valid_mobs)
+			M = pickweight(valid_mobs || list())
 			Turf = DEFAULTPICK(valid_spawn_turfs, null)
 			LAZYREMOVE(valid_spawn_turfs, Turf)
 			var/mob/ourmob = new M(Turf)

@@ -352,7 +352,7 @@ GLOBAL_LIST_BOILERPLATE(all_crematoriums, /obj/structure/morgue/crematorium)
 
 
 /obj/structure/morgue/crematorium/vr
-	var/list/allowed_items = list(/obj/item/organ,
+	var/static/list/allowed_items = list(/obj/item/organ,
 			/obj/item/implant,
 			/obj/item/material/shard/shrapnel,
 			/mob/living)

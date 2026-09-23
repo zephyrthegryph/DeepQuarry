@@ -51,7 +51,7 @@
 			if(!(toggle_addon in host.vore_selected.mode_flag_list))
 				return FALSE
 			host.vore_selected.mode_flags ^= host.vore_selected.mode_flag_list[toggle_addon]
-			host.vore_selected.items_preserved.Cut() //Re-evaltuate all items in belly on
+			LAZYCLEARLIST(host.vore_selected.items_preserved) //Re-evaltuate all items in belly on
 			host.vore_selected.slow_digestion = FALSE
 			if(host.vore_selected.mode_flags & DM_FLAG_SLOWBODY)
 				host.vore_selected.slow_digestion = TRUE
@@ -73,7 +73,7 @@
 				return FALSE
 
 			host.vore_selected.item_digest_mode = new_mode
-			host.vore_selected.items_preserved.Cut() //Re-evaltuate all items in belly on belly-mode change
+			LAZYCLEARLIST(host.vore_selected.items_preserved) //Re-evaltuate all items in belly on belly-mode change
 			. = TRUE
 		if("b_contaminates") // Reverting upstream's change because why reset save files due to a different server's drama?
 			host.vore_selected.contaminates = !host.vore_selected.contaminates
@@ -89,7 +89,7 @@
 			if(!(new_color in GLOB.contamination_colors))
 				return FALSE
 			host.vore_selected.contamination_color = new_color
-			host.vore_selected.items_preserved.Cut() //To re-contaminate for new color
+			LAZYCLEARLIST(host.vore_selected.items_preserved) //To re-contaminate for new color
 			. = TRUE
 		if("b_egg_type")
 			var/new_egg_type = params["val"]
@@ -551,14 +551,14 @@
 			if(!isnum(new_damage))
 				return FALSE
 			host.vore_selected.digest_burn = CLAMP(new_damage, 0, host.vore_selected.get_unused_digestion_damage() + host.vore_selected.digest_burn) // sanity check following tgui input
-			host.vore_selected.items_preserved.Cut()
+			LAZYCLEARLIST(host.vore_selected.items_preserved)
 			. = TRUE
 		if("b_brute_dmg")
 			var/new_damage = text2num(params["val"])
 			if(!isnum(new_damage))
 				return FALSE
 			host.vore_selected.digest_brute = CLAMP(new_damage, 0, host.vore_selected.get_unused_digestion_damage() + host.vore_selected.digest_brute)
-			host.vore_selected.items_preserved.Cut()
+			LAZYCLEARLIST(host.vore_selected.items_preserved)
 			. = TRUE
 		if("b_oxy_dmg")
 			var/new_damage = text2num(params["val"])

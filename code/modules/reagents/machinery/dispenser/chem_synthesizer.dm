@@ -39,7 +39,7 @@
 	var/list/catalyst_ids // This keeps track of the chemicals in the catalyst to remove before bottling.
 	var/list/cartridges = list() // Associative, label -> cartridge
 
-	var/list/spawn_cartridges = list(
+	var/static/list/spawn_cartridges = list(
 			/obj/item/reagent_containers/chem_disp_cartridge/hydrogen,
 			/obj/item/reagent_containers/chem_disp_cartridge/lithium,
 			/obj/item/reagent_containers/chem_disp_cartridge/carbon,

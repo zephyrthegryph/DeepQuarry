@@ -47,7 +47,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/list/all_arfgs = null		//Similar, but a list of all arfgs adjacent to this area
 	var/firedoors_closed = 0
 	var/arfgs_active = 0
-	var/list/ambience = list()
+	var/list/ambience
 	var/list/forced_ambience = null
 	var/sound_env = STANDARD_STATION
 	var/turf/base_turf //The base turf type of the area, which can be used to override the z-level's base turf
@@ -423,10 +423,10 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 			L << chosen_ambiance
 		else
 			L << sound(null, channel = CHANNEL_AMBIENCE_FORCED)
-	else if(src.ambience && src.ambience.len)
+	else if(src.ambience && length(src.ambience))
 		var/ambience_odds = L.read_preference(/datum/preference/numeric/ambience_chance)
 		if(prob(ambience_odds) && (world.time >= L.client.time_last_ambience_played + 1 MINUTE))
-			var/sound = pick(ambience)
+			var/sound = DEFAULTPICK(ambience, null)
 			L << sound(sound, repeat = 0, wait = 0, volume = 50 * volume_mod, channel = CHANNEL_AMBIENCE)
 			L.client.time_last_ambience_played = world.time
 

@@ -21,7 +21,7 @@
 	var/spell_power_modifier = 1.0	// Multiplier on how strong spells are.
 	var/cooldown_modifier 	 = 1.0	// Multiplier on cooldowns for spells.
 	var/list/spells		// This contains the buttons used to make spells in the user's hand.
-	var/list/appearances = list(	// Assoc list containing possible icon_states that the wiz can change the core to.
+	var/static/list/appearances = list(	// Assoc list containing possible icon_states that the wiz can change the core to.
 		"default"			= "technomancer_core",
 		"wizard's cloak"	= "wizard_cloak"
 		)

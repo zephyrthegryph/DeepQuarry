@@ -293,16 +293,16 @@
 
 	switch(item_digest_mode)
 		if(IM_HOLD)
-			items_preserved |= I
+			LAZYOR(items_preserved, I)
 		if(IM_DIGEST_FOOD)
 			if(istype(I,/obj/item/reagent_containers/food) || istype(I, /obj/item/organ))
 				var/obj/item/organ/R = I
 				if(istype(R) && R.robotic >= ORGAN_ROBOT)
-					items_preserved |= I
+					LAZYOR(items_preserved, I)
 				else
 					did_an_item = digest_item(I, touchable_amount, delta_factor)
 			else
-				items_preserved |= I
+				LAZYOR(items_preserved, I)
 		if(IM_DIGEST,IM_DIGEST_PARALLEL)
 			did_an_item = digest_item(I, touchable_amount, delta_factor)
 	return did_an_item

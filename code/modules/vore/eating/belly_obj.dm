@@ -139,7 +139,7 @@
 
 	var/tmp/mob/living/owner					// The mob whose belly this is.
 	var/digest_mode = DM_HOLD				// Current mode the belly is set to from digest_modes (+transform_modes if human)
-	var/tmp/list/items_preserved = list()		// Stuff that wont digest so we shouldn't process it again.
+	var/tmp/list/items_preserved		// Stuff that wont digest so we shouldn't process it again.
 	var/tmp/recent_sound = FALSE				// Prevent audio spam
 	var/tmp/drainmode = DR_NORMAL				// Simply drains the prey then does nothing.
 	var/tmp/digested_prey_count = 0				// Amount of prey that have been digested
@@ -512,7 +512,7 @@
 		count += release_specific_contents(AM, silent = TRUE)
 
 	//Clean up our own business
-	items_preserved.Cut()
+	LAZYCLEARLIST(items_preserved)
 
 	//Determines privacy
 	var/privacy_range = world.view
@@ -568,7 +568,7 @@
 		slip.slip_protect = world.time + 25 // This is to prevent slipping back into your pred if they stand on soap or something.
 	//Place them into our drop_location
 	M.forceMove(drop_location())
-	items_preserved -= M
+	LAZYREMOVE(items_preserved, M)
 
 	//Special treatment for absorbed prey
 	if(isliving(M))
@@ -705,7 +705,7 @@
 				var/obj/item/organ/internal/mmi_holder/MMI = W
 				var/obj/item/mmi/brainbox = MMI.removed()
 				if(brainbox)
-					items_preserved += brainbox
+					LAZYADD(items_preserved, brainbox)
 					hasMMI = brainbox // Adjust how MMI's are handled
 			for(var/slot in slots)
 				var/obj/item/I = M.get_equipped_item(slot = slot)
@@ -714,9 +714,9 @@
 					if(contaminates)
 						I.gurgle_contaminate(contents, contamination_flavor, contamination_color) //We do an initial contamination pass to get stuff like IDs wet.
 					if(item_digest_mode == IM_HOLD)
-						items_preserved |= I
+						LAZYOR(items_preserved, I)
 					else if(item_digest_mode == IM_DIGEST_FOOD && !(istype(I,/obj/item/reagent_containers/food) || istype(I,/obj/item/organ) || istype(I,/obj/item/reagent_containers/pill))) // Allow pills to digest in bellies
-						items_preserved |= I
+						LAZYOR(items_preserved, I)
 
 	//Reagent transfer
 	if(ishuman(owner))
@@ -763,7 +763,7 @@
 				owner.soulgem.catch_mob(R, R.name)
 			else
 				R.mmi.loc = src
-				items_preserved += R.mmi
+				LAZYADD(items_preserved, R.mmi)
 				hasMMI = R.mmi
 				var/datum/component/mind_host/mmi_host = get_mind_host(hasMMI)
 				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
@@ -884,7 +884,7 @@
 	// 26 lenient overrides that don't declare the keyword, so a keyword call trips DreamChecker.
 	var/digested = item.digest_act(src, touchable_amount, 0, delta_factor)
 	if(digested == FALSE)
-		items_preserved |= item
+		LAZYOR(items_preserved, item)
 	else
 		owner_adjust_nutrition((nutrition_percent / 100) * 5 * digested)
 		digested = TRUE
@@ -945,7 +945,7 @@
 		if(I.gurgled && target.contaminates)
 			I.wash(CLEAN_WASH)
 			I.gurgle_contaminate(target.contents, target.contamination_flavor, target.contamination_color)
-	items_preserved -= content
+	LAZYREMOVE(items_preserved, content)
 	if(!silent)
 		handle_visual_update()
 

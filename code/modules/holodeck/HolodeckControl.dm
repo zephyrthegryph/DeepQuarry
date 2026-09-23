@@ -24,7 +24,7 @@
 	var/powerdown_program = "Turn Off"
 	var/default_program = "Empty Court"
 
-	var/list/supported_programs = list(
+	var/static/list/supported_programs = list(
 	"Empty Court" 		= new/datum/holodeck_program(/area/holodeck/source_emptycourt, list('sound/music/THUNDERDOME.ogg')),
 	"Boxing Ring" 		= new/datum/holodeck_program(/area/holodeck/source_boxingcourt, list('sound/music/THUNDERDOME.ogg')),
 	"Basketball" 		= new/datum/holodeck_program(/area/holodeck/source_basketball, list('sound/music/THUNDERDOME.ogg')),

@@ -72,7 +72,7 @@
 	announce_delay_lower_bound = 1 MINUTE
 	announce_delay_upper_bound = 5 MINUTES
 	// This could be made into a GLOB accessible list for reuse if needed.
-	var/list/area/excluded = list(
+	var/static/list/area/excluded = list(
 		/area/submap,
 		/area/shuttle,
 		/area/crew_quarters,

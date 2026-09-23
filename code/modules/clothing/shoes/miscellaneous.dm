@@ -405,7 +405,7 @@
 	icon_state = "jackboots"
 
 /obj/item/clothing/shoes/clown_shoes
-	var/list/squeak_sound = list("clownstep"=1)
+	var/static/list/squeak_sound = list("clownstep"=1)
 
 /obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
 	.=..()

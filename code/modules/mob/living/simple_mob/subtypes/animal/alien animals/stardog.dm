@@ -689,7 +689,7 @@
 /area/redgate/stardog/flesh_abyss/spawn_mob_on_turf()
 	if(!spawnstuff)
 		return
-	if(!valid_mobs.len)
+	if(!length(valid_mobs))
 		log_mapping("[src] does not have a set valid mobs list!")
 		return TRUE
 
@@ -697,7 +697,7 @@
 	var/turf/Turf
 	if(semirandom)
 		for(var/groupscount = 1 to (semirandom_groups))
-			var/ourgroup = pickweight(valid_mobs)
+			var/ourgroup = pickweight(valid_mobs || list())
 			var/goodnum = rand(semirandom_group_min, semirandom_group_max)
 			for(var/mobscount = 1 to (goodnum))
 				M = pickweight(ourgroup)
@@ -707,7 +707,7 @@
 					adjust_mob(ourmob)
 	else
 		for(var/mobscount = 1 to mobcountmax)
-			M = pickweight(valid_mobs)
+			M = pickweight(valid_mobs || list())
 			Turf = DEFAULTPICK(valid_spawn_turfs, null)
 			if(!Turf.check_density())
 				var/mob/ourmob = new M(Turf)
@@ -716,7 +716,7 @@
 /area/redgate/stardog/flesh_abyss/proc/spawn_mob()
 	if(!spawnstuff)
 		return
-	if(!valid_mobs.len)
+	if(!length(valid_mobs))
 		log_mapping("[src] does not have a set valid mobs list!")
 		return
 
@@ -726,7 +726,7 @@
 	var/turf/Turf
 	var/goodnum = rand(semirandom_group_min, semirandom_group_max)
 	for(var/mobscount = 1 to goodnum)
-		M = pickweight(pickweight(valid_mobs))
+		M = pickweight(pickweight(valid_mobs || list()))
 		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			var/mob/ourmob = new M(Turf)

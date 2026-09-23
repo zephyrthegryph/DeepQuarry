@@ -42,7 +42,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	preserve_item = FALSE
 
 	var/mode_index = RMS_STEEL //start at steel creation
-	var/list/modes = list(RMS_STEEL, RMS_GLASS, RMS_CLOTH, RMS_PLASTIC, RMS_STONE, RMS_RAND)
+	var/static/list/modes = list(RMS_STEEL, RMS_GLASS, RMS_CLOTH, RMS_PLASTIC, RMS_STONE, RMS_RAND)
 	var/stored_charge = 0
 	var/max_charge = 1000000 //large storage, equivalent to a little over 33 GIGA batteries.
 	var/charge_cost = 1000
