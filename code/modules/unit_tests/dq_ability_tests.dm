@@ -135,8 +135,9 @@
 /// turf next to (not test_floor() itself), so mutating its area doesn't leak
 /// into every other test sharing the canonical test floor.
 /datum/unit_test/proc/dq_respite_test_human()
-	var/turf/dark_turf = get_step(test_floor(), SOUTH)
-	if(get_area(dark_turf).type != /area/shadekin)
+	var/turf/dark_turf = get_step(test_floor(), SOUTH) || test_floor()
+	var/area/current = get_area(dark_turf)
+	if(!current || current.type != /area/shadekin)
 		ChangeArea(dark_turf, new /area/shadekin())
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, dark_turf)
 	var/datum/component/shadekin/SK = H.AddComponent(/datum/component/shadekin/full)
