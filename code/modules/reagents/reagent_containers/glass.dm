@@ -168,6 +168,7 @@
 	item_state = "beaker"
 	center_of_mass_x = 15
 	center_of_mass_y = 11
+	material_template = /datum/material_template/container
 	material_total = 500
 	drop_sound = 'sound/items/drop/glass.ogg'
 	pickup_sound = 'sound/items/pickup/glass.ogg'
@@ -225,6 +226,7 @@
 	icon_state = "beakerlarge"
 	center_of_mass_x = 16
 	center_of_mass_y = 11
+	material_template = /datum/material_template/container
 	material_total = 5000
 	volume = 120
 	amount_per_transfer_from_this = 10
@@ -238,6 +240,7 @@
 	icon_state = "beakernoreact"
 	center_of_mass_x = 16
 	center_of_mass_y = 13
+	material_template = /datum/material_template/container
 	material_total = 500
 	volume = 60
 	amount_per_transfer_from_this = 10
@@ -249,6 +252,7 @@
 	icon_state = "beakerbluespace"
 	center_of_mass_x = 16
 	center_of_mass_y = 11
+	material_template = /datum/material_template/container
 	material_total = 5000
 	volume = 300
 	amount_per_transfer_from_this = 10
@@ -262,6 +266,7 @@
 	icon_state = "vial"
 	center_of_mass_x = 15
 	center_of_mass_y = 9
+	material_template = /datum/material_template/container
 	material_total = 250
 	volume = 30
 	w_class = ITEMSIZE_TINY

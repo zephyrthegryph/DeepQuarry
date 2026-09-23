@@ -4,6 +4,7 @@
 
 /obj/item/cell
 	material_template = /datum/material_template/cell
+	material_total = 2 * SHEET_MATERIAL_AMOUNT
 	name = "power cell"
 	desc = "A rechargable electrochemical power cell."
 	icon = 'icons/obj/power_cells.dmi' // swap to 'icons/obj/power_cells_.dmi' for new sprites. // Enable new sprites
@@ -37,7 +38,6 @@
 	var/material_quenched = FALSE
 	var/material_feedback_cooldown = 0
 
-	material_total = 700 + 50
 
 	drop_sound = 'sound/items/drop/component.ogg'
 	pickup_sound = 'sound/items/pickup/component.ogg'
@@ -51,6 +51,7 @@
 	// A cell's temperature and electrical phase are functional state even for
 	// the standard construction. Unlike idle machine housings, cells therefore
 	// always need a service datum; it sleeps dependency-driven when stable.
+	apply_blueprint_effects()
 	enable_material_service()
 	AddElement(/datum/element/electrovoreable)
 	c_uid = cell_uid++

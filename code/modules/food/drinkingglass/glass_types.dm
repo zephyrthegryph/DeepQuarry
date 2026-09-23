@@ -8,6 +8,7 @@
 	volume = 30
 	max_transfer_amount = 30
 	rim_pos = list(23,13,20) // y, x0, x1
+	material_template = /datum/material_template/container
 	material_total = 60
 
 /obj/item/reagent_containers/food/drinks/glass2/rocks
@@ -19,6 +20,7 @@
 	volume = 20
 	max_transfer_amount = 20
 	rim_pos = list(21, 10, 23)
+	material_template = /datum/material_template/container
 	material_total = 40
 
 /obj/item/reagent_containers/food/drinks/glass2/shake
@@ -30,6 +32,7 @@
 	volume = 30
 	max_transfer_amount = 30
 	rim_pos = list(25, 13, 21)
+	material_template = /datum/material_template/container
 	material_total = 30
 
 /obj/item/reagent_containers/food/drinks/glass2/cocktail
@@ -41,6 +44,7 @@
 	volume = 15
 	max_transfer_amount = 15
 	rim_pos = list(22, 13, 21)
+	material_template = /datum/material_template/container
 	material_total = 30
 
 /obj/item/reagent_containers/food/drinks/glass2/shot
@@ -52,6 +56,7 @@
 	volume = 5
 	max_transfer_amount = 5
 	rim_pos = list(17, 13, 21)
+	material_template = /datum/material_template/container
 	material_total = 10
 
 /obj/item/reagent_containers/food/drinks/glass2/pint
@@ -63,6 +68,7 @@
 	volume = 60
 	max_transfer_amount = 60
 	rim_pos = list(25, 12, 21)
+	material_template = /datum/material_template/container
 	material_total = 120
 
 /obj/item/reagent_containers/food/drinks/glass2/mug
@@ -74,6 +80,7 @@
 	volume = 40
 	max_transfer_amount = 40
 	rim_pos = list(22, 12, 20)
+	material_template = /datum/material_template/container
 	material_total = 80
 
 /obj/item/reagent_containers/food/drinks/glass2/wine
@@ -85,4 +92,5 @@
 	volume = 25
 	max_transfer_amount = 25
 	rim_pos = list(25, 12, 21)
+	material_template = /datum/material_template/container
 	material_total = 50

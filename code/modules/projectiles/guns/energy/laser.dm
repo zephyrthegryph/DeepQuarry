@@ -448,7 +448,6 @@
 	maxcharge = 7200
 	charge = 7200
 	charge_amount = 20
-	material_total = 350 + 50
 	preserve_item = 1
 
 /obj/item/gun/energy/tommylaser

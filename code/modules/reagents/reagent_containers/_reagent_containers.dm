@@ -1,5 +1,4 @@
 /obj/item/reagent_containers
-	material_template = /datum/material_template/container
 	name = "Container"
 	desc = "..."
 	icon = 'icons/obj/chemical.dmi'

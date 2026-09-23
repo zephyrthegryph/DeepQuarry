@@ -11,6 +11,7 @@
 	unacidable = TRUE //glass
 	center_of_mass_x = 16
 	center_of_mass_y = 10
+	material_template = /datum/material_template/container
 	material_total = 500
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/on_reagent_change()
@@ -117,6 +118,7 @@
 	icon_state = "shotglass"
 	amount_per_transfer_from_this = 10
 	volume = 10
+	material_template = /datum/material_template/container
 	material_total = 175
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/shotglass/on_reagent_change()

@@ -4,7 +4,6 @@
 	icon_state = "modded"
 	charge = 10000
 	maxcharge = 10000
-	material_total = 1000 + 80 + 100
 	self_recharge = TRUE
 	charge_amount = 150
 

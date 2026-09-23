@@ -53,6 +53,15 @@
 		/obj/item/handcuffs/fake = list(MAT_PLASTIC = 500),
 	)
 
+/// The construction total a type was already built with before `matter` was merged
+/// into blueprints (ensure_material_construction() in Initialize), or null.
+/proc/dq_matter_prior_construction_total(path)
+	if(ispath(path, /obj/item/cell))
+		return 2 * SHEET_MATERIAL_AMOUNT
+	if(ispath(path, /obj/item/stack/cable_coil) || ispath(path, /obj/item/tank) || ispath(path, /obj/item/pipe))
+		return SHEET_MATERIAL_AMOUNT
+	return null
+
 /datum/unit_test/dq_matter_type_totals_match_snapshot/Run()
 	var/list/changes = dq_matter_snapshot_changes().Copy()
 	var/list/fixes = dq_matter_snapshot_fixes()
@@ -77,11 +86,15 @@
 			if(!dq_matter_lists_equal(actual, expected) && failures++ < 20)
 				TEST_FAIL("[path]: made of [dq_matter_text(actual)], expected [dq_matter_text(expected)]")
 			continue
-		// A functional blueprint (cell, tool, container...) splits the old total between
-		// its parts. The total is conserved; the material mix may differ.
+		// A functional blueprint splits a total between its parts; the mix may differ
+		// from the old `matter`. Families that already had a real construction keep
+		// that construction's total (their physics runs on it); every other type
+		// conserves its old `matter` total.
 		functional++
-		if(abs(dq_matter_sum(actual) - dq_matter_sum(expected)) > 0.001 && failures++ < 20)
-			TEST_FAIL("[path]: blueprint total [dq_matter_sum(actual)], expected the old total [dq_matter_sum(expected)]")
+		var/construction_total = dq_matter_prior_construction_total(path)
+		var/expected_total = isnull(construction_total) ? dq_matter_sum(expected) : construction_total
+		if(abs(dq_matter_sum(actual) - expected_total) > 0.001 && failures++ < 20)
+			TEST_FAIL("[path]: blueprint total [dq_matter_sum(actual)], expected [expected_total]")
 		if(!dq_matter_lists_equal(actual, expected))
 			mix_disagreements += "[path]: [dq_matter_text(expected)] -> [dq_matter_text(actual)]"
 	log_test("dq_matter: [checked] item types checked, [functional] with functional blueprints, [length(mix_disagreements)] whose material mix changed:")

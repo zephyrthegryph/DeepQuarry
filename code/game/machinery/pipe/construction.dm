@@ -5,6 +5,7 @@ Buildable meters
 
 /obj/item/pipe
 	material_template = /datum/material_template/pressure
+	material_total = SHEET_MATERIAL_AMOUNT
 	name = "pipe"
 	desc = "A pipe."
 	var/pipe_type
@@ -46,6 +47,7 @@ Buildable meters
 	else
 		pipe_type = _pipe_type
 		set_dir(_dir)
+		apply_blueprint_effects()
 
 	update()
 	pixel_x += rand(-5, 5)

@@ -216,10 +216,14 @@
 	name = "cable coil synthesizer"
 	desc = "A device that makes cable."
 	gender = NEUTER
-	material_total = 0
 	uses_charge = 1
 	charge_costs = list(1)
 	custom_handling = TRUE
+
+/// A synthesiser keeps its cable construction for the cable it lays, but is not
+/// made of recyclable material itself (it would dupe materials in a recycler).
+/obj/item/stack/cable_coil/cyborg/material_totals()
+	return list()
 
 /obj/item/stack/cable_coil/cyborg/attack_self(mob/user)
 	. = ..(user)

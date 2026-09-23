@@ -210,3 +210,10 @@
 	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
 	if(liner)
 		. += span_notice("Pressure liner: <b>[liner.display_name]</b> ([round(material_liner_integrity)]% intact); shell rated to [round(effective_maximum_pressure() / ONE_ATMOSPHERE, 0.1)] atmospheres.")
+
+/// Apply the declared blueprint's physical effects (integrity, handling, and family
+/// stats such as a cell's discharge limit) to a freshly made item. Stores no lists.
+/obj/item/proc/apply_blueprint_effects()
+	var/datum/material_template/template = get_material_template()
+	if(template && !template.bulk)
+		apply_material_role_effects(template.application)
