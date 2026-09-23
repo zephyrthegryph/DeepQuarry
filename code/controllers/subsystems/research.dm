@@ -349,10 +349,10 @@ SUBSYSTEM_DEF(research)
 	// read-only cache derived from node.design_ids; it must not be mutated after this proc.
 	for(var/design_id in techweb_designs)
 		var/datum/design_techweb/D = techweb_designs[design_id]
-		D.unlocked_by = list()
+		D.unlocked_by = null
 	for(var/node_id in techweb_nodes)
 		var/datum/techweb_node/node = techweb_nodes[node_id]
-		node.unlock_ids = list()
+		node.unlock_ids = null
 		for(var/i in node.design_ids)
 			var/datum/design_techweb/D = techweb_designs[i]
 			if(!D)
@@ -360,7 +360,7 @@ SUBSYSTEM_DEF(research)
 			node.design_ids[i] = TRUE
 			// unlocked_by is the precomputed reverse-index: design → list of node IDs that unlock it.
 			// After this proc returns, unlocked_by is considered immutable for the lifetime of the round.
-			D.unlocked_by += node.id
+			LAZYADD(D.unlocked_by, node.id)
 		if(node.hidden)
 			techweb_nodes_hidden[node.id] = TRUE
 		if(node.experimental)
@@ -371,12 +371,12 @@ SUBSYSTEM_DEF(research)
 /datum/controller/subsystem/research/proc/generate_techweb_unlock_linking()
 	for(var/node_id in techweb_nodes) //Clear all unlock links to avoid duplication.
 		var/datum/techweb_node/node = techweb_nodes[node_id]
-		node.unlock_ids = list()
+		node.unlock_ids = null
 	for(var/node_id in techweb_nodes)
 		var/datum/techweb_node/node = techweb_nodes[node_id]
 		for(var/prereq_id in node.prereq_ids)
 			var/datum/techweb_node/prereq_node = techweb_node_by_id(prereq_id)
-			prereq_node.unlock_ids[node.id] = node
+			LAZYSET(prereq_node.unlock_ids, node.id, node)
 
 /datum/controller/subsystem/research/proc/calculate_techweb_item_unlocking_requirements()
 	for(var/node_id in techweb_nodes)

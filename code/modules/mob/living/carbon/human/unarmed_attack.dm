@@ -1,8 +1,9 @@
 //Species unarmed attacks
 /datum/unarmed_attack
 	var/attack_name = "fist"
-	var/attack_verb = list("attack")	// Empty hand hurt intent verb.
-	var/attack_noun = list("fist")
+	// Both are interned in New(): shared between attacks with the same words, so never write to them.
+	var/list/attack_verb = list("attack")	// Empty hand hurt intent verb.
+	var/list/attack_noun = list("fist")
 	var/damage = 0						// Extra empty hand attack damage.
 	var/attack_sound = "punch"
 	var/miss_sound = 'sound/weapons/punchmiss.ogg'
@@ -17,6 +18,13 @@
 
 	var/eye_attack_text
 	var/eye_attack_text_victim
+
+/datum/unarmed_attack/New()
+	..()
+	if(islist(attack_verb))
+		attack_verb = string_list(attack_verb)
+	if(islist(attack_noun))
+		attack_noun = string_list(attack_noun)
 
 /datum/unarmed_attack/proc/get_sparring_variant()
 	if(sparring_variant_type)

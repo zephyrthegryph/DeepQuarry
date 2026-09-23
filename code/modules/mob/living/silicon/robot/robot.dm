@@ -123,7 +123,7 @@
 	var/obj/item/implant/restrainingbolt/bolt	// The restraining bolt installed into the cyborg.
 	var/datum/tgui_module/robot_ui/robotact
 
-	var/list/robot_verbs_default = list(
+	var/static/list/robot_verbs_default = list(
 		/mob/living/silicon/robot/proc/sensor_mode,
 		/mob/living/silicon/robot/proc/robot_checklaws,
 		/mob/living/silicon/robot/proc/robot_mount,

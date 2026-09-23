@@ -283,6 +283,7 @@ GLOBAL_LIST_EMPTY(micro_tunnels)
 
 /obj/Initialize(mapload)
 	. = ..()
+	intern_access_lists()
 	if(micro_target)
 		verbs += /obj/proc/micro_interact
 

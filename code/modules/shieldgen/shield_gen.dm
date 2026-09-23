@@ -185,7 +185,7 @@
 
 		average_field_strength = 0 //recalculate the average field strength
 		for(var/obj/effect/energy_field/E in field)
-			E.max_strength = target_field_strength
+			E.set_max_strength(target_field_strength)
 			var/amount_to_strengthen = renwick_increase_per_field - renwick_upkeep_per_field
 			if(E.ticks_recovering > 0 && amount_to_strengthen > 0)
 				E.adjust_strength( min(amount_to_strengthen / 10, 0.1), 0 )
@@ -193,7 +193,7 @@
 			else
 				E.adjust_strength(amount_to_strengthen, 0)
 
-			average_field_strength += E.strength
+			average_field_strength += E.get_strength()
 
 		average_field_strength /= field.len
 		if(average_field_strength < 1)

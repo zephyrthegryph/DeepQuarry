@@ -2,7 +2,6 @@
 	name = "meat"
 	desc = "A slab of meat."
 	icon_state = "meat"
-	health = 180
 	filling_color = "#FF1C1C"
 	center_of_mass_x = 16
 	center_of_mass_y = 14
@@ -186,7 +185,6 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 	name = "weird meat"
 	desc = "A chunk of pulsating meat."
 	icon_state = "wormmeat"
-	health = 180
 	filling_color = "#551A8B"
 	center_of_mass_x = 16
 	center_of_mass_y = 14

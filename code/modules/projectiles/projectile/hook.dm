@@ -22,7 +22,7 @@
 
 	var/disarm_chance = 60		// Chance for a successful disarm hit. The inverse is a throw away from the firer.
 
-	var/list/help_messages = list("slaps", "pokes", "nudges", "bumps", "pinches")
+	var/static/list/help_messages = list("slaps", "pokes", "nudges", "bumps", "pinches")
 	var/done_mob_unique = FALSE	// Has the projectile already done something to a mob?
 
 	var/datum/beam/chain = null

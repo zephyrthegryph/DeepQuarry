@@ -673,7 +673,7 @@
 	power_draw_per_use = 30
 
 	var/list/my_langs = list()
-	var/list/readable_langs = list(
+	var/static/list/readable_langs = list(
 		LANGUAGE_GALCOM,
 		LANGUAGE_SOL_COMMON,
 		LANGUAGE_TRADEBAND,

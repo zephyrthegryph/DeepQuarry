@@ -300,6 +300,33 @@ if grep -RInE --include='*.dm' '\b(organ|internal_organ|external_organ|our_organ
 	FAILED=1
 fi;
 
+part "separate object health pools"
+# Every object's hit points are its integrity (doc/rewrite/damage.md Â§5, D3):
+# take_damage() to harm, repair_damage() to repair, integrity_failure for a
+# broken state, atom_destruction()/handle_deconstruct() for what zero does.
+# These are the deleted per-type pools; don't bring them back.
+d3_pools=0
+d3_pool() { # <pattern> <path...>
+	local pattern="$1"; shift
+	if grep -RInE --include='*.dm' "$pattern" "$@"; then d3_pools=1; fi
+}
+d3_pool '^[[:space:]]*var/(damage|damage_overlay)\b' code/game/turfs/simulated/walls.dm
+d3_pool '^/turf/simulated/wall[^[:space:]]*/(take_damage|update_damage)\(' code/game/turfs
+d3_pool '^[[:space:]]+var/integrity\b|\bintegrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)' code/modules/blob2
+d3_pool '\bblob_(max_)?health\b' code/modules/blob
+d3_pool '^[[:space:]]+var/(damage|max_damage|broken_damage|damage_failure)\b|\b(max_damage|broken_damage|damage_failure)\b' code/modules/modular_computers
+d3_pool '\b(maxintegrity|integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--))|^[[:space:]]+var/integrity\b' code/game/objects/items/weapons/tanks
+d3_pool '\bshield_health\b' code
+d3_pool '^[[:space:]]+var/hp\b|\bhp[[:space:]]*[-+]?=[^=]' code/game/objects/items/shooting_range.dm
+d3_pool '^[[:space:]]+var/(strength|max_strength)\b|\.(strength|max_strength)\b' code/modules/shieldgen/energy_field.dm code/modules/shieldgen/shield_gen.dm code/modules/xenoarcheaology/effects/forcefield.dm
+d3_pool '\bhealth\b' code/game/objects/items/weapons/material code/game/objects/items/weapons/traps.dm code/modules/vore/smoleworld
+d3_pool '\.integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)' code/game/mecha
+if [ $d3_pools -ne 0 ]; then
+	echo
+	echo -e "${RED}ERROR: a separate object health pool was reintroduced. Objects use integrity: take_damage()/repair_damage()/get_integrity(), integrity_failure and atom_destruction().${NC}"
+	FAILED=1
+fi;
+
 part "contract-only physical types"
 # Contracts may observe or extend ordinary world objects, but must not define
 # dedicated items, machines, mobs, turfs, or areas. Physical play goes through

@@ -699,8 +699,7 @@
 	desc = "A stone wielded by only the most powerful of cult leaders. It projects a shield around the user."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "implant_melted"
-	shield_health = 100
-	max_shield_health = 100
+	max_integrity = 100
 	shield_regen_delay = 10 SECONDS
 	shield_regen_amount = 10
 	size_x = 1

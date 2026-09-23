@@ -3,7 +3,7 @@
 	drone_type = null //var filled by drone choice.
 	fabricator_tag = "Unified Drone Fabricator"
 
-	var/list/possible_drones = list("Construction Module" = /mob/living/silicon/robot/drone/construction,
+	var/static/list/possible_drones = list("Construction Module" = /mob/living/silicon/robot/drone/construction,
 									"Maintenance Module" = /mob/living/silicon/robot/drone,
 									) //List of drone types to choose from.//Changeable in mapping.
 

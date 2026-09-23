@@ -259,7 +259,7 @@
 /obj/machinery/bomb_tester/proc/single_tank_sim()
 	faketank.set_volume(tank1.volume)
 	faketank.copy_from(tank1.air_contents)
-	faketank_integrity = tank1.integrity
+	faketank_integrity = tank1.get_integrity() / 10 // The sim counts the seal in its old 20-point scale.
 
 	simulation_results = "<center><h1><b>Single Tank Ignition Test</b></h1></center>"
 	simulation_results += "<hr>"
@@ -283,7 +283,7 @@
 /obj/machinery/bomb_tester/proc/ttv_sim()
 	faketank.set_volume(tank1.air_contents.return_volume() + tank2.air_contents.return_volume())
 	faketank.copy_from(tank1.air_contents)
-	faketank_integrity = tank1.integrity
+	faketank_integrity = tank1.get_integrity() / 10 // The sim counts the seal in its old 20-point scale.
 	faketank.merge(tank2.air_contents)
 
 	simulation_results = "<center><h1><b>Tank Transfer Valve Mixture Test</b></h1></center>"
@@ -309,7 +309,7 @@
 	test_canister.anchored = TRUE
 	faketank.set_volume(tank1.air_contents.return_volume())
 	faketank.copy_from(tank1.air_contents)
-	faketank_integrity = tank1.integrity
+	faketank_integrity = tank1.get_integrity() / 10 // The sim counts the seal in its old 20-point scale.
 
 	var/datum/gas_mixture/fakecanister = new
 	fakecanister.set_volume(test_canister.air_contents.return_volume())

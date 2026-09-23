@@ -52,13 +52,13 @@ other types of metals and chemistry for reagents).
 	/// What categories this design falls under. Used for sorting in production machines.
 	var/list/category = list()
 	/// List of reagents required to create one unit of the product. Currently only supported by the limb grower.
-	var/list/reagents_list = list()
+	var/list/reagents_list // Lazy
 	/// How many times faster than normal is this to build on the protolathe
 	var/lathe_time_factor = 1
 	/// Bitflags indicating what departmental lathes should be allowed to process this design.
 	var/departmental_flags = ALL
 	/// What techwebs nodes unlock this design. Constructed by SSresearch
-	var/list/datum/techweb_node/unlocked_by = list()
+	var/list/datum/techweb_node/unlocked_by // Lazy; built by SSresearch
 	/// Override for the automatic icon generation used for the research console.
 	var/research_icon
 	/// Override for the automatic icon state generation used for the research console.

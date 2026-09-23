@@ -11,7 +11,7 @@
 	var/phrase = 1
 	var/aggressiveness = 1
 	var/safety = 1
-	var/list/phrase_list = list(
+	var/static/list/phrase_list = list(
 		"halt" 			= "HALT! HALT! HALT! HALT!",
 		"bobby" 		= "Stop in the name of the Law.",
 		"compliance" 	= "Compliance is in your best interest.",

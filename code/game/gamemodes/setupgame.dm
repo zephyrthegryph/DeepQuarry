@@ -47,7 +47,7 @@
 	log_world("DNA2: Initial Conflict summary")
 	// This is to setup the initial segments for the gene editing machines to sort gene segments with.
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
-		if(gene.conflict_traits.len)
+		if(LAZYLEN(gene.conflict_traits))
 			var/summery = ""
 			for(var/path in gene.conflict_traits)
 				var/datum/trait/T = GLOB.all_traits[path]
