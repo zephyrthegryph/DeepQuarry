@@ -7,4 +7,4 @@
 // code/__defines/atmospherics.dm as need arises.
 
 /atom
-	var/flags_1 = 0
+	var/tmp/flags_1 = 0

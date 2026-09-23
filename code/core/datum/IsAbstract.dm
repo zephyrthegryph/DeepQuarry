@@ -8,7 +8,7 @@
 */
 
 /// If set, a path at/above this one that expects not to be instantiated.
-/datum/var/abstract_type
+/datum/var/tmp/abstract_type
 
 /// If true, this datum is an instance of an abstract type. Oops.
 /datum/proc/IsAbstract()

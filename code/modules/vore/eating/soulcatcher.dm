@@ -1,14 +1,14 @@
 /obj/soulgem
 	name = "Mind imprintation matrix"
 	desc = "A mind storage and processing system capable of capturing and supporting human-level minds in a small VR space."
-	var/mob/living/owner
-	var/datum/own_mind
+	var/tmp/mob/living/owner
+	var/tmp/datum/own_mind
 	var/obj/belly/linked_belly
-	var/taken_over_name
+	var/tmp/taken_over_name
 
 	var/setting_flags = (NIF_SC_ALLOW_EARS|NIF_SC_ALLOW_EYES|NIF_SC_BACKUPS|NIF_SC_PROJECTING)
-	var/mob/selected_soul = null
-	var/list/brainmobs = list()
+	var/tmp/mob/selected_soul = null
+	var/tmp/list/brainmobs = list()
 	var/inside_flavor = "A small completely white room with a couch, and a window to what seems to be the outside world. A small sign in the corner says 'Configure Me'."
 	var/capture_message = "Your vision fades in a haze of static, before returning.\nAround you, you see...\n"
 	var/transit_message = "Your surroundings change to..."
@@ -16,33 +16,29 @@
 	var/transfer_message = "Transfer Message"
 	var/delete_message = "Delete Message"
 
-// Append the vars to save to our savefile list
-/obj/soulgem/vars_to_save()
-	var/list/saving = list (
-		"setting_flags",
-		"inside_flavor",
-		"capture_message",
-		"transit_message",
-		"release_message",
-		"transfer_message",
-		"delete_message",
-		"linked_belly"
-	)
-	return ..() + saving
+// The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);
+// linked_belly is saved as the belly's name.
+/obj/soulgem/state_codecs()
+	return ..() + list("linked_belly" = /datum/state_codec/soulgem_belly)
 
-// Load the vars_to_save from the savefile
 /obj/soulgem/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
 		owner = loc
 
-// Store the vars_to_save into the save file
-/obj/soulgem/deserialize(list/data)
-	. = ..()
-	if(apply_stored_belly(data["linked_belly"], TRUE))
+/// Saves the linked belly by name, and relinks it to the owner's belly of that name.
+/datum/state_codec/soulgem_belly
+
+/datum/state_codec/soulgem_belly/encode(datum/owner, var_name, value, datum/state_context/ctx)
+	var/obj/belly/belly = value
+	return istype(belly) ? belly.name : null
+
+/datum/state_codec/soulgem_belly/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
+	var/obj/soulgem/gem = owner
+	if(gem.apply_stored_belly(encoded, TRUE))
 		return
-	linked_belly = null
-	owner?.recalculate_vis()
+	gem.linked_belly = null
+	gem.owner?.recalculate_vis()
 
 /obj/soulgem/proc/apply_stored_belly(belly_string, skip_unreg = FALSE)
 	for(var/obj/belly in owner.vore_organs)

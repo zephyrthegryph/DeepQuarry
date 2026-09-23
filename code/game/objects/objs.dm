@@ -6,14 +6,14 @@
 	//Used to store information about the contents of the object.
 	var/w_class // Size of the object.
 	animate_movement = 2
-	var/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
+	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
 	var/show_messages
 	var/can_speak = 0 //For MMIs and admin trickery. If an object has a brainmob in its contents, set this to 1 to allow it to speak.
 
 	var/show_examine = TRUE	// Does this pop up on a mob when the mob is examined?
 
 	var/redgate_allowed = TRUE	//can we be taken through the redgate, in either direction?
-	var/being_shocked = FALSE
+	var/tmp/being_shocked = FALSE
 	var/micro_accepted_scale = 0.5
 	var/micro_target = FALSE
 	var/explosion_resistance
@@ -27,7 +27,7 @@
 	var/economic_sale_invoice_id = 0
 
 	/// Cached custom fire overlay
-	var/custom_fire_overlay
+	var/tmp/custom_fire_overlay
 	/// Particles this obj uses when burning, if any
 	var/burning_particles
 

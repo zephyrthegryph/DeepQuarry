@@ -151,7 +151,7 @@
 
 /////////////////////
 /atom/
-	var/datum/component/orbiter/orbiters
+	var/tmp/datum/component/orbiter/orbiters
 
 // orbiting and orbit_target moved to /datum/component/movable_state.
 

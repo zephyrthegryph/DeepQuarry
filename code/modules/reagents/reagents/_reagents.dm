@@ -4,7 +4,7 @@
 	var/description = REAGENT_DESC_DEVELOPER_WARNING
 	var/taste_description = "bitterness"
 	var/taste_mult = 1 //how this taste compares to others. Higher values means it is more noticable
-	var/datum/reagents/holder = null
+	var/tmp/datum/reagents/holder = null
 	var/reagent_state = SOLID
 	var/list/data = null
 	var/volume = 0

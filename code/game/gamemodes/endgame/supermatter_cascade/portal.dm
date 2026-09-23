@@ -73,7 +73,7 @@
 
 /mob
 	//thou shall always be able to see the rift
-	var/image/riftimage = null
+	var/tmp/image/riftimage = null
 
 /mob/proc/see_rift(obj/singularity/narsie/large/exit/R)
 	var/turf/T_mob = get_turf(src)

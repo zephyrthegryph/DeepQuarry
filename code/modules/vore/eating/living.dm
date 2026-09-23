@@ -268,11 +268,19 @@
 	for(var/obj/belly/B as anything in src.vore_organs)
 		if(B.prevent_saving) // Dont save bellies marked as unsavable.
 			continue
-		serialized += list(B.serialize()) //Can't add a list as an object to another list in Byond. Thanks.
+		var/list/errors = list()
+		var/list/blob = state_serialize(B, NONE, errors)
+		if(!blob)
+			log_state("copy_to_prefs_vr: belly [B.name] of [src] did not serialize: [jointext(errors, "; ")]")
+			continue
+		serialized += list(blob) //Can't add a list as an object to another list in Byond. Thanks.
 
 	P.belly_prefs = serialized
 
-	P.soulcatcher_prefs = src.soulgem.serialize()
+	var/list/errors = list()
+	P.soulcatcher_prefs = state_serialize(src.soulgem, NONE, errors) || list()
+	if(length(errors))
+		log_state("copy_to_prefs_vr: soulgem of [src] did not serialize: [jointext(errors, "; ")]")
 	return TRUE
 
 //
@@ -293,7 +301,9 @@
 			L.release_vore_contents(silent = TRUE)
 		QDEL_LIST(vore_organs)
 		for(var/entry in P.belly_prefs)
-			list_to_object(entry,src)
+			var/list/errors = list()
+			if(!state_materialize(entry, src, NONE, errors))
+				log_state("copy_from_prefs_vr: a belly of [src] did not load: [jointext(errors, "; ")]")
 		if(!length(vore_organs))
 			var/obj/belly/B = new /obj/belly(src)
 			vore_selected = B
@@ -308,8 +318,11 @@
 			src.soulgem.release_mobs()
 			QDEL_NULL(soulgem)
 		if(P.soulcatcher_prefs.len)
-			soulgem = list_to_object(P.soulcatcher_prefs, src)
-		else
+			var/list/errors = list()
+			soulgem = state_materialize(P.soulcatcher_prefs, src, NONE, errors)
+			if(!soulgem)
+				log_state("copy_from_prefs_vr: the soulgem of [src] did not load: [jointext(errors, "; ")]")
+		if(!soulgem)
 			soulgem = new(src)
 
 	return TRUE

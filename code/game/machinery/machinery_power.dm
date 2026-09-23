@@ -71,7 +71,7 @@
 	return 0
 
 /obj/machinery
-	var/recursive_set = FALSE // bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
+	var/tmp/recursive_set = FALSE // bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
 
 // Do not do power stuff in New/Initialize until after ..()
 /obj/machinery/Initialize(mapload)

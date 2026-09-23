@@ -69,7 +69,7 @@
 	var/material_environment_exterior_integrity = 100
 	var/material_environment_fatigue = 0
 	var/material_environment_leaking = FALSE
-	var/material_environment_last_process = 0
+	var/tmp/material_environment_last_process = 0
 
 /obj/proc/material_environment_pressure_limit(base_pressure, radius_mm, wall_thickness_mm, temperature)
 	var/selected_limit = construction_pressure_limit(radius_mm, wall_thickness_mm, temperature)

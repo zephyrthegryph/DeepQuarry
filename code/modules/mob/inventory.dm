@@ -19,7 +19,7 @@ GLOBAL_LIST_INIT(slot_equipment_priority, list(
 	))
 
 /mob
-	var/obj/item/storage/s_active = null // Even ghosts can/should be able to peek into boxes on the ground
+	var/tmp/obj/item/storage/s_active = null // Even ghosts can/should be able to peek into boxes on the ground
 
 ///Returns the thing we're currently holding
 /mob/proc/get_active_held_item() //Currently just a proc for when we do change to /tg/'s item handling.

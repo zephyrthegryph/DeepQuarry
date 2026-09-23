@@ -1,8 +1,8 @@
 /mob
 	///the icon currently used for the typing indicator's bubble
-	var/mutable_appearance/active_typing_indicator
+	var/tmp/mutable_appearance/active_typing_indicator
 	///the icon currently used for the thinking indicator's bubble
-	var/mutable_appearance/active_thinking_indicator
+	var/tmp/mutable_appearance/active_thinking_indicator
 
 /** Creates a thinking indicator over the mob. Note: Prefs are checked in /client/proc/start_thinking() */
 /mob/proc/create_thinking_indicator()
