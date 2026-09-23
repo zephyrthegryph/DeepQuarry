@@ -32,12 +32,14 @@
 	return TRUE
 
 
-/obj/item/assembly/igniter/attack_self(mob/user)
-	. = ..(user)
+/// Overrides assembly's interaction_self(): activate instead of opening the UI.
+/obj/item/assembly/igniter/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	activate()
 	add_fingerprint(user)
+	return TRUE
 
 /obj/item/assembly/igniter/is_hot()
 	return TRUE

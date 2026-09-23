@@ -76,9 +76,21 @@
 		i_beams |= I
 		I.visible = visible
 
-/obj/item/assembly/infra/attack_hand()
-	QDEL_LIST_NULL(i_beams)
+/obj/item/assembly/infra/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/infra_hand,
+	)
 	..()
+
+/// Old attack_hand: clear the beams before falling through to normal pickup.
+/datum/interaction/entry_hand/infra_hand
+	id = "infra_hand"
+	name = "Use"
+	effect = /obj/item/assembly/infra/proc/interaction_hand
+
+/obj/item/assembly/infra/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	QDEL_LIST_NULL(i_beams)
+	return FALSE
 
 /obj/item/assembly/infra/Move()
 	var/t = dir

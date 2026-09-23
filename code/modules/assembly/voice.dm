@@ -26,8 +26,9 @@
 			T.visible_message("[icon2html(src,viewers(src))] beeps, \"[listening ? "Now" : "No longer"] recording input.\"")
 
 
-/obj/item/assembly/voice/attack_self(mob/user)
-	. = ..(user)
+/// Overrides assembly's interaction_self(): activate instead of opening the UI.
+/obj/item/assembly/voice/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	if(!user)

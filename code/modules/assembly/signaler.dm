@@ -70,15 +70,27 @@
 
 	update_icon()
 
-/obj/item/assembly/signaler/attackby(obj/item/W, mob/user, params)
+/obj/item/assembly/signaler/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/signaler_transfer,
+	)
+	..()
+
+/// Old attackby: tap two secured signalers together to copy frequency/code.
+/datum/interaction/entry_item/signaler_transfer
+	id = "signaler_transfer"
+	name = "Transfer"
+	effect = /obj/item/assembly/signaler/proc/interaction_transfer
+
+/obj/item/assembly/signaler/proc/interaction_transfer(mob/user, obj/item/W, datum/interaction/interaction)
 	if(issignaler(W))
 		var/obj/item/assembly/signaler/signaler2 = W
 		if(secured && signaler2.secured)
 			code = signaler2.code
 			set_frequency(signaler2.frequency)
 			to_chat(user, "You transfer the frequency and code of [signaler2] to [src].")
-	else
-		..()
+		return TRUE
+	return FALSE
 
 /obj/item/assembly/signaler/proc/signal()
 	if(!COOLDOWN_FINISHED(src, next_activate))

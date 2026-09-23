@@ -67,13 +67,26 @@
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE
 
-/obj/item/assembly/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/assembly/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/assembly_item,
+		/datum/interaction/entry_self/assembly_self,
+	)
+	..()
+
+/// Old attackby: attach another unsecured assembly.
+/datum/interaction/entry_item/assembly_item
+	id = "assembly_item"
+	name = "Use"
+	effect = /obj/item/assembly/proc/interaction_item
+
+/obj/item/assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(isassembly(W))
 		var/obj/item/assembly/A = W
 		if((!A.secured) && (!secured))
 			attach_assembly(A,user)
-			return
-	return ..()
+			return TRUE
+	return FALSE
 
 /obj/item/assembly/screwdriver_act(mob/user, obj/item/tool)
 	if(toggle_secure())
@@ -93,15 +106,20 @@
 		else
 			. += "\The [src] can be attached!"
 
-/obj/item/assembly/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: subtypes override interaction_self() and call ..() first, matching the
+/// old override chain (a subtype's own handling takes priority; this base opens the UI).
+/datum/interaction/entry_self/assembly_self
+	id = "assembly_self"
+	name = "Use"
+	effect = /obj/item/assembly/proc/interaction_self
+
+/obj/item/assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(!user)
 		return FALSE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/assembly/tgui_state(mob/user)
 	return GLOB.tgui_deep_inventory_state
