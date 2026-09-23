@@ -231,6 +231,8 @@
 		H.injure(INJURY_BLUNT, removed * 2, st, src, flags = INJURE_IGNORE_RESISTANCE) // Causes stomach contractions, makes sense for an overdose to make it much worse.
 
 /datum/reagent/dexalin
+	// Loads the blood with oxygen: more carried per unit of saturation.
+	factors = alist(BF_O2_CARRIAGE = 1.25)
 	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 15))
 	name = REAGENT_DEXALIN
 	id = REAGENT_ID_DEXALIN
@@ -259,6 +261,7 @@
 	holder.remove_reagent(REAGENT_ID_LEXORIN, 8 * removed)
 
 /datum/reagent/dexalinp
+	factors = alist(BF_O2_CARRIAGE = 1.5)
 	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 25))
 	name = REAGENT_DEXALINP
 	id = REAGENT_ID_DEXALINP
@@ -1509,7 +1512,7 @@
 		if(prob(12))
 			M.injure(INJURY_TOXIN, rand(1,4), source = src)
 			M.injure(INJURY_BLUNT, rand(1,4), source = src)
-			M.injure(INJURY_ASPHYXIA, rand(1,4), source = src)
+			M.AdjustLosebreath(rand(1,2)) // Withdrawal seizes the chest.
 	// proc side effect
 	if(current_addiction <= 30)
 		if(prob(3))
@@ -1618,7 +1621,8 @@
 	color = "#FF0000"
 
 /datum/reagent/eden/snake/affect_blood(mob/living/carbon/M, alien, removed)
-	M.injure_many(alist(INJURY_ASPHYXIA = 1, INJURY_BURN = 1, INJURY_BLUNT = 1, INJURY_TOXIN = 1), source = src)
+	M.injure_many(alist(INJURY_BURN = 1, INJURY_BLUNT = 1, INJURY_TOXIN = 1), source = src)
+	M.AdjustLosebreath(1) // The taint chokes.
 
 /datum/reagent/tercozolam
 	name = REAGENT_TERCOZOLAM
@@ -1694,7 +1698,7 @@
 		return
 	// Repair is the treatment_tags profile; the catalysis toxifies the host
 	// while it has something to convert.
-	if(M.injury_load(INJURY_CATEGORY_PHYSICAL) || M.injury_load(INJURY_CATEGORY_THERMAL) || M.injury_load(INJURY_CATEGORY_ASPHYXIA))
+	if(M.injury_load(INJURY_CATEGORY_PHYSICAL) || M.injury_load(INJURY_CATEGORY_THERMAL) || M.oxygen_debt())
 		M.injure(INJURY_TOXIN, 0.8, source = src)
 
 /////SERAZINE REAGENTS///////
@@ -1786,10 +1790,9 @@
 			H.AdjustWeakened(5) //Fall onto the floor for a few moments.
 			H.Confuse(15) //Be unable to walk correctly for a bit longer.
 		if(prob(1))
-			if(H.losebreath <= 1 && H.injury_load(INJURY_CATEGORY_ASPHYXIA) <= 20) //Let's not suffocate them to the point that they pass out.
+			if(H.losebreath <= 1 && H.oxygen_debt() <= 20) //Let's not suffocate them to the point that they pass out.
 				to_chat(H,span_warning("You feel a sharp stabbing pain in your chest and quickly realize that your lungs have stopped functioning!")) //Let's scare them a bit.
 				H.losebreath = 10
-				H.injure(INJURY_ASPHYXIA, 5, source = src)
 		if(prob(2))
 			to_chat(H,span_warning("You feel a dull pain behind your eyes and at the back of your head..."))
 			H.hallucination += 20 //It messes with your mind for some reason.

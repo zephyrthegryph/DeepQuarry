@@ -10,7 +10,7 @@
 #define INPUT_ACTION_ALTERNATE "alternate"
 /// Alt plus right-click: the secondary alternate interaction.
 #define INPUT_ACTION_ALTERNATE_SECONDARY "alternate_secondary"
-/// List every interaction. Until the resolver lands (I2) this is BYOND's native right-click menu.
+/// List every interaction, with availability and reasons: the interaction menu (code/datums/interactions/menu.dm).
 #define INPUT_ACTION_MENU "menu"
 /// Examine. Shift-click.
 #define INPUT_ACTION_INSPECT "inspect"
@@ -45,7 +45,7 @@
 
 // Interaction categories that can be bound to keys. A category key runs the best
 // interaction in that category on the hovered atom, or on the tile in front of
-// the player. The resolver that picks the interaction arrives with I2.
+// the player (try_interaction_category()).
 #define INTERACTION_CAT_TOGGLE "toggle"
 #define INTERACTION_CAT_OPEN "open"
 #define INTERACTION_CAT_EJECT "eject"
@@ -58,8 +58,7 @@
 
 #define INTERACTION_CATEGORIES list(INTERACTION_CAT_TOGGLE, INTERACTION_CAT_OPEN, INTERACTION_CAT_EJECT, INTERACTION_CAT_INSERT, INTERACTION_CAT_LOCK, INTERACTION_CAT_CONFIGURE, INTERACTION_CAT_REPAIR, INTERACTION_CAT_MAINTAIN, INTERACTION_CAT_ATTACK)
 
-/// What right-click can be bound to. Menu keeps BYOND's native popup; Alternate
-/// turns on right-click on the map element and routes it to the Alternate action.
+/// What right-click can be bound to: the interaction menu, or the Alternate action.
 #define RIGHT_CLICK_BINDINGS list(INPUT_ACTION_MENU, INPUT_ACTION_ALTERNATE)
 
 // Keybinding profiles: which default set a mob gets.

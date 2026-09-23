@@ -12,7 +12,7 @@
 	var/atom/movable/charging
 	var/charge = 45
 	var/repair = 0
-	var/list/chargable_types = list(
+	var/static/list/chargable_types = list(
 		/obj/mecha,
 		/mob/living/silicon/robot/platform
 	)

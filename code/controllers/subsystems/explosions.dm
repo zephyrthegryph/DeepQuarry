@@ -482,7 +482,6 @@ SUBSYSTEM_DEF(explosions)
 		atmos_topology_batch_open = FALSE
 		vg_topology_batch_commit()
 		SSair.rust_commit_pending_pipenets()
-	SSair.flush_automatic_shutoff_wake()
 	SSmachines.flush_gas_watch_updates()
 	// Awaiting the rust powernet rebuild so this can be called normally...
 	INVOKE_ASYNC(SSmachines, TYPE_PROC_REF(/datum/controller/subsystem/machines,release_powernet_defer))

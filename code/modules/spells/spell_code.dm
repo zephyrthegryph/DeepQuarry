@@ -110,6 +110,13 @@
 		for(var/tag in heal_tags)
 			target.mend(tag, -amount)
 
+/// Positive `amount` adds oxygen debt; negative oxygenates.
+/datum/spell/proc/spell_oxygen_debt(mob/living/target, amount)
+	if(amount > 0)
+		target.add_oxygen_debt(amount, holder)
+	else if(amount < 0)
+		target.mend(TREAT_OXYGENATION, -amount)
+
 /datum/spell/proc/adjust_var(mob/living/target = usr, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
 	switch(type)
 		if("trauma")
@@ -119,7 +126,7 @@
 		if("toxin")
 			spell_injure(target, INJURY_TOXIN, amount, list(TREAT_ANTITOXIN))
 		if("asphyxia")
-			spell_injure(target, INJURY_ASPHYXIA, amount, list(TREAT_OXYGENATION))
+			spell_oxygen_debt(target, amount)
 		if("stunned")
 			target.AdjustStunned(amount)
 		if("weakened")

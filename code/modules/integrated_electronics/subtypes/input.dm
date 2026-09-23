@@ -175,11 +175,11 @@
 	outputs = list(
 		"total health %"		= IC_PINTYPE_NUMBER,
 		"total missing health"	= IC_PINTYPE_NUMBER,
-		"brute damage"			= IC_PINTYPE_NUMBER,
-		"burn damage"			= IC_PINTYPE_NUMBER,
-		"tox damage"			= IC_PINTYPE_NUMBER,
-		"oxy damage"			= IC_PINTYPE_NUMBER,
-		"clone damage"			= IC_PINTYPE_NUMBER
+		"heart rate"			= IC_PINTYPE_NUMBER,
+		"SpO2 %"				= IC_PINTYPE_NUMBER,
+		"respiratory rate"		= IC_PINTYPE_NUMBER,
+		"temperature (C)"		= IC_PINTYPE_NUMBER,
+		"findings"				= IC_PINTYPE_NUMBER
 	)
 	activators = list("scan" = IC_PINTYPE_PULSE_IN, "on scanned" = IC_PINTYPE_PULSE_OUT)
 	spawn_flags = IC_SPAWN_RESEARCH
@@ -197,14 +197,21 @@
 
 		set_pin_data(IC_OUTPUT, 1, total_health)
 		set_pin_data(IC_OUTPUT, 2, missing_health)
-		set_pin_data(IC_OUTPUT, 3, H.injury_load(INJURY_CATEGORY_PHYSICAL))
-		set_pin_data(IC_OUTPUT, 4, H.injury_load(INJURY_CATEGORY_THERMAL))
-		set_pin_data(IC_OUTPUT, 5, H.injury_load(INJURY_CATEGORY_TOXIC))
-		set_pin_data(IC_OUTPUT, 6, H.injury_load(INJURY_CATEGORY_ASPHYXIA))
-		set_pin_data(IC_OUTPUT, 7, H.injury_load(INJURY_CATEGORY_GENETIC))
+		set_diagnosis_pins(H)
 
 	push_data()
 	activate_pin(2)
+
+/// Output pins 3-7: vitals and the number of findings from the analyzer's
+/// diagnosis (the advanced analyzer's sensors).
+/obj/item/integrated_circuit/input/adv_med_scanner/proc/set_diagnosis_pins(mob/living/carbon/human/H)
+	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/health_analyzer/advanced)
+	set_pin_data(IC_OUTPUT, 3, D?.heart_rate)
+	set_pin_data(IC_OUTPUT, 4, D?.oxygenation)
+	set_pin_data(IC_OUTPUT, 5, D?.respiratory_rate)
+	set_pin_data(IC_OUTPUT, 6, D?.temperature)
+	set_pin_data(IC_OUTPUT, 7, LAZYLEN(D?.findings))
+	qdel(D)
 
 /obj/item/integrated_circuit/input/examiner
 	name = "examiner"
@@ -666,7 +673,7 @@
 	power_draw_per_use = 30
 
 	var/list/my_langs = list()
-	var/list/readable_langs = list(
+	var/static/list/readable_langs = list(
 		LANGUAGE_GALCOM,
 		LANGUAGE_SOL_COMMON,
 		LANGUAGE_TRADEBAND,

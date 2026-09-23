@@ -43,11 +43,11 @@
 		"Eyes" = "#FFFFFF"
 	)
 	//If you add any more, it's as easy as adding the icons to these lists
-	var/list/body_styles = list(
+	var/static/list/body_styles = list(
 		"Normal"
 	)
 	var/body_style
-	var/list/horn_styles = list(
+	var/static/list/horn_styles = list(
 		"None",
 		"Curved",
 		"Straight",
@@ -63,7 +63,7 @@
 		"Long",
 	)
 	var/markings
-	var/list/eye_styles = list(
+	var/static/list/eye_styles = list(
 		"Normal"
 	)
 	var/eyes

@@ -45,6 +45,9 @@
 /datum/life_system/addictions/tick(mob/living/self, datum/life_context/ctx)
 	return
 
+/datum/life_system/addictions/idle(mob/living/self)
+	return type == /datum/life_system/addictions
+
 /datum/life_system/addictions/carbon
 	mob_type = /mob/living/carbon
 

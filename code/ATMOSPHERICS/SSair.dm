@@ -27,7 +27,6 @@ SUBSYSTEM_DEF(air)
 	var/cost_superconductivity = 0
 	var/cost_pipenets = 0
 	var/cost_rebuilds = 0
-	var/cost_adjacent = 0
 	// auxmos turf processing writes these cost mirrors back into SSair each tick
 	// (turfs/processing.rs writes cost_turfs/cost_post_process, groups.rs writes
 	// cost_groups, katmos.rs writes cost_equalize). They MUST be declared or the
@@ -101,19 +100,8 @@ SUBSYSTEM_DEF(air)
 	// otherwise). Defaults per SSAIR_CONTRACT.
 	/// FDM sharing steps per process_turfs tick (turfs/processing.rs).
 	var/share_max_steps = 4
-	/// Enables katmos equalize (turfs/processing.rs gates on this AND cfg!(fastmos)).
-	var/equalize_enabled = TRUE
 	/// Fraction of the delta a planetary turf shares with its atmosphere each pass.
 	var/planet_share_ratio = 0.25
-	/// Pressure delta below which an excited group is considered equalized (groups.rs).
-	var/excited_group_pressure_goal = 0.5
-	/// Hard cap on turfs a single katmos equalize pass may touch (katmos.rs).
-	// A pressure wave is solved as one connected snapshot. Two thousand cells is
-	// smaller than a breached hangar or combined hallway network and causes the
-	// wave to be arbitrarily chopped into slow queue fragments. The detached Rust
-	// worker remains time-budgeted, so this is a reachability cap rather than a DM
-	// tick-time budget.
-	var/equalize_hard_turf_limit = 8192
 
 	// auxmos turf processing writes these counters back each tick. Declared so the
 	// Rust write_var_id calls don't panic (NonExistentString). Informational only.
@@ -124,14 +112,12 @@ SUBSYSTEM_DEF(air)
 
 	// active_turfs / excited_groups are gone — turf sharing lives in the Rust
 	// arena now. hotspots stays (LINDA hotspot fires are still DM). networks stays
-	// (CHOMP pipenets). The rebuild/expansion/adjacent queues below are unchanged.
+	// (CHOMP pipenets). The rebuild/expansion queues below are unchanged.
 	var/list/hotspots = list()
 	var/list/networks = list()
 	var/list/rebuild_queue = list()
 	//Subservient to rebuild queue
 	var/list/expansion_queue = list()
-	/// List of turfs to recalculate adjacent turfs on before processing
-	var/list/adjacent_rebuild = list()
 	/// Turfs that requested a high-pressure spacewind push this tick. auxmos
 	/// (katmos explosively_depressurize) appends to this list via
 	/// consider_pressure_difference; the DM high-pressure step drains it.
@@ -184,7 +170,6 @@ SUBSYSTEM_DEF(air)
 	msg += "HP:[round(cost_highpressure,1)]|"
 	msg += "PN:[round(cost_pipenets,1)]|"
 	msg += "RB:[round(cost_rebuilds,1)]|"
-	msg += "AJ:[round(cost_adjacent,1)]|"
 	msg += "ASYNC:[round(async_compute_cost,1)]|"
 	msg += "} "
 	// Active-turf/excited-group counts now live in the Rust arena; the DM lists
@@ -197,8 +182,7 @@ SUBSYSTEM_DEF(air)
 	msg += "HPD:[high_pressure_delta.len]|"
 	msg += "PN:[networks.len]|"
 	msg += "RB:[rebuild_queue.len]|"
-	msg += "EP:[expansion_queue.len]|"
-	msg += "AJ:[adjacent_rebuild.len]"
+	msg += "EP:[expansion_queue.len]"
 	msg += "|GEN:[async_generation]"
 	msg += "|ACT:[async_active_turfs]"
 	msg += "|PEND:[async_pending_turfs]"
@@ -235,6 +219,12 @@ SUBSYSTEM_DEF(air)
 	// before this runs) already triggered registration via gas_mixture/New().
 	ensure_auxmos_gas_registry()
 
+	// Hand Rust the map dimensions it needs to compute turf neighbours by
+	// coordinate id. MUST precede setup_allturfs(), whose registration builds
+	// adjacency from them; reading world vars from Rust is unreliable on BYOND 516
+	// so DM pushes them in.
+	vg_set_world_dims(world.maxx, world.maxy)
+
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.
 	build_gas_data_overlays()
@@ -248,7 +238,6 @@ SUBSYSTEM_DEF(air)
 	// Rust setup is the sole pipenet topology build. Compatibility wrappers are
 	// materialized from its connected-region publication.
 	setup_turf_visuals()
-	process_adjacent_rebuild()
 	// atmos_handbooks_init() removed. /tg/'s gas handbook is an
 	// in-game wiki UI that DQ doesn't ship; the call had nothing to do.
 	return SS_INIT_SUCCESS
@@ -259,19 +248,6 @@ SUBSYSTEM_DEF(air)
 
 	//Rebuilds can happen at any time, so this needs to be done outside of the normal system
 	cost_rebuilds = 0
-	cost_adjacent = 0
-
-	// We need to have a solid setup for turfs before fire, otherwise we'll get massive runtimes and strange behavior
-	if(length(adjacent_rebuild))
-		timer = TICK_USAGE_REAL
-		process_adjacent_rebuild()
-		//This does mean that the apperent rebuild costs fluctuate very quickly, this is just the cost of having them always process, no matter what
-		cost_adjacent = TICK_USAGE_REAL - timer
-		// Never start a Rust diffusion generation against a partially rebuilt
-		// topology. Large atomic changes such as shuttle translation can exceed one
-		// DM tick; finish the remaining adjacency batch on later SSair fires first.
-		if(state != SS_RUNNING || length(adjacent_rebuild))
-			return
 
 	// /tg/-style rebuild_queue/expansion_queue dispatch removed — CHOMP pipes
 	// rebuild their networks through /obj/machinery/atmospherics/pipe Initialize
@@ -410,7 +386,6 @@ SUBSYSTEM_DEF(air)
 	networks = SSair.networks
 	rebuild_queue = SSair.rebuild_queue
 	expansion_queue = SSair.expansion_queue
-	adjacent_rebuild = SSair.adjacent_rebuild
 	pipe_init_dirs_cache = SSair.pipe_init_dirs_cache
 	gas_reactions = SSair.gas_reactions
 	atmos_gen = SSair.atmos_gen
@@ -418,28 +393,6 @@ SUBSYSTEM_DEF(air)
 	high_pressure_delta = SSair.high_pressure_delta
 	currentrun = SSair.currentrun
 	queued_for_activation = SSair.queued_for_activation
-
-/datum/controller/subsystem/air/proc/process_adjacent_rebuild(init = FALSE)
-	var/list/queue = adjacent_rebuild
-
-	while (length(queue))
-		var/turf/currT = queue[1]
-		queue.Cut(1,2)
-
-		// Rebuild the DM adjacency graph (multi-z aware) and push the result to
-		// the Rust arena. The old MAKE_ACTIVE / KILL_EXCITED distinction is gone —
-		// auxmos decides activity itself from the arena; we just keep the arena's
-		// adjacency + air-ref view of this turf current. Register the air ref FIRST
-		// (arena.map must hold the turf before update_adjacencies can attach edges).
-		currT.immediate_calculate_adjacent_turfs()
-		currT.update_air_ref(0)
-		currT.__update_auxtools_turf_adjacency_info()
-
-		if(init)
-			CHECK_TICK
-		else
-			if(MC_TICK_CHECK)
-				break
 
 /datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)
 	if (!resumed)
@@ -545,25 +498,18 @@ SUBSYSTEM_DEF(air)
 
 /datum/controller/subsystem/air/StopLoadingMap()
 	map_loading = FALSE
-	// Turfs deferred during a mid-round map load (submaps, expedition z-levels). Now
-	// that the whole batch exists, rebuild each one's adjacency, register it, then
-	// push adjacency to the arena (all endpoints in the batch are registered by the
-	// time the second loop runs).
+	// Turfs deferred during a mid-round map load (submaps, expedition z-levels).
+	// Now that the whole batch exists, register each with its air-block mask; Rust
+	// builds the adjacency regardless of order.
 	for(var/turf/T as anything in queued_for_activation)
-		T.immediate_calculate_adjacent_turfs()
-		T.update_air_ref(0)
-	for(var/turf/T as anything in queued_for_activation)
-		T.__update_auxtools_turf_adjacency_info()
+		T.update_air_ref(0, T.air_block_mask())
 	queued_for_activation.Cut()
 
 /// Bridge the movement-multiz connection data (GLOB.z_levels, populated by
-/// /obj/effect/landmark/map_data during mapload) into SSmapping.multiz_levels,
-/// the table init_immediate_calculate_adjacent_turfs reads to decide vertical
-/// atmos adjacency. Without this the init fast-path never wires UP/DOWN turf
-/// adjacency even when z-levels are vertically stacked (the runtime recalc path
-/// uses GetAbove/GetBelow and already works; only init lagged). No-op on
-/// single-z maps, where HasAbove/HasBelow return 0 for every z. Re-runnable
-/// when the z-level layout changes.
+/// /obj/effect/landmark/map_data during mapload) into SSmapping.multiz_levels and
+/// on to Rust, which only links turfs vertically across linked z-levels.
+/// No-op on single-z maps, where HasAbove/HasBelow return 0 for every z.
+/// Re-runnable when the z-level layout changes.
 /datum/controller/subsystem/air/proc/build_multiz_atmos_levels()
 	if(!SSmapping)
 		return
@@ -571,14 +517,13 @@ SUBSYSTEM_DEF(air)
 		SSmapping.multiz_levels.len = world.maxz
 	for(var/z in 1 to world.maxz)
 		// Z_LEVEL_UP / Z_LEVEL_DOWN are the numeric direction constants UP (16)
-		// and DOWN (32). init_immediate_calculate_adjacent_turfs reads this
-		// per-z list POSITIONALLY (z_traits[Z_LEVEL_UP] / [Z_LEVEL_DOWN]), so it
-		// must be at least Z_LEVEL_DOWN entries long or both read and write go
-		// out of bounds. Slot 16 = up-connected, slot 32 = down-connected.
+		// and DOWN (32); the per-z list is read POSITIONALLY, so it must be at
+		// least Z_LEVEL_DOWN entries long. Slot 16 = up-connected, 32 = down.
 		var/list/traits = new /list(Z_LEVEL_DOWN)
 		traits[Z_LEVEL_UP] = HasAbove(z) ? TRUE : FALSE
 		traits[Z_LEVEL_DOWN] = HasBelow(z) ? TRUE : FALSE
 		SSmapping.multiz_levels[z] = traits
+	push_z_links()
 
 /// Update only a newly-added dynamic level and its immediate boundary. A full
 /// rebuild is appropriate during round initialization, but mid-round template
@@ -593,54 +538,47 @@ SUBSYSTEM_DEF(air)
 		traits[Z_LEVEL_UP] = HasAbove(level) ? TRUE : FALSE
 		traits[Z_LEVEL_DOWN] = HasBelow(level) ? TRUE : FALSE
 		SSmapping.multiz_levels[level] = traits
+	push_z_links()
+
+/// Sends Rust one UP|DOWN link mask per z-level from SSmapping.multiz_levels.
+/// Rust re-syncs vertical adjacency across the whole map, so call it only when
+/// the z-level layout changes.
+/datum/controller/subsystem/air/proc/push_z_links()
+	var/list/links = new /list(world.maxz)
+	for(var/z in 1 to world.maxz)
+		var/list/traits = length(SSmapping.multiz_levels) >= z ? SSmapping.multiz_levels[z] : null
+		if(!traits)
+			links[z] = NONE
+			continue
+		links[z] = (traits[Z_LEVEL_UP] ? UP : NONE) | (traits[Z_LEVEL_DOWN] ? DOWN : NONE)
+	vg_set_z_links(links)
 
 /datum/controller/subsystem/air/proc/setup_allturfs()
 	times_fired++
 
-	// Roundstart turf init. The old DM active-turf diffing pass is gone: turf
-	// FDM sharing lives in the Rust arena, which discovers active turfs itself on
-	// the first process_turfs tick. So here we only need to build each turf's air
-	// mixture + adjacency graph and register it in the arena.
-	//
-	// current_cycle is still seeded (decrementing per sleep) so the O(n)
-	// init_immediate_calculate_adjacent_turfs fast-path in Initalize_Atmos works.
-	var/time = -1
-
-	// PASS 1: build each turf's DM adjacency graph (pure DM). Arena registration
-	// is deferred to a bulk FFI call below — one call_ext per ~327k turfs was the
-	// dominant cost of SSair init. Adjacency is NOT pushed here either — auxmos
-	// drops edges to unregistered turfs.
-	var/list/turf/open/open_turfs = list()
+	// Round-start turf init: register every eligible turf's air in the Rust arena
+	// together with its air-block mask. Rust builds the whole adjacency graph
+	// from the masks and discovers active turfs itself; there is no DM adjacency
+	// pass. Chunked so a single FFI call can't hold the tick hostage.
+	var/list/turf_masks = list()
 	for(var/turf/setup as anything in ALL_TURFS())
-		if (!setup.init_air)
+		if(!setup.init_air)
 			continue
-		setup.Initalize_Atmos(time, register = FALSE)
 		var/turf/open/open_setup = setup
-		if(istype(open_setup))
-			// Same eligibility rule as /turf/open/update_air_ref: a non-blocking
-			// tile with no air mixture must not reach the Rust register (it reads
-			// air unconditionally when blocks_air == 0).
-			if(open_setup.blocks_air || !isnull(open_setup.air))
-				open_turfs += open_setup
+		// Same eligibility rule as /turf/open/update_air_ref: a non-blocking
+		// tile with no air mixture must not reach the Rust register (it reads
+		// air unconditionally when blocks_air == 0).
+		if(istype(open_setup) && (open_setup.blocks_air || !isnull(open_setup.air)))
+			turf_masks[open_setup] = open_setup.air_block_mask()
+			if(length(turf_masks) >= 8192)
+				auxmos_register_turfs_bulk(turf_masks)
+				heat_register_turfs(turf_masks)
+				turf_masks = list()
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
-			time--
-
-	// PASS 2: bulk-register every eligible turf's air ref, then bulk-push the
-	// adjacency graph (all endpoints now exist in arena.map). Chunked so a
-	// single FFI call can't hold the tick hostage for the whole world.
-	var/total = length(open_turfs)
-	var/chunk = 8192
-	for(var/start = 1, start <= total, start += chunk)
-		var/list/turf/batch = open_turfs.Copy(start, min(start + chunk, total + 1))
-		auxmos_register_turfs_bulk(batch)
-		heat_register_turfs(batch)
-		if(length(GLOB.clients) && TICK_CHECK)
-			stoplag()
-	for(var/start = 1, start <= total, start += chunk)
-		vg_hook_infos_bulk(open_turfs.Copy(start, min(start + chunk, total + 1)))
-		if(length(GLOB.clients) && TICK_CHECK)
-			stoplag()
+	if(length(turf_masks))
+		auxmos_register_turfs_bulk(turf_masks)
+		heat_register_turfs(turf_masks)
 
 // log_active_turfs / resolve_active_graph removed — they existed only to service
 // the DM roundstart active-turf diffing pass, which is gone (auxmos discovers

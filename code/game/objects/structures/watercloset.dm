@@ -145,7 +145,7 @@
 					if(!refilling)
 						user.visible_message(span_danger("[user] gives [GM] a swirlie!"), span_notice("You give [GM] a swirlie!"), "You hear a toilet flushing.")
 						if(!GM.internal)
-							GM.injure(INJURY_ASPHYXIA, 5, null, src)
+							GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 						if(GM.size_multiplier <= 0.75)
 							GM.visible_message(span_danger("[GM] gets sucked into \the [src] due to their small size!"), span_userdanger("You get sucked into \the [src]!"))
 							GM.forceMove(get_turf(src))
@@ -753,7 +753,7 @@
 	icon_state = "rubberducky_green"
 	item_state = "rubberducky_green"
 	honk_sound = 'sound/arcade/mana.ogg'
-	var/list/flora = list(/obj/structure/flora/ausbushes,
+	var/static/list/flora = list(/obj/structure/flora/ausbushes,
 						/obj/structure/flora/ausbushes/reedbush,
 						/obj/structure/flora/ausbushes/leafybush,
 						/obj/structure/flora/ausbushes/palebush,

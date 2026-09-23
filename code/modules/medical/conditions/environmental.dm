@@ -119,14 +119,12 @@
 
 // --- Tissue hypoxia ----------------------------------------------------
 //
-// The oxygen pool: every INJURY_ASPHYXIA on a humanoid lands here as
-// severity (body/plans/humanoid.dm). At severity 50 (consciousness_at_max) the patient
-// passes out; past DQ_HYPOXIA_BRAIN_DAMAGE the brain starts dying. Covers
-// the systemic insult of an unresolved oxygen debt — the patient
-// is breathing but tissues aren't getting enough oxygen to function.
-// Distinct from acute respiratory_failure (which is a lung-failure
-// condition); this is the systemic consequence of any oxy-raising
-// mechanism, including chem ODs that compromise oxygenation.
+// The oxygen debt made visible: the physiology (body/physiology.dm) sets
+// its severity from the debt. At severity 50 (consciousness_at_max) the
+// patient passes out; past DQ_HYPOXIA_BRAIN_DAMAGE the brain starts dying.
+// Distinct from acute respiratory_failure (a lung-failure condition): this is
+// the systemic consequence of any shortfall in oxygen delivery, whether the
+// airway, the lungs, the air, the blood, the heart or a poison is to blame.
 
 /datum/affliction/tissue_hypoxia
 	name = "tissue hypoxia"

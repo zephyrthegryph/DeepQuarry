@@ -68,7 +68,7 @@
 		/obj/item/reagent_containers/food/snacks/oort
 	)
 
-	var/list/badcandy = list(
+	var/static/list/badcandy = list(
 		/obj/item/reagent_containers/food/snacks/no_raisin,
 		/obj/item/reagent_containers/food/snacks/egg/rotten,
 		/obj/item/reagent_containers/food/snacks/hakarl

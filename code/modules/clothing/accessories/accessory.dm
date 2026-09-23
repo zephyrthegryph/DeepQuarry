@@ -263,7 +263,7 @@
 							var/obj/item/organ/internal/lungs/L = M.internal_organs_by_name[O_LUNGS]
 							if(!L || M.losebreath)
 								sound += span_warning(" and no respiration")
-							else if(M.is_lung_ruptured() || M.injury_load(INJURY_CATEGORY_ASPHYXIA) > 50)
+							else if(M.is_lung_ruptured() || M.oxygen_debt() > 50)
 								sound += span_warning(" and [pick("wheezing","gurgling")] sounds")
 							else
 								sound += " and healthy respiration"

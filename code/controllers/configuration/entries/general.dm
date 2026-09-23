@@ -808,6 +808,9 @@
 
 /datum/config_entry/flag/auto_profile
 
+/// Run SSreactor's missed-wake audit (sampling sleepers) this round. Always on in test builds.
+/datum/config_entry/flag/reactor_audit
+
 /datum/config_entry/number/profiler_interval
 	// Compact diagnostic snapshots, not full world.Profile serialization.
 	default = 1 MINUTE
@@ -832,6 +835,10 @@
 /// If admins with +DEBUG can queue byond-tracy to run the next round.
 /datum/config_entry/flag/allow_tracy_queue
 	protection = CONFIG_ENTRY_LOCKED
+
+/// Run the mob hibernation missed-wake audit (SSmobs) every 30 s. Debugging aid; always on in
+/// unit test builds. Admins can also turn it on for a round with "Toggle Hibernation Audit".
+/datum/config_entry/flag/mob_hibernation_audit
 
 /// log vore interactions
 /datum/config_entry/flag/log_vore

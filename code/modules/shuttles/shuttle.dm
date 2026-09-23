@@ -133,6 +133,7 @@
 	var/obj/effect/shuttle_landmark/start_location = current_location
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
+	publish_schedule()
 	spawn(warmup_time*10)
 
 		make_sounds(HYPERSPACE_WARMUP)
@@ -174,6 +175,7 @@
 	var/obj/effect/shuttle_landmark/start_location = current_location
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
+	publish_schedule()
 	spawn(warmup_time*10)
 
 		make_sounds(HYPERSPACE_WARMUP)
@@ -459,3 +461,10 @@
 	if(moving_status == SHUTTLE_INTRANSIT)
 		return "In transit"
 	return current_location.name
+
+/// Wakes the status displays that show this shuttle's schedule (REACT_KEY_SHUTTLE_SCHEDULE).
+/datum/shuttle/proc/publish_schedule()
+	if(src == SSemergency_shuttle?.shuttle)
+		REACT_PUBLISH(REACT_KEY_SHUTTLE_SCHEDULE, REACT_SHUTTLE_EVAC, 1)
+	else if(src == SSsupply?.shuttle)
+		REACT_PUBLISH(REACT_KEY_SHUTTLE_SCHEDULE, REACT_SHUTTLE_SUPPLY, 1)

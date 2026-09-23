@@ -63,11 +63,11 @@
 	outputs = list(
 		"total health %"		= IC_PINTYPE_NUMBER,
 		"total missing health"	= IC_PINTYPE_NUMBER,
-		"brute damage"			= IC_PINTYPE_NUMBER,
-		"burn damage"			= IC_PINTYPE_NUMBER,
-		"tox damage"			= IC_PINTYPE_NUMBER,
-		"oxy damage"			= IC_PINTYPE_NUMBER,
-		"clone damage"			= IC_PINTYPE_NUMBER,
+		"heart rate"			= IC_PINTYPE_NUMBER,
+		"SpO2 %"				= IC_PINTYPE_NUMBER,
+		"respiratory rate"		= IC_PINTYPE_NUMBER,
+		"temperature (C)"		= IC_PINTYPE_NUMBER,
+		"findings"				= IC_PINTYPE_NUMBER,
 		"species"				= IC_PINTYPE_STRING,
 		"size %"				= IC_PINTYPE_NUMBER
 	)
@@ -87,11 +87,7 @@
 
 		set_pin_data(IC_OUTPUT, 1, total_health)
 		set_pin_data(IC_OUTPUT, 2, missing_health)
-		set_pin_data(IC_OUTPUT, 3, H.injury_load(INJURY_CATEGORY_PHYSICAL))
-		set_pin_data(IC_OUTPUT, 4, H.injury_load(INJURY_CATEGORY_THERMAL))
-		set_pin_data(IC_OUTPUT, 5, H.injury_load(INJURY_CATEGORY_TOXIC))
-		set_pin_data(IC_OUTPUT, 6, H.injury_load(INJURY_CATEGORY_ASPHYXIA))
-		set_pin_data(IC_OUTPUT, 7, H.injury_load(INJURY_CATEGORY_GENETIC))
+		set_diagnosis_pins(H)
 		set_pin_data(IC_OUTPUT, 8, H.species.name)
 		set_pin_data(IC_OUTPUT, 9, H.size_multiplier *100)
 

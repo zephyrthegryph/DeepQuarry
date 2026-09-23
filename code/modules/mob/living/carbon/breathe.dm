@@ -33,7 +33,7 @@
 		self.AdjustLosebreath(-1)
 		if (prob(10) && !isbelly(self.loc)) //Gasp per 10 ticks? Sounds about right.
 			spawn self.emote("gasp")
-	else if(self.breath_blocked()) //Closed airway or not breathing on their own: no gas exchange at all.
+	else if(self.breath_blocked()) //No ventilation (closed airway, apnea): no gas exchange at all.
 		if(prob(10) && !isbelly(self.loc))
 			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, emote), "gasp")
 	else

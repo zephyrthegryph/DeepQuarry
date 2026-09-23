@@ -54,11 +54,11 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 5
 
-	var/list/tile_info[4]
-	var/list/dir_alerts[4] // 4 dirs, bitflags
+	/// Lazy: 4 cardinal dirs of FIREDOOR_ALERT_* bitflags, null while no direction alerts.
+	var/list/dir_alerts
 
 	// MUST be in same order as FIREDOOR_ALERT_*
-	var/list/ALERT_STATES=list(
+	var/static/list/ALERT_STATES=list(
 		"hot",
 		"cold"
 	)
@@ -108,6 +108,7 @@
 		. += span_warning("WARNING: Current pressure differential is [pdiff]kPa! Opening door may result in injury!")
 
 	. += span_bold("Sensor readings:")
+	var/list/tile_info = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
 	for(var/index = 1; index <= tile_info.len; index++)
 		var/o = "&nbsp;&nbsp;"
 		switch(index)
@@ -126,7 +127,7 @@
 		var/celsius = convert_k2c(tile_info[index][1])
 		var/pressure = tile_info[index][2]
 		var/temperature_string = "[celsius]&deg;C "
-		o += ((dir_alerts[index] & (FIREDOOR_ALERT_HOT|FIREDOOR_ALERT_COLD)) ? span_warning(temperature_string) : span_blue(temperature_string))
+		o += ((LAZYACCESS(dir_alerts, index) & (FIREDOOR_ALERT_HOT|FIREDOOR_ALERT_COLD)) ? span_warning(temperature_string) : span_blue(temperature_string))
 		o += span_blue("[pressure]kPa")
 		o += "</li>"
 		. += o
@@ -387,14 +388,20 @@
 	if(pdiff_alert != new_pdiff_alert)
 		pdiff_alert = new_pdiff_alert
 		changed = TRUE
-	tile_info = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
+	var/list/tile_info = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
+	var/any_alerts = FALSE
 	for(var/index = 1; index <= 4; index++)
 		var/list/tileinfo = tile_info[index]
 		var/alerts = tileinfo ? firedoor_temperature_band(tileinfo[1]) : 0
-		if(dir_alerts[index] != alerts)
+		if((LAZYACCESS(dir_alerts, index) || 0) != alerts)
 			changed = TRUE
-		dir_alerts[index] = alerts
+			if(!dir_alerts)
+				dir_alerts = new /list(4)
+			dir_alerts[index] = alerts
+		any_alerts ||= alerts
 		lockdown ||= alerts
+	if(!any_alerts)
+		dir_alerts = null
 	if(changed)
 		update_icon()
 	hibernate_until_air_changes()
@@ -411,9 +418,15 @@
 	if(length(sleeping_atmos_snapshot) != FIREDOOR_SNAPSHOT_TURFS * FIREDOOR_SNAPSHOT_STRIDE)
 		sleeping_atmos_snapshot = new /list(FIREDOOR_SNAPSHOT_TURFS * FIREDOOR_SNAPSHOT_STRIDE)
 	var/list/snapshot = sleeping_atmos_snapshot
+	var/list/mixtures = new /list(length(dependency_turfs))
+	for(var/index in 1 to length(dependency_turfs))
+		var/turf/T = dependency_turfs[index]
+		mixtures[index] = T?.return_air()
+	// One batched arena read for the door's turf and its four neighbours.
+	var/list/readings = read_gas_mixtures(mixtures)
 	var/base = 0
-	for(var/turf/T as anything in dependency_turfs)
-		var/datum/gas_mixture/air = T?.return_air()
+	for(var/index in 1 to length(mixtures))
+		var/datum/gas_mixture/air = mixtures[index]
 		if(!air)
 			snapshot[base + 1] = null
 			snapshot[base + 2] = null
@@ -421,9 +434,10 @@
 			base += FIREDOOR_SNAPSHOT_STRIDE
 			continue
 		var/mixture_id = air.arena_id()
+		var/record = (index - 1) * GAS_READ_STRIDE
 		snapshot[base + 1] = mixture_id
-		snapshot[base + 2] = air.return_pressure()
-		snapshot[base + 3] = air.return_temperature()
+		snapshot[base + 2] = readings[record + GAS_READ_PRESSURE]
+		snapshot[base + 3] = readings[record + GAS_READ_TEMPERATURE]
 		base += FIREDOOR_SNAPSHOT_STRIDE
 		var/key = "[mixture_id]"
 		LAZYSET(sleeping_mixture_ids, key, mixture_id)

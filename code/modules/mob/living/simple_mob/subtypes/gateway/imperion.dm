@@ -426,8 +426,7 @@
 	return ..()
 
 /obj/item/shield_projector/rectangle/automatic/imperion
-	shield_health = 250
-	max_shield_health = 250
+	max_integrity = 250
 	shield_regen_delay = 60 SECONDS
 	shield_regen_amount = 50
 	size_x = 2

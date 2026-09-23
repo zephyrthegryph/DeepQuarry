@@ -1,0 +1,7 @@
+author: "Claude"
+delete-after: true
+changes:
+  - rscadd: "Right-click (when set to Menu) opens an interaction menu: what you can do to the thing, what you can't and why, with your keys. It also lists the thing's commands."
+  - rscadd: "Screentips show what clicking and alt-clicking would do to the thing under your mouse. Toggle them in Game Preferences."
+  - rscadd: "Examining something lists its interactions and why any are unavailable."
+  - code_imp: "Machine maintenance (panel, secure, deconstruct, weld repair) is now built on interaction definitions."

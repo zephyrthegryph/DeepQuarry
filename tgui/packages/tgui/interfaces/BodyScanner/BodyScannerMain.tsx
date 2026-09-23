@@ -1,8 +1,11 @@
 import { Box } from 'tgui-core/components';
 
+import {
+  DiagnosisFindingsSection,
+  DiagnosisHintsSection,
+  DiagnosisVitalsSection,
+} from '../common/Diagnosis';
 import { BodyScannerMainAbnormalities } from './BodyScannerMainAbnormalities';
-import { BodyScannerMainDamage } from './BodyScannerMainDamage';
-import { BodyScannerMainFindings } from './BodyScannerMainFindings';
 import { BodyScannerMainOccupant } from './BodyScannerMainOccupant';
 import { BodyScannerMainOrgansExternal } from './BodyScannerMainOrgansExternal';
 import { BodyScannerMainOrgansInternal } from './BodyScannerMainOrgansInternal';
@@ -14,9 +17,13 @@ export const BodyScannerMain = (props: { occupant: occupant }) => {
   return (
     <Box>
       <BodyScannerMainOccupant occupant={occupant} />
+      <DiagnosisVitalsSection vitals={occupant.diagnosis.vitals} />
       <BodyScannerMainAbnormalities occupant={occupant} />
-      <BodyScannerMainFindings occupant={occupant} />
-      <BodyScannerMainDamage occupant={occupant} />
+      <DiagnosisFindingsSection
+        title="Scanner Findings"
+        findings={occupant.diagnosis.findings}
+      />
+      <DiagnosisHintsSection hints={occupant.diagnosis.hints} />
       <BodyScannerMainOrgansExternal organs={occupant.extOrgan} />
       <BodyScannerMainOrgansInternal organs={occupant.intOrgan} />
       <BodyScannerMainReagents occupant={occupant} />

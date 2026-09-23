@@ -52,7 +52,8 @@ verdigris/                  <- workspace root (this dir)
 | `vg-ffi` `metrics` | The DLL's metrics registry and `verdigris_metrics()`, which returns every Rust metric (allocator tags, jobs, ...) as one JSON object. |
 | `verdigris` `material_power` | Double-precision electrical solve for material-engineering power networks. |
 | `vg-ffi` `allocator` | Tracking allocator: live/peak Rust heap overall and per `AllocTag`, with a thread-local tag scope (`allocator::tagged`); each block carries its tag in a small header so frees are charged correctly. |
-| `vg-gas` | Gas arena, turf diffusion and decompression. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. `turfs/heat.rs` holds the heat domain's binds and implements `vg_heat::GasExchange` over the arena. |
+| `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
+| `vg-gas` | Gas arena, turf adjacency (built from DM air-block masks), turf diffusion, decompression. Numeric gas registry in `gas/ids.rs`. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. | `turfs/heat.rs` holds the heat domain's binds and implements `vg_heat::GasExchange` over the arena. |
 | `vg-heat` | The heat domain (M4, `simulation.md` §7, `temperature.md`): `solid` (the turf solid heat field on R6's framework, with conduction, Stefan–Boltzmann radiation to space reservoirs and planet reservoirs), `body` (heat bodies created on first divergence, analytic relaxation on reservoirs, exact two-body steps otherwise, phase plateau, power, two couplings), `couple` (the `GasExchange` trait, exact pair exchange, the energy ledger, the solid ↔ turf gas task), `regulator` (the thermal regulator primitive) and `world` (`HeatWorld`, the main-thread host with watches). Replaces `superconduct.rs`. |
 | `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic, 16x16 chunked layers, per-kind blocked-direction layers (`Grid`). |
 | `vg-core` `handle` / `arena` | 20-bit index + 4-bit generation handles (exact as f32); `Arena<T>` with 4096-slot chunks, stale-handle rejection, rayon iteration. |
@@ -216,7 +217,7 @@ the generator emits `#define DM_NAME <literal>`.
 Every FFI call costs microseconds (byondapi marshalling). String allocations
 across the boundary compound that:
 
-- Gas IDs are `u8`, never strings, after one-time registration at boot.
+- Gas IDs are numbers, never strings: fixed `GAS_ID_*` constants from `gas/ids.rs`.
 - Turf handles are `usize` arena indices, never datum paths.
 - Lists returned to DM should be `Vec<f32>` / `Vec<i32>`, not `Vec<String>`.
 

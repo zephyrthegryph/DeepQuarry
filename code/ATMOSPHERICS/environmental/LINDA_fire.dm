@@ -107,7 +107,7 @@
 
 	var/turf/open/our_turf = loc
 	//on creation we check adjacent turfs for hot spot to start grouping, if surrounding do not have hot spots we create our own
-	for(var/turf/open/to_check as anything in our_turf.atmos_adjacent_turfs)
+	for(var/turf/open/to_check as anything in vg_atmos_adjacent_turfs(our_turf))
 		if(!to_check.active_hotspot)
 			continue
 		var/obj/effect/hotspot/enemy_spot = to_check.active_hotspot
@@ -143,8 +143,6 @@
 	if(COOLDOWN_FINISHED(our_turf, fire_puff_cooldown))
 		COOLDOWN_START(our_turf, fire_puff_cooldown, 5 SECONDS)
 
-	// Remove just_spawned protection if no longer processing the parent cell
-	just_spawned = (our_turf.current_cycle < SSair.times_fired)
 	update_color()
 
 /obj/effect/hotspot/set_smoothed_icon_state(new_junction)
@@ -199,8 +197,9 @@
 	if(reference)
 		volume = 0
 		var/list/cached_results = reference.reaction_results
-		for (var/reaction in SSair.hotspot_reactions)
-			volume += cached_results[reaction] * FIRE_GROWTH_RATE
+		if(cached_results) // Lazy: null until a reaction fires on the mixture.
+			for (var/reaction in SSair.hotspot_reactions)
+				volume += cached_results[reaction] * FIRE_GROWTH_RATE
 		temperature = reference.return_temperature()
 
 	// Handles the burning of atoms.
@@ -280,7 +279,8 @@
 	color = list(LERP(0.3, 1, 1-greyscale_fire) * heat_r,0.3 * heat_g * greyscale_fire,0.3 * heat_b * greyscale_fire, 0.59 * heat_r * greyscale_fire,LERP(0.59, 1, 1-greyscale_fire) * heat_g,0.59 * heat_b * greyscale_fire, 0.11 * heat_r * greyscale_fire,0.11 * heat_g * greyscale_fire,LERP(0.11, 1, 1-greyscale_fire) * heat_b, 0,0,0)
 	alpha = heat_a
 
-#define INSUFFICIENT(path) (location.air.get_moles(path) < 0.5)
+/// Reads a gas's moles from the batched `readings` record (read_gas_mixtures).
+#define INSUFFICIENT(gas_id) (readings[GAS_READ_MOLES(gas_id)] < 0.5)
 
 /**
  * Regular process proc for hotspots governed by the controller.
@@ -311,8 +311,12 @@
 		qdel(src)
 		return
 
-	//Not enough / nothing to burn
-	if(!location.air || (INSUFFICIENT(/datum/gas/plasma) && INSUFFICIENT(/datum/gas/tritium) && INSUFFICIENT(/datum/gas/hydrogen) && INSUFFICIENT(/datum/gas/freon)) || INSUFFICIENT(/datum/gas/oxygen))
+	//Not enough / nothing to burn. One batched read covers every fuel and oxidiser check.
+	if(!location.air)
+		qdel(src)
+		return
+	var/list/readings = read_gas_mixtures(list(location.air))
+	if((INSUFFICIENT(GAS_ID_PLASMA) && INSUFFICIENT(GAS_ID_TRITIUM) && INSUFFICIENT(GAS_ID_HYDROGEN) && INSUFFICIENT(GAS_ID_FREON)) || INSUFFICIENT(GAS_ID_OXYGEN))
 		qdel(src)
 		return
 
@@ -331,7 +335,7 @@
 			var/radiated_temperature = air_temperature*FIRE_SPREAD_RADIOSITY_SCALE
 			if(cold_fire)
 				radiated_temperature = air_temperature * COLD_FIRE_SPREAD_RADIOSITY_SCALE
-			for(var/t in location.atmos_adjacent_turfs)
+			for(var/t in vg_atmos_adjacent_turfs(location))
 				var/turf/open/T = t
 				if(!T.active_hotspot)
 					T.hotspot_expose(radiated_temperature, CELL_VOLUME/4)

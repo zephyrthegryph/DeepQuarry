@@ -68,7 +68,7 @@
 			var/datum/techweb_node/node = SSresearch.techweb_nodes[node_id]
 
 			// Check that our cost and make sure it's more expensive than our prior tier, unless they have a required experiment.
-			if(!node.required_experiments.len && node.prereq_ids.len)
+			if(!length(node.required_experiments) && node.prereq_ids.len)
 				if(!node.starting_node)
 					var/current_cost = node.research_costs.len ? INFINITY : 0
 					for(var/check_cost_type in node.research_costs)

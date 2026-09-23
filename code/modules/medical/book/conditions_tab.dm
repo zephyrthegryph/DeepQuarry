@@ -199,16 +199,16 @@
 			var/list/parts = splittext(pair_key, "|")
 			var/dt = parts[1]
 			var/tag = (length(parts) >= 2) ? parts[2] : ""
-			// Systemic toxin / asphyxia injury feeds the systemic
-			// afflictions directly — no trigger record in between.
-			if(dt == "tox" || dt == "oxy")
-				var/pool_type = (dt == "tox") ? /datum/affliction/toxic_poisoning : /datum/affliction/tissue_hypoxia
+			// Systemic toxin injury feeds the systemic affliction
+			// directly — no trigger record in between.
+			if(dt == "tox")
+				var/pool_type = /datum/affliction/toxic_poisoning
 				if(pool_type == T || comp_seen_causes["[pool_type]"])
 					continue
 				comp_seen_causes["[pool_type]"] = TRUE
 				complications += list(list(
 					"cause_id"   = null,
-					"cause_name" = (dt == "tox") ? "Systemic toxicity" : "Systemic oxygen debt",
+					"cause_name" = "Systemic toxicity",
 					"conditions" = list(list(
 						"id"   = "[pool_type]",
 						"name" = _dq_condition_name(pool_type),
@@ -345,9 +345,6 @@
 		return
 	if(damage_type == INJURY_TOXIN)
 		out["tox|"] = TRUE
-		return
-	if(damage_type == INJURY_ASPHYXIA)
-		out["oxy|"] = TRUE
 		return
 	var/list/tags = list()
 	if(length(organ_targets))

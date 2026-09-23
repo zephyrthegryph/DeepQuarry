@@ -235,6 +235,15 @@ export function render(root: string): { dm: string; rs: string; binds: number } 
 
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 
+#ifdef BENCHMARK
+/// FFI calls made through the vg_* procs. Benchmark builds only; the
+/// benchmarks report it per window (code/modules/benchmarks/_benchmark.dm).
+/* This comment bypasses grep checks */ /var/__verdigris_ffi_calls = 0
+#define VG_COUNT_FFI_CALL __verdigris_ffi_calls++
+#else
+#define VG_COUNT_FFI_CALL
+#endif
+
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
 #define VERDIGRIS_ABI "${abi}"
 
@@ -249,12 +258,14 @@ export function render(root: string): { dm: string; rs: string; binds: number } 
     if (b.args === null) {
       dm += `/proc/vg_${b.name}(...)
 	var/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
+	VG_COUNT_FFI_CALL
 	return call_ext(__f)(arglist(args))
 `;
     } else {
       const a = b.args.join(', ');
       dm += `/proc/vg_${b.name}(${a})
 	var/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
+	VG_COUNT_FFI_CALL
 	return call_ext(__f)(${a})
 `;
     }

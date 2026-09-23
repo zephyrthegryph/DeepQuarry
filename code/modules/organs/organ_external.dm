@@ -73,13 +73,11 @@
 	var/dislocated = 0    // If you target a joint, you can dislocate the limb, impairing it's usefulness and causing pain
 	var/encased                        // Needs to be opened with a saw to access the organs.
 
-	// Surgery vars.
+	/// Surgical access depth. A cache of this limb's surgical incision
+	/// affliction (code/modules/surgery/incision.dm); only the incision writes it.
 	var/open = 0
+	/// Dissection stage of a severed limb on the bench.
 	var/stage = 0
-	var/cavity = 0
-	var/burn_stage = 0		//Surgical repair stage for burn.
-	var/brute_stage = 0		//Surgical repair stage for brute.
-	var/remove_necrosis = 0 //Surgical stage for necrosis removal.
 
 	// HUD element variable, see organ_icon.dm get_damage_hud_image()
 	var/image/hud_damage_image
@@ -114,6 +112,10 @@
 		splinted.loc = null
 		qdel(splinted)
 	splinted = null
+
+	if(tourniquet && tourniquet.loc == src)
+		qdel(tourniquet)
+	tourniquet = null
 
 	if(istype(owner))
 		owner.organs -= src
@@ -974,7 +976,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/proc/update_damages()
 	recalc_integrity()
 	status &= ~ORGAN_BLEEDING
-	var/clamped = 0
 
 	var/mob/living/carbon/human/H
 	if(ishuman(owner))
@@ -984,10 +985,10 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if(!(robotic >= ORGAN_ROBOT) && W.bleeding() && (H && H.should_have_organ(O_HEART)) && !(H.species.flags & NO_BLOOD))
 			W.bleed_timer--
 			status |= ORGAN_BLEEDING
-		clamped |= W.clamped
 
-	//things tend to bleed if they are CUT OPEN
-	if (open && !clamped && (H && H.should_have_organ(O_HEART)))
+	// An open, unclamped surgical site bleeds.
+	var/datum/affliction/surgical_incision/incision = get_incision()
+	if(incision?.is_bleeding() && !flow_occluded())
 		status |= ORGAN_BLEEDING
 
 	//Bone fractures
@@ -1314,6 +1315,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		splinted = splint
 		if(!applied_pressure)
 			applied_pressure = splint
+		refresh_fracture_support()
 		return 1
 	return 0
 
@@ -1324,6 +1326,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if(applied_pressure == splinted)
 			applied_pressure = null
 		splinted = null
+		refresh_fracture_support()
 		return 1
 	return 0
 

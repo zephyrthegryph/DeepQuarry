@@ -137,7 +137,8 @@ fn z_capacity(max_z: u32) -> u32 {
 	max_z.saturating_mul(2).max(256).max(max_z + 1)
 }
 
-fn configure_heat(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
+/// Creates or grows the heat world (called by `auxmos_configure_world`).
+pub(super) fn configure_heat(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
 	HEAT.with_borrow_mut(|h| {
 		if let Some(world) = h.as_ref() {
 			let d = world.dims();
@@ -153,27 +154,6 @@ fn configure_heat(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
 		*h = Some(world);
 		Ok(())
 	})
-}
-
-/// World dimensions: sizes the turf arena, the gas arena and the heat grid.
-/// DM calls it at boot and whenever `world.maxz` grows.
-#[auxmacros::bind("/proc/auxmos_configure_world")]
-fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> Result<ByondValue> {
-	let max_x = max_x.get_number()? as i32;
-	let max_y = max_y.get_number()? as i32;
-	let max_z = max_z.get_number()? as i32;
-	let tiles = (max_x.max(1) as usize)
-		.saturating_mul(max_y.max(1) as usize)
-		.saturating_mul(max_z.max(1) as usize);
-	let edges = tiles.saturating_mul(4);
-	super::reserve_turf_capacity(tiles, edges);
-	crate::gas::reserve_gas_capacity(tiles.saturating_add(8192));
-	configure_heat(
-		max_x.max(1) as u32,
-		max_y.max(1) as u32,
-		max_z.max(1) as u32,
-	)?;
-	Ok(ByondValue::null())
 }
 
 /// Drops the heat world (world boot, before `auxmos_configure_world`), so a

@@ -150,9 +150,6 @@
 	var/purge = 0					// Cult stuff.
 	var/supernatural = FALSE		// Ditto.
 
-	// contained in a cage
-	var/in_stasis = 0
-
 	// don't process me if there's nobody around to see it
 	low_priority = TRUE
 	// Used for if the mob can drop limbs. Overrides species dmi.

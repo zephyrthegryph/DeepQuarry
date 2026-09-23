@@ -2,18 +2,7 @@
 	var/custom_infix = custom_name ? ", [modtype][sprite_type ? " [sprite_type]" : ""] [braintype]" : ""
 	. = ..(user, infix = custom_infix)
 
-	var/structural_load = injury_load(INJURY_CATEGORY_PHYSICAL)
-	var/electronics_load = injury_load(INJURY_CATEGORY_THERMAL)
-	if (structural_load)
-		if (structural_load < 75)
-			. += span_warning("It looks slightly dented.")
-		else
-			. += span_boldwarning("It looks severely dented!")
-	if (electronics_load)
-		if (electronics_load < 75)
-			. += span_warning("It looks slightly charred.")
-		else
-			. += span_boldwarning("It looks severely burnt and heat-warped!")
+	. += machine_examine_lines(src)
 
 	if(opened)
 		. += span_warning("Its cover is open and the power cell is [cell ? "installed" : "missing"].")

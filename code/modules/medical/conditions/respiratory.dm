@@ -99,11 +99,7 @@
 	)
 	min_symptoms = 2
 	max_symptoms = 4
-	factors = alist(BF_SLOWDOWN = 2.5, BF_ACCURACY = -50, BF_MOTOR_CONTROL = 0.92, BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH, BF_HEART_RATE = 20, BF_O2_SAT = -30, BF_RESP_RATE = -8)
+	factors = alist(BF_SLOWDOWN = 2.5, BF_ACCURACY = -50, BF_MOTOR_CONTROL = 0.92, BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH, BF_HEART_RATE = 20, BF_RESP_RATE = -8, BF_GAS_EXCHANGE = 0.15)
 	spontaneous_emotes = list("gasp", "collapse", "wheeze")
 	spontaneous_emote_prob = 10
-	// Heavy hypoxia while present.
-	organ_damage_threshold = 0
-	organ_damage_type = INJURY_ASPHYXIA
-	organ_damage_per_tick = 5
 

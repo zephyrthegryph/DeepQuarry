@@ -6,7 +6,7 @@
 	energy_drain = 0
 	range = 0
 	var/coeff = 100
-	var/list/use_channels = list(EQUIP,ENVIRON,LIGHT)
+	var/static/list/use_channels = list(EQUIP,ENVIRON,LIGHT)
 	equip_type = EQUIP_UTILITY
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/Destroy()

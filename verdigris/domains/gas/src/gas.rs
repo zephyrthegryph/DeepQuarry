@@ -1,11 +1,13 @@
 #[allow(dead_code)]
 pub mod constants;
+pub mod ids;
 pub mod mixture;
 pub mod types;
 
 use crate::GAS_MIN_MOLES;
 use byondapi::prelude::*;
 use eyre::Result;
+pub use ids::*;
 pub use mixture::Mixture;
 use parking_lot::{const_mutex, const_rwlock, Mutex, MutexGuard, RwLock};
 use rustc_hash::FxHashMap;

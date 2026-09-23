@@ -19,9 +19,15 @@
 	volume_chan		(type)					If set to a specific volume channel via the incoming argument, we tell the playsound proc to modulate volume based on that channel
 	exclusive		(bool)					If true, only one of this sound is allowed to play. Relies on if started is true or not. If true, it will not start another loop until it is false.
 */
-/// How often a dormant loop rechecks for listeners without a chunk wake.
+/// How often a dormant loop rechecks for listeners without a chunk wake
+/// (a moving source, or a player who appears without moving).
 #define LOOPING_SOUND_DORMANT_RECHECK (10 SECONDS)
 
+/**
+ * A looping sound runs on SSreactor (reactor.md §9, Q5): each loop is a REACT_AT timer, and a
+ * loop nobody can hear parks on the REACT_KEY_PLAYER_CHUNK keys around it until a player
+ * moves into range (with a slow recheck timer).
+ */
 /datum/looping_sound
 	var/list/atom/output_atoms
 	var/mid_sounds
@@ -41,12 +47,15 @@
 	var/falloff
 	var/volume_chan
 
-	var/timerid
 	var/started
-	/// Chunk keys this loop is parked on while nobody can hear it; null while it is looping (Q5).
-	var/list/dormant_chunk_keys
-	/// The starttime the loop had when it went dormant, so max_loops still counts from the real start.
-	var/dormant_starttime
+	/// TRUE from start() until stop(): the loop is waiting to start, looping or dormant.
+	var/tmp/running = FALSE
+	/// The pending REACT_AT: the next loop, the start delay or the dormant recheck.
+	var/tmp/loop_token
+	/// world.time of the first loop, so max_loops counts from the real start.
+	var/tmp/loop_starttime
+	/// REACT_KEY_PLAYER_CHUNK tokens while nobody can hear the loop; null while it is looping (Q5).
+	var/tmp/list/dormant_chunk_tokens
 
 /datum/looping_sound/New(list/_output_atoms=list(), start_immediately=FALSE, disable_direct=FALSE)
 	if(!mid_sounds)
@@ -70,45 +79,71 @@
 		return
 	if(add_thing)
 		output_atoms |= add_thing
-	if(timerid)
+	if(running)
 		return
 	if(skip_start_sound && (!exclusive && !started)) // Skip start sounds optionally, check if we're exclusive AND started already
-		sound_loop()
+		running = TRUE
 		started = TRUE
+		sound_loop()
 		return
 	if(exclusive && started) // Prevents a sound from starting multiple times
 		return // Don't start this loop.
+	running = TRUE
 	on_start()
 	started = TRUE
 
 /datum/looping_sound/proc/stop(atom/remove_thing, skip_stop_sound = FALSE)
 	if(remove_thing)
 		output_atoms -= remove_thing
-	var/was_dormant = !isnull(dormant_chunk_keys)
-	leave_dormancy()
-	if(!timerid)
+	if(!running)
 		return
-	if(was_dormant)
+	if(leave_dormancy())
 		skip_stop_sound = TRUE // Nobody was in range to hear it end.
 	if(!skip_stop_sound)
 		on_stop()
-	deltimer(timerid)
-	timerid = null
+	cancel_loop_timer()
+	running = FALSE
 	started = FALSE
+	loop_starttime = null
 
-/datum/looping_sound/proc/sound_loop(starttime)
-	if(QDELETED(src) || (max_loops && world.time >= starttime + mid_length * max_loops))
+/datum/looping_sound/proc/cancel_loop_timer()
+	if(!isnull(loop_token))
+		REACT_CANCEL(src, loop_token)
+		loop_token = null
+
+/datum/looping_sound/on_react(reason, source, source_kind)
+	if(!running)
+		return
+	if(dormant_chunk_tokens)
+		wake_from_dormancy(reason & REACT_REASON_TIMER)
+	else if(reason & REACT_REASON_TIMER)
+		loop_token = null
+		sound_loop()
+
+/datum/looping_sound/react_sleep_violation()
+	if(running && isnull(loop_token) && !dormant_chunk_tokens)
+		return "running with no loop timer and no chunk keys"
+	if(dormant_chunk_tokens && isnull(loop_token))
+		return "dormant without its recheck timer"
+	return null
+
+/datum/looping_sound/proc/sound_loop()
+	if(QDELETED(src) || !running)
+		return
+	if(isnull(loop_starttime))
+		loop_starttime = world.time
+	if(max_loops && world.time >= loop_starttime + mid_length * max_loops)
 		stop()
 		return
 	if(!direct && !has_listener())
-		enter_dormancy(starttime)
+		enter_dormancy()
 		return
 	if(!chance || prob(chance))
-		var/soundfile = get_sound(starttime)
+		var/soundfile = get_sound(loop_starttime)
 		if(soundfile)
 			play(soundfile)
-	if(!timerid)
-		timerid = addtimer(CALLBACK(src, PROC_REF(sound_loop), world.time), mid_length, TIMER_STOPPABLE | TIMER_LOOP)
+	cancel_loop_timer()
+	loop_token = REACT_AT(src, world.time + mid_length)
 
 /// TRUE if a player could hear this loop from any of its output atoms.
 /datum/looping_sound/proc/has_listener()
@@ -119,43 +154,38 @@
 			return TRUE
 	return FALSE
 
-/// Stops the loop timer and waits for a player to enter a nearby chunk.
-/// A slow recheck also runs, for sources that move or players that appear without moving.
-/datum/looping_sound/proc/enter_dormancy(starttime)
-	if(timerid)
-		deltimer(timerid)
-	dormant_starttime = starttime
+/// Stops looping and waits on the player chunk keys in hearing range, with a slow recheck.
+/datum/looping_sound/proc/enter_dormancy()
+	cancel_loop_timer()
+	leave_dormancy()
 	var/max_distance = (world.view + extra_range) * 2
-	var/list/keys = list()
+	var/list/tokens = list()
+	var/list/seen = list()
 	for(var/atom/thing as anything in output_atoms)
 		var/turf/source_turf = get_turf(thing)
-		if(!source_turf)
+		if(!source_turf || seen[source_turf])
 			continue
-		var/min_x = MOB_CHUNK_COORD(max(source_turf.x - max_distance, 1))
-		var/max_x = MOB_CHUNK_COORD(min(source_turf.x + max_distance, world.maxx))
-		var/min_y = MOB_CHUNK_COORD(max(source_turf.y - max_distance, 1))
-		var/max_y = MOB_CHUNK_COORD(min(source_turf.y + max_distance, world.maxy))
-		for(var/chunk_x in min_x to max_x)
-			for(var/chunk_y in min_y to max_y)
-				keys |= MOB_CHUNK_NUMERIC_KEY(source_turf.z, chunk_x, chunk_y)
-	dormant_chunk_keys = keys
-	SSsounds.subscribe_dormant_loop(src, keys)
-	timerid = addtimer(CALLBACK(src, PROC_REF(wake_from_dormancy)), LOOPING_SOUND_DORMANT_RECHECK, TIMER_STOPPABLE)
+		seen[source_turf] = TRUE
+		tokens += SSreactor.subscribe_player_chunks(src, source_turf, max_distance)
+	dormant_chunk_tokens = tokens
+	loop_token = REACT_AT(src, world.time + LOOPING_SOUND_DORMANT_RECHECK)
 
+/// Drops the chunk keys. TRUE if the loop was dormant.
 /datum/looping_sound/proc/leave_dormancy()
-	if(isnull(dormant_chunk_keys))
+	if(isnull(dormant_chunk_tokens))
 		return FALSE
-	SSsounds.unsubscribe_dormant_loop(src, dormant_chunk_keys)
-	dormant_chunk_keys = null
+	SSreactor.unsubscribe_player_chunks(src, dormant_chunk_tokens)
+	dormant_chunk_tokens = null
 	return TRUE
 
-/datum/looping_sound/proc/wake_from_dormancy()
-	if(!leave_dormancy())
+/// A player moved nearby, or the recheck fired. A chunk wake with still nobody in range
+/// stays dormant on the same keys; the recheck rebuilds them (the source may have moved).
+/datum/looping_sound/proc/wake_from_dormancy(recheck)
+	if(!recheck && !direct && !has_listener())
 		return
-	if(timerid)
-		deltimer(timerid)
-		timerid = null
-	sound_loop(dormant_starttime)
+	leave_dormancy()
+	cancel_loop_timer()
+	sound_loop()
 
 /datum/looping_sound/proc/play(soundfile)
 	var/list/atoms_cache = output_atoms
@@ -187,7 +217,8 @@
 	if(start_sound)
 		play(start_sound)
 		start_wait = start_length
-	addtimer(CALLBACK(src, PROC_REF(sound_loop)), start_wait)
+	cancel_loop_timer()
+	loop_token = REACT_AT(src, world.time + start_wait)
 
 /datum/looping_sound/proc/on_stop()
 	if(end_sound)

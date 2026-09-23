@@ -64,9 +64,9 @@ pattern is the source of most of their bugs.
 | Machinery | Hibernates (`PROCESS_KILL` or `hibernate_*`); `subscribe_gas_dependency` with change masks; versioned reactive keys; timers; `audit_reactive_sleepers` checks for missed wakes | yes |
 | AI brains (`SSai`) | calm brains sleep | yes |
 | TG status effects | exist and process only while active | yes |
-| Mob `Life()` | every mob every 2 s (`SSmobs` wait 0.25 s over 8 slices). Only skip: `low_priority` mobs on z-levels without living players (`subsystems/mobs.dm:77`) | **no** |
+| Mob `Life()` | life systems sleep by rule and wake on events; a mob with nothing awake hibernates out of `SSmobs` (§4.9). Humans, robots, the AI and pAIs still run most systems every 2 s until those systems get rules | partly |
 | Body core | dirty flags, the emergent dirty domains and HUD dirty bits are incremental. But the humanoid `life_tick` always recomputes (`humanoid.dm:246`), the metrics domain compares values every tick, and every metabolised reagent triggers a full side-effect reconcile | partly |
-| Stun, weaken, paralysis, sleep | counters decremented every tick (~570 references) | **no** |
+| Stun, weaken, paralysis, sleep | counters; setters wake the statuses systems, which run only while a counter is live (§4.9) | partly |
 | Robots | poll power draw per component, camera, radio, blindness, lights, HUD and lock countdowns every tick; rebuild the sprite every tick while unconscious or weapon-locked | **no** |
 | Proteans and prometheans | poll injury load 2–12 times per tick, copy state between forms every tick, re-scan the turf to clean it every tick | **no** |
 
@@ -365,14 +365,125 @@ with no behaviour change. The code is in `code/modules/mob/living/life/` and the
 - **Public entry points.** Code outside `Life()` uses `refresh_hud()`, `refresh_vision()`,
   `refresh_glow()`, `process_chemicals()`, `process_organs(force)` (humans) and
   `run_life_system(family)`.
-- **Hibernation.** `wake(bits)`, `SSmobs.hibernate()` and `SSmobs.wake_mob()` exist but are off
-  (`MOB_HIBERNATION_ENABLED`). Every system stays awake until phase 5 gives them sleep rules.
+- **Hibernation.** Phase 2 only added the plumbing, with hibernation off. Phase 5 turned it on
+  for every mob; see §4.9.
 - **Profiling.** When SSmobs samples a mob, the scheduler times each system and SSmobs logs
   `MOB_SYSTEM_PROFILE system=... estimated_cost_ms=... estimated_calls=...` next to
   `MOB_PROFILE`. SSmobs passes elapsed seconds; systems keep their per-cycle amounts until
   they are rewritten to scale by `ctx.seconds`.
 - **Lint.** `tools/ci/check_grep.sh` rejects `Life()` overrides on living mobs and `handle_*`
   Life hooks on mobs, species and traits.
+
+### 4.9 As built (phase 5): sleep rules, wakes and hibernation
+
+Hibernation is on for every mob, players included (`MOB_HIBERNATION_ENABLED`, runtime switch
+`GLOB.mob_hibernation_enabled`). A mob leaves the `SSmobs` run once all of its systems are
+asleep, and comes back on the first wake.
+
+**Sleep rules.** A system says when it has nothing to do:
+- `idle(self)` returns TRUE when the system can sleep until its `bit` is woken. The default is
+  FALSE (never sleeps), so a system nobody has audited keeps its mob awake. It must be cheap
+  and read-only, because the hibernation audit calls it on mobs that aren't ticking.
+- `rewake_delay(self)` is for an idle system that still drifts slowly. It returns the
+  deciseconds after which the system wakes anyway (a per-mob timer, `life_wake_in()`).
+- `woken_by` names the producers that wake it. The audit prints it when a wake was missed.
+- A family root's rule covers only the root (`type == /datum/life_system/<family>`). A variant
+  with its own tick code stays awake until it declares its own rule.
+
+**The scheduler.** After each system ticks, `Life()` asks `idle()`. A bit goes to sleep when
+every system on it that was considered this cycle is idle, and nothing woke that bit during
+the cycle. Some systems don't run in a given cycle (period skip, blocked segment). They keep
+their bit awake if they still have work, except in the segments a dead mob never runs
+(`LIFE_SEGS_BLOCKED_WHEN_DEAD`). Gates (`LIFE_SYS_GATE`, including `simple_vitals`) run
+whenever the mob runs and never keep it awake. Nothing sleeps in a cycle that halted, or that
+a transforming or nullspace gate stopped (`ctx.no_sleep`). When no bit other than the gate
+bit is left, `life_hibernate()` parks the mob.
+
+**Wake and hibernate live in exactly one proc each.**
+- `/mob/living/proc/life_wake(bits, reason, partial = FALSE)` sets bits. A hibernating mob
+  wakes whole, so every system gets one pass to re-check its rule. Only the timer passes
+  `partial`. The next `Life()` gets nominal seconds, not the length of the nap.
+- `/mob/living/proc/life_hibernate(reason)` parks the mob.
+- `SSmobs.hibernating_mobs` and `life_hibernating` are written only there;
+  `tools/ci/check_grep.sh` rejects other writes. Any other waker, such as SSreactor's REACT_ON
+  path, calls `life_wake()`.
+
+**Producers** (wake groups in `code/__defines/life_systems.dm`):
+
+| Event | Where | Wakes |
+|---|---|---|
+| injury, treatment, full heal | `injure()`, `mend()`, `fully_heal()` | `LIFE_WAKE_BODY` |
+| any body change: afflictions added or removed, severity bands, factors, reagents (`on_reagent_change`) | `/datum/body/proc/invalidate()` | `LIFE_WAKE_BODY` |
+| stun, weaken, paralysis, sleep, confusion, blindness setters; start pulling | `mob.dm` setters → `on_status_counter_changed()` | `LIFE_WAKE_STATUS` |
+| moving (air, area, light, gravity, hazards, belly) | `/mob/living/Moved()` | `LIFE_WAKE_MOVED` |
+| equipping or unequipping | `/obj/item/equipped()`, `/mob/proc/remove_from_mob()` → `on_equipment_changed()` | `LIFE_WAKE_EQUIPMENT` |
+| stat change | `/mob/living/set_stat()` | all |
+| client login or logout | `/mob/living/Login()`, `Logout()` → `on_client_changed()` | all |
+| modifier added, instability, disease | `add_modifier()`, `adjust_instability()`, `addDisease()` | `LIFE_SYS_UPKEEP` |
+| species, plan or trait change | `recompose_life()`, `add_life_system()` | the new systems' bits |
+
+**Rules in place** (the rest default to awake):
+
+| System | Sleeps when | Timer |
+|---|---|---|
+| upkeep | no ghost follows and no spell buttons | |
+| light (root) | the applied glow matches the wanted glow | |
+| breathing, blood, chemicals, random events, environment, special, addictions, type_pre (roots) | always (roots are no-ops) | |
+| type_post (root, carbon, simple mob) | always (return value only) | |
+| mutations, radiation (roots) | no component listens to the signal | |
+| afk | always | 30 s with a client |
+| ambience | always | until the next replay with a client |
+| movement | not pulling or grabbing | 30 s with a client (gravity) |
+| status (root) | conscious or dead, and `body.life_settled()` | |
+| disabilities (root) | eyes and ears recovered, blind alert gone, no disability component | |
+| statuses (root) | every counter at 0 and every alert cleared | |
+| canmove (root) | not stunned, weakened, paralysed or asleep | |
+| hud, vision (roots) | no component takes over the HUD or vision | 5 s with a client (darksight) |
+| modifiers, instability, diseases, tf holder, vr derez | nothing to expire, decay, spread or link; a VR mob inside the VR area | |
+| simple statuses, supernatural, healing, guts | counters at 0; purge 0; not hurt or not fed; no organ objects | |
+| environment (simple mob) | the air is survivable and the body has nothing for it to treat | 15 s (air changing in place) |
+| human hud refresh, voice, visible name | always | 1 min; 10 s; 10 s |
+
+A healthy idle simple mob hibernates within two cycles. Humans still run their physiology,
+HUD, vision and tail systems every cycle, and robots, the AI and pAIs their own sets. They
+sleep individual bits but don't hibernate until those systems declare rules (the physiology
+work, diagnosis, cyborg phases).
+
+**Status effects.** The counters (`stunned`, `weakened`, `paralysis`, `sleeping`,
+`confused`, `eye_blind`) stay as they are. Their setters wake `LIFE_WAKE_STATUS`, and the
+statuses systems run only while a counter or alert is live. Moving them onto
+`/datum/status_effect` (§4.7) is still to do.
+
+**Missed-wake safety net.** The audit is a debugging aid, not a production feature:
+- In unit test and `TESTING` builds it always runs, and a missed wake fails the run
+  (`stack_trace()` plus `Fail()` on the current test).
+- On servers it's off unless the `MOB_HIBERNATION_AUDIT` config flag is set, or an admin
+  uses the Debug verb "Toggle Hibernation Audit" for the round (logged with the admin's key).
+
+When enabled, every `MOB_HIBERNATION_AUDIT_INTERVAL` (30 s),
+`SSmobs.audit_hibernation()` checks two groups:
+- up to 400 hibernating mobs, round robin
+- up to 100 awake mobs that have sleeping systems
+
+For each mob it asks every sleeping system's `idle()`. If a rule no longer holds, a producer
+changed the mob without calling `life_wake()`. The audit logs `MOB_HIBERNATE_AUDIT: MISSED
+WAKE` to the runtime and world logs, naming the mob, the system and its `woken_by`, and wakes
+the mob. Direct writes to `eye_blurry`, `druggy`, `silent`, `stuttering` and similar, and glow
+toggles on hibernating mobs, are the known sources. Waking whole from hibernation also clears
+up stale counters on any later wake.
+
+**Logging.**
+- `MOB_HIBERNATE_SUMMARY` is always on, one line every two minutes next to `MOB_PROFILE`.
+  It gives the hibernating count, hibernations, wakes, audits, missed wakes and the top wake
+  reasons.
+- Per-transition `MOB_HIBERNATE:` lines (bits put to sleep, hibernate, wake with reason and
+  nap length) are behind `MOB_HIBERNATION_TRACE`, runtime switch
+  `GLOB.mob_hibernation_trace`.
+- The `SSmobs` stat panel shows `H:` hibernating.
+
+**Measuring.** The `idle_mobs` benchmark (`code/modules/benchmarks/scenarios.dm`) spawns idle
+mice and humans on a fixture. It measures `SSmobs` with hibernation off, then on, and reports
+how many mobs hibernated and the awake bits left by type.
 
 ---
 
@@ -668,8 +779,8 @@ written once, inside systems, instead of into today's god procedures and then mo
 
 ## 10. Decisions needed
 
-1. **Hibernation scope.** NPC and SSD mobs first, players only once their HUD and client
-   systems are fully event-driven? *Recommendation: yes.*
+1. **Hibernation scope.** Decided: all mobs, players included (doc/refactor_brief.md). Built in
+   §4.9; a player's mob hibernates as soon as its composition has nothing awake.
 2. **Proteans and prometheans.** One mob with forms, after the spike, rather than one body
    shared across two mobs? *Recommendation: forms.*
 3. **Scheduler before factors** (phase 2 ahead of phases 3–4), so the physiology is built

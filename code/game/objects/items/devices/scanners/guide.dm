@@ -11,90 +11,47 @@
 	guide = TRUE
 	icon_state = "health-g"
 
-/obj/item/healthanalyzer/proc/guide(mob/living/carbon/human/M, mob/living/user)
+/// Beginner advice per treatment mechanism the patient's detected afflictions
+/// respond to (the analyzer's own treatment_demand()).
+/proc/analyzer_guidance_line(tag)
+	var/static/list/advice = list(
+		TREAT_HEMOSTATIC = "Bleeding - Apply bandages or administer Bicaridine. Internal bleeds need coagulants such as Myelamine or vein repair surgery.",
+		TREAT_TISSUE_REPAIR = "Physical trauma - Bandage the wounded body part. Administer Bicaridine or Vermicetol depending on the severity.",
+		TREAT_BURN_CARE = "Burns - Salve the wound in ointment. Administer Kelotane or Dermaline. Check for infections.",
+		TREAT_BONE_REPAIR = "Bone fracture - Splint the area. Treat with bone repair surgery or Osteodaxon.",
+		TREAT_ANTIMICROBIAL = "Infection - Administer Spaceacillin. If severe, use Corophizine and monitor until well.",
+		TREAT_ANTITOXIN = "Toxins - Inject Dylovene or Carthatoline. Monitor the liver and kidneys.",
+		TREAT_OXYGENATION = "Poor oxygenation - Administer Dexalin or Dexalin Plus. Check the airway, heart and lungs.",
+		TREAT_NEURAL_REPAIR = "Brain injury - Administer Alkysine or Peridaxon, or commence brain repair surgery.",
+		TREAT_ANTIRADIATION = "Radiation exposure - Administer Hyronalin or Arithrazine. Monitor for genetic damage.",
+		TREAT_GENETIC_REPAIR = "Genetic damage - Use a cryogenic pod with Cryoxadone below 70 K, or give Rezadone.",
+		TREAT_BLOOD_RESTORE = "Low blood volume - Transfuse blood via IV drip or give blood-restorative chemicals (copper for zorren and skrell, iron for the rest).",
+		TREAT_HEPATORENAL = "Liver or kidney damage - Administer Peridaxon; perform a full body scan for targeted surgery.",
+		TREAT_CARDIAC = "Heart damage - Administer Peridaxon; perform a full body scan for targeted surgery.",
+		TREAT_RESPIRATORY = "Lung damage - Administer Peridaxon; perform a full body scan for targeted surgery.",
+		TREAT_DEFIBRILLATION = "Shockable cardiac rhythm - Defibrillate.",
+		TREAT_AIRWAY = "Airway compromised - Clear and secure the airway.",
+	)
+	return advice[tag]
 
-	var/dat = ""
-
-	var/bleeding_external = FALSE
-	var/bleeding_internal = FALSE
-	var/infection = FALSE
-	var/organ = FALSE
-	var/bone = FALSE
-	var/bloodloss = FALSE
-	var/robotparts = FALSE
-
-	for(var/obj/item/organ/external/org in M.organs)
-		if(!istype(org))		//how?
-			continue
-		if(org.robotic >= ORGAN_ROBOT)
-			robotparts = TRUE
-			continue
-		if(length(dq_limb_internal_bleeds(org)))
-			bleeding_internal = TRUE
-		if(org.status & ORGAN_BLEEDING)
-			bleeding_external = TRUE
-		if(org.status & ORGAN_BROKEN && (!org.splinted))
-			bone = TRUE
-		if(org.has_infected_wound())
-			infection = TRUE
-
-	for(var/obj/item/organ/org in M.internal_organs)
-		if(!istype(org))		//how?
-			continue
-		if(org.robotic >= ORGAN_ROBOT)
-			robotparts = TRUE
-			continue
-		if(org.status & ORGAN_BLEEDING)
-			bleeding_internal = TRUE
-		if(org.damage >= 1 && !istype(org, /obj/item/organ/internal/brain))
-			organ = TRUE
-
-	var/blood_volume = M.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
-	if(blood_volume <= M.species.blood_volume*M.species.blood_level_safe)
-		bloodloss = TRUE
-
-// start: Wording
-	if(bleeding_external)
-		dat += span_bold("Surface Bleeding") + " - Apply bandages or administer Bicaridine.<br>"
-	if(bleeding_internal)
-		dat += span_bold("Internal Bleeding") + " - Commence an internal vein repair operation or administer coagulants, such as Myelamine.<br>"
-	if(M.injury_load(INJURY_CATEGORY_ASPHYXIA))
-		dat += span_bold("Suffocation") + " - Administer Dexalin or Dexalin Plus. Check for heart or lung damage.<br>"
-	if(infection)
-		dat += span_bold("Infection") + " - Administer Spaceacillin. If severe, use Corophizine or overdose on Spaceacillin and monitor until well.<br>"
-	if(M.injury_load(INJURY_CATEGORY_NEURAL) >= 1)
-		dat += span_bold("Traumatic Brain Injury") + " - Commence brain repair surgery, administer Alkysine or universal organ-repair chemicals such as Peridaxon.<br>"
-	if(M.radiation || M.accumulated_rads)
-		dat += span_bold("Radiation Exposure") + " - Administer Hyronalin or Arithrazine. Monitor for genetic damage.<br>"
-	if(organ)
-		dat += span_bold("Organ Damage") + " - Administer Peridaxon. Perform a full body scan for targeted organ repair surgery.<br>"
-	if(bloodloss)
-		dat += span_bold("Low blood volume") + " - Commence blood transfusion via IV drip or provide blood-restorative chemicals (e.g.: Copper for zorren and skrell, iron for the rest)."
-	if(M.injury_load(INJURY_CATEGORY_TOXIC))
-		dat += span_bold("Toxin Buildup") + " - Inject Dylovene or Carthatoline. Monitor for damage to the liver or kidneys.<br>"
-	if(M.injury_load(INJURY_CATEGORY_PHYSICAL))
-		dat += span_bold("Physical Trauma") + " - Bandage the wounded body part. Administer Bicaridine or Vermicetol depending on the severity.<br>"
-	if(M.injury_load(INJURY_CATEGORY_THERMAL))
-		dat += span_bold("Burn Wounds") + " - Salve the wounded body part in ointment. Administer Kelotane or Dermaline. Check for infections.<br>"
-	if(M.injury_load(INJURY_CATEGORY_GENETIC))
-		dat += span_bold("Genetic Damage") + " - Utilize cryogenic pod with appropriate chemicals (i.e. Cryoxadone) and below 70 K, or give Rezadone.<br>"
-	if(bone)
-		dat += span_bold("Bone fracture") + " - Splint damaged area. Treat with bone repair surgery or Osteodaxon after treating brute damage.<br>"
-	if(M.IsInfected())
-		for(var/datum/disease/D in M.GetViruses())
+/obj/item/healthanalyzer/proc/guide(mob/living/M, mob/living/user)
+	var/list/demand = M.body?.treatment_demand(active_profile())
+	var/list/lines = list()
+	for(var/tag in demand)
+		var/line = analyzer_guidance_line(tag)
+		if(line)
+			lines += line
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
+		for(var/datum/disease/D in H.GetViruses())
 			if(D.visibility_flags & HIDDEN_SCANNER)
 				continue
-			else
-				dat += span_bold("Viral Infection") + " - Inform a Virologist or the Chief Medical Officer and administer antiviral chemicals such as Spaceacillin. Limit exposure to other personnel.<br>"
-	if(robotparts)
-		dat += span_bold("Robotic Body Parts") + " - Inform the Robotics department."
-
-	var/peeb
-	if(dat)
-		peeb += span_notice(span_bold("GUIDANCE SYSTEM BEGIN"))
-		peeb += "<br>"
-		peeb += dat
-		peeb += span_notice("For more detailed information on the patient's condition, utilize a body scanner at the closest medical bay.")
-
-		user.show_message(peeb, 1)
-// end.
+			lines += "Viral infection - Inform a Virologist or the Chief Medical Officer and administer antiviral chemicals such as Spaceacillin. Limit exposure to other personnel."
+			break
+		for(var/obj/item/organ/external/E as anything in H.organs)
+			if(E.robotic >= ORGAN_ROBOT)
+				lines += "Robotic body parts - Inform the Robotics department."
+				break
+	if(!length(lines))
+		return
+	user.show_message(span_notice(span_bold("GUIDANCE SYSTEM BEGIN")) + "<br>" + lines.Join("<br>") + "<br>" + span_notice("For more detailed information on the patient's condition, utilize a body scanner at the closest medical bay."), 1)

@@ -1,5 +1,7 @@
 import type { BooleanLike } from 'tgui-core/react';
 
+import type { DiagnosisBand } from '../common/Diagnosis';
+
 export type Data = {
   name?: string;
   theme: string;
@@ -35,10 +37,7 @@ export type Patient = {
   crit_pulse: BooleanLike;
   health: number;
   max_health: number;
-  brute: number;
-  oxy: number;
-  tox: number;
-  burn: number;
+  findings: { name: string; band: DiagnosisBand }[];
   paralysis: number;
   braindamage: BooleanLike;
   clonedamage: BooleanLike;

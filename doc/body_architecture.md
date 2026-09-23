@@ -23,7 +23,7 @@ declared — not special-cased with `isSynthetic()` at call sites.
 | **Body plan** | subtype of `/datum/body` | How a kind of mob is built: `humanoid`, `simple`, `robot`, `ai`. |
 | **Part** | an organ (`/obj/item/organ`), a robot component (`/datum/robot_component`), or null (whole body) | Where an affliction is located. |
 | **Biology** | `BIOLOGY_*` bitflag | What a part (or the whole body) is made of: organic, synthetic, nanoform. |
-| **Injury** | `INJURY_*` int | *What happened*: blunt, cut, pierce, burn, frostbite, corrosive, electric, toxin, asphyxia, radiation, cellular, neural, pain, digestion. Replaces BRUTE/BURN/TOX/OXY/CLONE/HALLOSS for mobs. |
+| **Injury** | `INJURY_*` int | *What happened*: blunt, cut, pierce, burn, frostbite, corrosive, electric, toxin, radiation, cellular, neural, pain, digestion. Replaces BRUTE/BURN/TOX/CLONE/HALLOSS for mobs. There is no asphyxia injury: lack of oxygen is computed by the physiology (§10). |
 | **Affliction** | `/datum/affliction` | A root-cause problem with a severity (0–100) or a load (points), stages, progression, symptoms and treatments. Was `/datum/medical_issue/condition`. Wounds are afflictions too. |
 | **Trigger** | `/datum/affliction_trigger` | Data rule that *creates* afflictions (injury events, organ integrity thresholds, progression gates, metrics). Was `/datum/dq_cause`. |
 | **Symptom** | `/datum/affliction_symptom` | Stateless presentation (flyweight singleton per type, `affliction_symptom(type)`). Was `/datum/medical_symptom`. |
@@ -47,7 +47,7 @@ from the lesion afflictions located on them (§6).
   Sharp+edge weapon → `INJURY_CUT`; sharp without edge → `INJURY_PIERCE`; blunt
   → `INJURY_BLUNT`; laser/fire/heat → `INJURY_BURN`; cold → `INJURY_FROSTBITE`;
   acid/bioacid → `INJURY_CORROSIVE`; shock → `INJURY_ELECTRIC`; poison →
-  `INJURY_TOXIN`; suffocation → `INJURY_ASPHYXIA`; rads → `INJURY_RADIATION`;
+  `INJURY_TOXIN`; rads → `INJURY_RADIATION`;
   clone/DNA → `INJURY_CELLULAR`; brain → `INJURY_NEURAL`; stun/agony/"halloss"
   → `INJURY_PAIN`; vore digestion → `INJURY_DIGESTION`.
 - `zone` — the **target**: a `BP_*` zone, a limb, an **internal organ**
@@ -56,8 +56,8 @@ from the lesion afflictions located on them (§6).
   through one static table (`organ_lesion_for_injury()`: blunt, burn,
   electric, neural → contusion; cut → laceration; pierce → perforation, a
   laceration on solid organs; toxin, corrosive, radiation, cellular,
-  digestion → toxic injury; frostbite, asphyxia → ischemic injury; pain → no
-  effect). A lesion typepath as `affliction` picks the kind directly. An organ
+  digestion → toxic injury; frostbite → ischemic injury; pain → no
+  effect). Suffocation is not an injury kind: see §10. A lesion typepath as `affliction` picks the kind directly. An organ
   the body no longer has is not a target (the injury applies 0).
 - `source` — the weapon/reagent/turf/mob responsible (logging, triggers).
 - `armor_pen` — armour points ignored when the hit is armoured.
@@ -169,7 +169,6 @@ A welder on a synthetic arm is `mend(TREAT_PLATING_REPAIR, 15, BP_L_ARM)`.
 | corrosive | chemical burn wound | corrosion | burn load |
 | electric | electrical burn + cardiac stun | scorching + system shock | burn load |
 | toxin | toxic poisoning (systemic) | — | toxin load |
-| asphyxia | tissue hypoxia (systemic) | — | asphyxia load |
 | radiation | adds to `radiation` metric | — | burn load |
 | cellular | genetic damage (systemic) | — | toxin load |
 | neural | brain organ damage | processor damage (brain organ) | trauma load |
@@ -197,7 +196,8 @@ reagent = `TREAT_COOLANT`.
 
 **Simple plan**: `/mob/living/var/endurance` (was `maxHealth`) is the only
 tuning number. Afflictions are whole-body `load` afflictions in points
-(`/datum/affliction/load/trauma|burn|toxin|asphyxia`). Regeneration and repair
+(`/datum/affliction/load/trauma|burn|toxin|hypoxia`; hypoxia is the simple
+plan's oxygen debt, fed by `add_oxygen_debt()`). Regeneration and repair
 call `mend()`. `vitality()` = `1 - total_load/endurance`.
 
 ## 5. Consciousness & death (`/datum/body` + each plan's `recompute_vitals()` / `is_dead()`)
@@ -326,8 +326,11 @@ MMI'd brain keeps its lesions, so damage and treatment carry on.
   (hepatorenal/cardiac/respiratory/digestive/neural/ocular/tissue);
   lacerations and perforations are only stabilised by drugs
   (`is_stabilised()`) and closed by `TREAT_SURGICAL_REPAIR`; necrosis needs
-  `TREAT_RESECTION`. Surgery calls `H.surgically_repair_organ(organ, amount)`:
-  one budget, structural repair first, resection gets the remainder. Lesions
+  `TREAT_RESECTION`. Surgery treats one organ per step (a suture delivers
+  `TREAT_SURGICAL_REPAIR`, a resection `TREAT_RESECTION`; see Surgery below).
+  `H.surgically_repair_organ(organ, amount)` remains for code that repairs a
+  whole organ at once: one budget, structural repair first, resection gets the
+  remainder. Lesions
   override `receive_tagged_treatment` (drug floors, full-repair tags,
   `drug_efficiency`) and `progress()` (drift, untreated effects, and the
   brain's secondary injury: past 60% a brain swells — ischemic injury grows
@@ -338,36 +341,36 @@ MMI'd brain keeps its lesions, so damage and treatment carry on.
 ### Vital systems (Airway / Breathing / Circulation)
 
 `code/modules/medical/conditions/vital_systems.dm` models the ABCs as
-afflictions with real mechanical consequences on humanoids:
+afflictions whose consequences are factors the physiology reads (§10):
 
 | Affliction | Consequence | Cure path |
 |---|---|---|
-| `airway_obstruction` (choking, aspirated vomit, facial trauma) | severity ≥ 50: airway closed, **no gas exchange** | `TREAT_AIRWAY`: Heimlich (help intent on the chest), airway kit; CPR compressions shift it a little |
-| `airway_edema` (allergy `AG_OXY_DMG`, inhalation burn) | severity ≥ 70: airway closed | `TREAT_VASOPRESSOR` (adrenaline, inaprovaline), `TREAT_AIRWAY` |
-| `respiratory_arrest` (oxycodone OD, brain herniation, hypoxia ≥ 85) | severity ≥ 40: no spontaneous breaths | `TREAT_VENTILATION` (bag-valve mask, CPR rescue breaths) breathes *for* the patient; the drive recovers once nothing sustains it |
-| `pneumothorax` (sharp chest injury, perforated lung lesion) | tension at ≥ 60: asphyxia + lung damage | `TREAT_DECOMPRESSION` (needle, chest tube surgery); an unstabilised lung perforation refills it until surgically repaired |
+| `airway_obstruction` (choking, aspirated vomit, facial trauma, a slit throat) | `BF_AIRWAY` narrows with severity; closed (0) at ≥ 50 | `TREAT_AIRWAY`: Heimlich (help intent on the chest), airway kit; CPR compressions shift it a little |
+| `airway_edema` (allergy `AG_OXY_DMG`, inhalation burn) | `BF_AIRWAY`; closed at ≥ 70 | `TREAT_VASOPRESSOR` (adrenaline, inaprovaline), `TREAT_AIRWAY` |
+| `respiratory_arrest` (oxycodone OD, brain herniation, hypoxia ≥ 85) | `BF_RESP_DRIVE` 0 at ≥ 40 (apnea) | a bag-valve mask or CPR rescue breaths add a **drive support** that breathes *for* the patient; the drive recovers once nothing sustains it |
+| `pneumothorax` (sharp chest injury, perforated lung lesion) | `BF_LUNG_MECHANICS`; tension at ≥ 60 also `BF_PUMP` + lung damage | `TREAT_DECOMPRESSION` (needle, chest tube surgery); an unstabilised lung perforation refills it until surgically repaired |
 | `cardiac_arrhythmia` | rhythm state below | `TREAT_DEFIBRILLATION`, `TREAT_CHEST_COMPRESSION`, `TREAT_VASOPRESSOR`, `TREAT_CARDIAC` |
 
 Breathing hook: `/mob/living/carbon/proc/breath_blocked()` (human override:
-closed airway, or apneic and not ventilated) makes `breathe()` take no breath,
-so `handle_breath(null)` builds tissue hypoxia exactly like vacuum.
+the physiology's ventilation is below `PHYSIOLOGY_APNEA_VENTILATION`) makes
+`breathe()` take no breath, so the breath reports quality 0 exactly like vacuum.
 
 Rhythm (`CARDIAC_RHYTHM_*`): **sinus** (post-conversion, settles and resolves)
 → **tachy** (perfusing, climbs toward VF; cardiac drugs settle it, stimulants
 worsen it) → **VF** (no output, shockable, decays to asystole) → **asystole**
 (no output, *not* shockable; a vasopressor in the blood + compressions
-coarsen it to VF). Without output the patient is unconscious
-(`consciousness_at_max` 200), takes `INJURY_ASPHYXIA` and anoxic brain
-lesions (`lesion/ischemic_injury`) every tick; compressions within the last
-7 s cut both to 35%. `handle_pulse()` reads `has_cardiac_output()`; the
+coarsen it to VF). The VF and asystole stages set `BF_PUMP` 0: the patient is
+unconscious (`consciousness_at_max` 200) and the physiology builds oxygen debt,
+then ischemic brain lesions. A CPR cycle adds a `BF_PUMP` support
+(`SUPPORT_CPR_PUMP` for `CPR_COMPRESSION_WINDOW`), cutting the debt's growth to
+about a third. `handle_pulse()` reads `has_cardiac_output()`; the
 defibrillator's rhythm analysis (`can_defib`) refuses asystole and perfusing
 rhythms, cardioverts living VF, and converts a fibrillating corpse before
 revival. Heart-stopping chems (`potassium_chloride` OD, chlorophoride), heart
 failure's Critical stage, strong electrocution and deep hypoxia all
 `induce_arrhythmia()`. Instant mechanisms reach afflictions through `mend()`;
-afflictions reinterpret them in `receive_tagged_treatment()` (ventilation
-sets a ventilated window, defibrillation converts the rhythm) rather than
-treating severity. Readouts: `cardiac_rhythm_reading()` on the health analyser
+afflictions reinterpret them in `receive_tagged_treatment()` (defibrillation
+converts the rhythm) rather than treating severity. Readouts: `cardiac_rhythm_reading()` on the health analyser
 and vitals monitor; symptoms `choking`, `stridor`, `absent_breath_sounds`,
 `tracheal_deviation`, `absent_pulse`, `rhythm_finding/*`.
 
@@ -383,9 +386,10 @@ the default injury response. That is the whole synthetic/organic system — no
   `NO_PAIN`, no-lungs etc. become `injury_mods[kind] = 0` at species setup.
 - `/datum/modifier`: `incoming_injury_percent` (all) and per-category
   `incoming_physical_percent`, `incoming_thermal_percent`,
-  `incoming_toxic_percent`, `incoming_asphyxia_percent`,
-  `incoming_genetic_percent`, `incoming_pain_percent`; energy shields use
-  `effective_physical/thermal/toxic/asphyxia/genetic/pain_resistance`;
+  `incoming_toxic_percent`, `incoming_genetic_percent`,
+  `incoming_pain_percent`; energy shields use
+  `effective_physical/thermal/toxic/genetic/pain_resistance`. Resistance to
+  suffocation is metabolic demand (`BF_DEMAND`);
   `max_health_flat/percent` → `endurance_flat/percent`.
 
 ## 8. Performance & memory rules
@@ -406,7 +410,8 @@ the default injury response. That is the whole synthetic/organic system — no
 | `adjustBruteLoss(x)` x>0 | `injure(INJURY_BLUNT, x, ...)` (or CUT/PIERCE if sharp) |
 | `adjustFireLoss(x)` x>0 | `injure(INJURY_BURN, x, ...)` (FROSTBITE for cold, CORROSIVE for acid, ELECTRIC for shock) |
 | `adjustToxLoss(x)` x>0 | `injure(INJURY_TOXIN, x, ...)` (+ `affliction =` a specific poison where it deserves one) |
-| `adjustOxyLoss(x)` x>0 | `injure(INJURY_ASPHYXIA, x)` |
+| `adjustOxyLoss(x)` x>0 | the mechanism (airway / breathing restriction, breath quality, a reagent factor); with none, `add_oxygen_debt(x, source)` |
+| `getOxyLoss()` | `oxygen_debt()` |
 | `adjustCloneLoss(x)` x>0 | `injure(INJURY_CELLULAR, x)` |
 | `adjustHalLoss(x)` x>0 / agony | `injure(INJURY_PAIN, x)` |
 | `adjustBrainLoss(x)` x>0 | `injure(INJURY_NEURAL, x)` |
@@ -429,3 +434,146 @@ the default injury response. That is the whole synthetic/organic system — no
 | `/datum/medical_issue/condition` | `/datum/affliction` |
 | `/datum/dq_cause` | `/datum/affliction_trigger` |
 | `/datum/medical_symptom` | `/datum/affliction_symptom` |
+
+## 10. Physiology: ventilation, oxygenation, perfusion, oxygen debt
+
+`code/modules/body/physiology.dm`. Suffocation is an outcome, not an injury:
+there is no `INJURY_ASPHYXIA` (`tools/ci/check_grep.sh` rejects it). Every
+cause says what physically happens, and the physiology decides whether the
+tissues starve.
+
+**The model** (humanoid plan, `/datum/physiology/humanoid`):
+
+```
+ventilation = supported(BF_RESP_DRIVE) × BF_LUNG_MECHANICS × BF_AIRWAY
+oxygenation = saturate(ventilation × BF_GAS_EXCHANGE × lungs × breath quality)
+output      = supported(BF_PUMP × heart condition)
+perfusion   = output × volume factor(blood volume) × BF_CIRCULATION
+delivery    = oxygenation × perfusion × BF_O2_CARRIAGE × BF_TISSUE_UPTAKE
+shortfall   = max(0, PHYSIOLOGY_CRITICAL_RATIO × BF_DEMAND − delivery)
+debt       += shortfall × PHYSIOLOGY_DEBT_RATE per second
+debt       -= (delivery − critical × demand) × PHYSIOLOGY_REPAY_RATE per second, when positive
+```
+
+- `saturate(x) = x(2 − x)`: mild hypoventilation barely moves saturation;
+  severe loss collapses it.
+- `lungs` is the lung organ's condition (missing or dead 0, broken 0.5,
+  bruised 0.8). `heart condition` is the heart organ's (missing 0, broken 0.3,
+  bruised 0.7). The **rhythm** comes from `cardiac_arrhythmia`'s stage factors
+  (VF and asystole `BF_PUMP` 0, tachycardia 0.85).
+- The volume factor is 1 above the species' `blood_level_safe`, falling to 0
+  at three quarters of `blood_level_fatal`.
+- Species without lungs (and `does_not_breathe`, `mNobreath`) have no
+  respiratory model: ventilation and oxygenation are null and don't limit
+  delivery. `skin_breathing` species (alraunes) report breath quality without
+  lungs. Species without a heart have no circulatory model.
+
+**Inputs, all event-driven.** The derived values are cached and recomputed
+only when `BODY_DIRTY_PHYSIOLOGY` is set:
+
+| Input | Who reports it | Dirties the physiology |
+|---|---|---|
+| Factors (`BF_AIRWAY`, `BF_RESP_DRIVE`, `BF_LUNG_MECHANICS`, `BF_GAS_EXCHANGE`, `BF_PUMP`, `BF_CIRCULATION`, `BF_DEMAND`, `BF_O2_CARRIAGE`, `BF_TISSUE_UPTAKE`) | afflictions, reagents, modifiers, species, worn items | any factor or organ invalidation |
+| Breath quality (0..1) | the Breathing system: `body.set_breath_quality()` after each breath | a change of more than `PHYSIOLOGY_BREATH_EPSILON`, or reaching 0 or 1 |
+| Blood volume | the Blood system: `body.note_blood_fraction()` | a change of more than `PHYSIOLOGY_BLOOD_EPSILON` |
+| Supports | `add_support()` / `add_restriction()` / expiry | adding, changing or dropping one |
+
+**Supports** (`/datum/body_support`) are floors (or, as restrictions,
+multipliers) on one factor, owned by a source (weakref), with an optional
+duration and `still_valid` callback. They are reasons with sources, not magic
+numbers, and they are applied after the product, so their placement encodes
+the rules: a bag-valve mask floors the *drive*, so it can't push past a
+closed airway.
+
+| Source | Support |
+|---|---|
+| Bag-valve mask | `BF_RESP_DRIVE` floor `SUPPORT_BVM_DRIVE` for 12 s per squeeze |
+| CPR rescue breaths | `BF_RESP_DRIVE` floor `SUPPORT_RESCUE_BREATH_DRIVE` |
+| CPR compressions | `BF_PUMP` floor `SUPPORT_CPR_PUMP` for `CPR_COMPRESSION_WINDOW` |
+| Oxygen pump (ventilator) | `BF_RESP_DRIVE` and `BF_PUMP` floor 1 while attached |
+| Chokehold grab | `BF_AIRWAY` restriction (0.3; 0 on a kill grab) while held |
+| Leash yank, toilet swirlie, drowning slime | `BF_AIRWAY` restriction for a few seconds |
+| Mech clamp | `BF_LUNG_MECHANICS` restriction |
+| Bad smoke, dust anomalies, pneumonia, vacuum ebullition | `BF_GAS_EXCHANGE` restriction |
+| Carbon-monoxide round | `BF_O2_CARRIAGE` restriction |
+
+**Where each old asphyxia source went.**
+
+- Choking and strangling: airway restrictions and `airway_obstruction`.
+- Lung damage, pneumothorax, respiratory failure: `BF_LUNG_MECHANICS` /
+  `BF_GAS_EXCHANGE` and the lung organ's condition.
+- Bad gas, no gas, vacuum, methane, hypercapnia: breath quality (vacuum also
+  keeps its decompression injury).
+- Cyanide: `BF_TISSUE_UPTAKE`. Carbon monoxide: `BF_O2_CARRIAGE`. Shredding
+  and defective nanites: `BF_GAS_EXCHANGE`. Zombie powder: `BF_RESP_DRIVE`.
+  Sedative overdoses: `losebreath` (no breath drawn).
+- Low blood, hypovolemic and burn shock: perfusion (blood volume, `BF_CIRCULATION`).
+- Cardiac arrest: `BF_PUMP` from the rhythm.
+- Species and trait resistances: `BF_DEMAND` (0 = needs no oxygen).
+- No mechanism at all (spells, admin, spawn-in injuries, changeling powers,
+  anomalies' magic, belly digestion, mech damage transfer, EMP-sensitive
+  species): `add_oxygen_debt(amount, source)`.
+
+**Consequences.** The debt is mirrored by `tissue_hypoxia`, whose severity is
+the debt (capped at 100; consciousness fails at 50). Past
+`DQ_HYPOXIA_BRAIN_DAMAGE` the physiology grows ischemic lesions on the brain
+through `apply_lesion_damage()` (halved by `BF_STABILIZATION`); death comes
+through `is_brain_dead()`, the body's single decision point. The emergent
+ischemia path (`dq_check_ischemic_damage()`) reads `oxygen_debt()` for the
+other organs.
+
+**Healing acts on the mechanism.** `TREAT_OXYGENATION` (dexalin, the oxygen
+pump, rescue oxygen, Vox phoron) pays the debt down through
+`tissue_hypoxia.receive_tagged_treatment()`. Dexalin also raises
+`BF_O2_CARRIAGE`. Restoring delivery (clearing the airway, a defibrillator
+restoring the rhythm, transfusion) lets the debt repay on its own.
+`fully_heal()` clears it.
+
+**Queries** (the contract diagnosis reads; each is null when the plan has no
+such system): `ventilation()` (0..1), `oxygenation()` (SpO2 0–100, including
+`BF_O2_SAT` readout offsets; carbon monoxide doesn't show), `perfusion()`
+(0..1), `oxygen_debt()`, `heart_rate()` (bpm), `blood_pressure()`
+(`list(systolic, diastolic)`), `respiratory_rate()` (breaths/min), and
+`add_oxygen_debt(amount, source)`. Mob wrappers `L.oxygen_debt()` (0 when
+null) and `L.add_oxygen_debt()`.
+
+**Plans.** Humanoid: the full model. Simple: no respiratory model (queries
+null); `add_oxygen_debt()` lands as `load/hypoxia`, scaled by `BF_DEMAND`, and
+kills like any other load. Machine: no oxygen at all; `add_oxygen_debt()` does
+nothing and `oxygen_debt()` is null.
+
+**Tick.** `/datum/life_system/physiology` (phase BODY, order 85, alive only,
+skipped in stasis) calls `body.physiology_tick(seconds)`: prune lapsed
+supports, recompute if dirty, then integrate the debt. With no shortfall and
+no debt it does nothing. Debt crossing each `PHYSIOLOGY_DEBT_LOG_BAND`, every
+support gained or lost, and every explicit debt are logged to the runtime log
+(`PHYSIOLOGY:`).
+
+## 11. Surgery
+
+`code/modules/surgery/`. A procedure is access (incise, retract, saw, pry;
+unscrew and open a panel), operate, then close. Access state is the limb's
+`/datum/affliction/surgical_incision`: its `depth` is the only record of how
+far a limb is open (the limb's `open` var caches it). The site bleeds until
+clamped (`TREAT_HEMOSTATIC`) and gathers germs by the sterility of the
+surface it was opened on until it is closed (`TREAT_BONE_SETTING` closes a
+sawn bone layer, then `TREAT_SURGICAL_CLOSURE` / `TREAT_PANEL_CLOSURE`).
+
+Every healing step is a treatment: a `/datum/surgical_step` names
+`treatments` (TREAT_* -> amount) and a `scope` (the limb, the limb and its
+organs, or one chosen organ) and delivers them through `mend()`. A step offers
+itself only when an affliction in scope responds to its mechanism, so a
+condition that needs surgery declares the surgical tag in `treated_by`
+(`TREAT_BONE_SETTING`, `TREAT_VESSEL_REPAIR`, `TREAT_TENDON_REPAIR`,
+`TREAT_DECOMPRESSION`, `TREAT_RESECTION`, `TREAT_FOREIGN_BODY_REMOVAL`, ...).
+Success is tool quality x surface x surgeon (department, `BF_MOTOR_CONTROL`,
+self-surgery) x patient (a conscious patient flinches unless `BF_ANALGESIA` /
+`BF_SEDATION` cover the step's pain). A failed step injures with a specific
+complication (a slipped suture lacerates the organ; a slipped vessel repair
+opens an arterial bleed). Organ removal and insertion go through
+`removed()` / `replaced()`, so an organ's lesions travel with it. An organ
+whose `is_beyond_repair()` is true still takes the step; the surgeon perceives
+why (`beyond_repair_perception()`) and nothing heals. Synthetic and nanoform
+parts use the same steps with repair tags; a step's `part_biology` defaults to
+the biologies its tags work on. `/datum/dq_surgery` records are the medical
+book's entries and name the steps that perform them.

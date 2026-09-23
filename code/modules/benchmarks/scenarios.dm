@@ -34,10 +34,17 @@
 	for(var/root in census["by_root"])
 		metric("instances_[root]", census["by_root"][root], "instances")
 	detail("census_top_types", census["top_types"])
+	var/list/var_lists = benchmark_var_lists(param("list_top", 60))
+	metric("var_lists_total", var_lists["total"], "lists")
+	metric("var_lists_empty", var_lists["empty"], "lists")
+	metric("var_list_entries", var_lists["entries"], "entries")
+	detail("var_lists_top", var_lists["top"])
 	var/list/types = benchmark_type_counts()
 	for(var/kind in types)
 		metric("types_[kind]", types[kind], "types")
 	metric("init_seconds", Master.initializations_seconds, "s")
+	metric("init_atmos_ms", SSair.init_time_ms, "ms")
+	metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
 	// Weakrefs never get cleaned up while their target lives, so count them by target type.
 	var/list/weakref_targets = list()
 	var/weakrefs = 0
@@ -352,17 +359,19 @@
 	var/turf/open/epicenter = locate(site["x"], site["y"], site["z"])
 	if(!istype(epicenter) || get_area(epicenter) != affected_area)
 		return list("label" = label, "delay_s" = delay, "cells" = 0, "origin_missing" = TRUE)
-	var/list/turfs_to_scan = list(epicenter)
+	var/list/frontier = list(epicenter)
 	var/list/connected = list()
 	connected[epicenter] = TRUE
-	var/scan_index = 1
-	while(scan_index <= length(turfs_to_scan))
-		var/turf/open/current = turfs_to_scan[scan_index++]
-		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
-			if(get_area(neighbor) != affected_area || connected[neighbor])
-				continue
-			connected[neighbor] = TRUE
-			turfs_to_scan += neighbor
+	// Breadth-first over Rust's adjacency, one batched read per ring.
+	while(length(frontier))
+		var/list/neighbor_lists = atmos_adjacent_turfs_bulk(frontier)
+		frontier = list()
+		for(var/list/neighbors as anything in neighbor_lists)
+			for(var/turf/open/neighbor as anything in neighbors)
+				if(get_area(neighbor) != affected_area || connected[neighbor])
+					continue
+				connected[neighbor] = TRUE
+				frontier += neighbor
 	var/count = 0
 	var/vacuum = 0
 	var/total = 0
@@ -433,3 +442,130 @@
 		metric(name, best[name], "us/call")
 	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
+
+/// Idle mob Life cost with mob hibernation off, then on (doc/mob_life_architecture.md §4.9).
+/// Spawns idle mice (every system has a sleep rule, so they hibernate) and humans (partly
+/// asleep until the physiology systems gain sleep rules) on a fixture, then measures SSmobs
+/// with GLOB.mob_hibernation_enabled FALSE and TRUE.
+/datum/benchmark/idle_mobs
+	id = "idle_mobs"
+	description = "Idle mob Life cost with mob hibernation off and on"
+
+/datum/benchmark/idle_mobs/Run()
+	wait_for_assets()
+	var/list/turf/open/turfs = build_floor_fixture(param("width", 20))
+	var/list/mob/living/mobs = list()
+	var/mice = param("mice", 300)
+	var/humans = param("humans", 40)
+	var/cycles = param("cycles", 30)
+	for(var/i in 1 to mice)
+		var/mob/living/simple_mob/animal/passive/mouse/M = new(pick(turfs))
+		benchmark_quiet_simple_mob(M)
+		mobs += M
+		CHECK_TICK
+	for(var/i in 1 to humans)
+		mobs += new /mob/living/carbon/human(pick(turfs))
+		CHECK_TICK
+	metric("idle_mobs_spawned", length(mobs), "mobs", "none")
+	var/was_enabled = GLOB.mob_hibernation_enabled
+
+	GLOB.mob_hibernation_enabled = FALSE
+	for(var/mob/living/L as anything in mobs)
+		L.life_wake(LIFE_SYS_ALL, "benchmark")
+	wait_fires(SSmobs, SSmobs.life_slices * 2)
+	begin_window()
+	wait_fires(SSmobs, SSmobs.life_slices * cycles)
+	end_window("hibernation_off")
+	metric("hibernation_off_ssmobs_cost_ms", SSmobs.cost, "ms")
+	metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
+
+	GLOB.mob_hibernation_enabled = TRUE
+	wait_fires(SSmobs, SSmobs.life_slices * 4)
+	begin_window()
+	wait_fires(SSmobs, SSmobs.life_slices * cycles)
+	end_window("hibernation_on")
+	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
+	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
+	var/list/awake_bits = list()
+	for(var/mob/living/L as anything in mobs)
+		if(!L.life_hibernating)
+			awake_bits["[L.type]"] |= L.life_awake
+	detail("hibernation_on_awake_bits_by_type", awake_bits)
+
+	GLOB.mob_hibernation_enabled = was_enabled
+	for(var/mob/living/L as anything in mobs)
+		qdel(L)
+		CHECK_TICK
+
+/// Puts a simple mob's AI to sleep and opens its environment limits, so it idles without
+/// reacting to the fixture's air.
+/proc/benchmark_quiet_simple_mob(mob/living/simple_mob/M)
+	M.ai_brain?.go_sleep()
+	M.min_oxy = 0
+	M.max_oxy = 0
+	M.min_tox = 0
+	M.max_tox = 0
+	M.min_n2 = 0
+	M.max_n2 = 0
+	M.min_co2 = 0
+	M.max_co2 = 0
+	M.min_ch4 = 0
+	M.max_ch4 = 0
+	M.minbodytemp = 0
+	M.maxbodytemp = INFINITY
+	M.temperature_range = INFINITY
+
+/// How many of `mobs` are hibernating.
+/proc/benchmark_count_hibernating(list/mobs)
+	. = 0
+	for(var/mob/living/L as anything in mobs)
+		if(L.life_hibernating)
+			.++
+
+/// Radiation: pulses from many sources over a walled fixture full of mobs and
+/// insulating objects. Reports the time SSradiation spent inside pulses.
+/datum/benchmark/radiation
+	id = "radiation"
+	description = "Radiation pulse cost: rays from 20 sources to mobs through walls (bench_rounds, default 30)"
+
+/datum/benchmark/radiation/Run()
+	wait_for_assets()
+	var/list/turf/floors = build_floor_fixture(48)
+	var/turf/corner = floors[1]
+	var/fixture_z = corner.z
+	// Interior walls and windows so rays have shielding to cross.
+	for(var/y in 4 to 46)
+		if(y % 6)
+			var/turf/wall_turf = locate(18, y, fixture_z)
+			wall_turf.ChangeTurf(/turf/simulated/wall)
+			new /obj/structure/window/reinforced/full(locate(34, y, fixture_z))
+	var/list/sources = list()
+	for(var/i in 1 to 20)
+		sources += new /obj/item/stack/material/steel(locate(3 + (i * 7) % 46, 3 + (i * 13) % 46, fixture_z))
+	for(var/i in 1 to 120)
+		var/mob/living/simple_mob/animal/passive/mouse/white/mouse = new(locate(3 + (i * 11) % 46, 3 + (i * 17) % 46, fixture_z))
+		mouse.ai_brain?.go_sleep()
+	var/rounds = param("rounds", 30)
+	stoplag()
+	var/cost_before = 0
+	for(var/key in SSradiation.profile_source_cost_ms)
+		cost_before += SSradiation.profile_source_cost_ms[key]
+	var/pulses_before = SSradiation.profile_pulses_completed
+	begin_window()
+	for(var/round in 1 to rounds)
+		for(var/atom/source as anything in sources)
+			radiation_pulse(source, 14, 0.05, 10, 0, 1)
+		var/deadline = REALTIMEOFDAY + 600
+		while(length(SSradiation.processing))
+			if(REALTIMEOFDAY > deadline)
+				fail("radiation pulses did not drain within 60s")
+			stoplag()
+	end_window("radiation")
+	var/cost_after = 0
+	for(var/key in SSradiation.profile_source_cost_ms)
+		cost_after += SSradiation.profile_source_cost_ms[key]
+	var/pulses = SSradiation.profile_pulses_completed - pulses_before
+	metric("radiation_pulses", pulses, "pulses", "none")
+	metric("radiation_pulse_ms_total", cost_after - cost_before, "ms")
+	metric("radiation_pulse_ms_each", pulses ? (cost_after - cost_before) / pulses : 0, "ms")
+	detail("radiation_diagnostics", SSradiation.performance_diagnostics())

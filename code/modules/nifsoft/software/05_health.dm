@@ -22,7 +22,7 @@
 		a_drain = initial(a_drain)
 		mode = initial(mode)
 		if(nif.human)				// What if we deactivate because human is gone?
-			nif.human.Stasis(0)
+			nif.human.set_stasis(null, nif)
 
 /datum/nifsoft/medichines_org/life()
 	if((. = ..()))
@@ -68,9 +68,9 @@
 			//Patient critical - emergency stasis
 			if(mode >= 3)
 				if(HP_percent <= 0)
-					H.Stasis(3)
+					H.set_stasis(/datum/modifier/stasis/moderate, nif)
 				if(HP_percent > 0.2)
-					H.Stasis(0)
+					H.set_stasis(null, nif)
 					nif.notify("Ending emergency stasis.",TRUE)
 					mode = 2
 

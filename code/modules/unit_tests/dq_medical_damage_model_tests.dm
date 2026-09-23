@@ -147,26 +147,29 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_BLUNT, 20, BP_L_LEG, flags = DQ_TEST_INJURE)
 	H.injure(INJURY_TOXIN, 30, flags = DQ_TEST_INJURE)
-	H.injure(INJURY_ASPHYXIA, 20, flags = DQ_TEST_INJURE)
+	H.add_oxygen_debt(20, "unit test")
 	_spawn_affliction_on(H, BP_TORSO, /datum/affliction/internal_hemorrhage)
 	TEST_ASSERT(LAZYLEN(H.body.afflictions), "setup should have produced afflictions")
 	H.fully_heal()
 	TEST_ASSERT(!LAZYLEN(H.body.afflictions), "fully_heal() should clear every affliction")
+	TEST_ASSERT_EQUAL(H.oxygen_debt(), 0, "fully_heal() should clear the oxygen debt")
 	TEST_ASSERT(!H.is_injured(), "a fully healed human should not be injured")
 	TEST_ASSERT_EQUAL(H.vitality(), 1, "a fully healed human should read full vitality")
 
-/// Continuous treatment (reagent tags applied by the tick) lowers a pool.
+/// Continuous treatment (reagent tags applied by the tick) pays down the
+/// oxygen debt through tissue hypoxia.
 /datum/unit_test/dq_medical_treatment_lowers_pool
 
 /datum/unit_test/dq_medical_treatment_lowers_pool/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.injure(INJURY_ASPHYXIA, 40, flags = DQ_TEST_INJURE)
-	var/before = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	H.add_oxygen_debt(40, "unit test")
+	var/before = H.oxygen_debt()
 	var/datum/affliction/C = H.find_affliction(/datum/affliction/tissue_hypoxia)
-	TEST_ASSERT_NOTNULL(C, "INJURY_ASPHYXIA should create tissue_hypoxia")
+	TEST_ASSERT_NOTNULL(C, "oxygen debt should show as tissue_hypoxia")
+	TEST_ASSERT_EQUAL(C.severity, before, "tissue hypoxia severity should mirror the debt")
 	H.bloodstr.add_reagent(REAGENT_ID_DEXALINP, 20)
 	_dq_tick_n(C, 3)
-	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_ASPHYXIA) < before, "dexalin plus (oxygenation tag) should lower hypoxia ([before] -> [H.injury_load(INJURY_CATEGORY_ASPHYXIA)])")
+	TEST_ASSERT(H.oxygen_debt() < before, "dexalin plus (oxygenation tag) should pay down the debt ([before] -> [H.oxygen_debt()])")
 
 // --- consciousness & death: humanoid -------------------------------------------------
 
@@ -180,32 +183,34 @@
 	H.body.on_status_changed()
 	TEST_ASSERT(H.stat != DEAD, "maxed toxic poisoning alone must not kill — death is organ death")
 
-/// tissue_hypoxia's consciousness_at_max (200) knocks a patient out at
-/// severity 50, not before.
+/// tissue_hypoxia's consciousness_at_max (200) knocks a patient out at an
+/// oxygen debt of 50, not before.
 /datum/unit_test/dq_medical_hypoxia_causes_crit
 
 /datum/unit_test/dq_medical_hypoxia_causes_crit/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.body.recompute_vitals()
 	TEST_ASSERT(!H.body.is_unconscious(), "a healthy human should be conscious")
-	H.injure(INJURY_ASPHYXIA, 40, flags = DQ_TEST_INJURE)
+	H.add_oxygen_debt(40, "unit test")
 	H.body.recompute_vitals()
 	TEST_ASSERT(!H.body.is_unconscious(), "hypoxia 40 should not knock the patient out (consciousness [H.body.consciousness])")
-	H.injure(INJURY_ASPHYXIA, 15, flags = DQ_TEST_INJURE)
+	H.add_oxygen_debt(15, "unit test")
 	H.body.recompute_vitals()
 	TEST_ASSERT(H.body.is_unconscious(), "hypoxia past 50 should knock the patient out (consciousness [H.body.consciousness])")
 	TEST_ASSERT(H.vitality() < 1, "an unconscious patient should not read full vitality")
 
-/// Suffocation kills through the brain: severe hypoxia damages it each tick.
+/// Suffocation kills through the brain: a severe oxygen debt grows ischemic
+/// brain lesions each physiology tick.
 /datum/unit_test/dq_medical_hypoxia_damages_brain
 
 /datum/unit_test/dq_medical_hypoxia_damages_brain/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.injure(INJURY_ASPHYXIA, 90, flags = DQ_TEST_INJURE)
+	H.add_oxygen_debt(90, "unit test")
 	var/datum/affliction/C = H.find_affliction(/datum/affliction/tissue_hypoxia)
-	TEST_ASSERT_NOTNULL(C, "INJURY_ASPHYXIA should create tissue_hypoxia")
+	TEST_ASSERT_NOTNULL(C, "oxygen debt should show as tissue_hypoxia")
 	var/before = H.injury_load(INJURY_CATEGORY_NEURAL)
-	_dq_tick_n(C, 5)
+	for(var/i in 1 to 5)
+		H.body.physiology_tick(2)
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_NEURAL) > before, "severe hypoxia should damage the brain ([before] -> [H.injury_load(INJURY_CATEGORY_NEURAL)])")
 
 /// A vital body part kills at DQ_VITAL_PART_LETHAL_MULT × its rated integrity,
@@ -259,7 +264,9 @@
 	TEST_ASSERT(istype(R.body, /datum/body/simple/machine/robot), "a cyborg should have a robot machine body")
 	TEST_ASSERT(R.biology & BIOLOGY_SYNTHETIC, "a cyborg should be synthetic")
 	TEST_ASSERT_EQUAL(R.injure(INJURY_TOXIN, 50, flags = DQ_TEST_INJURE), 0, "toxins should not harm a cyborg")
-	TEST_ASSERT_EQUAL(R.injure(INJURY_ASPHYXIA, 50, flags = DQ_TEST_INJURE), 0, "asphyxia should not harm a cyborg")
+	TEST_ASSERT_EQUAL(R.add_oxygen_debt(50, "unit test"), 0, "a cyborg doesn't breathe: no oxygen debt")
+	TEST_ASSERT_NULL(R.body.oxygen_debt(), "a cyborg has no oxygen debt to report")
+	TEST_ASSERT_NULL(R.body.ventilation(), "a cyborg has no ventilation to report")
 
 	var/endurance = R.get_endurance()
 	R.injure(INJURY_BLUNT, 20, flags = DQ_TEST_INJURE)

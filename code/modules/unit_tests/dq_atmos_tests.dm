@@ -706,7 +706,7 @@
 		var/head = 1
 		while(head <= length(queue))
 			var/turf/open/current = queue[head++]
-			for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+			for(var/turf/open/neighbor as anything in vg_atmos_adjacent_turfs(current))
 				if(checked[neighbor])
 					continue
 				if(istype(neighbor, /turf/space))
@@ -721,7 +721,7 @@
 			CHECK_TICK
 	TEST_ASSERT(alarm_count > 0, "no Southern Cross air alarm found")
 	for(var/turf/open/vertical_source in world)
-		for(var/turf/open/vertical_target as anything in vertical_source.atmos_adjacent_turfs)
+		for(var/turf/open/vertical_target as anything in vg_atmos_adjacent_turfs(vertical_source))
 			if(vertical_source.z == vertical_target.z)
 				continue
 			var/turf/upper = vertical_source.z > vertical_target.z ? vertical_source : vertical_target
@@ -856,12 +856,12 @@
 	// for both turfs and listed each as a neighbor of the other. If either is
 	// null or missing, init_immediate_calculate_adjacent_turfs is broken under
 	// the /turf/simulated → /turf/open reparent and atmos spread won't work.
-	TEST_ASSERT_NOTNULL(A.atmos_adjacent_turfs, \
-		"A.atmos_adjacent_turfs is null after world init — adjacency calc never ran for this turf")
-	TEST_ASSERT(A.atmos_adjacent_turfs[B], \
-		"init didn't list B in A.atmos_adjacent_turfs — A.adj_len=[LAZYLEN(A.atmos_adjacent_turfs)]")
-	TEST_ASSERT(B.atmos_adjacent_turfs && B.atmos_adjacent_turfs[A], \
-		"init didn't list A in B.atmos_adjacent_turfs — symmetric adjacency broken")
+	TEST_ASSERT(length(vg_atmos_adjacent_turfs(A)), \
+		"A has no atmos neighbours after world init — its air-block mask was never published")
+	TEST_ASSERT(vg_atmos_turfs_share(A, B), \
+		"init didn't make B adjacent to A — A has [length(vg_atmos_adjacent_turfs(A))] neighbours")
+	TEST_ASSERT(vg_atmos_turfs_share(B, A), \
+		"init didn't make A adjacent to B — symmetric adjacency broken")
 
 
 /// End-to-end gas-spread check: put phoron on tile A via assume_air, wait
@@ -880,8 +880,8 @@
 
 	// Assert adjacency built by init. If init didn't wire A↔B, the test
 	// can't validate spread.
-	TEST_ASSERT(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B], \
-		"init didn't build A.atmos_adjacent_turfs[B] — the test map didn't wire this pair through init")
+	TEST_ASSERT(vg_atmos_turfs_share(A, B), \
+		"init didn't build vg_atmos_turfs_share(A, B) — the test map didn't wire this pair through init")
 
 	// Strip B's plasma first so the post check is honest.
 	B.air.set_moles(/datum/gas/plasma, 0)
@@ -902,7 +902,7 @@
 
 	var/b_after = LINDA_GAS_AMT(B.air, GAS_PLASMA)
 	TEST_ASSERT(b_after > 0, \
-		"after process_cell on A (with 100 mol plasma), adjacent floor B still has 0 plasma — process_cell didn't share. atmos_adjacent_turfs len on A = [LAZYLEN(A.atmos_adjacent_turfs)]")
+		"after process_cell on A (with 100 mol plasma), adjacent floor B still has 0 plasma — process_cell didn't share. atmos neighbours of A = [length(vg_atmos_adjacent_turfs(A))]")
 
 	// Clean up so we don't pollute later tests.
 	A.air.set_moles(/datum/gas/plasma, 0)
@@ -932,8 +932,8 @@
 		"/turf/simulated/floor.init_air is FALSE — SSair.setup_allturfs() will skip this turf and never call Initalize_Atmos on it")
 	// After SSair init, adjacency should be populated for at least one neighbor
 	// (otherwise spread is dead).
-	TEST_ASSERT(LAZYLEN(T.atmos_adjacent_turfs) > 0, \
-		"atmos_adjacent_turfs is empty after SSair init on a /turf/simulated/floor (at [T.x],[T.y],[T.z]) — Initalize_Atmos never wired this turf into the graph")
+	TEST_ASSERT(length(vg_atmos_adjacent_turfs(T)) > 0, \
+		"no atmos neighbours after SSair init on a /turf/simulated/floor (at [T.x],[T.y],[T.z]) — its air-block mask was never published to Rust")
 
 	if(T.active_hotspot)
 		qdel(T.active_hotspot)
@@ -975,9 +975,7 @@
 	for(var/turf/simulated/floor/cand in world)
 		if(!cand.air || cand.blocks_air)
 			continue
-		if(!cand.atmos_adjacent_turfs)
-			continue
-		for(var/turf/n as anything in cand.atmos_adjacent_turfs)
+		for(var/turf/n as anything in vg_atmos_adjacent_turfs(cand))
 			if(istype(n, /turf/simulated/floor))
 				var/turf/simulated/floor/floor_n = n
 				if(floor_n.air && !floor_n.blocks_air)
@@ -1028,7 +1026,7 @@
 		sleep(max(SSair.wait, 1))
 		if(SSair.times_fired == fired)
 			continue
-		if(SSair.async_generation == last_generation && !length(SSair.adjacent_rebuild))
+		if(SSair.async_generation == last_generation)
 			idle_fires += SSair.times_fired - fired
 			if(idle_fires >= settle_fires)
 				break
@@ -1082,9 +1080,7 @@
 		if(istype(seed_turf, /turf/simulated/floor))
 			var/turf/simulated/floor/seed = seed_turf
 			if(seed.air && !seed.blocks_air)
-				if(!seed.atmos_adjacent_turfs)
-					seed.immediate_calculate_adjacent_turfs()
-				for(var/turf/n as anything in (seed.atmos_adjacent_turfs || list()))
+				for(var/turf/n as anything in vg_atmos_adjacent_turfs(seed))
 					if(istype(n, /turf/simulated/floor))
 						var/turf/simulated/floor/floor_n = n
 						if(floor_n.air && !floor_n.blocks_air)
@@ -1129,12 +1125,12 @@
 				// which leaves the pair unwired — the caller would then bad-index
 				// on a null atmos_adjacent_turfs. Only hand back a real, connected line.
 				for(var/turf/T as anything in line)
-					T.immediate_calculate_adjacent_turfs()
+					T.air_update_turf(TRUE, FALSE)
 				var/connected = TRUE
 				for(var/i in 1 to count - 1)
 					var/turf/a = line[i]
 					var/turf/b = line[i + 1]
-					if(!a.atmos_adjacent_turfs || !a.atmos_adjacent_turfs[b])
+					if(!vg_atmos_turfs_share(a, b))
 						connected = FALSE
 						break
 				if(connected)
@@ -1232,7 +1228,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			var/turf/N = get_step_multiz(T, dir)
 			if(N && N != A && N != B && !(N in to_wall))
 				to_wall += N
-		for(var/turf/N as anything in (T.atmos_adjacent_turfs || list()))
+		for(var/turf/N as anything in vg_atmos_adjacent_turfs(T))
 			if(N != A && N != B && !(N in to_wall))
 				to_wall += N
 	for(var/turf/N as anything in to_wall)
@@ -1265,7 +1261,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			var/turf/N = get_step_multiz(T, dir)
 			if(N && !(N in triple) && !(N in to_wall))
 				to_wall += N
-		for(var/turf/N as anything in (T.atmos_adjacent_turfs || list()))
+		for(var/turf/N as anything in vg_atmos_adjacent_turfs(T))
 			if(!(N in triple) && !(N in to_wall))
 				to_wall += N
 	for(var/turf/N as anything in to_wall)
@@ -1279,7 +1275,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// post-seal state instead of a transiently-null list. (Safe here: only the triple
 	// tests use this; the wall-barrier test does its own walling and must NOT rebuild.)
 	for(var/turf/T as anything in triple)
-		T.immediate_calculate_adjacent_turfs()
+		T.air_update_turf(TRUE, FALSE)
 
 /// Restore turfs walled off by dq_atmos_test_isolate_* back to whatever
 /// they were before the test. Call this at the END of any test that used
@@ -1300,8 +1296,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		for(var/turf/open/open_turf as anything in list(restored, get_step(restored, NORTH), get_step(restored, SOUTH), get_step(restored, EAST), get_step(restored, WEST)))
 			if(!istype(open_turf))
 				continue
-			open_turf.immediate_calculate_adjacent_turfs()
-			open_turf.__update_auxtools_turf_adjacency_info()
+			open_turf.air_update_turf(TRUE, FALSE)
 
 /// Open a sealed test-room floor up to space by ChangeTurf-ing one of its
 /// cardinal neighbors (a /turf/closed/indestructible test-room wall) into a
@@ -1432,8 +1427,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/C = line[3]
 
 	dq_atmos_test_isolate_triple(A, B, C)
-	TEST_ASSERT(A.atmos_adjacent_turfs[B], "A-B adjacency missing")
-	TEST_ASSERT(B.atmos_adjacent_turfs[C], "B-C adjacency missing")
+	TEST_ASSERT(vg_atmos_turfs_share(A, B), "A-B adjacency missing")
+	TEST_ASSERT(vg_atmos_turfs_share(B, C), "B-C adjacency missing")
 
 	for(var/turf/open/T as anything in list(A, B, C))
 		for(var/datum/gas/g as anything in T.air.get_gases())
@@ -1494,19 +1489,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// The wall between A and B is part of the map's init layout.
 	// Verify init didn't wire A↔B (wall blocks adjacency) and W is also
 	// excluded from A's adjacency (blocks_air rejection).
-	TEST_ASSERT(!(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[W]), \
-		"wall ended up in A's atmos_adjacent_turfs — blocks_air check broken")
-	TEST_ASSERT(!(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B]), \
+	TEST_ASSERT(!vg_atmos_turfs_share(A, W), \
+		"wall ended up adjacent to A — blocks_air check broken")
+	TEST_ASSERT(!vg_atmos_turfs_share(A, B), \
 		"B somehow ended up adjacent to A despite a wall between them")
 
 	// Isolate the far-side turf from unrelated station routes and ambient test
 	// contamination. The assertions above test the wall topology; this isolates
 	// the Rust publication check so only a stale/phantom Rust edge can reach B.
-	if(!B.atmos_adjacent_turfs)
-		B.atmos_adjacent_turfs = list()
-	else
-		B.atmos_adjacent_turfs.Cut()
-	B.__update_auxtools_turf_adjacency_info()
+	B.update_air_ref(0, AIR_BLOCK_ALL)
 
 	for(var/datum/gas/g as anything in A.air.get_gases())
 		A.air.set_moles(g, 0)
@@ -1527,8 +1518,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	dq_atmos_test_wait_real_ssair_ticks(20)
 
 	var/b_p = B.air.get_moles(/datum/gas/plasma)
-	B.immediate_calculate_adjacent_turfs()
-	B.__update_auxtools_turf_adjacency_info()
+	B.air_update_turf(TRUE, FALSE)
 	TEST_ASSERT_EQUAL(b_p, 0, \
 		"plasma leaked through a wall: B has [b_p] mol after 100 ticks with A→W→B layout")
 
@@ -1568,8 +1558,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	dq_atmos_test_drive_ticks(list(B), 1)
 
-	TEST_ASSERT(!(B.atmos_adjacent_turfs && B.atmos_adjacent_turfs[W]), \
-		"B's atmos_adjacent_turfs still contains the dead A→wall slot")
+	TEST_ASSERT(!vg_atmos_turfs_share(B, W), \
+		"B is still adjacent to the dead A→wall slot")
 
 	// Always restore even on success — keeps the test map clean for the
 	// next test that picks this tile. (On assert failure the entry in
@@ -1813,11 +1803,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Wire both ends through the production recompute path, then publish the
 	// complete topology batch before expecting the detached solver to use it.
-	lower.immediate_calculate_adjacent_turfs()
-	upper.immediate_calculate_adjacent_turfs()
+	lower.air_update_turf(TRUE, FALSE)
+	upper.air_update_turf(TRUE, FALSE)
 	vg_topology_barrier()
-	TEST_ASSERT(upper.atmos_adjacent_turfs && upper.atmos_adjacent_turfs[lower], \
-		"vertical atmos adjacency wasn't wired: the open turf isn't adjacent to the floor below it")
+	TEST_ASSERT(vg_atmos_turfs_share(upper, lower), \
+		"vertical atmos adjacency wasn't wired: the open turf isn't adjacent to the floor below it (upper mask=[upper.air_block_mask()] open=[vg_atmos_open_dirs(upper)], lower mask=[lower.air_block_mask()] open=[vg_atmos_open_dirs(lower)], rust upper=[json_encode(vg_atmos_cell_info(upper))] lower=[json_encode(vg_atmos_cell_info(lower))] z=[lower_z]/[upper_z])")
 
 	// Zero both, load plasma up top, let the real engine share it down.
 	for(var/datum/gas/g as anything in upper.air.get_gases())
@@ -2060,7 +2050,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(T, "no simulated floor is available for the canister release test")
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
-	T.immediate_calculate_adjacent_turfs()
+	T.air_update_turf(TRUE, FALSE)
 	vg_topology_barrier()
 	var/datum/gas_mixture/original_air = new(T.air.return_volume())
 	original_air.copy_from(T.air)
@@ -2148,10 +2138,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/wall/W = null
 	var/turf/simulated/floor/N = null
 	for(var/turf/simulated/floor/cand in world)
-		if(!cand.air || cand.blocks_air || !cand.atmos_adjacent_turfs)
+		if(!cand.air || cand.blocks_air || !length(vg_atmos_adjacent_turfs(cand)))
 			continue
 		var/turf/simulated/floor/conn = null
-		for(var/turf/nn as anything in cand.atmos_adjacent_turfs)
+		for(var/turf/nn as anything in vg_atmos_adjacent_turfs(cand))
 			if(istype(nn, /turf/simulated/floor))
 				var/turf/simulated/floor/nf = nn
 				if(nf.air && !nf.blocks_air)
@@ -2694,7 +2684,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// update_nearby_tiles() is the production proc that doors call to refresh
 	// adjacency around them. After it runs, the engine's adjacency lists
 	// reflect the door's current density.
-	TEST_ASSERT(!(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B]), \
+	TEST_ASSERT(!vg_atmos_turfs_share(A, B), \
 		"closed airlock didn't block A↔B atmos adjacency — door.update_nearby_tiles or CanZASPass routing broken")
 
 	// Open the airlock — the door itself calls update_nearby_tiles on density
@@ -2702,7 +2692,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	D.density = FALSE
 	D.update_nearby_tiles()
 
-	TEST_ASSERT(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B], \
+	TEST_ASSERT(vg_atmos_turfs_share(A, B), \
 		"open airlock didn't allow A↔B atmos adjacency — door.update_nearby_tiles or CanZASPass routing broken in reverse direction")
 
 	qdel(D)
@@ -2912,7 +2902,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/T = pair[1]
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
-	T.immediate_calculate_adjacent_turfs()
+	T.air_update_turf(TRUE, FALSE)
 	vg_topology_barrier()
 	var/obj/machinery/airlock_sensor/S = new(T)
 	S.process()
@@ -3449,13 +3439,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Near-vacuum breath (tiny moles).
 	var/datum/gas_mixture/breath = new(BREATH_VOLUME)
-	breath.adjust_gas(/datum/gas/oxygen, 0.01)
+	breath.adjust_gas(/datum/gas/oxygen, 0.002)
 	breath.set_temperature(T20C)
-	var/initial_hypoxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/initial_hypoxia = H.oxygen_debt()
 
 	life_test_breath(H, breath)
+	H.body.physiology_tick(2)
 
-	var/final_hypoxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/final_hypoxia = H.oxygen_debt()
 	TEST_ASSERT(final_hypoxia > initial_hypoxia, \
 		"human didn't become hypoxic from near-vacuum breath: [initial_hypoxia] → [final_hypoxia]")
 
@@ -3639,8 +3630,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		var/turf/other_side = blocker.loc == S ? A : S
 		if(!QDELETED(blocker) && !CANATMOSPASS(blocker, other_side, FALSE))
 			space_blockers += "[blocker.type](loc=[COORD(blocker)],density=[blocker.density],pass=[blocker.can_atmos_pass])"
-	TEST_ASSERT(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[S], \
-		"floor↔space adjacency wasn't wired after breaching the wall to space (A=[COORD(A)] S=[COORD(S)] dir=[get_dir(A, S)] A.blocks=[A.blocks_air] S.blocks=[S.blocks_air] A.pass=[CANATMOSPASS(A, A, FALSE)] S.pass=[CANATMOSPASS(S, A, FALSE)] blockers=[jointext(space_blockers, ",")] A.adj=[json_encode(A.atmos_adjacent_turfs)] S.adj=[json_encode(S.atmos_adjacent_turfs)])")
+	TEST_ASSERT(vg_atmos_turfs_share(A, S), \
+		"floor↔space adjacency wasn't wired after breaching the wall to space (A=[COORD(A)] S=[COORD(S)] dir=[get_dir(A, S)] A.blocks=[A.blocks_air] S.blocks=[S.blocks_air] A.pass=[CANATMOSPASS(A, A, FALSE)] S.pass=[CANATMOSPASS(S, A, FALSE)] blockers=[jointext(space_blockers, ",")] A.adj=[json_encode(vg_atmos_adjacent_turfs(A))] S.adj=[json_encode(vg_atmos_adjacent_turfs(S))])")
 
 	for(var/datum/gas/g as anything in A.air.get_gases())
 		A.air.set_moles(g, 0)
@@ -4029,7 +4020,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// alarm already at its worst danger level correctly ignores more plasma.
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
-	T.immediate_calculate_adjacent_turfs()
+	T.air_update_turf(TRUE)
 	vg_topology_barrier()
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
@@ -4205,10 +4196,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.upgradeMotion()
 	C.motionTargets = null
 	C.detectTime = 0
-	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "idle motion camera retained timed polling")
+	C.stat &= ~NOPOWER
+	C.schedule_camera_timer()
+	TEST_ASSERT(isnull(C.camera_timer_token), "idle motion camera kept a timer")
 	var/mob/living/carbon/human/H = new(test_turf)
 	C.newTarget(H)
-	TEST_ASSERT(C in SSmachines.processing_machines, "motion target did not wake its camera")
+	TEST_ASSERT(!isnull(C.camera_timer_token), "motion target did not schedule its camera's alarm timer")
 	qdel(H)
 	qdel(C)
 
@@ -4256,7 +4249,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/simulated/floor/T = pair[1]
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
-	T.immediate_calculate_adjacent_turfs()
+	T.air_update_turf(TRUE, FALSE)
 	vg_topology_barrier()
 	// Start from room temperature. Earlier tests can leave this turf warm, and
 	// +10 K from there may cross the firedoor's hot threshold, which is a real
@@ -4295,7 +4288,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.emergency_mode = FALSE
 	L.auto_flicker = FALSE
 	L.cell.charge = 0
-	TEST_ASSERT_EQUAL(L.process(), PROCESS_KILL, "unpowered light without emergency charge retained timed polling")
+	L.continue_emergency_discharge()
+	TEST_ASSERT(!L.emergency_discharge_at && !L.flicker_chunk_tokens, "unpowered light without emergency charge kept a timer or chunk keys")
 	qdel(L)
 
 /datum/unit_test/dq_emergency_light_discharge_is_timer_driven
@@ -4307,7 +4301,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.emergency_mode = TRUE
 	L.auto_flicker = FALSE
 	L.begin_emergency_discharge()
-	TEST_ASSERT(L.emergency_discharge_timer, "emergency light did not schedule its discharge timer")
+	TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency light did not schedule its discharge timer")
 	TEST_ASSERT(!(L in SSobj.processing), "ordinary emergency light retained SSobj polling")
 	qdel(L)
 
@@ -4415,12 +4409,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"
 	D.receive_signal(blank)
-	TEST_ASSERT_EQUAL(D.process(), PROCESS_KILL, "blank status display remained scheduled")
-	STOP_MACHINE_PROCESSING(D)
+	TEST_ASSERT(isnull(D.refresh_token), "blank status display kept a refresh timer")
 	var/datum/signal/time_signal = new
 	time_signal.data["command"] = "time"
 	D.receive_signal(time_signal)
-	TEST_ASSERT(D.datum_flags & DF_ISPROCESSING, "time signal did not wake a sleeping status display")
+	TEST_ASSERT(!isnull(D.refresh_token) || (D.stat & NOPOWER), "time signal did not schedule the clock's next redraw")
 	qdel(D)
 	qdel(canister)
 	qdel(C)
@@ -4480,7 +4473,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(T, "no floor for Rust pipe-removal test")
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
-	T.immediate_calculate_adjacent_turfs()
+	T.air_update_turf(TRUE, FALSE)
 	vg_topology_barrier()
 	var/initial_turf_oxygen = T.air.get_moles(/datum/gas/oxygen)
 	var/initial_region_count = length(SSair.rust_pipe_region_networks)
@@ -4557,10 +4550,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!A.close_door_at, "blocked airlock retained a timed polling retry")
 	TEST_ASSERT(LAZYLEN(A.autoclose_blockers), "blocked airlock did not subscribe to its blocker")
 	TEST_ASSERT(blocker._listen_lookup?[COMSIG_MOVABLE_MOVED], "blocked airlock did not register a movement signal on its blocker")
-	TEST_ASSERT(!(A.datum_flags & DF_ISPROCESSING), "blocked airlock remained in machinery processing")
+	TEST_ASSERT(isnull(A.door_timer_token) || A.next_door_deadline(), "blocked airlock kept an autoclose timer")
 	blocker.Moved(T, NORTH, TRUE, 0)
-	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, "blocked airlock did not wake when its blocker moved (flags=[A.datum_flags], listed=[A in SSmachines.processing_machines], close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
 	TEST_ASSERT(A.close_door_at, "woken airlock did not schedule an immediate close attempt")
+	TEST_ASSERT(!isnull(A.door_timer_token), "woken airlock has no autoclose timer (close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
 	qdel(blocker)
 	qdel(A)
 
@@ -4573,14 +4566,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.operating = FALSE
 	A.autoclose = TRUE
 	A.close_door_at = world.time
-	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, "closed airlock retained its stale autoclose processing deadline")
+	A.door_deadlines_due()
 	TEST_ASSERT(!A.close_door_at, "closed airlock did not clear its stale autoclose deadline")
 	A.density = FALSE
 	A.operating = FALSE
 	A.locked = TRUE
 	A.close_door_at = world.time
-	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, "locked open airlock retained its impossible autoclose processing deadline")
+	A.door_deadlines_due()
 	TEST_ASSERT(!A.close_door_at, "locked open airlock did not clear its impossible autoclose deadline")
+	A.schedule_door_timer()
 	A.unlock(TRUE)
 	TEST_ASSERT(A.close_door_at, "unlocking an open airlock did not restore autoclose scheduling")
 
@@ -4670,10 +4664,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	shield_capacitor.stored_charge = shield_capacitor.max_charge
 	TEST_ASSERT_EQUAL(shield_capacitor.process(), PROCESS_KILL, "full shield capacitor remained scheduled")
 	var/obj/machinery/atmospherics/valve/shutoff/shutoff = new(T)
-	TEST_ASSERT_EQUAL(shutoff.process(), PROCESS_KILL, "stable automatic shutoff valve remained scheduled")
-	STOP_MACHINE_PROCESSING(shutoff)
-	wake_automatic_shutoff_valves()
-	TEST_ASSERT(shutoff in SSmachines.processing_machines, "atmos topology invalidation did not wake automatic shutoff valve")
+	TEST_ASSERT(!isnull(shutoff.global_leak_token), "automatic shutoff valve did not subscribe to the global leak key")
+	var/shutoff_wake = react_wake_test(shutoff, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
+	TEST_ASSERT(!shutoff_wake, shutoff_wake)
 	var/obj/machinery/sleeper/sleeper = new(T)
 	sleeper.stat = 0
 	TEST_ASSERT_EQUAL(sleeper.process(), PROCESS_KILL, "empty sleeper remained scheduled")
@@ -5956,7 +5949,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 
 	// Stash baseline integrity, then push pressure into the rupture band (40-50 atm).
-	var/initial_integrity = Tank.integrity
+	var/initial_integrity = Tank.get_integrity()
 	TEST_ASSERT(initial_integrity > 0, "tank integrity zero at construct")
 
 	// Pressure target: ~37 atm. DQ's TANK_RUPTURE_PRESSURE is 35 atm and
@@ -5974,8 +5967,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	Tank.check_status()
 
-	TEST_ASSERT(Tank.integrity < initial_integrity, \
-		"check_status didn't reduce integrity under rupture pressure: [initial_integrity] → [Tank.integrity]")
+	TEST_ASSERT(Tank.get_integrity() < initial_integrity, \
+		"check_status didn't reduce integrity under rupture pressure: [initial_integrity] → [Tank.get_integrity()]")
 
 	qdel(Tank)
 
@@ -6653,7 +6646,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(T, "no floor for siphon test")
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
-	T.immediate_calculate_adjacent_turfs()
+	T.air_update_turf(TRUE, FALSE)
 	vg_topology_barrier()
 
 	var/datum/gas_mixture/turf_air = T.return_air()
@@ -6788,7 +6781,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /datum/unit_test/dq_real_spread_via_ssair_fire/Run()
 	var/list/pair = dq_atmos_test_find_floor_pair()
-	TEST_ASSERT_NOTNULL(pair, "no floor pair with built atmos_adjacent_turfs — adjacency was never built, that's the bug")
+	TEST_ASSERT_NOTNULL(pair, "no floor pair with built atmos adjacency — adjacency was never built, that's the bug")
 	var/turf/open/A = pair[1]
 	var/turf/open/B = pair[2]
 	// Seal the pair so the injected plasma stays concentrated in A+B under real
@@ -6796,9 +6789,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// test measures that gas MOVES A->B, not that it stays dense in a big room.
 	dq_atmos_test_isolate_pair(A, B)
 
-	TEST_ASSERT(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B], \
-		"A's adjacency list doesn't contain B — init_immediate_calculate_adjacent_turfs is broken")
-	TEST_ASSERT(B.atmos_adjacent_turfs && B.atmos_adjacent_turfs[A], \
+	TEST_ASSERT(vg_atmos_turfs_share(A, B), \
+		"A's adjacency list doesn't contain B — round-start mask publication is broken")
+	TEST_ASSERT(vg_atmos_turfs_share(B, A), \
 		"B's adjacency list doesn't contain A — adjacency wasn't built symmetrically")
 
 	// Snapshot starting plasma in both turfs.
@@ -7299,3 +7292,87 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/datum/gas/g as anything in back_to_floor.air.get_gases())
 		back_to_floor.air.set_moles(g, 0)
 	dq_atmos_test_restore_walls()
+
+
+/// The pre-M1a adjacency rule, evaluated directly in DM: two registered open
+/// turfs share air when neither blocks air and every object on either turf lets
+/// air through toward the other (CANATMOSPASS). Vertical pairs also need the
+/// upper turf to be an opening and the z-levels to be linked. Used only as the
+/// reference the Rust adjacency must reproduce.
+/proc/dq_atmos_test_pairwise_shares(turf/open/A, turf/open/B, direction)
+	if(!istype(A) || !istype(B) || A.blocks_air || B.blocks_air || isnull(A.air) || isnull(B.air))
+		return FALSE
+	var/vertical = (direction & (UP|DOWN))
+	if(vertical)
+		var/turf/upper = (direction & UP) ? B : A
+		if(!istype(upper, /turf/simulated/open))
+			return FALSE
+	for(var/obj/checked_object in A.contents + B.contents)
+		if(QDELETED(checked_object))
+			continue
+		var/turf/other = (checked_object.loc == A ? B : A)
+		if(!CANATMOSPASS(checked_object, other, vertical))
+			return FALSE
+	return TRUE
+
+/// Rust builds turf adjacency from DM air-block masks. On every registered
+/// turf of the map it must match the old pairwise rule exactly: doors,
+/// windows, firedoors and directional blockers block the same faces as before.
+/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule
+
+/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule/Run()
+	dq_atmos_test_restore_walls()
+	var/checked = 0
+	var/mismatch_count = 0
+	var/list/mismatches = list()
+	for(var/turf/open/T in world)
+		if(T.blocks_air || isnull(T.air))
+			continue
+		for(var/direction in GLOB.cardinals_multiz)
+			var/turf/open/N = get_step_multiz(T, direction)
+			if(!istype(N))
+				continue
+			checked++
+			var/expected = dq_atmos_test_pairwise_shares(T, N, direction)
+			var/actual = vg_atmos_turfs_share(T, N)
+			if(!expected == !actual)
+				continue
+			mismatch_count++
+			if(length(mismatches) < 10)
+				var/list/objects = list()
+				for(var/obj/O in T.contents + N.contents)
+					if(O.can_atmos_pass != ATMOS_PASS_YES)
+						objects += "[O.type](dir=[O.dir], density=[O.density])"
+				mismatches += "[COORD(T)] -> [COORD(N)] dir=[direction]: expected [expected ? "open" : "blocked"], Rust [actual ? "open" : "blocked"]; masks [T.air_block_mask()]/[N.air_block_mask()]; objects [jointext(objects, ", ")]"
+		CHECK_TICK
+	TEST_ASSERT(checked > 0, "no registered turf pairs on the map")
+	TEST_ASSERT(!mismatch_count, "Rust adjacency differs from the pairwise rule on [mismatch_count] of [checked] faces:\n[jointext(mismatches, "\n")]")
+
+/// Gas IDs cross the FFI as numbers. The DM table and the Rust registry agree,
+/// and every accepted key form reaches the same gas.
+/datum/unit_test/dq_gas_ids_are_numeric_end_to_end
+
+/datum/unit_test/dq_gas_ids_are_numeric_end_to_end/Run()
+	TEST_ASSERT_EQUAL(length(GLOB.gas_path_by_idx), GAS_ID_COUNT, "gas path table size")
+	for(var/datum/gas/gas_path as anything in subtypesof(/datum/gas))
+		var/idx = initial(gas_path.idx)
+		TEST_ASSERT_NOTNULL(idx, "[gas_path] has no GAS_ID_* idx")
+		TEST_ASSERT_EQUAL(GLOB.gas_path_by_idx[idx + 1], gas_path, "gas_path_by_idx disagrees for [gas_path]")
+		TEST_ASSERT_EQUAL(GAS_IDX(gas_path), idx, "GAS_IDX(path) for [gas_path]")
+		TEST_ASSERT_EQUAL(GAS_IDX("[gas_path]"), idx, "GAS_IDX(path text) for [gas_path]")
+		TEST_ASSERT_EQUAL(GAS_IDX(initial(gas_path.id)), idx, "GAS_IDX(short id) for [gas_path]")
+	var/datum/gas_mixture/mix = new(CELL_VOLUME)
+	mix.set_moles(GAS_ID_PLASMA, 12)
+	mix.adjust_moles(/datum/gas/plasma, 3)
+	TEST_ASSERT_EQUAL(mix.get_moles(GAS_ID_PLASMA), 15, "numeric and path gas keys reach the same slot")
+	mix.adjust_multiple_gases(list(/datum/gas/oxygen = 4, /datum/gas/nitrogen = 6))
+	var/list/gases = mix.get_gases()
+	TEST_ASSERT_EQUAL(gases[/datum/gas/plasma], 15, "get_gases plasma")
+	TEST_ASSERT_EQUAL(gases[/datum/gas/oxygen], 4, "get_gases oxygen")
+	TEST_ASSERT_EQUAL(gases[/datum/gas/nitrogen], 6, "get_gases nitrogen")
+	var/list/readings = read_gas_mixtures(list(mix, null))
+	TEST_ASSERT_EQUAL(length(readings), 2 * GAS_READ_STRIDE, "read_gas_mixtures keeps null entries")
+	TEST_ASSERT_EQUAL(readings[GAS_READ_TOTAL_MOLES], 25, "batched total moles")
+	TEST_ASSERT_EQUAL(readings[GAS_READ_MOLES(GAS_ID_OXYGEN)], 4, "batched oxygen moles")
+	TEST_ASSERT_EQUAL(readings[GAS_READ_STRIDE + GAS_READ_TOTAL_MOLES], 0, "a null mixture reads as zero")
+	qdel(mix)

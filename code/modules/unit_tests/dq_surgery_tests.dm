@@ -1,151 +1,377 @@
-// Unit tests for the DQ surgery framework — registry, cure hook,
-// zone-routing, well-formedness.
+// Unit tests for the surgery framework (code/modules/surgery/): the
+// incision state, treatment-tag steps, complications, synthetic repair,
+// organ removal and insertion, outcome conditions and the procedure records.
+//
+// Steps are driven directly (perform() / complicate()) so the tests don't
+// depend on do_after timing or dice.
 //
 // Sibling test files in this directory cover bodyscanner and the
 // cross-cutting audit. They share helper procs declared on the base
-// unit_test type in /home/ethan/projects/CHOMPStation2/code/modules/unit_tests/dq_medical_tests.dm.
-//
-// All three sibling files are #included from
-// code/modules/unit_tests/_unit_tests.dm (via ) so the TEST_ASSERT*
-// macros are still in scope. The medical defines header is re-included
-// once here because the upstream test block compiles before the
-// medical includes.
+// unit_test type in code/modules/unit_tests/dq_medical_tests.dm.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 #include "../medical/_defines.dm"
 
-// --- surgery: registry has entries -------------------------------------
+/// Perform `step_type` on `H` at `zone` as `surgeon`, on `work_target`
+/// (default: the limb).
+/datum/unit_test/proc/_surgery_perform(step_type, mob/living/carbon/human/surgeon, mob/living/carbon/human/H, zone, obj/item/tool = null, atom/work_target = null)
+	var/datum/surgical_step/S = surgical_step(step_type)
+	var/obj/item/organ/external/part = H.get_organ(zone)
+	S.perform(surgeon, H, part, tool, work_target || part)
+
+/// Make `step_type` fail on `H` at `zone` (its complication).
+/datum/unit_test/proc/_surgery_fail(step_type, mob/living/carbon/human/surgeon, mob/living/carbon/human/H, zone, obj/item/tool = null, atom/work_target = null)
+	var/datum/surgical_step/S = surgical_step(step_type)
+	var/obj/item/organ/external/part = H.get_organ(zone)
+	S.complicate(surgeon, H, part, tool, work_target || part)
+
+/datum/unit_test/proc/_has_affliction_type(mob/living/carbon/human/H, affliction_type)
+	for(var/datum/affliction/A in H.get_afflictions())
+		if(istype(A, affliction_type))
+			return TRUE
+	return FALSE
+
+
+// --- registry ------------------------------------------------------------------
 
 /datum/unit_test/dq_surgery_registry_populates
 
 /datum/unit_test/dq_surgery_registry_populates/Run()
-	// Force a fresh build of the registry.
-	GLOB.dq_surgery_by_step = list()
-	var/list/registry = dq_surgeries_registry()
-	TEST_ASSERT(length(registry) > 0, "surgery registry should contain at least one entry")
-	for(var/step_path in registry)
-		TEST_ASSERT(ispath(step_path, /datum/surgery_step), "registry key [step_path] is not a /datum/surgery_step")
-		var/list/datum/dq_surgery/surgeries = registry[step_path]
-		TEST_ASSERT(length(surgeries) > 0, "registry value for [step_path] is empty")
-		for(var/datum/dq_surgery/sg as anything in surgeries)
-			TEST_ASSERT(istype(sg), "registry value for [step_path] contains non-/datum/dq_surgery [sg]")
-			TEST_ASSERT_EQUAL(sg.completion_step, step_path, "surgery [sg.type] indexed under wrong step ([step_path] vs its completion_step [sg.completion_step])")
+	var/list/steps = surgical_steps()
+	TEST_ASSERT(length(steps) > 0, "the surgical step registry is empty")
+	for(var/datum/surgical_step/S as anything in steps)
+		TEST_ASSERT(S.abstract_type != S.type, "abstract step [S.type] was registered")
+		TEST_ASSERT(S.name && S.name != "surgical step", "[S.type] has no name")
+		TEST_ASSERT(S.part_biology, "[S.type] works on no biology")
+		for(var/tag in S.treatments)
+			TEST_ASSERT(dq_treatment_tag_names()[tag], "[S.type] delivers unknown treatment tag [tag]")
 
-
-// --- surgery: every authored surgery references real types -------------
-
+/// Every procedure record names real steps, and every condition it treats
+/// responds to a mechanism those steps deliver (or the record repairs organs).
 /datum/unit_test/dq_surgery_records_well_formed
 
 /datum/unit_test/dq_surgery_records_well_formed/Run()
 	for(var/T in subtypesof(/datum/dq_surgery))
 		var/datum/dq_surgery/sg = new T()
 		TEST_ASSERT(sg.name, "[T] has no name")
-		TEST_ASSERT(sg.description, "[T] has no description")
-		TEST_ASSERT(sg.category, "[T] has no category")
-		TEST_ASSERT(length(sg.steps) > 0, "[T] has no procedural steps documented")
-		TEST_ASSERT(length(sg.treats) > 0, "[T] declares no treatable conditions")
-		for(var/cond_path in sg.treats)
-			TEST_ASSERT(ispath(cond_path, /datum/affliction), "[T].treats contains non-condition path [cond_path]")
-		if(sg.completion_step)
-			TEST_ASSERT(ispath(sg.completion_step, /datum/surgery_step), "[T].completion_step [sg.completion_step] is not a /datum/surgery_step subtype")
+		TEST_ASSERT(length(sg.steps), "[T] has no prose steps")
+		TEST_ASSERT(length(sg.procedure), "[T] names no surgical steps")
+		for(var/step_type in sg.procedure)
+			TEST_ASSERT(surgical_step(step_type), "[T] names unregistered step [step_type]")
+		var/list/delivered = sg.delivered_tags()
+		for(var/cond in sg.treats)
+			TEST_ASSERT(ispath(cond, /datum/affliction), "[T] treats non-affliction [cond]")
+			if(length(sg.repairs_organs))
+				continue
+			var/datum/affliction/proto = dq_proto(cond)
+			var/linked = FALSE
+			for(var/tag in delivered)
+				if(proto.treatment_rate(tag))
+					linked = TRUE
+					break
+			TEST_ASSERT(linked, "[T] claims to treat [cond], but none of its steps deliver a mechanism it responds to")
 		qdel(sg)
 
 
-// --- surgery: cure hook actually clears matching conditions ------------
+// --- incision state ---------------------------------------------------------------
 
-/datum/unit_test/dq_surgery_cures_matching_condition
+/datum/unit_test/dq_surgery_incision_opens_and_closes
 
-/datum/unit_test/dq_surgery_cures_matching_condition/Run()
+/datum/unit_test/dq_surgery_incision_opens_and_closes/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/untreated_fracture/C = _spawn_affliction_on(H, BP_L_ARM, /datum/affliction/untreated_fracture)
-	TEST_ASSERT_NOTNULL(C, "untreated_fracture didn't spawn")
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	TEST_ASSERT_NULL(arm.get_incision(), "a fresh arm has no incision")
 
-	var/datum/surgery_step/bones/finish_bone/step = new()
-	dq_apply_surgery_cures(step, H, BP_L_ARM)
-	qdel(step)
+	_surgery_perform(/datum/surgical_step/access/incise, surgeon, H, BP_L_ARM)
+	var/datum/affliction/surgical_incision/I = arm.get_incision()
+	TEST_ASSERT_NOTNULL(I, "an incision should create the incision affliction")
+	TEST_ASSERT_EQUAL(arm.surgical_depth(), INCISION_MADE, "the incision is at skin depth")
+	TEST_ASSERT_EQUAL(arm.open, INCISION_MADE, "the limb's open cache follows the incision")
+	TEST_ASSERT(_has_affliction_type(H, /datum/affliction/surgical_incision), "the incision is on the patient's body")
 
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/untreated_fracture))
-			TEST_FAIL("untreated_fracture should have been cured by fracture_setting")
+	_surgery_perform(/datum/surgical_step/access/retract, surgeon, H, BP_L_ARM)
+	TEST_ASSERT_EQUAL(arm.surgical_depth(), FLESH_RETRACTED, "retracting deepens the site")
 
+	var/datum/surgical_step/cauterize = surgical_step(/datum/surgical_step/cauterize)
+	TEST_ASSERT(cauterize.can_use(surgeon, H, BP_L_ARM, null), "an open site can be cauterized")
+	_surgery_perform(/datum/surgical_step/cauterize, surgeon, H, BP_L_ARM)
+	TEST_ASSERT_NULL(arm.get_incision(), "closing should clear the incision")
+	TEST_ASSERT_EQUAL(arm.open, SURGERY_DEPTH_CLOSED, "the limb's open cache is cleared on close")
+	TEST_ASSERT(!_has_affliction_type(H, /datum/affliction/surgical_incision), "no incision left on the body")
+	TEST_ASSERT(!cauterize.can_use(surgeon, H, BP_L_ARM, null), "a closed limb has nothing to cauterize")
 
-// --- surgery: tendon repair via its own dedicated step ---------------
+/// The bone layer has to be set before the skin closes.
+/datum/unit_test/dq_surgery_bone_layer_closes_first
 
-/datum/unit_test/dq_surgery_tendon_repair_step_cures
-
-/datum/unit_test/dq_surgery_tendon_repair_step_cures/Run()
+/datum/unit_test/dq_surgery_bone_layer_closes_first/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/tendon_severed/C = _spawn_affliction_on(H, BP_L_LEG, /datum/affliction/tendon_severed)
-	TEST_ASSERT_NOTNULL(C, "tendon_severed didn't spawn")
+	var/obj/item/organ/external/chest = H.get_organ(BP_TORSO)
+	TEST_ASSERT_EQUAL(chest.surgical_full_access(), BONE_RETRACTED, "the torso is encased")
+	_surgery_perform(/datum/surgical_step/access/incise, surgeon, H, BP_TORSO)
+	_surgery_perform(/datum/surgical_step/access/retract, surgeon, H, BP_TORSO)
+	_surgery_perform(/datum/surgical_step/access/saw, surgeon, H, BP_TORSO)
+	_surgery_perform(/datum/surgical_step/access/pry_bone, surgeon, H, BP_TORSO)
+	TEST_ASSERT_EQUAL(chest.surgical_depth(), BONE_RETRACTED, "the ribcage is open")
 
-	var/datum/surgery_step/fix_tendon/step = new()
-	dq_apply_surgery_cures(step, H, BP_L_LEG)
-	qdel(step)
+	_surgery_perform(/datum/surgical_step/cauterize, surgeon, H, BP_TORSO)
+	TEST_ASSERT_EQUAL(chest.surgical_depth(), BONE_RETRACTED, "the skin can't close over an open ribcage")
 
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/tendon_severed))
-			TEST_FAIL("tendon_severed should have been cured by fix_tendon")
+	_surgery_perform(/datum/surgical_step/set_bone, surgeon, H, BP_TORSO)
+	TEST_ASSERT_EQUAL(chest.surgical_depth(), FLESH_RETRACTED, "setting the bone closes the bone layer")
+	_surgery_perform(/datum/surgical_step/cauterize, surgeon, H, BP_TORSO)
+	TEST_ASSERT_NULL(chest.get_incision(), "then the skin closes")
+
+/// An open site bleeds until clamped and gathers germs by its sterility.
+/datum/unit_test/dq_surgery_incision_bleeds_and_infects
+
+/datum/unit_test/dq_surgery_incision_bleeds_and_infects/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/leg = H.get_organ(BP_L_LEG)
+	var/datum/affliction/surgical_incision/I = leg.open_surgical_site(INCISION_MADE, 0)
+	TEST_ASSERT(I.is_bleeding(), "an unclamped incision bleeds")
+	leg.update_damages()
+	TEST_ASSERT(leg.status & ORGAN_BLEEDING, "the limb reports the incision's bleeding")
+
+	var/germs_before = leg.germ_level
+	I.progress()
+	TEST_ASSERT(leg.germ_level > germs_before, "a site opened on a dirty surface gathers germs")
+
+	_surgery_perform(/datum/surgical_step/clamp_bleeders, surgeon, H, BP_L_LEG)
+	TEST_ASSERT(!I.is_bleeding(), "clamping stops the incision bleeding")
+
+	var/obj/item/organ/external/right_leg = H.get_organ(BP_R_LEG)
+	var/datum/affliction/surgical_incision/clean = right_leg.open_surgical_site(INCISION_MADE, 100)
+	var/clean_germs = right_leg.germ_level
+	clean.progress()
+	TEST_ASSERT_EQUAL(right_leg.germ_level, clean_germs, "a site opened on a sterile surface stays clean")
 
 
-// --- surgery: cure hook ignores non-matching conditions ----------------
+// --- organ repair: each step cures only its own lesions -----------------------------------
+
+/datum/unit_test/dq_surgery_organ_steps_match_lesions
+
+/datum/unit_test/dq_surgery_organ_steps_match_lesions/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	TEST_ASSERT_NOTNULL(liver, "no liver")
+	H.injure(INJURY_CUT, 10, liver, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
+	H.injure(INJURY_CUT, 10, liver, affliction = /datum/affliction/lesion/necrosis, flags = INJURE_IGNORE_RESISTANCE)
+	TEST_ASSERT_NOTNULL(liver.find_lesion(/datum/affliction/lesion/laceration), "laceration didn't form")
+	TEST_ASSERT_NOTNULL(liver.find_lesion(/datum/affliction/lesion/necrosis), "necrosis didn't form")
+
+	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_GROIN, null, liver)
+	TEST_ASSERT_NULL(liver.find_lesion(/datum/affliction/lesion/laceration), "suturing closes the laceration")
+	TEST_ASSERT_NOTNULL(liver.find_lesion(/datum/affliction/lesion/necrosis), "suturing doesn't touch necrosis")
+
+	_surgery_perform(/datum/surgical_step/treat/organ/resection, surgeon, H, BP_GROIN, null, liver)
+	TEST_ASSERT_NULL(liver.find_lesion(/datum/affliction/lesion/necrosis), "resection removes the necrosis")
+
+/// Only the chosen organ is repaired.
+/datum/unit_test/dq_surgery_organ_repair_is_targeted
+
+/datum/unit_test/dq_surgery_organ_repair_is_targeted/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/lungs = H.internal_organs_by_name[O_LUNGS]
+	H.injure(INJURY_BLUNT, 10, heart, affliction = /datum/affliction/lesion/contusion, flags = INJURE_IGNORE_RESISTANCE)
+	H.injure(INJURY_BLUNT, 10, lungs, affliction = /datum/affliction/lesion/contusion, flags = INJURE_IGNORE_RESISTANCE)
+	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_TORSO, null, heart)
+	TEST_ASSERT_NULL(heart.find_lesion(/datum/affliction/lesion/contusion), "the heart was repaired")
+	TEST_ASSERT_NOTNULL(lungs.find_lesion(/datum/affliction/lesion/contusion), "the lungs weren't operated on")
+
+/// An organ past saving still takes the step, and nothing heals.
+/datum/unit_test/dq_surgery_organ_beyond_repair_heals_nothing
+
+/datum/unit_test/dq_surgery_organ_beyond_repair_heals_nothing/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	TEST_ASSERT_NOTNULL(brain, "no brain")
+	H.injure(INJURY_CUT, 10, brain, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
+	brain.status |= ORGAN_DEAD
+	TEST_ASSERT(brain.is_beyond_repair(), "a dead brain is beyond repair")
+	var/datum/surgical_step/treat/organ/suture = surgical_step(/datum/surgical_step/treat/organ/suture)
+	TEST_ASSERT(suture.location_needs_treatment(H, brain), "the surgeon can still work on it")
+	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_HEAD, null, brain)
+	TEST_ASSERT_NOTNULL(brain.find_lesion(/datum/affliction/lesion/laceration), "nothing heals in an organ beyond repair")
+
+
+// --- conditions that need surgery -----------------------------------------------------------
+
+/datum/unit_test/dq_surgery_steps_cure_their_conditions
+
+/datum/unit_test/dq_surgery_steps_cure_their_conditions/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	// condition, zone, step
+	var/list/cases = list(
+		list(/datum/affliction/untreated_fracture, BP_L_ARM, /datum/surgical_step/set_bone),
+		list(/datum/affliction/tendon_severed, BP_L_LEG, /datum/surgical_step/treat/tendon_repair),
+		list(/datum/affliction/compartment_syndrome, BP_R_LEG, /datum/surgical_step/treat/decompression),
+		list(/datum/affliction/pneumothorax, BP_TORSO, /datum/surgical_step/treat/decompression),
+		list(/datum/affliction/internal_hemorrhage, BP_TORSO, /datum/surgical_step/treat/vessel_repair),
+		list(/datum/affliction/lacerated_artery, BP_R_ARM, /datum/surgical_step/treat/vessel_repair),
+		list(/datum/affliction/tissue_necrosis, BP_R_ARM, /datum/surgical_step/treat/debridement),
+		list(/datum/affliction/subdural_hematoma, BP_HEAD, /datum/surgical_step/treat/decompression),
+	)
+	for(var/list/c in cases)
+		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+		var/cond = c[1]
+		var/zone = c[2]
+		var/step_type = c[3]
+		var/datum/affliction/A = _spawn_affliction_on(H, zone, cond)
+		TEST_ASSERT_NOTNULL(A, "[cond] didn't spawn on [zone]")
+		var/obj/item/organ/external/part = H.get_organ(zone)
+		part.open_surgical_site(part.surgical_full_access(), 100)
+		var/datum/surgical_step/S = surgical_step(step_type)
+		TEST_ASSERT(S.can_use(surgeon, H, zone, null), "[step_type] should offer itself for [cond]")
+		_surgery_perform(step_type, surgeon, H, zone)
+		TEST_ASSERT(!_has_affliction_type(H, cond), "[step_type] should cure [cond]")
 
 /datum/unit_test/dq_surgery_does_not_cure_unrelated
 
 /datum/unit_test/dq_surgery_does_not_cure_unrelated/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/cellulitis/C = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/cellulitis)
-	TEST_ASSERT_NOTNULL(C, "cellulitis didn't spawn")
-
-	var/datum/surgery_step/bones/finish_bone/step = new()
-	dq_apply_surgery_cures(step, H, BP_TORSO)
-	qdel(step)
-
-	var/still_present = FALSE
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/cellulitis))
-			still_present = TRUE
-			break
-	TEST_ASSERT(still_present, "cellulitis should not be cured by an unrelated surgery (fracture_setting)")
+	_spawn_affliction_on(H, BP_TORSO, /datum/affliction/cellulitis)
+	var/obj/item/organ/external/chest = H.get_organ(BP_TORSO)
+	chest.open_surgical_site(BONE_RETRACTED, 100)
+	var/datum/surgical_step/vessels = surgical_step(/datum/surgical_step/treat/vessel_repair)
+	TEST_ASSERT(!vessels.can_use(surgeon, H, BP_TORSO, null), "vessel repair has nothing to do for cellulitis")
+	_surgery_perform(/datum/surgical_step/treat/vessel_repair, surgeon, H, BP_TORSO)
+	TEST_ASSERT(_has_affliction_type(H, /datum/affliction/cellulitis), "cellulitis isn't cured by vessel repair")
 
 
-// --- surgery: shared step routed by zone ------------------------------
-// /datum/surgery_step/internal/fix_organ is reused by craniotomy (head,
-// treats subdural_hematoma) and lung_repair (torso, treats
-// respiratory_failure). The cure hook should only fire the surgery
-// whose body_region matches the target zone.
+// --- failure creates a complication ------------------------------------------------------------
 
-/datum/unit_test/dq_surgery_zone_routing
+/datum/unit_test/dq_surgery_failure_complicates
 
-/datum/unit_test/dq_surgery_zone_routing/Run()
+/datum/unit_test/dq_surgery_failure_complicates/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	_spawn_affliction_on(H, BP_HEAD, /datum/affliction/subdural_hematoma)
-	_spawn_affliction_on(H, O_LUNGS, /datum/affliction/respiratory_failure)
 
-	// Apply fix_organ on the HEAD zone. Should only cure subdural_hematoma.
-	var/datum/surgery_step/internal/fix_organ/step = new()
-	dq_apply_surgery_cures(step, H, BP_HEAD)
+	// A nicked organ is a lesion.
+	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	TEST_ASSERT_NULL(heart.find_lesion(/datum/affliction/lesion/laceration), "the heart starts whole")
+	_surgery_fail(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_TORSO, null, heart)
+	TEST_ASSERT_NOTNULL(heart.find_lesion(/datum/affliction/lesion/laceration), "a slipped suture lacerates the organ")
 
-	var/sh_present = FALSE
-	var/rf_present = FALSE
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/subdural_hematoma))
-			sh_present = TRUE
-		else if(istype(c, /datum/affliction/respiratory_failure))
-			rf_present = TRUE
-	TEST_ASSERT(!sh_present, "head-zone fix_organ (craniotomy) should have cured subdural_hematoma")
-	TEST_ASSERT(rf_present, "head-zone fix_organ should NOT have cured respiratory_failure (torso)")
+	// A cut vessel is a bleed.
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	_surgery_fail(/datum/surgical_step/treat/vessel_repair, surgeon, H, BP_L_ARM)
+	var/bleeding = FALSE
+	for(var/datum/affliction/wound/internal_bleeding/W in arm.afflictions_here())
+		bleeding = TRUE
+	TEST_ASSERT(bleeding, "a slipped vessel repair tears an artery")
 
-	// Now apply fix_organ on the TORSO zone. Should cure respiratory_failure.
-	dq_apply_surgery_cures(step, H, BP_TORSO)
-	qdel(step)
-	rf_present = FALSE
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/respiratory_failure))
-			rf_present = TRUE
-			break
-	TEST_ASSERT(!rf_present, "torso-zone fix_organ should have cured respiratory_failure")
+	// A slipped scalpel cuts.
+	var/obj/item/organ/external/leg = H.get_organ(BP_L_LEG)
+	var/trauma_before = leg.get_trauma()
+	_surgery_fail(/datum/surgical_step/access/incise, surgeon, H, BP_L_LEG)
+	TEST_ASSERT(leg.get_trauma() > trauma_before, "a slipped incision wounds the limb")
 
+
+// --- synthetic limbs ---------------------------------------------------------------------------
+
+/datum/unit_test/dq_surgery_robotic_limb_repair_tags
+
+/datum/unit_test/dq_surgery_robotic_limb_repair_tags/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_R_ARM)
+	arm.robotize()
+	TEST_ASSERT(arm.robotic >= ORGAN_ROBOT, "the arm is prosthetic")
+
+	var/datum/surgical_step/incise = surgical_step(/datum/surgical_step/access/incise)
+	var/datum/surgical_step/unscrew = surgical_step(/datum/surgical_step/access/unscrew_panel)
+	TEST_ASSERT(!incise.can_use(surgeon, H, BP_R_ARM, null), "a scalpel incision doesn't apply to plating")
+	TEST_ASSERT(unscrew.can_use(surgeon, H, BP_R_ARM, null), "a prosthetic opens by its panel")
+
+	H.injure(INJURY_BLUNT, 20, arm, flags = INJURE_IGNORE_RESISTANCE)
+	var/dented = arm.get_trauma()
+	TEST_ASSERT(dented > 0, "the plating took damage")
+
+	_surgery_perform(/datum/surgical_step/access/unscrew_panel, surgeon, H, BP_R_ARM)
+	_surgery_perform(/datum/surgical_step/access/open_hatch, surgeon, H, BP_R_ARM)
+	TEST_ASSERT_EQUAL(arm.surgical_depth(), FLESH_RETRACTED, "the hatch is open")
+
+	// Organic tissue repair does nothing to plating; the plating repair tag does.
+	var/datum/surgical_step/flesh = surgical_step(/datum/surgical_step/treat/repair_flesh)
+	TEST_ASSERT(!flesh.can_use(surgeon, H, BP_R_ARM, null), "flesh repair doesn't apply to a prosthetic")
+	var/datum/surgical_step/weld = surgical_step(/datum/surgical_step/treat/repair_plating)
+	TEST_ASSERT(weld.can_use(surgeon, H, BP_R_ARM, null), "plating repair offers itself for dented plating")
+	TEST_ASSERT(TREAT_PLATING_REPAIR in weld.treatments, "plating repair works through TREAT_PLATING_REPAIR")
+	_surgery_perform(/datum/surgical_step/treat/repair_plating, surgeon, H, BP_R_ARM)
+	TEST_ASSERT(arm.get_trauma() < dented, "welding repairs the plating")
+
+	// Surgical closure (organic) doesn't close a panel; panel closure does.
+	H.mend(TREAT_SURGICAL_CLOSURE, 100, arm)
+	TEST_ASSERT_NOTNULL(arm.get_incision(), "organic closure doesn't close a panel")
+	_surgery_perform(/datum/surgical_step/close_panel, surgeon, H, BP_R_ARM)
+	TEST_ASSERT_NULL(arm.get_incision(), "the panel closes")
+
+
+// --- organ removal and insertion ------------------------------------------------------------------
+
+/datum/unit_test/dq_surgery_organ_reinsertion_keeps_afflictions
+
+/datum/unit_test/dq_surgery_organ_reinsertion_keeps_afflictions/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	H.injure(INJURY_CUT, 10, liver, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
+	var/datum/affliction/lesion/laceration/L = liver.find_lesion(/datum/affliction/lesion/laceration)
+	TEST_ASSERT_NOTNULL(L, "laceration didn't form")
+	var/damage = liver.damage
+
+	var/zone = liver.parent_organ
+	_surgery_perform(/datum/surgical_step/organ/extract, surgeon, H, zone, null, liver)
+	TEST_ASSERT_NULL(liver.owner, "the liver is out")
+	TEST_ASSERT_NULL(H.internal_organs_by_name[O_LIVER], "the patient has no liver")
+	TEST_ASSERT(!(L in H.get_afflictions()), "the lesion left the body with the liver")
+	TEST_ASSERT(!QDELETED(L), "the lesion travels with the liver")
+	TEST_ASSERT_EQUAL(L.location, liver, "the lesion is still on the liver")
+	TEST_ASSERT_EQUAL(liver.damage, damage, "the loose liver keeps its damage")
+
+	_surgery_perform(/datum/surgical_step/organ/insert, surgeon, H, zone, liver)
+	TEST_ASSERT_EQUAL(liver.owner, H, "the liver is back in")
+	TEST_ASSERT_EQUAL(H.internal_organs_by_name[O_LIVER], liver, "the patient has their liver again")
+	TEST_ASSERT(L in H.get_afflictions(), "the lesion came back with the liver")
+	TEST_ASSERT_EQUAL(L.owner, H, "the lesion belongs to the patient again")
+
+
+// --- outcome conditions -------------------------------------------------------------------------
+
+/datum/unit_test/dq_surgery_success_conditions
+
+/datum/unit_test/dq_surgery_success_conditions/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/surgical/scalpel/scalpel = allocate(/obj/item/surgical/scalpel)
+	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	var/datum/surgical_step/S = surgical_step(/datum/surgical_step/access/incise)
+
+	var/on_table = S.success_chance(surgeon, H, arm, scalpel, 100)
+	var/on_floor = S.success_chance(surgeon, H, arm, scalpel, 0)
+	TEST_ASSERT(on_floor < on_table, "the floor ([on_floor]) is worse than an operating table ([on_table])")
+	var/improvised = S.success_chance(surgeon, H, arm, knife, 100)
+	TEST_ASSERT(improvised < on_table, "a knife ([improvised]) is worse than a scalpel ([on_table])")
+
+	// A conscious patient with no pain relief flinches; an unconscious one doesn't.
+	TEST_ASSERT(S.patient_mult(H, arm) < 1, "a conscious, unmedicated patient is a risk")
+	H.stat = UNCONSCIOUS
+	TEST_ASSERT_EQUAL(S.patient_mult(H, arm), 1, "an anaesthetised patient holds still")
+	H.stat = CONSCIOUS
+
+	// Operating on yourself is harder.
+	var/self = S.success_chance(H, H, arm, scalpel, 100)
+	TEST_ASSERT(self < S.success_chance(surgeon, H, arm, scalpel, 100), "self-surgery is harder")
 
 // --- chem presence: single-chem side effect spawns and clears --------
 
@@ -727,186 +953,5 @@
 		if(/datum/affliction/brain_damage in sg.treats)
 			TEST_FAIL("[T] declares it treats brain_damage; that condition is intentionally terminal — no surgery can repair established brain tissue damage")
 		qdel(sg)
-
-
-// --- surgery: undocumented step is a no-op ----------------------------
-
-/datum/unit_test/dq_surgery_undocumented_step_noop
-
-/datum/unit_test/dq_surgery_undocumented_step_noop/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	_spawn_affliction_on(H, BP_TORSO, /datum/affliction/cellulitis)
-	var/before = length(H.get_afflictions())
-
-	// /datum/surgery_step/face/mend_vocal isn't referenced by any
-	// dq_surgery record. It's a real surgery_step subtype but undocumented
-	// in our framework — should be a no-op.
-	var/datum/surgery_step/face/mend_vocal/step = new()
-	dq_apply_surgery_cures(step, H, BP_TORSO)
-	qdel(step)
-
-	var/after = length(H.get_afflictions())
-	TEST_ASSERT_EQUAL(before, after, "undocumented surgery step should not cure anything")
-
-
-// --- surgery: every authored surgery is wired up ---------------------
-// Stricter than dq_surgery_completion_step_coverage: every authored
-// /datum/dq_surgery must have a real completion_step. Documentation-only
-// entries were acceptable while the framework was being built; now they
-// represent unreachable cures and a player-visible lie in the
-// encyclopedia. Fails loudly if any record is unwired.
-
-/datum/unit_test/dq_surgery_all_wired
-
-/datum/unit_test/dq_surgery_all_wired/Run()
-	var/list/unwired = list()
-	for(var/T in subtypesof(/datum/dq_surgery))
-		var/datum/dq_surgery/sg = new T()
-		if(!sg.completion_step)
-			unwired += "[T]"
-		qdel(sg)
-	if(length(unwired))
-		TEST_FAIL("documentation-only surgeries with no completion_step: [jointext(unwired, ", ")]")
-
-
-// --- surgery: cure_severity reduces severity, doesn't always cure ----
-
-/datum/unit_test/dq_surgery_graduated_cure
-
-/datum/unit_test/dq_surgery_graduated_cure/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/heart_damage/hd = _spawn_affliction_on(H, O_HEART, /datum/affliction/heart_damage)
-	TEST_ASSERT_NOTNULL(hd, "heart_damage didn't spawn")
-	hd.severity = 90  // critical-arrest territory
-
-	var/datum/surgery_step/cardiac_repair/step = new()
-	dq_apply_surgery_cures(step, H, BP_TORSO)
-	qdel(step)
-
-	// cardiac_repair has cure_severity = 60, so severity 90 → 30.
-	// The condition should still be present but much less severe.
-	var/datum/affliction/heart_damage/after
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/heart_damage))
-			after = c
-			break
-	TEST_ASSERT_NOTNULL(after, "graduated cure should NOT have removed heart_damage entirely from severity 90")
-	TEST_ASSERT(after.severity < 90, "severity should have dropped from 90 ([after.severity])")
-	TEST_ASSERT(after.severity <= 30, "cure_severity=60 should drop severity 90 to ~30 (got [after.severity])")
-
-
-// --- surgery: cure_severity >= severity does cure fully --------------
-
-/datum/unit_test/dq_surgery_graduated_cure_full_when_low
-
-/datum/unit_test/dq_surgery_graduated_cure_full_when_low/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/heart_damage/hd = _spawn_affliction_on(H, O_HEART, /datum/affliction/heart_damage)
-	hd.severity = 40  // below cardiac_repair's cure_severity (60)
-
-	var/datum/surgery_step/cardiac_repair/step = new()
-	dq_apply_surgery_cures(step, H, BP_TORSO)
-	qdel(step)
-
-	// 40 ≤ 60, so the condition should be fully removed.
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/heart_damage))
-			TEST_FAIL("cure_severity 60 should fully clear heart_damage at severity 40 (drop >= severity = full cure)")
-
-
-// --- surgery: fasciotomy cures compartment syndrome ------------------
-
-/datum/unit_test/dq_surgery_fasciotomy_cures
-
-/datum/unit_test/dq_surgery_fasciotomy_cures/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/compartment_syndrome/C = _spawn_affliction_on(H, BP_L_LEG, /datum/affliction/compartment_syndrome)
-	TEST_ASSERT_NOTNULL(C, "compartment_syndrome didn't spawn")
-
-	var/datum/surgery_step/fasciotomy/step = new()
-	dq_apply_surgery_cures(step, H, BP_L_LEG)
-	qdel(step)
-
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/compartment_syndrome))
-			TEST_FAIL("compartment_syndrome should be cured by fasciotomy")
-
-
-// --- surgery: chest tube cures tension pneumothorax ------------------
-
-/datum/unit_test/dq_surgery_chest_tube_cures
-
-/datum/unit_test/dq_surgery_chest_tube_cures/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/pneumothorax/C = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/pneumothorax)
-	TEST_ASSERT_NOTNULL(C, "pneumothorax didn't spawn")
-
-	var/datum/surgery_step/chest_tube/step = new()
-	dq_apply_surgery_cures(step, H, BP_TORSO)
-	qdel(step)
-
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/pneumothorax))
-			TEST_FAIL("pneumothorax should be cured by chest tube placement")
-
-
-// --- surgery: exploratory laparotomy cures internal bleeding --------
-
-/datum/unit_test/dq_surgery_laparotomy_cures
-
-/datum/unit_test/dq_surgery_laparotomy_cures/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/internal_hemorrhage/C = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/internal_hemorrhage)
-	TEST_ASSERT_NOTNULL(C, "internal_hemorrhage didn't spawn")
-
-	var/datum/surgery_step/exploratory_laparotomy/step = new()
-	dq_apply_surgery_cures(step, H, BP_TORSO)
-	qdel(step)
-
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/internal_hemorrhage))
-			TEST_FAIL("internal_hemorrhage should be cured by exploratory laparotomy")
-
-
-// --- surgery: retinal repair cures vision loss ----------------------
-
-/datum/unit_test/dq_surgery_retinal_repair_cures
-
-/datum/unit_test/dq_surgery_retinal_repair_cures/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	_spawn_affliction_on(H, O_EYES, /datum/affliction/ischemic_vision_loss)
-
-	var/datum/surgery_step/retinal_repair/step = new()
-	dq_apply_surgery_cures(step, H, BP_HEAD)
-	qdel(step)
-
-	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/ischemic_vision_loss))
-			TEST_FAIL("ischemic_vision_loss should be cured by retinal repair")
-
-
-// --- surgery zone matcher: keyword table behaves --------------------
-
-/datum/unit_test/dq_surgery_zone_matcher
-
-/datum/unit_test/dq_surgery_zone_matcher/Run()
-	// "Affected limb or torso" matches both limb and torso zones.
-	var/datum/dq_surgery/proto = new()
-	proto.body_region = "Affected limb or torso"
-	TEST_ASSERT(_dq_surgery_matches_zone(proto, BP_L_ARM), "limb-or-torso surgery should match arm")
-	TEST_ASSERT(_dq_surgery_matches_zone(proto, BP_TORSO), "limb-or-torso surgery should match torso")
-	TEST_ASSERT(!_dq_surgery_matches_zone(proto, BP_HEAD), "limb-or-torso surgery should NOT match head")
-
-	// "Head" matches the head, eyes, mouth zones.
-	proto.body_region = "Head"
-	TEST_ASSERT(_dq_surgery_matches_zone(proto, BP_HEAD), "head surgery should match BP_HEAD")
-	TEST_ASSERT(_dq_surgery_matches_zone(proto, O_EYES), "head surgery should match O_EYES (eye zone)")
-	TEST_ASSERT(!_dq_surgery_matches_zone(proto, BP_L_LEG), "head surgery should NOT match limb")
-
-	// Empty body_region matches everything.
-	proto.body_region = ""
-	TEST_ASSERT(_dq_surgery_matches_zone(proto, BP_HEAD), "empty body_region should match head")
-	TEST_ASSERT(_dq_surgery_matches_zone(proto, BP_TORSO), "empty body_region should match torso")
-	qdel(proto)
 
 #endif

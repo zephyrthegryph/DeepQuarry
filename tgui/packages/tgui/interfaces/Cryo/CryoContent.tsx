@@ -10,7 +10,8 @@ import {
   Stack,
 } from 'tgui-core/components';
 
-import { damageTypes, statNames } from './constants';
+import { DiagnosisVitalsList } from '../common/Diagnosis';
+import { statNames } from './constants';
 import type { Data } from './types';
 
 export const CryoContent = (props) => {
@@ -69,19 +70,16 @@ export const CryoContent = (props) => {
               />
             </LabeledList.Item>
             <LabeledList.Divider />
-            {damageTypes.map((damageType, i) => (
-              <LabeledList.Item key={i} label={damageType.label}>
-                <ProgressBar
-                  value={occupant[damageType.type] / 100}
-                  ranges={{ bad: [0.01, Infinity] }}
-                >
-                  <AnimatedNumber
-                    value={occupant[damageType.type]}
-                    format={(value) => value.toFixed()}
-                  />
-                </ProgressBar>
-              </LabeledList.Item>
-            ))}
+            <LabeledList.Item label="Vitals">
+              <DiagnosisVitalsList vitals={occupant.diagnosis.vitals} />
+            </LabeledList.Item>
+            <LabeledList.Item label="Findings">
+              {occupant.diagnosis.findings.length
+                ? occupant.diagnosis.findings
+                    .map((finding) => finding.name)
+                    .join(', ')
+                : 'None'}
+            </LabeledList.Item>
           </LabeledList>
         ) : (
           <Stack height="100%" textAlign="center">

@@ -5,9 +5,15 @@
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "target_h"
 	density = FALSE
-	var/hp = 1800
+	max_integrity = 1800
 	var/icon/virtualIcon
 	var/list/bulletholes = list()
+
+/obj/item/target/atom_destruction(damage_flag)
+	for(var/mob/O in oviewers(src))
+		if ((O.client && !( O.blinded )))
+			to_chat(O, span_warning("\The [src] breaks into tiny pieces and collapses!"))
+	return ..()
 
 /obj/item/target/Destroy()
 	// if a target is deleted and associated with a stake, force stake to forget
@@ -72,11 +78,11 @@
 /obj/item/target/syndicate
 	icon_state = "target_s"
 	desc = "A shooting target that looks like a hostile agent."
-	hp = 2600 // i guess syndie targets are sturdier?
+	max_integrity = 2600 // i guess syndie targets are sturdier?
 /obj/item/target/alien
 	icon_state = "target_q"
 	desc = "A shooting target with a threatening silhouette."
-	hp = 2350 // alium onest too kinda
+	max_integrity = 2350 // alium onest too kinda
 
 /obj/item/target/bullet_act(obj/item/projectile/Proj)
 	var/p_x = Proj.p_x + pick(0,0,0,0,0,-1,1) // really ugly way of coding "sometimes offset Proj.p_x!"
@@ -91,12 +97,10 @@
 
 	if( virtualIcon.GetPixel(p_x, p_y) ) // if the located pixel isn't blank (null)
 
-		hp -= Proj.damage
-		if(hp <= 0)
-			for(var/mob/O in oviewers())
-				if ((O.client && !( O.blinded )))
-					to_chat(O, span_warning("\The [src] breaks into tiny pieces and collapses!"))
-			qdel(src)
+		// Only rounds that land on the silhouette wear the target down.
+		take_damage(Proj.damage, BRUTE, null, FALSE)
+		if(QDELETED(src))
+			return
 
 		// Create a temporary object to represent the damage
 		var/obj/bmark = new

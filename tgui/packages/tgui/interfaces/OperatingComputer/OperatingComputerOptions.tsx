@@ -5,7 +5,7 @@ import type { Data } from './types';
 
 export const OperatingComputerOptions = (props) => {
   const { act, data } = useBackend<Data>();
-  const { verbose, health, healthAlarm, oxy, oxyAlarm, crit } = data;
+  const { verbose, health, healthAlarm, spo2, spo2Alarm, crit } = data;
   return (
     <LabeledList>
       <LabeledList.Item label="Loudspeaker">
@@ -42,26 +42,25 @@ export const OperatingComputerOptions = (props) => {
           }
         />
       </LabeledList.Item>
-      <LabeledList.Item label="Oxygen Alarm">
+      <LabeledList.Item label="SpO2 Alarm">
         <Button
-          selected={oxy}
-          icon={oxy ? 'toggle-on' : 'toggle-off'}
-          onClick={() => act(oxy ? 'oxyOff' : 'oxyOn')}
+          selected={spo2}
+          icon={spo2 ? 'toggle-on' : 'toggle-off'}
+          onClick={() => act(spo2 ? 'spo2Off' : 'spo2On')}
         >
-          {oxy ? 'On' : 'Off'}
+          {spo2 ? 'On' : 'Off'}
         </Button>
       </LabeledList.Item>
-      <LabeledList.Item label="Oxygen Alarm Threshold">
+      <LabeledList.Item label="SpO2 Alarm Threshold">
         <Knob
-          bipolar
-          minValue={-100}
+          minValue={0}
           maxValue={100}
-          value={oxyAlarm}
+          value={spo2Alarm}
           stepPixelSize={5}
           ml="0"
           format={(val) => `${val.toFixed()}%`}
           onChange={(e, val: number) =>
-            act('oxy_adj', {
+            act('spo2_adj', {
               new: val,
             })
           }
