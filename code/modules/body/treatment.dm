@@ -378,6 +378,13 @@
 		TREAT_DIGESTIVE        = "Digestive repair",
 		TREAT_REGENERATION     = "Natural regeneration",
 		TREAT_RESTORATION      = "Restoration",
+		TREAT_SURGICAL_CLOSURE = "Surgical closure",
+		TREAT_PANEL_CLOSURE    = "Panel closure",
+		TREAT_BONE_SETTING     = "Bone setting",
+		TREAT_VESSEL_REPAIR    = "Vessel repair",
+		TREAT_TENDON_REPAIR    = "Tendon repair",
+		TREAT_FOREIGN_BODY_REMOVAL = "Foreign body removal",
+		TREAT_LITHOTRIPSY      = "Lithotripsy",
 	)
 	return names
 
@@ -394,6 +401,8 @@
 			return TRUE
 		if(TREAT_REGENERATION, TREAT_RESTORATION)
 			return TRUE // the body itself, powers, magic, admin
+		if(TREAT_SURGICAL_CLOSURE, TREAT_PANEL_CLOSURE, TREAT_BONE_SETTING, TREAT_VESSEL_REPAIR, TREAT_TENDON_REPAIR, TREAT_FOREIGN_BODY_REMOVAL, TREAT_LITHOTRIPSY)
+			return TRUE // surgical procedure steps
 	return FALSE
 
 /// Biologies a treatment mechanism works on. Biological mechanisms (every
@@ -401,9 +410,9 @@
 /// synthetic parts. Nanoform bodies respond to both.
 /proc/treatment_tag_biology(tag)
 	switch(tag)
-		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_SYSTEM_RESTORE, TREAT_COOLANT, TREAT_CALIBRATION)
+		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_SYSTEM_RESTORE, TREAT_COOLANT, TREAT_CALIBRATION, TREAT_PANEL_CLOSURE)
 			return BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM
-		if(TREAT_RESTORATION)
+		if(TREAT_RESTORATION, TREAT_FOREIGN_BODY_REMOVAL)
 			return BIOLOGY_ALL
 	return BIOLOGY_ORGANIC | BIOLOGY_NANOFORM
 

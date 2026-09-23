@@ -34,7 +34,7 @@
 	category = "Circulation"
 	clinical_description = "Bleeding into the body cavity from torn vessels. Symptoms are often subtle until enough blood has been lost to start affecting circulation."
 	progression_rate = 1.0
-	treated_by = list(TREAT_HEMOSTATIC = 1.4)
+	treated_by = list(TREAT_HEMOSTATIC = 1.4, TREAT_VESSEL_REPAIR = 1)
 	worsened_by_tags = list(TREAT_STIMULANT = 1.0)  // stimulant raises BP, worsens bleed
 	// min_symptoms = 0: this can present invisibly at low severity.
 	// Doctors who don't measure vitals won't see it until shock starts.
@@ -194,7 +194,7 @@
 	progression_rate = 0.5
 	// Osteodaxon promotes bone healing; bicaridine handles the
 	// surrounding soft-tissue damage.
-	treated_by = list(TREAT_BONE_REPAIR = 1.2)
+	treated_by = list(TREAT_BONE_REPAIR = 1.2, TREAT_BONE_SETTING = 1)
 	worsened_by_tags = list(TREAT_STIMULANT = 0.5)
 	symptom_pool = list(
 		/datum/affliction_symptom/sharp_pain    = 80,
@@ -363,7 +363,8 @@
 	category = "Infection"
 	clinical_description = "Bacterial colonisation of an open wound. The dirtier the wound was when it was inflicted, the faster the infection takes hold."
 	progression_rate = 0.5
-	treated_by = list(TREAT_ANTIMICROBIAL = 1.0)
+	// Debridement (resection) cuts the colonised tissue out.
+	treated_by = list(TREAT_ANTIMICROBIAL = 1.0, TREAT_RESECTION = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/fever_sensation = 60,
 		/datum/affliction_symptom/chills          = 40,

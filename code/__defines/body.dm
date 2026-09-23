@@ -102,6 +102,15 @@
 // Body-provided mechanisms.
 #define TREAT_REGENERATION     "regeneration"  // natural regeneration: species x nutrition x sleep (body.regeneration_level())
 #define TREAT_RESTORATION      "restoration"  // admin / magic / species restoration: every biology, full repair of every restorable affliction
+// Surgical mechanisms (code/modules/surgery/). Delivered only by instant mend() from a
+// procedure step; no reagent provides them.
+#define TREAT_SURGICAL_CLOSURE "surgical_closure"  // closes an organic incision (cautery, sutures)
+#define TREAT_PANEL_CLOSURE    "panel_closure"  // synthetic: closes and secures a maintenance panel
+#define TREAT_BONE_SETTING     "bone_setting"  // sets a fracture, closes a sawn bone layer (bone gel, bone setter)
+#define TREAT_VESSEL_REPAIR    "vessel_repair"  // repairs a torn vessel or arterial bleed (FixOVein)
+#define TREAT_TENDON_REPAIR    "tendon_repair"  // rejoins a severed tendon
+#define TREAT_FOREIGN_BODY_REMOVAL "foreign_body_removal"  // extracts foreign objects and embedded material
+#define TREAT_LITHOTRIPSY      "lithotripsy"  // breaks up deposits with focused ultrasound
 
 // --- Cardiac rhythms (/datum/affliction/cardiac_arrhythmia) ------------------------------
 /// Normal rhythm; the arrhythmia is settling and will resolve.

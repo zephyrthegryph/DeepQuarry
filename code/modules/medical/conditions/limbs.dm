@@ -19,7 +19,7 @@
 	category = "Limbs"
 	clinical_description = "A torn artery in a limb. Blood loss is rapid and obvious; direct pressure or a tourniquet is the only way to stop it."
 	progression_rate = 2.0
-	treated_by = list(TREAT_HEMOSTATIC = 1.0)
+	treated_by = list(TREAT_HEMOSTATIC = 1.0, TREAT_VESSEL_REPAIR = 1)
 	worsened_by_tags = list(TREAT_STIMULANT = 0.8)
 	symptom_pool = list(
 		/datum/affliction_symptom/bleeding_visible = 90,
@@ -78,6 +78,7 @@
 	progression_rate = 0
 	// No reagents help. Surgery only.
 	cured_by = null
+	treated_by = list(TREAT_TENDON_REPAIR = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/sharp_pain      = 60,
 		/datum/affliction_symptom/burning_limb    = 40,
@@ -153,7 +154,7 @@
 	clinical_description = "Swelling inside a limb has cut off its own blood supply. Untreated, the tissue inside dies."
 	progression_rate = 0.5
 	// Surgical decompression is the real cure. Chems only slow it.
-	treated_by = list(TREAT_CIRCULATORY = 0.3)
+	treated_by = list(TREAT_CIRCULATORY = 0.3, TREAT_DECOMPRESSION = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/burning_limb     = 90,
 		/datum/affliction_symptom/sharp_pain       = 80,
@@ -173,6 +174,7 @@
 	progression_rate = 0  // permanent until surgery / amputation
 	// No chem cure. Surgical removal of dead tissue is the only fix.
 	cured_by = null
+	treated_by = list(TREAT_RESECTION = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/burning_limb       = 60,
 		/datum/affliction_symptom/numbness_arm       = 50,
