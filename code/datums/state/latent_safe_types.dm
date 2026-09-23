@@ -34,3 +34,7 @@
 
 /obj/item/ammo_casing/state_codecs()
 	return ..() + list("BB" = /datum/state_codec/child)
+
+/// An admin's fax being composed: it refers to the admin, sender and fax machine.
+/obj/item/paper/admin
+	latent_safe = FALSE

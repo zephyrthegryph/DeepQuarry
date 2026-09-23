@@ -1,0 +1,27 @@
+# Saved reference vars on latent-safe types (or their ancestors) that keep no
+# codec on purpose. tools/ci/state_schema_lint.py reads this file; every entry
+# needs a reason. At runtime the serializer refuses these vars whenever they are
+# set, so an object holding one stays real (doc/rewrite/state.md section 1).
+# The lint fails on entries no latent-safe type saves any more: remove them.
+
+# Relationships with other live objects.
+/atom/movable/pulledby # relationship: the mob pulling this
+/atom/movable/riding_datum # relationship: riding setup while buckled
+/atom/movable/buckled_mobs # relationship: mobs buckled to this
+/obj/item/master # relationship: the item this one is attached to
+/obj/item/my_augment # relationship: the organ this item is an augment of
+/obj/item/tethered_host_item # relationship: the item this one is tethered to
+/obj/item/exploit_for # relationship: weakref to the mob this exploit targets
+
+# Running behaviour.
+/atom/movable/throwing # running: set only mid-throw
+/obj/material_service # running: the material simulation service while admitted
+
+# Owned state with no codec yet; set on few items, which stay real until one is written.
+/atom/wires # owned: wiring state; needs a wires codec
+/obj/talking_atom # owned: xenoarch speech state with mob refs
+/obj/item/hidden_uplink # owned: uplink object held outside contents
+/obj/item/identity # owned: identification datum, refers back to its holder
+
+# Values that are not objects in practice.
+/obj/item/default_worn_icon # holds an icon file, which encodes as a resource; a runtime /icon is refused

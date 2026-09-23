@@ -109,11 +109,16 @@ class Var:
 
     @property
     def holds_ref(self):
-        return bool(self.vtype) and self.vtype.startswith(REF_ROOTS)
+        return under(self.vtype, REF_ROOTS)
 
     @property
     def registry(self):
-        return bool(self.vtype) and self.vtype.startswith(REGISTRY_TYPES)
+        return under(self.vtype, REGISTRY_TYPES)
+
+
+def under(path, roots):
+    """True if `path` is one of `roots` or a subtype of one (whole path segments)."""
+    return bool(path) and any(path == r or path.startswith(r + "/") for r in roots)
 
 
 VAR_DECL = re.compile(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:\[[^\]]*\])?\s*(?:=|$|as\b)")
