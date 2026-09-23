@@ -289,7 +289,7 @@
 
 		var/mob/living/carbon/human/H = target
 
-		var/target_zone = get_zone_with_miss_chance(check_zone(user.zone_sel.selecting, target))
+		var/target_zone = get_zone_with_miss_chance(user.zone_sel.selecting, target, attacker = user)
 		var/obj/item/organ/external/affecting = H.get_organ(target_zone)
 
 		if (!affecting || affecting.is_stump())
