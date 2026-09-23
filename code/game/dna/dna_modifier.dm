@@ -15,10 +15,7 @@
 	var/implant=null
 	var/ckey=null
 	var/mind=null
-	var/languages=null
-	var/list/flavor=null
 	var/gender = null
-	var/list/genetic_modifiers = list() // Modifiers with the MODIFIER_GENETIC flag are saved.  Note that only the type is saved, not an instance.
 
 /datum/dna2/record/proc/GetData()
 	var/list/ser=list("data" = null, "owner" = null, "label" = null, "type" = null, "ue" = 0)
@@ -864,10 +861,6 @@
 			var/mob/living/carbon/human/H = WC
 			H.sync_organ_dna()
 
-		//Apply genetic modifiers
-		WC.dna.genetic_modifiers.Cut() // clear em!
-		for(var/modifier_type in buf.genetic_modifiers)
-			WC.add_modifier(modifier_type)
 	WC.apply_effect(rand(20,50), IRRADIATE, check_protection = 0)
 
 
