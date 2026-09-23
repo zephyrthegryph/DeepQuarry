@@ -306,3 +306,10 @@
 		var/datum/reagent/R = SSchemistry.chemical_reagents[id]
 		for(var/factor_id in R.factors)
 			TEST_ASSERT(isnum(factor_id) && factor_id >= 1 && factor_id <= BF_COUNT, "[R.type] has an invalid factor id [factor_id]")
+
+/// Every id in 1..BF_ARMOR_BASE-1 has exactly one row in body_factor_defs()'s
+/// `rows` (grants.md's boot assert) - catches a hand-numbering collision or gap.
+/datum/unit_test/dq_body_factor_defs_unique
+
+/datum/unit_test/dq_body_factor_defs_unique/Run()
+	TEST_ASSERT_NULL(body_factor_defs_check_unique(), "no missing or duplicated body factor ids")

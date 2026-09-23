@@ -107,18 +107,22 @@
 #define BF_STASIS            69
 /// Stasis deeper than this keeps the patient asleep.
 #define STASIS_SLEEP_THRESHOLD 0.5
+/// add: placeholder reserved for w5/integrate, which owns the real definition.
+#define BF_CARDIAC_IRRITABILITY 70
 // --- Grants (code/datums/grants/kind_factors.dm) -----------------------------------------
-/// mult: generic 0..1 multiplier read wherever a grant's factor table needs a plain scalar
-/// (rewrite/mobsrc rules read this; nothing converts to it here - see grants.md).
-#define BF_ALPHA             70
+/// mult: the mob's visual alpha (opacity) only, baseline 1, range 0..1. Derived ONLY on
+/// COMSIG_LIVING_FACTORS_CHANGED (the same way action_blocked() derives blocked actions from
+/// BF_ACTION_BLOCKS) - that's the factor's one writer. Anything else that wants a generic 0..1
+/// multiplier declares its own named factor instead of reusing this one.
+#define BF_ALPHA             71
 /// flags: deny mask ANDed OUT of a mob's move flags. Effective flags = base & ~factor;
 /// derive the mob var on COMSIG_LIVING_FACTORS_CHANGED, the same way action_blocked() does.
-#define BF_MOVE_FLAGS_DENY   71
+#define BF_MOVE_FLAGS_DENY   72
 // --- Armour -----------------------------------------------------------------------------
 /// Armour points against one armour kind (INJURY_* or ARMOR_BLAST), added to
 /// worn / natural armour. BF_ARMOR(INJURY_BLUNT) .. BF_ARMOR(ARMOR_BLAST).
 /// BF_ARMOR(1) is the first id after the last named factor.
-#define BF_ARMOR_BASE        72
+#define BF_ARMOR_BASE        73
 #define BF_ARMOR(kind)       (BF_ARMOR_BASE + (kind))
 #define BF_COUNT             (BF_ARMOR_BASE + ARMOR_KIND_COUNT)
 

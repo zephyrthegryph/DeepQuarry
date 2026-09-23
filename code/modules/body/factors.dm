@@ -123,11 +123,20 @@
 		list(BF_O2_CARRIAGE, "Oxygen carriage", BF_RULE_MULT, 1, 0, 2, "percent", "How much oxygen the blood carries."),
 		list(BF_TISSUE_UPTAKE, "Tissue oxygen uptake", BF_RULE_MULT, 1, 0, 2, "percent", "How well the tissues use the oxygen that reaches them."),
 		list(BF_STASIS, "Stasis", BF_RULE_MAX, 0, 0, 1, "points", "Share of life processes suspended: conditions, metabolism and breathing slow by this much."),
-		list(BF_ALPHA, "Alpha", BF_RULE_MULT, 1, 0, 1, "percent", "Generic 0..1 multiplier for grants that don't need a named factor."),
+		// Placeholder: DQ Medical (w5/integrate) owns the real definition. Reserved so the
+		// grants BF_ALPHA/BF_MOVE_FLAGS_DENY numbering below has a fixed id (71/72) to follow.
+		list(BF_CARDIAC_IRRITABILITY, "Cardiac irritability", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Placeholder for w5/integrate."),
+		list(BF_ALPHA, "Opacity", BF_RULE_MULT, 1, 0, 1, "percent", "The mob's visual alpha (opacity) only."),
 		list(BF_MOVE_FLAGS_DENY, "Movement flags denied", BF_RULE_FLAGS, 0, 0, INFINITY, "flags", "Move flags masked out of the mob's effective move flags."),
 	)
+	var/list/seen = new /list(BF_COUNT)
 	for(var/list/row as anything in rows)
-		defs[row[1]] = new /datum/body_factor_def(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])
+		var/id = row[1]
+		if(seen[id])
+			stack_trace("body factor [id] is defined twice (last: [row[2]], first: [seen[id]])")
+			continue
+		seen[id] = row[2]
+		defs[id] = new /datum/body_factor_def(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])
 	for(var/kind in 1 to ARMOR_KIND_COUNT)
 		var/kind_name = armor_kind_name(kind)
 		defs[BF_ARMOR(kind)] = new /datum/body_factor_def(BF_ARMOR(kind), "[capitalize(kind_name)] armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra armour against [kind_name] harm.")
@@ -135,6 +144,18 @@
 		if(!defs[id])
 			stack_trace("body factor [id] has no definition")
 	return defs
+
+/// Boot assert (also exercised directly by a unit test): every id in 1..BF_ARMOR_BASE-1
+/// (the hand-numbered range - armour ids past it are generated, never hand-numbered) has
+/// exactly one row in body_factor_defs()'s `rows`, so a copy-paste id collision or a gap
+/// can't slip in silently. Returns null when clean, else a list of problem strings.
+/proc/body_factor_defs_check_unique()
+	var/list/defs = body_factor_defs()
+	var/list/problems
+	for(var/id in 1 to BF_ARMOR_BASE - 1)
+		if(!defs[id])
+			LAZYADD(problems, "body factor [id] has no definition")
+	return problems
 
 /// Flat list of baselines, indexed by BF_*. Shared: never mutate.
 /proc/body_factor_baselines()
