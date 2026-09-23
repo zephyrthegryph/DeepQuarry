@@ -24,7 +24,7 @@
 	var/crisis //Admin-settable for combat module use.
 	var/crisis_override = 0
 	var/integrated_light_power = 6
-	var/list/robotdecal_on = list()
+	var/list/robotdecal_on	// Lazy.
 	var/glowy_enabled = FALSE
 
 	can_be_antagged = TRUE
@@ -33,7 +33,7 @@
 
 	var/datum/robot_sprite/sprite_datum 				// Sprite datum, holding all our sprite data. Resolved in Initialize.
 	var/icon_selected = FALSE								// If icon selection has been completed yet
-	var/list/sprite_extra_customization = list()
+	var/list/sprite_extra_customization	// Lazy.
 	var/rest_style = "Default"
 	var/notransform
 	does_spin = FALSE
@@ -95,7 +95,7 @@
 	var/power_demand = 0
 	/// Accumulated heat the cooling loop failed to shed (machine physiology).
 	var/heat_debt = 0
-	var/list/req_access = list(ACCESS_ROBOTICS)
+	var/list/req_access = list(ACCESS_ROBOTICS) // Interned per subtype in Initialize().
 	var/ident = 0
 	var/viewalerts = 0
 	var/modtype = "Default"
@@ -138,7 +138,7 @@
 	var/has_recoloured = FALSE
 	var/vtec_active = FALSE
 
-	var/list/vore_light_states = list() //Robot exclusive
+	var/list/vore_light_states	//Robot exclusive. Lazy.
 	vore_capacity_ex = list()
 	vore_fullness_ex = list()
 	vore_icon_bellies = list()
@@ -147,6 +147,8 @@
 // --- Lifecycle ------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/Initialize(mapload, is_decoy)
+	if(islist(req_access))
+		req_access = shared_type_list(type, "req_access", req_access)
 	spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)

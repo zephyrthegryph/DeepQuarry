@@ -233,7 +233,7 @@
 		baby.untamable = untamable
 	baby.untamable_inheirit = untamable_inheirit
 	baby.faction = faction
-	baby.friends = friends.Copy()
+	baby.friends = friends?.Copy()
 
 	if(no_step != 1)
 		step_away(baby, src)
