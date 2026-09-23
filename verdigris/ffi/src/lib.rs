@@ -15,3 +15,4 @@ mod metrics;
 mod power;
 mod propagate;
 pub mod reactor;
+pub mod registry;
