@@ -3,7 +3,7 @@
 // The patient's condition is the body scanner profile's diagnosis
 // (code/modules/medical/diagnosis/): vitals, findings (conditions, lesions,
 // wounds and presenting signs, with trends and hints) and per-limb bands,
-// rendered by /datum/diagnosis/proc/tgui_data() into `diagnosis`.
+// rendered by /datum/diagnosis/proc/report_data() into `diagnosis`.
 //
 // Alongside it: identity, abnormality flags, reagents, implants and the
 // discrete organ states (broken, bleeding, splinted, robotic, dead, missing,
@@ -30,7 +30,7 @@
 	dq_emit_internal_organs(H, occupantData)
 
 	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
-	occupantData["diagnosis"] = D.tgui_data()
+	occupantData["diagnosis"] = D.report_data()
 	occupantData["healthBand"] = D.band
 	occupantData["worstFinding"] = D.worst_finding_band()
 	qdel(D)

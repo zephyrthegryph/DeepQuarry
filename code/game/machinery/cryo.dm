@@ -117,7 +117,7 @@
 		occupantData["vitality"] = round(occupant.vitality() * 100)
 		occupantData["critical"] = occupant.is_critical()
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
-		occupantData["diagnosis"] = D.tgui_data()
+		occupantData["diagnosis"] = D.report_data()
 		qdel(D)
 		occupantData["bodyTemperature"] = occupant.bodytemperature
 	data["occupant"] = occupantData;

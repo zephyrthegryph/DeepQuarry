@@ -14,7 +14,7 @@
 
 /// Diagnose this mob through `profile` (a /datum/diagnostic_profile typepath
 /// or instance). Null when the mob has no body.
-/mob/living/proc/diagnose(profile)
+/mob/living/proc/diagnose(profile) as /datum/diagnosis
 	return body?.diagnose(profile)
 
 /// Write one line to the game log for a player-initiated scan.
@@ -23,7 +23,7 @@
 		return
 	log_game("DIAGNOSIS: [key_name(user)] scanned [key_name(patient)] with [D.profile.name]: status [D.status], band [D.band], [LAZYLEN(D.findings)] finding(s).")
 
-/datum/body/proc/diagnose(profile)
+/datum/body/proc/diagnose(profile) as /datum/diagnosis
 	var/datum/diagnostic_profile/P = ispath(profile) ? diagnostic_profile(profile) : profile
 	if(!istype(P))
 		CRASH("diagnose() called with an invalid profile: [profile]")

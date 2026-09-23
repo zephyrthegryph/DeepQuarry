@@ -69,7 +69,7 @@
 		occupantData["vitality"] = round(occupant.vitality() * 100)
 		occupantData["paralysis"] = occupant.paralysis
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/operating_computer)
-		occupantData["diagnosis"] = D.tgui_data()
+		occupantData["diagnosis"] = D.report_data()
 		qdel(D)
 		if(ishuman(occupant) && occupant.dna)
 			occupantData["bloodType"] = occupant.dna.b_type

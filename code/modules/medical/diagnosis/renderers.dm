@@ -3,7 +3,7 @@
 //
 //   render_chat()      HTML for chat (analyzers, cyborg analyzer, admin scan)
 //                      and printouts
-//   tgui_data()        list for the TGUI (body scanner, operating computer,
+//   report_data()      list for the TGUI (body scanner, operating computer,
 //                      kiosk, sleepers); matches tgui/.../common/Diagnosis.tsx
 //   examine_lines()    short lines for examine text
 //   hud_status()       "dead" / "critical" / "ill" / "healthy" for HUD icons
@@ -106,27 +106,27 @@
 
 /// One line of vitals, or null when nothing was measured.
 /datum/diagnosis/proc/render_vitals_text()
-	var/list/parts = list()
+	var/list/readings = list()
 	if(!isnull(heart_rate))
-		parts += "HR [heart_rate] bpm"
+		readings += "HR [heart_rate] bpm"
 	if(blood_pressure)
-		parts += "BP [blood_pressure[1]]/[blood_pressure[2]]"
+		readings += "BP [blood_pressure[1]]/[blood_pressure[2]]"
 	if(!isnull(oxygenation))
-		parts += "SpO2 [oxygenation]%"
+		readings += "SpO2 [oxygenation]%"
 	if(!isnull(respiratory_rate))
-		parts += "RR [respiratory_rate]/min"
+		readings += "RR [respiratory_rate]/min"
 	if(!isnull(temperature))
-		parts += "T [temperature]&deg;C"
+		readings += "T [temperature]&deg;C"
 	if(consciousness)
-		parts += "consciousness: [consciousness]"
+		readings += "consciousness: [consciousness]"
 	if(!isnull(blood_percent))
-		parts += "blood volume [blood_percent]%"
-	return length(parts) ? parts.Join(" | ") : null
+		readings += "blood volume [blood_percent]%"
+	return length(readings) ? readings.Join(" | ") : null
 
 
 // --- TGUI ------------------------------------------------------------------------
 
-/datum/diagnosis/proc/tgui_data()
+/datum/diagnosis/proc/report_data()
 	var/list/finding_data = list()
 	for(var/datum/diagnosis_finding/F as anything in findings)
 		finding_data += list(list(

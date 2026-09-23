@@ -130,7 +130,7 @@
 			data["status"] = "Unknown"
 	data["health_percent"] = round(occupant.vitality()*100)
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
-	data["diagnosis"] = D?.tgui_data()
+	data["diagnosis"] = D?.report_data()
 	qdel(D)
 	data["body_temp_c"] = round(occupant.bodytemperature - T0C, 0.1)
 	data["body_temp_f"] = round(occupant.bodytemperature * 1.8 - 459.67, 0.1)

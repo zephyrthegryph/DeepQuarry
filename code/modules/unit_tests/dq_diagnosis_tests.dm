@@ -147,7 +147,7 @@
 		for(var/profile_type in typesof(/datum/diagnostic_profile))
 			var/datum/diagnosis/D = _diagnose(M, profile_type)
 			TEST_ASSERT(length(D.render_chat()), "[M.type] through [profile_type]: the chat renderer produced nothing")
-			var/list/ui = D.tgui_data()
+			var/list/ui = D.report_data()
 			TEST_ASSERT(islist(ui) && islist(ui["vitals"]) && islist(ui["findings"]), "[M.type] through [profile_type]: malformed TGUI data")
 			D.examine_lines()
 			TEST_ASSERT(D.hud_status() in list("dead", "critical", "ill", "healthy"), "[M.type] through [profile_type]: bad HUD status '[D.hud_status()]'")

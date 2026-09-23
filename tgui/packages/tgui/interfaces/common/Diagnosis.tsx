@@ -1,5 +1,5 @@
 // Shared rendering of a /datum/diagnosis (DM: diagnosis/renderers.dm,
-// tgui_data()). Every medical interface shows the same report: vitals plus
+// report_data()). Every medical interface shows the same report: vitals plus
 // findings, with treatment hints when the instrument gives them.
 
 import {

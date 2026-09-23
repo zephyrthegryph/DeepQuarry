@@ -31,7 +31,7 @@
 		patientname = H
 		patienthealth = H.vitality()
 		var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/automation)
-		patientdiagnosis = D?.tgui_data()
+		patientdiagnosis = D?.report_data()
 		qdel(D)
 		patientstatus = H.stat
 		if(H.vessel)
