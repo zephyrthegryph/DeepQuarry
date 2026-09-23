@@ -1,15 +1,16 @@
-//! Band-triggered revision counters (`rust_core.md` §15: change tracking
-//! belongs in `core::watch`/`core::revision`, not reimplemented per domain).
+//! Band-triggered revision counters (`rust_core.md` §15, `rust_architecture.md`
+//! §4.7: change tracking is one module, `watch`, with this as its
+//! "read-directly" variant -- not reimplemented per domain).
 //!
 //! This is the cheap, per-value sibling of [`crate::watch`]'s frame-
 //! evaluated conditions: no registration, no channel table, no chunk
 //! bucketing -- just "bump a counter when a tracked scalar moved far enough
 //! from what was last recorded", for a caller (typically an FFI read) that
 //! wants to know "did this change enough to be worth re-reading" without
-//! comparing full state every time. `core::watch::Cond::Band` is the right
-//! tool when a watch needs to be *registered* and *fire* through the
-//! frame/outbox pipeline; `BandRevision` is for a value a domain already
-//! owns and just wants a cheap dirty counter on.
+//! comparing full state every time. `watch::Cond::Band` (the parent module)
+//! is the right tool when a watch needs to be *registered* and *fire*
+//! through the frame/outbox pipeline; `BandRevision` is for a value a
+//! domain already owns and just wants a cheap dirty counter on.
 
 /// A `u32` counter over `N` scalar channels, bumped once per [`update`](Self::update)
 /// call in which any channel moved by at least its band width from the

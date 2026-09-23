@@ -33,7 +33,6 @@ pub mod rate;
 pub mod reactor;
 pub mod recorder;
 pub mod replay;
-pub mod revision;
 pub mod rng;
 pub mod sim;
 pub mod thermo;
