@@ -58,14 +58,14 @@
 				//testing("[gene.name] activated!")
 				gene.activate(M,connected,flags)
 				if(M)
-					M.active_genes |= gene.name // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
+					LAZYDISTINCTADD(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
 					M.update_icon = 1
 			// If Gene is NOT active:
 			else
 				//testing("[gene.name] deactivated!")
 				gene.deactivate(M,connected,flags)
 				if(M)
-					M.active_genes -= gene.name // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
+					LAZYREMOVE(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
 					M.update_icon = 1
 	M.update_mutations()
 	// Inform anything attached of our mutation

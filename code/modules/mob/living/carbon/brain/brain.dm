@@ -12,6 +12,9 @@
 	var/obj/item/container = null
 	/// The mind host that owns this view, if any.
 	var/datum/component/mind_host/host
+	/// Set once the view has read its status from brain tissue. Only digital
+	/// hosts are tissue-less: a view that loses its tissue has lost its brain.
+	var/had_tissue = FALSE
 	var/emp_damage = 0//Handles a type of MMI damage
 	var/alert = null
 	use_me = 0 //Can't use the me verb, it's a freaking immobile brain
@@ -59,13 +62,17 @@
 	return host?.tissue
 
 /// Sync stat with the host: the view is dead exactly when its brain tissue is
-/// brain dead (/obj/item/organ/internal/brain/proc/is_brain_dead()).
+/// brain dead (/obj/item/organ/internal/brain/proc/is_brain_dead()), or when a
+/// view that had tissue has lost it. Only digital hosts stay up without tissue.
 /mob/living/carbon/brain/proc/refresh_host_status()
 	if(!host)
 		return
 	var/obj/item/organ/internal/brain/tissue = host.tissue
-	if(tissue?.is_brain_dead())
+	if(tissue)
+		had_tissue = TRUE
+	if(tissue ? tissue.is_brain_dead() : had_tissue)
 		if(stat != DEAD)
+			log_game("MIND: view [key_name(src)] in [host.parent] died: [tissue ? "its brain tissue is brain dead" : "its brain tissue is gone"].")
 			death()
 		return
 	if(stat == DEAD)

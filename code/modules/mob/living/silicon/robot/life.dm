@@ -168,7 +168,7 @@
 	if(A?.flag_check(AREA_NO_SPOILERS))
 		self.disable_spoiler_vision()
 
-	if (self.stat == DEAD || (XRAY in self.mutations) || (self.sight_mode & BORGXRAY))
+	if (self.stat == DEAD || (self.has_mutation(XRAY)) || (self.sight_mode & BORGXRAY))
 		self.sight |= SEE_TURFS
 		self.sight |= SEE_MOBS
 		self.sight |= SEE_OBJS
@@ -229,19 +229,6 @@
 	. = ..()
 	if(!.)
 		return
-
-	if (self.syndicate)
-		for(var/datum/mind/tra in GLOB.traitors.current_antagonists)
-			if(tra.current)
-				// TODO: Update to new antagonist system.
-				var/I = image('icons/mob/mob.dmi', loc = tra.current, icon_state = "traitor")
-				self.client.images += I
-		self.disconnect_from_ai()
-		if(self.mind)
-			// TODO: Update to new antagonist system.
-			if(!self.mind.special_role)
-				self.mind.special_role = "traitor"
-				LAZYOR(GLOB.traitors.current_antagonists, self.mind)
 
 	self.update_cell()
 

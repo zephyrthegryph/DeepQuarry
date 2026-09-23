@@ -37,12 +37,19 @@ placement with the matching layer and type already filled in. Route
 endpoints pick up compatible neighboring ports. The Mapped systems check reports
 possible broken links and APCs without a cable on their tile.
 Read-only map operations reuse a parsed map until the source file changes.
-The browser loads visible tiles before its type catalog, then loads one atlas
-image containing the visible sprites. This keeps the map responsive while
-sprites are prepared. The editor renders visible tiles in a Canvas 2D back buffer
-and copies the complete frame to the display canvas. The canvas bitmap is
-resized only when the viewport or device pixel ratio changes, avoiding blank
-frames during zoom.
+The browser loads visible tiles before its type catalog. When panning, it fetches
+only the newly exposed strips; large views are split into requests under the
+server's tile limit. Sprites load in small atlas batches. The WebGL2 viewport
+renders the map while the 2D canvas handles editing controls and fallback.
+
+`maps/mapstudio_reactor_demo.dmm` is a disposable, standalone R-UST reactor
+suite for exercising the editor. Rebuild it with
+`python tools/mapstudio/build_reactor_demo.py`. The 27 by 21 tile suite is
+built from individual atoms: a shielded chamber, tagged controls, indoor TEG
+and coolant service, fuel preparation, and separate APC areas. The Sif outpost
+reactor informed the equipment list; none of its room tiles are copied. The
+static mapped-port check and maplint pass. It is not registered as a live
+station map or validated through a game boot.
 Agent previews appear in the browser automatically, where you can inspect and
 save them. The browser can undo the last Map Studio save if no one has edited
 the map since then.

@@ -50,7 +50,7 @@
 	return
 
 /mob/proc/has_telegrip()
-	return TK in mutations
+	return has_mutation(TK)
 
 /mob/living/carbon/human/has_telegrip()
 	if(istype(get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/telekinetic))
@@ -60,10 +60,10 @@
 	return ..()
 
 /mob/living/carbon/human/RangedAttack(atom/A)
-	if(!get_equipped_item(SLOT_ID_GLOVES) && !mutations.len && !spitting)
+	if(!get_equipped_item(SLOT_ID_GLOVES) && !mutation_count() && !spitting)
 		return
 	var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES)
-	if((LASER_EYES in mutations) && IS_HARMING(src))
+	if((has_mutation(LASER_EYES)) && IS_HARMING(src))
 		LaserEyes(A) // moved into a proc below
 
 	else if(istype(G) && G.Touch(A,0)) // for magic gloves

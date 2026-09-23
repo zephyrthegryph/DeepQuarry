@@ -63,7 +63,7 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 		parts += list(list(
 			"key" = k,
 			"label" = labels[k],
-			"preview" = TextPreview(host.flavor_texts[k]),
+			"preview" = TextPreview(LAZYACCESS(host.flavor_texts, k)),
 		))
 	data["parts"] = parts
 	return data

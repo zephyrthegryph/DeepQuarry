@@ -71,10 +71,8 @@
 	var/dark_gains = 0 //Last tick's change in energy
 	var/ability_flags = 0 //Flags for active abilities
 
-	var/list/shadekin_abilities
 	var/check_for_observer = FALSE
 	var/check_timer = 0
-	var/doing_phase = FALSE // Prevent bugs when spamming phase button
 
 /mob/living/simple_mob/shadekin/Initialize(mapload)
 	//You spawned the prototype, and want a totally random one.
@@ -130,7 +128,6 @@
 	return ..()
 
 /mob/living/simple_mob/shadekin/Destroy()
-	QDEL_LIST_NULL(shadekin_abilities)
 	. = ..()
 
 /mob/living/simple_mob/shadekin/load_default_bellies()
@@ -211,9 +208,9 @@
 				non_kin_count ++
 		// Technically can be combined with ||, they call the same function, but readability is poor
 		if(!non_kin_count && (self.comp.in_phase))
-			self.phase_shift() // shifting back in, nobody present
+			dq_use_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
 		else if (non_kin_count && !(self.comp.in_phase))
-			self.phase_shift() // shifting out, scaredy
+			dq_use_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
 	if(.)

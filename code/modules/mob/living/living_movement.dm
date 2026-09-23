@@ -58,7 +58,7 @@ default behaviour is:
 		spreadFire(tmob)
 
 		for(var/mob/living/M in range(tmob, 1))
-			if(LAZYLEN(tmob.pinned) ||  ((M.pulling == tmob && ( tmob.restrained() && !( M.restrained() ) && M.stat == CONSCIOUS)) || locate(/obj/item/grab, tmob.grabbed_by.len)) )
+			if(LAZYLEN(tmob.pinned) ||  ((M.pulling == tmob && ( tmob.restrained() && !( M.restrained() ) && M.stat == CONSCIOUS)) || locate(/obj/item/grab, LAZYLEN(tmob.grabbed_by))) )
 				if ( !(world.time % 5) )
 					to_chat(src, span_warning("[tmob] is restrained, you cannot push past"))
 				now_pushing = FALSE
@@ -139,7 +139,7 @@ default behaviour is:
 		if(ishuman(tmob))
 			var/mob/living/carbon/human/H = tmob
 			if(H.species.lightweight == TRUE && prob(50))
-				if(HULK in H.mutations) //No knocking over the hulk
+				if(H.has_mutation(HULK)) //No knocking over the hulk
 					return
 				H.visible_message(span_warning("[src] bumps into [H], knocking them off balance!"))
 				H.Weaken(5)
@@ -156,8 +156,8 @@ default behaviour is:
 		else
 			if(handle_micro_bump_other(tmob,1)) return
 		// CHOMPSTATION edit end
-		if(ishuman(tmob) && (FAT in tmob.mutations))
-			if(prob(40) && !(FAT in src.mutations))
+		if(ishuman(tmob) && (tmob.has_mutation(FAT)))
+			if(prob(40) && !(src.has_mutation(FAT)))
 				to_chat(src, span_danger("You fail to push [tmob]'s fat ass out of the way."))
 				now_pushing = FALSE
 				return

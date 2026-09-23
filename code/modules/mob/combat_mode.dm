@@ -206,6 +206,10 @@
 /mob/living/declare_interactions(list/into)
 	. = ..()
 	into += list(/datum/interaction/attack_variant/disarm, /datum/interaction/attack_variant/grab)
+	// Abilities (doc/rewrite/rules.md §5): every ability type is offered to
+	// every living mob; a grant (ability.dm's has_ability()) decides who can
+	// actually use one.
+	into += GLOB.ability_interaction_types
 
 /// Effect of the Disarm and Grab interactions.
 /mob/living/proc/receive_attack_variant(mob/actor, obj/item/held, datum/interaction/attack_variant/interaction)

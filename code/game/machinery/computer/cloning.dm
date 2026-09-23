@@ -268,8 +268,8 @@
 						activerecord = "\ref[active_BR]",
 						health = (H && istype(H)) ? H.sensehealth() : "",
 						realname = sanitize(active_BR.mydna.dna.real_name),
-						unidentity = active_BR.mydna.dna.uni_identity,
-						strucenzymes = active_BR.mydna.dna.struc_enzymes,
+						unidentity = active_BR.mydna.dna.GetUniIdentity(),
+						strucenzymes = active_BR.mydna.dna.GetStrucEnzymes(),
 					)
 					tgui_modal_message(src, action, "", null, payload)
 			else
@@ -406,7 +406,7 @@
 		set_scan_temp("Subject's brain is not responding. Further attempts after a short delay may succeed.", "bad")
 		SStgui.update_uis(src)
 		return
-	if((NOCLONE in subject.mutations))
+	if((subject.has_mutation(NOCLONE)))
 		set_scan_temp("Subject has incompatible genetic mutations.", "bad")
 		SStgui.update_uis(src)
 		return

@@ -210,6 +210,9 @@
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)
 	held_mob = owner
 	RegisterSignal(held_mob, COMSIG_LIVING_BODY_STATUS, PROC_REF(hold_alive))
+	// Without a control cluster to work through, the core is repaired on the body itself.
+	RegisterSignal(held_mob, COMSIG_ATOM_TOOL_ACT(TOOL_SCREWDRIVER), PROC_REF(on_body_screwdriver))
+	RegisterSignal(held_mob, COMSIG_ATOM_ATTACKBY, PROC_REF(on_body_attackby))
 	log_game("NANOFORM: [key_name(held_mob)] entered core dormancy at [AREACOORD(held_mob)].")
 	playsound(held_mob, 'sound/voice/borg_deathsound.ogg', 50, 1)
 	held_mob.visible_message(span_bold("[held_mob.name]") + " shudders and retreats inwards, coalescing into a single core component!")
@@ -217,7 +220,12 @@
 	var/datum/component/forms/protean/F = held_mob.GetComponent(/datum/component/forms/protean)
 	if(!F)
 		return
-	F.enter_rig()
+	// Folding up inside a belly, closet, mech or holder would move the core out of
+	// its container; there the swarm collapses where it is instead.
+	if(isturf(held_mob.loc))
+		F.enter_rig()
+	else
+		log_game("NANOFORM: [key_name(held_mob)] went dormant inside [held_mob.loc] ([held_mob.loc.type]); not folding into the control cluster.")
 	F.rig?.go_inert()
 
 /datum/affliction/core_dormancy/on_removed()
@@ -234,7 +242,7 @@
 		reboot_timer = null
 	if(!held_mob)
 		return
-	UnregisterSignal(held_mob, COMSIG_LIVING_BODY_STATUS)
+	UnregisterSignal(held_mob, list(COMSIG_LIVING_BODY_STATUS, COMSIG_ATOM_TOOL_ACT(TOOL_SCREWDRIVER), COMSIG_ATOM_ATTACKBY))
 	var/datum/component/forms/protean/F = held_mob.GetComponent(/datum/component/forms/protean)
 	F?.rig?.wake()
 	log_game("NANOFORM: [key_name(held_mob)] left core dormancy.")
@@ -251,6 +259,84 @@
 /datum/affliction/core_dormancy/proc/open_panel()
 	if(revival_step == DORMANCY_SEALED)
 		revival_step = DORMANCY_OPEN
+
+/// True when the core is repaired on the body rather than through the control
+/// cluster: the protean has no cluster, or is not folded into it.
+/datum/affliction/core_dormancy/proc/repaired_on_body()
+	var/datum/component/forms/protean/F = held_mob?.GetComponent(/datum/component/forms/protean)
+	return !F?.in_rig()
+
+/datum/affliction/core_dormancy/proc/on_body_screwdriver(mob/living/source, mob/living/user, obj/item/tool)
+	SIGNAL_HANDLER
+	if(revival_step != DORMANCY_SEALED || !repaired_on_body())
+		return NONE
+	INVOKE_ASYNC(src, PROC_REF(repair_with), tool, user, source)
+	return ITEM_INTERACT_SUCCESS
+
+/datum/affliction/core_dormancy/proc/on_body_attackby(mob/living/source, obj/item/W, mob/living/user, params)
+	SIGNAL_HANDLER
+	if(!repaired_on_body() || !is_repair_item(W))
+		return NONE
+	INVOKE_ASYNC(src, PROC_REF(repair_with), W, user, source)
+	return COMPONENT_CANCEL_ATTACK_CHAIN
+
+/// Whether `W` is the tool for the current revival step.
+/datum/affliction/core_dormancy/proc/is_repair_item(obj/item/W)
+	switch(revival_step)
+		if(DORMANCY_SEALED)
+			return W.has_tool_quality(TOOL_SCREWDRIVER)
+		if(DORMANCY_OPEN)
+			return istype(W, /obj/item/protean_reboot)
+		if(DORMANCY_PROGRAMMED)
+			return istype(W, /obj/item/stack/nanopaste)
+		if(DORMANCY_PASTED)
+			return istype(W, /obj/item/shockpaddles)
+	return FALSE
+
+/// Advance one revival step with `W`, working on `site` (the control cluster,
+/// or the protean's body when there is no cluster). Sleeps.
+/datum/affliction/core_dormancy/proc/repair_with(obj/item/W, mob/living/user, atom/site)
+	var/mob/living/patient = held_mob
+	if(!patient || !istype(user) || !is_repair_item(W))
+		return
+	var/step = revival_step
+	switch(step)
+		if(DORMANCY_SEALED)
+			playsound(site, W.usesound, 50, 1)
+			if(!do_after(user, 5 SECONDS, target = site) || QDELETED(src) || revival_step != step)
+				return
+			to_chat(user, span_notice("You unscrew the maintenance panel on [site]."))
+			open_panel()
+		if(DORMANCY_OPEN)
+			if(!do_after(user, 5 SECONDS, target = site) || QDELETED(src) || revival_step != step)
+				return
+			if(patient.mend(TREAT_CALIBRATION, 1))
+				playsound(site, 'sound/items/Deconstruct.ogg', 50, 1)
+				to_chat(user, span_notice("You carefully slot [W] into [site]."))
+				qdel(W)
+		if(DORMANCY_PROGRAMMED)
+			var/obj/item/stack/nanopaste/paste = W
+			if(!do_after(user, 5 SECONDS, target = site) || QDELETED(src) || revival_step != step)
+				return
+			if(paste.use(1) && patient.mend(TREAT_PLATING_REPAIR, 1))
+				playsound(site, 'sound/effects/ointment.ogg', 50, 1)
+				to_chat(user, span_notice("You slather the interior confines of [site] with [W]."))
+		if(DORMANCY_PASTED)
+			var/obj/item/shockpaddles/paddles = W
+			if(!paddles.can_use(user))
+				return
+			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
+			if(!do_after(user, 5 SECONDS, target = site))
+				return
+			playsound(site, 'sound/machines/defib_charge.ogg', 50, 0)
+			if(!do_after(user, 1 SECOND, target = site) || QDELETED(src) || revival_step != step)
+				return
+			playsound(site, 'sound/machines/defib_zap.ogg', 50, 1, -1)
+			if(patient.mend(TREAT_DEFIBRILLATION, 1))
+				playsound(site, 'sound/machines/defib_success.ogg', 50, 0)
+				new /obj/effect/gibspawner/robot(get_turf(site))
+				site.atom_say("Contact received! Reassembly nanites calibrated. Estimated time to resucitation: 1 minute 30 seconds")
+	log_game("NANOFORM: [key_name(user)] worked on [key_name(patient)]'s dormant core with [W] via [site]; step [step] -> [revival_step].")
 
 /// Each revival mechanism advances exactly one step, in order.
 /datum/affliction/core_dormancy/receive_tagged_treatment(tag, amount, continuous = FALSE)

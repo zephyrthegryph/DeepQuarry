@@ -116,12 +116,9 @@
 	scan_level = 0
 	damage_coeff = 0
 	precision_coeff = 0
-	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
-		scan_level += P.rating
-	for(var/obj/item/stock_parts/manipulator/P in component_parts)
-		precision_coeff = P.rating
-	for(var/obj/item/stock_parts/micro_laser/P in component_parts)
-		damage_coeff = P.rating
+	scan_level += get_part_rating(/obj/item/stock_parts/scanning_module)
+	precision_coeff = get_part_rating(/obj/item/stock_parts/manipulator)
+	damage_coeff = get_part_rating(/obj/item/stock_parts/micro_laser)
 
 /obj/machinery/dna_scannernew/relaymove(mob/user as mob)
 	if(user.stat)
@@ -458,15 +455,15 @@
 			var/mob/living/carbon/human/H = WC
 			if(!H.species || (H.species.flags & NO_DNA))
 				allowed = FALSE
-		if(!allowed || (NOCLONE in WC.mutations) || !WC.dna)
+		if(!allowed || (WC.has_mutation(NOCLONE)) || !WC.dna)
 			occupantData["isViableSubject"] = 0
 		// Vitality is reported as a 0..100 percentage; the UI bar reads health / maxHealth.
 		occupantData["health"] = round(WC.vitality() * 100)
 		occupantData["maxHealth"] = 100
 		occupantData["minHealth"] = 0
 		occupantData["uniqueEnzymes"] = WC.dna.unique_enzymes
-		occupantData["uniqueIdentity"] = WC.dna.uni_identity
-		occupantData["structuralEnzymes"] = WC.dna.struc_enzymes
+		occupantData["uniqueIdentity"] = WC.dna.GetUniIdentity()
+		occupantData["structuralEnzymes"] = WC.dna.GetStrucEnzymes()
 		occupantData["radiationLevel"] = WC.radiation
 	data["occupant"] = occupantData;
 
@@ -619,7 +616,7 @@
 					return TRUE
 				if("transfer")
 					var/mob/living/carbon/WC = connected?.get_occupant()
-					if(!WC || (NOCLONE in WC.mutations) || !WC.dna)
+					if(!WC || (WC.has_mutation(NOCLONE)) || !WC.dna)
 						return TRUE
 					irradiating = 2
 					var/lock_state = connected.locked
