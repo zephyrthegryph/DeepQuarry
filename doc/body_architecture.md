@@ -233,6 +233,33 @@ Queries every other system uses instead of `health`:
 | How hurt by category (medbot, vore payout, analyzers) | `L.injury_load(INJURY_CATEGORY_*)` |
 | Is it hurt at all | `L.is_injured()` |
 | Specific affliction | `L.body.find_affliction(type)` / `has_affliction(type)` |
+| Brain death (needs a resleeve) | `L.is_brain_dead()` → the brain organ's `is_brain_dead()` |
+
+### 5a. Brain death, minds and mind hosts
+
+**Brain death** is decided in one place:
+`/obj/item/organ/internal/brain/proc/is_brain_dead()` — the brain is at 100%
+damage or the organ is `ORGAN_DEAD`. Brain death needs a resleeve. The
+humanoid plan's `is_dead()`, the defibrillator (`can_revive()`),
+`check_vital_organs()`, the scanners, the MMI and the brain view all ask it.
+
+**Identity.** `/datum/character_identity` (`code/datums/character_identity.dm`)
+is owned by the mind: real name, a DNA reference, every OOC-note field,
+languages, flavour text and persistent (MODIFIER_GENETIC) traits. Every
+living mob holds a reference in `identity`, bound in one place,
+`bind_identity()`, when a mind enters it. Nothing copies identity fields.
+
+**Moving minds.** `transfer_mind(mind, dest, reason)` is the one logged path.
+Anything that holds a mind outside a body has a `/datum/component/mind_host`
+(the brain organ, MMIs, posibrains, robot intelligence circuits, protean
+cores). Its API is `receive_mind()`, `release_mind()` and `adopt_occupant()`,
+which moves the view between hosts, e.g. brain → MMI.
+
+**The brain view** (`/mob/living/carbon/brain`) is the mob the client needs.
+It is a thin view on its host's brain tissue: harm lands on the organ as
+lesions, `mend()` repairs the organ, `vitality()`/`injury_load()` read the
+organ, and its stat follows `is_brain_dead()` (`refresh_host_status()`). An
+MMI'd brain keeps its lesions, so damage and treatment carry on.
 
 ## 6. Afflictions
 
