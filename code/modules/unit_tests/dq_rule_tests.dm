@@ -370,6 +370,7 @@
 /datum/unit_test/dq_rule_plastic_melts
 
 /datum/unit_test/dq_rule_plastic_melts/Run()
+	dq_h3_cool_floor(test_floor())
 	var/turf/T = test_floor()
 	var/obj/item/reagent_containers/glass/cooler_bottle/bottle = allocate(/obj/item/reagent_containers/glass/cooler_bottle, T)
 	var/datum/material/plastic = GLOB.name_to_material[MAT_PLASTIC]

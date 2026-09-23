@@ -81,6 +81,21 @@
 	default_apply_parts()
 	RefreshParts()
 
+/obj/machinery/dna_scannernew/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/occupant/dna_scanner, /datum/slot_def/machine_internals)
+	return types
+
+/// Sealed occupant slot (C8a, containment.md §10). Full blast share: the
+/// scanner's own explosion_contents_severity() used to pass severity through
+/// untouched, so its slot keeps that share instead.
+/datum/slot_def/occupant/dna_scanner
+	id = OCCUPANT_SLOT_DNA_SCANNER
+	name = "DNA scanner"
+	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+
+/obj/machinery/dna_scannernew/explosion_contents_severity(severity)
+	return dq_slot_blast_severity(src, severity)
+
 /obj/machinery/dna_scannernew/Destroy()
 	eject_occupant()
 	. = ..()
@@ -168,7 +183,9 @@
 		to_chat(usr, span_warning("There is already something inside."))
 		return
 	usr.stop_pulling()
-	usr.forceMove(src)
+	if(!usr.move_into(src, OCCUPANT_SLOT_DNA_SCANNER, usr))
+		to_chat(usr, span_warning("\The [src] won't take you!"))
+		return
 	set_occupant(usr)
 	icon_state = "scanner_1"
 	add_fingerprint(usr)
@@ -227,7 +244,7 @@
 		beaker = null
 	var/mob/living/carbon/WC = get_occupant()
 	if(WC)
-		WC.forceMove(get_turf(src))
+		slot_remove(WC, get_turf(src))
 		set_occupant(null)
 	// Disconnect from our terminal
 	for(var/dirfind in GLOB.cardinal)
@@ -239,7 +256,8 @@
 	. = ..()
 
 /obj/machinery/dna_scannernew/proc/put_in(mob/M)
-	M.forceMove(src)
+	if(!M.move_into(src, OCCUPANT_SLOT_DNA_SCANNER))
+		return
 	set_occupant(M)
 	icon_state = "scanner_1"
 
@@ -264,10 +282,10 @@
 		for(var/obj/O in src)
 			if(istype(O,/obj/item/organ/internal/brain))
 				O.forceMove(get_turf(src))
-				WC.forceMove(O)
+				slot_remove(WC, O)
 				break
 	else
-		WC.forceMove(loc)
+		slot_remove(WC, loc)
 	set_occupant(null)
 	icon_state = "scanner_0"
 	SStgui.update_uis(src)

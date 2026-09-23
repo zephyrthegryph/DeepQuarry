@@ -31,6 +31,15 @@
 	cell = default_use_hicell()
 	update_icon()
 
+/obj/machinery/recharge_station/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/occupant/recharge_station, /datum/slot_def/machine_internals)
+	return types
+
+/// Sealed occupant slot (C8a, containment.md §10).
+/datum/slot_def/occupant/recharge_station
+	id = OCCUPANT_SLOT_RECHARGE_STATION
+	name = "recharge station"
+
 /obj/machinery/recharge_station/proc/has_cell_power()
 	return cell && cell.percent() > 0
 
@@ -315,7 +324,8 @@
 			return
 
 		add_fingerprint(R)
-		R.forceMove(src)
+		if(!R.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
+			return
 		occupant = R
 		START_MACHINE_PROCESSING(src)
 		update_icon()
@@ -328,7 +338,8 @@
 			return
 
 		add_fingerprint(P)
-		P.forceMove(src)
+		if(!P.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
+			return
 		occupant = P
 		START_MACHINE_PROCESSING(src)
 		update_icon()
@@ -338,7 +349,8 @@
 		var/mob/living/carbon/human/H = L
 		if(H.isSynthetic() || H.wearing_rig)
 			add_fingerprint(H)
-			H.forceMove(src)
+			if(!H.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
+				return
 			occupant = H
 			START_MACHINE_PROCESSING(src)
 			update_icon()
@@ -349,7 +361,7 @@
 /obj/machinery/recharge_station/proc/go_out()
 	if(!occupant)
 		return
-	occupant.forceMove(get_turf(src))
+	slot_remove(occupant, get_turf(src))
 	occupant = null
 	update_icon()
 

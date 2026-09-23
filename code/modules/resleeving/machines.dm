@@ -332,6 +332,15 @@
 /obj/machinery/transhuman/resleever/Destroy()
 	. = ..()
 
+/obj/machinery/transhuman/resleever/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/occupant/resleever, /datum/slot_def/machine_internals)
+	return types
+
+/// Sealed occupant slot (C8a, containment.md §10): the sleever's own field is
+/// the occupant's environment, same as before the ledger tracked it.
+/datum/slot_def/occupant/resleever
+	id = OCCUPANT_SLOT_RESLEEVER
+	name = "resleever"
 
 /obj/machinery/transhuman/resleever/proc/set_occupant(mob/living/carbon/human/H)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -516,7 +525,7 @@
 	var/mob/living/carbon/human/occupant = get_occupant()
 	if(!occupant)
 		return
-	occupant.forceMove(get_turf(src))
+	slot_remove(occupant, get_turf(src))
 	set_occupant(null)
 	icon_state = "implantchair"
 	return
@@ -529,7 +538,9 @@
 		to_chat(usr, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()
-	M.forceMove(src)
+	if(!M.move_into(src, OCCUPANT_SLOT_RESLEEVER, usr))
+		to_chat(usr, span_warning("\The [src] won't take [M]!"))
+		return
 	set_occupant(M)
 	src.add_fingerprint(usr)
 	icon_state = "implantchair_on"
