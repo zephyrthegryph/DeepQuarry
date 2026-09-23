@@ -20,20 +20,6 @@ struct FixtureSpec {
     layer: FixtureLayer,
 }
 
-#[derive(Clone, Copy)]
-struct CompositionCell {
-    dx: i16,
-    dy: i16,
-    spec: FixtureSpec,
-}
-
-#[derive(Clone, Copy)]
-struct CompositionPlacement {
-    at: Point,
-    facing: Facing,
-    spec: FixtureSpec,
-}
-
 #[derive(Clone)]
 struct AuthoredCompositionPlacement {
     at: Point,
@@ -43,15 +29,7 @@ struct AuthoredCompositionPlacement {
 }
 
 #[derive(Clone, Copy)]
-enum CompositionAnchor {
-    Center,
-    Perimeter,
-    Entrance,
-}
-
-#[derive(Clone, Copy)]
 struct CounterpartProfile {
-    anchor: CompositionAnchor,
     minimum_cluster_micros: u32,
     minimum_unique_fixtures: usize,
     minimum_occupancy_micros: u32,
@@ -2376,488 +2354,49 @@ fn plan_networks(
         .collect()
 }
 
-fn semantic_composition(
-    role: &str,
-    seed: u64,
-    tiles: &BTreeSet<Point>,
-    reserved: &BTreeSet<Point>,
-    doors: &BTreeSet<Point>,
-    center: Point,
-) -> Vec<CompositionPlacement> {
-    let profile = counterpart_profile(role);
-    let furniture = |id| FixtureSpec {
-        id,
-        layer: FixtureLayer::Furniture,
-    };
-    let machine = |id| FixtureSpec {
-        id,
-        layer: FixtureLayer::Machine,
-    };
-    let cells = if has(role, &["surgery", "treatment", "exam", "medical"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("operating_table"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: machine("anesthetic"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("medical_console"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("instrument_table"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("medical_cabinet"),
-            },
-        ]
-    } else if has(role, &["laboratory", "research", "analysis"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("experiment_table"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: machine("analyzer"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("research_console"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("reagent_storage"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: -1,
-                spec: furniture("stool"),
-            },
-        ]
-    } else if has(role, &["security", "armory", "brig", "evidence"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: machine("security_console"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("weapon_rack"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("secure_locker"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("chair"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("evidence_cabinet"),
-            },
-        ]
-    } else if has(role, &["engineering", "workshop", "equipment", "power"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("workbench"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("tool_rack"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("parts_bin"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("engineering_console"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("stool"),
-            },
-        ]
-    } else if has(role, &["command", "operations", "meeting", "briefing"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("conference_table"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("conference_table"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("executive_chair"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("executive_chair"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: machine("command_console"),
-            },
-        ]
-    } else if has(role, &["kitchen", "galley", "food"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("grill"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("food_prep"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("sink"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("fridge"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("serving_counter"),
-            },
-        ]
-    } else if has(role, &["hydro", "garden", "botany"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("hydroponics_tray"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("hydroponics_tray"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("hydroponics_tray"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 1,
-                spec: furniture("hydroponics_tray"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: machine("plant_analyzer"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 1,
-                spec: furniture("produce_bin"),
-            },
-        ]
-    } else if has(role, &["warehouse", "sorting", "inventory"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("disposal_unit"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("supply_crate"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("loading_table"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("crate_rack"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: -1,
-                spec: machine("cargo_console"),
-            },
-        ]
-    } else if has(role, &["cargo", "storage"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("crate_rack"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("loading_table"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("crate_rack"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: machine("package_scanner"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: -1,
-                spec: furniture("freight_cart"),
-            },
-        ]
-    } else if has(role, &["ai", "core", "satellite", "monitoring"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: machine("ai_core"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("server_rack"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("server_rack"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: machine("coolant_unit"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: -1,
-                spec: machine("control_console"),
-            },
-        ]
-    } else if has(role, &["reception", "foyer", "liaison"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("reception_desk"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: machine("visitor_console"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("reception_desk"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 2,
-                spec: furniture("waiting_bench"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 2,
-                spec: furniture("waiting_bench"),
-            },
-        ]
-    } else {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("worktable"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: machine("role_console"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("department_locker"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("chair"),
-            },
-        ]
-    };
-
-    let mut anchors = tiles
-        .iter()
-        .copied()
-        .filter(|point| !reserved.contains(point) && !doors.contains(point))
-        .collect::<Vec<_>>();
-    anchors.sort_by_key(|point| {
-        let center_distance = distance(*point, center);
-        let perimeter_distance = tiles
-            .iter()
-            .filter(|tile| {
-                point_neighbors(**tile, u16::MAX, u16::MAX)
-                    .into_iter()
-                    .any(|neighbor| !tiles.contains(&neighbor))
-            })
-            .map(|edge| distance(*point, *edge))
-            .min()
-            .unwrap_or(0);
-        let entrance_distance = doors
-            .iter()
-            .map(|door| distance(*point, *door))
-            .min()
-            .unwrap_or(center_distance);
-        let anchor_score = match profile.anchor {
-            CompositionAnchor::Center => center_distance,
-            CompositionAnchor::Perimeter => perimeter_distance,
-            CompositionAnchor::Entrance => entrance_distance,
-        };
-        (
-            anchor_score,
-            composition_hash(seed, *point),
-            point.y,
-            point.x,
-        )
-    });
-    let start_rotation = usize::try_from(seed & 3).unwrap_or(0);
-    let composition_sizes = [cells.len(), cells.len().min(3)];
-    for composition_size in composition_sizes {
-        for rotation_offset in 0..4 {
-            let rotation = (start_rotation + rotation_offset) % 4;
-            for anchor in &anchors {
-                let transformed = cells
-                    .iter()
-                    .take(composition_size)
-                    .filter_map(|cell| {
-                        let (dx, dy) = rotate_offset(cell.dx, cell.dy, rotation);
-                        let x = i32::from(anchor.x) + i32::from(dx);
-                        let y = i32::from(anchor.y) + i32::from(dy);
-                        if x < 0 || y < 0 {
-                            return None;
-                        }
-                        Some((
-                            Point {
-                                x: u16::try_from(x).ok()?,
-                                y: u16::try_from(y).ok()?,
-                            },
-                            cell.spec,
-                        ))
-                    })
-                    .collect::<Vec<_>>();
-                if transformed.len() != composition_size
-                    || transformed.iter().any(|(at, _)| {
-                        !tiles.contains(at) || reserved.contains(at) || doors.contains(at)
-                    })
-                {
-                    continue;
-                }
-                return transformed
-                    .into_iter()
-                    .map(|(at, spec)| CompositionPlacement {
-                        at,
-                        facing: if at == *anchor {
-                            face_toward(at, center)
-                        } else {
-                            face_toward(at, *anchor)
-                        },
-                        spec,
-                    })
-                    .collect();
-            }
-        }
-    }
-    Vec::new()
-}
-
 fn counterpart_profile(role: &str) -> CounterpartProfile {
-    let (reference_role, anchor, minimum_cluster_micros) = if has(role, &["surgery"]) {
-        ("surgery", CompositionAnchor::Center, 650_000)
+    let (reference_role, minimum_cluster_micros) = if has(role, &["surgery"]) {
+        ("surgery", 650_000)
     } else if has(role, &["treatment", "exam", "emergency"]) {
-        ("treatment", CompositionAnchor::Center, 650_000)
+        ("treatment", 650_000)
     } else if has(role, &["ward", "recovery"]) {
-        ("ward", CompositionAnchor::Perimeter, 600_000)
+        ("ward", 600_000)
     } else if has(role, &["laboratory", "research", "analysis"]) {
-        ("laboratory", CompositionAnchor::Center, 650_000)
+        ("laboratory", 650_000)
     } else if has(role, &["ai", "core", "server"]) {
-        ("ai", CompositionAnchor::Center, 650_000)
+        ("ai", 650_000)
     } else if has(role, &["armory"]) {
-        ("armory", CompositionAnchor::Perimeter, 650_000)
+        ("armory", 650_000)
     } else if has(role, &["brig", "interrogation", "checkpoint"]) {
-        ("brig", CompositionAnchor::Entrance, 600_000)
+        ("brig", 600_000)
     } else if has(role, &["security", "evidence", "locker-room"]) {
-        ("security", CompositionAnchor::Entrance, 600_000)
+        ("security", 600_000)
     } else if has(
         role,
         &["operations", "communications", "briefing", "meeting"],
     ) {
-        ("operations", CompositionAnchor::Center, 650_000)
+        ("operations", 650_000)
     } else if has(role, &["office", "records", "liaison"]) {
-        ("office", CompositionAnchor::Center, 600_000)
+        ("office", 600_000)
     } else if has(role, &["reception", "foyer"]) {
-        ("reception", CompositionAnchor::Entrance, 600_000)
+        ("reception", 600_000)
     } else if has(
         role,
         &["storage", "warehouse", "cargo", "inventory", "equipment"],
     ) {
-        ("storage", CompositionAnchor::Perimeter, 600_000)
+        ("storage", 600_000)
     } else if has(role, &["workshop", "engineering", "power", "tool-room"]) {
-        ("workshop", CompositionAnchor::Perimeter, 600_000)
+        ("workshop", 600_000)
     } else if has(role, &["atmospherics", "maintenance"]) {
-        ("atmospherics", CompositionAnchor::Perimeter, 550_000)
+        ("atmospherics", 550_000)
     } else if has(role, &["dispatch", "processing", "cargo"]) {
-        ("cargo", CompositionAnchor::Perimeter, 600_000)
+        ("cargo", 600_000)
     } else if has(role, &["docking", "customs", "control"]) {
-        ("docking", CompositionAnchor::Entrance, 550_000)
+        ("docking", 550_000)
     } else if has(role, &["robotics"]) {
-        ("robotics", CompositionAnchor::Center, 600_000)
+        ("robotics", 600_000)
     } else {
-        ("general", CompositionAnchor::Center, 550_000)
+        ("general", 550_000)
     };
     let measured = southern_cross_reference()
         .profiles
@@ -2865,7 +2404,6 @@ fn counterpart_profile(role: &str) -> CounterpartProfile {
         .or_else(|| southern_cross_reference().profiles.get("general"))
         .expect("Southern Cross reference must contain a general profile");
     CounterpartProfile {
-        anchor,
         minimum_cluster_micros,
         // The DMM contains incidental item subfamilies that the blueprint
         // intentionally represents as one semantic fixture category.
@@ -2878,15 +2416,6 @@ fn counterpart_profile(role: &str) -> CounterpartProfile {
         // Absolute counts are size-sensitive; cap the mapped p25 while density
         // and empty-region ratios carry the scale-independent comparison.
         minimum_fixture_count: measured.fixture_count_p25.clamp(4, 12),
-    }
-}
-
-fn rotate_offset(dx: i16, dy: i16, rotation: usize) -> (i16, i16) {
-    match rotation % 4 {
-        0 => (dx, dy),
-        1 => (-dy, dx),
-        2 => (-dx, -dy),
-        _ => (dy, -dx),
     }
 }
 
@@ -3050,31 +2579,6 @@ fn semantic_fixture_program(role: &str) -> Vec<FixtureSpec> {
         .collect()
 }
 
-fn compact_department_fixture_program(department_id: &str) -> Vec<FixtureSpec> {
-    let ids: &[&str] = match department_id {
-        "command" => &["role_console", "filing_cabinet"],
-        "ai" => &["ai_core", "filing_cabinet"],
-        "security" => &["server_rack", "secure_locker"],
-        "medical" => &["sleeper", "medical_locker"],
-        "engineering" => &["autolathe", "electrical_locker"],
-        "logistics" => &["cargo_console", "supply_crate"],
-        "docking" => &["communications_console", "secure_locker"],
-        _ => &["role_console", "filing_cabinet"],
-    };
-    ids.iter()
-        .map(|id| FixtureSpec {
-            id,
-            layer: if id.contains("console")
-                || matches!(*id, "ai_core" | "server_rack" | "sleeper" | "autolathe")
-            {
-                FixtureLayer::Machine
-            } else {
-                FixtureLayer::Furniture
-            },
-        })
-        .collect()
-}
-
 fn semantic_fillers(role: &str) -> Vec<FixtureSpec> {
     let ids: &[&str] = if has(
         role,
@@ -3192,87 +2696,6 @@ fn semantic_fillers(role: &str) -> Vec<FixtureSpec> {
             layer: FixtureLayer::Furniture,
         })
         .collect()
-}
-
-fn target_density(role: &str) -> u32 {
-    if has(role, &["storage", "warehouse", "workshop", "laboratory"]) {
-        540_000
-    } else if has(role, &["foyer", "reception", "meeting"]) {
-        420_000
-    } else {
-        480_000
-    }
-    .clamp(MIN_OCCUPANCY_MICROS, MAX_OCCUPANCY_MICROS)
-}
-fn safe_spread_candidate(
-    candidates: &[Point],
-    blocking: &BTreeSet<Point>,
-    required_access: &BTreeSet<Point>,
-    tiles: &BTreeSet<Point>,
-    center: Point,
-    salt: usize,
-    width: u16,
-    height: u16,
-    fixture_id: &str,
-    prefer_cluster: bool,
-) -> Option<usize> {
-    let mut allowed: Vec<usize> = (0..candidates.len())
-        .filter(|index| {
-            let candidate = candidates[*index];
-            if required_access.contains(&candidate) {
-                return false;
-            }
-            if !fixture_blocks(fixture_id) {
-                return true;
-            }
-            let access = step_facing(candidate, face_toward(candidate, center));
-            tiles.contains(&access)
-                && !blocking.contains(&access)
-                && placement_preserves_walkability(tiles, blocking, candidate, width, height)
-        })
-        .collect();
-    allowed.sort_by_key(|index| {
-        let point = candidates[*index];
-        let spread = blocking
-            .iter()
-            .map(|other| distance(point, *other))
-            .min()
-            .unwrap_or(distance(point, center));
-        let spread_key = if prefer_cluster {
-            spread
-        } else {
-            u16::MAX - spread
-        };
-        (spread_key, (*index + salt) % 7, distance(point, center))
-    });
-    allowed.into_iter().next()
-}
-
-fn placement_preserves_walkability(
-    tiles: &BTreeSet<Point>,
-    blocking: &BTreeSet<Point>,
-    candidate: Point,
-    width: u16,
-    height: u16,
-) -> bool {
-    let remaining: BTreeSet<Point> = tiles
-        .iter()
-        .copied()
-        .filter(|point| !blocking.contains(point) && *point != candidate)
-        .collect();
-    let Some(start) = remaining.iter().next().copied() else {
-        return false;
-    };
-    let mut reached = BTreeSet::from([start]);
-    let mut queue = VecDeque::from([start]);
-    while let Some(point) = queue.pop_front() {
-        for next in point_neighbors(point, width, height) {
-            if remaining.contains(&next) && reached.insert(next) {
-                queue.push_back(next);
-            }
-        }
-    }
-    reached.len() == remaining.len()
 }
 
 fn fixture_blocks(id: &str) -> bool {
