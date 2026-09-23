@@ -185,7 +185,7 @@
 		return INTERACTION_TRY_BLOCKED
 	var/list/feedback = messages(actor, target, held)
 	var/shown_name = display_name(actor, target)
-	if(!call(target, effect)(actor, held, src))
+	if(!run_effect(actor, target, held))
 		return null
 	log_input("Interaction: [key_name(actor)] did [id] ([shown_name]) on [target] ([target.type]).")
 	var/self_text = fill_message(feedback[1], actor, target)
@@ -195,6 +195,16 @@
 	else if(self_text)
 		to_chat(actor, span_notice(self_text))
 	return INTERACTION_TRY_RAN
+
+/**
+ * Calls `effect` and returns whether it ran (TRUE) or declined (FALSE), so an
+ * entry moves on to the next candidate. Overridden by /datum/interaction/generic
+ * for shapes that are always meant once reached (self-use, hand, alt-click):
+ * their effect proc need not return TRUE itself, so a plain existing proc can
+ * be pointed at directly with no wrapper.
+ */
+/datum/interaction/proc/run_effect(mob/actor, atom/target, obj/item/held)
+	return call(target, effect)(actor, held, src)
 
 /// Tells the actor why they can't do this right now.
 /datum/interaction/proc/tell_blocked(mob/actor, atom/target, reason)
@@ -227,12 +237,43 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 	return by_id[id]
 
 /**
+ * Compact interaction specs (doc/rewrite/interactions.md §5a): built with the
+ * INTERACT_* macros (code/__defines/interactions.dm), returned from an
+ * override of get_interactions(), e.g.
+ *
+ *   /obj/item/binoculars/get_interactions()
+ *       var/static/list/L = list(
+ *           INTERACT_USE("Zoom", PROC_REF(zoom)),
+ *       )
+ *       return L
+ *
+ * A proc-local `var/static/list`, not a plain var default: a type-level list
+ * *default* (`var/list/foo = list(...)`) is reallocated per instance in DM
+ * (AGENTS.md §3a's list-allocation anti-pattern), but a `var/static/list`
+ * inside a proc is allocated once, ever, shared by every instance of every
+ * type that inherits the proc - the idiom AGENTS.md already prescribes for
+ * per-subtype constant tables. Turned into interned /datum/interaction/generic
+ * singletons by declare_interactions() below (dq_interaction_from_spec(),
+ * compact.dm) - one singleton per distinct spec, shared further across types
+ * whose get_interactions() names the same inherited proc.
+ */
+/atom/proc/get_interactions()
+	return null
+
+/**
  * Adds the interaction types this atom offers to `into`. Types add theirs and
  * call ..() to inherit. Called once per type (the result is cached), so it
  * must not depend on instance state: use applies_to() for that.
+ *
+ * `into` takes either a /datum/interaction type path (the full datum form,
+ * looked up in GLOB.interactions_by_type) or a live /datum/interaction
+ * instance (what the compact form and dq_interaction_from_spec() add).
  */
 /atom/proc/declare_interactions(list/into)
-	return
+	var/list/specs = get_interactions()
+	if(specs)
+		for(var/i in 1 to length(specs))
+			into += dq_interaction_from_spec(type, specs[i])
 
 /// The interactions this atom's type offers, as shared singletons. Cached per type.
 /proc/interaction_candidates(atom/target)
@@ -240,13 +281,13 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 	var/list/candidates = cache[target.type]
 	if(candidates)
 		return candidates
-	var/list/paths = list()
-	target.declare_interactions(paths)
+	var/list/entries = list()
+	target.declare_interactions(entries)
 	candidates = list()
-	for(var/path in paths)
-		var/datum/interaction/interaction = GLOB.interactions_by_type[path]
+	for(var/entry in entries)
+		var/datum/interaction/interaction = istype(entry, /datum/interaction) ? entry : GLOB.interactions_by_type[entry]
 		if(!interaction)
-			stack_trace("[target.type] declares [path], which is not a registered interaction")
+			stack_trace("[target.type] declares [entry], which is not a registered interaction")
 			continue
 		candidates |= interaction
 	cache[target.type] = candidates

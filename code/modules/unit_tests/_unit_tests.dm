@@ -215,6 +215,7 @@
 #include "dq_i7_bulk_capture.dm"
 #include "dq_i7_structures_bulk_capture.dm"
 #include "dq_i7_items_bulk_capture.dm"
+#include "dq_compact_interaction_tests.dm"
 #include "dq_interaction_tests.dm"
 #include "dq_interaction_entry_tests.dm"
 #include "dq_tool_tests.dm"

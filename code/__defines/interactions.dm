@@ -63,3 +63,37 @@
 /// Requirement: in reach. Adjacent, or a silicon the target lets use it remotely (silicon_use),
 /// or already dispatched by the legacy entry (which decided reach itself: telekinesis, the AI).
 #define REQ_INTERACTION_REACH REQ_PROC(/proc/dq_interaction_reach, "too far away")
+
+// ---------------------------------------------------------------------------
+// Compact interaction specs (doc/rewrite/interactions.md §5a; code/datums/interactions/compact.dm).
+//
+// A get_interactions() override returning list(INTERACT_USE(...), ...) in place of a
+// declare_interactions() override plus a one-off /datum/interaction subtype.
+// Each macro builds a plain data tuple: list(kind, name, effect, requires, extra).
+// `effect` is a proc reference (PROC_REF(x) or .proc/x, written inside the
+// type that owns the proc) or the string form. `name` may be null to derive
+// one from the proc's name ("insert_cell" -> "Insert cell"). `requires` is an
+// extra P2 spec (REQ_* clauses) added on top of the shape's own; omit or pass
+// null for none. dq_interaction_from_spec() (compact.dm) turns a spec into an
+// interned /datum/interaction/generic singleton, shared by every type that
+// declares the identical spec (e.g. an inherited proc reference).
+
+/// Kind tags read by dq_interaction_from_spec() to pick the entry/category/default_action.
+#define INTERACT_KIND_USE "use"
+#define INTERACT_KIND_HAND "hand"
+#define INTERACT_KIND_ITEM "item"
+#define INTERACT_KIND_INSERT "insert"
+#define INTERACT_KIND_ALT "alt"
+
+/// Self-use (old attack_self): the held item used on itself. `effect(actor, held, interaction)`.
+#define INTERACT_USE(name, effect, requires...) list(INTERACT_KIND_USE, name, effect, list(requires))
+/// Touched with an empty hand, or a silicon's Use (old attack_hand). `effect(actor, held, interaction)`.
+#define INTERACT_HAND(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires))
+/// Used with any item (old attackby, no type check). `effect(actor, item, interaction)` returns
+/// FALSE to fall through to the next candidate, as an old attackby fell through to ..().
+#define INTERACT_ITEM(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires))
+/// Alt-click (old click_alt). `effect(actor, held, interaction)`.
+#define INTERACT_ALT(name, effect, requires...) list(INTERACT_KIND_ALT, name, effect, list(requires))
+/// Used with an item of `held_type` (old attackby with an istype(W, held_type) guard at the top).
+/// name may be null to derive one ("Insert " + the item type's article+name).
+#define INTERACT_INSERT(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type)
