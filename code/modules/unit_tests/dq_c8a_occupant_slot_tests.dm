@@ -74,6 +74,11 @@
 	var/turf/T = test_floor()
 	var/obj/machinery/recharge_station/S = allocate(/obj/machinery/recharge_station, T)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	// A test robot's camera would otherwise schedule a cameranet update a few
+	// seconds out (update_triggers.dm); nothing here exercises camera vision,
+	// and that timer can still be pending when the robot is torn down at the
+	// end of this test, well after it, in an unrelated one.
+	QDEL_NULL(R.camera)
 	c8a_check_occupant_slot(S, R, OCCUPANT_SLOT_RECHARGE_STATION)
 
 /datum/unit_test/dq_c8a_dna_scanner_occupant_slot
