@@ -379,14 +379,14 @@ GLOBAL_LIST(construction_frame_floor)
 					components += CC
 					req_components[I] -= camt
 					update_desc()
+					break
+				user.drop_item()
+				P.forceMove(src)
+				components += P
+				req_components[I]--
+				update_desc()
 				break
-			user.drop_item()
-			P.forceMove(src)
-			components += P
-			req_components[I]--
-			update_desc()
-			break
-	to_chat(user, desc)
+		to_chat(user, desc)
 
 	else if(istype(P, /obj/item))
 		if(state == FRAME_WIRED)
