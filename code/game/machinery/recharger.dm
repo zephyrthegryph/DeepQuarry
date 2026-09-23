@@ -369,9 +369,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		icon_state = icon_state_idle
 
 /obj/machinery/recharger/RefreshParts()
-	var/E = 0
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		E += C.rating
+	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
 	efficiency = active_power_usage * (1+ (E - 1)*0.5)
 
 /obj/machinery/recharger/wallcharger

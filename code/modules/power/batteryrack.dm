@@ -34,13 +34,8 @@
 	default_apply_parts()
 
 /obj/machinery/power/smes/batteryrack/RefreshParts()
-	var/capacitor_efficiency = 0
-	var/maxcells = 0
-	for(var/obj/item/stock_parts/capacitor/CP in component_parts)
-		capacitor_efficiency += CP.rating
-
-	for(var/obj/item/stock_parts/matter_bin/MB in component_parts)
-		maxcells += MB.rating * 3
+	var/capacitor_efficiency = get_part_rating(/obj/item/stock_parts/capacitor)
+	var/maxcells = get_part_rating(/obj/item/stock_parts/matter_bin) * 3
 
 	max_transfer_rate = 10000 * capacitor_efficiency // 30kw - 90kw depending on used capacitors.
 	max_cells = min(PSU_MAXCELLS, maxcells)

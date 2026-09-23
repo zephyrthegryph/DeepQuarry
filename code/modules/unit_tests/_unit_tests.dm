@@ -129,6 +129,7 @@
 #include "vore_tests.dm"
 // DQ fork tests — need TEST_ASSERT* macros in scope, which are #undef'd at
 // the bottom of this file.
+#include "dq_c6_machine_parts_tests.dm"
 #include "dq_atmos_tests.dm"
 #include "dq_heat_domain_tests.dm"
 #include "dq_heat_api_tests.dm"

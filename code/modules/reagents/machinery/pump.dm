@@ -37,17 +37,11 @@
 	. = ..()
 
 /obj/machinery/pump/RefreshParts()
-	var/obj/item/stock_parts/manipulator/SM = locate() in component_parts
-	active_power_usage = initial(active_power_usage) / SM.rating
-
-	var/pump_power = 0
-	for(var/obj/item/stock_parts/manipulator/M in component_parts) // scaling off the manipulator and not motor because motors have no upgrades
-		pump_power += M.rating
+	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades
+	active_power_usage = initial(active_power_usage) / (pump_power / max(1, get_part_count(/obj/item/stock_parts/manipulator)))
 	reagents_per_cycle = initial(reagents_per_cycle) * pump_power
 
-	var/bin_size = 0
-	for(var/obj/item/stock_parts/matter_bin/SB in component_parts)
-		bin_size += SB.rating
+	var/bin_size = get_part_rating(/obj/item/stock_parts/matter_bin)
 
 	// New holder might have different volume. Transfer everything to a new holder to account for this.
 	var/datum/reagents/R = new(round(initial(reagents.maximum_volume) + 100 * bin_size), src)

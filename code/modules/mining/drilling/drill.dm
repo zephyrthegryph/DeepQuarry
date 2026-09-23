@@ -264,6 +264,7 @@
 			user.drop_item()
 			O.forceMove(src)
 			cell = O
+			materialize_parts()
 			component_parts += O
 			balloon_alert(user, "you install \the [O]")
 		return TRUE
@@ -303,7 +304,8 @@
 	if (panel_open && cell && user.Adjacent(src))
 		balloon_alert(user, "you take out \the [cell]")
 		user.put_in_hands(cell)
-		component_parts -= cell
+		if(component_parts)
+			component_parts -= cell
 		cell = null
 		return TRUE
 	else if(need_player_check)
@@ -350,29 +352,31 @@
 	drill_range = 5
 	offset = 2
 
-	for(var/obj/item/stock_parts/P in component_parts)
-		if(istype(P, /obj/item/stock_parts/micro_laser))
-			harvest_speed = P.rating ** 2 // 1, 4, 9, 16, 25
-			exotic_drilling = P.rating - 1
-			if(exotic_drilling >= 1)
-				ore_types |= ore_types_uncommon
-				if(exotic_drilling >= 2)
-					ore_types |= ore_types_rare
-			else
-				ore_types -= ore_types_uncommon
-				ore_types -= ore_types_rare
-			if(P.rating > 3) // are we t4+?
-				// default drill range 5, offset 2
-				if(P.rating >= 5) // t5
-					drill_range = 9
-					offset = 4
-				else if(P.rating >= 4) // t4
-					drill_range = 7
-					offset = 3
-		if(istype(P, /obj/item/stock_parts/matter_bin))
-			capacity = 200 * P.rating
-		if(istype(P, /obj/item/stock_parts/capacitor))
-			charge_use -= 10 * P.rating
+	var/laser_rating = get_part_rating(/obj/item/stock_parts/micro_laser)
+	if(laser_rating)
+		harvest_speed = laser_rating ** 2 // 1, 4, 9, 16, 25
+		exotic_drilling = laser_rating - 1
+		if(exotic_drilling >= 1)
+			ore_types |= ore_types_uncommon
+			if(exotic_drilling >= 2)
+				ore_types |= ore_types_rare
+		else
+			ore_types -= ore_types_uncommon
+			ore_types -= ore_types_rare
+		if(laser_rating > 3) // are we t4+?
+			// default drill range 5, offset 2
+			if(laser_rating >= 5) // t5
+				drill_range = 9
+				offset = 4
+			else if(laser_rating >= 4) // t4
+				drill_range = 7
+				offset = 3
+	var/bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
+	if(bin_rating)
+		capacity = 200 * bin_rating
+	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
+	if(cap_rating)
+		charge_use -= 10 * cap_rating
 	cell = locate(/obj/item/cell) in src
 
 /obj/machinery/mining/drill/proc/check_supports()
@@ -487,9 +491,7 @@
 
 /obj/machinery/mining/brace/RefreshParts()
 	..()
-	brace_tier = 0
-	for(var/obj/item/stock_parts/manipulator/M in component_parts)
-		brace_tier += M.rating
+	brace_tier = get_part_rating(/obj/item/stock_parts/manipulator)
 
 /obj/machinery/mining/brace/declare_interactions(list/into)
 	into += list(
