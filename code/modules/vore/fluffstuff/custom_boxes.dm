@@ -10,9 +10,7 @@
 
 /obj/item/storage/box/fluff/Initialize(mapload)
 	storage_slots = has_items.len
-	allowed = list()
 	for(var/P in has_items)
-		allowed += P
 		new P(src)
 	. = ..()
 // END - DO NOT EDIT PROTOTYPE
@@ -179,11 +177,13 @@
 	storage_slots = 1
 	foldable = null
 	w_class = ITEMSIZE_SMALL
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/clothing/under/swimsuit/)
 	has_items = list(/obj/item/clothing/under/swimsuit/fluff/penelope)
 
 // JackNoir413: Mor Xaina
+
+/obj/item/storage/box/fluff/penelope/hold_constraint()
+	var/list/holds = list(/obj/item/clothing/under/swimsuit/)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/box/fluff/morxaina
 	name = "Fashionable clothes set"
 	desc = "Set of custom-made, expensive attire elements."
@@ -246,9 +246,11 @@ Swimsuits, for general use, to avoid arriving to work with your swimsuit.
 	icon_state = "capsule"
 	foldable = null
 	w_class = ITEMSIZE_SMALL
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/clothing/under/swimsuit/)
 	has_items = list(/obj/item/clothing/under/swimsuit/black)
+
+/obj/item/storage/box/fluff/swimsuit/hold_constraint()
+	var/list/holds = list(/obj/item/clothing/under/swimsuit/)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/box/fluff/swimsuit/blue
 	name = "Blue Swimsuit capsule"

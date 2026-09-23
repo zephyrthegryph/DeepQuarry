@@ -12,7 +12,6 @@
 	item_state_slots = list(slot_r_hand_str = "tdomni", slot_l_hand_str = "tdomni")
 	blood_overlay_type = "armor"
 	body_parts_covered = UPPER_TORSO
-	allowed = list (/obj/item/gun/energy/lasertag)
 	siemens_coefficient = 3.0
 	description_fluff = "Laser tag armor can have its health and 'healing' time adjusted. Additionally, DonkSoft brand darts are compatible with laser tag vests, proving a projectile based alternative!"
 	description_antag = "Laser tag armor can be emagged, causing the user to not only have a heart attack when eliminated, but also take massive damage based on the amount of 'lives' the vest had."
@@ -28,6 +27,10 @@
 
 	///If we're emagged or not.
 	var/emagged
+
+/obj/item/clothing/suit/lasertag/suit_storage_constraint()
+	var/list/stores = list (/obj/item/gun/energy/lasertag)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/lasertag/emag_act(remaining_charges, mob/user, emag_source)
 	if(!emagged)
@@ -164,14 +167,20 @@
 	desc = "Blue Pride, Station Wide."
 	icon_state = "bluetag"
 	item_state_slots = list(slot_r_hand_str = "tdblue", slot_l_hand_str = "tdblue")
-	allowed = list (/obj/item/gun/energy/lasertag/blue)
+
+/obj/item/clothing/suit/lasertag/bluetag/suit_storage_constraint()
+	var/list/stores = list (/obj/item/gun/energy/lasertag/blue)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/lasertag/redtag
 	name = "red laser tag armor"
 	desc = "Reputed to go faster."
 	icon_state = "redtag"
 	item_state_slots = list(slot_r_hand_str = "tdred", slot_l_hand_str = "tdred")
-	allowed = list (/obj/item/gun/energy/lasertag/red)
+
+/obj/item/clothing/suit/lasertag/redtag/suit_storage_constraint()
+	var/list/stores = list (/obj/item/gun/energy/lasertag/red)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/lasertag/bluetag/sub
 	name = "Brigader Armor"
@@ -186,4 +195,7 @@
 /obj/item/clothing/suit/lasertag/omni
 	name = "universal laser tag armour"
 	desc = "Laser tag armor with no allegiance. For the true renegade, or a free for all."
-	allowed = list (/obj/item/gun/energy/lasertag/omni)
+
+/obj/item/clothing/suit/lasertag/omni/suit_storage_constraint()
+	var/list/stores = list (/obj/item/gun/energy/lasertag/omni)
+	return list(HOLD_ONLY(stores))

@@ -4,7 +4,10 @@
 	icon_state = "punpun"
 	worn_state = "punpun"
 	has_sensor = 0
-	species_restricted = list("Monkey")
+
+/obj/item/clothing/under/punpun/fit_constraint()
+	var/list/bodytypes = list("Monkey")
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /mob/living/carbon/human/monkey/punpun/Initialize(mapload)
 	. = ..()

@@ -141,7 +141,6 @@
 	name = "mass"
 	desc = "A helmet-shaped clump of nanomachines."
 	light_overlay = "should not use a light overlay"
-	species_restricted = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
 	sprite_sheets = list(
 		SPECIES_PROTEAN			 = 'icons/mob/head.dmi',
 		SPECIES_HUMAN			 = 'icons/mob/head.dmi',
@@ -188,11 +187,14 @@
 	icon_state = "nanomachine_rig"
 	//item_state = "nanomachine_rig"
 
+/obj/item/clothing/head/helmet/space/rig/protean/fit_constraint()
+	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/gloves/gauntlets/rig/protean
 	name = "mass"
 	desc = "Glove-shaped clusters of nanomachines."
 	siemens_coefficient= 0
-	species_restricted = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
 	sprite_sheets = list(
 		SPECIES_PROTEAN			 = 'icons/mob/hands.dmi',
 		SPECIES_HUMAN			 = 'icons/mob/hands.dmi',
@@ -238,10 +240,13 @@
 	icon_state = "nanomachine_rig"
 	//item_state = "nanomachine_rig"
 
+/obj/item/clothing/gloves/gauntlets/rig/protean/fit_constraint()
+	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/shoes/magboots/rig/protean
 	name = "mass"
 	desc = "Boot-shaped clusters of nanomachines."
-	species_restricted = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
 	sprite_sheets = list(
 		SPECIES_TESHARI 		 = 'icons/mob/species/teshari/feet.dmi',
 		SPECIES_VOX				 = 'icons/mob/species/vox/shoes.dmi',
@@ -253,12 +258,14 @@
 	icon_state = "nanomachine_rig"
 	//item_state = "nanomachine_rig"
 
+/obj/item/clothing/shoes/magboots/rig/protean/fit_constraint()
+	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/suit/space/rig/protean
 	name = "mass"
 	desc = "A body-hugging mass of nanomachines."
 	can_breach = 0
-	species_restricted = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
 	sprite_sheets = list(
 		SPECIES_TESHARI 		 = 'icons/mob/species/teshari/suit.dmi',
 		SPECIES_VOX				 = 'icons/mob/species/vox/suit.dmi',
@@ -272,6 +279,14 @@
 	//item_state = "nanomachine_rig"
 
 //Copy pasted most of this proc from base because I don't feel like rewriting the base proc with a shit load of exceptions
+
+/obj/item/clothing/suit/space/rig/protean/fit_constraint()
+	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/rig/protean/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
+	return list(HOLD_ONLY(stores))
 /obj/item/rig/protean/attackby(obj/item/W, mob/living/user)
 	if(!istype(user))
 		return 0

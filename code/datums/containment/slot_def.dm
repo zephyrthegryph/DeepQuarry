@@ -18,6 +18,10 @@
 	var/capacity = 0
 	/// /datum/predicate subtype the inserted thing must pass, or null for anything.
 	var/accepts
+	/// CONSTRAINT_* kind the holder declares for this slot (P3), such as
+	/// CONSTRAINT_HOLD for storage: checked after `accepts`, for holders whose
+	/// acceptance varies by type. Null for none.
+	var/holder_constraint
 	/// SLOT_DROP_*.
 	var/drop_policy = SLOT_DROP_SPILL
 	/// Legacy moves into the holder (forceMove, new(holder)) land in the
@@ -58,7 +62,7 @@
 /// The slot definitions a holder type declares, in order, or null. Cached per type.
 /proc/dq_slot_defs_for(atom/holder)
 	var/static/list/cache = list()
-	var/key = holder.type
+	var/key = holder.slot_def_key()
 	. = cache[key]
 	if(isnull(.))
 		var/list/defs = list()
@@ -69,9 +73,16 @@
 	return . || null
 
 /// Override on a holder type to declare its slots: a list of /datum/slot_def
-/// paths. Return a proc-local static list. Must depend on the type only.
+/// paths. Return a proc-local static list. The result must depend only on
+/// slot_def_key(), which is the holder's type unless overridden.
 /atom/proc/slot_def_types()
 	return null
+
+/// What a holder's slot set is cached by. Holders whose slots depend on more
+/// than their type (a mob's body plan) return a key covering that too, e.g.
+/// "[type]|[body.plan.type]"; slot_def_types() must then return the set for it.
+/atom/proc/slot_def_key()
+	return type
 
 /// The limit for this holder. Override for per-instance capacities.
 /datum/slot_def/proc/capacity_for(atom/holder)
@@ -92,10 +103,14 @@
 
 /// Why `thing` can't go in this slot on `holder`, not counting capacity, or null.
 /datum/slot_def/proc/refusal(atom/holder, atom/movable/thing, mob/actor)
-	if(!accepts)
-		return null
-	var/datum/predicate/P = dq_predicate(accepts)
-	return P.why_not(actor, thing, null)
+	if(accepts)
+		var/datum/predicate/P = dq_predicate(accepts)
+		. = P.why_not(actor, thing, null)
+		if(.)
+			return .
+	if(holder_constraint && isitem(holder))
+		return dq_constraint_refusal(holder, holder_constraint, thing, actor)
+	return null
 
 /// Why `thing` can't leave this slot on `holder`, or null. Default: it can.
 /datum/slot_def/proc/removal_refusal(atom/holder, atom/movable/thing, mob/actor)

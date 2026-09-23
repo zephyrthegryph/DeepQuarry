@@ -15,7 +15,7 @@
 	fire_sound = 'sound/weapons/grenade_launcher.ogg' // Formerly tablehit1.ogg but I like this better -Ace
 
 	var/fire_pressure									// Used in fire checks/pressure checks.
-	var/max_w_class = ITEMSIZE_NORMAL					// Hopper intake size.
+	var/hopper_size = ITEMSIZE_NORMAL					// Hopper intake size.
 	var/max_storage_space = ITEMSIZE_COST_NORMAL * 5	// Total internal storage size.
 	var/obj/item/tank/tank = null						// Tank of gas for use in firing the cannon.
 
@@ -31,7 +31,7 @@
 	. = ..()
 	item_storage = new(src)
 	item_storage.name = "hopper"
-	item_storage.max_w_class = max_w_class
+	item_storage.restrict_hold(null, hopper_size)
 	item_storage.max_storage_space = max_storage_space
 	item_storage.use_sound = null
 
@@ -76,8 +76,12 @@
 		tank = W
 		user.visible_message("[user] jams [W] into [src]'s valve and twists it closed.","You jam [W] into [src]'s valve and twist it closed.")
 		update_icon()
-	else if(istype(W) && item_storage.can_be_inserted(W))
-		item_storage.handle_item_insertion(W)
+	else if(istype(W))
+		var/refusal = item_storage.insert_refusal(W, user)
+		if(refusal)
+			item_storage.refuse_insert(W, user, refusal)
+		else
+			item_storage.handle_item_insertion(W)
 
 /obj/item/gun/launcher/pneumatic/attack_self(mob/user)
 	. = ..(user)

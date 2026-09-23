@@ -3,8 +3,11 @@
 	desc = "Sterilized equipment within. Do not contaminate."
 	icon = 'icons/obj/forensics.dmi'
 	icon_state = "dnakit"
-	can_hold = list(/obj/item/forensics/swab)
 	storage_slots = 14
+
+/obj/item/storage/box/swabs/hold_constraint()
+	var/list/holds = list(/obj/item/forensics/swab)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/swabs/Initialize(mapload)
 	. = ..()
@@ -15,7 +18,10 @@
 	name = "evidence bag box"
 	desc = "A box claiming to contain evidence bags."
 	storage_slots = 7
-	can_hold = list(/obj/item/evidencebag)
+
+/obj/item/storage/box/evidence/hold_constraint()
+	var/list/holds = list(/obj/item/evidencebag)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/evidence/Initialize(mapload)
 	. = ..()
@@ -27,8 +33,11 @@
 	desc = "Sterilized equipment within. Do not contaminate."
 	icon = 'icons/obj/forensics.dmi'
 	icon_state = "dnakit"
-	can_hold = list(/obj/item/sample/print)
 	storage_slots = 14
+
+/obj/item/storage/box/fingerprints/hold_constraint()
+	var/list/holds = list(/obj/item/sample/print)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/fingerprints/Initialize(mapload)
 	. = ..()

@@ -335,6 +335,7 @@
 #include "code\__defines\atmospherics_linda\atmos_piping.dm"
 #include "code\__defines\atmospherics_linda\reactions.dm"
 #include "code\__defines\predicates.dm"
+#include "code\__defines\constraints.dm"
 #include "code\__defines\properties.dm"
 #include "code\__defines\rules.dm"
 // Medical symptom/audience #defines — kept in the early defines block so
@@ -5150,8 +5151,14 @@
 #include "code\datums\components\sparse_vars\observer_events.dm"
 #include "code\datums\components\sparse_vars\update_on_z.dm"
 #include "code\datums\properties\aggregators.dm"
+#include "code\datums\properties\constraints.dm"
+#include "code\datums\properties\equip_slots.dm"
 #include "code\datums\properties\families\item_physical.dm"
+<<<<<<< HEAD
 #include "code\datums\properties\families\dynamic_state.dm"
+=======
+#include "code\datums\properties\families\wearable.dm"
+>>>>>>> origin/rewrite/p3
 #include "code\datums\properties\families\temperature_thresholds.dm"
 #include "code\datums\properties\predicates.dm"
 #include "code\datums\properties\property_def.dm"

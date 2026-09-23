@@ -18,7 +18,6 @@
 	gas_transfer_coefficient = 0.90
 	permeability_coefficient = 0.50
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher)
 	slowdown = 1.0
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	item_flags = 0
@@ -28,6 +27,10 @@
 	min_pressure_protection = 0.2 * ONE_ATMOSPHERE
 	max_pressure_protection = 20  * ONE_ATMOSPHERE
 	resistance_flags = FIRE_PROOF
+
+/obj/item/clothing/suit/fire/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/fire/firefighter
 	name = "firesuit"
@@ -76,12 +79,15 @@
 
 /obj/item/clothing/suit/bomb_suit/security
 	icon_state = "bombsuitsec"
-	allowed = list(POCKET_SECURITY)
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 
 /*
  * Radiation protection
  */
+
+/obj/item/clothing/suit/bomb_suit/security/suit_storage_constraint()
+	var/list/stores = list(POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/head/radiation
 	name = "Radiation hood"
 	icon_state = "rad"
@@ -104,11 +110,14 @@
 	gas_transfer_coefficient = 0.90
 	permeability_coefficient = 0.50
 	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation)
 	slowdown = 1.5
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 60, rad = 100)
 	flags_inv = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	item_flags = THICKMATERIAL
+
+/obj/item/clothing/suit/radiation/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/radiation/Initialize(mapload)
 	. = ..()
@@ -120,8 +129,11 @@
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_override = 'icons/inventory/suit/mob_teshari.dmi'
 	icon_state = "rad_fitted"
-	species_restricted = list(SPECIES_TESHARI)
 	slowdown = 0.5
+
+/obj/item/clothing/suit/radiation/teshari/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/head/radiation/teshari
 	name = "Small radiation hood"
@@ -129,7 +141,10 @@
 	icon = 'icons/inventory/head/item_teshari.dmi'
 	icon_override = 'icons/inventory/head/mob_teshari.dmi'
 	icon_state = "rad_fitted"
-	species_restricted = list(SPECIES_TESHARI)
+
+/obj/item/clothing/head/radiation/teshari/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 
 /obj/item/clothing/head/bomb_hood/security
@@ -145,8 +160,11 @@
 	blood_overlay_type = "coat"
 	body_parts_covered = UPPER_TORSO
 	flags_inv = HIDEHOLSTER
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+
+/obj/item/clothing/suit/storage/toggle/paramedic/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/radiation
 	sprite_sheets = list(

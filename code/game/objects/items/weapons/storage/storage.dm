@@ -16,14 +16,9 @@
 	show_messages = 1
 	MATERIAL_BULK(MAT_FIBERS, 50)
 
-	/// List of objects which this item can store (if set, it can't store anything else)
-	var/list/can_hold
-	/// List of objects which this item can't store (in effect only if can_hold isn't set)
-	var/list/cant_hold
 	/// List of mobs which are currently seeing the contents of this item's storage
 	var/list/is_seeing
 
-	var/max_w_class = ITEMSIZE_SMALL //Max size of objects that this object can store (in effect only if can_hold isn't set)
 	var/max_storage_space = ITEMSIZE_COST_SMALL * 4 //The sum of the storage costs of all the items in this storage item.
 	var/storage_slots = null //The number of storage slots in this container.  If null, it uses the volume-based storage instead.
 
@@ -440,60 +435,52 @@
 		src.slot_orient_objs(row_num, col_count, numbered_contents)
 	return
 
-//This proc return 1 if the item can be picked up and 0 if it can't.
-//Set the stop_messages to stop it from printing messages
-/obj/item/storage/proc/can_be_inserted(obj/item/W as obj, stop_messages = 0)
-	if(!istype(W)) return //Not an item
+/// What storage takes (constraints, rules.md §3): pocket-sized things unless a
+/// type says otherwise. Types override this; see HOLD_ONLY and HOLD_MAX_SIZE.
+/obj/item/storage/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
-	if(usr && usr.isEquipped(W) && !usr.canUnEquip(W))
-		return 0
-
-	if(src.loc == W)
-		return 0 //Means the item is already in the storage item
+/// Why `W` can't go in right now, or null if it can: the hold constraint
+/// (what this takes), then space and the stuck-item rules. `user` is the mover.
+/obj/item/storage/proc/insert_refusal(obj/item/W, mob/user)
+	if(!istype(W))
+		return "that can't go in a container"
+	if(user && user.isEquipped(W) && !user.canUnEquip(W))
+		return "you can't let go of \the [W]"
+	if(loc == W)
+		return "\the [src] is inside \the [W]"
 	if(storage_slots != null && contents.len >= storage_slots)
-		if(!stop_messages)
-			to_chat(usr, span_notice("[src] is full, make some space."))
-		return 0 //Storage item is full
-
-	if(LAZYLEN(can_hold) && !is_type_in_list(W, can_hold))
-		if(!stop_messages)
-			if (istype(W, /obj/item/hand_labeler))
-				return 0
-			to_chat(usr, span_notice("[src] cannot hold [W]."))
-		return 0
-
-	if(LAZYLEN(cant_hold) && is_type_in_list(W, cant_hold))
-		if(!stop_messages)
-			to_chat(usr, span_notice("[src] cannot hold [W]."))
-		return 0
-
-	if (max_w_class != null && W.w_class > max_w_class)
-		if(!stop_messages)
-			to_chat(usr, span_notice("[W] is too long for \the [src]."))
-		return 0
-
+		return "\the [src] is full"
+	. = dq_constraint_refusal(src, CONSTRAINT_HOLD, W, user)
+	if(.)
+		return .
 	var/total_storage_space = W.get_storage_cost()
 	for(var/obj/item/I in contents)
-		total_storage_space += I.get_storage_cost() //Adds up the combined w_classes which will be in the storage item if the item is added to it.
-
+		total_storage_space += I.get_storage_cost()
 	if(total_storage_space > max_storage_space)
-		if(!stop_messages)
-			to_chat(usr, span_notice("[src] is too full, make some space."))
-		return 0
+		return "\the [src] is too full"
+	if(W.w_class >= w_class && istype(W, /obj/item/storage))
+		return "it's a container as big as \the [src]"
+	if(HAS_TRAIT(W, TRAIT_NODROP))
+		return "\the [W] is stuck to your hand"
+	return null
 
-	if(W.w_class >= src.w_class && (istype(W, /obj/item/storage)))
-		if(!stop_messages)
-			to_chat(usr, span_notice("[src] cannot hold [W] as it's a storage item of the same size."))
-		return 0 //To prevent the stacking of same sized storage items.
-	// Getting around to proper object flags
-	if(HAS_TRAIT(W, TRAIT_NODROP)) //SHOULD be handled in unEquip, but better safe than sorry.
-		if(!stop_messages)
-			to_chat(usr, span_warning("\the [W] is stuck to your hand, you can't put it in \the [src]!"))
-		return FALSE
+/// Tell `user` why `W` didn't go in.
+/obj/item/storage/proc/refuse_insert(obj/item/W, mob/user, reason)
+	if(!user || !reason || istype(W, /obj/item/hand_labeler))
+		return
+	to_chat(user, span_notice("\The [W] won't go in \the [src]: [reason]."))
 
-	return 1
+/// Legacy entry point, kept only for mob inventory code (C3 moves those callers
+/// onto slots): /mob/living/proc/equip_to_storage and friends in
+/// code/modules/mob/living/inventory.dm, human/inventory.dm and protean_rig.dm.
+/obj/item/storage/proc/can_be_inserted(obj/item/W, stop_messages = FALSE)
+	var/reason = insert_refusal(W, usr)
+	if(reason && !stop_messages)
+		refuse_insert(W, usr, reason)
+	return !reason
 
-//This proc handles items being inserted. It does not perform any checks of whether an item can or can't be inserted. That's done by can_be_inserted()
+//This proc handles items being inserted. It does not perform any checks of whether an item can or can't be inserted. That's done by insert_refusal()
 //The stop_warning parameter will stop the insertion message from being displayed. It is intended for cases where you are inserting multiple items at once,
 //such as when picking up all the items on a tile with one click.
 /obj/item/storage/proc/handle_item_insertion(obj/item/W as obj, prevent_warning = 0)
@@ -599,7 +586,9 @@
 			to_chat(user, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
 			return
 
-	if(!can_be_inserted(W))
+	var/refusal = insert_refusal(W, user)
+	if(refusal)
+		refuse_insert(W, user, refusal)
 		return
 
 	if(istype(W, /obj/item/tray))
@@ -648,8 +637,10 @@
 	for(var/obj/item/I in T)
 		if(I.type in rejections) // To limit bag spamming: any given type only complains once
 			continue
-		if(!can_be_inserted(I, user))	// Note can_be_inserted still makes noise when the answer is no
-			rejections += I.type	// therefore full bags are still a little spammy
+		var/refusal = insert_refusal(I, user)
+		if(refusal)
+			refuse_insert(I, user, refusal) // one complaint per type
+			rejections += I.type
 			failure = 1
 			continue
 		success = 1
@@ -777,14 +768,14 @@
 /obj/item/storage/proc/make_exact_fit()
 	storage_slots = contents.len
 
-	LAZYCLEARLIST(can_hold)
-	can_hold = list()
-	max_w_class = 0
+	var/list/types = list()
+	var/max_size = 0
 	max_storage_space = 0
 	for(var/obj/item/I in src)
-		can_hold[I.type]++
-		max_w_class = max(I.w_class, max_w_class)
+		types |= I.type
+		max_size = max(I.w_class, max_size)
 		max_storage_space += I.get_storage_cost()
+	restrict_hold(types, max_size)
 
 /*
  * Trinket Box - READDING SOON
@@ -796,14 +787,17 @@
 	icon_state = "trinketbox"
 	var/open = 0
 	storage_slots = 1
-	can_hold = list(
+	var/open_state
+	var/closed_state
+	special_handling = TRUE
+
+/obj/item/storage/trinketbox/hold_constraint()
+	var/list/holds = list(
 		/obj/item/clothing/accessory/ring,
 		/obj/item/coin,
 		/obj/item/clothing/accessory/medal
 		)
-	var/open_state
-	var/closed_state
-	special_handling = TRUE
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/trinketbox/update_icon()
 	cut_overlays()
@@ -904,7 +898,7 @@
 	else        // Other creatures not accepted at this time
 		qdel(D) // If there's a better way to check the size of a
 		return  // mob's holder and if it fits, replace this slab
-	if(!src.can_be_inserted(D, 1)) // If the dummy item doesn't fit, exit
+	if(insert_refusal(D, user)) // If the dummy item doesn't fit, exit
 		qdel(D)
 		return
 	qdel(D)

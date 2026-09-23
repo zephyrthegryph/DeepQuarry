@@ -115,7 +115,11 @@
 	item_state = "syringe_kit"
 	storage_slots = 7
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/pickaxe/brush,
+	max_storage_space = ITEMSIZE_COST_SMALL * 9
+	use_to_pickup = TRUE
+
+/obj/item/storage/excavation/hold_constraint()
+	var/list/holds = list(/obj/item/pickaxe/brush,
 	/obj/item/pickaxe/one_pick,
 	/obj/item/pickaxe/two_pick,
 	/obj/item/pickaxe/three_pick,
@@ -123,9 +127,7 @@
 	/obj/item/pickaxe/five_pick,
 	/obj/item/pickaxe/six_pick,
 	/obj/item/pickaxe/hand)
-	max_storage_space = ITEMSIZE_COST_SMALL * 9
-	max_w_class = ITEMSIZE_SMALL
-	use_to_pickup = TRUE
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/excavation/Initialize(mapload)
 	. = ..()
