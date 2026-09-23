@@ -148,7 +148,7 @@
 			bp.disinfect()
 		for(var/obj/item/organ/internal/I in H.internal_organs) //other wise their organs stay mush
 			H.mend(TREAT_RESTORATION, I.max_damage, I)
-			I.status = 0
+			I.restore_status()
 			if(I.organ_tag == O_EYES)
 				H.sdisabilities &= ~BLIND
 			if(I.organ_tag == O_LUNGS)

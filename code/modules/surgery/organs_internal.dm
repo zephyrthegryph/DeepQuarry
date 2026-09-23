@@ -92,6 +92,10 @@
 				// claim to repair.
 				if(dq_permitted && !dq_permitted[I.organ_tag])
 					continue
+				if(I.is_beyond_repair())
+					to_chat(user, span_warning("[target]'s [I.name] is dead and beyond surgical repair; [target.p_they()] must be resleeved."))
+					user.balloon_alert(user, "	he [I.name] is dead, resleeving required")
+					continue
 				user.visible_message(span_notice("[user] treats damage to [target]'s [I.name] with [tool_name]."), \
 				span_notice("You treat damage to [target]'s [I.name] with [tool_name].") )
 				user.balloon_alert_visible("starts treating damage to [target]'s [I.name]", "treating damage to \the [I.name]")
@@ -100,7 +104,7 @@
 					user.balloon_alert(user, "fixed \the [I], neurological structure still in neeed of repair.")
 				I.germ_level = 0
 				target.surgically_repair_organ(I)
-				I.status = 0
+				I.restore_status()
 				if(I.organ_tag == O_EYES)
 					target.sdisabilities &= ~BLIND
 				if(I.organ_tag == O_LUNGS)

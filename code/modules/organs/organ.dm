@@ -572,6 +572,9 @@
 	var/obj/item/reagent_containers/container = W
 	if(istype(container))
 		if(container.reagents.has_reagent(REAGENT_ID_PERIDAXON, 5))
+			if(is_beyond_repair())
+				to_chat(user, span_warning("\The [src] is dead beyond any revival."))
+				return
 			status &= ~ORGAN_DEAD
 			var/obj/item/organ/internal/internal_organ = src
 			if(istype(internal_organ))
