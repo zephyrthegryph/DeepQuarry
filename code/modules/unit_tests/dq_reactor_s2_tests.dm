@@ -4,8 +4,6 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-#include "../combat_ai/_defines.dm"
-
 /datum/unit_test/dq_s2_wake_power_monitor
 
 /datum/unit_test/dq_s2_wake_power_monitor/Run()
