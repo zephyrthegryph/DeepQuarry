@@ -221,7 +221,7 @@
 		return
 
 	var/obj/item/clothing/ears/O
-	if(slot_flags & SLOT_TWOEARS )
+	if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
 		O = (H.l_ear == src ? H.r_ear : H.l_ear)
 		user.u_equip(O)
 		if(!istype(src,/obj/item/clothing/ears/offear))
@@ -248,7 +248,7 @@
 	if(ishuman(usr))
 		var/mob/living/carbon/human/H = usr
 		// If this covers both ears, we want to return the result of unequipping the primary object, and kill the off-ear one
-		if(slot_flags & SLOT_TWOEARS)
+		if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
 			var/obj/item/clothing/ears/O = (H.l_ear == src ? H.r_ear : H.l_ear)
 			if(istype(src, /obj/item/clothing/ears/offear))
 				. = O.MouseDrop(over_object)

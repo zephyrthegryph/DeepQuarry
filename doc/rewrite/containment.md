@@ -62,7 +62,7 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
   - an exposure;
   - a capacity model: none, count, size class, mass, or custom units through `cost()`;
   - `capacity_for(holder)`, which gives the capacity per instance;
-  - an `accepts` predicate;
+  - an `accepts` predicate, plus an optional `holder_constraint` (P3): a `CONSTRAINT_*` kind read from the holder, for holders whose acceptance varies by type ([rules.md §3.1](rules.md#31-as-built-p3));
   - a drop policy: spill, delete, or transfer.
   The ledger itself (`/datum/ledger`) is created the first time the holder is used, so a closet nobody touches has none.
 - **Drop policies.** `/atom/movable/Destroy()` calls `ledger_apply_drop_policies()` before anything else.

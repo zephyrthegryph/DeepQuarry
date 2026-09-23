@@ -62,6 +62,25 @@ The ledger's `can_insert` (both sides), equipping and interaction availability a
 
 Tags replace most of the type lists: an item declares `suit_storable`, and a suit's storage slot accepts that tag.
 
+### 3.1 As built (P3)
+
+The code is in `code/datums/properties/constraints.dm` (API), `code/datums/properties/equip_slots.dm` (equip slots) and `code/datums/properties/families/wearable.dm` (tags). Defines are in `code/__defines/constraints.dm`.
+
+- **Declaring.** An item type overrides a proc and returns a spec (a list of `REQ_*` clauses), or null for none. The proc runs once per type and the spec is compiled and cached by type:
+  - `hold_constraint()`: what a holder takes (storage, holsters). `HOLD_ONLY(types)`, `HOLD_NOT(types)` and `HOLD_MAX_SIZE(size)` are shorthands.
+  - `suit_storage_constraint()`: what a worn suit's suit-storage slot takes. Null means no suit storage. PDAs and pens always fit a suit that has one.
+  - `fit_constraint()`: whose body the item fits, with `REQ_FITS_BODYTYPES(list)` (the old `species_restricted` rules, include or `"exclude"` form, and the Teshari and Werebeast sprite rule).
+  - `equip_constraint()`: what the item needs of its wearer in any slot (taur halves, a robotic head, not wielded, owner-only fluff items).
+- **New clauses.** `REQ_TYPE(subject, types)` compiles a typecache; `REQ_FITS_BODYTYPES` evaluates the fit rule against `PRED_ACTOR`.
+- **Instances.** `set_constraint(kind, spec, key)` installs a compiled override on one instance: `restrict_hold()` (exact-fit boxes, internal pockets, random xenoarch boxes), `restrict_fit()` (refits, paint kits), `adopt_constraint()` (a rig's chest piece takes the rig's suit storage).
+- **Reading.** `dq_constraint(I, kind)` gives the compiled predicate, and `dq_constraint_refusal(I, kind, thing, actor)` the reason.
+  - `storage.insert_refusal(W, user)` is the hold constraint, then space and stuck items. It replaced `can_be_inserted()`.
+  - `item.equip_refusal(M, slot, ...)` checks that the species has the slot, the slot's predicate, that the slot is free (unless `TAG_WEAR_OVER`) and reachable, then `CONSTRAINT_FIT` (except in pockets and suit storage) and `CONSTRAINT_EQUIP`. It replaced `mob_can_equip()` and its 27 overrides.
+- **Equip slots.** Each slot has a `/datum/predicate/equip_slot` subtype, with the wearer as `PRED_ACTOR` and the item as `PRED_TARGET`. The `slot_flags` checks became wearable tags (`TAG_WEAR_HEAD`, `TAG_POCKETABLE`, `TAG_NO_POCKET`, `TAG_HOLSTERABLE`, …) that read the instance's current `slot_flags`. Slot rules are proc clauses: pockets and IDs need a jumpsuit, suit storage asks the worn suit, the backpack slot asks the backpack, gloves layer, and two-ear items need both ears.
+- **Slots.** `slot_def.holder_constraint` names a `CONSTRAINT_*` kind that `refusal()` reads from the holder after `accepts`. A C4 storage slot sets `holder_constraint = CONSTRAINT_HOLD`, and a C3 equip slot uses the matching `equip_slot` predicate as `accepts`.
+- **Parity.** `code/modules/unit_tests/data/dq_constraint_parity.json` holds the legacy answers, captured before the conversion: every storage type × 824 items, every suit with storage × 824 items, 17 holsters, and 4,734 equip items × 22 slots × naked and dressed for a human, plus the species-sensitive items for 38 species. That is 3.2 million cells, and `dq_constraint_parity/*` requires every cell to match.
+- **Left as they were.** The champion belt's legacy list named its mask as a string, so it has never held anything, and it still doesn't. Robot grippers keep their own `can_hold` (robot modules move with C3).
+
 ## 4. Rules
 
 **Rule = trigger + condition + effect.**

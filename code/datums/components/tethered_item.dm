@@ -113,9 +113,9 @@
 	var/mob/M = host_item.loc
 	if(!istype(M))
 		return FALSE
-	if((host_item.slot_flags & SLOT_BACK) && M.get_equipped_item(slot_back) == host_item)
+	if(HAS_TAG(host_item, TAG_WEAR_BACK) && M.get_equipped_item(slot_back) == host_item)
 		return TRUE
-	if((host_item.slot_flags & SLOT_BELT) && M.get_equipped_item(slot_belt) == host_item)
+	if(HAS_TAG(host_item, TAG_WEAR_BELT) && M.get_equipped_item(slot_belt) == host_item)
 		return TRUE
 	if(M.get_equipped_item(slot_s_store) == host_item) // There is no flag for this, just a whitelist on the suits themselves
 		return TRUE
