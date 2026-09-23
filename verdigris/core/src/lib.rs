@@ -8,10 +8,17 @@
 pub mod alloc;
 pub mod arena;
 pub mod bitset;
+pub mod command;
+pub mod cow;
+pub mod frame;
 pub mod grid;
 pub mod handle;
 pub mod intern;
+pub mod mailbox;
+pub mod overlay;
+pub mod owner;
 pub mod rng;
+pub mod sim;
 pub mod thermo;
 pub mod units;
 
