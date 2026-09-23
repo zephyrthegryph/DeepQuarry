@@ -235,7 +235,7 @@
 	brainmob.soulcatcher = src
 	brainmob.container = src
 	brainmob.stat = 0
-	brainmob.silent = FALSE
+	brainmob.SetSilent(FALSE)
 	GLOB.dead_mob_list -= brainmob
 	brainmob.add_language(LANGUAGE_GALCOM)
 	brainmobs |= brainmob
@@ -343,20 +343,20 @@
 	//If they're blinded
 	if(self.soulcatcher) // needs it's own handling to allow vore_fx
 		if(self.ext_blind)
-			self.eye_blind = 5
+			self.SetBlinded(5)
 			self.client.screen.Remove(GLOB.global_hud.whitense)
 			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			self.eye_blind = 0
+			self.SetBlinded(0)
 			self.clear_fullscreens()
 			self.client.screen.Add(GLOB.global_hud.whitense)
 
 	//If they're deaf
 	if(self.ext_deaf)
-		self.ear_deaf = 5
+		self.SetDeaf(5)
 		self.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
 	else
-		self.ear_deaf = 0
+		self.SetDeaf(0)
 		self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
 
 /mob/living/carbon/brain/caught_soul/hear_say()
@@ -382,21 +382,21 @@
 		return ..(direction)
 
 /mob/living/carbon/brain/caught_soul/me_verb_subtle(message as message)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	soulcatcher.emote_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/whisper(message as text)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	soulcatcher.say_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/say(message, datum/language/speaking = null, whispering = 0)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	soulcatcher.say_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/emote(act,m_type=1,message = null)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	if (act == "me")
-		if(silent)
+		if(get_silent())
 			return
 		if (src.client)
 			if (client.prefs.muted & MUTE_IC)
@@ -411,7 +411,7 @@
 		return FALSE
 
 /mob/living/carbon/brain/caught_soul/custom_emote(m_type, message)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	soulcatcher.emote_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/resist()

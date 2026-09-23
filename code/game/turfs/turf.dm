@@ -225,7 +225,7 @@
 		return
 	if(istype(O, /atom/movable/screen))
 		return
-	if(user.restrained() || user.stat || user.stunned || user.paralysis || (!user.lying && !isrobot(user)) || LAZYLEN(user.grabbed_by) || user.is_paralyzed())
+	if(user.restrained() || user.stat || user.get_stunned() || user.get_paralysis() || (!user.lying && !isrobot(user)) || LAZYLEN(user.grabbed_by) || user.is_paralyzed())
 		return
 	if((!(istype(O, /atom/movable)) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O)))
 		return
@@ -233,7 +233,7 @@
 		return
 	if(isanimal(user) && O != user)
 		return
-	if (do_after(user, 25 + (5 * user.weakened), target = O) && !(user.stat))
+	if (do_after(user, 25 + (5 * user.get_weakened()), target = O) && !(user.stat))
 		step_towards(O, src)
 		if(ismob(O))
 			animate(O, transform = turn(O.transform, 20), time = 2)

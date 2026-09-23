@@ -178,7 +178,7 @@
 			if(check.stat == CONSCIOUS)
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
-			else if (!check.eye_blind)
+			else if (!check.get_eye_blind())
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
 	for(var/atom/T in view(world.view, target_turf))	//Is anyone at our target?
@@ -187,7 +187,7 @@
 			if(check.stat == CONSCIOUS)
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
-			else if (!check.eye_blind)
+			else if (!check.get_eye_blind())
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
 	forceMove(target_turf)

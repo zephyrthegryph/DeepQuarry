@@ -109,7 +109,7 @@
 	var/strength = 10 // This is, essentially, units between stages - the lower, the stronger. Less fine tuning, more clarity.
 	var/toxicity = 1
 
-	var/druggy = 0
+	var/drug_intensity = 0
 	var/adj_temp = 0
 	var/targ_temp = BODYTEMP_NORMAL
 	var/halluci = 0
@@ -160,19 +160,19 @@
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
 			M.make_dizzy(18) // It is decreased at the speed of 3 per tick
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 2) // Slurring
-			M.slurring = max(M.slurring, 90)
+			M.Slur(90)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 3) // Confusion - walking in random directions
 			M.Confuse(60)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 4) // Blurry vision
-			M.eye_blurry = max(M.eye_blurry, 30)
+			M.Blur(30)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 5) // Drowsyness - periodically falling asleep
-			M.drowsyness = max(M.drowsyness, 60)
+			M.Drowse(60)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 7) // Pass out
 			M.Paralyse(60)
 			M.Sleeping(90)
 
-		if(druggy != 0)
-			M.druggy = max(M.druggy, druggy*3)
+		if(drug_intensity != 0)
+			M.Drug(drug_intensity*3)
 
 		if(adj_temp > 0 && M.bodytemperature < targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -203,19 +203,19 @@
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
 			M.make_dizzy(6) // It is decreased at the speed of 3 per tick
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 2) // Slurring
-			M.slurring = max(M.slurring, 30)
+			M.Slur(30)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 3) // Confusion - walking in random directions
 			M.Confuse(20)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 4) // Blurry vision
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.Blur(10)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 5) // Drowsyness - periodically falling asleep
-			M.drowsyness = max(M.drowsyness, 20)
+			M.Drowse(20)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 7) // Pass out
 			M.Paralyse(20)
 			M.Sleeping(30)
 
-		if(druggy != 0)
-			M.druggy = max(M.druggy, druggy)
+		if(drug_intensity != 0)
+			M.Drug(drug_intensity)
 
 		if(halluci)
 			M.hallucination = max(M.hallucination, halluci)
@@ -677,14 +677,14 @@
 			if(effective_dose == metabolism * 2 || prob(5))
 				M.emote("yawn")
 		else if(effective_dose < 5)
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.Blur(10)
 		else if(effective_dose < 20)
 			if(prob(50))
 				M.Weaken(2)
-			M.drowsyness = max(M.drowsyness, 20)
+			M.Drowse(20)
 		else
 			M.Sleeping(20)
-			M.drowsyness = max(M.drowsyness, 60)
+			M.Drowse(60)
 
 /datum/reagent/sulfur
 	name = REAGENT_SULFUR

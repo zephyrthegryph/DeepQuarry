@@ -35,7 +35,7 @@
 	if((living_guy.nutrition < nutrition_danger) && prob(25))
 		living_guy.hallucination = min(30,living_guy.hallucination+8)
 	if((living_guy.nutrition < nutrition_critical) && prob(5))
-		living_guy.drowsyness = min(100,living_guy.drowsyness+30)
+		living_guy.SetDrowsyness(min(100,living_guy.get_drowsyness()+30))
 
 /// Trait system: low blood sugar. Was a COMSIG_LIVING_LIFE listener.
 /datum/life_system/trait/diabetic

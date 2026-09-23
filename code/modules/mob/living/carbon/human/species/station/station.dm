@@ -1587,13 +1587,13 @@
 		var/coldshock = 0
 		if(H.bodytemperature <= 260 && H.bodytemperature >= 200) //Chilly.
 			coldshock = 4 //This will begin to knock them out until they run out of oxygen and suffocate or until someone finds them.
-			H.eye_blurry = 5 //Blurry vision in the cold.
+			H.SetBlurry(5) //Blurry vision in the cold.
 		if(H.bodytemperature <= 199 && H.bodytemperature >= 100) //Extremely cold. Even in somewhere like the server room it takes a while for bodytemp to drop this low.
 			coldshock = 8
-			H.eye_blurry = 5
+			H.SetBlurry(5)
 		if(H.bodytemperature <= 99) //Insanely cold.
 			coldshock = 16
-			H.eye_blurry = 5
+			H.SetBlurry(5)
 		H.shock_stage = min(H.shock_stage + coldshock, 160) //cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage.
 	..()
 
@@ -1758,7 +1758,7 @@
 	var/temp_diff = body_temperature - H.bodytemperature
 	if(temp_diff >= 50)
 		H.shock_stage = min(H.shock_stage + (temp_diff/20), 160) // Divided by 20 is the same as previous numbers, but a full scale
-		H.eye_blurry = max(5,H.eye_blurry)
+		H.Blur(5)
 	..()
 
 /datum/species/xenochimera/get_race_key()

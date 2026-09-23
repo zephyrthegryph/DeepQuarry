@@ -198,144 +198,6 @@
 	return temperature
 
 
-/// Scale a stun / weaken / paralysis / sleep / confusion / blindness duration
-/// by BF_DISABLE_DURATION (0 = immune).
-/mob/living/proc/scale_disable_duration(amount)
-	var/scale = factor(BF_DISABLE_DURATION)
-	return scale == 1 ? amount : round(amount * scale)
-
-/mob/living/Stun(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(stunned > 0)
-		add_status_indicator("stunned")
-
-/mob/living/SetStunned(amount, ignore_canstun = FALSE)
-	..()
-	if(stunned <= 0)
-		remove_status_indicator("stunned")
-	else
-		add_status_indicator("stunned")
-
-/mob/living/AdjustStunned(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(stunned <= 0)
-		remove_status_indicator("stunned")
-	else
-		add_status_indicator("stunned")
-
-/mob/living/Weaken(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(weakened > 0)
-		add_status_indicator("weakened")
-
-/mob/living/SetWeakened(amount, ignore_canstun = FALSE)
-	..()
-	if(weakened <= 0)
-		remove_status_indicator("weakened")
-	else
-		add_status_indicator("weakened")
-
-/mob/living/AdjustWeakened(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(weakened <= 0)
-		remove_status_indicator("weakened")
-	else
-		add_status_indicator("weakened")
-
-/mob/living/Paralyse(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(paralysis > 0)
-		add_status_indicator("paralysis")
-
-/mob/living/SetParalysis(amount, ignore_canstun = FALSE)
-	..()
-	if(paralysis <= 0)
-		remove_status_indicator("paralysis")
-	else
-		add_status_indicator("paralysis")
-
-/mob/living/AdjustParalysis(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(paralysis <= 0)
-		remove_status_indicator("paralysis")
-	else
-		add_status_indicator("paralysis")
-
-/mob/living/Sleeping(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(sleeping > 0)
-		add_status_indicator("sleeping")
-
-/mob/living/SetSleeping(amount, ignore_canstun = FALSE)
-	..()
-	if(sleeping <= 0)
-		remove_status_indicator("sleeping")
-	else
-		add_status_indicator("sleeping")
-
-/mob/living/AdjustSleeping(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(sleeping <= 0)
-		remove_status_indicator("sleeping")
-	else
-		add_status_indicator("sleeping")
-
-/mob/living/Confuse(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(confused > 0)
-		add_status_indicator("confused")
-
-/mob/living/SetConfused(amount, ignore_canstun = FALSE)
-	..()
-	if(confused <= 0)
-		remove_status_indicator("confused")
-	else
-		add_status_indicator("confused")
-
-/mob/living/AdjustConfused(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(confused <= 0)
-		remove_status_indicator("confused")
-	else
-		add_status_indicator("confused")
-
-/mob/living/Blind(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(eye_blind > 0)
-		add_status_indicator("blinded")
-
-/mob/living/SetBlinded(amount, ignore_canstun = FALSE)
-	..()
-	if(eye_blind <= 0)
-		remove_status_indicator("blinded")
-	else
-		add_status_indicator("blinded")
-
-/mob/living/AdjustBlinded(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(eye_blind <= 0)
-		remove_status_indicator("blinded")
-	else
-		add_status_indicator("blinded")
-
 // ++++ROCKDTBEN++++ MOB PROCS //END
 
 /mob/proc/get_contents()
@@ -408,9 +270,9 @@
 
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_LEGCUFFED))
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	mark_hud_dirty(HEALTH_HUD)
+	mark_hud_dirty(STATUS_HUD)
+	mark_hud_dirty(LIFE_HUD)
 	if(ai_brain) // AI gets told to sleep when killed. Since they're not dead anymore, wake it up.
 		ai_brain.go_wake()
 
@@ -446,8 +308,9 @@
 	// fix blindness and deafness
 	blinded = 0
 	SetBlinded(0)
-	eye_blurry = 0
-	ear_deaf = 0
+	SetBlurry(0)
+	SetDeaf(0)
+	update_blinded()
 	ear_damage = 0
 
 	// fix all of our organs
@@ -466,9 +329,9 @@
 	// make the icons look correct
 	regenerate_icons()
 
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	mark_hud_dirty(HEALTH_HUD)
+	mark_hud_dirty(STATUS_HUD)
+	mark_hud_dirty(LIFE_HUD)
 
 	failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
 	reload_fullscreen()
@@ -507,7 +370,7 @@
 	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (last_resist_time + RESIST_COOLDOWN < world.time))
 		last_resist_time = world.time
 		resist_grab()
-		if(!weakened)
+		if(!get_weakened())
 			process_resist()
 		else if(absorbed && isbelly(loc))			// Allow absorbed resistance
 			var/obj/belly/B = loc
@@ -637,19 +500,16 @@
 //damage/heal the mob ears and adjust the deaf amount
 /mob/living/adjustEarDamage(damage, deaf)
 	ear_damage = max(0, ear_damage + damage)
-	ear_deaf = max(0, ear_deaf + deaf)
-	if(ear_deaf > 0)
-		deaf_loop.start() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
-	else if(ear_deaf <= 0)
-		deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
+	AdjustDeaf(deaf)
+	life_wake(LIFE_SYS_GENETICS | LIFE_SYS_SENSES, "ear damage")
 
 //pass a negative argument to skip one of the variable
 /mob/living/setEarDamage(damage, deaf)
 	if(damage >= 0)
 		ear_damage = damage
 	if(deaf >= 0)
-		ear_deaf = deaf
-		deaf_loop.start()
+		SetDeaf(deaf)
+	life_wake(LIFE_SYS_GENETICS | LIFE_SYS_SENSES, "ear damage")
 
 /mob/living/proc/vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 	if(!lastpuke)
@@ -1056,13 +916,13 @@
 /mob/living/get_sound_env(spot, pressure_factor)
 	if (hallucination)
 		return SOUND_ENVIRONMENT_PSYCHOTIC
-	else if (druggy)
+	else if (get_druggy())
 		return SOUND_ENVIRONMENT_DRUGGED
-	else if (drowsyness)
+	else if (get_drowsyness())
 		return SOUND_ENVIRONMENT_DIZZY
-	else if (confused)
+	else if (get_confused())
 		return SOUND_ENVIRONMENT_DIZZY
-	else if (sleeping)
+	else if (get_sleeping())
 		return SOUND_ENVIRONMENT_UNDERWATER
 	else
 		return ..()
@@ -1088,7 +948,7 @@
 
 
 /mob/living/proc/has_vision()
-	return !(eye_blind || (disabilities & BLIND) || stat || blinded)
+	return !(get_eye_blind() || (disabilities & BLIND) || stat || blinded)
 
 
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
@@ -1098,7 +958,24 @@
 	return !isSynthetic()
 
 /mob/living/proc/adjust_nutrition(amount)
+	var/before = nutrition
 	nutrition = between(0, nutrition + amount, max_nutrition)
+	// The nutrition alert, weight change and digestion noises follow bands: wake them when
+	// one is crossed.
+	if(nutrition_band(before) != nutrition_band(nutrition))
+		life_wake(LIFE_SYS_HUD | LIFE_SYS_NUTRITION | LIFE_SYS_METABOLISM, "nutrition band")
+
+/// The band of a nutrition value: starving, hungry, fed, fattening, overfull.
+/proc/nutrition_band(value)
+	if(value <= MAX_NUTRITION_TO_LOSE)
+		return 0
+	if(value < 250)
+		return 1
+	if(value <= MIN_NUTRITION_TO_GAIN)
+		return 2
+	if(value <= 500)
+		return 3
+	return 4
 
 /mob/living/proc/nutrition_percent()
 	return 100 * nutrition / max_nutrition

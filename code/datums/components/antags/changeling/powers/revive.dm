@@ -57,9 +57,9 @@
 				current_limb.relocate()
 				current_limb.open = 0
 
-		BITSET(H.hud_updateflag, HEALTH_HUD)
-		BITSET(H.hud_updateflag, STATUS_HUD)
-		BITSET(H.hud_updateflag, LIFE_HUD)
+		H.mark_hud_dirty(HEALTH_HUD)
+		H.mark_hud_dirty(STATUS_HUD)
+		H.mark_hud_dirty(LIFE_HUD)
 
 		if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_HANDCUFFED), H.loc)

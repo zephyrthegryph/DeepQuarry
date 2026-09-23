@@ -3,14 +3,14 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 		if(!L.is_incorporeal())
-			if(buckled != AM && (((confused || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying && flight_vore))
+			if(buckled != AM && (((get_confused() || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying && flight_vore))
 				AM.stumble_into(src)
 	return ..()
 // Because flips toggle density
 /mob/living/Crossed(atom/movable/AM)
 	if(isliving(AM) && isturf(loc) && AM != src)
 		var/mob/living/AMV = AM
-		if(AMV.buckled != src && (((AMV.confused || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || AMV.flying && AMV.flight_vore))
+		if(AMV.buckled != src && (((AMV.get_confused() || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || AMV.flying && AMV.flight_vore))
 			INVOKE_ASYNC(src,TYPE_PROC_REF(/atom/movable, stumble_into), AMV)
 	..()
 

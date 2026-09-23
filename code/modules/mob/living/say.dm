@@ -107,11 +107,11 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			verb = pick("yells","roars","hollers")
 			whispering = 0
 			. = 1
-		if(slurring)
+		if(get_slurring())
 			S.message = slur(S.message)
 			verb = pick("slobbers","slurs")
 			. = 1
-		if(stuttering)
+		if(get_stuttering())
 			S.message = stutter(S.message)
 			verb = pick("stammers","stutters")
 			. = 1
@@ -220,9 +220,11 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		to_chat(src, span_danger("You're muzzled and cannot speak!"))
 		return
 
-	// A closed airway or failing lungs leave no breath to speak with.
+	// A closed airway or failing lungs leave no breath to speak with. Silence blocks speech
+	// the same way, without a word.
 	if(action_blocked(ACTION_BLOCK_SPEECH))
-		to_chat(src, span_danger("You can't get enough breath to speak!"))
+		if(!get_silent())
+			to_chat(src, span_danger("You can't get enough breath to speak!"))
 		return
 
 	//Whisper vars

@@ -69,7 +69,7 @@ Bonus
 				H.emote("twitch")
 				to_chat(H, span_notice("[pick("You feel energetic!", "You feel well-rested.", "You feel great!")]"))
 		if(4 to 5)
-			H.drowsyness = max(0, H.drowsyness - 10 * power)
+			H.AdjustDrowsyness(-(10 * power))
 			H.AdjustSleeping(-10 * power)
 			H.AdjustStunned(-10 * power)
 			H.emote("twitch")

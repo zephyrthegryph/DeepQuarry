@@ -585,7 +585,7 @@
 
 /obj/item/organ/internal/malignant/parasite/gethigh/feed()
 	..()
-	owner.druggy = max(owner.druggy, 10 + (growth * 20))
+	owner.Drug(10 + (growth * 20))
 	return prob(6) && growth < 5
 
 

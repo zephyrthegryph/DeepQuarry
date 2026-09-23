@@ -83,11 +83,11 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 		return
 	// Bits no system in this composition carries (woken by a broad wake) have nothing to run.
 	life_awake &= comp.bits
-	var/sleeping = considered & ~(busy | life_cycle_wakes | LIFE_SYS_GATE)
-	if(sleeping)
-		life_awake &= ~sleeping
+	var/asleep_bits = considered & ~(busy | life_cycle_wakes | LIFE_SYS_GATE)
+	if(asleep_bits)
+		life_awake &= ~asleep_bits
 		if(GLOB.mob_hibernation_trace)
-			log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) systems asleep: bits [sleeping], awake [life_awake]")
+			log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) systems asleep: bits [asleep_bits], awake [life_awake]")
 	if(!(life_awake & ~LIFE_SYS_GATE))
 		life_hibernate("no awake systems")
 
@@ -269,7 +269,8 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 // --- Producers ----------------------------------------------------------------------------
 // Hooks on /mob that the generic mob code calls; living mobs turn them into life_wake().
 
-/// Stun, weaken, paralysis, sleep, confusion and blindness setters call this.
+/// Starting or stopping a pull calls this. (The status counters wake the mob themselves when
+/// they start and end; see life/status_counters.dm.)
 /mob/proc/on_status_counter_changed(reason)
 	return
 
@@ -279,6 +280,11 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 /// A client logged into or out of this mob: the HUD, senses and client systems restart.
 /mob/living/proc/on_client_changed(reason)
 	life_wake(LIFE_SYS_ALL, reason)
+
+/// Marks one HUD_* image of this mob's HUD overlays stale and wakes the HUD to redraw it.
+/mob/living/proc/mark_hud_dirty(index)
+	BITSET(hud_updateflag, index)
+	life_wake(LIFE_SYS_HUD | LIFE_SYS_SENSES, "hud dirty")
 
 /// Something was equipped or unequipped.
 /mob/proc/on_equipment_changed()

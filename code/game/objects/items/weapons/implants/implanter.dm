@@ -72,8 +72,8 @@
 
 						if(ishuman(M))
 							var/mob/living/carbon/human/H = M
-							BITSET(H.hud_updateflag, IMPLOYAL_HUD)
-							BITSET(H.hud_updateflag, BACKUP_HUD) // Backup HUD updates
+							H.mark_hud_dirty(IMPLOYAL_HUD)
+							H.mark_hud_dirty(BACKUP_HUD) // Backup HUD updates
 
 					imp = null
 					update()

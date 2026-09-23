@@ -327,7 +327,7 @@
 	M.stop_pulling()
 	M.forceMove(src)
 	M.extinguish_mob()
-	if(M.stat != DEAD && (M.is_critical() || M.sleeping))
+	if(M.stat != DEAD && (M.is_critical() || M.get_sleeping()))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
 	occupant = M
 	if(on)

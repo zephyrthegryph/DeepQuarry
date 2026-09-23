@@ -183,7 +183,7 @@
 
 		if(SMITE_SPICE)
 			to_chat(target, span_warning("Spice spice baby!"))
-			target.eye_blurry = max(target.eye_blurry, 25)
+			target.Blur(25)
 			target.Blind(10)
 			target.Stun(5)
 			target.Weaken(5)
@@ -233,7 +233,7 @@
 		target.injure(INJURY_BLUNT, max(99, target.get_endurance() * target.vitality() - 1), flags = INJURE_IGNORE_RESISTANCE)
 		target.Stun(20)
 		target.Weaken(20)
-		target.stuttering = 20
+		target.SetStuttering(20)
 
 GLOBAL_VAR(redspace_abduction_z)
 

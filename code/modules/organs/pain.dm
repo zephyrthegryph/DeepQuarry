@@ -59,6 +59,10 @@
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
 
+/// Pain messages need a hurt limb, which is an affliction; the body wakes it.
+/datum/life_system/pain/idle(mob/living/carbon/human/self)
+	return self.stat || !LAZYLEN(self.body?.afflictions)
+
 /// Pain messages from limbs and organs.
 /datum/life_system/pain/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(self.stat)
@@ -83,7 +87,7 @@
 				var/mob/living/carbon/human/H = self
 				maxdam *= H.species.trauma_mod // end
 	if(damaged_organ && self.factor(BF_ANALGESIA) < maxdam)
-		if(maxdam > 10 && self.paralysis)
+		if(maxdam > 10 && self.get_paralysis())
 			self.AdjustParalysis(-round(maxdam/10))
 		if(maxdam > 50 && prob(maxdam / 5))
 			self.drop_item()

@@ -26,7 +26,7 @@
 		to_chat(M, span_warning("Your ears feel like they're bleeding!"))
 		playsound(M, 'sound/effects/bang.ogg', 70, 1, 30)
 		M.SetSleeping(0)
-		M.ear_deaf += 30
+		M.AdjustDeaf(30)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 		M.ear_damage += rand(5, 20)
 		M.Weaken(3)

@@ -214,7 +214,7 @@
 
 			if (get_ear_protection() < 2)
 				ear_damage += 30
-				ear_deaf += 120
+				AdjustDeaf(120)
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
 			if (prob(70) && !shielded)
 				Paralyse(10)
@@ -226,7 +226,7 @@
 				b_loss = b_loss/2
 			if (get_ear_protection() < 2)
 				ear_damage += 15
-				ear_deaf += 60
+				AdjustDeaf(60)
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
 			if (prob(50) && !shielded)
 				Paralyse(10)
@@ -444,7 +444,7 @@
 										modified = 1
 
 										spawn()
-											BITSET(hud_updateflag, WANTED_HUD)
+											mark_hud_dirty(WANTED_HUD)
 											if(ishuman(usr))
 												var/mob/living/carbon/human/U = usr
 												var/datum/life_system/hud/carbon/human/hud_system = U.life_system_for(/datum/life_system/hud)
@@ -1337,6 +1337,8 @@
 
 	//A slew of bits that may be affected by our species change
 	regenerate_icons()
+	// Species data drives most life systems (breath, temperature, sight, HUD): re-check them all.
+	life_wake(LIFE_SYS_ALL, "species")
 
 	if(species)
 		return 1
@@ -1736,7 +1738,7 @@
 
 /mob/living/carbon/human/proc/update_icon_special() //For things such as teshari hiding and whatnot.
 	if(status_flags & HIDING) // Hiding? Carry on.
-		if(stat == DEAD || paralysis || weakened || stunned || restrained() || buckled || LAZYLEN(grabbed_by) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
+		if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned() || restrained() || buckled || LAZYLEN(grabbed_by) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
 			reveal(null)
 		else
 			layer = HIDING_LAYER
@@ -1870,7 +1872,7 @@
 	set category = "Abilities.General"
 	set desc = "Switch your horizontal direction while prone."
 
-	if(stat || paralysis || weakened || stunned || world.time < last_special)
+	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special)
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 

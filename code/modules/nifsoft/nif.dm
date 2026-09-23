@@ -127,6 +127,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 		human = H
 		human.nif = src
+		human.life_wake(LIFE_SYS_TRAITS, "nif implanted")
 		stat = NIF_INSTALLING
 		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
 		menu = H.AddComponent(/datum/component/nif_menu)
@@ -304,7 +305,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	switch(percent_done) //This is 0.0 to 1.0 kinda percent.
 		//Connecting to optical nerves
 		if(0.0 to 0.1)
-			human.eye_blind = 5
+			human.SetBlinded(5)
 
 		//Mapping brain
 		if(0.2 to 0.9)

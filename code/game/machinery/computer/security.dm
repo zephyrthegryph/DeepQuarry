@@ -431,7 +431,7 @@
 					if(field == "criminal")
 						old_criminal_status = active2?.fields?["criminal"]
 						for(var/mob/living/carbon/human/H in GLOB.player_list)
-							BITSET(H.hud_updateflag, WANTED_HUD)
+							H.mark_hud_dirty(WANTED_HUD)
 
 					if(istype(active2) && (field in active2.fields))
 						active2.fields[field] = answer

@@ -58,7 +58,7 @@
 		LAZYREMOVE(faction_members, player)
 		player.special_role = null
 		update_icons_removed(player)
-		BITSET(player.current.hud_updateflag, SPECIALROLE_HUD)
+		player.current.mark_hud_dirty(SPECIALROLE_HUD)
 		if(!is_special_character(player))
 			remove_verb(player.current, /mob/living/proc/write_ambition)
 			if(player.current.client)

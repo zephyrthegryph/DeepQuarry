@@ -146,7 +146,7 @@
 	holder.AdjustWeakened(-5)
 	holder.AdjustSleeping(-5)
 	holder.AdjustStunned(-5)
-	holder.eye_blurry = 0
+	holder.SetBlurry(0)
 
 /datum/modifier/voltaic_overdrive/on_applied()
 	. = ..()

@@ -107,6 +107,9 @@
 	S.still_valid = still_valid
 	if(changed)
 		invalidate(BODY_DIRTY_PHYSIOLOGY)
+	// The physiology prunes the support when it lapses: make sure it runs then.
+	if(duration)
+		owner.life_wake_in(LIFE_SYS_BODY, duration)
 	if(fresh)
 		log_runtime("PHYSIOLOGY: [key_name(owner)] gained a [isnull(floor) ? "restriction x[multiplier]" : "support floor [floor]"] on factor [factor_id] from [S.source_name] for [duration ? "[duration / (1 SECONDS)]s" : "as long as it lasts"]")
 	return S
@@ -564,6 +567,7 @@
 	phase = LIFE_PHASE_BODY
 	order = 85
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	woken_by = "body invalidate (BODY_DIRTY_PHYSIOLOGY); a timed support's expiry"
 
 /datum/life_system/physiology/applies(mob/living/self)
 	var/datum/body/proto = self.body_type
@@ -573,3 +577,21 @@
 	if(ctx?.in_stasis(self))
 		return
 	self.body?.physiology_tick(ctx ? ctx.seconds : LIFE_NOMINAL_SECONDS)
+
+/// Settled: no oxygen debt, no shortfall, nothing stale, and no support that lapses on its
+/// own (a timer or a validity check). Woken by BODY_DIRTY_PHYSIOLOGY through the body's
+/// invalidate() (factors, organs, breath quality, blood volume, supports), and by a timed
+/// support's add, which schedules a wake for its expiry.
+/datum/life_system/physiology/idle(mob/living/self)
+	var/datum/body/B = self.body
+	if(!B?.physiology)
+		return TRUE
+	if(B.dirty & BODY_DIRTY_PHYSIOLOGY)
+		return FALSE
+	var/datum/physiology/P = B.physiology
+	if(P.shortfall || P.oxygen_debt)
+		return FALSE
+	for(var/datum/body_support/S as anything in B.supports)
+		if(S.expires_at || S.still_valid)
+			return FALSE
+	return TRUE

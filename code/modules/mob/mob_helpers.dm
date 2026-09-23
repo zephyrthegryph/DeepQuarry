@@ -44,7 +44,7 @@
 /proc/isdeaf(A)
 	if(istype(A, /mob))
 		var/mob/M = A
-		return (M.sdisabilities & DEAF) || M.ear_deaf
+		return (M.sdisabilities & DEAF) || M.get_ear_deaf()
 	return 0
 
 /mob/proc/get_ear_protection()

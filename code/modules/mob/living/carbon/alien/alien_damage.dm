@@ -18,7 +18,7 @@
 			f_loss += 60
 
 			ear_damage += 30
-			ear_deaf += 120
+			AdjustDeaf(120)
 			deaf_loop.start() // Ear Ringing/Deafness
 
 		if(3.0)
@@ -26,7 +26,7 @@
 			if (prob(50))
 				Paralyse(1)
 			ear_damage += 15
-			ear_deaf += 60
+			AdjustDeaf(60)
 			deaf_loop.start() // Ear Ringing/Deafness
 
 	if(b_loss)

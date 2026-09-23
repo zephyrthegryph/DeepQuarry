@@ -70,7 +70,7 @@
 		last_touched.Paralyse(10)
 		last_touched.Sleeping(10)
 		last_touched.make_jittery(1000)
-		last_touched.eye_blurry += 10
+		last_touched.AdjustBlurry(10)
 		last_touched.add_modifier(/datum/modifier/agonize, 30 SECONDS)
 		blood_splatter(last_touched, last_touched, 1)
 		if(last_touched.loc)

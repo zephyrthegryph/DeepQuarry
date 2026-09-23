@@ -29,12 +29,6 @@
 	order = 10
 	segment = NONE
 
-/datum/life_system/statuses/silicon/robot
-	mob_type = /mob/living/silicon/robot
-	phase = LIFE_PHASE_INPUT
-	order = 20
-	segment = NONE
-
 /datum/life_system/instability/silicon/robot
 	mob_type = /mob/living/silicon/robot
 	order = 40
@@ -97,7 +91,7 @@
 	order = 30
 	segment = NONE
 
-/// Temporary blindness, deafness and blur wear off.
+/// Ear damage recovery.
 /datum/life_system/robot_senses
 	name = "robot senses"
 	bit = LIFE_SYS_SENSES
@@ -106,24 +100,17 @@
 	life_sets = LIFE_SET_ROBOT
 	mob_type = /mob/living/silicon/robot
 
-/// Temporary blindness, deafness and blur wear off.
+/// Ear damage heals slowly. Temporary blindness, deafness and blur are status counters that end
+/// on their own; the blindness counter refreshes the senses when it starts and ends.
 /datum/life_system/robot_senses/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
-	var/senses_changed = FALSE
-	if(self.eye_blind)
-		self.AdjustBlinded(-1)
-		senses_changed = !self.eye_blind
-	if(self.ear_deaf > 0)
-		self.ear_deaf--
-	if(self.ear_damage < 25)
+	if(self.ear_damage > 0 && self.ear_damage < 25)
 		self.ear_damage = max(self.ear_damage - 0.05, 0)
-	if(self.ear_deaf <= 0)
-		self.deaf_loop.stop()
-	if(self.sdisabilities & DEAF)
-		self.ear_deaf = 1
-	if(self.eye_blurry > 0)
-		self.eye_blurry = max(0, self.eye_blurry - 1)
-	if(senses_changed)
-		self.update_senses()
+
+/datum/life_system/robot_senses/idle(mob/living/silicon/robot/self)
+	return self.ear_damage <= 0 || self.ear_damage >= 25
+
+/mob/living/silicon/robot/update_blinded()
+	update_senses()
 
 // --- Power system ------------------------------------------------------------------------------
 
@@ -262,8 +249,8 @@
 
 	// Blindness is raised by update_senses() when the camera or stat changes.
 	if(self.stat != DEAD && !self.blinded)
-		self.set_fullscreen(self.eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-		self.set_fullscreen(self.druggy, "high", /atom/movable/screen/fullscreen/high)
+		self.set_fullscreen(self.get_eye_blurry(), "blurry", /atom/movable/screen/fullscreen/blurry)
+		self.set_fullscreen(self.get_druggy(), "high", /atom/movable/screen/fullscreen/high)
 
 	if(self.emagged)
 		self.throw_alert("hacked", /atom/movable/screen/alert/hacked)

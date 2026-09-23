@@ -694,9 +694,9 @@ SUBSYSTEM_DEF(job)
 			var/obj/item/clothing/glasses/worn_glasses = human_mob.get_equipped_item(SLOT_ID_EYES)
 			worn_glasses.prescription = TRUE
 
-	BITSET(human_mob.hud_updateflag, ID_HUD)
-	BITSET(human_mob.hud_updateflag, IMPLOYAL_HUD)
-	BITSET(human_mob.hud_updateflag, SPECIALROLE_HUD)
+	human_mob.mark_hud_dirty(ID_HUD)
+	human_mob.mark_hud_dirty(IMPLOYAL_HUD)
+	human_mob.mark_hud_dirty(SPECIALROLE_HUD)
 	return human_mob
 
 /datum/controller/subsystem/job/proc/handle_feedback_gathering()

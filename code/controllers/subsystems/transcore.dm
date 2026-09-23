@@ -74,7 +74,7 @@ SUBSYSTEM_DEF(transcore)
 			continue
 
 		//In a human
-		BITSET(H.hud_updateflag, BACKUP_HUD)
+		H.mark_hud_dirty(BACKUP_HUD)
 
 		if(H == imp.imp_in && H.stat < DEAD)
 			if(H.mind)

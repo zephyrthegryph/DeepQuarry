@@ -57,6 +57,13 @@ BLOOD_VOLUME_SURVIVE = 40
 /datum/life_system/blood/carbon/human
 	mob_type = /mob/living/carbon/human
 
+/// Continuous while the volume is below normal or the sprite still shows pale; bleeding and
+/// blood draws change the volume through the body, which wakes it.
+/datum/life_system/blood/carbon/human/idle(mob/living/carbon/human/self)
+	if(!self.should_have_organ(O_HEART) || self.stat == DEAD)
+		return TRUE
+	return !self.pale && self.vessel.get_reagent_amount(REAGENT_ID_BLOOD) >= self.species.blood_volume
+
 /datum/life_system/blood/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(self.inStasisNow())
 		return

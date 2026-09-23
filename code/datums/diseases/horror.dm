@@ -45,7 +45,7 @@
 				to_chat(infected, span_danger("You hear whispers speaking to you in the back of your mind, your throat closing up."))
 				infected.emote("gasp")
 				infected.AdjustConfused(10)
-				infected.silent = max(10, infected.silent)
+				infected.Silence(10)
 		if(4)
 			if(!infected.has_modifier_of_type(/datum/modifier/redspace_drain))
 				infected.add_modifier(/datum/modifier/redspace_drain/lesser)

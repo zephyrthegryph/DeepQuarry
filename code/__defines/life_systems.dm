@@ -91,10 +91,11 @@
 #define LIFE_SEGS_BLOCKED_WHEN_DEAD (LIFE_SEG_LIVING_ALIVE | LIFE_SEG_LIVING_STATUS | LIFE_SEG_HUMAN_LIVE | LIFE_SEG_SIMPLE)
 
 // --- Wake groups: the bits a producer wakes --------------------------------------------------
-/// The body changed: injury, treatment, affliction, factor or reagent change.
-#define LIFE_WAKE_BODY (LIFE_SYS_BODY | LIFE_SYS_METABOLISM | LIFE_SYS_HUD | LIFE_SYS_IDENTITY)
-/// A stun, weaken, paralysis, sleep, confusion or blindness setter ran.
-#define LIFE_WAKE_STATUS (LIFE_SYS_STATUS | LIFE_SYS_MOVEMENT | LIFE_SYS_GENETICS | LIFE_SYS_HUD)
+/// The body changed: injury, treatment, affliction, factor or reagent change. Everything that
+/// reads the body (blood, organs, temperature, breathing, sight, the HUD) re-checks its rule.
+#define LIFE_WAKE_BODY (LIFE_SYS_BODY | LIFE_SYS_METABOLISM | LIFE_SYS_HUD | LIFE_SYS_SENSES | LIFE_SYS_IDENTITY | LIFE_SYS_GENETICS | LIFE_SYS_ORGANS | LIFE_SYS_BLOOD | LIFE_SYS_THERMAL | LIFE_SYS_BREATHING | LIFE_SYS_RADIATION | LIFE_SYS_NUTRITION | LIFE_SYS_ADDICTION)
+/// A status counter started or ended (stun, weaken, paralysis, sleep, confusion, blindness).
+#define LIFE_WAKE_STATUS (LIFE_SYS_STATUS | LIFE_SYS_MOVEMENT | LIFE_SYS_GENETICS | LIFE_SYS_HUD | LIFE_SYS_SENSES)
 /// The mob moved: new air, area, light, gravity and hazards.
 #define LIFE_WAKE_MOVED (LIFE_SYS_BREATHING | LIFE_SYS_THERMAL | LIFE_SYS_MOVEMENT | LIFE_SYS_SENSES | LIFE_SYS_UPKEEP | LIFE_SYS_HUD | LIFE_SYS_IDENTITY)
 /// Something was equipped or unequipped: sight, voice, name, insulation, internals.
@@ -102,3 +103,21 @@
 
 /// Nominal seconds between two Life() calls for one mob (SSmobs wait x slices).
 #define LIFE_NOMINAL_SECONDS 2
+
+// --- Status counters (code/modules/mob/living/life/status_counters.dm) ---------------------
+/// One legacy status counter tick: Stun(5) lasts five nominal Life cycles.
+#define STATUS_COUNTER_TICK (LIFE_NOMINAL_SECONDS SECONDS)
+
+// --- Steady-state resampling (sleep rules with a timer behind them) -------------------------
+/// A breathing system asleep in steady air re-samples it this often (air can change in place).
+#define BREATH_STEADY_RESAMPLE (30 SECONDS)
+/// A human environment system asleep in comfortable air re-samples it this often.
+#define ENVIRONMENT_STEADY_RESAMPLE (15 SECONDS)
+/// A human chemicals system with nothing to metabolise wakes this often to charge hunger.
+#define NUTRITION_RESAMPLE (30 SECONDS)
+/// At most this many cycles of hunger are charged at once after a nap.
+#define NUTRITION_CATCHUP_CYCLES 150
+/// A carbon's germs system rolls its creep toward the ambient level this often.
+#define GERM_RESAMPLE (1 MINUTES)
+/// At most this many cycles of germ creep are charged at once.
+#define GERM_CATCHUP_CYCLES 300

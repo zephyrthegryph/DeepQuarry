@@ -346,7 +346,7 @@
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 			s.set_up(3, 1, src)
 			s.start()
-			if(user.stunned)
+			if(user.get_stunned())
 				return 1
 		else
 			return 0

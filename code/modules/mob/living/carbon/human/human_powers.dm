@@ -41,7 +41,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || paralysis || stunned || weakened || lying || restrained() || buckled)
+	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
 		to_chat(src, span_notice("You cannot tackle someone in your current state."))
 		return
 
@@ -60,7 +60,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || paralysis || stunned || weakened || lying || restrained() || buckled)
+	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
 		to_chat(src, span_notice("You cannot tackle in your current state."))
 		return
 

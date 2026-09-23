@@ -117,7 +117,7 @@
 
 /datum/decl/emote/visible/faint/do_extra(mob/user)
 	. = ..()
-	if(iscarbon(user) && !user.sleeping)
+	if(iscarbon(user) && !user.get_sleeping())
 		user.Sleeping(10)
 
 /datum/decl/emote/visible/frown

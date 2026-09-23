@@ -36,7 +36,7 @@
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		if(H.silent)
+		if(H.get_silent())
 			to_chat(src, span_danger("You can't speak!"))
 			return FALSE
 
@@ -105,7 +105,7 @@
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		if(H.silent)
+		if(H.get_silent())
 			to_chat(src, span_danger("You can't speak!"))
 			return FALSE
 

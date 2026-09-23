@@ -47,10 +47,10 @@
 		H.Weaken(disable_severity)
 
 	if(species.allergen_reaction & AG_BLURRY)
-		H.eye_blurry = max(H.eye_blurry, disable_severity)
+		H.Blur(disable_severity)
 
 	if(species.allergen_reaction & AG_SLEEPY)
-		H.drowsyness = max(H.drowsyness, disable_severity)
+		H.Drowse(disable_severity)
 
 	if(species.allergen_reaction & AG_CONFUSE)
 		H.Confuse(disable_severity/4)

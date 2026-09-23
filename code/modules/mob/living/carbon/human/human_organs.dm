@@ -27,6 +27,97 @@
 /datum/life_system/organs/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	process_organs(self)
 
+/// Idle while every organ is healthy and quiet (the active organ set is empty): no limb
+/// needs processing, the stance is sound, nothing in the blood or gut for the liver and
+/// kidneys, no toxins, withdrawal or liver strain. Injury, reagents, factors and organ
+/// changes wake it through the body.
+/datum/life_system/organs/idle(mob/living/carbon/human/self)
+	return self.organs_quiescent()
+
+/mob/living/carbon/human/proc/organs_quiescent()
+	if(length(bad_external_organs) || stance_damage || LAZYLEN(body?.afflictions))
+		return FALSE
+	if(bloodstr?.total_volume || ingested?.total_volume)
+		return FALSE
+	if(injury_load(INJURY_CATEGORY_TOXIC) || factor(BF_HEPATOTOXICITY) || factor(BF_WITHDRAWAL))
+		return FALSE
+	for(var/obj/item/organ/I as anything in internal_organs)
+		if(!I.life_quiescent())
+			return FALSE
+	return TRUE
+
+/// TRUE when processing this organ has nothing to do: undamaged, germ-free, not rejected.
+/// (The stomach tops its acid up while the system runs; digestion wakes the mob through its
+/// reagents, so a stomach that isn't full yet doesn't keep it awake.)
+/obj/item/organ/proc/life_quiescent()
+	if(status & ORGAN_DEAD)
+		return TRUE
+	if(processes_while_healthy)
+		return FALSE
+	return !damage && !germ_level && !rejecting
+
+/obj/item/organ/internal/brain/life_quiescent()
+	return ..() && defib_timer >= (CONFIG_GET(number/defib_timer) MINUTES) / 2
+
+/obj/item/organ/internal/appendix/life_quiescent()
+	return ..() && !inflamed
+
+/obj/item/organ
+	/// TRUE for organs whose process() does its own work every cycle (tumours, parasites,
+	/// augment and species organs): the organs system never sleeps while one is present.
+	var/processes_while_healthy = FALSE
+
+/obj/item/organ/internal/malignant
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/borer
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/diona
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/fruitgland
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/regennetwork
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/heart/grey/colormatch/slime
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/liver/unathi
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/appendix/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/eyes/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/heart/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/intestine/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/kidneys/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/liver/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/lungs/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/spleen/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/stomach/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/voicebox/horror
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/robotic/heatsink
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/stomach/machine
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/cell/machine
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/xenos/plasmavessel
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/immunehub
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/heart/replicant/rage
+	processes_while_healthy = TRUE
+/obj/item/organ/internal/lungs/replicant/mending
+	processes_while_healthy = TRUE
+
 /// Takes care of organ related updates, such as broken and missing limbs. `force` rebuilds the
 /// list of external organs that need processing.
 /datum/life_system/organs/proc/process_organs(mob/living/carbon/human/self, force = FALSE)

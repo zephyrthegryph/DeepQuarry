@@ -40,7 +40,7 @@
 				if(applied_strength > 0)
 					H.Confuse(applied_strength + 5)
 					H.Blind(applied_strength)
-					H.eye_blurry = max(H.eye_blurry, applied_strength + 5)
+					H.Blur(applied_strength + 5)
 					H.injure(INJURY_PAIN, 22 * (applied_strength / 5), source = src) // Five flashes to stun.  Bit weaker than melee flashes due to being ranged.
 
 	//snap pop
@@ -246,7 +246,7 @@
 		M.Stun(10)
 		M.Weaken(2)
 		M.ear_damage += rand(1, 10)
-		M.ear_deaf = max(M.ear_deaf,15)
+		M.Deafen(15)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 	if (M.ear_damage >= 15)
 		to_chat(M, span_danger("Your ears start to ring badly!"))

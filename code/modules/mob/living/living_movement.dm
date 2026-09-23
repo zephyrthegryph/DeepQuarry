@@ -17,7 +17,7 @@
 /mob/living/SelfMove(turf/n, direct, movetime)
 	// If on walk intent, don't willingly step into hazardous tiles.
 	// Unless the walker is confused.
-	if(m_intent == I_WALK && confused <= 0)
+	if(m_intent == I_WALK && get_confused() <= 0)
 		if(!n.is_safe_to_enter(src))
 			to_chat(src, span_warning("\The [n] is dangerous to move into."))
 			return FALSE // In case any code wants to know if movement happened.
@@ -178,7 +178,7 @@ default behaviour is:
 	now_pushing = FALSE
 	. = ..()
 	if (!istype(AM, /atom/movable) || AM.anchored)
-		if(((confused || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying)
+		if(((get_confused() || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying)
 			AM.stumble_into(src)
 		return
 	if (!now_pushing)

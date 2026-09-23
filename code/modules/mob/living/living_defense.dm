@@ -316,7 +316,7 @@
 	// The actual damage/electrocution is handled by the tesla_zap() that accompanies this.
 	Paralyse(5)
 	Sleeping(5)
-	stuttering += 20
+	AdjustStuttering(20)
 	make_jittery(150)
 	emp_act(EMP_HEAVY)
 	to_chat(src, span_critical("You've been struck by lightning!"))
@@ -339,11 +339,11 @@
 /mob/living/proc/get_accuracy_penalty()
 	// Certain statuses make it harder to score a hit.
 	var/accuracy_penalty = 0
-	if(eye_blind)
+	if(get_eye_blind())
 		accuracy_penalty += 75
-	if(eye_blurry)
+	if(get_eye_blurry())
 		accuracy_penalty += 30
-	if(confused)
+	if(get_confused())
 		accuracy_penalty += 45
 
 	return accuracy_penalty

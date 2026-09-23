@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Stuns, knockdowns, sleep, confusion, blindness, blurred vision, drugs, deafness, drowsiness, silence, stuttering and slurring are now status effects that run on their own timers."
+  - code_imp: "Idle humans in normal air now hibernate out of the mob subsystem, and wake on injury, reagents, stuns, equipment, speech impairments and other events."
+  - balance: "Stuns and knockouts that used to be written directly now respect stun immunity and disable-duration modifiers like every other stun."

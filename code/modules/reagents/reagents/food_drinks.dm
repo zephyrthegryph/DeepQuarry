@@ -384,14 +384,14 @@
 			if(effective_dose == metabolism * 2 || prob(5))
 				M.emote("yawn")
 		else if(effective_dose < 5)
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.Blur(10)
 		else if(effective_dose < 20)
 			if(prob(50))
 				M.Weaken(2)
-			M.drowsyness = max(M.drowsyness, 20)
+			M.Drowse(20)
 		else
 			M.Weaken(10)
-			M.drowsyness = max(M.drowsyness, 60)
+			M.Drowse(60)
 
 /datum/reagent/nutriment/mayo
 	name = REAGENT_MAYO
@@ -969,7 +969,7 @@
 			return
 	else if(eyes_covered)
 		to_chat(M, span_warning("Your [safe_thing] protects you from most of the pepperspray!"))
-		M.eye_blurry = max(M.eye_blurry, effective_strength * 3)
+		M.Blur(effective_strength * 3)
 		M.Blind(effective_strength)
 		M.Stun(5)
 		M.Weaken(5)
@@ -977,12 +977,12 @@
 			return
 	else if(mouth_covered) // Mouth cover is better than eye cover
 		to_chat(M, span_warning("Your [safe_thing] protects your face from the pepperspray!"))
-		M.eye_blurry = max(M.eye_blurry, effective_strength)
+		M.Blur(effective_strength)
 		if(alien != IS_SLIME)
 			return
 	else// Oh dear :D
 		to_chat(M, span_warning("You're sprayed directly in the eyes with pepperspray!"))
-		M.eye_blurry = max(M.eye_blurry, effective_strength * 5)
+		M.Blur(effective_strength * 5)
 		M.Blind(effective_strength * 2)
 		M.Stun(5)
 		M.Weaken(5)
@@ -1064,7 +1064,7 @@
 		var/bonus = M.food_preference(allergen_type)
 		M.adjust_nutrition((nutrition + bonus) * removed)
 	M.make_dizzy(adj_dizzy)
-	M.drowsyness = max(0, M.drowsyness + adj_drowsy)
+	M.AdjustDrowsyness(adj_drowsy)
 	M.AdjustSleeping(adj_sleepy)
 	if(adj_temp > 0 && M.bodytemperature < BODYTEMP_NORMAL)
 		M.bodytemperature = min(BODYTEMP_NORMAL, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -1168,14 +1168,14 @@
 				if(effective_dose == metabolism * 2 || prob(5))
 					M.emote("yawn")
 			else if(effective_dose < 5)
-				M.eye_blurry = max(M.eye_blurry, 10)
+				M.Blur(10)
 			else if(effective_dose < 20)
 				if(prob(50))
 					M.Weaken(2)
-				M.drowsyness = max(M.drowsyness, 20)
+				M.Drowse(20)
 			else
 				M.Weaken(10)
-				M.drowsyness = max(M.drowsyness, 60)
+				M.Drowse(60)
 
 /datum/reagent/drink/juice/lemon
 	name = REAGENT_LEMONJUICE
@@ -2130,14 +2130,14 @@
 			if(effective_dose == metabolism * 2 || prob(5))
 				M.emote("yawn")
 		else if(effective_dose < 5)
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.Blur(10)
 		else if(effective_dose < 20)
 			if(prob(50))
 				M.Weaken(2)
-			M.drowsyness = max(M.drowsyness, 20)
+			M.Drowse(20)
 		else
 			M.Weaken(10)
-			M.drowsyness = max(M.drowsyness, 60)
+			M.Drowse(60)
 
 /datum/reagent/drink/milkshake/chocoshake
 	name = REAGENT_CHOCOSHAKE
@@ -2228,9 +2228,9 @@
 /datum/reagent/drink/soda/nuka_cola/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	M.make_jittery(20)
-	M.druggy = max(M.druggy, 30)
+	M.Drug(30)
 	M.make_dizzy(5)
-	M.drowsyness = 0
+	M.SetDrowsyness(0)
 
 /datum/reagent/drink/grenadine 	//Description implies that the grenadine we would be working with does not contain fruit, so no allergens.
 	name = REAGENT_GRENADINE
@@ -2541,7 +2541,7 @@
 		return
 	// Its healing is the treatment_tags profile.
 	M.make_dizzy(-15)
-	if(M.confused)
+	if(M.get_confused())
 		M.Confuse(-5)
 
 /datum/reagent/drink/dry_ramen
@@ -3197,7 +3197,7 @@
 			return
 		..()
 		M.make_dizzy(-5)
-		M.drowsyness = max(0, M.drowsyness - 3)
+		M.AdjustDrowsyness(-(3))
 		M.AdjustSleeping(-2)
 		if(M.bodytemperature > BODYTEMP_NORMAL)
 			M.bodytemperature = max(BODYTEMP_NORMAL, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -3324,7 +3324,7 @@
 	if(!(M.isSynthetic()))
 		if(alien == IS_DIONA)
 			return
-		M.drowsyness = max(0, M.drowsyness - 7)
+		M.AdjustDrowsyness(-(7))
 		if (M.bodytemperature > BODYTEMP_NORMAL)
 			M.bodytemperature = max(BODYTEMP_NORMAL, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
 		M.make_jittery(5)
@@ -3418,7 +3418,7 @@
 	description = "Is this even wine? Toxic! Hallucinogenic! Probably consumed in boatloads by your superiors!"
 	color = "#000000"
 	strength = 10
-	druggy = 50
+	drug_intensity = 50
 	halluci = 10
 
 	glass_name = "???"
@@ -3553,7 +3553,7 @@
 	reagent_state = LIQUID
 	color = "#666300"
 	strength = 10
-	druggy = 50
+	drug_intensity = 50
 
 	glass_name = REAGENT_ATOMICBOMB
 	glass_desc = "We cannot take legal responsibility for your actions after imbibing."
@@ -3826,7 +3826,7 @@
 	reagent_state = LIQUID
 	color = "#7F00FF"
 	strength = 10
-	druggy = 15
+	drug_intensity = 15
 
 	glass_name = REAGENT_GARGLEBLASTER
 	glass_desc = "Does... does this mean that Arthur and Ford are on the station? Oh joy."
@@ -3868,7 +3868,7 @@
 	reagent_state = LIQUID
 	color = "#FF88FF"
 	strength = 15
-	druggy = 50
+	drug_intensity = 50
 
 	glass_name = "Hippie's Delight"
 	glass_desc = "A drink enjoyed by people during the 1960's."
@@ -3975,7 +3975,7 @@
 	taste_description = "death, the destroyer of worlds"
 	color = "#C15D00"
 	strength = 10
-	druggy = 30
+	drug_intensity = 30
 
 	glass_name = REAGENT_MANHATTANPROJ
 	glass_desc = "A scientist's drink of choice, for thinking how to blow up the station."
@@ -4205,7 +4205,7 @@
 	taste_description = "dry"
 	color = "#666340"
 	strength = 10
-	druggy = 50
+	drug_intensity = 50
 
 	glass_name = "Three Mile Island iced tea"
 	glass_desc = "A glass of this is sure to prevent a meltdown."
@@ -4332,7 +4332,7 @@
 		if(alien == IS_SLIME)
 			drug_strength *= 0.15 //~ 1/6
 
-		M.druggy = max(M.druggy, drug_strength)
+		M.Drug(drug_strength)
 		if(prob(10) && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained())
 			step(M, pick(GLOB.cardinal))
 
@@ -5043,7 +5043,7 @@
 		if(dose * strength >= strength) // Early warning
 			M.make_dizzy(24) // Intentionally higher than normal to compensate for it's previous effects.
 		if(dose * strength >= strength * 2.5) // Slurring takes longer. Again, intentional.
-			M.slurring = max(M.slurring, 30)
+			M.Slur(30)
 
 /datum/reagent/nutriment/magicdust
 	name = REAGENT_MAGICDUST
@@ -5172,7 +5172,7 @@
 		if(dose * strength >= strength)
 			M.make_dizzy(24)
 		if(dose * strength >= strength * 2.5)
-			M.slurring = max(M.slurring, 30)
+			M.Slur(30)
 		// Simulating heat effects of spice. Without spice.
 		if(alien == IS_DIONA || alien == IS_ALRAUNE)
 			return
@@ -5295,7 +5295,7 @@
 	description = "The absolute worst thing you could ever put in your body."
 	taste_description = "an entire galaxy collasping in on itself"
 	strength = 10
-	druggy = 50
+	drug_intensity = 50
 	halluci = 30
 	color = "#d3785d"
 
@@ -5310,7 +5310,7 @@
 		if(dose * strength >= strength) // Early warning
 			M.make_dizzy(24) // Intentionally higher than normal to compensate for it's previous effects.
 		if(dose * strength >= strength * 2.5) // Slurring takes longer. Again, intentional.
-			M.slurring = max(M.slurring, 30)
+			M.Slur(30)
 
 /datum/reagent/ethanol/bulldog
 	name = REAGENT_BULLDOG
@@ -5340,7 +5340,7 @@
 	description = "This drink was concocted by a madwoman, causing the Italian Crisis of 2123."
 	taste_description = "cola, fruit, fizz, coffee, and cream swirled together in an old boot"
 	strength = 20
-	druggy = 0
+	drug_intensity = 0
 	halluci = 0
 	color = "#d3785d"
 
@@ -5375,7 +5375,7 @@
 	description = "The mushroom farmer didn't sort through their stock very well."
 	taste_description = "sweet and sour citrus with a savory kick"
 	strength = 100
-	druggy = 30
+	drug_intensity = 30
 	halluci = 30
 	color = "#d3785d"
 
@@ -5405,7 +5405,7 @@
 	description = "A drink said to help one find true love."
 	taste_description = "sweet fruit and honey"
 	strength = 30
-	druggy = 0
+	drug_intensity = 0
 	halluci = 0
 	adj_temp = 10
 	targ_temp = 360
@@ -5442,7 +5442,7 @@
 	description = "A new nuclear take on a pre-modern classic!"
 	taste_description = "overwhelmingly sour apples powered by a nuclear fission reactor"
 	strength = 30
-	druggy = 20
+	drug_intensity = 20
 	color = "#d3785d"
 
 	glass_name = REAGENT_GLOWINGAPPLETINI
@@ -5454,7 +5454,7 @@
 	description = "The screwdriver's bigger cousin."
 	taste_description = "smooth, savory booze and tangy orange juice"
 	strength = 30
-	druggy = 0
+	drug_intensity = 0
 	halluci = 0
 	color = "#d3785d"
 
@@ -5477,7 +5477,7 @@
 	description = "A drink made by imbueing the essence of redspace into the spirits."
 	taste_description = "whiskey and rum strung out through a hellish dimensional rift"
 	strength = 30
-	druggy = 10
+	drug_intensity = 10
 	color = "#d3785d"
 
 	glass_name = REAGENT_REDSPACEFLUSH
@@ -5531,7 +5531,7 @@
 	description = "A sick experiment to take the sweetness out of tea after sugar has been added resulted in this."
 	taste_description = "bland, slightly bitter, discount black tea"
 	strength = 80
-	druggy = 10
+	drug_intensity = 10
 	color = "#d3785d"
 
 	glass_name = REAGENT_UNSWEETTEA
@@ -5977,7 +5977,7 @@
 				nif.stat = NIF_INSTALLING
 			nif.repair(removed)
 		else if(prob(5))
-			M.SetConfused(max(M.confused, 20))
+			M.SetConfused(max(M.get_confused(), 20))
 			M.emote(pick("shudder", "seem lost", "blank for a moment"))
 	M.adjust_nutrition(4 * removed)
 
@@ -6010,7 +6010,7 @@
 	if(alien == IS_SLIME)
 		threshold *= 0.15 //~1/6
 
-	M.druggy = max(M.druggy, 30)
+	M.Drug(30)
 	M.adjust_nutrition(-10 * removed)
 
 	var/drug_strength = 20
@@ -6025,7 +6025,7 @@
 		M.apply_effect(3, STUTTER)
 		M.make_jittery(5)
 		M.make_dizzy(5)
-		M.druggy = max(M.druggy, 35)
+		M.Drug(35)
 		M.hallucination = max(M.hallucination, drug_strength * threshold)
 		if(prob(5))
 			M.emote(pick("twitch", "giggle"))
@@ -6033,7 +6033,7 @@
 		M.apply_effect(3, STUTTER)
 		M.make_jittery(10)
 		M.make_dizzy(10)
-		M.druggy = max(M.druggy, 40)
+		M.Drug(40)
 		M.hallucination = max(M.hallucination, drug_strength * threshold)
 		if(prob(10))
 			M.emote(pick("twitch", "giggle"))
@@ -6079,7 +6079,7 @@
 /datum/reagent/drink/coffee/nukie/mega/one/overdose(mob/living/carbon/M, alien, removed)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		H.eye_blurry += 20
+		H.AdjustBlurry(20)
 		var/od_harm = min(removed * overdose_mod * round(3 + 3 * volume / overdose), 1)
 		H.injure_many(alist(INJURY_TOXIN = od_harm, INJURY_BURN = od_harm, INJURY_BLUNT = od_harm), source = src)
 		H.add_modifier(/datum/modifier/berserk, 2 SECONDS, suppress_failure = TRUE)
@@ -6155,7 +6155,7 @@
 /datum/reagent/drink/tea/dyloteane/affect_ingest(mob/living/carbon/M, alien, removed)
 	var/chem_effective = 1
 	if(alien != IS_DIONA)
-		M.drowsyness = max(0, M.drowsyness - 6 * removed * chem_effective)
+		M.AdjustDrowsyness(-(6 * removed * chem_effective))
 		M.hallucination = max(0, M.hallucination - 9 * removed * chem_effective)
 
 /datum/reagent/slimedrink
@@ -6298,23 +6298,23 @@
 		if(effective_dose == metabolism * 2 || prob(5))
 			M.emote("yawn")
 	else if(effective_dose < 1.5 * threshold)
-		M.eye_blurry = max(M.eye_blurry, 10)
+		M.Blur(10)
 	else if(effective_dose < 5 * threshold)
 		if(prob(50))
 			M.Weaken(2)
-		M.drowsyness = max(M.drowsyness, 20)
+		M.Drowse(20)
 	else
 		if(alien == IS_SLIME) //They don't have eyes, and they don't really 'sleep'. Fumble their general senses.
-			M.eye_blurry = max(M.eye_blurry, 30)
+			M.Blur(30)
 			if(prob(20))
-				M.ear_deaf = max(M.ear_deaf, 4)
+				M.Deafen(4)
 				M.deaf_loop.start() // Ear Ringing/Deafness
 				M.Confuse(2)
 			else
 				M.Weaken(2)
 		else
-			M.sleeping = max(M.sleeping, 20)
-		M.drowsyness = max(M.drowsyness, 60)
+			M.Sleeping(20)
+		M.Drowse(60)
 
 /datum/reagent/ethanol/flapper
 	name = REAGENT_FLAPPER
@@ -6759,7 +6759,7 @@
 	taste_description = "Wriggly cave fungus"
 	color = "#827A00"
 	strength = 30
-	druggy = 10
+	drug_intensity = 10
 
 	glass_name = "Worm blood"
 	glass_desc = "Who had the grand idea to bottle THE BLOOD OF A WORM."

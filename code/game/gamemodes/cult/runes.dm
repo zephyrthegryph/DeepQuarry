@@ -899,7 +899,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in C
 			if(N)
 				continue
-			C.ear_deaf += 50
+			C.AdjustDeaf(50)
 			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
 			affected += C
@@ -920,7 +920,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in C
 			if(N)
 				continue
-			C.ear_deaf += 30
+			C.AdjustDeaf(30)
 			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
 			//talismans is weaker.
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
@@ -943,7 +943,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in C
 			if(N)
 				continue
-			C.eye_blurry += 50
+			C.AdjustBlurry(50)
 			C.Blind(20)
 			if(prob(5))
 				C.disabilities |= NEARSIGHTED
@@ -966,7 +966,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in C
 			if(N)
 				continue
-			C.eye_blurry += 30
+			C.AdjustBlurry(30)
 			C.Blind(10)
 			//talismans is weaker.
 			affected += C
@@ -1055,8 +1055,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
 				C.flash_eyes()
-				if(C.stuttering < 1 && (!(HULK in C.mutations)))
-					C.stuttering = 1
+				if(C.get_stuttering() < 1 && (!(HULK in C.mutations)))
+					C.SetStuttering(1)
 				C.Weaken(1)
 				C.Stun(1)
 				C.show_message(span_danger("The rune explodes in a bright flash."), 3)
@@ -1085,7 +1085,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				var/mob/living/carbon/C = T
 				C.flash_eyes()
 				if (!(HULK in C.mutations))
-					C.silent += 15
+					C.AdjustSilent(15)
 				C.Weaken(25)
 				C.Stun(25)
 				add_attack_logs(user,C,"Stun rune")

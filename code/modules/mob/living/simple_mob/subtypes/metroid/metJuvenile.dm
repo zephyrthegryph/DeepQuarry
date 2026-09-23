@@ -26,8 +26,6 @@
 		if(self.victim)
 			self.handle_consumption()
 
-		life_statuses().stuttering(self) // ??
-
 	..()
 
 /mob/living/simple_mob/metroid/juvenile/examine(mob/user)
@@ -48,13 +46,13 @@
 		return
 
 	if(is_queen)
-		paralysis = 7998
+		SetParalysis(7998)
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
 		src.visible_message(span_notice("\The [src] begins to lay an egg."))
 		spawn(50)
 			new /obj/effect/metroid/egg(loc, src)
 			adjust_nutrition(-500)
-			paralysis = 0
+			SetParalysis(0)
 		return
 
 	if(nutrition >= evo_point && !buckled && vore_fullness == 0 && !victim)
@@ -62,7 +60,7 @@
 			to_chat(src, span_warning("There is already a queen."))
 			return
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
-		paralysis = 7998
+		SetParalysis(7998)
 		sleep(50)
 		expand_troid()
 
@@ -109,7 +107,7 @@
 					do_attack_animation(L)
 					if(L.buckled)
 						L.buckled.unbuckle_mob() // To prevent an exploit where being buckled prevents metroids from jumping on you.
-					L.stuttering = max(L.stuttering, stun_power)
+					L.Stutter(stun_power)
 
 					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 					s.set_up(5, 1, L)

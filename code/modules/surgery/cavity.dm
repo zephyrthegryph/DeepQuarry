@@ -127,7 +127,7 @@
 	LAZYREMOVE(part.implants, removed)
 	if(!target.has_embedded_objects())
 		target.clear_alert("embeddedobject")
-	BITSET(target.hud_updateflag, IMPLOYAL_HUD)
+	target.mark_hud_dirty(IMPLOYAL_HUD)
 	log_game("SURGERY: [key_name(user)] extracted [removed] ([removed.type]) from [key_name(target)]'s [part]")
 	if(istype(removed, /mob/living/simple_mob/animal/borer))
 		var/mob/living/simple_mob/animal/borer/worm = removed

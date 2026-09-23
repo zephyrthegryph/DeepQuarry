@@ -124,7 +124,7 @@
 	//trying/permitted to pounce
 	if(pouncing)
 		//able to pounce (not dead or stunned or on CD)
-		if(isliving(src) && !src.weakened && (world.time > pounce_last) && !(status_flags & LEAPING))
+		if(isliving(src) && !src.get_weakened() && (world.time > pounce_last) && !(status_flags & LEAPING))
 			//can see pounce target
 			if((A in view(src, world.view)))
 				//make sure we're targetting a turf!

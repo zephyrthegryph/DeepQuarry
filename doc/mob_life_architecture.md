@@ -64,9 +64,9 @@ pattern is the source of most of their bugs.
 | Machinery | Hibernates (`PROCESS_KILL` or `hibernate_*`); `subscribe_gas_dependency` with change masks; versioned reactive keys; timers; `audit_reactive_sleepers` checks for missed wakes | yes |
 | AI brains (`SSai`) | calm brains sleep | yes |
 | TG status effects | exist and process only while active | yes |
-| Mob `Life()` | life systems sleep by rule and wake on events; a mob with nothing awake hibernates out of `SSmobs` (§4.9). Humans, robots, the AI and pAIs still run most systems every 2 s until those systems get rules | partly |
+| Mob `Life()` | life systems sleep by rule and wake on events; a mob with nothing awake hibernates out of `SSmobs` (§4.9). Simple mobs and humans hibernate; robots, the AI and pAIs still run most systems every 2 s until those systems get rules | partly |
 | Body core | dirty flags, the emergent dirty domains and HUD dirty bits are incremental. But the humanoid `life_tick` always recomputes (`humanoid.dm:246`), the metrics domain compares values every tick, and every metabolised reagent triggers a full side-effect reconcile | partly |
-| Stun, weaken, paralysis, sleep | counters; setters wake the statuses systems, which run only while a counter is live (§4.9) | partly |
+| Stun, weaken, paralysis, sleep and the other status counters | status effect datums on their own timers; start and end wake the mob (§4.7) | yes |
 | Robots | poll power draw per component, camera, radio, blindness, lights, HUD and lock countdowns every tick; rebuild the sprite every tick while unconscious or weapon-locked | **no** |
 | Proteans and prometheans | poll injury load 2–12 times per tick, copy state between forms every tick, re-scan the turf to clean it every tick | **no** |
 
@@ -311,16 +311,35 @@ them (health review §5.4).
 
 **`droplimb` (136) becomes** message, remains and detach.
 
-### 4.7 Status effects
+### 4.7 Status effects (as built)
 
-The stun, weaken, paralysis and sleep counters (about 570 references) move onto
-`/datum/status_effect`, the TG framework already in the codebase:
-- They exist only while active, expire by timer, and nothing polls them.
-- The setters keep their names (`Stun(x)`); readers use `IsStun()`, `IsParalyzed()` and
-  so on.
-- The conversion is mechanical and done in one pass.
+The status counters are `/datum/status_effect/counter` subtypes
+(`code/modules/mob/living/life/status_counters.dm`):
 
-Minor effects (jitter, dizziness, blurred vision, stuttering) follow the same pattern.
+| Family | Counters |
+|---|---|
+| movement and stun | stunned, weakened, paralysis, sleeping, confused |
+| sensory | eye_blind, eye_blurry, druggy, ear_deaf, drowsyness |
+| speech | silent, stuttering, slurring |
+
+- A counter exists only while it runs. Its duration is the status effect's own `duration`
+  (the base type expires it); nothing polls it and no life system decrements it.
+- On start and on end it applies or undoes its effect: HUD alert, status indicator,
+  `update_canmove()`, `update_blinded()`, body factors (silence contributes the
+  `ACTION_BLOCK_SPEECH` action block; status counters are a factor source), the ear-ringing
+  loop. Both ends call `life_wake()` with the counter's bits.
+- Units stay the legacy ones: one tick is `STATUS_COUNTER_TICK` (a nominal Life cycle).
+  Sleep runs faster for species with a `waking_speed`. A held sleep (the Sleep verb, or a
+  human with no player: SSD) extends itself until released.
+- The setters keep their names and semantics: `X(n)` never lowers, `SetX(n)` sets,
+  `AdjustX(n)` adds (`Stun`, `Weaken`, `Paralyse`, `Sleeping`, `Confuse`, `Blind`, `Blur`,
+  `Drug`, `Deafen`, `Drowse`, `Silence`, `Stutter`, `Slur` and their Set/Adjust forms).
+  The disabling ones scale by `BF_DISABLE_DURATION`. Readers use `get_stunned()`,
+  `get_eye_blurry()` and so on.
+- The raw counter vars are deleted, and so is the per-tick statuses life system.
+  `tools/ci/check_grep.sh` rejects direct writes to the old names and the vars on mobs.
+
+Jitter and dizziness were already components.
 
 ### 4.8 As built (phase 2)
 
@@ -414,7 +433,11 @@ bit is left, `life_hibernate()` parks the mob.
 |---|---|---|
 | injury, treatment, full heal | `injure()`, `mend()`, `fully_heal()` | `LIFE_WAKE_BODY` |
 | any body change: afflictions added or removed, severity bands, factors, reagents (`on_reagent_change`) | `/datum/body/proc/invalidate()` | `LIFE_WAKE_BODY` |
-| stun, weaken, paralysis, sleep, confusion, blindness setters; start pulling | `mob.dm` setters → `on_status_counter_changed()` | `LIFE_WAKE_STATUS` |
+| a status counter starts or ends; start pulling | `/datum/status_effect/counter`; `on_status_counter_changed()` | `LIFE_WAKE_STATUS` (plus the counter's own bits) |
+| HUD overlay data changes (ID, implants, records, antag roles) | `mark_hud_dirty()` | `LIFE_SYS_HUD`, `LIFE_SYS_SENSES` |
+| nutrition crosses a band | `adjust_nutrition()` | HUD, nutrition, metabolism |
+| irradiated | `SSradiation.irradiate()`, `apply_effect(IRRADIATE)` | `LIFE_SYS_RADIATION` |
+| species change | `set_species()` | all |
 | moving (air, area, light, gravity, hazards, belly) | `/mob/living/Moved()` | `LIFE_WAKE_MOVED` |
 | equipping or unequipping | `/obj/item/equipped()`, `/mob/proc/remove_from_mob()` → `on_equipment_changed()` | `LIFE_WAKE_EQUIPMENT` |
 | stat change | `/mob/living/set_stat()` | all |
@@ -435,24 +458,33 @@ bit is left, `life_hibernate()` parks the mob.
 | ambience | always | until the next replay with a client |
 | movement | not pulling or grabbing | 30 s with a client (gravity) |
 | status (root) | conscious or dead, and `body.life_settled()` | |
-| disabilities (root) | eyes and ears recovered, blind alert gone, no disability component | |
-| statuses (root) | every counter at 0 and every alert cleared | |
-| canmove (root) | not stunned, weakened, paralysed or asleep | |
+| status (human) | settled body, stat matching sleep (a sleeping mob with no player is idle), no fear, hallucination or tiredness, healthy eyes and ears, no earmuffs | |
+| disabilities (root, human) | ear damage recovered, blind alert matches the eyes, no disability component; humans: no brain-damage episodes due | |
+| canmove (root) | always (the counters and resting update canmove themselves) | |
+| physiology | no oxygen debt, no shortfall, nothing stale, no support with a timer or validity check; a timed support schedules a wake for its expiry | |
+| breathing (carbon) | the last breath was full quality from turf air: no internals, losebreath, crit or breath alerts | 30 s (steady air re-sampled) |
+| environment (human) | the last exchange found comfortable air on a turf, body in its comfort band, no species environment effects | 15 s (air changing in place) |
+| chemicals (human) | nothing to metabolise, no digestion noises due; hunger is integrated over the nap | 30 s (hunger) |
+| hud, vision (human) | no HUD dirty bits (`mark_hud_dirty()` wakes); sight recomputed on stat, equipment, species, factor and counter changes | root timers for players |
+| organs | the active organ set is empty: every organ undamaged, germ-free and quiet, no reagents, toxins, withdrawal or liver strain | |
+| germs | always (lazy creep) | 1 min while below ambient |
+| blood, radiation, mutations, shock, pain, pulse, heartbeat, thermoregulation, weight, medical, nif, phobias, npc, changeling, species components, stasis sleep, fall, defib timer, addictions (human and carbon variants) | nothing to do for a healthy, idle, living human | fall: 10 s with a client |
 | hud, vision (roots) | no component takes over the HUD or vision | 5 s with a client (darksight) |
 | modifiers, instability, diseases, tf holder, vr derez | nothing to expire, decay, spread or link; a VR mob inside the VR area | |
 | simple statuses, supernatural, healing, guts | counters at 0; purge 0; not hurt or not fed; no organ objects | |
 | environment (simple mob) | the air is survivable and the body has nothing for it to treat | 15 s (air changing in place) |
 | human hud refresh, voice, visible name | always | 1 min; 10 s; 10 s |
 
-A healthy idle simple mob hibernates within two cycles. Humans still run their physiology,
-HUD, vision and tail systems every cycle, and robots, the AI and pAIs their own sets. They
-sleep individual bits but don't hibernate until those systems declare rules (the physiology
-work, diagnosis, cyborg phases).
+A healthy idle simple mob hibernates within two cycles, and so does a healthy idle human in
+normal air (a clientless human is held asleep, SSD, which counts as settled). Robots, the AI
+and pAIs sleep individual bits but don't hibernate until their systems declare rules (the
+cyborg phases). Timers still bring a hibernating human back briefly: breathing (30 s),
+environment (15 s), hunger (30 s), germs (1 min), HUD refresh (1 min), voice and visible name
+(10 s); players add their AFK, ambience, darksight and fall timers.
 
-**Status effects.** The counters (`stunned`, `weakened`, `paralysis`, `sleeping`,
-`confused`, `eye_blind`) stay as they are. Their setters wake `LIFE_WAKE_STATUS`, and the
-statuses systems run only while a counter or alert is live. Moving them onto
-`/datum/status_effect` (§4.7) is still to do.
+**Status effects.** The counters are status effect datums that wake the mob when they start
+and end (§4.7). Human blindness (`blinded`) is computed from the mob's state by
+`update_blinded()` on the events that change it, not reset every cycle.
 
 **Missed-wake safety net.** The audit is a debugging aid, not a production feature:
 - In unit test and `TESTING` builds it always runs, and a missed wake fails the run
@@ -468,8 +500,9 @@ When enabled, every `MOB_HIBERNATION_AUDIT_INTERVAL` (30 s),
 For each mob it asks every sleeping system's `idle()`. If a rule no longer holds, a producer
 changed the mob without calling `life_wake()`. The audit logs `MOB_HIBERNATE_AUDIT: MISSED
 WAKE` to the runtime and world logs, naming the mob, the system and its `woken_by`, and wakes
-the mob. Direct writes to `eye_blurry`, `druggy`, `silent`, `stuttering` and similar, and glow
-toggles on hibernating mobs, are the known sources. Waking whole from hibernation also clears
+the mob. Glow toggles on hibernating mobs and direct writes to vars an idle rule reads
+(`hallucination`, `fear`, `radiation`) are the known sources; the status counters can no
+longer be written directly. Waking whole from hibernation also clears
 up stale counters on any later wake.
 
 **Logging.**

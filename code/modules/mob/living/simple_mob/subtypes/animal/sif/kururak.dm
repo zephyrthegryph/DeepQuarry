@@ -193,7 +193,7 @@
 						flash_strength *= H.species.flash_mod
 						if(flash_strength > 0)
 							to_chat(H, span_alien("You are disoriented by \the [src]!"))
-							H.eye_blurry = max(H.eye_blurry, flash_strength + 5)
+							H.Blur(flash_strength + 5)
 							H.flash_eyes()
 							H.injure(INJURY_BURN, flash_strength * H.species.flash_burn/5, BP_HEAD, src)
 

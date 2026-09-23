@@ -22,13 +22,14 @@
 			rad_protection = (100-rad_protection)/100
 			if(!(SEND_SIGNAL(src, COMSIG_LIVING_IRRADIATE_EFFECT, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
 				radiation += max((effect * rad_protection), 0)
+				life_wake(LIFE_SYS_RADIATION, "irradiated")
 		if(STUTTER)
 			if(status_flags & CANSTUN) // stun is usually associated with stutter
-				stuttering = max(stuttering,(effect * blocked))
+				Stutter((effect * blocked))
 		if(EYE_BLUR)
-			eye_blurry = max(eye_blurry,(effect * blocked))
+			Blur((effect * blocked))
 		if(DROWSY)
-			drowsyness = max(drowsyness,(effect * blocked))
+			Drowse((effect * blocked))
 	return 1
 
 

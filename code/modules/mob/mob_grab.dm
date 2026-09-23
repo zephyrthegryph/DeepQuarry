@@ -151,7 +151,7 @@
 
 	if(state >= GRAB_KILL)
 		//affecting.apply_effect(STUTTER, 5) //would do this, but affecting isn't declared as mob/living for some stupid reason.
-		affecting.stuttering = max(affecting.stuttering, 5) //It will hamper your voice, being choked and all.
+		affecting.Stutter(5) //It will hamper your voice, being choked and all.
 		affecting.Weaken(5)	//Should keep you down unless you get help.
 		affecting.losebreath = max(affecting.losebreath + 2, 3)
 
@@ -165,12 +165,12 @@
 		if(O_MOUTH)
 			if(announce)
 				user.visible_message(span_warning("\The [user] covers [target]'s mouth!"))
-			if(target.silent < 3)
-				target.silent = 3
+			if(target.get_silent() < 3)
+				target.SetSilent(3)
 		if(O_EYES)
 			if(announce)
 				assailant.visible_message(span_warning("[assailant] covers [affecting]'s eyes!"))
-			if(affecting.eye_blind < 3)
+			if(affecting.get_eye_blind() < 3)
 				affecting.Blind(3)
 		if(BP_HEAD)
 			if(force_down)
@@ -364,7 +364,7 @@
 		if(GRAB_NECK)
 			grab_name = "headlock"
 			//If the you move when grabbing someone then it's easier for them to break free. Same if the affected mob is immune to stun.
-			if(world.time - assailant.l_move_time < 30 || !affecting.stunned)
+			if(world.time - assailant.l_move_time < 30 || !affecting.get_stunned())
 				break_strength++
 			break_chance_table = list(3, 18, 45, 100)
 

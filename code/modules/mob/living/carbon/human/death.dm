@@ -52,9 +52,9 @@
 
 	if(stat == DEAD) return
 
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	mark_hud_dirty(HEALTH_HUD)
+	mark_hud_dirty(STATUS_HUD)
+	mark_hud_dirty(LIFE_HUD)
 
 	//Handle species-specific deaths.
 	if(species.handle_death(src))

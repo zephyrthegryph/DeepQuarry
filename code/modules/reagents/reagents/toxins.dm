@@ -185,7 +185,7 @@
 	var/poison_strength = strength * M.species.chem_strength_tox
 	if(strength && alien != IS_DIONA)
 		M.injure(INJURY_TOXIN, poison_strength * removed, source = src, affliction = poison_affliction)
-		M.druggy = max(M.druggy, 10)
+		M.Drug(10)
 		M.make_jittery(5)
 
 /datum/reagent/toxin/phoron
@@ -409,8 +409,8 @@
 		M.tod = stationtime2text()
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
-	M.silent = max(M.silent, 10)
-	M.paralysis = max(M.paralysis, 10)
+	M.Silence(10)
+	M.Paralyse(10)
 
 /datum/reagent/toxin/zombiepowder/Destroy()
 	if(holder && holder.my_atom && ismob(holder.my_atom))
@@ -439,8 +439,8 @@
 		M.tod = stationtime2text()
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
-	M.silent = max(M.silent, 10)
-	M.paralysis = max(M.paralysis, 10)
+	M.Silence(10)
+	M.Paralyse(10)
 
 	if(prob(0.1))
 		M.visible_message("[M] wheezes.", "You wheeze sharply... it's cold.")
@@ -653,7 +653,7 @@
 		else if(prob(20))
 			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!","rubs at their eyes!")]"))
 	else
-		M.eye_blurry = max(M.eye_blurry, 10)
+		M.Blur(10)
 
 /datum/reagent/lexorin
 	name = REAGENT_LEXORIN
@@ -773,7 +773,7 @@
 			M.mend(TREAT_TISSUE_REPAIR, 25 * removed)
 			M.mend(TREAT_BURN_CARE, 25 * removed)
 			M.mend(TREAT_ANTITOXIN, rand(10, 30) * removed)
-			M.druggy = max(M.druggy, 10)
+			M.Drug(10)
 	else
 		if(prob(10))
 			to_chat(M, span_danger("Your insides are burning!"))
@@ -815,23 +815,23 @@
 		if(effective_dose == metabolism * 2 || prob(5))
 			M.emote("yawn")
 	else if(effective_dose < 1.5 * threshold)
-		M.eye_blurry = max(M.eye_blurry, 10)
+		M.Blur(10)
 	else if(effective_dose < 5 * threshold)
 		if(prob(50))
 			M.Weaken(2)
-		M.drowsyness = max(M.drowsyness, 20)
+		M.Drowse(20)
 	else
 		if(alien == IS_SLIME) //They don't have eyes, and they don't really 'sleep'. Fumble their general senses.
-			M.eye_blurry = max(M.eye_blurry, 30)
+			M.Blur(30)
 			if(prob(20))
-				M.ear_deaf = max(M.ear_deaf, 4)
+				M.Deafen(4)
 				M.deaf_loop.start() // Ear Ringing/Deafness
 				M.Confuse(2)
 			else
 				M.Weaken(2)
 		else
 			M.Sleeping(20)
-		M.drowsyness = max(M.drowsyness, 60)
+		M.Drowse(60)
 
 /datum/reagent/chloralhydrate
 	name = REAGENT_CHLORALHYDRATE
@@ -865,16 +865,16 @@
 
 	if(effective_dose == metabolism)
 		M.Confuse(2)
-		M.drowsyness += 2
+		M.AdjustDrowsyness(2)
 	else if(effective_dose < 2 * threshold)
 		M.Weaken(30)
-		M.eye_blurry = max(M.eye_blurry, 10)
+		M.Blur(10)
 	else
 		if(alien == IS_SLIME)
 			if(prob(30))
-				M.ear_deaf = max(M.ear_deaf, 4)
+				M.Deafen(4)
 				M.deaf_loop.start() // Ear Ringing/Deafness
-			M.eye_blurry = max(M.eye_blurry, 60)
+			M.Blur(60)
 			M.Weaken(30)
 			M.Confuse(40)
 		else
@@ -987,7 +987,7 @@
 	if(prob(80))
 		M.injure(INJURY_NEURAL, 0.1 * removed, source = src)
 	if(prob(50))
-		M.drowsyness = max(M.drowsyness, 3)
+		M.Drowse(3)
 	if(prob(10))
 		M.emote("drool")
 

@@ -9,6 +9,7 @@
 
 /datum/life_system/breathing/carbon
 	mob_type = /mob/living/carbon
+	woken_by = "Moved; equipment (masks, internals); body invalidate; its own timer (steady air)"
 
 //Start of a breath chain, calls breathe()
 /datum/life_system/breathing/carbon/tick(mob/living/carbon/self, datum/life_context/ctx)
@@ -17,6 +18,27 @@
 		breathe(self)
 
 #undef BREATH_CYCLE_PERIOD
+
+/// Breathing can't stop, but in steady air a breath changes nothing: the physiology holds
+/// the last breath quality between breaths, so a good breath in unchanged air needn't be
+/// repeated every cadence. Sleeps while the last breath was full quality from the turf's
+/// air (no internals, no losebreath, not critical, no breath alerts). Moving, equipment
+/// (masks, internals) and body changes (airway, lungs) wake it; air that changes in place
+/// is re-sampled by the timer.
+/datum/life_system/breathing/carbon/idle(mob/living/carbon/self)
+	if(!self.should_have_organ(O_LUNGS))
+		return TRUE
+	if(self.losebreath || self.failed_last_breath || self.internal || !isturf(self.loc))
+		return FALSE
+	if(self.alerts?["oxy"] || self.alerts?["tox_in_air"] || self.alerts?["methane_in_air"])
+		return FALSE
+	var/datum/physiology/P = self.body?.physiology
+	if(P && P.breath_quality < 1)
+		return FALSE
+	return !self.is_critical()
+
+/datum/life_system/breathing/carbon/rewake_delay(mob/living/carbon/self)
+	return self.should_have_organ(O_LUNGS) ? BREATH_STEADY_RESAMPLE : 0
 
 /// One breath: pick the breath source, exchange gas, exhale.
 /datum/life_system/breathing/carbon/proc/breathe(mob/living/carbon/self)

@@ -6,6 +6,10 @@
 	segment = LIFE_SEG_HUMAN_LIVE
 	mob_type = /mob/living/carbon/human
 
+/// Only a phobic human looks for what it fears.
+/datum/life_system/phobias/idle(mob/living/carbon/human/self)
+	return !self.phobias
+
 /datum/life_system/phobias/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	if(!self.phobias)
 		return

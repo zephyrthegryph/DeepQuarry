@@ -190,6 +190,7 @@ SUBSYSTEM_DEF(radiation)
 	if(!ishuman(target))
 		if(ismob(target))
 			target.radiation += strength
+			target.life_wake(LIFE_SYS_RADIATION, "irradiated")
 			return TRUE
 		return FALSE
 
@@ -198,6 +199,7 @@ SUBSYSTEM_DEF(radiation)
 	if(rad_vulnerability <= 0)
 		return FALSE
 	target.radiation += round(strength * rad_vulnerability, 0.1)
+	target.life_wake(LIFE_SYS_RADIATION, "irradiated")
 
 //	target.AddComponent(/datum/component/irradiated)
 	return TRUE

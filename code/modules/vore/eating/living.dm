@@ -837,7 +837,7 @@
 	set category = "Abilities.General"
 	set desc = "Toggle your glowing on/off!"
 
-	if(stat || is_paralyzed() || weakened || stunned || world.time < last_special)
+	if(stat || is_paralyzed() || get_weakened() || get_stunned() || world.time < last_special)
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -869,7 +869,7 @@
 	set category = "Abilities.Vore"
 	set desc = "Consume held garbage."
 
-	if(stat || is_paralyzed() || weakened || stunned || world.time < last_special)
+	if(stat || is_paralyzed() || get_weakened() || get_stunned() || world.time < last_special)
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1022,7 +1022,7 @@
 				H.apply_effect(nom["WTF"], STUTTER)
 				H.make_jittery(nom["WTF"])
 				H.make_dizzy(nom["WTF"])
-				H.druggy = max(H.druggy, nom["WTF"])
+				H.Drug(nom["WTF"])
 
 			return TRUE
 		else

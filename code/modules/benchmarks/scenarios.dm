@@ -470,9 +470,9 @@
 		fail("cached and by-name hash_string disagree")
 
 /// Idle mob Life cost with mob hibernation off, then on (doc/mob_life_architecture.md §4.9).
-/// Spawns idle mice (every system has a sleep rule, so they hibernate) and humans (partly
-/// asleep until the physiology systems gain sleep rules) on a fixture, then measures SSmobs
-/// with GLOB.mob_hibernation_enabled FALSE and TRUE.
+/// Spawns idle mice and humans on a fixture (every system of both has a sleep rule, and the
+/// status counters run on their own timers, so both hibernate), then measures SSmobs with
+/// GLOB.mob_hibernation_enabled FALSE and TRUE. Reports how many of each hibernated.
 /datum/benchmark/idle_mobs
 	id = "idle_mobs"
 	description = "Idle mob Life cost with mob hibernation off and on"
@@ -480,6 +480,15 @@
 /datum/benchmark/idle_mobs/Run()
 	wait_for_assets()
 	var/list/turf/open/turfs = build_floor_fixture(param("width", 20))
+	// Normal station air, so the humans are healthy and idle rather than decompressing.
+	for(var/turf/open/fixture_turf as anything in turfs)
+		for(var/datum/gas/gas as anything in fixture_turf.air.get_gases())
+			fixture_turf.air.set_moles(gas, 0)
+		fixture_turf.air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
+		fixture_turf.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+		fixture_turf.air.set_temperature(T20C)
+		fixture_turf.air_update_turf()
+		CHECK_TICK
 	var/list/mob/living/mobs = list()
 	var/mice = param("mice", 300)
 	var/humans = param("humans", 40)
@@ -490,7 +499,11 @@
 		mobs += M
 		CHECK_TICK
 	for(var/i in 1 to humans)
-		mobs += new /mob/living/carbon/human(pick(turfs))
+		var/mob/living/carbon/human/H = new(pick(turfs))
+		// Humans are low priority NPCs: keep them in the run on a z-level with no players, so
+		// hibernation, not the NPC skip, is what is measured.
+		H.low_priority = FALSE
+		mobs += H
 		CHECK_TICK
 	metric("idle_mobs_spawned", length(mobs), "mobs", "none")
 	var/was_enabled = GLOB.mob_hibernation_enabled
@@ -512,6 +525,19 @@
 	end_window("hibernation_on")
 	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
 	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
+	var/list/humans_spawned = list()
+	for(var/mob/living/carbon/human/H in mobs)
+		humans_spawned += H
+	metric("hibernation_on_humans_hibernating", benchmark_count_hibernating(humans_spawned), "mobs", "higher")
+	var/list/busy_human_systems = list()
+	for(var/mob/living/carbon/human/H as anything in humans_spawned)
+		if(H.life_hibernating)
+			continue
+		var/datum/life_composition/comp = H.life_composition
+		for(var/datum/life_system/S as anything in comp?.ordered)
+			if(S.bit != LIFE_SYS_GATE && H.life_system_wants_run(S))
+				busy_human_systems["[S.type]"] += 1
+	detail("hibernation_on_busy_human_systems", busy_human_systems)
 	var/list/awake_bits = list()
 	for(var/mob/living/L as anything in mobs)
 		if(!L.life_hibernating)
@@ -524,8 +550,10 @@
 		CHECK_TICK
 
 /// Puts a simple mob's AI to sleep and opens its environment limits, so it idles without
-/// reacting to the fixture's air.
+/// reacting to the fixture's air. It stays in the SSmobs run although no player shares its
+/// z-level (so hibernation, not the NPC skip, is what is measured).
 /proc/benchmark_quiet_simple_mob(mob/living/simple_mob/M)
+	M.low_priority = FALSE
 	M.ai_brain?.go_sleep()
 	M.min_oxy = 0
 	M.max_oxy = 0

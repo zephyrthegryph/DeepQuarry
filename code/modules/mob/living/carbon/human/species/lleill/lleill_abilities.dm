@@ -26,13 +26,13 @@
 			return
 		cloak()
 		block_hud = 1
-		hud_updateflag = 1
+		mark_hud_dirty(HEALTH_HUD)
 		to_chat(src, span_warning("Your fur shimmers and shifts around you, hiding you from the naked eye."))
 		species.lleill_energy -= energy_cost
 	else
 		uncloak()
 		block_hud = 0
-		hud_updateflag = 1
+		mark_hud_dirty(HEALTH_HUD)
 		to_chat(src, span_warning("The brustling of your fur settles down and you become visible once again."))
 	species.update_lleill_hud(src)
 
@@ -325,7 +325,7 @@
 		chosen_target.tiredness += 70
 		chosen_target.nutrition = max((chosen_target.nutrition / 2),75)
 		chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
-		chosen_target.eye_blurry += 20
+		chosen_target.AdjustBlurry(20)
 		to_chat(chosen_target, span_warning("You feel considerably weakened for the moment."))
 	species.update_lleill_hud(src)
 

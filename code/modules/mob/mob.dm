@@ -101,7 +101,7 @@
 	if(!client && !teleop)	return
 
 	if (type)
-		if((type & VISIBLE_MESSAGE) && (is_blind() || paralysis) )//Vision related
+		if((type & VISIBLE_MESSAGE) && (is_blind() || get_paralysis()) ) //Vision related
 			if (!( alt ))
 				return
 			else
@@ -116,7 +116,7 @@
 				if ((type & VISIBLE_MESSAGE) && (sdisabilities & BLIND))
 					return
 	// Added voice muffling for Issue 41.
-	if(stat == UNCONSCIOUS || sleeping > 0)
+	if(stat == UNCONSCIOUS || get_sleeping() > 0)
 		to_chat(src, span_filter_notice(span_italics("... You can almost hear someone talking ...")))
 	else
 		if(teleop)
@@ -217,10 +217,10 @@
 	return ((sdisabilities & BLIND) || blinded || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_deaf()
-	return ((sdisabilities & DEAF) || ear_deaf || incapacitated(INCAPACITATION_KNOCKOUT))
+	return ((sdisabilities & DEAF) || get_ear_deaf() || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_paralyzed()
-	return paralysis
+	return get_paralysis()
 
 /mob/proc/is_physically_disabled()
 	return incapacitated(INCAPACITATION_DISABLED)
@@ -229,13 +229,13 @@
 	return incapacitated(INCAPACITATION_KNOCKDOWN)
 
 /mob/proc/incapacitated(incapacitation_flags = INCAPACITATION_DEFAULT)
-	if((incapacitation_flags & INCAPACITATION_STUNNED) && stunned)
+	if((incapacitation_flags & INCAPACITATION_STUNNED) && get_stunned())
 		return 1
 
-	if((incapacitation_flags & INCAPACITATION_FORCELYING) && (weakened || resting))
+	if((incapacitation_flags & INCAPACITATION_FORCELYING) && (get_weakened() || resting))
 		return 1
 
-	if((incapacitation_flags & INCAPACITATION_KNOCKOUT) && (stat || sleeping))
+	if((incapacitation_flags & INCAPACITATION_KNOCKOUT) && (stat || get_sleeping()))
 		return 1
 
 	if((incapacitation_flags & INCAPACITATION_RESTRAINED) && restrained())
@@ -828,145 +828,6 @@
 //This might need a rename but it should replace the can this mob use things check
 /mob/proc/IsAdvancedToolUser()
 	return 0
-
-/mob/proc/Stun(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_STUN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANSTUN)
-		facing_dir = null
-		stunned = max(max(stunned,amount),0) //can't go below 0, getting a low amount of stun doesn't lower your current stun
-		update_canmove()	//updates lying, canmove and icons
-	on_status_counter_changed("stun")
-	return
-
-/mob/proc/SetStunned(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_STUN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANSTUN)
-		stunned = max(amount,0)
-		update_canmove()	//updates lying, canmove and icons
-	on_status_counter_changed("setstunned")
-	return
-
-/mob/proc/AdjustStunned(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_STUN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANSTUN)
-		stunned = max(stunned + amount,0)
-		update_canmove()	//updates lying, canmove and icons
-	on_status_counter_changed("adjuststunned")
-	return
-
-/mob/proc/Weaken(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_WEAKEN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANWEAKEN)
-		facing_dir = null
-		weakened = max(max(weakened,amount),0)
-		update_canmove()	//updates lying, canmove and icons
-	on_status_counter_changed("weaken")
-	return
-
-/mob/proc/SetWeakened(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_WEAKEN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANWEAKEN)
-		weakened = max(amount,0)
-		update_canmove()	//can you guess what this does yet?
-	on_status_counter_changed("setweakened")
-	return
-
-/mob/proc/AdjustWeakened(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_WEAKEN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANWEAKEN)
-		weakened = max(weakened + amount,0)
-		update_canmove()	//updates lying, canmove and icons
-	on_status_counter_changed("adjustweakened")
-	return
-
-/mob/proc/Paralyse(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_PARALYZE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANPARALYSE)
-		facing_dir = null
-		paralysis = max(max(paralysis,amount),0)
-	on_status_counter_changed("paralyse")
-	return
-
-/mob/proc/SetParalysis(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_PARALYZE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANPARALYSE)
-		paralysis = max(amount,0)
-	on_status_counter_changed("setparalysis")
-	return
-
-/mob/proc/AdjustParalysis(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_PARALYZE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANPARALYSE)
-		paralysis = max(paralysis + amount,0)
-	on_status_counter_changed("adjustparalysis")
-	return
-
-/mob/proc/Sleeping(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_SLEEP, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	facing_dir = null
-	sleeping = max(max(sleeping,amount),0)
-	on_status_counter_changed("sleeping")
-	return
-
-/mob/proc/SetSleeping(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_SLEEP, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	sleeping = max(amount,0)
-	on_status_counter_changed("setsleeping")
-	return
-
-/mob/proc/AdjustSleeping(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_SLEEP, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	sleeping = max(sleeping + amount,0)
-	on_status_counter_changed("adjustsleeping")
-	return
-
-/mob/proc/Confuse(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	confused = max(max(confused,amount),0)
-	on_status_counter_changed("confuse")
-	return
-
-/mob/proc/SetConfused(amount, ignore_canstun = FALSE) //Sets remaining duration
-	confused = max(amount,0)
-	on_status_counter_changed("setconfused")
-	return
-
-/mob/proc/AdjustConfused(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	confused = max(confused + amount,0)
-	on_status_counter_changed("adjustconfused")
-	return
-
-/mob/proc/Blind(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(max(eye_blind,amount),0)
-	on_status_counter_changed("blind")
-	return
-
-/mob/proc/SetBlinded(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(amount,0)
-	on_status_counter_changed("setblinded")
-	return
-
-/mob/proc/AdjustBlinded(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(eye_blind + amount,0)
-	on_status_counter_changed("adjustblinded")
-	return
 
 /mob/proc/Resting(amount)
 	facing_dir = null
