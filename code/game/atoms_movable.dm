@@ -38,7 +38,7 @@
 /atom/movable/Initialize(mapload)
 	. = ..()
 	if(rad_insulation != RAD_NO_INSULATION)
-		RAD_SHIELDING_CHANGED
+		RAD_SHIELDING_CHANGED(loc)
 
 #if EMISSIVE_BLOCK_GENERIC != 0
 	#error EMISSIVE_BLOCK_GENERIC is expected to be 0 to facilitate a weird optimization hack where we rely on it being the most common.
@@ -259,7 +259,8 @@
 	SEND_SIGNAL(src, COMSIG_MOVABLE_MOVED, old_loc, direction, forced, movetime)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
-		RAD_SHIELDING_CHANGED
+		RAD_SHIELDING_CHANGED(old_loc)
+		RAD_SHIELDING_CHANGED(loc)
 	// Handle any buckled mobs on this movable
 	if(has_buckled_mobs())
 		handle_buckled_mob_movement(old_loc, direction, movetime)

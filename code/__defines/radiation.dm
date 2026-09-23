@@ -26,10 +26,9 @@ Ask Mothblocks if they're around
 /// Amount of knockdown when it occurs
 #define RAD_MOB_KNOCKDOWN_AMOUNT 3
 
-/// Invalidates SSradiation's cached shielding paths. Use when anything that shields radiation changes.
-#define RAD_SHIELDING_CHANGED if(SSradiation) SSradiation.shielding_revision++
-/// Cached source/target insulation entries kept before the radiation path cache is flushed.
-#define RAD_PATH_CACHE_MAX 4096
+/// Marks a turf's radiation shielding for resending to the Rust insulation layer.
+/// Use when a turf changes or an insulating movable arrives on, leaves or is deleted from it.
+#define RAD_SHIELDING_CHANGED(turf) if(SSradiation && isturf(turf)) SSradiation.dirty_turfs[turf] = TRUE
 #define RAD_NO_INSULATION 1.0 // For things that shouldn't become irradiated for whatever reason
 #define RAD_VERY_LIGHT_INSULATION 0.9 // What girders have
 #define RAD_LIGHT_INSULATION 0.8
