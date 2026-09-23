@@ -146,6 +146,21 @@ struct ParsedField {
     attr: FieldAttr,
 }
 
+impl ParsedField {
+    /// This field's element type if it is a fixed-size array (`[T; N]`,
+    /// e.g. a value keyed by an enum like `Channel` -- `rust_bindings.md`
+    /// §2's "per-channel values become fields keyed by the enum", not a
+    /// magic index): `Some(elem_ty)` for `[T; N]`, `None` otherwise. `N`
+    /// itself is never needed in the generated code (every op below is
+    /// either whole-array or a single, runtime-checked index).
+    fn array_elem(&self) -> Option<&syn::Type> {
+        match &self.ty {
+            syn::Type::Array(a) => Some(&a.elem),
+            _ => None,
+        }
+    }
+}
+
 fn pascal_case(ident: &Ident) -> Ident {
     let mut out = String::new();
     for part in ident.to_string().split('_') {
@@ -224,9 +239,12 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
     let dm_str = &args.dm;
 
     // Default field values (input/state fields fall back to `Default`).
+    // An array field's default is used as-is (an array literal like
+    // `[0.0; 3]` can't be `as`-cast the way a scalar default can).
     let default_fields = parsed.iter().map(|f| {
         let ident = &f.ident;
         match &f.attr.default {
+            Some(expr) if f.array_elem().is_some() => quote! { #ident: #expr },
             Some(expr) => quote! { #ident: (#expr) as _ },
             None => quote! { #ident: ::std::default::Default::default() },
         }
@@ -238,52 +256,114 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
         .iter()
         .filter(|f| matches!(f.attr.role, Role::Config | Role::Input))
         .collect();
-    let command_variants = command_fields.iter().map(|f| {
+    // An array field gets a whole-array variant (`Channels([f64; 3])`, a
+    // bulk write) *and* an indexed one (`ChannelsAt(usize, f64)`, a single
+    // enum-keyed write -- e.g. `Command::ChannelsAt(Channel::Light.idx(),
+    // v)` -- without replacing the other two channels). An out-of-range
+    // index is a silent no-op: `apply` has no error channel back to the
+    // caller (§2's commands are fire-and-forget once validated), and a
+    // bad index only reaches here past a `usize` DM already computed, not
+    // past user input.
+    let command_variants = command_fields.iter().flat_map(|f| {
         let variant = pascal_case(&f.ident);
         let ty = &f.ty;
-        quote! { #variant(#ty) }
+        let whole = quote! { #variant(#ty) };
+        match f.array_elem() {
+            Some(elem) => {
+                let at_variant = format_ident!("{variant}At");
+                vec![whole, quote! { #at_variant(usize, #elem) }]
+            }
+            None => vec![whole],
+        }
     });
-    let apply_arms = command_fields.iter().map(|f| {
+    let apply_arms = command_fields.iter().flat_map(|f| {
         let variant = pascal_case(&f.ident);
         let ident = &f.ident;
-        quote! { #command_ident::#variant(v) => value.#ident = ::std::clone::Clone::clone(v) }
+        let whole = quote! { #command_ident::#variant(v) => value.#ident = ::std::clone::Clone::clone(v) };
+        match f.array_elem() {
+            Some(_) => {
+                let at_variant = format_ident!("{variant}At");
+                vec![
+                    whole,
+                    quote! {
+                        #command_ident::#at_variant(i, v) => {
+                            if let ::std::option::Option::Some(slot) = value.#ident.get_mut(*i) {
+                                *slot = ::std::clone::Clone::clone(v);
+                            }
+                        }
+                    },
+                ]
+            }
+            None => vec![whole],
+        }
     });
 
     // Validators: one per config field (bounded ones clamp/reject; the rest
-    // pass through, kept for uniform call sites in the FFI glue).
-    let validators = parsed.iter().filter(|f| f.attr.role == Role::Config).map(|f| {
+    // pass through, kept for uniform call sites in the FFI glue). An array
+    // field gets a second, single-element validator (`validate_<f>_at`)
+    // for its indexed command, applying the same rule to one value; the
+    // whole-array one applies it to every element.
+    let validators = parsed.iter().filter(|f| f.attr.role == Role::Config).flat_map(|f| {
         let ident = &f.ident;
-        let ty = &f.ty;
-        let fn_ident = format_ident!("validate_{ident}");
-        match &f.attr.range {
-            Some((min, max)) => {
-                let on_invalid = f
-                    .attr
-                    .on_invalid
-                    .clone()
-                    .unwrap_or_else(|| format_ident!("clamp", span = Span::call_site()));
-                let call = match on_invalid.to_string().as_str() {
-                    "clamp" => quote! { ::vg_core::component::clamp(v, (#min) as #ty, (#max) as #ty) },
-                    "reject" => quote! { ::vg_core::component::reject_range(v, (#min) as #ty, (#max) as #ty) },
-                    other => {
-                        return syn::Error::new(
+        let elem_ty = f.array_elem();
+        let scalar_ty = elem_ty.unwrap_or(&f.ty);
+        let call = |v: TokenStream| -> Result<TokenStream, TokenStream> {
+            match &f.attr.range {
+                Some((min, max)) => {
+                    let on_invalid = f
+                        .attr
+                        .on_invalid
+                        .clone()
+                        .unwrap_or_else(|| format_ident!("clamp", span = Span::call_site()));
+                    match on_invalid.to_string().as_str() {
+                        "clamp" => Ok(quote! { ::vg_core::component::clamp(#v, (#min) as #scalar_ty, (#max) as #scalar_ty) }),
+                        "reject" => {
+                            Ok(quote! { ::vg_core::component::reject_range(#v, (#min) as #scalar_ty, (#max) as #scalar_ty) })
+                        }
+                        other => Err(syn::Error::new(
                             on_invalid.span(),
                             format!("on_invalid must be `clamp` or `reject`, got `{other}`"),
                         )
-                        .to_compile_error();
-                    }
-                };
-                quote! {
-                    pub fn #fn_ident(v: #ty) -> ::std::result::Result<#ty, ::vg_core::component::FieldError> {
-                        #call
+                        .to_compile_error()),
                     }
                 }
+                None => Ok(quote! { ::vg_core::component::identity(#v) }),
             }
-            None => quote! {
-                pub fn #fn_ident(v: #ty) -> ::std::result::Result<#ty, ::vg_core::component::FieldError> {
-                    ::vg_core::component::identity(v)
-                }
-            },
+        };
+        let at_call = match call(quote! { v }) {
+            Ok(c) => c,
+            Err(e) => return vec![e],
+        };
+        match elem_ty {
+            Some(elem_ty) => {
+                let fn_ident = format_ident!("validate_{ident}");
+                let at_fn_ident = format_ident!("validate_{ident}_at");
+                let ty = &f.ty;
+                vec![
+                    quote! {
+                        pub fn #at_fn_ident(v: #elem_ty) -> ::std::result::Result<#elem_ty, ::vg_core::component::FieldError> {
+                            #at_call
+                        }
+                    },
+                    quote! {
+                        pub fn #fn_ident(v: #ty) -> ::std::result::Result<#ty, ::vg_core::component::FieldError> {
+                            let mut out = v;
+                            for x in &mut out {
+                                *x = Self::#at_fn_ident(*x)?;
+                            }
+                            ::std::result::Result::Ok(out)
+                        }
+                    },
+                ]
+            }
+            None => {
+                let fn_ident = format_ident!("validate_{ident}");
+                vec![quote! {
+                    pub fn #fn_ident(v: #scalar_ty) -> ::std::result::Result<#scalar_ty, ::vg_core::component::FieldError> {
+                        #at_call
+                    }
+                }]
+            }
         }
     });
 
