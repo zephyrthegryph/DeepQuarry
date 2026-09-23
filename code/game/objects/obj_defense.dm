@@ -27,8 +27,8 @@
 		return TRUE
 	return ..()
 
-/// Explosion adapter: blast from the propagated severity. Structures and items
-/// still run their own "prob then qdel" ladders until D5 batches explosions.
+/// Explosion adapter: blast from the propagated severity, delivered in type
+/// batches by SSexplosions. Objects are destroyed by integrity.
 /obj/ex_act(severity)
 	if(..())
 		return

@@ -203,7 +203,7 @@
 			to_chat(user, span_notice("Internal Diagnostics:"))
 			for(var/slot in Mecha.internal_components)
 				var/obj/item/mecha_parts/component/MC = Mecha.internal_components[slot]
-				to_chat(user, "[MC? ("[slot]: [MC] " + span_notice("[round((MC.integrity / MC.max_integrity) * 100, 0.1)]%") + " integrity. [MC.get_efficiency() * 100] Operational capacity.") : span_warning("[slot]: Component Not Found")]")
+				to_chat(user, "[MC? ("[slot]: [MC] " + span_notice("[round((MC.get_integrity() / MC.max_integrity) * 100, 0.1)]%") + " integrity. [MC.get_efficiency() * 100] Operational capacity.") : span_warning("[slot]: Component Not Found")]")
 
 			to_chat(user, "<hr>")
 			to_chat(user, span_notice("General Statistics:"))
