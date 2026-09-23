@@ -57,7 +57,7 @@
 				return ITEM_INTERACT_FAILURE
 		else if(!H.stat && !prototype)
 			if(H != user)
-				if(H.a_intent != I_HELP)
+				if(!IS_HELPING(H))
 					balloon_alert(user, "[H] resists your attempt to inject them with \the [src].")
 					balloon_alert(H, "[user] is trying to inject you with \the [src]")
 					if(!do_after(user, 3 SECONDS, target = H))

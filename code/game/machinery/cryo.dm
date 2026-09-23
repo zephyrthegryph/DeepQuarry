@@ -84,9 +84,6 @@
 	if(occupant == user && !user.stat)
 		go_out()
 
-/obj/machinery/atmospherics/unary/cryo_cell/attack_ghost(mob/user)
-	tgui_interact(user)
-
 /obj/machinery/atmospherics/unary/cryo_cell/attack_hand(mob/user)
 	if(user == occupant)
 		return

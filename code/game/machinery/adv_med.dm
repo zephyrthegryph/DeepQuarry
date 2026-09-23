@@ -327,9 +327,6 @@
 				return
 		return
 
-/obj/machinery/body_scanconsole/attack_ai(user as mob)
-	return attack_hand(user)
-
 /obj/machinery/body_scanconsole/attack_ghost(user as mob)
 	return attack_hand(user)
 

@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The lethal-injection syringe no longer stabs people in combat mode; it is too big to stab with."
+  - code_imp: "Medical, surgery and species handlers read combat mode instead of intents."
+  - code_imp: "Medical consoles, the cryo cell and the medical stand use the AI, cyborg and ghost actor adapters."
+  - code_imp: "Surgery reads welders through get_welder(); the protean rig stores items through the storage API."

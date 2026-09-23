@@ -213,6 +213,7 @@
 #include "dq_reactor_poller_tests.dm"
 #include "dq_actor_adapter_tests.dm"
 #include "dq_combat_mode_tests.dm"
+#include "dq_interact_cleanup_tests.dm"
 #include "dq_input_tests.dm"
 #include "dq_i7_bulk_capture.dm"
 #include "dq_interaction_tests.dm"

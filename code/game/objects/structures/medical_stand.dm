@@ -3,6 +3,7 @@
 	icon = 'icons/obj/medical_stand.dmi'
 	desc = "Medical stand used to hang reagents for transfusion and to hold anesthetic tank."
 	icon_state = "medical_stand_empty"
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 	//gas stuff
 	var/obj/item/tank/tank
@@ -89,10 +90,6 @@
 	qdel(beaker)
 	beaker = null
 	return ..()
-
-/obj/structure/medical_stand/attack_robot(mob/user)
-	if(Adjacent(user))
-		attack_hand(user)
 
 /obj/structure/medical_stand/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
 	..()

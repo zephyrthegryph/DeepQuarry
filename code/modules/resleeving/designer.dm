@@ -49,9 +49,6 @@
 	else
 		. = ..()
 
-/obj/machinery/computer/transhuman/designer/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/computer/transhuman/designer/attack_hand(mob/user)
 	add_fingerprint(user)
 	if(inoperable())
