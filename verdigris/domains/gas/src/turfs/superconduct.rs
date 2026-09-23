@@ -359,7 +359,8 @@ fn process_heat_notify(src: ByondValue) -> Result<ByondValue> {
 }
 
 fn get_share_energy(delta: f32, cap_1: f32, cap_2: f32) -> f32 {
-	delta * ((cap_1 * cap_2) / (cap_1 + cap_2))
+	use vg_core::units::{HeatCapacity, Kelvin};
+	vg_core::thermo::equalizing_energy(Kelvin(delta), HeatCapacity(cap_1), HeatCapacity(cap_2)).0
 }
 
 #[cfg(test)]

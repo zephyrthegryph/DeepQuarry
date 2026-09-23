@@ -6,3 +6,12 @@ rust-version = "1.85"
 description = "Domain-agnostic simulation primitives for verdigris. Host-buildable: no byondapi, no global statics."
 
 [dependencies]
+rayon = { version = "1.10.0", optional = true }
+
+[features]
+default = ["rayon"]
+# Parallel iteration over `Arena` (rayon is already in the workspace via gas and layout).
+rayon = ["dep:rayon"]
+
+[dev-dependencies]
+proptest = "1.5"
