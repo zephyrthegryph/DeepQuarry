@@ -75,6 +75,17 @@ GLOBAL_VAR(latent_last_refusal)
 
 // ---- Eligibility and type data ----
 
+/// A type opts out of being latent for reasons the storability sandbox can't
+/// see (semantics, not side effects: containment.md §4.7) -- an admin fax
+/// mid-composition, a reagent that isn't wired up. Override to return a
+/// non-null reason and `latent_safe_types.dm`'s hand-kept `latent_safe`
+/// still decides eligibility (dq_latent_eligible() below); this is the
+/// self-documenting home for *why*, queried by the sandbox
+/// (dq_storability_sandbox.dm) so an opt-out reads as a reason, not a
+/// silent `FALSE`.
+/atom/movable/proc/latent_unsafe_reason()
+	return null
+
 /// Whether things of `path` may be latent: latent-safe (containment.md §4.4).
 /proc/dq_latent_eligible(path)
 	var/static/list/cache = list()

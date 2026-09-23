@@ -19,13 +19,6 @@ GLOBAL_LIST_INIT(dq_storability_candidate_roots, list(
 	/obj/item,
 ))
 
-/// A type opts out for reasons the sandbox can't see (semantics, not side
-/// effects): override this to return a non-null reason and the type is
-/// excluded regardless of what the sandbox finds. Subtypes inherit the
-/// reason unless they override it back to null.
-/atom/movable/proc/latent_unsafe_reason()
-	return null
-
 /// One sandbox verdict.
 /datum/storability_verdict
 	var/path
