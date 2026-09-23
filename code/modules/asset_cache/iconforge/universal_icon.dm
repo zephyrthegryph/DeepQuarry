@@ -439,7 +439,9 @@
 	// Filter out 'runtime' icons (server-generated RSC cache icons)
 	// Write the icon to the filesystem so it can be used by iconforge
 	if(!isfile(curicon) || !length(string_curicon))
-		var/file_path_tmp = "tmp/uni_icon-tmp-[rand(1, 999)].dmi" // this filename is temporary.
+		// dq_scratch_tag: unique per DreamDaemon process, so two worlds sharing a
+		// working directory (a sharded dm-test run) can't collide on this temp name.
+		var/file_path_tmp = "tmp/uni_icon-tmp-[GLOB.dq_scratch_tag]-[rand(1, 999)].dmi" // this filename is temporary.
 		fcopy(curicon, file_path_tmp)
 		var/file_hash = rustg_hash_file(RUSTG_HASH_MD5, file_path_tmp)
 		// Use the hash as its new filename - this allows the uni_icon to be smart cached, because the filename will be consistent between runs if the content is the same

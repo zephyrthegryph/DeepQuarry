@@ -5,6 +5,13 @@ GLOBAL_PROTECT(round_id)
 GLOBAL_VAR_INIT(log_directory, "data/logs/") //See world.dm for the full calculated path
 GLOBAL_PROTECT(log_directory)
 
+/// A random tag, unique per DreamDaemon process, for scratch file paths under
+/// tmp/ that must not collide between two worlds sharing a working directory
+/// (a sharded dm-test run boots N worlds in the same worktree). See
+/// get_dummy_savefile() in code/_helpers/icons.dm.
+GLOBAL_VAR_INIT(dq_scratch_tag, num2text(rand(1, 999999999)))
+GLOBAL_PROTECT(dq_scratch_tag)
+
 #define DECLARE_LOG_NAMED(log_var_name, log_file_name, start)\
 GLOBAL_VAR(##log_var_name);\
 GLOBAL_PROTECT(##log_var_name);\

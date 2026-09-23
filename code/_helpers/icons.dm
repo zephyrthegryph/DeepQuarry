@@ -531,7 +531,12 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 	var/static/next_id = 0
 	if(next_id++ > 9)
 		next_id = 0
-	var/savefile_path = "tmp/dummy-save-[next_id].sav"
+	// dq_scratch_tag makes this path unique per DreamDaemon process: two
+	// worlds that happen to share a working directory (a sharded dm-test run
+	// boots N worlds in the same worktree) would otherwise round-robin
+	// through the SAME tmp/dummy-save-N.sav paths and race each other for
+	// the file (observed as "cannot open savefile buffer dummy for write").
+	var/savefile_path = "tmp/dummy-save-[GLOB.dq_scratch_tag]-[next_id].sav"
 	try
 		if(fexists(savefile_path))
 			fdel(savefile_path)

@@ -18,7 +18,13 @@ SUBSYSTEM_DEF(server_maint)
 	world.hub_password = "" *///quickly! before the hubbies see us.
 
 /datum/controller/subsystem/server_maint/Initialize()
-	if (fexists("tmp/"))
+	// A sharded dm-test run boots N worlds sharing this worktree's tmp/, each
+	// still actively using it (icon2base64's dummy savefiles, universal_icon's
+	// scratch .dmi files, ...); wiping it out from under a sibling shard was the
+	// root cause of "cannot open savefile buffer dummy for write" under --shards.
+	// Only the un-sharded case (the overwhelming majority of runs) still gets the
+	// old wipe-on-boot behavior.
+	if (GLOB.dq_test_shard_count <= 1 && fexists("tmp/"))
 		fdel("tmp/")
 	//if (CONFIG_GET(flag/hub))
 		//world.update_hub_visibility(TRUE)
@@ -76,7 +82,9 @@ SUBSYSTEM_DEF(server_maint)
 			return
 
 /datum/controller/subsystem/server_maint/Shutdown()
-	if (fexists("tmp/"))
+	// See the matching guard in Initialize(): a sharded run's worlds share tmp/
+	// with siblings that may still be running.
+	if (GLOB.dq_test_shard_count <= 1 && fexists("tmp/"))
 		fdel("tmp/")
 	//kick_clients_in_lobby(span_boldannounce("The round came to an end with you in the lobby."), TRUE) //second parameter ensures only afk clients are kicked
 	var/server = CONFIG_GET(string/server)
