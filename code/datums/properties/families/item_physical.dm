@@ -10,6 +10,8 @@
 	desc = "ITEMSIZE_* class. A container aggregates the largest it holds."
 	unit = PROP_UNIT_SIZE_CLASS
 	aggregator = PROP_AGG_MAX
+	high_word = "big"
+	low_word = "small"
 	min_value = 0
 	max_value = ITEMSIZE_NO_CONTAINER
 
@@ -31,6 +33,8 @@
 	unit = PROP_UNIT_KILOGRAMS
 	aggregator = PROP_AGG_SUM
 	min_value = 0
+	high_word = "heavy"
+	low_word = "light"
 
 /datum/property_provider/material/mass
 	property = PROP_MASS

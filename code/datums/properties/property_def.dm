@@ -20,6 +20,12 @@
 	var/aggregator = PROP_AGG_NONE
 	var/min_value = -INFINITY
 	var/max_value = INFINITY
+	/// Predicate reasons (predicates.dm): "too [high_word]" when a value is
+	/// too large, "too [low_word]" when too small. Null: "<name> too high".
+	var/high_word
+	var/low_word
+	/// Tags: how reasons describe it ("must be [adjective]"). Null: lowercase name.
+	var/adjective
 	/// Test fixtures set this so the global registry skips them.
 	var/test_only = FALSE
 
