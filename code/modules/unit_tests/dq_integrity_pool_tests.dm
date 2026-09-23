@@ -279,11 +279,12 @@
 	TEST_ASSERT_EQUAL(laptop.get_integrity(), 150, "casing damage comes off integrity")
 	TEST_ASSERT(!laptop.computer_broken(), "a scratched laptop still works")
 
-	// The explosion/EMP ladders' legacy call: take_damage(amount, component_probability).
-	laptop.take_damage(60, 0)
-	TEST_ASSERT(laptop.get_integrity() >= 150 - 75 && laptop.get_integrity() <= 150 - 45, "the ladder's legacy call damages the casing ([laptop.get_integrity()])")
-	laptop.take_damage(40, 0, 0)
-	TEST_ASSERT(laptop.get_integrity() >= 150 - 75, "an EMP's legacy call spares the casing")
+	// Blasts hit the casing; EMPs only the components.
+	laptop.ex_act(3)
+	var/after_blast = laptop.get_integrity()
+	TEST_ASSERT(after_blast < 150, "a blast damages the casing ([after_blast])")
+	laptop.emp_act(EMP_LIGHT)
+	TEST_ASSERT_EQUAL(laptop.get_integrity(), after_blast, "an EMP spares the casing")
 
 	laptop.repair_damage(full)
 	laptop.damage_computer(110, 0, TRUE, FALSE)
