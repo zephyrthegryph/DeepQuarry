@@ -56,10 +56,11 @@
 			for(var/mob/living/L as anything in buckled_mobs)
 				L.set_dir(dir)
 
-/obj/structure/bed/chair/wheelchair/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides chair's interaction_item(): no padding this wheelchair with a stack.
+/obj/structure/bed/chair/wheelchair/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack))
-		return
-	..()
+		return TRUE
+	return ..()
 
 /obj/structure/bed/chair/wheelchair/wrench_act(mob/user, obj/item/W)
 	return TRUE
@@ -155,14 +156,26 @@
 				if (occupant && (src.loc != occupant.loc))
 					src.forceMove(occupant.loc) // Failsafe to make sure the wheelchair stays beneath the occupant after driving
 
-/obj/structure/bed/chair/wheelchair/attack_hand(mob/living/user as mob)
+/obj/structure/bed/chair/wheelchair/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/wheelchair_hand,
+	)
+	..()
+
+/// Old attack_hand: drop the puller, or unbuckle whoever's sitting in it.
+/datum/interaction/entry_hand/wheelchair_hand
+	id = "wheelchair_hand"
+	name = "Use"
+	effect = /obj/structure/bed/chair/wheelchair/proc/interaction_hand
+
+/obj/structure/bed/chair/wheelchair/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (pulling)
 		MouseDrop(user)
 	else
 		if(has_buckled_mobs())
 			for(var/A in buckled_mobs)
 				user_unbuckle_mob(A, user)
-	return
+	return TRUE
 
 /obj/structure/bed/chair/wheelchair/click_ctrl(mob/user)
 	if(in_range(src, user))
