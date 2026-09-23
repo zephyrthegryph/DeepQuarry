@@ -131,7 +131,7 @@
 	T.visible_message(span_danger("\The [src] goes dull!"))
 	playsound(src, "shatter", 70, 1)
 	dulled = 1
-	if(is_sharp() || has_edge())
+	if(is_sharp(src) || has_edge(src))
 		sharp = FALSE
 		edge = FALSE
 

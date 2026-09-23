@@ -83,7 +83,8 @@
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		qdel(CH)
-	paired_uavs.Cut()
+	if(paired_uavs)
+		paired_uavs.Cut()
 	return ..()
 
 /obj/item/modular_computer/emag_act(remaining_charges, mob/user)
