@@ -184,7 +184,7 @@
 				span_warning("[user] is trying to stuff a beacon into you!"))
 			if(do_after(user, 3 SECONDS, target = src))
 				user.drop_item()
-				I.forceMove(B)
+				B.belly_insert(I, user)
 				return TRUE
 			else
 				return TRUE //You don't get to hit someone 'later'

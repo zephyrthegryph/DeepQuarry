@@ -231,6 +231,8 @@ As built (S3):
   bodies comparing `world.time` with a variable. The rest (S4's SSobj/SSprocessing users and S5's
   machines) are in `tools/ci/deadline_polling_allowlist.txt`; a stale entry fails the check.
 
+As built (C7): **SSbellies** is deleted. An occupied belly declares one `REACT_EVERY` and cancels it when it empties; an empty belly making liquid waits on a `REACT_AT` (containment.md §9).
+
 ## 10. Lint rules
 
 | Rule | On after |

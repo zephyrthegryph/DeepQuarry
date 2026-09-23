@@ -312,6 +312,14 @@ These are interactions that perform ledger moves, so each one is a single atomic
 - **Serialization.** The belly serializer becomes a client of the generic serializer.
 - **What stays in the vore module:** the vore UI, messages and preferences.
 
+**As built (C7).** Code: `code/modules/vore/eating/belly_slot.dm`, `belly_shared_lists.dm`, `vore_consent.dm`; tests in `code/modules/unit_tests/dq_vore_slot_tests.dm`.
+- **Slot.** `/datum/slot_def/belly_interior` (`BELLY_SLOT_INTERIOR`): sealed, `reaches_mobs`, no heat or damage share from outside (the belly's own modes act on its contents). Eating, releasing, transfers, absorbing, egging and in-belly spawning go through `belly_insert()` (`move_into`), `belly_release_to()` (`slot_remove`, falling back to the turf when a full holder refuses) and `slot_transfer()`. The ledger is made on first use.
+- **Scheduling.** SSbellies is deleted. `belly_reschedule()` declares one `REACT_EVERY` (6 s, 2 s in turbo) when something enters and cancels it when the belly empties; an empty belly that makes liquid from nutrition waits on a `REACT_AT` for its next batch. Callers: `Initialize`, `Entered`/`Exited`, `state_post_apply`, the vore panel's attribute setters and the belly preview.
+- **Rates.** `belly_cycle(seconds)` replaces `process()`. Every mode's per-cycle amount is a rate per `BELLY_BASELINE_TICK`, scaled by the reactor's elapsed seconds, so late and turbo cycles give the same totals (drain and resize exactly). Digestion damage goes through `injure()`, as before. The body's `injure()` is not linear in the size of a hit (many small hits land more than a few big ones), so turbo digestion still lands more injury than normal digestion over the same time; that is the body's to settle.
+- **Modes as rules.** A mode is trigger (the cycle), condition (its `consent` predicate) and effect (`process_mob()`). The mode datums stay: they do not fit P4's compiled watches, which need channel-backed properties.
+- **Consent.** `/datum/predicate/vore_devour`, `vore_digest`, `vore_absorb`, `vore_heal`, `vore_strip`, `vore_affect_worn`, with reasons. `vore_sanity_checks()` shows the devour reason; a prey who refuses the belly's mode is held, and the predator is told why on entry.
+- **Shared lists.** 43 message lists, the 5 fullness lists, `emote_lists`, `generated_reagents`, both extra autotransfer lists and the vore-spawn whitelist point at one copy per type or the base default (`belly_default_lists()`). They are replaced, never edited; `own_emote_lists()` comes before a keyed emote write. Saves leave out lists still shared, and a load swaps equal lists back to the shared copy. `items_preserved` and `belly_surrounding` are lazy; `autotransfer_queue` was unused and is gone. A default empty belly owns no lists.
+
 ## 10. Occupants and mechs (C8, with the body rewrite)
 
 - **Occupant slots** are internal and sealed, and they define the occupant's environment (breathing and temperature).

@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - code_imp: "Bellies are sealed slots that only run while something is inside them; the belly subsystem is gone."
+  - code_imp: "Belly message lists are shared until you customize them, so empty bellies cost almost nothing."
+  - qol: "When a prey's preferences stop your belly's mode from affecting them, you're told why as they arrive."

@@ -68,6 +68,7 @@
 	B.name = "stomach"
 	B.desc = "As the giant snake's closed jaws seal you away from the outside world, you are immediately greeted with a seemingly endless passage of tightly squeezing flesh. Hot and coated in thick, body-clinging slime, the serpent's stomach walls immediately get to work at rhythmically pulsing and contracting against your figure, slowly tugging you deeper into its ravenous clutches."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"A near-constant string of soft, slick noises drift over you as waves of peristalsis slowly drag you further within the possessive serpent.",
 		"The giant snake's stomach suddenly squishes inwards from everywhere at once, wrapping you up in a warm, doughy embrace before easing back again.",
@@ -76,6 +77,7 @@
 		"The snake occasionally hisses out in satisfaction as it feels your twitching, filling weight bulge out its scales before giving you a compressing squeeze.",
 		"Hot, viscous ooze clings to and coats your body as time passes, encouraging you to submit and let the snake do all the serpentine, winding slithering.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"A chorus of sordid, slick sounds fill your senses as another wave of peristalsis ripples over you, tugging you a little deeper into the snake!",
 		"The serpent's all-encompassing stomach flesh closes in tight around your figure, testing how much softer you are now before finally relaxing. Slightly!",

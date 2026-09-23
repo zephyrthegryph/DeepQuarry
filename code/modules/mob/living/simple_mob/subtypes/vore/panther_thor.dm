@@ -117,6 +117,7 @@
 	B.name = "stomach"
 	B.desc = "All it takes is a few more rasps of the panther's rough, barbed tongue to shovel the rest of you down its tightly rippling gullet... and with a final couple ravenous swallows, you spill out into the predatory feline's stomach! Right away, that gut's muscular walls knead and contract around you, forcing you into a curled-up ball as the panther's noisy purring rumbles into you from every direction."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"A steady white noise of content purring vibrates throughout you, the panther clearly enjoying the hanging, shifting swell you've given it.",
 		"Your slick, gently churning surroundings abruptly clench inwards, smothering you in an all-encompassing, massage-filled hug before finally easing back.",
@@ -125,6 +126,7 @@
 		"For a moment, you can hear a few other sounds through the juicy sloshing and reverberating purring, such as the panther slurping its tongue over its chops.",
 		"The possessive feline takes a moment to flump down into a resting position, its doughy insides kneading snugly around your curled figure until it shuffles back up.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The big feline rumbles heartily, incredibly satisfied as it works to digest its newfound, stomach-filling catch!",
 		"The surrounding stomach walls suddenly tighten inwards, smothering you in slimy, kneading flesh for a time until they finally relax back again!",

@@ -178,6 +178,7 @@
 #include "dq_containment_tests.dm"
 #include "dq_rule_tests.dm"
 #include "dq_containment_path_tests.dm"
+#include "dq_vore_slot_tests.dm"
 #include "dq_stock_tests.dm"
 #include "dq_breakpoint_tests.dm"
 #include "dq_damage_packet_tests.dm"

@@ -5,6 +5,8 @@
 #define CONTAINER_SLOT_INTERIOR "interior"
 /// A folder's pages.
 #define CONTAINER_SLOT_PAGES "pages"
+/// The sealed interior of a vore belly (C7).
+#define BELLY_SLOT_INTERIOR "belly"
 /// A vending machine's or smartfridge's stock (C9, stock.dm).
 #define CONTAINER_SLOT_STOCK "stock"
 /// A machine's legacy internals: parts, circuit, coin. The machine's Destroy owns them.

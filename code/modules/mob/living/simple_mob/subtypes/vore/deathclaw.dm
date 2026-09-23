@@ -87,6 +87,7 @@
 	B.name = "stomach"
 	B.desc = "The giant mutant of a lizard finishes stuffing you into its jaws and down its ravenously clenching gullet with a worrying ease and efficiency. An assortment of slick, slimy noises assault your senses for a few gulp-filled moments... before you spill out into the apex predator's swelteringly hot stomach, its walls already possessively grinding into your body."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with the deathclaw's pleased rumbling, its claws stroking over the taut swell you make in its belly.",
 		"As time passes, the stiflingly warm atmosphere filling the deathclaw's stuffed gut saps your will to struggle, replacing it with an odd relaxation.",
@@ -95,6 +96,7 @@
 		"Your gooey surroundings suddenly quiver a little more tightly as the deathclaw lets out a belch, before you're rocked about by its patting claw.",
 		"Try as you might, the armored hide and impressive muscles sported by your mutant predator resist  most of your attempts to squirm, and its periodically aggressive, two-armed hugs coerce you into a tight, manageable ball. Now, you're little more than its filling, and it seems keen on keeping you that way.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The creature emits a pleased rumble before pressing one of its claws against its belly, smushing you up into a tightly packed ball for a couple moments!",
 		"The thick, hazy heat permeating the deathclaw's stomach leaves you feeling increasingly faint and disoriented!",
