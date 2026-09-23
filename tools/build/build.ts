@@ -272,6 +272,12 @@ const VERDIGRIS_RUST_TARGET =
 
 export const VerdigrisTarget = new Juke.Target({
   onlyWhen: () => {
+    // DM-only work (agents in worktrees, CI lint jobs) can reuse a prebuilt
+    // library instead of compiling the whole Rust workspace.
+    if (process.env.DQ_PREBUILT_VERDIGRIS === '1' && fs.existsSync(VERDIGRIS_LIB)) {
+      Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 — using existing ${VERDIGRIS_LIB}`);
+      return false;
+    }
     const probe = spawnSync('cargo', ['--version'], {
       stdio: 'ignore',
       shell: true,
@@ -320,7 +326,7 @@ export const VerdigrisTarget = new Juke.Target({
       { cwd: 'verdigris' },
     );
     fs.copyFileSync(
-      `verdigris/target/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`,
+      `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`,
       VERDIGRIS_LIB,
     );
   },
