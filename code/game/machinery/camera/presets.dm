@@ -237,7 +237,6 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 		return //nooooo
 	LAZYADD(assembly.upgrades, new /obj/item/assembly/prox_sensor(assembly))
 	setPowerUsage()
-	START_MACHINE_PROCESSING(src)
 	sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	update_coverage()
 

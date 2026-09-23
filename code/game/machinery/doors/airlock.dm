@@ -134,21 +134,33 @@
 		return get_material_by_name(mineral)
 	return get_material_by_name(MAT_STEEL)
 
-/obj/machinery/door/airlock/process()
-	// Deliberate no call to parent.
+/obj/machinery/door/airlock/next_door_deadline()
+	. = ..()
+	if(main_power_lost_until > 0 && (!. || main_power_lost_until < .))
+		. = main_power_lost_until
+	if(backup_power_lost_until > 0 && (!. || backup_power_lost_until < .))
+		. = backup_power_lost_until
+	if(electrified_until > 0 && (!. || electrified_until < .))
+		. = electrified_until
+
+/obj/machinery/door/airlock/door_deadlines_due()
 	if(close_door_at && !density && !operating && (locked || welded || !arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR)))
 		close_door_at = 0
 	if(main_power_lost_until > 0 && world.time >= main_power_lost_until)
 		regainMainPower()
-
+		if(main_power_lost_until > 0) // Cables cut since: lost until mended (mending calls regainMainPower()).
+			main_power_lost_until = -1
 	if(backup_power_lost_until > 0 && world.time >= backup_power_lost_until)
 		regainBackupPower()
-
+		if(backup_power_lost_until > 0)
+			backup_power_lost_until = -1
 	else if(electrified_until > 0 && world.time >= electrified_until)
 		electrify(0)
+	return ..()
 
-	if (..() == PROCESS_KILL && !(main_power_lost_until > 0 || backup_power_lost_until > 0 || electrified_until > 0))
-		. = PROCESS_KILL
+/// Tells REACT_KEY_DOOR_MODE subscribers (door controllers, S2's machine keys) what changed.
+/obj/machinery/door/airlock/proc/publish_door_mode(mask)
+	REACT_PUBLISH(REACT_KEY_DOOR_MODE, REACT_ID(src), mask)
 
 /obj/machinery/door/airlock/proc/check_for_freeze()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -260,26 +272,26 @@ About the new airlock wires panel:
 	if(backup_power_lost_until == -1 && !backupPowerCablesCut())
 		backup_power_lost_until = world.time + (10 SECONDS)
 
-	if(main_power_lost_until > 0 || backup_power_lost_until > 0)
-		START_MACHINE_PROCESSING(src)
+	schedule_door_timer()
 
 	// Disable electricity if required
 	if(electrified_until && isAllPowerLoss())
 		electrify(0)
 
 	update_icon()
+	publish_door_mode(REACT_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/loseBackupPower()
 	backup_power_lost_until = backupPowerCablesCut() ? -1 : world.time + (1 MINUTE)
 
-	if(backup_power_lost_until > 0)
-		START_MACHINE_PROCESSING(src)
+	schedule_door_timer()
 
 	// Disable electricity if required
 	if(electrified_until && isAllPowerLoss())
 		electrify(0)
 
 	update_icon()
+	publish_door_mode(REACT_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/regainMainPower()
 	if(!mainPowerCablesCut())
@@ -289,7 +301,9 @@ About the new airlock wires panel:
 			backup_power_lost_until = -1
 
 	update_icon()
+	schedule_door_timer()
 	resume_autoclose_if_possible()
+	publish_door_mode(REACT_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/regainBackupPower()
 	if(!backupPowerCablesCut())
@@ -297,7 +311,9 @@ About the new airlock wires panel:
 		backup_power_lost_until = main_power_lost_until == 0 ? -1 : 0
 
 	update_icon()
+	schedule_door_timer()
 	resume_autoclose_if_possible()
+	publish_door_mode(REACT_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/resume_autoclose_if_possible()
 	// Unit-created and partially constructed doors may not have a wire datum yet.
@@ -325,8 +341,8 @@ About the new airlock wires panel:
 		message = "The door is now electrified [duration == -1 ? "permanently" : "for [duration] second\s"]."
 		electrified_until = duration == -1 ? -1 : world.time + (duration SECONDS)
 
-	if(electrified_until > 0)
-		START_MACHINE_PROCESSING(src)
+	schedule_door_timer()
+	publish_door_mode(REACT_DOOR_ELECTRIFIED)
 
 	if(feedback && message)
 		to_chat(usr,message)
@@ -1134,6 +1150,11 @@ About the new airlock wires panel:
 	for(var/mob/M in range(1,src))
 		M.show_message("You hear a click from the bottom of the door.", 2)
 	update_icon()
+	// A bolted open door cannot autoclose: drop the deadline instead of waking to find that out.
+	if(close_door_at && !density)
+		close_door_at = 0
+		schedule_door_timer()
+	publish_door_mode(REACT_DOOR_BOLTS)
 	return TRUE
 
 /obj/machinery/door/airlock/proc/unlock(forced=0)
@@ -1149,6 +1170,7 @@ About the new airlock wires panel:
 		M.show_message("You hear a click from the bottom of the door.", 2)
 	update_icon()
 	resume_autoclose_if_possible()
+	publish_door_mode(REACT_DOOR_BOLTS)
 	return TRUE
 
 /obj/machinery/door/airlock/allowed(mob/M)

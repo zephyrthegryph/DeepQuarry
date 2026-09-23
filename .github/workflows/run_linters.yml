@@ -115,6 +115,8 @@ jobs:
         run: python3 tools/ci/lifecycle_lint.py
       - name: Check Instance List Allocation
         run: python3 tools/ci/instance_list_lint.py
+      - name: Check Deadline Polling
+        run: python3 tools/ci/check_deadline_polling.py
       - name: Run TGUI Checks
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: tools/build/build.sh --ci lint tgui-test

@@ -34,17 +34,20 @@
 		return 1
 	return 0
 
-/obj/machinery/status_display/supply_display/process()
-	. = ..()
-	if(. == PROCESS_KILL)
-		return .
-	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
-	if(!shuttle || (!shuttle.has_arrive_time() && !shuttle.is_launching()))
-		return PROCESS_KILL
+/obj/machinery/status_display/supply_display/next_refresh_delay()
+	if(mode != STATUS_DISPLAY_CUSTOM)
+		return ..()
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply?.shuttle
+	if(shuttle && (shuttle.has_arrive_time() || shuttle.is_launching()))
+		return 2 SECONDS
+	return 0
+
+/obj/machinery/status_display/supply_display/watched_shuttle()
+	return mode == STATUS_DISPLAY_CUSTOM ? REACT_SHUTTLE_SUPPLY : ..()
 
 /obj/machinery/status_display/supply_display/receive_signal/(datum/signal/signal)
 	if(signal.data["command"] == "supply")
 		mode = STATUS_DISPLAY_CUSTOM
-		START_MACHINE_PROCESSING(src)
+		refresh()
 	else
 		..(signal)

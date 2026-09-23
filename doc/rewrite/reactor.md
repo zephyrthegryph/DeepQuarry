@@ -180,11 +180,43 @@ As built:
 | SSobj (190 `START_PROCESSING` sites), SSprocessing, SSfastprocess users, SSbellies, SSburning, SSmaterial_services | Watches, timers, rate models, or declared continuous work | S4 |
 | Every machine auto-starting in `Initialize()` (`machinery.dm:140`) | Machines start asleep and declare their activation | S5 |
 
+As built (S3):
+- **Airlocks and doors.** `close_door_at`, `main_power_lost_until`, `backup_power_lost_until` and
+  `electrified_until` share one `REACT_AT` on the earliest (`next_door_deadline()`,
+  `schedule_door_timer()`); `door_deadlines_due()` is the old poll body. Airlocks publish
+  `REACT_KEY_DOOR_MODE` (`REACT_DOOR_BOLTS`/`POWER`/`ELECTRIFIED`). `airlock_control.dm`'s
+  `cur_command` retry is not a deadline and still processes while a command is pending.
+- **Cameras.** EMP recovery and the motion-alarm delay are one `REACT_AT`; losing a motion target is
+  signals on the target (moved, stat change, deleted) instead of a per-tick range check.
+- **Lights.** `/area/proc/power_change()` publishes `REACT_KEY_AREA_POWER`; lights subscribe and
+  act only when their own power changed (`light/power_change()` is a no-op, so the area's scan of
+  its machines no longer reaches them). Emergency discharge, recharge and the auto-flicker recheck
+  are one `REACT_AT`; an auto-flicker light on its cell waits on the player chunk keys within 12 tiles.
+- **Status displays.** Redraw on a signal, alert, power change or `REACT_KEY_SHUTTLE_SCHEDULE`
+  (`REACT_SHUTTLE_EVAC`/`SUPPLY`, published when a countdown starts or stops or a shuttle warms up),
+  plus one `REACT_AT` only for content that moves by itself (a countdown, the clock at the next
+  station minute, a scrolling message).
+- **Looping sounds.** Each loop is a `REACT_AT`; a loop nobody can hear parks on the
+  `REACT_KEY_PLAYER_CHUNK` keys in hearing range with a 10 s recheck timer. SSsounds'
+  `dormant_loops_by_chunk` is gone.
+- **Shutoff valves.** `wake_automatic_shutoff_valves(network)` publishes `REACT_KEY_PIPE_NETWORK`
+  for that network (`REACT_ID_GLOBAL` for construction of unknown network); each valve subscribes
+  to its two networks' keys and the global one and re-subscribes on `reassign_network()`,
+  `rust_bind_pipe_port()` and `disconnect()`. SSair's bulk-blast batching is gone: publications merge.
+- **Player chunk keys.** `REACT_KEY_PLAYER_CHUNK` (id `MOB_CHUNK_NUMERIC_KEY`) is published by
+  `/mob/Moved()` for mobs with a client, only while `SSreactor.player_chunk_subscriptions` is
+  non-zero; subscribe with `SSreactor.subscribe_player_chunks()`. Looping sounds and auto-flicker
+  lights use it. S2's `REACT_KEY_MOB_CHUNK` covers any mob (AI, turrets); the two could merge
+  into one key with a player mask bit once both land.
+- **Lint.** `tools/ci/check_deadline_polling.py` (CI: "Check Deadline Polling") flags `process()`
+  bodies comparing `world.time` with a variable. The rest (S4's SSobj/SSprocessing users and S5's
+  machines) are in `tools/ci/deadline_polling_allowlist.txt`; a stale entry fails the check.
+
 ## 10. Lint rules
 
 | Rule | On after |
 |---|---|
-| No `world.time` deadline comparisons inside `process()` | S3 |
+| No `world.time` deadline comparisons inside `process()` (`tools/ci/check_deadline_polling.py`) | S3 (on) |
 | No `START_PROCESSING`/`STOP_PROCESSING`/`START_MACHINE_PROCESSING` outside the reactor | S4, S5 |
 | No `process()` unless it is declared with `REACT_EVERY` | S5 |
 | No string-built reactive keys | S2 |
