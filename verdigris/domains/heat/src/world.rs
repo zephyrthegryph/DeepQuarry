@@ -3,9 +3,11 @@
 //! out body handles, turns DM's API calls into commands, and paces frames.
 //!
 //! One frame is [`HeatConfig::dt`] simulated seconds. [`HeatWorld::tick`]
-//! accumulates the game time DM reports and dispatches a frame when a full
-//! step is due (never waiting: a still-running frame just keeps the
-//! backlog, capped at [`MAX_BACKLOG_FRAMES`]).
+//! feeds the game time DM reports through [`vg_core::law::Pacer`] (Core A's
+//! shared fixed-dt accumulator/idle-skip/backlog-cap, `rust_architecture.md`
+//! §4.3) and dispatches a frame when a full step is due (never waiting: a
+//! still-running frame just keeps the backlog, capped at
+//! [`MAX_BACKLOG_FRAMES`]).
 //!
 //! Frame order: the field (conduction and radiation), the solid ↔ gas
 //! coupling, the bodies, the ledger mirror, then the watches.
@@ -217,7 +219,16 @@ pub struct HeatWorld {
     body_watch: WatchKey<Bodies>,
     dims: GridDims,
     dt: f32,
-    accum: f32,
+    /// The fixed-dt accumulator/idle-skip/backlog-cap Core A's driver
+    /// generalized (`rust_architecture.md` §4.3): replaces this type's own
+    /// `accum`/[`MAX_BACKLOG_FRAMES`] arithmetic.
+    pacer: vg_core::law::Pacer,
+    /// Steps [`Pacer::advance`] has already counted as due but this host
+    /// hasn't dispatched yet (at most one frame is ever in flight at a
+    /// time, so a call that reports 2+ due steps still only starts one;
+    /// the rest carry here instead of being re-derived from elapsed time
+    /// on a later call, which would double-count it).
+    pending_frames: u32,
     slots: Vec<Slot>,
     free: Vec<u32>,
     next_slot: u32,
@@ -298,7 +309,12 @@ impl HeatWorld {
             body_watch,
             dims: config.dims,
             dt: config.dt,
-            accum: 0.0,
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            pacer: vg_core::law::Pacer::new(
+                vg_core::units::Seconds(f64::from(config.dt)),
+                MAX_BACKLOG_FRAMES as u32,
+            ),
+            pending_frames: 0,
             slots: vec![Slot::default(); MAX_BODIES as usize],
             free: Vec::new(),
             next_slot: 0,
@@ -825,14 +841,20 @@ impl HeatWorld {
     /// One DM tick: reclaim a finished frame, collect its wakes and events,
     /// retire released bodies, and dispatch the next frame if `elapsed`
     /// seconds of game time make one due. Returns whether a frame started.
+    ///
+    /// At most one frame is ever in flight (one `dispatch_frame()` call per
+    /// `tick()`), so a call that reports more than one step now due (a
+    /// backlog) carries the rest in `pending_frames` for later calls
+    /// instead of asking [`Pacer::advance`] again, which would double-count
+    /// the elapsed time already spent on this call's steps.
     pub fn tick(&mut self, elapsed: f32) -> bool {
         self.sim.begin_tick();
         self.collect();
-        if elapsed.is_finite() && elapsed > 0.0 {
-            self.accum = (self.accum + elapsed).min(self.dt * MAX_BACKLOG_FRAMES);
-        }
-        if self.accum + 1e-6 >= self.dt && self.sim.dispatch_frame() {
-            self.accum = (self.accum - self.dt).max(0.0);
+        self.pending_frames += self
+            .pacer
+            .advance(vg_core::units::Seconds(f64::from(elapsed)));
+        if self.pending_frames > 0 && self.sim.dispatch_frame() {
+            self.pending_frames -= 1;
             return true;
         }
         false
