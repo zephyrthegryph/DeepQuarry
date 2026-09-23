@@ -201,6 +201,13 @@ can't starve other agents. `bench-baseline` always benchmarks exclusively for
 this reason — a baseline with noisy TIMING numbers isn't useful to compare
 against.
 
+`tools/ci/dd-slot.sh` also has a priority lane: `DQ_DD_PRIORITY=1 dd-slot.sh
+<command>` can use every DreamDaemon slot, while ordinary (non-priority)
+invocations are capped at `DQ_DD_SLOT_COUNT` minus `DQ_DD_PRIORITY_RESERVED`
+(2 by default), so test/bench-infrastructure work other agents are waiting on
+doesn't queue behind the general pool. Use it for exactly that kind of
+work, not routinely.
+
 Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 
 | Scenario | Measures | Options (`--arg=name=value`) |
