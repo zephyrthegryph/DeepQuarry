@@ -115,15 +115,15 @@ jobs:
       - name: Verdigris cargo fmt
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
-        run: cargo fmt --package verdigris --check
+        run: cargo fmt --all --check
       - name: Verdigris cargo clippy
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
-        run: cargo clippy --package verdigris --all-targets -- -D warnings
+        run: cargo clippy --package verdigris --package vg-core --all-targets -- -D warnings
       - name: Verdigris cargo test
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
-        run: cargo test --package verdigris
+        run: cargo test
 
       - name: Run Nanomap Checks
         run: tools/github-actions/nanomap-renderer-invoker.sh --testing

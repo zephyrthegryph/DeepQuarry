@@ -62,7 +62,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --pr
 
 COPY . .
 
-# bosion (verdigris/verdigris/build.rs) captures build provenance from git, but
+# bosion (verdigris/ffi/build.rs) captures build provenance from git, but
 # the build context excludes .git — give it a throwaway repo with one commit so
 # the build.rs probe succeeds.
 RUN git init -q . \
