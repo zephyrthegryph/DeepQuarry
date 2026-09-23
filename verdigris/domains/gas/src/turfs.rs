@@ -1420,8 +1420,12 @@ fn register_turf_impl(
 		if blocks > 0.0 {
 			with_air_cells_mut(|cells| cells.masks.remove(&id));
 			apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
+			// Walls leave the gas graph but still conduct heat.
 			#[cfg(feature = "superconductivity")]
-			superconduct::supercond_update_ref(src)?;
+			{
+				superconduct::supercond_update_ref(src)?;
+				superconduct::supercond_update_adjacencies(id)?;
+			}
 			return Ok(());
 		}
 	}

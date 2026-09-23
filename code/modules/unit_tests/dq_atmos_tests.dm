@@ -7255,3 +7255,87 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/datum/gas/g as anything in back_to_floor.air.get_gases())
 		back_to_floor.air.set_moles(g, 0)
 	dq_atmos_test_restore_walls()
+
+
+/// The pre-M1a adjacency rule, evaluated directly in DM: two registered open
+/// turfs share air when neither blocks air and every object on either turf lets
+/// air through toward the other (CANATMOSPASS). Vertical pairs also need the
+/// upper turf to be an opening and the z-levels to be linked. Used only as the
+/// reference the Rust adjacency must reproduce.
+/proc/dq_atmos_test_pairwise_shares(turf/open/A, turf/open/B, direction)
+	if(!istype(A) || !istype(B) || A.blocks_air || B.blocks_air || isnull(A.air) || isnull(B.air))
+		return FALSE
+	var/vertical = (direction & (UP|DOWN))
+	if(vertical)
+		var/turf/upper = (direction & UP) ? B : A
+		if(!istype(upper, /turf/simulated/open))
+			return FALSE
+	for(var/obj/checked_object in A.contents + B.contents)
+		if(QDELETED(checked_object))
+			continue
+		var/turf/other = (checked_object.loc == A ? B : A)
+		if(!CANATMOSPASS(checked_object, other, vertical))
+			return FALSE
+	return TRUE
+
+/// Rust builds turf adjacency from DM air-block masks. On every registered
+/// turf of the map it must match the old pairwise rule exactly: doors,
+/// windows, firedoors and directional blockers block the same faces as before.
+/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule
+
+/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule/Run()
+	dq_atmos_test_restore_walls()
+	var/checked = 0
+	var/mismatch_count = 0
+	var/list/mismatches = list()
+	for(var/turf/open/T in world)
+		if(T.blocks_air || isnull(T.air))
+			continue
+		for(var/direction in GLOB.cardinals_multiz)
+			var/turf/open/N = get_step_multiz(T, direction)
+			if(!istype(N))
+				continue
+			checked++
+			var/expected = dq_atmos_test_pairwise_shares(T, N, direction)
+			var/actual = vg_atmos_turfs_share(T, N)
+			if(!expected == !actual)
+				continue
+			mismatch_count++
+			if(length(mismatches) < 10)
+				var/list/objects = list()
+				for(var/obj/O in T.contents + N.contents)
+					if(O.can_atmos_pass != ATMOS_PASS_YES)
+						objects += "[O.type](dir=[O.dir], density=[O.density])"
+				mismatches += "[COORD(T)] -> [COORD(N)] dir=[direction]: expected [expected ? "open" : "blocked"], Rust [actual ? "open" : "blocked"]; masks [T.air_block_mask()]/[N.air_block_mask()]; objects [jointext(objects, ", ")]"
+		CHECK_TICK
+	TEST_ASSERT(checked > 0, "no registered turf pairs on the map")
+	TEST_ASSERT(!mismatch_count, "Rust adjacency differs from the pairwise rule on [mismatch_count] of [checked] faces:\n[jointext(mismatches, "\n")]")
+
+/// Gas IDs cross the FFI as numbers. The DM table and the Rust registry agree,
+/// and every accepted key form reaches the same gas.
+/datum/unit_test/dq_gas_ids_are_numeric_end_to_end
+
+/datum/unit_test/dq_gas_ids_are_numeric_end_to_end/Run()
+	TEST_ASSERT_EQUAL(length(GLOB.gas_path_by_idx), GAS_ID_COUNT, "gas path table size")
+	for(var/datum/gas/gas_path as anything in subtypesof(/datum/gas))
+		var/idx = initial(gas_path.idx)
+		TEST_ASSERT_NOTNULL(idx, "[gas_path] has no GAS_ID_* idx")
+		TEST_ASSERT_EQUAL(GLOB.gas_path_by_idx[idx + 1], gas_path, "gas_path_by_idx disagrees for [gas_path]")
+		TEST_ASSERT_EQUAL(GAS_IDX(gas_path), idx, "GAS_IDX(path) for [gas_path]")
+		TEST_ASSERT_EQUAL(GAS_IDX("[gas_path]"), idx, "GAS_IDX(path text) for [gas_path]")
+		TEST_ASSERT_EQUAL(GAS_IDX(initial(gas_path.id)), idx, "GAS_IDX(short id) for [gas_path]")
+	var/datum/gas_mixture/mix = new(CELL_VOLUME)
+	mix.set_moles(GAS_ID_PLASMA, 12)
+	mix.adjust_moles(/datum/gas/plasma, 3)
+	TEST_ASSERT_EQUAL(mix.get_moles(GAS_ID_PLASMA), 15, "numeric and path gas keys reach the same slot")
+	mix.adjust_multiple_gases(list(/datum/gas/oxygen = 4, /datum/gas/nitrogen = 6))
+	var/list/gases = mix.get_gases()
+	TEST_ASSERT_EQUAL(gases[/datum/gas/plasma], 15, "get_gases plasma")
+	TEST_ASSERT_EQUAL(gases[/datum/gas/oxygen], 4, "get_gases oxygen")
+	TEST_ASSERT_EQUAL(gases[/datum/gas/nitrogen], 6, "get_gases nitrogen")
+	var/list/readings = read_gas_mixtures(list(mix, null))
+	TEST_ASSERT_EQUAL(length(readings), 2 * GAS_READ_STRIDE, "read_gas_mixtures keeps null entries")
+	TEST_ASSERT_EQUAL(readings[GAS_READ_TOTAL_MOLES], 25, "batched total moles")
+	TEST_ASSERT_EQUAL(readings[GAS_READ_MOLES(GAS_ID_OXYGEN)], 4, "batched oxygen moles")
+	TEST_ASSERT_EQUAL(readings[GAS_READ_STRIDE + GAS_READ_TOTAL_MOLES], 0, "a null mixture reads as zero")
+	qdel(mix)
