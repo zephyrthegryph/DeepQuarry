@@ -2165,7 +2165,7 @@ fn authored_fragment_composition(
 fn fragment_feature_point(origin: Point, feature: &FragmentFeatureWire) -> Option<Point> {
     let x = i32::from(origin.x) + i32::from(feature.dx) - 1;
     let y = i32::from(origin.y) + i32::from(feature.dy) - 1;
-    (x >= 0 && y >= 0 && x <= i32::from(u16::MAX) && y <= i32::from(u16::MAX)).then(|| Point {
+    (x >= 0 && y >= 0 && x <= i32::from(u16::MAX) && y <= i32::from(u16::MAX)).then_some(Point {
         x: x as u16,
         y: y as u16,
     })
@@ -3318,9 +3318,8 @@ fn fixture_requires_fixed_facing(id: &str) -> bool {
 fn fixture_repeat_limit(id: &str) -> usize {
     if id == "wall_light" {
         16
-    } else if matches!(id, "vent" | "scrubber" | "air_alarm" | "fire_alarm" | "apc") {
-        4
-    } else if id.contains("chair")
+    } else if matches!(id, "vent" | "scrubber" | "air_alarm" | "fire_alarm" | "apc")
+        || id.contains("chair")
         || id.contains("table")
         || id.contains("bed")
         || matches!(id, "stool" | "visitor_bench" | "supply_crate" | "pallet")

@@ -577,8 +577,8 @@ fn blit_tile_offset(
         i32::try_from(height).unwrap_or(i32::MAX) - (i32::from(point.y) + 1) * 32 - offset_y;
     for y in 0..32 {
         for x in 0..32 {
-            let target_x = origin_x + x as i32;
-            let target_y = origin_y + y as i32;
+            let target_x = origin_x + x;
+            let target_y = origin_y + y;
             if target_x < 0 || target_y < 0 || target_x >= width as i32 || target_y >= height as i32
             {
                 continue;

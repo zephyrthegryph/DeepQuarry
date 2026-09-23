@@ -1761,13 +1761,13 @@ fn pack_architectural_department(
     // depth and later portal construction connects it without inventing a
     // second cross-corridor through the department.
     let shallow_axis_hash = hash64(seed ^ u64::from(department.id) ^ 0x7368_616c_6c6f_775f);
-    if horizontal_hall && block.max_y - block.min_y + 1 <= 6 {
+    if horizontal_hall && block.max_y - block.min_y < 6 {
         hall_axis = if shallow_axis_hash & 1 == 0 {
             block.min_y
         } else {
             block.max_y
         };
-    } else if !horizontal_hall && block.max_x - block.min_x + 1 <= 6 {
+    } else if !horizontal_hall && block.max_x - block.min_x < 6 {
         hall_axis = if shallow_axis_hash & 1 == 0 {
             block.min_x
         } else {
@@ -1849,11 +1849,9 @@ fn pack_architectural_department(
                 && x <= hall_max_x
                 && y >= hall_min_y
                 && y <= hall_max_y
-            {
-                if plan.get(point) != Space::Public {
+                && plan.get(point) != Space::Public {
                     plan.set(point, Space::Common(department.id));
                 }
-            }
         }
     }
     // Shallow blocks need a two-module circulation band. With one row, the
@@ -1861,7 +1859,7 @@ fn pack_architectural_department(
     // any authored room envelope—and the splitter is forced to cut across
     // frontage. Two rows leave an eleven-tile-deep bay that can be divided
     // only along the hall while every resulting room retains direct frontage.
-    if horizontal_hall && block.max_y - block.min_y + 1 <= 6 {
+    if horizontal_hall && block.max_y - block.min_y < 6 {
         let inner_y = if hall_axis == block.min_y {
             hall_axis + 1
         } else {
@@ -1873,7 +1871,7 @@ fn pack_architectural_department(
                 plan.set(point, Space::Common(department.id));
             }
         }
-    } else if !horizontal_hall && block.max_x - block.min_x + 1 <= 6 {
+    } else if !horizontal_hall && block.max_x - block.min_x < 6 {
         let inner_x = if hall_axis == block.min_x {
             hall_axis + 1
         } else {
@@ -1970,13 +1968,13 @@ fn pack_architectural_department(
         let height = max_y - min_y + 1;
         if width >= 8 && width > height {
             for (part_min, part_max) in
-                partition_axis_weighted(min_x, max_x, 2, seed ^ 0x7465_726d_78)
+                partition_axis_weighted(min_x, max_x, 2, seed ^ 0x0074_6572_6d78)
             {
                 zones.push((part_min, part_max, min_y, max_y));
             }
         } else if height >= 8 && height > width {
             for (part_min, part_max) in
-                partition_axis_weighted(min_y, max_y, 2, seed ^ 0x7465_726d_79)
+                partition_axis_weighted(min_y, max_y, 2, seed ^ 0x0074_6572_6d79)
             {
                 zones.push((min_x, max_x, part_min, part_max));
             }
@@ -4048,7 +4046,7 @@ fn insert_internal_maintenance(
         anchors.sort_by_key(|point| {
             (
                 hash_cell(
-                    request.settings.seed ^ 0x7365_7276_6963_65 ^ u64::from(department.id),
+                    request.settings.seed ^ 0x0073_6572_7669_6365 ^ u64::from(department.id),
                     *point,
                 ),
                 *point,
@@ -4431,7 +4429,7 @@ fn assign_department_common_and_rooms(
             .room_types
             .iter()
             .filter(|room| room.max_count > 0)
-            .map(|room| room_minimum_area(room))
+            .map(room_minimum_area)
             .min()
             .unwrap_or(1);
         let minimum_short_side = department
@@ -6339,11 +6337,11 @@ fn rebalance_shapes_for_programs(
     }
 }
 
-fn room_instances<'a>(
-    department: &'a super::model::DepartmentRequest,
+fn room_instances(
+    department: &super::model::DepartmentRequest,
     area: usize,
     minimum_components: usize,
-) -> Vec<&'a RoomType> {
+) -> Vec<&RoomType> {
     let mut instances = Vec::new();
     for room_type in &department.room_types {
         for _ in 0..room_type.min_count {
@@ -7697,7 +7695,6 @@ fn assign_portals(plan: &mut LogicalPlan, request: &LayoutRequest) -> Result<(),
         let public_edge = department_public_edges
             .iter()
             .copied()
-            .into_iter()
             .filter(|edge| !used_edges.contains(&normalize_edge(edge.0, edge.1)))
             .min_by_key(|(left, right)| {
                 (

@@ -629,6 +629,9 @@ fn list(values: &[f32]) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/react_step")]
 fn react_step(now: ByondValue, budget: ByondValue) -> Result<ByondValue> {
     let now = num(&now)?;
+    // Deliberately `!(now >= 0.0)`: this must also reject a NaN `now` from DM,
+    // which `now < 0.0` would not catch.
+    #[allow(clippy::neg_cmp_op_on_partial_ord)]
     if !(now >= 0.0) {
         bail!("bad tick {now}");
     }
@@ -921,6 +924,9 @@ fn rate_linear(
 #[auxmacros::bind("/proc/rate_relax")]
 fn rate_relax(v0: ByondValue, target: ByondValue, k: ByondValue) -> Result<ByondValue> {
     let k = f64::from(num(&k)?);
+    // Deliberately `!(k > 0.0)`: this must also reject a NaN `k`, which
+    // `k <= 0.0` would not catch.
+    #[allow(clippy::neg_cmp_op_on_partial_ord)]
     if !(k > 0.0) {
         bail!("relax rate must be positive");
     }
