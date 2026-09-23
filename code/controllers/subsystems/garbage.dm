@@ -395,6 +395,10 @@ SUBSYSTEM_DEF(garbage)
 	var/slept_destroy = 0 //!Number of times it's slept in its destroy
 	var/qdel_flags = 0 //!Flags related to this type's trip thru qdel.
 	var/list/extra_details //!Lazylist of string metadata about the deleted objects
+	/// L1 (doc/rewrite/lifecycle.md §2, §8): total milliseconds spent in
+	/// each LIFECYCLE_PHASE_*, indexed by phase id. Lazy -- a type that
+	/// never qdels pays nothing.
+	var/list/phase_ms
 
 /datum/qdel_item/New(mytype)
 	name = "[mytype]"
@@ -424,11 +428,13 @@ SUBSYSTEM_DEF(garbage)
 		return
 
 
-	to_delete.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
+	// L1 (doc/rewrite/lifecycle.md §2): destroy_transaction() is the whole
+	// destruction -- phases 0 (this used to be inline here: gc_destroyed,
+	// COMSIG_QDELETING) through 8. Phase 7 is what to_delete.Destroy(force)
+	// used to be called directly.
 	var/start_time = world.time
 	var/start_tick = world.tick_usage
-	SEND_SIGNAL(to_delete, COMSIG_QDELETING, force) // Let the (remaining) components know about the result of Destroy
-	var/hint = to_delete.Destroy(force) // Let our friend know they're about to get fucked up.
+	var/hint = destroy_transaction(to_delete, force, trash)
 
 	if(world.time != start_time)
 		trash.slept_destroy++

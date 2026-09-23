@@ -88,10 +88,19 @@
 /// Sealed occupant slot (C8a, containment.md §10). Full blast share: the
 /// scanner's own explosion_contents_severity() used to pass severity through
 /// untouched, so its slot keeps that share instead.
+///
+/// L1 audit (doc/rewrite/lifecycle.md §3): HOLDER, not the SLOT_DROP_SPILL
+/// default. Destroy() calls eject_occupant() -> go_out(), whose cleanup
+/// (closing the TGUI, clearing alerts, occupant = null, ...) is gated on its
+/// own slot_remove() reporting a move -- which the destroy transaction's
+/// contents phase, now running before any Destroy() code, would already
+/// have done, silently skipping all of it. Same finding as mecha_pilot
+/// above; same follow-up (an on_unslotted() hook migration, not this pass).
 /datum/slot_def/occupant/dna_scanner
 	id = OCCUPANT_SLOT_DNA_SCANNER
 	name = "DNA scanner"
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+	drop_policy = SLOT_DROP_HOLDER
 
 /obj/machinery/dna_scannernew/explosion_contents_severity(severity)
 	return dq_slot_blast_severity(src, severity)

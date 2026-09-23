@@ -21,6 +21,11 @@ GLOBAL_LIST_INIT(bitflags, list(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 204
 #define DF_VAR_EDITED			(1<<0)
 #define DF_ISPROCESSING			(1<<1)
 #define DF_USE_TAG				(1<<2)
+/// L1 (doc/rewrite/lifecycle.md §2 phase 0): set for the rest of this
+/// datum's life the moment its destroy transaction starts (gc_destroyed is
+/// set in the same phase, so QDELETED(src) is already true by the time
+/// anything can observe this bit). holder_destroying() reads it.
+#define DF_DESTROYING			(1<<3)
 
 // /atom/movable movement_type
 #define UNSTOPPABLE				(1<<0)			//Can not be stopped from moving from Cross(), CanPass(), or Uncross() failing. Still bumps everything it passes through, though.

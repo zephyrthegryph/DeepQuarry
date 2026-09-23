@@ -23,6 +23,15 @@
 	hud = null
 	return ..()
 
+// L1 (doc/rewrite/lifecycle.md §2 phase 5, "release screens"): whichever
+// client(s) it's shown on -- almost always exactly one, but this doesn't
+// assume which -- instead of leaving a dangling ref in client.screen for
+// the destroy transaction to null out later.
+/atom/movable/screen/dq_lifecycle_release_screen()
+	for(var/client/C as anything in GLOB.clients)
+		if(src in C.screen)
+			C.screen -= src
+
 /atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params)
 	return
 

@@ -48,6 +48,11 @@
 	/// Datum level flags
 	var/tmp/datum_flags = NONE
 
+	/// L1 (doc/rewrite/lifecycle.md §2 phase 5): the subsystem START_PROCESSING
+	/// last recorded us into, or null. The destroy transaction's teardown
+	/// phase stops it automatically -- see dq_lifecycle_teardown().
+	var/tmp/datum/controller/subsystem/lifecycle_processing_subsystem
+
 	/// A weak reference to another datum
 	var/tmp/datum/weakref/weak_reference
 

@@ -64,7 +64,16 @@
 #define TAG_FLAMMABLE "flammable"
 #define TAG_CONDUCTIVE "conductive"
 #define TAG_PAPERWORK "paperwork"
-// Wearable tags: what the item's slot_flags allow (constraints, rules.md �3).
+/// J7 (doc/rewrite/lifecycle.md, containment.md §3.2): dynamic -- unlike the
+/// tags above (read once, from a type var or material), this reads a live
+/// instance check (/datum/proc/is_lifecycle_clocked()) every time it's
+/// asked, because it can flip while an object sits in its slot with nothing
+/// else about it changing. A holder's ledger caches each thing's
+/// contribution at note_enter() (containment.md §2), so a flip only reaches
+/// the holder's aggregate once something calls ledger_refresh_contribution()
+/// on the thing -- DQ Medical's clock code (K1) does, whenever it flips this.
+#define TAG_CLOCKED "clocked"
+// Wearable tags: what the item's slot_flags allow (constraints, rules.md �3).
 // The equip slot constraints (code/datums/properties/equip_slots.dm) read these.
 #define TAG_WEAR_SUIT "wear_suit"
 #define TAG_WEAR_UNIFORM "wear_uniform"
