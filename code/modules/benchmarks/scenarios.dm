@@ -330,6 +330,8 @@
 /datum/benchmark/sm_soak/proc/detonate()
 	for(var/obj/machinery/power/supermatter/crystal in world)
 		var/turf/epicenter = get_turf(crystal)
+		if(!epicenter)
+			continue
 		var/list/site = list("x" = epicenter.x, "y" = epicenter.y, "z" = epicenter.z, "area" = get_area(crystal))
 		crystal.explode()
 		return site
