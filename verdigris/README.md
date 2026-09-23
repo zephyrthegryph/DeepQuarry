@@ -50,6 +50,8 @@ verdigris/                  <- workspace root (this dir)
 | `verdigris` `material_power` | Double-precision electrical solve for material-engineering power networks. |
 | `vg-ffi` `allocator` | Tracking allocator: live/peak Rust heap overall and per `AllocTag`, with a thread-local tag scope (`allocator::tagged`); each block carries its tag in a small header so frees are charged correctly. |
 | `vg-gas` | Gas arena, turf diffusion, decompression and heat conduction. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. |
+| `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
+| `vg-gas` | Gas arena, turf adjacency (built from DM air-block masks), turf diffusion, decompression and heat conduction. Numeric gas registry in `gas/ids.rs`. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. |
 | `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic, 16x16 chunked layers, per-kind blocked-direction layers (`Grid`). |
 | `vg-core` `handle` / `arena` | 20-bit index + 4-bit generation handles (exact as f32); `Arena<T>` with 4096-slot chunks, stale-handle rejection, rayon iteration. |
 | `vg-core` `bitset` / `intern` | Dense bitsets for dirty/active flags; string-to-numeric-ID interner. |
@@ -170,7 +172,7 @@ the generator emits `#define DM_NAME <literal>`.
 Every FFI call costs microseconds (byondapi marshalling). String allocations
 across the boundary compound that:
 
-- Gas IDs are `u8`, never strings, after one-time registration at boot.
+- Gas IDs are numbers, never strings: fixed `GAS_ID_*` constants from `gas/ids.rs`.
 - Turf handles are `usize` arena indices, never datum paths.
 - Lists returned to DM should be `Vec<f32>` / `Vec<i32>`, not `Vec<String>`.
 

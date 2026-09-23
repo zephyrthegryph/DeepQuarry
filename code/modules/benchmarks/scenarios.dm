@@ -43,6 +43,8 @@
 	for(var/kind in types)
 		metric("types_[kind]", types[kind], "types")
 	metric("init_seconds", Master.initializations_seconds, "s")
+	metric("init_atmos_ms", SSair.init_time_ms, "ms")
+	metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
 	// Weakrefs never get cleaned up while their target lives, so count them by target type.
 	var/list/weakref_targets = list()
 	var/weakrefs = 0
@@ -357,17 +359,19 @@
 	var/turf/open/epicenter = locate(site["x"], site["y"], site["z"])
 	if(!istype(epicenter) || get_area(epicenter) != affected_area)
 		return list("label" = label, "delay_s" = delay, "cells" = 0, "origin_missing" = TRUE)
-	var/list/turfs_to_scan = list(epicenter)
+	var/list/frontier = list(epicenter)
 	var/list/connected = list()
 	connected[epicenter] = TRUE
-	var/scan_index = 1
-	while(scan_index <= length(turfs_to_scan))
-		var/turf/open/current = turfs_to_scan[scan_index++]
-		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
-			if(get_area(neighbor) != affected_area || connected[neighbor])
-				continue
-			connected[neighbor] = TRUE
-			turfs_to_scan += neighbor
+	// Breadth-first over Rust's adjacency, one batched read per ring.
+	while(length(frontier))
+		var/list/neighbor_lists = atmos_adjacent_turfs_bulk(frontier)
+		frontier = list()
+		for(var/list/neighbors as anything in neighbor_lists)
+			for(var/turf/open/neighbor as anything in neighbors)
+				if(get_area(neighbor) != affected_area || connected[neighbor])
+					continue
+				connected[neighbor] = TRUE
+				frontier += neighbor
 	var/count = 0
 	var/vacuum = 0
 	var/total = 0

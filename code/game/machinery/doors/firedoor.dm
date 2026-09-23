@@ -418,9 +418,15 @@
 	if(length(sleeping_atmos_snapshot) != FIREDOOR_SNAPSHOT_TURFS * FIREDOOR_SNAPSHOT_STRIDE)
 		sleeping_atmos_snapshot = new /list(FIREDOOR_SNAPSHOT_TURFS * FIREDOOR_SNAPSHOT_STRIDE)
 	var/list/snapshot = sleeping_atmos_snapshot
+	var/list/mixtures = new /list(length(dependency_turfs))
+	for(var/index in 1 to length(dependency_turfs))
+		var/turf/T = dependency_turfs[index]
+		mixtures[index] = T?.return_air()
+	// One batched arena read for the door's turf and its four neighbours.
+	var/list/readings = read_gas_mixtures(mixtures)
 	var/base = 0
-	for(var/turf/T as anything in dependency_turfs)
-		var/datum/gas_mixture/air = T?.return_air()
+	for(var/index in 1 to length(mixtures))
+		var/datum/gas_mixture/air = mixtures[index]
 		if(!air)
 			snapshot[base + 1] = null
 			snapshot[base + 2] = null
@@ -428,9 +434,10 @@
 			base += FIREDOOR_SNAPSHOT_STRIDE
 			continue
 		var/mixture_id = air.arena_id()
+		var/record = (index - 1) * GAS_READ_STRIDE
 		snapshot[base + 1] = mixture_id
-		snapshot[base + 2] = air.return_pressure()
-		snapshot[base + 3] = air.return_temperature()
+		snapshot[base + 2] = readings[record + GAS_READ_PRESSURE]
+		snapshot[base + 3] = readings[record + GAS_READ_TEMPERATURE]
 		base += FIREDOOR_SNAPSHOT_STRIDE
 		var/key = "[mixture_id]"
 		LAZYSET(sleeping_mixture_ids, key, mixture_id)

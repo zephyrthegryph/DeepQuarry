@@ -388,6 +388,30 @@ if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[
 	FAILED=1
 fi;
 
+part "DM copies of Rust state"
+# Rust owns turf adjacency (built from DM air-block masks; see
+# code/ATMOSPHERICS/environmental/LINDA_system.dm) and the gas registry. DM must
+# not keep its own copy of that state: no per-turf adjacency lists, no
+# superconductivity direction caches, no gas-ID string round trips. Ask Rust
+# through the generated vg_* binds (vg_atmos_adjacent_turfs, *_bulk,
+# vg_atmos_turfs_share) and pass GAS_ID_* numbers.
+if $grep -n '\batmos_adjacent_turfs\b|\batmos_supeconductivity\b|\bcurrent_cycle\b|__update_auxtools_turf_adjacency_info|immediate_calculate_adjacent_turfs' "${code_files[@]}" \
+	| $grep -v '^code/__defines/verdigris/_bindings\.dm' \
+	| $grep -v ':\s*//|:\s*\*'; then
+	echo
+	echo -e "${RED}ERROR: DM copy of Rust atmos state. Turf adjacency lives in Rust: publish air-block masks with air_update_turf(TRUE) and read with get_atmos_adjacent_turfs() / atmos_adjacent_turfs_bulk() / SSair.air_blocked().${NC}"
+	FAILED=1
+fi;
+# Gas IDs cross the FFI as GAS_ID_* numbers (GAS_IDX() converts a /datum/gas
+# path); a stringified argument to a vg_* bind is a string round trip.
+if $grep -n 'vg_[a-z0-9_]+\([^)]*"\[' "${code_files[@]}" \
+	| $grep -v '^code/__defines/verdigris/_bindings\.dm' \
+	| $grep -v ':\s*//|:\s*\*'; then
+	echo
+	echo -e "${RED}ERROR: stringified argument passed to a verdigris bind. Pass numbers (GAS_ID_*, GAS_IDX(path)) across the FFI.${NC}"
+	FAILED=1
+fi;
+
 part "html tag matching"
 #Checking for missed tags
 python tools/TagMatcher/tag-matcher.py code
