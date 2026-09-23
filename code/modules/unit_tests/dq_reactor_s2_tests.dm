@@ -129,4 +129,26 @@
 	TEST_ASSERT(B.react_sleep_violation(), "the audit missed a hibernating brain with a threat")
 	B.primary_threat = null
 
+/// One mob chunk key, two mask bits: a mob without a client wakes any-mob subscribers only.
+/datum/unit_test/dq_s2_mob_chunk_masks
+
+/datum/unit_test/dq_s2_mob_chunk_masks/Run()
+	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/datum/players = allocate(/datum/react_test_subscriber)
+	var/datum/anyone = allocate(/datum/react_test_subscriber)
+	var/list/player_tokens = SSreactor.subscribe_player_chunks(players, T, 0)
+	var/list/any_tokens = SSreactor.sleep_on_keys(anyone, list(REACT_KEY_MOB_CHUNK, SSreactor.mob_chunk_id(T), REACT_CHUNK_ANY_MOB))
+	var/mob/living/npc = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
+	SSreactor.trace(players)
+	SSreactor.trace(anyone)
+	react_test_ticks(4)
+	npc.forceMove(T)
+	react_test_ticks(4)
+	TEST_ASSERT(SSreactor.traced_wakes(anyone), "a mob moving into the chunk did not wake an any-mob subscriber")
+	TEST_ASSERT(!SSreactor.traced_wakes(players), "a mob without a client woke a player-chunk subscriber")
+	SSreactor.untrace(players)
+	SSreactor.untrace(anyone)
+	SSreactor.unsubscribe_player_chunks(players, player_tokens)
+	SSreactor.cancel_keys(anyone, any_tokens)
+
 #endif
