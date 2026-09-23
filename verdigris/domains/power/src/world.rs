@@ -23,6 +23,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use vg_core::RawHandle;
+use vg_core::conservation::Ledger as ConservationLedger;
 use vg_core::network::{Network, NodeId, RegionEvent, RegionId};
 
 use crate::apc::{Apc, ApcConfig, ApcState, CELLRATE, Grid};
@@ -61,14 +62,24 @@ pub mod ev {
 pub struct Books {
     /// Offered by generators and pulses (not storage).
     pub generated: f64,
-    /// Offered by storage output.
+    /// Offered by storage output (SMES; visible on the region ledger).
     pub storage_offered: f64,
-    /// Delivered to loads (draws, APCs, storage input).
+    /// Delivered to loads that draw through the region grid: draws, APC
+    /// area demand covered from the grid (not from its own cell -- see
+    /// `cell_out`), storage input.
     pub delivered: f64,
-    /// Taken out of storage output.
+    /// Taken out of SMES output.
     pub storage_out: f64,
-    /// Put into storage input.
+    /// Put into SMES input.
     pub storage_in: f64,
+    /// Taken out of an APC cell to cover its own area directly. Never
+    /// crosses the region grid (unlike SMES's `storage_out`), so unlike
+    /// SMES it is not part of `delivered`: use `power_apc_charge` in
+    /// [`PowerWorld::conservation_violations`] to check it instead.
+    pub cell_out: f64,
+    /// Put into an APC cell from grid surplus. Already counted in
+    /// `delivered` (it was drawn from the grid via [`Grid::draw`]).
+    pub cell_in: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -166,6 +177,16 @@ pub struct PowerWorld {
     shown_apc: HashMap<u32, ApcState>,
     shown_smes: HashMap<u32, [f64; 6]>,
     books: Books,
+    /// Conservation audit (`rust_core.md` §15/§16) over the two stored
+    /// quantities `step` can move without a matching source/sink: SMES
+    /// charge and total APC cell charge (kept separate -- they are
+    /// different rate models at different scales, not one pool).
+    conservation: ConservationLedger,
+    /// Every conservation violation `step` has ever reported, oldest
+    /// first (a domain step never panics in production -- see
+    /// `vg_core::conservation`'s docs -- so a live server reports these
+    /// instead, e.g. through a metrics counter or `vg_describe()`).
+    conservation_violations: Vec<String>,
     out: Vec<f32>,
     touched: Vec<NodeId<Cables>>,
     scratch_devices: Vec<vg_core::network::DeviceId<Cables>>,
@@ -198,6 +219,15 @@ impl PowerWorld {
     #[must_use]
     pub fn books(&self) -> Books {
         self.books
+    }
+
+    /// Every conservation violation ever reported (see
+    /// [`PowerWorld::step`]'s doc on `conservation`). Empty in a healthy
+    /// world; a live server should surface a non-empty list as a metric or
+    /// alert, not ignore it.
+    #[must_use]
+    pub fn conservation_violations(&self) -> &[String] {
+        &self.conservation_violations
     }
 
     #[must_use]
@@ -707,6 +737,7 @@ impl PowerWorld {
     pub fn step(&mut self) -> Vec<f32> {
         self.commit();
         self.steps += 1;
+        let books_before = self.books;
 
         // APCs, in key order (the DM roster order is arbitrary; key order
         // is deterministic).
@@ -719,16 +750,26 @@ impl PowerWorld {
                 .and_then(|t| self.node_region(t));
             let apc = self.apcs.get_mut(&key).expect("listed");
             let old_demand = apc.demand();
-            if let Some(r) = region {
+            let (discharged, charged) = if let Some(r) = region {
                 let ledger = self.ledgers.entry(r.raw()).or_default();
                 let mut grid = RegionGrid {
                     ledger,
                     delivered: &mut self.books.delivered,
                 };
-                apc.tick(&mut grid);
+                apc.tick(&mut grid)
             } else {
-                apc.tick(&mut NoGrid);
-            }
+                apc.tick(&mut NoGrid)
+            };
+            // `charged` already reached `delivered` via `grid.draw` inside
+            // `tick()`; `discharged` never crosses the region grid at all
+            // (it's the cell covering its own area directly), so unlike
+            // SMES's `storage_out` it is not folded into `delivered` --
+            // doing so would double it against the `grid.draw(excess)`
+            // call `with_cell` can also make the same tick, which already
+            // draws up to the full surplus rather than only the remaining
+            // gap. `cell_in`/`cell_out` exist purely for `check_conservation`.
+            self.books.cell_out += discharged;
+            self.books.cell_in += charged;
             let changed_demand = apc.demand() != old_demand;
             let terminal = apc.terminal;
             if changed_demand && let Some(t) = terminal {
@@ -895,7 +936,45 @@ impl PowerWorld {
                 push(&mut self.out, ev::SMES, &v);
             }
         }
+
+        self.check_conservation(books_before);
         std::mem::take(&mut self.out)
+    }
+
+    /// Checks this step's stored quantities against what the books say
+    /// should have moved them (`rust_core.md` §15/§16's conservation
+    /// audit): SMES charge against `storage_in`/`storage_out`, and total
+    /// APC cell charge against `cell_in`/`cell_out`. A violation is
+    /// recorded, never panicked (a live server keeps running and reports
+    /// it; a domain's own tests use `assert_conserved`/panicking checks
+    /// like [`Books`] already supports for that purpose).
+    fn check_conservation(&mut self, before: Books) {
+        // Books keeps watts; the stored totals are in each rate model's own
+        // charge units (`RateStore::rate`, watt-ticks -> charge units), so
+        // every source/sink here is scaled by the same rate the charge
+        // itself moves at.
+        let smes_total: f64 = self.smes.values().map(|s| s.state.charge).sum();
+        self.conservation
+            .source("power_smes_charge", (self.books.storage_in - before.storage_in) * SMESRATE);
+        self.conservation
+            .sink("power_smes_charge", (self.books.storage_out - before.storage_out) * SMESRATE);
+        if let Err(v) = self.conservation.check("power_smes_charge", smes_total, 1e-6 * (1.0 + smes_total.abs())) {
+            self.conservation_violations.push(v.to_string());
+        }
+
+        let apc_total: f64 = self.apcs.values().map(|a| a.state.charge).sum();
+        self.conservation
+            .source("power_apc_charge", (self.books.cell_in - before.cell_in) * CELLRATE);
+        self.conservation
+            .sink("power_apc_charge", (self.books.cell_out - before.cell_out) * CELLRATE);
+        // A looser tolerance than SMES's: the APC charging path targets
+        // `chargelevel` of `max_charge` per tick then clamps to capacity,
+        // not a pure `RateStore::charge_in` (see `the_ledger_conserves`'s
+        // own note on this), so a tick landing right on that clamp can
+        // legitimately lose a sliver of `cell_in` to it.
+        if let Err(v) = self.conservation.check("power_apc_charge", apc_total, 0.01 * (1.0 + apc_total.abs())) {
+            self.conservation_violations.push(v.to_string());
+        }
     }
 
     /// Takes the events buffered by edits and reads since the last step.

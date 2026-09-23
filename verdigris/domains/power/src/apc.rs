@@ -199,12 +199,19 @@ impl Apc {
         })
     }
 
-    /// One machinery tick (`apc_power_distributor.tick()`).
-    pub fn tick(&mut self, grid: &mut dyn Grid) {
+    /// One machinery tick (`apc_power_distributor.tick()`). Returns the
+    /// cell's own contribution this tick, `(discharged, charged)` watts,
+    /// for the caller's conservation books: `discharged` was drawn from
+    /// the cell to cover the area (never touches `grid`, so it never
+    /// reaches [`Grid::draw`]'s own delivered accounting) and `charged`
+    /// went from the grid into the cell (it *does* reach `grid.draw`, so
+    /// a caller that books `grid.draw`'s return as delivered must not
+    /// double-count `charged` there -- only as storage input).
+    pub fn tick(&mut self, grid: &mut dyn Grid) -> (f64, f64) {
         let used = self.demand();
         self.oneoff = [0.0; 3];
         if !self.config.active {
-            return;
+            return (0.0, 0.0);
         }
         let s = &mut self.state;
         s.lastused[..3].copy_from_slice(&used);
@@ -220,7 +227,7 @@ impl Apc {
             status::GOOD
         };
         if self.config.has_cell && !self.config.shorted_or_grid_check {
-            self.with_cell(excess, grid);
+            self.with_cell(excess, grid)
         } else {
             s.charging = 0;
             s.chargecount = 0;
@@ -229,13 +236,15 @@ impl Apc {
             }
             s.alarm = true;
             s.autoflag = 0;
+            (0.0, 0.0)
         }
     }
 
-    fn with_cell(&mut self, excess: f64, grid: &mut dyn Grid) {
+    fn with_cell(&mut self, excess: f64, grid: &mut dyn Grid) -> (f64, f64) {
         let cfg = self.config;
         let s = &mut self.state;
         let total = s.lastused[4];
+        let mut discharged = 0.0;
         if excess >= total {
             grid.draw(total);
         } else {
@@ -245,7 +254,7 @@ impl Apc {
                 rate: CELLRATE,
             };
             let available = store.watts_available();
-            store.discharge_out(total);
+            discharged = store.discharge_out(total);
             s.charge = store.charge;
             if available + excess >= total {
                 let drawn = grid.draw(excess);
@@ -265,6 +274,7 @@ impl Apc {
 
         let s = &mut self.state;
         s.lastused[3] = 0.0;
+        let mut charged = 0.0;
         if cfg.chargemode && s.charging == 1 && cfg.operating {
             if excess > 0.0 {
                 let ch = (excess * CELLRATE).min(cfg.max_charge * cfg.chargelevel);
@@ -272,6 +282,7 @@ impl Apc {
                 s.charge = (s.charge + drawn * CELLRATE).min(cfg.max_charge.max(s.charge));
                 s.lastused[3] = drawn;
                 s.lastused[4] += drawn;
+                charged = drawn;
             } else {
                 s.charging = 0;
                 s.chargecount = 0;
@@ -297,6 +308,7 @@ impl Apc {
             s.charging = 0;
             s.chargecount = 0;
         }
+        (discharged, charged)
     }
 
     /// `_update_channels()`: shedding tiers from the cell level and trend.

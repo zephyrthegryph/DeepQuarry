@@ -338,6 +338,19 @@ proptest! {
         let s = w.smes(1001).unwrap().state.charge;
         let expect = smes0 + (b.storage_in - b.storage_out) * SMESRATE;
         prop_assert!((s - expect).abs() < 1e-6 * (1.0 + smes0), "smes {s} vs books {expect}");
+        // The APC's own charging path isn't a pure RateStore::charge_in (it
+        // targets `chargelevel` of max_charge per tick, then clamps to
+        // max_charge, so a tick that overshoots the target loses a sliver
+        // of `cell_in` to the clamp each time it happens), so it is not
+        // hand-reconstructed here the way SMES's charge is above; instead
+        // this drives the world's own conservation audit
+        // (`PowerWorld::step`'s `check_conservation`, `rust_core.md`
+        // §15/§16), which books exactly what each tick actually moved.
+        prop_assert!(
+            w.conservation_violations().is_empty(),
+            "conservation violation: {:?}",
+            w.conservation_violations()
+        );
     }
 }
 
