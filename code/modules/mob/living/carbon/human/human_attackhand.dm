@@ -309,11 +309,11 @@
 			if(canmove && src!=H && prob(20))
 				block = 1
 
-	if(M.grabbed_by.len)
+	if(LAZYLEN(M.grabbed_by))
 		// Someone got a good grip on them, they won't be able to do much damage
 		rand_damage = max(1, rand_damage - 2)
 
-	if(src.grabbed_by.len || src.buckled || !src.canmove || src==H)
+	if(LAZYLEN(src.grabbed_by) || src.buckled || !src.canmove || src==H)
 		accurate = 1 // certain circumstances make it impossible for us to evade punches
 		rand_damage = 5
 

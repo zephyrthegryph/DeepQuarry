@@ -7,7 +7,7 @@
 	//if we are being grabbed
 	if(isliving(mob))
 		var/mob/living/L = mob
-		if(!L.canmove && L.grabbed_by.len)
+		if(!L.canmove && LAZYLEN(L.grabbed_by))
 			L.resist() //shortcut for resisting grabs
 
 		//if we are grabbing someone
@@ -43,7 +43,7 @@
 	if(!istype(assailant) || !istype(affecting) || affecting.anchored || !assailant.Adjacent(victim))
 		return INITIALIZE_HINT_QDEL
 
-	affecting.grabbed_by += src
+	LAZYADD(affecting.grabbed_by, src)
 	affecting.reveal(span_warning("You are revealed as [assailant] grabs you."))
 	assailant.reveal(span_warning("You reveal yourself as you grab [affecting]."))
 
@@ -402,7 +402,7 @@
 	if(affecting)
 		animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
 		affecting.reset_plane_and_layer()
-		affecting.grabbed_by -= src
+		LAZYREMOVE(affecting.grabbed_by, src)
 		affecting = null
 	if(assailant)
 		if(assailant.client)

@@ -81,7 +81,7 @@
 	var/damageoverlaytemp = 0
 
 	var/computer_id = null
-	var/list/logging = list()
+	var/list/logging
 
 	var/already_placed = 0.0
 	var/other_mobs = null
@@ -154,7 +154,7 @@
 
 	var/tmp/datum/hud/hud_used = null
 
-	var/list/grabbed_by = list()
+	var/list/grabbed_by
 
 	var/tmp/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
@@ -238,9 +238,9 @@
 	//so don't treat them as being SSD even though their client var is null.
 	var/tmp/mob/teleop = null
 
-	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes
+	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
 
-	var/list/active_genes=list()
+	var/list/active_genes
 	var/mob_size = MOB_MEDIUM
 	var/forbid_seeing_deadchat = FALSE // Used for lings to not see deadchat, and to have ghosting behave as if they were not really dead.
 

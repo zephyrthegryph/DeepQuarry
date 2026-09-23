@@ -93,7 +93,7 @@
 	if(nif)
 		QDEL_NULL(nif)
 	GLOB.alt_farmanimals -= src
-	worn_clothing.Cut()
+	LAZYCLEARLIST(worn_clothing)
 
 	if(vessel)
 		QDEL_NULL(vessel)
@@ -769,15 +769,15 @@
 				SStgui.close_uis(src)
 				return
 			if("general")
-				var/msg = strip_html_simple(tgui_input_text(usr,"Update the general description of your character. This will be shown regardless of clothing.","Flavor Text",html_decode(flavor_texts[href_list["flavor_change"]]), multiline = TRUE, prevent_enter = TRUE))	//Separating out OOC notes
+				var/msg = strip_html_simple(tgui_input_text(usr,"Update the general description of your character. This will be shown regardless of clothing.","Flavor Text",html_decode(LAZYACCESS(flavor_texts, href_list["flavor_change"])), multiline = TRUE, prevent_enter = TRUE))	//Separating out OOC notes
 				if(msg)
-					flavor_texts[href_list["flavor_change"]] = msg
+					LAZYSET(flavor_texts, href_list["flavor_change"], msg)
 					set_flavor()
 				return
 			else
-				var/msg = strip_html_simple(tgui_input_text(usr,"Update the flavor text for your [href_list["flavor_change"]].","Flavor Text",html_decode(flavor_texts[href_list["flavor_change"]]), multiline = TRUE, prevent_enter = TRUE))
+				var/msg = strip_html_simple(tgui_input_text(usr,"Update the flavor text for your [href_list["flavor_change"]].","Flavor Text",html_decode(LAZYACCESS(flavor_texts, href_list["flavor_change"])), multiline = TRUE, prevent_enter = TRUE))
 				if(msg)
-					flavor_texts[href_list["flavor_change"]] = msg
+					LAZYSET(flavor_texts, href_list["flavor_change"], msg)
 					set_flavor()
 				return
 	..()
@@ -1074,7 +1074,7 @@
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
 		if(gene.name in active_genes)
 			gene.deactivate(src)
-			active_genes -= gene.name
+			LAZYREMOVE(active_genes, gene.name)
 
 	// Reapply markings/appearance from prefs for player mobs
 	if(client) //just to be sure
@@ -1639,7 +1639,7 @@
 	if(stat) return
 	var/datum/category_group/underwear/UWC = tgui_input_list(usr, "Choose underwear:", "Show/hide underwear", GLOB.global_underwear.categories)
 	if(!UWC) return
-	var/datum/category_item/underwear/UWI = all_underwear[UWC.name]
+	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
