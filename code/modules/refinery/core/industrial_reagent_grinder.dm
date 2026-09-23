@@ -72,7 +72,7 @@
 		return FALSE
 
 	// Needs to be sheet, ore, or grindable reagent containing things
-	if(istype(O,/obj/item/tool)) // Stops messages about the wrench being unsuitable to grind
+	if(LAZYLEN(O.tool_qualities)) // Stops messages about the wrench being unsuitable to grind
 		return FALSE
 	if(!GLOB.sheet_reagents[O.type] && !GLOB.ore_reagents[O.type] && (!O.reagents || !O.reagents.total_volume))
 		to_chat(user, "\The [O] is not suitable for blending.")

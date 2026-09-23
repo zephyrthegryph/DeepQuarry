@@ -398,27 +398,20 @@
 	return
 
 /obj/machinery/atmospherics/unary/vent_pump/welder_act(mob/user, obj/item/W)
-	var/obj/item/weldingtool/WT = W.get_welder()
-	if (WT.remove_fuel(0,user))
-		to_chat(user, span_notice("Now welding the vent."))
-		if(do_after(user, 20 * WT.toolspeed, target = src))
-			if(!src || !WT.isOn()) return ITEM_INTERACT_BLOCKING
-			playsound(src, WT.usesound, 50, 1)
-			if(!welded)
-				user.visible_message(span_bold("\The [user]") + " welds the vent shut.", span_notice("You weld the vent shut."), "You hear welding.")
-				welded = 1
-				invalidate_gas_dependencies()
-				update_icon()
-			else
-				user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
-				welded = 0
-				invalidate_gas_dependencies()
-				update_icon()
+	if(use_tool(user, W, src, delay = 20, quality = TOOL_WELDER, volume = 0, message_self = "Now welding the vent."))
+		if(!src)
+			return ITEM_INTERACT_BLOCKING
+		playsound(src, W.usesound, 50, 1)
+		if(!welded)
+			user.visible_message(span_bold("\The [user]") + " welds the vent shut.", span_notice("You weld the vent shut."), "You hear welding.")
+			welded = 1
+			invalidate_gas_dependencies()
+			update_icon()
 		else
-			to_chat(user, span_notice("The welding tool needs to be on to start this task."))
-	else
-		to_chat(user, span_warning("You need more welding fuel to complete this task."))
-		return ITEM_INTERACT_BLOCKING
+			user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
+			welded = 0
+			invalidate_gas_dependencies()
+			update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/vent_pump/wrench_act(mob/user, obj/item/W)
@@ -433,9 +426,7 @@
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, W.usesound, 50, 1)
-	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
-	if (do_after(user, 40 * W.toolspeed, target = src))
+	if (use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]..."))
 		user.visible_message( \
 			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
 			span_notice("You have unfastened \the [src]."), \

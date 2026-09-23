@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - code_imp: "Tools go through one pipeline: the quality and tier check, fuel or charge, the sound, the wait and the fuel use happen in one place. Timings are unchanged."
+  - code_imp: "Every tool quality (shovels, knives, surgical tools and so on) can now drive interactions, not just the six common tools."
+  - balance: "Welding jobs burn their fuel when the job finishes, so an interrupted job no longer wastes it."

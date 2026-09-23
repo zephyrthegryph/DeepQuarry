@@ -45,9 +45,8 @@
 		opened = !opened
 		update_icon()
 		return TRUE
-	to_chat(user, span_notice("You start to unwrench the extinguisher cabinet."))
-	playsound(src, O.usesound, 50, 1)
-	if(do_after(user, 1.5 SECONDS * O.toolspeed, target = src))
+	if(use_tool(user, O, src, delay = 1.5 SECONDS, quality = TOOL_WRENCH, volume = 50,
+			message_self = "You start to unwrench the extinguisher cabinet."))
 		to_chat(user, span_notice("You unwrench the extinguisher cabinet."))
 		new /obj/item/frame/extinguisher_cabinet(loc)
 		qdel(src)

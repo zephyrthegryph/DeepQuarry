@@ -397,25 +397,12 @@
 	return null
 
 /obj/machinery/camera/proc/weld(obj/item/tool, mob/user)
-	var/obj/item/weldingtool/WT = tool.get_welder()
-
 	if(busy)
 		return 0
-	if(!WT.isOn())
-		return 0
-
-	// Do after stuff here
-	to_chat(user, span_notice("You start to weld [src].."))
-	playsound(src, WT.usesound, 50, 1)
-	WT.eyecheck(user)
 	busy = 1
-	if(do_after(user, 10 SECONDS * WT.toolspeed, target = src))
-		busy = 0
-		if(!WT.isOn())
-			return 0
-		return 1
+	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..")
 	busy = 0
-	return 0
+	return result
 
 /obj/machinery/camera/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))

@@ -243,7 +243,7 @@
 			anchored = TRUE
 			update_icon()
 
-/obj/item/material/barbedwire/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/item/material/barbedwire/attackby(obj/item/W as obj, mob/user as mob)
 	if(!istype(W))
 		return
 
@@ -253,11 +253,6 @@
 		playsound(src, 'sound/effects/grillehit.ogg', 40, 1)
 
 		var/inc_damage = W.force
-
-		if(tool_quality == TOOL_WIRECUTTER)
-			if(!shock(user, 100, pick(BP_L_HAND, BP_R_HAND)))
-				playsound(src, W.usesound, 100, 1)
-				inc_damage *= 3
 
 		if(W.obj_damage_type() != BRUTE)
 			inc_damage *= 0.3
@@ -269,8 +264,28 @@
 	..()
 
 /obj/item/material/barbedwire/wirecutter_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WIRECUTTER)
-	return TRUE
+	if(!istype(tool))
+		return ITEM_INTERACT_BLOCKING
+
+	if((tool.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
+		user.setClickCooldown(user.get_attack_speed(tool))
+		user.do_attack_animation(src)
+		playsound(src, 'sound/effects/grillehit.ogg', 40, 1)
+
+		var/inc_damage = tool.force
+
+		if(!shock(user, 100, pick(BP_L_HAND, BP_R_HAND)))
+			playsound(src, tool.usesound, 100, 1)
+			inc_damage *= 3
+
+		if(tool.obj_damage_type() != BRUTE)
+			inc_damage *= 0.3
+
+		health -= inc_damage
+
+	check_health()
+
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/barbedwire/update_icon()
 	..()

@@ -72,7 +72,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
 		var/obj/item/solar_assembly/S = new(loc)
 		S.anchored = TRUE
 		new glass_type(loc, 2)

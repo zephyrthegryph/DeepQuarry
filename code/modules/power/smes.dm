@@ -425,9 +425,8 @@ GLOBAL_LIST_EMPTY(smeses)
 	if(terminal_turf && !terminal_turf.is_plating())
 		to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
 	else
-		to_chat(user, span_filter_notice(span_notice("You begin to cut the cables...")))
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		if(do_after(user, 5 SECONDS * tool.toolspeed, target = src))
+		if(use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables..."))
 			if(prob(50) && electrocute_mob(user, term.powernet, term))
 				var/datum/effect/effect/system/spark_spread/sparks = new
 				sparks.set_up(5, 1, src)

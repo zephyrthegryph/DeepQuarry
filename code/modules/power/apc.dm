@@ -431,9 +431,7 @@ GLOBAL_LIST_EMPTY(apcs)
 			if(terminal)
 				to_chat(user, span_warning("Disconnect the wires first."))
 				return ITEM_INTERACT_BLOCKING
-			playsound(src, tool.usesound, 50, TRUE)
-			to_chat(user, "You begin to remove the power control board...")
-			if(do_after(user, 5 SECONDS * tool.toolspeed, target = src) && has_electronics == APC_HAS_ELECTRONICS_WIRED)
+			if(use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, message_self = "You begin to remove the power control board...") && has_electronics == APC_HAS_ELECTRONICS_WIRED)
 				has_electronics = APC_HAS_ELECTRONICS_NONE
 				if(stat & BROKEN)
 					user.visible_message(span_warning("[user.name] has broken the charred power control board inside [name]!"), span_notice("You broke the charred power control board and remove the remains."), "You hear a crack!")
@@ -490,9 +488,8 @@ GLOBAL_LIST_EMPTY(apcs)
 	if(floor && !floor.is_plating())
 		to_chat(user, span_warning("You must remove the floor plating in front of the APC first."))
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("[user.name] starts dismantling the [src]'s power terminal."), "You begin to cut the cables...")
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, TRUE)
-	if(do_after(user, 5 SECONDS * tool.toolspeed, target = src) && terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED)
+	if(use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", message_others = "[user.name] starts dismantling the [src]'s power terminal.") && terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED)
 		if(prob(50) && electrocute_mob(user, terminal.powernet, terminal))
 			var/datum/effect/effect/system/spark_spread/sparks = new
 			sparks.set_up(5, 1, src)
@@ -509,20 +506,15 @@ GLOBAL_LIST_EMPTY(apcs)
 	add_fingerprint(user)
 	if(!opened || has_electronics != APC_HAS_ELECTRONICS_NONE || terminal)
 		return ..()
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(welder.get_fuel() < 3)
-		to_chat(user, span_warning("You need more welding fuel to complete this task."))
-		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("[user.name] begins cutting apart [src] with [welder]."), "You start welding the APC frame...", "You hear welding.")
-	playsound(src, welder.usesound, 25, TRUE)
-	if(!do_after(user, 5 SECONDS * welder.toolspeed, target = src) || !welder.remove_fuel(3, user))
+	if(!use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WELDER, amount = 3, volume = 25, \
+			message_self = "You start welding the APC frame...", message_others = "[user.name] begins cutting apart [src] with [tool]."))
 		return ITEM_INTERACT_SUCCESS
 	if(emagged || (stat & BROKEN) || opened == 2)
 		new /obj/item/stack/material/steel(loc)
-		user.visible_message(span_warning("[src] has been cut apart by [user.name] with [welder]."), span_notice("You disassembled the broken APC frame."), "You hear welding.")
+		user.visible_message(span_warning("[src] has been cut apart by [user.name] with [tool]."), span_notice("You disassembled the broken APC frame."), "You hear welding.")
 	else
 		new /obj/item/frame/apc(loc)
-		user.visible_message(span_warning("[src] has been cut from the wall by [user.name] with [welder]."), span_notice("You cut the APC frame from the wall."), "You hear welding.")
+		user.visible_message(span_warning("[src] has been cut from the wall by [user.name] with [tool]."), span_notice("You cut the APC frame from the wall."), "You hear welding.")
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 

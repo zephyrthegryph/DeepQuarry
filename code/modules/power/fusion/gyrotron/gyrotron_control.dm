@@ -33,7 +33,7 @@
 
 /obj/machinery/computer/gyrotron_control/attackby(obj/item/W, mob/user)
 	..()
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Gyrotron Control", monitor.gyro_tag, MAX_NAME_LEN)
 		if(new_ident && user.Adjacent(src))
 			monitor.gyro_tag = new_ident

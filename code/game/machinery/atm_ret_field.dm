@@ -71,15 +71,8 @@
 /obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
 	if(!hatch_open)
 		return NONE
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.isOn())
-		return ITEM_INTERACT_BLOCKING
-	if(welder.get_fuel() < 5)
-		to_chat(user, span_warning("You need more fuel to complete this task."))
-		return ITEM_INTERACT_BLOCKING
-	user.visible_message("[user] starts to disassemble \the [src].", "You start to disassemble \the [src].")
-	playsound(src, welder.usesound, 50, TRUE)
-	if(do_after(user, 1.5 SECONDS * tool.toolspeed, target = src) && welder.remove_fuel(5, user))
+	if(use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, \
+			message_self = "You start to disassemble \the [src].", message_others = "[user] starts to disassemble \the [src]."))
 		to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
 		qdel(src)
 	return ITEM_INTERACT_SUCCESS

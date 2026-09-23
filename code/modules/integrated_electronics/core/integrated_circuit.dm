@@ -158,7 +158,7 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	if(params["link"] && pin)
 		linked = locate(params["link"]) in pin.linked
 
-	var/obj/held_item = ui.user.get_active_hand()
+	var/obj/item/held_item = ui.user.get_active_hand()
 
 	. = TRUE
 	switch(action)
@@ -167,8 +167,8 @@ a creative player the means to solve many problems.  Circuits are held inside an
 			return
 
 		if("wire", "pin_name", "pin_data", "pin_unwire")
-			if(istype(held_item, /obj/item/multitool) && allow_multitool)
-				var/obj/item/multitool/M = held_item
+			var/obj/item/multitool/M = held_item?.get_multitool()
+			if(M && allow_multitool)
 				switch(action)
 					if("pin_name")
 						M.wire(pin, ui.user)

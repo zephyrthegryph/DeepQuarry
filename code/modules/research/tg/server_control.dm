@@ -16,8 +16,8 @@
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 
 /obj/machinery/computer/rdservercontrol/attackby(obj/item/I, user)
-	if(istype(I, /obj/item/multitool))
-		var/obj/item/multitool/tool = I
+	var/obj/item/multitool/tool = I.get_multitool()
+	if(tool)
 		if(!QDELETED(tool.buffer) && istype(tool.buffer, /datum/techweb))
 			stored_research = tool.buffer
 			balloon_alert(user, "techweb connected")

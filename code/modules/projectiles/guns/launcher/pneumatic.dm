@@ -176,10 +176,31 @@
 			. += "It has a transfer valve installed."
 
 /obj/item/cannonframe/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	var/obj/item/weldingtool/T = tool.get_welder()
+	if(buildstate == 1)
+		if(T.remove_fuel(0,user))
+			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
+			playsound(src, tool.usesound, 100, 1)
+			to_chat(user, span_notice("You weld the pipe into place."))
+			buildstate++
+			update_icon()
+	if(buildstate == 3)
+		if(T.remove_fuel(0,user))
+			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
+			playsound(src, tool.usesound, 100, 1)
+			to_chat(user, span_notice("You weld the metal chassis together."))
+			buildstate++
+			update_icon()
+	if(buildstate == 5)
+		if(T.remove_fuel(0,user))
+			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
+			playsound(src, tool.usesound, 100, 1)
+			to_chat(user, span_notice("You weld the valve into place."))
+			new /obj/item/gun/launcher/pneumatic(get_turf(src))
+			qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/cannonframe/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/item/cannonframe/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/pipe))
 		if(buildstate == 0)
 			user.drop_from_inventory(W)
@@ -206,29 +227,5 @@
 			buildstate++
 			update_icon()
 			return
-	else if(tool_quality == TOOL_WELDER)
-		var/obj/item/weldingtool/T = W.get_welder()
-		if(buildstate == 1)
-			if(T.remove_fuel(0,user))
-				if(!src || !T.isOn()) return
-				playsound(src, W.usesound, 100, 1)
-				to_chat(user, span_notice("You weld the pipe into place."))
-				buildstate++
-				update_icon()
-		if(buildstate == 3)
-			if(T.remove_fuel(0,user))
-				if(!src || !T.isOn()) return
-				playsound(src, W.usesound, 100, 1)
-				to_chat(user, span_notice("You weld the metal chassis together."))
-				buildstate++
-				update_icon()
-		if(buildstate == 5)
-			if(T.remove_fuel(0,user))
-				if(!src || !T.isOn()) return
-				playsound(src, W.usesound, 100, 1)
-				to_chat(user, span_notice("You weld the valve into place."))
-				new /obj/item/gun/launcher/pneumatic(get_turf(src))
-				qdel(src)
-		return
 	else
 		..()

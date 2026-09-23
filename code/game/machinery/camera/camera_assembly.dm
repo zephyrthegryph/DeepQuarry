@@ -140,21 +140,9 @@
 		..()
 
 /obj/item/camera_assembly/proc/weld(obj/item/weldingtool/WT, mob/user)
-	WT = WT.get_welder()
-
 	if(busy)
 		return 0
-	if(!WT.isOn())
-		return 0
-
-	to_chat(user, span_notice("You start to weld the [src].."))
-	playsound(src, WT.usesound, 50, 1)
-	WT.eyecheck(user)
 	busy = 1
-	if(do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-		busy = 0
-		if(!WT.isOn())
-			return 0
-		return 1
+	var/result = use_tool(user, WT, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld the [src]..")
 	busy = 0
-	return 0
+	return result

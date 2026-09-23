@@ -432,7 +432,7 @@
 		certification["actor_account"] = contract_account_for_mob(user)?.account_number
 		emit_contract_event(CONTRACT_EVENT_MATERIAL_CERTIFIED, certification, "material-certification:[REF(src)]:[world.time]", src, user)
 		to_chat(user, span_notice("The analyzer records a traceable qualification for batch [copytext(batch.fingerprint(), 1, 9)]."))
-	else if(istype(item, /obj/item/multitool))
+	else if(item.has_tool_quality(TOOL_MULTITOOL))
 		to_chat(user, span_notice("The stock measures [batch.conductivity]% relative conductivity and [batch.homogeneity]% lattice order."))
 	if(changed)
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(src, batch, user.drop_location())

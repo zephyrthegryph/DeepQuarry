@@ -117,9 +117,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(stage == 3)
 		to_chat(user, "You have to unscrew the case first.")
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, tool.usesound, 75, TRUE)
-	to_chat(user, "You begin deconstructing [src].")
-	if(!do_after(user, 3 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, message_self = "You begin deconstructing [src]."))
 		return ITEM_INTERACT_SUCCESS
 	new /obj/item/stack/material/steel(get_turf(src), sheets_refunded)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")

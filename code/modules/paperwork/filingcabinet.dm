@@ -49,9 +49,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/filingcabinet/screwdriver_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("You begin taking the [name] apart."))
-	playsound(src, tool.usesound, 50, TRUE)
-	if(!do_after(user, 1 SECOND * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin taking the [name] apart."))
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You take the [name] apart."))

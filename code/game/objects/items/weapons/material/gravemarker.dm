@@ -11,37 +11,33 @@
 	var/grave_name = ""		//Name of the intended occupant
 	var/epitaph = ""		//A quick little blurb
 
-/obj/item/material/gravemarker/attackby(obj/item/W, mob/user as mob, tool_quality)
-	if(tool_quality == TOOL_SCREWDRIVER)
-		var/carving_1 = sanitizeSafe(tgui_input_text(user, "Who is \the [src.name] for?", "Gravestone Naming", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(carving_1)
-			user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
-			if(do_after(user, material.hardness * W.toolspeed, target = src))
-				user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
-				grave_name += carving_1
-				update_icon()
-		var/carving_2 = sanitizeSafe(tgui_input_text(user, "What message should \the [src.name] have?", "Epitaph Carving", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(carving_2)
-			user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
-			if(do_after(user, material.hardness * W.toolspeed, target = src))
-				user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
-				epitaph += carving_2
-				update_icon()
-	if(tool_quality == TOOL_WRENCH)
-		user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
-		if(do_after(user, material.hardness * W.toolspeed, target = src))
-			material.place_dismantled_product(get_turf(src))
-			user.visible_message("[user] dismantles down \the [src.name].", "You dismantle \the [src.name].")
-			qdel(src)
+/obj/item/material/gravemarker/attackby(obj/item/W, mob/user as mob)
 	..()
 
 /obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
-	attackby(W, user, TOOL_SCREWDRIVER)
-	return TRUE
+	var/carving_1 = sanitizeSafe(tgui_input_text(user, "Who is \the [src.name] for?", "Gravestone Naming", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	if(carving_1)
+		if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER,
+				message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name]."))
+			user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+			grave_name += carving_1
+			update_icon()
+	var/carving_2 = sanitizeSafe(tgui_input_text(user, "What message should \the [src.name] have?", "Epitaph Carving", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	if(carving_2)
+		if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER,
+				message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name]."))
+			user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+			epitaph += carving_2
+			update_icon()
+	return NONE
 
 /obj/item/material/gravemarker/wrench_act(mob/user, obj/item/W)
-	attackby(W, user, TOOL_WRENCH)
-	return TRUE
+	if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH,
+			message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name]."))
+		material.place_dismantled_product(get_turf(src))
+		user.visible_message("[user] dismantles down \the [src.name].", "You dismantle \the [src.name].")
+		qdel(src)
+	return NONE
 
 /obj/item/material/gravemarker/examine(mob/user)
 	. = ..()

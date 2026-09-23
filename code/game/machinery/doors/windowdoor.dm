@@ -237,25 +237,22 @@
 /obj/machinery/door/window/welder_act(mob/user, obj/item/tool)
 	if(operating == 1 || user.a_intent != I_HELP)
 		return FALSE
-	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(get_integrity() >= max_integrity)
 		to_chat(user, span_warning("[src] is already in good condition!"))
 		return TRUE
-	if(welder.remove_fuel(1, user))
-		to_chat(user, span_notice("You begin repairing [src]..."))
-		playsound(src, welder.usesound, 50, TRUE)
-		if(do_after(user, 4 SECONDS * welder.toolspeed, target = src))
-			repair_damage(max_integrity)
-			update_icon()
-			to_chat(user, span_notice("You repair [src]."))
+	if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1,
+			message_self = "You begin repairing [src]..."))
+		repair_damage(max_integrity)
+		update_icon()
+		to_chat(user, span_notice("You repair [src]."))
 	return TRUE
 
 /obj/machinery/door/window/crowbar_act(mob/user, obj/item/tool)
 	if(operating == 1 || density)
 		return FALSE
-	playsound(src, tool.usesound, 50, TRUE)
-	user.visible_message("[user] begins prying the windoor out of the frame.", "You start to pry the windoor out of the frame.")
-	if(!do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 50,
+			message_self = "You start to pry the windoor out of the frame.",
+			message_others = "[user] begins prying the windoor out of the frame."))
 		return TRUE
 	to_chat(user, span_notice("You pried the windoor out of the frame!"))
 	var/obj/structure/windoor_assembly/assembly = new(loc)

@@ -201,7 +201,7 @@
 					qdel(imp)
 
 /obj/structure/backup_implanter_ch/attackby(obj/item/O, mob/user)
-	if(O.is_wrench())
+	if(O.has_tool_quality(TOOL_WRENCH))
 
 		if(anchored)
 			to_chat(user, span_notice("You start to unwrench the implanter."))

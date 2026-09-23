@@ -159,8 +159,9 @@ handles linking back and forth.
 
 /datum/component/remote_materials/proc/on_item_insert(datum/source, obj/item/target, mob/living/user)
 	SIGNAL_HANDLER
-	if(istype(target, /obj/item/multitool))
-		return OnMultitool(source, user, target)
+	var/obj/item/multitool/multitool = target.get_multitool()
+	if(multitool)
+		return OnMultitool(source, user, multitool)
 
 	if(istype(target, /obj/item/forensics))
 		return FALSE

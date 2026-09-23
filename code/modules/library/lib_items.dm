@@ -49,9 +49,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 75, 1)
-	to_chat(user, span_notice("You begin dismantling \the [src]."))
-	if(!do_after(user, 2.5 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src]."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You dismantle \the [src]."))
 	new /obj/item/stack/material/wood(get_turf(src), 3)

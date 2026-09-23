@@ -222,7 +222,7 @@
 	removing.canremove = TRUE
 	H.drop_from_inventory(removing)
 
-/obj/item/clothing/suit/space/void/attackby(obj/item/W, mob/user, tool_quality)
+/obj/item/clothing/suit/space/void/attackby(obj/item/W, mob/user)
 
 	if(!isliving(user)) return
 
@@ -233,34 +233,7 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return
 
-	if(tool_quality == TOOL_SCREWDRIVER)
-		if(hood || boots || tank)
-			var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(hood,boots,tank,cooler))
-			if(!choice) return
-
-			if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
-				to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
-				tank.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.tank = null
-			else if(choice == cooler)
-				to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
-				cooler.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.cooler = null
-			else if(choice == hood)
-				to_chat(user, "You detach \the [hood] from \the [src]'s helmet mount.")
-				remove_helmet()
-				playsound(src, W.usesound, 50, 1)
-			else if(choice == boots)
-				to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
-				boots.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.boots = null
-		else
-			to_chat(user, "\The [src] does not have anything installed.")
-		return
-	else if(istype(W,/obj/item/clothing/head/helmet/space))
+	if(istype(W,/obj/item/clothing/head/helmet/space))
 		if(hood)
 			to_chat(user, "\The [src] already has a helmet installed.")
 		else
@@ -394,7 +367,7 @@
 	hood = new /obj/item/clothing/head/helmet/space/void/autolok //autoinstall the helmet
 
 //override the attackby screwdriver proc so that people can't remove the helmet
-/obj/item/clothing/suit/space/void/autolok/attackby(obj/item/W, mob/user, tool_quality)
+/obj/item/clothing/suit/space/void/autolok/attackby(obj/item/W, mob/user)
 
 	if(!isliving(user))
 		return
@@ -406,39 +379,69 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return
 
-	if(tool_quality == TOOL_SCREWDRIVER)
-		if(boots || tank || cooler)
-			var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(boots,tank,cooler))
-			if(!choice) return
-
-			if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
-				to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
-				tank.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.tank = null
-			else if(choice == cooler)
-				to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
-				cooler.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.cooler = null
-			else if(choice == boots)
-				to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
-				boots.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.boots = null
-		else
-			to_chat(user, "\The [src] does not have anything installed.")
-		return
-
 	..()
 
 /obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	if(!isliving(user))
+		return ITEM_INTERACT_BLOCKING
+	if(user.get_inventory_slot(src) == slot_wear_suit)
+		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
+		return ITEM_INTERACT_SUCCESS
+	if(hood || boots || tank)
+		var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(hood,boots,tank,cooler))
+		if(!choice) return ITEM_INTERACT_SUCCESS
+
+		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
+			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
+			tank.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.tank = null
+		else if(choice == cooler)
+			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
+			cooler.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.cooler = null
+		else if(choice == hood)
+			to_chat(user, "You detach \the [hood] from \the [src]'s helmet mount.")
+			remove_helmet()
+			playsound(src, tool.usesound, 50, 1)
+		else if(choice == boots)
+			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
+			boots.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.boots = null
+	else
+		to_chat(user, "\The [src] does not have anything installed.")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/clothing/suit/space/void/autolok/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	if(!isliving(user))
+		return ITEM_INTERACT_BLOCKING
+	if(user.get_inventory_slot(src) == slot_wear_suit)
+		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
+		return ITEM_INTERACT_SUCCESS
+	if(boots || tank || cooler)
+		var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(boots,tank,cooler))
+		if(!choice) return ITEM_INTERACT_SUCCESS
+
+		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
+			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
+			tank.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.tank = null
+		else if(choice == cooler)
+			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
+			cooler.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.cooler = null
+		else if(choice == boots)
+			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
+			boots.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.boots = null
+	else
+		to_chat(user, "\The [src] does not have anything installed.")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/clothing/head/helmet/space/void/autolok
 	name = "AutoLok pressure helmet"

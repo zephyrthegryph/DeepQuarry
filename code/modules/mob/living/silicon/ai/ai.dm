@@ -807,9 +807,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	if(user == deployed_shell)
 		to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, tool.usesound, 50, 1)
-	user.visible_message(span_notice("\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating..."))
-	if(!do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, message_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating..."))
 		user.visible_message(span_notice("\The [user] decides not to [anchored ? "unbolt" : "bolt"] \the [src]."))
 		return ITEM_INTERACT_BLOCKING
 	anchored = !anchored

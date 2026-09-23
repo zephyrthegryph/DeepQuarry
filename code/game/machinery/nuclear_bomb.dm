@@ -61,137 +61,112 @@ GLOBAL_VAR(bomb_set)
 				attack_hand(M)
 	return ..()
 
-/obj/machinery/nuclearbomb/attackby(obj/item/O as obj, mob/user as mob, tool_quality)
-	if(tool_quality == TOOL_SCREWDRIVER)
-		playsound(src, O.usesound, 50, 1)
+/obj/machinery/nuclearbomb/attackby(obj/item/O as obj, mob/user as mob)
+	if(extended && istype(O, /obj/item/disk/nuclear))
+		user.drop_item()
+		O.loc = src
+		auth = O
 		add_fingerprint(user)
-		if(auth)
-			if(opened == 0)
-				opened = 1
-				add_overlay("npanel_open")
-				to_chat(user, "You unscrew the control panel of [src].")
-
-			else
-				opened = 0
-				cut_overlay("npanel_open")
-				to_chat(user, "You screw the control panel of [src] back on.")
-		else
-			if(opened == 0)
-				to_chat(user, "The [src] emits a buzzing noise, the panel staying locked in.")
-			if(opened == 1)
-				opened = 0
-				cut_overlay("npanel_open")
-				to_chat(user, "You screw the control panel of [src] back on.")
-			flick("nuclearbombc", src)
-
 		return
-	if(tool_quality == TOOL_WIRECUTTER || tool_quality == TOOL_MULTITOOL)
-		if(opened == 1)
-			nukehack_win(user)
-		return
-
-	if(extended)
-		if(istype(O, /obj/item/disk/nuclear))
-			user.drop_item()
-			O.loc = src
-			auth = O
-			add_fingerprint(user)
-			return
-
-	if(anchored)
-		switch(removal_stage)
-			if(0)
-				if(tool_quality == TOOL_WELDER)
-
-					var/obj/item/weldingtool/WT = O.get_welder()
-					if(!WT.isOn()) return
-					if(WT.get_fuel() < 5) // uses up 5 fuel.
-						to_chat(user, span_warning("You need more fuel to complete this task."))
-						return
-
-					user.visible_message("[user] starts cutting loose the anchoring bolt covers on [src].", "You start cutting loose the anchoring bolt covers with [O]...")
-
-					if(do_after(user, 4 SECONDS * WT.toolspeed, target = src))
-						if(!src || !user || !WT.remove_fuel(5, user)) return
-						user.visible_message("[user] cuts through the bolt covers on [src].", "You cut through the bolt cover.")
-						removal_stage = 1
-				return
-
-			if(1)
-				if(tool_quality == TOOL_CROWBAR)
-					user.visible_message("[user] starts forcing open the bolt covers on [src].", "You start forcing open the anchoring bolt covers with [O]...")
-
-					playsound(src, O.usesound, 50, 1)
-					if(do_after(user,15 * O.toolspeed, target = src))
-						if(!src || !user) return
-						user.visible_message("[user] forces open the bolt covers on [src].", "You force open the bolt covers.")
-						removal_stage = 2
-				return
-
-			if(2)
-				if(tool_quality == TOOL_WELDER)
-
-					var/obj/item/weldingtool/WT = O.get_welder()
-					if(!WT.isOn()) return
-					if(WT.get_fuel() < 5) // uses up 5 fuel.
-						to_chat(user, span_warning("You need more fuel to complete this task."))
-						return
-
-					user.visible_message("[user] starts cutting apart the anchoring system sealant on [src].", "You start cutting apart the anchoring system's sealant with [O]...")
-					playsound(src, WT.usesound, 50, 1)
-					if(do_after(user, 4 SECONDS * WT.toolspeed, target = src))
-						if(!src || !user || !WT.remove_fuel(5, user)) return
-						user.visible_message("[user] cuts apart the anchoring system sealant on [src].", "You cut apart the anchoring system's sealant.")
-						removal_stage = 3
-				return
-
-			if(3)
-				if(tool_quality == TOOL_WRENCH)
-
-					user.visible_message("[user] begins unwrenching the anchoring bolts on [src].", "You begin unwrenching the anchoring bolts...")
-					playsound(src, O.usesound, 50, 1)
-					if(do_after(user, 5 SECONDS * O.toolspeed, target = src))
-						if(!src || !user) return
-						user.visible_message("[user] unwrenches the anchoring bolts on [src].", "You unwrench the anchoring bolts.")
-						removal_stage = 4
-				return
-
-			if(4)
-				if(tool_quality == TOOL_CROWBAR)
-
-					user.visible_message("[user] begins lifting [src] off of the anchors.", "You begin lifting the device off the anchors...")
-					playsound(src, O.usesound, 50, 1)
-					if(do_after(user, 8 SECONDS * O.toolspeed, target = src))
-						if(!src || !user) return
-						user.visible_message("[user] crowbars [src] off of the anchors. It can now be moved.", "You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!")
-						anchored = FALSE
-						removal_stage = 5
-				return
 	..()
 
 /obj/machinery/nuclearbomb/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	playsound(src, tool.usesound, 50, 1)
+	add_fingerprint(user)
+	if(auth)
+		if(opened == 0)
+			opened = 1
+			add_overlay("npanel_open")
+			to_chat(user, "You unscrew the control panel of [src].")
+
+		else
+			opened = 0
+			cut_overlay("npanel_open")
+			to_chat(user, "You screw the control panel of [src] back on.")
+	else
+		if(opened == 0)
+			to_chat(user, "The [src] emits a buzzing noise, the panel staying locked in.")
+		if(opened == 1)
+			opened = 0
+			cut_overlay("npanel_open")
+			to_chat(user, "You screw the control panel of [src] back on.")
+		flick("nuclearbombc", src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/nuclearbomb/wirecutter_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WIRECUTTER)
-	return TRUE
+	add_fingerprint(user)
+	if(opened == 1)
+		nukehack_win(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/nuclearbomb/multitool_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_MULTITOOL)
-	return TRUE
+	return wirecutter_act(user, tool)
 
 /obj/machinery/nuclearbomb/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	add_fingerprint(user)
+	if(!anchored)
+		return NONE
+	switch(removal_stage)
+		if(0)
+			if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 0, \
+					message_self = "You start cutting loose the anchoring bolt covers with [tool]...", \
+					message_others = "[user] starts cutting loose the anchoring bolt covers on [src]."))
+				if(!src || !user)
+					return ITEM_INTERACT_SUCCESS
+				user.visible_message("[user] cuts through the bolt covers on [src].", "You cut through the bolt cover.")
+				removal_stage = 1
+			return ITEM_INTERACT_SUCCESS
+		if(2)
+			if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, \
+					message_self = "You start cutting apart the anchoring system's sealant with [tool]...", \
+					message_others = "[user] starts cutting apart the anchoring system sealant on [src]."))
+				if(!src || !user)
+					return ITEM_INTERACT_SUCCESS
+				user.visible_message("[user] cuts apart the anchoring system sealant on [src].", "You cut apart the anchoring system's sealant.")
+				removal_stage = 3
+			return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/nuclearbomb/crowbar_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_CROWBAR)
-	return TRUE
+	add_fingerprint(user)
+	if(!anchored)
+		return NONE
+	switch(removal_stage)
+		if(1)
+			if(use_tool(user, tool, src, delay = 15, quality = TOOL_CROWBAR, volume = 50, \
+					message_self = "You start forcing open the anchoring bolt covers with [tool]...", \
+					message_others = "[user] starts forcing open the bolt covers on [src]."))
+				if(!src || !user)
+					return ITEM_INTERACT_SUCCESS
+				user.visible_message("[user] forces open the bolt covers on [src].", "You force open the bolt covers.")
+				removal_stage = 2
+			return ITEM_INTERACT_SUCCESS
+		if(4)
+			if(use_tool(user, tool, src, delay = 8 SECONDS, quality = TOOL_CROWBAR, volume = 50, \
+					message_self = "You begin lifting the device off the anchors...", \
+					message_others = "[user] begins lifting [src] off of the anchors."))
+				if(!src || !user)
+					return ITEM_INTERACT_SUCCESS
+				user.visible_message("[user] crowbars [src] off of the anchors. It can now be moved.", "You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!")
+				anchored = FALSE
+				removal_stage = 5
+			return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/nuclearbomb/wrench_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WRENCH)
-	return TRUE
+	add_fingerprint(user)
+	if(!anchored)
+		return NONE
+	if(removal_stage != 3)
+		return ITEM_INTERACT_BLOCKING
+	if(use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 50, \
+			message_self = "You begin unwrenching the anchoring bolts...", \
+			message_others = "[user] begins unwrenching the anchoring bolts on [src]."))
+		if(!src || !user)
+			return ITEM_INTERACT_SUCCESS
+		user.visible_message("[user] unwrenches the anchoring bolts on [src].", "You unwrench the anchoring bolts.")
+		removal_stage = 4
+	return ITEM_INTERACT_SUCCESS
 
 // TGUI migration. attack_hand opens the main control view
 // of NuclearBomb.tsx; nukehack_win switches to the wire-defusion view of
@@ -377,7 +352,8 @@ GLOBAL_VAR(bomb_set)
 			var/wire = params["wire"]
 			if(!(wire in wires_list))
 				return TRUE
-			if(!istype(usr.get_active_hand(), /obj/item/multitool))
+			var/obj/item/hand_item = usr.get_active_hand()
+			if(!hand_item?.has_tool_quality(TOOL_MULTITOOL))
 				to_chat(usr, "You need a multitool!")
 				return TRUE
 			if(wires_list[wire])

@@ -276,11 +276,10 @@
 		return
 	else if(seal_tool)
 		if(istype(W, seal_tool))
-			var/obj/item/S = W
-			if(do_after(user, 2 SECONDS * S.toolspeed, target = src))
+			if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
 				if(opened) // cancel weld if opened mid-progress to prevent welder-traps
 					return
-				playsound(src, S.usesound, 50)
+				playsound(src, W.usesound, 50)
 				sealed = !sealed
 				update_icon()
 				for(var/mob/M in viewers(src))
@@ -294,7 +293,7 @@
 		to_chat(user, span_notice("You can't reach the anchoring bolts when the door is closed!"))
 		return TRUE
 	user.visible_message("\The [user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 0))
 		anchored = !anchored
 		to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 	return TRUE
@@ -314,7 +313,7 @@
 		return TRUE
 	if(!seal_tool || !istype(W, seal_tool))
 		return TRUE
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src) && !opened)
+	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0) && !opened)
 		playsound(src, W.usesound, 50)
 		sealed = !sealed
 		update_icon()

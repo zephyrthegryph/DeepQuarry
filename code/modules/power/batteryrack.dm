@@ -335,8 +335,7 @@
 		insert_cell(newcell)
 
 /obj/item/module/power_control/multitool_act(mob/user, obj/item/I)
-	to_chat(user, span_notice("You begin tweaking the power control circuits to support a power cell rack."))
-	if(do_after(user, 5 SECONDS * I.toolspeed, target = src))
+	if(use_tool(user, I, src, delay = 5 SECONDS, message_self = "You begin tweaking the power control circuits to support a power cell rack."))
 		var/obj/item/newcircuit = new/obj/item/circuitboard/batteryrack(get_turf(user))
 		qdel(src)
 		user.put_in_hands(newcircuit)

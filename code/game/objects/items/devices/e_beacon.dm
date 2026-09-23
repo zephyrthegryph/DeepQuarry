@@ -65,7 +65,7 @@
 	. = ..()
 
 /obj/item/emergency_beacon/attackby(obj/item/W, mob/user)
-	if(W.is_wrench() && beacon_active)
+	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
 		gps.tracking = FALSE
 		user.visible_message("[user] disassembles \the [src].")
 		qdel(src)

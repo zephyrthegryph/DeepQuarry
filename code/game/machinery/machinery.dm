@@ -420,9 +420,7 @@ Class Procs:
 /obj/machinery/proc/deconstruct_display(mob/user, obj/item/tool)
 	if(!circuit)
 		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You start disconnecting the monitor."))
-	playsound(src, tool.usesound, 50, TRUE)
-	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start disconnecting the monitor."))
 		return ITEM_INTERACT_BLOCKING
 	if(stat & BROKEN)
 		to_chat(user, span_notice("The broken glass falls out."))

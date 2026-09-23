@@ -356,15 +356,10 @@ update_flag
 	SStgui.update_uis(src) // Update all NanoUIs attached to src
 
 /obj/machinery/portable_atmospherics/canister/welder_act(mob/user, obj/item/tool)
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.remove_fuel(0, user))
-		to_chat(user, "The welding tool must be on to complete this task.")
-		return ITEM_INTERACT_BLOCKING
 	if(air_contents.return_pressure() > 1 && !destroyed)
 		to_chat(user, span_warning("\The [src]'s internal pressure is too high! Empty the canister before attempting to weld it apart."))
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, welder.usesound, 50, TRUE)
-	if(do_after(user, 2 SECONDS * welder.toolspeed, target = src) && welder.isOn())
+	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
 		to_chat(user, span_notice("You deconstruct [src]."))
 		new /obj/item/stack/material/steel(loc, 10)
 		if(connected_port)

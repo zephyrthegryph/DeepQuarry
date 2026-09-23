@@ -286,13 +286,11 @@
 			to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 			return
 
-		user.visible_message(span_danger("\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!"),\
-				"You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!",\
-				"You hear metal strain.")
 		prying = 1
 		update_icon()
-		playsound(src, C.usesound, 100, 1)
-		if(do_after(user,3 SECONDS * C.toolspeed, target = src))
+		if(use_tool(user, C, src, delay = 3 SECONDS, volume = 100,
+				message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!",
+				message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!"))
 			user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
 					"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
 					"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
@@ -359,11 +357,12 @@
 	if(prying)
 		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 		return TRUE
-	user.visible_message(span_danger("\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain.")
 	prying = TRUE
 	update_icon()
-	playsound(src, tool.usesound, 100, TRUE)
-	if(do_after(user, 3 SECONDS * tool.toolspeed, target = src) && (stat & (BROKEN|NOPOWER) || !density))
+	if(use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100,
+			message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!",
+			message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!") \
+			&& (stat & (BROKEN|NOPOWER) || !density))
 		user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
 		if(density)
 			open(TRUE)

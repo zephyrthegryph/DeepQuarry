@@ -120,10 +120,9 @@
 		return ..()
 
 /obj/machinery/pipedispenser/wrench_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_notice("You begin to [unwrenched ? "fasten" : "unfasten"] \the [src] [unwrenched ? "to" : "from"] the floor..."))
 	var/delay = unwrenched ? 2 SECONDS : 4 SECONDS
-	if(!do_after(user, delay * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = delay, volume = 50, \
+			message_self = "You begin to [unwrenched ? "fasten" : "unfasten"] \the [src] [unwrenched ? "to" : "from"] the floor..."))
 		return ITEM_INTERACT_BLOCKING
 	unwrenched = !unwrenched
 	anchored = !unwrenched

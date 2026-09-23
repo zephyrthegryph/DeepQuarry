@@ -381,14 +381,14 @@
 				istype(W,/obj/item/melee/energy) ||\
 				istype(W,/obj/item/melee/cultblade) ||\
 				istype(W,/obj/item/card/emag) ||\
-				istype(W,/obj/item/multitool))
+				W.has_tool_quality(TOOL_MULTITOOL))
 
 			if (my_effect.trigger == TRIGGER_ENERGY)
 				my_effect.ToggleActivate()
 
 		//If we weren't hit by energy, let's see if we were hit by a lighter or welding tool and if we are heat.
 		else if (istype(W,/obj/item/flame) && W:lit ||\
-				istype(W,/obj/item/weldingtool) && W:welding)
+				dq_held_welder_lit(null, null, W))
 			if(my_effect.trigger == TRIGGER_HEAT)
 				my_effect.ToggleActivate()
 
