@@ -17,8 +17,8 @@ type Data = {
   beaker_total: number;
   beaker_max: number;
   locked: BooleanLike;
-  heal_threshold: number | null;
-  heal_threshold_max: number;
+  min_urgency: number | null;
+  urgency_bands: string[];
   injection_amount_min: number;
   injection_amount: number | null;
   injection_amount_max: number;
@@ -37,8 +37,8 @@ export const Medbot = (props) => {
     beaker_total,
     beaker_max,
     locked,
-    heal_threshold,
-    heal_threshold_max,
+    min_urgency,
+    urgency_bands,
     injection_amount_min,
     injection_amount,
     injection_amount_max,
@@ -94,16 +94,16 @@ export const Medbot = (props) => {
         {(!locked && (
           <Section title="Behavioral Controls">
             <LabeledList>
-              <LabeledList.Item label="Healing Threshold">
-                <NumberInput
-                  fluid
-                  tickWhileDragging
-                  step={1}
-                  minValue={0}
-                  maxValue={heal_threshold_max}
-                  value={heal_threshold!}
-                  onChange={(val: number) => act('adj_threshold', { val: val })}
-                />
+              <LabeledList.Item label="Treat From">
+                {urgency_bands.map((band, index) => (
+                  <Button
+                    key={band}
+                    selected={min_urgency === index + 1}
+                    onClick={() => act('adj_urgency', { val: index + 1 })}
+                  >
+                    {band}
+                  </Button>
+                ))}
               </LabeledList.Item>
               <LabeledList.Item label="Injection Amount">
                 <NumberInput

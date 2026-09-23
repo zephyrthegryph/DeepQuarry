@@ -61,6 +61,74 @@
 /obj/item/medigun_backpack/proc/is_twohanded()
 	return TRUE
 
+// --- Treatment modes ----------------------------------------------------------
+// Each tank is a mode: it provides treatment tags and the medigun mends only
+// the tags the patient's automated triage demands. Nothing reads injury loads.
+
+#define MEDIGUN_TANK_BRUTE 1
+#define MEDIGUN_TANK_BURN 2
+#define MEDIGUN_TANK_TOX 3
+#define MEDIGUN_TANK_COUNT 3
+
+/// TREAT_* -> the tank (MEDIGUN_TANK_*) that powers it.
+/obj/item/medigun_backpack/proc/medigun_mode_tags()
+	var/static/list/tags = list(
+		TREAT_TISSUE_REPAIR = MEDIGUN_TANK_BRUTE,
+		TREAT_HEMOSTATIC = MEDIGUN_TANK_BRUTE,
+		TREAT_BURN_CARE = MEDIGUN_TANK_BURN,
+		TREAT_ANTITOXIN = MEDIGUN_TANK_TOX,
+	)
+	return tags
+
+/obj/item/medigun_backpack/proc/tank_charge(tank)
+	switch(tank)
+		if(MEDIGUN_TANK_BRUTE)
+			return brutecharge
+		if(MEDIGUN_TANK_BURN)
+			return burncharge
+		if(MEDIGUN_TANK_TOX)
+			return toxcharge
+	return 0
+
+/obj/item/medigun_backpack/proc/drain_tank(tank, amount)
+	switch(tank)
+		if(MEDIGUN_TANK_BRUTE)
+			brutecharge = max(0, brutecharge - amount)
+		if(MEDIGUN_TANK_BURN)
+			burncharge = max(0, burncharge - amount)
+		if(MEDIGUN_TANK_TOX)
+			toxcharge = max(0, toxcharge - amount)
+
+/// Mend what `H`'s automated triage demands from the tanks' tags, up to
+/// `strength` per tank this cycle. Returns the total amount treated.
+/obj/item/medigun_backpack/proc/treat_demand(mob/living/H, strength)
+	. = 0
+	var/list/demand = H.treatment_demand(/datum/diagnostic_profile/automation)
+	if(!demand || strength <= 0)
+		return
+	var/list/tags = medigun_mode_tags()
+	var/list/spent = new /list(MEDIGUN_TANK_COUNT)
+	for(var/tag in tags)
+		if(!demand[tag])
+			continue
+		var/tank = tags[tag]
+		var/budget = min(strength - spent[tank], tank_charge(tank))
+		if(budget <= 0)
+			continue
+		var/treated = min(H.mend(tag, budget), budget)
+		if(treated <= 0)
+			continue
+		spent[tank] += treated
+		drain_tank(tank, treated)
+		. += treated
+	if(.)
+		log_game("MEDIGUN: [src] treated [key_name(H)] for [round(., 0.1)] (brute [round(spent[MEDIGUN_TANK_BRUTE], 0.1)], burn [round(spent[MEDIGUN_TANK_BURN], 0.1)], tox [round(spent[MEDIGUN_TANK_TOX], 0.1)]).")
+
+#undef MEDIGUN_TANK_BRUTE
+#undef MEDIGUN_TANK_BURN
+#undef MEDIGUN_TANK_TOX
+#undef MEDIGUN_TANK_COUNT
+
 /obj/item/medigun_backpack/cmo/is_twohanded()
 	return FALSE
 
