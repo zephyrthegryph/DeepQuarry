@@ -5,7 +5,7 @@
 # the ledger read API or the spatial API (doc/rewrite/containment.md
 # section 2a) and lower the count; `python tools/ci/spatial_lint.py
 # --update` rewrites it.
-# Total: 1866 sites in 681 files.
+# Total: 1841 sites in 678 files.
 code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm 1
 code/ATMOSPHERICS/components/unary/unary_base.dm 1
 code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm 1
@@ -231,9 +231,6 @@ code/game/objects/structures.dm 2
 code/game/objects/structures/alien/alien.dm 2
 code/game/objects/structures/catwalk.dm 3
 code/game/objects/structures/cliff.dm 2
-code/game/objects/structures/crates_lockers/__closets.dm 9
-code/game/objects/structures/crates_lockers/closets/coffin.dm 2
-code/game/objects/structures/crates_lockers/closets/statue.dm 4
 code/game/objects/structures/crates_lockers/closets/syndicate.dm 1
 code/game/objects/structures/crates_lockers/crates.dm 3
 code/game/objects/structures/crates_lockers/vehiclecage.dm 1
@@ -250,7 +247,7 @@ code/game/objects/structures/stasis_cage.dm 1
 code/game/objects/structures/stool_bed_chair_nest/alien_nests.dm 3
 code/game/objects/structures/tank_dispenser.dm 2
 code/game/objects/structures/transit_tubes.dm 10
-code/game/objects/structures/watercloset.dm 11
+code/game/objects/structures/watercloset.dm 1
 code/game/objects/structures/window_spawner.dm 5
 code/game/shuttle_engines.dm 1
 code/game/turfs/initialization/init.dm 1
