@@ -148,6 +148,26 @@
 	cohesion?.cure()
 	log_game("NANOFORM: [key_name(H)] rebuilt cohesion; [LAZYLEN(afflictions)] affliction(s) remain.")
 
+/// Total Reassembly: the swarm rebuilds itself from `steel` of refactory
+/// feedstock, already consumed by the caller. Missing structure regrows,
+/// cohesion is whole again and the orchestrator recalibrates; the steel then
+/// funds plating and wiring repair across the body at NANOFORM_STEEL_PER_POINT.
+/// Like revival from dormancy, afflictions the repair doesn't reach stay.
+/// Returns the points repaired.
+/datum/body/humanoid/nanoform/proc/total_reassembly(steel)
+	var/mob/living/carbon/human/H = owner
+	regrow_structure()
+	var/datum/affliction/cohesion = find_affliction(/datum/affliction/nanite/cohesion_loss)
+	cohesion?.cure()
+	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
+	if(istype(O))
+		mend(TREAT_CALIBRATION, AFFLICTION_SEVERITY_TERMINAL, O)
+	var/points = max(steel, 0) / NANOFORM_STEEL_PER_POINT
+	. = mend(TREAT_PLATING_REPAIR, points / 2)
+	. += mend(TREAT_WIRING_REPAIR, points / 2)
+	on_status_changed()
+	log_game("NANOFORM: [key_name(H)] total reassembly spent [steel] steel on [points] points, repaired [.]; [LAZYLEN(afflictions)] affliction(s) remain.")
+
 /// Rebuild missing or stumped limbs and missing internal organs from the
 /// species template. Used by a full heal and by revival.
 /datum/body/humanoid/nanoform/proc/regrow_structure()
