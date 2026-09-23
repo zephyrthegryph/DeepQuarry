@@ -239,6 +239,8 @@
 					break
 
 	var/list/output = list("[icon2html(src,user.client)] That's [f_name] [suffix] [borg]", get_examine_desc())
+	if(uses_integrity && get_integrity() < max_integrity)
+		dq_rules_settle(src) // a pending integrity wake lands before we read the band
 	if(damage_band)
 		output += damage_flavour_text(damage_band)
 
