@@ -101,6 +101,7 @@
 	var/static/list/tested_ids = list(
 		"machine_panel", "machine_deconstruct", "machine_anchor", "machine_repair",
 		"dq_test_high", "dq_test_tie_a", "dq_test_tie_b", "dq_test_low", "dq_test_blocked", "dq_test_ghostly",
+		"dq_tool_weld", "dq_tool_dig", // dq_tool_tests.dm
 	)
 
 /datum/unit_test/dq_interaction_definitions/Run()
