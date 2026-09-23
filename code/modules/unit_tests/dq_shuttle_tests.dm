@@ -199,7 +199,7 @@
 				for(var/turf/open/cycle_turf in cycle_area)
 					if(!cycle_turf.blocks_air && cycle_turf.air)
 						TEST_ASSERT(vg_topology_matches(cycle_turf), "Rust/DM atmos topology diverged after shuttle move [hop], atmos cycle [cycle], at [cycle_turf.x],[cycle_turf.y],[cycle_turf.z]")
-			if(SSair.async_generation == last_generation && !length(SSair.adjacent_rebuild))
+			if(SSair.async_generation == last_generation)
 				if(++idle_cycles >= 2)
 					break
 			else

@@ -1026,7 +1026,7 @@
 		sleep(max(SSair.wait, 1))
 		if(SSair.times_fired == fired)
 			continue
-		if(SSair.async_generation == last_generation && !length(SSair.adjacent_rebuild))
+		if(SSair.async_generation == last_generation)
 			idle_fires += SSair.times_fired - fired
 			if(idle_fires >= settle_fires)
 				break
@@ -4020,7 +4020,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// alarm already at its worst danger level correctly ignores more plasma.
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
-	T.immediate_calculate_adjacent_turfs()
+	T.air_update_turf(TRUE)
 	vg_topology_barrier()
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
