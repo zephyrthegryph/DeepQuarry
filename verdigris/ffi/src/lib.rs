@@ -7,6 +7,7 @@
 
 mod abi;
 pub mod allocator;
+pub mod entity;
 mod jobs;
 mod layout;
 mod lifecycle;

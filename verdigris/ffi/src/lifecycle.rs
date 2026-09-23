@@ -65,10 +65,13 @@ fn verdigris_init(dm_abi: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::new_str(crate::abi::ABI)?)
 }
 
-/// Drop transient Rust-side state. Currently a no-op; once the gas-mixture
-/// arena needs an explicit drain for a clean `/world/New()`, it lands here.
+/// Drop transient Rust-side state for a clean `/world/New()`
+/// (`rust_bindings.md` §4: "world start ... resets every Rust store"). Every
+/// registered entity domain (§1) drops its components and the entity table
+/// itself is rebuilt, so no `vg_entity` handle survives into a new round.
 #[auxmacros::bind("/proc/verdigris_cleanup")]
 fn verdigris_cleanup() -> Result<ByondValue> {
+    crate::entity::reset_all();
     // future: arena.drain(); reaction_registry.clear(); etc.
     Ok(ByondValue::null())
 }

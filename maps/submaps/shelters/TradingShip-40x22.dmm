@@ -326,7 +326,7 @@
 /obj/machinery/meter,
 /obj/structure/largecrate/animal/cat,
 /obj/machinery/atmospherics/binary/pump/on{
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)

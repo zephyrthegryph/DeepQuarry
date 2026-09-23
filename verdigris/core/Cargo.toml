@@ -8,6 +8,10 @@ description = "Domain-agnostic simulation primitives for verdigris. Host-buildab
 [dependencies]
 # The frame pool (rust_core.md section 3.7) is a dedicated rayon ThreadPool.
 rayon = "1.10.0"
+# Re-exported as `vg_core::vg` so component crates can write `#[vg::component]`
+# (doc/rewrite/rust_bindings.md §2) instead of the longer `auxmacros::` path.
+# Host-buildable: auxmacros itself has no byondapi dependency.
+auxmacros = { path = "../ffi/macros" }
 
 [features]
 default = ["rayon"]
