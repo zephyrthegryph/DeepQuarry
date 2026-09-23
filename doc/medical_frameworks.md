@@ -1015,6 +1015,55 @@ the way.
 
 ---
 
+### 2.12 O2 as built (deviations from 2.2-2.3)
+
+Slice O2 landed on `w6/o2`, on top of the ledger joint (J2 `LEDGER_MOVE_FORCED`, J4 keyed slots,
+J6 `on_slotted`/`on_unslotted`, J8 `slot_item`). J1 and J3 did not land; J1 is being replaced by the
+framework destroy transaction (`doc/rewrite/lifecycle.md`). Where the code disagreed with the design,
+the code won:
+
+- **No `body.part_index`.** The mob-side `organs`, `organs_by_name`, `internal_organs` and
+  `internal_organs_by_name` stay as derived caches for O3's readers, and the attach/detach hooks are
+  their only writers (every other writer was converted to a ledger move or deleted). A second index
+  on the body would have duplicated them. `body.part(tag)`/`body.organ(tag)` read the caches;
+  `parts()`/`organs()` walk the ledger. The per-limb `children`, `parent` and `internal_organs`
+  also stay, as structural caches written only by `link_to_holder()`/`unlink_from_holder()`,
+  maintained whether or not the tree has an owner.
+- **The hooks are J6's, not a new ledger hook.** `/obj/item/organ` sets `has_slot_hooks`; its
+  `on_slotted()`/`on_unslotted()` call `on_attached()`/`on_detached()` for the three tree slots.
+  `on_attached()` resolves the owner by walking up the ledger (`resolve_owner()`); `on_detached()`
+  releases from the stored owner.
+- **Loose organs on mobs with no tree.** Simple mobs, larvae and butchery animals have no
+  `parts:root`. An organ in such a mob's `SLOT_ID_BODY` is attached there (owned and cached), so
+  `internal_organs` on those mobs is also hook-maintained.
+- **`removed()`/`replaced()` are kept as the entry points** (about 60 callers; converting them is O3),
+  but their bodies are now one ledger move each: `slot_remove(..., LEDGER_MOVE_FORCED)` to the owner's
+  drop location, and `place_into()` (`dq_ledger_refusal()` + `dq_ledger_commit()`). Organs born inside
+  a mob place themselves (`place_in_body()`). Transplant data capture stays in `replaced()`: capturing
+  it in the hook would allocate a list for every organ on every spawn.
+- **Organ acceptance is lenient.** `parts:organs` accepts any internal organ (surgery, horror
+  modifiers and augments put organs in limbs other than their default `parent_organ`); `parts:child`
+  enforces `parent_organ == holder.organ_tag`; `parts:root` takes only a limb with no `parent_organ`.
+- **Reparent.** A move between two places in the same body (horror's brain shunt) is detach + attach
+  in one `forceMove`. `place_into()` marks it (`GLOB.dq_part_reparenting`) so the detach half neither
+  runs `left_body()` nor counts a vital loss.
+- **Worn equipment.** A hook must not move anything, so gloves, shoes and headgear are dropped by
+  `drop_worn()` for the whole subtree before the sever move, in `external/removed()`.
+- **Destruction (O4 plugs in here).** Part slots declare `SLOT_DROP_DELETE` (embedded and tourniquet
+  `SPILL`), resolved children first. The external `Destroy()` child/organ loops are deleted (the slot
+  policy does it); no new `Destroy()` override was added. `release_subtree(root, destroying)` takes
+  one early branch when the holder is being destroyed (`dq_part_holder_destroying()`, a stub reading
+  `QDELETED(holder)` until the transaction's flag lands): it clears derived state but skips
+  invalidate, `life_wake`, verbs, `left_body()` and the death check. `detach_part()` still calls
+  `remove_affliction()`, which invalidates once per affliction; O4 should give it a quiet path.
+  `organ/Destroy()` still cures afflictions through `owner.body` (2.4's rules are O4's).
+- **Body created in `set_species()`.** A human's first `set_species()` runs before
+  `/mob/living/Initialize()`, so the body (and with it the humanoid slot set) is now built there;
+  `/mob/living/Initialize()` only builds one if none exists.
+- **Not done here:** implants, embedded objects, cavity items, splints and tourniquets still live
+  where they did (O3b/O3c move them into their declared slots); the mind slot (O4); robot MMI slot
+  (O4); the `check_part_moves.py` lint (O6).
+
 ## 3. Nullspace elimination
 
 ### 3.1 Rule

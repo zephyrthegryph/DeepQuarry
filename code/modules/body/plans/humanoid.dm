@@ -58,7 +58,7 @@
 			. *= 0.7
 		else if(category == INJURY_CATEGORY_THERMAL && H.nif.flag_check(NIF_C_BURNARMOR, NIF_FLAGS_COMBAT))
 			. *= 0.7
-	if(kind == INJURY_BURN && (COLD_RESISTANCE in H.mutations))
+	if(kind == INJURY_BURN && (H.has_mutation(COLD_RESISTANCE)))
 		. = 0
 	. *= part_multiplier(kind, location)
 

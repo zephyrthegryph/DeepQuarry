@@ -83,7 +83,8 @@
 		if(do_after_cooldown(target))
 			if(T == chassis.loc && src == chassis.selected)
 				LAZYADD(cargo_holder.cargo, O)
-				O.loc = chassis
+				if(!O.move_into(cargo_holder, MECHA_SLOT_CARGO))
+					O.forceMove(cargo_holder)
 				O.anchored = FALSE
 				occupant_message(span_notice("[target] succesfully loaded."))
 				src.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder.cargo_capacity - length(cargo_holder.cargo)]")
@@ -142,7 +143,8 @@
 				if(do_after_cooldown(target))
 					if(T == chassis.loc && src == chassis.selected)
 						LAZYADD(cargo_holder.cargo, O)
-						O.loc = chassis
+						if(!O.move_into(cargo_holder, MECHA_SLOT_CARGO))
+							O.forceMove(cargo_holder)
 						O.anchored = FALSE
 						chassis.occupant_message(span_notice("[target] succesfully loaded."))
 						chassis.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder.cargo_capacity - length(cargo_holder.cargo)]")

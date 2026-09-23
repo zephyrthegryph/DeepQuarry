@@ -304,7 +304,7 @@
 	if(has_eye_glow)
 		remove_eyes()
 
-	if(loot_list.len) //Drop any loot
+	if(LAZYLEN(loot_list)) //Drop any loot
 		for(var/path in loot_list)
 			if(prob(loot_list[path]))
 				new path(get_turf(src))

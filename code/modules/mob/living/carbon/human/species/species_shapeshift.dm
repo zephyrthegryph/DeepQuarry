@@ -269,15 +269,17 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	species.create_organs(src)
 //	species.handle_post_spawn(src)
 
-	for(var/limb in organs_by_name)
+	// A copy: deleting a limb that was missing before takes it out of the cache.
+	for(var/limb in organs_by_name.Copy())
 		var/obj/item/organ/external/O = organs_by_name[limb]
+		if(QDELETED(O))
+			continue // went with a deleted parent
 		if(limb_exists[O.organ_tag])
 			O.data.setup_from_species(GLOB.all_species[new_species])
 			// sync the organ's damage with its wounds
 			O.update_damages()
 		else
-			organs.Remove(O)
-			organs_by_name.Remove(O)
+			qdel(O)
 
 	spawn(0)
 		regenerate_icons()

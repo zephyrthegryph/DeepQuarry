@@ -36,6 +36,16 @@
 		MASK = new mask_type(src)
 	update_icon()
 
+/obj/machinery/suit_storage_unit/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/occupant/suit_storage, /datum/slot_def/machine_internals)
+	return types
+
+/// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay
+/// their own typed vars -- only the person hiding inside is a slot.
+/datum/slot_def/occupant/suit_storage
+	id = OCCUPANT_SLOT_SUIT_STORAGE
+	name = "suit storage unit"
+
 /obj/machinery/suit_storage_unit/update_icon()
 	var/hashelmet = 0
 	var/hassuit = 0
@@ -332,7 +342,7 @@
 			to_chat(OCCUPANT, span_notice("The machine kicks you out!"))
 		if(user.loc != src.loc)
 			to_chat(OCCUPANT, span_notice("You leave the not-so-cozy confines of the SSU."))
-	OCCUPANT.forceMove(get_turf(src))
+	slot_remove(OCCUPANT, get_turf(src))
 	OCCUPANT = null
 	if(!isopen)
 		isopen = 1
@@ -378,7 +388,8 @@
 	visible_message(span_info("[user] starts squeezing into the suit storage unit!"), 3)
 	if(do_after(user, 1 SECOND, target = src))
 		user.stop_pulling()
-		user.forceMove(src)
+		if(!user.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
+			return TRUE
 		OCCUPANT = user
 		isopen = 0 //Close the thing after the guy gets inside
 		update_icon()
@@ -417,7 +428,8 @@
 		if(do_after(user, 2 SECONDS, target = src))
 			if(!G || !G.affecting) return TRUE //derpcheck
 			var/mob/M = G.affecting
-			M.forceMove(src)
+			if(!M.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
+				return TRUE
 			OCCUPANT = M
 			isopen = 0 //close ittt
 

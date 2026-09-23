@@ -82,7 +82,7 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	var/mob/living/carbon/human/tmp_owner = owner
 	qdel(src)
 	if(tmp_owner)
-		tmp_owner.internal_organs_by_name[organ_tag] = new replace_path(tmp_owner, 1)
+		new replace_path(tmp_owner, 1) // takes the freed brain slot
 		tmp_owner = null
 
 /obj/item/organ/internal/brain/Initialize(mapload)
@@ -181,8 +181,8 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 
 /obj/item/organ/internal/brain/slime/LateInitialize()
 	//Match the core to the Promethean's starting color.
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
+	if(ishuman(owner)) // placed in its limb by now
+		var/mob/living/carbon/human/H = owner
 		color = rgb(min(H.r_skin + 40, 255), min(H.g_skin + 40, 255), min(H.b_skin + 40, 255))
 
 /obj/item/organ/internal/brain/slime/proc/reviveBody()
@@ -264,8 +264,8 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/organ/internal/brain/grey/colormatch/LateInitialize()
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
+	if(ishuman(owner)) // placed in its limb by now
+		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
 
 

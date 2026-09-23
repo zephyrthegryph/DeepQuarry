@@ -70,20 +70,14 @@
 	temp_language_sources = null
 	temp_languages = null
 
-	if(LAZYLEN(organs))
-		organs_by_name?.Cut()
-		while(organs.len)
-			var/obj/item/OR = organs[1]
-			organs -= OR
+	// Deleting a part detaches it, and the detach hook empties these caches
+	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
+	for(var/OR in organs?.Copy())
+		if(isdatum(OR))
 			qdel(OR)
-
-	if(LAZYLEN(internal_organs))
-		internal_organs_by_name?.Cut()
-		while(internal_organs.len)
-			var/obj/item/OR = internal_organs[1]
-			internal_organs -= OR
-			if(isobj(OR))
-				qdel(OR)
+	for(var/OR in internal_organs?.Copy())
+		if(isdatum(OR))
+			qdel(OR)
 
 	GLOB.cultnet.updateVisibility(src, 0)
 
@@ -166,9 +160,9 @@
 /mob/living/proc/burn_skin(burn_amount)
 	if(ishuman(src))
 		//to_world("DEBUG: burn_skin(), mutations=[mutations]")
-		if(mShock in src.mutations) //shockproof
+		if(src.has_mutation(mShock)) //shockproof
 			return 0
-		if (COLD_RESISTANCE in src.mutations) //fireproof
+		if (src.has_mutation(COLD_RESISTANCE)) //fireproof
 			return 0
 		// Electrical burns spread across the whole body.
 		if(injure(INJURY_ELECTRIC, burn_amount))

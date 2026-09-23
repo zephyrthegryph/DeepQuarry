@@ -151,7 +151,7 @@
 				if(M.stat == DEAD || M.blinded)	//mob is dead or fully blind
 					to_chat(user, span_warning("\The [M]'s pupils do not react to the light!"))
 					return ITEM_INTERACT_SUCCESS
-				if(XRAY in M.mutations)
+				if(M.has_mutation(XRAY))
 					to_chat(user, span_notice("\The [M] pupils give an eerie glow!"))
 				if(vision.is_bruised())
 					to_chat(user, span_warning("There's visible damage to [M]'s [vision.name]!"))

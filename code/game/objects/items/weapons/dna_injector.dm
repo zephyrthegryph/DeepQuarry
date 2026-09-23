@@ -80,7 +80,7 @@
 		if(!H.species || H.species.flags & NO_DNA)
 			allow = FALSE
 	// Traitgenes edit end
-	if (!(NOCLONE in M.mutations) && allow) // prevents drained people from having their DNA changed, Traitgenes edit - NO_DNA and Synthetics cannot be mutated
+	if (!(M.has_mutation(NOCLONE)) && allow) // prevents drained people from having their DNA changed, Traitgenes edit - NO_DNA and Synthetics cannot be mutated
 		if(buf)
 			if (buf.types & DNA2_BUF_UI)
 				if (!block) //isolated block?

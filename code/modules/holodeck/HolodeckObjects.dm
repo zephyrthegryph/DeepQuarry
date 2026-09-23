@@ -161,7 +161,7 @@
 	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_sel.selecting))
 	var/armor_block = target.armor_against(INJURY_PAIN, affecting)
 
-	if(HULK in user.mutations)
+	if(user.has_mutation(HULK))
 		damage += 5
 
 	playsound(target, "punch", 25, 1, -1)

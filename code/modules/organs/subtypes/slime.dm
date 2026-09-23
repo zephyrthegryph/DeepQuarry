@@ -70,7 +70,7 @@
 
 /obj/item/organ/internal/heart/grey/colormatch/slime/process()
 	..()
-	if(!(QDELETED(src)) && src.loc != owner)
+	if(!(QDELETED(src)) && !owner)
 		visible_message(span_infoplain(span_bold("\The [src]") + " splatters!"))
 		var/turf/T = get_turf(src)
 		var/obj/effect/decal/cleanable/blood/B = new (T)
@@ -93,8 +93,8 @@
 
 /obj/item/organ/internal/regennetwork/Initialize(mapload)
 	. = ..()
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
+	if(ishuman(owner)) // placed in its limb by now
+		var/mob/living/carbon/human/H = owner
 		color = H.species.get_blood_colour(H)
 
 /obj/item/organ/internal/regennetwork/proc/get_strain_percent(cost)
@@ -117,7 +117,7 @@
 /obj/item/organ/internal/regennetwork/process()
 	..()
 
-	if(!(QDELETED(src)) && src.loc != owner)
+	if(!(QDELETED(src)) && !owner)
 		visible_message(span_infoplain(span_bold("\The [src]") + " splatters!"))
 		var/turf/T = get_turf(src)
 		var/obj/effect/decal/cleanable/blood/B = new (T)

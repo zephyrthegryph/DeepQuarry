@@ -263,7 +263,7 @@
 
 	to_chat(user, span_notice("You feed \the [SM] the agent. It will now be your best friend."))
 	to_chat(SM, span_notice("\The [user] feeds you \the [src], and feel that \the [user] wants to be best friends with you."))
-	SM.friends.Add(user)
+	LAZYADD(SM.friends, user)
 	AI.remove_target() // So hostile things stop attacking people even if not hostile anymore.
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
 	qdel(src)

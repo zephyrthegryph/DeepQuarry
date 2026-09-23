@@ -23,7 +23,10 @@
 	var/biology = BIOLOGY_ORGANIC
 
 /mob/living/Initialize(mapload)
-	body = new body_type(src)
+	// A human builds its body in set_species(), before this, so its organs
+	// have part slots to attach into.
+	if(!body)
+		body = new body_type(src)
 	return ..()
 
 /mob/living/Destroy()

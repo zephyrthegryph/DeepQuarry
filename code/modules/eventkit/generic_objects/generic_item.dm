@@ -56,7 +56,7 @@
 						if(H.nif && H.nif.flag_check(NIF_V_FLASHPROT,NIF_FLAGS_VISION))
 							H.nif.notify("High intensity light detected, and blocked!",TRUE)
 							continue
-						if(FLASHPROOF in H.mutations)
+						if(H.has_mutation(FLASHPROOF))
 							continue
 						if(H.eyecheck() <= 0)
 							continue

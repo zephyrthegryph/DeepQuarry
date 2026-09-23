@@ -196,7 +196,8 @@
 		LAZYADD(M.universal_equipment, src)
 	M.equipment += src
 	chassis = M
-	src.loc = M
+	if(!move_into(M, MECHA_SLOT_EQUIPMENT))
+		forceMove(M) // the equipment lists above already committed; guarantee the move
 
 	if(enable_special_checks(M))
 		enable_special = TRUE
@@ -215,7 +216,8 @@
 	if(!chassis || !get_turf(chassis)) // don't detach components in nullspace
 		return
 	moveto = moveto || get_turf(chassis)
-	forceMove(moveto)
+	if(!chassis.slot_remove(src, moveto))
+		forceMove(moveto)
 	chassis.equipment -= src
 	LAZYREMOVE(chassis.universal_equipment, src)
 	if(equip_type)

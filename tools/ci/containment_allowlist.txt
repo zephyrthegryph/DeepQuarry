@@ -68,7 +68,7 @@ code/game/machinery/newscaster.dm 3
 code/game/machinery/nuclear_bomb.dm 3
 code/game/machinery/pandemic.dm 1
 code/game/machinery/partslathe.dm 1
-code/game/machinery/protean_reconstitutor.dm 12
+code/game/machinery/protean_reconstitutor.dm 8
 code/game/machinery/spaceheater.dm 1
 code/game/machinery/telecrystal_storage.dm 1
 code/game/machinery/virtual_reality/ar_console.dm 1
@@ -216,8 +216,7 @@ code/modules/mob/new_player/login.dm 1
 code/modules/mob/new_player/new_player.dm 2
 code/modules/mob/transform_procs.dm 1
 code/modules/organs/internal/malignant/malignant.dm 1
-code/modules/organs/organ.dm 1
-code/modules/organs/organ_external.dm 10
+code/modules/organs/organ_external.dm 5
 code/modules/overmap/overmap_object.dm 1
 code/modules/paperwork/clipboard.dm 5
 code/modules/paperwork/faxmachine.dm 1

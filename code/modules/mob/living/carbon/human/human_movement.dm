@@ -60,7 +60,7 @@
 	if(shock_stage >= 10)
 		. += CLAMP((shock_stage / 20), 0.5, 3) //Slowly become slower the longer you're in traumatic shock. Simulates adrenaline wearing off. Entering soft crit immediately sets shock_stage to 61.
 
-	if(FAT in mutations)
+	if(has_mutation(FAT))
 		. += 1.5
 
 	if (bodytemperature < species.cold_level_1)
@@ -93,7 +93,7 @@
 		. *= factor(BF_PENALTY_SCALE)
 
 	//mRun means we don't get slowdown: axe every penalty, keep speed buffs.
-	if(mRun in mutations)
+	if(has_mutation(mRun))
 		. = min(., 0)
 
 	if(HAS_TRAIT(src, UNUSUAL_RUNNING) && !get_active_hand() && !get_inactive_hand()) //better not have any items on you mfer

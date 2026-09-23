@@ -23,7 +23,7 @@
 	var/list/data = ..()
 
 	var/mob/living/silicon/robot/R = host
-	data["active_decals"] = R.robotdecal_on
+	data["active_decals"] = (R.robotdecal_on || list())
 
 	data["theme"] = R.get_ui_theme()
 
@@ -45,10 +45,10 @@
 			var/decal_to_toggle = lowertext(params["value"])
 			if(!(decal_to_toggle in R.sprite_datum.sprite_decals))
 				return FALSE
-			if(R.robotdecal_on.Find(decal_to_toggle))
-				R.robotdecal_on -= decal_to_toggle
+			if(decal_to_toggle in R.robotdecal_on)
+				LAZYREMOVE(R.robotdecal_on, decal_to_toggle)
 			else
-				R.robotdecal_on += decal_to_toggle
+				LAZYADD(R.robotdecal_on, decal_to_toggle)
 			R.update_icon()
 			. = TRUE
 		if("flick_animation")

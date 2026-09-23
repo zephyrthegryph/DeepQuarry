@@ -309,11 +309,11 @@
 			if(canmove && src!=H && prob(20))
 				block = 1
 
-	if(M.grabbed_by.len)
+	if(LAZYLEN(M.grabbed_by))
 		// Someone got a good grip on them, they won't be able to do much damage
 		rand_damage = max(1, rand_damage - 2)
 
-	if(src.grabbed_by.len || src.buckled || !src.canmove || src==H)
+	if(LAZYLEN(src.grabbed_by) || src.buckled || !src.canmove || src==H)
 		accurate = 1 // certain circumstances make it impossible for us to evade punches
 		rand_damage = 5
 
@@ -406,7 +406,7 @@
 
 	real_damage *= damage_multiplier
 	rand_damage *= damage_multiplier
-	if(HULK in H.mutations)
+	if(H.has_mutation(HULK))
 		real_damage *= 2 // Hulks do twice the damage
 		rand_damage *= 2
 	real_damage = max(1, real_damage)
@@ -588,7 +588,7 @@
 			visible_message(span_danger("\The [src]'s body twitches and gurgles a bit."))
 			to_chat(reviver, span_danger("You get the feeling [src] can't be revived by CPR alone."))
 			return // Handle xenochim, can't cpr them back to life
-		if(HUSK in mutations)
+		if(has_mutation(HUSK))
 			visible_message(span_danger("\The [src]'s body crunches and snaps."))
 			to_chat(reviver, span_danger("You get the feeling [src] is going to need surgical intervention to be revived."))
 			return // Handle husked, cure it before you can revive

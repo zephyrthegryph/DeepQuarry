@@ -21,12 +21,12 @@
 		vr_link.vr_holder = null
 		vr_link = null
 
-	for(var/obj/item/organ/I in internal_organs)
+	for(var/obj/item/organ/I in internal_organs.Copy()) // removed() shrinks the cache
 		I.removed()
 		if(isturf(I?.loc)) // Some organs qdel themselves or other things when removed
 			I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
 
-	for(var/obj/item/organ/external/E in src.organs)
+	for(var/obj/item/organ/external/E in src.organs.Copy())
 		E.droplimb(0,DROPLIMB_EDGE,1)
 
 	for(var/obj/item/I in src)
@@ -140,7 +140,7 @@
 		to_chat(src, span_danger("Everything abruptly stops."))
 
 /mob/living/carbon/human/proc/ChangeToHusk()
-	if(HUSK in mutations)	return
+	if(has_mutation(HUSK))	return
 
 	if(f_style)
 		f_style = "Shaved"		//we only change the icon_state of the hair datum, so it doesn't mess up their UI/UE
@@ -148,7 +148,7 @@
 		h_style = "Bald"
 	update_hair(0)
 
-	mutations.Add(HUSK)
+	add_mutation(HUSK)
 	status_flags |= DISFIGURED	//makes them unknown without fucking up other stuff like admintools
 	remove_blood(560)
 	update_icons_body()
@@ -156,11 +156,11 @@
 
 /mob/living/carbon/human/proc/Drain()
 	ChangeToHusk()
-	mutations |= HUSK
+	add_mutation(HUSK)
 	return
 
 /mob/living/carbon/human/proc/ChangeToSkeleton()
-	if(SKELETON in src.mutations)	return
+	if(src.has_mutation(SKELETON))	return
 
 	if(f_style)
 		f_style = "Shaved"
@@ -168,7 +168,7 @@
 		h_style = "Bald"
 	update_hair(0)
 
-	mutations.Add(SKELETON)
+	add_mutation(SKELETON)
 	status_flags |= DISFIGURED
 	update_icons_body()
 	return

@@ -102,7 +102,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			S.message = censor_swears(S.message) // Googlybonkers
 			. = 1
 
-		if((HULK in mutations) && vitality() >= 0.25 && length(S.message))
+		if((has_mutation(HULK)) && vitality() >= 0.25 && length(S.message))
 			S.message = "[uppertext(S.message)]!!!"
 			verb = pick("yells","roars","hollers")
 			whispering = 0

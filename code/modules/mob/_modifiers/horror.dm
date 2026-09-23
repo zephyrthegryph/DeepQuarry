@@ -394,12 +394,13 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/obj/item/organ/internal/brain/brain = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_BRAIN)
 	var/obj/item/organ/internal/eyes/eyes = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_EYES)
 	var/obj/item/organ/external/chest/torso = unfortunate_soul.get_organ(BP_TORSO)
-	if(unfortunate_soul.should_have_organ(O_BRAIN))
+	// Ledger moves from the head's organ slot into the torso's, within the body.
+	if(brain && torso && unfortunate_soul.should_have_organ(O_BRAIN))
 		brain.parent_organ = BP_TORSO //Move the brain to the torso.
-		LAZYOR(torso.internal_organs, brain)
-	if(unfortunate_soul.should_have_organ(O_EYES))
+		brain.place_into(torso, SLOT_ID_PART_ORGANS)
+	if(eyes && torso && unfortunate_soul.should_have_organ(O_EYES))
 		eyes.parent_organ = BP_TORSO //Move the eyes to the torso.
-		LAZYOR(torso.internal_organs, eyes)
+		eyes.place_into(torso, SLOT_ID_PART_ORGANS)
 	for(var/obj/item/organ/external/head/ex_organ in unfortunate_soul.organs)
 		ex_organ.cannot_break = TRUE
 		ex_organ.dislocated = -1
@@ -409,10 +410,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		ex_organ.vital = FALSE
 		ex_organ.encased = FALSE
 		ex_organ.cannot_gib = FALSE
-		if(brain)
-			LAZYREMOVE(ex_organ.internal_organs, brain) //Remove the brain from the head.
-		if(eyes)
-			LAZYREMOVE(ex_organ.internal_organs, eyes)
 
 /datum/modifier/redspace_corruption/on_expire()
 	REMOVE_TRAIT(unfortunate_soul, TRAIT_REDSPACE_CORRUPTED, UNHOLY_TRAIT)

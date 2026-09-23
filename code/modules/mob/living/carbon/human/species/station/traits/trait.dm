@@ -70,8 +70,8 @@
 					H.vars[trait] = trait_prefs[trait]
 	// Traitgenes Traits can toggle mutations and disabilities
 	if(mutation)
-		if(!(mutation in H.mutations))
-			H.mutations.Add(mutation)
+		if(!(H.has_mutation(mutation)))
+			H.add_mutation(mutation)
 	if(disability)
 		H.disabilities |= disability // bitflag
 	if(sdisability)
@@ -106,7 +106,7 @@
 				if(TRAIT_VAREDIT_TARGET_MOB)
 					H.vars[trait] = initial(H.vars[trait])
 	if(mutation)
-		H.mutations.Remove(mutation)
+		H.remove_mutation(mutation)
 	if(disability)
 		H.disabilities &= ~disability // bitflag
 	if(sdisability)

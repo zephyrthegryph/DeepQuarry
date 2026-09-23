@@ -104,7 +104,8 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	var/list/things = L?.slots[id]
 	return length(things) ? things[1] : null
 
-/// The SLOT_ID_* id `I` is equipped in, or null (not ours, or in the interior).
+/// The SLOT_ID_* id `I` is equipped in, or null (not ours, in the interior, or
+/// the root body part: parts are not equipment).
 /mob/proc/inventory_slot_id(atom/movable/I)
 	if(!I || I.loc != src)
 		return null
@@ -113,7 +114,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(!entry)
 		return null
 	var/id = entry[LEDGER_E_SLOT]
-	return id == L.default_id ? null : id
+	return (id == L.default_id || id == SLOT_ID_PART_ROOT) ? null : id
 
 /// The slot_* number `I` is equipped in, or 0.
 /mob/proc/get_inventory_slot(obj/item/I)
@@ -180,7 +181,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 
 /mob/on_slot_changed(slot_id, atom/movable/thing, inserted)
 	. = ..()
-	if(slot_id == SLOT_ID_BODY || QDELETED(src))
+	if(slot_id == SLOT_ID_BODY || slot_id == SLOT_ID_PART_ROOT || QDELETED(src))
 		return
 	inventory_slot_changed(slot_id, thing, inserted)
 

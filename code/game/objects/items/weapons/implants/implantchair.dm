@@ -24,6 +24,15 @@
 	. = ..()
 	add_implants()
 
+/obj/machinery/implantchair/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/occupant/implant_chair, /datum/slot_def/machine_internals)
+	return types
+
+/// Sealed occupant slot (C8a, containment.md §10).
+/datum/slot_def/occupant/implant_chair
+	id = OCCUPANT_SLOT_IMPLANT_CHAIR
+	name = "implant chair"
+
 
 // structured TGUI ImplantChair (see
 // code/modules/admin/implant_chair_panel.dm).
@@ -83,7 +92,7 @@
 		return
 	if(M == occupant) // so that the guy inside can't eject himself -Agouri
 		return
-	src.occupant.forceMove(get_turf(src))
+	slot_remove(src.occupant, get_turf(src))
 	if(injecting)
 		implant(src.occupant)
 		injecting = 0
@@ -100,7 +109,9 @@
 		to_chat(usr, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()
-	M.forceMove(src)
+	if(!M.move_into(src, OCCUPANT_SLOT_IMPLANT_CHAIR, usr))
+		to_chat(usr, span_warning("\The [src] won't take [M]!"))
+		return
 	src.occupant = M
 	src.add_fingerprint(usr)
 	icon_state = "implantchair_on"

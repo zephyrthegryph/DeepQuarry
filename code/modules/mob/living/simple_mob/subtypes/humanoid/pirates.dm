@@ -49,6 +49,7 @@
 
 /mob/living/simple_mob/humanoid/pirate/Initialize(mapload)
 	. = ..()
+	loot_list = loot_list ? loot_list.Copy() : list()
 	loot_list += list(/obj/item/salvage/loot/pirate = 35)
 
 //Armored Variant

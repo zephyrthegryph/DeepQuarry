@@ -48,14 +48,17 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
 
 - **API** (`api.dm`):
   - `thing.move_into(holder, slot_id, actor)` inserts. A null `slot_id` means the default slot.
-  - `holder.slot_remove(thing, destination, actor)` takes a thing out. If the destination has slots, it's a transfer.
+  - `holder.slot_remove(thing, destination, actor, flags)` takes a thing out. If the destination has slots, it's a transfer. `flags` may carry `LEDGER_MOVE_FORCED` (J2): skips both refusals and both pre signals, but runs the same commit bookkeeping. `ledger_apply_drop_policies()` uses it for spill and transfer, so a holder being destroyed can't have its release blocked.
   - `holder.slot_transfer(thing, new_holder, slot_id, actor)` moves a thing from one holder's slot to another.
   - `holder.slot_empty(slot_id, destination)` empties a slot.
+  - `holder.slot_item(slot_id)` (J8) is the one thing in a single-item slot (null: the default slot), or null — the accessor for organ/equipment-style slots that never need a copied list.
+  - `holder.slot_lookup(slot_id, key)` (J4) is the thing keyed `key` in a keyed slot, O(1), or null.
   - `dq_ledger_refusal(thing, holder, slot_id, actor)` returns the reason a move would fail, or null.
-  - Reads: `slot_contents`, `slot_used`, `slot_capacity`, `contents_property(id)`, `contents_has_tag(tag)`, `slot_entry_id(thing)` and `slot_find_entry(id)`.
-- **Checks before the commit.** The source slot's `removal_refusal()` and `COMSIG_SLOT_PRE_REMOVE` run first. Then the destination slot's acceptance predicate (P2, with the thing as `PRED_TARGET`), its capacity and `COMSIG_SLOT_PRE_INSERT`. Either pre signal can return `COMPONENT_SLOT_BLOCK` to refuse the move.
-- **The commit** is a single `forceMove`.
-- **Bookkeeping lives in `doMove()`.** Right after the `loc` write, and before `Exited()`/`Entered()`, it calls `note_exit()`/`note_enter()` on the ledgers of the old and new locations. Those calls fire `COMSIG_SLOT_REMOVED`/`COMSIG_SLOT_INSERTED` and the holder's `on_slot_changed()`. Legacy `forceMove`s into a holder are therefore still accounted for, and land in the default slot.
+  - Reads: `slot_contents`, `slot_used`, `slot_capacity`, `slot_item`, `slot_lookup`, `contents_property(id)`, `contents_has_tag(tag)`, `slot_entry_id(thing)` and `slot_find_entry(id)`.
+- **Checks before the commit.** The source slot's `removal_refusal()` and `COMSIG_SLOT_PRE_REMOVE` run first. Then the destination slot's acceptance predicate (P2, with the thing as `PRED_TARGET`), a keyed slot's duplicate-key check, its capacity and `COMSIG_SLOT_PRE_INSERT`. Either pre signal can return `COMPONENT_SLOT_BLOCK` to refuse the move. `LEDGER_MOVE_FORCED` skips this whole step.
+- **The commit** is a single `forceMove` (or, already inside the same holder, a `reslot()`).
+- **Bookkeeping lives in `doMove()`.** Right after the `loc` write, and before `Exited()`/`Entered()`, it calls `note_exit()`/`note_enter()` on the ledgers of the old and new locations. Those calls fire `COMSIG_SLOT_REMOVED`/`COMSIG_SLOT_INSERTED`, the holder's `on_slot_changed()`, and — when the thing's type opted in with `has_slot_hooks = TRUE` (J6) — the thing's own `on_unslotted(holder, slot_id)`/`on_slotted(holder, slot_id)`. `reslot()` fires the same four in order (leave the old slot, then enter the new one). Legacy `forceMove`s into a holder are therefore still accounted for, and land in the default slot.
+- **Keyed slots (J4).** A slot definition sets `keyed = TRUE`. At insert (and at `reslot()`, and on demand through `thing.ledger_rekey()`), the ledger reads `thing.slot_key()` and stores it on the entry (`LEDGER_E_KEY`); a lazy `keys[slot_id]` assoc on the ledger indexes key -> thing, so only holders with a keyed slot pay for it. A second thing with the same key in the same slot is refused in `dq_ledger_refusal()`, with the existing thing named in the reason. `verify()` recomputes the index from the entries and reports any mismatch or stale key.
 - **Atoms created inside a holder** (`new X(holder)`) are recorded by `InitAtom`. The ledger's `sync()` catches anything else; it costs one `length(contents)` comparison when nothing is missing.
 - **Declaring slots.** A holder type overrides `slot_def_types()` and returns a list of `/datum/slot_def` paths. Each definition is a shared singleton with:
   - an id;

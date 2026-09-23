@@ -58,9 +58,9 @@
 	var/response_help   = "tries to help"	// If clicked on help intent
 	var/response_disarm = "tries to disarm" // If clicked on disarm intent
 	var/response_harm   = "tries to hurt"	// If clicked on harm intent
-	var/list/friends = list()		// Mobs on this list wont get attacked regardless of faction status.
+	var/list/friends		// Mobs on this list wont get attacked regardless of faction status. Lazy.
 	var/harm_intent_damage = 3		// How much an unarmed harm click does to this mob.
-	var/list/loot_list = list()		// The list of lootable objects to drop, with "/path = prob%" structure
+	var/list/loot_list		// The list of lootable objects to drop, with "/path = prob%" structure. Interned per subtype in Initialize().
 	var/obj/item/card/id/myid// An ID card if they have one to give them access to stuff.
 	var/organ_names = /datum/decl/mob_organ_names //'False' bodyparts that can be shown as hit by projectiles in place of the default humanoid bodyplan.
 
@@ -150,7 +150,7 @@
 	var/limb_icon_key
 	var/understands_common = TRUE // Makes it so that simplemobs can understand galcomm without being able to speak it.
 	var/heal_countdown = 5 // A cooldown ticker for passive healing
-	var/list/myid_access = list()
+	var/list/myid_access	// Lazy per-subtype constant.
 	var/ID_provided = FALSE
 	// Move/Shoot/Attack delays based on damage
 	var/damage_fatigue_mult = 1			// Our multiplier for how heavily mobs are affected by injury. [UPDATE THIS IF THE FORMULA CHANGES]: Formula = injury_level = round(rand(1,3) * damage_fatigue_mult * clamp(((rand(2,5) * vitality()) - rand(0,2)), 1, 5))
@@ -175,9 +175,22 @@
 /mob/living/simple_mob/Initialize(mapload)
 	remove_verb(src, /mob/verb/observe)
 
+	// Per-subtype constant tables: share one list across every instance of
+	// this type instead of allocating a fresh copy per mob. attacktext can
+	// be a single string on some subtypes, so only intern the list form;
+	// subtypes that mutate their attacktext list (e.g. synx) copy it first.
+	if(islist(attacktext))
+		attacktext = shared_type_list(type, "attacktext", attacktext)
+	if(islist(friendly))
+		friendly = shared_type_list(type, "friendly", friendly)
+	if(islist(loot_list))
+		loot_list = shared_type_list(type, "loot_list", loot_list)
+	if(islist(myid_access))
+		myid_access = shared_type_list(type, "myid_access", myid_access)
+
 	if(ID_provided)
 		myid = new /obj/item/card/id(src)
-		myid.access = myid_access.Copy()
+		myid.access = myid_access ? myid_access.Copy() : list()
 
 	for(var/L in has_langs)
 		languages |= GLOB.all_languages[L]
@@ -211,7 +224,7 @@
 		qdel(myid)
 		myid = null
 
-	friends.Cut()
+	LAZYCLEARLIST(friends)
 	languages.Cut()
 	movement_target = null
 
