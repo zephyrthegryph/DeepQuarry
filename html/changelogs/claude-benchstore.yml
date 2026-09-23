@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Benchmarks: shared, machine-wide run store (DQ_BENCH_STORE) so branch worktrees can compare against a stored master baseline instead of only their own history."
+  - rscadd: "New bench-baseline build target stores a benchmark run for master (or a given commit) that bench/bench-compare use automatically via the branch's merge-base with master."
+  - code_imp: "Benchmark metrics are now tagged COUNT (load-independent) or TIMING; TIMING comparisons are skipped as 'not comparable (load)' unless both runs were taken under similar machine load or the new bench --exclusive lock."
