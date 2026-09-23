@@ -102,3 +102,7 @@
 
 /// Nominal seconds between two Life() calls for one mob (SSmobs wait x slices).
 #define LIFE_NOMINAL_SECONDS 2
+
+// --- Status counters (code/modules/mob/living/life/status_counters.dm) ---------------------
+/// One legacy status counter tick: Stun(5) lasts five nominal Life cycles.
+#define STATUS_COUNTER_TICK (LIFE_NOMINAL_SECONDS SECONDS)

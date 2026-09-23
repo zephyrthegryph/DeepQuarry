@@ -65,11 +65,11 @@
 		self.silent = 0
 		self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
-		if(self.paralysis && self.paralysis > 0)
+		if(self.get_paralysis() && self.get_paralysis() > 0)
 			self.blinded = 1
 			self.set_stat(UNCONSCIOUS)
 
-		if(self.sleeping)
+		if(self.get_sleeping())
 			if (self.mind)
 				if(self.mind.active && self.client != null)
 					self.AdjustSleeping(-1)

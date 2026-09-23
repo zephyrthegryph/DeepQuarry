@@ -191,7 +191,7 @@
 		var/minor_problems = ""
 		if(user.hallucination)
 			minor_problems += "<br>" + span_warning("Brain activity suggesting severe mental inhibitions detected - medical assistance recommended.")
-		if(user.drowsyness || user.sleeping)
+		if(user.drowsyness || user.get_sleeping())
 			minor_problems += "<br>" + span_warning("Mild mental inhibitions detected - drinking coffee can improve symptoms and stimulate nervous system.")
 		if(is_drunk)
 			minor_problems += "<br>" + span_warning("Ethanol intoxication detected - suggest close observation to alleviate risk of injury.")

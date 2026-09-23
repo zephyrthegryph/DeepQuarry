@@ -2541,7 +2541,7 @@
 		return
 	// Its healing is the treatment_tags profile.
 	M.make_dizzy(-15)
-	if(M.confused)
+	if(M.get_confused())
 		M.Confuse(-5)
 
 /datum/reagent/drink/dry_ramen
@@ -5977,7 +5977,7 @@
 				nif.stat = NIF_INSTALLING
 			nif.repair(removed)
 		else if(prob(5))
-			M.SetConfused(max(M.confused, 20))
+			M.SetConfused(max(M.get_confused(), 20))
 			M.emote(pick("shudder", "seem lost", "blank for a moment"))
 	M.adjust_nutrition(4 * removed)
 
@@ -6313,7 +6313,7 @@
 			else
 				M.Weaken(2)
 		else
-			M.sleeping = max(M.sleeping, 20)
+			M.Sleeping(20)
 		M.drowsyness = max(M.drowsyness, 60)
 
 /datum/reagent/ethanol/flapper

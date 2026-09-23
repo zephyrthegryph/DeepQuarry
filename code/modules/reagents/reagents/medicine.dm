@@ -649,7 +649,7 @@
 	if(alien == IS_SLIME)
 		if(M.injury_load(INJURY_CATEGORY_NEURAL) >= 10)
 			M.Weaken(5)
-		if(dose >= 10 && M.paralysis < 40)
+		if(dose >= 10 && M.get_paralysis() < 40)
 			M.AdjustParalysis(1) //Messing with the core with a simple chemical probably isn't the best idea.
 	// Brain repair is alkysine's TREAT_NEURAL_REPAIR tag (body/treatment.dm);
 	// past the salvage band a swollen brain outpaces it (lesions.dm).
@@ -1677,7 +1677,7 @@
 				M.Weaken(2)
 			M.drowsyness = max(M.drowsyness, 20)
 	else
-		M.sleeping = max(M.sleeping, 20)
+		M.Sleeping(20)
 
 
 /datum/reagent/bullvalene //This is for the third sap. It converts Brute Oxy and burn into slightly less toxins.
@@ -1754,7 +1754,7 @@
 /datum/reagent/adranol/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	if(M.confused)
+	if(M.get_confused())
 		M.Confuse(-8*removed)
 	if(M.eye_blurry)
 		M.eye_blurry = max(M.eye_blurry - 25*removed, 0)

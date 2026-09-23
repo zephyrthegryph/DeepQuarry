@@ -106,8 +106,8 @@
 
 /datum/reagent/sizeoxadone/affect_blood(mob/living/carbon/M, alien, removed)
 	M.make_dizzy(1)
-	if(!M.confused) M.confused = 1
-	M.confused = max(M.confused, 20)
+	if(!M.get_confused()) M.SetConfused(1)
+	M.Confuse(20)
 	return
 
 
@@ -152,7 +152,7 @@
 /datum/reagent/unsorbitol/affect_blood(mob/living/carbon/M, alien, removed)
 	M.make_dizzy(1)
 	M.injure(INJURY_PAIN, 1, source = src)
-	M.SetConfused(max(M.confused, 20))
+	M.SetConfused(max(M.get_confused(), 20))
 	M.hallucination = max(M.hallucination, 20) //This used to be += 15 resulting in INFINITE HALLUCINATION
 
 	for(var/obj/belly/B as anything in M.vore_organs)
@@ -298,7 +298,7 @@
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
 /datum/reagent/paralysis_toxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.weakened < 50 || M.stunned <50 ) // Let's not leave them PERMA stuck, after all. // stun accounting for crawl
+	if(M.get_weakened() < 50 || M.get_stunned() <50 ) // Let's not leave them PERMA stuck, after all. // stun accounting for crawl
 		M.AdjustWeakened(5) //Stand in for paralyze so you can still talk/emote/see
 		M.AdjustStunned(5) // stun accounting for crawl
 

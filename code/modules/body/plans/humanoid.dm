@@ -87,7 +87,7 @@
 	. = REGENERATION_BASE_LEVEL * CONFIG_GET(number/organ_regeneration_multiplier)
 	if(H.nutrition < REGENERATION_HUNGRY_NUTRITION)
 		. *= REGENERATION_HUNGRY_MULT
-	if(H.sleeping)
+	if(H.get_sleeping())
 		. *= REGENERATION_SLEEP_MULT
 	. *= get_factor(BF_HEALING)
 

@@ -524,8 +524,8 @@
 		return FALSE
 	return !self.eye_blind && !self.eye_blurry && !self.ear_deaf && self.ear_damage <= 0 && !self.alerts?["blind"]
 
-/// Stun, weaken, paralysis, confusion and speech impairments wear off. Its helpers are also
-/// called on their own by mobs that run only some of them (simple mobs, the AI, pAIs).
+/// Speech impairments and drugs wear off. Stun, weaken, paralysis, sleep and confusion are
+/// status counters (life/status_counters.dm) that end on their own.
 /datum/life_system/statuses
 	name = "statuses"
 	bit = LIFE_SYS_STATUS
@@ -533,49 +533,21 @@
 	order = 30
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI
-	woken_by = "Stun/Weaken/Paralyse/Confuse setters (LIFE_WAKE_STATUS)"
+	woken_by = "speech and drug setters"
 
 /datum/life_system/statuses/tick(mob/living/self, datum/life_context/ctx)
-	stunned(self)
-	weakened(self)
-	paralysed(self)
 	stuttering(self)
 	silent(self)
 	drugged(self)
 	slurring(self)
-	confused(self)
 
 /// Continuous while any counter runs or an alert is still up; asleep otherwise.
 /datum/life_system/statuses/idle(mob/living/self)
 	if(type != /datum/life_system/statuses)
 		return FALSE
-	if(self.stunned || self.weakened || self.paralysis || self.confused)
-		return FALSE
 	if(self.stuttering || self.silent || self.druggy || self.slurring)
 		return FALSE
-	return !self.alert_state_stunned && !self.alert_state_weakened && !self.alert_state_paralysed && !self.alert_state_drugged && !self.alert_state_confused
-
-/datum/life_system/statuses/proc/stunned(mob/living/self)
-	if(self.stunned)
-		self.AdjustStunned(-1)
-		if(!self.alert_state_stunned)
-			self.alert_state_stunned = TRUE
-			self.throw_alert("stunned", /atom/movable/screen/alert/stunned)
-	else if(self.alert_state_stunned)
-		self.alert_state_stunned = FALSE
-		self.clear_alert("stunned")
-	return self.stunned
-
-/datum/life_system/statuses/proc/weakened(mob/living/self)
-	if(self.weakened)
-		self.AdjustWeakened(-1)
-		if(!self.alert_state_weakened)
-			self.alert_state_weakened = TRUE
-			self.throw_alert("weakened", /atom/movable/screen/alert/weakened)
-	else if(self.alert_state_weakened)
-		self.alert_state_weakened = FALSE
-		self.clear_alert("weakened")
-	return self.weakened
+	return !self.alert_state_drugged
 
 /datum/life_system/statuses/proc/stuttering(mob/living/self)
 	if(self.stuttering)
@@ -603,43 +575,7 @@
 		self.slurring = max(self.slurring-1, 0)
 	return self.slurring
 
-/datum/life_system/statuses/proc/paralysed(mob/living/self)
-	if(self.paralysis)
-		self.AdjustParalysis(-1)
-		if(!self.alert_state_paralysed)
-			self.alert_state_paralysed = TRUE
-			self.throw_alert("paralyzed", /atom/movable/screen/alert/paralyzed)
-	else if(self.alert_state_paralysed)
-		self.alert_state_paralysed = FALSE
-		self.clear_alert("paralyzed")
-	return self.paralysis
-
-/datum/life_system/statuses/proc/confused(mob/living/self)
-	if(self.confused)
-		self.AdjustConfused(-1)
-		if(!self.alert_state_confused)
-			self.alert_state_confused = TRUE
-			self.throw_alert("confused", /atom/movable/screen/alert/confused)
-	else if(self.alert_state_confused)
-		self.alert_state_confused = FALSE
-		self.clear_alert("confused")
-	return self.confused
-
-/datum/life_system/statuses/proc/sleeping(mob/living/self)
-	if(self.stat != DEAD && self.toggled_sleeping)
-		self.Sleeping(2)
-	if(self.sleeping)
-		if(iscarbon(self))
-			var/mob/living/carbon/C = self
-			self.AdjustSleeping(-1 * C.species.waking_speed)
-		else
-			self.AdjustSleeping(-1)
-		self.throw_alert("asleep", /atom/movable/screen/alert/asleep)
-	else
-		self.clear_alert("asleep")
-	return self.sleeping
-
-/// The shared statuses helpers (stunned(), sleeping(), ...) for code outside the statuses tick.
+/// The shared statuses helpers (stuttering(), ...) for code outside the statuses tick.
 /proc/life_statuses()
 	RETURN_TYPE(/datum/life_system/statuses)
 	var/static/datum/life_system/statuses/statuses
@@ -657,14 +593,15 @@
 	order = 10
 	segment = LIFE_SEG_LIVING
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
-	woken_by = "status setters (LIFE_WAKE_STATUS); set_stat; Moved"
+	woken_by = "status counters start and end (LIFE_WAKE_STATUS); set_stat; Moved"
 
 /datum/life_system/canmove/tick(mob/living/self, datum/life_context/ctx)
 	self.update_canmove()
 
-/// Resting and buckling update canmove themselves; the tick only follows the counters.
+/// Event-driven: resting, buckling and the stun, weaken, paralysis and sleep counters
+/// update canmove themselves when they change.
 /datum/life_system/canmove/idle(mob/living/self)
-	return type == /datum/life_system/canmove && !self.stunned && !self.weakened && !self.paralysis && !self.sleeping
+	return type == /datum/life_system/canmove
 
 /// The player HUD. Returns FALSE when there is no HUD to update. Also run by refresh_hud().
 /datum/life_system/hud

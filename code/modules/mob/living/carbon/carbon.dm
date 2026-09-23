@@ -280,9 +280,9 @@
 			if(show_ssd && !client && !teleop)
 				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
 				span_notice("You shake [src], but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?"))
-			else if(lying || src.sleeping)
+			else if(lying || src.get_sleeping())
 				AdjustSleeping(-5)
-				if(src.sleeping == 0)
+				if(src.get_sleeping() == 0)
 					src.resting = 0
 				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
 									span_notice("You shake [src] trying to wake [H.p_them()] up!"))

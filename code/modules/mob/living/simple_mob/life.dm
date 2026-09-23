@@ -5,7 +5,7 @@
 
 // Simple mob Life: the living core, then these TAIL systems in the old order:
 //	vitals (health display; `if(stat >= DEAD) return FALSE` -> LIFE_SEG_SIMPLE),
-//	statuses, supernatural, special, guts, healing, then the type_post variants.
+//	supernatural, special, guts, healing, then the type_post variants.
 
 /// Health display, then the dead check that ended the old simple mob Life().
 /datum/life_system/simple_vitals
@@ -27,29 +27,6 @@
 
 /datum/life_system/simple_vitals/idle(mob/living/simple_mob/self)
 	return TRUE
-
-/// Sleep, stun, weakness and paralysis wear off.
-/datum/life_system/simple_statuses
-	name = "simple statuses"
-	bit = LIFE_SYS_STATUS
-	phase = LIFE_PHASE_TAIL
-	order = 110
-	segment = LIFE_SEG_SIMPLE
-	mob_type = /mob/living/simple_mob
-	woken_by = "Stun/Weaken/Paralyse/Sleeping setters (LIFE_WAKE_STATUS)"
-
-/datum/life_system/simple_statuses/tick(mob/living/simple_mob/self, datum/life_context/ctx)
-	var/datum/life_system/statuses/statuses = life_statuses()
-	statuses.sleeping(self)
-	statuses.stunned(self)
-	statuses.weakened(self)
-	statuses.paralysed(self)
-
-/// Continuous while a counter runs or its alert is up.
-/datum/life_system/simple_statuses/idle(mob/living/simple_mob/self)
-	if(self.sleeping || self.toggled_sleeping || self.stunned || self.weakened || self.paralysis)
-		return FALSE
-	return !self.alert_state_stunned && !self.alert_state_weakened && !self.alert_state_paralysed && !self.alerts?["asleep"]
 
 /// Passive healing while fed.
 /datum/life_system/simple_healing

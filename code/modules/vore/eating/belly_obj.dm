@@ -481,7 +481,7 @@
 		if(isliving(AM))
 			var/mob/living/L = AM
 			if(L.stat)
-				L.SetSleeping(min(L.sleeping,20))
+				L.SetSleeping(min(L.get_sleeping(),20))
 			if(L.absorbed && !include_absorbed)
 				continue
 		count += release_specific_contents(AM, silent = TRUE)
@@ -571,7 +571,7 @@
 	if(isliving(M))
 		var/mob/living/ML = M
 		if(ML.stat)
-			ML.SetSleeping(min(ML.sleeping,20))
+			ML.SetSleeping(min(ML.get_sleeping(),20))
 
 
 	//Determines privacy

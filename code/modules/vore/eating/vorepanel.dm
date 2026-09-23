@@ -1388,13 +1388,13 @@
 			if(H.blinded)
 				condition += "blinded"
 				condition_consequences += "hear emotes"
-			if(H.paralysis)
+			if(H.get_paralysis())
 				if(condition)
 					condition += " and "
 					condition_consequences += " or "
 				condition += "paralysed"
 				condition_consequences += "make emotes"
-			if(H.sleeping)
+			if(H.get_sleeping())
 				if(condition)
 					condition += " and "
 					condition_consequences += " or "

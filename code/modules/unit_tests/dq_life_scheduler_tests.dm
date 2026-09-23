@@ -328,7 +328,17 @@
 	TEST_ASSERT(!M.life_hibernating, "adding a reagent should wake a hibernating mob")
 	TEST_ASSERT(M.life_awake & LIFE_SYS_METABOLISM, "a reagent should wake metabolism")
 
-/// A stun wakes the mob; once it wears off the mob hibernates again.
+/// Runs a status counter's own expiry now: its deadline passes and the base type ends it.
+/proc/life_test_expire_counter(mob/living/L, counter_type)
+	var/datum/status_effect/counter/C = L.has_status_effect(counter_type)
+	if(!C)
+		return FALSE
+	C.duration = world.time - 1
+	C.process(SSfastprocess.wait / (1 SECONDS))
+	return QDELETED(C)
+
+/// A stun wakes the mob; the stun's own timer covers its duration, so the mob hibernates
+/// while stunned, and the stun's end wakes it again.
 /datum/unit_test/dq_life_stun_wakes_then_rehibernates
 
 /datum/unit_test/dq_life_stun_wakes_then_rehibernates/Run()
@@ -337,12 +347,15 @@
 	M.status_flags |= CANSTUN
 	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
 	M.Stun(3)
-	TEST_ASSERT_EQUAL(M.stunned, 3, "the stun should land")
+	TEST_ASSERT(M.get_stunned() > 2.9, "the stun should land, got [M.get_stunned()]")
 	TEST_ASSERT(!M.life_hibernating, "Stun() should wake a hibernating mob")
-	M.Life()
-	TEST_ASSERT(!M.life_hibernating, "a stunned mob stays awake while the stun runs")
-	TEST_ASSERT(life_test_settle(M, 12), "the mouse should hibernate again once the stun wears off; still busy: [life_test_busy(M)]; stunned [M.stunned]")
-	TEST_ASSERT_EQUAL(M.stunned, 0, "the stun should have worn off")
+	TEST_ASSERT(!M.canmove, "a stunned mob can't move")
+	TEST_ASSERT(life_test_settle(M), "a stun needs no Life() ticks, so the mouse hibernates while stunned; still busy: [life_test_busy(M)]")
+	TEST_ASSERT(life_test_expire_counter(M, /datum/status_effect/counter/stunned), "the stun should end at its deadline")
+	TEST_ASSERT_EQUAL(M.get_stunned(), 0, "the stun should have worn off")
+	TEST_ASSERT(!M.life_hibernating, "the end of a stun wakes the mob")
+	TEST_ASSERT(M.canmove, "the end of a stun restores canmove")
+	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate again once the stun wears off; still busy: [life_test_busy(M)]")
 
 /// A client logging in wakes the whole mob.
 /datum/unit_test/dq_life_client_login_wakes
@@ -364,13 +377,14 @@
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
 	TEST_ASSERT_NULL(SSmobs.audit_mob(M), "the audit must not flag a mob that is correctly asleep")
-	// A deliberately missed wake: write the counter directly instead of calling Stun().
-	M.stunned = 3
+	// A deliberately missed wake: write instability directly instead of adjust_instability().
+	M.instability = 10
 	TEST_ASSERT(M.life_hibernating, "a direct write must not wake the mob (that is the bug the audit catches)")
 	var/missed_before = SSmobs.hibernation_audit_missed
 	var/datum/life_system/S = SSmobs.audit_mob(M, expected = TRUE)
 	TEST_ASSERT_NOTNULL(S, "the audit should find the system with pending work")
-	TEST_ASSERT_EQUAL(S.bit, LIFE_SYS_STATUS, "the statuses system should be the one flagged, got [S?.type]")
+	TEST_ASSERT_EQUAL(S.family, /datum/life_system/instability, "the instability system should be the one flagged, got [S?.type]")
+	M.instability = 0
 	TEST_ASSERT_EQUAL(SSmobs.hibernation_audit_missed, missed_before + 1, "the audit should count the missed wake")
 	TEST_ASSERT(!M.life_hibernating, "the audit should wake the mob")
 

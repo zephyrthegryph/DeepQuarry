@@ -198,122 +198,6 @@
 	return temperature
 
 
-/// Scale a stun / weaken / paralysis / sleep / confusion / blindness duration
-/// by BF_DISABLE_DURATION (0 = immune).
-/mob/living/proc/scale_disable_duration(amount)
-	var/scale = factor(BF_DISABLE_DURATION)
-	return scale == 1 ? amount : round(amount * scale)
-
-/mob/living/Stun(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(stunned > 0)
-		add_status_indicator("stunned")
-
-/mob/living/SetStunned(amount, ignore_canstun = FALSE)
-	..()
-	if(stunned <= 0)
-		remove_status_indicator("stunned")
-	else
-		add_status_indicator("stunned")
-
-/mob/living/AdjustStunned(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(stunned <= 0)
-		remove_status_indicator("stunned")
-	else
-		add_status_indicator("stunned")
-
-/mob/living/Weaken(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(weakened > 0)
-		add_status_indicator("weakened")
-
-/mob/living/SetWeakened(amount, ignore_canstun = FALSE)
-	..()
-	if(weakened <= 0)
-		remove_status_indicator("weakened")
-	else
-		add_status_indicator("weakened")
-
-/mob/living/AdjustWeakened(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(weakened <= 0)
-		remove_status_indicator("weakened")
-	else
-		add_status_indicator("weakened")
-
-/mob/living/Paralyse(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(paralysis > 0)
-		add_status_indicator("paralysis")
-
-/mob/living/SetParalysis(amount, ignore_canstun = FALSE)
-	..()
-	if(paralysis <= 0)
-		remove_status_indicator("paralysis")
-	else
-		add_status_indicator("paralysis")
-
-/mob/living/AdjustParalysis(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(paralysis <= 0)
-		remove_status_indicator("paralysis")
-	else
-		add_status_indicator("paralysis")
-
-/mob/living/Sleeping(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(sleeping > 0)
-		add_status_indicator("sleeping")
-
-/mob/living/SetSleeping(amount, ignore_canstun = FALSE)
-	..()
-	if(sleeping <= 0)
-		remove_status_indicator("sleeping")
-	else
-		add_status_indicator("sleeping")
-
-/mob/living/AdjustSleeping(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(sleeping <= 0)
-		remove_status_indicator("sleeping")
-	else
-		add_status_indicator("sleeping")
-
-/mob/living/Confuse(amount, ignore_canstun = FALSE)
-	amount = scale_disable_duration(amount)
-	..(amount)
-	if(confused > 0)
-		add_status_indicator("confused")
-
-/mob/living/SetConfused(amount, ignore_canstun = FALSE)
-	..()
-	if(confused <= 0)
-		remove_status_indicator("confused")
-	else
-		add_status_indicator("confused")
-
-/mob/living/AdjustConfused(amount, ignore_canstun = FALSE)
-	if(amount > 0)
-		amount = scale_disable_duration(amount)
-	..(amount)
-	if(confused <= 0)
-		remove_status_indicator("confused")
-	else
-		add_status_indicator("confused")
-
 /mob/living/Blind(amount, ignore_canstun = FALSE)
 	amount = scale_disable_duration(amount)
 	..(amount)
@@ -507,7 +391,7 @@
 	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (last_resist_time + RESIST_COOLDOWN < world.time))
 		last_resist_time = world.time
 		resist_grab()
-		if(!weakened)
+		if(!get_weakened())
 			process_resist()
 		else if(absorbed && isbelly(loc))			// Allow absorbed resistance
 			var/obj/belly/B = loc
@@ -1060,9 +944,9 @@
 		return SOUND_ENVIRONMENT_DRUGGED
 	else if (drowsyness)
 		return SOUND_ENVIRONMENT_DIZZY
-	else if (confused)
+	else if (get_confused())
 		return SOUND_ENVIRONMENT_DIZZY
-	else if (sleeping)
+	else if (get_sleeping())
 		return SOUND_ENVIRONMENT_UNDERWATER
 	else
 		return ..()

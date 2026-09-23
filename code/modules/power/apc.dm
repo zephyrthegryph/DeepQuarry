@@ -504,7 +504,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			var/datum/effect/effect/system/spark_spread/sparks = new
 			sparks.set_up(5, 1, src)
 			sparks.start()
-			if(user.stunned)
+			if(user.get_stunned())
 				return ITEM_INTERACT_SUCCESS
 		new /obj/item/stack/cable_coil(loc, 10)
 		to_chat(user, span_notice("You cut the cables and dismantle the power terminal."))
@@ -606,7 +606,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 					s.set_up(5, 1, src)
 					s.start()
-					if(user.stunned)
+					if(user.get_stunned())
 						return TRUE
 				C.use(10)
 				user.visible_message(\

@@ -343,7 +343,7 @@
 		accuracy_penalty += 75
 	if(eye_blurry)
 		accuracy_penalty += 30
-	if(confused)
+	if(get_confused())
 		accuracy_penalty += 45
 
 	return accuracy_penalty

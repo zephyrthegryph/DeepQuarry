@@ -48,16 +48,6 @@
 	if(self.stat == DEAD)
 		return LIFE_HALT
 
-/// EMP stun wears off.
-/datum/life_system/statuses/silicon/ai
-	mob_type = /mob/living/silicon/ai
-	phase = LIFE_PHASE_BODY
-	order = 0
-	segment = NONE
-
-/datum/life_system/statuses/silicon/ai/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
-	stunned(self)	// Handle EMP-stun
-
 /// Lying down, malfunction, APU and queued alarms.
 /datum/life_system/ai_upkeep
 	name = "ai upkeep"

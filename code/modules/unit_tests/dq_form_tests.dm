@@ -27,11 +27,11 @@
 
 	var/severity_before = pain.severity
 	var/volume_before = H.bloodstr.get_reagent_amount(REAGENT_ID_TRICORDRAZINE)
-	var/weakened_before = H.weakened
 	H.Life()
 	TEST_ASSERT(QDELETED(pain) || pain.severity < severity_before, "afflictions should keep progressing in blob form ([severity_before] -> [QDELETED(pain) ? 0 : pain.severity])")
 	TEST_ASSERT(H.bloodstr.get_reagent_amount(REAGENT_ID_TRICORDRAZINE) < volume_before, "reagents should keep metabolising in blob form")
-	TEST_ASSERT(H.weakened < weakened_before, "statuses should keep wearing off in blob form")
+	var/datum/status_effect/counter/weakened/W = H.has_status_effect(/datum/status_effect/counter/weakened)
+	TEST_ASSERT(W && W.duration > world.time, "statuses should survive the form switch and keep running on their own timer")
 
 	TEST_ASSERT(F.set_form(/datum/form/human), "switching back should succeed")
 	TEST_ASSERT(!HAS_TRAIT(H, TRAIT_FORM_HIDES_BODY), "the human form draws the body again")

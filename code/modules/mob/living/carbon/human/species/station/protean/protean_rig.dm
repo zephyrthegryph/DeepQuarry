@@ -36,7 +36,7 @@
 	var/mob/living/carbon/human/soaking_wearer
 
 /obj/item/rig/protean/relaymove(mob/user, direction)
-	if(user != myprotean || user.stat || user.stunned)
+	if(user != myprotean || user.stat || user.get_stunned())
 		return
 	forced_move(direction, user, 0)
 

@@ -395,7 +395,7 @@
 			self.radiation -= 10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
 			self.accumulated_rads += 10 * RADIATION_SPEED_COEFFICIENT
 			if(!self.isSynthetic())
-				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.weakened)
+				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.get_weakened())
 					to_chat(self, span_warning("You feel exhausted."))
 					self.AdjustWeakened(3)
 				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && self.species.get_bodytype() == SPECIES_HUMAN) //apes go bald
@@ -419,7 +419,7 @@
 					self.emote("gasp")
 				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
-				if(prob(10) && !self.weakened)
+				if(prob(10) && !self.get_weakened())
 					to_chat(self, span_warning("You feel sick."))
 					self.AdjustWeakened(3)
 
@@ -435,7 +435,7 @@
 					self.emote("gasp")
 				if(prob(10) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
-				if(prob(15) && !self.weakened)
+				if(prob(15) && !self.get_weakened())
 					to_chat(self, span_warning("You feel horribly ill."))
 					self.AdjustWeakened(3)
 				if(prob(5) && self.internal_organs.len)
@@ -470,7 +470,7 @@
 					self.emote("gasp")
 				if(prob(25) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
-				if(prob(20) && !self.weakened)
+				if(prob(20) && !self.get_weakened())
 					to_chat(self, span_critical("You feel like your insides are burning!"))
 					self.AdjustWeakened(5)
 				if(prob(5))
@@ -503,7 +503,7 @@
 
 				if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
-				if(!self.paralysis && prob(30) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
+				if(!self.get_paralysis() && prob(30) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
 					to_chat(self, span_critical("You have a seizure!"))
 					self.Paralyse(10)
 					self.Sleeping(10)
@@ -555,7 +555,7 @@
 				if(prob(5) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
 					to_chat(self, span_warning("Your feel nauseated."))
 					spawn self.vomit()
-				if(!self.weakened && prob(2) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
+				if(!self.get_weakened() && prob(2) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
 					to_chat(self, span_warning("Your feel exhausted."))
 					self.AdjustWeakened(3)
 			if(self.accumulated_rads > 300) // (6Gy)
@@ -563,7 +563,7 @@
 					to_chat(self, span_danger("Your hand won't respond properly, you drop what you're holding!"))
 					self.drop_item()
 			if(self.accumulated_rads > 700) // (12Gy)
-				if(!self.paralysis && prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //1 in 1000 chance per tick.
+				if(!self.get_paralysis() && prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //1 in 1000 chance per tick.
 					to_chat(self, span_critical("You have a seizure!"))
 					self.Paralyse(10)
 					self.Sleeping(10)
@@ -1382,30 +1382,22 @@
 					var/fear_other = pick(self.fear_message_other)
 					self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
 
-		if(self.sleeping)
-			self.blinded = TRUE
+		if(self.get_sleeping())
 			self.set_stat(UNCONSCIOUS)
 			self.animate_tail_reset()
 			self.mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
+			if(prob(2))
+				if(prob(50))
+					self.mend(TREAT_TISSUE_REPAIR, 1)
+				else
+					self.mend(TREAT_BURN_CARE, 1)
 
-			if(self.sleeping)
-				if(prob(2))
-					if(prob(50))
-						self.mend(TREAT_TISSUE_REPAIR, 1)
-					else
-						self.mend(TREAT_BURN_CARE, 1)
-
-				self.handle_dreams()
-				if(self.mind)
-					//Are they SSD? If so we'll keep them asleep but work off some of that sleep var in case of stoxin or similar.
-					if(self.client || self.sleeping > 3)
-						life_statuses().sleeping(self)
-				if(prob(2) && !self.is_critical() && !self.get_hallucination_component()?.get_fakecrit() && self.client)
-					self.emote("snore")
+			self.handle_dreams()
+			if(prob(2) && !self.is_critical() && !self.get_hallucination_component()?.get_fakecrit() && self.client)
+				self.emote("snore")
 		//CONSCIOUS
 		else if(!in_crit)
 			self.set_stat(CONSCIOUS)
-			self.clear_alert("asleep")
 			if(HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
 				REMOVE_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 
@@ -1872,7 +1864,7 @@
 	if(!self.stat && !isbelly(self.loc))
 		var/toxic_load = self.injury_load(INJURY_CATEGORY_TOXIC)
 		if (toxic_load >= 30 && self.isSynthetic())
-			if(!self.confused)
+			if(!self.get_confused())
 				if(prob(5))
 					to_chat(self, span_danger("You lose directional control!"))
 					self.Confuse(10)

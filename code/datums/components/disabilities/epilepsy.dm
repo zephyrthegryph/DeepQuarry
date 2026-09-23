@@ -19,7 +19,7 @@
 		return
 	if(owner.transforming)
 		return
-	if((prob(1) && prob(1) && owner.paralysis < 1))
+	if((prob(1) && prob(1) && owner.get_paralysis() < 1))
 		to_chat(owner, span_red("You have a seizure!"))
 		for(var/mob/O in viewers(owner, null))
 			if(O == owner)

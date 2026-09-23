@@ -335,7 +335,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
 		s.start()
-		if(user.stunned)
+		if(user.get_stunned())
 			return 1
 	return 0
 
@@ -530,7 +530,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	set category = "Object"
 	var/mob/M = usr
 
-	if(ishuman(M) && !M.restrained() && !M.stat && !M.paralysis && ! M.stunned)
+	if(ishuman(M) && !M.restrained() && !M.stat && !M.get_paralysis() && ! M.get_stunned())
 		if(!istype(M.loc,/turf)) return
 		if(src.amount <= 14)
 			to_chat(M, span_warning("You need at least 15 lengths to make restraints!"))

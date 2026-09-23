@@ -88,11 +88,11 @@
 /mob/living/simple_mob/vore/alienanimals/startreader/apply_melee_effects(mob/living/L)
 	if(!isliving(L))
 		return
-	if(L.weakened) //Don't stun people while they're already stunned! That's SILLY!
+	if(L.get_weakened()) //Don't stun people while they're already stunned! That's SILLY!
 		return
 	if(prob(15))
 		visible_message(span_danger("\The [src] trips \the [L]!"))
-		L.weakened += rand(1,10)
+		L.AdjustWeakened(rand(1,10))
 
 /datum/life_system/type_post/simple_mob/vore/alienanimals/startreader
 	mob_type = /mob/living/simple_mob/vore/alienanimals/startreader

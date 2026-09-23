@@ -162,7 +162,7 @@
 		to_chat(usr, span_warning("The suit is not initialized."))
 		return 0
 
-	if(usr.lying || usr.stat || usr.stunned || usr.paralysis || usr.weakened)
+	if(usr.lying || usr.stat || usr.get_stunned() || usr.get_paralysis() || usr.get_weakened())
 		to_chat(usr, span_warning("You cannot use the suit in this state."))
 		return 0
 
