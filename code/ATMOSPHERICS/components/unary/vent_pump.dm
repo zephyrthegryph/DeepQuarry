@@ -89,6 +89,63 @@
 	if (!id_tag)
 		assign_uid()
 		id_tag = num2text(uid)
+	// M2: the flow law is a Rust device edge (pipe port <-> turf), stepped
+	// from SSair every gas tick; this has no process() at all any more.
+	STOP_MACHINE_PROCESSING(src)
+
+// M2 (simulation.md §5): the flow law lives on the Rust device edge
+// (device::DeviceParams::VentPump). rust_bind_pipe_port fires once the
+// port's region exists in Rust, the earliest point it can bind to a turf.
+/obj/machinery/atmospherics/unary/vent_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	update_rust_device()
+
+/// Publishes (or unpublishes) the vent's Rust device edge. `device.rs`'s
+/// VentPump only bounds the turf ("a") side within `[min_kpa, max_kpa]`;
+/// `pressure_checks`' PRESSURE_CHECK_EXTERNAL bit maps onto that bound
+/// directly (the common case - every default configuration uses it).
+/// PRESSURE_CHECK_INTERNAL (bounding the network side, used only by the
+/// `/siphon/on/atmos` variant) has no equivalent yet, so that one variant
+/// runs unbounded on the turf side until the network-side bound is added.
+/obj/machinery/atmospherics/unary/vent_pump/proc/update_rust_device()
+	// disconnect() (called mid-Destroy(), after the port/region is already
+	// torn down) reaches here via invalidate_gas_dependencies(); air_contents
+	// may already be a dead handle at that point.
+	if(QDELETED(src))
+		return
+	if(!node || !can_pump())
+		rust_unregister_device()
+		return
+	var/datum/gas_mixture/environment = return_air()
+	if(!environment)
+		rust_unregister_device()
+		return
+	var/mode = pump_direction ? RUST_VENT_MODE_RELEASE : RUST_VENT_MODE_SIPHON
+	var/min_kpa = 0
+	var/max_kpa = 1e30
+	if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
+		if(pump_direction)
+			max_kpa = external_pressure_bound
+		else
+			min_kpa = external_pressure_bound
+	var/max_rate = air_contents.return_volume() * 50
+	rust_set_turf_device(1, environment, RUST_DEVICE_LAW_VENT_PUMP, mode, min_kpa, max_kpa, max_rate)
+
+/obj/machinery/atmospherics/unary/vent_pump/rust_device_stepped(moles, power_w, target_reached)
+	last_flow_rate = abs(moles)
+
+// The unary base's invalidate_gas_dependencies() wakes a DM gas-dependency
+// subscriber; vent_pump has none any more (M2), so this republishes the
+// Rust device edge instead. Covers every existing call site (welder_act,
+// multitool_act, click_ctrl, power_change) without touching each one.
+/obj/machinery/atmospherics/unary/vent_pump/invalidate_gas_dependencies()
+	update_rust_device()
+
+// The unary base's disconnect() calls invalidate_gas_dependencies() before
+// nulling `node`, so that call sees stale state; re-publish afterwards.
+/obj/machinery/atmospherics/unary/vent_pump/disconnect(obj/machinery/atmospherics/reference)
+	. = ..()
+	update_rust_device()
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/update_area()
 	initial_loc = get_area(loc)
@@ -98,7 +155,8 @@
 
 
 /obj/machinery/atmospherics/unary/vent_pump/Destroy()
-	SSmachines.wake_vent(WEAKREF(src)) // So we are removed from hibernating list
+	// rust_unregister_device() runs as part of the base class's
+	// rust_unregister_pipe_topology() (atmospherics.dm's Destroy()), below.
 	unregister_radio(src, frequency)
 	if(initial_loc)
 		LAZYREMOVE(initial_loc.air_vent_info, id_tag)
@@ -197,62 +255,10 @@
 		return 0
 	return 1
 
-/obj/machinery/atmospherics/unary/vent_pump/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
-	if(!..(mixture_id, change_mask, observation, observation_index))
-		return FALSE
-	if(!can_pump())
-		return FALSE
-	if(get_pressure_delta_values(sleeping_turf_pressure, sleeping_pipe_pressure) <= 0.5)
-		return FALSE
-	var/source_moles = pump_direction ? sleeping_pipe_moles : sleeping_turf_moles
-	return source_moles >= MINIMUM_MOLES_TO_PUMP
-
-/obj/machinery/atmospherics/unary/vent_pump/process()
-	..()
-
-	if (!node)
-		update_use_power(USE_POWER_OFF)
-	if(!can_pump())
-		SSmachines.hibernate_vent(src)
-		return PROCESS_KILL
-
-	var/datum/gas_mixture/environment = return_air() // Use our own proc
-
-	var/power_draw = -1
-
-	//Figure out the target pressure difference
-	var/pressure_delta = get_pressure_delta(environment)
-	//src.visible_message("DEBUG >>> [src]: pressure_delta = [pressure_delta]")
-
-	if((environment.return_temperature() || air_contents.return_temperature()) && pressure_delta > 0.5)
-		if(pump_direction) //internal -> external
-			var/transfer_moles = calculate_transfer_moles(air_contents, environment, pressure_delta)
-			power_draw = queue_pump_gas(src, air_contents, environment, transfer_moles, power_rating)
-		else //external -> internal
-			var/transfer_moles = calculate_transfer_moles(environment, air_contents, pressure_delta, (network)? network.volume : 0)
-
-			//limit flow rate from turfs
-			transfer_moles = min(transfer_moles, environment.total_moles()*air_contents.return_volume()/environment.return_volume())	//group_multiplier gets divided out here
-			power_draw = queue_pump_gas(src, environment, air_contents, transfer_moles, power_rating)
-
-	// A pressure target can remain actionable while the source mixture is empty.
-	// Both mixtures are subscribed before sleeping, so either new source gas or a
-	// changed target pressure wakes the vent without polling.
-	if(power_draw < 0 && Master.iteration > 10)
-		SSmachines.hibernate_vent(src)
-
-	// Power, flow telemetry, turf activation, and pipenet dirtiness are finalized
-	// using the actual shared-source-clamped transfer in the subsystem batch.
-
-	return 1
-
-/obj/machinery/atmospherics/unary/vent_pump/pump_transaction_committed(actual_moles)
-	if(actual_moles >= MINIMUM_MOLES_TO_PUMP)
-		return
-	// The optimistic request lost the shared-source transaction race. Subscribe
-	// to both authoritative mixtures and remain asleep until either can actually
-	// make the pressure predicate actionable again.
-	SSmachines.hibernate_vent(src)
+// process(), gas_dependency_changed() and pump_transaction_committed() are
+// deleted (M2, simulation.md §5): the flow law above is a Rust device edge,
+// stepped every gas tick from SSair.fire() regardless of DM's process()
+// scheduling, so there is nothing left to run and nothing to hibernate.
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/get_pressure_delta(datum/gas_mixture/environment)
 	return get_pressure_delta_values(environment.return_pressure(), air_contents.return_pressure())
@@ -332,7 +338,6 @@
 	//log_admin("DEBUG \[[world.timeofday]\]: /obj/machinery/atmospherics/unary/vent_pump/receive_signal([signal.debug_print()])")
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
 		return 0
-	SSmachines.wake_vent(WEAKREF(src))
 
 	if(signal.data["purge"] != null)
 		pressure_checks &= ~1
@@ -387,6 +392,8 @@
 	if(signal.data["init"] != null)
 		name = signal.data["init"]
 		return
+
+	update_rust_device()
 
 	if(signal.data["status"] != null)
 		addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)

@@ -47,6 +47,9 @@
 	if (!id_tag)
 		assign_uid()
 		id_tag = num2text(uid)
+	// M2: the flow law is a Rust device edge (pipe port <-> turf), stepped
+	// from SSair every gas tick; this has no process() at all any more.
+	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/update_area()
 	initial_loc = get_area(loc)
@@ -55,12 +58,60 @@
 	id_tag = num2text(uid)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/Destroy()
-	SSmachines.wake_vent(WEAKREF(src)) // So we are removed from hibernating list
+	// rust_unregister_device() runs as part of the base class's
+	// rust_unregister_pipe_topology() (atmospherics.dm's Destroy()), below.
 	unregister_radio(src, frequency)
 	if(initial_loc)
 		LAZYREMOVE(initial_loc.air_scrub_info, id_tag)
 		LAZYREMOVE(initial_loc.air_scrub_names, id_tag)
 	return ..()
+
+// M2 (simulation.md §5): the flow law lives on the Rust device edge
+// (device::DeviceParams::Scrubber). rust_bind_pipe_port fires once the
+// port's region exists in Rust, the earliest point it can bind to a turf.
+/obj/machinery/atmospherics/unary/vent_scrubber/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	update_rust_device()
+
+/// Publishes (or unpublishes) the scrubber's Rust device edge: turf ("a")
+/// into air_contents ("b"), masked by `scrubbing_gas` unless siphoning.
+/obj/machinery/atmospherics/unary/vent_scrubber/proc/update_rust_device()
+	// disconnect() (called mid-Destroy(), after the port/region is already
+	// torn down) reaches here via invalidate_gas_dependencies(); air_contents
+	// may already be a dead handle at that point.
+	if(QDELETED(src))
+		return
+	if(!node || !use_power || (stat & (NOPOWER|BROKEN)) || welded)
+		rust_unregister_device()
+		return
+	var/datum/gas_mixture/environment = return_air()
+	if(!environment)
+		rust_unregister_device()
+		return
+	// scrubbing_gas holds GAS_* short-id strings ("plasma", "co2", ...), not
+	// numbers - GAS_IDX() resolves to the numeric Rust gas index the mask
+	// bit corresponds to.
+	var/mask = 0
+	for(var/gas_id in scrubbing_gas)
+		mask |= (1 << GAS_IDX(gas_id))
+	var/rate = scrubbing ? MAX_SCRUBBER_FLOWRATE : MAX_SIPHON_FLOWRATE
+	rust_set_turf_device(1, environment, RUST_DEVICE_LAW_SCRUBBER, mask, rate, scrubbing ? 0 : 1)
+
+/obj/machinery/atmospherics/unary/vent_scrubber/rust_device_stepped(moles, power_w, target_reached)
+	last_flow_rate = abs(moles)
+
+// The unary base's invalidate_gas_dependencies() wakes a DM gas-dependency
+// subscriber; vent_scrubber has none any more (M2), so this republishes the
+// Rust device edge instead. Covers every existing call site (welder_act,
+// power_change, receive_signal).
+/obj/machinery/atmospherics/unary/vent_scrubber/invalidate_gas_dependencies()
+	update_rust_device()
+
+// The unary base's disconnect() calls invalidate_gas_dependencies() before
+// nulling `node`, so that call sees stale state; re-publish afterwards.
+/obj/machinery/atmospherics/unary/vent_scrubber/disconnect(obj/machinery/atmospherics/reference)
+	. = ..()
+	update_rust_device()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/update_icon(safety = 0)
 	cut_overlays()
@@ -140,106 +191,10 @@
 		set_frequency(frequency)
 		src.broadcast_status()
 
-/obj/machinery/atmospherics/unary/vent_scrubber/process()
-	..()
-
-	if (!node)
-		update_use_power(USE_POWER_OFF)
-	//broadcast_status()
-	if(!use_power || (stat & (NOPOWER|BROKEN)))
-		SSmachines.hibernate_vent(src)
-		return PROCESS_KILL
-	if(welded) // Don't do anything if welded
-		SSmachines.hibernate_vent(src)
-		return PROCESS_KILL
-
-	var/datum/gas_mixture/environment = loc.return_air()
-
-	var/power_draw = -1
-	if(scrubbing)
-		//limit flow rate from turfs
-		var/transfer_moles = min(environment.total_moles(), environment.total_moles()*MAX_SCRUBBER_FLOWRATE/environment.return_volume())	//group_multiplier gets divided out here
-
-		power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, power_rating)
-	else //Just siphon all air
-		//limit flow rate from turfs
-		var/transfer_moles = min(environment.total_moles(), environment.total_moles()*MAX_SIPHON_FLOWRATE/environment.return_volume())	//group_multiplier gets divided out here
-
-		power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
-
-	// Scrubbing and siphoning both depend exclusively on the subscribed turf and
-	// pipenet mixtures while their explicit configuration is unchanged.
-	if(power_draw < 0 && Master.iteration > 10)
-		SSmachines.hibernate_vent(src)
-
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
-		// scrub_gas / pump_gas mutate the turf's air mix directly via
-		// the gas_mixture reference. They don't enroll the turf in active_turfs
-		// or call update_visuals, so under LINDA the turf's gas state goes stale
-		// (overlay never re-evaluates) and adjacent turfs never see the change.
-		if(isturf(loc))
-			var/turf/open/T = loc
-			if(istype(T))
-				T.update_visuals()
-				T.air_update_turf(FALSE, FALSE)
-
-	if(network)
-		network.mark_dirty()
-
-	return 1
-
-/obj/machinery/atmospherics/unary/vent_scrubber/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
-	if(!..(mixture_id, change_mask, observation, observation_index))
-		return FALSE
-	if(!use_power || (stat & (NOPOWER|BROKEN)) || welded)
-		return FALSE
-	if(observation && observation_index)
-		if(!scrubbing)
-			var/pressure = observation[observation_index + 3]
-			var/temperature = observation[observation_index + 4]
-			var/volume = observation[observation_index + 5]
-			var/total_moles = temperature > 0 ? pressure * volume / (R_IDEAL_GAS_EQUATION * temperature) : 0
-			return total_moles >= MINIMUM_MOLES_TO_PUMP
-		for(var/gas_id in scrubbing_gas)
-			var/observed_moles
-			switch(gas_id)
-				if(GAS_O2)
-					observed_moles = observation[observation_index + 6]
-				if(GAS_CO2)
-					observed_moles = observation[observation_index + 7]
-				if(GAS_PHORON)
-					observed_moles = observation[observation_index + 8]
-				if(GAS_CH4)
-					observed_moles = observation[observation_index + 9]
-				if(GAS_N2O)
-					observed_moles = observation[observation_index + 10]
-				if(GAS_VOLATILE_FUEL)
-					observed_moles = observation[observation_index + 11]
-			if(!isnull(observed_moles) && observed_moles >= MINIMUM_MOLES_TO_FILTER)
-				return TRUE
-		// Custom gases not present in the compact publication are deliberately
-		// checked through the arena below. Normal scrubber configurations never
-		// pay those per-gas FFI crossings.
-	var/datum/gas_mixture/environment = return_air()
-	if(!environment)
-		return FALSE
-	if(!scrubbing)
-		return environment.total_moles() >= MINIMUM_MOLES_TO_PUMP
-	// Composition revisions include accumulated sub-visual changes. Do not put a
-	// sleeping scrubber back through the machinery roster merely because a gas
-	// exists as a floating-point trace: scrub_gas() cannot perform useful work
-	// below this same threshold. This predicate and the transaction therefore
-	// have one definition of "actionable" and cannot form a wake/kill loop.
-	for(var/gas_id in scrubbing_gas)
-		if(observation && observation_index)
-			switch(gas_id)
-				if(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4, GAS_N2O, GAS_VOLATILE_FUEL)
-					continue
-		if(LINDA_GAS_AMT(environment, gas_id) >= MINIMUM_MOLES_TO_FILTER)
-			return TRUE
-	return FALSE
+// process() and gas_dependency_changed() are deleted (M2, simulation.md
+// §5): the flow law above is a Rust device edge, stepped every gas tick
+// from SSair.fire() regardless of DM's process() scheduling, so there is
+// nothing left to run and nothing to hibernate.
 
 /obj/machinery/atmospherics/unary/vent_scrubber/hide(i) //to make the little pipe section invisible, the icon changes.
 	update_icon()
@@ -250,7 +205,6 @@
 		return
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
 		return 0
-	invalidate_gas_dependencies()
 
 	if(signal.data["power"] != null)
 		update_use_power(text2num(signal.data["power"]))
@@ -324,6 +278,8 @@
 	if(signal.data["init"] != null)
 		name = signal.data["init"]
 		return
+
+	update_rust_device()
 
 	if(signal.data["status"] != null)
 		addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)

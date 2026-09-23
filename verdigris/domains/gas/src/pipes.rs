@@ -378,6 +378,30 @@ impl PipeNet {
 		}
 	}
 
+	/// Adds (or replaces) a device edge between a pipe port and a field cell
+	/// (a turf) - a vent pump or scrubber (M2, `simulation.md` §5, stepped
+	/// by `GasWorld::step_turf_devices`, not this network's own
+	/// `step_devices`). `cell` is the Rust field-cell index, from the
+	/// turf's gas-mixture handle (`world::MixRef::Turf`).
+	pub fn add_turf_device(&mut self, id: u32, port: u32, cell: u32, params: DeviceParams) -> bool {
+		let Some(node) = self.port(port) else {
+			return false;
+		};
+		if let Some(&d) = self.devices.get(&id) {
+			let _ = self.net.remove_device(d);
+		}
+		match self
+			.net
+			.add_device(Endpoint::Cell(cell), Endpoint::Node(node), 0, id, params)
+		{
+			Ok(d) => {
+				self.devices.insert(id, d);
+				true
+			}
+			Err(_) => false,
+		}
+	}
+
 	/// Removes a device edge.
 	pub fn remove_device(&mut self, id: u32) -> bool {
 		let Some(d) = self.devices.remove(&id) else {
@@ -652,6 +676,23 @@ mod tests {
 		assert!(net.add_device(9, 1, 2, DeviceParams::Valve { open: true }));
 		let steps = net.step_devices(1.0);
 		assert!(steps.is_empty(), "same region already: nothing to move");
+	}
+
+	#[test]
+	fn add_turf_device_creates_a_cell_node_edge_step_devices_skips() {
+		use vg_core::network::Endpoint;
+
+		let mut net = PipeNet::new();
+		net.upsert(1, 1, 100.0, gas(50.0, 293.0));
+		net.commit();
+		assert!(net.add_turf_device(7, 1, 42, DeviceParams::Valve { open: true }));
+		let &device_id = net.devices.get(&7).expect("device registered under id 7");
+		let device = net.net.device(device_id).expect("device is live");
+		assert_eq!((device.a, device.b), (Endpoint::Cell(42), Endpoint::Node(net.port(1).unwrap())));
+		// PipeNet::step_devices only steps Node<->Node edges: this one has a
+		// Cell endpoint, so GasWorld::step_turf_devices is the one that runs
+		// it (world.rs's own test covers that path end to end).
+		assert!(net.step_devices(1.0).is_empty());
 	}
 
 	#[test]

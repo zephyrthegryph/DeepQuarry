@@ -108,6 +108,7 @@
 // verdigris/domains/gas/src/lib.rs's pipenet_device_batch.
 #define RUST_DEVICE_OP_SET 1
 #define RUST_DEVICE_OP_REMOVE 2
+#define RUST_DEVICE_OP_SET_TURF 3
 
 // Flow laws, matching device::DeviceParams::decode's `kind` tag.
 #define RUST_DEVICE_LAW_PUMP 1

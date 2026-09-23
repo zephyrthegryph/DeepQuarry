@@ -139,8 +139,12 @@ fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
 /// nothing; call `pipenet_step_devices` to run them. Input is
 /// semicolon-delimited fixed-width records of nine comma-separated numbers:
 /// `opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3`. Opcodes: add or
-/// replace = 1 (`port_a`/`port_b` are read; `law_kind`/`p0..p3` decode via
-/// [`device::DeviceParams::decode`]), remove = 2 (only `id` is read).
+/// replace between two pipe ports = 1 (`port_a`/`port_b` are pipe port ids;
+/// `law_kind`/`p0..p3` decode via [`device::DeviceParams::decode`]), remove
+/// = 2 (only `id` is read), add or replace between a pipe port and a turf
+/// = 3 (`port_a` is a pipe port id, `port_b` is the turf's gas-mixture
+/// handle - a vent pump or scrubber, stepped by
+/// `GasWorld::step_turf_devices`).
 #[auxmacros::bind("/proc/auxmos_pipenet_device_batch")]
 fn pipenet_device_batch(operations: ByondValue) -> Result<ByondValue> {
 	let encoded = operations.get_string()?;
@@ -171,6 +175,17 @@ fn pipenet_device_batch(operations: ByondValue) -> Result<ByondValue> {
 				}
 				2 => {
 					w.pipes.remove_device(id);
+				}
+				3 => {
+					// A pipe port <-> turf device (a vent pump/scrubber): `port_b`
+					// carries the turf's gas-mixture handle, not a pipe port id.
+					let Some(MixRef::Turf(cell)) = MixRef::from_f32(port_b) else {
+						eyre::bail!("device {id}'s turf side is not a turf gas handle: {port_b}");
+					};
+					let params = device::DeviceParams::decode(law_kind as u8, [p0, p1, p2, p3]);
+					if !w.pipes.add_turf_device(id, port_a as u32, cell, params) {
+						eyre::bail!("device {id} could not bind port {port_a} to turf cell {cell}");
+					}
 				}
 				other => eyre::bail!("unknown device opcode {other}"),
 			}

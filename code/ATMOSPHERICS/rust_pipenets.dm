@@ -202,6 +202,24 @@
 	SSair.rust_commit_pending_devices()
 	return TRUE
 
+/// Registers (or replaces) `machine`'s device edge between its port
+/// `port_index` (1-based, a `rust_pipe_port_ids` index) and the turf gas
+/// mixture `turf_air` faces (a vent pump or scrubber), with the flow law
+/// `law_kind`/`p0..p3` (`RUST_DEVICE_LAW_*`). Allocates a stable device id
+/// on first use. `device::VentPump`/`Scrubber`'s `a` side is the turf, so
+/// pass mode/bounds with that convention.
+/obj/machinery/atmospherics/proc/rust_set_turf_device(port_index, datum/gas_mixture/turf_air, law_kind, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
+	if(!rust_pipe_port_ids || port_index > length(rust_pipe_port_ids) || !turf_air)
+		return FALSE
+	if(!rust_device_id)
+		rust_device_id = SSair.next_rust_device_id++
+		if(!SSair.rust_pipe_devices)
+			SSair.rust_pipe_devices = list()
+		SSair.rust_pipe_devices["[rust_device_id]"] = src
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_air.arena_id(), law_kind, p0, p1, p2, p3)
+	SSair.rust_commit_pending_devices()
+	return TRUE
+
 /obj/machinery/atmospherics/proc/rust_unregister_device()
 	if(!rust_device_id)
 		return

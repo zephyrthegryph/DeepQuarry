@@ -2263,6 +2263,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/pipe_turf = run[2]
 	var/direction = get_dir(T, pipe_turf)
 	var/axis_directions = direction | REVERSE_DIR(direction)
+	// A real sealed pair: the flow law now writes the turf through the R6
+	// field, which shares gas with open neighbours every settled frame, so
+	// an unsealed test turf would leak the result into the rest of the map.
+	dq_atmos_test_isolate_pair(T, pipe_turf)
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())
@@ -2293,6 +2297,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	V.pump_direction = 1 // release
 	V.external_pressure_bound = ONE_ATMOSPHERE * 2 // ambitious target
 	V.internal_pressure_bound = 0
+	V.update_rust_device()
 	TEST_ASSERT(V.air_contents.arena_id() != turf_air.arena_id(), "vent supply and turf unexpectedly share one Rust mixture")
 	TEST_ASSERT(V.air_contents.total_moles() > 499, "vent supply lost its seeded nitrogen before processing")
 	TEST_ASSERT(V.get_pressure_delta(turf_air) > 0.5, "vent pressure predicate is not actionable after setup")
@@ -2308,26 +2313,36 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"batch transfer ABI moved no gas for valid arena IDs [V.air_contents.arena_id()] -> [turf_air.arena_id()]: [json_encode(direct_transfer)]")
 	initial_turf_n2 = turf_air.get_moles(/datum/gas/nitrogen)
 	var/initial_vent_n2 = V.air_contents.get_moles(/datum/gas/nitrogen)
+	var/initial_pipe_turf_n2 = pipe_turf.return_air().get_moles(/datum/gas/nitrogen)
 
-	var/queued_transfers = 0
-	for(var/i in 1 to 5)
-		V.process()
-		if(!length(SSmachines.pending_pump_transfers))
-			// Reaching the pressure target in an earlier atomic transfer is normal.
-			TEST_ASSERT(V.get_pressure_delta(turf_air) <= 0.5, "actionable vent did not enqueue a pump transaction")
-			break
-		queued_transfers++
-		SSmachines.flush_pump_transfers()
-	TEST_ASSERT(queued_transfers, "vent never enqueued a pump transaction")
+	// M2 (simulation.md §5): the flow law is a Rust device edge bridging
+	// the pipe network and the turf field; SSair drives it, not
+	// V.process() (deleted). Every step reads the same pinned turf view
+	// until a gas frame runs, so its target-pressure check doesn't see its
+	// own prior steps mid-loop (each command is a delta, so this still
+	// conserves) - settle with one frame at the end, not every iteration,
+	// so the real map's neighbour diffusion doesn't spread the result away
+	// from this one turf before the assertions below read it. A frame must
+	// run every iteration: step_turf_devices reads the field's pinned view,
+	// so without a commit in between, every step recomputes its transfer
+	// from the same unchanged turf snapshot instead of a shrinking one.
+	for(var/i in 1 to 10)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
 
 	var/final_turf_n2 = turf_air.get_moles(/datum/gas/nitrogen)
 	TEST_ASSERT(final_turf_n2 > initial_turf_n2 + 5, \
 		"vent_pump didn't push N2 to turf: [initial_turf_n2] → [final_turf_n2]")
-	// Conservation: turf gained == vent_contents lost.
+	// Conservation: vent_contents lost == gained across the whole isolated
+	// pair. T shares what it received with pipe_turf (its sealed-pair
+	// neighbour) every settled frame like any other open turf, so pipe_turf's
+	// share must be counted too, not just T's.
 	var/vent_after = V.air_contents.get_moles(/datum/gas/nitrogen)
-	var/total_delta = abs((initial_vent_n2 - vent_after) - (final_turf_n2 - initial_turf_n2))
+	var/final_pipe_turf_n2 = pipe_turf.return_air().get_moles(/datum/gas/nitrogen)
+	var/turf_pair_gained = (final_turf_n2 - initial_turf_n2) + (final_pipe_turf_n2 - initial_pipe_turf_n2)
+	var/total_delta = abs((initial_vent_n2 - vent_after) - turf_pair_gained)
 	TEST_ASSERT(total_delta < 1, \
-		"vent_pump conservation broken: vent lost [initial_vent_n2 - vent_after], turf gained [final_turf_n2 - initial_turf_n2]")
+		"vent_pump conservation broken: vent lost [initial_vent_n2 - vent_after], turf+neighbour gained [turf_pair_gained]")
 
 	qdel(V)
 	qdel(P)
@@ -2345,6 +2360,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			T = cand
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor on test map for vent_scrubber test")
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.air_update_turf(TRUE, FALSE)
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())
@@ -2357,20 +2375,32 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(S, "couldn't construct vent_scrubber")
 	TEST_ASSERT_NOTNULL(S.air_contents, "scrubber air_contents null")
 
-	// Wire up: node ref, powered, scrubbing mode, filter PHORON only.
-	S.node = S
+	// Wire up: powered, scrubbing mode, filter PHORON only. `node` is set
+	// after topology registration - self-referencing it beforehand would
+	// make rust_register_pipe_edges() try to connect the scrubber's port
+	// to itself.
 	S.use_power = USE_POWER_IDLE
 	S.stat &= ~(NOPOWER | BROKEN)
 	S.welded = FALSE
 	S.scrubbing = 1
 	S.scrubbing_gas = list(GAS_PHORON)
+	S.rust_register_pipe_topology() // allocates ports, registers the device edge
+	S.node = S
+	S.update_rust_device()
 
 	var/initial_turf_phoron = turf_air.get_moles(/datum/gas/plasma)
 	var/initial_turf_o2 = turf_air.get_moles(/datum/gas/oxygen)
 	var/initial_scrubber_phoron = S.air_contents.get_moles(/datum/gas/plasma)
 
+	// M2 (simulation.md §5): the flow law is a Rust device edge bridging
+	// the pipe network and the turf field; SSair drives it, not
+	// S.process() (deleted). A frame must run every iteration:
+	// step_turf_devices reads the field's pinned view, so without a commit
+	// in between, every step recomputes its transfer from the same
+	// unchanged turf snapshot instead of a shrinking one.
 	for(var/i in 1 to 5)
-		S.process()
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
 
 	var/final_turf_phoron = turf_air.get_moles(/datum/gas/plasma)
 	var/final_turf_o2 = turf_air.get_moles(/datum/gas/oxygen)
@@ -3562,6 +3592,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			T = cand
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for full-cycle test")
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.air_update_turf(TRUE, FALSE)
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())
@@ -3571,34 +3604,45 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Pollute the turf with CO2 — the scrubber's target.
 	turf_air.adjust_gas(/datum/gas/carbon_dioxide, 200)
 
-	// Vent_pump preloaded with clean N2 supply.
+	// Vent_pump preloaded with clean N2 supply. `node` is set after
+	// topology registration - self-referencing it beforehand would make
+	// rust_register_pipe_edges() try to connect the port to itself.
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
-	V.air_contents.adjust_gas(/datum/gas/nitrogen, 500)
-	V.air_contents.set_temperature(T20C)
-	V.node = V
 	V.use_power = USE_POWER_IDLE
 	V.stat &= ~(NOPOWER | BROKEN)
 	V.welded = FALSE
 	V.pump_direction = 1
 	V.external_pressure_bound = ONE_ATMOSPHERE * 1.5
 	V.internal_pressure_bound = 0
+	V.rust_register_pipe_topology()
+	V.node = V
+	V.air_contents.adjust_gas(/datum/gas/nitrogen, 500)
+	V.air_contents.set_temperature(T20C)
+	V.update_rust_device()
 
 	// Scrubber configured for CO2.
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
-	S.node = S
 	S.use_power = USE_POWER_IDLE
 	S.stat &= ~(NOPOWER | BROKEN)
 	S.welded = FALSE
 	S.scrubbing = 1
 	S.scrubbing_gas = list(GAS_CO2)
+	S.rust_register_pipe_topology()
+	S.node = S
+	S.update_rust_device()
 
 	var/initial_co2 = turf_air.get_moles(/datum/gas/carbon_dioxide)
 	var/initial_n2 = turf_air.get_moles(/datum/gas/nitrogen)
 
-	for(var/i in 1 to 10)
-		V.process()
-		S.process()
-		SSmachines.flush_pump_transfers()
+	// M2 (simulation.md §5): the flow law is a Rust device edge bridging
+	// the pipe network and the turf field; SSair drives it, not
+	// V.process()/S.process() (deleted). Turf CO2 starts above the vent's
+	// own external_pressure_bound, so the vent stays refused until the
+	// scrubber (running the same loop) brings the turf pressure down -
+	// give the coupled feedback loop enough iterations to converge.
+	for(var/i in 1 to 30)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
 
 	var/final_co2 = turf_air.get_moles(/datum/gas/carbon_dioxide)
 	var/final_n2 = turf_air.get_moles(/datum/gas/nitrogen)
@@ -3929,18 +3973,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for inactive vent hibernation test")
+	// M2 (simulation.md §5): both flow laws are Rust device edges, stepped
+	// from SSair every gas tick, so neither is ever a DM process()
+	// subscriber - there is nothing left in DM to hibernate or wake.
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	V.update_use_power(USE_POWER_OFF)
-	TEST_ASSERT_EQUAL(V.process(), PROCESS_KILL, "inactive vent pump did not stop timed processing")
-	var/datum/weakref/vent_ref = WEAKREF(V)
-	TEST_ASSERT(SSmachines.hibernating_vents[vent_ref.reference], \
-		"inactive vent pump did not register dependency wakeups")
+	TEST_ASSERT(!(V in SSmachines.processing_machines), "inactive vent pump should never be a DM process() subscriber")
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
 	S.update_use_power(USE_POWER_OFF)
-	TEST_ASSERT_EQUAL(S.process(), PROCESS_KILL, "inactive vent scrubber did not stop timed processing")
-	var/datum/weakref/scrubber_ref = WEAKREF(S)
-	TEST_ASSERT(SSmachines.hibernating_vents[scrubber_ref.reference], \
-		"inactive vent scrubber did not register dependency wakeups")
+	TEST_ASSERT(!(S in SSmachines.processing_machines), "inactive vent scrubber should never be a DM process() subscriber")
 	qdel(V)
 	qdel(S)
 
@@ -5219,6 +5260,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			T = cand
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for shared-pipenet test")
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.air_update_turf(TRUE, FALSE)
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())
@@ -5226,38 +5270,55 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	turf_air.adjust_gas(/datum/gas/carbon_dioxide, 200)
 	turf_air.set_temperature(T20C)
 
-	// Shared pipenet air mixture (represents the connecting pipe).
-	var/datum/gas_mixture/shared = new(200)
-	shared.adjust_gas(/datum/gas/nitrogen, 1000)
-	shared.set_temperature(T20C)
-
+	// `node` is set after topology registration - self-referencing it
+	// beforehand would make rust_register_pipe_edges() try to connect the
+	// port to itself.
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
-	V.air_contents = shared
-	V.node = V
 	V.use_power = USE_POWER_IDLE
 	V.stat &= ~(NOPOWER | BROKEN)
 	V.welded = FALSE
 	V.pump_direction = 1
 	V.external_pressure_bound = ONE_ATMOSPHERE * 1.5
 	V.internal_pressure_bound = 0
+	V.rust_register_pipe_topology()
+	V.node = V
 
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
-	S.air_contents = shared
-	S.node = S
 	S.use_power = USE_POWER_IDLE
 	S.stat &= ~(NOPOWER | BROKEN)
 	S.welded = FALSE
 	S.scrubbing = 1
 	S.scrubbing_gas = list(GAS_CO2)
+	S.rust_register_pipe_topology()
+	S.node = S
+
+	// M2 (simulation.md §5): the "shared pipenet" is one Rust region — a real
+	// pipe connection between the vent's and the scrubber's ports, not a
+	// hand-spliced gas_mixture.
+	SSair.rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, V.rust_pipe_port_ids[1], S.rust_pipe_port_ids[1])
+	SSair.rust_commit_pending_pipenets()
+	var/datum/gas_mixture/shared = V.air_contents
+	TEST_ASSERT_EQUAL(V.air_contents.arena_id(), S.air_contents.arena_id(), "vent and scrubber did not land in the same pipe region")
+	shared.adjust_gas(/datum/gas/nitrogen, 1000)
+	shared.set_temperature(T20C)
+	V.update_rust_device()
+	S.update_rust_device()
 
 	var/initial_shared_n2 = shared.get_moles(/datum/gas/nitrogen)
 	var/initial_shared_co2 = shared.get_moles(/datum/gas/carbon_dioxide)
 	var/initial_turf_co2 = turf_air.get_moles(/datum/gas/carbon_dioxide)
 
-	for(var/i in 1 to 10)
-		V.process()
-		S.process()
-		SSmachines.flush_pump_transfers()
+	// The flow law is a Rust device edge bridging the pipe network and the
+	// turf field; SSair drives it, not V.process()/S.process() (deleted).
+	// Turf CO2 starts above the vent's own external_pressure_bound, so the
+	// vent stays refused until the scrubber (running the same loop) brings
+	// the turf pressure down - give the coupled feedback loop enough
+	// iterations to converge, and commit a frame every iteration:
+	// step_turf_devices reads the field's pinned view, so without that the
+	// scrubber's own effect never becomes visible to either device.
+	for(var/i in 1 to 30)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
 
 	// Vent moved N2 from shared → turf.
 	var/final_shared_n2 = shared.get_moles(/datum/gas/nitrogen)
@@ -6528,20 +6589,32 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
 	TEST_ASSERT_NOTNULL(S, "scrubber construct failed")
-	S.node = S
+	// `node` is set after topology registration - self-referencing it
+	// beforehand would make rust_register_pipe_edges() try to connect the
+	// port to itself.
 	S.use_power = USE_POWER_IDLE
 	S.stat &= ~(NOPOWER | BROKEN)
 	S.welded = FALSE
 	S.scrubbing = 0  // SIPHON mode
 	S.scrubbing_gas = list() // siphon doesn't consult this
+	S.rust_register_pipe_topology()
+	S.node = S
+	S.update_rust_device()
 
 	var/initial_n2 = turf_air.get_moles(/datum/gas/nitrogen)
 	var/initial_o2 = turf_air.get_moles(/datum/gas/oxygen)
 	var/initial_co2 = turf_air.get_moles(/datum/gas/carbon_dioxide)
 	var/initial_total = initial_n2 + initial_o2 + initial_co2
 
+	// M2 (simulation.md §5): the flow law is a Rust device edge bridging
+	// the pipe network and the turf field; SSair drives it, not
+	// S.process() (deleted). A frame must run every iteration:
+	// step_turf_devices reads the field's pinned view, so without a commit
+	// in between, every step recomputes its transfer from the same
+	// unchanged turf snapshot instead of a shrinking one.
 	for(var/i in 1 to 20)
-		S.process()
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
 
 	var/final_n2 = turf_air.get_moles(/datum/gas/nitrogen)
 	var/final_o2 = turf_air.get_moles(/datum/gas/oxygen)
