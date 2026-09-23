@@ -14,14 +14,35 @@
  */
 
 /// References a movable gets from its loc, and an atom gets per movable in its
-/// contents. Measured on BYOND 516; dq_state_tests checks them.
+/// contents. Measured on BYOND 516; dq_state_collapse_blockers checks them.
 #define STATE_REFS_FROM_LOC 1
 #define STATE_REFS_PER_CONTENT 1
-/// References state_collapse_blockers() itself holds while counting: the
-/// entries in its `nodes` and `internal` lists, plus `src` for the root.
-/// The counting loops go by index so no loop variable holds a node.
-#define STATE_REFS_WHILE_COUNTING 2
-#define STATE_REFS_SRC 1
+
+/// Probe for measuring the references the counting code itself holds.
+/datum/state_refcount_probe
+
+/**
+ * The references state_collapse_blockers() itself holds on a node while it
+ * counts (its lists, `src`, evaluation temporaries), as list(root, other node).
+ * Measured once by running the same counting code on probes, so it follows
+ * whatever BYOND counts. The counting loops go by index so no loop variable
+ * holds a node.
+ */
+/proc/state_refcount_overhead()
+	var/static/list/overhead
+	if(!overhead)
+		var/datum/state_refcount_probe/probe = new
+		// One reference is this proc's `probe` variable, standing in for held_refs = 1.
+		overhead = probe.measure_refcount_overhead()
+		overhead[1] -= 1
+		qdel(probe)
+	return overhead
+
+/datum/state_refcount_probe/proc/measure_refcount_overhead()
+	var/list/nodes = list(src, new /datum/state_refcount_probe)
+	var/list/internal = nodes.Copy()
+	. = list(state_refcount_excess(nodes, internal, 1), state_refcount_excess(nodes, internal, 2))
+	qdel(nodes[2])
 
 /// Built-in vars the incoming-reference scan skips: they are counted by the
 /// loc/contents rule above, or they cannot hold references to datums.
@@ -117,13 +138,15 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 /// Compares refcount() of each object in the subtree with the references accounted for.
 /proc/state_refcount_blockers(list/nodes, list/internal, held_refs)
 	. = list()
+	var/list/overhead = state_refcount_overhead()
 	for(var/i in 1 to length(nodes))
-		var/expected = STATE_REFS_WHILE_COUNTING + state_accounted_refs(nodes[i], internal)
-		if(i == 1)
-			expected += held_refs + STATE_REFS_SRC
-		var/actual = refcount(nodes[i])
-		if(actual > expected)
-			. += state_describe_outside_refs(nodes[i], actual - expected, actual)
+		var/extra = state_refcount_excess(nodes, internal, i) - (i == 1 ? overhead[1] + held_refs : overhead[2])
+		if(extra > 0)
+			. += state_describe_outside_refs(nodes[i], extra)
+
+/// refcount() of nodes[i] less the references its container, contents, subtree and elements account for.
+/proc/state_refcount_excess(list/nodes, list/internal, i)
+	return refcount(nodes[i]) - state_accounted_refs(nodes[i], internal)
 
 /// References to `node` that its container, its contents, the subtree and type elements account for.
 /proc/state_accounted_refs(datum/node, list/internal)
@@ -169,8 +192,8 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 			if(!isnull(assoc))
 				. += state_count_refs_in(assoc, node, depth + 1)
 
-/proc/state_describe_outside_refs(datum/node, extra, actual)
-	. = "[node.type] has [extra] reference\s from outside its container (refcount [actual])"
+/proc/state_describe_outside_refs(datum/node, extra)
+	. = "[node.type] has [extra] reference\s from outside its container"
 #ifdef UNIT_TESTS
 	// Name the holder. Slow (it walks the world), so test builds only.
 	SSgarbage.should_save_refs = TRUE
@@ -193,5 +216,3 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 
 #undef STATE_REFS_FROM_LOC
 #undef STATE_REFS_PER_CONTENT
-#undef STATE_REFS_WHILE_COUNTING
-#undef STATE_REFS_SRC

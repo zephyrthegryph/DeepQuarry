@@ -204,8 +204,13 @@
 /datum/unit_test/dq_state_collapse_blockers
 
 /datum/unit_test/dq_state_collapse_blockers/Run()
+	var/obj/item/paper/lone = new(test_floor())
+	var/list/blockers = lone.state_collapse_blockers(1)
+	TEST_ASSERT_EQUAL(length(blockers), 0, "a paper with no outside references should collapse: [jointext(blockers, "; ")]")
+	qdel(lone)
+
 	var/obj/item/storage/box/box = new(test_floor())
-	var/list/blockers = box.state_collapse_blockers(1)
+	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "an empty box with no outside references should collapse: [jointext(blockers, "; ")]")
 	new /obj/item/paper(box)
 	blockers = box.state_collapse_blockers(1)
