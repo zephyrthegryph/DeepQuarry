@@ -148,6 +148,62 @@
 				demand[tag] = band
 	return demand
 
+/// The mob-level entry point for automation: TREAT_* -> DIAG_BAND_* urgency
+/// as `profile` perceives it. Null when nothing is demanded (or no body).
+/mob/living/proc/treatment_demand(profile = null)
+	return body?.treatment_demand(profile)
+
+
+// --- Deciding from demand ------------------------------------------------------
+// Automation (medbots, drones, mediguns, cryo) decides from treatment_demand()
+// alone: which tags are wanted and how urgently. These helpers turn a demand
+// into a decision; nothing here reads injury loads.
+
+/// Each urgency rank weighs this many times the rank below it, so the most
+/// urgent demand dominates a match and lesser demands only break ties.
+#define DIAG_URGENCY_WEIGHT 10
+
+/// The highest urgency rank (0..4, see _dq_band_rank) in `demand` among the
+/// tags in `offered` (a list of TREAT_*, or a TREAT_* -> potency list). Null
+/// `offered` = any tag.
+/proc/demand_urgency(list/demand, list/offered = null)
+	. = 0
+	for(var/tag in demand)
+		if(offered && !(tag in offered))
+			continue
+		var/rank = _dq_band_rank(demand[tag])
+		if(rank > .)
+			. = rank
+
+/// How well a treatment providing `tags` (TREAT_* -> potency) answers
+/// `demand`. The most urgent demanded tag dominates; 0 = no match.
+/proc/treatment_match_score(list/tags, list/demand)
+	. = 0
+	if(!tags || !demand)
+		return
+	for(var/tag in tags)
+		var/rank = _dq_band_rank(demand[tag])
+		if(rank)
+			. += tags[tag] * (DIAG_URGENCY_WEIGHT ** rank)
+
+/// The reagent (id) among `candidates` (reagent ids or /datum/reagent
+/// instances) whose treatment_tags best answer `demand`. Reagents already in
+/// `patient`'s blood are skipped. Null when nothing matches.
+/proc/best_reagent_for_demand(list/demand, list/candidates, mob/living/patient = null)
+	if(!demand || !candidates)
+		return null
+	var/best_score = 0
+	for(var/candidate in candidates)
+		var/datum/reagent/R = istype(candidate, /datum/reagent) ? candidate : SSchemistry.chemical_reagents[candidate]
+		if(!R)
+			continue
+		if(patient?.reagents?.has_reagent(R.id))
+			continue
+		var/score = treatment_match_score(R.treatment_tags, demand)
+		if(score > best_score)
+			best_score = score
+			. = R.id
+
 
 // --- Humanoid ------------------------------------------------------------------
 

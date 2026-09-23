@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Medibots pick the reagent in their synthesizer or beaker that best matches what automated triage says the patient needs most, instead of fixed brute/burn/tox/oxy chems. The threshold setting is now an urgency band."
+  - balance: "Crisis drones treat the patient who most urgently needs what the drone provides, and mend only those needs."
+  - balance: "Medigun tanks mend only the needs their mode covers (brute tank: trauma and bleeding, burn tank: burns, toxin tank: poisoning)."
+  - balance: "Cryo cells heal whatever triage finds by treatment tag, faster when colder and boosted by matching chemicals in the beaker, and release a patient triage finds healthy."
+  - admin: "The View Variables body row now injures by kind, mends by treatment tag, adds or removes afflictions, and adjusts oxygen debt."
+  - code_imp: "Recharge stations, nanopaste, robobags, leeches and the mecha injury mirror no longer read legacy injury loads."

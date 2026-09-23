@@ -90,9 +90,10 @@
 			R.add_power(ROBOT_CELL_JOULES(charge_used), src)
 
 		//Lastly, attempt to repair the cyborg if enabled
-		if(weld_rate && R.injury_load(INJURY_CATEGORY_PHYSICAL) && cell.checked_use(weld_power_use * weld_rate * CELLRATE))
+		var/list/demand = R.treatment_demand(/datum/diagnostic_profile/robot_analyzer)
+		if(weld_rate && demand?[TREAT_PLATING_REPAIR] && cell.checked_use(weld_power_use * weld_rate * CELLRATE))
 			R.mend(TREAT_PLATING_REPAIR, weld_rate)
-		if(wire_rate && R.injury_load(INJURY_CATEGORY_THERMAL) && cell.checked_use(wire_power_use * wire_rate * CELLRATE))
+		if(wire_rate && demand?[TREAT_WIRING_REPAIR] && cell.checked_use(wire_power_use * wire_rate * CELLRATE))
 			R.mend(TREAT_WIRING_REPAIR, wire_rate)
 
 	else if(ispAI(occupant))

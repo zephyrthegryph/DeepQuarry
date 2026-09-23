@@ -159,10 +159,11 @@
 			process_medigun(H, user, filter)
 			return
 		var/lastier = medigun_base_unit.slaser.get_rating()
+		var/list/demand = H.treatment_demand(/datum/diagnostic_profile/automation)
 		if(lastier >= 2)
 			if(checked_use(5))
 				H.add_modifier(/datum/modifier/medbeameffect, 2 SECONDS)
-			if(H.current_pain() && checked_use(5))
+			if(demand?[TREAT_ANALGESIC] && checked_use(5))
 				H.mend(TREAT_ANALGESIC, 20)
 			if(H.weakened && checked_use(5))
 				H.AdjustWeakened(-1)
@@ -170,31 +171,20 @@
 				if(H.paralysis && (checked_use(15)))
 					H.AdjustParalysis(-1)
 
-		var/healmod = lastier
-		if(H.injury_load(INJURY_CATEGORY_TOXIC))
-			healmod = min(lastier,medigun_base_unit.toxcharge,H.injury_load(INJURY_CATEGORY_TOXIC))
-			if(medigun_base_unit.toxcharge >= healmod)
-				if(!checked_use(healmod))
-					to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-					return
-				if(healmod < 0)
-					healmod = 0
-				else
-					H.mend(TREAT_ANTITOXIN, healmod)
-					medigun_base_unit.toxcharge -= healmod
-					ishealing = TRUE
-		if(H.oxygen_debt())
-			healmod = min(10*lastier,H.oxygen_debt())
-			if(!checked_use(min(10,healmod)))
+		if(demand?[TREAT_OXYGENATION])
+			if(!checked_use(min(10, 10 * lastier)))
 				to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
 				return
-			H.mend(TREAT_OXYGENATION, healmod)
-			ishealing = TRUE
+			if(H.mend(TREAT_OXYGENATION, 10 * lastier))
+				ishealing = TRUE
 
-		ishealing = process_wounds(H, lastier, lastier, ishealing)
-		//if(medigun_base_unit.brutecharge <= 0 || medigun_base_unit.burncharge <= 0 || medigun_base_unit.toxcharge <= 0)
+		// The chem tanks: each mends only the tags its mode provides, and
+		// only those the patient's triage demands.
+		var/treated = medigun_base_unit.treat_demand(H, lastier)
+		if(treated)
+			checked_use(min(10, treated))
+			ishealing = TRUE
 		medigun_base_unit.update_icon()
-		//if(medigun_base_unit.slaser.get_rating() >= 5)
 
 	//Blood regeneration if there is some space
 		if(lastier >= 5)
@@ -209,46 +199,3 @@
 				H.filters -= filter
 
 		process_medigun(H, user, filter, ishealing)
-
-/obj/item/bork_medigun/linked/proc/process_wounds(mob/living/carbon/human/H, heal_ticks, remaining_strength, ishealing)
-	while(heal_ticks > 0)
-		if(remaining_strength <= 0)
-			return ishealing
-		if((!H.injury_load(INJURY_CATEGORY_THERMAL) || medigun_base_unit.burncharge <= 0) && (!H.injury_load(INJURY_CATEGORY_PHYSICAL) || medigun_base_unit.burncharge <= 0))
-			return ishealing
-
-		for(var/name in BP_ALL)
-			var/obj/item/organ/external/O = H.organs_by_name[name]
-			for(var/datum/affliction/wound/W as anything in O.get_wounds())
-				if (W.internal)
-					continue
-				//if (W.bandaged && W.disinfected)
-				//	continue
-				if (W.damage_type == BRUISE || W.damage_type == CUT || W.damage_type == PIERCE)
-					if(medigun_base_unit.brutecharge >= 1)
-						if(W.damage <= 1)
-							O.remove_wound(W)
-							medigun_base_unit.brutecharge -= 1
-							ishealing = TRUE
-						else if(medigun_base_unit.brutecharge >= 1)
-							W.heal_damage(1)
-							medigun_base_unit.brutecharge -= 1
-							remaining_strength -= 1
-							ishealing = TRUE
-				if (W.damage_type == BURN)
-					if(medigun_base_unit.burncharge >= 1)
-						if(W.damage <= 1)
-							O.remove_wound(W)
-							medigun_base_unit.burncharge -= 1
-							ishealing = TRUE
-						else if(medigun_base_unit.burncharge >= 1)
-							W.heal_damage(1)
-							medigun_base_unit.burncharge -= 1
-							remaining_strength -= 1
-							ishealing = TRUE
-				if(remaining_strength <= 0)
-					return ishealing
-			if(remaining_strength <= 0)
-				return ishealing
-		heal_ticks--
-	return ishealing

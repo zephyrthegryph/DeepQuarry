@@ -354,16 +354,12 @@
 
 	var/max_distance = 3
 
-	var/damcap = 60
+	/// Only patients whose field triage demand for one of the drone's tags is
+	/// at least this urgent (_dq_band_rank: 1 minor .. 4 critical) are treated.
+	var/min_urgency = 2
 	var/heal_dead = FALSE	// Does this device heal the dead?
 
-	var/brute_heal = 0.5	// Amount of physical injury mended (tissue / plating).
-	var/burn_heal = 0.5		// Amount of burn injury mended (burn care / wiring).
-	var/tox_heal = 0.5		// Amount of toxin cleared.
-	var/oxy_heal = 1		// Amount of asphyxiation relieved.
-	var/rad_heal = 0		// Amount of radiation healed.
-	var/clone_heal = 0	// Amount of cellular damage repaired.
-	var/hal_heal = 0.2	// Amount of pain relieved.
+	var/rad_heal = 0		// Radiation purged per tick while treating.
 	var/bone_heal = 0	// Percent chance it will heal a broken bone. this does not mean 'make it not instantly re-break'.
 
 	var/mob/living/Target = null
@@ -393,25 +389,40 @@
 		to_chat(chassis.occupant, span_notice("\The [chassis] shudders as something jams!"))
 		src.mecha_log_message("[src.name] has malfunctioned. Maintenance required.")
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/process()	// Will continually try to find the nearest person above the threshold that is a valid target, and try to heal them.
+/// What the drone treats: TREAT_* -> amount mended per tick, applied only to
+/// the tags the patient's field triage demands.
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/drone_treatment_tags()
+	var/static/list/tags = list(
+		TREAT_TISSUE_REPAIR = 0.5,
+		TREAT_HEMOSTATIC = 0.5,
+		TREAT_PLATING_REPAIR = 0.5,
+		TREAT_BURN_CARE = 0.5,
+		TREAT_WIRING_REPAIR = 0.5,
+		TREAT_ANTITOXIN = 0.5,
+		TREAT_OXYGENATION = 1,
+		TREAT_ANALGESIC = 0.2,
+	)
+	return tags
+
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/process()	// Will continually try to find the patient most urgently in need of what the drone treats, and try to heal them.
 	if(chassis && enabled && chassis.has_charge(energy_drain) && (chassis.occupant || enable_special))
-		var/mob/living/Targ = Target
-		var/TargDamage = 0
+		var/target_urgency = 0
 
 		if(!valid_target(Target))
 			Target = null
 
 		if(Target)
-			TargDamage = (Targ.oxygen_debt() + Targ.injury_load(INJURY_CATEGORY_THERMAL) + Targ.injury_load(INJURY_CATEGORY_PHYSICAL) + Targ.injury_load(INJURY_CATEGORY_TOXIC))
+			target_urgency = treatable_urgency(Target)
 
 		for(var/mob/living/Potential in viewers(max_distance, chassis))
 			if(!valid_target(Potential))
 				continue
 
-			var/tallydamage = treatable_damage(Potential)
+			var/urgency = treatable_urgency(Potential)
 
-			if(tallydamage > TargDamage)
+			if(urgency > target_urgency)
 				Target = Potential
+				target_urgency = urgency
 
 		if(MyBeam && !valid_target(MyBeam.target))
 			QDEL_NULL(MyBeam)
@@ -446,26 +457,16 @@
 	if(L.stat == DEAD && !heal_dead)
 		return FALSE
 
-	if(treatable_damage(L) < damcap)
+	if(treatable_urgency(L) < min_urgency)
 		return FALSE
 
-/// Sums the injury load this drone is able to treat on L.
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/treatable_damage(mob/living/L)
-	. = 0
-	if(oxy_heal)
-		. += L.oxygen_debt()
-	if(burn_heal)
-		. += L.injury_load(INJURY_CATEGORY_THERMAL)
-	if(brute_heal)
-		. += L.injury_load(INJURY_CATEGORY_PHYSICAL)
-	if(tox_heal)
-		. += L.injury_load(INJURY_CATEGORY_TOXIC)
-	if(hal_heal)
-		. += L.current_pain()
-	if(clone_heal)
-		. += L.injury_load(INJURY_CATEGORY_GENETIC)
-	if(rad_heal)
-		. += L.radiation / 2
+/// The patient's field triage demand, as seen by the drone.
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/patient_demand(mob/living/L)
+	return L.treatment_demand(/datum/diagnostic_profile/automation/field)
+
+/// How urgently L needs something this drone treats (_dq_band_rank, 0 = nothing).
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/treatable_urgency(mob/living/L)
+	return demand_urgency(patient_demand(L), drone_treatment_tags())
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/shut_down()
 	if(enabled)
@@ -482,21 +483,13 @@
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/heal_target(mob/living/L)	// We've done all our special checks, just get to fixing damage.
 	chassis.use_power(energy_drain)
 	if(istype(L))
-		if(brute_heal)
-			L.mend(TREAT_TISSUE_REPAIR, brute_heal)
-			L.mend(TREAT_PLATING_REPAIR, brute_heal)
-		if(burn_heal)
-			L.mend(TREAT_BURN_CARE, burn_heal)
-			L.mend(TREAT_WIRING_REPAIR, burn_heal)
-		if(tox_heal)
-			L.mend(TREAT_ANTITOXIN, tox_heal)
-		if(oxy_heal)
-			L.mend(TREAT_OXYGENATION, oxy_heal)
-		if(clone_heal)
-			L.mend(TREAT_GENETIC_REPAIR, clone_heal)
-		if(hal_heal)
-			L.mend(TREAT_ANALGESIC, hal_heal)
-		L.radiation = max(0, L.radiation - rad_heal)
+		var/list/demand = patient_demand(L)
+		var/list/tags = drone_treatment_tags()
+		for(var/tag in tags)
+			if(demand?[tag])
+				L.mend(tag, tags[tag])
+		if(rad_heal)
+			L.radiation = max(0, L.radiation - rad_heal)
 
 		if(ishuman(L) && bone_heal)
 			var/mob/living/carbon/human/H = L
@@ -540,10 +533,16 @@
 	droid_state = "rad_drone"
 	beam_state = "g_beam"
 
-	tox_heal = 0.5
 	rad_heal = 5
-	clone_heal = 0.2
-	hal_heal = 0.2
+
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/rad/drone_treatment_tags()
+	var/static/list/tags = list(
+		TREAT_ANTITOXIN = 0.5,
+		TREAT_ANTIRADIATION = 1,
+		TREAT_GENETIC_REPAIR = 0.2,
+		TREAT_ANALGESIC = 0.2,
+	)
+	return tags
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/medanalyzer
 	name = "mounted humanoid scanner"
