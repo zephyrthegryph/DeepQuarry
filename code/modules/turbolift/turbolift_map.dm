@@ -16,12 +16,12 @@
 	var/list/areas_to_use
 
 /obj/turbolift_map_holder/Destroy()
-	GLOB.turbolifts -= src
 	return ..()
+
+REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 
 /obj/turbolift_map_holder/Initialize(mapload)
 	..()
-	GLOB.turbolifts += src
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/turbolift_map_holder/LateInitialize()

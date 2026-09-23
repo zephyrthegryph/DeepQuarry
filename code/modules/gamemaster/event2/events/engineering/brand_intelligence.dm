@@ -19,7 +19,7 @@
 	var/last_malware_spread_time = null
 
 /datum/event2/event/brand_intelligence/set_up()
-	for(var/obj/machinery/vending/V in GLOB.machines)
+	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!(V.z in using_map.station_levels))
 			continue
 		LAZYADD(vending_machines, V)

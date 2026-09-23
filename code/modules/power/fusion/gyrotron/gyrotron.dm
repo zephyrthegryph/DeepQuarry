@@ -1,5 +1,4 @@
 
-GLOBAL_LIST_EMPTY(gyrotrons)
 
 /obj/machinery/power/emitter/gyrotron
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -22,13 +21,13 @@ GLOBAL_LIST_EMPTY(gyrotrons)
 	anchored = TRUE
 	state = 2
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
+
 /obj/machinery/power/emitter/gyrotron/Initialize(mapload)
-	GLOB.gyrotrons += src
 	default_apply_parts()
 	return ..()
 
 /obj/machinery/power/emitter/gyrotron/Destroy()
-	GLOB.gyrotrons -= src
 	return ..()
 
 /obj/machinery/power/emitter/gyrotron/proc/set_beam_power(new_power)
@@ -53,7 +52,7 @@ GLOBAL_LIST_EMPTY(gyrotrons)
 		icon_state = "emitter-off"
 
 /obj/machinery/power/emitter/gyrotron/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Gyrotron", id_tag, MAX_NAME_LEN)
 		if(new_ident && user.Adjacent(src))
 			id_tag = new_ident

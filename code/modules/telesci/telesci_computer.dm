@@ -79,9 +79,6 @@
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
 	return FLOOR((length(crystals) * telepad.efficiency * powerCoefficient), 1)
 
-/obj/machinery/computer/telescience/attack_ai(mob/user)
-	src.attack_hand(user)
-
 /obj/machinery/computer/telescience/attack_hand(mob/user)
 	if(..())
 		return
@@ -198,7 +195,7 @@
 			return
 		if(86 to 90)
 			// Irradiate everyone in telescience!
-			for(var/obj/machinery/telepad/E in GLOB.machines)
+			for(var/obj/machinery/telepad/E in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				var/L = get_turf(E)
 				sparks()
 				for(var/mob/living/carbon/human/M in viewers(L, null))

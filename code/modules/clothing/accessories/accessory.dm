@@ -188,14 +188,14 @@
 	slot = ACCESSORY_SLOT_TIE
 
 /obj/item/clothing/accessory/stethoscope/do_surgery(mob/living/carbon/human/M, mob/living/user)
-	if(user.a_intent != I_HELP) //in case it is ever used as a surgery tool
+	if(!IS_HELPING(user)) //in case it is ever used as a surgery tool
 		return ..()
 	attack(M, user) //default surgery behaviour is just to scan as usual
 	return 1
 
 /obj/item/clothing/accessory/stethoscope/attack(mob/living/carbon/human/M, mob/living/user)
 	if(ishuman(M) && isliving(user))
-		if(user.a_intent == I_HELP)
+		if(IS_HELPING(user))
 			var/body_part = parse_zone(user.zone_sel.selecting)
 
 			var/message_holder	//Holds pervy message
@@ -263,7 +263,7 @@
 							var/obj/item/organ/internal/lungs/L = M.internal_organs_by_name[O_LUNGS]
 							if(!L || M.losebreath)
 								sound += span_warning(" and no respiration")
-							else if(M.is_lung_ruptured() || M.injury_load(INJURY_CATEGORY_ASPHYXIA) > 50)
+							else if(M.is_lung_ruptured() || M.oxygen_debt() > 50)
 								sound += span_warning(" and [pick("wheezing","gurgling")] sounds")
 							else
 								sound += " and healthy respiration"
@@ -434,7 +434,10 @@
 	name = "small neckscarf"
 	desc = "a neckscarf that is too small for a human's neck"
 	icon_state = "tesh_neckscarf"
-	species_restricted = list(SPECIES_TESHARI)
+
+/obj/item/clothing/accessory/scarf/teshari/neckscarf/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/accessory/halfcape
 	name = "half cape"
@@ -849,7 +852,7 @@
 	icon_state = "collar_holo"
 	item_state = "collar_holo"
 	overlay_state = "collar_holo"
-	matter = list(MAT_STEEL = 50)
+	MATERIAL_BULK(MAT_STEEL, 50)
 
 /obj/item/clothing/accessory/collar/holo/indigestible
 	desc = "A special variety of the holo-collar that seems to be made of a very durable fabric that fits around the neck."
@@ -894,7 +897,7 @@
 	if(istype(src,/obj/item/clothing/accessory/collar/holo))
 		return
 
-	if(istype(I,/obj/item/tool/screwdriver))
+	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		update_collartag(user, I, "scratched out", "scratch out", "engraved")
 		return
 
@@ -1193,11 +1196,14 @@
 	icon_state = "holster_machete"
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 0
-	can_hold = list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete)
 	//sound_in = 'sound/effects/holster/sheathin.ogg'
 	//sound_out = 'sound/effects/holster/sheathout.ogg'
 
 //Medals
+
+/obj/item/clothing/accessory/holster/machete/hold_constraint()
+	var/list/holds = list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete)
+	return list(HOLD_ONLY(holds))
 
 /obj/item/clothing/accessory/medal/silver/unity
 	name = "medal of unity"

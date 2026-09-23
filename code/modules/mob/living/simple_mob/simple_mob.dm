@@ -150,9 +150,6 @@
 	var/purge = 0					// Cult stuff.
 	var/supernatural = FALSE		// Ditto.
 
-	// contained in a cage
-	var/in_stasis = 0
-
 	// don't process me if there's nobody around to see it
 	low_priority = TRUE
 	// Used for if the mob can drop limbs. Overrides species dmi.
@@ -725,6 +722,7 @@
 	B.human_prey_swallow_time = swallowTime
 	B.nonhuman_prey_swallow_time = swallowTime
 	B.vore_verb = "swallow"
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list( // We need more that aren't repetitive. I suck at endo. -Ace
 		"The insides knead at you gently for a moment.",
 		"The guts glorp wetly around you as some air shifts.",
@@ -735,6 +733,7 @@
 		"The liquids churn around you, though there doesn't seem to be much effect.",
 		"The sound of bodily movements drown out everything for a moment.",
 		"The predator's movements gently force you into a different position.")
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The burning acids eat away at your form.",
 		"The muscular stomach flesh grinds harshly against you.",

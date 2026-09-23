@@ -131,7 +131,7 @@
 /obj/item/denecrotizer/proc/check_target(mob/living/simple_mob/target, mob/living/user)
 	if(!target.Adjacent(user))
 		return FALSE
-	if(user.a_intent != I_HELP) //be gentle
+	if(!IS_HELPING(user)) //be gentle
 		user.visible_message("[user] bonks [target] with [src].", runemessage = "bonks [target]")
 		return FALSE
 	if(!istype(target))

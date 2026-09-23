@@ -287,13 +287,11 @@
 			to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 			return
 
-		user.visible_message(span_danger("\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!"),\
-				"You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!",\
-				"You hear metal strain.")
 		prying = 1
 		update_icon()
-		playsound(src, C.usesound, 100, 1)
-		if(do_after(user,3 SECONDS * C.toolspeed, target = src))
+		if(use_tool(user, C, src, delay = 3 SECONDS, volume = 100,
+				message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!",
+				message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!"))
 			user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
 					"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
 					"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
@@ -360,11 +358,12 @@
 	if(prying)
 		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 		return TRUE
-	user.visible_message(span_danger("\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain.")
 	prying = TRUE
 	update_icon()
-	playsound(src, tool.usesound, 100, TRUE)
-	if(do_after(user, 3 SECONDS * tool.toolspeed, target = src) && (stat & (BROKEN|NOPOWER) || !density))
+	if(use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100,
+			message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!",
+			message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!") \
+			&& (stat & (BROKEN|NOPOWER) || !density))
 		user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
 		if(density)
 			open(TRUE)
@@ -418,9 +417,15 @@
 	if(length(sleeping_atmos_snapshot) != FIREDOOR_SNAPSHOT_TURFS * FIREDOOR_SNAPSHOT_STRIDE)
 		sleeping_atmos_snapshot = new /list(FIREDOOR_SNAPSHOT_TURFS * FIREDOOR_SNAPSHOT_STRIDE)
 	var/list/snapshot = sleeping_atmos_snapshot
+	var/list/mixtures = new /list(length(dependency_turfs))
+	for(var/index in 1 to length(dependency_turfs))
+		var/turf/T = dependency_turfs[index]
+		mixtures[index] = T?.return_air()
+	// One batched arena read for the door's turf and its four neighbours.
+	var/list/readings = read_gas_mixtures(mixtures)
 	var/base = 0
-	for(var/turf/T as anything in dependency_turfs)
-		var/datum/gas_mixture/air = T?.return_air()
+	for(var/index in 1 to length(mixtures))
+		var/datum/gas_mixture/air = mixtures[index]
 		if(!air)
 			snapshot[base + 1] = null
 			snapshot[base + 2] = null
@@ -428,9 +433,10 @@
 			base += FIREDOOR_SNAPSHOT_STRIDE
 			continue
 		var/mixture_id = air.arena_id()
+		var/record = (index - 1) * GAS_READ_STRIDE
 		snapshot[base + 1] = mixture_id
-		snapshot[base + 2] = air.return_pressure()
-		snapshot[base + 3] = air.return_temperature()
+		snapshot[base + 2] = readings[record + GAS_READ_PRESSURE]
+		snapshot[base + 3] = readings[record + GAS_READ_TEMPERATURE]
 		base += FIREDOOR_SNAPSHOT_STRIDE
 		var/key = "[mixture_id]"
 		LAZYSET(sleeping_mixture_ids, key, mixture_id)

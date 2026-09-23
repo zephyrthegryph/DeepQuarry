@@ -65,7 +65,7 @@
 	update_icon()
 
 /obj/item/reagent_containers/glass/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(force && !(flags & NOBLUDGEON) && user.a_intent == I_HURT)
+	if(force && !(flags & NOBLUDGEON) && IS_HARMING(user))
 		return	..()
 
 	// If the container is *closed* we do snake milking!~
@@ -78,7 +78,7 @@
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/reagent_containers/glass/standard_feed_mob(mob/user, mob/target)
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		return FALSE
 	return ..()
 
@@ -120,7 +120,7 @@
 		return 1
 	if(standard_pour_into(user, target)) //Pouring into another beaker?
 		return
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		if(standard_splash_mob(user,target))
 			return 1
 		if(reagents && reagents.total_volume)
@@ -144,7 +144,7 @@
 			update_name_label()
 	if(istype(W,/obj/item/storage/bag))
 		..()
-	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && user.a_intent != I_HELP)
+	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && !IS_HELPING(user))
 		balloon_alert(user, "[W] dipped into \the [src].")
 		reagents.touch_obj(W, reagents.total_volume)
 	attempt_changeling_test(W,user)
@@ -168,7 +168,8 @@
 	item_state = "beaker"
 	center_of_mass_x = 15
 	center_of_mass_y = 11
-	matter = list(MAT_GLASS = 500)
+	material_template = /datum/material_template/container
+	material_total = 500
 	drop_sound = 'sound/items/drop/glass.ogg'
 	pickup_sound = 'sound/items/pickup/glass.ogg'
 	var/rating = 1
@@ -225,7 +226,8 @@
 	icon_state = "beakerlarge"
 	center_of_mass_x = 16
 	center_of_mass_y = 11
-	matter = list(MAT_GLASS = 5000)
+	material_template = /datum/material_template/container
+	material_total = 5000
 	volume = 120
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 120
@@ -238,7 +240,8 @@
 	icon_state = "beakernoreact"
 	center_of_mass_x = 16
 	center_of_mass_y = 13
-	matter = list(MAT_GLASS = 500)
+	material_template = /datum/material_template/container
+	material_total = 500
 	volume = 60
 	amount_per_transfer_from_this = 10
 	flags = OPENCONTAINER | NOREACT
@@ -249,7 +252,8 @@
 	icon_state = "beakerbluespace"
 	center_of_mass_x = 16
 	center_of_mass_y = 11
-	matter = list(MAT_GLASS = 5000)
+	material_template = /datum/material_template/container
+	material_total = 5000
 	volume = 300
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 300
@@ -262,7 +266,8 @@
 	icon_state = "vial"
 	center_of_mass_x = 15
 	center_of_mass_y = 9
-	matter = list(MAT_GLASS = 250)
+	material_template = /datum/material_template/container
+	material_total = 250
 	volume = 30
 	w_class = ITEMSIZE_TINY
 	amount_per_transfer_from_this = 10
@@ -295,7 +300,7 @@
 	item_state = "bucket"
 	center_of_mass_x = 16
 	center_of_mass_y = 10
-	matter = list(MAT_STEEL = 200)
+	MATERIAL_BULK(MAT_STEEL, 200)
 	w_class = ITEMSIZE_NORMAL
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = 120
@@ -355,7 +360,7 @@
 	item_state = "woodbucket"
 	center_of_mass_x = 16
 	center_of_mass_y = 8
-	matter = list(MAT_WOOD = 50)
+	MATERIAL_BULK(MAT_WOOD, 50)
 	w_class = ITEMSIZE_LARGE
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = 120
@@ -391,7 +396,7 @@
 	name = "water-cooler bottle"
 	icon = 'icons/obj/vending.dmi'
 	icon_state = "water_cooler_bottle"
-	matter = list(MAT_PLASTIC = 2000)
+	MATERIAL_BULK(MAT_PLASTIC, 2000)
 	w_class = ITEMSIZE_NO_CONTAINER
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = 120
@@ -404,7 +409,7 @@
 	name = "pint mug"
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "pint_mug"
-	matter = list(MAT_WOOD = 50)
+	MATERIAL_BULK(MAT_WOOD, 50)
 	drop_sound = 'sound/items/drop/wooden.ogg'
 	pickup_sound = 'sound/items/pickup/wooden.ogg'
 
@@ -421,7 +426,7 @@
 	volume = 60
 	w_class = ITEMSIZE_SMALL
 	flags = OPENCONTAINER
-	matter = list(MAT_STEEL = 50)
+	MATERIAL_BULK(MAT_STEEL, 50)
 	drop_sound = 'sound/items/drop/crowbar.ogg'
 	pickup_sound = 'sound/items/pickup/drinkglass.ogg'
 

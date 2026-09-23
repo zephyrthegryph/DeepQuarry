@@ -66,12 +66,12 @@ In short:
 		if(!T.holy && prob(1))
 			new /obj/effect/gateway/active/cult(T)
 
-	for (var/obj/machinery/firealarm/alm in GLOB.machines)
+	for (var/obj/machinery/firealarm/alm in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if (!(alm.stat & BROKEN))
 			alm.ex_act(2)
 
 /datum/universal_state/hell/proc/APCSet()
-	for (var/obj/machinery/power/apc/APC in GLOB.apcs)
+	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if (!(APC.stat & BROKEN) && !APC.is_critical)
 			APC.emagged = 1
 			APC.queue_icon_update()

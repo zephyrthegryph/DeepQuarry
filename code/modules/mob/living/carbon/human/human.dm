@@ -102,7 +102,7 @@
 /mob/living/carbon/human/get_status_tab_items()
 	. = ..()
 	. += ""
-	. += "Intent: [a_intent]"
+	. += "Combat mode: [combat_mode ? "on" : "off"]"
 	. += "Move Mode: [m_intent]"
 	if(SSemergency_shuttle)
 		var/eta_status = SSemergency_shuttle.get_status_panel_eta()

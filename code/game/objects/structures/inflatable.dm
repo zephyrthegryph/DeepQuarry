@@ -49,19 +49,6 @@
 	update_nearby_tiles()
 	return ..()
 
-/obj/structure/inflatable/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			puncture()
-			return
-		if(3.0)
-			if(prob(50))
-				puncture()
-				return
-
 /obj/structure/inflatable/blob_act()
 	puncture()
 
@@ -267,5 +254,8 @@
 	icon_state = "inf_box"
 	w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7
-	can_hold = list(/obj/item/inflatable)
 	starts_with = list(/obj/item/inflatable/door = 3, /obj/item/inflatable = 4)
+
+/obj/item/storage/briefcase/inflatable/hold_constraint()
+	var/list/holds = list(/obj/item/inflatable)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))

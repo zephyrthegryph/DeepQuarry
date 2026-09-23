@@ -16,9 +16,6 @@ COMSIG_DQAI_TARGET_CHANGED
 COMSIG_DQAI_TARGET_LOST
 
 # Wired later by the roadmap.
-COMSIG_MACHINERY_POWER_LOST # M3: machinery power signals come with the power network
-COMSIG_MACHINERY_POWER_RESTORED # M3: machinery power signals come with the power network
-COMSIG_MACHINERY_BROKEN # D-track: base /obj/machinery/atom_break sends it (doc/rewrite/damage.md)
 COMSIG_MOB_APPLY_DAMAGE # D1: sent by the damage pipeline; the robot cloak listens
 
 # Sent or needed only from medical, body and mob Life code, which L4 did not

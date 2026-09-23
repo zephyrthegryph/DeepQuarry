@@ -317,7 +317,9 @@
 	desc = "shoeless?"
 	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
-	species_restricted = null
+
+/obj/item/clothing/shoes/none/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/none/Initialize(mapload)
 	. = ..()

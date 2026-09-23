@@ -23,9 +23,14 @@ verdigris/                  <- workspace root (this dir)
 ├── core/                   <- vg-core: domain-agnostic primitives (grid, ...).
 │                              Host-buildable, no byondapi, no global statics.
 ├── domains/
-│   ├── gas/                <- vg-gas: vendored auxmos (gas arena, turf diffusion,
-│   │                          heat); i686 only until its binds move to vg-ffi.
+│   ├── gas/                <- vg-gas: vendored auxmos (gas arena, turf diffusion);
+│   │                          i686 only until its binds move to vg-ffi. Also holds
+│   │                          the heat binds and gas adapter (turfs/heat.rs).
 │   │                          See domains/gas/UPSTREAM.md.
+│   ├── heat/               <- vg-heat: the heat domain (M4): turf solid field,
+│   │                          heat bodies, couplings, regulator. Host-buildable.
+│   ├── power/              <- vg-power: the power domain (M3): cables as an R7
+│   │                          network kind, the ledger, APC and SMES models.
 │   └── layout/             <- vg-layout: station layout planner, cave generator,
 │                              and the offline station-layout tools (src/bin/)
 ├── ffi/                    <- vg-ffi: BYOND binds (lifecycle, layout, cave gen)
@@ -49,7 +54,10 @@ verdigris/                  <- workspace root (this dir)
 | `vg-ffi` `metrics` | The DLL's metrics registry and `verdigris_metrics()`, which returns every Rust metric (allocator tags, jobs, ...) as one JSON object. |
 | `verdigris` `material_power` | Double-precision electrical solve for material-engineering power networks. |
 | `vg-ffi` `allocator` | Tracking allocator: live/peak Rust heap overall and per `AllocTag`, with a thread-local tag scope (`allocator::tagged`); each block carries its tag in a small header so frees are charged correctly. |
-| `vg-gas` | Gas arena, turf diffusion, decompression and heat conduction. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. |
+| `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
+| `vg-gas` | Gas arena, turf adjacency (built from DM air-block masks), turf diffusion, decompression. Numeric gas registry in `gas/ids.rs`. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. | `turfs/heat.rs` holds the heat domain's binds and implements `vg_heat::GasExchange` over the arena. |
+| `vg-power` | The power domain (M3, `simulation.md` §6): `kind` (`Cables`, the R7 network kind: summary = supply, demand per APC channel, storage capacity; payload = pooled storage split by capacity), `geom` (the `get_connections()` rule, so Rust derives the graph from each piece's turf and directions), `apc` (the APC distributor), `smes` (SMES units) and `world` (`PowerWorld`: keys, batched edits, the ledger, one `step()` per machinery tick returning DM's events). Binds in `vg-ffi` (`ffi/src/power.rs`). |
+| `vg-heat` | The heat domain (M4, `simulation.md` §7, `temperature.md`): `solid` (the turf solid heat field on R6's framework, with conduction, Stefan–Boltzmann radiation to space reservoirs and planet reservoirs), `body` (heat bodies created on first divergence, analytic relaxation on reservoirs, exact two-body steps otherwise, phase plateau, power, two couplings), `couple` (the `GasExchange` trait, exact pair exchange, the energy ledger, the solid ↔ turf gas task), `regulator` (the thermal regulator primitive) and `world` (`HeatWorld`, the main-thread host with watches). Replaces `superconduct.rs`. |
 | `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic, 16x16 chunked layers, per-kind blocked-direction layers (`Grid`). |
 | `vg-core` `handle` / `arena` | 20-bit index + 4-bit generation handles (exact as f32); `Arena<T>` with 4096-slot chunks, stale-handle rejection, rayon iteration. |
 | `vg-core` `bitset` / `intern` | Dense bitsets for dirty/active flags; string-to-numeric-ID interner. |
@@ -89,6 +97,85 @@ verdigris/                  <- workspace root (this dir)
 - **Sleep.** Commands, geometry changes and other tasks' writes wake chunks by CoW pointer diff; an edge into a sleeping chunk flows only once it is unsettled (so sleeping chunks are never written); a chunk sleeps when all its live edges are `settled` or the whole step left it `quiet` (the f32 fixed point).
 - **Channels need capacity.** Extractors see only the cell, so a kind caches intensive values (temperature, pressure) in `refresh`, which runs on every touched cell after a step.
 - **Precision.** Cells are f32: each step conserves to rounding (checked per step at 2e-6 relative), and long near-equilibrium runs random-walk at roughly 1e-8 relative per step.
+
+### M3 notes (for S5, H4 and material power)
+
+- **Wiring.** DM owns dense power keys (`power_key_alloc`). Cables send
+  `POWER_OP_CABLE` (turf, `d1`, `d2`, the z-levels above/below for vertical
+  pieces, an ender link id); power machines send `POWER_OP_MACHINE` and join
+  every knot on their turf. Edits queue in `SSmachines.power_ops` and go in one
+  `vg_power_edit()`; an explosion epoch holds them (`power_batch_begin/end`),
+  so a blast is one commit. `vg_power_step()` runs once per machinery tick
+  (the `SSMACHINES_POWERNETS` stage) and returns `POWER_EV_*` records: machine
+  rebinds, region numbers, retirements, APC and SMES state, brownouts.
+- **Ledger.** Per region and step: `avail` = registered supply
+  (`set_power_supply`, persistent) + pulses (`add_avail`, one step) + SMES
+  output offered; draws (`vg_power_draw`) never exceed `avail - load`. APCs run
+  the distributor in key order, then SMES input shares the leftover by request,
+  then SMES output pays what non-storage supply did not cover. Rust tests:
+  conservation (property test over random edits, supplies, pulses and draws),
+  exact SMES books, APC drain/brownout/restore/charge, idle silence.
+- **Sleeping.** APCs and SMES never poll: Rust steps them and reports only
+  shown changes (channels, charging, status, alarm, charge; SMES charge, I/O
+  state). A DM-side change (UI, wires, cell swap, damage) resends the settings
+  (`power_sync()`), directly or through one `process()` that returns
+  `PROCESS_KILL`. DM's copies are current after every step, so a sync never
+  loses Rust's progress. Trend counters that cycle on a settled APC
+  (`longtermpower`, `chargecount`) are not reported.
+- **Areas.** Static loads and one-offs are flushed per dirty area once per step.
+  An APC channel change calls `area.power_change()` once; subscribed machines
+  (not lights, which use the reactor key) re-check power and the base
+  `power_change()` sends `COMSIG_MACHINERY_POWER_LOST`/`_RESTORED`.
+- **Not built here.** Storage charge is stepped, not solved by rate-model
+  crossings (a settled APC reports nothing, so DM cost is already zero); the TEG
+  still computes its output in DM and registers it as a supply rate (the gas
+  view/exchange buffer coupling waits for M1b); network batches are not in the
+  flight recorder (no `Codec` for `Edit<Cables>` yet).
+
+### M4 notes (for H1–H4, M1b and material science)
+
+- **Frame.** `HeatWorld` owns its own `Sim` (two pool threads). A frame is
+  `HEAT_DT` = 1 s: the field (conduction, radiation), the solid ↔ turf gas
+  coupling, the bodies, the ledger mirror, then the watches. SSair's
+  `process_turf_heat()` calls `vg_heat_tick(seconds)` (never waits; backlog is
+  capped at two frames) and dispatches wakes. When S1 lands, the heat domains
+  move into the one frame graph unchanged: they are ordinary `add_field` /
+  `add_domain` / `add_task` registrations (`HeatWorld::new`).
+- **Physics changes from superconduct.rs** (deliberate): bounds-checked
+  neighbours (B1); space is a radiative reservoir (`ε σ A (T⁴ − T_sky⁴)`, sky at
+  20 °C so a room-temperature hull is in balance) instead of conduction against
+  a 7000 J/K vacuum above 20 °C only; no 303 K gate on turf ↔ gas coupling (cold
+  air cools floors too; pairs within 0.5 K are left alone); the coupling uses the
+  exact pair solution; planets (immutable non-space air) are reservoirs instead of
+  being excluded; cross-z conduction stays blocked. Solid ↔ solid keeps today's
+  law, `G = min(k_a, k_b) · harmonic(C_a, C_b)`, now integrated by the monotone
+  sub-steps and conserving exactly (reservoir inflow in the ledger).
+- **Energy books.** `HeatLedger` (a domain) holds cumulative flows no store
+  kept: reservoirs, gas, released body baselines, power sources.
+  `Totals::conserved()` is constant under the physics; tests check every
+  coupling type with property tests.
+- **Gas coupling.** Only through `GasExchange` (probe, exchange with a closure,
+  changed turfs). M1b replaces `ArenaGas` in `turfs/heat.rs` with a coupling
+  task on the gas field's cells; nothing in vg-heat changes. The adapter never
+  blocks a frame thread: every lock is a `try`, and a miss retries next frame.
+- **Bodies for H2/H3/H4.** `Body` has capacity, a phase plateau, power (W), two
+  couplings (solid cell, turf air, gas mixture by id, another body), a `KEEP`
+  flag, and `flow` (J out through coupling 0 last step). Releases at
+  equilibrium are host-driven (the worker reports, the host sends `Release`
+  after anything DM queued), so heat DM adds never lands on a freed slot.
+  Watches (`Threshold`, `Band`, `ThresholdSet`) work on bodies and cells; an
+  analytic body schedules its settles at the exact crossing times of its
+  watched levels (up to `BODY_LEVELS`).
+- **Regulator (H4).** `regulator::Regulator::step(controlled, other, dt)`
+  returns `work`, `moved` and `other` with `work = moved + other` exactly (B9,
+  B10). H4 wires it to bodies (a machine body plus a gas mixture coupling) and
+  publishes `work` to the power domain.
+- **Not built here.** Heat-exchange pipe regions as a network kind (M3/H4); the
+  per-zone clothing insulation chain (H2).
+- **Constants (H1).** `consts.rs` entries marked `/// @dm-define` are the DM
+  defines (T0C, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY, the THERMAL_* defaults,
+  …); DM must not redefine them (check_grep.sh). `vg_heat_constants()` returns
+  the same values at runtime for `dq_heat_constants_match_rust`.
 
 ## Building
 
@@ -170,7 +257,7 @@ the generator emits `#define DM_NAME <literal>`.
 Every FFI call costs microseconds (byondapi marshalling). String allocations
 across the boundary compound that:
 
-- Gas IDs are `u8`, never strings, after one-time registration at boot.
+- Gas IDs are numbers, never strings: fixed `GAS_ID_*` constants from `gas/ids.rs`.
 - Turf handles are `usize` arena indices, never datum paths.
 - Lists returned to DM should be `Vec<f32>` / `Vec<i32>`, not `Vec<String>`.
 

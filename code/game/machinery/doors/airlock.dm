@@ -114,7 +114,7 @@
 				welded = FALSE
 				update_icon()
 				open(TRUE)
-				set_broken() //These aren't emags, these be CLAWS
+				atom_break() //These aren't emags, these be CLAWS
 		else if(density)
 			visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
 			if(do_after(user, 5 SECONDS, target = src))
@@ -134,21 +134,33 @@
 		return get_material_by_name(mineral)
 	return get_material_by_name(MAT_STEEL)
 
-/obj/machinery/door/airlock/process()
-	// Deliberate no call to parent.
+/obj/machinery/door/airlock/next_door_deadline()
+	. = ..()
+	if(main_power_lost_until > 0 && (!. || main_power_lost_until < .))
+		. = main_power_lost_until
+	if(backup_power_lost_until > 0 && (!. || backup_power_lost_until < .))
+		. = backup_power_lost_until
+	if(electrified_until > 0 && (!. || electrified_until < .))
+		. = electrified_until
+
+/obj/machinery/door/airlock/door_deadlines_due()
 	if(close_door_at && !density && !operating && (locked || welded || !arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR)))
 		close_door_at = 0
 	if(main_power_lost_until > 0 && world.time >= main_power_lost_until)
 		regainMainPower()
-
+		if(main_power_lost_until > 0) // Cables cut since: lost until mended (mending calls regainMainPower()).
+			main_power_lost_until = -1
 	if(backup_power_lost_until > 0 && world.time >= backup_power_lost_until)
 		regainBackupPower()
-
+		if(backup_power_lost_until > 0)
+			backup_power_lost_until = -1
 	else if(electrified_until > 0 && world.time >= electrified_until)
 		electrify(0)
+	return ..()
 
-	if (..() == PROCESS_KILL && !(main_power_lost_until > 0 || backup_power_lost_until > 0 || electrified_until > 0))
-		. = PROCESS_KILL
+/// Tells REACT_KEY_DOOR_MODE subscribers (door controllers, S2's machine keys) what changed.
+/obj/machinery/door/airlock/proc/publish_door_mode(mask)
+	REACT_PUBLISH(REACT_KEY_DOOR_MODE, REACT_ID(src), mask)
 
 /obj/machinery/door/airlock/proc/check_for_freeze()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -260,26 +272,26 @@ About the new airlock wires panel:
 	if(backup_power_lost_until == -1 && !backupPowerCablesCut())
 		backup_power_lost_until = world.time + (10 SECONDS)
 
-	if(main_power_lost_until > 0 || backup_power_lost_until > 0)
-		START_MACHINE_PROCESSING(src)
+	schedule_door_timer()
 
 	// Disable electricity if required
 	if(electrified_until && isAllPowerLoss())
 		electrify(0)
 
 	update_icon()
+	publish_door_mode(REACT_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/loseBackupPower()
 	backup_power_lost_until = backupPowerCablesCut() ? -1 : world.time + (1 MINUTE)
 
-	if(backup_power_lost_until > 0)
-		START_MACHINE_PROCESSING(src)
+	schedule_door_timer()
 
 	// Disable electricity if required
 	if(electrified_until && isAllPowerLoss())
 		electrify(0)
 
 	update_icon()
+	publish_door_mode(REACT_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/regainMainPower()
 	if(!mainPowerCablesCut())
@@ -289,7 +301,9 @@ About the new airlock wires panel:
 			backup_power_lost_until = -1
 
 	update_icon()
+	schedule_door_timer()
 	resume_autoclose_if_possible()
+	publish_door_mode(REACT_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/regainBackupPower()
 	if(!backupPowerCablesCut())
@@ -297,7 +311,9 @@ About the new airlock wires panel:
 		backup_power_lost_until = main_power_lost_until == 0 ? -1 : 0
 
 	update_icon()
+	schedule_door_timer()
 	resume_autoclose_if_possible()
+	publish_door_mode(REACT_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/resume_autoclose_if_possible()
 	// Unit-created and partially constructed doors may not have a wire datum yet.
@@ -325,8 +341,8 @@ About the new airlock wires panel:
 		message = "The door is now electrified [duration == -1 ? "permanently" : "for [duration] second\s"]."
 		electrified_until = duration == -1 ? -1 : world.time + (duration SECONDS)
 
-	if(electrified_until > 0)
-		START_MACHINE_PROCESSING(src)
+	schedule_door_timer()
+	publish_door_mode(REACT_DOOR_ELECTRIFIED)
 
 	if(feedback && message)
 		to_chat(usr,message)
@@ -428,11 +444,8 @@ About the new airlock wires panel:
 				playsound(src, denied_sound, 50, 0, 3)
 	return
 
-/obj/machinery/door/airlock/attack_ai(mob/user)
-	tgui_interact(user)
-
-/obj/machinery/door/airlock/attack_ghost(mob/user)
-	tgui_interact(user)
+/obj/machinery/door/airlock
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/door/airlock/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, datum/tgui_state/custom_state)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -531,7 +544,8 @@ About the new airlock wires panel:
 	if (isElectrified())
 		if (istype(mover, /obj/item))
 			var/obj/item/i = mover
-			if (i.matter && (MAT_STEEL in i.matter) && i.matter[MAT_STEEL] > 0)
+			var/list/item_matter = i.material_totals()
+			if (item_matter && (MAT_STEEL in item_matter) && item_matter[MAT_STEEL] > 0)
 				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 				s.set_up(5, 1, src)
 				s.start()
@@ -572,7 +586,7 @@ About the new airlock wires panel:
 	if(!Adjacent(user))
 		return CLICK_ACTION_BLOCKING
 
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
 		add_fingerprint(user)
 		if(icon_state == "door_closed" && arePowerSystemsOn())
@@ -580,7 +594,7 @@ About the new airlock wires panel:
 		playsound(src, knock_hammer_sound, 50, 0, 3)
 		return CLICK_ACTION_SUCCESS
 
-	if(user.a_intent == I_GRAB) //Hold door open
+	if(IS_GRABBING(user)) //Hold door open
 		hold_open = user
 		visible_message(span_info("[user] begins holding \the [src] open."), span_info("Someone has started holding \the [src] open."))
 		attack_hand(user)
@@ -850,9 +864,9 @@ About the new airlock wires panel:
 	if(reinforcing || user.a_intent == I_HURT)
 		return ..()
 	if(can_remove_electronics())
-		playsound(src, tool.usesound, 75, 1)
-		user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to remove electronics from the airlock assembly.")
-		if(do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+		if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75,
+				message_self = "You start to remove electronics from the airlock assembly.",
+				message_others = "[user] removes the electronics from the airlock assembly."))
 			to_chat(user, span_notice("You removed the airlock electronics!"))
 
 			var/obj/structure/door_assembly/da = new assembly_type(get_turf(src))
@@ -899,9 +913,8 @@ About the new airlock wires panel:
 		unFreeze()
 		to_chat(user, span_notice("You finish chipping the ice off \the [src]"))
 
-/obj/machinery/door/airlock/set_broken()
+/obj/machinery/door/airlock/on_broken()
 	p_open = TRUE
-	stat |= BROKEN
 	if (secured_wires)
 		lock()
 	for (var/mob/O in viewers(src, null))
@@ -1134,6 +1147,11 @@ About the new airlock wires panel:
 	for(var/mob/M in range(1,src))
 		M.show_message("You hear a click from the bottom of the door.", 2)
 	update_icon()
+	// A bolted open door cannot autoclose: drop the deadline instead of waking to find that out.
+	if(close_door_at && !density)
+		close_door_at = 0
+		schedule_door_timer()
+	publish_door_mode(REACT_DOOR_BOLTS)
 	return TRUE
 
 /obj/machinery/door/airlock/proc/unlock(forced=0)
@@ -1149,6 +1167,7 @@ About the new airlock wires panel:
 		M.show_message("You hear a click from the bottom of the door.", 2)
 	update_icon()
 	resume_autoclose_if_possible()
+	publish_door_mode(REACT_DOOR_BOLTS)
 	return TRUE
 
 /obj/machinery/door/airlock/allowed(mob/M)
@@ -1194,7 +1213,7 @@ About the new airlock wires panel:
 	. = ..()
 
 	if(closeOtherId != null)
-		for (var/obj/machinery/door/airlock/A in GLOB.machines)
+		for (var/obj/machinery/door/airlock/A in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(A.closeOtherId == closeOtherId && A != src)
 				closeOther = A
 				break

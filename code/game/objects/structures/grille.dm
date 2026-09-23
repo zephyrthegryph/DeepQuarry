@@ -14,9 +14,6 @@
 	integrity_failure = 0.375
 	var/destroyed = FALSE
 
-/obj/structure/grille/ex_act(severity)
-	qdel(src)
-
 /obj/structure/grille/update_icon()
 	if(destroyed)
 		icon_state = "[initial(icon_state)]-b"
@@ -198,8 +195,7 @@
 	var/obj/structure/cable/C = T.get_cable_node()
 	if(C)
 		if(electrocute_mob(user, C, src))
-			if(C.powernet)
-				C.powernet.trigger_warning()
+			C.get_powernet()?.trigger_warning()
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 			s.set_up(3, 1, src)
 			s.start()

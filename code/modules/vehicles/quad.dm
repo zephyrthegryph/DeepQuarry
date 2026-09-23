@@ -89,7 +89,7 @@
 			pixel_y = 0
 
 /obj/vehicle/train/engine/quadbike/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool) && open)
+	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
 		var/new_paint = tgui_color_picker(user, "Please select paint color.", "Paint Color", paint_color)
 		if(new_paint)
 			paint_color = new_paint
@@ -277,7 +277,7 @@
 	add_overlay(Bodypaint)
 
 /obj/vehicle/train/trolley/trailer/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool) && open)
+	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
 		var/new_paint = tgui_color_picker(user, "Please select paint color.", "Paint Color", paint_color)
 		if(new_paint)
 			paint_color = new_paint

@@ -74,6 +74,8 @@
 /datum/body/New(mob/living/new_owner)
 	..()
 	owner = new_owner
+	if(physiology_type)
+		physiology = new physiology_type(src)
 
 /// Afflictions leave through remove_affliction(), so their on_removed()
 /// hooks and signals run, then are deleted.
@@ -88,12 +90,18 @@
 	reagent_volumes = null
 	reagent_interference = null
 	factors = null
+	QDEL_NULL(physiology)
+	QDEL_LIST(supports)
 	owner = null
 	return ..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.
 /datum/body/proc/invalidate(domains)
 	dirty |= domains
+	// The physiology reads factors and organs.
+	if(domains & (BODY_DIRTY_FACTORS | BODY_DIRTY_ORGANS))
+		dirty |= BODY_DIRTY_PHYSIOLOGY
+	owner?.life_wake(LIFE_WAKE_BODY, "body invalidate")
 
 
 // --- Affliction bookkeeping -------------------------------------------------
@@ -181,6 +189,7 @@
 
 /// Remove every affliction: admin heal, resleeve, rejuvenate.
 /datum/body/proc/clear_afflictions()
+	physiology?.set_debt(0)
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		A.cure()
 
@@ -343,6 +352,9 @@
 	if(factors)
 		tick_factor_effects()
 	if(!always_evaluate && !LAZYLEN(afflictions) && !(dirty & BODY_DIRTY_VITALS))
+		return
+	// A cycle the stasis clock paused: afflictions hold still (advance_stasis()).
+	if(stasis_paused)
 		return
 	// Regeneration depends on sleep and nutrition: one snapshot per tick.
 	invalidate(BODY_DIRTY_TREATMENT)

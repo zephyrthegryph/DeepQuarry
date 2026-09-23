@@ -24,10 +24,10 @@
 	if(!istype(target))
 		return 0
 
-	if(user.a_intent != I_HURT && (turn(target.dir, 180) == get_dir(user, target)))
+	if(!IS_HARMING(user) && (turn(target.dir, 180) == get_dir(user, target)))
 		to_chat(target, span_warning("[user] rifles in your pockets!"))
 
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		if(istype(target.back,/obj/item/storage) && do_after(user, 3 SECONDS, target, progress = FALSE))
 			var/obj/item/storage/Backpack = target.back
 			Backpack.open(user)
@@ -36,7 +36,7 @@
 			Belt.open(user)
 		return 1
 
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		var/obj/item/LTarg = target.l_store
 		var/obj/item/LUser = user.l_store
 
@@ -60,7 +60,7 @@
 
 		return 1
 
-	if(user.a_intent == I_GRAB)
+	if(IS_GRABBING(user))
 		var/obj/item/RTarg = target.r_store
 		var/obj/item/RUser = user.r_store
 
@@ -116,7 +116,7 @@
 
 /obj/item/clothing/gloves/ring/buzzer/proc/zap(mob/living/carbon/human/user, atom/movable/target, proximity)
 	. = FALSE
-	if(user.a_intent == I_HURT && battery.percent() >= 50)
+	if(IS_HARMING(user) && battery.percent() >= 50)
 		if(isliving(target))
 			var/mob/living/L = target
 

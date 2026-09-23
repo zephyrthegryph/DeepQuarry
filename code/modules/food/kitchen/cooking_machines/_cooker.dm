@@ -83,7 +83,7 @@
 		heat_up()
 	else
 		var/turf/T = get_turf(src)
-		if (temperature > T.return_temperature())
+		if (temperature > T.get_temperature())
 			equalize_temperature()
 	..()
 	if(cooking)
@@ -93,7 +93,7 @@
 			return PROCESS_KILL
 		return
 	var/turf/ambient_turf = get_turf(src)
-	if(!ambient_turf || temperature <= ambient_turf.return_temperature())
+	if(!ambient_turf || temperature <= ambient_turf.get_temperature())
 		return PROCESS_KILL
 
 /obj/machinery/appliance/cooker/power_change()

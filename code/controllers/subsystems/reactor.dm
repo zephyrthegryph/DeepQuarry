@@ -54,6 +54,10 @@ SUBSYSTEM_DEF(reactor)
 	/// Datums whose on_react() calls are counted (wake tests): datum -> count.
 	var/list/traced
 
+	/// Live REACT_KEY_MOB_CHUNK subscriptions made through sleep_on_keys(). Mob movement
+	/// skips the turf lookup and the bind call while it is 0 (Q12).
+	var/mob_chunk_subscriptions = 0
+
 	/// Missed-wake audit (reactor.md §7), every `audit_interval` while audit_enabled(): always
 	/// under UNIT_TESTS/TESTING (where a finding is a runtime, failing the run), and on servers
 	/// only with the `reactor_audit` config flag (off by default; an admin can set it for a round).
@@ -61,6 +65,11 @@ SUBSYSTEM_DEF(reactor)
 	var/next_audit = 0
 	var/audit_sample = 64
 	var/list/last_audit_findings = list()
+
+	/// Live player chunk subscriptions (REACT_KEY_MOB_CHUNK with REACT_CHUNK_PLAYER). A player's move publishes only while this is
+	/// non-zero. A subscription dropped by REACT_CLEAR without unsubscribe_player_chunks()
+	/// leaves it high, which only costs publishes.
+	var/player_chunk_subscriptions = 0
 
 /datum/controller/subsystem/reactor/stat_entry(msg)
 	msg = "S:[length(subscribers) - length(free_ids) - length(released_ids)] W:[last_wakes] C:[length(continuous)] [round(last_dispatch_ms, 0.01)]ms"
@@ -75,6 +84,8 @@ SUBSYSTEM_DEF(reactor)
 	next_continuous_token = SSreactor.next_continuous_token
 	wake_counts = SSreactor.wake_counts
 	continuous_cost = SSreactor.continuous_cost
+	mob_chunk_subscriptions = SSreactor.mob_chunk_subscriptions
+	player_chunk_subscriptions = SSreactor.player_chunk_subscriptions
 
 /// The wheel tick for world.time `time`: the first tick at or after it.
 /datum/controller/subsystem/reactor/proc/tick_of(time)
@@ -217,6 +228,92 @@ SUBSYSTEM_DEF(reactor)
 		entry.cancelled = TRUE
 		return TRUE
 	return !!vg_react_cancel(token)
+
+// --- Sleeping on keys (S2) -------------------------------------------------------------------
+
+/// Subscribes `D` to every (kind, id, mask) triple in the flat list `keys`. Returns the flat
+/// list (token, kind, ...) to hand back to cancel_keys() when `D` wakes.
+/datum/controller/subsystem/reactor/proc/sleep_on_keys(datum/D, list/keys)
+	. = list()
+	for(var/i = 1; i <= length(keys); i += 3)
+		var/kind = keys[i]
+		. += on_key(D, kind, keys[i + 1], keys[i + 2])
+		. += kind
+		if(kind == REACT_KEY_MOB_CHUNK) // any-mob subscribers; players use subscribe_player_chunks()
+			mob_chunk_subscriptions++
+
+/// Drops the subscriptions sleep_on_keys() returned.
+/datum/controller/subsystem/reactor/proc/cancel_keys(datum/D, list/tokens)
+	for(var/i = 1; i <= length(tokens); i += 2)
+		cancel(D, tokens[i])
+		if(tokens[i + 1] == REACT_KEY_MOB_CHUNK)
+			mob_chunk_subscriptions = max(mob_chunk_subscriptions - 1, 0)
+
+/// The mob-chunk key for a location, or null off-map.
+/datum/controller/subsystem/reactor/proc/mob_chunk_id(atom/location)
+	var/turf/T = get_turf(location)
+	if(!T)
+		return
+	return MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y))
+
+/// A mob appeared in or vanished from `location`'s chunk (Initialize, Destroy).
+/datum/controller/subsystem/reactor/proc/publish_mob_chunk(atom/location)
+	if(!mob_chunk_subscriptions)
+		return
+	var/id = mob_chunk_id(location)
+	if(!isnull(id))
+		REACT_PUBLISH(REACT_KEY_MOB_CHUNK, id, REACT_CHUNK_ANY_MOB)
+
+// --- Player chunk keys (Q5) ---------------------------------------------------------------
+
+/// Subscribes `D` to players (REACT_KEY_MOB_CHUNK, REACT_CHUNK_PLAYER) in every chunk within `radius` tiles of `center`.
+/// Returns the tokens, for unsubscribe_player_chunks().
+/datum/controller/subsystem/reactor/proc/subscribe_player_chunks(datum/D, turf/center, radius)
+	. = list()
+	if(!center)
+		return
+	var/min_x = MOB_CHUNK_COORD(max(center.x - radius, 1))
+	var/max_x = MOB_CHUNK_COORD(min(center.x + radius, world.maxx))
+	var/min_y = MOB_CHUNK_COORD(max(center.y - radius, 1))
+	var/max_y = MOB_CHUNK_COORD(min(center.y + radius, world.maxy))
+	for(var/chunk_x in min_x to max_x)
+		for(var/chunk_y in min_y to max_y)
+			. += on_key(D, REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(center.z, chunk_x, chunk_y), REACT_CHUNK_PLAYER)
+	player_chunk_subscriptions += length(.)
+
+/// Drops tokens from subscribe_player_chunks(). Returns null, for `tokens = unsubscribe_player_chunks(...)`.
+/datum/controller/subsystem/reactor/proc/unsubscribe_player_chunks(datum/D, list/tokens)
+	for(var/token in tokens)
+		if(cancel(D, token))
+			player_chunk_subscriptions = max(player_chunk_subscriptions - 1, 0)
+	return null
+
+/// A player is in `T`'s chunk. Callers check player_chunk_subscriptions first.
+/datum/controller/subsystem/reactor/proc/publish_player_chunk(turf/T)
+	if(T)
+		REACT_PUBLISH(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y)), REACT_CHUNK_PLAYER)
+
+/**
+ * /mob/Moved()'s one publish. The new chunk hears REACT_CHUNK_ANY_MOB (while anything sleeps on
+ * it) plus REACT_CHUNK_PLAYER for a player (while anything listens for players). The old chunk
+ * hears REACT_CHUNK_ANY_MOB only when the step crossed a chunk edge: a step inside one chunk
+ * needs one publish. Callers gate on the two counters first (Q12).
+ */
+/datum/controller/subsystem/reactor/proc/publish_mob_move(atom/old_loc, atom/movable/mover, player)
+	var/mask = mob_chunk_subscriptions ? REACT_CHUNK_ANY_MOB : 0
+	if(player && player_chunk_subscriptions)
+		mask |= REACT_CHUNK_PLAYER
+	if(!mask)
+		return
+	var/turf/old_turf = get_turf(old_loc)
+	var/turf/new_turf = get_turf(mover)
+	var/new_id = new_turf ? MOB_CHUNK_NUMERIC_KEY(new_turf.z, MOB_CHUNK_COORD(new_turf.x), MOB_CHUNK_COORD(new_turf.y)) : null
+	if(!isnull(new_id))
+		REACT_PUBLISH(REACT_KEY_MOB_CHUNK, new_id, mask)
+	if(old_turf && (mask & REACT_CHUNK_ANY_MOB))
+		var/old_id = MOB_CHUNK_NUMERIC_KEY(old_turf.z, MOB_CHUNK_COORD(old_turf.x), MOB_CHUNK_COORD(old_turf.y))
+		if(old_id != new_id)
+			REACT_PUBLISH(REACT_KEY_MOB_CHUNK, old_id, REACT_CHUNK_ANY_MOB)
 
 // --- The continuous lane (reactor.md §2) --------------------------------------------------------
 
@@ -419,9 +516,7 @@ SUBSYSTEM_DEF(reactor)
 /**
  * The one place a reactor wake reaches mob Life. A mob's on_react() (or a life system's watch)
  * calls this with the LIFE_SYS_* bits to wake and a short `what` ("gas", "timer", ...).
- * After the body rewrite's wave-4 merge this becomes `life_wake(bits, "reactor:[what]")`;
- * until then it uses the scheduler's current wake().
  */
 /mob/living/proc/reactor_wake(bits, what)
 	SHOULD_NOT_SLEEP(TRUE)
-	wake(bits)
+	life_wake(bits, "reactor:[what]")

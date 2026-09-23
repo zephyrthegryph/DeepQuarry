@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Medical instruments now diagnose: each scanner sees vitals (heart rate, blood pressure, SpO2, respiration, temperature, consciousness) and findings its sensors can perceive. Hidden conditions need the right instrument, from a glance to the body scanner."
+  - rscadd: "Advanced analyzers, the body scanner and the cyborg analyzer list which treatments the detected conditions respond to."
+  - rscdel: "Removed the brute/burn/toxin/oxygen damage numbers from analyzers, the body scanner, the operating computer, the crew monitor, sleepers, cryo, mediguns, PDAs and circuits."
+  - qol: "The operating computer's oxygen alarm now triggers on SpO2."

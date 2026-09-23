@@ -6,7 +6,7 @@
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
 
-	matter = list(MAT_STEEL = 60,MAT_GLASS = 30)
+	MATERIAL_MIX(list(MAT_STEEL = 60,MAT_GLASS = 30))
 
 	var/emagged = 0.0
 	var/recording = 0.0
@@ -379,7 +379,7 @@
 	icon_state = "tape_white"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_TINY
-	matter = list(MAT_STEEL=20, MAT_GLASS=5)
+	MATERIAL_MIX(list(MAT_STEEL=20, MAT_GLASS=5))
 	force = 1
 	throwforce = 0
 	var/max_capacity = 1800
@@ -446,9 +446,7 @@
 /obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)
 	if(!ruined)
 		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You start winding the tape back in..."))
-	playsound(src, tool.usesound, 50, 1)
-	if(do_after(user, 12 SECONDS * tool.toolspeed, target = src) && ruined)
+	if(use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You start winding the tape back in...") && ruined)
 		to_chat(user, span_notice("You wound the tape back in."))
 		fix()
 	return ITEM_INTERACT_SUCCESS

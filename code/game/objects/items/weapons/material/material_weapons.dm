@@ -35,11 +35,15 @@
 	if(!material)
 		return INITIALIZE_HINT_QDEL
 
-	matter = material.get_matter()
-	if(matter.len)
-		for(var/material_type in matter)
-			if(!isnull(matter[material_type]))
-				matter[material_type] *= force_divisor // May require a new var instead.
+	// A material weapon is made of its material, scaled by force_divisor.
+	var/list/new_matter = material.get_matter()
+	for(var/material_type in new_matter)
+		if(!isnull(new_matter[material_type]))
+			new_matter[material_type] *= force_divisor // May require a new var instead.
+	if(length(new_matter) == 1)
+		set_bulk_material(new_matter[1], new_matter[new_matter[1]])
+	else
+		set_material_mix(new_matter)
 
 	if(!(material.conductive))
 		src.flags |= NOCONDUCT

@@ -157,9 +157,6 @@
 	else
 		icon_state = "ironfoam"
 
-/obj/structure/foamedmetal/ex_act(severity)
-	qdel(src)
-
 /obj/structure/foamedmetal/bullet_act(obj/item/projectile/P)
 	if(istype(P, /obj/item/projectile/test))
 		return

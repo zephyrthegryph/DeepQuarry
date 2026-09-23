@@ -10,7 +10,7 @@
 
 	var/obj/machinery/power/fusion_core/C = null
 	if(params["core"])
-		C = locate(params["core"]) in GLOB.fusion_cores
+		C = locate(params["core"]) in REGISTRY_MEMBERS(REGISTRY_FUSION_CORES)
 		if(!istype(C))
 			return FALSE
 
@@ -43,7 +43,7 @@
 	var/list/data = list()
 	var/list/cores = list()
 
-	for(var/obj/machinery/power/fusion_core/C in GLOB.fusion_cores)
+	for(var/obj/machinery/power/fusion_core/C in REGISTRY_MEMBERS(REGISTRY_FUSION_CORES))
 		if(C.id_tag == core_tag)
 
 			var/list/reactants = list()

@@ -73,6 +73,8 @@
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = FALSE
 
+REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
+
 /obj/machinery/message_server/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
 	if(prob(60)) // 60% chance to change the midloop
@@ -86,12 +88,10 @@
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
 			soundloop.mid_length = 30
 	. = ..()
-	GLOB.message_servers += src
 	decryptkey = GenerateKey()
 	send_pda_message("System Administrator", "system", "This is an automated message. The messaging system is functioning correctly.")
 
 /obj/machinery/message_server/Destroy()
-	GLOB.message_servers -= src
 	QDEL_NULL(soundloop)
 	return ..()
 
@@ -137,7 +137,7 @@
 		authmsg += "([id_auth])\n"
 	if (stamp)
 		authmsg += "([stamp])\n"
-	for (var/obj/machinery/requests_console/Console in GLOB.allConsoles)
+	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
 		if (ckey(Console.department) == ckey(recipient))
 			if(Console.inoperable())
 				LAZYADD(Console.message_log, list(list("Message lost due to console failure.","Please contact [station_name()] system adminsitrator or AI for technical assistance.")))
@@ -323,7 +323,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	var/pda_msg_amt = 0
 	var/rc_msg_amt = 0
 
-	for(var/obj/machinery/message_server/MS in GLOB.machines)
+	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(length(MS.pda_msgs) > pda_msg_amt)
 			pda_msg_amt = length(MS.pda_msgs)
 		if(length(MS.rc_msgs) > rc_msg_amt)

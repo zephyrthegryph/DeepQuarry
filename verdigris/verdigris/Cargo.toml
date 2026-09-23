@@ -17,9 +17,9 @@ eyre = { workspace = true }
 
 [target.'cfg(target_arch = "x86")'.dependencies]
 # Gas features: turf_processing (diffusion + decompression, turfs/processing.rs) and
-# superconductivity (turf heat conduction, turfs/superconduct.rs). Reactions run in
+# heat (the M4 heat domain binds and gas adapter, turfs/heat.rs, over vg-heat). Reactions run in
 # DM (see code/ATMOSPHERICS/README.md).
-vg-gas = { path = "../domains/gas", default-features = false, features = ["turf_processing", "superconductivity"] }
+vg-gas = { path = "../domains/gas", default-features = false, features = ["turf_processing", "heat"] }
 vg-ffi = { path = "../ffi" }
 # material_power.rs still carries its own binds (it belongs to another session and
 # moves to vg-ffi / the power domain with its owner's agreement).

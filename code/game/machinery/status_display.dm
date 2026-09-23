@@ -53,6 +53,13 @@
 
 	var/seclevel = "green"
 
+	/// The REACT_AT for the next redraw (a countdown, the clock or a scrolling message) and
+	/// when it is due; the shuttle key watched in shuttle modes (REACT_SHUTTLE_*, 0 for none).
+	var/tmp/refresh_token
+	var/tmp/refresh_at = 0
+	var/tmp/shuttle_key_token
+	var/tmp/shuttle_key_id = 0
+
 /obj/machinery/status_display/Destroy()
 	if(SSradio)
 		SSradio.remove_object(src,frequency)
@@ -69,24 +76,82 @@
 	. = ..()
 	if(SSradio)
 		SSradio.add_object(src, frequency)
+	refresh()
 
-// timed process
-/obj/machinery/status_display/process()
+// A status display redraws only when its input changes: a signal, an alert, power, the
+// shuttle key, or a REACT_AT for content that moves on its own (a countdown, the clock,
+// a scrolling message). It never polls (reactor.md §9).
+
+/// Deciseconds until the display must redraw with no new input, or 0 while it is static.
+/obj/machinery/status_display/proc/next_refresh_delay()
+	if(friendc && !ignore_friendc)
+		return 0
+	switch(mode)
+		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)
+			if(SSemergency_shuttle?.shuttle && SSemergency_shuttle.has_eta())
+				return 2 SECONDS
+		if(STATUS_DISPLAY_MESSAGE)
+			if(index1 || index2)
+				return 2 SECONDS
+		if(STATUS_DISPLAY_TIME)
+			// The clock shows hh:mm: redraw at the next station minute.
+			var/now = station_time_in_ds + GLOB.timezoneOffset
+			return max(1, 1 MINUTE - (now - FLOOR(now, 1 MINUTE)))
+	return 0
+
+/// The REACT_SHUTTLE_* schedule this display shows, or 0.
+/obj/machinery/status_display/proc/watched_shuttle()
+	return mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME ? REACT_SHUTTLE_EVAC : 0
+
+/// Redraws now and schedules the next redraw.
+/obj/machinery/status_display/proc/refresh()
 	if(stat & NOPOWER)
 		remove_display()
-		return PROCESS_KILL
-	update()
-	if(mode == STATUS_DISPLAY_BLANK || mode == STATUS_DISPLAY_ALERT)
-		return PROCESS_KILL
-	if(mode == STATUS_DISPLAY_MESSAGE && !index1 && !index2)
-		return PROCESS_KILL
-	if(mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME && (!SSemergency_shuttle || !SSemergency_shuttle.has_eta()))
-		return PROCESS_KILL
+	else
+		update()
+	schedule_refresh()
+
+/obj/machinery/status_display/proc/schedule_refresh()
+	var/powered = !(stat & NOPOWER)
+	var/want_shuttle = powered ? watched_shuttle() : 0
+	if(want_shuttle != shuttle_key_id)
+		if(!isnull(shuttle_key_token))
+			REACT_CANCEL(src, shuttle_key_token)
+			shuttle_key_token = null
+		shuttle_key_id = want_shuttle
+		if(want_shuttle)
+			shuttle_key_token = REACT_ON_KEY(src, REACT_KEY_SHUTTLE_SCHEDULE, want_shuttle, 1)
+	var/delay = powered ? next_refresh_delay() : 0
+	var/at = delay ? world.time + delay : 0
+	if(!isnull(refresh_token))
+		if(at && at == refresh_at)
+			return
+		REACT_CANCEL(src, refresh_token)
+		refresh_token = null
+	refresh_at = at
+	if(at)
+		refresh_token = REACT_AT(src, at)
+
+/obj/machinery/status_display/on_react(reason, source, source_kind)
+	. = ..()
+	if(reason & REACT_REASON_TIMER)
+		refresh_token = null
+		refresh_at = 0
+	refresh()
+
+/obj/machinery/status_display/react_sleep_violation()
+	if(stat & NOPOWER)
+		return null
+	if(next_refresh_delay() && isnull(refresh_token))
+		return "mode [mode] needs redrawing but has no timer"
+	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token)))
+		return "mode [mode] is not watching its shuttle"
+	return null
 
 /obj/machinery/status_display/power_change()
 	. = ..()
-	if(. && !(stat & NOPOWER))
-		START_MACHINE_PROCESSING(src)
+	if(.)
+		refresh()
 
 /obj/machinery/status_display/emp_act(severity, recursive)
 	if(stat & (BROKEN|NOPOWER))
@@ -106,7 +171,7 @@
 		if(STATUS_DISPLAY_BLANK)	//blank
 			return 1
 		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)				//emergency shuttle timer
-			if(!SSemergency_shuttle)
+			if(!SSemergency_shuttle?.shuttle)
 				message1 = "-ETA-"
 				message2 = "Never" // You're here forever.
 				return 1
@@ -195,16 +260,16 @@
 
 // Called when the alert level is changed.
 /obj/machinery/status_display/proc/on_alert_changed(new_level)
-	START_MACHINE_PROCESSING(src)
 	// On most alerts, this will change to a flashing alert picture in a specific color.
 	// Doing that for green alert automatically doesn't really make sense, but it is still available on the comm consoles/PDAs.
 	if(seclevel2num(new_level) == SEC_LEVEL_GREEN)
 		mode = STATUS_DISPLAY_TIME
 		set_light(0) // Remove any glow we had from the alert previously.
-		update()
+		refresh()
 		return
 	mode = STATUS_DISPLAY_ALERT
 	display_alert(new_level)
+	schedule_refresh()
 
 /obj/machinery/status_display/proc/set_picture(state)
 	remove_display()
@@ -252,7 +317,6 @@
 		maptext = ""
 
 /obj/machinery/status_display/receive_signal(datum/signal/signal)
-	START_MACHINE_PROCESSING(src)
 	switch(signal.data["command"])
 		if("blank")
 			mode = STATUS_DISPLAY_BLANK
@@ -274,7 +338,7 @@
 		if("time")
 			mode = STATUS_DISPLAY_TIME
 			set_light(0)
-	update()
+	refresh()
 
 #undef FONT_SIZE
 #undef FONT_COLOR

@@ -113,7 +113,7 @@
 	icon = 'icons/obj/ammo.dmi'
 	slot_flags = SLOT_BELT
 	item_state = "syringe_kit"
-	matter = list(MAT_STEEL = 500)
+	MATERIAL_BULK(MAT_STEEL, 500)
 	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
@@ -279,7 +279,7 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	icon_state = "pistol"
 	slot_flags = null //You can't fit a box on your belt
 	item_state = "paper"
-	matter = null
+	MATERIAL_NONE
 	throwforce = 3
 	throw_speed = 5
 	throw_range = 12

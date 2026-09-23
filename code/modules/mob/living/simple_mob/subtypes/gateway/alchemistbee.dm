@@ -66,9 +66,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
@@ -91,13 +93,13 @@
 	// Thermal injuries.
 	// Toxic injuries.
 	// Asphyxiation.
-	factors = alist(BF_INCOMING_ALL = 2, BF_INCOMING_PHYSICAL = 2, BF_INCOMING_THERMAL = 2, BF_INCOMING_TOXIC = 2, BF_INCOMING_ASPHYXIA = 2)
+	factors = alist(BF_INCOMING_ALL = 2, BF_INCOMING_PHYSICAL = 2, BF_INCOMING_THERMAL = 2, BF_INCOMING_TOXIC = 2, BF_DEMAND = 2)
 
 //Trying to learn from the AADG's ai and make my own
 
 /mob/living/simple_mob/vr/alchemistbee/do_special_attack(atom/A)
 	. = TRUE
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM)
 			chemblast(A)
 		if(I_HURT)

@@ -66,10 +66,7 @@
 		return myid.GetID()
 
 /mob/living/proc/instasis()
-
-/mob/living/simple_mob/instasis()
-	if(in_stasis)
-		return TRUE
+	return inStasisNow()
 
 // Respects move cooldowns as if it had a client.
 // Also tries to avoid being superdumb with moving into certain tiles (unless that's desired).

@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(holoposters)
 /obj/machinery/holoposter
 	name = "Holographic Poster"
 	desc = "A wall-mounted holographic projector displaying advertisements by all manner of factions. How much do they pay to advertise here?"
@@ -25,15 +24,15 @@ GLOBAL_LIST_EMPTY(holoposters)
 		"moebius" = list(LIGHT_COLOR_PURPLE, "Moebius. One of the few companies worth merit beyond their local bubble staffed completely by synthetics. 'For synths, by synths.'")
 	)
 
+REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
+
 /obj/machinery/holoposter/Initialize(mapload)
 	. = ..()
 	set_rand_sprite()
-	GLOB.holoposters += src
 	mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
 
 /obj/machinery/holoposter/Destroy()
 	deltimer(mytimer)
-	GLOB.holoposters -= src
 	return ..()
 
 /obj/machinery/holoposter/process()
@@ -89,7 +88,7 @@ GLOBAL_LIST_EMPTY(holoposters)
 	if(!Adjacent(user))
 		return ITEM_INTERACT_BLOCKING
 	if(icon_state == "random")
-		stat &= ~BROKEN
+		atom_fix()
 		icon_forced = FALSE
 		if(!mytimer)
 			mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
@@ -98,12 +97,9 @@ GLOBAL_LIST_EMPTY(holoposters)
 	icon_forced = TRUE
 	if(mytimer)
 		deltimer(mytimer)
-	stat &= ~BROKEN
+	atom_fix()
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/holoposter/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 /obj/machinery/holoposter/power_change()
 	var/wasUnpowered = stat & NOPOWER
@@ -115,5 +111,4 @@ GLOBAL_LIST_EMPTY(holoposters)
 	. = ..()
 	if (. & EMP_PROTECT_SELF || stat & BROKEN)
 		return
-	stat |= BROKEN
-	update_icon()
+	atom_break()

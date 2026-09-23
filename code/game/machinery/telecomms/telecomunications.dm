@@ -128,8 +128,9 @@
 		return 0
 
 
+REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
+
 /obj/machinery/telecomms/Initialize(mapload)
-	GLOB.telecomms_list += src
 	..()
 	default_apply_parts()
 	return INITIALIZE_HINT_LATELOAD
@@ -148,7 +149,7 @@
 			for(var/obj/machinery/telecomms/T in orange(20, src))
 				add_link(T)
 		else
-			for(var/obj/machinery/telecomms/T in GLOB.telecomms_list)
+			for(var/obj/machinery/telecomms/T in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				add_link(T)
 	soundloop = new(list(src), FALSE)
 	if(prob(60)) // 60% chance to change the midloop
@@ -167,8 +168,7 @@
 	if(thermal_timer)
 		deltimer(thermal_timer)
 		thermal_timer = null
-	GLOB.telecomms_list -= src
-	for(var/obj/machinery/telecomms/comm in GLOB.telecomms_list)
+	for(var/obj/machinery/telecomms/comm in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 		LAZYREMOVE(comm.links, src)
 	links = list()
 	QDEL_NULL(soundloop)

@@ -13,29 +13,6 @@
 		wearing_rig.notify_ai(span_danger("Warning: user consciousness failure. Mobility control passed to integrated intelligence system."))
 	..()
 
-/mob/living/carbon/human/proc/Stasis(amount)
-	if((species.flags & NO_DNA) || isSynthetic())
-		in_stasis = 0
-	else
-		in_stasis = amount
-
-/mob/living/carbon/human/proc/getStasis()
-	if((species.flags & NO_DNA) || isSynthetic())
-		return 0
-
-	return in_stasis
-
-/// This determines if, RIGHT NOW, the life() tick is being skipped due to stasis
-/mob/proc/inStasisNow() // For components to be more easily compatible with both simple and human mobs, only humans can stasis.
-	return FALSE
-
-/mob/living/carbon/human/inStasisNow()
-	var/stasisValue = getStasis()
-	if(stasisValue && (life_tick % stasisValue) || HAS_TRAIT(src, TRAIT_STASIS))
-		return 1
-
-	return 0
-
 // Oxy / tox / clone "damage" for humans is condition severity — see
 // code/modules/medical/damage_pools.dm for the adapters.
 

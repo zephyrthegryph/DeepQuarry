@@ -31,17 +31,17 @@
 	var/list/freight_form_paper
 
 // Claim machine ID
+REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
+
 /obj/item/retail_scanner/Initialize(mapload)
 	. = ..()
 	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
 	if(locate(/obj/structure/table) in loc)
 		pixel_y = 3
-	GLOB.transaction_devices += src // Global reference list to be properly set up by /proc/setup_economy()
 	if(GLOB.economy_init && account_to_connect)
 		linked_account = GLOB.department_accounts[account_to_connect]
 
 /obj/item/retail_scanner/Destroy()
-	GLOB.transaction_devices -= src
 	freight_form_paper = null
 	. = ..()
 

@@ -99,7 +99,6 @@
 /obj/proc/process_material_environment(datum/gas_mixture/internal, datum/gas_mixture/external, elapsed_seconds, base_pressure, radius_mm, wall_thickness_mm, allow_pressure = TRUE, service_owns_heat = FALSE, surface_fraction = 1)
 	if(!internal || QDELETED(src))
 		return FALSE
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
 	elapsed_seconds = max(elapsed_seconds, 0)
 	var/internal_temperature = internal.return_temperature()
 	var/external_temperature = external?.return_temperature() || TCMB
@@ -216,7 +215,6 @@
 
 /obj/item/reagent_containers/on_reagent_change()
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_CONTAINER)
 	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
 	var/corrosion = 0
 	if(liner && reagents?.total_volume)

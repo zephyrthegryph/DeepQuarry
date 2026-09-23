@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(simple_portals)
 
 /obj/effect/simple_portal
 	name = "Portal"
@@ -11,9 +10,10 @@ GLOBAL_LIST_EMPTY(simple_portals)
 	var/atom/destination
 	var/teleport_sound = 'sound/effects/portal_effect.ogg'
 
+REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
+
 /obj/effect/simple_portal/Initialize(mapload)
 	. = ..()
-	GLOB.simple_portals += src
 
 /obj/effect/simple_portal/linked/Initialize(mapload)
 	..()
@@ -25,7 +25,6 @@ GLOBAL_LIST_EMPTY(simple_portals)
 
 /obj/effect/simple_portal/Destroy()
 	. = ..()
-	GLOB.simple_portals -= src
 
 /obj/effect/simple_portal/Bumped(atom/movable/AM)
 	. = ..()
@@ -116,7 +115,7 @@ GLOBAL_LIST_EMPTY(simple_portals)
 /obj/effect/simple_portal/linked/proc/link_portal()
 	if(!portal_id)
 		return "SET PORTAL ID FIRST"
-	for(var/obj/effect/simple_portal/linked/candidate in GLOB.simple_portals)
+	for(var/obj/effect/simple_portal/linked/candidate in REGISTRY_MEMBERS(REGISTRY_SIMPLE_PORTALS))
 		if(istype(candidate) && portal_id == candidate.portal_id && candidate != src)
 			linked_portal = candidate
 			break

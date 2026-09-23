@@ -679,3 +679,7 @@ TOAST_NOTIFICATION_ON_INIT
 
 ## Uncomment to allow admins with +DEBUG to queue the next round to run the byond-tracy profiler.
 #ALLOW_TRACY_QUEUE
+
+## Uncomment to run the mob hibernation audit: every 30 seconds it re-checks sleeping mobs and logs
+## MOB_HIBERNATE_AUDIT when one should have been woken. A debugging aid; leave off on live servers.
+#MOB_HIBERNATION_AUDIT

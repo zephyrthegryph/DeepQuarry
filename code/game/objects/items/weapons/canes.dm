@@ -10,7 +10,7 @@
 	force = 5.0
 	throwforce = 7.0
 	w_class = ITEMSIZE_NORMAL
-	matter = list(MAT_STEEL = 50)
+	MATERIAL_BULK(MAT_STEEL, 50)
 	attack_verb = list("bludgeoned", "whacked", "disciplined", "thrashed")
 
 /obj/item/cane/crutch
@@ -69,7 +69,7 @@
 	icon_state = "whitecane"
 
 /obj/item/cane/white/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		user.visible_message(span_notice("\The [user] has lightly tapped [M] on the ankle with their white cane!"))
 		return ITEM_INTERACT_SUCCESS
 	else

@@ -110,7 +110,10 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	icon = 'icons/obj/items.dmi'
 	icon_state = "album"
 	item_state = "briefcase"
-	can_hold = list(/obj/item/photo)
+
+/obj/item/storage/photo_album/hold_constraint()
+	var/list/holds = list(/obj/item/photo)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/photo_album/MouseDrop(obj/over_object as obj)
 
@@ -147,7 +150,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	item_state = "camera"
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
-	matter = list(MAT_STEEL = 2000)
+	MATERIAL_BULK(MAT_STEEL, 2000)
 	var/pictures_max = 10
 	var/pictures_left = 10
 	var/on = 1

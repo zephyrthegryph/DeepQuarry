@@ -10,25 +10,24 @@
 #define INJURY_CORROSIVE  6
 #define INJURY_ELECTRIC   7
 #define INJURY_TOXIN      8
-#define INJURY_ASPHYXIA   9
-#define INJURY_RADIATION  10
-#define INJURY_CELLULAR   11
-#define INJURY_NEURAL     12
-#define INJURY_PAIN       13
-#define INJURY_DIGESTION  14
-#define INJURY_KIND_COUNT 14
+#define INJURY_RADIATION  9
+#define INJURY_CELLULAR   10
+#define INJURY_NEURAL     11
+#define INJURY_PAIN       12
+#define INJURY_DIGESTION  13
+#define INJURY_KIND_COUNT 13
 
 // --- Injury categories --------------------------------------------------------
 // Coarse groupings used by modifiers, armour-style resistances and load
-// queries (the successors of brute / fire / tox / oxy / clone / hal).
+// queries (the successors of brute / fire / tox / clone / hal). Lack of
+// oxygen is not an injury: the physiology computes it (oxygen_debt()).
 #define INJURY_CATEGORY_PHYSICAL  1
 #define INJURY_CATEGORY_THERMAL   2
 #define INJURY_CATEGORY_TOXIC     3
-#define INJURY_CATEGORY_ASPHYXIA  4
-#define INJURY_CATEGORY_GENETIC   5
-#define INJURY_CATEGORY_NEURAL    6
-#define INJURY_CATEGORY_PAIN      7
-#define INJURY_CATEGORY_COUNT     7
+#define INJURY_CATEGORY_GENETIC   4
+#define INJURY_CATEGORY_NEURAL    5
+#define INJURY_CATEGORY_PAIN      6
+#define INJURY_CATEGORY_COUNT     6
 
 // injure() flags
 /// Skip modifiers/species multipliers (admin, scripted exact amounts).
@@ -93,15 +92,27 @@
 #define TREAT_RESECTION        "resection"  // surgical removal of dead (necrotic) tissue
 // Vital-system mechanisms (code/modules/medical/conditions/vital_systems.dm).
 #define TREAT_AIRWAY           "airway"  // clears / secures the airway (Heimlich, airway kit)
-#define TREAT_VENTILATION      "ventilation"  // assisted breathing (bag-valve mask, rescue breaths); amount = seconds of breaths
 #define TREAT_DECOMPRESSION    "decompression"  // vents trapped pleural air (decompression needle, chest tube)
 #define TREAT_DEFIBRILLATION   "defibrillation"  // electrical cardioversion of a shockable rhythm (defibrillator)
 #define TREAT_CHEST_COMPRESSION "chest_compression"  // CPR compressions: partial perfusion while the heart is stopped
 #define TREAT_VASOPRESSOR      "vasopressor"  // epinephrine-type: coaxes asystole toward VF, shrinks airway swelling
 #define TREAT_DIGESTIVE        "digestive"  // stomach / intestine / appendix tissue repair
+// Field stabilisation mechanisms (code/modules/medical/stabilisation/).
+#define TREAT_WOUND_PACKING    "wound_packing"  // packs / dresses a bleeding wound shut (hemostatic gauze, pressure bandage); amount = wounds
+#define TREAT_OCCLUSIVE_SEAL   "occlusive_seal"  // airtight seal over an open chest wound (chest seal); amount = wounds
 // Body-provided mechanisms.
 #define TREAT_REGENERATION     "regeneration"  // natural regeneration: species x nutrition x sleep (body.regeneration_level())
 #define TREAT_RESTORATION      "restoration"  // admin / magic / species restoration: every biology, full repair of every restorable affliction
+#define TREAT_FEEDSTOCK        "feedstock"  // nanoform: steel fed into the refactory (amount = repair points of steel)
+// Surgical mechanisms (code/modules/surgery/). Delivered only by instant mend() from a
+// procedure step; no reagent provides them.
+#define TREAT_SURGICAL_CLOSURE "surgical_closure"  // closes an organic incision (cautery, sutures)
+#define TREAT_PANEL_CLOSURE    "panel_closure"  // synthetic: closes and secures a maintenance panel
+#define TREAT_BONE_SETTING     "bone_setting"  // sets a fracture, closes a sawn bone layer (bone gel, bone setter)
+#define TREAT_VESSEL_REPAIR    "vessel_repair"  // repairs a torn vessel or arterial bleed (FixOVein)
+#define TREAT_TENDON_REPAIR    "tendon_repair"  // rejoins a severed tendon
+#define TREAT_FOREIGN_BODY_REMOVAL "foreign_body_removal"  // extracts foreign objects and embedded material
+#define TREAT_LITHOTRIPSY      "lithotripsy"  // breaks up deposits with focused ultrasound
 
 // --- Cardiac rhythms (/datum/affliction/cardiac_arrhythmia) ------------------------------
 /// Normal rhythm; the arrhythmia is settling and will resolve.
@@ -115,6 +126,8 @@
 
 /// Seconds of assisted breathing one CPR cycle of rescue breaths provides.
 #define CPR_RESCUE_BREATH_SECONDS 10
+/// How long one CPR compression cycle holds cardiac output at its floor.
+#define CPR_COMPRESSION_WINDOW (7 SECONDS)
 
 // --- Body invalidation domains (/datum/body/var/dirty, body.invalidate()) -----------------
 /// Cached vitals (pain, consciousness, vitality) are stale.
@@ -130,8 +143,11 @@
 /// The trigger domains dq_process_dirty_medical_conditions() consumes.
 /// Body factors (code/modules/body/factors.dm) must be recomputed.
 #define BODY_DIRTY_FACTORS   (1<<5)
+/// The physiology (ventilation, oxygenation, perfusion, delivery) must be
+/// recomputed: a factor, support, organ, breath or blood volume changed.
+#define BODY_DIRTY_PHYSIOLOGY (1<<6)
 #define BODY_DIRTY_CONDITIONS (BODY_DIRTY_ORGANS | BODY_DIRTY_METRICS | BODY_DIRTY_CHEMS)
-#define BODY_DIRTY_ALL       (BODY_DIRTY_VITALS | BODY_DIRTY_CONDITIONS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
+#define BODY_DIRTY_ALL       (BODY_DIRTY_VITALS | BODY_DIRTY_CONDITIONS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS | BODY_DIRTY_PHYSIOLOGY)
 
 // --- Natural regeneration (TREAT_REGENERATION) ---------------------------------------------
 /// Regeneration level of a fed, awake, living humanoid.
@@ -199,10 +215,35 @@
 /// Robots and AIs are destroyed at this multiple of their endurance.
 #define DQ_MACHINE_LETHAL_MULT 2
 
-// Hypoxia: severity at which the brain starts dying, and peak anoxic brain
-// damage per tick at severity 100.
+// Hypoxia: oxygen debt at which the brain starts dying, and peak ischemic
+// brain lesion damage per second at a debt of 100.
 #define DQ_HYPOXIA_BRAIN_DAMAGE 30
-#define DQ_HYPOXIA_BRAIN_RATE 1.5
+#define DQ_HYPOXIA_BRAIN_RATE 0.75
+
+// --- Physiology (code/modules/body/physiology.dm) ------------------------------------------
+/// Delivery below this fraction of demand builds oxygen debt.
+#define PHYSIOLOGY_CRITICAL_RATIO 0.6
+/// Oxygen debt gained per second per unit of shortfall.
+#define PHYSIOLOGY_DEBT_RATE 1.7
+/// Oxygen debt repaid per second per unit of delivery above the critical ratio.
+#define PHYSIOLOGY_REPAY_RATE 2.5
+/// Oxygen debt never climbs past this.
+#define PHYSIOLOGY_DEBT_MAX 150
+/// Changes in blood volume fraction smaller than this don't dirty the physiology.
+#define PHYSIOLOGY_BLOOD_EPSILON 0.005
+/// Changes in breath quality smaller than this don't dirty the physiology.
+#define PHYSIOLOGY_BREATH_EPSILON 0.02
+/// Ventilation below this counts as not breathing (no breath is drawn).
+#define PHYSIOLOGY_APNEA_VENTILATION 0.05
+/// Oxygen debt is logged each time it crosses a multiple of this.
+#define PHYSIOLOGY_DEBT_LOG_BAND 25
+// Supports: the floors equipment and hands provide.
+/// Bag-valve mask: breathing-drive floor while squeezing.
+#define SUPPORT_BVM_DRIVE 0.8
+/// Rescue breaths during CPR: breathing-drive floor.
+#define SUPPORT_RESCUE_BREATH_DRIVE 0.5
+/// Chest compressions: cardiac-output floor.
+#define SUPPORT_CPR_PUMP 0.4
 
 /// Default endurance for a living mob that doesn't set one.
 #define DEFAULT_ENDURANCE 100

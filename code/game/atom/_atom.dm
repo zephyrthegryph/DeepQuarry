@@ -58,6 +58,8 @@
 	var/datum/wires/wires = null
 
 /atom/Destroy()
+	if(!isnull(heat_body))
+		release_heat_body()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
 	// The only L2 line in this proc; the containment ledger (C1) owns the rest.
 	dematerialize()
@@ -237,6 +239,10 @@
 					break
 
 	var/list/output = list("[icon2html(src,user.client)] That's [f_name] [suffix] [borg]", get_examine_desc())
+	if(uses_integrity && get_integrity() < max_integrity)
+		dq_rules_settle(src) // a pending integrity wake lands before we read the band
+	if(damage_band)
+		output += damage_flavour_text(damage_band)
 
 	SEND_SIGNAL(src, COMSIG_ATOM_EXAMINE, user, output)
 	return output

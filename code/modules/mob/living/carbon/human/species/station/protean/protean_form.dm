@@ -4,7 +4,10 @@
 
 /datum/component/forms/protean
 	/// The character's nanosuit control cluster. Per-character, lives here.
+	/// There is only ever the one: if it is destroyed, it is gone.
 	var/obj/item/rig/protean/rig
+	/// world.time of the last form change (form strain).
+	var/last_switch_time = 0
 
 /datum/component/forms/protean/get_form_types()
 	var/static/list/types = list(/datum/form/human, /datum/form/protean_blob)
@@ -44,15 +47,14 @@
 	var/mob/living/carbon/human/H = parent
 	return !!H.body?.find_affliction(/datum/affliction/core_dormancy)
 
-/// Fold into the control cluster. Collapses into the blob first.
+/// Fold into the control cluster. Collapses into the blob first. Fails if
+/// the cluster is gone.
 /datum/component/forms/protean/proc/enter_rig()
 	var/mob/living/carbon/human/H = parent
 	if(!rig)
-		to_chat(H, span_warning("Your control cluster is missing. A new one has been assembled; please report how this happened."))
-		log_runtime("FORMS: [key_name(H)] had no protean rig; created a replacement.")
-		new /obj/item/rig/protean(get_turf(H), H)
-		if(!rig)
-			return FALSE
+		to_chat(H, span_warning("Your control cluster is gone. You have nothing to fold into."))
+		log_game("FORMS: [key_name(H)] tried to fold into a control cluster they no longer have.")
+		return FALSE
 	if(in_rig())
 		return TRUE
 	if(!is_form(/datum/form/protean_blob))
@@ -89,6 +91,43 @@
 	H.equip_to_slot_if_possible(rig, slot_back)
 	log_game("FORMS: [key_name(H)] unfolded from their control cluster at [AREACOORD(H)]")
 	return TRUE
+
+
+/// Changing shape quickly strains the swarm (form_strain).
+/datum/component/forms/protean/set_form(form_type, silent = FALSE)
+	var/previous_switch = last_switch_time
+	. = ..()
+	if(!.)
+		return
+	last_switch_time = world.time
+	if(previous_switch && world.time - previous_switch < NANITE_FORM_SWITCH_GRACE)
+		var/mob/living/carbon/human/H = parent
+		H.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_FAST_SWITCH)
+		log_game("FORMS: [key_name(H)] changed form again within [NANITE_FORM_SWITCH_GRACE / 10] seconds; form strain.")
+
+/// Upkeep of the swarm's shape and its control cluster.
+/datum/component/forms/protean/on_life(mob/living/source)
+	SIGNAL_HANDLER
+	..()
+	if(source.stat == DEAD || is_dormant())
+		return
+	rig?.recharge_from(source)
+	var/shapeless = !is_form(/datum/form/human) || in_rig()
+	if(shapeless && world.time - last_switch_time > NANITE_FORM_HOLD_LIMIT)
+		source.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_HELD_TICK)
+
+/// The orchestrator coordinates a change of shape. A damaged one may fail to:
+/// the chance of failure is half its damage's severity. Returns TRUE when the
+/// swarm holds together for the change.
+/datum/component/forms/protean/proc/form_control_check()
+	var/mob/living/carbon/human/H = parent
+	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
+	var/datum/affliction/nanite/orchestrator_damage/damage = O && H.body?.find_affliction(/datum/affliction/nanite/orchestrator_damage, O)
+	if(!damage || !prob(damage.severity / 2))
+		return TRUE
+	to_chat(H, span_warning("Your orchestrator loses track of the swarm and the change falls apart!"))
+	log_game("FORMS: [key_name(H)] failed a form change to orchestrator damage ([round(damage.severity)]).")
+	return FALSE
 
 
 // --- The blob form -------------------------------------------------------------------

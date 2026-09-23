@@ -54,7 +54,7 @@
 		var/mob/living/carbon/human/H = holder.loc
 		if(istype(H.loc, /obj/mecha))
 			var/obj/mecha/M = H.loc
-			return M.return_temperature()
+			return M.get_interior_temperature()
 		if(istype(H.loc, /obj/machinery/atmospherics/unary/cryo_cell))
 			var/obj/machinery/atmospherics/unary/cryo_cell/cryo = H.loc
 			return cryo.air_contents.return_temperature()

@@ -34,7 +34,7 @@
 	category = "Circulation"
 	clinical_description = "Bleeding into the body cavity from torn vessels. Symptoms are often subtle until enough blood has been lost to start affecting circulation."
 	progression_rate = 1.0
-	treated_by = list(TREAT_HEMOSTATIC = 1.4)
+	treated_by = list(TREAT_HEMOSTATIC = 1.4, TREAT_VESSEL_REPAIR = 1)
 	worsened_by_tags = list(TREAT_STIMULANT = 1.0)  // stimulant raises BP, worsens bleed
 	// min_symptoms = 0: this can present invisibly at low severity.
 	// Doctors who don't measure vitals won't see it until shock starts.
@@ -102,28 +102,14 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	// Pulse and BP both derive from actual blood volume already; only
-	// the perfusion-related o2 sat needs an extra hit.
 	// Damages the heart at high severity (poor coronary perfusion);
 	// downstream cardiac damage spawns cardiac_arrest via the emergent
-	// system. We also stack hypoxia directly — see the proc override
-	// below.
+	// system. The collapse itself is BF_CIRCULATION in the band tables:
+	// the physiology turns lost perfusion into oxygen debt.
 	organ_damage_threshold = 60
 	organ_damage_type = "internal"
 	organ_damage_per_tick = 2
 	organ_damage_targets = list(O_HEART)
-
-// Hypovolemic shock stacks hypoxia on top of the heart damage. Low
-// blood means low perfusion means O2 transport collapses; upstream
-// code converts that hypoxia into brain damage, which is what spawns
-// anoxic_brain_injury via the emergent system. This is the natural
-// path: bleed → shock → hypoxia → brain damage → ABI.
-/datum/affliction/hypovolemic_shock/_apply_organ_damage()
-	..()
-	if(!owner || severity < 60)
-		return
-	var/scale = clamp((severity - 60) / 40, 0, 1)
-	owner.injure(INJURY_ASPHYXIA, 2.5 * scale, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 // Severity-scaled mechanical effects: even at low severity (perfusion
 // just starting to fail), the patient feels weak. At high severity
@@ -160,8 +146,8 @@
 	// path so the body treats them as the band's own table.
 	var/static/list/bands = list(
 		list("factors" = alist(BF_SLOWDOWN = 0.3), "spontaneous_emotes" = list("sigh"), "spontaneous_emote_prob" = 2),
-		list("factors" = alist(BF_SLOWDOWN = 0.8, BF_ACCURACY = -12, BF_MOTOR_CONTROL = 0.99), "spontaneous_emotes" = list("wobble", "shake"), "spontaneous_emote_prob" = 3),
-		list("factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.96), "spontaneous_emotes" = list("stagger", "collapse", "groan"), "spontaneous_emote_prob" = 6),
+		list("factors" = alist(BF_SLOWDOWN = 0.8, BF_ACCURACY = -12, BF_MOTOR_CONTROL = 0.99, BF_CIRCULATION = 0.85), "spontaneous_emotes" = list("wobble", "shake"), "spontaneous_emote_prob" = 3),
+		list("factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.96, BF_CIRCULATION = 0.5), "spontaneous_emotes" = list("stagger", "collapse", "groan"), "spontaneous_emote_prob" = 6),
 	)
 	var/list/entry = bands[band + 1]
 	band_factors = entry["factors"]
@@ -194,7 +180,7 @@
 	progression_rate = 0.5
 	// Osteodaxon promotes bone healing; bicaridine handles the
 	// surrounding soft-tissue damage.
-	treated_by = list(TREAT_BONE_REPAIR = 1.2)
+	treated_by = list(TREAT_BONE_REPAIR = 1.2, TREAT_BONE_SETTING = 1)
 	worsened_by_tags = list(TREAT_STIMULANT = 0.5)
 	symptom_pool = list(
 		/datum/affliction_symptom/sharp_pain    = 80,
@@ -202,6 +188,65 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 2
+
+/// Fracture pain and slowdown are body factors, by region and by whether a
+/// splint holds the bone still. A splint doesn't knit the bone; it cuts the
+/// grinding (pain) and the limp.
+/datum/affliction/untreated_fracture/get_stages()
+	var/static/list/S = list(
+		"Unset leg" = list(
+			"name" = "untreated fracture",
+			"description" = "A broken leg bone, unset and unsupported. Every step grinds the fragments.",
+			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
+			"factors" = alist(BF_SLOWDOWN = 1.5, BF_PAIN = 15),
+		),
+		"Splinted leg" = list(
+			"name" = "splinted fracture",
+			"description" = "A broken leg bone held still by a splint.",
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
+			"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 5),
+		),
+		"Unset arm" = list(
+			"name" = "untreated fracture",
+			"description" = "A broken arm bone, unset and unsupported.",
+			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
+			"factors" = alist(BF_ACCURACY = -15, BF_PAIN = 15),
+		),
+		"Splinted arm" = list(
+			"name" = "splinted fracture",
+			"description" = "A broken arm bone held still by a splint.",
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
+			"factors" = alist(BF_ACCURACY = -5, BF_PAIN = 5),
+		),
+		"Unset" = list(
+			"name" = "untreated fracture",
+			"description" = "A broken bone, unset and unsupported.",
+			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
+			"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 15),
+		),
+		"Splinted" = list(
+			"name" = "splinted fracture",
+			"description" = "A broken bone held still by a splint.",
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
+			"factors" = alist(BF_PAIN = 5),
+		),
+	)
+	return S
+
+/datum/affliction/untreated_fracture/on_added()
+	. = ..()
+	recompute_stage_from_severity()
+
+/datum/affliction/untreated_fracture/recompute_stage_from_severity()
+	var/obj/item/organ/external/E = location
+	var/region = ""
+	if(istype(E))
+		switch(E.organ_tag)
+			if(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
+				region = " leg"
+			if(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)
+				region = " arm"
+	_apply_stage("[(istype(E) && E.splinted) ? "Splinted" : "Unset"][region]")
 
 /datum/affliction/untreated_fracture/damage_scaling()
 	. = 1.0
@@ -270,10 +315,7 @@
 	min_symptoms = 1
 	max_symptoms = 2
 	// Severe stage-3 burns crash the body's ability to hold fluid
-	// balance; we model that as systemic hypoxia above stage 3.
-	organ_damage_threshold = 70
-	organ_damage_type = INJURY_ASPHYXIA
-	organ_damage_per_tick = 3
+	// balance: stage 3 lowers BF_CIRCULATION.
 
 /datum/affliction/burn_shock/New()
 	..()
@@ -316,7 +358,7 @@
 			),
 			"min_symptoms" = 3,
 			"max_symptoms" = 4,
-			"factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -20, BF_MOTOR_CONTROL = 0.97, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = -35, BF_BP_DIASTOLIC = -20, BF_O2_SAT = -8),
+			"factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -20, BF_MOTOR_CONTROL = 0.97, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = -35, BF_BP_DIASTOLIC = -20, BF_CIRCULATION = 0.5),
 			"spontaneous_emotes" = list("groan in pain", "collapse", "shudder"),
 			"spontaneous_emote_prob" = 7,
 		),
@@ -363,7 +405,8 @@
 	category = "Infection"
 	clinical_description = "Bacterial colonisation of an open wound. The dirtier the wound was when it was inflicted, the faster the infection takes hold."
 	progression_rate = 0.5
-	treated_by = list(TREAT_ANTIMICROBIAL = 1.0)
+	// Debridement (resection) cuts the colonised tissue out.
+	treated_by = list(TREAT_ANTIMICROBIAL = 1.0, TREAT_RESECTION = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/fever_sensation = 60,
 		/datum/affliction_symptom/chills          = 40,
@@ -387,7 +430,7 @@
 	// Modest fever — local infection, not systemic yet.
 	if(severity > 0 && istype(owner, /mob/living/carbon/human))
 		var/target_offset_k = (severity / 100) * 1.2
-		owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, 310.15 + 1.5)
+		owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, BODYTEMP_NORMAL + 1.5)
 	var/germ_level = location.germ_level
 	// Above INFECTION_LEVEL_ONE the wound is actively feeding the
 	// condition. The extra delta scales with how far past threshold

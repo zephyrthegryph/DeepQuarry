@@ -71,15 +71,8 @@
 /obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
 	if(!hatch_open)
 		return NONE
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.isOn())
-		return ITEM_INTERACT_BLOCKING
-	if(welder.get_fuel() < 5)
-		to_chat(user, span_warning("You need more fuel to complete this task."))
-		return ITEM_INTERACT_BLOCKING
-	user.visible_message("[user] starts to disassemble \the [src].", "You start to disassemble \the [src].")
-	playsound(src, welder.usesound, 50, TRUE)
-	if(do_after(user, 1.5 SECONDS * tool.toolspeed, target = src) && welder.remove_fuel(5, user))
+	if(use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, \
+			message_self = "You start to disassemble \the [src].", message_others = "[user] starts to disassemble \the [src]."))
 		to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
 		qdel(src)
 	return ITEM_INTERACT_SUCCESS
@@ -133,10 +126,10 @@
 
 /obj/machinery/atmospheric_field_generator/atom_break(damage_flag)
 	. = ..()
-	stat |= BROKEN
+	if(!.)
+		return
 	visible_message("The ARF-G cracks and shatters!", "You hear an uncomfortable metallic crunch.")
 	disable_field()
-	update_icon()
 
 /obj/machinery/atmospheric_field_generator/proc/generate_field()
 	if(!ispowered || hatch_open || !wires_intact || isactive) //if it's not powered, the hatch is open, the wires are busted, or it's already on, don't do anything
@@ -183,6 +176,7 @@
 			areas_added += A
 
 /obj/structure/atmospheric_retention_field
+	resistance_flags = BOMB_PROOF
 	name = "atmospheric retention field"
 	desc = "A shimmering forcefield that keeps the good air inside and the bad air outside. This field has been modulated so that it doesn't impede movement or projectiles.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
 	icon = 'icons/obj/atm_fieldgen.dmi'
@@ -234,9 +228,6 @@
 		visible_message("You touch the retention field, and it crackles faintly. Tingly!")
 	else
 		visible_message("You try to touch the retention field, but pass through it like it isn't even there.")
-
-/obj/structure/atmospheric_retention_field/ex_act()
-	return
 
 /obj/structure/atmospheric_retention_field/impassable
 	desc = "A shimmering forcefield that keeps the good air inside and the bad air outside. It seems fairly solid, almost like it's made out of some kind of hardened light.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."

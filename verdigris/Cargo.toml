@@ -2,7 +2,8 @@
 resolver = "2"
 # Crate map (see README.md and doc/rewrite/rust_core.md):
 #   core/            vg-core    domain-agnostic primitives; host-buildable, no byondapi, no global statics
-#   domains/gas/     vg-gas     gas arena, turf diffusion, heat (vendored auxmos); i686 only for now
+#   domains/gas/     vg-gas     gas arena, turf diffusion, heat binds (vendored auxmos); i686 only for now
+#   domains/heat/    vg-heat    heat domain (M4): turf solid field, bodies, couplings; host-buildable
 #   domains/layout/  vg-layout  station layout planner + cave generator; host-buildable
 #   ffi/             vg-ffi     BYOND binds (byondapi); i686 only
 #   ffi/macros       auxmacros  panic_safe bind attribute (proc macro)
@@ -13,7 +14,9 @@ resolver = "2"
 members = [
     "core",
     "domains/gas",
+    "domains/heat",
     "domains/layout",
+    "domains/power",
     "ffi",
     "ffi/macros",
     "ffi/callback",
@@ -25,7 +28,7 @@ members = [
 # check` covers the host-buildable crates. The i686 release build
 # (build-{linux,windows}.sh) builds the DLL and everything it links; gas tests run
 # with `cargo test --target i686-pc-windows-msvc -p vg-gas` (or i686-unknown-linux-gnu).
-default-members = ["core", "domains/layout", "verdigris", "tools/bench", "tools/replay"]
+default-members = ["core", "domains/heat", "domains/layout", "domains/power", "verdigris", "tools/bench", "tools/replay"]
 
 # Shared by the gas domain and the FFI crates (auxmos was originally its own
 # workspace; see domains/gas/UPSTREAM.md).

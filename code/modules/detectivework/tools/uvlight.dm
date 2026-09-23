@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 	actions_types = list(/datum/action/item_action/toggle_uv_light)
-	matter = list(MAT_STEEL = 150)
+	MATERIAL_BULK(MAT_STEEL, 150)
 
 	var/list/scanned
 	var/list/stored_alpha

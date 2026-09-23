@@ -9,7 +9,7 @@
 	is_ranged = 1
 	preparing_arrest_sounds = new()
 
-	a_intent = I_HURT
+	combat_mode = TRUE
 	mob_bump_flag = HEAVY
 	mob_swap_flags = ~HEAVY
 	mob_push_flags = HEAVY

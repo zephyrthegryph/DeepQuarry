@@ -73,7 +73,7 @@ SUBSYSTEM_DEF(plants)
 
 	// Make sure any seed packets that were mapped in are updated
 	// correctly (since the seed datums did not exist a tick ago).
-	for(var/obj/item/seeds/S in GLOB.all_seed_packs)
+	for(var/obj/item/seeds/S in REGISTRY_MEMBERS(REGISTRY_SEED_PACKS))
 		S.update_seed()
 
 	//Might as well mask the gene types while we're at it.

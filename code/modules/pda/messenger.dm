@@ -35,7 +35,7 @@
 	else
 		var/list/convopdas = list()
 		var/list/pdas = list()
-		for(var/obj/item/pda/P as anything in GLOB.PDAs)
+		for(var/obj/item/pda/P as anything in REGISTRY_MEMBERS(REGISTRY_PDAS))
 			var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 
 			if(!PM || !P.owner || PM.toff || P == pda || PM.m_hidden)
@@ -148,7 +148,7 @@
 	// check if telecomms I/O route 1459 is stable
 	//var/telecomms_intact = telecomms_process(P.owner, owner, t)
 	var/obj/machinery/message_server/useMS = null
-	for(var/obj/machinery/message_server/MS as anything in GLOB.message_servers)
+	for(var/obj/machinery/message_server/MS as anything in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 	//PDAs are now dependent on the Message Server.
 		if(MS.active)
 			useMS = MS
@@ -194,7 +194,7 @@
 		to_chat(usr, "Turn on your receiver in order to send messages.")
 		return
 
-	for(var/obj/item/pda/P as anything in GLOB.PDAs)
+	for(var/obj/item/pda/P as anything in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 
 		if(!P.owner || !PM || PM.hidden || P == pda || PM.toff)
@@ -237,7 +237,7 @@
 	modified_message["target"] = "\ref[M]"
 
 	var/list/targets = list()
-	for(var/obj/item/pda/pda in GLOB.PDAs)
+	for(var/obj/item/pda/pda in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		if(pda.cartridge && pda.owner && is_type_in_list(pda.cartridge, M.cartridges_to_send_to))
 			targets |= pda
 	if(targets.len)

@@ -27,6 +27,8 @@
 	var/profiling = FALSE
 	var/window_start_position
 	var/window_start_time
+	/// __verdigris_ffi_calls when the window began.
+	var/window_start_ffi_calls = 0
 	var/list/window_subsystem_fires
 	/// SSreactor.total_wakes when the window began.
 	var/window_reactor_wakes = 0
@@ -86,6 +88,7 @@
 	Master.perf_worst_tick = list()
 	window_start_position = Master.perf_samples_total + 1
 	window_start_time = REALTIMEOFDAY
+	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
 	window_reactor_wakes = SSreactor.total_wakes
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
@@ -107,6 +110,7 @@
 	metric("[prefix]_overruns", tick["overruns"], "ticks")
 	metric("[prefix]_overrun_ratio", tick["samples"] ? tick["overruns"] / tick["samples"] : 0, "ratio")
 	metric("[prefix]_tps", tick["tps"], "tps", "higher")
+	metric("[prefix]_ffi_calls", __verdigris_ffi_calls - window_start_ffi_calls, "calls")
 	var/list/subsystems = list()
 	for(var/datum/controller/subsystem/subsystem as anything in window_subsystem_fires)
 		var/fires = subsystem.times_fired - window_subsystem_fires[subsystem]

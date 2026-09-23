@@ -62,7 +62,7 @@
 					// equivalent of swapping AI subtype at runtime.
 					ai_type = null
 					faction = (L.faction ? L.faction : "neutral")
-					intent  = (L.a_intent ? L.a_intent : I_HELP)
+					intent  = L.use_stance()
 					new_path = FALSE
 
 					// "max_health" is the mob's endurance; "health" is how
@@ -160,7 +160,7 @@
 								S.melee_damage_upper = params["melee_damage_upper"]
 						if(use_custom_ai)
 							L.faction = faction
-							L.a_intent = intent
+							L.set_use_stance(intent)
 							L.initialize_ai_brain()
 							L.AdjustSleeping(-100)
 						else

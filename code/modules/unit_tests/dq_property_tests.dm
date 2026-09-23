@@ -7,14 +7,14 @@
 	name = "property test item"
 	w_class = ITEMSIZE_SMALL
 	sharp = TRUE
-	matter = list(MAT_STEEL = 1000, MAT_CARDBOARD = 500)
+	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_CARDBOARD = 500))
 
 /// Same values as its parent, so it must share the parent's interned table.
 /obj/item/dq_property_test/twin
 
 /obj/item/dq_property_test/blunt
 	sharp = FALSE
-	matter = list(MAT_STEEL = 200)
+	MATERIAL_BULK(MAT_STEEL, 200)
 
 GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	"big" = list("w_class" = ITEMSIZE_HUGE),
@@ -251,9 +251,15 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	// Per-type values, with no instance.
 	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "size class comes from initial(w_class)")
 	TEST_ASSERT(dq_type_has_tag(path, TAG_SHARP), "sharp comes from initial(sharp)")
-	// initial() of a list var is null, so matter-derived values need an instance
-	// until matter moves to a static per-type table (deferred).
-	TEST_ASSERT_NULL(dq_type_property(path, PROP_MASS), "per-type matter is not readable yet")
+	// Matter-derived values per type, from the declared blueprint and total.
+	TEST_ASSERT(abs(dq_type_property(path, PROP_MASS) - 1.5) < 0.0001, "per-type mass: 1000 + 500 matter units is 1.5 kg, got [dq_type_property(path, PROP_MASS)]")
+	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_MELTING_POINT), min(steel.melting_point, cardboard.melting_point), "per-type melting point is the lowest material's")
+	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_IGNITION_POINT), cardboard.ignition_point, "per-type ignition point comes from the cardboard")
+	TEST_ASSERT(dq_type_has_tag(path, TAG_FLAMMABLE), "per type, cardboard makes it flammable")
+	TEST_ASSERT(abs(dq_type_property(/obj/item/dq_property_test/twin, PROP_MASS) - 1.5) < 0.0001, "a subtype inherits its parent's per-type matter")
+	TEST_ASSERT(abs(dq_type_property(/obj/item/dq_property_test/blunt, PROP_MASS) - 0.2) < 0.0001, "a subtype's own declaration wins, got [dq_type_property(/obj/item/dq_property_test/blunt, PROP_MASS)]")
+	TEST_ASSERT(!dq_type_has_tag(/obj/item/dq_property_test/blunt, TAG_FLAMMABLE), "per type, steel alone is not flammable")
+	TEST_ASSERT_EQUAL(dq_type_has_tag(/obj/item/dq_property_test/blunt, TAG_CONDUCTIVE), steel.conductive ? TRUE : FALSE, "per-type conductive follows the material")
 	var/obj/item/dq_property_test/probe = allocate(path)
 	TEST_ASSERT(abs(PROPERTY(probe, PROP_MASS) - 1.5) < 0.0001, "1000 + 500 matter units is 1.5 kg, got [PROPERTY(probe, PROP_MASS)]")
 	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_MELTING_POINT), min(steel.melting_point, cardboard.melting_point), "melting point is the lowest material's")
@@ -288,7 +294,7 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	TEST_ASSERT_EQUAL(PROPERTY(item, PROP_SIZE_CLASS), ITEMSIZE_LARGE, "instance state overrides the type value")
 	TEST_ASSERT(!HAS_TAG(item, TAG_SHARP), "a blunted instance is not sharp")
 	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "the per-type value is unchanged")
-	item.matter = list(MAT_STEEL = 3000)
+	item.set_material_mix(list(MAT_STEEL = 3000))
 	TEST_ASSERT(abs(PROPERTY(item, PROP_MASS) - 3) < 0.0001, "instance matter drives instance mass")
 	TEST_ASSERT(!HAS_TAG(item, TAG_FLAMMABLE), "without cardboard the instance is not flammable")
 

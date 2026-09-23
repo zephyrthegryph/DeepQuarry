@@ -133,6 +133,10 @@
 	order = 40
 	segment = LIFE_SEG_LIVING
 
+/// Continuous only for a transformed mob holding its original body.
+/datum/life_system/tf_holder/idle(mob/living/self)
+	return !self.tf_mob_holder
+
 /// Links life and death between a transformed mob and the body it holds.
 /datum/life_system/tf_holder/tick(mob/living/self, datum/life_context/ctx)
 	if(!self.tf_mob_holder)

@@ -58,6 +58,11 @@ with `DQEdit` comments where modifications are inline.
    - `README.md` — upstream context, still useful for orientation
    - `.gitignore`, `.rustfmt.toml` — local conventions
 
+6. **Adjacency and gas IDs (M1a)**: turf adjacency is built in Rust from
+   DM air-block masks (`turfs.rs`, `AirCells`) instead of DM's per-turf
+   `atmos_adjacent_turfs` lists, and gases have fixed numeric IDs
+   (`gas/ids.rs`) instead of string lookups.
+
 The source has diverged heavily from upstream since vendoring; treat it as
 DeepQuarry code, not a patch set.
 

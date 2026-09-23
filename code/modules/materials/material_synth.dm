@@ -4,13 +4,16 @@
 	uses_charge = 1
 	charge_costs = list(1000)
 	gender = NEUTER
-	matter = null // Don't shove it in the autholathe.
+	MATERIAL_NONE // Don't shove it in the autholathe.
 
 /obj/item/stack/material/cyborg/Initialize(mapload)
 	. = ..()
 	name = "[material.display_name] synthesiser"
 	desc = "A device that synthesises [material.display_name]."
-	matter = null
+
+/// A synthesiser is not made of what it synthesises.
+/obj/item/stack/material/cyborg/material_totals()
+	return list()
 
 /obj/item/stack/material/cyborg/update_strings()
 	return

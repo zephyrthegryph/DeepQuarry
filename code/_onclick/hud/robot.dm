@@ -68,17 +68,13 @@
 
 //End of module select
 
-//Intent
-	using = new /atom/movable/screen()
-	using.name = "act_intent"
+//Combat mode (it replaced the intent selector)
+	using = HUD.make_combat_mode_button(src, "help", "harm")
 	using.set_dir(SOUTHWEST)
 	using.icon = HUD.ui_style
 	using.alpha = HUD.ui_alpha
-	using.icon_state = a_intent
-	using.screen_loc = ui_acti
 	using.layer = HUD_LAYER
 	adding += using
-	HUD.action_intent = using
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()

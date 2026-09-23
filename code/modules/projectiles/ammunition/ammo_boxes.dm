@@ -32,7 +32,7 @@
 	icon_state = "foambox"
 	caliber = "foam"
 	ammo_type = /obj/item/ammo_casing/afoam_dart
-	matter = list(MAT_PLASTIC = 1800)
+	MATERIAL_BULK(MAT_PLASTIC, 1800)
 	max_ammo = 30
 	multiple_sprites = null
 
@@ -41,7 +41,7 @@
 	desc = "Contains Donk-Soft riot darts. It's Donk or Don't! Ages 18 and up."
 	icon_state = "foambox_riot"
 	ammo_type = /obj/item/ammo_casing/afoam_dart/riot
-	matter = list(MAT_STEEL = 5040, MAT_PLASTIC = 1800)
+	MATERIAL_MIX(list(MAT_STEEL = 5040, MAT_PLASTIC = 1800))
 
 /*
  * Cap
@@ -54,7 +54,7 @@
 	icon_state = "capbox"
 	caliber = "caps"
 	ammo_type = /obj/item/ammo_casing/cap
-	matter = list(MAT_STEEL = 2040)
+	MATERIAL_BULK(MAT_STEEL, 2040)
 	max_ammo = 24
 	multiple_sprites = null
 
@@ -68,7 +68,7 @@
 	icon_state = "magnum"
 	caliber = ".357"
 	ammo_type = /obj/item/ammo_casing/a357
-	matter = list(MAT_STEEL = 5040)
+	MATERIAL_BULK(MAT_STEEL, 5040)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -78,7 +78,7 @@
 	icon_state = "magnum_r"
 	caliber = ".357"
 	ammo_type = /obj/item/ammo_casing/a357/rubber
-	matter = list(MAT_STEEL = 5040)
+	MATERIAL_BULK(MAT_STEEL, 5040)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -92,7 +92,7 @@
 	icon_state = "pistol"
 	caliber = ".38"
 	ammo_type = /obj/item/ammo_casing/a38
-	matter = list(MAT_STEEL = 1440)
+	MATERIAL_BULK(MAT_STEEL, 1440)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -102,7 +102,7 @@
 	icon_state = "pistol_p"
 	caliber = ".38"
 	ammo_type = /obj/item/ammo_casing/a38/rubber
-	matter = list(MAT_STEEL = 1440)
+	MATERIAL_BULK(MAT_STEEL, 1440)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -116,7 +116,7 @@
 	icon_state = "box10mm"
 	caliber = "10mm"
 	ammo_type = /obj/item/ammo_casing/a10mm
-	matter = list(MAT_STEEL = 3000)
+	MATERIAL_BULK(MAT_STEEL, 3000)
 	max_ammo = 40
 	multiple_sprites = 1
 
@@ -126,7 +126,7 @@
 	icon_state = "box10mm-practice"
 	caliber = "10mm"
 	ammo_type = /obj/item/ammo_casing/a10mm/practice
-	matter = list(MAT_STEEL = 2400)
+	MATERIAL_BULK(MAT_STEEL, 2400)
 	max_ammo = 40
 	multiple_sprites = 1
 
@@ -136,7 +136,7 @@
 	icon_state = "box10mm-rubber"
 	caliber = "10mm"
 	ammo_type = /obj/item/ammo_casing/a10mm/rubber
-	matter = list(MAT_STEEL = 2400)
+	MATERIAL_BULK(MAT_STEEL, 2400)
 	max_ammo = 40
 	multiple_sprites = 1
 
@@ -146,7 +146,7 @@
 	icon_state = "box10mm-hw"
 	caliber = "10mm"
 	ammo_type = /obj/item/ammo_casing/a10mm/emp
-	matter = list(MAT_STEEL = 5200, MAT_URANIUM = 4000)
+	MATERIAL_MIX(list(MAT_STEEL = 5200, MAT_URANIUM = 4000))
 	max_ammo = 40
 	multiple_sprites = 1
 
@@ -160,7 +160,7 @@
 	icon_state = "box44"
 	caliber = ".44"
 	ammo_type = /obj/item/ammo_casing/a44
-	matter = list(MAT_STEEL = 5040)
+	MATERIAL_BULK(MAT_STEEL, 5040)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -170,7 +170,7 @@
 	icon_state = "box44-rubber"
 	caliber = ".44"
 	ammo_type = /obj/item/ammo_casing/a44/rubber
-	matter = list(MAT_STEEL = 1440)
+	MATERIAL_BULK(MAT_STEEL, 1440)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -184,7 +184,7 @@
 	icon_state = "pistol_s"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45
-	matter = list(MAT_STEEL = 1800)
+	MATERIAL_BULK(MAT_STEEL, 1800)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -194,7 +194,7 @@
 	icon_state = "pistol_p"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45/practice
-	matter = list(MAT_STEEL = 1440)
+	MATERIAL_BULK(MAT_STEEL, 1440)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -204,7 +204,7 @@
 	icon_state = "pistol_ap"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45/ap
-	matter = list(MAT_STEEL = 1200, MAT_PLASTEEL = 600)
+	MATERIAL_MIX(list(MAT_STEEL = 1200, MAT_PLASTEEL = 600))
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -214,7 +214,7 @@
 	icon_state = "pistol_hp"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45/hp
-	matter = list(MAT_STEEL = 1440, MAT_PLASTIC = 360)
+	MATERIAL_MIX(list(MAT_STEEL = 1440, MAT_PLASTIC = 360))
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -224,7 +224,7 @@
 	icon_state = "pistol_r"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45/rubber
-	matter = list(MAT_STEEL = 1440)
+	MATERIAL_BULK(MAT_STEEL, 1440)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -234,7 +234,7 @@
 	icon_state = "pistol_hw"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45/emp
-	matter = list(MAT_STEEL = 3120, MAT_URANIUM = 2400)
+	MATERIAL_MIX(list(MAT_STEEL = 3120, MAT_URANIUM = 2400))
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -248,7 +248,7 @@
 	icon_state = "slug"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g
-	matter = list(MAT_STEEL = 2880)
+	MATERIAL_BULK(MAT_STEEL, 2880)
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -258,7 +258,7 @@
 	icon_state = "buckshot"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/pellet
-	matter = list(MAT_STEEL = 2880)
+	MATERIAL_BULK(MAT_STEEL, 2880)
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -268,7 +268,7 @@
 	icon_state = "bean"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
-	matter = list(MAT_STEEL = 1440)
+	MATERIAL_BULK(MAT_STEEL, 1440)
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -278,7 +278,7 @@
 	icon_state = "stunslug"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/stunshell
-	matter = list(MAT_STEEL = 2880, MAT_GLASS = 5760)
+	MATERIAL_MIX(list(MAT_STEEL = 2880, MAT_GLASS = 5760))
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -288,7 +288,7 @@
 	icon_state = "emp"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/emp
-	matter = list(MAT_STEEL = 2880, MAT_URANIUM = 1920)
+	MATERIAL_MIX(list(MAT_STEEL = 2880, MAT_URANIUM = 1920))
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -298,7 +298,7 @@
 	icon_state = "bean"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/flechette
-	matter = list(MAT_STEEL = 2880, MAT_PLASTEEL = 800)
+	MATERIAL_MIX(list(MAT_STEEL = 2880, MAT_PLASTEEL = 800))
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -308,7 +308,7 @@
 	icon_state = "practice"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/practice
-	matter = list(MAT_STEEL = 480)
+	MATERIAL_BULK(MAT_STEEL, 480)
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -318,7 +318,7 @@
 	icon_state = "blank"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/blank
-	matter = list(MAT_STEEL = 720)
+	MATERIAL_BULK(MAT_STEEL, 720)
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -328,7 +328,7 @@
 	icon_state = "flash"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/flash
-	matter = list(MAT_STEEL = 720, MAT_GLASS = 720)
+	MATERIAL_MIX(list(MAT_STEEL = 720, MAT_GLASS = 720))
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -342,7 +342,7 @@
 	icon_state = "sniper"
 	caliber = "14.5mm"
 	ammo_type = /obj/item/ammo_casing/a145
-	matter = list(MAT_STEEL = 28000, MAT_PLASTEEL = 3500) // Makes them a bit more expensive
+	MATERIAL_MIX(list(MAT_STEEL = 28000, MAT_PLASTEEL = 3500)) // Makes them a bit more expensive
 	max_ammo = 7
 	multiple_sprites = 1
 
@@ -352,7 +352,7 @@
 	icon_state = "sniper"
 	caliber = "14.5mm"
 	ammo_type = /obj/item/ammo_casing/a145/highvel
-	matter = list(MAT_STEEL = 2800, MAT_PLASTEEL = 7000) // Makes them a bit more expensive
+	MATERIAL_MIX(list(MAT_STEEL = 2800, MAT_PLASTEEL = 7000)) // Makes them a bit more expensive
 	max_ammo = 7
 	multiple_sprites = 1
 
@@ -366,7 +366,7 @@
 	icon_state = "rifle"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762
-	matter = list(MAT_STEEL = 6000)
+	MATERIAL_BULK(MAT_STEEL, 6000)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -376,7 +376,7 @@
 	icon_state = "rifle_hp"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762/hp
-	matter = list(MAT_STEEL = 9000)
+	MATERIAL_BULK(MAT_STEEL, 9000)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -386,7 +386,7 @@
 	icon_state = "rifle_ap"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762/ap
-	matter = list(MAT_STEEL = 9000)
+	MATERIAL_BULK(MAT_STEEL, 9000)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -396,7 +396,7 @@
 	icon_state = "rifle_p"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762/practice
-	matter = list(MAT_STEEL = 2700)
+	MATERIAL_BULK(MAT_STEEL, 2700)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -406,7 +406,7 @@
 	icon_state = "rifle_hunter"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762/hunter
-	matter = list(MAT_STEEL = 6000)
+	MATERIAL_BULK(MAT_STEEL, 6000)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -416,7 +416,7 @@
 	icon_state = "paper_wrap"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762
-	matter = list(MAT_STEEL = 1600)
+	MATERIAL_BULK(MAT_STEEL, 1600)
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -426,7 +426,7 @@
 	icon_state = "paper_wrap"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762/blank
-	matter = list(MAT_STEEL = 720)
+	MATERIAL_BULK(MAT_STEEL, 720)
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -436,7 +436,7 @@
 	icon_state = "paper_wrap"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762/hunter
-	matter = list(MAT_STEEL = 1600)
+	MATERIAL_BULK(MAT_STEEL, 1600)
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -450,7 +450,7 @@
 	icon_state = "hrifle"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545
-	matter = list(MAT_STEEL = 5400)
+	MATERIAL_BULK(MAT_STEEL, 5400)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -460,7 +460,7 @@
 	icon_state = "hrifle-ap"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/ap
-	matter = list(MAT_STEEL = 8100)
+	MATERIAL_BULK(MAT_STEEL, 8100)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -470,7 +470,7 @@
 	icon_state = "hrifle-hp"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/hp
-	matter = list(MAT_STEEL = 5400)
+	MATERIAL_BULK(MAT_STEEL, 5400)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -480,7 +480,7 @@
 	icon_state = "hrifle-blank"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/practice
-	matter = list(MAT_STEEL = 2700)
+	MATERIAL_BULK(MAT_STEEL, 2700)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -490,7 +490,7 @@
 	icon_state = "hrifle-hunter"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/hunter
-	matter = list(MAT_STEEL = 5400)
+	MATERIAL_BULK(MAT_STEEL, 5400)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -500,7 +500,7 @@
 	icon_state = "hrifle-blank"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/blank
-	matter = list(MAT_STEEL = 2700)
+	MATERIAL_BULK(MAT_STEEL, 2700)
 	max_ammo = 30
 	multiple_sprites = 1
 
@@ -510,7 +510,7 @@
 	icon_state = "boxhrifle"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545
-	matter = list(MAT_STEEL = 18000)
+	MATERIAL_BULK(MAT_STEEL, 18000)
 	max_ammo = 100
 	multiple_sprites = 1
 
@@ -520,7 +520,7 @@
 	icon_state = "boxhrifle-ap"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/ap
-	matter = list(MAT_STEEL = 27000)
+	MATERIAL_BULK(MAT_STEEL, 27000)
 	max_ammo = 100
 	multiple_sprites = 1
 
@@ -530,7 +530,7 @@
 	icon_state = "boxhrifle-hp"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/hp
-	matter = list(MAT_STEEL = 18000)
+	MATERIAL_BULK(MAT_STEEL, 18000)
 	max_ammo = 100
 	multiple_sprites = 1
 
@@ -540,7 +540,7 @@
 	icon_state = "boxhrifle-practice"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/practice
-	matter = list(MAT_STEEL = 9000)
+	MATERIAL_BULK(MAT_STEEL, 9000)
 	max_ammo = 100
 	multiple_sprites = 1
 
@@ -550,6 +550,6 @@
 	icon_state = "boxhrifle-hunter"
 	caliber = "5.45mm"
 	ammo_type = /obj/item/ammo_casing/a545/hunter
-	matter = list(MAT_STEEL = 18000)
+	MATERIAL_BULK(MAT_STEEL, 18000)
 	max_ammo = 100
 	multiple_sprites = 1

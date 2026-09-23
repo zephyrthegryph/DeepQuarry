@@ -111,7 +111,7 @@
 
 	var/druggy = 0
 	var/adj_temp = 0
-	var/targ_temp = 310
+	var/targ_temp = BODYTEMP_NORMAL
 	var/halluci = 0
 
 	glass_name = REAGENT_ID_ETHANOL
@@ -174,7 +174,7 @@
 		if(druggy != 0)
 			M.druggy = max(M.druggy, druggy*3)
 
-		if(adj_temp > 0 && M.bodytemperature < targ_temp) // 310 is the normal bodytemp. 310.055
+		if(adj_temp > 0 && M.bodytemperature < targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
 		if(adj_temp < 0 && M.bodytemperature > targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -220,7 +220,7 @@
 		if(halluci)
 			M.hallucination = max(M.hallucination, halluci)
 
-		if(adj_temp > 0 && M.bodytemperature < targ_temp) // 310 is the normal bodytemp. 310.055
+		if(adj_temp > 0 && M.bodytemperature < targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
 		if(adj_temp < 0 && M.bodytemperature > targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))

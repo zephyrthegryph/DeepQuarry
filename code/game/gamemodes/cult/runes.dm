@@ -16,7 +16,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	var/allrunesloc[]
 	allrunesloc = new/list()
 	var/index = 0
-	for(var/obj/effect/rune/R in GLOB.rune_list)
+	for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
 		if(R == src)
 			continue
 		if(R.word1 == GLOB.cultwords["travel"] && R.word2 == GLOB.cultwords["self"] && R.word3 == key && isPlayerLevel(R.z))
@@ -49,7 +49,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	var/culcount = 0
 	var/runecount = 0
 	var/obj/effect/rune/IP = null
-	for(var/obj/effect/rune/R in GLOB.rune_list)
+	for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
 		if(R == src)
 			continue
 		if(R.word1 == GLOB.cultwords["travel"] && R.word2 == GLOB.cultwords["other"] && R.word3 == key)
@@ -233,7 +233,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 
 /obj/effect/rune/proc/drain(mob/living/user)
 	var/drain = 0
-	for(var/obj/effect/rune/R in GLOB.rune_list)
+	for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
 		if(R.word1==GLOB.cultwords["travel"] && R.word2==GLOB.cultwords["blood"] && R.word3==GLOB.cultwords["self"])
 			for(var/mob/living/carbon/D in R.loc)
 				if(D.stat!=2)
@@ -330,7 +330,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 
 	is_sacrifice_target = 0
 	find_sacrifice:
-		for(var/obj/effect/rune/R in GLOB.rune_list)
+		for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
 			if(R.word1==GLOB.cultwords["blood"] && R.word2==GLOB.cultwords["join"] && R.word3==GLOB.cultwords["hell"])
 				for(var/mob/living/carbon/human/N in R.loc)
 					if(GLOB.cult && N.mind && N.mind == GLOB.cult.sacrifice_target)
@@ -1026,7 +1026,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		if(iscultist(C) && !C.stat)
 			culcount++
 	if(culcount >= 5)
-		for(var/obj/effect/rune/R in GLOB.rune_list)
+		for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
 			if(R.forensic_data?.get_blooddna() == src.forensic_data?.get_blooddna())
 				for(var/mob/living/M in orange(2,R))
 					M.injure(INJURY_BURN, 15)

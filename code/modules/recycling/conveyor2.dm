@@ -46,7 +46,7 @@
 /obj/machinery/conveyor/Destroy()
 	if(loc)
 		UnregisterSignal(loc, COMSIG_ATOM_ENTERED)
-	for(var/obj/machinery/conveyor_switch/conveyor_switch in GLOB.machines)
+	for(var/obj/machinery/conveyor_switch/conveyor_switch in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		LAZYREMOVE(conveyor_switch.conveyors, src)
 	return ..()
 
@@ -167,7 +167,7 @@
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING
 	id = input
-	for(var/obj/machinery/conveyor_switch/C in GLOB.machines)
+	for(var/obj/machinery/conveyor_switch/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
 			C.conveyors |= src
 	return ITEM_INTERACT_SUCCESS
@@ -194,7 +194,7 @@
 // make the conveyor broken
 // also propagate inoperability to any connected conveyor with the same ID
 /obj/machinery/conveyor/proc/broken()
-	stat |= BROKEN
+	atom_break()
 	update()
 
 	var/obj/machinery/conveyor/C = locate() in get_step(src, dir)
@@ -258,7 +258,7 @@
 
 /obj/machinery/conveyor_switch/LateInitialize()
 	conveyors = list()
-	for(var/obj/machinery/conveyor/C in GLOB.machines)
+	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
 			conveyors += C
 
@@ -320,7 +320,7 @@
 	update()
 
 	// find any switches with same id as this one, and set their positions to match us
-	for(var/obj/machinery/conveyor_switch/S in GLOB.machines)
+	for(var/obj/machinery/conveyor_switch/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(S.id == src.id)
 			S.position = position
 			S.update()
@@ -331,13 +331,9 @@
 /obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/WT = I.get_welder()
-	if(!WT.remove_fuel(0, user))
-		to_chat(user, "The welding tool must be on to complete this task.")
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, WT.usesound, 50, 1)
-	if(do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-		if(!src || !WT.isOn()) return ITEM_INTERACT_BLOCKING
+	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
+		if(!src)
+			return ITEM_INTERACT_BLOCKING
 		to_chat(user, span_notice("You deconstruct the frame."))
 		new /obj/item/stack/material/steel(src.loc, 2)
 		qdel(src)
@@ -352,7 +348,7 @@
 		return ITEM_INTERACT_BLOCKING
 	id = input
 	conveyors = list()
-	for(var/obj/machinery/conveyor/C in GLOB.machines)
+	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
 			conveyors += C
 	return ITEM_INTERACT_SUCCESS

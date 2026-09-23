@@ -43,6 +43,38 @@
 	for(var/kind in types)
 		metric("types_[kind]", types[kind], "types")
 	metric("init_seconds", Master.initializations_seconds, "s")
+	metric("init_atmos_ms", SSair.init_time_ms, "ms")
+	metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
+	// Per-instance composition lists. Blueprints are per type; an item owns a list only
+	// for an arbitrary mix (material_mix). Override lists are interned and shared.
+	var/items = 0
+	var/matter_lists = 0
+	var/matter_entries = 0
+	var/list/matter_owners = list()
+	for(var/obj/item/I in world)
+		items++
+		if(I.material_mix)
+			matter_lists++
+			matter_entries += length(I.material_mix)
+			matter_owners["[I.type]"]++
+		CHECK_TICK
+	var/override_refs = 0
+	var/list/override_lists = list()
+	for(var/obj/O in world)
+		if(O.material_overrides)
+			override_refs++
+			if(!(O.material_overrides in override_lists))
+				override_lists += list(O.material_overrides)
+		CHECK_TICK
+	metric("items_total", items, "instances")
+	metric("item_matter_lists", matter_lists, "lists")
+	metric("item_matter_entries", matter_entries, "entries")
+	metric("material_override_refs", override_refs, "instances")
+	metric("material_override_lists", length(override_lists), "lists")
+	matter_owners = sortTim(matter_owners, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	if(length(matter_owners) > 20)
+		matter_owners.Cut(21)
+	detail("item_matter_owner_types", matter_owners)
 	// Weakrefs never get cleaned up while their target lives, so count them by target type.
 	var/list/weakref_targets = list()
 	var/weakrefs = 0
@@ -330,6 +362,8 @@
 /datum/benchmark/sm_soak/proc/detonate()
 	for(var/obj/machinery/power/supermatter/crystal in world)
 		var/turf/epicenter = get_turf(crystal)
+		if(!epicenter)
+			continue
 		var/list/site = list("x" = epicenter.x, "y" = epicenter.y, "z" = epicenter.z, "area" = get_area(crystal))
 		crystal.explode()
 		return site
@@ -355,17 +389,19 @@
 	var/turf/open/epicenter = locate(site["x"], site["y"], site["z"])
 	if(!istype(epicenter) || get_area(epicenter) != affected_area)
 		return list("label" = label, "delay_s" = delay, "cells" = 0, "origin_missing" = TRUE)
-	var/list/turfs_to_scan = list(epicenter)
+	var/list/frontier = list(epicenter)
 	var/list/connected = list()
 	connected[epicenter] = TRUE
-	var/scan_index = 1
-	while(scan_index <= length(turfs_to_scan))
-		var/turf/open/current = turfs_to_scan[scan_index++]
-		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
-			if(get_area(neighbor) != affected_area || connected[neighbor])
-				continue
-			connected[neighbor] = TRUE
-			turfs_to_scan += neighbor
+	// Breadth-first over Rust's adjacency, one batched read per ring.
+	while(length(frontier))
+		var/list/neighbor_lists = atmos_adjacent_turfs_bulk(frontier)
+		frontier = list()
+		for(var/list/neighbors as anything in neighbor_lists)
+			for(var/turf/open/neighbor as anything in neighbors)
+				if(get_area(neighbor) != affected_area || connected[neighbor])
+					continue
+				connected[neighbor] = TRUE
+				frontier += neighbor
 	var/count = 0
 	var/vacuum = 0
 	var/total = 0
@@ -436,6 +472,85 @@
 		metric(name, best[name], "us/call")
 	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
+
+/// Idle mob Life cost with mob hibernation off, then on (doc/mob_life_architecture.md §4.9).
+/// Spawns idle mice (every system has a sleep rule, so they hibernate) and humans (partly
+/// asleep until the physiology systems gain sleep rules) on a fixture, then measures SSmobs
+/// with GLOB.mob_hibernation_enabled FALSE and TRUE.
+/datum/benchmark/idle_mobs
+	id = "idle_mobs"
+	description = "Idle mob Life cost with mob hibernation off and on"
+
+/datum/benchmark/idle_mobs/Run()
+	wait_for_assets()
+	var/list/turf/open/turfs = build_floor_fixture(param("width", 20))
+	var/list/mob/living/mobs = list()
+	var/mice = param("mice", 300)
+	var/humans = param("humans", 40)
+	var/cycles = param("cycles", 30)
+	for(var/i in 1 to mice)
+		var/mob/living/simple_mob/animal/passive/mouse/M = new(pick(turfs))
+		benchmark_quiet_simple_mob(M)
+		mobs += M
+		CHECK_TICK
+	for(var/i in 1 to humans)
+		mobs += new /mob/living/carbon/human(pick(turfs))
+		CHECK_TICK
+	metric("idle_mobs_spawned", length(mobs), "mobs", "none")
+	var/was_enabled = GLOB.mob_hibernation_enabled
+
+	GLOB.mob_hibernation_enabled = FALSE
+	for(var/mob/living/L as anything in mobs)
+		L.life_wake(LIFE_SYS_ALL, "benchmark")
+	wait_fires(SSmobs, SSmobs.life_slices * 2)
+	begin_window()
+	wait_fires(SSmobs, SSmobs.life_slices * cycles)
+	end_window("hibernation_off")
+	metric("hibernation_off_ssmobs_cost_ms", SSmobs.cost, "ms")
+	metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
+
+	GLOB.mob_hibernation_enabled = TRUE
+	wait_fires(SSmobs, SSmobs.life_slices * 4)
+	begin_window()
+	wait_fires(SSmobs, SSmobs.life_slices * cycles)
+	end_window("hibernation_on")
+	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
+	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
+	var/list/awake_bits = list()
+	for(var/mob/living/L as anything in mobs)
+		if(!L.life_hibernating)
+			awake_bits["[L.type]"] |= L.life_awake
+	detail("hibernation_on_awake_bits_by_type", awake_bits)
+
+	GLOB.mob_hibernation_enabled = was_enabled
+	for(var/mob/living/L as anything in mobs)
+		qdel(L)
+		CHECK_TICK
+
+/// Puts a simple mob's AI to sleep and opens its environment limits, so it idles without
+/// reacting to the fixture's air.
+/proc/benchmark_quiet_simple_mob(mob/living/simple_mob/M)
+	M.ai_brain?.go_sleep()
+	M.min_oxy = 0
+	M.max_oxy = 0
+	M.min_tox = 0
+	M.max_tox = 0
+	M.min_n2 = 0
+	M.max_n2 = 0
+	M.min_co2 = 0
+	M.max_co2 = 0
+	M.min_ch4 = 0
+	M.max_ch4 = 0
+	M.minbodytemp = 0
+	M.maxbodytemp = INFINITY
+	M.temperature_range = INFINITY
+
+/// How many of `mobs` are hibernating.
+/proc/benchmark_count_hibernating(list/mobs)
+	. = 0
+	for(var/mob/living/L as anything in mobs)
+		if(L.life_hibernating)
+			.++
 
 /// Radiation: pulses from many sources over a walled fixture full of mobs and
 /// insulating objects. Reports the time SSradiation spent inside pulses.

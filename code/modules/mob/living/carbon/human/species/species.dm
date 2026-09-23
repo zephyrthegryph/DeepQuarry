@@ -159,7 +159,7 @@
 	var/suit_exhale_sound = 'sound/effects/mob_effects/suit_breathe_out.ogg'
 	var/bad_swimmer = FALSE
 
-	var/body_temperature = 310.15							// Species will try to stabilize at this temperature. (also affects temperature processing)
+	var/body_temperature = BODYTEMP_NORMAL							// Species will try to stabilize at this temperature. (also affects temperature processing)
 
 	// Cold
 	var/cold_level_1 = 260									// Cold damage level 1 below this point.

@@ -54,33 +54,16 @@
 			src.icon_state = "morgue1"
 	return
 
-/obj/structure/morgue/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			for(var/atom/movable/A as mob|obj in src)
-				A.forceMove(src.loc)
-				ex_act(severity)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(src.loc)
-					ex_act(severity)
-				qdel(src)
-				return
-		if(3.0)
-			if (prob(5))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(src.loc)
-					ex_act(severity)
-				qdel(src)
-				return
-	return
+/obj/structure/morgue/explosion_contents_severity(severity)
+	return severity
 
-/obj/structure/morgue/attack_robot(mob/user)
-	if(Adjacent(user))
-		attack_hand(user)
+/obj/structure/morgue/atom_destruction(damage_flag)
+	for(var/atom/movable/A as anything in contents)
+		A.forceMove(loc)
+	return ..()
+
+/obj/structure/morgue
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /obj/structure/morgue/attack_hand(mob/user as mob)
 	if (src.connected)
@@ -160,9 +143,8 @@
 	connected = null
 	return ..()
 
-/obj/structure/m_tray/attack_robot(mob/user)
-	if(Adjacent(user))
-		attack_hand(user)
+/obj/structure/m_tray
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /obj/structure/m_tray/attack_hand(mob/user as mob)
 	if (src.connected)
@@ -197,7 +179,7 @@
  * Crematorium
  */
 
-GLOBAL_LIST_BOILERPLATE(all_crematoriums, /obj/structure/morgue/crematorium)
+REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 
 /obj/structure/morgue/crematorium
 	name = "crematorium"
@@ -343,7 +325,7 @@ GLOBAL_LIST_BOILERPLATE(all_crematoriums, /obj/structure/morgue/crematorium)
 	if(..())
 		return
 	if(src.allowed(user))
-		for (var/obj/structure/morgue/crematorium/C in GLOB.all_crematoriums)
+		for (var/obj/structure/morgue/crematorium/C in REGISTRY_MEMBERS(REGISTRY_CREMATORIUMS))
 			if (C.id == id)
 				if (!C.cremating)
 					C.cremate(null, user)

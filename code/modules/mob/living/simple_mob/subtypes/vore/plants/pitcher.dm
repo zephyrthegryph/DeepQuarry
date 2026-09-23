@@ -25,7 +25,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 	anchored = 1 // Rooted plant. Only killing it will let you move it.
 	endurance = 200
-	a_intent = I_HELP // While this is already help by default, I'm leaving this variable here as a reminder that disarm will prevent players from swapping places with the pitcher, but interfere with vore bump.
+	// Combat mode stays off: a pitcher in combat mode would stop players swapping places with it, but interfere with vore bump.
 	faction = FACTION_PLANTS // Makes plant-b-gone deadly.
 
 	min_oxy = 0 //Immune to atmos because so are space vines. This is arbitrary and can be tweaked if desired.
@@ -90,16 +90,19 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	B.contamination_color = "purple"
 	B.contamination_flavor = "Wet"
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Slick fluid trickles over you, carrying threads of sweetness.",
 		"Everything is still, dark, and quiet. Your breaths echo quietly.",
 		"The surrounding air feels thick and humid.")
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The slimy puddle stings faintly. It seems the plant has no need to quickly break down victims.",
 		"The humid air settles in your lungs, keeping each breath more labored than the last.",
 		"Fluid drips onto you, burning faintly as your body heat warms it.",
 		"Digestive enzymes itch at your flesh as you are slowly dissolved into soupy nutrients."
 		)
+	B.own_emote_lists()
 	B.emote_lists[DM_DRAIN] = list(
 		"Each bead of slick fluid running down your body leaves you feeling weaker.",
 		"It's cramped and dark, the air thick and heavy. Your limbs feel like lead.",
@@ -184,7 +187,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				adjust_nutrition(-NUTRITION_PITCHER)
 
 /mob/living/simple_mob/vore/pitcher_plant/attack_hand(mob/living/user)
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		if(fruit)
 			to_chat(user, span_infoplain("You pick a fruit from \the [src]."))
 			var/obj/F = new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(user)) //Drops at the user's feet if put_in_hands fails

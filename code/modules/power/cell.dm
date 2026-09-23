@@ -3,6 +3,8 @@
 // fits in APC to provide backup power
 
 /obj/item/cell
+	material_template = /datum/material_template/cell
+	material_total = 2 * SHEET_MATERIAL_AMOUNT
 	name = "power cell"
 	desc = "A rechargable electrochemical power cell."
 	icon = 'icons/obj/power_cells.dmi' // swap to 'icons/obj/power_cells_.dmi' for new sprites. // Enable new sprites
@@ -36,7 +38,6 @@
 	var/material_quenched = FALSE
 	var/material_feedback_cooldown = 0
 
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 50)
 
 	drop_sound = 'sound/items/drop/component.ogg'
 	pickup_sound = 'sound/items/pickup/component.ogg'
@@ -47,10 +48,10 @@
 
 /obj/item/cell/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_CELL, 2 * SHEET_MATERIAL_AMOUNT)
 	// A cell's temperature and electrical phase are functional state even for
 	// the standard construction. Unlike idle machine housings, cells therefore
 	// always need a service datum; it sleeps dependency-driven when stable.
+	apply_blueprint_effects()
 	enable_material_service()
 	AddElement(/datum/element/electrovoreable)
 	c_uid = cell_uid++
@@ -426,24 +427,9 @@
 	update_icon()
 
 /obj/item/cell/ex_act(severity)
-
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-				return
-			if (prob(50))
-				corrupt()
-		if(3.0)
-			if (prob(25))
-				qdel(src)
-				return
-			if (prob(25))
-				corrupt()
-	return
+	. = ..()
+	if(!QDELETED(src) && prob(50 / severity))
+		corrupt()
 
 /obj/item/cell/proc/get_electrocute_damage()
 	//1kW = 5

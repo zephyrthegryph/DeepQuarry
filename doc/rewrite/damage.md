@@ -160,12 +160,28 @@ Each type declares its breakpoints as rules ([rules.md §4](rules.md#4-rules)):
 - **Destroyed at 0.** Debris entries, then each slot's drop policy through the ledger ([containment.md §2](containment.md#2-the-ledger)).
   - Latent contents are resolved as data: destroyed entries are removed, and only survivors that land on a turf are created.
 
+### 6.1 As built (D4)
+
+- **Rules** (`code/datums/rules/declarations.dm`), in declaration order so one hit breaks before it destroys:
+  - `/datum/rule/integrity_breaks`: integrity ratio at or below `integrity_failure` calls `atom_break()`, and leaving it calls `atom_fix()`. Applies to every `/obj` whose type sets `integrity_failure` (a per-type filter, `/datum/rule/proc/applies_to_type()`), so other types have no rules and no binding.
+  - `/datum/rule/damage_flavour/{light,moderate,heavy}`: below 3/4, 1/2 and 1/4 integrity, they keep `damage_band`. `/atom/examine()` shows `damage_flavour_text(band)`, generated from the type's `damage_wear`. They apply to windows, railings, low walls, tables, doors and the expedition target, which had the hand-written lines. Walls are turfs and have no binding, so they read the same levels through `dq_damage_band_for()`.
+  - `/datum/rule/integrity_destroyed`: at 0 it calls `atom_destruction()`. It applies to the types above.
+  - `take_damage()` settles the binding, so the effects run in the same call. The damage flag reaches the effects through `last_damage_flag`. An object of a rule-driven type that never materialized has no binding, so it keeps the legacy crossings.
+- **Machinery.** `/obj/machinery/atom_break()` sets `BROKEN`, sends `COMSIG_MACHINERY_BROKEN` (with the damage flag) and publishes `REACT_KEY_MACHINE_BROKEN`. It returns FALSE if the machine was already broken. `atom_fix()` is its inverse. Overrides with real behaviour call the base and act on its result. `set_broken()` is gone. Code that broke or fixed a machine by hand (vending malfunction, holoposters, floor lights, conveyors, turrets, and door, APC and camera repair) now calls `atom_break()` or `atom_fix()`. Setup-time `BROKEN` flags (missing parts at Initialize) are left as they were.
+- **Destruction.** `/obj/atom_destruction()` spawns the type's debris (`debris_type`/`debris_amount`, or override `debris_entries()`). Then `deconstruct(FALSE)` applies each slot's drop policy through the ledger before the legacy loop that drops leftover contents.
+- **Lint.** `tools/ci/breakpoint_lint.py` fails on any `set_broken()` definition, and on any `atom_break()`/`atom_fix()` override whose body only calls the parent, sets flags or updates the icon.
+- **Tests.** `dq_rule_thresholds` generates the threshold cases. For a rule whose root the per-type filter rejects, it runs every topmost type that declares the breakpoint (`dq_rule_declaring_types()`). `dq_breakpoint_tests.dm` covers machine break and fix parity, real machine types, flavour text at each band, and destruction debris.
+
 ## 7. Explosions and EMPs
 
 - Propagation stays in DM, because it is under 5% of explosion cost. The rest is side effects.
 - **Batched delivery.** The affected atoms receive their packets in budgeted batches, grouped by type. Containers resolve their latent contents in bulk.
 - **What's deleted:** the `ex_act` severity ladders, the structure and item base "`prob` then `qdel`" behaviour, and the duplicated EMP ladder (`living_defense.dm:261` and `projectile.dm:711`).
 - **Batched power topology.** Explosions batch their power topology changes (M3) instead of calling `makepowernets()`.
+
+**Done in D5.** `SSexplosions.queue_blast()` collects each reached atom once, at its strongest severity, into per-type batches; `deliver_blast_batches()` hands them their packets under `blast_batch_budget` atoms per fire. A container declares `explosion_contents_severity()` (closets shield one step; morgues, pods, scanners and APCs pass the blast through) and its contents join the same epoch before its own packet lands, so a destroyed container spills survivors. Immune types are `BOMB_PROOF` and never queued. The EMP ladder is `emp_ladder()`: `emp_ionic_damage()` reads it forwards for pulses and `emp_severity_for_ionic()` reads it backwards for ion rounds (`receive_ionic()`), for objects and mobs alike. The powernet defer and atmos topology batch stay open for the whole epoch, so an epoch is one topology commit.
+
+Still on severity ladders, owned elsewhere: turfs and walls (D3), the separate health pools of blobs, plants, shields, simple doors and modular computers (D3), and mob `ex_act`s (the body rewrite).
 
 ## 8. Repair
 

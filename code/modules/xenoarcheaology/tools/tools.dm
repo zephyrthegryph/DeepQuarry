@@ -3,7 +3,7 @@
 	desc = "A coiled metallic tape used to check dimensions and lengths."
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "measuring"
-	matter = list(MAT_STEEL = 100)
+	MATERIAL_BULK(MAT_STEEL, 100)
 	w_class = ITEMSIZE_SMALL
 
 /obj/item/storage/bag/fossils
@@ -15,8 +15,10 @@
 	w_class = ITEMSIZE_NORMAL
 	storage_slots = 50
 	max_storage_space = ITEMSIZE_COST_NORMAL * 50
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/fossil)
+
+/obj/item/storage/bag/fossils/hold_constraint()
+	var/list/holds = list(/obj/item/fossil)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/box/samplebags
 	name = "sample bag box"
@@ -35,7 +37,7 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "xenoarch_scanner"
 	item_state = "analyzer"
-	matter = list(MAT_STEEL = 10000,MAT_GLASS = 5000)
+	MATERIAL_MIX(list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 
@@ -101,7 +103,7 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "depth_scanner"
 	item_state = "analyzer"
-	matter = list(MAT_STEEL = 1000,MAT_GLASS = 1000)
+	MATERIAL_MIX(list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	var/list/positive_locations
@@ -233,7 +235,7 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "pinoff"	//pinonfar, pinonmedium, pinonclose, pinondirect, pinonnull
 	item_state = "electronic"
-	matter = list(MAT_STEEL = 1000,MAT_GLASS = 500)
+	MATERIAL_MIX(list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	var/frequency = PUB_FREQ
 	var/scan_ticks = 0
 	var/obj/item/radio/target_radio
@@ -269,7 +271,7 @@
 						//scan radios in the world to try and find one
 						var/turf/T = get_turf(src)
 						var/cur_dist = 999
-						for(var/obj/item/radio/beacon/R in GLOB.all_beacons)
+						for(var/obj/item/radio/beacon/R in REGISTRY_MEMBERS(REGISTRY_BEACONS))
 							if(R.z == T.z && R.frequency == src.frequency)
 								var/check_dist = get_dist(T,R)
 								if(check_dist < cur_dist)
@@ -334,7 +336,7 @@
 	icon_state = "ano_scanner2"
 	item_state = "lampgreen"
 	icon = 'icons/obj/xenoarchaeology.dmi'
-	matter = list(MAT_STEEL = 10000,MAT_GLASS = 5000)
+	MATERIAL_MIX(list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	var/mode = 1 //Start off scanning. 1 = scanning, 0 = measuring

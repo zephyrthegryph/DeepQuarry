@@ -109,18 +109,11 @@
 	NC.d2 = fdirn
 	NC.update_icon()
 
-	var/datum/powernet/PN
 	if(last_piece && last_piece.d2 != chassis.dir)
 		last_piece.d1 = min(last_piece.d2, chassis.dir)
 		last_piece.d2 = max(last_piece.d2, chassis.dir)
 		last_piece.update_icon()
-		PN = last_piece.powernet
-
-	if(!PN)
-		PN = new()
-	PN.add_cable(NC)
-	NC.mergeConnectedNetworks(NC.d2)
-
-	//NC.mergeConnectedNetworksOnTurf()
+		last_piece.power_register()
+	NC.power_register()
 	last_piece = NC
 	return 1

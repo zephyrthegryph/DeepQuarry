@@ -93,8 +93,6 @@
 	// really big, you can't miss them, and laser carbines pump out so much hurt. At zero the shield overloads;
 	// the projector itself survives and recharges.
 	max_integrity = 400
-	/// D5 shim: emp_act still reads this; it mirrors max_integrity. Delete with the EMP ladder.
-	var/max_shield_health = 400
 	var/shield_regen_amount = 20		// How much to recharge every process(), after the delay.
 	var/shield_regen_delay = 5 SECONDS	// If the shield takes damage, it won't recharge for this long.
 	var/last_damaged_time = null		// world.time when the shields took damage, used for the delay.
@@ -247,7 +245,7 @@
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	adjust_health(-max_shield_health / severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
+	adjust_health(-max_integrity / severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
 
 // Subtypes
 

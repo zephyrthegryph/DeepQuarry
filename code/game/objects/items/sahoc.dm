@@ -3,7 +3,7 @@
 	desc = "It radiates an aura of chaotic size energy."
 	icon = 'icons/obj/mobcap.dmi'
 	icon_state = "mobcap0"
-	matter = list(DEFAULT_WALL_MATERIAL = 1000)
+	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 1000)
 	throwforce = 00
 	throw_speed = 4
 	throw_range = 20
@@ -60,7 +60,7 @@
 	desc = "A strange button, the only distinguishing feature being an engraved text reading 'Suffer to Gain.'."
 	icon = 'icons/obj/mobcap.dmi'
 	icon_state = "mobcap1"
-	matter = list(DEFAULT_WALL_MATERIAL = 5000)
+	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 5000)
 	throwforce = 00
 	throw_speed = 2
 	throw_range = 20

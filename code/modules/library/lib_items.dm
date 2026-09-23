@@ -49,9 +49,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 75, 1)
-	to_chat(user, span_notice("You begin dismantling \the [src]."))
-	if(!do_after(user, 2.5 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src]."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You dismantle \the [src]."))
 	new /obj/item/stack/material/wood(get_turf(src), 3)
@@ -73,26 +71,13 @@
 				choice.loc = get_turf(src)
 			update_icon()
 
-/obj/structure/bookcase/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			for(var/obj/item/book/b in contents)
-				qdel(b)
-			qdel(src)
-			return
-		if(2.0)
-			for(var/obj/item/book/b in contents)
-				if (prob(50)) b.loc = (get_turf(src))
-				else qdel(b)
-			qdel(src)
-			return
-		if(3.0)
-			if (prob(50))
-				for(var/obj/item/book/b in contents)
-					b.loc = (get_turf(src))
-				qdel(src)
-			return
-	return
+/obj/structure/bookcase/explosion_contents_severity(severity)
+	return severity
+
+/obj/structure/bookcase/atom_destruction(damage_flag)
+	for(var/obj/item/book/b in contents)
+		b.forceMove(loc)
+	return ..()
 
 /obj/structure/bookcase/update_icon()
 	if(contents.len < 5)

@@ -27,7 +27,7 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 	opacity = 0
 	density = FALSE
 	anchored = FALSE
-	matter = list(DEFAULT_WALL_MATERIAL = 25000)
+	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 25000)
 	var/stored_matter = 30
 	var/mode = "container"
 	var/glasstype_name = "metamorphic glass"

@@ -14,7 +14,7 @@
 	throw_speed = 2
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 80)
+	material_total = 80
 	attack_verb = list("pinched", "nipped")
 	hitsound = 'sound/items/Wirecutter.ogg'
 	usesound = 'sound/items/Wirecutter.ogg'
@@ -48,7 +48,7 @@
 	if(!iscarbon(M))
 		return ..()
 	var/mob/living/carbon/C = M
-	if(istype(C) && user.a_intent == I_HELP && (C.handcuffed) && (istype(C.handcuffed, /obj/item/handcuffs/cable)))
+	if(istype(C) && IS_HELPING(user) && (C.handcuffed) && (istype(C.handcuffed, /obj/item/handcuffs/cable)))
 		user.visible_message("\The [user] cuts \the [C]'s restraints with \the [src]!",\
 		"You cut \the [C]'s restraints with \the [src]!",\
 		"You hear cable being cut.")

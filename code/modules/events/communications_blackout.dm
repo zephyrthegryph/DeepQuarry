@@ -16,7 +16,7 @@
 
 
 /datum/event/communications_blackout/start()
-	for(var/obj/machinery/telecomms/T in GLOB.telecomms_list)
+	for(var/obj/machinery/telecomms/T in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 		T.emp_act(EMP_HEAVY)
-	for(var/obj/machinery/exonet_node/N in GLOB.machines)
+	for(var/obj/machinery/exonet_node/N in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		N.emp_act(EMP_HEAVY)

@@ -108,14 +108,14 @@
 	var/turf/T = get_turf(src)
 	var/obj/structure/cable/C = T.get_cable_node()
 	if (C && anchored) //Make sure its anchored too.
-		PN = C.powernet
+		PN = C.get_powernet()
 
 	if (PN)
 		var/power_draw = between(0, max_charge - stored_charge, charge_rate) //what we are trying to draw
 		power_draw = PN.draw_power(power_draw) //what we actually get
 		stored_charge += power_draw
 		if(power_draw <= 0 && stored_charge < max_charge)
-			SSmachines.hibernate_reactive_machine(src, list("powernet-rate:[REF(PN)]", "powernet:[REF(PN)]"))
+			sleep_until_keys(list(REACT_KEY_POWERNET, REACT_ID(PN), REACT_POWERNET_RATE|REACT_POWERNET_STATE))
 			return PROCESS_KILL
 	else
 		return PROCESS_KILL
@@ -157,3 +157,14 @@
 // === merged from shield_capacitor_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_capacitor
 	icon = 'icons/obj/machines/shielding.dmi'
+
+/// Audit: a sleeping capacitor must be full or have nothing to draw from.
+/obj/machinery/shield_capacitor/react_sleep_violation()
+	if(!asleep_on_keys() || !anchored || stored_charge >= max_charge)
+		return null
+	var/turf/T = get_turf(src)
+	var/obj/structure/cable/C = T?.get_cable_node()
+	var/datum/powernet/PN = C?.get_powernet()
+	if(PN && PN.avail - PN.load > 0)
+		return "asleep below full charge on a grid with [PN.avail - PN.load] W spare"
+	return null

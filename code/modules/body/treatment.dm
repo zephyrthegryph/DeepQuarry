@@ -370,14 +370,23 @@
 		TREAT_SURGICAL_REPAIR  = "Surgical repair",
 		TREAT_RESECTION        = "Resection",
 		TREAT_AIRWAY           = "Airway clearance",
-		TREAT_VENTILATION      = "Assisted ventilation",
 		TREAT_DECOMPRESSION    = "Chest decompression",
 		TREAT_DEFIBRILLATION   = "Defibrillation",
 		TREAT_CHEST_COMPRESSION = "Chest compressions",
 		TREAT_VASOPRESSOR      = "Vasopressor",
 		TREAT_DIGESTIVE        = "Digestive repair",
+		TREAT_WOUND_PACKING    = "Wound packing",
+		TREAT_OCCLUSIVE_SEAL   = "Occlusive seal",
 		TREAT_REGENERATION     = "Natural regeneration",
 		TREAT_RESTORATION      = "Restoration",
+		TREAT_FEEDSTOCK        = "Refactory feedstock",
+		TREAT_SURGICAL_CLOSURE = "Surgical closure",
+		TREAT_PANEL_CLOSURE    = "Panel closure",
+		TREAT_BONE_SETTING     = "Bone setting",
+		TREAT_VESSEL_REPAIR    = "Vessel repair",
+		TREAT_TENDON_REPAIR    = "Tendon repair",
+		TREAT_FOREIGN_BODY_REMOVAL = "Foreign body removal",
+		TREAT_LITHOTRIPSY      = "Lithotripsy",
 	)
 	return names
 
@@ -390,22 +399,34 @@
 	switch(tag)
 		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_SYSTEM_RESTORE, TREAT_CALIBRATION, TREAT_TISSUE_REPAIR, TREAT_BURN_CARE, TREAT_HEMOSTATIC, TREAT_BONE_REPAIR, TREAT_SURGICAL_REPAIR, TREAT_RESECTION)
 			return TRUE
-		if(TREAT_AIRWAY, TREAT_VENTILATION, TREAT_DECOMPRESSION, TREAT_DEFIBRILLATION, TREAT_CHEST_COMPRESSION)
+		if(TREAT_AIRWAY, TREAT_DECOMPRESSION, TREAT_DEFIBRILLATION, TREAT_CHEST_COMPRESSION)
 			return TRUE
-		if(TREAT_REGENERATION, TREAT_RESTORATION)
-			return TRUE // the body itself, powers, magic, admin
+		if(TREAT_WOUND_PACKING, TREAT_OCCLUSIVE_SEAL)
+			return TRUE
+		if(TREAT_REGENERATION, TREAT_RESTORATION, TREAT_FEEDSTOCK)
+			return TRUE // the body itself, powers, magic, admin, steel fed to a refactory
+		if(TREAT_SURGICAL_CLOSURE, TREAT_PANEL_CLOSURE, TREAT_BONE_SETTING, TREAT_VESSEL_REPAIR, TREAT_TENDON_REPAIR, TREAT_FOREIGN_BODY_REMOVAL, TREAT_LITHOTRIPSY)
+			return TRUE // surgical procedure steps
 	return FALSE
 
 /// Biologies a treatment mechanism works on. Biological mechanisms (every
-/// reagent tag) only treat organic tissue; repair mechanisms only treat
-/// synthetic parts. Nanoform bodies respond to both.
+/// reagent tag) only treat organic tissue; repair mechanisms treat synthetic
+/// parts. A nanite swarm answers only to structural repair (plating, wiring,
+/// calibration), its own regeneration and refactory feedstock, plus the
+/// electrical jump-start that reboots a dormant core.
 /proc/treatment_tag_biology(tag)
 	switch(tag)
-		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_SYSTEM_RESTORE, TREAT_COOLANT, TREAT_CALIBRATION)
+		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_CALIBRATION, TREAT_PANEL_CLOSURE)
 			return BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM
-		if(TREAT_RESTORATION)
+		if(TREAT_SYSTEM_RESTORE, TREAT_COOLANT)
+			return BIOLOGY_SYNTHETIC
+		if(TREAT_REGENERATION, TREAT_DEFIBRILLATION)
+			return BIOLOGY_ORGANIC | BIOLOGY_NANOFORM
+		if(TREAT_FEEDSTOCK)
+			return BIOLOGY_NANOFORM
+		if(TREAT_RESTORATION, TREAT_FOREIGN_BODY_REMOVAL)
 			return BIOLOGY_ALL
-	return BIOLOGY_ORGANIC | BIOLOGY_NANOFORM
+	return BIOLOGY_ORGANIC
 
 /// reagent ID -> treatment_tags, built once from the chemistry prototypes.
 /// Only reagents that carry tags appear.

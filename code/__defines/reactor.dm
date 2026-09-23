@@ -32,6 +32,61 @@
 #define REACT_KEY_AREA_POWER 2
 /// A door's mode (bolts, emergency access, ...) changed. Id: the door's REACT_ID.
 #define REACT_KEY_DOOR_MODE 3
+/// An APC's own state or its grid supply class changed. Id: the APC's REACT_ID.
+#define REACT_KEY_APC 4
+	#define REACT_APC_STATE 1
+	#define REACT_APC_SUPPLY 2
+/// A powernet changed. Id: the powernet's REACT_ID.
+#define REACT_KEY_POWERNET 5
+	/// Supply or load moved (exact-rate consumers).
+	#define REACT_POWERNET_RATE 1
+	/// Cables, warnings or monitor-visible state.
+	#define REACT_POWERNET_STATE 2
+	/// Machine membership (sleeping APCs).
+	#define REACT_POWERNET_TOPOLOGY 4
+/// A turret's settings or power changed. Id: the turret's REACT_ID.
+#define REACT_KEY_TURRET 6
+/// A disposal unit's state changed. Id: the unit's REACT_ID.
+#define REACT_KEY_DISPOSAL 7
+/// A meteor appeared or went away. Id: always 1.
+#define REACT_KEY_METEORS 8
+/// A mob entered, left or moved in a 16x16 chunk. Id: MOB_CHUNK_NUMERIC_KEY (z < 256).
+/// One key for every mob; the mask says whether the mover was a player.
+#define REACT_KEY_MOB_CHUNK 9
+	/// Any mob (sleeping turrets, calm AI brains). Subscribe with sleep_on_keys().
+	#define REACT_CHUNK_ANY_MOB (1<<0)
+	/// A mob with a client (looping sounds, auto-flicker lights, Q5). Subscribe with
+	/// SSreactor.subscribe_player_chunks().
+	#define REACT_CHUNK_PLAYER (1<<1)
+/// The mask for keys with a single meaning.
+#define REACT_KEY_CHANGED 1
+
+/// Publish key (kind, D's id) only if D was ever given a registry id: a subscriber builds
+/// the key with REACT_ID(D), so a datum without one has no subscribers. Saves the bind call.
+#define REACT_PUBLISH_OWN(D, kind, mask) if((D).reactor_id) { REACT_PUBLISH(kind, (D).reactor_id, mask) }
+/// A pipe network's leaks or topology changed. Id: the network's REACT_ID, or
+/// REACT_ID_GLOBAL for a change whose network is not known yet (new construction).
+#define REACT_KEY_PIPE_NETWORK 21
+/// A shuttle's schedule changed (called, recalled, launching). Id: REACT_SHUTTLE_*.
+#define REACT_KEY_SHUTTLE_SCHEDULE 22
+#define REACT_SHUTTLE_EVAC 1
+#define REACT_SHUTTLE_SUPPLY 2
+/// A machine broke or was fixed (base /obj/machinery/atom_break()/atom_fix()). Id: the machine's REACT_ID.
+#define REACT_KEY_MACHINE_BROKEN 23
+
+/// Key id for global keys (registry ids start at 1, so 0 is never a datum's id).
+#define REACT_ID_GLOBAL 0
+
+// Key masks.
+/// REACT_KEY_AREA_POWER: the area's power_change() ran (channels or light switch).
+#define REACT_AREA_POWER_CHANGED (1<<0)
+/// REACT_KEY_DOOR_MODE parts.
+#define REACT_DOOR_BOLTS (1<<0)
+#define REACT_DOOR_POWER (1<<1)
+#define REACT_DOOR_ELECTRIFIED (1<<2)
+#define REACT_DOOR_OPEN (1<<3)
+/// REACT_KEY_PIPE_NETWORK: leak membership or topology changed.
+#define REACT_PIPE_LEAKS (1<<0)
 
 /// Reason classes for the wake metrics (REACT_CLASS_EVERY counts continuous-lane runs,
 /// which call react_every() instead of on_react()).

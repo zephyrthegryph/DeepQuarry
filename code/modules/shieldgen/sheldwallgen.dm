@@ -67,7 +67,7 @@
 
 	var/obj/structure/cable/C = T.get_cable_node()
 	var/datum/powernet/PN
-	if(C)	PN = C.powernet		// find the powernet of the connected cable
+	if(C)	PN = C.get_powernet()		// find the powernet of the connected cable
 
 	if(!PN)
 		power = 0
@@ -295,31 +295,11 @@
 
 
 /obj/machinery/shieldwall/ex_act(severity)
+	// The wall itself is energy; the blast drains a generator instead.
 	if(needs_power)
-		var/obj/machinery/shieldwallgen/G
-		switch(severity)
-			if(1.0) //big boom
-				if(prob(50))
-					G = gen_primary
-				else
-					G = gen_secondary
-				G.storedpower -= 120000
-
-			if(2.0) //medium boom
-				if(prob(50))
-					G = gen_primary
-				else
-					G = gen_secondary
-				G.storedpower -= 30000
-
-			if(3.0) //lil boom
-				if(prob(50))
-					G = gen_primary
-				else
-					G = gen_secondary
-				G.storedpower -= 12000
-	return
-
+		var/obj/machinery/shieldwallgen/G = prob(50) ? gen_primary : gen_secondary
+		var/static/list/drain = list(120000, 30000, 12000)
+		G.storedpower -= drain[clamp(round(severity), 1, 3)]
 
 /obj/machinery/shieldwall/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))

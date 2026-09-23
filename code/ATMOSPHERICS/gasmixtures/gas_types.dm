@@ -33,6 +33,30 @@
 			fill += gas
 	return to_return
 
+/// Gas key -> numeric Rust gas ID, for every /datum/gas: its type path, its path
+/// text and its short id ("o2"). Read through the GAS_IDX() macro.
+GLOBAL_LIST_INIT(gas_idx_by_key, build_gas_idx_lookup())
+/// Numeric gas ID + 1 -> /datum/gas type path. The name table for admin and UI.
+GLOBAL_LIST_INIT(gas_path_by_idx, build_gas_path_table())
+
+/proc/build_gas_idx_lookup()
+	. = list()
+	for(var/datum/gas/gas_path as anything in subtypesof(/datum/gas))
+		var/idx = initial(gas_path.idx)
+		if(isnull(idx))
+			continue
+		.[gas_path] = idx
+		.["[gas_path]"] = idx
+		if(initial(gas_path.id))
+			.[initial(gas_path.id)] = idx
+
+/proc/build_gas_path_table()
+	. = new /list(GAS_ID_COUNT)
+	for(var/datum/gas/gas_path as anything in subtypesof(/datum/gas))
+		var/idx = initial(gas_path.idx)
+		if(!isnull(idx))
+			.[idx + 1] = gas_path
+
 /proc/gas_id2path(id)
 	var/list/meta_gas = GLOB.meta_gas_info
 	if(id in meta_gas)
@@ -53,6 +77,9 @@
 
 //This is a plot created using the values for gas exports. Each gas has a value that works as its kind of soft-cap, which limits you from making billions of credits per sale, based on the base_value variable on the gasses themselves. Most of these gasses as a result have a rather low value when sold, like nitrogen and oxygen at 1500 and 600 respectively at their maximum value. The
 /datum/gas
+	/// Numeric Rust gas ID (GAS_ID_*, generated from verdigris gas/ids.rs). This
+	/// is what crosses the FFI.
+	var/idx
 	var/id = ""
 	var/specific_heat = 0
 	var/name = ""
@@ -75,6 +102,7 @@
 
 
 /datum/gas/oxygen
+	idx = GAS_ID_OXYGEN
 	id = GAS_O2
 	specific_heat = 20
 	name = "Oxygen"
@@ -85,6 +113,7 @@
 	primary_color = "#0000ff"
 
 /datum/gas/nitrogen
+	idx = GAS_ID_NITROGEN
 	id = GAS_N2
 	specific_heat = 20
 	name = "Nitrogen"
@@ -95,6 +124,7 @@
 	primary_color = "#ffff00"
 
 /datum/gas/carbon_dioxide //what the fuck is this?
+	idx = GAS_ID_CARBON_DIOXIDE
 	id = GAS_CO2
 	specific_heat = 30
 	name = "Carbon Dioxide"
@@ -106,6 +136,7 @@
 	primary_color = COLOR_GRAY
 
 /datum/gas/plasma
+	idx = GAS_ID_PLASMA
 	id = GAS_PLASMA
 	specific_heat = 200
 	name = "Plasma"
@@ -120,6 +151,7 @@
 	primary_color = "#ffc0cb"
 
 /datum/gas/water_vapor
+	idx = GAS_ID_WATER_VAPOR
 	id = GAS_WATER_VAPOR
 	specific_heat = 40
 	name = "Water Vapor"
@@ -133,6 +165,7 @@
 	primary_color = "#b0c4de"
 
 /datum/gas/hypernoblium
+	idx = GAS_ID_HYPERNOBLIUM
 	id = GAS_HYPER_NOBLIUM
 	specific_heat = 2000
 	name = "Hyper-noblium"
@@ -145,6 +178,7 @@
 	primary_color = COLOR_TEAL
 
 /datum/gas/nitrous_oxide
+	idx = GAS_ID_NITROUS_OXIDE
 	id = GAS_N2O
 	specific_heat = 40
 	name = "Nitrous Oxide"
@@ -159,6 +193,7 @@
 	primary_color = "#ffe4c4"
 
 /datum/gas/nitrium
+	idx = GAS_ID_NITRIUM
 	id = GAS_NITRIUM
 	specific_heat = 10
 	name = "Nitrium"
@@ -172,6 +207,7 @@
 	primary_color = "#a52a2a"
 
 /datum/gas/tritium
+	idx = GAS_ID_TRITIUM
 	id = GAS_TRITIUM
 	specific_heat = 10
 	name = "Tritium"
@@ -185,6 +221,7 @@
 	primary_color = "#32cd32"
 
 /datum/gas/bz
+	idx = GAS_ID_BZ
 	id = GAS_BZ
 	specific_heat = 20
 	name = "BZ"
@@ -197,6 +234,7 @@
 	primary_color = "#9370db"
 
 /datum/gas/pluoxium
+	idx = GAS_ID_PLUOXIUM
 	id = GAS_PLUOXIUM
 	specific_heat = 80
 	name = "Pluoxium"
@@ -207,6 +245,7 @@
 	primary_color = "#7b68ee"
 
 /datum/gas/miasma
+	idx = GAS_ID_MIASMA
 	id = GAS_MIASMA
 	specific_heat = 20
 	name = "Miasma"
@@ -219,6 +258,7 @@
 	primary_color = COLOR_OLIVE
 
 /datum/gas/freon
+	idx = GAS_ID_FREON
 	id = GAS_FREON
 	specific_heat = 600
 	name = "Freon"
@@ -232,6 +272,7 @@
 	primary_color = "#afeeee"
 
 /datum/gas/hydrogen
+	idx = GAS_ID_HYDROGEN
 	id = GAS_HYDROGEN
 	specific_heat = 15
 	name = "Hydrogen"
@@ -243,6 +284,7 @@
 	primary_color = "#ffffff"
 
 /datum/gas/healium
+	idx = GAS_ID_HEALIUM
 	id = GAS_HEALIUM
 	specific_heat = 10
 	name = "Healium"
@@ -255,6 +297,7 @@
 	primary_color = "#fa8072"
 
 /datum/gas/proto_nitrate
+	idx = GAS_ID_PROTO_NITRATE
 	id = GAS_PROTO_NITRATE
 	specific_heat = 30
 	name = "Proto Nitrate"
@@ -267,6 +310,7 @@
 	primary_color = "#adff2f"
 
 /datum/gas/zauker
+	idx = GAS_ID_ZAUKER
 	id = GAS_ZAUKER
 	specific_heat = 350
 	name = "Zauker"
@@ -279,6 +323,7 @@
 	primary_color = "#006400"
 
 /datum/gas/halon
+	idx = GAS_ID_HALON
 	id = GAS_HALON
 	specific_heat = 175
 	name = "Halon"
@@ -291,6 +336,7 @@
 	primary_color = COLOR_PURPLE
 
 /datum/gas/helium
+	idx = GAS_ID_HELIUM
 	id = GAS_HELIUM
 	specific_heat = 15
 	name = "Helium"
@@ -301,6 +347,7 @@
 	primary_color = "#f0f8ff"
 
 /datum/gas/antinoblium
+	idx = GAS_ID_ANTINOBLIUM
 	id = GAS_ANTINOBLIUM
 	specific_heat = 1
 	name = "Antinoblium"

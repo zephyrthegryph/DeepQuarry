@@ -94,7 +94,7 @@
 		to_chat(user, span_warning("\The [H] is wearing gloves."))
 		return ITEM_INTERACT_FAILURE
 
-	if(user != H && H.a_intent != I_HELP && !H.lying)
+	if(user != H && !IS_HELPING(H) && !H.lying)
 		user.visible_message(span_danger("\The [user] tries to take prints from \the [H], but they move away."))
 		return ITEM_INTERACT_FAILURE
 

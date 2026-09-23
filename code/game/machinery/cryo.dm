@@ -4,7 +4,6 @@
 // is the source of truth for per-line diff context.
 
 /// 72 kg of tissue at about 3470 J/(kg K).
-#define HEAT_CAPACITY_HUMAN 249840
 
 /obj/machinery/atmospherics/unary/cryo_cell
 	name = "cryo cell"
@@ -116,10 +115,9 @@
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
 		occupantData["critical"] = occupant.is_critical()
-		occupantData["physicalLoad"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-		occupantData["asphyxiaLoad"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
-		occupantData["toxicLoad"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
-		occupantData["thermalLoad"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
+		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
+		occupantData["diagnosis"] = D.report_data()
+		qdel(D)
 		occupantData["bodyTemperature"] = occupant.bodytemperature
 	data["occupant"] = occupantData;
 
@@ -218,7 +216,7 @@
 		// The occupant and the cell's gas settle to a shared temperature; the
 		// heat the body loses is what the gas gains.
 		var/air_heat_capacity = air_contents.heat_capacity()
-		var/equilibrium_temperature = (HEAT_CAPACITY_HUMAN * occupant.bodytemperature + air_heat_capacity * air_contents.return_temperature()) / (HEAT_CAPACITY_HUMAN + air_heat_capacity)
+		var/equilibrium_temperature = (HUMAN_HEAT_CAPACITY * occupant.bodytemperature + air_heat_capacity * air_contents.return_temperature()) / (HUMAN_HEAT_CAPACITY + air_heat_capacity)
 		occupant.bodytemperature = equilibrium_temperature
 		air_contents.set_temperature(equilibrium_temperature)
 		occupant.set_stat(UNCONSCIOUS)
@@ -269,7 +267,6 @@
 		occupant.bodytemperature = 261									  // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
 	unbuckle_mob(occupant, force = TRUE)
 	occupant.cozyloop.stop() // Cozy Music
-	//REMOVE_TRAIT(occupant, TRAIT_STASIS, REF(src)) //Stops life almost entirely, so not done here.
 	occupant = null
 	update_use_power(USE_POWER_IDLE)
 	SStgui.update_uis(src)
@@ -300,7 +297,6 @@
 	if(on)
 		START_MACHINE_PROCESSING(src)
 	occupant.cozyloop.start() // Cozy Music
-	//ADD_TRAIT(occupant, TRAIT_STASIS, REF(src))  //Stops life almost entirely, so not done here.
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant
 	occupant.pixel_y += 19
@@ -363,4 +359,3 @@
 /datum/data/function/proc/display()
 	return
 
-#undef HEAT_CAPACITY_HUMAN

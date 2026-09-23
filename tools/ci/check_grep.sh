@@ -150,6 +150,15 @@ if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LI
 	FAILED=1
 fi;
 
+part "life scheduler: wake and hibernate in one place"
+# Only /mob/living/proc/life_wake() and life_hibernate() (scheduler.dm) change whether a mob
+# runs; producers call life_wake() (doc/mob_life_architecture.md §4.9).
+if $grep -n '(life_hibernating|life_awake)\s*[|&]?=[^=]|hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/scheduler\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+	echo
+	echo -e "${RED}ERROR: direct write to a mob's wake state. Call life_wake(bits, reason) or life_hibernate(reason).${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`
@@ -160,6 +169,43 @@ part "gas mixture mirror writes"
 if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperature|volume)[[:space:]]*[-+*/]?=[^=]' "${code_files[@]}" | grep -vE 'return_temperature|return_volume'; then
 	echo
 	echo -e "${RED}ERROR: direct write to a gas mixture temperature/volume mirror detected. Use set_temperature() / set_volume() — a raw assignment updates only the DM mirror and is ignored by the Rust atmos arena.${NC}"
+	FAILED=1
+fi;
+
+part "thermal constants: generated, not redefined (H1)"
+# Temperatures, heat capacities and thermal defaults are generated from
+# verdigris/domains/heat/src/consts.rs (`/// @dm-define`) into the bindings. A DM
+# #define of a generated name is a second definition that can drift (B12).
+generated_defines=$(sed -n 's/^#define \([A-Z][A-Z0-9_]*\) .*/\1/p' code/__defines/verdigris/_bindings.dm | paste -sd'|' -)
+if [ -n "$generated_defines" ] && $grep -n "^[[:space:]]*#define[[:space:]]+($generated_defines)\b" "${code_files[@]}" | grep -v '^code/__defines/verdigris/_bindings\.dm'; then
+	echo
+	echo -e "${RED}ERROR: a generated verdigris constant is redefined in DM. Change it in the Rust source (@dm-define) and regenerate the bindings.${NC}"
+	FAILED=1
+fi;
+
+part "thermal constants: no hardcoded body temperatures or human heat capacities (H1)"
+# 310.15 K is BODYTEMP_NORMAL and 280000 J/K is HUMAN_HEAT_CAPACITY. Comments are
+# ignored. emergent.dm's T0C + 37 belongs to the body rewrite (fixes.md B22).
+if $grep -n '\b(310(\.(15|055|0?5))?|280000|249840)\b' "${code_files[@]}" | sed 's#//.*##' \
+	| grep -E '^[^:]+:[0-9]+:.*\b(310(\.(15|055|0?5))?|280000|249840)\b' | grep -iE 'temp|heat|capacit' \
+	| grep -v '^code/__defines/verdigris/_bindings\.dm'; then
+	echo
+	echo -e "${RED}ERROR: hardcoded body temperature or human heat capacity. Use BODYTEMP_NORMAL / HUMAN_HEAT_CAPACITY (generated from verdigris/domains/heat/src/consts.rs).${NC}"
+	FAILED=1
+fi;
+if $grep -n '^[^/]*(\bT0C[[:space:]]*\+[[:space:]]*37\b|\b37[[:space:]]*\+[[:space:]]*T0C\b)' "${code_files[@]}" | grep -v '^code/modules/medical/emergent\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: T0C + 37 is BODYTEMP_NORMAL.${NC}"
+	FAILED=1
+fi;
+
+part "one temperature API: no ad-hoc return_temperature procs (H1)"
+# Atoms read get_temperature() / get_interior_temperature() and heat with
+# add_heat() (code/modules/heat/heat.dm). return_temperature() is the gas
+# mixture accessor only.
+if $grep -n '^/[A-Za-z0-9_/]*/return_temperature\(' "${code_files[@]}" | grep -v '^code/ATMOSPHERICS/gasmixtures/gas_mixture\.dm:[0-9]*:/datum/gas_mixture/proc/return_temperature('; then
+	echo
+	echo -e "${RED}ERROR: return_temperature() is only the gas mixture accessor. Atoms override get_temperature() / get_interior_temperature() (code/modules/heat/heat.dm).${NC}"
 	FAILED=1
 fi;
 
@@ -174,6 +220,55 @@ input_ladder_allowlist='code/modules/keybindings/router\.dm|code/_onclick/item_a
 if $grep -n '\bmodifiers\[\s*"(shift|ctrl|alt|middle|right|left|xbutton1|xbutton2)"|LAZYACCESS\(\s*modifiers\s*,\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)|\bmodifiers\[\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)\s*\]' "${code_files[@]}" | grep -vE "^($input_ladder_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: a click modifier check outside the input router. Add a row to a click table in code/modules/keybindings/router.dm and branch on the INPUT_ACTION_* it produces.${NC}"
+	FAILED=1
+fi;
+
+part "tools: *_act procs that bounce into attackby"
+# A tool hook does its own work through use_tool() (doc/rewrite/interactions.md §9,
+# code/datums/interactions/tools.dm). It must not hand the tool back to attackby().
+# The focused_tool_stage construction ladders listed here are replaced by
+# construction graphs in I5 and must not grow.
+tool_bounce_allowlist='code.modules.vehicles.construction\.dm|code.modules.mob.living.bot.secbot\.dm'
+if [ "$pcre2_support" -eq 1 ]; then
+	if $grep -PUn '(?m)^/[^\n]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act(_secondary)?\([^\n]*\)\n(?:(?:\t[^\n]*|[ \t]*)\n)*?\t[^\n]*(?<![.\w])attackby\(' code --glob '*.dm' | grep -E '_act' | grep -vE "^($tool_bounce_allowlist):"; then
+		echo
+		echo -e "${RED}ERROR: a *_act tool hook calls attackby(). Do the tool's work in the hook with use_tool().${NC}"
+		FAILED=1
+	fi;
+fi;
+
+part "tools: istype checks on tool types"
+# Tools are identified by quality: has_tool_quality(TOOL_*), with get_welder() /
+# get_multitool() when a subtype member is read. The files below keep type-specific
+# checks (a particular subtype, not "any tool of this quality"), or belong to domains
+# converted later (mecha: I5; surgery and medical machines: the body rewrite). They
+# must not grow.
+tool_istype_allowlist='code.modules.surgery.limbs\.dm|code.modules.surgery.operate\.dm|code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.modules.surgery.robotics\.dm|code.modules.surgery.hardsuit\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
+if $grep -n 'istype\([^,]+,\s*/obj/item/(tool|weldingtool|multitool)\b' "${code_files[@]}" | grep -vE "^($tool_istype_allowlist):"; then
+	echo
+	echo -e "${RED}ERROR: an istype() check on a tool type. Use has_tool_quality(TOOL_*), or get_welder()/get_multitool() to read the tool.${NC}"
+	FAILED=1
+fi;
+
+part "tools: deprecated is_<tool>() helpers"
+if $grep -n '\.is_(screwdriver|wrench|crowbar|wirecutter|multitool|welder)\(\)' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: is_<tool>() helpers are gone. Use has_tool_quality(TOOL_*).${NC}"
+	FAILED=1
+fi;
+
+part "combat mode: a_intent"
+# Intents were replaced by combat mode (roadmap I6, doc/rewrite/interactions.md §12).
+# Read what a Use does with IS_HELPING/IS_HARMING/IS_DISARMING/IS_GRABBING or
+# use_stance(), and set it with set_combat_mode()/set_use_stance(). `a_intent`
+# survives only as a read-only mirror (code/modules/mob/combat_mode.dm) for
+# files other work owns and has not converted yet: the body rewrite's medical,
+# surgery, organ and species files, and the tool *_act procs I4 is migrating.
+# These must not grow; delete an entry once its file is converted.
+a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/modules/medical/instruments/resuscitation\.dm|code/modules/surgery/surgery\.dm|code/modules/organs/organ\.dm|code/game/objects/items/weapons/surgery_tools\.dm|code/game/objects/items/devices/scanners/health\.dm|code/modules/reagents/reagent_containers/(hypospray|syringes|blood_pack)\.dm|code/modules/mob/living/carbon/human/species/(species|station/teshari|station/station_special_abilities|station/traits/weaver_objs)\.dm|code/game/machinery/doors/(airlock|windowdoor)\.dm|code/game/mecha/mecha\.dm|code/game/objects/items/devices/spy_bug\.dm|code/game/objects/structures/window\.dm|code/modules/maintenance_panels/maintenance_panel\.dm|code/modules/mob/living/silicon/robot/robot\.dm'
+if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist):"; then
+	echo
+	echo -e "${RED}ERROR: a_intent is gone. Use combat mode: IS_HARMING(M), IS_HELPING(M), IS_DISARMING(M), IS_GRABBING(M) or M.use_stance() to read it, and set_combat_mode()/set_use_stance() to set it (code/__defines/combat_mode.dm).${NC}"
 	FAILED=1
 fi;
 
@@ -193,6 +288,17 @@ part "body factors: no chemical effects"
 if $grep -n '\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: chem_effects / add_chemical_effect detected. Declare body factors on the reagent (factors = alist(BF_X = value)) and read them with factor(BF_X).${NC}"
+	FAILED=1
+fi;
+
+part "physiology: no asphyxia injury"
+# Lack of oxygen is an outcome the physiology computes (code/modules/body/physiology.dm),
+# not an injury. Express the cause as a mechanism: an airway / breathing restriction, breath
+# quality, a factor (BF_O2_CARRIAGE, BF_TISSUE_UPTAKE, ...) or, with no mechanism at all,
+# add_oxygen_debt(). Read it with oxygen_debt().
+if $grep -n '(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: asphyxia injury detected. Model the mechanism (restriction, breath quality, factor) or use add_oxygen_debt() / oxygen_debt().${NC}"
 	FAILED=1
 fi;
 
@@ -254,6 +360,17 @@ part "medical condition severity writes"
 if grep -RInE --include='*.dm' '\.severity[[:space:]]*[-+*/]?=[^=]' code/modules/medical code/modules/contracts; then
 	echo
 	echo -e "${RED}ERROR: direct medical-condition severity write detected. Use set_severity() or adjust_severity() so condition-dependent systems receive invalidation signals.${NC}"
+	FAILED=1
+fi;
+
+part "diagnosis: no four-number readouts"
+# Every scanner, monitor, HUD and UI renders body.diagnose(profile): vitals
+# plus findings (code/modules/medical/diagnosis/). The brute/burn/tox/oxy
+# readouts and their helpers are gone; injury_load() is an internal query,
+# not a UI.
+if grep -RInE --exclude-dir=node_modules --include='*.dm' --include='*.ts' --include='*.tsx' '\b(bruteLoss|oxyLoss|toxLoss|fireLoss|patient_brute|patient_burn|patient_tox|patient_oxy|physicalLoad|asphyxiaLoad|toxicLoad|thermalLoad|damagePanel|scannerFindings|dq_qualitative_damage_panel|dq_qualitative_scanner_findings|dq_crude_scan_readout|dq_externally_visible_symptom_lines)\b|Damage Specifics|Suffocation/Toxin/Burns/Brute' code tgui/packages/tgui/interfaces; then
+	echo
+	echo -e "${RED}ERROR: a four-number (brute/burn/tox/oxy) readout detected. Render a diagnosis instead: M.diagnose(/datum/diagnostic_profile/...) and its render_chat() / report_data().${NC}"
 	FAILED=1
 fi;
 
@@ -388,6 +505,30 @@ if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[
 	FAILED=1
 fi;
 
+part "DM copies of Rust state"
+# Rust owns turf adjacency (built from DM air-block masks; see
+# code/ATMOSPHERICS/environmental/LINDA_system.dm) and the gas registry. DM must
+# not keep its own copy of that state: no per-turf adjacency lists, no
+# superconductivity direction caches, no gas-ID string round trips. Ask Rust
+# through the generated vg_* binds (vg_atmos_adjacent_turfs, *_bulk,
+# vg_atmos_turfs_share) and pass GAS_ID_* numbers.
+if $grep -n '\batmos_adjacent_turfs\b|\batmos_supeconductivity\b|\bcurrent_cycle\b|__update_auxtools_turf_adjacency_info|immediate_calculate_adjacent_turfs' "${code_files[@]}" \
+	| $grep -v '^code/__defines/verdigris/_bindings\.dm' \
+	| $grep -v ':\s*//|:\s*\*'; then
+	echo
+	echo -e "${RED}ERROR: DM copy of Rust atmos state. Turf adjacency lives in Rust: publish air-block masks with air_update_turf(TRUE) and read with get_atmos_adjacent_turfs() / atmos_adjacent_turfs_bulk() / SSair.air_blocked().${NC}"
+	FAILED=1
+fi;
+# Gas IDs cross the FFI as GAS_ID_* numbers (GAS_IDX() converts a /datum/gas
+# path); a stringified argument to a vg_* bind is a string round trip.
+if $grep -n 'vg_[a-z0-9_]+\([^)]*"\[' "${code_files[@]}" \
+	| $grep -v '^code/__defines/verdigris/_bindings\.dm' \
+	| $grep -v ':\s*//|:\s*\*'; then
+	echo
+	echo -e "${RED}ERROR: stringified argument passed to a verdigris bind. Pass numbers (GAS_ID_*, GAS_IDX(path)) across the FFI.${NC}"
+	FAILED=1
+fi;
+
 part "html tag matching"
 #Checking for missed tags
 python tools/TagMatcher/tag-matcher.py code
@@ -453,6 +594,13 @@ if [ "$pcre2_support" -eq 1 ]; then
 	if $grep -P 'addtimer\((?=.*TIMER_OVERRIDE)(?!.*TIMER_UNIQUE).*\)' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: TIMER_OVERRIDE used without TIMER_UNIQUE.${NC}"
+		FAILED=1
+	fi;
+
+	part "string-built reactive keys"
+	if $grep -P '(publish_reactive_dependency|hibernate_reactive_machine|wake_reactive_machine)\(|REACT_(PUBLISH|ON_KEY)\([^)]*"' "${code_files[@]}"; then
+		echo
+		echo -e "${RED}ERROR: Reactive keys are numeric (REACT_PUBLISH / REACT_ON_KEY with REACT_KEY_* and REACT_ID), never strings (reactor.md §10).${NC}"
 		FAILED=1
 	fi;
 

@@ -185,6 +185,8 @@
 	var/list/micro_utility_equipment
 	var/list/micro_weapon_equipment
 
+REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
+
 /obj/mecha/Initialize(mapload)
 	. = ..()
 
@@ -238,7 +240,6 @@
 	removeVerb(/obj/mecha/verb/disconnect_from_port)
 	src.mecha_log_message("[src.name] created.")
 	loc.Entered(src)
-	GLOB.mechas_list += src //global mech list
 
 /obj/mecha/drain_power(drain_check)
 
@@ -333,7 +334,6 @@
 
 	STOP_PROCESSING(SSobj, src)
 
-	GLOB.mechas_list -= src //global mech list
 	. = ..()
 
 // The main process loop to replace the ancient global iterators.
@@ -1345,35 +1345,14 @@
 //This refer to whenever you are caught in an explosion.
 /obj/mecha/ex_act(severity)
 	var/obj/item/mecha_parts/component/armor/ArmC = internal_components[MECH_ARMOR]
-
-	var/temp_deflect_chance = deflect_chance
-
-	if(!ArmC)
-		temp_deflect_chance = 0
-
-	else
-		temp_deflect_chance = round(ArmC.get_efficiency() * ArmC.deflect_chance + (defence_mode ? 25 : 0))
-
+	var/temp_deflect_chance = ArmC ? round(ArmC.get_efficiency() * ArmC.deflect_chance + (defence_mode ? 25 : 0)) : 0
 	src.mecha_log_message("Affected by explosion of severity: [severity].",1)
 	if(prob(temp_deflect_chance))
 		severity++
 		src.log_append_to_last("Armor saved, changing severity to [severity].")
-	switch(severity)
-		if(1.0)
-			src.take_damage(max_integrity, "bomb")
-		if(2.0)
-			if (prob(30))
-				src.take_damage(max_integrity, "bomb")
-			else
-				src.take_damage(max_integrity/2, "bomb")
-				src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
-		if(3.0)
-			if (prob(5))
-				qdel(src)
-			else
-				src.take_damage(max_integrity/5, "bomb")
-				src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
-	return
+	. = ..(severity)
+	if(!QDELETED(src) && severity <= 3)
+		src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
 /*Will fix later -Sieve
 /obj/mecha/attack_blob(mob/user as mob)
@@ -1622,7 +1601,7 @@
 				to_chat(user, "There's already a powercell installed.")
 		return
 
-	else if(focused_tool_stage == TOOL_WELDER && user.a_intent != I_HURT)
+	else if(focused_tool_stage == TOOL_WELDER && !IS_HARMING(user))
 		var/obj/item/weldingtool/WT = W.get_welder()
 		var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
 		var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
@@ -1824,17 +1803,15 @@
 			. = t_air.return_pressure()
 	return
 
-//skytodo: //No idea what you want me to do here, mate.
-/obj/mecha/proc/return_temperature()
-	. = 0
+/// The pilot sees the cabin air on the internal tank, else the air outside.
+/obj/mecha/get_interior_temperature()
 	var/obj/item/mecha_parts/component/gas/GC = internal_components[MECH_GAS]
 	if(use_internal_tank && (GC && prob(GC.get_efficiency() * 100)))
-		. = cabin_air.return_temperature()
-	else
-		var/datum/gas_mixture/t_air = get_turf_air()
-		if(t_air)
-			. = t_air.return_temperature()
-	return
+		return cabin_air.return_temperature()
+	var/datum/gas_mixture/t_air = get_turf_air()
+	if(t_air)
+		return t_air.return_temperature()
+	return ..()
 
 // connect/disconnect plumb the mecha cabin atmosphere into a LINDA
 // portables_connector's pipe network, mirroring the canonical portable
@@ -2385,12 +2362,12 @@
 	// Atmos.
 	data["use_internal_tank"] = !!use_internal_tank
 	data["tank_pressure"] = internal_tank ? round(internal_tank.return_pressure(), 0.01) : "None"
-	var/tt = internal_tank ? internal_tank.return_temperature() : null
+	var/tt = internal_tank?.air_contents?.return_temperature()
 	data["tank_temp_k"] = tt == null ? "Unknown" : round(tt, 0.1)
 	data["tank_temp_c"] = tt == null ? "Unknown" : round(tt - T0C, 0.1)
 	data["cabin_pressure"] = round(return_pressure(), 0.01)
-	data["cabin_temp_k"] = round(return_temperature(), 0.1)
-	data["cabin_temp_c"] = round(return_temperature() - T0C, 0.1)
+	data["cabin_temp_k"] = round(get_interior_temperature(), 0.1)
+	data["cabin_temp_c"] = round(get_interior_temperature() - T0C, 0.1)
 	data["lights"] = !!lights
 	data["dna_lock"] = dna || ""
 	data["defence_mode_possible"] = !!defence_mode_possible
@@ -2580,7 +2557,7 @@
 						<b>Airtank pressure: </b>[tank_pressure]kPa<br>
 						<b>Airtank temperature: </b>[tank_temperature]K|[tank_temperature - T0C]&deg;C<br>
 						<b>Cabin pressure: </b>[cabin_pressure>WARNING_HIGH_PRESSURE ? span_red("[cabin_pressure]"): cabin_pressure]kPa<br>
-						<b>Cabin temperature: </b> [return_temperature()]K|[return_temperature() - T0C]&deg;C<br>
+						<b>Cabin temperature: </b> [get_interior_temperature()]K|[get_interior_temperature() - T0C]&deg;C<br>
 						<b>Lights: </b>[lights?"on":"off"]<br>
 						[src.dna?"<b>DNA-locked:</b><br> <span style='font-size:10px;letter-spacing:-1px;'>[src.dna]</span> \[<a href='byond://?src=\ref[src];reset_dna=1'>Reset</a>\]<br>":null]
 					"}
@@ -3196,15 +3173,15 @@
 	var/physical = source_mob.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/thermal = source_mob.injury_load(INJURY_CATEGORY_THERMAL)
 	var/toxic = source_mob.injury_load(INJURY_CATEGORY_TOXIC)
-	var/asphyxia = source_mob.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/oxygen_debt = source_mob.oxygen_debt()
 	if(physical)
 		target_mob.injure(INJURY_BLUNT, physical, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	if(thermal)
 		target_mob.injure(INJURY_BURN, thermal, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	if(toxic)
 		target_mob.injure(INJURY_TOXIN, toxic, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	if(asphyxia)
-		target_mob.injure(INJURY_ASPHYXIA, asphyxia, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	if(oxygen_debt)
+		target_mob.add_oxygen_debt(oxygen_debt, src)
 
 /// Icon-state suffix for the melee-mode action button, keyed on the mecha's melee injury kind.
 /obj/mecha/proc/melee_damtype_icon()

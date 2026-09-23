@@ -43,10 +43,7 @@
 					return 2
 
 	playsound(src, open_sound, 50, 1, -3)
-	for(var/obj/O in src)
-		O.forceMove(get_turf(src))
-	for(var/mob/M in src)
-		M.forceMove(get_turf(src))
+	slot_empty(CONTAINER_SLOT_INTERIOR, get_turf(src))
 	src.opened = 1
 
 	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, null)
@@ -60,21 +57,22 @@
 		return 0
 
 	playsound(src, close_sound, 50, 1, -3)
-	var/itemcount = 0
+	// Each object costs one unit (storage_cost_of); the ledger stops at storage_capacity.
 	for(var/obj/O in get_turf(src))
-		if(itemcount >= storage_capacity)
-			break
 		if(O.density || O.anchored || istype(O,/obj/structure/closet) || istype(O,/obj/effect/abstract))
 			continue
 		if(istype(O, /obj/structure/bed)) //This is only necessary because of rollerbeds and swivel chairs.
 			var/obj/structure/bed/B = O
 			if(B.has_buckled_mobs())
 				continue
-		O.forceMove(src)
-		itemcount++
+		O.move_into(src)
 
 	src.opened = 0
 	update_icon()
+	return 1
+
+/// Crates count objects, not sizes.
+/obj/structure/closet/crate/storage_cost_of(atom/movable/thing)
 	return 1
 
 /obj/structure/closet/crate/attackby(obj/item/W as obj, mob/user as mob)
@@ -116,25 +114,6 @@
 		return TRUE
 	attack_hand(user)
 	return TRUE
-
-/obj/structure/closet/crate/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			for(var/obj/O in src.contents)
-				qdel(O)
-			qdel(src)
-			return
-		if(2.0)
-			for(var/obj/O in src.contents)
-				if(prob(50))
-					qdel(O)
-			qdel(src)
-			return
-		if(3.0)
-			if (prob(50))
-				qdel(src)
-			return
-	return
 
 /obj/structure/closet/req_breakout()
 	if(opened || !sealed)

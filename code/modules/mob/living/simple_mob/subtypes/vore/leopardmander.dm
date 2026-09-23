@@ -95,6 +95,7 @@
 	B.contamination_flavor = "Wet"
 	B.belly_fullscreen_color = "#c47cb4"
 	B.belly_fullscreen = "VBOanim_belly1"
+	B.own_emote_lists()
 	B.emote_lists[DM_HEAL] = list(
 		"The drake's idle movement helps its stomach gently churn around you, slimily squelching against your figure.",
 		"The draconic predator takes a moment to intentionally clench its gut around you, encapsulating you in a strange, fleshy hug.",
@@ -103,6 +104,7 @@
 		"The thick, humid atmosphere within the drake's thick hanging belly works in tandem with its steady, metronome-like heartbeat to soothe you.",
 		"Your surroundings sway from side to side as the drake wanders about, your form sinking bodily into the doughy, soft gutflesh.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The drake growls in annoyance before clenching those wrinkled walls tight against your form, grinding away at you!",
 		"As the beast wanders about, you're forced to slip and slide around amidst a pool of thick digestive goop, sinking briefly into the thick, heavy walls!",
@@ -126,6 +128,7 @@
 	B.belly_fullscreen_color3 = "#FFCCFF"
 	B.belly_fullscreen = "VBO_maw20"
 	B.emote_time = 1 //Short emote time, since they wont spend long here!
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The drake's thick tongue presses against your form, smothering you with thick, gooey saliva as it pushes you around in it's maw.",
 		"The exotic drake lets out a deep rumble as it idly maws over you, shifting you in a warm, slimy embrace as it passively prepares to send you into a deeper embrace."
@@ -192,6 +195,7 @@
 	B.belly_fullscreen_color = "#df3dbc"
 	B.belly_fullscreen_alpha = 240
 	B.belly_fullscreen = "VBOanim_belly1"
+	B.own_emote_lists()
 	B.emote_lists[DM_HEAL] = list(
 		"The drake's idle movement helps its stomach gently churn around you, slimily squelching against your figure.",
 		"The draconic predator takes a moment to intentionally clench its gut around you, encapsulating you in a strange, fleshy hug.",
@@ -200,6 +204,7 @@
 		"The thick, humid atmosphere within the drake's thick hanging belly works in tandem with its steady, metronome-like heartbeat to soothe you.",
 		"Your surroundings sway from side to side as the drake wanders about, your form sinking bodily into the doughy, soft gutflesh.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The drake growls in annoyance before clenching those wrinkled walls tight against your form, grinding away at you!",
 		"As the beast wanders about, you're forced to slip and slide around amidst a pool of thick digestive goop, sinking briefly into the thick, heavy walls!",
@@ -225,6 +230,7 @@
 	B.belly_fullscreen_color4 = "#B593F9"
 	B.belly_fullscreen = "VBO_maw20"
 	B.emote_time = 1 //Short emote time, since they wont spend long here!
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The drake's thick tongue presses against your form, smothering you with thick, gooey saliva as it pushes you around in it's maw.",
 		"The exotic drake lets out a deep rumble as it idly maws over you, shifting you in a warm, slimy embrace as it passively prepares to send you into a deeper embrace."

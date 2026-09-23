@@ -8,9 +8,6 @@
 	w_class = ITEMSIZE_NORMAL
 	flags = WALL_ITEM
 
-/obj/structure/sign/ex_act(severity)
-	qdel(src)
-
 /obj/structure/sign/screwdriver_act(mob/user, obj/item/tool)
 	if(istype(src, /obj/structure/sign/scenery) || istype(src, /obj/structure/sign/double))
 		return ..()
@@ -1630,16 +1627,9 @@
 	. = ..()
 
 /obj/structure/sign/flag/ex_act(severity)
-	switch(severity)
-		if(1)
-			qdel(src)
-		if(2)
-			if(prob(50))
-				qdel(src)
-			else
-				rip()
-		if(3)
-			rip()
+	. = ..()
+	if(!QDELETED(src))
+		rip()
 
 /obj/structure/sign/flag/unfasten(mob/user)
 	if(!ripped)
@@ -1674,7 +1664,7 @@
 
 /obj/structure/sign/flag/attackby(obj/item/W, mob/user)
 	..()
-	if(istype(W, /obj/item/flame/lighter) || istype(W, /obj/item/weldingtool))
+	if(istype(W, /obj/item/flame/lighter) || W.has_tool_quality(TOOL_WELDER))
 		visible_message(span_warning("\The [user] starts to burn \the [src] down!"))
 		if(!do_after(user, 2 SECONDS, target = src))
 			return FALSE

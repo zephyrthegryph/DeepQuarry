@@ -1,4 +1,5 @@
 /obj/item/projectile/spell_projectile
+	resistance_flags = BOMB_PROOF
 	name = "spell"
 	icon = 'icons/obj/projectiles.dmi'
 
@@ -20,9 +21,6 @@
 		qdel(trail)
 	carried = null
 	return ..()
-
-/obj/item/projectile/spell_projectile/ex_act()
-	return
 
 /obj/item/projectile/spell_projectile/before_move()
 	if(proj_trail && src && src.loc) //pretty trails

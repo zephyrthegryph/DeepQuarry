@@ -1,0 +1,11 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - balance: "Hits on a protean's control cluster, and what its armour stops for a wearer, now injure the protean itself. The cluster has no separate damage pool."
+  - balance: "A dormant protean's cluster goes inert: no armour, unsealed, modules off and very heavy."
+  - bugfix: "A protean folded into its cluster goes dormant instead of dying from lethal damage."
+  - balance: "Dormancy is now unconsciousness. Revival rebuilds cohesion and the vital parts, but other injuries and afflictions stay."
+  - rscdel: "A lost protean control cluster is no longer silently replaced."
+  - rscadd: "Nanite afflictions: cohesion loss, refactory depletion, orchestrator damage, swarm contamination and form strain."
+  - balance: "Nanite bodies respond only to plating, wiring and calibration repair, their own regeneration and steel feedstock. Biological medicine does nothing for them."
+  - code_imp: "The protean cluster's cell is charged and drained through a power ledger."

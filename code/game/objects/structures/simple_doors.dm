@@ -15,9 +15,6 @@
 	var/datum/material/material
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
-	/// D5 shim: the explosion ladder (ex_act) still subtracts old hardness points
-	/// here; CheckHardness() moves them onto integrity. Delete with the ladder.
-	var/hardness = 0
 	var/oreAmount = 7
 	var/knock_sound = 'sound/machines/door/knock_glass.ogg'
 	var/knock_hammer_sound = 'sound/weapons/sonic_jackhammer.ogg'
@@ -93,11 +90,11 @@
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!Adjacent(user))
 		return
-	else if(user.a_intent == I_HURT)
+	else if(IS_HARMING(user))
 		src.visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
 		src.add_fingerprint(user)
 		playsound(src, knock_hammer_sound, 50, 0, 3)
-	else if(user.a_intent == I_HELP)
+	else if(IS_HELPING(user))
 		src.visible_message("[user] knocks on \the [src].", "Someone knocks on \the [src].")
 		src.add_fingerprint(user)
 		playsound(src, knock_sound, 50, 0, 3)
@@ -221,34 +218,12 @@
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
 
-/// Moves hardness the explosion ladder subtracted onto integrity (see `hardness`).
-/obj/structure/simple_door/proc/CheckHardness()
-	var/pending = hardness
-	hardness = 0
-	if(pending < 0)
-		take_damage(-pending * 10, BRUTE, BOMB, FALSE)
-
 /obj/structure/simple_door/proc/Dismantle(devastated = 0)
 	deconstruct(!devastated)
 
 /obj/structure/simple_door/handle_deconstruct(disassembled = TRUE)
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("The [src] is destroyed!"))
-
-/obj/structure/simple_door/ex_act(severity = 1)
-	switch(severity)
-		if(1)
-			Dismantle(1)
-		if(2)
-			if(prob(20))
-				Dismantle(1)
-			else
-				hardness--
-				CheckHardness()
-		if(3)
-			hardness -= 0.1
-			CheckHardness()
-	return
 
 /obj/structure/simple_door/process()
 	// material.radioactivity moved to a component; query the helper.
@@ -386,7 +361,7 @@
 
 		// Carbons can get straight through these.
 		if(istype(usr,/mob/living/carbon))
-			if(user.a_intent == I_HURT)
+			if(IS_HARMING(user))
 				var/mob/living/carbon/M = usr
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)

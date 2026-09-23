@@ -5,7 +5,17 @@
 	icon = 'icons/obj/wallet.dmi'
 	icon_state = "wallet-orange"
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(
+	slot_flags = SLOT_ID
+
+	var/obj/item/card/id/front_id = null
+
+	drop_sound = 'sound/items/drop/leather.ogg'
+	pickup_sound = 'sound/items/pickup/leather.ogg'
+
+	var/original_name // Due to loadout customizations and such
+
+/obj/item/storage/wallet/hold_constraint()
+	var/list/holds = list(
 		/obj/item/spacecash,
 		/obj/item/card,
 		/obj/item/clothing/mask/smokable/cigarette/,
@@ -40,25 +50,18 @@
 		/obj/item/pizzavoucher,
 		/obj/item/card_fluff
 		)
-	slot_flags = SLOT_ID
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
-	var/obj/item/card/id/front_id = null
-
-	drop_sound = 'sound/items/drop/leather.ogg'
-	pickup_sound = 'sound/items/pickup/leather.ogg'
-
-	var/original_name // Due to loadout customizations and such
-
-/obj/item/storage/wallet/remove_from_storage(obj/item/W as obj, atom/new_location)
-	. = ..(W, new_location)
+/obj/item/storage/wallet/remove_from_storage(obj/item/W, atom/new_location, mob/user)
+	. = ..()
 	if(.)
 		if(W == front_id)
 			front_id = null
 			name = original_name || initial(name)
 			update_icon()
 
-/obj/item/storage/wallet/handle_item_insertion(obj/item/W as obj, prevent_warning = 0)
-	. = ..(W, prevent_warning)
+/obj/item/storage/wallet/insert_item(obj/item/W, mob/user, prevent_warning = FALSE)
+	. = ..()
 	if(.)
 		if(!front_id && istype(W, /obj/item/card/id))
 			front_id = W

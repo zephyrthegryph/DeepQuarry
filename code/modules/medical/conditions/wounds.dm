@@ -266,6 +266,10 @@
 		return FALSE
 	if(bandaged || clamped)
 		return FALSE
+	// A tourniquet on this limb or one above it stops the flow into the wound.
+	var/obj/item/organ/external/E = location
+	if(istype(E) && E.flow_occluded())
+		return FALSE
 	if(bleed_timer <= 0 && wound_damage() <= bleed_threshold)
 		return FALSE // clotted; big wounds need a bandage regardless
 	return TRUE
@@ -278,9 +282,17 @@
 	return amount
 
 /// Wound damage, not severity, is the state; severity follows through sync().
-/// Hemostatics run down the bleed; every other mechanism heals damage.
-/// Returns the amount treated (bleed ticks or damage).
+/// Hemostatics run down the bleed; packing and occlusive seals dress the wound
+/// (one wound per point); every other mechanism heals damage.
+/// Returns the amount treated (bleed ticks, wounds dressed or damage).
 /datum/affliction/wound/receive_tagged_treatment(tag, amount, continuous = FALSE)
+	if(tag == TREAT_WOUND_PACKING || tag == TREAT_OCCLUSIVE_SEAL)
+		if(bandaged || internal || amount < 1)
+			return 0
+		bandage()
+		sync()
+		log_game("WOUND: [key_name(owner)] [desc] on [location] dressed by [tag].")
+		return 1
 	if(tag == TREAT_HEMOSTATIC)
 		if(bleed_timer <= 0)
 			return 0
@@ -292,7 +304,8 @@
 	if(continuous)
 		amount *= continuous_scale
 	var/before = damage
-	heal_damage(amount, tag == TREAT_RESTORATION)
+	// Internal (arterial) wounds close only by vessel repair or restoration.
+	heal_damage(amount, tag == TREAT_RESTORATION || tag == TREAT_VESSEL_REPAIR)
 	return before - damage
 
 /// Wounds don't progress on their own: autoheal lives in the limb's
@@ -369,7 +382,7 @@
 	clinical_description = "An open laceration of the skin and soft tissue."
 	bleed_threshold = 5
 	damage_type = CUT
-	treated_by = list(TREAT_TISSUE_REPAIR = 1, TREAT_HEMOSTATIC = 1)
+	treated_by = list(TREAT_TISSUE_REPAIR = 1, TREAT_HEMOSTATIC = 1, TREAT_WOUND_PACKING = 1, TREAT_OCCLUSIVE_SEAL = 1)
 
 /datum/affliction/wound/cut/small
 	max_bleeding_stage = 3
@@ -401,7 +414,7 @@
 	clinical_description = "A penetrating wound; narrow at the surface, deep beneath it."
 	bleed_threshold = 5
 	damage_type = PIERCE
-	treated_by = list(TREAT_TISSUE_REPAIR = 1, TREAT_HEMOSTATIC = 1)
+	treated_by = list(TREAT_TISSUE_REPAIR = 1, TREAT_HEMOSTATIC = 1, TREAT_WOUND_PACKING = 1, TREAT_OCCLUSIVE_SEAL = 1)
 
 /datum/affliction/wound/puncture/can_worsen(type, amount)
 	return FALSE // punctures cannot be enlarged
@@ -435,7 +448,7 @@
 	bleed_threshold = 20
 	max_bleeding_stage = 2 // only huge bruises and worse bleed
 	damage_type = BRUISE
-	treated_by = list(TREAT_TISSUE_REPAIR = 1, TREAT_HEMOSTATIC = 1)
+	treated_by = list(TREAT_TISSUE_REPAIR = 1, TREAT_HEMOSTATIC = 1, TREAT_WOUND_PACKING = 1, TREAT_OCCLUSIVE_SEAL = 1)
 
 // --- Burns ----------------------------------------------------------------------------
 
@@ -473,6 +486,7 @@
 	stages = list("severed artery" = 30, "cut artery" = 20, "damaged artery" = 10, "bruised artery" = 5)
 	autoheal_cutoff = 5
 	max_bleeding_stage = 4 // all stages bleed
+	treated_by = list(TREAT_VESSEL_REPAIR = 1)
 
 // --- Lost limb (stump) ----------------------------------------------------------------------
 
@@ -514,7 +528,7 @@
 				"deformed stump" = damage_amt * 0.5,
 				"scarred stump" = 0,
 			)
-	treated_by = (damage_type == BURN) ? list(TREAT_BURN_CARE = 1) : list(TREAT_TISSUE_REPAIR = 1, TREAT_HEMOSTATIC = 1)
+	treated_by = (damage_type == BURN) ? list(TREAT_BURN_CARE = 1) : list(TREAT_TISSUE_REPAIR = 1, TREAT_HEMOSTATIC = 1, TREAT_WOUND_PACKING = 1)
 	return ..(location, damage_amt)
 
 /datum/affliction/wound/lost_limb/can_merge(datum/affliction/wound/other)

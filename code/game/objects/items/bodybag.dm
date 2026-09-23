@@ -83,7 +83,7 @@
 	storage_capacity = (MOB_MEDIUM * 12) - 1 //Holds 12 bodys
 	item_path = /obj/item/bodybag/large
 
-/obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob)
 	if (istype(W, /obj/item/pen))
 		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", src.name), null, MAX_NAME_LEN	)
 		if (user.get_active_hand() != W)
@@ -100,14 +100,8 @@
 			src.name = "body bag"
 	//..() //Doesn't need to run the parent. Since when can fucking bodybags be welded shut? -Agouri
 		return
-	else if(tool_quality == TOOL_WIRECUTTER)
-		to_chat(user, "You cut the tag off the bodybag")
-		src.name = "body bag"
-		has_label = FALSE
-		cut_overlays()
-		return
 
-/obj/structure/closet/body_bag/store_mobs(stored_units)
+/obj/structure/closet/body_bag/store_mobs()
 	contains_body = ..()
 	return contains_body
 
@@ -177,7 +171,8 @@
 	var/used = 0
 	var/obj/item/tank/tank = null
 	var/tank_type = /obj/item/tank/stasis/oxygen
-	var/stasis_level = 3 //Every 'this' life ticks are applied to the mob (when life_ticks%stasis_level == 1)
+	/// Stasis modifier (/datum/modifier/stasis/*) applied to whoever lies inside.
+	var/stasis_level = /datum/modifier/stasis/deep
 	var/obj/item/reagent_containers/syringe/syringe
 
 /obj/structure/closet/body_bag/cryobag/Initialize(mapload)
@@ -219,10 +214,11 @@
 		syringe = null
 
 /obj/structure/closet/body_bag/cryobag/Entered(atom/movable/AM)
-	ADD_TRAIT(AM, TRAIT_STASIS, REF(src))
+	if(isliving(AM))
+		var/mob/living/L = AM
+		L.set_stasis(stasis_level, src)
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
-		H.Stasis(stasis_level)
 		src.used = 1
 		inject_occupant(H)
 
@@ -234,10 +230,9 @@
 	..()
 
 /obj/structure/closet/body_bag/cryobag/Exited(atom/movable/AM)
-	REMOVE_TRAIT(AM, TRAIT_STASIS, REF(src))
-	if(ishuman(AM))
-		var/mob/living/carbon/human/H = AM
-		H.Stasis(0)
+	if(isliving(AM))
+		var/mob/living/L = AM
+		L.set_stasis(null, src)
 
 	if(istype(AM, /obj/item/organ))
 		var/obj/item/organ/O = AM
@@ -267,7 +262,7 @@
 		for(var/mob/living/L in contents)
 			. += L.examine(user)
 
-/obj/structure/closet/body_bag/cryobag/attackby(obj/item/W, mob/user, tool_quality)
+/obj/structure/closet/body_bag/cryobag/attackby(obj/item/W, mob/user)
 	if(opened)
 		..()
 	else //Allows the bag to respond to a health analyzer by analyzing the mob inside without needing to open it.
@@ -289,25 +284,27 @@
 					inject_occupant(H)
 					break
 
-		else if(tool_quality == TOOL_SCREWDRIVER)
-			if(syringe)
-				if(used)
-					to_chat(user,span_warning("The injector cannot be removed now that the stasis bag has been used!"))
-				else
-					syringe.forceMove(src.loc)
-					to_chat(user,span_info("You pry \the [syringe] out of \the [src]."))
-					syringe = null
-
 		else
 			..()
 
 /obj/structure/closet/body_bag/wirecutter_act(mob/user, obj/item/W)
-	attackby(W, user, TOOL_WIRECUTTER)
-	return TRUE
+	to_chat(user, "You cut the tag off the bodybag")
+	src.name = "body bag"
+	has_label = FALSE
+	cut_overlays()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/closet/body_bag/cryobag/screwdriver_act(mob/user, obj/item/W)
-	attackby(W, user, TOOL_SCREWDRIVER)
-	return TRUE
+	if(opened)
+		return NONE
+	if(syringe)
+		if(used)
+			to_chat(user,span_warning("The injector cannot be removed now that the stasis bag has been used!"))
+		else
+			syringe.forceMove(src.loc)
+			to_chat(user,span_info("You pry \the [syringe] out of \the [src]."))
+			syringe = null
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/usedcryobag
 	name = "used stasis bag"

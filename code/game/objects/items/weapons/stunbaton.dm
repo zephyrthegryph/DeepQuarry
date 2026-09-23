@@ -141,7 +141,7 @@
 			taped_safety = TRUE
 		else if(grip_safety && taped_safety)
 			to_chat(user, span_notice("The grip safety has already been taped down."))
-	if(istype(W, /obj/item/tool/screwdriver))
+	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(taped_safety)
 			to_chat(user, span_notice("You painstakingly scrape away the tape over the grip safety."))
 			taped_safety = FALSE
@@ -199,7 +199,7 @@
 		var/mob/living/carbon/human/H = target
 		affecting = H.get_organ(hit_zone)
 
-	if(user.a_intent == I_HURT) // No disarm. ONLY HARM.
+	if(IS_HARMING(user)) // No disarm. ONLY HARM.
 		. = ..()
 		//whacking someone causes a much poorer electrical contact than deliberately prodding them.
 		agony *= 0.5

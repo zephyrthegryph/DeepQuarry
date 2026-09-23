@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(env_messages)
 
 /obj/effect/env_message
 	name = "Env message"
@@ -10,12 +9,12 @@ GLOBAL_LIST_EMPTY(env_messages)
 	var/list/message_list
 	var/combined_message = DEVELOPER_WARNING_NAME
 
+REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
+
 /obj/effect/env_message/Initialize(mapload)
 	.=..()
-	GLOB.env_messages += src
 
 /obj/effect/env_message/Destroy()
-	GLOB.env_messages -= src
 	return ..()
 
 /obj/effect/env_message/examine(mob/user)
@@ -60,7 +59,7 @@ GLOBAL_LIST_EMPTY(env_messages)
 	..()
 
 /proc/clear_env_message(tckey)
-	for(var/obj/effect/env_message/EM in GLOB.env_messages)
+	for(var/obj/effect/env_message/EM in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES))
 		if(tckey in EM.message_list)
 			EM.remove_message(tckey)
 

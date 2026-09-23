@@ -1,4 +1,4 @@
-GLOBAL_LIST_BOILERPLATE(all_janitorial_carts, /obj/structure/janitorialcart)
+REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 
 /obj/structure/janitorialcart
 	name = "janitorial cart"

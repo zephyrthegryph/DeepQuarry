@@ -122,26 +122,26 @@
 
 	//// Object-holding variables
 	//struggle_messages_outside - strings
-	new_belly.struggle_messages_outside = struggle_messages_outside.Copy() // assign: the belly's default table is shared
+	new_belly.struggle_messages_outside = struggle_messages_outside.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//struggle_messages_inside - strings
-	new_belly.struggle_messages_inside = struggle_messages_inside.Copy() // assign: the belly's default table is shared
+	new_belly.struggle_messages_inside = struggle_messages_inside.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//digest_messages_owner - strings
-	new_belly.digest_messages_owner = digest_messages_owner.Copy() // assign: the belly's default table is shared
+	new_belly.digest_messages_owner = digest_messages_owner.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//digest_messages_prey - strings
-	new_belly.digest_messages_prey = digest_messages_prey.Copy() // assign: the belly's default table is shared
+	new_belly.digest_messages_prey = digest_messages_prey.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//examine_messages - strings
-	new_belly.examine_messages = examine_messages.Copy() // assign: the belly's default table is shared
+	new_belly.examine_messages = examine_messages.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//emote_lists - index: digest mode, key: list of strings
-	new_belly.emote_lists.Cut()
+	var/list/new_emotes = list()
 	for(var/K in emote_lists)
-		new_belly.emote_lists[K] = list()
-		for(var/I in emote_lists[K])
-			new_belly.emote_lists[K] += I
+		var/list/mode_emotes = emote_lists[K]
+		new_emotes[K] = mode_emotes.Copy()
+	new_belly.emote_lists = new_emotes
 
 	return new_belly
 

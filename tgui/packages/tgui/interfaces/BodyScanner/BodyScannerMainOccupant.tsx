@@ -1,12 +1,5 @@
 import { useBackend } from 'tgui/backend';
-import {
-  AnimatedNumber,
-  Box,
-  Button,
-  LabeledList,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 
 import { BAND_INFO, BAND_RANK, stats } from './constants';
 import type { DamageBand, occupant } from './types';
@@ -24,7 +17,7 @@ export const BodyScannerMainOccupant = (props: { occupant: occupant }) => {
     BAND_RANK[worstFinding] > BAND_RANK[healthBand] ? worstFinding : healthBand;
   const info = BAND_INFO[band];
   // Customise the wording for the overall-health row so it doesn't read
-  // as "moderate injury" generically — the damage panel + per-organ
+  // as "moderate injury" generically — the findings and per-organ
   // rows already cover specific injuries.
   const healthWord =
     band === 'uninjured'
@@ -62,30 +55,6 @@ export const BodyScannerMainOccupant = (props: { occupant: occupant }) => {
         </LabeledList.Item>
         <LabeledList.Item label="Status" color={stats[occupant.stat][0]}>
           {stats[occupant.stat][1]}
-        </LabeledList.Item>
-        <LabeledList.Item label="Temperature">
-          <AnimatedNumber
-            value={occupant.bodyTempC}
-            format={(value) => value.toFixed()}
-          />
-          &deg;C,&nbsp;
-          <AnimatedNumber
-            value={occupant.bodyTempF}
-            format={(value) => value.toFixed()}
-          />
-          &deg;F
-        </LabeledList.Item>
-        <LabeledList.Item label="Blood Volume">
-          <AnimatedNumber
-            value={occupant.blood.volume}
-            format={(value) => value.toFixed()}
-          />
-          u&nbsp;(
-          <AnimatedNumber
-            value={occupant.blood.percent}
-            format={(value) => value.toFixed()}
-          />
-          %)
         </LabeledList.Item>
         <LabeledList.Item label="Weight">
           {`${(occupant.weight / 2.20463).toFixed(1)}kg, `}

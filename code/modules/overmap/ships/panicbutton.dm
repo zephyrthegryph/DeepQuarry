@@ -35,7 +35,7 @@
 		to_chat(user, span_warning("The button is already depressed; the beacon has been launched already."))
 	// Glass present
 	else if(glass)
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "smashes the glass on [src]!")
 			glass = FALSE
 			playsound(src, 'sound/effects/hit_on_shattered_glass.ogg')

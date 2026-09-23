@@ -15,34 +15,10 @@
 	if(mapload)
 		laws = new using_map.default_law_type
 
-/obj/structure/AIcore/attackby(obj/item/P as obj, mob/user as mob, tool_quality)
+/obj/structure/AIcore/attackby(obj/item/P as obj, mob/user as mob)
 
 	switch(state)
-		if(0)
-			if(tool_quality == TOOL_WRENCH)
-				playsound(src, P.usesound, 50, 1)
-				if(do_after(user, 2 SECONDS * P.toolspeed, target = src))
-					to_chat(user, span_notice("You wrench the frame into place."))
-					anchored = TRUE
-					state = 1
-			if(tool_quality == TOOL_WELDER)
-				var/obj/item/weldingtool/WT = P.get_welder()
-				if(!WT.isOn())
-					to_chat(user, "The welder must be on for this task.")
-					return
-				playsound(src, WT.usesound, 50, 1)
-				if(do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-					if(!src || !WT.remove_fuel(0, user)) return
-					to_chat(user, span_notice("You deconstruct the frame."))
-					new /obj/item/stack/material/plasteel( loc, 4)
-					qdel(src)
 		if(1)
-			if(tool_quality == TOOL_WRENCH)
-				playsound(src, P.usesound, 50, 1)
-				if(do_after(user, 2 SECONDS * P.toolspeed, target = src))
-					to_chat(user, span_notice("You unfasten the frame."))
-					anchored = FALSE
-					state = 0
 			if(istype(P, /obj/item/circuitboard/aicore) && !circuit)
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
@@ -50,24 +26,7 @@
 				circuit = P
 				user.drop_item()
 				P.loc = src
-			if(tool_quality == TOOL_SCREWDRIVER && circuit)
-				playsound(src, P.usesound, 50, 1)
-				to_chat(user, span_notice("You screw the circuit board into place."))
-				state = 2
-				icon_state = "2"
-			if(tool_quality == TOOL_CROWBAR && circuit)
-				playsound(src, P.usesound, 50, 1)
-				to_chat(user, span_notice("You remove the circuit board."))
-				state = 1
-				icon_state = "0"
-				circuit.loc = loc
-				circuit = null
 		if(2)
-			if(tool_quality == TOOL_SCREWDRIVER && circuit)
-				playsound(src, P.usesound, 50, 1)
-				to_chat(user, span_notice("You unfasten the circuit board."))
-				state = 1
-				icon_state = "1"
 			if(istype(P, /obj/item/stack/cable_coil))
 				var/obj/item/stack/cable_coil/C = P
 				if (C.get_amount() < 5)
@@ -82,16 +41,6 @@
 						to_chat(user, span_notice("You add cables to the frame."))
 				return
 		if(3)
-			if(tool_quality == TOOL_WIRECUTTER)
-				if (brain)
-					to_chat(user, "Get that brain out of there first")
-				else
-					playsound(src, P.usesound, 50, 1)
-					to_chat(user, span_notice("You remove the cables."))
-					state = 2
-					icon_state = "2"
-					new /obj/item/stack/cable_coil(loc, 5)
-
 			if(istype(P, /obj/item/stack/material) && P.get_material_name() == MAT_RGLASS)
 				var/obj/item/stack/RG = P
 				if (RG.get_amount() < 2)
@@ -150,63 +99,110 @@
 				to_chat(user, "Added [P].")
 				icon_state = "3b"
 
-			if(tool_quality == TOOL_CROWBAR && brain)
-				playsound(src, P.usesound, 50, 1)
+/obj/structure/AIcore/wrench_act(mob/user, obj/item/tool)
+	if(state != 0 && state != 1)
+		return ITEM_INTERACT_BLOCKING
+	if(state == 0)
+		if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50))
+			to_chat(user, span_notice("You wrench the frame into place."))
+			anchored = TRUE
+			state = 1
+	else
+		if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50))
+			to_chat(user, span_notice("You unfasten the frame."))
+			anchored = FALSE
+			state = 0
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/AIcore/welder_act(mob/user, obj/item/tool)
+	if(state != 0)
+		return ITEM_INTERACT_BLOCKING
+	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0))
+		to_chat(user, span_notice("You deconstruct the frame."))
+		new /obj/item/stack/material/plasteel(loc, 4)
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/AIcore/screwdriver_act(mob/user, obj/item/tool)
+	switch(state)
+		if(1)
+			if(circuit)
+				playsound(src, tool.usesound, 50, 1)
+				to_chat(user, span_notice("You screw the circuit board into place."))
+				state = 2
+				icon_state = "2"
+				return ITEM_INTERACT_SUCCESS
+		if(2)
+			if(circuit)
+				playsound(src, tool.usesound, 50, 1)
+				to_chat(user, span_notice("You unfasten the circuit board."))
+				state = 1
+				icon_state = "1"
+				return ITEM_INTERACT_SUCCESS
+		if(4)
+			playsound(src, tool.usesound, 50, 1)
+			to_chat(user, span_notice("You connect the monitor."))
+			if(!brain)
+				var/open_for_latejoin = tgui_alert(user, "Would you like this core to be open for latejoining AIs?", "Latejoin", list("Yes", "No")) == "Yes"
+				var/obj/structure/AIcore/deactivated/D = new(loc)
+				if(open_for_latejoin)
+					GLOB.empty_playable_ai_cores += D
+			else
+				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
+				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
+					A.rename_self("ai", 1)
+					for(var/datum/language/L in A.identity.languages)
+						A.add_language(L.name)
+			feedback_inc("cyborg_ais_created",1)
+			qdel(src)
+			return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
+
+/obj/structure/AIcore/crowbar_act(mob/user, obj/item/tool)
+	switch(state)
+		if(1)
+			if(circuit)
+				playsound(src, tool.usesound, 50, 1)
+				to_chat(user, span_notice("You remove the circuit board."))
+				state = 1
+				icon_state = "0"
+				circuit.loc = loc
+				circuit = null
+				return ITEM_INTERACT_SUCCESS
+		if(3)
+			if(brain)
+				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You remove the brain."))
 				brain.loc = loc
 				brain = null
 				icon_state = "3"
-
+				return ITEM_INTERACT_SUCCESS
 		if(4)
-			if(tool_quality == TOOL_CROWBAR)
-				playsound(src, P.usesound, 50, 1)
-				to_chat(user, span_notice("You remove the glass panel."))
-				state = 3
-				if (brain)
-					icon_state = "3b"
-				else
-					icon_state = "3"
-				new /obj/item/stack/material/glass/reinforced( loc, 2 )
-				return
-
-			if(tool_quality == TOOL_SCREWDRIVER)
-				playsound(src, P.usesound, 50, 1)
-				to_chat(user, span_notice("You connect the monitor."))
-				if(!brain)
-					var/open_for_latejoin = tgui_alert(user, "Would you like this core to be open for latejoining AIs?", "Latejoin", list("Yes", "No")) == "Yes"
-					var/obj/structure/AIcore/deactivated/D = new(loc)
-					if(open_for_latejoin)
-						GLOB.empty_playable_ai_cores += D
-				else
-					var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
-					if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
-						A.rename_self("ai", 1)
-						for(var/datum/language/L in A.identity.languages)
-							A.add_language(L.name)
-				feedback_inc("cyborg_ais_created",1)
-				qdel(src)
-
-/obj/structure/AIcore/wrench_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WRENCH)
-	return TRUE
-
-/obj/structure/AIcore/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
-
-/obj/structure/AIcore/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
-
-/obj/structure/AIcore/crowbar_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_CROWBAR)
-	return TRUE
+			playsound(src, tool.usesound, 50, 1)
+			to_chat(user, span_notice("You remove the glass panel."))
+			state = 3
+			if (brain)
+				icon_state = "3b"
+			else
+				icon_state = "3"
+			new /obj/item/stack/material/glass/reinforced( loc, 2 )
+			return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
 /obj/structure/AIcore/wirecutter_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WIRECUTTER)
-	return TRUE
+	if(state != 3)
+		return ITEM_INTERACT_BLOCKING
+	if (brain)
+		to_chat(user, "Get that brain out of there first")
+	else
+		playsound(src, tool.usesound, 50, 1)
+		to_chat(user, span_notice("You remove the cables."))
+		state = 2
+		icon_state = "2"
+		new /obj/item/stack/cable_coil(loc, 5)
+	return ITEM_INTERACT_SUCCESS
 
-GLOBAL_LIST_BOILERPLATE(all_deactivated_AI_cores, /obj/structure/AIcore/deactivated)
+REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIVATED)
 
 /obj/structure/AIcore/deactivated
 	name = "inactive AI"
@@ -264,25 +260,23 @@ GLOBAL_LIST_BOILERPLATE(all_deactivated_AI_cores, /obj/structure/AIcore/deactiva
 /obj/structure/AIcore/deactivated/wrench_act(mob/user, obj/item/tool)
 	if(anchored)
 		user.visible_message(span_bold("\The [user]") + " starts to unbolt \the [src] from the plating...")
-		playsound(src, tool.usesound, 50, TRUE)
-		if(!do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+		if(!use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50))
 			user.visible_message(span_bold("\The [user]") + " decides not to unbolt \the [src].")
-			return TRUE
+			return ITEM_INTERACT_SUCCESS
 		user.visible_message(span_bold("\The [user]") + " finishes unfastening \the [src]!")
 		anchored = FALSE
-		return TRUE
+		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_bold("\The [user]") + " starts to bolt \the [src] to the plating...")
-	playsound(src, tool.usesound, 50, TRUE)
-	if(!do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50))
 		user.visible_message(span_bold("\The [user]") + " decides not to bolt \the [src].")
-		return TRUE
+		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_bold("\The [user]") + " finishes fastening down \the [src]!")
 	anchored = TRUE
-	return TRUE
+	return ITEM_INTERACT_SUCCESS
 
 ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI Core Latejoin", "Toggles the option to latejoin as AI core.", ADMIN_CATEGORY_SILICON)
 	var/list/cores = list()
-	for(var/obj/structure/AIcore/deactivated/current_ai_struct in GLOB.all_deactivated_AI_cores)
+	for(var/obj/structure/AIcore/deactivated/current_ai_struct in REGISTRY_MEMBERS(REGISTRY_AI_CORES_DEACTIVATED))
 		cores["[current_ai_struct] ([current_ai_struct.loc.loc])"] = current_ai_struct
 
 	var/id = tgui_input_list(user, "Which core?", "Toggle AI Core Latejoin", cores)

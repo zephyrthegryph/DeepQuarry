@@ -215,8 +215,9 @@
 	. = check_requirements(a, R, surroundings)
 	if(.)
 		return
-	var/list/resolved_materials = material_slot_resolve(R.material_slots, material_choices)
-	if(length(R.material_slots) && (!resolved_materials || !crafting_materials_available(surroundings, R.material_slots, resolved_materials)))
+	var/datum/material_template/blueprint = material_template_singleton(R.material_template)
+	var/list/resolved_materials = blueprint?.resolve(material_choices)
+	if(blueprint && (!resolved_materials || !crafting_materials_available(surroundings, R, resolved_materials)))
 		return ", missing selected construction material."
 
 	if(R.one_per_turf)
@@ -232,26 +233,32 @@
 	. = check_requirements(a, R, surroundings)
 	if(.)
 		return
-	if(length(R.material_slots) && !crafting_materials_available(surroundings, R.material_slots, resolved_materials))
+	if(blueprint && !crafting_materials_available(surroundings, R, resolved_materials))
 		return ", selected construction material changed."
 
 	var/list/parts = del_reqs(R, a)
-	if(length(R.material_slots))
-		consume_crafting_materials(surroundings, R.material_slots, resolved_materials)
+	if(blueprint)
+		consume_crafting_materials(surroundings, R, resolved_materials)
 	var/atom/movable/I = new R.result (get_turf(a.loc))
 	I.CheckParts(parts, R)
-	if(length(R.material_slots) && isobj(I))
+	if(blueprint && isobj(I))
 		var/obj/product = I
-		product.apply_material_construction(resolved_materials, R.material_slots, null)
+		product.apply_material_construction(resolved_materials, R.material_template, R.material_total)
 	// if(send_feedback)
 		// SSblackbox.record_feedback("tally", "object_crafted", 1, I.type)
 	return I //Send the item back to whatever called this proc so it can handle whatever it wants to do with the new item
 
-/datum/component/personal_crafting/proc/crafting_materials_available(list/surroundings, list/slots, list/resolved)
+/// Sheets of each chosen material a recipe's blueprint needs.
+/datum/component/personal_crafting/proc/crafting_sheets_needed(datum/crafting_recipe/R, list/resolved)
 	var/list/needed = list()
+	var/datum/material_template/blueprint = material_template_singleton(R.material_template)
+	var/list/amounts = blueprint.role_amounts(R.material_total)
 	for(var/role in resolved)
-		var/list/spec = slots[role]
-		needed[resolved[role]] = (needed[resolved[role]] || 0) + CEILING(spec["amount"] / SHEET_MATERIAL_AMOUNT, 1)
+		needed[resolved[role]] = (needed[resolved[role]] || 0) + CEILING(amounts[role] / SHEET_MATERIAL_AMOUNT, 1)
+	return needed
+
+/datum/component/personal_crafting/proc/crafting_materials_available(list/surroundings, datum/crafting_recipe/R, list/resolved)
+	var/list/needed = crafting_sheets_needed(R, resolved)
 	var/list/instances = surroundings["instances"]
 	for(var/instance_path in instances)
 		for(var/obj/item/stack/material/stock in instances[instance_path])
@@ -262,11 +269,8 @@
 			return FALSE
 	return TRUE
 
-/datum/component/personal_crafting/proc/consume_crafting_materials(list/surroundings, list/slots, list/resolved)
-	var/list/needed = list()
-	for(var/role in resolved)
-		var/list/spec = slots[role]
-		needed[resolved[role]] = (needed[resolved[role]] || 0) + CEILING(spec["amount"] / SHEET_MATERIAL_AMOUNT, 1)
+/datum/component/personal_crafting/proc/consume_crafting_materials(list/surroundings, datum/crafting_recipe/R, list/resolved)
+	var/list/needed = crafting_sheets_needed(R, resolved)
 	var/list/instances = surroundings["instances"]
 	for(var/instance_path in instances)
 		for(var/obj/item/stack/material/stock in instances[instance_path])
@@ -473,9 +477,10 @@
 			continue
 
 		var/can_craft = check_contents(user, R, surroundings)
-		if(can_craft && length(R.material_slots))
-			var/list/defaults = material_slot_resolve(R.material_slots)
-			can_craft = defaults && crafting_materials_available(surroundings, R.material_slots, defaults)
+		if(can_craft && R.material_template)
+			var/datum/material_template/recipe_blueprint = material_template_singleton(R.material_template)
+			var/list/defaults = recipe_blueprint.resolve()
+			can_craft = defaults && crafting_materials_available(surroundings, R, defaults)
 		craftability["[REF(R)]"] = can_craft
 
 	data["craftability"] = craftability
@@ -575,7 +580,7 @@
 	for(var/obj/item/required_path as anything in R.tool_paths)
 		tool_list += initial(required_path.name)
 	data["tool_text"] = tool_list.Join(", ")
-	data["material_slots"] = material_slots_tgui(R.material_slots)
+	data["material_slots"] = material_slots_tgui(material_template_singleton(R.material_template), R.material_total)
 
 	return data
 

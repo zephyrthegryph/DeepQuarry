@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(bump_teleporters)
 
 /obj/effect/bump_teleporter
 	name = "bump-teleporter"
@@ -11,12 +10,12 @@ GLOBAL_LIST_EMPTY(bump_teleporters)
 	density = TRUE
 	opacity = 0
 
+REGISTRY_MEMBERSHIP(/obj/effect/bump_teleporter, REGISTRY_BUMP_TELEPORTERS)
+
 /obj/effect/bump_teleporter/Initialize(mapload)
 	. = ..()
-	GLOB.bump_teleporters += src
 
 /obj/effect/bump_teleporter/Destroy()
-	GLOB.bump_teleporters -= src
 	return ..()
 
 /obj/effect/bump_teleporter/Bumped(atom/user)
@@ -28,7 +27,7 @@ GLOBAL_LIST_EMPTY(bump_teleporters)
 		//user.loc = src.loc	//Stop at teleporter location, there is nowhere to teleport to.
 		return
 
-	for(var/obj/effect/bump_teleporter/BT in GLOB.bump_teleporters)
+	for(var/obj/effect/bump_teleporter/BT in REGISTRY_MEMBERS(REGISTRY_BUMP_TELEPORTERS))
 		if(BT.id == src.id_target)
 			M.forceMove(BT.loc) // Teleport to location with correct id. //
 			return

@@ -114,11 +114,8 @@
 		ailock = FALSE
 		return TRUE
 
-/obj/machinery/turretid/attack_ai(mob/user as mob)
-	tgui_interact(user)
-
-/obj/machinery/turretid/attack_ghost(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/turretid
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/turretid/attack_hand(mob/user as mob)
 	tgui_interact(user)

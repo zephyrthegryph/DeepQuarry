@@ -8,6 +8,11 @@
 	phase = LIFE_PHASE_OUTPUT
 	order = 50
 	segment = LIFE_SEG_LIVING
+	woken_by = "Moved (a VR mob can only leave the VR area by moving)"
+
+/// Only virtual reality mobs have anything to check, and only after moving.
+/datum/life_system/vr_derez/idle(mob/living/self)
+	return !self.virtual_reality_mob || istype(get_area(self), /area/vr)
 
 /datum/life_system/vr_derez/tick(mob/living/self, datum/life_context/ctx)
 	if(self.virtual_reality_mob && !istype(get_area(self), /area/vr))

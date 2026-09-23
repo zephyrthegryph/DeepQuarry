@@ -204,7 +204,7 @@
 	_dq_tick_n(C, 5)
 	TEST_ASSERT(heart.damage > heart_dmg_before, "heart_damage at severity 90 should damage the heart ([heart_dmg_before] -> [heart.damage])")
 
-// --- high-severity hypovolemic_shock stacks oxyloss ----------------------
+// --- high-severity hypovolemic_shock starves the tissues ------------------
 
 /datum/unit_test/dq_medical_high_severity_oxy_damage
 
@@ -216,9 +216,11 @@
 	TEST_ASSERT_NOTNULL(C, "hypovolemic_shock could not be afflicted")
 	C.severity = 90
 
-	var/oxy_before = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/oxy_before = H.oxygen_debt()
 	_dq_tick_n(C, 5)
-	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_ASPHYXIA) > oxy_before, "hypovolemic_shock at severity 90 should cause hypoxia ([oxy_before] -> [H.injury_load(INJURY_CATEGORY_ASPHYXIA)])")
+	for(var/i in 1 to 5)
+		H.body.physiology_tick(2)
+	TEST_ASSERT(H.oxygen_debt() > oxy_before, "hypovolemic_shock at severity 90 should cause oxygen debt ([oxy_before] -> [H.oxygen_debt()])")
 
 // --- shared helpers ------------------------------------------------------
 
@@ -248,9 +250,9 @@
 	TEST_ASSERT_NOTNULL(liver, "no liver")
 	TEST_ASSERT_NOTNULL(kidneys, "no kidneys")
 
-	// Push tissue hypoxia above the ischemia threshold.
-	H.injure(INJURY_ASPHYXIA, 50, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 50, "asphyxia injury did not land as tissue hypoxia")
+	// Push the oxygen debt above the ischemia threshold.
+	H.add_oxygen_debt(50, "unit test")
+	TEST_ASSERT(H.oxygen_debt() >= 50, "explicit oxygen debt did not land")
 	var/liver_before = liver.damage
 	var/kidney_before = kidneys.damage
 	for(var/i in 1 to 30)  // probabilistic per tick, run several
@@ -425,10 +427,13 @@
 	// Confirm respiratory_failure causes hypoxia while present.
 	var/datum/affliction/respiratory_failure/rf = H.body.find_affliction(/datum/affliction/respiratory_failure, lungs)
 	if(rf)
-		var/oxy_before = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		// Established failure: mild failure alone still oxygenates above the critical ratio.
+		rf.set_severity(100)
+		var/oxy_before = H.oxygen_debt()
 		for(var/i in 1 to 5)
 			rf.tick()
-		TEST_ASSERT(H.injury_load(INJURY_CATEGORY_ASPHYXIA) > oxy_before, "respiratory_failure should cause hypoxia ([oxy_before] -> [H.injury_load(INJURY_CATEGORY_ASPHYXIA)])")
+			H.body.physiology_tick(2)
+		TEST_ASSERT(H.oxygen_debt() > oxy_before, "respiratory_failure should cause oxygen debt ([oxy_before] -> [H.oxygen_debt()])")
 
 	// And when lungs heal back below threshold, the condition auto-cures.
 	dq_test_set_organ_damage(lungs, lungs.max_damage * 0.5)
@@ -588,8 +593,8 @@
 
 /datum/unit_test/dq_medical_examine_lists_visible_symptoms/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	// Without conditions, the examine helper returns an empty list.
-	var/list/empty = H.dq_externally_visible_symptom_lines()
+	// Without conditions, the glance diagnosis has no examine lines.
+	var/list/empty = H.diagnose(/datum/diagnostic_profile/glance).examine_lines()
 	TEST_ASSERT_EQUAL(length(empty), 0, "no conditions = no visible-symptom lines (got [length(empty)])")
 
 	// Spawn lacerated_artery and force-roll bleeding_visible into the
@@ -600,7 +605,7 @@
 	// Force bleeding_visible if RNG didn't pick it (typepaths: singletons).
 	if(!(/datum/affliction_symptom/bleeding_visible in C.active_symptoms))
 		LAZYADD(C.active_symptoms, /datum/affliction_symptom/bleeding_visible)
-	var/list/lines = H.dq_externally_visible_symptom_lines()
+	var/list/lines = H.diagnose(/datum/diagnostic_profile/glance).examine_lines()
 	TEST_ASSERT(length(lines) > 0, "examine helper should return at least one visible-symptom line")
 	var/found_bleeding = FALSE
 	for(var/line in lines)
@@ -756,8 +761,8 @@
 	var/obj/item/organ/internal/intestine = H.internal_organs_by_name[O_INTESTINE]
 	TEST_ASSERT_NOTNULL(intestine, "no intestine")
 	var/germ_before = intestine.germ_level
-	// Push tissue hypoxia well past the ischemia threshold.
-	H.injure(INJURY_ASPHYXIA, 60, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	// Push the oxygen debt well past the ischemia threshold.
+	H.add_oxygen_debt(60, "unit test")
 	for(var/i in 1 to 10)
 		H.dq_check_ischemic_damage()
 	TEST_ASSERT(intestine.germ_level > germ_before, "sustained ischemia should raise intestine germ_level ([germ_before] -> [intestine.germ_level])")
@@ -817,7 +822,7 @@
 /datum/unit_test/dq_medical_metric_temperature_extremes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	// Drop body temperature way below normal.
-	H.bodytemperature = 310.15 - 25  // 25K below 37°C
+	H.bodytemperature = BODYTEMP_NORMAL - 25  // 25K below 37°C
 	H.dq_check_metric_conditions()
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/saw_hypo = FALSE
@@ -828,7 +833,7 @@
 	TEST_ASSERT(saw_hypo, "cold body temperature should spawn hypothermia")
 
 	// Now spike to overheated.
-	H.bodytemperature = 310.15 + 10
+	H.bodytemperature = BODYTEMP_NORMAL + 10
 	H.dq_check_metric_conditions()
 	var/saw_heat = FALSE
 	for(var/datum/affliction/c in torso.afflictions_here())

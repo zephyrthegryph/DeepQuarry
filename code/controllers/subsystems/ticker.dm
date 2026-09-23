@@ -217,7 +217,7 @@ SUBSYSTEM_DEF(ticker)
 		GLOB.empty_playable_ai_cores += new /obj/structure/AIcore/deactivated(get_turf(S))
 
 	// Final init, these things need round to start for their info to be ready
-	for(var/obj/item/paper/dockingcodes/dcp as anything in GLOB.papers_dockingcode)
+	for(var/obj/item/paper/dockingcodes/dcp as anything in REGISTRY_MEMBERS(REGISTRY_DOCKING_CODE_PAPERS))
 		dcp.populate_info()
 	for(var/obj/machinery/power/solar_control/SC as anything in GLOB.solars_list)
 		SC.auto_start()

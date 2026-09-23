@@ -26,9 +26,6 @@
 	SStgui.update_uis(src)
 	return
 
-/obj/machinery/computer/stockexchange/attack_ai(mob/user)
-	src.attack_hand(user)
-
 /obj/machinery/computer/stockexchange/attack_hand(mob/user)
 	if(..(user))
 		return

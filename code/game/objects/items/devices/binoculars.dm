@@ -11,7 +11,7 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-	//matter = list(MAT_STEEL = 50, MAT_GLASS = 50)
+	//MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
 /obj/item/binoculars/attack_self(mob/user)
 	. = ..(user)

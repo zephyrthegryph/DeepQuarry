@@ -90,7 +90,7 @@
 		if(S.check_ownership(src))
 			LAZYOR(S.engines, controller)
 			if(dir != S.fore_dir)
-				set_broken(TRUE)
+				atom_break()
 			break
 
 /obj/machinery/atmospherics/unary/engine/Destroy()
@@ -103,14 +103,6 @@
 	// Burns are initiated synchronously by the owning ship engine datum. The
 	// nozzle has no autonomous per-tick work once its pipenet is constructed.
 	return PROCESS_KILL
-
-/// Toggles the BROKEN stat flag and refreshes the icon. Defined here to avoid conflicts
-/// with unrelated set_broken procs elsewhere in the codebase that have different semantics.
-/obj/machinery/atmospherics/unary/engine/proc/set_broken(new_state, cause)
-	if(!(stat & BROKEN) == !new_state)
-		return // Nothing changed
-	stat ^= BROKEN
-	update_icon()
 
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()

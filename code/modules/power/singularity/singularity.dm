@@ -1,6 +1,6 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
 
-GLOBAL_LIST_BOILERPLATE(all_singularities, /obj/singularity)
+REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 
 /obj/singularity/
 	name = "gravitational singularity"
@@ -37,7 +37,7 @@ GLOBAL_LIST_BOILERPLATE(all_singularities, /obj/singularity)
 	. = ..()
 	energy = starting_energy
 	START_PROCESSING(SSobj, src)
-	for(var/obj/machinery/power/singularity_beacon/singubeacon in GLOB.machines)
+	for(var/obj/machinery/power/singularity_beacon/singubeacon in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(singubeacon.active)
 			target = singubeacon
 			break
@@ -455,7 +455,7 @@ GLOBAL_LIST_BOILERPLATE(all_singularities, /obj/singularity)
 	return
 
 /obj/singularity/proc/pulse()
-	for(var/obj/machinery/power/rad_collector/R in GLOB.rad_collectors)
+	for(var/obj/machinery/power/rad_collector/R in REGISTRY_MEMBERS(REGISTRY_RAD_COLLECTORS))
 		if (get_dist(R, src) <= 15) //Better than using orange() every process.
 			R.receive_pulse(energy)
 	//Yes, this means rad collectors can double dip on the singulo, but you could always use the safer SM or tesla, so it gets a small buff.

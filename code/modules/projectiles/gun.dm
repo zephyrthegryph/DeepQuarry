@@ -39,7 +39,7 @@
 	icon_state = "detective"
 	item_state = "gun"
 	slot_flags = SLOT_BELT|SLOT_HOLSTER
-	matter = list(MAT_STEEL = 2000)
+	MATERIAL_BULK(MAT_STEEL, 2000)
 	w_class = ITEMSIZE_NORMAL
 	throwforce = 5
 	throw_speed = 4
@@ -262,7 +262,7 @@
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
 		return
 
-	if(user && user.a_intent == I_HELP && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring)) //regardless of what happens, refuse to shoot if help intent is on
+	if(user && IS_HELPING(user) && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring)) //regardless of what happens, refuse to shoot if help intent is on
 		to_chat(user, span_warning("You refrain from firing your [src] as your intent is set to help."))
 		return
 
@@ -292,7 +292,7 @@
 	if (A == user && user.zone_sel.selecting == O_MOUTH && !mouthshoot)
 		handle_suicide(user)
 		return ITEM_INTERACT_SUCCESS
-	else if(user.a_intent == I_HURT) //point blank shooting
+	else if(IS_HARMING(user)) //point blank shooting
 		if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A && A != user)
 			PreFire(A,user) //They're using the new gun system, locate what they're aiming at.
 			return ITEM_INTERACT_SUCCESS
@@ -323,9 +323,7 @@
 	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
 		to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
 		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You begin removing \the [attached_lock] from \the [src]."))
-	playsound(src, tool.usesound, 50, TRUE)
-	if(!do_after(user, 2.5 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You begin removing \the [attached_lock] from \the [src]."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)

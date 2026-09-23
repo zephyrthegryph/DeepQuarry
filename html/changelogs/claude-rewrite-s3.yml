@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - code_imp: "Airlocks, cameras, lights, status displays, looping sounds and shutoff valves now sleep until an event or timer wakes them instead of polling every tick."
+  - code_imp: "Added a CI lint against world.time deadline polling in process()."

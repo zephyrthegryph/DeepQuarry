@@ -49,7 +49,7 @@
 
 	// Messaging server spam filters.
 	// This might be better served as a seperate event since it seems more like a hacker attack than a natural occurance.
-	for(var/obj/machinery/message_server/MS in GLOB.message_servers)
+	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(MS.z in get_location_z_levels())
 			MS.spamfilter.Cut()
 			for (var/i = 1, i <= MS.spamfilter_limit, i++)

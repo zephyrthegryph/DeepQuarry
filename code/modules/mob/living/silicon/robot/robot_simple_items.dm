@@ -216,10 +216,14 @@
 	name = "cable coil synthesizer"
 	desc = "A device that makes cable."
 	gender = NEUTER
-	matter = null
 	uses_charge = 1
 	charge_costs = list(1)
 	custom_handling = TRUE
+
+/// A synthesiser keeps its cable construction for the cable it lays, but is not
+/// made of recyclable material itself (it would dupe materials in a recycler).
+/obj/item/stack/cable_coil/cyborg/material_totals()
+	return list()
 
 /obj/item/stack/cable_coil/cyborg/attack_self(mob/user)
 	. = ..(user)
@@ -571,8 +575,10 @@
 	var/special_handling = FALSE
 
 /obj/item/storage/internal/gripper
-	max_w_class = ITEMSIZE_HUGE
 	max_storage_space = ITEMSIZE_COST_HUGE
+
+/obj/item/storage/internal/gripper/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_HUGE))
 
 /obj/item/gripper/Initialize(mapload)
 	. = ..()

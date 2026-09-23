@@ -25,7 +25,7 @@
 	start_effect_sprayer(smoke, smoke_strength, 'sound/effects/smoke.ogg', smoke_color)
 
 /obj/item/grenade/smokebomb/attackby(obj/item/I as obj, mob/user as mob)
-	if(istype(I,/obj/item/multitool))
+	if(I.has_tool_quality(TOOL_MULTITOOL))
 		var/new_smoke_color = tgui_color_picker(user, "Choose a color for the smoke:", "Smoke Color", smoke_color)
 		if(new_smoke_color)
 			smoke_color = new_smoke_color

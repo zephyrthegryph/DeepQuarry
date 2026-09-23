@@ -61,8 +61,8 @@
 	. = ..()
 	START_MACHINE_PROCESSING(src)
 
-/obj/machinery/embedded_controller/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/embedded_controller
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/embedded_controller/attack_hand(mob/user as mob)
 	if(!user.IsAdvancedToolUser())

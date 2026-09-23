@@ -51,6 +51,8 @@
 		if(location)
 			/// Sends a signal that the new atom `src`, has been created at `loc`
 			SEND_SIGNAL(location, COMSIG_ATOM_AFTER_SUCCESSFUL_INITIALIZED_ON, A, arguments[1])
+			// Created straight into a holder with a ledger: record it now (containment C1).
+			location.ledger?.note_enter(A)
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables
 			created_atoms += A.get_all_contents()
 
@@ -148,7 +150,7 @@
  *  proc must return the hint
  * [INITIALIZE_HINT_LATELOAD] otherwise it will never be called.
  *
- * useful for doing things like finding other machines on GLOB.machines because you can guarantee
+ * useful for doing things like finding other machines on REGISTRY_MEMBERS(REGISTRY_MACHINES) because you can guarantee
  * that all atoms will actually exist in the "WORLD" at this time and that all their Initialization
  * code has been run
  */

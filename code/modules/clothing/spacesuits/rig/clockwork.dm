@@ -20,9 +20,6 @@
 	boot_type = /obj/item/clothing/shoes/magboots/rig/ch/clockwork
 	cell_type =  /obj/item/cell/clockwork
 
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear
-		)
-
 	initial_modules = list(
 		/obj/item/rig_module/ai_container,
 		/obj/item/rig_module/maneuvering_jets,
@@ -31,6 +28,11 @@
 
 	req_access = list()
 	req_one_access = list()
+
+/obj/item/rig/ch/clockwork/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear
+		)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/rig/ch/clockwork
 	name = "cuirass"
@@ -68,5 +70,4 @@
 	charge_amount = 120
 	self_recharge = TRUE
 	charge_delay = 50
-	matter = null
 	standard_overlays = FALSE

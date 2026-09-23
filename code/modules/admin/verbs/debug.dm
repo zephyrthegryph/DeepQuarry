@@ -177,10 +177,10 @@ ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instance
 		message_admins("[key_name_admin(user)] has deleted all instances of [hsbitem].", 0)
 	feedback_add_details("admin_verb","DELA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_debug_make_powernets, R_DEBUG, "Make Powernets", "Rebuild all powernets.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
-	SSmachines.makepowernets()
-	log_admin("[key_name(user)] has remade the powernet. SSmachines.makepowernets() called.")
-	message_admins("[key_name_admin(user)] has remade the powernets. SSmachines.makepowernets() called.")
+ADMIN_VERB(cmd_debug_make_powernets, R_DEBUG, "Make Powernets", "Send every cable and power machine to the power network again.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
+	SSmachines.power_reregister_all()
+	log_admin("[key_name(user)] has remade the power network.")
+	message_admins("[key_name_admin(user)] has remade the power network.")
 	feedback_add_details("admin_verb","MPWN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_debug_tog_aliens, R_DEBUG, "Toggle Aliens", "Toggle if aliens are allowed.", ADMIN_CATEGORY_SERVER_GAME)
@@ -298,37 +298,37 @@ ADMIN_VERB(cmd_admin_areatest, R_DEBUG, "Test areas", "Manually tests all areas 
 		if(!(A.type in areas_all))
 			areas_all.Add(A.type)
 
-	for(var/obj/machinery/power/apc/APC in GLOB.apcs)
+	for(var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
 		var/area/A = get_area(APC)
 		if(A && !(A.type in areas_with_APC))
 			areas_with_APC.Add(A.type)
 
-	for(var/obj/machinery/alarm/alarm in GLOB.machines)
+	for(var/obj/machinery/alarm/alarm in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/area/A = get_area(alarm)
 		if(A && !(A.type in areas_with_air_alarm))
 			areas_with_air_alarm.Add(A.type)
 
-	for(var/obj/machinery/requests_console/RC in GLOB.machines)
+	for(var/obj/machinery/requests_console/RC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/area/A = get_area(RC)
 		if(A && !(A.type in areas_with_RC))
 			areas_with_RC.Add(A.type)
 
-	for(var/obj/machinery/light/L in GLOB.machines)
+	for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/area/A = get_area(L)
 		if(A && !(A.type in areas_with_light))
 			areas_with_light.Add(A.type)
 
-	for(var/obj/machinery/light_switch/LS in GLOB.machines)
+	for(var/obj/machinery/light_switch/LS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/area/A = get_area(LS)
 		if(A && !(A.type in areas_with_LS))
 			areas_with_LS.Add(A.type)
 
-	for(var/obj/item/radio/intercom/I in GLOB.machines)
+	for(var/obj/item/radio/intercom/I in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/area/A = get_area(I)
 		if(A && !(A.type in areas_with_intercom))
 			areas_with_intercom.Add(A.type)
 
-	for(var/obj/machinery/camera/C in GLOB.machines)
+	for(var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/area/A = get_area(C)
 		if(A && !(A.type in areas_with_camera))
 			areas_with_camera.Add(A.type)
@@ -401,27 +401,27 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 	if(tgui_alert(user, "Are you sure? This will start up the engine. Should only be used during debug!","Start Singularity",list("Yes","No")) != "Yes")
 		return
 
-	for(var/obj/machinery/power/emitter/E in GLOB.machines)
+	for(var/obj/machinery/power/emitter/E in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(istype(get_area(E), /area/space))
 			E.anchored = TRUE
 			E.state = 2
 			E.connect_to_network()
 			E.active = TRUE
-	for(var/obj/machinery/field_generator/F in GLOB.machines)
+	for(var/obj/machinery/field_generator/F in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(istype(get_area(F), /area/space))
 			F.Varedit_start = 1
 			START_MACHINE_PROCESSING(F)
-	for(var/obj/machinery/power/grounding_rod/GR in GLOB.machines)
+	for(var/obj/machinery/power/grounding_rod/GR in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		GR.anchored = TRUE
 		GR.update_icon()
-	for(var/obj/machinery/power/tesla_coil/TC in GLOB.machines)
+	for(var/obj/machinery/power/tesla_coil/TC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		TC.anchored = TRUE
 		TC.update_icon()
-	for(var/obj/structure/particle_accelerator/PA in GLOB.machines)
+	for(var/obj/structure/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
 		PA.construction_state = 3
 		PA.update_icon()
-	for(var/obj/machinery/particle_accelerator/PA in GLOB.machines)
+	for(var/obj/machinery/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
 		PA.construction_state = 3
 		PA.update_icon()
@@ -440,7 +440,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 	var/found_the_pump = 0
 	var/obj/machinery/power/supermatter/SM
 
-	for(var/obj/machinery/M in GLOB.machines)
+	for(var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!M)
 			continue
 		if(!M.loc)

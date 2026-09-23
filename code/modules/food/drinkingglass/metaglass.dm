@@ -7,7 +7,8 @@
 	unacidable = TRUE //glass
 	center_of_mass_x = 16
 	center_of_mass_y = 10
-	matter = list(MAT_GLASS = 500)
+	material_template = /datum/material_template/container
+	material_total = 500
 	icon = 'icons/obj/drinks.dmi'
 
 /obj/item/reagent_containers/food/drinks/metaglass/metapint

@@ -15,7 +15,6 @@
 GLOBAL_LIST_EMPTY(req_console_assistance)
 GLOBAL_LIST_EMPTY(req_console_supplies)
 GLOBAL_LIST_EMPTY(req_console_information)
-GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 
 /obj/machinery/requests_console
 	name = "requests console"
@@ -55,6 +54,8 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 	light_range = 0
 	var/datum/announcement/announcement
 
+REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
+
 /obj/machinery/requests_console/Initialize(mapload)
 	. = ..()
 	announcement = new
@@ -62,7 +63,6 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 	announcement.newscast = 1
 
 	name = "[department] requests console"
-	GLOB.allConsoles += src
 	if(departmentType & RC_ASSIST)
 		GLOB.req_console_assistance |= department
 	if(departmentType & RC_SUPPLY)
@@ -73,10 +73,9 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 	update_icon()
 
 /obj/machinery/requests_console/Destroy()
-	GLOB.allConsoles -= src
 	var/lastDeptRC = 1
-	for (var/obj/machinery/requests_console/Console in GLOB.allConsoles)
-		if(Console.department == department)
+	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
+		if(Console != src && Console.department == department) // still registered until ..() dematerializes it
 			lastDeptRC = 0
 			break
 	if(lastDeptRC)
@@ -185,7 +184,7 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 			var/log_msg = message
 			var/pass = 0
 			screen = RCS_SENTFAIL
-			for(var/obj/machinery/message_server/MS in GLOB.machines)
+			for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				if(!MS.active)
 					continue
 				MS.send_rc_message(ckey(params["department"]), department, log_msg, msgStamped, msgVerified, priority)
@@ -218,7 +217,7 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 			if(tempScreen == RCS_ANNOUNCE && !announcementConsole)
 				return
 			if(tempScreen == RCS_VIEWMSGS)
-				for (var/obj/machinery/requests_console/Console in GLOB.allConsoles)
+				for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
 					if(Console.department == department)
 						Console.newmessagepriority = 0
 						Console.update_icon()

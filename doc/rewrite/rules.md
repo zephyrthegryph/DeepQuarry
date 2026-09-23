@@ -62,6 +62,25 @@ The ledger's `can_insert` (both sides), equipping and interaction availability a
 
 Tags replace most of the type lists: an item declares `suit_storable`, and a suit's storage slot accepts that tag.
 
+### 3.1 As built (P3)
+
+The code is in `code/datums/properties/constraints.dm` (API), `code/datums/properties/equip_slots.dm` (equip slots) and `code/datums/properties/families/wearable.dm` (tags). Defines are in `code/__defines/constraints.dm`.
+
+- **Declaring.** An item type overrides a proc and returns a spec (a list of `REQ_*` clauses), or null for none. The proc runs once per type and the spec is compiled and cached by type:
+  - `hold_constraint()`: what a holder takes (storage, holsters). `HOLD_ONLY(types)`, `HOLD_NOT(types)` and `HOLD_MAX_SIZE(size)` are shorthands.
+  - `suit_storage_constraint()`: what a worn suit's suit-storage slot takes. Null means no suit storage. PDAs and pens always fit a suit that has one.
+  - `fit_constraint()`: whose body the item fits, with `REQ_FITS_BODYTYPES(list)` (the old `species_restricted` rules, include or `"exclude"` form, and the Teshari and Werebeast sprite rule).
+  - `equip_constraint()`: what the item needs of its wearer in any slot (taur halves, a robotic head, not wielded, owner-only fluff items).
+- **New clauses.** `REQ_TYPE(subject, types)` compiles a typecache; `REQ_FITS_BODYTYPES` evaluates the fit rule against `PRED_ACTOR`.
+- **Instances.** `set_constraint(kind, spec, key)` installs a compiled override on one instance: `restrict_hold()` (exact-fit boxes, internal pockets, random xenoarch boxes), `restrict_fit()` (refits, paint kits), `adopt_constraint()` (a rig's chest piece takes the rig's suit storage).
+- **Reading.** `dq_constraint(I, kind)` gives the compiled predicate, and `dq_constraint_refusal(I, kind, thing, actor)` the reason.
+  - `storage.insert_refusal(W, user)` is the hold constraint, then space and stuck items. It replaced `can_be_inserted()`.
+  - `item.equip_refusal(M, slot, ...)` checks that the species has the slot, the slot's predicate, that the slot is free (unless `TAG_WEAR_OVER`) and reachable, then `CONSTRAINT_FIT` (except in pockets and suit storage) and `CONSTRAINT_EQUIP`. It replaced `mob_can_equip()` and its 33 overrides.
+- **Equip slots.** Each slot has a `/datum/predicate/equip_slot` subtype, with the wearer as `PRED_ACTOR` and the item as `PRED_TARGET`. The `slot_flags` checks became wearable tags (`TAG_WEAR_HEAD`, `TAG_POCKETABLE`, `TAG_NO_POCKET`, `TAG_HOLSTERABLE`, …) that read the instance's current `slot_flags`. Slot rules are proc clauses: pockets and IDs need a jumpsuit, suit storage asks the worn suit, the backpack slot asks the backpack, gloves layer, and two-ear items need both ears.
+- **Slots.** `slot_def.holder_constraint` names a `CONSTRAINT_*` kind that `refusal()` reads from the holder after `accepts`. A C4 storage slot sets `holder_constraint = CONSTRAINT_HOLD`, and a C3 equip slot uses the matching `equip_slot` predicate as `accepts`.
+- **Parity.** `code/modules/unit_tests/data/dq_constraint_parity.json` holds the legacy answers, captured before the conversion: every storage type × 824 items, every suit with storage × 824 items, 17 holsters, and 4,734 equip items × 22 slots × naked and dressed for a human, plus the species-sensitive items for 38 species. That is 3.2 million cells, and `dq_constraint_parity/*` requires every cell to match.
+- **Left as they were.** The champion belt's legacy list named its mask as a string, so it has never held anything, and it still doesn't. Robot grippers keep their own `can_hold` (robot modules move with C3).
+
 ## 4. Rules
 
 **Rule = trigger + condition + effect.**
@@ -96,6 +115,15 @@ Tags replace most of the type lists: an item declares `suit_storable`, and a sui
 | Cell | On EMP, drain its charge (data) |
 | Glass | When integrity hits 0, transform into shards |
 | Any object | At integrity thresholds, show the matching damage flavour text (generated, replacing about 26 hand-written lines) |
+
+### Implementation (P4)
+
+Code: `code/datums/rules/`, defines in `code/__defines/rules.dm`, tests in `code/modules/unit_tests/dq_rule_tests.dm`.
+- **Declaring.** A `/datum/rule` subtype names `applies_to` types (inherited by subtypes; `excludes` opts out), a `condition` (a predicate spec over `PRED_TARGET`), and an effect: `RULE_EFFECT_DATA` with a `transform` (`RULE_SET_STATE`, `RULE_SWAP_TYPE`, `RULE_REMOVE`), or `RULE_EFFECT_BEHAVIOUR` with an `effect_proc` (and an `exit_proc` for repeatable rules). `hold_for` makes it a time-above-threshold rule; `replaces` tells the legacy path it takes over to stand down.
+- **Compiling.** Every property clause becomes a trigger: a channel-backed measure against a literal or a static property is a Threshold watch (`REACT_WHEN`), a band a Band watch, two channel-backed sides change watches, and a DM-owned property (`dm_key_kind` on its definition) a key subscription (`REACT_ON_KEY`). A rule with no trigger, or one reading the actor or held item, fails boot validation (SSproperties).
+- **Running.** Rules are singletons. An object subscribes in `on_materialize()` and unsubscribes in `on_dematerialize()`, holding one `/datum/rule_binding` while live. Every wake re-checks the whole predicate; a rule fires on the false-to-true edge. `hold_for` runs on a rate model with a `REACT_RATE` watch, never polling.
+- **Reactor coupling.** Only `reactor_adapter.dm` touches SSreactor. Objects have no heat-domain node yet, so a heat node is DM-mirrored and borrows one of S1's probe cells while it is away from ambient; at rest its watches live only in DM (no reactor state), and when the cells run out a write wakes them directly.
+- **Tests.** `dq_rule_thresholds` generates one case per declared threshold per declaring type: just on the quiet side nothing fires, just across it fires once, further across it doesn't fire again.
 
 ## 5. Abilities
 

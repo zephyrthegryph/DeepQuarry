@@ -587,23 +587,33 @@
 // Walls (blocks_air=1) have air=null and we treat them as "no pressure" so the
 // open/closed boundary still shows as a non-zero differential.
 /proc/getOPressureDifferential(turf/loc)
-	var/minp=16777216;
-	var/maxp=0;
+	var/list/turfs = new /list(4)
+	var/list/mixtures = new /list(4)
+	var/index = 0
 	for(var/dir in GLOB.cardinal)
-		var/turf/simulated/T=get_turf(get_step(loc,dir))
-		var/cp=0
+		index++
+		var/turf/T = get_turf(get_step(loc, dir))
 		var/turf/open/open_turf = istype(T, /turf/open) ? T : null
 		// /turf/open/return_air() deliberately returns the immutable vacuum
 		// fallback for walls and other airless turfs. Sensors must inspect the
 		// actual turf-owned mixture or walls become fake 0 K / 0 kPa samples.
-		var/datum/gas_mixture/environment = open_turf?.air
-		if(environment)
-			cp = environment.return_pressure()
-		else if(istype(T, /turf/simulated))
+		turfs[index] = T
+		mixtures[index] = open_turf?.air
+	// One batched arena read for all four neighbours.
+	var/list/readings = read_gas_mixtures(mixtures)
+	var/minp = 16777216
+	var/maxp = 0
+	for(var/i in 1 to length(turfs))
+		var/cp = 0
+		if(mixtures[i])
+			cp = readings[(i - 1) * GAS_READ_STRIDE + GAS_READ_PRESSURE]
+		else if(istype(turfs[i], /turf/simulated))
 			continue
-		if(cp<minp)minp=cp
-		if(cp>maxp)maxp=cp
-	return abs(minp-maxp)
+		if(cp < minp)
+			minp = cp
+		if(cp > maxp)
+			maxp = cp
+	return abs(minp - maxp)
 
 /proc/convert_k2c(temp)
 	return ((temp - T0C))
@@ -612,39 +622,37 @@
 	return ((temp + T0C))
 
 /proc/getCardinalAirInfo(turf/loc, list/stats=list("temperature"))
-	var/list/temps = new/list(4)
-	for(var/dir in GLOB.cardinal)
-		var/direction
-		switch(dir)
-			if(NORTH)
-				direction = 1
-			if(SOUTH)
-				direction = 2
-			if(EAST)
-				direction = 3
-			if(WEST)
-				direction = 4
-		// zone-check replaced with return_air() non-null check; walls
+	var/static/list/stat_offsets = list(
+		"pressure" = GAS_READ_PRESSURE,
+		"temperature" = GAS_READ_TEMPERATURE,
+		"volume" = GAS_READ_VOLUME,
+		"total_moles" = GAS_READ_TOTAL_MOLES,
+	)
+	// Order matches the returned list: NORTH, SOUTH, EAST, WEST.
+	var/static/list/directions = list(NORTH, SOUTH, EAST, WEST)
+	var/list/turfs = new /list(4)
+	var/list/mixtures = new /list(4)
+	for(var/index in 1 to 4)
+		// zone-check replaced with a real air mixture check; walls
 		// (blocks_air=1) have air=null and are excluded as "no readings".
-		var/turf/simulated/T=get_turf(get_step(loc,dir))
-		var/list/rstats = new /list(stats.len)
+		var/turf/T = get_turf(get_step(loc, directions[index]))
 		var/turf/open/open_turf = istype(T, /turf/open) ? T : null
-		var/datum/gas_mixture/environment = open_turf?.air
-		if(environment)
-			for(var/i=1;i<=stats.len;i++)
-				switch(stats[i])
-					// temperature/volume/pressure are arena-backed accessors now, not DM
-					// vars; a dynamic environment.vars["temperature"] read would runtime.
-					if("pressure")
-						rstats[i] = environment.return_pressure()
-					if("temperature")
-						rstats[i] = environment.return_temperature()
-					if("volume")
-						rstats[i] = environment.return_volume()
-					else
-						rstats[i] = environment.vars[stats[i]]
-		else if(istype(T, /turf/simulated))
-			rstats = null // Exclude wall/door/etc — no air to sample.
+		turfs[index] = T
+		mixtures[index] = open_turf?.air
+	// One batched arena read for all four neighbours.
+	var/list/readings = read_gas_mixtures(mixtures)
+	var/list/temps = new/list(4)
+	for(var/direction in 1 to 4)
+		if(!mixtures[direction])
+			if(!istype(turfs[direction], /turf/simulated))
+				temps[direction] = new /list(stats.len)
+			continue
+		var/base = (direction - 1) * GAS_READ_STRIDE
+		var/list/rstats = new /list(stats.len)
+		for(var/i in 1 to stats.len)
+			var/offset = stat_offsets[stats[i]]
+			if(offset)
+				rstats[i] = readings[base + offset]
 		temps[direction] = rstats
 	return temps
 

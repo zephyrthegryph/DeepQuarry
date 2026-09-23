@@ -28,7 +28,7 @@
 
 	contained = animal
 	animal.forceMove(src)
-	animal.in_stasis = 1
+	animal.set_stasis(/datum/modifier/stasis/total, src)
 	if(animal.buckled && istype(animal.buckled, /obj/effect/energy_net))
 		animal.buckled.forceMove(animal.loc)
 	icon_state = "critter"
@@ -41,7 +41,7 @@
 	contained.dropInto(src)
 	if(contained.buckled && istype(contained.buckled, /obj/effect/energy_net))
 		contained.buckled.dropInto(src)
-	contained.in_stasis = 0
+	contained.set_stasis(null, src)
 	contained = null
 	icon_state = "critteropen"
 	underlays.Cut()

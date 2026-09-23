@@ -129,7 +129,7 @@
 	var/head = 1
 	while(head <= length(queue))
 		var/turf/open/current = queue[head++]
-		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+		for(var/turf/open/neighbor as anything in vg_atmos_adjacent_turfs(current))
 			if(visited[neighbor])
 				continue
 			if(!(neighbor.loc in shuttle.shuttle_area))
@@ -199,7 +199,7 @@
 				for(var/turf/open/cycle_turf in cycle_area)
 					if(!cycle_turf.blocks_air && cycle_turf.air)
 						TEST_ASSERT(vg_topology_matches(cycle_turf), "Rust/DM atmos topology diverged after shuttle move [hop], atmos cycle [cycle], at [cycle_turf.x],[cycle_turf.y],[cycle_turf.z]")
-			if(SSair.async_generation == last_generation && !length(SSair.adjacent_rebuild))
+			if(SSair.async_generation == last_generation)
 				if(++idle_cycles >= 2)
 					break
 			else
@@ -258,7 +258,7 @@
 			var/head = 1
 			while(head <= queue.len)
 				var/turf/open/current = queue[head++]
-				for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+				for(var/turf/open/neighbor as anything in vg_atmos_adjacent_turfs(current))
 					if(visited[neighbor])
 						continue
 					TEST_ASSERT(!istype(neighbor, /turf/space), "arrivals shuttle atmosphere from [component_seed.x],[component_seed.y],[component_seed.z] reaches space at [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]")
@@ -326,7 +326,7 @@
 	var/head = 1
 	while(head <= queue.len)
 		var/turf/open/current = queue[head++]
-		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+		for(var/turf/open/neighbor as anything in vg_atmos_adjacent_turfs(current))
 			if(visited[neighbor])
 				continue
 			TEST_ASSERT(!istype(neighbor, /turf/space), "escape shuttle atmosphere reaches space at [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]")

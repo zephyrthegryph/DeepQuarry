@@ -1,5 +1,7 @@
 import type { BooleanLike } from 'tgui-core/react';
 
+import type { Diagnosis } from '../common/Diagnosis';
+
 export type Data = {
   maintenance: BooleanLike;
   tankmax: number;
@@ -15,10 +17,7 @@ export type Data = {
   toxheal_vol: number | null;
   patient_name: string | null;
   patient_health: number | null;
-  patient_brute: number | null;
-  patient_burn: number | null;
-  patient_tox: number | null;
-  patient_oxy: number | null;
+  patient_diagnosis: Diagnosis | null;
   blood_status: { volume: number; max_volume: number } | null;
   patient_status: number | null;
   organ_damage: BooleanLike;

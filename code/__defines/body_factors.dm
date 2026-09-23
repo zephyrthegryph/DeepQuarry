@@ -69,39 +69,49 @@
 #define BF_INCOMING_PHYSICAL 37 // mult (INJURY_CATEGORY_PHYSICAL)
 #define BF_INCOMING_THERMAL  38 // mult (INJURY_CATEGORY_THERMAL)
 #define BF_INCOMING_TOXIC    39 // mult (INJURY_CATEGORY_TOXIC)
-#define BF_INCOMING_ASPHYXIA 40 // mult (INJURY_CATEGORY_ASPHYXIA)
-#define BF_INCOMING_GENETIC  41 // mult (INJURY_CATEGORY_GENETIC)
-#define BF_INCOMING_NEURAL   42 // mult (INJURY_CATEGORY_NEURAL)
-#define BF_INCOMING_PAIN     43 // mult (INJURY_CATEGORY_PAIN)
-#define BF_DISABLE_DURATION  44 // mult: stun / weaken / paralysis / sleep / confusion durations
-#define BF_HEALING_RECEIVED  45 // mult: every mend() the mob receives
-#define BF_ENDURANCE_FLAT    46 // add: toughness points
-#define BF_ENDURANCE_MULT    47 // mult: toughness
-#define BF_ICON_SCALE_X      48 // mult: sprite width
-#define BF_ICON_SCALE_Y      49 // mult: sprite height
-#define BF_PAIN_IMMUNITY     50 // max: 1 = feels no pain
-#define BF_PULSE_SHIFT       51 // add: pulse-level shift (PULSE_* steps)
-#define BF_PULSE_SET         52 // max: forced pulse level (baseline -1 = none)
-#define BF_EMP_SHIFT         53 // add: added to EMP severity (higher = weaker)
-#define BF_EXPLOSION_SHIFT   54 // add: added to explosion severity (higher = weaker)
-#define BF_HEAT_EXPOSURE     55 // mult: share of environmental heat that reaches the body
-#define BF_COLD_EXPOSURE     56 // mult: share of environmental cold that reaches the body
-#define BF_SIEMENS           57 // mult: electrical conductivity
+#define BF_INCOMING_GENETIC  40 // mult (INJURY_CATEGORY_GENETIC)
+#define BF_INCOMING_NEURAL   41 // mult (INJURY_CATEGORY_NEURAL)
+#define BF_INCOMING_PAIN     42 // mult (INJURY_CATEGORY_PAIN)
+#define BF_DISABLE_DURATION  43 // mult: stun / weaken / paralysis / sleep / confusion durations
+#define BF_HEALING_RECEIVED  44 // mult: every mend() the mob receives
+#define BF_ENDURANCE_FLAT    45 // add: toughness points
+#define BF_ENDURANCE_MULT    46 // mult: toughness
+#define BF_ICON_SCALE_X      47 // mult: sprite width
+#define BF_ICON_SCALE_Y      48 // mult: sprite height
+#define BF_PAIN_IMMUNITY     49 // max: 1 = feels no pain
+#define BF_PULSE_SHIFT       50 // add: pulse-level shift (PULSE_* steps)
+#define BF_PULSE_SET         51 // max: forced pulse level (baseline -1 = none)
+#define BF_EMP_SHIFT         52 // add: added to EMP severity (higher = weaker)
+#define BF_EXPLOSION_SHIFT   53 // add: added to explosion severity (higher = weaker)
+#define BF_HEAT_EXPOSURE     54 // mult: share of environmental heat that reaches the body
+#define BF_COLD_EXPOSURE     55 // mult: share of environmental cold that reaches the body
+#define BF_SIEMENS           56 // mult: electrical conductivity
 // --- Chemistry (the old per-tick chemical channels) -------------------------------------
-#define BF_STABILIZATION     58 // add: cardiorespiratory stabilisation (inaprovaline)
-#define BF_ANTIMICROBIAL     59 // add: antibiotic strength
-#define BF_BLOOD_REGEN       60 // add: blood regenerated per tick (units)
-#define BF_INTOXICATION      61 // add: alcohol intoxication
-#define BF_HEPATOTOXICITY    62 // add: liver toxicity from alcohol
-#define BF_ANTIEMETIC        63 // add: vomiting suppression
-#define BF_ALLERGY           64 // add: allergic reaction strength
-#define BF_WITHDRAWAL        65 // add: withdrawal strain on the organs
-#define BF_NEURAL_REPAIR     66 // add: extra brain-lesion repair per tick
-#define BF_IMMUNE_SUPPRESSION 67 // add: immune suppression
+#define BF_STABILIZATION     57 // add: cardiorespiratory stabilisation (inaprovaline)
+#define BF_ANTIMICROBIAL     58 // add: antibiotic strength
+#define BF_BLOOD_REGEN       59 // add: blood regenerated per tick (units)
+#define BF_INTOXICATION      60 // add: alcohol intoxication
+#define BF_HEPATOTOXICITY    61 // add: liver toxicity from alcohol
+#define BF_ANTIEMETIC        62 // add: vomiting suppression
+#define BF_ALLERGY           63 // add: allergic reaction strength
+#define BF_WITHDRAWAL        64 // add: withdrawal strain on the organs
+#define BF_NEURAL_REPAIR     65 // add: extra brain-lesion repair per tick
+#define BF_IMMUNE_SUPPRESSION 66 // add: immune suppression
+// --- Oxygen transport (physiology, code/modules/body/physiology.dm) --------------------------
+#define BF_O2_CARRIAGE       67 // mult: oxygen the blood carries per unit of saturation (carbon monoxide lowers it; oximeters can't see it)
+#define BF_TISSUE_UPTAKE     68 // mult: oxygen the tissues can use from what arrives (cyanide lowers it)
+// --- Stabilisation ----------------------------------------------------------------------
+/// max: share of life processes suspended, 0..1 (stasis bags, sleepers, cryopods).
+/// The body's stasis clock (code/modules/medical/stabilisation/stasis.dm) reads it once
+/// per Life() cycle; afflictions, metabolism, breathing and blood skip paused cycles.
+#define BF_STASIS            69
+/// Stasis deeper than this keeps the patient asleep.
+#define STASIS_SLEEP_THRESHOLD 0.5
 // --- Armour -----------------------------------------------------------------------------
 /// Armour points against one armour kind (INJURY_* or ARMOR_BLAST), added to
 /// worn / natural armour. BF_ARMOR(INJURY_BLUNT) .. BF_ARMOR(ARMOR_BLAST).
-#define BF_ARMOR_BASE        67
+/// BF_ARMOR(1) is the first id after the last named factor.
+#define BF_ARMOR_BASE        69
 #define BF_ARMOR(kind)       (BF_ARMOR_BASE + (kind))
 #define BF_COUNT             (BF_ARMOR_BASE + ARMOR_KIND_COUNT)
 

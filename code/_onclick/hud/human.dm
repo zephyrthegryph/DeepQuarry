@@ -61,72 +61,14 @@
 		using.alpha = HUD.ui_alpha
 		adding += using
 
-	// Draw the attack intent dialogue.
+	// The combat mode button (it replaced the intent selector).
 	if(hud_data.has_a_intent)
-
-		using = new /atom/movable/screen()
-		using.name = "act_intent"
+		using = HUD.make_combat_mode_button(src)
 		using.icon = HUD.ui_style
-		using.icon_state = "intent_"+a_intent
-		using.screen_loc = ui_acti
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
 		adding += using
-		HUD.action_intent = using
-
 		hud_elements |= using
-
-		//intent small hud objects
-		var/icon/ico
-
-		ico = new(HUD.ui_style, "black")
-		ico.MapColors(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, -1,-1,-1,-1)
-		ico.DrawBox(rgb(255,255,255,1),1,ico.Height()/2,ico.Width()/2,ico.Height())
-		using = new /atom/movable/screen()
-		using.name = I_HELP
-		using.icon = ico
-		using.screen_loc = ui_acti
-		using.alpha = HUD.ui_alpha
-		using.layer = LAYER_HUD_ITEM //These sit on the intent box
-		adding += using
-		HUD.help_intent = using
-
-		ico = new(HUD.ui_style, "black")
-		ico.MapColors(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, -1,-1,-1,-1)
-		ico.DrawBox(rgb(255,255,255,1),ico.Width()/2,ico.Height()/2,ico.Width(),ico.Height())
-		using = new /atom/movable/screen()
-		using.name = I_DISARM
-		using.icon = ico
-		using.screen_loc = ui_acti
-		using.alpha = HUD.ui_alpha
-		using.layer = LAYER_HUD_ITEM
-		adding += using
-		HUD.disarm_intent = using
-
-		ico = new(HUD.ui_style, "black")
-		ico.MapColors(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, -1,-1,-1,-1)
-		ico.DrawBox(rgb(255,255,255,1),ico.Width()/2,1,ico.Width(),ico.Height()/2)
-		using = new /atom/movable/screen()
-		using.name = I_GRAB
-		using.icon = ico
-		using.screen_loc = ui_acti
-		using.alpha = HUD.ui_alpha
-		using.layer = LAYER_HUD_ITEM
-		adding += using
-		HUD.grab_intent = using
-
-		ico = new(HUD.ui_style, "black")
-		ico.MapColors(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, -1,-1,-1,-1)
-		ico.DrawBox(rgb(255,255,255,1),1,1,ico.Width()/2,ico.Height()/2)
-		using = new /atom/movable/screen()
-		using.name = I_HURT
-		using.icon = ico
-		using.screen_loc = ui_acti
-		using.alpha = HUD.ui_alpha
-		using.layer = LAYER_HUD_ITEM
-		adding += using
-		HUD.hurt_intent = using
-		//end intent small hud objects
 
 	if(hud_data.has_m_intent)
 		using = new /atom/movable/screen()

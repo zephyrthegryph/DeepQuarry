@@ -2,7 +2,7 @@
 	name = "Nameless Joe"
 
 
-	a_intent = I_HURT
+	combat_mode = TRUE
 
 	low_sorting_priority = TRUE
 

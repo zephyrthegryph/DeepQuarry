@@ -32,16 +32,16 @@
 
 
 // Claim machine ID
+REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
+
 /obj/machinery/cash_register/Initialize(mapload)
 	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
 	. = ..()
 	cash_stored = rand(10, 70)*10
-	GLOB.transaction_devices += src // Global reference list to be properly set up by /proc/setup_economy()
 	if(GLOB.economy_init && account_to_connect)
 		linked_account = GLOB.department_accounts[account_to_connect]
 
 /obj/machinery/cash_register/Destroy()
-	GLOB.transaction_devices -= src
 	. = ..()
 
 /obj/machinery/cash_register/examine(mob/user)
@@ -557,14 +557,9 @@
 /obj/machinery/cash_register/proc/toggle_anchors(obj/item/W, mob/user)
 	if(manipulating) return
 	manipulating = 1
-	if(!anchored)
-		user.visible_message("\The [user] begins securing \the [src] to the floor.",
-							"You begin securing \the [src] to the floor.")
-	else
-		user.visible_message(span_warning("\The [user] begins unsecuring \the [src] from the floor."),
-							"You begin unsecuring \the [src] from the floor.")
-	playsound(src, W.usesound, 50, 1)
-	if(!do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(!use_tool(user, W, src, delay = 2 SECONDS, volume = 50, \
+			message_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", \
+			message_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor."))
 		manipulating = 0
 		return
 	if(!anchored)

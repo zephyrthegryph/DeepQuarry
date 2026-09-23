@@ -14,7 +14,7 @@
 	throw_range = 4
 	actions_types = list(/datum/action/item_action/toggle_heatsink)
 
-	matter = list(MAT_STEEL = 15000, MAT_GLASS = 3500)
+	MATERIAL_MIX(list(MAT_STEEL = 15000, MAT_GLASS = 3500))
 
 	var/on = 0				//is it turned on?
 	var/cover_open = 0		//is the cover open?
@@ -80,7 +80,7 @@
 		var/mob/living/carbon/human/H = loc
 		if(istype(H.loc, /obj/mecha))
 			var/obj/mecha/M = H.loc
-			return M.return_temperature()
+			return M.get_interior_temperature()
 		else if(istype(H.loc, /obj/machinery/atmospherics/unary/cryo_cell))
 			var/obj/machinery/atmospherics/unary/cryo_cell/cc = H.loc
 			return cc.air_contents.return_temperature()

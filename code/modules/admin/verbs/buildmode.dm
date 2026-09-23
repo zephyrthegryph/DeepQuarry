@@ -11,7 +11,6 @@
 
 #define LAST_BUILDMODE		10
 
-GLOBAL_LIST_EMPTY(active_buildmode_holders)
 
 /proc/togglebuildmode(mob/M as mob in GLOB.player_list)
 	set name = "Toggle Build Mode"
@@ -22,7 +21,7 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 			M.client.buildmode = 0
 			M.client.show_popup_menus = 1
 			M.plane_holder.set_vis(VIS_BUILDMODE, FALSE)
-			for(var/obj/effect/bmode/buildholder/H in GLOB.active_buildmode_holders)
+			for(var/obj/effect/bmode/buildholder/H in REGISTRY_MEMBERS(REGISTRY_BUILDMODE_HOLDERS))
 				if(H.cl == M.client)
 					qdel(H)
 		else
@@ -209,12 +208,12 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 	var/copied_faction = null
 	var/warned = 0
 
+REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
+
 /obj/effect/bmode/buildholder/Initialize(mapload)
 	. = ..()
-	GLOB.active_buildmode_holders += src
 
 /obj/effect/bmode/buildholder/Destroy()
-	GLOB.active_buildmode_holders -= src
 	qdel(builddir)
 	builddir = null
 	qdel(buildhelp)

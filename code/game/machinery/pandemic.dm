@@ -29,10 +29,6 @@
 	. = ..()
 	update_icon()
 
-/obj/machinery/computer/pandemic/set_broken()
-	stat |= BROKEN
-	update_icon()
-
 /obj/machinery/computer/pandemic/update_icon()
 	if(stat & BROKEN)
 		icon_state = (beaker ? "pandemic1_b" : "pandemic0_b")

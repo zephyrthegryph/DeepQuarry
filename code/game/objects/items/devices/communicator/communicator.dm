@@ -23,7 +23,7 @@
 	slot_flags = SLOT_ID | SLOT_BELT
 	show_messages = 1
 
-	matter = list(MAT_STEEL = 30,MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 	var/video_range = 3
 	var/obj/machinery/camera/communicator/video_source	// Their camera
@@ -83,9 +83,10 @@
 // Parameters: None
 // Description: Adds the new communicator to the global list of all communicators, sorts the list, obtains a reference to the Exonet node, then tries to
 //				assign the device to the holder's name automatically in a spectacularly shitty way.
+REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
+
 /obj/item/communicator/Initialize(mapload)
 	. = ..()
-	GLOB.all_communicators += src
 	node = get_exonet_node()
 	START_PROCESSING(SSobj, src)
 	camera = new(src)
@@ -260,7 +261,7 @@
 	LAZYCLEARLIST(src.known_devices)
 	if(!get_connection_to_tcomms()) //If the network's down, we can't see anything.
 		return
-	for(var/obj/item/communicator/comm in GLOB.all_communicators)
+	for(var/obj/item/communicator/comm in REGISTRY_MEMBERS(REGISTRY_COMMUNICATORS))
 		if(!comm || !comm.exonet || !comm.exonet.address || comm.exonet.address == src.exonet.address) //Don't add addressless devices, and don't add ourselves.
 			continue
 		LAZYOR(src.known_devices, comm)
@@ -398,7 +399,6 @@
 	node = null
 
 	//Clean up references that might point at us
-	GLOB.all_communicators -= src
 	STOP_PROCESSING(SSobj, src)
 	GLOB.listening_objects.Remove(src)
 	QDEL_NULL(camera)

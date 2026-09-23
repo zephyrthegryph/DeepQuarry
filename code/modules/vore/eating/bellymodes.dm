@@ -1,13 +1,13 @@
-// Process the predator's effects upon the contents of its belly (i.e digestion/transformation etc)
-/obj/belly/process(wait) //Passed by controller
+// One cycle of the predator's effects upon the contents of its belly (digestion,
+// transformation, ...), for `seconds` of real time. SSreactor runs it only while the
+// belly is occupied (belly_slot.dm).
+/obj/belly/proc/belly_cycle(seconds = BELLY_BASELINE_TICK / (1 SECONDS))
 	recent_sound = FALSE
 	cycle_sloshed = FALSE
 
-	// Normalize all per-tick digestion/resize/drain deltas to the SSbellies cadence
-	// (BELLY_BASELINE_TICK). On the normal path this is exactly 1 (no behavior change);
-	// on the DM_FLAG_TURBOMODE/SSobj path the shorter wait yields a proportionally
-	// smaller factor so the same flat constants don't digest faster there.
-	var/delta_factor = wait ? (wait / BELLY_BASELINE_TICK) : 1
+	// Every mode's per-cycle amount is a rate per BELLY_BASELINE_TICK; scale it by the
+	// time this cycle covers, so turbo or late cycles give the same totals over time.
+	var/delta_factor = seconds ? ((seconds SECONDS) / BELLY_BASELINE_TICK) : 1
 
 	if(loc != owner)
 		if(isAI(owner))
@@ -71,7 +71,7 @@
 		if(DM.handle_atoms(src, contents))
 			updateVRPanels()
 		return
-	if(!length(touchable_atoms) && !length(belly_surrounding)) // Needed to not exit early for indirect vorefx
+	if(!length(touchable_atoms) && !LAZYLEN(belly_surrounding)) // Needed to not exit early for indirect vorefx
 		return
 
 /////////////////////////// Sound Selections ///////////////////////////
@@ -138,6 +138,9 @@
 	for(var/mob/living/L as anything in touchable_mobs)
 		if(!istype(L))
 			stack_trace("Touchable mobs had a nonmob: [L]")
+			continue
+		// The mode's consent requirements (vore_consent.dm): a prey whose prefs refuse it is held.
+		if(DM.consent_refusal(src, L))
 			continue
 		var/list/returns = DM.process_mob(src, L, delta_factor)
 		if(istype(returns) && returns["to_update"])
@@ -226,14 +229,14 @@
 						H.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,4)
 
 				//Worn items flag
-				if((mode_flags & DM_FLAG_AFFECTWORN) && H.contaminate_pref)
+				if((mode_flags & DM_FLAG_AFFECTWORN) && vore_consents(/datum/predicate/vore_affect_worn, owner, H))
 					for(var/slot in slots)
 						var/obj/item/I = H.get_equipped_item(slot = slot)
 						if(I && I.canremove)
 							touchable_atoms |= I
 
 				//Stripping flag
-				if((mode_flags & DM_FLAG_STRIPPING) && H.strip_pref) //Stripping pref check
+				if((mode_flags & DM_FLAG_STRIPPING) && vore_consents(/datum/predicate/vore_strip, owner, H)) //Stripping pref check
 					for(var/slot in slots)
 						var/obj/item/I = H.get_equipped_item(slot = slot)
 						if(!I || I.flags & NOSTRIP)
@@ -342,7 +345,7 @@
 	var/digest_alert_prey = span_vnotice(belly_format_string(digest_messages_prey, M))
 	var/compensation = M.get_endurance() / 5 //Dead body bonus.
 	if(ishuman(M))
-		compensation += M.injury_load(INJURY_CATEGORY_ASPHYXIA) //How much of the prey's damage was caused by passive crit oxyloss to compensate the lost nutrition.
+		compensation += M.oxygen_debt() //How much of the prey's damage was caused by passive crit oxyloss to compensate the lost nutrition.
 
 	//Send messages
 	to_chat(owner, digest_alert_owner)

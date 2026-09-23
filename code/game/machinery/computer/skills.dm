@@ -204,9 +204,6 @@
 	else
 		..()
 
-/obj/machinery/computer/skills/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 /obj/machinery/computer/skills/attack_hand(mob/user as mob)
 	if(..())

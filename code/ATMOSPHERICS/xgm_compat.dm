@@ -223,23 +223,12 @@
 /turf/proc/c_airblock(turf/T)
 	if(!T || T == src)
 		return 0
-	if(blocks_air || T.blocks_air)
-		return BLOCKED
-	if(!istype(src, /turf/open) || !istype(T, /turf/open))
-		return BLOCKED
-	// can_atmos_pass walks contents of both turfs (doors, windows, objects)
-	// and asks each whether atmos crosses — same semantics as ZAS would have
-	// applied to the boundary.
-	if(can_atmos_pass(T, FALSE))
-		return 0
-	return BLOCKED
+	return SSair.air_blocked(src, T) ? BLOCKED : 0
 
 // ZAS: SSair.air_blocked(T1, T2) — true if these two turfs are atmos-separated.
-// LINDA equivalent: T1.atmos_adjacent_turfs lists T2 (and vice versa) iff they
-// can share air. If neither side has computed adjacency yet we have to be
-// conservative and answer "blocked" — the alternative is to invoke
-// can_atmos_pass which mutates supeconductivity state and can return stale
-// answers for the wrong reasons.
+// Rust owns turf adjacency (built from DM air-block masks), so ask it: two turfs
+// share air only if both are registered face neighbours and neither blocks the
+// shared face.
 /datum/controller/subsystem/air/proc/air_blocked(turf/A, turf/B)
 	if(!A || !B)
 		return TRUE
@@ -249,28 +238,18 @@
 		return TRUE
 	if(A.blocks_air || B.blocks_air)
 		return TRUE
-	if(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B])
-		return FALSE
-	if(B.atmos_adjacent_turfs && B.atmos_adjacent_turfs[A])
-		return FALSE
-	// Adjacency not built yet — kick a rebuild now so the next caller gets a
-	// fresh answer, and answer "blocked" for this call.
-	A.immediate_calculate_adjacent_turfs()
-	if(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[B])
-		return FALSE
-	return TRUE
+	return !vg_atmos_turfs_share(A, B)
 
 // ZAS: SSair.mark_for_update(T) — schedule a turf for zone-graph rebuild.
-// LINDA equivalent: rebuild adjacency + add to active.
+// Republish the turf's air-block mask and re-register it.
 /datum/controller/subsystem/air/proc/mark_for_update(turf/T)
 	if(!T)
 		return
 	T.air_update_turf(TRUE, FALSE)
 
 // ZAS: /atom/movable.update_nearby_tiles() — was called whenever an object
-// moved or changed state that could affect zone connectivity. LINDA equivalent:
-// recompute the turf's atmos_adjacent_turfs since this atom may now block or
-// unblock atmos passage in a direction.
+// moved or changed state that could affect zone connectivity. Now: republish
+// the turf's air-block mask, since this atom may block or unblock a face.
 /atom/movable/proc/update_nearby_tiles(need_rebuild = 0)
 	var/turf/T = get_turf(src)
 	if(T && SSair?.initialized)
@@ -307,9 +286,9 @@
 	var/list/molar_specific_volume = list()
 	var/list/flags = list()
 	var/list/overlay_limit = list()
-	/// Rust turf visuals (update_visuals) reads GLOB.gas_data.overlays[gas_id][vis_factor].
-	/// Declare so the read resolves (empty -> no overlay, no per-turf error flood).
-	var/list/overlays = list()
+	/// Rust turf visuals (update_visuals) reads GLOB.gas_data.overlays[GAS_ID + 1][vis_factor].
+	/// Positional by numeric gas ID; a null entry means the gas has no overlay.
+	var/list/overlays = new /list(GAS_ID_COUNT)
 
 // Real molar masses (kg/mol) for the LINDA-only /datum/gas subtypes that
 // don't have a matching /datum/decl/xgm_gas in code/defines/gases.dm. Real
@@ -389,9 +368,10 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 	for(var/gas_path in GLOB.meta_gas_info)
 		var/list/meta = GLOB.meta_gas_info[gas_path]
 		var/list/overlay = meta[META_GAS_OVERLAY]
-		if(!length(overlay))
+		var/idx = GLOB.gas_idx_by_key[gas_path]
+		if(!length(overlay) || isnull(idx))
 			continue
-		GLOB.gas_data.overlays["[gas_path]"] = overlay[1]
+		GLOB.gas_data.overlays[idx + 1] = overlay[1]
 
 
 // =====================================================================
@@ -474,16 +454,11 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 		return
 	vg_multiply_hook(src, num_val)
 
-// /obj/item/tank exposed return_pressure/return_temperature as forwarding
-// methods to air_contents. Re-declare for callers that still use them.
+// /obj/item/tank exposed return_pressure as a forwarding method to air_contents.
+// Its temperature is its gas's: read air_contents.return_temperature().
 /obj/item/tank/proc/return_pressure()
 	if(air_contents)
 		return air_contents.return_pressure()
-	return 0
-
-/obj/item/tank/proc/return_temperature()
-	if(air_contents)
-		return air_contents.return_temperature()
 	return 0
 
 // /datum/decl/xgm_gas — base type for the per-gas decls in code/defines/gases.dm.

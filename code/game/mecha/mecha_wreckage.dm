@@ -16,12 +16,6 @@
 	var/list/crowbar_salvage
 	var/salvage_num = 5
 
-/obj/effect/decal/mecha_wreckage/ex_act(severity)
-	if(severity < 2)
-		spawn
-			qdel(src)
-	return
-
 /obj/effect/decal/mecha_wreckage/bullet_act(obj/item/projectile/Proj)
 	return
 

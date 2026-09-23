@@ -6,7 +6,7 @@
 	force = 2
 	throwforce = 2
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 50)
+	MATERIAL_BULK(MAT_STEEL, 50)
 	var/broken
 	attack_verb = list("annoyed")
 	var/static/radial_examine = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_examine")
@@ -61,7 +61,7 @@
 			..()
 
 /obj/item/deskbell/proc/ring(mob/user)
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		playsound(src, 'sound/effects/deskbell_rude.ogg', 50, 1)
 		to_chat(user,span_notice("You hammer [src] rudely!"))
 		if (prob(2))

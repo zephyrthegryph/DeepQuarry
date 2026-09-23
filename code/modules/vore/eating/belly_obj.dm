@@ -57,7 +57,7 @@
 	var/tmp/egg_path = /obj/item/storage/vore_egg
 	var/egg_name = null						// Custom egg name
 	var/egg_size = 0						// Custom egg size
-	var/list/list/emote_lists = list()			// Idle emotes that happen on their own, depending on the bellymode. Contains lists of strings indexed by bellymode
+	var/list/list/emote_lists			// Shared empty list until customized (own_emote_lists()). Idle emotes that happen on their own, depending on the bellymode. Contains lists of strings indexed by bellymode
 	var/emote_time = 60						// How long between stomach emotes at prey (in seconds)
 	var/emote_active = TRUE					// Are we even giving emotes out at all or not?
 	var/tmp/next_emote = 0						// When we're supposed to print our next emote, as a world.time
@@ -104,14 +104,14 @@
 	var/autotransferchance = 0 				// % Chance of prey being autotransferred to transfer location
 	var/autotransferwait = 10 				// Time between trying to transfer.
 	var/autotransferlocation				// Place to send them
-	var/list/autotransferextralocation	// List of extra places this could go
+	var/list/autotransferextralocation	// List of extra places this could go (shared until written)
 	var/autotransfer_whitelist = 0			// Flags for what can be transferred to the primary location
 	var/autotransfer_blacklist = 2			// Flags for what can not be transferred to the primary location, defaults to Absorbed
 	var/autotransfer_whitelist_items = 0	// Flags for what can be transferred to the primary location
 	var/autotransfer_blacklist_items = 0	// Flags for what can not be transferred to the primary location
 	var/autotransferchance_secondary = 0 	// % Chance of prey being autotransferred to secondary transfer location
 	var/autotransferlocation_secondary		// Second place to send them
-	var/list/autotransferextralocation_secondary	// List of extra places the secondary transfer could go
+	var/list/autotransferextralocation_secondary	// List of extra places the secondary transfer could go (shared until written)
 	var/autotransfer_secondary_whitelist = 0// Flags for what can be transferred to the secondary location
 	var/autotransfer_secondary_blacklist = 2// Flags for what can not be transferred to the secondary location, defaults to Absorbed
 	var/autotransfer_secondary_whitelist_items = 0// Flags for what can be transferred to the secondary location
@@ -119,7 +119,6 @@
 	var/autotransfer_enabled = FALSE		// Player toggle
 	var/autotransfer_min_amount = 0			// Minimum amount of things to pass at once.
 	var/autotransfer_max_amount = 0			// Maximum amount of things to pass at once.
-	var/tmp/list/autotransfer_queue// Reserve for above things.
 	//Auto-transfer flags for whitelist
 	var/tmp/static/list/autotransfer_flags_list = list("Creatures" = AT_FLAG_CREATURES, "Absorbed" = AT_FLAG_ABSORBED, "Carbon" = AT_FLAG_CARBON, "Silicon" = AT_FLAG_SILICON, "Mobs" = AT_FLAG_MOBS, "Animals" = AT_FLAG_ANIMALS, "Mice" = AT_FLAG_MICE, "Dead" = AT_FLAG_DEAD, "Digestable Creatures" = AT_FLAG_CANDIGEST, "Absorbable Creatures" = AT_FLAG_CANABSORB, "Full Health" = AT_FLAG_HEALTHY)
 	var/tmp/static/list/autotransfer_flags_list_items = list("Items" = AT_FLAG_ITEMS, "Trash" = AT_FLAG_TRASH, "Eggs" = AT_FLAG_EGGS, "Remains" = AT_FLAG_REMAINS, "Indigestible Items" = AT_FLAG_INDIGESTIBLE, "Recyclable Items" = AT_FLAG_RECYCLABLE, "Ores" = AT_FLAG_ORES, "Clothes and Bags" = AT_FLAG_CLOTHES, "Food" = AT_FLAG_FOOD)
@@ -139,7 +138,7 @@
 
 	var/tmp/mob/living/owner					// The mob whose belly this is.
 	var/digest_mode = DM_HOLD				// Current mode the belly is set to from digest_modes (+transform_modes if human)
-	var/tmp/list/items_preserved		// Stuff that wont digest so we shouldn't process it again.
+	var/tmp/list/items_preserved		// Lazy. Stuff that wont digest so we shouldn't process it again.
 	var/tmp/recent_sound = FALSE				// Prevent audio spam
 	var/tmp/drainmode = DR_NORMAL				// Simply drains the prey then does nothing.
 	var/tmp/digested_prey_count = 0				// Amount of prey that have been digested
@@ -191,7 +190,7 @@
 
 	var/nutri_reagent_gen = FALSE					//if belly produces reagent over time using nutrition, needs to be optimized to use subsystem - Jack
 	var/is_beneficial = FALSE							//Sets a reagent as a beneficial one / healing reagents
-	var/list/generated_reagents = list(REAGENT_ID_WATER = 1) //Any number of reagents, the associated value is how many units are generated per process()
+	var/list/generated_reagents //Shared default: water. Any number of reagents, the associated value is how many units are generated per process()
 	var/reagent_name = REAGENT_ID_WATER 						//What is shown when reagents are removed, doesn't need to be an actual reagent
 	var/reagentid = REAGENT_ID_WATER							//Selected reagent's id, for use in puddle system currently
 	var/reagentcolor = "#0064C877"					//Selected reagent's color, for use in puddle system currently
@@ -215,24 +214,14 @@
 	var/liquid_fullness5_messages = FALSE
 	var/displayed_message_flags = ALL
 	var/vorespawn_blacklist = FALSE
-	var/vorespawn_whitelist = list()
+	var/list/vorespawn_whitelist // Shared empty list until written
 	var/vorespawn_absorbed = 0
 
-	var/list/fullness1_messages = list(
-		"%pred's %belly looks empty"
-		)
-	var/list/fullness2_messages = list(
-		"%pred's %belly looks filled"
-		)
-	var/list/fullness3_messages = list(
-		"%pred's %belly looks like it's full of liquid"
-		)
-	var/list/fullness4_messages = list(
-		"%pred's %belly is quite full!"
-		)
-	var/list/fullness5_messages = list(
-		"%pred's %belly is completely filled to it's limit!"
-		)
+	var/list/fullness1_messages
+	var/list/fullness2_messages
+	var/list/fullness3_messages
+	var/list/fullness4_messages
+	var/list/fullness5_messages
 
 	var/tmp/reagent_chosen = REAGENT_WATER				// variable for switch to figure out what to set variables when a certain reagent is selected
 	var/tmp/static/list/reagent_choices = list(		// List of reagents people can chose, maybe one day expand so it covers criterias like dogborgs who can make meds, booze, etc - Jack
@@ -256,7 +245,7 @@
 	var/slow_digestion = FALSE				// Gradual corpse digestion
 	var/slow_brutal = FALSE					// Gradual corpse digestion: Stumpy's Special
 	var/sound_volume = 100					// Volume knob.
-	var/speedy_mob_processing = FALSE		// Independent belly processing to utilize SSobj instead of SSbellies 3x speed.
+	var/speedy_mob_processing = FALSE		// Turbo mode: the belly cycles three times as often (BELLY_TURBO_TICK), same rates.
 	var/tmp/cycle_sloshed = FALSE				// Has vorgan entrance made a wet slosh this cycle? Soundspam prevention for multiple items entered.
 	var/tmp/egg_cycles = 0						// Process egg mode after 10 cycles.
 	var/recycling = FALSE					// Recycling mode.
@@ -266,7 +255,7 @@
 	var/storing_nutrition = FALSE			// Storing gained nutrition as paste instead of absorbing it.
 	var/belchchance = 0						// % Chance of pred belching on prey struggle
 
-	var/tmp/list/belly_surrounding		// A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
+	var/tmp/list/belly_surrounding		// Lazy. A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
 	var/bellytemperature = T20C				// Temperature applied to humans in the belly.
 	var/temperature_damage = FALSE			// Does temperature damage prey?
 	var/tmp/last_transfer_log = 0				// Prevent server message spam!
@@ -282,12 +271,12 @@
 	. = ..() + list("reagents")
 	if(!save_digest_mode)
 		. += "digest_mode"
-
-// New(), not Initialize(): callers customise a belly right after creating it, and
-// Initialize() can be deferred past that during map load.
-/obj/belly/New(loc, ...)
-	share_default_tables()
-	return ..()
+	// Lists still shared with the type's defaults (belly_shared_lists.dm) are not saved:
+	// a load gives the belly the same shared copy.
+	var/list/customized = belly_unshared_list_names()
+	for(var/var_name in belly_default_lists())
+		if(!(var_name in customized))
+			. += var_name
 
 /obj/belly/Initialize(mapload)
 	. = ..()
@@ -295,37 +284,14 @@
 	if(ismob(loc))
 		owner = loc
 		LAZYADD(owner.vore_organs, src)
-		if(isliving(loc))
-			if(mode_flags & DM_FLAG_TURBOMODE)
-				START_PROCESSING(SSobj, src)
-			else
-				START_PROCESSING(SSbellies, src)
+		belly_reschedule()
 
 	create_reagents(300)	// So we can have some liquids in bellies
 	AddElement(/datum/element/empprotection, EMP_PROTECT_ALL)
 
-/// Message and reagent tables that are only ever replaced whole (the vore panel,
-/// imports and mob setup assign new lists). Every belly of a type starts with the
-/// same defaults, so they share the first belly's lists instead of holding ~50 each.
-/// Never edit these in place: assign a new list.
-/obj/belly/proc/share_default_tables()
-	var/static/list/table_vars = list("absorb_chance_messages_owner", "absorb_chance_messages_prey", "absorb_messages_owner", "absorb_messages_prey", "absorbed_struggle_messages_inside", "absorbed_struggle_messages_outside", "digest_chance_messages_owner", "digest_chance_messages_prey", "digest_messages_owner", "digest_messages_prey", "escape_absorbed_messages_outside", "escape_absorbed_messages_owner", "escape_absorbed_messages_prey", "escape_attempt_absorbed_messages_owner", "escape_attempt_absorbed_messages_prey", "escape_attempt_messages_owner", "escape_attempt_messages_prey", "escape_fail_absorbed_messages_owner", "escape_fail_absorbed_messages_prey", "escape_fail_messages_owner", "escape_fail_messages_prey", "escape_item_messages_outside", "escape_item_messages_owner", "escape_item_messages_prey", "escape_messages_outside", "escape_messages_owner", "escape_messages_prey", "examine_messages", "examine_messages_absorbed", "fullness1_messages", "fullness2_messages", "fullness3_messages", "fullness4_messages", "fullness5_messages", "generated_reagents", "primary_autotransfer_messages_owner", "primary_autotransfer_messages_prey", "primary_transfer_messages_owner", "primary_transfer_messages_prey", "secondary_autotransfer_messages_owner", "secondary_autotransfer_messages_prey", "secondary_transfer_messages_owner", "secondary_transfer_messages_prey", "struggle_messages_inside", "struggle_messages_outside", "trash_eater_in", "trash_eater_out", "unabsorb_messages_owner", "unabsorb_messages_prey")
-	var/static/list/tables_by_type = list()
-	var/list/shared = tables_by_type[type]
-	if(shared)
-		for(var/name in shared)
-			vars[name] = shared[name]
-		return
-	shared = list()
-	for(var/name in table_vars)
-		shared[name] = vars[name]
-	tables_by_type[type] = shared
-
 /obj/belly/Destroy()
-	if(mode_flags & DM_FLAG_TURBOMODE)
-		STOP_PROCESSING(SSobj, src)
-	else
-		STOP_PROCESSING(SSbellies, src)
+	cycle_token = null
+	liquid_timer = null
 	owner?.vore_organs?.Remove(src)
 	owner = null
 	for(var/mob/observer/G in src)
@@ -343,16 +309,21 @@
 // Called whenever an atom enters this belly
 /obj/belly/Entered(atom/movable/thing, atom/OldLoc)
 	. = ..()
+	if(QDELETED(thing)) // Parts a deleted body drops on its way out
+		return
 	if(!owner)
 		thing.forceMove(get_turf(src))
 		return
 	thing.enter_belly(src) // Atom movable proc, does nothing by default. Overridden in children for special behavior.
+	if(!cycle_token)
+		belly_reschedule()
 	if(owner && istype(owner.loc,/turf/simulated) && !cycle_sloshed && reagents.total_volume > 0)
 		var/S = pick(GLOB.slosh)
 		if(S)
 			playsound(owner.loc, S, sound_volume * (reagents.total_volume / 100), FALSE, frequency = noise_freq, preference = /datum/preference/toggle/digestion_noises)
 			cycle_sloshed = TRUE
-	dq_set_belly_cycles(thing, 0) //reset cycle count
+	if(dq_get_belly_cycles(thing)) // Reset only a count that exists: no component per eaten thing.
+		dq_set_belly_cycles(thing, 0) //reset cycle count
 	if(istype(thing, /mob/observer)) //Ports CHOMPStation PR#3072
 		if(desc) //Ports CHOMPStation PR#4772
 			//Allow ghosts see where they are if they're still getting squished along inside.
@@ -416,6 +387,8 @@
 			//Replace placeholder vars
 			to_chat(living_mob, span_vnotice(span_bold("[belly_format_string(raw_desc, living_mob)]")))
 
+		if(living_mob == thing)
+			show_mode_refusal(living_mob)
 		var/taste
 		if(can_taste && living_mob.loc == src && (taste = living_mob.get_taste_message(FALSE))) // Prevent indirect tasting
 			to_chat(owner, span_vnotice("[living_mob] tastes of [taste]."))
@@ -438,6 +411,8 @@
 	if(QDELETED(owner))
 		return
 	thing.exit_belly(src) // atom movable proc, does nothing by default. Overridden in children for special behavior.
+	if(!length(contents))
+		belly_reschedule()
 	if(isbelly(thing.loc))
 		var/obj/belly/NB = thing.loc
 		if(count_items_for_sprite && !NB.count_items_for_sprite)
@@ -512,7 +487,7 @@
 		count += release_specific_contents(AM, silent = TRUE)
 
 	//Clean up our own business
-	LAZYCLEARLIST(items_preserved)
+	items_preserved = null
 
 	//Determines privacy
 	var/privacy_range = world.view
@@ -567,7 +542,7 @@
 		var/mob/living/slip = M
 		slip.slip_protect = world.time + 25 // This is to prevent slipping back into your pred if they stand on soap or something.
 	//Place them into our drop_location
-	M.forceMove(drop_location())
+	belly_release_to(M, drop_location())
 	LAZYREMOVE(items_preserved, M)
 
 	//Special treatment for absorbed prey
@@ -647,7 +622,8 @@
 			if(owner.mind)
 				owner.mind.vore_prey_eaten++
 
-	prey.forceMove(src)
+	if(!belly_insert(prey, user))
+		return
 	owner.updateVRPanel()
 
 	for(var/mob/living/M in contents)
@@ -705,7 +681,7 @@
 				var/obj/item/organ/internal/mmi_holder/MMI = W
 				var/obj/item/mmi/brainbox = MMI.removed()
 				if(brainbox)
-					LAZYADD(items_preserved, brainbox)
+					LAZYOR(items_preserved, brainbox)
 					hasMMI = brainbox // Adjust how MMI's are handled
 			for(var/slot in slots)
 				var/obj/item/I = M.get_equipped_item(slot = slot)
@@ -763,7 +739,7 @@
 				owner.soulgem.catch_mob(R, R.name)
 			else
 				R.mmi.loc = src
-				LAZYADD(items_preserved, R.mmi)
+				LAZYOR(items_preserved, R.mmi)
 				hasMMI = R.mmi
 				var/datum/component/mind_host/mmi_host = get_mind_host(hasMMI)
 				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
@@ -778,14 +754,14 @@
 	if(istype(hasMMI))
 		hasMMI.body_backup = M
 		M.enabled = FALSE
-		M.forceMove(hasMMI)
+		slot_remove(M, hasMMI)
 	else
 		var/mob/observer/G = M.ghostize(FALSE) // Make sure they're out, so we can copy attack logs and such.
 		if(G)
-			G.forceMove(src)
+			belly_insert(G)
 			G.body_backup = M
 			M.enabled = FALSE
-			M.forceMove(G)
+			slot_remove(M, G)
 		else
 			qdel(M)
 	owner.handle_belly_update()
@@ -823,7 +799,7 @@
 
 	//This is probably already the case, but for sub-prey, it won't be.
 	if(M.loc != src)
-		M.forceMove(src)
+		belly_insert(M)
 
 	//Seek out absorbed prey of the prey, absorb them too.
 	//This in particular will recurse oddly because if there is absorbed prey of prey of prey...
@@ -932,11 +908,12 @@
 /obj/belly/proc/transfer_contents(atom/movable/content, obj/belly/target, silent = FALSE)
 	if(!(content in src) || !istype(target))
 		return
-	dq_set_belly_cycles(content, 0)
+	if(dq_get_belly_cycles(content)) // Reset only a count that exists: no component per eaten thing.
+		dq_set_belly_cycles(content, 0)
 	var/old_entrance_logs = target.entrance_logs
 	if(silent)
 		target.entrance_logs = FALSE
-	content.forceMove(target)
+	slot_transfer(content, target, BELLY_SLOT_INTERIOR)
 	target.entrance_logs = old_entrance_logs
 	if(isitem(content))
 		var/obj/item/I = content
@@ -960,9 +937,9 @@
 	var/list/primary_bellies = list()
 	var/list/secondary_bellies = list()
 
-	var/list/primary_locations = LAZYCOPY(autotransferextralocation)
+	var/list/primary_locations = autotransferextralocation.Copy()
 	primary_locations += autotransferlocation
-	var/list/secondary_locations = LAZYCOPY(autotransferextralocation_secondary)
+	var/list/secondary_locations = autotransferextralocation_secondary.Copy()
 	secondary_locations += autotransferlocation_secondary
 	for(var/obj/belly/B in owner.vore_organs)
 		if(B.name in primary_locations)
@@ -993,7 +970,8 @@
 			if(isitem(prey) && autotransfer_filter(prey, autotransfer_whitelist_items, autotransfer_blacklist_items))
 				dest_belly = pick(transfer_locations["primary"])
 	if(!dest_belly) // Didn't transfer, so wait before retrying
-		dq_set_belly_cycles(prey, 0)
+		if(dq_get_belly_cycles(prey)) // Reset only a count that exists: no component per eaten thing.
+			dq_set_belly_cycles(prey, 0)
 		return FALSE
 	if(ismob(prey))
 		var/autotransfer_owner_message
@@ -1096,7 +1074,7 @@
 		if(blacklist & autotransfer_flags_list_items["Recyclable Items"])
 			if(isitem(prey))
 				var/obj/item/I = prey
-				if(I.matter) return FALSE
+				if(length(I.material_totals())) return FALSE
 		if(blacklist & autotransfer_flags_list_items["Ores"])
 			if(istype(prey, /obj/item/ore)) return FALSE
 		if(blacklist & autotransfer_flags_list_items["Clothes and Bags"])
@@ -1117,7 +1095,7 @@
 		if(whitelist & autotransfer_flags_list_items["Recyclable Items"])
 			if(isitem(prey))
 				var/obj/item/I = prey
-				if(I.matter) return TRUE
+				if(length(I.material_totals())) return TRUE
 		if(whitelist & autotransfer_flags_list_items["Ores"])
 			if(istype(prey, /obj/item/ore)) return TRUE
 		if(whitelist & autotransfer_flags_list_items["Clothes and Bags"])
@@ -1174,7 +1152,7 @@
 	w_class = ITEMSIZE_SMALL
 
 /obj/belly/proc/recycle(obj/item/O)
-	if(!recycling || (!LAZYLEN(O.matter) && !istype(O, /obj/item/ore)))
+	if(!recycling || (!length(O.material_totals()) && !istype(O, /obj/item/ore)))
 		return FALSE
 	if(istype(O, /obj/item/ore))
 		var/obj/item/ore/ore = O
@@ -1192,11 +1170,11 @@
 		if(istype(O,/obj/item/stack))
 			var/obj/item/stack/S = O
 			trash = S.amount
-		for(var/mat in O.matter)
-			modified_mats[mat] = O.matter[mat] * trash
+		var/list/item_matter = O.material_totals()
+		for(var/mat in item_matter)
+			modified_mats[mat] = item_matter[mat] * trash
 		for(var/obj/item/debris_pack/digested/D in contents)
-			for(var/mat in modified_mats)
-				D.matter[mat] += modified_mats[mat]
+			D.add_materials(modified_mats)
 			if(O.w_class > D.w_class)
 				D.w_class = O.w_class
 			if(O.possessed_voice && O.possessed_voice.len)
@@ -1245,13 +1223,12 @@
 // Updates the belly_surrounding list variable. Called in bellymodes_vr.dm
 /obj/belly/proc/update_belly_surrounding()
 	if(!contents.len && !LAZYLEN(owner.soulgem?.brainmobs))
-		// Empty bellies are the common case each tick: reuse the list, don't allocate.
-		if(length(belly_surrounding))
-			LAZYCLEARLIST(belly_surrounding)
+		// An empty belly surrounds nobody and holds no list.
+		belly_surrounding = null
 		return
 	belly_surrounding = get_belly_surrounding(contents)
 	if(owner.soulgem?.linked_belly == src)
-		LAZYADD(belly_surrounding, owner.soulgem.brainmobs)
+		belly_surrounding += owner.soulgem.brainmobs
 
 // Recursive proc that returns all living mobs directly and indirectly inside a belly
 // This can also be called more generically to get all living mobs not in bellies within any contents list

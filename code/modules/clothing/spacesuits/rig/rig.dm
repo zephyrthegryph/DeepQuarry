@@ -438,11 +438,6 @@
 	cooling_on = 0
 	power_system.cooling_on = 0
 
-// Thin wrapper — environment-temperature logic now lives in power_system.
-// Kept here so legacy callers (and subtypes) continue to work unchanged.
-/obj/item/rig/proc/get_environment_temperature()
-	return power_system.get_environment_temperature()
-
 /obj/item/rig/proc/attached_to_user(mob/M)
 	if (!ishuman(M))
 		return 0

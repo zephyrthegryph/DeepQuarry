@@ -2,7 +2,7 @@
 	name = "voice analyzer"
 	desc = "A small electronic device able to record a voice sample, and send a signal when that sample is repeated."
 	icon_state = "voice"
-	matter = list(MAT_STEEL = 500, MAT_GLASS = 50)
+	MATERIAL_MIX(list(MAT_STEEL = 500, MAT_GLASS = 50))
 	var/listening = 0
 	var/recorded	//the activation message
 	special_handling = TRUE

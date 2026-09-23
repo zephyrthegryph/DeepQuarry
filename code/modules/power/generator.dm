@@ -4,7 +4,6 @@
 	max_power = 500000
 	thermal_efficiency = 0.40 // 25% less effective around 1400 kw with 24 shots
 
-GLOBAL_LIST_EMPTY(all_turbines)
 
 /obj/machinery/power/generator
 	name = "thermoelectric generator"
@@ -34,10 +33,11 @@ GLOBAL_LIST_EMPTY(all_turbines)
 	var/datum/looping_sound/generator/soundloop
 	var/list/sleeping_mixture_ids
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
+
 /obj/machinery/power/generator/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
-	GLOB.all_turbines += src
 	AddElement(/datum/element/rotatable)
 	..() //Not returned, because...
 	return INITIALIZE_HINT_LATELOAD
@@ -48,7 +48,6 @@ GLOBAL_LIST_EMPTY(all_turbines)
 /obj/machinery/power/generator/Destroy()
 	clear_gas_dependencies()
 	QDEL_NULL(soundloop)
-	GLOB.all_turbines -= src
 	return ..()
 
 //generators connect in dir and GLOB.reverse_dir(dir) directions
@@ -127,9 +126,11 @@ GLOBAL_LIST_EMPTY(all_turbines)
 /obj/machinery/power/generator/process()
 	if(!anchored)
 		stored_energy = 0
+		set_power_supply(0)
 		return PROCESS_KILL
 	if(!circ1 || !circ2 || stat & (BROKEN|NOPOWER))
 		stored_energy = 0
+		set_power_supply(0)
 		return PROCESS_KILL
 
 	var/datum/gas_mixture/air1 = circ1.return_transfer_air()
@@ -199,13 +200,12 @@ GLOBAL_LIST_EMPTY(all_turbines)
 	if(genlev != lastgenlev)
 		lastgenlev = genlev
 		update_icon()
-	add_avail(effective_gen)
+	// A supply rate, not a per-tick pulse: the TEG is a steady generator (M3).
+	set_power_supply(effective_gen)
 	if(!air1 && !air2 && stored_energy < 0.01 && effective_gen < 0.01)
+		set_power_supply(0)
 		SSmachines.hibernate_generator(src)
 		return PROCESS_KILL
-
-/obj/machinery/power/generator/attack_ai(mob/user)
-	attack_hand(user)
 
 /obj/machinery/power/generator/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 75, 1)

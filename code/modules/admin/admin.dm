@@ -769,7 +769,7 @@ ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to
 
 ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this machine.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/department = tgui_input_list(user, "Choose a fax", "Fax", GLOB.alldepartments)
-	for(var/obj/machinery/photocopier/faxmachine/sendto in GLOB.allfaxes)
+	for(var/obj/machinery/photocopier/faxmachine/sendto in REGISTRY_MEMBERS(REGISTRY_FAXES))
 		if(sendto.department == department)
 			var/replyorigin = tgui_input_text(user, "Please specify who the fax is coming from", "Origin")
 

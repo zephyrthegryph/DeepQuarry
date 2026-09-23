@@ -67,8 +67,9 @@
 		M.reset_perspective() // Fixes a blackscreen flicker
 
 /obj/structure/closet/statue/Destroy()
-	for(var/mob/living/M in src)
-		UnregisterSignal(M, COMSIG_LIVING_INJURE)
+	// Release the mob properly (unmuted, unregistered) before the base
+	// Destroy() spills the interior.
+	dump_contents()
 	return ..()
 
 /// Go-go gadget stasis field: the encased mob can't be hurt while it's rock.
@@ -97,10 +98,8 @@
 		for(var/mob/M in src)
 			shatter(M)
 
-/obj/structure/closet/statue/ex_act(severity)
-	for(var/mob/M in src)
-		M.ex_act(severity)
-	deal_damage(DAMAGE_BLAST, 60 / severity)
+/obj/structure/closet/statue/explosion_contents_severity(severity)
+	return severity
 
 /obj/structure/closet/statue/attackby(obj/item/I as obj, mob/user as mob)
 	user.do_attack_animation(src)

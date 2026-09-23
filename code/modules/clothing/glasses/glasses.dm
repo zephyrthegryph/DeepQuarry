@@ -184,8 +184,11 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/night/vox
 	name = "Alien Optics"
-	species_restricted = list("Vox")
 	flags = PHORONGUARD
+
+/obj/item/clothing/glasses/night/vox/fit_constraint()
+	var/list/bodytypes = list("Vox")
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/glasses/night/Initialize(mapload)
 	. = ..()
@@ -387,7 +390,7 @@ BLIND     // can't see anything
 	icon_state = "welding-g"
 	item_state_slots = list(slot_r_hand_str = "welding-g", slot_l_hand_str = "welding-g")
 	actions_types = list(/datum/action/item_action/flip_welding_goggles)
-	matter = list(MAT_STEEL = 1500, MAT_GLASS = 1000)
+	MATERIAL_MIX(list(MAT_STEEL = 1500, MAT_GLASS = 1000))
 	item_flags = AIRTIGHT
 	var/up = 0
 	flash_protection = FLASH_PROTECTION_MAJOR
@@ -621,8 +624,11 @@ BLIND     // can't see anything
 	var/up = 0
 	item_flags = AIRTIGHT
 	body_parts_covered = EYES
-	species_restricted = list(SPECIES_TESHARI)
 	specialty_goggles = TRUE
+
+/obj/item/clothing/glasses/aerogelgoggles/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/glasses/aerogelgoggles/attack_self(mob/user)
 	. = ..(user)

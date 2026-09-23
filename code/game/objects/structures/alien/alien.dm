@@ -11,9 +11,6 @@
 	set_density(0)
 	return ..()
 
-/obj/structure/alien/ex_act(severity)
-	deal_damage(DAMAGE_BLAST, severity == 3 && prob(50) ? 25 : 50)
-
 /obj/structure/alien/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	visible_message(span_danger("\The [src] was hit by \the [source]."))
 	playsound(loc, 'sound/effects/attackblob.ogg', 100, 1)
@@ -44,7 +41,7 @@
 
 		// Aliens can get straight through these.
 		if(istype(usr,/mob/living/carbon))
-			if(user.a_intent == I_HURT)
+			if(IS_HARMING(user))
 				var/mob/living/carbon/M = usr
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)

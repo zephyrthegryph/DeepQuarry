@@ -47,9 +47,6 @@
 			return attack_hand(user)
 	..()
 
-/obj/machinery/computer/security/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/computer/security/proc/set_network(list/new_network)
 	network = new_network
 	camera.network = network
@@ -72,8 +69,6 @@
 /obj/machinery/computer/security/telescreen/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-GLOBAL_LIST_EMPTY(entertainment_screens)
-GLOBAL_LIST_EMPTY(bodycamera_screens)
 
 /obj/machinery/computer/security/telescreen/entertainment
 	name = "entertainment monitor"
@@ -93,8 +88,9 @@ GLOBAL_LIST_EMPTY(bodycamera_screens)
 
 	var/enabled = TRUE // on or off
 
+REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, REGISTRY_ENTERTAINMENT_SCREENS)
+
 /obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
-	GLOB.entertainment_screens += src
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
 
@@ -123,7 +119,6 @@ GLOBAL_LIST_EMPTY(bodycamera_screens)
 	power_change()
 
 /obj/machinery/computer/security/telescreen/entertainment/Destroy()
-	GLOB.entertainment_screens -= src
 	if(showing)
 		stop_showing()
 	vis_contents.Cut()

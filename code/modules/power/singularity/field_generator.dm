@@ -138,33 +138,26 @@
 				to_chat(user, span_red("The [src.name] needs to be unwelded from the floor."))
 				return
 	else if(tool_quality == TOOL_WELDER)
-		var/obj/item/weldingtool/WT = W.get_welder()
 		switch(state)
 			if(0)
 				to_chat(user, span_red("The [src.name] needs to be wrenched to the floor."))
 				return
 			if(1)
-				if (WT.remove_fuel(0,user))
-					playsound(src, WT.usesound, 50, 1)
-					user.visible_message("[user.name] starts to weld the [src.name] to the floor.", \
-						"You start to weld the [src] to the floor.", \
-						"You hear welding")
-					if (do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-						if(!src || !WT.isOn()) return
-						state = 2
-						to_chat(user, "You weld the field generator to the floor.")
+				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
+						message_self = "You start to weld the [src] to the floor.", message_others = "[user.name] starts to weld the [src.name] to the floor."))
+					if(!src)
+						return
+					state = 2
+					to_chat(user, "You weld the field generator to the floor.")
 				else
 					return
 			if(2)
-				if (WT.remove_fuel(0,user))
-					playsound(src, WT.usesound, 50, 1)
-					user.visible_message("[user.name] starts to cut the [src.name] free from the floor.", \
-						"You start to cut the [src] free from the floor.", \
-						"You hear welding")
-					if (do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-						if(!src || !WT.isOn()) return
-						state = 1
-						to_chat(user, "You cut the [src] free from the floor.")
+				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
+						message_self = "You start to cut the [src] free from the floor.", message_others = "[user.name] starts to cut the [src.name] free from the floor."))
+					if(!src)
+						return
+					state = 1
+					to_chat(user, "You cut the [src] free from the floor.")
 				else
 					return
 	return ITEM_INTERACT_SUCCESS
@@ -353,7 +346,7 @@
 	//I want to avoid using global variables.
 	spawn(1)
 		var/temp = 1 //stops spam
-		for(var/obj/singularity/O in GLOB.machines)
+		for(var/obj/singularity/O in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(O.last_warning && temp)
 				if((world.time - O.last_warning) > 50) //to stop message-spam
 					temp = 0

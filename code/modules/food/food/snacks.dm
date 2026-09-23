@@ -202,7 +202,7 @@
 				to_chat(eater, span_danger("Nope. That's it. You literally cannot force any more of [src] to go down your throat. It's fair to say you're full."))
 				return ITEM_INTERACT_FAILURE
 
-		else if(user.a_intent == I_HURT)
+		else if(IS_HARMING(user))
 			return ..()
 
 		else
@@ -6562,12 +6562,15 @@
 	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/reagent_containers/food/snacks/mint/admints = 6)
-	can_hold = list(/obj/item/reagent_containers/food/snacks/mint/admints)
 	use_sound = 'sound/items/drop/paper.ogg'
 	drop_sound = 'sound/items/drop/wrapper.ogg'
 	max_storage_space = 6
 	foldable = null
 	trash = /obj/item/trash/admints
+
+/obj/item/storage/box/admints/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/mint/admints)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/candy
 	name = "\improper Grandma Ellen's Candy Bar"
@@ -8200,11 +8203,14 @@
 	var/icon_base = "wings"
 	var/startswith = 5
 	max_storage_space = ITEMSIZE_COST_SMALL * 5
-	can_hold = list(/obj/item/reagent_containers/food/snacks/chickenwing)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/chickenwing = 5
 	)
 	foldable = null
+
+/obj/item/storage/box/wings/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/chickenwing)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/wings/Initialize(mapload)
 	. = ..()
@@ -8636,8 +8642,11 @@
 		/obj/item/reagent_containers/food/snacks/cube/protein = 4,
 		/obj/item/reagent_containers/food/snacks/cube/nutriment = 4
 	)
-	can_hold = list(/obj/item/reagent_containers/food/snacks/cube/protein,
+
+/obj/item/storage/box/wings/tray/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/cube/protein,
 					/obj/item/reagent_containers/food/snacks/cube/nutriment)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/carpmeat/sif //Making fish meat non-toxic!  As advised by Ascian!
 	toxin_type = null
@@ -8733,7 +8742,10 @@
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/grub = 6
 	)
-	can_hold = list(/obj/item/reagent_containers/food/snacks/grub)
+
+/obj/item/storage/box/wings/bucket/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/grub)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/grub
 	name = "grub"
@@ -9078,11 +9090,14 @@
 	var/icon_base = "jaffacake_pack"
 	var/startswith = 12
 	max_storage_space = ITEMSIZE_COST_SMALL * 12
-	can_hold = list(/obj/item/reagent_containers/food/snacks/jaffacake)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/jaffacake = 12
 	)
 	foldable = null
+
+/obj/item/storage/box/jaffacake/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/jaffacake)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/winegum
 	name = "wine gum"
@@ -9123,7 +9138,6 @@
 	var/icon_base = "winegum_pack"
 	var/startswith = 20
 	max_storage_space = ITEMSIZE_COST_TINY * 20
-	can_hold = list(/obj/item/reagent_containers/food/snacks/winegum)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/winegum = 3,
 		/obj/item/reagent_containers/food/snacks/winegum/orange = 4,
@@ -9133,6 +9147,10 @@
 		/obj/item/reagent_containers/food/snacks/winegum/white = 4
 	)
 	foldable = null
+
+/obj/item/storage/box/winegum/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/winegum)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/packaged/pasty
 	name = "Terran Pasty"
@@ -9170,11 +9188,14 @@
 	var/icon_base = "saucer_pack"
 	var/startswith = 20
 	max_storage_space = ITEMSIZE_COST_TINY * 20
-	can_hold = list(/obj/item/reagent_containers/food/snacks/saucer)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/saucer = 20,
 	)
 	foldable = null
+
+/obj/item/storage/box/saucer/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/saucer)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/custardcream
 	name = "Custard Cream"
@@ -9193,11 +9214,14 @@
 	var/icon_base = "custard_cream_pack"
 	var/startswith = 12
 	max_storage_space = ITEMSIZE_COST_SMALL * 12
-	can_hold = list(/obj/item/reagent_containers/food/snacks/custardcream)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/custardcream = 12
 	)
 	foldable = null
+
+/obj/item/storage/box/custardcream/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/custardcream)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/bourbon
 	name = "Bourbon Biscuit"
@@ -9216,11 +9240,14 @@
 	var/icon_base = "bourbon_pack"
 	var/startswith = 12
 	max_storage_space = ITEMSIZE_COST_SMALL * 12
-	can_hold = list(/obj/item/reagent_containers/food/snacks/bourbon)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/bourbon = 12
 	)
 	foldable = null
+
+/obj/item/storage/box/bourbon/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/bourbon)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/bourbon/Initialize(mapload)
 	. = ..()
@@ -9280,12 +9307,15 @@
 	var/icon_base = "shrimpbanana_pack"
 	var/startswith = 20
 	max_storage_space = ITEMSIZE_COST_TINY * 20
-	can_hold = list(/obj/item/reagent_containers/food/snacks/foam_banana,/obj/item/reagent_containers/food/snacks/foam_shrimp)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/foam_banana = 10,
 		/obj/item/reagent_containers/food/snacks/foam_shrimp = 10
 	)
 	foldable = null
+
+/obj/item/storage/box/shrimpsandbananas/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/foam_banana,/obj/item/reagent_containers/food/snacks/foam_shrimp)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/rhubarbcustard
 	name = "Rhubarb and Custard Sweet"
@@ -9310,11 +9340,14 @@
 	var/icon_base = "rhubarbcustard_pack"
 	var/startswith = 15
 	max_storage_space = ITEMSIZE_COST_TINY * 15
-	can_hold = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/rhubarbcustard = 15,
 	)
 	foldable = null
+
+/obj/item/storage/box/rhubarbcustard/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/reagent_containers/food/snacks/packaged/porkpie
 	name = "Pork Pie"

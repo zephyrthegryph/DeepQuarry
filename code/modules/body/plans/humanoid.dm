@@ -7,14 +7,17 @@
 // (/obj/item/organ/external/proc/receive_injury → wound afflictions).
 // Injuries aimed at an internal organ become lesions on it
 // (receive_organ_injury, kind → lesion through one static table).
-// Systemic injuries become systemic afflictions (toxic poisoning, tissue
-// hypoxia, genetic damage, acute pain) or brain lesions (neural).
+// Systemic injuries become systemic afflictions (toxic poisoning, genetic
+// damage, acute pain) or brain lesions (neural). Lack of oxygen is not an
+// injury: the humanoid physiology (code/modules/body/physiology.dm) computes
+// it and grows tissue hypoxia from the oxygen debt.
 
 /mob/living/carbon/human
 	body_type = /datum/body/humanoid
 
 /datum/body/humanoid
 	plan_flag = BODY_PLAN_HUMANOID
+	physiology_type = /datum/physiology/humanoid
 	// Limb and organ state changes outside the body (surgery, organ procs),
 	// and brainless bodies must still die.
 	always_evaluate = TRUE
@@ -114,10 +117,6 @@
 			if((H.species.flags & NO_POISON) || systemic_biology == BIOLOGY_SYNTHETIC)
 				return 0
 			return systemic_injury(affliction_type || /datum/affliction/toxic_poisoning, amount, kind, source)
-		if(INJURY_ASPHYXIA)
-			if(!H.should_have_organ(O_LUNGS))
-				return 0
-			return systemic_injury(affliction_type || /datum/affliction/tissue_hypoxia, amount, kind, source)
 		if(INJURY_CELLULAR)
 			if((H.species.flags & NO_DNA) || systemic_biology == BIOLOGY_SYNTHETIC)
 				return 0
@@ -156,7 +155,6 @@
 		/datum/affliction/lesion/toxic_injury,    // corrosive
 		/datum/affliction/lesion/contusion,       // electric
 		/datum/affliction/lesion/toxic_injury,    // toxin
-		/datum/affliction/lesion/ischemic_injury, // asphyxia
 		/datum/affliction/lesion/toxic_injury,    // radiation
 		/datum/affliction/lesion/toxic_injury,    // cellular
 		/datum/affliction/lesion/contusion,       // neural

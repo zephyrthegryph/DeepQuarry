@@ -91,37 +91,6 @@
 		H.vessel.remove_reagent(REAGENT_ID_BLOOD, 1.0 * scale)
 
 
-/datum/affliction_symptom/cyanosis/tick(mob/living/M, datum/affliction/source)
-	. = ..()
-	if(!M || !source)
-		return
-	if(source.subcategory != "Overdose")
-		return
-	var/scale = source.severity / 100
-	if(scale <= 0.5)
-		return
-	// Cyanosis fires only when the source is Severe-or-worse. Adds a
-	// little hypoxia to reflect the tissue-level oxygen failure the
-	// blue tint represents — already-existing oxy damage from the
-	// underlying condition just gets amplified.
-	M.injure(INJURY_ASPHYXIA, 0.5 * scale, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-
-
-/datum/affliction_symptom/labored_breathing/tick(mob/living/M, datum/affliction/source)
-	. = ..()
-	if(!M || !source)
-		return
-	if(source.subcategory != "Overdose")
-		return
-	var/scale = source.severity / 100
-	if(scale <= 0.6)
-		return
-	// At Critical, ongoing labored breathing reflects that the patient
-	// isn't moving enough air. A little hypoxia; progression triggers
-	// (respiratory_failure spawn) handle the catastrophic outcome.
-	M.injure(INJURY_ASPHYXIA, 0.4 * scale, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-
-
 /datum/affliction_symptom/sharp_chest_pain/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source)

@@ -13,7 +13,7 @@
 
 	spawncount = rand(2 * severity, 4 * severity)
 
-	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in GLOB.machines)
+	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		//Added a couple areas to the exclusion. Also made this actually work.
 		var/area/in_area = get_area(temp_vent)
 		if(in_area.flag_check(AREA_FORBID_EVENTS))

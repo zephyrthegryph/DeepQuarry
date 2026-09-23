@@ -63,7 +63,7 @@
 		visible_message(span_warning("\The [M]'s hand goes through \the [src]!"))
 		return
 	else
-		switch(M.a_intent)
+		switch(M.use_stance())
 			if(I_HELP)
 				M.visible_message(
 					span_notice("\The [M] hugs [src] to make [p_them()] feel better!"), \

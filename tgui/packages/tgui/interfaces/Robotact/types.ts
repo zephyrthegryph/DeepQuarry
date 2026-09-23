@@ -1,11 +1,11 @@
 import type { BooleanLike } from 'tgui-core/react';
 
+import type { DiagnosisBand } from '../common/Diagnosis';
+
 export type Component = {
   key: string;
   name: string;
-  brute_damage: number;
-  electronics_damage: number;
-  max_damage: number;
+  band: DiagnosisBand | null;
   idle_usage: number;
   is_powered: boolean;
   toggled: boolean;
@@ -43,4 +43,5 @@ export type Data = {
   // Diagnosis
   diag_functional: BooleanLike;
   components: Component[];
+  faults: { name: string; band: DiagnosisBand; location: string }[];
 };

@@ -56,7 +56,8 @@ SUBSYSTEM_DEF(profiler)
 	)
 	subsystems["material_exposure"] += SSmaterial_services.performance_diagnostics()
 	var/list/material_graphs = list()
-	for(var/datum/powernet/network as anything in SSmachines.powernets)
+	for(var/id in SSmachines.power_regions)
+		var/datum/powernet/network = SSmachines.power_regions[id]
 		var/datum/material_power_graph/graph = network.material_graph
 		if(graph)
 			material_graphs += list(list("cables" = length(network.cables), "vertices" = length(graph.vertices), "core" = length(graph.core_vertices), "edges" = length(graph.edges), "iterations" = graph.iterations, "solve_ms" = graph.solve_ms, "deposit_ms" = graph.deposit_ms, "resistance_ms" = graph.resistance_ms))
@@ -68,7 +69,6 @@ SUBSYSTEM_DEF(profiler)
 			"superconductivity" = SSair.cost_superconductivity,
 			"pipenets" = SSair.cost_pipenets,
 			"rebuilds" = SSair.cost_rebuilds,
-			"adjacent" = SSair.cost_adjacent,
 			"callback_finalize" = SSair.cost_finalize,
 		),
 		"rust_worker_last" = list(
@@ -108,15 +108,14 @@ SUBSYSTEM_DEF(profiler)
 			"pipenets" = length(SSair.networks),
 			"rebuild" = length(SSair.rebuild_queue),
 			"expansion" = length(SSair.expansion_queue),
-			"adjacent" = length(SSair.adjacent_rebuild),
 		),
 	)
 	subsystems["machines"] += list(
 		"stage_average_ms" = list("machinery" = SSmachines.cost_machinery, "powernets" = SSmachines.cost_powernets, "power_objects" = SSmachines.cost_power_objects),
 		"stage_last_logical_run_ms" = list("machinery" = SSmachines.last_cost_machinery, "powernets" = SSmachines.last_cost_powernets, "power_objects" = SSmachines.last_cost_power_objects),
 		"pump_commit" = list("active_ms" = SSmachines.last_pump_commit_ms, "wall_ms" = SSmachines.last_pump_commit_wall_ms, "suspended_ms" = SSmachines.last_pump_commit_suspended_ms, "operations" = SSmachines.last_pump_commit_operations, "turfs" = SSmachines.last_pump_commit_turfs),
-		"topology" = list("jobs" = length(SSmachines.powernet_topology_jobs), "work" = SSmachines.powernet_topology_last_work, "active_ms" = SSmachines.powernet_topology_last_ms),
-		"counts" = list("processing" = length(SSmachines.processing_machines), "all" = length(SSmachines.all_machines), "powernets" = length(SSmachines.powernets), "active_powernets" = length(SSmachines.active_powernets), "power_objects" = length(SSmachines.powerobjs), "hibernating_vents" = length(SSmachines.hibernating_vents), "reactive_sleepers" = length(SSmachines.reactive_sleepers)),
+		"power" = list("events" = SSmachines.power_last_events, "edits_sent" = SSmachines.power_edits_sent),
+		"counts" = list("processing" = length(SSmachines.processing_machines), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.power_regions), "power_objects" = length(SSmachines.powerobjs), "hibernating_vents" = length(SSmachines.hibernating_vents)),
 		"gas_wakes" = list("dirty" = SSmachines.gas_dirty_last, "subscribers_checked" = SSmachines.gas_wake_subscribers_last, "scan_ms" = SSmachines.gas_wake_scan_last_ms, "woken" = SSmachines.gas_woken_last, "dead" = SSmachines.gas_dead_last, "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = length(GLOB.mob_list), "current" = length(SSmobs.currentrun), "slept" = SSmobs.slept_mobs, "deaths_pending" = length(SSmobs.death_list)))

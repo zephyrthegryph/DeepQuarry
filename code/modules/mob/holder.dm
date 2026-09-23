@@ -311,7 +311,7 @@
 
 /obj/item/holder/attackby(obj/item/W as obj, mob/user as mob)
 	// ITION: MicroHandCrush
-	if(W == src && user.a_intent == I_HURT)
+	if(W == src && IS_HARMING(user))
 		for(var/mob/living/M in src.contents)
 			if(user.size_multiplier > M.size_multiplier)
 				var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
@@ -328,7 +328,7 @@
 
 /mob/living/MouseDrop(atom/over_object)
 	var/mob/living/carbon/human/H = over_object
-	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (src.a_intent == I_HELP && H.a_intent == I_HELP))
+	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (IS_HELPING(src) && IS_HELPING(H)))
 		if(!issmall(H) || !ishuman(src))
 			get_scooped(H, (usr == src))
 		return
@@ -388,7 +388,6 @@
 /obj/item/holder/protoblob
 	slot_flags = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS
 	w_class = ITEMSIZE_TINY
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/lefthand_holder.dmi',
 		slot_r_hand_str = 'icons/mob/righthand_holder.dmi',
@@ -397,3 +396,7 @@
 		slot_wear_suit_str = 'icons/mob/suit.dmi',
 		slot_r_ear_str = 'icons/mob/ears.dmi',
 		slot_l_ear_str = 'icons/mob/ears.dmi')
+
+/obj/item/holder/protoblob/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
+	return list(HOLD_ONLY(stores))

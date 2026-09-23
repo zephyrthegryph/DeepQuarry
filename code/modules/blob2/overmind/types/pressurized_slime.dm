@@ -7,7 +7,7 @@
 	difficulty = BLOB_DIFFICULTY_HARD
 	color = "#AAAABB"
 	complementary_color = "#BBBBAA"
-	injury_kind = INJURY_ASPHYXIA
+	injury_kind = INJURY_BLUNT
 	damage_lower = 5
 	damage_upper = 15
 	brute_multiplier = 0.6
@@ -21,6 +21,8 @@
 
 /datum/blob_type/pressurized_slime/on_attack(obj/structure/blob/B, mob/living/victim, def_zone)
 	victim.water_act(5)
+	// Drowning: slime forced past internals floods the airway for a few seconds.
+	victim.body?.add_restriction(B, BF_AIRWAY, 0, 4 SECONDS)
 	var/turf/simulated/T = get_turf(victim)
 	if(T)
 		T.wet_floor()

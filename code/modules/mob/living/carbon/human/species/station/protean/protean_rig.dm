@@ -28,10 +28,12 @@
 	offline_vision_restriction = FALSE
 	open = TRUE
 	cell_type =  /obj/item/cell/protean
-	//interface_path = "RIGSuit_protean"
-	//ai_interface_path = "RIGSuit_protean"
 	var/assimilated_rig
 	var/can_assimilate_rig = TRUE
+	/// The protean is dormant: the cluster is a dead weight that protects nobody.
+	var/inert = FALSE
+	/// The wearer whose injuries this cluster soaks (not the protean itself).
+	var/mob/living/carbon/human/soaking_wearer
 
 /obj/item/rig/protean/relaymove(mob/user, direction)
 	if(user != myprotean || user.stat || user.stunned)
@@ -85,6 +87,7 @@
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
 /obj/item/rig/protean/Destroy()
+	stop_soaking()
 	if(myprotean)
 		var/datum/component/forms/protean/F = myprotean.GetComponent(/datum/component/forms/protean)
 		if(F?.rig == src)
@@ -138,7 +141,6 @@
 	name = "mass"
 	desc = "A helmet-shaped clump of nanomachines."
 	light_overlay = "should not use a light overlay"
-	species_restricted = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
 	sprite_sheets = list(
 		SPECIES_PROTEAN			 = 'icons/mob/head.dmi',
 		SPECIES_HUMAN			 = 'icons/mob/head.dmi',
@@ -185,11 +187,14 @@
 	icon_state = "nanomachine_rig"
 	//item_state = "nanomachine_rig"
 
+/obj/item/clothing/head/helmet/space/rig/protean/fit_constraint()
+	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/gloves/gauntlets/rig/protean
 	name = "mass"
 	desc = "Glove-shaped clusters of nanomachines."
 	siemens_coefficient= 0
-	species_restricted = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
 	sprite_sheets = list(
 		SPECIES_PROTEAN			 = 'icons/mob/hands.dmi',
 		SPECIES_HUMAN			 = 'icons/mob/hands.dmi',
@@ -235,10 +240,13 @@
 	icon_state = "nanomachine_rig"
 	//item_state = "nanomachine_rig"
 
+/obj/item/clothing/gloves/gauntlets/rig/protean/fit_constraint()
+	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/shoes/magboots/rig/protean
 	name = "mass"
 	desc = "Boot-shaped clusters of nanomachines."
-	species_restricted = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
 	sprite_sheets = list(
 		SPECIES_TESHARI 		 = 'icons/mob/species/teshari/feet.dmi',
 		SPECIES_VOX				 = 'icons/mob/species/vox/shoes.dmi',
@@ -250,12 +258,14 @@
 	icon_state = "nanomachine_rig"
 	//item_state = "nanomachine_rig"
 
+/obj/item/clothing/shoes/magboots/rig/protean/fit_constraint()
+	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/suit/space/rig/protean
 	name = "mass"
 	desc = "A body-hugging mass of nanomachines."
 	can_breach = 0
-	species_restricted = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
 	sprite_sheets = list(
 		SPECIES_TESHARI 		 = 'icons/mob/species/teshari/suit.dmi',
 		SPECIES_VOX				 = 'icons/mob/species/vox/suit.dmi',
@@ -269,6 +279,14 @@
 	//item_state = "nanomachine_rig"
 
 //Copy pasted most of this proc from base because I don't feel like rewriting the base proc with a shit load of exceptions
+
+/obj/item/clothing/suit/space/rig/protean/fit_constraint()
+	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/rig/protean/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
+	return list(HOLD_ONLY(stores))
 /obj/item/rig/protean/attackby(obj/item/W, mob/living/user)
 	if(!istype(user))
 		return 0
@@ -412,12 +430,170 @@
 				new /obj/effect/gibspawner/robot(loc)
 				atom_say("Contact received! Reassembly nanites calibrated. Estimated time to resucitation: 1 minute 30 seconds")
 
+/// The cluster has no module damage pool of its own: see take_damage() and
+/// soak_wearer_injury(), which put every hit on the protean's body.
 /obj/item/rig/protean/take_hit(damage, source, is_emp=0)
-	return	//We don't do that here
-/*
-/obj/item/rig/protean/emp_act(severity, recursive)
-	return	//Same here
-*/
+	return
+
+/// A hit on the cluster itself is a hit on the protean: its mass is the
+/// protean's body, so the damage goes through the protean's injure(), aimed at
+/// the core (the torso), and the cluster's own integrity never moves. An
+/// orphaned cluster is just an object.
+/obj/item/rig/protean/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
+	if(!myprotean || QDELETED(src))
+		return ..()
+	if(sound_effect)
+		play_attack_sound(damage_amount, damage_type, damage_flag)
+	var/kind
+	switch(damage_type)
+		if(BRUTE)
+			kind = (damage_flag == BULLET) ? INJURY_PIERCE : INJURY_BLUNT
+		if(BURN)
+			kind = INJURY_BURN
+	if(!kind)
+		return 0
+	. = myprotean.injure(kind, damage_amount, BP_TORSO, src, armour_penetration)
+	log_attack("PROTEAN RIG: [src] took [damage_amount] [damage_type] ([damage_flag]); [key_name(myprotean)] took [.].")
+
+/// Worn by someone else, the cluster's armour is the protean's own mass: what
+/// it stops, the protean takes. The wearer's own armour stage still applies.
+/obj/item/rig/protean/proc/start_soaking(mob/living/carbon/human/M)
+	if(soaking_wearer == M)
+		return
+	stop_soaking()
+	if(!istype(M) || M == myprotean)
+		return
+	soaking_wearer = M
+	RegisterSignal(M, COMSIG_LIVING_INJURE, PROC_REF(soak_wearer_injury))
+
+/obj/item/rig/protean/proc/stop_soaking()
+	if(!soaking_wearer)
+		return
+	UnregisterSignal(soaking_wearer, COMSIG_LIVING_INJURE)
+	soaking_wearer = null
+
+/obj/item/rig/protean/proc/soak_wearer_injury(mob/living/carbon/human/source, kind, list/amount_ref, zone, atom/hit_source, flags)
+	SIGNAL_HANDLER
+	if(!myprotean || inert || !(flags & INJURE_ARMORED))
+		return
+	var/armor_key = injury_armor_key(kind)
+	if(!armor_key)
+		return
+	var/obj/item/organ/external/E = istext(zone) ? source.get_organ(check_zone(zone)) : null
+	var/obj/item/clothing/piece = covering_piece(source, E)
+	var/armor_value = piece?.armor?[armor_key]
+	if(!armor_value)
+		return
+	var/soaked = amount_ref[1] * clamp(armor_value, 0, 100) / 100
+	if(soaked <= 0)
+		return
+	INVOKE_ASYNC(myprotean, TYPE_PROC_REF(/mob/living, injure), kind, soaked, E?.organ_tag, hit_source, 0, null, INJURE_SILENT)
+	log_attack("PROTEAN RIG: [key_name(myprotean)] soaked [soaked] [injury_kind_name(kind)] for [key_name(source)].")
+
+/// The deployed piece of this cluster covering `E` on `M` (the chest piece
+/// for untargeted hits), or null.
+/obj/item/rig/protean/proc/covering_piece(mob/living/carbon/human/M, obj/item/organ/external/E)
+	for(var/obj/item/clothing/piece in list(chest, helmet, gloves, boots))
+		if(piece.loc != M)
+			continue
+		if(!E || (piece.body_parts_covered & E.body_part))
+			return piece
+	return null
+
+/obj/item/rig/protean/dropped(mob/user, equipping, slot)
+	stop_soaking()
+	return ..()
+
+
+// --- Power ledger ------------------------------------------------------------------------
+// draw_power() and add_power() are the protean cluster's writers of its cell,
+// as for robots (robot.dm). Amounts are joules; the cell stores joules * CELLRATE.
+
+/// Take `joules` from the cell, all or nothing. `reserve` joules must remain
+/// afterwards. `partial` takes whatever is there instead. Returns TRUE if
+/// anything was drawn.
+/obj/item/rig/protean/proc/draw_power(joules, datum/source, reserve = 0, partial = FALSE)
+	if(joules <= 0)
+		return TRUE
+	if(!cell)
+		return FALSE
+	var/units = joules * CELLRATE
+	if(partial)
+		return cell.use(units, FALSE) > 0
+	if(!cell.check_charge(units + max(reserve, 0) * CELLRATE))
+		return FALSE
+	return cell.use(units, FALSE) >= units
+
+/// Put up to `joules` into the cell. Returns the joules actually stored.
+/obj/item/rig/protean/proc/add_power(joules, datum/source)
+	if(joules <= 0 || !cell)
+		return 0
+	return cell.give(joules * CELLRATE, FALSE) / CELLRATE
+
+/// The swarm feeds its cluster's cell from its own nutrition.
+/obj/item/rig/protean/proc/recharge_from(mob/living/P)
+	if(!cell || inert || cell.charge >= cell.maxcharge || P.nutrition <= PROTEAN_RIG_RECHARGE_NUTRITION_FLOOR)
+		return 0
+	var/stored = add_power(ROBOT_CELL_JOULES(PROTEAN_RIG_RECHARGE_UNITS), P)
+	if(stored > 0)
+		P.adjust_nutrition(-stored * CELLRATE * PROTEAN_RIG_NUTRITION_PER_UNIT)
+	return stored
+
+
+// --- Dormancy -------------------------------------------------------------------------------
+
+/// The protean has gone dormant: the cluster is inert. It protects nobody,
+/// unseals, drops every module and weighs its wearer down.
+/obj/item/rig/protean/proc/go_inert()
+	if(inert)
+		return
+	inert = TRUE
+	for(var/obj/item/rig_module/module in installed_modules)
+		if(!module.active)
+			continue
+		module.deactivate()
+		// Unworn modules refuse a polite shutdown; an inert cluster cuts them anyway.
+		module.active = FALSE
+	reset()
+	var/list/no_armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor = no_armor.Copy()
+	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
+		piece.armor = no_armor.Copy()
+	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
+	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
+	wearer?.update_inv_back()
+	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
+
+/// The protean has reconstituted: the cluster is its own again.
+/obj/item/rig/protean/proc/wake()
+	if(!inert)
+		return
+	inert = FALSE
+	var/obj/item/rig/R = assimilated_rig
+	var/list/restored = istype(R) ? R.armor : initial_armor()
+	armor = restored.Copy()
+	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
+		piece.armor = restored.Copy()
+	if(istype(R))
+		slowdown = initial(R.slowdown) * 0.5
+	else
+		slowdown = initial(slowdown)
+	offline_slowdown = slowdown
+	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] woke at [AREACOORD(src)].")
+
+/// The unconfigured cluster's armour.
+/obj/item/rig/protean/proc/initial_armor()
+	var/static/list/base_armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 100)
+	return base_armor
+
+/// An inert cluster runs nothing: no seals, no modules.
+/obj/item/rig/protean/check_power_cost(mob/living/user, cost, use_unconcious, obj/item/rig_module/mod, user_is_ai)
+	if(inert)
+		if(user)
+			to_chat(user, span_warning("\The [src] is inert and unresponsive."))
+		return 0
+	return ..()
+
 /obj/item/rig/protean/cut_suit()
 	return	//nope
 
@@ -425,34 +601,18 @@
 	wearer.lay_down()
 	to_chat(user, span_notice("\The [wearer] is now [wearer.resting ? "resting" : "getting up"]."))
 
+/// The cluster's cell. It starts full and is recharged only through the
+/// cluster's power ledger (recharge_from()).
 /obj/item/cell/protean
 	name = "Protean power cell"
 	desc = "Something terrible must have happened if you're managing to see this."
 	maxcharge = 10000
 	charge_amount = 100
-	var/mob/living/carbon/human/charger
 
 /obj/item/cell/protean/Initialize(mapload)
 	. = ..()
 	charge = maxcharge
 	update_icon()
-	addtimer(CALLBACK(src, PROC_REF(search_for_protean)), 60)
-
-/obj/item/cell/protean/proc/search_for_protean()
-	if(istype(src.loc, /obj/item/rig/protean))
-		var/obj/item/rig/protean/prig = src.loc
-		charger = prig.wearer
-	if(charger)
-		START_PROCESSING(SSobj, src)
-
-/obj/item/cell/protean/process()
-	var/C = charge
-	if(charger)
-		if((world.time >= last_use + charge_delay) && charger.nutrition > 100)
-			give(charge_amount)
-			charger.nutrition -= ((1/200)*(charge - C))	//Take nutrition relative to charge. Change the 1/200 if you want to alter the nutrition to charge ratio
-	else
-		return PROCESS_KILL
 
 
 /obj/item/rig/protean/equipped(mob/living/carbon/human/M)
@@ -461,6 +621,8 @@
 		unremovable = FALSE
 	else
 		unremovable = TRUE //It's like glue! If you put them on your back, YOU can't take them off!
+	if(istype(M) && (M.back == src || M.belt == src))
+		start_soaking(M)
 
 /obj/item/rig/protean/ai_can_move_suit(mob/user, check_user_module = 0, check_for_ai = 0)
 	if(check_for_ai)

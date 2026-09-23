@@ -37,10 +37,14 @@
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
 	var/affected_by_emp_until = 0
+	/// The REACT_AT token for next_camera_deadline(), and the deadline it was set for.
+	var/tmp/camera_timer_token
+	var/tmp/camera_timer_at = 0
 
 	var/client_huds = null
 
 /obj/machinery/camera/Initialize(mapload)
+	RegisterSignals(src, list(COMSIG_MACHINERY_POWER_LOST, COMSIG_MACHINERY_POWER_RESTORED), PROC_REF(on_power_signal))
 	set_wires(new /datum/wires/camera(src))
 	assembly = new(src)
 	assembly.state = 4
@@ -92,21 +96,55 @@
 	network = null
 	return ..()
 
-/obj/machinery/camera/process()
+// A camera sleeps on one REACT_AT for its earliest deadline (EMP recovery, the motion alarm
+// delay) and on signals from the mobs it tracks; it never polls (reactor.md §9).
+
+/// The earliest pending deadline (world.time), or 0 for none.
+/obj/machinery/camera/proc/next_camera_deadline()
+	. = 0
+	if((stat & EMPED) && affected_by_emp_until > 0)
+		. = affected_by_emp_until
+	// The motion alarm waits for power (power_change() reschedules).
+	if(detectTime > 0 && !(stat & (NOPOWER|EMPED)))
+		var/alarm_at = detectTime + alarm_delay + 1
+		if(!. || alarm_at < .)
+			. = alarm_at
+
+/obj/machinery/camera/proc/schedule_camera_timer()
+	var/deadline = next_camera_deadline()
+	if(deadline == camera_timer_at && (!isnull(camera_timer_token) || !deadline))
+		return
+	if(!isnull(camera_timer_token))
+		REACT_CANCEL(src, camera_timer_token)
+		camera_timer_token = null
+	camera_timer_at = deadline
+	if(deadline)
+		camera_timer_token = REACT_AT(src, deadline)
+
+/obj/machinery/camera/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER))
+		return
+	camera_timer_token = null
+	camera_timer_at = 0
 	if((stat & EMPED) && world.time >= affected_by_emp_until)
 		stat &= ~EMPED
 		cancelCameraAlarm()
 		update_icon()
 		update_coverage()
-	return internal_process()
+	check_motion_alarm()
+	schedule_camera_timer()
 
-/obj/machinery/camera/power_change()
-	. = ..()
-	if(. && !(stat & NOPOWER) && ((stat & EMPED) || detectTime || LAZYLEN(motionTargets)))
-		START_MACHINE_PROCESSING(src)
+/obj/machinery/camera/react_sleep_violation()
+	var/deadline = next_camera_deadline()
+	if(deadline && (isnull(camera_timer_token) || camera_timer_at > deadline))
+		return "deadline [deadline] (now [world.time]) has no timer"
+	return null
 
-/obj/machinery/camera/proc/internal_process()
-	return
+/// The area's channel change reaches cameras as the machinery power signals.
+/obj/machinery/camera/proc/on_power_signal(datum/source)
+	SIGNAL_HANDLER
+	schedule_camera_timer()
 
 /obj/machinery/camera/emp_act(severity, recursive, forced)
 	. = ..()
@@ -120,7 +158,7 @@
 			triggerCameraAlarm()
 			update_icon()
 			update_coverage()
-			START_PROCESSING(SSobj, src)
+			schedule_camera_timer()
 
 /obj/machinery/camera/ex_act(severity)
 	if(src.invuln)
@@ -297,11 +335,11 @@
 
 /obj/machinery/camera/atom_break(damage_flag)
 	. = ..()
-	stat |= BROKEN
+	if(!.)
+		return
 	wires.cut_all()
 
 	triggerCameraAlarm()
-	update_icon()
 	update_coverage()
 
 	//sparks
@@ -312,10 +350,10 @@
 
 /obj/machinery/camera/atom_fix()
 	. = ..()
+	if(!.)
+		return
 	wires.mend_all()
-	stat &= ~BROKEN
 	cancelCameraAlarm()
-	update_icon()
 	update_coverage()
 
 /obj/machinery/camera/proc/set_status(newstatus)
@@ -397,25 +435,12 @@
 	return null
 
 /obj/machinery/camera/proc/weld(obj/item/tool, mob/user)
-	var/obj/item/weldingtool/WT = tool.get_welder()
-
 	if(busy)
 		return 0
-	if(!WT.isOn())
-		return 0
-
-	// Do after stuff here
-	to_chat(user, span_notice("You start to weld [src].."))
-	playsound(src, WT.usesound, 50, 1)
-	WT.eyecheck(user)
 	busy = 1
-	if(do_after(user, 10 SECONDS * WT.toolspeed, target = src))
-		busy = 0
-		if(!WT.isOn())
-			return 0
-		return 1
+	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..")
 	busy = 0
-	return 0
+	return result
 
 /obj/machinery/camera/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))
@@ -499,8 +524,7 @@
 /obj/machinery/camera/proc/reset_wires()
 	if(!wires)
 		return
-	if (stat & BROKEN) // Fix the camera
-		stat &= ~BROKEN
+	atom_fix() // Fix the camera
 	wires.repair()
 	update_icon()
 	update_coverage()

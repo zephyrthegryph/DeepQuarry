@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(fuel_injectors)
 
 /obj/machinery/fusion_fuel_injector
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -19,9 +18,10 @@ GLOBAL_LIST_EMPTY(fuel_injectors)
 	var/injecting = 0
 	var/obj/item/fuel_assembly/cur_assembly
 
+REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS)
+
 /obj/machinery/fusion_fuel_injector/Initialize(mapload)
 	. = ..()
-	GLOB.fuel_injectors += src
 	default_apply_parts()
 	AddElement(/datum/element/rotatable)
 
@@ -29,7 +29,6 @@ GLOBAL_LIST_EMPTY(fuel_injectors)
 	if(cur_assembly)
 		cur_assembly.forceMove(get_turf(src))
 		cur_assembly = null
-	GLOB.fuel_injectors -= src
 	return ..()
 
 /obj/machinery/fusion_fuel_injector/mapped
@@ -45,7 +44,7 @@ GLOBAL_LIST_EMPTY(fuel_injectors)
 
 /obj/machinery/fusion_fuel_injector/attackby(obj/item/W, mob/user)
 
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Fuel Injector", id_tag, MAX_NAME_LEN)
 		if(new_ident && user.Adjacent(src))
 			id_tag = new_ident

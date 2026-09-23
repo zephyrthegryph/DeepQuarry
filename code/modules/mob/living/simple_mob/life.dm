@@ -10,7 +10,8 @@
 /// Health display, then the dead check that ended the old simple mob Life().
 /datum/life_system/simple_vitals
 	name = "simple vitals"
-	bit = LIFE_SYS_HUD
+	// A gate: it blocks LIFE_SEG_SIMPLE for the dead, so it runs whenever the mob runs.
+	bit = LIFE_SYS_GATE
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/simple_mob
@@ -24,6 +25,9 @@
 		return
 	ctx.core_result = TRUE
 
+/datum/life_system/simple_vitals/idle(mob/living/simple_mob/self)
+	return TRUE
+
 /// Sleep, stun, weakness and paralysis wear off.
 /datum/life_system/simple_statuses
 	name = "simple statuses"
@@ -32,6 +36,7 @@
 	order = 110
 	segment = LIFE_SEG_SIMPLE
 	mob_type = /mob/living/simple_mob
+	woken_by = "Stun/Weaken/Paralyse/Sleeping setters (LIFE_WAKE_STATUS)"
 
 /datum/life_system/simple_statuses/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	var/datum/life_system/statuses/statuses = life_statuses()
@@ -39,6 +44,12 @@
 	statuses.stunned(self)
 	statuses.weakened(self)
 	statuses.paralysed(self)
+
+/// Continuous while a counter runs or its alert is up.
+/datum/life_system/simple_statuses/idle(mob/living/simple_mob/self)
+	if(self.sleeping || self.toggled_sleeping || self.stunned || self.weakened || self.paralysis)
+		return FALSE
+	return !self.alert_state_stunned && !self.alert_state_weakened && !self.alert_state_paralysed && !self.alerts?["asleep"]
 
 /// Passive healing while fed.
 /datum/life_system/simple_healing
@@ -48,9 +59,14 @@
 	order = 150
 	segment = LIFE_SEG_SIMPLE
 	mob_type = /mob/living/simple_mob
+	woken_by = "injure (LIFE_WAKE_BODY); feeding"
 
 /datum/life_system/simple_healing/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	self.do_healing()
+
+/// Heals only while hurt and fed.
+/datum/life_system/simple_healing/idle(mob/living/simple_mob/self)
+	return self.nutrition < 150 || !self.is_injured()
 
 /// Simple mob Life() returned TRUE alive, FALSE dead.
 /datum/life_system/type_post/simple_mob
@@ -139,13 +155,56 @@
 /datum/life_system/special/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	return
 
+/datum/life_system/special/idle(mob/living/simple_mob/self)
+	return type == /datum/life_system/special
+
 /datum/life_system/environment/simple_mob
 	mob_type = /mob/living/simple_mob
+	woken_by = "Moved (LIFE_WAKE_MOVED); injure; its own timer for air changing in place"
+
+/// Idle while the air is survivable and the body has nothing for it to treat. Air that
+/// changes in place (a breach) is caught by a slow timer: atmos has no per-mob signal yet.
+/datum/life_system/environment/simple_mob/idle(mob/living/simple_mob/self)
+	if(type != /datum/life_system/environment/simple_mob)
+		return FALSE
+	if(self.is_incorporeal() || !self.loc)
+		return TRUE
+	if(LAZYLEN(self.body?.afflictions))
+		return FALSE
+	if(self.bodytemperature < self.minbodytemp || self.bodytemperature > self.maxbodytemp)
+		return FALSE
+	var/datum/gas_mixture/environment = isbelly(self.loc) ? self.loc.return_air_for_internal_lifeform(self) : self.loc.return_air()
+	return !environment || self.environment_is_safe(environment)
+
+/datum/life_system/environment/simple_mob/rewake_delay(mob/living/simple_mob/self)
+	return 15 SECONDS
+
+/// TRUE when exchange() would change nothing: temperature within the mob's range and every
+/// gas inside its bounds. Read-only; shared by the sleep rule and the hibernation audit.
+/mob/living/simple_mob/proc/environment_is_safe(datum/gas_mixture/environment)
+	if(abs(environment.return_temperature() - bodytemperature) > temperature_range)
+		return FALSE
+	var/o2 = LINDA_GAS_AMT(environment, GAS_O2)
+	if((min_oxy && o2 < min_oxy) || (max_oxy && o2 > max_oxy))
+		return FALSE
+	var/phoron = LINDA_GAS_AMT(environment, GAS_PHORON)
+	if((min_tox && phoron < min_tox) || (max_tox && phoron > max_tox))
+		return FALSE
+	var/n2 = LINDA_GAS_AMT(environment, GAS_N2)
+	if((min_n2 && n2 < min_n2) || (max_n2 && n2 > max_n2))
+		return FALSE
+	var/co2 = LINDA_GAS_AMT(environment, GAS_CO2)
+	if((min_co2 && co2 < min_co2) || (max_co2 && co2 > max_co2))
+		return FALSE
+	var/ch4 = LINDA_GAS_AMT(environment, GAS_CH4)
+	if((min_ch4 && ch4 < min_ch4) || (max_ch4 && ch4 > max_ch4))
+		return FALSE
+	return TRUE
 
 /// Handle interacting with and taking damage from atmos.
 /datum/life_system/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment)
 
-	if(self.in_stasis)
+	if(self.inStasisNow())
 		return 1 // return early to skip atmos checks
 	if(self.is_incorporeal())
 		return 1
@@ -213,7 +272,7 @@
 		self.clear_alert("temp")
 
 	if(atmos_unsuitable)
-		self.injure(INJURY_ASPHYXIA, self.unsuitable_atoms_damage, source = self.loc)
+		self.add_oxygen_debt(self.unsuitable_atoms_damage, self.loc)
 	else
 		self.mend(TREAT_OXYGENATION, self.unsuitable_atoms_damage)
 
@@ -233,6 +292,10 @@
 	for(var/obj/item/organ/OR in self.organs)
 		OR.process()
 
+/// Only mobs carrying real organ objects process them (most list organ paths for butchery).
+/datum/life_system/guts/idle(mob/living/simple_mob/self)
+	return !(LAZYLEN(self.internal_organs) && (locate(/obj/item/organ) in self.internal_organs)) && !(LAZYLEN(self.organs) && (locate(/obj/item/organ) in self.organs))
+
 /datum/life_system/supernatural
 	name = "supernatural"
 	bit = LIFE_SYS_STATUS
@@ -245,6 +308,9 @@
 /datum/life_system/supernatural/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	if(self.purge)
 		self.purge -= 1
+
+/datum/life_system/supernatural/idle(mob/living/simple_mob/self)
+	return !self.purge
 
 /mob/living/simple_mob/
 	var/update_icon_timer

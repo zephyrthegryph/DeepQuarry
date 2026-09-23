@@ -33,18 +33,6 @@
 /obj/structure/attack_tk()
 	return
 
-/obj/structure/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if(prob(50))
-				qdel(src)
-				return
-		if(3.0)
-			return
-
 // Default destruction for integrity-using structures: drop any parts (via Destroy) and delete.
 // Subtypes that shatter into shards / drop rods override this and call ..() or qdel themselves.
 /obj/structure/atom_destruction(damage_flag)

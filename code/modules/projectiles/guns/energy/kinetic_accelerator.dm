@@ -112,18 +112,16 @@
 		M.uninstall(src, FALSE)
 
 /obj/item/gun/energy/kinetic_accelerator/crowbar_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_CROWBAR)
-	return TRUE
+	if(length(modkits))
+		to_chat(user, span_notice("You pry the modifications out."))
+		playsound(loc, tool.usesound, 100, 1)
+		for(var/obj/item/borg/upgrade/modkit/M in modkits)
+			M.uninstall(src)
+	else
+		to_chat(user, span_notice("There are no modifications currently installed."))
+	return NONE
 
-/obj/item/gun/energy/kinetic_accelerator/attackby(obj/item/I, mob/user, tool_quality)
-	if(tool_quality == TOOL_CROWBAR)
-		if(length(modkits))
-			to_chat(user, span_notice("You pry the modifications out."))
-			playsound(loc, I.usesound, 100, 1)
-			for(var/obj/item/borg/upgrade/modkit/M in modkits)
-				M.uninstall(src)
-		else
-			to_chat(user, span_notice("There are no modifications currently installed."))
+/obj/item/gun/energy/kinetic_accelerator/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/borg/upgrade/modkit))
 		var/obj/item/borg/upgrade/modkit/MK = I
 		MK.install(src, user)

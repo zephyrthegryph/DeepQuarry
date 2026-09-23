@@ -77,20 +77,24 @@
 	var/obj/belly/B = new /obj/belly/gryphon/beak(src)
 	vore_selected = B
 	B.affects_vore_sprites = FALSE
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list("You get pushed around the creature's maw, that tongue pressing you against the roof of its mouth and humming as it savors your taste",
 	"The gryphon swallows, pulling you closer to the gullet desperately trying to gulp you down.",
 	"You feel that beak tilt upwards to help pull you deeper into the gryphon's body, intent on making you disappear.")
 	B = new /obj/belly/gryphon/throat(src)
 	B.affects_vore_sprites = TRUE
 	B.belly_sprite_to_affect = "throat"
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list("You hear the light gurgling of the stomach below you, calling you to relax and allow the beast to claim you.",
 	"Those throat muscles squeeze and knead all along your body, pressing you deeper into the gryphon's body.")
 	B = new /obj/belly/gryphon/stomach(src)
 	B.affects_vore_sprites = TRUE
 	B.belly_sprite_to_affect = "stomach"
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list("The gryphon lightly sways its filled gut, tossing you around inside of the tight chamber.",
 	"A sudden pressure presses down across your body as the gryphon gives its gut a squeeze.",
 	"Sitting in the hot, stewing guts of the gryphon you wonder when someone will finally notice that you've disappeared.")
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list("The churning gut squeezes down on your body, rubbing more of those acids into your skin and trying to claim you as nutrients to fuel the massive gryphon.",
 	"The gryphon lightly sways its filled gut, tossing you around inside of the tight chamber.",
 	"A sudden pressure presses down across your body as the gryphon gives its gut a squeeze.",

@@ -95,7 +95,7 @@
 
 /obj/machinery/disposal/proc/wake_for_state_change()
 	clear_gas_dependency()
-	SSmachines.publish_reactive_dependency("disposal:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_DISPOSAL, REACT_KEY_CHANGED)
 	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
@@ -237,14 +237,9 @@
 		if(length(contents))
 			to_chat(user, "Eject the items first!")
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/W = I.get_welder()
-	if(!W.remove_fuel(0,user))
-		to_chat(user, "You need more welding fuel to complete this task.")
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, W.usesound, 100, 1)
-	to_chat(user, "You start slicing the floorweld off the disposal unit.")
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-		if(!src || !W.isOn()) return ITEM_INTERACT_BLOCKING
+	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit."))
+		if(!src)
+			return ITEM_INTERACT_BLOCKING
 		to_chat(user, "You sliced the floorweld off the disposal unit.")
 		atom_deconstruct(TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -392,10 +387,8 @@
 	user.forceMove(get_turf(src))
 	update_icon()
 
-// ai as human but can't flush
-/obj/machinery/disposal/attack_ai(mob/user)
-	add_hiddenprint(user)
-	tgui_interact(user)
+/obj/machinery/disposal
+	silicon_use = SILICON_USE_UI
 /*
 /obj/machinery/disposal/attack_paw()
 	if(stat & BROKEN)
@@ -543,7 +536,7 @@
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(contents))
 		update_use_power(USE_POWER_IDLE)
 		flush_count = 0
-		SSmachines.hibernate_reactive_machine(src, list("disposal:[REF(src)]"))
+		sleep_until_keys(list(REACT_KEY_DISPOSAL, REACT_ID(src), REACT_KEY_CHANGED))
 		return
 
 	flush_count++
@@ -564,7 +557,7 @@
 		mode = DISPOSALMODE_CHARGED //if full enough, switch to ready mode
 		update_icon()
 		if(!flush && !length(contents))
-			SSmachines.hibernate_reactive_machine(src, list("disposal:[REF(src)]"))
+			sleep_until_keys(list(REACT_KEY_DISPOSAL, REACT_ID(src), REACT_KEY_CHANGED))
 			return
 	else
 		if(!pressurize()) //otherwise charge
@@ -774,3 +767,11 @@
 
 /obj/mecha/CanEnterDisposals()
 	return FALSE
+
+/// Audit: a unit sleeping on its own key must be idle and empty.
+/obj/machinery/disposal/react_sleep_violation()
+	if(!asleep_on_keys() || (stat & BROKEN))
+		return null
+	if(flush || length(contents))
+		return "asleep with [flush ? "a flush pending" : "contents"]"
+	return null

@@ -327,7 +327,9 @@
 			return TRUE
 
 		if("set_attribute")
-			return set_attr(ui.user, params)
+			. = set_attr(ui.user, params)
+			host.vore_selected?.belly_reschedule() // Turbo mode or liquid settings may have changed.
+			return .
 
 		if("saveprefs")
 			if(isnewplayer(host))
@@ -571,7 +573,9 @@
 			return TRUE
 		// liquid belly code
 		if("liq_set_attribute")
-			return liq_set_attr(ui.user, params)
+			. = liq_set_attr(ui.user, params)
+			host.vore_selected?.belly_reschedule() // Liquid generation may have started or stopped.
+			return .
 		if("toggle_liq_rec")
 			host.receive_reagents = !host.receive_reagents
 			if(host.client.prefs_vr)
@@ -1281,7 +1285,7 @@
 						MMI.loc = R
 						R.mmi = MMI
 						R.add_language(LANGUAGE_ROBOT_TALK)
-					else //reference /datum/surgery_step/robotics/install_mmi/end_step
+					else //reference /datum/surgical_step/organ/install_mmi/perform
 						var/obj/item/organ/internal/mmi_holder/holder
 						if(istype(MMI, /obj/item/mmi/digital/posibrain))
 							var/obj/item/organ/internal/mmi_holder/posibrain/holdertmp = new(body_backup, 1)

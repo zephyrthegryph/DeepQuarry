@@ -13,7 +13,7 @@
 	event_type = /datum/event2/event/grid_check
 
 // /obj/machinery/power/generator (turbine) was deleted with the ZAS
-// power machinery cleanup; GLOB.all_turbines no longer exists. Without
+// power machinery cleanup; REGISTRY_MEMBERS(REGISTRY_TURBINES) no longer exists. Without
 // turbines, overpower is always 0 — grid checks fall back to weight-only.
 /datum/event2/meta/grid_check/proc/get_overpower()
 	return 0

@@ -81,20 +81,6 @@
 		return TRUE
 	return ..()
 
-/obj/structure/bed/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-				return
-		if(3.0)
-			if (prob(5))
-				qdel(src)
-				return
-
 /obj/structure/bed/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/stack))
 		if(padding_material)
@@ -415,9 +401,8 @@
 		return
 
 /obj/structure/dirtybed/wrench_act(mob/user, obj/item/W)
-	playsound(src, W.usesound, 100, 1)
 	user.visible_message("[user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 100))
 		anchored = !anchored
 		to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 	return TRUE

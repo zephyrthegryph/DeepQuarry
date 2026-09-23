@@ -4,7 +4,6 @@
 	icon_state = "magboots0"
 	flags = PHORONGUARD
 	item_state_slots = list(slot_r_hand_str = "magboots", slot_l_hand_str = "magboots")
-	species_restricted = null
 	center_of_mass_x = 17
 	center_of_mass_y = 12
 	force = 3
@@ -24,6 +23,9 @@
 	drop_sound = 'sound/items/drop/metalboots.ogg'
 	pickup_sound = 'sound/items/pickup/toolbox.ogg'
 	resistance_flags = FIRE_PROOF
+
+/obj/item/clothing/shoes/magboots/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/magboots/proc/set_slowdown()
 	slowdown = shoes? max(SHOES_SLOWDOWN, shoes.slowdown): SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
@@ -64,20 +66,15 @@
 	user.update_inv_shoes()	//so our mob-overlays update
 	user.update_mob_action_buttons()
 
-/obj/item/clothing/shoes/magboots/mob_can_equip(mob/user, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = TRUE)
-	if(!ishuman(user))
-		return ..()
-	var/mob/living/carbon/human/H = user
+/obj/item/clothing/shoes/magboots/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/magboots/proc/overshoe_clearance, null)))
 
-	if(H.shoes)
-		shoes = H.shoes
-		if(istype(shoes, /obj/item/clothing/shoes) && shoes.overshoes)
-			if(slot && slot == slot_shoes && !disable_warning)
-				to_chat(user, "You are unable to wear \the [src] as \the [H.shoes] are in the way.")
-			shoes = null
-			return FALSE
-		shoes = null
-	return ..()
+/// Magboots go on over shoes, but not over other overshoes.
+/obj/item/clothing/shoes/magboots/proc/overshoe_clearance(mob/living/carbon/human/H)
+	if(!istype(H) || !istype(H.shoes, /obj/item/clothing/shoes))
+		return TRUE
+	var/obj/item/clothing/shoes/worn = H.shoes
+	return worn.overshoes ? "\the [worn] are in the way" : TRUE
 
 /obj/item/clothing/shoes/magboots/equipped(mob/user, slot)
 
@@ -124,10 +121,13 @@
 	mag_disable = "You relax your deathgrip on the flooring."
 	unremovable_when_enabled = TRUE
 	flags = PHORONGUARD
-	species_restricted = list(SPECIES_VOX)
 	armor = list (melee = 40, bullet = 10, laser = 10, energy = 20, bomb = 20, bio = 10, rad = 20) // values of workboots and heavy duty engineering gloves, it's the only option that will ever be taken so may as well give the turkeys some protection //
 
 	actions_types = list(/datum/action/item_action/toggle_magclaws)
+
+/obj/item/clothing/shoes/magboots/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/shoes/magboots/vox/set_slowdown()
 	return //voxboots suffer no slowdown penalties!

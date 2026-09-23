@@ -28,9 +28,7 @@
 	return
 
 /obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
-	to_chat(user, "You begin removing the faceplate from the [src]")
-	playsound(src, tool.usesound, 50, 1)
-	if(do_after(user, 1 SECOND * tool.toolspeed, target = src))
+	if(use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin removing the faceplate from the [src]"))
 		to_chat(user, "You remove the faceplate from the [src]")
 		var/obj/structure/frame/A = new /obj/structure/frame(loc)
 		A.circuit = circuit
@@ -134,7 +132,7 @@
 
 /obj/machinery/keycard_auth/proc/broadcast_request(mob/user)
 	icon_state = "auth_on"
-	for(var/obj/machinery/keycard_auth/KA in GLOB.machines)
+	for(var/obj/machinery/keycard_auth/KA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(KA == src) continue
 		KA.reset()
 		spawn()

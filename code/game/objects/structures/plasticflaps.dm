@@ -17,9 +17,8 @@
 		)
 
 /obj/structure/plasticflaps/wirecutter_act(mob/user, obj/item/P)
-	playsound(src, P.usesound, 50, 1)
-	to_chat(user, span_notice("You start to cut the plastic flaps."))
-	if(do_after(user, 1 SECOND * P.toolspeed, target = src))
+	if(use_tool(user, P, src, delay = 1 SECOND, quality = TOOL_WIRECUTTER, volume = 50,
+			message_self = "You start to cut the plastic flaps."))
 		to_chat(user, span_notice("You cut the plastic flaps."))
 		new /obj/item/stack/material/plastic(loc, 4)
 		qdel(src)
@@ -57,17 +56,6 @@
 		return issmall(M)
 
 	return ..()
-
-/obj/structure/plasticflaps/ex_act(severity)
-	switch(severity)
-		if (1)
-			qdel(src)
-		if (2)
-			if (prob(50))
-				qdel(src)
-		if (3)
-			if (prob(5))
-				qdel(src)
 
 /obj/structure/plasticflaps/mining //A specific type for mining that doesn't allow airflow because of them damn crates
 	name = "airtight plastic flaps"

@@ -24,6 +24,8 @@
 // --- Coolant leak ----------------------------------------------------------------
 /datum/affliction/synthetic/coolant_leak
 	name = "coolant leak"
+	// Nanite swarms have no coolant loop or processor to fault.
+	biology = BIOLOGY_SYNTHETIC
 	subcategory = "Cooling"
 	clinical_description = "A breach in the coolant loop. Coolant is lost steadily and the chassis heats up; left alone it overheats into thermal runaway. Seal the breach (plating repair) and replenish coolant."
 	progression_rate = 0.5
@@ -46,6 +48,8 @@
 // --- Thermal runaway ------------------------------------------------------------
 /datum/affliction/synthetic/thermal_runaway
 	name = "thermal runaway"
+	// Nanite swarms have no coolant loop or processor to fault.
+	biology = BIOLOGY_SYNTHETIC
 	subcategory = "Cooling"
 	clinical_description = "Cooling has failed and internal temperature is climbing faster than it can shed. Processors throttle and the unit loses awareness. Replenish coolant urgently."
 	progression_rate = 0.8
@@ -77,6 +81,8 @@
 // --- Processor corruption --------------------------------------------------------
 /datum/affliction/synthetic/processor_corruption
 	name = "processor corruption"
+	// Nanite swarms have no coolant loop or processor to fault.
+	biology = BIOLOGY_SYNTHETIC
 	subcategory = "Processing"
 	clinical_description = "Memory and processing faults from a blow to the processor housing or electromagnetic interference. Speech and thought degrade; severe corruption drops the unit into safe mode. A system restore clears it."
 	progression_rate = 0.3

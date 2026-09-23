@@ -69,9 +69,6 @@
 	"Wildlife Simulation" 		= new/datum/holodeck_program(/area/holodeck/source_wildlife, list())
 	)
 
-/obj/machinery/computer/HolodeckControl/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
-
 /obj/machinery/computer/HolodeckControl/attack_hand(mob/user as mob)
 	if(..())
 		return

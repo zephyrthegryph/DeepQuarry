@@ -11,10 +11,7 @@
 	var/mob/living/carbon/human/H = medigun.current_target
 	var/patientname
 	var/patienthealth = 0
-	var/patientbruteloss = 0
-	var/patientfireloss = 0
-	var/patienttoxloss = 0
-	var/patientoxyloss = 0
+	var/list/patientdiagnosis
 	var/patientstatus = 0
 	var/list/bloodData = list()
 	var/inner_bleeding = FALSE
@@ -33,10 +30,9 @@
 				organ_damage = TRUE
 		patientname = H
 		patienthealth = H.vitality()
-		patientbruteloss = H.injury_load(INJURY_CATEGORY_PHYSICAL)
-		patientfireloss = H.injury_load(INJURY_CATEGORY_THERMAL)
-		patienttoxloss = H.injury_load(INJURY_CATEGORY_TOXIC)
-		patientoxyloss = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/automation)
+		patientdiagnosis = D?.report_data()
+		qdel(D)
 		patientstatus = H.stat
 		if(H.vessel)
 			bloodData["volume"] = round(H.vessel.get_reagent_amount("blood"))
@@ -56,10 +52,7 @@
 		"toxheal_vol" = sbin ? toxvol : null,
 		"patient_name" = smodule ? patientname : null,
 		"patient_health" = smodule ? patienthealth : null,
-		"patient_brute" = smodule ? patientbruteloss : null,
-		"patient_burn" = smodule ? patientfireloss : null,
-		"patient_tox" = smodule ? patienttoxloss : null,
-		"patient_oxy" = smodule ? patientoxyloss : null,
+		"patient_diagnosis" = smodule ? patientdiagnosis : null,
 		"blood_status" = smodule ? bloodData : null,
 		"patient_status" = smodule ? patientstatus : null,
 		"organ_damage" = smodule ? organ_damage : null,

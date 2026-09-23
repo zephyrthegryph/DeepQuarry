@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 7c5d7bb525ceb98e1178365f931c0be35eed216c4849385ee3d8ecd6542c8bff # shrinks to ops = [Body { c: 3400.7756, t: 50.0, target: 0, x: 0, y: 0, g: 0.1, other: 0, power: 0.0 }, Body { c: 1.0, t: 50.0, target: 2, x: 0, y: 0, g: 0.1, other: 0, power: 42.099476 }]
+cc 2a8962445d17637ad19e253ad7b402a4efe7ca2ac758dad65cc233870b687104 # shrinks to ops = [Cell { x: 3, y: 4, c: 30251.654, k: 0.0, t: 1679.0463, air: false }, Body { c: 1.0, t: 50.0, target: 0, x: 0, y: 0, g: 0.1, other: 0, power: 0.0 }, Body { c: 1.0, t: 50.0, target: 0, x: 3, y: 4, g: 0.1, other: 0, power: 193.4414 }, Body { c: 819.7846, t: 50.0, target: 2, x: 0, y: 0, g: 0.1, other: 1, power: -26.627457 }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Cell { x: 0, y: 0, c: 10.0, k: 0.0, t: 50.0, air: false }, Release { which: 2 }]

@@ -27,9 +27,6 @@
 	circuit = /obj/item/circuitboard/supplycomp/control
 	authorization = SUP_SEND_SHUTTLE | SUP_ACCEPT_ORDERS
 
-/obj/machinery/computer/supplycomp/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/computer/supplycomp/attack_hand(mob/user as mob)
 	if(..())
 		return

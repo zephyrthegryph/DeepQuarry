@@ -1,4 +1,6 @@
 /obj/machinery/portable_atmospherics
+	material_template = /datum/material_template/pressure
+	material_total = 2 * SHEET_MATERIAL_AMOUNT
 	name = "atmoalter"
 	use_power = USE_POWER_OFF
 	layer = OBJ_LAYER // These are mobile, best not be under everything.
@@ -16,7 +18,6 @@
 
 /obj/machinery/portable_atmospherics/Initialize(mapload)
 	..()
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE, 2 * SHEET_MATERIAL_AMOUNT)
 	air_contents = new
 	air_contents.set_volume(volume)
 	air_contents.set_temperature(T20C)
@@ -180,6 +181,8 @@
 
 
 /obj/machinery/portable_atmospherics/powered
+	material_template = /datum/material_template/pump
+	material_total = 5 * SHEET_MATERIAL_AMOUNT
 	var/power_rating
 	var/power_losses
 	var/last_power_draw = 0
@@ -196,7 +199,6 @@
 
 /obj/machinery/portable_atmospherics/powered/Initialize(mapload)
 	. = ..()
-	ensure_pump_materials()
 
 /obj/machinery/portable_atmospherics/powered/attackby(obj/item/I, mob/user)
 	if(use_cell && istype(I, /obj/item/cell))

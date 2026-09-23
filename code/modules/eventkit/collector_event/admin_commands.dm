@@ -2,7 +2,7 @@
 Event Collector Admin Commands
 */
 
-ADMIN_VERB_AND_CONTEXT_MENU(modify_event_collector, R_ADMIN, "Configure Collector", "Configure Event Collector.", ADMIN_CATEGORY_FUN_EVENT_KIT, obj/structure/event_collector/target in GLOB.event_collectors)
+ADMIN_VERB_AND_CONTEXT_MENU(modify_event_collector, R_ADMIN, "Configure Collector", "Configure Event Collector.", ADMIN_CATEGORY_FUN_EVENT_KIT, obj/structure/event_collector/target in REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTORS))
 	var/msg = "---------------\n"
 	if(target?.active_recipe?.len > 0)
 		msg += " [target] has [target.active_recipe.len] left in its current recipe\n"
@@ -42,14 +42,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_event_collector, R_ADMIN, "Configure Collecto
 			target.calls_remaining = 0
 
 		if("Force Clear Blockers")
-			if(islist(GLOB.event_collector_blockers[target.blocker_channel]))
-				for(var/obj/structure/event_collector_blocker/tofix in GLOB.event_collector_blockers[target.blocker_channel])
+			if(islist(REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTOR_BLOCKERS)[target.blocker_channel]))
+				for(var/obj/structure/event_collector_blocker/tofix in REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTOR_BLOCKERS)[target.blocker_channel])
 					tofix.fix()
 
 		if("Empty Stored Items")
 			target.empty_items()
 
-ADMIN_VERB_AND_CONTEXT_MENU(induce_malfunction, R_ADMIN, "Toggle Malfunction State", "Configure Collector Blocker.", ADMIN_CATEGORY_FUN_EVENT_KIT, obj/structure/event_collector_blocker/target in GLOB.event_collector_blockers)
+ADMIN_VERB_AND_CONTEXT_MENU(induce_malfunction, R_ADMIN, "Toggle Malfunction State", "Configure Collector Blocker.", ADMIN_CATEGORY_FUN_EVENT_KIT, obj/structure/event_collector_blocker/target in REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTOR_BLOCKERS))
 	if(target.block_amount)
 		target.fix()
 		return

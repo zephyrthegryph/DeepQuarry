@@ -52,9 +52,6 @@
 		if(istype(prizeselect, /obj/item/clothing/suit/syndicatefake)) //Helmet is part of the suit
 			new	/obj/item/clothing/head/syndicatefake(src.loc)
 
-/obj/machinery/computer/arcade/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 
 /obj/machinery/computer/arcade/emp_act(severity, recursive)
 	. = ..()

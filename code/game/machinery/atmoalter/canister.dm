@@ -28,7 +28,6 @@
 
 /obj/machinery/portable_atmospherics/canister/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE, 2 * SHEET_MATERIAL_AMOUNT)
 	AddElement(/datum/element/climbable)
 
 /obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
@@ -294,12 +293,6 @@ update_flag
 /obj/machinery/portable_atmospherics/canister/return_air()
 	return air_contents
 
-/obj/machinery/portable_atmospherics/canister/proc/return_temperature()
-	var/datum/gas_mixture/GM = src.return_air()
-	if(GM && GM.return_volume()>0)
-		return GM.return_temperature()
-	return 0
-
 /obj/machinery/portable_atmospherics/canister/proc/return_pressure()
 	var/datum/gas_mixture/GM = src.return_air()
 	if(GM && GM.return_volume()>0)
@@ -356,24 +349,16 @@ update_flag
 	SStgui.update_uis(src) // Update all NanoUIs attached to src
 
 /obj/machinery/portable_atmospherics/canister/welder_act(mob/user, obj/item/tool)
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.remove_fuel(0, user))
-		to_chat(user, "The welding tool must be on to complete this task.")
-		return ITEM_INTERACT_BLOCKING
 	if(air_contents.return_pressure() > 1 && !destroyed)
 		to_chat(user, span_warning("\The [src]'s internal pressure is too high! Empty the canister before attempting to weld it apart."))
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, welder.usesound, 50, TRUE)
-	if(do_after(user, 2 SECONDS * welder.toolspeed, target = src) && welder.isOn())
+	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
 		to_chat(user, span_notice("You deconstruct [src]."))
 		new /obj/item/stack/material/steel(loc, 10)
 		if(connected_port)
 			disconnect()
 		qdel(src)
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/portable_atmospherics/canister/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
 
 /obj/machinery/portable_atmospherics/canister/attack_hand(mob/user as mob)
 	return tgui_interact(user)

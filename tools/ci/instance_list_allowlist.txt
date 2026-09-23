@@ -71,6 +71,10 @@
 /datum/controller/master/perf_outliers # d: MC singleton, filled every tick
 /datum/controller/master/perf_tick_realtime # d: MC singleton, filled every tick
 /datum/controller/master/perf_tick_usage # d: MC singleton, filled every tick
+/datum/controller/subsystem/machines/power_dirty_areas # d: SSmachines singleton (M3 power); one instance
+/datum/controller/subsystem/machines/power_material_cables # d: SSmachines singleton (M3 power); one instance
+/datum/controller/subsystem/machines/power_ops # d: SSmachines singleton (M3 power); one instance
+/datum/controller/subsystem/machines/power_regions # d: SSmachines singleton (M3 power); one instance
 /datum/controller/subsystem/mapping/multiz_levels # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/mapping/z_list # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/rolling_usage # d: one per subsystem; the usage ring buffer is always in use
@@ -147,7 +151,6 @@
 /datum/plane_holder/plane_masters # d: fixed-size list/x[VIS_COUNT] indexed by plane slot; every plane holder fills it
 /datum/planet/sun # d: edited in place per instance (2 writers)
 /datum/powernet/cables # d: powernets exist because cables joined them; never empty
-/datum/powernet_topology_job/remaining # d: powernet rebuild scratch state, always used
 /datum/predicate_compiler/errors # d: compiler state (generic name, too many ambiguous call sites)
 /datum/predicate_compiler/watchable # d: singleton compiler table
 /datum/property_registry/contributors # d: registry singleton, filled at init
@@ -217,8 +220,13 @@
 /datum/turbolift_floor/doors # d: every lift floor has doors
 /datum/unarmed_attack/attack_noun # kept: interned with string_list() in New()
 /datum/unarmed_attack/attack_verb # kept: interned with string_list() in New()
+/datum/unit_test/dq_containment_conservation_fuzz/holders # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_containment_conservation_fuzz/made # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_containment_conservation_fuzz/things # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_stock_sheets/made # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_stock_smartfridge/made # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_stock_vending/made # d: unit-test fixture; a handful of instances per test run
 /datum/unit_test/template_noops/log # d: unit-test state
-/datum/visualnet/camera/cameras # d: camera net singleton; every camera joins it
 /datum/vore_preferences/nutrition_messages # d: edited in place per instance (1 writers)
 /datum/vore_preferences/weight_messages # d: edited in place per instance (1 writers)
 /datum/weather_holder/forecast # d: build_forecast() always keeps it filled
@@ -231,58 +239,10 @@
 /datum/xgm_gas_data/overlays # d: gas data singleton (atmos compat), filled at init
 /datum/xgm_gas_data/specific_heat # d: gas data singleton (atmos compat), filled at init
 /datum/xgm_gas_data/tile_overlay # d: gas data singleton (atmos compat), filled at init
-/obj/belly/absorb_chance_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/absorb_chance_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/absorb_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/absorb_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/absorbed_struggle_messages_inside # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/absorbed_struggle_messages_outside # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/digest_chance_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/digest_chance_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/digest_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/digest_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/emote_lists # d: nested per-mode emote lists that mob setup edits in place
-/obj/belly/escape_absorbed_messages_outside # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_absorbed_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_absorbed_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_attempt_absorbed_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_attempt_absorbed_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_attempt_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_attempt_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_fail_absorbed_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_fail_absorbed_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_fail_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_fail_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_item_messages_outside # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_item_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_item_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_messages_outside # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/escape_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/examine_messages # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/examine_messages_absorbed # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/fullness1_messages # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/fullness2_messages # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/fullness3_messages # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/fullness4_messages # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/fullness5_messages # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/generated_reagents # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/primary_autotransfer_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/primary_autotransfer_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/primary_transfer_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/primary_transfer_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/secondary_autotransfer_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/secondary_autotransfer_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/secondary_transfer_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/secondary_transfer_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/struggle_messages_inside # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/struggle_messages_outside # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/trash_eater_in # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/trash_eater_out # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/unabsorb_messages_owner # kept: shared per belly type in share_default_tables(); only ever replaced whole
-/obj/belly/unabsorb_messages_prey # kept: shared per belly type in share_default_tables(); only ever replaced whole
+/obj/dq_combat_probe/done # d: unit-test fixture; a handful of instances per test run
 /obj/dq_emp_probe/severities # d: unit-test fixture; a handful of instances per test run
 /obj/dq_interaction_probe/done # d: unit-test fixture; a handful of instances per test run
+/obj/dq_tool_target/done # d: unit-test fixture; a handful of instances per test run
 /obj/effect/decal/mecha_wreckage/welder_salvage # d: edited in place per instance (6 writers)
 /obj/effect/fake_sun/possible_light_setups # c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
 /obj/effect/fusion_em_field/dormant_reactant_quantities # d: live reactor state
@@ -466,8 +426,6 @@
 # Medical session areas (not edited here).
 /datum/robolimb/species_alternates # medical session owns code/modules/organs/robolimbs.dm; see memory_lists_audit.md
 /datum/robolimb/species_cannot_use # medical session owns code/modules/organs/robolimbs.dm; see memory_lists_audit.md
-/datum/surgery_status/in_progress # medical session owns code/modules/surgery/surgery.dm; see memory_lists_audit.md
-/datum/surgery_step/excludes_steps # medical session owns code/modules/surgery/surgery.dm; see memory_lists_audit.md
 /obj/item/organ/assists_languages # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
 /obj/item/organ/autopsy_data # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
 /obj/item/organ/external/children # medical session owns code/modules/organs/organ_external.dm; see memory_lists_audit.md
@@ -485,12 +443,20 @@
 /obj/item/rig_module/protean/armor/armor_settings # medical session owns code/modules/clothing/spacesuits/rig/modules/protean.dm; see memory_lists_audit.md
 
 # Other active areas (listed in memory_lists_audit.md, not edited here).
-/datum/controller/subsystem/air/pending_automatic_shutoff_valves # atmos area (M1a): SSair shutoff queue; listed in memory_lists_audit.md, not edited here
 /datum/design_techweb/materials # composition rewrite: design materials are being replaced; not edited here
+/datum/dq_containment_listener/events # containment (C1/C4): landed on master unlisted; not edited here
+/datum/dq_rx_nodes/cells # reactive nodes: landed on master unlisted; singleton-like engine state, not edited here
+/datum/dq_rx_nodes/node_watches # reactive nodes: landed on master unlisted; not edited here
+/datum/dq_rx_nodes/values # reactive nodes: landed on master unlisted; not edited here
+/datum/dq_rx_nodes/watches # reactive nodes: landed on master unlisted; not edited here
 /datum/hot_group/spot_list # atmos area (M1a): LINDA fire hotspot groups; listed in memory_lists_audit.md, not edited here
 /datum/interaction_resolution/available # interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
 /datum/interaction_resolution/blocked # interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
+/datum/interaction_resolution/priorities # interaction area (I3/I4/I6): resolver result lists; not edited here
 /datum/pipeline/leaks # atmos area (M1a): pipeline leaks; listed in memory_lists_audit.md, not edited here
+/datum/powernet/nodes # M3 power (Rust): powernet.dm was rewritten on master; not edited here
+/datum/rule_compiler/errors # constraints (P3): compiler state; landed on master unlisted, not edited here
+/datum/rule_compiler/triggers # constraints (P3): compiler state; landed on master unlisted, not edited here
 /obj/effect/decal/cleanable/blood/drip/drips # medical session: merged in code/modules/organs/blood.dm; listed in memory_lists_audit.md, not edited here
 /obj/effect/decal/cleanable/blood/viruses # medical session: disease data on blood decals; listed in memory_lists_audit.md, not edited here
 /obj/effect/decal/cleanable/mucus/viruses # medical session: disease data on decals; listed in memory_lists_audit.md, not edited here
@@ -502,6 +468,7 @@
 /obj/machinery/atmospherics/omni/mixer/mixing_inputs # atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
 /obj/machinery/atmospherics/omni/ports # atmos area (M1a): omni pipe device ports; listed in memory_lists_audit.md, not edited here
 /obj/machinery/atmospherics/trinary/atmos_filter/filtered_out # atmos area (M1a): trinary filter pipe device; listed in memory_lists_audit.md, not edited here
+/obj/machinery/power/sensor/history # M3 power (Rust): sensor code rewritten on master; not edited here
 
 # Mobs: few at boot.
 /mob/active_genes # mob: 15 mobs at boot; per-instance state, see audit
@@ -602,3 +569,4 @@
 /mob/vore_fullness_ex # mob: 15 mobs at boot; per-instance state, see audit
 /mob/vore_icon_bellies # mob: 15 mobs at boot; per-instance state, see audit
 /mob/weight_messages # mob: 15 mobs at boot; per-instance state, see audit
+

@@ -70,7 +70,7 @@
 		return FALSE
 
 	var/obj/structure/blob/B = null
-	var/list/potential_blobs = GLOB.all_blobs.Copy()
+	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
 		var/obj/structure/blob/temp = pick(potential_blobs)
 		if(!(locate(/obj/structure/blob/node) in range(temp, BLOB_NODE_PULSE_RANGE) ) && !(locate(/obj/structure/blob/core) in range(temp, BLOB_CORE_PULSE_RANGE) ))
@@ -113,7 +113,7 @@
 		return FALSE
 
 	var/obj/structure/blob/B = null
-	var/list/potential_blobs = GLOB.all_blobs.Copy()
+	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
 		var/obj/structure/blob/temp = pick(potential_blobs)
 		if(!(locate(/obj/structure/blob/node) in range(temp, BLOB_NODE_PULSE_RANGE) ) && !(locate(/obj/structure/blob/core) in range(temp, BLOB_CORE_PULSE_RANGE) ))
@@ -157,7 +157,7 @@
 		return FALSE
 
 	var/obj/structure/blob/B = null
-	var/list/potential_blobs = GLOB.all_blobs.Copy()
+	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
 		var/obj/structure/blob/temp = pick(potential_blobs)
 		if(locate(/obj/structure/blob/node) in range(temp, 5) )

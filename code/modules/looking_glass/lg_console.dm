@@ -45,9 +45,6 @@
 		secret_programs["Teshari 1"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "sca")
 		secret_programs["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
 
-/obj/machinery/computer/looking_glass/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/computer/looking_glass/attack_hand(mob/user as mob)
 	if(..())
 		return

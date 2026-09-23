@@ -112,11 +112,14 @@
 	else
 		dissipate() //sing code has a much better system.
 
+/// Miniballs only orbit a real ball; they don't count as singularities.
+/obj/singularity/energy_ball/skips_registry(registry_id)
+	return miniball && registry_id == REGISTRY_SINGULARITIES
+
 /obj/singularity/energy_ball/proc/new_mini_ball()
 	if(!loc)
 		return
 	var/obj/singularity/energy_ball/EB = new(loc, 0, TRUE)
-	GLOB.all_singularities -= EB //why are these miniballs even singularities in the first place, they don't do anything
 
 	EB.transform *= pick(0.3, 0.4, 0.5, 0.6, 0.7)
 	var/icon/I = icon(icon,icon_state,dir)

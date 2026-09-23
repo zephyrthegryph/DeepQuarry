@@ -57,9 +57,6 @@
 	else
 		icon_state = "[initial(icon_state)]_off"
 
-/obj/machinery/pda_multicaster/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/pda_multicaster/attack_hand(mob/user)
 	toggle_power(user)
 

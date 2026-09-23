@@ -284,6 +284,11 @@
 			for(var/datum/reagent/ingested in patient.reagents.reagent_list)
 				UNTYPED_LIST_ADD(ingested_reagents, list("name" = ingested.name, "volume" = ingested.volume))
 
+		var/datum/diagnosis/D = patient.diagnose(/datum/diagnostic_profile/automation)
+		var/list/findings = list()
+		for(var/datum/diagnosis_finding/F as anything in D?.findings)
+			UNTYPED_LIST_ADD(findings, list("name" = F.name, "band" = F.band))
+		qdel(D)
 		patient_data = list(
 			"name" = patient.name,
 			"stat" = patient.stat,
@@ -292,10 +297,7 @@
 			// Old +100..-100 readout scale, derived from vitality.
 			"health" = round((2 * patient.vitality() - 1) * 100),
 			"max_health" = 100,
-			"brute" = round(patient.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1),
-			"oxy" = round(patient.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1),
-			"tox" = round(patient.injury_load(INJURY_CATEGORY_TOXIC), 0.1),
-			"burn" = round(patient.injury_load(INJURY_CATEGORY_THERMAL), 0.1),
+			"findings" = findings,
 			"paralysis" = patient.paralysis,
 			"braindamage" = !!patient.injury_load(INJURY_CATEGORY_NEURAL),
 			"clonedamage" = !!patient.injury_load(INJURY_CATEGORY_GENETIC),
@@ -494,7 +496,7 @@
 			'sound/vore/digest12.ogg')
 		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	//If the timing is right, and there are items to be touched
-	if(SSair.times_fired%3==1 && length(touchable_items)) // LINDA renamed current_cycle → times_fired
+	if(SSair.times_fired%3==1 && length(touchable_items))
 
 		//Burn all the mobs or add them to the exclusion list
 		var/volume = 0
@@ -576,9 +578,10 @@
 				else
 					if(volume && water)
 						water.add_charge(volume)
-					if(recycles && T.matter)
-						for(var/material in T.matter)
-							var/total_material = T.matter[material]
+					var/list/item_matter = T.material_totals()
+					if(recycles && length(item_matter))
+						for(var/material in item_matter)
+							var/total_material = item_matter[material]
 							if(istype(T,/obj/item/stack))
 								var/obj/item/stack/stack = T
 								total_material *= stack.get_amount()

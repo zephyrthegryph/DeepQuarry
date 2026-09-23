@@ -254,7 +254,7 @@
 
 /obj/effect/overmap/visitable/ship/populate_sector_objects()
 	..()
-	for(var/obj/machinery/computer/ship/S in GLOB.machines)
+	for(var/obj/machinery/computer/ship/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		S.attempt_hook_up(src)
 	for(var/datum/ship_engine/E in GLOB.ship_engines)
 		if(check_ownership(E.holder))

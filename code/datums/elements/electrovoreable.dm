@@ -30,7 +30,7 @@
 	var/obj/item/cell/source_cell = source
 
 	// HELP: obligate electrovores only (charge the cell)
-	if(living_user.a_intent == I_HELP && HAS_TRAIT(living_user, TRAIT_ELECTROVORE_OBLIGATE))
+	if(IS_HELPING(living_user) && HAS_TRAIT(living_user, TRAIT_ELECTROVORE_OBLIGATE))
 		if(source_cell.charge >= source_cell.maxcharge)
 			return COMPONENT_CANCEL_ATTACK_CHAIN
 
@@ -55,7 +55,7 @@
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 
 	// HURT: drain energy for nutrition (obligate + freeform)
-	if(living_user.a_intent == I_HURT)
+	if(IS_HARMING(living_user))
 		if(!source_cell.charge)
 			living_user.show_message(span_warning("You take a look at [source_cell] and notice it has nothing in it!"))
 			return COMPONENT_CANCEL_ATTACK_CHAIN

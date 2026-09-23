@@ -476,7 +476,7 @@
 	desc = "A metal tile fit for covering a section of floor."
 	icon_state = "tile"
 	force = 6.0
-	matter = list(DEFAULT_WALL_MATERIAL = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, SHEET_MATERIAL_AMOUNT / 4)
 	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
@@ -518,7 +518,7 @@
 	name = "steel floor tile"
 	singular_name = "steel floor tile"
 	icon_state = "tile_steel"
-	matter = list(MAT_PLASTEEL = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_PLASTEEL, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/plasteel
 	no_variants = FALSE
 
@@ -526,7 +526,7 @@
 	name = "steel floor tile"
 	singular_name = "steel floor tile"
 	icon_state = "tile_steel"
-	matter = list(MAT_PLASTEEL = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_PLASTEEL, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/plasteel
 	no_variants = FALSE
 
@@ -534,7 +534,7 @@
 	name = "white floor tile"
 	singular_name = "white floor tile"
 	icon_state = "tile_white"
-	matter = list(MAT_PLASTIC = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_PLASTIC, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/plastic
 	no_variants = FALSE
 
@@ -555,7 +555,7 @@
 	name = "dark floor tile"
 	singular_name = "dark floor tile"
 	icon_state = "tile_steel"
-	matter = list(MAT_PLASTEEL = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_PLASTEEL, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/plasteel
 	no_variants = FALSE
 
@@ -563,7 +563,7 @@
 	name = "freezer floor tile"
 	singular_name = "freezer floor tile"
 	icon_state = "tile_freezer"
-	matter = list(MAT_PLASTIC = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_PLASTIC, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/plastic
 	no_variants = FALSE
 
@@ -571,7 +571,7 @@
 	name = "floor tile synthesizer"
 	desc = "A device that makes floor tiles."
 	gender = NEUTER
-	matter = null
+	MATERIAL_NONE
 	uses_charge = 1
 	charge_costs = list(250)
 	stacktype = /obj/item/stack/tile/floor
@@ -639,7 +639,7 @@
 	name = "gold floor tile"
 	singular_name = "gold floor tile"
 	icon_state = "tile-gold"
-	matter = list(MAT_GOLD = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_GOLD, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/gold
 	no_variants = FALSE
 
@@ -647,7 +647,7 @@
 	name = "silver floor tile"
 	singular_name = "silver floor tile"
 	icon_state = "tile-silver"
-	matter = list(MAT_SILVER = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_SILVER, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/silver
 	no_variants = FALSE
 
@@ -655,7 +655,7 @@
 	name = "phoron floor tile"
 	singular_name = "phoron floor tile"
 	icon_state = "tile-phoron"
-	matter = list(MAT_PHORON = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_PHORON, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/phoron
 	no_variants = FALSE
 
@@ -663,7 +663,7 @@
 	name = "diamond floor tile"
 	singular_name = "diamond floor tile"
 	icon_state = "tile-diamond"
-	matter = list(MAT_DIAMOND = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_DIAMOND, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/diamond
 	no_variants = FALSE
 
@@ -671,6 +671,6 @@
 	name = "uranium floor tile"
 	singular_name = "uranium floor tile"
 	icon_state = "tile-uranium"
-	matter = list(MAT_URANIUM = SHEET_MATERIAL_AMOUNT / 4)
+	MATERIAL_BULK(MAT_URANIUM, SHEET_MATERIAL_AMOUNT / 4)
 	welds_into = /obj/item/stack/material/uranium
 	no_variants = FALSE

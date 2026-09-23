@@ -49,9 +49,6 @@
 /obj/machinery/hyperpad/inoperable() //A lame way of making this machine always useable
 	return 0
 
-/obj/machinery/hyperpad/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/hyperpad/centre/attack_ghost(mob/observer/dead/ghost)
 	. = ..()
 	if(.)

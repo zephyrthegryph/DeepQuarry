@@ -243,13 +243,16 @@
 	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/gum = 5)
-	can_hold = list(/obj/item/clothing/mask/chewable/candy/gum,
-					/obj/item/trash/spitgum)
 	use_sound = 'sound/items/drop/paper.ogg'
 	drop_sound = 'sound/items/drop/wrapper.ogg'
 	max_storage_space = 5
 	foldable = null
 	trash = /obj/item/trash/gumpack
+
+/obj/item/storage/box/gum/hold_constraint()
+	var/list/holds = list(/obj/item/clothing/mask/chewable/candy/gum,
+					/obj/item/trash/spitgum)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/clothing/mask/chewable/candy/lolli
 	name = "lollipop"
@@ -350,12 +353,15 @@
 	item_state = "pocky"
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/pocky = 8)
-	can_hold = list(/obj/item/clothing/mask/chewable/candy/pocky)
 	use_sound = 'sound/items/drop/paper.ogg'
 	drop_sound = 'sound/items/drop/wrapper.ogg'
 	max_storage_space = 8
 	foldable = null
 	trash = /obj/item/trash/pocky
+
+/obj/item/storage/box/pocky/hold_constraint()
+	var/list/holds = list(/obj/item/clothing/mask/chewable/candy/pocky)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/clothing/mask/chewable/candy/pocky
 	name = "chocolate pocky"

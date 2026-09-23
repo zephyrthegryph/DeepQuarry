@@ -210,7 +210,7 @@
 	. += span_notice("Alt-click to recolor it.")
 
 /obj/item/toy/sword/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool) && !active)
+	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
 		else
@@ -726,11 +726,11 @@
 		else
 			searching = FALSE
 
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
-	else if (user.a_intent == I_GRAB)
+	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes the [src]."),span_notice("You poke the [src]."))
@@ -849,11 +849,11 @@
 
 	if(world.time - last_message <= 1 SECOND)
 		return
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
-	else if (user.a_intent == I_GRAB)
+	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]."),span_notice("You poke [src]."))
@@ -1475,11 +1475,11 @@
 /obj/structure/balloon/attack_hand(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]!"),span_notice("You poke [src]!"))
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
-	else if (user.a_intent == I_GRAB)
+	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to pop [src]!"),span_warning("You attempt to pop [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " lightly bats the [src]."),span_notice("You lightly bat the [src]."))
@@ -1533,7 +1533,7 @@
 	icon_state = "teppialt"
 
 /obj/item/toy/plushie/teppi/attack_self(mob/user as mob)
-	if(user.a_intent == I_HURT || user.a_intent == I_GRAB)
+	if(IS_HARMING(user) || IS_GRABBING(user))
 		playsound(user, 'sound/voice/teppi/roar.ogg', 10, 0)
 	else
 		var/teppi_noise = pick(
@@ -1560,7 +1560,7 @@
 
 /obj/item/clothing/gloves/ring/buzzer/toy/zap(mob/living/carbon/human/user, atom/movable/target, proximity)
 	. = FALSE
-	if(user.a_intent == I_HELP && battery.percent() >= 50)
+	if(IS_HELPING(user) && battery.percent() >= 50)
 		if(isliving(target))
 			var/mob/living/L = target
 
@@ -2115,7 +2115,7 @@
 /obj/item/handcuffs/fake
 	name = "plastic handcuffs"
 	desc = "Use this to keep plastic prisoners in line."
-	matter = list(PLASTIC = 500)
+	MATERIAL_BULK(MAT_PLASTIC, 500) // Was list(PLASTIC = 500): a "PLASTIC" key, no such material.
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
 	breakouttime = 30
@@ -2134,11 +2134,14 @@
 	icon_state = "handcuff"
 	starts_with = list(/obj/item/handcuffs/fake = 1, /obj/item/handcuffs/legcuffs/fake = 1)
 	foldable = null
-	can_hold = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake)
 
 /*
  * Toy nuke
  */
+
+/obj/item/storage/box/handcuffs/fake/hold_constraint()
+	var/list/holds = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/toy/nuke
 	name = "\improper Nuclear Fission Explosive toy"
 	desc = "A plastic model of a Nuclear Fission Explosive."
@@ -2509,8 +2512,6 @@
 	desc = "A toy recreation of the Time Capsule from Professor Who. Can hold up to two action figures."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "time_cap"
-	can_hold = list(/obj/item/toy/figure)
-	max_w_class = ITEMSIZE_TINY
 	max_storage_space = ITEMSIZE_COST_TINY * 2
 	use_sound = 'sound/machines/click.ogg'
 	drop_sound = 'sound/items/drop/accessory.ogg'
@@ -2519,6 +2520,10 @@
 /*
  * Action figures
  */
+
+/obj/item/storage/box/timecap/hold_constraint()
+	var/list/holds = list(/obj/item/toy/figure)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
 /obj/item/toy/figure/ranger
 	name = "Space Ranger action figure"
 	desc = "A \"Space Life\" brand Space Ranger action figure."

@@ -52,7 +52,6 @@
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
 	use_sound = 'sound/items/storage/smolecase.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
@@ -65,6 +64,9 @@
 
 //Track code
 //defineing actions
+
+/obj/item/storage/smolebrickcase/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/structure/smoletrack
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	color = "#ffffff"
@@ -75,7 +77,7 @@
 	AddElement(/datum/element/rotatable)
 
 /obj/structure/smoletrack/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
@@ -155,7 +157,7 @@
 
 //makes it so buildings can be dismaintaled or GodZilla style attacked
 /obj/structure/smolebuilding/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
@@ -165,7 +167,7 @@
 			new /obj/item/stack/material/smolebricks(loc)
 		qdel(src)
 
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
@@ -209,7 +211,7 @@
 
 //get material from ruins
 /obj/structure/smoleruins/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
@@ -369,7 +371,6 @@
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "sp_storage"
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
 	drop_sound = 'sound/items/drop/food.ogg'
 	pickup_sound = 'sound/items/pickup/food.ogg'
@@ -377,3 +378,6 @@
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b,/obj/item/reagent_containers/food/snacks/snackplanet/moon,
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	)
+
+/obj/item/storage/bagoplanets/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))

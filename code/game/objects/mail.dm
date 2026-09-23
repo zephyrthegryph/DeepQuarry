@@ -362,10 +362,11 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 	w_class = ITEMSIZE_NORMAL
 	storage_slots = 31
 	max_storage_space = 50
-	max_w_class = ITEMSIZE_NORMAL
 	use_to_pickup = TRUE
 	allow_quick_gather = TRUE
-	can_hold = list(
+
+/obj/item/storage/bag/mail/hold_constraint()
+	var/list/holds = list(
 		/obj/item/mail,
 		/obj/item/smallDelivery,
 		/obj/item/paper,
@@ -374,6 +375,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 		/obj/item/mail_scanner,
 		/obj/item/pen
 	)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/bag/mail/borg
 	name = "letter compartment"

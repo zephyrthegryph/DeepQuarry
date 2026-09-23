@@ -7,6 +7,9 @@
 
 /mob/proc/addDisease(datum/disease/D)
 	LAZYADD(viruses, D)
+	var/mob/living/L = src
+	if(istype(L))
+		L.life_wake(LIFE_SYS_UPKEEP, "disease")
 	return TRUE
 
 /mob/proc/RemoveDisease(datum/disease/D)
@@ -176,6 +179,11 @@
 	phase = LIFE_PHASE_BODY
 	order = 50
 	segment = LIFE_SEG_LIVING
+	woken_by = "addDisease()"
+
+/// Continuous only while the mob carries a virus.
+/datum/life_system/diseases/idle(mob/living/self)
+	return !self.has_viruses()
 
 /// Virus spread and stages. Runs dead or alive, only while the mob carries a virus.
 /datum/life_system/diseases/tick(mob/living/self, datum/life_context/ctx)

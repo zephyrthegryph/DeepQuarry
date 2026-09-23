@@ -13,7 +13,7 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	matter = list(DEFAULT_WALL_MATERIAL = 50000)
+	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 50000)
 	preserve_item = TRUE // RCDs are pretty important.
 	var/datum/effect/effect/system/spark_spread/spark_system
 	var/stored_matter = 0
@@ -332,13 +332,13 @@
 	icon_state = "rcd"
 	item_state = "rcdammo"
 	w_class = ITEMSIZE_SMALL
-	matter = list(DEFAULT_WALL_MATERIAL = 30000,MAT_GLASS = 15000)
+	MATERIAL_MIX(list(DEFAULT_WALL_MATERIAL = 30000,MAT_GLASS = 15000))
 	var/remaining = RCD_MAX_CAPACITY / 0.75
 
 /obj/item/rcd_ammo/large
 	name = "high-capacity matter cartridge"
 	desc = "Do not ingest."
-	matter = list(DEFAULT_WALL_MATERIAL = 45000,MAT_GLASS = 22500)
+	MATERIAL_MIX(list(DEFAULT_WALL_MATERIAL = 45000,MAT_GLASS = 22500))
 	remaining = RCD_MAX_CAPACITY * 2
 
 

@@ -30,9 +30,6 @@
 	attack_hand(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/telecomms/attack_ai(mob/user as mob)
-	attack_hand(user)
-
 /obj/machinery/telecomms/tgui_data(mob/user)
 	var/list/data = list()
 
@@ -88,7 +85,8 @@
 
 /obj/machinery/telecomms/tgui_status(mob/user)
 	if(!issilicon(user))
-		if(!istype(user.get_active_hand(), /obj/item/multitool))
+		var/obj/item/hand_item = user.get_active_hand()
+		if(!hand_item?.get_multitool())
 			return STATUS_CLOSE
 	. = ..()
 
@@ -125,14 +123,14 @@
 
 	var/obj/item/multitool/P = null
 	// Let's double check
-	if(!issilicon(user) && istype(user.get_active_hand(), /obj/item/multitool))
-		P = user.get_active_hand()
+	var/obj/item/held = user.get_active_hand()
+	if(!issilicon(user))
+		P = held?.get_multitool()
 	else if(isAI(user))
 		var/mob/living/silicon/ai/U = user
 		P = U.aiMulti
 	else if(isrobot(user) && in_range(user, src))
-		if(istype(user.get_active_hand(), /obj/item/multitool))
-			P = user.get_active_hand()
+		P = held?.get_multitool()
 	return P
 
 // Additional Options for certain machines. Use this when you want to add an option to a specific machine.

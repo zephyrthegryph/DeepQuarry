@@ -3,6 +3,8 @@
 GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 /obj/item/tank
+	material_template = /datum/material_template/pressure
+	material_total = SHEET_MATERIAL_AMOUNT
 	name = "tank"
 	icon = 'icons/obj/tank.dmi'
 	sprite_sheets = list(
@@ -61,7 +63,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 /obj/item/tank/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
+	apply_blueprint_effects()
 
 	src.init_proxy()
 	src.air_contents = new /datum/gas_mixture()
@@ -137,7 +139,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		. += span_warning("\The [src] emergency relief valve has been welded shut!")
 
 
-/obj/item/tank/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/item/tank/attackby(obj/item/W as obj, mob/user as mob)
 	..()
 	if (istype(src.loc, /obj/item/assembly))
 		icon = src.loc
@@ -154,47 +156,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			to_chat(user, span_notice("You attach the wires to the tank."))
 			src.add_bomb_overlay()
 
-	if(tool_quality == TOOL_WIRECUTTER)
-		if(wired && src.proxyassembly.assembly)
-
-			to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
-			if(do_after(user, 10 SECONDS, target = src))
-				wired = 0
-				cut_overlay("bomb_assembly")
-				to_chat(user, span_notice("You cut the wire and remove the device."))
-
-				var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
-				if(assy.a_left && assy.a_right)
-					assy.dropInto(user.loc)
-					assy.master = null
-					src.proxyassembly.assembly = null
-				else
-					if(!src.proxyassembly.assembly.a_left)
-						assy.a_right.dropInto(user.loc)
-						assy.a_right.holder = null
-						assy.a_right = null
-						src.proxyassembly.assembly = null
-						qdel(assy)
-				cut_overlays()
-				last_gauge_pressure = 0
-				update_gauge()
-
-			else
-				to_chat(user, span_danger("You slip and bump the igniter!"))
-				if(prob(85))
-					src.proxyassembly.receive_signal()
-
-		else if(wired)
-			if(do_after(user, 1 SECOND, target = src))
-				to_chat(user, span_notice("You quickly clip the wire from the tank."))
-				wired = 0
-				cut_overlay("bomb_assembly")
-
-		else
-			to_chat(user, span_notice("There are no wires to cut!"))
-
-
-
 	if(istype(W, /obj/item/assembly_holder))
 		if(wired)
 			to_chat(user, span_notice("You begin attaching the assembly to \the [src]."))
@@ -208,39 +169,69 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		else
 			to_chat(user, span_notice("You need to wire the device up first."))
 
-
-	if(tool_quality == TOOL_WELDER)
-		var/obj/item/weldingtool/WT = W
-		if(WT.remove_fuel(1,user))
-			if(!valve_welded)
-				to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
-				if(do_after(user, 4 SECONDS, target = src))
-					to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
-					src.valve_welded = 1
-					src.leaking = 0
-				else
-					GLOB.bombers += "[key_name(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]"
-					message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
-					if(WT.welding)
-						to_chat(user, span_danger("You accidentally rake \the [W] across \the [src]!"))
-						max_integrity -= rand(20,60)
-						if(get_integrity() > max_integrity)
-							update_integrity(max_integrity)
-						src.air_contents.add_thermal_energy(rand(2000,50000))
-				WT.eyecheck(user)
-			else
-				to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
-		add_fingerprint(user)
-
-
-
 /obj/item/tank/wirecutter_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WIRECUTTER)
-	return TRUE
+	if(wired && src.proxyassembly.assembly)
+
+		to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
+		if(do_after(user, 10 SECONDS, target = src))
+			wired = 0
+			cut_overlay("bomb_assembly")
+			to_chat(user, span_notice("You cut the wire and remove the device."))
+
+			var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
+			if(assy.a_left && assy.a_right)
+				assy.dropInto(user.loc)
+				assy.master = null
+				src.proxyassembly.assembly = null
+			else
+				if(!src.proxyassembly.assembly.a_left)
+					assy.a_right.dropInto(user.loc)
+					assy.a_right.holder = null
+					assy.a_right = null
+					src.proxyassembly.assembly = null
+					qdel(assy)
+			cut_overlays()
+			last_gauge_pressure = 0
+			update_gauge()
+
+		else
+			to_chat(user, span_danger("You slip and bump the igniter!"))
+			if(prob(85))
+				src.proxyassembly.receive_signal()
+
+	else if(wired)
+		if(do_after(user, 1 SECOND, target = src))
+			to_chat(user, span_notice("You quickly clip the wire from the tank."))
+			wired = 0
+			cut_overlay("bomb_assembly")
+
+	else
+		to_chat(user, span_notice("There are no wires to cut!"))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/tank/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	var/obj/item/weldingtool/WT = tool.get_welder()
+	if(WT?.remove_fuel(1,user))
+		if(!valve_welded)
+			to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
+			if(do_after(user, 4 SECONDS, target = src))
+				to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
+				src.valve_welded = 1
+				src.leaking = 0
+			else
+				GLOB.bombers += "[key_name(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]"
+				message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
+				if(WT.welding)
+					to_chat(user, span_danger("You accidentally rake \the [tool] across \the [src]!"))
+					max_integrity -= rand(20,60)
+					if(get_integrity() > max_integrity)
+						update_integrity(max_integrity)
+					src.air_contents.add_thermal_energy(rand(2000,50000))
+			WT.eyecheck(user)
+		else
+			to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
+	add_fingerprint(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/tank/attack_self(mob/user)
 	. = ..(user)

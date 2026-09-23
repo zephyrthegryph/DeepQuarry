@@ -400,7 +400,7 @@
 	name = "broken component"
 	icon = 'icons/obj/robot_component.dmi'
 	icon_state = "broken"
-	matter = list(MAT_STEEL = 1000)
+	MATERIAL_BULK(MAT_STEEL, 1000)
 
 /obj/item/broken_device/random
 	var/static/list/possible_icons = list("binradio_broken",

@@ -220,10 +220,10 @@
 	M.extinguish_mob()
 	M.fire_stacks = 0
 	M.remove_a_modifier_of_type(/datum/modifier/poisoned)
-	if(M.bodytemperature > 310)
-		M.bodytemperature = max(310, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
+	if(M.bodytemperature > BODYTEMP_NORMAL)
+		M.bodytemperature = max(BODYTEMP_NORMAL, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
 	else if(M.bodytemperature < 311)
-		M.bodytemperature = min(310, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
+		M.bodytemperature = min(BODYTEMP_NORMAL, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = 5
@@ -794,12 +794,13 @@
 	wiki_flag = WIKI_SPOILER
 	supply_conversion_value = REFINERYEXPORT_VALUE_NO
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
+	// Clog the lungs' exchange surfaces.
+	factors = alist(BF_GAS_EXCHANGE = 0.5)
 
 /datum/reagent/defective_nanites/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure_many(alist(
 		INJURY_BLUNT = 2 * removed,
 		INJURY_BURN = 2 * removed,
-		INJURY_ASPHYXIA = 4 * removed,
 		INJURY_TOXIN = 2 * removed,
 		INJURY_CELLULAR = 2 * removed,
 	), source = src)

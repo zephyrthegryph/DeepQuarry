@@ -13,6 +13,8 @@ Thus, the two variables affect pump operation are set in New():
 */
 
 /obj/machinery/atmospherics/binary/pump
+	material_template = /datum/material_template/pump
+	material_total = 4 * SHEET_MATERIAL_AMOUNT
 	icon = 'icons/atmos/pump.dmi'
 	icon_state = "map_off"
 	construction_type = /obj/item/pipe/directional
@@ -46,7 +48,6 @@ Thus, the two variables affect pump operation are set in New():
 
 /obj/machinery/atmospherics/binary/pump/Initialize(mapload)
 	. = ..()
-	ensure_pump_materials()
 
 	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
@@ -273,9 +274,6 @@ Thus, the two variables affect pump operation are set in New():
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/pump/attack_ghost(mob/user)
-	tgui_interact(user)
-
 /obj/machinery/atmospherics/binary/pump/attack_hand(mob/user)
 	if(..())
 		return
@@ -324,9 +322,7 @@ Thus, the two variables affect pump operation are set in New():
 		to_chat(user, span_warning("You cannot unwrench this [src], it too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, W.usesound, 50, 1)
-	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
-	if (do_after(user, 40 * W.toolspeed, target = src))
+	if (use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]..."))
 		user.visible_message( \
 			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
 			span_notice("You have unfastened \the [src]."), \

@@ -9,7 +9,7 @@
 	throwforce = 5
 	throw_speed = 4
 	throw_range = 20
-	matter = list(MAT_STEEL = 30,MAT_GLASS = 20)
+	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 20))
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 

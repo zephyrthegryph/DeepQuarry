@@ -119,7 +119,7 @@
 	TEST_ASSERT_NOTNULL(A, "airway edema should afflict")
 	A.set_severity(100)
 	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 20), "edema at full severity should raise the heart rate by 20, got [H.factor(BF_HEART_RATE)]")
-	TEST_ASSERT(dq_near(H.factor(BF_O2_SAT), -8), "edema at full severity should drop saturation by 8")
+	TEST_ASSERT(dq_near(H.factor(BF_BP_SYSTOLIC), -15), "edema at full severity should drop systolic pressure by 15")
 
 	A.set_severity(50)
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "crossing a severity band should mark the factors dirty")

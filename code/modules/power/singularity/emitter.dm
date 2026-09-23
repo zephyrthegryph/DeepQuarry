@@ -1,4 +1,6 @@
 /obj/machinery/power/emitter
+	material_template = /datum/material_template/energy_device
+	material_total = 10 * SHEET_MATERIAL_AMOUNT
 	name = "emitter"
 	desc = "It is a heavy duty industrial laser."
 	icon = 'icons/obj/singularity.dmi'
@@ -157,7 +159,6 @@
 		return
 
 	if(tool_quality == TOOL_WELDER)
-		var/obj/item/weldingtool/WT = W.get_welder()
 		if(active)
 			to_chat(user, "Turn off [src] first.")
 			return
@@ -165,31 +166,21 @@
 			if(0)
 				to_chat(user, span_warning("\The [src] needs to be wrenched to the floor."))
 			if(1)
-				if (WT.remove_fuel(0,user))
-					playsound(src, WT.usesound, 50, 1)
-					user.visible_message("[user.name] starts to weld [src] to the floor.", \
-						"You start to weld [src] to the floor.", \
-						"You hear welding")
-					if (do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-						if(!src || !WT.isOn()) return
-						state = 2
-						to_chat(user, "You weld [src] to the floor.")
-						connect_to_network()
-				else
-					to_chat(user, span_warning("You need more welding fuel to complete this task."))
+				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
+						message_self = "You start to weld [src] to the floor.", message_others = "[user.name] starts to weld [src] to the floor."))
+					if(!src)
+						return
+					state = 2
+					to_chat(user, "You weld [src] to the floor.")
+					connect_to_network()
 			if(2)
-				if (WT.remove_fuel(0,user))
-					playsound(src, WT.usesound, 50, 1)
-					user.visible_message("[user.name] starts to cut [src] free from the floor.", \
-						"You start to cut [src] free from the floor.", \
-						"You hear welding")
-					if (do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-						if(!src || !WT.isOn()) return
-						state = 1
-						to_chat(user, "You cut [src] free from the floor.")
-						disconnect_from_network()
-				else
-					to_chat(user, span_warning("You need more welding fuel to complete this task."))
+				if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
+						message_self = "You start to cut [src] free from the floor.", message_others = "[user.name] starts to cut [src] free from the floor."))
+					if(!src)
+						return
+					state = 1
+					to_chat(user, "You cut [src] free from the floor.")
+					disconnect_from_network()
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_SUCCESS
@@ -320,7 +311,6 @@
 
 /obj/machinery/power/emitter/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_ENERGY_DEVICE, 10 * SHEET_MATERIAL_AMOUNT)
 	previous_state = state
 	if(state == 2 && anchored)
 		connect_to_network()

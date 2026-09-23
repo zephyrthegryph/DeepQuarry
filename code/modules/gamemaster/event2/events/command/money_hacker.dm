@@ -34,7 +34,7 @@
 	Notifications will be sent as updates occur."
 	var/my_department = "[location_name()] Firewall Subroutines"
 
-	for(var/obj/machinery/message_server/MS in GLOB.machines)
+	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!MS.active)
 			continue
 		MS.send_rc_message(JOB_HEAD_OF_PERSONNEL + "'s Desk", my_department, "[message]<br>", "", "", 2)
@@ -55,7 +55,7 @@
 
 	var/my_department = "[location_name()] Firewall Subroutines"
 
-	for(var/obj/machinery/message_server/MS in GLOB.machines)
+	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!MS.active) continue
 		MS.send_rc_message(JOB_HEAD_OF_PERSONNEL + "'s Desk", my_department, message, "", "", 2)
 

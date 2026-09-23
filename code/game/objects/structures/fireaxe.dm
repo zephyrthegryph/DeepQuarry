@@ -30,10 +30,10 @@
 	// Seriously why the fuck is this even a closet aghasjdhasd I hate you
 
 	if (isrobot(user) || locked)
-		if(istype(O, /obj/item/multitool))
+		if(O.has_tool_quality(TOOL_MULTITOOL))
 			to_chat(user, span_warning("Resetting circuitry..."))
 			playsound(src, 'sound/machines/lockreset.ogg', 50, 1)
-			if(do_after(user, 2 SECONDS * O.toolspeed, target = src))
+			if(use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0))
 				locked = 0
 				to_chat(user, span_warning("You disable the locking modules."))
 				update_icon()
@@ -75,7 +75,7 @@
 	else
 		if(smashed)
 			return
-		if(istype(O, /obj/item/multitool))
+		if(O.has_tool_quality(TOOL_MULTITOOL))
 			if(open)
 				open = 0
 				update_icon()
@@ -84,7 +84,7 @@
 			else
 				to_chat(user, span_warning("Resetting circuitry..."))
 				playsound(src, 'sound/machines/lockenable.ogg', 50, 1)
-				if(do_after(user, 2 SECONDS * O.toolspeed, target = src))
+				if(use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0))
 					locked = 1
 					to_chat(user, span_warning("You re-enable the locking modules."))
 				return

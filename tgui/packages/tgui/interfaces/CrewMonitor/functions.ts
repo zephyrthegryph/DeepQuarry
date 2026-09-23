@@ -24,8 +24,29 @@ export function getStatColor(cm: Crewmember) {
   return 'green';
 }
 
-export function getTotalDamage(cm: Crewmember) {
-  return cm.brute + cm.fire + cm.oxy + cm.tox;
+// How badly off a crewmember is, for sorting: lost vitality, with the dead
+// and the critical at the top.
+export function getSeverity(cm: Crewmember) {
+  if (cm.dead) {
+    return 300;
+  }
+  if (cm.condition === 'critical') {
+    return 200;
+  }
+  return 100 - (cm.vitality ?? 100);
+}
+
+const CONDITION_INFO: Record<string, { label: string; color: string }> = {
+  dead: { label: 'Flatline', color: 'red' },
+  critical: { label: 'Critical', color: 'red' },
+  severe: { label: 'Serious', color: 'orange' },
+  moderate: { label: 'Injured', color: 'yellow' },
+  minor: { label: 'Fair', color: 'olive' },
+  uninjured: { label: 'Stable', color: 'green' },
+};
+
+export function getConditionInfo(cm: Crewmember) {
+  return CONDITION_INFO[cm.condition ?? ''] ?? null;
 }
 
 function crewStatus(
@@ -107,8 +128,7 @@ export function getSortedCrew(
       if (sortType === 'damage') {
         const sorted = shownCrew.sort(
           (a, b) =>
-            getTotalDamage(a) - getTotalDamage(b) ||
-            a.name.localeCompare(b.name),
+            getSeverity(a) - getSeverity(b) || a.name.localeCompare(b.name),
         );
         if (damageSortOrder) {
           return sorted.reverse();

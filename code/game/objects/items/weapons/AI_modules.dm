@@ -17,7 +17,7 @@ AI MODULES
 	throw_speed = 3
 	throw_range = 15
 	preserve_item = 1
-	matter = list(MAT_STEEL = 30, MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30, MAT_GLASS = 10))
 	var/datum/ai_laws/laws = null
 
 /obj/item/aiModule/examine(mob/user)

@@ -9,4 +9,3 @@
  * bunch of ChangeTurf() calls.
  */
 
-GLOBAL_LIST_EMPTY(turbolifts)

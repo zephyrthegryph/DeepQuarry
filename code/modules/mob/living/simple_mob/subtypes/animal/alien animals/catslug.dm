@@ -155,8 +155,8 @@
 
 	if(stat == DEAD)
 		return ..()
-	if(M.a_intent != I_HELP)
-		if(M.a_intent == I_GRAB && hat)
+	if(!IS_HELPING(M))
+		if(IS_GRABBING(M) && hat)
 			remove_hat(M)
 			return
 		return ..()
@@ -342,7 +342,7 @@
 
 	if(stat == DEAD)
 		return ..()
-	if(M.a_intent != I_HELP)
+	if(!IS_HELPING(M))
 		return ..()
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)
@@ -441,7 +441,7 @@
 
 	if(stat == DEAD)
 		return ..()
-	if(M.a_intent != I_HELP)
+	if(!IS_HELPING(M))
 		return ..()
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)

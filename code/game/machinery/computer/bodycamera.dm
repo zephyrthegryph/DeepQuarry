@@ -17,8 +17,9 @@
 
 	var/enabled = TRUE // on or off
 
+REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGISTRY_BODYCAMERA_SCREENS)
+
 /obj/machinery/computer/security/telescreen/bodycamera/Initialize(mapload)
-	GLOB.bodycamera_screens += src
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
 

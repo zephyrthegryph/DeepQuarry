@@ -27,7 +27,7 @@
 /obj/machinery/robotic_fabricator/proc/complete_insertion(mob/user, obj/item/stack/supplied_stack)
 	var/count = 0
 	while(metal_amount < 150000 && supplied_stack.get_amount())
-		metal_amount += supplied_stack.matter[MAT_STEEL]
+		metal_amount += supplied_stack.material_totals()[MAT_STEEL]
 		supplied_stack.use(1)
 		count++
 

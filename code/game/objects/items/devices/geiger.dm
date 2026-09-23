@@ -11,7 +11,7 @@
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	item_flags = NOBLUDGEON
-	matter = list(/datum/material/steel = SHEET_MATERIAL_AMOUNT * 1.5, /datum/material/glass = SHEET_MATERIAL_AMOUNT * 1.5)
+	MATERIAL_MIX(list(/datum/material/steel = SHEET_MATERIAL_AMOUNT * 1.5, /datum/material/glass = SHEET_MATERIAL_AMOUNT * 1.5))
 
 	var/last_perceived_radiation_danger = null
 	///How strong the last radiation pulse was, at the source.
@@ -23,13 +23,13 @@
 
 	var/mounted = FALSE
 
+REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
+
 /obj/item/geiger/Initialize(mapload)
 	. = ..()
-	GLOB.geiger_counters += src
 	RegisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_pre_potential_irradiation))
 
 /obj/item/geiger/Destroy()
-	GLOB.geiger_counters -= src
 	UnregisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION)
 	return ..()
 

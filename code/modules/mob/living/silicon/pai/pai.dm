@@ -331,10 +331,10 @@
 	return
 
 /mob/living/silicon/pai/attack_hand(mob/user as mob)
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		visible_message(span_notice("\The [user] pats \the [src]."))
 		return
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		visible_message(span_danger("\The [user] boops \the [src] on the head."))
 		close_up()
 		return
@@ -373,7 +373,7 @@
 	if(!ismob(A) || A == src)
 		return
 
-	switch(a_intent)
+	switch(use_stance())
 		if(I_HELP)
 			if(isliving(A))
 				hug(src, A)
@@ -381,7 +381,7 @@
 			pai_nom(A)
 
 // Allow card inhabited machines to be interacted with
-// This has to override ClickOn because of storage depth nonsense with how pAIs are in cards in GLOB.machines
+// This has to override ClickOn because of storage depth nonsense with how pAIs are in cards in REGISTRY_MEMBERS(REGISTRY_MACHINES)
 /mob/living/silicon/pai/ClickOn(atom/A, params)
 	if(istype(A, /obj/machinery))
 		var/obj/machinery/M = A
@@ -642,30 +642,3 @@
 			else
 				icon = holo_icon_north
 
-/mob/living/silicon/pai/a_intent_change(input as text)
-	. = ..()
-
-	switch(a_intent)
-		if(I_HELP)
-			hud_used.help_intent.icon_state = "intent_help-s"
-			hud_used.disarm_intent.icon_state = "intent_disarm-n"
-			hud_used.grab_intent.icon_state = "intent_grab-n"
-			hud_used.hurt_intent.icon_state = "intent_harm-n"
-
-		if(I_DISARM)
-			hud_used.help_intent.icon_state = "intent_help-n"
-			hud_used.disarm_intent.icon_state = "intent_disarm-s"
-			hud_used.grab_intent.icon_state = "intent_grab-n"
-			hud_used.hurt_intent.icon_state = "intent_harm-n"
-
-		if(I_GRAB)
-			hud_used.help_intent.icon_state = "intent_help-n"
-			hud_used.disarm_intent.icon_state = "intent_disarm-n"
-			hud_used.grab_intent.icon_state = "intent_grab-s"
-			hud_used.hurt_intent.icon_state = "intent_harm-n"
-
-		if(I_HURT)
-			hud_used.help_intent.icon_state = "intent_help-n"
-			hud_used.disarm_intent.icon_state = "intent_disarm-n"
-			hud_used.grab_intent.icon_state = "intent_grab-n"
-			hud_used.hurt_intent.icon_state = "intent_harm-s"

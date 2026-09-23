@@ -341,7 +341,6 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	. = ..()
 	hold = new/obj/item/storage/internal(src)
 	hold.max_storage_space = slots * 2
-	hold.max_w_class = ITEMSIZE_SMALL
 
 /obj/item/cartridge/storage/Destroy()
 	// Un-nulled `hold` pins the internal storage against GC (cf. suit pockets).
@@ -368,7 +367,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)
 	for(var/obj/item/I in hold.contents)
-		hold.remove_from_storage(I, T)
+		hold.remove_from_storage(I, T, user)
 	add_fingerprint(user)
 
 /obj/item/cartridge/storage/deluxe

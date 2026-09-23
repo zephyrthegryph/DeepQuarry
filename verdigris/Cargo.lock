@@ -1754,6 +1754,7 @@ dependencies = [
  "serde_json",
  "vg-core",
  "vg-layout",
+ "vg-power",
 ]
 
 [[package]]
@@ -1784,6 +1785,16 @@ dependencies = [
  "tracing-subscriber",
  "tracing-tracy",
  "vg-core",
+ "vg-heat",
+]
+
+[[package]]
+name = "vg-heat"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "rayon",
+ "vg-core",
 ]
 
 [[package]]
@@ -1798,6 +1809,14 @@ dependencies = [
  "serde",
  "serde_json",
  "toml",
+ "vg-core",
+]
+
+[[package]]
+name = "vg-power"
+version = "0.1.0"
+dependencies = [
+ "proptest",
  "vg-core",
 ]
 

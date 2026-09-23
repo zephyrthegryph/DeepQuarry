@@ -13,9 +13,9 @@
  * set_temperature()/set_volume(). A stale-mirror read is impossible and a raw
  * `GM.temperature = x` is a compile error.
  *
- * Gas identity: auxmos binds take gas args as BYOND STRINGS. Callers pass a
- * /datum/gas TYPE PATH, so every bind route stringifies with "[gas_type]".
- * Passing a raw type path to a bind panic-crashes (get_strid().unwrap()).
+ * Gas identity: gas binds take numeric GAS_ID_* IDs (generated from verdigris
+ * gas/ids.rs). Callers may pass a GAS_ID_* number or a /datum/gas type path;
+ * every route converts with GAS_IDX(), so no string crosses the FFI.
  *
  * The DM turf-sharing engine (share/archive/temperature_share DM math) is DELETED
  * — auxmos' Rust turf processing replaces it.
@@ -123,7 +123,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 
 /// Returns the heat capacity of a single gas in the mixture, in J/K.
 /datum/gas_mixture/proc/partial_heat_capacity(gas_id)
-	return vg_partial_heat_capacity(src, "[gas_id]")
+	return vg_partial_heat_capacity(src, GAS_IDX(gas_id))
 
 /// Calculate moles
 /datum/gas_mixture/proc/revision()
@@ -133,6 +133,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /datum/gas_mixture/proc/arena_id()
 	return _extools_pointer_gasmixture
 
+/// Batched read: one FFI call returns pressure, temperature, volume, total moles,
+/// heat capacity and every gas's moles for each mixture in `mixtures` (nulls read
+/// as zero). See GAS_READ_* for the layout. Use this instead of calling several
+/// getters per mixture in a loop.
+/proc/read_gas_mixtures(list/mixtures)
+	return vg_read_mixtures(mixtures)
+
 /proc/watch_dirty_gas_mixture(mixture_id, interest_mask = GAS_DEPENDENCY_ALL)
 	return vg_watch_dirty_gas_mixture(mixture_id, interest_mask)
 
@@ -141,42 +148,30 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 
 /// Returns the moles of a single gas in the mixture.
 /datum/gas_mixture/proc/get_moles(gas_id)
-	return vg_get_moles_hook(src, "[gas_id]")
+	return vg_get_moles_hook(src, GAS_IDX(gas_id))
 
 /// Sets the moles of a single gas in the mixture.
 /datum/gas_mixture/proc/set_moles(gas_id, amount)
-	return vg_set_moles_hook(src, "[gas_id]", amount)
+	return vg_set_moles_hook(src, GAS_IDX(gas_id), amount)
 
 /// Adjusts the moles of a single gas by the given (signed) amount.
 /datum/gas_mixture/proc/adjust_moles(gas_id, amount)
-	return vg_adjust_moles_hook(src, "[gas_id]", amount)
+	return vg_adjust_moles_hook(src, GAS_IDX(gas_id), amount)
 
-/// Returns the list of gas ids present in the mixture (assoc id -> moles).
-/// Returns the /datum/gas TYPE PATHS present in the mixture. The Rust bind
-/// returns the registered STRING ids (which we register as type-path text, e.g.
-/// "/datum/gas/plasma"), so convert each back to a path so callers get the same
-/// type-path contract the old DM gases[] keys had (meta_gas_info/get_moles all
-/// key by type path).
+/// Returns an assoc list of /datum/gas type path -> moles for every gas present,
+/// read in one FFI call (Rust returns a flat id, moles, id, moles, ... list).
+/// Iterating it yields the type paths, the same contract the old DM gases[]
+/// keys had (meta_gas_info / get_moles all accept type paths).
 /datum/gas_mixture/proc/get_gases()
-	var/list/ids = vg_get_gases_hook(src)
+	var/list/flat = vg_get_gases_hook(src)
 	. = list()
-	if(!islist(ids))
-		return
-	// Build an ASSOC list gas-type-path -> moles. Iterating it (for(g in ...))
-	// still yields the type-path keys, so the many iterate-only callers are
-	// unchanged; callers that read the value (cached[g]) now get the mole count
-	// instead of null. The Rust bind returns registered STRING ids (type-path
-	// text, e.g. "/datum/gas/plasma"); convert each back to a path for the key
-	// (meta_gas_info / get_moles all key by type path) and read its moles by the
-	// same string id we got back.
-	for(var/id in ids)
-		var/gas_path = text2path(id)
-		if(gas_path)
-			.[gas_path] = vg_get_moles_hook(src, id)
+	var/list/paths = GLOB.gas_path_by_idx
+	for(var/i in 1 to length(flat) step 2)
+		.[paths[flat[i] + 1]] = flat[i + 1]
 
 /// Checks to see if gas amount exists in mixture.
 /datum/gas_mixture/proc/has_gas(gas_id, amount=0)
-	return amount < (vg_get_moles_hook(src, "[gas_id]") || 0)
+	return amount < (vg_get_moles_hook(src, GAS_IDX(gas_id)) || 0)
 
 /// Calculate pressure in kilopascals
 /datum/gas_mixture/proc/return_pressure()
@@ -229,7 +224,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 
 // Set the gas specie within the gas mix to a set amount, if there is none it will be created at the target temp
 /datum/gas_mixture/proc/set_gas(gas_specie, amount)
-	return vg_set_moles_hook(src, "[gas_specie]", amount)
+	return vg_set_moles_hook(src, GAS_IDX(gas_specie), amount)
 
 /datum/gas_mixture/proc/set_temperature(target_temp)
 	// Arena is authoritative (and clamps to TCMB). No DM mirror to refresh.
@@ -241,20 +236,24 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /// Add a specific amount of moles to specified gas or add a new gas to the mix
 /// amount is added so make it negative to remove
 /datum/gas_mixture/proc/adjust_gas(gas, amount)
-	return vg_adjust_moles_hook(src, "[gas]", QUANTIZE(amount))
+	return vg_adjust_moles_hook(src, GAS_IDX(gas), QUANTIZE(amount))
 
 /// Add a specific amount of moles to all the gasses present or add a new gas to the mix
 ///gases_moles is an associative list of gas species to their amount to be added
 /datum/gas_mixture/proc/adjust_multiple_gases(list/gases_moles)
+	var/list/adjustments = list()
 	for(var/gas_specie in gases_moles)
-		vg_adjust_moles_hook(src, "[gas_specie]", gases_moles[gas_specie])
+		adjustments += GAS_IDX(gas_specie)
+		adjustments += gases_moles[gas_specie]
+	if(length(adjustments))
+		vg_adjust_multi_hook(arglist(list(src) + adjustments))
 
 /// Modify the gas list as to convert moles of gas species A to gas species B
 /// reactant and product are the gas species to convert and conversion_amount is the amount to be converted
 /datum/gas_mixture/proc/convert_gas(datum/gas/reactant, datum/gas/product, conversion_amount)
 	var/amount = QUANTIZE(conversion_amount)
-	vg_adjust_moles_hook(src, "[reactant]", -amount)
-	vg_adjust_moles_hook(src, "[product]", amount)
+	vg_adjust_moles_hook(src, GAS_IDX(reactant), -amount)
+	vg_adjust_moles_hook(src, GAS_IDX(product), amount)
 
 ///Proportionally removes amount of gas from the gas_mixture.
 ///Returns: gas_mixture with the gases removed
@@ -280,13 +279,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 ///Removes an amount of a specific gas from the gas_mixture.
 ///Returns: gas_mixture with the gas removed
 /datum/gas_mixture/proc/remove_specific(gas_id, amount)
-	amount = min(amount, vg_get_moles_hook(src, "[gas_id]"))
+	amount = min(amount, vg_get_moles_hook(src, GAS_IDX(gas_id)))
 	if(amount <= 0)
 		return null
 	var/datum/gas_mixture/removed = new type
 	removed.set_temperature(return_temperature())
-	vg_set_moles_hook(removed, "[gas_id]", amount)
-	vg_adjust_moles_hook(src, "[gas_id]", -amount)
+	vg_set_moles_hook(removed, GAS_IDX(gas_id), amount)
+	vg_adjust_moles_hook(src, GAS_IDX(gas_id), -amount)
 	return removed
 
 /datum/gas_mixture/proc/remove_specific_ratio(gas_id, ratio)
@@ -295,9 +294,9 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	ratio = min(ratio, 1)
 	var/datum/gas_mixture/removed = new type
 	removed.set_temperature(return_temperature())
-	var/amount = QUANTIZE(vg_get_moles_hook(src, "[gas_id]") * ratio)
-	vg_set_moles_hook(removed, "[gas_id]", amount)
-	vg_adjust_moles_hook(src, "[gas_id]", -amount)
+	var/amount = QUANTIZE(vg_get_moles_hook(src, GAS_IDX(gas_id)) * ratio)
+	vg_set_moles_hook(removed, GAS_IDX(gas_id), amount)
+	vg_adjust_moles_hook(src, GAS_IDX(gas_id), -amount)
 	return removed
 
 ///Distributes the contents of two mixes equally between themselves
@@ -342,9 +341,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	var/list/reactions = SSair.gas_reactions
 	if(!length(reactions))
 		return
-	var/temp = return_temperature()
+	// One batched read for the temperature and every gas the requirements name.
+	var/list/readings = vg_read_mixtures(list(src))
+	var/temp = readings[GAS_READ_TEMPERATURE]
 	// Hypernoblium suppresses all reactions (parity with the old react()).
-	if(get_moles(/datum/gas/hypernoblium) >= REACTION_OPPRESSION_THRESHOLD && temp > REACTION_OPPRESSION_MIN_TEMP)
+	if(readings[GAS_READ_MOLES(GAS_ID_HYPERNOBLIUM)] >= REACTION_OPPRESSION_THRESHOLD && temp > REACTION_OPPRESSION_MIN_TEMP)
 		return STOP_REACTIONS
 	var/results_reset = FALSE
 	for(var/datum/gas_reaction/reaction as anything in reactions)
@@ -357,7 +358,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		for(var/id in reqs)
 			if(id == "MIN_TEMP" || id == "MAX_TEMP")
 				continue
-			if(get_moles(id) < reqs[id])
+			if(readings[GAS_READ_MOLES(GAS_IDX(id))] < reqs[id])
 				satisfied = FALSE
 				break
 		if(!satisfied)
@@ -372,6 +373,9 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		. |= reaction.react(src, holder)
 		if(. & STOP_REACTIONS)
 			return
+		// The reaction changed the mixture: later requirement checks see the new
+		// moles (the temperature stays the one sampled at the start, as before).
+		readings = vg_read_mixtures(list(src))
 
 /**
  * Returns the partial pressure of the gas in the breath based on BREATH_VOLUME

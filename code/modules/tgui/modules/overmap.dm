@@ -182,7 +182,7 @@
 			R.fields["y"] = S.y
 			LAZYSET(known_sectors, S.name, R)
 	// SENSORS
-	for(var/obj/machinery/shipsensors/S in GLOB.machines)
+	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked.check_ownership(S))
 			sensors = S
 			break

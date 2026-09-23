@@ -16,6 +16,9 @@
 	/// FALSE for structural afflictions (injury loads) and runtime-configured
 	/// ones (GM custom afflictions) that have no authored clinical picture.
 	var/catalogued = TRUE
+	/// TRUE when the condition recedes on its own once its cause is gone
+	/// (its progress() turns progression negative), so it needs no cure.
+	var/recedes_without_cause = FALSE
 
 // Simple-body injury loads are bookkeeping, not diagnoses.
 /datum/affliction/load

@@ -21,7 +21,7 @@
 	// corophizine is the wide-spectrum alternative (faster but causes
 	// GI side effects). Either works; their combo has a documented
 	// interference, see the chemical side-effect conditions.
-	treated_by = list(TREAT_ANTIMICROBIAL = 1.2)
+	treated_by = list(TREAT_ANTIMICROBIAL = 1.2, TREAT_RESECTION = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/throbbing_pain  = 80,
 		/datum/affliction_symptom/fever_sensation = 70,
@@ -49,7 +49,7 @@
 	// back, so we apply repeatedly. Scale by severity so a low-grade
 	// fever feels different from a high one.
 	var/target_offset_k = (severity / 100) * 2.0
-	owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, 310.15 + 2.5)  // 310.15K = 37C
+	owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, BODYTEMP_NORMAL + 2.5)
 
 /datum/affliction/sepsis
 	name = "sepsis"
@@ -86,7 +86,7 @@
 	if(severity <= 0 || !owner)
 		return
 	var/target_offset_k = (severity / 100) * 3.5
-	owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, 310.15 + 4.0)
+	owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, BODYTEMP_NORMAL + 4.0)
 
 /datum/affliction/septic_shock
 	name = "septic shock"

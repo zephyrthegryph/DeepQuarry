@@ -157,7 +157,7 @@
 	w_class = ITEMSIZE_TINY
 	icon = 'icons/obj/ecig.dmi'
 	icon_state = "ecartridge"
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 10))
 	volume = 20
 	flags = OPENCONTAINER
 	max_transfer_amount = null

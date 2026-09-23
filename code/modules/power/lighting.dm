@@ -117,9 +117,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(stage == 3)
 		to_chat(user, "You have to unscrew the case first.")
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, tool.usesound, 75, TRUE)
-	to_chat(user, "You begin deconstructing [src].")
-	if(!do_after(user, 3 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, message_self = "You begin deconstructing [src]."))
 		return ITEM_INTERACT_SUCCESS
 	new /obj/item/stack/material/steel(get_turf(src), sheets_refunded)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
@@ -229,9 +227,19 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/auto_flicker = FALSE // If true, will constantly flicker, so long as someone is around to see it (otherwise its a waste of CPU).
 
 	var/obj/item/cell/emergency_light/cell
-	var/emergency_recharge_timer
-	var/emergency_discharge_timer
+	/// Emergency cell deadlines (world.time; 0 for none) and when discharge accounting last ran.
+	var/tmp/emergency_recharge_at = 0
+	var/tmp/emergency_discharge_at = 0
 	var/emergency_discharge_started
+	/// Reactor state: the area power key, the one REACT_AT on next_light_deadline(), and the
+	/// auto-flicker chunk keys and recheck.
+	var/tmp/area_power_token
+	var/tmp/area_power_area_id = 0
+	var/tmp/last_area_power = null
+	var/tmp/light_timer_token
+	var/tmp/light_timer_at = 0
+	var/tmp/flicker_check_at = 0
+	var/tmp/list/flicker_chunk_tokens
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
@@ -313,12 +321,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	lamp_shade = 0
 
 /obj/machinery/light/Destroy()
-	if(emergency_recharge_timer)
-		deltimer(emergency_recharge_timer)
-		emergency_recharge_timer = null
-	if(emergency_discharge_timer)
-		deltimer(emergency_discharge_timer)
-		emergency_discharge_timer = null
+	stop_flicker_watch()
 	var/area/A = get_area(src)
 	if(A)
 		on = 0
@@ -463,7 +466,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		emergency_mode = TRUE
 		begin_emergency_discharge()
 		if(auto_flicker)
-			START_PROCESSING(SSobj, src)
+			start_flicker_watch()
 	else
 		update_use_power(USE_POWER_IDLE)
 		set_light(0)
@@ -871,48 +874,115 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 //blob effect
 
-// timed process
-// use power
+// A light sleeps on its area's power key (REACT_KEY_AREA_POWER), one REACT_AT for its
+// earliest deadline (emergency discharge and recharge, the auto-flicker recheck) and, for an
+// auto-flicker light running on its cell, the player chunk keys around it (reactor.md §9).
 
-/obj/machinery/light/process()
-	if(!cell)
-		return PROCESS_KILL
-	if(has_power())
+/// Subscribes to the current area's power key (again, if the area changed).
+/obj/machinery/light/proc/subscribe_area_power()
+	var/area/A = get_area(src)
+	var/id = A ? REACT_ID(A) : 0
+	if(id == area_power_area_id && (!isnull(area_power_token) || !id))
+		return
+	if(!isnull(area_power_token))
+		REACT_CANCEL(src, area_power_token)
+		area_power_token = null
+	area_power_area_id = id
+	if(id)
+		area_power_token = REACT_ON_KEY(src, REACT_KEY_AREA_POWER, id, REACT_AREA_POWER_CHANGED)
+
+/obj/machinery/light/Moved(atom/old_loc, direction, forced, movetime)
+	. = ..()
+	subscribe_area_power()
+
+/// The earliest pending deadline (world.time), or 0 for none.
+/obj/machinery/light/proc/next_light_deadline()
+	. = 0
+	for(var/deadline in list(emergency_discharge_at, emergency_recharge_at, flicker_check_at))
+		if(deadline > 0 && (!. || deadline < .))
+			. = deadline
+
+/obj/machinery/light/proc/schedule_light_timer()
+	var/deadline = next_light_deadline()
+	if(deadline == light_timer_at && (!isnull(light_timer_token) || !deadline))
+		return
+	if(!isnull(light_timer_token))
+		REACT_CANCEL(src, light_timer_token)
+		light_timer_token = null
+	light_timer_at = deadline
+	if(deadline)
+		light_timer_token = REACT_AT(src, deadline)
+
+/obj/machinery/light/on_react(reason, source, source_kind)
+	. = ..()
+	if(QDELETED(src))
+		return
+	if(reason & REACT_REASON_KEY)
+		area_power_changed()
+		// A player moved near an auto-flicker light that is waiting in the dark.
+		if(flicker_chunk_tokens && !flicker_check_at)
+			auto_flicker_check()
+	if(reason & REACT_REASON_TIMER)
+		light_timer_token = null
+		light_timer_at = 0
+		if(emergency_discharge_at && world.time >= emergency_discharge_at)
+			continue_emergency_discharge()
+		if(emergency_recharge_at && world.time >= emergency_recharge_at)
+			finish_emergency_recharge()
+		if(flicker_check_at && world.time >= flicker_check_at)
+			flicker_check_at = 0
+			auto_flicker_check()
+	schedule_light_timer()
+
+/obj/machinery/light/react_sleep_violation()
+	var/deadline = next_light_deadline()
+	if(deadline && (isnull(light_timer_token) || light_timer_at > deadline))
+		return "deadline [deadline] (now [world.time]) has no timer"
+	if(get_area(src) && isnull(area_power_token))
+		return "not subscribed to an area power key"
+	return null
+
+/// The area's power_change() ran: act only if this light's power actually changed.
+/obj/machinery/light/proc/area_power_changed()
+	var/powered_now = !!has_power()
+	if(powered_now == last_area_power)
+		return
+	last_area_power = powered_now
+	if(powered_now)
+		if(emergency_discharge_at)
+			settle_emergency_discharge()
+			emergency_discharge_at = 0
+			emergency_discharge_started = 0
 		emergency_mode = FALSE
-		update(FALSE)
+		stop_flicker_watch()
+	else
+		emergency_recharge_at = 0
+	seton(powered_now)
+	if(powered_now)
 		schedule_emergency_recharge()
-		return PROCESS_KILL
-	if(auto_flicker && !flickering)
-		if(check_for_player_proximity(src, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE))
-			seton(TRUE) // Lights must be on to flicker.
-			flicker(5)
-		else
-			seton(FALSE) // Otherwise keep it dark and spooky for when someone shows up.
-
-	if(!auto_flicker)
-		return PROCESS_KILL
+	schedule_light_timer()
 
 /obj/machinery/light/proc/begin_emergency_discharge()
-	if(!emergency_mode || !cell || emergency_discharge_timer)
+	if(!emergency_mode || !cell || emergency_discharge_at)
 		return
 	// Set the initial emergency appearance immediately, then account for charge
-	// in coarse time-based batches. Hundreds of fixtures no longer need an SSobj
-	// process call every two seconds during a station-wide outage.
+	// in coarse time-based batches: one timer per fixture every 10 seconds.
 	use_emergency_power(0)
 	emergency_discharge_started = world.time
-	emergency_discharge_timer = addtimer(CALLBACK(src, PROC_REF(continue_emergency_discharge)), 10 SECONDS, TIMER_STOPPABLE)
+	emergency_discharge_at = world.time + 10 SECONDS
+	schedule_light_timer()
 
 /obj/machinery/light/proc/settle_emergency_discharge()
 	if(!emergency_discharge_started || !cell)
 		return
 	var/elapsed = max(0, world.time - emergency_discharge_started)
 	emergency_discharge_started = world.time
-	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / max(1, SSobj.wait))
+	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
 		use_emergency_power(min(amount, cell.charge))
 
 /obj/machinery/light/proc/continue_emergency_discharge()
-	emergency_discharge_timer = null
+	emergency_discharge_at = 0
 	if(has_power() || !emergency_mode || !cell)
 		emergency_discharge_started = 0
 		update(FALSE)
@@ -922,35 +992,60 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		emergency_discharge_started = 0
 		update(FALSE)
 		return
-	emergency_discharge_timer = addtimer(CALLBACK(src, PROC_REF(continue_emergency_discharge)), 10 SECONDS, TIMER_STOPPABLE)
+	emergency_discharge_at = world.time + 10 SECONDS
 
 /obj/machinery/light/proc/schedule_emergency_recharge()
-	if(!cell || cell.charge >= cell.maxcharge || !has_power() || emergency_recharge_timer)
+	if(!cell || cell.charge >= cell.maxcharge || !has_power() || emergency_recharge_at)
 		return
-	// Charging is time based, not an SSobj poll. Preserve the historical rate of
-	// 0.4 charge every two seconds while stable power is available.
+	// Charging is time based. Preserve the historical rate of 0.4 charge every
+	// two seconds while stable power is available.
 	var/charge_steps = CEILING((cell.maxcharge - cell.charge) / (LIGHT_EMERGENCY_POWER_USE * 2), 1)
-	emergency_recharge_timer = addtimer(CALLBACK(src, PROC_REF(finish_emergency_recharge)), max(1, charge_steps * SSobj.wait), TIMER_STOPPABLE)
+	emergency_recharge_at = world.time + max(1, charge_steps * (2 SECONDS))
+	schedule_light_timer()
 
 /obj/machinery/light/proc/finish_emergency_recharge()
-	emergency_recharge_timer = null
+	emergency_recharge_at = 0
 	if(!cell || !has_power())
 		return
 	cell.give(cell.maxcharge - cell.charge)
 	update(FALSE)
 
-// called when area power state changes
+/// An auto-flicker light on its cell flickers only while a player is near (radius 12). It
+/// waits on the player chunk keys around it, and rechecks every 2 seconds while someone is there.
+/obj/machinery/light/proc/start_flicker_watch()
+	if(!auto_flicker || flicker_chunk_tokens)
+		return
+	flicker_chunk_tokens = SSreactor.subscribe_player_chunks(src, get_turf(src), 12)
+	auto_flicker_check()
+
+/obj/machinery/light/proc/stop_flicker_watch()
+	if(flicker_chunk_tokens)
+		flicker_chunk_tokens = SSreactor.unsubscribe_player_chunks(src, flicker_chunk_tokens)
+	flicker_check_at = 0
+
+/obj/machinery/light/proc/auto_flicker_check()
+	if(!auto_flicker || !cell || has_power())
+		stop_flicker_watch()
+		schedule_light_timer()
+		return
+	if(flickering)
+		flicker_check_at = world.time + 2 SECONDS
+	else if(check_for_player_proximity(src, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE))
+		seton(TRUE) // Lights must be on to flicker.
+		flicker(5)
+		flicker_check_at = world.time + 2 SECONDS
+	else
+		seton(FALSE) // Otherwise keep it dark and spooky for when someone shows up.
+		flicker_check_at = 0
+	schedule_light_timer()
+
+// Area power reaches lights through REACT_KEY_AREA_POWER (on_react), not the area's scan of
+// its machines, so this does nothing.
 /obj/machinery/light/power_change()
-	if(emergency_discharge_timer && has_power())
-		settle_emergency_discharge()
-		deltimer(emergency_discharge_timer)
-		emergency_discharge_timer = null
-		emergency_discharge_started = 0
-	if(emergency_recharge_timer && !has_power())
-		deltimer(emergency_recharge_timer)
-		emergency_recharge_timer = null
-	spawn(10)
-		seton(has_power())
+	return
+
+/obj/machinery/light
+	power_subscriber = FALSE
 
 // called when on fire
 
@@ -978,7 +1073,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	force = 2
 	throwforce = 5
 	w_class = ITEMSIZE_TINY
-	matter = list(MAT_STEEL = 60)
+	MATERIAL_BULK(MAT_STEEL, 60)
 
 	///LIGHT_OK, LIGHT_BURNED or LIGHT_BROKEN
 	var/status = LIGHT_OK
@@ -1020,7 +1115,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	icon_state = "ltube"
 	base_state = "ltube"
 	item_state = "c_tube"
-	matter = list(MAT_GLASS = 100)
+	MATERIAL_BULK(MAT_GLASS, 100)
 	init_brightness_range = 7
 	init_brightness_power = 2
 
@@ -1041,7 +1136,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	icon_state = "lbulb"
 	base_state = "lbulb"
 	item_state = "contvapour"
-	matter = list(MAT_GLASS = 100)
+	MATERIAL_BULK(MAT_GLASS, 100)
 	brightness_color = LIGHT_COLOR_INCANDESCENT_BULB
 
 	init_brightness_range = 5
@@ -1082,7 +1177,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	icon_state = "fbulb"
 	base_state = "fbulb"
 	item_state = "egg4"
-	matter = list(MAT_GLASS = 100)
+	MATERIAL_BULK(MAT_GLASS, 100)
 
 // update the icon state and description of the light
 /obj/item/light/update_icon()
@@ -1193,7 +1288,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(!proximity) return
 	if(istype(target, /obj/machinery/light))
 		return
-	if(user.a_intent != I_HURT)
+	if(!IS_HARMING(user))
 		return
 
 	shatter()
@@ -1260,6 +1355,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			broken(1)
 
 	on = powered()
+	last_area_power = !!has_power()
+	subscribe_area_power()
 	update(0)
 	// ition, so large mobs stop looking stupid in front of lights.
 	if (dir == SOUTH) // Lights are backwards, SOUTH lights face north (they are on south wall)

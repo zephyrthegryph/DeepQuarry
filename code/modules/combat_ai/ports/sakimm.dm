@@ -147,7 +147,7 @@
 	if(loot.anchored)
 		return DQ_BEHAVIOR_FAILED
 	if(S.Adjacent(loot))
-		S.a_intent = I_HELP
+		S.set_use_stance(I_HELP)
 		loot.attack_hand(S)
 		return DQ_BEHAVIOR_DONE
 	if(!brain.smart_step_toward(loot))
@@ -199,14 +199,14 @@
 				var/obj/item/IT = locate() in T.contents
 				if(IT && !IT.anchored && !S.get_active_hand())
 					if(S.Adjacent(IT))
-						S.a_intent = I_HELP
+						S.set_use_stance(I_HELP)
 						IT.attack_hand(S)
 					return DQ_BEHAVIOR_DONE
-			S.a_intent = I_HURT
+			S.set_use_stance(I_HURT)
 		else
-			S.a_intent = I_DISARM
+			S.set_use_stance(I_DISARM)
 	else
-		S.a_intent = I_HURT
+		S.set_use_stance(I_HURT)
 	S.attack_target(L)
 	brain.last_attack_at = world.time
 	// post_melee_attack: dance to the side so we're a harder target, then the

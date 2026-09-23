@@ -5,7 +5,6 @@
 	icon_state = "utility"
 	storage_slots = 7
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7 //This should ensure belts always have enough room to store whatever.
-	max_w_class = ITEMSIZE_NORMAL
 	slot_flags = SLOT_BELT
 	attack_verb = list("whipped", "lashed", "disciplined")
 	equip_sound = 'sound/items/toolbelt_equip.ogg'
@@ -17,6 +16,9 @@
 		)
 
 	var/show_above_suit = 0
+
+/obj/item/storage/belt/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/verb/toggle_layer()
 	set name = "Switch Belt Layer"
@@ -50,7 +52,9 @@
 	name = "tool-belt" //Carn: utility belt is nicer, but it bamboozles the text parsing.
 	desc = "Can hold various tools."
 	icon_state = "utility"
-	can_hold = list(
+
+/obj/item/storage/belt/utility/hold_constraint()
+	var/list/holds = list(
 		///obj/item/combitool,
 		/obj/item/tool/crowbar,
 		/obj/item/tool/screwdriver,
@@ -90,6 +94,7 @@
 		/obj/item/anomaly_releaser,
 		/obj/item/anomaly_scanner
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/utility/full
 	starts_with = list(
@@ -139,7 +144,9 @@
 	icon_state = "utilitybelt_ce"
 	item_state = "utility_ce"
 	storage_slots = 8	//If they get better everything-else, why not the belt too?
-	can_hold = list(
+
+/obj/item/storage/belt/utility/chief/hold_constraint()
+	var/list/holds = list(
 		/obj/item/rcd,	//They've given one from the get-go, it's hard to imagine they wouldn't be given something that can store it neater than a bag
 		/obj/item/pipe_dispenser,
 		/obj/item/holosign_creator/combifan,
@@ -177,6 +184,7 @@
 		/obj/item/wire_reader,	//As above
 		/obj/item/holosign_creator/combifan
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/utility/chief/full
 	starts_with = list(
@@ -195,7 +203,9 @@
 	icon_state = "utility_holding"
 	storage_slots = 14 //twice the amount as a normal belt
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14
-	can_hold = list(
+
+/obj/item/storage/belt/utility/holding/hold_constraint()
+	var/list/holds = list(
 		/obj/item/tool/crowbar,
 		/obj/item/tool/screwdriver,
 		/obj/item/weldingtool,
@@ -238,13 +248,16 @@
 		/obj/item/reagent_scanner,
 		/obj/item/lightpainter
 	)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 
 /obj/item/storage/belt/medical
 	name = "medical belt"
 	desc = "Can hold various medical equipment."
 	icon_state = "medical"
-	can_hold = list(
+
+/obj/item/storage/belt/medical/hold_constraint()
+	var/list/holds = list(
 		/obj/item/healthanalyzer,
 		/obj/item/dnainjector,
 		/obj/item/reagent_containers/dropper,
@@ -278,6 +291,7 @@
 		/obj/item/extrapolator,
 		/obj/item/gene_scanner,
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/medical/emt
 	name = "EMT utility belt"
@@ -295,8 +309,9 @@
 	name = "security belt"
 	desc = "Can hold security gear like handcuffs and flashes."
 	icon_state = "security"
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(
+
+/obj/item/storage/belt/security/hold_constraint()
+	var/list/holds = list(
 		/obj/item/grenade,
 		/obj/item/reagent_containers/spray/pepper,
 		/obj/item/handcuffs,
@@ -330,14 +345,16 @@
 		/obj/item/holowarrant,
 		/obj/item/ticket_printer
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/detective
 	name = "forensic utility belt"
 	desc = "A belt for holding forensics equipment."
 	icon_state = "security"
 	storage_slots = 7
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(
+
+/obj/item/storage/belt/detective/hold_constraint()
+	var/list/holds = list(
 		/obj/item/taperecorder,
 		/obj/item/rectape,
 		/obj/item/clothing/glasses,
@@ -376,15 +393,19 @@
 		/obj/item/reagent_containers/food/drinks/flask,
 		/obj/item/ticket_printer
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/soulstone
 	name = "soul stone belt"
 	desc = "Designed for ease of access to the shards during a fight, as to not let a single enemy spirit slip away"
 	icon_state = "soulstone"
 	storage_slots = 6
-	can_hold = list(
+
+/obj/item/storage/belt/soulstone/hold_constraint()
+	var/list/holds = list(
 		/obj/item/soulstone
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/soulstone/full
 	starts_with = list(/obj/item/soulstone = 6)
@@ -414,7 +435,9 @@
 	icon_state = "belt"
 	item_state = "security"
 	storage_slots = 8
-	can_hold = list(
+
+/obj/item/storage/belt/medical/alien/hold_constraint()
+	var/list/holds = list(
 		/obj/item/healthanalyzer,
 		/obj/item/dnainjector,
 		/obj/item/reagent_containers/dropper,
@@ -441,6 +464,7 @@
 		/obj/item/extinguisher/mini,
 		/obj/item/surgical
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/medical/alien
 	starts_with = list(
@@ -459,25 +483,66 @@
 	desc = "Proves to the world that you are the strongest!"
 	icon_state = "champion"
 	storage_slots = 1
-	can_hold = list(
-		"/obj/item/clothing/mask/luchador"
-		)
+
+/obj/item/storage/belt/champion/hold_constraint()
+	// The legacy can_hold named the luchador mask as a string, which never
+	// matched, so the belt has always refused everything. Kept as-is for P3's
+	// parity; list /obj/item/clothing/mask/luchador here to make it hold one.
+	var/list/holds = list()
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/security/tactical
 	name = "combat belt"
 	desc = "Can hold security gear like handcuffs and flashes, with more pouches for more storage."
 	icon_state = "swat"
 	storage_slots = 9
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7
+
+/obj/item/storage/belt/security/tactical/hold_constraint()
+	var/list/holds = list(
+		/obj/item/grenade,
+		/obj/item/reagent_containers/spray/pepper,
+		/obj/item/handcuffs,
+		/obj/item/flash,
+		/obj/item/clothing/glasses,
+		/obj/item/ammo_casing/a12g,
+		/obj/item/ammo_magazine,
+		/obj/item/cell/device,
+		/obj/item/reagent_containers/food/snacks/donut/,
+		/obj/item/melee/baton,
+		/obj/item/gun/energy/taser,
+		/obj/item/gun/energy/stunrevolver,
+		/obj/item/gun/energy/stunrevolver/vintage,
+		/obj/item/gun/magnetic/railgun/heater/pistol,
+		/obj/item/gun/energy/gun,
+		/obj/item/flame/lighter,
+		/obj/item/flashlight,
+		/obj/item/taperecorder,
+		/obj/item/rectape,
+		/obj/item/pda,
+		/obj/item/radio/headset,
+		/obj/item/clothing/gloves,
+		/obj/item/hailer,
+		/obj/item/megaphone,
+		/obj/item/melee,
+		/obj/item/clothing/accessory/badge,
+		/obj/item/gun/projectile/sec,
+		/obj/item/gun/projectile/p92x,
+		/obj/item/taperoll,
+		/obj/item/gun/projectile/colt/detective,
+		/obj/item/holowarrant,
+		/obj/item/ticket_printer
+		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/bandolier
 	name = "shotgun bandolier"
 	desc = "Designed to hold shotgun shells. Can't really hold more than that."
 	icon_state = "bandolier1"
 	storage_slots = 8
-	max_w_class = ITEMSIZE_TINY
-	can_hold = list(
+
+/obj/item/storage/belt/bandolier/hold_constraint()
+	var/list/holds = list(
 		/obj/item/ammo_casing/a12g,
 		/obj/item/ammo_casing/a12g/pellet,
 		/obj/item/ammo_casing/a12g/blank,
@@ -488,6 +553,7 @@
 		/obj/item/ammo_casing/a12g/emp,
 		/obj/item/ammo_casing/a12g/flechette
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
 
 /obj/item/storage/belt/security/tactical/bandolier
 	name = "combat bandolier"
@@ -499,8 +565,9 @@
 	desc = "A belt used to hold most janitorial supplies."
 	icon_state = "janitor"
 	storage_slots = 7
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(
+
+/obj/item/storage/belt/janitor/hold_constraint()
+	var/list/holds = list(
 		/obj/item/clothing/glasses,
 		/obj/item/flashlight,
 		/obj/item/cell/device,
@@ -521,23 +588,31 @@
 		/obj/item/lightreplacer,
 		/obj/item/clothing/glasses/hud/janitor
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/archaeology
 	name = "excavation gear-belt"
 	desc = "Can hold various excavation gear."
 	icon_state = "gear"
-	can_hold = list(
+
+/obj/item/storage/belt/archaeology/hold_constraint()
+	var/list/holds = list(
+		/obj/item/stack/marker_beacon,
+		/obj/item/clothing/glasses,
 		/obj/item/storage/box/samplebags,
+		/obj/item/xenoarch_multi_tool,
 		/obj/item/core_sampler,
 		/obj/item/beacon_locator,
 		/obj/item/radio/beacon,
 		/obj/item/gps,
 		/obj/item/measuring_tape,
 		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/pickaxe,
 		/obj/item/depth_scanner,
 		/obj/item/camera,
+		/obj/item/ano_scanner,
+		/obj/item/geiger,
+		/obj/item/cell/device,
+		/obj/item/pickaxe,
 		/obj/item/paper,
 		/obj/item/paper_bundle,
 		/obj/item/photo,
@@ -546,27 +621,25 @@
 		/obj/item/folder,
 		/obj/item/clipboard,
 		/obj/item/anodevice,
-		/obj/item/clothing/glasses,
 		/obj/item/tool/wrench,
 		/obj/item/tool/transforming/powerdrill,
+		/obj/item/multitool,
 		/obj/item/storage/excavation,
 		/obj/item/anobattery,
-		/obj/item/ano_scanner,
-		/obj/item/pickaxe/hand,
-		/obj/item/xenoarch_multi_tool,
-		/obj/item/pickaxe/excavationdrill,
-		/obj/item/storage/sample_container,
-		/obj/item/storage/bag/fossils
+		/obj/item/pickaxe
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/fannypack
 	name = "leather fannypack"
 	desc = "A dorky fannypack for keeping small items in."
 	icon_state = "fannypack_leather"
 	item_state = "fannypack_leather"
-	max_w_class = ITEMSIZE_SMALL
 	storage_slots = null
 	max_storage_space = ITEMSIZE_COST_NORMAL * 2
+
+/obj/item/storage/belt/fannypack/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/belt/fannypack/black
 	name = "black fannypack"
@@ -624,9 +697,12 @@
 	desc = "A Donk-Soft bandolier! Carry your spare darts anywhere! Ages 8 and up."
 	icon_state = "dbandolier"
 	storage_slots = 8
-	can_hold = list(
+
+/obj/item/storage/belt/dbandolier/hold_constraint()
+	var/list/holds = list(
 		/obj/item/ammo_casing/afoam_dart
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/explorer
 	name = "explorer's belt"
@@ -634,9 +710,10 @@
 	icon_state = "explo_belt"
 	item_state = "explorer_belt"
 	storage_slots = 5	//makes it strictly inferior to any specialized belt as they have seven slots, but it's far more versatile
-	max_w_class = ITEMSIZE_NORMAL	//limits the max size of thing that can be put in, so no using it to hold five laser cannons
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
-	can_hold = list(
+
+/obj/item/storage/belt/explorer/hold_constraint()
+	var/list/holds = list(
 		/obj/item/grenade,
 		/obj/item/tool,
 		/obj/item/weldingtool,
@@ -677,6 +754,7 @@
 		/obj/item/analyzer,
 		/obj/item/storage/sample_container
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/belt/explorer/pathfinder
 	name = "pathfinder's belt"
@@ -692,9 +770,11 @@
 	icon_state = "mining"
 	item_state = "mining"
 	storage_slots = 6
-	max_w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 6
-	can_hold = list(
+		//Pretty much, if it's in the mining vendor, they should be able to put it on the belt.
+
+/obj/item/storage/belt/miner/hold_constraint()
+	var/list/holds = list(
 		/obj/item/fulton_core,
 		/obj/item/extraction_pack,
 		/obj/item/resonator,
@@ -746,41 +826,9 @@
 		/obj/item/ore_bag,
 		/obj/item/storage/sample_container
 		)
-		//Pretty much, if it's in the mining vendor, they should be able to put it on the belt.
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
 
 /obj/item/storage/belt/archaeology
-	can_hold = list(
-		/obj/item/stack/marker_beacon,
-		/obj/item/clothing/glasses,
-		/obj/item/storage/box/samplebags,
-		/obj/item/xenoarch_multi_tool,
-		/obj/item/core_sampler,
-		/obj/item/beacon_locator,
-		/obj/item/radio/beacon,
-		/obj/item/gps,
-		/obj/item/measuring_tape,
-		/obj/item/flashlight,
-		/obj/item/depth_scanner,
-		/obj/item/camera,
-		/obj/item/ano_scanner,
-		/obj/item/geiger,
-		/obj/item/cell/device,
-		/obj/item/pickaxe,
-		/obj/item/paper,
-		/obj/item/paper_bundle,
-		/obj/item/photo,
-		/obj/item/folder,
-		/obj/item/pen,
-		/obj/item/folder,
-		/obj/item/clipboard,
-		/obj/item/anodevice,
-		/obj/item/tool/wrench,
-		/obj/item/tool/transforming/powerdrill,
-		/obj/item/multitool,
-		/obj/item/storage/excavation,
-		/obj/item/anobattery,
-		/obj/item/pickaxe
-		)
 
 /obj/item/storage/belt/hydro
 	name = "hydroponics belt"
@@ -788,9 +836,10 @@
 	icon_state = "plantbelt"
 	item_state = "plantbelt"
 	storage_slots = 5
-	max_w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
-	can_hold = list(
+
+/obj/item/storage/belt/hydro/hold_constraint()
+	var/list/holds = list(
 		/obj/item/analyzer/plant_analyzer,
 		/obj/item/reagent_containers/glass/beaker,
 		/obj/item/reagent_containers/glass/bottle,
@@ -803,3 +852,4 @@
 		/obj/item/gun/energy/floragun,
 		/obj/item/seeds
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_LARGE))

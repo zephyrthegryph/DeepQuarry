@@ -58,7 +58,7 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 2000, MAT_GLASS = 2000)
+	MATERIAL_MIX(list(MAT_STEEL = 2000, MAT_GLASS = 2000))
 	var/list/obj/item/implant/backup/imps = list()
 	var/max_implants = 4 //Iconstates need to exist due to the update proc!
 
@@ -201,7 +201,7 @@
 					qdel(imp)
 
 /obj/structure/backup_implanter_ch/attackby(obj/item/O, mob/user)
-	if(O.is_wrench())
+	if(O.has_tool_quality(TOOL_WRENCH))
 
 		if(anchored)
 			to_chat(user, span_notice("You start to unwrench the implanter."))

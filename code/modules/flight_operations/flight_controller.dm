@@ -28,7 +28,7 @@ SUBSYSTEM_DEF(flight_operations)
 
 /datum/controller/subsystem/flight_operations/proc/rebuild_registry()
 	var/has_sif = FALSE
-	for(var/obj/effect/overmap/visitable/planet/planet as anything in GLOB.visitable_overmap_object_instances)
+	for(var/obj/effect/overmap/visitable/planet/planet as anything in REGISTRY_MEMBERS(REGISTRY_OVERMAP_VISITABLES))
 		if(lowertext(planet.name) == "sif")
 			has_sif = TRUE
 	if(!has_sif)
@@ -41,7 +41,7 @@ SUBSYSTEM_DEF(flight_operations)
 	system.body_radius = 5
 	system.body_color = "#ffd36a"
 	destinations[system.id] = system
-	for(var/obj/effect/overmap/visitable/target as anything in GLOB.visitable_overmap_object_instances)
+	for(var/obj/effect/overmap/visitable/target as anything in REGISTRY_MEMBERS(REGISTRY_OVERMAP_VISITABLES))
 		register_destination(target)
 	normalize_celestial_hierarchy()
 	for(var/obj/effect/overmap/visitable/ship/ship as anything in SSshuttles.ships)

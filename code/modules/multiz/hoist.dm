@@ -146,38 +146,17 @@
 	QDEL_NULL(source_hook)
 
 /obj/structure/hoist/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if(prob(50))
-				qdel(src)
-			else
-				visible_message("\The [src] shakes violently, and neatly collapses as its damage sensors go off.")
-				collapse_kit()
-			return
-		if(3.0)
-			if(prob(50) && !broken)
-				break_hoist()
-			return
+	. = ..()
+	if(!QDELETED(src) && severity <= 2 && !broken)
+		break_hoist()
 
 /obj/effect/hoist_hook/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			source_hoist.break_hoist()
-			return
-		if(2.0)
-			if(prob(50))
-				source_hoist.break_hoist()
-			return
-		if(3.0)
-			if(prob(25))
-				source_hoist.break_hoist()
-			return
+	// A hit on the hook wrenches the hoist; it breaks more often the closer the blast.
+	if(prob(100 / severity))
+		source_hoist.break_hoist()
 
-/obj/structure/hoist/attack_robot(mob/living/user)
-	attack_hand(user)
+/obj/structure/hoist
+	silicon_use = ROBOT_USE_HAND
 
 /obj/structure/hoist/attack_hand(mob/living/user)
 	if (!(ishuman(user) || issilicon(user)))

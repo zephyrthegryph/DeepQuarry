@@ -72,7 +72,7 @@
 		else
 			to_chat(usr,span_notice("Video streaming deactivated."))
 			hide_tvs()
-			for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in GLOB.entertainment_screens)
+			for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 				ES.stop_showing()
 		update_icon()
 	if(href_list["sound"])
@@ -90,7 +90,7 @@
 
 	showing = WEAKREF(thing)
 	showing_name = "[thing]"
-	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in GLOB.entertainment_screens)
+	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
 
 	START_PROCESSING(SSobj, src)
@@ -98,7 +98,7 @@
 /obj/item/tvcamera/proc/hide_tvs()
 	if(!showing)
 		return
-	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in GLOB.entertainment_screens)
+	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.maybe_stop_showing(showing)
 	STOP_PROCESSING(SSobj, src)
 	showing = null
@@ -232,7 +232,7 @@
 			if(here)
 				here.visible_message(span_warning("[usr] turns off their body camera!"))
 			hide_bodycamera_tvs()
-			for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in GLOB.bodycamera_screens)
+			for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 				ES.stop_showing()
 		update_icon()
 	if(href_list["sound"])
@@ -250,7 +250,7 @@
 
 	showing = WEAKREF(thing)
 	showing_name = "[thing]"
-	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in GLOB.bodycamera_screens)
+	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
 
 	START_PROCESSING(SSobj, src)
@@ -258,7 +258,7 @@
 /obj/item/clothing/accessory/bodycam/proc/hide_bodycamera_tvs()
 	if(!showing)
 		return
-	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in GLOB.bodycamera_screens)
+	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.maybe_stop_showing(showing)
 	STOP_PROCESSING(SSobj, src)
 	showing = null
@@ -314,7 +314,7 @@
 	var/buildstep = 0
 	w_class = ITEMSIZE_LARGE
 
-/obj/item/TVAssembly/attackby(W, mob/user)
+/obj/item/TVAssembly/attackby(obj/item/W, mob/user)
 	switch(buildstep)
 		if(0)
 			if(istype(W, /obj/item/robot_parts/robot_component/camera))
@@ -344,7 +344,7 @@
 				desc = "This TV camera assembly has wires sticking out"
 				return
 		if(3)
-			if(istype(W, /obj/item/tool/wirecutters))
+			if(W.has_tool_quality(TOOL_WIRECUTTER))
 				to_chat(user, span_notice(" You trim the wires."))
 				buildstep++
 				desc = "This TV camera assembly needs casing."

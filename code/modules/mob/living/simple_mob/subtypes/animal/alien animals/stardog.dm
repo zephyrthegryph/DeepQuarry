@@ -1375,7 +1375,7 @@
 		return
 	else if(user.faction == faction)
 		SwitchState()
-	else if(user.a_intent == I_HELP)
+	else if(IS_HELPING(user))
 		visible_message(span_warningplain("[user] knocks on \the [src]."), span_warningplain("Someone knocks on \the [src]."))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 10
@@ -1391,7 +1391,7 @@
 		return
 	else if(user.faction == faction)
 		SwitchState()
-	else if(user.a_intent == I_HELP)
+	else if(IS_HELPING(user))
 		visible_message(span_warningplain("[user] knocks on \the [src]."), span_warningplain("Someone knocks on \the [src]."))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 10

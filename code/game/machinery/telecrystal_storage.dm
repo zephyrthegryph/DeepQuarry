@@ -74,9 +74,6 @@
 /datum/stored_item/telecrystals/get_amount()
 	return amount
 
-/datum/stored_item/telecrystals/init_products()
-	return
-
 /obj/tcspawner
 	name = "Telecrystal spawner"
 	desc = "This item spawns stack of 5 telecrystals"

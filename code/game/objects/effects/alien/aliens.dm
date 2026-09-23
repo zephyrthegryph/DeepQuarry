@@ -171,18 +171,6 @@
 		if(prob(max(10, 60 - (5 * nearby_weeds.len))))
 			W.process()
 
-/obj/effect/alien/weeds/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-		if(3.0)
-			if (prob(5))
-				qdel(src)
-	return
-
 /obj/effect/alien/weeds/attackby(obj/item/W, mob/user)
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(LAZYLEN(W.attack_verb))
@@ -218,7 +206,7 @@
 
 		// Aliens can get straight through these.
 		if(istype(usr,/mob/living/carbon))
-			if(user.a_intent == I_HURT)
+			if(IS_HARMING(user))
 				var/mob/living/carbon/M = usr
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)

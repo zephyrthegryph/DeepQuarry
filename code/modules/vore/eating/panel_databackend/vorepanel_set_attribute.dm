@@ -51,20 +51,16 @@
 			if(!(toggle_addon in host.vore_selected.mode_flag_list))
 				return FALSE
 			host.vore_selected.mode_flags ^= host.vore_selected.mode_flag_list[toggle_addon]
-			LAZYCLEARLIST(host.vore_selected.items_preserved) //Re-evaltuate all items in belly on
+			host.vore_selected.items_preserved = null //Re-evaltuate all items in belly on
 			host.vore_selected.slow_digestion = FALSE
 			if(host.vore_selected.mode_flags & DM_FLAG_SLOWBODY)
 				host.vore_selected.slow_digestion = TRUE
 			if(toggle_addon == "TURBO MODE")
-				STOP_PROCESSING(SSbellies, host.vore_selected)
-				STOP_PROCESSING(SSobj, host.vore_selected)
 				if(host.vore_selected.mode_flags & DM_FLAG_TURBOMODE)
 					host.vore_selected.speedy_mob_processing = TRUE
-					START_PROCESSING(SSobj, host.vore_selected)
 					to_chat(user, span_warning("TURBO MODE activated! Belly processing speed tripled! This also affects timed settings, such as autotransfer and liquid generation."))
 				else
 					host.vore_selected.speedy_mob_processing = FALSE
-					START_PROCESSING(SSbellies, host.vore_selected)
 					to_chat(user, span_warning("TURBO MODE deactivated. Belly processing returned to normal speed."))
 			. = TRUE
 		if("b_item_mode")
@@ -73,7 +69,7 @@
 				return FALSE
 
 			host.vore_selected.item_digest_mode = new_mode
-			LAZYCLEARLIST(host.vore_selected.items_preserved) //Re-evaltuate all items in belly on belly-mode change
+			host.vore_selected.items_preserved = null //Re-evaltuate all items in belly on belly-mode change
 			. = TRUE
 		if("b_contaminates") // Reverting upstream's change because why reset save files due to a different server's drama?
 			host.vore_selected.contaminates = !host.vore_selected.contaminates
@@ -89,7 +85,7 @@
 			if(!(new_color in GLOB.contamination_colors))
 				return FALSE
 			host.vore_selected.contamination_color = new_color
-			LAZYCLEARLIST(host.vore_selected.items_preserved) //To re-contaminate for new color
+			host.vore_selected.items_preserved = null //To re-contaminate for new color
 			. = TRUE
 		if("b_egg_type")
 			var/new_egg_type = params["val"]
@@ -330,55 +326,55 @@
 					var/confirm = tgui_alert(user,"This will delete any custom messages. Are you sure?","Confirmation",list("Cancel","DELETE"))
 					if(confirm != "DELETE")
 						return FALSE
-					host.vore_selected.digest_messages_prey = /obj/belly::digest_messages_prey
-					host.vore_selected.digest_messages_owner = /obj/belly::digest_messages_owner
-					host.vore_selected.absorb_messages_prey = /obj/belly::absorb_messages_prey
-					host.vore_selected.absorb_messages_owner = /obj/belly::absorb_messages_owner
-					host.vore_selected.unabsorb_messages_prey = /obj/belly::unabsorb_messages_prey
-					host.vore_selected.unabsorb_messages_owner = /obj/belly::unabsorb_messages_owner
-					host.vore_selected.struggle_messages_outside = /obj/belly::struggle_messages_outside
-					host.vore_selected.struggle_messages_inside = /obj/belly::struggle_messages_inside
-					host.vore_selected.absorbed_struggle_messages_outside = /obj/belly::absorbed_struggle_messages_outside
-					host.vore_selected.absorbed_struggle_messages_inside = /obj/belly::absorbed_struggle_messages_inside
-					host.vore_selected.escape_attempt_messages_owner = /obj/belly::escape_attempt_messages_owner
-					host.vore_selected.escape_attempt_messages_prey = /obj/belly::escape_attempt_messages_prey
-					host.vore_selected.escape_messages_owner = /obj/belly::escape_messages_owner
-					host.vore_selected.escape_messages_prey = /obj/belly::escape_messages_prey
-					host.vore_selected.escape_messages_outside = /obj/belly::escape_messages_outside
-					host.vore_selected.escape_item_messages_owner = /obj/belly::escape_item_messages_owner
-					host.vore_selected.escape_item_messages_prey = /obj/belly::escape_item_messages_prey
-					host.vore_selected.escape_item_messages_outside = /obj/belly::escape_item_messages_outside
-					host.vore_selected.escape_fail_messages_owner = /obj/belly::escape_fail_messages_owner
-					host.vore_selected.escape_fail_messages_prey = /obj/belly::escape_fail_messages_prey
-					host.vore_selected.escape_attempt_absorbed_messages_owner = /obj/belly::escape_attempt_absorbed_messages_owner
-					host.vore_selected.escape_attempt_absorbed_messages_prey = /obj/belly::escape_attempt_absorbed_messages_prey
-					host.vore_selected.escape_absorbed_messages_owner = /obj/belly::escape_absorbed_messages_owner
-					host.vore_selected.escape_absorbed_messages_prey = /obj/belly::escape_absorbed_messages_prey
-					host.vore_selected.escape_absorbed_messages_outside = /obj/belly::escape_absorbed_messages_outside
-					host.vore_selected.escape_fail_absorbed_messages_owner = /obj/belly::escape_fail_absorbed_messages_owner
-					host.vore_selected.escape_fail_absorbed_messages_prey = /obj/belly::escape_fail_absorbed_messages_prey
-					host.vore_selected.primary_transfer_messages_owner = /obj/belly::primary_transfer_messages_owner
-					host.vore_selected.primary_transfer_messages_prey = /obj/belly::primary_transfer_messages_prey
-					host.vore_selected.secondary_transfer_messages_owner = /obj/belly::secondary_transfer_messages_owner
-					host.vore_selected.secondary_transfer_messages_prey = /obj/belly::secondary_transfer_messages_prey
-					host.vore_selected.primary_autotransfer_messages_owner = /obj/belly::primary_autotransfer_messages_owner
-					host.vore_selected.primary_autotransfer_messages_prey = /obj/belly::primary_autotransfer_messages_prey
-					host.vore_selected.secondary_autotransfer_messages_owner = /obj/belly::secondary_autotransfer_messages_owner
-					host.vore_selected.secondary_autotransfer_messages_prey = /obj/belly::secondary_autotransfer_messages_prey
-					host.vore_selected.digest_chance_messages_owner = /obj/belly::digest_chance_messages_owner
-					host.vore_selected.digest_chance_messages_prey = /obj/belly::digest_chance_messages_prey
-					host.vore_selected.absorb_chance_messages_owner = /obj/belly::absorb_chance_messages_owner
-					host.vore_selected.absorb_chance_messages_prey = /obj/belly::absorb_chance_messages_prey
-					host.vore_selected.examine_messages = /obj/belly::examine_messages
-					host.vore_selected.examine_messages_absorbed = /obj/belly::examine_messages_absorbed
-					host.vore_selected.emote_lists = /obj/belly::emote_lists
-					host.vore_selected.trash_eater_in = /obj/belly::trash_eater_in
-					host.vore_selected.trash_eater_out = /obj/belly::trash_eater_out
-					host.vore_selected.liquid_fullness1_messages = /obj/belly::fullness1_messages
-					host.vore_selected.liquid_fullness2_messages = /obj/belly::fullness2_messages
-					host.vore_selected.liquid_fullness3_messages = /obj/belly::fullness3_messages
-					host.vore_selected.liquid_fullness4_messages = /obj/belly::fullness4_messages
-					host.vore_selected.liquid_fullness5_messages = /obj/belly::fullness5_messages
+					host.vore_selected.digest_messages_prey = host.vore_selected.belly_shared_list("digest_messages_prey")
+					host.vore_selected.digest_messages_owner = host.vore_selected.belly_shared_list("digest_messages_owner")
+					host.vore_selected.absorb_messages_prey = host.vore_selected.belly_shared_list("absorb_messages_prey")
+					host.vore_selected.absorb_messages_owner = host.vore_selected.belly_shared_list("absorb_messages_owner")
+					host.vore_selected.unabsorb_messages_prey = host.vore_selected.belly_shared_list("unabsorb_messages_prey")
+					host.vore_selected.unabsorb_messages_owner = host.vore_selected.belly_shared_list("unabsorb_messages_owner")
+					host.vore_selected.struggle_messages_outside = host.vore_selected.belly_shared_list("struggle_messages_outside")
+					host.vore_selected.struggle_messages_inside = host.vore_selected.belly_shared_list("struggle_messages_inside")
+					host.vore_selected.absorbed_struggle_messages_outside = host.vore_selected.belly_shared_list("absorbed_struggle_messages_outside")
+					host.vore_selected.absorbed_struggle_messages_inside = host.vore_selected.belly_shared_list("absorbed_struggle_messages_inside")
+					host.vore_selected.escape_attempt_messages_owner = host.vore_selected.belly_shared_list("escape_attempt_messages_owner")
+					host.vore_selected.escape_attempt_messages_prey = host.vore_selected.belly_shared_list("escape_attempt_messages_prey")
+					host.vore_selected.escape_messages_owner = host.vore_selected.belly_shared_list("escape_messages_owner")
+					host.vore_selected.escape_messages_prey = host.vore_selected.belly_shared_list("escape_messages_prey")
+					host.vore_selected.escape_messages_outside = host.vore_selected.belly_shared_list("escape_messages_outside")
+					host.vore_selected.escape_item_messages_owner = host.vore_selected.belly_shared_list("escape_item_messages_owner")
+					host.vore_selected.escape_item_messages_prey = host.vore_selected.belly_shared_list("escape_item_messages_prey")
+					host.vore_selected.escape_item_messages_outside = host.vore_selected.belly_shared_list("escape_item_messages_outside")
+					host.vore_selected.escape_fail_messages_owner = host.vore_selected.belly_shared_list("escape_fail_messages_owner")
+					host.vore_selected.escape_fail_messages_prey = host.vore_selected.belly_shared_list("escape_fail_messages_prey")
+					host.vore_selected.escape_attempt_absorbed_messages_owner = host.vore_selected.belly_shared_list("escape_attempt_absorbed_messages_owner")
+					host.vore_selected.escape_attempt_absorbed_messages_prey = host.vore_selected.belly_shared_list("escape_attempt_absorbed_messages_prey")
+					host.vore_selected.escape_absorbed_messages_owner = host.vore_selected.belly_shared_list("escape_absorbed_messages_owner")
+					host.vore_selected.escape_absorbed_messages_prey = host.vore_selected.belly_shared_list("escape_absorbed_messages_prey")
+					host.vore_selected.escape_absorbed_messages_outside = host.vore_selected.belly_shared_list("escape_absorbed_messages_outside")
+					host.vore_selected.escape_fail_absorbed_messages_owner = host.vore_selected.belly_shared_list("escape_fail_absorbed_messages_owner")
+					host.vore_selected.escape_fail_absorbed_messages_prey = host.vore_selected.belly_shared_list("escape_fail_absorbed_messages_prey")
+					host.vore_selected.primary_transfer_messages_owner = host.vore_selected.belly_shared_list("primary_transfer_messages_owner")
+					host.vore_selected.primary_transfer_messages_prey = host.vore_selected.belly_shared_list("primary_transfer_messages_prey")
+					host.vore_selected.secondary_transfer_messages_owner = host.vore_selected.belly_shared_list("secondary_transfer_messages_owner")
+					host.vore_selected.secondary_transfer_messages_prey = host.vore_selected.belly_shared_list("secondary_transfer_messages_prey")
+					host.vore_selected.primary_autotransfer_messages_owner = host.vore_selected.belly_shared_list("primary_autotransfer_messages_owner")
+					host.vore_selected.primary_autotransfer_messages_prey = host.vore_selected.belly_shared_list("primary_autotransfer_messages_prey")
+					host.vore_selected.secondary_autotransfer_messages_owner = host.vore_selected.belly_shared_list("secondary_autotransfer_messages_owner")
+					host.vore_selected.secondary_autotransfer_messages_prey = host.vore_selected.belly_shared_list("secondary_autotransfer_messages_prey")
+					host.vore_selected.digest_chance_messages_owner = host.vore_selected.belly_shared_list("digest_chance_messages_owner")
+					host.vore_selected.digest_chance_messages_prey = host.vore_selected.belly_shared_list("digest_chance_messages_prey")
+					host.vore_selected.absorb_chance_messages_owner = host.vore_selected.belly_shared_list("absorb_chance_messages_owner")
+					host.vore_selected.absorb_chance_messages_prey = host.vore_selected.belly_shared_list("absorb_chance_messages_prey")
+					host.vore_selected.examine_messages = host.vore_selected.belly_shared_list("examine_messages")
+					host.vore_selected.examine_messages_absorbed = host.vore_selected.belly_shared_list("examine_messages_absorbed")
+					host.vore_selected.emote_lists = host.vore_selected.belly_shared_list("emote_lists")
+					host.vore_selected.trash_eater_in = host.vore_selected.belly_shared_list("trash_eater_in")
+					host.vore_selected.trash_eater_out = host.vore_selected.belly_shared_list("trash_eater_out")
+					host.vore_selected.liquid_fullness1_messages = host.vore_selected.belly_shared_list("fullness1_messages")
+					host.vore_selected.liquid_fullness2_messages = host.vore_selected.belly_shared_list("fullness2_messages")
+					host.vore_selected.liquid_fullness3_messages = host.vore_selected.belly_shared_list("fullness3_messages")
+					host.vore_selected.liquid_fullness4_messages = host.vore_selected.belly_shared_list("fullness4_messages")
+					host.vore_selected.liquid_fullness5_messages = host.vore_selected.belly_shared_list("fullness5_messages")
 			. = TRUE
 		if("b_verb")
 			var/new_verb = html_encode(params["val"])
@@ -551,14 +547,14 @@
 			if(!isnum(new_damage))
 				return FALSE
 			host.vore_selected.digest_burn = CLAMP(new_damage, 0, host.vore_selected.get_unused_digestion_damage() + host.vore_selected.digest_burn) // sanity check following tgui input
-			LAZYCLEARLIST(host.vore_selected.items_preserved)
+			host.vore_selected.items_preserved = null
 			. = TRUE
 		if("b_brute_dmg")
 			var/new_damage = text2num(params["val"])
 			if(!isnum(new_damage))
 				return FALSE
 			host.vore_selected.digest_brute = CLAMP(new_damage, 0, host.vore_selected.get_unused_digestion_damage() + host.vore_selected.digest_brute)
-			LAZYCLEARLIST(host.vore_selected.items_preserved)
+			host.vore_selected.items_preserved = null
 			. = TRUE
 		if("b_oxy_dmg")
 			var/new_damage = text2num(params["val"])
@@ -713,9 +709,9 @@
 			if(!istype(choice))
 				return FALSE
 			else if(choice.name in host.vore_selected.autotransferextralocation)
-				LAZYREMOVE(host.vore_selected.autotransferextralocation, choice.name)
+				host.vore_selected.autotransferextralocation = host.vore_selected.autotransferextralocation - choice.name // Replace: the list may be shared
 			else
-				LAZYADD(host.vore_selected.autotransferextralocation, choice.name)
+				host.vore_selected.autotransferextralocation = host.vore_selected.autotransferextralocation + choice.name
 			. = TRUE
 		if("b_autotransferchance_secondary")
 			var/autotransferchance_secondary_input = params["val"]
@@ -736,9 +732,9 @@
 			if(!istype(choice)) //They cancelled, no changes
 				return FALSE
 			else if(choice.name in host.vore_selected.autotransferextralocation_secondary)
-				LAZYREMOVE(host.vore_selected.autotransferextralocation_secondary, choice.name)
+				host.vore_selected.autotransferextralocation_secondary = host.vore_selected.autotransferextralocation_secondary - choice.name // Replace: the list may be shared
 			else
-				LAZYADD(host.vore_selected.autotransferextralocation_secondary, choice.name)
+				host.vore_selected.autotransferextralocation_secondary = host.vore_selected.autotransferextralocation_secondary + choice.name
 			. = TRUE
 		if("b_autotransfer_whitelist_primary")
 			var/toggle_addon = params["val"]

@@ -12,13 +12,13 @@
 	var/mob/living/carbon/human/victim = null
 	var/verbose = 1 //general speaker toggle
 	var/patientName = null
-	var/oxyAlarm = 30 //oxy damage at which the computer will beep
+	var/spo2Alarm = 90 //SpO2 (%) below which the computer will beep
 	var/choice = 0 //just for going into and out of the options menu
 	var/healthAnnounce = 1 //healther announcer toggle
 	var/crit = 1 //crit beeping toggle
 	var/nextTick = OP_COMPUTER_COOLDOWN
 	var/healthAlarm = 50
-	var/oxy = 1 //oxygen beeping toggle
+	var/spo2 = 1 //SpO2 beeping toggle
 
 /obj/machinery/computer/operating/Initialize(mapload)
 	. = ..()
@@ -66,65 +66,23 @@
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
-		// UI keys kept for the tgui interface: health is vitality as a percentage.
-		occupantData["health"] = round(occupant.vitality() * 100)
-		occupantData["maxHealth"] = 100
-		occupantData["minHealth"] = 0
-		occupantData["bruteLoss"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-		occupantData["oxyLoss"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
-		occupantData["toxLoss"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
-		occupantData["fireLoss"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
+		occupantData["vitality"] = round(occupant.vitality() * 100)
 		occupantData["paralysis"] = occupant.paralysis
-		occupantData["hasBlood"] = 0
-		occupantData["bodyTemperature"] = occupant.bodytemperature
-		occupantData["maxTemp"] = 1000 // If you get a burning vox armalis into the sleeper, congratulations
-		// Because we can put simple_animals in here, we need to do something tricky to get things working nice
-		occupantData["temperatureSuitability"] = 0 // 0 is the baseline
-		if(ishuman(occupant) && occupant.species)
-			// I wanna do something where the bar gets bluer as the temperature gets lower
-			// For now, I'll just use the standard format for the temperature status
-			var/datum/species/sp = occupant.species
-			if(occupant.bodytemperature < sp.cold_level_3)
-				occupantData["temperatureSuitability"] = -3
-			else if(occupant.bodytemperature < sp.cold_level_2)
-				occupantData["temperatureSuitability"] = -2
-			else if(occupant.bodytemperature < sp.cold_level_1)
-				occupantData["temperatureSuitability"] = -1
-			else if(occupant.bodytemperature > sp.heat_level_3)
-				occupantData["temperatureSuitability"] = 3
-			else if(occupant.bodytemperature > sp.heat_level_2)
-				occupantData["temperatureSuitability"] = 2
-			else if(occupant.bodytemperature > sp.heat_level_1)
-				occupantData["temperatureSuitability"] = 1
-		else if(isanimal(occupant))
-			var/mob/living/simple_mob/silly = occupant
-			if(silly.bodytemperature < silly.minbodytemp)
-				occupantData["temperatureSuitability"] = -3
-			else if(silly.bodytemperature > silly.maxbodytemp)
-				occupantData["temperatureSuitability"] = 3
-		// Blast you, imperial measurement system
-		occupantData["btCelsius"] = occupant.bodytemperature - T0C
-		occupantData["btFaren"] = ((occupant.bodytemperature - T0C) * (9.0/5.0))+ 32
-
-		if(ishuman(occupant) && !(NO_BLOOD in occupant.species.flags) && occupant.vessel)
-			occupantData["pulse"] = occupant.get_pulse(GETPULSE_TOOL)
-			occupantData["hasBlood"] = 1
-			var/blood_volume = round(occupant.vessel.get_reagent_amount(REAGENT_ID_BLOOD))
-			occupantData["bloodLevel"] = blood_volume
-			occupantData["bloodMax"] = occupant.species.blood_volume
-			occupantData["bloodPercent"] = occupant.species.blood_volume ? round(100*(blood_volume/occupant.species.blood_volume), 0.01) : 0 //copy pasta ends here, some species have no blood volume
-
+		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/operating_computer)
+		occupantData["diagnosis"] = D.report_data()
+		qdel(D)
+		if(ishuman(occupant) && occupant.dna)
 			occupantData["bloodType"] = occupant.dna.b_type
 			occupantData["surgery"] = build_surgery_list(user)
 
 	data["occupant"] = occupantData
 	data["verbose"]=verbose
-	data["oxyAlarm"]=oxyAlarm
+	data["spo2Alarm"]=spo2Alarm
 	data["choice"]=choice
 	data["health"]=healthAnnounce
 	data["crit"]=crit
 	data["healthAlarm"]=healthAlarm
-	data["oxy"]=oxy
+	data["spo2"]=spo2
 
 	return data
 
@@ -148,12 +106,12 @@
 			crit = TRUE
 		if("critOff")
 			crit = FALSE
-		if("oxyOn")
-			oxy = TRUE
-		if("oxyOff")
-			oxy = FALSE
-		if("oxy_adj")
-			oxyAlarm = clamp(text2num(params["new"]), -100, 100)
+		if("spo2On")
+			spo2 = TRUE
+		if("spo2Off")
+			spo2 = FALSE
+		if("spo2_adj")
+			spo2Alarm = clamp(text2num(params["new"]), 0, 100)
 		if("choiceOn")
 			choice = TRUE
 		if("choiceOff")
@@ -180,7 +138,8 @@
 				nextTick=world.time + OP_COMPUTER_COOLDOWN
 				if(crit && victim.is_critical())
 					playsound(src.loc, 'sound/machines/defib_success.ogg', 50, 0)
-				if(oxy && victim.injury_load(INJURY_CATEGORY_ASPHYXIA) > oxyAlarm)
+				var/saturation = victim.body?.oxygenation()
+				if(spo2 && !isnull(saturation) && saturation < spo2Alarm)
 					playsound(src.loc, 'sound/machines/defib_safetyOff.ogg', 50, 0)
 				if(healthAnnounce && victim.vitality() * 100 <= healthAlarm)
 					atom_say("[round(victim.vitality() * 100)]% vitality.")
@@ -197,123 +156,21 @@
 		if(E && E.open)
 			. += list(list("name" = E.name, "currentStage" = find_stage(E), "nextSteps" = find_next_steps(user, limb)))
 
-/**
- * This proc is actually hell. I hate the surgery system Polaris uses.
- * Basically, surgery is completely stateless, and what "stage" we're on is just dependent
- * on the current state of 5 separate variables that determine what stages we can perform
- * next.
- *
- * So, here's a little guide to understand this proc:
- * Surgery is broken down into 5 different variables:
- *		`open`,
- *		`stage`,
- *		`cavity`,
- *		`burn_stage`,
- *		and `brute_stage`.
- * Naturally, the values assigned to these don't use defines or names or anything, they're just magic numbers.
- * So, we have to figure out ourselves what we should call each value.
- * Open can be 4 values, and represents the "openness" of the surgery site.
- *		1 = Cut Open.
- *		2 = Retracted.
- *		2.5 = Bones cut.
- *		3 = Bones spread.
- * Stage can be 3 values, and represents the progress in fixing broken bones
- *		0 = Closed, can be either "we're done" or "we haven't started" FFS.
- *		1 = Bones glued.
- *		2 = Bones set.
- * Cavity is just representing the cavity implant surgeries, and can be 2 values.
- *		0 = Cavity Closed
- *		1 = Cavity Open
- * burn_stage and brute_stage are literally only used for repairing brute/burn damage to limbs
- * I have no idea why you would ever perform these surgeries, given that Bicaradine and Kelotane exist.
- * So I'm not even going to bother trying to represent them here. Fuck it.
- */
+/// The surgical site's state, from the limb's incision.
 /obj/machinery/computer/operating/proc/find_stage(obj/item/organ/external/E)
-	. = "None."
-	switch(E.open)
-		if(1)
-			. = "Incision made."
-		if(2)
-			. = "Surgical site opened."
-			switch(E.stage)
-				// if(0) // Nothing.
-				if(1)
-					. = "Surgical site opened; Bones glued."
-				if(2)
-					. = "Surgical site opened; Bones set."
-			switch(E.cavity)
-				if(1)
-					. = "Surgical site opened; Cavity open."
-		if(2.5) // WHY IS THIS A FLOAT. WHY?
-			. = "Bones cut."
-			switch(E.stage)
-				// if(0) // Nothing.
-				if(1)
-					. = "Bones cut; Bones glued."
-				if(2)
-					. = "Bones cut; Bones set."
-		if(3)
-			. = "Bones retracted."
-			switch(E.stage)
-				// if(0) // Nothing.
-				if(1)
-					. = "Bones retracted; Bones glued."
-				if(2)
-					. = "Bones retracted; Bones reset."
-			switch(E.cavity)
-				if(1)
-					. = "Bones retracted; Cavity open."
+	return E.surgery_state_text()
 
-/**
- * This converts a typepath into a pretty name.
- * As best as it can, anyways.
- */
-/proc/pretty_type(datum/A)
-	var/typeStr = "[A.type]"
-	. = copytext(typeStr, findlasttext(typeStr, "/") + 1, length(typeStr) + 1)
-	. = capitalize(replacetext(., "_", " "))
-
-/proc/get_surgery_steps_without_basetypes()
-	var/static/list/good_surgeries = list()
-	if(LAZYLEN(good_surgeries))
-		return good_surgeries
-	var/static/list/banned_surgery_steps = list(
-			/datum/surgery_step,
-			/datum/surgery_step/generic,
-			/datum/surgery_step/open_encased,
-			/datum/surgery_step/repairflesh,
-			/datum/surgery_step/face,
-			/datum/surgery_step/cavity,
-			/datum/surgery_step/limb,
-			/datum/surgery_step/brainstem,
-			/datum/surgery_step/generic/ripper,
-		)
-	good_surgeries = GLOB.surgery_steps
-	for(var/datum/surgery_step/S in good_surgeries)
-		if(S.type in banned_surgery_steps)
-			good_surgeries -= S
-		if(!LAZYLEN(S.allowed_tools))
-			good_surgeries -= S
-	return good_surgeries
-
-/**
- * Funnily enough, this proc is actually considerably less awful than find_stage.
- * All we have to do is check what surgeries can be done, like surgery mechanics themselves do.
- * Then, build a string telling the user what they can do next.
- */
+/// What can be done next at `zone`, with the proper tools for each step.
 /obj/machinery/computer/operating/proc/find_next_steps(mob/user, zone)
 	. = list()
-	for(var/datum/surgery_step/S in get_surgery_steps_without_basetypes())
-		if(S.can_use(user, victim, zone, null) && S.is_valid_target(victim))
-			var/allowed_tools_by_name = list()
-			for(var/tool in S.allowed_tools)
-				// Exempt ghetto tools.
-				if(S.allowed_tools[tool] < 100)
-					continue
-				var/obj/tool_path = tool
-				allowed_tools_by_name += capitalize(initial(tool_path.name))
-			// Please for the love of all that is holy, someone make surgery steps
-			// have names so I don't have to do this stupid pretty_type shit.
-			. += "[pretty_type(S)]: [english_list(allowed_tools_by_name)]"
+	for(var/datum/surgical_step/S as anything in next_surgical_steps(user, victim, zone))
+		var/list/allowed_tools_by_name = list()
+		for(var/tool in S.allowed_tools)
+			// Exempt improvised tools.
+			if(S.allowed_tools[tool] < 100)
+				continue
+			var/obj/tool_path = tool
+			allowed_tools_by_name += capitalize(initial(tool_path.name))
+		. += "[S.name]: [english_list(allowed_tools_by_name)]"
 
 #undef OP_COMPUTER_COOLDOWN

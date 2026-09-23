@@ -1,6 +1,5 @@
 /obj/item/clothing/suit/armor
 	name = DEVELOPER_WARNING_NAME
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
 	body_parts_covered = CHEST
 	item_flags = THICKMATERIAL
 
@@ -11,16 +10,23 @@
 	siemens_coefficient = 0.6
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/suit/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..()) //This will only run if no other problems occured when equiping.
-		for(var/obj/item/clothing/I in list(H.gloves, H.shoes))
-			if(I && (src.body_parts_covered & ARMS && I.body_parts_covered & ARMS) )
-				to_chat(H, span_warning("You can't wear \the [src] with \the [I], it's in the way."))
-				return 0
-			if(I && (src.body_parts_covered & LEGS && I.body_parts_covered & LEGS) )
-				to_chat(H, span_warning("You can't wear \the [src] with \the [I], it's in the way."))
-				return 0
-		return 1
+/obj/item/clothing/suit/armor/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
+
+/// Suits can't go on over gloves or shoes that cover the same limbs.
+/obj/item/clothing/suit/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/proc/limb_clearance, null)))
+
+/obj/item/clothing/suit/proc/limb_clearance(mob/living/carbon/human/H)
+	if(!istype(H))
+		return TRUE
+	for(var/obj/item/clothing/I in list(H.gloves, H.shoes))
+		if(I && (src.body_parts_covered & ARMS && I.body_parts_covered & ARMS))
+			return "\the [I] [I.gender == PLURAL ? "are" : "is"] in the way"
+		if(I && (src.body_parts_covered & LEGS && I.body_parts_covered & LEGS))
+			return "\the [I] [I.gender == PLURAL ? "are" : "is"] in the way"
+	return TRUE
 
 /obj/item/clothing/suit/armor/vest
 	name = "armor"
@@ -130,7 +136,6 @@
 	permeability_coefficient = 0.01
 	item_flags = THICKMATERIAL
 	body_parts_covered = CHEST|LEGS|FEET|ARMS
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
 	slowdown = 1
 	w_class = ITEMSIZE_HUGE
 	armor = list(melee = 80, bullet = 60, laser = 50,energy = 25, bomb = 50, bio = 100, rad = 100)
@@ -140,6 +145,10 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 20* ONE_ATMOSPHERE
 	siemens_coefficient = 0.6
+
+/obj/item/clothing/suit/armor/swat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/armor/swat/officer
 	name = "officer jacket"
@@ -230,7 +239,6 @@
 	blood_overlay_type = "armor"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
 	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
 
 	body_parts_covered = CHEST
 	item_flags = THICKMATERIAL
@@ -240,6 +248,10 @@
 	heat_protection = CHEST
 	max_heat_protection_temperature = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0.6
+
+/obj/item/clothing/suit/storage/vest/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/vest/officer
 	name = "officer armor vest"
@@ -354,7 +366,10 @@
 	icon_state = "pvest"
 	desc = "A simple kevlar plate carrier. This one has the word 'Press' embroidered on patches on the back and front."
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet)
+
+/obj/item/clothing/suit/storage/vest/press/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/vest/heavy
 	name = "heavy armor vest"
@@ -414,11 +429,14 @@
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
 	w_class = ITEMSIZE_LARGE//bulky item
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0
+
+/obj/item/clothing/suit/armor/centcomm/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/armor/heavy
 	name = "heavy armor"
@@ -477,21 +495,21 @@
 		|ACCESSORY_SLOT_ARMBAND) // let pcarriers have fashion
 	blood_overlay_type = "armor"
 
-/obj/item/clothing/suit/armor/pcarrier/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..()) //This will only run if no other problems occured when equiping.
-		if(H.gloves)
-			if(H.gloves.body_parts_covered & ARMS)
-				for(var/obj/item/clothing/accessory/A in src)
-					if(A.body_parts_covered & ARMS)
-						to_chat(H, span_warning("You can't wear \the [A] with \the [H.gloves], they're in the way."))
-						return 0
-		if(H.shoes)
-			if(H.shoes.body_parts_covered & LEGS)
-				for(var/obj/item/clothing/accessory/A in src)
-					if(A.body_parts_covered & LEGS)
-						to_chat(H, span_warning("You can't wear \the [A] with \the [H.shoes], they're in the way."))
-						return 0
-		return 1
+/obj/item/clothing/suit/armor/pcarrier/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance, null)))
+
+/obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance(mob/living/carbon/human/H)
+	if(!istype(H))
+		return TRUE
+	if(H.gloves && (H.gloves.body_parts_covered & ARMS))
+		for(var/obj/item/clothing/accessory/A in src)
+			if(A.body_parts_covered & ARMS)
+				return "\the [A] and \the [H.gloves] are in each other's way"
+	if(H.shoes && (H.shoes.body_parts_covered & LEGS))
+		for(var/obj/item/clothing/accessory/A in src)
+			if(A.body_parts_covered & LEGS)
+				return "\the [A] and \the [H.shoes] are in each other's way"
+	return TRUE
 
 /obj/item/clothing/suit/armor/pcarrier/explorer
 	name = "explorer plate carrier" // Clarity for vendors.
@@ -598,18 +616,18 @@
 /obj/item/clothing/suit/armor/vest/wolftaur
 	name = "wolf-taur armor vest"
 	desc = "An armored vest that protects against some damage. It appears to be created for a wolf-taur."
-	species_restricted = null //Species restricted since all it cares about is a taur half
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "wolf_item"
 	item_state = "heavy_wolf_armor"
 
-/obj/item/clothing/suit/armor/vest/wolftaur/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf))
-			return ..()
-		else
-			to_chat(H,span_warning("You need to have a wolf-taur half to wear this."))
-			return 0
+/obj/item/clothing/suit/armor/vest/wolftaur/fit_constraint()
+	return null
+
+/obj/item/clothing/suit/armor/vest/wolftaur/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit, "you need a wolf-taur half to wear this")))
+
+/obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit(mob/living/carbon/human/H)
+	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf)
 
 // HoS armor improved by to be slightly better than normal security stuff.
 /obj/item/clothing/suit/storage/vest/hoscoat
@@ -735,7 +753,10 @@
 	slowdown=0
 	siemens_coefficient = 0.9
 	armor = list(melee = 30, bullet = 20, laser = 20, energy = 20, bomb = 35, bio = 75, rad = 35) // Inferior to sec vests in bullet/laser but better for environmental protection.
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING)
+
+/obj/item/clothing/suit/armor/combat/crusader_explo/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/armor/combat/crusader_explo/FM
 	name = "field medic low tech suit"

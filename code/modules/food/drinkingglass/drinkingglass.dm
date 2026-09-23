@@ -21,7 +21,8 @@
 	min_transfer_amount = 1
 	flags = OPENCONTAINER
 
-	matter = list(MAT_GLASS = 60)
+	material_template = /datum/material_template/container
+	material_total = 60
 
 /obj/item/reagent_containers/food/drinks/glass2/examine(mob/M as mob)
 	. = ..()
@@ -142,7 +143,7 @@
 		side = "right"
 
 /obj/item/reagent_containers/food/drinks/glass2/afterattack(obj/target, mob/user, proximity)
-	if(user.a_intent == I_HURT) //We only want splashing to be done if they are on harm intent.
+	if(IS_HARMING(user)) //We only want splashing to be done if they are on harm intent.
 		if(!is_open_container() || !proximity)
 			return TRUE
 		if(standard_splash_mob(user, target))

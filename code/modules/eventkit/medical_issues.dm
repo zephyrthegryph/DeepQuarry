@@ -12,18 +12,32 @@
 //                 progress on its own.
 //   harm          optional: every tick, injure() the body with a chosen
 //                 INJURY_* kind, or damage the host organ directly, up to a cap.
-//   cure          a reagent (cured_by), a named surgery step (cure_surgery),
-//                 or removal of the organ (the affliction leaves with it).
+//   cure          a reagent (cured_by), a surgical treatment mechanism
+//                 (cure_surgery, a TREAT_* tag the matching surgical step
+//                 delivers), or removal of the organ (the affliction leaves
+//                 with it).
 
-/// Surgery steps a GM may name as the cure for a custom affliction.
-#define DQ_CUSTOM_SURGERY_BONE        "bone reinforcement"
-#define DQ_CUSTOM_SURGERY_GROWTHS     "remove growths"
-#define DQ_CUSTOM_SURGERY_VESSELS     "redirect blood vessels"
-#define DQ_CUSTOM_SURGERY_EXTRACT     "extract object"
-#define DQ_CUSTOM_SURGERY_GRAFT       "flesh graft"
-#define DQ_CUSTOM_SURGERY_HOLES       "close holes"
-#define DQ_CUSTOM_SURGERY_ULTRASOUND  "ultrasound"
-#define DQ_CUSTOM_SURGERY_REOXYGENATE "reoxygenate tissue"
+/// Surgical cures a GM may pick for a custom affliction on a limb: name -> TREAT_*.
+/proc/dq_custom_external_surgeries()
+	var/static/list/L = list(
+		"bone reinforcement" = TREAT_BONE_SETTING,
+		"remove growths" = TREAT_RESECTION,
+		"redirect blood vessels" = TREAT_VESSEL_REPAIR,
+		"extract object" = TREAT_FOREIGN_BODY_REMOVAL,
+		"flesh graft" = TREAT_TISSUE_REPAIR,
+	)
+	return L
+
+/// Surgical cures a GM may pick for a custom affliction on an internal organ.
+/proc/dq_custom_internal_surgeries()
+	var/static/list/L = list(
+		"remove growths" = TREAT_RESECTION,
+		"redirect blood vessels" = TREAT_VESSEL_REPAIR,
+		"close holes" = TREAT_SURGICAL_REPAIR,
+		"ultrasound" = TREAT_LITHOTRIPSY,
+		"reoxygenate tissue" = TREAT_OXYGENATION,
+	)
+	return L
 
 /// Per-tick cure strength of the cure reagent at a standard dose (the old
 /// system removed 10 "unhealth" per tick while the reagent was present).
@@ -58,13 +72,25 @@
 
 	/// Display name of the cure reagent (the ID lives in cured_by).
 	var/cure_reagent_name
-	/// DQ_CUSTOM_SURGERY_* that cures this, or null.
+	/// TREAT_* mechanism of the surgical step that cures this, or null.
 	var/cure_surgery
+	/// What the GM called that surgery.
+	var/cure_surgery_name
 
 	/// Message relayed to the patient now and then.
 	var/symptom_text
 	/// Observable effect key (see handle_custom_symptoms()).
 	var/symptom_affect
+
+/// The surgical cure works only as a procedure: one completed step cures the
+/// issue, and drugs sharing the mechanism do nothing.
+/datum/affliction/custom/receive_tagged_treatment(tag, amount, continuous = FALSE)
+	if(cure_surgery && tag == cure_surgery)
+		if(continuous || amount <= 0)
+			return 0
+		cure()
+		return amount
+	return ..()
 
 /datum/affliction/custom/tick()
 	if(!owner || QDELETED(location) || location.owner != owner)
@@ -142,18 +168,16 @@
 	if(cure_reagent_name)
 		return "Suggested treatment: Prescription of [cure_reagent_name]."
 	if(cure_surgery)
-		return "Required surgery: [cure_surgery]."
+		return "Required surgery: [cure_surgery_name]."
 	return "[location ? capitalize(location.name) : "The affected organ"] may require surgical removal or transplantation."
 
-/// Custom afflictions on `O` (in a body or detached), optionally only those
-/// cured by `surgery`.
-/proc/dq_custom_afflictions_on(obj/item/organ/O, surgery = null)
+/// Custom afflictions on `O` (in a body or detached).
+/proc/dq_custom_afflictions_on(obj/item/organ/O)
 	. = list()
 	if(!O)
 		return
 	for(var/datum/affliction/custom/A in O.afflictions_here())
-		if(!surgery || A.cure_surgery == surgery)
-			. += A
+		. += A
 
 /// Every custom affliction on a mob.
 /proc/dq_custom_afflictions_of(mob/living/M)
@@ -165,8 +189,6 @@
 // --- GM setup -----------------------------------------------------------------------
 
 /mob/living/carbon/human/proc/custom_medical_issue(mob/user)
-	var/static/list/external_organ_surgeries = list(DQ_CUSTOM_SURGERY_BONE, DQ_CUSTOM_SURGERY_GROWTHS, DQ_CUSTOM_SURGERY_VESSELS, DQ_CUSTOM_SURGERY_EXTRACT, DQ_CUSTOM_SURGERY_GRAFT)
-	var/static/list/internal_organ_surgeries = list(DQ_CUSTOM_SURGERY_GROWTHS, DQ_CUSTOM_SURGERY_VESSELS, DQ_CUSTOM_SURGERY_HOLES, DQ_CUSTOM_SURGERY_ULTRASOUND, DQ_CUSTOM_SURGERY_REOXYGENATE)
 	var/static/list/possible_symptoms = list("vomit", "temporary weakness", "permanent weakness", "temporary sleeping", "permanent sleeping", "jittery", "paralysed", "cough", "confusion", "None")
 
 	var/issue_name = tgui_input_text(user, "What would you like to call this medical issue?", "Name")
@@ -209,14 +231,14 @@
 	if(!cure_q || cure_q == "Cancel")
 		return
 	var/datum/reagent/cure_reagent_type
-	var/cure_surgery
+	var/cure_surgery_name
 	if(cure_q == "Reagent")
 		cure_reagent_type = tgui_input_list(user, "Which reagent should be the cure?", "Cure", subtypesof(/datum/reagent))
 		if(!cure_reagent_type)
 			return
 	if(cure_q == "Surgery")
-		cure_surgery = tgui_input_list(user, "Which surgery step should cure it?", "Cure", istype(issue_organ, /obj/item/organ/internal) ? internal_organ_surgeries : external_organ_surgeries)
-		if(!cure_surgery)
+		cure_surgery_name = tgui_input_list(user, "Which surgery step should cure it?", "Cure", istype(issue_organ, /obj/item/organ/internal) ? dq_custom_internal_surgeries() : dq_custom_external_surgeries())
+		if(!cure_surgery_name)
 			return
 
 	var/symptom_text = tgui_input_text(user, "What text should be displayed to the affected patient about their symptoms?", "Symptoms")
@@ -250,7 +272,12 @@
 		A.cure_reagent_name = initial(cure_reagent_type.name)
 		A.cured_by = list()
 		A.cured_by[initial(cure_reagent_type.id)] = DQ_CUSTOM_CURE_RATE
-	A.cure_surgery = cure_surgery
+	if(cure_surgery_name)
+		var/list/surgeries = istype(issue_organ, /obj/item/organ/internal) ? dq_custom_internal_surgeries() : dq_custom_external_surgeries()
+		A.cure_surgery = surgeries[cure_surgery_name]
+		A.cure_surgery_name = cure_surgery_name
+		A.treated_by = list()
+		A.treated_by[A.cure_surgery] = 1
 	if(symptom_text)
 		A.symptom_text = sanitize(symptom_text)
 	if(symptom_affect != "None")
@@ -264,8 +291,8 @@
 		to_chat(user, "[issue_name] will damage the [damage_organ] with a strength of [damage_value], up to a maximum of [damage_max].")
 	if(cure_reagent_type)
 		to_chat(user, "[issue_name] can be cured with [A.cure_reagent_name].")
-	else if(cure_surgery)
-		to_chat(user, "[issue_name] can be cured via the [cure_surgery] surgery.")
+	else if(cure_surgery_name)
+		to_chat(user, "[issue_name] can be cured via the [cure_surgery_name] surgery.")
 	else
 		to_chat(user, "[issue_name] can only be cured by amputation or removal of \the [issue_organ]!")
 
@@ -289,183 +316,3 @@
 		return
 	to_chat(user, "[one_issue.name] removed from [one_issue.location] in [src].")
 	one_issue.cure()
-
-
-///////////////////////////////////////////////////////////////
-//////////////Custom affliction surgeries//////////////////////
-///////////////////////////////////////////////////////////////
-// Each step cures the custom afflictions that name it. External steps treat
-// afflictions on the limb itself; internal steps treat afflictions on the
-// organs inside the limb.
-
-/datum/surgery_step/medical_issue
-	can_infect = 1
-	blood_level = 1
-	min_duration = 50
-	max_duration = 60
-	/// DQ_CUSTOM_SURGERY_* this step performs.
-	var/cure_key
-	/// Treat afflictions on the internal organs of the limb, not the limb.
-	var/internal_target = FALSE
-	/// "reinforce the bone" — the verb phrase for messages.
-	var/action_text = "operate"
-	/// "reinforced the bone" — the completed phrase.
-	var/done_text = "operated"
-
-/// Custom afflictions this step can cure at `affected`.
-/datum/surgery_step/medical_issue/proc/curable_afflictions(obj/item/organ/external/affected)
-	. = list()
-	if(!affected || !cure_key)
-		return
-	if(!internal_target)
-		return dq_custom_afflictions_on(affected, cure_key)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		. += dq_custom_afflictions_on(I, cure_key)
-
-/datum/surgery_step/medical_issue/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!ishuman(target))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	if(!affected) //happens if we try to target an organ that was amputated.
-		return FALSE
-	if(coverage_check(user, target, affected, tool))
-		return FALSE
-	if(!length(curable_afflictions(affected)))
-		return FALSE
-	return (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-
-/datum/surgery_step/medical_issue/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to [action_text] in [target]'s [affected.name] with \the [tool]."), \
-		span_notice("You are beginning to [action_text] in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to [action_text].", "beginning to [action_text].")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	var/list/curable = curable_afflictions(affected)
-	if(!length(curable))
-		return
-	user.visible_message(span_notice("[user] [done_text] in [target]'s [affected.name] with \the [tool]."), \
-		span_notice("You [done_text] in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("[done_text].", "[done_text].")
-	for(var/datum/affliction/custom/A as anything in curable)
-		A.cure()
-
-/datum/surgery_step/medical_issue/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_danger("[user]'s hand slips, damaging the tissue in [target]'s [affected.name] with \the [tool]!"), \
-		span_danger("Your hand slips, damaging the tissue in [target]'s [affected.name] with \the [tool]!"))
-	user.balloon_alert_visible("slips, damaging the tissue.", "your hand slips, damaging the tissue")
-	target.injure(INJURY_BLUNT, 5, target_zone, tool)
-
-// --- External (the limb itself) ---
-
-//Bone-gel
-/datum/surgery_step/medical_issue/strengthen_bone
-	surgery_name = "Reinforce Bone"
-	allowed_tools = list(
-		/obj/item/surgical/bonegel = 100
-	)
-	allowed_procs = list(IS_SCREWDRIVER = 75)
-	cure_key = DQ_CUSTOM_SURGERY_BONE
-	action_text = "reinforce the bone"
-	done_text = "reinforced the bone"
-
-//scalpel
-/datum/surgery_step/medical_issue/remove_growth
-	surgery_name = "Remove Growth"
-	allowed_tools = list(
-		/obj/item/surgical/scalpel = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_GROWTHS
-	action_text = "remove growths"
-	done_text = "removed the growths"
-
-//fixovein
-/datum/surgery_step/medical_issue/redirect_vessels
-	surgery_name = "Redirect Blood Vessels"
-	allowed_tools = list(
-		/obj/item/surgical/FixOVein = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_VESSELS
-	action_text = "redirect blood vessels"
-	done_text = "redirected blood vessels"
-
-//hemostat
-/datum/surgery_step/medical_issue/extract_object
-	surgery_name = "Extract Object"
-	allowed_tools = list(
-		/obj/item/surgical/hemostat = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_EXTRACT
-	action_text = "remove objects"
-	done_text = "removed the objects"
-
-//brute kit
-/datum/surgery_step/medical_issue/flesh_graft
-	surgery_name = "Graft Flesh"
-	allowed_tools = list(
-		/obj/item/stack/medical/advanced/bruise_pack = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_GRAFT
-	action_text = "graft flesh"
-	done_text = "grafted the flesh"
-
-// --- Internal (organs inside the limb) ---
-
-//scalpel
-/datum/surgery_step/medical_issue/remove_growth_internal
-	surgery_name = "Remove Growth on Organ"
-	allowed_tools = list(
-		/obj/item/surgical/scalpel = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_GROWTHS
-	internal_target = TRUE
-	action_text = "remove growths"
-	done_text = "removed the growths"
-
-//fixovein
-/datum/surgery_step/medical_issue/redirect_vessels_internal
-	surgery_name = "Redirect Blood Vessels"
-	allowed_tools = list(
-		/obj/item/surgical/FixOVein = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_VESSELS
-	internal_target = TRUE
-	action_text = "redirect blood vessels"
-	done_text = "redirected blood vessels"
-
-//cautery
-/datum/surgery_step/medical_issue/close_holes
-	surgery_name = "Close Holes"
-	allowed_tools = list(
-		/obj/item/surgical/cautery = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_HOLES
-	internal_target = TRUE
-	action_text = "close holes"
-	done_text = "closed the holes"
-
-//autopsy scanner
-/datum/surgery_step/medical_issue/ultrasound
-	surgery_name = "Ultrasound"
-	allowed_tools = list(
-		/obj/item/autopsy_scanner = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_ULTRASOUND
-	internal_target = TRUE
-	action_text = "break up material using ultrasound"
-	done_text = "broke up material with ultrasound"
-
-//bioregen
-/datum/surgery_step/medical_issue/reoxygenate_tissue
-	surgery_name = "Reoxygenate Tissue"
-	allowed_tools = list(
-		/obj/item/surgical/bioregen = 100
-	)
-	cure_key = DQ_CUSTOM_SURGERY_REOXYGENATE
-	internal_target = TRUE
-	action_text = "reoxygenate tissue"
-	done_text = "reoxygenated tissue"

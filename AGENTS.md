@@ -264,8 +264,11 @@ accident or assume they work:
   **`/datum/gas_mixture` is an opaque handle.** There is no public `temperature`/`volume`
   var: read with `return_temperature()`/`return_volume()`, write with
   `set_temperature()`/`set_volume()`, and cache reads in hot loops because each call crosses
-  the FFI. Turf heat works the same way through `/turf/proc/set_temperature()` /
-  `return_temperature()`. The `check_grep.sh` "gas mixture mirror writes" lint backs this up.
+  the FFI. Atoms (turfs included) have one temperature API in `code/modules/heat/heat.dm`:
+  `get_temperature()` / `get_interior_temperature()` to read, `add_heat()` to heat,
+  `/turf/proc/set_temperature()` for map/admin authority. `return_temperature()` is the gas
+  mixture accessor only, and shared thermal constants (`T0C`, `BODYTEMP_NORMAL`,
+  `HUMAN_HEAT_CAPACITY`, …) are generated from `verdigris/domains/heat/src/consts.rs`. The `check_grep.sh` "gas mixture mirror writes" lint backs this up.
   The FFI routes are the generated `vg_*` procs; the DM wrappers with real logic live in
   `gas_mixture.dm`, `auxmos_init_bridge.dm` and `dq_linda_turf_air.dm`.
   Verdigris builds on byondapi 0.6.x and **requires BYOND 516.1682+** (older builds crash at
@@ -359,8 +362,19 @@ accident or assume they work:
   heal only via `treatment_tags` (`code/modules/body/treatment.dm`). Triggers
   (`/datum/affliction_trigger`) create afflictions; symptoms are singletons that ACCUMULATE.
   Vital systems (airway / breathing / cardiac rhythm, `medical/conditions/vital_systems.dm`)
-  are afflictions too; see the doc. Not yet built: tourniquets, surgery redesign,
-  stasis & field stabilisation.
+  are afflictions too; see the doc. Also BUILT (all in the doc):
+  - **Physiology / oxygen debt** (`code/modules/body/physiology.dm`): ventilation,
+    oxygenation, perfusion and an oxygen debt; there is no `INJURY_ASPHYXIA` — express a
+    cause as a factor, support/restriction or breath quality, else `add_oxygen_debt()`.
+  - **Stabilisation** (`code/modules/medical/stabilisation/`): tourniquets
+    (`flow_occluded()`), field items, and stasis via `BF_STASIS`, read once per cycle by
+    `body.advance_stasis()`; systems check `ctx.in_stasis()` / `inStasisNow()`.
+  - **Surgery as treatments** (`code/modules/surgery/`): steps deliver `TREAT_*` through
+    `mend()`; access state is the `surgical_incision` affliction (no `op_stage`); organs
+    past saving answer `is_beyond_repair()`.
+  - **Diagnosis** (`code/modules/medical/diagnosis/`): readouts go through
+    `diagnose(profile)` and renderers; no four-number damage readouts.
+  - **Hibernation**: life systems sleep by rule and wake on events (see the Mob life entry).
 - **Body factors — every numeric mob stat.** `code/modules/body/factors.dm`, defines in
   `code/__defines/body_factors.dm`. Slowdown, accuracy, evasion, attack speed, incoming
   injury per category, stun duration, healing received, metabolism, bleeding, analgesia,
@@ -379,7 +393,21 @@ accident or assume they work:
   add a system, or a variant whose path mirrors the mob path (`breathing/carbon/human`). Code
   outside Life uses `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or
   `run_life_system()`. Components tick via `add_trait_life_system()` (there is no
-  `COMSIG_LIVING_LIFE`). Hibernation plumbing exists but is off (`MOB_HIBERNATION_ENABLED`).
+  `COMSIG_LIVING_LIFE`).
+  **Mobs are event-driven and hibernate, players included** (§4.9):
+  - A system sleeps when its `idle(self)` holds after it ticks. `rewake_delay()` sets a slow
+    timer for work that still drifts, and `woken_by` documents what wakes it. The default
+    `idle()` is FALSE, so a new system stays awake until you give it a rule.
+  - A mob with nothing awake leaves `SSmobs`.
+  - Anything that changes what a system reads must call `L.life_wake(bits, reason)`, or go
+    through a producer that does: `injure`/`mend`, `body.invalidate()`, the status setters,
+    `Moved`, equip/unequip, `set_stat`, Login.
+  - `life_wake()` and `life_hibernate()` are the only procs that change a mob's run state.
+    `check_grep.sh` rejects direct writes.
+  - A 30 s audit logs `MOB_HIBERNATE_AUDIT: MISSED WAKE` and wakes the mob when a producer
+    was forgotten. It always runs in test builds and fails the run on a miss. On servers it's off
+    unless the `MOB_HIBERNATION_AUDIT` config flag or the "Toggle Hibernation Audit" verb turns it on.
+  - Transition tracing is `GLOB.mob_hibernation_trace`.
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
   cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf

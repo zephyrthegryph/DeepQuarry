@@ -92,14 +92,22 @@
 		UNTYPED_LIST_ADD(components, list(
 			"key" = comp.slot,
 			"name" = "[comp]",
-			"brute_damage" = round(comp.get_structural_damage(), 0.1),
-			"electronics_damage" = diagnosis_functional ? round(comp.get_wiring_damage(), 0.1) : -1,
-			"max_damage" = diagnosis_functional ? comp.max_damage : -1,
+			"band" = diagnosis_functional ? dq_qualitative_damage_band(comp.get_structural_damage() + comp.get_wiring_damage(), comp.max_damage) : null,
 			"idle_usage" = diagnosis_functional ? comp.idle_usage : -1,
 			"is_powered" = diagnosis_functional ? comp.is_powered() : 0,
 			"toggled" = comp.toggled,
 		))
 	data["components"] = components
+
+	// Self-diagnosis: the synthetic bus reports faults while the diagnosis
+	// unit works.
+	var/list/faults = list()
+	if(diagnosis_functional)
+		var/datum/diagnosis/D = R.diagnose(/datum/diagnostic_profile/robot_analyzer)
+		for(var/datum/diagnosis_finding/F as anything in D?.findings)
+			UNTYPED_LIST_ADD(faults, list("name" = F.name, "band" = F.band, "location" = F.location))
+		qdel(D)
+	data["faults"] = faults
 
 	return data
 

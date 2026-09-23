@@ -1,8 +1,7 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
-//NOTE: Breathing happens once per FOUR TICKS, unless the last breath fails. In which case it happens once per ONE TICK! So oxyloss healing is done once per 4 ticks while oxyloss damage is applied once per tick!
-#define HUMAN_MAX_OXYLOSS 1 //Defines how much oxyloss humans can get per tick. A tile with no air at all (such as space) applies this value, otherwise it's a percentage of it.
-#define HUMAN_CRIT_MAX_OXYLOSS ( 2.0 / 6) //The amount of damage you'll get when in critical condition. We want this to be a 5 minute deal = 300s. There are 50HP to get through, so (1/6)*last_tick_duration per second. Breaths however only happen every 4 ticks. last_tick_duration = ~2.0 on average
+//NOTE: Breathing happens once per FOUR TICKS, unless the last breath fails. In which case it happens once per ONE TICK!
+//A breath doesn't harm or heal: it reports its quality (0..1) to the physiology, which decides whether the patient suffocates.
 
 #define HEAT_DAMAGE_LEVEL_1 2 //Amount of damage applied when your body temperature just passes the 360.15k safety point
 #define HEAT_DAMAGE_LEVEL_2 4 //Amount of damage applied when your body temperature passes the 400K point
@@ -15,9 +14,10 @@
 #define HUMAN_COMBUSTION_TEMP 524 //524k is the sustained combustion temperature of human fat
 
 /mob/living/carbon/human
-	var/in_stasis = 0
 	var/heartbeat = 0
 	var/chemical_darksight = 0
+	/// world.time of the next periodic full HUD refresh (hud refresh system).
+	var/hud_full_refresh_at = 0
 
 // Human Life (doc/mob_life_architecture.md §4.5). The living core runs first; the human-only
 // steps that followed ..() in the old Life() are TAIL systems below, in their old order:
@@ -53,13 +53,21 @@
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/carbon/human
+	woken_by = "its own timer"
 
 /datum/life_system/hud_refresh/tick(mob/living/carbon/human/self, datum/life_context/ctx)
-	// This used to dirty every HUD on 29 of every 30 Life ticks due to an
-	// inverted modulo condition. The periodic safety refresh is intentionally
-	// rare; state-changing code continues to set its exact HUD dirty bits.
-	if(!(self.life_tick % 30))
+	// The periodic safety refresh is intentionally rare (once a minute); state-changing
+	// code continues to set its exact HUD dirty bits.
+	if(world.time >= self.hud_full_refresh_at)
+		self.hud_full_refresh_at = world.time + 1 MINUTES
 		self.hud_updateflag = (1 << TOTAL_HUDS) - 1
+
+/// Lazy: sleeps until the next refresh is due.
+/datum/life_system/hud_refresh/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/life_system/hud_refresh/rewake_delay(mob/living/carbon/human/self)
+	return max(1 SECONDS, self.hud_full_refresh_at - world.time)
 
 /// The voice others hear.
 /datum/life_system/voice
@@ -68,16 +76,21 @@
 	phase = LIFE_PHASE_TAIL
 	order = 110
 	mob_type = /mob/living/carbon/human
+	woken_by = "equipment (LIFE_WAKE_EQUIPMENT); body invalidate; set_stat; Moved; its own timer"
 
 /datum/life_system/voice/tick(mob/living/carbon/human/self, datum/life_context/ctx)
-	// NOTE: voice/name are recomputed every tick. GetVoice()/get_visible_name() now
-	// skip their per-tick list alloc when no signal handler is registered (the common case).
-	// A fuller event-driven conversion (recompute only on identity/mask/wear/disguise change)
-	// is deferred: the inputs (rig/voice-changer active state, changeling mimic, belly absorb)
-	// change from too many scattered sites to hook safely without behavior risk.
 	self.voice = self.GetVoice()
 
-/// Deep stasis puts the body to sleep. Reads the cycle's stasis state for the vitals gate.
+/// Event-driven: equipment (masks, voice changers, rigs), the body, stat and moving (belly
+/// absorb) wake it. Voice changers, changeling mimicry and disguises toggle from scattered
+/// sites, so a slow timer backs the events up.
+/datum/life_system/voice/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/life_system/voice/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
+
+/// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /datum/life_system/stasis_sleep
 	name = "stasis sleep"
 	bit = LIFE_SYS_BODY
@@ -86,8 +99,7 @@
 	mob_type = /mob/living/carbon/human
 
 /datum/life_system/stasis_sleep/tick(mob/living/carbon/human/self, datum/life_context/ctx)
-	ctx.in_stasis(self)
-	if(self.getStasis() > 2)
+	if(self.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
 		self.Sleeping(20)
 
 /// Falling (prevents people from floating).
@@ -153,13 +165,18 @@
 	phase = LIFE_PHASE_TAIL
 	order = 300
 	mob_type = /mob/living/carbon/human
+	woken_by = "equipment (LIFE_WAKE_EQUIPMENT); body invalidate (disfigurement); set_stat; its own timer"
 
 /datum/life_system/visible_name/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	//Update our name based on whether our face is obscured/disfigured
-	// NOTE: recomputed every tick. get_visible_name() now skips its per-tick list alloc
-	// when no signal handler is registered. A fuller event-driven conversion (recompute
-	// only on identity/mask/wear/disguise change) is deferred as too risky to verify here.
 	self.name = self.get_visible_name()
+
+/// Event-driven like the voice system, with the same slow timer behind it.
+/datum/life_system/visible_name/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/life_system/visible_name/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
 
 /datum/life_system/breathing/carbon/human
 	mob_type = /mob/living/carbon/human
@@ -601,47 +618,37 @@
 		return
 
 	if(self.suiciding)
+		// Holding the breath: nothing is drawn in.
 		self.failed_last_breath = 1
-		self.injure(INJURY_ASPHYXIA, 2)//If you are suiciding, you should die a little bit faster
+		self.body?.set_breath_quality(0)
 		self.suiciding--
 		return 0
 
 	if(self.wear_mask && (self.wear_mask.item_flags & INFINITE_AIR))
 		self.failed_last_breath = 0
-		self.mend(TREAT_OXYGENATION, 5)
+		self.body?.set_breath_quality(1)
 		return
 
 	if(self.does_not_breathe)
 		self.failed_last_breath = 0
-		self.mend(TREAT_OXYGENATION, 5)
 		return
 
 	// XGM .total_moles var → LINDA proc. Cache to avoid 12 proc calls.
 	var/breath_moles = breath ? breath.total_moles() : 0
 	if(!breath || (breath_moles == 0))
+		// Nothing to breathe: a closed airway, apnea, or vacuum.
 		self.failed_last_breath = 1
-		if(!self.is_critical())
-			self.injure(INJURY_ASPHYXIA, HUMAN_MAX_OXYLOSS)
-		else
-			self.injure(INJURY_ASPHYXIA, HUMAN_CRIT_MAX_OXYLOSS)
-
+		self.body?.set_breath_quality(0)
 		self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
 		return 0
 	else
 		self.clear_alert("oxy")
 
-	var/safe_pressure_min = self.species.minimum_breath_pressure // Minimum safe partial pressure of breathable gas in kPa
-
-
-	// Lung damage increases the minimum safe pressure.
-	if(self.should_have_organ(O_LUNGS))
-		var/obj/item/organ/internal/lungs/L = self.internal_organs_by_name[O_LUNGS]
-		if(isnull(L))
-			safe_pressure_min = INFINITY //No lungs, how are you breathing?
-		else if(L.is_broken())
-			safe_pressure_min *= 1.5
-		else if(L.is_bruised())
-			safe_pressure_min *= 1.25
+	// Minimum safe partial pressure of breathable gas in kPa. Lung damage is
+	// the physiology's business (gas exchange), not the air's.
+	var/safe_pressure_min = self.species.minimum_breath_pressure
+	/// How good this breath is, 0..1, reported to the physiology.
+	var/quality = 1
 
 	var/safe_exhaled_max = 10
 	var/safe_toxins_min = 0.05
@@ -698,9 +705,8 @@
 		if(is_below_sound_pressure(get_turf(self)))	//No more popped lungs from choking/drowning. You also have ~20 seconds to get internals on before your lungs pop.
 			self.rupture_lung(TRUE)
 
-		var/ratio = inhale_pp/safe_pressure_min
-		// Don't fuck them up too fast (space only does HUMAN_MAX_OXYLOSS after all!)
-		self.injure(INJURY_ASPHYXIA, max(HUMAN_MAX_OXYLOSS*(1-ratio), 0))
+		// Too little of the breath gas: the breath is only as good as its share.
+		quality = safe_pressure_min > 0 ? clamp(inhale_pp / safe_pressure_min, 0, 1) : 0
 		failed_inhale = 1
 
 		switch(breath_type)
@@ -736,7 +742,8 @@
 				var/word = pick("extremely dizzy","short of breath","faint","confused")
 				to_chat(self, span_danger("You feel [word]."))
 
-			self.injure(INJURY_ASPHYXIA, HUMAN_MAX_OXYLOSS)
+			// Hypercapnia: the exhaled gas crowds out the breath.
+			quality *= 0.4
 			failed_exhale = 1
 
 		else if(exhaled_pp > safe_exhaled_max * 0.7)
@@ -747,9 +754,8 @@
 			//scale linearly from 0 to 1 between safe_exhaled_max and safe_exhaled_max*0.7
 			var/ratio = 1.0 - (safe_exhaled_max - exhaled_pp)/(safe_exhaled_max*0.3)
 
-			//give them some oxyloss, up to the limit - we don't want people falling unconcious due to CO2 alone until they're pretty close to safe_exhaled_max.
-			if (self.injury_load(INJURY_CATEGORY_ASPHYXIA) < 50*ratio)
-				self.injure(INJURY_ASPHYXIA, HUMAN_MAX_OXYLOSS)
+			// Mild hypercapnia: the breath worsens as the exhaled gas nears its limit.
+			quality *= 1 - 0.5 * ratio
 			failed_exhale = 1
 
 		else if(exhaled_pp > safe_exhaled_max * 0.6)
@@ -779,8 +785,8 @@
 			if(prob(5))
 				to_chat(self,span_warning("You smell rotten eggs."))
 	if(methane_pp > safe_toxins_max)
-		var/ratio = (poison_methane/safe_toxins_max) * 1200
-		self.injure(INJURY_ASPHYXIA, CLAMP(ratio,0.1,10)) // Causes slow suffocation
+		// Methane displaces the breath: slow suffocation.
+		quality *= 1 - clamp(methane_pp / (safe_toxins_max * 20), 0.1, 0.8)
 		if(prob(20))
 			self.emote("gasp")
 		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after // removed duplicate line; poison_methane already equals LINDA_GAS_AMT(breath, GAS_CH4) from line 608
@@ -815,11 +821,8 @@
 		self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 
 	// Were we able to breathe?
-	if (failed_inhale || failed_exhale)
-		self.failed_last_breath = 1
-	else
-		self.failed_last_breath = 0
-		self.mend(TREAT_OXYGENATION, 5)
+	self.failed_last_breath = (failed_inhale || failed_exhale) ? 1 : 0
+	self.body?.set_breath_quality(quality)
 
 	if(!self.does_not_breathe && self.client) // If we breathe, and have an active client, check if we have synthetic lungs.
 		var/obj/item/organ/internal/lungs/L = self.internal_organs_by_name[O_LUNGS]
@@ -973,7 +976,7 @@
 		var/loc_temp = T0C
 		if(istype(self.loc, /obj/mecha))
 			var/obj/mecha/M = self.loc
-			loc_temp =  M.return_temperature()
+			loc_temp =  M.get_interior_temperature()
 		else if(istype(self.loc, /obj/machinery/atmospherics/unary/cryo_cell))
 			var/obj/machinery/atmospherics/unary/cryo_cell/cc = self.loc
 			loc_temp = cc.air_contents.return_temperature()
@@ -1113,19 +1116,12 @@
 				if(self.stat==DEAD)
 					pressure_damage = pressure_damage/2
 				self.injure(INJURY_BLUNT, pressure_damage) // Decompression: ruptured capillaries and tissue
-			if(self.injury_load(INJURY_CATEGORY_ASPHYXIA) < 55) 		// 12 OxyLoss per 4 ticks when wearing internals;    unconsciousness in 16 ticks, roughly half a minute
-				var/pressure_dam = 3	// 16 OxyLoss per 4 ticks when no internals present; unconsciousness in 13 ticks, roughly twenty seconds
-										// (Extra 1 oxyloss from failed breath)
-										// Being in higher pressure decreases the damage taken, down to a minimum of (species.hazard_low_pressure / ONE_ATMOSPHERE) at species.hazard_low_pressure
-				pressure_dam *= (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE
-
+				// Ebullition in the lungs: gas exchange fails even on internals,
+				// less the better the suit holds pressure.
+				var/exposure = (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE
 				if(self.wear_suit && self.wear_suit.min_pressure_protection && self.head && self.head.min_pressure_protection)
-					var/protection = max(self.wear_suit.min_pressure_protection, self.head.min_pressure_protection) // Take the weakest protection
-					pressure_dam *= (protection) / (ONE_ATMOSPHERE) 	// Divide by ONE_ATMOSPHERE to get a fractional protection
-																		// Stronger protection (Closer to 0) results in a smaller fraction
-																		// Firesuits (Min protection = 0.2 atmospheres) decrease oxyloss to 1/5
-
-				self.injure(INJURY_ASPHYXIA, pressure_dam)
+					exposure *= max(self.wear_suit.min_pressure_protection, self.head.min_pressure_protection) / ONE_ATMOSPHERE
+				self.body?.add_restriction(self, BF_GAS_EXCHANGE, clamp(1 - exposure, 0.1, 1), 4 SECONDS)
 			self.throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 2)
 		else
 			self.clear_alert("pressure")
@@ -1555,11 +1551,11 @@
 		self.overlay_fullscreen("crit", /atom/movable/screen/fullscreen/crit, severity)
 	else //Alive
 		self.clear_fullscreen("crit")
-		//Oxygen damage overlay
-		var/asphyxia = self.injury_load(INJURY_CATEGORY_ASPHYXIA)
-		if(asphyxia)
+		//Oxygen debt overlay
+		var/debt = self.oxygen_debt()
+		if(debt)
 			var/severity = 0
-			switch(asphyxia)
+			switch(debt)
 				if(10 to 20)		severity = 1
 				if(20 to 25)		severity = 2
 				if(25 to 30)		severity = 3
@@ -2365,8 +2361,6 @@
 			return TRUE
 	return FALSE
 
-#undef HUMAN_MAX_OXYLOSS
-#undef HUMAN_CRIT_MAX_OXYLOSS
 
 #undef HEAT_DAMAGE_LEVEL_1
 #undef HEAT_DAMAGE_LEVEL_2

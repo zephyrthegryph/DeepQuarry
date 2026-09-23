@@ -35,7 +35,11 @@
 			. += span_notice("It's unpowered.")
 			return
 		. += span_notice("Vitals of [victim]:")
-		. += span_notice("Pulse: [victim.get_pulse(GETPULSE_TOOL)]")
+		var/datum/diagnosis/D = victim.diagnose(/datum/diagnostic_profile/vitals_monitor)
+		var/vitals_text = D?.render_vitals_text()
+		qdel(D)
+		if(vitals_text)
+			. += span_notice(vitals_text)
 		. += span_notice("Rhythm: [victim.cardiac_rhythm_reading()]")
 
 		var/brain_activity = "none"
@@ -53,15 +57,10 @@
 
 			var/obj/item/organ/internal/lungs/lungs = victim.internal_organs_by_name[O_LUNGS]
 			if(istype(lungs))
-				var/hypoxia = victim.injury_load(INJURY_CATEGORY_ASPHYXIA)
 				if(victim.breath_blocked())
 					breathing = "none"
-				else if(hypoxia > 50)
-					breathing = "erratic"
-				else if(hypoxia > 10)
-					breathing = "shallow"
 				else
-					breathing = "normal"
+					breathing = breathing_band()
 
 		. += span_notice("Brain activity: [brain_activity]")
 		. += span_notice("Breathing: [breathing]")
@@ -126,16 +125,25 @@
 
 	var/obj/item/organ/internal/lungs/lungs = victim.internal_organs_by_name[O_LUNGS]
 	if(istype(lungs) && victim.stat != DEAD && !(victim.status_flags & FAKEDEATH))
-		var/hypoxia = victim.injury_load(INJURY_CATEGORY_ASPHYXIA)
-		if(hypoxia > 50)
-			add_overlay("breathing_shallow")
-			add_overlay("breathing_warning")
-		else if(hypoxia > 10)
-			add_overlay("breathing_shallow")
-		else
-			add_overlay("breathing_normal")
+		switch(breathing_band())
+			if("erratic")
+				add_overlay("breathing_shallow")
+				add_overlay("breathing_warning")
+			if("shallow")
+				add_overlay("breathing_shallow")
+			else
+				add_overlay("breathing_normal")
 	else
 		add_overlay("breathing_warning")
+
+/// Breathing quality from the patient's oxygen saturation.
+/obj/machinery/vitals_monitor/proc/breathing_band()
+	var/saturation = victim.body?.oxygenation()
+	if(isnull(saturation) || saturation >= 93)
+		return "normal"
+	if(saturation >= 85)
+		return "shallow"
+	return "erratic"
 
 /obj/machinery/vitals_monitor/verb/toggle_beep()
 	set name = "Toggle Monitor Beeping"

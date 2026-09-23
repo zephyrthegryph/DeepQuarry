@@ -122,7 +122,7 @@
 					log_vore("[attacker] attempted to feed [G.affecting] to [user] ([user.type]) but it failed.")
 
 			///// If user clicked on their grabbed target
-			else if((src == G.affecting) && (attacker.a_intent == I_GRAB) && (attacker.zone_sel.selecting == BP_TORSO) && (is_vore_predator(G.affecting)))
+			else if((src == G.affecting) && (IS_GRABBING(attacker)) && (attacker.zone_sel.selecting == BP_TORSO) && (is_vore_predator(G.affecting)))
 				if(istype(victim) && !victim.client && !victim.ai_brain) //Check whether the victim is: A carbon mob, has no client, but has a ckey. This should indicate an SSD player.
 					log_and_message_admins("attempted to force feed themselves to [key_name_admin(G.affecting)] whilst they were AFK ([G.affecting ? ADMIN_JMP(G.affecting) : "null"])", attacker)
 				if(!G.affecting.feeding)
@@ -184,7 +184,7 @@
 				span_warning("[user] is trying to stuff a beacon into you!"))
 			if(do_after(user, 3 SECONDS, target = src))
 				user.drop_item()
-				I.forceMove(B)
+				B.belly_insert(I, user)
 				return TRUE
 			else
 				return TRUE //You don't get to hit someone 'later'
@@ -199,7 +199,7 @@
 			return FALSE
 		var/mob/living/attacker = user
 
-		if(attacker.a_intent != I_HELP)
+		if(!IS_HELPING(attacker))
 			return FALSE
 
 		var/hit_zone = attacker.zone_sel.selecting

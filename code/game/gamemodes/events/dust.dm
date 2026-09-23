@@ -115,6 +115,3 @@ The "dust" will damage the hull of the station causin minor hull breaches.
 	Bump(A)
 	return
 
-/obj/effect/space_dust/ex_act(severity)
-	qdel(src)
-	return

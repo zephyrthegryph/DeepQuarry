@@ -10,19 +10,34 @@
 	name = null
 	icon = 'icons/obj/power.dmi'
 	anchored = TRUE
+	/// The network this machine is on (bound by the Rust power step), or null.
 	var/datum/powernet/powernet = null
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 	active_power_usage = 0
-	/// Machinery-generation heartbeat for the persistent supply ledger. A source
-	/// that stops publishing is removed after its process call in that generation.
-	var/power_supply_generation = 0
+	/// This machine's key in the Rust power domain (0: not registered).
+	var/power_key = 0
+	/// Persistent supply registered with set_power_supply() (W).
+	var/power_supply_rate = 0
+
+/obj/machinery/power/Initialize(mapload)
+	. = ..()
+	power_autoconnect()
+
+/// An anchored power machine joins the knot cables on its turf.
+/obj/machinery/power/proc/power_autoconnect()
+	if(anchored && power_turf())
+		connect_to_network(FALSE)
+
+/// The turf this machine's node sits on.
+/obj/machinery/power/proc/power_turf()
+	return isturf(loc) ? loc : null
 
 /obj/machinery/power/Destroy()
-	SSmachines.deferred_powernet_machines -= src
-	if(powernet)
-		powernet.unregister_power_supply(src)
 	disconnect_from_network()
+	if(power_key)
+		power_key_free(power_key)
+		power_key = 0
 	return ..()
 
 ///////////////////////////////
@@ -38,17 +53,27 @@
 		powernet.trigger_warning()
 		return powernet.draw_power(amount, src)
 
+/// Supply for the next power step only (pulse sources: coils, collectors,
+/// fusion). A producer that runs every tick calls it every tick, as before.
 /obj/machinery/power/proc/add_avail(amount)
-	if(powernet)
-		power_supply_generation = SSmachines.power_supply_generation
-		powernet.register_power_supply(src, amount, FALSE)
-		return TRUE
-	return FALSE
+	if(!powernet || amount <= 0)
+		return FALSE
+	SSmachines.power_queue(list(POWER_OP_PULSE, 2, power_key, amount))
+	return TRUE
 
-/// Remove a persistent supply rate when a producer switches off. Repeating an
-/// unchanged add_avail() is intentionally free, so stopping is explicit.
+/// A persistent supply rate (W): it stays until changed, so a steady
+/// generator can sleep. Repeating the same rate is free.
+/obj/machinery/power/proc/set_power_supply(amount)
+	amount = max(amount, 0)
+	if(amount == power_supply_rate)
+		return
+	power_supply_rate = amount
+	if(!power_key)
+		power_key = power_key_alloc(src)
+	SSmachines.power_queue(list(POWER_OP_SUPPLY, 2, power_key, amount))
+
 /obj/machinery/power/proc/clear_power_supply()
-	powernet?.unregister_power_supply(src)
+	set_power_supply(0)
 
 /obj/machinery/power/proc/draw_power(amount)
 	if(powernet)
@@ -76,30 +101,63 @@
 /obj/machinery/power/proc/disconnect_terminal(obj/machinery/power/terminal/term) // machines without a terminal will just return, no harm no fowl.
 	return
 
-// connect the machine to a powernet if a node cable is present on the turf
-/obj/machinery/power/proc/connect_to_network()
-	if(SSmachines.powernet_is_defered())
-		SSmachines.note_deferred_powernet_machine(src)
-		return 0
+/// Registers the machine as a node on its turf; it joins every knot cable
+/// there. Returns TRUE when that put it on a network. Without `bind_now` the
+/// next power step binds it (map load).
+/obj/machinery/power/proc/connect_to_network(bind_now = TRUE)
+	if(powernet && power_key)
+		return TRUE
+	if(!power_send_node())
+		return FALSE
+	if(bind_now)
+		power_bind_now()
+	return !!powernet
 
-	var/turf/T = src.loc
-	if(!T || !istype(T))
-		return 0
+/// Sends this machine's node (its turf) to Rust; it joins the knots there.
+/obj/machinery/power/proc/power_send_node()
+	var/turf/T = power_turf()
+	if(!istype(T))
+		return FALSE
+	if(!power_key)
+		power_key = power_key_alloc(src)
+	SSmachines.power_queue(list(POWER_OP_MACHINE, 4, power_key, T.x, T.y, T.z))
+	if(power_supply_rate)
+		SSmachines.power_queue(list(POWER_OP_SUPPLY, 2, power_key, power_supply_rate))
+	power_registered()
+	return TRUE
 
-	var/obj/structure/cable/C = T.get_cable_node() //check if we have a node cable on the machine turf, the first found is picked
-	if(!C || !C.powernet)
-		return 0
+/// Hook: the node was (re)sent to Rust; storage machines resend their state.
+/obj/machinery/power/proc/power_registered()
+	return
 
-	C.powernet.add_machine(src)
-	return 1
+/// Binds to the current region at once (the step would do it anyway).
+/obj/machinery/power/proc/power_bind_now()
+	var/datum/powernet/network = SSmachines.power_region_of(power_key)
+	power_bind(network?.region_id || 0, network ? 2 : 0)
 
-// remove and disconnect the machine from its current powernet
+/// Leaves the network and removes the node.
 /obj/machinery/power/proc/disconnect_from_network()
-	if(!powernet)
-		return 0
-	powernet.unregister_power_supply(src)
-	powernet.remove_machine(src)
-	return 1
+	if(!power_key)
+		return FALSE
+	SSmachines.power_queue(list(POWER_OP_REMOVE, 1, power_key))
+	var/was = !!powernet
+	power_bind(0, 0)
+	return was
+
+/// The Rust step (or a connect) put this machine on region `region_id`.
+/obj/machinery/power/proc/power_bind(region_id, members)
+	var/datum/powernet/network = (region_id && members > 1) ? SSmachines.power_facade(region_id, power_key) : null
+	if(network == powernet)
+		return
+	var/datum/powernet/old = powernet
+	powernet = network
+	old?.unbind_machine(src)
+	network?.bind_machine(src)
+	power_network_changed(old, network)
+
+/// Hook: the machine moved to another network (or off one).
+/obj/machinery/power/proc/power_network_changed(datum/powernet/old, datum/powernet/network)
+	return
 
 // attach a wire to a power machine - leads from the turf you are standing on
 //almost never called, overwritten by all power machines but terminal and generator
@@ -142,150 +200,6 @@
 /obj/machinery/power/proc/power_spike()
 	return
 
-///////////////////////////////////////////
-// Powernet handling helpers
-//////////////////////////////////////////
-
-//returns all the cables WITHOUT a powernet in neighbors turfs,
-//pointing towards the turf the machine is located at
-/obj/machinery/power/proc/get_connections()
-
-	. = list()
-
-	var/cdir
-	var/turf/T
-
-	for(var/card in GLOB.cardinal)
-		T = get_step(loc,card)
-		cdir = get_dir(T,loc)
-
-		for(var/obj/structure/cable/C in T)
-			if(C.powernet)	continue
-			if(C.d1 == cdir || C.d2 == cdir)
-				. += C
-	return .
-
-//returns all the cables in neighbors turfs,
-//pointing towards the turf the machine is located at
-/obj/machinery/power/proc/get_marked_connections()
-
-	. = list()
-
-	var/cdir
-	var/turf/T
-
-	for(var/card in GLOB.cardinal)
-		T = get_step(loc,card)
-		cdir = get_dir(T,loc)
-
-		for(var/obj/structure/cable/C in T)
-			if(C.d1 == cdir || C.d2 == cdir)
-				. += C
-	return .
-
-//returns all the NODES (O-X) cables WITHOUT a powernet in the turf the machine is located at
-/obj/machinery/power/proc/get_indirect_connections()
-	. = list()
-	for(var/obj/structure/cable/C in loc)
-		if(C.powernet)	continue
-		if(C.d1 == 0) // the cable is a node cable
-			. += C
-	return .
-
-///////////////////////////////////////////
-// GLOBAL PROCS for powernets handling
-//////////////////////////////////////////
-
-
-// returns a list of all power-related objects (nodes, cable, junctions) in turf,
-// excluding source, that match the direction d
-// if unmarked==1, only return those with no powernet
-/proc/power_list(turf/T, source, d, unmarked=0, cable_only = 0)
-	. = list()
-
-	var/reverse = d ? GLOB.reverse_dir[d] : 0
-	for(var/AM in T)
-		if(AM == source)	continue			//we don't want to return source
-
-		if(!cable_only && istype(AM,/obj/machinery/power))
-			var/obj/machinery/power/P = AM
-			if(P.powernet == 0)	continue		// exclude APCs which have powernet=0
-
-			if(!unmarked || !P.powernet)		//if unmarked=1 we only return things with no powernet
-				if(d == 0)
-					. += P
-
-		else if(istype(AM,/obj/structure/cable))
-			var/obj/structure/cable/C = AM
-
-			if(!unmarked || !C.powernet)
-				if(C.d1 == d || C.d2 == d || C.d1 == reverse || C.d2 == reverse )
-					. += C
-	return .
-
-//remove the old powernet and replace it with a new one throughout the network.
-/proc/propagate_network(obj/O, datum/powernet/PN)
-	//to_world_log("propagating new network")
-	var/list/worklist = list(O)
-	// Membership set for worklist; `worklist |= ...` rescanned the whole list per cable.
-	var/list/queued = list()
-	queued[O] = TRUE
-	var/list/found_machines = list()
-	var/index = 1
-	var/obj/P = null
-
-	while(index<=worklist.len) //until we've exhausted all power objects
-		P = worklist[index] //get the next power object found
-		index++
-
-		if( istype(P,/obj/structure/cable))
-			var/obj/structure/cable/C = P
-			if(C.powernet != PN) //add it to the powernet, if it isn't already there
-				PN.add_cable(C)
-			for(var/obj/connection as anything in C.get_connections()) //get adjacents power objects, with or without a powernet
-				if(!queued[connection])
-					queued[connection] = TRUE
-					worklist += connection
-
-		else if(P.anchored && istype(P,/obj/machinery/power))
-			var/obj/machinery/power/M = P
-			found_machines |= M //we wait until the powernet is fully propagates to connect the machines
-
-		else
-			continue
-
-	//now that the powernet is set, connect found machines to it
-	for(var/obj/machinery/power/PM in found_machines)
-		if(!PM.connect_to_network()) //couldn't find a node on its turf...
-			PM.disconnect_from_network() //... so disconnect if already on a powernet
-
-
-//Merge two powernets, the bigger (in cable length term) absorbing the other
-/proc/merge_powernets(datum/powernet/net1, datum/powernet/net2)
-	if(!net1 || !net2) //if one of the powernet doesn't exist, return
-		return
-
-	if(net1 == net2) //don't merge same powernets
-		return
-
-	//We assume net1 is larger. If net2 is in fact larger we are just going to make them switch places to reduce on code.
-	if(net1.cables.len < net2.cables.len)	//net2 is larger than net1. Let's switch them around
-		var/temp = net1
-		net1 = net2
-		net2 = temp
-
-	//merge net2 into net1
-	for(var/obj/structure/cable/Cable in net2.cables) //merge cables
-		net1.add_cable(Cable)
-
-	if(!net2) return net1
-
-	for(var/obj/machinery/power/Node in net2.nodes) //merge power machines
-		if(!Node.connect_to_network())
-			Node.disconnect_from_network() //if somehow we can't connect the machine to the new powernet, disconnect it from the old nonetheless
-
-	return net1
-
 //Determines how strong could be shock, deals damage to mob, uses power.
 //M is a mob who touched wire/whatever
 //power_source is a source of electricity, can be powercell, area, apc, cable, powernet or null
@@ -300,7 +214,7 @@
 		power_source = source_area.get_apc()
 	if(istype(power_source,/obj/structure/cable))
 		var/obj/structure/cable/Cable = power_source
-		power_source = Cable.powernet
+		power_source = Cable.get_powernet()
 
 	var/datum/powernet/PN
 	var/obj/item/cell/cell

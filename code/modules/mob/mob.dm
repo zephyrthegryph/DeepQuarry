@@ -1,6 +1,5 @@
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
-	SSmachines?.publish_mob_chunk(src)
-	SSai?.publish_mob_chunk(src)
+	SSreactor?.publish_mob_chunk(src)
 	if(client)
 		stack_trace("Mob with client has been deleted.")
 
@@ -93,8 +92,7 @@
 	set_focus(src) // Key Handling
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
-	SSmachines?.publish_mob_chunk(src)
-	SSai?.publish_mob_chunk(src)
+	SSreactor?.publish_mob_chunk(src)
 	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
@@ -541,10 +539,10 @@
 	var/list/targets = list()
 
 
-	targets += observe_list_format(GLOB.nuke_disks)
-	targets += observe_list_format(GLOB.all_singularities)
+	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_NUKE_DISKS))
+	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 	targets += getmobs()
-	targets += observe_list_format(sort_names(GLOB.mechas_list))
+	targets += observe_list_format(sort_names(REGISTRY_MEMBERS(REGISTRY_MECHAS)))
 	targets += observe_list_format(SSshuttles.ships)
 
 	client.perspective = EYE_PERSPECTIVE
@@ -686,6 +684,7 @@
 
 	pulling = AM
 	AM.pulledby = src
+	on_status_counter_changed("pulling")
 
 	if(pullin)
 		pullin.icon_state = "pull1"
@@ -721,6 +720,7 @@
 
 	pulling = AM
 	AM.pulledby = src
+	on_status_counter_changed("pulling")
 
 	if(pullin)
 		pullin.icon_state = "pull1"
@@ -836,6 +836,7 @@
 		facing_dir = null
 		stunned = max(max(stunned,amount),0) //can't go below 0, getting a low amount of stun doesn't lower your current stun
 		update_canmove()	//updates lying, canmove and icons
+	on_status_counter_changed("stun")
 	return
 
 /mob/proc/SetStunned(amount, ignore_canstun = FALSE) //Sets remaining duration
@@ -844,6 +845,7 @@
 	if(status_flags & CANSTUN)
 		stunned = max(amount,0)
 		update_canmove()	//updates lying, canmove and icons
+	on_status_counter_changed("setstunned")
 	return
 
 /mob/proc/AdjustStunned(amount, ignore_canstun = FALSE) //Adds to remaining duration
@@ -852,6 +854,7 @@
 	if(status_flags & CANSTUN)
 		stunned = max(stunned + amount,0)
 		update_canmove()	//updates lying, canmove and icons
+	on_status_counter_changed("adjuststunned")
 	return
 
 /mob/proc/Weaken(amount, ignore_canstun = FALSE) //Can't go below remaining duration
@@ -861,6 +864,7 @@
 		facing_dir = null
 		weakened = max(max(weakened,amount),0)
 		update_canmove()	//updates lying, canmove and icons
+	on_status_counter_changed("weaken")
 	return
 
 /mob/proc/SetWeakened(amount, ignore_canstun = FALSE) //Sets remaining duration
@@ -869,6 +873,7 @@
 	if(status_flags & CANWEAKEN)
 		weakened = max(amount,0)
 		update_canmove()	//can you guess what this does yet?
+	on_status_counter_changed("setweakened")
 	return
 
 /mob/proc/AdjustWeakened(amount, ignore_canstun = FALSE) //Adds to remaining duration
@@ -877,6 +882,7 @@
 	if(status_flags & CANWEAKEN)
 		weakened = max(weakened + amount,0)
 		update_canmove()	//updates lying, canmove and icons
+	on_status_counter_changed("adjustweakened")
 	return
 
 /mob/proc/Paralyse(amount, ignore_canstun = FALSE) //Can't go below remaining duration
@@ -885,6 +891,7 @@
 	if(status_flags & CANPARALYSE)
 		facing_dir = null
 		paralysis = max(max(paralysis,amount),0)
+	on_status_counter_changed("paralyse")
 	return
 
 /mob/proc/SetParalysis(amount, ignore_canstun = FALSE) //Sets remaining duration
@@ -892,6 +899,7 @@
 		return
 	if(status_flags & CANPARALYSE)
 		paralysis = max(amount,0)
+	on_status_counter_changed("setparalysis")
 	return
 
 /mob/proc/AdjustParalysis(amount, ignore_canstun = FALSE) //Adds to remaining duration
@@ -899,6 +907,7 @@
 		return
 	if(status_flags & CANPARALYSE)
 		paralysis = max(paralysis + amount,0)
+	on_status_counter_changed("adjustparalysis")
 	return
 
 /mob/proc/Sleeping(amount, ignore_canstun = FALSE) //Can't go below remaining duration
@@ -906,48 +915,57 @@
 		return
 	facing_dir = null
 	sleeping = max(max(sleeping,amount),0)
+	on_status_counter_changed("sleeping")
 	return
 
 /mob/proc/SetSleeping(amount, ignore_canstun = FALSE) //Sets remaining duration
 	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_SLEEP, amount, ignore_canstun) & COMPONENT_NO_STUN)
 		return
 	sleeping = max(amount,0)
+	on_status_counter_changed("setsleeping")
 	return
 
 /mob/proc/AdjustSleeping(amount, ignore_canstun = FALSE) //Adds to remaining duration
 	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_SLEEP, amount, ignore_canstun) & COMPONENT_NO_STUN)
 		return
 	sleeping = max(sleeping + amount,0)
+	on_status_counter_changed("adjustsleeping")
 	return
 
 /mob/proc/Confuse(amount, ignore_canstun = FALSE) //Can't go below remaining duration
 	confused = max(max(confused,amount),0)
+	on_status_counter_changed("confuse")
 	return
 
 /mob/proc/SetConfused(amount, ignore_canstun = FALSE) //Sets remaining duration
 	confused = max(amount,0)
+	on_status_counter_changed("setconfused")
 	return
 
 /mob/proc/AdjustConfused(amount, ignore_canstun = FALSE) //Adds to remaining duration
 	confused = max(confused + amount,0)
+	on_status_counter_changed("adjustconfused")
 	return
 
 /mob/proc/Blind(amount, ignore_canstun = FALSE) //Adds to remaining duration
 	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
 		return
 	eye_blind = max(max(eye_blind,amount),0)
+	on_status_counter_changed("blind")
 	return
 
 /mob/proc/SetBlinded(amount, ignore_canstun = FALSE) //Sets remaining duration
 	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
 		return
 	eye_blind = max(amount,0)
+	on_status_counter_changed("setblinded")
 	return
 
 /mob/proc/AdjustBlinded(amount, ignore_canstun = FALSE) //Adds to remaining duration
 	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
 		return
 	eye_blind = max(eye_blind + amount,0)
+	on_status_counter_changed("adjustblinded")
 	return
 
 /mob/proc/Resting(amount)
@@ -1663,7 +1681,9 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 		L.initialize_ai_brain()
 		L.faction = tgui_input_text(usr, "Please input AI faction", "AI faction", "neutral", MAX_MESSAGE_LEN)
-		L.a_intent = tgui_input_list(usr, "Please choose AI intent", "AI intent", list(I_HURT, I_HELP))
+		var/stance = tgui_input_list(usr, "Please choose AI combat mode", "AI combat mode", list(I_HURT, I_HELP))
+		if(stance)
+			L.set_use_stance(stance)
 		if(tgui_alert(usr, "Make mob wake up? This is needed for carbon mobs.", "Wake mob?", list("Yes", "No")) == "Yes")
 			L.AdjustSleeping(-100)
 
@@ -1746,7 +1766,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	. = ..()
 	if (!istype(user))
 		return
-	if(("[slot_equipped]" in GLOB.slot_flags_enumeration) && (slot_flags & GLOB.slot_flags_enumeration["[slot_equipped]"]))
+	if(dq_item_fits_slot_flags(src, slot_equipped))
 		if (LAZYLEN(user_vars_to_edit))
 			for(var/variable in user_vars_to_edit)
 				if(variable in user.vars)

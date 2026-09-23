@@ -20,7 +20,7 @@
 
 
 /datum/event/brand_intelligence/start()
-	for(var/obj/machinery/vending/V in GLOB.machines)
+	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(isNotStationLevel(V.z))	continue
 		LAZYADD(vendingMachines, V)
 

@@ -371,7 +371,6 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		flags &= ~NOCONDUCT
 	else
 		flags |= NOCONDUCT
-	matter = material.get_matter()
 	update_strings()
 	set_economic_provenance(DEPARTMENT_RESEARCH, max(material.supply_conversion_value, 1) * amount)
 	return TRUE

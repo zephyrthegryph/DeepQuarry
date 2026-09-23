@@ -130,7 +130,7 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 	spell_injure(target, INJURY_BLUNT, amt_dam_brute, list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR))
 	spell_injure(target, INJURY_BURN, amt_dam_fire, list(TREAT_BURN_CARE, TREAT_WIRING_REPAIR))
 	spell_injure(target, INJURY_TOXIN, amt_dam_tox, list(TREAT_ANTITOXIN))
-	spell_injure(target, INJURY_ASPHYXIA, amt_dam_oxy, list(TREAT_OXYGENATION))
+	spell_oxygen_debt(target, amt_dam_oxy)
 	//disabling
 	target.Weaken(amt_weakened)
 	target.Paralyse(amt_paralysis)

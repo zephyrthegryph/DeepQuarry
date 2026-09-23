@@ -121,7 +121,7 @@
 
 	if(default_part_replacement(user, W))
 		return
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, comp_id, MAX_NAME_LEN)
 		if(new_ident && user.Adjacent(src))
 			comp_id = new_ident
@@ -316,16 +316,16 @@
 /obj/machinery/computer/turbine_computer/proc/locate_machinery()
 	if(!id)
 		return
-	for(var/obj/machinery/compressor/C in GLOB.machines)
+	for(var/obj/machinery/compressor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.comp_id == id)
 			compressor = C
 	LAZYINITLIST(doors)
-	for(var/obj/machinery/door/blast/P in GLOB.machines)
+	for(var/obj/machinery/door/blast/P in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(P.id == id) //This will never work because the ID on the blast doors is a number while the ID on the turbine (if set mid-round) is a string.
 			doors += P
 
 /obj/machinery/computer/turbine_computer/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, id, MAX_NAME_LEN)
 		if(new_ident && user.Adjacent(src))
 			id = new_ident

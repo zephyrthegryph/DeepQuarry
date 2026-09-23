@@ -92,6 +92,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	// NOTE: BayStation calles area.Exited/Entered for the TURF T.  So far we don't do that.s
 	// NOTE: There probably won't be any atoms in these turfs, but just in case we should call these procs.
 	A.contents.Add(T)
+	T.reactor_area_changed()
 	if(old_area)
 		// Handle dynamic lighting update if
 		if(SSlighting.initialized && T.dynamic_lighting && old_area.dynamic_lighting != A.dynamic_lighting)
@@ -262,10 +263,23 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 	return 0
 
-// called when power status changes
+/// Machines told about this area's channel changes (see power_subscriber).
+/area/var/list/power_machines
+
+/area/proc/power_subscribe(obj/machinery/M)
+	LAZYADD(power_machines, M)
+
+/area/proc/power_unsubscribe(obj/machinery/M)
+	LAZYREMOVE(power_machines, M)
+
+// Called once per area channel change (the APC's Rust power event). Lights and
+// other reactor subscribers hear the key; subscribed machines re-check their
+// power, and the base power_change() sends COMSIG_MACHINERY_POWER_LOST or
+// COMSIG_MACHINERY_POWER_RESTORED when it flips.
 /area/proc/power_change()
-	for(var/obj/machinery/M in src)	// for each machine in the area
-		M.power_change()			// reverify power status (to update icons etc.)
+	REACT_PUBLISH(REACT_KEY_AREA_POWER, REACT_ID(src), REACT_AREA_POWER_CHANGED)
+	for(var/obj/machinery/M as anything in power_machines)
+		M.power_change()
 	if (fire || eject || party)
 		update_icon()
 
@@ -292,8 +306,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 // Use this for a one-time power draw from the area, typically for non-machines.
 /area/proc/use_power_oneoff(amount, chan)
-	if(amount && apc?.adjust_sleeping_area_load(amount, chan))
-		return amount
 	switch(chan)
 		if(EQUIP)
 			oneoff_equip += amount
@@ -302,7 +314,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(ENVIRON)
 			oneoff_environ += amount
 	if(amount)
-		SSmachines.publish_reactive_dependency("area_power:[REF(src)]")
+		power_loads_changed()
+		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
 	return amount
 
 // This is used by machines to properly update the area of power changes.
@@ -319,7 +332,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(ENVIRON)
 			static_environ += amount
 	if(amount)
-		SSmachines.publish_reactive_dependency("area_power:[REF(src)]")
+		power_loads_changed()
+		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
 /area/proc/retally_power()
@@ -334,6 +348,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 				static_light += M.get_power_usage()
 			if(ENVIRON)
 				static_environ += M.get_power_usage()
+	power_loads_changed()
 
 //////////////////////////////////////////////////////////////////
 
