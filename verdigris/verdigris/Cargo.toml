@@ -25,3 +25,7 @@ vg-ffi = { path = "../ffi" }
 # moves to vg-ffi / the power domain with its owner's agreement).
 byondapi = { workspace = true }
 auxmacros = { path = "../ffi/macros" }
+# Pulled in transitively by every `#[auxmacros::bind]` expansion (the panic guard
+# lives in auxcallback::panic_guard); material_power.rs uses the bind macro, so this
+# crate needs the dependency too. Mechanical addition, not a material_power.rs edit.
+auxcallback = { path = "../ffi/callback" }

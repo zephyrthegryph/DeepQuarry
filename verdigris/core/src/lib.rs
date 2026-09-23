@@ -5,11 +5,13 @@
 //! - no `byondapi` (it builds and tests on the host, not only on i686);
 //! - no global statics (tests run in parallel, and a `World` owns all state).
 
+pub mod activity;
 pub mod alloc;
 pub mod arena;
 pub mod bitset;
 pub mod channel;
 pub mod command;
+pub mod conservation;
 pub mod cow;
 pub mod field;
 pub mod frame;
@@ -17,6 +19,7 @@ pub mod grid;
 pub mod handle;
 pub mod intern;
 pub mod jobs;
+pub mod law;
 pub mod mailbox;
 pub mod metrics;
 pub mod network;
@@ -24,6 +27,7 @@ pub mod outbox;
 pub mod overlay;
 pub mod owner;
 pub mod propagate;
+pub mod rate;
 pub mod reactor;
 pub mod recorder;
 pub mod replay;

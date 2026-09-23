@@ -82,8 +82,8 @@ fn thermo(c: &mut Criterion) {
     let mut bodies: Vec<_> = (0..65_536)
         .map(|i| {
             ThermalBody::new(
-                HeatCapacity(100.0 + i as f32),
-                Kelvin(200.0 + (i % 300) as f32),
+                HeatCapacity(100.0 + i as f64),
+                Kelvin(200.0 + (i % 300) as f64),
             )
         })
         .collect();

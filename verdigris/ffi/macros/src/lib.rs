@@ -53,19 +53,7 @@ fn wrap_bind(
 		#[#inner(#attr)]
 		#(#attrs)*
 		#vis #sig {
-			let __vg_result: ::eyre::Result<::byondapi::value::ByondValue> =
-				match ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(move || #block)) {
-					::std::result::Result::Ok(__vg_result) => __vg_result,
-					::std::result::Result::Err(__vg_payload) => {
-						let __vg_msg = __vg_payload
-							.downcast_ref::<&str>()
-							.map(|__s| (*__s).to_string())
-							.or_else(|| __vg_payload.downcast_ref::<::std::string::String>().cloned())
-							.unwrap_or_else(|| "unknown panic".to_string());
-						::std::result::Result::Err(::eyre::eyre!("panic: {}", __vg_msg))
-					}
-				};
-			__vg_result.map_err(|__vg_err| __vg_err.wrap_err(#context))
+			::auxcallback::panic_guard::run_guarded(#context, move || #block)
 		}
 	}
 	.into()
@@ -97,7 +85,9 @@ fn strip_mut_and_filter(arg: &syn::FnArg) -> Option<syn::FnArg> {
 /// allowing these functions to run in cpus without the required instructions.
 /// The specific simd feature used here is avx2.
 /// Example usage:
-/// ```
+/// ```ignore
+/// // Illustrative only: `byondapi`/`auxcallback`/`ByondValue` come from the FFI
+/// // crate's runtime context, which isn't available to a standalone doctest.
 ///#[auxmacros::generate_simd_functions]
 ///#[byondapi::bind("/proc/process_atmos_callbacks")]
 ///fn atmos_callback_handle(remaining: ByondValue) -> Result<ByondValue> {

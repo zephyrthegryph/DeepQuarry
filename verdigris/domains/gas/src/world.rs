@@ -34,6 +34,7 @@ use vg_core::frame::{Res, Task};
 use vg_core::grid::{DirMask, Face, GridDims};
 use vg_core::outbox::{Event, EventKind, Lane, Outbox, Wake, WatchId};
 use vg_core::owner::{DomainState, View};
+use vg_core::watch::revision::Counter;
 use vg_core::sim::{Mode, Sim, SimBuilder, SimConfig, WatchKey};
 use vg_core::watch::{Cond, WatchPort, WatchState};
 
@@ -120,7 +121,7 @@ impl MixRef {
 
 struct Slot {
 	mix: Mixture,
-	revision: u32,
+	revision: Counter,
 	live: bool,
 }
 
@@ -143,7 +144,7 @@ impl Mains {
 		if let Some(i) = self.free.pop() {
 			let slot = &mut self.slots[i as usize];
 			slot.mix = mix;
-			slot.revision = slot.revision.wrapping_add(1);
+			slot.revision.bump();
 			slot.live = true;
 			return Ok(i);
 		}
@@ -154,7 +155,7 @@ impl Mains {
 		}
 		self.slots.push(Slot {
 			mix,
-			revision: 0,
+			revision: Counter::new(),
 			live: true,
 		});
 		Ok(i)
@@ -165,7 +166,7 @@ impl Mains {
 			if slot.live {
 				slot.live = false;
 				slot.mix = Mixture::new();
-				slot.revision = slot.revision.wrapping_add(1);
+				slot.revision.bump();
 				self.free.push(i);
 				self.live -= 1;
 			}
@@ -189,13 +190,13 @@ impl Mains {
 
 	fn bump(&mut self, i: u32) {
 		if let Some(s) = self.slots.get_mut(i as usize) {
-			s.revision = s.revision.wrapping_add(1);
+			s.revision.bump();
 		}
 	}
 
 	#[must_use]
 	pub fn revision(&self, i: u32) -> u32 {
-		self.slots.get(i as usize).map_or(0, |s| s.revision)
+		self.slots.get(i as usize).map_or(0, |s| s.revision.get())
 	}
 
 	#[must_use]
@@ -228,9 +229,13 @@ impl Mains {
 /// What the heat world's frame threads see of gas (`vg_heat::GasExchange`),
 /// and the energy they move, applied to gas as commands on the main thread
 /// (an exchange buffer, `rust_core.md` §3.6). Frame threads only `try_lock`.
+/// The turf-field views (gas cells, geometry) the heat world reads, swapped
+/// in together each frame.
+type FieldViews = Option<(Arc<View<GasCell>>, Arc<View<Geom>>)>;
+
 #[derive(Default)]
 pub struct Exchange {
-	views: Mutex<Option<(Arc<View<GasCell>>, Arc<View<Geom>>)>>,
+	views: Mutex<FieldViews>,
 	/// Probes of main-owned and pipe gas, by handle, refreshed each tick.
 	probes: Mutex<HashMap<u32, vg_heat::GasProbe>>,
 	requests: Mutex<Vec<u32>>,
@@ -1351,7 +1356,7 @@ impl GasWorld {
 				continue;
 			};
 			let vol_region = *r.summary();
-			let mut region_gas = r.payload().clone();
+			let mut region_gas = *r.payload();
 
 			let Some(before_mix) = self.load(MixRef::Turf(cell)) else {
 				continue;
@@ -1405,7 +1410,7 @@ impl GasWorld {
 				.field
 				.as_ref()
 				.and_then(|f| f.read(c))
-				.map_or(0, |(cell, _)| cell.revision),
+				.map_or(0, |(cell, _)| cell.revision()),
 		}
 	}
 
@@ -1453,8 +1458,8 @@ impl GasWorld {
 			}
 			MixRef::Pipe(s) => {
 				if let Some((gas, _)) = self.pipes.gas_mut(s) {
-					for i in 0..N {
-						gas.moles[i] = (gas.moles[i] + f64::from(amounts[i])).max(0.0);
+					for (moles, &amount) in gas.moles.iter_mut().zip(amounts.iter()).take(N) {
+						*moles = (*moles + f64::from(amount)).max(0.0);
 					}
 					gas.energy = (gas.energy + f64::from(amounts[N])).max(0.0);
 					if gas.total() > 0.0 && temperature_hint > 0.0 && gas.energy == 0.0 {
