@@ -12,4 +12,4 @@
 /mob/living/carbon/alien/larva/Initialize(mapload)
 	. = ..()
 	add_language(LANGUAGE_XENOLINGUA) //Bonus language.
-	LAZYOR(internal_organs, new /obj/item/organ/internal/xenos/hivenode(src))
+	new /obj/item/organ/internal/xenos/hivenode(src) // loose in the interior; the attach hook caches it

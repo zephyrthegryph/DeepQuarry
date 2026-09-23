@@ -192,7 +192,7 @@
 		if(H.internal_organs_by_name[organ_tag])
 			continue
 		var/organ_type = H.species.has_organ[organ_tag]
-		H.internal_organs_by_name[organ_tag] = new organ_type(H, TRUE)
+		new organ_type(H, TRUE) // takes its place in its limb
 		regrown++
 	if(regrown)
 		H.regenerate_icons()

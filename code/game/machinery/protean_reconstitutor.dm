@@ -203,31 +203,24 @@
 		P.loc = src
 		P.name = "Unfinished Protean"
 		P.real_name = "Unfinished Protean"
-		for(var/organ in P.internal_organs_by_name)
+		// A copy: swapping an organ below rewrites the cache.
+		for(var/organ in P.internal_organs_by_name.Copy())
 			sleep(per_organ_delay)
 			if(QDELETED(src))
 				return
 			var/obj/item/O = P.internal_organs_by_name[organ]
 			if(istype(O,/obj/item/organ/internal/nano/refactory))
 				src.visible_message(span_notice("\The [src] chirps, \"Initializing refactory...\""))
-				P.internal_organs_by_name.Remove(O)
-				P.contents.Remove(O)
+				// Deleting the blank detaches it; the salvaged one takes its slot.
 				qdel(O)
-				P.internal_organs_by_name.Add(list(O_FACT = protean_refactory))
-				P.internal_organs.Add(protean_refactory)
+				protean_refactory.replaced(P)
 				//cache our mats otherwise they get wiped by the revive
 				materials_cache = protean_refactory.materials.Copy()
 				mats_cached = TRUE
-				protean_refactory.loc = P
 			if(istype(O,/obj/item/organ/internal/nano/orchestrator))
 				src.visible_message(span_notice("\The [src] chirps, \"Linking nanoswarm to orchestrator...\""))
-				P.internal_organs_by_name.Remove(O)
-				P.internal_organs.Remove(O)
-				P.contents.Remove(O)
 				qdel(O)
-				P.internal_organs_by_name.Add(list(O_ORCH = protean_orchestrator))
-				P.internal_organs.Add(protean_orchestrator)
-				protean_orchestrator.loc = P
+				protean_orchestrator.replaced(P)
 			if(istype(O,/obj/item/organ/internal/mmi_holder/posibrain/nano))
 				src.visible_message(span_notice("\The [src] chirps, \"Synchronizing positronic neural architecture...\""))
 				//on the offchance our client blipped before getting to this step, abort, schloop the organs back into the machine, dissolve the body, and refund the nanos
@@ -321,12 +314,11 @@
 	log_game("PROTEAN: reconstitution aborted at [AREACOORD(src)]: [reason]")
 	if(P)
 		for(var/obj/item/organ/O in list(protean_refactory, protean_orchestrator))
-			if(O.loc != P)
+			if(O.owner != P)
 				continue
-			P.internal_organs -= O
-			P.internal_organs_by_name -= O.organ_tag
-			O.owner = null
-			O.forceMove(src)
+			// A ledger move out of its limb: the detach hook clears the caches.
+			var/atom/holder = O.loc
+			holder.slot_remove(O, src, null, LEDGER_MOVE_FORCED)
 		if(protean_brain && protean_brain.loc != src)
 			protean_brain.forceMove(src)
 		qdel(P)

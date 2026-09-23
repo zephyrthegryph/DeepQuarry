@@ -85,28 +85,11 @@
 	special_handling = TRUE
 
 /obj/item/organ/external/Destroy()
-
-	if(parent && parent.children)
-		LAZYREMOVE(parent.children, src)
-		parent = null
-
+	// Child limbs and organs sit in this limb's part slots: the ledger deletes
+	// them (SLOT_DROP_DELETE, children first) and the detach hook clears the
+	// tree caches and the owner's (code/modules/body/parts/).
 	for(var/datum/affliction/wound/W as anything in get_wounds())
 		remove_wound(W)
-
-	if(children)
-		// Iterate a snapshot: shrinking `children` mid-loop makes DM skip entries,
-		// leaving child limbs never-Destroy()'d (their owner ref then pins the mob).
-		for(var/obj/item/organ/external/C in children.Copy())
-			C.parent = null
-			qdel(C)
-		children = null
-
-	if(internal_organs)
-		// Same snapshot rule — organs remove themselves from this list in Destroy().
-		for(var/obj/item/organ/O in internal_organs.Copy())
-			if(isobj(O))
-				qdel(O)
-		internal_organs = null
 
 	if(splinted && splinted.loc == src)
 		splinted.loc = null
@@ -116,13 +99,6 @@
 	if(tourniquet && tourniquet.loc == src)
 		qdel(tourniquet)
 	tourniquet = null
-
-	if(istype(owner))
-		owner.organs -= src
-		owner.organs_by_name[organ_tag] = null
-		owner.organs_by_name -= organ_tag
-		while(null in owner.organs)
-			owner.organs -= null
 
 	for(var/obj/item/implant/I as anything in implants)
 		if(!istype(I))
@@ -346,7 +322,6 @@
 /obj/item/organ/external/Initialize(mapload, internal)
 	..(mapload, 0)
 	if(istype(owner))
-		replaced(owner)
 		sync_colour_to_human(owner)
 	return INITIALIZE_HINT_LATELOAD
 
@@ -354,28 +329,36 @@
 	if(!QDELETED(src))
 		get_icon()
 
+/// Attaches this limb to `target`: onto the limb its parent_organ names, or
+/// as the root when it has none. A stump holding the place is taken off
+/// first. A ledger move into the part slot: the attach hook does the
+/// bookkeeping for the whole subtree. Returns TRUE on success.
 /obj/item/organ/external/replaced(mob/living/carbon/human/target)
-	owner = target
-	forceMove(owner)
-	if(istype(owner))
-		owner.organs_by_name[organ_tag] = src
-		owner.organs |= src
-		for(var/obj/item/organ/organ in src)
-			organ.replaced(owner,src)
-		owner.refresh_modular_limb_verbs()
+	if(!istype(target))
+		return FALSE
+	if(!parent_organ)
+		return place_into(target, SLOT_ID_PART_ROOT)
+	var/obj/item/organ/external/joint_limb = target.get_organ(parent_organ)
+	if(!joint_limb)
+		log_runtime("PARTS: [src] ([type]) has no [parent_organ] to join onto on [key_name(target)]")
+		return FALSE
+	var/obj/item/organ/external/placeholder = joint_limb.slot_lookup(SLOT_ID_PART_CHILD, organ_tag)
+	if(placeholder?.is_stump())
+		qdel(placeholder)
+	return place_into(joint_limb, SLOT_ID_PART_CHILD)
 
-	// Afflictions that rode along with the severed limb rejoin the body.
-	target.body?.attach_part(src)
-
-	if(parent_organ)
-		parent = owner.organs_by_name[src.parent_organ]
-		if(parent)
-			LAZYADD(parent.children, src)
-			//Remove all stump wounds since limb is not missing anymore
-			for(var/datum/affliction/wound/lost_limb/W in parent.get_wounds())
-				parent.remove_wound(W)
-				break
-			parent.update_damages()
+/// Born inside `M`: onto the limb our parent_organ names, or into the root.
+/obj/item/organ/external/place_in_body(mob/living/M)
+	var/datum/ledger/L = dq_ledger(M) // syncs: a mob with no part tree adopts us here
+	if(!L?.def_by_id(SLOT_ID_PART_ROOT))
+		return !!L
+	if(!parent_organ)
+		return place_into(M, SLOT_ID_PART_ROOT)
+	var/obj/item/organ/external/joint_limb = LAZYACCESS(M.organs_by_name, parent_organ)
+	if(!joint_limb)
+		log_runtime("PARTS: [src] ([type]) born in [key_name(M)] with no [parent_organ] to join onto; left loose")
+		return FALSE
+	return place_into(joint_limb, SLOT_ID_PART_CHILD)
 
 /****************************************************
 			   DAMAGE PROCS
@@ -488,7 +471,7 @@
 	src.update_damages()
 
 	//If limb took enough damage, try to cut or tear it off
-	if(owner && loc == owner && !is_stump())
+	if(owner && !is_stump())
 		/// <summary>
 		/// This determines if the limb is ELIGIBLE to be chopped off or not.
 		/// It checks if it's amputatable, if the config setting is set, then continues down the proc.
@@ -700,20 +683,6 @@ This function completely restores a damaged organ to perfect condition.
 					robotize(robodata)
 				else
 					robotize()
-
-/obj/item/organ/external/remove_rejuv()
-	if(owner)
-		owner.organs -= src
-		owner.organs_by_name[organ_tag] = null
-		owner.organs_by_name -= organ_tag
-		while(null in owner.organs) owner.organs -= null
-	if(children && children.len)
-		for(var/obj/item/organ/external/E in children)
-			E.remove_rejuv()
-	children = null
-	for(var/obj/item/organ/internal/I in internal_organs)
-		I.remove_rejuv()
-	..()
 
 /// Lowest-level wound funnel: every limb injury (apply_wound_damage, and through
 /// it every injure() call) becomes a wound affliction here. `type` is CUT,
@@ -1085,7 +1054,13 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/use_flesh_colour = data.get_species_flesh_colour(owner)
 	var/use_blood_colour = data.get_species_blood_colour(owner)
 
-	removed(null, ignore_children)
+	// Child limbs ride along inside this one unless each is to come off on its
+	// own (gibbing): then they go first, leaves before parents.
+	if(ignore_children)
+		for(var/obj/item/organ/external/child as anything in slot_contents(SLOT_ID_PART_CHILD))
+			child.droplimb(clean, disintegrate, TRUE)
+
+	removed(null)
 	victim?.shock_stage += 60
 
 	if(parent_organ)
@@ -1094,11 +1069,11 @@ Note that amputating the affected organ does in fact remove the infection from t
 			parent_organ.add_wound(W)
 			parent_organ.update_damages()
 		else
+			// Born in the victim, the stump takes this limb's place on its parent.
 			var/obj/item/organ/external/stump/stump = new (victim, 0, src)
 			if(robotic >= ORGAN_ROBOT)
 				stump.robotize()
 			stump.add_wound(W)
-			victim.organs |= stump
 			stump.update_damages()
 		victim?.body?.on_status_changed()
 
@@ -1126,9 +1101,10 @@ Note that amputating the affected organ does in fact remove the infection from t
 				dir = 2
 		if(DROPLIMB_BURN)
 			new /obj/effect/decal/cleanable/ash(droploc)
-			for(var/obj/item/I in src)
+			// Large foreign objects survive the fire; the parts burn with the limb.
+			for(var/obj/item/I in slot_contents())
 				if(I.w_class > ITEMSIZE_SMALL && !istype(I,/obj/item/organ))
-					I.forceMove(droploc)
+					slot_remove(I, droploc, null, LEDGER_MOVE_FORCED)
 			qdel(src)
 		if(DROPLIMB_BLUNT)
 			var/obj/effect/decal/cleanable/blood/gibs/gore
@@ -1142,14 +1118,10 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 			gore.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
 
-			for(var/obj/item/organ/I in internal_organs)
-				I.removed()
-				if(istype(loc,/turf))
-					I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
-
-			for(var/obj/item/I in src)
-				I.forceMove(droploc)
-				I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
+			// Everything in the limb, organs and child limbs included, is flung out.
+			for(var/atom/movable/thing as anything in slot_contents())
+				if(slot_remove(thing, droploc, null, LEDGER_MOVE_FORCED))
+					thing.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
 
 			qdel(src)
 
@@ -1395,18 +1367,11 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(owner)
 
 		if(!keep_organs)
-			for(var/obj/item/organ/thing in internal_organs)
-				if(istype(thing))
-					if(thing.vital)
-						continue
-					LAZYREMOVE(internal_organs, thing)
-					owner.internal_organs_by_name[thing.organ_tag] = null
-					owner.internal_organs_by_name -= thing.organ_tag
-					owner.internal_organs.Remove(thing)
+			// Deleting an organ detaches it (the hook clears every cache).
+			for(var/obj/item/organ/thing as anything in slot_contents(SLOT_ID_PART_ORGANS))
+				if(!thing.vital)
 					qdel(thing)
 
-		while(null in owner.internal_organs)
-			owner.internal_organs -= null
 		owner.refresh_modular_limb_verbs()
 
 	if(restore_nanoform)
@@ -1445,7 +1410,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	return ((robotic >= ORGAN_ROBOT) && total >= min_broken_damage*0.83 && prob(total)) // Makes robotic limb damage scalable
 
 /obj/item/organ/external/proc/embed(obj/item/W, silent = 0)
-	if(!owner || loc != owner)
+	if(!owner)
 		return
 	if(SEND_SIGNAL(owner, COMSIG_EMBED_OBJECT) & COMSIG_CANCEL_EMBED) //Normally we'd let this proc continue on, but it's much less time consumptive to just do a godmode check here.
 		return 0	// Cancelled by a component
@@ -1461,52 +1426,32 @@ Note that amputating the affected organ does in fact remove the infection from t
 		H.drop_from_inventory(W)
 	W.loc = owner
 
-/obj/item/organ/external/removed(mob/living/user, ignore_children = 0)
+/// Severs this limb, with everything below it, onto the floor (the base
+/// removed() moves it; the detach hook releases the subtree). Implants still
+/// kept in the mob for this limb and the limbs below it come too, until O3c
+/// moves implants into the limb's implant slot.
+/obj/item/organ/external/removed(mob/living/user)
 	if(!owner)
-		return
+		return FALSE
 	var/is_robotic = robotic >= ORGAN_ROBOT
 	var/mob/living/carbon/human/victim = owner
 
-	// Afflictions located on the limb (necrosis, fractures, severed
-	// tendons) travel with it and rejoin on reattachment; the base removed()
-	// detaches them.
-	..()
+	// What the subtree wears has nothing to hang on once it goes. Before the
+	// move: the detach hook runs inside it and must not move anything.
+	var/list/subtree = dq_part_subtree(src)
+	if(istype(victim))
+		for(var/obj/item/organ/external/E in subtree)
+			E.drop_worn(victim)
 
-	victim.bad_external_organs -= src
+	if(!..())
+		return FALSE
 
-	for(var/atom/movable/implant in implants)
-		//large items and non-item objs fall to the floor, everything else stays
-		var/obj/item/I = implant
-		if(istype(I) && I.w_class < ITEMSIZE_NORMAL)
-			implant.loc = get_turf(victim.loc)
-		else
-			implant.loc = src
-	implants = null
+	for(var/obj/item/organ/external/E in subtree)
+		E.shed_mob_implants(victim)
 
-	// Attached organs also fly off.
-	if(!ignore_children)
-		for(var/obj/item/organ/external/O in children)
-			O.removed()
-			if(O)
-				O.loc = src
-				for(var/obj/item/I in O.contents)
-					I.loc = src
-
-	// Grab all the internal giblets too.
-	for(var/obj/item/organ/organ in internal_organs)
-		organ.removed()
-		organ.loc = src
-
-	// Remove parent references
-	if(parent)
-		LAZYREMOVE(parent.children, src)
-	parent = null
-
+	if(!istype(victim))
+		return TRUE // a loose limb on a mob with no part tree (butchery)
 	release_restraints(victim)
-	victim.organs -= src
-	victim.organs_by_name[organ_tag] = null // Remove from owner's vars.
-
-	status |= ORGAN_CUT_AWAY //Checked during surgeries to reattach it
 
 	//Robotic limbs explode if sabotaged.
 	if(is_robotic && sabotaged)
@@ -1523,8 +1468,25 @@ Note that amputating the affected organ does in fact remove the infection from t
 			qdel(spark_system)
 		qdel(src)
 
-	victim.refresh_modular_limb_verbs()
 	victim.update_icons_body()
+	return TRUE
+
+/// Drops what `victim` wears on this limb, which is about to be severed.
+/obj/item/organ/external/proc/drop_worn(mob/living/carbon/human/victim)
+	return
+
+/// Implants recorded on this limb but kept in `victim` (not yet in the limb's
+/// implant slot, O3c): small ones fall to the floor, the rest go with the limb.
+/obj/item/organ/external/proc/shed_mob_implants(mob/living/victim)
+	for(var/atom/movable/implant in implants)
+		if(implant.loc != victim)
+			continue
+		var/obj/item/I = implant
+		if(istype(I) && I.w_class < ITEMSIZE_NORMAL)
+			implant.forceMove(get_turf(victim))
+		else
+			implant.forceMove(src)
+	implants = null
 
 /obj/item/organ/external/proc/disfigure(type = "brute")
 	if (disfigured)

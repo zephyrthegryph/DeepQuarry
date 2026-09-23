@@ -50,7 +50,7 @@
 
 /obj/item/organ/internal/mmi_holder/Initialize(mapload, internal, obj/item/mmi/installed)
 	. = ..(mapload, internal)
-	if(!ishuman(loc) || ismannequin(loc))
+	if(!ishuman(owner) || ismannequin(owner))
 		return
 	if(installed)
 		stored_mmi = installed

@@ -175,17 +175,16 @@
 
 /datum/surgical_step/organ/install_mmi/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/mmi/M = tool
-	var/obj/item/organ/internal/mmi_holder/holder
 	user.drop_from_inventory(M)
+	// Born in the target, the holder takes the brain slot in its limb.
 	if(istype(M, /obj/item/mmi/digital/posibrain/nano))
-		holder = new /obj/item/organ/internal/mmi_holder/posibrain/nano(target, 1, M)
+		new /obj/item/organ/internal/mmi_holder/posibrain/nano(target, 1, M)
 	else if(istype(M, /obj/item/mmi/digital/posibrain))
-		holder = new /obj/item/organ/internal/mmi_holder/posibrain(target, 1, M)
+		new /obj/item/organ/internal/mmi_holder/posibrain(target, 1, M)
 	else if(istype(M, /obj/item/mmi/digital/robot))
-		holder = new /obj/item/organ/internal/mmi_holder/robot(target, 1, M)
+		new /obj/item/organ/internal/mmi_holder/robot(target, 1, M)
 	else
-		holder = new /obj/item/organ/internal/mmi_holder(target, 1, M)
-	target.internal_organs_by_name[O_BRAIN] = holder
+		new /obj/item/organ/internal/mmi_holder(target, 1, M)
 	var/datum/component/mind_host/host = get_mind_host(M)
 	host?.release_mind(target, "MMI installed into [target] by [key_name(user)]")
 	log_game("SURGERY: [key_name(user)] installed [M] into [key_name(target)]")
@@ -227,8 +226,7 @@
 
 /datum/surgical_step/organ/install_nymph/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/holder/diona/N = tool
-	var/obj/item/organ/internal/brain/cephalon/cephalon = new(target, 1)
-	target.internal_organs_by_name[O_BRAIN] = cephalon
+	new /obj/item/organ/internal/brain/cephalon(target, 1) // takes the brain slot in its limb
 	var/mob/living/carbon/alien/diona/D = N.held_mob
 	user.drop_from_inventory(tool)
 	if(D?.mind)

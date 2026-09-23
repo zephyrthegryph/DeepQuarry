@@ -26,13 +26,13 @@
 /obj/item/organ/external/chest/robotize(company, skip_prosthetics = 0, keep_organs = 0)
 	if(..() && owner)
 		if(robotic != ORGAN_NANOFORM)
-			// Give them fancy new organs.
-			owner.internal_organs_by_name[O_CELL] = new /obj/item/organ/internal/cell(owner,1)
-			owner.internal_organs_by_name[O_VOICE] = new /obj/item/organ/internal/voicebox/robot(owner, 1)
-			owner.internal_organs_by_name[O_PUMP] = new /obj/item/organ/internal/heart/machine(owner,1)
-			owner.internal_organs_by_name[O_CYCLER] = new /obj/item/organ/internal/stomach/machine(owner,1)
-			owner.internal_organs_by_name[O_HEATSINK] = new /obj/item/organ/internal/robotic/heatsink(owner,1)
-			owner.internal_organs_by_name[O_DIAGNOSTIC] = new /obj/item/organ/internal/robotic/diagnostic(owner,1)
+			// Give them fancy new organs (each takes its place in its limb).
+			new /obj/item/organ/internal/cell(owner,1)
+			new /obj/item/organ/internal/voicebox/robot(owner, 1)
+			new /obj/item/organ/internal/heart/machine(owner,1)
+			new /obj/item/organ/internal/stomach/machine(owner,1)
+			new /obj/item/organ/internal/robotic/heatsink(owner,1)
+			new /obj/item/organ/internal/robotic/diagnostic(owner,1)
 
 		var/datum/robolimb/R = GLOB.all_robolimbs[model] // company should be set in parent by now
 		if(!R)
@@ -186,10 +186,8 @@
 	force = 3
 	throwforce = 6
 
-/obj/item/organ/external/foot/removed()
-	if(owner)
-		owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_SHOES))
-	..()
+/obj/item/organ/external/foot/drop_worn(mob/living/carbon/human/victim)
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_SHOES))
 
 /obj/item/organ/external/foot/handle_germ_effects()
 	. = ..() //Should return an infection level
@@ -236,10 +234,8 @@
 	force = 3
 	throwforce = 5
 
-/obj/item/organ/external/hand/removed()
-	if(owner)
-		owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_GLOVES))
-	..()
+/obj/item/organ/external/hand/drop_worn(mob/living/carbon/human/victim)
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_GLOVES))
 
 /obj/item/organ/external/hand/handle_germ_effects()
 	. = ..() //Should return an infection level
@@ -307,19 +303,21 @@
 			LAZYREMOVE(organ_verbs, /mob/living/carbon/human/proc/setmonitor_state)
 		handle_organ_mod_special()
 
+/obj/item/organ/external/head/drop_worn(mob/living/carbon/human/victim)
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_EYES))
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_HEAD))
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_EAR_L))
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_EAR_R))
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_MASK))
+
 /obj/item/organ/external/head/removed()
-	if(owner)
-		if(iscarbon(owner))
-			name = "[owner.real_name]'s head"
-			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_EYES))
-			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_HEAD))
-			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_EAR_L))
-			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_EAR_R))
-			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_MASK))
-			spawn(1)
-				owner.update_hair()
+	var/mob/living/carbon/human/victim = owner
+	if(iscarbon(victim))
+		name = "[victim.real_name]'s head"
+		spawn(1)
+			victim?.update_hair()
 	get_icon()
-	..()
+	return ..()
 
 /obj/item/organ/external/head/apply_wound_damage(brute, burn, sharp, edge, used_weapon = null, list/forbidden_limbs = null, permutation, projectile)
 	. = ..(brute, burn, sharp, edge, used_weapon, forbidden_limbs, permutation, projectile)

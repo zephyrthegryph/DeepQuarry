@@ -289,7 +289,9 @@
 
 /// Humanoids and nanoforms (a subtype). Declaration order matters to the worn
 /// protection cache: head, mask, suit, uniform, gloves, shoes, eyes is the old
-/// covering-clothing order.
+/// covering-clothing order. The part root (the torso, and through it the whole
+/// limb tree: code/modules/body/parts/) comes after the equipment and before
+/// the interior, which is the order a deleted mob releases them in.
 /datum/body/humanoid/slot_def_types()
 	var/static/list/types = list(
 		/datum/slot_def/body/hand/left,
@@ -311,6 +313,7 @@
 		/datum/slot_def/body/pocket/right,
 		/datum/slot_def/body/handcuffed,
 		/datum/slot_def/body/legcuffed,
+		/datum/slot_def/part/root,
 		/datum/slot_def/body/interior,
 	)
 	return types

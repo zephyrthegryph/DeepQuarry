@@ -21,12 +21,12 @@
 		vr_link.vr_holder = null
 		vr_link = null
 
-	for(var/obj/item/organ/I in internal_organs)
+	for(var/obj/item/organ/I in internal_organs.Copy()) // removed() shrinks the cache
 		I.removed()
 		if(isturf(I?.loc)) // Some organs qdel themselves or other things when removed
 			I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
 
-	for(var/obj/item/organ/external/E in src.organs)
+	for(var/obj/item/organ/external/E in src.organs.Copy())
 		E.droplimb(0,DROPLIMB_EDGE,1)
 
 	for(var/obj/item/I in src)

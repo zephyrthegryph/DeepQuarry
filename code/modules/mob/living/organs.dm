@@ -23,8 +23,9 @@
 /mob/living/proc/butchery_organ_types()
 	return null
 
-/// Create the butchery organs inside the mob, once. Each organ registers
-/// itself in internal_organs on Initialize.
+/// Create the butchery organs inside the mob, once. Each lands in the mob's
+/// interior slot, where the attach hook caches it in internal_organs
+/// (code/modules/body/parts/attach.dm).
 /mob/living/proc/spawn_butchery_organs()
 	if(LAZYLEN(internal_organs))
 		return
@@ -37,14 +38,13 @@
 	if(butchery_drops_organs)
 		spawn_butchery_organs()
 
-		for(var/obj/item/organ/I in internal_organs)
+		for(var/obj/item/organ/I in internal_organs?.Copy()) // removed() shrinks the cache
 			I.removed()
 			if(isturf(I?.loc)) // Some organs qdel themselves or other things when removed
 				I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
 
-		for(var/obj/item/organ/external/E in src.organs)
-			if(!ispath(E))
-				E.droplimb(0,DROPLIMB_EDGE,1)
+		for(var/obj/item/organ/external/E in src.organs?.Copy())
+			E.droplimb(0,DROPLIMB_EDGE,1)
 
 	// ition Start
 	if(tf_mob_holder && tf_mob_holder.loc == src)

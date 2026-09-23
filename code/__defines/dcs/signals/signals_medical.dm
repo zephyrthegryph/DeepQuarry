@@ -29,6 +29,10 @@
 
 /// From /datum/body/add_affliction() and remove_affliction(): (datum/affliction/affliction, added)
 #define COMSIG_BODY_AFFLICTIONS_CHANGED "body_afflictions_changed"
+/// From /datum/body/proc/adopt_subtree(), sent to the owning mob once per part that joined it: (obj/item/organ/part)
+#define COMSIG_BODY_PART_ATTACHED "body_part_attached"
+/// From /datum/body/proc/release_subtree(), sent to the owning mob once per part that left it: (obj/item/organ/part)
+#define COMSIG_BODY_PART_DETACHED "body_part_detached"
 /// From /datum/affliction/proc/set_severity(), sent to the owning mob: (datum/affliction/affliction, old_severity)
 #define COMSIG_AFFLICTION_SEVERITY_CHANGED "affliction_severity_changed"
 /// From base of /mob/living/proc/injure(), before mitigation: (kind, list/amount_ref, zone, atom/source, flags). amount_ref[1] may be modified.

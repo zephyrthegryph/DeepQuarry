@@ -30,8 +30,8 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/organ/internal/eyes/grey/colormatch/LateInitialize()
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
+	if(ishuman(owner)) // placed in its limb by now
+		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
 
 /obj/item/organ/internal/eyes/proc/change_eye_color()

@@ -1312,9 +1312,12 @@
 	//icon_state = lowertext(species.name) //Necessary?
 
 	// Swap the body plan before the organs are built so they attach to the new body.
-	// Before /mob/living/Initialize() there is no body yet; it is built from body_type.
+	// On the first set_species() (before /mob/living/Initialize()) the body is
+	// built here: organs attach into the plan's part slots as they are made.
 	body_type = species.body_plan
-	if(body && body.type != body_type)
+	if(!body)
+		body = new body_type(src)
+	else if(body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
 		QDEL_NULL(body)
 		body = new body_type(src)
