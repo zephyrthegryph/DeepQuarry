@@ -7,9 +7,8 @@
 	name = "metroid acid"
 	icon_state = "neurotoxin"
 	damage = 10
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	agony = 10
-	check_armour = "bio"
 	armor_penetration = 50
 
 //EGG! Metroid egg and its mechanics. Ripped from spiders.

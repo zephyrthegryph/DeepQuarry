@@ -33,9 +33,7 @@
 /obj/effect/illusionary_fall/end_fall(crushing = FALSE)
 	for(var/mob/living/L in loc)
 		var/target_zone = ran_zone()
-		var/blocked = L.run_armor_check(target_zone, "melee")
-
-		if(!L.injure(INJURY_BLUNT, 35, target_zone, src, blocked))
+		if(!L.injure(INJURY_BLUNT, 35, target_zone, src, flags = INJURE_ARMORED))
 			break
 	playsound(src, 'sound/effects/clang2.ogg', 50, 1)
 	qdel(src)

@@ -207,7 +207,7 @@
 	// We as a species CAN be slipped when barefoot
 	// And also 1 in 4 because rngesus
 	if((shoes || !(species.flags & NO_SLIP)) && randn <= 25)
-		var/armor_check = run_armor_check(affecting, "melee")
+		var/armor_check = armor_against(INJURY_BLUNT, affecting)
 		apply_effect(3, WEAKEN, armor_check)
 		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 		if(armor_check < 60)
@@ -386,22 +386,23 @@
 		return FALSE
 
 	var/real_damage = rand_damage
-	var/hit_dam_type = attack.damage_type
+	var/hit_kind = attack.injury_kind
 	real_damage += attack.get_unarmed_damage(H)
 	if(H.gloves && attack.is_punch)
 		if(istype(H.gloves, /obj/item/clothing/gloves))
 			var/obj/item/clothing/gloves/G = H.gloves
 			real_damage += G.punch_force
-			hit_dam_type = G.punch_damtype
+			hit_kind = G.punch_injury_kind || hit_kind
 		else if(istype(H.gloves, /obj/item/clothing/accessory))
 			var/obj/item/clothing/accessory/G = H.gloves
 			real_damage += G.punch_force
-			hit_dam_type = G.punch_damtype
+			hit_kind = G.punch_injury_kind || hit_kind
 		if(HAS_TRAIT(H, TRAIT_NONLETHAL_BLOWS) && !attack.sharp && !attack.edge && !H.get_feralness())	//SO IT IS DECREED: PULLING PUNCHES WILL PREVENT THE ACTUAL DAMAGE FROM RINGS AND KNUCKLES, BUT NOT THE ADDED PAIN, BUT YOU CAN'T "PULL" A KNIFE
-			hit_dam_type = HALLOSS
-			if(species)// if you're more resistant to physical blows, pulling punches won't make them more likely to down you. This makes species with both brute and pain modifiers double-dip, but I think that's fine
-				real_damage *= species.get_injury_mod(INJURY_BLUNT)
-				rand_damage *= species.get_injury_mod(INJURY_BLUNT)
+			hit_kind = INJURY_PAIN
+			// if you're more resistant to physical blows, pulling punches won't make them more likely to down you. This makes species with both brute and pain modifiers double-dip, but I think that's fine
+			var/physical_resistance = incoming_injury_factor(INJURY_CATEGORY_PHYSICAL)
+			real_damage *= physical_resistance
+			rand_damage *= physical_resistance
 
 	real_damage *= damage_multiplier
 	rand_damage *= damage_multiplier
@@ -410,12 +411,12 @@
 		rand_damage *= 2
 	real_damage = max(1, real_damage)
 
-	var/armour = run_armor_check(hit_zone, "melee")
+	var/armour = armor_against(hit_kind, hit_zone)
 	// Apply additional unarmed effects.
 	attack.apply_effects(H, src, armour, rand_damage, hit_zone)
 
-	// Finally, apply damage to target
-	injure_by_damtype(hit_dam_type, real_damage, hit_zone, H, armour, attack.sharp, attack.edge)
+	// Finally, apply damage to target (armour applies in injure()).
+	injure(hit_kind, real_damage, hit_zone, H, flags = INJURE_ARMORED)
 
 /// INTENTS END
 
@@ -423,7 +424,7 @@
 /mob/living/carbon/human/proc/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, inrange, params)
 	return
 
-/mob/living/carbon/human/attack_generic(mob/user, damage, attack_message, armor_type = "melee", armor_pen = 0, a_sharp = 0, a_edge = 0)
+/mob/living/carbon/human/attack_generic(mob/user, damage, attack_message)
 	if(istype(user,/mob/living))
 		var/mob/living/L = user
 		if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
@@ -442,9 +443,8 @@
 
 	var/dam_zone = pick(organs_by_name)
 	var/obj/item/organ/external/affecting = get_organ(ran_zone(dam_zone))
-	var/armor_block = run_armor_check(affecting, armor_type, armor_pen)
-	var/kind = (a_sharp || a_edge) ? injury_kind_for(BRUTE, a_sharp, a_edge) : generic_attack_injury_kind(user)
-	injure(kind, damage, affecting?.organ_tag, user, armor_block)
+	var/mob/living/simple_mob/animal = user
+	injure(generic_attack_injury_kind(user), damage, affecting?.organ_tag, user, istype(animal) ? animal.attack_armor_pen : 0, flags = INJURE_ARMORED)
 	return TRUE
 
 //Used to attack a joint through grabbing

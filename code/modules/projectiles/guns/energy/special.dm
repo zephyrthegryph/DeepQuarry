@@ -417,8 +417,7 @@
 	icon_state = "minitesla"
 	speed=5
 	damage = 100
-	damage_type = AGONY
-	check_armour = "energy"
+	injury_kind = INJURY_PAIN
 	embed_chance = 0
 	hitsound = 'sound/weapons/zapbang.ogg'
 	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
@@ -492,7 +491,6 @@
 	name = "expirmental energy net"
 	icon_state = "toxin"
 	damage = 0
-	check_armour = "energy"
 	hud_state = "pistol_tranq"
 	fire_sound = 'sound/weapons/taser.ogg'
 	nodamage = 1

@@ -13,8 +13,7 @@
 	see_in_dark = 3
 	melee_damage_lower = 12
 	melee_damage_upper = 12
-	attack_sharp = TRUE
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 
 	meat_amount = 7
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_shock
@@ -481,7 +480,7 @@ ANT STRUCTURES
 
 /obj/effect/ant_structure/bullet_act(obj/item/projectile/Proj)
 	..()
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
+	take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
 
 /obj/effect/ant_structure/proc/die()
 	qdel(src)

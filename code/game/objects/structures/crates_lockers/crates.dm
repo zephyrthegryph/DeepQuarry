@@ -772,7 +772,7 @@
 	var/tamper_proof = 0
 
 /obj/structure/closet/crate/secure/bullet_act(obj/item/projectile/Proj)
-	if(!(Proj.damage_type == BRUTE || Proj.damage_type == BURN))
+	if(!(Proj.obj_damage_type() == BRUTE || Proj.obj_damage_type() == BURN))
 		return
 
 	if(locked && tamper_proof && get_integrity() <= Proj.damage)

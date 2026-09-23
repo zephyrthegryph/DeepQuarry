@@ -121,9 +121,9 @@
 	if(O.force)
 		if(O.force >= 25)
 			var/damage = O.force
-			if (O.damtype == HALLOSS)
+			if (O.injury_kind == INJURY_PAIN)
 				damage = 0
-			injure(O.get_injury_kind(), damage, null, O)
+			injure(O.injury_kind, damage, null, O)
 			for(var/mob/M in viewers(src, null))
 				if ((M.client && !( M.blinded )))
 					M.show_message(span_danger("[src] has been attacked with the [O] by [user]. "))

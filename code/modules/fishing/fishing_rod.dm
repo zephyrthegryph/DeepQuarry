@@ -14,6 +14,7 @@
 	force_divisor = 0.02
 	throwforce = 1
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 	attack_verb = list("whipped", "battered", "slapped", "fished", "hooked")
 	hitsound = 'sound/weapons/punchmiss.ogg'
 	applies_material_colour = TRUE

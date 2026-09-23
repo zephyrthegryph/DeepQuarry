@@ -95,7 +95,7 @@
 /datum/projectile_effects/proc/apply_to_turf(turf/T, obj/item/projectile/source)
 	if(!isturf(T))
 		return
-	if(incendiary && source && source.damage_type == BURN)
+	if(incendiary && source && source.obj_damage_type() == BURN)
 		T.hotspot_expose(700, 5)
 	if(turf_effect_callback)
 		turf_effect_callback.Invoke(T, source)

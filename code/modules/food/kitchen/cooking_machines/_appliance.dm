@@ -23,7 +23,7 @@
 	var/cooking = FALSE				// Whether or not the machine is currently operating.
 	var/cook_type					// A string value used to track what kind of food this machine makes.
 	var/can_cook_mobs				// Whether or not this machine accepts grabbed mobs.
-	var/mobdamagetype = BRUTE		// Burn damage for cooking appliances, brute for cereal/candy
+	var/mob_injury_kind = INJURY_BLUNT	// What a mob stuffed inside suffers: burns for cooking appliances, bruising for cereal/candy
 	var/food_color					// Colour of resulting food item.
 	var/cooked_sound = 'sound/machines/ding.ogg'				// Sound played when cooking completes.
 	var/can_burn_food = FALSE		// Can the object burn food that is left inside?
@@ -381,7 +381,7 @@
 	for(var/obj/item/holder/H in CI.container.contents)
 		var/mob/living/M = H.held_mob
 		if(M)
-			M.injure(injury_kind_for(mobdamagetype), rand(1,3) * (1/M.size_multiplier), pick(BP_ALL), source = src)
+			M.injure(mob_injury_kind, rand(1,3) * (1/M.size_multiplier), pick(BP_ALL), source = src)
 
 	return TRUE
 

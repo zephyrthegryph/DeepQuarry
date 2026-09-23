@@ -64,7 +64,7 @@
 	var/custom_damage = FALSE
 
 	///What type of damage we take from radiation.
-	var/damage_type = TOX
+	var/injury_kind = INJURY_TOXIN
 
 	///How much the damage we take from rads is multiplied by.
 	var/damage_multiplier = 1.0
@@ -110,8 +110,8 @@
 		src.radiation_dissipation = radiation_dissipation
 	if(custom_damage)
 		src.custom_damage = custom_damage
-	if(damage_type)
-		src.damage_type = damage_type
+	if(injury_kind)
+		src.injury_kind = injury_kind
 	if(damage_multiplier)
 		src.damage_multiplier = damage_multiplier
 
@@ -241,10 +241,10 @@
 			rads_to_utilize = rads * rad_removal_mod
 
 		//Special handling for pain to prevent unfun permastuns. Only lets your pain go to 90% of your endurance, crippling but not KOing you.
-		if(injury_kind_for(damage_type) == INJURY_PAIN && (living_guy.current_pain() + (rads_to_utilize * damage_multiplier)) >= living_guy.get_endurance() * 0.90)
+		if(injury_kind == INJURY_PAIN && (living_guy.current_pain() + (rads_to_utilize * damage_multiplier)) >= living_guy.get_endurance() * 0.90)
 			return COMPONENT_BLOCK_LIVING_RADIATION
 
-		living_guy.injure(injury_kind_for(damage_type), rads_to_utilize * damage_multiplier, flags = INJURE_SILENT)
+		living_guy.injure(injury_kind, rads_to_utilize * damage_multiplier, flags = INJURE_SILENT)
 
 		living_guy.radiation = CLAMP(living_guy.radiation, 0, RADIATION_CAP)
 		living_guy.accumulated_rads = CLAMP(living_guy.accumulated_rads, 0, RADIATION_CAP)
@@ -380,7 +380,7 @@
 	glows = FALSE
 	glow_toggle = FALSE
 	custom_damage = TRUE
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	damage_multiplier = 0.25
 
 // Diona

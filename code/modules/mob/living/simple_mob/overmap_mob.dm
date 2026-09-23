@@ -99,7 +99,6 @@
 	harm_intent_damage = 1
 	melee_damage_lower = 50
 	melee_damage_upper = 100
-	attack_sharp = FALSE
 
 	min_oxy = 0
 	max_oxy = 0

@@ -7,6 +7,7 @@
 	thrown_force_divisor = 0.5 // 10 when thrown with weight 20 (steel)
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	drop_sound = 'sound/items/drop/sword.ogg'
@@ -40,6 +41,7 @@
 	applies_material_colour = 0
 	attack_verb = list("attacked", "stabbed", "prodded", "poked", "lunged")
 	edge = 0 //rapiers are pointy, but not cutty like other swords
+	injury_kind = INJURY_PIERCE
 
 /obj/item/material/sword/longsword
 	name = "longsword"

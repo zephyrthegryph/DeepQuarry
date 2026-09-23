@@ -100,8 +100,7 @@
 	melee_damage_upper = 20
 	attack_armor_pen = 50
 	base_attack_cooldown = 2.5
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attack_sound = 'sound/mob/robots/cyber_horror_changelingmelee.ogg'
 	attacktext = list ("sliced", "diced", "lashed", "shredded")
 // Slow as all sin
@@ -330,8 +329,7 @@
 	melee_damage_upper = 2
 // Four attacks per second.
 	base_attack_cooldown = 2.5
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attack_sound = 'sound/weapons/bite.ogg'
 
 	attacktext = list("jabbed", "injected")
@@ -366,7 +364,7 @@
 	name = "energy missle"
 	icon_state = "force_missile"
 	damage = 12
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 
 
 // === merged from cyber_horror_chomp.dm during hard-fork de-suffix (verified no override-order change) ===

@@ -264,7 +264,7 @@
 			return
 	else if(!(W.flags & NOBLUDGEON))
 		user.setClickCooldown(user.get_attack_speed(W))
-		if(W.damtype == BRUTE || W.damtype == BURN)
+		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			playsound(src, W.hitsound, 50, 1)
 			damage(W.force)

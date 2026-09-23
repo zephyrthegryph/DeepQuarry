@@ -11,6 +11,7 @@
 	armor_penetration = 10
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	attack_verb = list("stabbed", "poked", "slashed")
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	w_class = ITEMSIZE_HUGE

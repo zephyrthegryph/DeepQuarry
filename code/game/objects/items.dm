@@ -24,7 +24,6 @@
 	var/obj/item/master = null
 	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 	var/force = 0
-	var/damtype = BRUTE
 	var/throwforce = 0
 	var/sharp = FALSE		// whether this object cuts
 	var/edge = FALSE		// whether this object is more likely to dismember

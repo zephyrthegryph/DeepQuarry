@@ -43,7 +43,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	harm_intent_damage = 1
 	melee_damage_lower = 1
 	melee_damage_upper = 2
-	attack_sharp = FALSE
 	attack_sound = 'sound/weapons/tap.ogg'
 	attacktext = list("drained", "bludgeoned", "wraped", "tentacle whipped")
 

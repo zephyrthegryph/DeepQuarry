@@ -80,9 +80,7 @@
 /obj/effect/callstrike/end_fall(crushing = FALSE)
 	for(var/mob/living/L in loc)
 		var/target_zone = ran_zone()
-		var/blocked = L.run_armor_check(target_zone, "laser")
-
-		if(!L.injure(INJURY_BURN, 70, target_zone, src, blocked))
+		if(!L.injure(INJURY_BURN, 70, target_zone, src, flags = INJURE_ARMORED))
 			break
 	playsound(src, 'sound/effects/clang2.ogg', 50, 1)
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 0.25 SECONDS, TIMER_DELETE_ME)

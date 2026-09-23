@@ -32,7 +32,6 @@
 
 	melee_damage_lower = 1
 	melee_damage_upper = 2
-	attack_sharp = FALSE
 	attacktext = list("nipped", "squeaked at", "hopped on", "kicked")
 
 

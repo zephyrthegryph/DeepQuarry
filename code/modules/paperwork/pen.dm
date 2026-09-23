@@ -213,7 +213,8 @@
 	edge = TRUE
 	w_class = active_w_class
 	playsound(src, 'sound/weapons/saberon.ogg', 15, 1)
-	damtype = SEARING
+	injury_kind = INJURY_CUT
+	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 	catchable = FALSE
 
 	attack_verb |= list(\
@@ -235,7 +236,8 @@
 	sharp = initial(sharp)
 	edge = initial(edge)
 	w_class = initial(w_class)
-	damtype = BRUTE
+	injury_kind = initial(injury_kind)
+	injury_kinds = null
 	catchable = TRUE
 
 /obj/item/pen/blade/blue

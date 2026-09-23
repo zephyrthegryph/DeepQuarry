@@ -127,7 +127,7 @@
 	if(target.species.flags & NO_PAIN)
 		return
 
-	var/armor = target.run_armor_check(target, "melee")
+	var/armor = target.armor_against(INJURY_PAIN)
 	if(armor < 60)
 		to_chat(target, span_danger("You feel extreme pain!"))
 
@@ -169,9 +169,9 @@
 	if(istype(hat))
 		damage += hat.force * 3
 
-	var/armor = target.run_armor_check(BP_HEAD, "melee")
-	target.injure(INJURY_BLUNT, damage, BP_HEAD, attacker, armor)
-	attacker.injure(INJURY_BLUNT, 10, BP_HEAD, target, attacker.run_armor_check(BP_HEAD))
+	var/armor = target.armor_against(INJURY_BLUNT, BP_HEAD)
+	target.injure(INJURY_BLUNT, damage, BP_HEAD, attacker, flags = INJURE_ARMORED)
+	attacker.injure(INJURY_BLUNT, 10, BP_HEAD, target, flags = INJURE_ARMORED)
 
 	if(!armor && target.headcheck(BP_HEAD) && prob(damage))
 		target.apply_effect(20, PARALYZE)

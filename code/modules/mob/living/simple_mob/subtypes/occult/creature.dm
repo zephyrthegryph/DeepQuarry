@@ -17,8 +17,7 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 	attack_armor_pen = 5	//It's a horror from beyond, I ain't gotta explain 5 AP
-	attack_sharp = TRUE
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 
 	attacktext = list("chomped")
 	attack_sound = 'sound/weapons/bite.ogg'

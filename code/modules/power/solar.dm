@@ -66,7 +66,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 		user.visible_message(span_warning("[user] strikes the solar panel with [W]."))
 		user.setClickCooldown(user.get_attack_speed(W))
 		add_fingerprint(user)
-		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+		take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
 	..()
 
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)

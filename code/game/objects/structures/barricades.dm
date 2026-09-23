@@ -32,10 +32,10 @@
 		return
 	var/base_multiplier
 	if(barricade_damage > 30)
-		base_multiplier = P.damage_type == BURN ? 0.5 : 0.25
+		base_multiplier = P.obj_damage_type() == BURN ? 0.5 : 0.25
 	else
-		base_multiplier = P.damage_type == BURN ? 0.25 : 0.1
-	take_damage(barricade_damage * base_multiplier, P.damage_type, BULLET)
+		base_multiplier = P.obj_damage_type() == BURN ? 0.25 : 0.1
+	take_damage(barricade_damage * base_multiplier, P.obj_damage_type(), BULLET)
 
 /obj/structure/barricade/attackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
@@ -59,7 +59,7 @@
 		playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
 	else
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
-	switch(W.damtype)
+	switch(W.obj_damage_type())
 		if(BURN)
 			take_damage(W.force, BURN, MELEE, sound_effect = FALSE)
 		if(BRUTE)

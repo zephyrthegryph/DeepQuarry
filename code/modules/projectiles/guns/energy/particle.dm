@@ -167,8 +167,7 @@
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "particle"
 	damage = 40
-	damage_type = BURN
-	check_armour = "energy"
+	injury_kind = INJURY_BURN
 	embed_chance = 0
 
 /obj/item/projectile/bullet/particle/heavy

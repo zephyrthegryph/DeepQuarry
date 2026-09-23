@@ -34,7 +34,7 @@
 /obj/structure/ghost_pod/automatic/xenomorph_egg/attackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
-	switch(W.damtype)
+	switch(W.obj_damage_type())
 		if(BURN)
 			take_damage(W.force * 1.25, BURN, MELEE, sound_effect = FALSE) //It really doesn't like fire
 		if(BRUTE)
@@ -43,7 +43,7 @@
 	return
 
 /obj/structure/ghost_pod/automatic/xenomorph_egg/bullet_act(obj/item/projectile/Proj)
-	switch(Proj.damage_type)
+	switch(Proj.obj_damage_type())
 		if(BURN)
 			take_damage(Proj.damage * 1.5, BURN, BULLET) //It burns!
 		if(BRUTE)

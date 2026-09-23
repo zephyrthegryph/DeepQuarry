@@ -35,9 +35,9 @@
 		user.Weaken(3 * force)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
-			H.injure(get_injury_kind(), 2*force, BP_HEAD, src)
+			H.injure(injury_kind, 2*force, BP_HEAD, src)
 		else
-			user.injure(get_injury_kind(), 2*force, source = src)
+			user.injure(injury_kind, 2*force, source = src)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
@@ -106,8 +106,8 @@
 			user.Weaken(3 * force)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
-				H.injure(get_injury_kind(), 2*force, BP_HEAD, src)
+				H.injure(injury_kind, 2*force, BP_HEAD, src)
 			else
-				user.injure(get_injury_kind(), 2*force, source = src)
+				user.injure(injury_kind, 2*force, source = src)
 			return ITEM_INTERACT_SUCCESS
 	return ..()

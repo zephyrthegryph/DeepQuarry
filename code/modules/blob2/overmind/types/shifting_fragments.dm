@@ -6,7 +6,6 @@
 	difficulty = BLOB_DIFFICULTY_EASY
 	color = "#C8963C"
 	complementary_color = "#3C6EC8"
-	damage_type = BRUTE
 	damage_lower = 20
 	damage_upper = 30
 	brute_multiplier = 0.5

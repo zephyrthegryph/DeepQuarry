@@ -20,6 +20,7 @@
 	force = 15
 	armor_penetration = 25
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	defend_chance = 10
 	projectile_parry_chance = 5
@@ -33,6 +34,7 @@
 	force = 30
 	armor_penetration = 15
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	pry = 1
 	defend_chance = 40
 	projectile_parry_chance = 20

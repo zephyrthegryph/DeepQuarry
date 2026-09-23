@@ -68,7 +68,7 @@
 
 	//20% chance that the grille provides a bit more cover than usual. Support structure for example might take up 20% of the grille's area.
 	//If they click on the grille itself then we assume they are aiming at the grille itself and the extra cover behaviour is always used.
-	switch(Proj.damage_type)
+	switch(Proj.obj_damage_type())
 		if(BRUTE)
 			//bullets
 			if(Proj.original == src || prob(20))
@@ -86,10 +86,10 @@
 
 	if(passthrough)
 		. = PROJECTILE_CONTINUE
-		damage = between(0, (damage - Proj.damage)*(Proj.damage_type == BRUTE? 0.4 : 1), 10) //if the bullet passes through then the grille avoids most of the damage
+		damage = between(0, (damage - Proj.damage)*(Proj.obj_damage_type() == BRUTE? 0.4 : 1), 10) //if the bullet passes through then the grille avoids most of the damage
 
 	if(damage > 0)
-		take_damage(damage * 0.2, Proj.damage_type, BULLET)
+		take_damage(damage * 0.2, Proj.obj_damage_type(), BULLET)
 
 /obj/structure/grille/attackby(obj/item/W as obj, mob/user as mob)
 	if(!istype(W))
@@ -143,7 +143,7 @@
 		user.setClickCooldown(user.get_attack_speed(W))
 		user.do_attack_animation(src)
 		playsound(src, 'sound/effects/grillehit.ogg', 80, 1)
-		switch(W.damtype)
+		switch(W.obj_damage_type())
 			if(BURN)
 				take_damage(W.force, BURN, MELEE, sound_effect = FALSE)
 			if(BRUTE)

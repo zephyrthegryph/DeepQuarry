@@ -86,6 +86,18 @@ ADMIN_VERB(debug_atmospherics, R_DEBUG, "Debug Atmospherics", "Opens the SSair d
 	SSair.tgui_interact(user.mob)
 	feedback_add_details("admin_verb","DBGATMOS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
+ADMIN_VERB_AND_CONTEXT_MENU(trace_injury_mitigation, R_DEBUG, "Trace Injury Mitigation", "Toggle a per-hit breakdown of a mob's injury mitigation (armour, shields, factors, species) in your chat and the debug log.", ADMIN_CATEGORY_DEBUG_INVESTIGATE, mob/living/target in GLOB.mob_list)
+	if(!istype(target))
+		return
+	if(user in target.injury_trace)
+		LAZYREMOVE(target.injury_trace, user)
+		to_chat(user, span_notice("No longer tracing injury mitigation on [target]."))
+	else
+		LAZYADD(target.injury_trace, user)
+		to_chat(user, span_notice("Tracing injury mitigation on [target]: every injure() call reports each stage."))
+	log_admin("[key_name(user)] toggled injury mitigation tracing on [key_name(target)].")
+	feedback_add_details("admin_verb","TRACEINJ") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_robotize, R_ADMIN|R_EVENT|R_DEBUG, "Make Robot", "Turns the target into a robot.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/living/carbon/human/target_human in GLOB.human_mob_list)
 	if(!SSticker)
 		tgui_alert_async(user, "Wait until the game starts")

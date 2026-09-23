@@ -83,7 +83,6 @@
 /obj/item/projectile/energy/lightingspark/nanoweave
 	damage = 15
 	armor_penetration = 40
-	damage_type = BURN
 	nodamage = 0
 	penetrating = 10
 	icon_state = "tesla_projectile"
@@ -94,8 +93,6 @@
 	name = "sonic blast"
 	icon_state = "sound"
 	damage = 0 //No
-	damage_type = BRUTE
-	check_armour = "melee"
 	embed_chance = 0
 	range = 12
 
@@ -112,7 +109,6 @@
 	speed = 0.5 //we need this to hit for the follow up, the sooner the better
 	damage = 0 //but hey no real harm
 	embed_chance = 0
-	damage_type = BRUTE
 	muzzle_type = null
 	combustion = FALSE
 

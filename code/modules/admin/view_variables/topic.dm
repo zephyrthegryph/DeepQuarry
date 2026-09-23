@@ -124,8 +124,8 @@
 
 		var/existing_val = -1
 		switch(href_list["var_tweak"])
-			if("damtype")
-				existing_val = editing.damtype
+			if("injury_kind")
+				existing_val = editing.injury_kind
 			if("force")
 				existing_val = editing.force
 			//if("wound")
@@ -136,17 +136,20 @@
 				CRASH("Invalid var_tweak passed to item vv set var: [href_list["var_tweak"]]")
 
 		var/new_val
-		if(href_list["var_tweak"] == "damtype")
-			//new_val = tgui_input_list(usr, "Enter the new damage type for [editing]", "Set Damtype", list(BRUTE, BURN, TOX, OXY, STAMINA, BRAIN), existing_val)
-			new_val = tgui_input_list(usr, "Enter the new damage type for [editing]","Set Damtype", list(BRUTE, BURN, TOX, OXY, CLONE, HALLOSS, ELECTROCUTE, BIOACID, SEARING, ELECTROMAG), existing_val)
+		if(href_list["var_tweak"] == "injury_kind")
+			var/list/kinds = list()
+			for(var/kind in 1 to INJURY_KIND_COUNT)
+				kinds[injury_kind_name(kind)] = kind
+			var/picked = tgui_input_list(usr, "Enter the new injury kind for [editing]","Set Injury Kind", kinds, injury_kind_name(existing_val))
+			new_val = picked ? kinds[picked] : null
 		else
 			new_val = tgui_input_number(usr, "Enter the new value for [editing]'s [href_list["var_tweak"]]","Set [href_list["var_tweak"]]", existing_val)
 		if(isnull(new_val) || new_val == existing_val || QDELETED(editing) || !check_rights(R_VAREDIT))
 			return
 
 		switch(href_list["var_tweak"])
-			if("damtype")
-				editing.damtype = new_val
+			if("injury_kind")
+				editing.injury_kind = new_val
 			if("force")
 				editing.force = new_val
 			//if("wound")

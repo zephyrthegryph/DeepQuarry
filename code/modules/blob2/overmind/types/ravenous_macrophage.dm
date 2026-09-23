@@ -7,10 +7,9 @@
 	difficulty = BLOB_DIFFICULTY_MEDIUM
 	color = "#639b3f"
 	complementary_color = "#d1ec3c"
-	damage_type = BIOACID
+	injury_kind = INJURY_CORROSIVE
 	damage_lower = 20
 	damage_upper = 30
-	armor_check = "bio"
 	armor_pen = 50
 	brute_multiplier = 0.8
 	burn_multiplier = 0.3

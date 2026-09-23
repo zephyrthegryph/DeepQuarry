@@ -29,7 +29,7 @@
 
 	melee_damage_upper = 12
 	melee_damage_lower = 7
-	attack_sharp = TRUE
+	attack_injury_kind = INJURY_PIERCE
 
 	old_x = -16
 	old_y = 0

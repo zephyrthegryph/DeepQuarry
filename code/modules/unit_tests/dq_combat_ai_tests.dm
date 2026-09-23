@@ -224,7 +224,7 @@
 	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/simple_mob/combat_ai_test_subject/aggressor = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// Direct notify (the hook does the same after attack_generic).
-	victim.ai_brain.notify_damage(10, BRUTE, aggressor)
+	victim.ai_brain.notify_damage(10, INJURY_BLUNT, aggressor)
 	TEST_ASSERT(victim.ai_brain.check_attacker(aggressor), "notify_damage didn't promote attacker to HOSTILE")
 
 
@@ -415,7 +415,7 @@
 
 	// Simulate attacker hitting the victim (out of view — visible_hostiles is empty
 	// because we never ran update_perception and the mobs aren't on a live map).
-	victim.ai_brain.notify_damage(10, BRUTE, attacker)
+	victim.ai_brain.notify_damage(10, INJURY_BLUNT, attacker)
 
 	// notify_damage should: record last_attacker, add personal HOSTILE, invalidate selection.
 	TEST_ASSERT(victim.ai_brain.check_attacker(attacker), \

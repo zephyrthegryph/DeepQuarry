@@ -445,8 +445,8 @@
 			H.drop_both_hands() //Stuns no longer drop items, so were forcing it >:3
 			return
 
-	var/armor_block = run_armor_check(T, "melee")
-	T.injure(INJURY_PAIN, 20, null, src, armor_block)
+	var/armor_block = T.armor_against(INJURY_PAIN)
+	T.injure(INJURY_PAIN, 20, null, src, flags = INJURE_ARMORED)
 	if(prob(75)) //75% chance to stun for 5 seconds, really only going to be 4 bcus click cooldown+animation.
 		T.apply_effect(5, STUN, armor_block)
 		T.drop_both_hands() // Stuns no longer drop items

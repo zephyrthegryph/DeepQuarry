@@ -47,9 +47,8 @@
 	icon_state = "glitch"
 	damage = 50
 	speed = 6
-	damage_type = ELECTROCUTE
+	injury_kind = INJURY_ELECTRIC
 	agony = 15
-	check_armour = "energy"
 	armor_penetration = 40
 
 	fire_sound = 'sound/effects/uncloak.ogg'
@@ -301,9 +300,8 @@
 	icon_state = "glitch"
 	damage = 0
 	speed = 6
-	damage_type = ELECTROCUTE
+	injury_kind = INJURY_ELECTRIC
 	agony = 0
-	check_armour = "energy"
 	armor_penetration = 0
 
 	fire_sound = 'sound/effects/uncloak.ogg'

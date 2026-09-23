@@ -35,7 +35,6 @@
 	harm_intent_damage = 0
 	melee_damage_lower = 1
 	melee_damage_upper = 1
-	attack_sharp = FALSE
 	attacktext = list("spooked", "startled", "jumpscared", "screamed at")
 
 
@@ -132,7 +131,6 @@
 	harm_intent_damage = 0
 	melee_damage_lower = 1
 	melee_damage_upper = 1
-	attack_sharp = FALSE
 	attacktext = list("spooked", "startled", "jumpscared", "screamed at")
 
 	min_oxy = 0

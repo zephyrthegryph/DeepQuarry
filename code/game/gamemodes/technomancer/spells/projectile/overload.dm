@@ -25,7 +25,7 @@
 /obj/item/projectile/overload
 	name = "overloaded bolt"
 	icon_state = "bluespace"
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	armor_penetration = 100
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
 	hitsound_wall = 'sound/weapons/effects/searwall.ogg'

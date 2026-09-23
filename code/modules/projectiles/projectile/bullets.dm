@@ -4,11 +4,10 @@
 	icon_state = "bullet"
 	fire_sound = 'sound/weapons/gunshot4.ogg'
 	damage = 60
-	damage_type = BRUTE
 	nodamage = 0
-	check_armour = "bullet"
 	embed_chance = 20	//Modified in the actual embed process, but this should keep embed chance about the same
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 	hitsound_wall = "ricochet"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	var/mob_passthrough_check = 0
@@ -127,7 +126,6 @@
 	agony = 60
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
 	hud_state = "pistol_special"
 
 /obj/item/projectile/bullet/pistol/rubber // "Rubber" bullets for all other pistols.
@@ -136,7 +134,7 @@
 	agony = 40
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 	hud_state = "pistol_special"
 	fire_sound ='sound/weapons/gunshot_pathetic.ogg' // Rubber shots have less powder in the casing.
 
@@ -157,7 +155,7 @@
 	agony = 60
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 	hud_state = "shotgun_beanbag"
 
 //Should do about 80 damage at 1 tile distance (adjacent), and 50 damage at 3 tiles distance.
@@ -185,7 +183,7 @@
 	damage = 15
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 	hud_state = "shotgun_ion"
 
 	combustion = FALSE
@@ -291,6 +289,7 @@
 	damage = 20
 	embed_chance = 0
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	hud_state = "pistol_fire"
 
 /obj/item/projectile/bullet/burstbullet/on_hit(atom/target, blocked = 0)
@@ -304,7 +303,7 @@
 	name = "incendiary bullet"
 	icon_state = "bullet_alt"
 	damage = 15
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	incendiary = 0.5
 	flammability = 2
 	hud_state = "pistol_fire"
@@ -386,6 +385,7 @@
 	agony = 0
 	embed_chance = 0
 	sharp = FALSE
+	injury_kind = INJURY_BLUNT
 	silenced = TRUE
 	hud_state = "pistol_light"
 
@@ -395,6 +395,7 @@
 	agony = 0
 	embed_chance = 0
 	sharp = FALSE
+	injury_kind = INJURY_BLUNT
 	pellets = 6
 	range_step = 1
 	spread_step = 10
@@ -556,7 +557,7 @@
 	agony = 40
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/a10mm
 	fire_sound = 'sound/weapons/gunshot2.ogg'
@@ -577,7 +578,7 @@
 	agony = 50
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/a380
 	fire_sound = 'sound/weapons/gunshot2.ogg'
@@ -639,7 +640,7 @@
 	agony = 100
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a762x39 //7.62x39 Soviet
 	fire_sound = 'sound/weapons/ballistics/a762.ogg'
@@ -659,7 +660,7 @@
 	agony = 70
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a545
 	fire_sound = 'sound/weapons/ballistics/a545.ogg'
@@ -673,7 +674,7 @@
 	agony = 60
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a545/hp
 	armor_penetration = -10
@@ -698,7 +699,7 @@
 	agony = 60
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a145 // 14.5×114mm
 	fire_sound = 'sound/weapons/ballistics/a145.ogg'
@@ -723,7 +724,7 @@
 	agony = 70
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a10x24 //10x24mm Caseless
 	damage = 30
@@ -735,7 +736,7 @@
 	agony = 80
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/rifle/a762x54
 	fire_sound = 'sound/weapons/ballistics/a762x54.ogg'
@@ -783,4 +784,4 @@
 	agony = 70
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT

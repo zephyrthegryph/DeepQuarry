@@ -52,8 +52,8 @@
 	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
 
 	//Calculate damage
-	if(W.damtype == BRUTE || W.damtype == BURN)
-		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+	if(W.obj_damage_type())
+		take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
 
 	set_opacity(1)
 	spawn(20) if(!QDELETED(src)) set_opacity(0)

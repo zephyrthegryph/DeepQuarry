@@ -307,11 +307,11 @@ update_flag
 	return 0
 
 /obj/machinery/portable_atmospherics/canister/bullet_act(obj/item/projectile/Proj)
-	if(!(Proj.damage_type == BRUTE || Proj.damage_type == BURN))
+	if(!(Proj.obj_damage_type() == BRUTE || Proj.obj_damage_type() == BURN))
 		return
 
 	if(Proj.damage)
-		take_damage(round(Proj.damage / 2), Proj.damage_type, BULLET)
+		take_damage(round(Proj.damage / 2), Proj.obj_damage_type(), BULLET)
 	..()
 
 /obj/machinery/portable_atmospherics/canister/attackby(obj/item/W as obj, mob/user as mob)
@@ -339,7 +339,7 @@ update_flag
 	if(!istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
 		visible_message(span_warning("\The [user] hits \the [src] with \a [W]!"))
 		src.add_fingerprint(user)
-		take_damage(W.force, W.damtype, MELEE)
+		take_damage(W.force, W.obj_damage_type(), MELEE)
 
 	if(isrobot(user) && istype(W, /obj/item/tank/jetpack))
 		var/obj/item/tank/jetpack/the_jetpack_tank = W

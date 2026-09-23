@@ -46,7 +46,8 @@
 	weaken = 0
 	stun = 0
 	damage = 30
-	damage_type = SEARING
+	injury_kind = INJURY_BLUNT
+	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	embed_chance = 0
 	armor_penetration = 40
 	penetrating = 1
@@ -168,7 +169,6 @@
 	incendiary = 1
 	armor_penetration = 20
 	penetrating = 0
-	check_armour = "melee"
 	irradiate = 20
 	range = 6
 	hud_state = "plasma_rifle_blast"

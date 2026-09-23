@@ -3,8 +3,6 @@
 	name = "fireball"
 	icon_state = "fireball2"
 	damage = 15
-	damage_type = BURN
-	check_armour = "bomb"
 	armor_penetration = 25	// It's a great ball of fire.
 
 	combustion = TRUE

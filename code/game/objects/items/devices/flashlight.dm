@@ -440,7 +440,7 @@
 /obj/item/flashlight/flare/proc/turn_off()
 	on = 0
 	src.force = initial(src.force)
-	src.damtype = initial(src.damtype)
+	src.injury_kind = initial(src.injury_kind)
 	update_brightness()
 
 /obj/item/flashlight/flare/attack_self(mob/user)
@@ -455,14 +455,14 @@
 	if(. == CAN_USE)
 		user.visible_message(span_notice("[user] activates the flare."), span_notice("You pull the cord on the flare, activating it!"))
 		force = on_damage
-		damtype = BURN
+		injury_kind = INJURY_BURN
 		START_PROCESSING(SSobj, src)
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	on = !on
 	update_brightness()
 	force = on_damage
-	damtype = BURN
+	injury_kind = INJURY_BURN
 	START_PROCESSING(SSobj, src)
 	return 1
 

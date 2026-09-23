@@ -46,7 +46,7 @@ Deployable items
 				return
 		return
 	else
-		switch(W.damtype)
+		switch(W.obj_damage_type())
 			if(BURN)
 				take_damage(W.force * 0.75, BURN, MELEE, sound_effect = FALSE)
 			if(BRUTE)

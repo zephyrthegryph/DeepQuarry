@@ -28,7 +28,7 @@
 
 		var/damage_to_inflict = L.vitality() // Otherwise, those in crit would actually be healed.
 
-		var/armor_factor = abs(L.getarmor(null, "energy") - 100)
+		var/armor_factor = abs(L.injury_armor(INJURY_ELECTRIC, null) - 100)
 		armor_factor = armor_factor / 100
 
 		damage_to_inflict = damage_to_inflict * armor_factor

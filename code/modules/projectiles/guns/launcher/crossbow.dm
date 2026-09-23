@@ -12,6 +12,7 @@
 	w_class = ITEMSIZE_NORMAL
 	sharp = TRUE
 	edge = FALSE
+	injury_kind = INJURY_PIERCE
 
 /obj/item/arrow/proc/removed() //Helper for metal rods falling apart.
 	return
@@ -21,6 +22,7 @@
 	desc = "It's about a foot of weird silver metal with a wicked point."
 	sharp = TRUE
 	edge = FALSE
+	injury_kind = INJURY_PIERCE
 	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/weapons.dmi'

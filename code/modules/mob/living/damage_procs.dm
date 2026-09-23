@@ -18,7 +18,7 @@
 		if(AGONY)
 			injure(INJURY_PAIN, effect * blocked) // Useful for objects that cause "subdual" damage. PAIN!
 		if(IRRADIATE)
-			var/rad_protection = getarmor(null, "rad")
+			var/rad_protection = injury_armor(INJURY_RADIATION, null)
 			rad_protection = (100-rad_protection)/100
 			if(!(SEND_SIGNAL(src, COMSIG_LIVING_IRRADIATE_EFFECT, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
 				radiation += max((effect * rad_protection), 0)

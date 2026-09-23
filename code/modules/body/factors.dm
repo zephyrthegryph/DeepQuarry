@@ -108,13 +108,6 @@
 		list(BF_PULSE_SET, "Forced pulse", BF_RULE_MAX, -1, -1, INFINITY, "points", "Forces the pulse to a level."),
 		list(BF_EMP_SHIFT, "EMP resistance", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Weakens EMPs (higher is weaker)."),
 		list(BF_EXPLOSION_SHIFT, "Blast resistance", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Weakens explosions (higher is weaker)."),
-		list(BF_ARMOR_MELEE, "Melee armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra melee armour."),
-		list(BF_ARMOR_BULLET, "Bullet armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra bullet armour."),
-		list(BF_ARMOR_LASER, "Laser armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra laser armour."),
-		list(BF_ARMOR_ENERGY, "Energy armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra energy armour."),
-		list(BF_ARMOR_BOMB, "Blast armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra blast armour."),
-		list(BF_ARMOR_BIO, "Bio armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra biological armour."),
-		list(BF_ARMOR_RAD, "Radiation armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra radiation armour."),
 		list(BF_HEAT_EXPOSURE, "Heat exposure", BF_RULE_MULT, 1, 0, 10, "percent", "Share of environmental heat that reaches the body."),
 		list(BF_COLD_EXPOSURE, "Cold exposure", BF_RULE_MULT, 1, 0, 10, "percent", "Share of environmental cold that reaches the body."),
 		list(BF_SIEMENS, "Conductivity", BF_RULE_MULT, 1, 0, 10, "percent", "Electrical conductivity."),
@@ -131,6 +124,9 @@
 	)
 	for(var/list/row as anything in rows)
 		defs[row[1]] = new /datum/body_factor_def(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])
+	for(var/kind in 1 to ARMOR_KIND_COUNT)
+		var/kind_name = armor_kind_name(kind)
+		defs[BF_ARMOR(kind)] = new /datum/body_factor_def(BF_ARMOR(kind), "[capitalize(kind_name)] armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra armour against [kind_name] harm.")
 	for(var/id in 1 to BF_COUNT)
 		if(!defs[id])
 			stack_trace("body factor [id] has no definition")
@@ -229,31 +225,6 @@
 	. = factor(BF_INCOMING_ALL)
 	if(category)
 		. *= factor(BF_INCOMING(category))
-
-/// Armour-type string ("melee", "bullet", ...) -> BF_ARMOR_* or null.
-/proc/armor_type_factor(type)
-	switch(type)
-		if("melee")
-			return BF_ARMOR_MELEE
-		if("bullet")
-			return BF_ARMOR_BULLET
-		if("laser")
-			return BF_ARMOR_LASER
-		if("energy")
-			return BF_ARMOR_ENERGY
-		if("bomb")
-			return BF_ARMOR_BOMB
-		if("bio")
-			return BF_ARMOR_BIO
-		if("rad")
-			return BF_ARMOR_RAD
-	return null
-
-/// Armour points the mob's factors add for an armour type.
-/mob/living/proc/factor_armor(type)
-	var/id = armor_type_factor(type)
-	return id ? factor(id) : 0
-
 
 // --- Body side ---------------------------------------------------------------------
 

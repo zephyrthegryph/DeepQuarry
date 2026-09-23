@@ -84,28 +84,26 @@
 #define BF_PULSE_SET         52 // max: forced pulse level (baseline -1 = none)
 #define BF_EMP_SHIFT         53 // add: added to EMP severity (higher = weaker)
 #define BF_EXPLOSION_SHIFT   54 // add: added to explosion severity (higher = weaker)
-#define BF_ARMOR_MELEE       55 // add: armour points
-#define BF_ARMOR_BULLET      56 // add
-#define BF_ARMOR_LASER       57 // add
-#define BF_ARMOR_ENERGY      58 // add
-#define BF_ARMOR_BOMB        59 // add
-#define BF_ARMOR_BIO         60 // add
-#define BF_ARMOR_RAD         61 // add
-#define BF_HEAT_EXPOSURE     62 // mult: share of environmental heat that reaches the body
-#define BF_COLD_EXPOSURE     63 // mult: share of environmental cold that reaches the body
-#define BF_SIEMENS           64 // mult: electrical conductivity
+#define BF_HEAT_EXPOSURE     55 // mult: share of environmental heat that reaches the body
+#define BF_COLD_EXPOSURE     56 // mult: share of environmental cold that reaches the body
+#define BF_SIEMENS           57 // mult: electrical conductivity
 // --- Chemistry (the old per-tick chemical channels) -------------------------------------
-#define BF_STABILIZATION     65 // add: cardiorespiratory stabilisation (inaprovaline)
-#define BF_ANTIMICROBIAL     66 // add: antibiotic strength
-#define BF_BLOOD_REGEN       67 // add: blood regenerated per tick (units)
-#define BF_INTOXICATION      68 // add: alcohol intoxication
-#define BF_HEPATOTOXICITY    69 // add: liver toxicity from alcohol
-#define BF_ANTIEMETIC        70 // add: vomiting suppression
-#define BF_ALLERGY           71 // add: allergic reaction strength
-#define BF_WITHDRAWAL        72 // add: withdrawal strain on the organs
-#define BF_NEURAL_REPAIR     73 // add: extra brain-lesion repair per tick
-#define BF_IMMUNE_SUPPRESSION 74 // add: immune suppression
-#define BF_COUNT             74
+#define BF_STABILIZATION     58 // add: cardiorespiratory stabilisation (inaprovaline)
+#define BF_ANTIMICROBIAL     59 // add: antibiotic strength
+#define BF_BLOOD_REGEN       60 // add: blood regenerated per tick (units)
+#define BF_INTOXICATION      61 // add: alcohol intoxication
+#define BF_HEPATOTOXICITY    62 // add: liver toxicity from alcohol
+#define BF_ANTIEMETIC        63 // add: vomiting suppression
+#define BF_ALLERGY           64 // add: allergic reaction strength
+#define BF_WITHDRAWAL        65 // add: withdrawal strain on the organs
+#define BF_NEURAL_REPAIR     66 // add: extra brain-lesion repair per tick
+#define BF_IMMUNE_SUPPRESSION 67 // add: immune suppression
+// --- Armour -----------------------------------------------------------------------------
+/// Armour points against one armour kind (INJURY_* or ARMOR_BLAST), added to
+/// worn / natural armour. BF_ARMOR(INJURY_BLUNT) .. BF_ARMOR(ARMOR_BLAST).
+#define BF_ARMOR_BASE        67
+#define BF_ARMOR(kind)       (BF_ARMOR_BASE + (kind))
+#define BF_COUNT             (BF_ARMOR_BASE + ARMOR_KIND_COUNT)
 
 // --- Action blocks (BF_ACTION_BLOCKS) ------------------------------------------------------
 /// Can't speak (airway closed, respiratory failure).

@@ -8,6 +8,7 @@
 	throw_range = 15
 	sharp = TRUE
 	edge =  TRUE
+	injury_kind = INJURY_CUT
 
 /obj/item/material/star/Initialize(mapload)
 	. = ..()

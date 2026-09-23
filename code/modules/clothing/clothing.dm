@@ -341,7 +341,7 @@
 	var/glove_level = 2							//What "layer" the glove is on
 	var/overgloves = 0							//Used by gauntlets and arm_guards
 	var/punch_force = 0							//How much damage do these gloves add to a punch?
-	var/punch_damtype = BRUTE					//What type of damage does this make fists be?
+	var/punch_injury_kind						//What punches in these gloves inflict (INJURY_*); null = the punch's own kind.
 	heat_protection = HANDS
 	cold_protection = HANDS
 	body_parts_covered = HANDS

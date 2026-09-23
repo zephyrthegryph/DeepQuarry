@@ -1,86 +1,4 @@
 
-/*
-	run_armor_check(a,b)
-	args
-	a:def_zone		- What part is getting hit, if null will check entire body
-	b:attack_flag	- What type of attack, bullet, laser, energy, melee
-	c:armour_pen	- How much armor to ignore.
-	d:absorb_text	- Custom text to send to the player when the armor fully absorbs an attack.
-	e:soften_text	- Similar to absorb_text, custom text to send to the player when some damage is reduced.
-
-	Returns
-	A number between 0 and 100, with higher numbers resulting in less damage taken.
-*/
-/mob/living/proc/run_armor_check(def_zone = null, attack_flag = "melee", armour_pen = 0, absorb_text = null, soften_text = null)
-	if(GLOB.Debug2)
-		log_world("## DEBUG: getarmor() was called.")
-
-	if(armour_pen >= 100)
-		return 0 //might as well just skip the processing
-
-	var/armor = getarmor(def_zone, attack_flag)
-	if(armor)
-		var/armor_variance_range = round(armor * 0.25) //Armor's effectiveness has a +25%/-25% variance.
-		var/armor_variance = rand(-armor_variance_range, armor_variance_range) //Get a random number between -25% and +25% of the armor's base value
-		if(GLOB.Debug2)
-			log_world("## DEBUG: The range of armor variance is [armor_variance_range].  The variance picked by RNG is [armor_variance].")
-
-		armor = min(armor + armor_variance, 100)	//Now we calcuate damage using the new armor percentage.
-		armor = max(armor - armour_pen, 0)			//Armor pen makes armor less effective.
-		if(armor >= 100)
-			if(absorb_text)
-				to_chat(src, span_danger("[absorb_text]"))
-			else
-				to_chat(src, span_danger("Your armor absorbs the blow!"))
-
-		else if(armor > 0)
-			if(soften_text)
-				to_chat(src, span_danger("[soften_text]"))
-			else
-				to_chat(src, span_danger("Your armor softens the blow!"))
-		if(GLOB.Debug2)
-			log_world("## DEBUG: Armor when [src] was attacked was [armor].")
-	return armor
-
-/*
-	//Old armor code here.
-	if(armour_pen >= 100)
-		return 0 //might as well just skip the processing
-
-	var/armor = getarmor(def_zone, attack_flag)
-	var/absorb = 0
-
-	//Roll armour
-	if(prob(armor))
-		absorb += 1
-	if(prob(armor))
-		absorb += 1
-
-	//Roll penetration
-	if(prob(armour_pen))
-		absorb -= 1
-	if(prob(armour_pen))
-		absorb -= 1
-
-	if(absorb >= 2)
-		if(absorb_text)
-			show_message("[absorb_text]")
-		else
-			show_message(span_warning("Your armor absorbs the blow!"))
-		return 2
-	if(absorb == 1)
-		if(absorb_text)
-			show_message("[soften_text]",4)
-		else
-			show_message(span_warning("Your armor softens the blow!"))
-		return 1
-	return 0
-*/
-
-//if null is passed for def_zone, then this should return something appropriate for all zones (e.g. area effect damage)
-/mob/living/proc/getarmor(def_zone, type)
-	return 0
-
 // Clicking with an empty hand
 /mob/living/attack_hand(mob/living/L)
 	..()
@@ -107,19 +25,14 @@
 	if(ai_brain && P.firer)
 		ai_brain.react_to_attack(P.firer)
 
-	//Armor
-	var/absorb = run_armor_check(def_zone, P.check_armour, P.armor_penetration)
-	var/proj_sharp = is_sharp(P)
-	var/proj_edge = has_edge(P)
-
-	if ((proj_sharp || proj_edge) && prob(getarmor(def_zone, P.check_armour)))
-		proj_sharp = 0
-		proj_edge = 0
+	// Armour on the struck part scales the secondary effects; the harm itself
+	// is armoured inside injure().
+	var/absorb = armor_against(P.injury_kind, def_zone, P.armor_penetration)
 
 	//Stun Beams
 	if(P.taser_effect)
 		stun_effect_act(0, P.agony, def_zone, P, electric = TRUE)
-		P.inflict_injury(src, def_zone, absorb, proj_sharp, proj_edge)
+		P.inflict_injury(src, def_zone)
 		// Call on_hit() so any modifier_type_to_apply and other effects set on the
 		// projectile are applied even for taser-effect projectiles.  Pass absorb so
 		// a fully-blocked hit still suppresses secondary effects correctly.
@@ -127,7 +40,7 @@
 		qdel(P)
 		return
 
-	P.inflict_injury(src, def_zone, absorb, proj_sharp, proj_edge)
+	P.inflict_injury(src, def_zone)
 	P.on_hit(src, absorb, def_zone)
 
 	if(absorb == 100)
@@ -176,8 +89,8 @@
 
 	var/damage = rand(30, 40)
 	var/armor_pen = 0
-	var/armor_check = "melee"
-	var/damage_type = BRUTE
+	var/kind = INJURY_BLUNT
+	var/alist/kinds = null
 	var/attack_message = "The blob attacks you!"
 	var/attack_verb = "attacks"
 	var/def_zone = pick(BP_HEAD, BP_TORSO, BP_GROIN, BP_L_ARM, BP_R_ARM, BP_L_LEG, BP_R_LEG)
@@ -186,9 +99,9 @@
 		var/datum/blob_type/blob = B.overmind.blob_type
 
 		damage = rand(blob.damage_lower, blob.damage_upper)
-		armor_check = blob.armor_check
 		armor_pen = blob.armor_pen
-		damage_type = blob.damage_type
+		kind = blob.injury_kind
+		kinds = blob.injury_kinds
 
 		attack_message = "[blob.attack_message][isSynthetic() ? "[blob.attack_message_synth]":"[blob.attack_message_living]"]"
 		attack_verb = blob.attack_verb
@@ -197,13 +110,10 @@
 	visible_message(span_danger("\The [B] [attack_verb] \the [src]!"), span_danger("[attack_message]!"))
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 
-	//Armor
-	var/absorb = run_armor_check(def_zone, armor_check, armor_pen)
-
 	if(ai_brain)
 		ai_brain.react_to_attack(B)
 
-	injure_by_damtype(damage_type, damage, def_zone, B, absorb)
+	injure_split(kind, kinds, damage, def_zone, B, armor_pen, INJURE_ARMORED)
 
 /mob/living/proc/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
 	return target_zone
@@ -215,11 +125,11 @@
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
 
-	var/blocked = run_armor_check(hit_zone, "melee")
+	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone)
 
-	if(I.damtype == BRUTE && prob(33)) // Added blood for whacking non-humans too
+	if(injury_category(I.injury_kind) == INJURY_CATEGORY_PHYSICAL && prob(33)) // Added blood for whacking non-humans too
 		var/turf/simulated/location = get_turf(src)
 		if(istype(location)) location.add_blood_floor(src)
 
@@ -229,34 +139,13 @@
 /mob/living/proc/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone)
 	if(!effective_force || blocked >= 100)
 		return 0
-	//Apply weapon damage
-	var/weapon_sharp = is_sharp(I)
-	var/weapon_edge = has_edge(I)
-
-	if(prob(max(getarmor(hit_zone, "melee") - I.armor_penetration, 0))) //melee armour provides a chance to turn sharp/edge weapon attacks into blunt ones
-		weapon_sharp = 0
-		weapon_edge = 0
-
-	injure_by_damtype(I.damtype, effective_force, hit_zone, I, blocked, weapon_sharp, weapon_edge)
+	// Apply weapon damage: armour (and its chance to turn an edge) is applied in injure().
+	injure_by(I, effective_force, hit_zone)
 
 	return 1
 
-/// Harm from a legacy-damtype source (weapon, thrown object, blob):
-/// resolves the injury kind (sharp/edge honoured) and the two damtypes that
-/// are not a single injury â€” SEARING (a burn plus a blunt/cut injury) and
-/// ELECTROMAG (an EMP scaled by the unblocked amount). Returns the amount applied.
-/mob/living/proc/injure_by_damtype(damtype, amount, zone = null, atom/source = null, armor = 0, sharp = FALSE, edge = FALSE, flags = NONE)
-	switch(damtype)
-		if(ELECTROMAG)
-			electromagnetic_hit(amount * (100 - armor) / 100)
-			return 0
-		if(SEARING)
-			. = injure(INJURY_BURN, amount / 3, zone, source, armor, null, flags)
-			. += injure(injury_kind_for(BRUTE, sharp, edge), amount * 2 / 3, zone, source, armor, null, flags)
-			return
-	return injure(injury_kind_for(damtype, sharp, edge), amount, zone, source, armor, null, flags)
-
-/// Electromagnetic "damage" pulses the mob instead of injuring it.
+/// Electromagnetic "damage" pulses the mob instead of injuring it (ion
+/// projectiles, emp_on_hit). Strength scales with the unblocked amount.
 /mob/living/proc/electromagnetic_hit(amount)
 	switch(round(amount))
 		if(91 to INFINITY)
@@ -287,7 +176,6 @@
 
 	if(isitem(source))
 		var/obj/item/O = source
-		var/dtype = O.damtype
 		var/throw_damage = O.throwforce*(speed/THROWFORCE_SPEED_DIVISOR)
 
 		/*var/miss_chance = 15
@@ -300,10 +188,7 @@
 			return*/
 		// removing baymiss
 		src.visible_message(span_filter_warning("[span_red("[src] has been hit by [O].")]"))
-		var/armor = run_armor_check(null, "melee")
-
-
-		injure_by_damtype(dtype, throw_damage, null, O, armor, is_sharp(O), has_edge(O))
+		injure_by(O, throw_damage)
 
 		if(ismob(thrower))
 			var/client/assailant = thrower.client
@@ -392,11 +277,11 @@
 	return 1
 
 /// What kind of wound a generic (usually animal) attack from `user` leaves:
-/// simple mobs declare their melee sharpness; anything else is a blunt blow.
+/// simple mobs declare their melee kind; anything else is a blunt blow.
 /mob/living/proc/generic_attack_injury_kind(mob/user)
 	var/mob/living/simple_mob/S = user
 	if(istype(S))
-		return injury_kind_for(BRUTE, S.attack_sharp, S.attack_edge)
+		return S.attack_injury_kind
 	return INJURY_BLUNT
 
 /mob/living/proc/get_cold_protection()

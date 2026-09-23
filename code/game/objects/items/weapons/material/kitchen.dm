@@ -12,6 +12,7 @@
 	attack_verb = list("attacked", "stabbed", "poked")
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.25 // 5 when thrown with weight 20 (steel)
 	var/scoop_volume = 5
@@ -143,6 +144,7 @@
 	icon_state = "fork"
 	sharp = TRUE
 	edge = FALSE
+	injury_kind = INJURY_PIERCE
 
 /obj/item/material/kitchen/utensil/fork/plastic
 	default_material = MAT_PLASTIC
@@ -153,6 +155,7 @@
 	icon_state = "foon"
 	sharp = TRUE
 	edge = FALSE
+	injury_kind = INJURY_PIERCE
 
 /obj/item/material/kitchen/utensil/foon/plastic
 	default_material = MAT_PLASTIC
@@ -163,6 +166,7 @@
 	icon_state = "spork"
 	sharp = TRUE
 	edge = FALSE
+	injury_kind = INJURY_PIERCE
 
 /obj/item/material/kitchen/utensil/spork/plastic
 	default_material = MAT_PLASTIC
@@ -174,6 +178,7 @@
 	attack_verb = list("attacked", "poked")
 	edge = FALSE
 	sharp = FALSE
+	injury_kind = INJURY_BLUNT
 	force_divisor = 0.1 //2 when wielded with weight 20 (steel)
 
 /obj/item/material/kitchen/utensil/spoon/plastic

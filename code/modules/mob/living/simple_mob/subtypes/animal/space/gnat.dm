@@ -38,7 +38,7 @@
 	melee_damage_lower = 2
 	melee_damage_upper = 3	//they do very little damage but attack fairly fast, like organic viscerators
 	base_attack_cooldown = 10 // Bitey bitey!
-	attack_sharp = TRUE
+	attack_injury_kind = INJURY_PIERCE
 	attack_sound = 'sound/weapons/bite.ogg'
 	attacktext = list("nibbled")
 

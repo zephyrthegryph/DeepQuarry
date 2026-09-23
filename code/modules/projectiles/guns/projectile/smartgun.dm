@@ -98,10 +98,8 @@
 	fire_sound = 'sound/weapons/gunshot4.ogg' // hmm
 
 	// Slight damage and big stun
-	damage_type = BRUTE
 	damage = 10
 	agony = 70
-	check_armour = "bullet"
 	embed_chance = 0 // There's a separate sprite for this, but for now let's just not embed
 	accuracy = -30 // 2 turfs closer for the purpose of accuracy
 

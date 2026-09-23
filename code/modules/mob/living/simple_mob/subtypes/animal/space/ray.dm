@@ -48,7 +48,7 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 10	//minor damage variance, since they should only be fighting carp
 	base_attack_cooldown = 18 // A bit slower than carp
-	attack_sharp = TRUE
+	attack_injury_kind = INJURY_PIERCE
 	attack_sound = 'sound/weapons/bite.ogg'
 	attacktext = list("lanced","bitten","impaled","gored")
 

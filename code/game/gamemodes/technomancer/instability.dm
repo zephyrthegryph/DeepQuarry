@@ -279,7 +279,7 @@
 // This should only be used for EXTERNAL sources of instability, such as from someone or something glowing.
 /mob/living/proc/receive_radiated_instability(amount)
 	// Energy armor like from the AMI RIG can protect from this.
-	var/armor = getarmor(null, "energy")
+	var/armor = injury_armor(INJURY_ELECTRIC, null)
 	var/armor_factor = abs( (armor - 100) / 100)
 	amount = amount * armor_factor
 	if(amount && prob(10))

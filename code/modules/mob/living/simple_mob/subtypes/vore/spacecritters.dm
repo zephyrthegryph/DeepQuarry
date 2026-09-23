@@ -71,7 +71,7 @@
 	icon_living = "solarray"
 	icon_dead = "solarray-dead"
 	attacktext = list("incinerate")
-	attack_armor_type = "energy"
+	attack_injury_kind = INJURY_BURN
 	attack_armor_pen = 30
 	water_resist = 0
 
@@ -177,7 +177,6 @@
 	melee_damage_lower = 2		// Lower bound of randomized melee damage
 	melee_damage_upper = 2		// Upper bound of randomized melee damage
 	attacktext = list("pinches") // "You are [attacktext] by the mob!"
-	attack_armor_type = "melee"		// What armor does this check?
 	attack_armor_pen = 100			// How much armor pen this attack has.
 	var/rads = 50
 	evolve = "/mob/living/simple_mob/vore/spacecritter/radcrab/supermattercrab"

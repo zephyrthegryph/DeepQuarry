@@ -8,19 +8,16 @@
 	if(!effective_force || blocked >= 100)
 		return 0
 
-	//Apply weapon damage
-	var/weapon_sharp = is_sharp(I)
-	var/weapon_edge = has_edge(I)
-	var/hit_embed_chance = I.embed_chance
-	if(prob(getarmor(hit_zone, "melee"))) //melee armour provides a chance to turn sharp/edge weapon attacks into blunt ones
-		weapon_sharp = 0
-		weapon_edge = 0
-		hit_embed_chance = I.force/(I.w_class*3)
-
-	injure_by_damtype(I.damtype, effective_force, hit_zone, I, blocked, weapon_sharp, weapon_edge)
+	// The harm goes through injure(), whose armour stage can also turn the edge.
+	injure_by(I, effective_force, hit_zone)
 
 	//Melee weapon embedded object code.
-	if (I && I.damtype == BRUTE && !I.anchored && !is_robot_module(I) && I.embed_chance > 0)
+	if (I && I.obj_damage_type() == BRUTE && !I.anchored && !is_robot_module(I) && I.embed_chance > 0)
+		var/weapon_sharp = is_sharp(I)
+		var/hit_embed_chance = I.embed_chance
+		if(prob(blocked)) // Armour that turns the edge also keeps the blade from lodging.
+			weapon_sharp = FALSE
+			hit_embed_chance = I.force/(I.w_class*3)
 		var/damage = effective_force
 		if (blocked)
 			damage *= (100 - blocked)/100
@@ -51,7 +48,7 @@
 // Knifing
 /mob/living/carbon/proc/attack_throat(obj/item/W, obj/item/grab/G, mob/user)
 
-	if(!W.edge || !W.force || W.damtype != BRUTE)
+	if(!W.edge || !W.force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
 	user.visible_message(span_danger("\The [user] begins to slit [src]'s throat with \the [W]!"))
@@ -72,7 +69,7 @@
 	var/total_damage = 0
 	for(var/i in 1 to 3)
 		var/damage = min(W.force*1.5, 20)*damage_mod
-		injure_by_damtype(W.damtype, damage, BP_HEAD, W, 0, W.sharp, W.edge)
+		injure_split(W.injury_kind, W.injury_kinds, damage, BP_HEAD, W)
 		total_damage += damage
 
 	var/asphyxia = total_damage
@@ -99,13 +96,13 @@
 
 /mob/living/carbon/proc/shank_attack(obj/item/W, obj/item/grab/G, mob/user, hit_zone)
 
-	if(!W.sharp || !W.force || W.damtype != BRUTE)
+	if(!W.sharp || !W.force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
 	user.visible_message(span_danger("\The [user] plunges \the [W] into \the [src]!"))
 
 	var/damage = shank_armor_helper(W, G, user)
-	injure_by_damtype(W.damtype, damage, BP_TORSO, W, 0, W.sharp, W.edge)
+	injure_split(W.injury_kind, W.injury_kinds, damage, BP_TORSO, W)
 
 	if(W.hitsound)
 		playsound(src, W.hitsound, 50, 1, -1)
@@ -152,7 +149,7 @@
 
 /// Carbons react to every injury after it lands (pain noises; humans add
 /// suit breaches, damage overlays and husking — see on_injured()).
-/mob/living/carbon/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE)
+/mob/living/carbon/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	. = ..()
 	if(.)
 		on_injured(kind, ., zone, source, flags)
@@ -172,7 +169,7 @@
 /mob/living/carbon/proc/injury_pain_noise(amount)
 	if(isbelly(loc)) // No pain noises inside bellies.
 		return
-	var/pain_noise = species ? amount * species.get_injury_mod(INJURY_PAIN) : amount * rand(0.5, 1.5)
+	var/pain_noise = species ? amount * incoming_injury_factor(INJURY_CATEGORY_PAIN) : amount * rand(0.5, 1.5)
 	switch(amount)
 		if(-INFINITY to 0)
 			return

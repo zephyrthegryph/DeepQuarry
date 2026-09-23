@@ -559,8 +559,6 @@
 	icon_state = "choclate_sphere"
 	damage = 20
 	armor_penetration = 30
-	damage_type = BURN
-	check_armour = "energy"
 	speed = 4.0
 	flash_strength = 0
 	modifier_type_to_apply = /datum/modifier/chilled
@@ -572,8 +570,6 @@
 	icon_state = "choclate_sphere"
 	damage = 15
 	armor_penetration = 40
-	damage_type = BURN
-	check_armour = "laser"
 	speed = 2.5
 	flash_strength = 0
 	modifier_type_to_apply = /datum/modifier/grievous_wounds

@@ -37,7 +37,7 @@
 	say_list_type = /datum/say_list/otie
 	tame_chance = 0
 
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 20,
 				"bullet" = 10,
 				"laser" = 20,
@@ -78,7 +78,7 @@
 	special_attack_max_range = 3
 	special_attack_cooldown = 30 SECONDS
 
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 30,
 				"bullet" = 30,
 				"laser" = 30,
@@ -166,7 +166,7 @@
 	buckle_movable = TRUE
 	buckle_lying = FALSE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 40,
 				"bullet" = 20,
 				"laser" = 20,
@@ -234,7 +234,7 @@
 
 	say_list_type = /datum/say_list/merc
 
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 40,
 				"bullet" = 30,
 				"laser" = 20,

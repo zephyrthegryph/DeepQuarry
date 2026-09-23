@@ -4,8 +4,7 @@
 	fire_sound = 'sound/weapons/Laser.ogg'
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 40
-	damage_type = BURN
-	check_armour = "laser"
+	injury_kind = INJURY_BURN
 	eyeblur = 4
 	var/frequency = 1
 	hitscan = 1
@@ -29,8 +28,6 @@
 	icon_state = "laser"
 	damage = 0
 	excavation_amount = 0
-	damage_type = BURN
-	check_armour = "laser"
 	eyeblur = 2
 	hud_state = "laser"
 
@@ -50,7 +47,8 @@
 	impact_type = /obj/effect/projectile/impact/laser_blue
 
 /obj/item/projectile/beam/weaklaser/ion
-	damage_type = ELECTROMAG
+	injury_kind = INJURY_ELECTRIC
+	emp_on_hit = TRUE
 	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
@@ -61,7 +59,8 @@
 	hud_state = "laser"
 
 /obj/item/projectile/beam/smalllaser/ion
-	damage_type = ELECTROMAG
+	injury_kind = INJURY_ELECTRIC
+	emp_on_hit = TRUE
 	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
@@ -73,7 +72,8 @@
 	hud_state = "laser"
 
 /obj/item/projectile/beam/burstlaser/ion
-	damage_type = ELECTROMAG
+	injury_kind = INJURY_ELECTRIC
+	emp_on_hit = TRUE
 	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
@@ -85,7 +85,8 @@
 	hud_state = "laser"
 
 /obj/item/projectile/beam/midlaser/ion
-	damage_type = ELECTROMAG
+	injury_kind = INJURY_ELECTRIC
+	emp_on_hit = TRUE
 	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
@@ -131,7 +132,8 @@
 	impact_type = /obj/effect/projectile/impact/emitter
 
 /obj/item/projectile/beam/heavylaser/ion
-	damage_type = ELECTROMAG
+	injury_kind = INJURY_ELECTRIC
+	emp_on_hit = TRUE
 	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
@@ -219,8 +221,6 @@
 	eyeblur = 0
 	excavation_amount = 0
 	no_attack_log = 1
-	damage_type = BURN
-	check_armour = "laser"
 	hud_state = "monkey"
 	///What suits this beam can hit.
 	var/list/allowed_suits = list(/obj/item/clothing/suit/lasertag/omni, /obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag)
@@ -353,7 +353,7 @@
 /obj/item/projectile/beam/shock
 	name = "shock beam"
 	icon_state = "lightning"
-	damage_type = ELECTROCUTE
+	injury_kind = INJURY_ELECTRIC
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning
@@ -378,7 +378,7 @@
 	name = "point defense salvo"
 	icon_state = "laser"
 	damage = 15
-	damage_type = ELECTROCUTE //You should be safe inside a voidsuit
+	injury_kind = INJURY_ELECTRIC //You should be safe inside a voidsuit
 	sharp = FALSE //"Wide" spectrum beam
 	light_color = COLOR_GOLD
 
@@ -393,7 +393,7 @@
 	name = "defense coil salvo"
 	icon_state = "coil"
 	damage = 15
-	damage_type = ELECTROCUTE //You should be safe inside a voidsuit
+	injury_kind = INJURY_ELECTRIC //You should be safe inside a voidsuit
 	sharp = FALSE //"Wide" spectrum beam
 	light_color = "#FFFFFF"
 
@@ -480,8 +480,8 @@
 	name = "point defense salvo"
 	icon_state = "laser"
 	damage = 15
-	damage_type = ELECTROCUTE //You should be safe inside a voidsuit
 	sharp = FALSE //"Wide" spectrum beam
+	injury_kind = INJURY_ELECTRIC
 	light_color = COLOR_GOLD
 	hud_state = "monkey"
 	excavation_amount = 200 // Good at shooting rocks
@@ -494,8 +494,8 @@
 	name = "defense coil salvo"
 	icon_state = "coil"
 	damage = 15
-	damage_type = ELECTROCUTE //You should be safe inside a voidsuit
 	sharp = FALSE //"Wide" spectrum beam
+	injury_kind = INJURY_ELECTRIC
 	light_color = "#FFFFFF"
 
 	excavation_amount = 200 // Good at shooting rocks
@@ -556,8 +556,6 @@
 	damage = 0 //stops it damaging walls
 	nodamage = TRUE
 	no_attack_log = TRUE
-	damage_type = BURN
-	check_armour = "laser"
 	light_color = "#80F5FF"
 	hud_state = "laser_disabler"
 	combustion = FALSE

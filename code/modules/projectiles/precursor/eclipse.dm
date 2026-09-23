@@ -113,7 +113,6 @@
 	name = "experimental laser"
 	icon = 'icons/obj/guns/precursor/eclipse.dmi'
 	icon_state = "laser"
-	check_armour = "laser"
 	speed = 10
 	crawl_destroy = TRUE
 
@@ -128,8 +127,7 @@
 /obj/item/projectile/energy/eclipse_boss/metalsphere
 	name = "metal sphere"
 	icon_state = "metal_sphere"
-	damage_type = BRUTE
-	check_armour = "bullet"
+	injury_kind = INJURY_BLUNT
 	damage = 20
 	agony = 10
 	armor_penetration = 50
@@ -137,7 +135,8 @@
 /obj/item/projectile/energy/eclipse_boss/energyjavelin
 	name = "searing javelin"
 	icon_state = "javelin"
-	damage_type = SEARING
+	injury_kind = INJURY_BLUNT
+	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	damage = 40
 	armor_penetration = 30
 
@@ -146,13 +145,12 @@
 	name = "abnormal energy"
 	speed = 3
 	damage = 28
-	damage_type = BURN
 	icon = 'icons/obj/guns/precursor/eclipse.dmi'
 	icon_state = "laser"
-	check_armour = "laser"
 
 /obj/item/projectile/energy/astral_collective/basic
-	damage_type = SEARING
+	injury_kind = INJURY_BLUNT
+	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 
 /obj/item/projectile/energy/astral_collective/spear
 	icon_state = "spear"
