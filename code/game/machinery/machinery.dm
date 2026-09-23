@@ -109,7 +109,11 @@ Class Procs:
 	/// Re-checks power (power_change()) when its area's channels change.
 	/// Lights listen on the reactor key instead.
 	var/power_subscriber = TRUE
-	var/list/component_parts = null //list of all the parts used to build it, if made from certain kinds of frames.
+	/// Cache of the real part objects once materialize_parts() has pulled
+	/// them out of the CONTAINER_SLOT_INTERNALS latent entries (roadmap C6):
+	/// null until then. The circuit board is not in this list; see `circuit`.
+	var/list/component_parts = null
+	latent_contents = TRUE
 	var/tmp/uid
 	var/panel_open = FALSE
 	var/global/gl_uid = 1
@@ -142,12 +146,34 @@ Class Procs:
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
+/obj/machinery/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/machine_internals)
+	return types
+
+/// The board plus its req_components, as a spawn list (roadmap C6): resolved
+/// lazily into latent entries in CONTAINER_SLOT_INTERNALS the first time
+/// anything asks the ledger an exact question (RefreshParts's rating reads
+/// included), so a mapped machine's board and parts stay data at boot.
+/obj/machinery/latent_generator()
+	if(!circuit)
+		return null
+	var/list/gen = list()
+	gen[circuit] = 1
+	var/list/req = dq_type_var(circuit, "req_components")
+	for(var/comp_path in req)
+		var/comp_amt = req[comp_path]
+		if(comp_amt)
+			gen[comp_path] = (gen[comp_path] || 0) + comp_amt
+	return gen
+
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
 	if(isnum(d))
 		set_dir(d)
-	if(ispath(circuit))
-		circuit = new circuit(src)
+	// The board stays a type path (roadmap C6): it is only ever materialized
+	// into a real /obj/item/circuitboard when something needs the physical
+	// item (deconstruction, admin var edit, a frame move). See
+	// materialize_circuit().
 	if(!speed_process)
 		START_MACHINE_PROCESSING(src)
 	else
@@ -166,7 +192,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	// generation retained by an already-deleting machine (and reference tracking
 	// turns thousands of those harmless delays into multi-second world freezes).
 	if(circuit)
-		if(circuit.loc == src && !QDELETED(circuit))
+		// circuit may still be a type path (roadmap C6, never materialized):
+		// nothing real to delete in that case.
+		if(!ispath(circuit) && circuit.loc == src && !QDELETED(circuit))
 			qdel(circuit)
 		circuit = null
 	if(component_parts)
@@ -234,13 +262,82 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		return TRUE
 	return ..()
 
-/// Returns the sum of the rating values of all component_parts entries that are instances of part_type.
+/// Reads var_name's declared value for a bare type `path` (roadmap C6): one
+/// transient instance, made and qdel'd once per (path, var_name) and cached
+/// after that. `path` might be any subtype (a stock part, a circuit board, an
+/// smes_coil, ...), so a typed local can't be used to read it -- a typed
+/// local's `.` member access binds to its DECLARED type at compile time,
+/// which for a subtype path silently reads the wrong (base type's) value.
+/// The `:` operator would dispatch correctly, but AGENTS.md §3b forbids it
+/// for subtype access; this reads the same data through a real instance and
+/// the built-in per-datum `vars` list instead, which is always dynamic.
+/proc/dq_type_var(path, var_name)
+	// A caller may already hold a materialized instance (the board, once
+	// materialize_parts() resolved it) rather than a bare path: read it
+	// directly, since it already IS "a real instance" of its own exact type.
+	if(!ispath(path))
+		var/atom/instance = path
+		return instance?.vars[var_name]
+	var/static/list/cache = list()
+	var/cache_key = "[path]#[var_name]"
+	if(cache_key in cache)
+		return cache[cache_key]
+	var/atom/instance = new path
+	var/value = instance.vars[var_name]
+	qdel(instance)
+	cache[cache_key] = value
+	return value
+
+/// Returns the sum of the rating values of all installed parts that are
+/// subtypes of part_type (roadmap C6): real objects already materialized in
+/// CONTAINER_SLOT_INTERNALS, plus latent entries not yet materialized there.
 /obj/machinery/proc/total_component_rating_of_type(part_type)
 	. = 0
-	for(var/thing in component_parts)
-		if(istype(thing, part_type))
-			var/obj/item/stock_parts/part = thing
-			. += part.rating
+	for(var/obj/item/stock_parts/P in slot_contents(CONTAINER_SLOT_INTERNALS))
+		if(istype(P, part_type))
+			. += P.rating
+	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
+		if(ispath(entry.path, part_type))
+			. += dq_type_var(entry.path, "rating") * entry.count
+
+/// Alias of total_component_rating_of_type(), named to match get_part_count().
+/obj/machinery/proc/get_part_rating(part_type)
+	return total_component_rating_of_type(part_type)
+
+/// Returns how many installed parts are subtypes of part_type: real objects
+/// plus latent entries, in CONTAINER_SLOT_INTERNALS (roadmap C6).
+/obj/machinery/proc/get_part_count(part_type)
+	. = 0
+	for(var/obj/item/stock_parts/P in slot_contents(CONTAINER_SLOT_INTERNALS))
+		if(istype(P, part_type))
+			.++
+	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
+		if(ispath(entry.path, part_type))
+			. += entry.count
+
+/// Materializes the board (roadmap C6): if `circuit` is still a type path,
+/// pulls the real board (and every other latent entry in
+/// CONTAINER_SLOT_INTERNALS) out through the ledger. Idempotent.
+/obj/machinery/proc/materialize_circuit()
+	if(ispath(circuit))
+		materialize_parts()
+	return circuit
+
+/// Materializes every latent entry in CONTAINER_SLOT_INTERNALS (roadmap C6):
+/// the board becomes `circuit`, everything else becomes `component_parts`. A
+/// no-op once component_parts is already a real list, so it's safe to call
+/// defensively before anything that reads or moves real parts: deconstruction,
+/// an RPED swap, admin var edits.
+/obj/machinery/proc/materialize_parts()
+	if(component_parts)
+		return
+	latent_materialize_all(CONTAINER_SLOT_INTERNALS)
+	component_parts = list()
+	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
+		if(istype(I, /obj/item/circuitboard))
+			circuit = I
+		else
+			component_parts += I
 
 /obj/machinery/proc/operable(additional_flags = 0)
 	return !inoperable(additional_flags)
@@ -362,19 +459,23 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 			return 1
 	return 0
 
+/// Kept for the ~85 existing call sites in individual machines' Initialize().
+/// There is nothing left to build eagerly (roadmap C6): the board and its
+/// req_components are declared through latent_generator() and resolved into
+/// CONTAINER_SLOT_INTERNALS entries lazily, the first time anything (this
+/// RefreshParts() call included) asks the ledger an exact question.
 /obj/machinery/proc/default_apply_parts()
-	var/obj/item/circuitboard/CB = circuit
-	if(!istype(CB))
-		return
-	CB.apply_default_parts(src)
+	component_parts = null
 	RefreshParts()
 
 /obj/machinery/proc/default_use_hicell()
+	materialize_parts()
 	var/obj/item/cell/C = locate(/obj/item/cell) in component_parts
 	if(C)
 		component_parts -= C
 		qdel(C)
 		C = new /obj/item/cell/high(src)
+		C.move_into(src, CONTAINER_SLOT_INTERNALS)
 		component_parts += C
 		RefreshParts()
 		return C
@@ -383,16 +484,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	var/parts_replaced = FALSE
 	if(!istype(R))
 		return 0
-	if(!component_parts)
+	if(!circuit)
 		return 0
+	materialize_parts()
 	to_chat(user, span_notice("Following parts detected in [src]:"))
 	for(var/obj/item/C in component_parts)
 		to_chat(user, span_notice("    [C.name]"))
 	if(panel_open || !R.panel_req)
-		var/obj/item/circuitboard/CB = circuit
+		var/list/req = dq_type_var(circuit, "req_components")
 		var/P
 		for(var/obj/item/A in component_parts)
-			for(var/T in CB.req_components)
+			for(var/T in req)
 				if(ispath(A.type, T))
 					P = T
 					break
@@ -402,15 +504,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 						R.remove_from_storage(B, src, user)
 						R.insert_item(A, user, TRUE)
 						component_parts -= A
+						B.move_into(src, CONTAINER_SLOT_INTERNALS, user)
 						component_parts += B
-						B.loc = null
 						to_chat(user, span_notice("[A.name] replaced with [B.name]."))
 						parts_replaced = TRUE
 						break
 			update_icon()
-			RefreshParts()
-			if(parts_replaced)
-				R.play_rped_sound()
+		RefreshParts()
+		if(parts_replaced)
+			R.play_rped_sound()
 	return 1
 
 // This is it's own proc so it can be more easily found when looking for machines that can upgrade themselves from mapped parts
@@ -441,6 +543,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 	if(!circuit)
 		return 0
+	materialize_circuit()
+	materialize_parts()
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
 	var/obj/item/circuitboard/M = circuit
 	A.circuit = M
@@ -491,6 +595,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
  * nor reports them as stale component_parts.
  */
 /obj/machinery/atom_deconstruct(disassembled = TRUE)
+	// Real objects must exist to be scattered as salvage by /obj/deconstruct()'s
+	// generic contents-to-turf pass, so materialize before letting go of them.
+	materialize_circuit()
+	materialize_parts()
 	component_parts = null
 	circuit = null
 	return ..()

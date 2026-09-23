@@ -3,6 +3,23 @@
 // vars, and dq_state_latent_round_trip round-trips every subtype). Initialize()
 // side effects are audited by L2. Rollout order is containment.md section 4.6.
 
+// ---- Machine internals (roadmap C6): board and stock parts ----
+// Initialize() side effects are cosmetic (random pixel offset) or a static
+// read into an instance var (security board networks); nothing registers
+// with a subsystem or builds a child eagerly.
+
+/obj/item/circuitboard
+	latent_safe = TRUE
+
+/obj/item/stock_parts
+	latent_safe = TRUE
+
+/obj/item/smes_coil
+	latent_safe = TRUE
+
+/obj/item/bluespace_crystal
+	latent_safe = TRUE
+
 /obj/item/paper
 	latent_safe = TRUE
 
