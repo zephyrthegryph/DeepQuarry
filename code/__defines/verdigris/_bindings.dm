@@ -15,7 +15,7 @@
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "78e573c56120b437"
+#define VERDIGRIS_ABI "103c482dddb8aa3a"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -438,12 +438,6 @@
 /proc/vg_set_world_dims(max_x, max_y)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_world_dims_ffi")
 	return call_ext(__f)(max_x, max_y)
-
-/// Args: (mixture, ratio, one_way). Shares the given `ratio` of `src` with `mixture`, and, unless `one_way` is truthy, vice versa.
-// /datum/gas_mixture/proc/share_ratio (verdigris/domains/gas/src/lib.rs)
-/proc/vg_share_ratio_hook(other_gas, ratio_val, one_way_val)
-	var/static/__f = load_ext(VERDIGRIS, "byond:share_ratio_hook_ffi")
-	return call_ext(__f)(other_gas, ratio_val, one_way_val)
 
 // /proc/solve_material_power_graph (verdigris/verdigris/src/material_power.rs)
 /proc/vg_solve_material_power_graph(topology, loads, warm)

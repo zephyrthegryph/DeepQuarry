@@ -33,6 +33,51 @@ type Bind = {
   docs: string[];
   file: string;
 };
+// Cargo features are only used by the gas crate. The DLL enables the ones listed
+// on its vg-gas dependency; binds (or whole modules) behind any other feature are
+// not exported, so they get no DM binding.
+const GAS_CRATE = 'verdigris/domains/gas/';
+const DLL_MANIFEST = 'verdigris/verdigris/Cargo.toml';
+
+function enabledGasFeatures(root: string): Set<string> {
+  const manifest = fs.readFileSync(path.join(root, DLL_MANIFEST), 'utf8');
+  const line = /^vg-gas\s*=.*$/m.exec(manifest);
+  const list = line && /features\s*=\s*\[([^\]]*)\]/.exec(line[0]);
+  if (!list) throw new Error(`${DLL_MANIFEST}: cannot read the vg-gas features`);
+  return new Set([...list[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]));
+}
+
+/** `#[cfg(feature = "x")]` attributes directly above line `at`. */
+function cfgFeatures(lines: string[], at: number): string[] {
+  const out: string[] = [];
+  for (let i = at; i >= 0; i--) {
+    const line = lines[i].trim();
+    const m = /^#\[cfg\(feature\s*=\s*"([^"]+)"\)\]$/.exec(line);
+    if (m) out.push(m[1]);
+    else if (line.startsWith('#[') || line.startsWith('///')) continue;
+    else break;
+  }
+  return out;
+}
+
+/** Gas-crate module paths whose `mod` declaration is behind a disabled feature. */
+function disabledModules(root: string, files: string[], enabled: Set<string>): string[] {
+  const disabled: string[] = [];
+  for (const file of files) {
+    const rel = path.relative(root, file).replace(/\\/g, '/');
+    if (!rel.startsWith(GAS_CRATE)) continue;
+    const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+    const base = /\/(lib|mod|main)\.rs$/.test(rel) ? path.posix.dirname(rel) : rel.replace(/\.rs$/, '');
+    lines.forEach((line, i) => {
+      const m = /^\s*(?:pub(?:\([a-z]+\))?\s+)?mod\s+([a-z0-9_]+)\s*;/.exec(line);
+      if (m && cfgFeatures(lines, i - 1).some((f) => !enabled.has(f))) {
+        disabled.push(`${base}/${m[1]}.rs`, `${base}/${m[1]}/`);
+      }
+    });
+  }
+  return disabled;
+}
+
 type Define = { name: string; value: string; docs: string[]; file: string };
 
 function listRs(dir: string, out: string[]) {
@@ -85,11 +130,16 @@ export function scan(root: string): { binds: Bind[]; defines: Define[] } {
   const files: string[] = [];
   for (const dir of SCAN_ROOTS) listRs(path.join(root, dir), files);
   files.sort();
+  const enabled = enabledGasFeatures(root);
+  const disabled = disabledModules(root, files, enabled);
+  const isDisabled = (rel: string) =>
+    disabled.some((d) => rel === d || (d.endsWith('/') && rel.startsWith(d)));
   const binds: Bind[] = [];
   const defines: Define[] = [];
   const attr = /^\s*#\[auxmacros::(bind|bind_raw_args)(?:\(\s*"([^"]*)"\s*\))?\]/;
   for (const file of files) {
     const rel = path.relative(root, file).replace(/\\/g, '/');
+    if (isDisabled(rel)) continue;
     const text = fs.readFileSync(file, 'utf8');
     const lines = text.split(/\r?\n/);
     for (let i = 0; i < lines.length; i++) {
@@ -107,6 +157,11 @@ export function scan(root: string): { binds: Bind[]; defines: Define[] } {
           if (rest[j] === ')') depth--;
         }
         const params = splitTopLevel(rest.slice(start, j - 1));
+        const features = cfgFeatures(lines, i - 1);
+        if (features.length && !rel.startsWith(GAS_CRATE)) {
+          throw new Error(`${rel}:${i + 1}: feature-gated binds are only supported in vg-gas`);
+        }
+        if (features.some((f) => !enabled.has(f))) continue;
         binds.push({
           name: fm[1],
           path: m[2] ?? `/proc/${fm[1]}`,
