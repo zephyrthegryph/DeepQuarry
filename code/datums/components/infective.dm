@@ -101,9 +101,9 @@
 
 	if(!is_weak)
 		var/bodypart_type
-		if(feeder.l_hand == source)
+		if(feeder.get_equipped_item(SLOT_ID_HAND_L) == source)
 			bodypart_type = BP_R_ARM
-		else if(feeder.r_hand == source)
+		else if(feeder.get_equipped_item(SLOT_ID_HAND_R) == source)
 			bodypart_type = BP_L_ARM
 		else
 			bodypart_type = BP_TORSO
@@ -159,6 +159,7 @@
 		old_bio_armor = equipped_item.armor["bio"]
 		equipped_item.own_armor()
 		equipped_item.armor["bio"] = 0
+		equipped_item.worn_protection_changed()
 
 	try_infect(L, slot2body_zone(slot))
 
@@ -166,6 +167,7 @@
 		var/obj/item/equipped_item = parent
 		equipped_item.own_armor()
 		equipped_item.armor["bio"] = old_bio_armor
+		equipped_item.worn_protection_changed()
 
 /datum/component/infective/proc/try_infect_crossed(datum/source, atom/movable/arrived, atom/old_loc, list/atom/old_locs)
 	SIGNAL_HANDLER

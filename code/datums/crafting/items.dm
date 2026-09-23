@@ -261,7 +261,7 @@
 
 /obj/item/clothing/gloves/toxinregen/equipped(mob/user, slot)
 	var/mob/living/carbon/human/H = wearer?.resolve()
-	if(H && H.gloves == src)
+	if(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel a stabbing sensation in your hands as you slide \the [src] on!"))
 			H.custom_pain("You feel a sharp pain in your hands!",1)

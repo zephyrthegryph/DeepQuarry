@@ -825,7 +825,7 @@
 	return FALSE
 
 /mob/living/carbon/human/dq_has_free_hand()
-	return !l_hand || !r_hand
+	return !get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R)
 
 /mob/living/simple_mob/dq_has_free_hand()
-	return has_hands && (!l_hand || !r_hand)
+	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))

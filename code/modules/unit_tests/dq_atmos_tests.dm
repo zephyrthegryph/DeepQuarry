@@ -454,8 +454,7 @@
 
 	// Make sure player has no internals / mask filtering distorting the test.
 	H.internal = null
-	if(H.wear_mask)
-		H.wear_mask = null
+	H.drop_from_inventory(H.get_equipped_item(SLOT_ID_MASK))
 
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 
@@ -6434,7 +6433,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Airtight breath mask in the wear_mask slot.
 	var/obj/item/clothing/mask/breath/M = new(H)
-	H.wear_mask = M
+	TEST_ASSERT(H.equip_to_slot(M, slot_wear_mask), "couldn't put the test mask on")
 	TEST_ASSERT(M.item_flags & AIRTIGHT, "test mask not AIRTIGHT — setup invalid")
 
 	// Oxygen tank in the human's contents, set as the internal supply.
@@ -6466,7 +6465,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Removing the AIRTIGHT mask should detach the internal supply: next call
 	// returns null because the AIRTIGHT gate fails.
-	H.wear_mask = null
+	H.drop_from_inventory(M)
 	var/datum/gas_mixture/no_breath = H.get_breath_from_internal(BREATH_VOLUME)
 	TEST_ASSERT_NULL(no_breath, \
 		"internals stayed active without AIRTIGHT mask — security gate broken")

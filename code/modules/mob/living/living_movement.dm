@@ -161,11 +161,11 @@ default behaviour is:
 				to_chat(src, span_danger("You fail to push [tmob]'s fat ass out of the way."))
 				now_pushing = FALSE
 				return
-		if(tmob.r_hand && istype(tmob.r_hand, /obj/item/shield/riot))
+		if(tmob.get_equipped_item(SLOT_ID_HAND_R) && istype(tmob.get_equipped_item(SLOT_ID_HAND_R), /obj/item/shield/riot))
 			if(prob(99))
 				now_pushing = FALSE
 				return
-		if(tmob.l_hand && istype(tmob.l_hand, /obj/item/shield/riot))
+		if(tmob.get_equipped_item(SLOT_ID_HAND_L) && istype(tmob.get_equipped_item(SLOT_ID_HAND_L), /obj/item/shield/riot))
 			if(prob(99))
 				now_pushing = FALSE
 				return

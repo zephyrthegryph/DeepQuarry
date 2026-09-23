@@ -219,15 +219,15 @@
 	return ..()
 
 /obj/item/rig/proc/suit_is_deployed()
-	if(!istype(wearer) || src.loc != wearer || (wearer.back != src && wearer.belt != src))
+	if(!istype(wearer) || src.loc != wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
 		return 0
-	if(helm_type && !(helmet && wearer.head == helmet))
+	if(helm_type && !(helmet && wearer.get_equipped_item(SLOT_ID_HEAD) == helmet))
 		return 0
-	if(glove_type && !(gloves && wearer.gloves == gloves))
+	if(glove_type && !(gloves && wearer.get_equipped_item(SLOT_ID_GLOVES) == gloves))
 		return 0
-	if(boot_type && !(boots && wearer.shoes == boots))
+	if(boot_type && !(boots && wearer.get_equipped_item(SLOT_ID_SHOES) == boots))
 		return 0
-	if(chest_type && !(chest && wearer.wear_suit == chest))
+	if(chest_type && !(chest && wearer.get_equipped_item(SLOT_ID_SUIT) == chest))
 		return 0
 	return 1
 
@@ -311,7 +311,7 @@
 		if(!M)
 			failed_to_seal = 1
 		else
-			for(var/list/piece_data in list(list(M.shoes,boots,"boots",boot_type),list(M.gloves,gloves,"gloves",glove_type),list(M.head,helmet,"helmet",helm_type),list(M.wear_suit,chest,"chest",chest_type)))
+			for(var/list/piece_data in list(list(M.get_equipped_item(SLOT_ID_SHOES),boots,"boots",boot_type),list(M.get_equipped_item(SLOT_ID_GLOVES),gloves,"gloves",glove_type),list(M.get_equipped_item(SLOT_ID_HEAD),helmet,"helmet",helm_type),list(M.get_equipped_item(SLOT_ID_SUIT),chest,"chest",chest_type)))
 
 				var/obj/item/piece = piece_data[1]
 				var/obj/item/compare_piece = piece_data[2]
@@ -327,7 +327,7 @@
 					failed_to_seal = 1
 					break
 
-				if(!failed_to_seal && (M.back == src || M.belt == src) && piece == compare_piece)
+				if(!failed_to_seal && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src) && piece == compare_piece)
 
 					if(seal_delay && !instant && !do_after(M, seal_delay, target = src))
 						failed_to_seal = 1
@@ -355,12 +355,13 @@
 						piece.armor["bio"] = 100
 					else
 						piece.armor["bio"] = src.armor["bio"]
+					piece.worn_protection_changed()
 					playsound(src,'sound/machines/rig/rigservo.ogg', 10, FALSE)
 
 				else
 					failed_to_seal = 1
 
-		if((M && !(istype(M) && (M.back == src || M.belt == src)) && !istype(M,/mob/living/silicon)) || (!seal_target && !suit_is_deployed()))
+		if((M && !(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src)) && !istype(M,/mob/living/silicon)) || (!seal_target && !suit_is_deployed()))
 			failed_to_seal = 1
 
 	sealing = null
@@ -444,7 +445,7 @@
 
 	var/mob/living/carbon/human/H = M
 
-	if (!H.wear_suit || (H.back != src && H.belt != src))
+	if (!H.get_equipped_item(SLOT_ID_SUIT) || (H.get_equipped_item(SLOT_ID_BACK) != src && H.get_equipped_item(SLOT_ID_BELT) != src))
 		return 0
 
 	return 1
@@ -471,7 +472,7 @@
 	// The offline-state machine now lives in power_system.
 	// We only invoke it when the original condition would have triggered
 	// the cell-check path, preserving the original conditional structure.
-	if(!istype(wearer) || loc != wearer || (wearer.back != src && wearer.belt != src) || canremove || !cell || cell.charge <= 0)
+	if(!istype(wearer) || loc != wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src) || canremove || !cell || cell.charge <= 0)
 		if(power_system.process_offline_state())
 			offline = power_system.offline
 			return
@@ -504,7 +505,7 @@
 
 	if(!user_is_ai)
 		var/mob/living/carbon/human/H = user
-		if(istype(H) && (H.back != src && H.belt != src))
+		if(istype(H) && (H.get_equipped_item(SLOT_ID_BACK) != src && H.get_equipped_item(SLOT_ID_BELT) != src))
 			fail_msg = span_warning("You must be wearing \the [src] to do this.")
 		else if(user.is_incorporeal())
 			fail_msg = span_warning("You must be solid to do this.")
@@ -567,7 +568,7 @@
 			return 1
 		if(malfunction_check(user))
 			return 0
-		if(user.back != src && user.belt != src)
+		if(user.get_equipped_item(SLOT_ID_BACK) != src && user.get_equipped_item(SLOT_ID_BELT) != src)
 			return 0
 		else if(!src.allowed(user))
 			if(do_message)
@@ -590,24 +591,24 @@
 /obj/item/rig/equipped(mob/living/carbon/human/M)
 	..()
 
-	if(istype(M.back, /obj/item/rig) && istype(M.belt, /obj/item/rig))
+	if(istype(M.get_equipped_item(SLOT_ID_BACK), /obj/item/rig) && istype(M.get_equipped_item(SLOT_ID_BELT), /obj/item/rig))
 		to_chat(M, span_notice("You try to put on the [src], but it won't fit."))
-		if(M && (M.back == src || M.belt == src))
+		if(M && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 			if(!M.unEquip(src))
 				return
 		src.forceMove(get_turf(src))
 		return
 
-	if(seal_delay > 0 && istype(M) && (M.back == src || M.belt == src))
+	if(seal_delay > 0 && istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		M.visible_message(span_notice("[M] starts putting on \the [src]..."), span_notice("You start putting on \the [src]..."))
 		if(!do_after(M, seal_delay, target = src))
-			if(M && (M.back == src || M.belt == src))
+			if(M && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 				if(!M.unEquip(src))
 					return
 			src.forceMove(get_turf(src))
 			return
 
-	if(istype(M) && (M.back == src || M.belt == src))
+	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		M.visible_message(span_boldnotice("[M] struggles into \the [src]."), span_boldnotice("You struggle into \the [src]."))
 		wearer = M
 		wearer.wearing_rig = src
@@ -618,7 +619,7 @@
 	if((sealing || !cell || !cell.charge) && !forced)
 		return
 
-	if((!istype(wearer) || (wearer.back != src && wearer.belt != src)) && !forced)
+	if((!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src)) && !forced)
 		return
 
 	if(!H)
@@ -635,19 +636,19 @@
 		if("helmet")
 			equip_to = slot_head
 			use_obj = helmet
-			check_slot = H.head
+			check_slot = H.get_equipped_item(SLOT_ID_HEAD)
 		if("gauntlets")
 			equip_to = slot_gloves
 			use_obj = gloves
-			check_slot = H.gloves
+			check_slot = H.get_equipped_item(SLOT_ID_GLOVES)
 		if("boots")
 			equip_to = slot_shoes
 			use_obj = boots
-			check_slot = H.shoes
+			check_slot = H.get_equipped_item(SLOT_ID_SHOES)
 		if("chest")
 			equip_to = slot_wear_suit
 			use_obj = chest
-			check_slot = H.wear_suit
+			check_slot = H.get_equipped_item(SLOT_ID_SUIT)
 
 	if(use_obj)
 		if(check_slot == use_obj && deploy_mode != ONLY_DEPLOY)
@@ -691,32 +692,28 @@
 
 	if(!H || !istype(H)) return
 
-	if(H.back != src && H.belt != src)
+	if(H.get_equipped_item(SLOT_ID_BACK) != src && H.get_equipped_item(SLOT_ID_BELT) != src)
 		return
 
 	if(destructive)
-		if(H.head)
-			var/obj/item/garbage = H.head
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_HEAD)
 			H.drop_from_inventory(garbage)
-			H.head = null
 			qdel(garbage)
 
-		if(H.gloves)
-			var/obj/item/garbage = H.gloves
+		if(H.get_equipped_item(SLOT_ID_GLOVES))
+			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_GLOVES)
 			H.drop_from_inventory(garbage)
-			H.gloves = null
 			qdel(garbage)
 
-		if(H.shoes)
-			var/obj/item/garbage = H.shoes
+		if(H.get_equipped_item(SLOT_ID_SHOES))
+			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_SHOES)
 			H.drop_from_inventory(garbage)
-			H.shoes = null
 			qdel(garbage)
 
-		if(H.wear_suit)
-			var/obj/item/garbage = H.wear_suit
+		if(H.get_equipped_item(SLOT_ID_SUIT))
+			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_SUIT)
 			H.drop_from_inventory(garbage)
-			H.wear_suit = null
 			qdel(garbage)
 
 	for(var/piece in list("helmet","gauntlets","chest","boots"))
@@ -841,7 +838,7 @@
 		if(user)
 			to_chat(user, span_warning("Your host rig is unpowered and unresponsive."))
 		return 0
-	if(!wearer || (wearer.back != src && wearer.belt != src))
+	if(!wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
 		if(user)
 			to_chat(user, span_warning("Your host rig is not being worn."))
 		return 0
@@ -945,10 +942,10 @@
 	return src
 
 /mob/living/carbon/human/get_rig()
-	if(istype(back, /obj/item/rig))
-		return back
-	else if(istype(belt, /obj/item/rig))
-		return belt
+	if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/rig))
+		return get_equipped_item(SLOT_ID_BACK)
+	else if(istype(get_equipped_item(SLOT_ID_BELT), /obj/item/rig))
+		return get_equipped_item(SLOT_ID_BELT)
 	else
 		return null
 
@@ -956,8 +953,8 @@
 	return null
 
 /mob/living/carbon/human/get_voidsuit()
-	if(istype(wear_suit, /obj/item/clothing/suit/space/void))
-		return wear_suit
+	if(istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space/void))
+		return get_equipped_item(SLOT_ID_SUIT)
 	else
 		return null
 

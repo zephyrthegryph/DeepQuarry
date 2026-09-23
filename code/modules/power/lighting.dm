@@ -783,8 +783,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		if(istype(H))
 			if(H.species.heat_level_1 > LIGHT_BULB_TEMPERATURE)
 				prot = 1
-			else if(H.gloves)
-				var/obj/item/clothing/gloves/G = H.gloves
+			else if(H.get_equipped_item(SLOT_ID_GLOVES))
+				var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				if(G.max_heat_protection_temperature)
 					if(G.max_heat_protection_temperature > LIGHT_BULB_TEMPERATURE)
 						prot = 1

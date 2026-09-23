@@ -81,8 +81,8 @@
 		F.rig.myprotean = null
 	F.rig = src
 	myprotean = P
-	if(P.back)
-		addtimer(CALLBACK(src, PROC_REF(AssimilateBag), P, 1, P.back), 3)
+	if(P.get_equipped_item(SLOT_ID_BACK))
+		addtimer(CALLBACK(src, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK)), 3)
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
@@ -101,8 +101,8 @@
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
 	if(istype(B,/obj/item/storage/backpack))
 		if(spawned)
-			B = P.back
-			P.unEquip(P.back)
+			B = P.get_equipped_item(SLOT_ID_BACK)
+			P.unEquip(P.get_equipped_item(SLOT_ID_BACK))
 		if(QDELETED(B)) // for mannequins or such
 			return
 		B.forceMove(src)
@@ -339,7 +339,7 @@
 			return
 	if(rig_storage)
 		var/obj/item/storage/backpack = rig_storage
-		if(backpack.can_be_inserted(W, 1))
+		if(!backpack.insert_refusal(W, user))
 			backpack.handle_item_insertion(W)
 	else
 		if(istype(W,/obj/item/storage/backpack))
@@ -351,7 +351,7 @@
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
 		return ITEM_INTERACT_BLOCKING
-	if(user.r_hand && user.l_hand)
+	if(user.get_equipped_item(SLOT_ID_HAND_R) && user.get_equipped_item(SLOT_ID_HAND_L))
 		air_supply.forceMove(get_turf(user))
 	else
 		user.put_in_hands(air_supply)
@@ -562,6 +562,7 @@
 	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	wearer?.update_inv_back()
+	wearer?.worn_protection_changed()
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
 
 /// The protean has reconstituted: the cluster is its own again.
@@ -574,6 +575,7 @@
 	armor = restored.Copy()
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
 		piece.armor = restored.Copy()
+	wearer?.worn_protection_changed()
 	if(istype(R))
 		slowdown = initial(R.slowdown) * 0.5
 	else
@@ -621,7 +623,7 @@
 		unremovable = FALSE
 	else
 		unremovable = TRUE //It's like glue! If you put them on your back, YOU can't take them off!
-	if(istype(M) && (M.back == src || M.belt == src))
+	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		start_soaking(M)
 
 /obj/item/rig/protean/ai_can_move_suit(mob/user, check_user_module = 0, check_for_ai = 0)
@@ -631,7 +633,7 @@
 		if(user)
 			to_chat(user, span_warning("Your host rig is unpowered and unresponsive."))
 		return 0
-	if(!wearer || (wearer.back != src && wearer.belt != src))
+	if(!wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
 		if(user)
 			to_chat(user, span_warning("Your host rig is not being worn."))
 		return 0
@@ -673,6 +675,7 @@
 		piece.armor = R.armor.Copy()
 		piece.max_pressure_protection = R.rigsuit_max_pressure
 		piece.max_heat_protection_temperature = R.max_heat_protection_temperature
+	wearer?.worn_protection_changed()
 	//I dislike this piece of code, but not every rig has the full set of parts
 	if(R.gloves)
 		gloves.sprite_sheets = R.gloves.sprite_sheets.Copy()
@@ -741,6 +744,7 @@
 		icon_state = tempRig.icon_state
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)
+		wearer?.worn_protection_changed()
 		usr.put_in_hands(assimilated_rig)
 		assimilated_rig = null
 		qdel(tempRig)

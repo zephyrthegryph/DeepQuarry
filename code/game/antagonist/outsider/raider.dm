@@ -216,7 +216,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		var/new_suit =    pick(raider_suits)
 
 		player.equip_to_slot_or_del(new new_shoes(player),slot_shoes)
-		if(!player.shoes)
+		if(!player.get_equipped_item(SLOT_ID_SHOES))
 			//If equipping shoes failed, fall back to equipping sandals
 			var/fallback_type = pick(/obj/item/clothing/shoes/sandal, /obj/item/clothing/shoes/boots/jackboots/toeless)
 			player.equip_to_slot_or_del(new fallback_type(player), slot_shoes)
@@ -260,9 +260,9 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		holster = new new_holster(T)
 		holster.holstered = primary
 		primary.loc = holster
-	else if(!player.belt && HAS_TAG(primary, TAG_WEAR_BELT))
+	else if(!player.get_equipped_item(SLOT_ID_BELT) && HAS_TAG(primary, TAG_WEAR_BELT))
 		player.equip_to_slot_or_del(primary, slot_belt)
-	else if(!player.back && HAS_TAG(primary, TAG_WEAR_BACK))
+	else if(!player.get_equipped_item(SLOT_ID_BACK) && HAS_TAG(primary, TAG_WEAR_BACK))
 		player.equip_to_slot_or_del(primary, slot_back)
 	else
 		player.put_in_any_hand_if_possible(primary)
@@ -271,7 +271,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	equip_ammo(player, primary)
 
 	if(holster)
-		var/obj/item/clothing/under/uniform = player.w_uniform
+		var/obj/item/clothing/under/uniform = player.get_equipped_item(SLOT_ID_UNIFORM)
 		if(istype(uniform) && uniform.can_attach_accessory(holster))
 			uniform.attackby(holster, player)
 		else

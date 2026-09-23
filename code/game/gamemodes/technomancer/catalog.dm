@@ -188,8 +188,8 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 					new_spell = s
 					break
 			var/obj/item/technomancer_core/core = null
-			if(istype(H.back, /obj/item/technomancer_core))
-				core = H.back
+			if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core))
+				core = H.get_equipped_item(SLOT_ID_BACK)
 			if(new_spell && core)
 				if(new_spell.cost <= budget)
 					if(!core.has_spell(new_spell))
@@ -222,8 +222,8 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 				to_chat(H, span_danger("You can only refund at your base, it's too late now!"))
 				return TRUE
 			var/obj/item/technomancer_core/core = null
-			if(istype(H.back, /obj/item/technomancer_core))
-				core = H.back
+			if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core))
+				core = H.get_equipped_item(SLOT_ID_BACK)
 			if(core)
 				for(var/obj/spellbutton/spell in core.spells)
 					for(var/datum/technomancer/spell/spell_datum in spell_instances)

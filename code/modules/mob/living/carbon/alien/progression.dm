@@ -11,7 +11,7 @@
 		remove_verb(src, /mob/living/carbon/alien/verb/evolve)
 		return
 
-	if(handcuffed || legcuffed)
+	if(get_equipped_item(SLOT_ID_HANDCUFFED) || get_equipped_item(SLOT_ID_LEGCUFFED))
 		to_chat(src, span_red("You cannot evolve when you are cuffed."))
 		return
 

@@ -302,7 +302,7 @@
 				if(my_effect.trigger == TRIGGER_FORCE)
 					my_effect.ToggleActivate()
 
-		else if(ishuman(M) && !istype(M:gloves,/obj/item/clothing/gloves))
+		else if(ishuman(M) && !istype(bumper_gloves(M),/obj/item/clothing/gloves))
 			if(my_effect.trigger == TRIGGER_TOUCH)
 				my_effect.ToggleActivate(M)
 				warn = 1
@@ -328,7 +328,7 @@
 
 	var/triggered = FALSE
 
-	if(ishuman(user) && !istype(user:gloves,/obj/item/clothing/gloves))
+	if(ishuman(user) && !istype(user.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves))
 		for(var/datum/artifact_effect/my_effect in my_effects)
 			if(my_effect.trigger == TRIGGER_TOUCH)
 				triggered = TRUE
@@ -479,3 +479,7 @@
 #undef HYDROPHORON_PATH
 #undef THERMITE_PATH
 #undef TOXIN_PATH
+
+/// What a mob bumping into an artifact wears on its hands.
+/datum/component/artifact_master/proc/bumper_gloves(mob/M)
+	return M.get_equipped_item(SLOT_ID_GLOVES)

@@ -926,25 +926,25 @@
 		var/mob/living/carbon/human/H = M
 		if(!H.can_feel_pain())
 			return
-		if(H.head)
-			if(H.head.body_parts_covered & EYES)
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			if(H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES)
 				eyes_covered = 1
-				safe_thing = H.head
-			if((H.head.body_parts_covered & FACE) && !(H.head.item_flags & FLEXIBLEMATERIAL))
+				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
+			if((H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_HEAD).item_flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
-				safe_thing = H.head
-		if(H.wear_mask)
-			if(!eyes_covered && H.wear_mask.body_parts_covered & EYES)
+				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
+		if(H.get_equipped_item(SLOT_ID_MASK))
+			if(!eyes_covered && H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
 				eyes_covered = 1
-				safe_thing = H.wear_mask
-			if(!mouth_covered && (H.wear_mask.body_parts_covered & FACE) && !(H.wear_mask.item_flags & FLEXIBLEMATERIAL))
+				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
+			if(!mouth_covered && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_MASK).item_flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
-				safe_thing = H.wear_mask
-		if(H.glasses && H.glasses.body_parts_covered & EYES)
+				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
+		if(H.get_equipped_item(SLOT_ID_EYES) && H.get_equipped_item(SLOT_ID_EYES).body_parts_covered & EYES)
 			if(!eyes_covered)
 				eyes_covered = 1
 				if(!safe_thing)
-					safe_thing = H.glasses
+					safe_thing = H.get_equipped_item(SLOT_ID_EYES)
 		if(alien == IS_SLIME)
 			for(var/obj/item/clothing/C in H.worn_clothing)
 				if(C.body_parts_covered & HEAD)

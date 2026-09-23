@@ -241,8 +241,8 @@
 		var/mob/living/carbon/human/H = M
 		if(H.species.siemens_coefficient <= 0)
 			return
-		if(H.gloves)
-			var/obj/item/clothing/gloves/G = H.gloves
+		if(H.get_equipped_item(SLOT_ID_GLOVES))
+			var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
 			if(G.siemens_coefficient == 0)	return 0		//to avoid spamming with insulated glvoes on
 /*Phorochem removed.
 //Phorochemistry DM: Allows chemicalresistant shocking -Radiantflash

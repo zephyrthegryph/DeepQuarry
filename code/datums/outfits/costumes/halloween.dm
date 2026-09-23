@@ -41,7 +41,7 @@
 	r_hand = /obj/item/gun/projectile/revolver/capgun
 
 /datum/decl/hierarchy/outfit/costume/horrorcop/post_equip(mob/living/carbon/human/H)
-	var/obj/item/clothing/under/U = H.w_uniform
+	var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
 	if(LAZYLEN(U.accessories))
 		for(var/obj/item/clothing/accessory/A in U.accessories)
 			if(istype(A, /obj/item/clothing/accessory/holster))
@@ -58,7 +58,7 @@
 	r_hand = /obj/item/gun/projectile/revolver/capgun
 
 /datum/decl/hierarchy/outfit/costume/cowboy/post_equip(mob/living/carbon/human/H)
-	var/obj/item/clothing/under/U = H.w_uniform
+	var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
 	if(LAZYLEN(U.accessories))
 		for(var/obj/item/clothing/accessory/A in U.accessories)
 			if(istype(A, /obj/item/clothing/accessory/holster))

@@ -677,7 +677,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/mob/living/carbon/human/T = M
 
 	if(istype(T.species,/datum/species/shapeshifter/promethean) && target_zone == BP_TORSO)
-		if(T.w_uniform || T.wear_suit)
+		if(T.get_equipped_item(SLOT_ID_UNIFORM) || T.get_equipped_item(SLOT_ID_SUIT))
 			to_chat(user,span_warning("Remove any clothing they have on, as it might interfere!"))
 			return ITEM_INTERACT_FAILURE
 		var/obj/item/organ/external/eo = T.get_organ(BP_TORSO)

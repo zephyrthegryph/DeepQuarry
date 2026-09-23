@@ -116,8 +116,8 @@
 
 /mob/living/simple_mob/blob/spore/proc/infest(mob/living/carbon/human/H)
 	is_infesting = TRUE
-	if(H.wear_suit)
-		var/obj/item/clothing/suit/A = H.wear_suit
+	if(H.get_equipped_item(SLOT_ID_SUIT))
+		var/obj/item/clothing/suit/A = H.get_equipped_item(SLOT_ID_SUIT)
 		if(A.armor && A.armor["melee"])
 			endurance += A.armor["melee"] //That zombie's got armor, I want armor!
 

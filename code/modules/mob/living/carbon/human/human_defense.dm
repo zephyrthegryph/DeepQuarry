@@ -64,9 +64,9 @@ emp_act
 		if(BP_L_HAND, BP_R_HAND)
 			var/c_hand
 			if (def_zone == BP_L_HAND)
-				c_hand = l_hand
+				c_hand = get_equipped_item(SLOT_ID_HAND_L)
 			else
-				c_hand = r_hand
+				c_hand = get_equipped_item(SLOT_ID_HAND_R)
 
 			if(c_hand && (stun_amount || agony_amount > 10))
 				msg_admin_attack("[key_name(src)] was disarmed by a stun effect")
@@ -118,15 +118,8 @@ emp_act
 /mob/living/carbon/human/proc/get_siemens_coefficient_organ(obj/item/organ/external/def_zone)
 	if (!def_zone)
 		return 1.0
-
-	var/siemens_coefficient = max(species.siemens_coefficient,0)
-
-	var/list/clothing_items = list(head, wear_mask, wear_suit, w_uniform, gloves, shoes) // What all are we checking?
-	for(var/obj/item/clothing/C in clothing_items)
-		if(istype(C) && (C.body_parts_covered & def_zone.body_part)) // Is that body part being targeted covered?
-			siemens_coefficient *= C.siemens_coefficient
-
-	return siemens_coefficient * factor(BF_SIEMENS)
+	// What covers the part: the body's worn protection cache (code/modules/body/worn_protection.dm).
+	return max(species.siemens_coefficient, 0) * body.worn_siemens(def_zone.body_part) * factor(BF_SIEMENS)
 
 // Similar to above but is for the mob's overall protection, being the average of all slots.
 /mob/living/carbon/human/proc/get_siemens_coefficient_average()
@@ -152,21 +145,19 @@ emp_act
 // Returns a list of clothing that is currently covering def_zone.
 /mob/living/carbon/human/proc/get_clothing_list_organ(obj/item/organ/external/def_zone, type)
 	var/list/results = list()
-	var/list/clothing_items = list(head, wear_mask, wear_suit, w_uniform, gloves, shoes)
+	var/list/clothing_items = list(get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_MASK), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_UNIFORM), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_SHOES))
 	for(var/obj/item/clothing/C in clothing_items)
 		if(istype(C) && (C.body_parts_covered & def_zone.body_part))
 			results.Add(C)
 	return results
 
 /// Worn armour points on one external limb for a worn-armour list key
-/// ("melee", "bullet", ...; see injury_armor_key()).
+/// ("melee", "bullet", ...; see injury_armor_key()), from the body's worn
+/// protection cache (code/modules/body/worn_protection.dm).
 /mob/living/carbon/human/proc/worn_armor_organ(obj/item/organ/external/def_zone, key)
 	if(!key || !def_zone)
 		return 0
-	var/protection = 0
-	for(var/obj/item/clothing/gear in def_zone.get_covering_clothing())
-		protection += gear.armor[key]
-	return protection
+	return body.worn_armor(def_zone.body_part, key)
 
 // Checked in borer code
 /mob/living/carbon/human/proc/check_head_coverage()
@@ -194,7 +185,7 @@ emp_act
 	return null
 
 /mob/living/carbon/human/proc/check_shields(damage = 0, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	for(var/obj/item/shield in list(l_hand, r_hand, wear_suit, l_ear, r_ear)) // included ears for the headset/event item
+	for(var/obj/item/shield in list(get_equipped_item(SLOT_ID_HAND_L), get_equipped_item(SLOT_ID_HAND_R), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_EAR_L), get_equipped_item(SLOT_ID_EAR_R))) // included ears for the headset/event item
 		if(!shield) continue
 		. = shield.handle_shield(src, damage, damage_source, attacker, def_zone, attack_text)
 		if(.) return
@@ -290,14 +281,14 @@ emp_act
 						apply_effect(20, PARALYZE, blocked)
 						visible_message(span_danger("\The [src] has been knocked unconscious!"))
 					if(bloody)//Apply blood
-						if(wear_mask)
-							wear_mask.add_blood(src)
+						if(get_equipped_item(SLOT_ID_MASK))
+							get_equipped_item(SLOT_ID_MASK).add_blood(src)
 							update_inv_wear_mask(0)
-						if(head)
-							head.add_blood(src)
+						if(get_equipped_item(SLOT_ID_HEAD))
+							get_equipped_item(SLOT_ID_HEAD).add_blood(src)
 							update_inv_head(0)
-						if(glasses && prob(33))
-							glasses.add_blood(src)
+						if(get_equipped_item(SLOT_ID_EYES) && prob(33))
+							get_equipped_item(SLOT_ID_EYES).add_blood(src)
 							update_inv_glasses(0)
 				if(BP_TORSO)//Easier to score a stun but lasts less time
 					if(prob(effective_force + 10))
@@ -476,8 +467,8 @@ emp_act
 
 
 /mob/living/carbon/human/proc/bloody_hands(mob/living/source, amount = 2)
-	if (istype(gloves, /obj/item/clothing/gloves))
-		var/obj/item/clothing/gloves/gl = gloves
+	if (istype(get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/gl = get_equipped_item(SLOT_ID_GLOVES)
 		gl.add_blood(source)
 		gl.transfer_blood = amount
 	else
@@ -486,11 +477,11 @@ emp_act
 	update_inv_gloves()		//updates on-mob overlays for bloody hands and/or bloody gloves
 
 /mob/living/carbon/human/proc/bloody_body(mob/living/source)
-	if(wear_suit)
-		wear_suit.add_blood(source)
+	if(get_equipped_item(SLOT_ID_SUIT))
+		get_equipped_item(SLOT_ID_SUIT).add_blood(source)
 		update_inv_wear_suit(0)
-	if(w_uniform)
-		w_uniform.add_blood(source)
+	if(get_equipped_item(SLOT_ID_UNIFORM))
+		get_equipped_item(SLOT_ID_UNIFORM).add_blood(source)
 		update_inv_w_uniform(0)
 
 /// Human post-injury reactions: rig soak / suit breaches, damage overlays,
@@ -526,9 +517,9 @@ emp_act
 		rig.take_hit(damage)
 
 	// We may also be taking a suit breach.
-	if(!wear_suit) return
-	if(!istype(wear_suit,/obj/item/clothing/suit/space)) return
-	var/obj/item/clothing/suit/space/SS = wear_suit
+	if(!get_equipped_item(SLOT_ID_SUIT)) return
+	if(!istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/space)) return
+	var/obj/item/clothing/suit/space/SS = get_equipped_item(SLOT_ID_SUIT)
 	var/penetrated_dam = max(0,(damage - SS.breach_threshold))
 	if(penetrated_dam) SS.create_breaches(breach_type, penetrated_dam)
 
@@ -619,7 +610,7 @@ emp_act
 	if(!check_has_mouth())
 		return TRUE
 
-	if((isobj(head) && head.body_parts_covered & FACE) || isobj(wear_mask) && wear_mask.body_parts_covered & FACE|| (isobj(wear_suit) && wear_suit.body_parts_covered & FACE))
+	if((isobj(get_equipped_item(SLOT_ID_HEAD)) && get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) || isobj(get_equipped_item(SLOT_ID_MASK)) && get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE|| (isobj(get_equipped_item(SLOT_ID_SUIT)) && get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FACE))
 		return TRUE
 
 	return FALSE

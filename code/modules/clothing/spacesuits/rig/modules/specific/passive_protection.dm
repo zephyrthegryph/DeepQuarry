@@ -59,6 +59,7 @@
 	items_to_update += holder
 	for(var/obj/item/part in items_to_update)
 		ADD_TRAIT(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/rad_shield/deactivate()
 
@@ -99,6 +100,7 @@
 
 	for(var/obj/item/part in items_to_update)
 		REMOVE_TRAIT(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/rad_shield/advanced
 	name = "advanced radiation absorption device"
@@ -162,6 +164,7 @@
 		gloves.max_heat_protection_temperature = INFINITY
 	holder.max_pressure_protection = INFINITY
 	holder.max_heat_protection_temperature = INFINITY
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/atmos_shield/deactivate()
 
@@ -193,6 +196,7 @@
 
 	stored_max_pressure = 0
 	stored_max_temp = 0
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/atmos_shield/advanced
 	name = "advanced atmospheric protection enhancement suite"
@@ -249,6 +253,7 @@
 	if(gloves)
 		gloves.siemens_coefficient = 0
 	holder.siemens_coefficient = 0
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/faraday_shield/deactivate()
 
@@ -274,6 +279,7 @@
 	holder.siemens_coefficient = stored_siemens_coefficient
 
 	stored_siemens_coefficient = 0
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/faraday_shield/advanced
 	name = "advanced faraday protection shield suite"

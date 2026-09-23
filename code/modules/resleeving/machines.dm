@@ -43,7 +43,7 @@
 
 		if(tankpath)
 			H.equip_to_slot_or_del(new tankpath(H), slot_back)
-			H.internal = H.back
+			H.internal = H.get_equipped_item(SLOT_ID_BACK)
 			if(istype(H.internal,/obj/item/tank) && H.internals)
 				H.internals.icon_state = "internal1"
 

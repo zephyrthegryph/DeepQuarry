@@ -234,7 +234,7 @@
 		var/mob/living/silicon/robot/R = user
 		if(R.module?.modules)
 			for(var/obj/item/gripper/G in R.module.modules)
-				if(is_type_in_list(src,G.can_hold))
+				if(!dq_constraint_refusal(G, CONSTRAINT_HOLD, src, R))
 					borg = span_boldnotice("\The [G]") + span_notice(" can hold this.")
 					break
 

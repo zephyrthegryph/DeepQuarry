@@ -123,7 +123,7 @@
 						return
 					if(tank)
 						tank.forceMove(src)
-					if (breather.wear_mask == contained)
+					if (breather.get_equipped_item(SLOT_ID_MASK) == contained)
 						breather.remove_from_mob(contained)
 						contained.forceMove(src)
 					else
@@ -268,11 +268,11 @@
 	if(!target.check_has_mouth())
 		to_chat(user, span_warning("\The [target] doesn't have a mouth."))
 		return
-	if(target.wear_mask && target != breather)
+	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather)
 		to_chat(user, span_warning("\The [target] is already wearing a mask."))
 		return
-	if(target.head && (target.head.body_parts_covered & FACE))
-		to_chat(user, span_warning("Remove their [target.head] first."))
+	if(target.get_equipped_item(SLOT_ID_HEAD) && (target.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
+		to_chat(user, span_warning("Remove their [target.get_equipped_item(SLOT_ID_HEAD)] first."))
 		return
 	if(!tank)
 		to_chat(user, span_warning("There is no tank in \the [src]."))
@@ -287,7 +287,7 @@
 		to_chat(user, span_warning("\The [src] is already in use."))
 		return
 	//Checking if breather is still valid
-	if(target == breather && target.wear_mask != contained)
+	if(target == breather && target.get_equipped_item(SLOT_ID_MASK) != contained)
 		to_chat(user, span_warning("\The [target] is not using the supplied mask."))
 		return
 	return 1
@@ -363,7 +363,7 @@
 		if(!can_apply_to_target(breather))
 			if(tank)
 				tank.forceMove(src)
-			if (breather.wear_mask == contained)
+			if (breather.get_equipped_item(SLOT_ID_MASK) == contained)
 				breather.remove_from_mob(contained)
 				contained.forceMove(src)
 			else

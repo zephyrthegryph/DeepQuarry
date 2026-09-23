@@ -619,9 +619,7 @@
 							var/obj/item/handcuffs/C = new(src.loc)
 							var/mob/living/carbon/human/H = usr
 							if(istype(H))
-								C.forceMove(H)
-								H.handcuffed = C
-								H.update_handcuffed()
+								H.equip_to_slot(C, slot_handcuffed)
 							else
 								C.throw_at(usr,16,3,src)
 

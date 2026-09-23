@@ -407,6 +407,394 @@
 	else
 		return ..()
 
+<<<<<<< HEAD
+=======
+/obj/item/storage/proc/return_inv()
+
+	var/list/L = list(  )
+
+	L += src.contents
+
+	for(var/obj/item/storage/S in src)
+		L += S.return_inv()
+	for(var/obj/item/gift/G in src)
+		L += G.gift
+		if (istype(G.gift, /obj/item/storage))
+			L += G.gift:return_inv()
+	return L
+
+/obj/item/storage/proc/show_to(mob/user as mob)
+	if(user.s_active != src)
+		for(var/obj/item/I in src)
+			if(I.on_found(user))
+				return
+	if(user.s_active)
+		user.s_active.hide_from(user)
+
+	var/client/C = user.client
+	if(!C)
+		return
+
+	if(storage_slots)
+		C.screen += src.boxes
+		create_slot_catchers()
+		C.screen += src.box_catchers
+	else
+		C.screen += src.storage_start
+		C.screen += src.storage_continue
+		C.screen += src.storage_end
+
+	C.screen += src.closer
+	C.screen += src.contents
+
+	user.s_active = src
+	LAZYDISTINCTADD(is_seeing,user)
+
+/obj/item/storage/proc/hide_from(mob/user as mob)
+	var/client/C = user.client
+	LAZYREMOVE(is_seeing,user)
+
+	if(!C)
+		if(!LAZYLEN(is_seeing))
+			clear_slot_catchers()
+		return
+
+	if(storage_slots)
+		C.screen -= src.boxes
+		C.screen -= src.box_catchers
+	else
+		C.screen -= src.storage_start
+		C.screen -= src.storage_continue
+		C.screen -= src.storage_end
+
+	C.screen -= src.closer
+	C.screen -= src.contents
+
+	if(user.s_active == src)
+		user.s_active = null
+
+	if(!LAZYLEN(is_seeing))
+		clear_slot_catchers()
+
+/obj/item/storage/proc/open(mob/user as mob)
+	if (use_sound)
+		var/obj/belly/B = user.loc
+		if(isliving(user) && (!isbelly(B) || !(B.mode_flags & DM_FLAG_MUFFLEITEMS)))
+			playsound(src, src.use_sound, 50, 0, -5)
+
+	orient2hud(user)
+	if(user.s_active)
+		user.s_active.close(user)
+	show_to(user)
+
+/obj/item/storage/proc/close(mob/user as mob)
+	src.hide_from(user)
+	user.s_active = null
+	return
+
+/obj/item/storage/proc/close_all()
+	for(var/mob/M in can_see_contents())
+		close(M)
+		. = 1
+
+/obj/item/storage/proc/can_see_contents()
+	var/list/cansee = list()
+	for(var/mob/M in is_seeing)
+		if(M.s_active == src && M.client)
+			cansee |= M
+		else
+			LAZYREMOVE(is_seeing,M)
+	return cansee
+
+/obj/item/storage/proc/create_slot_catchers()
+	clear_slot_catchers()
+	var/list/new_catchers = list()
+	for(var/obj/item/I in contents)
+		var/atom/movable/storage_slot/SS = new(null, I)
+		SS.screen_loc = I.screen_loc
+		SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
+		new_catchers += SS
+	box_catchers = new_catchers
+
+/obj/item/storage/proc/clear_slot_catchers()
+	if(box_catchers)
+		for(var/mob/M in is_seeing)
+			M.client?.screen -= box_catchers
+		QDEL_LIST_NULL(box_catchers)
+
+//This proc draws out the inventory and places the items on it. tx and ty are the upper left tile and mx, my are the bottm right.
+//The numbers are calculated from the bottom-left The bottom-left slot being 1,1.
+/obj/item/storage/proc/orient_objs(tx, ty, mx, my)
+	var/cx = tx
+	var/cy = ty
+	src.boxes.screen_loc = "[tx]:,[ty] to [mx],[my]"
+	for(var/obj/O in src.contents)
+		O.screen_loc = "[cx],[cy]"
+		O.hud_layerise()
+		cx++
+		if (cx > mx)
+			cx = tx
+			cy--
+	src.closer.screen_loc = "[mx+1],[my]"
+	return
+
+//This proc draws out the inventory and places the items on it. It uses the standard position.
+/obj/item/storage/proc/slot_orient_objs(rows, cols, list/obj/item/display_contents)
+	var/cx = 4
+	var/cy = 2+rows
+	src.boxes.screen_loc = "4:16,2:16 to [4+cols]:16,[2+rows]:16"
+
+	if(display_contents_with_number)
+		for(var/datum/numbered_display/ND in display_contents)
+			ND.sample_object.screen_loc = "[cx]:16,[cy]:16"
+			ND.sample_object.maptext = span_white("[(ND.number > 1)? "[ND.number]" : ""]")
+			ND.sample_object.hud_layerise()
+			var/atom/movable/storage_slot/SS = new(null, ND.sample_object)
+			SS.screen_loc = ND.sample_object.screen_loc
+			SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
+			cx++
+			if (cx > (4+cols))
+				cx = 4
+				cy--
+	else
+		for(var/obj/O in contents)
+			O.screen_loc = "[cx]:16,[cy]:16"
+			O.maptext = ""
+			O.hud_layerise()
+			var/atom/movable/storage_slot/SS = new(null, O)
+			SS.screen_loc = O.screen_loc
+			SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
+			cx++
+			if (cx > (4+cols))
+				cx = 4
+				cy--
+	src.closer.screen_loc = "[4+cols+1]:16,2:16"
+	return
+
+/obj/item/storage/proc/space_orient_objs(list/obj/item/display_contents)
+	SHOULD_NOT_SLEEP(TRUE)
+
+	/// A prototype for drawing the leftmost border behind each item in storage
+	var/static/mutable_appearance/stored_start
+	/// A prototype for drawing the wide backing space behind each item in storage
+	var/static/mutable_appearance/stored_continue
+	/// A prototype for drawing the rightmost border behind each item in storage
+	var/static/mutable_appearance/stored_end
+
+	if(!stored_start)
+		// Because these are static and manipulated all the time by different storages, you'd better make 100000% sure this proc never sleeps
+		stored_start = mutable_appearance(icon = 'icons/mob/screen1.dmi', icon_state = "stored_start", layer = 0.1, plane = PLANE_PLAYER_HUD_ITEMS)
+		stored_continue = mutable_appearance(icon = 'icons/mob/screen1.dmi', icon_state = "stored_continue", layer = 0.1, plane = PLANE_PLAYER_HUD_ITEMS)
+		stored_end = mutable_appearance(icon = 'icons/mob/screen1.dmi', icon_state = "stored_end", layer = 0.1, plane = PLANE_PLAYER_HUD_ITEMS)
+
+	var/baseline_max_storage_space = INVENTORY_STANDARD_SPACE / 2 //should be equal to default backpack capacity // This is a lie.
+	// Above var is misleading, what it does upon changing is makes smaller inventory sizes have smaller space on the UI.
+	// It's cut in half because otherwise boxes of IDs and other tiny items are unbearably cluttered.
+
+	var/storage_cap_width = 2 //length of sprite for start and end of the box representing total storage space
+	var/stored_cap_width = 4 //length of sprite for start and end of the box representing the stored item
+	var/storage_width = min( round( 224 * max_storage_space/baseline_max_storage_space ,1) ,274) //length of sprite for the box representing total storage space
+
+	QDEL_LIST_NULL(storage_start.vis_contents)
+
+	var/matrix/M = matrix()
+	M.Scale((storage_width-storage_cap_width*2+3)/32,1)
+	src.storage_continue.transform = M
+
+	src.storage_start.screen_loc = "4:16,2:16"
+	src.storage_continue.screen_loc = "4:[storage_cap_width+(storage_width-storage_cap_width*2)/2+2],2:16"
+	src.storage_end.screen_loc = "4:[19+storage_width-storage_cap_width],2:16"
+
+	var/startpoint = 0
+	var/endpoint = 1
+
+	for(var/obj/item/O in contents)
+		var/atom/movable/storage_slot/SS = new(null, O)
+		startpoint = endpoint + 1
+		endpoint += storage_width * O.get_storage_cost()/max_storage_space
+
+		var/matrix/M_start = matrix()
+		var/matrix/M_continue = matrix()
+		var/matrix/M_end = matrix()
+		M_start.Translate(startpoint,0)
+		M_continue.Scale((endpoint-startpoint-stored_cap_width*2)/32,1)
+		M_continue.Translate(startpoint+stored_cap_width+(endpoint-startpoint-stored_cap_width*2)/2 - 16,0)
+		M_end.Translate(endpoint-stored_cap_width,0)
+		stored_start.transform = M_start
+		stored_continue.transform = M_continue
+		stored_end.transform = M_end
+		SS.add_overlay(list(stored_start, stored_continue, stored_end))
+
+		O.screen_loc = "4:[round((startpoint+endpoint)/2)+2],2:16"
+		O.maptext = ""
+		O.hud_layerise()
+		storage_start.vis_contents += SS
+
+	src.closer.screen_loc = "4:[storage_width+19],2:16"
+	return
+
+/datum/numbered_display
+	var/obj/item/sample_object
+	var/number
+
+/datum/numbered_display/New(obj/item/sample as obj)
+	if(!istype(sample))
+		qdel(src)
+	sample_object = sample
+	number = 1
+
+//This proc determins the size of the inventory to be displayed. Please touch it only if you know what you're doing.
+/obj/item/storage/proc/orient2hud(mob/user as mob)
+
+	var/adjusted_contents = contents.len
+
+	//Numbered contents display
+	var/list/datum/numbered_display/numbered_contents
+	if(display_contents_with_number)
+		numbered_contents = list()
+		adjusted_contents = 0
+		for(var/obj/item/I in contents)
+			var/found = 0
+			for(var/datum/numbered_display/ND in numbered_contents)
+				if(ND.sample_object.type == I.type)
+					ND.number++
+					found = 1
+					break
+			if(!found)
+				adjusted_contents++
+				numbered_contents.Add( new/datum/numbered_display(I) )
+
+	if(storage_slots == null)
+		src.space_orient_objs(numbered_contents)
+	else
+		var/row_num = 0
+		var/col_count = min(7,storage_slots) -1
+		if (adjusted_contents > 7)
+			row_num = round((adjusted_contents-1) / 7) // 7 is the maximum allowed width.
+		src.slot_orient_objs(row_num, col_count, numbered_contents)
+	return
+
+/// What storage takes (constraints, rules.md §3): pocket-sized things unless a
+/// type says otherwise. Types override this; see HOLD_ONLY and HOLD_MAX_SIZE.
+/obj/item/storage/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+
+/// Why `W` can't go in right now, or null if it can: the hold constraint
+/// (what this takes), then space and the stuck-item rules. `user` is the mover.
+/obj/item/storage/proc/insert_refusal(obj/item/W, mob/user)
+	if(!istype(W))
+		return "that can't go in a container"
+	if(user && user.isEquipped(W) && !user.canUnEquip(W))
+		return "you can't let go of \the [W]"
+	if(loc == W)
+		return "\the [src] is inside \the [W]"
+	if(storage_slots != null && contents.len >= storage_slots)
+		return "\the [src] is full"
+	. = dq_constraint_refusal(src, CONSTRAINT_HOLD, W, user)
+	if(.)
+		return .
+	var/total_storage_space = W.get_storage_cost()
+	for(var/obj/item/I in contents)
+		total_storage_space += I.get_storage_cost()
+	if(total_storage_space > max_storage_space)
+		return "\the [src] is too full"
+	if(W.w_class >= w_class && istype(W, /obj/item/storage))
+		return "it's a container as big as \the [src]"
+	if(HAS_TRAIT(W, TRAIT_NODROP))
+		return "\the [W] is stuck to your hand"
+	return null
+
+/// Tell `user` why `W` didn't go in.
+/obj/item/storage/proc/refuse_insert(obj/item/W, mob/user, reason)
+	if(!user || !reason || istype(W, /obj/item/hand_labeler))
+		return
+	to_chat(user, span_notice("\The [W] won't go in \the [src]: [reason]."))
+
+//This proc handles items being inserted. It does not perform any checks of whether an item can or can't be inserted. That's done by insert_refusal()
+//The stop_warning parameter will stop the insertion message from being displayed. It is intended for cases where you are inserting multiple items at once,
+//such as when picking up all the items on a tile with one click.
+/obj/item/storage/proc/handle_item_insertion(obj/item/W as obj, prevent_warning = 0)
+	if(!istype(W)) return 0
+
+	if(!stall_insertion(W, usr)) // Can sleep here and delay removal for slow storage
+		return 0
+
+	if(usr)
+		usr.remove_from_mob(W,target = src) //If given a target, handles forceMove()
+		W.on_enter_storage(src)
+		if (usr.client && usr.s_active != src)
+			usr.client.screen -= W
+		W.dropped(usr)
+		add_fingerprint(usr)
+		if (use_sound)
+			playsound(src, src.use_sound, 50, 0, -5) //Something broke "add item to container" sounds, this is a hacky fix.
+
+		if(!prevent_warning)
+			for(var/mob/M in viewers(usr, null))
+				if (M == usr)
+					to_chat(usr, span_notice("You put \the [W] into [src]."))
+				else if (M in range(1)) //If someone is standing close enough, they can tell what it is...
+					M.show_message(span_notice("\The [usr] puts [W] into [src]."))
+				else if (W && W.w_class >= 3) //Otherwise they can only see large or normal items from a distance...
+					M.show_message(span_notice("\The [usr] puts [W] into [src]."))
+
+		src.orient2hud(usr)
+		if(usr.s_active)
+			usr.s_active.show_to(usr)
+	else
+		W.forceMove(src)
+		W.on_enter_storage(src)
+
+	update_icon()
+	return 1
+
+//Call this proc to handle the removal of an item from the storage item. The item will be moved to the atom sent as new_target
+/obj/item/storage/proc/remove_from_storage(obj/item/W as obj, atom/new_location)
+	if(!istype(W)) return 0
+
+	if(!stall_removal(W, usr)) // Can sleep here and delay removal for slow storage
+		return 0
+
+	if(istype(src, /obj/item/storage/fancy))
+		var/obj/item/storage/fancy/F = src
+		F.update_icon(1)
+
+	for(var/mob/M in is_seeing)
+		if(!M.client || QDELETED(M))
+			hide_from(M)
+		else
+			M.client.screen -= W
+
+	if(new_location)
+		if(ismob(loc))
+			W.dropped(usr)
+		if(ismob(new_location))
+			W.hud_layerise()
+		else
+			W.reset_plane_and_layer()
+		W.forceMove(new_location)
+	else
+		W.forceMove(get_turf(src))
+
+	for(var/mob/M in is_seeing)
+		if(M.s_active == src)
+			orient2hud(M)
+			show_to(M)
+	if(W.maptext)
+		W.maptext = ""
+	W.on_exit_storage(src)
+	update_icon()
+	return 1
+
+/// Called before insertion completes, allowing you to delay or cancel it
+/obj/item/storage/proc/stall_insertion(obj/item/W, mob/user)
+	return TRUE
+
+/// Called before removal completes, allowing you to delay or cancel it
+/obj/item/storage/proc/stall_removal(obj/item/W, mob/user)
+	return TRUE
+
+>>>>>>> rewrite/c3
 //This proc is called when you want to place an item into the storage item.
 /obj/item/storage/attackby(obj/item/W as obj, mob/user as mob)
 	..()
@@ -447,13 +835,11 @@
 /obj/item/storage/attack_hand(mob/user as mob)
 	if(ishuman(user) && !pocketable)
 		var/mob/living/carbon/human/H = user
-		if(H.l_store == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
+		if(H.get_equipped_item(SLOT_ID_POCKET_L) == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
 			H.put_in_hands(src)
-			H.l_store = null
 			return
-		if(H.r_store == src && !H.get_active_hand())
+		if(H.get_equipped_item(SLOT_ID_POCKET_R) == src && !H.get_active_hand())
 			H.put_in_hands(src)
-			H.r_store = null
 			return
 
 	if (src.loc == user)

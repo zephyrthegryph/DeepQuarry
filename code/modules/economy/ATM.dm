@@ -434,12 +434,12 @@ log transactions
 //stolen wholesale and then edited a bit from newscasters, which are awesome and by Agouri
 /obj/machinery/atm/proc/scan_user(mob/living/carbon/human/human_user as mob)
 	if(!authenticated_account)
-		if(human_user.wear_id)
+		if(human_user.get_equipped_item(SLOT_ID_ID))
 			var/obj/item/card/id/I
-			if(istype(human_user.wear_id, /obj/item/card/id) )
-				I = human_user.wear_id
-			else if(istype(human_user.wear_id, /obj/item/pda) )
-				var/obj/item/pda/P = human_user.wear_id
+			if(istype(human_user.get_equipped_item(SLOT_ID_ID), /obj/item/card/id) )
+				I = human_user.get_equipped_item(SLOT_ID_ID)
+			else if(istype(human_user.get_equipped_item(SLOT_ID_ID), /obj/item/pda) )
+				var/obj/item/pda/P = human_user.get_equipped_item(SLOT_ID_ID)
 				I = P.id
 			if(I)
 				authenticated_account = attempt_account_access(I.associated_account_number)

@@ -61,6 +61,7 @@
 			if(istext(clothing.armor?[damage_type]))
 				clothing.own_armor()
 				clothing.armor[damage_type] += armor_delta[damage_type]
+		clothing.worn_protection_changed()
 
 /*
  * proc/revert(obj/item/clothing/clothing)
@@ -77,6 +78,7 @@
 			if(istext(clothing.armor?[damage_type]))
 				clothing.own_armor()
 				clothing.armor[damage_type] -= armor_delta[damage_type]
+		clothing.worn_protection_changed()
 
 
 /datum/accessory_slot_registry
