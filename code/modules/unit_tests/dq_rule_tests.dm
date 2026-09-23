@@ -303,10 +303,14 @@
 	dq_rx_flush()
 	dq_rx_test_advance(0.8 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "under a second above is not enough")
+	// Dispatch each crossing as it is written, so the hold pauses and resumes at the write
+	// rather than whenever SSair next happens to dispatch heat wakes during the sleep.
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 300)
+	dq_rx_flush()
 	dq_rx_test_advance(1.5 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "time below the threshold does not count")
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 450)
+	dq_rx_flush()
 	dq_rx_test_advance(0.5 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "about 1.5 seconds in total is not enough")
 	dq_rx_test_advance(1 SECONDS)

@@ -270,7 +270,11 @@ function runDreamDaemonWithWatchdog(
 ): Promise<Juke.ExecReturn> {
   const watchdogFile = options.watchdogFile as string;
   const graceMs = options.watchdogGraceMs ?? 30_000;
-  const hardTimeoutMs = options.watchdogTimeoutMs ?? 20 * 60 * 1000;
+  // The full unit-test suite runs close to 20 minutes on a busy machine, so the backstop
+  // sits well above that. DQ_DD_WATCHDOG_MINUTES overrides it.
+  const envMinutes = Number(process.env.DQ_DD_WATCHDOG_MINUTES);
+  const hardTimeoutMs =
+    options.watchdogTimeoutMs ?? (envMinutes > 0 ? envMinutes : 45) * 60 * 1000;
   return new Promise((resolve) => {
     const child = spawn(exe, args, {
       stdio: 'inherit',
@@ -295,7 +299,7 @@ function runDreamDaemonWithWatchdog(
         clearTimeout(graceTimer);
       }
       if (forceKill && child.pid && child.exitCode === null && child.signalCode === null) {
-        Juke.logger.info(`DreamDaemon watchdog: force-killing daemon (${reason}).`);
+        Juke.logger.error(`DreamDaemon watchdog: force-killing daemon (${reason}).`);
         killProcessTree(child.pid);
       }
       resolve({ code: child.exitCode ?? 0, signal: null, stdout: '', stderr: '', combined: '' } as Juke.ExecReturn);
