@@ -61,6 +61,9 @@ pub struct NetworkHost<K: NetworkKind> {
     /// search (same cell and [`NetworkKind::reach`]'s targets, not every
     /// node).
     occupants: HashMap<CellId, Vec<Entity>>,
+    /// [`NetworkKind::link_group`] id -> entities sharing it, for the same
+    /// search's non-geometric side.
+    groups: HashMap<u32, Vec<Entity>>,
     devices: HashMap<Entity, DeviceId<K>>,
 }
 
@@ -77,6 +80,7 @@ impl<K: NetworkKind> NetworkHost<K> {
             net: Network::default(),
             nodes: HashMap::new(),
             occupants: HashMap::new(),
+            groups: HashMap::new(),
             devices: HashMap::new(),
         }
     }
@@ -108,13 +112,41 @@ impl<K: NetworkKind> NetworkHost<K> {
         if self.nodes.contains_key(&entity) {
             self.unbind_node(entity);
         }
+        let group = K::link_group(&data);
         let node = self
             .net
             .add_node(cell, kind, encode_entity(entity), data, K::Payload::default())?;
         self.nodes.insert(entity, node);
         self.occupants.entry(cell).or_default().push(entity);
+        if let Some(g) = group {
+            self.groups.entry(g).or_default().push(entity);
+        }
         self.connect_new_node(entity, node, cell);
         Ok(node)
+    }
+
+    /// Every other bound entity that might connect to a node at `cell`:
+    /// [`NetworkKind::reach`]'s target cells (plus `cell` itself) and, if
+    /// `data` names one, [`NetworkKind::link_group`]'s members -- not every
+    /// node, and never `exclude` itself.
+    fn candidate_entities(&self, exclude: Entity, data: &K::Node, cell: CellId) -> Vec<Entity> {
+        let mut candidates: Vec<Entity> = Vec::new();
+        let mut cells = K::reach(data, cell);
+        if !cells.contains(&cell) {
+            cells.push(cell);
+        }
+        for c in cells {
+            if let Some(occ) = self.occupants.get(&c) {
+                candidates.extend(occ.iter().copied());
+            }
+        }
+        if let Some(g) = K::link_group(data)
+            && let Some(members) = self.groups.get(&g)
+        {
+            candidates.extend(members.iter().copied());
+        }
+        candidates.retain(|&e| e != exclude);
+        candidates
     }
 
     fn connect_new_node(&mut self, entity: Entity, node: NodeId<K>, cell: CellId) {
@@ -124,28 +156,16 @@ impl<K: NetworkKind> NetworkHost<K> {
             .expect("just added")
             .data
             .clone();
-        let mut candidates = K::reach(&my_data, cell);
-        if !candidates.contains(&cell) {
-            candidates.push(cell);
-        }
         let mut peers: Vec<NodeId<K>> = Vec::new();
-        for c in candidates {
-            let Some(occupants) = self.occupants.get(&c) else {
+        for other_entity in self.candidate_entities(entity, &my_data, cell) {
+            let Some(&other_node) = self.nodes.get(&other_entity) else {
                 continue;
             };
-            for &other_entity in occupants {
-                if other_entity == entity {
-                    continue;
-                }
-                let Some(&other_node) = self.nodes.get(&other_entity) else {
-                    continue;
-                };
-                let Ok(other) = self.net.node(other_node) else {
-                    continue;
-                };
-                if K::connects((&my_data, cell), (&other.data, other.pos)) {
-                    peers.push(other_node);
-                }
+            let Ok(other) = self.net.node(other_node) else {
+                continue;
+            };
+            if K::connects((&my_data, cell), (&other.data, other.pos)) {
+                peers.push(other_node);
             }
         }
         for peer in peers {
@@ -167,6 +187,14 @@ impl<K: NetworkKind> NetworkHost<K> {
                 occupants.retain(|&e| e != entity);
                 if occupants.is_empty() {
                     self.occupants.remove(&cell);
+                }
+            }
+            if let Some(g) = K::link_group(&n.data)
+                && let Some(members) = self.groups.get_mut(&g)
+            {
+                members.retain(|&e| e != entity);
+                if members.is_empty() {
+                    self.groups.remove(&g);
                 }
             }
         }
@@ -290,6 +318,55 @@ mod tests {
         fn reach((): &(), cell: CellId) -> Vec<CellId> {
             [cell.wrapping_sub(1), cell + 1].into_iter().collect()
         }
+    }
+
+    /// A kind whose only connection rule is a shared, non-geometric group
+    /// id (ender cables: joined wherever they are, matched only by id).
+    #[derive(Clone, Copy, Debug, Default, PartialEq)]
+    struct Linked;
+
+    impl NetworkKind for Linked {
+        const NAME: &'static str = "linked";
+        type Node = u32;
+        type Summary = f64;
+        type Payload = f64;
+        type Device = ();
+        type Command = f64;
+
+        fn summarize(_: &u32) -> f64 {
+            1.0
+        }
+        fn split(payload: &mut f64, whole: &f64, part: &f64) -> f64 {
+            if *whole <= 0.0 {
+                return 0.0;
+            }
+            let share = *payload * (*part / *whole);
+            *payload -= share;
+            share
+        }
+        fn merge(into: &mut f64, other: f64) {
+            *into += other;
+        }
+        fn connects((a, _): (&u32, CellId), (b, _): (&u32, CellId)) -> bool {
+            a == b
+        }
+        fn link_group(node: &u32) -> Option<u32> {
+            Some(*node)
+        }
+    }
+
+    #[test]
+    fn same_link_group_connects_regardless_of_distance() {
+        let mut host: NetworkHost<Linked> = NetworkHost::new();
+        let a = entity(0);
+        let b = entity(1);
+        let unrelated = entity(2);
+        host.bind_node(a, 1, 0, 7).unwrap();
+        host.bind_node(b, 9_999, 0, 7).unwrap();
+        host.bind_node(unrelated, 2, 0, 42).unwrap();
+        host.commit();
+        assert_eq!(host.region_of(a), host.region_of(b), "same link id, far apart cells");
+        assert_ne!(host.region_of(a), host.region_of(unrelated));
     }
 
     fn entity(i: u32) -> Entity {

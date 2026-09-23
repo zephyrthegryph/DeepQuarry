@@ -112,6 +112,17 @@ pub trait NetworkKind:
         let _ = node;
         vec![cell]
     }
+
+    /// A non-geometric connection group (`rust_architecture.md` §4.5: this
+    /// is what replaces power's `links` map): nodes that share a non-`None`
+    /// group id connect wherever they are, in addition to whatever
+    /// [`NetworkKind::reach`] finds. `None` (the default) opts a node out;
+    /// [`NetworkKind::connects`] still confirms every pair a shared group
+    /// produces.
+    fn link_group(node: &Self::Node) -> Option<u32> {
+        let _ = node;
+        None
+    }
 }
 
 /// A grid cell index (`grid::GridDims`'s turf index): what
