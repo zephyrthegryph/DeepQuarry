@@ -485,11 +485,13 @@ SUBSYSTEM_DEF(explosions)
 
 /datum/controller/subsystem/explosions/proc/wake_and_defer_subsystem_updates()
 	// Even a small blast can destroy a cell, cable, or pipe.  Keep one
-	// topology transaction open for the complete nested explosion epoch: every
-	// cable the blast removes reaches Rust as one power commit.
+	// transaction open for the complete nested explosion epoch: every cable
+	// the blast removes reaches Rust as one power commit. Gas geometry needs
+	// no matching begin/commit here (unlike master's old turf-adjacency-graph
+	// atmos, M1b's field applies the whole epoch's turf commands in order at
+	// its next frame) -- only the power side batches.
 	if(!atmos_topology_batch_open)
 		atmos_topology_batch_open = TRUE
-		vg_topology_batch_begin()
 		SSmachines.power_batch_begin()
 	// waking from sleep, we are absolutely not resuming, and INSTANT feedback to players is required here.
 	if(can_fire) // already awake

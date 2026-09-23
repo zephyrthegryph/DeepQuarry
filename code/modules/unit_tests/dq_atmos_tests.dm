@@ -5328,12 +5328,23 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_item_takes_atmos_heat
 
 /datum/unit_test/dq_item_takes_atmos_heat/Run()
-	var/turf/simulated/floor/T = null
-	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air)
-			T = cand
-			break
-	TEST_ASSERT_NOTNULL(T, "no floor for item-heat test")
+	// A dedicated, walled single-tile room on its own z-level: picking a
+	// shared "first floor in world" turf made this test order-dependent both
+	// ways -- a prior test's leftover state on that turf could suppress
+	// ignition here, and the 100 extra moles of oxygen this test injects
+	// could diffuse into the open station map and corrupt a later test's
+	// mass-conservation accounting (the room's walls make that impossible;
+	// nothing here is reachable from, or leaks into, the rest of the map).
+	var/test_z = world.maxz + 1
+	world.maxz = test_z
+	for(var/x in 5 to 7)
+		for(var/y in 5 to 7)
+			var/turf/wall_turf = locate(x, y, test_z)
+			wall_turf.ChangeTurf(/turf/simulated/wall)
+	var/turf/simulated/floor/T = locate(6, 6, test_z)
+	T.ChangeTurf(/turf/simulated/floor)
+	TEST_ASSERT_NOTNULL(T, "couldn't build the item-heat test room")
+	TEST_ASSERT(T.air && !T.blocks_air, "the test room's floor has no air")
 
 	// Paper is FLAMMABLE and uses the integrity system — the canonical
 	// flammable floor item.
