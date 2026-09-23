@@ -220,3 +220,48 @@ null is not, so checks like `if(!L)` that were dead code become live. Pass 2
 reviewed the truth tests on converted vars. Where the negative branch did real
 work (hard drive `store_file()`, the chat client, targeted spells, robot belly
 tables) the check was fixed or the list was kept eager.
+
+## Pass 3 (mob memlists)
+
+The 98 `/mob` allowlist entries from pass 2's lint count, worked type by type.
+Every writer of a converted var was audited (`.len`, `+=`, `-=`, `|=`,
+`[key] =`, `.Cut()`, `.Add()`, `.Remove()`, `.Copy()`) and rewritten to a
+null-safe form; the goal was every conversion falsifiable by a fresh mob
+owning none of these lists, not just a var declaration edit.
+
+### Changes
+
+| Type | Var | Class | Change |
+|---|---|---|---|
+| `/mob` | `logging` | b | Lazy. `code/_helpers/logging/mob.dm` indexes/creates per-category sublists with `LAZYACCESS`/`LAZYSET`; the admin log viewer already null-checked. |
+| `/mob` | `grabbed_by` | b | Lazy. ~20 call sites across grabs, buckling, stairs, multiz movement, guns and vore converted to `LAZYLEN`/`LAZYADD`/`LAZYREMOVE`; plain `for(... in grabbed_by)` and truthy checks are already null-safe in DM and were left alone. |
+| `/mob` | `active_genes` | b | Lazy. `in` reads are null-safe; `dna2_domutcheck.dm`, `resleeving/infocore_records.dm` and `human.dm` writers use `LAZYDISTINCTADD`/`LAZYREMOVE`. |
+| `/mob` | `speak_emote` | c | Kept eager (many callers `pick()` it unconditionally), but interned per subtype: `/mob/Initialize()` calls `shared_type_list(type, "speak_emote", speak_emote)`, so every simple_mob subtype's literal (`list("chirps")`, ...) is shared across instances of that type instead of copied per mob. |
+| `/mob` | `shouldnt_see` | c | Kept eager (only a base default and one AI override, never mutated), interned per subtype via `shared_type_list()` in `/mob/Initialize()`. `var/static/list` was tried first but DM statics are a single global slot across the whole type hierarchy, not per-type — the AI override raised "re-initialization of global var" at compile time. |
+| `/mob` | `languages`, `language_keys` | d | Kept — genuinely per-instance and effectively always non-empty (every mob knows at least one language); `languages` alone has ~86 call sites including direct `+=`/`-=` from changeling and prey-domination code. Converting needs a null-audit of that whole surface for a saving that doesn't apply (rarely if ever empty). |
+| `/mob/living` | `modifiers` | b | Lazy. `_modifiers/modifiers.dm`'s `.Remove`/`.Add`/`.len` converted to `LAZYREMOVE`/`LAZYADD`/`LAZYLEN`; the changeling transform power (`transform.dm`) that reaches into another mob's `modifiers` list was fixed too. |
+| `/mob/living` | `temp_language_sources`, `temp_languages` (`vore/eating/living.dm`) | b | Lazy. Already nulled in `living.dm/Destroy()`, which was the tell that null was already tolerated; `dominated_brain.dm`'s `|=` writer now uses `LAZYOR`, and a redundant `= list()` right after `LAZYCLEARLIST()` was dropped. `temp_language_sources` itself has no writer anywhere (declared, read nowhere) — left lazy rather than removed, since another area may still reference it via VV/admin tools. |
+| `/mob/living` | `custom_heat`, `custom_cold` (`living_defines.dm`) | b | Lazy. Every reader (`species_getters.dm`) already short-circuited with `x && x.len > 0`; writers are whole-list preference assignments, already null-safe. `code/game/dna/dna2.dm`'s own `custom_heat`/`custom_cold` (the cloning-record copy) is untouched — that file is rewrite/traitmem's. |
+| `/mob/living/carbon` | `antibodies` | d, excluded | Kept eager: its only writers are `code/modules/organs/blood.dm` and `reagents/core.dm`'s `|=`, and `blood.dm` is under the excluded organs/medical tree. Listed here, not converted. |
+| `/mob/living/carbon` | `worn_clothing` | b | Lazy. `human.dm`'s `.Cut()` → `LAZYCLEARLIST`; `human/inventory.dm`'s `|=`/`-=` → `LAZYDISTINCTADD`/`LAZYREMOVE`; equip-slot iteration, the leash puppet check, food-drink soiling and the inventory unit test's `length()` read were already null-safe. |
+| `/mob/living/carbon/human` | `all_underwear` | b | Lazy. Every direct index (`under_wardrobe.dm`, `human.dm`, `human_bellies.dm`, `stripping.dm`, `update_icons.dm`, the equip-hook applier, the cult rune strip, the HUD reset) converted to `LAZYACCESS`/`LAZYSET`/`LAZYREMOVE`/`LAZYCLEARLIST`. `all_underwear_metadata` was left eager — it has a nested-index writer (`human_bellies.dm`) that assumes the outer key already holds a list, which is riskier to make lazy without also touching that call site's shape; not requested, left as-is. |
+| `/mob/living/carbon/human` | `flavor_texts` | b | Lazy. Direct index writes in `human.dm`, `dq_mind_moves_tests.dm`, the appearance-changer TGUI module and the `flavor_texts` preference's `apply_to_human()` converted to `LAZYSET`; reads through `flavor_panel.dm` and `deadringer.dm`'s corpse-copy use `LAZYACCESS`/`?.Copy()`. `/datum/character_identity/flavor_texts` (a separate, already-lazy datum var that `on_identity_bound()` can alias to the mob's) was left as designed. |
+| `/mob/living/carbon/human` (vore) | `trait_injection_reagents` | b | Lazy. `station_special_abilities.dm`'s `.len`/`[1]` converted to `LAZYLEN`/`LAZYACCESS`, the reagent-choice `tgui_input_list` call falls back to `list()`; the dozen `+=` trait grants in `traits/neutral.dm` and `simple_mob/subtypes/vore/goia.dm` use `LAZYADD`. |
+| `/mob/living/simple_mob` | `friends` | b | Lazy. Writers across xenobio defense/consumption/slime-potions, the technomancer control/summon spells and `Destroy()`'s `.Cut()` converted to `LAZYREMOVE`/`LAZYADD`/`LAZYDISTINCTADD`/`LAZYCLEARLIST`; `xenobio.dm`'s child-copy uses `?.Copy()`. |
+| `/mob/living/simple_mob` | `loot_list`, `attacktext`, `friendly`, `myid_access` | c | Per-subtype constant tables (hundreds of literal overrides — pirates, mercs, vistors, hivebots, catslug access sets, ...), interned with `shared_type_list(type, name, value)` in `Initialize()`, gated by `islist()` since `attacktext` can also be a bare string on a few subtypes. The two runtime mutators found by the audit (`synx.dm`'s stomach-distend `attacktext` swap, `pirates.dm`'s post-`..()` `loot_list +=`, and the expedition faction loot seeding in `expedition_faction.dm`) now copy the list before writing so they don't corrupt the shared table. `life.dm`'s `loot_list.len` read (which would already have runtime-erred on the one subtype that sets `loot_list = null`) is now `LAZYLEN`. |
+| `/mob/living/simple_mob` | `hit_zones` (`/datum/decl/mob_organ_names`) | already static | Not converted — nothing ever instantiates this decl type. `organ_names` holds a *typepath*, and both `simple_mob/Initialize()` (`GET_DECL`) and `projectile.dm` read `hit_zones` as a type-initial value (`TypePath.var`), so every subtype's `hit_zones` list is already a single compile-time table, never copied per mob. Left as-is; noted so it isn't "fixed" again by mistake. |
+| `/mob/living/silicon/robot` | `robotdecal_on` | b | Lazy. `robot.dm`'s eligibility check was already `LAZYLEN`; `robot_ui_decals.dm`'s `.Find()`/`+=`/`-=` converted to an `in` check plus `LAZYADD`/`LAZYREMOVE`, and the TGUI data export falls back to `list()`. |
+| `/mob/living/silicon/robot` | `sprite_extra_customization` | b | Lazy. The one writer/reader pair (`sprites/civilian.dm`'s booze customization) collapsed to a single `LAZYSET`; the `"key" in list` reads are already null-safe. |
+| `/mob/living/silicon/robot` | `vore_light_states` | b | Lazy. `robot_bellies.dm`'s per-belly index writes converted to `LAZYSET`; `sprites/_sprite_datum.dm`'s light-colour read converted to `LAZYACCESS`. |
+| `/mob/living/silicon/robot` | `req_access` | c | No writer anywhere in the robot tree (only `drone.dm`/`swarm.dm` subtype overrides and read-only iteration in `robot.dm`); interned per subtype via `shared_type_list()` in `Initialize()` (same static-var compile error as `shouldnt_see` ruled out `var/static/list` here too). `/mob/living/bot`'s separate `req_access` declaration (a different type, `bot.dm`) is untouched. |
+
+### Excluded (medical/body/organ/surgery/protean/species, listed not edited)
+
+- `/mob/living/carbon/antibodies` — writer is `code/modules/organs/blood.dm` (`|=`).
+- `code/game/dna/dna2.dm`'s `custom_heat`/`custom_cold` copy on the cloning record, and the `dna2_domutcheck.dm` gene-activation checks that read `active_genes` — left alone per the coordination note; only the `/mob` var declarations and their non-`code/game/dna` users were touched.
+- `mutations` (`/mob/mutations`) — explicitly owned by `rewrite/traitmem`, not touched.
+
+### Kept eager, not converted
+
+- `/mob/living/carbon/human/all_underwear_metadata` — nested-index writer shape, not requested.
+- `/mob/mind`, `/mob/exploit_addons`, `proc_holder_list`, `spell_list` and the other `/mob` list vars not named in the task were left untouched; they weren't audited this pass.
