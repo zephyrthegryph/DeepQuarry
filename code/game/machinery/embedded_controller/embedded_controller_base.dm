@@ -76,7 +76,7 @@
 	category = INTERACTION_CAT_CONFIGURE
 	effect = /obj/machinery/embedded_controller/proc/interaction_open_ui
 
-/obj/machinery/embedded_controller/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/embedded_controller/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 	tgui_interact(user)

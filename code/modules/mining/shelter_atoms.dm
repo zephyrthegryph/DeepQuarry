@@ -710,7 +710,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	category = INTERACTION_CAT_TOGGLE
 	effect = /obj/machinery/light_switch/survival_pod/proc/interaction_toggle
 
-/obj/machinery/light_switch/survival_pod/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/light_switch/survival_pod/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 	if(!target_light)

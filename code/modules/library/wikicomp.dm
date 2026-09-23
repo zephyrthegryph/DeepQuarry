@@ -34,7 +34,7 @@
 	name = "Use"
 	effect = /obj/machinery/librarywikicomp/proc/interaction_open_ui
 
-/obj/machinery/librarywikicomp/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarywikicomp/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(crash)
 		user.visible_message("[user] performs percussive maintenance on \the [src].", "You try to smack some sense into \the [src].")
 		if(prob(10))

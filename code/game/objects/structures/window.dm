@@ -604,11 +604,20 @@
 	flags = WALL_ITEM
 	var/range = 7
 
-/obj/machinery/button/windowtint/attack_hand(mob/user as mob)
-	if(..())
-		return 1
+/obj/machinery/button/windowtint/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/windowtint_toggle,
+	)
+	..()
 
+/datum/interaction/machine_hand/windowtint_toggle
+	id = "windowtint_toggle"
+	name = "Toggle"
+	effect = /obj/machinery/button/windowtint/proc/interaction_toggle
+
+/obj/machinery/button/windowtint/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_tint()
+	return TRUE
 
 /obj/machinery/button/windowtint/proc/toggle_tint()
 	use_power(5)

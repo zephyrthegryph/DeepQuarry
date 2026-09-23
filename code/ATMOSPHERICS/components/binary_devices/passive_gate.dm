@@ -289,7 +289,7 @@
 /obj/machinery/atmospherics/binary/passive_gate/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/atmospherics/binary/passive_gate/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/atmospherics/binary/passive_gate/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
 	return TRUE

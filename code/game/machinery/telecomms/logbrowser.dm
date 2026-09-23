@@ -76,7 +76,7 @@
 	name = "Use"
 	effect = /obj/machinery/computer/telecomms/server/proc/interaction_open_ui
 
-/obj/machinery/computer/telecomms/server/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/telecomms/server/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
 		return TRUE
 	tgui_interact(user)

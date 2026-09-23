@@ -155,7 +155,7 @@
 	name = "Use"
 	effect = /obj/machinery/atmospherics/omni/proc/interaction_open_ui
 
-/obj/machinery/atmospherics/omni/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/atmospherics/omni/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
 	return TRUE

@@ -116,7 +116,7 @@
 	name = "Use"
 	effect = /obj/machinery/exonet_node/proc/interaction_open_ui
 
-/obj/machinery/exonet_node/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/exonet_node/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

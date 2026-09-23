@@ -51,10 +51,24 @@
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
-/obj/machinery/keycard_auth/attackby(obj/item/W, mob/user)
+/obj/machinery/keycard_auth/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/keycard_auth_swipe,
+		/datum/interaction/machine_hand/ungated/keycard_auth_open_ui,
+	)
+	..()
+
+/// Old attackby never called ..(): every item is swallowed by this, id cards checked for access.
+/datum/interaction/machine_item/keycard_auth_swipe
+	id = "keycard_auth_swipe"
+	name = "Swipe"
+	held_type = /obj/item
+	effect = /obj/machinery/keycard_auth/proc/interaction_swipe
+
+/obj/machinery/keycard_auth/proc/interaction_swipe(mob/user, obj/item/W, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
 		to_chat(user, "This device is not powered.")
-		return
+		return TRUE
 
 	if(istype(W,/obj/item/card/id))
 		var/obj/item/card/id/ID = W
@@ -67,6 +81,7 @@
 			else if(screen == 2)
 				event_triggered_by = user
 				broadcast_request(user) //This is the device making the initial event request. It needs to broadcast to other devices
+	return TRUE
 
 /obj/machinery/keycard_auth/power_change()
 	..()
@@ -75,16 +90,22 @@
 
 // TGUI migration. attack_hand opens KeycardAuth.tsx;
 // Topic event/reset actions move to tgui_act.
-/obj/machinery/keycard_auth/attack_hand(mob/user as mob)
+/datum/interaction/machine_hand/ungated/keycard_auth_open_ui
+	id = "keycard_auth_open_ui"
+	name = "Use"
+	effect = /obj/machinery/keycard_auth/proc/interaction_open_ui
+
+/obj/machinery/keycard_auth/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || stat & (NOPOWER|BROKEN))
 		to_chat(user, "This device is not powered.")
-		return
+		return TRUE
 	if(!user.IsAdvancedToolUser())
-		return 0
+		return FALSE
 	if(busy)
 		to_chat(user, "This device is busy.")
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/keycard_auth/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

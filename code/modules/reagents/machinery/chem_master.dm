@@ -100,7 +100,7 @@
 /obj/machinery/chem_master/proc/chem_master_not_broken(mob/actor, atom/target, obj/item/held)
 	return !(stat & BROKEN)
 
-/obj/machinery/chem_master/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/chem_master/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

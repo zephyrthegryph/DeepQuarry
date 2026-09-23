@@ -170,7 +170,7 @@ Nothing else in the console has ID requirements.
 	category = INTERACTION_CAT_CONFIGURE
 	effect = /obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui
 
-/obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/rdconsole_tg/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
 		return TRUE
 

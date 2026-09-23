@@ -265,7 +265,7 @@
 	name = "Use"
 	effect = /obj/machinery/media/jukebox/proc/interaction_interact
 
-/obj/machinery/media/jukebox/proc/interaction_interact(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/media/jukebox/interaction_interact(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
 	return TRUE
 

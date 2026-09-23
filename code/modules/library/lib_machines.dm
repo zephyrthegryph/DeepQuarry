@@ -48,7 +48,7 @@
 	category = INTERACTION_CAT_CONFIGURE
 	effect = /obj/machinery/librarypubliccomp/proc/interaction_open_ui
 
-/obj/machinery/librarypubliccomp/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarypubliccomp/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
@@ -218,7 +218,7 @@
 	category = INTERACTION_CAT_CONFIGURE
 	effect = /obj/machinery/librarycomp/proc/interaction_open_ui
 
-/obj/machinery/librarycomp/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarycomp/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	is_admin_view = FALSE
 	tgui_interact(user)
@@ -537,7 +537,7 @@
 	category = INTERACTION_CAT_CONFIGURE
 	effect = /obj/machinery/libraryscanner/proc/interaction_open_ui
 
-/obj/machinery/libraryscanner/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/libraryscanner/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE

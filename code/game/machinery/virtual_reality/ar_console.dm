@@ -47,7 +47,7 @@
 	held_type = /obj/item
 	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_scan
 
-/obj/machinery/vr_sleeper/alien/proc/interaction_scan(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/alien/interaction_scan(mob/user, obj/item/I, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(occupant && (istype(I, /obj/item/healthanalyzer) || istype(I, /obj/item/robotanalyzer)))
@@ -60,7 +60,7 @@
 	category = INTERACTION_CAT_EJECT
 	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_eject
 
-/obj/machinery/vr_sleeper/alien/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/alien/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN) || (eject_dead && occupant && occupant.stat == DEAD))
 		perform_exit()
 	else

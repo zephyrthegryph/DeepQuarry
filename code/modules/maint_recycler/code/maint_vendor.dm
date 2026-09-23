@@ -12,7 +12,6 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 
-	description_info = "With the points you get from another, similar machine in maint - you can redeem various goodies! Nothing important, but fun stuff!"
 	description_fluff = "While RSG's \"Trash 4 Cash\" recycling campaign came to an end decades ago, the underlying systems still work as well as ever thanks to an underground network of mega-dweebs and other assorted idiots maintaining it."
 
 	//wide sprite
@@ -70,15 +69,24 @@
 	qdel(monitor_screen)
 	monitor_screen = null
 
-/obj/machinery/maint_vendor/attack_hand(mob/user)
-	if(..(user))
-		return
+/obj/machinery/maint_vendor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/maint_vendor_open_ui,
+	)
+	..()
 
+/datum/interaction/machine_hand/maint_vendor_open_ui
+	id = "maint_vendor_open_ui"
+	name = "Use"
+	effect = /obj/machinery/maint_vendor/proc/interaction_open_ui
+
+/obj/machinery/maint_vendor/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
 
 	if(!is_on)
 		set_on_state(TRUE)
+	return TRUE
 
 /obj/machinery/maint_vendor/proc/attempt_purchase(mob/user, datum/maint_recycler_vendor_entry/entry)
 	if(!istype(entry))

@@ -17,7 +17,7 @@
 		new parts(loc)
 	return ..()
 
-/obj/structure/attack_hand(mob/user)
+/obj/structure/hand_gate(mob/user)
 	if(breakable)
 		if(HULK in user.mutations)
 			user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))

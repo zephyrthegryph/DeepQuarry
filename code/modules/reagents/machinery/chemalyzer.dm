@@ -84,7 +84,7 @@
 /obj/machinery/chemical_analyzer/proc/has_results(mob/actor, atom/target, obj/item/held)
 	return length(found_reagents) > 0
 
-/obj/machinery/chemical_analyzer/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/chemical_analyzer/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user) // Show last analysis
 	return TRUE
 

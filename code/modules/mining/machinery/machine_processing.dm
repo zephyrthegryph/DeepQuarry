@@ -64,7 +64,7 @@
 /obj/machinery/mineral/processing_unit_console/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/mineral/processing_unit_console/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

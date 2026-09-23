@@ -15,7 +15,7 @@
 /obj/machinery/computer/specops_shuttle/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/computer/specops_shuttle/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/specops_shuttle/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE

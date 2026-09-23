@@ -233,7 +233,7 @@
 	var/obj/machinery/computer/skills/machine = target
 	return !using_map || (machine.z in using_map.contact_levels)
 
-/obj/machinery/computer/skills/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/skills/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

@@ -175,7 +175,7 @@
 /obj/machinery/recharge_station/proc/is_vacant(mob/actor, atom/target, obj/item/held)
 	return !occupant
 
-/obj/machinery/recharge_station/proc/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/recharge_station/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
 	return default_part_replacement(user, held) ? TRUE : FALSE
 
 /datum/interaction/machine_item/recharge_station_insert_grab

@@ -138,7 +138,7 @@
 	name = "Press"
 	effect = /obj/machinery/button/doorbell/proc/interaction_press
 
-/obj/machinery/button/doorbell/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/doorbell/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	use_power(5)
 	flick("doorbell-active", src)

@@ -32,7 +32,7 @@
 	name = "Use"
 	effect = /obj/machinery/computer/fusion_fuel_control/proc/interaction_open_ui
 
-/obj/machinery/computer/fusion_fuel_control/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/fusion_fuel_control/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
 		return TRUE
 

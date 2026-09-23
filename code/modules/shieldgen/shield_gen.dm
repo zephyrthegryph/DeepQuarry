@@ -113,7 +113,7 @@
 /obj/machinery/shield_gen/proc/shield_gen_not_broken(mob/actor, atom/target, obj/item/held)
 	return !(stat & BROKEN)
 
-/obj/machinery/shield_gen/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shield_gen/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 

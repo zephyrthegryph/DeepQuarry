@@ -12,7 +12,7 @@
 	name = "Use"
 	effect = /obj/machinery/implantchair/proc/interaction_open_ui
 
-/obj/machinery/implantchair/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/implantchair/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE

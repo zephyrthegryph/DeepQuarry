@@ -12,7 +12,6 @@
 	icon_state = "default"
 
 	desc = "A long since abandoned recycling kiosk. Now featuring a state of the art, monochrome holographic tube display!"
-	description_info = "This machine allows you to recycle a limited amount of objects per round, the points you get from it can be used for goodies from another machine somewhere in maint!"
 	description_fluff = "While the original owners stopped their partnership with NT after a data theft scandal, the machine itself has been adopted by endless hoardes of vintage hardware enthusiasts to \"Keep Maint Clean™️\" and facilitate what has to be the galaxy's most neurodivergent black market "
 
 	anchored = TRUE
@@ -202,23 +201,36 @@
 	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 4, FALSE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/maint_recycler/attackby(obj/item/O, mob/user)
+/obj/machinery/maint_recycler/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/maint_recycler_insert,
+		/datum/interaction/machine_hand/maint_recycler_use,
+	)
+	..()
+
+/datum/interaction/machine_item/maint_recycler_insert
+	id = "maint_recycler_insert"
+	name = "Insert"
+	held_type = /obj/item
+	effect = /obj/machinery/maint_recycler/proc/interaction_attackby
+
+/obj/machinery/maint_recycler/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!door_open)
 		to_chat(user, span_warning("\The [src] doesn't have its door open!"))
-		return
+		return TRUE
 
 	if(inserted_item)
 		to_chat(user, span_warning("\The [src] already has [inserted_item] in its recycling compartment!"))
-		return
+		return TRUE
 
 	switch(get_item_whitelist(O))
 		if(RECYCLER_FORBIDDEN) //the usual stuff.
 			deny_act(O,user)
-			return
+			return TRUE
 
 		if(RECYCLER_EVIL)
 			evil_act(O,user)
-			return
+			return TRUE
 
 	to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 	if(istype(O,/obj/item/holder))
@@ -231,7 +243,7 @@
 				m.forceMove(src)
 				inserted_item = m
 			else
-				return //too far away, dumbass.
+				return TRUE //too far away, dumbass.
 		else
 			deny_act(O,user)
 	else
@@ -240,7 +252,7 @@
 		inserted_item = O
 
 	update_icon()
-	. = ..()
+	return FALSE
 
 
 
@@ -411,14 +423,17 @@
 
 	. = ..()
 
-/obj/machinery/maint_recycler/attack_hand(mob/user)
-	if(..(user))
-		return
+/datum/interaction/machine_hand/maint_recycler_use
+	id = "maint_recycler_use"
+	name = "Use"
+	effect = /obj/machinery/maint_recycler/proc/interaction_use
 
+/obj/machinery/maint_recycler/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
 	if(!is_on)
 		set_on_state(TRUE)
+	return TRUE
 
 /*
 TGUI PROCS
