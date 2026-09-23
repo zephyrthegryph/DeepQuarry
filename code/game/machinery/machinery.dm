@@ -134,6 +134,8 @@ Class Procs:
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
+REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
+
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
 	if(!istype(src, /obj/machinery/atmospherics) && !istype(src, /obj/machinery/portable_atmospherics) && !istype(src, /obj/machinery/power/emitter))

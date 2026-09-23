@@ -2,9 +2,8 @@
 // use it is at the top of code/__defines/registries.dm.
 
 /// Every registry, as id -> /datum/registry. Built once from the declarations
-/// in code/datums/registry_declarations.dm. Whichever of these two globals
-/// initializes first builds the registries; the other reuses them.
-GLOBAL_LIST_INIT(registries, GLOB.registries || build_registries())
+/// in code/datums/registry_declarations.dm.
+GLOBAL_LIST_INIT(registries, build_registries())
 /// Every registry's member list, as id -> list. REGISTRY_MEMBERS() reads it.
 /// The lists are the registries' own, so a read costs one lookup.
 GLOBAL_LIST_INIT(registry_members, registry_member_lists())
@@ -12,7 +11,13 @@ GLOBAL_LIST_INIT(registry_members, registry_member_lists())
 GLOBAL_LIST_EMPTY(registries_by_type)
 
 /proc/build_registries()
-	. = list()
+	// GLOB is still being built while globals initialize, so the shared
+	// result lives in a plain global until both GLOB lists hold it.
+	var/global/list/built
+	if(built)
+		return built
+	built = list()
+	. = built
 	for(var/datum/registry/path as anything in subtypesof(/datum/registry))
 		var/datum/registry/registry = new path
 		if(!registry.id)
@@ -24,11 +29,10 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 		.[registry.id] = registry
 
 /proc/registry_member_lists()
-	if(!GLOB.registries)
-		GLOB.registries = build_registries()
+	var/list/registries = build_registries()
 	. = list()
-	for(var/id in GLOB.registries)
-		var/datum/registry/registry = GLOB.registries[id]
+	for(var/id in registries)
+		var/datum/registry/registry = registries[id]
 		.[id] = registry.members
 
 /// The registry with this id. Crashes on an unknown id: a typo would otherwise

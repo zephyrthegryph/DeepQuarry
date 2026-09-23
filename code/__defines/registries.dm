@@ -75,7 +75,6 @@
 #define REGISTRY_GYROTRONS "gyrotrons"
 #define REGISTRY_HOLOPOSTERS "holoposters"
 #define REGISTRY_JANITORIAL_CARTS "all_janitorial_carts"
-#define REGISTRY_LANDMARKS "landmarks_list"
 #define REGISTRY_MACHINES "machines"
 #define REGISTRY_MECHAS "mechas_list"
 #define REGISTRY_MESSAGE_SERVERS "message_servers"
