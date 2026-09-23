@@ -357,7 +357,7 @@
 				wound_flavor_text["[temp.name]"] = ""
 			if(temp.dislocated == 1)
 				wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.joint] is dislocated!")
-			if(temp.get_trauma() > temp.min_broken_damage || (temp.status & (ORGAN_BROKEN | ORGAN_MUTATED)))
+			if(temp.get_trauma() > temp.min_broken_damage || temp.is_fractured() || (temp.status & ORGAN_MUTATED))
 				wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.name] is dented and swollen!")
 
 			if(temp.germ_level > INFECTION_LEVEL_TWO && !(temp.status & ORGAN_DEAD))

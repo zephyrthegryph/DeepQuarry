@@ -132,7 +132,7 @@
 	if (user == target && ((zone == BP_GROIN && (prob(98)) || (zone == BP_HEAD || zone == O_EYES || zone == O_MOUTH)))) //biting your own groin is hard. 2% hit chance.
 		return FALSE
 	for(var/obj/item/organ/external/head/user_head in user.organs) //We have a head!
-		if(!user_head.dislocated && !(user_head.status & ORGAN_BROKEN)) //And it's not dislocated
+		if(!user_head.dislocated && !user_head.is_fractured()) //And it's not dislocated
 			return TRUE
 	return FALSE
 

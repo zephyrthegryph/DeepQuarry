@@ -226,6 +226,7 @@
 #include "dq_automation_tests.dm"
 #include "xgm_total_moles_test.dm"
 #include "dq_harm_time_invariance_tests.dm"
+#include "dq_w5_loose_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

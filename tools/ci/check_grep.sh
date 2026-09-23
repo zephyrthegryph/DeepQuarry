@@ -172,6 +172,15 @@ if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperatu
 	FAILED=1
 fi;
 
+part "rig cells move through the power ledger"
+# A rig's cell is written only by /obj/item/rig/proc/draw_power() and add_power()
+# (rig.dm); modules, seals, cooling, movement and power sinks call those.
+if $grep -n '\bcell\.(use|give)\(' $(find code/modules/clothing/spacesuits/rig -name '*.dm') code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm | grep -vE 'cell\.use\(units, FALSE\)|cell\.give\(joules \* CELLRATE, FALSE\)'; then
+	echo
+	echo -e "${RED}ERROR: a rig cell is drawn or charged directly. Use the rig's draw_power() / add_power() ledger.${NC}"
+	FAILED=1
+fi;
+
 part "thermal constants: generated, not redefined (H1)"
 # Temperatures, heat capacities and thermal defaults are generated from
 # verdigris/domains/heat/src/consts.rs (`/// @dm-define`) into the bindings. A DM

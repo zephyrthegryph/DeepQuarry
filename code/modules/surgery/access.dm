@@ -216,21 +216,15 @@
 	complication_kind = INJURY_BLUNT
 	complication_amount = 10
 
-/// Needed for an open bone layer, a fracture condition, or a broken bone.
+/// Needed for an open bone layer or a fracture. TREAT_BONE_SETTING mends the
+/// fracture affliction, and with it the fracture.
 /datum/surgical_step/set_bone/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/datum/affliction/surgical_incision/I = part.get_incision()
 	if(I?.needs_bone_setting())
 		return TRUE
-	if(part.status & ORGAN_BROKEN)
+	if(part.is_fractured())
 		return TRUE
 	return ..()
-
-/// Bone setting also mends the limb's fracture state (ORGAN_BROKEN), which
-/// isn't an affliction yet.
-/datum/surgical_step/set_bone/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
-	..()
-	if(part.status & ORGAN_BROKEN)
-		part.mend_fracture()
 
 /datum/surgical_step/cauterize
 	name = "Cauterize Incision"

@@ -122,21 +122,6 @@
 	declare(/datum/affliction/compartment_syndrome, chance = 40)
 
 
-// -- Bone ----
-
-/datum/affliction_trigger/injury/bone_fracture
-	name = "Broken bone"
-	subcategory = "Bone"
-	description = "A bone has fractured. Without setting, the surrounding tissue grinds against the broken edges with every movement."
-	wound_class = "broken_bone"  // pseudo-class; dispatcher emits it when ORGAN_BROKEN flips
-	body_regions = null
-	min_damage = 0
-
-/datum/affliction_trigger/injury/bone_fracture/setup()
-	..()
-	declare(/datum/affliction/untreated_fracture, chance = 60)
-
-
 // --- Organ-damage causes ------------------------------------------------
 //
 // One cause per organ. Each cause carries tiered outcomes (Moderate /

@@ -69,8 +69,22 @@
 /obj/item/rig/protean/digest_act(atom/movable/item_storage = null)
 	return FALSE
 
+/// An explosion on the cluster is an explosion on the protean's mass: it goes
+/// through the protean's injure(), aimed at the core, like every other hit on
+/// the cluster (take_damage()). The cluster's own integrity never moves. An
+/// orphaned cluster is just an object.
 /obj/item/rig/protean/ex_act(severity)
-	return
+	if(!myprotean || QDELETED(src))
+		return ..()
+	var/band = round(severity)
+	var/static/list/blast_blunt = list(120, 60, 25)
+	var/static/list/blast_burn = list(60, 30, 10)
+	if(band < 1 || band > length(blast_blunt))
+		return
+	var/taken = myprotean.injure(INJURY_BLUNT, blast_blunt[band], BP_TORSO, src)
+	taken += myprotean.injure(INJURY_BURN, blast_burn[band], BP_TORSO, src)
+	log_attack("PROTEAN RIG: [src] caught a severity [band] explosion; [key_name(myprotean)] took [taken].")
+	return taken
 
 /obj/item/rig/protean/Initialize(mapload, mob/living/carbon/human/P)
 	. = ..()
@@ -503,31 +517,6 @@
 	stop_soaking()
 	return ..()
 
-
-// --- Power ledger ------------------------------------------------------------------------
-// draw_power() and add_power() are the protean cluster's writers of its cell,
-// as for robots (robot.dm). Amounts are joules; the cell stores joules * CELLRATE.
-
-/// Take `joules` from the cell, all or nothing. `reserve` joules must remain
-/// afterwards. `partial` takes whatever is there instead. Returns TRUE if
-/// anything was drawn.
-/obj/item/rig/protean/proc/draw_power(joules, datum/source, reserve = 0, partial = FALSE)
-	if(joules <= 0)
-		return TRUE
-	if(!cell)
-		return FALSE
-	var/units = joules * CELLRATE
-	if(partial)
-		return cell.use(units, FALSE) > 0
-	if(!cell.check_charge(units + max(reserve, 0) * CELLRATE))
-		return FALSE
-	return cell.use(units, FALSE) >= units
-
-/// Put up to `joules` into the cell. Returns the joules actually stored.
-/obj/item/rig/protean/proc/add_power(joules, datum/source)
-	if(joules <= 0 || !cell)
-		return 0
-	return cell.give(joules * CELLRATE, FALSE) / CELLRATE
 
 /// The swarm feeds its cluster's cell from its own nutrition.
 /obj/item/rig/protean/proc/recharge_from(mob/living/P)
