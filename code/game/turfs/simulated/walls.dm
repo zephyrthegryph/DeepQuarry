@@ -775,7 +775,7 @@
 	if(density || !can_build_into_floor)
 		return FALSE
 	if(passed_mode == RCD_FLOORWALL)
-		var/obj/structure/lattice/L = locate() in src
+		var/obj/structure/lattice/L = locate_on(src, /obj/structure/lattice)
 		// A lattice costs one rod to make. A sheet can make two rods, meaning a lattice costs half of a sheet.
 		// A sheet also makes four floor tiles, meaning it costs 1/4th of a sheet to place a floor tile on a lattice.
 		// Therefore it should cost 3/4ths of a sheet if a lattice is not present, or 1/4th of a sheet if it does.
@@ -799,7 +799,7 @@
 /turf/simulated/floor/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	switch(passed_mode)
 		if(RCD_FLOORWALL)
-			var/obj/structure/girder/G = locate() in src
+			var/obj/structure/girder/G = locate_on(src, /obj/structure/girder)
 			if(G)
 				the_rcd.use_rcd(G, user)
 				return 1
@@ -830,7 +830,7 @@
 				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 5
 			)
 		if(RCD_WINDOWGRILLE)
-			var/obj/structure/grille/G = locate() in src
+			var/obj/structure/grille/G = locate_on(src, /obj/structure/grille)
 			if(G)
 				the_rcd.use_rcd(G, user)
 				return 1
@@ -873,7 +873,7 @@
 			new the_rcd.girder_type(src)
 			return TRUE
 		if(RCD_AIRLOCK)
-			if(locate(/obj/machinery/door/airlock) in src)
+			if(locate_on(src, /obj/machinery/door/airlock))
 				return FALSE // No more airlock stacking.
 			to_chat(user, span_notice("You build an airlock."))
 			var/obj/machinery/door/airlock/A = new the_rcd.airlock_type(src)
@@ -947,13 +947,13 @@
 			A.autoclose = TRUE
 			return TRUE
 		if(RCD_FIRELOCK)
-			if(locate(/obj/machinery/door/firedoor) in src)
+			if(locate_on(src, /obj/machinery/door/firedoor))
 				return FALSE
 			to_chat(user, span_notice("You build a firelock."))
 			new /obj/machinery/door/firedoor/glass(src)
 			return TRUE
 		if(RCD_WINDOWGRILLE)
-			if(locate(/obj/structure/grille) in src)
+			if(locate_on(src, /obj/structure/grille))
 				return FALSE
 			to_chat(user, span_notice("You construct the grille."))
 			var/obj/structure/grille/G = new(src)
@@ -1020,7 +1020,7 @@
 			to_chat(user, span_notice("You build a conveyor"))
 			return TRUE
 		if(RCD_TURRET)
-			if(locate(/obj/machinery/porta_turret) in src)
+			if(locate_on(src, /obj/machinery/porta_turret))
 				return FALSE
 			var/obj/machinery/porta_turret/T = new /obj/machinery/porta_turret/rcd(src)
 			T.faction = the_rcd.turret_faction

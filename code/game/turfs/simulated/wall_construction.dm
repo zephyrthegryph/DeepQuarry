@@ -247,7 +247,7 @@
 
 /turf/simulated/wall/proc/burn_away_rot(mob/actor, obj/item/held, datum/interaction/interaction)
 	touched_by_tool(held)
-	for(var/obj/effect/overlay/wallrot/rot in src)
+	for(var/obj/effect/overlay/wallrot/rot in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
 		qdel(rot)
 	return TRUE
 

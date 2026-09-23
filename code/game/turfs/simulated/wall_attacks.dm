@@ -96,7 +96,7 @@
 		return
 	if(!isrobot((user)))
 		return
-	var/rotting = (locate(/obj/effect/overlay/wallrot) in src)
+	var/rotting = (locate_on(src, /obj/effect/overlay/wallrot))
 	try_touch(user, rotting)
 
 /turf/simulated/wall/attack_hand(mob/user)
@@ -104,7 +104,7 @@
 	radiate()
 	add_fingerprint(user)
 	user.setClickCooldown(user.get_attack_speed())
-	var/rotting = (locate(/obj/effect/overlay/wallrot) in src)
+	var/rotting = (locate_on(src, /obj/effect/overlay/wallrot))
 	if (user.has_mutation(HULK))
 		if (rotting || !prob(material.hardness))
 			success_smash(user)
@@ -118,7 +118,7 @@
 
 	radiate()
 	user.setClickCooldown(user.get_attack_speed())
-	var/rotting = (locate(/obj/effect/overlay/wallrot) in src)
+	var/rotting = (locate_on(src, /obj/effect/overlay/wallrot))
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD * 2)
 		try_touch(user, rotting)
 		return
@@ -183,7 +183,7 @@
 		return
 
 	// Welders reach the wall's interactions (wall_construction.dm) before attackby.
-	if(locate(/obj/effect/overlay/wallrot) in src)
+	if(locate_on(src, /obj/effect/overlay/wallrot))
 		if(!is_sharp(W) && W.force >= 10 || W.force >= 20)
 			to_chat(user, span_notice("\The [src] crumbles away under the force of your [W.name]."))
 			src.dismantle_wall(1)

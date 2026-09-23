@@ -5,7 +5,7 @@
 # the ledger read API or the spatial API (doc/rewrite/containment.md
 # section 2a) and lower the count; `python tools/ci/spatial_lint.py
 # --update` rewrites it.
-# Total: 1417 sites in 595 files.
+# Total: 1384 sites in 590 files.
 code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm 1
 code/ATMOSPHERICS/components/unary/unary_base.dm 1
 code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm 1
@@ -19,7 +19,7 @@ code/_helpers/mobs.dm 2
 code/_helpers/pathfinding/common.dm 1
 code/_helpers/turfs.dm 1
 code/_helpers/unsorted.dm 9
-code/_onclick/adjacent.dm 2
+code/_onclick/adjacent.dm 1
 code/_onclick/hud/screen_objects.dm 1
 code/_onclick/observer.dm 1
 code/controllers/master.dm 1
@@ -187,7 +187,6 @@ code/game/objects/items/weapons/gift_wrappaper.dm 1
 code/game/objects/items/weapons/implants/implantlanguage.dm 1
 code/game/objects/items/weapons/material/ashtray.dm 4
 code/game/objects/items/weapons/medigun/linked_medigun.dm 1
-code/game/objects/items/weapons/mop_deploy.dm 1
 code/game/objects/items/weapons/policetape.dm 1
 code/game/objects/items/weapons/scrolls.dm 1
 code/game/objects/items/weapons/storage/storage.dm 1
@@ -206,7 +205,7 @@ code/game/objects/structures/droppod.dm 3
 code/game/objects/structures/grille.dm 2
 code/game/objects/structures/janicart.dm 2
 code/game/objects/structures/kitchen_foodcart.dm 3
-code/game/objects/structures/low_wall.dm 8
+code/game/objects/structures/low_wall.dm 1
 code/game/objects/structures/morgue.dm 8
 code/game/objects/structures/props/machines.dm 3
 code/game/objects/structures/safe.dm 2
@@ -222,10 +221,8 @@ code/game/turfs/simulated/floor_attackby.dm 2
 code/game/turfs/simulated/floor_construction.dm 1
 code/game/turfs/simulated/floor_icon.dm 2
 code/game/turfs/simulated/nanogoop.dm 2
-code/game/turfs/simulated/outdoors/survival_action.dm 2
-code/game/turfs/simulated/wall_attacks.dm 11
-code/game/turfs/simulated/wall_construction.dm 2
-code/game/turfs/simulated/walls.dm 11
+code/game/turfs/simulated/wall_attacks.dm 3
+code/game/turfs/simulated/wall_construction.dm 1
 code/game/turfs/simulated/water.dm 2
 code/game/turfs/space/space.dm 3
 code/game/turfs/turf.dm 2
@@ -344,7 +341,6 @@ code/modules/mining/drilling/drill.dm 3
 code/modules/mining/machinery/machine_processing.dm 4
 code/modules/mining/machinery/machine_stacking.dm 2
 code/modules/mining/mine_items.dm 2
-code/modules/mining/mine_turfs.dm 1
 code/modules/mining/shelter_atoms.dm 3
 code/modules/mining/shelters.dm 1
 code/modules/mob/_modifiers/traits_phobias.dm 1
@@ -475,7 +471,6 @@ code/modules/power/fusion/_setup.dm 2
 code/modules/power/generator.dm 4
 code/modules/power/port_gen.dm 5
 code/modules/power/power_bridge.dm 2
-code/modules/power/powernet.dm 1
 code/modules/power/singularity/field_generator.dm 1
 code/modules/power/singularity/singularity.dm 11
 code/modules/power/smes.dm 2

@@ -118,7 +118,7 @@ Quick adjacency (to turf):
 	The border_only flag allows you to not objects (for source and destination squares)
 */
 /turf/proc/ClickCross(target_dir, border_only, target_atom = null)
-	for(var/obj/O in src)
+	for(var/obj/O in turf_contents_of_type(src, /obj))
 		if( !O.density || O == target_atom || O.throwpass) continue // throwpass is used for anything you can click through
 
 		if( O.flags&ON_BORDER) // windows have throwpass but are on border, check them first

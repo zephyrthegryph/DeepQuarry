@@ -15,7 +15,7 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 			R.pixel_y = rand(-6,6)
 			icon_state = "dirt0"
 		return
-	if(locate(/obj) in src)
+	if(locate_on(src, /obj))
 		to_chat(user, span_notice("The [name] isn't clear."))
 		return
 	else

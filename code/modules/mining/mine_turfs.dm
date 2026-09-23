@@ -661,7 +661,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	//Xenoarch that much more confusing, and the intent of this PR is to make it more friendly to get into.
 	//many finds are ancient and thus very delicate - luckily there is a specialised energy suspension field which protects them when they're being extracted
 	if(prob(F.prob_delicate))
-		var/obj/effect/suspension_field/S = locate() in src
+		var/obj/effect/suspension_field/S = locate_on(src, /obj/effect/suspension_field)
 		if(!S)
 			if(X)
 				visible_message(span_danger("\The [pick("[display_name] crumbles away into dust","[display_name] breaks apart")]."))

@@ -85,7 +85,7 @@
 	return ..()
 
 /obj/structure/low_wall/wrench_act(mob/user, obj/item/W)
-	for(var/obj/structure/S in loc)
+	for(var/obj/structure/S in turf_contents_of_type(loc, /obj/structure))
 		if(istype(S, /obj/structure/window))
 			to_chat(user, span_notice("There is still a window on the low wall!"))
 			return TRUE
@@ -100,7 +100,7 @@
 	return TRUE
 
 /obj/structure/low_wall/proc/can_place_items()
-	for(var/obj/structure/S in loc)
+	for(var/obj/structure/S in turf_contents_of_type(loc, /obj/structure))
 		if(S == src)
 			continue
 		if(S.density)
@@ -149,7 +149,7 @@
 	if(!grille_type)
 		to_chat(user, span_notice("This type of wall frame doesn't support grilles."))
 		return
-	for(var/obj/structure/window/WINDOW in loc)
+	for(var/obj/structure/window/WINDOW in turf_contents_of_type(loc, /obj/structure/window))
 		if(WINDOW.dir == get_dir(src, user))
 			to_chat(user, span_notice("There is a window in the way."))
 			return
@@ -169,7 +169,7 @@
 	if(!window_type)
 		to_chat(user, span_notice("You can't build that type of window on this type of low wall."))
 		return
-	for(var/obj/structure/window/WINDOW in loc)
+	for(var/obj/structure/window/WINDOW in turf_contents_of_type(loc, /obj/structure/window))
 		if(WINDOW.dir == get_dir(src, user))
 			to_chat(user, span_notice("There is already a window here."))
 			return
@@ -261,10 +261,10 @@
 	if(stacktype)
 		new stacktype(get_turf(src), 3)
 	// If we were violently dismantled
-	for(var/obj/structure/window/W in loc)
+	for(var/obj/structure/window/W in turf_contents_of_type(loc, /obj/structure/window))
 		if(W.anchored)
 			W.shatter()
-	for(var/obj/structure/grille/G in loc)
+	for(var/obj/structure/grille/G in turf_contents_of_type(loc, /obj/structure/grille))
 		if(G.anchored)
 			G.take_damage(G.max_integrity, BRUTE, MELEE) // Smash it apart with the wall.
 	qdel(src)
@@ -335,7 +335,7 @@
 		G.update_icon()
 
 /obj/structure/grille/bay/update_icon()
-	var/on_frame = locate(/obj/structure/low_wall/bay) in loc
+	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 
 	cut_overlays()
 	if(destroyed)
