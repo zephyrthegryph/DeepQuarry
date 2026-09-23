@@ -20,6 +20,11 @@
 	/// If true, this board should be ignored during the circuitboard printing unit test, and give an examine hint that the board may be hard to get if so.
 	var/hidden = FALSE
 
+/// board_type is a /datum/frame/frame_types instance owned only by this
+/// board (or, for a few boards, a plain string) -- see the frame_type codec.
+/obj/item/circuitboard/state_codecs()
+	return ..() + list("board_type" = /datum/state_codec/frame_type)
+
 /obj/item/circuitboard/Destroy()
 	// Explosions can destroy an installed board before their containing machine.
 	// Sever the owner's typed reference immediately so the board never waits in
