@@ -41,24 +41,12 @@ def arg_name(params):
     return re.split(r"[/\s]", params)[-1] if params else "user"
 
 # type/proc pairs that must forward because an ancestor overrides the proc
-# with other behaviour, or that live in files another track owns. Must not grow.
+# with other behaviour. Must not grow.
 ALLOWLIST = {
     "/obj/machinery/atmospherics/tvalve/digital/attack_ai",
     "/obj/machinery/atmospherics/valve/digital/attack_ai",
     "/obj/machinery/atmospherics/valve/shutoff/attack_ai",
     "/obj/machinery/light/flamp/attack_ai",
-    "/obj/machinery/body_scanconsole/attack_ai",
-    "/obj/machinery/clonepod/attack_ai",
-    "/obj/machinery/computer/cloning/attack_ai",
-    "/obj/machinery/computer/cryopod/attack_ai",
-    "/obj/machinery/computer/med_data/attack_ai",
-    "/obj/machinery/computer/pandemic/attack_ai",
-    "/obj/machinery/computer/transhuman/designer/attack_ai",
-    "/obj/machinery/computer/transhuman/resleeving/attack_ai",
-    "/obj/machinery/sleep_console/attack_ai",
-    "/obj/structure/medical_stand/attack_robot",
-    "/obj/machinery/atmospherics/unary/cryo_cell/attack_ghost",
-    "/obj/machinery/computer/pandemic/attack_ghost",
 }
 
 

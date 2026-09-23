@@ -72,9 +72,6 @@
 	storage_name = "Travel Oversight Control"
 	allow_items = 1
 
-/obj/machinery/computer/cryopod/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/computer/cryopod/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/cryopod_console_open_ui,
