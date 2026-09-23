@@ -36,7 +36,7 @@
 
 /// A welder on harm intent attacks the exosuit instead of repairing it.
 /obj/mecha/interaction_tool_act(mob/user, obj/item/tool, quality)
-	if(quality == TOOL_WELDER && user.a_intent == I_HURT)
+	if(quality == TOOL_WELDER && IS_HARMING(user))
 		return ITEM_INTERACT_SKIP_TO_ATTACK
 	return ..()
 

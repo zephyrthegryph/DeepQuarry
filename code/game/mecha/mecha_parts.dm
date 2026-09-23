@@ -14,26 +14,8 @@
 /obj/item/mecha_parts/chassis
 	name="Mecha Chassis"
 	icon_state = "backbone"
-	var/datum/construction/construct
-
-/obj/item/mecha_parts/chassis/attackby(obj/item/W as obj, mob/user as mob)
-	if(!construct || !construct.action(W, user))
-		..()
-	return
-
-/obj/item/mecha_parts/chassis/proc/run_focused_tool(mob/user, obj/item/tool)
-	return construct?.action(tool, user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
-
-/obj/item/mecha_parts/chassis/screwdriver_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
-/obj/item/mecha_parts/chassis/crowbar_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
-/obj/item/mecha_parts/chassis/wrench_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
-/obj/item/mecha_parts/chassis/wirecutter_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
-/obj/item/mecha_parts/chassis/welder_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
+	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
+	var/construction_state = "p0"
 
 /obj/item/mecha_parts/chassis/attack_hand()
 	return
@@ -42,10 +24,7 @@
 
 /obj/item/mecha_parts/chassis/ripley
 	name = "Ripley Chassis"
-
-/obj/item/mecha_parts/chassis/ripley/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/ripley_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/ripley
 
 /obj/item/mecha_parts/part/ripley_torso
 	name="Ripley Torso"
@@ -76,10 +55,7 @@
 
 /obj/item/mecha_parts/chassis/gygax
 	name = "Gygax Chassis"
-
-/obj/item/mecha_parts/chassis/gygax/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/gygax_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/gygax
 
 /obj/item/mecha_parts/part/gygax_torso
 	name="Gygax Torso"
@@ -117,19 +93,13 @@
 
 /obj/item/mecha_parts/chassis/serenity
 	name = "Serenity Chassis"
-
-/obj/item/mecha_parts/chassis/serenity/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/serenity_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/serenity
 
 //////////// Durand
 
 /obj/item/mecha_parts/chassis/durand
 	name = "Durand Chassis"
-
-/obj/item/mecha_parts/chassis/durand/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/durand_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/durand
 
 /obj/item/mecha_parts/part/durand_torso
 	name="Durand Torso"
@@ -163,10 +133,7 @@
 
 /obj/item/mecha_parts/chassis/firefighter
 	name = "Firefighter Chassis"
-
-/obj/item/mecha_parts/chassis/firefighter/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/firefighter_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/firefighter
 /*
 /obj/item/mecha_parts/part/firefighter_torso
 	name="Ripley-on-Fire Torso"
@@ -193,10 +160,7 @@
 
 /obj/item/mecha_parts/chassis/phazon
 	name = "Phazon Chassis"
-
-/obj/item/mecha_parts/chassis/phazon/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/phazon_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/phazon
 
 /obj/item/mecha_parts/part/phazon_torso
 	name="Phazon Torso"
@@ -239,10 +203,7 @@
 
 /obj/item/mecha_parts/chassis/odysseus
 	name = "Odysseus Chassis"
-
-/obj/item/mecha_parts/chassis/odysseus/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/odysseus_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/odysseus
 
 /obj/item/mecha_parts/part/odysseus_head
 	name="Odysseus Head"
@@ -283,10 +244,7 @@
 
 /obj/item/mecha_parts/chassis/janus
 	name = "Janus Chassis"
-
-/obj/item/mecha_parts/chassis/janus/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/janus_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/janus
 
 /obj/item/mecha_parts/part/janus_torso
 	name="Imperion Torso"
@@ -321,26 +279,8 @@
 /obj/item/mecha_parts/fighter/chassis
 	name="Fighter Chassis"
 	icon_state = "backbone"
-	var/datum/construction/construct
-
-/obj/item/mecha_parts/fighter/chassis/attackby(obj/item/W, mob/user)
-	if(!construct || !construct.action(W, user))
-		..()
-	return
-
-/obj/item/mecha_parts/fighter/chassis/proc/run_focused_tool(mob/user, obj/item/tool)
-	return construct?.action(tool, user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
-
-/obj/item/mecha_parts/fighter/chassis/screwdriver_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
-/obj/item/mecha_parts/fighter/chassis/crowbar_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
-/obj/item/mecha_parts/fighter/chassis/wrench_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
-/obj/item/mecha_parts/fighter/chassis/wirecutter_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
-/obj/item/mecha_parts/fighter/chassis/welder_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool)
+	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
+	var/construction_state = "p0"
 
 /obj/item/mecha_parts/fighter/chassis/attack_hand(mob/user, list/params)
 	return
@@ -351,10 +291,7 @@
 /obj/item/mecha_parts/fighter/chassis/pinnace
 	name = "\improper Pinnace Chassis"
 	icon_state = "pinnace_chassis"
-
-/obj/item/mecha_parts/fighter/chassis/pinnace/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/fighter/pinnace_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/fighter/pinnace
 
 /obj/item/mecha_parts/fighter/part/pinnace_core
 	name="\improper Pinnace Core"
@@ -389,11 +326,7 @@
 /obj/item/mecha_parts/fighter/chassis/baron
 	name = "\improper Baron Chassis"
 	icon_state = "baron_chassis"
-
-
-/obj/item/mecha_parts/fighter/chassis/baron/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/fighter/baron_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/fighter/baron
 
 
 /obj/item/mecha_parts/fighter/part/baron_core
@@ -429,10 +362,7 @@
 	name = "Scarab Chassis"
 	icon = 'icons/mecha/mech_construct_ch.dmi'
 	icon_state = "scarab_chassis"
-
-/obj/item/mecha_parts/chassis/scarab/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/scarab_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/scarab
 
 /obj/item/mecha_parts/part/scarab_torso
 	name="Scarab Torso"
@@ -473,10 +403,7 @@
 
 /obj/item/mecha_parts/chassis/hades
 	name = "Hades Chassis"
-
-/obj/item/mecha_parts/chassis/hades/Initialize(mapload)
-	. = ..()
-	construct = new /datum/construction/mecha/hades_chassis(src)
+	construction_graph = /datum/construction_graph/mecha/hades
 
 /obj/item/mecha_parts/part/hades_torso
 	name="Hades Torso"
