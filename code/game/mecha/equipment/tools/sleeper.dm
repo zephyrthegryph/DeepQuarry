@@ -47,7 +47,7 @@
 			return
 		target.forceMove(src)
 		occupant = target
-		occupant.Stasis(3)
+		occupant.set_stasis(/datum/modifier/stasis/moderate, src)
 		set_ready_state(FALSE)
 		START_PROCESSING(SSprocessing, src)
 		occupant_message(span_notice("[target] successfully loaded into [src]. Life support functions engaged."))
@@ -61,7 +61,7 @@
 	occupant.forceMove(get_turf(src))
 	occupant_message(span_infoplain("[occupant] ejected. Life support functions disabled."))
 	src.mecha_log_message("[occupant] ejected. Life support functions disabled.")
-	occupant.Stasis(0)
+	occupant.set_stasis(null, src)
 	occupant = null
 	STOP_PROCESSING(SSprocessing, src)
 	set_ready_state(TRUE)

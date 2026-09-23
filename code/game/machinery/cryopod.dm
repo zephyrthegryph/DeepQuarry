@@ -626,9 +626,9 @@
 		usr.stop_pulling()
 		usr.forceMove(src)
 		set_occupant(usr)
-		if(ishuman(usr) && applies_stasis)
-			var/mob/living/carbon/human/H = occupant
-			H.Stasis(1000)
+		if(isliving(usr) && applies_stasis)
+			var/mob/living/L = occupant
+			L.set_stasis(/datum/modifier/stasis/total, src)
 		if(usr.buckled && istype(usr.buckled, /obj/structure/bed/chair/wheelchair))
 			usr.buckled.loc = usr.loc
 
@@ -661,9 +661,9 @@
 
 	if(!skip_move)
 		occupant.forceMove(get_turf(src))
-	if(ishuman(occupant) && applies_stasis)
-		var/mob/living/carbon/human/H = occupant
-		H.Stasis(0)
+	if(isliving(occupant) && applies_stasis)
+		var/mob/living/L = occupant
+		L.set_stasis(null, src)
 	set_occupant(null)
 
 	icon_state = base_icon_state
@@ -721,9 +721,9 @@
 		to_chat(M, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
 		set_occupant(M)
 		time_entered = world.time
-		if(ishuman(M) && applies_stasis)
-			var/mob/living/carbon/human/H = M
-			H.Stasis(1000)
+		if(isliving(M) && applies_stasis)
+			var/mob/living/L = M
+			L.set_stasis(/datum/modifier/stasis/total, src)
 		if(M.buckled && istype(M.buckled, /obj/structure/bed/chair/wheelchair))
 			M.buckled.loc = M.loc
 

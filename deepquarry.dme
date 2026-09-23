@@ -5194,6 +5194,7 @@
 #include "code\modules\medical\instruments\instruments.dm"
 #include "code\modules\medical\instruments\resuscitation.dm"
 #include "code\modules\medical\scenarios\scenarios.dm"
+#include "code\modules\medical\stabilisation\stasis.dm"
 #include "code\modules\medical\surgery\_surgery.dm"
 #include "code\modules\medical\surgery\integration.dm"
 #include "code\modules\medical\surgery\steps.dm"

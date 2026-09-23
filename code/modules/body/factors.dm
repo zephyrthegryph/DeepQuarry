@@ -121,6 +121,7 @@
 		list(BF_WITHDRAWAL, "Withdrawal", BF_RULE_ADD, 0, 0, INFINITY, "points", "Withdrawal strain on the organs."),
 		list(BF_NEURAL_REPAIR, "Neural repair", BF_RULE_ADD, 0, 0, INFINITY, "points", "Extra brain repair per tick."),
 		list(BF_IMMUNE_SUPPRESSION, "Immune suppression", BF_RULE_ADD, 0, 0, INFINITY, "points", "Suppresses the immune response."),
+		list(BF_STASIS, "Stasis", BF_RULE_MAX, 0, 0, 1, "points", "Share of life processes suspended: conditions, metabolism and breathing slow by this much."),
 	)
 	for(var/list/row as anything in rows)
 		defs[row[1]] = new /datum/body_factor_def(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])

@@ -98,10 +98,18 @@
 #define BF_WITHDRAWAL        65 // add: withdrawal strain on the organs
 #define BF_NEURAL_REPAIR     66 // add: extra brain-lesion repair per tick
 #define BF_IMMUNE_SUPPRESSION 67 // add: immune suppression
+// --- Stabilisation ----------------------------------------------------------------------
+/// max: share of life processes suspended, 0..1 (stasis bags, sleepers, cryopods).
+/// The body's stasis clock (code/modules/medical/stabilisation/stasis.dm) reads it once
+/// per Life() cycle; afflictions, metabolism, breathing and blood skip paused cycles.
+#define BF_STASIS            68
+/// Stasis deeper than this keeps the patient asleep.
+#define STASIS_SLEEP_THRESHOLD 0.5
 // --- Armour -----------------------------------------------------------------------------
 /// Armour points against one armour kind (INJURY_* or ARMOR_BLAST), added to
 /// worn / natural armour. BF_ARMOR(INJURY_BLUNT) .. BF_ARMOR(ARMOR_BLAST).
-#define BF_ARMOR_BASE        67
+/// BF_ARMOR(1) is the first id after the last named factor.
+#define BF_ARMOR_BASE        68
 #define BF_ARMOR(kind)       (BF_ARMOR_BASE + (kind))
 #define BF_COUNT             (BF_ARMOR_BASE + ARMOR_KIND_COUNT)
 
