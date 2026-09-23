@@ -18,7 +18,9 @@
 use std::collections::HashMap;
 
 use vg_core::handle::RawHandle;
-use vg_core::network::{Network, NetworkKind, NodeId, RegionEvent, RegionId};
+use vg_core::network::{DeviceId, Endpoint, Network, NetworkKind, NodeId, RegionEvent, RegionId, Side};
+
+use crate::device::{self, DeviceParams, StepReport};
 
 use crate::cell::{heat_capacity, N, Q};
 
@@ -130,7 +132,8 @@ impl NetworkKind for Pipes {
 	/// The region's volume.
 	type Summary = f64;
 	type Payload = PipeGas;
-	type Device = ();
+	/// A device edge's flow law and parameters (M2, `device.rs`).
+	type Device = DeviceParams;
 	type Command = ();
 
 	fn summarize(node: &f32) -> f64 {
@@ -186,6 +189,15 @@ pub struct Release {
 	pub gas: PipeGas,
 }
 
+/// One device edge's flow-law result for a tick, for DM's stalled /
+/// target-reached / filter-saturated events and power billing.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DeviceStep {
+	/// The device's DM id.
+	pub key: u32,
+	pub report: StepReport,
+}
+
 /// The main-owned pipe network: ports by DM id, and stable small slots for
 /// regions (a region's DM gas handle is `PIPE_BASE + slot`).
 #[derive(Default)]
@@ -193,6 +205,8 @@ pub struct PipeNet {
 	pub net: Network<Pipes>,
 	ports: HashMap<u32, NodeId<Pipes>>,
 	targets: HashMap<u32, u32>,
+	/// Device edges (M2) by DM id.
+	devices: HashMap<u32, DeviceId<Pipes>>,
 	slots: Vec<Option<RawHandle>>,
 	slot_of: HashMap<RawHandle, u32>,
 	free: Vec<u32>,
@@ -329,6 +343,95 @@ impl PipeNet {
 		if let (Some(a), Some(b)) = (self.port(a), self.port(b)) {
 			let _ = self.net.disconnect(a, b);
 		}
+	}
+
+	// ---- devices (M2: flow-law edges) --------------------------------
+
+	/// Adds (or replaces) a device edge between two ports, with its flow
+	/// law and parameters. Both ports must already be live.
+	pub fn add_device(&mut self, id: u32, port_a: u32, port_b: u32, params: DeviceParams) -> bool {
+		let (Some(a), Some(b)) = (self.port(port_a), self.port(port_b)) else {
+			return false;
+		};
+		if let Some(&d) = self.devices.get(&id) {
+			let _ = self.net.remove_device(d);
+		}
+		match self
+			.net
+			.add_device(Endpoint::Node(a), Endpoint::Node(b), 0, id, params)
+		{
+			Ok(d) => {
+				self.devices.insert(id, d);
+				true
+			}
+			Err(_) => false,
+		}
+	}
+
+	/// Removes a device edge.
+	pub fn remove_device(&mut self, id: u32) -> bool {
+		let Some(d) = self.devices.remove(&id) else {
+			return false;
+		};
+		self.net.remove_device(d).is_ok()
+	}
+
+	/// Replaces a device's parameters (a setting change).
+	pub fn set_device(&mut self, id: u32, params: DeviceParams) -> bool {
+		let Some(&d) = self.devices.get(&id) else {
+			return false;
+		};
+		self.net.set_device_data(d, params).is_ok()
+	}
+
+	/// Runs every device edge's flow law once (`device.rs`), moving gas
+	/// between the regions on each side and bumping their DM slot
+	/// revisions. Edges with a field-cell (turf) endpoint are skipped until
+	/// the pipe/turf field bridge lands; that leaves vent pumps and
+	/// scrubbers, whose non-network side is a turf, for a follow-up.
+	pub fn step_devices(&mut self, dt: f32) -> Vec<DeviceStep> {
+		let ids: Vec<DeviceId<Pipes>> = self.net.devices().map(|(id, _)| id).collect();
+		let mut out = Vec::with_capacity(ids.len());
+		for id in ids {
+			let Ok(dev) = self.net.device(id) else {
+				continue;
+			};
+			if matches!(dev.data, DeviceParams::None) {
+				continue;
+			}
+			let (Endpoint::Node(na), Endpoint::Node(nb)) = (dev.a, dev.b) else {
+				continue;
+			};
+			let key = dev.key;
+			let params = dev.data.clone();
+			let (Side::Region(ra), Side::Region(rb)) =
+				(self.net.resolve(Endpoint::Node(na)), self.net.resolve(Endpoint::Node(nb)))
+			else {
+				continue;
+			};
+			if ra == rb {
+				continue;
+			}
+			let Ok(region_a) = self.net.region(ra) else { continue };
+			let Ok(region_b) = self.net.region(rb) else { continue };
+			let vol_a = *region_a.summary();
+			let vol_b = *region_b.summary();
+			let mut pa = region_a.payload().clone();
+			let mut pb = region_b.payload().clone();
+			let report = device::step(&params, &mut pa, vol_a, &mut pb, vol_b, dt);
+			if report.moles != 0.0 || report.power_w != 0.0 {
+				*self.net.payload_mut(ra).expect("resolved above") = pa;
+				*self.net.payload_mut(rb).expect("resolved above") = pb;
+				if let Some(&sa) = self.slot_of.get(&ra.raw()) {
+					self.bump(sa);
+				}
+				if let Some(&sb) = self.slot_of.get(&rb.raw()) {
+					self.bump(sb);
+				}
+			}
+			out.push(DeviceStep { key, report });
+		}
+		out
 	}
 
 	/// Drops everything (a map reload); returns the gas that was pooled.
@@ -500,5 +603,56 @@ mod tests {
 		assert_eq!(released[0].target, Some(77));
 		assert!((released[0].gas.moles[GAS_OXYGEN] - 10.0).abs() < 1e-9);
 		assert!((total(&net, &released) - 30.0).abs() < 1e-9);
+	}
+
+	#[test]
+	fn step_devices_moves_gas_between_regions_and_conserves() {
+		let mut net = PipeNet::new();
+		net.upsert(1, 1, 1000.0, gas(1000.0, 293.0));
+		net.upsert(2, 2, 1000.0, gas(0.0, 293.0));
+		net.commit();
+		assert!(net.add_device(
+			500,
+			1,
+			2,
+			DeviceParams::Pump {
+				target_kpa: 101.325,
+				power_w: 5000.0,
+			},
+		));
+		let before = net.totals()[GAS_OXYGEN];
+		let mut reached = false;
+		for _ in 0..200 {
+			let steps = net.step_devices(1.0);
+			assert_eq!(steps.len(), 1);
+			assert_eq!(steps[0].key, 500);
+			reached |= steps[0].report.target_reached;
+		}
+		assert!((net.totals()[GAS_OXYGEN] - before).abs() < 1e-6, "conserves mass");
+		assert!(reached, "reaches its target pressure");
+	}
+
+	#[test]
+	fn step_devices_skips_edges_already_in_one_region() {
+		let mut net = PipeNet::new();
+		net.upsert(1, 1, 100.0, gas(50.0, 293.0));
+		net.upsert(2, 2, 100.0, gas(0.0, 293.0));
+		net.connect(1, 2);
+		net.commit();
+		assert!(net.add_device(9, 1, 2, DeviceParams::Valve { open: true }));
+		let steps = net.step_devices(1.0);
+		assert!(steps.is_empty(), "same region already: nothing to move");
+	}
+
+	#[test]
+	fn remove_device_stops_future_steps() {
+		let mut net = PipeNet::new();
+		net.upsert(1, 1, 100.0, gas(50.0, 293.0));
+		net.upsert(2, 2, 100.0, gas(0.0, 293.0));
+		net.commit();
+		assert!(net.add_device(1, 1, 2, DeviceParams::Valve { open: true }));
+		assert!(net.remove_device(1));
+		let steps = net.step_devices(1.0);
+		assert!(steps.is_empty());
 	}
 }

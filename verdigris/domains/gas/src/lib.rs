@@ -5,6 +5,7 @@
 //! set of binds below.
 
 pub mod cell;
+pub mod device;
 pub mod gas;
 pub mod gate;
 #[cfg(feature = "heat")]
