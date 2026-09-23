@@ -28,6 +28,13 @@
 	var/max_temperature = DEFAULT_MAX_TEMP
 	var/heating_power = 40000
 	var/power_efficiency = 1 //Inverse. The lower, the more power efficient we are.
+	/// Fraction of the Carnot COP this heater's cooling side achieves (H4:
+	/// the real Carnot-bounded COP formula lives once in Rust now,
+	/// rust_core.md §15, replacing the old `removed.return_temperature() /
+	/// T20C` approximation below).
+	var/regulator_carnot_fraction = 0.4
+	/// Upper bound on the pump's COP.
+	var/regulator_max_cop = 25
 	clicksound = "switch"
 	interact_offline = TRUE
 	bubble_icon = "engineering"
@@ -250,7 +257,7 @@
 					heat_transfer = abs(heat_transfer)
 
 					//Assume the heat is being pumped into the hull which is fixed at 20 C
-					var/cop = removed.return_temperature()/T20C	//coefficient of performance from thermodynamics -> power used = heat_transfer/cop
+					var/cop = vg_heat_regulator_cooling_cop(removed.return_temperature(), T20C, regulator_carnot_fraction, regulator_max_cop) //power used = heat_transfer/cop
 					heat_transfer = min(heat_transfer, cop * heating_power)	//limit heat transfer by available power
 					heat_transfer = removed.add_thermal_energy(-heat_transfer)	//get the actual heat transfer
 

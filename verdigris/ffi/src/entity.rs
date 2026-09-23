@@ -50,7 +50,9 @@ pub fn bind_or_reuse(existing: f32) -> Result<EntityId> {
         }
         bail!("entity {existing} is not live");
     }
-    ENTITIES.with_borrow_mut(EntityTable::bind).map_err(|e| eyre!("{e}"))
+    ENTITIES
+        .with_borrow_mut(EntityTable::bind)
+        .map_err(|e| eyre!("{e}"))
 }
 
 /// Attaches `comp` to `entity`'s `domain` slot.

@@ -3,9 +3,11 @@
 //! out body handles, turns DM's API calls into commands, and paces frames.
 //!
 //! One frame is [`HeatConfig::dt`] simulated seconds. [`HeatWorld::tick`]
-//! accumulates the game time DM reports and dispatches a frame when a full
-//! step is due (never waiting: a still-running frame just keeps the
-//! backlog, capped at [`MAX_BACKLOG_FRAMES`]).
+//! feeds the game time DM reports through [`vg_core::law::Pacer`] (Core A's
+//! shared fixed-dt accumulator/idle-skip/backlog-cap, `rust_architecture.md`
+//! §4.3) and dispatches a frame when a full step is due (never waiting: a
+//! still-running frame just keeps the backlog, capped at
+//! [`MAX_BACKLOG_FRAMES`]).
 //!
 //! Frame order: the field (conduction and radiation), the solid ↔ gas
 //! coupling, the bodies, the ledger mirror, then the watches.
@@ -24,7 +26,7 @@ use vg_core::watch::{Cmp, Cond, Edge, Level, SetEntry, WatchError};
 use crate::body::{self, Bodies, Body, BodyCmd, body_ch};
 use crate::consts::{
     BODY_GENERATION_BITS, BODY_LEVELS, DEFAULT_EMISSIVITY, HEAT_CAPACITY_VACUUM, HEAT_DT,
-    MAX_BACKLOG_FRAMES, MAX_BODIES, TCMB,
+    MAX_BACKLOG_FRAMES, MAX_BODIES, MAX_WATCHES, TCMB,
 };
 use crate::couple::{self, GasExchange, HeatLedger, ledger};
 use crate::solid::{SolidCell, SolidCmd, SolidHeat, flags, solid_ch};
@@ -197,8 +199,14 @@ struct Slot {
 #[derive(Clone, Debug)]
 struct WatchRec {
     target: WatchTarget,
+    /// The sim's own watch id (its table index and generation), used to
+    /// call back into `self.sim.watches(...)`. Never exposed to DM: DM only
+    /// ever sees the host-allocated handle this record is keyed under.
     id: WatchId,
     set_levels: Vec<(u32, f32)>,
+    /// This record's host watch slot, freed (and its generation bumped) on
+    /// `unwatch`.
+    slot: u32,
 }
 
 /// The heat domain's host.
@@ -211,18 +219,58 @@ pub struct HeatWorld {
     body_watch: WatchKey<Bodies>,
     dims: GridDims,
     dt: f32,
-    accum: f32,
+    /// The fixed-dt accumulator/idle-skip/backlog-cap Core A's driver
+    /// generalized (`rust_architecture.md` §4.3): replaces this type's own
+    /// `accum`/[`MAX_BACKLOG_FRAMES`] arithmetic.
+    pacer: vg_core::law::Pacer,
+    /// Steps [`Pacer::advance`] has already counted as due but this host
+    /// hasn't dispatched yet (at most one frame is ever in flight at a
+    /// time, so a call that reports 2+ due steps still only starts one;
+    /// the rest carry here instead of being re-derived from elapsed time
+    /// on a later call, which would double-count it).
+    pending_frames: u32,
     slots: Vec<Slot>,
     free: Vec<u32>,
     next_slot: u32,
     watches: HashMap<u32, WatchRec>,
+    /// This host's own generation per watch slot (`world.rs`'s handle
+    /// allocator, parallel to `slots`/`free`/`next_slot` for bodies).
+    watch_generations: Vec<u8>,
+    watch_free: Vec<u32>,
+    next_watch_slot: u32,
+    /// Sim watch-table index -> host handle, so a wake or event the sim
+    /// reports (keyed by its own table index) can be re-keyed to the DM
+    /// handle without a linear scan. One map per watch domain.
+    cell_watch_owner: HashMap<u32, u32>,
+    body_watch_owner: HashMap<u32, u32>,
     wakes: Vec<Wake>,
     events: Vec<Event>,
 }
 
-/// Encodes a watch for DM: `(index * 16 + generation % 16) * 2 + domain`.
-fn watch_handle(id: WatchId, body: bool) -> u32 {
-    (id.index * 16 + (id.generation & 15)) * 2 + u32::from(body)
+/// Allocates a host watch slot: the freed slot with the lowest index, or a
+/// new one, exactly like [`HeatWorld::alloc_slot`] for bodies. Returns the
+/// slot and its *current* (not yet bumped) generation.
+fn alloc_watch_slot(free: &mut Vec<u32>, next: &mut u32, generations: &mut Vec<u8>) -> (u32, u8) {
+    if let Some(slot) = free.pop() {
+        (slot, generations[slot as usize])
+    } else {
+        let slot = *next;
+        *next += 1;
+        generations.push(0);
+        (slot, 0)
+    }
+}
+
+/// Packs a host watch handle: `(slot * 2 + domain) | (generation << 16)`,
+/// mirroring [`handle`]/[`BodyHandle`]'s body-handle scheme so it stays
+/// exact as an f32 (`consts::MAX_WATCHES`, `consts::WATCH_GENERATION_BITS`).
+/// Unlike the old `index * 16 + generation & 15` scheme this packed the
+/// *sim's* watch-table generation into only 4 bits, this handle is host-
+/// allocated: a value only repeats after `2^WATCH_GENERATION_BITS` reuses
+/// of the same host slot, each requiring an explicit `unwatch()` first, so
+/// a DM handle can never alias a watch it wasn't given.
+fn watch_pack(slot: u32, generation: u8, body: bool) -> u32 {
+    (slot * 2 + u32::from(body)) | (u32::from(generation) << 16)
 }
 
 impl HeatWorld {
@@ -261,11 +309,21 @@ impl HeatWorld {
             body_watch,
             dims: config.dims,
             dt: config.dt,
-            accum: 0.0,
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            pacer: vg_core::law::Pacer::new(
+                vg_core::units::Seconds(f64::from(config.dt)),
+                MAX_BACKLOG_FRAMES as u32,
+            ),
+            pending_frames: 0,
             slots: vec![Slot::default(); MAX_BODIES as usize],
             free: Vec::new(),
             next_slot: 0,
             watches: HashMap::new(),
+            watch_generations: Vec::new(),
+            watch_free: Vec::new(),
+            next_watch_slot: 0,
+            cell_watch_owner: HashMap::new(),
+            body_watch_owner: HashMap::new(),
             wakes: Vec::new(),
             events: Vec::new(),
         })
@@ -604,18 +662,37 @@ impl HeatWorld {
                 .watch(subscriber, lane, &c)
         }
         .map_err(|e: WatchError| format!("{e:?}"))?;
-        let wh = watch_handle(id, body);
+        if self.watch_free.is_empty() && self.next_watch_slot >= MAX_WATCHES {
+            // Undo the sim-side registration: don't leak a watch we can't
+            // hand a host handle back for.
+            if body {
+                let _ = self.sim.watches(self.body_watch).unwatch(id);
+            } else {
+                let _ = self.sim.watches(self.cell_watch).unwatch(id);
+            }
+            return Err("out of watch slots".to_owned());
+        }
+        let (slot, generation) = alloc_watch_slot(
+            &mut self.watch_free,
+            &mut self.next_watch_slot,
+            &mut self.watch_generations,
+        );
+        let wh = watch_pack(slot, generation, body);
         self.watches.insert(
             wh,
             WatchRec {
                 target,
                 id,
                 set_levels: Vec::new(),
+                slot,
             },
         );
         if body {
+            self.body_watch_owner.insert(id.index, wh);
             self.slots[cell as usize].watches.push((wh, levels));
             self.push_levels(cell);
+        } else {
+            self.cell_watch_owner.insert(id.index, wh);
         }
         Ok(wh)
     }
@@ -703,12 +780,24 @@ impl HeatWorld {
     /// A stale watch.
     pub fn unwatch(&mut self, watch: u32) -> Result<(), String> {
         let rec = self.watches.remove(&watch).ok_or("stale watch")?;
-        if watch & 1 == 1 {
+        let body = watch & 1 == 1;
+        if body {
             self.sim.watches(self.body_watch).unwatch(rec.id)
         } else {
             self.sim.watches(self.cell_watch).unwatch(rec.id)
         }
         .map_err(|e| format!("{e:?}"))?;
+        // Free the host slot (bumping its generation) and the reverse
+        // sim-index -> handle mapping, so neither a repacked handle nor a
+        // late wake/event for the old sim id can alias this watch.
+        self.watch_generations[rec.slot as usize] =
+            self.watch_generations[rec.slot as usize].wrapping_add(1);
+        self.watch_free.push(rec.slot);
+        if body {
+            self.body_watch_owner.remove(&rec.id.index);
+        } else {
+            self.cell_watch_owner.remove(&rec.id.index);
+        }
         if let WatchTarget::Body(h) = rec.target {
             let (slot, _) = split(h);
             let s = &mut self.slots[slot as usize];
@@ -752,14 +841,20 @@ impl HeatWorld {
     /// One DM tick: reclaim a finished frame, collect its wakes and events,
     /// retire released bodies, and dispatch the next frame if `elapsed`
     /// seconds of game time make one due. Returns whether a frame started.
+    ///
+    /// At most one frame is ever in flight (one `dispatch_frame()` call per
+    /// `tick()`), so a call that reports more than one step now due (a
+    /// backlog) carries the rest in `pending_frames` for later calls
+    /// instead of asking [`Pacer::advance`] again, which would double-count
+    /// the elapsed time already spent on this call's steps.
     pub fn tick(&mut self, elapsed: f32) -> bool {
         self.sim.begin_tick();
         self.collect();
-        if elapsed.is_finite() && elapsed > 0.0 {
-            self.accum = (self.accum + elapsed).min(self.dt * MAX_BACKLOG_FRAMES);
-        }
-        if self.accum + 1e-6 >= self.dt && self.sim.dispatch_frame() {
-            self.accum = (self.accum - self.dt).max(0.0);
+        self.pending_frames += self
+            .pacer
+            .advance(vg_core::units::Seconds(f64::from(elapsed)));
+        if self.pending_frames > 0 && self.sim.dispatch_frame() {
+            self.pending_frames -= 1;
             return true;
         }
         false
@@ -768,12 +863,18 @@ impl HeatWorld {
     fn collect(&mut self) {
         let out = self.sim.drain(self.field.cells);
         for w in out.wakes() {
-            let mut w = *w;
-            w.watch = WatchId {
-                index: watch_handle(w.watch, false),
-                generation: 0,
-            };
-            self.wakes.push(w);
+            // Re-key by the host handle currently owning this sim table
+            // slot. A wake for a watch already `unwatch()`-ed (no owner
+            // left) is dropped rather than aliased onto whatever new watch
+            // has since reused the slot.
+            if let Some(&wh) = self.cell_watch_owner.get(&w.watch.index) {
+                let mut w = *w;
+                w.watch = WatchId {
+                    index: wh,
+                    generation: 0,
+                };
+                self.wakes.push(w);
+            }
         }
         let cell_events: Vec<Event> = out.events().to_vec();
         for e in cell_events {
@@ -781,12 +882,14 @@ impl HeatWorld {
         }
         let out = self.sim.drain(self.bodies);
         for w in out.wakes() {
-            let mut w = *w;
-            w.watch = WatchId {
-                index: watch_handle(w.watch, true),
-                generation: 0,
-            };
-            self.wakes.push(w);
+            if let Some(&wh) = self.body_watch_owner.get(&w.watch.index) {
+                let mut w = *w;
+                w.watch = WatchId {
+                    index: wh,
+                    generation: 0,
+                };
+                self.wakes.push(w);
+            }
         }
         for e in out.events() {
             if e.kind == body::SETTLED {
@@ -816,14 +919,16 @@ impl HeatWorld {
         }
     }
 
-    /// Re-keys a `ThresholdCrossed` event by its DM watch handle.
+    /// Re-keys a `ThresholdCrossed` event by its DM watch handle, via the
+    /// same sim-index -> handle owner map `collect()`'s wakes use. An event
+    /// for a since-`unwatch()`-ed watch (no current owner) is dropped.
     fn push_event(&mut self, e: Event, body: bool) {
-        let key = self
-            .watches
-            .iter()
-            .find(|(h, r)| (**h & 1 == 1) == body && r.id.index == e.key)
-            .map_or(u32::MAX, |(h, _)| *h);
-        if key != u32::MAX {
+        let owner = if body {
+            &self.body_watch_owner
+        } else {
+            &self.cell_watch_owner
+        };
+        if let Some(&key) = owner.get(&e.key) {
             self.events.push(Event { key, ..e });
         }
     }

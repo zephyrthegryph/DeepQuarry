@@ -95,6 +95,21 @@ pub const MAX_BODIES: u32 = 1 << 16;
 /// `index | generation << 16`, below 2²⁴ so exact as an f32).
 pub const BODY_GENERATION_BITS: u32 = 8;
 
+/// Watch slots the host allocator hands out (`world.rs`'s own generation-
+/// checked handles, mirroring `MAX_BODIES`/[`BODY_GENERATION_BITS`]).
+/// `slot*2 + domain_bit` must fit the low 16 bits alongside an 8-bit
+/// generation so the packed handle stays below 2²⁴ (exact as an f32).
+pub const MAX_WATCHES: u32 = 1 << 15;
+/// Watch handle generation bits. Was 4 (the DM-facing handle packed the
+/// *sim's own* table generation as `index * 16 + generation & 15`), which
+/// aliased a still-live watch's handle with an unrelated one after only 16
+/// reuses of the same sim table slot -- a stale DM handle could then
+/// silently act on the wrong watch. Watches now get their own host-owned
+/// slot/generation allocation (like bodies), so a handle only repeats after
+/// this many *host* slot reuses, each requiring an explicit `unwatch()` in
+/// between.
+pub const WATCH_GENERATION_BITS: u32 = 8;
+
 #[cfg(test)]
 mod tests {
     use super::*;

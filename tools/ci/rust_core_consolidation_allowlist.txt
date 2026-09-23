@@ -29,5 +29,7 @@ verdigris/domains/gas/src/world.rs:vec_f32_return  # M2/gas rewrite: drain_obser
 # world.rs host/BodyHandle/gas's heat.rs, next) ---
 verdigris/domains/heat/src/world.rs:key_map  # rewrite/heat-r10: HeatWorld's watches map; replaced by EntityTable/component-store-keyed storage (§4.1-4.2).
 verdigris/domains/heat/src/world.rs:sim_construct  # rewrite/heat-r10: heat's own SimBuilder; deleted once heat's laws run on the one per-DLL driver (§4.3).
+verdigris/domains/heat/src/mob.rs:sim_construct  # rewrite/heat-r10: MobHeatWorld's own SimBuilder; MobHeatFlux (the Law) runs on the one per-DLL driver instead (§4.3).
+verdigris/domains/heat/src/mob.rs:vec_f32_return  # rewrite/heat-r10: MobHeatWorld::take_wakes(&mut Vec<f32>); replaced by typed events (§4.8).
 verdigris/domains/heat/src/world.rs:vec_f32_return  # rewrite/heat-r10: take_wakes(&mut Vec<f32>); replaced by typed events (§4.8).
 

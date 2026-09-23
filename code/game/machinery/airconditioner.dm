@@ -68,22 +68,7 @@
 		hibernate_until_temperature_changes()
 		return PROCESS_KILL
 
-	var/heat_transfer = removed.get_thermal_energy_change(target_temp)
-	// var/power_avail
-	if(heat_transfer == 0) //just in case
-		change_mode(MODE_IDLE)
-	else if(heat_transfer > 0)
-		change_mode(MODE_HEATING)
-		// power_avail = draw_power(min(heat_transfer, active_power_usage))
-		removed.add_thermal_energy(min(active_power_usage*1000,heat_transfer))
-	else
-		change_mode(MODE_COOLING)
-		heat_transfer = abs(heat_transfer)
-		var/cop = removed.return_temperature()/TN60C
-		var/actual_heat_transfer = heat_transfer
-		heat_transfer = min(heat_transfer, active_power_usage*cop)
-		// power_avail = draw_power(heat_transfer/cop)
-		removed.add_thermal_energy(-min(active_power_usage*1000*cop,actual_heat_transfer))
+	apply_regulator_step(removed, active_power_usage*1000)
 	env.merge(removed)
 
 // Given the power behind this thermodynamics defying machine, nerfing EMP effectiveness.
@@ -123,6 +108,51 @@
 	var/mode = MODE_IDLE
 	var/sleeping_mixture_id
 	var/sleeping_mixture_revision = -1
+	/// Fraction of the Carnot COP this unit's pump achieves (H4, the
+	/// generic vg_heat_regulator_step -- rust_core.md §15's "the heat
+	/// regulator" row). Was a bespoke `removed.return_temperature()/TN60C`
+	/// formula per subtype; the real Carnot-bounded model lives once in
+	/// Rust now.
+	var/regulator_carnot_fraction = 0.4
+	/// Upper bound on the pump's COP (a pump across a tiny gap is not free).
+	var/regulator_max_cop = 25
+
+/// One vg_heat_regulator_step() call against `removed`'s current heat
+/// capacity/temperature, applied with add_thermal_energy(). `watts` is the
+/// electrical work budget for this call (one process() tick is treated as
+/// one second, matching every caller's existing per-tick power constants);
+/// heating is resistive (1:1, matching every caller's old heating branch
+/// exactly); cooling rejects to an infinite reservoir (the old code never
+/// applied the rejected/absorbed heat to any other side either -- see H4's
+/// note in temperature.md). Sets `mode` and returns it.
+/obj/machinery/power/thermoregulator/proc/apply_regulator_step(datum/gas_mixture/removed, watts)
+	var/capacity = removed.heat_capacity()
+	if(!removed || capacity <= 0)
+		change_mode(MODE_IDLE)
+		return mode
+	// The "other" side is an infinite reservoir at station-ambient
+	// temperature (there is no specific hull/space hookup here -- the old
+	// code never applied the rejected/absorbed heat to any other side
+	// either). Only cooling's Carnot lift (Th - Tc) reads this; T20C keeps
+	// that lift physically sane instead of the wildly-wrong TCMB a
+	// space-side default would give.
+	var/list/step = vg_heat_regulator_step(
+		target_temp, watts, REGULATOR_MODE_BOTH,
+		regulator_carnot_fraction, regulator_max_cop, TRUE, 1,
+		capacity, removed.return_temperature(),
+		-1, T20C,
+		1,
+	)
+	var/moved = step[2]
+	if(moved > 0)
+		change_mode(MODE_HEATING)
+	else if(moved < 0)
+		change_mode(MODE_COOLING)
+	else
+		change_mode(MODE_IDLE)
+		return mode
+	removed.add_thermal_energy(moved)
+	return mode
 
 /obj/machinery/power/thermoregulator/Initialize(mapload)
 	. = ..()
@@ -230,7 +260,12 @@
 	else
 		change_mode(MODE_COOLING)
 		heat_transfer = abs(heat_transfer)
-		var/cop = removed.return_temperature()/TN60C
+		// H4: the Carnot-bounded COP formula lives once in Rust now
+		// (rust_core.md §15's "the heat regulator" row) instead of this
+		// unit's own `removed.return_temperature()/TN60C` approximation;
+		// "other" (the hot side rejected heat goes to) is treated as
+		// station-ambient, same reasoning as apply_regulator_step's.
+		var/cop = vg_heat_regulator_cooling_cop(removed.return_temperature(), T20C, regulator_carnot_fraction, regulator_max_cop)
 		var/actual_heat_transfer = heat_transfer
 		heat_transfer = min(heat_transfer, active_power_usage*cop)
 		power_avail = draw_power(heat_transfer/cop)

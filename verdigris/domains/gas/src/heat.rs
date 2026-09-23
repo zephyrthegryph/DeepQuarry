@@ -79,6 +79,14 @@ pub const HEAT_CELL_SPACE: i32 = 1;
 /// @dm-define HEAT_CELL_PLANET
 pub const HEAT_CELL_PLANET: i32 = 2;
 
+/// Decodes DM's `HEAT_CELL_*` into a [`CellSpec`].
+///
+/// # Errors
+/// An unrecognized `kind`. This used to silently fall back to `Solid` (H1
+/// audit finding), which would give a turf DM meant as space or a planet
+/// surface ordinary wall physics with no diagnostic -- a DM-side typo or a
+/// new `HEAT_CELL_*` value added without updating this match would go
+/// unnoticed. A bad kind is now a bind error DM sees.
 fn cell_spec(
 	kind: f32,
 	capacity: f32,
@@ -86,13 +94,12 @@ fn cell_spec(
 	emissivity: f32,
 	temperature: f32,
 	air: bool,
-) -> CellSpec {
+) -> Result<CellSpec> {
 	let kind = match kind as i32 {
 		HEAT_CELL_SPACE => CellKind::Space,
 		HEAT_CELL_PLANET => CellKind::Planet,
 		HEAT_CELL_SOLID => CellKind::Solid,
-		// Unknown kinds are ordinary solids.
-		_ => CellKind::Solid,
+		other => eyre::bail!("unknown HEAT_CELL_* kind {other}"),
 	};
 	let mut spec = CellSpec {
 		kind,
@@ -106,7 +113,7 @@ fn cell_spec(
 		spec.capacity = spec.capacity.max(hc::HEAT_CAPACITY_VACUUM);
 		spec.temperature = hc::TCMB;
 	}
-	spec
+	Ok(spec)
 }
 
 /// Registers or updates one turf's solid heat cell: its kind
@@ -131,7 +138,7 @@ fn heat_set_turf(
 		emissivity.get_number()?,
 		temperature.get_number()?,
 		air.is_true(),
-	);
+	)?;
 	Ok(with_heat(|w| w.set_cell(cell, spec))
 		.unwrap_or(false)
 		.into())
@@ -155,7 +162,7 @@ fn heat_set_turfs_bulk(records: ByondValue) -> Result<ByondValue> {
 				r[4].get_number()?,
 				r[5].get_number()?,
 				r[6].is_true(),
-			);
+			)?;
 			if w.set_cell(cell, spec) {
 				set += 1;
 			}
@@ -235,12 +242,23 @@ pub const HEAT_TARGET_MIXTURE: i32 = 3;
 /// @dm-define HEAT_TARGET_BODY
 pub const HEAT_TARGET_BODY: i32 = 4;
 
+/// Decodes a `HEAT_TARGET_*` coupling target.
+///
+/// # Errors
+/// An unrecognized `kind`.
 fn target(kind: &ByondValue, target: &ByondValue) -> Result<Target> {
 	Ok(match kind.get_number()? as i32 {
 		HEAT_TARGET_SOLID => Target::Solid(target.get_ref()?),
 		HEAT_TARGET_TURF_AIR => Target::Gas(GasRef::Turf(target.get_ref()?)),
 		HEAT_TARGET_MIXTURE => Target::Gas(GasRef::Mixture(target.get_number()? as u32)),
-		HEAT_TARGET_BODY => Target::Body(target.get_number()? as u32 & (hc::MAX_BODIES - 1)),
+		// The full packed handle (slot | generation << 16), not masked to
+		// its low `MAX_BODIES - 1` bits (H1 audit finding): masking here
+		// used to silently strip the generation, so a stale or garbage
+		// handle whose low bits matched a live slot's index would target
+		// whatever body currently occupies that slot instead of being
+		// rejected. `HeatWorld::live_slot` already checks the generation
+		// against the slot's current one; let it reject a bad handle.
+		HEAT_TARGET_BODY => Target::Body(target.get_number()? as u32),
 		HEAT_TARGET_NONE => Target::None,
 		other => eyre::bail!("bad heat target kind {other}"),
 	})
@@ -597,5 +615,45 @@ mod constant_tests {
 		assert_eq!(gc::T20C, hc::T20C);
 		assert!((gc::FIRE_MINIMUM_TEMPERATURE_TO_EXIST - hc::IGNITION_TEMPERATURE).abs() < 1e-4);
 		assert!((gc::PLASMA_MINIMUM_BURN_TEMPERATURE - hc::IGNITION_TEMPERATURE).abs() < 1e-4);
+	}
+}
+
+/// Regression tests for the H1 audit's unknown-`HEAT_CELL_*`-kind finding:
+/// it used to silently become `Solid`. `cell_spec` takes only primitive
+/// args, so this is host-testable without a live BYOND VM.
+///
+/// The matching `target()` fix (a `HEAT_TARGET_BODY` handle used to be
+/// silently masked to its low `MAX_BODIES - 1` bits, stripping its
+/// generation) isn't unit-testable here: every `ByondValue` constructor,
+/// even a plain number, calls into byondcore's static global, which this
+/// host binary doesn't load. It's covered by the DM-side
+/// `code/modules/unit_tests/dq_heat_api_tests.dm` heat-body suite instead
+/// (a stale/garbage `HEAT_TARGET_BODY` handle must be rejected, not
+/// silently redirected to whatever body now owns that handle's slot).
+#[cfg(test)]
+mod decode_tests {
+	use super::{cell_spec, HEAT_CELL_PLANET, HEAT_CELL_SOLID, HEAT_CELL_SPACE};
+	use vg_heat::world::CellKind;
+
+	#[test]
+	fn cell_spec_accepts_every_known_kind() {
+		for (kind, want) in [
+			(HEAT_CELL_SOLID, CellKind::Solid),
+			(HEAT_CELL_SPACE, CellKind::Space),
+			(HEAT_CELL_PLANET, CellKind::Planet),
+		] {
+			let spec = cell_spec(kind as f32, 1000.0, 0.05, 0.9, 293.0, true).unwrap();
+			assert_eq!(spec.kind, want);
+		}
+	}
+
+	#[test]
+	fn cell_spec_rejects_an_unknown_kind_instead_of_defaulting_to_solid() {
+		// Not one of HEAT_CELL_SOLID/SPACE/PLANET (0/1/2).
+		let err = cell_spec(99.0, 1000.0, 0.05, 0.9, 293.0, true).unwrap_err();
+		assert!(
+			err.to_string().contains("99"),
+			"error should name the bad kind: {err}"
+		);
 	}
 }

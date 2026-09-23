@@ -1,0 +1,5 @@
+author: "heat-r10"
+delete-after: true
+changes:
+  - refactor: "Air conditioners, thermal regulators and space heaters now compute their cooling COP (and, for the thermal regulators, their whole heating/cooling step) through the shared Rust thermal regulator instead of each machine's own approximate formula."
+  - code_imp: "Added a mob heat-body component (Rust, entity-based) for future mob body-temperature work."
