@@ -226,11 +226,10 @@ fi;
 part "tools: *_act procs that bounce into attackby"
 # A tool hook does its own work through use_tool() (doc/rewrite/interactions.md §9,
 # code/datums/interactions/tools.dm). It must not hand the tool back to attackby().
-# The focused_tool_stage construction ladders listed here are replaced by
-# construction graphs in I5 and must not grow.
-tool_bounce_allowlist='code.modules.vehicles.construction\.dm|code.modules.mob.living.bot.secbot\.dm'
+# The last focused_tool_stage construction ladders (vehicles, secbots) were
+# converted to construction graphs in I5; none may be reintroduced.
 if [ "$pcre2_support" -eq 1 ]; then
-	if $grep -PUn '(?m)^/[^\n]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act(_secondary)?\([^\n]*\)\n(?:(?:\t[^\n]*|[ \t]*)\n)*?\t[^\n]*(?<![.\w])attackby\(' code --glob '*.dm' | grep -E '_act' | grep -vE "^($tool_bounce_allowlist):"; then
+	if $grep -PUn '(?m)^/[^\n]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act(_secondary)?\([^\n]*\)\n(?:(?:\t[^\n]*|[ \t]*)\n)*?\t[^\n]*(?<![.\w])attackby\(' code --glob '*.dm' | grep -E '_act'; then
 		echo
 		echo -e "${RED}ERROR: a *_act tool hook calls attackby(). Do the tool's work in the hook with use_tool().${NC}"
 		FAILED=1
@@ -269,6 +268,28 @@ a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/modules/medical/instru
 if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: a_intent is gone. Use combat mode: IS_HARMING(M), IS_HELPING(M), IS_DISARMING(M), IS_GRABBING(M) or M.use_stance() to read it, and set_combat_mode()/set_use_stance() to set it (code/__defines/combat_mode.dm).${NC}"
+	FAILED=1
+fi;
+
+part "interactions: converted domains (I7)"
+# Converted domains' input handlers are interaction definitions (roadmap I7,
+# doc/rewrite/interactions.md section 13): no attackby, attack_hand, attack_self,
+# click_alt or MouseDrop_T overrides and no object verbs on their types, and no
+# hand-written description_info in their directories (examine text is generated).
+# The old procs are the entry points; declare interactions with an `entry` instead.
+# The allowlist holds files other work owns (the body rewrite's medical code,
+# cooking, vore) and test fixtures. It must not grow.
+i7_converted_types='/obj/machinery'
+i7_converted_dirs='code/game/machinery/|code/ATMOSPHERICS/|code/modules/power/'
+i7_allowlist='code/modules/unit_tests/|code/game/dna/dna_modifier\.dm|code/game/machinery/(OpTable|Sleeper|adv_med|bioprinter|cloning|cryo|iv_drip|medical_kiosk|oxygen_pump|protean_reconstitutor|vitals_monitor)\.dm|code/game/machinery/computer/(Operating|cloning|medical)\.dm|code/modules/resleeving/|code/modules/food/kitchen/|code/modules/vore/|code/modules/examine/descriptions/medical\.dm'
+if $grep -nE "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)"; then
+	echo
+	echo -e "${RED}ERROR: converted domains take interactions, not handler overrides or object verbs. Declare an interaction with an entry (code/datums/interactions/entries.dm).${NC}"
+	FAILED=1
+fi;
+if $grep -nE '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
+	echo
+	echo -e "${RED}ERROR: description_info in a converted domain. Examine text is generated from the interactions.${NC}"
 	FAILED=1
 fi;
 

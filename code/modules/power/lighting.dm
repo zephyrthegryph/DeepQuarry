@@ -68,47 +68,70 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		else
 			. += span_danger("This casing doesn't support power cells for backup power.")
 
-/obj/machinery/light_construct/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return . // obj/machinery/attack_hand returns 1 if user can't use the machine
+/obj/machinery/light_construct/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/light_construct_insert_cell,
+		/datum/interaction/machine_item/light_construct_add_wires,
+		/datum/interaction/machine_hand/light_construct_remove_cell,
+	)
+	..()
+
+/datum/interaction/machine_hand/light_construct_remove_cell
+	id = "light_construct_remove_cell"
+	name = "Remove cell"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/light_construct/proc/interaction_remove_cell
+
+/obj/machinery/light_construct/proc/interaction_remove_cell(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cell)
 		user.visible_message("[user] removes [cell] from [src]!",span_notice("You remove [cell]."))
 		user.put_in_hands(cell)
 		cell.update_icon()
 		cell = null
+	return TRUE
 
-/obj/machinery/light_construct/attackby(obj/item/W, mob/user)
-	src.add_fingerprint(user)
-	if(istype(W, /obj/item/cell/emergency_light))
-		if(!cell_connectors)
-			to_chat(user, span_warning("This [name] can't support a power cell!"))
-			return
-		if(!user.unEquip(W))
-			to_chat(user, span_warning("[W] is stuck to your hand!"))
-			return
-		if(cell)
-			to_chat(user, span_warning("There is a power cell already installed!"))
-		else if(user.drop_from_inventory(W))
-			user.visible_message(span_notice("[user] hooks up [W] to [src]."), \
-			span_notice("You add [W] to [src]."))
-			playsound(src, 'sound/machines/click.ogg', 50, TRUE)
-			W.forceMove(src)
-			cell = W
-			add_fingerprint(user)
-		return
+/datum/interaction/machine_item/light_construct_insert_cell
+	id = "light_construct_insert_cell"
+	name = "Insert cell"
+	held_type = /obj/item/cell/emergency_light
+	effect = /obj/machinery/light_construct/proc/interaction_insert_cell
 
-	if(istype(W, /obj/item/stack/cable_coil))
-		if (src.stage != 1) return
-		var/obj/item/stack/cable_coil/coil = W
-		if (coil.use(1))
-			src.stage = 2
-			src.update_icon()
-			user.visible_message("[user.name] adds wires to [src].", \
-				"You add wires to [src].")
-		return
+/obj/machinery/light_construct/proc/interaction_insert_cell(mob/user, obj/item/cell/emergency_light/W, datum/interaction/interaction)
+	add_fingerprint(user)
+	if(!cell_connectors)
+		to_chat(user, span_warning("This [name] can't support a power cell!"))
+		return TRUE
+	if(!user.unEquip(W))
+		to_chat(user, span_warning("[W] is stuck to your hand!"))
+		return TRUE
+	if(cell)
+		to_chat(user, span_warning("There is a power cell already installed!"))
+	else if(user.drop_from_inventory(W))
+		user.visible_message(span_notice("[user] hooks up [W] to [src]."), \
+		span_notice("You add [W] to [src]."))
+		playsound(src, 'sound/machines/click.ogg', 50, TRUE)
+		W.forceMove(src)
+		cell = W
+		add_fingerprint(user)
+	return TRUE
 
-	..()
+/datum/interaction/machine_item/light_construct_add_wires
+	id = "light_construct_add_wires"
+	name = "Add wires"
+	held_type = /obj/item/stack/cable_coil
+	effect = /obj/machinery/light_construct/proc/interaction_add_wires
+
+/// The old stage != 1 check was a silent return (no ..() either), so it stays in the effect.
+/obj/machinery/light_construct/proc/interaction_add_wires(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
+	add_fingerprint(user)
+	if (stage != 1)
+		return TRUE
+	if (coil.use(1))
+		stage = 2
+		update_icon()
+		user.visible_message("[user.name] adds wires to [src].", \
+			"You add wires to [src].")
+	return TRUE
 
 /obj/machinery/light_construct/wrench_act(mob/user, obj/item/tool)
 	if(stage == 2)
@@ -146,6 +169,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	finished_light.set_dir(dir)
 	transfer_fingerprints_to(finished_light)
 	if(cell)
+		finished_light.latent_cell_charge = null
 		finished_light.cell = cell
 		cell.forceMove(finished_light)
 		cell = null
@@ -207,7 +231,13 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	power_channel = LIGHT //Lights are calc'd via area so they dont need to be in the machine list
 	max_integrity = 20
 	integrity_failure = 0.5
-	var/obj/item/light/installed_light //What light is currently in the socket! Updated in new()
+	var/obj/item/light/installed_light //What light is currently in the socket! Use bulb() to read it.
+	/// A pristine light_type bulb held as data (C5): its status, switchcount and
+	/// rigged are the fixture's own. bulb() makes it real.
+	var/latent_bulb = FALSE
+	/// Charge of a pristine emergency cell held as data (C5), or null for none.
+	/// emergency_cell() makes it real.
+	var/latent_cell_charge = null
 	var/on = 0					// 1 if on, 0 if off
 	var/brightness_range
 	var/brightness_power
@@ -404,7 +434,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return
 
 	current_alert = null
-	var/obj/item/light/L = installed_light //This ensures any special bulbs will stay special!
+	var/obj/item/light/L = bulb() //This ensures any special bulbs will stay special!
 
 	if(L)
 		update_from_bulb(L)
@@ -501,7 +531,42 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	update()
 
 /obj/machinery/light/get_cell()
+	return emergency_cell()
+
+/// Whether a bulb is fitted, real or latent.
+/obj/machinery/light/proc/has_bulb()
+	return installed_light || latent_bulb
+
+/// The fitted bulb, made real if it was latent (C5). Null when empty.
+/obj/machinery/light/proc/bulb()
+	if(latent_bulb)
+		latent_bulb = FALSE
+		installed_light = new light_type(src)
+		installed_light.status = status
+		installed_light.switchcount = switchcount
+		installed_light.rigged = rigged
+		installed_light.update_icon()
+	return installed_light
+
+/// Whether an emergency cell is fitted, real or latent.
+/obj/machinery/light/proc/has_cell()
+	return cell || !isnull(latent_cell_charge)
+
+/// The emergency cell, made real if it was latent (C5). Null when none.
+/obj/machinery/light/proc/emergency_cell()
+	if(!isnull(latent_cell_charge))
+		var/charge = latent_cell_charge
+		latent_cell_charge = null
+		cell = new /obj/item/cell/emergency_light(src)
+		cell.charge = charge
 	return cell
+
+/// A pristine emergency cell as data: what /obj/item/cell/emergency_light's
+/// Initialize() would give here (no charge in a naturally depowered area).
+/obj/machinery/light/proc/declare_emergency_cell()
+	var/area/A = get_area(src)
+	var/obj/item/cell/emergency_light/typed = /obj/item/cell/emergency_light
+	latent_cell_charge = (!A?.lightswitch || !A?.light_power) ? 0 : initial(typed.charge)
 
 // examine verb
 /obj/machinery/light/examine(mob/user)
@@ -516,8 +581,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			. += "The [fitting] is burnt out."
 		if(LIGHT_BROKEN)
 			. += "The [fitting] has been smashed."
-	if(cell)
-		. += "Its backup power charge meter reads [round((cell.charge / cell.maxcharge) * 100, 0.1)]%."
+	if(has_cell())
+		var/obj/item/cell/C = emergency_cell()
+		. += "Its backup power charge meter reads [round((C.charge / C.maxcharge) * 100, 0.1)]%."
 
 /obj/machinery/light/proc/get_fitting_name()
 	var/obj/item/light/L = light_type
@@ -541,6 +607,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L)
 	update_from_bulb(L)
+	latent_bulb = FALSE
 	installed_light = L
 	L.loc = src //Move it into the socket!
 
@@ -559,46 +626,76 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 	switchcount = 0
 	installed_light = null
+	latent_bulb = FALSE
 	status = LIGHT_EMPTY
 	update()
 
-/obj/machinery/light/attackby(obj/item/W, mob/user)
+/obj/machinery/light/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/light_paint,
+		/datum/interaction/machine_item/light_replace,
+		/datum/interaction/machine_item/light_insert_bulb,
+		/datum/interaction/machine_item/light_hit,
+		/datum/interaction/machine_hand/ungated/light_use,
+	)
+	..()
 
-	//Light painter code
-	if(istype(W, /obj/item/lightpainter))
-		var/obj/item/lightpainter/LP = W
-		if(isliving(user))
-			var/mob/living/U = user
-			LP.ColorLight(src, U)
-			return
+/datum/interaction/machine_item/light_paint
+	id = "light_paint"
+	name = "Paint"
+	held_type = /obj/item/lightpainter
+	effect = /obj/machinery/light/proc/interaction_paint
 
-	//Light replacer code
-	if(istype(W, /obj/item/lightreplacer)) //These will never be modified, so it's fine to use old code.
-		var/obj/item/lightreplacer/LR = W
-		if(isliving(user))
-			var/mob/living/U = user
-			LR.ReplaceLight(src, U)
-			return
+/obj/machinery/light/proc/interaction_paint(mob/user, obj/item/lightpainter/LP, datum/interaction/interaction)
+	if(isliving(user))
+		var/mob/living/U = user
+		LP.ColorLight(src, U)
+	return TRUE
 
-	// attempt to insert light
-	if(istype(W, /obj/item/light))
-		if(status != LIGHT_EMPTY)
-			to_chat(user, "There is a [get_fitting_name()] already inserted.")
-			return
-		if(!istype(W, light_type))
-			to_chat(user, "This type of light requires a [get_fitting_name()].")
-			return
+/// These will never be modified, so it's fine to use old code.
+/datum/interaction/machine_item/light_replace
+	id = "light_replace"
+	name = "Replace bulb"
+	held_type = /obj/item/lightreplacer
+	effect = /obj/machinery/light/proc/interaction_replace
 
-		to_chat(user, "You insert [W].")
-		user.drop_item()
-		insert_bulb(W)
-		update() //Like other places, this is done later down the line but this is essential to updating the overlay when nightmode is involved. Again, I have no idea WHY.
-		src.add_fingerprint(user)
+/obj/machinery/light/proc/interaction_replace(mob/user, obj/item/lightreplacer/LR, datum/interaction/interaction)
+	if(isliving(user))
+		var/mob/living/U = user
+		LR.ReplaceLight(src, U)
+	return TRUE
 
-		// attempt to break the light
-		//If xenos decide they want to smash a light bulb with a toolbox, who am I to stop them? /N
+/datum/interaction/machine_item/light_insert_bulb
+	id = "light_insert_bulb"
+	name = "Insert bulb"
+	held_type = /obj/item/light
+	effect = /obj/machinery/light/proc/interaction_insert_bulb
 
-	else if(status != LIGHT_BROKEN && status != LIGHT_EMPTY)
+/obj/machinery/light/proc/interaction_insert_bulb(mob/user, obj/item/light/W, datum/interaction/interaction)
+	if(status != LIGHT_EMPTY)
+		to_chat(user, "There is a [get_fitting_name()] already inserted.")
+		return TRUE
+	if(!istype(W, light_type))
+		to_chat(user, "This type of light requires a [get_fitting_name()].")
+		return TRUE
+
+	to_chat(user, "You insert [W].")
+	user.drop_item()
+	insert_bulb(W)
+	update() //Like other places, this is done later down the line but this is essential to updating the overlay when nightmode is involved. Again, I have no idea WHY.
+	add_fingerprint(user)
+	return TRUE
+
+/// Any other item: smash the light, or stick it into an empty socket.
+/datum/interaction/machine_item/light_hit
+	id = "light_hit"
+	name = "Hit"
+	category = INTERACTION_CAT_ATTACK
+	held_type = /obj/item
+	effect = /obj/machinery/light/proc/interaction_hit
+
+/obj/machinery/light/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+	if(status != LIGHT_BROKEN && status != LIGHT_EMPTY)
 		if(prob(1+W.force * 5))
 
 			to_chat(user, "You hit the light, and it smashes!")
@@ -625,16 +722,24 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			//if(!user.mutations & COLD_RESISTANCE)
 			if (prob(75))
 				electrocute_mob(user, get_area(src), src, rand(0.7,1.0))
+	return TRUE
 
-/obj/machinery/light/flamp/attackby(obj/item/W, mob/user)
-	if(!lamp_shade)
-		if(istype(W, /obj/item/lampshade))
-			lamp_shade = 1
-			qdel(W)
-			update_icon()
-			return
+/// Old attackby: falls through to ..() (the base light attackby chain) unless a bare fixture is given a shade.
+/datum/interaction/machine_item/light_flamp_add_shade
+	id = "light_flamp_add_shade"
+	name = "Add lamp shade"
+	held_type = /obj/item/lampshade
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/light/flamp/proc/no_shade, null))
+	effect = /obj/machinery/light/flamp/proc/interaction_add_shade
 
-	..()
+/obj/machinery/light/flamp/proc/no_shade(mob/actor, atom/target, obj/item/held)
+	return !lamp_shade
+
+/obj/machinery/light/flamp/proc/interaction_add_shade(mob/user, obj/item/lampshade/W, datum/interaction/interaction)
+	lamp_shade = 1
+	qdel(W)
+	update_icon()
+	return TRUE
 
 /obj/machinery/light/screwdriver_act(mob/user, obj/item/tool)
 	if(status != LIGHT_EMPTY)
@@ -646,9 +751,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light/multitool_act(mob/user, obj/item/tool)
-	if(status == LIGHT_BROKEN || status == LIGHT_EMPTY || !installed_light)
+	if(status == LIGHT_BROKEN || status == LIGHT_EMPTY || !has_bulb())
 		return NONE
-	return installed_light.multitool_act(user, tool)
+	return bulb().multitool_act(user, tool)
 
 /obj/machinery/light/flamp/wrench_act(mob/user, obj/item/tool)
 	anchored = !anchored
@@ -688,9 +793,10 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 // returns whether this light has emergency power
 // can also return if it has access to a certain amount of that power
 /obj/machinery/light/proc/has_emergency_power(pwr)
-	if(no_emergency || !cell)
+	if(no_emergency || !has_cell())
 		return FALSE
-	if(pwr ? cell.charge >= pwr : cell.charge)
+	var/charge = cell ? cell.charge : latent_cell_charge
+	if(pwr ? charge >= pwr : charge)
 		return status == LIGHT_OK
 
 // attempts to use power from the installed emergency cell, returns true if it does and false if it doesn't
@@ -699,13 +805,15 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return FALSE
 	if(!has_emergency_power(pwr))
 		return FALSE
-	if(cell.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
+	var/obj/item/cell/C = emergency_cell()
+	if(C.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
 		visible_message(span_warning("[src] short-circuits from too powerful of a power cell!"))
 		status = LIGHT_BURNED
-		installed_light.status = status
+		if(installed_light)
+			installed_light.status = status
 		return FALSE
-	cell.use(pwr)
-	var/emergency_power = max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (cell.charge / cell.maxcharge))
+	C.use(pwr)
+	var/emergency_power = max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (C.charge / C.maxcharge))
 	set_light(brightness_range * bulb_emergency_brightness_mul, round(emergency_power, LIGHT_EMERGENCY_POWER_STEP), bulb_emergency_colour)
 	return TRUE
 
@@ -758,13 +866,20 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 // attack with hand - remove tube/bulb
 // if hands aren't protected and the light is on, burn the player
-/obj/machinery/light/attack_hand(mob/user)
+/// Old attack_hand (never called ..()): remove the tube/bulb; burns hands if not protected while on.
+/datum/interaction/machine_hand/ungated/light_use
+	id = "light_use"
+	name = "Remove bulb"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/light/proc/interaction_use
+
+/obj/machinery/light/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 
 	add_fingerprint(user)
 
 	if(status == LIGHT_EMPTY)
 		to_chat(user, "There is no [get_fitting_name()] in this light.")
-		return
+		return TRUE
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -773,7 +888,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			for(var/mob/M in viewers(src))
 				M.show_message(span_red("[user.name] smashed the light!"), 3, "You hear a tinkle of breaking glass", 2)
 			broken()
-			return
+			return TRUE
 
 	// make it burn hands if not wearing fire-insulated gloves
 	if(on)
@@ -791,36 +906,55 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		else
 			prot = 1
 
-		if(prot > 0 || (COLD_RESISTANCE in user.mutations))
-			to_chat(user, "You remove the light [get_fitting_name()]")
-		else if(TK in user.mutations)
-			to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
-		else
-			to_chat(user, "You try to remove the [get_fitting_name()], but it's too hot and you don't want to burn your hand.")
-			return				// if burned, don't remove the light
+			if(prot > 0 || (COLD_RESISTANCE in user.mutations))
+				to_chat(user, "You remove the light [get_fitting_name()]")
+			else if(TK in user.mutations)
+				to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
+			else
+				to_chat(user, "You try to remove the [get_fitting_name()], but it's too hot and you don't want to burn your hand.")
+				return TRUE				// if burned, don't remove the light
 	else
 		to_chat(user, "You remove the light [get_fitting_name()].")
 
 	//Let's actually put the real bulb in their hand.
-	installed_light.status = status //Update the bulb they're being given. If it's broken, the bulb should be as well!
-	user.put_in_active_hand(installed_light)	//puts it in our active hand
-	installed_light.update_icon()
+	var/obj/item/light/B = bulb()
+	B.status = status //Update the bulb they're being given. If it's broken, the bulb should be as well!
+	user.put_in_active_hand(B)	//puts it in our active hand
+	B.update_icon()
 	remove_bulb()
+	return TRUE
 
-/obj/machinery/light/flamp/attack_hand(mob/user)
-	if(lamp_shade)
-		if(status == LIGHT_EMPTY)
-			to_chat(user, "There is no [get_fitting_name()] in this light.")
-			return
+/obj/machinery/light/flamp/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/light_flamp_add_shade,
+		/datum/interaction/machine_hand/ungated/light_flamp_toggle,
+	)
+	..()
 
-		if(on)
-			on = 0
-			update()
-		else
-			on = has_power()
-			update()
+/// Old attack_hand: with a shade fitted, toggles the lamp instead of falling through to the base light's remove-bulb behaviour.
+/datum/interaction/machine_hand/ungated/light_flamp_toggle
+	id = "light_flamp_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/light/flamp/proc/has_shade, null))
+	effect = /obj/machinery/light/flamp/proc/interaction_toggle
+
+/obj/machinery/light/flamp/proc/has_shade(mob/actor, atom/target, obj/item/held)
+	return lamp_shade
+
+/obj/machinery/light/flamp/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	if(status == LIGHT_EMPTY)
+		to_chat(user, "There is no [get_fitting_name()] in this light.")
+		return TRUE
+
+	if(on)
+		on = 0
+		update()
 	else
-		..()
+		on = has_power()
+		update()
+	return TRUE
+
 
 /obj/machinery/light/attack_tk(mob/user)
 	if(status == LIGHT_EMPTY)
@@ -828,13 +962,14 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return
 
 	to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
-	installed_light.status = status
-	installed_light.forceMove(src.loc)
+	var/obj/item/light/B = bulb()
+	B.status = status
+	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
 	O.host = user
-	O.focus_object(installed_light)
-	installed_light.update_icon()
+	O.focus_object(B)
+	B.update_icon()
 	remove_bulb()
 
 // break the light and make sparks if was on
@@ -851,8 +986,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			s.set_up(3, 1, src)
 			s.start()
 	status = LIGHT_BROKEN //This occasionally runtimes when it occurs midround after build mode spawns a broken light. No idea why.
-	installed_light.status = status
-	installed_light.update_icon()
+	if(installed_light) // a latent bulb takes the fixture's status
+		installed_light.status = status
+		installed_light.update_icon()
 	update()
 
 /obj/machinery/light/atom_break(damage_flag)
@@ -963,7 +1099,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/begin_emergency_discharge()
-	if(!emergency_mode || !cell || emergency_discharge_at)
+	if(!emergency_mode || !has_cell() || emergency_discharge_at)
 		return
 	// Set the initial emergency appearance immediately, then account for charge
 	// in coarse time-based batches: one timer per fixture every 10 seconds.
@@ -973,17 +1109,17 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/settle_emergency_discharge()
-	if(!emergency_discharge_started || !cell)
+	if(!emergency_discharge_started || !has_cell())
 		return
 	var/elapsed = max(0, world.time - emergency_discharge_started)
 	emergency_discharge_started = world.time
 	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
-		use_emergency_power(min(amount, cell.charge))
+		use_emergency_power(min(amount, emergency_cell().charge))
 
 /obj/machinery/light/proc/continue_emergency_discharge()
 	emergency_discharge_at = 0
-	if(has_power() || !emergency_mode || !cell)
+	if(has_power() || !emergency_mode || !has_cell())
 		emergency_discharge_started = 0
 		update(FALSE)
 		return
@@ -1024,7 +1160,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	flicker_check_at = 0
 
 /obj/machinery/light/proc/auto_flicker_check()
-	if(!auto_flicker || !cell || has_power())
+	if(!auto_flicker || !has_cell() || has_power())
 		stop_flicker_watch()
 		schedule_light_timer()
 		return
@@ -1049,9 +1185,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 // called when on fire
 
-/obj/machinery/light/fire_act(exposed_temperature, exposed_volume)
-	if(prob(max(0, exposed_temperature - 673)))   //0% at <400C, 100% at >500C
-		broken()
+/// Heat behaviour rule: the tube breaks above 450 C.
+/obj/machinery/light/proc/rule_break_light(datum/rule/rule)
+	broken()
 
 // explode the light
 
@@ -1333,14 +1469,14 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		update_icon()
 	else
 		if(start_with_cell && !no_emergency)
-			cell = new/obj/item/cell/emergency_light(src)
+			declare_emergency_cell()
 
 // create a new lighting fixture
 /obj/machinery/light/Initialize(mapload, obj/machinery/light_construct/construct = null)
 	. = ..()
 
 	if(start_with_cell && !no_emergency)
-		cell = new/obj/item/cell/emergency_light(src)
+		declare_emergency_cell()
 	if(construct)
 		start_with_cell = FALSE
 		status = LIGHT_EMPTY
@@ -1348,7 +1484,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		construct.transfer_fingerprints_to(src)
 		set_dir(construct.dir)
 	else
-		installed_light = new light_type(src)
+		latent_bulb = TRUE // the bulb is data until someone takes it (C5)
 		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
 		update_from_bulb(L)
 		if(prob(L.broken_chance))
@@ -1560,8 +1696,21 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
 	overlay_above_everything = TRUE
 
-/obj/machinery/light/small/torch/attackby()
-	return
+/obj/machinery/light/small/torch/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/light_torch_swallow,
+	)
+	..()
+
+/// Old attackby (no args, no ..()): swallows every item, disabling the base light's item interactions entirely.
+/datum/interaction/machine_item/light_torch_swallow
+	id = "light_torch_swallow"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/light/small/torch/proc/interaction_swallow
+
+/obj/machinery/light/small/torch/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/light/broken
 	icon_state = "tube-broken"

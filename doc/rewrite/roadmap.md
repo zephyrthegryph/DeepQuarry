@@ -106,10 +106,11 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 | C2 | Exposure, layers and propagation paths | C1 | Heat and damage path tests pass |
 | C3 | Inventory and equipment on body-part slots; pickup, drop, throw and equip interactions; robot modules (with the body rewrite) | C1, I2 | The per-slot vars, the `u_equip` chains and `equip_to_slot`'s direct `loc` writes are deleted |
 | C4 | Storage on slots, with screen objects created per viewer | C1, P3 | The `/obj/item/storage` insertion code is deleted, and the 6–8k screen atoms are gone |
-| C5 | Latent contents: generators, entries, resolve, materialize and collapse, with parity tests. Roll out to closets, then mapped storage, lights, ammo, pills, and finally PDAs and radios. | L2, L3, C1, P4 | Each rollout step reduces boot_memory atoms, and parity tests pass |
+| C5 | Latent contents: generators, entries, resolve, materialize and collapse, with parity tests. Roll out to closets, then mapped storage, lights, ammo, pills, and finally radios, headsets and ID cards (PDAs need on_materialize()-time app construction first; see containment.md section 4.6). | L2, L3, C1, P4 | Each rollout step reduces boot_memory atoms, and parity tests pass |
 | C6 | Machine internals become data: part tiers, and boards as paths | C1, I5 | Eager `component_parts` and eager circuit boards are gone |
 | C7 | Vore on slots: a sealed interior, modes as rules and rate models, consent as requirements, shared message lists | C1, P4, S1, D1 | SSbellies is deleted, and empty bellies cost nothing |
-| C8 | Occupant machines and mechs (with the body rewrite) | C2, D3 | The occupant code paths are deleted, and mech damage goes through the body model |
+| C8a | Occupant and mech containment: sealed occupant slots, mech pilot, hardpoint and cargo slots, and blast shares. Medical machines (cryo, sleepers, scanners) wait for the body rewrite's automation work | C2, D5 | The duplicated go-in, go-out and eject code is deleted |
+| C8b | Mech damage through the body model. The body rewrite provides the body host interface; it also owns occupant behaviour in medical machines | C8a, D3 | Mech damage goes through `injure()` |
 | C9 | Vending and smartfridge stock become stock slots | C1 | Vending no longer materializes a product's whole amount at once |
 
 ### I: interactions and input

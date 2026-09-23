@@ -872,8 +872,20 @@
 	pixel_y = -16
 	clicksound = 'sound/vore/squish1.ogg'
 
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/attackby(I, user)
-	return
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/dog_eye_swallow,
+	)
+	..()
+
+/// The old attackby did nothing at all with any item, and never called ..(): swallow it silently.
+/datum/interaction/machine_item/dog_eye_swallow
+	id = "dog_eye_swallow"
+	name = "Use"
+	effect = /obj/machinery/computer/ship/navigation/telescreen/dog_eye/proc/interaction_dog_eye_swallow
+
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/proc/interaction_dog_eye_swallow(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/update_icon()
 	. = ..()

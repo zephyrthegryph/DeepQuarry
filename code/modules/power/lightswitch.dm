@@ -25,9 +25,16 @@
 	y_offset = 26
 
 // Attackby on the lightswitch for deconstruction steps.
-/obj/machinery/light_switch/attackby(obj/item/W, mob/user, params)
+/// The old attackby: fingerprinted, then fell through to ..().
+/datum/interaction/machine_item/lightswitch_fingerprint
+	id = "lightswitch_fingerprint"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/light_switch/proc/interaction_fingerprint
+
+/obj/machinery/light_switch/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
-	return ..()
+	return FALSE
 
 /obj/machinery/light_switch
 	maintenance_flags = MACHINE_MAINT_STANDARD

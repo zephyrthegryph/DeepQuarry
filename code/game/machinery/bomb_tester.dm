@@ -86,26 +86,45 @@
 		scan_rating += S.rating
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
-/obj/machinery/bomb_tester/attackby(obj/item/I, mob/user)
-	if(default_part_replacement(user, I))
-		return
-	if(istype(I, /obj/item/tank))
-		if(!tank1 || !tank2)
-			user.drop_item(I)
-			I.forceMove(src)
-			if(!tank1)
-				tank1 = I
-			else
-				tank2 = I
-			update_icon()
-			SStgui.update_uis(src)
-			to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
-			return
+/obj/machinery/bomb_tester/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_item/bomb_tester_load_tank,
+		/datum/interaction/machine_hand/ungated/bomb_tester_open,
+	)
 	..()
 
-/obj/machinery/bomb_tester/attack_hand(mob/user)
+/datum/interaction/machine_item/bomb_tester_load_tank
+	id = "bomb_tester_load_tank"
+	name = "Connect tank"
+	held_type = /obj/item/tank
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/bomb_tester/proc/has_free_tank_slot, null))
+	effect = /obj/machinery/bomb_tester/proc/interaction_load_tank
+
+/obj/machinery/bomb_tester/proc/has_free_tank_slot(mob/actor, atom/target, obj/item/held)
+	return !tank1 || !tank2
+
+/obj/machinery/bomb_tester/proc/interaction_load_tank(mob/user, obj/item/I, datum/interaction/interaction)
+	user.drop_item(I)
+	I.forceMove(src)
+	if(!tank1)
+		tank1 = I
+	else
+		tank2 = I
+	update_icon()
+	SStgui.update_uis(src)
+	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
+	return TRUE
+
+/datum/interaction/machine_hand/ungated/bomb_tester_open
+	id = "bomb_tester_open"
+	name = "Use"
+	effect = /obj/machinery/bomb_tester/proc/interaction_open
+
+/obj/machinery/bomb_tester/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/bomb_tester/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

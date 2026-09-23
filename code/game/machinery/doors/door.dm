@@ -266,36 +266,57 @@
 		update_icon()
 
 
-
 /obj/machinery/door/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
 	visible_message(span_danger("[name] was hit by [source]."))
 	playsound(src, hitsound, 100, 1)
 
-/obj/machinery/door/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/door/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/door_use_item,
+		/datum/interaction/machine_hand/door_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/door_use
+	id = "door_use"
+	name = "Use"
+	effect = /obj/machinery/door/proc/interaction_door_use
+
+/obj/machinery/door/proc/interaction_door_use(mob/user, obj/item/held, datum/interaction/interaction)
 	try_to_activate_door(user)
+	return TRUE
 
 /obj/machinery/door/attack_tk(mob/user)
 	if(requiresID() && !allowed(null))
 		return
 	..()
 
-/obj/machinery/door/attackby(obj/item/I, mob/user)
+/datum/interaction/machine_item/door_use_item
+	id = "door_use_item"
+	name = "Use"
+	effect = /obj/machinery/door/proc/interaction_door_use_item
+
+// NOTE (approximation): the old attackby had a mid-body `if(..()) return` after the
+// plasteel-reinforce branch, gating the weapon-hit branch and try_to_activate_door() on
+// whether the base atom's attackby signal chain intercepted the item. There's no direct way
+// to invoke just that signal check from an interaction effect, so this always falls through
+// past it (as if the signal never intercepted). Flagged for the lead: if any component hooks
+// the attackby signal to intercept items on doors (e.g. a reagent sprayer), this loses that
+// early-return and always proceeds to the weapon-hit / activate-door logic instead.
+/obj/machinery/door/proc/interaction_door_use_item(mob/user, obj/item/I, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(istype(I, /obj/item/stack/material) && I.get_material_name() == MAT_PLASTEEL)
 		if(heat_proof)
 			to_chat(user, span_warning("\The [src] is already reinforced."))
-			return
+			return TRUE
 		if((stat & BROKEN) || (get_integrity() < max_integrity))
 			to_chat(user, span_notice("It looks like \the [src] broken. Repair it before reinforcing it."))
-			return
+			return TRUE
 		if(!density)
 			to_chat(user, span_warning("\The [src] must be closed before you can reinforce it."))
-			return
+			return TRUE
 
 		var/amount_needed = 2
 
@@ -315,11 +336,7 @@
 					amount_given = mats_given
 		if(amount_given)
 			to_chat(user, span_notice("You fit [amount_given] [singular_name]\s on \the [src]."))
-		return
-
-	// Handle signals
-	if(..())
-		return
+		return TRUE
 
 	//psa to whoever coded this, there are plenty of objects that need to call attack() on doors without bludgeoning them.
 	if(density && istype(I, /obj/item) && IS_HARMING(user) && !istype(I, /obj/item/card))
@@ -333,9 +350,10 @@
 				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 				playsound(src, hitsound, 100, 1)
 				receive_weapon_hit(W, user, silent = FALSE)
-		return
+		return TRUE
 
 	try_to_activate_door(user)
+	return TRUE
 
 /obj/machinery/door/crowbar_act(mob/user, obj/item/tool)
 	if(!reinforcing)
@@ -622,22 +640,6 @@
 /obj/machinery/door/morgue
 	icon = 'icons/obj/doors/doormorgue.dmi'
 
-
-/obj/machinery/door/fire_act(exposed_temperature, exposed_volume)
-	for(var/obj/machinery/door/blast/B in loc.contents)
-		if(B.density)
-			return
-
-	var/maxtemperature = 1800 //same as a normal steel wall
-	if(heat_proof)
-		maxtemperature = 6000 //same as a plasteel rwall
-
-	if(exposed_temperature > maxtemperature)
-		var/burndamage = log(RAND_F(0.9, 1.1) * (exposed_temperature - maxtemperature))
-		if(burndamage)
-			deal_damage(DAMAGE_THERMAL, burndamage, FIRE)
-
-	return ..()
 
 /obj/machinery/door/proc/toggle()
 	if(glass)

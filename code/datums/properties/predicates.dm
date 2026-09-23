@@ -659,7 +659,7 @@
 		return "needs something in hand"
 	return dq_pred_cmp_reason(def, subject, dq_property(a, property), op, dq_property(b, property_b))
 
-// ---- Types and fit (constraints, rules.md §3) ----
+// ---- Types and fit (constraints, rules.md ï¿½3) ----
 
 /datum/pred_node/type
 	var/subject
@@ -723,7 +723,7 @@
 	var/tier = 1
 
 /datum/pred_node/tool/test(mob/actor, atom/target, obj/item/held)
-	if(!held || !held.has_tool_quality(quality))
+	if(!istype(held) || !held.has_tool_quality(quality))
 		return FALSE
 	return tier <= 1 || dq_tool_tier(held, quality) >= tier
 

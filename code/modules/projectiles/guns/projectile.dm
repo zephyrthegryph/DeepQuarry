@@ -531,6 +531,9 @@
 	if(loaded.len >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return
+	// The handful may still hold its rounds as a count (C5) if it was
+	// picked straight off a turf or out of a latent holder.
+	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
 	var/count = 0
 	while(!QDELETED(H) && H.stored_ammo.len && loaded.len < max_shells)
@@ -568,6 +571,10 @@
 		if(!(load_method & AM.mag_type) || caliber != AM.caliber || allowed_magazines && !is_type_in_list(A, allowed_magazines))
 			to_chat(user, span_warning("[AM] won't load into [src]!"))
 			return
+		// Legacy gun code reads stored_ammo directly below (C5); a magazine
+		// picked straight off a turf or out of a latent holder still holds
+		// its rounds as a count until now.
+		AM.make_rounds_real()
 		var/loading_method = AM.mag_type & load_method
 		if(loading_method == (MAGAZINE & SPEEDLOADER)) loading_method = MAGAZINE //Default to magazine if both are valid
 		switch(loading_method)

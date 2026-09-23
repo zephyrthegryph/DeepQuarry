@@ -93,38 +93,62 @@ log transactions
 	to_chat(user, span_warning("[icon2html(src, user.client)] The [src] beeps: \"[response]\""))
 	return 1
 
-/obj/machinery/atm/attackby(obj/item/I as obj, mob/user as mob)
-	if(istype(I, /obj/item/card))
-		if(emagged > 0)
-			//prevent inserting id into an emagged ATM
-			to_chat(user, span_boldwarning("[icon2html(src, user.client)] CARD READER ERROR. This system has been compromised!"))
-			return
-		else if(istype(I,/obj/item/card/emag))
-			I.resolve_attackby(src, user)
-			return
+/obj/machinery/atm/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/atm_insert_card,
+		/datum/interaction/machine_item/atm_deposit_cash,
+		/datum/interaction/machine_hand/ungated/atm_use,
+	)
+	..()
 
-		var/obj/item/card/id/idcard = I
-		if(!held_card)
-			user.drop_item()
-			idcard.loc = src
-			held_card = idcard
-			if(authenticated_account && held_card.associated_account_number != authenticated_account.account_number)
-				authenticated_account = null
-	else if(authenticated_account)
-		if(istype(I,/obj/item/spacecash))
-			var/obj/item/spacecash/cash = I
-			// Convert physical cash into an audited account deposit.
-			authenticated_account.credit(cash.worth, user.real_name, "Cash deposit", machine_id)
-			if(prob(50))
-				playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
-			else
-				playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
+/// The old attackby's card branch: emag error, resolve an emag card, or slot an ID.
+/datum/interaction/machine_item/atm_insert_card
+	id = "atm_insert_card"
+	name = "Insert card"
+	held_type = /obj/item/card
+	effect = /obj/machinery/atm/proc/interaction_atm_insert_card
 
-			to_chat(user, span_info("You insert [I] into [src]."))
-			src.attack_hand(user)
-			qdel(I)
+/obj/machinery/atm/proc/interaction_atm_insert_card(mob/user, obj/item/card/held, datum/interaction/interaction)
+	if(emagged > 0)
+		//prevent inserting id into an emagged ATM
+		to_chat(user, span_boldwarning("[icon2html(src, user.client)] CARD READER ERROR. This system has been compromised!"))
+		return TRUE
+	else if(istype(held, /obj/item/card/emag))
+		held.resolve_attackby(src, user)
+		return TRUE
+
+	var/obj/item/card/id/idcard = held
+	if(!held_card)
+		user.drop_item()
+		idcard.loc = src
+		held_card = idcard
+		if(authenticated_account && held_card.associated_account_number != authenticated_account.account_number)
+			authenticated_account = null
+	return TRUE
+
+/// The old attackby's spacecash branch: deposit cash into the authenticated account.
+/datum/interaction/machine_item/atm_deposit_cash
+	id = "atm_deposit_cash"
+	name = "Deposit cash"
+	held_type = /obj/item/spacecash
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atm/proc/has_authenticated_account, null))
+	effect = /obj/machinery/atm/proc/interaction_atm_deposit_cash
+
+/obj/machinery/atm/proc/has_authenticated_account(mob/actor, atom/target, obj/item/held)
+	return !!authenticated_account
+
+/obj/machinery/atm/proc/interaction_atm_deposit_cash(mob/user, obj/item/spacecash/held, datum/interaction/interaction)
+	// Convert physical cash into an audited account deposit.
+	authenticated_account.credit(held.worth, user.real_name, "Cash deposit", machine_id)
+	if(prob(50))
+		playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
 	else
-		..()
+		playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
+
+	to_chat(user, span_info("You insert [held] into [src]."))
+	src.attack_hand(user)
+	qdel(held)
+	return TRUE
 
 /obj/machinery/atm/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
@@ -424,12 +448,19 @@ log transactions
 			START_MACHINE_PROCESSING(src)
 		playsound(src, "keyboard", 50, TRUE)
 
-/obj/machinery/atm/attack_hand(mob/user as mob)
+/datum/interaction/machine_hand/ungated/atm_use
+	id = "atm_use"
+	name = "Use"
+	requires = list()
+	effect = /obj/machinery/atm/proc/interaction_atm_use
+
+/obj/machinery/atm/proc/interaction_atm_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(user, /mob/living/silicon))
 		to_chat (user, span_warning("A firewall prevents you from interfacing with this device!"))
-		return
+		return TRUE
 	if(get_dist(src,user) <= 1)
 		tgui_interact(user)
+	return TRUE
 
 //stolen wholesale and then edited a bit from newscasters, which are awesome and by Agouri
 /obj/machinery/atm/proc/scan_user(mob/living/carbon/human/human_user as mob)

@@ -20,12 +20,21 @@
 #define ORION_SCREEN_GAMEOVER   "gameover"
 
 
-/obj/machinery/computer/arcade/orion_trail/attack_hand(mob/living/user)
-	// structured TGUI Orion Trail; the upstream attack_hand's
-	// game-over side effects (death, ignite_mob etc. when emagged) still
-	// run here, then the panel opens.
-	if(..())
-		return
+/obj/machinery/computer/arcade/orion_trail/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/orion_trail_use,
+	)
+	..()
+
+// structured TGUI Orion Trail; the upstream attack_hand's
+// game-over side effects (death, ignite_mob etc. when emagged) still
+// run here, then the panel opens.
+/datum/interaction/machine_hand/orion_trail_use
+	id = "orion_trail_use"
+	name = "Use"
+	effect = /obj/machinery/computer/arcade/orion_trail/proc/interaction_use
+
+/obj/machinery/computer/arcade/orion_trail/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(fuel <= 0 || food <= 0 || settlers.len == 0)
 		gameStatus = ORION_STATUS_GAMEOVER
 		event = null
@@ -49,6 +58,7 @@
 			desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/arcade/orion_trail/tgui_state(mob/user)
 	return GLOB.tgui_default_state

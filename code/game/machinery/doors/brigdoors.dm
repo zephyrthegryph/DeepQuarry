@@ -149,10 +149,11 @@
 	if(timer_duration && activation_time && timing) // Setting it while active will reset the activation time
 		activation_time = world.time
 
-/obj/machinery/door_timer/attack_hand(mob/user)
-	if(..())
-		return TRUE
-	tgui_interact(user)
+/obj/machinery/door_timer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/door_timer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

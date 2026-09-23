@@ -65,6 +65,12 @@
 	if(bluespace_radio && (bs_tx_preload_id || bs_rx_preload_id))
 		return INITIALIZE_HINT_LATELOAD
 
+// radio_connection/secure_radio_connections are SSradio's live subscriptions,
+// rebuilt by on_materialize() from frequency/channels (C5); bs_tx_weakref
+// points at a telecomms machine outside the subtree, relinked separately.
+/obj/item/radio/state_exclude()
+	return ..() + list("radio_connection", "secure_radio_connections", "bs_tx_weakref")
+
 /// Radio joins (L3): the frequency and channel connections, and hearing.
 /obj/item/radio/on_materialize()
 	. = ..()
@@ -774,6 +780,10 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	return output
 /obj/item/radio/intercom
 	var/list/broadcast_tiles
+
+// A cache of nearby turfs, rebuilt by Initialize()/forceMove() (C5); not state.
+/obj/item/radio/intercom/state_exclude()
+	return ..() + list("broadcast_tiles")
 
 /obj/item/radio/intercom/proc/update_broadcast_tiles()
 	var/list/output = list()

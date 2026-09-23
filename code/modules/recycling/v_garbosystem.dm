@@ -43,9 +43,24 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	if(contents.len)
 		. += span_warning("There are items in the filter's trap!")
 
-/obj/machinery/v_garbosystem/attack_hand(mob/living/user as mob)
+/obj/machinery/v_garbosystem/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/v_garbosystem_toggle,
+		/datum/interaction/machine_item/v_garbosystem_crowbar_open,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/v_garbosystem_toggle
+	id = "v_garbosystem_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/v_garbosystem/proc/interaction_toggle
+
+/obj/machinery/v_garbosystem/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	operating = !operating
 	update()
+	return TRUE
 
 /obj/machinery/v_garbosystem/power_change()
 	if((. = ..()))
@@ -152,16 +167,22 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	emagged = !emagged
 	update()
 
-/obj/machinery/v_garbosystem/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		if(!operating)
-			to_chat(user, span_notice("You crowbar the filter hatch open, releasing the items trapped within."))
-			for(var/atom/movable/A in contents)
-				A.forceMove(loc)
-			return
-		else
-			to_chat(user, span_warning("Unable to empty filter while the machine is running."))
-	return ..()
+/datum/interaction/machine_item/v_garbosystem_crowbar_open
+	id = "v_garbosystem_crowbar_open"
+	name = "Open filter hatch"
+	category = INTERACTION_CAT_OPEN
+	tool = TOOL_CROWBAR
+	tool_volume = 0
+	effect = /obj/machinery/v_garbosystem/proc/interaction_crowbar_open
+
+/obj/machinery/v_garbosystem/proc/interaction_crowbar_open(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!operating)
+		to_chat(user, span_notice("You crowbar the filter hatch open, releasing the items trapped within."))
+		for(var/atom/movable/A in contents)
+			A.forceMove(loc)
+	else
+		to_chat(user, span_warning("Unable to empty filter while the machine is running."))
+	return TRUE
 
 /obj/machinery/v_garbosystem/proc/transfer_reagent_to_tank(datum/reagents/reg,multiplier)
 	var/volume_magic = reg.total_volume * multiplier
@@ -194,6 +215,19 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	icon_state = "doorbell-standby"
 	var/obj/machinery/v_garbosystem/grinder
 
-/obj/machinery/button/garbosystem/attack_hand(mob/living/user as mob)
+/obj/machinery/button/garbosystem/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/garbosystem_button_press,
+	)
+	..()
+
+/// Old attack_hand: never called ..(); delegates to the grinder's own attack_hand entry.
+/datum/interaction/machine_hand/ungated/garbosystem_button_press
+	id = "garbosystem_button_press"
+	name = "Press"
+	effect = /obj/machinery/button/garbosystem/proc/interaction_press_impl
+
+/obj/machinery/button/garbosystem/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(grinder)
-		return grinder.attack_hand(user)
+		grinder.attack_hand(user)
+	return TRUE

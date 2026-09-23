@@ -206,7 +206,8 @@
 			. += 30 //Organs give a little more
 
 /obj/item/storage/digest_act(atom/movable/item_storage = null)
-	for(var/obj/item/I in contents)
+	make_contents_real()
+	for(var/obj/item/I in contents) // latent-ok
 		I.screen_loc = null
 
 	. = ..()

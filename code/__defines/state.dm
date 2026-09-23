@@ -6,6 +6,10 @@
 #define STATE_KEY_VARS "vars"
 #define STATE_KEY_CONTENTS "contents"
 #define STATE_KEY_COMPONENTS "components"
+/// On a child blob: the holder slot it is in, when not the holder's default slot (C5).
+#define STATE_KEY_SLOT "slot"
+/// Latent entries of a holder (C5): list(list("type", "count", "slot", "state"), ...).
+#define STATE_KEY_LATENT "latent"
 
 /// Wrapper keys for encoded values that JSON cannot hold as they are.
 /// A single-key list with one of these keys is a wrapped value; keys of

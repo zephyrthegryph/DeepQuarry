@@ -45,11 +45,11 @@
 		secret_programs["Teshari 1"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "sca")
 		secret_programs["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
 
-/obj/machinery/computer/looking_glass/attack_hand(mob/user as mob)
-	if(..())
-		return
-
-	tgui_interact(user)
+/obj/machinery/computer/looking_glass/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/computer/looking_glass/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

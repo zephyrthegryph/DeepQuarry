@@ -1,11 +1,4 @@
-#define MECHA_OPERATING     0
-#define MECHA_BOLTS_SECURED 1
-#define MECHA_PANEL_LOOSE   2
-#define MECHA_CELL_OPEN     3
-#define MECHA_CELL_OUT      4
-
 /obj/mecha
-	var/focused_tool_stage
 	name = "Mecha"
 	desc = "Exosuit"
 	description_info = "Alt click to strafe."
@@ -518,7 +511,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return 0
 
 	return 1
-
 
 
 /obj/mecha/proc/check_for_support()
@@ -1238,7 +1230,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				pass_damage_reduc_mod = 1
 
 
-
 			for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 				pass_damage = ME.handle_ranged_contact(A, pass_damage)
 
@@ -1387,12 +1378,10 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(prob(80))
 		check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
-/obj/mecha/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature>src.max_temperature)
-		src.mecha_log_message("Exposed to dangerous temperature.",1)
-		src.take_damage(5,"fire")	//The take_damage() proc handles armor values
-		src.check_for_internal_damage(list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL))
-	return
+/// Hull past max_temperature (the overheating rule): log it and risk internal damage.
+/obj/mecha/on_overheat()
+	mecha_log_message("Exposed to dangerous temperature.", 1)
+	check_for_internal_damage(list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL))
 
 /obj/mecha/proc/dynattackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
@@ -1451,22 +1440,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 ////// AttackBy //////
 //////////////////////
 
-/obj/mecha/proc/run_focused_tool(mob/user, obj/item/tool, quality)
-	focused_tool_stage = quality
-	attackby(tool, user)
-	focused_tool_stage = null
-	return ITEM_INTERACT_SUCCESS
-
-/obj/mecha/screwdriver_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_SCREWDRIVER)
-/obj/mecha/crowbar_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_CROWBAR)
-/obj/mecha/wrench_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_WRENCH)
-/obj/mecha/welder_act(mob/user, obj/item/tool)
-	if(user.a_intent == I_HURT)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
-	return run_focused_tool(user, tool, TOOL_WELDER)
+// Maintenance steps and weld repairs: mecha_maintenance.dm.
 
 /obj/mecha/attackby(obj/item/W as obj, mob/user as mob)
 
@@ -1521,37 +1495,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				to_chat(user, span_warning("Invalid ID: Access denied."))
 		else
 			to_chat(user, span_warning("Maintenance protocols disabled by operator."))
-	else if(focused_tool_stage == TOOL_WRENCH)
-		if(state==MECHA_BOLTS_SECURED)
-			state = MECHA_PANEL_LOOSE
-			to_chat(user, "You undo the securing bolts.")
-		else if(state==MECHA_PANEL_LOOSE)
-			state = MECHA_BOLTS_SECURED
-			to_chat(user, "You tighten the securing bolts.")
-		return
-	else if(focused_tool_stage == TOOL_CROWBAR)
-		if(state==MECHA_PANEL_LOOSE)
-			state = MECHA_CELL_OPEN
-			to_chat(user, "You open the hatch to the power unit")
-		else if(state==MECHA_CELL_OPEN)
-			state=MECHA_PANEL_LOOSE
-			to_chat(user, "You close the hatch to the power unit")
-		else if(state==MECHA_CELL_OUT)
-			var/list/removable_components = list()
-			for(var/slot in internal_components)
-				var/obj/item/mecha_parts/component/MC = internal_components[slot]
-				if(istype(MC))
-					removable_components[MC.name] = MC
-				else
-					to_chat(user, span_notice("\The [src] appears to be missing \the [slot]."))
-
-			var/remove = tgui_input_list(user, "Which component do you want to pry out?", "Remove Component", removable_components)
-			if(!remove)
-				return
-
-			var/obj/item/mecha_parts/component/RmC = removable_components[remove]
-			RmC.detach()
-
+	// Tool steps are the maintenance graph (mecha_maintenance.dm); a tool it has no step for does nothing.
+	else if(W.has_tool_quality(TOOL_WRENCH) || W.has_tool_quality(TOOL_CROWBAR) || W.has_tool_quality(TOOL_SCREWDRIVER))
 		return
 	else if(istype(W, /obj/item/stack/cable_coil))
 		if(state >= MECHA_CELL_OPEN && hasInternalDamage(MECHA_INT_SHORT_CIRCUIT))
@@ -1562,21 +1507,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			else
 				to_chat(user, "There's not enough wire to finish the task.")
 		return
-	else if(focused_tool_stage == TOOL_SCREWDRIVER)
-		if(hasInternalDamage(MECHA_INT_TEMP_CONTROL))
-			clearInternalDamage(MECHA_INT_TEMP_CONTROL)
-			to_chat(user, "You repair the damaged temperature controller.")
-		else if(state==MECHA_CELL_OPEN && src.cell)
-			src.cell.forceMove(src.loc)
-			src.cell = null
-			state = MECHA_CELL_OUT
-			to_chat(user, "You unscrew and pry out the powercell.")
-			src.mecha_log_message("Powercell removed")
-		else if(state==MECHA_CELL_OUT && src.cell)
-			state=MECHA_CELL_OPEN
-			to_chat(user, "You screw the cell in place")
-		return
-
 	else if(istype(W, /obj/item/multitool))
 		if(state>=MECHA_CELL_OPEN && src.occupant)
 			to_chat(user, "You attempt to eject the pilot using the maintenance controls.")
@@ -1601,32 +1531,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				to_chat(user, "There's already a powercell installed.")
 		return
 
-	else if(focused_tool_stage == TOOL_WELDER && !IS_HARMING(user))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
-		var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
-		if (WT.remove_fuel(0,user))
-			if (hasInternalDamage(MECHA_INT_TANK_BREACH))
-				clearInternalDamage(MECHA_INT_TANK_BREACH)
-				to_chat(user, span_notice("You repair the damaged gas tank."))
-		else
-			return
-		if((get_integrity()<max_integrity) || (HC.get_integrity()<HC.max_integrity) || (AC.get_integrity()<AC.max_integrity))
-			if(get_integrity()<max_integrity)
-				to_chat(user, span_notice("You repair some damage to [src.name]."))
-				repair_damage(min(10, max_integrity - get_integrity()))
-				update_damage_alerts()
-			else	if(HC.get_integrity()<HC.max_integrity)
-				to_chat(user, span_notice("You repair some damage to [HC.name]."))
-				HC.repair_damage(10)
-				update_damage_alerts()
-			else	if(AC.get_integrity()<AC.max_integrity)
-				to_chat(user, span_notice("You repair some damage to [AC.name]."))
-				AC.repair_damage(10)
-				update_damage_alerts()
-
-		else
-			to_chat(user, "The [src.name] is at full integrity")
+	else if(W.has_tool_quality(TOOL_WELDER) && !IS_HARMING(user))
 		return
 
 	else if(istype(W, /obj/item/mecha_parts/mecha_tracking))
@@ -1688,7 +1593,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 */
 	return
-
 
 
 /*
@@ -2956,7 +2860,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	*/
 
 
-
 /*
 
 	if (href_list["ai_take_control"])
@@ -3111,7 +3014,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return ..()
 
 
-
 /obj/mecha/proc/update_cell_alerts()
 	if(occupant && cell)
 		var/cellcharge = cell.charge/cell.maxcharge
@@ -3152,11 +3054,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	return TRUE
 
-#undef MECHA_OPERATING
-#undef MECHA_BOLTS_SECURED
-#undef MECHA_PANEL_LOOSE
-#undef MECHA_CELL_OPEN
-#undef MECHA_CELL_OUT
 
 
 // === merged from mecha_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===

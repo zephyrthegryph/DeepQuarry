@@ -39,71 +39,104 @@
 	if(!closed)
 		. += "The lid is open."
 
-/obj/machinery/beehive/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/bee_smoker))
-		if(closed)
-			to_chat(user, span_notice("You need to open \the [src] with a crowbar before smoking the bees."))
-			return
-		user.visible_message(span_notice("[user] smokes the bees in \the [src]."), span_notice("You smoke the bees in \the [src]."))
-		smoked = 30
+/obj/machinery/beehive/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/beehive_smoke,
+		/datum/interaction/machine_item/beehive_load_frame,
+		/datum/interaction/machine_item/beehive_bee_pack,
+		/datum/interaction/machine_item/beehive_scan,
+		/datum/interaction/machine_hand/ungated/beehive_harvest,
+	)
+	..()
+
+/datum/interaction/machine_item/beehive_smoke
+	id = "beehive_smoke"
+	name = "Smoke bees"
+	held_type = /obj/item/bee_smoker
+	effect = /obj/machinery/beehive/proc/interaction_beehive_smoke
+
+/obj/machinery/beehive/proc/interaction_beehive_smoke(mob/user, obj/item/held, datum/interaction/interaction)
+	if(closed)
+		to_chat(user, span_notice("You need to open \the [src] with a crowbar before smoking the bees."))
+		return TRUE
+	user.visible_message(span_notice("[user] smokes the bees in \the [src]."), span_notice("You smoke the bees in \the [src]."))
+	smoked = 30
+	START_MACHINE_PROCESSING(src)
+	update_icon()
+	return TRUE
+
+/datum/interaction/machine_item/beehive_load_frame
+	id = "beehive_load_frame"
+	name = "Load frame"
+	held_type = /obj/item/honey_frame
+	effect = /obj/machinery/beehive/proc/interaction_beehive_load_frame
+
+/obj/machinery/beehive/proc/interaction_beehive_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
+	if(closed)
+		to_chat(user, span_notice("You need to open \the [src] with a crowbar before inserting \the [held]."))
+		return TRUE
+	if(length(frames) >= maxFrames)
+		to_chat(user, span_notice("There is no place for an another frame."))
+		return TRUE
+	if(held.honey)
+		to_chat(user, span_notice("\The [held] is full with beeswax and honey, empty it in the extractor first."))
+		return TRUE
+	user.visible_message(span_notice("[user] loads \the [held] into \the [src]."), span_notice("You load \the [held] into \the [src]."))
+	update_icon()
+	user.drop_from_inventory(held)
+	held.forceMove(src)
+	frames.Add(held)
+	return TRUE
+
+/datum/interaction/machine_item/beehive_bee_pack
+	id = "beehive_bee_pack"
+	name = "Move bees"
+	held_type = /obj/item/bee_pack
+	effect = /obj/machinery/beehive/proc/interaction_beehive_bee_pack
+
+/obj/machinery/beehive/proc/interaction_beehive_bee_pack(mob/user, obj/item/bee_pack/held, datum/interaction/interaction)
+	if(held.full && bee_count)
+		to_chat(user, span_notice("\The [src] already has bees inside."))
+		return TRUE
+	if(!held.full && bee_count < 90)
+		to_chat(user, span_notice("\The [src] is not ready to split."))
+		return TRUE
+	if(!held.full && !smoked)
+		to_chat(user, span_notice("Smoke \the [src] first!"))
+		return TRUE
+	if(closed)
+		to_chat(user, span_notice("You need to open \the [src] with a crowbar before moving the bees."))
+		return TRUE
+	if(held.full)
+		user.visible_message(span_notice("[user] puts the queen and the bees from \the [held] into \the [src]."), span_notice("You put the queen and the bees from \the [held] into \the [src]."))
+		bee_count = 20
 		START_MACHINE_PROCESSING(src)
-		update_icon()
-		return
-	else if(istype(I, /obj/item/honey_frame))
-		if(closed)
-			to_chat(user, span_notice("You need to open \the [src] with a crowbar before inserting \the [I]."))
-			return
-		if(length(frames) >= maxFrames)
-			to_chat(user, span_notice("There is no place for an another frame."))
-			return
-		var/obj/item/honey_frame/H = I
-		if(H.honey)
-			to_chat(user, span_notice("\The [I] is full with beeswax and honey, empty it in the extractor first."))
-			return
-		user.visible_message(span_notice("[user] loads \the [I] into \the [src]."), span_notice("You load \the [I] into \the [src]."))
-		update_icon()
-		user.drop_from_inventory(H)
-		H.forceMove(src)
-		LAZYADD(frames, H)
-		return
-	else if(istype(I, /obj/item/bee_pack))
-		var/obj/item/bee_pack/B = I
-		if(B.full && bee_count)
-			to_chat(user, span_notice("\The [src] already has bees inside."))
-			return
-		if(!B.full && bee_count < 90)
-			to_chat(user, span_notice("\The [src] is not ready to split."))
-			return
-		if(!B.full && !smoked)
-			to_chat(user, span_notice("Smoke \the [src] first!"))
-			return
-		if(closed)
-			to_chat(user, span_notice("You need to open \the [src] with a crowbar before moving the bees."))
-			return
-		if(B.full)
-			user.visible_message(span_notice("[user] puts the queen and the bees from \the [I] into \the [src]."), span_notice("You put the queen and the bees from \the [I] into \the [src]."))
-			bee_count = 20
-			START_MACHINE_PROCESSING(src)
-			B.empty()
-		else
-			user.visible_message(span_notice("[user] puts bees and larvae from \the [src] into \the [I]."), span_notice("You put bees and larvae from \the [src] into \the [I]."))
-			bee_count /= 2
-			B.fill()
-		update_icon()
-		return
-	else if(istype(I, /obj/item/analyzer/plant_analyzer))
-		to_chat(user, span_notice("Scan result of \the [src]..."))
-		to_chat(user, "Beehive is [bee_count ? "[round(bee_count)]% full" : "empty"].[bee_count > 90 ? " Colony is ready to split." : ""]")
-		if(length(frames))
-			to_chat(user, "[length(frames)] frames installed, [round(honeycombs / 100)] filled.")
-			if(honeycombs < length(frames) * 100)
-				to_chat(user, "Next frame is [round(honeycombs % 100)]% full.")
-		else
-			to_chat(user, "No frames installed.")
-		if(smoked)
-			to_chat(user, "The hive is smoked.")
-		return 1
-	return ..()
+		held.empty()
+	else
+		user.visible_message(span_notice("[user] puts bees and larvae from \the [src] into \the [held]."), span_notice("You put bees and larvae from \the [src] into \the [held]."))
+		bee_count /= 2
+		held.fill()
+	update_icon()
+	return TRUE
+
+/datum/interaction/machine_item/beehive_scan
+	id = "beehive_scan"
+	name = "Scan"
+	held_type = /obj/item/analyzer/plant_analyzer
+	effect = /obj/machinery/beehive/proc/interaction_beehive_scan
+
+/obj/machinery/beehive/proc/interaction_beehive_scan(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("Scan result of \the [src]..."))
+	to_chat(user, "Beehive is [bee_count ? "[round(bee_count)]% full" : "empty"].[bee_count > 90 ? " Colony is ready to split." : ""]")
+	if(length(frames))
+		to_chat(user, "[length(frames)] frames installed, [round(honeycombs / 100)] filled.")
+		if(honeycombs < length(frames) * 100)
+			to_chat(user, "Next frame is [round(honeycombs % 100)]% full.")
+	else
+		to_chat(user, "No frames installed.")
+	if(smoked)
+		to_chat(user, "The hive is smoked.")
+	return TRUE
 
 /obj/machinery/beehive/crowbar_act(mob/user, obj/item/tool)
 	closed = !closed
@@ -133,14 +166,19 @@
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
-/obj/machinery/beehive/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/beehive_harvest
+	id = "beehive_harvest"
+	name = "Harvest honeycombs"
+	effect = /obj/machinery/beehive/proc/interaction_beehive_harvest
+
+/obj/machinery/beehive/proc/interaction_beehive_harvest(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!closed)
 		if(honeycombs < 100)
 			to_chat(user, span_notice("There are no filled honeycombs."))
-			return
+			return TRUE
 		if(!smoked && bee_count)
 			to_chat(user, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
-			return
+			return TRUE
 		user.visible_message(span_notice("[user] starts taking the honeycombs out of \the [src]."), span_notice("You start taking the honeycombs out of \the [src]..."))
 		while(honeycombs >= 100 && length(frames) && do_after(user, 3 SECONDS, target = src))
 			var/obj/item/honey_frame/H = pop(frames)
@@ -151,7 +189,7 @@
 			update_icon()
 		if(honeycombs < 100)
 			to_chat(user, span_notice("You take all filled honeycombs out."))
-		return
+		return TRUE
 
 /obj/machinery/beehive/process()
 	if(!bee_count && !smoked)
@@ -224,42 +262,63 @@
 	if(processing)
 		icon_state = "[icon_state]_moving"
 
-/obj/machinery/honey_extractor/attackby(obj/item/I, mob/user)
+/obj/machinery/honey_extractor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/honey_extractor_load_frame,
+		/datum/interaction/machine_item/honey_extractor_collect,
+	)
+	..()
+
+/// The old attackby's shared guard: not spinning, powered, panel closed.
+/obj/machinery/honey_extractor/proc/ready_for_item(mob/actor, atom/target, obj/item/held)
 	if(processing)
-		to_chat(user, span_notice("\The [src] is currently spinning, wait until it's finished."))
-		return
+		return "it's currently spinning, wait until it's finished"
 	if(stat & NOPOWER)
-		to_chat(user, span_notice("\The [src] is powerless and can't grant your wishes"))
-		return
+		return "it's powerless and can't grant your wishes"
 	if(panel_open)
-		to_chat(user, span_notice("\The [src]'s maintenance panel is open, It would not be safe to turn it on."))
-		return
-	else if(istype(I, /obj/item/honey_frame))
-		var/obj/item/honey_frame/H = I
-		if(!H.honey)
-			to_chat(user, span_notice("\The [H] is empty, put it into a beehive."))
-			return
-		user.visible_message(span_notice("[user] loads \the [H]'s comb into \the [src] and turns it on."), span_notice("You load \the [H] into \the [src] and turn it on."))
-		processing = H.honey
+		return "its maintenance panel is open, it would not be safe to turn it on"
+	return TRUE
+
+/datum/interaction/machine_item/honey_extractor_load_frame
+	id = "honey_extractor_load_frame"
+	name = "Load frame"
+	held_type = /obj/item/honey_frame
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null))
+	effect = /obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame
+
+/obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
+	if(!held.honey)
+		to_chat(user, span_notice("\The [held] is empty, put it into a beehive."))
+		return TRUE
+	user.visible_message(span_notice("[user] loads \the [held]'s comb into \the [src] and turns it on."), span_notice("You load \the [held] into \the [src] and turn it on."))
+	processing = held.honey
+	update_icon()
+	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
+	held.honey = 0
+	held.update_icon() //updates the honeyframe
+	spawn(50)
+		new /obj/item/stack/material/wax(loc)
+		honey += processing
+		processing = 0
 		update_icon()
-		use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
-		H.honey = 0
-		H.update_icon() //updates the honeyframe
-		spawn(50)
-			new /obj/item/stack/material/wax(loc)
-			honey += processing
-			processing = 0
-			update_icon()
-	else if(istype(I, /obj/item/reagent_containers/glass))
-		if(!honey)
-			to_chat(user, span_notice("There is no honey in \the [src]."))
-			return
-		var/obj/item/reagent_containers/glass/G = I
-		var/transferred = min(G.reagents.maximum_volume - G.reagents.total_volume, honey)
-		G.reagents.add_reagent(REAGENT_ID_HONEY, transferred)
-		honey -= transferred
-		user.visible_message(span_notice("[user] collects honey from \the [src] into \the [G]."), span_notice("You collect [transferred] units of honey from \the [src] into \the [G]."))
-		return 1
+	return TRUE
+
+/datum/interaction/machine_item/honey_extractor_collect
+	id = "honey_extractor_collect"
+	name = "Collect honey"
+	held_type = /obj/item/reagent_containers/glass
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null))
+	effect = /obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect
+
+/obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect(mob/user, obj/item/reagent_containers/glass/held, datum/interaction/interaction)
+	if(!honey)
+		to_chat(user, span_notice("There is no honey in \the [src]."))
+		return TRUE
+	var/transferred = min(held.reagents.maximum_volume - held.reagents.total_volume, honey)
+	held.reagents.add_reagent(REAGENT_ID_HONEY, transferred)
+	honey -= transferred
+	user.visible_message(span_notice("[user] collects honey from \the [src] into \the [held]."), span_notice("You collect [transferred] units of honey from \the [src] into \the [held]."))
+	return TRUE
 
 /obj/item/bee_smoker
 	name = "bee smoker"

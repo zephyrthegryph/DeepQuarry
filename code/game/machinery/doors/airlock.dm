@@ -8,7 +8,6 @@
 
 /obj/machinery/door/airlock
 	name = "Airlock"
-	description_info = "If you hold left ctrl whilst left-clicking on an airlock, you can ring the doorbell to announce your presence to anyone on the other side! Alternately if you are on HARM intent when doing this, you will bang loudly on the door!<br><br>AIs and Cyborgs can also quickly open/close, bolt/unbolt, and electrify/de-electrify doors at a distance by holding left shift, left control, or left alt respectively whilst left-clicking."
 	icon = 'icons/obj/doors/doorint.dmi'
 	icon_state = "door_closed"
 	power_channel = ENVIRON
@@ -551,11 +550,23 @@ About the new airlock wires panel:
 				s.start()
 	. = ..()
 
-/obj/machinery/door/airlock/attack_hand(mob/user)
+/obj/machinery/door/airlock/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/airlock_use,
+	)
+	..()
+
+/// The old attack_hand: shock/hold-open/xenos/maintenance-panel handling, then fell through to ..() (the base machine_hand chain).
+/datum/interaction/machine_hand/airlock_use
+	id = "airlock_use"
+	name = "Use"
+	effect = /obj/machinery/door/airlock/proc/interaction_use
+
+/obj/machinery/door/airlock/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!issilicon(user))
 		if(isElectrified())
 			if(shock(user, 100))
-				return
+				return TRUE
 
 	if(!Adjacent(hold_open))
 		hold_open = null
@@ -570,13 +581,13 @@ About the new airlock wires panel:
 		var/mob/living/carbon/human/X = user
 		if(istype(X.species, /datum/species/xenos))
 			attack_alien(user)
-			return
+			return TRUE
 
 	if(p_open)
 		wires.Interact(user)
-		return
+		return TRUE
 
-	. = ..()
+	return FALSE
 
 /obj/machinery/door/airlock/click_ctrl(mob/user) //Hold door open
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -735,65 +746,79 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/proc/can_remove_electronics()
 	return !frozen && p_open && (operating < 0 || (!operating && welded && !arePowerSystemsOn() && density && (!locked || (stat & BROKEN))))
 
-/obj/machinery/door/airlock/attackby(obj/item/C, mob/user)
+/obj/machinery/door/airlock/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/airlock_use_item,
+	)
+	..()
+
+/// The old attackby: de-icing, shock, signaler, pai cable and unpowered prying, then fell through to ..().
+/datum/interaction/machine_item/airlock_use_item
+	id = "airlock_use_item"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/door/airlock/proc/interaction_use_item
+
+/obj/machinery/door/airlock/proc/interaction_use_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(frozen)
 		// Melting with hot objects that don't take fuel
 		if(C.is_hot())
 			if(do_after(user, 9 SECONDS, target = src))
 				to_chat(user, span_notice("You finish melting the ice off \the [src]"))
 				unFreeze()
-			return
+			return TRUE
 
 		// This is just funny
 		if(istype(C, /obj/item/pen/crayon))
 			to_chat(user, span_notice("You try to use \the [C] to clear the ice, but it crumbles away!"))
 			qdel(C)
-			return
+			return TRUE
 
 		// Check if we have something that can deice properly, and then use it's deice speed
 		for(var/IT in deicing_tools)
 			if(istype(C, IT))
 				handleRemoveIce(C, user, deicing_tools[IT])
-				return
+				return TRUE
 
 		//if we can't de-ice the door tell them what's wrong.
 		to_chat(user, span_notice("\the [src] is frozen shut!"))
-		return
+		return TRUE
 
 	if(!issilicon(user))
 		if(isElectrified() && shock(user, 75))
-			return
+			return TRUE
 
 	if(istype(C, /obj/item/taperoll))
-		return
+		return TRUE
 
 	add_fingerprint(user)
 
 	if(istype(C, /obj/item/assembly/signaler))
-		return attack_hand(user)
+		attack_hand(user)
+		return TRUE
 
 	if(istype(C, /obj/item/pai_cable))	// -- TLE
 		var/obj/item/pai_cable/cable = C
 		cable.plugin(src, user)
-		return
+		return TRUE
 
 	// Non-crowbar prying weapons retain their special unpowered-door behavior.
 	if(C.pry && !C.has_tool_quality(TOOL_CROWBAR) && !arePowerSystemsOn())
 		if(locked)
 			to_chat(user, span_notice("The airlock's bolts prevent it from being forced."))
-			return
+			return TRUE
 		if(!welded && !operating)
 			if(istype(C, /obj/item/material/twohanded/fireaxe))
 				var/obj/item/material/twohanded/fireaxe/F = C
 				if(!F.wielded)
 					to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
-					return
+					return TRUE
 			if(density)
 				open(TRUE)
 			else
 				close(1)
-			return
-	. = ..()
+			return TRUE
+	return FALSE
 
 /obj/machinery/door/airlock/welder_act(mob/user, obj/item/tool)
 	if(frozen)
@@ -1035,7 +1060,8 @@ About the new airlock wires panel:
 /obj/structure/closet/airlock_crush(crush_damage)
 	..()
 	take_damage(crush_damage, BRUTE)
-	for(var/atom/movable/AM in src)
+	latent_materialize_all() // crushing reaches the contents (C5)
+	for(var/atom/movable/AM in src) // latent-ok
 		AM.airlock_crush()
 	return TRUE
 

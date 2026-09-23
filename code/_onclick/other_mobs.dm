@@ -27,7 +27,21 @@
 
 	A.attack_hand(src)
 
+/**
+ * Touched with an empty hand, or a silicon's Use through silicon_use. The
+ * type's gates run first (hand_gate()); then the converted handlers (I7):
+ * interactions with `entry = INTERACTION_ENTRY_HAND`, most specific type first.
+ * Returns TRUE when a gate stopped the touch or an interaction answered it.
+ */
 /atom/proc/attack_hand(mob/user as mob)
+	return run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE) ? TRUE : FALSE
+
+/**
+ * What a touch passes through before the type's own hand interactions: signal
+ * listeners, unbuckling, the machinery operability checks. Returns TRUE to stop
+ * the touch there. Overrides call ..() at the point the old attack_hand did.
+ */
+/atom/proc/hand_gate(mob/user)
 	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACK_HAND, user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
 	return FALSE

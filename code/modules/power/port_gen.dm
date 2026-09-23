@@ -60,11 +60,20 @@
 /obj/machinery/power/powered()
 	return 1 //doesn't require an external power source
 
-/obj/machinery/power/port_gen/attack_hand(mob/user as mob)
-	if(..())
-		return
-	if(!anchored)
-		return
+/obj/machinery/power/port_gen/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/port_gen_touch,
+	)
+	..()
+
+/// Old attack_hand: no-op placeholder (the anchored check did nothing observable either way).
+/datum/interaction/machine_hand/port_gen_touch
+	id = "port_gen_touch"
+	name = "Use"
+	effect = /obj/machinery/power/port_gen/proc/interaction_touch
+
+/obj/machinery/power/port_gen/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/power/port_gen/examine(mob/user)
 	. = ..()
@@ -279,21 +288,54 @@
 		emagged = 1
 		return 1
 
-/obj/machinery/power/port_gen/pacman/attackby(obj/item/O, mob/user)
-	if(istype(O, sheet_path))
-		var/obj/item/stack/addstack = O
-		var/amount = min((max_sheets - sheets), addstack.get_amount())
-		if(amount < 1)
-			to_chat(user, span_warning("The [src.name] is full!"))
-			return
-		to_chat(user, span_notice("You add [amount] sheet\s to the [src.name]."))
-		sheets += amount
-		addstack.use(amount)
-		return
-	else if(!active)
-		if(default_part_replacement(user, O))
-			return
-	return ..()
+/obj/machinery/power/port_gen/pacman/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/pacman_add_sheets,
+		/datum/interaction/machine_item/pacman_part_replacement,
+		/datum/interaction/machine_hand/pacman_open_ui,
+	)
+	..()
+
+/// Old attackby: add fuel sheets. `sheet_path` varies by subtype, so it's checked at runtime.
+/datum/interaction/machine_item/pacman_add_sheets
+	id = "pacman_add_sheets"
+	name = "Add fuel"
+	held_type = /obj/item/stack/material
+	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/power/port_gen/pacman/proc/pacman_sheet_match, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/pacman/proc/pacman_has_room, "it's full"))
+	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_add_sheets
+
+/obj/machinery/power/port_gen/pacman/proc/pacman_sheet_match(mob/actor, atom/target, obj/item/held)
+	return istype(held, sheet_path)
+
+/obj/machinery/power/port_gen/pacman/proc/pacman_has_room(mob/actor, atom/target, obj/item/held)
+	if(!held)
+		return TRUE
+	var/obj/item/stack/addstack = held
+	return min((max_sheets - sheets), addstack.get_amount()) >= 1
+
+/obj/machinery/power/port_gen/pacman/proc/interaction_add_sheets(mob/user, obj/item/O, datum/interaction/interaction)
+	var/obj/item/stack/addstack = O
+	var/amount = min((max_sheets - sheets), addstack.get_amount())
+	to_chat(user, span_notice("You add [amount] sheet\s to the [src.name]."))
+	sheets += amount
+	addstack.use(amount)
+	return TRUE
+
+/// Old attackby: `else if(!active) if(default_part_replacement(user, O)) return`.
+/datum/interaction/machine_item/pacman_part_replacement
+	id = "pacman_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/pacman/proc/pacman_not_active, null))
+	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_part_replacement_impl
+
+/obj/machinery/power/port_gen/pacman/proc/pacman_not_active(mob/actor, atom/target, obj/item/held)
+	return !active
+
+/obj/machinery/power/port_gen/pacman/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	return default_part_replacement(user, held) ? TRUE : FALSE
 
 /obj/machinery/power/port_gen/pacman/screwdriver_act(mob/user, obj/item/O)
 	if(active)
@@ -318,11 +360,19 @@
 	anchored = !anchored
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/port_gen/pacman/attack_hand(mob/user)
-	..()
-	if (!anchored)
-		return
+/// Old attack_hand: base was always called first, then opened the interface if anchored.
+/datum/interaction/machine_hand/pacman_open_ui
+	id = "pacman_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/pacman/proc/pacman_anchored, null))
+	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_open_ui_impl
+
+/obj/machinery/power/port_gen/pacman/proc/pacman_anchored(mob/actor, atom/target, obj/item/held)
+	return !!anchored
+
+/obj/machinery/power/port_gen/pacman/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/power/port_gen/pacman
 	silicon_use = SILICON_USE_UI
@@ -620,10 +670,11 @@
 	if(Adjacent(user, src) || isobserver(user))
 		. += span_notice("The status display reads: Power generation now at <b>[power_gen*0.001]</b>kW.")
 
-/obj/machinery/power/rtg/attackby(obj/item/I, mob/user, params)
-	if(default_part_replacement(user, I))
-		return
-	return ..()
+/obj/machinery/power/rtg/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+	)
+	..()
 
 /obj/machinery/power/rtg/update_icon()
 	if(panel_open)
@@ -646,7 +697,8 @@
 
 /obj/machinery/power/rtg/fake_gen/RefreshParts()
 	return
-/obj/machinery/power/rtg/fake_gen/attackby(obj/item/I, mob/user, params)
+/// Old attackby: blocked entirely (never called ..()), so fake_gen never offers the base rtg's part replacement.
+/obj/machinery/power/rtg/fake_gen/declare_interactions(list/into)
 	return
 /obj/machinery/power/rtg/fake_gen/update_icon()
 	return
@@ -688,7 +740,7 @@
 		span_warningplain("You hear a loud electrical crack!"))
 	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
 	tesla_zap(src, 5, power_gen * 0.05, current_jumps = 1)
-	addtimer(CALLBACK(GLOBAL_PROC, PROC_REF(explosion), get_turf(src), 2, 3, 4, 8), 100) // Not a normal explosion.
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(explosion), get_turf(src), 2, 3, 4, 8), 100) // Not a normal explosion.
 
 /obj/machinery/power/rtg/abductor/bullet_act(obj/item/projectile/Proj)
 	. = ..()
@@ -696,31 +748,69 @@
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an Abductor Core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
 
-/obj/machinery/power/rtg/abductor/attack_hand(mob/living/user)
-	if(!istype(user) || (. = ..()))
-		return
+/obj/machinery/power/rtg/abductor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/abductor_eject_cell,
+		/datum/interaction/machine_item/abductor_insert_cell,
+		/datum/interaction/machine_item/abductor_insert_cell_real,
+	)
+	..()
 
-	if(cell)
-		cell.forceMove(get_turf(src))
-		user.put_in_active_hand(cell)
-		cell = null
-		state_change = TRUE
-		RefreshParts()
-		update_icon()
-		playsound(src, 'sound/effects/metal_close.ogg', 50, 1)
-		return TRUE
+/// Old attack_hand: eject the void cell. `!istype(user)` (never true for a mob/living param) is kept as a requirement for fidelity.
+/datum/interaction/machine_hand/abductor_eject_cell
+	id = "abductor_eject_cell"
+	name = "Take out"
+	category = INTERACTION_CAT_EJECT
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/power/rtg/abductor/proc/abductor_actor_is_living, null), REQ_ON(PRED_TARGET, /obj/machinery/power/rtg/abductor/proc/abductor_has_cell, null))
+	effect = /obj/machinery/power/rtg/abductor/proc/interaction_eject_cell
 
-/obj/machinery/power/rtg/abductor/attackby(obj/item/I, mob/user, params)
+/obj/machinery/power/rtg/abductor/proc/abductor_actor_is_living(mob/actor, atom/target, obj/item/held)
+	return isliving(actor)
+
+/obj/machinery/power/rtg/abductor/proc/abductor_has_cell(mob/actor, atom/target, obj/item/held)
+	return !!cell
+
+/obj/machinery/power/rtg/abductor/proc/interaction_eject_cell(mob/user, obj/item/held, datum/interaction/interaction)
+	cell.forceMove(get_turf(src))
+	user.put_in_active_hand(cell)
+	cell = null
+	state_change = TRUE
+	RefreshParts()
+	update_icon()
+	playsound(src, 'sound/effects/metal_close.ogg', 50, 1)
+	return TRUE
+
+/// Old attackby: `state_change = TRUE` ran unconditionally first, then a void cell was inserted if there wasn't one already.
+/datum/interaction/machine_item/abductor_insert_cell
+	id = "abductor_insert_cell"
+	name = "Use"
+	held_type = /obj/item
+	consumes_input = FALSE
+	effect = /obj/machinery/power/rtg/abductor/proc/interaction_state_change_marker
+
+/obj/machinery/power/rtg/abductor/proc/interaction_state_change_marker(mob/user, obj/item/held, datum/interaction/interaction)
 	state_change = TRUE //Can't tell if parent did something
-	if(istype(I, /obj/item/cell/void) && !cell)
-		user.remove_from_mob(I)
-		I.forceMove(src)
-		cell = I
-		RefreshParts()
-		update_icon()
-		playsound(src, 'sound/effects/metal_close.ogg', 50, 1)
-		return
-	return ..()
+	return FALSE
+
+/datum/interaction/machine_item/abductor_insert_cell_real
+	id = "abductor_insert_cell_real"
+	name = "Insert void cell"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/cell/void
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/rtg/abductor/proc/abductor_no_cell, null))
+	effect = /obj/machinery/power/rtg/abductor/proc/interaction_insert_cell
+
+/obj/machinery/power/rtg/abductor/proc/abductor_no_cell(mob/actor, atom/target, obj/item/held)
+	return !cell
+
+/obj/machinery/power/rtg/abductor/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
+	user.remove_from_mob(I)
+	I.forceMove(src)
+	cell = I
+	RefreshParts()
+	update_icon()
+	playsound(src, 'sound/effects/metal_close.ogg', 50, 1)
+	return TRUE
 
 /obj/machinery/power/rtg/abductor/update_icon()
 	if(!state_change)
@@ -748,7 +838,8 @@
 	else
 		asplod()
 
-/obj/machinery/power/rtg/abductor/fire_act(exposed_temperature, exposed_volume)
+/// Heat behaviour rule: fire sets off a void core.
+/obj/machinery/power/rtg/abductor/proc/rule_asplod(datum/rule/rule)
 	asplod()
 
 // Comes with an installed cell
@@ -802,7 +893,8 @@
 /obj/machinery/power/rtg/kugelblitz/ex_act()
 	asplod()
 
-/obj/machinery/power/rtg/kugelblitz/fire_act(exposed_temperature, exposed_volume)
+/// Heat behaviour rule: fire sets off a kugelblitz.
+/obj/machinery/power/rtg/kugelblitz/proc/rule_asplod(datum/rule/rule)
 	asplod()
 
 /obj/machinery/power/rtg/kugelblitz/bullet_act(obj/item/projectile/Proj)
@@ -851,9 +943,23 @@
 		n += SP.rating
 	part_mult = n
 
-/obj/machinery/power/rtg/reg/attackby(obj/item/I, mob/user, params)
+/obj/machinery/power/rtg/reg/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/reg_pixel_fix,
+	)
+	..()
+
+/// Old attackby: `pixel_x = -32` ran unconditionally first, then the base rtg's part replacement.
+/datum/interaction/machine_item/reg_pixel_fix
+	id = "reg_pixel_fix"
+	name = "Use"
+	held_type = /obj/item
+	consumes_input = FALSE
+	effect = /obj/machinery/power/rtg/reg/proc/interaction_pixel_fix
+
+/obj/machinery/power/rtg/reg/proc/interaction_pixel_fix(mob/user, obj/item/held, datum/interaction/interaction)
 	pixel_x = -32
-	return ..()
+	return FALSE
 
 /obj/machinery/power/rtg/reg/update_icon()
 	pixel_x = -32
@@ -983,25 +1089,54 @@
 	else
 		sheet_left -= needed_sheets
 
-/obj/machinery/power/port_gen/large_altevian/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, sheet_path))
-		var/obj/item/stack/addstack = O
-		var/amount = min((max_sheets - sheets), addstack.get_amount())
-		if(amount < 1)
-			to_chat(user, span_warning("The [src.name] is full!"))
-			return
-		to_chat(user, span_notice("You add [amount] sheet\s to the [src.name]."))
-		sheets += amount
-		addstack.use(amount)
-		update_icon()
-		return
-	return ..()
-
-/obj/machinery/power/port_gen/large_altevian/attack_hand(mob/user as mob)
+/obj/machinery/power/port_gen/large_altevian/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/large_altevian_add_sheets,
+		/datum/interaction/machine_hand/large_altevian_toggle,
+	)
 	..()
-	if (!anchored)
-		return
+
+/// Old attackby: add fuel sheets.
+/datum/interaction/machine_item/large_altevian_add_sheets
+	id = "large_altevian_add_sheets"
+	name = "Add fuel"
+	held_type = /obj/item/stack/material
+	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/power/port_gen/large_altevian/proc/large_altevian_sheet_match, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/large_altevian/proc/large_altevian_has_room, "it's full"))
+	effect = /obj/machinery/power/port_gen/large_altevian/proc/interaction_add_sheets
+
+/obj/machinery/power/port_gen/large_altevian/proc/large_altevian_sheet_match(mob/actor, atom/target, obj/item/held)
+	return istype(held, sheet_path)
+
+/obj/machinery/power/port_gen/large_altevian/proc/large_altevian_has_room(mob/actor, atom/target, obj/item/held)
+	if(!held)
+		return TRUE
+	var/obj/item/stack/addstack = held
+	return min((max_sheets - sheets), addstack.get_amount()) >= 1
+
+/obj/machinery/power/port_gen/large_altevian/proc/interaction_add_sheets(mob/user, obj/item/O, datum/interaction/interaction)
+	var/obj/item/stack/addstack = O
+	var/amount = min((max_sheets - sheets), addstack.get_amount())
+	to_chat(user, span_notice("You add [amount] sheet\s to the [src.name]."))
+	sheets += amount
+	addstack.use(amount)
+	update_icon()
+	return TRUE
+
+/// Old attack_hand: the base port_gen behaviour always ran, then toggled power if anchored.
+/datum/interaction/machine_hand/large_altevian_toggle
+	id = "large_altevian_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/large_altevian/proc/large_altevian_anchored, null))
+	effect = /obj/machinery/power/port_gen/large_altevian/proc/interaction_toggle_power
+
+/obj/machinery/power/port_gen/large_altevian/proc/large_altevian_anchored(mob/actor, atom/target, obj/item/held)
+	return !!anchored
+
+/obj/machinery/power/port_gen/large_altevian/proc/interaction_toggle_power(mob/user, obj/item/held, datum/interaction/interaction)
 	TogglePower()
+	return TRUE
 
 /obj/machinery/power/port_gen/large_altevian/attack_ai(mob/user as mob)
 	TogglePower()
@@ -1054,8 +1189,6 @@
 /obj/machinery/power/rtg/antimatter_core/ex_act()
 	asplod()
 
-/obj/machinery/power/rtg/antimatter_core/fire_act(exposed_temperature, exposed_volume)
-	return
 
 /obj/machinery/power/rtg/antimatter_core/bullet_act(obj/item/projectile/Proj)
 	. = ..()

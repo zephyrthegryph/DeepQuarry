@@ -201,14 +201,43 @@ Thus, the two variables affect pump operation are set in New():
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/pump/attack_hand(mob/user)
-	if(..())
-		return
+/obj/machinery/atmospherics/binary/pump/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/pump_open_ui,
+		/datum/interaction/machine_alt/pump_max_output,
+	)
+	..()
+
+/// Old attack_hand: `if(..()) return; add_fingerprint(user); if(!allowed(user)) ...; tgui_interact(user)`.
+/datum/interaction/machine_hand/pump_open_ui
+	id = "pump_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/pump/proc/lets_in, "access denied"))
+	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl
+
+/// Old click_alt access check, shared with the hand entry.
+/obj/machinery/atmospherics/binary/pump/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
+
+/obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return
 	tgui_interact(user)
+	return TRUE
+
+/// Old click_alt: sets the pump to max output.
+/datum/interaction/machine_alt/pump_max_output
+	id = "pump_max_output"
+	name = "Set to max output"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/pump/proc/lets_in, "access denied"))
+	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_max_output
+
+/obj/machinery/atmospherics/binary/pump/proc/interaction_max_output(mob/user, obj/item/held, datum/interaction/interaction)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	to_chat(user, span_notice("You set the [name] to max output"))
+	target_pressure = max_pressure_setting
+	update_rust_device()
+	add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/atmospherics/binary/pump/tgui_act(action, params, datum/tgui/ui)
 	if(..())
@@ -258,19 +287,8 @@ Thus, the two variables affect pump operation are set in New():
 		atom_deconstruct()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/atmospherics/binary/pump/click_alt(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return CLICK_ACTION_BLOCKING
-
-	to_chat(user, span_notice("You set the [name] to max output"))
-	target_pressure = max_pressure_setting
-	update_rust_device()
-	add_fingerprint(user)
-	return CLICK_ACTION_SUCCESS
-
-
+// click_alt is now /datum/interaction/machine_alt/pump_max_output (above),
+// from the interaction-framework conversion landed on master.
 /obj/machinery/atmospherics/binary/pump/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!allowed(user))

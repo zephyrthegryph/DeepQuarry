@@ -73,15 +73,30 @@
 	busy = 0
 
 
-/obj/machinery/power/breakerbox/attack_hand(mob/user)
-	if(update_locked)
-		to_chat(user, span_red("System locked. Please try again later."))
-		return
+/obj/machinery/power/breakerbox/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/breakerbox_toggle,
+		/datum/interaction/machine_item/breakerbox_use,
+	)
+	..()
 
-	if(busy)
-		to_chat(user, span_red("System is busy. Please wait until current operation is finished before changing power settings."))
-		return
+/// Old attack_hand (never called ..()): reprogram the breaker box, gated on lock/busy state.
+/datum/interaction/machine_hand/ungated/breakerbox_toggle
+	id = "breakerbox_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	requires = list(REQ_INTERACTION_REACH, \
+		REQ_ON(PRED_TARGET, /obj/machinery/power/breakerbox/proc/breakerbox_not_locked, "system locked. please try again later"), \
+		REQ_ON(PRED_TARGET, /obj/machinery/power/breakerbox/proc/breakerbox_not_busy, "system is busy. please wait until current operation is finished before changing power settings"))
+	effect = /obj/machinery/power/breakerbox/proc/interaction_toggle
 
+/obj/machinery/power/breakerbox/proc/breakerbox_not_locked(mob/actor, atom/target, obj/item/held)
+	return !update_locked
+
+/obj/machinery/power/breakerbox/proc/breakerbox_not_busy(mob/actor, atom/target, obj/item/held)
+	return !busy
+
+/obj/machinery/power/breakerbox/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	busy = 1
 	for(var/mob/O in viewers(user))
 		O.show_message(span_red(text("[user] started reprogramming [src]!")), 1)
@@ -95,8 +110,20 @@
 		spawn(600)
 			update_locked = 0
 	busy = 0
+	return TRUE
 
-/obj/machinery/power/breakerbox/attackby(obj/item/W as obj, mob/user as mob)
+/**
+ * Old attackby: a multitool renames the RCON tag, then regardless of item type the box
+ * refuses maintenance while on, else tries a part replacement. Kept as one interaction
+ * with the whole old body since the multitool branch isn't exclusive of the rest.
+ */
+/datum/interaction/machine_item/breakerbox_use
+	id = "breakerbox_use"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/power/breakerbox/proc/interaction_use
+
+/obj/machinery/power/breakerbox/proc/interaction_use(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/newtag = tgui_input_text(user, "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "SMES RCON system", "", MAX_NAME_LEN)
 		if(newtag)
@@ -104,9 +131,9 @@
 			to_chat(user, span_notice("You changed the RCON tag to: [newtag]"))
 	if(on)
 		to_chat(user, span_red("Disable the breaker before performing maintenance."))
-		return
-	if(default_part_replacement(user, W))
-		return
+		return TRUE
+	default_part_replacement(user, W)
+	return TRUE
 
 /obj/machinery/power/breakerbox/proc/set_state(state)
 	on = state

@@ -49,19 +49,33 @@
 		return
 
 
-/obj/machinery/implantchair/attackby(obj/item/G, mob/user)
+/obj/machinery/implantchair/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/implantchair_insert,
+		/datum/interaction/machine_verb/implantchair_get_out,
+		/datum/interaction/machine_verb/implantchair_move_inside,
+	)
+	..()
+
+/// Old attackby: never called ..(), so the whole thing (including the non-grab no-op) stays in the effect.
+/datum/interaction/machine_item/implantchair_insert
+	id = "implantchair_insert"
+	name = "Put in chair"
+	effect = /obj/machinery/implantchair/proc/interaction_insert
+
+/obj/machinery/implantchair/proc/interaction_insert(mob/user, obj/item/G, datum/interaction/interaction)
 	if(istype(G, /obj/item/grab))
 		var/obj/item/grab/grab = G
 		if(!ismob(grab.affecting))
-			return
+			return TRUE
 		if(grab.affecting.has_buckled_mobs())
 			to_chat(user, span_warning("\The [grab.affecting] has other entities attached to them. Remove them first."))
-			return
+			return TRUE
 		var/mob/M = grab.affecting
 		if(put_mob(M))
 			qdel(G)
 	src.updateUsrDialog(user)
-	return
+	return TRUE
 
 
 /obj/machinery/implantchair/proc/go_out(mob/M)
@@ -117,22 +131,25 @@
 		LAZYADD(implant_list, I)
 	return
 
-/obj/machinery/implantchair/verb/get_out()
-	set name = "Eject occupant"
-	set category = "Object"
-	set src in oview(1)
-	if(usr.stat != 0)
-		return
-	src.go_out(usr)
-	add_fingerprint(usr)
-	return
+/datum/interaction/machine_verb/implantchair_get_out
+	id = "implantchair_get_out"
+	name = "Eject occupant"
+	effect = /obj/machinery/implantchair/proc/interaction_get_out
 
+/obj/machinery/implantchair/proc/interaction_get_out(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0)
+		return TRUE
+	src.go_out(user)
+	add_fingerprint(user)
+	return TRUE
 
-/obj/machinery/implantchair/verb/move_inside()
-	set name = "Move Inside"
-	set category = "Object"
-	set src in oview(1)
-	if(usr.stat != 0 || stat & (NOPOWER|BROKEN))
-		return
-	put_mob(usr)
-	return
+/datum/interaction/machine_verb/implantchair_move_inside
+	id = "implantchair_move_inside"
+	name = "Move Inside"
+	effect = /obj/machinery/implantchair/proc/interaction_move_inside
+
+/obj/machinery/implantchair/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0 || stat & (NOPOWER|BROKEN))
+		return TRUE
+	put_mob(user)
+	return TRUE

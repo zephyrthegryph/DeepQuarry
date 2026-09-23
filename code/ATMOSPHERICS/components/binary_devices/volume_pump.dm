@@ -228,14 +228,26 @@ Thus, the two variables affect pump operation are set in New():
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/volume_pump/attack_hand(mob/user)
-	if(..())
-		return
+/obj/machinery/atmospherics/binary/volume_pump/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/volume_pump_open_ui,
+		/datum/interaction/machine_alt/volume_pump_max_output,
+	)
+	..()
+
+/// Old attack_hand: fingerprint, access check, then the UI.
+/datum/interaction/machine_hand/volume_pump_open_ui
+	id = "volume_pump_open_ui"
+	name = "Use"
+	effect = /obj/machinery/atmospherics/binary/volume_pump/proc/interaction_volume_pump_open_ui
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/interaction_volume_pump_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(!allowed(user))
 		to_chat(user, span_warning("Access denied."))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/atmospherics/binary/volume_pump/tgui_act(action, params, datum/tgui/ui)
 	if(..())
@@ -306,18 +318,22 @@ Thus, the two variables affect pump operation are set in New():
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/atmospherics/binary/volume_pump/click_alt(mob/user)
+/datum/interaction/machine_alt/volume_pump_max_output
+	id = "volume_pump_max_output"
+	name = "Set to max output"
+	effect = /obj/machinery/atmospherics/binary/volume_pump/proc/interaction_max_output
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/interaction_max_output(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!allowed(user))
 		to_chat(user, span_warning("Access denied."))
-		return CLICK_ACTION_BLOCKING
+		return TRUE
 
 	to_chat(user, span_notice("You set the [name] to max output"))
 	transfer_rate = max_transfer_rate
 	update_rust_device()
 	add_fingerprint(user)
-	return CLICK_ACTION_SUCCESS
-
+	return TRUE
 
 /obj/machinery/atmospherics/binary/volume_pump/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)

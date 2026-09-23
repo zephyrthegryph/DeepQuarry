@@ -8,29 +8,43 @@
 	var/list/authorized = list(  )
 
 
-/obj/machinery/computer/shuttle/attackby(obj/item/card/W as obj, mob/user as mob)
-	if(stat & (BROKEN|NOPOWER))	return
-	if ((!( istype(W, /obj/item/card) ) || !( SSticker ) || SSemergency_shuttle.location() || !( user )))	return
+/obj/machinery/computer/shuttle/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shuttle_authorize,
+	)
+	..()
+
+/datum/interaction/machine_item/shuttle_authorize
+	id = "shuttle_authorize"
+	name = "Use"
+	held_type = /obj/item/card
+	effect = /obj/machinery/computer/shuttle/proc/interaction_authorize
+
+/obj/machinery/computer/shuttle/proc/interaction_authorize(mob/user, obj/item/card/W, datum/interaction/interaction)
+	if(stat & (BROKEN|NOPOWER))
+		return TRUE
+	if ((!( istype(W, /obj/item/card) ) || !( SSticker ) || SSemergency_shuttle.location() || !( user )))
+		return TRUE
 	if (istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if (istype(W, /obj/item/pda))
 			var/obj/item/pda/pda = W
 			W = pda.id
 		if (!W:access) //no access
 			to_chat(user, "The access level of [W:registered_name]\'s card is not high enough. ")
-			return
+			return TRUE
 
 		var/list/cardaccess = W:access
 		if(!istype(cardaccess, /list) || !cardaccess.len) //no access
 			to_chat(user, "The access level of [W:registered_name]\'s card is not high enough. ")
-			return
+			return TRUE
 
 		if(!(ACCESS_HEADS in W:access)) //doesn't have this access
 			to_chat(user, "The access level of [W:registered_name]\'s card is not high enough. ")
-			return 0
+			return TRUE
 
 		var/choice = tgui_alert(user, text("Would you like to (un)authorize a shortened launch time? [] authorization\s are still needed. Use abort to cancel all authorizations.", src.auth_need - src.authorized.len), "Shuttle Launch", list("Authorize", "Repeal", "Abort"))
 		if(SSemergency_shuttle.location() && user.get_active_hand() != W)
-			return 0
+			return TRUE
 		switch(choice)
 			if("Authorize")
 				src.authorized -= W:registered_name
@@ -65,5 +79,5 @@
 					SSemergency_shuttle.set_launch_countdown(10)
 					emagged = 1
 				if("Cancel")
-					return
-	return
+					return TRUE
+	return TRUE

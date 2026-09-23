@@ -188,6 +188,8 @@
 	if(gun.ammo_magazine)
 		to_chat(user, span_warning("[gun] already has a magazine loaded."))
 		return FALSE
+	// C5: the magazine may still hold its rounds as a count.
+	AM.make_rounds_real()
 	if(do_after(user, gun.reload_time * AM.w_class, target = gun))
 		user.remove_from_mob(AM)
 		AM.loc = gun

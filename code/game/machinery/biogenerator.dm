@@ -220,9 +220,22 @@
 		icon_state = "biogen-work"
 	return
 
-/obj/machinery/biogenerator/attackby(obj/item/O, mob/user)
-	if(default_part_replacement(user, O))
-		return
+/obj/machinery/biogenerator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_item/biogenerator_insert,
+		/datum/interaction/machine_hand/ungated/biogenerator_use,
+	)
+	..()
+
+/// The old attackby: insert a beaker, bulk-insert a plant bag, or insert one grown item.
+/datum/interaction/machine_item/biogenerator_insert
+	id = "biogenerator_insert"
+	name = "Insert"
+	held_type = /obj/item
+	effect = /obj/machinery/biogenerator/proc/interaction_insert
+
+/obj/machinery/biogenerator/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_notice("\The [src] is already loaded."))
@@ -262,12 +275,19 @@
 			O.loc = src
 			to_chat(user, span_notice("You put \the [O] in \the [src]"))
 	update_icon()
-	return
+	return TRUE
 
-/obj/machinery/biogenerator/attack_hand(mob/user as mob)
+/// The old attack_hand: never called ..(), just checked BROKEN then opened the UI.
+/datum/interaction/machine_hand/ungated/biogenerator_use
+	id = "biogenerator_use"
+	name = "Use"
+	effect = /obj/machinery/biogenerator/proc/interaction_use
+
+/obj/machinery/biogenerator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & BROKEN)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/biogenerator/proc/activate(mob/user)
 	if(user.stat)

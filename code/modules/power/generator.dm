@@ -226,12 +226,26 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/generator/attack_hand(mob/user)
+/obj/machinery/power/generator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/generator_open_ui,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/generator_open_ui
+	id = "generator_open_ui"
+	name = "Use"
+	effect = /obj/machinery/power/generator/proc/interaction_open_ui_impl
+
+/obj/machinery/power/generator/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER) || !anchored) return
+	if(stat & (BROKEN|NOPOWER) || !anchored)
+		return TRUE
 	if(!circ1 || !circ2) //Just incase the middle part of the TEG was not wrenched last.
 		reconnect()
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/power/generator/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

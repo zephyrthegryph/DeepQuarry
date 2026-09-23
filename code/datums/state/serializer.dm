@@ -158,12 +158,24 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if((flags & STATE_CONTENTS) && isatom(D))
 		var/atom/A = D
 		var/list/children = list()
+		var/datum/ledger/L = A.ledger || (A.has_latent() ? dq_ledger(A) : null)
 		for(var/atom/movable/child as anything in state_children(A))
 			var/list/child_blob = serialize_datum(child, flags)
 			if(!child_blob)
 				return null
+			var/list/record = L?.entries[child]
+			if(record && record[LEDGER_E_SLOT] != L.default_id)
+				child_blob[STATE_KEY_SLOT] = record[LEDGER_E_SLOT]
 			children += list(child_blob)
 		blob[STATE_KEY_CONTENTS] = children
+		if(L?.latent_total)
+			var/list/latent = list()
+			for(var/datum/latent_entry/entry as anything in L.latent_list())
+				var/list/encoded = list("type" = "[entry.path]", "count" = entry.count, "slot" = entry.slot)
+				if(entry.blob)
+					encoded["state"] = entry.blob
+				latent += list(encoded)
+			blob[STATE_KEY_LATENT] = latent
 	if(flags & STATE_COMPONENTS)
 		var/list/components = serialize_components(D)
 		if(errors)
@@ -234,6 +246,13 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	probe_ctx.ids = list()
 	var/datum/state_schema/schema = state_schema_for(probe)
 	for(var/name in schema.saved_vars)
+		// atom_colours can be seeded by a random pick at Initialize() (a
+		// flavour colour promoted into the priority list by the base
+		// /atom/Initialize()); a baseline sampled from one random instance
+		// would falsely swallow every other instance's real colour (C5).
+		// Skipping it here falls back to the plain "matches if empty" rule.
+		if(name == "atom_colours")
+			continue
 		var/value = probe.vars[name]
 		if(!islist(value))
 			continue
@@ -284,7 +303,14 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if(islist(value))
 		return encode_list(value, where)
 	if(isfile(value))
-		return list(STATE_WRAP_RESOURCE = "[value]")
+		// A dynamically generated icon/mutable_appearance (e.g. a composited
+		// sprite stack) has no .rsc path, "[value]" is "", and decode's
+		// file("") does not round-trip back to it (C5); treat it as unset,
+		// same as what decode would give back anyway.
+		var/rsc_path = "[value]"
+		if(!length(rsc_path))
+			return null
+		return list(STATE_WRAP_RESOURCE = rsc_path)
 	if(isdatum(value))
 		if(ids && (value in ids))
 			return list(STATE_WRAP_CHILD = ids[value])
@@ -443,10 +469,27 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			var/value = A.vars[name]
 			if(isdatum(value) && (value in removed))
 				A.vars[name] = null
+	// The blob's latent entries replace whatever the holder declared at init.
+	if(A.latent_contents)
+		A.latent_generator_clear()
+		A.latent_declared = FALSE
+		A.ledger?.latent_clear()
 	var/index = 0
 	for(var/list/child_blob as anything in blob[STATE_KEY_CONTENTS])
 		index++
-		create_tree(child_blob, A, id == "" ? "[index]" : "[id].[index]")
+		var/child_id = id == "" ? "[index]" : "[id].[index]"
+		var/atom/movable/child = create_tree(child_blob, A, child_id)
+		var/slot = child_blob[STATE_KEY_SLOT]
+		if(slot && child && child.loc == A)
+			var/datum/ledger/L = dq_ledger(A)
+			if(L?.def_by_id(slot) && L.entries[child])
+				L.reslot(child, slot)
+			else
+				refuse("[A.type] has no slot [slot]")
+	for(var/list/encoded as anything in blob[STATE_KEY_LATENT])
+		var/path = text2path(encoded["type"])
+		if(!path || !A.latent_add(path, encoded["count"], encoded["state"], encoded["slot"]))
+			refuse("[A.type] refused latent entry [encoded["type"]]")
 
 /// Applies vars and components everywhere, then runs state_post_apply() children first.
 /datum/state_context/proc/finish_tree()

@@ -133,7 +133,6 @@
 	canister_color = "green"
 
 
-
 /obj/machinery/portable_atmospherics/canister/proc/check_change()
 	var/old_flag = update_flag
 	update_flag = desired_update_flag()
@@ -208,10 +207,6 @@ update_flag
 		add_overlay("can-o3")
 	return
 
-/obj/machinery/portable_atmospherics/canister/fire_act(exposed_temperature, exposed_volume)
-	var/datum/material/exterior = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
-	if(exterior && exposed_temperature >= exterior.melting_point)
-		deal_damage(DAMAGE_THERMAL, max(1, round((exposed_temperature - exterior.melting_point) / 100)), FIRE)
 
 // At zero integrity the canister ruptures: dumps its gas into the environment,
 // frees any connected port, and becomes a non-dense wreck (it is NOT qdel'd).
@@ -303,50 +298,80 @@ update_flag
 /obj/machinery/portable_atmospherics/canister/projectile_damage(obj/item/projectile/P, def_zone)
 	return receive_projectile(P, def_zone, 0.5)
 
-/obj/machinery/portable_atmospherics/canister/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/stack/material))
-		var/obj/item/stack/material/stock = W
-		if(pressure_liner_material_id)
-			to_chat(user, span_warning("[src] already has an engineered pressure liner."))
-			return
-		if(destroyed || air_contents.return_pressure() > ONE_ATMOSPHERE * 0.1)
-			to_chat(user, span_warning("Drain and restore [src] before installing a pressure liner."))
-			return
-		if(stock.get_amount() < 2)
-			to_chat(user, span_warning("A pressure liner requires two sheets."))
-			return
-		var/datum/material/liner = stock.material
-		pressure_liner_material_id = liner.name
-		stock.use(2)
-		set_construction_material(MATERIAL_ROLE_LINER, liner.name)
-		material_liner_integrity = 100
-		material_environment_liner_integrity = 100
-		name = "[liner.display_name]-lined [initial(name)]"
-		color = liner.icon_colour
-		to_chat(user, span_notice("You install a [liner.display_name] pressure liner in [src]."))
-		return
+/obj/machinery/portable_atmospherics/canister/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/canister_liner,
+		/datum/interaction/machine_item/canister_jetpack_refill,
+		/datum/interaction/machine_item/canister_generic,
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
+
+/datum/interaction/machine_item/canister_liner
+	id = "canister_liner"
+	name = "Install pressure liner"
+	held_type = /obj/item/stack/material
+	effect = /obj/machinery/portable_atmospherics/canister/proc/interaction_liner
+
+/obj/machinery/portable_atmospherics/canister/proc/interaction_liner(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
+	if(pressure_liner_material_id)
+		to_chat(user, span_warning("[src] already has an engineered pressure liner."))
+		return TRUE
+	if(destroyed || air_contents.return_pressure() > ONE_ATMOSPHERE * 0.1)
+		to_chat(user, span_warning("Drain and restore [src] before installing a pressure liner."))
+		return TRUE
+	if(stock.get_amount() < 2)
+		to_chat(user, span_warning("A pressure liner requires two sheets."))
+		return TRUE
+	var/datum/material/liner = stock.material
+	pressure_liner_material_id = liner.name
+	stock.use(2)
+	set_construction_material(MATERIAL_ROLE_LINER, liner.name)
+	material_liner_integrity = 100
+	material_environment_liner_integrity = 100
+	name = "[liner.display_name]-lined [initial(name)]"
+	color = liner.icon_colour
+	to_chat(user, span_notice("You install a [liner.display_name] pressure liner in [src]."))
+	return TRUE
+
+/datum/interaction/machine_item/canister_jetpack_refill
+	id = "canister_jetpack_refill"
+	name = "Pulse-pressurize jetpack"
+	held_type = /obj/item/tank/jetpack
+	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/portable_atmospherics/canister/proc/actor_is_robot, null))
+	effect = /obj/machinery/portable_atmospherics/canister/proc/interaction_jetpack_refill
+
+/obj/machinery/portable_atmospherics/canister/proc/actor_is_robot(mob/actor, atom/target, obj/item/held)
+	return isrobot(actor)
+
+/obj/machinery/portable_atmospherics/canister/proc/interaction_jetpack_refill(mob/user, obj/item/tank/jetpack/the_jetpack_tank, datum/interaction/interaction)
+	var/datum/gas_mixture/thejetpack = the_jetpack_tank.air_contents
+	var/env_pressure = thejetpack.return_pressure()
+	var/pressure_delta = min(10*ONE_ATMOSPHERE - env_pressure, (air_contents.return_pressure() - env_pressure)/2)
+	//Can not have a pressure delta that would cause environment pressure > tank pressure
+	var/transfer_moles = 0
+	if((air_contents.return_temperature() > 0) && (pressure_delta > 0))
+		transfer_moles = pressure_delta*thejetpack.return_volume()/(air_contents.return_temperature() * R_IDEAL_GAS_EQUATION)//Actually transfer the gas
+		var/datum/gas_mixture/removed = air_contents.remove(transfer_moles)
+		thejetpack.merge(removed)
+		to_chat(user, "You pulse-pressurize your jetpack from the tank.")
+	return TRUE
+
+/datum/interaction/machine_item/canister_generic
+	id = "canister_generic"
+	name = "Use"
+	held_type = /obj/item
+	consumes_input = FALSE
+	effect = /obj/machinery/portable_atmospherics/canister/proc/interaction_generic
+
+/obj/machinery/portable_atmospherics/canister/proc/interaction_generic(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
 		visible_message(span_warning("\The [user] hits \the [src] with \a [W]!"))
 		src.add_fingerprint(user)
 		receive_weapon_hit(W, user, silent = FALSE)
 
-	if(isrobot(user) && istype(W, /obj/item/tank/jetpack))
-		var/obj/item/tank/jetpack/the_jetpack_tank = W
-		var/datum/gas_mixture/thejetpack = the_jetpack_tank.air_contents
-		var/env_pressure = thejetpack.return_pressure()
-		var/pressure_delta = min(10*ONE_ATMOSPHERE - env_pressure, (air_contents.return_pressure() - env_pressure)/2)
-		//Can not have a pressure delta that would cause environment pressure > tank pressure
-		var/transfer_moles = 0
-		if((air_contents.return_temperature() > 0) && (pressure_delta > 0))
-			transfer_moles = pressure_delta*thejetpack.return_volume()/(air_contents.return_temperature() * R_IDEAL_GAS_EQUATION)//Actually transfer the gas
-			var/datum/gas_mixture/removed = air_contents.remove(transfer_moles)
-			thejetpack.merge(removed)
-			to_chat(user, "You pulse-pressurize your jetpack from the tank.")
-		return
-
-	..()
-
 	SStgui.update_uis(src) // Update all NanoUIs attached to src
+	return FALSE
 
 /obj/machinery/portable_atmospherics/canister/welder_act(mob/user, obj/item/tool)
 	if(air_contents.return_pressure() > 1 && !destroyed)
@@ -359,9 +384,6 @@ update_flag
 			disconnect()
 		qdel(src)
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/portable_atmospherics/canister/attack_hand(mob/user as mob)
-	return tgui_interact(user)
 
 /obj/machinery/portable_atmospherics/canister/tgui_state(mob/user)
 	return GLOB.tgui_physical_state

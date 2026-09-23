@@ -57,8 +57,22 @@
 	else
 		icon_state = "[initial(icon_state)]_off"
 
-/obj/machinery/pda_multicaster/attack_hand(mob/user)
+/obj/machinery/pda_multicaster/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/pda_multicaster_toggle,
+	)
+	..()
+
+/// Old attack_hand (never called ..()): toggle the multicaster.
+/datum/interaction/machine_hand/ungated/pda_multicaster_toggle
+	id = "pda_multicaster_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/pda_multicaster/proc/interaction_toggle
+
+/obj/machinery/pda_multicaster/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_power(user)
+	return TRUE
 
 /obj/machinery/pda_multicaster/proc/toggle_power(mob/user)
 	toggle = !toggle

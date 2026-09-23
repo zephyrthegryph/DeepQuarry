@@ -32,6 +32,9 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		CRASH("attack_self was called without a user!")
 	if(SEND_SIGNAL(src, COMSIG_ITEM_ATTACK_SELF, user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
+	// Converted handlers (I7): interactions with entry = INTERACTION_ENTRY_SELF.
+	if(run_interaction_entry(user, src, src, INTERACTION_ENTRY_SELF))
+		return TRUE
 	return
 
 /**
@@ -165,8 +168,16 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /atom/proc/welder_act_secondary(mob/user, obj/item/tool)
 	return NONE
 
-// No comment
+/**
+ * Used with an item. Converted handlers (I7) are interactions with
+ * `entry = INTERACTION_ENTRY_ITEM`; they run first, where the type's own
+ * attackby override used to. Returns TRUE when the input was used up, so the
+ * item's afterattack doesn't follow.
+ */
 /atom/proc/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
+	var/datum/interaction/answered = run_interaction_entry(user, src, W, INTERACTION_ENTRY_ITEM)
+	if(answered)
+		return answered.consumes_input
 	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
 	return FALSE

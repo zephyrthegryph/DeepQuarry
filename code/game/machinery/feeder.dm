@@ -51,19 +51,43 @@
 		update_icon()
 
 
-/obj/machinery/feeder/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/reagent_containers))
-		if(!isnull(beaker))
-			to_chat(user, span_warning("There is already a reagent container inserted!"))
-			return
+/obj/machinery/feeder/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/feeder_insert_beaker,
+		/datum/interaction/machine_item/feeder_reject,
+		/datum/interaction/machine_hand/feeder_take_beaker,
+	)
+	..()
 
-		user.drop_item()
-		W.loc = src
-		beaker = W
-		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
-		update_icon()
-		return
+/// Old attackby: the only branch.
+/datum/interaction/machine_item/feeder_insert_beaker
+	id = "feeder_insert_beaker"
+	name = "Insert container"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/reagent_containers
+	effect = /obj/machinery/feeder/proc/interaction_insert_beaker
 
+/obj/machinery/feeder/proc/interaction_insert_beaker(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!isnull(beaker))
+		to_chat(user, span_warning("There is already a reagent container inserted!"))
+		return TRUE
+
+	user.drop_item()
+	W.loc = src
+	beaker = W
+	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
+	update_icon()
+	return TRUE
+
+/// Old attackby: fell off the end for anything else, silently doing nothing (no ..() call).
+/datum/interaction/machine_item/feeder_reject
+	id = "feeder_reject"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/feeder/proc/interaction_reject
+
+/obj/machinery/feeder/proc/interaction_reject(mob/user, obj/item/W, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/feeder/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -98,13 +122,20 @@
 			beaker.reagents.trans_to_mob(attached, transfer_amount, CHEM_INGEST)
 			update_icon()
 
-/obj/machinery/feeder/attack_hand(mob/user as mob)
-	if(beaker)
-		beaker.loc = get_turf(src)
-		beaker = null
-		update_icon()
-	else
-		return ..()
+/// Old attack_hand: took out the beaker, or fell through to ..() when there was none.
+/datum/interaction/machine_hand/feeder_take_beaker
+	id = "feeder_take_beaker"
+	name = "Take out container"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/feeder/proc/interaction_take_beaker
+
+/obj/machinery/feeder/proc/interaction_take_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!beaker)
+		return FALSE
+	beaker.loc = get_turf(src)
+	beaker = null
+	update_icon()
+	return TRUE
 
 /obj/machinery/feeder/examine(mob/user)
 	.=..()

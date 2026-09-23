@@ -721,11 +721,44 @@
 /obj/machinery/alarm
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/alarm/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return
-	return interact(user)
+/obj/machinery/alarm/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/alarm_unlock,
+		/datum/interaction/machine_alt/alarm_toggle_lock,
+		/datum/interaction/machine_hand/interact,
+	)
+	..()
+
+/// Any item used on the alarm invalidates gas dependencies and adds a fingerprint;
+/// an ID card or PDA also toggles the lock. Always falls through afterward (the
+/// old attackby's trailing `return ..()`), so the resolver moves on to whatever
+/// the parent type offers (part replacement, deconstruction, etc).
+/datum/interaction/machine_item/alarm_unlock
+	id = "alarm_unlock"
+	name = "Swipe ID"
+	category = INTERACTION_CAT_LOCK
+	held_type = /obj/item
+	consumes_input = FALSE
+	effect = /obj/machinery/alarm/proc/interaction_swipe
+
+/obj/machinery/alarm/proc/interaction_swipe(mob/user, obj/item/W, datum/interaction/interaction)
+	invalidate_gas_dependencies()
+	add_fingerprint(user)
+	if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))// trying to unlock the interface with an ID card
+		togglelock(user)
+	return FALSE
+
+/// Alt-click toggles the interface lock.
+/datum/interaction/machine_alt/alarm_toggle_lock
+	id = "alarm_toggle_lock"
+	name = "Toggle lock"
+	category = INTERACTION_CAT_LOCK
+	consumes_input = FALSE
+	effect = /obj/machinery/alarm/proc/interaction_toggle_lock
+
+/obj/machinery/alarm/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
+	togglelock(user)
+	return TRUE
 
 /obj/machinery/alarm/interact(mob/user)
 	tgui_interact(user)
@@ -1035,13 +1068,6 @@
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
 		AA.update_icon()
 
-/obj/machinery/alarm/attackby(obj/item/W as obj, mob/user)
-	invalidate_gas_dependencies()
-	add_fingerprint(user)
-	if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))// trying to unlock the interface with an ID card
-		togglelock(user)
-	return ..()
-
 /obj/machinery/alarm/screwdriver_act(mob/user, obj/item/tool)
 	invalidate_gas_dependencies()
 	add_fingerprint(user)
@@ -1072,10 +1098,6 @@
 		else
 			to_chat(user, span_warning("Access denied."))
 		return
-
-/obj/machinery/alarm/click_alt(mob/user)
-	..()
-	togglelock(user)
 
 /obj/machinery/alarm/power_change()
 	invalidate_gas_dependencies()

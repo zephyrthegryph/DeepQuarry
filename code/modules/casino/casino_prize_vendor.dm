@@ -239,23 +239,42 @@
 			spawn(rand(0, 15))
 				icon_state = "[initial(icon_state)]-off"
 
-/obj/machinery/casino_prize_dispenser/attack_hand(mob/user as mob)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	tgui_interact(user)
+/obj/machinery/casino_prize_dispenser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/casino_prize_dispenser_attackby,
+		/datum/interaction/machine_hand/ungated/casino_prize_dispenser_use,
+	)
+	..()
 
-/obj/machinery/casino_prize_dispenser/attackby(obj/item/W as obj, mob/user as mob)
+/datum/interaction/machine_item/casino_prize_dispenser_attackby
+	id = "casino_prize_dispenser_attackby"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_attackby
+
+/obj/machinery/casino_prize_dispenser/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
 	if(currently_vending)
 		if(istype(W, /obj/item/spacecasinocash))
 			to_chat(user, span_warning("Please select prize on display with sufficient amount of chips."))
 		else
 			SStgui.update_uis(src)
-			return // don't smack that machine with your 2 chips
+		return TRUE // don't smack that machine with your 2 chips
 
 	if(istype(W, /obj/item/spacecasinocash))
 		attack_hand(user)
-		return
-	..()
+		return TRUE
+	return FALSE
+
+/datum/interaction/machine_hand/ungated/casino_prize_dispenser_use
+	id = "casino_prize_dispenser_use"
+	name = "Use"
+	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_use
+
+/obj/machinery/casino_prize_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(stat & (BROKEN|NOPOWER))
+		return TRUE
+	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/casino_prize_dispenser/proc/pay_with_chips(obj/item/spacecasinocash/cashmoney, mob/user, price)
 	//"cashmoney_:[cashmoney] user:[user] currently_vending:[currently_vending]"

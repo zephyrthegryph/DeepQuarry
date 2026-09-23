@@ -100,14 +100,28 @@
 /obj/machinery/atmospherics/tvalve/attack_ai(mob/user as mob)
 	return
 
-/obj/machinery/atmospherics/tvalve/attack_hand(mob/user as mob)
-	src.add_fingerprint(user)
+/obj/machinery/atmospherics/tvalve/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/tvalve_toggle,
+	)
+	..()
+
+/// Toggle between straight-through and side flow.
+/datum/interaction/machine_hand/ungated/tvalve_toggle
+	id = "tvalve_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/atmospherics/tvalve/proc/interaction_toggle
+
+/obj/machinery/atmospherics/tvalve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
 	update_icon(1)
 	sleep(10)
-	if (src.state)
-		src.go_straight()
+	if(state)
+		go_straight()
 	else
-		src.go_to_side()
+		go_to_side()
+	return TRUE
 
 // M2 (simulation.md §5): same as valve — a three-way valve's flow law is
 // pure topology (which pair of ports the region merge connects), so
@@ -204,13 +218,27 @@
 /obj/machinery/atmospherics/tvalve/digital/attack_ai(mob/user as mob)
 	return src.attack_hand(user)
 
-/obj/machinery/atmospherics/tvalve/digital/attack_hand(mob/user as mob)
-	if(!powered())
-		return
-	if(!src.allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return
+/obj/machinery/atmospherics/tvalve/digital/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/tvalve_toggle_digital,
+	)
 	..()
+
+/// Toggle, gated on power and access.
+/datum/interaction/machine_hand/ungated/tvalve_toggle_digital
+	id = "tvalve_toggle_digital"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/tvalve/digital/proc/lets_in, "access denied"))
+	effect = /obj/machinery/atmospherics/tvalve/digital/proc/interaction_toggle_digital
+
+/obj/machinery/atmospherics/tvalve/digital/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
+
+/obj/machinery/atmospherics/tvalve/digital/proc/interaction_toggle_digital(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!powered())
+		return TRUE
+	return interaction_toggle(user, held, interaction)
 
 //Radio remote control
 

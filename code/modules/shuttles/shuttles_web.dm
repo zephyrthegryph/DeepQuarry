@@ -203,17 +203,29 @@
 		for(var/lost in find_sensors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] sensor!")
 
-/obj/machinery/computer/shuttle_control/web/attackby(obj/I, mob/user)
-	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
-	if(shuttle && istype(I,/obj/item/clothing/head/pilot))
-		var/obj/item/clothing/head/pilot/H = I
-		H.shuttle_comp = src
-		shuttle.helmets |= I
-		to_chat(user, span_notice("You register the helmet with the ship's console."))
-		shuttle.update_helmets()
-		return
+/obj/machinery/computer/shuttle_control/web/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shuttle_control_web_register_helmet,
+	)
+	..()
 
-	return ..()
+/datum/interaction/machine_item/shuttle_control_web_register_helmet
+	id = "shuttle_control_web_register_helmet"
+	name = "Register helmet"
+	held_type = /obj/item/clothing/head/pilot
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/shuttle_control/web/proc/has_shuttle, null))
+	effect = /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet
+
+/obj/machinery/computer/shuttle_control/web/proc/has_shuttle(mob/actor, atom/target, obj/item/held)
+	return SSshuttles.shuttles[shuttle_tag]
+
+/obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
+	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
+	H.shuttle_comp = src
+	shuttle.helmets |= H
+	to_chat(user, span_notice("You register the helmet with the ship's console."))
+	shuttle.update_helmets()
+	return TRUE
 
 /obj/machinery/computer/shuttle_control/web/tgui_data(mob/user)
 	var/list/data = list()

@@ -54,6 +54,7 @@
 		qdel(src)
 
 /obj/structure/closet/statue/dump_contents()
+	latent_materialize_all()
 
 	for(var/obj/O in src)
 		O.forceMove(get_turf(src))

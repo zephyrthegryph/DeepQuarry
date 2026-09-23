@@ -15,7 +15,7 @@
 	randpixel = 7
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	var/list/datum/stack_recipe/recipes
+	var/tmp/list/datum/stack_recipe/recipes
 	var/singular_name
 	var/amount = 1
 	var/max_amount //also see stack recipes initialisation, param "max_res_amount" must be equal to this max_amount

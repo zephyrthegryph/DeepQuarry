@@ -179,7 +179,9 @@
 #include "dq_constraint_tests.dm"
 #include "dq_containment_tests.dm"
 #include "dq_inventory_tests.dm"
+#include "dq_latent_tests.dm"
 #include "dq_rule_tests.dm"
+#include "dq_h3_heat_tests.dm"
 #include "dq_containment_path_tests.dm"
 #include "dq_vore_slot_tests.dm"
 #include "dq_storage_tests.dm"
@@ -212,8 +214,13 @@
 #include "dq_actor_adapter_tests.dm"
 #include "dq_combat_mode_tests.dm"
 #include "dq_input_tests.dm"
+#include "dq_i7_bulk_capture.dm"
 #include "dq_interaction_tests.dm"
+#include "dq_interaction_entry_tests.dm"
 #include "dq_tool_tests.dm"
+#include "dq_construction_tests.dm"
+#include "dq_construction_mech_tests.dm"
+#include "dq_construction_assembly_tests.dm"
 #include "xgm_total_moles_test.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

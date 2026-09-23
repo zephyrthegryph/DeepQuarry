@@ -1172,21 +1172,9 @@
 		else if(istype(F))
 			F.lifetime = initial(F.lifetime) //reduce object churn a little bit when using smoke by keeping existing foam alive a bit longer
 
-	var/datum/gas_mixture/environment = T.return_air()
-	var/min_temperature = T0C + 100 // 100C, the boiling point of water
-
-	var/hotspot = (locate(/obj/effect/hotspot) in T)
-	if(hotspot && !isspace(T))
-		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T.air → LINDA helper
-		var/lowertemp_temperature = lowertemp.return_temperature()
-		lowertemp.set_temperature(max(min(lowertemp_temperature-2000, lowertemp_temperature / 2), 0))
-		lowertemp.react()
-		T.assume_air(lowertemp)
-		qdel(hotspot)
-
-	if (environment && environment.return_temperature() > min_temperature) // Abstracted as steam or something
-		var/removed_heat = between(0, volume * 19000, -environment.get_thermal_energy_change(min_temperature))
-		environment.add_thermal_energy(-removed_heat)
+	// Foam is water-based: the same quench and the same latent heat as water.
+	reagent_quench_hotspot(T)
+	if(reagent_boil_off(T, volume))
 		if(prob(5))
 			T.visible_message(span_warning("The foam sizzles as it lands on \the [T]!"))
 

@@ -7,17 +7,18 @@
 /datum/unit_test/dq_fire_act_reads_temperature
 
 /datum/unit_test/dq_fire_act_reads_temperature/Run()
+	// H3: an exposure heats the object's body; damage comes from its rules.
 	var/obj/structure/window/hot = allocate(/obj/structure/window, test_floor())
-	var/before = hot.get_integrity()
+	var/before = hot.get_temperature()
 	hot.fire_act(hot.maximal_heat + 500, 1)
-	var/hot_loss = before - hot.get_integrity()
-	TEST_ASSERT(hot_loss > 0, "window above its heat limit took no fire damage")
+	var/hot_gain = hot.get_temperature() - before
+	TEST_ASSERT(hot_gain > 0, "a hot exposure did not heat the window")
 
 	var/obj/structure/window/cool = allocate(/obj/structure/window, test_floor())
-	before = cool.get_integrity()
+	before = cool.get_temperature()
 	cool.fire_act(T20C, CELL_VOLUME * 10)
-	var/cool_loss = before - cool.get_integrity()
-	TEST_ASSERT(cool_loss < hot_loss, "a room-temperature exposure with a large volume hurt the window as much as a hot one ([cool_loss] vs [hot_loss])")
+	var/cool_gain = cool.get_temperature() - before
+	TEST_ASSERT(cool_gain < hot_gain, "a room-temperature exposure with a large volume heated the window as much as a hot one ([cool_gain] vs [hot_gain])")
 
 /// Q11: the machine roster removes by swapping the last entry into the hole,
 /// and every entry keeps its own slot index.

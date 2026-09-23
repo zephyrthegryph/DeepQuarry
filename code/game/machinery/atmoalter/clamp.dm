@@ -4,7 +4,6 @@
 /obj/machinery/clamp
 	name = "stasis clamp"
 	desc = "A magnetic clamp which can halt the flow of gas in a pipe, via a localised stasis field."
-	description_info = "Click-dragging this to yourself while adjacent will attempt to remove it from the pipe."
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "pclamp0"
 	anchored = TRUE
@@ -24,6 +23,29 @@
 		update_networks()
 		dir = target.dir
 
+/obj/machinery/clamp/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/clamp_toggle,
+	)
+	..()
+
+/// Toggle the clamp open/closed; declines (falls through) if not attached to a pipe.
+/datum/interaction/machine_hand/ungated/clamp_toggle
+	id = "clamp_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/clamp/proc/interaction_toggle
+
+/obj/machinery/clamp/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!target)
+		return FALSE
+	if(!open)
+		open()
+	else
+		close()
+	to_chat(user, span_notice("You turn [open ? "off" : "on"] \the [src]"))
+	return TRUE
+
 /obj/machinery/clamp/proc/update_networks()
 	if(!target)
 		return
@@ -36,16 +58,6 @@
 		if(istype(node2))
 			var/datum/pipeline/P2 = node2.parent
 			network_node2 = P2.network
-
-/obj/machinery/clamp/attack_hand(mob/user)
-	if(!target)
-		return FALSE
-	if(!open)
-		open()
-	else
-		close()
-	to_chat(user, span_notice("You turn [open ? "off" : "on"] \the [src]"))
-	return TRUE
 
 /obj/machinery/clamp/Destroy()
 	if(!open)

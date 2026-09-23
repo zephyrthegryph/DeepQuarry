@@ -35,7 +35,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 			message_self = start[1]
 			message_others = start[2]
 #ifdef UNIT_TESTS
-	GLOB.dq_tool_last_use = list("delay" = interaction ? interaction.duration : delay, "quality" = quality, "amount" = amount, "volume" = volume)
+	GLOB.dq_tool_last_use = list("delay" = interaction ? interaction.base_duration(actor, target) : delay, "quality" = quality, "amount" = amount, "volume" = volume)
 #endif
 
 	// 1. Quality and tier.

@@ -3,6 +3,8 @@
 // ---- Slot ids (a holder's slots are named by these) ----
 /// The one interior slot of a closet, crate or locker.
 #define CONTAINER_SLOT_INTERIOR "interior"
+/// Inside a legacy /obj/item/storage (until C4).
+#define CONTAINER_SLOT_STORAGE "storage"
 /// A folder's pages.
 #define CONTAINER_SLOT_PAGES "pages"
 /// The sealed interior of a vore belly (C7).

@@ -28,10 +28,11 @@
 /obj/machinery/computer/atmoscontrol
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/computer/atmoscontrol/attack_hand(mob/user)
-	if(..())
-		return 1
-	tgui_interact(user)
+/obj/machinery/computer/atmoscontrol/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/computer/atmoscontrol/emag_act(remaining_carges, mob/user)
 	if(!emagged)

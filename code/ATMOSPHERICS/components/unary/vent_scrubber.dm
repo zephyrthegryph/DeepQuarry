@@ -60,6 +60,10 @@
 /obj/machinery/atmospherics/unary/vent_scrubber/Destroy()
 	// rust_unregister_device() runs as part of the base class's
 	// rust_unregister_pipe_topology() (atmospherics.dm's Destroy()), below.
+	// M2 (simulation.md §5): vent_scrubber has no DM gas-dependency
+	// subscription any more, so there's nothing for SSmachines.wake_vent()
+	// to do here (master's fix for the WEAKREF(src)-during-Destroy() bug
+	// doesn't apply: this proc no longer calls it at all).
 	unregister_radio(src, frequency)
 	if(initial_loc)
 		LAZYREMOVE(initial_loc.air_scrub_info, id_tag)

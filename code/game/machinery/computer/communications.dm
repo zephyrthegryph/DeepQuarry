@@ -23,7 +23,18 @@
 		to_chat(user, "You scramble the communication routing circuits!")
 		return TRUE
 
-/obj/machinery/computer/communications/attack_hand(mob/user)
-	if(..())
-		return
+/obj/machinery/computer/communications/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/comms_open_ui,
+	)
+	..()
+
+/// Old attack_hand: `if(..()) return; communications.tgui_interact(user)`.
+/datum/interaction/machine_hand/comms_open_ui
+	id = "comms_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/communications/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/communications/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	communications.tgui_interact(user)
+	return TRUE

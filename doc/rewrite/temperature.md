@@ -69,6 +69,16 @@ REACT_WHEN(src, THRESHOLD(src, CH_HEAT_TEMPERATURE, ABOVE, KELVIN(373)))
 - **Reagent holders** get a heat capacity from their reagents' specific heats. Reactions that need a temperature subscribe to a `ThresholdSet` on the holder. The bunsen burner and distillery become heat sources, so the temperature they track finally matters. Water's latent heat is one rule, replacing its copy in foam.
 - **Food and drink** add heat to the body node through the API instead of writing `bodytemperature` (about 31 writes today).
 
+### Implementation (H3)
+
+Code: `code/modules/heat/heat_objects.dm`, rules in `code/datums/rules/declarations.dm`, defines in `code/__defines/heat.dm`, tests in `code/modules/unit_tests/dq_h3_heat_tests.dm`.
+- **Thermal properties.** `/obj/item/thermal_properties()` reads `PROP_HEAT_CAPACITY` (materials: kg × specific heat), falling back to the size class; reagent containers, the bunsen burner and the distillery add `reagents.heat_capacity()` (Σ volume × `specific_heat`). A holder's body capacity follows its contents (`heat_capacity_changed()`).
+- **Thresholds** come from `PROPERTY()`: melting and ignition points from the material templates for every `/obj` (a FLAMMABLE object with no flammable material ignites at `FIRE_MINIMUM_TEMPERATURE_TO_EXIST`), with per-type limits for windows (`maximal_heat`), exosuits (`max_temperature`), weeds, webs, shields and gargoyles.
+- **Rules:** `ignition`, `melting` (items become a molten mass), `overheating` (structures/machines: a thermal damage stream while above the limit), `cooking` (`hold_for` above `FOOD_COOKING_TEMPERATURE`), `cook_off` (ammunition), and `heat_behaviour/*`, one per converted `fire_act()` override.
+- **Cooking.** A cooker's temperature is its heat body's: `heating_power` W under a thermostat, loss through its casing's coupling to the room, and its containers and their food coupled to it. An idle cooker at temperature hibernates on a heat watch.
+- **Reagents.** Distilling reactions read the holder's temperature (`/datum/reagents/proc/get_temperature()`) and the holder keeps one `ThresholdSet` with both ends of every candidate reaction's range; a crossing runs `handle_reactions()`. Water's latent heat is `reagent_boil_off()`, shared with foam.
+- **Explicit exposures.** `/obj/fire_act(T, V)` is a pulse into the heat node (`expose_heat()`: `FIRE_EXPOSURE_SECONDS` of contact through `fire_conductance()`); it no longer damages or ignites directly.
+
 ## 5. Fire and burning (H3)
 
 - **Hotspots** stay in the gas field as per-tile effects. They heat everything on the tile through its heat node, which replaces calling `fire_act` on every atom in the tile on every SSair fire.
@@ -80,6 +90,11 @@ REACT_WHEN(src, THRESHOLD(src, CH_HEAT_TEMPERATURE, ABOVE, KELVIN(373)))
 
   It ends when the thing runs out of fuel or oxygen, or its temperature drops below a limit. The burning component's flat `10 * seconds_per_tick` damage is replaced.
 - **Burning mobs** use the same state. They stop calling `hotspot_expose` every tick and stop passing fire stacks as a temperature (B16).
+
+### Implementation (H3)
+
+- **Hotspots** call one proc, `heat_tile()`: each object on the tile is coupled once (slot 1) to the tile's gas at `fire_conductance()` and kept while the tile burns; the heat domain moves the heat, conserving it. A body made this way starts at the floor's temperature. `cool_tile()` uncouples when the hotspot goes. Mobs still take `fire_act()` (H2).
+- **Burning** (`/datum/component/burning`): `BURN_POWER` W on the object's body, fuel `max_integrity × BURN_ENERGY_PER_INTEGRITY` J burnt as a thermal damage stream, and `burn_gas_step()` turning `BURN_OXYGEN_PER_JOULE` of the tile's O2 into CO2. It ends on fuel, oxygen (`BURN_MIN_OXYGEN_MOLES`) or a Below heat watch `BURN_EXTINGUISH_MARGIN` under the ignition point (`ended_by`). Burning mobs can use `burn_gas_step()` for their tile side.
 
 ## 6. Machines (H4)
 

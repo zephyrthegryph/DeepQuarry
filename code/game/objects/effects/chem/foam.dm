@@ -73,10 +73,12 @@
 				for(var/datum/reagent/R in reagents.reagent_list)
 					F.reagents.add_reagent(R.id, 1, safety = 1) //added safety check since reagents in the foam have already had a chance to react
 
-/obj/effect/effect/foam/fire_act(exposed_temperature, exposed_volume) // foam disolves when heated, except metal foams
-	if(!metal && prob(max(0, exposed_temperature - 475)))
-		flick("[icon_state]-disolve", src)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 5)
+/// Heat behaviour rule: foam dissolves when heated, except metal foam.
+/obj/effect/effect/foam/proc/rule_dissolve(datum/rule/rule)
+	if(metal)
+		return
+	flick("[icon_state]-disolve", src)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 5)
 
 /obj/effect/effect/foam/Crossed(atom/movable/AM)
 	if(AM.is_incorporeal())
