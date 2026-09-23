@@ -68,7 +68,7 @@
 	var/luckynumber7 = 0
 	var/colorindex = 1
 
-	var/list/winitems = list(
+	var/static/list/winitems = list(
 				/obj/item/reagent_containers/food/snacks/sugarcookie,
 				/obj/item/spacecasinocash,
 				/obj/item/reagent_containers/syringe/drugs,
@@ -128,7 +128,7 @@
 	light_color = "#FF0000"
 	light_range = 3
 	light_power = 9 //should be plenty visible.
-	var/list/chaos_colors = list(
+	var/static/list/chaos_colors = list(
 					"#FF0000",
 					"#00FF00",
 					"#0000FF",

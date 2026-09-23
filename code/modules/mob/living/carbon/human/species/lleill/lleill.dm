@@ -125,7 +125,7 @@
 
 	base_species = SPECIES_LLEILL
 
-	var/list/lleill_abilities = list(/datum/power/lleill/invisibility,
+	var/static/list/lleill_abilities = list(/datum/power/lleill/invisibility,
 										/datum/power/lleill/transmute,
 										/datum/power/lleill/rings,
 										/datum/power/lleill/contact,

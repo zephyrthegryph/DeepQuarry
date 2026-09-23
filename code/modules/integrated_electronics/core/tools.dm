@@ -39,8 +39,8 @@
 		if(io.holder.assembly && io.holder.assembly != selected_io.holder.assembly)
 			to_chat(user, span_warning("Both \the [io.holder] and \the [selected_io.holder] need to be inside the same assembly."))
 			return
-		selected_io.linked |= io
-		io.linked |= selected_io
+		LAZYOR(selected_io.linked, io)
+		LAZYOR(io.linked, selected_io)
 
 		to_chat(user, span_notice("You connect \the [selected_io.holder]'s [selected_io.name] to \the [io.holder]'s [io.name]."))
 		mode = WIRE
@@ -50,7 +50,7 @@
 
 	else if(mode == UNWIRE)
 		selected_io = io
-		if(!io.linked.len)
+		if(!LAZYLEN(io.linked))
 			to_chat(user, span_warning("There is nothing connected to \the [selected_io] data channel."))
 			selected_io = null
 			return
@@ -65,8 +65,8 @@
 			the same pin is rather moot."))
 			return
 		if(selected_io in io.linked)
-			io.linked.Remove(selected_io)
-			selected_io.linked.Remove(io)
+			LAZYREMOVE(io.linked, selected_io)
+			LAZYREMOVE(selected_io.linked, io)
 			to_chat(user, span_notice("You disconnect \the [selected_io.holder]'s [selected_io.name] from \
 			\the [io.holder]'s [io.name]."))
 			selected_io.holder.interact(user) // This is to update the UI.
@@ -210,8 +210,8 @@
 		if(io.holder.assembly && io.holder.assembly != selected_io.holder.assembly)
 			to_chat(user, span_warning("Both \the [io.holder] and \the [selected_io.holder] need to be inside the same assembly."))
 			return
-		selected_io.linked |= io
-		io.linked |= selected_io
+		LAZYOR(selected_io.linked, io)
+		LAZYOR(io.linked, selected_io)
 
 		to_chat(user, span_notice("You connect \the [selected_io.holder]'s [selected_io.name] to \the [io.holder]'s [io.name]."))
 		selected_io.holder.interact(user) // This is to update the UI.
@@ -225,7 +225,7 @@
 
 
 /obj/item/multitool/proc/unwire(datum/integrated_io/io1, datum/integrated_io/io2, mob/user)
-	if(!io1.linked.len || !io2.linked.len)
+	if(!LAZYLEN(io1.linked) || !LAZYLEN(io2.linked))
 		to_chat(user, span_warning("There is nothing connected to the data channel."))
 		return
 
@@ -233,8 +233,8 @@
 		to_chat(user, span_warning("These data pins aren't connected!"))
 		return
 	else
-		io1.linked.Remove(io2)
-		io2.linked.Remove(io1)
+		LAZYREMOVE(io1.linked, io2)
+		LAZYREMOVE(io2.linked, io1)
 		to_chat(user, span_notice("You clip the data connection between the [io1.holder.displayed_name]'s \
 		[io1.name] and the [io2.holder.displayed_name]'s [io2.name]."))
 		io1.holder.interact(user) // This is to update the UI.

@@ -67,8 +67,9 @@
 		add_overlay(I)
 		return
 
+	var/list/connections = get_wall_connections()
 	for(var/i = 1 to 4)
-		I = image(wall_masks, "[material.icon_base][wall_connections[i]]", dir = 1<<(i-1))
+		I = image(wall_masks, "[material.icon_base][connections[i]]", dir = 1<<(i-1))
 		I.color = material.icon_colour
 		add_overlay(I)
 
@@ -81,7 +82,7 @@
 			if(icon_exists(wall_masks, "[reinf_material.icon_reinf]0"))
 				// Directional icon
 				for(var/i = 1 to 4)
-					I = image(wall_masks, "[reinf_material.icon_reinf][wall_connections[i]]", dir = 1<<(i-1))
+					I = image(wall_masks, "[reinf_material.icon_reinf][connections[i]]", dir = 1<<(i-1))
 					I.color = reinf_material.icon_colour
 					add_overlay(I)
 			else if(icon_exists(wall_masks, "[reinf_material.icon_reinf]"))
@@ -129,7 +130,12 @@
 			dirs += get_dir(src, WF)
 
 	special_wall_connections(dirs, inrange)
-	wall_connections = dirs_to_corner_states(dirs)
+	wall_connections = string_list(dirs_to_corner_states(dirs))
+
+/// wall_connections, or the unconnected corner states before update_connections() has run.
+/turf/simulated/wall/proc/get_wall_connections()
+	var/static/list/unconnected = list("0", "0", "0", "0")
+	return wall_connections || unconnected
 
 /turf/simulated/wall/proc/special_wall_connections(list/dirs, list/inrange)
 	if(material.icon_base == "hull") // Could be improved...

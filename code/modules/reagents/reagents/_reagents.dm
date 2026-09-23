@@ -9,7 +9,7 @@
 	var/list/data = null
 	var/volume = 0
 	var/metabolism = REM // This would be 0.2 normally
-	var/list/filtered_organs = list()	// Organs that will slow the processing of this chemical.
+	var/list/filtered_organs	// Organs that will slow the processing of this chemical.
 	var/mrate_static = FALSE	//If the reagent should always process at the same speed, regardless of species, make this TRUE
 	var/ingest_met = 0
 	var/touch_met = 0

@@ -23,8 +23,9 @@
 	var/last_state
 	var/construction_stage
 
-	// There's basically always going to be wall connections, making this lazy doesn't seem like it'd help much unless you wanted to make it bitflags instead.
-	var/list/wall_connections = list("0", "0", "0", "0")
+	/// Corner states from dirs_to_corner_states(), interned with string_list() so walls with the
+	/// same shape share one list. Null until update_connections(); read it via get_wall_connections().
+	var/list/wall_connections
 	rad_insulation = RAD_MEDIUM_INSULATION
 
 // Walls always hide the stuff below them.

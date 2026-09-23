@@ -72,7 +72,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		initial_volume = volume
 	if(initial_volume <= 0)
 		stack_trace("Created a gas mixture with zero volume!")
-	reaction_results = new
 	// Register the mixture in the Rust arena. Reads initial_volume, writes
 	// _extools_pointer_gasmixture.
 	vg_register_gasmixture_hook(src)

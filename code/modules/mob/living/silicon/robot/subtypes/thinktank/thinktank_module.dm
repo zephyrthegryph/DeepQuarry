@@ -10,7 +10,7 @@
 	var/user_icon_state = "tachi"
 
 	var/list/decals
-	var/list/available_decals = list(
+	var/static/list/available_decals = list(
 		"Stripe" = "stripe",
 		"Vertical Stripe" = "stripe_vertical"
 	)

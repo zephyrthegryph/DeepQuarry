@@ -20,7 +20,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	id_type = /obj/item/card/id/syndicate
 
 	// Heist overrides check_victory() and doesn't need victory or loss strings/tags.
-	var/list/raider_uniforms = list(
+	var/static/list/raider_uniforms = list(
 		/obj/item/clothing/under/soviet,
 		/obj/item/clothing/under/pirate,
 		/obj/item/clothing/under/redcoat,
@@ -30,20 +30,20 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		/obj/item/clothing/under/color/brown,
 		)
 
-	var/list/raider_shoes = list(
+	var/static/list/raider_shoes = list(
 		/obj/item/clothing/shoes/boots/jackboots,
 		/obj/item/clothing/shoes/boots/workboots,
 		/obj/item/clothing/shoes/brown,
 		/obj/item/clothing/shoes/laceup
 		)
 
-	var/list/raider_glasses = list(
+	var/static/list/raider_glasses = list(
 		/obj/item/clothing/glasses/thermal,
 		/obj/item/clothing/glasses/thermal/plain/eyepatch,
 		/obj/item/clothing/glasses/thermal/plain/monocle
 		)
 
-	var/list/raider_helmets = list(
+	var/static/list/raider_helmets = list(
 		/obj/item/clothing/head/bearpelt,
 		/obj/item/clothing/head/ushanka,
 		/obj/item/clothing/head/pirate,
@@ -51,7 +51,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		/obj/item/clothing/head/hgpiratecap,
 		)
 
-	var/list/raider_suits = list(
+	var/static/list/raider_suits = list(
 		/obj/item/clothing/suit/pirate,
 		/obj/item/clothing/suit/hgpirate,
 		/obj/item/clothing/suit/storage/toggle/bomber,
@@ -63,7 +63,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		/obj/item/clothing/accessory/poncho,
 		)
 
-	var/list/raider_guns = list(
+	var/static/list/raider_guns = list(
 		/obj/item/gun/energy/laser,
 		/obj/item/gun/energy/retro,
 		/obj/item/gun/energy/xray,
@@ -100,7 +100,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		list(/obj/item/gun/projectile/deagle, /obj/item/gun/projectile/deagle/gold, /obj/item/gun/projectile/deagle/camo)
 		)
 
-	var/list/raider_holster = list(
+	var/static/list/raider_holster = list(
 		/obj/item/clothing/accessory/holster/armpit,
 		/obj/item/clothing/accessory/holster/waist,
 		/obj/item/clothing/accessory/holster/hip

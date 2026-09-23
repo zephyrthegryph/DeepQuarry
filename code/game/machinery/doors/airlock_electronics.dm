@@ -7,7 +7,7 @@
 	matter = list(MAT_STEEL = 50,MAT_GLASS = 50)
 
 	req_one_access = list(ACCESS_ENGINE, ACCESS_TALON_ENGINEER) // Access to unlock the device, ignored if emagged // Add talon
-	var/list/apply_any_access = list(ACCESS_ENGINE) // Can apply any access, not just their own
+	var/static/list/apply_any_access = list(ACCESS_ENGINE) // Can apply any access, not just their own
 
 	var/secure = 0 //if set, then wires will be randomized and bolts will drop if the door is broken
 	var/list/conf_access = null
@@ -110,8 +110,8 @@
 	else
 		var/req = text2num(acc)
 
-		if (conf_access == null)
-			conf_access = list()
+		// Copy: conf_access may be a door's interned access list (intern_access_lists()).
+		conf_access = conf_access ? conf_access.Copy() : list()
 
 		if (!(req in conf_access))
 			conf_access += req

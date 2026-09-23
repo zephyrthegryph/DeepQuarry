@@ -180,6 +180,7 @@
 		for(var/number in list(melee_armor, bullet_armor, laser_armor, energy_armor, bomb_armor))
 			number = between(0, number, 100)
 
+		own_armor()
 		armor["melee"] = melee_armor
 		armor["bullet"] = bullet_armor
 		armor["laser"] = laser_armor
