@@ -36,7 +36,7 @@ use vg_core::field::{FieldKey, Geom};
 use vg_core::frame::Task;
 use vg_core::outbox::{Event, EventKind};
 use vg_core::owner::{Applied, Domain, DomainKey};
-use vg_core::reactor::RateModel;
+use vg_core::rate::RateModel;
 use vg_core::sim::SimBuilder;
 
 use crate::consts::{

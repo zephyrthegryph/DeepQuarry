@@ -35,6 +35,7 @@ use std::hash::BuildHasherDefault;
 use crate::overlay::{CellHasher, CellMap};
 
 use crate::outbox::{Lane, Subscriber, Wake, WatchId, reason};
+use crate::rate::RateModel;
 use crate::timer::{Tick, TimerId, TimerWheel};
 use crate::watch::Cmp;
 
@@ -194,13 +195,10 @@ impl WakeLanes {
 }
 
 // --- Rate models ------------------------------------------------------------
-
-/// Moved to `core::rate` (`rust_architecture.md` §4.10: "reactor::RateModel
-/// ... and power's ... RateStore merge into one core::rate module"),
-/// re-exported here so every existing `vg_core::reactor::RateModel`
-/// reference (this crate's own uses below, `vg_heat::body`, `vg_ffi::reactor`)
-/// keeps working unchanged.
-pub use crate::rate::RateModel;
+//
+// RateModel itself moved to `core::rate` (`rust_architecture.md` §4.10);
+// callers use `vg_core::rate::RateModel` directly (see `use` below and
+// `vg_heat::body`/`vg_ffi::reactor`'s own imports) -- no re-export shim.
 
 /// A rate model, as index plus generation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
