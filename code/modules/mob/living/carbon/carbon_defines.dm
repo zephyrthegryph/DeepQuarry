@@ -10,8 +10,8 @@
 	var/number_wounds = 0
 	var/obj/item/handcuffed = null //Whether or not the mob is handcuffed
 	var/obj/item/legcuffed = null  //Same as handcuffs but for legs. Bear traps use this.
-	//Surgery info
-	var/datum/surgery_status/op_stage = new/datum/surgery_status
+	/// Zones a surgical step is currently being performed on (lazy).
+	var/list/surgery_zones_in_progress
 	//Active emote/pose
 	var/pose = null
 	var/pose_move = FALSE

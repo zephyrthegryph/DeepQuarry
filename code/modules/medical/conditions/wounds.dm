@@ -304,7 +304,8 @@
 	if(continuous)
 		amount *= continuous_scale
 	var/before = damage
-	heal_damage(amount, tag == TREAT_RESTORATION)
+	// Internal (arterial) wounds close only by vessel repair or restoration.
+	heal_damage(amount, tag == TREAT_RESTORATION || tag == TREAT_VESSEL_REPAIR)
 	return before - damage
 
 /// Wounds don't progress on their own: autoheal lives in the limb's
@@ -485,6 +486,7 @@
 	stages = list("severed artery" = 30, "cut artery" = 20, "damaged artery" = 10, "bruised artery" = 5)
 	autoheal_cutoff = 5
 	max_bleeding_stage = 4 // all stages bleed
+	treated_by = list(TREAT_VESSEL_REPAIR = 1)
 
 // --- Lost limb (stump) ----------------------------------------------------------------------
 

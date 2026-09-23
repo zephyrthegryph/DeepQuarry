@@ -326,8 +326,11 @@ MMI'd brain keeps its lesions, so damage and treatment carry on.
   (hepatorenal/cardiac/respiratory/digestive/neural/ocular/tissue);
   lacerations and perforations are only stabilised by drugs
   (`is_stabilised()`) and closed by `TREAT_SURGICAL_REPAIR`; necrosis needs
-  `TREAT_RESECTION`. Surgery calls `H.surgically_repair_organ(organ, amount)`:
-  one budget, structural repair first, resection gets the remainder. Lesions
+  `TREAT_RESECTION`. Surgery treats one organ per step (a suture delivers
+  `TREAT_SURGICAL_REPAIR`, a resection `TREAT_RESECTION`; see Surgery below).
+  `H.surgically_repair_organ(organ, amount)` remains for code that repairs a
+  whole organ at once: one budget, structural repair first, resection gets the
+  remainder. Lesions
   override `receive_tagged_treatment` (drug floors, full-repair tags,
   `drug_efficiency`) and `progress()` (drift, untreated effects, and the
   brain's secondary injury: past 60% a brain swells — ischemic injury grows
@@ -545,3 +548,32 @@ supports, recompute if dirty, then integrate the debt. With no shortfall and
 no debt it does nothing. Debt crossing each `PHYSIOLOGY_DEBT_LOG_BAND`, every
 support gained or lost, and every explicit debt are logged to the runtime log
 (`PHYSIOLOGY:`).
+
+## 11. Surgery
+
+`code/modules/surgery/`. A procedure is access (incise, retract, saw, pry;
+unscrew and open a panel), operate, then close. Access state is the limb's
+`/datum/affliction/surgical_incision`: its `depth` is the only record of how
+far a limb is open (the limb's `open` var caches it). The site bleeds until
+clamped (`TREAT_HEMOSTATIC`) and gathers germs by the sterility of the
+surface it was opened on until it is closed (`TREAT_BONE_SETTING` closes a
+sawn bone layer, then `TREAT_SURGICAL_CLOSURE` / `TREAT_PANEL_CLOSURE`).
+
+Every healing step is a treatment: a `/datum/surgical_step` names
+`treatments` (TREAT_* -> amount) and a `scope` (the limb, the limb and its
+organs, or one chosen organ) and delivers them through `mend()`. A step offers
+itself only when an affliction in scope responds to its mechanism, so a
+condition that needs surgery declares the surgical tag in `treated_by`
+(`TREAT_BONE_SETTING`, `TREAT_VESSEL_REPAIR`, `TREAT_TENDON_REPAIR`,
+`TREAT_DECOMPRESSION`, `TREAT_RESECTION`, `TREAT_FOREIGN_BODY_REMOVAL`, ...).
+Success is tool quality x surface x surgeon (department, `BF_MOTOR_CONTROL`,
+self-surgery) x patient (a conscious patient flinches unless `BF_ANALGESIA` /
+`BF_SEDATION` cover the step's pain). A failed step injures with a specific
+complication (a slipped suture lacerates the organ; a slipped vessel repair
+opens an arterial bleed). Organ removal and insertion go through
+`removed()` / `replaced()`, so an organ's lesions travel with it. An organ
+whose `is_beyond_repair()` is true still takes the step; the surgeon perceives
+why (`beyond_repair_perception()`) and nothing heals. Synthetic and nanoform
+parts use the same steps with repair tags; a step's `part_biology` defaults to
+the biologies its tags work on. `/datum/dq_surgery` records are the medical
+book's entries and name the steps that perform them.

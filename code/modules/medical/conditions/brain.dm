@@ -14,7 +14,7 @@
 	// Synaptizine repairs neural tissue from the bleed; bicaridaze
 	// slows the bleed itself. The surgical option (craniotomy) is the
 	// real fix for severe cases.
-	treated_by = list(TREAT_NEURAL_REPAIR = 0.8, TREAT_HEMOSTATIC = 0.3)
+	treated_by = list(TREAT_NEURAL_REPAIR = 0.8, TREAT_HEMOSTATIC = 0.3, TREAT_DECOMPRESSION = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/headache             = 90,
 		/datum/affliction_symptom/confusion            = 80,

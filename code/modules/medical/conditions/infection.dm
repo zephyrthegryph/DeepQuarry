@@ -21,7 +21,7 @@
 	// corophizine is the wide-spectrum alternative (faster but causes
 	// GI side effects). Either works; their combo has a documented
 	// interference, see the chemical side-effect conditions.
-	treated_by = list(TREAT_ANTIMICROBIAL = 1.2)
+	treated_by = list(TREAT_ANTIMICROBIAL = 1.2, TREAT_RESECTION = 1)
 	symptom_pool = list(
 		/datum/affliction_symptom/throbbing_pain  = 80,
 		/datum/affliction_symptom/fever_sensation = 70,
