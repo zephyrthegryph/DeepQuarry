@@ -147,7 +147,8 @@
 	icon_state = "mirror_broke"
 	shattered = 1
 
-/obj/structure/mirror/raider/attack_hand(mob/living/carbon/human/user)
+/// Overrides mirror's interaction_open_ui(): raiders may become Vox here, then the mirror opens as usual.
+/obj/structure/mirror/raider/interaction_open_ui(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(istype(get_area(src),/area/syndicate_mothership))
 		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && is_alien_whitelisted(user.client, SPECIES_VOX))
 			var/choice = tgui_alert(user, "Do you wish to become a true Vox of the Shoal? This is not reversible.", "Become Vox?", list("No","Yes"))
@@ -166,4 +167,4 @@
 					vox.name = vox.real_name
 					GLOB.raiders.update_access(vox)
 				qdel(user)
-	..()
+	return ..()
