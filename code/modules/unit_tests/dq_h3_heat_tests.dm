@@ -24,6 +24,10 @@
 /proc/dq_h3_cool_floor(turf/open/T)
 	T.air?.set_temperature(T20C)
 
+/// wait_for_condition() helper: TRUE once A is warmer than `start`.
+/proc/dq_h3_probe_warmer_than(atom/A, start)
+	return A.get_temperature() > start
+
 /// A fire needs oxygen; the test map's floor has little. Returns the air to restore.
 /proc/dq_h3_oxygenate(turf/open/T)
 	var/datum/gas_mixture/saved = new
@@ -47,11 +51,11 @@
 	var/datum/gas_mixture/restore = dq_h3_oxygenate(test_floor())
 	var/obj/item/paper/paper = allocate(/obj/item/paper, test_floor())
 	var/ignition = PROPERTY(paper, PROP_IGNITION_POINT)
+	// dq_rule_test_write() flushes deterministically itself now (test_write()
+	// in dynamic_state.dm / dq_rx_node_write() in reactor_adapter.dm).
 	dq_rule_test_write(paper, PROP_TEMPERATURE, ignition - 1)
-	dq_rx_flush()
 	TEST_ASSERT(!(paper.resistance_flags & ON_FIRE), "a kelvin below its ignition point it does not burn")
 	dq_rule_test_write(paper, PROP_TEMPERATURE, ignition + 1)
-	dq_rx_flush()
 	TEST_ASSERT(paper.resistance_flags & ON_FIRE, "a kelvin above it, the ignition rule lights it")
 
 	// Heated at rest past its ignition point (its surroundings got hot while
@@ -77,10 +81,8 @@
 	var/melting = PROPERTY(bottle, PROP_MELTING_POINT)
 	TEST_ASSERT(melting > T20C, "the bottle's melting point comes from its plastic")
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, melting - 1)
-	dq_rx_flush()
 	TEST_ASSERT(!QDELETED(bottle), "a kelvin below its melting point it keeps its shape")
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, melting + 1)
-	dq_rx_flush()
 	TEST_ASSERT(QDELETED(bottle), "a kelvin above, it melts")
 	for(var/obj/effect/decal/cleanable/molten_item/goo in T)
 		qdel(goo)
@@ -109,7 +111,6 @@
 	hot.process(1)
 	TEST_ASSERT(window.get_integrity() < before, "and takes thermal damage through the pipeline")
 	dq_rule_test_write(window, PROP_TEMPERATURE, limit - 50)
-	dq_rx_flush()
 	TEST_ASSERT_NULL(window.GetComponent(/datum/component/overheating), "cooled below it, the stream stops")
 
 // ---- Reagents ----
@@ -236,8 +237,22 @@
 	TEST_ASSERT_EQUAL(probe.heat_fire_turf, T, "the hotspot coupled the item to the burning gas")
 	TEST_ASSERT(!isnull(probe.heat_body), "through its heat body")
 	var/start = probe.get_temperature()
-	vg_heat_debug_run_frames(3)
-	TEST_ASSERT(probe.get_temperature() > start, "the heat domain heats it")
+	// Was a fixed vg_heat_debug_run_frames(3): that assumed 3 frames is always
+	// enough for the heat domain to measurably warm the probe, which held only
+	// by accident when this test ran on a floor left warm by a previous test
+	// sharing the same turf. wait_for_condition() is the right replacement for
+	// that timing assumption, but on a genuinely isolated floor this still
+	// fails even after 500 frames (50 x 10) -- the probe never measurably
+	// warms at all. That is a real heat-domain coupling bug, not a timing
+	// issue, and is tracked separately from test isolation; see the isolation
+	// checkpoint notes. Kept short (not 500 frames) so this fails fast instead
+	// of adding 30+ seconds to every run while that's open.
+	var/heated = wait_for_condition(
+		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
+		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_heat_debug_run_frames), 1),
+		20,
+	)
+	TEST_ASSERT(heated, "the heat domain heats it (KNOWN ISSUE: heat-domain coupling, not test isolation -- see doc/testing.md flaky notes)")
 	hotspot.perform_exposure()
 	TEST_ASSERT_EQUAL(probe.fire_acts, 0, "without a fire_act() call per SSair fire")
 	qdel(hotspot)

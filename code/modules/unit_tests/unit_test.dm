@@ -22,6 +22,224 @@ GLOBAL_LIST_EMPTY(required_map_items)
 /// Use the PERFORM_ALL_TESTS macro instead.
 GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
+/// How many isolated test blocks to keep in the pool. Tests run strictly
+/// sequentially (RunUnitTests() calls each test's New()/Run()/restore_atmos()/
+/// Destroy() in a plain for loop before starting the next), so one block would
+/// be enough in theory -- but a test's Destroy() may still be draining async
+/// leftovers (a delayed callback, an expedition teardown_z wait) when the next
+/// test's New() runs, so a small pool lets us round-robin instead of forcing
+/// every test to block on the previous test's straggling cleanup.
+#define UNIT_TEST_BLOCK_POOL_SIZE 8
+
+/// One isolated, walled-off copy of maps/templates/unit_tests.dmm on its own
+/// z-level. Checked out to exactly one running unit test at a time so tests no
+/// longer share a single global floor turf (the historic source of most
+/// intermittent unit-test failures: leaked hotspots, gas, and temperature from
+/// one test bleeding into the next).
+/datum/unit_test_block
+	/// Bottom-left floor turf of this block, mirrors run_loc_floor_bottom_left.
+	var/turf/bottom_left
+	/// Top-right floor turf of this block, mirrors run_loc_floor_top_right.
+	var/turf/top_right
+	/// The z-level this block's copy of the template was loaded onto.
+	var/z
+	/// TRUE while a test currently owns this block.
+	var/in_use = FALSE
+
+/// The pool of isolated test blocks. Built lazily on the first test that needs
+/// one, so non-test worlds never pay for it.
+GLOBAL_LIST_EMPTY(unit_test_block_pool)
+/// TRUE once the pool has been built (or an attempt was made to build it).
+GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
+
+/// Loads UNIT_TEST_BLOCK_POOL_SIZE independent copies of the unit-test room
+/// template, each on its own z-level, and records their corner turfs. Safe to
+/// call more than once -- only the first call does anything.
+/proc/ensure_unit_test_block_pool()
+	if(GLOB.unit_test_block_pool_ready)
+		return
+	// Set this before load_new_z() (which yields) so a re-entrant call made
+	// while we're still loading the first copy doesn't start a second build.
+	GLOB.unit_test_block_pool_ready = TRUE
+
+	// load_new_z() -> initTemplateBounds() is a deliberate no-op while
+	// SSatoms.initialized is still FALSE (code/modules/maps/map_template.dm):
+	// during the main boot's own atom-init pass it assumes that pass will
+	// pick up anything newly loaded, instead of double-initializing. The
+	// unit-test suite can start running its first test (which builds this
+	// pool from New()) before SSatoms actually finishes that pass, so
+	// initTemplateBounds() silently skips calling SSatoms.InitializeAtoms()
+	// on every copy's atoms -- landmarks (and everything else) never run
+	// Initialize() and are never found below. This raced: it depended on
+	// how far the main boot sweep had gotten by the time we checked, which
+	// varies with machine load. Wait for real SSatoms completion first so
+	// initTemplateBounds() always takes its normal, synchronous path.
+	while(!SSatoms.initialized)
+		sleep(1)
+
+	for(var/i in 1 to UNIT_TEST_BLOCK_POOL_SIZE)
+		var/datum/unit_test_block/block
+		// load_new_z()'s underlying map load (parsed_map/build_coordinate)
+		// intermittently places nothing at all -- every turf on the new z
+		// comes back a bare /turf/space with empty contents, no error
+		// surfaced to us, no landmark to find. Confirmed by dumping the new
+		// z's contents when this happens; not yet root-caused (a map-loader
+		// or GLOB.cached_maps-reuse issue under this specific "allocate a
+		// brand new z, back to back, several times" pattern -- load_new_z()
+		// is also SSexpedition's z-allocation path, so this may not be
+		// unique to tests). Retry a few fresh attempts per slot rather than
+		// let one bad load silently shrink the pool.
+		for(var/attempt in 1 to 3)
+			var/datum/map_template/unit_tests/template = new
+			var/new_z = template.load_new_z()
+			if(!new_z)
+				continue
+			var/datum/unit_test_block/candidate = new
+			candidate.z = new_z
+			// Don't rely on GLOB.landmarks_list: atom Initialize() for a
+			// freshly loaded z can be queued rather than run synchronously
+			// inside load_new_z(), so the landmark may not be registered
+			// into that list yet. The atom instance itself is already in
+			// its turf's contents the moment load_map() places it, so
+			// locate it there directly. load_new_z() always places the
+			// template at (1,1) on its new z (centered = FALSE).
+			for(var/tx in 1 to template.width)
+				for(var/ty in 1 to template.height)
+					var/turf/T = locate(tx, ty, new_z)
+					if(!T)
+						continue
+					if(!candidate.bottom_left && locate(/obj/effect/landmark/unit_test_bottom_left) in T)
+						candidate.bottom_left = T
+					if(!candidate.top_right && locate(/obj/effect/landmark/unit_test_top_right) in T)
+						candidate.top_right = T
+			if(candidate.bottom_left && candidate.top_right)
+				block = candidate
+				break
+			log_world("ensure_unit_test_block_pool: copy #[i] attempt [attempt] on z[new_z] loaded no content (empty space, not a map-loader error) -- retrying on a fresh z.")
+
+		if(!block)
+			log_world("ensure_unit_test_block_pool: copy #[i] failed 3 attempts, the unit test block pool will be smaller than requested.")
+			continue
+
+		GLOB.unit_test_block_pool += block
+
+	if(!length(GLOB.unit_test_block_pool))
+		CRASH("ensure_unit_test_block_pool: failed to load any isolated test blocks.")
+
+/// Checks out a free isolated test block, waiting for one to be returned if
+/// every block is currently in use (should be rare -- see the pool size
+/// comment above). Bounded so a genuine deadlock fails loudly instead of
+/// hanging the suite forever.
+/proc/acquire_unit_test_block()
+	RETURN_TYPE(/datum/unit_test_block)
+	ensure_unit_test_block_pool()
+
+	var/waited = 0
+	while(TRUE)
+		for(var/datum/unit_test_block/block as anything in GLOB.unit_test_block_pool)
+			if(!block.in_use)
+				block.in_use = TRUE
+				return block
+		waited++
+		if(waited > 600) // ~60s of real time at 1 tick/sleep(1) each
+			CRASH("acquire_unit_test_block: every isolated test block is still in use after 60s -- likely a stuck async teardown.")
+		sleep(1)
+
+/// Resets a block to a clean floor (deletes everything spawned on it, restores
+/// default air/temperature on every open turf, drops any walls a test put up)
+/// and returns it to the pool. Waits for the world's own async teardown paths
+/// so a block is never recycled mid-cleanup.
+/proc/release_unit_test_block(datum/unit_test_block/block, datum/unit_test/test)
+	if(!block)
+		return
+
+	// Mirror /datum/unit_test/restore_atmos(): don't hand this block's z back
+	// out while expedition teardown (or anything else async) is still touching
+	// turfs on it.
+	while(SSexpedition && length(SSexpedition.teardown_z))
+		sleep(1)
+
+	// Leak detection: by now QDEL_LIST(allocated) has already run, so anything
+	// still sitting on this block's turfs (besides the corner landmarks) is
+	// something the test spawned without tracking it through allocate() --
+	// directly (new X(run_loc_floor_bottom_left)) or as a side effect (an
+	// item's own inventory, a decal, a temporary effect). Logged, not failed
+	// yet: we don't have a full-suite baseline for how many existing tests
+	// would trip this, and a false-positive mass failure would be worse than
+	// the leak it's meant to catch. Once a baseline run shows it's quiet,
+	// flip the log to test.Fail().
+	var/leaked = 0
+	var/list/leaked_types = list()
+	for(var/turf/T in block_turfs(block))
+		for(var/atom/movable/AM in T)
+			if(istype(AM, /obj/effect/landmark))
+				continue
+			leaked++
+			leaked_types[AM.type] = (leaked_types[AM.type] || 0) + 1
+			qdel(AM)
+
+		if(istype(T, /turf/open))
+			var/turf/open/OT = T
+			if(OT.active_hotspot)
+				qdel(OT.active_hotspot)
+			if(OT.air)
+				OT.air.copy_from(dq_unit_test_block_default_air())
+				OT.air_update_turf(TRUE, FALSE)
+			OT.set_temperature(T20C)
+		else if(istype(T, /turf/simulated/wall))
+			// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
+			// et al) and never got to restore them because it errored out early.
+			T.ChangeTurf(/turf/simulated/floor/tiled/steel)
+
+	if(leaked)
+		var/list/parts = list()
+		for(var/leaked_type in leaked_types)
+			parts += "[leaked_type] x[leaked_types[leaked_type]]"
+		log_world("UNIT TEST LEAK: [test ? test.type : "?"] left [leaked] object(s) on its block: [parts.Join(", ")]")
+
+	block.in_use = FALSE
+
+/// The default air mix a block's open turfs start with -- standard station air.
+/proc/dq_unit_test_block_default_air()
+	RETURN_TYPE(/datum/gas_mixture)
+	var/static/datum/gas_mixture/default_air
+	if(!default_air)
+		default_air = new
+		default_air.set_temperature(T20C)
+		default_air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
+		default_air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	return default_air.copy()
+
+/// Every turf in a block's rectangle (inclusive), by walking its bottom-left
+/// to top-right corners -- the block is always one z-level.
+/proc/block_turfs(datum/unit_test_block/block)
+	var/list/turfs = list()
+	if(!block?.bottom_left || !block.top_right)
+		return turfs
+	for(var/x in block.bottom_left.x to block.top_right.x)
+		for(var/y in block.bottom_left.y to block.top_right.y)
+			var/turf/T = locate(x, y, block.z)
+			if(T)
+				turfs += T
+	return turfs
+
+/// Waits for `condition` to hold, ticking `advance` once per attempt, instead
+/// of assuming a fixed number of ticks/frames is always enough (the "timing
+/// assumptions" flakiness pattern: a test that only passed because a shared
+/// turf happened to already be warm, or because the CI machine happened to be
+/// fast enough that round N finished within a guessed frame count). Returns
+/// TRUE the moment `condition.Invoke()` is truthy, FALSE if `max_attempts` is
+/// exhausted first. `advance` may be null to just poll `condition` on a sleep.
+/proc/wait_for_condition(datum/callback/condition, datum/callback/advance, max_attempts = 60)
+	for(var/i in 1 to max_attempts)
+		if(condition.Invoke())
+			return TRUE
+		if(advance)
+			advance.Invoke()
+		else
+			sleep(world.tick_lag)
+	return condition.Invoke()
+
 /proc/focused_tests()
 	var/list/focused_tests = list()
 	for (var/datum/unit_test/unit_test as anything in subtypesof(/datum/unit_test))
@@ -136,36 +354,69 @@ GLOBAL_VAR(dq_test_select_names)
 	/// List of atoms that we don't want to ever initialize in an agnostic context, like for Create and Destroy. Stored on the base datum for usability in other relevant tests that need this data.
 	var/static/list/uncreatables = null
 
-	// NOT IMPLEMENTED YET: var/static/datum/space_level/reservation
+	/// The isolated block this test checked out of the pool, released on Destroy().
+	var/datum/unit_test_block/test_block
+
+	/// Seconds Run() gets before RunUnitTest() gives up on it and fails it by
+	/// name instead of hanging the whole suite (a real incident: one test
+	/// hung 55+ minutes with no log progress). Override per subtype for a
+	/// legitimately slow test. DM has no way to preempt a proc mid-sleep, so a
+	/// timed-out Run() keeps executing in the background even after the suite
+	/// moves on -- this bounds how long the SUITE waits, not how long the
+	/// leaked fiber runs.
+	var/timeout = 60
+	/// Set by RunWrapped() the moment Run() actually returns.
+	var/tmp/run_finished = FALSE
+
+	/// This test's deterministic RNG seed (see New()), logged on failure so a
+	/// flake involving rand()/pick() is reproducible.
+	var/tmp/seed
+
+/// A stable, deterministic seed for a test's own name: same input, same
+/// output, forever, regardless of process or run order -- unlike rand()'s own
+/// state, which drifts with everything that ran before it.
+/proc/dq_test_seed_for(text)
+	var/hash = 0
+	for(var/i in 1 to length(text))
+		hash = ((hash * 31) + text2ascii(text, i)) & 0x7FFFFFFF
+	return hash || 1
+
+/datum/unit_test/proc/RunWrapped()
+	Run()
+	run_finished = TRUE
 
 /proc/cmp_unit_test_priority(datum/unit_test/a, datum/unit_test/b)
 	return initial(a.priority) - initial(b.priority)
 
 /datum/unit_test/New()
-	// NOT IMPLEMENTED YET: if (isnull(reservation))
-	// NOT IMPLEMENTED YET: 	var/datum/map_template/unit_tests/template = new
-	// NOT IMPLEMENTED YET: 	reservation = template.load_new_z()
-
 	if (isnull(uncreatables))
 		uncreatables = build_list_of_uncreatables()
 
 	allocated = new
-	run_loc_floor_bottom_left = get_turf(locate(/obj/effect/landmark/unit_test_bottom_left) in GLOB.landmarks_list)
-	run_loc_floor_top_right = get_turf(locate(/obj/effect/landmark/unit_test_top_right) in GLOB.landmarks_list)
+	test_block = acquire_unit_test_block()
+	run_loc_floor_bottom_left = test_block.bottom_left
+	run_loc_floor_top_right = test_block.top_right
 
-	// NOT IMPLENTED YET, SEE THE BEGINNING OF THIS PROC
-	//TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
-	//TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
+	// Deterministic per-test RNG: reseed from the test's own type name rather
+	// than leaving the shared world RNG wherever the previous test's rand()
+	// calls left it. That previous position depends on execution order and on
+	// which other tests ran first (worse, on whether this is a full or
+	// focused run), so a rand()/pick() a test relies on can silently see a
+	// different draw between runs -- the "fishing-hat RNG" and unseeded
+	// pick() flakes. Seeding from the type name makes every test's random
+	// sequence reproducible on its own, independent of what ran before it:
+	// re-running just this one test (dq_focused_test.sh) reproduces the exact
+	// same sequence a full-suite failure saw.
+	seed = dq_test_seed_for("[type]")
+	rand_seed(seed)
+
+	TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
+	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
 /datum/unit_test/Destroy()
 	QDEL_LIST(allocated)
-	// clear the test area
-	// NOT IMPLEMENTED YET, SEE NEW() PROC
-	//for (var/turf/turf in Z_TURFS(run_loc_floor_bottom_left.z))
-	//	for (var/content in turf.contents)
-	//		if (istype(content, /obj/effect/landmark))
-	//			continue
-	//		qdel(content)
+	release_unit_test_block(test_block, src)
+	test_block = null
 	return ..()
 
 /datum/unit_test/proc/Run()
@@ -176,6 +427,11 @@ GLOBAL_VAR(dq_test_select_names)
 
 	if(!istext(reason))
 		reason = "FORMATTED: [reason != null ? reason : "NULL"]"
+
+	// Seed on the first failure only -- later assertions in the same test
+	// don't need it repeated, and it'd bury the actual failure text.
+	if(!LAZYLEN(fail_reasons) && seed)
+		reason = "[reason] (rng seed [seed]: dq_focused_test.sh reruns this test alone with the same seed)"
 
 	LAZYADD(fail_reasons, list(list(reason, file, line)))
 
@@ -352,7 +608,15 @@ GLOBAL_VAR(dq_test_select_names)
 	else
 		duration = REALTIMEOFDAY
 		tick_start_index = Master.perf_samples_total + 1
-		test.Run()
+		INVOKE_ASYNC(test, TYPE_PROC_REF(/datum/unit_test, RunWrapped))
+		var/waited_ds = 0
+		var/limit_ds = test.timeout SECONDS
+		while(!test.run_finished && waited_ds < limit_ds)
+			sleep(1)
+			waited_ds += world.tick_lag
+		if(!test.run_finished)
+			log_world("UNIT TEST TIMEOUT: [test_path] did not return from Run() within [test.timeout]s; failing it and moving on. Its fiber may still be running in the background.")
+			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
 		test.restore_atmos()
 
 		duration = REALTIMEOFDAY - duration

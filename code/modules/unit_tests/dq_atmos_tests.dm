@@ -4236,8 +4236,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/fire_result = F.process()
 	TEST_ASSERT_EQUAL(fire_result, PROCESS_KILL, "idle fire alarm remained in the machine polling loop")
 	// Its detector is a heat rule on its body (H3): no polling needed.
+	// dq_rule_test_write() flushes deterministically itself now.
 	dq_rule_test_write(F, PROP_TEMPERATURE, T0C + 300)
-	dq_rx_flush()
 	TEST_ASSERT(F.firewarn, "hibernating fire alarm did not respond to being heated")
 	qdel(F)
 	qdel(M)

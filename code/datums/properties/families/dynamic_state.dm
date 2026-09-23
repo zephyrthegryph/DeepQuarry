@@ -24,6 +24,8 @@
 	var/handle = node_of(D, FALSE)
 	if(isnull(handle))
 		return FALSE
+	// dq_rx_node_write() flushes deterministically itself (reactor_adapter.dm)
+	// so this doesn't need its own dq_rx_flush().
 	dq_rx_node_write(handle, channel, value)
 	return TRUE
 
@@ -55,6 +57,14 @@
 		return FALSE
 	vg_heat_body_couple(A.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
 	vg_heat_body_set_temperature(A.heat_body, value)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+	// See /datum/property_provider/domain/test_write(): flush here too, so
+	// PROP_TEMPERATURE writes on /obj (the common case -- paper ignition, the
+	// generated threshold tests) are deterministically observed without every
+	// caller adding its own dq_rx_flush(). Guarded for the same reason: only
+	// exists in a test/lint build.
+	dq_rx_flush()
+#endif
 	return TRUE
 
 // ---- DM-owned: integrity ----
