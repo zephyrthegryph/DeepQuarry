@@ -271,8 +271,7 @@ impl Flow {
 				let side_p = if side_is_a { pa } else { pb };
 				let gap = match target.cmp {
 					Cmp::AtLeast => target.kpa - side_p,
-					Cmp::AtMost => side_p - target.kpa,
-				};
+					Cmp::AtMost => side_p - target.kpa,				};
 				if gap <= 0.01 {
 					return StepReport {
 						target_reached: true,

@@ -79,3 +79,24 @@ jobs:
           name: dm-health-report
           path: tools/dm-health/target/latest-report.json
           if-no-files-found: ignore
+      # dm-health's ci-suite is DM/map/misc checks (replaces the old individual
+      # steps this job used to list one by one). The Rust-side checks below are
+      # not part of it and stay their own steps.
+      - name: Check Rust core consolidation
+        run: python3 tools/ci/check_rust_core_consolidation.py
+      # Linting is scoped to the host-buildable, non-vendored crates (not the
+      # whole workspace): vg-gas is vendored auxmos and stays on upstream's
+      # lint level (see domains/gas/UPSTREAM.md), and vg-gas/vg-ffi both need
+      # byondapi (i686/32-bit only -- see verdigris/Cargo.toml), which this
+      # runner has no cross toolchain for. `cargo test`'s default-members
+      # (core, domains/heat, domains/layout, domains/power, verdigris,
+      # tools/bench, tools/replay) already matches this clippy package list.
+      - name: Verdigris cargo fmt
+        working-directory: verdigris
+        run: cargo fmt --all --check
+      - name: Verdigris cargo clippy
+        working-directory: verdigris
+        run: cargo clippy --package verdigris --package vg-core --package vg-layout --package vg-heat --package vg-power --all-targets -- -D warnings
+      - name: Verdigris cargo test
+        working-directory: verdigris
+        run: cargo test

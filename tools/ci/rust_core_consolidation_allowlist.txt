@@ -1,0 +1,7 @@
+# Known current offenders for tools/ci/check_rust_core_consolidation.py
+# (doc/rewrite/rust_core.md §15). Format: <path>:<category>  # branch/plan
+# that removes it. Remove an entry once it no longer matches; a stale entry
+# fails the check, so the list only shrinks as domains migrate.
+
+verdigris/domains/gas/src/pipes.rs:revision  # M2 (device/pipe binds, rewrite/m2): pipe-node revision is a plain generation counter, not band tracking; migrate onto core::revision::Counter (the primitive world.rs's Main-slot revision now uses) when M2's pipe restructuring lands.
+verdigris/domains/power/src/world.rs:smoothing  # rewrite/power-r10: shown_brown/shown_apc/shown_smes are exactly "power's 'shown' diff copies" from rust_core.md §15's table; removed when power's rewrite onto core components lands and DM reads values directly instead.
