@@ -1055,8 +1055,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
 				C.flash_eyes()
-				if(C.stuttering < 1 && (!(HULK in C.mutations)))
-					C.stuttering = 1
+				if(C.get_stuttering() < 1 && (!(HULK in C.mutations)))
+					C.SetStuttering(1)
 				C.Weaken(1)
 				C.Stun(1)
 				C.show_message(span_danger("The rune explodes in a bright flash."), 3)
@@ -1085,7 +1085,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				var/mob/living/carbon/C = T
 				C.flash_eyes()
 				if (!(HULK in C.mutations))
-					C.silent += 15
+					C.AdjustSilent(15)
 				C.Weaken(25)
 				C.Stun(25)
 				add_attack_logs(user,C,"Stun rune")

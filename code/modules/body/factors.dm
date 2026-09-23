@@ -248,6 +248,9 @@
 		acc = A.accumulate_factors(acc)
 	for(var/datum/modifier/M as anything in owner.modifiers)
 		acc = body_factor_accumulate(acc, M.factors)
+	for(var/datum/status_effect/counter/C in owner.status_effects)
+		if(C.has_factors)
+			acc = body_factor_accumulate(acc, C.counter_factors())
 	acc = accumulate_reagent_factors(acc)
 	acc = accumulate_plan_factors(acc)
 	var/list/old = factors

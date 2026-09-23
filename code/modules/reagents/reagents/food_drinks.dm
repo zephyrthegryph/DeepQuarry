@@ -5043,7 +5043,7 @@
 		if(dose * strength >= strength) // Early warning
 			M.make_dizzy(24) // Intentionally higher than normal to compensate for it's previous effects.
 		if(dose * strength >= strength * 2.5) // Slurring takes longer. Again, intentional.
-			M.slurring = max(M.slurring, 30)
+			M.Slur(30)
 
 /datum/reagent/nutriment/magicdust
 	name = REAGENT_MAGICDUST
@@ -5172,7 +5172,7 @@
 		if(dose * strength >= strength)
 			M.make_dizzy(24)
 		if(dose * strength >= strength * 2.5)
-			M.slurring = max(M.slurring, 30)
+			M.Slur(30)
 		// Simulating heat effects of spice. Without spice.
 		if(alien == IS_DIONA || alien == IS_ALRAUNE)
 			return
@@ -5310,7 +5310,7 @@
 		if(dose * strength >= strength) // Early warning
 			M.make_dizzy(24) // Intentionally higher than normal to compensate for it's previous effects.
 		if(dose * strength >= strength * 2.5) // Slurring takes longer. Again, intentional.
-			M.slurring = max(M.slurring, 30)
+			M.Slur(30)
 
 /datum/reagent/ethanol/bulldog
 	name = REAGENT_BULLDOG

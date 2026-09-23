@@ -1312,7 +1312,7 @@
 	if(self.species.get_ssd(self) && !self.client && !self.teleop)
 		self.Sleeping(2)
 	if(self.stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
-		self.silent = 0
+		self.SetSilent(0)
 		self.SetDeaf(0)
 		return 1
 
@@ -1322,7 +1322,7 @@
 	self.body.life_tick()
 
 	if(self.stat == DEAD)
-		self.silent = 0
+		self.SetSilent(0)
 		self.SetDeaf(0)
 		return 1
 
@@ -1983,7 +1983,7 @@
 			self.automatic_custom_emote(VISIBLE_MESSAGE, "is having trouble keeping their eyes open.", check_stat = TRUE)
 		self.Blur(2)
 		if(self.traumatic_shock >= 80)
-			self.stuttering = max(self.stuttering, 5)
+			self.Stutter(5)
 
 
 	if(self.shock_stage == 40)

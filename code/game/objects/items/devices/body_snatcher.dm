@@ -69,12 +69,12 @@
 					else
 						user.tf_mob_holder = M
 					user.SetSleeping(10) //Device knocks out both the user and the target.
-					user.SetBlurry(30)//Blurry vision while they both get used to their new body's vision
-					user.slurring = 50 //And let's also have them slurring while they attempt to get used to using their new body.
+					user.SetBlurry(30) //Blurry vision while they both get used to their new body's vision
+					user.SetSlurring(50) //And let's also have them slurring while they attempt to get used to using their new body.
 					if(ishuman(M)) //Let's not have the AI slurring, even though its downright hilarious.
 						M.SetSleeping(10)
 						M.SetBlurry(30)
-						M.slurring = 50
+						M.SetSlurring(50)
 					return ITEM_INTERACT_SUCCESS
 				return ITEM_INTERACT_BLOCKING
 

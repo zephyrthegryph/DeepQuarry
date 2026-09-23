@@ -233,7 +233,7 @@
 		target.injure(INJURY_BLUNT, max(99, target.get_endurance() * target.vitality() - 1), flags = INJURE_IGNORE_RESISTANCE)
 		target.Stun(20)
 		target.Weaken(20)
-		target.stuttering = 20
+		target.SetStuttering(20)
 
 GLOBAL_VAR(redspace_abduction_z)
 

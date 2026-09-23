@@ -24,7 +24,7 @@
 				radiation += max((effect * rad_protection), 0)
 		if(STUTTER)
 			if(status_flags & CANSTUN) // stun is usually associated with stutter
-				stuttering = max(stuttering,(effect * blocked))
+				Stutter((effect * blocked))
 		if(EYE_BLUR)
 			Blur((effect * blocked))
 		if(DROWSY)

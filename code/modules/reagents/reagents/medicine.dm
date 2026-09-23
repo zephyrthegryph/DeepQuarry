@@ -362,7 +362,7 @@
 			chem_effective = 0.25
 			to_chat(M, span_danger("It's cold. Something causes your cellular mass to harden occasionally, resulting in vibration."))
 			M.Weaken(10)
-			M.silent = max(M.silent, 10)
+			M.Silence(10)
 			M.make_jittery(4)
 		// Only works below 170K, a gate a continuous treatment tag can't
 		// express, so the cryo-healing mends directly.
@@ -390,7 +390,7 @@
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to harden sporadically, resulting in seizure-like twitching."))
 			chem_effective = 0.5
 			M.Weaken(20)
-			M.silent = max(M.silent, 20)
+			M.Silence(20)
 			M.make_jittery(4)
 		// Temperature-gated (see cryoxadone): mends directly.
 		dq_cryo_mend(M, 30 * removed * chem_effective)
@@ -430,7 +430,7 @@
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to solidify sporadically, resulting in uncontrollable twitching."))
 			chem_effective = 0.5
 			M.Weaken(10)
-			M.silent = max(M.silent, 10)
+			M.Silence(10)
 			M.make_jittery(4)
 		// Cold- or death-gated: mends directly (a tag can't express the gate).
 		if(M.stat != DEAD)
@@ -470,7 +470,7 @@
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to harden sporadically, resulting in seizure-like twitching."))
 			chem_effective = 0.5
 			M.Weaken(20)
-			M.silent = max(M.silent, 20)
+			M.Silence(20)
 			M.make_jittery(4)
 		// Cold/corpse-gated boost on top of the baseline treatment_tags
 		// profile; the gate can't be a tag, so it mends directly.
@@ -546,7 +546,7 @@
 	var/chem_effective = 1 * M.species.chem_strength_pain
 	if(alien == IS_SLIME)
 		chem_effective = 0.75
-		M.stuttering = min(50, max(0, M.stuttering + 5)) //If you can't feel yourself, and your main mode of speech is resonation, there's a problem.
+		M.SetStuttering(min(50, max(0, M.get_stuttering() + 5))) //If you can't feel yourself, and your main mode of speech is resonation, there's a problem.
 	M.SetBlurry(min(M.get_eye_blurry() + 10, 250 * chem_effective))
 
 /datum/reagent/oxycodone/overdose(mob/living/carbon/M, alien)
@@ -705,7 +705,7 @@
 			if(I.damage > 0) // Repair is peridaxon's organ tags; the confusion is its side effect.
 				H.Confuse(5)
 			if(I.damage <= 5 && I.organ_tag == O_EYES)
-				H.SetBlurry(min(M.get_eye_blurry() + 10, 250))//Eyes need to reset, or something
+				H.SetBlurry(min(M.get_eye_blurry() + 10, 250)) //Eyes need to reset, or something
 				H.sdisabilities &= ~BLIND
 		if(alien == IS_SLIME)
 			if(prob(33))
@@ -1075,7 +1075,7 @@
 		return
 	M.clear_dizzy()
 	M.SetDrowsyness(0)
-	M.stuttering = 0
+	M.SetStuttering(0)
 	M.SetConfused(0)
 	if(M.ingested)
 		for(var/datum/reagent/R in M.ingested.reagent_list)
@@ -1087,7 +1087,7 @@
 		return
 	M.clear_dizzy()
 	M.SetDrowsyness(0)
-	M.stuttering = 0
+	M.SetStuttering(0)
 	M.SetConfused(0)
 	if(M.bloodstr)
 		for(var/datum/reagent/R in M.bloodstr.reagent_list)
@@ -1796,14 +1796,14 @@
 		if(prob(2))
 			to_chat(H,span_warning("You feel a dull pain behind your eyes and at the back of your head..."))
 			H.hallucination += 20 //It messes with your mind for some reason.
-			H.AdjustBlurry(20)//Groggy vision for a small bit.
+			H.AdjustBlurry(20) //Groggy vision for a small bit.
 		if(prob(3))
 			to_chat(H,span_warning("You shiver, your body continually being assaulted by the sensation of pins and needles."))
 			H.emote("shiver")
 			H.make_jittery(10)
 		if(prob(3))
 			to_chat(H,span_warning("Your tongue feels numb and unresponsive."))
-			H.stuttering += 20
+			H.AdjustStuttering(20)
 
 /datum/reagent/vermicetol
 	name = REAGENT_VERMICETOL

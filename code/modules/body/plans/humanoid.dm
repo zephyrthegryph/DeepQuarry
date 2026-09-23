@@ -228,7 +228,7 @@
 		else if(E.is_dislocated())
 			raw_pain += PAIN_DISLOCATION
 	raw_pain *= H.species.trauma_mod
-	if(H.slurring)
+	if(H.get_slurring())
 		raw_pain -= PAIN_SLURRING_RELIEF
 	raw_pain += get_factor(BF_PAIN)
 	return max(0, raw_pain - get_factor(BF_ANALGESIA))

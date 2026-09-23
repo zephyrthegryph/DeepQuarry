@@ -83,11 +83,11 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 		return
 	// Bits no system in this composition carries (woken by a broad wake) have nothing to run.
 	life_awake &= comp.bits
-	var/sleeping = considered & ~(busy | life_cycle_wakes | LIFE_SYS_GATE)
-	if(sleeping)
-		life_awake &= ~sleeping
+	var/asleep_bits = considered & ~(busy | life_cycle_wakes | LIFE_SYS_GATE)
+	if(asleep_bits)
+		life_awake &= ~asleep_bits
 		if(GLOB.mob_hibernation_trace)
-			log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) systems asleep: bits [sleeping], awake [life_awake]")
+			log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) systems asleep: bits [asleep_bits], awake [life_awake]")
 	if(!(life_awake & ~LIFE_SYS_GATE))
 		life_hibernate("no awake systems")
 

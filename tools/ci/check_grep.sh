@@ -159,6 +159,24 @@ if $grep -n '(life_hibernating|life_awake)\s*[|&]?=[^=]|hibernating_mobs(\[[^]]*
 	FAILED=1
 fi;
 
+part "status counters: setters only"
+# Stun, weaken, paralysis, sleep, confusion, blindness, blur, drugs, deafness, drowsiness,
+# silence, stuttering and slurring are status effect datums (life/status_counters.dm) that
+# own their timers and wake the mob. Write them with the setters (Stun/SetStunned/
+# AdjustStunned, Blur/SetBlurry/AdjustBlurry, ...), read them with get_stunned() and friends;
+# never bring the raw counter vars back on a mob.
+status_counter_names='stunned|weakened|paralysis|sleeping|confused|eye_blind|eye_blurry|druggy|ear_deaf|drowsyness|silent|stuttering|slurring'
+if $grep -n "\.(${status_counter_names})\s*([-+*/]?=[^=]|\+\+|--)" "${code_files[@]}" | grep -v 'Console\.silent' | grep -v 'shandler\.sleeping'; then
+	echo
+	echo -e "${RED}ERROR: direct write to a status counter. Use its setter (Stun(), SetBlurry(), AdjustSilent(), ...).${NC}"
+	FAILED=1
+fi;
+if $grep -n "^\s*var/(${status_counter_names})\b" "${code_files[@]}" | grep "^code/modules/mob/"; then
+	echo
+	echo -e "${RED}ERROR: a raw status counter var on a mob. Status counters are /datum/status_effect/counter subtypes.${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`

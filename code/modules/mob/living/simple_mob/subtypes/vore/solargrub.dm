@@ -140,7 +140,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 			playsound(src, 'sound/weapons/egloves.ogg', 75, 1)
 			L.Weaken(4)
 			L.Stun(4)
-			L.stuttering = max(L.stuttering, 4)
+			L.Stutter(4)
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 			s.set_up(5, 1, L)
 			s.start()

@@ -38,7 +38,7 @@
 
 	if(self.stat == DEAD)
 		self.blinded = 1
-		self.silent = 0
+		self.SetSilent(0)
 		self.deaf_loop.stop()
 		return 1
 
@@ -62,7 +62,7 @@
 			blinded = 1
 			SetDeaf(1)
 			deaf_loop.start()
-			silent = 1
+			SetSilent(1)
 			if(!alert)//Sounds an alarm, but only once per 'level'
 				emote("alarm")
 				to_chat(src, span_red("Major electrical distruption detected: System rebooting."))
@@ -75,7 +75,7 @@
 			SetBlinded(0)
 			SetDeaf(0)
 			deaf_loop.stop()
-			silent = 0
+			SetSilent(0)
 			emp_damage -= 1
 		if(11 to 19)//Moderate level of EMP damage, resulting in nearsightedness and ear damage
 			SetBlurry(1)

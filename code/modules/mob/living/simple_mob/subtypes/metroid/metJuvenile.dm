@@ -26,8 +26,6 @@
 		if(self.victim)
 			self.handle_consumption()
 
-		life_statuses().stuttering(self) // ??
-
 	..()
 
 /mob/living/simple_mob/metroid/juvenile/examine(mob/user)
@@ -109,7 +107,7 @@
 					do_attack_animation(L)
 					if(L.buckled)
 						L.buckled.unbuckle_mob() // To prevent an exploit where being buckled prevents metroids from jumping on you.
-					L.stuttering = max(L.stuttering, stun_power)
+					L.Stutter(stun_power)
 
 					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 					s.set_up(5, 1, L)

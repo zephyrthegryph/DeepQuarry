@@ -101,7 +101,7 @@
 	if(!client && !teleop)	return
 
 	if (type)
-		if((type & VISIBLE_MESSAGE) && (is_blind() || get_paralysis()) )//Vision related
+		if((type & VISIBLE_MESSAGE) && (is_blind() || get_paralysis()) ) //Vision related
 			if (!( alt ))
 				return
 			else

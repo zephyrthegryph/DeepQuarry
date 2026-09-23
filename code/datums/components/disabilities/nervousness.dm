@@ -20,7 +20,7 @@
 	if(owner.transforming)
 		return
 	if(prob(5) && prob(7))
-		owner.stuttering = max(15, owner.stuttering)
+		owner.Stutter(15)
 		if(owner.get_jittery() < 50)
 			owner.make_jittery(65)
 

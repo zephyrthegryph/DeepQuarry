@@ -93,8 +93,6 @@
 	var/transforming = null	//Carbon
 	var/other = 0.0
 	var/ear_damage = null	//Carbon
-	var/stuttering = null	//Carbon
-	var/slurring = null		//Carbon
 	var/real_name = null
 	var/nickname = null
 	var/flavor_text = ""

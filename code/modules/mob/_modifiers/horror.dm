@@ -94,7 +94,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 			"Your [O] itches.", "Your [O] is crawling around inside of you.")
 			to_chat(unfortunate_soul, span_cult(spooky_message))
 		unfortunate_soul.make_dizzy(5)
-		unfortunate_soul.stuttering = min(100, unfortunate_soul.stuttering + 10) //Stuttering is increased by 1, but never above 100. You're in a scary place.
+		unfortunate_soul.SetStuttering(min(100, unfortunate_soul.get_stuttering() + 10)) //Stuttering is increased by 1, but never above 100. You're in a scary place.
 	return
 
 /datum/modifier/redspace_drain/proc/choose_organs(organs_to_replace)

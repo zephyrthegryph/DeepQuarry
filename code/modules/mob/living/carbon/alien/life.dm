@@ -62,7 +62,7 @@
 
 	if(self.stat == DEAD)
 		self.blinded = 1
-		self.silent = 0
+		self.SetSilent(0)
 		self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
 		if(self.get_paralysis() && self.get_paralysis() > 0)

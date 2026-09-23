@@ -160,7 +160,7 @@
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
 			M.make_dizzy(18) // It is decreased at the speed of 3 per tick
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 2) // Slurring
-			M.slurring = max(M.slurring, 90)
+			M.Slur(90)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 3) // Confusion - walking in random directions
 			M.Confuse(60)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 4) // Blurry vision
@@ -203,7 +203,7 @@
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
 			M.make_dizzy(6) // It is decreased at the speed of 3 per tick
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 2) // Slurring
-			M.slurring = max(M.slurring, 30)
+			M.Slur(30)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 3) // Confusion - walking in random directions
 			M.Confuse(20)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 4) // Blurry vision

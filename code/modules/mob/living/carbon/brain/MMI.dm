@@ -215,7 +215,7 @@
 	view.add_language(LANGUAGE_GALCOM)
 	view.add_language(LANGUAGE_EAL)
 	view.set_stat(CONSCIOUS)
-	view.silent = 0
+	view.SetSilent(0)
 	GLOB.dead_mob_list -= view
 
 /obj/item/mmi/digital/update_occupied_state()

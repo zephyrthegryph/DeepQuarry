@@ -316,7 +316,7 @@
 	// The actual damage/electrocution is handled by the tesla_zap() that accompanies this.
 	Paralyse(5)
 	Sleeping(5)
-	stuttering += 20
+	AdjustStuttering(20)
 	make_jittery(150)
 	emp_act(EMP_HEAVY)
 	to_chat(src, span_critical("You've been struck by lightning!"))

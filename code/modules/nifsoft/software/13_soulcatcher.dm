@@ -235,7 +235,7 @@
 	brainmob.soulcatcher = src
 	brainmob.container = src
 	brainmob.stat = 0
-	brainmob.silent = FALSE
+	brainmob.SetSilent(FALSE)
 	GLOB.dead_mob_list -= brainmob
 	brainmob.add_language(LANGUAGE_GALCOM)
 	brainmobs |= brainmob
@@ -382,21 +382,21 @@
 		return ..(direction)
 
 /mob/living/carbon/brain/caught_soul/me_verb_subtle(message as message)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	soulcatcher.emote_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/whisper(message as text)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	soulcatcher.say_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/say(message, datum/language/speaking = null, whispering = 0)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	soulcatcher.say_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/emote(act,m_type=1,message = null)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	if (act == "me")
-		if(silent)
+		if(get_silent())
 			return
 		if (src.client)
 			if (client.prefs.muted & MUTE_IC)
@@ -411,7 +411,7 @@
 		return FALSE
 
 /mob/living/carbon/brain/caught_soul/custom_emote(m_type, message)
-	if(silent) return FALSE
+	if(get_silent()) return FALSE
 	soulcatcher.emote_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/resist()

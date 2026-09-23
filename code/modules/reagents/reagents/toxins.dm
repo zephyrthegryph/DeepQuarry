@@ -409,7 +409,7 @@
 		M.tod = stationtime2text()
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
-	M.silent = max(M.silent, 10)
+	M.Silence(10)
 	M.Paralyse(10)
 
 /datum/reagent/toxin/zombiepowder/Destroy()
@@ -439,7 +439,7 @@
 		M.tod = stationtime2text()
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
-	M.silent = max(M.silent, 10)
+	M.Silence(10)
 	M.Paralyse(10)
 
 	if(prob(0.1))

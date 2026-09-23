@@ -31,7 +31,6 @@
 
 	var/tod = null // Time of death
 	var/update_slimes = 1
-	var/silent = null 		// Can't talk. Value goes down every life proc.
 
 	/// Helper vars for quick access to firestacks, these should be updated every time firestacks are adjusted
 	var/on_fire = 0

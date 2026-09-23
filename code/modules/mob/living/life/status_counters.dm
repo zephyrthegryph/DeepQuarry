@@ -428,3 +428,59 @@
 
 /mob/proc/AdjustDrowsyness(amount)
 	adjust_status_counter(/datum/status_effect/counter/drowsy, amount)
+
+// --- Speech family --------------------------------------------------------------------------
+
+/// Silence blocks speech through the ACTION_BLOCK_SPEECH action block.
+/datum/status_effect/counter/silent
+	id = "silent"
+	has_factors = TRUE
+	wake_bits = LIFE_SYS_HUD
+
+/datum/status_effect/counter/silent/counter_factors()
+	var/static/alist/silenced = alist(BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH)
+	return silenced
+
+/datum/status_effect/counter/stuttering
+	id = "stuttering"
+	wake_bits = LIFE_SYS_HUD
+
+/datum/status_effect/counter/slurring
+	id = "slurring"
+	wake_bits = LIFE_SYS_HUD
+
+/mob/proc/get_silent()
+	return status_counter(/datum/status_effect/counter/silent)
+
+/mob/proc/Silence(amount)
+	raise_status_counter(/datum/status_effect/counter/silent, amount)
+
+/mob/proc/SetSilent(amount)
+	set_status_counter(/datum/status_effect/counter/silent, max(amount, 0))
+
+/mob/proc/AdjustSilent(amount)
+	adjust_status_counter(/datum/status_effect/counter/silent, amount)
+
+/mob/proc/get_stuttering()
+	return status_counter(/datum/status_effect/counter/stuttering)
+
+/mob/proc/Stutter(amount)
+	raise_status_counter(/datum/status_effect/counter/stuttering, amount)
+
+/mob/proc/SetStuttering(amount)
+	set_status_counter(/datum/status_effect/counter/stuttering, max(amount, 0))
+
+/mob/proc/AdjustStuttering(amount)
+	adjust_status_counter(/datum/status_effect/counter/stuttering, amount)
+
+/mob/proc/get_slurring()
+	return status_counter(/datum/status_effect/counter/slurring)
+
+/mob/proc/Slur(amount)
+	raise_status_counter(/datum/status_effect/counter/slurring, amount)
+
+/mob/proc/SetSlurring(amount)
+	set_status_counter(/datum/status_effect/counter/slurring, max(amount, 0))
+
+/mob/proc/AdjustSlurring(amount)
+	adjust_status_counter(/datum/status_effect/counter/slurring, amount)

@@ -293,7 +293,7 @@
 		// In complete darkness
 		if(our_guy_pos.get_lumcount() <= LIGHTING_SOFT_THRESHOLD)
 			living_guy.Blind(5) //10 seconds of 'OH GOD WHAT'S HAPPENING'
-			living_guy.silent = max(living_guy.silent, 5)
+			living_guy.Silence(5)
 			living_guy.Paralyse(5)
 			to_chat(living_guy, span_bolddanger("You feel the ground buckle underneath you, falling down, your vision going dark as you feel paralyzed in place!"))
 			consume_omen()

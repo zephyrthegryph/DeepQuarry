@@ -20,7 +20,7 @@
 	if(!(ishuman(user) || user.isSynthetic()))
 		to_chat(user, span_warning("You don't know how to use this!"))
 		return FALSE
-	if(user.silent)
+	if(user.get_silent())
 		return FALSE
 	if(spamcheck > world.time)
 		to_chat(user, span_warning("[src] needs to recharge!"))
@@ -147,7 +147,7 @@
 					if(M.get_ear_protection() >= 2)
 						continue
 					M.SetSleeping(0)
-					M.stuttering += 20
+					M.AdjustStuttering(20)
 					M.AdjustDeaf(30)
 					M.deaf_loop.start() // Ear Ringing/Deafness
 					M.Weaken(3)

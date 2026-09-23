@@ -96,7 +96,6 @@
 		/datum/life_system/status/carbon/human,
 		/datum/life_system/disabilities/carbon/human,
 		/datum/life_system/addictions/carbon,
-		/datum/life_system/statuses,
 		/datum/life_system/canmove,
 		/datum/life_system/hud/carbon/human,
 		/datum/life_system/vision/carbon/human,
@@ -140,7 +139,6 @@
 	var/list/expected = list(
 		/datum/life_system/robot_cycle,
 		/datum/life_system/modifiers/silicon/robot,
-		/datum/life_system/statuses/silicon/robot,
 		/datum/life_system/robot_senses,
 		/datum/life_system/instability/silicon/robot,
 		/datum/life_system/robot_power,

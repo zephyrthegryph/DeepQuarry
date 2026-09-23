@@ -29,12 +29,6 @@
 	order = 10
 	segment = NONE
 
-/datum/life_system/statuses/silicon/robot
-	mob_type = /mob/living/silicon/robot
-	phase = LIFE_PHASE_INPUT
-	order = 20
-	segment = NONE
-
 /datum/life_system/instability/silicon/robot
 	mob_type = /mob/living/silicon/robot
 	order = 40

@@ -12,7 +12,7 @@
 //	breathing, mutations, radiation, blood, random events, AFK      (alive only)
 //	chemicals, diseases, environment, ambience, movement
 //	status (regular status updates) -> LIFE_SEG_LIVING_STATUS
-//	disabilities, addictions, statuses                             (status only)
+//	disabilities, addictions                                       (status only)
 //	canmove, HUD, vision, TF holder, VR derez
 //	subtype tails (carbon germs, human, alien, simple mob, bot), then type_post variants
 //
@@ -442,7 +442,7 @@
 	return self.client ? 30 SECONDS : 0
 
 /// Status & health update: are we dead or alive, conscious or not. When it returns false the
-/// disabilities, addictions and statuses systems skip this cycle.
+/// disabilities and addictions systems skip this cycle.
 /datum/life_system/status
 	name = "status"
 	bit = LIFE_SYS_BODY
@@ -519,51 +519,6 @@
 	if(!want_alert != !self.alerts?["blind"])
 		return FALSE
 	return self.ear_damage <= 0 || self.ear_damage >= 100
-
-/// Speech impairments wear off. Stun, weaken, paralysis, sleep, confusion and the sensory
-/// counters are status counters (life/status_counters.dm) that end on their own.
-/datum/life_system/statuses
-	name = "statuses"
-	bit = LIFE_SYS_STATUS
-	phase = LIFE_PHASE_MIND
-	order = 30
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
-	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI
-	woken_by = "speech setters"
-
-/datum/life_system/statuses/tick(mob/living/self, datum/life_context/ctx)
-	stuttering(self)
-	silent(self)
-	slurring(self)
-
-/// Continuous while any counter runs or an alert is still up; asleep otherwise.
-/datum/life_system/statuses/idle(mob/living/self)
-	if(type != /datum/life_system/statuses)
-		return FALSE
-	return !self.stuttering && !self.silent && !self.slurring
-
-/datum/life_system/statuses/proc/stuttering(mob/living/self)
-	if(self.stuttering)
-		self.stuttering = max(self.stuttering-1, 0)
-	return self.stuttering
-
-/datum/life_system/statuses/proc/silent(mob/living/self)
-	if(self.silent)
-		self.silent = max(self.silent-1, 0)
-	return self.silent
-
-/datum/life_system/statuses/proc/slurring(mob/living/self)
-	if(self.slurring)
-		self.slurring = max(self.slurring-1, 0)
-	return self.slurring
-
-/// The shared statuses helpers (stuttering(), ...) for code outside the statuses tick.
-/proc/life_statuses()
-	RETURN_TYPE(/datum/life_system/statuses)
-	var/static/datum/life_system/statuses/statuses
-	if(!statuses)
-		statuses = get_life_system(/datum/life_system/statuses)
-	return statuses
 
 // --- Output -----------------------------------------------------------------------------------
 

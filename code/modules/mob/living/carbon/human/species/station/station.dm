@@ -1587,7 +1587,7 @@
 		var/coldshock = 0
 		if(H.bodytemperature <= 260 && H.bodytemperature >= 200) //Chilly.
 			coldshock = 4 //This will begin to knock them out until they run out of oxygen and suffocate or until someone finds them.
-			H.SetBlurry(5)//Blurry vision in the cold.
+			H.SetBlurry(5) //Blurry vision in the cold.
 		if(H.bodytemperature <= 199 && H.bodytemperature >= 100) //Extremely cold. Even in somewhere like the server room it takes a while for bodytemp to drop this low.
 			coldshock = 8
 			H.SetBlurry(5)
