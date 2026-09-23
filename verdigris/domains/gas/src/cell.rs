@@ -81,6 +81,11 @@ const DIFFUSION_CONDUCTANCE: f32 = DIFFUSION_RATE * CELL_VOLUME / 2.0;
 pub const SETTLED_MOLES: f32 = 0.05;
 /// ... and below this temperature difference (K), unless a side is nearly empty.
 pub const SETTLED_KELVIN: f32 = 0.5;
+/// Revision bands (as machines' dirty observations: 0.5 kPa, 0.5 K; and
+/// 0.05 mol in total).
+pub const REVISION_KPA: f32 = 0.5;
+pub const REVISION_KELVIN: f32 = 0.5;
+pub const REVISION_MOLES: f32 = 0.05;
 /// Pressure differences below this (kPa) do not add bulk flow to the
 /// stiffness (they still flow).
 const STIFF_PRESSURE: f32 = 1.0;
@@ -109,8 +114,12 @@ pub struct GasCell {
 	pub pressure: f32,
 	/// Cached by `refresh`.
 	pub total: f32,
-	/// Bumped whenever the cell's gas changes (DM's `revision()`).
+	/// DM's `revision()`: bumped when pressure, temperature or total moles
+	/// leave the band around their values at the last bump (the same bands
+	/// as machines' dirty observations), never on settling drift.
 	pub revision: u32,
+	/// Pressure, temperature and total moles at the last revision bump.
+	pub rev_at: [f32; 3],
 	/// [`flags`].
 	pub flags: u8,
 	/// Planet atmosphere id (0: none). Planet cells are reservoirs that DM
@@ -129,6 +138,7 @@ impl Default for GasCell {
 			pressure: 0.0,
 			total: 0.0,
 			revision: 0,
+			rev_at: [0.0; 3],
 			flags: 0,
 			planet: 0,
 			vis: 0,
@@ -210,18 +220,24 @@ impl GasCell {
 		} else {
 			0.0
 		};
-		// Revisions wake sleeping devices: rounding-level drift of a settling
-		// cell is not a change.
-		if (total - self.total).abs() > 1e-3
-			|| (temperature - self.temperature).abs() > 1e-2
-			|| (pressure - self.pressure).abs() > 1e-2
-		{
-			self.revision = self.revision.wrapping_add(1);
-		}
+		self.band_check(Some(pressure), temperature, total);
 		self.total = total;
 		self.temperature = temperature;
 		self.pressure = pressure;
 		self.vis = vis_signature(&self.moles);
+	}
+
+	/// Bumps the revision when a value left its band (`None`: pressure
+	/// unknown here, as in `Domain::apply`, which has no volume).
+	fn band_check(&mut self, pressure: Option<f32>, temperature: f32, total: f32) {
+		let [p0, t0, n0] = self.rev_at;
+		let moved = pressure.is_some_and(|p| (p - p0).abs() >= REVISION_KPA)
+			|| (temperature - t0).abs() >= REVISION_KELVIN
+			|| (total - n0).abs() >= REVISION_MOLES;
+		if moved {
+			self.revision = self.revision.wrapping_add(1);
+			self.rev_at = [pressure.unwrap_or(p0), temperature, total];
+		}
 	}
 
 	/// The amounts vector (every gas, then energy).
@@ -275,7 +291,8 @@ impl Domain for TurfGas {
 					return Applied::default();
 				}
 				let shortfall = value.add_amounts(d);
-				value.revision = value.revision.wrapping_add(1);
+				let (t, n) = (value.temperature_now(), value.total_moles());
+				value.band_check(None, t, n);
 				value.flags |= flags::TOUCHED;
 				Applied { shortfall }
 			}

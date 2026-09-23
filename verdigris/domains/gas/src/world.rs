@@ -343,6 +343,9 @@ pub struct Post {
 	dims: GridDims,
 	/// The field's reservoir ledger, published for the main thread.
 	ledger: Arc<Mutex<Vec<f64>>>,
+	stats: Arc<Mutex<vg_core::field::FieldStats>>,
+	/// Chunks the next step will simulate, plus planet cells still relaxing.
+	awake: Arc<std::sync::atomic::AtomicUsize>,
 	pub events: u64,
 }
 
@@ -356,6 +359,9 @@ impl Post {
 		if let Ok(mut l) = self.ledger.try_lock() {
 			l.clear();
 			l.extend_from_slice(state.ledger());
+		}
+		if let Ok(mut s) = self.stats.try_lock() {
+			*s = state.stats();
 		}
 		let layout = dom.store.layout();
 		let changed: Vec<usize> = match &self.last {
@@ -469,6 +475,8 @@ impl Post {
 			}
 		}
 		self.last = Some(dom.store.snapshot());
+		let awake = state.active_chunks().count() + self.planet_dirty.len();
+		self.awake.store(awake, std::sync::atomic::Ordering::Release);
 	}
 
 	fn relax_planets(&mut self, dom: &mut DomainState<TurfGas>) {
@@ -763,6 +771,10 @@ pub struct Field {
 	planet_ids: HashMap<String, u8>,
 	takes: HashMap<Seq, PendingTake>,
 	ledger: Arc<Mutex<Vec<f64>>>,
+	stats: Arc<Mutex<vg_core::field::FieldStats>>,
+	awake: Arc<std::sync::atomic::AtomicUsize>,
+	/// Frames not started because nothing was awake and nothing was queued.
+	pub idle_skips: u64,
 	pub frames: u64,
 	pub mode: Mode,
 }
@@ -812,6 +824,8 @@ impl Field {
 		);
 		let planets: Planets = Arc::new(RwLock::new(vec![GasCell::default()]));
 		let ledger = Arc::new(Mutex::new(vec![0.0; Q]));
+		let stats = Arc::new(Mutex::new(vg_core::field::FieldStats::default()));
+		let awake = Arc::new(std::sync::atomic::AtomicUsize::new(1));
 		let post = b.add_resource(
 			"gas:post",
 			Post {
@@ -821,6 +835,8 @@ impl Field {
 				exchange: Arc::clone(exchange),
 				dims,
 				ledger: Arc::clone(&ledger),
+				stats: Arc::clone(&stats),
+				awake: Arc::clone(&awake),
 				events: 0,
 			},
 		);
@@ -854,9 +870,39 @@ impl Field {
 			planet_ids: HashMap::new(),
 			takes: HashMap::new(),
 			ledger,
+			stats,
+			awake,
+			idle_skips: 0,
 			frames: 0,
 			mode,
 		})
+	}
+
+	/// The field's last step statistics (as of the last reclaimed frame).
+	#[must_use]
+	pub fn stats(&self) -> vg_core::field::FieldStats {
+		*self
+			.stats
+			.lock()
+			.unwrap_or_else(std::sync::PoisonError::into_inner)
+	}
+
+	/// Chunks the next step will simulate, plus planet cells still relaxing,
+	/// as of the last reclaimed frame.
+	#[must_use]
+	pub fn awake_chunks(&self) -> usize {
+		self.awake.load(std::sync::atomic::Ordering::Acquire)
+	}
+
+	/// Whether a frame would do nothing: every chunk asleep, no planet cell
+	/// relaxing, no command or watch registration queued, no frame running.
+	#[must_use]
+	pub fn idle(&mut self) -> bool {
+		self.awake.load(std::sync::atomic::Ordering::Acquire) == 0
+			&& !self.sim.frame_running()
+			&& self.sim.port_ref(self.key.cells).queued() == 0
+			&& self.sim.port_ref(self.key.geometry).queued() == 0
+			&& self.sim.watches(self.watch).queued() == 0
 	}
 
 	/// Registered turf cells.
@@ -1642,8 +1688,14 @@ impl GasWorld {
 			]);
 		}
 		self.stats.events += out.events().len() as u64;
-		if dispatch && field.sim.dispatch_frame() {
-			field.frames += 1;
+		if dispatch {
+			// A settled station costs nothing: no frame while nothing is awake
+			// or queued (a command, a mask, a watch or heat wakes it again).
+			if field.idle() {
+				field.idle_skips += 1;
+			} else if field.sim.dispatch_frame() {
+				field.frames += 1;
+			}
 		}
 		for (take, exact) in takes {
 			let mut d = [0.0; Q];

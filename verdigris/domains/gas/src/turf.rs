@@ -444,22 +444,26 @@ fn gas_run_frames(frames: ByondValue) -> Result<ByondValue> {
 /// `list(frames, commands, events, reactions, visuals, pressure, takes
 /// reconciled, last tick µs, last frame µs, command backlog, overlay entries,
 /// view age, frames skipped, removal shortfall (mol), fallback pieces applied,
-/// fallback pieces rejected, mode)`.
+/// fallback pieces rejected, mode, idle frames skipped, active chunks last
+/// step)`.
 #[auxmacros::bind("/proc/gas_stats")]
 fn gas_stats() -> Result<ByondValue> {
 	let v = with_world(|w| {
 		let s = w.stats;
-		let (frames, m, shortfall, fb) =
-			w.field
-				.as_ref()
-				.map_or((0, vg_core::sim::SimMetrics::default(), 0.0, None), |f| {
+		let (frames, m, shortfall, fb, idle_skips, awake_chunks) =
+			w.field.as_ref().map_or(
+				(0, vg_core::sim::SimMetrics::default(), 0.0, None, 0, 0),
+				|f| {
 					(
 						f.frames,
 						f.sim.metrics().clone(),
 						f.sim.port_ref(f.key.cells).pinned().shortfall_total(),
 						f.sim.port_ref(f.key.cells).fallback_stats(),
+						f.idle_skips,
+						f.awake_chunks(),
 					)
-				});
+				},
+			);
 		#[allow(clippy::cast_precision_loss)]
 		[
 			frames as f32,
@@ -483,6 +487,8 @@ fn gas_stats() -> Result<ByondValue> {
 			} else {
 				1.0
 			},
+			idle_skips as f32,
+			awake_chunks as f32,
 		]
 	});
 	floats(&v)

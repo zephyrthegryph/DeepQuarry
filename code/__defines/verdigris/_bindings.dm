@@ -475,7 +475,8 @@
 /// `list(frames, commands, events, reactions, visuals, pressure, takes
 /// reconciled, last tick µs, last frame µs, command backlog, overlay entries,
 /// view age, frames skipped, removal shortfall (mol), fallback pieces applied,
-/// fallback pieces rejected, mode)`.
+/// fallback pieces rejected, mode, idle frames skipped, active chunks last
+/// step)`.
 // /proc/gas_stats (verdigris/domains/gas/src/turf.rs)
 /proc/vg_gas_stats()
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_stats_ffi")

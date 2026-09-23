@@ -368,3 +368,30 @@ fn visual_and_reaction_events_reach_dm() {
 	assert!(visual_b, "no VisualChange for b: {events:?}");
 	assert!(react_a, "no ReactionCheck for a");
 }
+
+#[test]
+fn a_settled_station_sleeps() {
+	let mut w = world(Mode::Overlay);
+	{
+		let f = w.field.as_mut().unwrap();
+		for y in 1..Y - 1 {
+			for x in 1..X - 1 {
+				f.register(cell(x, y), air(1.0, 293.15), 2500.0, false, Some(0));
+			}
+		}
+	}
+	w.run_frames(5);
+	let idle = |w: &mut GasWorld| w.field.as_mut().unwrap().idle();
+	assert!(idle(&mut w));
+	let skips = w.field.as_ref().unwrap().idle_skips;
+	assert!(skips > 0, "a settled field still dispatched frames");
+	// A heat-sized nudge wakes it; it settles and sleeps again.
+	let mut d = [0.0; Q];
+	d[N] = 50.0;
+	w.add_amounts(MixRef::Turf(cell(5, 5)), &d, 0.0);
+	assert!(!idle(&mut w));
+	let frames = w.field.as_ref().unwrap().frames;
+	w.run_frames(10);
+	assert!(w.field.as_ref().unwrap().frames > frames);
+	assert!(idle(&mut w), "{:?}", w.field.as_ref().unwrap().stats());
+}
