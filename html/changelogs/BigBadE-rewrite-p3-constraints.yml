@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - qol: "When something won't go in a container or can't be worn, you're told why (too big, needs a jumpsuit, only fits Teshari, and so on)."
+  - refactor: "Storage, suit storage, holsters, species fit and equip slots now use declared constraints instead of per-item lists and mob_can_equip overrides. What fits where is unchanged."

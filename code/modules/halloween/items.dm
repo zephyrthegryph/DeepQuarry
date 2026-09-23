@@ -2,7 +2,9 @@
 	name = "halloween bag"
 	icon = 'icons/obj/halloween/trash.dmi'
 	icon_state = "halloween_bag"
-	can_hold = list(
+
+/obj/item/storage/bag/plasticbag/halloween/hold_constraint()
+	var/list/holds = list(
 		/obj/item/reagent_containers/food/snacks/candy,
 		/obj/item/reagent_containers/food/snacks/candy_corn,
 		/obj/item/reagent_containers/food/snacks/chocolatebar,
@@ -35,6 +37,8 @@
 		/obj/item/storage/box/shrimpsandbananas,
 		/obj/item/clothing/mask/chewable/candy/lolli
 	)
+	var/list/refuses = list(/obj/item/disk/nuclear)
+	return list(HOLD_ONLY(holds), HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/structure/candybowl
 	name = "candy bowl"

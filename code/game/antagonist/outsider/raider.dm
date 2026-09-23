@@ -249,20 +249,20 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	//Give some of the raiders a pirate gun as a secondary
 	if(prob(60))
 		var/obj/item/secondary = new /obj/item/gun/projectile/pirate(T)
-		if(!(primary.slot_flags & SLOT_HOLSTER))
+		if(!HAS_TAG(primary, TAG_HOLSTERABLE))
 			holster = new new_holster(T)
 			holster.holstered = secondary
 			secondary.loc = holster
 		else
 			player.equip_to_slot_or_del(secondary, slot_belt)
 
-	if(primary.slot_flags & SLOT_HOLSTER)
+	if(HAS_TAG(primary, TAG_HOLSTERABLE))
 		holster = new new_holster(T)
 		holster.holstered = primary
 		primary.loc = holster
-	else if(!player.belt && (primary.slot_flags & SLOT_BELT))
+	else if(!player.belt && HAS_TAG(primary, TAG_WEAR_BELT))
 		player.equip_to_slot_or_del(primary, slot_belt)
-	else if(!player.back && (primary.slot_flags & SLOT_BACK))
+	else if(!player.back && HAS_TAG(primary, TAG_WEAR_BACK))
 		player.equip_to_slot_or_del(primary, slot_back)
 	else
 		player.put_in_any_hand_if_possible(primary)

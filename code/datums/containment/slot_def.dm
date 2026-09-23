@@ -18,6 +18,10 @@
 	var/capacity = 0
 	/// /datum/predicate subtype the inserted thing must pass, or null for anything.
 	var/accepts
+	/// CONSTRAINT_* kind the holder declares for this slot (P3), such as
+	/// CONSTRAINT_HOLD for storage: checked after `accepts`, for holders whose
+	/// acceptance varies by type. Null for none.
+	var/holder_constraint
 	/// SLOT_DROP_*.
 	var/drop_policy = SLOT_DROP_SPILL
 	/// Legacy moves into the holder (forceMove, new(holder)) land in the
@@ -92,10 +96,14 @@
 
 /// Why `thing` can't go in this slot on `holder`, not counting capacity, or null.
 /datum/slot_def/proc/refusal(atom/holder, atom/movable/thing, mob/actor)
-	if(!accepts)
-		return null
-	var/datum/predicate/P = dq_predicate(accepts)
-	return P.why_not(actor, thing, null)
+	if(accepts)
+		var/datum/predicate/P = dq_predicate(accepts)
+		. = P.why_not(actor, thing, null)
+		if(.)
+			return .
+	if(holder_constraint && isitem(holder))
+		return dq_constraint_refusal(holder, holder_constraint, thing, actor)
+	return null
 
 /// Why `thing` can't leave this slot on `holder`, or null. Default: it can.
 /datum/slot_def/proc/removal_refusal(atom/holder, atom/movable/thing, mob/actor)

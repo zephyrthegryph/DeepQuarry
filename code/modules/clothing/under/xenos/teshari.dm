@@ -1,7 +1,10 @@
 /obj/item/clothing/under/teshari
 	icon = 'icons/inventory/uniform/item_teshari.dmi'
 	icon_state = "seromi_grey"
-	species_restricted = list(SPECIES_TESHARI)
+
+/obj/item/clothing/under/teshari/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/under/teshari/smock
 	name = "small grey smock"

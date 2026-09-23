@@ -434,7 +434,10 @@
 	name = "small neckscarf"
 	desc = "a neckscarf that is too small for a human's neck"
 	icon_state = "tesh_neckscarf"
-	species_restricted = list(SPECIES_TESHARI)
+
+/obj/item/clothing/accessory/scarf/teshari/neckscarf/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/accessory/halfcape
 	name = "half cape"
@@ -1193,11 +1196,14 @@
 	icon_state = "holster_machete"
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 0
-	can_hold = list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete)
 	//sound_in = 'sound/effects/holster/sheathin.ogg'
 	//sound_out = 'sound/effects/holster/sheathout.ogg'
 
 //Medals
+
+/obj/item/clothing/accessory/holster/machete/hold_constraint()
+	var/list/holds = list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete)
+	return list(HOLD_ONLY(holds))
 
 /obj/item/clothing/accessory/medal/silver/unity
 	name = "medal of unity"

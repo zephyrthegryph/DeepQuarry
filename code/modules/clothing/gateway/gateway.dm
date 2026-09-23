@@ -23,7 +23,10 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 3 * ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	allowed = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs)
+
+/obj/item/clothing/suit/vrwizard/suit_storage_constraint()
+	var/list/stores = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/darkvrwizard
 	name = "wizard hat"
@@ -50,9 +53,12 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 3 * ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	allowed = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword)
 
 //Candy section
+
+/obj/item/clothing/suit/darkvrwizard/suit_storage_constraint()
+	var/list/stores = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/head/psy_crown/candycrown
 	name = "candy crown"
 	desc = "A crown smelling oddly sweet"

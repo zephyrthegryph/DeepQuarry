@@ -52,7 +52,6 @@
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
 	use_sound = 'sound/items/storage/smolecase.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
@@ -65,6 +64,9 @@
 
 //Track code
 //defineing actions
+
+/obj/item/storage/smolebrickcase/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/structure/smoletrack
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	color = "#ffffff"
@@ -369,7 +371,6 @@
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "sp_storage"
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
 	drop_sound = 'sound/items/drop/food.ogg'
 	pickup_sound = 'sound/items/pickup/food.ogg'
@@ -377,3 +378,6 @@
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b,/obj/item/reagent_containers/food/snacks/snackplanet/moon,
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	)
+
+/obj/item/storage/bagoplanets/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))

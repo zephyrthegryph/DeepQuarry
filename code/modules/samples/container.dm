@@ -7,7 +7,6 @@
 
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
-	max_w_class = ITEMSIZE_TINY
 	storage_slots = 8
 	max_storage_space = ITEMSIZE_TINY * 8
 	var/lightcolor = "#EFF1BF"
@@ -15,7 +14,10 @@
 	drop_sound = 'sound/items/drop/gascan.ogg'
 	pickup_sound = 'sound/items/pickup/gascan.ogg'
 
-	can_hold = list(/obj/item/research_sample)
+/obj/item/storage/sample_container/hold_constraint()
+	var/list/holds = list(/obj/item/research_sample)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
+
 
 /obj/item/storage/sample_container/update_icon()
 	..()

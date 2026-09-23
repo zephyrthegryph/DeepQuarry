@@ -39,13 +39,11 @@
 	. = ..()
 	update_icon()
 
-/obj/item/oldtwohanded/mob_can_equip(M as mob, slot, disable_warning = FALSE)
-	//Cannot equip wielded items.
-	if(wielded)
-		to_chat(M, span_warning("Unwield the [initial(name)] first!"))
-		return 0
+/obj/item/oldtwohanded/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first")))
 
-	return ..()
+/obj/item/oldtwohanded/proc/not_wielded()
+	return !wielded
 
 /obj/item/oldtwohanded/dropped(mob/user, equipping, slot)
 	//handles unwielding a twohanded weapon when dropped as well as clearing up the offhand

@@ -4,7 +4,6 @@
 	desc = "A lighter, less armoured rig suit."
 	icon_state = "ninja_rig"
 	suit_type = "light suit"
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
 	armor = list(melee = 50, bullet = 15, laser = 50, energy = 10, bomb = 25, bio = 0, rad = 0)
 	emp_protection = 10
 	slowdown = 0
@@ -18,6 +17,10 @@
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/light
 	rigsuit_max_pressure = 5 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
+
+/obj/item/rig/light/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/rig/light
 	name = DEVELOPER_WARNING_NAME // "suit"
@@ -81,7 +84,6 @@
 	desc = "A unique suit of nano-enhanced armor designed for covert operations."
 	icon_state = "ninja_rig"
 	armor = list(melee = 50, bullet = 15, laser = 30, energy = 10, bomb = 25, bio = 100, rad = 30)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT)
 	emp_protection = 40 //change this to 30 if too high.
 	slowdown = 0
 
@@ -106,6 +108,10 @@
 		/obj/item/rig_module/datajack,
 		/obj/item/rig_module/self_destruct
 		)
+
+/obj/item/rig/light/ninja/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/gloves/gauntlets/rig/light/ninja
 	name = "insulated gloves"

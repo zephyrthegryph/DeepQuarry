@@ -72,5 +72,7 @@
 	name = "tribal sandals"
 	desc = "Traditionally made sandals made with local materials."
 	icon_state = "tribal_sandals"
-	species_restricted = null
 	body_parts_covered = 0
+
+/obj/item/clothing/shoes/tribalwear/fit_constraint()
+	return null

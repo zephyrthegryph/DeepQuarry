@@ -202,10 +202,13 @@
 	icon_state = "dicecup"
 	w_class = ITEMSIZE_SMALL
 	storage_slots = 5
-	can_hold = list(
+	special_handling = TRUE
+
+/obj/item/storage/dicecup/hold_constraint()
+	var/list/holds = list(
 		/obj/item/dice,
 		)
-	special_handling = TRUE
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/dicecup/attack_self(mob/user)
 	. = ..(user)

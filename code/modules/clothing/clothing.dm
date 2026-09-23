@@ -4,7 +4,6 @@
 	drop_sound = 'sound/items/drop/clothing.ogg'
 	pickup_sound = 'sound/items/pickup/clothing.ogg'
 	resistance_flags = FLAMMABLE
-	var/list/species_restricted = null //Only these species can wear this kit.
 
 	var/list/accessories
 	var/list/valid_accessory_slots
@@ -58,7 +57,7 @@
 	..()
 	if(enables_planes)
 		user.recalculate_vis()
-	if(("[slot]" in GLOB.slot_flags_enumeration) && (slot_flags & GLOB.slot_flags_enumeration["[slot]"]))
+	if(dq_item_fits_slot_flags(src, slot))
 		for(var/trait in clothing_traits)
 			ADD_CLOTHING_TRAIT(user, trait)
 
@@ -100,45 +99,6 @@
 /obj/item/clothing/click_alt(mob/user)
 	if(Adjacent(user) || user == src.loc)
 		removetie_proc(user)
-
-//BS12: Species-restricted clothing check.
-/obj/item/clothing/mob_can_equip(mob/M, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot)
-
-	//if we can't equip the item anyway, don't bother with species_restricted (cuts down on spam)
-	if (!..())
-		return 0
-
-	if(LAZYLEN(species_restricted) && ishuman(M))
-		var/exclusive = null
-		var/wearable = null
-		var/mob/living/carbon/human/H = M
-
-		if("exclude" in species_restricted)
-			exclusive = TRUE
-
-		if(H.species)
-			var/our_species = H.species.get_bodytype(H)
-			if(exclusive)
-				if(!(our_species in species_restricted))
-					wearable = TRUE
-			else
-				if(our_species in species_restricted)
-					wearable = TRUE
-
-				///Prevent us from wearing clothing that is restricted to vox, werebeast, or teshari. This generally means it's custom designed for them and them only.
-				else if((((SPECIES_VOX in species_restricted) && our_species != SPECIES_VOX) || ((SPECIES_WEREBEAST in species_restricted) && our_species != SPECIES_WEREBEAST) || ((SPECIES_TESHARI in species_restricted) && our_species != SPECIES_TESHARI)))
-					wearable = FALSE
-
-				///Prevent us from from wearing clothing if we ARE a teshari or werebeast. This is due to these two having different anatomy that don't fix most clothing.
-				else if((our_species == SPECIES_TESHARI || our_species == SPECIES_WEREBEAST) && !LAZYACCESS(sprite_sheets, our_species)) //teshari and werebeasts must have their own sprites. Vox can get away...somewhat
-					wearable = FALSE
-				else
-					wearable = TRUE
-
-			if(!wearable && !(slot in list(slot_l_store, slot_r_store, slot_s_store)))
-				to_chat(H, span_danger("Your species cannot wear [src]."))
-				return FALSE
-	return TRUE
 
 /obj/item/clothing/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	. = ..()
@@ -187,28 +147,27 @@
 			. |= C.get_heat_protection_flags()
 
 /obj/item/clothing/proc/refit_for_species(target_species)
-	if(!species_restricted)
-		return //this item doesn't use the species_restricted system
+	if(!dq_constraint(src, CONSTRAINT_FIT))
+		return //this item doesn't restrict who it fits
 
-	//Set species_restricted list
 	switch(target_species)
 		if(SPECIES_HUMAN, SPECIES_SKRELL)	//humanoid bodytypes
-			species_restricted = SPECIES_HUMANOID_CAN_WEAR
+			restrict_fit(SPECIES_HUMANOID_CAN_WEAR)
 		if(SPECIES_UNATHI)
-			species_restricted = SPECIES_UNATHI_CAN_WEAR
+			restrict_fit(SPECIES_UNATHI_CAN_WEAR)
 		if(SPECIES_TAJARAN)
-			species_restricted = SPECIES_TAJARAN_CAN_WEAR
+			restrict_fit(SPECIES_TAJARAN_CAN_WEAR)
 		if(SPECIES_VULPKANIN)
-			species_restricted = SPECIES_VULPKANIN_CAN_WEAR
+			restrict_fit(SPECIES_VULPKANIN_CAN_WEAR)
 		if(SPECIES_SERGAL)
-			species_restricted = SPECIES_SERGAL_CAN_WEAR
+			restrict_fit(SPECIES_SERGAL_CAN_WEAR)
 		if("Metamorphic")
 			if(sprite_sheets[SPECIES_TESHARI]) //We have a custom teshari species sprite. Sorry teshari, but otherwise the fallback looks awful on you.
-				species_restricted = SPECIES_ALL_CAN_WEAR
+				restrict_fit(SPECIES_ALL_CAN_WEAR)
 			else
-				species_restricted = SPECIES_ALL_BUT_TESHARI_CAN_WEAR
+				restrict_fit(SPECIES_ALL_BUT_TESHARI_CAN_WEAR)
 		else
-			species_restricted = list(target_species)
+			restrict_fit(list(target_species))
 
 	//Set icon
 	if (sprite_sheets_obj && (target_species in sprite_sheets_obj))
@@ -262,7 +221,7 @@
 		return
 
 	var/obj/item/clothing/ears/O
-	if(slot_flags & SLOT_TWOEARS )
+	if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
 		O = (H.l_ear == src ? H.r_ear : H.l_ear)
 		user.u_equip(O)
 		if(!istype(src,/obj/item/clothing/ears/offear))
@@ -289,7 +248,7 @@
 	if(ishuman(usr))
 		var/mob/living/carbon/human/H = usr
 		// If this covers both ears, we want to return the result of unequipping the primary object, and kill the off-ear one
-		if(slot_flags & SLOT_TWOEARS)
+		if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
 			var/obj/item/clothing/ears/O = (H.l_ear == src ? H.r_ear : H.l_ear)
 			if(istype(src, /obj/item/clothing/ears/offear))
 				. = O.MouseDrop(over_object)
@@ -388,28 +347,6 @@
 	transfer_blood = 0
 	update_icon()
 
-/obj/item/clothing/gloves/mob_can_equip(mob/user, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = TRUE)
-	var/mob/living/carbon/human/H = user
-
-	if(slot && slot == slot_gloves)
-		var/obj/item/clothing/G = H.gloves
-		//Check glove_level, which both accessories and gloves share.
-		if(istype(G, /obj/item/clothing/accessory) || istype(G, /obj/item/clothing/gloves))
-			ring = H.gloves //Ring or gloves both work here. They both have the glove_level var.
-			if(ring.glove_level >= src.glove_level)
-				ring = null
-				return FALSE
-			ring = null
-
-		//Check overgloves, which only gloves have.
-		if(istype(G, /obj/item/clothing/gloves))
-			gloves = H.gloves
-			if(gloves.overgloves)
-				gloves = null
-				return FALSE
-			gloves = null
-
-	return ..()
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
 	wearer = WEAKREF(user)
@@ -471,7 +408,6 @@
 	w_class = ITEMSIZE_TINY
 	icon = 'icons/inventory/hands/item.dmi'
 	gender = NEUTER
-	species_restricted = list("exclude", SPECIES_DIONA)
 	siemens_coefficient = 1
 	glove_level = 1
 	fingerprint_chance = 100
@@ -482,6 +418,10 @@
 
 ///////////////////////////////////////////////////////////////////////
 //Head
+
+/obj/item/clothing/gloves/ring/fit_constraint()
+	var/list/bodytypes = list("exclude", SPECIES_DIONA)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 /obj/item/clothing/head
 	name = DEVELOPER_WARNING_NAME // "Head"
 	icon = 'icons/inventory/head/item.dmi'
@@ -678,7 +618,6 @@
 	slowdown = SHOES_SLOWDOWN
 	force = 2
 	var/overshoes = 0
-	species_restricted = list("exclude",SPECIES_TESHARI, SPECIES_VOX)
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/feet/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/feet/mob_vox.dmi',
@@ -690,6 +629,10 @@
 	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
 	var/list/inside_emotes = list()
 	var/recent_squish = 0
+
+/obj/item/clothing/shoes/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_TESHARI, SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/shoes/Initialize(mapload)
 	. = ..()
@@ -940,7 +883,6 @@
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi')
 	max_heat_protection_temperature = T0C+100
-	allowed = list(POCKET_EMERGENCY)
 	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)
 	slot_flags = SLOT_OCLOTHING
 	heat_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
@@ -974,6 +916,10 @@
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
 	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
+
+/obj/item/clothing/suit/suit_storage_constraint()
+	var/list/stores = list(POCKET_EMERGENCY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/Initialize(mapload)
 	MakeHood()

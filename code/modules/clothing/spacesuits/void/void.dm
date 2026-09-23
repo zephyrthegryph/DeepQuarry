@@ -12,12 +12,15 @@
 //	flags_inv = HIDEEARS|BLOCKHAIR
 
 	//Species-specific stuff.
-	species_restricted = list("Human", "Promethean")
 	sprite_sheets = VR_SPECIES_SPRITE_SHEETS_HEAD_MOB
 	sprite_sheets_obj = VR_SPECIES_SPRITE_SHEETS_HEAD_ITEM
 
 	light_overlay = "helmet_light"
 	var/no_cycle = FALSE	//stop this item from being put in a cycler
+
+/obj/item/clothing/head/helmet/space/void/fit_constraint()
+	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/suit/space/void
 	name = "voidsuit"
@@ -26,13 +29,11 @@
 	desc = "A high-tech dark red space suit. Used for AI satellite maintenance."
 	slowdown = 0.5
 	armor = list(melee = 30, bullet = 5, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 20)
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS)
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 10 * ONE_ATMOSPHERE
 	special_hood_handling = TRUE
 	actions_types = list(/datum/action/item_action/toggle_helmet)
-	species_restricted = list("Human", SPECIES_SKRELL, "Promethean")
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 	sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM
 
@@ -51,6 +52,14 @@
 	var/no_cycle = FALSE	//stop this item from being put in a cycler
 
 //Does it spawn with any Inbuilt devices?
+
+/obj/item/clothing/suit/space/void/fit_constraint()
+	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/void/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/suit/space/void/Initialize(mapload)
 	. = ..()
 	if(boots && ispath(boots))
@@ -311,10 +320,8 @@
 //
 
 /obj/item/clothing/head/helmet/space/void
-	species_restricted = list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA)
 
 /obj/item/clothing/suit/space/void
-	species_restricted = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA)
 
 /obj/item/clothing/head/helmet/space/void/heck
 	name = "\improper H.E.C.K. helmet"
@@ -382,12 +389,15 @@
 	armor = list(melee = 15, bullet = 5, laser = 5,energy = 5, bomb = 5, bio = 100, rad = 80)
 	slowdown = 0.5
 	siemens_coefficient = 1
-	species_restricted = list("exclude",SPECIES_DIONA,SPECIES_VOX)	//this thing can autoadapt
 	breach_threshold = 6 //this thing is basically tissue paper
 	w_class = ITEMSIZE_NORMAL //if it's snug, high-tech, and made of relatively soft materials, it should be much easier to store!
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 	sprite_sheets_obj = null
+
+/obj/item/clothing/suit/space/void/autolok/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/suit/space/void/autolok/Initialize(mapload)
 	. = ..()
@@ -445,17 +455,18 @@
 	desc = "A rather close-fitting helmet designed to protect the wearer from hazardous conditions. Automatically deploys when the suit's sensors detect an environment that is hazardous to the wearer."
 	icon_state = "autolokhelmet"
 	item_state = "autolokhelmet"
-	species_restricted = list("exclude",SPECIES_DIONA,SPECIES_VOX)	//this thing can autoadapt too
 	flags_inv = HIDEEARS|BLOCKHAIR //removed HIDEFACE/MASK/EYES flags so sunglasses or facemasks don't disappear. still gotta have BLOCKHAIR or it'll clip out tho.
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
 	sprite_sheets_obj = null
 
+/obj/item/clothing/head/helmet/space/void/autolok/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 
 /obj/item/clothing/head/helmet/space/void
-	species_restricted = list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
 
 /obj/item/clothing/suit/space/void
-	species_restricted = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
 
 
 // === merged from spacesuits_chomp.dm during hard-fork de-suffix. Placed in this file because it
