@@ -32,6 +32,31 @@
 #define REACT_KEY_AREA_POWER 2
 /// A door's mode (bolts, emergency access, ...) changed. Id: the door's REACT_ID.
 #define REACT_KEY_DOOR_MODE 3
+/// A player (a mob with a client) moved into a mob chunk (Q5). Id: MOB_CHUNK_NUMERIC_KEY.
+/// Subscribe with SSreactor.subscribe_player_chunks(); /mob/Moved() publishes only while
+/// something is subscribed. S2's REACT_KEY_MOB_CHUNK is the key for any mob.
+#define REACT_KEY_PLAYER_CHUNK 20
+/// A pipe network's leaks or topology changed. Id: the network's REACT_ID, or
+/// REACT_ID_GLOBAL for a change whose network is not known yet (new construction).
+#define REACT_KEY_PIPE_NETWORK 21
+/// A shuttle's schedule changed (called, recalled, launching). Id: REACT_SHUTTLE_*.
+#define REACT_KEY_SHUTTLE_SCHEDULE 22
+#define REACT_SHUTTLE_EVAC 1
+#define REACT_SHUTTLE_SUPPLY 2
+
+/// Key id for global keys (registry ids start at 1, so 0 is never a datum's id).
+#define REACT_ID_GLOBAL 0
+
+// Key masks.
+/// REACT_KEY_AREA_POWER: the area's power_change() ran (channels or light switch).
+#define REACT_AREA_POWER_CHANGED (1<<0)
+/// REACT_KEY_DOOR_MODE parts.
+#define REACT_DOOR_BOLTS (1<<0)
+#define REACT_DOOR_POWER (1<<1)
+#define REACT_DOOR_ELECTRIFIED (1<<2)
+#define REACT_DOOR_OPEN (1<<3)
+/// REACT_KEY_PIPE_NETWORK: leak membership or topology changed.
+#define REACT_PIPE_LEAKS (1<<0)
 
 /// Reason classes for the wake metrics (REACT_CLASS_EVERY counts continuous-lane runs,
 /// which call react_every() instead of on_react()).

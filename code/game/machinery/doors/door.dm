@@ -27,6 +27,9 @@
 	//var/repairing = 0 //VOREstation Edit: We're not using materials anymore
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
 	var/close_door_at = 0 //When to automatically close the door, if possible
+	/// The REACT_AT token for next_door_deadline(), and the deadline it was set for.
+	var/tmp/door_timer_token
+	var/tmp/door_timer_at = 0
 	var/list/autoclose_blockers
 
 	var/anim_length_before_density = 0.3 SECONDS
@@ -91,7 +94,35 @@
 		las.Trigger(src)
 	*/
 
-/obj/machinery/door/process()
+// Door deadlines (autoclose here; power and electrification on airlocks) are one REACT_AT on
+// the earliest of them (reactor.md §3), never a process() poll.
+
+/// The earliest pending deadline (world.time), or 0 for none. Subtypes add theirs.
+/obj/machinery/door/proc/next_door_deadline()
+	return close_door_at > 0 ? close_door_at : 0
+
+/// Keeps one REACT_AT on next_door_deadline(). Call after changing any deadline.
+/obj/machinery/door/proc/schedule_door_timer()
+	var/deadline = next_door_deadline()
+	if(deadline == door_timer_at && (!isnull(door_timer_token) || !deadline))
+		return
+	if(!isnull(door_timer_token))
+		REACT_CANCEL(src, door_timer_token)
+		door_timer_token = null
+	door_timer_at = deadline
+	if(deadline)
+		door_timer_token = REACT_AT(src, deadline)
+
+/obj/machinery/door/on_react(reason, source, source_kind)
+	. = ..()
+	if(reason & REACT_REASON_TIMER)
+		door_timer_token = null
+		door_timer_at = 0
+		door_deadlines_due()
+		schedule_door_timer()
+
+/// Runs every deadline that has passed. Called from the door's timer wake.
+/obj/machinery/door/proc/door_deadlines_due()
 	if(close_door_at && world.time >= close_door_at)
 		if(density && !operating)
 			close_door_at = 0
@@ -100,13 +131,19 @@
 			close()
 		else
 			close_door_at = 0
-	if (..() == PROCESS_KILL && !close_door_at)
-		return PROCESS_KILL
+
+/obj/machinery/door/react_sleep_violation()
+	var/deadline = next_door_deadline()
+	if(!deadline)
+		return null
+	if(isnull(door_timer_token) || door_timer_at > deadline)
+		return "deadline [deadline] (now [world.time]) has no timer (timer at [door_timer_at])"
+	return null
 
 /obj/machinery/door/proc/autoclose_in(wait)
 	clear_autoclose_blockers()
 	close_door_at = world.time + wait
-	START_MACHINE_PROCESSING(src)
+	schedule_door_timer()
 
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
 	if(!blocker)
@@ -115,7 +152,7 @@
 	RegisterSignal(blocker, COMSIG_MOVABLE_MOVED, PROC_REF(on_autoclose_blocker_changed))
 	RegisterSignal(blocker, COMSIG_QDELETING, PROC_REF(on_autoclose_blocker_changed))
 	close_door_at = 0
-	STOP_MACHINE_PROCESSING(src)
+	schedule_door_timer()
 
 /obj/machinery/door/proc/clear_autoclose_blockers()
 	for(var/atom/movable/blocker as anything in autoclose_blockers)
