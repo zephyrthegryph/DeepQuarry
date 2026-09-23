@@ -22,6 +22,151 @@ GLOBAL_LIST_EMPTY(required_map_items)
 /// Use the PERFORM_ALL_TESTS macro instead.
 GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
+/// How many isolated test blocks to keep in the pool. Tests run strictly
+/// sequentially (RunUnitTests() calls each test's New()/Run()/restore_atmos()/
+/// Destroy() in a plain for loop before starting the next), so one block would
+/// be enough in theory -- but a test's Destroy() may still be draining async
+/// leftovers (a delayed callback, an expedition teardown_z wait) when the next
+/// test's New() runs, so a small pool lets us round-robin instead of forcing
+/// every test to block on the previous test's straggling cleanup.
+#define UNIT_TEST_BLOCK_POOL_SIZE 8
+
+/// One isolated, walled-off copy of maps/templates/unit_tests.dmm on its own
+/// z-level. Checked out to exactly one running unit test at a time so tests no
+/// longer share a single global floor turf (the historic source of most
+/// intermittent unit-test failures: leaked hotspots, gas, and temperature from
+/// one test bleeding into the next).
+/datum/unit_test_block
+	/// Bottom-left floor turf of this block, mirrors run_loc_floor_bottom_left.
+	var/turf/bottom_left
+	/// Top-right floor turf of this block, mirrors run_loc_floor_top_right.
+	var/turf/top_right
+	/// The z-level this block's copy of the template was loaded onto.
+	var/z
+	/// TRUE while a test currently owns this block.
+	var/in_use = FALSE
+
+/// The pool of isolated test blocks. Built lazily on the first test that needs
+/// one, so non-test worlds never pay for it.
+GLOBAL_LIST_EMPTY(unit_test_block_pool)
+/// TRUE once the pool has been built (or an attempt was made to build it).
+GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
+
+/// Loads UNIT_TEST_BLOCK_POOL_SIZE independent copies of the unit-test room
+/// template, each on its own z-level, and records their corner turfs. Safe to
+/// call more than once -- only the first call does anything.
+/proc/ensure_unit_test_block_pool()
+	if(GLOB.unit_test_block_pool_ready)
+		return
+	// Set this before load_new_z() (which yields) so a re-entrant call made
+	// while we're still loading the first copy doesn't start a second build.
+	GLOB.unit_test_block_pool_ready = TRUE
+
+	for(var/i in 1 to UNIT_TEST_BLOCK_POOL_SIZE)
+		var/datum/map_template/unit_tests/template = new
+		var/new_z = template.load_new_z()
+		if(!new_z)
+			log_world("ensure_unit_test_block_pool: template failed to load copy #[i], the unit test block pool will be smaller than requested.")
+			continue
+
+		var/datum/unit_test_block/block = new
+		block.z = new_z
+		for(var/obj/effect/landmark/unit_test_bottom_left/L in GLOB.landmarks_list)
+			if(L.z == new_z)
+				block.bottom_left = get_turf(L)
+				break
+		for(var/obj/effect/landmark/unit_test_top_right/L in GLOB.landmarks_list)
+			if(L.z == new_z)
+				block.top_right = get_turf(L)
+				break
+
+		if(!block.bottom_left || !block.top_right)
+			log_world("ensure_unit_test_block_pool: copy #[i] on z[new_z] is missing its corner landmarks, discarding it.")
+			continue
+
+		GLOB.unit_test_block_pool += block
+
+	if(!length(GLOB.unit_test_block_pool))
+		CRASH("ensure_unit_test_block_pool: failed to load any isolated test blocks.")
+
+/// Checks out a free isolated test block, waiting for one to be returned if
+/// every block is currently in use (should be rare -- see the pool size
+/// comment above). Bounded so a genuine deadlock fails loudly instead of
+/// hanging the suite forever.
+/proc/acquire_unit_test_block()
+	RETURN_TYPE(/datum/unit_test_block)
+	ensure_unit_test_block_pool()
+
+	var/waited = 0
+	while(TRUE)
+		for(var/datum/unit_test_block/block as anything in GLOB.unit_test_block_pool)
+			if(!block.in_use)
+				block.in_use = TRUE
+				return block
+		waited++
+		if(waited > 600) // ~60s of real time at 1 tick/sleep(1) each
+			CRASH("acquire_unit_test_block: every isolated test block is still in use after 60s -- likely a stuck async teardown.")
+		sleep(1)
+
+/// Resets a block to a clean floor (deletes everything spawned on it, restores
+/// default air/temperature on every open turf, drops any walls a test put up)
+/// and returns it to the pool. Waits for the world's own async teardown paths
+/// so a block is never recycled mid-cleanup.
+/proc/release_unit_test_block(datum/unit_test_block/block)
+	if(!block)
+		return
+
+	// Mirror /datum/unit_test/restore_atmos(): don't hand this block's z back
+	// out while expedition teardown (or anything else async) is still touching
+	// turfs on it.
+	while(SSexpedition && length(SSexpedition.teardown_z))
+		sleep(1)
+
+	for(var/turf/T in block_turfs(block))
+		for(var/atom/movable/AM in T)
+			if(istype(AM, /obj/effect/landmark))
+				continue
+			qdel(AM)
+
+		if(istype(T, /turf/open))
+			var/turf/open/OT = T
+			if(OT.active_hotspot)
+				qdel(OT.active_hotspot)
+			if(OT.air)
+				OT.air.copy_from(dq_unit_test_block_default_air())
+				OT.air_update_turf(TRUE, FALSE)
+			OT.set_temperature(T20C)
+		else if(istype(T, /turf/simulated/wall))
+			// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
+			// et al) and never got to restore them because it errored out early.
+			T.ChangeTurf(/turf/simulated/floor/tiled/steel)
+
+	block.in_use = FALSE
+
+/// The default air mix a block's open turfs start with -- standard station air.
+/proc/dq_unit_test_block_default_air()
+	RETURN_TYPE(/datum/gas_mixture)
+	var/static/datum/gas_mixture/default_air
+	if(!default_air)
+		default_air = new
+		default_air.set_temperature(T20C)
+		default_air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
+		default_air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	return default_air.copy()
+
+/// Every turf in a block's rectangle (inclusive), by walking its bottom-left
+/// to top-right corners -- the block is always one z-level.
+/proc/block_turfs(datum/unit_test_block/block)
+	var/list/turfs = list()
+	if(!block?.bottom_left || !block.top_right)
+		return turfs
+	for(var/x in block.bottom_left.x to block.top_right.x)
+		for(var/y in block.bottom_left.y to block.top_right.y)
+			var/turf/T = locate(x, y, block.z)
+			if(T)
+				turfs += T
+	return turfs
+
 /proc/focused_tests()
 	var/list/focused_tests = list()
 	for (var/datum/unit_test/unit_test as anything in subtypesof(/datum/unit_test))
@@ -59,36 +204,28 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	/// List of atoms that we don't want to ever initialize in an agnostic context, like for Create and Destroy. Stored on the base datum for usability in other relevant tests that need this data.
 	var/static/list/uncreatables = null
 
-	// NOT IMPLEMENTED YET: var/static/datum/space_level/reservation
+	/// The isolated block this test checked out of the pool, released on Destroy().
+	var/datum/unit_test_block/test_block
 
 /proc/cmp_unit_test_priority(datum/unit_test/a, datum/unit_test/b)
 	return initial(a.priority) - initial(b.priority)
 
 /datum/unit_test/New()
-	// NOT IMPLEMENTED YET: if (isnull(reservation))
-	// NOT IMPLEMENTED YET: 	var/datum/map_template/unit_tests/template = new
-	// NOT IMPLEMENTED YET: 	reservation = template.load_new_z()
-
 	if (isnull(uncreatables))
 		uncreatables = build_list_of_uncreatables()
 
 	allocated = new
-	run_loc_floor_bottom_left = get_turf(locate(/obj/effect/landmark/unit_test_bottom_left) in GLOB.landmarks_list)
-	run_loc_floor_top_right = get_turf(locate(/obj/effect/landmark/unit_test_top_right) in GLOB.landmarks_list)
+	test_block = acquire_unit_test_block()
+	run_loc_floor_bottom_left = test_block.bottom_left
+	run_loc_floor_top_right = test_block.top_right
 
-	// NOT IMPLENTED YET, SEE THE BEGINNING OF THIS PROC
-	//TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
-	//TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
+	TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
+	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
 /datum/unit_test/Destroy()
 	QDEL_LIST(allocated)
-	// clear the test area
-	// NOT IMPLEMENTED YET, SEE NEW() PROC
-	//for (var/turf/turf in Z_TURFS(run_loc_floor_bottom_left.z))
-	//	for (var/content in turf.contents)
-	//		if (istype(content, /obj/effect/landmark))
-	//			continue
-	//		qdel(content)
+	release_unit_test_block(test_block)
+	test_block = null
 	return ..()
 
 /datum/unit_test/proc/Run()
