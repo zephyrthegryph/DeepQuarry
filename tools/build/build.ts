@@ -362,6 +362,10 @@ export const VerdigrisTarget = new Juke.Target({
 });
 // DQAdd End
 
+// -trusted pops a hidden trust dialog for an untrusted .dmb path, which hangs
+// headless runs in new worktrees. DQ_DD_SECURITY overrides (matches master).
+const ddSecurityFlag = (fallback = 'safe') => `-${process.env.DQ_DD_SECURITY || fallback}`;
+
 export const DmTarget = new Juke.Target({
   parameters: [
     DefineParameter,
@@ -506,7 +510,7 @@ async function runTestWorld(
         onSpawn: (pid) => sampler?.start(pid),
       },
       '-close',
-      '-trusted',
+      ddSecurityFlag(),
       '-verbose',
       '-params',
       params,
@@ -887,7 +891,7 @@ export const AutowikiTarget = new Juke.Target({
     await DreamDaemon(
       options,
       '-close',
-      '-trusted',
+      ddSecurityFlag(),
       '-verbose',
       '-params',
       'log-directory=ci',
@@ -1200,7 +1204,7 @@ export const ServerTarget = new Juke.Target({
       await DreamDaemon(
         options,
         port,
-        '-trusted',
+        ddSecurityFlag('trusted'),
         '-invisible',
         '-params',
         'config-directory=config/example',

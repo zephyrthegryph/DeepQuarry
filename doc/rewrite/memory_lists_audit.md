@@ -53,9 +53,11 @@ estimate.
 
 | Metric | Before | After |
 |---|---|---|
-| `var_lists_total` | 102,507 | _pending: DreamDaemon paused machine-wide_ |
-| `var_lists_empty` | 26,996 | _pending_ |
-| `var_list_entries` | 436,726 | _pending_ |
+| `var_lists_total` | 102,507 | 78,354 (-23.6%) |
+| `var_lists_empty` | 26,996 | 12,968 (-52.0%) |
+| `var_list_entries` | 436,726 | 406,200 (-7.0%) |
+
+The instance count was unchanged (94,283 before, 94,475 after) and so was the Rust heap (13.8 MB). The runner read DreamDaemon's private memory as 0 MB, so there is no process memory figure. The full `dm-test` passed: 697 passed, 0 failed, 58 skipped.
 
 ## Kept (class d)
 
