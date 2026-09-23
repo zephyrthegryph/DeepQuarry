@@ -179,6 +179,7 @@
 #include "dq_predicate_tests.dm"
 #include "dq_constraint_tests.dm"
 #include "dq_containment_tests.dm"
+#include "dq_destroy_transaction_tests.dm"
 #include "dq_inventory_tests.dm"
 #include "dq_mob_memlist_tests.dm"
 #include "dq_latent_tests.dm"
