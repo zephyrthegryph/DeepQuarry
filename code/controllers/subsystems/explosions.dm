@@ -46,11 +46,12 @@ SUBSYSTEM_DEF(explosions)
 	VAR_PRIVATE/list/resolved_atoms = list()
 	VAR_PRIVATE/epoch_atoms_resolved = 0
 	VAR_PRIVATE/epoch_atoms_deduplicated = 0
+	/// Changed turfs (turf -> TRUE, in insertion order). Turfs are changed in
+	/// place, so the ref itself is the key; no coordinate strings.
 	VAR_PRIVATE/list/deferred_turf_updates = list()
-	VAR_PRIVATE/list/deferred_turf_update_keys = list()
 	VAR_PRIVATE/deferred_turf_update_index = 1
+	/// Changed turfs and their neighbours, for one appearance update each.
 	VAR_PRIVATE/list/deferred_appearance_updates = list()
-	VAR_PRIVATE/list/deferred_appearance_update_keys = list()
 	VAR_PRIVATE/deferred_appearance_update_index = 1
 	VAR_PRIVATE/bulk_resolution_active = FALSE
 	VAR_PRIVATE/list/explosion_resistance_cache = list()
@@ -94,8 +95,8 @@ SUBSYSTEM_DEF(explosions)
 		"epoch_blast_batches" = epoch_blast_batches,
 		"epoch_atom_collect_ms" = epoch_atom_collect_ms,
 		"epoch_atom_resolve_ms" = epoch_atom_resolve_ms,
-		"deferred_turf_updates" = max(0, length(deferred_turf_update_keys) - deferred_turf_update_index + 1),
-		"deferred_appearance_updates" = max(0, length(deferred_appearance_update_keys) - deferred_appearance_update_index + 1),
+		"deferred_turf_updates" = max(0, length(deferred_turf_updates) - deferred_turf_update_index + 1),
+		"deferred_appearance_updates" = max(0, length(deferred_appearance_updates) - deferred_appearance_update_index + 1),
 		"last_epoch_wall_ms" = last_epoch_ms,
 		"topology_batch_open" = atmos_topology_batch_open,
 	)
@@ -232,15 +233,10 @@ SUBSYSTEM_DEF(explosions)
 			currentrun_keys += key
 	currentrun_index = 1
 
-/datum/controller/subsystem/explosions/proc/coordinate_key(x, y, z)
-	SHOULD_NOT_OVERRIDE(TRUE)
-	PRIVATE_PROC(TRUE)
-	// BYOND treats numeric list keys as positional indices. A single packed text
-	// key avoids three interpolations while retaining associative-list semantics.
-	return num2text(x + ((y - 1) * world.maxx) + ((z - 1) * world.maxx * world.maxy))
-
 /datum/controller/subsystem/explosions/proc/queue_sound_event(turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
-	var/key = coordinate_key(epicenter.x, epicenter.y, epicenter.z)
+	// Every per-turf table is keyed by the turf itself: turfs change in place,
+	// so the ref is stable, and it costs no key string per visit.
+	var/key = epicenter
 	var/list/prior = pending_sound_events[key]
 	if(!prior || max(devastation_range, heavy_impact_range, light_impact_range) > max(prior[2], prior[3], prior[4]))
 		pending_sound_events[key] = list(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
@@ -291,7 +287,7 @@ SUBSYSTEM_DEF(explosions)
 	var/turf/epicenter = locate(data[1],data[2],data[3])
 	if(!epicenter)
 		return
-	var/list/res_explo = resolving_explosions[coordinate_key(epicenter.x, epicenter.y, epicenter.z)] // check if this has already resolved
+	var/list/res_explo = resolving_explosions[epicenter] // check if this has already resolved
 	if(res_explo && res_explo[4] >= pwr)
 		return
 	if(direction)
@@ -301,13 +297,13 @@ SUBSYSTEM_DEF(explosions)
 			// Fan outward from the original explosion
 			var/turf/T = get_step(epicenter, direction)
 			if(T)
-				append_currentrun(T.x,T.y,T.z,spread_power,direction,starting_power)
+				append_currentrun(T,spread_power,direction,starting_power)
 				T = get_step(epicenter, turn(direction,90))
 				if(T)
-					append_currentrun(T.x,T.y,T.z,spread_power,direction,starting_power)
+					append_currentrun(T,spread_power,direction,starting_power)
 				T = get_step(epicenter, turn(direction,-90))
 				if(T)
-					append_currentrun(T.x,T.y,T.z,spread_power,direction,starting_power)
+					append_currentrun(T,spread_power,direction,starting_power)
 			// Make these feel a little more flashy
 			if(epoch_visuals < 64 && spread_power > 3 && spread_power < GLOB.max_explosion_range && prob(6)) // bombs above maxcap are probably badmins, lets not make 10000 effects
 				epoch_visuals++
@@ -320,7 +316,7 @@ SUBSYSTEM_DEF(explosions)
 					P.set_up(2,epicenter,direction)
 					P.start()
 	// Build the final explosion list, will be processed when we get to final resolution
-	finalize_explosion(data[1],data[2],data[3],pwr,starting_power)
+	finalize_explosion(epicenter,pwr,starting_power)
 
 /datum/controller/subsystem/explosions/proc/fire_resolve_explosions(list/data)
 	var/pwr = data[4]
@@ -438,14 +434,13 @@ SUBSYSTEM_DEF(explosions)
 			break
 
 /datum/controller/subsystem/explosions/proc/cached_explosion_resistance(turf/T)
-	var/key = coordinate_key(T.x, T.y, T.z)
-	if(!isnull(explosion_resistance_cache[key]))
-		return explosion_resistance_cache[key]
-	var/resistance = T.explosion_resistance
+	. = explosion_resistance_cache[T]
+	if(!isnull(.))
+		return
+	. = T.explosion_resistance
 	for(var/obj/O in T)
-		resistance += O.explosion_resistance
-	explosion_resistance_cache[key] = resistance
-	return resistance
+		. += O.explosion_resistance
+	explosion_resistance_cache[T] = .
 
 /datum/controller/subsystem/explosions/proc/start_resolve()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -465,36 +460,26 @@ SUBSYSTEM_DEF(explosions)
 /datum/controller/subsystem/explosions/proc/defer_turf_update(turf/T)
 	if(!T)
 		return
-	var/key = coordinate_key(T.x, T.y, T.z)
-	if(!deferred_turf_updates[key])
-		deferred_turf_update_keys += key
-	deferred_turf_updates[key] = T
+	if(deferred_turf_updates[T])
+		return // its neighbourhood is already queued too
+	deferred_turf_updates[T] = TRUE
 	for(var/turf/neighbor as anything in RANGE_TURFS(1, T))
-		var/neighbor_key = coordinate_key(neighbor.x, neighbor.y, neighbor.z)
-		if(!deferred_appearance_updates[neighbor_key])
-			deferred_appearance_update_keys += neighbor_key
-		deferred_appearance_updates[neighbor_key] = neighbor
+		deferred_appearance_updates[neighbor] = TRUE
 
 /datum/controller/subsystem/explosions/proc/flush_deferred_turf_updates()
-	while(deferred_turf_update_index <= length(deferred_turf_update_keys))
-		var/key = deferred_turf_update_keys[deferred_turf_update_index++]
-		var/turf/T = deferred_turf_updates[key]
-		if(T)
-			T.finalize_explosion_deferred_change(FALSE)
+	while(deferred_turf_update_index <= length(deferred_turf_updates))
+		var/turf/T = deferred_turf_updates[deferred_turf_update_index++]
+		T?.finalize_explosion_deferred_change(FALSE)
 		if(MC_TICK_CHECK)
 			return FALSE
 	deferred_turf_updates.Cut()
-	deferred_turf_update_keys.Cut()
 	deferred_turf_update_index = 1
-	while(deferred_appearance_update_index <= length(deferred_appearance_update_keys))
-		var/key = deferred_appearance_update_keys[deferred_appearance_update_index++]
-		var/turf/T = deferred_appearance_updates[key]
-		if(T)
-			T.finalize_explosion_deferred_appearance()
+	while(deferred_appearance_update_index <= length(deferred_appearance_updates))
+		var/turf/T = deferred_appearance_updates[deferred_appearance_update_index++]
+		T?.finalize_explosion_deferred_appearance()
 		if(MC_TICK_CHECK)
 			return FALSE
 	deferred_appearance_updates.Cut()
-	deferred_appearance_update_keys.Cut()
 	deferred_appearance_update_index = 1
 	return TRUE
 
@@ -526,10 +511,8 @@ SUBSYSTEM_DEF(explosions)
 	clear_blast_batches()
 	explosion_resistance_cache.Cut()
 	deferred_turf_updates.Cut()
-	deferred_turf_update_keys.Cut()
 	deferred_turf_update_index = 1
 	deferred_appearance_updates.Cut()
-	deferred_appearance_update_keys.Cut()
 	deferred_appearance_update_index = 1
 	current_signal_keys = null
 	current_signal_index = 1
@@ -562,13 +545,12 @@ SUBSYSTEM_DEF(explosions)
 	currentrun_index = 1
 
 // INTERNAL explosion proc, meant for GROWING a currently processing blast.
-/datum/controller/subsystem/explosions/proc/append_currentrun(x0,y0,z0,pwr,direction,starting_power)
+/datum/controller/subsystem/explosions/proc/append_currentrun(turf/key,pwr,direction,starting_power)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(pwr <= 0)
 		return
 	// check if there is already an explosion calculated by our current run...
-	var/key = coordinate_key(x0, y0, z0)
 	var/final_data = resolving_explosions[key]
 	var/final_power = 0
 	if(final_data)
@@ -584,7 +566,7 @@ SUBSYSTEM_DEF(explosions)
 	if(isnull(dat) || pwr >= dat[4])
 		if(isnull(dat))
 			currentrun_keys += key
-		currentrun[key] = list(x0,y0,z0,pwr,direction,max_starting)
+		currentrun[key] = list(key.x,key.y,key.z,pwr,direction,max_starting)
 
 // Queue explosion event, call this from explosion() ONLY
 /datum/controller/subsystem/explosions/proc/append_explosion(turf/epicenter, pwr, devastation_range, heavy_impact_range, light_impact_range, flash_range, z_transfer)
@@ -596,7 +578,7 @@ SUBSYSTEM_DEF(explosions)
 	var/z0 = epicenter.z
 	// actual explosion. Do not allow multiple, just take the highest power explosion hitting that turf
 	var/max_starting = pwr
-	var/key = coordinate_key(x0, y0, z0)
+	var/key = epicenter
 	var/list/dat = pending_explosions[key]
 	if(!isnull(dat) && dat[6] > max_starting)
 		max_starting = dat[6]
@@ -608,13 +590,12 @@ SUBSYSTEM_DEF(explosions)
 		for(var/direction in GLOB.cardinal)
 			var/turf/T = get_step(epicenter, direction)
 			if(T)
-				var/turf_key = coordinate_key(T.x, T.y, T.z)
-				dat = pending_explosions[turf_key]
+				dat = pending_explosions[T]
 				max_starting = pwr
 				if(!isnull(dat) && dat[6] > max_starting)
 					max_starting = dat[6]
 				if(isnull(dat) || rad_power >= dat[4])
-					pending_explosions[turf_key] = list(T.x,T.y,T.z,rad_power,direction,max_starting)
+					pending_explosions[T] = list(T.x,T.y,T.z,rad_power,direction,max_starting)
 
 	// send signals to dopplers
 	var/list/prior_signal = explosion_signals[key]
@@ -625,15 +606,14 @@ SUBSYSTEM_DEF(explosions)
 	epoch_submissions++
 
 // Collect prepared explosions for BLAST PROCESSING
-/datum/controller/subsystem/explosions/proc/finalize_explosion(x0,y0,z0,pwr,max_starting)
+/datum/controller/subsystem/explosions/proc/finalize_explosion(turf/key,pwr,max_starting)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(pwr <= 0)
 		return
-	var/key = coordinate_key(x0, y0, z0)
 	var/list/dat = resolving_explosions[key]
 	if(isnull(dat) || pwr >= dat[4])
-		resolving_explosions[key] = list(x0,y0,z0,pwr,max_starting)
+		resolving_explosions[key] = list(key.x,key.y,key.z,pwr,max_starting)
 
 /proc/explosion(turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range, adminlog = 1, z_transfer = UP|DOWN, shaped)
 	// Rarely objects might explode during init... Don't.
