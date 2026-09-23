@@ -25,7 +25,7 @@
 // --- Basic: robot variables -----------------------------------------------------------------
 
 /obj/item/borg/upgrade/basic/vtec/is_installed(mob/living/silicon/robot/R)
-	return (/mob/living/silicon/robot/proc/toggle_vtec in R.verbs)
+	return R.has_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC)
 
 /obj/item/borg/upgrade/basic/sizeshift/is_installed(mob/living/silicon/robot/R)
 	return (/mob/living/proc/set_size in R.verbs)

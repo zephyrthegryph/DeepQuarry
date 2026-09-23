@@ -122,7 +122,7 @@
 		to_chat(user, span_warning("It'd be unwise to plug another vtec module in!"))
 		return FALSE
 
-	add_verb(R, /mob/living/silicon/robot/proc/toggle_vtec)
+	R.grant_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
 	R.vtec_active = TRUE
 	R.hud_used.toggle_vtec_control()
 	to_chat(R, span_notice("Actuator overdrive enabled!"))

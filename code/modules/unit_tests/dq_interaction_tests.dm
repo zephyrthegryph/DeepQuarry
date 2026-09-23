@@ -110,7 +110,10 @@
 		"ai_slipper_toggle_lock", // code/game/machinery/ai_slipper.dm: no dedicated test or snapshot yet
 		"shadekin_phase_shift", "shadekin_dark_respite", "shadekin_regenerate_other", "shadekin_create_shade", // dq_ability_tests.dm
 		"shadekin_dark_maw", "shadekin_clear_dark_maws", "shadekin_dark_tunneling", // dq_ability_tests.dm
-		"robot_toggle_lights", // dq_ability_tests.dm
+		"robot_toggle_lights", "robot_pick_name", "robot_customize_appearance", "robot_toggle_glowy_stomach",
+		"robot_spark_plug", "robot_toggle_grabbability", "robot_purge_nutrition", "robot_toggle_decals",
+		"robot_sensor_mode", "robot_recolour", "robot_toggle_vtec", // dq_ability_tests.dm
+		"robot_pick_shell", "robot_set_mail_tag", "robot_eject_cargo", // dq_ability_tests.dm
 		"stacking_console_use", // code/modules/mining/machinery/machine_stacking.dm: needs a linked machine on the map, excluded from dq_i7_bulk_capture.dm's snapshot
 		// I7: verb-category and drag/enter ids without an `entry`, so the snapshot-coverage
 		// check (which requires `entry`) never sees them even when a snapshot exists.

@@ -115,7 +115,9 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	add_language(LANGUAGE_DRONE_TALK, 1)
 	serial_number = rand(0,999)
 
-	remove_verb(src, /mob/living/silicon/robot/verb/namepick)
+	revoke_ability(ABILITY_ID_ROBOT_PICK_NAME, src)
+	grant_ability(ABILITY_ID_ROBOT_PICK_SHELL, src)
+	grant_ability(ABILITY_ID_ROBOT_SET_MAIL_TAG, src)
 
 	if(can_pick_shell)
 		var/random = pick(shell_types)
@@ -124,6 +126,11 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 
 	update_icon()
 	updatename()
+
+/mob/living/silicon/robot/drone/Destroy()
+	revoke_ability(ABILITY_ID_ROBOT_PICK_SHELL, src)
+	revoke_ability(ABILITY_ID_ROBOT_SET_MAIL_TAG, src)
+	return ..()
 
 /mob/living/silicon/robot/drone/setup_camera()
 	if(scrambledcodes || foreign_droid)
@@ -175,13 +182,10 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 /mob/living/silicon/robot/drone/update_worn_icons()
 	return
 
-/mob/living/silicon/robot/drone/verb/pick_shell()
-	set name = "Customize Appearance"
-	set category = "Abilities.Settings"
-
+/mob/living/silicon/robot/drone/proc/dq_do_pick_shell(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	if(!can_pick_shell)
 		to_chat(src, span_warning("You already selected a shell or this drone type isn't customizable."))
-		return
+		return FALSE
 
 	var/list/choices = shell_types.Copy()
 
@@ -207,6 +211,20 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 
 	can_pick_shell = FALSE
 	update_icon()
+	return TRUE
+
+/datum/interaction/ability/self/robot_pick_shell
+	id = ABILITY_ID_ROBOT_PICK_SHELL
+	name = "Customize appearance"
+	category = ABILITY_CAT_UTILITY
+	requires = list(REQ_ON(PRED_ACTOR, /mob/living/silicon/robot/drone/proc/dq_pred_can_pick_shell, "you already selected a shell or this drone type isn't customizable"))
+	effect = /mob/living/silicon/robot/drone/proc/dq_do_pick_shell
+
+/datum/interaction/ability/self/robot_pick_shell/applies_to(atom/target)
+	return istype(target, /mob/living/silicon/robot/drone)
+
+/mob/living/silicon/robot/drone/proc/dq_pred_can_pick_shell(mob/living/silicon/robot/drone/actor, atom/target, obj/item/held)
+	return actor.can_pick_shell || "you already selected a shell or this drone type isn't customizable"
 
 /mob/living/silicon/robot/drone/pick_module()
 	return

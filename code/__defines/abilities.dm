@@ -51,3 +51,16 @@
 #define DARK_TUNNEL_COST 100
 
 #define ABILITY_ID_ROBOT_TOGGLE_LIGHTS "robot_toggle_lights"
+#define ABILITY_ID_ROBOT_PICK_NAME "robot_pick_name"
+#define ABILITY_ID_ROBOT_CUSTOMIZE_APPEARANCE "robot_customize_appearance"
+#define ABILITY_ID_ROBOT_TOGGLE_GLOWY_STOMACH "robot_toggle_glowy_stomach"
+#define ABILITY_ID_ROBOT_SPARK_PLUG "robot_spark_plug"
+#define ABILITY_ID_ROBOT_TOGGLE_GRABBABILITY "robot_toggle_grabbability"
+#define ABILITY_ID_ROBOT_SENSOR_MODE "robot_sensor_mode"
+#define ABILITY_ID_ROBOT_PURGE_NUTRITION "robot_purge_nutrition"
+#define ABILITY_ID_ROBOT_TOGGLE_DECALS "robot_toggle_decals"
+#define ABILITY_ID_ROBOT_RECOLOUR "robot_recolour"
+#define ABILITY_ID_ROBOT_TOGGLE_VTEC "robot_toggle_vtec"
+#define ABILITY_ID_ROBOT_PICK_SHELL "robot_pick_shell"
+#define ABILITY_ID_ROBOT_SET_MAIL_TAG "robot_set_mail_tag"
+#define ABILITY_ID_ROBOT_EJECT_CARGO "robot_eject_cargo"

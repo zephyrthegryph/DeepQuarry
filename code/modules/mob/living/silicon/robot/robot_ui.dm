@@ -185,8 +185,8 @@
 			dq_use_ability(R, ABILITY_ID_ROBOT_TOGGLE_LIGHTS)
 			. = TRUE
 		if("quick_action_sensors")
-			R.sensor_mode()
+			dq_use_ability(R, ABILITY_ID_ROBOT_SENSOR_MODE)
 			. = TRUE
 		if("quick_action_sparks")
-			R.spark_plug()
+			dq_use_ability(R, ABILITY_ID_ROBOT_SPARK_PLUG)
 			. = TRUE

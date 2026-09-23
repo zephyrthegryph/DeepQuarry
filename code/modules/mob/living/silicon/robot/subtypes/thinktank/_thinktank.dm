@@ -69,6 +69,7 @@
 		mmi = new /obj/item/mmi/digital/robot(src)
 	SetName("inactive [initial(name)]")
 	update_icon()
+	grant_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 
 /// Platforms carry heavier armour plating.
 /mob/living/silicon/robot/platform/get_component_types()
@@ -80,6 +81,7 @@
 	return types
 
 /mob/living/silicon/robot/platform/Destroy()
+	revoke_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 	for(var/datum/weakref/drop_ref in stored_atoms)
 		var/atom/movable/drop_atom = drop_ref.resolve()
 		if(istype(drop_atom) && !QDELETED(drop_atom) && drop_atom.loc == src)
