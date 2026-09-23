@@ -10,22 +10,6 @@
 	var/occupied = 1
 	var/destroyed = 0
 
-/obj/structure/displaycase/ex_act(severity)
-	switch(severity)
-		if (1)
-			new /obj/item/material/shard( src.loc )
-			if (occupied)
-				new /obj/item/gun/energy/captain( src.loc )
-				occupied = 0
-			qdel(src)
-		if (2)
-			if (prob(50))
-				deal_damage(DAMAGE_BLAST, 15)
-		if (3)
-			if (prob(50))
-				deal_damage(DAMAGE_BLAST, 5)
-
-
 // Glass-on-glass hit sound while the case still stands.
 /obj/structure/displaycase/play_attack_sound(damage_amount, damage_type, damage_flag)
 	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)

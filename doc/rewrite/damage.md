@@ -167,6 +167,10 @@ Each type declares its breakpoints as rules ([rules.md §4](rules.md#4-rules)):
 - **What's deleted:** the `ex_act` severity ladders, the structure and item base "`prob` then `qdel`" behaviour, and the duplicated EMP ladder (`living_defense.dm:261` and `projectile.dm:711`).
 - **Batched power topology.** Explosions batch their power topology changes (M3) instead of calling `makepowernets()`.
 
+**Done in D5.** `SSexplosions.queue_blast()` collects each reached atom once, at its strongest severity, into per-type batches; `deliver_blast_batches()` hands them their packets under `blast_batch_budget` atoms per fire. A container declares `explosion_contents_severity()` (closets shield one step; morgues, pods, scanners and APCs pass the blast through) and its contents join the same epoch before its own packet lands, so a destroyed container spills survivors. Immune types are `BOMB_PROOF` and never queued. The EMP ladder is `emp_ladder()`: `emp_ionic_damage()` reads it forwards for pulses and `emp_severity_for_ionic()` reads it backwards for ion rounds (`receive_ionic()`), for objects and mobs alike. The powernet defer and atmos topology batch stay open for the whole epoch, so an epoch is one topology commit.
+
+Still on severity ladders, owned elsewhere: turfs and walls (D3), the separate health pools of blobs, plants, shields, simple doors and modular computers (D3), and mob `ex_act`s (the body rewrite).
+
 ## 8. Repair
 
 Repair is the inverse pipeline. An interaction (welder, nanopaste, a repair kit) builds a repair packet, and the sink applies it: `repair_damage` for integrity, `mend()` for bodies. Welder repair of walls (today `take_damage(-damage)`) goes through it.

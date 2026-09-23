@@ -191,13 +191,34 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 			return ENERGY
 	return injury_armor_key(injury_kind_for_damage(kind))
 
-/// Shared EMP ladder: ionic amount per severity (EMP_HEAVY .. EMP_HARMLESS).
+/// The one EMP ladder (damage.md §7): the ionic amount of each severity,
+/// EMP_HEAVY .. EMP_HARMLESS. Pulses read it forwards (emp_ionic_damage) and
+/// ionic hits such as ion rounds read it backwards (emp_severity_for_ionic).
+/proc/emp_ladder()
+	var/static/list/ladder = list(100, 70, 40, 10)
+	return ladder
+
+/// Ionic amount an EMP of `severity` delivers.
 /proc/emp_ionic_damage(severity)
-	var/static/list/ladder = list(20, 15, 10, 5)
+	var/list/ladder = emp_ladder()
 	var/band = round(severity)
 	if(band < 1 || band > length(ladder))
 		return 0
 	return ladder[band]
+
+/// The severity an ionic hit of `amount` pulses its target with. Within 9 of
+/// a rung it is that rung; in the 15 below that it is a coin flip between the
+/// rung and the next one down; anything weaker is harmless.
+/proc/emp_severity_for_ionic(amount)
+	var/list/ladder = emp_ladder()
+	amount = round(amount)
+	for(var/severity in 1 to length(ladder) - 1)
+		var/rung = ladder[severity] - 9
+		if(amount >= rung)
+			return severity
+		if(amount >= rung - 15)
+			return prob(50) ? severity : severity + 1
+	return EMP_HARMLESS
 
 /// Blast per explosion severity, as a fraction of the target's max integrity.
 /proc/explosion_blast_fraction(severity)
@@ -353,11 +374,23 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	var/datum/damage_packet/packet = damage_packet(user, user, null, zone, flags, istype(S) ? S.attack_armor_pen : 0, user ? get_dir(user, src) : 0)
 	return receive_split(packet, generic_attack_kind(user), null, amount)
 
-/// Explosion: blast from the propagated severity.
+/// Explosion: blast from the propagated severity. Explosions deliver it in
+/// type batches (SSexplosions.deliver_blast_batches); objects are destroyed by
+/// integrity, never by a severity ladder.
 /atom/proc/receive_explosion(severity)
-	if(!uses_integrity)
+	if(!uses_integrity || (resistance_flags & BOMB_PROOF))
 		return 0
 	return deal_damage(DAMAGE_BLAST, max_integrity * explosion_blast_fraction(severity), flags = DAMAGE_PACKET_SILENT)
+
+/// Severity the explosion delivers to this atom's contents, in bulk, in the
+/// same batch epoch; 0 shields them. A destroyed container spills whatever it
+/// held, so contents are queued before the container's own packet lands.
+/atom/movable/proc/explosion_contents_severity(severity)
+	return 0
+
+/// An ionic hit (ion rounds): pulse the target at the ladder's severity.
+/atom/proc/receive_ionic(amount)
+	emp_act(emp_severity_for_ionic(amount))
 
 /// EMP: ionic from the severity, through the shared ladder.
 /atom/proc/receive_emp(severity)

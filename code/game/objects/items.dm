@@ -290,17 +290,6 @@
 		else if(M.r_hand == src)
 			M.update_inv_r_hand()
 
-/obj/item/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-		if(3.0)
-			if (prob(5))
-				qdel(src)
-
 /obj/item/verb/move_to_top()
 	set name = "Move To Top"
 	set category = "Object"

@@ -85,13 +85,6 @@
 	qdel(src)
 	return
 
-/obj/structure/barricade/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			dismantle()
-		if(2.0)
-			deal_damage(DAMAGE_BLAST, 25)
-
 /obj/structure/barricade/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
 	if(istype(mover) && mover.checkpass(PASSTABLE))
 		return TRUE

@@ -452,10 +452,8 @@
 	malfunction()
 	..()
 
-/obj/machinery/clonepod/ex_act(severity)
-	for(var/atom/movable/occupant as mob|obj in src)
-		occupant.ex_act(severity)
-	return ..()
+/obj/machinery/clonepod/explosion_contents_severity(severity)
+	return severity
 
 /obj/machinery/clonepod/update_icon()
 	..()

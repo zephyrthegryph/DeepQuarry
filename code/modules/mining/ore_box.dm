@@ -75,7 +75,3 @@
 	if(!has_ore)
 		. += "Nothing."
 
-/obj/structure/ore_box/ex_act(severity)
-	if(severity == 1.0 || (severity == 2.0 && prob(50)))
-		qdel(src)
-		return

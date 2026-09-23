@@ -197,8 +197,8 @@
 
 /// Packet sink. A segment has no integrity of its own: hits drain its
 /// generator's shared energy (deal_shield_damage) by shield damage type.
-/// take_damage() here keeps its (damage, SHIELD_DAMTYPE_*, hitby) form for the
-/// explosion and EMP ladders (D5).
+/// take_damage() keeps its (damage, SHIELD_DAMTYPE_*, hitby) form for this sink
+/// and for fire and projectiles.
 /obj/effect/shield/receive_damage(datum/damage_packet/packet)
 	if(QDELETED(src) || disabled_for)
 		return 0
@@ -240,12 +240,12 @@
 	. = ..()
 	if (. & EMP_PROTECT_SELF || disabled_for)
 		return
-	take_damage(rand(30,60) / severity, SHIELD_DAMTYPE_EM)
+	deal_damage(DAMAGE_IONIC, emp_ionic_damage(severity) * 0.45, flags = DAMAGE_PACKET_SILENT)
 
 // Explosions
 /obj/effect/shield/ex_act(severity)
 	if(!disabled_for)
-		take_damage(rand(10,15) / severity, SHIELD_DAMTYPE_PHYSICAL)
+		deal_damage(DAMAGE_BLAST, rand(10,15) / severity, flags = DAMAGE_PACKET_SILENT)
 
 
 // Fire

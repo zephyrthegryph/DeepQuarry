@@ -141,8 +141,8 @@
 	return PROCESS_KILL
 
 /obj/machinery/shipsensors
-	// EMPs burn out the delicate sensor elements.
-	emp_integrity_factor = 1
+	// EMPs burn out the delicate sensor elements (20 integrity from a heavy pulse).
+	emp_integrity_factor = 0.2
 	name = "sensors suite"
 	desc = "Long range gravity scanner with various other sensors, used to detect irregularities in surrounding space. Can only run in vacuum to protect delicate quantum BS elements."
 	icon = 'icons/obj/stationobjs.dmi'

@@ -34,10 +34,6 @@
 		visible_message(span_cult("\The [src] is completely unaffected by \the [Proj]."))
 	qdel(Proj) //No piercing. No.
 
-/obj/machinery/door/blast/puzzle/ex_act(severity)
-	visible_message(span_cult("\The [src] is completely unaffected by the blast."))
-	return
-
 /obj/machinery/door/blast/puzzle/Initialize(mapload)
 	. = ..()
 	implicit_material = get_material_by_name(MAT_ALIEN_DUNGEON)

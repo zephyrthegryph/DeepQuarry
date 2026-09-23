@@ -424,10 +424,6 @@ GLOBAL_VAR(bomb_set)
 		deployable = 1
 	return
 
-/obj/machinery/nuclearbomb/ex_act(severity)
-	return
-
-
 #define NUKERANGE 80
 /obj/machinery/nuclearbomb/proc/explode()
 	if(safety)

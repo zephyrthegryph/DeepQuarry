@@ -17,8 +17,6 @@
 	// A component's condition is its integrity. At zero it is wrecked but stays
 	// installed (efficiency 0) until it is repaired or replaced.
 	max_integrity = 100
-	/// D5 shim: emp_act still reads this; it mirrors get_integrity(). Delete with the EMP ladder.
-	var/integrity
 	var/integrity_danger_mod = 0.5	// Multiplier for comparison to max_integrity before problems start.
 
 	var/step_delay = 0
@@ -46,8 +44,6 @@
 
 /obj/item/mecha_parts/component/Initialize(mapload)
 	. = ..()
-	integrity = get_integrity()
-
 	if(start_damaged)
 		update_integrity(round(max_integrity * integrity_danger_mod))
 
@@ -66,7 +62,7 @@
 
 	severity = clamp(severity + emp_resistance, 1, 4)
 
-	take_damage((4 - severity) * round(integrity * 0.1, 0.1))
+	take_damage((4 - severity) * round(get_integrity() * 0.1, 0.1))
 
 /// Repairs (positive) or wears (negative) the component. Wear passed on from the
 /// chassis has already been through the mech's armour.
@@ -75,10 +71,6 @@
 		repair_damage(amt)
 	else if(amt < 0)
 		take_damage(-amt, BRUTE, null, FALSE)
-
-/obj/item/mecha_parts/component/on_update_integrity(old_value, new_value)
-	. = ..()
-	integrity = new_value
 
 /// A wrecked component stays a (useless) component. Fire and acid still destroy it.
 /obj/item/mecha_parts/component/atom_destruction(damage_flag)

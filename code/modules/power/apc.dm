@@ -1129,9 +1129,10 @@ GLOBAL_LIST_EMPTY(apcs)
 
 /obj/machinery/power/apc/ex_act(severity)
 	wake_for_power_dependency()
-	if(cell && (severity == 1 || (severity <= 3 && prob(50))))
-		cell.ex_act(severity)
 	return ..()
+
+/obj/machinery/power/apc/explosion_contents_severity(severity)
+	return severity
 
 /obj/machinery/power/apc/atom_break(damage_flag)
 	. = ..()

@@ -1,4 +1,5 @@
 /obj/machinery/shield
+	emp_integrity_factor = 2 // a heavy pulse (100 ionic) collapses a fresh 200-integrity field
 	name = "emergency energy shield"
 	desc = "An energy shield used to contain hull breaches."
 	icon = 'icons/effects/effects.dmi'
@@ -64,24 +65,6 @@
 	..()
 	set_opacity(1)
 	spawn(20) if(!QDELETED(src)) set_opacity(0)
-
-/obj/machinery/shield/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	switch(severity)
-		if(1)
-			qdel(src)
-		if(2)
-			if(prob(75))
-				qdel(src)
-		if(3)
-			if(prob(50))
-				qdel(src)
-		if(4)
-			if(prob(25))
-				qdel(src)
-
 
 /obj/machinery/shield/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	//Let everyone know we've been hit!

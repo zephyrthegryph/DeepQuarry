@@ -12,10 +12,8 @@
 		pipe_image = null
 	. = ..()
 
-/obj/machinery/atmospherics/ex_act(severity)
-	for(var/atom/movable/A in src) //ventcrawling is serious business
-		A.ex_act(severity)
-	. = ..()
+/obj/machinery/atmospherics/explosion_contents_severity(severity)
+	return severity
 
 /obj/machinery/atmospherics/Entered(atom/movable/Obj)
 	if(isliving(Obj))
