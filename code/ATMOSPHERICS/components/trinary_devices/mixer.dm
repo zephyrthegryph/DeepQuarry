@@ -26,6 +26,12 @@
 
 	//node 3 is the outlet, nodes 1 & 2 are intakes
 
+/obj/machinery/atmospherics/trinary/mixer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
+
 /obj/machinery/atmospherics/trinary/mixer/update_icon(safety = 0)
 	if(tee)
 		icon_state = "t"
@@ -100,11 +106,6 @@
 	data["node1_dir"] = dir_name(node_connects[1],TRUE)
 	data["node2_dir"] = dir_name(node_connects[2],TRUE)
 	return data
-
-/obj/machinery/atmospherics/trinary/mixer/attack_hand(user as mob)
-	if(..())
-		return
-	tgui_interact(user)
 
 /obj/machinery/atmospherics/trinary/mixer/tgui_act(action, params)
 	if(..())

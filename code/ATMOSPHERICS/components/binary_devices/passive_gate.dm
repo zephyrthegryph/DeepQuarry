@@ -273,14 +273,26 @@
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/passive_gate/attack_hand(mob/user)
-	if(..())
-		return
+/obj/machinery/atmospherics/binary/passive_gate/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/passive_gate_open_ui,
+	)
+	..()
+
+/// The old attack_hand's access check.
+/datum/interaction/machine_hand/passive_gate_open_ui
+	id = "passive_gate_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/passive_gate/proc/lets_in, "access denied"))
+	effect = /obj/machinery/atmospherics/binary/passive_gate/proc/interaction_open_ui
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/atmospherics/binary/passive_gate/tgui_interact(mob/user, datum/tgui/ui)
 	if(stat & BROKEN)

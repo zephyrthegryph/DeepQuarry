@@ -143,13 +143,22 @@
 		atom_deconstruct()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/atmospherics/omni/attack_hand(user as mob)
-	if(..())
-		return
+/obj/machinery/atmospherics/omni/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/omni_open_ui,
+	)
+	..()
 
-	src.add_fingerprint(user)
+/// Open the omni device's interface: the old `if(..()) return; add_fingerprint(user); tgui_interact(user)`.
+/datum/interaction/machine_hand/omni_open_ui
+	id = "omni_open_ui"
+	name = "Use"
+	effect = /obj/machinery/atmospherics/omni/proc/interaction_open_ui
+
+/obj/machinery/atmospherics/omni/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
 	tgui_interact(user)
-	return
+	return TRUE
 
 /obj/machinery/atmospherics/omni/proc/build_icons()
 	var/core_icon = null

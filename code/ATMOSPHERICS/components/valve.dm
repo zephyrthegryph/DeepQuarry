@@ -96,14 +96,28 @@
 /obj/machinery/atmospherics/valve/attack_ai(mob/user as mob)
 	return
 
-/obj/machinery/atmospherics/valve/attack_hand(mob/user as mob)
-	src.add_fingerprint(user)
+/obj/machinery/atmospherics/valve/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/valve_toggle,
+	)
+	..()
+
+/// Toggle the valve open or closed.
+/datum/interaction/machine_hand/ungated/valve_toggle
+	id = "valve_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/atmospherics/valve/proc/interaction_toggle
+
+/obj/machinery/atmospherics/valve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
 	update_icon(1)
 	sleep(10)
-	if (src.open)
-		src.close()
+	if(open)
+		close()
 	else
-		src.open()
+		open()
+	return TRUE
 
 /obj/machinery/atmospherics/valve/process()
 	..()
@@ -185,13 +199,26 @@
 /obj/machinery/atmospherics/valve/digital/attack_ai(mob/user as mob)
 	return src.attack_hand(user)
 
-/obj/machinery/atmospherics/valve/digital/attack_hand(mob/user as mob)
-	if(!powered())
-		return
-	if(!src.allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return
+/obj/machinery/atmospherics/valve/digital/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/valve_digital_toggle,
+	)
 	..()
+
+/// Toggle a digital valve: requires power and access, then behaves as the manual toggle.
+/datum/interaction/machine_hand/ungated/valve_digital_toggle
+	id = "valve_digital_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/atmospherics/valve/digital/proc/interaction_digital_toggle
+
+/obj/machinery/atmospherics/valve/digital/proc/interaction_digital_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!powered())
+		return TRUE
+	if(!allowed(user))
+		to_chat(user, span_warning("Access denied."))
+		return TRUE
+	return interaction_toggle(user, held, interaction)
 
 /obj/machinery/atmospherics/valve/digital/open
 	open = 1
