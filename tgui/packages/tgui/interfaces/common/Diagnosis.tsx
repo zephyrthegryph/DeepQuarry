@@ -2,7 +2,13 @@
 // tgui_data()). Every medical interface shows the same report: vitals plus
 // findings, with treatment hints when the instrument gives them.
 
-import { Box, LabeledList, Section, Table, Tooltip } from 'tgui-core/components';
+import {
+  Box,
+  LabeledList,
+  Section,
+  Table,
+  Tooltip,
+} from 'tgui-core/components';
 
 export type DiagnosisBand =
   | 'uninjured'
@@ -74,7 +80,11 @@ const TREND: Record<
     color: 'label',
     tooltip: 'New finding: no prior scan to compare against.',
   },
-  worsening: { symbol: '↑', color: 'bad', tooltip: 'Worsening since last scan.' },
+  worsening: {
+    symbol: '↑',
+    color: 'bad',
+    tooltip: 'Worsening since last scan.',
+  },
   improving: {
     symbol: '↓',
     color: 'good',

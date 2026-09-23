@@ -7,6 +7,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import { DIAGNOSIS_BAND, DiagnosisVitalsList } from '../../common/Diagnosis';
 import {
   gridStatusToColor,
   gridStatusToText,
@@ -15,7 +16,6 @@ import {
   statToColor,
   statToString,
 } from '../constants';
-import { DIAGNOSIS_BAND, DiagnosisVitalsList } from '../../common/Diagnosis';
 import { ChargeStatus } from '../MedigunHelpers/ChargeStatus';
 import type { Data, SModule } from '../types';
 

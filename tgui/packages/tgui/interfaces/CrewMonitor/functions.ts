@@ -128,8 +128,7 @@ export function getSortedCrew(
       if (sortType === 'damage') {
         const sorted = shownCrew.sort(
           (a, b) =>
-            getSeverity(a) - getSeverity(b) ||
-            a.name.localeCompare(b.name),
+            getSeverity(a) - getSeverity(b) || a.name.localeCompare(b.name),
         );
         if (damageSortOrder) {
           return sorted.reverse();

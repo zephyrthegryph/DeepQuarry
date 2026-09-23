@@ -1,11 +1,5 @@
 import { useBackend } from 'tgui/backend';
-import {
-  Box,
-  Button,
-  LabeledList,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 
 import { BAND_INFO, BAND_RANK, stats } from './constants';
 import type { DamageBand, occupant } from './types';
