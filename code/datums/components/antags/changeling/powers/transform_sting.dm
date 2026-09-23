@@ -35,7 +35,7 @@
 	var/mob/living/carbon/T = changeling_sting(40,/mob/proc/changeling_transformation_sting)
 	if(!T)
 		return FALSE
-	if((HUSK in T.mutations) || (!ishuman(T) && !issmall(T)))
+	if((T.has_mutation(HUSK)) || (!ishuman(T) && !issmall(T)))
 		to_chat(src, span_warning("Our sting appears ineffective against its DNA."))
 		return FALSE
 	add_attack_logs(src,T,"Transformation sting (changeling)")

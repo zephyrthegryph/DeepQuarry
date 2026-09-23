@@ -116,7 +116,7 @@
 			fingerprintshidden += text("\[[time_stamp()]\] (Wearing gloves). Real name: [], Key: []",H.real_name, H.key)
 			fingerprintslast = H.key
 		return FALSE
-	if (mFingerprints in M.mutations)
+	if (M.has_mutation(mFingerprints))
 		if(fingerprintslast != H.key)
 			fingerprintshidden += text("\[[time_stamp()]\] (Noprint mutation). Real name: [], Key: []",H.real_name, H.key)
 			fingerprintslast = H.key

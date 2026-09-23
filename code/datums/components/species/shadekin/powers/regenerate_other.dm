@@ -1,54 +1,49 @@
 //////////////////////////
 ///  REGENERATE OTHER  ///
 //////////////////////////
-/datum/power/shadekin/regenerate_other
-	name = "Regenerate Other (50)"
-	desc = "Spend energy to heal physical wounds in another creature."
-	verbpath = /mob/living/proc/regenerate_other
-	ability_icon_state = "shadekin_regen"
+// Ported to the ability framework (doc/rewrite/rules.md §5). This is a
+// targeted ability, not a self one: the legacy verb picked its target from a
+// tgui_input_list of nearby mobs (a picker built by hand, then re-validated
+// because the pick was async). Here the target IS the click/Menu target - the
+// Menu on a nearby mob already lists this, with its live cost and adjacency
+// requirement, so there's no separate picker to keep in sync.
 
-/mob/living/proc/regenerate_other()
-	set name = "Regenerate Other (50)"
-	set desc = "Spend energy to heal physical wounds in another creature."
-	set category = "Abilities.Shadekin"
+/datum/interaction/ability/shadekin_regenerate_other
+	id = ABILITY_ID_SHADEKIN_REGENERATE_OTHER
+	name = "Regenerate other"
+	category = ABILITY_CAT_UTILITY
+	requires = list(
+		REQ_CONSCIOUS,
+		REQ_NOT_SELF, // the legacy oview(1) target list never included yourself
+		REQ_REACH(1),
+		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"),
+		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_shifted, "you can't use that while phase shifted"),
+		REQ_RESOURCE(/mob/living/proc/dq_regenerate_other_afford),
+	)
+	effect = /mob/living/proc/dq_do_regenerate_other
 
-	var/ability_cost = 50
+// pay_cost() is deliberately trivial (see phase_shift.dm's comment): spending
+// there would make the framework's post-pay_cost why_not() recheck fail
+// against the now-lower balance. The spend happens in the effect instead.
 
-	var/datum/component/shadekin/SK = get_shadekin_component()
+/// TRUE if `actor` can afford the flat 50-energy cost, else a reason.
+/mob/living/proc/dq_regenerate_other_afford(mob/living/actor, atom/target, obj/item/held)
+	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	if(!SK)
+		return "you aren't shadekin"
+	return (SK.shadekin_get_energy() >= 50) || "not enough energy for that ability"
+
+/// Mends `src` (the target), announced by `actor` (the healer).
+/mob/living/proc/dq_do_regenerate_other(mob/actor, obj/item/held, datum/interaction/ability/interaction)
+	var/mob/living/L = actor
+	var/datum/component/shadekin/SK = L.get_shadekin_component()
 	if(!SK)
 		return FALSE
-	if(SK.special_considerations(TRUE))
-		return FALSE
-	if(stat)
-		to_chat(src, span_warning("Can't use that ability in your state!"))
-		return FALSE
-	else if(SK.shadekin_get_energy() < ability_cost)
-		to_chat(src, span_warning("Not enough energy for that ability!"))
-		return FALSE
-	else if(SK.in_phase)
-		to_chat(src, span_warning("You can't use that while phase shifted!"))
-		return FALSE
-
-	var/list/viewed = oview(1)
-	var/list/targets = list()
-	for(var/mob/living/L in viewed)
-		targets += L
-	if(!targets.len)
-		to_chat(src,span_warning("Nobody nearby to mend!"))
-		return FALSE
-
-	var/mob/living/target = tgui_input_list(src,"Pick someone to mend:","Mend Other", targets)
-	if(!target)
-		return FALSE
-	if(stat || SK.in_phase || SK.shadekin_get_energy() < ability_cost || !(target in oview(1)))
-		to_chat(src, span_warning("You can no longer mend \the [target]."))
-		return FALSE
-
-	target.add_modifier(/datum/modifier/shadekin/heal_boop,1 MINUTE)
-	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
-	SK.shadekin_adjust_energy(-ability_cost)
-	visible_message(span_notice("\The [src] gently places a hand on \the [target]..."))
-	face_atom(target)
+	SK.shadekin_adjust_energy(-50)
+	playsound(L, 'sound/effects/EMPulse.ogg', 75, 1)
+	add_modifier(/datum/modifier/shadekin/heal_boop, 1 MINUTE)
+	actor.visible_message(span_notice("\The [actor] gently places a hand on \the [src]..."))
+	actor.face_atom(src)
 	return TRUE
 
 /datum/modifier/shadekin/heal_boop

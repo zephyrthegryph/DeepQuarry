@@ -100,7 +100,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.real_name = shadekin.name
 			shadekin.init_vore(TRUE)
 			shadekin.ability_flags |= 0x1
-			shadekin.phase_shift()
+			shadekin.phase_out(get_turf(shadekin))
 			shadekin.ai_brain?.give_target(target, TRUE)
 			shadekin.ai_brain?.set_hostile(FALSE)
 			if(shadekin.ai_brain)
@@ -156,7 +156,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.can_be_drop_pred = TRUE
 			shadekin.dir = SOUTH
 			shadekin.ability_flags |= 0x1
-			shadekin.phase_shift() //Homf
+			shadekin.phase_out(get_turf(shadekin)) //Homf
 			shadekin.comp.dark_energy = initial(shadekin.comp.dark_energy)
 			//For fun
 			sleep(1 SECOND)
@@ -168,7 +168,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			sleep(1 SECOND)
 			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
 			sleep(2 SECONDS)
-			shadekin.phase_shift()
+			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_component())
 			target.transforming = FALSE //Undo cheap hack
 
 			if(myself == "Control") //Put admin in mob

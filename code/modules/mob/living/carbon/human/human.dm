@@ -93,7 +93,7 @@
 	if(nif)
 		QDEL_NULL(nif)
 	GLOB.alt_farmanimals -= src
-	worn_clothing.Cut()
+	LAZYCLEARLIST(worn_clothing)
 
 	if(vessel)
 		QDEL_NULL(vessel)
@@ -360,7 +360,7 @@
 //Returns "Unknown" if facially disfigured and real_name if not. Useful for setting name when polyacided or when updating a human's name variable
 /mob/living/carbon/human/proc/get_face_name()
 	var/obj/item/organ/external/head = get_organ(BP_HEAD)
-	if(!head || head.disfigured || head.is_stump() || !real_name || (HUSK in mutations) )	//disfigured. use id-name if possible
+	if(!head || head.disfigured || head.is_stump() || !real_name || (has_mutation(HUSK)) )	//disfigured. use id-name if possible
 		return "Unknown"
 	return real_name
 
@@ -769,15 +769,15 @@
 				SStgui.close_uis(src)
 				return
 			if("general")
-				var/msg = strip_html_simple(tgui_input_text(usr,"Update the general description of your character. This will be shown regardless of clothing.","Flavor Text",html_decode(flavor_texts[href_list["flavor_change"]]), multiline = TRUE, prevent_enter = TRUE))	//Separating out OOC notes
+				var/msg = strip_html_simple(tgui_input_text(usr,"Update the general description of your character. This will be shown regardless of clothing.","Flavor Text",html_decode(LAZYACCESS(flavor_texts, href_list["flavor_change"])), multiline = TRUE, prevent_enter = TRUE))	//Separating out OOC notes
 				if(msg)
-					flavor_texts[href_list["flavor_change"]] = msg
+					LAZYSET(flavor_texts, href_list["flavor_change"], msg)
 					set_flavor()
 				return
 			else
-				var/msg = strip_html_simple(tgui_input_text(usr,"Update the flavor text for your [href_list["flavor_change"]].","Flavor Text",html_decode(flavor_texts[href_list["flavor_change"]]), multiline = TRUE, prevent_enter = TRUE))
+				var/msg = strip_html_simple(tgui_input_text(usr,"Update the flavor text for your [href_list["flavor_change"]].","Flavor Text",html_decode(LAZYACCESS(flavor_texts, href_list["flavor_change"])), multiline = TRUE, prevent_enter = TRUE))
 				if(msg)
-					flavor_texts[href_list["flavor_change"]] = msg
+					LAZYSET(flavor_texts, href_list["flavor_change"], msg)
 					set_flavor()
 				return
 	..()
@@ -902,7 +902,7 @@
 	if(stat!=CONSCIOUS)
 		return
 
-	if(!(mMorph in mutations))
+	if(!(has_mutation(mMorph)))
 		remove_verb(src, /mob/living/carbon/human/proc/morph)
 		return
 
@@ -974,7 +974,7 @@
 	if(stat != CONSCIOUS)
 		return
 
-	if(!(mRemotetalk in src.mutations))
+	if(!(src.has_mutation(mRemotetalk)))
 		remove_verb(src, /mob/living/carbon/human/proc/remotesay)
 		return
 	var/list/creatures = list()
@@ -987,7 +987,7 @@
 		return
 
 	var/say = tgui_input_text(src, "What do you wish to say?", "", "", MAX_MESSAGE_LEN)
-	if(mRemotetalk in target.mutations)
+	if(target.has_mutation(mRemotetalk))
 		target.show_message(span_filter_say("[span_blue("You hear [src.real_name]'s voice: [say]")]"))
 	else
 		target.show_message(span_filter_say("[span_blue("You hear a voice that seems to echo around the room: [say]")]"))
@@ -1074,7 +1074,7 @@
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
 		if(gene.name in active_genes)
 			gene.deactivate(src)
-			active_genes -= gene.name
+			LAZYREMOVE(active_genes, gene.name)
 
 	// Reapply markings/appearance from prefs for player mobs
 	if(client) //just to be sure
@@ -1146,9 +1146,9 @@
 	return 1 //we applied blood to the item
 
 /mob/living/carbon/human/proc/get_full_print()
-	if(!dna ||!dna.uni_identity)
+	if(!dna || !dna.dna_ready)
 		return
-	return md5(dna.uni_identity)
+	return md5(dna.GetUniIdentity())
 
 /mob/living/carbon/human/wash(clean_types)
 	. = ..()
@@ -1259,10 +1259,16 @@
 	if(!GLOB.all_species[new_species])
 		new_species = SPECIES_HUMAN
 
+	var/datum/species/old_species = species
 	if(species)
 
 		if(species.name && species.name == new_species && species.name != "Custom Species")
 			return
+		// A protean folded into its control cluster unfolds before its swarm goes away.
+		var/datum/component/forms/protean/protean_forms = GetComponent(/datum/component/forms/protean)
+		if(protean_forms?.in_rig())
+			protean_forms.leave_rig()
+			log_game("SPECIES: [key_name(src)] unfolded from their control cluster for a species change to [new_species].")
 		if(species.language)
 			remove_language(species.language)
 		if(species.default_language)
@@ -1275,6 +1281,7 @@
 		hunger_rate = initial(hunger_rate)
 
 	species = GLOB.all_species[new_species]
+	old_species?.remove_components(src, species)
 	invalidate_factors()
 
 	if(species.language)
@@ -1639,7 +1646,7 @@
 	if(stat) return
 	var/datum/category_group/underwear/UWC = tgui_input_list(usr, "Choose underwear:", "Show/hide underwear", GLOB.global_underwear.categories)
 	if(!UWC) return
-	var/datum/category_item/underwear/UWI = all_underwear[UWC.name]
+	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return

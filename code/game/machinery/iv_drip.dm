@@ -124,7 +124,7 @@
 				return
 			if(!T.dna)
 				return
-			if(NOCLONE in T.mutations)
+			if(T.has_mutation(NOCLONE))
 				return
 
 			if(!T.should_have_organ(O_HEART))

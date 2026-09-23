@@ -19,7 +19,7 @@
 
 /obj/structure/hand_gate(mob/user)
 	if(breakable)
-		if(HULK in user.mutations)
+		if(user.has_mutation(HULK))
 			user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))
 			attack_generic(user,1,"smashes")
 		else if(ishuman(user))

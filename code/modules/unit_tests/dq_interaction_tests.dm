@@ -108,6 +108,9 @@
 		// Construction (dq_construction_tests.dm and its per-domain files). Graph edges are checked there, not here.
 		"wall_burn_rot", "wall_light_thermite", "wall_repair", "mecha_fix_temperature", "mecha_weld_repair", "window_repair",
 		"ai_slipper_toggle_lock", // code/game/machinery/ai_slipper.dm: no dedicated test or snapshot yet
+		"shadekin_phase_shift", "shadekin_dark_respite", "shadekin_regenerate_other", "shadekin_create_shade", // dq_ability_tests.dm
+		"shadekin_dark_maw", "shadekin_clear_dark_maws", "shadekin_dark_tunneling", // dq_ability_tests.dm
+		"robot_toggle_lights", // dq_ability_tests.dm
 		"stacking_console_use", // code/modules/mining/machinery/machine_stacking.dm: needs a linked machine on the map, excluded from dq_i7_bulk_capture.dm's snapshot
 		// I7: verb-category and drag/enter ids without an `entry`, so the snapshot-coverage
 		// check (which requires `entry`) never sees them even when a snapshot exists.
@@ -123,7 +126,7 @@
 		seen += interaction.id
 		TEST_ASSERT(istext(interaction.name) && length(interaction.name), "[interaction.id] has a name")
 		TEST_ASSERT(interaction.effect, "[interaction.id] has an effect")
-		TEST_ASSERT(isnull(interaction.category) || (interaction.category in INTERACTION_CATEGORIES), "[interaction.id] has a known category")
+		TEST_ASSERT(isnull(interaction.category) || (interaction.category in INTERACTION_CATEGORIES) || (interaction.category in ABILITY_CATEGORIES), "[interaction.id] has a known category")
 		TEST_ASSERT(isnull(interaction.default_action) || (interaction.default_action in list(INPUT_ACTION_USE, INPUT_ACTION_ALTERNATE)), "[interaction.id] answers Use, Alternate or nothing")
 		TEST_ASSERT(isnull(interaction.entry) || (interaction.entry in list(INTERACTION_ENTRY_ITEM, INTERACTION_ENTRY_HAND, INTERACTION_ENTRY_SELF, INTERACTION_ENTRY_ALT, INTERACTION_ENTRY_DRAG)), "[interaction.id] has a known entry")
 		var/datum/predicate/selector = interaction.selector()

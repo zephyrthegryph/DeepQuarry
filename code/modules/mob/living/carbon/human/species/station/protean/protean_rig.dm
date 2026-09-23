@@ -94,6 +94,10 @@
 			F.rig = null
 		if(myprotean.loc == src)
 			myprotean.forceMove(drop_location())
+		// A dormant core with no cluster left is repaired on the protean itself.
+		if(F?.is_dormant())
+			log_game("NANOFORM: [key_name(myprotean)]'s control cluster was destroyed during dormancy; repairs continue on the body at [AREACOORD(myprotean)].")
+			myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster."))
 		myprotean = null
 	return ..()
 
@@ -292,7 +296,7 @@
 		return 0
 	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
 	if(dormancy)
-		dormancy_repair(W, user, dormancy)
+		dormancy.repair_with(W, user, src)
 		return
 	if(istype(W,/obj/item/rig))
 		if(!assimilated_rig)
@@ -364,10 +368,7 @@
 	if(dormancy)
 		if(dormancy.revival_step != DORMANCY_SEALED)
 			return ITEM_INTERACT_BLOCKING
-		playsound(src, tool.usesound, 50, 1)
-		if(do_after(user, 5 SECONDS, target = src) && !QDELETED(dormancy) && dormancy.revival_step == DORMANCY_SEALED)
-			to_chat(user, span_notice("You unscrew the maintenance panel on the [src]."))
-			dormancy.open_panel()
+		INVOKE_ASYNC(dormancy, TYPE_PROC_REF(/datum/affliction/core_dormancy, repair_with), tool, user, src)
 		return ITEM_INTERACT_SUCCESS
 	else
 		var/list/possible_removals = list()
@@ -394,42 +395,6 @@
 
 /// Revival of a dormant core, one step per tool. Each step is a treatment
 /// mechanism the core_dormancy affliction answers to.
-/obj/item/rig/protean/proc/dormancy_repair(obj/item/W, mob/living/user, datum/affliction/core_dormancy/dormancy)
-	switch(dormancy.revival_step)
-		if(DORMANCY_OPEN)
-			if(!istype(W, /obj/item/protean_reboot))
-				return
-			if(!do_after(user, 5 SECONDS, target = src) || QDELETED(dormancy) || dormancy.revival_step != DORMANCY_OPEN)
-				return
-			if(myprotean.mend(TREAT_CALIBRATION, 1))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-				to_chat(user, span_notice("You carefully slot [W] in the [src]."))
-				qdel(W)
-		if(DORMANCY_PROGRAMMED)
-			var/obj/item/stack/nanopaste/paste = W
-			if(!istype(paste))
-				return
-			if(!do_after(user, 5 SECONDS, target = src) || QDELETED(dormancy) || dormancy.revival_step != DORMANCY_PROGRAMMED)
-				return
-			if(paste.use(1) && myprotean.mend(TREAT_PLATING_REPAIR, 1))
-				playsound(src, 'sound/effects/ointment.ogg', 50, 1)
-				to_chat(user, span_notice("You slather the interior confines of the [src] with the [W]."))
-		if(DORMANCY_PASTED)
-			var/obj/item/shockpaddles/paddles = W
-			if(!istype(paddles) || !paddles.can_use(user))
-				return
-			to_chat(user, span_notice("You hook up the [W] to the contact points in the maintenance assembly"))
-			if(!do_after(user, 5 SECONDS, target = src))
-				return
-			playsound(src, 'sound/machines/defib_charge.ogg', 50, 0)
-			if(!do_after(user, 1 SECOND, target = src) || QDELETED(dormancy) || dormancy.revival_step != DORMANCY_PASTED)
-				return
-			playsound(src, 'sound/machines/defib_zap.ogg', 50, 1, -1)
-			if(myprotean.mend(TREAT_DEFIBRILLATION, 1))
-				playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
-				new /obj/effect/gibspawner/robot(loc)
-				atom_say("Contact received! Reassembly nanites calibrated. Estimated time to resucitation: 1 minute 30 seconds")
-
 /// The cluster has no module damage pool of its own: see take_damage() and
 /// soak_wearer_injury(), which put every hit on the protean's body.
 /obj/item/rig/protean/take_hit(damage, source, is_emp=0)

@@ -30,7 +30,7 @@
 	set_tissue(tissue)
 
 /datum/component/mind_host/Destroy(force)
-	set_tissue(null)
+	// Detach the view before dropping the tissue, so it isn't put through a death on the way out.
 	if(occupant)
 		var/mob/living/carbon/brain/view = occupant
 		occupant = null
@@ -38,6 +38,7 @@
 		view.container = null
 		if(!QDELETED(view))
 			qdel(view)
+	set_tissue(null)
 	return ..()
 
 /// The brain organ backing the occupant's status.

@@ -68,12 +68,11 @@
 	var/list/active_dark_maws
 
 	//Ability Vars
-	///The innate abilities we start with
-	var/list/shadekin_abilities = list(/datum/power/shadekin/phase_shift,
-										/datum/power/shadekin/regenerate_other,
-										/datum/power/shadekin/create_shade)
-	///Datum holder. Largely ignore this.
-	var/list/shadekin_ability_datums
+	///Ability ids (code/datums/abilities/ability.dm) this variant grants while
+	///the component is attached: the source-tracked grant API, revoked in
+	///Destroy(). Every shadekin gets phase shift, regenerate other and create
+	///shade; phase_only and full override this to add or remove ids.
+	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE)
 
 	//Misc Vars
 	///Eyecolor
@@ -82,15 +81,10 @@
 	var/extended_kin = FALSE
 
 /datum/component/shadekin/phase_only
-	shadekin_abilities = list(/datum/power/shadekin/phase_shift)
+	shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT)
 
 /datum/component/shadekin/full
-	shadekin_abilities = list(/datum/power/shadekin/phase_shift,
-								/datum/power/shadekin/regenerate_other,
-								/datum/power/shadekin/create_shade,
-								/datum/power/shadekin/dark_maw,
-								/datum/power/shadekin/dark_respite,
-								/datum/power/shadekin/dark_tunneling)
+	shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE, ABILITY_ID_SHADEKIN_DARK_RESPITE, ABILITY_ID_SHADEKIN_DARK_TUNNELING, ABILITY_ID_SHADEKIN_DARK_MAW, "shadekin_clear_dark_maws")
 	extended_kin = TRUE
 	drop_items_on_phase = TRUE
 	camera_counts_as_watcher = TRUE
@@ -115,8 +109,11 @@
 	RegisterSignal(owner, COMSIG_HUMAN_GET_ALT_NAME, PROC_REF(on_get_alt_name))
 	RegisterSignal(owner, COMSIG_HUMAN_GET_VISIBLE_NAME, PROC_REF(on_get_visible_name))
 
-	//generates powers and then adds them
-	build_and_add_abilities()
+	// This component is the source for every ability it grants
+	// (code/datums/abilities/ability.dm); revoked with the component in
+	// Destroy() below, whatever kind of shadekin this is.
+	for(var/ability_id in shadekin_granted_abilities)
+		owner.grant_ability(ability_id, src)
 
 	handle_comp() //First hit is free!
 
@@ -128,29 +125,24 @@
 	add_verb(owner, /mob/living/proc/shadekin_control_panel)
 
 /datum/component/shadekin/Destroy(force)
+	if(owner)
+		for(var/ability_id in shadekin_granted_abilities)
+			owner.revoke_ability(ability_id, src)
 	if(ishuman(owner))
 		UnregisterSignal(owner, COMSIG_SHADEKIN_COMPONENT)
 	else
 		remove_trait_life_system(owner, /datum/life_system/trait/shadekin)
 	UnregisterSignal(owner, list(COMSIG_HUMAN_GET_VOICE, COMSIG_HUMAN_GET_ALT_NAME, COMSIG_HUMAN_GET_VISIBLE_NAME))
 	remove_verb(owner, /mob/living/proc/shadekin_control_panel)
-	for(var/datum/power in shadekin_ability_datums)
-		qdel(power)
 	for(var/obj/effect/abstract/dark_maw/dm as anything in active_dark_maws) //if the component gets destroyed so does your precious maws
 		if(!QDELETED(dm))
 			qdel(dm)
-	// Only rebuild the owner's HUD when the component is removed from a LIVE mob
-	// (e.g. species change). During mob deletion, /mob/Destroy has already
-	// QDEL_NULL'd ability_master — replace_shadekin_master() would then allocate
-	// a fresh screen atom inside the dying mob (my_mob ref + contents residency +
-	// ability_master var = an immortal cycle that pins the mob against GC).
+	// Only touch the owner's HUD when the component is removed from a LIVE mob
+	// (e.g. species change), not while owner itself is mid-deletion.
 	if(owner && !QDELING(owner))
 		if(owner.shadekin_display)
 			owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT //hide it
-		replace_shadekin_master()
 	LAZYCLEARLIST(active_dark_maws)
-	shadekin_abilities.Cut()
-	LAZYCLEARLIST(shadekin_ability_datums)
 	owner = null
 	. = ..()
 

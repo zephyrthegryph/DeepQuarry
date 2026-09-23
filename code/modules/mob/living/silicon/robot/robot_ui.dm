@@ -182,7 +182,7 @@
 			R.delete_images()
 			. = TRUE
 		if("quick_action_flashlight")
-			R.toggle_lights()
+			dq_use_ability(R, ABILITY_ID_ROBOT_TOGGLE_LIGHTS)
 			. = TRUE
 		if("quick_action_sensors")
 			R.sensor_mode()

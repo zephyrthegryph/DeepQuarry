@@ -528,6 +528,10 @@
 		return
 	if(!(amount in amounts))
 		return
+	if(!istext(chemical) || !LAZYACCESS(available_chemicals, chemical))
+		log_admin("[key_name(user)] attempted to inject non-available reagent '[chemical]' via [src] at [AREACOORD(src)]")
+		message_admins("[key_name_admin(user)] attempted to inject non-available reagent '[html_encode("[chemical]")]' via [src].")
+		return
 
 	if(occupant && occupant.reagents)
 		if(occupant.reagents.get_reagent_amount(chemical) + amount <= max_chem)

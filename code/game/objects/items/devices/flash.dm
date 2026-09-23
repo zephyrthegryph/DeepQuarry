@@ -215,7 +215,7 @@
 		return FALSE
 	if(target.is_incorporeal()) // SHADEEEKINNNNNNN
 		return FALSE
-	if(FLASHPROOF in target.mutations)
+	if(target.has_mutation(FLASHPROOF))
 		return FALSE
 	var/flash_strength = 5
 	var/flash_burn = 0

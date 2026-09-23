@@ -142,7 +142,7 @@
 /mob/living/carbon/AirborneContractDisease(datum/disease/D, force_spread)
 	if(internal)
 		return
-	if(mNobreath in mutations)
+	if(has_mutation(mNobreath))
 		return
 	..()
 

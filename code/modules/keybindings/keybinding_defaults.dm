@@ -108,6 +108,16 @@
 	. += list(list(INTERACTION_MENU_BINDING, "Interaction menu (hovered or in front)", KEYBIND_CAT_INTERACTION, ".input-menu", null, null))
 	for(var/category in INTERACTION_CATEGORIES)
 		. += list(list(INTERACTION_CATEGORY_BINDING(category), "[capitalize(category)] (hovered or in front)", KEYBIND_CAT_INTERACTION, ".input-category [category]", null, null))
+	// Abilities (doc/rewrite/rules.md §5): one row per declared ability, unbound
+	// by default. Whether it's usable right now (component, state, cost) is
+	// checked when the key is pressed, not here. Reads `initial()` rather than
+	// the GLOB.interactions_by_type singleton: global var init order between
+	// the two lists isn't guaranteed, but compile-time initial values are
+	// always available.
+	for(var/datum/interaction/ability/path as anything in subtypesof(/datum/interaction/ability))
+		if(!initial(path.id))
+			continue
+		. += list(list(ABILITY_KEYBIND(initial(path.id)), initial(path.name), KEYBIND_CAT_ABILITIES, ".use-ability [initial(path.id)]", null, null))
 
 #undef KB_BOTH
 #undef KB_HUMAN

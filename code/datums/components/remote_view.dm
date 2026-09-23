@@ -369,7 +369,7 @@
 	if(!host_mob)
 		return
 	var/mob/remote_mob = remote_view_target
-	if(host_mob.stat == CONSCIOUS && (mRemote in host_mob.mutations) && remote_mob && remote_mob.stat == CONSCIOUS)
+	if(host_mob.stat == CONSCIOUS && (host_mob.has_mutation(mRemote)) && remote_mob && remote_mob.stat == CONSCIOUS)
 		return
 	end_view()
 	qdel(src)
