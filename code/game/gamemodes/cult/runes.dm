@@ -472,7 +472,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	D.r_eyes = 200
 	D.g_eyes = 200
 	D.update_eyes()
-	D.all_underwear.Cut()
+	LAZYCLEARLIST(D.all_underwear)
 	D.key = ghost.key
 	GLOB.cult.add_antagonist(D.mind)
 

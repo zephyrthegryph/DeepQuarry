@@ -13,12 +13,12 @@
 			continue
 		new_fullness[undergarment_class.name] = -1 * round(-1 * new_fullness[undergarment_class.name]) // Doing a ceiling the only way BYOND knows how I guess
 		new_fullness[undergarment_class.name] = (min(2, new_fullness[undergarment_class.name]) - 2) * -1 //Complicated stuff to get it correctly aligned with the expected TRUE/FALSE
-		var/datum/category_item/underwear/UWI = all_underwear[undergarment_class.name]
+		var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, undergarment_class.name)
 		if(!UWI || UWI.name == "None")
 			//Welllll okay then. If the former then something went wrong, if None was selected then...
 			if(istype(undergarment_class.items_by_name[new_fullness[undergarment_class.name + "-ifnone"]], /datum/category_item/underwear))
 				UWI = undergarment_class.items_by_name[new_fullness[undergarment_class.name + "-ifnone"]]
-				all_underwear[undergarment_class.name] = UWI
+				LAZYSET(all_underwear, undergarment_class.name, UWI)
 		if(UWI && UWI.has_color && new_fullness[undergarment_class.name + "-color"])
 			all_underwear_metadata[undergarment_class.name]["[GLOB.gear_tweak_free_color_choice]"] = new_fullness[undergarment_class.name + "-color"]
 		if(UWI && UWI.name != "None" && hide_underwear[undergarment_class.name] != new_fullness[undergarment_class.name])

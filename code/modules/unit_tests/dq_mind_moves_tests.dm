@@ -184,12 +184,12 @@
 /datum/unit_test/dq_mind_sleeve_character_from_mind/Run()
 	var/mob/living/carbon/human/donor = allocate(/mob/living/carbon/human)
 	dq_test_give_mind(donor, "Body Donor")
-	donor.flavor_texts["general"] = "donor flavour"
+	LAZYSET(donor.flavor_texts, "general", "donor flavour")
 
 	var/mob/living/carbon/human/traveller = allocate(/mob/living/carbon/human)
 	var/datum/mind/M = dq_test_give_mind(traveller, "Traveller")
 	var/datum/character_identity/I = M.identity
-	I.flavor_texts["general"] = "traveller flavour"
+	LAZYSET(I.flavor_texts, "general", "traveller flavour")
 	traveller.add_language(LANGUAGE_SIGN)
 	traveller.add_modifier(/datum/modifier/no_borg)
 	TEST_ASSERT(I.has_genetic_modifier(/datum/modifier/no_borg), "setup: the persistent trait is the character's")

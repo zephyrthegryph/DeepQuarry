@@ -430,7 +430,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		for(var/category in all_underwear)
 			if(hide_underwear[category])
 				continue
-			var/datum/category_item/underwear/UWI = all_underwear[category]
+			var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, category)
 			var/image/wear = UWI.generate_image(all_underwear_metadata[category], layer = BODY_LAYER+UNDERWEAR_LAYER, digitigrade = digitigrade)
 			overlays_standing[UNDERWEAR_LAYER] += wear
 
