@@ -530,7 +530,13 @@ pub const OBSERVATION_STRIDE: usize = 15;
 const _: () = assert!(PIPE_BASE == 1 << 21 && TURF_BASE == 1 << 22);
 const PRESSURE_DIRTY_EPSILON: f32 = 0.5;
 const TEMPERATURE_DIRTY_EPSILON: f32 = 0.5;
-const COMPOSITION_DIRTY_EPSILON: f32 = 0.01;
+/// Total moles across every species, matching the settled/revision bands in
+/// `cell.rs` (`SETTLED_MOLES`, `REVISION_MOLES`). Checked against the sum of
+/// per-species drift rather than any one species crossing it (below), or
+/// settling noise spread thinly across several trace gases in a large idle
+/// mixture racks up spurious composition-dirty flags one species at a time
+/// even though the mixture as a whole is not meaningfully changing.
+const COMPOSITION_DIRTY_EPSILON: f32 = 0.05;
 use crate::gas::{
 	GAS_CHANGE_COMPOSITION as CHANGE_COMPOSITION, GAS_CHANGE_PRESSURE as CHANGE_PRESSURE,
 	GAS_CHANGE_TEMPERATURE as CHANGE_TEMPERATURE,
@@ -560,12 +566,13 @@ impl Signature {
 		if (self.temperature - after.temperature).abs() >= TEMPERATURE_DIRTY_EPSILON {
 			mask |= CHANGE_TEMPERATURE;
 		}
-		if self
+		let moles_drift: f32 = self
 			.moles
 			.iter()
 			.zip(&after.moles)
-			.any(|(a, b)| (a - b).abs() >= COMPOSITION_DIRTY_EPSILON)
-		{
+			.map(|(a, b)| (a - b).abs())
+			.sum();
+		if moles_drift >= COMPOSITION_DIRTY_EPSILON {
 			mask |= CHANGE_COMPOSITION;
 		}
 		mask
