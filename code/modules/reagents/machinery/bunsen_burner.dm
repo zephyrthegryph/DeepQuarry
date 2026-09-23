@@ -2,7 +2,6 @@
 	maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_WRENCH
 	name = "bunsen burner"
 	desc = "A small, self-heating device designed for bringing chemical mixtures to a boil."
-	description_info = "Place a beaker into it to begin heating. Reagents will be distilled over time as the mixture heats up. The bunsen burner is only capable of heating reagents up to 600c, and the atmoshere around it will affect what reactions are possible."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bunsen0"
 	var/current_temp = T0C
@@ -13,18 +12,31 @@
 	. = ..()
 	create_reagents(1, /datum/reagents/distilling) //  resizes based on the boiling container
 
-/obj/machinery/bunsen_burner/attackby(obj/item/W, mob/user)
+/obj/machinery/bunsen_burner/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/bunsen_burner_place_container,
+		/datum/interaction/machine_hand/bunsen_burner_remove_container,
+	)
+	..()
+
+/datum/interaction/machine_item/bunsen_burner_place_container
+	id = "bunsen_burner_place_container"
+	name = "Place container"
+	held_type = /obj/item
+	effect = /obj/machinery/bunsen_burner/proc/interaction_place_container
+
+/obj/machinery/bunsen_burner/proc/interaction_place_container(mob/user, obj/item/W, datum/interaction/interaction)
 	add_fingerprint(user)
 	// Handle container
 	if(!istype(W, /obj/item/reagent_containers))
 		to_chat(user, span_notice("You can't put \the [W] onto \the [src]."))
-		return
+		return TRUE
 	if(!anchored)
 		to_chat(user, span_notice("\The [src] must be secured down with a wrench."))
-		return
+		return TRUE
 	if(held_container)
 		to_chat(user, span_notice("You must remove \the [held_container] before you can place another container on \the [src]."))
-		return
+		return TRUE
 	// A new hand touches the beacon
 	user.drop_item(src)
 	held_container = W
@@ -35,6 +47,7 @@
 		start_boiling()
 	else
 		update_icon()
+	return TRUE
 
 /obj/machinery/bunsen_burner/wrench_act(mob/user, obj/item/tool)
 	. = ..()
@@ -60,13 +73,17 @@
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/bunsen_burner/attack_hand(mob/user)
-	if(..())
-		return
+/datum/interaction/machine_hand/bunsen_burner_remove_container
+	id = "bunsen_burner_remove_container"
+	name = "Remove container"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/bunsen_burner/proc/interaction_remove_container
+
+/obj/machinery/bunsen_burner/proc/interaction_remove_container(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(!held_container)
 		to_chat(user, span_notice("There is nothing on \the [src]."))
-		return
+		return TRUE
 
 	// Take it off
 	to_chat(user, span_notice("You remove \the [held_container] from \the [src]."))
@@ -77,8 +94,9 @@
 	// Removed beaker, so kill processing
 	if(heating)
 		end_boil()
-		return
+		return TRUE
 	update_icon()
+	return TRUE
 
 /obj/machinery/bunsen_burner/proc/start_boiling()
 	if(!held_container)

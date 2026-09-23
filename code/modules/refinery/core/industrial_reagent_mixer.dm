@@ -77,24 +77,33 @@
 	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
 	add_overlay(arm)
 
-/obj/machinery/reagent_refinery/mixer/attack_hand(mob/user)
-	set_rotation()
+/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/mixer_use,
+		/datum/interaction/machine_verb/mixer_set_rotation,
+	)
+	..()
 
-/obj/machinery/reagent_refinery/mixer/verb/set_rotation()
-	PRIVATE_PROC(TRUE)
-	set name = "Set Mixer Rotation"
-	set category = "Object"
-	set src in view(1)
+/// Old attack_hand: dispatched straight to the set_rotation verb, never called ..().
+/datum/interaction/machine_hand/ungated/mixer_use
+	id = "mixer_use"
+	name = "Use"
+	effect = /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation
 
-	if (usr.stat || usr.restrained())
-		return
+/// Old object verb: `set src in view(1)`.
+/datum/interaction/machine_verb/mixer_set_rotation
+	id = "mixer_set_rotation"
+	name = "Set Mixer Rotation"
+	effect = /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation
 
+/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(mob/user, obj/item/held, datum/interaction/interaction)
 	if(mixer_rotation_rate > 0)
 		mixer_rotation_rate = -45
-		to_chat(usr,span_notice("You set \the [src] to rotate counter clockwise."))
+		to_chat(user,span_notice("You set \the [src] to rotate counter clockwise."))
 	else
 		mixer_rotation_rate = 45
-		to_chat(usr,span_notice("You set \the [src] to rotate clockwise."))
+		to_chat(user,span_notice("You set \the [src] to rotate clockwise."))
+	return TRUE
 
 
 /obj/machinery/reagent_refinery/mixer/examine(mob/user, infix, suffix)

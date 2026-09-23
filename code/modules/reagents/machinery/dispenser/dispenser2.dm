@@ -75,34 +75,51 @@
 	cartridges -= label
 	SStgui.update_uis(src)
 
-/obj/machinery/chemical_dispenser/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/reagent_containers/chem_disp_cartridge))
-		add_cartridge(W, user)
+/obj/machinery/chemical_dispenser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/chemical_dispenser_add_cartridge,
+		/datum/interaction/machine_item/chemical_dispenser_set_container,
+		/datum/interaction/machine_hand/ungated/chemical_dispenser_use,
+	)
+	..()
 
-	else if(istype(W, /obj/item/reagent_containers/glass) || istype(W, /obj/item/reagent_containers/food))
-		if(container)
-			to_chat(user, span_warning("There is already \a [container] on \the [src]!"))
-			return
+/datum/interaction/machine_item/chemical_dispenser_add_cartridge
+	id = "chemical_dispenser_add_cartridge"
+	name = "Insert cartridge"
+	held_type = /obj/item/reagent_containers/chem_disp_cartridge
+	effect = /obj/machinery/chemical_dispenser/proc/interaction_add_cartridge
 
-		var/obj/item/reagent_containers/RC = W
+/obj/machinery/chemical_dispenser/proc/interaction_add_cartridge(mob/user, obj/item/W, datum/interaction/interaction)
+	add_cartridge(W, user)
+	return TRUE
 
-		if(!accept_drinking && istype(RC,/obj/item/reagent_containers/food))
-			to_chat(user, span_warning("This machine only accepts beakers!"))
-			return
+/datum/interaction/machine_item/chemical_dispenser_set_container
+	id = "chemical_dispenser_set_container"
+	name = "Set container"
+	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
+	effect = /obj/machinery/chemical_dispenser/proc/interaction_set_container
 
-		if(!RC.is_open_container())
-			to_chat(user, span_warning("You don't see how \the [src] could dispense reagents into \the [RC]."))
-			return
-		if(istype(RC, /obj/item/reagent_containers/glass/cooler_bottle))
-			to_chat(user, span_warning("You don't see how \the [RC] could fit into \the [src]."))
-			return
+/obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
+	if(container)
+		to_chat(user, span_warning("There is already \a [container] on \the [src]!"))
+		return TRUE
 
-		container =  RC
-		user.drop_from_inventory(RC)
-		RC.loc = src
-		to_chat(user, span_notice("You set \the [RC] on \the [src]."))
-	else
-		return ..()
+	if(!accept_drinking && istype(RC,/obj/item/reagent_containers/food))
+		to_chat(user, span_warning("This machine only accepts beakers!"))
+		return TRUE
+
+	if(!RC.is_open_container())
+		to_chat(user, span_warning("You don't see how \the [src] could dispense reagents into \the [RC]."))
+		return TRUE
+	if(istype(RC, /obj/item/reagent_containers/glass/cooler_bottle))
+		to_chat(user, span_warning("You don't see how \the [RC] could fit into \the [src]."))
+		return TRUE
+
+	container =  RC
+	user.drop_from_inventory(RC)
+	RC.loc = src
+	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
+	return TRUE
 
 /obj/machinery/chemical_dispenser/wrench_act(mob/user, obj/item/tool)
 	return ..()
@@ -287,7 +304,13 @@
 		return
 	tgui_interact(user)
 
-/obj/machinery/chemical_dispenser/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/chemical_dispenser_use
+	id = "chemical_dispenser_use"
+	name = "Use"
+	effect = /obj/machinery/chemical_dispenser/proc/interaction_use
+
+/obj/machinery/chemical_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & BROKEN)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE

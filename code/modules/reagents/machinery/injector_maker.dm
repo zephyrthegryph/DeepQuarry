@@ -52,91 +52,149 @@
 	return
 
 
-/obj/machinery/injector_maker/attackby(obj/item/O, mob/user)
-	if(istype(O,/obj/item/reagent_containers/glass) || \
-		istype(O,/obj/item/reagent_containers/food/drinks/glass2) || \
-		istype(O,/obj/item/reagent_containers/food/drinks/shaker))
+/obj/machinery/injector_maker/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/injector_maker_add_beaker,
+		/datum/interaction/machine_item/injector_maker_add_small_injector,
+		/datum/interaction/machine_item/injector_maker_add_large_injector,
+		/datum/interaction/machine_item/injector_maker_add_plastic,
+		/datum/interaction/machine_item/injector_maker_swallow,
+		/datum/interaction/machine_drag/injector_maker_add_plastic,
+		/datum/interaction/machine_alt/injector_maker_eject_beaker,
+		/datum/interaction/machine_hand/ungated/injector_maker_use,
+	)
+	..()
 
-		if (beaker)
-			return 1
-		else
-			src.beaker =  O
-			user.drop_item()
-			O.loc = src
-			update_icon()
-			return 0
+/datum/interaction/machine_item/injector_maker_add_beaker
+	id = "injector_maker_add_beaker"
+	name = "Add container"
+	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker)
+	effect = /obj/machinery/injector_maker/proc/interaction_add_beaker
 
+/obj/machinery/injector_maker/proc/interaction_add_beaker(mob/user, obj/item/O, datum/interaction/interaction)
+	if (beaker)
+		return TRUE
+	beaker = O
+	user.drop_item()
+	O.loc = src
+	update_icon()
+	return TRUE
 
+/datum/interaction/machine_item/injector_maker_add_small_injector
+	id = "injector_maker_add_small_injector"
+	name = "Add injector"
+	held_type = /obj/item/reagent_containers/hypospray/autoinjector/empty
+	effect = /obj/machinery/injector_maker/proc/interaction_add_small_injector
 
-	if(istype(O,/obj/item/reagent_containers/hypospray/autoinjector/empty))
-		var/obj/item/reagent_containers/hypospray/autoinjector/empty/E = O
-		if(src.count_small_injector >= src.capacity_small_injector)
-			to_chat(user, span_warning("Storage is full! It can only hold [capacity_small_injector]"))
-			return
-		if(E.reagents.total_volume > 0)
-			to_chat(user, span_warning("You cannot put a filled injector into the machine!"))
-			return
-		src.count_small_injector = src.count_small_injector + 1
-		qdel(E)
+/obj/machinery/injector_maker/proc/interaction_add_small_injector(mob/user, obj/item/reagent_containers/hypospray/autoinjector/empty/E, datum/interaction/interaction)
+	if(count_small_injector >= capacity_small_injector)
+		to_chat(user, span_warning("Storage is full! It can only hold [capacity_small_injector]"))
+		return TRUE
+	if(E.reagents.total_volume > 0)
+		to_chat(user, span_warning("You cannot put a filled injector into the machine!"))
+		return TRUE
+	count_small_injector = count_small_injector + 1
+	qdel(E)
+	update_icon()
+	return TRUE
+
+/datum/interaction/machine_item/injector_maker_add_large_injector
+	id = "injector_maker_add_large_injector"
+	name = "Add injector"
+	held_type = /obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty
+	effect = /obj/machinery/injector_maker/proc/interaction_add_large_injector
+
+/obj/machinery/injector_maker/proc/interaction_add_large_injector(mob/user, obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty/E, datum/interaction/interaction)
+	if(count_large_injector >= capacity_large_injector)
+		to_chat(user, span_warning("Storage is full! It can only hold [capacity_large_injector]"))
+		return TRUE
+	if(E.reagents.total_volume > 0)
+		to_chat(user, span_warning("You cannot put a filled injector into the machine!"))
+		return TRUE
+	count_large_injector = count_large_injector + 1
+	qdel(E)
+	update_icon()
+	return TRUE
+
+/datum/interaction/machine_item/injector_maker_add_plastic
+	id = "injector_maker_add_plastic"
+	name = "Add plastic"
+	held_type = /obj/item/stack/material
+	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/injector_maker/proc/is_plastic_stack, null))
+	effect = /obj/machinery/injector_maker/proc/interaction_add_plastic
+
+/obj/machinery/injector_maker/proc/is_plastic_stack(mob/actor, atom/target, obj/item/held)
+	return held.get_material_name() == MAT_PLASTIC
+
+/obj/machinery/injector_maker/proc/interaction_add_plastic(mob/user, obj/item/stack/S, datum/interaction/interaction)
+	var/input_amount = tgui_input_number(user, "How many sheets would you like to add?", "Add plastic", 0, S.get_amount())
+	if(input_amount == 0)
+		return TRUE
+	var/plastic_input = input_amount * value_plastic
+	var/free_space = capacity_plastic - count_plastic
+	if(plastic_input > free_space)
+		to_chat(user, span_warning("Storage is full! There is only [free_space] units worth of space left!"))
+	else
+		S.use(input_amount)
+		count_plastic = count_plastic + plastic_input
 		update_icon()
-	if(istype(O,/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty))
-		var/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty/E = O
-		if(src.count_large_injector >= src.capacity_large_injector)
-			to_chat(user, span_warning("Storage is full! It can only hold [capacity_large_injector]"))
-			return
-		if(E.reagents.total_volume > 0)
-			to_chat(user, span_warning("You cannot put a filled injector into the machine!"))
-			return
-		src.count_large_injector = src.count_large_injector + 1
-		qdel(E)
+	return TRUE
+
+/// Old attackby never called ..(), so any other item (or a non-plastic stack) is swallowed silently.
+/datum/interaction/machine_item/injector_maker_swallow
+	id = "injector_maker_swallow"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/injector_maker/proc/interaction_swallow
+
+/obj/machinery/injector_maker/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
+
+/datum/interaction/machine_drag/injector_maker_add_plastic
+	id = "injector_maker_drag_add_plastic"
+	name = "Add plastic"
+	held_type = /obj/item/stack/material/plastic
+	effect = /obj/machinery/injector_maker/proc/interaction_drag_add_plastic
+
+/// The old adjacency/consciousness checks were silent (no message), so they stay in the effect.
+/obj/machinery/injector_maker/proc/interaction_drag_add_plastic(mob/user, obj/item/stack/material/plastic/plastic_stack, datum/interaction/interaction)
+	if(!isliving(user) || user.stat || !Adjacent(user) || !Adjacent(plastic_stack))
+		return TRUE
+	var/input_amount = tgui_input_number(user, "How many sheets would you like to add?", "Add plastic", 0, plastic_stack.get_amount())
+	if(input_amount == 0)
+		return TRUE
+	if(!isliving(user) || user.stat || !Adjacent(user) || !Adjacent(plastic_stack))
+		return TRUE
+	var/plastic_input = input_amount * value_plastic
+	var/free_space = capacity_plastic - count_plastic
+	if(plastic_input > free_space)
+		to_chat(user, span_warning("Storage is full! There is only [free_space] units worth of space left!"))
+	else
+		plastic_stack.use(input_amount)
+		count_plastic = count_plastic + plastic_input
 		update_icon()
+	return TRUE
 
+/// Old click_alt always ran the base first (`. = ..()`), then conditionally ejected the
+/// beaker without changing the return. The effect declines (FALSE) so the base alt-click
+/// still runs; it only does anything extra when a beaker is present.
+/datum/interaction/machine_alt/injector_maker_eject_beaker
+	id = "injector_maker_eject_beaker"
+	name = "Eject beaker"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/injector_maker/proc/has_beaker, null))
+	effect = /obj/machinery/injector_maker/proc/interaction_eject_beaker
 
-	if(istype(O,/obj/item/stack/material))
-		if(O.get_material_name() == MAT_PLASTIC)
-			var/obj/item/stack/S = O
-			var/input_amount = tgui_input_number(user, "How many sheets would you like to add?", "Add plastic", 0, S.get_amount())
-			if(input_amount == 0)
-				return
-			var/plastic_input = input_amount * value_plastic
-			var/free_space = capacity_plastic - src.count_plastic
-			if(plastic_input > free_space)
-				to_chat(user, span_warning("Storage is full! There is only [free_space] units worth of space left!"))
-			else
-				S.use(input_amount)
-				src.count_plastic = src.count_plastic + plastic_input
-				update_icon()
+/obj/machinery/injector_maker/proc/has_beaker(mob/actor, atom/target, obj/item/held)
+	return !!beaker
 
-
-/obj/machinery/injector_maker/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	if(!isliving(user) || user.stat || !Adjacent(user) || !Adjacent(dropping))
-		return
-
-	if(istype(dropping, /obj/item/stack/material/plastic))
-		var/obj/item/stack/material/plastic/plastic_stack = dropping
-		var/input_amount = tgui_input_number(user, "How many sheets would you like to add?", "Add plastic", 0, plastic_stack.get_amount())
-		if(input_amount == 0)
-			return
-		if(!isliving(user) || user.stat || !Adjacent(user) || !Adjacent(dropping))
-			return
-		var/plastic_input = input_amount * value_plastic
-		var/free_space = capacity_plastic - count_plastic
-		if(plastic_input > free_space)
-			to_chat(user, span_warning("Storage is full! There is only [free_space] units worth of space left!"))
-		else
-			plastic_stack.use(input_amount)
-			src.count_plastic = src.count_plastic + plastic_input
-			update_icon()
-
-/obj/machinery/injector_maker/click_alt(mob/user)
-	. = ..()
-	if(beaker)
-		if(!user.incapacitated() && Adjacent(user))
-			user.put_in_hands(beaker)
-		else
-			beaker.forceMove(drop_location())
-		src.beaker = null
-		update_icon()
+/obj/machinery/injector_maker/proc/interaction_eject_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.incapacitated() && Adjacent(user))
+		user.put_in_hands(beaker)
+	else
+		beaker.forceMove(drop_location())
+	beaker = null
+	update_icon()
+	return FALSE
 
 /obj/machinery/injector_maker/examine(mob/user)
 	. = ..()
@@ -159,8 +217,15 @@
 			for(var/datum/reagent/R in beaker.reagents.reagent_list)
 				. += span_notice("- [R.volume] units of [R.name].")
 
-/obj/machinery/injector_maker/attack_hand(mob/user)
+/// Old attack_hand had no gate at all.
+/datum/interaction/machine_hand/ungated/injector_maker_use
+	id = "injector_maker_use"
+	name = "Use"
+	effect = /obj/machinery/injector_maker/proc/interaction_use
+
+/obj/machinery/injector_maker/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
+	return TRUE
 
 /obj/machinery/injector_maker/interact(mob/user)
 	if(user.incapacitated() || !beaker)

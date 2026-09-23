@@ -11,35 +11,51 @@
 	var/processing = FALSE // So I heard you like processing.
 	var/list/to_be_processed = list()
 	var/monkeys_recycled = 0
-	description_info = "Clickdrag dead slimes or monkeys to it to insert them.  It will make a new monkey cube for every four monkeys it processes."
 
 /obj/item/circuitboard/processor
 	name = T_BOARD("slime processor")
 	build_path = /obj/machinery/processor
 
-/obj/machinery/processor/attack_hand(mob/living/user)
+/obj/machinery/processor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/processor_start,
+		/datum/interaction/machine_verb/processor_eject,
+		/datum/interaction/machine_drag/processor_insert,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/processor_start
+	id = "processor_start"
+	name = "Start"
+	effect = /obj/machinery/processor/proc/interaction_start
+
+/obj/machinery/processor/proc/interaction_start(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(processing)
 		to_chat(user, span_warning("The processor is in the process of processing!"))
-		return
+		return TRUE
 	if(to_be_processed.len)
 		spawn(1)
 			begin_processing()
 	else
 		to_chat(user, span_warning("The processor is empty."))
 		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 1)
-		return
+		return TRUE
+	return TRUE
 
 // Verb to remove everything.
-/obj/machinery/processor/verb/eject()
-	set category = "Object"
-	set name = "Eject Processor"
-	set src in oview(1)
+/datum/interaction/machine_verb/processor_eject
+	id = "processor_eject"
+	name = "Eject Processor"
+	category = INTERACTION_CAT_EJECT
+	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
+	effect = /obj/machinery/processor/proc/interaction_eject
 
-	if(usr.stat || !usr.canmove || usr.restrained())
-		return
+/obj/machinery/processor/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat || !user.canmove || user.restrained())
+		return TRUE
 	empty()
-	add_fingerprint(usr)
-	return
+	add_fingerprint(user)
+	return TRUE
 
 // Ejects all the things out of the machine.
 /obj/machinery/processor/proc/empty()
@@ -111,7 +127,14 @@
 		return TRUE
 	return FALSE
 
-/obj/machinery/processor/MouseDrop_T(atom/movable/AM, mob/living/user)
+/datum/interaction/machine_drag/processor_insert
+	id = "processor_insert"
+	name = "Insert"
+	effect = /obj/machinery/processor/proc/interaction_insert
+
+/obj/machinery/processor/proc/interaction_insert(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
+	var/atom/movable/AM = dropping
 	if(user.stat || user.incapacitated(INCAPACITATION_DISABLED) || !istype(user))
-		return
+		return TRUE
 	insert(AM, user)
+	return TRUE

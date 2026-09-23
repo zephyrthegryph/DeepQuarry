@@ -21,9 +21,21 @@
 		stack_trace(span_danger("Warning: Stacking machine console at [src.x], [src.y], [src.z] could not find its machine!"))
 		return INITIALIZE_HINT_QDEL
 
-/obj/machinery/mineral/stacking_unit_console/attack_hand(mob/user)
+/obj/machinery/mineral/stacking_unit_console/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/stacking_console_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/stacking_console_use
+	id = "stacking_console_use"
+	name = "Use"
+	effect = /obj/machinery/mineral/stacking_unit_console/proc/interaction_use
+
+/obj/machinery/mineral/stacking_unit_console/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/mineral/stacking_unit_console/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

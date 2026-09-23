@@ -236,11 +236,26 @@
 		update_icon()
 		system_error("Resources depleted.")
 
-/obj/machinery/mining/drill/attackby(obj/item/O as obj, mob/user as mob)
+/obj/machinery/mining/drill/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/drill_attackby,
+		/datum/interaction/machine_hand/ungated/drill_use,
+		/datum/interaction/machine_verb/drill_unload,
+	)
+	..()
+
+/datum/interaction/machine_item/drill_attackby
+	id = "drill_attackby"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/mining/drill/proc/interaction_attackby
+
+/obj/machinery/mining/drill/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!active)
 		if(default_part_replacement(user, O))
-			return
-	if(!panel_open || active) return ..()
+			return TRUE
+	if(!panel_open || active)
+		return FALSE
 
 	if(istype(O, /obj/item/cell))
 		if(cell)
@@ -251,8 +266,8 @@
 			cell = O
 			component_parts += O
 			balloon_alert(user, "you install \the [O]")
-		return
-	..()
+		return TRUE
+	return FALSE
 
 /obj/machinery/mining/drill/multitool_act(mob/user, obj/item/tool)
 	if(active)
@@ -276,7 +291,12 @@
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
-/obj/machinery/mining/drill/attack_hand(mob/user as mob)
+/datum/interaction/machine_hand/ungated/drill_use
+	id = "drill_use"
+	name = "Use"
+	effect = /obj/machinery/mining/drill/proc/interaction_use
+
+/obj/machinery/mining/drill/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	check_supports()
 	RefreshParts()
 
@@ -285,14 +305,14 @@
 		user.put_in_hands(cell)
 		component_parts -= cell
 		cell = null
-		return
+		return TRUE
 	else if(need_player_check)
 		balloon_alert(user, "manual override hit, the drill's error checking resets.")
 		need_player_check = 0
 		if(anchored)
 			get_resource_field()
 		update_icon()
-		return
+		return TRUE
 	else if(supported && !panel_open)
 		if(use_cell_power())
 			active = !active
@@ -309,6 +329,7 @@
 		to_chat(user, span_notice("Turning on a piece of industrial machinery without sufficient bracing or wires exposed is a bad idea."))
 
 	update_icon()
+	return TRUE
 
 /obj/machinery/mining/drill/update_icon()
 	if(need_player_check)
@@ -423,13 +444,13 @@
 		return 1
 	return 0
 
-/obj/machinery/mining/drill/verb/unload()
-	set name = "Unload Drill"
-	set category = "Object"
-	set src in oview(1)
+/datum/interaction/machine_verb/drill_unload
+	id = "drill_unload"
+	name = "Unload Drill"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/mining/drill/proc/interaction_unload
 
-	if(usr.stat) return
-
+/obj/machinery/mining/drill/proc/interaction_unload(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/structure/ore_box/B = locate() in orange(1)
 	if(B)
 		for(var/ore in stored_ore)
@@ -438,9 +459,10 @@
 				B.stored_ore[ore] += ore_amount 	// Add the ore to the machine.
 				stored_ore[ore] = 0 				// Set the value of the ore in the satchel to 0.
 				current_capacity = 0				// Set the amount of ore in the drill to 0.
-		balloon_alert(usr, "onloaded cache into the ore box.")
+		balloon_alert(user, "onloaded cache into the ore box.")
 	else
-		balloon_alert(usr, "move an ore box to the drill before unloading it.")
+		balloon_alert(user, "move an ore box to the drill before unloading it.")
+	return TRUE
 
 
 /obj/machinery/mining/brace
@@ -469,14 +491,26 @@
 	for(var/obj/item/stock_parts/manipulator/M in component_parts)
 		brace_tier += M.rating
 
-/obj/machinery/mining/brace/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/mining/brace/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/brace_attackby,
+	)
+	..()
+
+/datum/interaction/machine_item/brace_attackby
+	id = "brace_attackby"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/mining/brace/proc/interaction_attackby
+
+/obj/machinery/mining/brace/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
 	if(connected && connected.active)
 		balloon_alert(user, "you can't work with the brace of a running drill.")
-		return
+		return TRUE
 
 	if(default_part_replacement(user,W))
-		return
-	return ..()
+		return TRUE
+	return FALSE
 
 /obj/machinery/mining/brace/screwdriver_act(mob/user, obj/item/tool)
 	if(connected?.active)

@@ -48,44 +48,66 @@
 	. = ..()
 	create_reagents(COOLANT_MAX)
 
-/obj/machinery/radiocarbon_spectrometer/attackby(obj/I, mob/user)
+/obj/machinery/radiocarbon_spectrometer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/radiocarbon_spectrometer_use_item,
+		/datum/interaction/machine_hand/ungated/radiocarbon_spectrometer_use,
+	)
+	..()
+
+/// The old attackby: never called ..(), handled reagent containers or loaded a scan sample.
+/datum/interaction/machine_item/radiocarbon_spectrometer_use_item
+	id = "radiocarbon_spectrometer_use_item"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item
+
+/obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(scanning)
 		to_chat(user, span_warning("You can't do that while [src] is scanning!"))
-		return
+		return TRUE
 
 	if(istype(I, /obj/item/reagent_containers/glass))
 		var/obj/item/reagent_containers/glass/G = I
 		if(!G.is_open_container())
-			return
+			return TRUE
 		var/choice = tgui_alert(user, "What do you want to do with the container?","Radiometric Scanner",list("Add water","Empty water","Scan container"))
 		if(!choice)
-			return
+			return TRUE
 		if(choice == "Add water")
 			if(!G.reagents.has_reagent(REAGENT_ID_WATER))
 				to_chat(user, span_danger("No water found in beaker."))
-				return
+				return TRUE
 			var/trans = G.reagents.trans_id_to(src, REAGENT_ID_WATER, G.amount_per_transfer_from_this)
 			to_chat(user, span_info("You transfer [trans ? trans : 0]u of water into [src]."))
-			return
+			return TRUE
 		else if(choice == "Empty water")
 			var/amount_transferred = min(G.reagents.maximum_volume - G.reagents.total_volume, reagents.total_volume)
 			var/trans = reagents.trans_to(G, amount_transferred)
 			to_chat(user, span_info("You remove [trans ? trans : 0]u of water from [src]."))
-			return
+			return TRUE
 		// fall through
 
 	if(scanned_item)
 		to_chat(user, span_warning("[src] already has \a [scanned_item] inside!"))
-		return
+		return TRUE
 
 	if(!user.unEquip(I, target = src))
-		return
+		return TRUE
 
 	scanned_item = I
 	to_chat(user, span_notice("You put [I] into [src]."))
+	return TRUE
 
-/obj/machinery/radiocarbon_spectrometer/attack_hand(mob/user)
+/// The old attack_hand: never called ..(), just opened the UI.
+/datum/interaction/machine_hand/ungated/radiocarbon_spectrometer_use
+	id = "radiocarbon_spectrometer_use"
+	name = "Use"
+	effect = /obj/machinery/radiocarbon_spectrometer/proc/interaction_use
+
+/obj/machinery/radiocarbon_spectrometer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/radiocarbon_spectrometer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

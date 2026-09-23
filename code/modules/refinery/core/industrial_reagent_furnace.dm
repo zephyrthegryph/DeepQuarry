@@ -131,17 +131,34 @@
 		filling.color = beaker.reagents.get_color()
 		add_overlay(filling)
 
-/obj/machinery/reagent_refinery/furnace/attack_hand(mob/user)
-	set_filter()
+/obj/machinery/reagent_refinery/furnace/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/reagent_furnace_use,
+		/datum/interaction/machine_verb/reagent_furnace_set_filter,
+		/datum/interaction/machine_verb/reagent_furnace_flip,
+	)
+	..()
 
-/obj/machinery/reagent_refinery/furnace/verb/set_filter()
-	PRIVATE_PROC(TRUE)
-	set name = "Set Sintering Chemical"
-	set category = "Object"
-	set src in view(1)
+/// The old attack_hand: never called ..(), just invoked the "Set Sintering Chemical" verb.
+/datum/interaction/machine_hand/ungated/reagent_furnace_use
+	id = "reagent_furnace_use"
+	name = "Use"
+	effect = /obj/machinery/reagent_refinery/furnace/proc/interaction_use
 
-	if (usr.stat || usr.restrained())
-		return
+/obj/machinery/reagent_refinery/furnace/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_set_filter(user, held, interaction)
+	return TRUE
+
+/// The old "Set Sintering Chemical" object verb.
+/datum/interaction/machine_verb/reagent_furnace_set_filter
+	id = "reagent_furnace_set_filter"
+	name = "Set Sintering Chemical"
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/reagent_refinery/furnace/proc/interaction_set_filter
+
+/obj/machinery/reagent_refinery/furnace/proc/interaction_set_filter(mob/user, obj/item/held, datum/interaction/interaction)
+	if (user.stat || user.restrained())
+		return TRUE
 
 	// Get a list of reagents currently inside!
 	var/list/tgui_list = list("Disabled" = "","Bypass" = "-1")
@@ -170,27 +187,32 @@
 	else if(filter_reagent_id != "")
 		var/datum/reagent/R = SSchemistry.chemical_reagents[filter_reagent_id]
 		filter = "sintering [R.name]"
-	var/select = tgui_input_list(usr, "Select chemical to sinter. It is currently [filter].", "Chemical Select", tgui_list)
+	var/select = tgui_input_list(user, "Select chemical to sinter. It is currently [filter].", "Chemical Select", tgui_list)
 
-	if (usr.stat || usr.restrained())
-		return
+	if (user.stat || user.restrained())
+		return TRUE
 
 	// Select if possible
 	if(select && select != "")
 		filter_reagent_id = tgui_list[select]
 		beaker.reagents.clear_reagents()
 		update_icon()
+	return TRUE
 
-/obj/machinery/reagent_refinery/furnace/verb/flip_furnace()
-	set name = "Flip Furnace Direction"
-	set category = "Object"
-	set src in view(1)
+/// The old "Flip Furnace Direction" object verb.
+/datum/interaction/machine_verb/reagent_furnace_flip
+	id = "reagent_furnace_flip"
+	name = "Flip Furnace Direction"
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/reagent_refinery/furnace/proc/interaction_flip
 
-	if (usr.stat || usr.restrained() || anchored)
-		return
+/obj/machinery/reagent_refinery/furnace/proc/interaction_flip(mob/user, obj/item/held, datum/interaction/interaction)
+	if (user.stat || user.restrained() || anchored)
+		return TRUE
 
 	filter_side *= -1
 	update_icon()
+	return TRUE
 
 /obj/machinery/reagent_refinery/furnace/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

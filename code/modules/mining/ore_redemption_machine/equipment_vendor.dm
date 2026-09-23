@@ -186,10 +186,14 @@
 	else
 		icon_state = "[initial(icon_state)]-off"
 
-/obj/machinery/mineral/equipment_vendor/attack_hand(mob/user)
-	if(..())
-		return
-	tgui_interact(user)
+/obj/machinery/mineral/equipment_vendor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_item/equipment_vendor_voucher,
+		/datum/interaction/machine_item/equipment_vendor_insert_id,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/mineral/equipment_vendor/tgui_data(mob/user)
 	var/list/data = ..()
@@ -289,23 +293,34 @@
 	add_fingerprint()
 
 
-/obj/machinery/mineral/equipment_vendor/attackby(obj/item/I, mob/user, params)
-	if(default_part_replacement(user, I))
-		return
-	if(istype(I, /obj/item/mining_voucher))
-		if(!powered())
-			return
-		redeem_voucher(I, user)
-		return
-	if(istype(I,/obj/item/card/id))
-		if(!powered())
-			return
-		else if(!inserted_id && (user.unEquip(I) || isrobot(user)))
-			I.forceMove(src)
-			inserted_id = I
-			tgui_interact(user)
-		return
-	return ..()
+/// Old attackby: a mining voucher redeems its selection.
+/datum/interaction/machine_item/equipment_vendor_voucher
+	id = "equipment_vendor_voucher"
+	name = "Redeem voucher"
+	held_type = /obj/item/mining_voucher
+	effect = /obj/machinery/mineral/equipment_vendor/proc/interaction_voucher
+
+/obj/machinery/mineral/equipment_vendor/proc/interaction_voucher(mob/user, obj/item/I, datum/interaction/interaction)
+	if(!powered())
+		return TRUE
+	redeem_voucher(I, user)
+	return TRUE
+
+/// Old attackby: insert an ID card.
+/datum/interaction/machine_item/equipment_vendor_insert_id
+	id = "equipment_vendor_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id
+
+/obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id(mob/user, obj/item/I, datum/interaction/interaction)
+	if(!powered())
+		return TRUE
+	else if(!inserted_id && (user.unEquip(I) || isrobot(user)))
+		I.forceMove(src)
+		inserted_id = I
+		tgui_interact(user)
+	return TRUE
 
 /obj/machinery/mineral/equipment_vendor/screwdriver_act(mob/user, obj/item/tool)
 	return ..()

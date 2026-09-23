@@ -60,16 +60,21 @@
 	s.set_up(5, 1, src)
 	s.start()
 
-/obj/machinery/shield_gen/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/card/id))
-		var/obj/item/card/id/C = W
-		if((ACCESS_CAPTAIN in C.GetAccess()) || (ACCESS_SECURITY in C.GetAccess()) || (ACCESS_ENGINE in C.GetAccess()))
-			src.locked = !src.locked
-			to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
-		else
-			to_chat(user, span_red("Access denied."))
+/// Old attackby: swipe an ID to lock/unlock the controls.
+/datum/interaction/machine_item/shield_gen_swipe_id
+	id = "shield_gen_swipe_id"
+	name = "Swipe ID"
+	category = INTERACTION_CAT_LOCK
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/shield_gen/proc/interaction_swipe_id
+
+/obj/machinery/shield_gen/proc/interaction_swipe_id(mob/user, obj/item/card/id/C, datum/interaction/interaction)
+	if((ACCESS_CAPTAIN in C.GetAccess()) || (ACCESS_SECURITY in C.GetAccess()) || (ACCESS_ENGINE in C.GetAccess()))
+		src.locked = !src.locked
+		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
-		..()
+		to_chat(user, span_red("Access denied."))
+	return TRUE
 
 /obj/machinery/shield_gen/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored
@@ -91,10 +96,26 @@
 			capacitor.owned_gen = null
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/shield_gen/attack_hand(mob/user)
-	if(stat & (BROKEN))
-		return
+/obj/machinery/shield_gen/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shield_gen_swipe_id,
+		/datum/interaction/machine_hand/ungated/shield_gen_open_ui,
+	)
+	..()
+
+/// Old attack_hand (never called ..()): open the interface unless broken.
+/datum/interaction/machine_hand/ungated/shield_gen_open_ui
+	id = "shield_gen_open_ui"
+	name = "Use"
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/shield_gen/proc/shield_gen_not_broken, null))
+	effect = /obj/machinery/shield_gen/proc/interaction_open_ui
+
+/obj/machinery/shield_gen/proc/shield_gen_not_broken(mob/actor, atom/target, obj/item/held)
+	return !(stat & BROKEN)
+
+/obj/machinery/shield_gen/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/shield_gen/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

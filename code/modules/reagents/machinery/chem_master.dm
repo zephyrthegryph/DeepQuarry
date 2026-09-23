@@ -36,31 +36,50 @@
 /obj/machinery/chem_master/update_icon()
 	icon_state = "mixer[beaker ? "1" : "0"]"
 
-/obj/machinery/chem_master/attackby(obj/item/B as obj, mob/user as mob)
+/obj/machinery/chem_master/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/chem_master_load_beaker,
+		/datum/interaction/machine_item/chem_master_load_pill_bottle,
+		/datum/interaction/machine_hand/ungated/chem_master_open_ui,
+	)
+	..()
 
-	if(istype(B, /obj/item/reagent_containers/glass) || istype(B, /obj/item/reagent_containers/food))
+/// Old attackby: load a reagent container.
+/datum/interaction/machine_item/chem_master_load_beaker
+	id = "chem_master_load_beaker"
+	name = "Load beaker"
+	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/chem_master/proc/chem_master_no_beaker, "a beaker is already loaded into the machine"))
+	effect = /obj/machinery/chem_master/proc/interaction_load_beaker
 
-		if(src.beaker)
-			to_chat(user, "\A [beaker] is already loaded into the machine.")
-			return
-		src.beaker = B
-		user.drop_item()
-		B.loc = src
-		to_chat(user, "You add \the [B] to the machine.")
-		update_icon()
+/obj/machinery/chem_master/proc/chem_master_no_beaker(mob/actor, atom/target, obj/item/held)
+	return !beaker
 
-	else if(istype(B, /obj/item/storage/pill_bottle))
+/obj/machinery/chem_master/proc/interaction_load_beaker(mob/user, obj/item/B, datum/interaction/interaction)
+	src.beaker = B
+	user.drop_item()
+	B.loc = src
+	to_chat(user, "You add \the [B] to the machine.")
+	update_icon()
+	return TRUE
 
-		if(src.loaded_pill_bottle)
-			to_chat(user, "A \the [loaded_pill_bottle] s already loaded into the machine.")
-			return
+/// Old attackby: load a pill bottle.
+/datum/interaction/machine_item/chem_master_load_pill_bottle
+	id = "chem_master_load_pill_bottle"
+	name = "Load pill bottle"
+	held_type = /obj/item/storage/pill_bottle
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/chem_master/proc/chem_master_no_pill_bottle, "a pill bottle is already loaded into the machine"))
+	effect = /obj/machinery/chem_master/proc/interaction_load_pill_bottle
 
-		src.loaded_pill_bottle = B
-		user.drop_item()
-		B.loc = src
-		to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
+/obj/machinery/chem_master/proc/chem_master_no_pill_bottle(mob/actor, atom/target, obj/item/held)
+	return !loaded_pill_bottle
 
-	return
+/obj/machinery/chem_master/proc/interaction_load_pill_bottle(mob/user, obj/item/B, datum/interaction/interaction)
+	src.loaded_pill_bottle = B
+	user.drop_item()
+	B.loc = src
+	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
+	return TRUE
 
 /obj/machinery/chem_master/wrench_act(mob/user, obj/item/tool)
 	return ..()
@@ -71,10 +90,19 @@
 /obj/machinery/chem_master/crowbar_act(mob/user, obj/item/tool)
 	return ..()
 
-/obj/machinery/chem_master/attack_hand(mob/user as mob)
-	if(stat & BROKEN)
-		return
+/// Old attack_hand (never called ..()): open the interface unless broken.
+/datum/interaction/machine_hand/ungated/chem_master_open_ui
+	id = "chem_master_open_ui"
+	name = "Use"
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/chem_master/proc/chem_master_not_broken, null))
+	effect = /obj/machinery/chem_master/proc/interaction_open_ui
+
+/obj/machinery/chem_master/proc/chem_master_not_broken(mob/actor, atom/target, obj/item/held)
+	return !(stat & BROKEN)
+
+/obj/machinery/chem_master/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/chem_master/ui_assets(mob/user)
 	return list(

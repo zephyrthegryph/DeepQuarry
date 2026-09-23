@@ -142,11 +142,26 @@
 	if(current_size >= STAGE_FIVE)
 		atom_deconstruct(TRUE)
 
+/obj/machinery/disposal/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/disposal_insert,
+		/datum/interaction/machine_drag/disposal_insert,
+		/datum/interaction/machine_hand/ungated/disposal_use,
+		/datum/interaction/machine_alt/disposal_flush,
+		/datum/interaction/machine_verb/disposal_force_eject,
+	)
+	..()
+
 // attack by item places it in to disposal
-/obj/machinery/disposal/attackby(obj/item/I, mob/user, attack_modifier, click_parameters, drag_dropped = FALSE)
+/datum/interaction/machine_item/disposal_insert
+	id = "disposal_insert"
+	name = "Insert"
+	effect = /obj/machinery/disposal/proc/interaction_disposal_insert
+
+/obj/machinery/disposal/proc/interaction_disposal_insert(mob/user, obj/item/I, datum/interaction/interaction, drag_dropped = FALSE)
 	wake_for_state_change()
 	if(stat & BROKEN || !I || !user || !istype(I))
-		return
+		return TRUE
 
 	add_fingerprint(user)
 
@@ -157,7 +172,7 @@
 			T.remove_from_storage(O,src)
 		T.update_icon()
 		update_icon()
-		return
+		return TRUE
 
 	if(istype(I, /obj/item/material/ashtray))
 		var/obj/item/material/ashtray/A = I
@@ -167,7 +182,7 @@
 				O.forceMove(src)
 			A.update_icon()
 			update_icon()
-			return
+			return TRUE
 
 	var/obj/item/grab/G = I
 	if(istype(G))	// handle grabbed mob
@@ -182,12 +197,12 @@
 				qdel(G)
 
 				add_attack_logs(user,GM,"Disposals dunked")
-		return
+		return TRUE
 
 	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.
-		return
+		return TRUE
 	if(!I || I.anchored || !I.canremove)
-		return
+		return TRUE
 
 	if(!drag_dropped)
 		user.drop_item()
@@ -206,12 +221,13 @@
 				span_warning("Pr-Thunk")
 			)
 			update_icon()
-			return 1
+			return TRUE
 
 		I.forceMove(src)
 
 	user.visible_message("[user] places \the [I] into the [src].",  "You place \the [I] into the [src].","Ca-Clunk")
 	update_icon()
+	return TRUE
 
 /obj/machinery/disposal/multitool_act(mob/user, obj/item/I)
 	wake_for_state_change()
@@ -336,11 +352,17 @@
 
 // mouse drop another mob or self
 //
-/obj/machinery/disposal/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
+/datum/interaction/machine_drag/disposal_insert
+	id = "disposal_drag_insert"
+	name = "Insert"
+	effect = /obj/machinery/disposal/proc/interaction_disposal_drag_insert
+
+/obj/machinery/disposal/proc/interaction_disposal_drag_insert(mob/user, atom/movable/dropping, datum/interaction/interaction)
 	if(isliving(dropping))
 		stuff_mob_in(dropping, user)
 	else if(Adjacent(user) && Adjacent(dropping) && isobj(dropping) && isturf(dropping.loc))
-		attackby(dropping, user, drag_dropped = TRUE)
+		interaction_disposal_insert(user, dropping, null, drag_dropped = TRUE)
+	return TRUE
 
 /obj/machinery/disposal/proc/stuff_mob_in(mob/living/target, mob/living/user)
 	//animals cannot put mobs other than themselves into disposal
@@ -397,13 +419,18 @@
 	update_icon()
 */
 // human interact with machine
-/obj/machinery/disposal/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/disposal_use
+	id = "disposal_use"
+	name = "Use"
+	effect = /obj/machinery/disposal/proc/interaction_disposal_use
+
+/obj/machinery/disposal/proc/interaction_disposal_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & BROKEN)
-		return
+		return TRUE
 
 	if(user && user.loc == src)
 		to_chat(user, span_red("You cannot reach the controls from inside."))
-		return
+		return TRUE
 
 	// Clumsy folks can only flush it.
 	if(user.IsAdvancedToolUser(1))
@@ -412,15 +439,22 @@
 		flush = !flush
 		wake_for_state_change()
 		update_icon()
-	return
+	return TRUE
 
-/obj/machinery/disposal/click_alt(mob/user)
+/// The old click_alt toggled flush, then (returning NONE) fell through to the alt-click loot panel either way.
+/datum/interaction/machine_alt/disposal_flush
+	id = "disposal_flush"
+	name = "Toggle flush"
+	consumes_input = FALSE
+	effect = /obj/machinery/disposal/proc/interaction_disposal_flush
+
+/obj/machinery/disposal/proc/interaction_disposal_flush(mob/user, obj/item/held, datum/interaction/interaction)
 	/*
 	if(user.canUseTopic) //Later...
 		return
 	*/
 	if(get_dist(user, src) > 1 || user.loc == src || user.stat) //Until the above exists...
-		return
+		return FALSE
 	flush = !flush
 	wake_for_state_change()
 	update_icon()
@@ -485,13 +519,17 @@
 
 // eject the contents of the disposal unit
 
-/obj/machinery/disposal/verb/force_eject()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Force Eject"
+/datum/interaction/machine_verb/disposal_force_eject
+	id = "disposal_force_eject"
+	name = "Force Eject"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/disposal/proc/interaction_disposal_force_eject
+
+/obj/machinery/disposal/proc/interaction_disposal_force_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	if(flushing)
-		return
+		return TRUE
 	eject()
+	return TRUE
 
 /obj/machinery/disposal/proc/eject()
 	for(var/atom/movable/AM in src)

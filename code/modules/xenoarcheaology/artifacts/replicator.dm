@@ -137,8 +137,12 @@
 
 	last_process_time = world.time
 
-/obj/machinery/replicator/attack_hand(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/replicator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/open_ui,
+		/datum/interaction/machine_item/replicator_insert,
+	)
+	..()
 
 /obj/machinery/replicator/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -171,14 +175,23 @@
 				else
 					visible_message(fail_message)
 
-/obj/machinery/replicator/attackby(obj/item/W as obj, mob/living/user as mob)
+/// The old attackby: never called ..(), inserted a material into the replicator.
+/datum/interaction/machine_item/replicator_insert
+	id = "replicator_insert"
+	name = "Insert"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item
+	effect = /obj/machinery/replicator/proc/interaction_insert
+
+/obj/machinery/replicator/proc/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(!W.canremove || !user.canUnEquip(W)) //No armblades, no grabs. No other-thing-I-didn't-think-of.
 		to_chat(user, span_notice("You cannot put \the [W] into the machine."))
-		return
+		return TRUE
 	user.drop_item()
 	W.loc = src
 	stored_materials.Add(W)
 	src.visible_message(span_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
+	return TRUE
 
 
 

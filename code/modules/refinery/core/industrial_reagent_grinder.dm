@@ -26,15 +26,28 @@
 	holdingitems.Cut()
 	. = ..()
 
-/obj/machinery/reagent_refinery/grinder/attackby(obj/item/O as obj, mob/user as mob)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
+	// Old attackby tried the parent's attackby FIRST, only falling to its own
+	// logic when the parent declined: the parent's own interactions come
+	// before this type's, the reverse of the usual override-chain order.
+	..()
+	into += list(
+		/datum/interaction/machine_item/grinder_insert,
+	)
 
+/// Old attackby: insert grindables when the parent attackby didn't handle it.
+/datum/interaction/machine_item/grinder_insert
+	id = "grinder_insert"
+	name = "Insert"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item
+	effect = /obj/machinery/reagent_refinery/grinder/proc/interaction_insert
+
+/obj/machinery/reagent_refinery/grinder/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
 	// Insert grindables if not handled by parent proc
 	if(holdingitems && holdingitems.len >= limit)
 		to_chat(user, "The machine cannot hold anymore items.")
-		return FALSE
+		return TRUE
 
 	// Botany/Chemistry gameplay
 	if(istype(O,/obj/item/storage/bag))
@@ -51,13 +64,13 @@
 
 		if(failed)
 			to_chat(user, "Nothing in \the [O] is usable.")
-			return 1
+			return TRUE
 
 		if(!O.contents.len)
 			to_chat(user, "You empty \the [O] into \the [src].")
 		else
 			to_chat(user, "You fill \the [src] from \the [O].")
-		return FALSE
+		return TRUE
 
 	// Borgos!
 	if(istype(O,/obj/item/gripper))
@@ -65,18 +78,18 @@
 		var/obj/item/wrapped = B.get_wrapped_item()
 		if(!wrapped)
 			to_chat(user, "\The [B] is not holding anything.")
-			return FALSE
+			return TRUE
 		else
 			var/B_held = wrapped
 			to_chat(user, "You use \the [B] to load \the [src] with \the [B_held].")
-		return FALSE
+		return TRUE
 
 	// Needs to be sheet, ore, or grindable reagent containing things
 	if(LAZYLEN(O.tool_qualities)) // Stops messages about the wrench being unsuitable to grind
-		return FALSE
+		return TRUE
 	if(!GLOB.sheet_reagents[O.type] && !GLOB.ore_reagents[O.type] && (!O.reagents || !O.reagents.total_volume))
 		to_chat(user, "\The [O] is not suitable for blending.")
-		return FALSE
+		return TRUE
 
 	user.drop_from_inventory(O,src)
 	holdingitems += O

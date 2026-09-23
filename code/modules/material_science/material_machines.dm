@@ -89,51 +89,95 @@
 	if(chamber_air)
 		. += span_notice("Chamber: [round(chamber_air.return_pressure(), 0.1)] kPa at [round(chamber_air.return_temperature(), 0.1)] K.")
 
-/obj/machinery/material_furnace/attackby(obj/item/item, mob/user)
-	if(istype(item, /obj/item/stack/material))
-		if(firing || output_stock)
-			to_chat(user, span_warning("The furnace must be idle and its output removed first."))
-			return
-		var/obj/item/stack/material/stock = item
-		user.drop_from_inventory(stock)
-		stock.forceMove(src)
-		LAZYADD(feedstock, stock)
-		visible_message(span_notice("[user] loads [stock] into [src]."))
-		return
-	if(istype(item, /obj/item/ore/coal))
-		if(firing || output_stock)
-			return
-		user.drop_from_inventory(item)
-		item.forceMove(src)
-		LAZYADD(carbon_feed, item)
-		visible_message(span_notice("[user] adds carbon to [src]'s charge."))
-		return
-	if(istype(item, /obj/item/tank))
-		if(firing)
-			return
-		var/obj/item/tank/tank = item
-		var/from_tank = tank.air_contents?.return_pressure() > chamber_air.return_pressure()
-		var/datum/gas_mixture/charge = from_tank ? tank.air_contents?.remove(5) : chamber_air.remove(5)
-		if(charge)
-			if(from_tank)
-				chamber_air.merge(charge)
-			else
-				tank.air_contents.merge(charge)
-			qdel(charge)
-			visible_message(span_notice("[user] transfers gas [from_tank ? "from [tank] into" : "from [src] into"] the furnace chamber."))
-		return
-	if(istype(item, /obj/item/reagent_containers))
-		var/obj/item/reagent_containers/container = item
-		if(container.reagents?.total_volume)
-			var/transferred = container.reagents.trans_to(src, min(10, container.reagents.total_volume))
-			if(transferred)
-				to_chat(user, span_notice("You pour [round(transferred, 0.1)] units from [container] into the furnace chamber."))
-				return
-	return ..()
+/obj/machinery/material_furnace/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/material_furnace_load_stock,
+		/datum/interaction/machine_item/material_furnace_load_carbon,
+		/datum/interaction/machine_item/material_furnace_transfer_gas,
+		/datum/interaction/machine_item/material_furnace_transfer_reagents,
+		/datum/interaction/machine_verb/material_furnace_eject_contents,
+		/datum/interaction/machine_hand/material_furnace_use,
+	)
+	..()
 
-/obj/machinery/material_furnace/attack_hand(mob/user)
-	if(..())
+/// The old attackby's first branch: loads a material stack.
+/datum/interaction/machine_item/material_furnace_load_stock
+	id = "material_furnace_load_stock"
+	name = "Load material"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/stack/material
+	effect = /obj/machinery/material_furnace/proc/interaction_load_stock
+
+/obj/machinery/material_furnace/proc/interaction_load_stock(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
+	if(firing || output_stock)
+		to_chat(user, span_warning("The furnace must be idle and its output removed first."))
 		return TRUE
+	user.drop_from_inventory(stock)
+	stock.forceMove(src)
+	LAZYADD(feedstock, stock)
+	visible_message(span_notice("[user] loads [stock] into [src]."))
+	return TRUE
+
+/// The old attackby's second branch: adds carbon (coal ore) to the charge.
+/datum/interaction/machine_item/material_furnace_load_carbon
+	id = "material_furnace_load_carbon"
+	name = "Add carbon"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/ore/coal
+	effect = /obj/machinery/material_furnace/proc/interaction_load_carbon
+
+/obj/machinery/material_furnace/proc/interaction_load_carbon(mob/user, obj/item/item, datum/interaction/interaction)
+	if(firing || output_stock)
+		return TRUE
+	user.drop_from_inventory(item)
+	item.forceMove(src)
+	LAZYADD(carbon_feed, item)
+	visible_message(span_notice("[user] adds carbon to [src]'s charge."))
+	return TRUE
+
+/// The old attackby's third branch: transfers gas between a tank and the furnace chamber.
+/datum/interaction/machine_item/material_furnace_transfer_gas
+	id = "material_furnace_transfer_gas"
+	name = "Transfer gas"
+	held_type = /obj/item/tank
+	effect = /obj/machinery/material_furnace/proc/interaction_transfer_gas
+
+/obj/machinery/material_furnace/proc/interaction_transfer_gas(mob/user, obj/item/tank/tank, datum/interaction/interaction)
+	if(firing)
+		return TRUE
+	var/from_tank = tank.air_contents?.return_pressure() > chamber_air.return_pressure()
+	var/datum/gas_mixture/charge = from_tank ? tank.air_contents?.remove(5) : chamber_air.remove(5)
+	if(charge)
+		if(from_tank)
+			chamber_air.merge(charge)
+		else
+			tank.air_contents.merge(charge)
+		qdel(charge)
+		visible_message(span_notice("[user] transfers gas [from_tank ? "from [tank] into" : "from [src] into"] the furnace chamber."))
+	return TRUE
+
+/// The old attackby's fourth branch: pours reagents into the chamber, else falls through to ..().
+/datum/interaction/machine_item/material_furnace_transfer_reagents
+	id = "material_furnace_transfer_reagents"
+	name = "Pour"
+	held_type = /obj/item/reagent_containers
+	effect = /obj/machinery/material_furnace/proc/interaction_transfer_reagents
+
+/obj/machinery/material_furnace/proc/interaction_transfer_reagents(mob/user, obj/item/reagent_containers/container, datum/interaction/interaction)
+	if(container.reagents?.total_volume)
+		var/transferred = container.reagents.trans_to(src, min(10, container.reagents.total_volume))
+		if(transferred)
+			to_chat(user, span_notice("You pour [round(transferred, 0.1)] units from [container] into the furnace chamber."))
+			return TRUE
+	return FALSE
+
+/// The old attack_hand: called ..() first, then collected output or fired the charge.
+/datum/interaction/machine_hand/material_furnace_use
+	id = "material_furnace_use"
+	name = "Use"
+	effect = /obj/machinery/material_furnace/proc/interaction_use
+
+/obj/machinery/material_furnace/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(output_stock && !firing)
 		var/obj/item/stack/material/processed_alloy/finished = output_stock
 		output_stock = null
@@ -161,34 +205,39 @@
 	firing_timer = addtimer(CALLBACK(src, PROC_REF(finish_firing)), 6 SECONDS, TIMER_STOPPABLE)
 	return TRUE
 
-/obj/machinery/material_furnace/verb/eject_contents()
-	set name = "Eject contents"
-	set category = "Object"
-	set src in oview(1)
+/// The old "Eject contents" object verb.
+/datum/interaction/machine_verb/material_furnace_eject_contents
+	id = "material_furnace_eject_contents"
+	name = "Eject contents"
+	category = INTERACTION_CAT_EJECT
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/material_furnace/proc/interaction_eject_contents
 
+/obj/machinery/material_furnace/proc/interaction_eject_contents(mob/user, obj/item/held, datum/interaction/interaction)
 	if(firing)
-		to_chat(usr, span_warning("The sealed furnace cannot be opened while firing."))
-		return
+		to_chat(user, span_warning("The sealed furnace cannot be opened while firing."))
+		return TRUE
 	if(!output_stock && !LAZYLEN(feedstock) && !LAZYLEN(carbon_feed))
-		to_chat(usr, span_notice("The furnace is empty."))
-		return
-	usr.visible_message(
-		span_notice("[usr] begins opening [src]."),
+		to_chat(user, span_notice("The furnace is empty."))
+		return TRUE
+	user.visible_message(
+		span_notice("[user] begins opening [src]."),
 		span_notice("You begin opening [src].")
 	)
-	if(!do_after(usr, 1 SECOND, target = src) || firing)
-		return
+	if(!do_after(user, 1 SECOND, target = src) || firing)
+		return TRUE
 	if(output_stock)
 		var/obj/item/stack/material/processed_alloy/finished = output_stock
 		output_stock = null
-		finished.forceMove(usr.drop_location())
-		usr.put_in_hands(finished)
-		usr.visible_message(
-			span_notice("[usr] removes [finished] from [src]'s output tray."),
+		finished.forceMove(user.drop_location())
+		user.put_in_hands(finished)
+		user.visible_message(
+			span_notice("[user] removes [finished] from [src]'s output tray."),
 			span_notice("You remove [finished] from [src]'s output tray.")
 		)
 	if(LAZYLEN(feedstock) || LAZYLEN(carbon_feed))
-		unload_charge(usr)
+		unload_charge(user)
+	return TRUE
 
 /obj/machinery/material_furnace/proc/finish_firing()
 	firing_timer = null

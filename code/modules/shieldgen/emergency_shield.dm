@@ -46,9 +46,21 @@
 	our_owner = null
 	. = ..()
 
-/obj/machinery/shield/attackby(obj/item/W as obj, mob/user as mob)
-	if(!istype(W)) return
+/obj/machinery/shield/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shield_hit,
+	)
+	..()
 
+/// Old attackby ended with a trailing return ..(): decline so the base attackby still runs.
+/datum/interaction/machine_item/shield_hit
+	id = "shield_hit"
+	name = "Hit"
+	category = INTERACTION_CAT_ATTACK
+	held_type = /obj/item
+	effect = /obj/machinery/shield/proc/interaction_hit
+
+/obj/machinery/shield/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
 	//Play a fitting sound
 	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
 
@@ -58,8 +70,7 @@
 
 	set_opacity(1)
 	spawn(20) if(!QDELETED(src)) set_opacity(0)
-
-	..()
+	return FALSE
 
 /obj/machinery/shield/bullet_act(obj/item/projectile/Proj)
 	..()
@@ -215,28 +226,44 @@
 				. = deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
 				malfunction = 1
 
-/obj/machinery/shieldgen/attack_hand(mob/user as mob)
-	if(locked)
-		to_chat(user, "The machine is locked, you are unable to use it.")
-		return
-	if(is_open)
-		to_chat(user, "The panel must be closed before operating this machine.")
-		return
+/obj/machinery/shieldgen/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shieldgen_repair,
+		/datum/interaction/machine_item/shieldgen_toggle_lock,
+		/datum/interaction/machine_item/shieldgen_insert_cell,
+		/datum/interaction/machine_hand/ungated/shieldgen_toggle,
+	)
+	..()
 
-	if (src.active)
+/// Old attack_hand (never called ..()).
+/datum/interaction/machine_hand/ungated/shieldgen_toggle
+	id = "shieldgen_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/shieldgen/proc/unlocked, "the machine is locked, you are unable to use it"), REQ_ON(PRED_TARGET, /obj/machinery/shieldgen/proc/panel_closed, "the panel must be closed before operating this machine"))
+	effect = /obj/machinery/shieldgen/proc/interaction_toggle
+
+/obj/machinery/shieldgen/proc/unlocked(mob/actor, atom/target, obj/item/held)
+	return !locked
+
+/obj/machinery/shieldgen/proc/panel_closed(mob/actor, atom/target, obj/item/held)
+	return !is_open
+
+/obj/machinery/shieldgen/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	if (active)
 		user.visible_message(span_blue("[icon2html(src,viewers(src))] [user] deactivated the shield generator."), \
 			span_blue("[icon2html(src,user.client)] You deactivate the shield generator."), \
 			"You hear heavy droning fade out.")
-		src.shields_down()
+		shields_down()
 	else
 		if(anchored)
 			user.visible_message(span_blue("[icon2html(src,viewers(src))] [user] activated the shield generator."), \
 				span_blue("[icon2html(src, user.client)] You activate the shield generator."), \
 				"You hear heavy droning.")
-			src.shields_up()
+			shields_up()
 		else
 			to_chat(user, "The device must first be secured to the floor.")
-	return
+	return TRUE
 
 /obj/machinery/shieldgen/emag_act(remaining_charges, mob/user)
 	if(!malfunction)
@@ -244,44 +271,67 @@
 		update_icon()
 		return 1
 
-/obj/machinery/shieldgen/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/stack/cable_coil) && malfunction && is_open)
-		var/obj/item/stack/cable_coil/coil = W
-		to_chat(user, span_notice("You begin to replace the wires."))
-		if(do_after(user, 3 SECONDS, target = src))
-			if (coil.use(1))
-				repair_damage(max_integrity)
-				malfunction = 0
-				to_chat(user, span_notice("You repair the [src]!"))
-				update_icon()
+/datum/interaction/machine_item/shieldgen_repair
+	id = "shieldgen_repair"
+	name = "Repair wiring"
+	category = INTERACTION_CAT_REPAIR
+	held_type = /obj/item/stack/cable_coil
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/shieldgen/proc/needs_repair, null))
+	effect = /obj/machinery/shieldgen/proc/interaction_repair
 
-	else if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))
-		if(src.allowed(user))
-			locked = !locked
-			to_chat(user, "The controls are now [src.locked ? "locked." : "unlocked."]")
-		else
-			to_chat(user, span_red("Access denied."))
+/obj/machinery/shieldgen/proc/needs_repair(mob/actor, atom/target, obj/item/held)
+	return malfunction && is_open
 
-	else if(istype(W, /obj/item/cell))
-		if(is_open)
-			if(cell)
-				to_chat(user, "There is already a power cell inside.")
-				return
-			// insert cell
-			var/obj/item/cell/C = user.get_active_hand()
-			if(istype(C))
-				user.drop_item()
-				cell = C
-				C.forceMove(src)
-				C.add_fingerprint(user)
+/obj/machinery/shieldgen/proc/interaction_repair(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
+	to_chat(user, span_notice("You begin to replace the wires."))
+	if(do_after(user, 3 SECONDS, target = src))
+		if (coil.use(1))
+			repair_damage(max_integrity)
+			malfunction = 0
+			to_chat(user, span_notice("You repair the [src]!"))
+			update_icon()
+	return TRUE
 
-				user.visible_message(span_notice("[user] inserts a power cell into [src]."), span_notice("You insert the power cell into [src]."))
-				power_change()
-		else
-			to_chat(user, "The hatch must be open to insert a power cell.")
-			return
+/datum/interaction/machine_item/shieldgen_toggle_lock
+	id = "shieldgen_toggle_lock"
+	name = "Toggle lock"
+	category = INTERACTION_CAT_LOCK
+	held_type = list(/obj/item/card/id, /obj/item/pda)
+	effect = /obj/machinery/shieldgen/proc/interaction_toggle_lock
+
+/obj/machinery/shieldgen/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
+	if(allowed(user))
+		locked = !locked
+		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")
 	else
-		..()
+		to_chat(user, span_red("Access denied."))
+	return TRUE
+
+/datum/interaction/machine_item/shieldgen_insert_cell
+	id = "shieldgen_insert_cell"
+	name = "Insert cell"
+	held_type = /obj/item/cell
+	effect = /obj/machinery/shieldgen/proc/interaction_insert_cell
+
+/obj/machinery/shieldgen/proc/interaction_insert_cell(mob/user, obj/item/cell/held, datum/interaction/interaction)
+	if(is_open)
+		if(cell)
+			to_chat(user, "There is already a power cell inside.")
+			return TRUE
+		// insert cell
+		var/obj/item/cell/C = user.get_active_hand()
+		if(istype(C))
+			user.drop_item()
+			cell = C
+			C.forceMove(src)
+			C.add_fingerprint(user)
+
+			user.visible_message(span_notice("[user] inserts a power cell into [src]."), span_notice("You insert the power cell into [src]."))
+			power_change()
+	else
+		to_chat(user, "The hatch must be open to insert a power cell.")
+		return TRUE
+	return TRUE
 
 /obj/machinery/shieldgen/screwdriver_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 100, 1)

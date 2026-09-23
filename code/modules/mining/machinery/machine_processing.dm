@@ -31,24 +31,42 @@
 		inserted_id.forceMove(loc) //Prevents deconstructing from deleting whatever ID was inside it.
 	. = ..()
 
-/obj/machinery/mineral/processing_unit_console/attack_hand(mob/user)
-	if(..())
-		return
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return
-	tgui_interact(user)
-
-/obj/machinery/mineral/processing_unit_console/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/card/id))
-		if(!powered())
-			return
-		if(!inserted_id && (user.unEquip(I) || isrobot(user)))
-			I.forceMove(src)
-			inserted_id = I
-			SStgui.update_uis(src)
-		return
+/obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/processing_console_insert_id,
+		/datum/interaction/machine_hand/processing_console_open_ui,
+	)
 	..()
+
+/// Old attackby: an ID card scanned. `!powered()` silently returned, so it stays in the effect.
+/datum/interaction/machine_item/processing_console_insert_id
+	id = "processing_console_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id
+
+/obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
+	if(!powered())
+		return TRUE
+	if(!inserted_id && (user.unEquip(I) || isrobot(user)))
+		I.forceMove(src)
+		inserted_id = I
+		SStgui.update_uis(src)
+	return TRUE
+
+/// Old attack_hand: `if(..()) return; if(!allowed(user)) ...; tgui_interact(user)`.
+/datum/interaction/machine_hand/processing_console_open_ui
+	id = "processing_console_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/mineral/processing_unit_console/proc/lets_in, "access denied"))
+	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui
+
+/obj/machinery/mineral/processing_unit_console/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
+
+/obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/mineral/processing_unit_console/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

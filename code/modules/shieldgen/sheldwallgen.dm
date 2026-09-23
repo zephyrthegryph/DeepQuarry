@@ -29,16 +29,30 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/shieldwallgen/attack_hand(mob/user as mob)
+/obj/machinery/shieldwallgen/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shieldwallgen_id_swipe,
+		/datum/interaction/machine_item/shieldwallgen_hit,
+		/datum/interaction/machine_hand/ungated/shieldwallgen_toggle,
+	)
+	..()
+
+/// Old attack_hand: never called ..(), so ungated.
+/datum/interaction/machine_hand/ungated/shieldwallgen_toggle
+	id = "shieldwallgen_toggle"
+	name = "Toggle"
+	effect = /obj/machinery/shieldwallgen/proc/interaction_toggle
+
+/obj/machinery/shieldwallgen/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(state != 1)
 		to_chat(user, span_red("The shield generator needs to be firmly secured to the floor first."))
-		return 1
+		return TRUE
 	if(src.locked && !istype(user, /mob/living/silicon))
 		to_chat(user, span_red("The controls are locked!"))
-		return 1
+		return TRUE
 	if(power != 1)
 		to_chat(user, span_red("The shield generator needs to be powered by wire underneath."))
-		return 1
+		return TRUE
 
 	if(src.active >= 1)
 		src.active = 0
@@ -58,6 +72,7 @@
 			"You turn on the shield generator.", \
 			"You hear heavy droning.")
 	src.add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/shieldwallgen/proc/power()
 	if(!anchored)
@@ -170,17 +185,31 @@
 		CF.set_dir(field_dir)
 
 
-/obj/machinery/shieldwallgen/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
-		if (src.allowed(user))
-			src.locked = !src.locked
-			to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
-		else
-			to_chat(user, span_red("Access denied."))
+/// Old attackby: never called ..(), so both branches stay in their effects.
+/datum/interaction/machine_item/shieldwallgen_id_swipe
+	id = "shieldwallgen_id_swipe"
+	name = "Swipe ID"
+	held_type = list(/obj/item/card/id, /obj/item/pda)
+	effect = /obj/machinery/shieldwallgen/proc/interaction_id_swipe
 
+/obj/machinery/shieldwallgen/proc/interaction_id_swipe(mob/user, obj/item/W, datum/interaction/interaction)
+	if (src.allowed(user))
+		src.locked = !src.locked
+		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
-		src.add_fingerprint(user)
-		visible_message(span_red("The [src.name] has been hit with \the [W.name] by [user.name]!"))
+		to_chat(user, span_red("Access denied."))
+	return TRUE
+
+/datum/interaction/machine_item/shieldwallgen_hit
+	id = "shieldwallgen_hit"
+	name = "Hit"
+	held_type = /obj/item
+	effect = /obj/machinery/shieldwallgen/proc/interaction_hit
+
+/obj/machinery/shieldwallgen/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+	src.add_fingerprint(user)
+	visible_message(span_red("The [src.name] has been hit with \the [W.name] by [user.name]!"))
+	return TRUE
 
 /obj/machinery/shieldwallgen/wrench_act(mob/user, obj/item/W)
 	if(active)
@@ -262,8 +291,20 @@
 	update_nearby_tiles()
 	. = ..()
 
-/obj/machinery/shieldwall/attack_hand(mob/user as mob)
-	return
+/obj/machinery/shieldwall/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/shieldwall_touch_block,
+	)
+	..()
+
+/// Old attack_hand did nothing at all and never called ..(); ungated so no gate side effects sneak in.
+/datum/interaction/machine_hand/ungated/shieldwall_touch_block
+	id = "shieldwall_touch_block"
+	name = "Touch"
+	effect = /obj/machinery/shieldwall/proc/interaction_touch_block
+
+/obj/machinery/shieldwall/proc/interaction_touch_block(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 
 /obj/machinery/shieldwall/process()
