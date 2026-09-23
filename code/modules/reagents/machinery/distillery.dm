@@ -70,9 +70,7 @@
 	update_icon()
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/RefreshParts()
-	var/total_laser_rating = 0
-	for(var/obj/item/stock_parts/micro_laser/ML in component_parts)
-		total_laser_rating += ML.rating
+	var/total_laser_rating = get_part_rating(/obj/item/stock_parts/micro_laser)
 
 	max_temp = initial(max_temp) + (50 * (total_laser_rating - 1))
 	min_temp = max(1, initial(min_temp) - (30 * (total_laser_rating - 1)))

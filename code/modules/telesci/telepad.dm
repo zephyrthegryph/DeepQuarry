@@ -12,21 +12,30 @@
 	active_power_usage = 5000
 	var/efficiency
 
+// This board declares no req_components, so its default parts are declared
+// here instead of read off the board (roadmap C6): still resolved lazily
+// into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
+/obj/machinery/telepad/latent_generator()
+	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
+	// the key (DM's named-argument list syntax), not circuit's value -- the
+	// key must be set by index instead to be the board's actual type path.
+	var/list/gen = list(
+		/obj/item/bluespace_crystal = 1,
+		/obj/item/stock_parts/capacitor = 2,
+		/obj/item/stock_parts/console_screen = 1,
+		/obj/item/stack/cable_coil = 5,
+	)
+	gen[circuit] = 1
+	return gen
+
 /obj/machinery/telepad/Initialize(mapload)
 	. = ..()
-	component_parts = list()
-	component_parts += new /obj/item/bluespace_crystal(src)
-	component_parts += new /obj/item/stock_parts/capacitor(src)
-	component_parts += new /obj/item/stock_parts/capacitor(src)
-	component_parts += new /obj/item/stock_parts/console_screen(src)
-	component_parts += new /obj/item/stack/cable_coil(src, 5)
+	component_parts = null
 	RefreshParts()
 	update_icon()
 
 /obj/machinery/telepad/RefreshParts()
-	var/E
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		E += C.rating
+	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
 	efficiency = E
 
 /obj/machinery/telepad/declare_interactions(list/into)

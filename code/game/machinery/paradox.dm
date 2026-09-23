@@ -22,17 +22,9 @@
 
 /obj/machinery/paradoxrift/RefreshParts()
 	..()
-	var/man_rating = 0
-	var/scan_rating = 0
-	var/cap_rating = 0
-
-	for(var/obj/item/stock_parts/P in component_parts)
-		if(istype(P, /obj/item/stock_parts/scanning_module))
-			scan_rating += P.rating
-		if(istype(P, /obj/item/stock_parts/manipulator))
-			man_rating += P.rating
-		if(istype(P, /obj/item/stock_parts/capacitor))
-			cap_rating += P.rating
+	var/man_rating = get_part_rating(/obj/item/stock_parts/manipulator)
+	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)
+	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 
 	build_eff = man_rating
 	loot_eff = scan_rating
