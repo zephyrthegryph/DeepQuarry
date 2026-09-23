@@ -270,7 +270,7 @@
 	else if(too_damaged) //They need to be healed first.
 		return "buzzes, \"Resuscitation failed - Severe tissue damage detected. Repair of anatomical damage required.\""
 
-	else if(HUSK in H.mutations) //Husked! Need to fix their husk status first.
+	else if(H.has_mutation(HUSK)) //Husked! Need to fix their husk status first.
 		return "buzzes, \"Resuscitation failed - Anatomical structure malformation detected. 'De-Husk' surgery required.\""
 
 	else if(!H.can_defib) //We can frankensurgery them! Let's tell the user.

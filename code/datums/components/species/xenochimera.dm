@@ -450,7 +450,7 @@
 	var/uninjured=owner.quickcheckuninjured()
 	trigger_revival(from_save_slot)
 
-	owner.mutations.Remove(HUSK)
+	owner.remove_mutation(HUSK)
 	owner.injure(INJURY_NEURAL, braindamage, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	owner.species.update_vore_belly_def_variant()
 

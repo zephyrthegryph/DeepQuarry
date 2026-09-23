@@ -107,7 +107,7 @@
 	mob_type = /mob/living/carbon/brain
 
 /datum/life_system/vision/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
-	if (self.stat == DEAD || (XRAY in self.mutations))
+	if (self.stat == DEAD || (self.has_mutation(XRAY)))
 		self.sight |= SEE_TURFS
 		self.sight |= SEE_MOBS
 		self.sight |= SEE_OBJS

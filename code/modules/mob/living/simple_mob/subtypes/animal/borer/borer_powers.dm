@@ -176,7 +176,7 @@
 		if(host.stat != DEAD)
 			to_chat(src, span_danger("Your host must be dead!"))
 			return
-		if(HUSK in host.mutations)
+		if(host.has_mutation(HUSK))
 			to_chat(src, span_danger("Your host is too destroyed to revive."))
 			return
 		if(!host.can_defib)

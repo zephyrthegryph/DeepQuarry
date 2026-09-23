@@ -176,7 +176,10 @@
 	var/datum/dna/dna = null//Carbon
 	var/radiation = 0.0//Carbon
 
-	var/list/mutations = list() //Carbon -- Doohl
+	/// Lazy list of active mutation defines (HULK, HUSK, XRAY, ...). Null when empty.
+	/// Do not read/write this directly outside mutations.dm -- use has_mutation(),
+	/// add_mutation(), remove_mutation() and mutation_count() instead.
+	var/list/mutations //Carbon -- Doohl
 	//see: setup.dm for list of mutations
 
 	var/voice_name = "unidentifiable voice"

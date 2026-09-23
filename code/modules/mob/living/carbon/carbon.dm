@@ -47,7 +47,7 @@
 		if(src.m_intent == I_RUN)
 			adjust_nutrition(-DEFAULT_HUNGER_FACTOR / 10)
 
-	if((FAT in src.mutations) && src.m_intent == I_RUN && src.bodytemperature <= 360)
+	if((src.has_mutation(FAT)) && src.m_intent == I_RUN && src.bodytemperature <= 360)
 		src.bodytemperature += 2
 
 	// Moving around increases germ_level faster
@@ -244,7 +244,7 @@
 				else
 					src.show_message("My [org.name] is " + span_notice("OK."),1)
 
-			if((SKELETON in H.mutations) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
+			if((H.has_mutation(SKELETON)) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
 				H.play_xylophone()
 		else if (on_fire)
 			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
@@ -436,7 +436,7 @@
 	return !(species.flags & NO_PAIN)
 
 /mob/living/carbon/needs_to_breathe()
-	if(does_not_breathe || (mNobreath in mutations))
+	if(does_not_breathe || (has_mutation(mNobreath)))
 		return FALSE
 	return ..()
 

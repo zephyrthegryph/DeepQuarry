@@ -357,7 +357,7 @@
 		return FALSE
 	demand = body.get_factor(BF_DEMAND)
 	var/skin = H.species.skin_breathing
-	breathes = (skin || H.should_have_organ(O_LUNGS)) && !H.does_not_breathe && !(mNobreath in H.mutations)
+	breathes = (skin || H.should_have_organ(O_LUNGS)) && !H.does_not_breathe && !(H.has_mutation(mNobreath))
 	circulates = H.should_have_organ(O_HEART)
 
 	var/o2 = 1

@@ -3,12 +3,18 @@
 	var/list/rust_pipe_ports
 	var/list/rust_pipe_region_networks
 	var/rust_pipe_pending_operations = ""
+	/// M2 (simulation.md §5): device edges by DM id -> owning machine.
+	var/next_rust_device_id = 1
+	var/list/rust_pipe_devices
+	var/rust_device_pending_operations = ""
 
 /obj/machinery/atmospherics
 	/// Stable IDs for this machine's physical gas ports. Rust owns connectivity.
 	var/list/rust_pipe_port_ids
 	/// Only components without a pre-existing gas slot (valves/connectors) use this.
 	var/list/datum/gas_mixture/rust_unbound_port_air
+	/// M2: this machine's device edge id, or 0 if it has none registered.
+	var/rust_device_id = 0
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_count()
 	return 0
@@ -127,6 +133,7 @@
 		SSair.rust_commit_pending_pipenets()
 
 /obj/machinery/atmospherics/proc/rust_unregister_pipe_topology()
+	rust_unregister_device()
 	for(var/index = 1 to length(rust_pipe_port_ids))
 		var/port_id = rust_pipe_port_ids[index]
 		var/port_volume = rust_pipe_port_volume(index)
@@ -163,6 +170,84 @@
 	var/operations = rust_pipe_pending_operations
 	rust_pipe_pending_operations = ""
 	rust_apply_pipe_topology(operations)
+
+// ---- M2: device edges (simulation.md §5) ------------------------------
+
+/datum/controller/subsystem/air/proc/rust_device_operation(opcode, id, port_a = 0, port_b = 0, law_kind = 0, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
+	return "[opcode],[id],[port_a],[port_b],[law_kind],[p0],[p1],[p2],[p3];"
+
+/datum/controller/subsystem/air/proc/rust_queue_device_operation(opcode, id, port_a = 0, port_b = 0, law_kind = 0, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
+	rust_device_pending_operations += rust_device_operation(opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3)
+
+/datum/controller/subsystem/air/proc/rust_commit_pending_devices()
+	if(!length(rust_device_pending_operations))
+		return
+	var/operations = rust_device_pending_operations
+	rust_device_pending_operations = ""
+	vg_pipenet_device_batch(operations)
+
+/// Registers (or replaces) `machine`'s device edge between its two ports
+/// `port_index_a`/`port_index_b` (1-based, `rust_pipe_port_ids` indices),
+/// with the flow law `law_kind`/`p0..p3` (`RUST_DEVICE_LAW_*`). Allocates a
+/// stable device id on first use.
+/obj/machinery/atmospherics/proc/rust_set_device(port_index_a, port_index_b, law_kind, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
+	if(!rust_pipe_port_ids || port_index_a > length(rust_pipe_port_ids) || port_index_b > length(rust_pipe_port_ids))
+		return FALSE
+	if(!rust_device_id)
+		rust_device_id = SSair.next_rust_device_id++
+		if(!SSair.rust_pipe_devices)
+			SSair.rust_pipe_devices = list()
+		SSair.rust_pipe_devices["[rust_device_id]"] = src
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET, rust_device_id, rust_pipe_port_ids[port_index_a], rust_pipe_port_ids[port_index_b], law_kind, p0, p1, p2, p3)
+	SSair.rust_commit_pending_devices()
+	return TRUE
+
+/// Registers (or replaces) `machine`'s device edge between its port
+/// `port_index` (1-based, a `rust_pipe_port_ids` index) and the turf gas
+/// mixture `turf_air` faces (a vent pump or scrubber), with the flow law
+/// `law_kind`/`p0..p3` (`RUST_DEVICE_LAW_*`). Allocates a stable device id
+/// on first use. `device::VentPump`/`Scrubber`'s `a` side is the turf, so
+/// pass mode/bounds with that convention.
+/obj/machinery/atmospherics/proc/rust_set_turf_device(port_index, datum/gas_mixture/turf_air, law_kind, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
+	if(!rust_pipe_port_ids || port_index > length(rust_pipe_port_ids) || !turf_air)
+		return FALSE
+	if(!rust_device_id)
+		rust_device_id = SSair.next_rust_device_id++
+		if(!SSair.rust_pipe_devices)
+			SSair.rust_pipe_devices = list()
+		SSair.rust_pipe_devices["[rust_device_id]"] = src
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_air.arena_id(), law_kind, p0, p1, p2, p3)
+	SSair.rust_commit_pending_devices()
+	return TRUE
+
+/obj/machinery/atmospherics/proc/rust_unregister_device()
+	if(!rust_device_id)
+		return
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_REMOVE, rust_device_id)
+	SSair.rust_pipe_devices?.Remove("[rust_device_id]")
+	rust_device_id = 0
+	SSair.rust_commit_pending_devices()
+
+/// Called once per gas tick with this tick's flow-law result (M2). The base
+/// implementation does nothing; devices with a UI/events override it.
+/obj/machinery/atmospherics/proc/rust_device_stepped(moles, power_w, target_reached)
+	return
+
+/// Runs every device edge's flow law for this tick and dispatches results
+/// (`SSair.fire()`, from `process_pipenets`).
+/datum/controller/subsystem/air/proc/rust_step_pipe_devices()
+	if(!length(rust_pipe_devices))
+		return
+	var/dt = wait / 10
+	var/list/result = vg_pipenet_step_devices(dt)
+	var/cursor = 1
+	while(cursor <= length(result))
+		var/id = result[cursor++]
+		var/moles = result[cursor++]
+		var/power_w = result[cursor++]
+		var/target_reached = result[cursor++]
+		var/obj/machinery/atmospherics/device = rust_pipe_devices["[id]"]
+		device?.rust_device_stepped(moles, power_w, target_reached)
 
 /// Publish the complete map topology once, then materialize all compatibility
 /// `/datum/pipe_network` wrappers from Rust's atomic connected-region result.

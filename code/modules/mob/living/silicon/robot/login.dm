@@ -14,3 +14,10 @@
 	apply_cyborg_chargen_prefs_or_default()
 
 	plane_holder.set_vis(VIS_AUGMENTED, TRUE)
+
+	if(syndicate)
+		apply_syndicate_state()
+
+/mob/living/silicon/robot/Logout()
+	clear_traitor_hud()
+	return ..()
