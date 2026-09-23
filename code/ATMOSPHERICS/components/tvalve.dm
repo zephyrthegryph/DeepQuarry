@@ -109,16 +109,15 @@
 	else
 		src.go_to_side()
 
-/obj/machinery/atmospherics/tvalve/process()
-	..()
-	. = PROCESS_KILL
-
-	return
+// M2 (simulation.md §5): same as valve — a three-way valve's flow law is
+// pure topology (which pair of ports the region merge connects), so
+// process() is deleted outright rather than kept as a self-killing no-op.
 
 /obj/machinery/atmospherics/tvalve/get_node_connect_dirs()
 	return get_node_connect_dirs_trinary(dir, mirrored)
 
 /obj/machinery/atmospherics/tvalve/atmos_init()
+	STOP_MACHINE_PROCESSING(src)
 	if(node1 && node2 && node3)
 		return
 

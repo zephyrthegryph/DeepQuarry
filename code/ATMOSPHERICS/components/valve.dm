@@ -105,11 +105,12 @@
 	else
 		src.open()
 
-/obj/machinery/atmospherics/valve/process()
-	..()
-	. = PROCESS_KILL
-
-	return
+// M2 (simulation.md §5): a valve's "flow law" is pure topology (M1b's region
+// merge on connect, split on disconnect already equalizes the instant the
+// aperture opens/closes — see open()/close() above), so there is no device
+// edge or per-tick physics to run here at all. process() is deleted outright
+// rather than kept as a self-killing no-op; atmos_init() below stops DM
+// process() scheduling for good, matching passive_gate's pattern.
 
 /obj/machinery/atmospherics/valve/atmos_init()
 	normalize_dir()
@@ -134,6 +135,8 @@
 		close()
 		open()
 		openDuringInit = 0
+
+	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/valve/return_network(obj/machinery/atmospherics/reference)
 	if(reference==node1)
