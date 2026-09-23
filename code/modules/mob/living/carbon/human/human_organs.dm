@@ -47,6 +47,8 @@
 	return TRUE
 
 /// TRUE when processing this organ has nothing to do: undamaged, germ-free, not rejected.
+/// (The stomach tops its acid up while the system runs; digestion wakes the mob through its
+/// reagents, so a stomach that isn't full yet doesn't keep it awake.)
 /obj/item/organ/proc/life_quiescent()
 	if(status & ORGAN_DEAD)
 		return TRUE
@@ -59,10 +61,6 @@
 
 /obj/item/organ/internal/appendix/life_quiescent()
 	return ..() && !inflamed
-
-/// The stomach tops its acid up until it is full.
-/obj/item/organ/internal/stomach/life_quiescent()
-	return ..() && (!reagents || reagents.total_volume + 2 >= max_acid_volume)
 
 /obj/item/organ
 	/// TRUE for organs whose process() does its own work every cycle (tumours, parasites,

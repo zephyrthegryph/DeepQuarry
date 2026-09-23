@@ -109,6 +109,22 @@
 /proc/life_test_settle_human(mob/living/carbon/human/H, cycles = 16)
 	return life_test_settle(H, cycles)
 
+/// What keeps a human's organs system awake, for failure messages.
+/proc/life_test_organ_reasons(mob/living/carbon/human/H)
+	var/list/reasons = list()
+	if(length(H.bad_external_organs))
+		reasons += "limbs [jointext(H.bad_external_organs, ",")]"
+	if(H.stance_damage)
+		reasons += "stance [H.stance_damage]"
+	if(LAZYLEN(H.body?.afflictions))
+		reasons += "afflictions [length(H.body.afflictions)]"
+	if(H.bloodstr?.total_volume || H.ingested?.total_volume)
+		reasons += "reagents"
+	for(var/obj/item/organ/I as anything in H.internal_organs)
+		if(!I.life_quiescent())
+			reasons += "[I.type] (damage [I.damage], germs [I.germ_level])"
+	return jointext(reasons, "; ")
+
 /// A healthy, idle human in normal air with no afflictions puts every system to sleep and
 /// leaves the SSmobs run.
 /datum/unit_test/dq_life_idle_human_hibernates
@@ -116,7 +132,7 @@
 /datum/unit_test/dq_life_idle_human_hibernates/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place_in_air(H), "no floor with breathable air for the test human")
-	TEST_ASSERT(life_test_settle_human(H), "an idle healthy human should hibernate; still busy: [life_test_busy(H)]; awake bits [H.life_awake]")
+	TEST_ASSERT(life_test_settle_human(H), "an idle healthy human should hibernate; still busy: [life_test_busy(H)]; awake bits [H.life_awake]; organs: [life_test_organ_reasons(H)]")
 	TEST_ASSERT(H in SSmobs.hibernating_mobs, "a hibernating human is parked in SSmobs")
 	TEST_ASSERT_NULL(H.life_missed_wake(), "a freshly hibernated human has no missed wake")
 	TEST_ASSERT_NULL(SSmobs.audit_mob(H), "the audit must not flag a human that is correctly asleep")
