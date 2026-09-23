@@ -2,14 +2,47 @@
 
 use vg_core::network::NetworkKind;
 
+/// An APC power channel. Replaces the magic `0`/`1`/`2` indices DM's
+/// `POWERCHAN_*` used: everywhere a channel is threaded through Rust it is
+/// this type, not a bare `usize`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Channel {
+    Equip,
+    Light,
+    Environ,
+}
+
+impl Channel {
+    /// Every channel, in the order DM's `EQUIP`/`LIGHT`/`ENVIRON` (minus
+    /// one) expects for its `[f64; 3]`/`[u8; 3]` arrays.
+    pub const ALL: [Channel; 3] = [Channel::Equip, Channel::Light, Channel::Environ];
+
+    /// This channel's index into a per-channel `[T; 3]` array.
+    #[must_use]
+    pub const fn idx(self) -> usize {
+        match self {
+            Channel::Equip => 0,
+            Channel::Light => 1,
+            Channel::Environ => 2,
+        }
+    }
+}
+
 /// Index of each [`Summary`] component.
 pub mod sum {
+    use super::Channel;
+
     /// Registered generator supply (W).
     pub const SUPPLY: usize = 0;
-    /// Demand by APC channel (W): equipment, lighting, environment.
-    pub const EQUIP: usize = 1;
-    pub const LIGHT: usize = 2;
-    pub const ENVIRON: usize = 3;
+    /// Demand by APC channel (W): equipment, lighting, environment. One
+    /// past [`SUPPLY`], in [`Channel::idx`] order.
+    #[must_use]
+    pub const fn channel(c: Channel) -> usize {
+        1 + c.idx()
+    }
+    pub const EQUIP: usize = channel(Channel::Equip);
+    pub const LIGHT: usize = channel(Channel::Light);
+    pub const ENVIRON: usize = channel(Channel::Environ);
     /// Storage capacity attached to the region (SMES and APC cell units).
     pub const CAPACITY: usize = 4;
 }

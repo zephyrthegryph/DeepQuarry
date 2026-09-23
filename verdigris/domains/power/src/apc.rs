@@ -7,6 +7,8 @@
 
 use vg_core::rate::RateStore;
 
+use crate::kind::Channel;
+
 /// `POWERCHAN_*`.
 pub mod chan {
     pub const OFF: u8 = 0;
@@ -24,12 +26,6 @@ pub mod status {
 
 /// `CELLRATE`: watts per tick to cell units.
 pub const CELLRATE: f64 = 0.002;
-
-/// Channel indices: equipment, lighting, environment (DM's EQUIP, LIGHT,
-/// ENVIRON minus one).
-pub const EQUIP: usize = 0;
-pub const LIGHT: usize = 1;
-pub const ENVIRON: usize = 2;
 
 /// What DM sets (settings and conditions); changes come as commands.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -68,7 +64,7 @@ impl Default for ApcConfig {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ApcState {
     pub charge: f64,
-    /// Channel settings, `chan::*`, indexed by [`EQUIP`], [`LIGHT`], [`ENVIRON`].
+    /// Channel settings, `chan::*`, indexed by [`Channel::idx`].
     pub channels: [u8; 3],
     /// 0 not charging, 1 charging, 2 full.
     pub charging: u8,
@@ -135,17 +131,19 @@ pub trait Grid {
 impl Apc {
     /// Whether channel `c` powers its area now (DM `apc.update()`).
     #[must_use]
-    pub fn powered(&self, c: usize) -> bool {
+    pub fn powered(&self, c: Channel) -> bool {
         self.config.operating
             && !self.config.shorted_or_grid_check
             && !self.config.failed
-            && self.state.channels[c] >= chan::ON
+            && self.state.channels[c.idx()] >= chan::ON
     }
 
     /// Area channel bits (1 equipment, 2 lighting, 4 environment).
     #[must_use]
     pub fn channel_bits(&self) -> u8 {
-        (0..3).fold(0, |b, c| b | (u8::from(self.powered(c)) << c))
+        Channel::ALL
+            .into_iter()
+            .fold(0, |b, c| b | (u8::from(self.powered(c)) << c.idx()))
     }
 
     /// Area demand this step: one-offs always, static load while the
@@ -153,10 +151,11 @@ impl Apc {
     #[must_use]
     pub fn demand(&self) -> [f64; 3] {
         let s = &self.state;
-        [0, 1, 2].map(|c| {
-            self.oneoff[c]
-                + if s.channels[c] >= chan::ON {
-                    self.static_load[c]
+        Channel::ALL.map(|c| {
+            let i = c.idx();
+            self.oneoff[i]
+                + if s.channels[i] >= chan::ON {
+                    self.static_load[i]
                 } else {
                     0.0
                 }
@@ -274,9 +273,9 @@ impl Apc {
         }
         let pct = if max > 0.0 { 100.0 * s.charge / max } else { 0.0 };
         let set = |s: &mut ApcState, e: u8, l: u8, v: u8| {
-            s.channels[EQUIP] = autoset(s.channels[EQUIP], e);
-            s.channels[LIGHT] = autoset(s.channels[LIGHT], l);
-            s.channels[ENVIRON] = autoset(s.channels[ENVIRON], v);
+            s.channels[Channel::Equip.idx()] = autoset(s.channels[Channel::Equip.idx()], e);
+            s.channels[Channel::Light.idx()] = autoset(s.channels[Channel::Light.idx()], l);
+            s.channels[Channel::Environ.idx()] = autoset(s.channels[Channel::Environ.idx()], v);
         };
         if pct > 30.0 || s.longtermpower > 0 {
             if s.autoflag != 3 {
