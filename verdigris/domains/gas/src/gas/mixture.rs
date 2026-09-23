@@ -8,7 +8,7 @@ use itertools::{
 	Itertools,
 };
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+use std::sync::atomic::Ordering::Relaxed;
 use tinyvec::TinyVec;
 
 type SpecificFireInfo = (usize, f32, f32);
@@ -45,12 +45,6 @@ impl GasCache {
 	pub fn set(&self, v: f32) {
 		self.0.store(v, Relaxed);
 	}
-}
-
-pub fn visibility_step(gas_amt: f32) -> u32 {
-	(gas_amt / MOLES_GAS_VISIBLE_STEP)
-		.ceil()
-		.clamp(1.0, FACTOR_GAS_VISIBLE_MAX) as u32
 }
 
 /// The data structure representing a Space Station 13 gas mixture.
@@ -214,6 +208,9 @@ impl Mixture {
 			&& (idx <= self.moles.len() || (amt > GAS_MIN_MOLES && amt.is_normal()))
 		{
 			self.maybe_expand(idx + 1);
+			// SAFETY: `maybe_expand(idx + 1)` just grew `self.moles` to at least
+			// `idx + 1` elements (it only ever grows, never shrinks), so `idx` is
+			// in bounds.
 			unsafe {
 				*self.moles.get_unchecked_mut(idx) = amt;
 			};
@@ -223,6 +220,8 @@ impl Mixture {
 	pub fn adjust_moles(&mut self, idx: GasIDX, amt: f32) {
 		if !self.immutable && amt.is_normal() && idx < total_num_gases() {
 			self.maybe_expand(idx + 1);
+			// SAFETY: as in `set_moles`, `maybe_expand(idx + 1)` guarantees `idx`
+			// is in bounds for `self.moles`.
 			let r = unsafe { self.moles.get_unchecked_mut(idx) };
 			*r += amt;
 			if amt <= 0.0 {
@@ -245,6 +244,10 @@ impl Mixture {
 			let mut should_collect = false;
 			for (idx, amt) in adjustments {
 				if *idx < num_gases && amt.is_normal() {
+					// SAFETY: `maybe_expand` above grew `self.moles` to at least
+					// `1 + max(i for (i, _) in adjustments if i < num_gases)`, and
+					// this loop only indexes with `*idx` when `*idx < num_gases`,
+					// so `*idx` is within that same bound and in range.
 					let r = unsafe { self.moles.get_unchecked_mut(*idx) };
 					*r += *amt;
 					if *amt <= 0.0 {
@@ -576,32 +579,6 @@ impl Mixture {
 	pub fn is_visible(&self) -> bool {
 		self.enumerate()
 			.any(|(i, gas)| gas_visibility(i).map_or(false, |amt| gas >= amt))
-	}
-	pub fn vis_hash(&self, gas_visibility: &[Option<f32>]) -> u64 {
-		use std::hash::Hasher;
-		let mut hasher: ahash::AHasher = ahash::AHasher::default();
-
-		self.enumerate()
-			.filter(|&(i, gas_amt)| {
-				unsafe { gas_visibility.get_unchecked(i) }
-					.filter(|&amt| gas_amt > amt)
-					.is_some()
-			})
-			.for_each(|(i, gas_amt)| {
-				hasher.write_usize(i);
-				hasher.write_usize(visibility_step(gas_amt) as usize)
-			});
-		hasher.finish()
-	}
-	/// Compares the current vis hash to the provided one; returns true if they are
-	pub fn vis_hash_changed(
-		&self,
-		gas_visibility: &[Option<f32>],
-		hash_holder: &AtomicU64,
-	) -> bool {
-		let cur_hash = self.vis_hash(gas_visibility);
-		let old_hash = hash_holder.swap(cur_hash, Relaxed);
-		old_hash == 0 || old_hash != cur_hash
 	}
 	// Removes all redundant zeroes from the gas mixture.
 	pub fn garbage_collect(&mut self) {
