@@ -2,17 +2,18 @@
 // (rules.md §4). One binding per object holds its reactor subscriptions and,
 // per rule, whether the condition held at the last look.
 
-/// object -> /datum/rule_binding.
+/// REF(object) -> /datum/rule_binding. Keyed by text and holding the owner by
+/// weakref, so a binding is no outside reference to its object (collapse).
 GLOBAL_LIST_EMPTY(dq_rule_bindings)
 
 /proc/dq_rule_binding_of(datum/thing)
-	return GLOB.dq_rule_bindings[thing]
+	return GLOB.dq_rule_bindings[REF(thing)]
 
 /// ---- Lifecycle (L2) ----
 /// Subscribes `A`'s rules. /atom/on_materialize() calls it.
 /proc/dq_rules_on_materialize(atom/A)
 	var/list/rules = dq_rules_for_type(A.type)
-	if(!rules || GLOB.dq_rule_bindings[A])
+	if(!rules || GLOB.dq_rule_bindings[REF(A)])
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
@@ -22,7 +23,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[A]
+	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(A)]
 	if(binding)
 		qdel(binding)
 
@@ -30,18 +31,18 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /// to destroy the object (take_damage before atom_destruction), so every rule
 /// that the change triggered runs first, in the order the old code ran it.
 /proc/dq_rules_settle(datum/thing)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[thing]
+	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
 	binding?.evaluate()
 
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[thing]
+	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
 	if(binding?.key_id && (key_kind in binding.key_kinds))
 		dq_rx_publish(key_kind, binding.key_id, 1)
 
 /// The node handle for (thing, property), created by `provider` when given.
 /proc/dq_rule_node(datum/thing, property, datum/property_provider/domain/provider)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[thing]
+	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
 	if(!binding)
 		return null
 	. = binding.nodes ? binding.nodes[property] : null
@@ -55,7 +56,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /// and relaxes to the surrounding air RULE_HEAT_EXPOSURE_HOLD after the last one.
 /// Only objects whose rules made a heat node are touched.
 /proc/dq_rule_expose_heat(obj/O, temperature)
-	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[O]
+	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(O)]
 	if(!binding || isnull(temperature))
 		return
 	var/handle = binding.nodes ? binding.nodes[PROP_TEMPERATURE] : null
@@ -67,7 +68,10 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 		binding.cool_token = dq_rx_at(binding, binding.exposed_at + RULE_HEAT_EXPOSURE_HOLD)
 
 /datum/rule_binding
-	var/atom/owner
+	var/datum/weakref/owner_ref
+	/// The owner, resolved for this call. Not held between calls.
+	var/tmp/atom/owner
+	var/owner_key
 	/// Shared rule list for the owner's type.
 	var/list/rules
 	/// Per rule (same index): TRUE while its condition held at the last look.
@@ -91,6 +95,8 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
+	owner_ref = WEAKREF(owner)
+	owner_key = REF(owner)
 	src.owner = owner
 	src.rules = rules
 	var/count = length(rules)
@@ -99,8 +105,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	tokens = new /list(count)
 	hold_models = new /list(count)
 	hold_tokens = new /list(count)
-	GLOB.dq_rule_bindings[owner] = src
-	RegisterSignal(owner, COMSIG_QDELETING, PROC_REF(owner_deleted))
+	GLOB.dq_rule_bindings[owner_key] = src
 	for(var/i in 1 to count)
 		tokens[i] = subscribe(rules[i])
 		fired[i] = 0
@@ -108,6 +113,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	for(var/i in 1 to count)
 		if(tokens[i])
 			holding[i] = check(rules[i])
+	src.owner = null
 
 /datum/rule_binding/Destroy()
 	for(var/i in 1 to length(rules))
@@ -116,16 +122,11 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 		dq_rx_node_free(nodes[property])
 	nodes = null
 	dq_rx_clear(src)
-	if(owner)
-		UnregisterSignal(owner, COMSIG_QDELETING)
-		if(GLOB.dq_rule_bindings[owner] == src)
-			GLOB.dq_rule_bindings -= owner
+	if(GLOB.dq_rule_bindings[owner_key] == src)
+		GLOB.dq_rule_bindings -= owner_key
 	owner = null
+	owner_ref = null
 	return ..()
-
-/datum/rule_binding/proc/owner_deleted()
-	SIGNAL_HANDLER
-	qdel(src)
 
 /datum/rule_binding/proc/active_count()
 	. = 0
@@ -184,7 +185,18 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /datum/rule_binding/proc/check(datum/rule/rule)
 	return rule.predicate.check(null, owner, null) ? TRUE : FALSE
 
+/// Resolve the owner for this call; a binding whose owner is gone deletes itself.
+/datum/rule_binding/proc/resolve()
+	owner = owner_ref?.resolve()
+	if(!owner || QDELETED(owner))
+		owner = null
+		qdel(src)
+		return FALSE
+	return TRUE
+
 /datum/rule_binding/rule_wake(reason, source)
+	if(!resolve())
+		return
 	if(!isnull(cool_token) && (reason & DQ_RX_REASON_TIMER))
 		cool_down()
 	evaluate()
@@ -200,9 +212,16 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	if(!isnull(handle))
 		dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, dq_ambient_temperature(owner))
 		dq_rx_node_idle(handle)
+	owner = null
 
 /// Look at every live rule: fire on false -> true edges, run exits on true -> false.
 /datum/rule_binding/proc/evaluate()
+	if(!resolve())
+		return
+	evaluate_rules()
+	owner = null
+
+/datum/rule_binding/proc/evaluate_rules()
 	for(var/i in 1 to length(rules))
 		if(QDELETED(owner) || QDELETED(src))
 			return

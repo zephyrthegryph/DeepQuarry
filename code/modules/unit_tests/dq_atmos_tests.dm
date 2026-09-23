@@ -5519,6 +5519,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	turf_air.adjust_gas(/datum/gas/oxygen, 100)
 
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
+	// Paper ignites through its ignition rule (code/datums/rules/declarations.dm),
+	// which runs on the next reactor dispatch.
+	react_test_ticks(2)
 
 	// Observable consequence: a flammable item exposed to ignition-temperature
 	// air must be alight. If fire_act stopped applying heat to floor items, the
