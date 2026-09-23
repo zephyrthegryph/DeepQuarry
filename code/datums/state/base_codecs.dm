@@ -7,6 +7,7 @@
 		"flags" = /datum/state_codec/atom_flags,
 		"reagents" = /datum/state_codec/reagents,
 		"forensic_data" = /datum/state_codec/owned,
+		"wires" = /datum/state_codec/owned,
 	)
 
 /// Integrity starts at max_integrity (set by Initialize()), so it is only state once it differs.
@@ -14,6 +15,21 @@
 	. = ..()
 	if(atom_integrity == max_integrity)
 		. += "atom_integrity"
+
+/// /datum/wires excludes its own holder ref from state (C5); restore it once
+/// the atom's own vars, including a decoded wires datum, are all applied.
+/atom/state_post_apply(list/blob, flags)
+	..()
+	if(wires)
+		wires.holder = src
+
+// constraint_overrides holds compiled /datum/predicate instances (rules.md
+// §3), each a cached, shared-by-key singleton rather than owned by this item
+// (C5); excluded rather than refused, so a latent-safe item with one (a
+// refitted suit, an exact-fit box) still serializes.
+/obj/item/state_exclude()
+	. = ..()
+	. += "constraint_overrides"
 
 // Variants (code/datums/variants/): a variant's own vars are left out of the
 // delta, and restored by applying the variant before the delta is written.

@@ -1,0 +1,36 @@
+# Raw contents walks on latent holders, per file (tools/ci/latent_lint.py).
+# Counts may only go down. Fix a site by going through the ledger API.
+code/controllers/subsystems/job.dm 1
+code/datums/components/antags/changeling/powers/fabricate_clothing.dm 1
+code/datums/outfits/costumes/halloween.dm 4
+code/datums/outfits/horror_killers.dm 6
+code/game/machinery/telecrystal_storage.dm 1
+code/game/objects/items/bodybag.dm 5
+code/game/objects/items/devices/lightreplacer.dm 1
+code/game/objects/items/devices/vacpack.dm 1
+code/game/objects/items/robobag.dm 1
+code/game/objects/items/weapons/grenades/flashbang.dm 1
+code/game/objects/items/weapons/storage/bags.dm 6
+code/game/objects/items/weapons/storage/belt.dm 2
+code/game/objects/items/weapons/storage/boxes.dm 2
+code/game/objects/items/weapons/storage/pouches.dm 1
+code/game/objects/items/weapons/storage/quickdraw.dm 1
+code/game/objects/items/weapons/storage/storage.dm 16
+code/game/objects/structures/crates_lockers/__closets.dm 3
+code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm 1
+code/game/objects/structures/crates_lockers/closets/statue.dm 4
+code/game/objects/structures/crates_lockers/closets/syndicate.dm 1
+code/game/objects/structures/crates_lockers/crates.dm 2
+code/modules/detectivework/tools/evidencebag.dm 1
+code/modules/food/kitchen/smartfridge/smartfridge.dm 2
+code/modules/games/dice.dm 2
+code/modules/hydroponics/seed_storage.dm 1
+code/modules/mob/living/bot/floorbot.dm 2
+code/modules/mob/living/bot/medbot.dm 1
+code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm 1
+code/modules/mob/living/silicon/robot/robot_gripper_handling.dm 7
+code/modules/projectiles/guns/magnetic/magnetic.dm 1
+code/modules/projectiles/guns/projectile.dm 1
+code/modules/research/part_replacer.dm 2
+code/modules/research/tg/machinery/destructive_analyzer.dm 2
+code/modules/xenoarcheaology/tools/tools_pickaxe.dm 1

@@ -245,7 +245,7 @@ Rolled out in this order, measuring boot_memory's census at each step:
 | 3 | Lights: bulb and emergency cell state kept on the fixture | ~2.6k objects |
 | 4 | Ammo: round counts in magazines and guns; casings on ejection; projectiles created when fired | ~3k atoms from mapped magazines |
 | 5 | Pills and pill bottles | ~46 containers per oxygen kit |
-| 6 | PDAs, radios and headsets (after L2 and L3) | 14 app datums per PDA; encryption keys |
+| 6 | Radios, headsets and ID cards (after L2 and L3). Intercoms, uplinks and the prelinked bluespace handsets stay eager (an eager circuit child, an eager hidden uplink, or a one-time roundstart link); PDAs need on_materialize()-time app construction first, not just the flag — their ~14 app datums are built in a var initializer, ahead of `Initialize()` | Encryption keys; agent cards |
 
 ## 5. Machine internals (C6)
 

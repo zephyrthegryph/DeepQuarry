@@ -339,7 +339,8 @@
 					if (istype(ROI, /obj/structure/closet))
 						var/obj/structure/closet/C = ROI
 						log_msg += " ("
-						for(var/atom/movable/Q as mob|obj in C)
+						C.latent_materialize_all() // teleported contents are real (C5)
+						for(var/atom/movable/Q as mob|obj in C) // latent-ok
 							if(ismob(Q))
 								log_msg += "[key_name(Q)], "
 							else

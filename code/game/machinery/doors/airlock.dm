@@ -1060,7 +1060,8 @@ About the new airlock wires panel:
 /obj/structure/closet/airlock_crush(crush_damage)
 	..()
 	take_damage(crush_damage, BRUTE)
-	for(var/atom/movable/AM in src)
+	latent_materialize_all() // crushing reaches the contents (C5)
+	for(var/atom/movable/AM in src) // latent-ok
 		AM.airlock_crush()
 	return TRUE
 

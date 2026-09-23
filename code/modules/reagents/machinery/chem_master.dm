@@ -59,7 +59,7 @@
 	src.beaker = B
 	user.drop_item()
 	B.loc = src
-	to_chat(user, "You add \the [B] to the machine.")
+	to_chat(user, "You add 	he [B] to the machine.")
 	update_icon()
 	return TRUE
 
@@ -75,7 +75,12 @@
 	return !loaded_pill_bottle
 
 /obj/machinery/chem_master/proc/interaction_load_pill_bottle(mob/user, obj/item/B, datum/interaction/interaction)
-	src.loaded_pill_bottle = B
+	var/obj/item/storage/pill_bottle/PB = B
+	// The machine reads .contents directly below (C5); a bottle loaded
+	// straight off a turf or out of a latent holder still holds its
+	// pills as a declared generator until now.
+	PB.make_contents_real()
+	src.loaded_pill_bottle = PB
 	user.drop_item()
 	B.loc = src
 	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")

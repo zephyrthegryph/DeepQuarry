@@ -30,6 +30,7 @@
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
 	MATERIAL_BULK(MAT_FIBERS, 50)
+	latent_contents = TRUE
 
 	/// Mobs looking into this storage.
 	var/list/is_seeing
@@ -89,7 +90,7 @@
 
 /// Latent entries in this slot, for the count limit. None until C5.
 /datum/slot_def/storage/proc/latent_count(obj/item/storage/holder)
-	return 0
+	return holder.latent_count(CONTAINER_SLOT_STORAGE)
 
 /datum/slot_def/storage/refusal(obj/item/storage/holder, atom/movable/thing, mob/actor)
 	if(!isitem(thing))
@@ -108,6 +109,26 @@
 		return "\the [W] is stuck to your hand"
 	return null
 
+// ---- Latent contents (C5) ----
+// Legacy storage code walks contents directly, so the storage materializes
+// its latent contents before any of it runs: when used, opened, searched,
+// picked up, worn or examined.
+
+/obj/item/storage/latent_generator()
+	return empty ? null : starts_with
+
+/obj/item/storage/latent_generator_clear()
+	starts_with = null
+
+/// Latent only for plain spawns: a variant needs apply_variant(), so it is made now.
+/obj/item/storage/latent_spawn_ok(path, value)
+	return !(islist(value) && length(value) >= 2 && istext(value[2]))
+
+/// Makes the latent contents real before legacy code reads contents.
+/obj/item/storage/proc/make_contents_real()
+	if(has_latent())
+		latent_materialize_all()
+
 // ---- Lifecycle ----
 
 /obj/item/storage/Initialize(mapload)
@@ -124,16 +145,13 @@
 		verbs -= /obj/item/storage/verb/toggle_gathering_mode
 
 	if(LAZYLEN(starts_with) && !empty)
-		// starts_with values are now list(count, variant). See code/datums/variants/spawn_with_variant.dm.
-		for(var/newtype in starts_with)
-			var/list/spec = dq_resolve_spawn_value(starts_with[newtype])
-			var/count = spec["count"]
-			var/variant = spec["variant"]
-			while(count > 0)
-				count--
-				spawn_with_variant(newtype, src, variant)
-		starts_with = null //Reduce list count.
+		// starts_with values are list(count, variant). See code/datums/variants/spawn_with_variant.dm.
+		// Latent-safe types without a variant stay declared until the storage
+		// is used (C5); the rest are made now.
+		dq_latent_declare(src)
 		update_icon()
+	else
+		starts_with = null
 
 	calibrate_size()
 
@@ -149,15 +167,35 @@
 
 	. = ..()
 
+/obj/item/storage/pickup(mob/user)
+	make_contents_real()
+	return ..()
+
+/obj/item/storage/equipped(mob/user, slot)
+	make_contents_real()
+	return ..()
+
+/obj/item/storage/examine(mob/user, infix, suffix)
+	make_contents_real()
+	return ..()
+
+/obj/item/storage/emp_act(severity, recursive)
+	make_contents_real()
+	return ..()
+
 /// Spawned and mapped contents may not fit the type's capacity: grow it to
-/// fit. Runs once at Initialize, over what was made inside.
+/// fit. Runs once at Initialize, over what was made inside (real or, for a
+/// declared generator, its would-be cost).
 /obj/item/storage/proc/calibrate_size()
-	if(!length(contents))
-		return
 	var/total_storage_space = 0
-	for(var/obj/item/I in contents)
+	for(var/obj/item/I in contents) // latent-ok: declared contents counted below
 		total_storage_space += I.get_storage_cost()
-	max_storage_space = max(total_storage_space, max_storage_space)
+	var/list/generator = latent_declared ? starts_with : null
+	for(var/path in generator)
+		if(dq_latent_eligible(path) && latent_spawn_ok(path, generator[path]))
+			total_storage_space += dq_type_storage_cost(path) * dq_latent_spawn_count(generator[path])
+	if(total_storage_space)
+		max_storage_space = max(total_storage_space, max_storage_space)
 
 // ---- Insertion ----
 
@@ -170,6 +208,7 @@
 /// slot's acceptance and hold constraint, the count and space limits, and
 /// whether `W` can leave where it is. `user` is the mover (may be null).
 /obj/item/storage/proc/insert_refusal(obj/item/W, mob/user)
+	make_contents_real()
 	return dq_ledger_refusal(W, src, CONTAINER_SLOT_STORAGE, user)
 
 /// Tell `user` why `W` didn't go in.
@@ -236,6 +275,7 @@
 /// Takes `W` out to `new_location` (null: the floor under this). Returns TRUE
 /// if it came out. `user` is whoever takes it (may be null).
 /obj/item/storage/proc/remove_from_storage(obj/item/W, atom/new_location, mob/user)
+	make_contents_real()
 	if(!istype(W) || W.loc != src)
 		return FALSE
 
@@ -281,6 +321,7 @@
 // ---- Gather and empty ----
 
 /obj/item/storage/proc/gather_all(turf/T, mob/user)
+	make_contents_real()
 	var/list/rejections = list()
 	var/success = 0
 	var/failure = 0
@@ -339,6 +380,7 @@
 
 /// Everything out onto the floor under this.
 /obj/item/storage/proc/drop_contents(mob/user)
+	make_contents_real()
 	if(user)
 		hide_from(user)
 	var/turf/T = get_turf(src)
@@ -347,6 +389,7 @@
 
 //Useful for spilling the contents of containers all over the floor
 /obj/item/storage/proc/spill(dist = 2, turf/T = null)
+	make_contents_real()
 	if (!istype(T))//If its not on the floor this might cause issues
 		T = get_turf(src)
 	for(var/obj/item/I as anything in stored_items())
@@ -354,6 +397,7 @@
 		I.tumble(2)
 
 /obj/item/storage/proc/return_inv()
+	make_contents_real()
 	var/list/L = list()
 	L += src.contents
 	for(var/obj/item/storage/S in src)
@@ -367,6 +411,7 @@
 // ---- Interaction ----
 
 /obj/item/storage/MouseDrop(obj/over_object as obj)
+	make_contents_real()
 	if(!canremove)
 		return
 
@@ -400,6 +445,7 @@
 		add_fingerprint(user)
 
 /obj/item/storage/click_alt(mob/user)
+	make_contents_real()
 	if(user in is_seeing)
 		src.close(user)
 	else if(isliving(user) && Adjacent(user))
@@ -409,6 +455,7 @@
 
 //This proc is called when you want to place an item into the storage item.
 /obj/item/storage/attackby(obj/item/W as obj, mob/user as mob)
+	make_contents_real()
 	..()
 
 	if(isrobot(user))
@@ -445,6 +492,7 @@
 	return insert_item(W, user)
 
 /obj/item/storage/attack_hand(mob/user as mob)
+	make_contents_real()
 	if(ishuman(user) && !pocketable)
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_POCKET_L) == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
@@ -465,6 +513,7 @@
 	return
 
 /obj/item/storage/attack_self(mob/user)
+	make_contents_real()
 	. = ..(user)
 	if(.)
 		return TRUE
@@ -480,6 +529,7 @@
 
 // Allows micros to drag themselves into storage items
 /obj/item/storage/MouseDrop_T(mob/living/target, mob/living/user)
+	make_contents_real()
 	if(!istype(user)) return // If the user passed in isn't a living mob, exit
 	if(target != user) return // If the user didn't drag themselves, exit
 	if(user.incapacitated() || user.buckled) return // If user is incapacitated or buckled, exit
@@ -525,6 +575,7 @@
 // ---- Opening and the HUD ----
 
 /obj/item/storage/proc/open(mob/user)
+	make_contents_real()
 	if (use_sound)
 		var/obj/belly/B = user.loc
 		if(isliving(user) && (!isbelly(B) || !(B.mode_flags & DM_FLAG_MUFFLEITEMS)))
@@ -554,6 +605,7 @@
 /// Shows the HUD to `user`, making it if nobody else is looking. A viewer
 /// without a client is tracked the same way (can_see_contents() drops it).
 /obj/item/storage/proc/show_to(mob/user)
+	make_contents_real()
 	if(user.s_active != src)
 		for(var/obj/item/I as anything in stored_items())
 			if(I.on_found(user))
@@ -861,6 +913,16 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	return depth
 
 // See inventory_sizes.dm for the defines.
+/// get_storage_cost() of a pristine `path`, from type data (latent entries).
+/proc/dq_type_storage_cost(path)
+	var/static/list/cache = list()
+	. = cache[path]
+	if(isnull(.))
+		var/obj/item/probe = new_unmaterialized(path, null)
+		. = probe.get_storage_cost()
+		qdel(probe)
+		cache[path] = .
+
 /obj/item/proc/get_storage_cost()
 	if (storage_cost)
 		return storage_cost
@@ -880,6 +942,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 				return ITEMSIZE_COST_NO_CONTAINER
 
 /obj/item/storage/proc/make_exact_fit()
+	make_contents_real()
 	// Runs at Initialize for fitted kits: read contents, don't make a ledger.
 	var/list/items = list()
 	for(var/obj/item/I in contents)

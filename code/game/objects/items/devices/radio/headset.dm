@@ -29,7 +29,9 @@
 		keyslot1 = new ks1type(src)
 	if(ks2type)
 		keyslot2 = new ks2type(src)
-	recalculateChannels(TRUE)
+	// Compute channels but don't register with SSradio yet (C5): on_materialize()
+	// (inherited from /obj/item/radio) does that, from the channels computed here.
+	recalculateChannels(TRUE, register = FALSE)
 
 /obj/item/radio/headset/Destroy()
 	qdel(keyslot1)
@@ -130,7 +132,7 @@
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/radio/headset/recalculateChannels(setDescription = FALSE)
+/obj/item/radio/headset/recalculateChannels(setDescription = FALSE, register = TRUE)
 	src.channels = list()
 	src.translate_binary = FALSE
 	src.translate_hive = FALSE
@@ -168,20 +170,23 @@
 		if(keyslot2.syndie)
 			src.syndie = TRUE
 
-	handle_finalize_recalculatechannels(setDescription, TRUE)
+	handle_finalize_recalculatechannels(setDescription, TRUE, register)
 
-/obj/item/radio/headset/proc/handle_finalize_recalculatechannels(setDescription = FALSE, initial_run = FALSE)
+/// register is FALSE only from Initialize() (C5): on_materialize() (inherited
+/// from /obj/item/radio) registers the channels computed here, exactly once.
+/obj/item/radio/headset/proc/handle_finalize_recalculatechannels(setDescription = FALSE, initial_run = FALSE, register = TRUE)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!SSradio && initial_run)
-		addtimer(CALLBACK(src,PROC_REF(handle_finalize_recalculatechannels),setDescription, FALSE),3 SECONDS)
-		return
-	if(!SSradio && !initial_run)
-		name = "broken radio headset"
-		return
+	if(register)
+		if(!SSradio && initial_run)
+			addtimer(CALLBACK(src,PROC_REF(handle_finalize_recalculatechannels),setDescription, FALSE),3 SECONDS)
+			return
+		if(!SSradio && !initial_run)
+			name = "broken radio headset"
+			return
 
-	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+		for (var/ch_name in channels)
+			secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
 
 	if(setDescription)
 		setupRadioDescription()
@@ -658,7 +663,8 @@
 
 /obj/item/radio/headset/raider/Initialize(mapload)
 	. = ..()
-	set_frequency(RAID_FREQ)
+	// Just the data; on_materialize() (C5) registers it with SSradio.
+	frequency = RAID_FREQ
 
 /obj/item/radio/headset/binary
 	ks1type = /obj/item/encryptionkey/binary

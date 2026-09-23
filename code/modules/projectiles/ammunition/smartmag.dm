@@ -73,6 +73,7 @@
 	return FALSE
 
 /obj/item/ammo_magazine/smart/attackby(obj/item/I as obj, mob/user)
+	make_rounds_real()
 	if(istype(I, /obj/item/cell/device))
 		if(attached_cell)
 			to_chat(user, span_notice("\The [src] already has a [attached_cell.name] attached."))
@@ -113,6 +114,7 @@
 
 // You can remove the power cell from the magazine by hand, but it's way slower than using a screwdriver
 /obj/item/ammo_magazine/smart/attack_hand(mob/user)
+	make_rounds_real()
 	if(user.get_inactive_hand() == src)
 		if(attached_cell)
 			to_chat(user, "You struggle to remove \the [attached_cell] from \the [src].")

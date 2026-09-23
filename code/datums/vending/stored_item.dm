@@ -147,13 +147,16 @@
 	var/obj/item/stack/S = product
 	return S.get_amount()
 
-/// Stacks merge regardless of their amount.
+/// Stacks merge regardless of their amount: exclude amount itself, icon_state
+/// (some stacks pick a sprite bucket by amount, e.g. material sheets), and the
+/// random per-instance pixel jitter every /obj/item/stack/material/Initialize()
+/// applies (randpixel_xy()) -- none of these are the stack's identity (C5).
 /datum/stored_item/stack/hash_of(list/blob)
 	var/list/copy = blob.Copy()
 	var/list/vars = copy[STATE_KEY_VARS]
 	if(islist(vars))
 		vars = vars.Copy()
-		vars -= "amount"
+		vars -= list("amount", "icon_state", "pixel_x", "pixel_y")
 		copy[STATE_KEY_VARS] = vars
 	return state_hash(copy)
 
