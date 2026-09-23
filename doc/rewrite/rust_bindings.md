@@ -1,49 +1,66 @@
 # Rust bindings (R10: the binding layer)
 
-How DM and Rust share objects. This replaces the ad-hoc binds described in
-`rust_core.md` §8–9 for anything with a lifetime (devices, consumers, bodies,
-sources). Stateless calls (jobs, layout, one-off queries) keep plain typed
-binds made by the same generator. The atmos pump (§13) is the reference
-example.
+How DM and Rust share objects. It covers everything with a lifetime (devices,
+machines, items, mobs, turfs); stateless calls (jobs, layout, one-off queries)
+use the same generator as plain typed commands and queries. The atmos pump
+(§14) is the reference example. This replaces `rust_core.md` §8–9's per-bind
+approach.
 
 ## 0. The invariant
 
 **Every fact that both sides use has exactly one store.** Nothing is copied
 across the boundary to be "kept in sync". Values cross only as:
 
-- a **command** that changes the one store,
-- a **read** of the one store,
-- an **event** (Rust tells DM something happened; DM keeps no state from it).
+- a **command** that changes the one store;
+- a **read** of the one store;
+- an **event**: Rust tells DM something happened, and DM keeps no state from it.
 
-Desync needs two copies. For facts Rust stores, this layer makes a second copy
-impossible to create: the DM var does not exist, so no DM code can write or
-cache it. For the few facts DM stores and Rust needs as inputs, every write
-path is closed (setters and lints) and a reconciler proves agreement: a
-divergence fails the test that caused it and cannot survive a production
-sweep (§7).
+A desync needs two copies of a fact. This design removes the second copy:
 
-## 1. Fact classes
+- **Facts Rust stores** (settings, simulation state) have no DM var at all.
+  DM reaches them only through generated procs, so DM code can neither write
+  them behind Rust's back nor keep a stale copy. This is enforced by the
+  compiler, not by discipline.
+- **Facts DM stores that Rust needs** (placement, containment, construction,
+  damage state) are *inputs*. Every way they can change is a framework
+  transition or an accessor that notifies Rust as part of the change (§7).
+  The one class DM cannot hide (a few BYOND built-in vars) is lint-enforced
+  and covered by a reconciler that fails CI on any divergence and repairs
+  production within one sweep.
 
-| Class | Examples | Store | DM access | Crosses as |
-|---|---|---|---|---|
-| **config** | target pressure, power rating, on/off, vent mode, filter mask, setpoints | Rust | generated `get_*`/`set_*` procs; no DM var | `set_*`, a validated command |
-| **state** | gas, heat, charge, flow rate, power drawn | Rust | generated `get_*` and query groups; no DM var | never written by DM |
-| **input** | anchored, broken, panel open, connected ports, position | DM | ordinary DM vars behind setters | derived by a pure proc, pushed on the sources' change signals, reconciled |
-| **identity** | this atom and its Rust object | both (a handle) | `vg_handle`, set only by the base bind | bind and unbind in base lifecycle procs |
-| **persistence** | save and load, latent blobs | Rust (config and state) | generated state codec | blob to spawn, and back |
-| **event** | target reached, starved, threshold crossed | none (transient) | `vg_event()` handler | outbox drain once per tick |
+## 1. Model
 
-Rule of thumb: if Rust needs a value every step, Rust stores it. DM stores only
-what is DM's by nature (placement, construction, damage state) and exposes it
+- **Entity.** A bound atom has one Rust entity, and DM stores its handle in one
+  var, `vg_entity`. The handle is the R2 packed handle (20-bit index, 4-bit
+  generation, exact as a DM number).
+- **Component.** Each domain contributes components to entities: a gas device
+  (pump, vent, filter), a power consumer, producer or store, a heat body, a
+  radiation source, and so on. One atom can hold several; a pump is a gas
+  device *and* a power consumer. Components of the same entity are coupled
+  inside Rust (the pump's compression work becomes its power demand), so DM
+  never relays between domains.
+- **Grid kind.** Per-turf data (gas cells, heat cells, air-blocking masks) is
+  keyed by coordinates. Turfs need no handle and no var.
+- **Field roles** in a component:
+
+| Role | Examples | Store | DM access |
+|---|---|---|---|
+| **config** | target pressure, power rating, on/off, vent mode, filter mask | Rust | generated `get_*` and `set_*`; no DM var |
+| **state** | gas, heat, charge, flow rate, power drawn | Rust | generated `get_*` and queries; never written by DM |
+| **input** | anchored, broken, connected ports, position | DM | derived by a pure proc and pushed when a source changes (§7) |
+
+Rule: if Rust needs a value every step, Rust stores it. DM keeps only what is
+DM's by nature (placement, containment, construction, damage) and exposes it
 as an input.
 
-## 2. Declaring a kind (Rust)
+## 2. Declaring a component (Rust)
 
-A kind is a struct in its domain crate. The macro generates the schema, the
-FFI procs, the DM surface, validation, the state codec and the docs.
+A component is a struct in its domain crate. One attribute generates the
+schema, the FFI procs, the DM surface, validation, the state codec and the
+documentation.
 
 ```rust
-#[vg::kind(domain = gas, dm = "/obj/machinery/atmospherics/binary/pump", ports = [input, output])]
+#[vg::component(domain = gas, dm = "/obj/machinery/atmospherics/binary/pump", ports = [input, output])]
 pub struct Pump {
 	#[vg(config, unit = "kPa", range = 0.0..=MAX_PUMP_PRESSURE, default = ONE_ATMOSPHERE, on_invalid = clamp)]
 	target_pressure: f32,
@@ -51,15 +68,13 @@ pub struct Pump {
 	power_rating: f32,
 	#[vg(config, default = false)]
 	on: bool,
-	#[vg(input, sources = [anchored, integrity_broken])]
+	#[vg(input, from = [construction, integrity])]
 	operable: bool,
 	#[vg(state, unit = "mol/s")]
 	flow_rate: f32,
-	#[vg(state, unit = "W")]
-	power_draw: f32,
 }
 
-#[vg::query(Pump, name = ui, fields = [target_pressure, power_rating, on, flow_rate, power_draw])]
+#[vg::query(Pump, ui = [target_pressure, power_rating, on, flow_rate])]
 
 #[vg::events(Pump)]
 pub enum PumpEvent { TargetReached, Starved }
@@ -73,142 +88,162 @@ impl GasDevice for Pump {
 			.rate(Rate::Power(self.power_rating))
 			.until(Port::Output.at_least(self.target_pressure))
 	}
+
+	fn couple(&self, step: &StepReport, entity: &mut EntityCtx) {
+		entity.power().demand(step.work_w); // cross-domain, inside Rust
+	}
 }
 ```
 
-- `config`: Rust store. DM gets `get_` and `set_`, seeded from DM type and map defaults (§3).
-- `state`: Rust store. DM gets `get_` only.
-- `input`: derived from DM. `sources` names the DM state it depends on (§7).
-- `on_invalid`: `clamp` or `reject`. Validation exists once, in Rust.
-- Units are part of the schema. Generated DM docs and defines carry them.
+- `dm` names the DM type the component attaches to. Subtypes inherit it and
+  can switch to another component of the same domain, or opt out.
+- `on_invalid` is `clamp` or `reject`. Validation, units and ranges exist once,
+  in Rust.
+- The power draw is not a pump field. It is the power consumer component's
+  state, and it's read like any other state field.
 
-Whether a pump is powered is not an input: power lives in the Rust power
-domain (M3), so the law asks the power domain directly.
+## 3. The generated DM surface
 
-## 3. Generated DM surface
-
-For each kind the generator writes the procs into
-`code/__defines/verdigris/_bindings.dm` and the type-level declarations into a
-generated `_bindings_types.dm`:
+The generator writes procs and defines into
+`code/__defines/verdigris/_bindings.dm`, and type-level declarations into
+`_bindings_types.dm`. Nothing in them is written by hand.
 
 ```dm
-#define VG_KIND_GAS_PUMP 7
+// Which component this type holds (type-level, no per-instance memory).
+/obj/machinery/atmospherics/binary/pump/vg_gas = VG_GAS_PUMP
 
-// Seeds: type and map defaults for config, read once at bind, never again.
-/obj/machinery/atmospherics/binary/pump/var/tmp/vgs_target_pressure
-/obj/machinery/atmospherics/binary/pump/var/tmp/vgs_power_rating
-/obj/machinery/atmospherics/binary/pump/var/tmp/vgs_on
+// Initial values for config: set on subtypes or var-edited in maps, read once when bound.
+/obj/machinery/atmospherics/binary/pump/var/tmp/init_target_pressure
+/obj/machinery/atmospherics/binary/pump/var/tmp/init_power_rating
+/obj/machinery/atmospherics/binary/pump/var/tmp/init_on
 
-/obj/machinery/atmospherics/binary/pump/proc/get_target_pressure()      // kPa
-/obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value) // kPa; returns the stored value
-/obj/machinery/atmospherics/binary/pump/proc/get_flow_rate()            // mol/s, read-only
-/obj/machinery/atmospherics/binary/pump/proc/vg_query_ui()              // assoc list, one call
-/obj/machinery/atmospherics/binary/pump/proc/vg_input_operable()        // declared here, implemented by the type
+// The only way to reach the values.
+/obj/machinery/atmospherics/binary/pump/proc/get_target_pressure()        // kPa
+/obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)   // kPa; returns what was stored
+/obj/machinery/atmospherics/binary/pump/proc/get_flow_rate()              // mol/s, read-only
+/obj/machinery/atmospherics/binary/pump/proc/pump_query_ui()              // assoc list, one call
+
+// Schema constants for UIs; no copied limits.
+#define VG_PUMP_TARGET_PRESSURE_MAX 4500
+
+// Event handlers, with no-op defaults. Override the ones you need.
+/obj/machinery/atmospherics/binary/pump/proc/on_pump_target_reached()
+/obj/machinery/atmospherics/binary/pump/proc/on_pump_starved()
 ```
 
-- **Seeds** (`vgs_*`) are the only place config defaults live on the DM side.
-  Subtypes override them in their type block and mappers var-edit them. They
-  are `tmp` (the state codec persists the Rust store instead), read once at
-  bind, and a lint forbids any reference to them in a proc body. An unset seed
-  uses the schema default. Seeds are never written at runtime, so they cost no
-  per-instance memory unless a map edits them.
-- **Accessors** are the only way to reach config and state. There is no DM var
-  named `target_pressure`, so `target_pressure = 50` does not compile.
-- **Admin var-edit** lists the config fields from the schema and writes through
-  the setters. Editing a seed after bind also routes to the setter.
-- **tgui**: `ui_data` calls `vg_query_ui()` (one FFI call).
-- **Events**: the type implements `vg_event(event, list/payload)`, and the
-  generated dispatcher calls it (§8).
+- **Initial values** (`init_*`) are constructor arguments, not state. A lint
+  forbids any reference to them inside a proc body, so they can't be mistaken
+  for the live value. An unset one uses the schema default. They are never
+  written at runtime, so they cost no per-instance memory unless a map sets
+  them.
+- There is **no DM var** named `target_pressure`, so `target_pressure = 50`
+  does not compile. The setter is the only way to change it.
+- **Admin var-edit** shows a section with each component's live fields and
+  writes through the setters. Editing an `init_*` after the atom is bound goes
+  to the setter too.
+- **Debugging:** `vg_describe(atom)` prints every component's fields, inputs
+  and recent commands (from the R9 flight recorder).
 
 ## 4. Lifecycle
 
-All of it lives in base procs keyed by the type's `vg_kind`, so a subtype
+All of it lives in base procs keyed by the type's component vars, so a subtype
 cannot skip it.
 
 | Moment | Where | What happens |
 |---|---|---|
-| bind | base `on_materialize()` (L2) | one call spawns the Rust object with seeds and current inputs, stores `vg_handle` and registers the atom in the DM handle table |
-| unbind | J1 `pre_destroy()`, which `qdel` runs before any `Destroy` override | removes the Rust object and clears the handle |
-| collapse to latent | C10 collapse (a ledger transaction) | captures config and state into the blob, then unbinds |
-| materialize from latent | ledger materialize | binds with the blob instead of seeds |
-| an input source changes | the source's setter signal | resubmits the derived input (§7) |
-| world start | `verdigris_init()` | resets every Rust domain store and checks the ABI hash. DM handles only ever exist in the current world. |
+| bind | the base `on_materialize()` (L2) | one call creates the entity and its components from the `init_*` values and current inputs, then stores `vg_entity` |
+| unbind | J1 `pre_destroy()`, which `qdel` runs before any `Destroy` override | removes the entity; clears `vg_entity` |
+| collapse to latent | the C10 collapse, a ledger transaction | saves every component's config and state into the latent blob, then unbinds |
+| materialize from latent | the ledger materialize | binds from the blob instead of the `init_*` values |
+| a source changes | the source's transition or accessor | recomputes and resubmits the input (§7) |
+| world start | `verdigris_init()` | resets every Rust store and checks the ABI hash, so no handle survives from a previous round |
 
-A handle is the R2 packed handle (20-bit index, 4-bit generation, exact as a DM
-number). The DM handle table is a flat list per kind indexed by slot, so an
-event resolves to its atom in O(1), and the dispatcher checks
-`atom.vg_handle == handle` before calling it.
+**Boot batching.** During world init, binds go into a spawn buffer: handles
+are reserved from Rust in blocks, so `vg_entity` is set immediately, and one
+call creates the whole batch. Every generated proc first flushes the buffer if
+it's non-empty (a single number check). Every read and command therefore sees
+every earlier bind. The buffer is invisible outside the generated code and
+empty after init.
 
 ## 5. Writes
 
 `set_x(value)` is one FFI call that:
 
-1. resolves the handle (a stale, wrong-kind or unbound handle is a typed error
-   and a DM runtime naming the object);
+1. resolves the handle and component (a stale, wrong-component or unbound
+   handle is a typed error and a DM runtime naming the atom);
 2. validates the value against the schema (`clamp` or `reject`);
 3. submits a typed command through the domain's `MainPort` (R4), which applies
-   it to the main-side overlay immediately and to the simulation at the next
-   frame;
+   it to what DM sees immediately and to the simulation at the next frame;
 4. returns the stored value.
 
-Nothing is buffered on the DM side, so nothing can be lost or reordered there.
-Sets are rare (players, admins, mapload, construction). A benchmark COUNT gate
-requires **zero binding sets per idle tick**: a per-tick DM write means a law
-belongs in Rust.
+Nothing is buffered on the DM side after init, so nothing can be lost or
+reordered. Sets are rare (players, admins, construction). A COUNT benchmark
+gate requires **zero sets per idle tick**: repeated per-tick DM writes mean a
+law belongs in Rust.
 
 ## 6. Reads
 
-`get_x()` is one FFI call returning `MainPort::read`: the overlay (every write
-DM made this tick) over the pinned frame. From DM's point of view each object
-is linearizable: a read always reflects every earlier set. State fields come
-from the pinned frame, at most one frame old, and DM never stores them. Query
-groups return several fields in one call.
+`get_x()` is one FFI call returning `MainPort::read`: this tick's writes over
+the pinned frame. From DM's point of view each entity is linearizable: a read
+always reflects every earlier set. State fields come from the pinned frame, at
+most one frame old.
 
-DM must not cache a read in a member var across ticks. A generated lint flags
-member assignments from `get_*` and `vg_query_*`, and a unit test checks that
-no bound type declares a var named like one of its kind's fields.
+- **Query groups** return several fields in one call (`pump_query_ui()`).
+- **Batch reads** return one field or group for a list of atoms in one call,
+  for consoles and scanners that show many devices.
+- DM never stores a read across ticks. A lint flags member-var assignment from
+  `get_*` or `*_query_*`, and a unit test checks that no bound type declares a
+  var with a component field's name.
 
 ## 7. Inputs: the only DM-owned values Rust stores
 
-An input is a pure DM proc (for example `vg_input_operable()`) over declared
-sources.
+An input is a pure DM proc over declared sources (for example
+`pump_input_operable()`), recomputed and resubmitted only when a source
+changes. Sources come in five classes. The first four make a missed update
+impossible by construction:
 
-- **Closed sources.** Every source is DM state that changes only through a
-  framework transition or a setter that sends a signal: `loc` (movement hooks,
-  J5), `anchored` (a setter, and I5 construction), integrity breakpoints (D4),
-  construction state (I5) and `panel_open` (a setter). Lints forbid raw writes
-  to declared source vars; `loc` and `contents` are already linted (C1).
-- **Event path.** The binding subscribes to its sources' signals and
-  resubmits the derived value only when it changed.
-- **Reconciler** (`SSvg`). A budgeted sweep recomputes every bound object's
-  inputs and compares them with Rust's stored inputs in batched reads. It also
-  compares the DM handle table with Rust's live set, looking for orphans on
-  either side.
-  - Test and dev builds reconcile **every** bound object after every unit test
-    (in the test sandbox's teardown) and after every step of the binding fuzz
-    test. A missed update fails the test that introduced it, naming the object,
-    field, expected value and actual value.
-  - Production sweeps cover every object within 60 seconds, repair any
-    divergence and log it. The benchmark COUNT metric `vg_reconcile_repairs`
-    must stay 0.
+| Class | Examples | Why an update can't be missed |
+|---|---|---|
+| 1. Ledger relationships | a canister in a connector port, a cell in a machine, contents | they change only through ledger transactions, which fire `on_slotted` and `on_unslotted` (J6) |
+| 2. Movement | position, which turf, which z-level | every move goes through the movement hooks (J5); raw `loc` writes are already a lint error (C1), and C11 removes the rest |
+| 3. Framework transitions | construction graph state (I5), integrity breakpoints (D4) | the framework is the only writer |
+| 4. DM vars behind accessors | machine status flags, panel open | a source var is renamed and reached only through a get and set proc pair (TG did this for `stat`, which became `machine_stat`), so a raw write does not compile |
+| 5. BYOND built-ins | `anchored`, `density`, `opacity`, `dir` | these can't be hidden: raw writes are linted, and the reconciler covers them |
+
+Prefer the higher classes. For example, "connected" should come from the
+connector's ledger slot (class 1), not from `anchored` (class 5).
+
+**Reconciler** (`SSvg`), the safety net for class 5 and for bugs anywhere:
+
+- A budgeted sweep recomputes every bound atom's inputs and compares them with
+  Rust's stored inputs through batched reads. It also compares the set of
+  bound atoms with Rust's live entities, looking for orphans on either side.
+- **Test and dev builds** reconcile every bound atom after every unit test (in
+  the test sandbox's teardown) and after every step of the binding fuzz test.
+  A divergence fails the test that caused it, naming the atom, field,
+  expected value and actual value.
+- **Production** sweeps cover every atom within 60 seconds and repair and log
+  any divergence. The COUNT benchmark metric `vg_reconcile_repairs` must stay 0.
 
 ## 8. Events
 
-Rust records events in its outbox. SSreactor drains each domain once per tick
-(one FFI call per domain), and the generated dispatcher calls `vg_event()` on
-the atom. There are no per-object callbacks each tick and no pushed stats: a
-display value such as flow rate is a `state` field read when shown.
+Rust records events in each domain's outbox. SSreactor drains each domain
+once per tick (one FFI call per domain), and the generated dispatcher calls the
+named handler on the atom after checking `atom.vg_entity == handle`. There are
+no per-object callbacks each tick and no pushed display values: a display
+value is a `state` field read when it's shown.
 
 ## 9. Errors and safety
 
-- Panics are caught per FFI call (the bind macro already does this) and per
-  command in the apply loop. A failing command leaves the stored value
-  unchanged and reports an error. It never takes down the batch or
-  DreamDaemon.
-- Every error is typed (kind, field, handle, reason) and becomes a DM runtime
+- Panics are caught per FFI call and per command in the apply loop. A failing
+  command leaves its value unchanged and reports an error. It can't take down
+  the batch or DreamDaemon.
+- Errors are typed (component, field, handle, reason) and become DM runtimes
   with the atom attached.
-- Validation, clamping and unit conversion exist once, in Rust.
-- Handles are generation-checked and per kind, so reusing a slot cannot alias.
+- Handles are generation-checked, so reusing a slot can't alias another atom.
+- Values an atom's type or map provides are validated by a unit test that
+  checks every bound type's `init_*` values against the schema, so a bad
+  default fails CI instead of failing at bind time.
 
 ## 10. Why desync cannot happen
 
@@ -216,74 +251,97 @@ display value such as flow rate is a `state` field read when shown.
 |---|---|
 | DM code changes a setting without telling Rust | the DM var does not exist; only `set_*` changes it |
 | Rust clamps or updates a value DM still holds | DM holds no copy |
-| A read right after a write sees the old value | reads are the overlay over the frame (read-your-writes) |
-| An object is created, destroyed or collapsed without Rust knowing | bind and unbind are in base lifecycle procs that subtypes cannot skip (materialize, J1 pre-destroy, ledger collapse), and the reconciler checks identity both ways |
-| A stale handle hits a recycled slot | the generation check, plus per-kind tables |
-| A map or admin edit changes a value | seeds are read once at bind; var-edit writes through setters |
+| A read right after a write sees the old value | reads return this tick's writes over the frame |
+| An atom is created, destroyed or collapsed without Rust knowing | binding is in base lifecycle procs subtypes can't skip (materialize, J1 pre-destroy, ledger collapse); the reconciler checks both directions |
+| A stale handle reaches a recycled slot | generation-checked handles |
+| A map or admin edit | `init_*` values are read once at bind; var-edit writes through setters |
 | Save and load | the state codec reads and writes the Rust store |
-| An invalid value | it is validated once, in Rust, and the setter returns what was stored |
-| A panic in the middle of a batch | a per-command catch; the value is unchanged and an error is reported |
-| A new round with leftover Rust state | `verdigris_init()` resets every store; the ABI handshake |
-| A DM-owned input changes through a path nobody hooked | lints on source writes; the reconciler fails CI and repairs production within one sweep |
-| DM caches a Rust value in a var | the lint on member assignment from reads, and the unit test on bound types' vars |
+| An invalid value | validated once, in Rust; the setter returns what was stored |
+| A panic in the middle of a batch | caught per command; the value is unchanged; an error is reported |
+| A new round with leftover Rust state | `verdigris_init()` resets every store; ABI handshake |
+| An input changes through a class 1–4 source | the transition or accessor updates Rust as part of the same change |
+| A class 5 built-in changes through a path nobody hooked | the lint rejects raw writes; the reconciler fails CI and repairs production within one sweep |
+| DM caches a Rust value in a var | lint and unit test (§6) |
+| Two domains disagree about one atom | components are coupled inside Rust in the same frame, never through DM |
+| Boot batching reorders anything | every generated proc flushes the spawn buffer first |
 
-## 11. Enforcement
+## 11. How this meets the goals
 
-- **Compile time:** bound fields have no DM var, so the accessors are the only API.
-- **Generator checks:** the DM base type exists; seeds match config fields; no
-  DM var on a bound type collides with a field name; every event has a
-  handler; units and ranges are declared.
+| Goal | How |
+|---|---|
+| No desync | one store per fact (§0); the invariant table (§10) |
+| Clean interface | typed, named procs generated from one Rust declaration; no positional slots, magic numbers or hand-written glue |
+| Developer friendliness | declare a struct and a law in Rust; in DM, set `init_*` values and call `get_*`/`set_*`; UIs use one query proc; events are named handlers you override |
+| Minimal memory | one `vg_entity` var per bound atom; component choice and `init_*` values are type-level; turfs need nothing; schemas are static |
+| Performance | one FFI call per set, get or query; batch reads; boot binds batched; one event drain per domain per tick; zero binding traffic per idle tick (COUNT gate) |
+| Generic, no duplication | handles, validation, units, errors, persistence, events, reconciliation, var-edit and docs are generic; a domain supplies only its data and its law |
+| Works for everything | components for machines, items and mobs; grid kinds for turfs; typed commands for stateless work |
+| Safety | panics isolated per call and per command; typed errors; generation-checked handles; reset each round |
+
+**Rejected alternatives:**
+- **DM vars plus dirty flags:** two copies, so a missed flag is a silent desync.
+- **DM vars plus a per-tick diff:** two copies, and polling every tick.
+- **Rust pushing state into DM vars:** stale between pushes, and FFI traffic every tick.
+- **One kind per atom:** a pump couldn't be a gas device and a power consumer at once.
+
+## 12. Enforcement
+
+- **Compile time:** bound fields have no DM var; input source vars (class 4)
+  are reachable only through accessors.
+- **Generator checks:**
+  - the DM type exists;
+  - no DM var on a bound type has a field's name;
+  - accessor names don't collide between components on one type;
+  - every event has a handler (a generated default);
+  - every field declares its units and range.
 - **Lints:**
-  - `call_ext` only in generated files (this exists);
-  - `vgs_*` only in type blocks and maps;
-  - no raw writes to input sources;
-  - no caching of reads;
-  - no positional multi-slot commands (the generator only emits typed ones).
+  - `call_ext` only in generated files (exists);
+  - `init_*` never in proc bodies;
+  - no member-var caching of reads;
+  - no raw writes to class 5 sources or to `loc`.
 - **Tests:**
   - read-your-writes;
-  - stale and wrong-kind handles;
-  - bind at materialize, and unbind at pre-destroy even when `Destroy` is overridden;
-  - the latent collapse and materialize round trip;
-  - the state save and load round trip;
+  - stale, wrong-component and unbound handles;
+  - binding at materialize, and unbinding at pre-destroy even when `Destroy` is overridden;
+  - the latent round trip and the state save/load round trip;
+  - `init_*` validation for every bound type;
   - a panic becomes a DM runtime;
+  - boot batching (a read before and after the flush);
   - the `verdigris_init()` reset;
-  - the reconciler catches a deliberately injected desync (a test that bypasses a setter through `vars[]` must fail);
-  - a fuzz test of random sets, moves, breaks, destroys and collapses, with full reconciliation after every step.
+  - an injected desync (a test that bypasses a setter through `vars[]` or a raw FFI call) must be caught;
+  - a fuzz test of random sets, moves, breaks, destroys, collapses and connections, with full reconciliation after every step.
 - **Benchmarks (COUNT metrics, independent of load):**
-  - binding sets per idle tick = 0;
+  - sets per idle tick = 0;
   - reconcile repairs = 0;
-  - FFI calls per idle tick do not grow.
+  - FFI calls per idle tick don't grow.
 
-## 12. Cost
+## 13. Cost
 
-- One FFI call per set, get or query, and none per idle tick from bindings.
-- Per bound object: one `vg_handle` var and one handle-table slot. Seeds are
-  type-level, with no per-instance memory unless mapped. Schemas are static.
-- The reconciler costs one derived-input evaluation per object per sweep
-  period, in batched reads. For example, 5,000 objects over 60 seconds is
-  about 85 evaluations per second.
+- **FFI calls:** one per set, get or query; none per idle tick; binds batched at boot.
+- **DM memory:** one var per bound atom, plus one slot in the entity table.
+- **Rust memory:** components in arenas, and a small per-entity component index.
+- **Reconciler:** one input evaluation per atom per sweep, in batched reads. For
+  example, 5,000 atoms over 60 seconds is about 85 evaluations per second.
 
-## 13. The pump, before and after
+## 14. The pump, before and after
 
 Before (`pump.dm` today):
 - a `target_pressure` var;
 - six scattered `update_rust_device()` calls;
 - `rust_set_device(1, 2, RUST_DEVICE_LAW_PUMP, target_pressure, power_rating)`, with four positional slots;
-- a string-keyed device map in SSair, with a commit per call;
-- `rust_device_stepped()` pushing display values every tick.
+- a string-keyed device map in SSair, and a commit on every call;
+- `rust_device_stepped()` pushing display values every tick;
+- `STOP_MACHINE_PROCESSING` in `Initialize()`.
 
-After:
+After (the whole binding-related part of the file):
 
 ```dm
-/obj/machinery/atmospherics/binary/pump
-	vg_kind = VG_KIND_GAS_PUMP
-	vgs_target_pressure = ONE_ATMOSPHERE
-
-/obj/machinery/atmospherics/binary/pump/vg_input_operable()
-	return anchored && !(stat & BROKEN)
+/obj/machinery/atmospherics/binary/pump/high_power
+	init_target_pressure = 9000
+	init_power_rating = 45000
 
 /obj/machinery/atmospherics/binary/pump/ui_data(mob/user)
-	return vg_query_ui()
+	return pump_query_ui()
 
 /obj/machinery/atmospherics/binary/pump/ui_act(action, list/params)
 	. = ..()
@@ -295,35 +353,34 @@ After:
 			set_on(!get_on())
 			return TRUE
 
-/obj/machinery/atmospherics/binary/pump/vg_event(event, list/payload)
-	if(event == VG_EVENT_PUMP_TARGET_REACHED)
-		update_icon()
+/obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
+	update_icon()
 ```
 
 No `process()`, no sync calls, no ids, no port numbers, no per-tick callbacks.
+`operable` comes from construction and integrity (classes 3 and 4) through
+generated wiring, so the pump file doesn't mention it.
 
-## 14. Migration
+## 15. Migration
 
 1. **Runtime and generator** (R10, one branch):
-   - the `#[vg::kind]`, `#[vg::query]` and `#[vg::events]` macros;
-   - per-kind handle tables on `MainPort`, validation and typed errors;
+   - entities, components and grid kinds on `MainPort`;
+   - the `#[vg::component]`, `#[vg::query]` and `#[vg::events]` attributes;
+   - validation and typed errors;
    - the generated DM surface;
-   - `SSvg` (the reconciler and event dispatch);
+   - boot batching;
+   - `SSvg` (reconciler and event dispatch);
    - lints and tests.
 
-   The pump is the reference kind.
-2. **Gas devices** (M2): every device kind moves onto it. These are deleted:
+   The pump is the reference component.
+2. **Gas devices** (M2) move onto it. These are deleted:
    - `rust_pipenets.dm`'s device procs;
    - `SSair.rust_pipe_devices` and `next_rust_device_id`;
    - `rust_device_stepped()`;
    - every `update_rust_device()`.
 3. **Power** (M3 consumers, producers and storage), **heat** (bodies and the H4
-   regulator) and **radiation** sources: each becomes kinds, and its old binds
-   are deleted.
-4. **Stateless binds** (jobs, layout, metrics, bulk topology registration)
-   become typed commands and queries through the same generator.
-5. The old untyped paths are deleted with no shims, and the lints turn on
+   regulator) and **radiation** sources become components. Turf gas and heat
+   become grid kinds.
+4. **Stateless binds** (jobs, layout, metrics) become typed commands and queries.
+5. The old untyped paths are deleted with no shims, and the lints go
    repo-wide.
-
-Classification of the existing binds, and the order, go in this file's
-appendix as each lands.
