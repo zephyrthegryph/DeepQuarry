@@ -382,6 +382,13 @@
 	var/obj/item/organ/external/E = organs_by_name[part]
 	return E && !E.is_stump()
 
+/// Whether this mob has body slot `id` and can use it now (its body part is
+/// there, its species has it): the old has_organ_for_slot().
+/mob/living/proc/body_slot_usable(id)
+	var/datum/ledger/L = dq_ledger(src)
+	var/datum/slot_def/body/def = L?.def_by_id(id)
+	return istype(def) && !body_slot_refusal(def)
+
 /// What is in body slot `def`.
 /mob/living/proc/body_slot_item(datum/slot_def/body/def)
 	var/datum/ledger/L = dq_ledger(src)

@@ -70,7 +70,7 @@
 	if(!istype(human_victim))
 		return 0
 
-	if (!human_victim.has_organ_for_slot(slot_handcuffed))
+	if (!human_victim.body_slot_usable(SLOT_ID_HANDCUFFED))
 		to_chat(user, span_danger("\The [victim] needs at least two wrists before you can cuff them together!"))
 		return 0
 
@@ -244,7 +244,7 @@
 	if(!istype(H))
 		return 0
 
-	if (!H.has_organ_for_slot(slot_legcuffed))
+	if (!H.body_slot_usable(SLOT_ID_LEGCUFFED))
 		to_chat(user, span_danger("\The [H] needs at least two ankles before you can cuff them together!"))
 		return 0
 
@@ -317,7 +317,7 @@
 		src.dropped(user)
 		return 0
 
-	if(!H.has_organ_for_slot(slot_legcuffed))
+	if(!H.body_slot_usable(SLOT_ID_LEGCUFFED))
 		H.visible_message(span_infoplain(span_bold("\The [src]") + " slams into [H], but slides off!"))
 		src.dropped(user)
 		return 0
