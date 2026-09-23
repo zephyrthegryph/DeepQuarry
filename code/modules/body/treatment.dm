@@ -379,6 +379,7 @@
 		TREAT_OCCLUSIVE_SEAL   = "Occlusive seal",
 		TREAT_REGENERATION     = "Natural regeneration",
 		TREAT_RESTORATION      = "Restoration",
+		TREAT_FEEDSTOCK        = "Refactory feedstock",
 	)
 	return names
 
@@ -395,20 +396,28 @@
 			return TRUE
 		if(TREAT_WOUND_PACKING, TREAT_OCCLUSIVE_SEAL)
 			return TRUE
-		if(TREAT_REGENERATION, TREAT_RESTORATION)
-			return TRUE // the body itself, powers, magic, admin
+		if(TREAT_REGENERATION, TREAT_RESTORATION, TREAT_FEEDSTOCK)
+			return TRUE // the body itself, powers, magic, admin, steel fed to a refactory
 	return FALSE
 
 /// Biologies a treatment mechanism works on. Biological mechanisms (every
-/// reagent tag) only treat organic tissue; repair mechanisms only treat
-/// synthetic parts. Nanoform bodies respond to both.
+/// reagent tag) only treat organic tissue; repair mechanisms treat synthetic
+/// parts. A nanite swarm answers only to structural repair (plating, wiring,
+/// calibration), its own regeneration and refactory feedstock, plus the
+/// electrical jump-start that reboots a dormant core.
 /proc/treatment_tag_biology(tag)
 	switch(tag)
-		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_SYSTEM_RESTORE, TREAT_COOLANT, TREAT_CALIBRATION)
+		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_CALIBRATION)
 			return BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM
+		if(TREAT_SYSTEM_RESTORE, TREAT_COOLANT)
+			return BIOLOGY_SYNTHETIC
+		if(TREAT_REGENERATION, TREAT_DEFIBRILLATION)
+			return BIOLOGY_ORGANIC | BIOLOGY_NANOFORM
+		if(TREAT_FEEDSTOCK)
+			return BIOLOGY_NANOFORM
 		if(TREAT_RESTORATION)
 			return BIOLOGY_ALL
-	return BIOLOGY_ORGANIC | BIOLOGY_NANOFORM
+	return BIOLOGY_ORGANIC
 
 /// reagent ID -> treatment_tags, built once from the chemistry prototypes.
 /// Only reagents that carry tags appear.

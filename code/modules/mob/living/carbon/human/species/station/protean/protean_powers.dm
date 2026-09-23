@@ -142,7 +142,8 @@
 		if(!do_after(H, 2 SECONDS, target = H))
 			to_chat(H, span_warning("You must remain still to reshape yourself!"))
 			return
-		F.set_form(/datum/form/human)
+		if(F.form_control_check())
+			F.set_form(/datum/form/human)
 		return
 	if(H.handcuffed)
 		to_chat(H, span_warning("You can't do this while handcuffed!"))
@@ -151,7 +152,8 @@
 	if(!do_after(H, 2 SECONDS, target = H))
 		to_chat(H, span_warning("You must remain still to blobform!"))
 		return
-	F.set_form(/datum/form/protean_blob)
+	if(F.form_control_check())
+		F.set_form(/datum/form/protean_blob)
 
 /mob/living/carbon/human/proc/nano_blobform()
 	set name = "Toggle Blobform"

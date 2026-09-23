@@ -81,9 +81,21 @@
 	return //No way to repair disfigured prots
 
 // // // Internal Organs
+// The swarm's own organs are nanite, not prosthetics: BIOLOGY_NANOFORM on any
+// body plan, so only the nanite mechanisms reach them.
 /obj/item/organ/internal/nano
-	robotic = ORGAN_ROBOT
+	robotic = ORGAN_NANOFORM
 
+/obj/item/organ/internal/nano/robotize()
+	. = ..()
+	robotic = ORGAN_NANOFORM
+
+/obj/item/organ/internal/nano/mechassist()
+	. = ..()
+	robotic = ORGAN_NANOFORM
+
+/// Control: coordinates the swarm. Its damage (orchestrator_damage) degrades
+/// fine control and the swarm's hold on a form.
 /obj/item/organ/internal/nano/orchestrator
 	name = "orchestrator module"
 	desc = "A small computer, designed for highly parallel workloads."
@@ -104,6 +116,9 @@
 	. = ..()
 	icon_state = "orchestrator"
 
+/// Supply and contamination: stores the steel the swarm repairs itself with
+/// (refactory_depletion when it runs dry) and filters out what it can't use
+/// (contamination).
 /obj/item/organ/internal/nano/refactory
 	name = "refactory module"
 	desc = "A miniature metal processing unit and nanite factory."
@@ -139,8 +154,19 @@
 		materials[material] += increase
 	else
 		materials[material] = increase
-
+	if(increase > 0 && owner)
+		take_in_material(material, increase)
 	return increase
+
+/// Stored material reaches the swarm: steel is feedstock (TREAT_FEEDSTOCK),
+/// anything else contaminates it.
+/obj/item/organ/internal/nano/refactory/proc/take_in_material(material, amount)
+	var/points = amount / NANOFORM_STEEL_PER_POINT
+	if(material == MAT_STEEL)
+		owner.mend(TREAT_FEEDSTOCK, points)
+		return
+	owner.body?.afflict(/datum/affliction/nanite/contamination, src, points * NANITE_CONTAMINATION_PER_MATERIAL_POINT)
+	log_game("NANOFORM: [key_name(owner)] stored [amount] [material]; the swarm is contaminated.")
 
 /obj/item/organ/internal/nano/refactory/proc/use_stored_material(material,amt)
 	if(status & ORGAN_DEAD)
@@ -222,10 +248,6 @@
 	icon = initial(icon)
 	icon_state = "posi1"
 	stored_mmi.icon_state = "posi1"
-/*
-/obj/item/organ/internal/mmi_holder/posibrain/nano/emp_act(severity, recursive)
-	return	//Proteans handle EMP's differently
-*/
 // The 'out on the ground' object, not the organ holder
 /obj/item/mmi/digital/posibrain/nano
 	name = "protean posibrain"
