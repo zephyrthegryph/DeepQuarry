@@ -29,7 +29,10 @@
 
 /datum/wires/New(atom/_holder)
 	..()
-	if(!istype(_holder, holder_type))
+	// A null holder is the state materializer building a bare instance
+	// (owned codec, C5); state_post_apply() on the atom fixes holder up
+	// once its own vars (including this datum) are applied.
+	if(_holder && !istype(_holder, holder_type))
 		CRASH("Our holder is null/the wrong type!")
 
 	holder = _holder
@@ -49,6 +52,12 @@
 		randomize()
 		GLOB.wire_color_directory[holder_type] = colors
 		GLOB.wire_name_directory[holder_type] = proper_name
+
+// holder is restored by the owning atom's state_post_apply() (C5, base_codecs.dm);
+// assemblies (attached signalers) are external items that outlive a wire
+// reset and are rare enough to just re-attach by hand after a round trip.
+/datum/wires/state_exclude()
+	return ..() + list("holder", "assemblies")
 
 /datum/wires/Destroy()
 	for(var/color in assemblies)

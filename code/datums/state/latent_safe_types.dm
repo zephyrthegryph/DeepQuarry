@@ -612,3 +612,48 @@
 
 /obj/item/ammo_magazine
 	latent_safe = TRUE
+
+// Ticks in SSobj from Initialize() to Destroy(): never latent (containment.md
+// section 4.4, "anything that processes").
+/obj/item/ammo_magazine/smart
+	latent_safe = FALSE
+
+// ---- C5 step 6: PDAs, radios and headsets ----
+// L2 and L3 already moved their world registrations into on_materialize()
+// (state.md section 5); this is only the serializer round trip.
+
+/obj/item/radio
+	latent_safe = TRUE
+
+// Its Initialize() builds a real circuitboard child eagerly (wall-mounted,
+// low count, not the bulk case this step targets); leave it for its owner.
+/obj/item/radio/intercom
+	latent_safe = FALSE
+
+/obj/item/card/id
+	latent_safe = TRUE
+
+// Its Initialize() builds a hidden uplink child with its own timers
+// (uplink.dm); a rare, antag-only preset, not the bulk case this step targets.
+/obj/item/radio/uplink
+	latent_safe = FALSE
+
+/obj/item/radio/headset/uplink
+	latent_safe = FALSE
+
+// Mapped pre-linked to a specific telecomms machine; the link is set up once
+// at roundstart (LateInitialize) and would need to be redone on materialize.
+/obj/item/radio/bluespacehandset/linked/tether_prelinked
+	latent_safe = FALSE
+
+/obj/item/radio/bluespacehandset/linked/talon_prelinked
+	latent_safe = FALSE
+
+/obj/item/radio/bluespacehandset/linked/relicbase_prelinked
+	latent_safe = FALSE
+
+/obj/item/radio/bluespacehandset/linked/southerncross_prelinked
+	latent_safe = FALSE
+
+/obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
+	latent_safe = FALSE

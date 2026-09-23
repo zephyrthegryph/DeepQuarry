@@ -296,7 +296,14 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if(islist(value))
 		return encode_list(value, where)
 	if(isfile(value))
-		return list(STATE_WRAP_RESOURCE = "[value]")
+		// A dynamically generated icon/mutable_appearance (e.g. a composited
+		// sprite stack) has no .rsc path, "[value]" is "", and decode's
+		// file("") does not round-trip back to it (C5); treat it as unset,
+		// same as what decode would give back anyway.
+		var/rsc_path = "[value]"
+		if(!length(rsc_path))
+			return null
+		return list(STATE_WRAP_RESOURCE = rsc_path)
 	if(isdatum(value))
 		if(ids && (value in ids))
 			return list(STATE_WRAP_CHILD = ids[value])
