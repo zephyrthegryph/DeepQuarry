@@ -435,7 +435,6 @@
 		return
 
 /obj/item/secbot_assembly
-	var/focused_tool_stage
 	name = "helmet/signaler assembly"
 	desc = "Some sort of bizarre assembly."
 	icon = 'icons/obj/aibots.dmi'
@@ -447,63 +446,100 @@
 	item_state = "helmet"
 	var/build_step = 0
 	var/created_name = "Securitron"
+	construction_graph = /datum/construction_graph/secbot_assembly
 
-/obj/item/secbot_assembly/welder_act(mob/user, obj/item/tool)
-	focused_tool_stage = TOOL_WELDER
-	attackby(tool, user)
-	focused_tool_stage = null
-	return ITEM_INTERACT_SUCCESS
-
-/obj/item/secbot_assembly/screwdriver_act(mob/user, obj/item/tool)
-	focused_tool_stage = TOOL_SCREWDRIVER
-	attackby(tool, user)
-	focused_tool_stage = null
-	return ITEM_INTERACT_SUCCESS
-
+// Renaming the finished bot is not construction: keep it a plain interaction.
 /obj/item/secbot_assembly/attackby(obj/item/W, mob/user)
 	..()
-	if(focused_tool_stage == TOOL_WELDER && !build_step)
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(WT.remove_fuel(0, user))
-			build_step = 1
-			add_overlay("hs_hole")
-			to_chat(user, "You weld a hole in \the [src].")
-
-	else if(isprox(W) && (build_step == 1))
-		user.drop_item()
-		build_step = 2
-		to_chat(user, "You add \the [W] to [src].")
-		add_overlay("hs_eye")
-		name = "helmet/signaler/prox sensor assembly"
-		qdel(W)
-
-	else if((istype(W, /obj/item/robot_parts/l_arm) || istype(W, /obj/item/robot_parts/r_arm) || (istype(W, /obj/item/organ/external/arm) && ((W.name == "robotic right arm") || (W.name == "robotic left arm")))) && build_step == 2)
-		user.drop_item()
-		build_step = 3
-		to_chat(user, "You add \the [W] to [src].")
-		name = "helmet/signaler/prox sensor/robot arm assembly"
-		add_overlay("hs_arm")
-		qdel(W)
-
-	else if(istype(W, /obj/item/melee/baton) && build_step == 3)
-		user.drop_item()
-		to_chat(user, "You complete the Securitron! Beep boop.")
-		if(istype(W, /obj/item/melee/baton/slime))
-			var/mob/living/bot/secbot/slime/S = new /mob/living/bot/secbot/slime(get_turf(src))
-			S.name = created_name
-		else
-			var/mob/living/bot/secbot/S = new /mob/living/bot/secbot(get_turf(src))
-			S.name = created_name
-		qdel(W)
-		qdel(src)
-
-	else if(istype(W, /obj/item/pen))
+	if(istype(W, /obj/item/pen))
 		var/t = sanitizeSafe(tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 		if(!t)
 			return
 		if(!in_range(src, user) && loc != user)
 			return
 		created_name = t
+
+/**
+ * The Securitron assembly: a helmet welded open, then a signaler (added by
+ * the helmet itself, see above), a prox sensor, a robot arm and a baton.
+ * `build_step` is the graph's state_var. The baton step branches by type
+ * (a slime baton makes a `/mob/living/bot/secbot/slime`) without a state fork.
+ */
+/datum/construction_graph/secbot_assembly
+	id = "secbot_assembly"
+	states = list(0, 1, 2, 3)
+	initial_states = list(0)
+	state_var = "build_step"
+	edge_types = list(
+		/datum/interaction/construction/secbot/weld_hole,
+		/datum/interaction/construction/secbot/prox,
+		/datum/interaction/construction/secbot/arm,
+		/datum/interaction/construction/secbot/baton,
+	)
+
+/datum/interaction/construction/secbot/weld_hole
+	from_state = 0
+	to_state = 1
+	step_text = "weld a hole in it"
+	tool = TOOL_WELDER
+
+/datum/interaction/construction/secbot/weld_hole/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	target.add_overlay("hs_hole")
+	to_chat(actor, span_notice("You weld a hole in \the [target]."))
+	return TRUE
+
+/datum/interaction/construction/secbot/prox
+	from_state = 1
+	to_state = 2
+	step_text = "add a proximity sensor"
+	item_type = /obj/item/assembly/prox_sensor
+	item_use = CONSTRUCTION_ITEM_DELETE
+
+/datum/interaction/construction/secbot/prox/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	target.add_overlay("hs_eye")
+	target.name = "helmet/signaler/prox sensor assembly"
+	to_chat(actor, span_notice("You add \the [held] to [target]."))
+	return TRUE
+
+/datum/interaction/construction/secbot/arm
+	from_state = 2
+	to_state = 3
+	step_text = "add a robot arm"
+	item_type = list(/obj/item/robot_parts/l_arm, /obj/item/robot_parts/r_arm, /obj/item/organ/external/arm)
+	item_name = "a robot arm"
+	item_use = CONSTRUCTION_ITEM_DELETE
+
+/datum/interaction/construction/secbot/arm/item_matches(obj/item/held)
+	if(istype(held, /obj/item/robot_parts/l_arm) || istype(held, /obj/item/robot_parts/r_arm))
+		return TRUE
+	return istype(held, /obj/item/organ/external/arm) && (held.name == "robotic right arm" || held.name == "robotic left arm")
+
+/datum/interaction/construction/secbot/arm/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	target.name = "helmet/signaler/prox sensor/robot arm assembly"
+	target.add_overlay("hs_arm")
+	to_chat(actor, span_notice("You add \the [held] to [target]."))
+	return TRUE
+
+/datum/interaction/construction/secbot/baton
+	from_state = 3
+	to_state = CONSTRUCTION_DONE
+	step_text = "attach a stun baton to finish it"
+	item_type = /obj/item/melee/baton
+	item_use = CONSTRUCTION_ITEM_DELETE
+
+/datum/interaction/construction/secbot/baton/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
+	var/obj/item/secbot_assembly/assembly = target
+	to_chat(actor, span_notice("You complete the Securitron! Beep boop."))
+	var/turf/where = get_turf(assembly)
+	if(istype(held, /obj/item/melee/baton/slime))
+		var/mob/living/bot/secbot/slime/bot = new /mob/living/bot/secbot/slime(where)
+		bot.name = assembly.created_name
+	else
+		var/mob/living/bot/secbot/bot = new /mob/living/bot/secbot(where)
+		bot.name = assembly.created_name
+	actor.drop_from_inventory(assembly)
+	qdel(assembly)
+	return TRUE
 
 #undef SECBOT_WAIT_TIME
 #undef SECBOT_THREAT_ARREST
