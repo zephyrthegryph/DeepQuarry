@@ -138,7 +138,7 @@ Nothing else in the console has ID requirements.
 					var/obj/item/card/id/ID = I.GetID()
 					if(istype(ID))
 						logname = "[ID.registered_name]"
-			stored_research.research_logs += list(list(
+			LAZYADD(stored_research.research_logs, list(list()
 				"node_name" = TN.display_name,
 				"node_cost" = price[TECHWEB_POINT_TYPE_GENERIC],
 				"node_researcher" = logname,
@@ -177,11 +177,11 @@ Nothing else in the console has ID requirements.
 		return data
 	data += list(
 		"nodes" = list(),
-		"queue_nodes" = stored_research.research_queue_nodes,
+		"queue_nodes" = (stored_research.research_queue_nodes || list()),
 		"experiments" = list(),
 		"researched_designs" = stored_research.researched_designs,
 		"points" = stored_research.research_points,
-		"points_last_tick" = stored_research.last_bitcoins,
+		"points_last_tick" = (stored_research.last_bitcoins || list()),
 		"web_org" = stored_research.organization,
 		"sec_protocols" = FALSE, // !(obj_flags & EMAGGED),
 		"t_disk" = null,
@@ -202,7 +202,7 @@ Nothing else in the console has ID requirements.
 		var/datum/techweb_node/n = SSresearch.techweb_node_by_id(v)
 		var/enqueued_by_user = FALSE
 
-		if((v in stored_research.research_queue_nodes) && stored_research.research_queue_nodes[v] == user)
+		if((v in stored_research.research_queue_nodes) && LAZYACCESS(stored_research.research_queue_nodes, v) == user)
 			enqueued_by_user = TRUE
 
 		// Ensure node is supposed to be visible

@@ -310,7 +310,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/created_fulltile_window
 	var/rod_product
 	var/wire_product
-	var/list/window_options = list()
+	var/list/window_options
 
 	// hardness/weight moved into the property system above.
 

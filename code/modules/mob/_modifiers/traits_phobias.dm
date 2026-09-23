@@ -6,14 +6,14 @@
 	var/max_fear = 100						// Cap for current_fear.
 	var/fear_decay_rate = 1					// How much is subtracted every Life() tick when not being spooked by something.
 
-	var/list/zero_fear_up = list()		// Message displayed to holder when current_fear raises above 0.
-	var/list/zero_fear_down = list()	// Message displayed when reaching 0.
+	var/list/zero_fear_up		// Message displayed to holder when current_fear raises above 0.
+	var/list/zero_fear_down	// Message displayed when reaching 0.
 
-	var/list/half_fear_up = list()		// Message displayed when current_fear passes half of max_fear.
-	var/list/half_fear_down = list()	// Message displayed when current_fear goes below half of max_fear.
+	var/list/half_fear_up		// Message displayed when current_fear passes half of max_fear.
+	var/list/half_fear_down	// Message displayed when current_fear goes below half of max_fear.
 
-	var/list/full_fear_up = list()		// Similar to above, but for the cap.
-	var/list/full_fear_down = list()	// Ditto.
+	var/list/full_fear_up		// Similar to above, but for the cap.
+	var/list/full_fear_down	// Ditto.
 
 /datum/modifier/trait/phobia/tick()
 	if(holder.stat)

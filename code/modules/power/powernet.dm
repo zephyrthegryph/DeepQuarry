@@ -1,6 +1,6 @@
 /datum/powernet
 	var/list/cables = list()   // all cables & junctions
-	var/list/nodes  = list()   // all connected machines
+	var/list/nodes   // all connected machines
 	var/apc_count = 0
 	var/list/smes_nodes
 
@@ -16,13 +16,13 @@
 	var/smes_avail     = 0     // power (avail) contributed by SMESes
 	var/smes_newavail  = 0     // as above, for newavail
 	/// Persistent source rates. Republishing an unchanged rate is free.
-	var/list/registered_sources = list()
+	var/list/registered_sources
 	var/list/registered_source_refs
 	var/registered_supply_total = 0
 	var/registered_smes_total = 0
 	/// Persistent SMES charge requests keyed by their input terminal. Entry:
 	/// storage, requested rate, currently allocated rate.
-	var/list/registered_storage_demands = list()
+	var/list/registered_storage_demands
 	var/registered_storage_demand_total = 0
 	var/registered_storage_input_total = 0
 	var/last_storage_settlement = 0
@@ -103,7 +103,7 @@
 		cables -= C
 		C.powernet = null
 	for(var/obj/machinery/power/M in nodes)
-		nodes -= M
+		LAZYREMOVE(nodes, M)
 		M.powernet = null
 	STOP_PROCESSING_POWERNET(src)
 	SSmachines.powernets -= src
@@ -119,10 +119,10 @@
 	if(!source)
 		return FALSE
 	amount = max(amount, 0)
-	var/list/entry = registered_sources[source]
+	var/list/entry = LAZYACCESS(registered_sources, source)
 	if(!entry)
 		entry = list(0, is_smes, 0)
-		registered_sources[source] = entry
+		LAZYSET(registered_sources, source, entry)
 		LAZYSET(registered_source_refs, source, WEAKREF(source))
 	var/old_amount = entry[1]
 	var/old_smes = entry[2]
@@ -185,7 +185,7 @@
 	registered_supply_total = max(registered_supply_total - entry[1], 0)
 	if(entry[2])
 		registered_smes_total = max(registered_smes_total - entry[1], 0)
-	registered_sources.Remove(source)
+	LAZYREMOVE(registered_sources, source)
 	LAZYREMOVE(registered_source_refs, source)
 	newavail = registered_supply_total
 	smes_newavail = registered_smes_total
@@ -197,7 +197,7 @@
 	if(!storage || !terminal || terminal.powernet != src)
 		return FALSE
 	amount = max(amount, 0)
-	var/list/entry = registered_storage_demands[terminal]
+	var/list/entry = LAZYACCESS(registered_storage_demands, terminal)
 	if(!amount)
 		if(!entry)
 			return FALSE
@@ -205,7 +205,7 @@
 		registered_storage_demand_total = max(registered_storage_demand_total - entry[2], 0)
 		registered_storage_input_total = max(registered_storage_input_total - entry[3], 0)
 		load = max(load - entry[3], 0)
-		registered_storage_demands.Remove(terminal)
+		LAZYREMOVE(registered_storage_demands, terminal)
 		mark_accounting_dirty()
 		return TRUE
 	if(entry && entry[1] == storage && entry[2] == amount)
@@ -217,7 +217,7 @@
 		load = max(load - entry[3], 0)
 	else
 		entry = list(storage, 0, 0)
-		registered_storage_demands[terminal] = entry
+		LAZYSET(registered_storage_demands, terminal, entry)
 	entry[1] = storage
 	entry[2] = amount
 	entry[3] = 0
@@ -234,7 +234,7 @@
 /datum/powernet/proc/rebuild_material_sources()
 	material_sources = list()
 	for(var/obj/machinery/power/source as anything in registered_sources)
-		var/list/entry = registered_sources[source]
+		var/list/entry = LAZYACCESS(registered_sources, source)
 		if(entry[1] > 0)
 			material_sources[LAZYACCESS(registered_source_refs, source)] = entry[1]
 	material_flow_dirty = TRUE
@@ -257,12 +257,12 @@
 	// windows; the persistent charging allocation remains a real consumer.
 	var/smes_used = clamp(load + registered_storage_input_total - non_smes_supply, 0, registered_smes_total)
 	for(var/obj/machinery/power/smes/storage as anything in registered_sources)
-		var/list/entry = registered_sources[storage]
+		var/list/entry = LAZYACCESS(registered_sources, storage)
 		if(!entry[2] || entry[1] <= 0)
 			continue
 		storage.consume_registered_output(smes_used * entry[1] / registered_smes_total, elapsed_ticks)
 	for(var/obj/machinery/power/terminal/terminal as anything in registered_storage_demands)
-		var/list/demand = registered_storage_demands[terminal]
+		var/list/demand = LAZYACCESS(registered_storage_demands, terminal)
 		if(demand[3] <= 0)
 			continue
 		var/obj/machinery/power/smes/storage = demand[1]
@@ -415,7 +415,7 @@
 	return delivered
 
 /datum/powernet/proc/is_empty()
-	return !cables.len && !nodes.len
+	return !cables.len && !length(nodes)
 
 /// remove_cable() — remove a cable and delete the powernet if now empty.
 /// Caller must verify the cable is in this net before calling.
@@ -467,7 +467,7 @@
 /// process call republishes source, storage, or APC accounting state.
 /datum/powernet/proc/bind_machine_after_topology(obj/machinery/power/machine)
 	machine.powernet = src
-	nodes[machine] = machine
+	LAZYSET(nodes, machine, machine)
 	if(istype(machine, /obj/machinery/power/terminal))
 		var/obj/machinery/power/terminal/terminal = machine
 		if(istype(terminal.master, /obj/machinery/power/apc))
@@ -583,7 +583,7 @@
 		var/smes_used = clamp(load - non_smes_supply, 0, registered_smes_total)
 		if(smes_used > 0)
 			for(var/obj/machinery/power/smes/storage as anything in registered_sources)
-				var/list/entry = registered_sources[storage]
+				var/list/entry = LAZYACCESS(registered_sources, storage)
 				if(!entry[2] || entry[1] <= 0)
 					continue
 				var/storage_rate = smes_used * entry[1] / registered_smes_total
@@ -593,7 +593,7 @@
 				if(!settlement_delay || depletion_delay < settlement_delay)
 					settlement_delay = depletion_delay
 	for(var/obj/machinery/power/terminal/terminal as anything in registered_storage_demands)
-		var/list/demand = registered_storage_demands[terminal]
+		var/list/demand = LAZYACCESS(registered_storage_demands, terminal)
 		if(demand[3] <= 0)
 			continue
 		var/obj/machinery/power/smes/storage = demand[1]
@@ -620,7 +620,7 @@
 			apc_count = max(apc_count - 1, 0)
 	else if(istype(M, /obj/machinery/power/smes))
 		LAZYREMOVE(smes_nodes, M)
-	nodes -= M
+	LAZYREMOVE(nodes, M)
 	if(!topology_batch_depth)
 		invalidate_material_cache()
 	M.powernet = null
@@ -637,7 +637,7 @@
 			return
 		M.disconnect_from_network()
 	M.powernet = src
-	nodes[M] = M
+	LAZYSET(nodes, M, M)
 	if(!topology_batch_depth)
 		invalidate_material_cache()
 	if(istype(M, /obj/machinery/power/terminal))
@@ -720,7 +720,7 @@
 		var/storage_excess = max(avail - load, 0)
 		var/storage_fraction = clamp(storage_excess / registered_storage_demand_total, 0, 1)
 		for(var/obj/machinery/power/terminal/terminal as anything in registered_storage_demands)
-			var/list/demand = registered_storage_demands[terminal]
+			var/list/demand = LAZYACCESS(registered_storage_demands, terminal)
 			var/allocated = demand[2] * storage_fraction
 			demand[3] = allocated
 			registered_storage_input_total += allocated

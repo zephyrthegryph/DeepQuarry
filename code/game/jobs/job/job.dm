@@ -41,7 +41,7 @@
 
 	var/camp_protection = FALSE
 	var/list/restricted_keys
-	var/list/shift_keys = list()
+	var/list/shift_keys
 
 	//Requires a ckey to be whitelisted in jobwhitelist.txt
 	var/whitelist_only = 0
@@ -238,7 +238,7 @@
 /datum/job/proc/register_shift_key(key)
 	if(key)
 		var/list/keylist = list(key)
-		SSjob.shift_keys[title] += keylist
+		LAZYADDASSOC(SSjob.shift_keys, title, keylist)
 // end
 
 /datum/job/proc/update_limit(comperator)

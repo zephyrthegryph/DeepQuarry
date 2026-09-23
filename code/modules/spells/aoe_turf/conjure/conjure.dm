@@ -9,7 +9,7 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 
 	school = "conjuration" //funny, that
 
-	var/list/summon_type = list() //determines what exactly will be summoned
+	var/list/summon_type //determines what exactly will be summoned
 	//should be text, like list("/obj/machinery/bot/ed209")
 
 	range = 0		//default values: only spawn on the player tile
@@ -32,12 +32,12 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 			break
 		var/summoned_object_type
 		if(summon_exclusive)
-			if(!summon_type.len)
+			if(!length(summon_type))
 				break
-			summoned_object_type = summon_type[1]
-			summon_type -= summoned_object_type
+			summoned_object_type = LAZYACCESS(summon_type, 1)
+			LAZYREMOVE(summon_type, summoned_object_type)
 		else
-			summoned_object_type = pick(summon_type)
+			summoned_object_type = DEFAULTPICK(summon_type, null)
 		var/turf/spawn_place = pick(targets)
 		if(spell_flags & IGNOREPREV)
 			targets -= spawn_place

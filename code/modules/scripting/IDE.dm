@@ -156,7 +156,7 @@
 				Machine.editingcode = null
 			else
 				if(mob in Machine.viewingcode)
-					Machine.viewingcode.Remove(mob)
+					LAZYREMOVE(Machine.viewingcode, mob)
 
 /client/verb/tcsrevert()
 	set hidden = 1

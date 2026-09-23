@@ -106,7 +106,7 @@
 	var/reason = "NOT SPECIFIED"
 	var/duration = 5
 
-	var/list/internal_log = list()
+	var/list/internal_log
 	var/mode = 0  // 0 - making pass, 1 - viewing logs
 
 /obj/machinery/computer/guestpass/Initialize(mapload)
@@ -186,7 +186,7 @@
 	data["reason"] = reason
 	data["duration"] = duration
 	data["mode"] = mode
-	data["log"] = internal_log
+	data["log"] = (internal_log || list())
 	data["uid"] = uid
 
 	return data
@@ -260,7 +260,7 @@
 						var/area = SSaccess.get_access_desc(A)
 						entry += "[i > 1 ? ", [area]" : "[area]"]"
 				entry += ". Expires at [worldtime2stationtime(world.time + duration*10*60)]."
-				internal_log.Add(entry)
+				LAZYADD(internal_log, entry)
 
 				var/obj/item/card/id/guest/pass = new(src.loc)
 				pass.temp_access = LAZYCOPY(accesses)

@@ -41,7 +41,7 @@
 	var/list/shareholders = list()
 	var/list/borrows
 	var/list/events = list()
-	var/list/articles = list()
+	var/list/articles
 	var/fluctuation_rate = 15
 	var/fluctuation_counter = 0
 	var/datum/industry/industry = null
@@ -51,7 +51,7 @@
 
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
-		articles.Insert(1, A)
+		LAZYINITLIST(articles); articles.Insert(1, A)
 	A.ticks = world.time
 
 /datum/stock/proc/generateEvents()

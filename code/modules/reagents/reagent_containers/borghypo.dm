@@ -35,7 +35,7 @@
 	/// If we're currently recording a recipe, this will be set to a list containing the recipe's steps.
 	var/list/recording_recipe
 	/// Associated list of the recipes we have saved. Indexed via the string ID of the recipe.
-	var/list/saved_recipes = list()
+	var/list/saved_recipes
 	/// In the hypo's TGUI, this determines the amount buttons that will be available to change this hypo's transfer amount.
 	var/list/transfer_amounts = list(5, 10)
 
@@ -76,7 +76,7 @@
 /obj/item/reagent_containers/borghypo/proc/try_injection(datum/reagents/target_reagents, mob/user)
 	if(is_dispensing_recipe && selected_recipe_id)
 		// Add reagents with our selected ID
-		var/foundRecipe = saved_recipes[selected_recipe_id]
+		var/foundRecipe = LAZYACCESS(saved_recipes, selected_recipe_id)
 		if(!foundRecipe)
 			to_chat(user, span_warning("Couldn't find recipe ") + span_boldwarning(selected_recipe_id) + span_warning("! Contact a coder."))
 			return BORGHYPO_STATUS_NORECIPE
@@ -144,7 +144,7 @@
 			var/result = try_injection(M.reagents, user)
 			if(is_dispensing_recipe)
 				// Log every reagent injected in the recipe
-				var/foundRecipe = saved_recipes[selected_recipe_id]
+				var/foundRecipe = LAZYACCESS(saved_recipes, selected_recipe_id)
 				for(var/recipe_step in foundRecipe)
 					var/step_reagent_id = recipe_step["id"]
 					var/step_dispense_amount = recipe_step["amount"]
@@ -217,7 +217,7 @@
 	data["chemicals"] = chemicals
 	data["uiChemicalSearch"] = ui_chemical_search
 	data["selectedReagentId"] = reagent_ids[mode]
-	data["recipes"] = saved_recipes
+	data["recipes"] = (saved_recipes || list())
 	data["recordingRecipe"] = recording_recipe
 	data["isDispensingRecipe"] = is_dispensing_recipe
 	data["selectedRecipeId"] = selected_recipe_id
@@ -276,7 +276,7 @@
 			var/name = tgui_input_text(ui.user, "What do you want to name this recipe?", "Recipe Name?", "Recipe Name", MAX_NAME_LEN)
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return
-			if(saved_recipes[name] && tgui_alert(ui.user, "\"[name]\" already exists, do you want to overwrite it?",, list("No", "Yes")) != "Yes")
+			if(LAZYACCESS(saved_recipes, name) && tgui_alert(ui.user, "\"[name]\" already exists, do you want to overwrite it?",, list("No", "Yes")) != "Yes")
 				return
 			if(name && recording_recipe)
 				for(var/list/L in recording_recipe)
@@ -285,7 +285,7 @@
 					if(!reagent_ids.Find(label))
 						to_chat(ui.user, span_warning("\The [src] cannot find ") + span_boldwarning(label) + span_warning("!"))
 						return
-				saved_recipes[name] = recording_recipe
+				LAZYSET(saved_recipes, name, recording_recipe)
 				recording_recipe = null
 				. = TRUE
 
@@ -295,13 +295,13 @@
 			if(selected_recipe_id == recipe_name)
 				selected_recipe_id = null
 				is_dispensing_recipe = FALSE
-			saved_recipes -= recipe_name
+			LAZYREMOVE(saved_recipes, recipe_name)
 			. = TRUE
 
 		if("select_recipe")
 			// Make sure we actually have a recipe saved with the given name before setting it!
 			var/recipe_name = params["recipe"]
-			var/selectedRecipe = saved_recipes[recipe_name]
+			var/selectedRecipe = LAZYACCESS(saved_recipes, recipe_name)
 			if(!selectedRecipe)
 				to_chat(ui.user, span_warning("\The [src] cannot find the recipe ") + span_boldwarning(recipe_name) + span_warning("!"))
 				return

@@ -88,11 +88,11 @@
 	var/current_processes = MECHA_PROC_INT_TEMP
 
 //mechaequipt2 stuffs
-	var/list/hull_equipment = list()
+	var/list/hull_equipment
 	var/list/weapon_equipment = list()
-	var/list/utility_equipment = list()
+	var/list/utility_equipment
 	var/list/universal_equipment
-	var/list/special_equipment = list()
+	var/list/special_equipment
 	var/max_hull_equip = 2
 	var/max_weapon_equip = 2
 	var/max_utility_equip = 2
@@ -182,8 +182,8 @@
 	//Micro Mech Code
 	var/max_micro_utility_equip = 0
 	var/max_micro_weapon_equip = 0
-	var/list/micro_utility_equipment = list()
-	var/list/micro_weapon_equipment = list()
+	var/list/micro_utility_equipment
+	var/list/micro_weapon_equipment
 
 /obj/mecha/Initialize(mapload)
 	. = ..()
@@ -277,11 +277,11 @@
 
 	if(wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
-		hull_equipment.Cut()
+		LAZYCLEARLIST(hull_equipment)
 		weapon_equipment.Cut()
-		utility_equipment.Cut()
+		LAZYCLEARLIST(utility_equipment)
 		LAZYCLEARLIST(universal_equipment)
-		special_equipment.Cut()
+		LAZYCLEARLIST(special_equipment)
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
 				WR.crowbar_salvage += E
@@ -2438,13 +2438,13 @@
 	data["equipment"] = equip
 	// Slot capacity.
 	data["slots"] = list(
-		list("label" = "Hull",          "used" = hull_equipment.len,          "max" = max_hull_equip),
+		list("label" = "Hull",          "used" = length(hull_equipment),          "max" = max_hull_equip),
 		list("label" = "Weapon",        "used" = weapon_equipment.len,        "max" = max_weapon_equip),
-		list("label" = "Micro Weapon",  "used" = micro_weapon_equipment.len,  "max" = max_micro_weapon_equip),
-		list("label" = "Utility",       "used" = utility_equipment.len,       "max" = max_utility_equip),
-		list("label" = "Micro Utility", "used" = micro_utility_equipment.len, "max" = max_micro_utility_equip),
+		list("label" = "Micro Weapon",  "used" = length(micro_weapon_equipment),  "max" = max_micro_weapon_equip),
+		list("label" = "Utility",       "used" = length(utility_equipment),       "max" = max_utility_equip),
+		list("label" = "Micro Utility", "used" = length(micro_utility_equipment), "max" = max_micro_utility_equip),
 		list("label" = "Universal",     "used" = length(universal_equipment),     "max" = max_universal_equip),
-		list("label" = "Special",       "used" = special_equipment.len,       "max" = max_special_equip),
+		list("label" = "Special",       "used" = length(special_equipment),       "max" = max_special_equip),
 	)
 	data["can_eject"] = (/obj/mecha/verb/eject in verbs)
 	return data

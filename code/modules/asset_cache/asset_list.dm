@@ -596,11 +596,11 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	_abstract = /datum/asset/simple/namespaced
 	/// parents - list of the parent asset or assets (in name = file assoicated format) for this namespace.
 	/// parent assets must be referenced by their generated url, but if an update changes a parent asset, it won't change the namespace's identity.
-	var/list/parents = list()
+	var/list/parents
 
 /datum/asset/simple/namespaced/register()
 	if(legacy)
-		assets |= parents
+		if(length(parents)) assets |= parents
 	var/list/hashlist = list()
 	var/list/created_items = list()
 
@@ -615,7 +615,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	var/namespace = md5(hashlist.Join())
 
 	for(var/asset_name in parents)
-		var/datum/asset_cache_item/ACI = new(asset_name, parents[asset_name])
+		var/datum/asset_cache_item/ACI = new(asset_name, LAZYACCESS(parents, asset_name))
 		if (!istype(ACI) || !ACI.hash)
 			log_asset("ERROR: Invalid asset: [type]:[asset_name]:[ACI]")
 			continue

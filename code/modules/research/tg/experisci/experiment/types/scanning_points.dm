@@ -43,4 +43,4 @@
 
 /datum/experiment/scanning/points/do_after_experiment(atom/target, typepath)
 	. = ..()
-	points = min(required_points, points + required_atoms[typepath])
+	points = min(required_points, points + LAZYACCESS(required_atoms, typepath))

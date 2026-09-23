@@ -11,7 +11,7 @@
 		if(P.ambitions)
 			text += "<br>Their goals for today were...<br>"
 			text += span_notice("[P.ambitions]")
-		if(!global_objectives.len && P.objectives && P.objectives.len)
+		if(!length(global_objectives) && P.objectives && P.objectives.len)
 			var/failed
 			var/num = 1
 			for(var/datum/objective/O in P.objectives)
@@ -29,7 +29,7 @@
 			else
 				text += "<br>" + span_green(span_bold("The [role_text] was successful!"))
 
-	if(global_objectives && global_objectives.len)
+	if(global_objectives && length(global_objectives))
 		text += "<br>"
 		text += span_normal("Their objectives were:")
 		var/num = 1

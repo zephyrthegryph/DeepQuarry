@@ -138,11 +138,11 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		else
 			O = new /datum/objective/heist/salvage()
 		O.choose_target()
-		global_objectives |= O
+		LAZYOR(global_objectives, O)
 
 		i++
 
-	global_objectives |= new /datum/objective/heist/preserve_crew
+	LAZYOR(global_objectives, new /datum/objective/heist/preserve_crew)
 	return 1
 
 /datum/antagonist/raider/check_victory()
@@ -152,10 +152,10 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	var/win_msg = ""
 
 	//No objectives, go straight to the feedback.
-	if(CONFIG_GET(flag/objectives_disabled) || !global_objectives.len)
+	if(CONFIG_GET(flag/objectives_disabled) || !length(global_objectives))
 		return
 
-	var/success = global_objectives.len
+	var/success = length(global_objectives)
 	//Decrease success for failed objectives.
 	for(var/datum/objective/O in global_objectives)
 		if(!(O.check_completion())) success--

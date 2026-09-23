@@ -17,8 +17,8 @@
 	table_icon = "gamble_space"
 	var/datum/weakref/player_one
 	var/datum/weakref/player_two
-	var/list/ship_count_pone = list()
-	var/list/ship_count_ptwo = list()
+	var/list/ship_count_pone
+	var/list/ship_count_ptwo
 	var/list/shots_fired_pone = list()
 	var/list/shots_fired_ptwo = list()
 	var/list/ships_placed_pone = list()
@@ -77,8 +77,8 @@
 		"destroyed_ships_pone" = destroyed_ships_pone,
 		"destroyed_ships_ptwo" = destroyed_ships_ptwo,
 		"visible_ships" = visible_ships,
-		"ship_count_pone" = ship_count_pone,
-		"ship_count_ptwo" = ship_count_ptwo,
+		"ship_count_pone" = (ship_count_pone || list()),
+		"ship_count_ptwo" = (ship_count_ptwo || list()),
 		"game_state" = game_state,
 		"winner" = winner,
 		"has_won" = winner == ui.user.name
@@ -270,8 +270,8 @@
 			return FALSE
 
 /datum/board_game/space_battle/proc/reset(full)
-	ship_count_pone.Cut()
-	ship_count_ptwo.Cut()
+	LAZYCLEARLIST(ship_count_pone)
+	LAZYCLEARLIST(ship_count_ptwo)
 	shots_fired_pone.Cut()
 	shots_fired_ptwo.Cut()
 	ships_placed_pone.Cut()

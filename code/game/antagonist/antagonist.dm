@@ -63,8 +63,8 @@
 	var/nuke_spawn_loc                      // If so, where should it be placed?
 	var/list/current_antagonists = list()   // All marked antagonists for this type.
 	var/list/pending_antagonists = list()   // Candidates that are awaiting finalized antag status.
-	var/list/starting_locations =  list()   // Spawn points.
-	var/list/global_objectives =   list()   // Universal objectives if any.
+	var/list/starting_locations   // Spawn points.
+	var/list/global_objectives   // Universal objectives if any.
 	var/list/candidates =          list()   // Potential candidates.
 	var/list/faction_members   // Semi-antags (in-round revs, borer thralls)
 

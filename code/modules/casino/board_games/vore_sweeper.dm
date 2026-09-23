@@ -16,8 +16,8 @@
 	var/mine_count = 10
 	var/datum/weakref/dealer
 	var/list/placed_mines = list()
-	var/list/revealed_fields = list()
-	var/list/placed_flags = list()
+	var/list/revealed_fields
+	var/list/placed_flags
 
 /datum/board_game/vore_sweeper/New(atom/holder)
 	. = ..()
@@ -45,8 +45,8 @@
 		"max_mines" = round(total_tiles * MAX_MINE_RATE),
 		"dealer" = dealer_mob,
 		"placed_mines" = placed_mine_data,
-		"revealed_fields" = revealed_fields,
-		"placed_flags" = placed_flags,
+		"revealed_fields" = (revealed_fields || list()),
+		"placed_flags" = (placed_flags || list()),
 		"game_state" = game_state,
 		"is_dealer" = dealer_mob == ui.user
 	)
@@ -80,8 +80,8 @@
 			if(game_state < GAME_PLAYING)
 				return FALSE
 			placed_mines.Cut()
-			revealed_fields.Cut()
-			placed_flags.Cut()
+			LAZYCLEARLIST(revealed_fields)
+			LAZYCLEARLIST(placed_flags)
 			if(!dealer_mob && game_state > GAME_PLAYING)
 				auto_place_mines(ui.user, TRUE)
 				return TRUE
@@ -107,16 +107,16 @@
 			if(!validated_data)
 				return FALSE
 			var/key = validated_data[1]
-			if(placed_flags[key])
+			if(LAZYACCESS(placed_flags, key))
 				return FALSE
-			if(revealed_fields[key])
+			if(LAZYACCESS(revealed_fields, key))
 				return FALSE
 			if(placed_mines[key])
 				game_state = GAME_LOST
-				revealed_fields[key] = "M"
+				LAZYSET(revealed_fields, key, "M")
 				return TRUE
 			var/mine_count = count_surrounding_mines(validated_data[2], validated_data[3])
-			revealed_fields[key] = mine_count
+			LAZYSET(revealed_fields, key, mine_count)
 			if(!mine_count)
 				reveal_empty_area(validated_data[2], validated_data[3])
 			validate_victory()
@@ -126,12 +126,12 @@
 			if(!validated_data)
 				return FALSE
 			var/key = validated_data[1]
-			if(revealed_fields[key])
+			if(LAZYACCESS(revealed_fields, key))
 				return FALSE
-			if(placed_flags[key])
-				placed_flags -= key
+			if(LAZYACCESS(placed_flags, key))
+				LAZYREMOVE(placed_flags, key)
 				return TRUE
-			placed_flags[key] = TRUE
+			LAZYSET(placed_flags, key, TRUE)
 			validate_flag_victory()
 			return TRUE
 
@@ -145,7 +145,7 @@
 	var/all_flagged = TRUE
 
 	for(var/mine_key in placed_mines)
-		if(placed_mines[mine_key] && !placed_flags[mine_key])
+		if(placed_mines[mine_key] && !LAZYACCESS(placed_flags, mine_key))
 			all_flagged = FALSE
 			break
 
@@ -164,7 +164,7 @@
 			if(placed_mines[key])
 				continue
 
-			revealed_fields[key] = count_surrounding_mines(x, y)
+			LAZYSET(revealed_fields, key, count_surrounding_mines(x, y))
 
 	game_state = GAME_WON
 
@@ -238,11 +238,11 @@
 			continue
 		checked[key] = TRUE
 
-		if(revealed_fields[key] || placed_flags[key])
+		if(LAZYACCESS(revealed_fields, key) || LAZYACCESS(placed_flags, key))
 			continue
 
 		var/adjacent_mines = count_surrounding_mines(cx, cy)
-		revealed_fields[key] = adjacent_mines
+		LAZYSET(revealed_fields, key, adjacent_mines)
 
 		if(adjacent_mines == 0)
 			for(var/dx = -1 to 1)

@@ -13,7 +13,7 @@
 	var/list/servers	// the servers located by the computer
 	var/mob/editingcode
 	var/mob/lasteditor
-	var/list/viewingcode = list()
+	var/list/viewingcode
 	var/obj/machinery/telecomms/server/SelectedServer
 	circuit = /obj/item/circuitboard/comm_traffic
 	req_access = list(ACCESS_TCOMSAT)
@@ -59,14 +59,14 @@
 					winset(M, "tcscode", "is-disabled=true")
 					winset(M, "tcscode", "text=\"[showcode]\"")
 				else
-					viewingcode.Remove(M)
+					LAZYREMOVE(viewingcode, M)
 					winshow(M, "Telecomms IDE", 0) // hide the window!
 
 		sleep(5)
 
 	if(length(viewingcode) > 0)
-		editingcode = pick(viewingcode)
-		viewingcode.Remove(editingcode)
+		editingcode = DEFAULTPICK(viewingcode, null)
+		LAZYREMOVE(viewingcode, editingcode)
 		update_ide()
 
 
@@ -136,7 +136,7 @@
 						update_ide()
 
 				else
-					viewingcode.Add(usr)
+					LAZYADD(viewingcode, usr)
 					winshow(usr, "Telecomms IDE", 1) // show the IDE
 					winset(usr, "tcscode", "is-disabled=true")
 					winset(editingcode, "tcscode", "text=\"\"")

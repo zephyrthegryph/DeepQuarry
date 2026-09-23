@@ -28,7 +28,7 @@
 	Var: warnings
 	A list of non-fatal problems in the script.
 */
-	var/list/warnings = list()
+	var/list/warnings
 /*
 	Var: curToken
 	The token at <index> in <tokens>.
@@ -113,7 +113,7 @@
 					errors+=new/datum/scriptError/BadToken(curToken)
 					continue
 			if(/datum/token/end)
-				warnings+=new/datum/scriptError/BadToken(curToken)
+				LAZYADD(warnings, new/datum/scriptError/BadToken(curToken))
 				continue
 			else
 				errors+=new/datum/scriptError/BadToken(curToken)

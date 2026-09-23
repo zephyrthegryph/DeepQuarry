@@ -17,7 +17,7 @@
 	var/datum/weakref/player_two
 	var/list/placed_chips_pone = list()
 	var/list/placed_chips_ptwo = list()
-	var/list/winning_tiles = list()
+	var/list/winning_tiles
 	var/grid_x_size = 7
 	var/grid_y_size = 6
 	var/win_count = 4
@@ -59,7 +59,7 @@
 		"win_count" = win_count,
 		"winner" = winner,
 		"has_won" = winner == ui.user.name,
-		"winning_tiles" = winning_tiles,
+		"winning_tiles" = (winning_tiles || list()),
 	)
 
 /datum/board_game/four_row/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -178,7 +178,7 @@
 /datum/board_game/four_row/proc/reset(full)
 	placed_chips_pone.Cut()
 	placed_chips_ptwo.Cut()
-	winning_tiles.Cut()
+	LAZYCLEARLIST(winning_tiles)
 	winner = null
 	if(full)
 		game_state = GAME_SETUP

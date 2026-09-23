@@ -21,7 +21,7 @@
 	/// Designs that are available for use. Assoc list, id = TRUE
 	var/list/researched_designs = list()
 	/// Custom inserted designs like from disks that should survive recalculation.
-	var/list/custom_designs = list()
+	var/list/custom_designs
 	/// Already boosted nodes that can't be boosted again. node id = path of boost object.
 	var/list/boosted_nodes = list()
 	/// Hidden nodes. id = TRUE. Used for unhiding nodes when requirements are met by removing the entry of the node.
@@ -31,9 +31,9 @@
 	/// Available research points, type = number
 	var/list/research_points = list()
 	/// Game logs of research nodes, "node_name" "node_cost" "node_researcher" "node_research_location"
-	var/list/research_logs = list()
+	var/list/research_logs
 	/// Current per-second production, used for display only.
-	var/list/last_bitcoins = list()
+	var/list/last_bitcoins
 	/// Mutations discovered by genetics, this way they are shared and cant be destroyed by destroying a single console
 	var/list/discovered_mutations
 	/// Assoc list, id = number, 1 is available, 2 is all reqs are 1, so on
@@ -80,7 +80,7 @@
 	  * Assoc list of nodes queued for automatic research when there are enough points available
 	  * research_queue_nodes[node_id] = user_enqueued
 	*/
-	var/list/research_queue_nodes = list()
+	var/list/research_queue_nodes
 
 /datum/techweb/New()
 	SSresearch.techwebs += src
@@ -109,7 +109,7 @@
 	for(var/id in available_nodes)
 		processing[id] = TRUE
 	if(recalculate_designs)
-		researched_designs = custom_designs.Copy()
+		researched_designs = LAZYCOPY(custom_designs)
 		if(wipe_custom_designs)
 			custom_designs = list()
 	defer_tier_recompute()
@@ -221,7 +221,7 @@
 		CRASH("add_design called with unregistered design ID '[design.id]' ([design.type]) on techweb '[id]' — design is not in SSresearch.techweb_designs")
 	SEND_SIGNAL(src, COMSIG_TECHWEB_ADD_DESIGN, design, custom)
 	if(custom)
-		custom_designs[design.id] = TRUE
+		LAZYSET(custom_designs, design.id, TRUE)
 
 	if(add_to)
 		add_to[design.id] = TRUE
@@ -239,10 +239,10 @@
 /datum/techweb/proc/remove_design(datum/design_techweb/design, custom = FALSE)
 	if(!istype(design))
 		return FALSE
-	if(custom_designs[design.id] && !custom)
+	if(LAZYACCESS(custom_designs, design.id) && !custom)
 		return FALSE
 	SEND_SIGNAL(src, COMSIG_TECHWEB_REMOVE_DESIGN, design, custom)
-	custom_designs -= design.id
+	LAZYREMOVE(custom_designs, design.id)
 	researched_designs -= design.id
 	return TRUE
 
@@ -348,27 +348,27 @@
 
 	if(id in research_queue_nodes)
 		if(queue_first)
-			research_queue_nodes.Remove(id) // Remove to be able to place first
+			LAZYREMOVE(research_queue_nodes, id) // Remove to be able to place first
 		else
 			return FALSE
 
 	for(var/node_id in research_queue_nodes)
-		if(research_queue_nodes[node_id] == user)
-			research_queue_nodes.Remove(node_id)
+		if(LAZYACCESS(research_queue_nodes, node_id) == user)
+			LAZYREMOVE(research_queue_nodes, node_id)
 
 	if (queue_first)
-		research_queue_nodes.Insert(1, id)
-	research_queue_nodes[id] = user
+		LAZYINITLIST(research_queue_nodes); research_queue_nodes.Insert(1, id)
+	LAZYSET(research_queue_nodes, id, user)
 
 	return TRUE
 
 /datum/techweb/proc/dequeue_node(id, mob/user)
 	if(!(id in research_queue_nodes))
 		return FALSE
-	if(research_queue_nodes[id] != user)
+	if(LAZYACCESS(research_queue_nodes, id) != user)
 		return FALSE
 
-	research_queue_nodes.Remove(id)
+	LAZYREMOVE(research_queue_nodes, id)
 
 	return TRUE
 
@@ -430,7 +430,7 @@
 
 	// Dequeue
 	if(node.id in research_queue_nodes)
-		research_queue_nodes.Remove(node.id)
+		LAZYREMOVE(research_queue_nodes, node.id)
 
 	flush_deferred_tiers()
 	return TRUE

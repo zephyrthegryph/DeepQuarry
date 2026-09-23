@@ -8,8 +8,8 @@
 	// This isn't the same list as what the event itself will break, as the event will also
 	// break open areas inbetween the holding area and the public hallway, like the brig area verses
 	// the prison area.
-	var/list/relevant_areas = list()
-	var/list/irrelevant_areas = list()
+	var/list/relevant_areas
+	var/list/irrelevant_areas
 
 /datum/event2/meta/prison_break/get_weight()
 	// First, don't do this if nobody can fix the doors.

@@ -14,7 +14,7 @@
 	var/tgui_selected_type = "" //String for single selection type
 	var/tgui_selected_id = ""   //String to retrieve ref from entity_refs
 	var/tgui_selected_refs //object references
-	var/list/tgui_selected_id_multi = list() //List of strings containing mob ids for multi selection
+	var/list/tgui_selected_id_multi //List of strings containing mob ids for multi selection
 	var/tgui_narrate_mode = 0 //0 for speak, 1 for emote
 	var/tgui_narrate_privacy = 0 //0 for loud, 1 for subtle
 	var/tgui_last_message = 0 // int to avoid spam
@@ -190,7 +190,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 	data["selected_name"] = tgui_selected_name
 	data["selected_type"] = tgui_selected_type
 	data["selection_mode"] = tgui_selection_mode
-	data["multi_id_selection"] = tgui_selected_id_multi
+	data["multi_id_selection"] = (tgui_selected_id_multi || list())
 	data["number_mob_selected"] = LAZYLEN(tgui_selected_id_multi)
 	data["entity_names"] = entity_names
 
@@ -221,19 +221,19 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 		if("select_entity")
 			if(tgui_selection_mode)
 				if(params["id_selected"] in tgui_selected_id_multi)
-					tgui_selected_id_multi -= params["id_selected"]
+					LAZYREMOVE(tgui_selected_id_multi, params["id_selected"])
 				else
-					tgui_selected_id_multi += params["id_selected"]
+					LAZYADD(tgui_selected_id_multi, params["id_selected"])
 			else
 				if(params["id_selected"] in tgui_selected_id_multi)
-					tgui_selected_id_multi -= params["id_selected"]
+					LAZYREMOVE(tgui_selected_id_multi, params["id_selected"])
 					tgui_selected_id = ""
 					tgui_selected_type = ""
 					tgui_selected_name = ""
 					tgui_selected_refs = null
 				else
 					tgui_selected_id_multi = list() //Using the same var for ease of implementation. Thus, we must reset to empty each time.
-					tgui_selected_id_multi += params["id_selected"]
+					LAZYADD(tgui_selected_id_multi, params["id_selected"])
 					tgui_selected_id = params["id_selected"]
 					var/datum/weakref/wref = LAZYACCESS(entity_refs, tgui_selected_id)
 					tgui_selected_refs = wref.resolve()
@@ -273,7 +273,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 							to_chat(ui.user, span_notice("[entity] has invalid reference, deleting"))
 							entity_names -= entity
 							LAZYREMOVE(entity_refs, entity)
-							tgui_selected_id_multi -= entity
+							LAZYREMOVE(tgui_selected_id_multi, entity)
 							continue
 						if(isliving(ref))
 							var/mob/living/L = ref

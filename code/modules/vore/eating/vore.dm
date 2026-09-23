@@ -97,7 +97,7 @@
 	var/max_voreoverlay_alpha = 255
 	var/persistend_edit_mode = FALSE
 
-	var/list/belly_prefs = list()
+	var/list/belly_prefs
 	var/vore_taste = "nothing in particular"
 	var/vore_smell = "nothing in particular"
 
@@ -442,7 +442,7 @@
 			"allow_spontaneous_tf"	= allow_spontaneous_tf,
 			"step_mechanics_pref"	= step_mechanics_pref,
 			"pickup_pref"			= pickup_pref,
-			"belly_prefs"			= belly_prefs,
+			"belly_prefs"			= (belly_prefs || list()),
 			"receive_reagents"		= receive_reagents,
 			"give_reagents"			= give_reagents,
 			"apply_reagents"		= apply_reagents,

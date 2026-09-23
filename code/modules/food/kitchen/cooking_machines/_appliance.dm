@@ -32,7 +32,7 @@
 
 	// If the machine has multiple output modes, define them here.
 	var/selected_option
-	var/list/output_options = list()
+	var/list/output_options
 
 	var/container_type = null
 
@@ -170,7 +170,7 @@
 		to_chat(user, span_filter_notice("You lack the dexterity to do that!"))
 		return
 
-	if(!output_options[new_output])
+	if(!LAZYACCESS(output_options, new_output))
 		return
 
 	if(new_output == "Default")
@@ -420,7 +420,7 @@
 	return jointext(results, ", ")
 
 /obj/machinery/appliance/proc/predict_combination(datum/cooking_item/CI)
-	var/obj/cook_path = output_options[CI.combine_target]
+	var/obj/cook_path = LAZYACCESS(output_options, CI.combine_target)
 
 	var/list/words = list()
 
@@ -502,7 +502,7 @@
 //Combination cooking involves combining the names and reagents of ingredients into a predefined output object
 //The ingredients represent flavours or fillings. EG: donut pizza, cheese bread
 /obj/machinery/appliance/proc/combination_cook(datum/cooking_item/CI)
-	var/cook_path = output_options[CI.combine_target]
+	var/cook_path = LAZYACCESS(output_options, CI.combine_target)
 
 	var/list/words = list()
 	var/datum/reagents/buffer = new /datum/reagents(1000)
@@ -647,7 +647,7 @@
 	data["safety"] = food_safety
 	data["containersRemovable"] = can_remove_items(user, show_warning = FALSE)
 	data["selected_option"] = selected_option
-	data["output_options"] = output_options
+	data["output_options"] = (output_options || list())
 
 	var/list/our_contents = list()
 	for(var/i in 1 to max_contents)

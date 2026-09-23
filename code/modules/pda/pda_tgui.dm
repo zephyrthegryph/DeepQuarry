@@ -15,7 +15,7 @@
 	data["ownjob"] = ownjob					// ...and what does he do?
 
 	// update list of shortcuts, only if they changed
-	if(!shortcut_cache.len)
+	if(!length(shortcut_cache))
 		shortcut_cache = list()
 		shortcut_cat_order = list()
 		var/prog_list = programs.Copy()
@@ -28,10 +28,10 @@
 				continue
 			var/list/cat
 			if(P.category in shortcut_cache)
-				cat = shortcut_cache[P.category]
+				cat = LAZYACCESS(shortcut_cache, P.category)
 			else
 				cat = list()
-				shortcut_cache[P.category] = cat
+				LAZYSET(shortcut_cache, P.category, cat)
 				shortcut_cat_order += P.category
 			cat |= list(list(name = P.name, icon = P.icon, notify_icon = P.notify_icon, ref = "\ref[P]"))
 

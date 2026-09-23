@@ -5,7 +5,7 @@
 	element_flags = ELEMENT_DETACH_ON_HOST_DESTROY|ELEMENT_BESPOKE
 	argument_hash_start_idx = 2
 	///A list containing living mobs and the number of steps they have taken since the last time their footsteps were played.
-	var/list/steps_for_living = list()
+	var/list/steps_for_living
 	///volume determines the extra volume of the footstep. This is multiplied by the base volume, should there be one.
 	var/volume
 	///e_range stands for extra range - aka how far the sound can be heard. This is added to the base value and ignored if there isn't a base value.
@@ -28,13 +28,13 @@
 
 	if(ishuman(target))
 		RegisterSignal(target, COMSIG_MOVABLE_MOVED, PROC_REF(play_humanstep))
-		steps_for_living[target] = 0
+		LAZYSET(steps_for_living, target, 0)
 		return
 
 	footstep_sounds = check_footstep_type(footstep_type)
 
 	RegisterSignal(target, COMSIG_MOVABLE_MOVED, PROC_REF(play_simplestep))
-	steps_for_living[target] = 0
+	LAZYSET(steps_for_living, target, 0)
 
 /datum/element/footstep/proc/check_footstep_type(footstep_type)
 	var/footstep_ret
@@ -61,7 +61,7 @@
 
 /datum/element/footstep/Detach(atom/movable/source)
 	UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
-	steps_for_living -= source
+	LAZYREMOVE(steps_for_living, source)
 	return ..()
 
 ///Prepares a footstep for living mobs. Determines if it should get played. Returns the turf it should get played on. Note that it is always a /turf/simulated
@@ -87,11 +87,11 @@
 			return
 		if(carbon_source.m_intent == I_WALK)
 			return// stealth
-	steps_for_living[source] += 1
-	var/steps = steps_for_living[source]
+	LAZYADDASSOC(steps_for_living, source, 1)
+	var/steps = LAZYACCESS(steps_for_living, source)
 
 	if(steps >= 6)
-		steps_for_living[source] = 0
+		LAZYSET(steps_for_living, source, 0)
 		steps = 0
 
 	if(steps % 2)

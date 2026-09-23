@@ -55,7 +55,7 @@
 		new/datum/data/pda/app/game_launcher,
 		new/datum/data/pda/utility/scanmode/notes,
 		new/datum/data/pda/utility/flashlight)
-	var/list/shortcut_cache = list()
+	var/list/shortcut_cache
 	var/list/shortcut_cat_order = list()
 	var/list/notifying_programs
 	var/retro_mode = 0
@@ -219,7 +219,7 @@
 
 // force the cache to rebuild on update_ui
 /obj/item/pda/proc/update_shortcuts()
-	shortcut_cache.Cut()
+	LAZYCLEARLIST(shortcut_cache)
 
 /obj/item/pda/proc/update_programs()
 	for(var/datum/data/pda/P as anything in programs)

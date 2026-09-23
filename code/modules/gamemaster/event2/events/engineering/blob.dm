@@ -79,7 +79,7 @@
 		/area/holodeck,
 		/area/engineering/engine_room
 	)
-	var/list/open_turfs = list()
+	var/list/open_turfs
 	var/spawn_blob_type = /obj/structure/blob/core/random_medium
 	var/number_of_blobs = 1
 	var/list/blobs // A list containing weakrefs to blob cores created. Weakrefs mean this event won't interfere with qdel.
@@ -98,16 +98,16 @@
 /datum/event2/event/blob/set_up()
 	open_turfs = find_random_turfs(5 + number_of_blobs)
 
-	if(!open_turfs.len)
+	if(!length(open_turfs))
 		log_game("Blob infestation event: Giving up after failure to find blob spots.")
 		abort()
 
 /datum/event2/event/blob/start()
 	for(var/i = 1 to number_of_blobs)
-		var/turf/T = pick(open_turfs)
+		var/turf/T = DEFAULTPICK(open_turfs, null)
 		var/obj/structure/blob/core/new_blob = new spawn_blob_type(T)
 		LAZYADD(blobs, WEAKREF(new_blob))
-		open_turfs -= T // So we can't put two cores on the same tile if doing multiblob.
+		LAZYREMOVE(open_turfs, T) // So we can't put two cores on the same tile if doing multiblob.
 		log_game("Spawned [new_blob.overmind.blob_type.name] blob at [get_area(new_blob)].")
 
 /datum/event2/event/blob/should_end()
@@ -151,7 +151,7 @@
 			lines += "The biohazard[multiblob ? "s have": " has"] been identified as [english_list(blob_type_names)]."
 
 		if(danger_level >= BLOB_DIFFICULTY_HARD) // If it's really hard then tell them where it is so the response occurs faster.
-			var/turf/T = open_turfs[1]
+			var/turf/T = LAZYACCESS(open_turfs, 1)
 			var/area/A = T.loc
 			lines += "[multiblob ? "It is": "They are"] suspected to have originated from \the [A]."
 

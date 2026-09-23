@@ -19,7 +19,7 @@
 	var/mode = null
 
 	//Used for logging people entering cryosleep and important items they are carrying.
-	var/list/frozen_crew = list()
+	var/list/frozen_crew
 	var/list/frozen_items
 	var/list/_admin_logs // _ so it shows first in VV
 
@@ -92,7 +92,7 @@
 
 	data["real_name"] = user.real_name
 	data["allow_items"] = allow_items
-	data["crew"] = frozen_crew
+	data["crew"] = (frozen_crew || list())
 
 	var/list/items = list()
 	if(allow_items)
@@ -520,7 +520,7 @@
 
 
 		//Make an announcement and log the person entering storage.
-		control_computer.frozen_crew += "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]"
+		LAZYADD(control_computer.frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]")
 		LAZYADD(control_computer._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
 		log_and_message_admins("([to_despawn.mind.role_alt_title]) entered cryostorage.", to_despawn)
 

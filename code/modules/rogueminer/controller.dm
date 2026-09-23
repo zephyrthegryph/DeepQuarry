@@ -7,7 +7,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 
 /datum/controller/rogue
 	var/list/datum/rogue/zonemaster/all_zones
-	var/list/datum/rogue/zonemaster/clean_zones = list()
+	var/list/datum/rogue/zonemaster/clean_zones
 	var/list/datum/rogue/zonemaster/ready_zones
 
 	//So I don't have to do absurd list[list[thing]] over and over.
@@ -149,7 +149,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	if(ZM in ready_zones)
 		GLOB.rm_controller.dbg("RMC(mc): Finite state machine broken.")
 
-	clean_zones += ZM
+	LAZYADD(clean_zones, ZM)
 
 /datum/controller/rogue/proc/mark_ready(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -167,7 +167,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	if(!(ZM in clean_zones))
 		GLOB.rm_controller.dbg("RMC(umc): Finite state machine broken.")
 
-	clean_zones -= ZM
+	LAZYREMOVE(clean_zones, ZM)
 
 /datum/controller/rogue/proc/unmark_ready(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -181,8 +181,8 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 /datum/controller/rogue/proc/prepare_new_zone()
 	var/datum/rogue/zonemaster/ZM_target
 
-	if(clean_zones.len)
-		ZM_target = pick(clean_zones)
+	if(length(clean_zones))
+		ZM_target = DEFAULTPICK(clean_zones, null)
 
 	if(ZM_target)
 		log_world("RM(stats): SCORING [ready_zones.len] zones (if unscored).") //DEBUG code for playtest stats gathering.
@@ -193,7 +193,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	else
 		GLOB.rm_controller.dbg("RMC(pnz): I was asked for a new zone but there's no space.")
 
-	if(clean_zones.len <= 1) //Need to clean the oldest one, too.
+	if(length(clean_zones) <= 1) //Need to clean the oldest one, too.
 		GLOB.rm_controller.dbg("RMC(pnz): Cleaning up oldest zone.")
 		spawn(0) //Detatch it so we can return the new zone for now.
 			var/datum/rogue/zonemaster/ZM_oldest = get_oldest_zone()

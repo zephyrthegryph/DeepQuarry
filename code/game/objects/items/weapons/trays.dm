@@ -12,7 +12,7 @@
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	matter = list(MAT_STEEL = 3000)
-	var/list/carrying = list() // List of things on the tray. - Doohl
+	var/list/carrying // List of things on the tray. - Doohl
 	var/max_carry = 10
 	var/min_bonus_damage = 3
 	var/max_bonus_damage = 5
@@ -27,7 +27,7 @@
 	cut_overlays()
 	for(var/obj/item/I in carrying)
 		I.loc = M.loc
-		carrying.Remove(I)
+		LAZYREMOVE(carrying, I)
 		if(isturf(I.loc))
 			spawn()
 				for(var/i = 1, i <= rand(1,2), i++)
@@ -140,7 +140,7 @@
 				break
 			var/image/Img = new(src.icon)
 			I.loc = src
-			carrying.Add(I)
+			LAZYADD(carrying, I)
 			Img.icon = I.icon
 			Img.icon_state = I.icon_state
 			Img.layer = layer + I.layer*0.01
@@ -164,7 +164,7 @@
 			cut_overlays()
 			for(var/obj/item/I in carrying)
 				I.forceMove(loc)
-				carrying.Remove(I)
+				LAZYREMOVE(carrying, I)
 				if(noTable)
 					for(var/i = 1, i <= rand(1,2), i++)
 						if(I)

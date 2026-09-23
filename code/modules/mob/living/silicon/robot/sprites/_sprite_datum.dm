@@ -36,8 +36,8 @@
 	var/whitelist_charname
 	var/list/belly_light_list = list() // Support multiple sleepers with r/g light "sleeper"
 	var/list/belly_capacity_list = list() //Support multiple bellies with multiple sizes, default: "sleeper" = 1
-	var/list/sprite_decals = list() // Allow extra decals
-	var/list/sprite_animations = list() // Allows to flick animations
+	var/list/sprite_decals // Allow extra decals
+	var/list/sprite_animations // Allows to flick animations
 
 	var/list/hat_offset = list("north" = list(0, -3), "south" = list(0, -3), "east" = list(4, -3), "west" = list(-4, -3))
 

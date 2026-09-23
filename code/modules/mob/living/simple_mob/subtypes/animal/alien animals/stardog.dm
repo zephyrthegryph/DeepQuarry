@@ -664,11 +664,11 @@
 /area/redgate/stardog/flesh_abyss/EvalValidSpawnTurfs()
 	for(var/turf/simulated/floor/F in src)
 		if(istype(F, /turf/simulated/floor/flesh))
-			valid_spawn_turfs |= F
+			LAZYOR(valid_spawn_turfs, F)
 
 		if(include_enzyme)
 			if(istype(F, /turf/simulated/floor/water/digestive_enzymes))
-				valid_spawn_turfs |= F
+				LAZYOR(valid_spawn_turfs, F)
 
 /area/redgate/stardog/flesh_abyss/spawn_flora_on_turf()
 	if(!spawnstuff)
@@ -682,7 +682,7 @@
 	var/howmany = rand(0,floracountmax)
 	for(var/floracount = 1 to howmany)
 		F = pickweight(valid_flora)
-		Turf = pick(valid_spawn_turfs)
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			new F(Turf)
 
@@ -701,14 +701,14 @@
 			var/goodnum = rand(semirandom_group_min, semirandom_group_max)
 			for(var/mobscount = 1 to (goodnum))
 				M = pickweight(ourgroup)
-				Turf = pick(valid_spawn_turfs)
+				Turf = DEFAULTPICK(valid_spawn_turfs, null)
 				if(!Turf.check_density())
 					var/mob/ourmob = new M(Turf)
 					adjust_mob(ourmob)
 	else
 		for(var/mobscount = 1 to mobcountmax)
 			M = pickweight(valid_mobs)
-			Turf = pick(valid_spawn_turfs)
+			Turf = DEFAULTPICK(valid_spawn_turfs, null)
 			if(!Turf.check_density())
 				var/mob/ourmob = new M(Turf)
 				adjust_mob(ourmob)
@@ -727,7 +727,7 @@
 	var/goodnum = rand(semirandom_group_min, semirandom_group_max)
 	for(var/mobscount = 1 to goodnum)
 		M = pickweight(pickweight(valid_mobs))
-		Turf = pick(valid_spawn_turfs)
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			var/mob/ourmob = new M(Turf)
 			adjust_mob(ourmob)
@@ -744,7 +744,7 @@
 	var/howmany = rand(1,floracountmax)
 	for(var/ore = 1 to howmany)
 		F = pickweight(valid_flora)
-		Turf = pick(valid_spawn_turfs)
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			new F(Turf)
 
@@ -764,7 +764,7 @@
 		if(prob(treasure_chance))
 			continue
 		F = pickweight(valid_treasure)
-		Turf = pick(valid_spawn_turfs)
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			new F(Turf)
 

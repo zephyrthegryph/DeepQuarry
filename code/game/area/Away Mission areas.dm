@@ -1,7 +1,7 @@
 /area
 	name = "\improper Unknown Location"
 	icon_state = "away"
-	var/list/valid_spawn_turfs = list()
+	var/list/valid_spawn_turfs
 	var/list/valid_mobs = list()
 	var/list/valid_flora = list()
 	var/mobcountmax = 0
@@ -17,15 +17,15 @@
 	//Adds turfs to the valid)turfs list, used for spawning.
 	if(mobcountmax || floracountmax || semirandom)
 		for(var/turf/simulated/floor/F in src)
-			valid_spawn_turfs |= F
+			LAZYOR(valid_spawn_turfs, F)
 		for(var/turf/unsimulated/floor/F in src)
-			valid_spawn_turfs |= F
+			LAZYOR(valid_spawn_turfs, F)
 
 /area/LateInitialize()
 	. = ..()
 	EvalValidSpawnTurfs()
 
-	if(!valid_spawn_turfs.len && (mobcountmax || floracountmax))
+	if(!length(valid_spawn_turfs) && (mobcountmax || floracountmax))
 		log_and_message_admins("Error! [src] does not have any turfs!")
 		return TRUE
 
@@ -52,8 +52,8 @@
 				if(!length(valid_spawn_turfs))
 					break
 				M = pickweight(ourgroup)
-				Turf = pick(valid_spawn_turfs)
-				valid_spawn_turfs -= Turf
+				Turf = DEFAULTPICK(valid_spawn_turfs, null)
+				LAZYREMOVE(valid_spawn_turfs, Turf)
 				var/mob/ourmob = new M(Turf)
 				adjust_mob(ourmob)
 	else
@@ -61,8 +61,8 @@
 			if(!length(valid_spawn_turfs))
 				break
 			M = pickweight(valid_mobs)
-			Turf = pick(valid_spawn_turfs)
-			valid_spawn_turfs -= Turf
+			Turf = DEFAULTPICK(valid_spawn_turfs, null)
+			LAZYREMOVE(valid_spawn_turfs, Turf)
 			var/mob/ourmob = new M(Turf)
 			adjust_mob(ourmob)
 
@@ -96,6 +96,6 @@
 		if(!length(valid_spawn_turfs))
 			break
 		F = pick(valid_flora)
-		Turf = pick(valid_spawn_turfs)
-		valid_spawn_turfs -= Turf
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
+		LAZYREMOVE(valid_spawn_turfs, Turf)
 		new F(Turf)

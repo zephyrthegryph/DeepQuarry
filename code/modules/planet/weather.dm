@@ -5,7 +5,7 @@
 	var/temperature = T20C // The temperature to set planetary walls to.
 	var/wind_dir = 0 // The direction the wind is blowing. Moving against the wind slows you down, while moving with it speeds you up.
 	var/wind_speed = 0 // How fast or slow a mob can be due to wind acting on them.
-	var/list/allowed_weather_types = list() // Assoc list of weather identifiers, containing the actual weather datum.
+	var/list/allowed_weather_types // Assoc list of weather identifiers, containing the actual weather datum.
 	var/list/roundstart_weather_chances = list() // Assoc list of weather identifiers and their odds of being picked to happen at roundstart.
 	var/next_weather_shift = null // world.time when the weather subsystem will advance the forecast.
 	var/imminent_weather_shift = null // world.time when weather will shift towards pre-set imminent weather type.
@@ -21,7 +21,7 @@
 	..()
 	our_planet = source
 	for(var/A in allowed_weather_types)
-		var/datum/weather/W = allowed_weather_types[A]
+		var/datum/weather/W = LAZYACCESS(allowed_weather_types, A)
 		if(istype(W))
 			W.holder = src
 	visuals = new()
@@ -47,7 +47,7 @@
 	if(current_weather)
 		old_light_modifier = current_weather.light_modifier // We store the old one, so we can determine if recalculating the sun is needed.
 		old_weather = current_weather
-	current_weather = allowed_weather_types[new_weather]
+	current_weather = LAZYACCESS(allowed_weather_types, new_weather)
 	next_weather_shift = world.time + rand(current_weather.timer_low_bound, current_weather.timer_high_bound) MINUTES
 	if(current_weather != old_weather)
 		if(istype(old_weather)) // At roundstart this is null.
@@ -122,7 +122,7 @@
 			forecast += get_next_weather(current_weather)
 		else
 			var/position = forecast[forecast.len] // Go to the bottom of the list.
-			var/datum/weather/W = allowed_weather_types[position] // Get the actual datum and not a string.
+			var/datum/weather/W = LAZYACCESS(allowed_weather_types, position) // Get the actual datum and not a string.
 			var/new_weather = get_next_weather(W) // Get a suitable weather pattern to shift to from this one.
 			forecast += new_weather
 	log_game("[our_planet.name]'s weather forecast is now '[english_list(forecast, and_text = " then ", final_comma_text = ", ")]'.")
@@ -163,13 +163,13 @@
 			M.update_client_color() // Passively done here instead of its own loop, the only issue is that if you enter an outdoor area to an indoor turf you won't get a blend update till your first message.
 
 /datum/weather_holder/proc/get_weather_datum(desired_type)
-	return allowed_weather_types[desired_type]
+	return LAZYACCESS(allowed_weather_types, desired_type)
 
 /datum/weather_holder/proc/show_transition_message()
-	if(!current_weather.transition_messages.len)
+	if(!length(current_weather.transition_messages))
 		return
 
-	var/message = pick(current_weather.transition_messages) // So everyone gets the same message.
+	var/message = DEFAULTPICK(current_weather.transition_messages, null) // So everyone gets the same message.
 	message_all_outdoor_players(message)
 
 /datum/weather
@@ -194,7 +194,7 @@
 	var/message_delay = 10 SECONDS	// Delay in between weather hit messages
 	var/show_message = FALSE		// Is set to TRUE and plays the messsage every [message_delay]
 
-	var/list/transition_messages = list()// List of messages shown to all outdoor mobs when this weather is transitioned to, for flavor. Not shown if already this weather.
+	var/list/transition_messages// List of messages shown to all outdoor mobs when this weather is transitioned to, for flavor. Not shown if already this weather.
 	var/imminent_transition_message = null
 	var/observed_message = null // What is shown to a player 'examining' the weather.
 

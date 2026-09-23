@@ -43,7 +43,7 @@
 	var/obj/item/inserted_item
 
 	var/list/hostile_towards //we remember mean people. do NOT recycle scugs. list of user keys
-	var/list/granted_points = list() //assoc list. key to points given
+	var/list/granted_points //assoc list. key to points given
 
 
 
@@ -488,10 +488,10 @@ UTILITY PROCS
 	if(!user || !user.client || !user.client.prefs) return
 	var/currentValue = 	user.client?.prefs?.read_preference(/datum/preference/numeric/recycler_points)
 	user.client?.prefs?.write_preference_by_type(/datum/preference/numeric/recycler_points, min(currentValue + amount,999))
-	if(granted_points[user.key])
-		granted_points[user.key] += amount
+	if(LAZYACCESS(granted_points, user.key))
+		LAZYADDASSOC(granted_points, user.key, amount)
 	else
-		granted_points[user.key] = amount
+		LAZYSET(granted_points, user.key, amount)
 
 
 /obj/machinery/maint_recycler/proc/user_balance(mob/user)
@@ -499,7 +499,7 @@ UTILITY PROCS
 
 /obj/machinery/maint_recycler/proc/canRecycle(mob/user, potentialValue)
 	if(!user.key) return FALSE
-	if(granted_points[user.key]+potentialValue > point_cap) return FALSE
+	if(LAZYACCESS(granted_points, user.key)+potentialValue > point_cap) return FALSE
 	return TRUE
 
 /obj/machinery/maint_recycler/proc/mob_consent_check(mob/probable_victim)

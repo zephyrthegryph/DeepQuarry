@@ -9,7 +9,7 @@
 	icon_state = "mag_trap0"
 	anchored = TRUE
 	var/list/things_in_range//what is in a radius of us?
-	var/list/fields_in_range = list()//What EM fields are in that radius?
+	var/list/fields_in_range//What EM fields are in that radius?
 	var/list/active_field = list()//Our active field.
 	var/active = 0 //are we even on?
 	var/id_tag //needed for !!rasins!!
@@ -38,16 +38,16 @@
 
 /obj/machinery/power/hydromagnetic_trap/proc/Search()//let's not have +100 instances of the same field in active_field.
 	things_in_range = range(7, src)
-	fields_in_range.Cut() // rebuild fresh each tick so in-range fields don't accumulate as duplicates
+	LAZYCLEARLIST(fields_in_range) // rebuild fresh each tick so in-range fields don't accumulate as duplicates
 	for (var/obj/effect/fusion_em_field/FFF in things_in_range)
-		fields_in_range.Add(FFF)
+		LAZYADD(fields_in_range, FFF)
 
 	listclearnulls(active_field)
 	listclearnulls(fields_in_range)
 
 	for (var/obj/effect/fusion_em_field/FFF in fields_in_range)
 		if(get_dist(src, FFF) > 7)
-			fields_in_range.Remove(FFF)
+			LAZYREMOVE(fields_in_range, FFF)
 			continue
 
 		if (active_field.len > 0)

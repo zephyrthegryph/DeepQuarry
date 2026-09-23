@@ -56,23 +56,23 @@
 	if(chassis)
 		if(equip_type)
 			if(equip_type == EQUIP_HULL)
-				chassis.hull_equipment -= src
+				LAZYREMOVE(chassis.hull_equipment, src)
 				listclearnulls(chassis.hull_equipment)
 			if(equip_type == EQUIP_WEAPON)
 				chassis.weapon_equipment -= src
 				listclearnulls(chassis.weapon_equipment)
 			if(equip_type == EQUIP_UTILITY)
-				chassis.utility_equipment -= src
+				LAZYREMOVE(chassis.utility_equipment, src)
 				listclearnulls(chassis.utility_equipment)
 			if(equip_type == EQUIP_SPECIAL)
-				chassis.special_equipment -= src
+				LAZYREMOVE(chassis.special_equipment, src)
 				listclearnulls(chassis.special_equipment)
 			// ition begin: MICROMECHS
 			if(equip_type == EQUIP_MICRO_UTILITY)
-				chassis.micro_utility_equipment -= src
+				LAZYREMOVE(chassis.micro_utility_equipment, src)
 				listclearnulls(chassis.micro_utility_equipment)
 			if(equip_type == EQUIP_MICRO_WEAPON)
-				chassis.micro_weapon_equipment -= src
+				LAZYREMOVE(chassis.micro_weapon_equipment, src)
 				listclearnulls(chassis.micro_weapon_equipment)
 			// ition end: MICROMECHS
 		LAZYREMOVE(chassis.universal_equipment, src)
@@ -149,18 +149,18 @@
 		for(var/obj/item/mecha_parts/mecha_equipment/ME in M.equipment) //Exact duplicate components aren't allowed.
 			if(ME.type == src.type)
 				return 0
-	if(equip_type == EQUIP_HULL && M.hull_equipment.len < M.max_hull_equip)
+	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip)
 		return 1
 	if(equip_type == EQUIP_WEAPON && M.weapon_equipment.len < M.max_weapon_equip)
 		return 1
-	if(equip_type == EQUIP_UTILITY && M.utility_equipment.len < M.max_utility_equip)
+	if(equip_type == EQUIP_UTILITY && length(M.utility_equipment) < M.max_utility_equip)
 		return 1
-	if(equip_type == EQUIP_SPECIAL && M.special_equipment.len < M.max_special_equip)
+	if(equip_type == EQUIP_SPECIAL && length(M.special_equipment) < M.max_special_equip)
 		return 1
 	// ition begin: MICROMECHS
-	if(equip_type == EQUIP_MICRO_UTILITY && M.micro_utility_equipment.len < M.max_micro_utility_equip)
+	if(equip_type == EQUIP_MICRO_UTILITY && length(M.micro_utility_equipment) < M.max_micro_utility_equip)
 		return 1
-	if(equip_type == EQUIP_MICRO_WEAPON && M.micro_weapon_equipment.len < M.max_micro_weapon_equip)
+	if(equip_type == EQUIP_MICRO_WEAPON && length(M.micro_weapon_equipment) < M.max_micro_weapon_equip)
 		return 1
 	// ition end: MICROMECHS
 	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip) //The exosuit needs to be military grade to actually have a universal slot capable of accepting a true weapon.
@@ -172,24 +172,24 @@
 /obj/item/mecha_parts/mecha_equipment/proc/attach(obj/mecha/M as obj)
 	//M.equipment += src
 	var/has_equipped = 0
-	if(equip_type == EQUIP_HULL && M.hull_equipment.len < M.max_hull_equip && !has_equipped)
-		M.hull_equipment += src
+	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip && !has_equipped)
+		LAZYADD(M.hull_equipment, src)
 		has_equipped = 1
 	if(equip_type == EQUIP_WEAPON && M.weapon_equipment.len < M.max_weapon_equip && !has_equipped)
 		M.weapon_equipment += src
 		has_equipped = 1
-	if(equip_type == EQUIP_UTILITY && M.utility_equipment.len < M.max_utility_equip && !has_equipped)
-		M.utility_equipment += src
+	if(equip_type == EQUIP_UTILITY && length(M.utility_equipment) < M.max_utility_equip && !has_equipped)
+		LAZYADD(M.utility_equipment, src)
 		has_equipped = 1
-	if(equip_type == EQUIP_SPECIAL && M.special_equipment.len < M.max_special_equip && !has_equipped)
-		M.special_equipment += src
+	if(equip_type == EQUIP_SPECIAL && length(M.special_equipment) < M.max_special_equip && !has_equipped)
+		LAZYADD(M.special_equipment, src)
 		has_equipped = 1
 	// ition begin: MICROMECHS
-	if(equip_type == EQUIP_MICRO_UTILITY && M.micro_utility_equipment.len < M.max_micro_utility_equip && !has_equipped)
-		M.micro_utility_equipment += src
+	if(equip_type == EQUIP_MICRO_UTILITY && length(M.micro_utility_equipment) < M.max_micro_utility_equip && !has_equipped)
+		LAZYADD(M.micro_utility_equipment, src)
 		has_equipped = 1
-	if(equip_type == EQUIP_MICRO_WEAPON && M.micro_weapon_equipment.len < M.max_micro_weapon_equip && !has_equipped)
-		M.micro_weapon_equipment += src
+	if(equip_type == EQUIP_MICRO_WEAPON && length(M.micro_weapon_equipment) < M.max_micro_weapon_equip && !has_equipped)
+		LAZYADD(M.micro_weapon_equipment, src)
 		has_equipped = 1
 	// ition end: MICROMECHS
 	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip && !has_equipped)
@@ -221,18 +221,18 @@
 	if(equip_type)
 		switch(equip_type)
 			if(EQUIP_HULL)
-				chassis.hull_equipment -= src
+				LAZYREMOVE(chassis.hull_equipment, src)
 			if(EQUIP_WEAPON)
 				chassis.weapon_equipment -= src
 			if(EQUIP_UTILITY)
-				chassis.utility_equipment -= src
+				LAZYREMOVE(chassis.utility_equipment, src)
 			if(EQUIP_SPECIAL)
-				chassis.special_equipment -= src
+				LAZYREMOVE(chassis.special_equipment, src)
 			// ition begin: MICROMECHS
 			if(EQUIP_MICRO_UTILITY)//CHOMPstation edit - This was improperly named bugging detaching on my equipment fix.
-				chassis.micro_utility_equipment -= src
+				LAZYREMOVE(chassis.micro_utility_equipment, src)
 			if(EQUIP_MICRO_WEAPON)
-				chassis.micro_weapon_equipment -= src
+				LAZYREMOVE(chassis.micro_weapon_equipment, src)
 			// ition end: MICROMECHS
 	if(chassis.selected == src)
 		chassis.selected = null

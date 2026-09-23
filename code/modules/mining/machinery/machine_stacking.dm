@@ -59,7 +59,7 @@
 		if("release_stack")
 			var/stack = params["stack"]
 			if(machine.stack_storage[stack] > 0)
-				var/stacktype = machine.stack_paths[stack]
+				var/stacktype = LAZYACCESS(machine.stack_paths, stack)
 				new stacktype(get_turf(machine.output), machine.stack_storage[stack])
 				machine.stack_storage[stack] = 0
 			. = TRUE
@@ -79,7 +79,7 @@
 	var/obj/machinery/mineral/input = null
 	var/obj/machinery/mineral/output = null
 	var/list/stack_storage[0]
-	var/list/stack_paths[0]
+	var/list/stack_paths
 	var/stack_amt = 50; // Amount to stack before releassing
 
 /obj/machinery/mineral/stacking_machine/Initialize(mapload)
@@ -87,7 +87,7 @@
 	for(var/obj/item/stack/material/S as anything in (subtypesof(/obj/item/stack/material) - typesof(/obj/item/stack/material/cyborg)))
 		var/s_matname = initial(S.default_type)
 		stack_storage[s_matname] = 0
-		stack_paths[s_matname] = S
+		LAZYSET(stack_paths, s_matname, S)
 
 	for (var/dir in GLOB.cardinal)
 		src.input = locate(/obj/machinery/mineral/input, get_step(src, dir))
@@ -152,7 +152,7 @@
 	for(var/sheet in stack_storage)
 		if(stack_storage[sheet] >= stack_amt)
 			did_work = TRUE
-			var/stacktype = stack_paths[sheet]
+			var/stacktype = LAZYACCESS(stack_paths, sheet)
 			new stacktype (get_turf(output), stack_amt)
 			stack_storage[sheet] -= stack_amt
 	if(!did_work)

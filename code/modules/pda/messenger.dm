@@ -6,7 +6,7 @@
 	template = "pda_messenger"
 
 	var/toff = 0 //If 1, messenger disabled
-	var/list/tnote[0]  //Current Texts
+	var/list/tnote  //Current Texts
 	var/last_text //No text spamming
 
 	var/m_hidden = 0 // Is the PDA hidden from the PDA list?
@@ -26,7 +26,7 @@
 
 	has_back = active_conversation
 	if(active_conversation)
-		data["messages"] = tnote
+		data["messages"] = (tnote || list())
 		for(var/c in tnote)
 			if(c["target"] == active_conversation)
 				data["convo_name"] = sanitize(c["owner"])
@@ -73,7 +73,7 @@
 			notify_silent = !notify_silent
 		if("Clear")//Clears messages
 			if(params["option"] == "All")
-				tnote.Cut()
+				LAZYCLEARLIST(tnote)
 				LAZYCLEARLIST(conversations)
 			if(params["option"] == "Convo")
 				var/new_tnote[0]
@@ -215,7 +215,7 @@
 	return pda.owner && !toff && !hidden
 
 /datum/data/pda/app/messenger/proc/receive_message(list/data, ref)
-	tnote.Add(list(data))
+	LAZYADD(tnote, list(data))
 	if(!LAZYFIND(conversations, ref))
 		LAZYADD(conversations, ref)
 	if(!data["sent"])

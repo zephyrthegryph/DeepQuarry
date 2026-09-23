@@ -25,7 +25,7 @@ fundamental differences
 	. = ..()
 	LAZYADD(cooking_objs, new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
 	cooking = FALSE
-	selected_option = pick(output_options)
+	selected_option = DEFAULTPICK(output_options, null)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
 
@@ -42,7 +42,7 @@ fundamental differences
 		to_chat(user, span_notice("You can't operate [src]."))
 		return
 
-	if(!output_options[new_output])
+	if(!LAZYACCESS(output_options, new_output))
 		return
 
 	selected_option = new_output

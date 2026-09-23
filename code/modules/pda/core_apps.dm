@@ -8,7 +8,7 @@
 
 	data["app"]["is_home"] = 1
 
-	data["apps"] = pda.shortcut_cache
+	data["apps"] = (pda.shortcut_cache || list())
 	data["categories"] = pda.shortcut_cat_order
 	data["pai"] = !isnull(pda.pai)				// pAI inserted?
 

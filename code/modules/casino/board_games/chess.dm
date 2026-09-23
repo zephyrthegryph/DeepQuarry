@@ -36,8 +36,8 @@
 		list("wR","wN","wB","wQ","wK","wB","wN","wR")
 	)
 	var/list/current_board = list()
-	var/list/valid_moves = list()
-	var/list/selected_figure = list()
+	var/list/valid_moves
+	var/list/selected_figure
 	var/list/last_double_pawn_move
 	var/game_flags = NONE
 	var/turn_start_time = 0
@@ -67,8 +67,8 @@
 		"player_one_time" = player_one_time + (game_state == GAME_PLAYER_ONE ? world.time - turn_start_time : 0),
 		"player_two_time" = player_two_time + (game_state == GAME_PLAYER_TWO ? world.time - turn_start_time : 0),
 		"current_board" = current_board,
-		"selected_figure" = selected_figure,
-		"valid_moves" = valid_moves,
+		"selected_figure" = (selected_figure || list()),
+		"valid_moves" = (valid_moves || list()),
 		"game_state" = game_state,
 		"winner" = winner,
 		"has_won" = winner == ui.user.name,
@@ -159,8 +159,8 @@
 	winner = null
 	player_one_time = 0
 	player_two_time = 0
-	selected_figure.Cut()
-	valid_moves.Cut()
+	LAZYCLEARLIST(selected_figure)
+	LAZYCLEARLIST(valid_moves)
 	LAZYCLEARLIST(last_double_pawn_move)
 	game_flags = NONE
 	if(full)
@@ -194,8 +194,8 @@
 			if(!coords || !selected_figure)
 				return GAME_ACTION_NONE
 
-			var/from_x = selected_figure[1]
-			var/from_y = selected_figure[2]
+			var/from_x = LAZYACCESS(selected_figure, 1)
+			var/from_y = LAZYACCESS(selected_figure, 2)
 			var/to_x = coords[1]
 			var/to_y = coords[2]
 
@@ -236,7 +236,7 @@
 						promotion = "Q"
 					current_board[to_y][to_x] = moving_piece[1] + promotion
 
-			selected_figure.Cut()
+			LAZYCLEARLIST(selected_figure)
 			update_valid_moves()
 			validate_victory(active_color)
 
@@ -332,10 +332,10 @@
 	return TRUE
 
 /datum/board_game/chess/proc/update_valid_moves()
-	valid_moves.Cut()
+	LAZYCLEARLIST(valid_moves)
 	if(length(selected_figure))
-		var/x = selected_figure[1]
-		var/y = selected_figure[2]
+		var/x = LAZYACCESS(selected_figure, 1)
+		var/y = LAZYACCESS(selected_figure, 2)
 		valid_moves = generate_valid_moves(x, y)
 
 /datum/board_game/chess/proc/square_under_attack(opponent_color, x, y)

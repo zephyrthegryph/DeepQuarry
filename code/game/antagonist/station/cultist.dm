@@ -49,14 +49,14 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 
 	global_objectives = list()
 	if(prob(50))
-		global_objectives |= new /datum/objective/cult/survive
+		LAZYOR(global_objectives, new /datum/objective/cult/survive)
 	else
-		global_objectives |= new /datum/objective/cult/eldergod
+		LAZYOR(global_objectives, new /datum/objective/cult/eldergod)
 
 	var/datum/objective/cult/sacrifice/sacrifice = new()
 	sacrifice.find_target()
 	sacrifice_target = sacrifice.target
-	global_objectives |= sacrifice
+	LAZYOR(global_objectives, sacrifice)
 
 /datum/antagonist/cultist/equip(mob/living/carbon/human/player)
 

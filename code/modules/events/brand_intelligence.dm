@@ -2,7 +2,7 @@
 	announceWhen	= 21
 	endWhen			= 1000	//Ends when all vending machines are subverted anyway.
 
-	var/list/obj/machinery/vending/vendingMachines = list()
+	var/list/obj/machinery/vending/vendingMachines
 	var/list/obj/machinery/vending/infectedVendingMachines
 	var/obj/machinery/vending/originMachine
 
@@ -22,20 +22,20 @@
 /datum/event/brand_intelligence/start()
 	for(var/obj/machinery/vending/V in GLOB.machines)
 		if(isNotStationLevel(V.z))	continue
-		vendingMachines.Add(V)
+		LAZYADD(vendingMachines, V)
 
-	if(!vendingMachines.len)
+	if(!length(vendingMachines))
 		kill()
 		return
 
-	originMachine = pick(vendingMachines)
-	vendingMachines.Remove(originMachine)
+	originMachine = DEFAULTPICK(vendingMachines, null)
+	LAZYREMOVE(vendingMachines, originMachine)
 	originMachine.shut_up = 0
 	originMachine.shoot_inventory = 1
 
 
 /datum/event/brand_intelligence/tick()
-	if(!vendingMachines.len || !originMachine || originMachine.shut_up)	//if every machine is infected, or if the original vending machine is missing or has it's voice switch flipped
+	if(!length(vendingMachines) || !originMachine || originMachine.shut_up) //if every machine is infected, or if the original vending machine is missing or has it's voice switch flipped
 		// Effects when 'source' machine is destroyed/silenced
 		for(var/obj/machinery/vending/saved in infectedVendingMachines)
 			saved.shoot_inventory = 0
@@ -48,8 +48,8 @@
 
 	if(ISMULTIPLE(activeFor, 5))
 		if(prob(15))
-			var/obj/machinery/vending/infectedMachine = pick(vendingMachines)
-			vendingMachines.Remove(infectedMachine)
+			var/obj/machinery/vending/infectedMachine = DEFAULTPICK(vendingMachines, null)
+			LAZYREMOVE(vendingMachines, infectedMachine)
 			LAZYADD(infectedVendingMachines, infectedMachine)
 			infectedMachine.shut_up = 0
 			infectedMachine.shoot_inventory = 1

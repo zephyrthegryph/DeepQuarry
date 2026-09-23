@@ -382,7 +382,7 @@ SUBSYSTEM_DEF(machines)
 				process_result = M.process(wait)
 			if(istype(M, /obj/machinery/power))
 				var/obj/machinery/power/power_machine = M
-				if(power_machine.powernet && power_machine.powernet.registered_sources[power_machine] && power_machine.power_supply_generation != power_supply_generation)
+				if(power_machine.powernet && LAZYACCESS(power_machine.powernet.registered_sources, power_machine) && power_machine.power_supply_generation != power_supply_generation)
 					power_machine.clear_power_supply()
 		if(QDELETED(M) || process_result == PROCESS_KILL)
 			if(process_result == PROCESS_KILL)
@@ -808,7 +808,7 @@ SUBSYSTEM_DEF(machines)
 					frontier += neighbor
 			work_done++
 		else if(phase == 2)
-			old_nodes = source_net.nodes.Copy()
+			old_nodes = LAZYCOPY(source_net.nodes)
 			source_net.prepare_topology_rebind()
 			if(!length(components))
 				qdel(source_net)

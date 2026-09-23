@@ -16,7 +16,7 @@
 	var/list/obj/machinery/mining/brace/supports = list()
 	var/supported = 0
 	var/active = 0
-	var/list/resource_field = list()
+	var/list/resource_field
 	var/list/gas_field
 	var/obj/item/radio/intercom/faultreporter
 	var/drill_range = 5
@@ -177,15 +177,15 @@
 		T.ex_act(2.0)
 
 	//Dig out the tasty ores.
-	if(resource_field.len)
-		var/turf/simulated/harvesting = pick(resource_field)
+	if(length(resource_field))
+		var/turf/simulated/harvesting = DEFAULTPICK(resource_field, null)
 
-		while(resource_field.len && !harvesting.resources)
+		while(length(resource_field) && !harvesting.resources)
 			harvesting.turf_resource_types &= ~(TURF_HAS_MINERALS)
 			harvesting.resources = null
-			resource_field -= harvesting
-			if(resource_field.len) // runtime protection
-				harvesting = pick(resource_field)
+			LAZYREMOVE(resource_field, harvesting)
+			if(length(resource_field)) // runtime protection
+				harvesting = DEFAULTPICK(resource_field, null)
 			else
 				harvesting = null
 
@@ -228,7 +228,7 @@
 		if(!found_resource)	// If a drill can't see an advanced material, it will destroy it while going through.
 			harvesting.turf_resource_types &= ~(TURF_HAS_MINERALS)
 			harvesting.resources = null
-			resource_field -= harvesting
+			LAZYREMOVE(resource_field, harvesting)
 
 	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
 		active = 0
@@ -407,7 +407,7 @@
 			mine_turf = locate(tx + ix, ty + iy, T.z)
 			if(!istype(mine_turf, /turf/space/))
 				if(mine_turf && mine_turf.turf_resource_types & TURF_HAS_MINERALS)
-					resource_field += mine_turf
+					LAZYADD(resource_field, mine_turf)
 				// gas mining
 				if(istype(mine_turf,/turf/simulated/floor/gas_crack))
 					// Get gasses the cracks around us could give!
@@ -416,7 +416,7 @@
 						continue
 					drill_moles_per_tick += 2
 					LAZYADD(gas_field, G.gas_type)
-	if(!resource_field.len && !length(gas_field))
+	if(!length(resource_field) && !length(gas_field))
 		system_error("Resources depleted.")
 
 /obj/machinery/mining/drill/proc/use_cell_power()

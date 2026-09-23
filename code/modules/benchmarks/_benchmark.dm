@@ -20,7 +20,7 @@
 	var/default_scenario = FALSE
 	var/list/metrics = list()
 	var/list/details = list()
-	var/list/phases = list()
+	var/list/phases
 	/// World parameters for this run; scenario options are `bench_<name>=value`.
 	var/list/params
 	/// Set by `bench_profile=1`: wrap each window in the BYOND proc profiler.
@@ -136,7 +136,7 @@
 /datum/benchmark/proc/mark(name)
 	var/list/process = benchmark_process_memory()
 	var/list/rust = verdigris_metrics_list()
-	phases += list(list(
+	LAZYADD(phases, list(list()
 		"name" = name,
 		"world_time" = world.time,
 		"realtime" = REALTIMEOFDAY,
@@ -331,7 +331,7 @@
 			result["runtimes"] = GLOB.total_runtimes - runtimes_before
 			result["metrics"] = scenario.metrics
 			result["details"] = scenario.details
-			result["phases"] = scenario.phases
+			result["phases"] = (scenario.phases || list())
 			log_test("Benchmark [scenario_id]: [result["status"]] in [result["duration_seconds"]]s, [length(scenario.metrics)] metrics")
 			qdel(scenario)
 		results[scenario_id] = result

@@ -40,7 +40,7 @@
 	/// Every provider.
 	var/list/providers
 	/// id -> list of base providers.
-	var/list/base_providers = list()
+	var/list/base_providers
 	/// id -> list of contributors.
 	var/list/contributors = list()
 	/// Tag id -> bit number (0-based, across words).
@@ -68,7 +68,7 @@
 			errors += "property [def.id] is declared twice ([existing.type] and [def.type])"
 			continue
 		LAZYSET(defs, def.id, def)
-		base_providers[def.id] = list()
+		LAZYSET(base_providers, def.id, list())
 		contributors[def.id] = list()
 		if(def.kind == PROP_KIND_TAG)
 			LAZYSET(tag_bits, def.id, tag_count++)
@@ -78,7 +78,7 @@
 		if(!LAZYACCESS(defs, provider.property))
 			continue // reported by validate()
 		if(provider.is_base())
-			base_providers[provider.property] += provider
+			LAZYADDASSOC(base_providers, provider.property, provider)
 		else
 			contributors[provider.property] += provider
 	errors += validate()
@@ -111,7 +111,7 @@
 					out += "measure [id] cannot aggregate with OR"
 			else
 				out += "property [id] has unknown kind [def.kind]"
-		if(!length(base_providers[id]) && !length(contributors[id]))
+		if(!length(LAZYACCESS(base_providers, id)) && !length(contributors[id]))
 			out += "property [id] has no provider"
 	for(var/datum/property_provider/provider as anything in providers)
 		var/datum/property_def/def = LAZYACCESS(defs, provider.property)
@@ -133,7 +133,7 @@
 				out += "[label] names [comp.component_type], which is not a component"
 	// Conflicting base providers: two answering for the same types.
 	for(var/id in base_providers)
-		var/list/bases = base_providers[id]
+		var/list/bases = LAZYACCESS(base_providers, id)
 		for(var/i in 1 to length(bases))
 			var/datum/property_provider/a = bases[i]
 			for(var/j in i + 1 to length(bases))

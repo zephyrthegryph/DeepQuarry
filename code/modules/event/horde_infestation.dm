@@ -2,7 +2,7 @@
 	announceWhen	= 30
 	endWhen		= 200
 	var/spawncount = 1
-	var/list/vents = list()
+	var/list/vents
 	var/spiders = FALSE
 	var/metroids = FALSE
 	var/list/alive_metroids
@@ -17,7 +17,7 @@
 			continue
 		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels)) //No spawns on welded vents
 			if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
-				vents += temp_vent
+				LAZYADD(vents, temp_vent)
 
 	if(prob(50)) //50/50 chance on spiders or metroids.
 		log_game("Hord event, spiders selected.")
@@ -48,10 +48,10 @@
 				if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change to 10 from 50 in order for spawns to work.
 					var/area/A = get_area(temp_vent)
 					if(!(A.flag_check(AREA_FORBID_EVENTS)))
-						vents += temp_vent
+						LAZYADD(vents, temp_vent)
 
-		while((spawncount >= 1) && vents.len)
-			var/obj/vent = pick(vents)
+		while((spawncount >= 1) && length(vents))
+			var/obj/vent = DEFAULTPICK(vents, null)
 		// adding spider EGGS to the possible spawns instead of singular spiderling spawns.
 			var/spawn_spiderlings = pickweight(list(
 				/obj/effect/spider/spiderling/space = 95,
@@ -59,11 +59,11 @@
 				/obj/effect/spider/eggcluster/royal/space = 1
 				))
 			new spawn_spiderlings(vent.loc) // No nurses //Oh my JESUS CHRIST, this slipped past me. Literally no nurses. Well guess what, nurses are back.
-			vents -= vent
+			LAZYREMOVE(vents, vent)
 			spawncount--
 	if(metroids)
-		while((spawncount >= 1) && vents.len)
-			var/obj/vent = pick(vents)
+		while((spawncount >= 1) && length(vents))
+			var/obj/vent = DEFAULTPICK(vents, null)
 			var/spawn_metroids = pickweight(list(
 				/mob/living/simple_mob/metroid/juvenile/baby = 60,
 				/mob/living/simple_mob/metroid/juvenile/super = 30,
@@ -73,9 +73,9 @@
 				/mob/living/simple_mob/metroid/juvenile/omega = 1,
 				))
 			LAZYADD(alive_metroids, new spawn_metroids(get_turf(vent)))
-			vents -= vent
+			LAZYREMOVE(vents, vent)
 			spawncount--
-		vents.Cut()
+		LAZYCLEARLIST(vents)
 
 /datum/event/horde_infestation/end()
 	if(spiders)

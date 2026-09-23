@@ -17,7 +17,7 @@
 	dissipate = 1
 	dissipate_delay = 5
 	dissipate_strength = 1
-	var/list/orbiting_balls = list()
+	var/list/orbiting_balls
 	var/miniball = FALSE
 	var/produced_power
 	var/energy_to_raise = 32
@@ -36,7 +36,7 @@
 	var/datum/component/orbiter/myorbit = dq_get_orbiting(src)
 	if(myorbit && istype(myorbit.parent, /obj/singularity/energy_ball))
 		var/obj/singularity/energy_ball/EB = myorbit.parent
-		EB.orbiting_balls -= src
+		LAZYREMOVE(EB.orbiting_balls, src)
 
 	for(var/obj/singularity/energy_ball/EB as anything in orbiting_balls)
 		qdel(EB)
@@ -55,21 +55,21 @@
 		if (handle_energy())
 			return
 
-		move_the_basket_ball(max(wait - 5, 4 + orbiting_balls.len * 1.5))
+		move_the_basket_ball(max(wait - 5, 4 + length(orbiting_balls) * 1.5))
 
 		playsound(src, 'sound/effects/lightningbolt.ogg', 100, 1, extrarange = 30)
 
 		set_dir(tesla_zap(src, 7, TESLA_DEFAULT_POWER, TRUE, current_jumps = 1))
 
 		for (var/ball in orbiting_balls)
-			var/range = rand(1, CLAMP(orbiting_balls.len, 3, 7))
+			var/range = rand(1, CLAMP(length(orbiting_balls), 3, 7))
 			tesla_zap(ball, range, TESLA_MINI_POWER/7*range, TRUE, current_jumps = 1)
 	else
 		energy = 0 // ensure we dont have miniballs of miniballs
 
 /obj/singularity/energy_ball/examine(mob/user)
 	. = ..()
-	if(orbiting_balls.len)
+	if(length(orbiting_balls))
 		. += "The amount of orbiting mini-balls is [orbiting_balls.len]."
 
 /obj/singularity/energy_ball/proc/move_the_basket_ball(move_amount)
@@ -102,11 +102,11 @@
 		//addtimer(CALLBACK(src, PROC_REF(new_mini_ball)), 100)
 		spawn(100) new_mini_ball()
 
-	else if(energy < energy_to_lower && orbiting_balls.len)
+	else if(energy < energy_to_lower && length(orbiting_balls))
 		energy_to_raise = energy_to_raise / 1.25
 		energy_to_lower = (energy_to_raise / 1.25) - 20
 
-		var/Orchiectomy_target = pick(orbiting_balls)
+		var/Orchiectomy_target = DEFAULTPICK(orbiting_balls, null)
 		qdel(Orchiectomy_target)
 
 	else
@@ -138,17 +138,17 @@
 
 /obj/singularity/energy_ball/orbit(obj/singularity/energy_ball/target)
 	if (istype(target))
-		target.orbiting_balls += src
+		LAZYADD(target.orbiting_balls, src)
 		//TODO-LESH-DEL global.poi_list -= src
-		target.dissipate_strength = target.orbiting_balls.len + 1
+		target.dissipate_strength = length(target.orbiting_balls) + 1
 
 	. = ..()
 /obj/singularity/energy_ball/stop_orbit()
 	var/datum/component/orbiter/myorbit = dq_get_orbiting(src)
 	if (myorbit && istype(myorbit.parent, /obj/singularity/energy_ball))
 		var/obj/singularity/energy_ball/orbitingball = myorbit.parent
-		orbitingball.orbiting_balls -= src
-		orbitingball.dissipate_strength = orbitingball.orbiting_balls.len + 1
+		LAZYREMOVE(orbitingball.orbiting_balls, src)
+		orbitingball.dissipate_strength = length(orbitingball.orbiting_balls) + 1
 	..()
 	if (!loc && !QDELETED(src))
 		qdel(src)

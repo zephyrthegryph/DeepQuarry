@@ -127,5 +127,5 @@ SUBSYSTEM_DEF(planets)
 		count--
 		for(var/datum/planet/P as anything in planets)
 			if(P.weather_holder)
-				P.weather_holder.change_weather(pick(P.weather_holder.allowed_weather_types))
+				P.weather_holder.change_weather(DEFAULTPICK(P.weather_holder.allowed_weather_types, null))
 		sleep(3)

@@ -1,6 +1,6 @@
 /datum/stockMarket
 	var/list/stocks = list()
-	var/list/balances = list()
+	var/list/balances
 	var/list/last_read
 	var/list/stockBrokers
 	var/list/logs
@@ -25,9 +25,9 @@
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))
-		balances[whose] = net
+		LAZYSET(balances, whose, net)
 	else
-		balances[whose] += net
+		LAZYADDASSOC(balances, whose, net)
 /datum/stockMarket/proc/generateBrokers()
 	stockBrokers = list()
 	var/list/fnames = list("Goldman", "Edward", "James", "Luis", "Alexander", "Walter", "Eugene", "Mary", "Morgan", "Jane", "Elizabeth", "Xavier", "Hayden", "Samuel", "Lee")

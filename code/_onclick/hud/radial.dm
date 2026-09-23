@@ -88,7 +88,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	/// choice_id -> /datum/radial_menu_choice
 	var/list/choice_datums
 
-	var/list/page_data = list() //list of choices per page
+	var/list/page_data //list of choices per page
 
 
 	var/selected_choice
@@ -171,9 +171,9 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	var/list/choices_left = choices.Copy()
 	while(choices_left.len)
 		if(current.len == max_elements)
-			page_data[page] = current
+			LAZYSET(page_data, page, current)
 			page++
-			page_data.len++
+			LAZYINITLIST(page_data); page_data.len++
 			current = list()
 		if(paged && current.len == max_elements - 1)
 			current += NEXT_PAGE_ID
@@ -183,13 +183,13 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	if(paged && current.len < max_elements)
 		current += NEXT_PAGE_ID
 
-	page_data[page] = current
+	LAZYSET(page_data, page, current)
 	pages = page
 	current_page = clamp(set_page, 1, pages)
 	update_screen_objects(entry_animation, click_on_hover)
 
 /datum/radial_menu/proc/update_screen_objects(anim = FALSE, click_on_hover = FALSE)
-	var/list/page_choices = page_data[current_page]
+	var/list/page_choices = LAZYACCESS(page_data, current_page)
 	var/angle_per_element = round(zone / page_choices.len)
 	for(var/i in 1 to elements.len)
 		var/atom/movable/screen/radial/element = elements[i]

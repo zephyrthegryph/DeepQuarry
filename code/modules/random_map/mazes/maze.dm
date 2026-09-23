@@ -2,7 +2,7 @@
 	descriptor = "maze"
 	initial_wall_cell = 100
 	var/list/checked_coord_cache = list()
-	var/list/openlist = list()
+	var/list/openlist
 	var/list/closedlist
 
 /datum/random_map/maze/set_map_size()
@@ -20,12 +20,12 @@
 	if(start_y%2!=0) start_y++
 
 	// Create the origin cell to start us off.
-	openlist += new /datum/maze_cell(start_x,start_y)
+	LAZYADD(openlist, new /datum/maze_cell(start_x,start_y))
 
-	while(openlist.len)
+	while(length(openlist))
 		// Grab a maze point to use and remove it from the open list.
-		var/datum/maze_cell/next = pick(openlist)
-		openlist -= next
+		var/datum/maze_cell/next = DEFAULTPICK(openlist, null)
+		LAZYREMOVE(openlist, next)
 		if(!isnull(LAZYACCESS(closedlist, next.name)))
 			continue
 
@@ -53,7 +53,7 @@
 
 	// Cleanup. Map stays in memory for display proc.
 	checked_coord_cache.Cut()
-	openlist.Cut()
+	LAZYCLEARLIST(openlist)
 	LAZYCLEARLIST(closedlist)
 
 /datum/random_map/maze/proc/add_to_openlist(tx, ty, nx, ny)
@@ -62,4 +62,4 @@
 	checked_coord_cache["[tx]-[ty]"] = 1
 	map[get_map_cell(tx,ty)] = DOOR_CHAR
 	var/datum/maze_cell/new_cell = new(tx,ty,nx,ny)
-	openlist |= new_cell
+	LAZYOR(openlist, new_cell)

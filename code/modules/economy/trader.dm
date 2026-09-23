@@ -13,13 +13,13 @@
 	var/coinbalance = 0					//only for use with coin mode - when you put a curious coin in, it adds the coins value to this number
 	var/list/start_products = list()	//Type paths entered here will spawn inside the trader and add themselves to the products list.
 	var/list/products = list()			//Anything in this list will be listed for sale
-	var/list/prices = list()			//Enter a type path with an associated number, and if the trader tries to sell something of that type, it will expect the number as the cost for that product
+	var/list/prices			//Enter a type path with an associated number, and if the trader tries to sell something of that type, it will expect the number as the cost for that product
 	var/list/multiple = list()			//Enter a type path with an associated number, and the trader will have however many of that type to sell as the number you entered
 	var/trading = FALSE					//'Busy' - Only one person can trade at a time.
 	var/welcome_msg = "This machine accepts"	//The first part of the welcome message
 	var/welcome_accepts_name = "curious coins"	//The name of the kind of thing the trader expects, automatically set except on "item" mode, where if you enter a value it will not change it.
 	var/welcome_msg_finish = ". Would you like to browse the wares?"	//The final part of the welcome message.
-	var/list/interact_sound = list()	//The sounds that may play when you click it. It will pick one at random from this list. It only thinks about this if there's anything in the list.
+	var/list/interact_sound	//The sounds that may play when you click it. It will pick one at random from this list. It only thinks about this if there's anything in the list.
 	var/sound_cooldown = 0				//The sound can only play this often in deciseconds. Use '10 SECONDS' format to make it easier to read
 	var/sound_lastplayed = 0			//Automatically set when the sound is played.
 	var/pick_inventory = FALSE			//If true, when initialized the trader will randomly pick things from its start products list to set up
@@ -86,9 +86,9 @@
 			to_chat(user, span_notice("You decided not to get anything."))
 			trading = FALSE
 			return
-		if(interact_sound.len > 0)
+		if(length(interact_sound) > 0)
 			if((world.time- sound_lastplayed) > sound_cooldown)
-				var/sound = pick(interact_sound)
+				var/sound = DEFAULTPICK(interact_sound, null)
 				playsound(src, sound, 25, FALSE, ignore_walls = FALSE)
 				sound_lastplayed = world.time
 		var/obj/input = tgui_input_list(user, "What would you like? You have [coin_value] banked with this trader.", "Trader", products, timeout = 30 SECONDS)
@@ -99,7 +99,7 @@
 		var/p = 0
 		var/t = input.type
 		if(t in prices)
-			p = prices[t]
+			p = LAZYACCESS(prices, t)
 		if(p > 0)
 			if(tgui_alert(user, "Are you sure? This costs [p].", "Confirm",list("Yes","No")) != "Yes")
 				to_chat(user, span_notice("You decided not to."))

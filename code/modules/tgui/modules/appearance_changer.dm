@@ -42,7 +42,7 @@
 	var/list/valid_earstyles = list()
 	var/list/valid_tailstyles = list()
 	var/list/valid_wingstyles = list()
-	var/list/valid_gradstyles = list()
+	var/list/valid_gradstyles
 	var/list/markings = null
 	var/cooldown //Anti-spam. If spammed, this can be REALLY laggy.
 
@@ -729,7 +729,7 @@
 		data["facial_hair_styles"] = facial_hair_styles
 
 	if(can_change(owner, APPEARANCE_HAIR_COLOR))
-		data["hair_grads"] = valid_gradstyles
+		data["hair_grads"] = (valid_gradstyles || list())
 
 	data["mapRef"] = map_name
 
@@ -915,7 +915,7 @@
 	valid_earstyles.Cut()
 	valid_tailstyles.Cut()
 	valid_wingstyles.Cut()
-	valid_gradstyles.Cut()
+	LAZYCLEARLIST(valid_gradstyles)
 
 /datum/tgui_module/appearance_changer/proc/generate_data(mob/user, mob/living/carbon/human/target)
 	if(!ishuman(target))
@@ -969,7 +969,7 @@
 
 	if(!LAZYLEN(valid_gradstyles))
 		for(var/key in GLOB.hair_gradients)
-			valid_gradstyles.Add(list(list(key)))
+			LAZYADD(valid_gradstyles, list(list(key)))
 
 /datum/tgui_module/appearance_changer/proc/get_genders(mob/living/carbon/human/target)
 	var/datum/species/S = target.species

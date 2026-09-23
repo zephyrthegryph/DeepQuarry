@@ -68,7 +68,7 @@
 
 	var/access_based = FALSE
 	var/list/network = list()
-	var/list/additional_networks = list()
+	var/list/additional_networks
 
 	var/obj/machinery/camera/active_camera
 	var/list/concurrent_users
@@ -254,7 +254,7 @@
 		all_networks = network.Copy()
 
 	if(additional_networks)
-		all_networks += additional_networks
+		if(length(additional_networks)) all_networks += additional_networks
 
 	var/list/D = list()
 	for(var/obj/machinery/camera/C in GLOB.cameranet.cameras)

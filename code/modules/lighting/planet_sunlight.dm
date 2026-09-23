@@ -23,7 +23,7 @@
 	var/datum/simple_sun/sun
 	var/atom/movable/sun_vis_simple/vis_overhead
 	var/atom/movable/sun_vis_simple/vis_shade
-	var/list/shandlers = list()
+	var/list/shandlers
 
 /datum/planet_sunlight_handler/New(planet)
 	. = ..()

@@ -13,7 +13,7 @@
 	allowed_experimentors = list(/obj/item/experi_scanner)
 	performance_hint = "Perform scanning experiments using a handheld experi-scanner."
 	/// The typepaths and number of atoms that must be scanned
-	var/list/required_atoms = list()
+	var/list/required_atoms
 	/// The list of atoms with sub-lists of atom references for scanned atoms contributing to the experiment (Or a count of atoms destoryed for destructive expiriments)
 	var/list/scanned = list()
 	/// If set, it'll be used in place of the generic "Scan samples of \a [initial(target.name)]" in serialize_progress_stage()
@@ -71,7 +71,7 @@
 /datum/experiment/scanning/proc/serialize_progress_stage(atom/target, list/seen_instances)
 	var/scanned_total = (traits & EXPERIMENT_TRAIT_DESTRUCTIVE && !(traits & EXPERIMENT_TRAIT_TYPECACHE)) ? scanned[target] : seen_instances.len
 	var/message = scan_message || "Scan samples of \a [initial(target.name)]"
-	return EXPERIMENT_PROG_INT(message, scanned_total, required_atoms[target])
+	return EXPERIMENT_PROG_INT(message, scanned_total, LAZYACCESS(required_atoms, target))
 
 /**
  * Attempts to scan an atom towards the experiment's goal
@@ -112,9 +112,9 @@
 		// Try to select a required atom that this scanned atom would contribute towards
 		var/selected
 		var/list/seen = scanned[req_atom]
-		if (destructive && (req_atom in scanned) && scanned[req_atom] < required_atoms[req_atom])
+		if (destructive && (req_atom in scanned) && scanned[req_atom] < LAZYACCESS(required_atoms, req_atom))
 			selected = req_atom
-		else if (!destructive && seen.len < required_atoms[req_atom] && !(WEAKREF(target) in seen))
+		else if (!destructive && seen.len < LAZYACCESS(required_atoms, req_atom) && !(WEAKREF(target) in seen))
 			selected = req_atom
 		// Run any additonal checks if necessary
 		if (selected && final_contributing_index_checks(experiment_handler, target, selected))

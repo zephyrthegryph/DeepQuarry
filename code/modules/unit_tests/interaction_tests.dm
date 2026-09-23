@@ -274,7 +274,7 @@
 	network.add_machine(terminal)
 	terminal.master = storage
 	network.register_storage_demand(storage, terminal, 400)
-	var/list/demand = network.registered_storage_demands[terminal]
+	var/list/demand = LAZYACCESS(network.registered_storage_demands, terminal)
 	demand[3] = 400
 	network.registered_storage_input_total = 400
 	starting_charge = storage.charge

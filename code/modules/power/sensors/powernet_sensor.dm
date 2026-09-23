@@ -19,7 +19,7 @@
 	var/name_tag = "#UNKN#" // ID tag displayed in list of powernet sensors. Each sensor should have it's own tag!
 	var/long_range = 0		// If 1, sensor reading will show on all computers, regardless of Zlevel
 
-	var/list/history = list()
+	var/list/history
 	var/record_size = 60
 	var/record_interval = 50
 	var/next_record = 0
@@ -34,8 +34,8 @@
 	if(name_tag == "#UNKN#")
 		name_tag = "Grid [z]-[x]-[y]"
 	auto_set_name()
-	history["supply"] = list()
-	history["demand"] = list()
+	LAZYSET(history, "supply", list())
+	LAZYSET(history, "demand", list())
 	for(var/obj/machinery/computer/power_monitor/PM in GLOB.machines)
 		PM.power_monitor?.refresh_sensors()
 		START_MACHINE_PROCESSING(PM)
@@ -56,7 +56,7 @@
 		if(PM.power_monitor)
 			PM.power_monitor.refresh_sensors()
 			START_MACHINE_PROCESSING(PM)
-	history.Cut()
+	LAZYCLEARLIST(history)
 	history = null
 
 // Proc: check_grid_warning()
@@ -97,13 +97,13 @@
 
 		var/datum/powernet/connected_powernet = powernet
 
-		var/list/supply = history["supply"]
+		var/list/supply = LAZYACCESS(history, "supply")
 		if(connected_powernet)
 			supply += connected_powernet.viewavail
 		if(supply.len > record_size)
 			supply.Cut(1, 2)
 
-		var/list/demand = history["demand"]
+		var/list/demand = LAZYACCESS(history, "demand")
 		if(connected_powernet)
 			demand += connected_powernet.viewload
 		if(demand.len > record_size)
@@ -116,7 +116,7 @@
 	data["stored"] = record_size
 	data["interval"] = record_interval / 10
 	data["attached"] = !!powernet
-	data["history"] = history
+	data["history"] = (history || list())
 
 	data["areas"] = list()
 	if(powernet)

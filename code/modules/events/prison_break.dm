@@ -3,12 +3,12 @@
 	announceWhen	= 75
 
 	var/releaseWhen = 60
-	var/list/area/areas = list()		//List of areas to affect. Filled by start()
+	var/list/area/areas		//List of areas to affect. Filled by start()
 
 	var/eventDept = "Security"			//Department name in announcement
 	var/list/areaName = list("Brig")	//Names of areas mentioned in AI and Engineering announcements
 	var/list/areaType = list(/area/security/prison, /area/security/brig)	//Area types to include.
-	var/list/areaNotType = list()		//Area types to specifically exclude.
+	var/list/areaNotType		//Area types to specifically exclude.
 
 /datum/event/prison_break/virology
 	eventDept = "Medical"
@@ -36,16 +36,16 @@
 
 
 /datum/event/prison_break/announce()
-	if(areas && areas.len > 0)
+	if(areas && length(areas) > 0)
 		GLOB.command_announcement.Announce("[pick("Gr3y.T1d3 virus","Malignant trojan")] detected in [station_name()] [(eventDept == "Security")? "imprisonment":"containment"] subroutines. Secure any compromised areas immediately. Involvement of [using_map.facility_type] AI is recommended.", "[eventDept] Alert", ANNOUNCER_MSG_GREYTIDEVIRUS)
 
 
 /datum/event/prison_break/start()
 	for(var/area/A in world)
 		if(is_type_in_list(A,areaType) && !is_type_in_list(A,areaNotType))
-			areas += A
+			LAZYADD(areas, A)
 
-	if(areas && areas.len > 0)
+	if(areas && length(areas) > 0)
 		var/my_department = "[station_name()] firewall subroutines"
 		var/rc_message = "An unknown malicious program has been detected in the [english_list(areaName)] lighting and airlock control systems at [stationtime2text()]. Systems will be fully compromised within approximately three minutes. Direct intervention is required immediately.<br>"
 		for(var/obj/machinery/message_server/MS in GLOB.machines)
@@ -60,7 +60,7 @@
 
 /datum/event/prison_break/tick()
 	if(activeFor == releaseWhen)
-		if(areas && areas.len > 0)
+		if(areas && length(areas) > 0)
 			var/obj/machinery/power/apc/theAPC = null
 			for(var/area/A in areas)
 				theAPC = A.get_apc()

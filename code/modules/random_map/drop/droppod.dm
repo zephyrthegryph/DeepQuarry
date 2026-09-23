@@ -14,7 +14,7 @@
 
 	wall_type = /turf/simulated/wall/titanium
 	floor_type = /turf/simulated/floor/reinforced
-	var/list/supplied_drop_types = list()
+	var/list/supplied_drop_types
 	var/door_type = /obj/structure/droppod_door
 	var/drop_type = /mob/living/simple_mob/animal/passive/bird/parrot
 	var/auto_open_doors
@@ -132,10 +132,10 @@
 	// Use the supply pod if you don't want to drop mobs.
 	// Mobs will not double up; if you want multiple mobs, you
 	// will need multiple drop tiles.
-	if(islist(supplied_drop_types) && supplied_drop_types.len)
-		while(supplied_drop_types.len)
-			drop = pick(supplied_drop_types)
-			supplied_drop_types -= drop
+	if(islist(supplied_drop_types) && length(supplied_drop_types))
+		while(length(supplied_drop_types))
+			drop = DEFAULTPICK(supplied_drop_types, null)
+			LAZYREMOVE(supplied_drop_types, drop)
 			if(istype(drop))
 				drop.tag = null
 				if(drop.buckled)

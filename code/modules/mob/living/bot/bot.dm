@@ -346,13 +346,13 @@
 
 	if(!targ)
 		for(var/obj/machinery/navbeacon/N in GLOB.navbeacons)
-			if(!N.codes["patrol"])
+			if(!LAZYACCESS(N.codes, "patrol"))
 				continue
 			if(get_dist(src, N) < minDist)
 				minDist = get_dist(src, N)
 				targ = N
 
-	if(targ && targ.codes["next_patrol"])
+	if(targ && LAZYACCESS(targ.codes, "next_patrol"))
 		for(var/obj/machinery/navbeacon/N in GLOB.navbeacons)
 			if(N.location == targ.codes["next_patrol"])
 				targ = N

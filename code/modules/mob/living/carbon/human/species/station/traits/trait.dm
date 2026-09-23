@@ -38,7 +38,7 @@
 	var/addiction = null // Addiction reagent, null otherwise
 	var/activation_message = null // If not null, shows a message when activated as a gene
 	var/deactivation_message = null // If not null, shows a message when deactivated as a gene
-	var/list/primitive_expression_messages=list() // Monkey's custom emote when they have this gene!
+	var/list/primitive_expression_messages // Monkey's custom emote when they have this gene!
 
 	var/datum/gene/trait/linked_gene = null // Internal use, do not assign.
 

@@ -6,7 +6,7 @@
 	var/width = 0
 	var/height = 0
 	var/list/shown_to
-	var/list/viewing_turfs = list()
+	var/list/viewing_turfs
 	var/atom/movable/screen/component_button/button_x
 	var/atom/movable/screen/component_button/button_expand
 	var/atom/movable/screen/component_button/button_shrink
@@ -148,10 +148,10 @@
 	if(!width || !height)
 		return
 	viewing_turfs = get_visible_turfs()
-	vis_contents += viewing_turfs
+	if(length(viewing_turfs)) vis_contents += viewing_turfs
 	if(popup_screen)
 		popup_screen.vis_contents.Cut()
-		popup_screen.vis_contents += viewing_turfs
+		if(length(viewing_turfs)) popup_screen.vis_contents += viewing_turfs
 
 /atom/movable/screen/movable/pic_in_pic/proc/get_visible_turfs()
 	var/turf/T = get_turf(center)

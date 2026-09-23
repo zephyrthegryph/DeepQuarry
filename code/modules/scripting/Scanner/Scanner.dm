@@ -19,7 +19,7 @@
 	Var: warnings
 	A list of non-fatal problems in the source code found by the scanner.
 */
-	var/list/warnings = list()
+	var/list/warnings
 
 /*
 	Proc: LoadCode
