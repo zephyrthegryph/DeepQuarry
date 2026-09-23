@@ -13,13 +13,13 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	. = list()
 	. += "This board has [inputs.len] input pin\s, [outputs.len] output pin\s and [activators.len] activation pin\s."
 	for(var/datum/integrated_io/I in inputs)
-		if(I.linked.len)
+		if(LAZYLEN(I.linked))
 			. += "The '[I]' is connected to [I.get_linked_to_desc()]."
 	for(var/datum/integrated_io/O in outputs)
-		if(O.linked.len)
+		if(LAZYLEN(O.linked))
 			. += "The '[O]' is connected to [O.get_linked_to_desc()]."
 	for(var/datum/integrated_io/activate/A in activators)
-		if(A.linked.len)
+		if(LAZYLEN(A.linked))
 			. += "The '[A]' is connected to [A.get_linked_to_desc()]."
 	. += any_examine(user)
 	tgui_interact(user)

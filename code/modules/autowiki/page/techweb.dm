@@ -61,7 +61,7 @@
 	if (prereq_difference != 0)
 		return prereq_difference
 
-	var/experiment_difference = node_a.required_experiments.len - node_b.required_experiments.len
+	var/experiment_difference = length(node_a.required_experiments) - length(node_b.required_experiments)
 	if (experiment_difference != 0)
 		return experiment_difference
 

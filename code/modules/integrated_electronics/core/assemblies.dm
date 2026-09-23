@@ -196,11 +196,11 @@
 
 			// Wiring the same pin will unwire it
 			if(pin2 in pin1.linked)
-				pin1.linked -= pin2
-				pin2.linked -= pin1
+				LAZYREMOVE(pin1.linked, pin2)
+				LAZYREMOVE(pin2.linked, pin1)
 			else
-				pin1.linked |= pin2
-				pin2.linked |= pin1
+				LAZYOR(pin1.linked, pin2)
+				LAZYOR(pin2.linked, pin1)
 
 			return TRUE
 
@@ -214,9 +214,9 @@
 				return
 
 			for(var/datum/integrated_io/other as anything in pin1.linked)
-				other.linked -= pin1
+				LAZYREMOVE(other.linked, pin1)
 
-			pin1.linked.Cut()
+			pin1.linked = null
 
 			return TRUE
 

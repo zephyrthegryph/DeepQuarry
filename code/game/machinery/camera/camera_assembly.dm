@@ -9,8 +9,8 @@
 	matter = list(MAT_STEEL = 700,MAT_GLASS = 300)
 
 	//	Motion, EMP-Proof, X-Ray
-	var/list/obj/item/possible_upgrades = list(/obj/item/assembly/prox_sensor, /obj/item/stack/material/osmium, /obj/item/stock_parts/scanning_module)
-	var/list/upgrades = list()
+	var/static/list/obj/item/possible_upgrades = list(/obj/item/assembly/prox_sensor, /obj/item/stack/material/osmium, /obj/item/stock_parts/scanning_module)
+	var/list/upgrades // Lazy: installed upgrade items.
 	var/camera_name
 	var/camera_network
 	var/state = 0
@@ -39,7 +39,7 @@
 	// Upgrades!
 	if(is_type_in_list(W, possible_upgrades) && !is_type_in_list(W, upgrades)) // Is a possible upgrade and isn't in the camera already.
 		to_chat(user, "You attach \the [W] into the assembly inner circuits.")
-		upgrades += W
+		LAZYADD(upgrades, W)
 		user.remove_from_mob(W)
 		W.loc = src
 		return
@@ -89,14 +89,14 @@
 	return TRUE
 
 /obj/item/camera_assembly/crowbar_act(mob/user, obj/item/tool)
-	if(!upgrades.len)
+	if(!LAZYLEN(upgrades))
 		return FALSE
 	var/obj/upgrade = locate(/obj) in upgrades
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
 		upgrade.loc = get_turf(src)
-		upgrades -= upgrade
+		LAZYREMOVE(upgrades, upgrade)
 	return TRUE
 
 /obj/item/camera_assembly/screwdriver_act(mob/user, obj/item/tool)

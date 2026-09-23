@@ -11,7 +11,7 @@
 	var/has_throw = 1     // Set to draw throw button.
 	var/has_resist = 1    // Set to draw resist button.
 	var/has_internals = 1 // Set to draw the internals toggle button.
-	var/list/equip_slots = list() // Checked by mob_can_equip().
+	var/list/equip_slots // Checked by mob_can_equip(). Shared by every hud_data of this type; read-only.
 
 	// Contains information on the position and tag for all inventory slots
 	// to be drawn for the mob. This is fairly delicate, try to avoid messing with it
@@ -36,21 +36,34 @@
 
 /datum/hud_data/New()
 	..()
+	// gear (a table of 15 nested lists) and the equip_slots derived from it are
+	// the same for every instance of a type, so each type builds them once.
+	var/static/list/shared_gear = list()
+	var/static/list/shared_slots = list()
+	if(shared_gear[type])
+		gear = shared_gear[type]
+		equip_slots = shared_slots[type]
+		return
+
+	var/list/slots = list()
 	for(var/slot in gear)
-		equip_slots |= gear[slot]["slot"]
+		slots |= gear[slot]["slot"]
 
 	if(has_hands)
-		equip_slots |= slot_l_hand
-		equip_slots |= slot_r_hand
-		equip_slots |= slot_handcuffed
+		slots |= slot_l_hand
+		slots |= slot_r_hand
+		slots |= slot_handcuffed
 
-	if(slot_back in equip_slots)
-		equip_slots |= slot_in_backpack
+	if(slot_back in slots)
+		slots |= slot_in_backpack
 
-	if(slot_w_uniform in equip_slots)
-		equip_slots |= slot_tie
+	if(slot_w_uniform in slots)
+		slots |= slot_tie
 
-	equip_slots |= slot_legcuffed
+	slots |= slot_legcuffed
+	equip_slots = slots
+	shared_gear[type] = gear
+	shared_slots[type] = slots
 
 /datum/hud_data/diona
 	has_internals = 0

@@ -53,6 +53,7 @@
 			body_parts_covered = initial(body_parts_covered)
 			icon_state = initial(icon_state)
 			armor = initial(armor)
+			armor_owned = FALSE
 			to_chat(user, "You pull the mask up to cover your face.")
 		update_clothing_icon()
 

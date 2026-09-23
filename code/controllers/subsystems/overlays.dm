@@ -45,7 +45,8 @@ SUBSYSTEM_DEF(overlays)
 		if(!islist(priority_overlays))
 			prio_overlay_temp = list(priority_overlays)
 		else
-			prio_overlay_temp = priority_overlays.Copy()
+			var/list/prio = priority_overlays
+			prio_overlay_temp = prio.Copy()
 		prio_overlay_temp |= build_overlays
 		build_overlays = prio_overlay_temp
 	for (var/overlay in build_overlays)
@@ -76,7 +77,10 @@ SUBSYSTEM_DEF(overlays)
 		return
 	STAT_START_STOPWATCH
 	if(priority)
-		priority_overlays -= remove_overlays
+		if(islist(priority_overlays))
+			priority_overlays -= remove_overlays
+		else if(priority_overlays && (islist(remove_overlays) ? (priority_overlays in remove_overlays) : priority_overlays == remove_overlays))
+			priority_overlays = null
 	if(islist(remove_overlays))
 		remove_overlays = remove_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	overlays -= build_appearance_list(remove_overlays)
@@ -90,10 +94,14 @@ SUBSYSTEM_DEF(overlays)
 	STAT_START_STOPWATCH
 	if(islist(add_overlays))
 		if(priority)
-			if (priority_overlays)
+			// A lone priority overlay (every movable's emissive blocker) is stored bare
+			// rather than in a one-entry list; build_appearance_list() accepts either.
+			if(!priority_overlays)
+				priority_overlays = length(add_overlays) == 1 ? add_overlays[1] : add_overlays
+			else if(islist(priority_overlays))
 				priority_overlays += add_overlays
 			else
-				priority_overlays = add_overlays
+				priority_overlays = list(priority_overlays) + add_overlays
 		add_overlays = add_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	overlays += build_appearance_list(add_overlays) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	VALIDATE_OVERLAY_LIMIT(src)

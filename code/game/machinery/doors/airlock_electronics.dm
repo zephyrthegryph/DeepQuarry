@@ -110,8 +110,8 @@
 	else
 		var/req = text2num(acc)
 
-		if (conf_access == null)
-			conf_access = list()
+		// Copy: conf_access may be a door's interned access list (intern_access_lists()).
+		conf_access = conf_access ? conf_access.Copy() : list()
 
 		if (!(req in conf_access))
 			conf_access += req

@@ -375,8 +375,9 @@
 	. = ..()
 	if(stripe_color)
 		var/image/I
+		var/list/connections = get_wall_connections()
 		for(var/i = 1 to 4)
-			I = image(wall_masks, "stripe[wall_connections[i]]", dir = 1<<(i-1))
+			I = image(wall_masks, "stripe[connections[i]]", dir = 1<<(i-1))
 			I.color = stripe_color
 			add_overlay(I)
 

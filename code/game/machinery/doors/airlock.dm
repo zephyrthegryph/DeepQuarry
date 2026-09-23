@@ -1167,10 +1167,10 @@ About the new airlock wires panel:
 		//update the door's access to match the electronics'
 		secured_wires = electronics.secure
 		if(electronics.one_access)
-			LAZYCLEARLIST(req_access)
+			req_access = null
 			req_one_access = electronics.conf_access
 		else
-			LAZYCLEARLIST(req_one_access)
+			req_one_access = null
 			req_access = electronics.conf_access
 
 		//get the name from the assembly

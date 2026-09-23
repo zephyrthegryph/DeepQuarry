@@ -59,6 +59,7 @@
 	if(LAZYLEN(armor_delta))
 		for(var/damage_type in armor_delta)
 			if(istext(clothing.armor?[damage_type]))
+				clothing.own_armor()
 				clothing.armor[damage_type] += armor_delta[damage_type]
 
 /*
@@ -74,6 +75,7 @@
 	if(LAZYLEN(armor_delta))
 		for(var/damage_type in armor_delta)
 			if(istext(clothing.armor?[damage_type]))
+				clothing.own_armor()
 				clothing.armor[damage_type] -= armor_delta[damage_type]
 
 

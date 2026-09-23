@@ -23,9 +23,9 @@
 	var/list/prereq_ids = list()
 	var/list/design_ids = list()
 	/// CALCULATED FROM OTHER NODE'S PREREQUISITIES. Associated list id = TRUE
-	var/list/unlock_ids = list()
+	var/list/unlock_ids // Lazy: leaf nodes unlock nothing.
 	/// List of items you need to deconstruct to unlock this node.
-	var/list/required_items_to_unlock = list()
+	var/list/required_items_to_unlock // Lazy
 	/// Boosting this will autounlock this node
 	var/autounlock_by_boost = TRUE
 	/// The points cost to research the node, type = amount
@@ -33,11 +33,11 @@
 	/// The category of the node
 	var/category = "Misc"
 	/// The list of experiments required to research the node
-	var/list/required_experiments = list()
+	var/list/required_experiments // Lazy
 	/// If completed, these experiments give a specific point amount discount to the node.
-	var/list/discount_experiments = list()
+	var/list/discount_experiments // Lazy
 	/// When this node is completed, allows these experiments to be performed.
-	var/list/experiments_to_unlock = list()
+	var/list/experiments_to_unlock // Lazy
 	/// Whether or not this node should show on the wiki
 	var/show_on_wiki = TRUE
 	/// Hidden Mech nodes unlocked when mech fabricator emaged.

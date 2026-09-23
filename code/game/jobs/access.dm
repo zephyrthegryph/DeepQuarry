@@ -1,5 +1,20 @@
+/// Interned in Initialize(): objects with the same access share one list, so
+/// replace these lists rather than editing them in place.
 /obj/var/list/req_access
 /obj/var/list/req_one_access
+
+/// Swaps req_access and req_one_access for the shared copy with the same contents.
+/obj/proc/intern_access_lists()
+	if(length(req_access) && is_access_id_list(req_access))
+		req_access = string_list(req_access)
+	if(length(req_one_access) && is_access_id_list(req_one_access))
+		req_one_access = string_list(req_one_access)
+
+/proc/is_access_id_list(list/L)
+	for(var/entry in L)
+		if(!isnum(entry))
+			return FALSE
+	return TRUE
 
 //returns 1 if this mob has sufficient access to use this object
 /obj/proc/allowed(mob/M)

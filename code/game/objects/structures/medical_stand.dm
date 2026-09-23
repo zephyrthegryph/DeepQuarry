@@ -424,7 +424,7 @@
 
 			var/datum/reagent/B = H.take_blood(beaker,amount)
 			if (B)
-				beaker.reagents.reagent_list |= B
+				beaker.reagents.adopt_reagent(B)
 				beaker.reagents.update_total()
 				beaker.on_reagent_change()
 				beaker.reagents.handle_reactions()

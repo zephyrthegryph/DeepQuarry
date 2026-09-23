@@ -22,7 +22,7 @@ D [1]/  ||
 	var/name = "input/output"
 	var/obj/item/integrated_circuit/holder = null
 	var/datum/weakref/data = null // This is a weakref, to reduce typecasts.  Note that oftentimes numbers and text may also occupy this.
-	var/list/linked = list()
+	var/list/linked // Lazy: most pins are never wired.
 	var/io_type = DATA_CHANNEL
 
 /datum/integrated_io/New(newloc, name, new_data)
@@ -130,7 +130,7 @@ list[](
 		write_data_to_pin(io.data)
 
 /datum/integrated_io/proc/get_linked_to_desc()
-	if(linked.len)
+	if(LAZYLEN(linked))
 		return "the [english_list(linked)]"
 	return "nothing"
 
@@ -140,11 +140,11 @@ list[](
 		//While doing that, we iterate them as well, and disconnect ourselves from them.
 		for(var/datum/integrated_io/their_linked_io in their_io.linked)
 			if(their_linked_io == src)
-				their_io.linked.Remove(src)
+				LAZYREMOVE(their_io.linked, src)
 			else
 				continue
 		//Now that we're removed from them, we gotta remove them from us.
-		src.linked.Remove(their_io)
+		LAZYREMOVE(linked, their_io)
 
 /datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"))
 	var/type_to_use = tgui_input_list(user, "Please choose a type to use.","[src] type setting", allowed_data_types)
