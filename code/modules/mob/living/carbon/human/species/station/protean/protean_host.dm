@@ -20,7 +20,7 @@
 	if(!do_after(H, 2 SECONDS, target = H))
 		to_chat(H, span_warning("You must remain still to condense!"))
 		return
-	if(can_use(H, F))
+	if(can_use(H, F) && F.form_control_check())
 		F.enter_rig()
 
 /mob/living/carbon/human/proc/nano_rig_transform()
