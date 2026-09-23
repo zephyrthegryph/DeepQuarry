@@ -88,6 +88,69 @@ pub enum DeviceParams {
 	PressureRegulator { release_kpa: f32 },
 }
 
+impl Regulate {
+	fn decode(v: f32) -> Self {
+		match v as i32 {
+			0 => Self::Input,
+			2 => Self::Equalize,
+			_ => Self::Output,
+		}
+	}
+}
+
+impl VentMode {
+	fn decode(v: f32) -> Self {
+		if (v as i32) == 1 {
+			Self::Siphon
+		} else {
+			Self::Release
+		}
+	}
+}
+
+impl DeviceParams {
+	/// Decodes a device edge's law and parameters from the FFI wire form
+	/// DM sends (`pipenet_device_batch`'s `kind, p0..p3` fields): a `kind`
+	/// tag and four `f32` slots, reused differently per law. Gas masks are
+	/// whole numbers under 2^24 (`gas::ids::GAS_COUNT` bits), so they round
+	/// through `f32` exactly.
+	#[must_use]
+	pub fn decode(kind: u8, p: [f32; 4]) -> Self {
+		match kind {
+			1 => Self::Pump {
+				target_kpa: p[0],
+				power_w: p[1],
+			},
+			2 => Self::VolumePump { rate_l_s: p[0] },
+			3 => Self::PassiveGate {
+				mode: Regulate::decode(p[0]),
+				target_kpa: p[1],
+				max_rate_l_s: p[2],
+			},
+			4 => Self::Valve { open: p[0] != 0.0 },
+			5 => Self::VentPump {
+				mode: VentMode::decode(p[0]),
+				min_kpa: p[1],
+				max_kpa: p[2],
+				max_rate_l_s: p[3],
+			},
+			6 => Self::Scrubber {
+				mask: p[0].max(0.0) as u32,
+				rate_l_s: p[1],
+				siphon: p[2] != 0.0,
+			},
+			7 => Self::Injector { rate_l_s: p[0] },
+			8 => Self::Filter {
+				mask: p[0].max(0.0) as u32,
+				rate_l_s: p[1],
+			},
+			9 => Self::HeatExchanger { conductance_w_k: p[0] },
+			10 => Self::PressureRegulator { release_kpa: p[0] },
+			_ => Self::None,
+		}
+	}
+}
+
 /// What a step did, for DM's stalled/target-reached/filter-saturated events
 /// and power billing.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -703,6 +766,66 @@ mod tests {
 		}
 		assert!((total(&tank) + total(&region) - before).abs() < 1e-3);
 		assert!(pressure(&region, 1000.0) <= 101.325 + 1.0);
+	}
+
+	#[test]
+	fn decode_round_trips_every_law() {
+		assert_eq!(
+			DeviceParams::decode(1, [101.325, 5000.0, 0.0, 0.0]),
+			DeviceParams::Pump {
+				target_kpa: 101.325,
+				power_w: 5000.0
+			}
+		);
+		assert_eq!(
+			DeviceParams::decode(2, [200.0, 0.0, 0.0, 0.0]),
+			DeviceParams::VolumePump { rate_l_s: 200.0 }
+		);
+		assert_eq!(
+			DeviceParams::decode(3, [0.0, 50.0, 1000.0, 0.0]),
+			DeviceParams::PassiveGate {
+				mode: Regulate::Input,
+				target_kpa: 50.0,
+				max_rate_l_s: 1000.0,
+			}
+		);
+		assert_eq!(DeviceParams::decode(4, [1.0, 0.0, 0.0, 0.0]), DeviceParams::Valve { open: true });
+		assert_eq!(DeviceParams::decode(4, [0.0, 0.0, 0.0, 0.0]), DeviceParams::Valve { open: false });
+		assert_eq!(
+			DeviceParams::decode(5, [1.0, 0.0, 1000.0, 500.0]),
+			DeviceParams::VentPump {
+				mode: VentMode::Siphon,
+				min_kpa: 0.0,
+				max_kpa: 1000.0,
+				max_rate_l_s: 500.0,
+			}
+		);
+		assert_eq!(
+			DeviceParams::decode(6, [(1 << 3) as f32, 200.0, 1.0, 0.0]),
+			DeviceParams::Scrubber {
+				mask: 1 << 3,
+				rate_l_s: 200.0,
+				siphon: true,
+			}
+		);
+		assert_eq!(DeviceParams::decode(7, [50.0, 0.0, 0.0, 0.0]), DeviceParams::Injector { rate_l_s: 50.0 });
+		assert_eq!(
+			DeviceParams::decode(8, [(1 << 5) as f32, 300.0, 0.0, 0.0]),
+			DeviceParams::Filter {
+				mask: 1 << 5,
+				rate_l_s: 300.0,
+			}
+		);
+		assert_eq!(
+			DeviceParams::decode(9, [42.0, 0.0, 0.0, 0.0]),
+			DeviceParams::HeatExchanger { conductance_w_k: 42.0 }
+		);
+		assert_eq!(
+			DeviceParams::decode(10, [101.325, 0.0, 0.0, 0.0]),
+			DeviceParams::PressureRegulator { release_kpa: 101.325 }
+		);
+		assert_eq!(DeviceParams::decode(0, [1.0, 2.0, 3.0, 4.0]), DeviceParams::None);
+		assert_eq!(DeviceParams::decode(200, [1.0, 2.0, 3.0, 4.0]), DeviceParams::None);
 	}
 
 	#[test]

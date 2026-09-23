@@ -135,6 +135,73 @@ fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
 	Ok(list)
 }
 
+/// Applies one DM device-edge transaction (M2, `device.rs`) and returns
+/// nothing; call `pipenet_step_devices` to run them. Input is
+/// semicolon-delimited fixed-width records of nine comma-separated numbers:
+/// `opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3`. Opcodes: add or
+/// replace = 1 (`port_a`/`port_b` are read; `law_kind`/`p0..p3` decode via
+/// [`device::DeviceParams::decode`]), remove = 2 (only `id` is read).
+#[auxmacros::bind("/proc/auxmos_pipenet_device_batch")]
+fn pipenet_device_batch(operations: ByondValue) -> Result<ByondValue> {
+	let encoded = operations.get_string()?;
+	let mut parsed = Vec::new();
+	for (operation_index, record) in encoded.split_terminator(';').enumerate() {
+		let fields = record.split(',').collect::<Vec<_>>();
+		if fields.len() != 9 {
+			eyre::bail!("device operation {operation_index} does not contain nine fields: {record}");
+		}
+		let mut n = [0.0f32; 9];
+		for (i, f) in fields.iter().enumerate() {
+			n[i] = f.parse::<f32>().map_err(|error| {
+				eyre::eyre!("invalid device number '{f}' at operation {operation_index}: {error}")
+			})?;
+		}
+		parsed.push(n);
+	}
+	with_world(|w| -> Result<()> {
+		for fields in parsed {
+			let [opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3] = fields;
+			let id = id as u32;
+			match opcode as u8 {
+				1 => {
+					let params = device::DeviceParams::decode(law_kind as u8, [p0, p1, p2, p3]);
+					if !w.pipes.add_device(id, port_a as u32, port_b as u32, params) {
+						eyre::bail!("device {id} could not bind ports {port_a}<->{port_b}");
+					}
+				}
+				2 => {
+					w.pipes.remove_device(id);
+				}
+				other => eyre::bail!("unknown device opcode {other}"),
+			}
+		}
+		Ok(())
+	})?;
+	Ok(ByondValue::null())
+}
+
+/// Runs every pipe-network device edge's flow law once (M2, `device.rs`) for
+/// `dt` seconds and returns a flat list of `id, moles, power_w,
+/// target_reached` per device that had a law set. `dt` is normally
+/// `SSair`'s tick length in seconds.
+#[auxmacros::bind("/proc/auxmos_pipenet_step_devices")]
+fn pipenet_step_devices(dt: ByondValue) -> Result<ByondValue> {
+	let dt = dt.get_number()?;
+	let steps = with_world(|w| w.pipes.step_devices(dt));
+	let mut out = Vec::with_capacity(steps.len() * 4);
+	for s in steps {
+		out.extend([
+			ByondValue::from(s.key as f32),
+			ByondValue::from(s.report.moles as f32),
+			ByondValue::from(s.report.power_w),
+			ByondValue::from(if s.report.target_reached { 1.0 } else { 0.0 }),
+		]);
+	}
+	let list = ByondValue::new_list()?;
+	list.write_list(&out)?;
+	Ok(list)
+}
+
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
 /// `auxmos_pipenet_topology_batch`). The datum's own slot is freed.
 #[auxmacros::bind("/datum/gas_mixture/proc/__bind_handle")]
