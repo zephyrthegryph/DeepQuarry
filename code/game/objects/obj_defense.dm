@@ -2,6 +2,11 @@
 /obj/fire_act(exposed_temperature, exposed_volume)
 	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR))
 		return
+	// Heat reaches the holder's contents through its slots' paths (C2).
+	if(length(contents))
+		propagate_fire(exposed_temperature, exposed_volume)
+		if(QDELETED(src))
+			return
 	// Generic map machinery remains dormant under nominal room conditions, but
 	// crossing into an actual thermal hazard activates its material assembly so
 	// continued exposure, cooling, diagnostics, and repair use the same model as

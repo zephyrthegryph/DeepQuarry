@@ -65,3 +65,25 @@
 
 /datum/property_provider/material/flammable/fold(datum/material/M, amount, acc)
 	return (acc || !isnull(M.ignition_point)) ? TRUE : FALSE
+
+/datum/property_def/insulation
+	id = PROP_INSULATION
+	name = "Insulation"
+	desc = "Fraction of heat the object's shell, or a worn layer, keeps from what it covers."
+	unit = PROP_UNIT_RATIO
+	min_value = 0
+	max_value = 1
+
+/datum/property_provider/type_var/insulation
+	property = PROP_INSULATION
+	applies_to = /obj
+	unit = PROP_UNIT_RATIO
+
+/datum/property_provider/type_var/insulation/read_initial(path)
+	var/obj/O = path
+	return initial(O.insulation)
+
+/obj
+	/// PROP_INSULATION: fraction of heat this keeps from what it holds or
+	/// covers, 0..1. Containment paths (containment/paths.dm) read it.
+	var/insulation = 0

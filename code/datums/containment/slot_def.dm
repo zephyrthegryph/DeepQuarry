@@ -25,6 +25,25 @@
 	/// sets this.
 	var/is_default = FALSE
 
+	// ---- Propagation (containment.md §3.2, C2; paths.dm walks these) ----
+	/// SLOT_LAYER_*: order among this holder's layered slots, higher is further
+	/// out. Everything in a layer further out covers what is in this one.
+	var/layer = SLOT_LAYER_NONE
+	/// Fraction of heat that crosses this slot's own boundary, before the
+	/// holder's insulation (internal and sealed slots) and outer layers.
+	var/heat_transmission = 1
+	/// Fraction of radiation that crosses this slot's own boundary, before the
+	/// holder's radiation armour and outer layers.
+	var/radiation_transmission = 1
+	/// Share of each damage kind (DAMAGE_* order) that passes from a hit on the
+	/// holder to this slot's contents, before armour. Null: the exposure's
+	/// default (dq_path_default_damage()).
+	var/list/damage_transmission
+	/// Whether living things in this slot take the heat and damage paths. Off:
+	/// mobs get heat from their environment (H2) and hits through their own
+	/// occupant rules (C8).
+	var/reaches_mobs = FALSE
+
 /// The singleton for a slot definition type.
 /proc/dq_slot_def(path)
 	var/static/list/cache = list()
@@ -81,3 +100,17 @@
 /// Why `thing` can't leave this slot on `holder`, or null. Default: it can.
 /datum/slot_def/proc/removal_refusal(atom/holder, atom/movable/thing, mob/actor)
 	return null
+
+/// Share of damage kind `kind` passing into this slot, before armour.
+/datum/slot_def/proc/damage_share(kind)
+	var/list/shares = damage_transmission || dq_path_default_damage(exposure)
+	return shares[kind]
+
+/// Whether gas from the holder's surroundings reaches this slot.
+/datum/slot_def/proc/passes_gas()
+	return exposure != SLOT_EXPOSURE_SEALED
+
+/// Whether this slot is inside the holder's shell (the holder's own
+/// insulation and armour cover it).
+/datum/slot_def/proc/is_inside()
+	return exposure != SLOT_EXPOSURE_EXTERNAL

@@ -48,6 +48,8 @@
 #define PROP_IGNITION_POINT "ignition_point"
 #define PROP_MAX_HEAT_PROTECTION "max_heat_protection"
 #define PROP_HEAT_CAPACITY "heat_capacity"
+/// Fraction of heat a holder's shell (or a worn layer) keeps from what it covers, 0..1.
+#define PROP_INSULATION "insulation"
 // Tag ids.
 #define TAG_SHARP "sharp"
 #define TAG_FLAMMABLE "flammable"
