@@ -919,11 +919,13 @@ fn build_architectural_plan(request: &LayoutRequest) -> Result<LogicalPlan, Layo
         if use_horizontal {
             let midpoint = i16::try_from(min_x + (max_x - min_x) / 2).unwrap_or(0);
             let margin = ((max_x - min_x).saturating_sub(2) / 2).min(5);
-            let separator = u16::try_from((midpoint + rng.signed(1)).clamp(
-                i16::try_from(min_x + margin).unwrap(),
-                i16::try_from(max_x - margin).unwrap(),
-            ))
-            .unwrap_or(min_x + (max_x - min_x) / 2);
+            // Coordinates are station-grid sized (far below i16::MAX), but
+            // fall back to the unclamped midpoint rather than panic if a
+            // future caller ever passes near-u16::MAX bounds.
+            let lo = i16::try_from(min_x + margin).unwrap_or(midpoint);
+            let hi = i16::try_from(max_x - margin).unwrap_or(midpoint);
+            let separator = u16::try_from((midpoint + rng.signed(1)).clamp(lo.min(hi), lo.max(hi)))
+                .unwrap_or(min_x + (max_x - min_x) / 2);
             blocks.push(DepartmentBlock {
                 min_x,
                 max_x: separator - 1,
@@ -941,11 +943,11 @@ fn build_architectural_plan(request: &LayoutRequest) -> Result<LogicalPlan, Layo
         } else {
             let midpoint = i16::try_from(min_y + (max_y - min_y) / 2).unwrap_or(0);
             let margin = ((max_y - min_y).saturating_sub(2) / 2).min(5);
-            let separator = u16::try_from((midpoint + rng.signed(1)).clamp(
-                i16::try_from(min_y + margin).unwrap(),
-                i16::try_from(max_y - margin).unwrap(),
-            ))
-            .unwrap_or(min_y + (max_y - min_y) / 2);
+            // See the horizontal branch above: fall back rather than panic.
+            let lo = i16::try_from(min_y + margin).unwrap_or(midpoint);
+            let hi = i16::try_from(max_y - margin).unwrap_or(midpoint);
+            let separator = u16::try_from((midpoint + rng.signed(1)).clamp(lo.min(hi), lo.max(hi)))
+                .unwrap_or(min_y + (max_y - min_y) / 2);
             let vertical_frontage = if max_x < center_x {
                 BlockFrontage::East
             } else {
@@ -3967,8 +3969,14 @@ fn insert_internal_maintenance(
                 if public_neighbors.len() < 2 {
                     continue;
                 }
-                let first = BTreeSet::from([*public_neighbors.iter().next().unwrap()]);
-                let last = BTreeSet::from([*public_neighbors.iter().next_back().unwrap()]);
+                let first = BTreeSet::from([*public_neighbors
+                    .iter()
+                    .next()
+                    .expect("invariant: checked len() >= 2 above")]);
+                let last = BTreeSet::from([*public_neighbors
+                    .iter()
+                    .next_back()
+                    .expect("invariant: checked len() >= 2 above")]);
                 let mut detour_allowed = public_cells.clone();
                 detour_allowed.remove(&public_point);
                 detour_allowed.extend(department_cells.iter().copied());
@@ -6498,7 +6506,8 @@ fn match_room_types_to_shapes<'a>(
             visited_types[type_index] = true;
             let can_claim = type_to_shape[type_index].is_none()
                 || augment(
-                    type_to_shape[type_index].unwrap(),
+                    type_to_shape[type_index]
+                        .expect("invariant: `||` short-circuit means this arm only runs when the left `is_none()` was false"),
                     candidates,
                     type_to_shape,
                     visited_types,
@@ -6671,7 +6680,8 @@ fn match_room_variants_to_shapes<'a>(
             visited_shapes[shape] = true;
             if shape_owner[shape].is_none()
                 || augment_required(
-                    shape_owner[shape].unwrap(),
+                    shape_owner[shape]
+                        .expect("invariant: `||` short-circuit means this arm only runs when the left `is_none()` was false"),
                     slot_candidates,
                     shape_owner,
                     chosen_variant,
@@ -6994,7 +7004,13 @@ fn grow_rooms(
                     })
                     .min()
                     .unwrap_or(u16::MAX),
-                hash_cell(rng.0 ^ index as u64, *block.iter().next().unwrap()),
+                hash_cell(
+                    rng.0 ^ index as u64,
+                    *block
+                        .iter()
+                        .next()
+                        .expect("invariant: a room-shape candidate block always has at least one cell"),
+                ),
             )
         });
         // Keep the best frontage-near candidates and bound the otherwise
@@ -9244,9 +9260,21 @@ fn bounds(points: &[Point]) -> Result<Rect, LayoutError> {
         .map(|point| point.x)
         .min()
         .ok_or_else(|| LayoutError("cannot bound an empty region".into()))?;
-    let max_x = points.iter().map(|point| point.x).max().unwrap();
-    let min_y = points.iter().map(|point| point.y).min().unwrap();
-    let max_y = points.iter().map(|point| point.y).max().unwrap();
+    let max_x = points
+        .iter()
+        .map(|point| point.x)
+        .max()
+        .expect("invariant: `min_x` above already rejected an empty `points`");
+    let min_y = points
+        .iter()
+        .map(|point| point.y)
+        .min()
+        .expect("invariant: `min_x` above already rejected an empty `points`");
+    let max_y = points
+        .iter()
+        .map(|point| point.y)
+        .max()
+        .expect("invariant: `min_x` above already rejected an empty `points`");
     Ok(Rect {
         x: min_x,
         y: min_y,
