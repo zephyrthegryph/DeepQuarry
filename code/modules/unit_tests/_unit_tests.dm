@@ -166,6 +166,7 @@
 #include "dq_robot_push_and_vtec_tests.dm"
 #include "dq_denecrotizer_tests.dm"
 #include "dq_event_headset_tests.dm"
+#include "dq_pai_translator_tests.dm"
 #include "dq_body_continuity_tests.dm"
 #include "dq_mind_host_tests.dm"
 #include "dq_mind_moves_tests.dm"
