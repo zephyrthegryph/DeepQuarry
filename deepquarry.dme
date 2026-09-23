@@ -324,6 +324,7 @@
 #include "code\__defines\atmospherics_linda\atmos_mob_interaction.dm"
 #include "code\__defines\atmospherics_linda\atmos_piping.dm"
 #include "code\__defines\atmospherics_linda\reactions.dm"
+#include "code\__defines\properties.dm"
 // Medical symptom/audience #defines — kept in the early defines block so
 // SYMPTOM_AUDIENCE_* etc. are available to every consumer (incl. unit tests,
 // which are included before the medical module under CIBUILDING).
@@ -574,6 +575,7 @@
 #include "code\controllers\subsystems\processing\processing.dm"
 #include "code\controllers\subsystems\processing\projectiles.dm"
 #include "code\controllers\subsystems\processing\turfs.dm"
+#include "code\controllers\subsystems\properties.dm"
 #include "code\core\atom\Transform.dm"
 #include "code\core\datum\IsAbstract.dm"
 #include "code\core\image\Transform.dm"
@@ -5103,6 +5105,7 @@
 #include "code\datums\variants\crayon_variants.dm"
 #include "code\datums\variants\gear_tweak_variant.dm"
 #include "code\datums\variants\spawn_with_variant.dm"
+#include "code\datums\variants\variant_tables.dm"
 #include "code\datums\components\sparse_vars\alt_appearance.dm"
 #include "code\datums\components\sparse_vars\catalogue_delay.dm"
 #include "code\datums\components\sparse_vars\chat_color_cache.dm"
@@ -5111,6 +5114,13 @@
 #include "code\modules\mob\living\silicon\robot\cyborg_spawn.dm"
 #include "code\datums\components\sparse_vars\observer_events.dm"
 #include "code\datums\components\sparse_vars\update_on_z.dm"
+#include "code\datums\properties\aggregators.dm"
+#include "code\datums\properties\families\item_physical.dm"
+#include "code\datums\properties\families\temperature_thresholds.dm"
+#include "code\datums\properties\property_def.dm"
+#include "code\datums\properties\providers.dm"
+#include "code\datums\properties\registry.dm"
+#include "code\datums\properties\state_adapter.dm"
 #include "code\modules\map_stubs\map_stubs.dm"
 #include "code\modules\body\affliction.dm"
 #include "code\modules\body\body.dm"
