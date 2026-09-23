@@ -16,24 +16,54 @@
 	. = ..()
 	layCable(loc,direction)
 
-/obj/machinery/cablelayer/attack_hand(mob/user as mob)
-	if(!cable&&!on)
-		to_chat(user, span_warning("\The [src] doesn't have any cable loaded."))
-		return
+/obj/machinery/cablelayer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/cablelayer_load,
+		/datum/interaction/machine_item/cablelayer_swallow,
+		/datum/interaction/machine_hand/ungated/cablelayer_toggle,
+	)
+	..()
+
+/// Load a coil into the reel.
+/datum/interaction/machine_item/cablelayer_load
+	id = "cablelayer_load"
+	name = "Load cable"
+	held_type = /obj/item/stack/cable_coil
+	effect = /obj/machinery/cablelayer/proc/interaction_load
+
+/obj/machinery/cablelayer/proc/interaction_load(mob/user, obj/item/stack/cable_coil/O, datum/interaction/interaction)
+	var/result = load_cable(O)
+	if(!result)
+		to_chat(user, span_warning("\The [src]'s cable reel is full."))
+	else
+		to_chat(user, "You load [result] lengths of cable into [src].")
+	return TRUE
+
+/// Old attackby: any other item did nothing and the base attackby was never reached.
+/datum/interaction/machine_item/cablelayer_swallow
+	id = "cablelayer_swallow"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/cablelayer/proc/interaction_swallow
+
+/obj/machinery/cablelayer/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
+
+/// Old attack_hand (never called ..()): toggle the layer on/off.
+/datum/interaction/machine_hand/ungated/cablelayer_toggle
+	id = "cablelayer_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/cablelayer/proc/has_cable_or_on, "doesn't have any cable loaded"))
+	effect = /obj/machinery/cablelayer/proc/interaction_toggle
+
+/obj/machinery/cablelayer/proc/has_cable_or_on(mob/actor, atom/target, obj/item/held)
+	return cable || on
+
+/obj/machinery/cablelayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	on=!on
 	user.visible_message("\The [user] [!on?"dea":"a"]ctivates \the [src].", "You switch [src] [on? "on" : "off"]")
-	return
-
-/obj/machinery/cablelayer/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/stack/cable_coil))
-
-		var/result = load_cable(O)
-		if(!result)
-			to_chat(user, span_warning("\The [src]'s cable reel is full."))
-		else
-			to_chat(user, "You load [result] lengths of cable into [src].")
-		return
-
+	return TRUE
 
 /obj/machinery/cablelayer/wirecutter_act(mob/user, obj/item/tool)
 	if(!cable || !cable.get_amount())

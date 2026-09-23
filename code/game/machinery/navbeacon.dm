@@ -41,13 +41,36 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	else
 		icon_state = "[state]"
 
-/obj/machinery/navbeacon/attackby(obj/item/I, mob/user)
+/obj/machinery/navbeacon/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/navbeacon_toggle_lock,
+		/datum/interaction/machine_hand/ungated/navbeacon_use,
+	)
+	..()
+
+/// Old attackby: swipe an ID to toggle the lock. Never fell through to ..(), so the whole thing stays inside the effect.
+/datum/interaction/machine_item/navbeacon_toggle_lock
+	id = "navbeacon_toggle_lock"
+	name = "Swipe ID"
+	effect = /obj/machinery/navbeacon/proc/interaction_toggle_lock
+
+/obj/machinery/navbeacon/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = loc
 	if(!T.is_plating())
-		return		// prevent intraction when T-scanner revealed
-
-	if(I.GetID())
+		return TRUE		// prevent intraction when T-scanner revealed
+	if(held.GetID())
 		togglelock(user)
+	return TRUE
+
+/// Old attack_hand: never called ..(), so ungated.
+/datum/interaction/machine_hand/ungated/navbeacon_use
+	id = "navbeacon_use"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/navbeacon/proc/actor_has_dexterity, "you don't have the dexterity"))
+	effect = /obj/machinery/proc/interaction_open_ui
+
+/obj/machinery/navbeacon/proc/actor_has_dexterity(mob/actor, atom/target, obj/item/held)
+	return actor.IsAdvancedToolUser()
 
 /obj/machinery/navbeacon/screwdriver_act(mob/user, obj/item/tool)
 	var/turf/floor = loc
@@ -61,13 +84,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 
 /obj/machinery/navbeacon
 	silicon_use = SILICON_USE_UI
-
-/obj/machinery/navbeacon/attack_hand(mob/user)
-
-	if(!user.IsAdvancedToolUser())
-		return 0
-
-	tgui_interact(user)
 
 /obj/machinery/navbeacon/proc/togglelock(mob/user)
 	if(!open)

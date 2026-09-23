@@ -104,8 +104,21 @@
 // Proc: attack_hand()
 // Parameters: 1 (user - the person clicking on the machine)
 // Description: Opens the TGUI interface with tgui_interact()
-/obj/machinery/exonet_node/attack_hand(mob/user)
+/obj/machinery/exonet_node/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/exonet_open_ui,
+	)
+	..()
+
+/// Old attack_hand, which never called ..(): no gate.
+/datum/interaction/machine_hand/ungated/exonet_open_ui
+	id = "exonet_open_ui"
+	name = "Use"
+	effect = /obj/machinery/exonet_node/proc/interaction_open_ui
+
+/obj/machinery/exonet_node/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 // Proc: tgui_interact()
 // Parameters: 2 (user - person interacting with the UI, ui - the UI itself, in a refresh)

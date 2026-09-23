@@ -95,31 +95,51 @@
 		return 1
 	return 0
 
-/obj/machinery/space_heater/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/cell))
-		if(panel_open)
-			if(cell)
-				to_chat(user, "There is already a power cell inside.")
-				return
-			else
-				// insert cell
-				var/obj/item/cell/C = user.get_active_hand()
-				if(istype(C))
-					user.drop_item()
-					cell = C
-					C.forceMove(src)
-					C.add_fingerprint(user)
+/obj/machinery/space_heater/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/space_heater_insert_cell,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_hand/ungated/space_heater_interact,
+	)
+	..()
 
-					user.visible_message(span_notice("[user] inserts a power cell into [src]."), span_notice("You insert the power cell into [src]."))
-					power_change()
-		else
-			to_chat(user, "The hatch must be open to insert a power cell.")
-			return
-	else if(default_part_replacement(user, I))
-		return
-	else
-		..()
-	return
+/// Old attackby: insert a power cell through the open hatch.
+/datum/interaction/machine_item/space_heater_insert_cell
+	id = "space_heater_insert_cell"
+	name = "Insert power cell"
+	held_type = /obj/item/cell
+	requires = list(REQ_INTERACTION_REACH,
+		REQ_ON(PRED_TARGET, /obj/machinery/space_heater/proc/hatch_open, "the hatch must be open to insert a power cell"),
+		REQ_ON(PRED_TARGET, /obj/machinery/space_heater/proc/no_cell_installed, "there is already a power cell inside"))
+	effect = /obj/machinery/space_heater/proc/interaction_insert_cell
+
+/obj/machinery/space_heater/proc/hatch_open(mob/actor, atom/target, obj/item/held)
+	return panel_open
+
+/obj/machinery/space_heater/proc/no_cell_installed(mob/actor, atom/target, obj/item/held)
+	return !cell
+
+/obj/machinery/space_heater/proc/interaction_insert_cell(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/cell/C = held
+	user.drop_item()
+	cell = C
+	C.forceMove(src)
+	C.add_fingerprint(user)
+	user.visible_message(span_notice("[user] inserts a power cell into [src]."), span_notice("You insert the power cell into [src]."))
+	power_change()
+	return TRUE
+
+/// Old attack_hand: `add_fingerprint(user); interact(user)`, no gate (never called ..()).
+/datum/interaction/machine_hand/ungated/space_heater_interact
+	id = "space_heater_interact"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/space_heater/proc/interaction_hand_interact
+
+/obj/machinery/space_heater/proc/interaction_hand_interact(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	interact(user)
+	return TRUE
 
 /obj/machinery/space_heater/screwdriver_act(mob/user, obj/item/tool)
 	panel_open = !panel_open
@@ -130,10 +150,6 @@
 		SStgui.close_uis(src)
 		user.unset_machine()
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/space_heater/attack_hand(mob/user as mob)
-	add_fingerprint(user)
-	interact(user)
 
 /obj/machinery/space_heater/interact(mob/user as mob)
 	if(panel_open)

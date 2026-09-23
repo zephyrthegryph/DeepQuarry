@@ -105,10 +105,25 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 		set_light(2)
 		set_light_on(TRUE)
 
-/obj/machinery/requests_console/attack_hand(user as mob)
-	if(..(user))
-		return
-	tgui_interact(user)
+/obj/machinery/requests_console/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/requests_console_id,
+		/datum/interaction/machine_item/requests_console_stamp,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
+
+/datum/interaction/machine_item/requests_console_id
+	id = "requests_console_id"
+	name = "Swipe ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/requests_console/proc/interaction_id
+
+/datum/interaction/machine_item/requests_console_stamp
+	id = "requests_console_stamp"
+	name = "Stamp"
+	held_type = /obj/item/stamp
+	effect = /obj/machinery/requests_console/proc/interaction_stamp
 
 /obj/machinery/requests_console/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -232,29 +247,32 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			. = TRUE
 
 					//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
-/obj/machinery/requests_console/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/card/id))
-		if(inoperable(MAINT)) return
-		if(screen == RCS_MESSAUTH)
-			var/obj/item/card/id/T = O
-			msgVerified = span_green(span_bold("Verified by [T.registered_name] ([T.assignment])"))
-			SStgui.update_uis(src)
-		if(screen == RCS_ANNOUNCE)
-			var/obj/item/card/id/ID = O
-			if(ACCESS_RC_ANNOUNCE in ID.GetAccess())
-				announceAuth = 1
-				announcement.announcer = ID.assignment ? "[ID.assignment] [ID.registered_name]" : ID.registered_name
-			else
-				reset_message()
-				to_chat(user, span_warning("You are not authorized to send announcements."))
-			SStgui.update_uis(src)
-	if(istype(O, /obj/item/stamp))
-		if(inoperable(MAINT)) return
-		if(screen == RCS_MESSAUTH)
-			var/obj/item/stamp/T = O
-			msgStamped = span_blue(span_bold("Stamped with the [T.name]"))
-			SStgui.update_uis(src)
-	return
+/obj/machinery/requests_console/proc/interaction_id(mob/user, obj/item/held, datum/interaction/interaction)
+	if(inoperable(MAINT))
+		return TRUE
+	if(screen == RCS_MESSAUTH)
+		var/obj/item/card/id/T = held
+		msgVerified = span_green(span_bold("Verified by [T.registered_name] ([T.assignment])"))
+		SStgui.update_uis(src)
+	if(screen == RCS_ANNOUNCE)
+		var/obj/item/card/id/ID = held
+		if(ACCESS_RC_ANNOUNCE in ID.GetAccess())
+			announceAuth = 1
+			announcement.announcer = ID.assignment ? "[ID.assignment] [ID.registered_name]" : ID.registered_name
+		else
+			reset_message()
+			to_chat(user, span_warning("You are not authorized to send announcements."))
+		SStgui.update_uis(src)
+	return TRUE
+
+/obj/machinery/requests_console/proc/interaction_stamp(mob/user, obj/item/held, datum/interaction/interaction)
+	if(inoperable(MAINT))
+		return TRUE
+	if(screen == RCS_MESSAUTH)
+		var/obj/item/stamp/T = held
+		msgStamped = span_blue(span_bold("Stamped with the [T.name]"))
+		SStgui.update_uis(src)
+	return TRUE
 
 /obj/machinery/requests_console/multitool_act(mob/user, obj/item/tool)
 	var/input = tgui_input_text(user, "What Department ID would you like to give this request console?", "Multitool-Request Console Interface", department, MAX_MESSAGE_LEN)

@@ -4,13 +4,23 @@
 // is the source of truth for per-line diff context.
 
 //# define AMAP
-/obj/machinery/computer/security/verb/station_map()
-	set name = ".map"
-	set category = "Object"
-	set src in view(1)
-	if(!mapping)	return
-	log_game("[usr]([usr.key]) used station map L[z] in [src.loc.loc]")
-	drawmap(usr)
+/obj/machinery/computer/security/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_verb/security_station_map,
+	)
+	..()
+
+/datum/interaction/machine_verb/security_station_map
+	id = "security_station_map"
+	name = ".map"
+	effect = /obj/machinery/computer/security/proc/interaction_station_map
+
+/obj/machinery/computer/security/proc/interaction_station_map(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!mapping)
+		return TRUE
+	log_game("[user]([user.key]) used station map L[z] in [src.loc.loc]")
+	drawmap(user)
+	return TRUE
 
 /obj/machinery/computer/security/proc/drawmap(mob/user as mob)
 

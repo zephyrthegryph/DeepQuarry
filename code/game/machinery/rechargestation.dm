@@ -154,30 +154,89 @@
 	go_out()
 	return
 
-/obj/machinery/recharge_station/attackby(obj/item/O as obj, mob/user as mob)
-	if(!occupant)
-		if(default_part_replacement(user, O))
-			return
-		if (istype(O, /obj/item/grab) && get_dist(src,user)<2)
-			var/obj/item/grab/G = O
-			if(isliving(G.affecting))
-				var/mob/living/M = G.affecting
-				qdel(O)
-				go_in(M)
-
+/obj/machinery/recharge_station/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/recharge_station_part_replacement,
+		/datum/interaction/machine_item/recharge_station_insert_grab,
+		/datum/interaction/machine_drag/recharge_station_insert,
+		/datum/interaction/machine_verb/recharge_station_eject,
+		/datum/interaction/machine_verb/recharge_station_enter,
+	)
 	..()
+
+/datum/interaction/machine_item/recharge_station_part_replacement
+	id = "recharge_station_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharge_station/proc/is_vacant, null))
+	effect = /obj/machinery/recharge_station/proc/interaction_part_replacement
+
+/obj/machinery/recharge_station/proc/is_vacant(mob/actor, atom/target, obj/item/held)
+	return !occupant
+
+/obj/machinery/recharge_station/proc/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
+	return default_part_replacement(user, held) ? TRUE : FALSE
+
+/datum/interaction/machine_item/recharge_station_insert_grab
+	id = "recharge_station_insert_grab"
+	name = "Put in recharger"
+	held_type = /obj/item/grab
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharge_station/proc/is_vacant, null), REQ_ON(PRED_TARGET, /obj/machinery/recharge_station/proc/grab_holds_living, null))
+	effect = /obj/machinery/recharge_station/proc/interaction_insert_grab
+
+/obj/machinery/recharge_station/proc/grab_holds_living(mob/actor, atom/target, obj/item/held)
+	if(get_dist(src, actor) >= 2)
+		return FALSE
+	var/obj/item/grab/G = held
+	return isliving(G.affecting)
+
+/obj/machinery/recharge_station/proc/interaction_insert_grab(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/grab/G = held
+	var/mob/living/M = G.affecting
+	qdel(held)
+	go_in(M)
+	return FALSE
+
+/datum/interaction/machine_drag/recharge_station_insert
+	id = "recharge_station_drag_insert"
+	name = "Put in recharger"
+	held_type = /mob
+	effect = /obj/machinery/recharge_station/proc/interaction_drag_insert
+
+/obj/machinery/recharge_station/proc/interaction_drag_insert(mob/user, atom/movable/dropping, datum/interaction/interaction)
+	var/mob/target = dropping
+	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))
+		return TRUE
+	go_in(target)
+	return TRUE
+
+/datum/interaction/machine_verb/recharge_station_eject
+	id = "recharge_station_eject"
+	name = "Eject Recharger"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/recharge_station/proc/interaction_eject
+
+/obj/machinery/recharge_station/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	go_out()
+	add_fingerprint(user)
+	return TRUE
+
+/datum/interaction/machine_verb/recharge_station_enter
+	id = "recharge_station_enter"
+	name = "Enter Recharger"
+	category = INTERACTION_CAT_INSERT
+	effect = /obj/machinery/recharge_station/proc/interaction_enter
+
+/obj/machinery/recharge_station/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+	go_in(user)
+	return TRUE
 
 /obj/machinery/recharge_station/screwdriver_act(mob/user, obj/item/tool)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/recharge_station/crowbar_act(mob/user, obj/item/tool)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
-
-/obj/machinery/recharge_station/MouseDrop_T(mob/target, mob/user)
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))
-		return
-
-	go_in(target)
 
 /obj/machinery/recharge_station/RefreshParts()
 	..()
@@ -302,28 +361,6 @@
 	. = ..()
 	if(.)
 		START_MACHINE_PROCESSING(src)
-
-/obj/machinery/recharge_station/verb/move_eject()
-	set category = "Object"
-	set name = "Eject Recharger"
-	set src in oview(1)
-
-	if(usr.incapacitated() || !isliving(usr))
-		return
-
-	go_out()
-	add_fingerprint(usr)
-	return
-
-/obj/machinery/recharge_station/verb/move_inside()
-	set category = "Object"
-	set name = "Enter Recharger"
-	set src in oview(1)
-
-	if(usr.incapacitated() || !isliving(usr))
-		return
-
-	go_in(usr)
 
 /obj/machinery/recharge_station/ghost_pod_recharger
 	name = "drone pod"

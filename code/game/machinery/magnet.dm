@@ -222,13 +222,25 @@
 			if(M.freq == frequency && M.code == code)
 				magnets.Add(M)
 
-/obj/machinery/magnetic_controller/attack_hand(mob/user as mob)
-	// structured TGUI MagneticConsole (see
-	// code/modules/admin/magnetic_console_panel.dm).
+/obj/machinery/magnetic_controller/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/magnetic_controller_open,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/magnetic_controller_open
+	id = "magnetic_controller_open"
+	name = "Use"
+	effect = /obj/machinery/magnetic_controller/proc/interaction_open
+
+// structured TGUI MagneticConsole (see
+// code/modules/admin/magnetic_console_panel.dm).
+/obj/machinery/magnetic_controller/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	user.set_machine(src)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/magnetic_controller/Topic(href, href_list)
 	if(stat & (BROKEN|NOPOWER))

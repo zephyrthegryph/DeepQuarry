@@ -408,8 +408,13 @@
 /obj/machinery/porta_turret
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/porta_turret/attack_hand(mob/user)
-	tgui_interact(user)
+/obj/machinery/porta_turret/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/porta_turret_lock,
+		/datum/interaction/machine_item/porta_turret_hit,
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
 
 /obj/machinery/porta_turret/proc/HasController()
 	var/area/A = get_area(src)
@@ -491,22 +496,36 @@
 	update_icon()
 
 
-/obj/machinery/porta_turret/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/card/id)||istype(I, /obj/item/pda))
-		//Behavior lock/unlock mangement
-		if(allowed(user))
-			locked = !locked
-			to_chat(user, span_notice("Controls are now [locked ? "locked" : "unlocked"]."))
-		else
-			to_chat(user, span_notice("Access denied."))
-		return
+/datum/interaction/machine_item/porta_turret_lock
+	id = "porta_turret_lock"
+	name = "Toggle lock"
+	held_type = list(/obj/item/card/id, /obj/item/pda)
+	effect = /obj/machinery/porta_turret/proc/interaction_lock
 
+/obj/machinery/porta_turret/proc/interaction_lock(mob/user, obj/item/I, datum/interaction/interaction)
+	//Behavior lock/unlock mangement
+	if(allowed(user))
+		locked = !locked
+		to_chat(user, span_notice("Controls are now [locked ? "locked" : "unlocked"]."))
+	else
+		to_chat(user, span_notice("Access denied."))
+	return TRUE
+
+/datum/interaction/machine_item/porta_turret_hit
+	id = "porta_turret_hit"
+	name = "Hit"
+	category = INTERACTION_CAT_ATTACK
+	held_type = /obj/item
+	tags = list(INTERACTION_TAG_HOSTILE)
+	effect = /obj/machinery/porta_turret/proc/interaction_hit
+
+/obj/machinery/porta_turret/proc/interaction_hit(mob/user, obj/item/I, datum/interaction/interaction)
 	//if the turret was attacked with the intention of harming it:
 	user.setClickCooldown(user.get_attack_speed(I))
 	var/dam = I.force * 0.5
 	take_damage(dam, BRUTE, MELEE)
 	attempt_retaliate(dam)
-	..()
+	return FALSE
 
 /obj/machinery/porta_turret/crowbar_act(mob/user, obj/item/tool)
 	if(!(stat & BROKEN))
@@ -1023,71 +1042,129 @@
 	var/installation = null		//the gun type installed
 	var/gun_charge = 0			//the gun charge of the gun type installed
 
-/obj/machinery/porta_turret_construct/attackby(obj/item/I, mob/user)
-	//this is a bit unwieldy but self-explanatory
-	switch(build_step)
-		if(1)
-			if(istype(I, /obj/item/stack/material) && I.get_material_name() == MAT_STEEL)
-				var/obj/item/stack/M = I
-				if(M.use(2))
-					to_chat(user, span_notice("You add some metal armor to the interior frame."))
-					build_step = 2
-					icon_state = "turret_frame2"
-				else
-					to_chat(user, span_warning("You need two sheets of metal to continue construction."))
-				return
-
-		if(3)
-			if(istype(I, /obj/item/gun/energy)) //the gun installation part
-
-				if(isrobot(user))
-					return
-				var/obj/item/gun/energy/E = I //typecasts the item to an energy gun
-				if(!user.unEquip(I))
-					to_chat(user, span_notice("\The [I] is stuck to your hand, you cannot put it in \the [src]"))
-					return
-				installation = I.type //installation becomes I.type
-				gun_charge = E.power_supply.charge //the gun's charge is stored in gun_charge
-				to_chat(user, span_notice("You add [I] to the turret."))
-				target_type = /obj/machinery/porta_turret
-
-				build_step = 4
-				qdel(I) //delete the gun :(
-				return
-
-		if(4)
-			if(isprox(I))
-				build_step = 5
-				if(!user.unEquip(I))
-					to_chat(user, span_notice("\The [I] is stuck to your hand, you cannot put it in \the [src]"))
-					return
-				to_chat(user, span_notice("You add the prox sensor to the turret."))
-				qdel(I)
-				return
-
-			//attack_hand() removes the gun
-
-		if(6)
-			if(istype(I, /obj/item/stack/material) && I.get_material_name() == MAT_STEEL)
-				var/obj/item/stack/M = I
-				if(M.use(2))
-					to_chat(user, span_notice("You add some metal armor to the exterior frame."))
-					build_step = 7
-				else
-					to_chat(user, span_warning("You need two sheets of metal to continue construction."))
-				return
-
-	if(istype(I, /obj/item/pen))	//you can rename turrets like bots!
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter new turret name", name, finish_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(!t)
-			return
-		if(!in_range(src, user) && loc != user)
-			return
-
-		finish_name = t
-		return
-
+/obj/machinery/porta_turret_construct/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/porta_turret_construct_interior_armor,
+		/datum/interaction/machine_item/porta_turret_construct_install_gun,
+		/datum/interaction/machine_item/porta_turret_construct_install_prox,
+		/datum/interaction/machine_item/porta_turret_construct_exterior_armor,
+		/datum/interaction/machine_item/porta_turret_construct_rename,
+		/datum/interaction/machine_hand/ungated/porta_turret_construct_remove,
+	)
 	..()
+
+/datum/interaction/machine_item/porta_turret_construct_interior_armor
+	id = "porta_turret_construct_interior_armor"
+	name = "Add interior armor"
+	held_type = /obj/item/stack/material
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/porta_turret_construct/proc/at_build_step_1, null))
+	effect = /obj/machinery/porta_turret_construct/proc/interaction_interior_armor
+
+/obj/machinery/porta_turret_construct/proc/at_build_step_1(mob/actor, atom/target, obj/item/held)
+	return build_step == 1
+
+/obj/machinery/porta_turret_construct/proc/interaction_interior_armor(mob/user, obj/item/I, datum/interaction/interaction)
+	if(istype(I, /obj/item/stack/material) && I.get_material_name() == MAT_STEEL)
+		var/obj/item/stack/M = I
+		if(M.use(2))
+			to_chat(user, span_notice("You add some metal armor to the interior frame."))
+			build_step = 2
+			icon_state = "turret_frame2"
+		else
+			to_chat(user, span_warning("You need two sheets of metal to continue construction."))
+		return TRUE
+	return FALSE
+
+/datum/interaction/machine_item/porta_turret_construct_install_gun
+	id = "porta_turret_construct_install_gun"
+	name = "Install gun"
+	held_type = /obj/item/gun/energy
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/porta_turret_construct/proc/at_build_step_3, null))
+	effect = /obj/machinery/porta_turret_construct/proc/interaction_install_gun
+
+/obj/machinery/porta_turret_construct/proc/at_build_step_3(mob/actor, atom/target, obj/item/held)
+	return build_step == 3
+
+/obj/machinery/porta_turret_construct/proc/interaction_install_gun(mob/user, obj/item/gun/energy/I, datum/interaction/interaction)
+	//the gun installation part
+	if(isrobot(user))
+		return TRUE
+	var/obj/item/gun/energy/E = I //typecasts the item to an energy gun
+	if(!user.unEquip(I))
+		to_chat(user, span_notice("\The [I] is stuck to your hand, you cannot put it in \the [src]"))
+		return TRUE
+	installation = I.type //installation becomes I.type
+	gun_charge = E.power_supply.charge //the gun's charge is stored in gun_charge
+	to_chat(user, span_notice("You add [I] to the turret."))
+	target_type = /obj/machinery/porta_turret
+
+	build_step = 4
+	qdel(I) //delete the gun :(
+	return TRUE
+
+/datum/interaction/machine_item/porta_turret_construct_install_prox
+	id = "porta_turret_construct_install_prox"
+	name = "Install proximity sensor"
+	held_type = /obj/item
+	offered_when = list(
+		REQ_ON(PRED_TARGET, /obj/machinery/porta_turret_construct/proc/at_build_step_4, null),
+		REQ_ON(PRED_HELD, /obj/machinery/porta_turret_construct/proc/held_is_prox, null),
+	)
+	effect = /obj/machinery/porta_turret_construct/proc/interaction_install_prox
+
+/obj/machinery/porta_turret_construct/proc/at_build_step_4(mob/actor, atom/target, obj/item/held)
+	return build_step == 4
+
+/obj/machinery/porta_turret_construct/proc/held_is_prox(mob/actor, atom/target, obj/item/held)
+	return isprox(held)
+
+/obj/machinery/porta_turret_construct/proc/interaction_install_prox(mob/user, obj/item/I, datum/interaction/interaction)
+	build_step = 5
+	if(!user.unEquip(I))
+		to_chat(user, span_notice("\The [I] is stuck to your hand, you cannot put it in \the [src]"))
+		return TRUE
+	to_chat(user, span_notice("You add the prox sensor to the turret."))
+	qdel(I)
+	return TRUE
+	//attack_hand() removes the gun
+
+/datum/interaction/machine_item/porta_turret_construct_exterior_armor
+	id = "porta_turret_construct_exterior_armor"
+	name = "Add exterior armor"
+	held_type = /obj/item/stack/material
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/porta_turret_construct/proc/at_build_step_6, null))
+	effect = /obj/machinery/porta_turret_construct/proc/interaction_exterior_armor
+
+/obj/machinery/porta_turret_construct/proc/at_build_step_6(mob/actor, atom/target, obj/item/held)
+	return build_step == 6
+
+/obj/machinery/porta_turret_construct/proc/interaction_exterior_armor(mob/user, obj/item/I, datum/interaction/interaction)
+	if(istype(I, /obj/item/stack/material) && I.get_material_name() == MAT_STEEL)
+		var/obj/item/stack/M = I
+		if(M.use(2))
+			to_chat(user, span_notice("You add some metal armor to the exterior frame."))
+			build_step = 7
+		else
+			to_chat(user, span_warning("You need two sheets of metal to continue construction."))
+		return TRUE
+	return FALSE
+
+/datum/interaction/machine_item/porta_turret_construct_rename
+	id = "porta_turret_construct_rename"
+	name = "Rename"
+	held_type = /obj/item/pen
+	effect = /obj/machinery/porta_turret_construct/proc/interaction_rename
+
+/obj/machinery/porta_turret_construct/proc/interaction_rename(mob/user, obj/item/I, datum/interaction/interaction)
+	//you can rename turrets like bots!
+	var/t = sanitizeSafe(tgui_input_text(user, "Enter new turret name", name, finish_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	if(!t)
+		return TRUE
+	if(!in_range(src, user) && loc != user)
+		return TRUE
+
+	finish_name = t
+	return TRUE
 
 /obj/machinery/porta_turret_construct/wrench_act(mob/user, obj/item/tool)
 	switch(build_step)
@@ -1176,11 +1253,16 @@
 			return ITEM_INTERACT_SUCCESS
 	return NONE
 
-/obj/machinery/porta_turret_construct/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/porta_turret_construct_remove
+	id = "porta_turret_construct_remove"
+	name = "Remove"
+	effect = /obj/machinery/porta_turret_construct/proc/interaction_remove
+
+/obj/machinery/porta_turret_construct/proc/interaction_remove(mob/user, obj/item/held, datum/interaction/interaction)
 	switch(build_step)
 		if(4)
 			if(!installation)
-				return
+				return TRUE
 			build_step = 3
 
 			var/obj/item/gun/energy/Gun = new installation(loc)
@@ -1194,6 +1276,7 @@
 			to_chat(user, span_notice("You remove the prox sensor from the turret frame."))
 			new /obj/item/assembly/prox_sensor(loc)
 			build_step = 4
+	return TRUE
 
 /obj/machinery/porta_turret_construct/attack_ai()
 	return

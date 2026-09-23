@@ -45,11 +45,23 @@
 	else
 		icon_state = "dbchime-standby"
 
-/obj/machinery/doorbell_chime/attackby(obj/item/W as obj, mob/user as mob)
-	src.add_fingerprint(user)
-	if(default_part_replacement(user, W))
-		return
+/obj/machinery/doorbell_chime/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/doorbell_chime_fingerprint,
+		/datum/interaction/machine_item/part_replacement,
+	)
 	..()
+
+/// Old attackby: added a fingerprint for any item before trying the part replacer.
+/datum/interaction/machine_item/doorbell_chime_fingerprint
+	id = "doorbell_chime_fingerprint"
+	name = "Touch"
+	held_type = /obj/item
+	effect = /obj/machinery/doorbell_chime/proc/interaction_fingerprint
+
+/obj/machinery/doorbell_chime/proc/interaction_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	return FALSE
 
 /obj/machinery/doorbell_chime/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)
@@ -113,23 +125,43 @@
 	else
 		icon_state = "doorbell-standby"
 
-/obj/machinery/button/doorbell/attack_hand(mob/user as mob)
+/obj/machinery/button/doorbell/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/doorbell_press,
+		/datum/interaction/machine_item/doorbell_rename,
+	)
+	..()
+
+/// Old attack_hand: press the button, chime the linked chimes.
+/datum/interaction/machine_hand/doorbell_press
+	id = "doorbell_press"
+	name = "Press"
+	effect = /obj/machinery/button/doorbell/proc/interaction_press
+
+/obj/machinery/button/doorbell/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(..())
-		return
 	use_power(5)
 	flick("doorbell-active", src)
 
 	for(var/obj/machinery/doorbell_chime/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id_tag == id)
 			M.chime()
+	return TRUE
 
-/obj/machinery/button/doorbell/attackby(obj/item/W as obj, mob/user as mob)
-	src.add_fingerprint(user)
-	if(panel_open && istype(W, /obj/item/pen))
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter the name for \the [src].", src.name, initial(src.name), MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+/// Old attackby: fingerprint any item, and rename with a pen when the panel is open.
+/datum/interaction/machine_item/doorbell_rename
+	id = "doorbell_rename"
+	name = "Touch"
+	held_type = /obj/item
+	effect = /obj/machinery/button/doorbell/proc/interaction_rename
+
+/obj/machinery/button/doorbell/proc/interaction_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
+	if(panel_open && istype(held, /obj/item/pen))
+		var/t = sanitizeSafe(tgui_input_text(user, "Enter the name for \the [src].", name, initial(name), MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 		if(t && in_range(src, user))
 			name = t
+	return TRUE
 
 /obj/machinery/button/doorbell/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)

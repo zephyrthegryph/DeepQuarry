@@ -94,9 +94,23 @@
 		return
 	hacked = newhacked
 
-/obj/machinery/media/jukebox/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/media/jukebox/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/jukebox_fingerprint,
+		/datum/interaction/machine_hand/ungated/jukebox_interact,
+	)
+	..()
+
+/// The old attackby: fingerprinted, then fell through to ..().
+/datum/interaction/machine_item/jukebox_fingerprint
+	id = "jukebox_fingerprint"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/media/jukebox/proc/interaction_fingerprint
+
+/obj/machinery/media/jukebox/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
-	return ..()
+	return FALSE
 
 /obj/machinery/media/jukebox/wirecutter_act(mob/user, obj/item/tool)
 	wires.Interact(user)
@@ -245,8 +259,15 @@
 				StopPlaying()
 			SSmedia_tracks.remove_track(ui.user, track_to_remove)
 
-/obj/machinery/media/jukebox/attack_hand(mob/user as mob)
+/// The old attack_hand: never called ..(), just interacted.
+/datum/interaction/machine_hand/ungated/jukebox_interact
+	id = "jukebox_interact"
+	name = "Use"
+	effect = /obj/machinery/media/jukebox/proc/interaction_interact
+
+/obj/machinery/media/jukebox/proc/interaction_interact(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
+	return TRUE
 
 /obj/machinery/media/jukebox/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

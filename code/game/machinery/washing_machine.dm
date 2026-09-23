@@ -44,14 +44,35 @@
 	. = ..()
 
 
-/obj/machinery/washing_machine/click_alt()
-	start()
+/obj/machinery/washing_machine/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/washing_machine_use_item,
+		/datum/interaction/machine_alt/washing_machine_start,
+		/datum/interaction/machine_verb/washing_machine_start_washing,
+		/datum/interaction/machine_verb/washing_machine_climb_out,
+		/datum/interaction/machine_hand/ungated/washing_machine_use,
+	)
+	..()
 
-/obj/machinery/washing_machine/verb/start_washing()
-	set name = "Start Washing"
-	set category = "Object"
-	set src in oview(1)
+/// The old click_alt() had no mob/user param at all and relied on `usr`; start() still does.
+/datum/interaction/machine_alt/washing_machine_start
+	id = "washing_machine_start"
+	name = "Start"
+	consumes_input = FALSE
+	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_start
+
+/obj/machinery/washing_machine/proc/interaction_washing_machine_start(mob/user, obj/item/held, datum/interaction/interaction)
 	start()
+	return TRUE
+
+/datum/interaction/machine_verb/washing_machine_start_washing
+	id = "washing_machine_start_washing"
+	name = "Start Washing"
+	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing
+
+/obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing(mob/user, obj/item/held, datum/interaction/interaction)
+	start()
+	return TRUE
 
 /obj/machinery/washing_machine/proc/start(force, damage_modifier)
 
@@ -103,11 +124,18 @@
 		state = FULL_CLOSED
 	update_icon()
 
-/obj/machinery/washing_machine/verb/climb_out()
-	set name = "Climb out"
-	set category = "Object"
-	set src in usr.loc
-	user_climb_out(usr)
+/datum/interaction/machine_verb/washing_machine_climb_out
+	id = "washing_machine_climb_out"
+	name = "Climb out"
+	requires = list(REQ_ON(PRED_ACTOR, /obj/machinery/washing_machine/proc/actor_inside, "you aren't inside it"))
+	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out
+
+/obj/machinery/washing_machine/proc/actor_inside(mob/actor, atom/target, obj/item/held)
+	return actor.loc == target
+
+/obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out(mob/user, obj/item/held, datum/interaction/interaction)
+	user_climb_out(user)
+	return TRUE
 
 /obj/machinery/washing_machine/proc/user_climb_out(mob/user)
 	if(user.loc != src) //Have to be in it to climb out of it.
@@ -124,7 +152,7 @@
 		visible_message("[src] begins to rattle and shake!")
 		if(do_after(user, 60 SECONDS, target = src))
 			visible_message("[user] climbs out of the [src]!")
-			attack_hand(user, force = TRUE)
+			interaction_washing_machine_use(user, null, null, force = TRUE)
 
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
 	user_climb_out(escapee)
@@ -135,7 +163,15 @@
 	if(panel_open)
 		add_overlay("panel")
 
-/obj/machinery/washing_machine/attackby(obj/item/W as obj, mob/user as mob)
+/datum/interaction/machine_item/washing_machine_use_item
+	id = "washing_machine_use_item"
+	name = "Use"
+	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item
+
+// Where the old body called a bare ..() and fell through to update_icon() below it (rather
+// than returning), the base attackby signal is approximated as a no-op: that fallback is a
+// generic atom hook with no other behavior on this type, but note it as an approximation.
+/obj/machinery/washing_machine/proc/interaction_washing_machine_use_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/pen/crayon) || istype(W,/obj/item/stamp))
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
 			if(!crayon)
@@ -143,10 +179,9 @@
 				crayon = W
 				crayon.forceMove(src)
 				crayon.loc = src
-			else
-				..()
-		else
-			..()
+			//else: old fell through to a bare ..() (approximated as a no-op)
+
+		//else: old fell through to a bare ..() (approximated as a no-op)
 
 	else if(istype(W,/obj/item/grab))
 		if((state == EMPTY_OPEN) && hacked)
@@ -162,12 +197,11 @@
 						state = FULL_CLOSED
 					else
 						to_chat(user, "You can't shove [G.affecting] in unless the washer is empty and open!")
-		else
-			..()
+		//else: old fell through to a bare ..() (approximated as a no-op)
 
 	else if(is_type_in_list(W, disallowed_types))
 		to_chat(user, span_warning("You can't fit \the [W] inside."))
-		return
+		return TRUE
 
 	else if(istype(W, /obj/item/clothing) || istype(W, /obj/item/bedsheet) || istype(W, /obj/item/stack/hairlesshide))
 		if(washing.len < 5)
@@ -180,9 +214,9 @@
 				to_chat(user, span_notice("You can't put the item in right now."))
 		else
 			to_chat(user, span_notice("The washing machine is full."))
-	else
-		..()
+	//else: old fell through to a bare ..() (approximated as a no-op)
 	update_icon()
+	return TRUE
 
 /obj/machinery/washing_machine/screwdriver_act(mob/user, obj/item/tool)
 	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
@@ -193,9 +227,14 @@
 /obj/machinery/washing_machine/wrench_act(mob/user, obj/item/tool)
 	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
 
-/obj/machinery/washing_machine/attack_hand(mob/user, force)
+/datum/interaction/machine_hand/ungated/washing_machine_use
+	id = "washing_machine_use"
+	name = "Use"
+	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_use
+
+/obj/machinery/washing_machine/proc/interaction_washing_machine_use(mob/user, obj/item/held, datum/interaction/interaction, force = FALSE)
 	if(user.loc == src && !force)
-		return //No interacting with it from the inside!
+		return TRUE //No interacting with it from the inside!
 	switch(state)
 		if(EMPTY_OPEN)
 			state = EMPTY_CLOSED
@@ -231,6 +270,7 @@
 			washing.Cut()
 
 	update_icon()
+	return TRUE
 
 #undef EMPTY_OPEN
 #undef EMPTY_CLOSED

@@ -75,27 +75,32 @@
 	occupant = null
 	update_icon()
 
-/obj/machinery/transportpod/verb/move_eject()
-	set category = "Object"
-	set name = "Eject Pod"
-	set src in oview(1)
+/obj/machinery/transportpod/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_verb/transportpod_eject,
+		/datum/interaction/machine_verb/transportpod_enter,
+	)
+	..()
 
-	if(usr.incapacitated())
-		return
+/datum/interaction/machine_verb/transportpod_eject
+	id = "transportpod_eject"
+	name = "Eject Pod"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/transportpod/proc/interaction_eject
 
+/obj/machinery/transportpod/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	go_out()
-	add_fingerprint(usr)
-	return
+	add_fingerprint(user)
+	return TRUE
 
-/obj/machinery/transportpod/verb/move_inside()
-	set category = "Object"
-	set name = "Enter Pod"
-	set src in oview(1)
+/datum/interaction/machine_verb/transportpod_enter
+	id = "transportpod_enter"
+	name = "Enter Pod"
+	effect = /obj/machinery/transportpod/proc/interaction_enter
 
-	if(usr.incapacitated()) //just to DOUBLE CHECK the damn sleepy people don't touch the pod
-		return
-
-	go_in(usr)
+/obj/machinery/transportpod/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+	go_in(user)
+	return TRUE
 
 /obj/machinery/transportpod/proc/build()
 	for(var/x = limit_x-2, x <= limit_x, x++)

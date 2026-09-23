@@ -25,8 +25,35 @@
 	else
 		to_chat(user, "Error, no route to host.")
 
-/obj/machinery/button/remote/attackby(obj/item/W, mob/user as mob)
-	return attack_hand(user)
+/obj/machinery/button/remote/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/remote_toggle,
+		/datum/interaction/machine_item/remote_toggle_item,
+	)
+	..()
+
+/// The old attack_hand, gated (it called ..()).
+/datum/interaction/machine_hand/remote_toggle
+	id = "remote_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/button/remote/proc/interaction_toggle
+
+/// The old attackby: `return attack_hand(user)` for any item.
+/datum/interaction/machine_item/remote_toggle_item
+	id = "remote_toggle_item"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	held_type = /obj/item
+	effect = /obj/machinery/button/remote/proc/interaction_toggle
+
+/**
+ * The remote/driver subtype's own attackby replaced this one outright (no ..()),
+ * restricting it to ID cards/PDAs; excluded here so driver instances don't also
+ * offer this generic any-item version.
+ */
+/datum/interaction/machine_item/remote_toggle_item/applies_to(atom/target)
+	return !istype(target, /obj/machinery/button/remote/driver)
 
 /obj/machinery/button/remote/emag_act(remaining_charges, mob/user)
 	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
@@ -35,24 +62,22 @@
 		playsound(src, "sparks", 100, 1)
 		return 1
 
-/obj/machinery/button/remote/attack_hand(mob/user as mob)
-	if(..())
-		return
-
+/obj/machinery/button/remote/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 
 	if(!allowed(user) && (wires_num & 1))
 		to_chat(user, span_warning("Access Denied"))
 		flick("doorctrl-denied",src)
-		return
+		return TRUE
 
 	use_power(5)
 	icon_state = "doorctrl1"
 	desiredstate = !desiredstate
 	trigger(user)
 	addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, update_icon)), 1.5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	return TRUE
 
 /obj/machinery/button/remote/proc/trigger()
 	return
@@ -229,11 +254,19 @@
 	active = FALSE
 	update_icon()
 
-/obj/machinery/button/remote/driver/attackby(obj/item/I, mob/user)
-	//Swiping ID on the access button
-	if (istype(I, /obj/item/card/id) || istype(I, /obj/item/pda))
-		attack_hand(user)
-		return
+/obj/machinery/button/remote/driver/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/remote_driver_id_swipe,
+	)
+	..()
+
+/// The old attackby: replaced the base's any-item forward with an ID/PDA-only one.
+/datum/interaction/machine_item/remote_driver_id_swipe
+	id = "remote_driver_id_swipe"
+	name = "Swipe ID"
+	category = INTERACTION_CAT_TOGGLE
+	held_type = list(/obj/item/card/id, /obj/item/pda)
+	effect = /obj/machinery/button/remote/proc/interaction_toggle
 
 /obj/machinery/button/remote/driver/multitool_act(mob/user, obj/item/tool)
 	var/new_id = tgui_input_number(user, "[src] has an id of \"[id]\". What would you like it to be?", "[src] ID]", id, 9999)

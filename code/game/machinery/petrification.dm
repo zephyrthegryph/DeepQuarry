@@ -141,10 +141,11 @@
 	SStgui.update_uis(src)
 	return TRUE
 
-/obj/machinery/petrification/attack_hand(mob/user as mob)
-	if(..())
-		return
-	tgui_interact(user)
+/obj/machinery/petrification/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/petrification/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

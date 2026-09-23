@@ -182,18 +182,82 @@
 	src.view_range = num
 	GLOB.cameranet.updateVisibility(src, 0)
 
-/obj/machinery/camera/attack_hand(mob/living/carbon/human/user as mob)
-	if(!istype(user))
-		return
+/obj/machinery/camera/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/camera_shred,
+		/datum/interaction/machine_item/camera_update_coverage,
+		/datum/interaction/machine_item/camera_paper_show,
+		/datum/interaction/machine_item/camera_bug_toggle,
+		/datum/interaction/machine_item/camera_bash,
+	)
+	..()
 
-	if(user.species.can_shred(user, FALSE, 11))
-		set_status(0)
-		user.do_attack_animation(src)
-		user.setClickCooldown(user.get_attack_speed())
-		visible_message(span_warning("\The [user] slashes at [src]!"))
-		playsound(src, 'sound/weapons/slash.ogg', 100, 1)
-		add_hiddenprint(user)
-		deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
+/// Old attackby's unconditional first line, before any branch was tested. Always
+/// runs first and declines, so the branches below (and the base attackby) still see it.
+/datum/interaction/machine_item/camera_update_coverage
+	id = "camera_update_coverage"
+	name = "Use"
+	held_type = /obj/item
+	consumes_input = FALSE
+	effect = /obj/machinery/camera/proc/interaction_update_coverage
+
+/obj/machinery/camera/proc/interaction_update_coverage(mob/user, obj/item/held, datum/interaction/interaction)
+	update_coverage()
+	return FALSE
+
+/// Old attackby: hold a paper or PDA up to the camera.
+/datum/interaction/machine_item/camera_paper_show
+	id = "camera_paper_show"
+	name = "Show to camera"
+	held_type = list(/obj/item/paper, /obj/item/pda)
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/camera/proc/paper_show_meant, null))
+	effect = /obj/machinery/camera/proc/interaction_show_paper
+
+/// Old attackby: bug or unbug the camera.
+/datum/interaction/machine_item/camera_bug_toggle
+	id = "camera_bug_toggle"
+	name = "Bug camera"
+	held_type = /obj/item/camera_bug
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/camera/proc/camera_can_use, "camera non-functional"))
+	effect = /obj/machinery/camera/proc/interaction_toggle_bug
+
+/obj/machinery/camera/proc/camera_can_use(mob/actor, atom/target, obj/item/held)
+	return can_use()
+
+/// Old attackby: bashing the camera with a damaging item.
+/datum/interaction/machine_item/camera_bash
+	id = "camera_bash"
+	name = "Attack"
+	category = INTERACTION_CAT_ATTACK
+	tags = list(INTERACTION_TAG_HOSTILE)
+	held_type = /obj/item
+	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/camera/proc/held_is_bashing, null))
+	effect = /obj/machinery/camera/proc/interaction_bash
+
+/// Old attack_hand (never called ..()): a human who can shred slashes the camera.
+/datum/interaction/machine_hand/ungated/camera_shred
+	id = "camera_shred"
+	name = "Slash"
+	category = INTERACTION_CAT_ATTACK
+	tags = list(INTERACTION_TAG_HOSTILE)
+	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/camera/proc/actor_can_shred, null))
+	effect = /obj/machinery/camera/proc/interaction_shred
+
+/obj/machinery/camera/proc/actor_can_shred(mob/actor, atom/target, obj/item/held)
+	if(!ishuman(actor))
+		return FALSE
+	var/mob/living/carbon/human/human_actor = actor
+	return human_actor.species.can_shred(human_actor, FALSE, 11)
+
+/obj/machinery/camera/proc/interaction_shred(mob/user, obj/item/held, datum/interaction/interaction)
+	set_status(0)
+	user.do_attack_animation(src)
+	user.setClickCooldown(user.get_attack_speed())
+	visible_message(span_warning("\The [user] slashes at [src]!"))
+	playsound(src, 'sound/weapons/slash.ogg', 100, 1)
+	add_hiddenprint(user)
+	deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
+	return TRUE
 
 /obj/machinery/camera/attack_generic(mob/user as mob)
 	if(isanimal(user))
@@ -249,62 +313,63 @@
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/camera/attackby(obj/item/W as obj, mob/living/user as mob)
+/obj/machinery/camera/proc/interaction_show_paper(mob/user, obj/item/W, datum/interaction/interaction)
 	update_coverage()
-	// OTHER
-	if (can_use() && (istype(W, /obj/item/paper) || istype(W, /obj/item/pda)) && isliving(user))
-		var/mob/living/U = user
-		var/obj/item/paper/X = null
-		var/obj/item/pda/P = null
+	var/mob/living/U = user
+	var/obj/item/paper/X = null
+	var/obj/item/pda/P = null
 
-		var/itemname = ""
-		var/info = ""
-		if(istype(W, /obj/item/paper))
-			X = W
-			itemname = X.name
-			info = X.info
-		else
-			P = W
-			itemname = P.name
-			var/datum/data/pda/app/notekeeper/N = P.find_program(/datum/data/pda/app/notekeeper)
-			if(N)
-				info = N.notehtml
-		to_chat(U, "You hold \a [itemname] up to the camera ...")
-		for(var/mob/living/silicon/ai/O in GLOB.living_mob_list)
-			if(!O.client)
-				continue
-			if(U.name == "Unknown")
-				to_chat(O, span_infoplain(span_bold("[U]") + " holds \a [itemname] up to one of your cameras ..."))
-			else
-				to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
-
-			// structured TGUI AdminReport.
-			dq_admin_report_html(O, itemname, "<TT>[info]</TT>")
-
-	else if (istype(W, /obj/item/camera_bug))
-		if (!src.can_use())
-			to_chat(user, span_warning("Camera non-functional."))
-			return
-		if (src.bugged)
-			to_chat(user, span_notice("Camera bug removed."))
-			src.bugged = 0
-		else
-			to_chat(user, span_notice("Camera bugged."))
-			src.bugged = 1
-
-	else if(W.obj_damage_type()) //bashing cameras
-		user.setClickCooldown(user.get_attack_speed(W))
-		if (W.force >= src.toughness)
-			user.do_attack_animation(src)
-			visible_message(span_boldwarning("[src] has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with [W] by [user]!"))
-			if (istype(W, /obj/item)) //is it even possible to get into attackby() with non-items?
-				var/obj/item/I = W
-				if (I.hitsound)
-					playsound(src, I.hitsound, 50, 1, -1)
-		receive_weapon_hit(W, user, silent = FALSE)
-
+	var/itemname = ""
+	var/info = ""
+	if(istype(W, /obj/item/paper))
+		X = W
+		itemname = X.name
+		info = X.info
 	else
-		..()
+		P = W
+		itemname = P.name
+		var/datum/data/pda/app/notekeeper/N = P.find_program(/datum/data/pda/app/notekeeper)
+		if(N)
+			info = N.notehtml
+	to_chat(U, "You hold \a [itemname] up to the camera ...")
+	for(var/mob/living/silicon/ai/O in GLOB.living_mob_list)
+		if(!O.client)
+			continue
+		if(U.name == "Unknown")
+			to_chat(O, span_infoplain(span_bold("[U]") + " holds \a [itemname] up to one of your cameras ..."))
+		else
+			to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
+
+		// structured TGUI AdminReport.
+		dq_admin_report_html(O, itemname, "<TT>[info]</TT>")
+	return TRUE
+
+/obj/machinery/camera/proc/paper_show_meant(mob/actor, atom/target, obj/item/held)
+	return can_use() && isliving(actor)
+
+/obj/machinery/camera/proc/interaction_toggle_bug(mob/user, obj/item/held, datum/interaction/interaction)
+	update_coverage()
+	if(src.bugged)
+		to_chat(user, span_notice("Camera bug removed."))
+		src.bugged = 0
+	else
+		to_chat(user, span_notice("Camera bugged."))
+		src.bugged = 1
+	return TRUE
+
+/obj/machinery/camera/proc/interaction_bash(mob/user, obj/item/W, datum/interaction/interaction)
+	update_coverage()
+	user.setClickCooldown(user.get_attack_speed(W))
+	if (W.force >= src.toughness)
+		user.do_attack_animation(src)
+		visible_message(span_boldwarning("[src] has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with [W] by [user]!"))
+		if (W.hitsound)
+			playsound(src, W.hitsound, 50, 1, -1)
+	receive_weapon_hit(W, user, silent = FALSE)
+	return TRUE
+
+/obj/machinery/camera/proc/held_is_bashing(mob/actor, atom/target, obj/item/held)
+	return held?.obj_damage_type()
 
 /obj/machinery/camera/proc/deactivate(user as mob, choice = 1)
 	// The only way for AI to reactivate cameras are malf abilities, this gives them different messages.

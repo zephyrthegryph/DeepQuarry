@@ -64,11 +64,23 @@
 /obj/machinery/embedded_controller
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/embedded_controller/attack_hand(mob/user as mob)
-	if(!user.IsAdvancedToolUser())
-		return 0
+/obj/machinery/embedded_controller/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/embedded_controller_open_ui,
+	)
+	..()
 
+/datum/interaction/machine_hand/ungated/embedded_controller_open_ui
+	id = "embedded_controller_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/embedded_controller/proc/interaction_open_ui
+
+/obj/machinery/embedded_controller/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.IsAdvancedToolUser())
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/embedded_controller/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
