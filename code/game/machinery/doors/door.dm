@@ -130,14 +130,10 @@
 /obj/machinery/door/proc/can_open()
 	if(!density || operating || !SSticker)
 		return FALSE
-	if(SEND_SIGNAL(src, COMSIG_DOOR_CAN_OPEN) & DOOR_DENY_OPEN)
-		return FALSE
 	return TRUE
 
 /obj/machinery/door/proc/can_close()
 	if(density || operating || !SSticker)
-		return FALSE
-	if(SEND_SIGNAL(src, COMSIG_DOOR_CAN_CLOSE) & DOOR_DENY_CLOSE)
 		return FALSE
 	return TRUE
 
@@ -218,8 +214,6 @@
 	// they didn't open the door they were tumbling through. LINDA has no airflow
 	// pulses, so the guard is unconditionally pass-through.
 	// if(user.last_airflow > world.time - GLOB.vsc.airflow_delay) return
-	if(SEND_SIGNAL(user, COMSIG_MOB_BUMPED_DOOR_OPEN, src) & DOOR_STOP_BUMP)
-		return
 	add_fingerprint(user)
 	if(density)
 		if(allowed(user))
@@ -487,7 +481,6 @@
 		return
 	operating = 1
 
-	SEND_SIGNAL(src, COMSIG_DOOR_OPEN, forced)
 	SSai?.publish_navigation_change()
 
 	do_animate("opening")
@@ -547,7 +540,6 @@
 	clear_autoclose_blockers()
 	operating = 1
 
-	SEND_SIGNAL(src, COMSIG_DOOR_CLOSE, forced)
 	SSai?.publish_navigation_change()
 
 	close_door_at = 0

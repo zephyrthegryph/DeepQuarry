@@ -11,8 +11,6 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	// Check if they've hooked in to prevent src from alt clicking anything
-	if(SEND_SIGNAL(src, COMSIG_MOB_ALTCLICKON, target) & COMSIG_MOB_CANCEL_CLICKON)
-		return TRUE
 
 	// If it has a signal handler that returns a click action, done.
 	if(SEND_SIGNAL(target, COMSIG_CLICK_ALT, src) & CLICK_ACTION_ANY)
@@ -105,12 +103,8 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	//Hook on the mob to intercept the click
-	if(SEND_SIGNAL(src, COMSIG_MOB_ALTCLICKON_SECONDARY, target) & COMSIG_MOB_CANCEL_CLICKON)
-		return
 
 	//Hook on the atom to intercept the click
-	if(SEND_SIGNAL(target, COMSIG_CLICK_ALT_SECONDARY, src) & COMPONENT_CANCEL_CLICK_ALT_SECONDARY)
-		return
 
 	// If it has a custom click_alt_secondary then do that
 	target.click_alt_secondary(src)

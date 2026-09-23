@@ -421,9 +421,7 @@ fn closed_component_mixtures(
 	coalesce_overlapping_mixture_components(closed)
 }
 
-fn coalesce_overlapping_mixture_components(
-	components: Vec<Vec<usize>>,
-) -> Vec<Vec<usize>> {
+fn coalesce_overlapping_mixture_components(components: Vec<Vec<usize>>) -> Vec<Vec<usize>> {
 	fn root(parents: &mut [usize], mut index: usize) -> usize {
 		while parents[index] != index {
 			parents[index] = parents[parents[index]];

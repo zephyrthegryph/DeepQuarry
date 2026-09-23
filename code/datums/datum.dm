@@ -86,7 +86,6 @@
  */
 /datum/Topic(href, href_list[])
 	..()
-	SEND_SIGNAL(src, COMSIG_TOPIC, usr, href_list)
 
 /**
  * Default implementation of clean-up code.
@@ -194,7 +193,6 @@
 /proc/end_cooldown(datum/source, index)
 	if(QDELETED(source))
 		return
-	SEND_SIGNAL(source, COMSIG_CD_STOP(index))
 	TIMER_COOLDOWN_END(source, index)
 
 /**
@@ -209,7 +207,6 @@
 /proc/reset_cooldown(datum/source, index)
 	if(QDELETED(source))
 		return
-	SEND_SIGNAL(source, COMSIG_CD_RESET(index), S_TIMER_COOLDOWN_TIMELEFT(source, index))
 	TIMER_COOLDOWN_END(source, index)
 
 /** Add a filter to the datum.

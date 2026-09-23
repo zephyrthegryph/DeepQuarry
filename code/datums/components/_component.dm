@@ -80,7 +80,6 @@
 		return ..()
 	if(!force)
 		_RemoveFromParent()
-	SEND_SIGNAL(parent, COMSIG_COMPONENT_REMOVING, src)
 	parent = null
 	return ..()
 
@@ -405,7 +404,6 @@
 		new_component = new component_type(raw_args, manual) // Dupes are allowed, act like normal
 
 	if(!old_component && !QDELETED(new_component)) // Nothing related to duplicate components happened and the new component is healthy
-		SEND_SIGNAL(src, COMSIG_COMPONENT_ADDED, new_component, manual)
 		return new_component
 
 	return old_component
@@ -445,7 +443,6 @@
 	PreTransfer()
 	_RemoveFromParent()
 	parent = null
-	SEND_SIGNAL(old_parent, COMSIG_COMPONENT_REMOVING, src)
 
 /**
  * Transfer this component to another parent

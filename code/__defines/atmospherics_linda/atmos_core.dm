@@ -121,8 +121,6 @@
 //Should not exceed 0.4 else strange heat flow occur
 #define WALL_HEAT_TRANSFER_COEFFICIENT 0.0
 #define OPEN_HEAT_TRANSFER_COEFFICIENT 0.4
-/// a hack for now
-#define WINDOW_HEAT_TRANSFER_COEFFICIENT 0.1
 /// Wall material conductance (W/K for a 2.5 m^2, 0.25 m slab) that maps to a
 /// transfer coefficient of 1. The best conductors (~100 W/mK, 1000 W/K) reach the
 /// 0.25 cap and steel (11 W/mK) lands near 0.03, just under a floor tile.

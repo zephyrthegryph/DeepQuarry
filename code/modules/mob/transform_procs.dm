@@ -192,7 +192,6 @@
 		O.fuzzy = B.read_preference(/datum/preference/toggle/human/fuzzy)
 		O.custom_speech_bubble = B.read_preference(/datum/preference/text/human/custom_speech_bubble)
 
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_BORGIFY, O)
 
 	spawn(0)	// Mobs still instantly del themselves, thus we need to spawn or O will never be returned
 		qdel(src)

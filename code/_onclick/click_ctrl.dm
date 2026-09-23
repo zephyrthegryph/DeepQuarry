@@ -13,12 +13,8 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	// Check if they've hooked in to prevent src from ctrl clicking anything
-	if(SEND_SIGNAL(src, COMSIG_MOB_CTRL_CLICKED, target) & COMSIG_MOB_CANCEL_CLICKON)
-		return TRUE
 
 	// If it has a signal handler that returns a click action, done.
-	if(SEND_SIGNAL(target, COMSIG_CLICK_CTRL, src) & CLICK_ACTION_ANY)
-		return TRUE
 
 	// If it has a custom click_alt that returns success/block, done.
 	return target.click_ctrl(src) & CLICK_ACTION_ANY
@@ -87,12 +83,8 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	// Check if they've hooked in to prevent src from ctrl clicking anything
-	if(SEND_SIGNAL(src, COMSIG_MOB_CTRL_SHIFT_CLICKED, target) & COMSIG_MOB_CANCEL_CLICKON)
-		return
 
 	// If it has a signal handler that returns a click action, done.
-	if(SEND_SIGNAL(target, COMSIG_CLICK_CTRL_SHIFT, src) & CLICK_ACTION_ANY)
-		return
 
 	target.click_ctrl_shift(src)
 	/* //NYI

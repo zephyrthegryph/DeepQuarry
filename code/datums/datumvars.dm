@@ -52,8 +52,6 @@
 /datum/proc/vv_do_topic(list/href_list)
 	if(!usr || !usr.client || !usr.client.holder || !check_rights(R_VAREDIT))
 		return FALSE //This is VV, not to be called by anything else.
-	if(SEND_SIGNAL(src, COMSIG_VV_TOPIC, usr, href_list) & COMPONENT_VV_HANDLED)
-		return FALSE
 	//if(href_list[VV_HK_MODIFY_TRAITS])
 	//	usr.client.holder.modify_traits(src)
 	return TRUE

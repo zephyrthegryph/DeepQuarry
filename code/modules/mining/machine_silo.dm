@@ -56,7 +56,6 @@
 
 	silo_log(context, "deposited", amount_inserted, item_inserted.name, mats_consumed)
 
-	SEND_SIGNAL(context, COMSIG_SILO_ITEM_CONSUMED, container, item_inserted, last_inserted_id, mats_consumed, amount_inserted)
 
 /obj/machinery/ore_silo/proc/log_sheets_ejected(datum/component/material_container/container, obj/item/stack/material/sheets, atom/context)
 	SIGNAL_HANDLER

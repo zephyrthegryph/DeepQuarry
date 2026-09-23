@@ -16,11 +16,11 @@ use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use std::collections::VecDeque;
 use std::hash::{Hash, Hasher};
 use std::time::Duration;
-use vg_core::grid::{Face, GridDims};
 use std::{
 	mem::drop,
 	sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering},
 };
+use vg_core::grid::{Face, GridDims};
 
 bitflags! {
 	#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -1643,7 +1643,10 @@ mod tests {
 		assert_eq!(collect(3), vec![0, 4]);
 		// Top-right corner: no north neighbour (was 8, on the next z-level).
 		assert_eq!(collect(5), vec![2, 4]);
-		assert_eq!(adjacent_tile_ids(Directions::ALL_CARDINALS, 0, 0, 2).count(), 0);
+		assert_eq!(
+			adjacent_tile_ids(Directions::ALL_CARDINALS, 0, 0, 2).count(),
+			0
+		);
 	}
 
 	fn empty_arena() -> TurfGases {

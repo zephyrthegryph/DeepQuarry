@@ -75,7 +75,6 @@ I said no!
 	if(!D.warm)
 		warm_up(D)
 	results.Add(D)
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_FOOD_PREPARED, container, results)
 	return results
 
 /datum/recipe/muffin

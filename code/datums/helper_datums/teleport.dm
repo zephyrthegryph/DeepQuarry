@@ -74,10 +74,6 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 				teleatom.balloon_alert(teleatom, "something holds you back!")
 			return FALSE
 
-	if(SEND_SIGNAL(teleatom, COMSIG_MOVABLE_TELEPORTING, destination, channel))
-		return FALSE
-	if(SEND_SIGNAL(destturf, COMSIG_ATOM_INTERCEPT_TELEPORT, channel, curturf))
-		return FALSE
 
 	if(isobserver(teleatom))
 		teleatom.forceMove(destturf)
@@ -97,7 +93,6 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 
 	. = TRUE
 
-	SEND_SIGNAL(teleatom, COMSIG_MOVABLE_POST_TELEPORT, destination, channel)
 
 	if(teleatom.has_buckled_mobs())
 		for(var/mob/living/rider in teleatom.buckled_mobs)

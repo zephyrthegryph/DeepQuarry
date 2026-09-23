@@ -362,9 +362,6 @@ GLOBAL_LIST_EMPTY(cached_maps)
 	// 		//we do this after we load everything in. if we don't, we'll have weird atmos bugs regarding atmos adjacent turfs
 	// 		T.AfterChange(CHANGETURF_IGNORE_AIR)
 
-	if(expanded_x || expanded_y)
-		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_EXPANDED_WORLD_BOUNDS, expanded_x, expanded_y)
-
 	#ifdef TESTING
 	if(turfsSkipped)
 		testing("Skipped loading [turfsSkipped] default turfs")

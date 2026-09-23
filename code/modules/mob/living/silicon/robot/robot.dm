@@ -1326,7 +1326,6 @@
 		var/eyes_overlay = sprite_datum.get_eye_light_overlay(src)
 		if(eyes_overlay)
 			add_overlay(eyes_overlay)
-	SEND_SIGNAL(src, COMSIG_ROBOT_UPDATE_OVERLAYS)
 
 /// Fullness a belly class shows. Components (the sleeper belly) may adjust it.
 /mob/living/silicon/robot/proc/belly_display_fullness(belly_class)
@@ -1568,7 +1567,6 @@
 		new_ai.connected_robots |= src
 		RegisterSignal(new_ai, COMSIG_SILICON_LAWS_CHANGED, PROC_REF(on_master_laws_changed))
 		RegisterSignal(new_ai, COMSIG_QDELETING, PROC_REF(on_master_deleted))
-	SEND_SIGNAL(src, COMSIG_ROBOT_MASTER_AI_CHANGED, old_ai, new_ai)
 	log_runtime("ROBOT_LINK: [key_name(src)] master AI [old_ai ? key_name(old_ai) : "none"] -> [new_ai ? key_name(new_ai) : "none"].")
 	return TRUE
 

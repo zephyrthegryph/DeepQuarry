@@ -94,7 +94,6 @@ SUBSYSTEM_DEF(ticker)
 			for(var/channel_tag in CONFIG_GET(str_list/channel_announce_new_game))
 				send2chat(new /datum/tgs_message_content("New round starting on [using_map.full_name] ([using_map.name])!"), channel_tag)
 			current_state = GAME_STATE_PREGAME
-			SEND_SIGNAL(src, COMSIG_TICKER_ENTER_PREGAME)
 
 			fire()
 		if(GAME_STATE_PREGAME)
@@ -123,7 +122,6 @@ SUBSYSTEM_DEF(ticker)
 				timeLeft -= wait
 
 			if(timeLeft <= 0)
-				SEND_SIGNAL(src, COMSIG_TICKER_ENTER_SETTING_UP)
 				current_state = GAME_STATE_SETTING_UP
 				Master.SetRunLevel(RUNLEVEL_SETUP)
 				if(start_immediately)
@@ -136,7 +134,6 @@ SUBSYSTEM_DEF(ticker)
 				start_at = world.time + (CONFIG_GET(number/lobby_countdown) * 10)
 				timeLeft = null
 				Master.SetRunLevel(RUNLEVEL_LOBBY)
-				SEND_SIGNAL(src, COMSIG_TICKER_ERROR_SETTING_UP)
 
 		if(GAME_STATE_PLAYING)
 			mode.process() // So THIS is where we run mode.process() huh? Okay
@@ -203,8 +200,6 @@ SUBSYSTEM_DEF(ticker)
 	//otherwise round_start_time would be 0 for the signals
 	round_start_time = world.time
 	GLOB.round_start_time = REALTIMEOFDAY
-	SEND_SIGNAL(src, COMSIG_TICKER_ROUND_STARTING, world.time)
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_ROUND_START)
 
 	// Spawn randomized items
 	for(var/id, value in GLOB.multi_point_spawns)
@@ -336,7 +331,6 @@ SUBSYSTEM_DEF(ticker)
 	switch(end_game_state)
 		if(END_GAME_READY_TO_END)
 			callHook("roundend") // TODO, remove all hooks that use this in favor of global signal
-			SEND_GLOBAL_SIGNAL(COMSIG_GLOB_ROUND_END)
 
 			if (mode.station_was_nuked)
 				feedback_set_details("end_proper", "nuke")

@@ -213,7 +213,6 @@
 			W.loc = O//Should fix cybros run time erroring when blown up. It got deleted before, along with the frame.
 
 			feedback_inc("cyborg_birth",1)
-			SEND_GLOBAL_SIGNAL(COMSIG_GLOB_BORGIFY, O)
 
 			qdel(src)
 		else

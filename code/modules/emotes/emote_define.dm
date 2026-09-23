@@ -156,7 +156,6 @@
 
 	do_extra(user, target)
 	do_sound(user)
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_EMOTE_PERFORMED, user, extra_params)
 
 /datum/decl/emote/proc/replace_target_tokens(msg, atom/target)
 	. = msg

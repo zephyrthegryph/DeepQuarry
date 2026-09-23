@@ -17,7 +17,6 @@
 		message_admins("[key_name_admin(usr)] deleted [D] [jmp_coords]")
 		//BLACKBOX_LOG_ADMIN_VERB("Delete")
 		feedback_add_details("admin_verb","ADEL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-		SEND_SIGNAL(D, COMSIG_ADMIN_DELETING, src)
 		if(isturf(D))
 			var/turf/T = D
 			//T.ScrapeAway()

@@ -239,13 +239,9 @@
 //called to set the atom's dir and used to add behaviour to dir-changes
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
-	if(SEND_SIGNAL(src, COMSIG_ATOM_PRE_DIR_CHANGE, dir, new_dir) & COMPONENT_ATOM_BLOCK_DIR_CHANGE)
-		new_dir = dir
-		return
 	SEND_SIGNAL(src, COMSIG_ATOM_DIR_CHANGE, dir, new_dir)
 	var/oldDir = dir
 	dir = new_dir
-	SEND_SIGNAL(src, COMSIG_ATOM_POST_DIR_CHANGE, oldDir, new_dir)
 
 // Called to set the atom's density and used to add behavior to density changes.
 /atom/proc/set_density(new_density)
@@ -481,8 +477,6 @@
 
 /atom/Exit(atom/movable/AM, atom/new_loc)
 	. = ..()
-	if(SEND_SIGNAL(src, COMSIG_ATOM_EXIT, AM, new_loc) & COMPONENT_ATOM_BLOCK_EXIT)
-		return FALSE
 
 /atom/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()

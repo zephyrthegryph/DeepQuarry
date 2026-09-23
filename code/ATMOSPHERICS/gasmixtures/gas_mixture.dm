@@ -227,7 +227,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	if(!giver)
 		return FALSE
 	. = call_ext(VERDIGRIS, "byond:merge_hook_ffi")(src, giver)
-	SEND_SIGNAL(src, COMSIG_GASMIX_MERGED)
 
 /// Atomically transfers a mole quantity between two authoritative arena
 /// mixtures. This avoids the temporary DM gas datum and the second FFI crossing
@@ -236,7 +235,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	if(!other || other == src || moles <= 0)
 		return FALSE
 	call_ext(VERDIGRIS, "byond:transfer_hook_ffi")(src, other, moles)
-	SEND_SIGNAL(other, COMSIG_GASMIX_MERGED)
 	return TRUE
 
 // Set the gas specie within the gas mix to a set amount, if there is none it will be created at the target temp
@@ -277,7 +275,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		return null
 	var/datum/gas_mixture/removed = new type(return_volume())
 	call_ext(VERDIGRIS, "byond:remove_hook_ffi")(src, removed, amount)
-	SEND_SIGNAL(src, COMSIG_GASMIX_REMOVED)
 	return removed
 
 ///Proportionally removes ratio of gas from the gas_mixture.
@@ -288,7 +285,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		return removed
 	ratio = min(ratio, 1)
 	call_ext(VERDIGRIS, "byond:remove_ratio_hook_ffi")(src, removed, ratio)
-	SEND_SIGNAL(src, COMSIG_GASMIX_REMOVED)
 	return removed
 
 ///Removes an amount of a specific gas from the gas_mixture.

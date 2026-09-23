@@ -259,7 +259,6 @@
 				inserted_battery.battery_effect = E
 				inserted_battery.stored_charge = 0
 
-			SEND_GLOBAL_SIGNAL(COMSIG_GLOB_HARVEST_ARTIFACT, inserted_battery, user)
 
 /obj/machinery/artifact_harvester/process()
 	if(harvesting == 0)

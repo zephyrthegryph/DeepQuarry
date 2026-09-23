@@ -48,7 +48,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	stored_mind.active = TRUE
 	transfer_mind(stored_mind, M, "sleevemate upload")
 	M.soulcatcher_pref_flags = soulcatcher_pref_flags
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_RESLEEVED_MIND, M, stored_mind)
 	clear_mind()
 
 

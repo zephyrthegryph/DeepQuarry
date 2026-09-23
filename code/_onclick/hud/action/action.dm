@@ -84,7 +84,6 @@
 			return
 		Remove(owner)
 
-	SEND_SIGNAL(src, COMSIG_ACTION_GRANTED, grant_to)
 	SEND_SIGNAL(grant_to, COMSIG_MOB_GRANTED_ACTION, src)
 	owner = grant_to
 	RegisterSignal(owner, COMSIG_QDELETING, PROC_REF(clear_ref), override = TRUE)
@@ -103,7 +102,6 @@
 	viewers = list()
 
 	if(owner)
-		SEND_SIGNAL(src, COMSIG_ACTION_REMOVED, owner)
 		SEND_SIGNAL(owner, COMSIG_MOB_REMOVED_ACTION, src)
 
 		UnregisterSignal(owner, COMSIG_QDELETING)
@@ -116,8 +114,6 @@
 /// Called when the on-screen button is clicked, for example.
 /datum/action/proc/Trigger(trigger_flags)
 	if(!IsAvailable())
-		return FALSE
-	if(SEND_SIGNAL(src, COMSIG_ACTION_TRIGGER, src) & COMPONENT_ACTION_BLOCK_TRIGGER)
 		return FALSE
 	return TRUE
 

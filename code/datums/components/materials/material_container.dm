@@ -297,8 +297,6 @@
 		if(target_item.abstract)
 			continue
 		// user defined conditions
-		if(SEND_SIGNAL(src, COMSIG_MATCONTAINER_PRE_USER_INSERT, target_item, user) & MATCONTAINER_BLOCK_INSERT)
-			continue
 		//item is either indestructible, not allowed for redemption or not in the allowed types
 		if(allowed_item_typecache && !is_type_in_typecache(target_item, allowed_item_typecache))
 			if(!(mat_container_flags & MATCONTAINER_SILENT))
@@ -515,9 +513,6 @@
 		return TRUE
 	if(istype(mat) && ((mat.name in allowed_materials) || (mat.type in allowed_materials)))
 		allowed_materials += mat // This could get messy with passing lists by ref... but if you're doing that the list expansion is probably being taken care of elsewhere anyway...
-		return TRUE
-	if(SEND_SIGNAL(src, COMSIG_MATCONTAINER_MAT_CHECK, mat) & MATCONTAINER_ALLOW_MAT)
-		allowed_materials += mat
 		return TRUE
 	return FALSE
 //========================================================================================

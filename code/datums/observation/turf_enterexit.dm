@@ -20,4 +20,3 @@
 
 /turf/Exited(atom/movable/am, atom/new_loc)
 	. = ..()
-	SEND_SIGNAL(src, COMSIG_OBSERVER_TURF_EXITED, WEAKREF(am), new_loc)

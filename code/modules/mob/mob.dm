@@ -921,20 +921,14 @@
 	return
 
 /mob/proc/Confuse(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_CONFUSE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
 	confused = max(max(confused,amount),0)
 	return
 
 /mob/proc/SetConfused(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_CONFUSE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
 	confused = max(amount,0)
 	return
 
 /mob/proc/AdjustConfused(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_CONFUSE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
 	confused = max(confused + amount,0)
 	return
 

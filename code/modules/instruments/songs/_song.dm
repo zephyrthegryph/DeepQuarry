@@ -212,7 +212,6 @@
 	//wrap the rest of the stuff to ensure stop_playing() is called.
 	do_hearcheck()
 	SEND_SIGNAL(parent, COMSIG_INSTRUMENT_START, src, user)
-	SEND_SIGNAL(user, COMSIG_ATOM_STARTING_INSTRUMENT, src)
 	elapsed_delay = 0
 	delay_by = 0
 	current_chord = 1
@@ -288,7 +287,6 @@
 		return
 	repeat--
 	current_chord = 1
-	SEND_SIGNAL(parent, COMSIG_INSTRUMENT_REPEAT, TRUE)
 
 /**
  * Converts a tempodiv to ticks to elapse before playing the next chord, taking into account our tempo.
@@ -336,8 +334,6 @@
  */
 /datum/song/proc/sanitize_tempo(new_tempo, initializing = FALSE)
 	new_tempo = abs(new_tempo)
-	if(!initializing) // not only is it not helpful while initializing but it will runtime really hard since nothing is set up
-		SEND_SIGNAL(parent, COMSIG_INSTRUMENT_TEMPO_CHANGE, src)
 	return clamp(round(new_tempo, world.tick_lag), world.tick_lag, 5 SECONDS)
 
 /**

@@ -68,7 +68,6 @@
 
 // This doesn't apply to skin contact - this is for, e.g. extinguishers and sprays. The difference is that reagent is not directly on the mob's skin - it might just be on their clothing.
 /datum/reagent/proc/touch_mob(mob/M, amount)
-	SEND_SIGNAL(M, COMSIG_REAGENT_EXPOSE_MOB, src, amount)
 	return
 
 /datum/reagent/proc/touch_obj(obj/O, amount) // Acid melting, cleaner cleaning, etc
@@ -76,7 +75,6 @@
 	return
 
 /datum/reagent/proc/touch_turf(turf/T, amount) // Cleaner cleaning, lube lubbing, etc, all go here
-	SEND_SIGNAL(T, COMSIG_REAGENT_EXPOSE_TURF, src, amount)
 	return
 
 /datum/reagent/proc/on_mob_life(mob/living/carbon/M, alien, datum/reagents/metabolism/location) // Currently, on_mob_life is called on carbons. Any interaction with non-carbon mobs (lube) will need to be done in touch_mob.

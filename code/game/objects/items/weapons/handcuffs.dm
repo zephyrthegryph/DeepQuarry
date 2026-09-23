@@ -64,9 +64,6 @@
 	return 0
 
 /obj/item/handcuffs/proc/attempt_to_cuff(mob/living/carbon/victim, mob/user)
-	if(SEND_SIGNAL(victim, COMSIG_CARBON_CUFF_ATTEMPTED, user) & COMSIG_CARBON_CUFF_PREVENT)
-		victim.balloon_alert(user, "can't be handcuffed!")
-		return
 	playsound(src, cuff_sound, 30, 1, -2)
 
 	var/mob/living/carbon/human/human_victim = victim

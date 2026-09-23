@@ -200,7 +200,6 @@
 			if(funds > 0)
 				transfer_account_funds(detailed_account_view, GLOB.station_account, funds, "Revoke payroll", machine_id)
 
-			SEND_GLOBAL_SIGNAL(COMSIG_GLOB_PAYMENT_ACCOUNT_REVOKE, detailed_account_view)
 
 		if("print")
 			print()

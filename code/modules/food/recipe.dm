@@ -269,9 +269,6 @@
 			result_obj.reagents.trans_to(holder, result_obj.reagents.total_volume)
 		tally++
 
-	if(results.len)
-		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_FOOD_PREPARED, container, results)
-
 	switch(reagent_mix)
 		if (RECIPE_REAGENT_REPLACE)
 			pass() //We do no transferring

@@ -270,7 +270,6 @@
 		moblight = new moblight_type(owner)
 
 	cache_stacks()
-	SEND_SIGNAL(owner, COMSIG_LIVING_IGNITED, owner)
 	return TRUE
 
 /**
@@ -282,7 +281,6 @@
 	QDEL_NULL(moblight)
 	on_fire = FALSE
 	// owner.clear_mood_event("on_fire")
-	SEND_SIGNAL(owner, COMSIG_LIVING_EXTINGUISHED, owner)
 	cache_stacks()
 	for(var/obj/item/equipped in (owner.get_equipped_items()))
 		equipped.extinguish()

@@ -347,7 +347,6 @@
 					var/A = min(RG.volume, amt)
 					RC.reagents.remove_reagent(id, A)
 					amt -= A
-					SEND_SIGNAL(RC.reagents, COMSIG_REAGENTS_CRAFTING_PING)
 
 		// Material stacks may have to accumulate across multiple stacks
 		else if(ispath(path_key, /obj/item/stack))

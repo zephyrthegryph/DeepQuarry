@@ -85,6 +85,5 @@
 
 	point_at(pointing_at)
 
-	SEND_SIGNAL(src, COMSIG_MOVABLE_POINTED, pointing_at)
 	face_atom(pointing_at)
 	return TRUE

@@ -537,7 +537,6 @@ SUBSYSTEM_DEF(supply)
 				// Usually it just makes a log that it wasn't shipped properly, and so isn't worth anything
 				if(SEND_SIGNAL(MA,COMSIG_ITEM_EXPORTED,EC,FALSE))
 					things_sold_successfully += MA
-			SEND_GLOBAL_SIGNAL(COMSIG_GLOB_SUPPLY_SHUTTLE_SELL_ITEM, MA, things_sold_successfully, EC, subarea)
 
 			exported_crates += EC
 			distribute_export_revenue(EC)

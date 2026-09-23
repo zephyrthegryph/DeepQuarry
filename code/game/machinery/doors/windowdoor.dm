@@ -155,7 +155,6 @@
 // atom_destruction (which calls set_broken()). Fire the destruction signal here.
 /obj/machinery/door/window/atom_destruction(damage_flag)
 	SHOULD_CALL_PARENT(FALSE)
-	SEND_SIGNAL(src, COMSIG_ATOM_DESTRUCTION, damage_flag)
 	shatter()
 
 /obj/machinery/door/window/attack_ai(mob/user as mob)

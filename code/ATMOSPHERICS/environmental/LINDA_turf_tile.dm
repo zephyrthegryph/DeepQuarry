@@ -316,7 +316,6 @@
 			if (!moving_atom.anchored && !moving_atom.pulledby)
 				moving_atom.experience_pressure_difference(pressure_difference, pressure_direction)
 			else
-				SEND_SIGNAL(moving_atom, COMSIG_MOVABLE_RESISTED_SPACEWIND, pressure_difference, pressure_direction)
 
 /atom/movable
 	///How much delta pressure is needed for us to move
@@ -325,8 +324,6 @@
 
 /atom/movable/proc/experience_pressure_difference(pressure_difference, direction, pressure_resistance_prob_delta = 0)
 	set waitfor = FALSE
-	if(SEND_SIGNAL(src, COMSIG_ATOM_PRE_PRESSURE_PUSH) & COMSIG_ATOM_BLOCKS_PRESSURE)
-		return
 	var/const/PROBABILITY_OFFSET = 25
 	var/const/PROBABILITY_BASE_PRECENT = 75
 	var/max_force = sqrt(pressure_difference) * (MOVE_FORCE_DEFAULT / 5)

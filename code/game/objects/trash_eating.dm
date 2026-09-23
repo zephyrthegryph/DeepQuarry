@@ -24,7 +24,6 @@
 /// Override this for post-swallow messages. Returns true if components on mob or item allow trash eating messages
 /obj/proc/after_trash_eaten(mob/living/user)
 	SHOULD_CALL_PARENT(TRUE)
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_ITEM_TRASH_EATEN, src, user)
 	var/signal_results = SEND_SIGNAL(src, COMSIG_ITEM_AFTER_TRASH_EAT, user) | SEND_SIGNAL(user, COMSIG_MOB_AFTER_TRASH_EATING, src)
 	if(signal_results & COMSIG_ITEM_AFTER_TRASH_EAT_HIDE_MESSAGE)
 		return FALSE // Deny messages

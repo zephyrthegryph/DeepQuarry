@@ -936,28 +936,6 @@ SUBSYSTEM_DEF(machines)
 			machine_wake_reason_counts["[M.type]|[reason]"]++
 		START_MACHINE_PROCESSING(M)
 
-/// Diagnostic-only invariant audit; gameplay never relies on this to wake objects.
-/datum/controller/subsystem/machines/proc/audit_reactive_sleepers(fail_hard = FALSE)
-	var/list/problems = list()
-	for(var/subscriber_key in reactive_sleepers)
-		var/list/captured = reactive_sleepers[subscriber_key]
-		var/datum/weakref/WR
-		for(var/resource_key in captured)
-			var/list/subscribers = reactive_subscribers[resource_key]
-			WR ||= subscribers?[subscriber_key]
-			if(!subscribers?[subscriber_key])
-				problems += "[subscriber_key] missing subscription to [resource_key]"
-			if(captured[resource_key] != (reactive_revisions[resource_key] || 0))
-				problems += "[subscriber_key] stale on [resource_key]"
-		var/obj/machinery/M = WR?.resolve()
-		if(!M)
-			problems += "dead reactive subscriber [subscriber_key]"
-		else if(M in processing_machines)
-			problems += "[M] is both sleeping and processing"
-	if(length(problems) && fail_hard)
-		CRASH("Reactive dependency audit failed: [problems.Join("; ")]")
-	return problems
-
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
@@ -1334,30 +1312,6 @@ SUBSYSTEM_DEF(machines)
 		sleeping_gas_devices.Remove(WR.reference)
 		hibernating_vents[WR.reference] = null
 		hibernating_vents.Remove(WR.reference)
-
-/// Diagnostic-only invariant audit. This never wakes devices or participates in gameplay.
-/datum/controller/subsystem/machines/proc/audit_sleeping_gas_subscribers(fail_hard = FALSE)
-	var/list/problems = list()
-	for(var/key in sleeping_gas_devices)
-		var/datum/weakref/WR = sleeping_gas_devices[key]
-		var/atom/device = WR?.resolve()
-		if(!device)
-			problems += "dead subscriber [key]"
-			continue
-		if(istype(device, /obj/machinery/atmospherics/unary/vent_pump))
-			var/obj/machinery/atmospherics/unary/vent_pump/V = device
-			if(V.can_pump() && V.get_pressure_delta(V.return_air()) > 0.5)
-				problems += "[V] sleeps with actionable pressure delta"
-		else if(istype(device, /obj/machinery/alarm))
-			var/obj/machinery/alarm/A = device
-			if(A.regulating_temperature)
-				problems += "[A] sleeps while regulating temperature"
-	if(length(problems))
-		var/message = "Gas dependency audit failed: [problems.Join("; ")]"
-		if(fail_hard)
-			CRASH(message)
-		log_world(message)
-	return problems
 
 #undef SSMACHINES_MACHINERY
 #undef SSMACHINES_POWERNETS

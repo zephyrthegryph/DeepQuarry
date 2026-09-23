@@ -108,7 +108,6 @@
  */
 /datum/proc/tgui_fallback(list/payload, mob/user)
 	SHOULD_CALL_PARENT(TRUE)
-	SEND_SIGNAL(src, COMSIG_UI_FALLBACK, usr)
 
 /**
  * public

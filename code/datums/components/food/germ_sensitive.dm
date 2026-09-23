@@ -77,14 +77,12 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 	// Is parent on simulated valid turf that is safe? Or held/in a pocket/in a closet/etc?
 	if(!istype(open_turf) || islava(open_turf) || ismineralturf(open_turf) || !parent_object.get_gravity())
 		remove_timer()
-		SEND_SIGNAL(parent, COMSIG_ATOM_GERM_UNEXPOSED, src)
 		return
 
 	// Is parent on an elevated structure?
 	for(var/atom/movable/content as anything in open_turf.contents)
 		if(GLOB.typecache_elevated_structures[content.type])
 			remove_timer()
-			SEND_SIGNAL(parent, COMSIG_ATOM_GERM_UNEXPOSED, src)
 			return
 
 	// Exposed to bacteria, start countdown until becoming infected
@@ -92,7 +90,6 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 
 /datum/component/germ_sensitive/proc/picked_up()
 	SIGNAL_HANDLER
-	SEND_SIGNAL(parent, COMSIG_ATOM_GERM_UNEXPOSED, src)
 	remove_timer()
 
 /datum/component/germ_sensitive/proc/dropped()
@@ -106,7 +103,6 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 
 /datum/component/germ_sensitive/proc/expose_to_germs()
 
-	SEND_SIGNAL(parent, COMSIG_ATOM_GERM_EXPOSED, src)
 
 	if(infective)
 		return

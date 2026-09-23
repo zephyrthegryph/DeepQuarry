@@ -303,8 +303,6 @@
 /atom/movable/Cross(atom/movable/AM)
 	if(SEND_SIGNAL(src, COMSIG_MOVABLE_CROSS, AM) & COMPONENT_BLOCK_CROSS)
 		return FALSE
-	if(SEND_SIGNAL(AM, COMSIG_MOVABLE_CROSS_OVER, src) & COMPONENT_BLOCK_CROSS)
-		return FALSE
 	return CanPass(AM, loc)
 
 /atom/movable/CanPass(atom/movable/mover, turf/target)
@@ -423,7 +421,6 @@
 		return TRUE
 
 /atom/movable/proc/onTransitZ(old_z,new_z)
-	SEND_SIGNAL(src, COMSIG_OBSERVER_Z_MOVED, old_z, new_z)
 	SEND_SIGNAL(src, COMSIG_MOVABLE_Z_CHANGED, old_z, new_z)
 	for(var/atom/movable/AM as anything in src) // Notify contents of Z-transition. This can be overridden IF we know the items contents do not care.
 		AM.onTransitZ(old_z,new_z)

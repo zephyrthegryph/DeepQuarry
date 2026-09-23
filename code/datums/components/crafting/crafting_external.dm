@@ -11,7 +11,6 @@
  * Otherwise it simply forceMoves the atom into this atom
  */
 /atom/proc/CheckParts(list/parts_list, datum/crafting_recipe/R)
-	SEND_SIGNAL(src, COMSIG_ATOM_CHECKPARTS, parts_list, R)
 	if(LAZYLEN(parts_list))
 		if(istype(parts_list["reagents"], /datum/reagents))
 			var/datum/reagents/RG = parts_list["reagents"]

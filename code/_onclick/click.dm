@@ -281,7 +281,6 @@
 	return
 
 /atom/proc/ShiftClick(mob/user)
-	SEND_SIGNAL(src, COMSIG_SHIFT_CLICKED_ON, user)
 	var/shiftclick_flags = SEND_SIGNAL(user, COMSIG_CLICK_SHIFT, src)
 	if(shiftclick_flags & COMSIG_MOB_CANCEL_CLICKON)
 		return
@@ -385,7 +384,6 @@
 
 /// MouseWheelOn
 /mob/proc/MouseWheelOn(atom/A, delta_x, delta_y, params)
-	SEND_SIGNAL(src, COMSIG_MOUSE_SCROLL_ON, A, delta_x, delta_y, params)
 
 /mob/proc/check_click_intercept(params,A)
 	//Client level intercept

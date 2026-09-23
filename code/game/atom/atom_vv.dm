@@ -64,7 +64,6 @@
 				if(isnull(angle))
 					return
 				transform = M.Turn(angle)
-		SEND_SIGNAL(src, COMSIG_ATOM_VV_MODIFY_TRANSFORM)
 
 	if(href_list[VV_HK_SPIN_ANIMATION])
 		if(!check_rights(R_VAREDIT))

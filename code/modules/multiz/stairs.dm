@@ -195,7 +195,6 @@
 				var/mob/living/L = P
 				if(L.client)
 					L.client.Process_Grab() // Update any miscellanous grabs, possibly break grab-chains
-		SEND_SIGNAL(AM, COMSIG_MOVED_UP_STAIRS, AM, oldloc)
 	return TRUE
 
 /obj/structure/stairs/bottom/use_stairs_instant(atom/movable/AM)
@@ -233,7 +232,6 @@
 			L.client.Process_Grab()
 	else
 		AM.forceMove(get_turf(top))
-	SEND_SIGNAL(AM, COMSIG_MOVED_UP_STAIRS, AM)
 
 
 //////////////////////////////////////////////////////////////////////

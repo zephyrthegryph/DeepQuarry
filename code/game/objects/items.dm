@@ -458,7 +458,6 @@
 
 	if(!equipping) //We ONLY send these signals when we ACTUALLY drop the item. Because our item code is stupid, swapping items between your hand is 'dropping' them.
 		SEND_SIGNAL(src, COMSIG_ITEM_DROPPED, user)
-		SEND_SIGNAL(user, COMSIG_MOB_DROPPED_ITEM, src)
 		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
 			qdel(src)
 

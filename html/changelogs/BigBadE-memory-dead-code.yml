@@ -1,0 +1,8 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "Construction material lists, camera network lists, scrubber gas lists and air alarm threshold tables are now shared between identical objects and copied only when changed."
+  - code_imp: "Wires, air alarm area lists, firedoors, holopads, vore organs and SMES terminals now allocate their lists only when needed."
+  - bugfix: "Changing one machine's wire colours no longer changes them for every machine of that type."
+  - bugfix: "Hacked autolathes, protolathes and circuit imprinters now start with their hack wire cut."
+  - rscdel: "Removed the unused DM room solver, dead turf heat-exposure and melting procs, and uncalled machine audit procs."
