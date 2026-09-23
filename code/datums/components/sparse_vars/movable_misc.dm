@@ -95,7 +95,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return 0
 /proc/dq_set_belly_cycles(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.belly_cycles = v
 
 /proc/dq_get_orbit_target(atom/movable/am)
@@ -103,7 +106,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return c?.orbit_target
 /proc/dq_set_orbit_target(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.orbit_target = v
 
 /proc/dq_get_orbiting(atom/movable/am)
@@ -111,7 +117,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return c?.orbiting
 /proc/dq_set_orbiting(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.orbiting = v
 
 // recursive_listeners is read+written using LAZY* macros. Helpers below match
@@ -121,7 +130,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return c?.recursive_listeners
 /proc/dq_set_recursive_listeners(atom/movable/am, list/v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.recursive_listeners = v
 /// LAZYOR equivalent.
 /proc/dq_recursive_listeners_or(atom/movable/am, item)
@@ -151,7 +163,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return 0
 /proc/dq_set_moved_recently(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.moved_recently = v
 
 /proc/dq_get_affected_dynamic_lights(atom/movable/am)
@@ -159,7 +174,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return c?.affected_dynamic_lights
 /proc/dq_set_affected_dynamic_lights(atom/movable/am, list/v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.affected_dynamic_lights = v
 /// LAZYSET-equivalent for affected_dynamic_lights (auto-create list if null).
 /proc/dq_affected_dynamic_lights_set(atom/movable/am, key, value)
@@ -182,7 +200,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return c?.cloaked_selfimage
 /proc/dq_set_cloaked_selfimage(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.cloaked_selfimage = v
 
 /proc/dq_get_cloaked(atom/movable/am)
@@ -191,7 +212,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return FALSE
 /proc/dq_set_cloaked(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.cloaked = v
 
 /proc/dq_get_parachute(atom/movable/am)
@@ -200,7 +224,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	return FALSE
 /proc/dq_set_parachute(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.parachute = v
 
 // Per-type-default resolver: walk the type hierarchy once per concrete
@@ -232,7 +259,10 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 
 /proc/dq_set_parachuting(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.parachuting = v
 
 /proc/dq_get_softfall(atom/movable/am)
@@ -242,7 +272,10 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 
 /proc/dq_set_softfall(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.softfall_set = TRUE
 	c.softfall_value = v
 
@@ -253,7 +286,10 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 
 /proc/dq_set_hovering(atom/movable/am, v)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
-	if(!c) c = am.AddComponent(/datum/component/movable_state)
+	if(!c)
+		if(isnull(v))
+			return
+		c = am.AddComponent(/datum/component/movable_state)
 	c.hovering_set = TRUE
 	c.hovering_value = v
 /// Clears the per-instance override so the type-default (GLOB lookup) re-applies.
