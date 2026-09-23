@@ -1026,7 +1026,16 @@ fn place_room_program(
             usize::try_from(layout.seed ^ stable_text_hash(zone.id)).unwrap_or_default() % 4;
         let mut selected = None;
         'candidate: for anchor in anchors {
-            for turn_offset in 0..4 {
+            // NOTE: every path out of this block either `continue 'candidate`
+            // (next anchor) or `break 'candidate` (done), so `turn_offset`
+            // never advances past 0 -- only `rotation_offset`'s own rotation
+            // is ever tried per anchor, not all 4. That's a pre-existing
+            // behavior quirk (see the verdigris rust-audit rust_core.md
+            // notes); written as a single pass here, without a loop, so it's
+            // honest about what actually runs instead of tripping
+            // clippy::never_loop over dead iteration.
+            {
+                let turn_offset = 0;
                 let turns = (rotation_offset + turn_offset) % 4;
                 let mut placements = Vec::with_capacity(zone.fixtures.len());
                 let mut local = BTreeSet::new();

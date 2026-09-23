@@ -527,8 +527,6 @@ pub fn generate_station_layout(request: &LayoutRequest) -> Result<StationLayout,
             let mut station = rasterize(&candidate, &logical)?;
             validate_station_structure(&station)?;
             validate_semantic_room_variety(&station, &candidate)?;
-            let public_ratio = public_circulation_quality(&station);
-            let public_congestion = public_congestion_quality(&station);
             let longest_public_run = longest_public_corridor_run(&station);
             if longest_public_run > 55 {
                 return Err(LayoutError(format!(
@@ -550,14 +548,6 @@ pub fn generate_station_layout(request: &LayoutRequest) -> Result<StationLayout,
                 return Err(LayoutError(format!(
                     "{tiny_rooms}/{} rooms were below the authored minimum-size mix",
                     station.rooms.len()
-                )));
-            }
-            // These are candidate-ranking metrics, not validity constraints.
-            // A structurally valid live seed must never fail because every
-            // deterministic candidate is wider than the preferred envelope.
-            if public_ratio > u32::MAX || public_congestion > u32::MAX {
-                return Err(LayoutError(format!(
-                    "public circulation exceeds the authored-map envelope ({public_ratio}‰ ratio, {public_congestion}‰ local congestion)"
                 )));
             }
             station.seed = public_seed;
@@ -606,39 +596,6 @@ fn longest_public_corridor_run(station: &StationLayout) -> usize {
         }
     }
     longest
-}
-
-fn public_circulation_quality(station: &StationLayout) -> u32 {
-    let room_tiles = station
-        .tiles
-        .iter()
-        .filter(|tile| tile.class == TileClass::Room)
-        .count()
-        .max(1);
-    let public_tiles = station
-        .tiles
-        .iter()
-        .filter(|tile| tile.class == TileClass::Public)
-        .count();
-    (public_tiles.saturating_mul(1000) / room_tiles) as u32
-}
-
-fn public_congestion_quality(station: &StationLayout) -> u32 {
-    const WINDOW: u16 = 12;
-    if station.width < WINDOW || station.height < WINDOW {
-        return 0;
-    }
-    let mut worst = 0usize;
-    for origin_y in 0..=station.height - WINDOW {
-        for origin_x in 0..=station.width - WINDOW {
-            let public = (origin_y..origin_y + WINDOW)
-                .flat_map(|y| (origin_x..origin_x + WINDOW).map(move |x| Point { x, y }))
-                .filter(|point| station.tile(*point).class == TileClass::Public)
-                .count();
-            worst = worst.max(public);
-        }
-    }
-    (worst.saturating_mul(1000) / usize::from(WINDOW).pow(2)) as u32
 }
 
 fn validate_semantic_room_variety(
@@ -3051,8 +3008,11 @@ fn grow_department_claims(
         if centers.iter().any(|center| component.contains(center)) {
             continue;
         }
-        for point in component {
-            claimable.remove(&point);
+        let representative = component.iter().next().copied();
+        for point in &component {
+            claimable.remove(point);
+        }
+        if let Some(point) = representative {
             return Err(LayoutError(format!(
                 "department region containing {point:?} has no center"
             )));

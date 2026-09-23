@@ -108,7 +108,6 @@ pub fn process_callbacks_for_millis(millis: u64) -> bool {
 ///     auxcallback::callback_processing_hook(remaining)
 /// }
 /// ```
-
 pub fn callback_processing_hook(time_remaining: ByondValue) -> Result<ByondValue> {
 	if time_remaining.is_num() {
 		// `is_num()` just checked this, but the byondapi call can still fail (e.g. a
