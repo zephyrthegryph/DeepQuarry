@@ -146,7 +146,7 @@ GLOBAL_LIST_EMPTY(blob_cores)
 		if(resource_delay <= world.time)
 			resource_delay = world.time + 1 SECOND
 			overmind.add_points(point_rate)
-	integrity = min(max_integrity, integrity + core_regen)
+	repair_damage(core_regen)
 //	if(overmind)
 //		overmind.update_health_hud()
 	pulse_area(overmind, 15, BLOB_CORE_PULSE_RANGE, BLOB_CORE_EXPAND_RANGE)

@@ -30,8 +30,8 @@
 
 /obj/machinery/button/remote/emag_act(remaining_charges, mob/user)
 	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
-		LAZYCLEARLIST(req_access)
-		LAZYCLEARLIST(req_one_access)
+		req_access = null
+		req_one_access = null
 		playsound(src, "sparks", 100, 1)
 		return 1
 

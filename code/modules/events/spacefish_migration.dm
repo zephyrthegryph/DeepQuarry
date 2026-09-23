@@ -8,7 +8,7 @@
 	var/fish_cap	= 10
 	var/list/spawned_fish = list()
 	// Possible fish types. First is the path, second is base cap, third is cap severity multiplier
-	var/list/possible_fish_types = list(
+	var/static/list/possible_fish_types = list(
 										list(/mob/living/simple_mob/animal/space/carp/event, 			2,	3),
 										list(/mob/living/simple_mob/vore/alienanimals/space_jellyfish,	2,	3),
 										list(/mob/living/simple_mob/animal/space/gnat,					8,	4),

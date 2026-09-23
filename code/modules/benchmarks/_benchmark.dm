@@ -217,6 +217,45 @@
 		top_counts["[path]"] = by_type[path]
 	return list("total" = total, "distinct_types" = length(by_type), "by_root" = by_root, "top_types" = top_counts)
 
+/// Counts the distinct lists held in instance vars, by owning type and var.
+/// Built-in lists (contents, overlays, verbs...) are skipped. A list shared by
+/// several instances counts once, against the first holder seen.
+/proc/benchmark_var_lists(top = 60)
+	var/static/list/skip = list("vars" = TRUE, "contents" = TRUE, "overlays" = TRUE, "underlays" = TRUE, "verbs" = TRUE, "vis_contents" = TRUE, "vis_locs" = TRUE, "locs" = TRUE, "filters" = TRUE, "screen" = TRUE, "images" = TRUE, "group" = TRUE, "client_images" = TRUE, "transform" = TRUE)
+	var/list/seen = list()
+	var/list/by_key = list()
+	var/total = 0
+	var/empty = 0
+	var/entries = 0
+	var/list/holders = list()
+	for(var/datum/thing)
+		holders += thing
+	for(var/atom/thing in world)
+		holders += thing
+	for(var/datum/thing as anything in holders)
+		for(var/name in thing.vars)
+			if(skip[name])
+				continue
+			var/list/value = thing.vars[name]
+			if(!islist(value))
+				continue
+			var/key = ref(value)
+			if(seen[key])
+				continue
+			seen[key] = TRUE
+			total++
+			var/len = length(value)
+			entries += len
+			if(!len)
+				empty++
+			by_key["[thing.type].[name]"]++
+		CHECK_TICK
+	holders.Cut()
+	by_key = sortTim(by_key, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	if(length(by_key) > top)
+		by_key.Cut(top + 1)
+	return list("total" = total, "empty" = empty, "entries" = entries, "top" = by_key)
+
 /// Compiled type counts; every type costs memory whether or not it's instanced.
 /proc/benchmark_type_counts()
 	var/atoms = length(typesof(/atom))

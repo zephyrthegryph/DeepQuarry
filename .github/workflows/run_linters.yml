@@ -110,6 +110,11 @@ jobs:
       - name: Check State Schema
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/state_schema_lint.py
+      - name: Check Lifecycle
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        run: python3 tools/ci/lifecycle_lint.py
+      - name: Check Instance List Allocation
+        run: python3 tools/ci/instance_list_lint.py
       - name: Run TGUI Checks
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: tools/build/build.sh --ci lint tgui-test

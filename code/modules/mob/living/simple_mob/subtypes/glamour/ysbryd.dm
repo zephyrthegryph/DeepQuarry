@@ -32,7 +32,7 @@
 	see_in_dark = 8
 	catalogue_data = list(/datum/category_item/catalogue/fauna/ysbryd)
 
-	var/list/emote_threats = list(
+	var/static/list/emote_threats = list(
 								"I have come to collect a meal, now that your people have broken the seal.",
 								"The sight of me should make you fly, but know that regardless you will die.",
 								"Escape all this frustrating clamour, come sink with me into the glamour.",

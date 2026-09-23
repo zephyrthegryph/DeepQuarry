@@ -17,7 +17,7 @@
 	unacidable = TRUE //plastic
 	max_transfer_amount = 10 //Set to null instead of list, if there is only one.
 	var/spray_size = 3
-	var/list/spray_sizes = list(1,3)
+	var/static/list/spray_sizes = list(1,3)
 	volume = 250
 
 /obj/item/reagent_containers/spray/Initialize(mapload)

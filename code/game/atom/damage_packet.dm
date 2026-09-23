@@ -256,7 +256,8 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 				continue
 		. += take_damage(amount, damage_type, packet.armor_flag || damage_kind_armor_key(kind), sound, packet.direction, packet.penetration)
 		sound = FALSE
-		if(QDELETED(src))
+		// A destroyed wall becomes a floor in place (same turf, no integrity).
+		if(QDELETED(src) || !uses_integrity)
 			return
 
 /atom

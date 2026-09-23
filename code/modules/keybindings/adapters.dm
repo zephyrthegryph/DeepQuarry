@@ -6,9 +6,12 @@
  * modifier actions (Inspect, Alternate, Pull, ...) go through handler_for(),
  * which names the mob proc that runs them; AI and borgs override those procs.
  *
- * Until the interaction resolver lands (I2), Use and Alternate dispatch to
- * today's handlers: attackby through resolve_attackby, attack_hand through
+ * Use and Alternate first ask the interaction resolver (I2,
+ * code/datums/interactions/). When no interaction answers, they fall back to
+ * today's handlers: attackby through resolve_attackby (whose tool_act path
+ * reaches the resolver again for tool interactions), attack_hand through
  * UnarmedAttack, attack_ai, attack_robot, attack_ghost, attack_tk, click_alt.
+ * allows_interaction() is where each kind of actor limits what it can do.
  */
 /datum/input_adapter
 	var/name = "abstract"
@@ -74,13 +77,21 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	return null
 
 /datum/input_adapter/proc/perform(mob/user, atom/target, action, list/modifiers, params)
-	if(action == INPUT_ACTION_USE)
-		return use(user, target, modifiers, params)
+	switch(action)
+		if(INPUT_ACTION_USE)
+			return use(user, target, modifiers, params)
+		if(INPUT_ACTION_MENU)
+			return open_interaction_menu(user, target)
+		if(INPUT_ACTION_ALTERNATE)
+			if(try_interaction(user, target, user.get_active_hand(), INPUT_ACTION_ALTERNATE))
+				return TRUE
 	var/handler = handler_for(action)
 	if(handler)
 		call(user, handler)(target, params)
-	// INPUT_ACTION_MENU: right-click bound to Menu keeps BYOND's native popup, so
-	// it never reaches the router. The resolver's Menu arrives with I2.
+
+/// Whether this kind of actor can ever do `interaction`. Excluded ones aren't even listed as blocked.
+/datum/input_adapter/proc/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
+	return TRUE
 
 /// The Use action.
 /datum/input_adapter/proc/use(mob/user, atom/target, list/modifiers, params)
@@ -98,10 +109,9 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return
 	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, src_location, over_location, src_control, over_control, params)
 
-/// A category key. The resolver that picks the interaction arrives with I2.
+/// A category key: the best interaction of that category on the target.
 /datum/input_adapter/proc/perform_category(mob/user, atom/target, category)
-	to_chat(user, span_notice("There is nothing to [category] on \the [target] yet."))
-	return FALSE
+	return try_interaction_category(user, target, category)
 
 // ---------------------------------------------------------------------------
 // Hands: every mob that interacts by touch (humans, animals, simple mobs, pAIs).
@@ -160,6 +170,11 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return TRUE
 
 	var/obj/item/W = user.get_active_hand()
+
+	// Empty-handed interactions (I2) come before the legacy attack_hand chain.
+	if(!currently_restrained && !W && try_interaction(user, A, null, INPUT_ACTION_USE, null, TRUE))
+		user.trigger_aiming(TARGET_CAN_CLICK)
+		return TRUE
 
 	if(!currently_restrained && W == A)
 		self_use(user, W, modifiers)
@@ -255,6 +270,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/ghost
 	name = "ghost"
 
+/// Ghosts only observe: no interaction is theirs to do (I3 adds observer-only ones).
+/datum/input_adapter/ghost/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
+	return FALSE
+
 /// Checking config.ghost_interaction is the responsibility of attack_ghost overrides.
 /datum/input_adapter/ghost/use(mob/user, atom/target, list/modifiers, params)
 	target.attack_ghost(user)
@@ -297,6 +316,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		list(list(RIGHT_CLICK), INPUT_ACTION_RIGHT_CLICK_BINDING),
 	)
 	return table
+
+/// The AI has no hands: only interactions tagged remote (I3 widens this with camera sight).
+/datum/input_adapter/ai/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
+	return (INTERACTION_TAG_REMOTE in interaction.tags) ? TRUE : FALSE
 
 /datum/input_adapter/ai/use(mob/living/silicon/ai/user, atom/target, list/modifiers, params)
 	var/obj/effect/overlay/aiholo/hologram = user.holo ? LAZYACCESS(user.holo.masters, user) : null

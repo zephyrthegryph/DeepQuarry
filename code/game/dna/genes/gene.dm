@@ -50,7 +50,7 @@
 /datum/gene/trait
 	desc="Gene linked to a trait."
 	var/datum/trait/linked_trait = null // Internal use, do not assign.
-	var/list/conflict_traits = list() // Cache known traits that don't work with this one, instead of doing it all at once, or EVERY time we do a mutation check
+	var/list/conflict_traits // Lazy. Cache known traits that don't work with this one, instead of doing it all at once, or EVERY time we do a mutation check
 
 /datum/gene/trait/Destroy()
 	// unlink circular reference
@@ -102,7 +102,7 @@
 
 		// check trait if not. CONFLICT-O-TRON ENGAGE
 		if(check_trait_conflict(linked_trait, GLOB.all_traits[P]))
-			conflict_traits |= P
+			LAZYOR(conflict_traits, P)
 			has_conflict = TRUE
 			continue
 

@@ -50,10 +50,10 @@
 	var/list/query
 	var/list/tree
 
-	var/list/boolean_operators = list("and", "or", "&&", "||")
-	var/list/unary_operators = list("!", "-", "~")
-	var/list/binary_operators = list("+", "-", "/", "*", "&", "|", "^", "%")
-	var/list/comparitors = list("=", "==", "!=", "<>", "<", "<=", ">", ">=")
+	var/static/list/boolean_operators = list("and", "or", "&&", "||")
+	var/static/list/unary_operators = list("!", "-", "~")
+	var/static/list/binary_operators = list("+", "-", "/", "*", "&", "|", "^", "%")
+	var/static/list/comparitors = list("=", "==", "!=", "<>", "<", "<=", ">", ">=")
 
 /datum/SDQL_parser/New(query_list)
 	query = query_list

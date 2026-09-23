@@ -6,7 +6,7 @@
 /client/var/tmp/keybind_macro_count = 0
 /// The profile whose macros are applied, or null if none are.
 /client/var/tmp/keybind_profile_applied
-/// Is MouseEntered recorded for this client? Only when a binding needs the hovered atom.
+/// Is MouseEntered recorded for this client? Only for screentips or a binding that needs the hovered atom.
 /client/var/tmp/hover_tracking = FALSE
 
 /// The player's key overrides (profile -> id -> keys), or null for all defaults.
@@ -41,19 +41,22 @@
 		params["[element].name"] = macro[1]
 		params["[element].command"] = macro[2]
 	params["mainwindow.macro"] = KEYBIND_MACRO_SET
-	params["mapwindow.map.right-click"] = (right_click_binding() == INPUT_ACTION_MENU) ? "false" : "true"
+	// Right-click always reaches the router: Menu opens the interaction menu,
+	// which replaces BYOND's native verb popup.
+	params["mapwindow.map.right-click"] = "true"
 	params["mapwindow.map.focus"] = "true"
 	winset(src, null, list2params(params))
 
 	keybind_macro_count = length(macros)
 	keybind_profile_applied = profile
-	set_hover_tracking(keybinding_profile_uses_hover(profile, overrides))
+	set_hover_tracking(keybinding_profile_uses_hover(profile, overrides) || screentips_enabled())
 	log_input("Keybindings: applied [length(macros)] macros for [key] (profile [profile], right-click [right_click_binding()]).")
 
 /client/proc/set_hover_tracking(enabled)
 	hover_tracking = !!enabled
 	if(!hover_tracking)
 		hovered_ref = null
+		clear_screentip()
 
 /// Lists the current bindings in chat. Replaces the old hand-written hotkey help.
 /client/verb/hotkeys_help()

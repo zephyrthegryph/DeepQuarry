@@ -10,7 +10,7 @@
 	var/randpixel = 6
 	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
-	var/health = null // generic per-item value (food freshness, organ/instrument condition, …); NOT the obj_integrity damage system
+	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
 	var/hitsound = "swing_hit"
@@ -60,7 +60,10 @@
 	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
+	/// Shared between items with the same values after Initialize(); call own_armor() before writing to it.
 	var/list/armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)
+	/// TRUE once armor is this item's own list rather than the shared table.
+	var/tmp/armor_owned = FALSE
 	var/list/allowed = null //suit storage stuff.
 	var/obj/item/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
@@ -151,6 +154,8 @@
 
 /obj/item/Initialize(mapload)
 	. = ..()
+	if(islist(armor) && !armor_owned)
+		armor = string_assoc_list(armor)
 
 	for(var/path in actions_types)
 		add_item_action(path)
@@ -1244,3 +1249,10 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 		if(B.mode_flags & DM_FLAG_MUFFLEITEMS)
 			return TRUE
 	return FALSE
+
+/// Copy-on-write: give this item a private armor list before editing it.
+/obj/item/proc/own_armor()
+	if(armor_owned)
+		return
+	armor = islist(armor) ? armor.Copy() : list()
+	armor_owned = TRUE

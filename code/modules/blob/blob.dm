@@ -11,15 +11,14 @@
 	anchored = TRUE
 	mouse_opacity = 2
 
-	var/blob_max_health = 30
-	var/blob_health
+	uses_integrity = TRUE
+	max_integrity = 30
 	var/brute_resist = 4
 	var/fire_resist = 1
 	var/expandType = /obj/effect/blob
 
 /obj/effect/blob/Initialize(mapload)
 	. = ..()
-	blob_health = blob_max_health
 	update_icon()
 
 /obj/effect/blob/CanPass(atom/movable/mover, turf/target)
@@ -35,22 +34,26 @@
 			take_damage(rand(20, 60) / brute_resist)
 
 /obj/effect/blob/update_icon()
-	if(blob_health > blob_max_health / 2)
+	if(get_integrity() > max_integrity / 2)
 		icon_state = "blob"
 	else
 		icon_state = "blob_damaged"
 
-/obj/effect/blob/take_damage(damage)
-	blob_health -= damage
-	if(blob_health < 0)
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		qdel(src)
-	else
-		update_icon()
+/obj/effect/blob/on_update_integrity(old_value, new_value)
+	. = ..()
+	update_icon()
+
+/obj/effect/blob/atom_destruction(damage_flag)
+	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	return ..()
+
+/// Blob damage is already divided by the blob's resistances, so it skips armour.
+/obj/effect/blob/proc/blob_damage(amount, damage_type = BRUTE)
+	var/resist = damage_type == BURN ? fire_resist : brute_resist
+	return take_damage(amount / resist, damage_type, null, FALSE)
 
 /obj/effect/blob/proc/regen()
-	blob_health = min(blob_health + 1, blob_max_health)
-	update_icon()
+	repair_damage(1)
 
 /obj/effect/blob/proc/expand(turf/T)
 	if(istype(T, /turf/unsimulated/) || isopenturf(T) || (ismineralturf(T) && T.density))
@@ -106,7 +109,7 @@
 		playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 		L.injure(INJURY_BLUNT, rand(30, 40), null, src)
 		return
-	new expandType(T, min(blob_health, 30))
+	new expandType(T)
 
 /obj/effect/blob/proc/pulse(forceLeft, list/dirs)
 	regen()
@@ -117,37 +120,27 @@
 	var/turf/T = get_step(src, pushDir)
 	var/obj/effect/blob/B = (locate() in T)
 	if(!B)
-		if(prob(blob_health))
+		if(prob(get_integrity()))
 			expand(T)
 		return
 	B.pulse(forceLeft - 1, dirs)
 
-/obj/effect/blob/bullet_act(obj/item/projectile/Proj)
-	if(!Proj)
-		return
-
-	switch(Proj.obj_damage_type())
-		if(BRUTE)
-			take_damage(Proj.damage / brute_resist)
-		if(BURN)
-			take_damage(Proj.damage / fire_resist)
-	return 0
+/// Projectile adapter: the blob's resistances divide the round.
+/obj/effect/blob/projectile_damage(obj/item/projectile/P, def_zone)
+	var/damage_type = P.obj_damage_type()
+	if(damage_type != BRUTE && damage_type != BURN)
+		return 0
+	return blob_damage(P.damage, damage_type)
 
 /obj/effect/blob/attackby(obj/item/W, mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
-	var/damage = 0
-	switch(W.obj_damage_type())
-		if(BURN)
-			damage = (W.force / fire_resist)
-			if(istype(W, /obj/item/weldingtool))
-				playsound(src, W.usesound, 100, 1)
-		if(BRUTE)
-			damage = (W.force / brute_resist)
-
-	take_damage(damage)
-	return
+	var/damage_type = W.obj_damage_type()
+	if(damage_type == BURN && istype(W, /obj/item/weldingtool))
+		playsound(src, W.usesound, 100, 1)
+	if(damage_type == BRUTE || damage_type == BURN)
+		blob_damage(W.force, damage_type)
 
 /obj/effect/blob/core
 	name = "blob core"
@@ -155,7 +148,7 @@
 	icon_state = "blob_core"
 	light_range = 3
 	light_color = "#ffc880"
-	blob_max_health = 200
+	max_integrity = 200
 	brute_resist = 2
 	fire_resist = 2
 
@@ -184,7 +177,7 @@
 	icon_state = "blob_idle"
 	light_range = 3
 	desc = "Some blob creature thingy"
-	blob_max_health = 60
+	max_integrity = 60
 	brute_resist = 1
 	fire_resist = 2
 
@@ -198,9 +191,9 @@
 	. = ..()
 
 /obj/effect/blob/shield/update_icon()
-	if(blob_health > blob_max_health * 2 / 3)
+	if(get_integrity() > max_integrity * 2 / 3)
 		icon_state = "blob_idle"
-	else if(blob_health > blob_max_health / 3)
+	else if(get_integrity() > max_integrity / 3)
 		icon_state = "blob"
 	else
 		icon_state = "blob_damaged"

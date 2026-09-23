@@ -39,17 +39,22 @@
 	to_chat(H, span_boldnotice("You activate your suit's powered radiation shielding."))
 	stored_rad_armor = holder.armor["rad"]
 	if(boots)
+		boots.own_armor()
 		boots.armor["rad"] = 100
 		items_to_update += boots
 	if(chest)
+		chest.own_armor()
 		chest.armor["rad"] = 100
 		items_to_update += chest
 	if(helmet)
+		helmet.own_armor()
 		helmet.armor["rad"] = 100
 		items_to_update += helmet
 	if(gloves)
+		gloves.own_armor()
 		gloves.armor["rad"] = 100
 		items_to_update += gloves
+	holder.own_armor()
 	holder.armor["rad"] = 100
 	items_to_update += holder
 	for(var/obj/item/part in items_to_update)
@@ -71,17 +76,22 @@
 	to_chat(H, span_danger("You deactivate your suit's powered radiation shielding."))
 
 	if(boots)
+		boots.own_armor()
 		boots.armor["rad"] = stored_rad_armor
 		items_to_update += boots
 	if(chest)
+		chest.own_armor()
 		chest.armor["rad"] = stored_rad_armor
 		items_to_update += chest
 	if(helmet)
+		helmet.own_armor()
 		helmet.armor["rad"] = stored_rad_armor
 		items_to_update += helmet
 	if(gloves)
+		gloves.own_armor()
 		gloves.armor["rad"] = stored_rad_armor
 		items_to_update += gloves
+	holder.own_armor()
 	holder.armor["rad"] = stored_rad_armor
 	items_to_update += holder
 

@@ -2,7 +2,6 @@
 /obj/item/instrument
 	name = "generic instrument"
 	force = 10
-	health = 100
 	//resistance_flags = FLAMMABLE
 	icon = 'icons/obj/musician.dmi'
 	item_icons = list(

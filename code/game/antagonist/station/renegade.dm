@@ -25,7 +25,7 @@ GLOBAL_DATUM(renegades, /datum/antagonist/renegade)
 	initial_spawn_req = 2
 	initial_spawn_target = 4
 
-	var/list/spawn_guns = list(
+	var/static/list/spawn_guns = list(
 		/obj/item/gun/energy/laser,
 		/obj/item/gun/energy/captain,
 		/obj/item/gun/energy/lasercannon,

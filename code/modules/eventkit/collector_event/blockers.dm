@@ -19,7 +19,7 @@
 	var/default_block_amount = 100
 
 	//tool to what's fucked up
-	var/list/problem_descs = list(
+	var/static/list/problem_descs = list(
 		TOOL_CROWBAR = "a panel is dislodged.",
 		TOOL_MULTITOOL = "a light next to a dataport is flashing some errors.",
 		TOOL_SCREWDRIVER = "there's some loose screws inside.",
@@ -30,7 +30,7 @@
 	)
 
 	//tool to how we unfuck it
-	var/list/fix_descs = list(
+	var/static/list/fix_descs = list(
 		TOOL_CROWBAR = "you lodge the panel back in place.",
 		TOOL_MULTITOOL = "you reset the panel with the multitool.",
 		TOOL_SCREWDRIVER = "you tighten the loose screws.",

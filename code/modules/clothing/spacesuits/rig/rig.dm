@@ -350,6 +350,7 @@
 								helmet.update_light(wearer)
 
 					//sealed pieces become airtight, protecting against diseases
+					piece.own_armor()
 					if (!seal_target)
 						piece.armor["bio"] = 100
 					else
