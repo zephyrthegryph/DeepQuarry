@@ -77,6 +77,9 @@
 			if(T in changes)
 				expected = changes[T]
 				break
+		// Test fixtures (/obj/item/dq_*) postdate the snapshot and have no expectation.
+		if(findtext("[path]", "/obj/item/dq_") == 1)
+			continue
 		var/list/actual = dq_type_material_totals(path)
 		checked++
 		var/obj/item/declared = path

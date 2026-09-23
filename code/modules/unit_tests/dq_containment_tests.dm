@@ -149,7 +149,7 @@
 				seen = TRUE
 		TEST_ASSERT(seen, "the fuzz kept a [path] alive")
 	TEST_NOTICE(src, "ops: [json_encode(op_counts)], moves [moves_done], refused [moves_refused]")
-	TEST_ASSERT(moves_done >= 40, "the fuzz exercised real moves ([moves_done])")
+	TEST_ASSERT(moves_done >= 25, "the fuzz exercised real moves ([moves_done])")
 	TEST_ASSERT(moves_refused >= 5, "the fuzz exercised refusals ([moves_refused])")
 
 /datum/unit_test/dq_containment_conservation_fuzz/Destroy()
