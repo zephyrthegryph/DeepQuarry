@@ -166,9 +166,9 @@
 /mob/living/proc/burn_skin(burn_amount)
 	if(ishuman(src))
 		//to_world("DEBUG: burn_skin(), mutations=[mutations]")
-		if(mShock in src.mutations) //shockproof
+		if(src.has_mutation(mShock)) //shockproof
 			return 0
-		if (COLD_RESISTANCE in src.mutations) //fireproof
+		if (src.has_mutation(COLD_RESISTANCE)) //fireproof
 			return 0
 		// Electrical burns spread across the whole body.
 		if(injure(INJURY_ELECTRIC, burn_amount))

@@ -34,7 +34,7 @@
 			to_chat(user,output)
 			return
 
-		if(SKELETON in L.mutations)
+		if(L.has_mutation(SKELETON))
 			output += span_vdanger("SUBJECT IS SPOOKY SCARY SKELETON")
 			to_chat(user,output)
 			return
@@ -62,9 +62,9 @@
 			else
 				output += span_warning("[genetic_load] Genetic damage") + "<br>"
 
-		if(NOCLONE in L.mutations)
+		if(L.has_mutation(NOCLONE))
 			output += span_warning("Subject's dna is unstable") + "<br>"
-		if(HUSK in L.mutations)
+		if(L.has_mutation(HUSK))
 			output += span_warning("Subject's anatomical structure is destroyed") + "<br>"
 
 		output += span_boldnotice("Detected genes:") + "<br>"

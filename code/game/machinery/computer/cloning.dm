@@ -406,7 +406,7 @@
 		set_scan_temp("Subject's brain is not responding. Further attempts after a short delay may succeed.", "bad")
 		SStgui.update_uis(src)
 		return
-	if((NOCLONE in subject.mutations))
+	if((subject.has_mutation(NOCLONE)))
 		set_scan_temp("Subject has incompatible genetic mutations.", "bad")
 		SStgui.update_uis(src)
 		return

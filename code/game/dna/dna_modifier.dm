@@ -440,7 +440,7 @@
 			var/mob/living/carbon/human/H = WC
 			if(!H.species || (H.species.flags & NO_DNA))
 				allowed = FALSE
-		if(!allowed || (NOCLONE in WC.mutations) || !WC.dna)
+		if(!allowed || (WC.has_mutation(NOCLONE)) || !WC.dna)
 			occupantData["isViableSubject"] = 0
 		// Vitality is reported as a 0..100 percentage; the UI bar reads health / maxHealth.
 		occupantData["health"] = round(WC.vitality() * 100)
@@ -601,7 +601,7 @@
 					return TRUE
 				if("transfer")
 					var/mob/living/carbon/WC = connected?.get_occupant()
-					if(!WC || (NOCLONE in WC.mutations) || !WC.dna)
+					if(!WC || (WC.has_mutation(NOCLONE)) || !WC.dna)
 						return TRUE
 					irradiating = 2
 					var/lock_state = connected.locked

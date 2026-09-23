@@ -3136,6 +3136,7 @@
 #include "code\modules\mob\logout.dm"
 #include "code\modules\mob\mob.dm"
 #include "code\modules\mob\mob_defines.dm"
+#include "code\modules\mob\mutations.dm"
 #include "code\modules\mob\mob_grab.dm"
 #include "code\modules\mob\mob_grab_specials.dm"
 #include "code\modules\mob\mob_helpers.dm"

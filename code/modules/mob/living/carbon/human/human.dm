@@ -360,7 +360,7 @@
 //Returns "Unknown" if facially disfigured and real_name if not. Useful for setting name when polyacided or when updating a human's name variable
 /mob/living/carbon/human/proc/get_face_name()
 	var/obj/item/organ/external/head = get_organ(BP_HEAD)
-	if(!head || head.disfigured || head.is_stump() || !real_name || (HUSK in mutations) )	//disfigured. use id-name if possible
+	if(!head || head.disfigured || head.is_stump() || !real_name || (has_mutation(HUSK)) )	//disfigured. use id-name if possible
 		return "Unknown"
 	return real_name
 
@@ -902,7 +902,7 @@
 	if(stat!=CONSCIOUS)
 		return
 
-	if(!(mMorph in mutations))
+	if(!(has_mutation(mMorph)))
 		remove_verb(src, /mob/living/carbon/human/proc/morph)
 		return
 
@@ -974,7 +974,7 @@
 	if(stat != CONSCIOUS)
 		return
 
-	if(!(mRemotetalk in src.mutations))
+	if(!(src.has_mutation(mRemotetalk)))
 		remove_verb(src, /mob/living/carbon/human/proc/remotesay)
 		return
 	var/list/creatures = list()
@@ -987,7 +987,7 @@
 		return
 
 	var/say = tgui_input_text(src, "What do you wish to say?", "", "", MAX_MESSAGE_LEN)
-	if(mRemotetalk in target.mutations)
+	if(target.has_mutation(mRemotetalk))
 		target.show_message(span_filter_say("[span_blue("You hear [src.real_name]'s voice: [say]")]"))
 	else
 		target.show_message(span_filter_say("[span_blue("You hear a voice that seems to echo around the room: [say]")]"))

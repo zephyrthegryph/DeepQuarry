@@ -906,9 +906,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		else
 			prot = 1
 
-			if(prot > 0 || (COLD_RESISTANCE in user.mutations))
+			if(prot > 0 || (user.has_mutation(COLD_RESISTANCE)))
 				to_chat(user, "You remove the light [get_fitting_name()]")
-			else if(TK in user.mutations)
+			else if(user.has_mutation(TK))
 				to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
 			else
 				to_chat(user, "You try to remove the [get_fitting_name()], but it's too hot and you don't want to burn your hand.")
