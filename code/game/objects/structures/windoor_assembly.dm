@@ -80,10 +80,22 @@
 	if(Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
 		rename_door(user)
 
-/obj/structure/windoor_assembly/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/windoor_assembly/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/windoor_assembly_item,
+	)
+	..()
+
+/// Old attackby: rename with a pen, wire, or install electronics.
+/datum/interaction/entry_item/windoor_assembly_item
+	id = "windoor_assembly_item"
+	name = "Use"
+	effect = /obj/structure/windoor_assembly/proc/interaction_item
+
+/obj/structure/windoor_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
 		rename_door(user)
-		return
+		return TRUE
 
 	if(state == "01")
 		//Adding cable to the assembly. Step 5 complete.
@@ -96,8 +108,6 @@
 					to_chat(user,span_notice("You wire the windoor!"))
 					src.state = "02"
 					step = 1
-		else
-			..()
 
 	else if(state == "02")
 		//Adding airlock electronics for access. Step 6 complete.
@@ -106,7 +116,7 @@
 			user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
 			if(do_after(user, 4 SECONDS, target = src))
-				if(!src) return
+				if(!src) return TRUE
 
 				user.drop_item()
 				W.loc = src
@@ -115,11 +125,10 @@
 				src.electronics = W
 			else
 				W.loc = src.loc
-		else
-			..()
 
 	//Update to reflect changes(if applicable)
 	update_state()
+	return TRUE
 
 /obj/structure/windoor_assembly/welder_act(mob/user, obj/item/W)
 	if(state != "01" || anchored)
