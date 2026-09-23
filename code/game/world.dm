@@ -5,6 +5,11 @@
 #define OVERRIDE_LOG_DIRECTORY_PARAMETER "log-directory"
 /// Prevent the master controller from starting automatically
 #define NO_INIT_PARAMETER "no-init"
+/// This world's 0-based position in a sharded dm-test run (`dm-test --shards=N`).
+/// See dq_test_shard_init() in code/modules/unit_tests/unit_test.dm.
+#define TEST_SHARD_INDEX_PARAMETER "shard-index"
+/// The shard count for a sharded dm-test run. See TEST_SHARD_INDEX_PARAMETER.
+#define TEST_SHARD_COUNT_PARAMETER "shard-count"
 
 GLOBAL_VAR(restart_counter)
 
@@ -248,6 +253,7 @@ GLOBAL_VAR(restart_counter)
 	CONFIG_SET(number/round_end_countdown, 0)
 	var/datum/callback/cb
 #ifdef UNIT_TESTS
+	dq_test_shard_init()
 	cb = CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(RunUnitTests))
 #else
 	cb = VARSET_CALLBACK(SSticker, force_ending, ADMIN_FORCE_END_ROUND)
