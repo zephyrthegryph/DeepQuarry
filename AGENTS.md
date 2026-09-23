@@ -359,6 +359,13 @@ accident or assume they work:
   no `chem_effects`/`add_chemical_effect`, no `mechanical_effects`/`vital_effects`/`od_boost`
   and no numeric modifier fields; `tools/ci/check_grep.sh` rejects them. Brief non-reagent
   effects are short modifiers (`/datum/modifier/numbness`, `withdrawal_strain`, …).
+- **Mob Life is a scheduler.** `/mob/living/Life()` (`code/modules/mob/living/life/scheduler.dm`)
+  runs an ordered list of `/datum/life_system` flyweights composed per mob type; see
+  `doc/mob_life_architecture.md` §4.8. Don't override `Life()` or add `handle_*` hooks on mobs:
+  add a system, or a variant whose path mirrors the mob path (`breathing/carbon/human`). Code
+  outside Life uses `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or
+  `run_life_system()`. Components tick via `add_trait_life_system()` (there is no
+  `COMSIG_LIVING_LIFE`). Hibernation plumbing exists but is off (`MOB_HIBERNATION_ENABLED`).
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
   cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf
