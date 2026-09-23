@@ -2,7 +2,11 @@
 //! a supply on the output node's region and a demand on each input
 //! terminal's region. Charge is linear between power steps; Rust reports
 //! the display state (`chargedisplay`, inputting, outputting) and the
-//! charge, and DM never polls.
+//! charge, and DM never polls. Charge/discharge run on the shared
+//! [`vg_core::rate::RateStore`] (`rust_core.md` §15): SMES and APC cells
+//! (see [`crate::apc`]) are the same rate model at two different rates.
+
+use vg_core::rate::RateStore;
 
 /// `SMESRATE`: watts per tick to SMES charge units.
 pub const SMESRATE: f64 = 0.033_33;
@@ -56,6 +60,24 @@ pub struct Smes {
 }
 
 impl Smes {
+    /// This unit's charge as a [`RateStore`] at [`SMESRATE`], for the
+    /// caller to discharge or charge and write back with
+    /// [`Self::set_store`].
+    #[must_use]
+    pub fn store(&self) -> RateStore {
+        RateStore {
+            charge: self.state.charge,
+            capacity: self.config.capacity,
+            rate: SMESRATE,
+        }
+    }
+
+    /// Writes a [`RateStore`]'s charge back (after [`RateStore::discharge_out`]
+    /// or [`RateStore::charge_in`]).
+    pub fn set_store(&mut self, store: RateStore) {
+        self.state.charge = store.charge;
+    }
+
     /// `chargedisplay()`: the five-step charge gauge.
     #[must_use]
     pub fn display(&self) -> u8 {

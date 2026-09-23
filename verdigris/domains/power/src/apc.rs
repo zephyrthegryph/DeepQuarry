@@ -1,7 +1,11 @@
 //! The APC: a port of DM's `/datum/apc_power_distributor` (channel state
 //! machine, cell charging, load shedding). Rust runs it every power step,
 //! so the DM APC never polls; DM hears only the state it shows (channels,
-//! charging, status, alarm) and the cell charge.
+//! charging, status, alarm) and the cell charge. Cell discharge runs on
+//! the shared [`vg_core::rate::RateStore`] (`rust_core.md` §15), the same
+//! rate model SMES uses (see [`crate::smes`]) at a different rate.
+
+use vg_core::rate::RateStore;
 
 /// `POWERCHAN_*`.
 pub mod chan {
@@ -199,9 +203,14 @@ impl Apc {
         if excess >= total {
             grid.draw(total);
         } else {
-            let available = s.charge / CELLRATE;
-            let cellused = s.charge.min(CELLRATE * total);
-            s.charge -= cellused;
+            let mut store = RateStore {
+                charge: s.charge,
+                capacity: cfg.max_charge,
+                rate: CELLRATE,
+            };
+            let available = store.watts_available();
+            store.discharge_out(total);
+            s.charge = store.charge;
             if available + excess >= total {
                 let drawn = grid.draw(excess);
                 s.charge = cfg.max_charge.min(s.charge + CELLRATE * drawn);

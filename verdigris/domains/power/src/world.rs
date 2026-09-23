@@ -780,9 +780,10 @@ impl PowerWorld {
                 got += alloc;
             }
             self.books.delivered += got;
-            let room = ((s.config.capacity - s.state.charge) / SMESRATE).max(0.0);
-            self.books.storage_in += got.min(room);
-            s.state.charge += got.min(room) * SMESRATE;
+            let mut store = s.store();
+            let absorbed = store.charge_in(got);
+            s.set_store(store);
+            self.books.storage_in += absorbed;
             s.state.input_available = got;
             s.state.inputting = if got <= 0.0 {
                 0
@@ -809,10 +810,11 @@ impl PowerWorld {
             } else {
                 0.0
             };
-            let share = share.min(s.state.charge / SMESRATE);
-            s.state.charge = (s.state.charge - share * SMESRATE).max(0.0);
-            s.state.output_used = share;
-            self.books.storage_out += share;
+            let mut store = s.store();
+            let delivered = store.discharge_out(share);
+            s.set_store(store);
+            s.state.output_used = delivered;
+            self.books.storage_out += delivered;
         }
 
         // Monitor view, brownouts, then next step's supply.
