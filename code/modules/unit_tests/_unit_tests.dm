@@ -227,10 +227,14 @@
 #include "xgm_total_moles_test.dm"
 #include "dq_harm_time_invariance_tests.dm"
 #include "dq_w5_loose_tests.dm"
+#include "../balance/_balance_harness.dm"
+#include "../balance/balance_scenarios.dm"
+#include "dq_balance_harness_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
 #include "../benchmarks/scenarios.dm"
+#include "../balance/balance_benchmark.dm"
 #endif
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"
