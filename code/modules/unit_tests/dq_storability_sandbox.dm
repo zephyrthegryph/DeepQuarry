@@ -6,8 +6,9 @@
 // dq_lifecycle_sandbox (dq_lifecycle_tests.dm, state.md §6) already verifies
 // Initialize() side effects for the types already marked latent_safe -- this
 // test runs the same checks over every *candidate* type, plus a full
-// serialize/apply/compare round-trip, and checks the result against the
-// checked-in generated file instead of trusting either list by hand.
+// serialize/apply/compare round-trip, and verifies every type the codebase
+// currently declares latent_safe = TRUE against it instead of trusting the
+// declaration by hand.
 
 /// Candidate roots: types where instantiating one in isolation is cheap and
 /// meaningful (movables that plausibly sit in a holder's contents). Mobs,
