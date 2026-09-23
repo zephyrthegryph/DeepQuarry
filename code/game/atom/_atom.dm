@@ -17,7 +17,7 @@
 	var/bubble_icon = "normal" ///what icon the atom uses for speechbubbles
 	var/datum/forensics_crime/forensic_data
 
-	var/last_bumped = 0
+	var/tmp/last_bumped = 0
 
 	///Chemistry.
 	var/datum/reagents/reagents = null
@@ -28,14 +28,14 @@
 
 	// Overlays
 	///Our local copy of (non-priority) overlays without byond magic. Use procs in SSoverlays to manipulate
-	var/list/our_overlays
+	var/tmp/list/our_overlays
 	///Overlays that should remain on top and not normally removed when using cut_overlay functions, like c4.
-	var/list/priority_overlays
+	var/tmp/list/priority_overlays
 	///vis overlays managed by SSvis_overlays to automaticaly turn them like other overlays
-	var/list/managed_vis_overlays
+	var/tmp/list/managed_vis_overlays
 
 	//Detective Work, used for the duplicate data points kept in the scanners
-	var/list/original_atom
+	var/tmp/list/original_atom
 	// Track if we are already had initialize() called to prevent double-initialization.
 	//var/initialized = FALSE // using the atom flags
 

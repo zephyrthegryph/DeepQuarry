@@ -143,7 +143,6 @@ GLOBAL_ALIST_INIT(logtype_to_string, alist(
 #define ENTRY_USE_DATA_W_READABLE (1<<0)
 
 
-#define SCHEMA_VERSION "schema-version"
 
 // Default log schema version
 #define LOG_CATEGORY_SCHEMA_VERSION_NOT_SET "0.0.1"

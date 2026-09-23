@@ -325,20 +325,11 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 			data = recursive_jsonify(data, semvers)
 
 		else if(isdatum(data))
-			var/list/options_list = list(
-				SCHEMA_VERSION = LOG_CATEGORY_SCHEMA_VERSION_NOT_SET,
-			)
-
-			var/list/serialization_data = data.serialize_list(options_list, semvers)
-			var/current_semver = semvers[data.type]
-			if(!semver_to_list(current_semver))
-				stack_trace("serialization of data had an invalid semver")
-				semvers[data.type] = LOG_CATEGORY_SCHEMA_VERSION_NOT_SET
-
-			if(!length(serialization_data)) // serialize_list wasn't implemented, and errored
-				stack_trace("serialization data was empty")
-				continue
-
+			// A datum is logged as its saved state (code/datums/state/schema.dm), or
+			// as its type and ref when its state does not serialize.
+			var/datum/logged = data
+			var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = REF(logged))
+			semvers[logged.type] = "[logged.state_version].0.0"
 			data = recursive_jsonify(serialization_data, semvers)
 
 		if(islist(data) && !length(data))

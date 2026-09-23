@@ -102,9 +102,9 @@ Class Procs:
 	var/idle_power_usage = 0
 	var/active_power_usage = 0
 	var/power_channel = EQUIP //EQUIP, ENVIRON or LIGHT
-	var/power_init_complete = FALSE
+	var/tmp/power_init_complete = FALSE
 	var/list/component_parts = null //list of all the parts used to build it, if made from certain kinds of frames.
-	var/uid
+	var/tmp/uid
 	var/panel_open = FALSE
 	var/global/gl_uid = 1
 	var/clicksound			// sound played on succesful interface. Just put it in the list of vars at the start.
@@ -122,7 +122,7 @@ Class Procs:
 	/// Whole-machine EMP rejection supplied by insulating component materials.
 	var/material_emp_resistance = 0
 	/// Monotonic diagnostic counter for exact dependency-wake assertions.
-	var/gas_dependency_wake_count = 0
+	var/tmp/gas_dependency_wake_count = 0
 	/// Slot in SSmachines.processing_machines while DF_ISPROCESSING is set; lets
 	/// hibernation swap-remove in O(1).
 	var/tmp/machine_processing_index = 0

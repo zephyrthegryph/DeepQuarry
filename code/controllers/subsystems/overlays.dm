@@ -155,10 +155,10 @@ SUBSYSTEM_DEF(overlays)
 /atom
 	/// List of overlay "keys" (info about the appearance) -> mutable versions of static appearances
 	/// Drawn from the overlays list
-	var/list/realized_overlays
+	var/tmp/list/realized_overlays
 	/// List of underlay "keys" (info about the appearance) -> mutable versions of static appearances
 	/// Drawn from the underlays list
-	var/list/realized_underlays
+	var/tmp/list/realized_underlays
 
 /image
 	/// List of overlay "keys" (info about the appearance) -> mutable versions of static appearances

@@ -10,7 +10,7 @@
 #define PREFERENCE_TAB 4
 
 /mob
-	var/datum/vore_look/vorePanel
+	var/tmp/datum/vore_look/vorePanel
 
 /mob/proc/insidePanel()
 	set name = "Vore Panel"

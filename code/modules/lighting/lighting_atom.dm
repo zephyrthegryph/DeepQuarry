@@ -22,13 +22,13 @@
 	///Hint for directional light cone positioning. Y is relevant when facing east/west (same value used for both east and west)
 	var/light_cone_y_offset // When facing east/west, ignored for north/south (uses 16 in those cases)
 	///Highest-intensity light affecting us, which determines our visibility.
-	var/affecting_dynamic_lumi = 0
+	var/tmp/affecting_dynamic_lumi = 0
 	///Lazylist to keep track on the sources of illumination.
 	// affected_dynamic_lights moved to /datum/component/movable_state
 	///Either FALSE, [EMISSIVE_BLOCK_GENERIC], or [EMISSIVE_BLOCK_UNIQUE]
 	var/blocks_emissive = EMISSIVE_BLOCK_NONE
 	///Internal holder for emissive blocker object, do not use directly use blocks_emissive
-	var/atom/movable/emissive_blocker/em_block
+	var/tmp/atom/movable/emissive_blocker/em_block
 
 // The proc you should always use to set the light of this atom.
 // Nonesensical value for l_color default, so we can detect if it gets set to null.

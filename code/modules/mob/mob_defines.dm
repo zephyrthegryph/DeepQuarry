@@ -17,7 +17,7 @@
 	unacidable = FALSE
 
 	/// It's like a client, but persists! Persistent clients will stick to a mob until the client in question is logged into a different mob.
-	var/datum/persistent_client/persistent_client
+	var/tmp/datum/persistent_client/persistent_client
 
 	var/datum/mind/mind
 
@@ -41,33 +41,33 @@
 	//Not in use yet
 	var/obj/effect/organstructure/organStructure = null
 
-	var/atom/movable/screen/hands = null
-	var/atom/movable/screen/pullin = null
-	var/atom/movable/screen/purged = null
-	var/atom/movable/screen/internals = null
-	var/atom/movable/screen/i_select = null
-	var/atom/movable/screen/m_select = null
-	var/atom/movable/screen/healths = null
-	var/atom/movable/screen/throw_icon = null
-	var/atom/movable/screen/pain = null
-	var/atom/movable/screen/gun/item/item_use_icon = null
-	var/atom/movable/screen/gun/radio/radio_use_icon = null
-	var/atom/movable/screen/gun/move/gun_move_icon = null
-	var/atom/movable/screen/gun/run/gun_run_icon = null
-	var/atom/movable/screen/gun/mode/gun_setting_icon = null
-	var/atom/movable/screen/ling/chems/ling_chem_display = null
-	var/atom/movable/screen/borer/chems/borer_chem_display = null
-	var/atom/movable/screen/wizard/energy/wiz_energy_display = null
-	var/atom/movable/screen/wizard/instability/wiz_instability_display = null
-	var/atom/movable/screen/autowhisper_display = null
+	var/tmp/atom/movable/screen/hands = null
+	var/tmp/atom/movable/screen/pullin = null
+	var/tmp/atom/movable/screen/purged = null
+	var/tmp/atom/movable/screen/internals = null
+	var/tmp/atom/movable/screen/i_select = null
+	var/tmp/atom/movable/screen/m_select = null
+	var/tmp/atom/movable/screen/healths = null
+	var/tmp/atom/movable/screen/throw_icon = null
+	var/tmp/atom/movable/screen/pain = null
+	var/tmp/atom/movable/screen/gun/item/item_use_icon = null
+	var/tmp/atom/movable/screen/gun/radio/radio_use_icon = null
+	var/tmp/atom/movable/screen/gun/move/gun_move_icon = null
+	var/tmp/atom/movable/screen/gun/run/gun_run_icon = null
+	var/tmp/atom/movable/screen/gun/mode/gun_setting_icon = null
+	var/tmp/atom/movable/screen/ling/chems/ling_chem_display = null
+	var/tmp/atom/movable/screen/borer/chems/borer_chem_display = null
+	var/tmp/atom/movable/screen/wizard/energy/wiz_energy_display = null
+	var/tmp/atom/movable/screen/wizard/instability/wiz_instability_display = null
+	var/tmp/atom/movable/screen/autowhisper_display = null
 
-	var/datum/plane_holder/plane_holder = null
+	var/tmp/datum/plane_holder/plane_holder = null
 	var/list/vis_enabled = null		// List of vision planes that should be graphically visible (list of their VIS_ indexes).
 	var/list/planes_visible = null	// List of atom planes that are logically visible/interactable (list of actual plane numbers).
 
 	//spells hud icons - this interacts with add_spell and remove_spell
-	var/list/atom/movable/screen/movable/spell_master/spell_masters = null
-	var/atom/movable/screen/movable/ability_master/ability_master = null
+	var/tmp/list/atom/movable/screen/movable/spell_master/spell_masters = null
+	var/tmp/atom/movable/screen/movable/ability_master/ability_master = null
 
 	/*A bunch of this stuff really needs to go under their own defines instead of being globally attached to mob.
 	A variable should only be globally attached to turfs/objects/whatever, when it is in fact needed as such.
@@ -75,7 +75,7 @@
 	I'll make some notes on where certain variable defines should probably go.
 	Changing this around would probably require a good look-over the pre-existing code.
 	*/
-	var/atom/movable/screen/zone_sel/zone_sel = null
+	var/tmp/atom/movable/screen/zone_sel/zone_sel = null
 
 	var/use_me = 1 //Allows all mobs to use the me verb by default, will have to manually specify they cannot
 	var/damageoverlaytemp = 0
@@ -153,11 +153,11 @@
 
 	var/seer = 0 //for cult//Carbon, probably Human
 
-	var/datum/hud/hud_used = null
+	var/tmp/datum/hud/hud_used = null
 
 	var/list/grabbed_by = list()
 
-	var/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
+	var/tmp/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
 	var/in_throw_mode = 0
 
@@ -204,7 +204,7 @@
 	*/
 
 //The last mob/living/carbon to push/drag/grab this mob (mostly used by slimes friend recognition)
-	var/mob/living/carbon/LAssailant = null
+	var/tmp/mob/living/carbon/LAssailant = null
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
 	var/list/datum/spell/spell_list = list()
@@ -218,12 +218,12 @@
 
 	var/status_flags = CANSTUN|CANWEAKEN|CANPARALYSE|CANPUSH	//bitflags defining which status effects can be inflicted (replaces canweaken, canstun, etc)
 
-	var/area/lastarea = null
-	var/lastareachange = null
+	var/tmp/area/lastarea = null
+	var/tmp/lastareachange = null
 
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 
-	var/list/radar_blips // list of screen objects, radar blips (currently unused; null until populated)
+	var/tmp/list/radar_blips // list of screen objects, radar blips (currently unused; null until populated)
 	var/radar_open = 0 	// nonzero is radar is open
 
 
@@ -237,7 +237,7 @@
 
 	//If set, indicates that the client "belonging" to this (clientless) mob is currently controlling some other mob
 	//so don't treat them as being SSD even though their client var is null.
-	var/mob/teleop = null
+	var/tmp/mob/teleop = null
 
 	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes
 
@@ -264,20 +264,20 @@
 	var/in_enclosed_vehicle = 0	//For mechs and fighters ambiance. Can be used in other cases.
 
 	///List of progress bars this mob is currently seeing for actions
-	var/list/progressbars = null //for stacking do_after bars
+	var/tmp/list/progressbars = null //for stacking do_after bars
 
 	///For storing what do_after's someone has, key = string, value = amount of interactions of that type happening.
-	var/list/do_afters
+	var/tmp/list/do_afters
 
 	///Allows a datum to intercept all click calls this mob is the source of
-	var/datum/click_intercept
+	var/tmp/datum/click_intercept
 
-	var/datum/focus //What receives our keyboard inputs. src by default
+	var/tmp/datum/focus //What receives our keyboard inputs. src by default
 
 	/// dict of custom stat tabs with data
 	var/list/list/misc_tabs = list()
 
-	var/list/datum/action/actions
+	var/tmp/list/datum/action/actions
 
 	VAR_PROTECTED/list/viruses
 	VAR_PROTECTED/list/resistances
@@ -296,9 +296,9 @@
 
 	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
-	var/atom/movable/screen/shadekin/shadekin_display = null
-	var/atom/movable/screen/shadekin/lleill_display = null
-	var/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display = null
+	var/tmp/atom/movable/screen/shadekin/shadekin_display = null
+	var/tmp/atom/movable/screen/shadekin/lleill_display = null
+	var/tmp/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display = null
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.

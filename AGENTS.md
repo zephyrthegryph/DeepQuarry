@@ -155,6 +155,8 @@ Windows is the supported dev OS. Entry points (`bin/`):
 
 **Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing `verdigris.dll` instead of compiling the Rust workspace (each fresh worktree otherwise rebuilds it from scratch). Rust work should set `RUSTC_WRAPPER=sccache` so worktrees share compiled dependencies. The build also honours `CARGO_TARGET_DIR`.
 
+**Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing `verdigris.dll` instead of compiling the Rust workspace (each fresh worktree otherwise rebuilds it from scratch). Rust work should set `RUSTC_WRAPPER=sccache` so worktrees share compiled dependencies. The build also honours `CARGO_TARGET_DIR`.
+
 Runtime DMI note: because repacked `.dmi` live only in `icons/gen/`, code that reads
 DMI metadata at runtime via rust-g resolves the `icons/gen/` copy automatically
 (`icon_metadata()`, `universal_icon.to_list()`).

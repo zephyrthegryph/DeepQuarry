@@ -338,7 +338,7 @@
 			return
 		vore_fx(owner)
 
-/obj/belly/deserialize(list/data)
+/obj/belly/state_post_apply(list/blob, flags)
 	..()
 	if(!SSchemistry.chemical_reagents[reagentid])
 		to_chat(owner, span_warning("Belly reagent with ID \"[reagentid]\" not found, please reselect your liquid reagent"))

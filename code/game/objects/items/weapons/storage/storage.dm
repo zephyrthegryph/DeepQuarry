@@ -28,19 +28,19 @@
 	var/storage_slots = null //The number of storage slots in this container.  If null, it uses the volume-based storage instead.
 
 	/// Boxes screen object for fixed-size storage (belts, etc)
-	var/atom/movable/screen/storage/boxes = null
+	var/tmp/atom/movable/screen/storage/boxes = null
 	/// List of 'click catchers' for boxes for fixed-size storage
-	var/list/box_catchers = null
+	var/tmp/list/box_catchers = null
 
 	/// For dynamic storage, the leftmost pixel column for the whole storage display. Most of the interesting effects are hung on this in vis_contents.
-	var/atom/movable/screen/storage/storage_start = null
+	var/tmp/atom/movable/screen/storage/storage_start = null
 	/// For dynamic storage, the majority of the width of the whole storage display. Decorative, but sized to the width appropriate to represent how much storage there is.
-	var/atom/movable/screen/storage/storage_continue = null
+	var/tmp/atom/movable/screen/storage/storage_continue = null
 	/// For dynamic storage, the rightmost pixel column for the whole storage display. Decorative.
-	var/atom/movable/screen/storage/storage_end = null
+	var/tmp/atom/movable/screen/storage/storage_end = null
 
 	/// The "X" button at the far right of the storage
-	var/atom/movable/screen/close/closer = null
+	var/tmp/atom/movable/screen/close/closer = null
 
 	var/use_to_pickup	//Set this to make it possible to use this item in an inverse way, so you can have the item in your hand and click items on the floor to pick them up.
 	var/display_contents_with_number	//Set this to make the storage item group contents of the same type and display them as a number.

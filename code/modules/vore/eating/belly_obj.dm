@@ -6,8 +6,6 @@
 //	How many times have I rewritten bellies and vore now? -Aro
 //
 
-// If you change what variables are on this, then you need to update the copy() proc.
-
 //
 // Parent type of all the various "belly" varieties.
 //
@@ -54,15 +52,15 @@
 	var/fancy_vore = FALSE					// Using the new sounds?
 	var/is_wet = TRUE						// Is this belly's insides made of slimy parts?
 	var/wet_loop = TRUE						// Does the belly have a fleshy loop playing?
-	var/obj/item/storage/vore_egg/ownegg	// Is this belly creating an egg?
+	var/tmp/obj/item/storage/vore_egg/ownegg	// Is this belly creating an egg?
 	var/egg_type = "Egg"					// Default egg type and path.
-	var/egg_path = /obj/item/storage/vore_egg
+	var/tmp/egg_path = /obj/item/storage/vore_egg
 	var/egg_name = null						// Custom egg name
 	var/egg_size = 0						// Custom egg size
 	var/list/list/emote_lists = list()			// Idle emotes that happen on their own, depending on the bellymode. Contains lists of strings indexed by bellymode
 	var/emote_time = 60						// How long between stomach emotes at prey (in seconds)
 	var/emote_active = TRUE					// Are we even giving emotes out at all or not?
-	var/next_emote = 0						// When we're supposed to print our next emote, as a world.time
+	var/tmp/next_emote = 0						// When we're supposed to print our next emote, as a world.time
 	var/selective_preference = DM_DIGEST	// Which type of selective bellymode do we default to?
 	var/eating_privacy_local = "default"	//Overrides eating_privacy_global if not "default". Determines if attempt/success messages are subtle/loud
 	var/is_feedable = TRUE					// If this belly shows up in belly selections for others.
@@ -94,10 +92,10 @@
 	var/resist_triggers_animation = TRUE
 	var/size_factor_for_sprite = 1
 	var/belly_sprite_to_affect = "stomach"
-	var/datum/sprite_accessory/tail/tail_to_change_to = FALSE
-	var/tail_colouration = FALSE
-	var/tail_extra_overlay = FALSE
-	var/tail_extra_overlay2 = FALSE
+	var/tmp/datum/sprite_accessory/tail/tail_to_change_to = FALSE
+	var/tmp/tail_colouration = FALSE
+	var/tmp/tail_extra_overlay = FALSE
+	var/tmp/tail_extra_overlay2 = FALSE
 	var/undergarment_chosen = "Underwear, bottom"
 	var/undergarment_if_none
 	var/undergarment_color = COLOR_GRAY
@@ -140,7 +138,7 @@
 	var/tmp/static/list/slots = list(slot_back,slot_handcuffed,slot_l_store,slot_r_store,slot_wear_mask,slot_l_hand,slot_r_hand,slot_wear_id,slot_glasses,slot_gloves,slot_head,slot_shoes,slot_belt,slot_wear_suit,slot_w_uniform,slot_s_store,slot_l_ear,slot_r_ear)
 
 	var/tmp/mob/living/owner					// The mob whose belly this is.
-	var/tmp/digest_mode = DM_HOLD				// Current mode the belly is set to from digest_modes (+transform_modes if human)
+	var/digest_mode = DM_HOLD				// Current mode the belly is set to from digest_modes (+transform_modes if human)
 	var/tmp/list/items_preserved = list()		// Stuff that wont digest so we shouldn't process it again.
 	var/tmp/recent_sound = FALSE				// Prevent audio spam
 	var/tmp/drainmode = DR_NORMAL				// Simply drains the prey then does nothing.
@@ -187,7 +185,7 @@
 	var/metabolism_overlay = FALSE					//Extra mush layer for ingested reagents currently in metabolism.
 	var/metabolism_mush_ratio = 15					//Metabolism reagent volume per unit compared to nutrition units.
 	var/max_ingested = 500							//How much metabolism content for full overlay.
-	var/ingested_color = "#664330"					//Normal color holder for ingested layer. Blended from existing reagent colors.
+	var/tmp/ingested_color = "#664330"					//Normal color holder for ingested layer. Blended from existing reagent colors.
 	var/custom_ingested_color = null				//Custom color for ingested reagent layer.
 	var/custom_ingested_alpha = 255					//Custom alpha for ingested reagent layer if not using normal mush layer.
 
@@ -202,11 +200,11 @@
 	var/gen_cost = 1 								//amount of nutrient taken from the host everytime nutrition is used to make reagents
 	var/gen_amount = 1							//Does not actually influence amount produced, but is used as a way to tell the system how much total reagent it has to take into account when filling a belly
 
-	var/gen_interval = 0							//Interval in seconds for generating fluids, once it reaches the value of gen_time one cycle of reagents generation will occur
+	var/tmp/gen_interval = 0							//Interval in seconds for generating fluids, once it reaches the value of gen_time one cycle of reagents generation will occur
 	var/gen_time = 5								//Time it takes in seconds to produce one cycle of reagents, technically add 1 second to it for the tick where the fluid is produced
 	var/gen_time_display = "1 hour"					//The displayed time it takes from a belly to go from 0 to 100
 	var/custom_max_volume = 100						//Variable for people to limit amount of liquid they can receive/produce in a belly
-	var/digest_nutri_gain = 0						//variable to store temporary nutrition gain from digestion and allow a seperate proc to ease up on the wall of code
+	var/tmp/digest_nutri_gain = 0						//variable to store temporary nutrition gain from digestion and allow a seperate proc to ease up on the wall of code
 	var/reagent_transfer_verb = "injects"			//verb for transfer of reagent from a vore belly
 
 	var/vorefootsteps_sounds = FALSE				//If this belly can make sounds when someone walks around
@@ -254,13 +252,13 @@
 	)
 
 	// Special var section
-	var/special_entrance_sound				// Mob specific custom entry sound set by mob's init_vore when applicable
+	var/tmp/special_entrance_sound				// Mob specific custom entry sound set by mob's init_vore when applicable
 	var/slow_digestion = FALSE				// Gradual corpse digestion
 	var/slow_brutal = FALSE					// Gradual corpse digestion: Stumpy's Special
 	var/sound_volume = 100					// Volume knob.
 	var/speedy_mob_processing = FALSE		// Independent belly processing to utilize SSobj instead of SSbellies 3x speed.
-	var/cycle_sloshed = FALSE				// Has vorgan entrance made a wet slosh this cycle? Soundspam prevention for multiple items entered.
-	var/egg_cycles = 0						// Process egg mode after 10 cycles.
+	var/tmp/cycle_sloshed = FALSE				// Has vorgan entrance made a wet slosh this cycle? Soundspam prevention for multiple items entered.
+	var/tmp/egg_cycles = 0						// Process egg mode after 10 cycles.
 	var/recycling = FALSE					// Recycling mode.
 	var/entrance_logs = TRUE				// Belly-specific entry message toggle.
 	var/noise_freq = 42500					// Tasty sound prefs.
@@ -268,27 +266,22 @@
 	var/storing_nutrition = FALSE			// Storing gained nutrition as paste instead of absorbing it.
 	var/belchchance = 0						// % Chance of pred belching on prey struggle
 
-	var/list/belly_surrounding = list()		// A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
+	var/tmp/list/belly_surrounding = list()		// A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
 	var/bellytemperature = T20C				// Temperature applied to humans in the belly.
 	var/temperature_damage = FALSE			// Does temperature damage prey?
-	var/last_transfer_log = 0				// Prevent server message spam!
-	var/next_transfer_log = 0				// Prevent server message spam!
-	var/entrance_log_count = 0				// Entrance count before spawm
+	var/tmp/last_transfer_log = 0				// Prevent server message spam!
+	var/tmp/next_transfer_log = 0				// Prevent server message spam!
+	var/tmp/entrance_log_count = 0				// Entrance count before spawm
 	flags = NOREACT							// We dont want bellies to start bubling nonstop due to people mixing when transfering and making different reagents
 
-// vars_to_save() is now defined in belly_serializer.dm and driven by
-// /datum/belly_serializer/proc/get_schema() — see that file to add new vars.
-// The legacy hand-written list is preserved in /obj/belly/vars_to_save_legacy()
-// for schema-coverage validation at boot.
-//
-// REMOVED: old hand-written /obj/belly/vars_to_save() block.
-// BEGIN legacy-compat marker so grep still finds this location:
-//   belly_vars_to_save_ORIGINAL_REMOVED
-//
-// If you need to add a new saveable belly var:
-//   1. Declare it on /obj/belly.
-//   2. Add its entry to /datum/belly_serializer/proc/get_schema() in belly_serializer.dm.
-//   That's all.
+// A belly's saved state is its saved vars (code/datums/state/schema.dm): mark
+// runtime vars tmp, and a new saved var is picked up by prefs saving on its own.
+// The liquid in the belly is not part of its preferences, and the digest mode
+// only persists when save_digest_mode is set.
+/obj/belly/state_exclude()
+	. = ..() + list("reagents")
+	if(!save_digest_mode)
+		. += "digest_mode"
 
 /obj/belly/Initialize(mapload)
 	. = ..()
@@ -1109,384 +1102,6 @@
 		if(whitelist & autotransfer_flags_list_items["Food"])
 			if(istype(prey, /obj/item/reagent_containers/food)) return TRUE
 	return FALSE
-
-// Belly copies and then returns the copy
-// Needs to be updated for any var changes
-// NOTE: This is a hand-maintained per-var clone and WILL silently drift out of sync
-// whenever a var is added to /obj/belly without a matching line here. The
-// belly_serializer schema (get_schema() in belly_serializer.dm) is the single source
-// of truth elsewhere; migrating copy() onto it would remove this drift risk but is a
-// large, hard-to-test change — do not attempt it piecemeal. When adding a /obj/belly
-// var, add it to BOTH this proc and the serializer schema.
-/obj/belly/proc/copy(mob/new_owner)
-	var/obj/belly/dupe = new /obj/belly(new_owner)
-
-	//// Non-object variables
-	dupe.name = name
-	dupe.desc = desc
-	dupe.display_name = display_name
-	dupe.message_mode = message_mode
-	dupe.absorbed_desc = absorbed_desc
-	dupe.vore_sound = vore_sound
-	dupe.vore_verb = vore_verb
-	dupe.release_verb = release_verb
-	dupe.human_prey_swallow_time = human_prey_swallow_time
-	dupe.nonhuman_prey_swallow_time = nonhuman_prey_swallow_time
-	dupe.emote_time = emote_time
-	dupe.nutrition_percent = nutrition_percent
-	dupe.digest_brute = digest_brute
-	dupe.digest_burn = digest_burn
-	dupe.digest_oxy = digest_oxy
-	dupe.digest_tox = digest_tox
-	dupe.digest_clone = digest_clone
-	dupe.bellytemperature = bellytemperature
-	dupe.temperature_damage = temperature_damage
-	dupe.immutable = immutable
-	dupe.can_taste = can_taste
-	dupe.escapable = escapable
-	dupe.escapetime = escapetime
-	dupe.digestchance = digestchance
-	dupe.absorbchance = absorbchance
-	dupe.escapechance = escapechance
-	dupe.escapechance_absorbed = escapechance_absorbed
-	dupe.transferchance = transferchance
-	dupe.transferchance_secondary = transferchance_secondary
-	dupe.transferlocation = transferlocation
-	dupe.transferlocation_secondary = transferlocation_secondary
-	dupe.bulge_size = bulge_size
-	dupe.shrink_grow_size = shrink_grow_size
-	dupe.mode_flags = mode_flags
-	dupe.item_digest_mode = item_digest_mode
-	dupe.contaminates = contaminates
-	dupe.contamination_flavor = contamination_flavor
-	dupe.contamination_color = contamination_color
-	dupe.release_sound = release_sound
-	dupe.fancy_vore = fancy_vore
-	dupe.is_wet = is_wet
-	dupe.wet_loop = wet_loop
-	dupe.reagent_mode_flags = reagent_mode_flags
-	dupe.belly_fullscreen_color = belly_fullscreen_color
-	dupe.belly_fullscreen_color2 = belly_fullscreen_color2
-	dupe.belly_fullscreen_color3 = belly_fullscreen_color3
-	dupe.belly_fullscreen_color4 = belly_fullscreen_color4
-	dupe.belly_fullscreen_alpha = belly_fullscreen_alpha
-	dupe.show_liquids = show_liquids
-	dupe.reagent_gen_cost_limit = reagent_gen_cost_limit
-	dupe.reagentbellymode = reagentbellymode
-	dupe.vorefootsteps_sounds = vorefootsteps_sounds
-	dupe.liquid_fullness1_messages = liquid_fullness1_messages
-	dupe.liquid_fullness2_messages = liquid_fullness2_messages
-	dupe.liquid_fullness3_messages = liquid_fullness3_messages
-	dupe.liquid_fullness4_messages = liquid_fullness4_messages
-	dupe.liquid_fullness5_messages = liquid_fullness5_messages
-	dupe.displayed_message_flags = displayed_message_flags
-	dupe.reagent_name = reagent_name
-	dupe.reagent_chosen = reagent_chosen
-	dupe.reagentid = reagentid
-	dupe.reagentcolor = reagentcolor
-	dupe.liquid_overlay = liquid_overlay
-	dupe.max_liquid_level = max_liquid_level
-	dupe.reagent_touches = reagent_touches
-	dupe.mush_overlay = mush_overlay
-	dupe.mush_color = mush_color
-	dupe.mush_alpha = mush_alpha
-	dupe.max_mush = max_mush
-	dupe.min_mush = min_mush
-	dupe.item_mush_val = item_mush_val
-	dupe.custom_reagentcolor = custom_reagentcolor
-	dupe.custom_reagentalpha = custom_reagentalpha
-	dupe.metabolism_overlay = metabolism_overlay
-	dupe.metabolism_mush_ratio = metabolism_mush_ratio
-	dupe.max_ingested = max_ingested
-	dupe.custom_ingested_color = custom_ingested_color
-	dupe.custom_ingested_alpha = custom_ingested_alpha
-	dupe.gen_cost = gen_cost
-	dupe.gen_amount = gen_amount
-	dupe.gen_time = gen_time
-	dupe.gen_time_display = gen_time_display
-	dupe.reagent_transfer_verb = reagent_transfer_verb
-	dupe.custom_max_volume = custom_max_volume
-	dupe.vorespawn_blacklist = vorespawn_blacklist
-	dupe.vorespawn_whitelist = vorespawn_whitelist
-	dupe.vorespawn_absorbed = vorespawn_absorbed
-	dupe.absorbed_multiplier = absorbed_multiplier
-	dupe.count_liquid_for_sprite = count_liquid_for_sprite
-	dupe.liquid_multiplier = liquid_multiplier
-	dupe.undergarment_chosen = undergarment_chosen
-	dupe.undergarment_if_none = undergarment_if_none
-	dupe.undergarment_color = undergarment_color
-	dupe.autotransferchance = autotransferchance
-	dupe.autotransferwait = autotransferwait
-	dupe.autotransferlocation = autotransferlocation
-	dupe.autotransfer_enabled = autotransfer_enabled
-	dupe.autotransferchance_secondary = autotransferchance_secondary
-	dupe.autotransferlocation_secondary = autotransferlocation_secondary
-	dupe.autotransfer_min_amount = autotransfer_min_amount
-	dupe.autotransfer_max_amount = autotransfer_max_amount
-	dupe.slow_digestion = slow_digestion
-	dupe.slow_brutal = slow_brutal
-	dupe.sound_volume = sound_volume
-	dupe.egg_name = egg_name
-	dupe.egg_size = egg_size
-	dupe.recycling = recycling
-	dupe.storing_nutrition = storing_nutrition
-	dupe.is_feedable = is_feedable
-	dupe.entrance_logs = entrance_logs
-	dupe.noise_freq = noise_freq
-	dupe.item_digest_logs = item_digest_logs
-	dupe.show_fullness_messages = show_fullness_messages
-	dupe.belchchance = belchchance
-	dupe.digest_max = digest_max
-	dupe.belly_fullscreen = belly_fullscreen
-	dupe.disable_hud = disable_hud
-	dupe.colorization_enabled = colorization_enabled
-	dupe.egg_type = egg_type
-	dupe.emote_time = emote_time
-	dupe.emote_active = emote_active
-	dupe.selective_preference = selective_preference
-	dupe.save_digest_mode = save_digest_mode
-	dupe.eating_privacy_local = eating_privacy_local
-	dupe.silicon_belly_overlay_preference = silicon_belly_overlay_preference
-	dupe.belly_mob_mult = belly_mob_mult
-	dupe.belly_item_mult = belly_item_mult
-	dupe.belly_overall_mult	= belly_overall_mult
-	dupe.vore_sprite_flags = vore_sprite_flags
-	dupe.affects_vore_sprites = affects_vore_sprites
-	dupe.count_absorbed_prey_for_sprite = count_absorbed_prey_for_sprite
-	dupe.resist_triggers_animation = resist_triggers_animation
-	dupe.size_factor_for_sprite = size_factor_for_sprite
-	dupe.belly_sprite_to_affect = belly_sprite_to_affect
-	dupe.health_impacts_size = health_impacts_size
-	dupe.count_items_for_sprite = count_items_for_sprite
-	dupe.item_multiplier = item_multiplier
-	dupe.undergarment_chosen = undergarment_chosen
-	dupe.undergarment_if_none = undergarment_if_none
-	dupe.undergarment_color = undergarment_color
-
-	//// Object-holding variables
-	//struggle_messages_outside - strings
-	dupe.struggle_messages_outside.Cut()
-	for(var/I in struggle_messages_outside)
-		dupe.struggle_messages_outside += I
-
-	//struggle_messages_inside - strings
-	dupe.struggle_messages_inside.Cut()
-	for(var/I in struggle_messages_inside)
-		dupe.struggle_messages_inside += I
-
-	//absorbed_struggle_messages_outside - strings
-	dupe.absorbed_struggle_messages_outside.Cut()
-	for(var/I in absorbed_struggle_messages_outside)
-		dupe.absorbed_struggle_messages_outside += I
-
-	//absorbed_struggle_messages_inside - strings
-	dupe.absorbed_struggle_messages_inside.Cut()
-	for(var/I in absorbed_struggle_messages_inside)
-		dupe.absorbed_struggle_messages_inside += I
-
-	//escape_attempt_messages_owner - strings
-	dupe.escape_attempt_messages_owner.Cut()
-	for(var/I in escape_attempt_messages_owner)
-		dupe.escape_attempt_messages_owner += I
-
-	//escape_attempt_messages_prey - strings
-	dupe.escape_attempt_messages_prey.Cut()
-	for(var/I in escape_attempt_messages_prey)
-		dupe.escape_attempt_messages_prey += I
-
-	//escape_messages_owner - strings
-	dupe.escape_messages_owner.Cut()
-	for(var/I in escape_messages_owner)
-		dupe.escape_messages_owner += I
-
-	//escape_messages_prey - strings
-	dupe.escape_messages_prey.Cut()
-	for(var/I in escape_messages_prey)
-		dupe.escape_messages_prey += I
-
-	//escape_messages_outside - strings
-	dupe.escape_messages_outside.Cut()
-	for(var/I in escape_messages_outside)
-		dupe.escape_messages_outside += I
-
-	//escape_item_messages_owner - strings
-	dupe.escape_item_messages_owner.Cut()
-	for(var/I in escape_item_messages_owner)
-		dupe.escape_item_messages_owner += I
-
-	//escape_item_messages_prey - strings
-	dupe.escape_item_messages_prey.Cut()
-	for(var/I in escape_item_messages_prey)
-		dupe.escape_item_messages_prey += I
-
-	//escape_item_messages_outside - strings
-	dupe.escape_item_messages_outside.Cut()
-	for(var/I in escape_item_messages_outside)
-		dupe.escape_item_messages_outside += I
-
-	//escape_fail_messages_owner - strings
-	dupe.escape_fail_messages_owner.Cut()
-	for(var/I in escape_fail_messages_owner)
-		dupe.escape_fail_messages_owner += I
-
-	//escape_fail_messages_prey - strings
-	dupe.escape_fail_messages_prey.Cut()
-	for(var/I in escape_fail_messages_prey)
-		dupe.escape_fail_messages_prey += I
-
-	//escape_attempt_absorbed_messages_owner - strings
-	dupe.escape_attempt_absorbed_messages_owner.Cut()
-	for(var/I in escape_attempt_absorbed_messages_owner)
-		dupe.escape_attempt_absorbed_messages_owner += I
-
-	//escape_attempt_absorbed_messages_prey - strings
-	dupe.escape_attempt_absorbed_messages_prey.Cut()
-	for(var/I in escape_attempt_absorbed_messages_prey)
-		dupe.escape_attempt_absorbed_messages_prey += I
-
-	//escape_absorbed_messages_owner - strings
-	dupe.escape_absorbed_messages_owner.Cut()
-	for(var/I in escape_absorbed_messages_owner)
-		dupe.escape_absorbed_messages_owner += I
-
-	//escape_absorbed_messages_prey - strings
-	dupe.escape_absorbed_messages_prey.Cut()
-	for(var/I in escape_absorbed_messages_prey)
-		dupe.escape_absorbed_messages_prey += I
-
-	//escape_absorbed_messages_outside - strings
-	dupe.escape_absorbed_messages_outside.Cut()
-	for(var/I in escape_absorbed_messages_outside)
-		dupe.escape_absorbed_messages_outside += I
-
-	//escape_fail_absorbed_messages_owner - strings
-	dupe.escape_fail_absorbed_messages_owner.Cut()
-	for(var/I in escape_fail_absorbed_messages_owner)
-		dupe.escape_fail_absorbed_messages_owner += I
-
-	//escape_fail_absorbed_messages_prey - strings
-	dupe.escape_fail_absorbed_messages_prey.Cut()
-	for(var/I in escape_fail_absorbed_messages_prey)
-		dupe.escape_fail_absorbed_messages_prey += I
-
-	//primary_transfer_messages_owner - strings
-	dupe.primary_transfer_messages_owner.Cut()
-	for(var/I in primary_transfer_messages_owner)
-		dupe.primary_transfer_messages_owner += I
-
-	//primary_transfer_messages_prey - strings
-	dupe.primary_transfer_messages_prey.Cut()
-	for(var/I in primary_transfer_messages_prey)
-		dupe.primary_transfer_messages_prey += I
-
-	//secondary_transfer_messages_owner - strings
-	dupe.secondary_transfer_messages_owner.Cut()
-	for(var/I in secondary_transfer_messages_owner)
-		dupe.secondary_transfer_messages_owner += I
-
-	//secondary_transfer_messages_prey - strings
-	dupe.secondary_transfer_messages_prey.Cut()
-	for(var/I in secondary_transfer_messages_prey)
-		dupe.secondary_transfer_messages_prey += I
-
-	//digest_chance_messages_owner - strings
-	dupe.digest_chance_messages_owner.Cut()
-	for(var/I in digest_chance_messages_owner)
-		dupe.digest_chance_messages_owner += I
-
-	//digest_chance_messages_prey - strings
-	dupe.digest_chance_messages_prey.Cut()
-	for(var/I in digest_chance_messages_prey)
-		dupe.digest_chance_messages_prey += I
-
-	//absorb_chance_messages_owner - strings
-	dupe.absorb_chance_messages_owner.Cut()
-	for(var/I in absorb_chance_messages_owner)
-		dupe.absorb_chance_messages_owner += I
-
-	//absorb_chance_messages_prey - strings
-	dupe.absorb_chance_messages_prey.Cut()
-	for(var/I in absorb_chance_messages_prey)
-		dupe.absorb_chance_messages_prey += I
-
-	//digest_messages_owner - strings
-	dupe.digest_messages_owner.Cut()
-	for(var/I in digest_messages_owner)
-		dupe.digest_messages_owner += I
-
-	//digest_messages_prey - strings
-	dupe.digest_messages_prey.Cut()
-	for(var/I in digest_messages_prey)
-		dupe.digest_messages_prey += I
-
-	//absorb_messages_owner - strings
-	dupe.absorb_messages_owner.Cut()
-	for(var/I in absorb_messages_owner)
-		dupe.absorb_messages_owner += I
-
-	//absorb_messages_prey - strings
-	dupe.absorb_messages_prey.Cut()
-	for(var/I in absorb_messages_prey)
-		dupe.absorb_messages_prey += I
-
-	//unabsorb_messages_owner - strings
-	dupe.unabsorb_messages_owner.Cut()
-	for(var/I in unabsorb_messages_owner)
-		dupe.unabsorb_messages_owner += I
-
-	//unabsorb_messages_prey - strings
-	dupe.unabsorb_messages_prey.Cut()
-	for(var/I in unabsorb_messages_prey)
-		dupe.unabsorb_messages_prey += I
-
-	//examine_messages - strings
-	dupe.examine_messages.Cut()
-	for(var/I in examine_messages)
-		dupe.examine_messages += I
-
-	//generated_reagents - strings
-	dupe.generated_reagents.Cut()
-	for(var/I in generated_reagents)
-		dupe.generated_reagents += I
-
-	//fullness1_messages - strings
-	dupe.fullness1_messages.Cut()
-	for(var/I in fullness1_messages)
-		dupe.fullness1_messages += I
-
-	//fullness2_messages - strings
-	dupe.fullness2_messages.Cut()
-	for(var/I in fullness2_messages)
-		dupe.fullness2_messages += I
-
-	//fullness3_messages - strings
-	dupe.fullness3_messages.Cut()
-	for(var/I in fullness3_messages)
-		dupe.fullness3_messages += I
-
-	//fullness4_messages - strings
-	dupe.fullness4_messages.Cut()
-	for(var/I in fullness4_messages)
-		dupe.fullness4_messages += I
-
-	//generated_reagents - strings
-	dupe.fullness5_messages.Cut()
-	for(var/I in fullness5_messages)
-		dupe.fullness5_messages += I
-
-	//examine_messages_absorbed - strings
-	dupe.examine_messages_absorbed.Cut()
-	for(var/I in examine_messages_absorbed)
-		dupe.examine_messages_absorbed += I
-
-	//emote_lists - index: digest mode, key: list of strings
-	dupe.emote_lists.Cut()
-	for(var/K in emote_lists)
-		dupe.emote_lists[K] = list()
-		for(var/I in emote_lists[K])
-			dupe.emote_lists[K] += I
-
-	return dupe
 
 /obj/belly/container_resist(mob/M)
 	return relay_resist(M)

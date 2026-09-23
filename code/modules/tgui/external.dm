@@ -145,7 +145,7 @@
  * Associative list of JSON-encoded shared states that were set by
  * tgui clients.
  */
-/datum/var/list/tgui_shared_states
+/datum/var/tmp/list/tgui_shared_states
 
 /**
  * global

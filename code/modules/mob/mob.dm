@@ -40,7 +40,6 @@
 		QDEL_NULL_LIST(vore_organs)
 	if(vorePanel)
 		QDEL_NULL(vorePanel)
-	QDEL_NULL(vore_state_datum)
 
 	for(var/mob/observer/dead/M in following_mobs)
 		M.stop_following()
@@ -1729,8 +1728,8 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 // is the highest-positioned definer in the override chain for the members it
 // sets, so every override stays after its base definition (resolution preserved). ===
 /obj/item
-	var/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
-	var/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
+	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
+	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
 
 /obj/item/dropped(mob/living/user)
 	. = ..()

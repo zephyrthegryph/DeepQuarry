@@ -98,13 +98,12 @@
 /datum/property_provider/material/proc/fold(datum/material/M, amount, acc)
 	return acc
 
-/// A type's compile-time `matter` list. The one place per-type matter is read.
-/// initial() of a list var is null in BYOND, so this is null today and
-/// matter-derived values are per instance only, until matter moves to a
-/// static per-type table.
+/// A type's default `matter` list. The one place per-type matter is read.
+/// initial() of a list var is null in BYOND, so it comes from the state
+/// schema's per-type list defaults, which only latent-safe types have; other
+/// types are null and their matter-derived values are per instance only.
 /proc/dq_property_type_matter(path)
-	var/obj/item/I = path
-	return initial(I.matter)
+	return dq_property_type_state_list(path, "matter")
 
 // ---- Components ----
 

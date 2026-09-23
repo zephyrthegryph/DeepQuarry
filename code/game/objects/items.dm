@@ -6,7 +6,7 @@
 
 	//matter = list(MAT_STEEL = 1)
 
-	var/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
+	var/tmp/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
 	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
@@ -44,7 +44,7 @@
 	var/max_pressure_protection // Set this variable if the item protects its wearer against high pressures below an upper bound. Keep at null to disable protection.
 	var/min_pressure_protection // Set this variable if the item protects its wearer against low pressures above a lower bound. Keep at null to disable protection. 0 represents protection against hard vacuum.
 
-	var/list/actions //list of /datum/action's that this item has.
+	var/tmp/list/actions //list of /datum/action's that this item has.
 	var/list/actions_types //list of paths of action datums to give to the item on New().
 
 	//This flag is used to determine when items in someone's inventory cover others. IE helmets making it so you can't see glasses, etc.
@@ -64,7 +64,7 @@
 	var/list/allowed = null //suit storage stuff.
 	var/obj/item/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
-	var/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
+	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
 	var/embed_chance = -1	//0 won't embed, and 100 will always embed
 
@@ -112,7 +112,7 @@
 	// drop sound - this is the default
 	var/drop_sound = "generic_drop"
 
-	var/tip_timer // reference to timer id for a tooltip we might open soon
+	var/tmp/tip_timer // reference to timer id for a tooltip we might open soon
 
 	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
 
@@ -127,8 +127,8 @@
 									//This is automatically set to false when an item is removed from storage
 
 	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
-	var/list/warned_of_possession //Checks to see who has been informed this item is possessed.
-	var/cleaving = FALSE // Used to avoid infinite cleaving.
+	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
+	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
 	var/obj/item/organ/my_augment = null	// Used to reference the object's host organ.
 	var/datum/identification/identity = null
@@ -141,8 +141,8 @@
 	var/digest_stage = null
 	var/d_mult_old = 1 //digest stage descriptions
 	var/d_mult = 1 //digest stage descriptions
-	var/image/d_stage_overlay //digest stage effects
-	var/d_stage_overlay_key //cache key (icon|icon_state|color) for d_stage_overlay; rebuild only when this changes
+	var/tmp/image/d_stage_overlay //digest stage effects
+	var/tmp/d_stage_overlay_key //cache key (icon|icon_state|color) for d_stage_overlay; rebuild only when this changes
 	var/gurgled = FALSE
 	var/oldname
 	var/cleanname

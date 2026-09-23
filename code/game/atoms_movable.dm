@@ -3,14 +3,14 @@
 	glide_size = 8
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
 
-	var/last_move = null //The direction the atom last moved
+	var/tmp/last_move = null //The direction the atom last moved
 	var/anchored = FALSE
 	// var/elevation = 2    - not used anywhere
-	var/moving_diagonally
-	var/move_speed = 10
-	var/l_move_time = 1
+	var/tmp/moving_diagonally
+	var/tmp/move_speed = 10
+	var/tmp/l_move_time = 1
 	var/datum/thrownthing/throwing
-	var/turf/throw_source = null
+	var/tmp/turf/throw_source = null
 	var/throw_speed = 2
 	var/throw_range = 7
 	// moved_recently moved to /datum/component/movable_state

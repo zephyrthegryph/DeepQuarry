@@ -45,7 +45,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	/// TRUE for player-fabricated or deliberately reconfigured assemblies. Map
 	/// defaults remain inspectable without enrolling every machine in exposure.
 	var/material_custom_assembly = FALSE
-	var/material_last_service_event
+	var/tmp/material_last_service_event
 
 /// Single admission point for material simulation. Callers report a physical
 /// event and normalized severity; they never decide lifecycle from their type.

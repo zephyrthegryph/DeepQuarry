@@ -27,7 +27,7 @@
 	var/dupe_type
 
 	/// The datum this components belongs to
-	var/datum/parent
+	var/tmp/datum/parent
 
 	/**
 	  * Only set to true if you are able to properly transfer this component
@@ -39,7 +39,7 @@
 	var/can_transfer = FALSE
 
 	/// A lazy list of the sources for this component
-	var/list/sources
+	var/tmp/list/sources
 
 /**
  * Create a new component.

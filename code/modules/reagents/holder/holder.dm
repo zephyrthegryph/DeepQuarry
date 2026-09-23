@@ -2,15 +2,15 @@
 	var/list/datum/reagent/reagent_list = list()
 	/// Associative lookup: reagent id → /datum/reagent datum. Kept in sync with reagent_list.
 	/// Provides O(1) access for has_reagent, get_reagent_amount, get_reagent, get_data, add_reagent (existing check), del_reagent, remove_reagent.
-	var/list/datum/reagent/reagent_by_id = list()
+	var/tmp/list/datum/reagent/reagent_by_id = list()
 	var/total_volume = 0
 	var/maximum_volume = 100
-	var/atom/my_atom = null
+	var/tmp/atom/my_atom = null
 	/// Nesting depth of begin_batch()/end_batch(). While positive, removals
 	/// defer their reaction check and change notification to end_batch().
-	var/batch_depth = 0
+	var/tmp/batch_depth = 0
 	/// A removal happened inside the current batch.
-	var/batch_changed = FALSE
+	var/tmp/batch_changed = FALSE
 
 /datum/reagents/New(max = 100, atom/A = null)
 	..()

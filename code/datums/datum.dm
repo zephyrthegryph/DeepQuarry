@@ -11,7 +11,7 @@
 /datum
 	#ifdef REFERENCE_TRACKING
 	/// Remaining references requested by the debug reference walker.
-	var/references_to_clear
+	var/tmp/references_to_clear
 	#endif
 	/**
 	  * Tick count time when this object was destroyed.
@@ -19,39 +19,38 @@
 	  * If this is non zero then the object has been garbage collected and is awaiting either
 	  * a hard del by the GC subsystme, or to be autocollected (if it has no references)
 	  */
-	var/gc_destroyed
+	var/tmp/gc_destroyed
 
 	/// Open uis owned by this datum
 	/// Lazy, since this case is semi rare
-	var/list/open_tguis // FIXME: open_uis
+	var/tmp/list/open_tguis // FIXME: open_uis
 
 	/// Active timers with this datum as the target
-	var/list/_active_timers
+	var/tmp/list/_active_timers
 	/// Status traits attached to this datum. associative list of the form: list(trait name (string) = list(source1, source2, source3,...))
-	var/list/_status_traits
+	var/tmp/list/_status_traits
 
 	/**
 	  * Components attached to this datum
 	  *
 	  * Lazy associated list in the structure of `type -> component/list of components`
 	  */
-	var/list/_datum_components
+	var/tmp/list/_datum_components
 	/**
 	  * Any datum registered to receive signals from this datum is in this list
 	  *
 	  * Lazy associated list in the structure of `signal -> registree/list of registrees`
 	  */
-	var/list/_listen_lookup
+	var/tmp/list/_listen_lookup
 	/// Lazy associated list in the structure of `target -> list(signal -> proctype)` that are run when the datum receives that signal
-	var/list/list/_signal_procs
+	var/tmp/list/list/_signal_procs
 
 	/// Datum level flags
-	var/datum_flags = NONE
-	var/trigger_uid
-	var/status_traits
+	var/tmp/datum_flags = NONE
+	var/tmp/status_traits
 
 	/// A weak reference to another datum
-	var/datum/weakref/weak_reference
+	var/tmp/datum/weakref/weak_reference
 
 	/*
 	* Lazy associative list of currently active cooldowns.
@@ -59,11 +58,11 @@
 	* cooldowns [ COOLDOWN_INDEX ] = add_timer()
 	* add_timer() returns the truthy value of -1 when not stoppable, and else a truthy numeric index
 	*/
-	var/list/cooldowns
+	var/tmp/list/cooldowns
 
 
 	/// List for handling persistent filters.
-	var/list/filter_data
+	var/tmp/list/filter_data
 
 #ifdef REFERENCE_TRACKING
 	var/tmp/running_find_references
@@ -71,13 +70,13 @@
 	var/tmp/find_references_on_destroy = FALSE //set this to true on an item to have it find refs after
 	#ifdef REFERENCE_TRACKING_DEBUG
 	///Stores info about where refs are found, used for sanity checks and testing
-	var/list/found_refs
+	var/tmp/list/found_refs
 	#endif
 #endif
 
 	// If we have called dump_harddel_info already. Used to avoid duped calls (since we call it immediately in some cases on failure to process)
 	// Create and destroy is weird and I wanna cover my bases
-	var/harddel_deets_dumped = FALSE
+	var/tmp/harddel_deets_dumped = FALSE
 
 /**
  * Called when a href for this datum is clicked
@@ -168,16 +167,6 @@
 
 	for(var/target in _signal_procs)
 		UnregisterSignal(target, _signal_procs[target])
-
-/// Return a list of data which can be used to investigate the datum, also ensure that you set the semver in the options list
-/datum/proc/serialize_list(list/options, list/semvers)
-	SHOULD_CALL_PARENT(TRUE)
-
-	. = list()
-	.["tag"] = tag
-
-	SET_SERIALIZATION_SEMVER(semvers, "1.0.0")
-	return .
 
 /**
  * Callback called by a timer to end an associative-list-indexed cooldown.

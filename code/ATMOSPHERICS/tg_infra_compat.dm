@@ -48,10 +48,10 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 // === /tg/-specific vars on /obj/machinery and /obj/item ===
 // atmos_processing removed alongside SSair.atmos_machinery.
 /obj/machinery
-	var/rebuilding = FALSE
+	var/tmp/rebuilding = FALSE
 
 /obj/item
-	var/datum/gas_mixture/air_temporary
+	var/tmp/datum/gas_mixture/air_temporary
 
 
 // === /tg/ hud + debug viz ===
@@ -132,7 +132,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 	dir = new_dir
 
 /atom
-	var/smoothing_junction = 0
+	var/tmp/smoothing_junction = 0
 
 /atom/proc/set_smoothed_icon_state(new_junction)
 	smoothing_junction = new_junction
