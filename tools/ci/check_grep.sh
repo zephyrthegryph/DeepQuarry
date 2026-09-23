@@ -148,6 +148,15 @@ if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LI
 	FAILED=1
 fi;
 
+part "life scheduler: wake and hibernate in one place"
+# Only /mob/living/proc/life_wake() and life_hibernate() (scheduler.dm) change whether a mob
+# runs; producers call life_wake() (doc/mob_life_architecture.md §4.9).
+if $grep -n '(life_hibernating|life_awake)\s*[|&]?=[^=]|hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' $code_files | grep -v '^code/modules/mob/living/life/scheduler\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+	echo
+	echo -e "${RED}ERROR: direct write to a mob's wake state. Call life_wake(bits, reason) or life_hibernate(reason).${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`

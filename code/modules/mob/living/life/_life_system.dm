@@ -36,6 +36,9 @@
 	var/extra = FALSE
 	/// Family root type. Filled by the registry.
 	var/family
+	/// What wakes this system once it sleeps (for logs and the audit). A system that can
+	/// sleep says here which producers call life_wake() with its `bit`.
+	var/woken_by
 
 /// Does this mob get this system at all? Evaluated only when composing, so it may depend
 /// only on what the composition key covers (the mob type and its extras).
@@ -50,6 +53,18 @@
 /// Undo attach(). Called when a mob loses the system (recomposition or deletion).
 /datum/life_system/proc/detach(mob/living/self)
 	return
+
+/// Sleep rule (doc/mob_life_architecture.md §4.9). TRUE when this system has nothing to do
+/// until something wakes its `bit`. Evaluated after every tick and by the hibernation
+/// audit, so it must be cheap, read-only and correct for a mob that is not ticking: the
+/// audit treats a FALSE on a sleeping system as a missed wake. The default never sleeps.
+/datum/life_system/proc/idle(mob/living/self)
+	return FALSE
+
+/// For an idle system that still drifts slowly (ambience, AFK, darksight): deciseconds
+/// until it should be woken anyway, or 0 to wait for an event.
+/datum/life_system/proc/rewake_delay(mob/living/self)
+	return 0
 
 /// Do the work. Return LIFE_SLEEP when nothing is left to do until woken, LIFE_HALT to end
 /// the cycle. `ctx` is null when the system runs outside the schedule (run_life_system()).
@@ -74,6 +89,9 @@
 	var/datum/gas_mixture/environment
 	/// Cached stasis state for this cycle; null until first read.
 	var/stasis
+	/// Set by a gate that stopped the cycle for a reason no wake covers (transforming,
+	/// nullspace): nothing goes to sleep this cycle.
+	var/no_sleep = FALSE
 
 /datum/life_context/New(seconds, profile)
 	src.seconds = seconds

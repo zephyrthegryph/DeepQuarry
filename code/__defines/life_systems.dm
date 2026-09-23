@@ -72,10 +72,33 @@
 /// Mobs whose Life() only removes them from the mob lists (dummies, announcers).
 #define LIFE_SET_DELIST (1<<5)
 
-// --- Hibernation ----------------------------------------------------------------------------
-/// Mob hibernation (a mob with no awake systems leaves the SSmobs run). Plumbing only: no
-/// system sleeps yet, so this stays off until the event-driven phase gives them sleep rules.
-#define MOB_HIBERNATION_ENABLED FALSE
+// --- Hibernation (doc/mob_life_architecture.md §4.3, §4.9) ---------------------------------
+/// Default for GLOB.mob_hibernation_enabled: a mob whose systems are all asleep leaves the
+/// SSmobs run until life_wake(). On for every mob, players included. The GLOB var is the
+/// runtime switch (benchmarks and admins flip it).
+#define MOB_HIBERNATION_ENABLED TRUE
+/// Default for GLOB.mob_hibernation_trace: log every hibernate and wake transition
+/// (MOB_HIBERNATE lines). Off by default because it is one line per transition.
+#define MOB_HIBERNATION_TRACE FALSE
+/// How often SSmobs audits sleeping mobs for a missed wake.
+#define MOB_HIBERNATION_AUDIT_INTERVAL (30 SECONDS)
+/// Hibernating mobs checked per audit (round robin).
+#define MOB_HIBERNATION_AUDIT_SAMPLE 400
+/// Awake mobs with sleeping systems checked per audit (round robin).
+#define MOB_HIBERNATION_AUDIT_AWAKE_SAMPLE 100
+/// Segments a dead mob never runs (the alive gate, the status system and the simple and
+/// human vitals gates block them), so the audit doesn't expect their systems to be idle.
+#define LIFE_SEGS_BLOCKED_WHEN_DEAD (LIFE_SEG_LIVING_ALIVE | LIFE_SEG_LIVING_STATUS | LIFE_SEG_HUMAN_LIVE | LIFE_SEG_SIMPLE)
+
+// --- Wake groups: the bits a producer wakes --------------------------------------------------
+/// The body changed: injury, treatment, affliction, factor or reagent change.
+#define LIFE_WAKE_BODY (LIFE_SYS_BODY | LIFE_SYS_METABOLISM | LIFE_SYS_HUD | LIFE_SYS_IDENTITY)
+/// A stun, weaken, paralysis, sleep, confusion or blindness setter ran.
+#define LIFE_WAKE_STATUS (LIFE_SYS_STATUS | LIFE_SYS_MOVEMENT | LIFE_SYS_GENETICS | LIFE_SYS_HUD)
+/// The mob moved: new air, area, light, gravity and hazards.
+#define LIFE_WAKE_MOVED (LIFE_SYS_BREATHING | LIFE_SYS_THERMAL | LIFE_SYS_MOVEMENT | LIFE_SYS_SENSES | LIFE_SYS_UPKEEP | LIFE_SYS_HUD | LIFE_SYS_IDENTITY)
+/// Something was equipped or unequipped: sight, voice, name, insulation, internals.
+#define LIFE_WAKE_EQUIPMENT (LIFE_SYS_SENSES | LIFE_SYS_IDENTITY | LIFE_SYS_HUD | LIFE_SYS_THERMAL | LIFE_SYS_BREATHING | LIFE_SYS_MOVEMENT)
 
 /// Nominal seconds between two Life() calls for one mob (SSmobs wait x slices).
 #define LIFE_NOMINAL_SECONDS 2
