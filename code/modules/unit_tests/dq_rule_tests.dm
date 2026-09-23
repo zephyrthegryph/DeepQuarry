@@ -133,9 +133,16 @@
 	// Fresh log per case: a deleted object's ref can be reused by the next one.
 	GLOB.dq_rule_fire_log.Cut()
 	var/atom/thing
+	var/turf/open/floor
 	if(ispath(root, /atom/movable))
 		// A room-temperature floor: an object starts at its surroundings' temperature.
-		var/turf/open/floor = test_floor()
+		// Reused across cases (allocate()'s default), so also clear any fire an
+		// earlier case left burning on it: a hot shared turf would ignite the
+		// next case's object before its own threshold is ever written.
+		floor = test_floor()
+		floor.extinguish()
+		if(floor.active_hotspot)
+			qdel(floor.active_hotspot)
 		floor.air?.set_temperature(T20C)
 		thing = allocate(root, floor)
 	else
@@ -147,6 +154,8 @@
 		qdel(thing)
 		for(var/obj/item/stack/rods/R in T)
 			qdel(R)
+	if(floor)
+		floor.extinguish()
 
 /datum/unit_test/dq_rule_thresholds/proc/check_case(datum/rule/rule, root, datum/rule_trigger/trigger, atom/thing)
 	var/label = "[rule.type] on [root]: [trigger.describe()]"

@@ -12,6 +12,9 @@
 /datum/rule/ignition
 	name = "ignition point"
 	applies_to = list(/obj/item, /obj/structure, /obj/machinery, /obj/vehicle, /obj/effect/alien, /obj/effect/spider)
+	// The generic rule-test fixture is a bare property target, not a real
+	// flammable item; it carries its own test_only rules instead.
+	excludes = list(/obj/item/dq_rule_test)
 	test_types = list(/obj/item/paper)
 	condition = list(
 		REQ_COMPARE(PRED_TARGET, PROP_TEMPERATURE, PRED_CMP_GTE, PRED_TARGET, PROP_IGNITION_POINT),
@@ -32,6 +35,7 @@
 /datum/rule/melting
 	name = "melting point"
 	applies_to = list(/obj/item)
+	excludes = list(/obj/item/dq_rule_test)
 	test_types = list(/obj/item/reagent_containers/glass/cooler_bottle)
 	condition = list(
 		REQ_COMPARE(PRED_TARGET, PROP_TEMPERATURE, PRED_CMP_GTE, PRED_TARGET, PROP_MELTING_POINT),
