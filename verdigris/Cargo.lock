@@ -1754,6 +1754,7 @@ dependencies = [
  "serde_json",
  "vg-core",
  "vg-layout",
+ "vg-power",
 ]
 
 [[package]]

@@ -11,5 +11,6 @@ mod jobs;
 mod layout;
 mod lifecycle;
 mod metrics;
+mod power;
 mod propagate;
 mod reactor;
