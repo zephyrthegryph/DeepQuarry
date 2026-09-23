@@ -66,21 +66,45 @@
 /obj/structure/bed/pillowpile/update_icon()
 	return
 
-/obj/structure/bed/pillowpile/attack_hand(mob/user)
+/obj/structure/bed/pillowpile/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/pillowpile_hand,
+	)
+
+/// Old attack_hand: disassemble the pile.
+/datum/interaction/entry_hand/pillowpile_hand
+	id = "pillowpile_hand"
+	name = "Disassemble"
+	effect = /obj/structure/bed/pillowpile/proc/interaction_hand
+
+/obj/structure/bed/pillowpile/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("Now disassembling the large pillow pile..."))
 	if(do_after(user, 3 SECONDS, target = src))
-		if(!src) return
+		if(!src) return TRUE
 		to_chat(user, span_notice("You dissasembled the large pillow pile!"))
 		new sourcepillow(src.loc)
 		qdel(src)
+	return TRUE
 
-/obj/structure/bed/pillowpilefront/attack_hand(mob/user)
+/obj/structure/bed/pillowpilefront/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/pillowpilefront_hand,
+	)
+
+/// Old attack_hand: disassemble the front piece.
+/datum/interaction/entry_hand/pillowpilefront_hand
+	id = "pillowpilefront_hand"
+	name = "Disassemble"
+	effect = /obj/structure/bed/pillowpilefront/proc/interaction_hand
+
+/obj/structure/bed/pillowpilefront/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("Now disassembling the front of the pillow pile..."))
 	if(do_after(user, 3 SECONDS, target = src))
-		if(!src) return
+		if(!src) return TRUE
 		to_chat(user, span_notice("You dissasembled the the front of the pillow pile!"))
 		new sourcepillow(src.loc)
 		qdel(src)
+	return TRUE
 
 //Colours
 
