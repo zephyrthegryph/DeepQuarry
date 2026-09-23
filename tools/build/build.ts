@@ -15,13 +15,19 @@ import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
+  acquireBenchExclusiveLock,
   BENCH_RUNS_DIR,
+  benchRunsDir,
+  benchStoreDir,
   type BenchIteration,
   type BenchRun,
   compareRuns,
+  findBaselineRun,
   formatComparison,
   formatNumber,
+  type LoadContext,
   listRuns,
+  LoadSampler,
   type ProcessSample,
   ProcessSampler,
   type ProcessSummary,
@@ -34,6 +40,7 @@ import {
   testHotspots,
   testRunRecord,
   type UnitTestEntry,
+  waitForDreamDaemonsToDrain,
   type WorldBenchDocument,
   writeJson,
 } from './lib/bench';
@@ -429,6 +436,7 @@ export const ThresholdParameter = new Juke.Parameter({ type: 'number' });
 export const FailOnRegressionParameter = new Juke.Parameter({ type: 'boolean' });
 export const AllParameter = new Juke.Parameter({ type: 'boolean' });
 export const RefParameter = new Juke.Parameter({ type: 'string' });
+export const ExclusiveParameter = new Juke.Parameter({ type: 'boolean' });
 
 /** Set in a tree with unfinished work to tolerate dangling or missing includes. */
 const WIP_TREE = !!(process.env.DQ_WIP_TREE || process.env.DQ_ALLOW_UNREACHABLE_DM);
@@ -748,6 +756,7 @@ export const BenchTarget = new Juke.Target({
   parameters: [
     DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter,
     ScenarioParameter, RunsParameter, WarmupParameter, ArgParameter, ProfileParameter, LabelParameter,
+    ExclusiveParameter,
   ],
   dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
   executes: async ({ get }) => {
@@ -762,41 +771,57 @@ export const BenchTarget = new Juke.Target({
     }
     await compileDerived(`${DME_NAME}.bench.dme`, get, [...TEST_DEFINES, 'BENCHMARK']);
     const identity = runIdentity(get(LabelParameter));
+    const wantExclusive = !!get(ExclusiveParameter);
+    let exclusiveLock: Awaited<ReturnType<typeof acquireBenchExclusiveLock>> | null = null;
+    let drained = false;
+    if (wantExclusive) {
+      Juke.logger.info(`Acquiring the exclusive bench lock (${benchStoreDir() ? 'shared' : 'local, DQ_BENCH_STORE unset'})...`);
+      exclusiveLock = await acquireBenchExclusiveLock();
+      drained = await waitForDreamDaemonsToDrain(5 * 60 * 1000, 5000, (msg) => Juke.logger.info(msg));
+      if (!drained) Juke.logger.warn('Timed out waiting for other DreamDaemons to drain; benchmarking under load anyway.');
+    }
+    const loadSampler = new LoadSampler();
+    loadSampler.start();
     const iterations: BenchIteration[] = [];
     const failures: string[] = [];
-    for (let i = 1; i <= warmup + runs; i++) {
-      const isWarmup = i <= warmup;
-      Juke.logger.info(`Benchmark iteration ${i}/${warmup + runs}${isWarmup ? ' (warm-up, not counted)' : ''}`);
-      const run = await runTestWorld(`${DME_NAME}.bench.dmb`, get(DmVersionParameter), worldParams, true);
-      let world: WorldBenchDocument;
-      try {
-        world = readJson<WorldBenchDocument>('data/bench/scenarios.json');
-      } catch {
-        printLogTails();
-        failures.push(`iteration ${i}: the world wrote no benchmark results`);
-        continue;
-      }
-      for (const scenario of Object.values(world.scenarios)) {
-        if (scenario.status !== 'passed') failures.push(`iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}`);
-      }
-      const profiles: string[] = [];
-      if (fs.existsSync('data/logs/ci/profiler')) {
-        const dest = `data/bench/profiles/${identity.id}/iteration${i}`;
-        fs.mkdirSync(dest, { recursive: true });
-        for (const file of fs.readdirSync('data/logs/ci/profiler')) {
-          fs.copyFileSync(`data/logs/ci/profiler/${file}`, `${dest}/${file}`);
-          profiles.push(`${dest}/${file}`);
+    try {
+      for (let i = 1; i <= warmup + runs; i++) {
+        const isWarmup = i <= warmup;
+        Juke.logger.info(`Benchmark iteration ${i}/${warmup + runs}${isWarmup ? ' (warm-up, not counted)' : ''}`);
+        const run = await runTestWorld(`${DME_NAME}.bench.dmb`, get(DmVersionParameter), worldParams, true);
+        let world: WorldBenchDocument;
+        try {
+          world = readJson<WorldBenchDocument>('data/bench/scenarios.json');
+        } catch {
+          printLogTails();
+          failures.push(`iteration ${i}: the world wrote no benchmark results`);
+          continue;
         }
+        for (const scenario of Object.values(world.scenarios)) {
+          if (scenario.status !== 'passed') failures.push(`iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}`);
+        }
+        const profiles: string[] = [];
+        if (fs.existsSync('data/logs/ci/profiler')) {
+          const dest = `data/bench/profiles/${identity.id}/iteration${i}`;
+          fs.mkdirSync(dest, { recursive: true });
+          for (const file of fs.readdirSync('data/logs/ci/profiler')) {
+            fs.copyFileSync(`data/logs/ci/profiler/${file}`, `${dest}/${file}`);
+            profiles.push(`${dest}/${file}`);
+          }
+        }
+        iterations.push({
+          ...world,
+          iteration: i,
+          warmup: isWarmup,
+          process: run.process as ProcessSummary,
+          process_samples: run.samples,
+          profiles,
+        });
       }
-      iterations.push({
-        ...world,
-        iteration: i,
-        warmup: isWarmup,
-        process: run.process as ProcessSummary,
-        process_samples: run.samples,
-        profiles,
-      });
+    } finally {
+      exclusiveLock?.release();
     }
+    const load: LoadContext = loadSampler.stop(true, wantExclusive && drained);
     await removeDerivedArtifacts('*.bench.*');
     const record: BenchRun = {
       ...identity,
@@ -809,8 +834,10 @@ export const BenchTarget = new Juke.Target({
       iterations,
       summary: summarize(iterations),
       failures,
+      load,
     };
-    const file = `${BENCH_RUNS_DIR}/${record.id}.json`;
+    const runsDir = benchRunsDir();
+    const file = `${runsDir}/${record.id}.json`;
     writeJson(file, record);
     for (const [scenario, metrics] of Object.entries(record.summary)) {
       console.log(`\n${scenario}`);
@@ -819,14 +846,30 @@ export const BenchTarget = new Juke.Target({
         console.log(`  ${name.padEnd(40)} ${formatNumber(stats.median).padStart(10)} ${stats.unit}${spread}`);
       }
     }
-    Juke.logger.info(`Saved ${file}`);
-    const sameMap = listRuns(BENCH_RUNS_DIR)
-      .map((f) => readJson<BenchRun>(f))
-      .filter((r) => r.map === record.map && r.id !== record.id);
-    if (sameMap.length) {
-      const previous = sameMap[sameMap.length - 1];
-      console.log(`\nCompared with ${previous.id}:`);
-      console.log(formatComparison(compareRuns(previous, record, 5), true));
+    Juke.logger.info(
+      `Saved ${file} (load: ${load.exclusive ? 'exclusive' : `cpu ${load.cpu_percent}%, +${load.other_dreamdaemon} dd/+${load.other_dm} dm/+${load.cargo_rustc} cargo-rustc`}).`,
+    );
+    // Prefer the stored baseline for this branch's merge-base with master
+    // (see findBaselineRun in lib/bench.ts) over "whatever ran before this",
+    // since a fresh worktree otherwise has nothing but its own history.
+    const baseline = findBaselineRun(record.map, { label: null });
+    if (baseline) {
+      console.log(`\nCompared with baseline ${baseline.run.id} (commit ${baseline.commit}${baseline.isMergeBase ? ', the merge-base with master' : ', the nearest master ancestor with a stored run'}):`);
+      console.log(formatComparison(compareRuns(baseline.run, record, 5), true));
+    } else {
+      const sameMap = listRuns(runsDir)
+        .map((f) => readJson<BenchRun>(f))
+        .filter((r) => r.map === record.map && r.id !== record.id);
+      if (sameMap.length) {
+        const previous = sameMap[sameMap.length - 1];
+        Juke.logger.warn(
+          `No stored baseline for this branch's merge-base with master (run 'bench-baseline' to create one). `
+          + `Comparing with the previous local run ${previous.id} instead.`,
+        );
+        console.log(formatComparison(compareRuns(previous, record, 5), true));
+      } else {
+        Juke.logger.warn(`No stored baseline and no previous run for map '${record.map}' to compare with. Run 'bench-baseline' to create one.`);
+      }
     }
     renderReport('data/bench/report.html');
     Juke.logger.info('Report: data/bench/report.html');
@@ -840,17 +883,39 @@ export const BenchTarget = new Juke.Target({
 export const BenchCompareTarget = new Juke.Target({
   parameters: [BaseParameter, HeadParameter, ThresholdParameter, FailOnRegressionParameter, AllParameter],
   executes: async ({ get }) => {
-    const baseFile = resolveRun(BENCH_RUNS_DIR, get(BaseParameter) || 'previous');
-    const headFile = resolveRun(BENCH_RUNS_DIR, get(HeadParameter) || 'latest');
-    const base = readJson<BenchRun>(baseFile);
+    const runsDir = benchRunsDir();
+    const headFile = resolveRun(runsDir, get(HeadParameter) || 'latest');
     const head = readJson<BenchRun>(headFile);
+    // --base=baseline (or no --base at all) means "this branch's stored
+    // master merge-base", the same lookup `bench` itself prints after a run.
+    const baseArg = get(BaseParameter);
+    let base: BenchRun;
+    let baseLabel: string;
+    if (!baseArg || baseArg === 'baseline') {
+      const baseline = findBaselineRun(head.map);
+      if (!baseline) {
+        Juke.logger.error(
+          `No stored baseline for this branch's merge-base with master and map '${head.map}'. `
+          + `Run 'bench-baseline' to create one, or pass --base=<run> to compare against something else.`,
+        );
+        throw new Juke.ExitCode(1);
+      }
+      base = baseline.run;
+      baseLabel = `${base.id} (commit ${baseline.commit}${baseline.isMergeBase ? ', the merge-base with master' : ', the nearest master ancestor with a stored run'})`;
+    } else {
+      base = readJson<BenchRun>(resolveRun(runsDir, baseArg));
+      baseLabel = base.id;
+    }
     if (base.map !== head.map) Juke.logger.warn(`Comparing different maps: ${base.map} vs ${head.map}`);
     const rows = compareRuns(base, head, get(ThresholdParameter) ?? 5);
-    console.log(`Base ${base.id}\nHead ${head.id}\n`);
+    console.log(`Base ${baseLabel}\nHead ${head.id}\n`);
     console.log(formatComparison(rows, !get(AllParameter)));
     const regressions = rows.filter((r) => r.verdict === 'regression');
     const improvements = rows.filter((r) => r.verdict === 'improvement');
-    Juke.logger.info(`${regressions.length} regression(s), ${improvements.length} improvement(s), ${rows.length} metrics compared.`);
+    const notComparable = rows.filter((r) => r.verdict === 'not_comparable');
+    Juke.logger.info(
+      `${regressions.length} regression(s), ${improvements.length} improvement(s), ${notComparable.length} not comparable (load), ${rows.length} metrics compared.`,
+    );
     if (get(FailOnRegressionParameter) && regressions.length) throw new Juke.ExitCode(1);
   },
 });
@@ -859,6 +924,80 @@ export const BenchReportTarget = new Juke.Target({
   executes: async () => {
     const { runs, tests } = renderReport('data/bench/report.html');
     Juke.logger.info(`Wrote data/bench/report.html (${runs} benchmark runs, ${tests} test runs).`);
+  },
+});
+
+/**
+ * Runs the benchmark for another commit (default `master`) in a reusable
+ * worktree, exclusively (to keep the stored numbers meaningful), and stores
+ * it so branch worktrees have a baseline to compare against (see
+ * findBaselineRun in lib/bench.ts and the `bench` target's automatic
+ * comparison). Mirrors TestBaselineTarget above.
+ */
+export const BenchBaselineTarget = new Juke.Target({
+  parameters: [RefParameter, ScenarioParameter, RunsParameter, WarmupParameter, DefineParameter],
+  executes: async ({ get }) => {
+    const ref = get(RefParameter) || 'master';
+    const commit = spawnSync('git', ['rev-parse', '--short=10', ref], { encoding: 'utf-8' }).stdout.trim();
+    if (!commit) {
+      Juke.logger.error(`Unknown git ref '${ref}'.`);
+      throw new Juke.ExitCode(1);
+    }
+    if (!benchStoreDir()) {
+      Juke.logger.warn(
+        'DQ_BENCH_STORE is not set, so this baseline will only be visible from the current worktree. '
+        + 'Set DQ_BENCH_STORE to a shared directory (see doc/testing.md) so other worktrees on this machine can find it.',
+      );
+    }
+    const root = process.cwd();
+    const worktree = path.join(os.tmpdir(), `dq-bench-baseline-${commit}`);
+    if (!fs.existsSync(worktree)) {
+      Juke.logger.info(`Creating baseline worktree for ${ref} (${commit}) at ${worktree}`);
+      await Juke.exec('git', ['worktree', 'add', '--detach', worktree, commit]);
+    } else {
+      Juke.logger.info(`Reusing baseline worktree ${worktree}`);
+    }
+    if (fs.existsSync('icons/gen') && !fs.existsSync(path.join(worktree, 'icons/gen'))) {
+      fs.cpSync('icons/gen', path.join(worktree, 'icons/gen'), { recursive: true });
+    }
+    const script = process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh';
+    const defines = get(DefineParameter).flatMap((d) => ['-D', d]);
+    const scenarioArgs = get(ScenarioParameter).length ? [`--scenario=${get(ScenarioParameter).join(',')}`] : [];
+    const runsArg = get(RunsParameter) != null ? [`--runs=${get(RunsParameter)}`] : [];
+    const warmupArg = get(WarmupParameter) != null ? [`--warmup=${get(WarmupParameter)}`] : [];
+    try {
+      await Juke.exec(
+        script,
+        ['bench', '--exclusive', '--label', `baseline-${commit}`, ...scenarioArgs, ...runsArg, ...warmupArg, ...defines],
+        {
+          cwd: worktree,
+          shell: process.platform === 'win32',
+          env: { ...process.env, CARGO_TARGET_DIR: path.join(root, 'verdigris', 'target') },
+        },
+      );
+    } catch {
+      // A failing scenario still writes a run; the check below decides.
+    }
+    const baselineRuns = listRuns(path.join(worktree, benchStoreDir() ? path.relative(worktree, path.join(benchStoreDir() as string, 'runs')) : BENCH_RUNS_DIR));
+    if (!baselineRuns.length) {
+      Juke.logger.error('The baseline bench produced no stored run (compile, boot or scenario failure). See the output above.');
+      throw new Juke.ExitCode(1);
+    }
+    const baselineFile = baselineRuns[baselineRuns.length - 1];
+    // Written directly into the shared store already when DQ_BENCH_STORE is
+    // set (both the worktree and this process resolve the same absolute
+    // path); otherwise copy it out of the throwaway worktree's local store.
+    if (!benchStoreDir()) {
+      const copied = path.join(BENCH_RUNS_DIR, path.basename(baselineFile));
+      fs.mkdirSync(BENCH_RUNS_DIR, { recursive: true });
+      fs.copyFileSync(baselineFile, copied);
+      Juke.logger.info(`Saved baseline to ${copied}`);
+    } else {
+      Juke.logger.info(`Saved baseline to the shared store: ${baselineFile}`);
+    }
+    const record = readJson<BenchRun>(baselineFile);
+    Juke.logger.info(`Baseline for ${ref} (${commit}), map ${record.map}: ${Object.keys(record.summary).length} scenario(s) with results.`);
+    Juke.logger.info(`Remove the worktree when done: git worktree remove --force ${worktree}`);
   },
 });
 
