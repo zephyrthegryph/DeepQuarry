@@ -41,11 +41,11 @@
 	for (var/req_atom in required_atoms)
 		var/list/seen = scanned[req_atom]
 		///typecache experiments work all the same whether it's destructive or not
-		if(typecache && length(seen) == required_atoms[req_atom])
+		if(typecache && length(seen) == LAZYACCESS(required_atoms, req_atom))
 			continue
-		if (destructive && (!(req_atom in scanned) || scanned[req_atom] != required_atoms[req_atom]))
+		if (destructive && (!(req_atom in scanned) || scanned[req_atom] != LAZYACCESS(required_atoms, req_atom)))
 			return FALSE
-		if (!destructive && (!seen || seen.len != required_atoms[req_atom]))
+		if (!destructive && (!seen || seen.len != LAZYACCESS(required_atoms, req_atom)))
 			return FALSE
 
 /**

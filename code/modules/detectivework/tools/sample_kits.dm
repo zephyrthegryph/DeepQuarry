@@ -24,7 +24,7 @@
 /obj/item/sample/proc/merge_evidence(obj/item/sample/supplied, mob/user)
 	if(!supplied.evidence || !length(supplied.evidence))
 		return 0
-	LAZYOR(evidence, supplied.evidence)
+	if(length(supplied.evidence)) LAZYOR(evidence, supplied.evidence)
 	name = "[initial(name)] (combined)"
 	to_chat(user, span_notice("You transfer the contents of \the [supplied] into \the [src]."))
 	return 1

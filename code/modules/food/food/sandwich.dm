@@ -53,7 +53,7 @@
 		i++
 		if(i == 1)
 			fullname += "[O.name]"
-		else if(i == ingredients.len)
+		else if(i == length(ingredients))
 			fullname += " and [O.name]"
 		else
 			fullname += ", [O.name]"

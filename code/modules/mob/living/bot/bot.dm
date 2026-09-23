@@ -354,7 +354,7 @@
 
 	if(targ && LAZYACCESS(targ.codes, "next_patrol"))
 		for(var/obj/machinery/navbeacon/N in GLOB.navbeacons)
-			if(N.location == targ.codes["next_patrol"])
+			if(N.location == LAZYACCESS(targ.codes, "next_patrol"))
 				targ = N
 				break
 

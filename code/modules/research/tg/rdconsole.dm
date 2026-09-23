@@ -138,7 +138,7 @@ Nothing else in the console has ID requirements.
 					var/obj/item/card/id/ID = I.GetID()
 					if(istype(ID))
 						logname = "[ID.registered_name]"
-			LAZYADD(stored_research.research_logs, list(list()
+			LAZYINITLIST(stored_research.research_logs); stored_research.research_logs += list(list(
 				"node_name" = TN.display_name,
 				"node_cost" = price[TECHWEB_POINT_TYPE_GENERIC],
 				"node_researcher" = logname,

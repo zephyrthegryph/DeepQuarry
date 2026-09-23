@@ -46,7 +46,7 @@
 				if(istype(B))
 					LAZYREMOVE(beakers, B)
 					user.put_in_hands(B)
-		name = "unsecured grenade with [length(beakers)] LAZYACCESS(containers, detonator?" and detonator":"")"
+		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 	if(stage > 1 && !active && clown_check(user))
 		to_chat(user, span_warning("You prime \the [name]!"))
 
@@ -80,7 +80,7 @@
 			var/obj/item/assembly/timer/T = detonator.a_right
 			det_time = 10*T.time
 		icon_state = initial(icon_state) +"_ass"
-		name = "unsecured grenade with [length(beakers)] LAZYACCESS(containers, detonator?" and detonator":"")"
+		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 		stage = 1
 	else if(is_type_in_list(W, allowed_containers) && (!stage || stage==1) && path != 2)
 		path = 1
@@ -94,7 +94,7 @@
 				W.loc = src
 				LAZYADD(beakers, W)
 				stage = 1
-				name = "unsecured grenade with [length(beakers)] LAZYACCESS(containers, detonator?" and detonator":"")"
+				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 			else
 				to_chat(user, span_warning("\The [W] is empty."))
 
@@ -123,7 +123,7 @@
 	else
 		to_chat(user, span_notice("You unlock the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
-		name = "unsecured grenade with [length(beakers)] LAZYACCESS(containers, detonator ? " and detonator" : "")"
+		name = "unsecured grenade with [length(beakers)] containers[detonator ? " and detonator" : ""]"
 		icon_state = initial(icon_state) + (detonator ? "_ass" : "")
 		stage = 1
 		active = FALSE

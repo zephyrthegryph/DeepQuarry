@@ -205,7 +205,7 @@
 	for(var/thing in generic_waypoints)
 		.[thing] = name
 	if(shuttle_name in restricted_waypoints)
-		for(var/thing in restricted_waypoints[shuttle_name])
+		for(var/thing in LAZYACCESS(restricted_waypoints, shuttle_name))
 			.[thing] = name
 
 /obj/effect/overmap/visitable/proc/generate_skybox(zlevel)

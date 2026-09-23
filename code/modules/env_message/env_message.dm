@@ -40,7 +40,7 @@ GLOBAL_LIST_EMPTY(env_messages)
 	for(var/tckey in message_list)
 		combined_message += LAZYACCESS(message_list, tckey)
 		count++
-		if(!(count == message_list.len))
+		if(!(count == length(message_list)))
 			combined_message += "<br><br>"
 
 /obj/effect/env_message/MouseEntered(location, control, params)

@@ -181,7 +181,7 @@
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 14, 0, 100)
 		if(MATERIAL_PROCESS_PURIFY)
 			var/removed_contamination = 0
-			for(var/impurity in impurities.Copy())
+			for(var/impurity in LAZYCOPY(impurities))
 				var/lower_impurity = lowertext(impurity)
 				if(findtext(lower_impurity, "oxide") || findtext(lower_impurity, "sulfur"))
 					removed_contamination += LAZYACCESS(impurities, impurity)

@@ -160,7 +160,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	for(var/datum/objective/O in global_objectives)
 		if(!(O.check_completion())) success--
 	//Set result by objectives.
-	if(success == global_objectives.len)
+	if(success == length(global_objectives))
 		win_type = "Major"
 		win_group = "Raider"
 	else if(success > 2)

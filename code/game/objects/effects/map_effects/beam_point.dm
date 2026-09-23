@@ -49,7 +49,7 @@ GLOBAL_LIST_EMPTY(all_beam_points)
 /obj/effect/map_effect/beam_point/proc/create_beams()
 	if(length(my_beams) >= max_beams)
 		return
-	var/beams_to_fill = max_beams - my_beams.len
+	var/beams_to_fill = max_beams - length(my_beams)
 	for(var/i = 1 to beams_to_fill)
 		var/obj/effect/map_effect/beam_point/point = seek_beam_point()
 		if(!point)

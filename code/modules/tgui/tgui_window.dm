@@ -559,7 +559,7 @@
 	if(LAZYACCESS(oversized_payloads, payload_id))
 		stack_trace("Attempted to create oversized tgui payload with duplicate ID.")
 		return
-	LAZYSET(oversized_payloads, payload_id, list()
+	LAZYINITLIST(oversized_payloads); oversized_payloads[payload_id] = list(
 		"type" = message_type,
 		"count" = chunk_count,
 		"chunks" = list(),

@@ -66,7 +66,7 @@
 
 	//Remove stale overlays
 	for(var/obj/O in update_remove)
-		user_client.images -= active_scanned[O]
+		user_client.images -= LAZYACCESS(active_scanned, O)
 		LAZYREMOVE(active_scanned, O)
 
 	//Flicker effect
@@ -124,7 +124,7 @@
 		return
 	if(user_client)
 		for(var/scanned in active_scanned)
-			user_client.images -= active_scanned[scanned]
+			user_client.images -= LAZYACCESS(active_scanned, scanned)
 	if(new_client)
 		for(var/scanned in active_scanned)
 			new_client.images += LAZYACCESS(active_scanned, scanned)

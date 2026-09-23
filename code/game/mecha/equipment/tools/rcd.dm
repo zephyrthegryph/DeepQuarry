@@ -27,7 +27,7 @@
 	..()
 	if(href_list["mode"])
 		my_rcd.mode_index = text2num(href_list["mode"])
-		occupant_message("RCD reconfigured to '[my_rcd.modes[my_rcd.mode_index]]'.")
+		occupant_message("RCD reconfigured to '[LAZYACCESS(my_rcd.modes, my_rcd.mode_index)]'.")
 /*
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/get_equip_info()
 	return "[..()] \[<a href='byond://?src=\ref[src];mode=0'>D</a>|<a href='byond://?src=\ref[src];mode=1'>C</a>|<a href='byond://?src=\ref[src];mode=2'>A</a>\]"

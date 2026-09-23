@@ -136,7 +136,7 @@
 /datum/benchmark/proc/mark(name)
 	var/list/process = benchmark_process_memory()
 	var/list/rust = verdigris_metrics_list()
-	LAZYADD(phases, list(list()
+	LAZYINITLIST(phases); phases += list(list(
 		"name" = name,
 		"world_time" = world.time,
 		"realtime" = REALTIMEOFDAY,

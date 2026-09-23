@@ -177,7 +177,7 @@
 	if(!isnull(.))
 		return . || null
 	var/datum/property_provider/best
-	for(var/datum/property_provider/provider as anything in base_providers[id])
+	for(var/datum/property_provider/provider as anything in LAZYACCESS(base_providers, id))
 		if(!ispath(path, provider.applies_to))
 			continue
 		if(!best || ispath(provider.applies_to, best.applies_to))

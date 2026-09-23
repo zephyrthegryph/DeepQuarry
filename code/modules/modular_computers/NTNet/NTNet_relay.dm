@@ -99,7 +99,7 @@
 			update_icon()
 			. = TRUE
 		if("purge")
-			GLOB.ntnet_global.banned_nids.Cut()
+			LAZYCLEARLIST(GLOB.ntnet_global.banned_nids)
 			GLOB.ntnet_global.add_log("Manual override: Network blacklist cleared.")
 			. = TRUE
 
@@ -108,7 +108,7 @@
 	assign_uid()
 	default_apply_parts()
 	if(GLOB.ntnet_global)
-		GLOB.ntnet_global.relays.Add(src)
+		LAZYADD(GLOB.ntnet_global.relays, src)
 		NTNet = GLOB.ntnet_global
 		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet.relays)]")
 	soundloop = new(list(src), FALSE)
@@ -126,7 +126,7 @@
 
 /obj/machinery/ntnet_relay/Destroy()
 	if(GLOB.ntnet_global)
-		GLOB.ntnet_global.relays.Remove(src)
+		LAZYREMOVE(GLOB.ntnet_global.relays, src)
 		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet.relays)]")
 		NTNet = null
 	for(var/datum/computer_file/program/ntnet_dos/D in dos_sources)

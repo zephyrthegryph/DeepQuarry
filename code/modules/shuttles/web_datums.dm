@@ -78,7 +78,7 @@
 
 /datum/shuttle_destination/Destroy()
 	// Snapshot: each route's Destroy() removes it from both endpoints' routes.
-	for(var/datum/shuttle_route/R in routes.Copy())
+	for(var/datum/shuttle_route/R in LAZYCOPY(routes))
 		qdel(R)
 	master = null
 	return ..()

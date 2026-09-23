@@ -320,7 +320,7 @@
 	mitigation_physical = between(0, mitigation_physical - MITIGATION_LOSS_PASSIVE, mitigation_max)
 
 	if(running == SHIELD_RUNNING)
-		upkeep_power_usage = round((length(field_segments) - damaged_segments.len) * ENERGY_UPKEEP_PER_TILE * upkeep_multiplier)
+		upkeep_power_usage = round((length(field_segments) - length(damaged_segments)) * ENERGY_UPKEEP_PER_TILE * upkeep_multiplier)
 	else if(running > SHIELD_RUNNING)
 		upkeep_power_usage = round(ENERGY_UPKEEP_IDLE * idle_multiplier * (field_radius * 8) * upkeep_multiplier) // Approximates number of turfs.
 

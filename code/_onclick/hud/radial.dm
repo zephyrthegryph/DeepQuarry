@@ -158,7 +158,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	max_elements = round(zone / min_angle)
 	var/paged = max_elements < length(choices)
 	if(length(elements) < max_elements)
-		var/elements_to_add = max_elements - elements.len
+		var/elements_to_add = max_elements - length(elements)
 		for(var/i in 1 to elements_to_add) //Create all elements
 			var/atom/movable/screen/radial/slice/new_element = new /atom/movable/screen/radial/slice
 			new_element.tooltips = use_tooltips

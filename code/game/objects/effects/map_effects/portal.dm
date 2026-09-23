@@ -200,7 +200,7 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 
 /obj/effect/map_effect/portal/master/proc/make_visuals()
 	var/list/observed_turfs = list()
-	for(var/obj/effect/map_effect/portal/P as anything in portal_lines + src)
+	for(var/obj/effect/map_effect/portal/P as anything in (portal_lines || list()) + src)
 		P.name = null
 		P.icon_state = null
 
@@ -224,7 +224,7 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 // Shifts the portal's pixels in order to line up properly, as BYOND offsets the sprite when it holds multiple turfs inside `vis_contents`.
 // This undos the shift that BYOND did.
 /obj/effect/map_effect/portal/master/proc/apply_offset()
-	for(var/obj/effect/map_effect/portal/P as anything in portal_lines + src)
+	for(var/obj/effect/map_effect/portal/P as anything in (portal_lines || list()) + src)
 
 		P.pixel_x = WORLD_ICON_SIZE * P.portal_distance_x
 		P.pixel_y = WORLD_ICON_SIZE * P.portal_distance_y
@@ -286,7 +286,7 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	var/obj/effect/map_effect/portal/master/other_master = counterpart
 
 	var/in_vis_contents = FALSE
-	for(var/obj/effect/map_effect/portal/P as anything in other_master.portal_lines + other_master)
+	for(var/obj/effect/map_effect/portal/P as anything in (other_master.portal_lines || list()) + other_master)
 		if(P in true_turf.vis_locs)
 			in_vis_contents = TRUE
 			break

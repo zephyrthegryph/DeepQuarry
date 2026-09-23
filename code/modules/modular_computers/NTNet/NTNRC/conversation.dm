@@ -12,7 +12,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 	id = GLOB.ntnrc_uid
 	GLOB.ntnrc_uid++
 	if(GLOB.ntnet_global)
-		GLOB.ntnet_global.chat_channels.Add(src)
+		LAZYADD(GLOB.ntnet_global.chat_channels, src)
 	..()
 
 /datum/ntnet_conversation/proc/add_message(message, username)
@@ -32,7 +32,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 /datum/ntnet_conversation/proc/add_client(datum/computer_file/program/chatclient/C)
 	if(!istype(C))
 		return
-	clients.Add(C)
+	LAZYADD(clients, C)
 	add_status_message("[C.username] has joined the channel.")
 	// No operator, so we assume the channel was empty. Assign this user as operator.
 	if(!operator)
@@ -41,14 +41,14 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 /datum/ntnet_conversation/proc/remove_client(datum/computer_file/program/chatclient/C)
 	if(!istype(C) || !(C in clients))
 		return
-	clients.Remove(C)
+	LAZYREMOVE(clients, C)
 	add_status_message("[C.username] has left the channel.")
 
 	// Channel operator left, pick new operator
 	if(C == operator)
 		operator = null
-		if(clients.len)
-			var/datum/computer_file/program/chatclient/newop = pick(clients)
+		if(length(clients))
+			var/datum/computer_file/program/chatclient/newop = DEFAULTPICK(clients, null)
 			changeop(newop)
 
 

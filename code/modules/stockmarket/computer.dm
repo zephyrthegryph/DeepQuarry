@@ -106,7 +106,7 @@
 				data["viewMode"] = "Compressed"
 
 			for (var/datum/stock/S in GLOB.stockExchange.last_read)
-				var/list/LR = GLOB.stockExchange.last_read[S]
+				var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
 				if (!(logged_in in LR))
 					LR[logged_in] = 0
 
@@ -136,7 +136,7 @@
 
 					var/news = 0
 					if (logged_in)
-						var/list/LR = GLOB.stockExchange.last_read[S]
+						var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
 						var/lrt = LR[logged_in]
 						for (var/datum/article/A in S.articles)
 							if (A.ticks > lrt)
@@ -169,7 +169,7 @@
 
 					var/news = 0
 					if (logged_in)
-						var/list/LR = GLOB.stockExchange.last_read[S]
+						var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
 						var/lrt = LR[logged_in]
 						for (var/datum/article/A in S.articles)
 							if (A.ticks > lrt)

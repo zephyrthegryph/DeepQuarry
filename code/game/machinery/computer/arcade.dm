@@ -1157,7 +1157,7 @@
 	T.source_terminal = name
 	T.date = GLOB.current_date_string
 	T.time = stationtime2text()
-	GLOB.vendor_account.transaction_log.Add(T)
+	LAZYADD(GLOB.vendor_account.transaction_log, T)
 
 /// End Payment
 /obj/machinery/computer/arcade/clawmachine/attack_hand(mob/living/user)

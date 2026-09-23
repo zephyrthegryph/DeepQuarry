@@ -26,11 +26,11 @@
 
 /datum/computer_file/data/email_account/New(glob_load)
 	if(!glob_load)
-		GLOB.ntnet_global.email_accounts += src
+		LAZYADD(GLOB.ntnet_global.email_accounts, src)
 	..()
 
 /datum/computer_file/data/email_account/Destroy()
-	GLOB.ntnet_global.email_accounts -= src
+	LAZYREMOVE(GLOB.ntnet_global.email_accounts, src)
 	. = ..()
 
 /datum/computer_file/data/email_account/proc/all_emails()

@@ -56,7 +56,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			P.crash_download("Connection terminated by remote server")
 		downloaded_file = null
 		if(GLOB.ntnet_global)
-			GLOB.ntnet_global.fileservers -= src
+			LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
 	..(forced)
 
 // Finishes download and attempts to store the file on HDD
@@ -148,7 +148,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			upload_menu = 0
 			finalize_download()
 			if(src in GLOB.ntnet_global.fileservers)
-				GLOB.ntnet_global.fileservers.Remove(src)
+				LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
 			for(var/datum/computer_file/program/nttransfer/T in connected_clients)
 				T.crash_download("Remote server has forcibly closed the connection")
 			provided_file = null
@@ -169,7 +169,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 						error = "I/O Error: File locked."
 						return
 					provided_file = F
-					GLOB.ntnet_global.fileservers |= src
+					LAZYOR(GLOB.ntnet_global.fileservers, src)
 					return
 			error = "I/O Error: Unable to locate file on hard drive."
 			return TRUE

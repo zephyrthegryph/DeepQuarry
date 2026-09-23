@@ -21,7 +21,7 @@
 	return INITIALIZE_HINT_QDEL
 
 /obj/effect/gibspawner/proc/Gib(atom/location, datum/dna/MobDNA = null)
-	if(length(gibtypes) != gibamounts.len || length(gibamounts) != gibdirections.len)
+	if(length(gibtypes) != length(gibamounts) || length(gibamounts) != length(gibdirections))
 		to_chat(world, span_filter_system(span_warning("Gib list length mismatch!")))
 		log_world("Gib list length mismatch!")
 		return

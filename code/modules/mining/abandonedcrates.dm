@@ -219,7 +219,7 @@ vorestation edit end */
 					++bulls
 				else if(LAZYACCESS(lastattempt, i) in code_contents)
 					++cows
-				code_contents -= lastattempt[i]
+				code_contents -= LAZYACCESS(lastattempt, i)
 			var/previousattempt = null //convert back to string for readback
 			for(var/i in 1 to codelen)
 				previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))

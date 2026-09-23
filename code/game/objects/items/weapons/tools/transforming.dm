@@ -26,7 +26,7 @@
 		return TRUE
 	if(!length(possible_tooltypes) || length(possible_tooltypes) < 2)
 		return
-	if(current_tooltype == possible_tooltypes.len)
+	if(current_tooltype == length(possible_tooltypes))
 		current_tooltype = 1
 	else
 		current_tooltype++

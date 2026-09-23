@@ -258,7 +258,7 @@
 
 /// Channel-backed properties can become reactor watches (P4).
 /datum/predicate_compiler/proc/channel_backed(id)
-	for(var/datum/property_provider/provider as anything in registry.base_providers[id])
+	for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
 		if(provider.source == PROP_SOURCE_DOMAIN)
 			return TRUE
 	return FALSE

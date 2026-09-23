@@ -150,7 +150,7 @@
 		var/index = text2num(href_list["stop_mix"])
 		if(index <= length(beakers))
 			for(var/obj/item/M in mixing)
-				if(M == beakers[index])
+				if(M == LAZYACCESS(beakers, index))
 					LAZYREMOVE(mixing, M)
 					break
 	else if (href_list["mix"])

@@ -85,7 +85,7 @@
 		return 0
 
 	F.holder = src
-	stored_files.Add(F)
+	LAZYADD(stored_files, F)
 	recalculate_size()
 	return 1
 
@@ -108,7 +108,7 @@
 		return 0
 
 	if(F in stored_files)
-		stored_files -= F
+		LAZYREMOVE(stored_files, F)
 		recalculate_size()
 		return 1
 	else
@@ -126,7 +126,7 @@
 /obj/item/computer_hardware/hard_drive/proc/can_store_file(size = 1)
 	// In the unlikely event someone manages to create that many files.
 	// BYOND is acting weird with numbers above 999 in loops (infinite loop prevention)
-	if(stored_files.len >= 999)
+	if(length(stored_files) >= 999)
 		return 0
 	if(used_capacity + size > max_capacity)
 		return 0

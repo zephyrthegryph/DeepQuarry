@@ -80,7 +80,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 		T.source_terminal = "Biesel GalaxyNet Terminal #277"
 
 		//add the account
-		GLOB.station_account.transaction_log.Add(T)
+		LAZYADD(GLOB.station_account.transaction_log, T)
 		GLOB.all_money_accounts.Add(GLOB.station_account)
 
 /proc/create_department_account(department)

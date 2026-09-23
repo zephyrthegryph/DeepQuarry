@@ -225,9 +225,9 @@
 /datum/stock/proc/generateBrokers()
 	if (length(borrow_brokers) > 2)
 		return
-	if (!GLOB.stockExchange.stockBrokers.len)
+	if (!length(GLOB.stockExchange.stockBrokers))
 		GLOB.stockExchange.generateBrokers()
-	var/broker = pick(GLOB.stockExchange.stockBrokers)
+	var/broker = DEFAULTPICK(GLOB.stockExchange.stockBrokers, null)
 	var/datum/borrow/B = new
 	B.broker = broker
 	B.stock = src

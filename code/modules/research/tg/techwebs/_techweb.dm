@@ -156,10 +156,10 @@
 		CHECK_TICK
 		if(get_available_nodes()[i] || get_researched_nodes()[i] || get_visible_nodes()[i])
 			LAZYREMOVE(receiver.hidden_nodes, i) //We can see it so let them see it too.
-	for(var/i in researched_nodes - receiver.researched_nodes)
+	for(var/i in (researched_nodes || list()) - receiver.researched_nodes)
 		CHECK_TICK
 		receiver.research_node_id(i, TRUE, FALSE, FALSE)
-	for(var/i in researched_designs - receiver.researched_designs)
+	for(var/i in (researched_designs || list()) - receiver.researched_designs)
 		CHECK_TICK
 		receiver.add_design_by_id(i)
 	receiver.recalculate_nodes()
@@ -476,7 +476,7 @@
 					var/prereq_tier = LAZYACCESS(tiers, id)
 					tier = max(tier, prereq_tier + 1)
 
-			if (tier != tiers[node.id])
+			if (tier != LAZYACCESS(tiers, node.id))
 				LAZYSET(tiers, node.id, tier)
 				for (var/id in node.unlock_ids)
 					next += SSresearch.techweb_node_by_id(id)
@@ -523,7 +523,7 @@
 		return
 	if(researched)
 		LAZYSET(researched_nodes, node.id, TRUE)
-		for(var/id in node.design_ids - researched_designs)
+		for(var/id in (node.design_ids || list()) - researched_designs)
 			add_design(SSresearch.techweb_design_by_id(id))
 	else
 		if(available)

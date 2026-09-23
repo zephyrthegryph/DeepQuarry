@@ -507,7 +507,7 @@
 	set_light(0)
 	RadiateAll()
 	// Snapshot: catcher Destroy() removes itself from particle_catchers.
-	for(var/obj/effect/fusion_particle_catcher/catcher in particle_catchers.Copy())
+	for(var/obj/effect/fusion_particle_catcher/catcher in LAZYCOPY(particle_catchers))
 		qdel(catcher)
 	if(owned_core)
 		owned_core.owned_field = null

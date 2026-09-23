@@ -103,7 +103,7 @@
 	for(var/obj/item/S in ingredients)
 		if(i == 1)
 			new_name += "[S.name]"
-		else if(i == src.ingredients.len)
+		else if(i == length(src.ingredients))
 			new_name += " and [S.name]"
 		else
 			new_name += ", [S.name]"

@@ -227,7 +227,7 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	var/datum/property_registry/registry = dq_property_registry()
 	var/failures = 0
 	for(var/id in registry.base_providers)
-		for(var/datum/property_provider/provider as anything in registry.base_providers[id])
+		for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
 			if(provider.state_var)
 				var/datum/sample = allocate(provider.applies_to)
 				TEST_ASSERT(dq_property_state_has_var(sample, provider.state_var), "[provider.type] reads [provider.state_var], which is not saved state on [provider.applies_to]")
