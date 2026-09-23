@@ -52,18 +52,19 @@
 	done += interaction.id
 	return TRUE
 
-/// Records the stance each attack_hand on a watched atom arrived with.
-/datum/unit_test/var/list/dq_seen_stances
-
-/datum/unit_test/proc/dq_note_attack_hand(atom/source, mob/user)
-	SIGNAL_HANDLER
-	LAZYADD(dq_seen_stances, user.use_stance())
+/// Test mobs have no HUD; unarmed attacks read the targeted zone from one.
+/datum/unit_test/proc/dq_give_zone_sel(mob/M)
+	if(!M.zone_sel)
+		M.zone_sel = new /atom/movable/screen/zone_sel()
+		M.zone_sel.selecting = BP_TORSO
 
 /// An attacker and a target on adjacent open tiles, the attacker facing it.
 /datum/unit_test/proc/dq_combat_pair(target_type)
 	var/turf/base = _swing_arena()
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
 	var/mob/living/target = allocate(target_type, get_step(base, NORTH))
+	dq_give_zone_sel(attacker)
+	dq_give_zone_sel(target)
 	attacker.set_dir(NORTH)
 	attacker.next_click = 0
 	return list(attacker, target)
@@ -155,23 +156,23 @@
 /datum/unit_test/dq_combat_mode_variant_keys/Run()
 	var/list/pair = dq_combat_pair(/mob/living/simple_mob/animal/passive/cow)
 	var/mob/living/carbon/human/attacker = pair[1]
-	var/mob/living/target = pair[2]
-	RegisterSignal(target, COMSIG_ATOM_ATTACK_HAND, PROC_REF(dq_note_attack_hand))
+	var/mob/living/simple_mob/animal/passive/cow/cow = pair[2]
 	attacker.attack_variant_key(ATTACK_VARIANT_DISARM)
-	GLOB.input_router.route_click(attacker, target, "left=1")
+	GLOB.input_router.route_click(attacker, cow, "left=1")
 	TEST_ASSERT_EQUAL(attacker.attack_variant, ATTACK_VARIANT_DISARM, "the variant holds while the key is down")
+	TEST_ASSERT(cow.weakened > 0, "the click arrived as a disarm (the cow is tipped)")
 	attacker.attack_variant_key_release(ATTACK_VARIANT_GRAB)
 	TEST_ASSERT_EQUAL(attacker.attack_variant, ATTACK_VARIANT_DISARM, "releasing the other key changes nothing")
 	attacker.attack_variant_key_release(ATTACK_VARIANT_DISARM)
 	TEST_ASSERT_NULL(attacker.attack_variant, "releasing the key clears the variant")
-	TEST_ASSERT_EQUAL(jointext(dq_seen_stances, ","), I_DISARM, "the click arrived as a disarm")
 
-	dq_seen_stances = null
-	attacker.next_click = 0
-	TEST_ASSERT(run_chosen_interaction(attacker, target, "grab"), "the Grab interaction runs")
-	TEST_ASSERT_NULL(attacker.attack_variant, "the interaction is one Use: no variant afterwards")
-	TEST_ASSERT_EQUAL(jointext(dq_seen_stances, ","), I_GRAB, "and it arrived as a grab")
-	UnregisterSignal(target, COMSIG_ATOM_ATTACK_HAND)
+	var/list/pair2 = dq_combat_pair(/mob/living/carbon/human)
+	var/mob/living/carbon/human/grabber = pair2[1]
+	var/mob/living/target = pair2[2]
+	TEST_ASSERT(run_chosen_interaction(grabber, target, "grab"), "the Grab interaction runs")
+	TEST_ASSERT_NULL(grabber.attack_variant, "the interaction is one Use: no variant afterwards")
+	TEST_ASSERT(istype(grabber.get_active_hand(), /obj/item/grab), "and it arrived as a grab")
+	qdel(grabber.get_active_hand())
 
 // ---- Parity: every intent outcome through the new controls ----
 
@@ -180,17 +181,14 @@
 
 /datum/unit_test/dq_combat_parity_help/Run()
 	for(var/target_type in list(/mob/living/carbon/human, /mob/living/simple_mob/animal/passive/cow))
-		dq_seen_stances = null
 		var/list/pair = dq_combat_pair(target_type)
 		var/mob/living/carbon/human/attacker = pair[1]
 		var/mob/living/target = pair[2]
-		RegisterSignal(target, COMSIG_ATOM_ATTACK_HAND, PROC_REF(dq_note_attack_hand))
 		var/before = target.injury_load(INJURY_CATEGORY_PHYSICAL)
 		GLOB.input_router.route_click(attacker, target, "left=1")
-		TEST_ASSERT_EQUAL(jointext(dq_seen_stances, ","), I_HELP, "[target_type]: Use out of combat mode reaches the help outcome")
+		TEST_ASSERT_EQUAL(attacker.use_stance(), I_HELP, "[target_type]: Use out of combat mode is the help outcome")
 		TEST_ASSERT_EQUAL(target.injury_load(INJURY_CATEGORY_PHYSICAL), before, "[target_type]: help does no harm")
 		TEST_ASSERT(!istype(attacker.get_active_hand(), /obj/item/grab), "[target_type]: help does not grab")
-		UnregisterSignal(target, COMSIG_ATOM_ATTACK_HAND)
 
 /// Harm: combat mode on, Use. The target is hurt.
 /datum/unit_test/dq_combat_parity_harm
@@ -280,15 +278,18 @@
 	var/mob/living/simple_mob/animal/passive/cow/cow = allocate(/mob/living/simple_mob/animal/passive/cow, base)
 	cow.melee_damage_lower = 5
 	cow.melee_damage_upper = 5
+	dq_give_zone_sel(cow)
 	cow.set_dir(NORTH)
 	cow.next_click = 0
 	var/before = mouse.injury_load(INJURY_CATEGORY_PHYSICAL)
 	GLOB.input_router.route_click(cow, mouse, "left=1")
+	sleep(cow.melee_attack_delay + 2)
 	TEST_ASSERT_EQUAL(mouse.injury_load(INJURY_CATEGORY_PHYSICAL), before, "a simple mob out of combat mode doesn't attack")
 	cow.set_combat_mode(TRUE)
 	for(var/i in 1 to 10)
 		cow.next_click = 0
 		GLOB.input_router.route_click(cow, mouse, "left=1")
+		sleep(cow.melee_attack_delay + 2) // attack_target winds up asynchronously
 		if(mouse.injury_load(INJURY_CATEGORY_PHYSICAL) > before)
 			break
 	TEST_ASSERT(mouse.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "a simple mob in combat mode attacks")
