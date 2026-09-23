@@ -8,6 +8,7 @@ pub mod cell;
 pub mod device;
 pub mod gas;
 pub mod gate;
+pub mod laws;
 #[cfg(feature = "heat")]
 pub(crate) mod heat;
 mod parser;
