@@ -1,8 +1,8 @@
 pub mod processing;
 /*
 */
-#[cfg(feature = "superconductivity")]
-pub(crate) mod superconduct;
+#[cfg(feature = "heat")]
+pub(crate) mod heat;
 
 use crate::{constants::*, gas::Mixture, GasArena};
 use bitflags::bitflags;
@@ -1301,8 +1301,6 @@ fn set_world_dims_impl(max_x: i32, max_y: i32) {
 		.zip(u32::try_from(max_y).ok())
 		.and_then(|(x, y)| GridDims::planar(x, y));
 	with_air_cells_mut(|cells| cells.dims = dims);
-	#[cfg(feature = "superconductivity")]
-	superconduct::set_heat_world_dims(max_x, max_y);
 }
 
 /// Args: (maxx, maxy). Called by SSair init before any turf registers.
@@ -1325,8 +1323,8 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
 		.saturating_mul(max_z.max(1) as usize);
 	let edges = tiles.saturating_mul(4);
 	reserve_turf_capacity(tiles, edges);
-	#[cfg(feature = "superconductivity")]
-	superconduct::reserve_heat_capacity(tiles, edges);
+	#[cfg(feature = "heat")]
+	heat::configure_heat(max_x.max(1) as u32, max_y.max(1) as u32, max_z.max(1) as u32)?;
 	crate::gas::reserve_gas_capacity(tiles.saturating_add(8192));
 	Ok(ByondValue::null())
 }
@@ -1420,12 +1418,6 @@ fn register_turf_impl(
 		if blocks > 0.0 {
 			with_air_cells_mut(|cells| cells.masks.remove(&id));
 			apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
-			// Walls leave the gas graph but still conduct heat.
-			#[cfg(feature = "superconductivity")]
-			{
-				superconduct::supercond_update_ref(src)?;
-				superconduct::supercond_update_adjacencies(id)?;
-			}
 			return Ok(());
 		}
 	}
@@ -1498,20 +1490,11 @@ fn register_turf_impl(
 			}
 		});
 		apply_or_queue_topology_update(PendingTopologyUpdate::Insert(to_insert));
-		#[cfg(feature = "superconductivity")]
-		{
-			superconduct::supercond_update_ref(src)?;
-			if topology_changed {
-				superconduct::supercond_update_adjacencies(id)?;
-			}
-		}
-		#[cfg(not(feature = "superconductivity"))]
+		// Heat takes turf values from DM (update_heat_cell), not from here.
 		let _ = topology_changed;
 	} else {
 		with_air_cells_mut(|cells| cells.masks.remove(&id));
 		apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
-		#[cfg(feature = "superconductivity")]
-		superconduct::supercond_update_ref(src)?;
 	}
 	Ok(())
 }

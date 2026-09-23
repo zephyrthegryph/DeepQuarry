@@ -1,0 +1,13 @@
+[package]
+name = "vg-heat"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "The heat domain (M4): turf solid heat field, heat bodies, gas couplings, thermal regulator. Host-buildable: vg-core only."
+
+[dependencies]
+vg-core = { path = "../../core" }
+rayon = "1.10.0"
+
+[dev-dependencies]
+proptest = "1.5"

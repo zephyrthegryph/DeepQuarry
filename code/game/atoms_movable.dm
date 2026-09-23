@@ -287,6 +287,8 @@
 		riding_datum.handle_vehicle_offsets()
 	for (var/datum/light_source/light as anything in light_sources) // Cycle through the light sources on this atom and tell them to update.
 		light.source_atom.update_light()
+	if(!isnull(heat_body))
+		heat_recouple()
 	return TRUE
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)

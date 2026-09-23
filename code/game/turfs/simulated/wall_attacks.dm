@@ -66,6 +66,7 @@
 			source.thermal_conductivity = WALL_HEAT_TRANSFER_COEFFICIENT
 		else
 			source.thermal_conductivity = initial(source.thermal_conductivity)
+		source.update_heat_cell()
 
 /turf/simulated/wall/proc/fail_smash(mob/user)
 	var/damage_lower = 25

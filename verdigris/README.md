@@ -23,9 +23,12 @@ verdigris/                  <- workspace root (this dir)
 ├── core/                   <- vg-core: domain-agnostic primitives (grid, ...).
 │                              Host-buildable, no byondapi, no global statics.
 ├── domains/
-│   ├── gas/                <- vg-gas: vendored auxmos (gas arena, turf diffusion,
-│   │                          heat); i686 only until its binds move to vg-ffi.
+│   ├── gas/                <- vg-gas: vendored auxmos (gas arena, turf diffusion);
+│   │                          i686 only until its binds move to vg-ffi. Also holds
+│   │                          the heat binds and gas adapter (turfs/heat.rs).
 │   │                          See domains/gas/UPSTREAM.md.
+│   ├── heat/               <- vg-heat: the heat domain (M4): turf solid field,
+│   │                          heat bodies, couplings, regulator. Host-buildable.
 │   └── layout/             <- vg-layout: station layout planner, cave generator,
 │                              and the offline station-layout tools (src/bin/)
 ├── ffi/                    <- vg-ffi: BYOND binds (lifecycle, layout, cave gen)
@@ -49,9 +52,9 @@ verdigris/                  <- workspace root (this dir)
 | `vg-ffi` `metrics` | The DLL's metrics registry and `verdigris_metrics()`, which returns every Rust metric (allocator tags, jobs, ...) as one JSON object. |
 | `verdigris` `material_power` | Double-precision electrical solve for material-engineering power networks. |
 | `vg-ffi` `allocator` | Tracking allocator: live/peak Rust heap overall and per `AllocTag`, with a thread-local tag scope (`allocator::tagged`); each block carries its tag in a small header so frees are charged correctly. |
-| `vg-gas` | Gas arena, turf diffusion, decompression and heat conduction. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. |
 | `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
-| `vg-gas` | Gas arena, turf adjacency (built from DM air-block masks), turf diffusion, decompression and heat conduction. Numeric gas registry in `gas/ids.rs`. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. |
+| `vg-gas` | Gas arena, turf adjacency (built from DM air-block masks), turf diffusion, decompression. Numeric gas registry in `gas/ids.rs`. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. | `turfs/heat.rs` holds the heat domain's binds and implements `vg_heat::GasExchange` over the arena. |
+| `vg-heat` | The heat domain (M4, `simulation.md` §7, `temperature.md`): `solid` (the turf solid heat field on R6's framework, with conduction, Stefan–Boltzmann radiation to space reservoirs and planet reservoirs), `body` (heat bodies created on first divergence, analytic relaxation on reservoirs, exact two-body steps otherwise, phase plateau, power, two couplings), `couple` (the `GasExchange` trait, exact pair exchange, the energy ledger, the solid ↔ turf gas task), `regulator` (the thermal regulator primitive) and `world` (`HeatWorld`, the main-thread host with watches). Replaces `superconduct.rs`. |
 | `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic, 16x16 chunked layers, per-kind blocked-direction layers (`Grid`). |
 | `vg-core` `handle` / `arena` | 20-bit index + 4-bit generation handles (exact as f32); `Arena<T>` with 4096-slot chunks, stale-handle rejection, rayon iteration. |
 | `vg-core` `bitset` / `intern` | Dense bitsets for dirty/active flags; string-to-numeric-ID interner. |
@@ -91,6 +94,48 @@ verdigris/                  <- workspace root (this dir)
 - **Sleep.** Commands, geometry changes and other tasks' writes wake chunks by CoW pointer diff; an edge into a sleeping chunk flows only once it is unsettled (so sleeping chunks are never written); a chunk sleeps when all its live edges are `settled` or the whole step left it `quiet` (the f32 fixed point).
 - **Channels need capacity.** Extractors see only the cell, so a kind caches intensive values (temperature, pressure) in `refresh`, which runs on every touched cell after a step.
 - **Precision.** Cells are f32: each step conserves to rounding (checked per step at 2e-6 relative), and long near-equilibrium runs random-walk at roughly 1e-8 relative per step.
+
+### M4 notes (for H1–H4, M1b and material science)
+
+- **Frame.** `HeatWorld` owns its own `Sim` (two pool threads). A frame is
+  `HEAT_DT` = 1 s: the field (conduction, radiation), the solid ↔ turf gas
+  coupling, the bodies, the ledger mirror, then the watches. SSair's
+  `process_turf_heat()` calls `vg_heat_tick(seconds)` (never waits; backlog is
+  capped at two frames) and dispatches wakes. When S1 lands, the heat domains
+  move into the one frame graph unchanged: they are ordinary `add_field` /
+  `add_domain` / `add_task` registrations (`HeatWorld::new`).
+- **Physics changes from superconduct.rs** (deliberate): bounds-checked
+  neighbours (B1); space is a radiative reservoir (`ε σ A (T⁴ − T_sky⁴)`, sky at
+  20 °C so a room-temperature hull is in balance) instead of conduction against
+  a 7000 J/K vacuum above 20 °C only; no 303 K gate on turf ↔ gas coupling (cold
+  air cools floors too; pairs within 0.5 K are left alone); the coupling uses the
+  exact pair solution; planets (immutable non-space air) are reservoirs instead of
+  being excluded; cross-z conduction stays blocked. Solid ↔ solid keeps today's
+  law, `G = min(k_a, k_b) · harmonic(C_a, C_b)`, now integrated by the monotone
+  sub-steps and conserving exactly (reservoir inflow in the ledger).
+- **Energy books.** `HeatLedger` (a domain) holds cumulative flows no store
+  kept: reservoirs, gas, released body baselines, power sources.
+  `Totals::conserved()` is constant under the physics; tests check every
+  coupling type with property tests.
+- **Gas coupling.** Only through `GasExchange` (probe, exchange with a closure,
+  changed turfs). M1b replaces `ArenaGas` in `turfs/heat.rs` with a coupling
+  task on the gas field's cells; nothing in vg-heat changes. The adapter never
+  blocks a frame thread: every lock is a `try`, and a miss retries next frame.
+- **Bodies for H2/H3/H4.** `Body` has capacity, a phase plateau, power (W), two
+  couplings (solid cell, turf air, gas mixture by id, another body), a `KEEP`
+  flag, and `flow` (J out through coupling 0 last step). Releases at
+  equilibrium are host-driven (the worker reports, the host sends `Release`
+  after anything DM queued), so heat DM adds never lands on a freed slot.
+  Watches (`Threshold`, `Band`, `ThresholdSet`) work on bodies and cells; an
+  analytic body schedules its settles at the exact crossing times of its
+  watched levels (up to `BODY_LEVELS`).
+- **Regulator (H4).** `regulator::Regulator::step(controlled, other, dt)`
+  returns `work`, `moved` and `other` with `work = moved + other` exactly (B9,
+  B10). H4 wires it to bodies (a machine body plus a gas mixture coupling) and
+  publishes `work` to the power domain.
+- **Not built here.** Heat-exchange pipe regions as a network kind (M3/H4); the
+  per-zone clothing insulation chain (H2); generated DM defines for the float
+  constants (H1: `vg_heat_constants()` returns them for now).
 
 ## Building
 

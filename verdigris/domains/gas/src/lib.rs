@@ -278,10 +278,10 @@ fn unwatch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
 fn auxmos_diagnostics() -> Result<ByondValue> {
 	let gas = GasArena::diagnostics();
 	let turf = turfs::turf_arena_diagnostics();
-	#[cfg(feature = "superconductivity")]
-	let heat = turfs::superconduct::heat_diagnostics();
-	#[cfg(not(feature = "superconductivity"))]
-	let heat = (false, 0, 0);
+	#[cfg(feature = "heat")]
+	let heat = turfs::heat::heat_diagnostics();
+	#[cfg(not(feature = "heat"))]
+	let heat = (0, 0, 0);
 	let values = [
 		gas.0,
 		gas.1,
@@ -295,7 +295,7 @@ fn auxmos_diagnostics() -> Result<ByondValue> {
 		turf.3,
 		turfs::pending_active_turfs(),
 		auxcallback::pending_callbacks(),
-		heat.0 as usize,
+		heat.0,
 		heat.1,
 		heat.2 as usize,
 		turf.4,
@@ -409,29 +409,6 @@ fn copy_from_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
 		src_mix.write().copy_from_mutable(&giver_mix.read());
 		Ok(ByondValue::null())
 	})
-}
-
-/// Args: (src, mixture, conductivity) or (src, conductivity, temperature, heat_capacity). Adjusts temperature of src based on parameters. Returns: temperature of sharer after sharing is complete.
-#[auxmacros::bind_raw_args("/datum/gas_mixture/proc/temperature_share")]
-fn temperature_share_hook() -> Result<ByondValue> {
-	let arg_num = args.len();
-	match arg_num {
-		3 => with_mixes_mut(&args[0], &args[1], |src_mix, share_mix| {
-			Ok(src_mix
-				.temperature_share(share_mix, args[2].get_number().unwrap_or_default())
-				.into())
-		}),
-		4 => with_mix_mut(&args[0], |mix| {
-			Ok(mix
-				.temperature_share_non_gas(
-					args[1].get_number().unwrap_or_default(),
-					args[2].get_number().unwrap_or_default(),
-					args[3].get_number().unwrap_or_default(),
-				)
-				.into())
-		}),
-		_ => Err(eyre::eyre!("Invalid args for temperature_share")),
-	}
 }
 
 /// Returns: a flat list `id, moles, id, moles, ...` of every gas present in the

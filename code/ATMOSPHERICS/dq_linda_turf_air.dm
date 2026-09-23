@@ -26,28 +26,9 @@
 /turf/proc/auxmos_is_atmos_active()
 	return vg_turf_active_hook(src)
 
-/// Fires the Rust superconductivity (heat-conduction) pass on a detached thread;
-/// results land via the atmos callback queue drained in SSAIR_FINALIZE_TURFS.
-/// cost_superconductivity is written back from the worker thread.
-/datum/controller/subsystem/air/proc/process_turf_heat()
-	return vg_process_heat_notify(src)
-
-/// Rust arena heat temperature (K) for this turf, or a sentinel if untracked.
-/turf/proc/return_temperature()
-	return vg_hook_turf_temperature(src)
-
 /// Monotonic gas revision used by sensors to avoid rescanning unchanged air.
 /turf/proc/air_revision()
 	return vg_hook_air_revision(src)
-
-/// Set this turf's temperature. The superconductivity arena OWNS turf heat (it seeds
-/// from the `temperature` var only at registration, then runs its own conduction), so
-/// a bare `T.temperature = x` updates a stale mirror the arena ignores. This is the
-/// sanctioned setter: it updates the DM mirror AND pushes the value into the arena.
-/// Use it for any external heat injection (pipe-to-wall exchange, holodeck programs).
-/turf/proc/set_temperature(temp)
-	temperature = temp
-	return vg_hook_set_turf_temperature(src, temp)
 
 /// Registers / refreshes (flag >= 0) or removes (flag < 0) this turf's air in the
 /// Rust arena and publishes its air-block mask (AIR_BLOCK_KEEP keeps the one Rust
@@ -70,7 +51,10 @@
 		return
 	// Register with SIMULATION_ANY so the Rust FDM processes this turf; the
 	// negative unregister flag passes straight through.
-	return vg_hook_register_turf(src, flag >= 0 ? SIMULATION_ANY : flag, mask)
+	. = vg_hook_register_turf(src, flag >= 0 ? SIMULATION_ANY : flag, mask)
+	// The heat field takes the turf's current thermal values either way (a
+	// turf change re-registers; the new cell keeps the old temperature).
+	update_heat_cell()
 
 /// Bulk arena registration: one FFI entry for a whole assoc list of turf ->
 /// air-block mask. Callers MUST pre-filter with the rule

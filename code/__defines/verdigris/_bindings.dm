@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "e9ff36f9c7b756f7"
+#define VERDIGRIS_ABI "df8be88047025f27"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -145,6 +145,49 @@
 /// total moles, heat capacity, then the moles of every gas by ID.
 // verdigris/domains/gas/src/lib.rs
 #define GAS_READ_HEADER 5
+
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_CELL_PLANET 2
+
+/// `HEAT_CELL_*` kinds DM sends.
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_CELL_SOLID 0
+
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_CELL_SPACE 1
+
+/// Another body (target: its handle).
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_TARGET_BODY 4
+
+/// A gas mixture (target: its arena id).
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_TARGET_MIXTURE 3
+
+/// Coupling target kinds DM sends.
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_TARGET_NONE 0
+
+/// A turf's solid cell (target: the turf).
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_TARGET_SOLID 1
+
+/// A turf's air (target: the turf).
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_TARGET_TURF_AIR 2
+
+/// Watch kinds.
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_WATCH_ABOVE 0
+
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_WATCH_BAND 2
+
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_WATCH_BELOW 1
+
+// verdigris/domains/gas/src/turfs/heat.rs
+#define HEAT_WATCH_SET 3
 
 /// The probe domain: DM-written test cells (see the module docs).
 // verdigris/ffi/src/reactor.rs
@@ -421,12 +464,223 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, gas_id)
 
+/// Adds heat (J) to the turf's solid. Returns 1 if the turf took it.
+// /turf/proc/heat_add_turf (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_add_turf(turf, joules)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_add_turf_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(turf, joules)
+
+/// Adds heat (J) to a body. Returns 0 if the handle is dead.
+// /proc/heat_body_add (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_add(h, joules)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_add_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h, joules)
+
+/// Changes a body's heat capacity, keeping its temperature.
+// /proc/heat_body_capacity (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_capacity(h, capacity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_capacity_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h, capacity)
+
+/// Sets coupling 0 or 1 of a body.
+// /proc/heat_body_couple (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_couple(h, slot, target_kind, target_ref, conductance)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_couple_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h, slot, target_kind, target_ref, conductance)
+
+/// Creates a heat body: capacity (J/K), temperature (K), one coupling
+/// (`HEAT_TARGET_*`, target, conductance W/K), and whether DM keeps it
+/// (no release at equilibrium). Returns the handle, or null when full.
+// /proc/heat_body_create (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_create(capacity, temperature, target_kind, target_ref, conductance, keep)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_create_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(capacity, temperature, target_kind, target_ref, conductance, keep)
+
+/// Energy (J) that left the body through coupling 0 in its last settle or
+/// step (positive: out of the body). For thermoelectric conversion.
+// /proc/heat_body_flow (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_flow(h)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_flow_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h)
+
+/// Keeps a body (never released at equilibrium) or lets it go.
+// /proc/heat_body_keep (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_keep(h, keep)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_keep_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h, keep)
+
+/// Sets a body's phase plateau: latent heat (J) at a phase temperature (K).
+// /proc/heat_body_phase (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_phase(h, temperature, latent)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_phase_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h, temperature, latent)
+
+/// Sets a body's sustained source (W; negative is a sink).
+// /proc/heat_body_power (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_power(h, watts)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_power_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h, watts)
+
+/// Releases a body: its excess heat goes to its environment and the handle
+/// dies at once.
+// /proc/heat_body_release (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_release(h)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_release_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h)
+
+/// Sets a body's temperature (DM authority).
+// /proc/heat_body_set_temperature (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_set_temperature(h, temperature)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_set_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h, temperature)
+
+/// A body's temperature (K), or null if the handle is dead (the body was
+/// released: the atom is back at its surroundings' temperature).
+// /proc/heat_body_temperature (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_body_temperature(h)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h)
+
 /// Returns: Heat capacity, in J/K (probably).
 // /datum/gas_mixture/proc/heat_capacity (verdigris/domains/gas/src/lib.rs)
 /proc/vg_heat_cap_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_cap_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
+
+/// Removes a turf from the heat field.
+// /turf/proc/heat_clear_turf (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_clear_turf(turf)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_clear_turf_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(turf)
+
+/// `list(TCMB, T0C, T20C, space sky temperature, Stefan–Boltzmann constant,
+/// default emissivity, seconds per heat frame)`: the heat constants DM reads
+/// instead of duplicating them (H1 generates defines from these).
+// /proc/heat_constants (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_constants()
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_constants_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Runs `frames` heat frames to completion, blocking. Unit tests only.
+// /proc/heat_debug_run_frames (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_debug_run_frames(frames)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_debug_run_frames_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(frames)
+
+/// Drops the heat world (world boot, before `auxmos_configure_world`), so a
+/// rebooted world starts with no stale cells or bodies.
+// /proc/heat_reset (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_reset()
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_reset_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Registers or updates one turf's solid heat cell: its kind
+/// (`HEAT_CELL_*`), heat capacity (J/K), `thermal_conductivity`,
+/// emissivity, temperature (used only for a new cell) and whether it has
+/// air. A capacity of 0 removes it.
+// /turf/proc/heat_set_turf (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_set_turf(turf, kind, capacity, conductivity, emissivity, temperature, air)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_set_turf_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(turf, kind, capacity, conductivity, emissivity, temperature, air)
+
+/// Sets the turf's solid temperature (DM authority). Returns 1 on success.
+// /turf/proc/heat_set_turf_temperature (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_set_turf_temperature(turf, temperature)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_set_turf_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(turf, temperature)
+
+/// Bulk form of `heat_set_turf`: a flat list of `[turf, kind, capacity,
+/// conductivity, emissivity, temperature, air]` records, one FFI call.
+// /proc/heat_set_turfs_bulk (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_set_turfs_bulk(records)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_set_turfs_bulk_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(records)
+
+/// Takes the wakes and `ThresholdSet` crossings collected so far, as one flat
+/// list: `[count of wakes]`, then `[subscriber, watch, reason, source]` per
+/// wake, then `[watch, payload, entered, generation]` per crossing.
+// /proc/heat_take_wakes (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_take_wakes()
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_take_wakes_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// One heat tick: collect the finished frame, then dispatch the next when
+/// `seconds` of game time make one due. Never waits. Returns the number of
+/// wakes plus crossings waiting for `vg_heat_take_wakes()`.
+// /datum/controller/subsystem/air/proc/heat_tick (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_tick(seconds)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_tick_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(seconds)
+
+/// `list(heat capacity, conductivity, emissivity)` of a turf's cell, or null.
+// /turf/proc/heat_turf_properties (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_turf_properties(turf)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_turf_properties_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(turf)
+
+/// The turf's solid temperature (K), or null if the turf is not in the
+/// heat field (DM then uses its `temperature` var).
+// /turf/proc/heat_turf_temperature (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_turf_temperature(turf)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_turf_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(turf)
+
+/// Removes a watch (a stale handle is ignored).
+// /proc/heat_unwatch (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_unwatch(watch)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_unwatch_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(watch)
+
+/// Registers a temperature watch on a turf's solid (`on_body` false: the
+/// target is the turf) or a body (the target is its handle). `kind` is
+/// `HEAT_WATCH_*`; `level` is the limit for above/below (and `both` fires on
+/// leaving too) or a list of levels for a band. Lane: 0 urgent, 1 normal,
+/// 2 background. Returns the watch handle; a bad watch is a runtime.
+// /proc/heat_watch (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_watch(on_body, target_ref, subscriber, lane, kind, level, both)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_watch_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(on_body, target_ref, subscriber, lane, kind, level, both)
+
+/// Adds (or replaces) a `HEAT_WATCH_SET` entry: payload, generation,
+/// `HEAT_WATCH_ABOVE`/`BELOW`, limit (K), and whether leaving fires too.
+// /proc/heat_watch_set_add (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_watch_set_add(watch, payload, generation, cmp, limit, both)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_watch_set_add_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(watch, payload, generation, cmp, limit, both)
+
+/// Removes a `HEAT_WATCH_SET` entry.
+// /proc/heat_watch_set_remove (verdigris/domains/gas/src/turfs/heat.rs)
+/proc/vg_heat_watch_set_remove(watch, payload)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_watch_set_remove_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(watch, payload)
 
 /// Monotonic revision of this turf's gas mixture. Consumers can skip expensive
 /// polling while the value is unchanged.
@@ -482,18 +736,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_register_turfs_bulk_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(list, flag)
-
-// /turf/proc/set_turf_temperature (verdigris/domains/gas/src/turfs/superconduct.rs)
-/proc/vg_hook_set_turf_temperature(src_ref, temperature)
-	var/static/__f = load_ext(VERDIGRIS, "byond:hook_set_turf_temperature_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, temperature)
-
-// /turf/proc/return_temperature (verdigris/domains/gas/src/turfs/superconduct.rs)
-/proc/vg_hook_turf_temperature(src_ref)
-	var/static/__f = load_ext(VERDIGRIS, "byond:hook_turf_temperature_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref)
 
 /// Marks the mix as immutable, meaning it will never change. This cannot be undone.
 // /datum/gas_mixture/proc/mark_immutable (verdigris/domains/gas/src/lib.rs)
@@ -578,12 +820,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:poll_material_power_graph_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(handle)
-
-// /datum/controller/subsystem/air/proc/process_turf_heat (verdigris/domains/gas/src/turfs/superconduct.rs)
-/proc/vg_process_heat_notify(src_ref)
-	var/static/__f = load_ext(VERDIGRIS, "byond:process_heat_notify_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref)
 
 /// Returns: If this cycle is interrupted by overtiming or not. Starts a processing turfs cycle.
 // /datum/controller/subsystem/air/proc/process_turfs_auxtools (verdigris/domains/gas/src/turfs/processing.rs)
@@ -915,13 +1151,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:subtract_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
-
-/// Args: (src, mixture, conductivity) or (src, conductivity, temperature, heat_capacity). Adjusts temperature of src based on parameters. Returns: temperature of sharer after sharing is complete.
-// /datum/gas_mixture/proc/temperature_share (verdigris/domains/gas/src/lib.rs)
-/proc/vg_temperature_share_hook(...)
-	var/static/__f = load_ext(VERDIGRIS, "byond:temperature_share_hook_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(arglist(args))
 
 /// Returns: the mix's thermal energy, the product of the mixture's heat capacity and its temperature.
 // /datum/gas_mixture/proc/thermal_energy (verdigris/domains/gas/src/lib.rs)

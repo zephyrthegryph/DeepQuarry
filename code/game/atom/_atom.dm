@@ -58,6 +58,8 @@
 	var/datum/wires/wires = null
 
 /atom/Destroy()
+	if(!isnull(heat_body))
+		release_heat_body()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
 	// The only L2 line in this proc; the containment ledger (C1) owns the rest.
 	dematerialize()

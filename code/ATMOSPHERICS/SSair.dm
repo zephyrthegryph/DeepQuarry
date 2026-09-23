@@ -140,10 +140,8 @@ SUBSYSTEM_DEF(air)
 
 
 	//Special functions lists
-	// active_super_conductivity removed — LINDA's DM superconduction engine is
-	// deleted. Heat conduction runs in Rust and IS wired: the
-	// SSAIR_SUPERCONDUCTIVITY fire() step below calls process_turf_heat()
-	// (auxmos superconductivity feature, compiled in).
+	// Turf heat is the heat domain (vg-heat, code/modules/heat/heat.dm): the
+	// SSAIR_SUPERCONDUCTIVITY fire() step below calls process_turf_heat().
 	// high_pressure_delta moved up next to the auxmos tunables (auxmos appends to it).
 	// atom_process removed; see cost_atoms comment.
 	/// Reactions which will contribute to a hotspot's size.
@@ -370,10 +368,9 @@ SUBSYSTEM_DEF(air)
 		resumed = FALSE
 		currentpart = SSAIR_SUPERCONDUCTIVITY
 
-	// Heat conduction: turf<->turf, turf<->space (radiation), turf<->gas. Runs on a
-	// detached Rust thread (process_turf_heat fires it and returns immediately); the
-	// results land via the atmos callback queue drained in SSAIR_FINALIZE_TURFS next
-	// fire(). cost_superconductivity is written back from the worker thread.
+	// The heat domain: turf<->turf conduction, radiation to space, turf<->air and
+	// heat bodies run as frames on vg-heat's pool. process_turf_heat() only
+	// collects the finished frame, starts the next, and dispatches watch wakes.
 	if(currentpart == SSAIR_SUPERCONDUCTIVITY)
 		process_turf_heat()
 		resumed = FALSE
@@ -575,11 +572,13 @@ SUBSYSTEM_DEF(air)
 			turf_masks[open_setup] = open_setup.air_block_mask()
 			if(length(turf_masks) >= 8192)
 				auxmos_register_turfs_bulk(turf_masks)
+				heat_register_turfs(turf_masks)
 				turf_masks = list()
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
 	if(length(turf_masks))
 		auxmos_register_turfs_bulk(turf_masks)
+		heat_register_turfs(turf_masks)
 
 // log_active_turfs / resolve_active_graph removed — they existed only to service
 // the DM roundstart active-turf diffing pass, which is gone (auxmos discovers

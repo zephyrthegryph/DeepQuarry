@@ -309,31 +309,7 @@
 // solver owns convergence; nothing references a /datum/excited_group anymore.
 
 ////////////////////////SUPERCONDUCTIVITY/////////////////////////////
-// LINDA's DM superconduction engine (super_conduct, conductivity_directions,
-// neighbor_conduct_with_src, temperature_share_open_to_solid,
-// share_temperature_mutual_solid, radiate_to_spess, finish_superconduction,
-// consider_superconductivity) is DELETED. Heat conduction now runs in RUST and
-// IS live: the auxmos superconductivity feature is compiled in and SSair.fire()
-// drives it via the SSAIR_SUPERCONDUCTIVITY step (process_turf_heat() — see
-// SSair.dm). Turf heat lives in the Rust superconductivity arena; read/write it
-// via /turf/proc/return_temperature() / set_temperature(), never a raw var.
-//
-// should_conduct_to_space() is a Rust->DM callback: auxmos superconduct.rs's
-// supercond_update_ref() invokes turf.should_conduct_to_space() by name via
-// call_id to decide whether a turf radiates heat to space. Reports whether this
-// turf is space-exposed: /turf/space (and the base /turf, treated as
-// unsimulated) return TRUE; simulated open turfs return FALSE.
-
-/// Rust superconductivity hook: TRUE if this turf should radiate heat directly to space.
-/turf/proc/should_conduct_to_space()
-	return TRUE
-
-/turf/open/should_conduct_to_space()
-	for(var/direction in GLOB.cardinals)
-		var/turf/neighbor = get_step(src, direction)
-		if(istype(neighbor, /turf/space))
-			return TRUE
-	return FALSE
-
-/turf/space/should_conduct_to_space()
-	return TRUE
+// Turf heat is the heat domain (verdigris/domains/heat, code/modules/heat/heat.dm):
+// each turf pushes its thermal values with update_heat_cell(); read and write the
+// solid with get_temperature() / add_heat() / set_temperature(), never a raw var.
+// Space turfs are radiative reservoirs, so no turf asks whether it faces space.

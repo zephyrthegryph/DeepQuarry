@@ -7022,19 +7022,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	T.update_visuals()
 
 
-/// Superconductivity (the Rust heat-conduction arena) is wired end-to-end. A heat-eligible
-/// turf — thermal_conductivity > 0 AND heat_capacity > 0 — must report its real arena
-/// temperature through the /turf/proc/return_temperature bind (the value supercond_update_ref
-/// seeded from turf.temperature). Untracked turfs now return that DM mirror too; registration is
-/// established by changing the mirror after registration and confirming the arena stays authoritative.
-///
-/// This is the regression guard the ported superconductivity subsystem otherwise lacked: it is
-/// green iff turfs actually reach the heat arena. It fails if the `superconductivity` cargo
-/// feature is dropped, the registration path (update_air_ref -> supercond_update_ref) breaks, or
-/// the world-dims push (auxmos_set_world_dims) is mis-ordered so adjacency/registration silently
-/// no-ops. Heat *conduction* itself runs on a detached worker thread, so asserting temperature
-/// convergence would be racy — this proves the DM<->arena bridge, which is exactly what a
-/// silently-disabled subsystem would break.
+/// The heat domain's turf field is wired end-to-end. A heat-eligible turf
+/// (thermal_conductivity > 0 and heat_capacity > 0) must report its solid heat
+/// cell's temperature through get_temperature() / return_temperature(): the value
+/// update_heat_cell() seeded from turf.temperature when SSair registered the turf.
+/// It fails if the heat feature is dropped from the DLL, the registration path
+/// (setup_allturfs -> heat_register_turfs, update_air_ref -> update_heat_cell)
+/// breaks, or the heat world is not configured before turfs register.
 /datum/unit_test/dq_superconductivity_arena_tracks_turfs
 
 /datum/unit_test/dq_superconductivity_arena_tracks_turfs/Run()
@@ -7056,7 +7050,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(eligible > 0, \
 		"no heat-eligible floors on the map (thermal_conductivity>0 && heat_capacity>0) — cannot validate superconductivity")
 	TEST_ASSERT(tracked > 0, \
-		"0 of [eligible] heat-eligible floors report a physical arena temperature — superconductivity is NOT wired")
+		"0 of [eligible] heat-eligible floors report a physical heat-field temperature — the heat domain is NOT wired")
 	// Broad registration, not a one-off fluke: the bulk of eligible floors must be tracked.
 	TEST_ASSERT(tracked >= eligible / 2, \
 		"only [tracked]/[eligible] heat-eligible floors reached the heat arena — turf registration is partially broken")

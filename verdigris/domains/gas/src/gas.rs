@@ -603,8 +603,8 @@ impl GasArena {
 		}
 		if mask & GAS_CHANGE_TEMPERATURE != 0 {
 			baseline.temperature = after.temperature;
-			#[cfg(feature = "superconductivity")]
-			crate::turfs::superconduct::mark_heat_dirty();
+			#[cfg(feature = "heat")]
+			crate::turfs::heat::gas_temperature_changed(id);
 		}
 		if mask & GAS_CHANGE_COMPOSITION != 0 {
 			baseline.composition = after.composition;
