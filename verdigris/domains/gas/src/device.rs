@@ -1,156 +1,193 @@
-//! Atmos device flow laws (`simulation.md` §5, roadmap M2).
+//! Atmos device flow laws (M2, `simulation.md` §5): one generic [`Flow`]
+//! plus [`DeviceParams::Equalize`], replacing the earlier eleven
+//! hand-written laws (pump, volume pump, passive gate, vent pump,
+//! scrubber, filter, injector, pressure regulator were each their own
+//! variant with their own copy of the ideal-gas math). Every device in the
+//! table in `simulation.md` §5 is one of these two shapes:
 //!
-//! A device becomes a device edge (`vg_core::network::Device`) between two
-//! [`PipeGas`] payloads — two pipe regions, or a region and (once the field
-//! bridge lands) a turf cell. Each edge carries a [`DeviceParams`], set by a
-//! DM command whenever the player changes a setting; [`step`] runs every
-//! edge's flow law once per gas tick inside the pipe network's step,
-//! replacing the DM `process()` procs deleted by this item.
+//! | Device | Shape |
+//! |---|---|
+//! | Pump | `Flow { rate: Power, direction: Forced, stop: Some(B AtLeast target) }` |
+//! | Volume pump | `Flow { rate: Volume, direction: Forced, stop: Some(B AtLeast max) }` (or `None` when overclocked) |
+//! | Passive gate | `Flow { rate: Volume, direction: Forced or Downhill, stop: per mode }` |
+//! | Valve, shutoff valve | `Equalize { open }` |
+//! | Vent pump | `Flow { rate: Volume, direction: Forced, stop: Some(turf-side target) }` |
+//! | Scrubber, filter | `Flow { gases: mask, rate: Volume, direction: Forced, stop: None }` |
+//! | Injector | `Flow { rate: Volume, direction: Forced, stop: None }` |
+//! | Canister/connector regulator | `Flow { rate: Unlimited, direction: Forced, stop: Some(B AtLeast release) }` |
 //!
-//! Every law here is a pure function over two mixtures, their volumes and a
-//! timestep: it never allocates, never talks to DM and always conserves
-//! mass and energy (moved gas leaves one side and arrives whole in the
-//! other, via [`PipeGas::carve`]/[`PipeGas::add`]).
+//! The heat exchanger is not a gas law: real heat exchange is a `vg-heat`
+//! coupling between the two sides' solids/mixtures, not a pipe-network
+//! device edge (`simulation.md` §5's M2 follow-up item 3) - `device.rs`
+//! only moves gas.
+//!
+//! The ideal-gas helpers (pressure, moles-for-a-volume, masked transfer)
+//! live once, as [`crate::pipes::PipeGas`] methods, instead of five
+//! per-law copies; [`Flow::step`] is arithmetic over the `stop`/`rate`
+//! shape plus those methods.
 
-use crate::cell::N;
-use crate::gas::constants::{GAS_MIN_MOLES, MINIMUM_HEAT_CAPACITY, R_IDEAL_GAS_EQUATION};
+use crate::gas::constants::R_IDEAL_GAS_EQUATION;
 use crate::pipes::PipeGas;
 
-/// A passive gate or canister regulator's target.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Regulate {
-	/// Shuts off once the input side falls to the target.
-	Input,
-	/// Shuts off once the output side reaches the target.
-	#[default]
-	Output,
-	/// No target: equalizes both sides.
-	Equalize,
+/// How much a [`Flow`] may move per second.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Rate {
+	/// A volume (L/s) of the source's current density.
+	Volume(f32),
+	/// A flat mole rate (mol/s).
+	Moles(f32),
+	/// Isothermal compression power (W): `n R T ln(P2/P1)` bounds the
+	/// moles moved (a pump working against its own target).
+	Power(f32),
+	/// No cap besides `stop` and (for [`Direction::Downhill`]) the
+	/// pressure gradient itself.
+	Unlimited,
 }
 
-/// A vent pump's direction.
+/// Whether a [`Flow`] moves regardless of the pressure gradient, or only
+/// while its source is the higher-pressure side.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum VentMode {
-	/// Pumps from `a` (the turf/region side) into `b` (the network side).
-	Siphon,
-	/// Pumps from `b` (the network side) into `a`.
+pub enum Direction {
+	/// Moves every tick `stop` still allows, ignoring which side is
+	/// higher (a pump pushing against its own target; a scrubber pulling
+	/// regardless of pressure).
 	#[default]
-	Release,
+	Forced,
+	/// Moves from whichever side is higher pressure into the other, and
+	/// not at all when they're equal (a valve, an unregulated passive
+	/// gate). Only meaningful with `stop: None` - a `Downhill` flow with a
+	/// `stop` target uses the target to pick source and destination
+	/// instead (see [`Flow::step`]).
+	Downhill,
 }
 
-/// One device edge's flow law and parameters (`Pipes::Device`,
-/// `simulation.md` §5's table). `a` is always the law's nominal "input" and
-/// `b` its "output"; DM chooses which physical port is which when it adds
-/// the edge.
-#[derive(Clone, Debug, Default, PartialEq)]
+/// Which endpoint a [`Target`] is measured on.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Side {
+	A,
+	B,
+}
+
+/// How a [`Target`] compares its side's pressure to `kpa`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Cmp {
+	/// Flow continues while `side` is below `kpa` (a goal to reach, or a
+	/// ceiling not to exceed - the stop condition is the same either way:
+	/// halt once `side >= kpa`). Gas moves *into* `side`.
+	AtLeast,
+	/// Flow continues while `side` is above `kpa` (draining down to a
+	/// floor). Gas moves *out of* `side`.
+	AtMost,
+}
+
+/// Where a [`Flow`] stops itself: gas moves toward satisfying this (which
+/// also picks the flow's source and destination when `stop` is set - see
+/// [`Flow::step`]), and the edge reports `target_reached` once it's met.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Target {
+	pub side: Side,
+	pub cmp: Cmp,
+	pub kpa: f32,
+}
+
+/// A generic flow law: moves the gases in `gases` (a `1 << gas_id`
+/// bitset; 0 means every gas) at up to `rate`, until `stop` is satisfied.
+///
+/// Source and destination aren't fixed to `a`/`b`: with a `stop` target,
+/// gas always moves toward satisfying it (into the target side for
+/// `AtLeast`, out of it for `AtMost`), whichever of `a`/`b` that turns out
+/// to be - this is what lets a vent pump's `a` stay "the turf" for both
+/// its release and siphon modes instead of needing the caller to swap
+/// endpoints per mode. With no `stop`, `Forced` always moves `a` -> `b`
+/// (an injector, a siphoning scrubber); `Downhill` moves from whichever of
+/// `a`/`b` is higher pressure (a valve, an unregulated passive gate).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Flow {
+	pub gases: u32,
+	pub rate: Rate,
+	pub direction: Direction,
+	pub stop: Option<Target>,
+}
+
+/// One device edge's law and parameters (`Pipes::Device`). A valve's
+/// "flow law" is pure topology under M1b (opening it merges the regions
+/// it bridges, which already equalizes them), so `Equalize` only gates
+/// that topology change - it moves no gas of its own.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum DeviceParams {
 	/// No device on this edge (an inert connection, or a not-yet-configured
 	/// slot). [`step`] is a no-op.
 	#[default]
 	None,
-	/// Moves gas towards a target pressure on `b`, limited by power:
-	/// isothermal work `n R T ln(P2/P1)`.
-	Pump { target_kpa: f32, power_w: f32 },
-	/// A fixed volume per second, uncapped by power. Refuses to add more
-	/// while `b` is at or above `max_output_kpa` (0: no cap — an
-	/// "overclocked" volume pump ignores its output pressure limit).
-	VolumePump { rate_l_s: f32, max_output_kpa: f32 },
-	/// A one-way regulator: flows from `a` to `b` while the regulated side
-	/// has not met `target_kpa`, up to `max_rate_l_s`.
-	PassiveGate {
-		mode: Regulate,
-		target_kpa: f32,
-		max_rate_l_s: f32,
-	},
+	Flow(Flow),
 	/// Equalizes while `open`; otherwise blocks (a valve or shutoff valve).
-	Valve { open: bool },
-	/// Pumps between `a` (the turf/region it faces) and `b` (the network),
-	/// bounded so `a` stays within `[min_kpa, max_kpa]`.
-	VentPump {
-		mode: VentMode,
-		min_kpa: f32,
-		max_kpa: f32,
-		max_rate_l_s: f32,
-	},
-	/// Removes the gases in `mask` (a `1 << gas_id` bitset) from `a` into
-	/// `b` at up to `rate_l_s`; `siphon` removes everything instead.
-	Scrubber { mask: u32, rate_l_s: f32, siphon: bool },
-	/// Injects from `a` into `b` at a fixed rate (a canister outlet).
-	Injector { rate_l_s: f32 },
-	/// Splits `a` into `b`, moving only the gases in `mask` at up to
-	/// `rate_l_s`; everything else stays on `a` (the other trinary leg is a
-	/// second device edge DM adds alongside this one).
-	Filter { mask: u32, rate_l_s: f32 },
-	/// Exchanges thermal energy between `a` and `b` at a fixed conductance,
-	/// without moving gas.
-	HeatExchanger { conductance_w_k: f32 },
-	/// A canister/connector pressure regulator: flows from `a` to `b` until
-	/// `b` reaches `release_kpa`, uncapped by power (tanks are effectively
-	/// infinite reservoirs on `a`).
-	PressureRegulator { release_kpa: f32 },
+	Equalize { open: bool },
 }
 
-impl Regulate {
-	fn decode(v: f32) -> Self {
-		match v as i32 {
-			0 => Self::Input,
-			2 => Self::Equalize,
-			_ => Self::Output,
-		}
-	}
-}
-
-impl VentMode {
-	fn decode(v: f32) -> Self {
-		if (v as i32) == 1 {
-			Self::Siphon
-		} else {
-			Self::Release
-		}
-	}
-}
 
 impl DeviceParams {
-	/// Decodes a device edge's law and parameters from the FFI wire form
-	/// DM sends (`pipenet_device_batch`'s `kind, p0..p3` fields): a `kind`
-	/// tag and four `f32` slots, reused differently per law. Gas masks are
-	/// whole numbers under 2^24 (`gas::ids::GAS_COUNT` bits), so they round
-	/// through `f32` exactly.
+	/// Decodes a device edge's law and parameters from the existing FFI
+	/// wire form (`pipenet_device_batch`'s `kind, p0..p3` fields,
+	/// `RUST_DEVICE_LAW_*` in `atmospherics.dm`) into the generic
+	/// [`Flow`]/[`Equalize`](DeviceParams::Equalize) shape: the M2 device
+	/// law collapse is purely internal to the Rust side, so the DM-side
+	/// wire format (and every already-converted device's `rust_set_device`
+	/// call) is unchanged - the binding-layer rewrite that replaces it
+	/// with typed per-kind commands (`doc/rewrite/rust_bindings.md`) is a
+	/// separate, later migration. `a` is always the law's nominal "input"
+	/// (the turf/region side for a turf device) and `b` its "output" - DM
+	/// chooses which physical port is which when it adds the edge. Kind 9
+	/// (heat exchanger) has no current caller: real heat exchange becomes
+	/// a `vg-heat` coupling, not a gas flow law, so it decodes to `None`.
 	#[must_use]
 	pub fn decode(kind: u8, p: [f32; 4]) -> Self {
+		let flow = |gases: u32, rate: Rate, direction: Direction, stop: Option<Target>| {
+			Self::Flow(Flow { gases, rate, direction, stop })
+		};
+		let at_least = |side: Side, kpa: f32| Some(Target { side, cmp: Cmp::AtLeast, kpa });
+		let at_most = |side: Side, kpa: f32| Some(Target { side, cmp: Cmp::AtMost, kpa });
 		match kind {
-			1 => Self::Pump {
-				target_kpa: p[0],
-				power_w: p[1],
+			// Pump: target_kpa=p[0], power_w=p[1].
+			1 => flow(0, Rate::Power(p[1]), Direction::Forced, at_least(Side::B, p[0])),
+			// Volume pump: rate_l_s=p[0], max_output_kpa=p[1] (<=0: uncapped).
+			2 => flow(
+				0,
+				Rate::Volume(p[0]),
+				Direction::Forced,
+				(p[1] > 0.0).then(|| Target {
+					side: Side::B,
+					cmp: Cmp::AtLeast,
+					kpa: p[1],
+				}),
+			),
+			// Passive gate: mode=p[0] (0 Input, 1 Output, 2 Equalize), target_kpa=p[1], max_rate_l_s=p[2].
+			3 => match p[0] as i32 {
+				0 => flow(0, Rate::Volume(p[2]), Direction::Forced, at_most(Side::A, p[1])),
+				2 => flow(0, Rate::Volume(p[2]), Direction::Downhill, None),
+				_ => flow(0, Rate::Volume(p[2]), Direction::Forced, at_least(Side::B, p[1])),
 			},
-			2 => Self::VolumePump {
-				rate_l_s: p[0],
-				max_output_kpa: p[1],
-			},
-			3 => Self::PassiveGate {
-				mode: Regulate::decode(p[0]),
-				target_kpa: p[1],
-				max_rate_l_s: p[2],
-			},
-			4 => Self::Valve { open: p[0] != 0.0 },
-			5 => Self::VentPump {
-				mode: VentMode::decode(p[0]),
-				min_kpa: p[1],
-				max_kpa: p[2],
-				max_rate_l_s: p[3],
-			},
-			6 => Self::Scrubber {
-				mask: p[0].max(0.0) as u32,
-				rate_l_s: p[1],
-				siphon: p[2] != 0.0,
-			},
-			7 => Self::Injector { rate_l_s: p[0] },
-			8 => Self::Filter {
-				mask: p[0].max(0.0) as u32,
-				rate_l_s: p[1],
-			},
-			9 => Self::HeatExchanger { conductance_w_k: p[0] },
-			10 => Self::PressureRegulator { release_kpa: p[0] },
+			// Valve/shutoff valve: open=p[0].
+			4 => Self::Equalize { open: p[0] != 0.0 },
+			// Vent pump: mode=p[0] (0 Release, 1 Siphon), min_kpa=p[1], max_kpa=p[2], max_rate_l_s=p[3].
+			// `a` is always the turf side (`add_turf_device`'s fixed convention).
+			5 => {
+				if p[0] as i32 == 1 {
+					flow(0, Rate::Volume(p[3]), Direction::Forced, at_most(Side::A, p[1]))
+				} else {
+					flow(0, Rate::Volume(p[3]), Direction::Forced, at_least(Side::A, p[2]))
+				}
+			}
+			// Scrubber: mask=p[0], rate_l_s=p[1], siphon=p[2] (true: ignore the mask, move everything).
+			6 => {
+				let mask = if p[2] != 0.0 { 0 } else { p[0].max(0.0) as u32 };
+				flow(mask, Rate::Volume(p[1]), Direction::Forced, None)
+			}
+			// Injector: rate_l_s=p[0].
+			7 => flow(0, Rate::Volume(p[0]), Direction::Forced, None),
+			// Filter: mask=p[0], rate_l_s=p[1].
+			8 => flow(p[0].max(0.0) as u32, Rate::Volume(p[1]), Direction::Forced, None),
+			// Pressure regulator (canister/connector): release_kpa=p[0], uncapped by rate.
+			10 => flow(0, Rate::Unlimited, Direction::Forced, at_least(Side::B, p[0])),
 			_ => Self::None,
 		}
 	}
@@ -165,74 +202,21 @@ pub struct StepReport {
 	/// Power actually drawn (W), for `simulation.md`'s "power draw is
 	/// published to the power domain".
 	pub power_w: f32,
-	/// The regulated side reached its target and flow stopped this tick.
+	/// The stop target (if any) is satisfied and flow halted this tick.
 	pub target_reached: bool,
-}
-
-fn pressure(gas: &PipeGas, volume: f64) -> f32 {
-	if volume <= 0.0 {
-		return 0.0;
-	}
-	let t = gas.temperature_now();
-	((gas.total() * f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t)) / volume) as f32
-}
-
-/// Moves `moles` from `from` to `to` (clamped to what `from` holds),
-/// preserving composition and energy on both sides.
-fn transfer(from: &mut PipeGas, to: &mut PipeGas, moles: f64) -> f64 {
-	let total = from.total();
-	if total <= GAS_MIN_MOLES.into() || moles <= 0.0 {
-		return 0.0;
-	}
-	let moles = moles.min(total);
-	let f = moles / total;
-	let carved = from.carve(f);
-	let moved = carved.total();
-	to.add(&carved);
-	moved
 }
 
 /// Runs one device's flow law for `dt` seconds, moving gas (and energy)
 /// between `a` and `b` in place. Returns what happened.
 #[must_use]
-pub fn step(
-	params: &DeviceParams,
-	a: &mut PipeGas,
-	vol_a: f64,
-	b: &mut PipeGas,
-	vol_b: f64,
-	dt: f32,
-) -> StepReport {
+pub fn step(params: &DeviceParams, a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, vol_b: f64, dt: f32) -> StepReport {
 	if dt <= 0.0 {
 		return StepReport::default();
 	}
-	match *params {
+	match params {
 		DeviceParams::None => StepReport::default(),
-		DeviceParams::Pump { target_kpa, power_w } => step_pump(a, vol_a, b, vol_b, dt, target_kpa, power_w),
-		DeviceParams::VolumePump {
-			rate_l_s,
-			max_output_kpa,
-		} => {
-			if max_output_kpa > 0.0 && pressure(b, vol_b) >= max_output_kpa {
-				return StepReport {
-					target_reached: true,
-					..Default::default()
-				};
-			}
-			let moles = moles_for_volume(a, vol_a, f64::from(rate_l_s) * f64::from(dt));
-			let moved = transfer(a, b, moles);
-			StepReport {
-				moles: moved,
-				..Default::default()
-			}
-		}
-		DeviceParams::PassiveGate {
-			mode,
-			target_kpa,
-			max_rate_l_s,
-		} => step_passive_gate(a, vol_a, b, vol_b, dt, mode, target_kpa, max_rate_l_s),
-		DeviceParams::Valve { open } => {
-			if !open {
+		DeviceParams::Equalize { open } => {
+			if !*open {
 				return StepReport::default();
 			}
 			let moved = equalize(a, vol_a, b, vol_b);
@@ -241,300 +225,136 @@ pub fn step(
 				..Default::default()
 			}
 		}
-		DeviceParams::VentPump {
-			mode,
-			min_kpa,
-			max_kpa,
-			max_rate_l_s,
-		} => step_vent(a, vol_a, b, vol_b, dt, mode, min_kpa, max_kpa, max_rate_l_s),
-		DeviceParams::Scrubber { mask, rate_l_s, siphon } => {
-			step_scrubber(a, vol_a, b, dt, mask, rate_l_s, siphon)
-		}
-		DeviceParams::Injector { rate_l_s } => {
-			let moles = moles_for_volume(a, vol_a, f64::from(rate_l_s) * f64::from(dt));
-			let moved = transfer(a, b, moles);
-			StepReport {
-				moles: moved,
-				..Default::default()
-			}
-		}
-		DeviceParams::Filter { mask, rate_l_s } => step_filter(a, vol_a, b, dt, mask, rate_l_s),
-		DeviceParams::HeatExchanger { conductance_w_k } => step_heat_exchanger(a, b, dt, conductance_w_k),
-		DeviceParams::PressureRegulator { release_kpa } => step_regulator(a, vol_a, b, vol_b, release_kpa),
+		DeviceParams::Flow(flow) => flow.step(a, vol_a, b, vol_b, dt),
 	}
-}
-
-/// The moles of `gas` a volume (L) at its current density represents.
-fn moles_for_volume(gas: &PipeGas, volume: f64, take_l: f64) -> f64 {
-	if volume <= 0.0 {
-		return 0.0;
-	}
-	gas.total() * (take_l / volume).clamp(0.0, 1.0)
 }
 
 /// Moves gas from the higher- to the lower-pressure side until both are
-/// equal (a valve or an unregulated passive gate).
+/// equal (a valve). Not part of `Flow`: a valve's "law" is really M1b's
+/// region merge on connect, this only covers the one tick before that
+/// merge's next commit catches up.
 fn equalize(a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, vol_b: f64) -> f64 {
-	let (pa, pb) = (pressure(a, vol_a), pressure(b, vol_b));
+	let (pa, pb) = (a.pressure(vol_a), b.pressure(vol_b));
 	if (pa - pb).abs() < 0.01 || vol_a <= 0.0 || vol_b <= 0.0 {
 		return 0.0;
 	}
-	// Moles that bring both sides to the same pressure, assuming equal
-	// temperature (a fair approximation for one tick's flow).
 	let (from, to, vol_from, vol_to, sign): (&mut PipeGas, &mut PipeGas, f64, f64, f64) = if pa > pb {
 		(a, b, vol_a, vol_b, 1.0)
 	} else {
 		(b, a, vol_b, vol_a, -1.0)
 	};
 	let t = from.temperature_now().max(1.0);
-	let delta_p = (pressure(from, vol_from) - pressure(to, vol_to)).max(0.0);
-	let moles = f64::from(delta_p) * (vol_from * vol_to / (vol_from + vol_to))
-		/ (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t));
-	transfer(from, to, moles) * sign
+	let delta_p = (from.pressure(vol_from) - to.pressure(vol_to)).max(0.0);
+	let moles =
+		f64::from(delta_p) * (vol_from * vol_to / (vol_from + vol_to)) / (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t));
+	from.transfer_masked(to, 0, moles) * sign
 }
 
-fn step_pump(a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, vol_b: f64, dt: f32, target_kpa: f32, power_w: f32) -> StepReport {
-	let pb = pressure(b, vol_b);
-	if pb >= target_kpa || a.total() <= GAS_MIN_MOLES.into() {
-		return StepReport {
-			target_reached: pb >= target_kpa,
-			..Default::default()
-		};
-	}
-	let pa = pressure(a, vol_a).max(0.01);
-	let t = a.temperature_now().max(1.0);
-	// Moles that would bring `b` to the target pressure.
-	let needed = f64::from((target_kpa - pb).max(0.0)) * vol_b / (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t));
-	// Power-limited moles: isothermal compression work n R T ln(P2/P1).
-	let ratio = (target_kpa.max(pa) / pa).max(1.0 + 1e-6);
-	let work_per_mole = f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t) * f64::from(ratio.ln());
-	let energy_budget = f64::from(power_w) * f64::from(dt);
-	let power_limited = if work_per_mole > 0.0 {
-		energy_budget / work_per_mole
-	} else {
-		f64::INFINITY
-	};
-	let moles = needed.min(power_limited).min(a.total());
-	let moved = transfer(a, b, moles);
-	let power_used = if moved > 0.0 {
-		((moved * work_per_mole) / f64::from(dt)) as f32
-	} else {
-		0.0
-	};
-	StepReport {
-		moles: moved,
-		power_w: power_used.min(power_w),
-		target_reached: pressure(b, vol_b) >= target_kpa,
-	}
-}
+impl Flow {
+	/// See the struct docs for how `stop` picks source/destination.
+	fn step(&self, a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, vol_b: f64, dt: f32) -> StepReport {
+		let (pa, pb) = (a.pressure(vol_a), b.pressure(vol_b));
 
-// device.rs is under concurrent edit on rewrite/m2 (device/pipe binds); not
-// restructuring this function's signature here per the rewrite/rustaudit
-// worktree brief. Each pair of (region, its volume) is a real distinct
-// physical quantity the pressure-gate math needs.
-#[allow(clippy::too_many_arguments)]
-fn step_passive_gate(
-	a: &mut PipeGas,
-	vol_a: f64,
-	b: &mut PipeGas,
-	vol_b: f64,
-	dt: f32,
-	mode: Regulate,
-	target_kpa: f32,
-	max_rate_l_s: f32,
-) -> StepReport {
-	let (pa, pb) = (pressure(a, vol_a), pressure(b, vol_b));
-	let (delta, reached) = match mode {
-		Regulate::Input => (pa - target_kpa, pa <= target_kpa),
-		Regulate::Output => (target_kpa - pb, pb >= target_kpa),
-		Regulate::Equalize => (pa - pb, (pa - pb).abs() < 0.01),
-	};
-	if delta <= 0.01 {
-		return StepReport {
-			target_reached: reached,
-			..Default::default()
-		};
-	}
-	let cap = moles_for_volume(a, vol_a, f64::from(max_rate_l_s) * f64::from(dt));
-	let moles = match mode {
-		Regulate::Equalize => {
-			let moved = equalize(a, vol_a, b, vol_b);
-			return StepReport {
-				moles: moved,
-				target_reached: false,
-				..Default::default()
-			};
-		}
-		_ => {
-			let t = a.temperature_now().max(1.0);
-			let by_target =
-				f64::from(delta) * (vol_a * vol_b / (vol_a + vol_b)) / (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t));
-			by_target.min(cap)
-		}
-	};
-	let moved = transfer(a, b, moles);
-	StepReport {
-		moles: moved,
-		target_reached: false,
-		..Default::default()
-	}
-}
-
-// See step_passive_gate above: device.rs is under concurrent edit on
-// rewrite/m2, so its signature is left as-is here.
-#[allow(clippy::too_many_arguments)]
-fn step_vent(
-	a: &mut PipeGas,
-	vol_a: f64,
-	b: &mut PipeGas,
-	vol_b: f64,
-	dt: f32,
-	mode: VentMode,
-	min_kpa: f32,
-	max_kpa: f32,
-	max_rate_l_s: f32,
-) -> StepReport {
-	let pa = pressure(a, vol_a);
-	match mode {
-		VentMode::Release => {
-			if pa >= max_kpa {
-				return StepReport {
-					target_reached: true,
-					..Default::default()
-				};
+		// `from_is_a`: which side gas leaves. `needed`: moles still wanted
+		// to satisfy `stop` (infinite with no stop, capped instead by
+		// `Downhill`'s own equalize-point below). `target_kpa`: with a
+		// `stop`, the absolute pressure a `Rate::Power` flow is doing
+		// compression work against (the pump's design duty), not
+		// whatever the destination's instantaneous pressure happens to
+		// be - using the instantaneous pressure would make a pump's
+		// power draw (and so its cap) collapse toward zero the moment the
+		// destination is still near-empty, since compressing into a
+		// near-vacuum looks like almost no work.
+		let (from_is_a, needed, target_kpa) = match self.stop {
+			Some(target) => {
+				let side_is_a = target.side == Side::A;
+				let side_p = if side_is_a { pa } else { pb };
+				let gap = match target.cmp {
+					Cmp::AtLeast => target.kpa - side_p,
+					Cmp::AtMost => side_p - target.kpa,				};
+				if gap <= 0.01 {
+					return StepReport {
+						target_reached: true,
+						..Default::default()
+					};
+				}
+				// AtLeast fills `side` (source is the other one); AtMost
+				// drains it (source is `side` itself). Either way `needed` is
+				// exact: it's `pV = nRT` solved on the TARGET side's own
+				// fixed volume for the moles that land it exactly on `kpa`,
+				// using the flow's temperature (the source's - which is the
+				// target's own temperature too, on an AtMost drain, since
+				// target and source are the same side there).
+				let dest_is_a = side_is_a == matches!(target.cmp, Cmp::AtLeast);
+				let t_flow = (if dest_is_a { &*b } else { &*a }).temperature_now().max(1.0);
+				let vol_side = if side_is_a { vol_a } else { vol_b };
+				let needed =
+					f64::from(gap) * vol_side / (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t_flow));
+				(!dest_is_a, needed, Some(target.kpa))
 			}
-			let t = b.temperature_now().max(1.0);
-			let needed =
-				f64::from(max_kpa - pa) * vol_a / (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t));
-			let cap = moles_for_volume(b, vol_b, f64::from(max_rate_l_s) * f64::from(dt));
-			let moved = transfer(b, a, needed.min(cap));
-			StepReport {
-				moles: -moved,
-				target_reached: pressure(a, vol_a) >= max_kpa,
-				..Default::default()
-			}
-		}
-		VentMode::Siphon => {
-			if pa <= min_kpa {
-				return StepReport {
-					target_reached: true,
-					..Default::default()
-				};
-			}
-			let t = a.temperature_now().max(1.0);
-			let needed =
-				f64::from(pa - min_kpa) * vol_a / (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t));
-			let cap = moles_for_volume(a, vol_a, f64::from(max_rate_l_s) * f64::from(dt));
-			let moved = transfer(a, b, needed.min(cap));
-			StepReport {
-				moles: moved,
-				target_reached: pressure(a, vol_a) <= min_kpa,
-				..Default::default()
-			}
-		}
-	}
-}
-
-fn step_scrubber(a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, dt: f32, mask: u32, rate_l_s: f32, siphon: bool) -> StepReport {
-	if siphon {
-		let moles = moles_for_volume(a, vol_a, f64::from(rate_l_s) * f64::from(dt));
-		let moved = transfer(a, b, moles);
-		return StepReport {
-			moles: moved,
-			..Default::default()
+			None => match self.direction {
+				Direction::Forced => (true, f64::INFINITY, None),
+				Direction::Downhill => {
+					if (pa - pb).abs() <= 0.01 {
+						return StepReport::default();
+					}
+					let from_is_a = pa > pb;
+					// No fixed target: converges the two sides towards each
+					// other (the same physics as `equalize`), so the moles
+					// moved this tick can't itself overshoot past
+					// equilibrium even when the rate cap is generous.
+					let (vol_from, vol_to) = if from_is_a { (vol_a, vol_b) } else { (vol_b, vol_a) };
+					let t_flow = (if from_is_a { &*a } else { &*b }).temperature_now().max(1.0);
+					let vol_pair = vol_from * vol_to / (vol_from + vol_to).max(1e-9);
+					let needed = f64::from((pa - pb).abs()) * vol_pair
+						/ (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t_flow));
+					(from_is_a, needed, None)
+				}
+			},
 		};
-	}
-	// Scrub only the masked gases: carve their share of the take volume,
-	// proportional to each masked gas's fraction of the total.
-	let take_l = f64::from(rate_l_s) * f64::from(dt);
-	if vol_a <= 0.0 || take_l <= 0.0 {
-		return StepReport::default();
-	}
-	let total = a.total();
-	if total <= GAS_MIN_MOLES.into() {
-		return StepReport::default();
-	}
-	let masked: f64 = (0..N)
-		.filter(|i| mask & (1 << i) != 0)
-		.map(|i| a.moles[i])
-		.sum();
-	if masked <= GAS_MIN_MOLES.into() {
-		return StepReport::default();
-	}
-	let take_moles = (total * (take_l / vol_a).clamp(0.0, 1.0)).min(masked);
-	let f = (take_moles / masked).clamp(0.0, 1.0);
-	let mut carved = PipeGas {
-		temperature: a.temperature_now(),
-		..PipeGas::default()
-	};
-	let mut removed_energy_frac = 0.0f64;
-	for i in 0..N {
-		if mask & (1 << i) != 0 {
-			let amt = a.moles[i] * f;
-			carved.moles[i] = amt;
-			a.moles[i] -= amt;
-			removed_energy_frac += amt;
-		}
-	}
-	let e = a.energy * (removed_energy_frac / total.max(f64::from(GAS_MIN_MOLES)));
-	carved.energy = e;
-	a.energy -= e;
-	let moved = carved.total();
-	b.add(&carved);
-	StepReport {
-		moles: moved,
-		..Default::default()
-	}
-}
 
-fn step_filter(a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, dt: f32, mask: u32, rate_l_s: f32) -> StepReport {
-	// Same masked-carve as the scrubber's filtered mode; kept separate
-	// because filters and scrubbers have independent parameter sets and
-	// events (filter saturation vs. siphon).
-	step_scrubber(a, vol_a, b, dt, mask, rate_l_s, false)
-}
-
-fn step_heat_exchanger(a: &mut PipeGas, b: &mut PipeGas, dt: f32, conductance_w_k: f32) -> StepReport {
-	if conductance_w_k <= 0.0 {
-		return StepReport::default();
-	}
-	let (ta, tb) = (a.temperature_now(), b.temperature_now());
-	let delta = ta - tb;
-	if delta.abs() < 0.01 {
-		return StepReport::default();
-	}
-	let ca = crate::cell::heat_capacity(&a.moles_f32());
-	let cb = crate::cell::heat_capacity(&b.moles_f32());
-	if ca <= MINIMUM_HEAT_CAPACITY || cb <= MINIMUM_HEAT_CAPACITY {
-		return StepReport::default();
-	}
-	let mut energy = f64::from(conductance_w_k) * f64::from(delta) * f64::from(dt);
-	// Never overshoot past thermal equilibrium in one tick.
-	let equilibrium_energy = f64::from(delta) / (1.0 / f64::from(ca) + 1.0 / f64::from(cb));
-	energy = energy.clamp(-equilibrium_energy.abs(), equilibrium_energy.abs());
-	a.energy -= energy;
-	b.energy += energy;
-	StepReport {
-		power_w: (energy / f64::from(dt)) as f32,
-		..Default::default()
-	}
-}
-
-fn step_regulator(a: &mut PipeGas, _vol_a: f64, b: &mut PipeGas, vol_b: f64, release_kpa: f32) -> StepReport {
-	let pb = pressure(b, vol_b);
-	if pb >= release_kpa || a.total() <= GAS_MIN_MOLES.into() {
-		return StepReport {
-			target_reached: pb >= release_kpa,
-			..Default::default()
+		let (from, to, vol_from, vol_to): (&mut PipeGas, &mut PipeGas, f64, f64) = if from_is_a {
+			(a, b, vol_a, vol_b)
+		} else {
+			(b, a, vol_b, vol_a)
 		};
-	}
-	let t = a.temperature_now().max(1.0);
-	let needed = f64::from((release_kpa - pb).max(0.0)) * vol_b / (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t));
-	let moved = transfer(a, b, needed);
-	StepReport {
-		moles: moved,
-		target_reached: pressure(b, vol_b) >= release_kpa,
-		..Default::default()
+
+		let p_from = from.pressure(vol_from);
+		let mut power_w = 0.0;
+		let cap = match self.rate {
+			Rate::Volume(l_s) => from.moles_for_volume(vol_from, f64::from(l_s) * f64::from(dt)),
+			Rate::Moles(mol_s) => f64::from(mol_s) * f64::from(dt),
+			Rate::Power(power) => {
+				let t = from.temperature_now().max(1.0);
+				let target = target_kpa.unwrap_or(p_from.max(to.pressure(vol_to)));
+				let ratio = (target.max(p_from) / p_from.max(0.01)).max(1.0 + 1e-6);
+				let work_per_mole = f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t) * f64::from(ratio.ln());
+				let budget = f64::from(power) * f64::from(dt);
+				power_w = power;
+				if work_per_mole > 0.0 {
+					budget / work_per_mole
+				} else {
+					f64::INFINITY
+				}
+			}
+			Rate::Unlimited => f64::INFINITY,
+		};
+
+		let moles = needed.min(cap).min(from.masked_total(self.gases));
+		if moles <= 0.0 {
+			return StepReport::default();
+		}
+		let moved = from.transfer_masked(to, self.gases, moles);
+		let used_power = if matches!(self.rate, Rate::Power(_)) && moved > 0.0 {
+			(power_w * (moved / cap.max(1e-12)) as f32).min(power_w)
+		} else {
+			0.0
+		};
+		StepReport {
+			moles: if from_is_a { moved } else { -moved },
+			power_w: used_power,
+			target_reached: false,
+		}
 	}
 }
 
@@ -556,27 +376,138 @@ mod tests {
 		gas.total()
 	}
 
+	fn pump(target_kpa: f32, power_w: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: 0,
+			rate: Rate::Power(power_w),
+			direction: Direction::Forced,
+			stop: Some(Target {
+				side: Side::B,
+				cmp: Cmp::AtLeast,
+				kpa: target_kpa,
+			}),
+		})
+	}
+
+	fn volume_pump(rate_l_s: f32, max_output_kpa: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: 0,
+			rate: Rate::Volume(rate_l_s),
+			direction: Direction::Forced,
+			stop: (max_output_kpa > 0.0).then_some(Target {
+				side: Side::B,
+				cmp: Cmp::AtLeast,
+				kpa: max_output_kpa,
+			}),
+		})
+	}
+
+	fn passive_gate_output(target_kpa: f32, max_rate_l_s: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: 0,
+			rate: Rate::Volume(max_rate_l_s),
+			direction: Direction::Forced,
+			stop: Some(Target {
+				side: Side::B,
+				cmp: Cmp::AtLeast,
+				kpa: target_kpa,
+			}),
+		})
+	}
+
+	fn passive_gate_input(target_kpa: f32, max_rate_l_s: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: 0,
+			rate: Rate::Volume(max_rate_l_s),
+			direction: Direction::Forced,
+			stop: Some(Target {
+				side: Side::A,
+				cmp: Cmp::AtMost,
+				kpa: target_kpa,
+			}),
+		})
+	}
+
+	fn passive_gate_equalize(max_rate_l_s: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: 0,
+			rate: Rate::Volume(max_rate_l_s),
+			direction: Direction::Downhill,
+			stop: None,
+		})
+	}
+
+	/// `a` is always the turf side, matching `PipeNet::add_turf_device`'s
+	/// fixed `Endpoint::Cell(_) == a` convention - `stop` alone decides
+	/// which way gas actually moves (see `Flow`'s docs).
+	fn vent_release(max_kpa: f32, max_rate_l_s: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: 0,
+			rate: Rate::Volume(max_rate_l_s),
+			direction: Direction::Forced,
+			stop: Some(Target {
+				side: Side::A,
+				cmp: Cmp::AtLeast,
+				kpa: max_kpa,
+			}),
+		})
+	}
+
+	fn vent_siphon(min_kpa: f32, max_rate_l_s: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: 0,
+			rate: Rate::Volume(max_rate_l_s),
+			direction: Direction::Forced,
+			stop: Some(Target {
+				side: Side::A,
+				cmp: Cmp::AtMost,
+				kpa: min_kpa,
+			}),
+		})
+	}
+
+	fn scrubber(mask: u32, rate_l_s: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: mask,
+			rate: Rate::Volume(rate_l_s),
+			direction: Direction::Forced,
+			stop: None,
+		})
+	}
+
+	fn regulator(release_kpa: f32) -> DeviceParams {
+		DeviceParams::Flow(Flow {
+			gases: 0,
+			rate: Rate::Unlimited,
+			direction: Direction::Forced,
+			stop: Some(Target {
+				side: Side::B,
+				cmp: Cmp::AtLeast,
+				kpa: release_kpa,
+			}),
+		})
+	}
+
 	#[test]
-	fn valve_closed_moves_nothing() {
+	fn equalize_closed_moves_nothing() {
 		let mut a = atmosphere(100.0, 293.0);
 		let mut b = PipeGas::default();
 		let before = total(&a) + total(&b);
-		let r = step(&DeviceParams::Valve { open: false }, &mut a, 100.0, &mut b, 100.0, 1.0);
+		let r = step(&DeviceParams::Equalize { open: false }, &mut a, 100.0, &mut b, 100.0, 1.0);
 		assert_eq!(r.moles, 0.0);
 		assert!((total(&a) + total(&b) - before).abs() < 1e-9);
 		assert!((total(&b)).abs() < 1e-9);
 	}
 
 	#[test]
-	fn valve_open_equalizes_and_conserves() {
+	fn equalize_open_equalizes_and_conserves() {
 		let mut a = atmosphere(100.0, 293.0);
 		let mut b = PipeGas::default();
 		let before = total(&a) + total(&b);
 		for _ in 0..500 {
-			let _ = step(&DeviceParams::Valve { open: true }, &mut a, 100.0, &mut b, 100.0, 1.0);
+			let _ = step(&DeviceParams::Equalize { open: true }, &mut a, 100.0, &mut b, 100.0, 1.0);
 		}
 		assert!((total(&a) + total(&b) - before).abs() < 1e-6, "conserves mass");
-		// Equal volumes at equal starting temperature converge to equal moles.
 		assert!((total(&a) - total(&b)).abs() < 0.5, "equalized: {} vs {}", total(&a), total(&b));
 	}
 
@@ -585,26 +516,21 @@ mod tests {
 		let mut a = atmosphere(1000.0, 293.0);
 		let mut b = PipeGas::default();
 		let before = total(&a) + total(&b);
-		let params = DeviceParams::Pump {
-			target_kpa: 101.325,
-			power_w: 5000.0,
-		};
+		let params = pump(101.325, 5000.0);
 		for _ in 0..200 {
 			let _ = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
 		}
 		assert!((total(&a) + total(&b) - before).abs() < 1e-6);
-		assert!(pressure(&b, 1000.0) <= 101.325 + 0.5, "does not overshoot target");
-		assert!(pressure(&b, 1000.0) > 50.0, "made real progress towards target");
+		let pb = b.pressure(1000.0);
+		assert!(pb <= 101.325 + 0.5, "does not overshoot target: {pb}");
+		assert!(pb > 50.0, "made real progress towards target: {pb}");
 	}
 
 	#[test]
 	fn pump_at_target_stalls() {
 		let mut a = atmosphere(10.0, 293.0);
 		let mut b = atmosphere(10000.0, 293.0);
-		let params = DeviceParams::Pump {
-			target_kpa: 50.0,
-			power_w: 5000.0,
-		};
+		let params = pump(50.0, 5000.0);
 		let r = step(&params, &mut a, 1.0, &mut b, 1000.0, 1.0);
 		assert_eq!(r.moles, 0.0);
 		assert!(r.target_reached);
@@ -612,17 +538,13 @@ mod tests {
 
 	#[test]
 	fn pump_is_power_limited() {
-		// Low input pressure, a demanding target: real compression work.
 		let mut a = atmosphere(10.0, 293.0);
 		let mut b = PipeGas::default();
-		let params = DeviceParams::Pump {
-			target_kpa: 1000.0,
-			power_w: 1.0,
-		};
+		let params = pump(1000.0, 1.0);
 		let r = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
 		assert!(r.moles > 0.0);
 		assert!(r.power_w <= 1.0 + 1e-3, "power draw stays within the rating");
-		assert!(pressure(&b, 1000.0) < 1.0, "low power moves very little gas in one tick");
+		assert!(b.pressure(1000.0) < 1.0, "low power moves very little gas in one tick");
 	}
 
 	#[test]
@@ -630,7 +552,7 @@ mod tests {
 		let mut a = atmosphere(1000.0, 293.0);
 		let mut b = PipeGas::default();
 		let before_a = total(&a);
-		let r = step(&DeviceParams::VolumePump { rate_l_s: 200.0, max_output_kpa: 0.0 }, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		let r = step(&volume_pump(200.0, 0.0), &mut a, 1000.0, &mut b, 1000.0, 1.0);
 		assert!(r.moles > 0.0);
 		assert!((total(&a) - (before_a - r.moles)).abs() < 1e-9);
 		assert!((total(&b) - r.moles).abs() < 1e-9);
@@ -639,12 +561,8 @@ mod tests {
 	#[test]
 	fn volume_pump_refuses_above_max_output_pressure() {
 		let mut a = atmosphere(1000.0, 293.0);
-		let mut b = atmosphere(100_000.0, 293.0); // already far above any sane cap
-		let params = DeviceParams::VolumePump {
-			rate_l_s: 200.0,
-			max_output_kpa: 101.325,
-		};
-		let r = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		let mut b = atmosphere(100_000.0, 293.0);
+		let r = step(&volume_pump(200.0, 101.325), &mut a, 1000.0, &mut b, 1000.0, 1.0);
 		assert_eq!(r.moles, 0.0);
 		assert!(r.target_reached);
 	}
@@ -653,25 +571,15 @@ mod tests {
 	fn volume_pump_uncapped_ignores_output_pressure() {
 		let mut a = atmosphere(1000.0, 293.0);
 		let mut b = atmosphere(100_000.0, 293.0);
-		let params = DeviceParams::VolumePump {
-			rate_l_s: 200.0,
-			max_output_kpa: 0.0, // overclocked: no cap
-		};
-		let r = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		let r = step(&volume_pump(200.0, 0.0), &mut a, 1000.0, &mut b, 1000.0, 1.0);
 		assert!(r.moles > 0.0);
 	}
 
 	#[test]
 	fn passive_gate_locked_direction_does_not_reverse() {
-		// Output already above target: REGULATE_OUTPUT should not flow.
 		let mut a = atmosphere(10.0, 293.0);
 		let mut b = atmosphere(10000.0, 293.0);
-		let params = DeviceParams::PassiveGate {
-			mode: Regulate::Output,
-			target_kpa: 50.0,
-			max_rate_l_s: 1000.0,
-		};
-		let r = step(&params, &mut a, 100.0, &mut b, 1000.0, 1.0);
+		let r = step(&passive_gate_output(50.0, 1000.0), &mut a, 100.0, &mut b, 1000.0, 1.0);
 		assert_eq!(r.moles, 0.0);
 	}
 
@@ -679,49 +587,60 @@ mod tests {
 	fn passive_gate_output_mode_stops_at_target() {
 		let mut a = atmosphere(100_000.0, 293.0);
 		let mut b = PipeGas::default();
-		let params = DeviceParams::PassiveGate {
-			mode: Regulate::Output,
-			target_kpa: 101.325,
-			max_rate_l_s: 5000.0,
-		};
+		let params = passive_gate_output(101.325, 5000.0);
 		let before = total(&a) + total(&b);
 		for _ in 0..2000 {
 			let _ = step(&params, &mut a, 10_000.0, &mut b, 1000.0, 1.0);
 		}
 		assert!((total(&a) + total(&b) - before).abs() < 1e-3);
-		assert!(pressure(&b, 1000.0) <= 101.325 + 1.0);
+		assert!(b.pressure(1000.0) <= 101.325 + 1.0);
+	}
+
+	#[test]
+	fn passive_gate_input_mode_drains_down_to_target() {
+		let mut a = atmosphere(100_000.0, 293.0);
+		let mut b = PipeGas::default();
+		let params = passive_gate_input(101.325, 5000.0);
+		for _ in 0..2000 {
+			let _ = step(&params, &mut a, 10_000.0, &mut b, 100_000.0, 1.0);
+		}
+		assert!(a.pressure(10_000.0) >= 101.325 - 1.0 && a.pressure(10_000.0) <= 101.325 + 1.0);
+	}
+
+	#[test]
+	fn passive_gate_equalize_mode_conserves_and_never_reverses() {
+		let mut a = atmosphere(100.0, 293.0);
+		let mut b = PipeGas::default();
+		let before = total(&a) + total(&b);
+		for _ in 0..500 {
+			let _ = step(&passive_gate_equalize(1000.0), &mut a, 100.0, &mut b, 100.0, 1.0);
+		}
+		assert!((total(&a) + total(&b) - before).abs() < 1e-6);
+		assert!((total(&a) - total(&b)).abs() < 0.5);
+		// Never reverses: b starts empty and a never goes negative.
+		assert!(total(&a) >= 0.0 && total(&b) >= 0.0);
 	}
 
 	#[test]
 	fn vent_pump_release_bounded_by_max_pressure() {
 		let mut turf = atmosphere(10.0, 293.0);
 		let mut network = atmosphere(100_000.0, 293.0);
-		let params = DeviceParams::VentPump {
-			mode: VentMode::Release,
-			min_kpa: 0.0,
-			max_kpa: 101.325,
-			max_rate_l_s: 10_000.0,
-		};
+		let params = vent_release(101.325, 10_000.0);
 		for _ in 0..500 {
 			let _ = step(&params, &mut turf, 2500.0, &mut network, 100_000.0, 1.0);
 		}
-		assert!(pressure(&turf, 2500.0) <= 101.325 + 1.0);
+		assert!(turf.pressure(2500.0) <= 101.325 + 1.0);
 	}
 
 	#[test]
 	fn vent_pump_siphon_bounded_by_min_pressure() {
 		let mut turf = atmosphere(100_000.0, 293.0);
 		let mut network = PipeGas::default();
-		let params = DeviceParams::VentPump {
-			mode: VentMode::Siphon,
-			min_kpa: 0.0,
-			max_kpa: 1000.0,
-			max_rate_l_s: 50_000.0,
-		};
+		let params = vent_siphon(0.0, 50_000.0);
 		for _ in 0..500 {
 			let _ = step(&params, &mut turf, 2500.0, &mut network, 100_000.0, 1.0);
 		}
-		assert!(pressure(&turf, 2500.0) <= 0.5, "siphoned down to the minimum");
+		assert!(turf.pressure(2500.0) <= 0.5, "siphoned down to the minimum");
 	}
 
 	#[test]
@@ -730,12 +649,8 @@ mod tests {
 		let mut b = PipeGas::default();
 		let co2_before = a.moles[GAS_CARBON_DIOXIDE];
 		let o2_before = a.moles[GAS_OXYGEN];
-		let params = DeviceParams::Scrubber {
-			mask: 1 << GAS_CARBON_DIOXIDE,
-			rate_l_s: 200.0,
-			siphon: false,
-		};
-		let _ = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		let r = step(&scrubber(1 << GAS_CARBON_DIOXIDE, 200.0), &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		assert!(r.moles > 0.0);
 		assert!(b.moles[GAS_CARBON_DIOXIDE] > 0.0, "scrubbed co2 into the output");
 		assert_eq!(b.moles[GAS_OXYGEN], 0.0, "left o2 behind");
 		assert!((a.moles[GAS_OXYGEN] - o2_before).abs() < 1e-9, "o2 untouched on input");
@@ -743,15 +658,10 @@ mod tests {
 	}
 
 	#[test]
-	fn scrubber_siphon_moves_everything() {
+	fn scrubber_siphon_mask_zero_moves_everything() {
 		let mut a = atmosphere(1000.0, 293.0);
 		let mut b = PipeGas::default();
-		let params = DeviceParams::Scrubber {
-			mask: 0,
-			rate_l_s: 200.0,
-			siphon: true,
-		};
-		let _ = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		let _ = step(&scrubber(0, 200.0), &mut a, 1000.0, &mut b, 1000.0, 1.0);
 		assert!(b.moles[GAS_OXYGEN] > 0.0);
 		assert!(b.moles[GAS_CARBON_DIOXIDE] > 0.0);
 	}
@@ -762,44 +672,9 @@ mod tests {
 		let mut b = PipeGas::default();
 		let before_moles = total(&a) + total(&b);
 		let before_energy = a.energy + b.energy;
-		let params = DeviceParams::Filter {
-			mask: 1 << GAS_OXYGEN,
-			rate_l_s: 500.0,
-		};
-		let _ = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		let _ = step(&scrubber(1 << GAS_OXYGEN, 500.0), &mut a, 1000.0, &mut b, 1000.0, 1.0);
 		assert!((total(&a) + total(&b) - before_moles).abs() < 1e-9);
 		assert!((a.energy + b.energy - before_energy).abs() < 1e-6);
-	}
-
-	#[test]
-	fn heat_exchanger_moves_energy_not_gas() {
-		let mut a = atmosphere(1000.0, 400.0);
-		let mut b = atmosphere(1000.0, 250.0);
-		let moles_before = (total(&a), total(&b));
-		let params = DeviceParams::HeatExchanger { conductance_w_k: 50.0 };
-		for _ in 0..2000 {
-			let _ = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
-		}
-		assert_eq!((total(&a), total(&b)), moles_before, "no gas moves");
-		assert!(a.temperature_now() < 400.0);
-		assert!(b.temperature_now() > 250.0);
-		assert!(
-			(a.temperature_now() - b.temperature_now()).abs() < 5.0,
-			"converges towards equilibrium: {} vs {}",
-			a.temperature_now(),
-			b.temperature_now()
-		);
-	}
-
-	#[test]
-	fn heat_exchanger_does_not_overshoot_equilibrium() {
-		let mut a = atmosphere(10.0, 400.0);
-		let mut b = atmosphere(100_000.0, 250.0);
-		let params = DeviceParams::HeatExchanger {
-			conductance_w_k: 1_000_000.0,
-		};
-		let _ = step(&params, &mut a, 10.0, &mut b, 100_000.0, 1.0);
-		assert!(a.temperature_now() >= 249.0, "did not undershoot past b's temperature");
 	}
 
 	#[test]
@@ -807,72 +682,12 @@ mod tests {
 		let mut tank = atmosphere(1_000_000.0, 293.0);
 		let mut region = PipeGas::default();
 		let before = total(&tank) + total(&region);
-		let params = DeviceParams::PressureRegulator { release_kpa: 101.325 };
+		let params = regulator(101.325);
 		for _ in 0..2000 {
 			let _ = step(&params, &mut tank, 100.0, &mut region, 1000.0, 1.0);
 		}
 		assert!((total(&tank) + total(&region) - before).abs() < 1e-3);
-		assert!(pressure(&region, 1000.0) <= 101.325 + 1.0);
-	}
-
-	#[test]
-	fn decode_round_trips_every_law() {
-		assert_eq!(
-			DeviceParams::decode(1, [101.325, 5000.0, 0.0, 0.0]),
-			DeviceParams::Pump {
-				target_kpa: 101.325,
-				power_w: 5000.0
-			}
-		);
-		assert_eq!(
-			DeviceParams::decode(2, [200.0, 0.0, 0.0, 0.0]),
-			DeviceParams::VolumePump { rate_l_s: 200.0, max_output_kpa: 0.0 }
-		);
-		assert_eq!(
-			DeviceParams::decode(3, [0.0, 50.0, 1000.0, 0.0]),
-			DeviceParams::PassiveGate {
-				mode: Regulate::Input,
-				target_kpa: 50.0,
-				max_rate_l_s: 1000.0,
-			}
-		);
-		assert_eq!(DeviceParams::decode(4, [1.0, 0.0, 0.0, 0.0]), DeviceParams::Valve { open: true });
-		assert_eq!(DeviceParams::decode(4, [0.0, 0.0, 0.0, 0.0]), DeviceParams::Valve { open: false });
-		assert_eq!(
-			DeviceParams::decode(5, [1.0, 0.0, 1000.0, 500.0]),
-			DeviceParams::VentPump {
-				mode: VentMode::Siphon,
-				min_kpa: 0.0,
-				max_kpa: 1000.0,
-				max_rate_l_s: 500.0,
-			}
-		);
-		assert_eq!(
-			DeviceParams::decode(6, [(1 << 3) as f32, 200.0, 1.0, 0.0]),
-			DeviceParams::Scrubber {
-				mask: 1 << 3,
-				rate_l_s: 200.0,
-				siphon: true,
-			}
-		);
-		assert_eq!(DeviceParams::decode(7, [50.0, 0.0, 0.0, 0.0]), DeviceParams::Injector { rate_l_s: 50.0 });
-		assert_eq!(
-			DeviceParams::decode(8, [(1 << 5) as f32, 300.0, 0.0, 0.0]),
-			DeviceParams::Filter {
-				mask: 1 << 5,
-				rate_l_s: 300.0,
-			}
-		);
-		assert_eq!(
-			DeviceParams::decode(9, [42.0, 0.0, 0.0, 0.0]),
-			DeviceParams::HeatExchanger { conductance_w_k: 42.0 }
-		);
-		assert_eq!(
-			DeviceParams::decode(10, [101.325, 0.0, 0.0, 0.0]),
-			DeviceParams::PressureRegulator { release_kpa: 101.325 }
-		);
-		assert_eq!(DeviceParams::decode(0, [1.0, 2.0, 3.0, 4.0]), DeviceParams::None);
-		assert_eq!(DeviceParams::decode(200, [1.0, 2.0, 3.0, 4.0]), DeviceParams::None);
+		assert!(region.pressure(1000.0) <= 101.325 + 1.0);
 	}
 
 	#[test]
@@ -883,5 +698,63 @@ mod tests {
 		let r = step(&DeviceParams::None, &mut a, 100.0, &mut b, 100.0, 1.0);
 		assert_eq!(r, StepReport::default());
 		assert_eq!(total(&a), before);
+	}
+
+	#[test]
+	fn decode_wire_pump_matches_the_hand_built_law() {
+		assert_eq!(DeviceParams::decode(1, [101.325, 5000.0, 0.0, 0.0]), pump(101.325, 5000.0));
+	}
+
+	#[test]
+	fn decode_wire_volume_pump_uncapped_when_max_output_is_zero() {
+		let DeviceParams::Flow(flow) = DeviceParams::decode(2, [200.0, 0.0, 0.0, 0.0]) else {
+			panic!("expected a Flow");
+		};
+		assert_eq!(flow.stop, None);
+	}
+
+	#[test]
+	fn decode_wire_passive_gate_modes() {
+		assert_eq!(DeviceParams::decode(3, [1.0, 101.325, 5000.0, 0.0]), passive_gate_output(101.325, 5000.0));
+		assert_eq!(DeviceParams::decode(3, [0.0, 101.325, 5000.0, 0.0]), passive_gate_input(101.325, 5000.0));
+		assert_eq!(DeviceParams::decode(3, [2.0, 0.0, 5000.0, 0.0]), passive_gate_equalize(5000.0));
+	}
+
+	#[test]
+	fn decode_wire_valve() {
+		assert_eq!(DeviceParams::decode(4, [1.0, 0.0, 0.0, 0.0]), DeviceParams::Equalize { open: true });
+		assert_eq!(DeviceParams::decode(4, [0.0, 0.0, 0.0, 0.0]), DeviceParams::Equalize { open: false });
+	}
+
+	#[test]
+	fn decode_wire_vent_pump_modes() {
+		assert_eq!(DeviceParams::decode(5, [0.0, 0.0, 101.325, 10_000.0]), vent_release(101.325, 10_000.0));
+		assert_eq!(DeviceParams::decode(5, [1.0, 0.0, 101.325, 10_000.0]), vent_siphon(0.0, 10_000.0));
+	}
+
+	#[test]
+	fn decode_wire_scrubber_siphon_ignores_the_mask() {
+		let mask = (1u32 << GAS_CARBON_DIOXIDE) as f32;
+		let DeviceParams::Flow(flow) = DeviceParams::decode(6, [mask, 200.0, 1.0, 0.0]) else {
+			panic!("expected a Flow");
+		};
+		assert_eq!(flow.gases, 0, "siphon mode moves every gas, ignoring the mask");
+	}
+
+	#[test]
+	fn decode_wire_scrubber_filters_by_mask() {
+		let mask = 1u32 << GAS_CARBON_DIOXIDE;
+		assert_eq!(DeviceParams::decode(6, [mask as f32, 200.0, 0.0, 0.0]), scrubber(mask, 200.0));
+	}
+
+	#[test]
+	fn decode_wire_regulator() {
+		assert_eq!(DeviceParams::decode(10, [101.325, 0.0, 0.0, 0.0]), regulator(101.325));
+	}
+
+	#[test]
+	fn decode_wire_unknown_kind_is_none() {
+		assert_eq!(DeviceParams::decode(9, [1.0, 0.0, 0.0, 0.0]), DeviceParams::None);
+		assert_eq!(DeviceParams::decode(255, [0.0, 0.0, 0.0, 0.0]), DeviceParams::None);
 	}
 }

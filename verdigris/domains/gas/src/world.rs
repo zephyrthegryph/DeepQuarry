@@ -408,12 +408,12 @@ impl Post {
 				if g.reservoir {
 					continue;
 				}
-				if cell.flags & flags::REACT != 0 {
+				if cell.ready != crate::cell::NO_REACTION {
 					events.push(Event {
-						kind: EventKind::ReactionCheck,
+						kind: EventKind::ReactionReady,
 						key: index,
 						value: 0.0,
-						extra: 0,
+						extra: cell.ready,
 						generation: 0,
 					});
 				}
@@ -1348,10 +1348,27 @@ impl GasWorld {
 				_ => continue,
 			};
 			let key = dev.key;
-			let params = dev.data.clone();
+			let params = dev.data;
 			let Side::Region(region) = self.pipes.net.resolve(Endpoint::Node(node)) else {
 				continue;
 			};
+
+			// Idle-skip (M2 follow-up): a settled edge whose region and
+			// turf cell haven't changed since its last step costs nothing
+			// but two revision lookups, the same as `PipeNet::step_devices`
+			// does for region<->region edges.
+			let rev_region_before = self.pipes.region_revision(region);
+			let rev_cell_before = self.revision(MixRef::Turf(cell));
+			let (rev_a_before, rev_b_before) = if cell_is_a {
+				(rev_cell_before, rev_region_before)
+			} else {
+				(rev_region_before, rev_cell_before)
+			};
+			let idx = id.index();
+			if self.pipes.device_asleep(idx, rev_a_before, rev_b_before) {
+				continue;
+			}
+
 			let Ok(r) = self.pipes.net.region(region) else {
 				continue;
 			};
@@ -1376,7 +1393,8 @@ impl GasWorld {
 				device::step(&params, &mut region_gas, vol_region, &mut turf_gas, vol_cell, dt)
 			};
 
-			if report.moles != 0.0 {
+			let settled = report.moles == 0.0 && report.power_w == 0.0;
+			if !settled {
 				if let Ok(payload) = self.pipes.net.payload_mut(region) {
 					*payload = region_gas;
 				}
@@ -1384,6 +1402,16 @@ impl GasWorld {
 				let after_mix = mixture_of_pipe(&turf_gas, vol_cell);
 				self.store(MixRef::Turf(cell), &before_mix, &after_mix);
 			}
+
+			let rev_region_after = self.pipes.region_revision(region);
+			let rev_cell_after = self.revision(MixRef::Turf(cell));
+			let (rev_a_after, rev_b_after) = if cell_is_a {
+				(rev_cell_after, rev_region_after)
+			} else {
+				(rev_region_after, rev_cell_after)
+			};
+			self.pipes.set_device_activity(idx, settled, rev_a_after, rev_b_after);
+
 			out.push(pipes::DeviceStep { key, report });
 		}
 		out
@@ -1754,7 +1782,7 @@ impl GasWorld {
 		}
 		for e in out.events() {
 			match e.kind {
-				EventKind::ReactionCheck => self.stats.reactions += 1,
+				EventKind::ReactionReady => self.stats.reactions += 1,
 				EventKind::VisualChange => self.stats.visuals += 1,
 				EventKind::PressureJump => self.stats.pressure += 1,
 				_ => {}

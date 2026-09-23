@@ -390,11 +390,13 @@ fn visual_and_reaction_events_reach_dm() {
 	let visual_b = events
 		.chunks_exact(4)
 		.any(|e| e[0] as u32 == 3 && e[1] as u32 == b);
+	// kind 2 (ReactionReady), key = a; extra (events[3]) is the dense gate
+	// index of the ready reaction - 0, the only one this test registered.
 	let react_a = events
 		.chunks_exact(4)
-		.any(|e| e[0] as u32 == 2 && e[1] as u32 == a);
+		.any(|e| e[0] as u32 == 2 && e[1] as u32 == a && e[3] as u32 == 0);
 	assert!(visual_b, "no VisualChange for b: {events:?}");
-	assert!(react_a, "no ReactionCheck for a");
+	assert!(react_a, "no ReactionReady(index 0) for a: {events:?}");
 }
 
 #[test]
@@ -496,7 +498,7 @@ fn nudging_one_cell_wakes_only_its_neighbourhood_and_settles_again() {
 /// region and checks the whole world (field + pipes) still conserves.
 #[test]
 fn step_turf_devices_bridges_pipe_and_field_and_conserves() {
-	use crate::device::{DeviceParams, VentMode};
+	use crate::device::DeviceParams;
 	use vg_core::network::Endpoint;
 
 	let mut w = world(Mode::Overlay);
@@ -525,12 +527,10 @@ fn step_turf_devices_bridges_pipe_and_field_and_conserves() {
 			Endpoint::Node(node),
 			0,
 			1,
-			DeviceParams::VentPump {
-				mode: VentMode::Siphon,
-				min_kpa: 0.0,
-				max_kpa: 1_000_000.0,
-				max_rate_l_s: 1000.0,
-			},
+			// Wire-format kind 5 (vent pump), mode 1 (siphon): decode(kind,
+			// [mode, min_kpa, max_kpa, max_rate_l_s]) - see `device.rs`'s
+			// `DeviceParams::decode` for the field layout.
+			DeviceParams::decode(5, [1.0, 0.0, 1_000_000.0, 1000.0]),
 		)
 		.expect("device added");
 
@@ -548,4 +548,141 @@ fn step_turf_devices_bridges_pipe_and_field_and_conserves() {
 		moved[GAS_OXYGEN] > 0.0 || moved[GAS_NITROGEN] > 0.0,
 		"the vent pump moved nothing from the turf into the pipe network"
 	);
+}
+
+// --- Differential test: the old Signature/Dirty path vs. a real core watch
+// condition (`rust_architecture.md` §4.7's planned replacement) ------------
+//
+// Per the coordinator: build the new path and differential-test it against
+// the old one before deleting anything, rather than deleting by inspection.
+// Pressure and temperature dirty-tracking are directly expressible as
+// `vg_core::watch::Cond::Changed` (a per-channel hysteresis comparison
+// against a baseline - exactly what `mix_ch::PRESSURE`/`TEMPERATURE`
+// already declare, at the same 0.5 hysteresis `world.rs`'s
+// `PRESSURE_DIRTY_EPSILON`/`TEMPERATURE_DIRTY_EPSILON` use), so this proves
+// the two paths agree on those two categories over randomized writes.
+//
+// Composition is deliberately *not* covered here: `Dirty`'s composition
+// category is `sum_i |moles[i] - baseline[i]| >= 0.05` across every gas,
+// an aggregate reduction over N independent per-species baselines. No
+// existing `Cond` expresses that - `Changed`'s mask semantics are "did any
+// *one* listed channel move past *its own* hysteresis" (an OR across
+// channels, each independently thresholded), not "does the sum of every
+// channel's movement cross one threshold". The extension this needs is
+// written up in `doc/rewrite/watch_aggregate_extension.md` for Core A;
+// composition dirty-tracking stays on the old `Signature`/`Dirty` path
+// until that lands.
+#[cfg(test)]
+mod dirty_watch_differential {
+	use super::*;
+	use vg_core::outbox::Lane;
+	use vg_core::watch::Cond;
+
+	use crate::gas::{GAS_CHANGE_PRESSURE, GAS_CHANGE_TEMPERATURE};
+	use crate::world::mix_ch;
+
+	/// Registers both paths on a fresh main-owned mixture and returns
+	/// `(world, tank slot, wire id, new watch id)`.
+	///
+	/// `Cond::Changed` documents "never fires at registration": its first
+	/// evaluation only primes its baseline to whatever the store shows at
+	/// that point, with nothing earlier to compare against (`watch/mod.rs`'s
+	/// `Node::Changed::eval`: `past` is `*primed && ...`, and `primed`
+	/// starts `false`). `Dirty::watch_dirty`, by contrast, baselines
+	/// immediately from the mixture's state *at registration*, with no
+	/// separate priming step. So the two paths agree only from their
+	/// *second* evaluation on: this drains one (necessarily empty) round of
+	/// wakes right after registering, exactly the way `SSreactor` would
+	/// evaluate the domain at least once before a caller's first real
+	/// write, to put both paths in the same "primed" state before the
+	/// tests below compare them.
+	fn rig() -> (GasWorld, u32, u32, vg_core::outbox::WatchId) {
+		let mut w = world(Mode::Overlay);
+		let tank = w.mains.alloc(Mixture::from_vol(70.0)).expect("alloc");
+		let id = MixRef::Main(tank).id();
+		w.watch_dirty(id, GAS_CHANGE_PRESSURE | GAS_CHANGE_TEMPERATURE);
+		let (_, watch_id) = w
+			.watch(
+				0,
+				Lane::Normal,
+				&Cond::Changed {
+					cell: id,
+					mask: mix_ch::PRESSURE.bit() | mix_ch::TEMPERATURE.bit(),
+				},
+			)
+			.expect("registers a Changed watch on a main-owned mixture");
+		let mut priming = Vec::new();
+		w.take_wakes(&mut priming);
+		assert!(priming.is_empty(), "Changed must never fire at registration");
+		(w, tank, id, watch_id)
+	}
+
+	fn old_fired(w: &mut GasWorld, id: u32) -> bool {
+		w.drain_dirty()
+			.iter()
+			.any(|&(i, mask)| i == id && mask & (GAS_CHANGE_PRESSURE | GAS_CHANGE_TEMPERATURE) != 0)
+	}
+
+	fn new_fired(w: &mut GasWorld, watch_id: vg_core::outbox::WatchId) -> bool {
+		let mut wakes = Vec::new();
+		w.take_wakes(&mut wakes);
+		wakes.iter().any(|wk| wk.watch == watch_id && wk.reason != 0)
+	}
+
+	proptest! {
+		/// A write that changes moles and temperature by an arbitrary
+		/// amount fires the old and the new path identically (both, or
+		/// neither), over randomized magnitudes including near-zero ones
+		/// that should fire nothing.
+		#[test]
+		fn agree_on_an_arbitrary_write(moles in 0.0f32..2000.0, temp in 100.0f32..900.0) {
+			let (mut w, tank, id, watch_id) = rig();
+			let before = w.load(MixRef::Main(tank)).expect("tank exists");
+			let mut after = before.clone();
+			after.set_moles(GAS_OXYGEN, moles);
+			after.set_temperature(temp);
+			w.store(MixRef::Main(tank), &before, &after);
+
+			let old = old_fired(&mut w, id);
+			let new = new_fired(&mut w, watch_id);
+			prop_assert_eq!(old, new, "moles={}, temp={}: old={}, new={}", moles, temp, old, new);
+		}
+
+		/// After a real change settles (both paths have re-baselined),
+		/// repeating exactly the same state fires neither path.
+		#[test]
+		fn agree_that_an_unchanged_state_fires_neither(moles in 1.0f32..2000.0, temp in 200.0f32..800.0) {
+			let (mut w, tank, id, watch_id) = rig();
+			let before = w.load(MixRef::Main(tank)).expect("tank exists");
+			let mut after = before.clone();
+			after.set_moles(GAS_OXYGEN, moles);
+			after.set_temperature(temp);
+			w.store(MixRef::Main(tank), &before, &after);
+			// Prime both paths' baselines on the first (real) change.
+			let _ = old_fired(&mut w, id);
+			let _ = new_fired(&mut w, watch_id);
+
+			// Same state again: no-op per `store`'s own `same_state` guard,
+			// but exercised through both drains regardless.
+			let before2 = w.load(MixRef::Main(tank)).expect("tank exists");
+			w.store(MixRef::Main(tank), &before2, &before2.clone());
+			prop_assert!(!old_fired(&mut w, id), "old path fired on an unchanged state");
+			prop_assert!(!new_fired(&mut w, watch_id), "new path fired on an unchanged state");
+		}
+	}
+
+	/// A single, non-randomized example pinning the exact call sequence
+	/// (useful as a readable smoke test alongside the property tests above).
+	#[test]
+	fn a_concrete_pressure_and_temperature_change_fires_both_paths() {
+		let (mut w, tank, id, watch_id) = rig();
+		let before = w.load(MixRef::Main(tank)).unwrap();
+		let mut after = before.clone();
+		after.set_moles(GAS_OXYGEN, 21.8);
+		after.set_temperature(350.0);
+		w.store(MixRef::Main(tank), &before, &after);
+
+		assert!(old_fired(&mut w, id), "old Dirty path did not fire on a real change");
+		assert!(new_fired(&mut w, watch_id), "new Cond::Changed path did not fire on the same change");
+	}
 }
