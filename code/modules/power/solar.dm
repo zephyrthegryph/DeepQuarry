@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)
 	. = ..()
-	if(!(stat & BROKEN))
+	if(.)
 		broken()
 
 // Once broken, further damage shatters it into shards.
@@ -523,19 +523,6 @@ GLOBAL_LIST_EMPTY(solars_list)
 		update_icon()
 
 
-/obj/machinery/power/solar_control/proc/broken()
-	stat |= BROKEN
-	update_icon()
-
-
-/obj/machinery/power/solar_control/atom_break(damage_flag)
-	. = ..()
-	broken()
-
-/obj/machinery/power/solar_control/atom_fix()
-	. = ..()
-	stat &= ~BROKEN
-	update_icon()
 
 //
 // MISC

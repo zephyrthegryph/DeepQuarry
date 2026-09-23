@@ -679,7 +679,7 @@
 	addtimer(CALLBACK(src, PROC_REF(emp_reenable)), rand(1 MINUTE, 2 MINUTES), TIMER_DELETE_ME)
 
 /obj/machinery/porta_turret/proc/die()	//called when the turret dies, ie, integrity <= 0
-	stat |= BROKEN	//enables the BROKEN bit
+	atom_break()
 	spark_system?.start()	//creates some sparks because they look cool
 	update_icon()
 	set_processing_speed(FALSE) // Drop back to slow machine processing

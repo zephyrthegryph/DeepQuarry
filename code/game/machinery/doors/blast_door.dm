@@ -301,8 +301,7 @@
 // Description: Fully repairs the blast door.
 /obj/machinery/door/blast/proc/repair()
 	repair_damage(max_integrity)
-	if(stat & BROKEN)
-		stat &= ~BROKEN
+	atom_fix()
 
 // SUBTYPE: Regular
 // Your classical blast door, found almost everywhere.

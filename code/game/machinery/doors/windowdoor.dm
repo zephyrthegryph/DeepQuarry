@@ -152,7 +152,7 @@
 // Window doors shatter outright at zero integrity rather than persisting broken.
 // Window doors shatter outright rather than persisting in the broken state the
 // base door uses, so we deliberately do NOT chain to /obj/machinery/door's
-// atom_destruction (which calls set_broken()). Fire the destruction signal here.
+// atom_destruction (which breaks it through atom_break()). Fire the destruction signal here.
 /obj/machinery/door/window/atom_destruction(damage_flag)
 	SHOULD_CALL_PARENT(FALSE)
 	shatter()

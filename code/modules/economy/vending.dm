@@ -690,7 +690,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			R.get_product(loc)
 		break
 
-	stat |= BROKEN
+	atom_break()
 	icon_state = "[initial(icon_state)]-broken"
 	return
 

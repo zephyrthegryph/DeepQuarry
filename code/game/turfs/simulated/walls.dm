@@ -133,16 +133,9 @@
 /turf/simulated/wall/examine(mob/user)
 	. = ..()
 
-	var/dam = wall_damage_fraction()
-	if(!dam)
-		. += span_notice("It looks fully intact.")
-	else
-		if(dam <= 0.3)
-			. += span_warning("It looks slightly damaged.")
-		else if(dam <= 0.6)
-			. += span_warning("It looks moderately damaged.")
-		else
-			. += span_danger("It looks heavily damaged.")
+	var/band = dq_damage_band_for(src)
+	if(band)
+		. += damage_flavour_text(band)
 
 	if(locate(/obj/effect/overlay/wallrot) in src)
 		. += span_warning("There is fungus growing on [src].")

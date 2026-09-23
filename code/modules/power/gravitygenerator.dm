@@ -32,11 +32,11 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 /obj/machinery/gravity_generator/ex_act(severity, target)
 	if(severity == 1) // Very sturdy.
-		set_broken()
+		atom_break()
 
 /obj/machinery/gravity_generator/blob_act(obj/structure/blob/B)
 	if(prob(20))
-		set_broken()
+		atom_break()
 
 /obj/machinery/gravity_generator/update_icon()
 	icon_state = "[get_status()]_[sprite_number]"
@@ -49,16 +49,10 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	. = ..()
 	qdel(src)
 
-/obj/machinery/gravity_generator/proc/set_broken()
-	stat |= BROKEN
-
-/obj/machinery/gravity_generator/proc/set_fix()
-	stat &= ~BROKEN
-
 /obj/machinery/gravity_generator/part/Destroy()
 	if(main_part)
 		qdel(main_part)
-	set_broken()
+	atom_break()
 	return ..()
 
 //
@@ -77,10 +71,10 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 /obj/machinery/gravity_generator/part/attack_hand(mob/user)
 	return main_part?.attack_hand(user)
 
-/obj/machinery/gravity_generator/part/set_broken()
-	..()
+/obj/machinery/gravity_generator/part/atom_break(damage_flag)
+	. = ..()
 	if(main_part && !(main_part.stat & BROKEN))
-		main_part.set_broken()
+		main_part.atom_break(damage_flag)
 
 //
 // Generator which spawns with the station.
@@ -167,11 +161,13 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 /obj/machinery/gravity_generator/main/proc/connected_parts()
 	return parts.len == 8
 
-/obj/machinery/gravity_generator/main/set_broken()
-	..()
+/obj/machinery/gravity_generator/main/atom_break(damage_flag)
+	. = ..()
+	if(!.)
+		return
 	for(var/obj/machinery/gravity_generator/M in parts)
 		if(!(M.stat & BROKEN))
-			M.set_broken()
+			M.atom_break(damage_flag)
 	middle.cut_overlays()
 	charge_count = 0
 	breaker = FALSE
@@ -179,11 +175,11 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	set_state(0)
 	investigate_log("has broken down.", "gravity")
 
-/obj/machinery/gravity_generator/main/set_fix()
-	..()
+/obj/machinery/gravity_generator/main/atom_fix()
+	. = ..()
 	for(var/obj/machinery/gravity_generator/M in parts)
 		if(M.stat & BROKEN)
-			M.set_fix()
+			M.atom_fix()
 	broken_state = FALSE
 	update_icon()
 	set_power()
@@ -233,7 +229,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You secure the plating to the framework."))
 	playsound(src, I.usesound, 75, 1)
-	set_fix()
+	atom_fix()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/gravity_generator/main/attack_hand(mob/user)

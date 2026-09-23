@@ -165,10 +165,6 @@
 	else
 		set_light(light_range_on, light_power_on)
 
-/obj/machinery/station_map/proc/set_broken()
-	stat |= BROKEN
-	update_icon()
-
 /obj/machinery/station_map/update_icon()
 	if(!holomap_datum)
 		return //Not yet.
@@ -204,14 +200,6 @@
 	src.add_fingerprint(user)
 	return ..()
 
-/obj/machinery/station_map/atom_break(damage_flag)
-	. = ..()
-	set_broken()
-
-/obj/machinery/station_map/atom_fix()
-	. = ..()
-	stat &= ~BROKEN
-	update_icon()
 
 /datum/frame/frame_types/station_map
 	name = "Station Map Frame"

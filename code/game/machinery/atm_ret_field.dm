@@ -133,10 +133,10 @@
 
 /obj/machinery/atmospheric_field_generator/atom_break(damage_flag)
 	. = ..()
-	stat |= BROKEN
+	if(!.)
+		return
 	visible_message("The ARF-G cracks and shatters!", "You hear an uncomfortable metallic crunch.")
 	disable_field()
-	update_icon()
 
 /obj/machinery/atmospheric_field_generator/proc/generate_field()
 	if(!ispowered || hatch_open || !wires_intact || isactive) //if it's not powered, the hatch is open, the wires are busted, or it's already on, don't do anything

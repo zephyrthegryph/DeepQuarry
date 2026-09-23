@@ -239,6 +239,8 @@
 					break
 
 	var/list/output = list("[icon2html(src,user.client)] That's [f_name] [suffix] [borg]", get_examine_desc())
+	if(damage_band)
+		output += damage_flavour_text(damage_band)
 
 	SEND_SIGNAL(src, COMSIG_ATOM_EXAMINE, user, output)
 	return output

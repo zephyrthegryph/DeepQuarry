@@ -315,7 +315,7 @@
 			if (prob(overload_chance))
 				A.overload_lighting()
 			if (prob(failure_chance))
-				A.set_broken()
+				A.atom_break()
 
 // Proc: update_icon()
 // Parameters: None

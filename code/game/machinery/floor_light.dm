@@ -57,7 +57,7 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 	if(QDELETED(src) || !WT.isOn())
 		return ITEM_INTERACT_BLOCKING
 	visible_message(span_notice("\The [user] has repaired \the [src]."))
-	stat &= ~BROKEN
+	atom_fix()
 	damaged = null
 	update_brightness()
 	return ITEM_INTERACT_SUCCESS
@@ -73,7 +73,7 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 		if(!isnull(damaged) && !(stat & BROKEN))
 			visible_message(span_danger("\The [user] smashes \the [src]!"))
 			playsound(src, "shatter", 70, 1)
-			stat |= BROKEN
+			atom_break()
 		else
 			visible_message(span_danger("\The [user] attacks \the [src]!"))
 			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
