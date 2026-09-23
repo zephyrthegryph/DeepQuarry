@@ -8,7 +8,6 @@ MRE Stuff
 	icon = 'icons/obj/food.dmi'
 	icon_state = "mre"
 	max_storage_space = ITEMSIZE_COST_SMALL * 6
-	max_w_class = ITEMSIZE_SMALL
 	var/opened = FALSE
 	var/meal_desc = "This one is menu 1, meat pizza."
 	starts_with = list(
@@ -22,6 +21,9 @@ MRE Stuff
 	/obj/item/material/kitchen/utensil/spoon/plastic
 	)
 	special_handling = TRUE
+
+/obj/item/storage/mre/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/mre/examine(mob/user)
 	. = ..()
@@ -223,10 +225,12 @@ MRE Stuff
 	icon_state = "pouch_medium"
 	storage_slots = 1
 	w_class = ITEMSIZE_SMALL
-	max_w_class = ITEMSIZE_SMALL
 	var/opened = FALSE
 	starts_with = list(/obj/item/reagent_containers/food/snacks/slice/meatpizza/filled)
 	special_handling = TRUE
+
+/obj/item/storage/mrebag/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/mrebag/Initialize(mapload)
 	. = ..()
@@ -304,11 +308,12 @@ MRE Stuff
 	icon = 'icons/obj/food.dmi'
 	icon_state = "tgmc_mre"
 	w_class = ITEMSIZE_SMALL
-	can_hold = list()
 	storage_slots = 5
-	max_w_class = 0
 	foldable = null
 	var/isopened = 0
+
+/obj/item/storage/box/tgmc_mre/hold_constraint()
+	return list(HOLD_MAX_SIZE(0))
 
 /obj/item/storage/box/tgmc_mre/Initialize(mapload)
 	. = ..()

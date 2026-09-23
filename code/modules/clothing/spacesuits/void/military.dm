@@ -32,7 +32,9 @@
 	item_state = "rig0-odst"
 	item_state_slots = null
 	light_overlay = "helmet_light_dual"
-	species_restricted = null
+
+/obj/item/clothing/head/helmet/space/void/merc/odst/fit_constraint()
+	return null
 
 /obj/item/clothing/suit/space/void/merc/odst
 	name = "ODST Armor"
@@ -40,6 +42,8 @@
 	icon_state = "odst"
 	item_state = "odst"
 	item_state_slots = null
-	species_restricted = null
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
+
+/obj/item/clothing/suit/space/void/merc/odst/fit_constraint()
+	return null

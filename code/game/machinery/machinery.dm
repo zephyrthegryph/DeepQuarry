@@ -419,9 +419,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/proc/deconstruct_display(mob/user, obj/item/tool)
 	if(!circuit)
 		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You start disconnecting the monitor."))
-	playsound(src, tool.usesound, 50, TRUE)
-	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start disconnecting the monitor."))
 		return ITEM_INTERACT_BLOCKING
 	if(stat & BROKEN)
 		to_chat(user, span_notice("The broken glass falls out."))
@@ -500,6 +498,32 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	sparks.start()
 	qdel(sparks)
 	return ..()
+
+/**
+ * The one machinery break (damage.md §6). Sets BROKEN, sends COMSIG_MACHINERY_BROKEN
+ * and publishes REACT_KEY_MACHINE_BROKEN. Returns TRUE if the machine was not
+ * already broken. Subtypes with real behaviour call this first and act on the
+ * result; an override that only sets flags is forbidden (tools/ci/check_breakpoints.sh).
+ */
+/obj/machinery/atom_break(damage_flag)
+	. = ..()
+	if(stat & BROKEN)
+		return FALSE
+	stat |= BROKEN
+	SEND_SIGNAL(src, COMSIG_MACHINERY_BROKEN, damage_flag)
+	REACT_PUBLISH_OWN(src, REACT_KEY_MACHINE_BROKEN, REACT_KEY_CHANGED)
+	update_icon()
+	return TRUE
+
+/// The inverse of atom_break(). Returns TRUE if the machine was broken.
+/obj/machinery/atom_fix()
+	. = ..()
+	if(!(stat & BROKEN))
+		return FALSE
+	stat &= ~BROKEN
+	REACT_PUBLISH_OWN(src, REACT_KEY_MACHINE_BROKEN, REACT_KEY_CHANGED)
+	update_icon()
+	return TRUE
 
 // --- Sleeping on DM-owned keys (reactor.md §4, S2) ----------------------------------------------
 

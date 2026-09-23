@@ -1,4 +1,5 @@
 /obj/structure/window
+	damage_wear = "cracks"
 	name = "window"
 	desc = "A window."
 	icon = 'icons/obj/structures_vr.dmi' // New icons
@@ -27,18 +28,6 @@
 /obj/structure/window/examine(mob/user)
 	. = ..()
 
-	if(get_integrity() >= max_integrity)
-		. += span_notice("It looks fully intact.")
-	else
-		var/perc = get_integrity() / max_integrity
-		if(perc > 0.75)
-			. += span_notice("It has a few cracks.")
-		else if(perc > 0.5)
-			. += span_warning("It looks slightly damaged.")
-		else if(perc > 0.25)
-			. += span_warning("It looks moderately damaged.")
-		else
-			. += span_danger("It looks heavily damaged.")
 	if(silicate)
 		if (silicate < 30)
 			. += span_notice("It has a thin layer of silicate.")
@@ -243,7 +232,7 @@
 				span_infoplain(span_bold("\The [user]") + " begins to wire \the [src] for electrochromic tinting."), \
 				span_notice("You begin to wire \the [src] for electrochromic tinting."), \
 				"You hear sparks.")
-			if(do_after(user, 2 SECONDS * C.toolspeed, src) && state == 0)
+			if(use_tool(user, C, src, delay = 2 SECONDS) && state == 0)
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 				var/obj/structure/window/reinforced/polarized/P = new(loc, dir)
 				if(is_fulltile())
@@ -274,17 +263,14 @@
 /obj/structure/window/welder_act(mob/user, obj/item/W)
 	if(user.a_intent != I_HELP)
 		return ..()
-	var/obj/item/weldingtool/WT = W.get_welder()
 	if(get_integrity() >= max_integrity)
 		to_chat(user, span_warning("[src] is already in good condition!"))
 		return TRUE
-	if(WT.remove_fuel(1, user))
-		to_chat(user, span_notice("You begin repairing [src]..."))
-		playsound(src, WT.usesound, 50, 1)
-		if(do_after(user, 4 SECONDS * WT.toolspeed, target = src))
-			repair_damage(max_integrity)
-			update_icon()
-			to_chat(user, span_notice("You repair [src]."))
+	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1,
+			message_self = "You begin repairing [src]..."))
+		repair_damage(max_integrity)
+		update_icon()
+		to_chat(user, span_notice("You repair [src]."))
 	return TRUE
 
 /obj/structure/window/screwdriver_act(mob/user, obj/item/W)
@@ -580,8 +566,8 @@
 	return opacity
 
 /obj/structure/window/reinforced/polarized/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/multitool) && !anchored) // Only allow programming if unanchored!
-		var/obj/item/multitool/MT = W
+	var/obj/item/multitool/MT = W.get_multitool()
+	if(MT && !anchored) // Only allow programming if unanchored!
 		// First check if they have a windowtint button buffered
 		if(istype(MT.connectable, /obj/machinery/button/windowtint))
 			var/obj/machinery/button/windowtint/buffered_button = MT.connectable

@@ -7,6 +7,10 @@
 #define CONTAINER_SLOT_PAGES "pages"
 /// The sealed interior of a vore belly (C7).
 #define BELLY_SLOT_INTERIOR "belly"
+/// A vending machine's or smartfridge's stock (C9, stock.dm).
+#define CONTAINER_SLOT_STOCK "stock"
+/// A machine's legacy internals: parts, circuit, coin. The machine's Destroy owns them.
+#define CONTAINER_SLOT_INTERNALS "internals"
 
 // ---- Exposure (containment.md §3.1) ----
 /// Outside the holder's shell: held, worn outer layer, mounted. Sees the
@@ -54,6 +58,8 @@
 #define SLOT_DROP_DELETE 2
 /// Move them into the holder's own container's default slot, else spill.
 #define SLOT_DROP_TRANSFER 3
+/// Leave them: the holder's own Destroy() deals with them (legacy machine internals, until C6).
+#define SLOT_DROP_HOLDER 4
 
 // ---- Entry records (the ledger's per-thing list) ----
 #define LEDGER_E_SLOT 1

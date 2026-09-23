@@ -23,13 +23,7 @@
 			to_chat(user, span_warning("Something in these cables make them too strong to cut!"))
 		return ITEM_INTERACT_BLOCKING
 
-	var/obj/item/weldingtool/WT = W.get_welder()
-	if(!WT.remove_fuel(2, user))
-		to_chat(user, span_infoplain("The welding tool must be on to complete this task."))
-		return ITEM_INTERACT_BLOCKING
-
-	playsound(src, WT.usesound, 50, 1)
-	if(do_after(user, 25 SECONDS * WT.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 25 SECONDS, quality = TOOL_WELDER, amount = 2, volume = 50))
 		var/obj/item/stack/cable_coil/heavyduty/CC
 		if(src.d1)
 			CC = new/obj/item/stack/cable_coil/heavyduty(T, 2, color)

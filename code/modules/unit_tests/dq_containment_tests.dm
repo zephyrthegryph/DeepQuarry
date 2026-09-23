@@ -6,6 +6,8 @@
 
 /obj/item/dq_containment_test
 	name = "containment test item"
+	icon = 'icons/obj/weapons.dmi'
+	icon_state = "whetstone"
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 1000)
 

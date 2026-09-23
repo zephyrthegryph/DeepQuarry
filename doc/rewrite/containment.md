@@ -23,7 +23,7 @@ Today these are about a dozen separate systems.
 | Machine occupants | A typed `occupant` var plus `forceMove`; some use weakrefs; the suit storage unit has named slots | About 18 copies of go-in/go-out code; the sleeper's eject skips the beaker, board and parts |
 | Mechs | `occupant`, `equipment`, `internal_components` and `cargo` all mixed in one `contents` | Six roles in one list |
 | Closets | `starts_with`, spawned in `LateInitialize` | 699 mapped closets spawn about 5.4k direct items, roughly 10k+ atoms including nested contents |
-| Vending | `/datum/stored_item`, virtual until the first vend | Then materializes the product's whole amount |
+| Vending | `/datum/stored_item`, virtual until the first vend | Then materializes the product's whole amount (fixed in C9: stock slots) |
 | Circuits | Plain `contents` of an assembly | Pin datums built eagerly; one instance of all ~195 circuit types at boot |
 | Movement | `doMove` calls `Crossed`/`Uncrossed` on every atom in both locations, including a full bag, closet or belly; `onTransitZ` recurses through all contents | Cost grows with everything carried |
 
@@ -62,7 +62,7 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
   - an exposure;
   - a capacity model: none, count, size class, mass, or custom units through `cost()`;
   - `capacity_for(holder)`, which gives the capacity per instance;
-  - an `accepts` predicate;
+  - an `accepts` predicate, plus an optional `holder_constraint` (P3): a `CONSTRAINT_*` kind read from the holder, for holders whose acceptance varies by type ([rules.md §3.1](rules.md#31-as-built-p3));
   - a drop policy: spill, delete, or transfer.
   The ledger itself (`/datum/ledger`) is created the first time the holder is used, so a closet nobody touches has none.
 - **Drop policies.** `/atom/movable/Destroy()` calls `ledger_apply_drop_policies()` before anything else.
@@ -80,6 +80,12 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
 - **Migrated holders.**
   - Closets, crates and lockers (`/obj/structure/closet`): one interior slot with custom units (`storage_cost_of()`) and the spill policy. `open()`, `close()`, `ex_act`, `examine` and `LateInitialize` all go through the API.
   - Folders: one pages slot that accepts `TAG_PAPERWORK` and uses the delete policy.
+- **Stock slots (C9)** (`stock.dm`, `code/datums/vending/stored_item.dm`):
+  - Vending machines and smartfridges declare an `internals` slot (parts, circuit, coin; policy `SLOT_DROP_HOLDER`, left to the machine's Destroy until C6) and a custom-units `stock` slot.
+  - Each product is a `/datum/stored_item` record: type path, latent `amount`, and deltas (price, category, variant, or a shared state blob). A real item is made only when one is taken out; cartridge restock adds to `amount`.
+  - An inserted item whose state serializes, with no contents and nothing running, folds into the count when its `state_hash` matches the record's (vending: a pristine item's; smartfridge: the first one's). Anything else stays real in the stock slot and the record's `instances`.
+  - Slot definitions gained `latent_used()` (counts towards capacity and `slot_used`) and `drop_latent()`, which the base Destroy calls before the real contents. Smartfridge stock spills (latent copies made real); vending stock is deleted with the machine, as before.
+  - Material stacks don't serialize yet (`recipes` has no codec), so sheet storage keeps them real.
 - **Lint.** `tools/ci/containment_lint.py` checks `tools/ci/containment_allowlist.txt`, which holds per-file counts of the legacy sites (681 in 310 files at C1). A file may not gain sites.
 
 ## 3. Slots

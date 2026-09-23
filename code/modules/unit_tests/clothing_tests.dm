@@ -105,14 +105,15 @@
 		// Resolve which of the shared species can actually wear this item, honoring the
 		// include/exclude species_restricted convention.
 		var/list/body_types = test_humans.Copy()
-		if(C.species_restricted && C.species_restricted.len)
-			if(C.species_restricted[1] == "exclude")
+		var/list/fits = dq_fit_bodytypes(C)
+		if(length(fits))
+			if(fits[1] == "exclude")
 				for(var/B in test_humans)
-					if(B in C.species_restricted)
+					if(B in fits)
 						body_types -= B
 			else
 				for(var/B in test_humans)
-					if(!(B in C.species_restricted))
+					if(!(B in fits))
 						body_types -= B
 		for(var/B in body_types)
 			var/mob/living/carbon/human/H = test_humans[B]

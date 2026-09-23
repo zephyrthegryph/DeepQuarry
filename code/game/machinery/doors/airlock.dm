@@ -114,7 +114,7 @@
 				welded = FALSE
 				update_icon()
 				open(TRUE)
-				set_broken() //These aren't emags, these be CLAWS
+				atom_break() //These aren't emags, these be CLAWS
 		else if(density)
 			visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
 			if(do_after(user, 5 SECONDS, target = src))
@@ -864,9 +864,9 @@ About the new airlock wires panel:
 	if(reinforcing || user.a_intent == I_HURT)
 		return ..()
 	if(can_remove_electronics())
-		playsound(src, tool.usesound, 75, 1)
-		user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to remove electronics from the airlock assembly.")
-		if(do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+		if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75,
+				message_self = "You start to remove electronics from the airlock assembly.",
+				message_others = "[user] removes the electronics from the airlock assembly."))
 			to_chat(user, span_notice("You removed the airlock electronics!"))
 
 			var/obj/structure/door_assembly/da = new assembly_type(get_turf(src))
@@ -913,9 +913,8 @@ About the new airlock wires panel:
 		unFreeze()
 		to_chat(user, span_notice("You finish chipping the ice off \the [src]"))
 
-/obj/machinery/door/airlock/set_broken()
+/obj/machinery/door/airlock/on_broken()
 	p_open = TRUE
-	stat |= BROKEN
 	if (secured_wires)
 		lock()
 	for (var/mob/O in viewers(src, null))

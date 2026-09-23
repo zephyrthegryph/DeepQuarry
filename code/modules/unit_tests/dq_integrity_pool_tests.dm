@@ -420,6 +420,12 @@
 /datum/unit_test/dq_integrity_pool/mech_packet/Run()
 	var/turf/T = scratch_turf()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
+	// Mechs deflect hits at random (deflect_chance, and the armour component's); pin both
+	// to zero so the packet always lands.
+	mech.deflect_chance = 0
+	var/obj/item/mecha_parts/component/armor/armour = mech.internal_components[MECH_ARMOR]
+	if(armour)
+		armour.deflect_chance = 0
 	var/before = mech.get_integrity()
 	var/applied = mech.deal_damage(DAMAGE_BLUNT, 40, MELEE, flags = DAMAGE_PACKET_SILENT)
 	TEST_ASSERT(mech.get_integrity() < before, "a blunt packet damages the mech ([before] -> [mech.get_integrity()])")

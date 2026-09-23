@@ -24,10 +24,12 @@
 	var/emagged = 0
 	var/open = 0
 	w_class = ITEMSIZE_NORMAL
-	max_w_class = ITEMSIZE_SMALL
 	max_storage_space = ITEMSIZE_SMALL * 7
 	use_sound = 'sound/items/storage/briefcase.ogg'
 	special_handling = TRUE
+
+/obj/item/storage/secure/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/secure/examine(mob/user)
 	. = ..()
@@ -54,7 +56,7 @@
 /obj/item/storage/secure/screwdriver_act(mob/user, obj/item/tool)
 	if(!locked)
 		return ..()
-	if(do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_SCREWDRIVER, volume = 0))
 		open = !open
 		playsound(src, tool.usesound, 50, TRUE)
 		user.show_message(span_notice("You [open ? "open" : "close"] the service panel."))
@@ -172,9 +174,11 @@
 	force = 8.0
 	throw_speed = 1
 	throw_range = 4
-	max_w_class = ITEMSIZE_NORMAL
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
+
+/obj/item/storage/secure/briefcase/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/secure/briefcase/attack_hand(mob/user as mob)
 	if ((src.loc == user) && (src.locked == 1))
@@ -204,15 +208,17 @@
 	icon_sparking = "safespark"
 	force = 8.0
 	w_class = ITEMSIZE_NO_CONTAINER
-	max_w_class = ITEMSIZE_LARGE // This was 8 previously...
 	flags = WALL_ITEM
 	anchored = TRUE
 	density = FALSE
-	cant_hold = list(/obj/item/storage/secure/briefcase)
 	starts_with = list(
 		/obj/item/paper,
 		/obj/item/pen
 	)
+
+/obj/item/storage/secure/safe/hold_constraint()
+	var/list/refuses = list(/obj/item/storage/secure/briefcase)
+	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
 
 /obj/item/storage/secure/safe/attack_hand(mob/user as mob)
 	tgui_interact(user)

@@ -72,7 +72,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
 		var/obj/item/solar_assembly/S = new(loc)
 		S.anchored = TRUE
 		new glass_type(loc, 2)
@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)
 	. = ..()
-	if(!(stat & BROKEN))
+	if(.)
 		broken()
 
 // Once broken, further damage shatters it into shards.
@@ -523,19 +523,6 @@ GLOBAL_LIST_EMPTY(solars_list)
 		update_icon()
 
 
-/obj/machinery/power/solar_control/proc/broken()
-	stat |= BROKEN
-	update_icon()
-
-
-/obj/machinery/power/solar_control/atom_break(damage_flag)
-	. = ..()
-	broken()
-
-/obj/machinery/power/solar_control/atom_fix()
-	. = ..()
-	stat &= ~BROKEN
-	update_icon()
 
 //
 // MISC

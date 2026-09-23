@@ -320,20 +320,9 @@
 		..()
 
 //Make plating inserts for modular armour.
-/obj/item/material/armor_plating/insert/attackby(obj/item/O, mob/user, tool_quality)
+/obj/item/material/armor_plating/insert/attackby(obj/item/O, mob/user)
 
 	. = ..()
-
-	if(tool_quality == TOOL_WELDER)
-		var /obj/item/weldingtool/S = O.get_welder()
-		if(S.remove_fuel(0,user))
-			if(!src || !S.isOn()) return
-			to_chat(user, span_notice("You trim down the edges to size."))
-			user.drop_from_inventory(src)
-			var/obj/item/clothing/accessory/material/makeshift/light/new_armor = new(null, src.material.name)
-			user.put_in_hands(new_armor)
-			qdel(src)
-			return
 
 	if(istype(O, /obj/item/material/armor_plating/insert))
 		var/obj/item/material/armor_plating/insert/second_plate = O
@@ -349,14 +338,6 @@
 		qdel(src)
 		return
 
-	if(tool_quality == TOOL_WIRECUTTER)
-		to_chat(user, span_notice("You split the plate down the middle, and joint it at the elbow."))
-		user.drop_from_inventory(src)
-		var/obj/item/clothing/accessory/material/makeshift/armguards/new_armor = new(null, src.material.name)
-		user.put_in_hands(new_armor)
-		qdel(src)
-		return
-
 	if(istype(O, /obj/item/stack/material))
 		var/obj/item/stack/material/S = O
 		if(S.material == get_material_by_name(MAT_LEATHER))
@@ -369,12 +350,23 @@
 				return
 
 /obj/item/material/armor_plating/insert/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	var/obj/item/weldingtool/S = tool.get_welder()
+	if(S.remove_fuel(0,user))
+		if(!src || !S.isOn()) return ITEM_INTERACT_SUCCESS
+		to_chat(user, span_notice("You trim down the edges to size."))
+		user.drop_from_inventory(src)
+		var/obj/item/clothing/accessory/material/makeshift/light/new_armor = new(null, src.material.name)
+		user.put_in_hands(new_armor)
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/armor_plating/insert/wirecutter_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WIRECUTTER)
-	return TRUE
+	to_chat(user, span_notice("You split the plate down the middle, and joint it at the elbow."))
+	user.drop_from_inventory(src)
+	var/obj/item/clothing/accessory/material/makeshift/armguards/new_armor = new(null, src.material.name)
+	user.put_in_hands(new_armor)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 // Used to craft the makeshift helmet
 /obj/item/clothing/head/helmet/bucket

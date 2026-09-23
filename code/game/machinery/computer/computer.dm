@@ -33,16 +33,7 @@
 	if (. & EMP_PROTECT_SELF)
 		return
 	if(prob(20/severity))
-		set_broken()
-
-/obj/machinery/computer/atom_break(damage_flag)
-	. = ..()
-	set_broken()
-
-/obj/machinery/computer/atom_fix()
-	. = ..()
-	stat &= ~BROKEN
-	update_icon()
+		atom_break()
 
 /obj/machinery/computer/blob_act()
 	ex_act(2)
@@ -91,10 +82,6 @@
 		set_light(0)
 	else
 		set_light(light_range_on, light_power_on)
-
-/obj/machinery/computer/proc/set_broken()
-	stat |= BROKEN
-	update_icon()
 
 /obj/machinery/computer/proc/decode(text)
 	// Adds line breaks

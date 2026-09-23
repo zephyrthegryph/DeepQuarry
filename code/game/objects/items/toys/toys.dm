@@ -210,7 +210,7 @@
 	. += span_notice("Alt-click to recolor it.")
 
 /obj/item/toy/sword/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool) && !active)
+	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
 		else
@@ -2134,11 +2134,14 @@
 	icon_state = "handcuff"
 	starts_with = list(/obj/item/handcuffs/fake = 1, /obj/item/handcuffs/legcuffs/fake = 1)
 	foldable = null
-	can_hold = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake)
 
 /*
  * Toy nuke
  */
+
+/obj/item/storage/box/handcuffs/fake/hold_constraint()
+	var/list/holds = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/toy/nuke
 	name = "\improper Nuclear Fission Explosive toy"
 	desc = "A plastic model of a Nuclear Fission Explosive."
@@ -2509,8 +2512,6 @@
 	desc = "A toy recreation of the Time Capsule from Professor Who. Can hold up to two action figures."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "time_cap"
-	can_hold = list(/obj/item/toy/figure)
-	max_w_class = ITEMSIZE_TINY
 	max_storage_space = ITEMSIZE_COST_TINY * 2
 	use_sound = 'sound/machines/click.ogg'
 	drop_sound = 'sound/items/drop/accessory.ogg'
@@ -2519,6 +2520,10 @@
 /*
  * Action figures
  */
+
+/obj/item/storage/box/timecap/hold_constraint()
+	var/list/holds = list(/obj/item/toy/figure)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
 /obj/item/toy/figure/ranger
 	name = "Space Ranger action figure"
 	desc = "A \"Space Life\" brand Space Ranger action figure."

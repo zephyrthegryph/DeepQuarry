@@ -62,10 +62,13 @@
 	gas_transfer_coefficient = 0.01 // IT'S MAGICAL OKAY JEEZ +1 TO NOT DIE
 	permeability_coefficient = 0.01
 	armor = list(melee = 30, bullet = 20, laser = 20,energy = 20, bomb = 20, bio = 20, rad = 20)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD)
 	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	siemens_coefficient = 0.8
 	wizard_garb = 1
+
+/obj/item/clothing/suit/wizrobe/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/wizrobe/red
 	name = "red wizard robe"

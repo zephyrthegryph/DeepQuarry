@@ -721,7 +721,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		return
 	playsound(src, pick(GLOB.teppi_sound), 75, 1)
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear(mob/user as mob, tool)
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear(mob/user as mob, obj/item/tool)
 	var/sheartime = 3 SECONDS
 	if(istype(tool, /obj/item/material/knife))
 		var/obj/item/material/knife/K = tool
@@ -733,7 +733,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 			sheartime *= 2
 		if(K.edge)
 			sheartime *= 0.5
-	else if(istype(tool, /obj/item/tool/wirecutters))
+	else if(tool.has_tool_quality(TOOL_WIRECUTTER))
 		sheartime *= 2
 	else
 		return FALSE

@@ -87,7 +87,7 @@
 //Make sure you un-comment the variables above too.
 
 /mob/living/simple_mob/vore/sheep/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/material/knife) || istype(O, /obj/item/tool/wirecutters))
+	if(istype(O, /obj/item/material/knife) || O.has_tool_quality(TOOL_WIRECUTTER))
 		if(!IS_HELPING(user))
 			return ..()
 		if(!harvestable_wool)

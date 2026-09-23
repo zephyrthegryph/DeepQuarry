@@ -16,7 +16,6 @@
 	. = ..()
 	hold = new/obj/item/storage/internal(src)
 	hold.max_storage_space = slots * 2
-	hold.max_w_class = ITEMSIZE_SMALL
 	if (!hide_on_roll)
 		on_rolled["down"] = icon_state
 
@@ -103,9 +102,8 @@
 /obj/item/clothing/accessory/storage/knifeharness/Initialize(mapload)
 	. = ..()
 	hold.max_storage_space = ITEMSIZE_COST_SMALL * 2
-	hold.can_hold = list(/obj/item/material/knife/machete/hatchet/unathiknife,\
-	/obj/item/material/knife,\
-	/obj/item/material/knife/plastic)
+	var/static/list/knives = list(/obj/item/material/knife/machete/hatchet/unathiknife, /obj/item/material/knife, /obj/item/material/knife/plastic)
+	hold.restrict_hold(knives)
 
 	new /obj/item/material/knife/machete/hatchet/unathiknife(hold)
 	new /obj/item/material/knife/machete/hatchet/unathiknife(hold)
