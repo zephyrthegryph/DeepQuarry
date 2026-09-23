@@ -30,6 +30,12 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
 	return focused_tests.len > 0 ? focused_tests : null
 
+/// TRUE when this unit-test world runs only TEST_FOCUS tests
+/// (tools/dq_focused_test.sh). Focused runs skip boot and shutdown waits that
+/// only matter for the full suite; see "Focused runs" in doc/testing.md.
+/proc/unit_test_is_focused_run()
+	return !!length(GLOB.focused_tests)
+
 /datum/unit_test
 	//Bit of metadata for the future maybe
 	var/list/procs_tested

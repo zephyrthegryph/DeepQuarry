@@ -727,9 +727,10 @@
 			var/turf/upper = vertical_source.z > vertical_target.z ? vertical_source : vertical_target
 			TEST_ASSERT(istype(upper, /turf/simulated/open), \
 				"solid stacked turfs have a vertical atmos edge: [vertical_source.x],[vertical_source.y],[vertical_source.z] <-> [vertical_target.x],[vertical_target.y],[vertical_target.z]")
-	var/baseline_fires = SSair.times_fired
-	while(SSair.times_fired < baseline_fires + 40)
-		sleep(SSair.wait)
+	// Up to 40 SSair fires; a sealed station goes quiet well before that, while
+	// a component leaking to space stays pending and uses the whole budget.
+	var/waited_fires = dq_unit_test_wait_air_until_quiescent(40)
+	log_test("station alarm seal: waited [waited_fires]/40 SSair fires before atmos went idle")
 	var/list/alarm_pressure_losses = list()
 	for(var/alarm_index in 1 to length(alarm_turfs))
 		var/turf/open/alarm_turf = alarm_turfs[alarm_index]
@@ -1007,6 +1008,33 @@
 		if(world.time - started > max_wait)
 			break
 		sleep(wait_per_tick)
+	return SSair.times_fired - baseline
+
+
+/// Wait for up to `max_fires` real SSair fires, but stop early once the Rust
+/// turf worker has gone idle: SSair keeps firing, no adjacency rebuild is
+/// queued, and no new atmos generation has been published for `settle_fires`
+/// fires. The worker only publishes while cells are pending, and it simulates
+/// in wall-clock epochs, so once it is idle further waiting cannot change any
+/// gas. A leak or an open gradient keeps it publishing, so a test looking for
+/// one still waits the full budget. Returns the number of fires waited.
+/proc/dq_unit_test_wait_air_until_quiescent(max_fires, settle_fires = 3)
+	var/baseline = SSair.times_fired
+	var/deadline = world.time + max(SSair.wait, 1) * max_fires * 3
+	var/last_generation = SSair.async_generation
+	var/idle_fires = 0
+	while(SSair.times_fired < baseline + max_fires && world.time < deadline)
+		var/fired = SSair.times_fired
+		sleep(max(SSair.wait, 1))
+		if(SSair.times_fired == fired)
+			continue
+		if(SSair.async_generation == last_generation && !length(SSair.adjacent_rebuild))
+			idle_fires += SSair.times_fired - fired
+			if(idle_fires >= settle_fires)
+				break
+		else
+			idle_fires = 0
+			last_generation = SSair.async_generation
 	return SSair.times_fired - baseline
 
 

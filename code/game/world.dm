@@ -244,7 +244,16 @@ GLOBAL_VAR(restart_counter)
 #else
 	cb = VARSET_CALLBACK(SSticker, force_ending, ADMIN_FORCE_END_ROUND)
 #endif
-	SSticker.OnRoundstart(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(_addtimer), cb, 10 SECONDS))
+	var/start_delay = 10 SECONDS
+#ifdef UNIT_TESTS
+	// The full suite keeps upstream's 10 s round-start settle so CI and local
+	// full runs see the same world. Focused runs are for iteration and start
+	// after 2 s; a test that only passes after the longer settle should wait
+	// for what it needs itself (see doc/testing.md).
+	if(unit_test_is_focused_run())
+		start_delay = 2 SECONDS
+#endif
+	SSticker.OnRoundstart(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(_addtimer), cb, start_delay))
 
 /// Returns a list of data about the world state, don't clutter
 /world/proc/get_world_state_for_logging()
