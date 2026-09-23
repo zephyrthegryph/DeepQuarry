@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Rules: object thresholds (ignition, melting, breaking points) run as reactor watches instead of hand-written checks."
+  - balance: "Paper catches fire only once a fire heats it to its ignition point (about 506 K), not from any hotspot exposure."
+  - rscadd: "Plastic water-cooler bottles melt into a molten mass at plastic's melting point."

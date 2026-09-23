@@ -50,8 +50,10 @@
 	unit = PROP_UNIT_KELVIN
 	channel = DQ_RX_CH_TEMPERATURE
 
+/// Room temperature, not the turf's air: nodes are made at mapload, before
+/// air exists, and reading air per object would cost a gas mixture each.
 /datum/property_provider/domain/heat/initial_value(datum/D)
-	return dq_ambient_temperature(D)
+	return T20C
 
 /// Temperature of the air around `D`, else 20 C.
 /proc/dq_ambient_temperature(datum/D)
