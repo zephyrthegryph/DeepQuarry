@@ -137,7 +137,21 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 	else
 		..()
 
-/obj/structure/janitorialcart/attackby(obj/item/I, mob/user)
+/obj/structure/janitorialcart/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/janitorialcart_item,
+		/datum/interaction/entry_alt/janitorialcart_alt,
+		/datum/interaction/entry_hand/janitorialcart_hand,
+	)
+	..()
+
+/// Old attackby: wet a mop/rag/soap, empty the bucket, equip a tool, or drop trash in the bag.
+/datum/interaction/entry_item/janitorialcart_item
+	id = "janitorialcart_item"
+	name = "Use"
+	effect = /obj/structure/janitorialcart/proc/interaction_item
+
+/obj/structure/janitorialcart/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/mop) || istype(I, /obj/item/reagent_containers/glass/rag) || istype(I, /obj/item/soap))
 		if (mybucket)
 			if(I.reagents.total_volume < I.reagents.maximum_volume)
@@ -151,35 +165,33 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 				user.balloon_alert(user, "[I] can't absorb anymore liquid!")
 		else
 			to_chat(user, span_notice("There is no bucket mounted here to dip [I] into!"))
-		return 1
+		return TRUE
 
 	else if (istype(I, /obj/item/reagent_containers/glass/bucket) && mybucket)
 		I.afterattack(mybucket, user, 1)
 		update_icon()
-		return 1
+		return TRUE
 
 	else if(istype(I, /obj/item/reagent_containers/spray) && !myspray)
 		equip_janicart_item(user, I)
-		return 1
+		return TRUE
 
 	else if(istype(I, /obj/item/lightreplacer) && !myreplacer)
 		equip_janicart_item(user, I)
-		return 1
+		return TRUE
 
 	else if(istype(I, /obj/item/storage/bag/trash) && !mybag)
 		equip_janicart_item(user, I)
-		return 1
+		return TRUE
 
 	else if(istype(I, /obj/item/clothing/suit/caution))
 		equip_janicart_item(user, I)
-		return 1
+		return TRUE
 
 	else if(mybag)
-		return mybag.attackby(I, user)
-		//This return will prevent afterattack from executing if the object goes into the trashbag,
+		mybag.attackby(I, user)
 		//This prevents dumb stuff like splashing the cart with the contents of a container, after putting said container into trash
-
-	..()
+	return TRUE
 
 /obj/structure/janitorialcart/wrench_act(mob/user, obj/item/I)
 	if(has_items)
@@ -192,8 +204,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 //New Altclick functionality!
 //Altclick the cart with a mop to stow the mop away
 //Altclick the cart with a reagent container to pour things into the bucket without putting the bottle in trash
-/obj/structure/janitorialcart/click_alt(mob/living/user)
-	if(user.incapacitated() || !Adjacent(user))	return
+/// Old click_alt: stow a mop, or pour a reagent container into the bucket.
+/datum/interaction/entry_alt/janitorialcart_alt
+	id = "janitorialcart_alt"
+	name = "Use item"
+	effect = /obj/structure/janitorialcart/proc/interaction_alt
+
+/obj/structure/janitorialcart/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(user.incapacitated() || !Adjacent(user))	return TRUE
 	var/obj/I = user.get_active_hand()
 	if(istype(I, /obj/item/mop))
 		equip_janicart_item(user, I)
@@ -201,11 +219,17 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 		var/obj/item/reagent_containers/C = I
 		C.afterattack(mybucket, user, 1)
 		update_icon()
+	return TRUE
 
+/// Old attack_hand: open the UI.
+/datum/interaction/entry_hand/janitorialcart_hand
+	id = "janitorialcart_hand"
+	name = "Use"
+	effect = /obj/structure/janitorialcart/proc/interaction_hand
 
-/obj/structure/janitorialcart/attack_hand(mob/user)
+/obj/structure/janitorialcart/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
-	return
+	return TRUE
 
 /obj/structure/janitorialcart/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -40,16 +40,27 @@
 				O.update() // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
 	. = ..()
 
-/obj/structure/lattice/attackby(obj/item/C as obj, mob/user as mob)
+/obj/structure/lattice/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/lattice_item,
+	)
+	..()
 
+/// Old attackby: place a floor tile on the turf underneath, or upgrade with rods.
+/datum/interaction/entry_item/lattice_item
+	id = "lattice_item"
+	name = "Use"
+	effect = /obj/structure/lattice/proc/interaction_item
+
+/obj/structure/lattice/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/stack/tile/floor))
 		var/turf/T = get_turf(src)
 		T.attackby(C, user) //BubbleWrap - hand this off to the underlying turf instead
-		return
+		return TRUE
 	if(istype(C, /obj/item/stack/rods))
 		upgrade(C, user)
-		return
-	return
+		return TRUE
+	return TRUE
 
 /obj/structure/lattice/welder_act(mob/user, obj/item/C)
 	var/obj/item/weldingtool/WT = C.get_welder()
