@@ -40,7 +40,8 @@
 	var/split_burn = burn_only.injure(INJURY_BURN, 5, BP_TORSO, flags = INJURE_SILENT)
 	var/mob/living/carbon/human/blunt_only = allocate(/mob/living/carbon/human)
 	var/split_blunt = blunt_only.injure(INJURY_BLUNT, 15, BP_TORSO, flags = INJURE_SILENT)
-	var/applied = victim.injure_split(INJURY_BURN, alist(INJURY_BURN = 0.25, INJURY_BLUNT = 0.75), 20, BP_TORSO, flags = INJURE_SILENT)
+	var/mob/living/carbon/human/split_victim = allocate(/mob/living/carbon/human)
+	var/applied = split_victim.injure_split(INJURY_BURN, alist(INJURY_BURN = 0.25, INJURY_BLUNT = 0.75), 20, BP_TORSO, flags = INJURE_SILENT)
 	TEST_ASSERT(dq_near(applied, split_burn + split_blunt, 0.01), "a split hit should land as its shares of each kind ([applied] vs [split_burn + split_blunt])")
 
 	var/datum/blob_type/living_agate/agate = new
