@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 74a7fbb05263b7f6e21159057154c266146fcdd488088a5d3514357919790078 # shrinks to setup = [Add { vol: 0, gas: 0 }, Add { vol: 0, gas: 0 }, Connect(0, 0), Connect(0, 0), Connect(0, 0), Connect(0, 0), Add { vol: 0, gas: 0 }, Connect(0, 0), Add { vol: 0, gas: 0 }, RemoveEdge(0), Add { vol: 0, gas: 1 }, Connect(1924557932, 3066742826), Add { vol: 0, gas: 0 }, Connect(154675634, 2190111466), Connect(1118147925, 444070697), Add { vol: 0, gas: 0 }, Connect(1498849306, 42482872), Add { vol: 0, gas: 0 }, Connect(148465139, 412841107), Add { vol: 0, gas: 0 }], removals = [(false, 177455271), (true, 1992534161), (false, 336973447)], adds = [], shuffle = 0

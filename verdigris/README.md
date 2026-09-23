@@ -66,6 +66,7 @@ verdigris/                  <- workspace root (this dir)
 | `vg-core` `watch` | R5 watches: `Changed`, `Threshold`, `Band`, `Difference`, `ThresholdSet`, `Any`/`All`, checked at registration by `WatchPort` and evaluated in a per-domain frame task over changed chunks only (semantics table in the module docs). |
 | `vg-core` `outbox` | R5 per-frame outbox next to each view: wakes, typed domain events and exact `Take` results; unread batches merge instead of being replaced; merge-by-key on overflow; flat fixed-stride DM encodings. |
 | `vg-core` `timer` / `reactor` | R5 main side: hierarchical timer wheel (O(1) insert/cancel, tick precision), wake lanes (urgent/normal/background, merged per subscriber, once per lane per tick, budgeted), exact rate models (`Linear`, `Relax`, `Sum`) whose crossings go on the wheel, DM-owned keys. |
+| `vg-core` `network` | R7 network framework: nodes/edges/regions in arenas, incremental merges and lockstep multi-source splits, conserving region payloads (`NetworkKind::split`/`merge`), batched commits, device edges between regions and cells, and `network::host` (frame task, `NetworkPort`, copy-on-write `NetworkView`, outbox events, region-channel mirror for watches). |
 
 ### R5 notes (for S1 and R6/R7)
 
@@ -74,6 +75,12 @@ verdigris/                  <- workspace root (this dir)
 - **Semantics.** Watches see frame-end states, so a crossing undone within one frame never fires. Thresholds and set entries fire at the first evaluation if they already hold, and `Band` always reports its starting band. `Changed` never fires at registration.
 - **Take conserves.** The worker records the exact value each `Take` removed in the outbox (`TakeResult`); DM's `take()` still returns the pinned value at once, and the difference is the transfer-out reconciliation (tested in `sim_toy.rs`).
 - **Not recorded.** Watch registrations are not in the flight recorder. Views still replay bit for bit, because watches never write domain state, but replaying the outbox would need them.
+
+### R7 notes (for M1b, M2 and M3)
+
+- **Wiring.** `network::host::add_network::<K>(&mut builder, name)` returns the state resource and a `NetworkPort`. The port is not a sim port: S1 calls `port.commit()` before `dispatch_frame` and `port.refresh()` / `take_outbox()` after. Region channels: a task mirrors region scalars into a cell domain with `NetworkState::mirror` (cell = region slot), and ordinary watches run on it (`tests/network_sim.rs`).
+- **Semantics.** A batch equals committing its removals, then its additions. A removed node's payload share is released at once (an outbox `TakeResult` keyed by node key). Merges keep the larger region's ID. Splits keep the parent ID for the side the search left open. Payload results are batch-order independent only for kinds that split proportionally on a positive weight.
+- **Not recorded.** Network batches are not in the flight recorder yet. M3 needs a `Codec` for `Edit<K>` before power replays.
 
 ## Building
 

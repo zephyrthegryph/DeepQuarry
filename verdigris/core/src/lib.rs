@@ -18,6 +18,7 @@ pub mod intern;
 pub mod jobs;
 pub mod mailbox;
 pub mod metrics;
+pub mod network;
 pub mod outbox;
 pub mod overlay;
 pub mod owner;
