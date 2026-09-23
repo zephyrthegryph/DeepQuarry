@@ -263,14 +263,34 @@ function killProcessTree(pid: number): void {
  * Spawn DreamDaemon and resolve when the run completes, force-killing the
  * daemon if it zombies instead of exiting. See DDOptions.watchdogFile.
  */
+export type DDResult = Juke.ExecReturn & {
+  /** TRUE only for the genuine "still running past the hard timeout" kill --
+   * NOT for the benign post-completion zombie cleanup (Windows frequently
+   * fails to let dreamdaemon.exe self-close after -close; that one is
+   * expected and not logged as an error). A killedByWatchdog run's results
+   * file is likely missing or mid-write; callers should treat it as
+   * unclean/incomplete, not just another failure. */
+  killedByWatchdog?: boolean;
+};
+
 function runDreamDaemonWithWatchdog(
   exe: string,
   args: string[],
   options: DDOptions,
-): Promise<Juke.ExecReturn> {
+): Promise<DDResult> {
   const watchdogFile = options.watchdogFile as string;
   const graceMs = options.watchdogGraceMs ?? 30_000;
-  const hardTimeoutMs = options.watchdogTimeoutMs ?? 20 * 60 * 1000;
+  // The full unit-test suite runs close to 20 minutes on a busy, contended
+  // machine (many concurrent DreamDaemons across worktrees/shards), so the
+  // backstop sits well above that; DQ_DD_WATCHDOG_MINUTES overrides it, and
+  // callers that know their own expected duration (the sharded runner, sized
+  // per shard) can pass watchdogTimeoutMs explicitly, which wins over both.
+  // DQ_DD_WATCHDOG_MINUTES is a manual override and wins over everything,
+  // including a caller-computed watchdogTimeoutMs (e.g. the sharded
+  // runner's per-shard estimate) -- it exists for exactly the case where
+  // that estimate is wrong for someone's machine/run.
+  const envMinutes = Number(process.env.DQ_DD_WATCHDOG_MINUTES);
+  const hardTimeoutMs = envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 45 * 60 * 1000);
   return new Promise((resolve) => {
     const child = spawn(exe, args, {
       stdio: 'inherit',
@@ -282,9 +302,9 @@ function runDreamDaemonWithWatchdog(
     let settled = false;
     let graceTimer: ReturnType<typeof setTimeout> | null = null;
     const poll = setInterval(checkDone, 1_000);
-    const hardTimer = setTimeout(() => finish(true, 'hard timeout'), hardTimeoutMs);
+    const hardTimer = setTimeout(() => finish(true, 'hard timeout', true), hardTimeoutMs);
 
-    function finish(forceKill: boolean, reason: string) {
+    function finish(forceKill: boolean, reason: string, isHardTimeout: boolean) {
       if (settled) {
         return;
       }
@@ -295,10 +315,18 @@ function runDreamDaemonWithWatchdog(
         clearTimeout(graceTimer);
       }
       if (forceKill && child.pid && child.exitCode === null && child.signalCode === null) {
-        Juke.logger.info(`DreamDaemon watchdog: force-killing daemon (${reason}).`);
+        const log = isHardTimeout ? Juke.logger.error : Juke.logger.info;
+        log(`DreamDaemon watchdog: force-killing daemon (${reason}).`);
         killProcessTree(child.pid);
       }
-      resolve({ code: child.exitCode ?? 0, signal: null, stdout: '', stderr: '', combined: '' } as Juke.ExecReturn);
+      resolve({
+        code: child.exitCode ?? 0,
+        signal: null,
+        stdout: '',
+        stderr: '',
+        combined: '',
+        killedByWatchdog: isHardTimeout,
+      } as DDResult);
     }
 
     function checkDone() {
@@ -308,19 +336,19 @@ function runDreamDaemonWithWatchdog(
       if (fs.existsSync(watchdogFile)) {
         // Tests finished. Give -close a chance to exit cleanly, then force-kill
         // if the daemon is still alive (the Windows zombie case).
-        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close'), graceMs);
+        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), graceMs);
       }
     }
 
-    child.on('exit', () => finish(false, 'exited'));
-    child.on('error', () => finish(false, 'spawn error'));
+    child.on('exit', () => finish(false, 'exited', false));
+    child.on('error', () => finish(false, 'spawn error', false));
   });
 }
 
 export async function DreamDaemon(
   options: DDOptions,
   ...args: any[]
-): Promise<Juke.ExecReturn> {
+): Promise<DDResult> {
   const dmPath = await getDmPath(options.namedDmVersion);
   const baseDir = path.dirname(dmPath);
   const ddExeName =
