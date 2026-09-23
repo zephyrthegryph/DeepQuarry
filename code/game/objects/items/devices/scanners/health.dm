@@ -16,7 +16,7 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
-	matter = list(MAT_STEEL = 200)
+	MATERIAL_BULK(MAT_STEEL, 200)
 	/// The diagnostic profile this analyzer scans with.
 	var/profile_type = /datum/diagnostic_profile/health_analyzer
 	/// FALSE = scan with the basic profile only (hides advanced detail).

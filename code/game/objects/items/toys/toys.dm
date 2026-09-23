@@ -2115,7 +2115,7 @@
 /obj/item/handcuffs/fake
 	name = "plastic handcuffs"
 	desc = "Use this to keep plastic prisoners in line."
-	matter = list(PLASTIC = 500)
+	MATERIAL_BULK(MAT_PLASTIC, 500) // Was list(PLASTIC = 500): a "PLASTIC" key, no such material.
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
 	breakouttime = 30

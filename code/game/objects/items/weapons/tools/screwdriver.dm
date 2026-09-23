@@ -18,7 +18,7 @@
 	usesound = 'sound/items/Screwdriver.ogg'
 	drop_sound = 'sound/items/drop/screwdriver.ogg'
 	pickup_sound = 'sound/items/pickup/screwdriver.ogg'
-	matter = list(MAT_STEEL = 75)
+	material_total = 75
 	attack_verb = list("stabbed")
 	sharp  = TRUE
 	injury_kind = INJURY_PIERCE

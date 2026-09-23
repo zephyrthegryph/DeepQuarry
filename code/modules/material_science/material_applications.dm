@@ -1,5 +1,5 @@
 /// Compatibility fields retained for save data and older callers. New
-/// fabrication records every functional part in construction_materials.
+/// fabrication records every functional part in the object's material blueprint.
 /obj/item
 	var/engineered_material_id
 	var/engineered_material_profile
@@ -14,12 +14,12 @@
 /obj/item/proc/apply_engineered_material(datum/material/material, application_profile)
 	if(!istype(material) || !application_profile)
 		return FALSE
-	var/list/slots = default_material_slots(application_profile, SHEET_MATERIAL_AMOUNT)
+	var/datum/material_template/template = material_template_for_application(application_profile)
 	var/list/choices = list()
-	for(var/primary_role in slots)
+	for(var/primary_role in template.roles)
 		choices[primary_role] = material.name
 		break
-	return apply_material_construction(choices, slots, application_profile)
+	return apply_material_construction(choices, template.type, SHEET_MATERIAL_AMOUNT)
 
 /obj/item/proc/apply_material_role_effects(application_profile)
 	var/datum/material/primary = primary_construction_material()
@@ -27,21 +27,19 @@
 		return FALSE
 	engineered_material_id = primary.name
 	engineered_material_profile = application_profile
-	matter = list()
 	var/total_amount = 0
 	var/weighted_density = 0
 	var/weighted_dielectric = 0
-	for(var/role in construction_materials)
+	var/datum/material_template/template = get_material_template()
+	var/list/amounts = template?.role_amounts(get_material_total())
+	for(var/role in amounts)
 		var/datum/material/part_material = material_for_role(role)
-		var/part_amount = construction_material_amounts[role]
+		var/part_amount = amounts[role]
 		if(!part_material || part_amount <= 0)
 			continue
 		total_amount += part_amount
 		weighted_density += part_material.density * part_amount
 		weighted_dielectric += part_material.dielectric_strength * part_amount
-		var/list/part_matter = part_material.get_matter()
-		for(var/material_id in part_matter)
-			matter[material_id] = (matter[material_id] || 0) + part_matter[material_id] * part_amount / SHEET_MATERIAL_AMOUNT
 	if(total_amount > 0)
 		material_effective_density = weighted_density / total_amount
 		material_effective_electrical_resistance = weighted_dielectric / total_amount
@@ -53,12 +51,12 @@
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || material_for_role(MATERIAL_ROLE_FRAME) || material_for_role(MATERIAL_ROLE_BODY) || primary
 	if(max_integrity > 0 && total_amount > 0)
 		var/condition = uses_integrity ? get_integrity() / max_integrity : 1
-		var/list/default_slots = default_material_slots(application_profile, SHEET_MATERIAL_AMOUNT)
+		var/datum/material_template/reference_template = material_template_for_application(application_profile)
 		var/reference_id = MAT_STEEL
 		for(var/role in list(MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_BODY))
-			var/list/spec = default_slots?[role]
-			if(spec)
-				reference_id = spec["default"]
+			var/default_id = reference_template.default_material(role)
+			if(default_id)
+				reference_id = default_id
 				break
 		var/datum/material/reference = get_material_by_name(reference_id)
 		var/integrity_factor = clamp(structure.integrity / max(reference.integrity, 1), 0.2, 4)
@@ -199,7 +197,7 @@
 
 /obj/item/examine(mob/user)
 	. = ..()
-	if(engineered_material_id && !length(construction_materials))
+	if(engineered_material_id && !has_functional_construction())
 		var/datum/material/material = get_material_by_name(engineered_material_id)
 		if(material)
 			. += span_notice("Engineered from <b>[material.display_name]</b> for [engineered_material_profile].")
@@ -212,3 +210,10 @@
 	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
 	if(liner)
 		. += span_notice("Pressure liner: <b>[liner.display_name]</b> ([round(material_liner_integrity)]% intact); shell rated to [round(effective_maximum_pressure() / ONE_ATMOSPHERE, 0.1)] atmospheres.")
+
+/// Apply the declared blueprint's physical effects (integrity, handling, and family
+/// stats such as a cell's discharge limit) to a freshly made item. Stores no lists.
+/obj/item/proc/apply_blueprint_effects()
+	var/datum/material_template/template = get_material_template()
+	if(template && !template.bulk)
+		apply_material_role_effects(template.application)

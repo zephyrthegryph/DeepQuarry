@@ -116,7 +116,7 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 20
-	matter = list(MAT_STEEL = 100)
+	MATERIAL_BULK(MAT_STEEL, 100)
 	drop_sound = 'sound/items/drop/device.ogg'
 	pickup_sound = 'sound/items/pickup/device.ogg'
 
@@ -180,7 +180,7 @@
 	icon_state = "power_mod"
 	item_state = "std_mod"
 	desc = "Heavy-duty switching circuits for power control."
-	matter = RECYCLE_CIRCUIT_MATERIALS
+	MATERIAL_BULK(MAT_GLASS, 40)
 
 /obj/item/module/id_auth
 	name = "\improper ID authentication module"
@@ -280,13 +280,13 @@
 	name = "console screen"
 	desc = "Used in the construction of computers and other devices with a interactive console."
 	icon_state = "screen"
-	matter = list(MAT_GLASS = 200)
+	MATERIAL_BULK(MAT_GLASS, 200)
 
 /obj/item/stock_parts/capacitor
 	name = "capacitor"
 	desc = "A basic capacitor used in the construction of a variety of devices."
 	icon_state = "capacitor"
-	matter = list(MAT_STEEL = 50,MAT_GLASS = 50)
+	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 50))
 
 	var/charge = 0
 	var/max_charge = 1000
@@ -310,25 +310,25 @@
 	name = "scanning module"
 	desc = "A compact, high resolution scanning module used in the construction of certain devices."
 	icon_state = "scan_module"
-	matter = list(MAT_STEEL = 50,MAT_GLASS = 20)
+	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 /obj/item/stock_parts/manipulator
 	name = "micro-manipulator"
 	desc = "A tiny little manipulator used in the construction of certain devices."
 	icon_state = "micro_mani"
-	matter = list(MAT_STEEL = 30)
+	MATERIAL_BULK(MAT_STEEL, 30)
 
 /obj/item/stock_parts/micro_laser
 	name = "micro-laser"
 	desc = "A tiny laser used in certain devices."
 	icon_state = "micro_laser"
-	matter = list(MAT_STEEL = 10,MAT_GLASS = 20)
+	MATERIAL_MIX(list(MAT_STEEL = 10,MAT_GLASS = 20))
 
 /obj/item/stock_parts/matter_bin
 	name = "matter bin"
 	desc = "A container for hold compressed matter awaiting re-construction."
 	icon_state = "matter_bin"
-	matter = list(MAT_STEEL = 80)
+	MATERIAL_BULK(MAT_STEEL, 80)
 
 // Tier subtypes (adv / super / hyper / omni / nano / pico /
 // high / ultra / phasic) are gone. Stock parts are now material-driven:
@@ -344,43 +344,43 @@
 	name = "subspace ansible"
 	icon_state = "subspace_ansible"
 	desc = "A compact module capable of sensing extradimensional activity."
-	matter = list(MAT_STEEL = 30,MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 /obj/item/stock_parts/subspace/sub_filter
 	name = "hyperwave filter"
 	icon_state = "hyperwave_filter"
 	desc = "A tiny device capable of filtering and converting super-intense radiowaves."
-	matter = list(MAT_STEEL = 30,MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 /obj/item/stock_parts/subspace/amplifier
 	name = "subspace amplifier"
 	icon_state = "subspace_amplifier"
 	desc = "A compact micro-machine capable of amplifying weak subspace transmissions."
-	matter = list(MAT_STEEL = 30,MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 /obj/item/stock_parts/subspace/treatment
 	name = "subspace treatment disk"
 	icon_state = "treatment_disk"
 	desc = "A compact micro-machine capable of stretching out hyper-compressed radio waves."
-	matter = list(MAT_STEEL = 30,MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 /obj/item/stock_parts/subspace/analyzer
 	name = "subspace wavelength analyzer"
 	icon_state = "wavelength_analyzer"
 	desc = "A sophisticated analyzer capable of analyzing cryptic subspace wavelengths."
-	matter = list(MAT_STEEL = 30,MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 /obj/item/stock_parts/subspace/crystal
 	name = "ansible crystal"
 	icon_state = "ansible_crystal"
 	desc = "A crystal made from pure glass used to transmit laser databursts to subspace."
-	matter = list(MAT_GLASS = 50)
+	MATERIAL_BULK(MAT_GLASS, 50)
 
 /obj/item/stock_parts/subspace/transmitter
 	name = "subspace transmitter"
 	icon_state = "subspace_transmitter"
 	desc = "A large piece of equipment used to open a window into the subspace dimension."
-	matter = list(MAT_STEEL = 50)
+	MATERIAL_BULK(MAT_STEEL, 50)
 
 /obj/item/ectoplasm
 	name = "ectoplasm"
@@ -396,21 +396,21 @@
 	desc = "A gear used for construction."
 	icon = 'icons/obj/stock_parts.dmi'
 	icon_state = "gear"
-	matter = list(MAT_STEEL = 50)
+	MATERIAL_BULK(MAT_STEEL, 50)
 
 /obj/item/stock_parts/motor
 	name = "motor"
 	desc = "A motor used for construction."
 	icon = 'icons/obj/stock_parts.dmi'
 	icon_state = "motor"
-	matter = list(MAT_STEEL = 60, MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 60, MAT_GLASS = 10))
 
 /obj/item/stock_parts/spring
 	name = "spring"
 	desc = "A spring used for construction."
 	icon = 'icons/obj/stock_parts.dmi'
 	icon_state = "spring"
-	matter = list(MAT_STEEL = 40)
+	MATERIAL_BULK(MAT_STEEL, 40)
 
 /obj/effect/spawner/parts
 	name = "nondescript parts bundle that shouldn't exist"

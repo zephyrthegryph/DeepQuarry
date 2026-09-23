@@ -7,11 +7,11 @@
 /obj/item/dq_pred_test
 	name = "predicate test item"
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 1000)
+	MATERIAL_BULK(MAT_STEEL, 1000)
 
 /obj/item/dq_pred_test/heavy
 	w_class = ITEMSIZE_LARGE
-	matter = list(MAT_STEEL = 12000)
+	MATERIAL_BULK(MAT_STEEL, 12000)
 
 /obj/item/dq_pred_test/knife
 	sharp = TRUE

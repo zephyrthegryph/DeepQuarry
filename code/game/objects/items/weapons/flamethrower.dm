@@ -21,7 +21,7 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	matter = list(MAT_STEEL = 500)
+	MATERIAL_BULK(MAT_STEEL, 500)
 	var/status = FALSE
 	var/throw_amount = THROWER_MIN
 	var/lit = FALSE	//on or off

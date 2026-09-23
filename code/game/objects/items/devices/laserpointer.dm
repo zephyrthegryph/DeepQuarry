@@ -6,7 +6,7 @@
 	item_state = "pen"
 	var/pointer_icon_state
 	slot_flags = SLOT_BELT
-	matter = list(MAT_GLASS = 500, MAT_STEEL = 500)
+	MATERIAL_MIX(list(MAT_GLASS = 500, MAT_STEEL = 500))
 	w_class = ITEMSIZE_SMALL //Increased to 2, because diodes are w_class 2. Conservation of matter.
 	var/turf/pointer_loc
 	var/energy = 8

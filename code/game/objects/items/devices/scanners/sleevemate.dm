@@ -12,7 +12,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
-	matter = list(MAT_STEEL = 200)
+	MATERIAL_BULK(MAT_STEEL, 200)
 
 	/// The stored mind. Its identity (OOC notes and all) is carried with it.
 	var/datum/mind/stored_mind

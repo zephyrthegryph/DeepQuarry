@@ -75,13 +75,15 @@
 /datum/property_provider/material
 	source = PROP_SOURCE_MATERIAL
 	applies_to = /obj/item
-	state_var = "matter"
+	state_var = "material_overrides"
 
 /datum/property_provider/material/type_value(path, list/variant_vars)
 	return from_matter(dq_property_type_matter(path))
 
 /datum/property_provider/material/instance_value(datum/D)
-	return from_matter(dq_property_state_value(D, state_var))
+	// Composition is derived from the blueprint plus this instance's saved overrides.
+	var/obj/O = D
+	return from_matter(O.material_totals())
 
 /// Fold a matter list (material name -> amount) into a value: calls fold()
 /// once per known material.
@@ -98,12 +100,10 @@
 /datum/property_provider/material/proc/fold(datum/material/M, amount, acc)
 	return acc
 
-/// A type's default `matter` list. The one place per-type matter is read.
-/// initial() of a list var is null in BYOND, so it comes from the state
-/// schema's per-type list defaults, which only latent-safe types have; other
-/// types are null and their matter-derived values are per instance only.
+/// A type's material totals from its declared blueprint and total, read without an
+/// instance. The one place per-type composition is read.
 /proc/dq_property_type_matter(path)
-	return dq_property_type_state_list(path, "matter")
+	return dq_type_material_totals(path)
 
 // ---- Components ----
 

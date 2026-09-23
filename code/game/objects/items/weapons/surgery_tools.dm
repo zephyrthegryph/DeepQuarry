@@ -44,7 +44,7 @@
 	name = "retractor"
 	desc = "Retracts stuff."
 	icon_state = "retractor"
-	matter = list(MAT_STEEL = 10000, MAT_GLASS = 5000)
+	material_total = 10000 + 5000
 	drop_sound = 'sound/items/drop/scrap.ogg'
 
 /*
@@ -54,7 +54,7 @@
 	name = "hemostat"
 	desc = "You think you have seen this before."
 	icon_state = "hemostat"
-	matter = list(MAT_STEEL = 5000, MAT_GLASS = 2500)
+	material_total = 5000 + 2500
 	attack_verb = list("attacked", "pinched")
 	hitsound = 'sound/items/Wirecutter.ogg'
 	drop_sound = 'sound/items/drop/scrap.ogg'
@@ -66,7 +66,7 @@
 	name = "cautery"
 	desc = "This stops bleeding."
 	icon_state = "cautery"
-	matter = list(MAT_STEEL = 5000, MAT_GLASS = 2500)
+	material_total = 5000 + 2500
 	attack_verb = list("burnt")
 	drop_sound = 'sound/items/drop/scrap.ogg'
 
@@ -78,7 +78,7 @@
 	desc = "You can drill using this item. You dig?"
 	icon_state = "drill"
 	hitsound = 'sound/weapons/circsawhit.ogg'
-	matter = list(MAT_STEEL = 15000, MAT_GLASS = 10000)
+	material_total = 15000 + 10000
 	force = 15.0
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("drilled")
@@ -100,7 +100,7 @@
 	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 5
-	matter = list(MAT_STEEL = 10000, MAT_GLASS = 5000)
+	material_total = 10000 + 5000
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	drop_sound = 'sound/items/drop/knife.ogg'
@@ -164,7 +164,7 @@
 	throwforce = 9.0
 	throw_speed = 3
 	throw_range = 5
-	matter = list(MAT_STEEL = 20000,MAT_GLASS = 10000)
+	material_total = 20000 + 10000
 	attack_verb = list("attacked", "slashed", "sawed", "cut")
 	sharp = TRUE
 	edge = TRUE
@@ -179,7 +179,7 @@
 	injury_kind = INJURY_CUT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 	w_class = ITEMSIZE_NORMAL
-	matter = list(MAT_STEEL = 25000,MAT_GLASS = 20000)
+	material_total = 25000 + 20000
 	attack_verb = list("attacked", "slashed", "seared", "cut")
 	toolspeed = 0.75
 

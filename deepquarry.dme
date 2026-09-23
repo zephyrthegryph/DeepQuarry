@@ -4152,6 +4152,7 @@
 #include "code\modules\material_science\material_equipment.dm"
 #include "code\modules\material_science\material_diagnostics.dm"
 #include "code\modules\power\material_power_graph.dm"
+#include "code\modules\material_science\material_templates.dm"
 #include "code\modules\material_science\material_construction.dm"
 #include "code\modules\material_science\material_responses.dm"
 #include "code\modules\material_science\material_applications.dm"

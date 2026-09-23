@@ -38,7 +38,7 @@
 	name = T_BOARD("entertainment camera monitor")
 	build_path = /obj/machinery/computer/security/telescreen/entertainment
 	board_type = new /datum/frame/frame_types/display
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 50)
+	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
 /obj/item/circuitboard/security/telescreen/entertainment/Initialize(mapload)
 	. = ..()
@@ -49,7 +49,7 @@
 	name = T_BOARD("security bodycamera monitor")
 	build_path = /obj/machinery/computer/security/telescreen/bodycamera
 	board_type = new /datum/frame/frame_types/display
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 50)
+	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
 /obj/item/circuitboard/security/telescreen/bodycamera/Initialize(mapload)
 	. = ..()

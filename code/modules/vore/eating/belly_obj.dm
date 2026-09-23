@@ -1073,7 +1073,7 @@
 		if(blacklist & autotransfer_flags_list_items["Recyclable Items"])
 			if(isitem(prey))
 				var/obj/item/I = prey
-				if(I.matter) return FALSE
+				if(length(I.material_totals())) return FALSE
 		if(blacklist & autotransfer_flags_list_items["Ores"])
 			if(istype(prey, /obj/item/ore)) return FALSE
 		if(blacklist & autotransfer_flags_list_items["Clothes and Bags"])
@@ -1094,7 +1094,7 @@
 		if(whitelist & autotransfer_flags_list_items["Recyclable Items"])
 			if(isitem(prey))
 				var/obj/item/I = prey
-				if(I.matter) return TRUE
+				if(length(I.material_totals())) return TRUE
 		if(whitelist & autotransfer_flags_list_items["Ores"])
 			if(istype(prey, /obj/item/ore)) return TRUE
 		if(whitelist & autotransfer_flags_list_items["Clothes and Bags"])
@@ -1151,7 +1151,7 @@
 	w_class = ITEMSIZE_SMALL
 
 /obj/belly/proc/recycle(obj/item/O)
-	if(!recycling || (!LAZYLEN(O.matter) && !istype(O, /obj/item/ore)))
+	if(!recycling || (!length(O.material_totals()) && !istype(O, /obj/item/ore)))
 		return FALSE
 	if(istype(O, /obj/item/ore))
 		var/obj/item/ore/ore = O
@@ -1169,11 +1169,11 @@
 		if(istype(O,/obj/item/stack))
 			var/obj/item/stack/S = O
 			trash = S.amount
-		for(var/mat in O.matter)
-			modified_mats[mat] = O.matter[mat] * trash
+		var/list/item_matter = O.material_totals()
+		for(var/mat in item_matter)
+			modified_mats[mat] = item_matter[mat] * trash
 		for(var/obj/item/debris_pack/digested/D in contents)
-			for(var/mat in modified_mats)
-				D.matter[mat] += modified_mats[mat]
+			D.add_materials(modified_mats)
 			if(O.w_class > D.w_class)
 				D.w_class = O.w_class
 			if(O.possessed_voice && O.possessed_voice.len)

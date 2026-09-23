@@ -7,15 +7,15 @@
 /obj/item/dq_containment_test
 	name = "containment test item"
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 1000)
+	MATERIAL_BULK(MAT_STEEL, 1000)
 
 /obj/item/dq_containment_test/glass
 	w_class = ITEMSIZE_NORMAL
-	matter = list(MAT_GLASS = 500)
+	MATERIAL_BULK(MAT_GLASS, 500)
 
 /obj/item/dq_containment_test/wood
 	w_class = ITEMSIZE_TINY
-	matter = list(MAT_WOOD = 2000)
+	MATERIAL_BULK(MAT_WOOD, 2000)
 	sharp = TRUE
 
 /obj/item/dq_containment_test/anchored

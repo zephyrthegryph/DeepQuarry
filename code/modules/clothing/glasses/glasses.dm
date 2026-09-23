@@ -387,7 +387,7 @@ BLIND     // can't see anything
 	icon_state = "welding-g"
 	item_state_slots = list(slot_r_hand_str = "welding-g", slot_l_hand_str = "welding-g")
 	actions_types = list(/datum/action/item_action/flip_welding_goggles)
-	matter = list(MAT_STEEL = 1500, MAT_GLASS = 1000)
+	MATERIAL_MIX(list(MAT_STEEL = 1500, MAT_GLASS = 1000))
 	item_flags = AIRTIGHT
 	var/up = 0
 	flash_protection = FLASH_PROTECTION_MAJOR

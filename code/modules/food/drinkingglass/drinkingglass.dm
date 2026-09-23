@@ -21,7 +21,8 @@
 	min_transfer_amount = 1
 	flags = OPENCONTAINER
 
-	matter = list(MAT_GLASS = 60)
+	material_template = /datum/material_template/container
+	material_total = 60
 
 /obj/item/reagent_containers/food/drinks/glass2/examine(mob/M as mob)
 	. = ..()

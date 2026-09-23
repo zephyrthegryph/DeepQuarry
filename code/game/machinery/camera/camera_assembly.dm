@@ -6,7 +6,7 @@
 	w_class = ITEMSIZE_SMALL
 	anchored = FALSE
 
-	matter = list(MAT_STEEL = 700,MAT_GLASS = 300)
+	MATERIAL_MIX(list(MAT_STEEL = 700,MAT_GLASS = 300))
 
 	//	Motion, EMP-Proof, X-Ray
 	var/static/list/obj/item/possible_upgrades = list(/obj/item/assembly/prox_sensor, /obj/item/stack/material/osmium, /obj/item/stock_parts/scanning_module)

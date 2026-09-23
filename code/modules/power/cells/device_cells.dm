@@ -13,7 +13,6 @@
 	charge = 480
 	maxcharge = 480
 	charge_amount = 5
-	matter = list(MAT_STEEL = 350, MAT_GLASS = 50)
 	preserve_item = 1
 
 /obj/item/cell/device/empty
@@ -29,7 +28,6 @@
 	icon_state = "device_crap"
 	charge = 240
 	maxcharge = 240
-	matter = list(MAT_STEEL = 350, MAT_GLASS = 30)
 
 /obj/item/cell/device/crap/update_icon() //No visible charge indicator
 	return
@@ -47,7 +45,6 @@
 	charge = 4800
 	maxcharge = 4800
 	charge_amount = 20
-	matter = list(MAT_STEEL = 400, MAT_GLASS = 60)
 
 /obj/item/cell/device/hyper/empty
 	charge = 0
@@ -59,7 +56,6 @@
 	name = "shielded device power cell"
 	desc = "A small power cell designed to power handheld devices. Shielded from EMPs."
 	icon_state = "s_st"
-	matter = list(MAT_STEEL = 400, MAT_GLASS = 60)
 
 /obj/item/cell/device/empproof/Initialize(mapload)
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
@@ -89,7 +85,6 @@
 	name = "shielded weapon power cell"
 	desc = "A small power cell designed to power handheld weaponry. Shielded from EMPs."
 	icon_state = "s_hi"
-	matter = list(MAT_STEEL = 400, MAT_GLASS = 60)
 
 /obj/item/cell/device/weapon/empproof/Initialize(mapload)
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
@@ -105,7 +100,6 @@
 	name = "self-charging weapon power cell"
 	desc = "A small power cell designed to power handheld weaponry. This one recharges itself."
 	icon_state = "meb_m_nu"
-	matter = list(MAT_STEEL = 400, MAT_GLASS = 80)
 	self_recharge = TRUE
 	charge_amount = 60 // 2.5% //
 	charge_delay = 75
@@ -115,7 +109,6 @@
  */
 /obj/item/cell/device/weapon/recharge/captain
 	icon_state = "infinite_m"
-	matter = list(MAT_STEEL = 400, MAT_GLASS = 100)
 	charge_amount = 160	//Recharges a lot more quickly...
 	charge_delay = 100	//... but it takes a while to get started
 

@@ -6,7 +6,7 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 1000, MAT_GLASS = 1000)
+	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_GLASS = 1000))
 	var/obj/item/implant/imp = null
 	var/active = 1
 	///Var for attack_self chain

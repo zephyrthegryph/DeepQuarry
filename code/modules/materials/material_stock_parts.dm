@@ -31,7 +31,7 @@
 /// formula. Unimbued parts chain to upstream so any future upstream
 /// get_rating() override stays wired through us.
 /obj/item/stock_parts/get_rating()
-	if(length(construction_materials))
+	if(has_functional_construction())
 		var/derived_composite = dq_composite_part_rating(src)
 		if(derived_composite > 0)
 			return derived_composite

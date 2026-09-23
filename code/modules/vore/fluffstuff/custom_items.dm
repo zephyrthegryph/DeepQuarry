@@ -663,7 +663,7 @@
 	force = 5.0
 	throwforce = 7.0
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 50)
+	MATERIAL_BULK(MAT_STEEL, 50)
 	attack_verb = list("bludgeoned", "whacked", "disciplined", "thrashed")
 
 /obj/item/cane/fluff/tasald
@@ -1461,7 +1461,7 @@ End */
 	icon_state = "claws"
 	drop_sound = null
 	pickup_sound = null
-	matter = null
+	material_total = 0
 
 //Coolcrow420 - Jade Davis
 /obj/item/stamp/fluff/jade_horror

@@ -23,7 +23,7 @@
 	slot_flags = SLOT_ID | SLOT_BELT
 	show_messages = 1
 
-	matter = list(MAT_STEEL = 30,MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 	var/video_range = 3
 	var/obj/machinery/camera/communicator/video_source	// Their camera

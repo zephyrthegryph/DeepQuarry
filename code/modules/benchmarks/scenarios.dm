@@ -45,6 +45,36 @@
 	metric("init_seconds", Master.initializations_seconds, "s")
 	metric("init_atmos_ms", SSair.init_time_ms, "ms")
 	metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
+	// Per-instance composition lists. Blueprints are per type; an item owns a list only
+	// for an arbitrary mix (material_mix). Override lists are interned and shared.
+	var/items = 0
+	var/matter_lists = 0
+	var/matter_entries = 0
+	var/list/matter_owners = list()
+	for(var/obj/item/I in world)
+		items++
+		if(I.material_mix)
+			matter_lists++
+			matter_entries += length(I.material_mix)
+			matter_owners["[I.type]"]++
+		CHECK_TICK
+	var/override_refs = 0
+	var/list/override_lists = list()
+	for(var/obj/O in world)
+		if(O.material_overrides)
+			override_refs++
+			if(!(O.material_overrides in override_lists))
+				override_lists += list(O.material_overrides)
+		CHECK_TICK
+	metric("items_total", items, "instances")
+	metric("item_matter_lists", matter_lists, "lists")
+	metric("item_matter_entries", matter_entries, "entries")
+	metric("material_override_refs", override_refs, "instances")
+	metric("material_override_lists", length(override_lists), "lists")
+	matter_owners = sortTim(matter_owners, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	if(length(matter_owners) > 20)
+		matter_owners.Cut(21)
+	detail("item_matter_owner_types", matter_owners)
 	// Weakrefs never get cleaned up while their target lives, so count them by target type.
 	var/list/weakref_targets = list()
 	var/weakrefs = 0

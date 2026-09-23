@@ -1,18 +1,16 @@
 /obj/item/trash/material
 	icon = 'icons/obj/material_trash.dmi'
-	matter = list()
+	MATERIAL_NONE
 	var/matter_chances = list()	//List of lists: list(mat_name, chance, amount)
 
 
 /obj/item/trash/material/Initialize(mapload)
 	. = ..()
-	if(!matter)
-		matter = list()
-
 	for(var/list/L in matter_chances)
 		if(prob(L[2]))
-			matter |= L[1]
-			matter[L[1]] += max(0, L[3] + rand(-2,2))
+			var/list/added = list()
+			added[L[1]] = max(0, L[3] + rand(-2,2))
+			add_materials(added)
 
 
 

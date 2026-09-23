@@ -63,26 +63,27 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
  */
 /obj/item/proc/get_material_composition(breakdown_flags=NONE)
 	. = list()
-	for(var/mat in matter)
+	var/list/item_matter = material_totals()
+	for(var/mat in item_matter)
 		var/datum/material/M = GET_MATERIAL_REF(mat)
 		if(M.composite_material && M.composite_material.len)
 			for(var/submat in M.composite_material)
 				var/datum/material/SM = GET_MATERIAL_REF(submat)
 				if(SM in .)
-					.[SM] += matter[mat]*(M.composite_material[submat]/SHEET_MATERIAL_AMOUNT)
+					.[SM] += item_matter[mat]*(M.composite_material[submat]/SHEET_MATERIAL_AMOUNT)
 				else
-					.[SM] = matter[mat]*(M.composite_material[submat]/SHEET_MATERIAL_AMOUNT)
+					.[SM] = item_matter[mat]*(M.composite_material[submat]/SHEET_MATERIAL_AMOUNT)
 		else
 			if(M in .)
-				.[M] += matter[mat]
+				.[M] += item_matter[mat]
 			else
-				.[M] = matter[mat]
+				.[M] = item_matter[mat]
 
 /obj/item/proc/set_custom_materials(list/materials, multiplier = 1)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(!LAZYLEN(materials))
-		matter = null
+		set_material_mix(null)
 		return
 
 	materials = materials.Copy()
@@ -91,7 +92,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 		for(var/x in materials)
 			materials[x] *= multiplier
 
-	matter = materials
+	set_material_mix(materials)
 
 
 // Builds the datum list above.

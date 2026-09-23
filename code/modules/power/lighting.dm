@@ -1072,7 +1072,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	force = 2
 	throwforce = 5
 	w_class = ITEMSIZE_TINY
-	matter = list(MAT_STEEL = 60)
+	MATERIAL_BULK(MAT_STEEL, 60)
 
 	///LIGHT_OK, LIGHT_BURNED or LIGHT_BROKEN
 	var/status = LIGHT_OK
@@ -1114,7 +1114,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	icon_state = "ltube"
 	base_state = "ltube"
 	item_state = "c_tube"
-	matter = list(MAT_GLASS = 100)
+	MATERIAL_BULK(MAT_GLASS, 100)
 	init_brightness_range = 7
 	init_brightness_power = 2
 
@@ -1135,7 +1135,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	icon_state = "lbulb"
 	base_state = "lbulb"
 	item_state = "contvapour"
-	matter = list(MAT_GLASS = 100)
+	MATERIAL_BULK(MAT_GLASS, 100)
 	brightness_color = LIGHT_COLOR_INCANDESCENT_BULB
 
 	init_brightness_range = 5
@@ -1176,7 +1176,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	icon_state = "fbulb"
 	base_state = "fbulb"
 	item_state = "egg4"
-	matter = list(MAT_GLASS = 100)
+	MATERIAL_BULK(MAT_GLASS, 100)
 
 // update the icon state and description of the light
 /obj/item/light/update_icon()

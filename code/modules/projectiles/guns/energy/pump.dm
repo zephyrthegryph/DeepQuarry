@@ -7,7 +7,7 @@
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	force = 10
-	matter = list(MAT_STEEL = 2000)
+	MATERIAL_BULK(MAT_STEEL, 2000)
 	fire_sound = 'sound/weapons/mandalorian.ogg'
 	projectile_type = /obj/item/projectile/beam/imperial
 

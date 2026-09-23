@@ -13,7 +13,7 @@
 	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_LARGE //huge was dumb for this.
 	force = 10
-	matter = list(MAT_STEEL = 2000)
+	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/midlaser
 	one_handed_penalty = 30
 
@@ -267,7 +267,7 @@
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	force = 10
-	matter = list(MAT_STEEL = 2000)
+	MATERIAL_BULK(MAT_STEEL, 2000)
 	fire_sound = 'sound/weapons/mandalorian.ogg'
 	projectile_type = /obj/item/projectile/beam/imperial
 
@@ -283,7 +283,7 @@
 	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_LARGE
 	force = 15
-	matter = list(MAT_STEEL = 2000)
+	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/mininglaser
 
 	firemodes = list(
@@ -305,7 +305,7 @@
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	force = 8
-	matter = list(MAT_STEEL = 1500)
+	MATERIAL_BULK(MAT_STEEL, 1500)
 	projectile_type = /obj/item/projectile/beam/midlaser
 
 /*
@@ -448,7 +448,6 @@
 	maxcharge = 7200
 	charge = 7200
 	charge_amount = 20
-	matter = list(MAT_METAL = 350, MAT_GLASS = 50)
 	preserve_item = 1
 
 /obj/item/gun/energy/tommylaser

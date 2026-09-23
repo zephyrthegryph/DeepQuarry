@@ -27,7 +27,7 @@
 	caliber = "caps"
 	ammo_type = /obj/item/ammo_casing/cap
 	projectile_type = /obj/item/projectile/bullet/cap
-	matter = list(MAT_STEEL = 1000)
+	MATERIAL_BULK(MAT_STEEL, 1000)
 	handle_casings = null
 	recoil = 0
 
@@ -48,7 +48,7 @@
 	load_method = SINGLE_CASING
 	ammo_type = /obj/item/ammo_casing/afoam_dart
 	projectile_type = /obj/item/projectile/bullet/foam_dart
-	matter = list(MAT_PLASTIC = 2000)
+	MATERIAL_BULK(MAT_PLASTIC, 2000)
 	handle_casings = null
 	recoil = 0
 	fire_sound = 'sound/items/syringeproj.ogg'
@@ -64,7 +64,7 @@
 	icon_state = "moistnugget"
 	item_state = "moistnugget"
 	max_shells = 5
-	matter = list(MAT_PLASTIC = 2500)
+	MATERIAL_BULK(MAT_PLASTIC, 2500)
 	fire_sound = 'sound/items/syringeproj.ogg'
 
 /*
@@ -81,7 +81,7 @@
 	projectile_type = /obj/item/projectile/bullet/foam_dart
 	caliber = "foam"
 	load_method = MAGAZINE
-	matter = list(MAT_PLASTIC = 1000)
+	MATERIAL_BULK(MAT_PLASTIC, 1000)
 	recoil = 0
 	fire_sound = 'sound/items/syringeproj.ogg'
 
@@ -132,7 +132,7 @@
 	projectile_type = /obj/item/projectile/bullet/foam_dart
 	load_method = SINGLE_CASING
 	max_shells = 6
-	matter = list(MAT_PLASTIC = 1000)
+	MATERIAL_BULK(MAT_PLASTIC, 1000)
 	handle_casings = null
 	recoil = null //it's a toy
 	fire_sound = 'sound/items/syringeproj.ogg'
@@ -179,7 +179,7 @@
 	item_state = "dshotgun"
 	max_shells = 2
 	w_class = ITEMSIZE_NORMAL
-	matter = list(MAT_PLASTIC = 1500)
+	MATERIAL_BULK(MAT_PLASTIC, 1500)
 
 /*
  * SMG
@@ -196,7 +196,7 @@
 	magazine_type = /obj/item/ammo_magazine/mfoam_dart/smg
 	allowed_magazines = list(/obj/item/ammo_magazine/mfoam_dart/smg)
 	projectile_type = /obj/item/projectile/bullet/foam_dart
-	matter = list(MAT_PLASTIC = 1500)
+	MATERIAL_BULK(MAT_PLASTIC, 1500)
 	recoil = null //it's a toy
 	fire_sound = 'sound/items/syringeproj.ogg'
 

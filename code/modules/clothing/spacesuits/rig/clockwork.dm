@@ -68,5 +68,4 @@
 	charge_amount = 120
 	self_recharge = TRUE
 	charge_delay = 50
-	matter = null
 	standard_overlays = FALSE

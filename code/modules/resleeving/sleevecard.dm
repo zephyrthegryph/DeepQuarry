@@ -3,7 +3,7 @@
 	desc = "This upgraded pAI module has enough capacity to run a whole mind of human-level intelligence."
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	show_messages = 0
-	matter = list(MAT_STEEL = 4000, MAT_GLASS = 4000)
+	MATERIAL_MIX(list(MAT_STEEL = 4000, MAT_GLASS = 4000))
 	has_emag_toolkit = FALSE // sleevecards don't have multitools or signalers,  you can just change their laws
 	special_handling = TRUE
 

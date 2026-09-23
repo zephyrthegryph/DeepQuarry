@@ -28,7 +28,6 @@
 
 /obj/machinery/portable_atmospherics/canister/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE, 2 * SHEET_MATERIAL_AMOUNT)
 	AddElement(/datum/element/climbable)
 
 /obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()

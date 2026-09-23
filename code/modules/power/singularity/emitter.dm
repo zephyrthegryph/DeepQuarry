@@ -1,4 +1,6 @@
 /obj/machinery/power/emitter
+	material_template = /datum/material_template/energy_device
+	material_total = 10 * SHEET_MATERIAL_AMOUNT
 	name = "emitter"
 	desc = "It is a heavy duty industrial laser."
 	icon = 'icons/obj/singularity.dmi'
@@ -320,7 +322,6 @@
 
 /obj/machinery/power/emitter/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_ENERGY_DEVICE, 10 * SHEET_MATERIAL_AMOUNT)
 	previous_state = state
 	if(state == 2 && anchored)
 		connect_to_network()

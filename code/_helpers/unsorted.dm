@@ -1610,7 +1610,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	var/list/material_map_sum = list()
 	var/list/material_map_amounts = list()
 	for(var/obj/item/object as anything in reccursive_contents)
-		var/list/item_materials = object.matter
+		var/list/item_materials = object.material_totals()
 		for(var/mat as anything in custom_materials)
 			var/mat_amount = 1 //no materials mean we assign this default amount
 			if(length(item_materials))

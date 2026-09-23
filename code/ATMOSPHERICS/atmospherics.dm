@@ -10,6 +10,8 @@ Pipelines + Other Objects -> Pipe network
 
 */
 /obj/machinery/atmospherics
+	material_template = /datum/material_template/pressure
+	material_total = SHEET_MATERIAL_AMOUNT
 	anchored = TRUE
 	idle_power_usage = 0
 	active_power_usage = 0
@@ -89,7 +91,6 @@ Pipelines + Other Objects -> Pipe network
 	return TRUE
 
 /obj/machinery/atmospherics/pipe/Initialize(mapload, newdir)
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
 	if(power_rating > 0)
 		ensure_pump_materials()
 	return ..()
@@ -102,7 +103,6 @@ Pipelines + Other Objects -> Pipe network
 
 /obj/machinery/atmospherics/Initialize(mapload, newdir)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
 	if(!isnull(newdir))
 		set_dir(newdir)
 	if(!pipe_color)
@@ -157,8 +157,7 @@ Pipelines + Other Objects -> Pipe network
 			return
 		var/datum/material/material = stock.material
 		engineered_material_id = material.name
-		var/list/slots = default_material_slots(MATERIAL_APPLICATION_PRESSURE, SHEET_MATERIAL_AMOUNT)
-		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), slots, MATERIAL_APPLICATION_PRESSURE)
+		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
 		stock.use(1)
 		to_chat(user, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
 		return

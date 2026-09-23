@@ -38,7 +38,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	matter = list(DEFAULT_WALL_MATERIAL = 5000)
+	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 5000)
 	preserve_item = FALSE
 
 	var/mode_index = RMS_STEEL //start at steel creation

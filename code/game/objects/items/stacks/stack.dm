@@ -206,15 +206,9 @@
 			if(istype(O, /obj/item))
 				var/obj/item/Ob = O
 
-				if(LAZYLEN(Ob.matter))	// Law of equivalent exchange.
-					Ob.matter.Cut()
-
-				else
-					Ob.matter = list()
-
+				// Law of equivalent exchange: the product is made of exactly what it cost.
 				var/mattermult = istype(Ob, /obj/item) ? min(2000, 400 * Ob.w_class) : 2000
-
-				Ob.matter[recipe.use_material] = mattermult / produced * required
+				Ob.set_single_material(recipe.use_material, mattermult / produced * required)
 
 		else
 			O = new recipe.result_type(user.loc)
@@ -223,15 +217,9 @@
 				if(istype(O, /obj/item))
 					var/obj/item/Ob = O
 
-					if(LAZYLEN(Ob.matter))	// Law of equivalent exchange.
-						Ob.matter.Cut()
-
-					else
-						Ob.matter = list()
-
+					// Law of equivalent exchange: the product is made of exactly what it cost.
 					var/mattermult = istype(Ob, /obj/item) ? min(2000, 400 * Ob.w_class) : 2000
-
-					Ob.matter[recipe.matter_material] = mattermult / produced * required
+					Ob.set_single_material(recipe.matter_material, mattermult / produced * required)
 
 		O.set_dir(user.dir)
 		O.add_fingerprint(user)
