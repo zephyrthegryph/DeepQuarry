@@ -14,3 +14,5 @@ changes:
   - qol: "Reworked layer editing and visibility controls and softened network selection and placement previews."
   - bugfix: "Made leftward cable extensions connect through the correct existing port."
   - qol: "Added nearest-sprite click tolerance and agent tools for rooms, fills, networks, and placement."
+  - bugfix: "Kept wire endpoints under the pointer while dragging and selected connected segments in unsaved proposals."
+  - qol: "Reduced live network preview work during continuous dragging."
