@@ -9,7 +9,7 @@
 //!   out of service once its generation is exhausted, which makes rejection
 //!   unconditional at the cost of losing that slot.
 
-use crate::handle::{Handle, MAX_GENERATION, MAX_SLOTS, RawHandle};
+use crate::slot::{Handle, MAX_GENERATION, MAX_SLOTS, RawHandle};
 use std::fmt;
 
 /// Slots per growth chunk.

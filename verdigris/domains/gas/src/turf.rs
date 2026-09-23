@@ -113,7 +113,7 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
 	let max_y = max_y.get_number()?.max(1.0) as u32;
 	let max_z = max_z.get_number()?.max(1.0) as u32;
 	with_world(|w| configure(w, max_x, max_y, max_z))?;
-	vg_ffi::reactor::register_domain(vg_ffi::reactor::DOMAIN_GAS, Box::new(GasDomain));
+	vg_ffi::registry::register_domain(vg_ffi::reactor::DOMAIN_GAS, Box::new(GasDomain));
 	#[cfg(feature = "heat")]
 	crate::heat::configure_heat(max_x, max_y, max_z)?;
 	Ok(ByondValue::null())
@@ -142,7 +142,7 @@ fn set_z_links(links: ByondValue) -> Result<ByondValue> {
 /// handle per condition.
 struct GasDomain;
 
-impl vg_ffi::reactor::ExternalDomain for GasDomain {
+impl vg_ffi::registry::DomainRegistry for GasDomain {
 	fn channels(&self) -> Vec<vg_core::channel::ChannelInfo> {
 		vg_core::channel::channel_infos::<TurfGas>()
 	}

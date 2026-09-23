@@ -18,8 +18,9 @@
 //! pressure/temperature cells DM writes directly, so the watch path
 //! (registration checks, frame evaluation, stale filtering, lanes) is
 //! exercised end to end from DM tests. Domains that live in other crates
-//! (gas, [`REACT_DOMAIN_GAS`]) register an [`ExternalDomain`] with
-//! [`register_domain`]; their wakes are collected at every step.
+//! (gas, [`REACT_DOMAIN_GAS`]) register a [`crate::registry::DomainRegistry`]
+//! with [`crate::registry::register_domain`]; their wakes are collected at
+//! every step.
 //!
 //! `react_watch_threshold`/`react_watch_difference`'s DM call convention is
 //! one Rust parameter per DM argument, so their argument counts (9, 10) are
@@ -46,6 +47,8 @@ use vg_core::owner::{Applied, Domain};
 use vg_core::reactor::{ModelId, RateModel, Reactor};
 use vg_core::timer::{Tick, TimerId};
 use vg_core::watch::{Cmp, Cond, Edge, Level, WatchPort, WatchState};
+
+use crate::registry::{self, DomainRegistry};
 
 // --- DM constants ------------------------------------------------------------
 
@@ -81,42 +84,17 @@ pub const PROBE_CELLS: u32 = 256;
 pub const DOMAIN_GAS: u32 = 2;
 
 // --- External domains ---------------------------------------------------------
-
-/// A watchable domain that lives in another crate. It keeps its own watch
-/// ports; the reactor host only routes registrations and collects wakes.
-pub trait ExternalDomain {
-    /// The domain's channel table (checks channel ids and units).
-    fn channels(&self) -> Vec<ChannelInfo>;
-    /// Registers a watch; returns the domain's sub-port and the watch id.
-    ///
-    /// # Errors
-    /// If the condition names invalid cells or is rejected.
-    fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId)>;
-    fn unwatch(&mut self, port: u8, id: WatchId);
-    /// Moves the wakes produced since the last call into `out`.
-    fn take_wakes(&mut self, out: &mut Vec<Wake>);
-}
-
-thread_local! {
-    static EXTERNAL: RefCell<HashMap<u32, Box<dyn ExternalDomain>>> = RefCell::new(HashMap::new());
-}
-
-/// Registers (or replaces) an external domain under a `REACT_DOMAIN_*` id.
-pub fn register_domain(id: u32, domain: Box<dyn ExternalDomain>) {
-    EXTERNAL.with_borrow_mut(|e| {
-        e.insert(id, domain);
-    });
-}
-
-fn external<T>(id: u32, f: impl FnOnce(&mut dyn ExternalDomain) -> T) -> Option<T> {
-    EXTERNAL.with_borrow_mut(|e| e.get_mut(&id).map(|d| f(d.as_mut())))
-}
+//
+// `register_domain`/`ExternalDomain` used to live here as this module's own
+// registry. They are now `crate::registry::{register_domain, DomainRegistry}`,
+// shared with `entity.rs`'s component lifecycle (`rust_architecture.md` §5:
+// "one DomainRegistry, merging ExternalDomain and EntityDomain").
 
 fn channel_table(domain: u32) -> Result<Vec<ChannelInfo>> {
     if domain == DOMAIN_PROBE {
         return Ok(channel_infos::<Probe>());
     }
-    external(domain, |d| d.channels()).ok_or_else(|| eyre!("domain {domain} has no watch port"))
+    registry::with_domain(domain, |d| d.channels()).ok_or_else(|| eyre!("domain {domain} has no watch port"))
 }
 
 const _: () = {
@@ -405,11 +383,7 @@ impl Host {
         }
         self.watch_wakes += self.probe.frame(&mut self.reactor) as u64;
         let mut external_wakes = Vec::new();
-        EXTERNAL.with_borrow_mut(|e| {
-            for d in e.values_mut() {
-                d.take_wakes(&mut external_wakes);
-            }
-        });
+        registry::for_each(|_, d| d.take_wakes(&mut external_wakes));
         self.watch_wakes += external_wakes.len() as u64;
         self.reactor.ingest(&external_wakes);
         self.wakes.clear();
@@ -539,7 +513,7 @@ fn unwatch(probe: &mut ProbeDomain, domain: u32, port: u8, id: WatchId) {
     if domain == DOMAIN_PROBE {
         let _ = probe.port.unwatch(id);
     } else {
-        external(domain, |d| d.unwatch(port, id));
+        registry::with_domain(domain, |d| d.unwatch(port, id));
     }
 }
 
@@ -598,7 +572,7 @@ fn watch(
         None
     } else {
         Some(
-            external(domain, |d| d.watch(sub, lane, cond))
+            registry::with_domain(domain, |d| d.watch(sub, lane, cond))
                 .ok_or_else(|| eyre!("domain {domain} has no watch port"))??,
         )
     };

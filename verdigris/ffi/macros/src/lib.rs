@@ -2,6 +2,37 @@ use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
 
+mod component;
+mod events;
+mod query;
+
+/// `#[component(domain = gas, kind = 1, dm = "/obj/...")]` on a struct
+/// (`doc/rewrite/rust_bindings.md` §2). Re-exported as `vg::component` from
+/// `vg_core::vg`. Field roles are declared with `#[vg(config|state|input, ...)]`;
+/// see the doc for the full grammar.
+#[proc_macro_attribute]
+pub fn component(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+	component::expand(attr, item)
+}
+
+/// `#[query(Type, name = [fields...], ...)]` (§3): one query method per
+/// named group. Re-exported as `vg::query`.
+#[proc_macro_attribute]
+pub fn query(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+	let extra = query::expand(attr);
+	let mut out = item;
+	out.extend(extra);
+	out
+}
+
+/// `#[events(Type)] pub enum FooEvent { ... }` (§3, §8): numeric ids and
+/// `snake_case` names for the generated DM dispatcher. Re-exported as
+/// `vg::events`.
+#[proc_macro_attribute]
+pub fn events(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+	events::expand(attr, item)
+}
+
 /// The one verdigris bind macro. Every function DM can call is declared with it:
 /// ```ignore
 /// /// Doc comment, copied into the generated DM binding.

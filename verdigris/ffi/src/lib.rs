@@ -7,6 +7,7 @@
 
 mod abi;
 pub mod allocator;
+pub mod entity;
 mod jobs;
 mod layout;
 mod lifecycle;
@@ -14,3 +15,4 @@ mod metrics;
 mod power;
 mod propagate;
 pub mod reactor;
+pub mod registry;

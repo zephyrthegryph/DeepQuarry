@@ -213,7 +213,7 @@
 "cL" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 1;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/MercShip)
@@ -786,7 +786,7 @@
 /area/survivalpod/superpose/MercShip)
 "kD" = (
 /obj/machinery/atmospherics/binary/pump/on{
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/MercShip)

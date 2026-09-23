@@ -1,8 +1,16 @@
-//! Generational handles (`rust_core.md` §4).
+//! Generic generational slot ids (`rust_architecture.md` §4.1).
+//!
+//! This is **not** the DM-facing identity — that is
+//! [`crate::entity::EntityTable`], the only handle type that crosses to DM.
+//! This module is for internal, Rust-only generational ids that never leave
+//! the process: the network graph's node/edge/region/device ids
+//! (`network::graph`, `network::host`, a domain's own network kind). Arenas
+//! keep their own private slot type instead of this one (`arena.rs`).
 //!
 //! A handle packs a 20-bit slot index and a 4-bit generation into the low 24
-//! bits of a `u32`, so it crosses to DM as a single number that is exact as a
-//! 32-bit float.
+//! bits of a `u32` — exact as an `f32`, which matters only where a value
+//! built from one (a network key) ends up crossing to DM; the packing itself
+//! doesn't require it.
 
 use std::fmt;
 use std::hash::{Hash, Hasher};
