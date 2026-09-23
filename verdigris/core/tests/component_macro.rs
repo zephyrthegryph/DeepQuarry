@@ -23,6 +23,12 @@ pub struct Widget {
     operable: bool,
     #[vg(state, unit = "mol/s")]
     flow_rate: f32,
+    /// A fixed-size, enum-keyed field (`rust_bindings.md` §2: "per-channel
+    /// values become fields keyed by the enum, not a magic index") --
+    /// modeled on the APC's three power channels, at `f64` (§16 "units
+    /// everywhere").
+    #[vg(config, unit = "W", range = 0.0..=1000.0, default = [0.0, 0.0, 0.0], on_invalid = clamp)]
+    channels: [f64; 3],
 }
 
 #[vg::query(Widget, ui = [target_pressure, power_rating, on, flow_rate])]
@@ -58,7 +64,10 @@ fn schema_lists_every_field_with_its_role_and_unit() {
     assert_eq!(schema.kind, 1);
     assert_eq!(schema.dm_type, "/obj/machinery/atmospherics/binary/pump");
     let names: Vec<&str> = schema.fields.iter().map(|f| f.name).collect();
-    assert_eq!(names, ["target_pressure", "power_rating", "on", "operable", "flow_rate"]);
+    assert_eq!(
+        names,
+        ["target_pressure", "power_rating", "on", "operable", "flow_rate", "channels"]
+    );
     assert_eq!(schema.fields[0].unit, Some("kPa"));
     assert_eq!(schema.fields[2].unit, None);
 }
@@ -71,6 +80,7 @@ fn query_group_returns_every_listed_field_in_order() {
         on: true,
         operable: false,
         flow_rate: 3.5,
+        channels: [0.0, 0.0, 0.0],
     };
     let q = w.query_ui();
     assert_eq!(
@@ -108,6 +118,34 @@ fn commands_apply_config_and_input_fields() {
     assert!(w.operable);
     // `flow_rate` (state) intentionally has no command variant: `WidgetCommand`
     // only has TargetPressure/PowerRating/On/Operable.
+}
+
+/// A fixed-size field (§2's "per-channel values become fields keyed by the
+/// enum, not a magic index") gets both a whole-array command and an
+/// indexed one, and validates each element the same way a scalar field's
+/// range does.
+#[test]
+fn array_fields_get_whole_and_indexed_commands_and_validation() {
+    let w = Widget::default();
+    assert_eq!(w.channels, [0.0, 0.0, 0.0], "array default is used as-is, not cast");
+
+    // Whole-array validation clamps every element independently.
+    assert_eq!(Widget::validate_channels([2000.0, -5.0, 500.0]), Ok([1000.0, 0.0, 500.0]));
+    // Single-element validation applies the exact same rule.
+    assert_eq!(Widget::validate_channels_at(2000.0), Ok(1000.0));
+    assert_eq!(Widget::validate_channels_at(500.0), Ok(500.0));
+
+    let mut w = Widget::default();
+    // Bulk write.
+    WidgetKind::apply(&mut w, &WidgetCommand::Channels([10.0, 20.0, 30.0]));
+    assert_eq!(w.channels, [10.0, 20.0, 30.0]);
+    // Indexed write touches only that slot -- this is the point: setting
+    // "the light channel" doesn't disturb equipment/environment.
+    WidgetKind::apply(&mut w, &WidgetCommand::ChannelsAt(1, 99.0));
+    assert_eq!(w.channels, [10.0, 99.0, 30.0]);
+    // An out-of-range index is a silent no-op, not a panic.
+    WidgetKind::apply(&mut w, &WidgetCommand::ChannelsAt(9, 1.0));
+    assert_eq!(w.channels, [10.0, 99.0, 30.0]);
 }
 
 /// The whole storage path a generated component uses: entity table resolves
