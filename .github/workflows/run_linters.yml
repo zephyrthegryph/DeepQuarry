@@ -45,7 +45,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v5.2.0
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.x
       - name: Install OpenDream
         uses: robinraju/release-downloader@v1.13
         with:
@@ -53,6 +53,8 @@ jobs:
           tag: "latest"
           fileName: "DMCompiler_linux-x64.tar.gz"
           extract: true
+      - name: Verify OpenDream compiler version for DM health
+        run: echo '934b817004fc3979a65b9fc1eb87bbbd36bed804c94e7da3b9620cc160e6745c  DMCompiler_linux-x64/DMCompiler.dll' | sha256sum --check
       - name: Install Tools
         run: |
           pip3 install setuptools
@@ -62,90 +64,26 @@ jobs:
       - name: Give Linters A Go
         id: linter-setup
         run: ":"
-      - name: Ensure genesis_call.dme is unchanged
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: bash tools/ci/check_genesis.sh
-      - name: Run Grep Checks
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: bash tools/ci/check_grep.sh
-      - name: Check Verdigris Bindings
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: bash tools/ci/check_verdigris_bindings.sh
-      - name: Run Define Sanity Checks
-        run: tools/bootstrap/python -m define_sanity.check
-      - name: Run DreamChecker
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        shell: bash
-        run: |
-          set -o pipefail
-          ~/dreamchecker 2>&1 | bash tools/ci/annotate_dm.sh
-      - name: Run OpenDream
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        # pipefail so a non-zero DMCompiler exit (compile errors) fails the step
-        # instead of being swallowed by the pipe to the annotator.
-        shell: bash
-        run: |
-          set -o pipefail
-          ./DMCompiler_linux-x64/DMCompiler deepquarry.dme --suppress-unimplemented --define=CIBUILDING | bash tools/ci/annotate_od.sh
-      - name: Run Map Checks
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: |
-          tools/bootstrap/python -m mapmerge2.dmm_test
-          tools/bootstrap/python -m tools.maplint.source
-      - name: Run DMI Tests
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: tools/bootstrap/python -m dmi.test
-      # "Check File Directories" was removed: tools/ci/check_filedirs.sh no longer
-      # exists, and its job (every code/ .dm reachable from the .dme) is enforced by
-      # the active ValidateDmeTarget in tools/build/build.ts (run on every build).
-      - name: Check Changelogs
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: bash tools/ci/check_changelogs.sh
-      - name: Check Miscellaneous Files
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: bash tools/ci/check_misc.sh
-      - name: Check Signals
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: bash tools/ci/check_signals.sh
-      - name: Check State Schema
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/state_schema_lint.py
-      - name: Check Containment Writes
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/containment_lint.py
-      - name: Check Latent Contents Walks
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/latent_lint.py
-      - name: Check Lifecycle
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/lifecycle_lint.py
-      - name: Check Instance List Allocation
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/instance_list_lint.py
-      - name: Check Deadline Polling
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/check_deadline_polling.py
-      - name: Check Rust core consolidation
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/check_rust_core_consolidation.py
-      - name: Check Breakpoints
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/breakpoint_lint.py
-      - name: Check Registries
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/registry_lint.py
-      - name: Check Actor Forwarding
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: python3 tools/ci/actor_forwarding_lint.py
-      - name: Run TGUI Checks
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
-        run: tools/build/build.sh --ci lint tgui-test
-
-      - name: Setup Rust toolchain for verdigris
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+      - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: Build DM health analyzer
+        run: cargo build --release --manifest-path tools/dm-health/Cargo.toml
+      - name: Run DM health and CI checks
+        run: tools/dm-health/target/release/dm-health ci-suite
+      - name: Upload DM health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dm-health-report
+          path: tools/dm-health/target/latest-report.json
+          if-no-files-found: ignore
+      # dm-health's ci-suite is DM/map/misc checks (replaces the old individual
+      # steps this job used to list one by one). The Rust-side checks below are
+      # not part of it and stay their own steps.
+      - name: Check Rust core consolidation
+        run: python3 tools/ci/check_rust_core_consolidation.py
       # Linting is scoped to the host-buildable, non-vendored crates (not the
       # whole workspace): vg-gas is vendored auxmos and stays on upstream's
       # lint level (see domains/gas/UPSTREAM.md), and vg-gas/vg-ffi both need
@@ -154,17 +92,11 @@ jobs:
       # (core, domains/heat, domains/layout, domains/power, verdigris,
       # tools/bench, tools/replay) already matches this clippy package list.
       - name: Verdigris cargo fmt
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
         run: cargo fmt --all --check
       - name: Verdigris cargo clippy
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
         run: cargo clippy --package verdigris --package vg-core --package vg-layout --package vg-heat --package vg-power --all-targets -- -D warnings
       - name: Verdigris cargo test
-        if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
         run: cargo test
-
-      - name: Run Nanomap Checks
-        run: tools/github-actions/nanomap-renderer-invoker.sh --testing
