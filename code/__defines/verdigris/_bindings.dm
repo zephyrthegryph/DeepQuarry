@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "2751dac6600e8d2a"
+#define VERDIGRIS_ABI "3826687ebd2f045a"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -410,6 +410,16 @@
 /// later domains (power, heat, ...) take 1, 2, ... as they land.
 // verdigris/domains/gas/src/kind/pump.rs
 #define VG_DOMAIN_GAS 0
+
+/// Power's domain index in the entity table (gas is 0).
+// verdigris/ffi/src/power.rs
+#define VG_DOMAIN_POWER 1
+
+/// The one component kind cable/machine identity uses: a cable and a
+/// machine node share [`PowerWorld`]'s own key space already, so they
+/// share this kind too.
+// verdigris/ffi/src/power.rs
+#define VG_POWER_NODE 1
 
 // Binds.
 
@@ -1103,6 +1113,23 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(handle)
 
+/// Binds a cable piece's identity: creates the entity (if `entity` is 0,
+/// DM's `vg_entity == 0` sentinel) or reuses it, attaches a fresh
+/// [`PowerWorld`] key seeded from the given shape, and returns the entity
+/// handle. The DM wrapper is responsible for calling `vg_power_edit()`
+/// separately for anything the key itself doesn't carry (there is none
+/// for a cable: shape is bind-time-only, matching
+/// [`PowerWorld::add_cable`]'s "replaces any object already under key").
+///
+/// # Errors
+/// A bad `entity`/geometry value, or [`PowerWorld::add_cable`]'s errors
+/// (an out-of-range key or a full arena).
+// /proc/power_cable_bind (verdigris/ffi/src/power.rs)
+/proc/vg_power_cable_bind(entity, x, y, z, d1, d2, up, down, link)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_cable_bind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, x, y, z, d1, d2, up, down, link)
+
 /// Draws up to `watts` for `key` from its region now; returns what was
 /// delivered.
 // /proc/power_draw (verdigris/ffi/src/power.rs)
@@ -1120,6 +1147,33 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(ops)
 
+/// This entity's power key (`PowerWorld` cell), or `null` if it has no
+/// power component. The bridge between a `vg_entity` and every existing
+/// `POWER_OP_*`/`vg_power_*` call, which still takes a plain key: the
+/// entity move changes *how a key is allocated and freed*, not
+/// [`PowerWorld`]'s own key-keyed API (`rust_core.md` §15's identity row
+/// names the R10 entity/component layer, not a second rewrite of
+/// [`PowerWorld`] itself).
+///
+/// # Errors
+/// A bad `entity` value.
+// /proc/power_key_of (verdigris/ffi/src/power.rs)
+/proc/vg_power_key_of(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_key_of_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+/// As [`power_cable_bind`], for a power machine node (a generator,
+/// terminal, SMES output, ...): no shape, just where it is.
+///
+/// # Errors
+/// As [`power_cable_bind`].
+// /proc/power_machine_bind (verdigris/ffi/src/power.rs)
+/proc/vg_power_machine_bind(entity, x, y, z)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_machine_bind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, x, y, z)
+
 /// Keys of every cable and machine on `key`'s region.
 // /proc/power_members (verdigris/ffi/src/power.rs)
 /proc/vg_power_members(key)
@@ -1134,7 +1188,11 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(key)
 
-/// Forgets everything (world start and tests).
+/// Forgets everything (world start and tests). Note this does not unbind
+/// any entity that already named a power key: callers doing a full reset
+/// unbind through the generic entity path first (`verdigris_cleanup`) or
+/// accept that any surviving handle is now stale-by-content, not
+/// stale-by-generation (the entity table itself is untouched here).
 // /proc/power_reset (verdigris/ffi/src/power.rs)
 /proc/vg_power_reset()
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_reset_ffi")
@@ -1413,16 +1471,12 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(domain, sub, lane, cell, mask)
 
-/// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
-/// `ch` crosses `value` like a threshold.
 // /proc/react_watch_difference (verdigris/ffi/src/reactor.rs)
 /proc/vg_react_watch_difference(domain, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_difference_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(domain, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
 
-/// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
-/// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
 // /proc/react_watch_threshold (verdigris/ffi/src/reactor.rs)
 /proc/vg_react_watch_threshold(domain, sub, lane, cell, ch, cmp, value, hysteresis, both_edges)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_threshold_ffi")

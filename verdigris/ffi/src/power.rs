@@ -6,14 +6,47 @@
 //! machinery tick, which returns the events it must act on.
 //!
 //! Everything runs on BYOND's main thread.
-use std::cell::RefCell;
+//!
+//! **Identity** (`rust_bindings.md` R10, `rust_core.md` §15): every cable
+//! piece and machine node is one entity, whose single power component
+//! (kind [`KIND_NODE`] -- a cable and a machine share it, exactly as
+//! [`vg_power::world::PowerWorld`]'s own `Obj` already unifies them) names
+//! the [`PowerWorld`] key it owns. DM no longer allocates that key itself
+//! (the old `power_key_alloc`/`power_free_keys`/`power_next_key` pool);
+//! [`power_cable_bind`]/[`power_machine_bind`] allocate it here, through
+//! the same [`CellAllocator`] pattern `vg-gas`'s pump uses, and the entity
+//! table's generic unbind (`entity_unbind`, `entity.rs`) frees it through
+//! [`EntityDomain::detach`] -- so a stale handle can never resolve to a
+//! reused key, and a fresh bind at a reused key always starts clean.
+//!
+//! `power_cable_bind`'s argument count (9) is one Rust parameter per DM
+//! argument (its call convention, like `react_watch_threshold`'s in
+//! `reactor.rs`); clippy's `too_many_arguments` fires inside
+//! `::byondapi::bind`'s own macro expansion, which doesn't inherit an
+//! item-level `#[allow]` from the `#[bind]`d fn -- hence the file-level
+//! allow below instead of one at each function (see `reactor.rs`'s note).
+#![allow(clippy::too_many_arguments)]
+
+use std::cell::{Cell, RefCell};
 
 use byondapi::prelude::*;
 use eyre::{Result, bail};
+use vg_core::entity::{CellAllocator, ComponentRef};
 use vg_power::PowerWorld;
 use vg_power::apc::ApcConfig;
 use vg_power::geom::{CableShape, pos};
 use vg_power::smes::SmesConfig;
+
+use crate::entity::{self, EntityDomain};
+
+/// Power's domain index in the entity table (gas is 0).
+/// @dm-define VG_DOMAIN_POWER
+pub const DOMAIN: usize = 1;
+/// The one component kind cable/machine identity uses: a cable and a
+/// machine node share [`PowerWorld`]'s own key space already, so they
+/// share this kind too.
+/// @dm-define VG_POWER_NODE
+pub const KIND_NODE: u16 = 1;
 
 // --- DM constants: edit ops. Each op is `op, n, n values`. -----------------
 
@@ -105,10 +138,57 @@ const _: () = {
 
 thread_local! {
     static WORLD: RefCell<PowerWorld> = RefCell::new(PowerWorld::new());
+    static CELLS: RefCell<CellAllocator> = const { RefCell::new(CellAllocator::new()) };
+    static REGISTERED: Cell<bool> = const { Cell::new(false) };
 }
 
 fn with<T>(f: impl FnOnce(&mut PowerWorld) -> Result<T>) -> Result<T> {
     WORLD.with(|w| f(&mut w.borrow_mut()))
+}
+
+/// Power's [`EntityDomain`] handler: generic unbind (`entity_unbind`) and
+/// `verdigris_init`/`verdigris_cleanup` drive this without knowing power
+/// exists, exactly as `vg-gas`'s pump does (see the module docs).
+struct Shared;
+
+impl EntityDomain for Shared {
+    fn detach(&mut self, comp: ComponentRef) {
+        if comp.kind != KIND_NODE {
+            return;
+        }
+        let _ = with(|w| {
+            w.remove(comp.cell);
+            Ok(())
+        });
+        CELLS.with_borrow_mut(|c| c.free_cell(comp.cell));
+    }
+
+    fn describe(&self, comp: ComponentRef) -> Vec<(String, String)> {
+        if comp.kind != KIND_NODE {
+            return Vec::new();
+        }
+        vec![("power_key".into(), comp.cell.to_string())]
+    }
+
+    fn tick(&mut self) {
+        // Power advances on `power_step()`, called once per machinery
+        // tick from `process_power()` -- not on `SSvg`'s generic entity
+        // sweep, unlike a domain with its own frame `Sim`.
+    }
+
+    fn reset(&mut self) {
+        WORLD.with(|w| *w.borrow_mut() = PowerWorld::new());
+        CELLS.with(|c| *c.borrow_mut() = CellAllocator::new());
+    }
+}
+
+fn ensure_registered() {
+    REGISTERED.with(|done| {
+        if !done.get() {
+            entity::register_entity_domain(DOMAIN, Box::new(Shared));
+            done.set(true);
+        }
+    });
 }
 
 fn list(values: &[f32]) -> Result<ByondValue> {
@@ -315,12 +395,96 @@ fn power_members(key: ByondValue) -> Result<ByondValue> {
     list(&keys)
 }
 
-/// Forgets everything (world start and tests).
+/// Forgets everything (world start and tests). Note this does not unbind
+/// any entity that already named a power key: callers doing a full reset
+/// unbind through the generic entity path first (`verdigris_cleanup`) or
+/// accept that any surviving handle is now stale-by-content, not
+/// stale-by-generation (the entity table itself is untouched here).
 #[auxmacros::bind("/proc/power_reset")]
 fn power_reset() -> Result<ByondValue> {
     with(|w| {
         *w = PowerWorld::new();
         Ok(())
     })?;
+    CELLS.with(|c| *c.borrow_mut() = CellAllocator::new());
     Ok(ByondValue::null())
+}
+
+// --- Identity: entities own cable/machine keys (rust_bindings.md R10) -----
+
+/// Binds a cable piece's identity: creates the entity (if `entity` is 0,
+/// DM's `vg_entity == 0` sentinel) or reuses it, attaches a fresh
+/// [`PowerWorld`] key seeded from the given shape, and returns the entity
+/// handle. The DM wrapper is responsible for calling `vg_power_edit()`
+/// separately for anything the key itself doesn't carry (there is none
+/// for a cable: shape is bind-time-only, matching
+/// [`PowerWorld::add_cable`]'s "replaces any object already under key").
+///
+/// # Errors
+/// A bad `entity`/geometry value, or [`PowerWorld::add_cable`]'s errors
+/// (an out-of-range key or a full arena).
+#[auxmacros::bind("/proc/power_cable_bind")]
+fn power_cable_bind(
+    entity: ByondValue,
+    x: ByondValue,
+    y: ByondValue,
+    z: ByondValue,
+    d1: ByondValue,
+    d2: ByondValue,
+    up: ByondValue,
+    down: ByondValue,
+    link: ByondValue,
+) -> Result<ByondValue> {
+    ensure_registered();
+    let shape = CableShape {
+        d1: u8::try_from(small(d1.get_number()?))?,
+        d2: u8::try_from(small(d2.get_number()?))?,
+        up: small(up.get_number()?),
+        down: small(down.get_number()?),
+        link: small(link.get_number()?),
+    };
+    let p = pos(small(x.get_number()?), small(y.get_number()?), small(z.get_number()?));
+    let h = entity::bind_or_reuse(entity.get_number()?)?;
+    let cell = CELLS.with_borrow_mut(CellAllocator::alloc);
+    with(|w| w.add_cable(cell, p, shape).map_err(|e| eyre::eyre!(e)))?;
+    entity::attach(h, DOMAIN, ComponentRef::new(KIND_NODE, cell)).map_err(|e| eyre::eyre!("{e}"))?;
+    Ok(ByondValue::from(entity::entity_value(h)))
+}
+
+/// As [`power_cable_bind`], for a power machine node (a generator,
+/// terminal, SMES output, ...): no shape, just where it is.
+///
+/// # Errors
+/// As [`power_cable_bind`].
+#[auxmacros::bind("/proc/power_machine_bind")]
+fn power_machine_bind(entity: ByondValue, x: ByondValue, y: ByondValue, z: ByondValue) -> Result<ByondValue> {
+    ensure_registered();
+    let p = pos(small(x.get_number()?), small(y.get_number()?), small(z.get_number()?));
+    let h = entity::bind_or_reuse(entity.get_number()?)?;
+    let cell = CELLS.with_borrow_mut(CellAllocator::alloc);
+    with(|w| w.add_machine(cell, p).map_err(|e| eyre::eyre!(e)))?;
+    entity::attach(h, DOMAIN, ComponentRef::new(KIND_NODE, cell)).map_err(|e| eyre::eyre!("{e}"))?;
+    Ok(ByondValue::from(entity::entity_value(h)))
+}
+
+/// This entity's power key (`PowerWorld` cell), or `null` if it has no
+/// power component. The bridge between a `vg_entity` and every existing
+/// `POWER_OP_*`/`vg_power_*` call, which still takes a plain key: the
+/// entity move changes *how a key is allocated and freed*, not
+/// [`PowerWorld`]'s own key-keyed API (`rust_core.md` §15's identity row
+/// names the R10 entity/component layer, not a second rewrite of
+/// [`PowerWorld`] itself).
+///
+/// # Errors
+/// A bad `entity` value.
+#[auxmacros::bind("/proc/power_key_of")]
+fn power_key_of(entity: ByondValue) -> Result<ByondValue> {
+    let v = entity.get_number()?;
+    if v == 0.0 {
+        return Ok(ByondValue::null());
+    }
+    match entity::resolve(v, DOMAIN, KIND_NODE) {
+        Ok(comp) => Ok(ByondValue::from(comp.cell as f32)),
+        Err(_) => Ok(ByondValue::null()),
+    }
 }
