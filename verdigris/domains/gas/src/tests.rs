@@ -395,3 +395,63 @@ fn a_settled_station_sleeps() {
 	assert!(w.field.as_ref().unwrap().frames > frames);
 	assert!(idle(&mut w), "{:?}", w.field.as_ref().unwrap().stats());
 }
+
+/// M2 (simulation.md §5): a vent pump/scrubber device edge with one side on
+/// a turf (the R6 field) and the other on a pipe region (the R7 network) —
+/// `GasWorld::step_turf_devices`. Siphons a live cell into an empty pipe
+/// region and checks the whole world (field + pipes) still conserves.
+#[test]
+fn step_turf_devices_bridges_pipe_and_field_and_conserves() {
+	use crate::device::{DeviceParams, VentMode};
+	use vg_core::network::Endpoint;
+
+	let mut w = world(Mode::Overlay);
+	build(&mut w, 7, false);
+	w.run_frames(1);
+
+	let mut turf_cell = None;
+	'search: for y in 1..Y - 1 {
+		for x in 1..X - 1 {
+			let c = cell(x, y);
+			if w.load(MixRef::Turf(c)).is_some_and(|m| m.total_moles() > 0.0) {
+				turf_cell = Some(c);
+				break 'search;
+			}
+		}
+	}
+	let turf_cell = turf_cell.expect("a live cell with gas");
+
+	w.pipes.upsert(1, 0, 1000.0, PipeGas::default());
+	w.pipes.commit();
+	let node = w.pipes.port(1).expect("port exists");
+	w.pipes
+		.net
+		.add_device(
+			Endpoint::Cell(turf_cell),
+			Endpoint::Node(node),
+			0,
+			1,
+			DeviceParams::VentPump {
+				mode: VentMode::Siphon,
+				min_kpa: 0.0,
+				max_kpa: 1_000_000.0,
+				max_rate_l_s: 1000.0,
+			},
+		)
+		.expect("device added");
+
+	w.run_frames(1);
+	let before = w.totals();
+	for _ in 0..20 {
+		w.step_turf_devices(1.0);
+	}
+	w.run_frames(3);
+	let after = w.totals();
+	assert!(close(&before, &after, 1e-3).is_ok(), "{:?}", close(&before, &after, 1e-3));
+
+	let moved = w.pipes.totals();
+	assert!(
+		moved[GAS_OXYGEN] > 0.0 || moved[GAS_NITROGEN] > 0.0,
+		"the vent pump moved nothing from the turf into the pipe network"
+	);
+}
