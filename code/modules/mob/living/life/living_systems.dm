@@ -15,6 +15,11 @@
 //	disabilities, addictions, statuses                             (status only)
 //	canmove, HUD, vision, TF holder, VR derez
 //	subtype tails (carbon germs, human, alien, simple mob, bot), then type_post variants
+//
+// Sleep rules (doc/mob_life_architecture.md §4.9): each system's idle() says when it has
+// nothing to do, and `woken_by` names the producers that call life_wake() with its bit. A
+// family root's rule covers only the root: a variant with its own tick code keeps its
+// mob awake until it declares a rule of its own.
 
 // --- Per-type pre and post chains ---------------------------------------------------------------
 
@@ -30,6 +35,10 @@
 /datum/life_system/type_pre/tick(mob/living/self, datum/life_context/ctx)
 	return
 
+/// The root is a no-op; a variant's pre code runs every cycle.
+/datum/life_system/type_pre/idle(mob/living/self)
+	return type == /datum/life_system/type_pre
+
 /// Code a mob subtype ran after ..() in its old Life() override. A variant starts with
 /// `. = ..()`, which runs its parent's post code and yields what the parent's old Life()
 /// returned, then runs its own code. The roots yield the core's legacy return value.
@@ -41,6 +50,15 @@
 
 /datum/life_system/type_post/tick(mob/living/self, datum/life_context/ctx)
 	return ctx?.living_result
+
+/// The root and the carbon and simple mob variants only yield a return value.
+/datum/life_system/type_post/idle(mob/living/self)
+	var/static/list/value_only = list(
+		/datum/life_system/type_post,
+		/datum/life_system/type_post/carbon,
+		/datum/life_system/type_post/simple_mob,
+	)
+	return type in value_only
 
 /// Carbon Life() returned nothing.
 /datum/life_system/type_post/carbon
@@ -87,11 +105,16 @@
 	name = "upkeep"
 	phase = LIFE_PHASE_INPUT
 	order = 20
+	woken_by = "Moved; ghosts following; spells learned"
 
 /datum/life_system/upkeep/tick(mob/living/self, datum/life_context/ctx)
 	// to catch teleports etc which directly set loc
 	self.update_following()
 	self.update_spell_masters()
+
+/// Followers are dragged along on Moved; spell buttons only matter for casters.
+/datum/life_system/upkeep/idle(mob/living/self)
+	return !length(self.following_mobs) && !LAZYLEN(self.spell_masters)
 
 // --- Gates ------------------------------------------------------------------------------------------
 
@@ -100,6 +123,10 @@
 /datum/life_system/gate
 	category = TRUE
 	bit = LIFE_SYS_GATE
+
+/// Gates run whenever the mob runs and never keep it awake on their own.
+/datum/life_system/gate/idle(mob/living/self)
+	return TRUE
 
 /// `if(transforming) return` in /mob/living/Life().
 /datum/life_system/gate/transforming
@@ -110,6 +137,7 @@
 /datum/life_system/gate/transforming/tick(mob/living/self, datum/life_context/ctx)
 	if(self.transforming)
 		ctx.blocked |= LIFE_SEG_LIVING
+		ctx.no_sleep = TRUE
 
 /// `if(!loc) return` in /mob/living/Life(); captures the environment for the cycle.
 /datum/life_system/gate/placed
@@ -121,6 +149,7 @@
 /datum/life_system/gate/placed/tick(mob/living/self, datum/life_context/ctx)
 	if(!self.loc)
 		ctx.blocked |= LIFE_SEG_LIVING
+		ctx.no_sleep = TRUE
 		return
 	if(isbelly(self.loc))
 		ctx.environment = self.loc.return_air_for_internal_lifeform(self)
@@ -148,6 +177,7 @@
 	phase = LIFE_PHASE_INPUT
 	order = 70
 	segment = LIFE_SEG_LIVING
+	woken_by = "refresh_glow(); instability"
 
 /datum/life_system/light/tick(mob/living/self, datum/life_context/ctx)
 	if(self.glow_override)
@@ -191,6 +221,18 @@
 /mob/living/proc/refresh_glow()
 	return run_life_system(/datum/life_system/light)
 
+/// Idle once the applied light matches what tick() would ask for.
+/datum/life_system/light/idle(mob/living/self)
+	if(type != /datum/life_system/light)
+		return FALSE
+	if(self.glow_override)
+		return TRUE
+	if(self.instability >= TECHNOMANCER_INSTABILITY_MIN_GLOW)
+		return FALSE
+	if(self.glow_toggle && !self.is_ventcrawling)
+		return self.last_glow_range == self.glow_range && self.last_glow_intensity == self.glow_intensity && self.last_glow_color == self.glow_color
+	return !self.last_glow_range
+
 // --- Alive block -----------------------------------------------------------------------------------
 
 /// Breathing. The carbon variant takes a breath on its own cadence (breathe()).
@@ -203,6 +245,9 @@
 
 /datum/life_system/breathing/tick(mob/living/self, datum/life_context/ctx)
 	return
+
+/datum/life_system/breathing/idle(mob/living/self)
+	return type == /datum/life_system/breathing
 
 /// Genetic mutation effects.
 /datum/life_system/mutations
@@ -218,6 +263,10 @@
 	if(SEND_SIGNAL(self, COMSIG_HANDLE_MUTATIONS) & COMPONENT_BLOCK_LIVING_MUTATIONS)
 		return COMPONENT_BLOCK_LIVING_MUTATIONS
 
+/// The root only feeds its signal's listeners.
+/datum/life_system/mutations/idle(mob/living/self)
+	return type == /datum/life_system/mutations && !self._listen_lookup?[COMSIG_HANDLE_MUTATIONS]
+
 /// Radiation dose decay and effects.
 /datum/life_system/radiation
 	name = "radiation"
@@ -232,6 +281,10 @@
 	if(SEND_SIGNAL(self, COMSIG_HANDLE_RADIATION) & COMPONENT_BLOCK_LIVING_RADIATION)
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
+/// The root only feeds its signal's listeners (the radiation effects component).
+/datum/life_system/radiation/idle(mob/living/self)
+	return type == /datum/life_system/radiation && !self._listen_lookup?[COMSIG_HANDLE_RADIATION]
+
 /// Blood volume and bleeding.
 /datum/life_system/blood
 	name = "blood"
@@ -242,6 +295,9 @@
 
 /datum/life_system/blood/tick(mob/living/self, datum/life_context/ctx)
 	return
+
+/datum/life_system/blood/idle(mob/living/self)
+	return type == /datum/life_system/blood
 
 /// Random episodes (vomiting, ...).
 /datum/life_system/random_events
@@ -254,6 +310,9 @@
 /datum/life_system/random_events/tick(mob/living/self, datum/life_context/ctx)
 	return
 
+/datum/life_system/random_events/idle(mob/living/self)
+	return type == /datum/life_system/random_events
+
 /// Automatic AFK marking for idle clients.
 /datum/life_system/afk
 	name = "afk"
@@ -261,6 +320,7 @@
 	phase = LIFE_PHASE_BODY
 	order = 30
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	woken_by = "Login, Logout; its own timer"
 
 /datum/life_system/afk/tick(mob/living/self, datum/life_context/ctx)
 	var/client/C = self.client
@@ -276,6 +336,13 @@
 		to_chat(self, span_notice("You have been automatically un-marked as AFK."))
 		self.away_from_keyboard = FALSE
 
+/// Lazy: a client's idle time is checked on a timer, not every cycle.
+/datum/life_system/afk/idle(mob/living/self)
+	return TRUE
+
+/datum/life_system/afk/rewake_delay(mob/living/self)
+	return self.client ? 30 SECONDS : 0
+
 // --- Core -------------------------------------------------------------------------------------
 
 /// Chemicals in the body. Runs dead or alive, so blood can be added after death.
@@ -288,6 +355,9 @@
 
 /datum/life_system/chemicals/tick(mob/living/self, datum/life_context/ctx)
 	return
+
+/datum/life_system/chemicals/idle(mob/living/self)
+	return type == /datum/life_system/chemicals
 
 /// Runs the chemicals system now (extra circulation from CPR, horror modifiers, ...).
 /mob/living/proc/process_chemicals()
@@ -309,6 +379,9 @@
 /datum/life_system/environment/proc/exchange(mob/living/self, datum/gas_mixture/environment)
 	return
 
+/datum/life_system/environment/idle(mob/living/self)
+	return type == /datum/life_system/environment
+
 /// Re-plays area ambience to a client that has stayed in one area.
 /datum/life_system/ambience
 	name = "ambience"
@@ -316,6 +389,7 @@
 	phase = LIFE_PHASE_BODY
 	order = 70
 	segment = LIFE_SEG_LIVING
+	woken_by = "Login; its own timer"
 
 /datum/life_system/ambience/tick(mob/living/self, datum/life_context/ctx)
 	if(!self.client)
@@ -331,6 +405,18 @@
 			self.lastareachange = world.time // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
 			A.play_ambience(self, initial = FALSE)
 
+/// Lazy: sleeps until the next replay is due.
+/datum/life_system/ambience/idle(mob/living/self)
+	return TRUE
+
+/datum/life_system/ambience/rewake_delay(mob/living/self)
+	if(!self.client)
+		return 0
+	var/pref = self.read_preference(/datum/preference/numeric/ambience_freq)
+	if(!pref)
+		return 0
+	return max(1 SECONDS, self.lastareachange + pref MINUTES - world.time)
+
 /// Gravity, pulling and grabs.
 /datum/life_system/movement
 	name = "movement"
@@ -338,6 +424,7 @@
 	phase = LIFE_PHASE_BODY
 	order = 80
 	segment = LIFE_SEG_LIVING
+	woken_by = "Moved; start_pulling; equipping a grab; status setters"
 
 /datum/life_system/movement/tick(mob/living/self, datum/life_context/ctx)
 	self.update_gravity(self.mob_get_gravity())
@@ -347,6 +434,13 @@
 	for(var/obj/item/grab/G in self)
 		G.process()
 
+/// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.
+/datum/life_system/movement/idle(mob/living/self)
+	return !self.pulling && !(locate(/obj/item/grab) in self)
+
+/datum/life_system/movement/rewake_delay(mob/living/self)
+	return self.client ? 30 SECONDS : 0
+
 /// Status & health update: are we dead or alive, conscious or not. When it returns false the
 /// disabilities, addictions and statuses systems skip this cycle.
 /datum/life_system/status
@@ -355,6 +449,7 @@
 	phase = LIFE_PHASE_BODY
 	order = 90
 	segment = LIFE_SEG_LIVING
+	woken_by = "injure, mend, afflictions, factors and reagents (body invalidate); set_stat"
 
 /datum/life_system/status/tick(mob/living/self, datum/life_context/ctx)
 	if(!update_status(self))
@@ -367,6 +462,23 @@
 		self.set_stat(CONSCIOUS)
 		return TRUE
 
+/// The root sleeps while the mob is conscious (or dead) and its body has nothing to tick.
+/datum/life_system/status/idle(mob/living/self)
+	if(type != /datum/life_system/status)
+		return FALSE
+	if(self.stat == UNCONSCIOUS)
+		return FALSE
+	return !self.body || self.body.life_settled()
+
+/// TRUE when life_tick() has nothing to do: no afflictions, no factor effects, nothing
+/// stale. Plans that evaluate every tick (humanoids) never settle.
+/datum/body/proc/life_settled()
+	return !always_evaluate && !LAZYLEN(afflictions) && !factors && !(dirty & (BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS))
+
+/// The simple plan's life_tick() ignores factors: it works only on afflictions and vitals.
+/datum/body/simple/life_settled()
+	return !LAZYLEN(afflictions) && !(dirty & BODY_DIRTY_VITALS)
+
 // --- Status block -----------------------------------------------------------------------------
 
 /// Eye and ear damage recovery.
@@ -376,6 +488,7 @@
 	phase = LIFE_PHASE_MIND
 	order = 10
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
+	woken_by = "Blind/SetBlinded/AdjustBlinded; set_stat; body invalidate"
 
 /datum/life_system/disabilities/tick(mob/living/self, datum/life_context/ctx)
 	SEND_SIGNAL(self, COMSIG_HANDLE_DISABILITIES)
@@ -400,6 +513,17 @@
 		if(self.ear_damage < 100)
 			self.adjustEarDamage(-0.05,-1)
 
+/// Busy while eyes or ears are recovering, a disability component listens, or the blind
+/// alert is still up.
+/datum/life_system/disabilities/idle(mob/living/self)
+	if(type != /datum/life_system/disabilities)
+		return FALSE
+	if(self._listen_lookup?[COMSIG_HANDLE_DISABILITIES])
+		return FALSE
+	if(self.stat || (self.sdisabilities & (BLIND | DEAF)))
+		return FALSE
+	return !self.eye_blind && !self.eye_blurry && !self.ear_deaf && self.ear_damage <= 0 && !self.alerts?["blind"]
+
 /// Stun, weaken, paralysis, confusion and speech impairments wear off. Its helpers are also
 /// called on their own by mobs that run only some of them (simple mobs, the AI, pAIs).
 /datum/life_system/statuses
@@ -409,6 +533,7 @@
 	order = 30
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI
+	woken_by = "Stun/Weaken/Paralyse/Confuse setters (LIFE_WAKE_STATUS)"
 
 /datum/life_system/statuses/tick(mob/living/self, datum/life_context/ctx)
 	stunned(self)
@@ -419,6 +544,16 @@
 	drugged(self)
 	slurring(self)
 	confused(self)
+
+/// Continuous while any counter runs or an alert is still up; asleep otherwise.
+/datum/life_system/statuses/idle(mob/living/self)
+	if(type != /datum/life_system/statuses)
+		return FALSE
+	if(self.stunned || self.weakened || self.paralysis || self.confused)
+		return FALSE
+	if(self.stuttering || self.silent || self.druggy || self.slurring)
+		return FALSE
+	return !self.alert_state_stunned && !self.alert_state_weakened && !self.alert_state_paralysed && !self.alert_state_drugged && !self.alert_state_confused
 
 /datum/life_system/statuses/proc/stunned(mob/living/self)
 	if(self.stunned)
@@ -522,9 +657,14 @@
 	order = 10
 	segment = LIFE_SEG_LIVING
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
+	woken_by = "status setters (LIFE_WAKE_STATUS); set_stat; Moved"
 
 /datum/life_system/canmove/tick(mob/living/self, datum/life_context/ctx)
 	self.update_canmove()
+
+/// Resting and buckling update canmove themselves; the tick only follows the counters.
+/datum/life_system/canmove/idle(mob/living/self)
+	return type == /datum/life_system/canmove && !self.stunned && !self.weakened && !self.paralysis && !self.sleeping
 
 /// The player HUD. Returns FALSE when there is no HUD to update. Also run by refresh_hud().
 /datum/life_system/hud
@@ -534,6 +674,7 @@
 	order = 20
 	segment = LIFE_SEG_LIVING
 	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
+	woken_by = "Login; body invalidate; equipment; Moved; its own timer (darksight)"
 
 /datum/life_system/hud/tick(mob/living/self, datum/life_context/ctx)
 	SHOULD_CALL_PARENT(TRUE)
@@ -543,6 +684,13 @@
 	darksight(self)
 	health_icons(self)
 	return TRUE
+
+/// The root's health icon is event-driven; darksight re-adapts on a timer for players.
+/datum/life_system/hud/idle(mob/living/self)
+	return type == /datum/life_system/hud && !self._listen_lookup?[COMSIG_MOB_HANDLE_HUD]
+
+/datum/life_system/hud/rewake_delay(mob/living/self)
+	return self.client ? 5 SECONDS : 0
 
 /// Health doll / health icon. Returns FALSE when a component draws it instead.
 /datum/life_system/hud/proc/health_icons(mob/living/self)
@@ -589,9 +737,17 @@
 	order = 30
 	segment = LIFE_SEG_LIVING
 	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
+	woken_by = "equipment; set_stat; Moved; Login; refresh_vision()"
 
 /// Variants set their sight, then call ..() last to send the vision signal.
 /datum/life_system/vision/tick(mob/living/self, datum/life_context/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
 	SEND_SIGNAL(self,COMSIG_MOB_HANDLE_VISION)
+
+/// The root only notifies listeners (remote view); sight inputs wake it.
+/datum/life_system/vision/idle(mob/living/self)
+	return type == /datum/life_system/vision && !self._listen_lookup?[COMSIG_MOB_HANDLE_VISION]
+
+/datum/life_system/vision/rewake_delay(mob/living/self)
+	return self.client ? 5 SECONDS : 0

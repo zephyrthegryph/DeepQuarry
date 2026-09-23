@@ -16,6 +16,8 @@
 /mob/living/carbon/human
 	var/heartbeat = 0
 	var/chemical_darksight = 0
+	/// world.time of the next periodic full HUD refresh (hud refresh system).
+	var/hud_full_refresh_at = 0
 
 // Human Life (doc/mob_life_architecture.md §4.5). The living core runs first; the human-only
 // steps that followed ..() in the old Life() are TAIL systems below, in their old order:
@@ -51,13 +53,21 @@
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/carbon/human
+	woken_by = "its own timer"
 
 /datum/life_system/hud_refresh/tick(mob/living/carbon/human/self, datum/life_context/ctx)
-	// This used to dirty every HUD on 29 of every 30 Life ticks due to an
-	// inverted modulo condition. The periodic safety refresh is intentionally
-	// rare; state-changing code continues to set its exact HUD dirty bits.
-	if(!(self.life_tick % 30))
+	// The periodic safety refresh is intentionally rare (once a minute); state-changing
+	// code continues to set its exact HUD dirty bits.
+	if(world.time >= self.hud_full_refresh_at)
+		self.hud_full_refresh_at = world.time + 1 MINUTES
 		self.hud_updateflag = (1 << TOTAL_HUDS) - 1
+
+/// Lazy: sleeps until the next refresh is due.
+/datum/life_system/hud_refresh/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/life_system/hud_refresh/rewake_delay(mob/living/carbon/human/self)
+	return max(1 SECONDS, self.hud_full_refresh_at - world.time)
 
 /// The voice others hear.
 /datum/life_system/voice
@@ -66,14 +76,19 @@
 	phase = LIFE_PHASE_TAIL
 	order = 110
 	mob_type = /mob/living/carbon/human
+	woken_by = "equipment (LIFE_WAKE_EQUIPMENT); body invalidate; set_stat; Moved; its own timer"
 
 /datum/life_system/voice/tick(mob/living/carbon/human/self, datum/life_context/ctx)
-	// NOTE: voice/name are recomputed every tick. GetVoice()/get_visible_name() now
-	// skip their per-tick list alloc when no signal handler is registered (the common case).
-	// A fuller event-driven conversion (recompute only on identity/mask/wear/disguise change)
-	// is deferred: the inputs (rig/voice-changer active state, changeling mimic, belly absorb)
-	// change from too many scattered sites to hook safely without behavior risk.
 	self.voice = self.GetVoice()
+
+/// Event-driven: equipment (masks, voice changers, rigs), the body, stat and moving (belly
+/// absorb) wake it. Voice changers, changeling mimicry and disguises toggle from scattered
+/// sites, so a slow timer backs the events up.
+/datum/life_system/voice/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/life_system/voice/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
 
 /// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /datum/life_system/stasis_sleep
@@ -150,13 +165,18 @@
 	phase = LIFE_PHASE_TAIL
 	order = 300
 	mob_type = /mob/living/carbon/human
+	woken_by = "equipment (LIFE_WAKE_EQUIPMENT); body invalidate (disfigurement); set_stat; its own timer"
 
 /datum/life_system/visible_name/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	//Update our name based on whether our face is obscured/disfigured
-	// NOTE: recomputed every tick. get_visible_name() now skips its per-tick list alloc
-	// when no signal handler is registered. A fuller event-driven conversion (recompute
-	// only on identity/mask/wear/disguise change) is deferred as too risky to verify here.
 	self.name = self.get_visible_name()
+
+/// Event-driven like the voice system, with the same slow timer behind it.
+/datum/life_system/visible_name/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/life_system/visible_name/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
 
 /datum/life_system/breathing/carbon/human
 	mob_type = /mob/living/carbon/human

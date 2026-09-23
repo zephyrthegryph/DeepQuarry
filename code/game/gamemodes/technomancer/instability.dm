@@ -18,6 +18,8 @@
 // Description: Does nothing, because inheritence.
 /mob/living/proc/adjust_instability(amount)
 	instability = between(0, round(instability + amount, TECHNOMANCER_INSTABILITY_PRECISION), 200)
+	if(instability)
+		life_wake(LIFE_SYS_UPKEEP, "instability")
 
 // Proc: adjust_instability()
 // Parameters: 1 (amount - how much instability to give)
@@ -50,6 +52,11 @@
 	phase = LIFE_PHASE_INPUT
 	order = 30
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
+	woken_by = "adjust_instability()"
+
+/// Continuous while there is instability to decay.
+/datum/life_system/instability/idle(mob/living/self)
+	return !self.instability
 
 /datum/life_system/instability/tick(mob/living/self, datum/life_context/ctx)
 	self.instability = between(0, round(self.instability, TECHNOMANCER_INSTABILITY_PRECISION), 200)

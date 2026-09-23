@@ -1,6 +1,6 @@
 // Unit tests for the Life scheduler (doc/mob_life_architecture.md §4 and §9): life system
-// families and variants, composition, segments and halts, trait systems, wake() and the
-// per-system profiler.
+// families and variants, composition, segments and halts, trait systems, life_wake(), the
+// per-system profiler, and hibernation with its producers and audit.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -210,7 +210,8 @@
 	qdel(P)
 	TEST_ASSERT(!(/datum/life_system/trait/photosynth in life_test_system_types(H)), "removing the component should remove its trait system")
 
-/// wake() sets awake bits; a sleeping system is skipped; hibernation stays off.
+/// life_wake() sets awake bits; a sleeping system is skipped; a mob with nothing awake
+/// hibernates and life_wake() brings it back whole.
 /datum/unit_test/dq_life_wake_and_hibernation
 
 /datum/unit_test/dq_life_wake_and_hibernation/Run()
@@ -221,17 +222,19 @@
 	var/cycle_before = H.breath_cycle
 	H.Life()
 	TEST_ASSERT_EQUAL(H.breath_cycle, cycle_before, "a sleeping breathing system must not run")
-	H.wake(LIFE_SYS_BREATHING)
-	TEST_ASSERT(H.life_awake & LIFE_SYS_BREATHING, "wake() should set the breathing bit")
+	H.life_wake(LIFE_SYS_BREATHING, "test")
+	TEST_ASSERT(H.life_awake & LIFE_SYS_BREATHING, "life_wake() should set the breathing bit")
 	H.Life()
 	TEST_ASSERT_NOTEQUAL(H.breath_cycle, cycle_before, "a woken breathing system runs again")
 
 	H.life_awake = NONE
 	H.Life()
-	TEST_ASSERT(!H.life_hibernating, "hibernation is disabled (MOB_HIBERNATION_ENABLED)")
-	TEST_ASSERT(!(H in SSmobs.hibernating_mobs), "a mob must not be parked while hibernation is disabled")
-	H.wake()
-	TEST_ASSERT_EQUAL(H.life_awake, LIFE_SYS_ALL, "wake() with no bits wakes everything")
+	TEST_ASSERT(H.life_hibernating, "a mob with no awake systems hibernates (MOB_HIBERNATION_ENABLED)")
+	TEST_ASSERT(H in SSmobs.hibernating_mobs, "a hibernating mob is parked in SSmobs")
+	H.life_wake(LIFE_SYS_BREATHING, "test")
+	TEST_ASSERT(!H.life_hibernating, "life_wake() unparks the mob")
+	TEST_ASSERT(!(H in SSmobs.hibernating_mobs), "a woken mob leaves the parked list")
+	TEST_ASSERT_EQUAL(H.life_awake, LIFE_SYS_ALL, "a hibernating mob wakes whole")
 
 /// The per-system profiler accumulates sampled cost by system type.
 /datum/unit_test/dq_life_system_profiler
@@ -248,5 +251,127 @@
 	var/upkeep_calls = SSmobs.profile_system_calls[key]
 	H.Life(LIFE_NOMINAL_SECONDS, TRUE)
 	TEST_ASSERT_EQUAL(SSmobs.profile_system_calls[key], upkeep_calls + SSmobs.profile_sample_stride, "a profiled Life should record each system it ran")
+
+// --- Hibernation (doc/mob_life_architecture.md §4.9) --------------------------------------
+
+/// A mouse that can hibernate: placed on a floor, its AI asleep, and its environment limits
+/// opened so the test floor's air can't hurt it.
+/proc/life_test_idle_mouse(mob/living/simple_mob/M)
+	if(!life_test_place(M))
+		return FALSE
+	M.ai_brain?.go_sleep()
+	M.min_oxy = 0
+	M.max_oxy = 0
+	M.min_tox = 0
+	M.max_tox = 0
+	M.min_n2 = 0
+	M.max_n2 = 0
+	M.min_co2 = 0
+	M.max_co2 = 0
+	M.min_ch4 = 0
+	M.max_ch4 = 0
+	M.minbodytemp = 0
+	M.maxbodytemp = INFINITY
+	M.temperature_range = INFINITY
+	return TRUE
+
+/// Runs Life() until the mob hibernates, at most `cycles` times. Returns TRUE if it did.
+/proc/life_test_settle(mob/living/L, cycles = 6)
+	for(var/i in 1 to cycles)
+		if(L.life_hibernating)
+			return TRUE
+		L.Life()
+	return L.life_hibernating
+
+/// Names of the systems that would keep this mob awake, for failure messages.
+/proc/life_test_busy(mob/living/L)
+	var/list/names = list()
+	var/datum/life_composition/comp = L.life_composition || L.recompose_life()
+	for(var/datum/life_system/S as anything in comp.ordered)
+		if(S.bit != LIFE_SYS_GATE && L.life_system_wants_run(S))
+			names += "[S.type]"
+	return jointext(names, ", ")
+
+/// A healthy idle mob puts every system to sleep and leaves the SSmobs run.
+/datum/unit_test/dq_life_idle_mob_hibernates
+
+/datum/unit_test/dq_life_idle_mob_hibernates/Run()
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
+	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
+	TEST_ASSERT(life_test_settle(M), "an idle healthy mouse should hibernate; still busy: [life_test_busy(M)]; awake bits [M.life_awake]")
+	TEST_ASSERT(M in SSmobs.hibernating_mobs, "a hibernating mob is parked in SSmobs")
+	TEST_ASSERT_NULL(M.life_missed_wake(), "a freshly hibernated mob has no missed wake")
+
+/// injure() wakes a hibernating mob.
+/datum/unit_test/dq_life_injure_wakes
+
+/datum/unit_test/dq_life_injure_wakes/Run()
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
+	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
+	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
+	TEST_ASSERT(M.injure(INJURY_BLUNT, 1) > 0, "the injury should land")
+	TEST_ASSERT(!M.life_hibernating, "injure() should wake a hibernating mob")
+	TEST_ASSERT(M.life_awake & LIFE_SYS_BODY, "injure() should wake the body systems")
+	M.Life()
+	TEST_ASSERT(!M.life_hibernating, "an injured mob stays awake while its body has afflictions")
+
+/// A reagent entering a hibernating mob wakes it.
+/datum/unit_test/dq_life_reagent_wakes
+
+/datum/unit_test/dq_life_reagent_wakes/Run()
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
+	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
+	if(!M.reagents)
+		M.create_reagents(30)
+	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
+	M.reagents.add_reagent(REAGENT_ID_WATER, 5)
+	TEST_ASSERT(!M.life_hibernating, "adding a reagent should wake a hibernating mob")
+	TEST_ASSERT(M.life_awake & LIFE_SYS_METABOLISM, "a reagent should wake metabolism")
+
+/// A stun wakes the mob; once it wears off the mob hibernates again.
+/datum/unit_test/dq_life_stun_wakes_then_rehibernates
+
+/datum/unit_test/dq_life_stun_wakes_then_rehibernates/Run()
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
+	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
+	M.status_flags |= CANSTUN
+	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
+	M.Stun(3)
+	TEST_ASSERT_EQUAL(M.stunned, 3, "the stun should land")
+	TEST_ASSERT(!M.life_hibernating, "Stun() should wake a hibernating mob")
+	M.Life()
+	TEST_ASSERT(!M.life_hibernating, "a stunned mob stays awake while the stun runs")
+	TEST_ASSERT(life_test_settle(M, 12), "the mouse should hibernate again once the stun wears off; still busy: [life_test_busy(M)]; stunned [M.stunned]")
+	TEST_ASSERT_EQUAL(M.stunned, 0, "the stun should have worn off")
+
+/// A client logging in wakes the whole mob.
+/datum/unit_test/dq_life_client_login_wakes
+
+/datum/unit_test/dq_life_client_login_wakes/Run()
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
+	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
+	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
+	// /mob/living/Login() calls this hook; a unit test has no client to log in with.
+	M.on_client_changed("login")
+	TEST_ASSERT(!M.life_hibernating, "a login should wake a hibernating mob")
+	TEST_ASSERT_EQUAL(M.life_awake, LIFE_SYS_ALL, "a login wakes every system")
+
+/// The hibernation audit finds a change made without life_wake(), logs it and wakes the mob.
+/datum/unit_test/dq_life_audit_catches_missed_wake
+
+/datum/unit_test/dq_life_audit_catches_missed_wake/Run()
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
+	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
+	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
+	TEST_ASSERT_NULL(SSmobs.audit_mob(M), "the audit must not flag a mob that is correctly asleep")
+	// A deliberately missed wake: write the counter directly instead of calling Stun().
+	M.stunned = 3
+	TEST_ASSERT(M.life_hibernating, "a direct write must not wake the mob (that is the bug the audit catches)")
+	var/missed_before = SSmobs.hibernation_audit_missed
+	var/datum/life_system/S = SSmobs.audit_mob(M, expected = TRUE)
+	TEST_ASSERT_NOTNULL(S, "the audit should find the system with pending work")
+	TEST_ASSERT_EQUAL(S.bit, LIFE_SYS_STATUS, "the statuses system should be the one flagged, got [S?.type]")
+	TEST_ASSERT_EQUAL(SSmobs.hibernation_audit_missed, missed_before + 1, "the audit should count the missed wake")
+	TEST_ASSERT(!M.life_hibernating, "the audit should wake the mob")
 
 #endif
