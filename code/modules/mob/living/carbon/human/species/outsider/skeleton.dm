@@ -24,11 +24,11 @@
 	blood_volume = null
 	taste_sensitivity = TASTE_DULL
 	hunger_factor = 0
-	factor_baseline = alist(BF_METABOLISM = 0)
+	factor_baseline = alist(BF_METABOLISM = 0, BF_INCOMING_THERMAL = 0, BF_INCOMING_TOXIC = 0, BF_INCOMING_ASPHYXIA = 0)
 
 	virus_immune = 1
 
-	injury_mod_groups = list("physical" = 1, "thermal" = 0, "toxin" = 0, "asphyxia" = 0, "radiation" = 0)
+	radiation_mod = 0
 	flash_mod =     0
 	chemOD_mod =	0
 

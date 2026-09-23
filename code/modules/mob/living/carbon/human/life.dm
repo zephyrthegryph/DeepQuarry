@@ -287,7 +287,7 @@
 			return
 
 		var/damage = 0
-		var/rad_mod = species.get_injury_mod(INJURY_RADIATION)
+		var/rad_mod = species.radiation_mod
 
 		if(!rad_mod) //If we are rad immune, stop here and remove rads if we have any.
 			radiation -= 10 * RADIATION_SPEED_COEFFICIENT * species.rad_removal_mod
@@ -454,8 +454,8 @@
 				if(accumulated_rads > 300) // (6Gy)
 					if(prob(2) && prob(accumulated_rads * RADIATION_SPEED_COEFFICIENT))
 						to_chat(src, span_warning("Your eyes burn."))
-						I.add_autopsy_data("Radiation Burns", 1 * species.get_injury_mod(INJURY_RADIATION) * RADIATION_SPEED_COEFFICIENT)
-						injure(INJURY_RADIATION, 1 * species.get_injury_mod(INJURY_RADIATION) * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //0.1 damage. Not a lot, but enough to tell you to get to medical.
+						I.add_autopsy_data("Radiation Burns", 1 * species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
+						injure(INJURY_RADIATION, 1 * species.radiation_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //0.1 damage. Not a lot, but enough to tell you to get to medical.
 						eye_blurry += 10
 
 			if(accumulated_rads > 200) // (4Gy)

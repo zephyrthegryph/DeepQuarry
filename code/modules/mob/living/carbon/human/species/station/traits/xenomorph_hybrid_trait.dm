@@ -15,8 +15,8 @@
 	cost = 0
 	category = 0
 	custom_only = FALSE
-	var_changes = list("item_slowdown_mod" = 0.5, "total_health" = 175, "injury_mod_physical" = 0.8)
-	factors = alist(BF_SLOWDOWN = 0.1) // Can carry heavy stuff better, more health, more brute resist, but slight slowdown.
+	var_changes = list("item_slowdown_mod" = 0.5, "total_health" = 175)
+	factors = alist(BF_SLOWDOWN = 0.1, BF_INCOMING_PHYSICAL = 0.8)
 
 /datum/trait/neutral/xenomorph_warrior
 	sort = TRAIT_SORT_SPECIES

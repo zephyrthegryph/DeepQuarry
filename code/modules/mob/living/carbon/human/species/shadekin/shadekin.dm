@@ -26,10 +26,9 @@
 	siemens_coefficient = 1
 	darksight = 10
 
-	factor_baseline = alist(BF_SLOWDOWN = -0.5)
+	factor_baseline = alist(BF_SLOWDOWN = -0.5, BF_INCOMING_PHYSICAL = 0.7, BF_INCOMING_THERMAL = 1.2)
 	item_slowdown_mod = 0.5
 
-	injury_mod_groups = list("physical" = 0.7, "thermal" = 1.2)
 	// Naturally sturdy. (brute)
 	// Furry (burn)
 

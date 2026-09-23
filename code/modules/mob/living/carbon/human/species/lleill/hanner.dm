@@ -22,7 +22,6 @@
 
 	//Specific abilities
 
-	injury_mod_groups = list("thermal" = 0.8, "pain" = 0.8)
 	//Slightly resistant to fire (burn)
 	//Whilst not resistant to brute or stunning, they are slightly resistant to pain. (pain)
 
@@ -44,7 +43,7 @@
 	chem_strength_alcohol = 0.8 //Handle alcohol slightly better
 
 	// Major downside of the Hanner, they metabolise drugs much slower, meaning that they are difficult to treat with medicine alone.
-	factor_baseline = alist(BF_METABOLISM = 0.4)
+	factor_baseline = alist(BF_METABOLISM = 0.4, BF_INCOMING_THERMAL = 0.8, BF_INCOMING_PAIN = 0.8)
 	bloodloss_rate = 1.2 //They bleed out faster too
 
 	lleill_energy = 100

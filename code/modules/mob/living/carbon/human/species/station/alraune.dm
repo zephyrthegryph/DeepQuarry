@@ -6,9 +6,8 @@
 	num_alternate_languages = 3
 	// slow, they're plants. Not as slow as full diona.
 	// slow metabolism
-	factor_baseline = alist(BF_METABOLISM = 0.75, BF_SLOWDOWN = 1)
+	factor_baseline = alist(BF_METABOLISM = 0.75, BF_SLOWDOWN = 1, BF_INCOMING_THERMAL = 1.5)
 	total_health = 100 //standard
-	injury_mod_groups = list("physical" = 1, "thermal" = 1.5)
 	//nothing special (brute)
 	//plants don't like fire (burn)
 	item_slowdown_mod = 0.25 //while they start slow, they don't get much slower

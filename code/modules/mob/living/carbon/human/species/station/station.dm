@@ -72,9 +72,8 @@
 	primitive_form = SPECIES_MONKEY_UNATHI
 	darksight = 3
 	ambiguous_genders = TRUE
-	factor_baseline = alist(BF_METABOLISM = 0.85, BF_SLOWDOWN = 0.5)
+	factor_baseline = alist(BF_METABOLISM = 0.85, BF_SLOWDOWN = 0.5, BF_INCOMING_PHYSICAL = 0.85, BF_INCOMING_THERMAL = 0.85)
 	total_health = 125
-	injury_mod_groups = list("physical" = 0.85, "thermal" = 0.85)
 	item_slowdown_mod = 0.25
 	mob_size = MOB_MEDIUM
 	blood_volume = 840
@@ -211,9 +210,8 @@
 	tail_animation = 'icons/mob/species/tajaran/tail_vr.dmi'
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
 	darksight = 8
-	factor_baseline = alist(BF_METABOLISM = 1.1, BF_SLOWDOWN = -0.5)
+	factor_baseline = alist(BF_METABOLISM = 1.1, BF_SLOWDOWN = -0.5, BF_INCOMING_PHYSICAL = 1.15, BF_INCOMING_THERMAL = 1.15)
 	snow_movement = -1		//Ignores half of light snow
-	injury_mod_groups = list("physical" = 1.15, "thermal" = 1.15)
 	flash_mod = 1.1
 	num_alternate_languages = 3
 	secondary_langs = list(LANGUAGE_SIIK, LANGUAGE_AKHANI, LANGUAGE_ALAI)
@@ -434,11 +432,10 @@
 	icobase = 'icons/mob/human_races/r_zaddat.dmi'
 	deform = 'icons/mob/human_races/r_zaddat.dmi'
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch)
-	injury_mod_groups = list("physical" = 1.15, "thermal" = 1.15, "toxin" = 0.5)
 	flash_mod = 2
 	flash_burn = 15 //flashing a zaddat probably counts as police brutality
 	// did u know if your ancestors starved ur body will actually start in starvation mode?
-	factor_baseline = alist(BF_METABOLISM = 0.7)
+	factor_baseline = alist(BF_METABOLISM = 0.7, BF_INCOMING_PHYSICAL = 1.15, BF_INCOMING_THERMAL = 1.15, BF_INCOMING_TOXIC = 0.5)
 	item_slowdown_mod = 0.30
 	taste_sensitivity = TASTE_SENSITIVE
 	num_alternate_languages = 3
@@ -1312,11 +1309,10 @@
 	siemens_coefficient = 0
 	darksight = 10
 
-	factor_baseline = alist(BF_SLOWDOWN = 0.5)
+	factor_baseline = alist(BF_SLOWDOWN = 0.5, BF_INCOMING_PHYSICAL = 1.25, BF_INCOMING_THERMAL = 1.25)
 	item_slowdown_mod = 1.5
 
 	total_health = 75
-	injury_mod_groups = list("physical" = 1.25, "thermal" = 1.25)
 	// Frail (brute)
 	// Furry (burn)
 	blood_volume = 500
@@ -1500,7 +1496,7 @@
 
 	genders = list(MALE, FEMALE, PLURAL, NEUTER)
 
-	injury_mod_groups = list("thermal" = 1.15)
+	factor_baseline = alist(BF_INCOMING_THERMAL = 1.15)
 	hunger_factor = 0.04
 	can_zero_g_move = TRUE
 
@@ -1536,8 +1532,7 @@
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
 	darksight = 8		//Can see completely in the dark. They are spiders, after all. Not that any of this matters because people will be using custom race.
 	// Small speedboost, as they've got a bunch of legs. Or something. I dunno.
-	factor_baseline = alist(BF_SLOWDOWN = -0.15)
-	injury_mod_groups = list("physical" = 0.8, "thermal" = 1.15) // 20% brute reduction; 15% burn increase. They're spiders. Aerosol can+lighter = dead spiders.
+	factor_baseline = alist(BF_SLOWDOWN = -0.15, BF_INCOMING_PHYSICAL = 0.8, BF_INCOMING_THERMAL = 1.15)
 	throwforce_absorb_threshold = 10
 
 	num_alternate_languages = 3
@@ -1611,8 +1606,7 @@
 	tail = "tail"
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
 	total_health = 200
-	injury_mod_groups = list("physical" = 0.85, "thermal" = 0.85)
-	factor_baseline = alist(BF_METABOLISM = 2)
+	factor_baseline = alist(BF_METABOLISM = 2, BF_INCOMING_PHYSICAL = 0.85, BF_INCOMING_THERMAL = 0.85)
 	item_slowdown_mod = 0.25
 	hunger_factor = 0.4
 	darksight = 8
@@ -1676,8 +1670,7 @@
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws/chimera, /datum/unarmed_attack/bite/sharp)
 	darksight = 8		//critters with instincts to hide in the dark need to see in the dark - about as good as tajara.
 	// scuttly, but not as scuttly as a tajara or a teshari.
-	factor_baseline = alist(BF_SLOWDOWN = -0.2)
-	injury_mod_groups = list("physical" = 0.8, "thermal" = 1.15) // As tanky to brute as a Unathi, as vulnerable to burn as a Tajara.
+	factor_baseline = alist(BF_SLOWDOWN = -0.2, BF_INCOMING_PHYSICAL = 0.8, BF_INCOMING_THERMAL = 1.15)
 	base_species = "Xenochimera"
 	selects_bodytype = SELECTS_BODYTYPE_CUSTOM
 	has_vibration_sense = TRUE
@@ -1778,8 +1771,8 @@
 	icobase = 'icons/mob/human_races/r_sparkle.dmi'
 	icobase_tail = 1
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
-	factor_baseline = alist(BF_SLOWDOWN = -0.5)
-	injury_mod_groups = list("physical" = 1.5, "thermal" = 1.5, "toxin" = 0.5, "radiation" = 0)
+	factor_baseline = alist(BF_SLOWDOWN = -0.5, BF_INCOMING_PHYSICAL = 1.5, BF_INCOMING_THERMAL = 1.5, BF_INCOMING_TOXIC = 0.5)
+	radiation_mod = 0
 	bloodloss_rate = 1.5
 	flash_mod =     2
 	siemens_coefficient = 10
@@ -1824,7 +1817,8 @@
 //I also want to make a dig because fennec foxes actually make burrows and such, but I can't figure out how to do it in a way that is both flavorful but not abuseable
 /datum/species/hi_zoxxen //zorrens get wierd chemistry because of their past of expirementing on themselves. Check the cataloguer for deathclaws
 	chemOD_threshold =		0.75
-	injury_mod_groups = list("physical" = 1.1, "thermal" = 0.9, "radiation" = 0.5)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 1.1, BF_INCOMING_THERMAL = 0.9)
+	radiation_mod = 0.5
 
 	cold_level_1 = 270 //Default 260 - Lower is better
 	cold_level_2 = 210 //Default 200
@@ -1844,8 +1838,7 @@
 
 /datum/species/fl_zorren
 	item_slowdown_mod = 1.2
-	factor_baseline = alist(BF_SLOWDOWN = -0.2)
-	injury_mod_groups = list("physical" = 1.1, "thermal" = 0.9)
+	factor_baseline = alist(BF_SLOWDOWN = -0.2, BF_INCOMING_PHYSICAL = 1.1, BF_INCOMING_THERMAL = 0.9)
 
 	cold_level_1 = 270 //Default 260 - Lower is better
 	cold_level_2 = 210 //Default 200
@@ -1876,7 +1869,6 @@
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws/strong/xeno, /datum/unarmed_attack/bite/strong/xeno) // Innate claws and bite.
 
 	total_health = 150 // Larger health pool.
-	injury_mod_groups = list("thermal" = 2, "toxin" = 0.5, "pain" = 0.3)
 	// Fire does not mix well with their silicon carapace. (burn)
 	// Resistant to toxins. (toxins)
 	trauma_mod = 0.3 // Highly resistant to pain.
@@ -1884,7 +1876,7 @@
 	rad_removal_mod = 1.5 // Radiation leaves the body much faster.
 	chem_strength_heal = 0.1 // Acidic blood neutralizes most injected and ingested beneficial chemicals.
 	// Very physically active species, thus requiring more nutritional intake.
-	factor_baseline = alist(BF_METABOLISM = 1.3)
+	factor_baseline = alist(BF_METABOLISM = 1.3, BF_INCOMING_THERMAL = 2, BF_INCOMING_TOXIC = 0.5, BF_INCOMING_PAIN = 0.3)
 	chem_strength_alcohol = 1.2 // They don't handle their drinks very well.
 	throwforce_absorb_threshold = 10 // Thrown objects don't do as much.
 	darksight = 10 // Full view darksight.
