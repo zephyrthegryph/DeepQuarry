@@ -894,7 +894,7 @@
 	if(istype(src,/obj/item/clothing/accessory/collar/holo))
 		return
 
-	if(istype(I,/obj/item/tool/screwdriver))
+	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		update_collartag(user, I, "scratched out", "scratch out", "engraved")
 		return
 

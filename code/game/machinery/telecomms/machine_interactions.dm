@@ -126,13 +126,14 @@
 
 	var/obj/item/multitool/P = null
 	// Let's double check
+	var/obj/item/held = user.get_active_hand()
 	if(!issilicon(user))
-		P = user.get_active_hand()?.get_multitool()
+		P = held?.get_multitool()
 	else if(isAI(user))
 		var/mob/living/silicon/ai/U = user
 		P = U.aiMulti
 	else if(isrobot(user) && in_range(user, src))
-		P = user.get_active_hand()?.get_multitool()
+		P = held?.get_multitool()
 	return P
 
 // Additional Options for certain machines. Use this when you want to add an option to a specific machine.

@@ -54,7 +54,7 @@
 /obj/item/storage/secure/screwdriver_act(mob/user, obj/item/tool)
 	if(!locked)
 		return ..()
-	if(do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_SCREWDRIVER, volume = 0))
 		open = !open
 		playsound(src, tool.usesound, 50, TRUE)
 		user.show_message(span_notice("You [open ? "open" : "close"] the service panel."))

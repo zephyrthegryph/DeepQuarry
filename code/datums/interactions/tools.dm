@@ -19,10 +19,8 @@
  * `delay` is the unscaled time, exactly what the site used to multiply by
  * `toolspeed`, so timings do not change. Returns TRUE when the tool was used.
  */
-#ifdef UNIT_TESTS
-/// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it.
+/// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)
-#endif
 
 /proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE)
 	if(!actor || !target)

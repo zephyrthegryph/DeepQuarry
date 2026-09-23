@@ -480,7 +480,7 @@
 		update_icon()
 		return
 
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/new_paint = input(usr, "Please select paint color.", "Paint Color", paint_color) as color|null
 		if(new_paint)
 			paint_color = new_paint

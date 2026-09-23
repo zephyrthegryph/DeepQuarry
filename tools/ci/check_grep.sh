@@ -194,8 +194,10 @@ fi;
 part "tools: istype checks on tool types"
 # Tools are identified by quality: has_tool_quality(TOOL_*), with get_welder() /
 # get_multitool() when a subtype member is read. The files below keep type-specific
-# checks (a particular subtype, not "any tool of this quality") and must not grow.
-tool_istype_allowlist='TOOL_ISTYPE_ALLOWLIST'
+# checks (a particular subtype, not "any tool of this quality"), or belong to domains
+# converted later (mecha: I5; surgery and medical machines: the body rewrite). They
+# must not grow.
+tool_istype_allowlist='code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.modules.surgery.robotics\.dm|code.modules.surgery.hardsuit\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
 if $grep -n 'istype\([^,]+,\s*/obj/item/(tool|weldingtool|multitool)\b' "${code_files[@]}" | grep -vE "^($tool_istype_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: an istype() check on a tool type. Use has_tool_quality(TOOL_*), or get_welder()/get_multitool() to read the tool.${NC}"

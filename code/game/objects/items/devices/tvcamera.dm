@@ -314,7 +314,7 @@
 	var/buildstep = 0
 	w_class = ITEMSIZE_LARGE
 
-/obj/item/TVAssembly/attackby(W, mob/user)
+/obj/item/TVAssembly/attackby(obj/item/W, mob/user)
 	switch(buildstep)
 		if(0)
 			if(istype(W, /obj/item/robot_parts/robot_component/camera))
@@ -344,7 +344,7 @@
 				desc = "This TV camera assembly has wires sticking out"
 				return
 		if(3)
-			if(istype(W, /obj/item/tool/wirecutters))
+			if(W.has_tool_quality(TOOL_WIRECUTTER))
 				to_chat(user, span_notice(" You trim the wires."))
 				buildstep++
 				desc = "This TV camera assembly needs casing."

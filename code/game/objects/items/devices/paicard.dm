@@ -405,7 +405,7 @@
 	setEmotion(16)
 
 /obj/item/paicard/attackby(obj/item/I as obj, mob/user as mob)
-	if(istype(I,/obj/item/tool/screwdriver))
+	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		if(panel_open)
 			panel_open = FALSE
 			user.visible_message(span_notice("\The [user] secured \the [src]'s maintenance panel."))
@@ -468,7 +468,7 @@
 			else
 				to_chat(user,"Speech Synthesizer: " + span_warning("missing"))
 
-	if(istype(I,/obj/item/multitool))
+	if(I.has_tool_quality(TOOL_MULTITOOL))
 		if(!panel_open)
 			to_chat(user, span_warning("You can't do that in this state."))
 		else
