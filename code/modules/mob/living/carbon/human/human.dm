@@ -1259,10 +1259,16 @@
 	if(!GLOB.all_species[new_species])
 		new_species = SPECIES_HUMAN
 
+	var/datum/species/old_species = species
 	if(species)
 
 		if(species.name && species.name == new_species && species.name != "Custom Species")
 			return
+		// A protean folded into its control cluster unfolds before its swarm goes away.
+		var/datum/component/forms/protean/protean_forms = GetComponent(/datum/component/forms/protean)
+		if(protean_forms?.in_rig())
+			protean_forms.leave_rig()
+			log_game("SPECIES: [key_name(src)] unfolded from their control cluster for a species change to [new_species].")
 		if(species.language)
 			remove_language(species.language)
 		if(species.default_language)
@@ -1275,6 +1281,7 @@
 		hunger_rate = initial(hunger_rate)
 
 	species = GLOB.all_species[new_species]
+	old_species?.remove_components(src, species)
 	invalidate_factors()
 
 	if(species.language)

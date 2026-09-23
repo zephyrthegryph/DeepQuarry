@@ -801,6 +801,17 @@
 		for(var/component in species_component)
 			H.LoadComponent(component)
 
+/// Remove this species' components that `next` doesn't also use (species change).
+/datum/species/proc/remove_components(mob/living/carbon/human/H, datum/species/next)
+	for(var/component in species_component)
+		if(next && (component in next.species_component))
+			continue
+		var/datum/component/C = H.GetComponent(component)
+		if(!C)
+			continue
+		log_game("SPECIES: removing [component] from [key_name(H)] on species change [name] -> [next?.name].")
+		qdel(C)
+
 /datum/species/proc/produceCopy(list/traits, mob/living/carbon/human/H, custom_base, reset_dna = TRUE) // Traitgenes reset_dna flag required, or genes get reset on resleeve
 	ASSERT(src)
 	ASSERT(istype(H))

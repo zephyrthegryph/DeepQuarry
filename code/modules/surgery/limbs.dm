@@ -19,15 +19,29 @@
 	pain_text = "Your %PART% is being ripped apart!"
 	complication_kind = INJURY_CUT
 	complication_amount = 30
+	// Only an opened limb can be amputated, so a stray saw on a closed limb does nothing.
+	min_depth = FLESH_RETRACTED
 
 /datum/surgical_step/amputate/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	return !part.cannot_amputate
 
 /datum/surgical_step/amputate/confirm(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	to_chat(user, span_danger("You are preparing to amputate \the [target]'s [part.name]!"))
-	if(!do_after(user, 3 SECONDS, target = target))
+	var/zone = part.organ_tag
+	var/message = "Amputate [target]'s [part.name]? This cannot be undone."
+	if(part.vital)
+		message = "WARNING: [target]'s [part.name] is VITAL. Amputating it will KILL [target.p_them()]. Amputate anyway?"
+	if(tgui_alert(user, message, "Confirm Amputation", list("Amputate", "Cancel")) != "Amputate")
 		to_chat(user, span_warning("You reconsider performing an amputation..."))
 		return FALSE
+	// The alert may have waited a long time: check everything again.
+	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool))
+		return FALSE
+	if(user.get_active_hand() != tool || !user.Adjacent(target))
+		return FALSE
+	if(target.get_organ(zone) != part || can_use(user, target, zone, tool) != TRUE)
+		return FALSE
+	to_chat(user, span_danger("You are preparing to amputate \the [target]'s [part.name]!"))
+	log_game("SURGERY: [key_name(user)] confirmed amputation of [key_name(target)]'s [part] (vital: [part.vital ? "yes" : "no"])")
 	return TRUE
 
 /datum/surgical_step/amputate/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)

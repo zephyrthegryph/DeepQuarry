@@ -82,7 +82,8 @@
 
 /obj/item/mmi/attackby(obj/item/O as obj, mob/user as mob)
 	var/mob/living/carbon/brain/occupant = get_occupant()
-	if(istype(O,/obj/item/organ/internal/brain) && !occupant) //Time to stick a brain in it --NEO
+	// An empty view with no brain behind it (left after its mind was released) doesn't block a new brain.
+	if(istype(O,/obj/item/organ/internal/brain) && (!occupant || (!occupant.mind && !brainobj))) //Time to stick a brain in it --NEO
 		var/obj/item/organ/internal/brain/B = O
 		if(B.is_brain_dead())
 			to_chat(user, span_warning("That brain is well and truly dead."))
@@ -118,8 +119,11 @@
 /// Seat a removed brain: the organ becomes the tissue and its view (with the
 /// mind) moves into this MMI. Nothing is copied.
 /obj/item/mmi/proc/insert_brain(obj/item/organ/internal/brain/B, reason = "brain inserted")
-	set_brain(B)
 	var/datum/component/mind_host/host = get_mind_host(src)
+	if(host.occupant && !host.occupant.mind && !brainobj)
+		log_game("MIND: [src] discarded its empty view to seat [B]: [reason]")
+		host.discard_occupant()
+	set_brain(B)
 	host.adopt_occupant(get_mind_host(B), reason)
 	update_occupied_state()
 
@@ -143,7 +147,6 @@
 	var/obj/item/organ/internal/brain/brain = brainobj
 	if(!brain)	// An MMI filled without an organ (borging) grows one to carry the mind.
 		brain = new(destination)
-	set_brain(null)
 	brain.preserved = FALSE
 	if(!destination)
 		destination = drop_location()
@@ -151,8 +154,10 @@
 		brain.forceMove(destination)
 	else
 		brain.moveToNullspace()
+	// The view moves to the organ before the MMI lets go of its tissue, so it is never tissue-less.
 	var/datum/component/mind_host/brain_host = get_mind_host(brain)
 	brain_host.adopt_occupant(get_mind_host(src), reason)
+	set_brain(null)
 	update_occupied_state()
 	return brain
 
@@ -171,9 +176,12 @@
 		var/mob/living/silicon/robot/borg = loc
 		borg.mmi = null
 	QDEL_NULL(radio)
+	// The occupant goes first: deleting the tissue under a live view would kill it for nothing.
+	var/datum/component/mind_host/host = get_mind_host(src)
+	host?.discard_occupant()
 	if(brainobj)
 		QDEL_NULL(brainobj)
-	return ..() // the mind host component deletes the occupant
+	return ..()
 
 /obj/item/mmi/radio_enabled
 	name = "radio-enabled man-machine interface"
