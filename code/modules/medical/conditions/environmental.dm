@@ -135,6 +135,8 @@
 	// authored rates reflect that they only buy time while the underlying
 	// driver (rad damage, OD, lung failure) is addressed.
 	treated_by = list(TREAT_OXYGENATION = 1.0)
+	// Pulse oximetry reads it: any surface sensor (analyzers, automation).
+	presentation = PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB
 	symptom_pool = list(
 		/datum/affliction_symptom/labored_breathing = 85,
 		/datum/affliction_symptom/cyanosis          = 70,
