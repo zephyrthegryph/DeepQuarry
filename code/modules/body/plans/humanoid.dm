@@ -176,7 +176,7 @@
 		lesion_type = organ_lesion_for_injury(kind)
 	if(!lesion_type)
 		return 0
-	return O.apply_lesion_damage(amount, lesion_type, flags & INJURE_SILENT)
+	return O.apply_lesion_damage(amount, lesion_type, flags & (INJURE_SILENT | INJURE_CONTINUOUS))
 
 /datum/body/humanoid/proc/systemic_injury(affliction_type, amount, kind, atom/source)
 	var/datum/affliction/A = afflict(affliction_type)
