@@ -210,7 +210,12 @@ impl GasCell {
 		} else {
 			0.0
 		};
-		if total != self.total || temperature != self.temperature || pressure != self.pressure {
+		// Revisions wake sleeping devices: rounding-level drift of a settling
+		// cell is not a change.
+		if (total - self.total).abs() > 1e-3
+			|| (temperature - self.temperature).abs() > 1e-2
+			|| (pressure - self.pressure).abs() > 1e-2
+		{
 			self.revision = self.revision.wrapping_add(1);
 		}
 		self.total = total;

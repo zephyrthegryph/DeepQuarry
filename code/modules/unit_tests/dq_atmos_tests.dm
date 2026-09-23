@@ -5418,6 +5418,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	SSair.run_gas_frames(1)
 
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
+	vg_heat_debug_run_frames(2)
 	// Paper ignites through its ignition rule (code/datums/rules/declarations.dm),
 	// which runs on the next reactor dispatch.
 	react_test_ticks(2)

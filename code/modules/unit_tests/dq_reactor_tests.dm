@@ -394,6 +394,13 @@
 			T = cand
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor whose air is a gas field cell")
+	// Seal it so the injected gas stays over the threshold for the frame.
+	var/turf/open/partner = null
+	for(var/turf/open/N as anything in vg_atmos_adjacent_turfs(T))
+		partner = N
+		break
+	TEST_ASSERT_NOTNULL(partner, "the watched floor has no open neighbour")
+	dq_atmos_test_isolate_pair(T, partner)
 	var/datum/react_test_subscriber/turf_sub = allocate(/datum/react_test_subscriber)
 	var/datum/react_test_subscriber/tank_sub = allocate(/datum/react_test_subscriber)
 	var/datum/gas_mixture/tank = new(70)
@@ -426,4 +433,5 @@
 	var/datum/gas_mixture/removed = T.air.remove(2000)
 	qdel(removed)
 	qdel(tank)
+	dq_atmos_test_restore_walls()
 	SSair.run_gas_frames(2)

@@ -299,6 +299,7 @@ fn overlay_vs_fallback() {
 		w.run_frames(1);
 		let before = totals(&w);
 		let mut main_us = Vec::new();
+		let mut writes = 0u32;
 		for i in 0..200u32 {
 			let t = std::time::Instant::now();
 			// DM-side work per tick: a scrubber and a vent on every tenth cell.
@@ -307,6 +308,7 @@ fn overlay_vs_fallback() {
 					let c = cell(x, y);
 					if w.load(MixRef::Turf(c)).is_some() {
 						dm_write(&mut w, c, |m| m.adjust_moles(GAS_OXYGEN, 0.01));
+						writes += 1;
 					}
 				}
 			}
@@ -322,7 +324,7 @@ fn overlay_vs_fallback() {
 		main_us.sort_by(f64::total_cmp);
 		let avg = main_us.iter().sum::<f64>() / main_us.len() as f64;
 		let p99 = main_us[main_us.len() * 99 / 100];
-		let added = 200.0 * 0.01 * f64::from(((X - 2) / 3 + 1) * ((Y - 2) / 3 + 1));
+		let added = 0.01 * f64::from(writes);
 		println!(
 			"{mode:?}: main-thread avg {avg:.1} us, p99 {p99:.1} us, oxygen drift {:.4} mol (added {added:.1})",
 			after[GAS_OXYGEN] - before[GAS_OXYGEN] - added
