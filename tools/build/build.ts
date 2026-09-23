@@ -718,9 +718,16 @@ export const TestBaselineTarget = new Juke.Target({
       fs.cpSync('icons/gen', path.join(worktree, 'icons/gen'), { recursive: true });
     }
     const script = process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh';
-    const defines = get(DefineParameter).flatMap((d) => ['-D', d]);
+    // Juke's CLI parser treats any bare (non-dash) argv token as the start of
+    // a new target, and a long flag's value only registers with `=` in the
+    // same token (see doc/testing.md's "Juke options take `=`" note) -- so
+    // both the flag and its value must be one token: `--label=x`, `-Dx`, never
+    // `--label`, `x` or `-D`, `x` as separate argv entries, or Juke silently
+    // tries to run `x` as a second, nonexistent target and the whole nested
+    // invocation fails before it does anything.
+    const defines = get(DefineParameter).map((d) => `-D${d}`);
     try {
-      await Juke.exec(script, ['dm-test', '--label', `baseline-${commit}`, ...defines], {
+      await Juke.exec(script, ['dm-test', `--label=baseline-${commit}`, ...defines], {
         cwd: worktree,
         shell: process.platform === 'win32',
         env: { ...process.env, CARGO_TARGET_DIR: path.join(root, 'verdigris', 'target') },
@@ -961,14 +968,16 @@ export const BenchBaselineTarget = new Juke.Target({
       fs.cpSync('icons/gen', path.join(worktree, 'icons/gen'), { recursive: true });
     }
     const script = process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh';
-    const defines = get(DefineParameter).flatMap((d) => ['-D', d]);
+    // See the matching comment in TestBaselineTarget above: every flag with a
+    // value must be one argv token (`--x=y` / `-Dy`), never split across two.
+    const defines = get(DefineParameter).map((d) => `-D${d}`);
     const scenarioArgs = get(ScenarioParameter).length ? [`--scenario=${get(ScenarioParameter).join(',')}`] : [];
     const runsArg = get(RunsParameter) != null ? [`--runs=${get(RunsParameter)}`] : [];
     const warmupArg = get(WarmupParameter) != null ? [`--warmup=${get(WarmupParameter)}`] : [];
     try {
       await Juke.exec(
         script,
-        ['bench', '--exclusive', '--label', `baseline-${commit}`, ...scenarioArgs, ...runsArg, ...warmupArg, ...defines],
+        ['bench', '--exclusive', `--label=baseline-${commit}`, ...scenarioArgs, ...runsArg, ...warmupArg, ...defines],
         {
           cwd: worktree,
           shell: process.platform === 'win32',

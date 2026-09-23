@@ -599,8 +599,20 @@ export async function acquireBenchExclusiveLock(maxHoldMs = 20 * 60 * 1000, poll
   };
 }
 
-/** Waits until every DreamDaemon slot directory is empty (or stale-owned), or the timeout elapses. Returns whether it drained. */
+/**
+ * Waits until every DreamDaemon slot directory is empty (or stale-owned), or
+ * the timeout elapses. Returns whether it drained.
+ *
+ * When this process is itself running inside a dd-slot.sh-held slot
+ * (DQ_DD_SLOT_HELD=1, set by dd-slot.sh around "$@"), that slot's directory
+ * never looks empty -- it's occupied by the wrapper's own pid for the whole
+ * invocation -- so waiting on it would just burn the full timeout every
+ * time. dd-slot.sh already bounds machine-wide DreamDaemon concurrency in
+ * that case, so skip the extra wait rather than pay for a drain that can't
+ * happen.
+ */
 export async function waitForDreamDaemonsToDrain(timeoutMs = 5 * 60 * 1000, pollMs = 5000, log: (msg: string) => void = () => {}): Promise<boolean> {
+  if (process.env.DQ_DD_SLOT_HELD === '1') return true;
   const base = ddSlotBaseDir();
   const deadline = Date.now() + timeoutMs;
   let announced = false;

@@ -70,7 +70,10 @@ while true; do
     if mkdir "$d" 2>/dev/null; then
       echo $$ > "$d/pid"
       trap 'rm -rf "'"$d"'"' EXIT
-      "$@"; rc=$?
+      # Tell anything we run (e.g. `bench --exclusive`, which otherwise waits
+      # for every slot dir to look empty before timing) that concurrency is
+      # already bounded by this wrapper, so it shouldn't wait on its own slot.
+      DQ_DD_SLOT_HELD=1 "$@"; rc=$?
       exit $rc
     fi
     p=$(cat "$d/pid" 2>/dev/null)
