@@ -49,18 +49,19 @@
 	laser_act(M, user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/laser_pointer/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/stock_parts/micro_laser))
-		if(!diode)
-			user.drop_item()
-			W.loc = src
-			diode = W
-			to_chat(user, span_notice("You install a [diode.name] in [src]."))
-		else
-			to_chat(user, span_notice("[src] already has a diode."))
+/obj/item/laser_pointer/get_interactions()
+	var/static/list/L = list(INTERACT_INSERT(/obj/item/stock_parts/micro_laser, PROC_REF(interaction_item), "Install"))
+	return L
 
+/obj/item/laser_pointer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!diode)
+		user.drop_item()
+		W.loc = src
+		diode = W
+		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else
-		return ..()
+		to_chat(user, span_notice("[src] already has a diode."))
+	return TRUE
 
 /obj/item/laser_pointer/screwdriver_act(mob/user, obj/item/tool)
 	if(!diode)

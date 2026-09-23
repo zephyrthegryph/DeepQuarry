@@ -67,16 +67,24 @@
 	if(get_dist(user, src) <= 2)
 		. += "It has [uses] lights remaining."
 
-/obj/item/lightreplacer/attackby(obj/item/W, mob/user)
+/obj/item/lightreplacer/get_interactions()
+	var/static/list/L = list(
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+	)
+	return L
+
+/// Old attackby never called ..() regardless of item type, so every click was swallowed.
+/obj/item/lightreplacer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_GLASS || istype(W, /obj/item/stack/material/cyborg/glass))
 		var/obj/item/stack/G = W
 		if(uses >= max_uses)
 			to_chat(user, span_warning("[src.name] is full."))
-			return
+			return TRUE
 		else if(G.use(1))
 			add_uses(16) //Autolathe converts 1 sheet into 16 lights.
 			to_chat(user, span_notice("You insert a piece of glass into \the [src.name]. You have [uses] light\s remaining."))
-			return
+			return TRUE
 		else
 			to_chat(user, span_warning("You need one sheet of glass to replace lights."))
 
@@ -86,18 +94,18 @@
 		if(L.status == 0) // LIGHT OKAY
 			if(uses < max_uses)
 				if(!user.unEquip(W))
-					return
+					return TRUE
 				add_uses(1)
 				qdel(L)
 		else
 			if(!user.unEquip(W))
-				return
+				return TRUE
 			new_bulbs += AddShards(1)
 			qdel(L)
 		if(new_bulbs != 0)
 			playsound(src, 'sound/machines/ding.ogg', 50, 1)
 		to_chat(user, "You insert \the [L.name] into \the [src.name]. You have [uses] light\s remaining.")
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/storage))
 		var/obj/item/storage/S = W
@@ -122,18 +130,17 @@
 
 		if(!found_lightbulbs)
 			to_chat(user, span_warning("\The [S] contains no bulbs."))
-			return
+			return TRUE
 
 		if(!replaced_something && src.uses == max_uses)
 			to_chat(user, span_warning("\The [src] is full!"))
-			return
+			return TRUE
 
 		to_chat(user, span_notice("You fill \the [src] with lights from \the [S]."))
 
-/obj/item/lightreplacer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+	return TRUE
+
+/obj/item/lightreplacer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	to_chat(user, "It has [uses] lights remaining.")
@@ -246,11 +253,11 @@
 		else
 			. += "It is currently coloring lights."
 
-/obj/item/lightpainter/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/lightpainter/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
 
+/obj/item/lightpainter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!resetmode)
 		resetmode = 1
 		to_chat(user, span_infoplain("Painter reset."))

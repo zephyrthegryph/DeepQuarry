@@ -31,10 +31,11 @@
 
 	to_chat(usr, "You configure the hailer to shout \"[use_message]\".")
 
-/obj/item/hailer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/hailer/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/hailer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if (spamcheck)
 		return
 

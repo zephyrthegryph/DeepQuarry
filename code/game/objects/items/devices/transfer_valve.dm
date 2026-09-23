@@ -10,12 +10,19 @@
 	var/valve_open = 0
 	var/toggle = 1
 
-/obj/item/transfer_valve/attackby(obj/item/item, mob/user)
+/obj/item/transfer_valve/get_interactions()
+	var/static/list/L = list(
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+	)
+	return L
+
+/obj/item/transfer_valve/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	var/turf/location = get_turf(src) // For admin logs
 	if(istype(item, /obj/item/tank))
 		if(tank_one && tank_two)
 			to_chat(user, span_warning("There are already two tanks attached, remove one first."))
-			return
+			return TRUE
 
 		if(!tank_one)
 			tank_one = item
@@ -37,10 +44,10 @@
 		var/obj/item/assembly/A = item
 		if(A.secured)
 			to_chat(user, span_notice("The device is secured."))
-			return
+			return TRUE
 		if(attached_device)
 			to_chat(user, span_warning("There is already an device attached to the valve, remove it first."))
-			return
+			return TRUE
 		user.remove_from_mob(item)
 		attached_device = A
 		A.forceMove(src)
@@ -53,7 +60,7 @@
 		log_game("[key_name_admin(user)] attached a [item] to a transfer valve.")
 		attacher = user
 		SStgui.update_uis(src) // update all UIs attached to src
-	return
+	return TRUE
 
 /obj/item/transfer_valve/HasProximity(turf/T, datum/weakref/WF, old_loc)
 	if(isnull(WF))
@@ -70,10 +77,7 @@
 	if(isturf(loc))
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
-/obj/item/transfer_valve/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/transfer_valve/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 
 /obj/item/transfer_valve/tgui_state(mob/user)

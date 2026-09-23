@@ -72,10 +72,14 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 			icon_state = "geiger_on_5"
 	return ..()
 
-/obj/item/geiger/attack_self(mob/user)
-	. = ..()
-	if(.)
-		return TRUE
+/obj/item/geiger/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_ALT("Reset", PROC_REF(interaction_alt)),
+	)
+	return L
+
+/obj/item/geiger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	scanning = !scanning
 
 	if (scanning)
@@ -143,14 +147,14 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 
 	to_chat(user, span_notice("[icon2html(src, user)] [isliving(target) ? "Subject" : "Target"] is free of radioactive contamination."))
 
-/obj/item/geiger/click_alt(mob/living/user)
+/obj/item/geiger/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!scanning)
 		to_chat(user, span_warning("[src] must be on to reset its radiation level!"))
-		return CLICK_ACTION_BLOCKING
+		return TRUE
 	to_chat(user, span_notice("You flush [src]'s radiation counts, resetting it to normal."))
 	last_perceived_radiation_danger = null
 	update_icon()
-	return CLICK_ACTION_SUCCESS
+	return TRUE
 
 /obj/item/geiger/wall
 	name = "mounted geiger counter"

@@ -24,10 +24,7 @@
 //	radio = new(src)
 	camera = new camtype(src)
 
-/obj/item/camerabug/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		to_chat(user, span_notice("You crush the [src] under your foot, breaking it."))
 		visible_message(span_notice("[user.name] crushes the [src] under their foot, breaking it!"))
@@ -99,29 +96,37 @@
 	else
 		alpha = 255
 
-/obj/item/camerabug/attackby(obj/item/W as obj, mob/living/user as mob)
-	if(istype(W, /obj/item/bug_monitor))
-		var/obj/item/bug_monitor/SM = W
-		if(!linkedmonitor)
-			to_chat(user, span_notice("\The [src] has been paired with \the [SM]."))
-			SM.pair(src)
-			linkedmonitor = SM
-		else if (linkedmonitor == SM)
-			to_chat(user, span_notice("\The [src] has been unpaired from \the [SM]."))
-			linkedmonitor.unpair(src)
-			linkedmonitor = null
-		else
-			to_chat(user, "Error: The device is linked to another monitor.")
+/obj/item/camerabug/get_interactions()
+	var/static/list/L = list(
+		INTERACT_INSERT(/obj/item/bug_monitor, PROC_REF(interaction_pair), "Pair"),
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+	)
+	return L
 
+/obj/item/camerabug/proc/interaction_pair(mob/user, obj/item/bug_monitor/SM, datum/interaction/interaction)
+	if(!linkedmonitor)
+		to_chat(user, span_notice("\The [src] has been paired with \the [SM]."))
+		SM.pair(src)
+		linkedmonitor = SM
+	else if (linkedmonitor == SM)
+		to_chat(user, span_notice("\The [src] has been unpaired from \the [SM]."))
+		linkedmonitor.unpair(src)
+		linkedmonitor = null
 	else
-		if(W.force >= 5)
-			visible_message("\The [src] lens shatters!")
-			new brokentype(get_turf(src))
-			if(linkedmonitor)
-				linkedmonitor.unpair(src)
-			linkedmonitor = null
-			qdel(src)
-		..()
+		to_chat(user, "Error: The device is linked to another monitor.")
+	return TRUE
+
+/// Old attackby: any other item breaks the lens on a strong hit, but always fell through to ..().
+/obj/item/camerabug/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(W.force >= 5)
+		visible_message("\The [src] lens shatters!")
+		new brokentype(get_turf(src))
+		if(linkedmonitor)
+			linkedmonitor.unpair(src)
+		linkedmonitor = null
+		qdel(src)
+	return FALSE
 
 /obj/item/camerabug/wrench_act(mob/user, obj/item/tool)
 	if(user.a_intent == I_HURT || !isturf(loc))
@@ -164,17 +169,19 @@
 /obj/item/bug_monitor/Initialize(mapload)
 	radio = new(src)
 */
-/obj/item/bug_monitor/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/bug_monitor/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_INSERT(/obj/item/camerabug, PROC_REF(interaction_item), null),
+	)
+	return L
+
+/obj/item/bug_monitor/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	view_cameras(user)
 
-/obj/item/bug_monitor/attackby(obj/item/W as obj, mob/living/user as mob)
-	if(istype(W, /obj/item/camerabug))
-		W.attackby(src, user)
-		return
-	. = ..()
+/obj/item/bug_monitor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	W.attackby(src, user)
+	return TRUE
 
 /obj/item/bug_monitor/proc/unpair(obj/item/camerabug/SB)
 	if(SB.camera in cameras)

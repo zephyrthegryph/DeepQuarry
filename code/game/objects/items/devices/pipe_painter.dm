@@ -25,10 +25,11 @@
 
 	P.change_color(GLOB.pipe_colors[mode])
 
-/obj/item/pipe_painter/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/pipe_painter/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/pipe_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/new_mode = tgui_input_list(user, "Which colour do you want to use?", "Pipe painter", modes)
 	if(!new_mode)
 		return

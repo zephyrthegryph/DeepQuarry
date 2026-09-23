@@ -39,19 +39,25 @@
 	return ..()
 
 
-/obj/item/taperecorder/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/rectape))
-		if(mytape)
-			to_chat(user, span_notice("There's already a tape inside."))
-			return
-		if(!user.unEquip(I))
-			return
-		I.forceMove(src)
-		mytape = I
-		to_chat(user, span_notice("You insert [I] into [src]."))
-		update_icon()
-		return
-	..()
+/obj/item/taperecorder/get_interactions()
+	var/static/list/L = list(
+		INTERACT_INSERT(/obj/item/rectape, PROC_REF(interaction_item), "Insert tape"),
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+	)
+	return L
+
+/obj/item/taperecorder/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	if(mytape)
+		to_chat(user, span_notice("There's already a tape inside."))
+		return TRUE
+	if(!user.unEquip(I))
+		return TRUE
+	I.forceMove(src)
+	mytape = I
+	to_chat(user, span_notice("You insert [I] into [src]."))
+	update_icon()
+	return TRUE
 
 
 /obj/item/taperecorder/fire_act()
@@ -60,12 +66,11 @@
 	return ..()
 
 
-/obj/item/taperecorder/attack_hand(mob/user)
-	if(user.get_inactive_hand() == src)
-		if(mytape)
-			eject()
-			return
-	..()
+/obj/item/taperecorder/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.get_inactive_hand() == src && mytape)
+		eject()
+		return TRUE
+	return FALSE
 
 
 /obj/item/taperecorder/verb/eject()
@@ -350,10 +355,7 @@
 	VARSET_IN(src, canprint, TRUE, 30 SECONDS)
 
 
-/obj/item/taperecorder/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/taperecorder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(recording || playing)
 		stop()
 	else
@@ -398,10 +400,14 @@
 /obj/item/rectape/fire_act()
 	ruin()
 
-/obj/item/rectape/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/rectape/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_INSERT(/obj/item/pen, PROC_REF(interaction_item), "Label"),
+	)
+	return L
+
+/obj/item/rectape/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ruined)
 		to_chat(user, span_notice("You pull out all the tape!"))
 		ruin()
@@ -428,20 +434,18 @@
 	LAZYADD(storedinfo, "*\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
 
 
-/obj/item/rectape/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/pen))
-		if(loc == user && !user.incapacitated())
-			var/new_name = tgui_input_text(user, "What would you like to label the tape?", "Tape labeling")
-			if(isnull(new_name)) return
-			new_name = sanitizeSafe(new_name)
-			if(new_name)
-				name = "tape - '[new_name]'"
-				to_chat(user, span_notice("You label the tape '[new_name]'."))
-			else
-				name = "tape"
-				to_chat(user, span_notice("You scratch off the label."))
-		return
-	..()
+/obj/item/rectape/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	if(loc == user && !user.incapacitated())
+		var/new_name = tgui_input_text(user, "What would you like to label the tape?", "Tape labeling")
+		if(isnull(new_name)) return TRUE
+		new_name = sanitizeSafe(new_name)
+		if(new_name)
+			name = "tape - '[new_name]'"
+			to_chat(user, span_notice("You label the tape '[new_name]'."))
+		else
+			name = "tape"
+			to_chat(user, span_notice("You scratch off the label."))
+	return TRUE
 
 /obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)
 	if(!ruined)

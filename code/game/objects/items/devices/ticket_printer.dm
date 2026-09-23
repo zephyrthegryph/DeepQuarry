@@ -10,8 +10,11 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 	w_class = ITEMSIZE_SMALL //because something so small, trivial, and used for silly RP should not be practically gigantic.
 
-/obj/item/ticket_printer/attack_self(mob/user)
-	. = ..(user)
+/obj/item/ticket_printer/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/ticket_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(last_print + print_cooldown <= world.time)
 		print_a_ticket(user)
 	else

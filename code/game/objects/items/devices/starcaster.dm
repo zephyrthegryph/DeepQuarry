@@ -18,10 +18,11 @@
 
 
 
-/obj/item/starcaster_news/attack_self(mob/user as mob)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/starcaster_news/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/starcaster_news/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user) //Activates tgui. Bless tgui.
 	return

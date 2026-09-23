@@ -122,10 +122,14 @@
 	STOP_PROCESSING(SSobj, src)
 	update_icon()
 
-/obj/item/suit_cooling_unit/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/suit_cooling_unit/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_INSERT(/obj/item/cell, PROC_REF(interaction_item), "Insert cell"),
+	)
+	return L
+
+/obj/item/suit_cooling_unit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cover_open && cell)
 		if(ishuman(user))
 			user.put_in_hands(cell)
@@ -149,20 +153,17 @@
 		turn_on()
 	to_chat(user, span_notice("You switch \the [src] [on ? "on" : "off"]."))
 
-/obj/item/suit_cooling_unit/attackby(obj/item/W as obj, mob/user as mob)
-	if (istype(W, /obj/item/cell))
-		if(cover_open)
-			if(cell)
-				to_chat(user, "There is a [cell] already installed here.")
-			else
-				user.drop_item()
-				W.loc = src
-				cell = W
-				to_chat(user, "You insert the [cell].")
-		update_icon()
-		return
-
-	return ..()
+/obj/item/suit_cooling_unit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(cover_open)
+		if(cell)
+			to_chat(user, "There is a [cell] already installed here.")
+		else
+			user.drop_item()
+			W.loc = src
+			cell = W
+			to_chat(user, "You insert the [cell].")
+	update_icon()
+	return TRUE
 
 /obj/item/suit_cooling_unit/screwdriver_act(mob/user, obj/item/tool)
 	cover_open = !cover_open

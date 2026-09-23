@@ -13,10 +13,11 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/universal_translator/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/universal_translator/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/universal_translator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!listening) //Turning ON
 		langset = tgui_input_list(user,"Translate to which of your languages?","Language Selection", user.languages)
 		if(langset)

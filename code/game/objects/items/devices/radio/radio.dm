@@ -127,13 +127,15 @@
 /obj/item/radio/proc/recalculateChannels()
 	return
 
-/obj/item/radio/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/radio/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/radio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(beacon || electric_pack || uplink)
-		return
+		return FALSE
 	interact(user)
+	return TRUE
 
 /obj/item/radio/interact(mob/user)
 	if(!user)
@@ -662,21 +664,22 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		var/mob/living/silicon/robot/R = src.loc
 		R.use_component(ROBOT_SLOT_RADIO)
 
-/obj/item/radio/borg/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/encryptionkey/))
-		if(keyslot)
-			to_chat(user, "The radio can't hold another key!")
-			return
+/obj/item/radio/borg/declare_interactions(list/into)
+	into += dq_interaction_from_spec(type, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
+	..()
 
-		if(!keyslot)
-			user.drop_item()
-			W.loc = src
-			keyslot = W
+/obj/item/radio/borg/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(keyslot)
+		to_chat(user, "The radio can't hold another key!")
+		return TRUE
 
-		recalculateChannels()
+	if(!keyslot)
+		user.drop_item()
+		W.loc = src
+		keyslot = W
 
-		return
-	return ..()
+	recalculateChannels()
+	return TRUE
 
 /obj/item/radio/borg/screwdriver_act(mob/user, obj/item/tool)
 	if(!keyslot)

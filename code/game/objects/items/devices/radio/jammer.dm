@@ -74,19 +74,24 @@ GLOBAL_LIST_EMPTY(active_radio_jammers)
 		update_icon()
 
 
-/obj/item/radio_jammer/attack_hand(mob/user)
+/obj/item/radio_jammer/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_INSERT(/obj/item/cell/device/weapon, PROC_REF(interaction_item), "Insert cell"),
+	)
+	return L
+
+/obj/item/radio_jammer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
 		power_source = null
 		turn_off()
-	else
-		return ..()
-
-/obj/item/radio_jammer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
 		return TRUE
+	return FALSE
+
+/obj/item/radio_jammer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(on)
 		turn_off(user)
 	else
@@ -95,14 +100,16 @@ GLOBAL_LIST_EMPTY(active_radio_jammers)
 		else
 			to_chat(user,span_warning("\The [src] has no power source!"))
 
-/obj/item/radio_jammer/attackby(obj/W, mob/user)
-	if(istype(W,/obj/item/cell/device/weapon) && !power_source)
+/obj/item/radio_jammer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!power_source)
 		power_source = W
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		user.unEquip(power_source)
 		power_source.forceMove(src)
 		update_icon()
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
+		return TRUE
+	return FALSE
 
 /obj/item/radio_jammer/update_icon()
 	if(on)

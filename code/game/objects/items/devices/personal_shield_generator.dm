@@ -121,14 +121,23 @@
 /obj/item/personal_shield_generator/ui_action_click(mob/user, actiontype)
 	toggle_shield()
 
-/obj/item/personal_shield_generator/attack_hand(mob/user)
+/obj/item/personal_shield_generator/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ALT(null, PROC_REF(interaction_alt)),
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+	)
+	return L
+
+/obj/item/personal_shield_generator/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(loc == user)
 		toggle_shield()
-	else
-		..()
+		return TRUE
+	return FALSE
 
-/obj/item/personal_shield_generator/click_alt(mob/living/user)
+/obj/item/personal_shield_generator/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	weapon_toggle()
+	return TRUE
 
 /obj/item/personal_shield_generator/MouseDrop()
 	if(ismob(src.loc))
@@ -140,7 +149,7 @@
 		src.add_fingerprint(usr)
 		M.put_in_any_hand_if_possible(src)
 
-/obj/item/personal_shield_generator/attackby(obj/item/W, mob/user, params)
+/obj/item/personal_shield_generator/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W == active_weapon)
 		reattach_gun(user)
 	else if(istype(W, /obj/item/cell))
@@ -150,7 +159,7 @@
 			to_chat(user, span_notice("This cell will not fit in the device."))
 		else
 			if(!user.unEquip(W))
-				return
+				return TRUE
 			W.forceMove(src)
 			bcell = W
 			if(active_weapon)
@@ -159,7 +168,8 @@
 			update_icon()
 
 	else
-		return ..()
+		return FALSE
+	return TRUE
 
 /obj/item/personal_shield_generator/screwdriver_act(mob/user, obj/item/tool)
 	if(!bcell)
@@ -465,18 +475,20 @@
 	icon_state = "modkit"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/personal_shield_generator/belt/mining/attackby(obj/item/W, mob/user, params)
-	if(istype(W, /obj/item/borg/upgrade/shield_upgrade))
-		if(modifier_type == /datum/modifier/shield_projection/mining/strong)
-			to_chat(user, span_warning("This shield generator is already upgraded!"))
-			return
-		modifier_type = /datum/modifier/shield_projection/mining/strong
-		upgraded = TRUE
-		to_chat(user, span_notice("You upgrade the [src] with the [W]!"))
-		user.drop_from_inventory(W)
-		qdel(W)
-	else
-		..()
+/obj/item/personal_shield_generator/belt/mining/declare_interactions(list/into)
+	into += dq_interaction_from_spec(type, INTERACT_INSERT(/obj/item/borg/upgrade/shield_upgrade, PROC_REF(interaction_upgrade), "Upgrade"))
+	..()
+
+/obj/item/personal_shield_generator/belt/mining/proc/interaction_upgrade(mob/user, obj/item/borg/upgrade/shield_upgrade/W, datum/interaction/interaction)
+	if(modifier_type == /datum/modifier/shield_projection/mining/strong)
+		to_chat(user, span_warning("This shield generator is already upgraded!"))
+		return TRUE
+	modifier_type = /datum/modifier/shield_projection/mining/strong
+	upgraded = TRUE
+	to_chat(user, span_notice("You upgrade the [src] with the [W]!"))
+	user.drop_from_inventory(W)
+	qdel(W)
+	return TRUE
 
 //Security belts
 
