@@ -57,8 +57,6 @@
 	var/last_glow_intensity = null
 	var/last_glow_color = null
 
-	// Edge-detection cache for status alerts so throw_alert/clear_alert only fire on state transition.
-	var/alert_state_drugged = FALSE
 
 	var/see_invisible_default = SEE_INVISIBLE_LIVING
 

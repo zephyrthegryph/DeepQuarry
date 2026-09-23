@@ -189,7 +189,7 @@
 			if(3 to 99)
 				C.nutrition = (C.nutrition + (T.nutrition*0.1)) //Just keep draining them.
 				T.nutrition = T.nutrition*0.9
-				T.eye_blurry += 5 //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+				T.AdjustBlurry(5)//Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
 				if(T.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
 					stage = 99
 				if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
@@ -255,7 +255,7 @@
 			if(3 to 48) //Should be more than enough to get under 100.
 				nutrition = (nutrition + (T.nutrition*0.1)) //Just keep draining them.
 				T.nutrition = T.nutrition*0.9
-				T.eye_blurry += 5 //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+				T.AdjustBlurry(5)//Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
 				if(T.nutrition < 100)//Did they drop below 100 nutrition? If so, do one last check then jump to stage 50 (Lethal!)
 					stage = 49
 			if(49)
@@ -285,7 +285,7 @@
 					return
 				if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 					T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
-				T.eye_blurry += 20 //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
+				T.AdjustBlurry(20)//A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
 				nutrition = (nutrition + 25) //Assuming brain damage kills at 60, this gives 300 nutrition.
 			if(99)
 				if(drain_finalized != 1)
@@ -349,7 +349,7 @@
 			if(3 to 99)
 				T.nutrition = (T.nutrition + (C.nutrition*0.1)) //Just keep draining them.
 				C.nutrition = C.nutrition*0.9
-				T.eye_blurry += 1 //Eating a slime's body is odd and will make your vision a bit blurry!
+				T.AdjustBlurry(1)//Eating a slime's body is odd and will make your vision a bit blurry!
 				if(C.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
 					stage = 99
 				if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
@@ -1272,9 +1272,9 @@
 /datum/reagent/succubi_numbing/affect_blood(mob/living/carbon/M, alien, removed)
 
 
-	M.eye_blurry = max(M.eye_blurry, 10)
+	M.Blur(10)
 	M.Weaken(2)
-	M.drowsyness = max(M.drowsyness, 20)
+	M.Drowse(20)
 	if(prob(7))
 		M.show_message(span_warning("You start to feel weakened, your body seems heavy."))
 	return
@@ -1292,7 +1292,7 @@
 /datum/reagent/succubi_paralize/affect_blood(mob/living/carbon/M, alien, removed) //will first keep it like that.  lets see what it changes. if nothing, than I will rework the effect again
 
 	M.Weaken(20)
-	M.eye_blurry = max(M.eye_blurry, 10)
+	M.Blur(10)
 	if(prob(10))
 		M.show_message(span_warning("You lose sensation of your body."))
 	return

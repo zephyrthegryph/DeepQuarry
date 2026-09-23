@@ -42,4 +42,4 @@
 
 	if(ishuman(holder))
 		var/mob/living/carbon/human/H = holder
-		H.druggy = min(15, H.druggy + 4)
+		H.SetDruggy(min(15, H.get_druggy() + 4))

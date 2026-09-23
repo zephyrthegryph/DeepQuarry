@@ -60,7 +60,7 @@
 		if(21 to 30)//High level of EMP damage, unable to see, hear, or speak
 			SetBlinded(1)
 			blinded = 1
-			ear_deaf = 1
+			SetDeaf(1)
 			deaf_loop.start()
 			silent = 1
 			if(!alert)//Sounds an alarm, but only once per 'level'
@@ -73,12 +73,12 @@
 			alert = 0
 			blinded = 0
 			SetBlinded(0)
-			ear_deaf = 0
+			SetDeaf(0)
 			deaf_loop.stop()
 			silent = 0
 			emp_damage -= 1
 		if(11 to 19)//Moderate level of EMP damage, resulting in nearsightedness and ear damage
-			eye_blurry = 1
+			SetBlurry(1)
 			ear_damage = 1
 			if(!alert)
 				emote("alert")
@@ -88,7 +88,7 @@
 				emp_damage -= 1
 		if(10)
 			alert = 0
-			eye_blurry = 0
+			SetBlurry(0)
 			ear_damage = 0
 			emp_damage -= 1
 		if(2 to 9)//Low level of EMP damage, has few effects(handled elsewhere)
@@ -139,8 +139,8 @@
 		else
 			self.clear_fullscreen("blind")
 			self.set_fullscreen(self.disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			self.set_fullscreen(self.eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-			self.set_fullscreen(self.druggy, "high", /atom/movable/screen/fullscreen/high)
+			self.set_fullscreen(self.get_eye_blurry(), "blurry", /atom/movable/screen/fullscreen/blurry)
+			self.set_fullscreen(self.get_druggy(), "high", /atom/movable/screen/fullscreen/high)
 
 /datum/life_system/hud/carbon/brain/health_icons(mob/living/carbon/brain/self)
 	. = ..()

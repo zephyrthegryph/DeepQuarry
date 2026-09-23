@@ -92,9 +92,6 @@
 	var/atom/movable/pulling = null
 	var/transforming = null	//Carbon
 	var/other = 0.0
-	var/eye_blind = null	//Carbon
-	var/eye_blurry = null	//Carbon
-	var/ear_deaf = null		//Carbon
 	var/ear_damage = null	//Carbon
 	var/stuttering = null	//Carbon
 	var/slurring = null		//Carbon
@@ -109,7 +106,6 @@
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
-	var/druggy = 0			//Carbon
 	var/antitoxs = null
 	var/phoron = null
 	var/resting = 0			//Carbon
@@ -135,7 +131,6 @@
 	var/cpr_time = 1.0//Carbon
 
 	var/bodytemperature = BODYTEMP_NORMAL
-	var/drowsyness = 0.0//Carbon
 	var/charges = 0.0
 
 	var/losebreath = 0.0//Carbon

@@ -35,12 +35,6 @@
 	if (self.transforming)
 		return LIFE_HALT
 
-	//Apparently, the person who wrote this code designed it so that
-	//blinded get reset each cycle and then get activated later in the
-	//code. Very ugly. I dont care. Moving this stuff here so its easy
-	//to find it.
-	self.blinded = 0
-
 	//TODO: seperate this out
 	// update the current life tick, can be used to e.g. only do something every 4 ticks
 	self.life_tick++
@@ -280,9 +274,9 @@
 		if(0 <= rn && rn <= 3)
 			self.custom_pain("Your head feels numb and painful.", 10)
 	if(brain_damage >= 15)
-		if(4 <= rn && rn <= 6) if(self.eye_blurry <= 0)
+		if(4 <= rn && rn <= 6) if(self.get_eye_blurry() <= 0)
 			to_chat(self, span_warning("It becomes hard to see for some reason."))
-			self.eye_blurry = 10
+			self.SetBlurry(10)
 	if(brain_damage >= 35)
 		if(7 <= rn && rn <= 9) if(self.get_active_hand())
 			to_chat(self, span_danger("Your hand won't respond properly, you drop what you're holding!"))
@@ -464,7 +458,7 @@
 							if(istype(I)) I.add_autopsy_data("Radiation Burns", damage)
 							self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
 							to_chat(self, span_warning("Your eyes burn!"))
-							self.eye_blurry += 10
+							self.AdjustBlurry(10)
 				if(prob(4))
 					self.injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
 					self.emote("gasp")
@@ -499,7 +493,7 @@
 				if(I)
 					I.add_autopsy_data("Radiation Burns", damage * rad_mod * RADIATION_SPEED_COEFFICIENT)
 					self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //3 eye damage a tick as your eyes melt down.
-					self.eye_blurry += 10
+					self.AdjustBlurry(10)
 
 				if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
@@ -543,13 +537,13 @@
 			if(I) //Eye stuff
 				if(prob(5) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
 					to_chat(self, span_warning("Your eyes water."))
-					self.eye_blurry += 5
+					self.AdjustBlurry(5)
 				if(self.accumulated_rads > 300) // (6Gy)
 					if(prob(2) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
 						to_chat(self, span_warning("Your eyes burn."))
 						I.add_autopsy_data("Radiation Burns", 1 * self.species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
 						self.injure(INJURY_RADIATION, 1 * self.species.radiation_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //0.1 damage. Not a lot, but enough to tell you to get to medical.
-						self.eye_blurry += 10
+						self.AdjustBlurry(10)
 
 			if(self.accumulated_rads > 200) // (4Gy)
 				if(prob(5) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
@@ -1318,177 +1312,175 @@
 	if(self.species.get_ssd(self) && !self.client && !self.teleop)
 		self.Sleeping(2)
 	if(self.stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
-		self.blinded = 1
 		self.silent = 0
-		self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness - Not sure if we need this, but, safety.
-	else				//ALIVE. LIGHTS ARE ON
-		// The body ticks afflictions, recomputes vitals once, and applies
-		// death (organ death) and unconsciousness (consciousness model).
-		self.body.life_tick()
+		self.SetDeaf(0)
+		return 1
 
-		if(self.stat == DEAD)
-			self.blinded = 1
-			self.silent = 0
-			self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness - Not sure if we need this, but, safety.
-			return 1
+	//ALIVE. LIGHTS ARE ON
+	// The body ticks afflictions, recomputes vitals once, and applies
+	// death (organ death) and unconsciousness (consciousness model).
+	self.body.life_tick()
 
-		//UNCONSCIOUS. NO-ONE IS HOME
-		var/in_crit = FALSE
-		if(self.body.is_unconscious())
-			self.Paralyse(3)
-			self.Sleeping(3)
-			self.set_stat(UNCONSCIOUS)
-			self.blinded = TRUE
-			in_crit = TRUE
-			if(!HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
-				ADD_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+	if(self.stat == DEAD)
+		self.silent = 0
+		self.SetDeaf(0)
+		return 1
 
-		if(self.hallucination)
-			if(self.hallucination >= HALLUCINATION_THRESHOLD && !(self.species.flags & (NO_POISON|IS_PLANT|NO_HALLUCINATION)) && !HAS_TRAIT(self, TRAIT_MADNESS_IMMUNE))
-				self.handle_hallucinations()
-				/* Stop spinning the view, it breaks too much.
-				if(client && prob(5))
-					client.dir = pick(2,4,8)
-					spawn(rand(20,50))
-						client.dir = 1
-				*/
-			self.hallucination = max(0, self.hallucination - 2)
+	//UNCONSCIOUS. NO-ONE IS HOME
+	var/in_crit = FALSE
+	if(self.body.is_unconscious())
+		self.Paralyse(3)
+		self.Sleeping(3)
+		self.set_stat(UNCONSCIOUS)
+		in_crit = TRUE
+		if(!HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
+			ADD_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 
+	if(self.hallucination)
+		if(self.hallucination >= HALLUCINATION_THRESHOLD && !(self.species.flags & (NO_POISON|IS_PLANT|NO_HALLUCINATION)) && !HAS_TRAIT(self, TRAIT_MADNESS_IMMUNE))
+			self.handle_hallucinations()
+		self.hallucination = max(0, self.hallucination - 2)
 
+	if(self.tiredness) //tiredness for vore drain
+		self.tiredness = (self.tiredness - 1)
+		if(self.tiredness >= 100)
+			self.Sleeping(5)
 
-		if(self.tiredness) //tiredness for vore drain
-			self.tiredness = (self.tiredness - 1)
-			if(self.tiredness >= 100)
-				self.Sleeping(5)
-
-		if(self.fear)
-			self.fear = (self.fear - 1)
-			if(self.fear >= 80 && self.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
-				if(self.last_fear_sound + 51 SECONDS <= world.time)
-					self << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
-					self.last_fear_sound = world.time
-			if(self.fear >= 80 && !self.isSynthetic())
-				if(prob(1) && self.get_active_hand())
-					var/stuff_to_drop = self.get_active_hand()
-					self.drop_item()
-					self.visible_message(span_notice("\The [self] suddenly drops their [stuff_to_drop]."),span_warning("You drop your [stuff_to_drop]!"))
-				if(prob(5))
-					var/fear_self = pick(self.fear_message_self)
-					var/fear_other = pick(self.fear_message_other)
-					self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
-			else if(self.fear >= 30 && !self.isSynthetic())
-				if(prob(2))
-					var/fear_self = pick(self.fear_message_self)
-					var/fear_other = pick(self.fear_message_other)
-					self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
-
-		if(self.get_sleeping())
-			self.set_stat(UNCONSCIOUS)
-			self.animate_tail_reset()
-			self.mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
+	if(self.fear)
+		self.fear = (self.fear - 1)
+		if(self.fear >= 80 && self.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
+			if(self.last_fear_sound + 51 SECONDS <= world.time)
+				self << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
+				self.last_fear_sound = world.time
+		if(self.fear >= 80 && !self.isSynthetic())
+			if(prob(1) && self.get_active_hand())
+				var/stuff_to_drop = self.get_active_hand()
+				self.drop_item()
+				self.visible_message(span_notice("\The [self] suddenly drops their [stuff_to_drop]."),span_warning("You drop your [stuff_to_drop]!"))
+			if(prob(5))
+				var/fear_self = pick(self.fear_message_self)
+				var/fear_other = pick(self.fear_message_other)
+				self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
+		else if(self.fear >= 30 && !self.isSynthetic())
 			if(prob(2))
-				if(prob(50))
-					self.mend(TREAT_TISSUE_REPAIR, 1)
-				else
-					self.mend(TREAT_BURN_CARE, 1)
+				var/fear_self = pick(self.fear_message_self)
+				var/fear_other = pick(self.fear_message_other)
+				self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
 
-			self.handle_dreams()
-			if(prob(2) && !self.is_critical() && !self.get_hallucination_component()?.get_fakecrit() && self.client)
-				self.emote("snore")
-		//CONSCIOUS
-		else if(!in_crit)
-			self.set_stat(CONSCIOUS)
-			if(HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
-				REMOVE_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+	if(self.get_sleeping())
+		self.set_stat(UNCONSCIOUS)
+		self.animate_tail_reset()
+		self.mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
+		if(prob(2))
+			if(prob(50))
+				self.mend(TREAT_TISSUE_REPAIR, 1)
+			else
+				self.mend(TREAT_BURN_CARE, 1)
 
-		//Periodically double-check embedded_flag
-		if(self.embedded_flag && !(self.life_tick % 10))
-			var/list/E
-			E = self.get_visible_implants(0)
-			if(!E.len)
-				self.embedded_flag = 0
+		self.handle_dreams()
+		if(prob(2) && !self.is_critical() && !self.get_hallucination_component()?.get_fakecrit() && self.client)
+			self.emote("snore")
+	//CONSCIOUS
+	else if(!in_crit)
+		self.set_stat(CONSCIOUS)
+		if(HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
+			REMOVE_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 
-		//Eyes
-		//Check rig first because it's two-check and other checks will override it.
-		if(istype(self.get_equipped_item(SLOT_ID_BACK),/obj/item/rig))
-			var/obj/item/rig/O = self.get_equipped_item(SLOT_ID_BACK)
-			if(O.helmet && O.helmet == self.get_equipped_item(SLOT_ID_HEAD) && (O.helmet.body_parts_covered & EYES))
-				if((O.offline && O.offline_vision_restriction == 2) || (!O.offline && O.vision_restriction == 2))
-					self.blinded = 1
+	//Periodically double-check embedded_flag
+	if(self.embedded_flag && !(self.life_tick % 10))
+		if(!length(self.get_visible_implants(0)) || !self.embedded_needs_process())
+			self.embedded_flag = 0
 
-		// Check everything else.
+	//Eyes. Whether the mob can see at all is update_blinded(), which the HUD reads; this
+	//only keeps damaged eyes blurry and lets a blindfold rest blurry ones.
+	if(!self.species.vision_organ) // Presumably if a species has no vision organs, they see via some other means.
+		self.SetBlinded(0)
+		self.SetBlurry(0)
+	else
+		var/obj/item/organ/vision = self.internal_organs_by_name[self.species.vision_organ]
+		if(!vision || vision.is_broken() || vision.is_bruised())   // Vision organs cut out, broken or impaired? Permablurry.
+			self.Blur(1)
+		else if(self.get_eye_blurry() && istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/blindfold))
+			self.AdjustBlurry(-3) //resting your eyes with a blindfold heals blurry eyes faster
 
-		//Periodically double-check embedded_flag
-		if(self.embedded_flag && !(self.life_tick % 10))
-			if(!self.embedded_needs_process())
-				self.embedded_flag = 0
-		//Vision
-		var/obj/item/organ/vision
-		if(self.species.vision_organ)
-			vision = self.internal_organs_by_name[self.species.vision_organ]
-
-		if(!self.species.vision_organ) // Presumably if a species has no vision organs, they see via some other means.
-			self.SetBlinded(0)
-			self.blinded =    0
-			self.eye_blurry = 0
-			self.clear_alert("blind")
-		else if(!vision || vision.is_broken())   // Vision organs cut out or broken? Permablind.
-			self.SetBlinded(1)
-			self.blinded =    1
-			self.eye_blurry = 1
-			self.throw_alert("blind", /atom/movable/screen/alert/blind)
-		else //You have the requisite organs
-			if(self.sdisabilities & BLIND) 	// Disabled-blind, doesn't get better on its own
-				self.blinded =    1
-				self.throw_alert("blind", /atom/movable/screen/alert/blind)
-			else if(self.eye_blind)		  	// Blindness, heals slowly over time
-				self.AdjustBlinded(-1)
-				self.blinded =    1
-				self.throw_alert("blind", /atom/movable/screen/alert/blind)
-			else if(istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/blindfold))	//resting your eyes with a blindfold heals blurry eyes faster
-				self.eye_blurry = max(self.eye_blurry-3, 0)
-				self.blinded =    1
-				self.throw_alert("blind", /atom/movable/screen/alert/blind)
-
-			//blurry sight
-			if(vision.is_bruised())   // Vision organs impaired? Permablurry.
-				self.eye_blurry = 1
-			if(self.eye_blurry)	           // Blurry eyes heal slowly
-				self.eye_blurry = max(self.eye_blurry-1, 0)
-
-		//Ears
-		if(self.sdisabilities & DEAF)	//disabled-deaf, doesn't get better on its own
-			self.ear_deaf = max(self.ear_deaf, 1)
-			self.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
-		else if(self.ear_deaf)			//deafness, heals slowly over time
-			self.ear_deaf = max(self.ear_deaf-1, 0)
-		else if(self.get_ear_protection() >= 2)	//resting your ears with earmuffs heals ear damage faster
+	//Ears. Disabled-deaf mobs are deaf through their sdisabilities; timed deafness is the
+	//ear_deaf counter.
+	if(!(self.sdisabilities & DEAF) && !self.get_ear_deaf())
+		if(self.get_ear_protection() >= 2)	//resting your ears with earmuffs heals ear damage faster
 			self.ear_damage = max(self.ear_damage-0.15, 0)
-			self.ear_deaf = max(self.ear_deaf, 1)
+			self.Deafen(1)
 		else if(self.ear_damage < 25)	//ear damage heals slowly under this threshold. otherwise you'll need earmuffs
 			self.ear_damage = max(self.ear_damage-0.05, 0)
 
-		// CHOMPEnable Start: Handle Ear ringing, standalone safety check.
-		if(self.ear_deaf <= 0)
-			self.deaf_loop.stop()
-		// CHOMPEnable End
+	//Resting eases pain faster than it fades on its own.
+	if(self.resting)
+		self.mend(TREAT_ANALGESIC, 2)
 
-		//Resting eases pain faster than it fades on its own.
-		if(self.resting)
-			self.mend(TREAT_ANALGESIC, 2)
-
-		if (self.drowsyness)
-			self.drowsyness = max(0, self.drowsyness - 1)
-			self.eye_blurry = max(2, self.eye_blurry)
-			if (prob(5))
-				self.Sleeping(1)
-				self.Paralyse(5)
-
-		// If you're dirty, your gloves will become dirty, too.
-		if(self.get_equipped_item(SLOT_ID_GLOVES) && self.germ_level > self.get_equipped_item(SLOT_ID_GLOVES).germ_level && prob(10))
-			self.get_equipped_item(SLOT_ID_GLOVES).germ_level += 1
+	// If you're dirty, your gloves will become dirty, too.
+	if(self.get_equipped_item(SLOT_ID_GLOVES) && self.germ_level > self.get_equipped_item(SLOT_ID_GLOVES).germ_level && prob(10))
+		self.get_equipped_item(SLOT_ID_GLOVES).germ_level += 1
 
 	return 1
+
+/// Sleeps once the body is settled and nothing above has work: no sleep, fear, hallucination
+/// or tiredness to wear off, eyes and ears healthy, no earmuffs resting the ears, clean
+/// gloves. Woken by the body (injure, mend, afflictions, factors, reagents), set_stat,
+/// equipment, the sleep counter and Login/Logout (SSD sleep).
+/datum/life_system/status/carbon/human/idle(mob/living/carbon/human/self)
+	if(self.stat == DEAD)
+		return TRUE
+	if(self.stat == UNCONSCIOUS || self.get_sleeping())
+		return FALSE
+	if(self.body && !self.body.life_settled())
+		return FALSE
+	if(self.hallucination || self.tiredness || self.fear || self.embedded_flag)
+		return FALSE
+	if(!self.client && !self.teleop && self.species.get_ssd(self))
+		return FALSE
+	if(self.species.vision_organ)
+		var/obj/item/organ/vision = self.internal_organs_by_name[self.species.vision_organ]
+		if(!vision || vision.is_broken() || vision.is_bruised())
+			return FALSE
+		if(self.get_eye_blurry() && istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/blindfold))
+			return FALSE
+	else if(self.get_eye_blind() || self.get_eye_blurry())
+		return FALSE
+	if(!(self.sdisabilities & DEAF) && !self.get_ear_deaf())
+		if(self.get_ear_protection() >= 2)
+			return FALSE
+		if(self.ear_damage > 0 && self.ear_damage < 25)
+			return FALSE
+	var/obj/item/gloves = self.get_equipped_item(SLOT_ID_GLOVES)
+	if(gloves && self.germ_level > gloves.germ_level)
+		return FALSE
+	return TRUE
+
+/// Whether this human can see, from its state: stat, sleep, a blinding rig visor, the vision
+/// organ, the BLIND disability, the eye_blind counter and a blindfold. Event-driven: the
+/// sleep and blindness counters call it when they start and end, and the HUD system (woken
+/// by stat, equipment, body and counter changes) calls it before drawing.
+/mob/living/carbon/human/update_blinded()
+	blinded = compute_blinded()
+
+/mob/living/carbon/human/proc/compute_blinded()
+	if(stat == DEAD)
+		return TRUE
+	if(!species?.vision_organ) // Presumably if a species has no vision organs, they see via some other means.
+		return FALSE
+	if(stat || get_sleeping())
+		return TRUE
+	var/obj/item/rig/rig = get_equipped_item(SLOT_ID_BACK)
+	if(istype(rig) && rig.helmet && rig.helmet == get_equipped_item(SLOT_ID_HEAD) && (rig.helmet.body_parts_covered & EYES))
+		if((rig.offline && rig.offline_vision_restriction == 2) || (!rig.offline && rig.vision_restriction == 2))
+			return TRUE
+	var/obj/item/organ/vision = internal_organs_by_name[species.vision_organ]
+	if(!vision || vision.is_broken())
+		return TRUE
+	if(sdisabilities & BLIND)
+		return TRUE
+	if(get_eye_blind())
+		return TRUE
+	return istype(get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/blindfold)
 
 /mob/living/carbon/human/set_stat(new_stat)
 	. = ..()
@@ -1499,6 +1491,7 @@
 	mob_type = /mob/living/carbon/human
 
 /datum/life_system/hud/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+	self.update_blinded()
 	if(self.hud_updateflag) // update our mob's hud overlays, AKA what others see flaoting above our head
 		hud_list(self)
 
@@ -1515,7 +1508,7 @@
 			self.client.screen |= cam.client_huds
 
 	if(self.stat == DEAD) //Dead
-		if(!self.druggy)		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+		if(!self.get_druggy())		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
 	else if(self.is_critical()) //Crit
 		//Critical damage passage overlay, deeper as vitality drains (0 at the crit line, -100 at the end).
@@ -1643,9 +1636,9 @@
 
 		self.set_fullscreen(apply_nearsighted_overlay, "nearsighted", /atom/movable/screen/fullscreen/impaired, 1)
 
-		self.set_fullscreen(self.eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-		self.set_fullscreen(self.druggy, "high", /atom/movable/screen/fullscreen/high)
-		if(self.druggy)
+		self.set_fullscreen(self.get_eye_blurry(), "blurry", /atom/movable/screen/fullscreen/blurry)
+		self.set_fullscreen(self.get_druggy(), "high", /atom/movable/screen/fullscreen/high)
+		if(self.get_druggy())
 			self.throw_alert("high", /atom/movable/screen/alert/high)
 		else
 			self.clear_alert("high")
@@ -1678,6 +1671,17 @@
 				if(self.absorbed) found_welder = 1
 			if(found_welder)
 				self.client.screen |= GLOB.global_hud.darkMask
+
+	// The screen was cleared of vision overlays above: if the vision system isn't running this
+	// cycle, put the glasses and NIF overlays back now.
+	if(!(self.life_awake & LIFE_SYS_SENSES))
+		self.refresh_vision()
+
+/// Event-driven: the HUD overlays and alerts are redrawn when something they show changes.
+/// mark_hud_dirty(), the body (injury, afflictions, factors, reagents), stat, equipment,
+/// Moved and the status counters wake it; the root's darksight timer backs up players.
+/datum/life_system/hud/carbon/human/idle(mob/living/carbon/human/self)
+	return !self.hud_updateflag && !self._listen_lookup?[COMSIG_MOB_HANDLE_HUD]
 
 /// Pain as a fraction of the pain that knocks this body out (1 = passing
 /// out from pain). Drives the HUD's softcrit / hardcrit indicators.
@@ -1763,7 +1767,7 @@
 		if(XRAY in self.mutations)
 			self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 			self.see_in_dark = 8
-			if(!self.druggy)		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+			if(!self.get_druggy())		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
 		if(self.seer==1)
 			var/obj/effect/rune/R = locate() in self.loc
@@ -1798,7 +1802,7 @@
 		if(XRAY in self.mutations)
 			self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 			self.see_in_dark = 8
-			if(!self.druggy)
+			if(!self.get_druggy())
 				self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
 		self.sight |= self.factor(BF_SIGHT_FLAGS)
@@ -1823,6 +1827,13 @@
 	// Call parent to handle signals
 	..()
 
+/// Event-driven: sight follows stat, equipment, species, the darksight and sight-flag factors
+/// (a factor change wakes the senses), the blindness and drug counters and Moved (area
+/// spoilers, cult runes). Glasses and visors that toggle in place are caught by the root's
+/// timer for players.
+/datum/life_system/vision/carbon/human/idle(mob/living/carbon/human/self)
+	return !self._listen_lookup?[COMSIG_MOB_HANDLE_VISION]
+
 /mob/living/carbon/human/proc/process_glasses(obj/item/clothing/glasses/G)
 	. = FALSE
 	if(G && G.active)
@@ -1840,7 +1851,7 @@
 		if(G.see_invisible >= 0)
 			see_invisible = G.see_invisible
 			. = TRUE
-		else if(!druggy && !seer)
+		else if(!get_druggy() && !seer)
 			see_invisible = see_invisible_default
 
 /mob/living/carbon/human/proc/process_nifsoft_vision(datum/nifsoft/NS)
@@ -1970,7 +1981,7 @@
 	if(self.shock_stage >= 30)
 		if(self.shock_stage == 30 && !isbelly(self.loc))
 			self.automatic_custom_emote(VISIBLE_MESSAGE, "is having trouble keeping their eyes open.", check_stat = TRUE)
-		self.eye_blurry = max(2, self.eye_blurry)
+		self.Blur(2)
 		if(self.traumatic_shock >= 80)
 			self.stuttering = max(self.stuttering, 5)
 

@@ -1005,7 +1005,7 @@
 				H.apply_effect(nom["WTF"], STUTTER)
 				H.make_jittery(nom["WTF"])
 				H.make_dizzy(nom["WTF"])
-				H.druggy = max(H.druggy, nom["WTF"])
+				H.Drug(nom["WTF"])
 
 			return TRUE
 		else

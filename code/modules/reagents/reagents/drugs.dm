@@ -79,7 +79,7 @@
 	if(alien == IS_SLIME)
 		drug_strength *= 0.15 //~ 1/6
 
-	M.druggy = max(M.druggy, drug_strength)
+	M.Drug(drug_strength)
 	if(prob_proc == TRUE && prob(10) && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained() && !M.resting) // CHOMPstation edit - Stop drug movement from forcing crawling
 		step(M, pick(GLOB.cardinal))
 		prob_proc = FALSE
@@ -126,7 +126,7 @@
 		drug_strength *= 0.15 //~ 1/6
 
 	// Its restorative action is the treatment_tags profile.
-	M.druggy = max(M.druggy, drug_strength)
+	M.Drug(drug_strength)
 	M.AdjustStunned(-1)
 	if(prob(5) && prob_proc == TRUE)
 		M.emote("giggle")
@@ -159,7 +159,7 @@
 	if(alien == IS_SLIME)
 		threshold *= 0.15 //~1/6
 
-	M.druggy = max(M.druggy, 30)
+	M.Drug(30)
 
 	var/drug_strength = 20
 	var/effective_dose = dose
@@ -174,7 +174,7 @@
 		M.apply_effect(3, STUTTER)
 		M.make_jittery(5)
 		M.make_dizzy(5)
-		M.druggy = max(M.druggy, 35)
+		M.Drug(35)
 		M.hallucination = max(M.hallucination, drug_strength * threshold)
 		if(prob(5) && prob_proc == TRUE)
 			M.emote(pick("twitch", "giggle"))
@@ -183,7 +183,7 @@
 		M.apply_effect(3, STUTTER)
 		M.make_jittery(10)
 		M.make_dizzy(10)
-		M.druggy = max(M.druggy, 40)
+		M.Drug(40)
 		M.hallucination = max(M.hallucination, drug_strength * threshold)
 		if(prob(10) && prob_proc == TRUE)
 			M.emote(pick("twitch", "giggle"))
@@ -213,7 +213,7 @@
 	else
 		M.injure(INJURY_TOXIN, 10 * removed, source = src) //Given incorporations of other toxins with similiar damage, this seems right.
 
-	M.druggy = max(M.druggy, drug_strength)
+	M.Drug(drug_strength)
 	if(prob(10) && prob_proc == TRUE && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained())
 		step(M, pick(GLOB.cardinal))
 		prob_proc = FALSE

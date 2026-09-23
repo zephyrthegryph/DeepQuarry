@@ -654,7 +654,7 @@
 				if(M.stat != 2)
 					to_chat(M, span_warning("You drop what you're holding and clutch at your eyes!"))
 					M.drop_item()
-				M.eye_blurry += 10
+				M.AdjustBlurry(10)
 				M.Paralyse(1)
 				M.Weaken(4)
 			if (eyes.damage >= eyes.min_broken_damage)
@@ -663,7 +663,7 @@
 		H.injure(INJURY_BLUNT, 7, BP_HEAD, src)
 	else
 		M.injure(INJURY_PIERCE, 7, BP_HEAD, src)
-	M.eye_blurry += rand(3,4)
+	M.AdjustBlurry(rand(3,4))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/reveal_blood()

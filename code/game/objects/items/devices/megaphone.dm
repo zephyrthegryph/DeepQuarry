@@ -148,7 +148,7 @@
 						continue
 					M.SetSleeping(0)
 					M.stuttering += 20
-					M.ear_deaf += 30
+					M.AdjustDeaf(30)
 					M.deaf_loop.start() // Ear Ringing/Deafness
 					M.Weaken(3)
 					if(prob(30))

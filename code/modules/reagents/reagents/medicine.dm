@@ -57,7 +57,7 @@
 /datum/reagent/bicaridine/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	var/wound_heal = 2.5 * removed
-	M.eye_blurry = min(M.eye_blurry + wound_heal, 250)
+	M.SetBlurry(min(M.get_eye_blurry() + wound_heal, 250))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.organs)
@@ -187,9 +187,9 @@
 	if(alien == IS_SLIME)
 		chem_effective = 0.66
 		if(dose >= 15)
-			M.druggy = max(M.druggy, 5)
+			M.Drug(5)
 	if(alien != IS_DIONA)
-		M.drowsyness = max(0, M.drowsyness - 6 * removed * chem_effective)
+		M.AdjustDrowsyness(-(6 * removed * chem_effective))
 		M.hallucination = max(0, M.hallucination - 9 * removed * chem_effective)
 		if(prob(10))
 			M.remove_a_modifier_of_type(/datum/modifier/poisoned)
@@ -221,7 +221,7 @@
 			return
 		// Liver repair is carthatoline's TREAT_HEPATORENAL tag (body/treatment.dm).
 		if(alien == IS_SLIME)
-			H.druggy = max(M.druggy, 5)
+			H.SetDruggy(max(M.get_druggy(), 5))
 
 /datum/reagent/carthatoline/overdose(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_PAIN, 2, source = src)
@@ -305,7 +305,7 @@
 
 /datum/reagent/tricordrazine/overdose(mob/living/carbon/M, alien)
 	..()
-	M.druggy = max(M.druggy, 5)
+	M.Drug(5)
 	M.Confuse(5)
 
 // Tricordrazine's healing (blood or touch) is its treatment_tags profile.
@@ -547,11 +547,11 @@
 	if(alien == IS_SLIME)
 		chem_effective = 0.75
 		M.stuttering = min(50, max(0, M.stuttering + 5)) //If you can't feel yourself, and your main mode of speech is resonation, there's a problem.
-	M.eye_blurry = min(M.eye_blurry + 10, 250 * chem_effective)
+	M.SetBlurry(min(M.get_eye_blurry() + 10, 250 * chem_effective))
 
 /datum/reagent/oxycodone/overdose(mob/living/carbon/M, alien)
 	..()
-	M.druggy = max(M.druggy, 10)
+	M.Drug(10)
 	M.hallucination = max(M.hallucination, 3)
 
 /* Other medicine */
@@ -584,7 +584,7 @@
 			M.mend(TREAT_TISSUE_REPAIR, 2 * removed)
 			M.mend(TREAT_BURN_CARE, 1 * removed)
 		chem_effective = 0.5
-	M.drowsyness = max(M.drowsyness - 5, 0)
+	M.AdjustDrowsyness(-(5))
 	M.AdjustParalysis(-1)
 	M.AdjustStunned(-1)
 	M.AdjustWeakened(-1)
@@ -668,7 +668,7 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
 /datum/reagent/imidazoline/affect_blood(mob/living/carbon/M, alien, removed)
-	M.eye_blurry = max(M.eye_blurry - 5, 0)
+	M.AdjustBlurry(-(5))
 	M.AdjustBlinded(-5)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -705,7 +705,7 @@
 			if(I.damage > 0) // Repair is peridaxon's organ tags; the confusion is its side effect.
 				H.Confuse(5)
 			if(I.damage <= 5 && I.organ_tag == O_EYES)
-				H.eye_blurry = min(M.eye_blurry + 10, 250) //Eyes need to reset, or something
+				H.SetBlurry(min(M.get_eye_blurry() + 10, 250))//Eyes need to reset, or something
 				H.sdisabilities &= ~BLIND
 		if(alien == IS_SLIME)
 			if(prob(33))
@@ -769,7 +769,7 @@
 /datum/reagent/myelamine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.eye_blurry = min(M.eye_blurry + (repair_strength * removed), 250)
+	M.SetBlurry(min(M.get_eye_blurry() + (repair_strength * removed), 250))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength
@@ -1074,7 +1074,7 @@
 	if(alien == IS_DIONA)
 		return
 	M.clear_dizzy()
-	M.drowsyness = 0
+	M.SetDrowsyness(0)
 	M.stuttering = 0
 	M.SetConfused(0)
 	if(M.ingested)
@@ -1086,7 +1086,7 @@
 	if(alien == IS_DIONA)
 		return
 	M.clear_dizzy()
-	M.drowsyness = 0
+	M.SetDrowsyness(0)
 	M.stuttering = 0
 	M.SetConfused(0)
 	if(M.bloodstr)
@@ -1208,7 +1208,7 @@
 		var/toxic_load = M.injury_load(INJURY_CATEGORY_TOXIC)
 		if(dose >= 5 && toxic_load >= 10) //It all starts going wrong.
 			M.injure(INJURY_BLUNT, removed * 3, source = src)
-			M.eye_blurry = min(20, max(0, M.eye_blurry + 10))
+			M.SetBlurry(min(20, max(0, M.get_eye_blurry() + 10)))
 			if(prob(25))
 				if(prob(25))
 					to_chat(M, span_danger("Your pneumatic fluids seize for a moment."))
@@ -1463,7 +1463,7 @@
 
 /datum/reagent/earthsblood/affect_blood(mob/living/carbon/M, alien, removed)
 	// The healing is the treatment_tags profile; the Tithe is paid here.
-	M.druggy = max(M.druggy, 20)
+	M.Drug(20)
 	M.hallucination = max(M.hallucination, 3)
 	M.injure(INJURY_NEURAL, 1 * removed, source = src) //your life for your mind. The Earthmother's Tithe.
 
@@ -1671,11 +1671,11 @@
 		if(effective_dose == metabolism * 2 || prob(5))
 			M.emote("yawn")
 		else if(effective_dose < 5)
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.Blur(10)
 		else if(effective_dose < 20)
 			if(prob(50))
 				M.Weaken(2)
-			M.drowsyness = max(M.drowsyness, 20)
+			M.Drowse(20)
 	else
 		M.Sleeping(20)
 
@@ -1718,7 +1718,7 @@
 /datum/reagent/serazine/affect_blood(mob/living/carbon/M, alien, removed)
 	var/chem_effective = 1
 	if(alien != IS_DIONA)
-		M.drowsyness = max(0, M.drowsyness - 3 * removed * chem_effective)
+		M.AdjustDrowsyness(-(3 * removed * chem_effective))
 		M.hallucination = max(0, M.hallucination - 6 * removed * chem_effective)
 
 /datum/reagent/alizene
@@ -1756,8 +1756,8 @@
 		return
 	if(M.get_confused())
 		M.Confuse(-8*removed)
-	if(M.eye_blurry)
-		M.eye_blurry = max(M.eye_blurry - 25*removed, 0)
+	if(M.get_eye_blurry())
+		M.AdjustBlurry(-(25*removed))
 	M.make_jittery(-25*removed)
 
 /datum/reagent/numbing_enzyme
@@ -1796,7 +1796,7 @@
 		if(prob(2))
 			to_chat(H,span_warning("You feel a dull pain behind your eyes and at the back of your head..."))
 			H.hallucination += 20 //It messes with your mind for some reason.
-			H.eye_blurry += 20 //Groggy vision for a small bit.
+			H.AdjustBlurry(20)//Groggy vision for a small bit.
 		if(prob(3))
 			to_chat(H,span_warning("You shiver, your body continually being assaulted by the sensation of pins and needles."))
 			H.emote("shiver")
@@ -2091,7 +2091,7 @@
 /datum/reagent/cleansingagent/affect_blood(mob/living/carbon/M, alien, removed)
 	// Antitoxin action is the treatment_tags profile.
 	if(alien != IS_DIONA)
-		M.druggy = max(M.druggy, 5)
+		M.Drug(5)
 		M.radiation = max(M.radiation - 15 * removed * M.species.chem_strength_heal, 0)
 		M.accumulated_rads = max(M.accumulated_rads - 15 * removed * M.species.chem_strength_heal, 0)
 
@@ -2138,7 +2138,7 @@
 /datum/reagent/burncard/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	var/wound_heal = 3 * removed
-	M.eye_blurry = min(M.eye_blurry + wound_heal, 250)
+	M.SetBlurry(min(M.get_eye_blurry() + wound_heal, 250))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
@@ -2160,7 +2160,7 @@
 /datum/reagent/flamecure/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.eye_blurry = min(M.eye_blurry + (repair_strength * removed), 250)
+	M.SetBlurry(min(M.get_eye_blurry() + (repair_strength * removed), 250))
 	// The legacy negative burn-heal here was a burn (twice for humans).
 	M.injure(INJURY_BURN, (ishuman(M) ? 2 : 1) * removed, source = src)
 	if(ishuman(M))
@@ -2227,7 +2227,7 @@
 
 /datum/reagent/livingagent/overdose(mob/living/carbon/M, alien)
 	..()
-	M.druggy = max(M.druggy, 5)
+	M.Drug(5)
 	M.Confuse(5)
 
 /datum/reagent/performancepeaker

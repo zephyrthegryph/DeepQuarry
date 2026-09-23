@@ -22,7 +22,7 @@
 	if(istype(target, /mob/living/carbon/human/dummy))
 		return
 
-	BITSET(target.hud_updateflag, VANTAG_HUD)
+	target.mark_hud_dirty(VANTAG_HUD)
 	var/want_body_save = preferences.read_preference(/datum/preference/toggle/human/resleeve_scan)
 	var/want_mind_save = preferences.read_preference(/datum/preference/toggle/human/mind_scan)
 	var/resleeve_lock_pref = preferences.read_preference(/datum/preference/toggle/human/resleeve_lock)

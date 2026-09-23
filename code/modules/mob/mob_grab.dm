@@ -170,7 +170,7 @@
 		if(O_EYES)
 			if(announce)
 				assailant.visible_message(span_warning("[assailant] covers [affecting]'s eyes!"))
-			if(affecting.eye_blind < 3)
+			if(affecting.get_eye_blind() < 3)
 				affecting.Blind(3)
 		if(BP_HEAD)
 			if(force_down)

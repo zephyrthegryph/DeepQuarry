@@ -61,7 +61,7 @@ Bonus
 
 	switch(sleep_level)
 		if(10 to 19)
-			M.drowsyness += 1
+			M.AdjustDrowsyness(1)
 		if(20 to INFINITY)
 			M.AdjustSleeping(30)
 			sleep_level = 0
@@ -98,7 +98,7 @@ Bonus
 		if(5)
 			if(prob(25))
 				to_chat(M, span_warning("[pick("So tired...","You feel very sleepy.","You have a hard time keeping your eyes open.","You try to stay awake.")]"))
-				M.drowsyness = max(M.drowsyness, 2)
+				M.Drowse(2)
 				sleepy_ticks += rand(10, 14)
 				if(weakens)
 					M.AdjustWeakened(30)

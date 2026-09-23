@@ -86,8 +86,8 @@ This saves us from having to call add_fingerprint() any time something is put in
 					internals.icon_state = "internal0"
 				internal = null
 		if(SLOT_ID_ID)
-			BITSET(hud_updateflag, ID_HUD)
-			BITSET(hud_updateflag, WANTED_HUD)
+			mark_hud_dirty(ID_HUD)
+			mark_hud_dirty(WANTED_HUD)
 
 /mob/living/carbon/human/slot_vacated(slot_id, obj/item/I)
 	..()

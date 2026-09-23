@@ -50,9 +50,9 @@
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.eye_blind))
+	if(visual && ((L.sdisabilities & BLIND) || L.get_eye_blind()))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.ear_deaf))
+	if(audio && ((L.sdisabilities & DEAF) || L.get_ear_deaf()))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient
@@ -111,9 +111,9 @@
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.eye_blind))
+	if(visual && ((L.sdisabilities & BLIND) || L.get_eye_blind()))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.ear_deaf))
+	if(audio && ((L.sdisabilities & DEAF) || L.get_ear_deaf()))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient

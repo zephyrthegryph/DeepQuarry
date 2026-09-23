@@ -729,7 +729,7 @@
 		M.Stun(10)
 		M.Weaken(2)
 		M.ear_damage += rand(1, 10)
-		M.ear_deaf = max(M.ear_deaf,15)
+		M.Deafen(15)
 		// M.deaf_loop.start() // used Downstream
 	if (M.ear_damage >= 15)
 		to_chat(M, span_danger("Your ears start to ring badly!"))

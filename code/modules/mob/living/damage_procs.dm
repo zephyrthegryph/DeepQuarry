@@ -26,9 +26,9 @@
 			if(status_flags & CANSTUN) // stun is usually associated with stutter
 				stuttering = max(stuttering,(effect * blocked))
 		if(EYE_BLUR)
-			eye_blurry = max(eye_blurry,(effect * blocked))
+			Blur((effect * blocked))
 		if(DROWSY)
-			drowsyness = max(drowsyness,(effect * blocked))
+			Drowse((effect * blocked))
 	return 1
 
 

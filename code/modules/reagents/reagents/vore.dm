@@ -272,7 +272,7 @@
 		drug_strength *= M.species.chem_strength_tox
 	if(alien == IS_SLIME)
 		drug_strength *= 0.15 //~ 1/6
-	M.druggy = max(M.druggy, drug_strength)
+	M.Drug(drug_strength)
 
 /datum/reagent/drugs/rainbow_toxin/overdose(mob/living/M as mob)
 	if(prob_proc == TRUE && prob(20))

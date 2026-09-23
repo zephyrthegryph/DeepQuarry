@@ -32,11 +32,11 @@
 		return
 
 	if(self.ext_blind)
-		self.eye_blind = 5
+		self.SetBlinded(5)
 		self.client.screen.Remove(GLOB.global_hud.whitense)
 		self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 	else
-		self.eye_blind = 0
+		self.SetBlinded(0)
 		self.clear_fullscreen("blind")
 		if(!self.gem.flag_check(SOULGEM_SHOW_VORE_SFX))
 			self.client.screen.Add(GLOB.global_hud.whitense)

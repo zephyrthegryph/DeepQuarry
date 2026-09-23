@@ -214,7 +214,7 @@
 
 			if (get_ear_protection() < 2)
 				ear_damage += 30
-				ear_deaf += 120
+				AdjustDeaf(120)
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
 			if (prob(70) && !shielded)
 				Paralyse(10)
@@ -226,7 +226,7 @@
 				b_loss = b_loss/2
 			if (get_ear_protection() < 2)
 				ear_damage += 15
-				ear_deaf += 60
+				AdjustDeaf(60)
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
 			if (prob(50) && !shielded)
 				Paralyse(10)
@@ -444,7 +444,7 @@
 										modified = 1
 
 										spawn()
-											BITSET(hud_updateflag, WANTED_HUD)
+											mark_hud_dirty(WANTED_HUD)
 											if(ishuman(usr))
 												var/mob/living/carbon/human/U = usr
 												var/datum/life_system/hud/carbon/human/hud_system = U.life_system_for(/datum/life_system/hud)
@@ -1337,6 +1337,8 @@
 
 	//A slew of bits that may be affected by our species change
 	regenerate_icons()
+	// Species data drives most life systems (breath, temperature, sight, HUD): re-check them all.
+	life_wake(LIFE_SYS_ALL, "species")
 
 	if(species)
 		return 1

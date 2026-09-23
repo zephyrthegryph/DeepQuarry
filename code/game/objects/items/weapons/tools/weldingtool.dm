@@ -323,7 +323,7 @@
 				to_chat(user, span_warning("Your eyes sting a little."))
 				H.injure(INJURY_BURN, rand(1, 2), E, src, flags = INJURE_SILENT)
 				if(E.damage > 12)
-					user.eye_blurry += rand(3,6)
+					user.AdjustBlurry(rand(3,6))
 			if(0)
 				to_chat(user, span_warning("Your eyes burn."))
 				H.injure(INJURY_BURN, rand(2, 4), E, src, flags = INJURE_SILENT)
@@ -331,7 +331,7 @@
 					H.injure(INJURY_BURN, rand(4, 10), E, src, flags = INJURE_SILENT)
 			if(-1)
 				to_chat(user, span_danger("Your thermals intensify the welder's glow. Your eyes itch and burn severely."))
-				user.eye_blurry += rand(12,20)
+				user.AdjustBlurry(rand(12,20))
 				H.injure(INJURY_BURN, rand(12, 16), E, src, flags = INJURE_SILENT)
 		if(safety<2)
 
@@ -344,7 +344,7 @@
 			else if (E.damage >= E.min_bruised_damage)
 				to_chat(user, span_danger("You go blind!"))
 				user.Blind(5)
-				user.eye_blurry = 5
+				user.SetBlurry(5)
 				// Don't cure being nearsighted
 				if(!(H.disabilities & NEARSIGHTED))
 					user.disabilities |= NEARSIGHTED

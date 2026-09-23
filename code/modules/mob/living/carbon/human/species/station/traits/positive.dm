@@ -727,15 +727,15 @@
 
 /datum/modifier/adrenaline/on_applied()
 	original_length = expire_at - world.time
-	original_values = list("stun" = holder.current_pain()*1.5, "weaken" = holder.get_weakened()*1.5, "paralyze" = holder.get_paralysis()*1.5, "stutter" = holder.stuttering*1.5, "eye_blur" = holder.eye_blurry*1.5, "drowsy" = holder.drowsyness*1.5, "agony" = holder.current_pain()*1.5, "confuse" = holder.get_confused()*1.5)
+	original_values = list("stun" = holder.current_pain()*1.5, "weaken" = holder.get_weakened()*1.5, "paralyze" = holder.get_paralysis()*1.5, "stutter" = holder.stuttering*1.5, "eye_blur" = holder.get_eye_blurry()*1.5, "drowsy" = holder.get_drowsyness()*1.5, "agony" = holder.current_pain()*1.5, "confuse" = holder.get_confused()*1.5)
 
 /datum/modifier/adrenaline/tick()
 	holder.mend(TREAT_ANALGESIC, 100)
 	holder.SetWeakened(0)
 	holder.SetParalysis(0)
 	holder.stuttering = 0
-	holder.eye_blurry = 0
-	holder.drowsyness = 0
+	holder.SetBlurry(0)
+	holder.SetDrowsyness(0)
 	holder.SetConfused(0)
 	holder.SetStunned(0)
 

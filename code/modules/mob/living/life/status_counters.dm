@@ -314,3 +314,117 @@
 
 /mob/proc/AdjustConfused(amount, ignore_canstun = FALSE) //Adds to remaining duration
 	adjust_status_counter(/datum/status_effect/counter/confused, amount > 0 ? scale_disable_duration(amount) : amount)
+
+// --- Sensory family -------------------------------------------------------------------------
+
+/datum/status_effect/counter/blind
+	id = "eye_blind"
+	hud_alert = "blind"
+	hud_alert_type = /atom/movable/screen/alert/blind
+	indicator = "blinded"
+	updates_blindness = TRUE
+	wake_bits = LIFE_WAKE_STATUS | LIFE_SYS_SENSES
+
+/datum/status_effect/counter/blurry
+	id = "eye_blurry"
+	wake_bits = LIFE_SYS_HUD | LIFE_SYS_SENSES
+
+/datum/status_effect/counter/druggy
+	id = "high"
+	hud_alert = "high"
+	hud_alert_type = /atom/movable/screen/alert/high
+	wake_bits = LIFE_SYS_HUD | LIFE_SYS_SENSES
+
+/// Temporary deafness. The ringing in the ears plays while it lasts.
+/datum/status_effect/counter/deaf
+	id = "ear_deaf"
+	wake_bits = LIFE_SYS_HUD | LIFE_SYS_SENSES
+
+/datum/status_effect/counter/deaf/counter_started()
+	owner.deaf_loop?.start()
+	return ..()
+
+/datum/status_effect/counter/deaf/on_remove()
+	if(!QDELETED(owner))
+		owner.deaf_loop?.stop()
+	return ..()
+
+/// Drowsiness keeps a human's eyes heavy and now and then nods them off.
+/datum/status_effect/counter/drowsy
+	id = "drowsy"
+	wake_bits = LIFE_SYS_HUD | LIFE_SYS_SENSES
+	tick_interval = STATUS_COUNTER_TICK
+
+/datum/status_effect/counter/drowsy/tick(seconds_between_ticks)
+	if(!ishuman(owner) || owner.stat == DEAD)
+		return
+	owner.Blur(2)
+	if(prob(5))
+		owner.Sleeping(1)
+		owner.Paralyse(5)
+
+/mob/proc/get_eye_blind()
+	return status_counter(/datum/status_effect/counter/blind)
+
+/mob/proc/Blind(amount, ignore_canstun = FALSE) //Can't go below remaining duration
+	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
+		return
+	raise_status_counter(/datum/status_effect/counter/blind, scale_disable_duration(amount))
+
+/mob/proc/SetBlinded(amount, ignore_canstun = FALSE) //Sets remaining duration
+	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
+		return
+	set_status_counter(/datum/status_effect/counter/blind, max(amount, 0))
+
+/mob/proc/AdjustBlinded(amount, ignore_canstun = FALSE) //Adds to remaining duration
+	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
+		return
+	adjust_status_counter(/datum/status_effect/counter/blind, amount > 0 ? scale_disable_duration(amount) : amount)
+
+/mob/proc/get_eye_blurry()
+	return status_counter(/datum/status_effect/counter/blurry)
+
+/mob/proc/Blur(amount)
+	raise_status_counter(/datum/status_effect/counter/blurry, amount)
+
+/mob/proc/SetBlurry(amount)
+	set_status_counter(/datum/status_effect/counter/blurry, max(amount, 0))
+
+/mob/proc/AdjustBlurry(amount)
+	adjust_status_counter(/datum/status_effect/counter/blurry, amount)
+
+/mob/proc/get_druggy()
+	return status_counter(/datum/status_effect/counter/druggy)
+
+/mob/proc/Drug(amount)
+	raise_status_counter(/datum/status_effect/counter/druggy, amount)
+
+/mob/proc/SetDruggy(amount)
+	set_status_counter(/datum/status_effect/counter/druggy, max(amount, 0))
+
+/mob/proc/AdjustDruggy(amount)
+	adjust_status_counter(/datum/status_effect/counter/druggy, amount)
+
+/mob/proc/get_ear_deaf()
+	return status_counter(/datum/status_effect/counter/deaf)
+
+/mob/proc/Deafen(amount)
+	raise_status_counter(/datum/status_effect/counter/deaf, amount)
+
+/mob/proc/SetDeaf(amount)
+	set_status_counter(/datum/status_effect/counter/deaf, max(amount, 0))
+
+/mob/proc/AdjustDeaf(amount)
+	adjust_status_counter(/datum/status_effect/counter/deaf, amount)
+
+/mob/proc/get_drowsyness()
+	return status_counter(/datum/status_effect/counter/drowsy)
+
+/mob/proc/Drowse(amount)
+	raise_status_counter(/datum/status_effect/counter/drowsy, amount)
+
+/mob/proc/SetDrowsyness(amount)
+	set_status_counter(/datum/status_effect/counter/drowsy, max(amount, 0))
+
+/mob/proc/AdjustDrowsyness(amount)
+	adjust_status_counter(/datum/status_effect/counter/drowsy, amount)

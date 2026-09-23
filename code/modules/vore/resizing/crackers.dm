@@ -103,7 +103,7 @@
 			winner.resize(2)
 			winner.visible_message(span_bold("\The [winner]") + " grows in height suddenly.")
 		if(DRUGGED_CRACKER)
-			winner.druggy = max(winner.druggy, 50)
+			winner.Drug(50)
 		if(INVISIBLE_CRACKER)
 			if(!dq_get_cloaked(winner))
 				winner.visible_message(span_bold("\The [winner]") + " vanishes from sight.")

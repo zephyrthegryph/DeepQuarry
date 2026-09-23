@@ -341,7 +341,7 @@
 	if (. >= 2)
 		if(prob(.))
 			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			owner.eye_blurry += 20 //Specific level 2 'feature
+			owner.AdjustBlurry(20)//Specific level 2 'feature
 
 /obj/item/organ/external/head/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/toy/plushie) || istype(I, /obj/item/organ/external/head))

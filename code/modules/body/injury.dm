@@ -114,7 +114,7 @@
 	. = body.receive_injury(kind, amount, zone, source, affliction, flags)
 	if(!.)
 		return
-	BITSET(hud_updateflag, HEALTH_HUD)
+	mark_hud_dirty(HEALTH_HUD)
 	life_wake(LIFE_WAKE_BODY, "injure")
 	if(!(flags & INJURE_SILENT))
 		flash_weak_pain()
@@ -244,7 +244,7 @@
 	amount *= factor(BF_HEALING_RECEIVED)
 	. = body.mend(tag, amount, target)
 	if(.)
-		BITSET(hud_updateflag, HEALTH_HUD)
+		mark_hud_dirty(HEALTH_HUD)
 		life_wake(LIFE_WAKE_BODY, "mend")
 
 /// Clear every affliction and restore the body plan's parts. Admin heal,
@@ -252,7 +252,7 @@
 /mob/living/proc/fully_heal()
 	body?.clear_afflictions()
 	body?.restore()
-	BITSET(hud_updateflag, HEALTH_HUD)
+	mark_hud_dirty(HEALTH_HUD)
 	life_wake(LIFE_WAKE_BODY, "fully healed")
 
 

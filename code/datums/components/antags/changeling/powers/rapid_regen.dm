@@ -35,10 +35,10 @@
 			C.restore_blood()
 			C.species.create_organs(C)
 			C.restore_all_organs()
-			C.blinded = 0
 			C.SetBlinded(0)
-			C.eye_blurry = 0
-			C.ear_deaf = 0
+			C.SetBlurry(0)
+			C.SetDeaf(0)
+			C.update_blinded()
 			C.ear_damage = 0
 
 			// make the icons look correct

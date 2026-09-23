@@ -251,7 +251,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 
 		if("spicy_air")
 			to_chat(target, span_warning("Spice spice baby!"))
-			target.eye_blurry = max(target.eye_blurry, 25)
+			target.Blur(25)
 			target.Blind(10)
 			target.Stun(5)
 			target.Weaken(5)

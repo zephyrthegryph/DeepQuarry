@@ -217,7 +217,7 @@
 	return ((sdisabilities & BLIND) || blinded || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_deaf()
-	return ((sdisabilities & DEAF) || ear_deaf || incapacitated(INCAPACITATION_KNOCKOUT))
+	return ((sdisabilities & DEAF) || get_ear_deaf() || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_paralyzed()
 	return get_paralysis()
@@ -828,27 +828,6 @@
 //This might need a rename but it should replace the can this mob use things check
 /mob/proc/IsAdvancedToolUser()
 	return 0
-
-/mob/proc/Blind(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(max(eye_blind,amount),0)
-	on_status_counter_changed("blind")
-	return
-
-/mob/proc/SetBlinded(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(amount,0)
-	on_status_counter_changed("setblinded")
-	return
-
-/mob/proc/AdjustBlinded(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(eye_blind + amount,0)
-	on_status_counter_changed("adjustblinded")
-	return
 
 /mob/proc/Resting(amount)
 	facing_dir = null

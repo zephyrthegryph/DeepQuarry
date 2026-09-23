@@ -20,7 +20,7 @@
 	// Movespeed delay based on movement mode
 	switch(m_intent)
 		if(I_RUN)
-			if(drowsyness > 0)
+			if(get_drowsyness() > 0)
 				. += 6
 			. += CONFIG_GET(number/run_speed)
 		if(I_WALK)

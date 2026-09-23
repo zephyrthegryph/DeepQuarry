@@ -481,51 +481,47 @@
 
 // --- Status block -----------------------------------------------------------------------------
 
-/// Eye and ear damage recovery.
+/// The blind alert for lasting blindness, and ear damage recovery. Timed blindness, blur and
+/// deafness are status counters (life/status_counters.dm) that end on their own.
 /datum/life_system/disabilities
 	name = "disabilities"
 	bit = LIFE_SYS_GENETICS
 	phase = LIFE_PHASE_MIND
 	order = 10
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
-	woken_by = "Blind/SetBlinded/AdjustBlinded; set_stat; body invalidate"
+	woken_by = "blindness counter start and end; set_stat; body invalidate; adjustEarDamage()"
 
 /datum/life_system/disabilities/tick(mob/living/self, datum/life_context/ctx)
 	SEND_SIGNAL(self, COMSIG_HANDLE_DISABILITIES)
-	//Eyes
-	if(self.sdisabilities & BLIND || self.stat)	//blindness from disability or unconsciousness doesn't get better on its own
-		self.SetBlinded(1)
+	//Eyes: blindness from a disability or unconsciousness doesn't get better on its own.
+	if((self.sdisabilities & BLIND) || self.stat)
 		self.throw_alert("blind", /atom/movable/screen/alert/blind)
-	else if(self.eye_blind)			//blindness, heals slowly over time
-		self.AdjustBlinded(-1)
-		self.throw_alert("blind", /atom/movable/screen/alert/blind)
-	else
+	else if(!self.get_eye_blind())
 		self.clear_alert("blind")
 
-	if(self.eye_blurry)			//blurry eyes heal slowly
-		self.eye_blurry = max(self.eye_blurry-1, 0)
+	//Ears: damage heals slowly, unless it is over 100. Disabled-deaf mobs are deaf through
+	//their sdisabilities; timed deafness is the ear_deaf counter.
+	if(self.ear_damage > 0 && self.ear_damage < 100)
+		self.ear_damage = max(self.ear_damage - 0.05, 0)
 
-	//Ears
-	if(self.sdisabilities & DEAF)		//disabled-deaf, doesn't get better on its own
-		self.setEarDamage(-1, max(self.ear_deaf, 1))
-	else
-		// deafness heals slowly over time, unless ear_damage is over 100
-		if(self.ear_damage < 100)
-			self.adjustEarDamage(-0.05,-1)
-
-/// Busy while eyes or ears are recovering, a disability component listens, or the blind
-/// alert is still up.
+/// Busy while the ears are recovering, a disability component listens, or the blind alert
+/// doesn't match the eyes.
 /datum/life_system/disabilities/idle(mob/living/self)
 	if(type != /datum/life_system/disabilities)
 		return FALSE
+	return base_idle(self)
+
+/// The root's sleep rule, shared with the variants that add their own conditions.
+/datum/life_system/disabilities/proc/base_idle(mob/living/self)
 	if(self._listen_lookup?[COMSIG_HANDLE_DISABILITIES])
 		return FALSE
-	if(self.stat || (self.sdisabilities & (BLIND | DEAF)))
+	var/want_alert = (self.sdisabilities & BLIND) || self.stat || self.get_eye_blind()
+	if(!want_alert != !self.alerts?["blind"])
 		return FALSE
-	return !self.eye_blind && !self.eye_blurry && !self.ear_deaf && self.ear_damage <= 0 && !self.alerts?["blind"]
+	return self.ear_damage <= 0 || self.ear_damage >= 100
 
-/// Speech impairments and drugs wear off. Stun, weaken, paralysis, sleep and confusion are
-/// status counters (life/status_counters.dm) that end on their own.
+/// Speech impairments wear off. Stun, weaken, paralysis, sleep, confusion and the sensory
+/// counters are status counters (life/status_counters.dm) that end on their own.
 /datum/life_system/statuses
 	name = "statuses"
 	bit = LIFE_SYS_STATUS
@@ -533,21 +529,18 @@
 	order = 30
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI
-	woken_by = "speech and drug setters"
+	woken_by = "speech setters"
 
 /datum/life_system/statuses/tick(mob/living/self, datum/life_context/ctx)
 	stuttering(self)
 	silent(self)
-	drugged(self)
 	slurring(self)
 
 /// Continuous while any counter runs or an alert is still up; asleep otherwise.
 /datum/life_system/statuses/idle(mob/living/self)
 	if(type != /datum/life_system/statuses)
 		return FALSE
-	if(self.stuttering || self.silent || self.druggy || self.slurring)
-		return FALSE
-	return !self.alert_state_drugged
+	return !self.stuttering && !self.silent && !self.slurring
 
 /datum/life_system/statuses/proc/stuttering(mob/living/self)
 	if(self.stuttering)
@@ -558,17 +551,6 @@
 	if(self.silent)
 		self.silent = max(self.silent-1, 0)
 	return self.silent
-
-/datum/life_system/statuses/proc/drugged(mob/living/self)
-	if(self.druggy)
-		self.druggy = max(self.druggy-1, 0)
-		if(!self.alert_state_drugged)
-			self.alert_state_drugged = TRUE
-			self.throw_alert("high", /atom/movable/screen/alert/high)
-	else if(self.alert_state_drugged)
-		self.alert_state_drugged = FALSE
-		self.clear_alert("high")
-	return self.druggy
 
 /datum/life_system/statuses/proc/slurring(mob/living/self)
 	if(self.slurring)

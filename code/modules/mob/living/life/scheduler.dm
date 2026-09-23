@@ -280,6 +280,11 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 /mob/living/proc/on_client_changed(reason)
 	life_wake(LIFE_SYS_ALL, reason)
 
+/// Marks one HUD_* image of this mob's HUD overlays stale and wakes the HUD to redraw it.
+/mob/living/proc/mark_hud_dirty(index)
+	BITSET(hud_updateflag, index)
+	life_wake(LIFE_SYS_HUD | LIFE_SYS_SENSES, "hud dirty")
+
 /// Something was equipped or unequipped.
 /mob/proc/on_equipment_changed()
 	return

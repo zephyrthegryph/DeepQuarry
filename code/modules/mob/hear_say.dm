@@ -207,7 +207,7 @@
 
 	message = "[encode_html_emphasis(message)][part_d]"
 
-	if((sdisabilities & DEAF) || ear_deaf)
+	if((sdisabilities & DEAF) || get_ear_deaf())
 		if(prob(20))
 			to_chat(src, span_warning("You feel your headset vibrate but can hear nothing from it!"))
 	else

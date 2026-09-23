@@ -958,7 +958,7 @@
 
 		if(deafening) //Very loud, ears go ouch. Should not make you permanently deaf, though.
 			H.ear_damage += 60
-			H.ear_deaf += 80
+			H.AdjustDeaf(80)
 
 		user.injure(INJURY_PAIN, 150, source = src) //That hurt a lot.
 		user.AdjustSleeping(50) //Knocked out

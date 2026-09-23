@@ -106,7 +106,7 @@
 				add_overlay(H.overlays_standing[i])
 
 	initial_sleep = H.get_sleeping()
-	initial_blind = H.eye_blind
+	initial_blind = H.get_eye_blind()
 	initial_is_shifted = H.is_shifted
 	transform = H.transform
 	layer = H.layer

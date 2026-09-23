@@ -343,20 +343,20 @@
 	//If they're blinded
 	if(self.soulcatcher) // needs it's own handling to allow vore_fx
 		if(self.ext_blind)
-			self.eye_blind = 5
+			self.SetBlinded(5)
 			self.client.screen.Remove(GLOB.global_hud.whitense)
 			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			self.eye_blind = 0
+			self.SetBlinded(0)
 			self.clear_fullscreens()
 			self.client.screen.Add(GLOB.global_hud.whitense)
 
 	//If they're deaf
 	if(self.ext_deaf)
-		self.ear_deaf = 5
+		self.SetDeaf(5)
 		self.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
 	else
-		self.ear_deaf = 0
+		self.SetDeaf(0)
 		self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
 
 /mob/living/carbon/brain/caught_soul/hear_say()
