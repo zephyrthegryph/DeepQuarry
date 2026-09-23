@@ -27,7 +27,19 @@ pub trait EntityDomain {
     /// Drops every component and resets to a fresh, empty state
     /// (`verdigris_init`/`verdigris_cleanup`, §4).
     fn reset(&mut self);
+    /// Moves this domain's raised events (since the last drain) into `out`,
+    /// as `(kind, entity, event_id)` (§8). `entity` is already in
+    /// `vg_entity`'s raw-plus-one form.
+    fn drain_events(&mut self, out: &mut Vec<(u16, f32, u8)>);
 }
+
+/// The bits of a `vg_entity` value (after subtracting the raw-plus-one
+/// offset) that carry the slot index, matching `vg_core::handle::INDEX_BITS`
+/// (checked in this module's tests). DM computes an entity's table index
+/// with it to look up the bound atom for event dispatch (§8), without
+/// needing to know anything else about handle packing.
+/// @dm-define VG_ENTITY_INDEX_MASK
+pub const ENTITY_INDEX_MASK: u32 = 1_048_575;
 
 thread_local! {
     static ENTITIES: RefCell<EntityTable> = RefCell::new(EntityTable::new());
@@ -200,6 +212,39 @@ fn yes(b: bool) -> ByondValue {
     ByondValue::from(if b { 1.0f32 } else { 0.0 })
 }
 
+fn list(values: &[f32]) -> Result<ByondValue> {
+    let items: Vec<ByondValue> = values.iter().copied().map(ByondValue::from).collect();
+    let list = ByondValue::new_list()?;
+    list.write_list(&items)?;
+    Ok(list)
+}
+
+/// `SSvg`'s per-domain event drain (§8): every event raised by that
+/// domain's components since the last drain, as a flat
+/// `[kind, entity, event_id, ...]` list. SSreactor/SSvg calls this once per
+/// domain per tick (or sweep), then resolves each `entity` to its bound
+/// atom and calls the generated dispatcher, checking `atom.vg_entity ==
+/// entity` first (a component detached between the event firing and the
+/// drain is a stale record, silently dropped by that check).
+#[auxmacros::bind("/proc/entity_drain_domain_events")]
+fn entity_drain_domain_events(domain: ByondValue) -> Result<ByondValue> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let domain = num(&domain)?.max(0.0) as usize;
+    let mut events = Vec::new();
+    DOMAINS.with_borrow_mut(|domains| {
+        if let Some(handler) = domains.get_mut(&domain) {
+            handler.drain_events(&mut events);
+        }
+    });
+    let mut flat = Vec::with_capacity(events.len() * 3);
+    for (kind, entity, event_id) in events {
+        flat.push(f32::from(kind));
+        flat.push(entity);
+        flat.push(f32::from(event_id));
+    }
+    list(&flat)
+}
+
 /// World reset (`verdigris_init`/`verdigris_cleanup`, §4): every registered
 /// domain drops its components, then the entity table itself is rebuilt, so
 /// no handle survives into a new round.
@@ -230,8 +275,15 @@ fn entity_debug_list() -> Result<ByondValue> {
             }
         }
     });
-    let items: Vec<ByondValue> = flat.into_iter().map(ByondValue::from).collect();
-    let list = ByondValue::new_list()?;
-    list.write_list(&items)?;
-    Ok(list)
+    list(&flat)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ENTITY_INDEX_MASK;
+
+    #[test]
+    fn index_mask_matches_vg_core_handle_packing() {
+        assert_eq!(ENTITY_INDEX_MASK, vg_core::handle::MAX_SLOTS - 1);
+    }
 }

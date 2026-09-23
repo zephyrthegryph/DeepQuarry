@@ -13,9 +13,18 @@
  *    reconcile proc pushes the recomputed value before returning it as a
  *    finding) and logged.
  *
- * `bound` (which atoms to sweep) is maintained by `on_materialize()`/
+ * 3. Drains and dispatches every domain's events (§8), through the
+ *    generated `vg_drain_events()`: one `entity_drain_domain_events()` FFI
+ *    call per domain, each event resolved to its bound atom by
+ *    `entity_lookup()` and checked against `atom.vg_entity` before the
+ *    generated dispatcher is called, so a component detached between the
+ *    event firing and this drain is silently dropped rather than
+ *    misdelivered.
+ *
+ * `bound` (which atoms to sweep) and `entities_by_index` (which atom a
+ * `vg_entity` belongs to) are maintained by `on_materialize()`/
  * `on_dematerialize()` (`code/game/atoms_movable.dm`), not by generated
- * code: it tracks "this atom currently has a live vg_entity", independent
+ * code: they track "this atom currently has a live vg_entity", independent
  * of which components it holds.
  *
  * Production sweeps cover every bound atom within about 60 seconds
@@ -34,6 +43,9 @@ SUBSYSTEM_DEF(vg)
 	/// Every atom with a live vg_entity. Membership: register()/unregister(),
 	/// called from on_materialize()/on_dematerialize().
 	var/list/bound = list()
+	/// vg_entity's index (see VG_ENTITY_INDEX_MASK) -> the bound atom, for
+	/// event dispatch (§8). 1-indexed like every DM list: slot "[index+1]".
+	var/list/entities_by_index = list()
 	/// Where the production sweep left off.
 	var/sweep_index = 1
 	/// Atoms checked per fire(). §7: 5,000 atoms over 60s is ~85/s; at the
@@ -49,6 +61,7 @@ SUBSYSTEM_DEF(vg)
 
 /datum/controller/subsystem/vg/Recover()
 	bound = SSvg.bound
+	entities_by_index = SSvg.entities_by_index
 	sweep_index = SSvg.sweep_index
 	total_repairs = SSvg.total_repairs
 
@@ -58,6 +71,7 @@ SUBSYSTEM_DEF(vg)
 
 /datum/controller/subsystem/vg/fire(resumed)
 	vg_entity_tick_all()
+	vg_drain_events()
 	if(!length(bound))
 		return
 	last_repairs = 0
@@ -100,14 +114,29 @@ SUBSYSTEM_DEF(vg)
 /datum/controller/subsystem/vg/proc/register(atom/movable/mover)
 	if(!(mover in bound))
 		bound += mover
+	var/slot = ((mover.vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+	if(length(entities_by_index) < slot)
+		entities_by_index.len = slot
+	entities_by_index[slot] = mover
 
 /datum/controller/subsystem/vg/proc/unregister(atom/movable/mover)
 	var/index = bound.Find(mover)
-	if(!index)
-		return
-	bound.Cut(index, index + 1)
-	if(sweep_index > index)
-		sweep_index--
+	if(index)
+		bound.Cut(index, index + 1)
+		if(sweep_index > index)
+			sweep_index--
+	var/slot = ((mover.vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+	if(entities_by_index[slot] == mover)
+		entities_by_index[slot] = null
+
+/// The atom `entity`'s index belongs to, or null. Event dispatch (§8) still
+/// checks `atom.vg_entity == entity` itself: a recycled index briefly holds
+/// a different, newer entity, and this alone would misdeliver.
+/datum/controller/subsystem/vg/proc/entity_lookup(entity)
+	var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+	if(slot > length(entities_by_index))
+		return null
+	return entities_by_index[slot]
 
 /**
  * Full reconciliation of every bound atom in one call (§7): the test

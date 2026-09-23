@@ -59,6 +59,12 @@ struct World {
     sim: Sim,
     key: DomainKey<PumpKind>,
     cells: CellAllocator,
+    /// `vg_entity` (raw-plus-one) of the pump bound at each cell, so a law
+    /// step that only knows a cell can still raise an event against the
+    /// right atom (§8). `None` for a free or never-allocated cell.
+    cell_entity: Vec<Option<f32>>,
+    /// Raised events not yet drained, as `(entity, event_id)` (§8).
+    events: Vec<(f32, u8)>,
 }
 
 impl World {
@@ -78,7 +84,31 @@ impl World {
             sim,
             key,
             cells: CellAllocator::new(),
+            cell_entity: Vec::new(),
+            events: Vec::new(),
         }
+    }
+
+    fn set_cell_entity(&mut self, cell: u32, entity: f32) {
+        let index = cell as usize;
+        if self.cell_entity.len() <= index {
+            self.cell_entity.resize(index + 1, None);
+        }
+        self.cell_entity[index] = Some(entity);
+    }
+
+    /// Raises `event` for the pump at `cell`, drained by `SSvg` (§8). A
+    /// no-op if the cell holds no live pump (already detached): nothing
+    /// left to notify.
+    #[allow(dead_code)] // wired up once a law (M2) actually calls this
+    fn push_event(&mut self, cell: u32, event: PumpEvent) {
+        if let Some(entity) = self.cell_entity.get(cell as usize).copied().flatten() {
+            self.events.push((entity, event.id()));
+        }
+    }
+
+    fn drain_events(&mut self, out: &mut Vec<(u16, f32, u8)>) {
+        out.extend(self.events.drain(..).map(|(entity, id)| (KIND, entity, id)));
     }
 
     fn detach_component(&mut self, comp: ComponentRef) {
@@ -87,6 +117,9 @@ impl World {
         }
         let _ = self.sim.port(self.key).take(comp.cell);
         self.cells.free_cell(comp.cell);
+        if let Some(slot) = self.cell_entity.get_mut(comp.cell as usize) {
+            *slot = None;
+        }
     }
 
     fn describe_component(&self, comp: ComponentRef) -> Vec<(String, String)> {
@@ -126,6 +159,9 @@ impl EntityDomain for Shared {
     }
     fn reset(&mut self) {
         *self.0.borrow_mut() = World::new();
+    }
+    fn drain_events(&mut self, out: &mut Vec<(u16, f32, u8)>) {
+        self.0.borrow_mut().drain_events(out);
     }
 }
 
@@ -188,16 +224,18 @@ fn pump_bind(
         flow_rate: 0.0,
     };
     let h = entity::bind_or_reuse(num(&entity)?)?;
+    let entity_v = entity::entity_value(h);
     let cell = with(|w| {
         let cell = w.cells.alloc();
         w.sim
             .port(w.key)
             .put(cell, value.clone())
             .map_err(|e| eyre!("pump bind: {e}"))?;
+        w.set_cell_entity(cell, entity_v);
         Ok(cell)
     })?;
     entity::attach(h, DOMAIN, ComponentRef::new(KIND, cell)).map_err(|e| eyre!("{e}"))?;
-    Ok(ByondValue::from(entity::entity_value(h)))
+    Ok(ByondValue::from(entity_v))
 }
 
 // --- Config: get/set -----------------------------------------------------
@@ -389,5 +427,47 @@ mod tests {
             Some(Pump::default()),
             "take() resets the cell to Value::default()"
         );
+    }
+
+    /// Events raised against a cell are attributed to the entity bound
+    /// there, and vanish once that entity detaches (§8): the whole path a
+    /// future law's `push_event` will exercise, tested independent of one.
+    #[test]
+    fn events_are_attributed_to_the_bound_entity_and_drain_once() {
+        let mut world = World::new();
+        let cell = world.cells.alloc();
+        world.sim.port(world.key).put(cell, Pump::default()).unwrap();
+        world.set_cell_entity(cell, 42.0);
+
+        // No bound entity yet at a different cell: nothing to attribute to.
+        world.push_event(cell + 1, PumpEvent::Starved);
+        let mut out = Vec::new();
+        world.drain_events(&mut out);
+        assert!(out.is_empty(), "an event on an unbound cell must not be attributed to anything");
+
+        world.push_event(cell, PumpEvent::TargetReached);
+        world.push_event(cell, PumpEvent::Starved);
+        let mut out = Vec::new();
+        world.drain_events(&mut out);
+        assert_eq!(
+            out,
+            vec![
+                (KIND, 42.0, PumpEvent::TargetReached.id()),
+                (KIND, 42.0, PumpEvent::Starved.id()),
+            ]
+        );
+
+        // Drained once: nothing left the second time.
+        let mut out2 = Vec::new();
+        world.drain_events(&mut out2);
+        assert!(out2.is_empty());
+
+        // Detaching clears the attribution: a later event on the same
+        // (reused) cell is never mistaken for the old entity's.
+        world.detach_component(ComponentRef::new(KIND, cell));
+        world.push_event(cell, PumpEvent::TargetReached);
+        let mut out3 = Vec::new();
+        world.drain_events(&mut out3);
+        assert!(out3.is_empty(), "a detached cell's event must not resurrect the old entity");
     }
 }

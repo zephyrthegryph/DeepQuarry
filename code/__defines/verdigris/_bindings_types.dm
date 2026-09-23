@@ -21,6 +21,11 @@
 /atom/movable/proc/vg_reconcile_gas()
 	return list()
 
+/// Dispatches one drained gas event (§8) to its named handler.
+/// Overridden per bound type below (only on types that declare events).
+/atom/movable/proc/vg_dispatch_gas_event(event_id)
+	return
+
 // ---- Pump (gas kind 1; verdigris/domains/gas/src/kind/pump.rs) ----
 
 #define VG_GAS_PUMP 1
@@ -119,6 +124,17 @@
 /obj/machinery/atmospherics/binary/pump/proc/on_pump_starved()
 	return
 
+/// Dispatches one drained event (§8) to its named handler.
+/obj/machinery/atmospherics/binary/pump/proc/pump_dispatch_event(event_id)
+	switch(event_id)
+		if(0)
+			on_pump_target_reached()
+		if(1)
+			on_pump_starved()
+
+/obj/machinery/atmospherics/binary/pump/vg_dispatch_gas_event(event_id)
+	pump_dispatch_event(event_id)
+
 // ---- One entry point per bound atom -------------------------------------
 
 /// Binds every component this atom's type declares (base on_materialize(), L2).
@@ -137,3 +153,18 @@
 	if(vg_gas)
 		mismatches += vg_reconcile_gas()
 	return mismatches
+
+/// Drains and dispatches every domain's events (§8). SSvg calls this once
+/// per tick; one `entity_drain_domain_events()` FFI call per domain.
+/proc/vg_drain_events()
+	vg_drain_gas_events()
+
+/proc/vg_drain_gas_events()
+	var/list/flat = vg_entity_drain_domain_events(VG_DOMAIN_GAS)
+	for(var/i = 1; i <= length(flat); i += 3)
+		var/entity = flat[i + 1]
+		var/event_id = flat[i + 2]
+		var/atom/movable/mover = SSvg.entity_lookup(entity)
+		if(mover && mover.vg_entity == entity)
+			mover.vg_dispatch_gas_event(event_id)
+

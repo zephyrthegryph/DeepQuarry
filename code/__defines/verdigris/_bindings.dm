@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "411e81c6b5a037b1"
+#define VERDIGRIS_ABI "a7d3f63e3eeff1ac"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -411,6 +411,14 @@
 // verdigris/domains/gas/src/kind/pump.rs
 #define VG_DOMAIN_GAS 0
 
+/// The bits of a `vg_entity` value (after subtracting the raw-plus-one
+/// offset) that carry the slot index, matching `vg_core::handle::INDEX_BITS`
+/// (checked in this module's tests). DM computes an entity's table index
+/// with it to look up the bound atom for event dispatch (§8), without
+/// needing to know anything else about handle packing.
+// verdigris/ffi/src/entity.rs
+#define VG_ENTITY_INDEX_MASK 1048575
+
 // Binds.
 
 /// Args: (amount). Adds the given amount to each gas.
@@ -614,6 +622,19 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:entity_describe_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
+
+/// `SSvg`'s per-domain event drain (§8): every event raised by that
+/// domain's components since the last drain, as a flat
+/// `[kind, entity, event_id, ...]` list. SSreactor/SSvg calls this once per
+/// domain per tick (or sweep), then resolves each `entity` to its bound
+/// atom and calls the generated dispatcher, checking `atom.vg_entity ==
+/// entity` first (a component detached between the event firing and the
+/// drain is a stale record, silently dropped by that check).
+// /proc/entity_drain_domain_events (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_drain_domain_events(domain)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_drain_domain_events_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(domain)
 
 /// A safe probe for whether `entity_v` currently resolves to a live
 /// component of `domain`/`kind`: `FALSE` for stale, out-of-range, unbound

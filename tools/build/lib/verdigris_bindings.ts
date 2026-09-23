@@ -469,6 +469,9 @@ function renderComponentsDm(components: Component[]): string {
     dm += `/// what Rust has stored for its ${domain} component, repairing as it goes.\n`;
     dm += `/// Overridden per bound type below.\n`;
     dm += `/atom/movable/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
+    dm += `/// Dispatches one drained ${domain} event (§8) to its named handler.\n`;
+    dm += `/// Overridden per bound type below (only on types that declare events).\n`;
+    dm += `/atom/movable/proc/vg_dispatch_${domain}_event(event_id)\n\treturn\n\n`;
   }
 
   for (const comp of components) {
@@ -574,6 +577,17 @@ function renderComponentsDm(components: Component[]): string {
         dm += `${dmType}/proc/on_${lower}_${snake(v)}()\n\treturn\n\n`;
       }
     }
+
+    const allVariants = comp.events.flatMap((e) => e.variants);
+    if (allVariants.length) {
+      dm += `/// Dispatches one drained event (§8) to its named handler.\n`;
+      dm += `${dmType}/proc/${lower}_dispatch_event(event_id)\n\tswitch(event_id)\n`;
+      allVariants.forEach((v, id) => {
+        dm += `\t\tif(${id})\n\t\t\ton_${lower}_${snake(v)}()\n`;
+      });
+      dm += '\n';
+      dm += `${dmType}/vg_dispatch_${domain}_event(event_id)\n\t${lower}_dispatch_event(event_id)\n\n`;
+    }
   }
 
   dm += `// ---- One entry point per bound atom -------------------------------------\n\n`;
@@ -592,7 +606,25 @@ function renderComponentsDm(components: Component[]): string {
   for (const domain of byDomain.keys()) {
     dm += `\tif(vg_${domain})\n\t\tmismatches += vg_reconcile_${domain}()\n`;
   }
-  dm += `\treturn mismatches\n`;
+  dm += `\treturn mismatches\n\n`;
+
+  dm += `/// Drains and dispatches every domain's events (§8). SSvg calls this once\n`;
+  dm += `/// per tick; one \`entity_drain_domain_events()\` FFI call per domain.\n`;
+  dm += `/proc/vg_drain_events()\n`;
+  for (const domain of byDomain.keys()) {
+    dm += `\tvg_drain_${domain}_events()\n`;
+  }
+  dm += '\n';
+  for (const domain of byDomain.keys()) {
+    dm += `/proc/vg_drain_${domain}_events()\n`;
+    dm += `\tvar/list/flat = vg_entity_drain_domain_events(VG_DOMAIN_${domain.toUpperCase()})\n`;
+    dm += `\tfor(var/i = 1; i <= length(flat); i += 3)\n`;
+    dm += `\t\tvar/entity = flat[i + 1]\n`;
+    dm += `\t\tvar/event_id = flat[i + 2]\n`;
+    dm += `\t\tvar/atom/movable/mover = SSvg.entity_lookup(entity)\n`;
+    dm += `\t\tif(mover && mover.vg_entity == entity)\n`;
+    dm += `\t\t\tmover.vg_dispatch_${domain}_event(event_id)\n\n`;
+  }
   return dm;
 }
 
