@@ -1024,108 +1024,32 @@ fn place_room_program(
         });
         let rotation_offset =
             usize::try_from(layout.seed ^ stable_text_hash(zone.id)).unwrap_or_default() % 4;
+        let env = ZonePlacementEnv {
+            layout,
+            tiles,
+            doors,
+            center,
+        };
         let mut selected = None;
         'candidate: for anchor in anchors {
-            // NOTE: every path out of this block either `continue 'candidate`
-            // (next anchor) or `break 'candidate` (done), so `turn_offset`
-            // never advances past 0 -- only `rotation_offset`'s own rotation
-            // is ever tried per anchor, not all 4. That's a pre-existing
-            // behavior quirk (see the verdigris rust-audit rust_core.md
-            // notes); written as a single pass here, without a loop, so it's
-            // honest about what actually runs instead of tripping
-            // clippy::never_loop over dead iteration.
-            {
-                let turn_offset = 0;
+            // Try all 4 quarter-turns for this anchor (starting from
+            // `rotation_offset`'s own rotation) before giving up on it: a
+            // rotation that doesn't fit at this anchor may still fit once
+            // turned. See `try_place_zone_at`.
+            for turn_offset in 0..4 {
                 let turns = (rotation_offset + turn_offset) % 4;
-                let mut placements = Vec::with_capacity(zone.fixtures.len());
-                let mut local = BTreeSet::new();
-                let mut trial_blocking = blocking.clone();
-                let mut trial_access = required_access.clone();
-                for fixture in &zone.fixtures {
-                    let (dx, dy) = program_rotate_offset(fixture.dx, fixture.dy, turns);
-                    let x = i32::from(anchor.x) + i32::from(dx);
-                    let y = i32::from(anchor.y) + i32::from(dy);
-                    if x < 0 || y < 0 {
-                        continue 'candidate;
-                    }
-                    let at = Point {
-                        x: u16::try_from(x).unwrap_or(u16::MAX),
-                        y: u16::try_from(y).unwrap_or(u16::MAX),
-                    };
-                    if !tiles.contains(&at)
-                        || doors.contains(&at)
-                        || occupied.contains(&at)
-                        || required_access.contains(&at)
-                        || !local.insert(at)
-                    {
-                        continue 'candidate;
-                    }
-                    let wall_mounted = fixture_is_wall_mounted(fixture.id);
-                    let layer = if wall_mounted {
-                        FixtureLayer::Wall
-                    } else {
-                        match fixture.layer {
-                            ProgramLayer::Furniture => FixtureLayer::Furniture,
-                            ProgramLayer::Machine => FixtureLayer::Machine,
-                            ProgramLayer::Wall => FixtureLayer::Wall,
-                        }
-                    };
-                    let facing = if wall_mounted || fixture.layer == ProgramLayer::Wall {
-                        let Some(facing) = wall_fixture_facing(layout, at) else {
-                            continue 'candidate;
-                        };
-                        facing
-                    } else if zone.anchor == ProgramAnchor::Perimeter {
-                        wall_fixture_facing(layout, anchor)
-                            .map(opposite_facing)
-                            .unwrap_or_else(|| face_toward(at, center))
-                    } else {
-                        face_toward(at, anchor)
-                    };
-                    if !wall_mounted && fixture_blocks(fixture.id) {
-                        trial_blocking.insert(at);
-                    }
-                    placements.push(AuthoredCompositionPlacement {
-                        at,
-                        facing,
-                        fixture_id: fixture.id.into(),
-                        layer,
-                    });
+                if let Some(placed) = try_place_zone_at(
+                    &env,
+                    &occupied,
+                    &required_access,
+                    &blocking,
+                    zone,
+                    anchor,
+                    turns,
+                ) {
+                    selected = Some(placed);
+                    break 'candidate;
                 }
-                for placement in &mut placements {
-                    if !fixture_blocks_on_layer(&placement.fixture_id, placement.layer) {
-                        continue;
-                    }
-                    let preferred = placement.facing;
-                    let candidate_facings = if fixture_requires_fixed_facing(&placement.fixture_id)
-                    {
-                        vec![preferred]
-                    } else {
-                        vec![
-                            preferred,
-                            Facing::North,
-                            Facing::East,
-                            Facing::South,
-                            Facing::West,
-                        ]
-                    };
-                    let Some((access, facing)) = candidate_facings
-                        .into_iter()
-                        .map(|facing| (step_facing(placement.at, facing), facing))
-                        .find(|(access, _)| {
-                            tiles.contains(access) && !trial_blocking.contains(access)
-                        })
-                    else {
-                        continue 'candidate;
-                    };
-                    placement.facing = facing;
-                    trial_access.insert(access);
-                }
-                if !room_walkable_connected(tiles, &trial_blocking, layout.width, layout.height) {
-                    continue 'candidate;
-                }
-                selected = Some((placements, trial_blocking, trial_access));
-                break 'candidate;
             }
         }
         if let Some((placements, trial_blocking, trial_access)) = selected {
@@ -1167,6 +1091,113 @@ fn place_room_program(
         }
     }
     Ok(result)
+}
+
+/// The parts of a zone-placement attempt that don't change across anchors or
+/// rotations, grouped so `try_place_zone_at` stays under clippy's argument
+/// limit instead of taking each of these separately.
+struct ZonePlacementEnv<'a> {
+    layout: &'a StationLayout,
+    tiles: &'a BTreeSet<Point>,
+    doors: &'a BTreeSet<Point>,
+    center: Point,
+}
+
+/// Tries to place every fixture of `zone`, anchored at `anchor` and rotated
+/// `turns` quarter-turns (see `program_rotate_offset`), without colliding
+/// with `occupied`/`env.doors`/`blocking`/`required_access` and without
+/// leaving the room's walkable area disconnected. Returns the placements
+/// plus the blocking/access point sets they would add, or `None` if this
+/// anchor/rotation doesn't fit -- the caller then retries with the next
+/// rotation, and failing all 4, the next anchor.
+fn try_place_zone_at(
+    env: &ZonePlacementEnv<'_>,
+    occupied: &BTreeSet<Point>,
+    required_access: &BTreeSet<Point>,
+    blocking: &BTreeSet<Point>,
+    zone: &ActivityZone,
+    anchor: Point,
+    turns: usize,
+) -> Option<(Vec<AuthoredCompositionPlacement>, BTreeSet<Point>, BTreeSet<Point>)> {
+    let mut placements = Vec::with_capacity(zone.fixtures.len());
+    let mut local = BTreeSet::new();
+    let mut trial_blocking = blocking.clone();
+    let mut trial_access = required_access.clone();
+    for fixture in &zone.fixtures {
+        let (dx, dy) = program_rotate_offset(fixture.dx, fixture.dy, turns);
+        let x = i32::from(anchor.x) + i32::from(dx);
+        let y = i32::from(anchor.y) + i32::from(dy);
+        if x < 0 || y < 0 {
+            return None;
+        }
+        let at = Point {
+            x: u16::try_from(x).unwrap_or(u16::MAX),
+            y: u16::try_from(y).unwrap_or(u16::MAX),
+        };
+        if !env.tiles.contains(&at)
+            || env.doors.contains(&at)
+            || occupied.contains(&at)
+            || required_access.contains(&at)
+            || !local.insert(at)
+        {
+            return None;
+        }
+        let wall_mounted = fixture_is_wall_mounted(fixture.id);
+        let layer = if wall_mounted {
+            FixtureLayer::Wall
+        } else {
+            match fixture.layer {
+                ProgramLayer::Furniture => FixtureLayer::Furniture,
+                ProgramLayer::Machine => FixtureLayer::Machine,
+                ProgramLayer::Wall => FixtureLayer::Wall,
+            }
+        };
+        let facing = if wall_mounted || fixture.layer == ProgramLayer::Wall {
+            wall_fixture_facing(env.layout, at)?
+        } else if zone.anchor == ProgramAnchor::Perimeter {
+            wall_fixture_facing(env.layout, anchor)
+                .map(opposite_facing)
+                .unwrap_or_else(|| face_toward(at, env.center))
+        } else {
+            face_toward(at, anchor)
+        };
+        if !wall_mounted && fixture_blocks(fixture.id) {
+            trial_blocking.insert(at);
+        }
+        placements.push(AuthoredCompositionPlacement {
+            at,
+            facing,
+            fixture_id: fixture.id.into(),
+            layer,
+        });
+    }
+    for placement in &mut placements {
+        if !fixture_blocks_on_layer(&placement.fixture_id, placement.layer) {
+            continue;
+        }
+        let preferred = placement.facing;
+        let candidate_facings = if fixture_requires_fixed_facing(&placement.fixture_id) {
+            vec![preferred]
+        } else {
+            vec![
+                preferred,
+                Facing::North,
+                Facing::East,
+                Facing::South,
+                Facing::West,
+            ]
+        };
+        let (access, facing) = candidate_facings
+            .into_iter()
+            .map(|facing| (step_facing(placement.at, facing), facing))
+            .find(|(access, _)| env.tiles.contains(access) && !trial_blocking.contains(access))?;
+        placement.facing = facing;
+        trial_access.insert(access);
+    }
+    if !room_walkable_connected(env.tiles, &trial_blocking, env.layout.width, env.layout.height) {
+        return None;
+    }
+    Some((placements, trial_blocking, trial_access))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -3820,5 +3851,71 @@ mod tests {
             fixture_repeat_limit_for_role("records", "filing_cabinet"),
             6
         );
+    }
+
+    #[test]
+    fn zone_placement_retries_every_rotation_before_giving_up_on_an_anchor() {
+        // Regression test for a bug clippy::never_loop caught during the
+        // rewrite/rustaudit pass: the rotation retry used to always try only
+        // `rotation_offset`'s own turn and give up on the whole anchor
+        // instead of trying the other 3 rotations. Two tiles in a vertical
+        // strip; a fixture offset one cell to the *east* of the anchor only
+        // lands on a real tile once rotated a quarter turn (which redirects
+        // the offset to the *north* tile instead).
+        let layout = StationLayout {
+            seed: 1,
+            width: 1,
+            height: 2,
+            archetype: MacroArchetype::Cross,
+            tiles: vec![TileCell::default(); 2],
+            departments: vec![],
+            rooms: vec![],
+            doors: vec![],
+            public_circulation: vec![],
+            maintenance: vec![],
+            structure: vec![],
+            hull: vec![],
+            graph: LayoutGraph::default(),
+            metadata: BTreeMap::new(),
+        };
+        let tiles = BTreeSet::from([Point { x: 0, y: 0 }, Point { x: 0, y: 1 }]);
+        let env = ZonePlacementEnv {
+            layout: &layout,
+            tiles: &tiles,
+            doors: &BTreeSet::new(),
+            center: Point { x: 0, y: 0 },
+        };
+        let empty = BTreeSet::new();
+        let zone = ActivityZone {
+            id: "test-zone",
+            anchor: ProgramAnchor::Center,
+            required: true,
+            repeatable: false,
+            fixtures: vec![super::super::program::ProgramFixture {
+                id: "vent",
+                dx: 1,
+                dy: 0,
+                layer: ProgramLayer::Furniture,
+            }],
+        };
+        let anchor = Point { x: 0, y: 0 };
+
+        // Unrotated (turns = 0), the fixture's (dx=1, dy=0) offset lands on
+        // (1, 0), which isn't one of the room's two tiles: this rotation
+        // must fail.
+        assert!(
+            try_place_zone_at(&env, &empty, &empty, &empty, &zone, anchor, 0).is_none(),
+            "turns=0 should not fit: (1,0) is not a tile in this room"
+        );
+
+        // Rotated one quarter turn, (dx=1, dy=0) becomes (0, 1) (see
+        // `program_rotate_offset`), landing on the room's other tile: this
+        // rotation must succeed. Before the fix, the caller never reached
+        // this rotation at all for a given anchor.
+        let placed = try_place_zone_at(&env, &empty, &empty, &empty, &zone, anchor, 1);
+        let (placements, _blocking, _access) =
+            placed.expect("turns=1 should fit: (0,1) is the room's other tile");
+        assert_eq!(placements.len(), 1);
+        assert_eq!(placements[0].at, Point { x: 0, y: 1 });
     }
 }
