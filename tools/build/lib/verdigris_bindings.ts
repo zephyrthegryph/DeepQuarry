@@ -457,14 +457,18 @@ function renderComponentsDm(components: Component[]): string {
   }
   dm += '\n';
 
-  // One dispatch proc per domain: which type's bind proc to call for the
-  // domain's component var (§4's "boot batching"/bind), regenerated
-  // whenever a domain gains or loses a kind.
-  for (const [domain, comps] of byDomain) {
+  // One bind and one reconcile dispatch proc per domain, overridden per
+  // bound type (like vg_bind_gas() below), so there is no switch to keep in
+  // sync by hand as kinds are added.
+  for (const domain of byDomain.keys()) {
     dm += `/// Binds this atom's ${domain} component (if the type declares one) and\n`;
-    dm += `/// returns the (possibly newly created) entity handle. Generated: lists\n`;
-    dm += `/// every VG_${domain.toUpperCase()}_* kind.\n`;
+    dm += `/// returns the (possibly newly created) entity handle. Overridden per\n`;
+    dm += `/// bound type below.\n`;
     dm += `/atom/movable/proc/vg_bind_${domain}(entity)\n\treturn entity\n\n`;
+    dm += `/// Reconciler (§7): mismatches between this atom's declared inputs and\n`;
+    dm += `/// what Rust has stored for its ${domain} component, repairing as it goes.\n`;
+    dm += `/// Overridden per bound type below.\n`;
+    dm += `/atom/movable/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
   }
 
   for (const comp of components) {
@@ -514,6 +518,9 @@ function renderComponentsDm(components: Component[]): string {
       dm += `/// Pure proc over ${structName}'s declared input sources (${f.from.join(', ') || 'none'}).\n`;
       dm += `/// Override per subtype if the default doesn't apply.\n`;
       dm += `${dmType}/proc/${lower}_input_${f.name}()\n\treturn FALSE\n\n`;
+      dm += `/// What Rust currently has stored, for the reconciler (§7). Compare\n`;
+      dm += `/// against ${lower}_input_${f.name}(); never used for game logic.\n`;
+      dm += `${dmType}/proc/get_${f.name}()\n\treturn vg_${lower}_get_${f.name}(vg_entity)\n\n`;
     }
 
     for (const g of comp.queries) {
@@ -524,6 +531,22 @@ function renderComponentsDm(components: Component[]): string {
     const inputArgs = inputFields.map((f) => `${lower}_input_${f.name}()`);
     const initArgs = configFields.map((f) => `init_${f.name}`);
     dm += `${dmType}/vg_bind_${domain}(entity)\n\treturn vg_${lower}_bind(entity, ${[...initArgs, ...inputArgs].join(', ')})\n\n`;
+
+    if (inputFields.length) {
+      dm += `/// Compares every declared input against what Rust has stored (§7);\n`;
+      dm += `/// repairs any mismatch and returns "field: expected=.. actual=.." for\n`;
+      dm += `/// each one (empty: no divergence).\n`;
+      dm += `${dmType}/proc/${lower}_reconcile()\n\tvar/list/mismatches = list()\n`;
+      for (const f of inputFields) {
+        dm += `\tvar/expected_${f.name} = ${lower}_input_${f.name}()\n`;
+        dm += `\tvar/actual_${f.name} = get_${f.name}()\n`;
+        dm += `\tif(!expected_${f.name} != !actual_${f.name})\n`;
+        dm += `\t\tmismatches += "${f.name}: expected=[expected_${f.name}] actual=[actual_${f.name}]"\n`;
+        dm += `\t\tvg_${lower}_push_${f.name}(vg_entity, expected_${f.name})\n`;
+      }
+      dm += `\treturn mismatches\n\n`;
+      dm += `${dmType}/vg_reconcile_${domain}()\n\treturn ${lower}_reconcile()\n\n`;
+    }
 
     for (const f of inputFields) {
       for (const source of f.from) {
@@ -560,7 +583,16 @@ function renderComponentsDm(components: Component[]): string {
   for (const domain of byDomain.keys()) {
     dm += `\tif(vg_${domain})\n\t\tentity = vg_bind_${domain}(entity)\n`;
   }
-  dm += `\tvg_entity = entity\n`;
+  dm += `\tvg_entity = entity\n\n`;
+  dm += `/// Every declared-input mismatch across every bound domain (§7). SSvg's\n`;
+  dm += `/// sweep and the test sandbox teardown call this per atom.\n`;
+  dm += `/atom/movable/proc/vg_reconcile()\n`;
+  dm += `\tif(!vg_entity)\n\t\treturn list()\n`;
+  dm += `\tvar/list/mismatches = list()\n`;
+  for (const domain of byDomain.keys()) {
+    dm += `\tif(vg_${domain})\n\t\tmismatches += vg_reconcile_${domain}()\n`;
+  }
+  dm += `\treturn mismatches\n`;
   return dm;
 }
 

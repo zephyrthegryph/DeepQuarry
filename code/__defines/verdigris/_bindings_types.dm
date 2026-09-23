@@ -10,10 +10,16 @@
 	var/tmp/vg_gas = 0
 
 /// Binds this atom's gas component (if the type declares one) and
-/// returns the (possibly newly created) entity handle. Generated: lists
-/// every VG_GAS_* kind.
+/// returns the (possibly newly created) entity handle. Overridden per
+/// bound type below.
 /atom/movable/proc/vg_bind_gas(entity)
 	return entity
+
+/// Reconciler (§7): mismatches between this atom's declared inputs and
+/// what Rust has stored for its gas component, repairing as it goes.
+/// Overridden per bound type below.
+/atom/movable/proc/vg_reconcile_gas()
+	return list()
 
 // ---- Pump (gas kind 1; verdigris/domains/gas/src/kind/pump.rs) ----
 
@@ -64,12 +70,32 @@
 /obj/machinery/atmospherics/binary/pump/proc/pump_input_operable()
 	return FALSE
 
+/// What Rust currently has stored, for the reconciler (§7). Compare
+/// against pump_input_operable(); never used for game logic.
+/obj/machinery/atmospherics/binary/pump/proc/get_operable()
+	return vg_pump_get_operable(vg_entity)
+
 /// target_pressure, power_rating, on, flow_rate in one call.
 /obj/machinery/atmospherics/binary/pump/proc/pump_query_ui()
 	return vg_pump_query_ui(vg_entity)
 
 /obj/machinery/atmospherics/binary/pump/vg_bind_gas(entity)
 	return vg_pump_bind(entity, init_target_pressure, init_power_rating, init_on, pump_input_operable())
+
+/// Compares every declared input against what Rust has stored (§7);
+/// repairs any mismatch and returns "field: expected=.. actual=.." for
+/// each one (empty: no divergence).
+/obj/machinery/atmospherics/binary/pump/proc/pump_reconcile()
+	var/list/mismatches = list()
+	var/expected_operable = pump_input_operable()
+	var/actual_operable = get_operable()
+	if(!expected_operable != !actual_operable)
+		mismatches += "operable: expected=[expected_operable] actual=[actual_operable]"
+		vg_pump_push_operable(vg_entity, expected_operable)
+	return mismatches
+
+/obj/machinery/atmospherics/binary/pump/vg_reconcile_gas()
+	return pump_reconcile()
 
 // integrity (class 3): pushes Pump's operable when it changes.
 /obj/machinery/atmospherics/binary/pump/atom_break(damage_flag)
@@ -101,3 +127,13 @@
 	if(vg_gas)
 		entity = vg_bind_gas(entity)
 	vg_entity = entity
+
+/// Every declared-input mismatch across every bound domain (§7). SSvg's
+/// sweep and the test sandbox teardown call this per atom.
+/atom/movable/proc/vg_reconcile()
+	if(!vg_entity)
+		return list()
+	var/list/mismatches = list()
+	if(vg_gas)
+		mismatches += vg_reconcile_gas()
+	return mismatches

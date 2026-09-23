@@ -80,8 +80,24 @@
 	// already set, so this never registered anything. Destroy() clears it.
 	if (listening_recursive)
 		set_listening(listening_recursive)
+	// R10 bind (doc/rewrite/rust_bindings.md §4): one call creates the Rust
+	// entity and every component this type declares (vg_gas, and future
+	// vg_power/vg_heat/...), from the init_* values and the current inputs.
+	// Last, so registries and signals this atom's inputs might read (e.g.
+	// REGISTRY_MACHINES via join_registries() in the base on_materialize())
+	// are already in place.
+	vg_bind()
 
 /atom/movable/on_dematerialize()
+	// R10 unbind. J1's pre_destroy() is the design's intended call site
+	// (rust_bindings.md §4); it has not landed yet (rewrite/ledger-joint).
+	// Until it does, this is the earliest guaranteed point every Destroy()
+	// path reaches (mirrors how L3's leave_registries() piggybacks on the
+	// same hook, __defines/misc.dm). Move this single call into pre_destroy()
+	// when J1 lands; do not add a second unbind mechanism.
+	if(vg_entity)
+		vg_entity_unbind(vg_entity)
+		vg_entity = 0
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
 	if(light_system == STATIC_LIGHT && light)

@@ -292,7 +292,21 @@ fn pump_get_flow_rate(entity: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::from(p.flow_rate))
 }
 
-// --- Input: pushed by generated wiring on a source change (§7) ------------
+// --- Input: read-only get (reconciler, §7), pushed by generated wiring ----
+
+/// Rust's currently stored `operable`, for the reconciler (§7): it compares
+/// this against what `pump_input_operable()` recomputes on the DM side.
+#[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/get_operable")]
+fn pump_get_operable(entity: ByondValue) -> Result<ByondValue> {
+    let cell = cell_of(&entity)?;
+    let p = with(|w| {
+        w.sim
+            .port(w.key)
+            .read(cell)
+            .ok_or_else(|| eyre!("pump cell {cell} out of range"))
+    })?;
+    Ok(bool_value(p.operable))
+}
 
 /// Pushes a recomputed `operable` (class 3/4 sources: construction,
 /// integrity). Never validated (booleans have no range): §2's `identity`

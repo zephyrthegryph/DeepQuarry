@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "cb1f90019a3e56f2"
+#define VERDIGRIS_ABI "415759240b85d7a1"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1168,6 +1168,14 @@
 // /obj/machinery/atmospherics/binary/pump/proc/get_on (verdigris/domains/gas/src/kind/pump.rs)
 /proc/vg_pump_get_on(entity)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_on_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+/// Rust's currently stored `operable`, for the reconciler (§7): it compares
+/// this against what `pump_input_operable()` recomputes on the DM side.
+// /obj/machinery/atmospherics/binary/pump/proc/get_operable (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_get_operable(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_operable_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
 
