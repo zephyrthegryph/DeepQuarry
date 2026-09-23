@@ -322,6 +322,7 @@
 #include "code\__defines\traits\macros.dm"
 #include "code\__defines\traits\sources.dm"
 #include "code\__defines\verdigris\_bindings.dm"
+#include "code\__defines\verdigris\_bindings_types.dm"
 // LINDA atmospherics is unconditional (no gating). Defines and macros
 // hoisted early so they're in scope for every later atmos consumer. ZAS/XGM
 // includes have been removed from the build entirely. See code/ATMOSPHERICS/README.md.

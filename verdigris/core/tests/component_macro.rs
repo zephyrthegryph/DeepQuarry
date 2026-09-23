@@ -11,7 +11,7 @@ use vg_core::owner::Domain;
 use vg_core::sim::{SimBuilder, SimConfig};
 use vg_core::vg;
 
-#[vg::component(domain = gas, kind = 1, dm = "/obj/machinery/atmospherics/binary/pump")]
+#[vg::component(domain = test_domain, kind = 1, dm = "/obj/machinery/atmospherics/binary/pump")]
 pub struct Widget {
     #[vg(config, unit = "kPa", range = 0.0..=100.0, default = 20.0, on_invalid = clamp)]
     target_pressure: f32,

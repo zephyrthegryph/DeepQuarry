@@ -50,7 +50,9 @@ pub enum PumpEvent {
     Starved,
 }
 
-/// `@dm-define VG_GAS_PUMP`
+// `VG_GAS_PUMP` is generated from the `#[vg::component(kind = 1, ...)]`
+// attribute above (component scan), not from an `@dm-define` line: the two
+// generators must never disagree on a kind's numeric id.
 pub const KIND: u16 = Pump::KIND;
 
 struct World {
@@ -310,9 +312,12 @@ fn pump_push_operable(entity: ByondValue, value: ByondValue) -> Result<ByondValu
 
 // --- Query group -----------------------------------------------------------
 
-/// `pump_query_ui()` (§3, §6): every UI field in one call.
+/// `pump_query_ui()` (§3, §6): every UI field in one call. Rust fn name
+/// intentionally matches the generated global proc the generator points
+/// `pump_query_ui()`'s DM wrapper at (`vg_<fn name>`, no `_ffi` suffix): see
+/// `tools/build/lib/verdigris_bindings.ts`'s component-binding convention.
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/pump_query_ui")]
-fn pump_query_ui_ffi(entity: ByondValue) -> Result<ByondValue> {
+fn pump_query_ui(entity: ByondValue) -> Result<ByondValue> {
     let cell = cell_of(&entity)?;
     let p = with(|w| {
         w.sim

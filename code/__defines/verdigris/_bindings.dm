@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "f5ded72d37220b60"
+#define VERDIGRIS_ABI "cb1f90019a3e56f2"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -406,6 +406,11 @@
 // verdigris/domains/heat/src/consts.rs
 #define THERMAL_EMISSIVITY_DEFAULT 0.9
 
+/// This component's domain index in the entity table (§1). Gas is domain 0;
+/// later domains (power, heat, ...) take 1, 2, ... as they land.
+// verdigris/domains/gas/src/kind/pump.rs
+#define VG_DOMAIN_GAS 0
+
 // Binds.
 
 /// Args: (amount). Adds the given amount to each gas.
@@ -586,6 +591,49 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:emp_falloff_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(x, y, z, max_x, max_y, max_z, ranges)
+
+/// Live entities (a reconciler/test metric).
+// /proc/entity_count (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_count()
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_count_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Test/reconciler hook: every live entity and the domains it has a
+/// component in, as `[entity, domain, kind, cell, ...]` flat groups of 4.
+// /proc/entity_debug_list (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_debug_list()
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_debug_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// `vg_describe(atom)` (§3): every attached component's fields, as one
+/// semicolon-joined line (`domain field=value, field=value; domain ...`).
+// /proc/entity_describe (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_describe(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_describe_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+/// `SSvg`'s per-sweep maintenance: ticks every registered domain's `Sim`
+/// once (publishing a view, pruning the overlay), so state is never more
+/// than one sweep old even though nothing sets it per idle tick.
+// /proc/entity_tick_all (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_tick_all()
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_tick_all_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Generic unbind (J1's `pre_destroy()`, or today's earliest guaranteed
+/// point — see `on_dematerialize()` in `atom_materialize.dm`): detaches
+/// every domain's component from the entity through its registered handler,
+/// then frees the entity itself. A zero/null handle (never bound, or
+/// already unbound) is a silent no-op.
+// /proc/entity_unbind (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_unbind(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_unbind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
 
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
 // /proc/equalize_all_gases_in_list (verdigris/domains/gas/src/lib.rs)
@@ -1101,6 +1149,77 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
+/// Creates the entity (if `entity` is 0) or reuses it, attaches a pump
+/// component seeded from the `init_*` values and the current input, and
+/// returns the entity handle (§4, §5). DM's base `on_materialize()` calls
+/// this once per component the type declares.
+// /proc/pump_bind (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_bind(entity, init_target_pressure, init_power_rating, init_on, operable)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_bind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, init_target_pressure, init_power_rating, init_on, operable)
+
+// /obj/machinery/atmospherics/binary/pump/proc/get_flow_rate (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_get_flow_rate(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_flow_rate_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /obj/machinery/atmospherics/binary/pump/proc/get_on (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_get_on(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_on_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /obj/machinery/atmospherics/binary/pump/proc/get_power_rating (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_get_power_rating(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_power_rating_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /obj/machinery/atmospherics/binary/pump/proc/get_target_pressure (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_get_target_pressure(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_target_pressure_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+/// Pushes a recomputed `operable` (class 3/4 sources: construction,
+/// integrity). Never validated (booleans have no range): §2's `identity`
+/// path.
+// /obj/machinery/atmospherics/binary/pump/proc/push_operable (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_push_operable(entity, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_push_operable_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, value)
+
+/// `pump_query_ui()` (§3, §6): every UI field in one call. Rust fn name
+/// intentionally matches the generated global proc the generator points
+/// `pump_query_ui()`'s DM wrapper at (`vg_<fn name>`, no `_ffi` suffix): see
+/// `tools/build/lib/verdigris_bindings.ts`'s component-binding convention.
+// /obj/machinery/atmospherics/binary/pump/proc/pump_query_ui (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_query_ui(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_query_ui_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /obj/machinery/atmospherics/binary/pump/proc/set_on (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_set_on(entity, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_set_on_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, value)
+
+// /obj/machinery/atmospherics/binary/pump/proc/set_power_rating (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_set_power_rating(entity, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_set_power_rating_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, value)
+
+// /obj/machinery/atmospherics/binary/pump/proc/set_target_pressure (verdigris/domains/gas/src/kind/pump.rs)
+/proc/vg_pump_set_target_pressure(entity, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pump_set_target_pressure_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, value)
+
 /// One radiation pulse from (`x`, `y`, `z`): returns the path transmission
 /// to each target in `targets` (a flat list of `x, y, z`), or -1 for targets
 /// out of `range`, on another z-level or off the grid. Rays stop early once
@@ -1490,8 +1609,10 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// Drop transient Rust-side state. Currently a no-op; once the gas-mixture
-/// arena needs an explicit drain for a clean `/world/New()`, it lands here.
+/// Drop transient Rust-side state for a clean `/world/New()`
+/// (`rust_bindings.md` §4: "world start ... resets every Rust store"). Every
+/// registered entity domain (§1) drops its components and the entity table
+/// itself is rebuilt, so no `vg_entity` handle survives into a new round.
 // /proc/verdigris_cleanup (verdigris/ffi/src/lifecycle.rs)
 /proc/vg_verdigris_cleanup()
 	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_cleanup_ffi")
