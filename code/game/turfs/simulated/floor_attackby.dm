@@ -1,20 +1,5 @@
-/turf/simulated/floor
-	var/focused_tool_stage
-
-/turf/simulated/floor/proc/run_focused_tool(mob/user, obj/item/tool, quality)
-	focused_tool_stage = quality
-	attackby(tool, user)
-	focused_tool_stage = null
-	return ITEM_INTERACT_SUCCESS
-
-/turf/simulated/floor/screwdriver_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_SCREWDRIVER)
-/turf/simulated/floor/crowbar_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_CROWBAR)
-/turf/simulated/floor/wrench_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_WRENCH)
-/turf/simulated/floor/welder_act(mob/user, obj/item/tool)
-	return run_focused_tool(user, tool, TOOL_WELDER)
+// Tool work on floors (removing coverings, welding and cutting plating) is the
+// floor construction graph: floor_construction.dm.
 
 /turf/simulated/floor/attackby(obj/item/C, mob/user, attack_modifier, click_parameters)
 
@@ -147,36 +132,6 @@
 					color = S.color
 				playsound(src, 'sound/items/Deconstruct.ogg', 80, 1)
 				return
-		// Plating repairs and removal
-		else if(focused_tool_stage == TOOL_WELDER)
-			var/obj/item/weldingtool/welder = C.get_welder()
-			if(welder.isOn())
-				// Needs repairs
-				if(broken || burnt)
-					if(welder.remove_fuel(0,user))
-						to_chat(user, span_notice("You fix some dents on the broken plating."))
-						playsound(src, welder.usesound, 80, 1)
-						icon_state = "plating"
-						burnt = null
-						broken = null
-					else
-						to_chat(user, span_warning("You need more welding fuel to complete this task."))
-				// Deconstructing plating
-				else
-					var/base_type = get_base_turf_by_area(src)
-					if(type == base_type || !base_type)
-						to_chat(user, span_warning("There's nothing under [src] to expose by cutting."))
-						return
-					if(!can_remove_plating(user))
-						return
-
-					user.visible_message(span_warning("[user] begins cutting through [src]."), span_warning("You begin cutting through [src]."))
-					// This is slow because it's a potentially hostile action to just cut through places into space in the middle of the bar and such
-					// Presumably also the structural floor is thick?
-					if(do_after(user, 10 SECONDS, target = src))
-						if(!can_remove_plating(user))
-							return // Someone slapped down some flooring or cables or something
-						do_remove_plating(C, user, base_type)
 
 /turf/simulated/floor/proc/try_deconstruct_tile(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/stack/tile) && isliving(user)) //If we're hitting it with a tile, try to check our offhand
@@ -184,28 +139,21 @@
 		W = deconstructor.get_inactive_hand()
 		if(!W || !istype(W, /obj/item))
 			return FALSE
-	if(focused_tool_stage == TOOL_CROWBAR)
-		if(broken || burnt)
-			to_chat(user, span_notice("You remove the broken [flooring.descriptor]."))
-			make_plating(FALSE)
-		else if(flooring.flags & TURF_IS_FRAGILE)
-			to_chat(user, span_danger("You forcefully pry off the [flooring.descriptor], destroying them in the process."))
-			make_plating(FALSE)
-		else if(flooring.flags & TURF_REMOVE_CROWBAR)
-			to_chat(user, span_notice("You lever off the [flooring.descriptor]."))
-			make_plating(TRUE)
-		else
+	// A tool in the other hand while laying tiles (try_replace_tile()). Held tools use the graph's edges.
+	if(W.has_tool_quality(TOOL_CROWBAR))
+		if(!(broken || burnt || (flooring.flags & (TURF_IS_FRAGILE | TURF_REMOVE_CROWBAR))))
 			return FALSE
+		pry_covering(user)
 		playsound(src, W.usesound, 80, 1)
 		return TRUE
-	else if(focused_tool_stage == TOOL_SCREWDRIVER && (flooring.flags & TURF_REMOVE_SCREWDRIVER))
+	else if(W.has_tool_quality(TOOL_SCREWDRIVER) && (flooring.flags & TURF_REMOVE_SCREWDRIVER))
 		if(broken || burnt)
 			return FALSE
 		to_chat(user, span_notice("You unscrew and remove the [flooring.descriptor]."))
 		make_plating(TRUE)
 		playsound(src, W.usesound, 80, 1)
 		return TRUE
-	else if(focused_tool_stage == TOOL_WRENCH && (flooring.flags & TURF_REMOVE_WRENCH))
+	else if(W.has_tool_quality(TOOL_WRENCH) && (flooring.flags & TURF_REMOVE_WRENCH))
 		to_chat(user, span_notice("You unwrench and remove the [flooring.descriptor]."))
 		make_plating(TRUE)
 		playsound(src, W.usesound, 80, 1)
@@ -229,23 +177,8 @@
 		return
 	attackby(T, user)
 
-/turf/simulated/floor/proc/can_remove_plating(mob/user)
-	if(!is_plating())
-		to_chat(user, span_warning("\The [src] can't be cut through!"))
-		return FALSE
-	if(locate(/obj/structure) in contents)
-		to_chat(user, span_warning("\The [src] has structures that must be removed before cutting!"))
-		return FALSE
-	return TRUE
-
-/turf/simulated/floor/proc/do_remove_plating(obj/item/W, mob/user, base_type)
-	if(focused_tool_stage == TOOL_WELDER)
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(!WT.remove_fuel(5,user))
-			to_chat(user, span_warning("You don't have enough fuel in [WT] finish cutting through [src]."))
-			return
-		playsound(src, WT.usesound, 80, 1)
-
+/// Replaces the plating with what lies under it (floor_construction.dm cuts it).
+/turf/simulated/floor/proc/do_remove_plating(base_type)
 	// Keep in mind, turfs can never actually be deleted in byond, after this line
 	// our turf is just 'magically changed' to the new type and src refers to that
 	ChangeTurf(base_type, preserve_outdoors = TRUE)

@@ -134,6 +134,10 @@
 /datum/interaction/proc/duration_for(mob/actor, atom/target, obj/item/held)
 	return tool ? tool_delay(actor, held, duration, tool) : duration
 
+/// The unscaled time for this target, before the tool's speed and skill: `duration` unless it depends on the target.
+/datum/interaction/proc/base_duration(mob/actor, atom/target)
+	return duration
+
 /// Messages as list(self, others), worked out before the effect changes the target's state.
 /datum/interaction/proc/messages(mob/actor, atom/target, obj/item/held)
 	return list(message_self, message_others)
@@ -208,7 +212,8 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 /proc/init_interactions_by_type()
 	var/list/by_type = list()
 	for(var/datum/interaction/path as anything in subtypesof(/datum/interaction))
-		if(!initial(path.id))
+		// Construction edges belong to their graphs (construction.dm), not this registry.
+		if(!initial(path.id) || ispath(path, /datum/interaction/construction))
 			continue
 		by_type[path] = new path
 	return by_type
@@ -224,7 +229,7 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 				stack_trace("Duplicate interaction id [interaction.id] ([path])")
 				continue
 			by_id[interaction.id] = interaction
-	return by_id[id]
+	return by_id[id] || construction_edge_by_id(id)
 
 /**
  * Adds the interaction types this atom offers to `into`. Types add theirs and

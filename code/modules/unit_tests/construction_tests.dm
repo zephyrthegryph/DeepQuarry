@@ -1,14 +1,15 @@
+/// Every mech/fighter/micro-mech construction graph (roadmap I5) has a valid `result`.
 /datum/unit_test/mech_construction/Run()
 	var/failed = FALSE
-	for(var/datum/construction/C as anything in subtypesof(/datum/construction))
-		// We check for null, as null is legal here... For now... Mech construction needs a full refactor to make them unittest-able in a not ugly way.
-		if(!C.result)
+	for(var/datum/construction_graph/mecha/path as anything in subtypesof(/datum/construction_graph/mecha))
+		if(!initial(path.id))
 			continue
-		if(!ispath(C.result))
-			TEST_NOTICE(src, "[C.type]: Mech Construction - Had invalid result \"[C.result]\", must be a path.")
+		var/datum/construction_graph/mecha/graph = GLOB.construction_graphs[path]
+		if(!graph || !graph.result || !ispath(graph.result))
+			TEST_NOTICE(src, "[path]: Mech Construction - Had invalid result \"[graph?.result]\", must be a path.")
 			failed = TRUE
 	if(failed)
-		TEST_FAIL("Mech Construction - A construction datum had incorrect data.")
+		TEST_FAIL("Mech Construction - A construction graph had incorrect data.")
 
 /datum/unit_test/all_machine_circuits_must_be_printable/Run()
 	// get a list of all construction frames that automatically populate their circuitboard, we don't need to test for these

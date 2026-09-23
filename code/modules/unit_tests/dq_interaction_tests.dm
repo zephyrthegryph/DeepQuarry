@@ -105,6 +105,8 @@
 		// Combat mode (dq_combat_mode_tests.dm): the Disarm and Grab interactions and its fixtures.
 		"disarm", "grab", "dq_combat_friendly", "dq_combat_hostile", "dq_combat_needs_combat", "dq_combat_needs_peace",
 		"dq_tool_weld", "dq_tool_dig", // dq_tool_tests.dm
+		// Construction (dq_construction_tests.dm and its per-domain files). Graph edges are checked there, not here.
+		"wall_burn_rot", "wall_light_thermite", "wall_repair", "mecha_fix_temperature", "mecha_weld_repair", "window_repair",
 		"ai_slipper_toggle_lock", // code/game/machinery/ai_slipper.dm: no dedicated test or snapshot yet
 		"stacking_console_use", // code/modules/mining/machinery/machine_stacking.dm: needs a linked machine on the map, excluded from dq_i7_bulk_capture.dm's snapshot
 		// I7: verb-category and drag/enter ids without an `entry`, so the snapshot-coverage

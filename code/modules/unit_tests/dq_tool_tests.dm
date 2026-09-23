@@ -162,7 +162,7 @@
 /datum/unit_test/dq_tool_parity_girder
 
 /datum/unit_test/dq_tool_parity_girder/Run()
-	var/turf/T = run_loc_floor_bottom_left
+	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/tool/wrench/wrench = dq_zero_speed(allocate(/obj/item/tool/wrench, T))
 	var/obj/item/tool/crowbar/crowbar = dq_zero_speed(allocate(/obj/item/tool/crowbar, T))
