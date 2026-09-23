@@ -54,10 +54,11 @@
 	else
 		to_chat(user, span_notice("Access Denied"))
 
-/obj/structure/closet/secure_closet/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides closet's interaction_item(): secure closets check grab size and can be sliced open.
+/obj/structure/closet/secure_closet/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(opened)
 		if(istype(W, /obj/item/storage/laundry_basket))
-			return ..(W,user)
+			return ..()
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
 			if(large)
@@ -65,9 +66,9 @@
 			else
 				to_chat(user, span_notice("The locker is too small to stuff [G.affecting] into!"))
 		if(isrobot(user))
-			return
+			return TRUE
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return
+			return TRUE
 		user.drop_item()
 		if(W)
 			W.forceMove(loc)
@@ -79,9 +80,10 @@
 			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
 			playsound(src, "sparks", 50, 1)
 	else if(istype(W,/obj/item/packageWrap))
-		return ..(W,user)
+		return ..()
 	else
 		togglelock(user)
+	return TRUE
 
 /obj/structure/closet/secure_closet/emag_act(remaining_charges, mob/user, emag_source, visual_feedback = "", audible_feedback = "")
 	if(!broken)
@@ -98,12 +100,29 @@
 		update_icon()
 		return 1
 
-/obj/structure/closet/secure_closet/attack_hand(mob/user as mob)
+// Secure closet's Use fully replaces closet's (the original override never called ..()
+// into it either), so it swaps out closet_hand for its own interaction, while still
+// inheriting closet_item (whose effect it overrides above, polymorphically).
+/obj/structure/closet/secure_closet/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/secure_closet_hand,
+	)
+	..()
+	into -= /datum/interaction/entry_hand/closet_hand
+
+/// Old attack_hand: toggle the lock, or open/close if unlocked.
+/datum/interaction/entry_hand/secure_closet_hand
+	id = "secure_closet_hand"
+	name = "Use"
+	effect = /obj/structure/closet/secure_closet/proc/interaction_secure_hand
+
+/obj/structure/closet/secure_closet/proc/interaction_secure_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(locked)
 		togglelock(user)
 	else
 		toggle(user)
+	return TRUE
 
 /obj/structure/closet/secure_closet/click_alt()
 	..()

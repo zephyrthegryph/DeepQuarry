@@ -186,10 +186,15 @@
 
 // Secure crate's Use fully replaces closet's (the original override never called ..() into
 // it either), so it declares its own interaction.
+// Secure crate's Use fully replaces closet's (the original override never called ..() into
+// it either), so it swaps out closet_hand for its own interaction, while still inheriting
+// crate_item (whose effect it overrides above, polymorphically).
 /obj/structure/closet/crate/secure/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/secure_crate_hand,
 	)
+	..()
+	into -= /datum/interaction/entry_hand/closet_hand
 
 /// Old attack_hand: toggle the lock, or open/close if unlocked.
 /datum/interaction/entry_hand/secure_crate_hand
