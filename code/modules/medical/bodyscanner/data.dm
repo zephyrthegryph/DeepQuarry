@@ -77,7 +77,7 @@
 	out["blind"] = (H.sdisabilities & BLIND)
 	out["nearsighted"] = (H.disabilities & NEARSIGHTED)
 	out["brokenspine"] = (H.disabilities & SPINE)
-	out["husked"] = (HUSK in H.mutations)
+	out["husked"] = (H.has_mutation(HUSK))
 
 	var/has_withdrawl = FALSE
 	for(var/addic in H.get_all_addictions())

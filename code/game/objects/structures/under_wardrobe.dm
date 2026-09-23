@@ -34,7 +34,7 @@
 		return data
 	var/mob/living/carbon/human/H = user
 	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
-		var/datum/category_item/underwear/UWI = H.all_underwear[UWC.name]
+		var/datum/category_item/underwear/UWI = LAZYACCESS(H.all_underwear, UWC.name)
 		var/list/tweaks = list()
 		if(UWI)
 			for(var/datum/gear_tweak/gt in UWI.tweaks)
@@ -90,15 +90,15 @@
 	switch(action)
 		if("remove_underwear")
 			if(params["category"] in H.all_underwear)
-				H.all_underwear -= params["category"]
+				LAZYREMOVE(H.all_underwear, params["category"])
 				changed = TRUE
 		if("change_underwear")
 			var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
 			if(!UWC)
 				return TRUE
-			var/datum/category_item/underwear/selected_underwear = tgui_input_list(H, "Choose underwear:", "Choose underwear", UWC.items, H.all_underwear[UWC.name])
+			var/datum/category_item/underwear/selected_underwear = tgui_input_list(H, "Choose underwear:", "Choose underwear", UWC.items, LAZYACCESS(H.all_underwear, UWC.name))
 			if(selected_underwear && CanUseTopic(H, GLOB.tgui_default_state))
-				H.all_underwear[UWC.name] = selected_underwear
+				LAZYSET(H.all_underwear, UWC.name, selected_underwear)
 				H.hide_underwear[UWC.name] = FALSE
 				changed = TRUE
 		if("tweak")

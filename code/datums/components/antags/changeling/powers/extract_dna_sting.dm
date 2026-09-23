@@ -25,7 +25,7 @@
 		to_chat(src, span_warning("We do not know how to parse this creature's DNA!"))
 		return FALSE
 
-	if(HUSK in T.mutations)
+	if(T.has_mutation(HUSK))
 		to_chat(src, span_warning("This creature's DNA is ruined beyond useability!"))
 		return FALSE
 

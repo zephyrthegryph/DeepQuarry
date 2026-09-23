@@ -281,7 +281,7 @@
 			vorestrings -= entry
 	msg += vorestrings
 
-	if(mSmallsize in mutations)
+	if(has_mutation(mSmallsize))
 		msg += "[p_Theyre()] very short!"
 
 	if (src.stat || (status_flags & FAKEDEATH))

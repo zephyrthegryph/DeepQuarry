@@ -63,7 +63,7 @@
 		if(!istype(H.dna, /datum/dna))
 			to_chat(user, span_notice("No fingerprints found on [H]"))
 		else
-			to_chat(user, span_notice("[H]'s Fingerprints: [md5(H.dna.uni_identity)]"))
+			to_chat(user, span_notice("[H]'s Fingerprints: [md5(H.dna.GetUniIdentity())]"))
 	scan_blood(C, user)
 
 /datum/data/pda/utility/scanmode/dna/scan_atom(atom/A, mob/user)

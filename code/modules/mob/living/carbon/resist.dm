@@ -90,5 +90,5 @@
 		buckled.user_unbuckle_mob(src, src)
 
 /mob/living/carbon/proc/can_break_cuffs()
-	if(HULK in mutations)
+	if(has_mutation(HULK))
 		return 1

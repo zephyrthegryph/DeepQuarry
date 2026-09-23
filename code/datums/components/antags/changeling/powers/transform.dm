@@ -52,10 +52,10 @@
 	if(chosen_dna.genMods)
 		var/mob/living/carbon/human/self = src
 		for(var/datum/modifier/mod in self.modifiers)
-			self.modifiers.Remove(mod.type)
+			LAZYREMOVE(self.modifiers, mod.type)
 
 		for(var/datum/modifier/mod in chosen_dna.genMods)
-			self.modifiers.Add(mod.type)
+			LAZYADD(self.modifiers, mod.type)
 	regenerate_icons()
 	if(isliving(src)) //Prevents organ rejection. Less intensive than adding a changeling check to blood_incompatible.
 		var/mob/living/owner = src

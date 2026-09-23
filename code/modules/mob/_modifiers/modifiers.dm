@@ -53,7 +53,7 @@
 	if(on_expired_text && !silent)
 		to_chat(holder, on_expired_text)
 	on_expire()
-	holder.modifiers.Remove(src)
+	LAZYREMOVE(holder.modifiers, src)
 	// A persistent trait leaves the character only when deliberately removed
 	// from a living body, not when the body dies or is deleted.
 	if((flags & MODIFIER_GENETIC) && !QDELETED(holder) && holder.stat != DEAD)
@@ -83,7 +83,7 @@
 	return
 
 /mob/living
-	var/list/modifiers = list() // A list of modifier datums, which can adjust certain mob numbers.
+	var/list/modifiers // A list of modifier datums, which can adjust certain mob numbers. Lazy: LAZYADD/LAZYREMOVE/LAZYLEN.
 
 // Called by Life().
 /datum/life_system/modifiers
@@ -100,7 +100,7 @@
 
 /// Modifier expiry and ticks. Runs even in nullspace.
 /datum/life_system/modifiers/tick(mob/living/self, datum/life_context/ctx)
-	if(!self.modifiers.len) // No work to do.
+	if(!LAZYLEN(self.modifiers)) // No work to do.
 		return
 	// Get rid of anything we shouldn't have.
 	for(var/datum/modifier/M in self.modifiers)
@@ -137,7 +137,7 @@
 		mod.expire_at = world.time + expire_at
 	if(mod.on_created_text)
 		to_chat(src, mod.on_created_text)
-	modifiers.Add(mod)
+	LAZYADD(modifiers, mod)
 	life_wake(LIFE_SYS_UPKEEP, "modifier")
 	if(mod.flags & MODIFIER_GENETIC)
 		record_genetic_modifier(mod.type, TRUE)

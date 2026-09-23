@@ -300,6 +300,7 @@ SUBSYSTEM_DEF(air)
 /datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)
 	if (!resumed)
 		rust_commit_pending_pipenets()
+		rust_step_pipe_devices()
 		src.currentrun = networks.Copy()
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun

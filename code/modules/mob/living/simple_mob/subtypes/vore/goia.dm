@@ -281,18 +281,18 @@
 	add_verb(src,/mob/living/proc/injection) //Poison sting c:
 	add_verb(src,/mob/living/simple_mob/vore/zorgoia/proc/export_style)
 	add_verb(src,/mob/living/simple_mob/vore/zorgoia/proc/import_style)
-	src.trait_injection_reagents += REAGENT_ID_MICROCILLIN			// get small
-	src.trait_injection_reagents += REAGENT_ID_MACROCILLIN			// get BIG
-	src.trait_injection_reagents += REAGENT_ID_NORMALCILLIN			// normal
-	src.trait_injection_reagents += REAGENT_ID_NUMBENZYME			// no feelings
-	src.trait_injection_reagents += REAGENT_ID_ANDROROVIR			// -> MALE
-	src.trait_injection_reagents += REAGENT_ID_GYNOROVIR			// -> FEMALE
-	src.trait_injection_reagents += REAGENT_ID_ANDROGYNOROVIR		// -> PLURAL
-	src.trait_injection_reagents += REAGENT_ID_STOXIN				// night night chem
-	src.trait_injection_reagents += REAGENT_ID_RAINBOWTOXIN			// Funny flashing lights.
-	src.trait_injection_reagents += REAGENT_ID_PARALYSISTOXIN 		// Paralysis!
-	src.trait_injection_reagents += REAGENT_ID_PAINENZYME			// Pain INCREASER
-	// src.trait_injection_reagents += REAGENT_ID_APHRODISIAC			// Horni // Downstream only
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_MICROCILLIN)			// get small
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_MACROCILLIN)			// get BIG
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_NORMALCILLIN)			// normal
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_NUMBENZYME)			// no feelings
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_ANDROROVIR)			// -> MALE
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_GYNOROVIR)			// -> FEMALE
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_ANDROGYNOROVIR)		// -> PLURAL
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_STOXIN)				// night night chem
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_RAINBOWTOXIN)			// Funny flashing lights.
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_PARALYSISTOXIN) 		// Paralysis!
+	LAZYADD(src.trait_injection_reagents, REAGENT_ID_PAINENZYME)			// Pain INCREASER
+	// LAZYADD(src.trait_injection_reagents, REAGENT_ID_APHRODISIAC)			// Horni // Downstream only
 
 	var/list/goia_colors = list("#1a00ff", "#6c5bff", "#ff00fe", "#ff0000", "#00d3ff", "#00ff7c", "#00ff35", "#e1ff00", "#ff9f00", "#393939")
 	var/bodycolor = pick(goia_colors)

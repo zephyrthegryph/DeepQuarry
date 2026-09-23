@@ -34,7 +34,7 @@
 
 /obj/structure/alien/attack_hand(mob/user as mob)
 	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if (HULK in usr.mutations)
+	if (usr.has_mutation(HULK))
 		visible_message(span_warning("[usr] destroys the [name]!"))
 		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
