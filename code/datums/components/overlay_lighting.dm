@@ -26,6 +26,8 @@
  * * For small objects this is good (you can't see them behind a wall), but for big ones this quickly becomes prety clumsy.
 */
 /datum/component/overlay_lighting
+	// Rebuilt from the parent's light vars when it is created (C5).
+	state_mode = STATE_COMPONENT_DERIVED
 	///How far the light reaches, float.
 	var/range = 1
 	///Ceiling of range, integer without decimal entries.

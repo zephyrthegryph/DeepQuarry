@@ -118,6 +118,8 @@
 /// Returns how many things left.
 /atom/proc/slot_empty(slot_id, atom/destination, mob/actor)
 	. = 0
+	// Pulling things out materializes them (C5).
+	latent_materialize_all(slot_id)
 	for(var/atom/movable/thing as anything in slot_contents(slot_id))
 		if(slot_remove(thing, destination, actor))
 			.++
@@ -189,3 +191,26 @@
 				thing.forceMove(drop)
 			if(thing.loc == src)
 				qdel(thing)
+	ledger_drop_latent(L, drop)
+
+/// Drop policies for latent entries, as data (damage.md §6): deleted entries
+/// are removed; spilled or transferred ones stay latent if they land in
+/// another latent holder, and are created only where they land on a turf.
+/atom/movable/proc/ledger_drop_latent(datum/ledger/L, atom/drop)
+	for(var/datum/latent_entry/entry as anything in L.latent_list())
+		var/datum/slot_def/def = L.def_by_id(entry.slot)
+		var/path = entry.path
+		var/list/blob = entry.blob
+		var/n = entry.count
+		L.latent_set_count(entry, 0)
+		if(def.drop_policy == SLOT_DROP_DELETE)
+			continue
+		var/atom/target = drop
+		if(def.drop_policy == SLOT_DROP_TRANSFER && loc && dq_slot_defs_for(loc))
+			target = loc
+		if(!target || QDELETED(target))
+			continue
+		if(!isturf(target) && target.latent_add(path, n, blob))
+			continue
+		for(var/i in 1 to n)
+			dq_latent_create(path, blob, target)

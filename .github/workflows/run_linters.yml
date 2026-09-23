@@ -113,6 +113,9 @@ jobs:
       - name: Check Containment Writes
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/containment_lint.py
+      - name: Check Latent Contents Walks
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        run: python3 tools/ci/latent_lint.py
       - name: Check Lifecycle
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/lifecycle_lint.py

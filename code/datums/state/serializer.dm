@@ -158,12 +158,24 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if((flags & STATE_CONTENTS) && isatom(D))
 		var/atom/A = D
 		var/list/children = list()
+		var/datum/ledger/L = A.ledger || (A.has_latent() ? dq_ledger(A) : null)
 		for(var/atom/movable/child as anything in state_children(A))
 			var/list/child_blob = serialize_datum(child, flags)
 			if(!child_blob)
 				return null
+			var/list/record = L?.entries[child]
+			if(record && record[LEDGER_E_SLOT] != L.default_id)
+				child_blob[STATE_KEY_SLOT] = record[LEDGER_E_SLOT]
 			children += list(child_blob)
 		blob[STATE_KEY_CONTENTS] = children
+		if(L?.latent_total)
+			var/list/latent = list()
+			for(var/datum/latent_entry/entry as anything in L.latent_list())
+				var/list/encoded = list("type" = "[entry.path]", "count" = entry.count, "slot" = entry.slot)
+				if(entry.blob)
+					encoded["state"] = entry.blob
+				latent += list(encoded)
+			blob[STATE_KEY_LATENT] = latent
 	if(flags & STATE_COMPONENTS)
 		var/list/components = serialize_components(D)
 		if(errors)
@@ -443,10 +455,27 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			var/value = A.vars[name]
 			if(isdatum(value) && (value in removed))
 				A.vars[name] = null
+	// The blob's latent entries replace whatever the holder declared at init.
+	if(A.latent_contents)
+		A.latent_generator_clear()
+		A.latent_declared = FALSE
+		A.ledger?.latent_clear()
 	var/index = 0
 	for(var/list/child_blob as anything in blob[STATE_KEY_CONTENTS])
 		index++
-		create_tree(child_blob, A, id == "" ? "[index]" : "[id].[index]")
+		var/child_id = id == "" ? "[index]" : "[id].[index]"
+		var/atom/movable/child = create_tree(child_blob, A, child_id)
+		var/slot = child_blob[STATE_KEY_SLOT]
+		if(slot && child && child.loc == A)
+			var/datum/ledger/L = dq_ledger(A)
+			if(L?.def_by_id(slot) && L.entries[child])
+				L.reslot(child, slot)
+			else
+				refuse("[A.type] has no slot [slot]")
+	for(var/list/encoded as anything in blob[STATE_KEY_LATENT])
+		var/path = text2path(encoded["type"])
+		if(!path || !A.latent_add(path, encoded["count"], encoded["state"], encoded["slot"]))
+			refuse("[A.type] refused latent entry [encoded["type"]]")
 
 /// Applies vars and components everywhere, then runs state_post_apply() children first.
 /datum/state_context/proc/finish_tree()

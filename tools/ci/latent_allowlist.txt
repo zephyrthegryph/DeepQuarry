@@ -1,0 +1,12 @@
+# Raw contents walks on latent holders, per file (tools/ci/latent_lint.py).
+# Counts may only go down. Fix a site by going through the ledger API.
+code/game/machinery/telecrystal_storage.dm 1
+code/game/objects/items/bodybag.dm 5
+code/game/objects/items/robobag.dm 1
+code/game/objects/items/weapons/grenades/flashbang.dm 1
+code/game/objects/structures/crates_lockers/__closets.dm 3
+code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm 1
+code/game/objects/structures/crates_lockers/closets/statue.dm 4
+code/game/objects/structures/crates_lockers/closets/syndicate.dm 1
+code/game/objects/structures/crates_lockers/crates.dm 2
+code/modules/projectiles/guns/magnetic/magnetic.dm 1

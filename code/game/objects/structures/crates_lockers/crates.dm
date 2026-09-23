@@ -770,7 +770,7 @@
 				qdel(src)
 			if(2 to 4)
 				visible_message(span_boldwarning("The anti-tamper mechanism of [src] causes a small fire!"))
-				for(var/atom/movable/A as mob|obj in src) // For every item in the box, we spawn a pile of ash.
+				for(var/i in 1 to length(contents) + latent_count()) // For every item in the box, we spawn a pile of ash.
 					new /obj/effect/decal/cleanable/ash(src.loc)
 				new /obj/effect/hotspot(src.loc)
 				qdel(src)

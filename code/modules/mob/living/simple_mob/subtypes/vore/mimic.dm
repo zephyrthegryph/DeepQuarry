@@ -50,15 +50,17 @@
 		return ..()
 
 /obj/structure/closet/crate/mimic/ex_act(severity)
-	for(var/obj/O in src.contents)
+	latent_discard()
+	for(var/obj/O in src.contents) // latent-ok: discarded above
 		qdel(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len)
+	if(contents.len || has_latent()) // latent-ok
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
-		for(var/obj/O in src.contents)
+		latent_discard()
+		for(var/obj/O in src.contents) // latent-ok: discarded above
 			qdel(O)
 	return ..()
 
@@ -182,15 +184,17 @@
 		return ..()
 
 /obj/structure/closet/crate/mimic/airlock/ex_act(severity) //Stores Mimic Contents for later
-	for(var/obj/O in src.contents)
+	latent_discard()
+	for(var/obj/O in src.contents) // latent-ok: discarded above
 		qdel(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len)
+	if(contents.len || has_latent()) // latent-ok
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
-		for(var/obj/O in src.contents)
+		latent_discard()
+		for(var/obj/O in src.contents) // latent-ok: discarded above
 			qdel(O)
 	return ..()
 
@@ -275,15 +279,17 @@
 		return ..()
 
 /obj/structure/closet/crate/mimic/closet/ex_act(severity) //Stores Mimic Contents for later
-	for(var/obj/O in src.contents)
+	latent_discard()
+	for(var/obj/O in src.contents) // latent-ok: discarded above
 		qdel(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/closet/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len)
+	if(contents.len || has_latent()) // latent-ok
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
-		for(var/obj/O in src.contents)
+		latent_discard()
+		for(var/obj/O in src.contents) // latent-ok: discarded above
 			qdel(O)
 	return ..()
 

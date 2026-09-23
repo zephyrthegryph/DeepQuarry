@@ -174,6 +174,7 @@
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
 #include "dq_containment_tests.dm"
+#include "dq_latent_tests.dm"
 #include "dq_rule_tests.dm"
 #include "dq_damage_packet_tests.dm"
 #include "dq_explosion_batch_tests.dm"

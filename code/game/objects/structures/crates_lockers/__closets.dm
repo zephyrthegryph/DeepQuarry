@@ -9,6 +9,7 @@
 	layer = UNDER_JUNK_LAYER
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 	flags = REMOTEVIEW_ON_ENTER
+	latent_contents = TRUE
 
 	var/opened = 0
 	var/sealed = 0
@@ -49,9 +50,9 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/structure/closet/LateInitialize()
-	if(starts_with)
-		create_objects_in_loc(src, starts_with)
-		starts_with = null
+	// starts_with is the generator: only types that can't be latent are made
+	// now; the rest stay declared until something needs them (C5).
+	dq_latent_declare(src)
 
 	if(!opened)		// if closed, any item at the crate's loc is put in the contents
 		if(isliving(loc)) return
@@ -64,6 +65,10 @@
 		var/content_size = 0
 		for(var/atom/movable/AM as anything in contents + loose)
 			content_size += storage_cost_of(AM)
+		var/list/generator = latent_declared ? starts_with : null
+		for(var/path in generator)
+			if(dq_latent_eligible(path))
+				content_size += storage_cost_of_type(path) * dq_latent_spawn_count(generator[path])
 		if(content_size > storage_capacity-5)
 			storage_capacity = content_size + 5
 		for(var/obj/item/I as anything in loose)
@@ -98,6 +103,25 @@
 /datum/predicate/slot_closet_interior
 	name = "closet interior"
 	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /atom/movable/proc/slot_loose, null), "it is fastened down"))
+
+/obj/structure/closet/latent_generator()
+	return starts_with
+
+/obj/structure/closet/latent_generator_clear()
+	starts_with = null
+
+/datum/slot_def/closet_interior/entry_cost(obj/structure/closet/holder, path)
+	return holder.storage_cost_of_type(path)
+
+/// What a thing of `path` would take up, from type data (latent entries).
+/obj/structure/closet/proc/storage_cost_of_type(path)
+	if(ispath(path, /obj/item))
+		var/obj/item/typed = path
+		return CEILING(initial(typed.w_class) / 2, 1)
+	if(ispath(path, /obj/structure/closet))
+		var/obj/structure/closet/typed_closet = path
+		return initial(typed_closet.storage_cost)
+	return 1
 
 /// What `thing` takes up inside this closet, in storage_capacity units.
 /obj/structure/closet/proc/storage_cost_of(atom/movable/thing)
@@ -144,7 +168,8 @@
 			. += "It is full."
 
 	if(!opened && isobserver(user))
-		. += "It contains: [counting_english_list(user.client, contents)]"
+		var/list/latent = latent_names()
+		. += "It contains: [counting_english_list(user.client, contents)][length(latent) ? "; [english_list(latent)]" : ""]"
 
 /obj/structure/closet/CanPass(atom/movable/mover, turf/target)
 	if(wall_mounted)
@@ -578,3 +603,7 @@
 /obj/structure/closet/bluespace/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/bluespace_connection/permanent_network, GLOB.bslockers)
+
+/// The icon is derived from closet_appearance in LateInitialize (C5 parity).
+/obj/structure/closet/state_exclude()
+	return ..() + list("icon")

@@ -574,10 +574,12 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Will return the contents of an atom recursivly to a depth of 'searchDepth'
 /atom/proc/GetAllContents(searchDepth = 5)
 	var/list/toReturn = list()
+	if(latent_contents)
+		latent_materialize_all() // a search needs real things (C5)
 
 	for(var/atom/part in contents)
 		toReturn += part
-		if(part.contents.len && searchDepth)
+		if((part.contents.len || part.latent_contents) && searchDepth)
 			toReturn += part.GetAllContents(searchDepth - 1)
 
 	return toReturn

@@ -382,7 +382,10 @@ SUBSYSTEM_DEF(explosions)
 			var/severity = resolved_atoms[AM]
 			if(!severity)
 				continue
-			var/contents_severity = length(AM.contents) ? AM.explosion_contents_severity(severity) : 0
+			var/has_latent = AM.has_latent()
+			var/contents_severity = (length(AM.contents) || has_latent) ? AM.explosion_contents_severity(severity) : 0
+			if(contents_severity && has_latent)
+				AM.latent_blast(contents_severity) // entries resolve as data (C5)
 			if(contents_severity)
 				for(var/atom/movable/inner as anything in AM.contents)
 					queue_blast(inner, contents_severity)
