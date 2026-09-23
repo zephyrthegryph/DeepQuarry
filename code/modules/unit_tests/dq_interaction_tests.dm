@@ -101,6 +101,8 @@
 	var/static/list/tested_ids = list(
 		"machine_panel", "machine_deconstruct", "machine_anchor", "machine_repair",
 		"dq_test_high", "dq_test_tie_a", "dq_test_tie_b", "dq_test_low", "dq_test_blocked", "dq_test_ghostly",
+		// Combat mode (dq_combat_mode_tests.dm): the Disarm and Grab interactions and its fixtures.
+		"disarm", "grab", "dq_combat_friendly", "dq_combat_hostile", "dq_combat_needs_combat", "dq_combat_needs_peace",
 	)
 
 /datum/unit_test/dq_interaction_definitions/Run()
