@@ -20,6 +20,8 @@ Latent contents ([containment.md](containment.md)), persistence, admin tools and
 
 The last row is the safety mechanism. Collapsing an object into data is just serializing it; if the serializer meets a relationship or running behaviour, it fails and the object stays real. No gameplay code decides eligibility, so there is no "if" to forget.
 
+**Incoming references.** The checks above cover what an object holds, not who holds it. Collapse also requires BYOND's `refcount(obj)` to equal the references its container and contents account for. Any extra reference means another object or list points at it, so it stays real. Test builds run the reference finder on refusals to name the holder, which then becomes a registry entry, a codec or a `tmp` var.
+
 ## 2. Schema
 
 BYOND already separates saved from unsaved vars: `issaved()` is false for `tmp`, `const` and `global` vars. So the schema of a type is its saved vars.
