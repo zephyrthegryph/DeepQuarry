@@ -10,6 +10,13 @@
 #define TEST_SHARD_INDEX_PARAMETER "shard-index"
 /// The shard count for a sharded dm-test run. See TEST_SHARD_INDEX_PARAMETER.
 #define TEST_SHARD_COUNT_PARAMETER "shard-count"
+/// Path to a file listing (one per line) the non-sweep test types assigned
+/// to this shard. See TEST_SHARD_INDEX_PARAMETER.
+#define TEST_SHARD_TESTS_FILE_PARAMETER "shard-tests"
+/// Overrides where RunUnitTests() writes its JSON results (default
+/// data/unit_tests.json), so a sharded run's N worlds don't clobber each
+/// other's results file.
+#define TEST_RESULTS_FILE_PARAMETER "unit-tests-file"
 
 GLOBAL_VAR(restart_counter)
 

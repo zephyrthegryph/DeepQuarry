@@ -222,6 +222,7 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 /// Every per-type value in the converted families is a number of the right
 /// kind and in range, and every state var is saved state.
 /datum/unit_test/dq_property_type_values_valid
+	is_sweep_test = TRUE
 
 /datum/unit_test/dq_property_type_values_valid/Run()
 	var/datum/property_registry/registry = dq_property_registry()
@@ -231,7 +232,7 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 			if(provider.state_var)
 				var/datum/sample = allocate(provider.applies_to)
 				TEST_ASSERT(dq_property_state_has_var(sample, provider.state_var), "[provider.type] reads [provider.state_var], which is not saved state on [provider.applies_to]")
-			for(var/path in typesof(provider.applies_to))
+			for(var/path in sweep_types(typesof(provider.applies_to)))
 				if(registry.base_provider(path, id) != provider)
 					continue
 				var/error = registry.check_value(id, provider.type_value(path, null))

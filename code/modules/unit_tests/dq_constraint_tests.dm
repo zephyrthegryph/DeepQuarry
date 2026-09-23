@@ -50,6 +50,7 @@
 /datum/unit_test/dq_constraint_parity
 	abstract_type = /datum/unit_test/dq_constraint_parity
 	priority = TEST_LONGER
+	is_sweep_test = TRUE
 	var/mismatches = 0
 	var/list/report
 
@@ -72,7 +73,7 @@
 	var/list/patterns = fixture["patterns"]
 	var/list/holders = fixture[group]
 	var/cells = 0
-	for(var/holder_name in holders)
+	for(var/holder_name in sweep_types(holders))
 		var/obj/item/holder = dq_parity_make(text2path(holder_name), T)
 		if(!holder)
 			mismatch("[holder_name]: can't be created any more")

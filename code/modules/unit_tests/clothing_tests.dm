@@ -3,6 +3,7 @@
 
 /// Test that checks if all clothing is valid
 /datum/unit_test/all_clothing_shall_be_valid
+	is_sweep_test = TRUE
 	/// Set TRUE by get_signal_data when a worn icon_state is missing. Reported as a
 	/// notice (non-failing); see the art-check rationale below.
 	var/signal_failed = FALSE
@@ -39,7 +40,7 @@
 	scan -= /obj/item/clothing/ears/offear // This is used for equip logic, not ingame
 	scan -= /obj/item/clothing/mask/ai // Breaks unit test entirely TODO
 
-	for(var/path as anything in scan)
+	for(var/path as anything in sweep_types(scan))
 		var/obj/item/clothing/C = new path(storage)
 		failed += test_clothing(C)
 

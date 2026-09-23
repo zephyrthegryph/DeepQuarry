@@ -46,22 +46,50 @@ GLOBAL_VAR_INIT(dq_test_shard_index, 0)
 /// See dq_test_shard_index.
 GLOBAL_VAR_INIT(dq_test_shard_count, 1)
 
-/// Reads shard-index/shard-count from world params into the globals above.
-/// Called once, early, from world/proc/HandleTestRun(). Missing params leave
-/// the "not sharded" default in place; malformed ones fall back to it too
-/// (loud, via stack_trace()) rather than silently running a wrong slice.
+/// Non-sweep test types assigned to this shard, or null when this world runs
+/// every test (a plain dm-test/focused run, or a shard-count-1 "sharded"
+/// run). Read from the file named by the `shard-tests` world param: one test
+/// type path per line. Sweep-test types (RunUnitTests() checks
+/// is_sweep_test) always run regardless of this list -- their cost is
+/// already spread across every shard by sweep_types(), so the sharded
+/// runner's bin-packer excludes them from this assignment entirely rather
+/// than pinning them to one shard.
+GLOBAL_VAR(dq_test_shard_names)
+
+/// Reads shard-index/shard-count/shard-tests from world params into the
+/// globals above. Called once, early, from world/proc/HandleTestRun().
+/// Missing shard-index/shard-count params leave the "not sharded" default in
+/// place; malformed ones fall back to it too (loud, via stack_trace())
+/// rather than silently running a wrong slice.
 /proc/dq_test_shard_init()
 	var/count_text = world.params[TEST_SHARD_COUNT_PARAMETER]
 	var/index_text = world.params[TEST_SHARD_INDEX_PARAMETER]
-	if(isnull(count_text) && isnull(index_text))
+	if(!isnull(count_text) || !isnull(index_text))
+		var/count = text2num(count_text)
+		var/index = text2num(index_text)
+		if(!count || count < 1 || isnull(index) || index < 0 || index >= count)
+			stack_trace("dq_test_shard_init: ignoring malformed shard params index=[index_text] count=[count_text]")
+		else
+			GLOB.dq_test_shard_count = count
+			GLOB.dq_test_shard_index = index
+
+	var/tests_file = world.params[TEST_SHARD_TESTS_FILE_PARAMETER]
+	if(isnull(tests_file))
 		return
-	var/count = text2num(count_text)
-	var/index = text2num(index_text)
-	if(!count || count < 1 || isnull(index) || index < 0 || index >= count)
-		stack_trace("dq_test_shard_init: ignoring malformed shard params index=[index_text] count=[count_text]")
+	if(!fexists(tests_file))
+		stack_trace("dq_test_shard_init: shard-tests file [tests_file] does not exist")
 		return
-	GLOB.dq_test_shard_count = count
-	GLOB.dq_test_shard_index = index
+	var/list/names = list()
+	for(var/line in splittext(file2text(tests_file), "\n"))
+		line = trim(line)
+		if(!length(line))
+			continue
+		var/path = text2path(line)
+		if(!path)
+			stack_trace("dq_test_shard_init: [tests_file] names an unknown type [line]")
+			continue
+		names[path] = TRUE
+	GLOB.dq_test_shard_names = names
 
 /datum/unit_test
 	//Bit of metadata for the future maybe
@@ -74,6 +102,12 @@ GLOBAL_VAR_INIT(dq_test_shard_count, 1)
 	var/turf/run_loc_floor_top_right
 	///The priority of the test, the larger it is the later it fires
 	var/priority = TEST_DEFAULT
+	/// TRUE for a type-sweep test that calls sweep_types() to divide its own
+	/// work across shards (see doc/testing.md "Sharded sweeps"). Such a test
+	/// always runs in every shard's world regardless of shard-tests, since
+	/// its cost is already spread across shards by sweep_types() rather than
+	/// being pinned to one shard by the runner's bin-packer.
+	var/is_sweep_test = FALSE
 	//internal shit
 	var/focus = FALSE
 	var/succeeded = TRUE
@@ -482,6 +516,16 @@ GLOBAL_VAR_INIT(dq_test_shard_count, 1)
 	if(length(focused_tests))
 		tests_to_run = focused_tests
 
+	// Sharded run: keep only this shard's assigned non-sweep tests, plus
+	// every sweep test (it always runs -- see is_sweep_test).
+	if(GLOB.dq_test_shard_names)
+		var/list/sharded = list()
+		for(var/_test_to_run in tests_to_run)
+			var/datum/unit_test/test_to_run = _test_to_run
+			if(initial(test_to_run.is_sweep_test) || GLOB.dq_test_shard_names[test_to_run])
+				sharded += test_to_run
+		tests_to_run = sharded
+
 	sortTim(tests_to_run, GLOBAL_PROC_REF(cmp_unit_test_priority))
 
 	var/list/test_results = list()
@@ -498,7 +542,11 @@ GLOBAL_VAR_INIT(dq_test_shard_count, 1)
 	SSticker.delay_end = FALSE
 	log_test("Unit-test suite finished: [total_tests] test types, failures: [GLOB.failed_any_test ? "yes" : "no"].")
 
-	var/file_name = "data/unit_tests.json"
+	// A sharded run gives each world its own results file (shard-tests-file's
+	// world param sibling) so N concurrent worlds in one worktree don't
+	// clobber each other's data/unit_tests.json; a plain run keeps the
+	// well-known default path every existing caller reads.
+	var/file_name = world.params[TEST_RESULTS_FILE_PARAMETER] || "data/unit_tests.json"
 	fdel(file_name)
 	file(file_name) << json_encode(test_results)
 

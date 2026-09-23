@@ -67,11 +67,12 @@
 
 /// Every latent-safe type (and subtype) survives serialize -> materialize, also through JSON.
 /datum/unit_test/dq_state_latent_round_trip
+	is_sweep_test = TRUE
 
 /datum/unit_test/dq_state_latent_round_trip/Run()
 	var/list/failures = list()
 	var/tested = 0
-	for(var/atom/movable/path as anything in subtypesof(/atom/movable))
+	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
 		if(!initial(path.latent_safe) || is_abstract(path))
 			continue
 		tested++

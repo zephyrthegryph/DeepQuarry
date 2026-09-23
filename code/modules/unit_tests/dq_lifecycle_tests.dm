@@ -94,6 +94,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 		. += "processing"
 
 /datum/unit_test/dq_lifecycle_sandbox
+	is_sweep_test = TRUE
 
 /// Types that are not latent-safe yet but register with the world only in
 /// on_materialize() (L3). The sandbox test holds them to the same rule. Only
