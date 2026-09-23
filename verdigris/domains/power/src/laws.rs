@@ -5,6 +5,7 @@
 //! scheduler wiring lands once Core B's component stores do; until then
 //! these are the physics, proven by the tests alongside each one.
 
+use vg_core::rate::RateModel;
 use vg_core::units::Watts;
 
 use crate::components::{Apc, Channel, Consumer, Smes};
@@ -224,6 +225,24 @@ pub fn smes_discharge_out(smes: &mut Smes, share: Watts) -> Watts {
     Watts(smes.charge.discharge_out(share.get()))
 }
 
+/// A SMES's charge trajectory if `net_rate` (watts into the store;
+/// negative for a net discharge) holds steady from `now`
+/// (`rust_architecture.md` §4.10): a driver builds this whenever the rate
+/// changes (a new offer, a config edit), predicts the next crossing with
+/// [`RateModel::crossing`] (empty at `0.0`, full at `smes.charge.capacity`),
+/// and schedules the law to run again then instead of stepping it every
+/// tick while nothing changes.
+#[must_use]
+pub fn smes_charge_model(smes: &Smes, net_rate: Watts, now: f64) -> RateModel {
+    smes.charge.model(net_rate.get(), now)
+}
+
+/// As [`smes_charge_model`], for an APC's cell.
+#[must_use]
+pub fn apc_cell_model(apc: &Apc, net_rate: Watts, now: f64) -> RateModel {
+    apc.cell.model(net_rate.get(), now)
+}
+
 /// A region browns out when it has no supply at all, or its planned
 /// excess (`avail - load`) is meaningfully negative (overdrawn). The 1 W
 /// slack absorbs float rounding across many small draws, not a real
@@ -402,6 +421,34 @@ mod tests {
         let delivered = smes_discharge_out(&mut smes, Watts(1000.0));
         assert_eq!(delivered, Watts(100.0), "capped by what's stored, not the request");
         assert_eq!(smes.charge.charge, 0.0);
+    }
+
+    #[test]
+    fn smes_charge_model_predicts_the_same_empty_time_as_manual_stepping() {
+        // 1000 charge units at 0.5 rate, discharging at a steady 100 W:
+        // 1000 / (0.5 * 100) = 20 ticks to empty.
+        let smes = Smes { charge: RateStore { charge: 1000.0, capacity: 1000.0, rate: 0.5 }, ..Smes::default() };
+        let model = smes_charge_model(&smes, Watts(-100.0), 0.0);
+        let predicted = model.crossing(0.0, 0.0).expect("reaches empty");
+        assert!((predicted - 20.0).abs() < 1e-9, "predicted {predicted}");
+
+        // A driver sleeping until `predicted` and then stepping once more
+        // sees the same charge a tick-by-tick simulation would.
+        let mut stepped = smes.charge;
+        for _ in 0..20 {
+            stepped.discharge_out(100.0);
+        }
+        assert!((stepped.charge - model.value_at(20.0)).abs() < 1e-6);
+    }
+
+    #[test]
+    fn apc_cell_model_predicts_when_a_steady_drain_empties_the_cell() {
+        let apc = apc_with(500.0, 500.0);
+        // Draining at 200 W with CELLRATE = 0.002: empties in
+        // 500 / (0.002 * 200) = 1250 ticks.
+        let model = apc_cell_model(&apc, Watts(-200.0), 0.0);
+        let predicted = model.crossing(0.0, 0.0).expect("reaches empty");
+        assert!((predicted - 1250.0).abs() < 1e-6, "predicted {predicted}");
     }
 
     #[test]
