@@ -215,7 +215,7 @@
 		TEST_ASSERT(dq_walk(H, chassis, edge, held), "[graph_path]: backward step [i] succeeds")
 	TEST_ASSERT_EQUAL(chassis.vars["construction_state"], before_state, "[graph_path]: the state round-trips")
 	TEST_ASSERT_EQUAL(chassis.icon_state, before_icon, "[graph_path]: the icon_state round-trips")
-	TEST_ASSERT_EQUAL(dq_materials_on(T), materials_before, "[graph_path]: the same materials came back")
+	TEST_ASSERT(dq_materials_equal(dq_materials_on(T), materials_before), "[graph_path]: the same materials came back")
 
 /datum/unit_test/dq_construction_mech_ripley_round_trip
 

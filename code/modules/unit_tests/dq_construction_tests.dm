@@ -19,6 +19,17 @@
 			amount = stack.get_amount()
 		.[thing.type] += amount
 
+/// Whether two dq_materials_on() snapshots hold the same types and amounts. DM's list == is a
+/// reference comparison (two separately-built lists are never ==, whatever their contents and
+/// insertion order), so this checks the assoc contents directly instead.
+/proc/dq_materials_equal(list/a, list/b)
+	if(length(a) != length(b))
+		return FALSE
+	for(var/type in a)
+		if(a[type] != b[type])
+			return FALSE
+	return TRUE
+
 /// The edge leaving `target`'s current state whose id ends with `suffix` (or equals it). `suffix` may
 /// be just the "from>to" transition (e.g. "0>1") or the full "from>to:tool_or_item" tail (e.g.
 /// "2>3:spring"): ids are "graph_id:from>to:tool_or_item", so both are checked against the tail.
