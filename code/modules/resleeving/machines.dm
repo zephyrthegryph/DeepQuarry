@@ -141,14 +141,21 @@
 	var/burn_value = 0 //Setting these to 0, if resleeving as organic with unupgraded sleevers gives them no damage, resleeving synths with unupgraded synthfabs should not give them potentially 105 damage.
 	var/brute_value = 0
 
+// This board declares no req_components, so its default parts are declared
+// here instead of read off the board (roadmap C6): still resolved lazily
+// into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
+/obj/machinery/transhuman/synthprinter/latent_generator()
+	return list(
+		circuit = 1,
+		/obj/item/stock_parts/matter_bin = 1,
+		/obj/item/stock_parts/scanning_module = 1,
+		/obj/item/stock_parts/manipulator = 2,
+		/obj/item/stack/cable_coil = 2,
+	)
+
 /obj/machinery/transhuman/synthprinter/Initialize(mapload)
 	. = ..()
-	component_parts = list()
-	component_parts += new /obj/item/stock_parts/matter_bin(src)
-	component_parts += new /obj/item/stock_parts/scanning_module(src)
-	component_parts += new /obj/item/stock_parts/manipulator(src)
-	component_parts += new /obj/item/stock_parts/manipulator(src)
-	component_parts += new /obj/item/stack/cable_coil(src, 2)
+	component_parts = null
 	RefreshParts()
 	update_icon()
 
@@ -160,20 +167,23 @@
 
 	//Scanning modules reduce burn rating by 15 each
 	var/burn_rating = initial(burn_value)
-	for(var/obj/item/stock_parts/scanning_module/SM in component_parts)
-		burn_rating = burn_rating - (SM.rating*15)
+	burn_rating -= get_part_rating(/obj/item/stock_parts/scanning_module) * 15
 	burn_value = burn_rating
 
 	//Manipulators reduce brute by 10 each
 	var/brute_rating = initial(burn_value)
-	for(var/obj/item/stock_parts/manipulator/M in component_parts)
-		brute_rating = brute_rating - (M.rating*10)
+	brute_rating -= get_part_rating(/obj/item/stock_parts/manipulator) * 10
 	brute_value = brute_rating
 
 	//Matter bins multiply the storage amount by their rating.
 	var/store_rating = initial(max_res_amount)
-	for(var/obj/item/stock_parts/matter_bin/MB in component_parts)
+	for(var/obj/item/stock_parts/matter_bin/MB in slot_contents(CONTAINER_SLOT_INTERNALS))
 		store_rating = store_rating * MB.rating
+	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
+		if(ispath(entry.path, /obj/item/stock_parts/matter_bin))
+			var/rating = dq_type_var(entry.path, "rating")
+			for(var/i in 1 to entry.count)
+				store_rating = store_rating * rating
 	max_res_amount = store_rating
 
 /obj/machinery/transhuman/synthprinter/process()
@@ -301,15 +311,21 @@
 
 	var/sleevecards = 2
 
+// This board declares no req_components, so its default parts are declared
+// here instead of read off the board (roadmap C6): still resolved lazily
+// into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
+/obj/machinery/transhuman/resleever/latent_generator()
+	return list(
+		circuit = 1,
+		/obj/item/stock_parts/scanning_module = 2,
+		/obj/item/stock_parts/manipulator = 2,
+		/obj/item/stock_parts/console_screen = 1,
+		/obj/item/stack/cable_coil = 2,
+	)
+
 /obj/machinery/transhuman/resleever/Initialize(mapload)
 	. = ..()
-	component_parts = list()
-	component_parts += new /obj/item/stock_parts/scanning_module(src)
-	component_parts += new /obj/item/stock_parts/scanning_module(src)
-	component_parts += new /obj/item/stock_parts/manipulator(src)
-	component_parts += new /obj/item/stock_parts/manipulator(src)
-	component_parts += new /obj/item/stock_parts/console_screen(src)
-	component_parts += new /obj/item/stack/cable_coil(src, 2)
+	component_parts = null
 	RefreshParts()
 	update_icon()
 
@@ -330,14 +346,10 @@
 	return weakref_occupant?.resolve()
 
 /obj/machinery/transhuman/resleever/RefreshParts()
-	var/scan_rating = 0
-	for(var/obj/item/stock_parts/scanning_module/SM in component_parts)
-		scan_rating += SM.rating
+	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)
 	confuse_amount = (48 - scan_rating * 8)
 
-	var/manip_rating = 0
-	for(var/obj/item/stock_parts/manipulator/M in component_parts)
-		manip_rating += M.rating
+	var/manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 	blur_amount = (48 - manip_rating * 8)
 
 /obj/machinery/transhuman/resleever/attack_hand(mob/user as mob)
