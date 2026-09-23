@@ -17,17 +17,26 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-//Adding canvases
-/obj/structure/easel/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/canvas))
-		var/obj/item/canvas/canvas = I
-		user.drop_from_inventory(canvas)
-		painting = canvas
-		canvas.forceMove(get_turf(src))
-		canvas.layer = layer+0.1
-		user.visible_message(span_notice("[user] puts \the [canvas] on \the [src]."),span_notice("You place \the [canvas] on \the [src]."))
-	else
-		return ..()
+/obj/structure/easel/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/easel_item,
+	)
+	..()
+
+/// Old attackby: adding canvases.
+/datum/interaction/entry_item/easel_item
+	id = "easel_item"
+	name = "Use"
+	held_type = /obj/item/canvas
+	effect = /obj/structure/easel/proc/interaction_item
+
+/obj/structure/easel/proc/interaction_item(mob/user, obj/item/canvas/canvas, datum/interaction/interaction)
+	user.drop_from_inventory(canvas)
+	painting = canvas
+	canvas.forceMove(get_turf(src))
+	canvas.layer = layer+0.1
+	user.visible_message(span_notice("[user] puts \the [canvas] on \the [src]."),span_notice("You place \the [canvas] on \the [src]."))
+	return TRUE
 
 
 //Stick to the easel like glue
@@ -408,13 +417,24 @@
 	. = ..()
 	SSpersistence.painting_frames -= src
 
-/obj/structure/sign/painting/attackby(obj/item/I, mob/user, params)
+/obj/structure/sign/painting/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/sign_painting_item,
+	)
+	..()
+
+/// Old attackby: frame a canvas, or rename with a pen.
+/datum/interaction/entry_item/sign_painting_item
+	id = "sign_painting_item"
+	name = "Use"
+	effect = /obj/structure/sign/painting/proc/interaction_item
+
+/obj/structure/sign/painting/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!current_canvas && istype(I, /obj/item/canvas))
 		frame_canvas(user, I)
 	else if(current_canvas && current_canvas.painting_name == initial(current_canvas.painting_name) && istype(I,/obj/item/pen))
 		try_rename(user)
-	else
-		return ..()
+	return TRUE
 
 /obj/structure/sign/painting/wirecutter_act(mob/user, obj/item/I)
 	if(current_canvas)
