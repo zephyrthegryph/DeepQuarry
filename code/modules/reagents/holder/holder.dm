@@ -1,8 +1,9 @@
 /datum/reagents
-	var/list/datum/reagent/reagent_list = list()
+	/// Empty holders share reagents_empty_list() here and in reagent_by_id; own_reagent_lists() before writing.
+	var/list/datum/reagent/reagent_list
 	/// Associative lookup: reagent id → /datum/reagent datum. Kept in sync with reagent_list.
 	/// Provides O(1) access for has_reagent, get_reagent_amount, get_reagent, get_data, add_reagent (existing check), del_reagent, remove_reagent.
-	var/tmp/list/datum/reagent/reagent_by_id = list()
+	var/tmp/list/datum/reagent/reagent_by_id
 	var/total_volume = 0
 	var/maximum_volume = 100
 	var/tmp/atom/my_atom = null
@@ -14,6 +15,8 @@
 
 /datum/reagents/New(max = 100, atom/A = null)
 	..()
+	reagent_list = reagents_empty_list()
+	reagent_by_id = reagent_list
 	maximum_volume = max
 	my_atom = A
 
@@ -162,6 +165,7 @@
 	var/datum/reagent/D = SSchemistry.chemical_reagents[id]
 	if(D)
 		var/datum/reagent/R = new D.type()
+		own_reagent_lists()
 		reagent_list += R
 		// Only update reagent_by_id if no entry exists yet for this id.
 		// Blood incompatibility may create multiple datums with the same id; the first one
@@ -240,6 +244,9 @@
 			reagent_by_id[id] = replacement
 		else
 			reagent_by_id -= id
+		if(!length(reagent_list))
+			reagent_list = reagents_empty_list()
+			reagent_by_id = reagent_list
 		qdel(current)
 		update_total()
 		if(my_atom)
@@ -590,3 +597,25 @@
 	for(var/datum/reagent/R in reagent_list)
 		cooling_power += R.coolant_modifier * R.volume
 	return cooling_power
+
+/// The one empty list every empty holder points reagent_list and reagent_by_id at.
+/// Never write to it: call own_reagent_lists() first.
+/proc/reagents_empty_list()
+	var/static/list/empty = list()
+	return empty
+
+/// Copy-on-write: give this holder its own lists before adding a reagent.
+/datum/reagents/proc/own_reagent_lists()
+	var/list/empty = reagents_empty_list()
+	if(reagent_list == empty || !reagent_list)
+		reagent_list = list()
+	if(reagent_by_id == empty || !reagent_by_id)
+		reagent_by_id = list()
+
+/// Puts an already-created reagent datum (drawn blood, for instance) into this holder.
+/// The caller still calls update_total() and friends.
+/datum/reagents/proc/adopt_reagent(datum/reagent/R)
+	own_reagent_lists()
+	reagent_list |= R
+	if(!reagent_by_id[R.id])
+		reagent_by_id[R.id] = R

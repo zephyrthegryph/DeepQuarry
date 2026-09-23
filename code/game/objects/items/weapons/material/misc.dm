@@ -62,7 +62,6 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "snowball"
 	default_material = MAT_SNOW
-	health = 1
 	fragile = 1
 	force_divisor = 0.01
 	thrown_force_divisor = 0.10

@@ -10,8 +10,10 @@
 	heat_capacity = 312500 //a little over 5 cm thick , 312500 for 1 m by 2.5 m by 0.25 m plasteel wall
 
 	var/icon/wall_masks = 'icons/turf/wall_masks.dmi'
-	var/damage = 0
-	var/damage_overlay = 0
+	// Walls use integrity (damage.md §5): max_integrity is the material cap,
+	// set by update_material().
+	uses_integrity = TRUE
+	max_integrity = 150
 	var/global/damage_overlays[16]
 	var/active
 	var/can_open = 0
@@ -21,8 +23,9 @@
 	var/last_state
 	var/construction_stage
 
-	// There's basically always going to be wall connections, making this lazy doesn't seem like it'd help much unless you wanted to make it bitflags instead.
-	var/list/wall_connections = list("0", "0", "0", "0")
+	/// Corner states from dirs_to_corner_states(), interned with string_list() so walls with the
+	/// same shape share one list. Null until update_connections(); read it via get_wall_connections().
+	var/list/wall_connections
 	rad_insulation = RAD_MEDIUM_INSULATION
 
 // Walls always hide the stuff below them.
@@ -67,53 +70,49 @@
 
 	var/proj_damage = Proj.get_structure_damage()
 
-	//cap the amount of damage, so that things like emitters can't destroy walls in one hit.
-	var/damage = min(proj_damage, 100)
-
-	if(Proj.obj_damage_type() == BURN && damage > 0)
+	if(Proj.obj_damage_type() == BURN && proj_damage > 0)
 		if(thermite)
 			thermitemelt()
 
-	if(istype(Proj,/obj/item/projectile/beam))
-		if(material && material.reflectivity >= 0.5) // Time to reflect lasers.
-			var/new_damage = damage * material.reflectivity
-			var/outgoing_damage = damage - new_damage
-			damage = new_damage
-			Proj.damage = outgoing_damage
+	// A reflective wall catches only its share of a beam and bounces the rest.
+	var/reflectivity = 0
+	if(istype(Proj,/obj/item/projectile/beam) && material && material.reflectivity >= 0.5) // Time to reflect lasers.
+		reflectivity = material.reflectivity
 
-			visible_message(span_danger("\The [src] reflects \the [Proj]!"))
+	projectile_damage(Proj, null, reflectivity || 1)
 
-			// Find a turf near or on the original location to bounce to
-			var/new_x = Proj.starting.x + pick(0, 0, 0, -1, 1, -2, 2)
-			var/new_y = Proj.starting.y + pick(0, 0, 0, -1, 1, -2, 2)
-			//var/turf/curloc = get_turf(src)
-			var/turf/curloc = get_step(src, get_dir(src, Proj.starting))
+	if(reflectivity)
+		Proj.damage = min(proj_damage, 100) * (1 - reflectivity)
 
-			Proj.penetrating += 1 // Needed for the beam to get out of the wall.
+		visible_message(span_danger("\The [src] reflects \the [Proj]!"))
 
-			// redirect the projectile
-			Proj.redirect(new_x, new_y, curloc, null)
+		// Find a turf near or on the original location to bounce to
+		var/new_x = Proj.starting.x + pick(0, 0, 0, -1, 1, -2, 2)
+		var/new_y = Proj.starting.y + pick(0, 0, 0, -1, 1, -2, 2)
+		var/turf/curloc = get_step(src, get_dir(src, Proj.starting))
 
-	take_damage(damage)
-	return
+		Proj.penetrating += 1 // Needed for the beam to get out of the wall.
+
+		// redirect the projectile
+		Proj.redirect(new_x, new_y, curloc, null)
+
+/// Projectile adapter. The share of a round a wall catches is capped at 100,
+/// so that things like emitters can't destroy walls in one hit.
+/turf/simulated/wall/projectile_damage(obj/item/projectile/P, def_zone, multiplier = 1)
+	var/structure_damage = P.get_structure_damage()
+	if(structure_damage > 100)
+		multiplier *= 100 / structure_damage
+	return receive_projectile(P, def_zone, multiplier)
 
 /turf/simulated/wall/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
-	if(ismob(source))
-		return
-	var/tforce = 0
-	if(isobj(source))
-		var/obj/object = source
-		var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
-		if(isitem(object))
-			var/obj/item/our_item = object
-			tforce = our_item.throwforce * (speed/THROWFORCE_SPEED_DIVISOR)
-		else
-			tforce = object.w_class * (speed/THROWFORCE_SPEED_DIVISOR)
-	if(tforce < 15)
-		return
+	thrown_damage(source, throwingdatum)
 
-	take_damage(tforce)
+/// Thrown-impact adapter: mobs bounce off, and light throws don't mark the wall.
+/turf/simulated/wall/thrown_damage(atom/movable/source, datum/thrownthing/throwingdatum)
+	if(ismob(source) || source.thrown_impact_force(throwingdatum) < 15)
+		return 0
+	return ..()
 
 /turf/simulated/wall/proc/clear_plants()
 	for(var/obj/effect/overlay/wallrot/WR in src)
@@ -134,10 +133,10 @@
 /turf/simulated/wall/examine(mob/user)
 	. = ..()
 
-	if(!damage)
+	var/dam = wall_damage_fraction()
+	if(!dam)
 		. += span_notice("It looks fully intact.")
 	else
-		var/dam = damage / material.integrity
 		if(dam <= 0.3)
 			. += span_warning("It looks slightly damaged.")
 		else if(dam <= 0.6)
@@ -165,26 +164,32 @@
 	visible_message(span_danger("\The [src] spontaneously combusts!.")) //!!OH SHIT!!
 	return
 
-/turf/simulated/wall/take_damage(dam)
-	if(dam)
-		damage = max(0, damage + dam)
-		update_damage()
-	return
+/// Missing integrity as a fraction of the material cap (0 = intact).
+/turf/simulated/wall/proc/wall_damage_fraction()
+	if(max_integrity <= 0)
+		return 0
+	return (max_integrity - get_integrity()) / max_integrity
 
-/turf/simulated/wall/proc/update_damage()
-	var/cap = material.integrity
+/// The material cap: plating plus reinforcement.
+/turf/simulated/wall/proc/material_integrity_cap()
+	. = material?.integrity || 0
 	if(reinf_material)
-		cap += reinf_material.integrity
+		. += reinf_material.integrity
+	return max(1, .)
 
-	if(locate(/obj/effect/overlay/wallrot) in src)
-		cap = cap / 10
+/// Wall-rot leaves a tenth of the wall: every hit on a rotting wall counts ten times.
+/turf/simulated/wall/run_atom_armor(damage_amount, damage_type, damage_flag = 0, attack_dir, armour_penetration = 0)
+	. = ..()
+	if(. > 0 && (locate(/obj/effect/overlay/wallrot) in src))
+		. *= 10
 
-	if(damage >= cap)
-		dismantle_wall()
-	else
-		update_icon()
+/turf/simulated/wall/on_update_integrity(old_value, new_value)
+	. = ..()
+	update_icon()
 
-	return
+/turf/simulated/wall/atom_destruction(damage_flag)
+	. = ..()
+	dismantle_wall()
 
 /turf/simulated/wall/fire_act(exposed_temperature, exposed_volume)//Doesn't fucking work because walls don't interact with air :(
 	burn(exposed_temperature)

@@ -111,7 +111,7 @@ Class Procs:
 	var/clickvol = 40		// volume
 	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
 	var/obj/item/circuitboard/circuit = null
-	/// Bitfield of MACHINE_MAINT_* capabilities handled by the generic tool hooks.
+	/// Bitfield of MACHINE_MAINT_*: which Maintainable interactions this machine offers (machinery_maintenance.dm).
 	var/maintenance_flags = NONE
 	/// Time spent securing or unsecuring this machine; zero is immediate.
 	var/maintenance_wrench_time = 0
@@ -185,54 +185,6 @@ Class Procs:
 
 /obj/machinery/process() // Steady power usage is handled separately. If you dont use process why are you here?
 	return PROCESS_KILL
-
-/obj/machinery/screwdriver_act(mob/user, obj/item/tool)
-	if(!(maintenance_flags & MACHINE_MAINT_PANEL))
-		return ..()
-	playsound(src, tool.usesound, 50, TRUE)
-	panel_open = !panel_open
-	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/crowbar_act(mob/user, obj/item/tool)
-	if(!(maintenance_flags & MACHINE_MAINT_FRAME))
-		return ..()
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
-
-/obj/machinery/wrench_act(mob/user, obj/item/tool)
-	if(!(maintenance_flags & MACHINE_MAINT_WRENCH))
-		return ..()
-	if(panel_open)
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, tool.usesound, 50, TRUE)
-	var/actual_time = tool.toolspeed * maintenance_wrench_time
-	if(actual_time)
-		user.visible_message(span_warning("\The [user] begins [anchored ? "un" : ""]securing \the [src]."), span_notice("You start [anchored ? "un" : ""]securing \the [src]."))
-		if(!do_after(user, actual_time, target = src))
-			return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("\The [user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-	anchored = !anchored
-	power_change()
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/welder_act(mob/user, obj/item/tool)
-	if(!(maintenance_flags & MACHINE_MAINT_WELDER_REPAIR))
-		return ..()
-	if(get_integrity() >= max_integrity)
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder?.remove_fuel(0, user))
-		to_chat(user, span_warning("The welding tool must be on to repair [src]."))
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, welder.usesound, 50, TRUE)
-	if(!do_after(user, maintenance_weld_time * welder.toolspeed, target = src) || QDELETED(src) || !welder.isOn())
-		return ITEM_INTERACT_BLOCKING
-	repair_damage(max_integrity)
-	return ITEM_INTERACT_SUCCESS
 
 /// Whether a dirty gas notification makes a sleeping machine actionable.
 /// Gas-dependent subtypes override this; the conservative default preserves

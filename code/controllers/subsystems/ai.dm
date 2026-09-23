@@ -80,7 +80,7 @@ SUBSYSTEM_DEF(ai)
 	var/list/keys = list()
 	for(var/cx in MOB_CHUNK_COORD(max(T.x - vision_range, 1)) to MOB_CHUNK_COORD(T.x + vision_range))
 		for(var/cy in MOB_CHUNK_COORD(max(T.y - vision_range, 1)) to MOB_CHUNK_COORD(T.y + vision_range))
-			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, cx, cy), REACT_KEY_CHANGED)
+			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, cx, cy), REACT_CHUNK_ANY_MOB)
 	react_sleep_tokens = SSreactor.sleep_on_keys(src, keys)
 	manage_processing(0)
 	return TRUE

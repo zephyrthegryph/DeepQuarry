@@ -66,6 +66,11 @@ SUBSYSTEM_DEF(reactor)
 	var/audit_sample = 64
 	var/list/last_audit_findings = list()
 
+	/// Live player chunk subscriptions (REACT_KEY_MOB_CHUNK with REACT_CHUNK_PLAYER). A player's move publishes only while this is
+	/// non-zero. A subscription dropped by REACT_CLEAR without unsubscribe_player_chunks()
+	/// leaves it high, which only costs publishes.
+	var/player_chunk_subscriptions = 0
+
 /datum/controller/subsystem/reactor/stat_entry(msg)
 	msg = "S:[length(subscribers) - length(free_ids) - length(released_ids)] W:[last_wakes] C:[length(continuous)] [round(last_dispatch_ms, 0.01)]ms"
 	return ..()
@@ -80,6 +85,7 @@ SUBSYSTEM_DEF(reactor)
 	wake_counts = SSreactor.wake_counts
 	continuous_cost = SSreactor.continuous_cost
 	mob_chunk_subscriptions = SSreactor.mob_chunk_subscriptions
+	player_chunk_subscriptions = SSreactor.player_chunk_subscriptions
 
 /// The wheel tick for world.time `time`: the first tick at or after it.
 /datum/controller/subsystem/reactor/proc/tick_of(time)
@@ -233,7 +239,7 @@ SUBSYSTEM_DEF(reactor)
 		var/kind = keys[i]
 		. += on_key(D, kind, keys[i + 1], keys[i + 2])
 		. += kind
-		if(kind == REACT_KEY_MOB_CHUNK)
+		if(kind == REACT_KEY_MOB_CHUNK) // any-mob subscribers; players use subscribe_player_chunks()
 			mob_chunk_subscriptions++
 
 /// Drops the subscriptions sleep_on_keys() returned.
@@ -250,13 +256,64 @@ SUBSYSTEM_DEF(reactor)
 		return
 	return MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y))
 
-/// A mob arrived in, left or moved inside `location`'s chunk.
+/// A mob appeared in or vanished from `location`'s chunk (Initialize, Destroy).
 /datum/controller/subsystem/reactor/proc/publish_mob_chunk(atom/location)
 	if(!mob_chunk_subscriptions)
 		return
 	var/id = mob_chunk_id(location)
 	if(!isnull(id))
-		REACT_PUBLISH(REACT_KEY_MOB_CHUNK, id, REACT_KEY_CHANGED)
+		REACT_PUBLISH(REACT_KEY_MOB_CHUNK, id, REACT_CHUNK_ANY_MOB)
+
+// --- Player chunk keys (Q5) ---------------------------------------------------------------
+
+/// Subscribes `D` to players (REACT_KEY_MOB_CHUNK, REACT_CHUNK_PLAYER) in every chunk within `radius` tiles of `center`.
+/// Returns the tokens, for unsubscribe_player_chunks().
+/datum/controller/subsystem/reactor/proc/subscribe_player_chunks(datum/D, turf/center, radius)
+	. = list()
+	if(!center)
+		return
+	var/min_x = MOB_CHUNK_COORD(max(center.x - radius, 1))
+	var/max_x = MOB_CHUNK_COORD(min(center.x + radius, world.maxx))
+	var/min_y = MOB_CHUNK_COORD(max(center.y - radius, 1))
+	var/max_y = MOB_CHUNK_COORD(min(center.y + radius, world.maxy))
+	for(var/chunk_x in min_x to max_x)
+		for(var/chunk_y in min_y to max_y)
+			. += on_key(D, REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(center.z, chunk_x, chunk_y), REACT_CHUNK_PLAYER)
+	player_chunk_subscriptions += length(.)
+
+/// Drops tokens from subscribe_player_chunks(). Returns null, for `tokens = unsubscribe_player_chunks(...)`.
+/datum/controller/subsystem/reactor/proc/unsubscribe_player_chunks(datum/D, list/tokens)
+	for(var/token in tokens)
+		if(cancel(D, token))
+			player_chunk_subscriptions = max(player_chunk_subscriptions - 1, 0)
+	return null
+
+/// A player is in `T`'s chunk. Callers check player_chunk_subscriptions first.
+/datum/controller/subsystem/reactor/proc/publish_player_chunk(turf/T)
+	if(T)
+		REACT_PUBLISH(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y)), REACT_CHUNK_PLAYER)
+
+/**
+ * /mob/Moved()'s one publish. The new chunk hears REACT_CHUNK_ANY_MOB (while anything sleeps on
+ * it) plus REACT_CHUNK_PLAYER for a player (while anything listens for players). The old chunk
+ * hears REACT_CHUNK_ANY_MOB only when the step crossed a chunk edge: a step inside one chunk
+ * needs one publish. Callers gate on the two counters first (Q12).
+ */
+/datum/controller/subsystem/reactor/proc/publish_mob_move(atom/old_loc, atom/movable/mover, player)
+	var/mask = mob_chunk_subscriptions ? REACT_CHUNK_ANY_MOB : 0
+	if(player && player_chunk_subscriptions)
+		mask |= REACT_CHUNK_PLAYER
+	if(!mask)
+		return
+	var/turf/old_turf = get_turf(old_loc)
+	var/turf/new_turf = get_turf(mover)
+	var/new_id = new_turf ? MOB_CHUNK_NUMERIC_KEY(new_turf.z, MOB_CHUNK_COORD(new_turf.x), MOB_CHUNK_COORD(new_turf.y)) : null
+	if(!isnull(new_id))
+		REACT_PUBLISH(REACT_KEY_MOB_CHUNK, new_id, mask)
+	if(old_turf && (mask & REACT_CHUNK_ANY_MOB))
+		var/old_id = MOB_CHUNK_NUMERIC_KEY(old_turf.z, MOB_CHUNK_COORD(old_turf.x), MOB_CHUNK_COORD(old_turf.y))
+		if(old_id != new_id)
+			REACT_PUBLISH(REACT_KEY_MOB_CHUNK, old_id, REACT_CHUNK_ANY_MOB)
 
 // --- The continuous lane (reactor.md §2) --------------------------------------------------------
 

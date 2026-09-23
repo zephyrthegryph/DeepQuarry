@@ -21,6 +21,18 @@
 	if(before != client.tgui_panel.oldchat)
 		client.nuke_chat()
 
+/// Screentips: what Click and Alt-click would do to the hovered thing (code/datums/interactions/presentation.dm).
+/datum/preference/toggle/screentips
+	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+	savefile_key = "screentips"
+	default_value = TRUE
+	savefile_identifier = PREFERENCE_PLAYER
+
+/datum/preference/toggle/screentips/apply_to_client(client/client, value)
+	client.set_hover_tracking(value || keybinding_profile_uses_hover(client.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT, client.keybinding_overrides()))
+	if(!value)
+		client.clear_screentip()
+
 /datum/preference/toggle/tgui_fancy
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "tgui_fancy"

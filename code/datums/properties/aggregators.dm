@@ -107,7 +107,7 @@
 			for(var/bit in 0 to PROP_TAG_WORD_BITS - 1)
 				if(!(value & (1 << bit)))
 					continue
-				counts[bit]--
+				counts[bit] = counts[bit] - 1
 				if(counts[bit] <= 0)
 					counts -= bit
 					total &= ~(1 << bit)

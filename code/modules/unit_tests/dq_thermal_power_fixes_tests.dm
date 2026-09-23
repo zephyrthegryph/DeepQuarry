@@ -95,12 +95,18 @@
 	var/datum/pipe_network/ours = new()
 	var/datum/pipe_network/theirs = new()
 	valve.network_node1 = ours
-	STOP_MACHINE_PROCESSING(valve)
+	valve.subscribe_network_keys()
 
+	// Held steady, and with a change on another network, the valve sleeps; its own network wakes it.
+	SSreactor.trace(valve)
+	react_test_ticks(4)
+	var/before = SSreactor.traced_wakes(valve)
 	wake_automatic_shutoff_valves(theirs)
-	TEST_ASSERT(!(valve.datum_flags & DF_ISPROCESSING), "a change on another network woke the valve")
-	wake_automatic_shutoff_valves(ours)
-	TEST_ASSERT(valve.datum_flags & DF_ISPROCESSING, "a change on the valve's network did not wake it")
+	react_test_ticks(4)
+	TEST_ASSERT_EQUAL(SSreactor.traced_wakes(valve), before, "a change on another network woke the valve")
+	SSreactor.untrace(valve)
+	var/failure = react_wake_test(valve, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
+	TEST_ASSERT(!failure, failure)
 
 	valve.network_node1 = null
 	qdel(ours)

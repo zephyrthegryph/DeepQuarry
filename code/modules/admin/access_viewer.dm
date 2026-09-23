@@ -31,8 +31,8 @@
 			var/set_id = text2num(params["set_id"])
 			if(!set_id)
 				return FALSE
-			if(!req_thing.req_access)
-				req_thing.req_access = list()
+			// Copy first: access lists are shared between objects (intern_access_lists()).
+			req_thing.req_access = req_thing.req_access ? req_thing.req_access.Copy() : list()
 			if(set_id in req_thing.req_access)
 				req_thing.req_access -= set_id
 			else
@@ -43,8 +43,7 @@
 			var/set_id = text2num(params["set_id"])
 			if(!set_id)
 				return FALSE
-			if(!req_thing.req_one_access)
-				req_thing.req_one_access = list()
+			req_thing.req_one_access = req_thing.req_one_access ? req_thing.req_one_access.Copy() : list()
 			if(set_id in req_thing.req_one_access)
 				req_thing.req_one_access -= set_id
 			else

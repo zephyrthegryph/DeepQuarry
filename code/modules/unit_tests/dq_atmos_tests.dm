@@ -4204,10 +4204,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.upgradeMotion()
 	C.motionTargets = null
 	C.detectTime = 0
-	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "idle motion camera retained timed polling")
+	C.stat &= ~NOPOWER
+	C.schedule_camera_timer()
+	TEST_ASSERT(isnull(C.camera_timer_token), "idle motion camera kept a timer")
 	var/mob/living/carbon/human/H = new(test_turf)
 	C.newTarget(H)
-	TEST_ASSERT(C in SSmachines.processing_machines, "motion target did not wake its camera")
+	TEST_ASSERT(!isnull(C.camera_timer_token), "motion target did not schedule its camera's alarm timer")
 	qdel(H)
 	qdel(C)
 
@@ -4294,7 +4296,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.emergency_mode = FALSE
 	L.auto_flicker = FALSE
 	L.cell.charge = 0
-	TEST_ASSERT_EQUAL(L.process(), PROCESS_KILL, "unpowered light without emergency charge retained timed polling")
+	L.continue_emergency_discharge()
+	TEST_ASSERT(!L.emergency_discharge_at && !L.flicker_chunk_tokens, "unpowered light without emergency charge kept a timer or chunk keys")
 	qdel(L)
 
 /datum/unit_test/dq_emergency_light_discharge_is_timer_driven
@@ -4306,7 +4309,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.emergency_mode = TRUE
 	L.auto_flicker = FALSE
 	L.begin_emergency_discharge()
-	TEST_ASSERT(L.emergency_discharge_timer, "emergency light did not schedule its discharge timer")
+	TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency light did not schedule its discharge timer")
 	TEST_ASSERT(!(L in SSobj.processing), "ordinary emergency light retained SSobj polling")
 	qdel(L)
 
@@ -4414,12 +4417,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"
 	D.receive_signal(blank)
-	TEST_ASSERT_EQUAL(D.process(), PROCESS_KILL, "blank status display remained scheduled")
-	STOP_MACHINE_PROCESSING(D)
+	TEST_ASSERT(isnull(D.refresh_token), "blank status display kept a refresh timer")
 	var/datum/signal/time_signal = new
 	time_signal.data["command"] = "time"
 	D.receive_signal(time_signal)
-	TEST_ASSERT(D.datum_flags & DF_ISPROCESSING, "time signal did not wake a sleeping status display")
+	TEST_ASSERT(!isnull(D.refresh_token) || (D.stat & NOPOWER), "time signal did not schedule the clock's next redraw")
 	qdel(D)
 	qdel(canister)
 	qdel(C)
@@ -4558,10 +4560,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!A.close_door_at, "blocked airlock retained a timed polling retry")
 	TEST_ASSERT(LAZYLEN(A.autoclose_blockers), "blocked airlock did not subscribe to its blocker")
 	TEST_ASSERT(blocker._listen_lookup?[COMSIG_MOVABLE_MOVED], "blocked airlock did not register a movement signal on its blocker")
-	TEST_ASSERT(!(A.datum_flags & DF_ISPROCESSING), "blocked airlock remained in machinery processing")
+	TEST_ASSERT(isnull(A.door_timer_token) || A.next_door_deadline(), "blocked airlock kept an autoclose timer")
 	blocker.Moved(T, NORTH, TRUE, 0)
-	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, "blocked airlock did not wake when its blocker moved (flags=[A.datum_flags], listed=[A in SSmachines.processing_machines], close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
 	TEST_ASSERT(A.close_door_at, "woken airlock did not schedule an immediate close attempt")
+	TEST_ASSERT(!isnull(A.door_timer_token), "woken airlock has no autoclose timer (close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
 	qdel(blocker)
 	qdel(A)
 
@@ -4574,14 +4576,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.operating = FALSE
 	A.autoclose = TRUE
 	A.close_door_at = world.time
-	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, "closed airlock retained its stale autoclose processing deadline")
+	A.door_deadlines_due()
 	TEST_ASSERT(!A.close_door_at, "closed airlock did not clear its stale autoclose deadline")
 	A.density = FALSE
 	A.operating = FALSE
 	A.locked = TRUE
 	A.close_door_at = world.time
-	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, "locked open airlock retained its impossible autoclose processing deadline")
+	A.door_deadlines_due()
 	TEST_ASSERT(!A.close_door_at, "locked open airlock did not clear its impossible autoclose deadline")
+	A.schedule_door_timer()
 	A.unlock(TRUE)
 	TEST_ASSERT(A.close_door_at, "unlocking an open airlock did not restore autoclose scheduling")
 
@@ -4673,10 +4676,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	shield_capacitor.stored_charge = shield_capacitor.max_charge
 	TEST_ASSERT_EQUAL(shield_capacitor.process(), PROCESS_KILL, "full shield capacitor remained scheduled")
 	var/obj/machinery/atmospherics/valve/shutoff/shutoff = new(T)
-	TEST_ASSERT_EQUAL(shutoff.process(), PROCESS_KILL, "stable automatic shutoff valve remained scheduled")
-	STOP_MACHINE_PROCESSING(shutoff)
-	wake_automatic_shutoff_valves()
-	TEST_ASSERT(shutoff in SSmachines.processing_machines, "atmos topology invalidation did not wake automatic shutoff valve")
+	TEST_ASSERT(!isnull(shutoff.global_leak_token), "automatic shutoff valve did not subscribe to the global leak key")
+	var/shutoff_wake = react_wake_test(shutoff, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
+	TEST_ASSERT(!shutoff_wake, shutoff_wake)
 	var/obj/machinery/sleeper/sleeper = new(T)
 	sleeper.stat = 0
 	TEST_ASSERT_EQUAL(sleeper.process(), PROCESS_KILL, "empty sleeper remained scheduled")
@@ -5961,7 +5963,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 
 	// Stash baseline integrity, then push pressure into the rupture band (40-50 atm).
-	var/initial_integrity = Tank.integrity
+	var/initial_integrity = Tank.get_integrity()
 	TEST_ASSERT(initial_integrity > 0, "tank integrity zero at construct")
 
 	// Pressure target: ~37 atm. DQ's TANK_RUPTURE_PRESSURE is 35 atm and
@@ -5979,8 +5981,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	Tank.check_status()
 
-	TEST_ASSERT(Tank.integrity < initial_integrity, \
-		"check_status didn't reduce integrity under rupture pressure: [initial_integrity] → [Tank.integrity]")
+	TEST_ASSERT(Tank.get_integrity() < initial_integrity, \
+		"check_status didn't reduce integrity under rupture pressure: [initial_integrity] → [Tank.get_integrity()]")
 
 	qdel(Tank)
 

@@ -22,6 +22,7 @@
 
 	//it would be cool to play a sound here
 	moving_status = SHUTTLE_WARMUP
+	publish_schedule()
 	spawn(warmup_time*10)
 
 		make_sounds(HYPERSPACE_WARMUP)

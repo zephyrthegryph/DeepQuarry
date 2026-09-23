@@ -8,8 +8,8 @@
 	var/severity 	= 0 // The current severity of this event
 	var/one_shot	= 0	// If true, then the event will not be re-added to the list of available events
 	var/add_to_queue= 1	// If true, add back to the queue of events upon finishing.
-	var/list/role_weights = list()
-	var/list/min_job_count = list()
+	var/list/role_weights // null when the event has no job weighting
+	var/list/min_job_count
 	var/datum/event/event_type
 
 /datum/event_meta/New(event_severity, event_name, datum/event/type, event_weight, list/job_weights, is_one_shot = 0, min_event_weight = 0, max_event_weight = 0, add_to_queue = 1, list/min_jobs)

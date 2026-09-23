@@ -19,6 +19,14 @@ export const VCHAT_ENABLE: FeatureToggle = {
   component: CheckboxInput,
 };
 
+export const screentips: FeatureToggle = {
+  name: 'Screentips',
+  category: 'UI',
+  description:
+    'Show what clicking and alt-clicking would do to the thing under your mouse.',
+  component: CheckboxInput,
+};
+
 export const tgui_fancy: FeatureToggle = {
   name: 'TGUI: Fancy Mode',
   category: 'UI',

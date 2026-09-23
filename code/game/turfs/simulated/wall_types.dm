@@ -375,8 +375,9 @@
 	. = ..()
 	if(stripe_color)
 		var/image/I
+		var/list/connections = get_wall_connections()
 		for(var/i = 1 to 4)
-			I = image(wall_masks, "stripe[wall_connections[i]]", dir = 1<<(i-1))
+			I = image(wall_masks, "stripe[connections[i]]", dir = 1<<(i-1))
 			I.color = stripe_color
 			add_overlay(I)
 
@@ -429,12 +430,9 @@
 	else
 		icon_state = "[wall_base_state][wall_connections]"
 
-	if(damage != 0)
-		var/integrity = material.integrity
-		if(reinf_material)
-			integrity += reinf_material.integrity
-
-		var/overlay = round(damage / integrity * damage_overlays.len) + 1
+	var/damage_fraction = wall_damage_fraction()
+	if(damage_fraction > 0)
+		var/overlay = round(damage_fraction * damage_overlays.len) + 1
 		if(overlay > damage_overlays.len)
 			overlay = damage_overlays.len
 

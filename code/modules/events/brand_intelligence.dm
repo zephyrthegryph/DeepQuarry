@@ -6,7 +6,7 @@
 	var/list/obj/machinery/vending/infectedVendingMachines = list()
 	var/obj/machinery/vending/originMachine
 
-	var/list/rampant_speeches = list("try our aggressive new marketing strategies!", \
+	var/static/list/rampant_speeches = list("try our aggressive new marketing strategies!", \
 										"you should buy products to feed your lifestyle obession!", \
 										"consume!", \
 										"your money can buy happiness!", \

@@ -26,12 +26,6 @@ SUBSYSTEM_DEF(sounds)
 	var/channel_reserve_high
 	/// Assoc list of character speaking sounds, contains lists of sounds per key for use with pick()
 	var/talk_sound_map = list()
-	/// MOB_CHUNK_NUMERIC_KEY -> assoc list of dormant /datum/looping_sound waiting for a listener (Q5).
-	var/alist/dormant_loops_by_chunk
-
-/datum/controller/subsystem/sounds/New()
-	dormant_loops_by_chunk = alist()
-	return ..()
 
 /datum/controller/subsystem/sounds/Initialize()
 	setup_available_channels()
@@ -166,34 +160,3 @@ SUBSYSTEM_DEF(sounds)
 	talk_sound_map["xeno speak"] = list('sound/talksounds/xeno/xenotalk.ogg', 'sound/talksounds/xeno/xenotalk2.ogg', 'sound/talksounds/xeno/xenotalk3.ogg')
 
 #undef DATUMLESS
-
-/// Parks a looping sound until a player moves into one of `chunk_keys`.
-/datum/controller/subsystem/sounds/proc/subscribe_dormant_loop(datum/looping_sound/loop, list/chunk_keys)
-	for(var/key in chunk_keys)
-		var/list/loops = dormant_loops_by_chunk[key]
-		if(!loops)
-			loops = list()
-			dormant_loops_by_chunk[key] = loops
-		loops[loop] = TRUE
-
-/datum/controller/subsystem/sounds/proc/unsubscribe_dormant_loop(datum/looping_sound/loop, list/chunk_keys)
-	for(var/key in chunk_keys)
-		var/list/loops = dormant_loops_by_chunk[key]
-		if(!loops)
-			continue
-		loops -= loop
-		if(!length(loops))
-			dormant_loops_by_chunk.Remove(key)
-
-/// A player arrived in `location`'s chunk: wake every loop waiting on it.
-/datum/controller/subsystem/sounds/proc/publish_mob_chunk(atom/location)
-	if(!length(dormant_loops_by_chunk))
-		return
-	var/turf/T = get_turf(location)
-	if(!T)
-		return
-	var/list/loops = dormant_loops_by_chunk[MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y))]
-	if(!length(loops))
-		return
-	for(var/datum/looping_sound/loop as anything in loops.Copy())
-		loop.wake_from_dormancy()

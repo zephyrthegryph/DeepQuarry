@@ -728,7 +728,7 @@
 	var/max_y = min(world.maxy, y + range)
 	for(var/chunk_x in MOB_CHUNK_COORD(min_x) to MOB_CHUNK_COORD(max_x))
 		for(var/chunk_y in MOB_CHUNK_COORD(min_y) to MOB_CHUNK_COORD(max_y))
-			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(z, chunk_x, chunk_y), REACT_KEY_CHANGED)
+			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(z, chunk_x, chunk_y), REACT_CHUNK_ANY_MOB)
 	return keys
 
 /obj/machinery/porta_turret/proc/slow_process(shot_targets)

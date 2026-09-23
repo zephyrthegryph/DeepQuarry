@@ -196,7 +196,7 @@
 				else
 					B = T.take_blood(src,tramount)
 				if (B)
-					reagents.reagent_list |= B
+					reagents.adopt_reagent(B)
 					reagents.update_total()
 					on_reagent_change()
 					reagents.handle_reactions()

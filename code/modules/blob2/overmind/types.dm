@@ -49,7 +49,7 @@
 	var/node_type = /obj/structure/blob/node
 	var/shield_type = /obj/structure/blob/shield
 
-	var/list/core_tech = list(TECH_BIO = 4, TECH_MATERIAL = 3)	// Tech for the item created when a core is destroyed.
+	var/static/list/core_tech = list(TECH_BIO = 4, TECH_MATERIAL = 3)	// Tech for the item created when a core is destroyed.
 	var/chunk_active_type = BLOB_CHUNK_TOGGLE
 	var/chunk_active_ability_cooldown = 20 SECONDS
 	var/chunk_passive_ability_cooldown = 5 SECONDS

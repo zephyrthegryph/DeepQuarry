@@ -403,7 +403,7 @@
 	matter = list(MAT_STEEL = 1000)
 
 /obj/item/broken_device/random
-	var/list/possible_icons = list("binradio_broken",
+	var/static/list/possible_icons = list("binradio_broken",
 									"motor_broken",
 									"armor_broken",
 									"camera_broken",

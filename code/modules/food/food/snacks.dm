@@ -3885,7 +3885,7 @@
 	nutriment_desc = list("turkey" = 20)
 	bitesize = 5
 	trash = /obj/item/trash/turkeybones
-	var/list/extra_product = list(/obj/item/reagent_containers/food/snacks/turkeydrumstick = 2,
+	var/static/list/extra_product = list(/obj/item/reagent_containers/food/snacks/turkeydrumstick = 2,
 									/obj/item/trash/turkeybones = 1)
 
 /obj/item/reagent_containers/food/snacks/sliceable/turkey/Initialize(mapload)
@@ -9005,7 +9005,7 @@
 	trash = /obj/item/trash/ratpackramen/standard
 	nutriment_amt = 2
 	nutriment_desc = list("savory noodles" = 4)
-	var/list/bowl_color_options = list("standard" = 6,
+	var/static/list/bowl_color_options = list("standard" = 6,
 										"lacquer1" = 2,
 										"lacquer2" = 2,
 										"lacquer3" = 2,
