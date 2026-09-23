@@ -11,7 +11,7 @@
 	. = ..()
 
 /datum/persistent/paper/CreateEntryInstance(turf/creating, list/token)
-	var/obj/structure/noticeboard/board = locate() in creating
+	var/obj/structure/noticeboard/board = locate_on(creating, /obj/structure/noticeboard)
 	if(requires_noticeboard && LAZYLEN(board.notices) >= board.max_notices)
 		return
 	var/obj/item/paper/paper = new paper_type(creating)

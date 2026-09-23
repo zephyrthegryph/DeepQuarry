@@ -308,7 +308,7 @@
 	if(!istype(T))
 		return FALSE
 
-	var/obj/effect/ant_structure/W = locate() in T
+	var/obj/effect/ant_structure/W = locate_on(T, /obj/effect/ant_structure)
 	if(W)
 		return FALSE // Already got webs here.
 
@@ -397,7 +397,7 @@
 	if(!istype(T))
 		return FALSE
 
-	var/obj/effect/ant_structure/W = locate() in T
+	var/obj/effect/ant_structure/W = locate_on(T, /obj/effect/ant_structure)
 	if(W)
 		return FALSE // Already got webs here.
 

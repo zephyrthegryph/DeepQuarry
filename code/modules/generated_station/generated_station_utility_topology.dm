@@ -588,12 +588,12 @@
 	for(var/module_id in materialization.module_areas)
 		var/area/generated_station/department_area = materialization.module_areas[module_id]
 		var/list/working_lights = list()
-		for(var/obj/machinery/light/light in department_area)
+		for(var/obj/machinery/light/light in area_contents_of_type(department_area, /obj/machinery/light))
 			if(light.status == LIGHT_OK && light.on && light.powered(LIGHT))
 				working_lights += light
 		if(!length(working_lights))
 			return FALSE
-		for(var/turf/simulated/floor/floor in department_area)
+		for(var/turf/simulated/floor/floor in area_contents_of_type(department_area, /turf/simulated/floor))
 			var/covered = FALSE
 			for(var/obj/machinery/light/light as anything in working_lights)
 				if(get_dist(floor, light) <= max_distance)

@@ -327,21 +327,21 @@
 /proc/set_area_machinery(area/area, title, oldtitle)
 	if(!oldtitle) // or replacetext goes to infinite loop
 		return
-	for(var/obj/machinery/alarm/airpanel in area)
+	for(var/obj/machinery/alarm/airpanel in area_contents_of_type(area, /obj/machinery/alarm))
 		airpanel.name = replacetext(airpanel.name,oldtitle,title)
 		airpanel.update_area()
-	for(var/obj/machinery/power/apc/apcpanel in area)
+	for(var/obj/machinery/power/apc/apcpanel in area_contents_of_type(area, /obj/machinery/power/apc))
 		apcpanel.name = replacetext(apcpanel.name,oldtitle,title)
 		apcpanel.update_area() //DECIDE IF THIS IS WANTED OR NOT. This can mean that the APC will overwrite the current APC the area being expanded has since areas cant have multiple APCs.
-	for(var/obj/machinery/atmospherics/unary/vent_scrubber/scrubber in area)
+	for(var/obj/machinery/atmospherics/unary/vent_scrubber/scrubber in area_contents_of_type(area, /obj/machinery/atmospherics/unary/vent_scrubber))
 		scrubber.name = replacetext(scrubber.name,oldtitle,title)
 		scrubber.update_area()
-	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in area)
+	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in area_contents_of_type(area, /obj/machinery/atmospherics/unary/vent_pump))
 		vent.name = replacetext(vent.name,oldtitle,title)
 		vent.update_area()
-	for(var/obj/machinery/door/door in area)
+	for(var/obj/machinery/door/door in area_contents_of_type(area, /obj/machinery/door))
 		door.name = replacetext(door.name,oldtitle,title)
-	for(var/obj/machinery/firealarm/firepanel in area)
+	for(var/obj/machinery/firealarm/firepanel in area_contents_of_type(area, /obj/machinery/firealarm))
 		firepanel.name = replacetext(firepanel.name,oldtitle,title)
 	area.update_areasize()
 	//TODO: much much more. Unnamed airlocks, cameras, etc.

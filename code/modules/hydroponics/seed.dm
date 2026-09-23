@@ -207,7 +207,7 @@
 			if(flesh_colour) splat.color = get_trait(TRAIT_PRODUCT_COLOUR)
 
 	if(chems && chems.len)
-		for(var/mob/living/M in T.contents)
+		for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 			if(!M.reagents)
 				continue
 			var/body_coverage = HEAD|FACE|EYES|CHEST|LEGS|FEET|ARMS|HANDS
@@ -272,7 +272,7 @@
 				open_turfs |= neighbor
 
 		for(var/turf/T in valid_turfs)
-			for(var/mob/living/M in T.contents)
+			for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 				apply_special_effect(M)
 			splatter(T,thrown)
 		if(origin_turf)

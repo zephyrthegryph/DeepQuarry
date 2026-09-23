@@ -168,7 +168,7 @@
 /obj/machinery/reagent_refinery/proc/update_input_connection_overlays(overlay_state)
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(get_turf(src),direction)
-		var/obj/machinery/reagent_refinery/other = locate() in T
+		var/obj/machinery/reagent_refinery/other = locate_on(T, /obj/machinery/reagent_refinery)
 		if(!other?.anchored)
 			continue
 

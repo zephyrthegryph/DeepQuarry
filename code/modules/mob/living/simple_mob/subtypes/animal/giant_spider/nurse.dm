@@ -160,7 +160,7 @@
 	if(!istype(T))
 		return FALSE
 
-	var/obj/effect/spider/stickyweb/W = locate() in T
+	var/obj/effect/spider/stickyweb/W = locate_on(T, /obj/effect/spider/stickyweb)
 	if(W)
 		return FALSE // Already got webs here.
 
@@ -192,7 +192,7 @@
 	if(!can_lay_eggs)
 		return FALSE
 
-	var/obj/effect/spider/eggcluster/E = locate() in T
+	var/obj/effect/spider/eggcluster/E = locate_on(T, /obj/effect/spider/eggcluster)
 	if(E)
 		return FALSE // Already got eggs here.
 

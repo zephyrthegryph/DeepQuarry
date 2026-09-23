@@ -71,7 +71,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 		if(spook)
 			var/turf/T = get_turf(spook)
 			var/list/visible = list()
-			for(var/obj/O in T.contents)
+			for(var/obj/O in turf_contents_of_type(T, /obj))
 				if(!O.invisibility && O.name)
 					visible += O
 			if(visible.len)

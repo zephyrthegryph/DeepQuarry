@@ -40,7 +40,7 @@
 /// Liquid on a burning tile knocks the fire back: the tile's gas loses at least
 /// half its temperature (2000 K at most) and the hotspot goes out.
 /proc/reagent_quench_hotspot(turf/T)
-	var/obj/effect/hotspot/hotspot = locate() in T
+	var/obj/effect/hotspot/hotspot = locate_on(T, /obj/effect/hotspot)
 	if(!hotspot || isspace(T))
 		return
 	var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air()))

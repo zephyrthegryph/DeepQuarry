@@ -81,7 +81,7 @@
 	TEST_ASSERT(finish, "a finishing edge leaves stage 7")
 	TEST_ASSERT(dq_walk(H, assembly, finish, wrench), "finishing succeeds")
 	TEST_ASSERT(QDELETED(assembly), "the assembly is gone")
-	var/obj/vehicle/train/engine/quadbike/built/product = locate() in T
+	var/obj/vehicle/train/engine/quadbike/built/product = locate_on(T, /obj/vehicle/train/engine/quadbike/built)
 	TEST_ASSERT(product, "the finished quadbike is on the turf")
 	TEST_ASSERT_EQUAL(product.cell, cell, "the cell moved to the product")
 	TEST_ASSERT_EQUAL(cell.loc, product, "the cell physically moved to the product")
@@ -101,7 +101,7 @@
 	TEST_ASSERT(dq_walk(H, assembly, to_trailer, steel), "converting to a trailer succeeds")
 	TEST_ASSERT_EQUAL(steel.get_amount(), 0, "all five steel sheets were used")
 	TEST_ASSERT(QDELETED(assembly), "the quadbike assembly is gone")
-	var/obj/item/vehicle_assembly/quadtrailer/trailer = locate() in T
+	var/obj/item/vehicle_assembly/quadtrailer/trailer = locate_on(T, /obj/item/vehicle_assembly/quadtrailer)
 	TEST_ASSERT(trailer, "a trailer assembly appears")
 	TEST_ASSERT_EQUAL(trailer.build_stage, 1, "the trailer starts framed (stage 1)")
 
@@ -195,7 +195,7 @@
 	var/datum/interaction/construction/finish = dq_edge(assembly, "6>done:screwdriver")
 	TEST_ASSERT(dq_walk(H, assembly, finish, screwdriver), "finishing succeeds")
 	TEST_ASSERT(QDELETED(assembly), "the assembly is gone")
-	var/obj/vehicle/bike/built/product = locate() in T
+	var/obj/vehicle/bike/built/product = locate_on(T, /obj/vehicle/bike/built)
 	TEST_ASSERT(product, "the finished bike is on the turf")
 	TEST_ASSERT_EQUAL(product.cell, cell, "the cell moved to the product")
 
@@ -249,7 +249,7 @@
 	var/datum/interaction/construction/finish = dq_edge(assembly, "7>done:screwdriver")
 	TEST_ASSERT(dq_walk(H, assembly, finish, screwdriver), "finishing succeeds")
 	TEST_ASSERT(QDELETED(assembly), "the assembly is gone")
-	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = locate() in T
+	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = locate_on(T, /obj/vehicle/train/engine/quadbike/snowmobile/built)
 	TEST_ASSERT(product, "the finished snowmobile is on the turf")
 	TEST_ASSERT_EQUAL(product.cell, cell, "the cell moved to the product")
 
@@ -284,7 +284,7 @@
 	var/datum/interaction/construction/baton_edge = dq_edge(assembly, "3>done")
 	TEST_ASSERT(dq_walk(H, assembly, baton_edge, baton), "attaching the baton finishes it")
 	TEST_ASSERT(QDELETED(assembly), "the assembly is gone")
-	var/mob/living/bot/secbot/bot = locate() in T
+	var/mob/living/bot/secbot/bot = locate_on(T, /mob/living/bot/secbot)
 	TEST_ASSERT(bot, "the finished Securitron is on the turf")
 	TEST_ASSERT(!istype(bot, /mob/living/bot/secbot/slime), "a plain baton makes a plain secbot")
 	TEST_ASSERT_EQUAL(bot.name, "Test Securitron", "the custom name carried over")
@@ -301,7 +301,7 @@
 	var/obj/item/melee/baton/slime/baton = allocate(/obj/item/melee/baton/slime, T)
 	var/datum/interaction/construction/baton_edge = dq_edge(assembly, "3>done")
 	TEST_ASSERT(dq_walk(H, assembly, baton_edge, baton), "attaching the slime baton finishes it")
-	var/mob/living/bot/secbot/slime/bot = locate() in T
+	var/mob/living/bot/secbot/slime/bot = locate_on(T, /mob/living/bot/secbot/slime)
 	TEST_ASSERT(bot, "a slime secbot is on the turf")
 
 // ---- ED-209 assembly ----
@@ -369,7 +369,7 @@
 	var/datum/interaction/construction/finish_edge = dq_edge(assembly, "9>done")
 	TEST_ASSERT(dq_walk(H, assembly, finish_edge, cell), "installing the cell finishes it")
 	TEST_ASSERT(QDELETED(assembly), "the assembly is gone")
-	var/mob/living/bot/secbot/ed209/bot = locate() in T
+	var/mob/living/bot/secbot/ed209/bot = locate_on(T, /mob/living/bot/secbot/ed209)
 	TEST_ASSERT(bot, "the finished ED-209 is on the turf")
 	TEST_ASSERT(!istype(bot, /mob/living/bot/secbot/ed209/slime), "a plain taser makes a plain ED-209")
 	TEST_ASSERT_EQUAL(bot.name, "Test ED-209", "the custom name carried over")
@@ -389,7 +389,7 @@
 	TEST_ASSERT(taser_xeno_edge, "a xenotaser edge leaves step 7")
 	TEST_ASSERT(dq_walk(H, assembly, taser_xeno_edge, xeno_taser), "the xenotaser swaps the assembly")
 	TEST_ASSERT(QDELETED(assembly), "the ED-209 assembly is gone")
-	var/obj/item/secbot_assembly/ed209_assembly/slime/slime_assembly = locate() in T
+	var/obj/item/secbot_assembly/ed209_assembly/slime/slime_assembly = locate_on(T, /obj/item/secbot_assembly/ed209_assembly/slime)
 	TEST_ASSERT(slime_assembly, "a slime assembly appears")
 	TEST_ASSERT_EQUAL(slime_assembly.build_step, 8, "the slime assembly picks up at step 8")
 	TEST_ASSERT_EQUAL(slime_assembly.created_name, "Test SL-ED-209", "the custom name carried over")
@@ -429,7 +429,7 @@
 	var/datum/interaction/construction/finish_edge = dq_edge(assembly, "9>done")
 	TEST_ASSERT(dq_walk(H, assembly, finish_edge, cell), "installing the cell finishes it")
 	TEST_ASSERT(QDELETED(assembly), "the assembly is gone")
-	var/mob/living/bot/secbot/ed209/slime/bot = locate() in T
+	var/mob/living/bot/secbot/ed209/slime/bot = locate_on(T, /mob/living/bot/secbot/ed209/slime)
 	TEST_ASSERT(bot, "the finished SL-ED-209 is on the turf")
 
 // ---- ED-CLN assembly ----
@@ -488,6 +488,6 @@
 	var/datum/interaction/construction/finish_edge = dq_edge(assembly, "8>done")
 	TEST_ASSERT(dq_walk(H, assembly, finish_edge, cell), "installing the cell finishes it")
 	TEST_ASSERT(QDELETED(assembly), "the assembly is gone")
-	var/mob/living/bot/cleanbot/edCLN/bot = locate() in T
+	var/mob/living/bot/cleanbot/edCLN/bot = locate_on(T, /mob/living/bot/cleanbot/edCLN)
 	TEST_ASSERT(bot, "the finished ED-CLN is on the turf")
 	TEST_ASSERT_EQUAL(bot.name, "Test ED-CLN", "the custom name carried over")

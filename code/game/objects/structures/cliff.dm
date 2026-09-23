@@ -242,7 +242,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 		L.injure(INJURY_BLUNT, damage * harm, target_zone, src, flags = INJURE_ARMORED)
 
 		// Now fall off more cliffs below this one if they exist.
-		var/obj/structure/cliff/bottom_cliff = locate() in T
+		var/obj/structure/cliff/bottom_cliff = locate_on(T, /obj/structure/cliff)
 		if(bottom_cliff)
 			visible_message(span_danger("\The [L] rolls down towards \the [bottom_cliff]!"))
 			sleep(5)

@@ -354,7 +354,7 @@
 
 	for(var/node_id in department_areas)
 		var/area/generated_station/department_area = department_areas[node_id]
-		for(var/turf/T in department_area)
+		for(var/turf/T in area_contents_of_type(department_area, /turf))
 			station_turfs |= T
 	// Authored rooms intentionally receive independent areas so each room can
 	// own its APC, alarms, and environmental controls. They are still part of
@@ -362,7 +362,7 @@
 	// structural/connectivity measurement.
 	for(var/module_id in module_areas)
 		var/area/generated_station/module_area = module_areas[module_id]
-		for(var/turf/T in module_area)
+		for(var/turf/T in area_contents_of_type(module_area, /turf))
 			station_turfs |= T
 	for(var/turf/T in transit_area)
 		station_turfs |= T

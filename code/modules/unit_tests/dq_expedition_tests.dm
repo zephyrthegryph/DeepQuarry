@@ -244,7 +244,7 @@
 		var/alarms = 0
 		var/lights = 0
 		var/floors = 0
-		for(var/turf/simulated/floor/floor in station_area)
+		for(var/turf/simulated/floor/floor in area_contents_of_type(station_area, /turf/simulated/floor))
 			floors++
 			for(var/obj/machinery/power/apc/APC in floor)
 				apcs++
@@ -302,7 +302,7 @@
 		var/list/initial_pressures = list()
 		for(var/node_id in site.station_materialization.department_areas)
 			var/area/generated_station/station_area = site.station_materialization.department_areas[node_id]
-			for(var/turf/simulated/floor/floor in station_area)
+			for(var/turf/simulated/floor/floor in area_contents_of_type(station_area, /turf/simulated/floor))
 				var/initial_pressure = floor.return_air()?.return_pressure()
 				TEST_ASSERT(isnum(initial_pressure) && initial_pressure > 80, "Seed [seed] floor [generated_station_coordinate(floor)] starts unpressurized")
 				initial_pressures[floor] = initial_pressure

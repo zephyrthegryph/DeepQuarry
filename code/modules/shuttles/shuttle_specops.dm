@@ -135,7 +135,7 @@
 	var/area/centcom/specops/special_ops = locate()//Where is the specops area located?
 	//Begin Marauder launchpad.
 	spawn(0)//So it parallel processes it.
-		for(var/obj/machinery/door/blast/M in special_ops)
+		for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 			switch(M.id)
 				if("ASSAULT0")
 					spawn(10)//1 second delay between each.
@@ -166,7 +166,7 @@
 
 		sleep(10)
 
-		for(var/obj/machinery/mass_driver/M in special_ops)
+		for(var/obj/machinery/mass_driver/M in area_contents_of_type(special_ops, /obj/machinery/mass_driver))
 			switch(M.id)
 				if("ASSAULT0")
 					spawn(10)
@@ -183,7 +183,7 @@
 
 		sleep(50)//Doors remain open for 5 seconds.
 
-		for(var/obj/machinery/door/blast/M in special_ops)
+		for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 			switch(M.id)//Doors close at the same time.
 				if("ASSAULT0")
 					spawn(0)

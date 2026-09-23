@@ -367,7 +367,7 @@
 	while(length(station_areas))
 		var/area/target_area = pick_n_take(station_areas)
 		var/list/open_turfs = list()
-		for(var/turf/open/T in target_area)
+		for(var/turf/open/T in area_contents_of_type(target_area, /turf/open))
 			open_turfs += T
 		if(!length(open_turfs))
 			continue

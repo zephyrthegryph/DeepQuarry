@@ -221,7 +221,7 @@
 		return "empty void"
 	if(T.density)
 		return T
-	for(var/obj/O in T.contents)
+	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(O && O.density && !(O.flags & ON_BORDER) && !HAS_TRAIT(O,TRAIT_CLIMBABLE)) //ON_BORDER structures are handled by the Adjacent() check.
 			return O
 	return 0
@@ -233,7 +233,7 @@
 		return 0
 	if(T.density == 1)
 		return T
-	for(var/obj/O in T.contents)
+	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(O && O.density && !(O.flags & ON_BORDER && !(turn(O.dir, 180) & climbed_thing.dir)) && !HAS_TRAIT(O,TRAIT_CLIMBABLE))
 			return O
 	return 0

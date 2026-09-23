@@ -9,7 +9,7 @@
 /obj/fiftyspawner/Initialize(mapload)
 	..()
 	var/turf/T = get_turf(src)
-	var/obj/structure/closet/C = locate() in T
+	var/obj/structure/closet/C = locate_on(T, /obj/structure/closet)
 	var/obj/item/stack/M = new type_to_spawn(C || T, -1)
 	M.update_icon() // Some stacks have different sprites depending on how full they are.
 	return INITIALIZE_HINT_QDEL //Bye!

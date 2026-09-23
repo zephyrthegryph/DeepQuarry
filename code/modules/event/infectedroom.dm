@@ -37,7 +37,7 @@
 			continue
 
 		var/list/turfs = list()
-		for(var/turf/simulated/floor/F in A)
+		for(var/turf/simulated/floor/F in area_contents_of_type(A, /turf/simulated/floor))
 			if(!F.check_density())
 				turfs += F
 		if(turfs.len == 0)

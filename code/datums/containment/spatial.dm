@@ -48,20 +48,23 @@
 
 /// Every atom of `type` (and subtypes) anywhere in area `A`, as a new list.
 /// Equivalent to `for(var/type/A in Area)`, one level up from
-/// `turf_contents_of_type()`.
+/// `turf_contents_of_type()`. `type` can be a movable type (BYOND yields the
+/// area's movable atoms) or a turf type (BYOND yields the area's own member
+/// turfs) -- both are `/atom`, so one generic loop covers both shapes.
 ///
 /// # Examples
 ///
 /// ```
 /// var/list/obj/machinery/light/L = area_contents_of_type(A, /obj/machinery/light)
+/// var/list/turf/simulated/floor/floors = area_contents_of_type(A, /turf/simulated/floor)
 /// ```
 /proc/area_contents_of_type(area/A, type)
 	. = list()
 	if(!A)
 		return
-	for(var/atom/movable/AM in A)
-		if(istype(AM, type))
-			. += AM
+	for(var/atom/AT in A)
+		if(istype(AT, type))
+			. += AT
 
 /// The first atom of `type` anywhere in area `A`, or null. Equivalent to
 /// `locate(type) in A`.

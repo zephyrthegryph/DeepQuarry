@@ -43,7 +43,7 @@
 	. = ..()
 
 	var/turf/T = get_turf(loc)
-	var/obj/machinery/navbeacon/N = locate() in T
+	var/obj/machinery/navbeacon/N = locate_on(T, /obj/machinery/navbeacon)
 	if(N)
 		home = T
 		homeName = N.location

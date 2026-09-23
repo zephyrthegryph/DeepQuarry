@@ -247,7 +247,7 @@
 	qdel(obj)
 
 /obj/machinery/computer/HolodeckControl/proc/checkInteg(area/A)
-	for(var/turf/T in A)
+	for(var/turf/T in area_contents_of_type(A, /turf))
 		if(istype(T, /turf/space))
 			return 0
 

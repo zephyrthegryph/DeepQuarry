@@ -88,7 +88,7 @@
 
 				if(sense)
 
-					for(var/atom/AM in T.contents)
+					for(var/atom/AM in turf_contents_of_type(T, /atom))
 
 						if(istype(AM, /obj/machinery/door) && !istype(AM, /obj/machinery/door/window))
 							if(AM.density)
@@ -235,7 +235,7 @@
 
 				if(sense)
 
-					for(var/atom/AM in T.contents)
+					for(var/atom/AM in turf_contents_of_type(T, /atom))
 
 						if(istype(AM, /obj/machinery/door) && !istype(AM, /obj/machinery/door/window))
 							if(AM.density)

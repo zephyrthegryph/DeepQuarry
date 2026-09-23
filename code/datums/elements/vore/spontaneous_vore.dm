@@ -59,7 +59,7 @@
 		return
 
 	if((drop_mob.status_flags & HIDING))
-		var/obj/structure/table/is_there_a_table = locate() in landing //Don't eat people hiding under tables
+		var/obj/structure/table/is_there_a_table = locate_on(landing, /obj/structure/table) //Don't eat people hiding under tables
 		if(is_there_a_table)
 			return
 

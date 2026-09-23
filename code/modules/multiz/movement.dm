@@ -44,7 +44,7 @@
 		forceMove(destination)
 		return 1
 
-	var/obj/structure/ladder/ladder = locate() in start.contents
+	var/obj/structure/ladder/ladder = locate_on(start, /obj/structure/ladder)
 	if((direction == UP ? ladder?.target_up : ladder?.target_down) && (ladder?.allowed_directions & direction))
 		if(src.may_climb_ladders(ladder))
 			return ladder.climbLadder(src, (direction == UP ? ladder.target_up : ladder.target_down))
@@ -76,8 +76,8 @@
 	var/area/area = get_area(src)
 	if(area.get_gravity() && !can_overcome_gravity())
 		if(direction == UP)
-			var/obj/structure/lattice/lattice = locate() in destination.contents
-			var/obj/structure/catwalk/catwalk = locate() in destination.contents
+			var/obj/structure/lattice/lattice = locate_on(destination, /obj/structure/lattice)
+			var/obj/structure/catwalk/catwalk = locate_on(destination, /obj/structure/catwalk)
 
 			if(lattice)
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * climb_modifier), 1)
@@ -794,7 +794,7 @@
 	if(LAZYLEN(above_wall.contents) > 30) //We avoid checking the contents if it's too cluttered to avoid issues
 		to_chat(L, span_warning("\The [above_wall] is too cluttered to climb onto!"))
 		return
-	for(var/atom/A in above_wall.contents)
+	for(var/atom/A in turf_contents_of_type(above_wall, /atom))
 		if(A.density)
 			to_chat(L, span_warning("\The [A.name] blocks your way!"))
 			return

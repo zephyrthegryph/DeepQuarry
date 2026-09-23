@@ -145,7 +145,7 @@
 	var/did_work = FALSE
 	if (src.output && src.input)
 		var/turf/T = get_turf(input)
-		for(var/obj/item/O in T.contents)
+		for(var/obj/item/O in turf_contents_of_type(T, /obj/item))
 			if(!O)
 				continue
 			did_work = TRUE

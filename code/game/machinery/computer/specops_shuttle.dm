@@ -63,7 +63,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	var/list/dstturfs = list()
 	var/throwy = world.maxy
 
-	for(var/turf/T in end_location)
+	for(var/turf/T in area_contents_of_type(end_location, /turf))
 		dstturfs += T
 		if(T.y < throwy)
 			throwy = T.y
@@ -78,10 +78,10 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		if(istype(T, /turf/simulated))
 			qdel(T)
 
-	for(var/mob/living/carbon/bug in end_location) // If someone somehow is still in the shuttle's docking area...
+	for(var/mob/living/carbon/bug in area_contents_of_type(end_location, /mob/living/carbon)) // If someone somehow is still in the shuttle's docking area...
 		bug.gib()
 
-	for(var/mob/living/simple_mob/pest in end_location) // And for the other kind of bug...
+	for(var/mob/living/simple_mob/pest in area_contents_of_type(end_location, /mob/living/simple_mob)) // And for the other kind of bug...
 		pest.gib()
 
 	start_location.move_contents_to(end_location)
@@ -141,7 +141,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 	//Begin Marauder launchpad.
 	spawn(0)//So it parallel processes it.
-		for(var/obj/machinery/door/blast/M in special_ops)
+		for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 			switch(M.id)
 				if("ASSAULT0")
 					spawn(10)//1 second delay between each.
@@ -172,7 +172,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 		sleep(10)
 
-		for(var/obj/machinery/mass_driver/M in special_ops)
+		for(var/obj/machinery/mass_driver/M in area_contents_of_type(special_ops, /obj/machinery/mass_driver))
 			switch(M.id)
 				if("ASSAULT0")
 					spawn(10)
@@ -189,7 +189,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 		sleep(50)//Doors remain open for 5 seconds.
 
-		for(var/obj/machinery/door/blast/M in special_ops)
+		for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 			switch(M.id)//Doors close at the same time.
 				if("ASSAULT0")
 					spawn(0)
@@ -212,7 +212,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	var/list/dstturfs = list()
 	var/throwy = world.maxy
 
-	for(var/turf/T in end_location)
+	for(var/turf/T in area_contents_of_type(end_location, /turf))
 		dstturfs += T
 		if(T.y < throwy)
 			throwy = T.y

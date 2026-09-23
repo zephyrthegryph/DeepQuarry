@@ -60,7 +60,7 @@
 	for(var/dirn in GLOB.cardinal)		//This is to guarantee that C4 at least breaks down all immediately adjacent walls and doors.
 		var/turf/simulated/wall/T = get_step(src,dirn)
 		if(locate_on(T, /obj/machinery/door/airlock))
-			var/obj/machinery/door/airlock/D = locate() in T
+			var/obj/machinery/door/airlock/D = locate_on(T, /obj/machinery/door/airlock)
 			if(D.density)
 				D.open()
 		if(istype(T,/turf/simulated/wall))

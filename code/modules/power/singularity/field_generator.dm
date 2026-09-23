@@ -291,7 +291,7 @@
 		T = get_step(T, NSEW)
 		if(T.density)//We cant shoot a field though this
 			return 0
-		for(var/atom/A in T.contents)
+		for(var/atom/A in turf_contents_of_type(T, /atom))
 			if(ismob(A))
 				continue
 			if(!istype(A,/obj/machinery/field_generator))

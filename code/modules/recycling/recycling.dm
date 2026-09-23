@@ -132,7 +132,7 @@
 	for(var/mat in item_matter)
 		modified_mats[mat] = item_matter[mat] * effic_factor * trash // Trash multiplier
 	var/turf/T = get_step(src, dir)
-	for(var/obj/item/debris_pack/D in T.contents)
+	for(var/obj/item/debris_pack/D in turf_contents_of_type(T, /obj/item/debris_pack))
 		if(istype(D))
 			D.add_materials(modified_mats)
 			update_use_power(USE_POWER_IDLE)

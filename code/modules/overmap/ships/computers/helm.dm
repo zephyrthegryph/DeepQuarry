@@ -43,7 +43,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 
 /obj/machinery/computer/ship/helm/proc/get_known_sectors()
 	var/area/overmap/map = locate() in world
-	for(var/obj/effect/overmap/visitable/S in map)
+	for(var/obj/effect/overmap/visitable/S in area_contents_of_type(map, /obj/effect/overmap/visitable))
 		if(!istype(S,/obj/effect/overmap/visitable/sector) && !istype(S,/obj/effect/overmap/visitable/planet)) // let planets also be favorited via GPS
 			continue
 		if(S.known)
@@ -116,7 +116,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 	var/list/data = ..()
 
 	var/turf/T = get_turf(linked)
-	var/obj/effect/overmap/visitable/sector/current_sector = locate() in T
+	var/obj/effect/overmap/visitable/sector/current_sector = locate_on(T, /obj/effect/overmap/visitable/sector)
 	if(linked)
 		data["mapRef"] = linked.map_name
 	data["sector"] = current_sector ? current_sector.name : "Deep Space"

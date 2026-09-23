@@ -47,7 +47,7 @@
 	var/turf/unsimulated/map/overmap_turf = locate(x,y,using_map.overmap_z)
 	if(!istype(overmap_turf))
 		CRASH("Attempt to get deepspace at ([x],[y]) which is not on overmap: [overmap_turf]")
-	var/obj/effect/overmap/visitable/sector/temporary/res = locate() in overmap_turf
+	var/obj/effect/overmap/visitable/sector/temporary/res = locate_on(overmap_turf, /obj/effect/overmap/visitable/sector/temporary)
 	if(istype(res))
 		return res
 	res = new /obj/effect/overmap/visitable/sector/temporary(overmap_turf)

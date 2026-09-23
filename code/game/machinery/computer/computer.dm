@@ -50,8 +50,8 @@
 		var/right = turn(dir, -90)
 		var/turf/L = get_step(src, left)
 		var/turf/R = get_step(src, right)
-		var/obj/machinery/computer/LC = locate() in L
-		var/obj/machinery/computer/RC = locate() in R
+		var/obj/machinery/computer/LC = locate_on(L, /obj/machinery/computer)
+		var/obj/machinery/computer/RC = locate_on(R, /obj/machinery/computer)
 		if(LC && LC.dir == dir && initial(LC.icon_state) == "computer")
 			append_string += "_L"
 		if(RC && RC.dir == dir && initial(RC.icon_state) == "computer")

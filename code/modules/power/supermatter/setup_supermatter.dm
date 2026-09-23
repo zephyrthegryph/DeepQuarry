@@ -275,7 +275,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 
 	var/obj/machinery/button/remote/blast_door/found = null
 	var/turf/T = get_turf(src)
-	for(var/obj/machinery/button/remote/blast_door/B in T.contents)
+	for(var/obj/machinery/button/remote/blast_door/B in turf_contents_of_type(T, /obj/machinery/button/remote/blast_door))
 		if(B.name == target_button)
 			found = B
 			break

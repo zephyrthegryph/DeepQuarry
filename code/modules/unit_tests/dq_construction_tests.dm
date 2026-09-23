@@ -451,7 +451,7 @@
 	var/turf/where = window.loc
 	window.tool_interaction(H, wrench)
 	TEST_ASSERT(QDELETED(window), "dismantled")
-	var/obj/item/stack/material/glass/reinforced/sheet = locate() in where
+	var/obj/item/stack/material/glass/reinforced/sheet = locate_on(where, /obj/item/stack/material/glass/reinforced)
 	TEST_ASSERT(sheet, "into reinforced glass")
 	TEST_ASSERT_EQUAL(sheet?.get_amount(), 1, "one sheet for a border window")
 

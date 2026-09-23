@@ -39,7 +39,7 @@
 		var/turf/simulated/target = get_step(src,d)
 		var/turf/simulated/origin = get_turf(src)
 		if(origin.CanPass(src, target) && target.CanPass(src, origin))
-			var/obj/effect/decal/cleanable/liquid_fuel/other_fuel = locate() in target
+			var/obj/effect/decal/cleanable/liquid_fuel/other_fuel = locate_on(target, /obj/effect/decal/cleanable/liquid_fuel)
 			if(other_fuel)
 				other_fuel.amount += amount*0.25
 				if(!(other_fuel in exclude))

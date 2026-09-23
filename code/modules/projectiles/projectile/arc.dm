@@ -201,7 +201,7 @@
 
 				splash.set_up(F, 2, 3)
 
-			var/obj/effect/decal/cleanable/chemcoating/acid = locate() in T
+			var/obj/effect/decal/cleanable/chemcoating/acid = locate_on(T, /obj/effect/decal/cleanable/chemcoating)
 			if(!istype(acid))
 				acid = new(T)
 				acid.reagents.add_reagent(REAGENT_ID_STOMACID, 5)

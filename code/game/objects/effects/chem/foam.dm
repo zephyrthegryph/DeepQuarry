@@ -61,7 +61,7 @@
 		if(!T.Enter(src))
 			continue
 
-		var/obj/effect/effect/foam/F = locate() in T
+		var/obj/effect/effect/foam/F = locate_on(T, /obj/effect/effect/foam)
 		if(F)
 			continue
 
