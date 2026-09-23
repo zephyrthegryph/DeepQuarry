@@ -187,3 +187,21 @@
 	if(L.is_critical())
 		return DIAG_STATUS_CRITICAL
 	return dq_qualitative_vitality_band(L.vitality())
+
+/// Examine lines for a machine chassis (cyborgs, AI cores): what the naked eye
+/// sees of its structural and thermal load.
+/proc/machine_examine_lines(mob/living/L)
+	. = list()
+	var/datum/diagnosis/D = L.diagnose(/datum/diagnostic_profile/glance)
+	var/dent = DIAG_BAND_NONE
+	var/char = DIAG_BAND_NONE
+	for(var/datum/diagnosis_finding/F as anything in D?.findings)
+		if(ispath(F.source_type, /datum/affliction/load/trauma) && _dq_band_rank(F.band) > _dq_band_rank(dent))
+			dent = F.band
+		else if(ispath(F.source_type, /datum/affliction/load/burn) && _dq_band_rank(F.band) > _dq_band_rank(char))
+			char = F.band
+	qdel(D)
+	if(dent != DIAG_BAND_NONE)
+		. += _dq_band_rank(dent) >= _dq_band_rank(DIAG_BAND_SEVERE) ? span_boldwarning("It looks severely dented!") : span_warning("It looks slightly dented.")
+	if(char != DIAG_BAND_NONE)
+		. += _dq_band_rank(char) >= _dq_band_rank(DIAG_BAND_SEVERE) ? span_boldwarning("It looks severely burnt and heat-warped!") : span_warning("It looks slightly charred.")

@@ -354,7 +354,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/mob/living/Tar = target
 			if(!istype(Tar))
 				return
-			Tar.scan_mob(ui.user)
+			var/datum/diagnosis/D = Tar.diagnose(/datum/diagnostic_profile/admin)
+			if(D)
+				to_chat(ui.user, D.render_chat())
+				qdel(D)
 
 		if("appendicitis")
 			var/mob/living/carbon/human/Tar = target
