@@ -6,9 +6,6 @@
 // /mob/living/carbon physiology signals
 
 
-///Called when someone attempts to cuff a carbon
-#define COMSIG_CARBON_CUFF_ATTEMPTED "carbon_attempt_cuff"
-	#define COMSIG_CARBON_CUFF_PREVENT (1<<0)
 	// Prevents the breath
 	// Prevents the breath
 

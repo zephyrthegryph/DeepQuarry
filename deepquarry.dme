@@ -614,6 +614,7 @@
 #include "code\datums\progressbar.dm"
 #include "code\datums\remote_view_config.dm"
 #include "code\datums\riding.dm"
+#include "code\datums\signal_args.dm"
 #include "code\datums\signals.dm"
 #include "code\datums\soul_link.dm"
 #include "code\datums\sun.dm"

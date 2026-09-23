@@ -281,9 +281,6 @@
 	return
 
 /atom/proc/ShiftClick(mob/user)
-	var/shiftclick_flags = SEND_SIGNAL(user, COMSIG_CLICK_SHIFT, src)
-	if(shiftclick_flags & COMSIG_MOB_CANCEL_CLICKON)
-		return
 	if(user.client && !user.is_remote_viewing())
 		user.examinate(src)
 	return

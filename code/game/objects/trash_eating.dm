@@ -2,12 +2,6 @@
 /obj/item/proc/on_trash_eaten(mob/living/user)
 	SHOULD_CALL_PARENT(TRUE)
 
-	var/signal_results = SEND_SIGNAL(src, COMSIG_ITEM_TRASH_EATEN, user) | SEND_SIGNAL(user, COMSIG_MOB_TRASH_EATING, src)
-	if(signal_results & COMSIG_ITEM_TRASH_EAT_DENY) // A component attached to the item or the mob said we cannot eat this
-		return FALSE
-	if(signal_results & COMSIG_ITEM_TRASH_EAT_FORCED) // Ignore everything including blacklist, prefs and adminbus. Component is handling the rules.
-		return TRUE
-
 	if(is_type_in_list(src, GLOB.item_vore_blacklist) && !user.adminbus_trash) //If someone has adminbus, they can eat whatever they want.
 		to_chat(user, span_warning("You are not allowed to eat this."))
 		return FALSE
@@ -21,12 +15,9 @@
 
 	return TRUE
 
-/// Override this for post-swallow messages. Returns true if components on mob or item allow trash eating messages
+/// Override this for post-swallow messages. Returns true if trash eating messages are allowed
 /obj/proc/after_trash_eaten(mob/living/user)
 	SHOULD_CALL_PARENT(TRUE)
-	var/signal_results = SEND_SIGNAL(src, COMSIG_ITEM_AFTER_TRASH_EAT, user) | SEND_SIGNAL(user, COMSIG_MOB_AFTER_TRASH_EATING, src)
-	if(signal_results & COMSIG_ITEM_AFTER_TRASH_EAT_HIDE_MESSAGE)
-		return FALSE // Deny messages
 	return TRUE
 
 /obj/item/after_trash_eaten(mob/living/user)

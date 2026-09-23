@@ -78,9 +78,5 @@
 /// From the robot belly overlay provider: (belly_class, list/fullness_ref)
 /// Handlers may adjust fullness_ref[1].
 #define COMSIG_ROBOT_BELLY_FULLNESS "robot_belly_fullness"
-/// From /mob/living/silicon/robot/update_icon() while conscious: ()
-#define COMSIG_ROBOT_UPDATE_OVERLAYS "robot_update_overlays"
 /// From /mob/living/silicon/proc/laws_changed(): ()
 #define COMSIG_SILICON_LAWS_CHANGED "silicon_laws_changed"
-/// From /mob/living/silicon/robot/proc/set_master_ai(): (mob/living/silicon/ai/old_ai, mob/living/silicon/ai/new_ai)
-#define COMSIG_ROBOT_MASTER_AI_CHANGED "robot_master_ai_changed"

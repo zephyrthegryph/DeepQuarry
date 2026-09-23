@@ -1,0 +1,9 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "Added a CI audit that fails when a signal is defined but never sent or never listened to, and deleted about 1,200 dead signal defines and sends."
+  - code_imp: "Signals now declare their argument counts; unit-test builds check every send against them."
+  - code_imp: "Sending a signal to several listeners reuses a pooled buffer instead of allocating one per send."
+  - bugfix: "Turf changes now notify their listeners, so loot panels and material services see the new turf."
+  - bugfix: "Buckling, thrown impacts, leaving an area, revival, mind transfer and melee attacks now reach the components that listen for them."
+  - bugfix: "Burning objects show their fire overlay again, and synth headphones light up while playing."

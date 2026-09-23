@@ -1,0 +1,40 @@
+# Signals exempt from tools/ci/check_signals.sh. Every entry needs a reason.
+# The check fails if an entry becomes fully wired (sent and listened to), so
+# remove entries as their owning work lands.
+
+# Computed names: the quality-keyed variants are built per tool quality; only
+# some qualities have listeners.
+COMSIG_ATOM_TOOL_ACT # tool_act() sends COMSIG_ATOM_TOOL_ACT(quality); no primary-quality listener yet
+COMSIG_TOOL_ATOM_ACTED_SECONDARY # tool_interaction() sends it per quality; no secondary listener yet
+
+# Not DCS signals: ai_brain.dispatch_behavior_signal() routes these to
+# behaviours by their eval_triggers lists.
+COMSIG_DQAI_ALLY_DISTRESS
+COMSIG_DQAI_DAMAGE_TAKEN
+COMSIG_DQAI_LOW_HEALTH
+COMSIG_DQAI_TARGET_CHANGED
+COMSIG_DQAI_TARGET_LOST
+
+# Wired later by the roadmap.
+COMSIG_MACHINERY_POWER_LOST # M3: machinery power signals come with the power network
+COMSIG_MACHINERY_POWER_RESTORED # M3: machinery power signals come with the power network
+COMSIG_MACHINERY_BROKEN # D-track: base /obj/machinery/atom_break sends it (doc/rewrite/damage.md)
+COMSIG_MOB_APPLY_DAMAGE # D1: sent by the damage pipeline; the robot cloak listens
+
+# Sent or needed only from medical, body and mob Life code, which L4 did not
+# touch. Resolve these when that code is rewritten.
+COMSIG_AUTOPSY_PERFORMED
+COMSIG_GLOB_AUTOPSY_PERFORMED
+COMSIG_GLOB_BRAIN_REMOVED
+COMSIG_LIVING_REGENERATE_LIMBS
+COMSIG_LIVING_FACTORS_CHANGED
+COMSIG_HANDLE_MUTATIONS
+COMSIG_HUMAN_BURNING
+COMSIG_FORM_CHANGED
+COMSIG_DEFIBRILLATOR_PRE_HELP_ZAP
+COMSIG_DEFIBRILLATOR_SUCCESS
+COMSIG_HEARTATTACK_DEFIB
+COMSIG_MOB_SURGERY_FINISHED
+COMSIG_MOB_SURGERY_STARTED
+COMSIG_MOB_SURGERY_STEP_SUCCESS
+COMSIG_SURGERY_STARTING

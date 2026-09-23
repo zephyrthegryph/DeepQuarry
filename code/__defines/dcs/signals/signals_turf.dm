@@ -10,8 +10,6 @@
 #define COMSIG_TURF_MULTIZ_DEL "turf_multiz_del"
 ///from base of turf/multiz_turf_new: (turf/source, direction)
 #define COMSIG_TURF_MULTIZ_NEW "turf_multiz_new"
-///from /turf/proc/immediate_calculate_adjacent_turfs()
-#define COMSIG_TURF_CALCULATED_ADJACENT_ATMOS "turf_calculated_adjacent_atmos"
 
 
 ///from /datum/element/footstep/prepare_step(): (list/steps)

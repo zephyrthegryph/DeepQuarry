@@ -1261,8 +1261,7 @@
 
 // --- Appearance: overlay providers --------------------------------------------------------------
 // update_icon() composes the sprite from providers: base, accents, status,
-// belly, panel and hat. Components add their own through
-// COMSIG_ROBOT_UPDATE_OVERLAYS.
+// belly, panel and hat.
 
 /mob/living/silicon/robot/update_icon()
 	if(!sprite_datum)

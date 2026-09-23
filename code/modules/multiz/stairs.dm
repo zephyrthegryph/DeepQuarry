@@ -494,7 +494,7 @@
 			L.client.Process_Grab()
 	else
 		AM.forceMove(get_turf(bottom))
-	SEND_SIGNAL(AM, COMSIG_MOVED_DOWN_STAIRS, AM)
+	SEND_SIGNAL(AM, COMSIG_MOVED_DOWN_STAIRS, AM, null)
 
 // Mapping pieces, placed at the bottommost part of the stairs
 /obj/structure/stairs/spawner

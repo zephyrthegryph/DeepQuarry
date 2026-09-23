@@ -53,25 +53,11 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		return TRUE
 	return FALSE //return TRUE to avoid calling attackby after this proc does stuff
 
-/// Right-click pre-interaction hook. Components may cancel, continue the
-/// secondary chain, or explicitly request the normal primary chain.
-/obj/item/proc/pre_attack_secondary(atom/A, mob/user, list/modifiers)
-	var/result = SEND_SIGNAL(src, COMSIG_ITEM_PRE_ATTACK_SECONDARY, A, user, modifiers)
-	if(user)
-		result |= SEND_SIGNAL(user, COMSIG_USER_PRE_ITEM_ATTACK_SECONDARY, src, A, modifiers)
-	return result
-
 //I would prefer to rename this to attack(), but that would involve touching hundreds of files.
 /obj/item/proc/resolve_attackby(atom/A, mob/user, attack_modifier = 1, click_parameters)
 	add_fingerprint(user)
 	var/list/modifiers = islist(click_parameters) ? click_parameters : params2list(click_parameters)
 	var/secondary = !!LAZYACCESS(modifiers, RIGHT_CLICK)
-	if(secondary)
-		var/secondary_pre_result = pre_attack_secondary(A, user, modifiers)
-		if(secondary_pre_result & COMPONENT_SECONDARY_CANCEL_ATTACK_CHAIN)
-			return ITEM_INTERACT_BLOCKING
-		if(secondary_pre_result & COMPONENT_SECONDARY_CALL_NORMAL_ATTACK_CHAIN)
-			secondary = FALSE
 	if(!secondary)
 		. = pre_attack(A, user, click_parameters)
 		if(.)	// We're returning the value of pre_attack, important if it has a special return.
@@ -88,27 +74,15 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	return A.attackby(src, user, attack_modifier, click_parameters)
 
 /**
- * Modern item interaction entry point. Components get first refusal, followed by
- * every quality offered by a multi-purpose tool. Returning no flags falls through
- * to the legacy attackby path in resolve_attackby().
+ * Modern item interaction entry point: every quality offered by a multi-purpose
+ * tool, in order. Returning no flags falls through to the legacy attackby path
+ * in resolve_attackby().
  */
 /atom/proc/item_interaction(mob/user, obj/item/tool, list/modifiers)
-	var/result = SEND_SIGNAL(src, COMSIG_ATOM_ITEM_INTERACTION, user, tool, modifiers)
-	if(user)
-		result |= SEND_SIGNAL(user, COMSIG_USER_ITEM_INTERACTION, src, tool, modifiers)
-	result |= SEND_SIGNAL(tool, COMSIG_ITEM_INTERACTING_WITH_ATOM, user, src, modifiers)
-	if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
-		return result
 	return tool_interaction(user, tool, modifiers, FALSE)
 
 /// Right-click counterpart to item_interaction().
 /atom/proc/item_interaction_secondary(mob/user, obj/item/tool, list/modifiers)
-	var/result = SEND_SIGNAL(src, COMSIG_ATOM_ITEM_INTERACTION_SECONDARY, user, tool, modifiers)
-	if(user)
-		result |= SEND_SIGNAL(user, COMSIG_USER_ITEM_INTERACTION_SECONDARY, src, tool, modifiers)
-	result |= SEND_SIGNAL(tool, COMSIG_ITEM_INTERACTING_WITH_ATOM_SECONDARY, user, src, modifiers)
-	if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
-		return result
 	return tool_interaction(user, tool, modifiers, TRUE)
 
 /// Dispatches all qualities on a tool in their declared order.
@@ -118,7 +92,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	for(var/tool_quality in tool.tool_qualities)
 		var/result = tool_act(user, tool, tool_quality, secondary)
 		if(result & ITEM_INTERACT_SUCCESS)
-			SEND_SIGNAL(tool, secondary ? COMSIG_ITEM_TOOL_ACTED_SECONDARY : COMSIG_ITEM_TOOL_ACTED, src, user, tool_quality, modifiers)
+			if(!secondary)
+				SEND_SIGNAL(tool, COMSIG_ITEM_TOOL_ACTED, src, user, tool_quality, modifiers)
 			SEND_SIGNAL(tool, secondary ? COMSIG_TOOL_ATOM_ACTED_SECONDARY(tool_quality) : COMSIG_TOOL_ATOM_ACTED_PRIMARY(tool_quality), src, user, modifiers)
 		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 			return result
