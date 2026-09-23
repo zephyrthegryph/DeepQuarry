@@ -4,14 +4,15 @@ use bitflags::bitflags;
 pub const R_IDEAL_GAS_EQUATION: f32 = 8.31;
 /// kPa
 pub const ONE_ATMOSPHERE: f32 = 101.325;
-///  -270.3degC
-pub const TCMB: f32 = 2.7;
+///  -270.3degC. Single source is `vg_heat::consts::TCMB` (H1 dedup); this is
+/// a re-export so existing gas call sites are unaffected.
+pub use vg_heat::consts::TCMB;
 ///  -48.15degC
 pub const TCRYO: f32 = 225.0;
-///  0degC
-pub const T0C: f32 = 273.15;
-///  20degC
-pub const T20C: f32 = 293.15;
+///  0degC. Re-exported from `vg_heat::consts::T0C` (H1 dedup).
+pub use vg_heat::consts::T0C;
+///  20degC. Re-exported from `vg_heat::consts::T20C` (H1 dedup).
+pub use vg_heat::consts::T20C;
 /// Amount of gas below which any amounts will be truncated to 0.
 pub const GAS_MIN_MOLES: f32 = 0.0001;
 /// Heat capacities below which heat will be considered 0.

@@ -85,23 +85,23 @@ fn inverse(capacity: f64) -> f64 {
     }
 }
 
-/// Exact energy moved from `a` to `b` over `dt` by conductance `g` (W/K):
-/// `ΔT · h · (1 − e^(−g (1/Ca + 1/Cb) dt))` with `h = 1 / (1/Ca + 1/Cb)`.
-/// A reservoir side passes `f32::INFINITY`. Never overshoots, for any `dt`.
+/// As [`pair_exchange_at_rate`], with the pair's relaxation rate derived
+/// from a conductance `g` (W/K): `rate = g (1/Ca + 1/Cb)`. A reservoir side
+/// passes `f32::INFINITY`.
 #[must_use]
 pub fn pair_exchange(ta: f32, ca: f32, tb: f32, cb: f32, g: f32, dt: f32) -> f32 {
-    let inv = inverse(f64::from(ca)) + inverse(f64::from(cb));
-    if inv <= 0.0 || g.is_nan() || g <= 0.0 || dt.is_nan() || dt <= 0.0 {
+    if g.is_nan() || g <= 0.0 {
         return 0.0;
     }
-    let fraction = -(-f64::from(g) * inv * f64::from(dt)).exp_m1();
-    let moved = f64::from(ta - tb) / inv * fraction;
+    let inv = inverse(f64::from(ca)) + inverse(f64::from(cb));
     #[allow(clippy::cast_possible_truncation)]
-    if moved.is_finite() { moved as f32 } else { 0.0 }
+    let rate = (f64::from(g) * inv) as f32;
+    pair_exchange_at_rate(ta, ca, tb, cb, rate, dt)
 }
 
-/// As [`pair_exchange`], with the pair's relaxation rate (1/s) given
-/// directly: `ΔT · h · (1 − e^(−rate dt))`.
+/// Exact energy moved from `a` to `b` over `dt` at relaxation rate `rate`
+/// (1/s): `ΔT · h · (1 − e^(−rate dt))` with `h = 1 / (1/Ca + 1/Cb)`. Never
+/// overshoots, for any `dt`.
 #[must_use]
 pub fn pair_exchange_at_rate(ta: f32, ca: f32, tb: f32, cb: f32, rate: f32, dt: f32) -> f32 {
     let inv = inverse(f64::from(ca)) + inverse(f64::from(cb));
