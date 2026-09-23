@@ -112,7 +112,9 @@
 	freezer.fire_act(fire, CELL_VOLUME)
 	TEST_ASSERT(DQ_PATH_CLOSE(dq_path_step(closet, in_closet, PATH_EFFECT_HEAT), 0.5), "a closet lets half the heat through ([dq_path_step(closet, in_closet, PATH_EFFECT_HEAT)])")
 	TEST_ASSERT(DQ_PATH_CLOSE(in_closet.hottest_fire, ambient + 500), "the closet's contents saw half the fire's excess ([in_closet.hottest_fire - ambient] K over [ambient])")
-	TEST_ASSERT(DQ_PATH_CLOSE(in_freezer.hottest_fire, ambient + 100), "the freezer's contents saw a tenth of it ([in_freezer.hottest_fire - ambient] K)")
+	// The freezer stands on another turf, whose air may differ slightly.
+	var/freezer_ambient = dq_heat_path_ambient(freezer)
+	TEST_ASSERT(DQ_PATH_CLOSE(in_freezer.hottest_fire, freezer_ambient + (fire - freezer_ambient) * 0.1), "the freezer's contents saw a tenth of it ([in_freezer.hottest_fire - freezer_ambient] K)")
 	TEST_ASSERT(in_freezer.hottest_fire < in_closet.hottest_fire, "better insulation protects better")
 
 	// A fire no hotter than the room reaches nobody.
