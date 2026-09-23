@@ -243,14 +243,19 @@
 	// Was a fixed vg_heat_debug_run_frames(3): that assumed 3 frames is always
 	// enough for the heat domain to measurably warm the probe, which held only
 	// by accident when this test ran on a floor left warm by a previous test
-	// sharing the same turf. On a genuinely isolated, cold floor, wait for the
-	// actual condition instead of guessing a frame count.
+	// sharing the same turf. wait_for_condition() is the right replacement for
+	// that timing assumption, but on a genuinely isolated floor this still
+	// fails even after 500 frames (50 x 10) -- the probe never measurably
+	// warms at all. That is a real heat-domain coupling bug, not a timing
+	// issue, and is tracked separately from test isolation; see the isolation
+	// checkpoint notes. Kept short (not 500 frames) so this fails fast instead
+	// of adding 30+ seconds to every run while that's open.
 	var/heated = wait_for_condition(
 		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
 		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_heat_debug_run_frames), 1),
-		30,
+		20,
 	)
-	TEST_ASSERT(heated, "the heat domain heats it")
+	TEST_ASSERT(heated, "the heat domain heats it (KNOWN ISSUE: heat-domain coupling, not test isolation -- see doc/testing.md flaky notes)")
 	hotspot.perform_exposure()
 	TEST_ASSERT_EQUAL(probe.fire_acts, 0, "without a fire_act() call per SSair fire")
 	qdel(hotspot)

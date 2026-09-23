@@ -231,6 +231,21 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	/// The isolated block this test checked out of the pool, released on Destroy().
 	var/datum/unit_test_block/test_block
 
+	/// Seconds Run() gets before RunUnitTest() gives up on it and fails it by
+	/// name instead of hanging the whole suite (a real incident: one test
+	/// hung 55+ minutes with no log progress). Override per subtype for a
+	/// legitimately slow test. DM has no way to preempt a proc mid-sleep, so a
+	/// timed-out Run() keeps executing in the background even after the suite
+	/// moves on -- this bounds how long the SUITE waits, not how long the
+	/// leaked fiber runs.
+	var/timeout = 60
+	/// Set by RunWrapped() the moment Run() actually returns.
+	var/tmp/run_finished = FALSE
+
+/datum/unit_test/proc/RunWrapped()
+	Run()
+	run_finished = TRUE
+
 /proc/cmp_unit_test_priority(datum/unit_test/a, datum/unit_test/b)
 	return initial(a.priority) - initial(b.priority)
 
@@ -413,7 +428,15 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	else
 		duration = REALTIMEOFDAY
 		tick_start_index = Master.perf_samples_total + 1
-		test.Run()
+		INVOKE_ASYNC(test, TYPE_PROC_REF(/datum/unit_test, RunWrapped))
+		var/waited_ds = 0
+		var/limit_ds = test.timeout SECONDS
+		while(!test.run_finished && waited_ds < limit_ds)
+			sleep(1)
+			waited_ds += world.tick_lag
+		if(!test.run_finished)
+			log_world("UNIT TEST TIMEOUT: [test_path] did not return from Run() within [test.timeout]s; failing it and moving on. Its fiber may still be running in the background.")
+			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
 		test.restore_atmos()
 
 		duration = REALTIMEOFDAY - duration
