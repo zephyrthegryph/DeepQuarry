@@ -23,6 +23,8 @@
 #define DAMAGE_PACKET_SILENT            (1<<2)
 /// Skip species/body resistance factors (scripted exact amounts).
 #define DAMAGE_PACKET_IGNORE_RESISTANCE (1<<3)
+/// Armour does not apply (insulation already counted, hits from inside, EMP surges).
+#define DAMAGE_PACKET_UNARMORED         (1<<5)
 /// Delivered by a thrown atom.
 #define DAMAGE_PACKET_THROWN            (1<<4)
 

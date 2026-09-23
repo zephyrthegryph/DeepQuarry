@@ -3,8 +3,9 @@
 //
 // Every hit follows one path: an entry point fills a packet, calls
 // receive_damage(packet) on the target, and releases the packet. Objects
-// apply integrity mitigation and call take_damage(); living mobs map each
-// kind to an injure() kind (mob mitigation stays inside injure()).
+// apply integrity mitigation and call take_damage(); living mobs hand each
+// kind to injure() through the agreed mapping, and injure() runs the one
+// mob mitigation pipeline (armour, shields, resistances, species).
 //
 // Packets are pooled: acquire one with damage_packet(), never new() one, and
 // release() it as soon as receive_damage() returns. Nothing may keep a
@@ -15,13 +16,13 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 /datum/damage_packet
 	/// Amount per kind, indexed by DAMAGE_* (flat list of DAMAGE_KIND_COUNT numbers).
 	var/list/amounts
-	/// Armour penetration, 0..100.
+	/// Armour penetration in armour points (injure()'s armor_pen).
 	var/penetration = 0
 	/// Where the hit lands (a BP_* zone), null for spread / whole atom.
 	var/zone
 	/// Direction the hit travels in, or 0.
 	var/direction = 0
-	/// The atom delivering the hit: a projectile, thrown atom, weapon, blob, explosion epicentre.
+	/// The atom delivering the hit: a projectile, thrown atom, weapon, blob.
 	var/atom/source
 	/// The mob responsible, for logging, reactions and contracts.
 	var/atom/attacker
@@ -29,13 +30,10 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	var/atom/weapon
 	/// DAMAGE_PACKET_* flags.
 	var/flags = NONE
-	/// Legacy armour category (MELEE, BULLET, LASER, ENERGY, BOMB, FIRE, ACID, BIO)
-	/// until interned armour (D2) derives it from the kinds. Null = unarmoured.
+	/// Object damage flag override (FIRE, ACID, ...) for hits whose destruction
+	/// matters (fire burns an object down, acid melts it). Null derives it per
+	/// kind from injury_armor_key(). Mobs ignore it: injure() looks armour up by kind.
 	var/armor_flag
-	/// Out: armour percentage the target resolved (mobs), so adapters can pass
-	/// it to on_hit() and friends. Null until resolved; an adapter that has
-	/// already resolved armour sets it before delivery.
-	var/blocked
 	/// TRUE while checked out of the pool.
 	var/in_use = FALSE
 
@@ -54,7 +52,7 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	return ..()
 
 /// Take a clean packet from the pool.
-/proc/damage_packet(armor_flag, atom/source, atom/attacker, atom/weapon, zone, flags = NONE, penetration = 0, direction = 0)
+/proc/damage_packet(atom/source, atom/attacker, atom/weapon, zone, flags = NONE, penetration = 0, direction = 0, armor_flag = null)
 	var/datum/damage_packet/packet
 	var/list/pool = GLOB.damage_packet_pool
 	if(length(pool))
@@ -63,7 +61,6 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	else
 		packet = new
 	packet.in_use = TRUE
-	packet.armor_flag = armor_flag
 	packet.source = source
 	packet.attacker = attacker
 	packet.weapon = weapon
@@ -71,6 +68,7 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	packet.flags = flags
 	packet.penetration = penetration
 	packet.direction = direction
+	packet.armor_flag = armor_flag
 	return packet
 
 /// Clear the packet and return it to the pool.
@@ -88,7 +86,6 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	weapon = null
 	flags = NONE
 	armor_flag = null
-	blocked = null
 	GLOB.damage_packet_pool += src
 
 /datum/damage_packet/proc/add(kind, amount)
@@ -104,46 +101,30 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		amounts[i] *= multiplier
 
-/// Adds `amount` of a legacy damtype (BRUTE, BURN, ...). Sharp and edge pick
-/// the physical kind. Returns FALSE for damtypes with no packet kind (OXY,
-/// CLONE), which stay internal to the body.
-/datum/damage_packet/proc/add_damtype(damtype, amount, sharp = FALSE, edge = FALSE)
-	switch(damtype)
-		if(BRUTE)
-			add(physical_damage_kind(sharp, edge), amount)
-		if(BURN)
-			add(DAMAGE_THERMAL, amount)
-		if(ELECTROCUTE)
-			add(DAMAGE_SHOCK, amount)
-		if(BIOACID)
-			add(DAMAGE_CORROSIVE, amount)
-		if(SEARING)
-			add(DAMAGE_THERMAL, amount / 3)
-			add(physical_damage_kind(sharp, edge), amount * 2 / 3)
-		if(HALLOSS)
-			add(DAMAGE_PAIN, amount)
-		if(TOX)
-			add(DAMAGE_TOXIC, amount)
-		if(IRRADIATE)
-			add(DAMAGE_RADIATION, amount)
-		if(ELECTROMAG)
-			add(DAMAGE_IONIC, amount)
-		else
-			return FALSE
-	if(edge)
-		flags |= DAMAGE_PACKET_EDGE
+/// Adds `amount` of an INJURY_* kind. Returns FALSE for the kinds that stay
+/// internal to the body (asphyxia, cellular, neural, digestion).
+/datum/damage_packet/proc/add_injury(injury_kind, amount)
+	var/kind = damage_kind_for_injury(injury_kind)
+	if(!kind)
+		return FALSE
+	add(kind, amount)
 	return TRUE
 
-/// Sharp + edge cuts, sharp alone pierces, anything else is blunt.
-/proc/physical_damage_kind(sharp, edge)
-	if(sharp && edge)
-		return DAMAGE_SHARP
-	if(sharp)
-		return DAMAGE_PIERCE
-	return DAMAGE_BLUNT
+/// `amount` as `injury_kind`, or shared out over `injury_kinds` (INJURY_* ->
+/// share) for a mixed hit, like injure_split(). Returns FALSE, adding nothing,
+/// if any kind has no packet kind.
+/datum/damage_packet/proc/add_split(injury_kind, alist/injury_kinds, amount)
+	if(!length(injury_kinds))
+		return add_injury(injury_kind, amount)
+	for(var/split_kind in injury_kinds)
+		if(!damage_kind_for_injury(split_kind))
+			return FALSE
+	for(var/split_kind in injury_kinds)
+		add_injury(split_kind, amount * injury_kinds[split_kind])
+	return TRUE
 
-/// INJURY_* -> DAMAGE_* for sources that declare an explicit injury kind.
-/// 0 for the kinds that stay internal to the body (asphyxia, cellular, neural, digestion).
+/// INJURY_* -> DAMAGE_*. 0 for the kinds that stay internal to the body
+/// (asphyxia, cellular, neural, digestion).
 /proc/damage_kind_for_injury(injury)
 	var/static/list/kinds = list(
 		DAMAGE_BLUNT,     // INJURY_BLUNT
@@ -183,6 +164,34 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	)
 	return injuries[kind]
 
+/// DAMAGE_* -> the obj_integrity damage type (BRUTE / BURN), or null for the
+/// kinds that can't harm objects. Ionic burns only types with an emp_integrity_factor.
+/proc/damage_kind_obj_damage_type(kind)
+	var/static/list/types = list(
+		BRUTE, // blunt
+		BRUTE, // sharp
+		BRUTE, // pierce
+		BURN,  // thermal
+		null,  // cold
+		null,  // shock
+		BURN,  // corrosive
+		null,  // toxic
+		null,  // radiation
+		BURN,  // ionic
+		BRUTE, // blast
+		null,  // pain
+	)
+	return types[kind]
+
+/// DAMAGE_* -> the object armour key ("melee", "bomb", ...).
+/proc/damage_kind_armor_key(kind)
+	switch(kind)
+		if(DAMAGE_BLAST)
+			return injury_armor_key(ARMOR_BLAST)
+		if(DAMAGE_IONIC)
+			return ENERGY
+	return injury_armor_key(injury_kind_for_damage(kind))
+
 /// Shared EMP ladder: ionic amount per severity (EMP_HEAVY .. EMP_HARMLESS).
 /proc/emp_ionic_damage(severity)
 	var/static/list/ladder = list(20, 15, 10, 5)
@@ -200,7 +209,7 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	return ladder[band]
 
 
-// --- The sink -------------------------------------------------------------------
+// --- The sinks ------------------------------------------------------------------
 
 /// Apply a damage packet. Returns the amount actually applied after mitigation.
 /// The default sink is object integrity; /mob/living overrides it with injure().
@@ -208,23 +217,36 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	if(!uses_integrity || QDELETED(src))
 		return 0
 	var/list/amounts = packet.amounts
-	// §4 step 1 (shields): no object holds a shield yet.
-	// §4 step 3 (innate armour) is the per-item armour list, and step 4
-	// (material response) does not exist yet; both run in run_atom_armor().
-	var/brute = amounts[DAMAGE_BLUNT] + amounts[DAMAGE_SHARP] + amounts[DAMAGE_PIERCE] + amounts[DAMAGE_BLAST]
-	var/burn = amounts[DAMAGE_THERMAL] + amounts[DAMAGE_CORROSIVE] + amounts[DAMAGE_IONIC] * emp_integrity_factor
-	// Cold, shock, toxic, radiation and pain have no effect on integrity.
+	// §4 step 1 (shields): no object holds a shield yet. Steps 3 (innate
+	// armour: the per-item armour list) and 4 (material response, which does
+	// not exist yet) run in run_atom_armor().
 	var/sound = !(packet.flags & DAMAGE_PACKET_SILENT)
 	. = 0
-	if(brute > 0)
-		. += take_damage(brute, BRUTE, packet.armor_flag, sound, packet.direction, packet.penetration)
-	if(burn > 0 && !QDELETED(src))
-		. += take_damage(burn, BURN, packet.armor_flag, sound, packet.direction, packet.penetration)
+	for(var/kind in 1 to DAMAGE_KIND_COUNT)
+		var/amount = amounts[kind]
+		if(amount <= 0)
+			continue
+		var/damage_type = damage_kind_obj_damage_type(kind)
+		if(!damage_type)
+			continue
+		if(kind == DAMAGE_IONIC)
+			amount *= emp_integrity_factor
+			if(amount <= 0)
+				continue
+		. += take_damage(amount, damage_type, packet.armor_flag || damage_kind_armor_key(kind), sound, packet.direction, packet.penetration)
+		sound = FALSE
+		if(QDELETED(src))
+			return
 
 /atom
 	/// How much of an incoming ionic (EMP) amount becomes burn integrity damage.
 	/// Zero for almost everything: EMPs disrupt objects, they don't break them.
 	var/emp_integrity_factor = 0
+
+/// For hits whose kinds have no packet kind (asphyxia, cellular...): they
+/// stay internal to the body, so only a living target takes them, directly.
+/atom/proc/receive_internal_injury(datum/damage_packet/packet, injury_kind, alist/injury_kinds, amount)
+	return 0
 
 
 // --- Adapter helpers --------------------------------------------------------------
@@ -232,134 +254,120 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 // releases it. They return the amount applied.
 
 /// One kind of damage, for adapters with nothing more to say.
-/atom/proc/deal_damage(kind, amount, armor_flag = MELEE, atom/source, atom/attacker, atom/weapon, flags = NONE, penetration = 0, zone = null, direction = 0)
+/atom/proc/deal_damage(kind, amount, armor_flag = null, atom/source, atom/attacker, atom/weapon, flags = NONE, penetration = 0, zone = null, direction = 0)
 	if(amount <= 0)
 		return 0
-	var/datum/damage_packet/packet = damage_packet(armor_flag, source, attacker, weapon, zone, flags, penetration, direction)
+	var/datum/damage_packet/packet = damage_packet(source, attacker, weapon, zone, flags, penetration, direction, armor_flag)
 	packet.add(kind, amount)
 	. = receive_damage(packet)
 	packet.release()
 
-/// Fill `packet` from this projectile: kinds from its injury kind or damage
-/// type (sharp/edge honoured), penetration and armour category.
-/obj/item/projectile/proc/fill_damage_packet(datum/damage_packet/packet, proj_sharp = sharp, proj_edge = edge)
-	packet.flags |= DAMAGE_PACKET_PROJECTILE
-	if(nodamage || !damage)
-		return
-	if(injury_kind)
-		packet.add(damage_kind_for_injury(injury_kind), damage)
-		if(proj_edge)
-			packet.flags |= DAMAGE_PACKET_EDGE
-	else
-		packet.add_damtype(damage_type, damage, proj_sharp, proj_edge)
+/// Deliver `amount` of an item's (or blob's) declared kinds in `packet`, then release it.
+/atom/proc/receive_split(datum/damage_packet/packet, injury_kind, alist/injury_kinds, amount)
+	if(amount > 0)
+		if(packet.add_split(injury_kind, injury_kinds, amount))
+			. = receive_damage(packet)
+		else
+			. = receive_internal_injury(packet, injury_kind, injury_kinds, amount)
+	packet.release()
 
-/// Build the packet for a projectile hit.
-/obj/item/projectile/proc/damage_packet_for(atom/target, def_zone, proj_sharp = sharp, proj_edge = edge)
-	var/datum/damage_packet/packet = damage_packet(check_armour, src, firer, null, def_zone, NONE, armor_penetration, dir)
-	fill_damage_packet(packet, proj_sharp, proj_edge)
-	return packet
-
-/// Projectile hit. `multiplier` is for types whose shape changes how much of a round they catch.
+/// Projectile hit. `multiplier` is for types whose shape changes how much of
+/// a round they catch. Ion rounds (emp_on_hit) pulse instead of harming.
 /atom/proc/receive_projectile(obj/item/projectile/P, def_zone, multiplier = 1)
-	var/datum/damage_packet/packet = P.damage_packet_for(src, def_zone)
-	if(multiplier != 1)
-		packet.scale(multiplier)
-	. = packet.total() > 0 ? receive_damage(packet) : 0
-	packet.release()
-
-/// Fill `packet` from a melee weapon: kinds from force, sharp, edge and damage type.
-/obj/item/proc/fill_weapon_packet(datum/damage_packet/packet, amount = force, damtype_used = damtype)
-	packet.add_damtype(damtype_used, amount, sharp, edge)
-
-/// Weapon hit on this atom. `amount` and `damtype_used` let a type react to
-/// the tool (a welder burns a barricade; a blast door shrugs off most of a blow).
-/atom/proc/receive_weapon_hit(obj/item/W, mob/user, amount = W.force, damtype_used = W.damtype, silent = TRUE)
-	if(amount <= 0)
+	if(P.nodamage || !P.damage || P.emp_on_hit)
 		return 0
-	var/datum/damage_packet/packet = damage_packet(MELEE, W, user, W, null, silent ? DAMAGE_PACKET_SILENT : NONE, W.armor_penetration, user ? get_dir(user, src) : 0)
-	W.fill_weapon_packet(packet, amount, damtype_used)
-	. = receive_damage(packet)
-	packet.release()
+	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, def_zone, DAMAGE_PACKET_PROJECTILE, P.armor_penetration, P.dir)
+	if(P.edge)
+		packet.flags |= DAMAGE_PACKET_EDGE
+	return receive_split(packet, P.injury_kind, P.injury_kinds, P.damage * multiplier)
+
+/// Weapon hit. `amount` and `injury_kind` let a type react to the tool (a
+/// welder burns a barricade; a blast door shrugs off most of a blow).
+/atom/proc/receive_weapon_hit(obj/item/W, mob/user, amount = W.force, injury_kind = null, zone = null, silent = TRUE, armored = TRUE)
+	var/flags = silent ? DAMAGE_PACKET_SILENT : NONE
+	if(!armored)
+		flags |= DAMAGE_PACKET_UNARMORED
+	var/datum/damage_packet/packet = damage_packet(W, user, W, zone, flags, W.armor_penetration, user ? get_dir(user, src) : 0)
+	if(W.edge)
+		packet.flags |= DAMAGE_PACKET_EDGE
+	if(injury_kind)
+		return receive_split(packet, injury_kind, null, amount)
+	return receive_split(packet, W.injury_kind, W.injury_kinds, amount)
 
 /// Force of a thrown atom on impact: the one formula (damage.md §3).
 /// Items hit with their throwforce, mobs with their size, other objects with their weight class.
 /atom/movable/proc/thrown_impact_force(datum/thrownthing/throwingdatum)
 	var/speed_factor = (throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR) / THROWFORCE_SPEED_DIVISOR
-	return w_class_impact_force() * speed_factor
+	return impact_mass() * speed_factor
 
-/atom/movable/proc/w_class_impact_force()
+/atom/movable/proc/impact_mass()
 	return 0
 
-/obj/w_class_impact_force()
+/obj/impact_mass()
 	return w_class
 
-/obj/item/w_class_impact_force()
+/obj/item/impact_mass()
 	return throwforce
 
-/mob/w_class_impact_force()
+/mob/impact_mass()
 	return mob_size
 
-/// Thrown-atom impact on this atom.
-/atom/proc/receive_thrown(atom/movable/AM, datum/thrownthing/throwingdatum, multiplier = 1)
+/// Thrown-atom impact.
+/atom/proc/receive_thrown(atom/movable/AM, datum/thrownthing/throwingdatum, multiplier = 1, zone = null)
 	var/amount = AM.thrown_impact_force(throwingdatum) * multiplier
 	if(amount <= 0)
 		return 0
-	var/datum/damage_packet/packet = damage_packet(MELEE, AM, throwingdatum?.get_thrower(), isitem(AM) ? AM : null, null, DAMAGE_PACKET_THROWN, 0, get_dir(AM, src))
-	if(isitem(AM))
-		var/obj/item/I = AM
-		packet.penetration = I.armor_penetration
-		packet.add_damtype(I.damtype, amount, I.sharp, I.edge)
-	else
+	var/datum/damage_packet/packet = damage_packet(AM, throwingdatum?.get_thrower(), null, zone, DAMAGE_PACKET_THROWN, 0, get_dir(AM, src))
+	if(!isitem(AM))
 		packet.add(DAMAGE_BLUNT, amount)
-	. = receive_damage(packet)
-	packet.release()
+		. = receive_damage(packet)
+		packet.release()
+		return
+	var/obj/item/I = AM
+	packet.weapon = I
+	packet.penetration = I.armor_penetration
+	if(I.edge)
+		packet.flags |= DAMAGE_PACKET_EDGE
+	return receive_split(packet, I.injury_kind, I.injury_kinds, amount)
 
-/// Generic (usually animal) attack: kinds from the attacker's profile.
-/atom/proc/receive_generic_attack(mob/user, amount)
-	if(amount <= 0)
-		return 0
-	// Objects play their own hit sounds for animal attacks; mobs still flash pain.
-	var/datum/damage_packet/packet = damage_packet(MELEE, user, user, null, null, ismob(src) ? NONE : DAMAGE_PACKET_SILENT, 0, user ? get_dir(user, src) : 0)
+/// The kind of wound a generic (usually animal) attack from `user` leaves:
+/// simple mobs declare their melee kind; anything else is a blunt blow.
+/proc/generic_attack_kind(mob/user)
 	var/mob/living/simple_mob/S = user
 	if(istype(S))
-		packet.penetration = S.attack_armor_pen
-		packet.add(physical_damage_kind(S.attack_sharp, S.attack_edge), amount)
-		if(S.attack_edge)
-			packet.flags |= DAMAGE_PACKET_EDGE
-	else
-		packet.add(DAMAGE_BLUNT, amount)
-	. = receive_damage(packet)
-	packet.release()
+		return S.attack_injury_kind
+	return INJURY_BLUNT
+
+/// Generic (usually animal) attack: kinds from the attacker's profile.
+/// Armour applies only where the target says so (humans armour against animals).
+/atom/proc/receive_generic_attack(mob/user, amount, zone = null, armored = FALSE)
+	// Objects play their own hit sounds for animal attacks; mobs still flash pain.
+	var/flags = ismob(src) ? NONE : DAMAGE_PACKET_SILENT
+	if(!armored)
+		flags |= DAMAGE_PACKET_UNARMORED
+	var/mob/living/simple_mob/S = user
+	var/datum/damage_packet/packet = damage_packet(user, user, null, zone, flags, istype(S) ? S.attack_armor_pen : 0, user ? get_dir(user, src) : 0)
+	return receive_split(packet, generic_attack_kind(user), null, amount)
 
 /// Explosion: blast from the propagated severity.
 /atom/proc/receive_explosion(severity)
 	if(!uses_integrity)
 		return 0
-	return deal_damage(DAMAGE_BLAST, max_integrity * explosion_blast_fraction(severity), BOMB, flags = DAMAGE_PACKET_SILENT)
+	return deal_damage(DAMAGE_BLAST, max_integrity * explosion_blast_fraction(severity), flags = DAMAGE_PACKET_SILENT)
 
 /// EMP: ionic from the severity, through the shared ladder.
 /atom/proc/receive_emp(severity)
-	return deal_damage(DAMAGE_IONIC, emp_ionic_damage(severity), ENERGY, flags = DAMAGE_PACKET_SILENT)
+	return deal_damage(DAMAGE_IONIC, emp_ionic_damage(severity), flags = DAMAGE_PACKET_SILENT | DAMAGE_PACKET_UNARMORED)
 
-/// Electric shock (electrocute_act): `amount` is after insulation (siemens) scaling, so it is unarmoured.
-/atom/proc/receive_shock(amount, atom/source, zone = null, flags = NONE)
-	if(amount <= 0)
-		return 0
-	var/datum/damage_packet/packet = damage_packet(null, source, null, null, zone, flags)
-	packet.blocked = 0
-	packet.add(DAMAGE_SHOCK, amount)
-	. = receive_damage(packet)
-	packet.release()
+/// Electric shock (electrocute_act): `amount` is after insulation (siemens)
+/// scaling, so armour does not apply again.
+/atom/proc/receive_shock(amount, atom/source, zone = null)
+	return deal_damage(DAMAGE_SHOCK, amount, null, source, zone = zone, flags = DAMAGE_PACKET_UNARMORED)
 
 /// Blob attack: kinds from the blob type's profile.
-/atom/proc/receive_blob(obj/structure/blob/B)
+/atom/proc/receive_blob(obj/structure/blob/B, zone = null)
 	var/datum/blob_type/blob = B?.overmind?.blob_type
-	var/datum/damage_packet/packet
-	if(blob)
-		packet = damage_packet(blob.armor_check, B, B.overmind, null, null, NONE, blob.armor_pen)
-		packet.add_damtype(blob.damage_type, rand(blob.damage_lower, blob.damage_upper))
-	else
-		packet = damage_packet(MELEE, B)
-		packet.add(DAMAGE_BLUNT, rand(30, 40))
-	. = receive_damage(packet)
-	packet.release()
+	if(!blob)
+		return deal_damage(DAMAGE_BLUNT, rand(30, 40), null, B, zone = zone)
+	var/datum/damage_packet/packet = damage_packet(B, B.overmind, null, zone, NONE, blob.armor_pen)
+	return receive_split(packet, blob.injury_kind, blob.injury_kinds, rand(blob.damage_lower, blob.damage_upper))

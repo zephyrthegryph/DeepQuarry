@@ -183,6 +183,7 @@
 /// Industrial turrets have exposed workings: they catch a third more of a round.
 /obj/machinery/porta_turret/industrial/projectile_damage(obj/item/projectile/P, def_zone)
 	return receive_projectile(P, def_zone, 1.33)
+
 /obj/machinery/porta_turret/industrial/attack_generic(mob/living/L, damage)
 	return ..(L, damage * 0.8)
 

@@ -13,8 +13,7 @@
 	see_in_dark = 3
 	melee_damage_lower = 12
 	melee_damage_upper = 12
-	attack_sharp = TRUE
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 
 	meat_amount = 7
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_shock

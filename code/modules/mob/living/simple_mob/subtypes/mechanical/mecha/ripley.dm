@@ -24,7 +24,7 @@
 	melee_damage_upper = 10
 	base_attack_cooldown = 5 // About 20 DPS.
 	attack_armor_pen = 50
-	attack_sharp = TRUE
+	attack_injury_kind = INJURY_PIERCE
 	attack_sound = 'sound/mecha/mechdrill.ogg'
 	attacktext = list("drilled", "bored", "pierced")
 

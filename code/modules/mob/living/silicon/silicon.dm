@@ -118,7 +118,8 @@
 
 /mob/living/silicon/bullet_act(obj/item/projectile/Proj)
 
-	if(!Proj.nodamage && (Proj.damage_type == BRUTE || Proj.damage_type == BURN))
+	// Hardware takes located harm (impacts, burns, current); the synthetic body decides what each kind does.
+	if(!Proj.nodamage && injury_is_located(Proj.injury_kind))
 		Proj.inflict_injury(src, null)
 
 	Proj.on_hit(src,2)

@@ -19,6 +19,7 @@
 	w_class = ITEMSIZE_NORMAL
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	embed_chance = 0 // it fizzles!
 	catchable = FALSE // oh god
 
@@ -166,3 +167,4 @@
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "garrow"
 	edge = TRUE
+	injury_kind = INJURY_CUT

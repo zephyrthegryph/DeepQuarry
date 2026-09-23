@@ -120,7 +120,6 @@
 	light_range = 2
 	light_power = -2
 	light_color = "#FFFFFF"
-	damage_type = BURN
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift
 	vore_active = 1
@@ -209,6 +208,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	edge = TRUE
 	sharp = TRUE
+	injury_kind = INJURY_CUT
 
 /obj/item/capture_crystal/demon
 	spawn_mob_type = /mob/living/simple_mob/vore/demonAI

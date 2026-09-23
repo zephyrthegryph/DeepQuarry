@@ -115,6 +115,19 @@ fi;
 
 section "code issues"
 
+part "call_ext outside generated bindings"
+# Verdigris is reached only through the generated vg_* procs in
+# code/__defines/verdigris/_bindings.dm (tools/build/lib/verdigris_bindings.ts).
+# The allowlisted files bind other libraries (rust_g, tracy, the debugger,
+# vchatlog, TGS) or define the LIBCALL compat alias.
+if $grep -n 'call_ext|load_ext|VERDIGRIS_CALL' $code_files \
+	| $grep -v '^code/(__defines/verdigris/_bindings\.dm|__defines/rust_g\.dm|__defines/vchatlog\.dm|__byond_version_compat\.dm|modules/debugging/(tracy|debugger)\.dm|modules/tgs/)' \
+	| $grep -v ':\s*//|:\s*\*|// .*call_ext'; then
+	echo
+	echo -e "${RED}ERROR: call_ext/load_ext outside the generated verdigris bindings. Declare the Rust function with #[auxmacros::bind], run tools/build/build.sh verdigris-bindings, and call the generated vg_* proc.${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`
@@ -165,6 +178,36 @@ fi;
 if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coefficient|heat_protection|cold_protection|vision_flags|armor_percent)\b' $code_files; then
 	echo
 	echo -e "${RED}ERROR: a modifier's slowdown/evasion/accuracy/... is read directly. Those are body factors: read factor(BF_X) on the holder.${NC}"
+	FAILED=1
+fi;
+
+part "weapon vocabulary: injury kinds, not damage types"
+# Weapons, projectiles, blobs, unarmed and animal attacks declare what they
+# inflict as INJURY_* kinds (`injury_kind`, or an `injury_kinds` alist for a
+# mixed hit). Object damage is derived with injury_kind_obj_damage_type().
+if $grep -n '(\.damtype\b|\bvar/damtype\b|^\s*damtype\s*=|\binjury_kind_for\b|\bget_injury_kind\b|\binjure_by_damtype\b|\bpunch_damtype\b|\bcheck_armour\b|\battack_(sharp|edge)\b)' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a legacy damage type (damtype / injury_kind_for / check_armour / attack_sharp...) detected. Declare injury_kind = INJURY_X (or injury_kinds) and derive object damage with injury_kind_obj_damage_type().${NC}"
+	FAILED=1
+fi;
+if $grep -n '^\s*(var/)?damage_type\s*=\s*(BRUTE|BURN)\b' $code_files | $grep -v '^code/modules/medical/conditions/wounds\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: damage_type = BRUTE/BURN on a mob-harming type. Declare injury_kind = INJURY_X; obj_integrity damage is derived from it.${NC}"
+	FAILED=1
+fi;
+if $grep -n '(#define\s+(TOX|OXY|CLONE|HALLOSS)\b|\b(HALLOSS|ELECTROCUTE|BIOACID|SEARING|ELECTROMAG)\b)' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a removed damage-type define (TOX/OXY/CLONE/HALLOSS/ELECTROCUTE/BIOACID/SEARING/ELECTROMAG) detected. Use INJURY_* kinds.${NC}"
+	FAILED=1
+fi;
+
+part "one mitigation pipeline"
+# Armour, shields, resistance factors and species multipliers apply inside
+# injure() (pass INJURE_ARMORED for hits from outside). The old parallel
+# armour procs are gone; ask armour with injury_armor(kind, zone).
+if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_armor|get_injury_mod|injury_mod_groups)\b' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a parallel mitigation path detected. Harm goes through injure(); armour is injury_armor(kind, zone); species resistances are factor_baseline BF_INCOMING_*.${NC}"
 	FAILED=1
 fi;
 

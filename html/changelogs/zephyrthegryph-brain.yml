@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Character identity (name, DNA, OOC notes, languages, flavour, persistent traits) now belongs to the mind and follows it through brains, MMIs, posibrains, borging and resleeving instead of being copied."
+  - refactor: "Brains, MMIs, posibrains and protean cores share one mind-hosting interface; every mind move is logged."
+  - bugfix: "A brain in an MMI keeps its damage and treatment, and the MMI shows the brain's real condition."
+  - bugfix: "Brains can be put into MMIs again."
+  - balance: "Brain death (brain at 100% or dead) is decided in one place. Defibrillators, scanners and MMIs all agree on it, and a resleeve is required."
+  - bugfix: "Temperature-driven emergent conditions use the patient's species body temperature instead of a fixed 37C."

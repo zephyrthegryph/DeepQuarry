@@ -32,7 +32,7 @@
 
 	rarity_value = 0.1
 	total_health = 75
-	injury_mod_groups = list("physical" = 1.5, "thermal" = 1.5)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 1.5, BF_INCOMING_THERMAL = 1.5)
 
 	spawn_flags = SPECIES_IS_RESTRICTED
 

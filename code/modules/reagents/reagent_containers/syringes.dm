@@ -25,6 +25,7 @@
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 	unacidable = TRUE //glass
 	var/mode = SYRINGE_CAPPED
 	var/image/filling //holds a reference to the current filling overlay
@@ -300,7 +301,7 @@
 		if((user != target) && H.check_shields(7, src, user, "\the [src]"))
 			return
 
-		var/armor_val = H.getarmor(target_zone, "melee")
+		var/armor_val = H.injury_armor(INJURY_BLUNT, target_zone)
 		if(target != user && armor_val >= 5 && prob(50+armor_val)) // High armor can deflect syringe stabs
 			for(var/mob/O in viewers(world.view, user))
 				O.show_message(span_bolddanger("[user] tries to stab [target] in \the [hit_area] with [src.name], but the attack is deflected by armor!"), 1)

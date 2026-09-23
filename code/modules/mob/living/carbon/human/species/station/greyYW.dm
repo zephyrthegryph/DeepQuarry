@@ -23,7 +23,7 @@
 	assisted_langs = list(LANGUAGE_EAL, LANGUAGE_SKRELLIAN, LANGUAGE_ROOTLOCAL, LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX)
 	flesh_color = "#a598ad"
 	blood_color = "#A200FF"
-	injury_mod_groups = list("physical" = 1.25)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 1.25)
 	flash_mod = 1.15
 	darksight = 5
 	reagent_tag = IS_GREY

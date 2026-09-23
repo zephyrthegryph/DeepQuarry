@@ -34,12 +34,12 @@ emp_act
 
 	//Shrapnel
 	if(P.can_embed())
-		var/armor = getarmor_organ(organ, "bullet")
+		var/armor = injury_armor(P.injury_kind, organ)
 		if(!prob(armor/2))		//Even if the armor doesn't stop the bullet from hurting you, it might stop it from embedding.
 			var/hit_embed_chance = P.embed_chance + (P.damage - armor)	//More damage equals more chance to embed
 
 			// Injury resistance makes bullets less likely to embed.
-			hit_embed_chance *= incoming_injury_factor(P.damage_type == BRUTE ? INJURY_CATEGORY_PHYSICAL : null)
+			hit_embed_chance *= incoming_injury_factor(injury_category(P.injury_kind))
 
 			if(prob(max(hit_embed_chance, 0)))
 				var/obj/item/material/shard/shrapnel/SP = new()
@@ -81,27 +81,38 @@ emp_act
 
 	..(stun_amount, agony_amount, def_zone, used_weapon, electric)
 
-/mob/living/carbon/human/getarmor(def_zone, type)
+/mob/living/carbon/human/injury_armor(kind, zone = null)
+	. = armor_factor(kind)
+	var/key = injury_armor_key(kind)
+	if(!key)
+		return
+	if(zone)
+		var/obj/item/organ/external/affecting = zone_to_external(zone)
+		if(affecting)
+			return . + worn_armor_organ(affecting, key)
+	// No part given: the covering of every part, weighted by its size.
 	var/armorval = 0
 	var/total = 0
-
-	if(def_zone)
-		if(isorgan(def_zone))
-			return getarmor_organ(def_zone, type)
-		var/obj/item/organ/external/affecting = get_organ(def_zone)
-		if(affecting)
-			return getarmor_organ(affecting, type)
-		//If a specific bodypart is targetted, check how that bodypart is protected and return the value.
-
-	//If you don't specify a bodypart, it checks ALL your bodyparts for protection, and averages out the values
 	for(var/organ_name in organs_by_name)
-		if (organ_name in GLOB.organ_rel_size)
+		if(organ_name in GLOB.organ_rel_size)
 			var/obj/item/organ/external/organ = organs_by_name[organ_name]
 			if(organ)
 				var/weight = GLOB.organ_rel_size[organ_name]
-				armorval += (getarmor_organ(organ, type) * weight)
+				armorval += worn_armor_organ(organ, key) * weight
 				total += weight
-	return (armorval/max(total, 1))
+	return . + armorval / max(total, 1)
+
+/// The external limb a zone refers to: a BP_* zone, a limb, or an internal
+/// organ (its parent limb).
+/mob/living/carbon/human/proc/zone_to_external(zone)
+	if(istype(zone, /obj/item/organ/external))
+		return zone
+	if(istype(zone, /obj/item/organ/internal))
+		var/obj/item/organ/internal/I = zone
+		return get_organ(I.parent_organ)
+	if(istext(zone))
+		return get_organ(zone)
+	return null
 
 //this proc returns the Siemens coefficient of electrical resistivity for a particular external organ.
 /mob/living/carbon/human/proc/get_siemens_coefficient_organ(obj/item/organ/external/def_zone)
@@ -147,16 +158,15 @@ emp_act
 			results.Add(C)
 	return results
 
-//this proc returns the armour value for a particular external organ.
-/mob/living/carbon/human/proc/getarmor_organ(obj/item/organ/external/def_zone, type)
-	if(!type || !def_zone)
+/// Worn armour points on one external limb for a worn-armour list key
+/// ("melee", "bullet", ...; see injury_armor_key()).
+/mob/living/carbon/human/proc/worn_armor_organ(obj/item/organ/external/def_zone, key)
+	if(!key || !def_zone)
 		return 0
 	var/protection = 0
-	var/list/protective_gear = def_zone.get_covering_clothing()
-	for(var/obj/item/clothing/gear in protective_gear)
-		protection += gear.armor[type]
-
-	return protection + factor_armor(type)
+	for(var/obj/item/clothing/gear in def_zone.get_covering_clothing())
+		protection += gear.armor[key]
+	return protection
 
 // Checked in borer code
 /mob/living/carbon/human/proc/check_head_coverage()
@@ -222,7 +232,7 @@ emp_act
 
 	visible_message(span_danger("[src] has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
 
-	var/blocked = run_armor_check(hit_zone, "melee", I.armor_penetration, "Your armor has protected your [affecting.name].", "Your armor has softened the blow to your [affecting.name].")
+	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone)
 
@@ -255,7 +265,7 @@ emp_act
 		forcesay(GLOB.hit_appends)	//forcesay checks stat already
 
 	if(prob(25 + (effective_force * 2)))
-		if(!((I.damtype == BRUTE) || (I.damtype == HALLOSS)))
+		if(!(I.obj_damage_type() == BRUTE || I.injury_kind == INJURY_PAIN))
 			return
 
 		if(!(I.flags & NOBLOODY))
@@ -302,7 +312,7 @@ emp_act
 	if(!organ || (organ.dislocated == 1) || (organ.dislocated == -1) || blocked >= 100) // Bugfix
 		return 0
 
-	if(W.damtype != BRUTE)
+	if(W.obj_damage_type() != BRUTE)
 		return 0
 
 	//want the dislocation chance to be such that the limb is expected to dislocate after dealing a fraction of the damage needed to break the limb
@@ -387,13 +397,12 @@ emp_act
 		if(ismob(thrower))
 			add_attack_logs(thrower,src,"Hit with thrown [thrown_object.name]")
 
-		var/armor = run_armor_check(affecting, "melee", thrown_object.armor_penetration, "Your armor has protected your [hit_area].", "Your armor has softened hit to your [hit_area].") //I guess "melee" is the best fit here
+		var/armor = armor_against(thrown_object.injury_kind, affecting, thrown_object.armor_penetration)
 		if(armor < 100)
-			injure_by_damtype(thrown_object.damtype, throw_damage, zone, thrown_object, armor, is_sharp(thrown_object), has_edge(thrown_object))
-
+			receive_thrown(thrown_object, throwingdatum, zone = zone)
 
 		//thrown weapon embedded object code.
-		if(thrown_object.damtype == BRUTE)
+		if(thrown_object.obj_damage_type() == BRUTE)
 			if (!is_robot_module(thrown_object))
 				var/sharp = is_sharp(thrown_object)
 				var/damage = throw_damage
@@ -509,7 +518,7 @@ emp_act
 	// Only physical and thermal injuries matter to suits.
 	if(category != INJURY_CATEGORY_PHYSICAL && category != INJURY_CATEGORY_THERMAL)
 		return
-	var/damtype = category == INJURY_CATEGORY_PHYSICAL ? BRUTE : BURN
+	var/breach_type = injury_kind_obj_damage_type(kind) || (category == INJURY_CATEGORY_PHYSICAL ? BRUTE : BURN)
 
 	// The rig might soak this hit, if we're wearing one.
 	if(istype(get_rig(),/obj/item/rig))
@@ -521,7 +530,7 @@ emp_act
 	if(!istype(wear_suit,/obj/item/clothing/suit/space)) return
 	var/obj/item/clothing/suit/space/SS = wear_suit
 	var/penetrated_dam = max(0,(damage - SS.breach_threshold))
-	if(penetrated_dam) SS.create_breaches(damtype, penetrated_dam)
+	if(penetrated_dam) SS.create_breaches(breach_type, penetrated_dam)
 
 /mob/living/carbon/human/reagent_permeability()
 	var/perm = 0

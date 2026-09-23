@@ -260,6 +260,7 @@
 	if(source.thrown_impact_force(throwingdatum) < 15)
 		return 0
 	return ..()
+
 /obj/structure/low_wall/atom_destruction(damage_flag)
 	dismantle()
 	return ..()

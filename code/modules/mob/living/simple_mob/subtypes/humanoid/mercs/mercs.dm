@@ -26,8 +26,7 @@
 	melee_damage_lower = 15		//Tac Knife damage
 	melee_damage_upper = 15
 	attack_armor_pen = 20
-	attack_sharp = TRUE
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 100, rad = 100)	// Same armor values as the vest they drop, plus simple mob immunities
 
@@ -93,8 +92,6 @@
 	melee_damage_lower = 30
 	melee_damage_upper = 30
 	attack_armor_pen = 50
-	attack_sharp = TRUE
-	attack_edge = 1
 	attacktext = list("slashed")
 
 	loot_list = list(/obj/item/melee/energy/sword = 100, /obj/item/shield/energy = 100)

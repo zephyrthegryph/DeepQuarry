@@ -55,7 +55,6 @@
 	name = "shock beam"
 	fire_sound = 'sound/weapons/clockwork/voltbeam_fire.ogg'
 	icon_state = "lightning"
-	damage_type = ELECTROCUTE
 
 	muzzle_type = /obj/effect/projectile/muzzle/voltbeam
 	tracer_type = /obj/effect/projectile/tracer/voltbeam

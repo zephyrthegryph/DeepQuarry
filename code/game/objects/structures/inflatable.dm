@@ -75,7 +75,7 @@
 	if (can_puncture(W))
 		visible_message(span_danger("[user] pierces [src] with [W]!"))
 		puncture()
-	if(W.damtype == BRUTE || W.damtype == BURN)
+	if(W.obj_damage_type())
 		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
 		receive_weapon_hit(W, user)
 		..()

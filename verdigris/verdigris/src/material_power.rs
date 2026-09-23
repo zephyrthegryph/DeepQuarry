@@ -223,8 +223,7 @@ mod ffi {
         Ok(edges)
     }
 
-    #[byondapi::bind("/proc/submit_material_power_graph")]
-    #[auxmacros::panic_safe]
+    #[auxmacros::bind("/proc/submit_material_power_graph")]
     fn submit_material_power_graph(
         handle: ByondValue,
         topology: ByondValue,
@@ -268,8 +267,7 @@ mod ffi {
         Ok(ByondValue::from(id as f32))
     }
 
-    #[byondapi::bind("/proc/drop_material_power_graph")]
-    #[auxmacros::panic_safe]
+    #[auxmacros::bind("/proc/drop_material_power_graph")]
     fn drop_material_power_graph(handle: ByondValue) -> Result<ByondValue> {
         let id = handle.get_number()? as u32;
         if id == 0 {
@@ -287,8 +285,7 @@ mod ffi {
         Ok(ByondValue::from(1.0))
     }
 
-    #[byondapi::bind("/proc/poll_material_power_graph")]
-    #[auxmacros::panic_safe]
+    #[auxmacros::bind("/proc/poll_material_power_graph")]
     fn poll_material_power_graph(handle: ByondValue) -> Result<ByondValue> {
         let id = handle.get_number()? as u32;
         let result = results()
@@ -317,8 +314,7 @@ mod ffi {
         Ok(list)
     }
 
-    #[byondapi::bind("/proc/solve_material_power_graph")]
-    #[auxmacros::panic_safe]
+    #[auxmacros::bind("/proc/solve_material_power_graph")]
     fn solve_material_power_graph(
         topology: ByondValue,
         loads: ByondValue,

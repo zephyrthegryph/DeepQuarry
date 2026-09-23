@@ -8,9 +8,7 @@
 	stun = 0
 	weaken = 1
 	stutter = 4
-	damage_type = BURN
 	pass_flags = PASSTABLE | PASSGRILLE
-	check_armour = "laser"
 	hud_state = "alloy_spike"
 
 /obj/item/projectile/energy/gaussweak
@@ -21,9 +19,7 @@
 	stun = 0
 	weaken = 5
 	stutter = 4
-	damage_type = BURN
 	pass_flags = PASSTABLE | PASSGRILLE
-	check_armour = "laser"
 	hud_state = "alloy_spike"
 
 /obj/item/projectile/energy/gaussrifle
@@ -34,10 +30,8 @@
 	stun = 2
 	weaken = 2
 	stutter = 6
-	damage_type = BURN
 	pass_flags = PASSTABLE | PASSGRILLE
 	penetrating = 0
-	check_armour = "laser"
 	hud_state = "alloy_spike"
 
 //End of gaussguns//
@@ -60,7 +54,5 @@
 	icon = 'icons/obj/projectiles_yw.dmi'
 	icon_state = "plasmablast"
 	damage = 25
-	damage_type = BURN
 	pass_flags = PASSGRILLE
-	check_armour = "laser"
 	hud_state = "plasma_rifle_blast"

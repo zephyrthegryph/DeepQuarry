@@ -194,14 +194,14 @@
 	ignite()
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/bullet_act(obj/item/projectile/P, def_zone)
-	if(P.damage_type && P.damage_type == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
+	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
 		log_and_message_admins("ignited due to bring hit by a burning projectile[P.firer ? " by [key_name(P.firer)]" : ""].", src)
 		ignite()
 	else
 		..()
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/attackby(obj/item/W, mob/user)
-	if(istype(W) && W.force && W.damtype == BURN)
+	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("ignited due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		ignite()
 	else
@@ -669,14 +669,14 @@
 	explode()
 
 /mob/living/simple_mob/slime/xenobio/oil/bullet_act(obj/item/projectile/P, def_zone)
-	if(P.damage_type && P.damage_type == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
+	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
 		log_and_message_admins("exploded due to bring hit by a burning projectile[P.firer ? " by [key_name(P.firer)]" : ""].", src)
 		explode()
 	else
 		..()
 
 /mob/living/simple_mob/slime/xenobio/oil/attackby(obj/item/W, mob/living/user)
-	if(istype(W) && W.force && W.damtype == BURN)
+	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("exploded due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		explode()
 	else

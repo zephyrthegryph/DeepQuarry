@@ -7,10 +7,9 @@
 	difficulty = BLOB_DIFFICULTY_MEDIUM
 	color = "#72109eaa"
 	complementary_color = "#1a9de8"
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	damage_lower = 10
 	damage_upper = 30
-	armor_check = "energy"
 	brute_multiplier = 1.5
 	burn_multiplier = 1.5
 	spread_modifier = 0.9

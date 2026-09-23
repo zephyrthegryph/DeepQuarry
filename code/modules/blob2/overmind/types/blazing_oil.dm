@@ -9,7 +9,7 @@
 	complementary_color = "#BE5532"
 	spread_modifier = 0.5
 	ai_aggressiveness = 50
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	burn_multiplier = 0 // Fire immunity
 	chunk_active_ability_cooldown = 4 MINUTES
 	attack_message = "The blazing oil splashes you with its burning oil"

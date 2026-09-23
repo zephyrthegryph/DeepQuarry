@@ -36,7 +36,6 @@
 
 	melee_damage_lower = 1
 	melee_damage_upper = 10
-	attack_sharp = FALSE
 	attacktext = list("spooked", "startled", "jumpscared", "rattled at")
 
 

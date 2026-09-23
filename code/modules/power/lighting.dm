@@ -488,7 +488,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return
 	visible_message(span_danger("[user] smashes the light!"))
 	user.do_attack_animation(src)
-	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, MELEE, user, user)
+	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 	return 1
 
 // attempt to set the light's on/off status

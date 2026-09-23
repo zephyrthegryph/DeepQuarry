@@ -64,8 +64,7 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 100, rad = 100)	// Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = 'sound/weapons/bladeslice.ogg'
@@ -224,8 +223,7 @@
 
 	harm_intent_damage = 5
 	attack_armor_pen = 25
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 45, bullet = 40, laser = 30, energy = 80, bomb = 20, bio = 100, rad = 100)	// Reduced Resistance to Approximate increased Tesh damage.
 	attack_sound = 'sound/weapons/bladeslice.ogg'
@@ -271,8 +269,7 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 15	//Ritual Knife
 	melee_damage_upper = 15
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 70, bullet = 60, laser = 30, energy = 80, bomb = 35, bio = 100, rad = 100)	// Better Armor to match lizard brute resist
 	attack_sound = 'sound/weapons/rapidslice.ogg'
@@ -318,8 +315,7 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 50, bullet = 30, laser = 50, energy = 80, bomb = 25, bio = 100, rad = 100)	//Armor Rebalanced for Cult Robes.
 	attack_sound = 'sound/weapons/rapidslice.ogg'
@@ -365,8 +361,7 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 15	//Ritual Knife
 	melee_damage_upper = 15
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 50, bullet = 30, laser = 50, energy = 80, bomb = 25, bio = 100, rad = 100)	//Armor Rebalanced for Cult Robes.
 	attack_sound = 'sound/weapons/rapidslice.ogg'
@@ -408,8 +403,7 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 35, bullet = 20, laser = 35, energy = 60, bomb = 20, bio = 100, rad = 100)	//Rebalanced for Robes and Tesh damage
 	attack_sound = 'sound/weapons/rapidslice.ogg'
@@ -453,8 +447,7 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 100, rad = 100)	// Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = 'sound/weapons/bladeslice.ogg'
@@ -522,8 +515,7 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 100, rad = 100)	//Super Armor since Boss Mob
 	attack_sound = 'sound/weapons/bladeslice.ogg'
@@ -574,8 +566,7 @@
 	response_harm = "hits"
 
 	harm_intent_damage = 5
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 100, rad = 100)	//Super Armor since Boss Mob
 	attack_sound = 'sound/weapons/bladeslice.ogg'
@@ -695,8 +686,7 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 15 //old 7
 	melee_damage_upper = 25 //old 15
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 40, laser = 60, energy = 80, bomb = 25, bio = 100, rad = 100)
 	attack_sound = 'sound/weapons/rapidslice.ogg'

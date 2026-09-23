@@ -34,14 +34,14 @@
 /obj/structure/ghost_pod/automatic/xenomorph_egg/attackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
-	switch(W.damtype)
+	switch(W.obj_damage_type())
 		if(BURN)
-			receive_weapon_hit(W, user, W.force * 1.25, BURN) //It really doesn't like fire
+			receive_weapon_hit(W, user, W.force * 1.25, INJURY_BURN) //It really doesn't like fire
 		if(BRUTE)
-			receive_weapon_hit(W, user, W.force * 0.75, BRUTE) //Bit hard to cut
+			receive_weapon_hit(W, user, W.force * 0.75) //Bit hard to cut
 	..()
 	return
 
 /// Eggs burn easily.
 /obj/structure/ghost_pod/automatic/xenomorph_egg/projectile_damage(obj/item/projectile/P, def_zone)
-	return receive_projectile(P, def_zone, P.damage_type == BURN ? 1.5 : 1)
+	return receive_projectile(P, def_zone, P.obj_damage_type() == BURN ? 1.5 : 1)

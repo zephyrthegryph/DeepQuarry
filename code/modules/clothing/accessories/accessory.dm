@@ -15,7 +15,7 @@
 	var/image/mob_overlay = null
 	var/overlay_state = null
 	var/punch_force	= 0							// added melee damage
-	var/punch_damtype = BRUTE					// added melee damage type
+	var/punch_injury_kind						// what punches inflict (INJURY_*); null = the punch's own kind
 	var/concealed_holster = 0
 	var/list/on_rolled							// Lazylist. Used when jumpsuit sleeves are rolled ("rolled" entry) or it's rolled down ("down"). Set to "none" to hide in those states.
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/accessory/mob_teshari.dmi') //Teshari can into webbing, too!

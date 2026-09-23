@@ -50,7 +50,7 @@
 	melee_damage_lower = 7 // About 14 DPS.
 	melee_damage_upper = 7
 	base_attack_cooldown = 10 // One attack a second.
-	attack_sharp = TRUE
+	attack_injury_kind = INJURY_PIERCE
 	attack_sound = 'sound/weapons/bite.ogg'
 	attacktext = list("bitten")
 
@@ -355,7 +355,7 @@
 /mob/living/simple_mob/animal/space/carp/puffer/apply_melee_effects() //it gets close enough to attack? EXPLODE
 	kaboom()
 
-/mob/living/simple_mob/animal/space/carp/puffer/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE) //you make it hot? EXPLODE
+/mob/living/simple_mob/animal/space/carp/puffer/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE) //you make it hot? EXPLODE
 	if(kind == INJURY_BURN && amount > 0)
 		kaboom()
 	return ..()

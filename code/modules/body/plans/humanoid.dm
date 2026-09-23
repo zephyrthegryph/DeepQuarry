@@ -304,10 +304,9 @@
 			O.mutate()
 			to_chat(src, span_notice("Something is not right with your [O.name]..."))
 
-/// Species injury multiplier: the species' flat `injury_mods` list (the
-/// successor of brute_mod / burn_mod / oxy_mod / toxins_mod / pain_mod /
-/// radiation_mod), with the NO_* immunity flags re-checked live because
-/// traits can grant flags after setup.
+/// Species immunities (mitigation stage 4). The NO_* flags are checked live
+/// because traits can grant flags after setup. Graded species resistances are
+/// body factors (factor_baseline BF_INCOMING_*, stage 3).
 /datum/species/proc/injury_multiplier(kind, mob/living/carbon/human/H)
 	switch(kind)
 		if(INJURY_TOXIN)
@@ -319,11 +318,7 @@
 		if(INJURY_PAIN)
 			if(flags & NO_PAIN)
 				return 0
-		if(INJURY_RADIATION)
-			// The species' radiation mod scales radiation's EFFECTS (human
-			// handle_mutations_and_radiation), not the dose absorbed.
-			return 1
-	return get_injury_mod(kind)
+	return 1
 
 // --- Body factors ---------------------------------------------------------------------------
 

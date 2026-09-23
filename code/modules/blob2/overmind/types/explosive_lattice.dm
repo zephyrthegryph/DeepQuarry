@@ -7,10 +7,9 @@
 	difficulty = BLOB_DIFFICULTY_MEDIUM
 	color = "#8B2500"
 	complementary_color = "#00668B"
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	damage_lower = 25
 	damage_upper = 35
-	armor_check = "bomb"
 	armor_pen = 5 // This is so blob hits still hurt just slightly when wearing a bomb suit (100 bomb resist).
 	brute_multiplier = 0.75
 	burn_multiplier = 0.5

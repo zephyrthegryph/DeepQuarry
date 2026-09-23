@@ -98,12 +98,12 @@
 		target_zone = pick(BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG)
 
 	//armour
-	var/blocked = L.run_armor_check(target_zone, "melee")
+	var/blocked = L.armor_against(INJURY_PIERCE, target_zone)
 
 	if(blocked >= 100)
 		return
 
-	if(!L.injure(INJURY_PIERCE, 30, target_zone, src, blocked))
+	if(!L.injure(INJURY_PIERCE, 30, target_zone, src, flags = INJURE_ARMORED))
 		return 0
 
 	if(ishuman(L))
@@ -187,6 +187,7 @@
 	thrown_force_divisor = 0.25
 
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 
 /obj/item/material/barbedwire/set_material(new_material)
 	..()
@@ -258,7 +259,7 @@
 				playsound(src, W.usesound, 100, 1)
 				inc_damage *= 3
 
-		if(W.damtype != BRUTE)
+		if(W.obj_damage_type() != BRUTE)
 			inc_damage *= 0.3
 
 		health -= inc_damage
@@ -347,7 +348,7 @@
 		target_zone = pick(BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG)
 
 	//armour
-	var/blocked = L.run_armor_check(target_zone, "melee")
+	var/blocked = L.armor_against(injury_kind, target_zone)
 
 	if(blocked >= 100)
 		return
@@ -359,7 +360,7 @@
 
 	L.add_modifier(/datum/modifier/entangled, 3 SECONDS)
 
-	if(!L.injure(injury_kind_for(BRUTE, sharp, edge), force * (issilicon(L) ? 0.25 : 1), target_zone, src, blocked))
+	if(!L.injure(injury_kind, force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
 		return
 
 	playsound(src, 'sound/effects/glass_step.ogg', 50, 1) // not sure how to handle metal shards with sounds

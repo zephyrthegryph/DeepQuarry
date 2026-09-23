@@ -46,11 +46,11 @@ Deployable items
 				return
 		return
 	else
-		switch(W.damtype)
+		switch(W.obj_damage_type())
 			if(BURN)
-				receive_weapon_hit(W, user, W.force * 0.75, BURN)
+				receive_weapon_hit(W, user, W.force * 0.75, INJURY_BURN)
 			if(BRUTE)
-				receive_weapon_hit(W, user, W.force * 0.5, BRUTE)
+				receive_weapon_hit(W, user, W.force * 0.5)
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 		..()
 

@@ -309,6 +309,7 @@ update_flag
 /// Canisters are thick-walled: they catch half of a round.
 /obj/machinery/portable_atmospherics/canister/projectile_damage(obj/item/projectile/P, def_zone)
 	return receive_projectile(P, def_zone, 0.5)
+
 /obj/machinery/portable_atmospherics/canister/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/stack/material))
 		var/obj/item/stack/material/stock = W

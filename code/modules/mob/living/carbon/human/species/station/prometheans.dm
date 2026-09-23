@@ -52,7 +52,7 @@
 
 	virus_immune =	1
 	blood_volume =	560
-	injury_mod_groups = list("physical" = 0.7, "thermal" = 1.6, "asphyxia" = 0)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.7, BF_INCOMING_THERMAL = 1.6, BF_INCOMING_ASPHYXIA = 0)
 	//chompedit Old values of .75 brute and 2 burn were imbalanced. (brute)
 	//chompedit (burn)
 	flash_mod =		0.5 //No centralized, lensed eyes.

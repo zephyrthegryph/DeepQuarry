@@ -2,20 +2,12 @@
 //
 // The Rust gas-math backend IS live: /datum/gas_mixture is an opaque handle
 // over the Rust arena, and every gas proc in gasmixtures/gas_mixture.dm routes
-// through call_ext(VERDIGRIS, ...). This file carries the init/lifecycle FREE
-// procs (auxtools_atmos_init etc.) plus the gas-registry adapter; the registry
+// through the generated vg_* procs (code/__defines/verdigris/_bindings.dm).
+// This file carries the gas-registry adapter; the registry
 // is populated by ensure_auxmos_gas_registry() below, called from
 // SSair.Initialize AND lazily from /datum/gas_mixture/New() (mapload turf air
 // is created before SSair inits, so the lazy path is load-bearing — see the
 // note above it).
-//
-// Only the routes DeepQuarry needs are declared here, by hand. Do not add proc
-// declarations that conflict with gasmixtures/gas_mixture.dm.
-
-
-/// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
-/proc/auxtools_atmos_init(gas_data)
-	return call_ext(VERDIGRIS, "byond:hook_init_ffi")(gas_data)
 
 // The gas registry MUST be initialised in auxmos before any gas_mixture's
 // set_moles runs — otherwise the gas ids are unknown and set_moles no-ops
@@ -33,24 +25,8 @@ GLOBAL_VAR_INIT(auxmos_gas_registry_initialized, FALSE)
 	// Set the guard only after init succeeds so a runtimed first attempt (e.g.
 	// verdigris failed to load) retries on the next mixture instead of leaving
 	// the registry permanently unpopulated after one log line.
-	auxtools_atmos_init(build_auxmos_gas_registry())
+	vg_hook_init(build_auxmos_gas_registry())
 	GLOB.auxmos_gas_registry_initialized = TRUE
-
-/// For registering gases, do not touch this.
-/proc/_auxtools_register_gas(gas)
-	return call_ext(VERDIGRIS, "byond:hook_register_gas_ffi")(gas)
-
-/// For updating reagent gas fire products, do not use for now.
-/proc/finalize_gas_refs()
-	return call_ext(VERDIGRIS, "byond:finalize_gas_refs_ffi")()
-
-/// Args: (ms). Runs callbacks until time limit is reached. If time limit is omitted, runs all callbacks.
-/proc/process_atmos_callbacks(remaining)
-	return call_ext(VERDIGRIS, "byond:atmos_callback_handle_ffi")(remaining)
-
-/// For updating reaction information for auxmos, call after gas_reactions list changes.
-/datum/controller/subsystem/air/proc/auxtools_update_reactions()
-	return call_ext(VERDIGRIS, "byond:update_reactions_ffi")()
 
 // byondapi_stack_trace — auxmos error/panic handler routes back into DM via this
 // proc. Log each DISTINCT message once (deduped) to world log so a per-turf error
@@ -62,7 +38,6 @@ GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 		return
 	GLOB.auxmos_seen_errors[key] = TRUE
 	log_world("AUXMOS_STACK_TRACE: [key]")
-
 
 // === Gas registry adapter (chunk 2) ===
 //
@@ -118,17 +93,16 @@ GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 		reg.datums["[gp]"] = m
 	return reg
 
-
 // adjust_moles_temp is the one arena mole-accessor gas_mixture.dm doesn't already
 // define (get_moles/set_moles/adjust_moles now live there, arena-backed). Route it
 // through the auxmos bind. Gas arg stringified per the get_strid contract.
 /datum/gas_mixture/proc/adjust_moles_temp(gas_type, moles, temp)
-	return call_ext(VERDIGRIS, "byond:adjust_moles_temp_hook_ffi")(src, "[gas_type]", moles, temp)
+	return vg_adjust_moles_temp_hook(src, "[gas_type]", moles, temp)
 
 /// Latches the mixture immutable in the arena (one-way; further writes no-op).
 /datum/gas_mixture/proc/mark_immutable()
-	return call_ext(VERDIGRIS, "byond:mark_immutable_hook_ffi")(src)
+	return vg_mark_immutable_hook(src)
 
 /// Removes all gases from the mixture (arena-side).
 /datum/gas_mixture/proc/clear()
-	return call_ext(VERDIGRIS, "byond:clear_hook_ffi")(src)
+	return vg_clear_hook(src)

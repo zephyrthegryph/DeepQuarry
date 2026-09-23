@@ -88,8 +88,7 @@
 
 	melee_damage_lower = 18
 	melee_damage_upper = 30
-	attack_sharp = TRUE
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attack_sound = 'sound/weapons/bite.ogg'
 
 	heat_damage_per_tick = 20

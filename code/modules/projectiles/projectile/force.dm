@@ -3,7 +3,6 @@
 	icon = 'icons/obj/projectiles.dmi'
 	icon_state = "ice_1"
 	damage = 20
-	check_armour = "energy"
 
 	combustion = FALSE
 

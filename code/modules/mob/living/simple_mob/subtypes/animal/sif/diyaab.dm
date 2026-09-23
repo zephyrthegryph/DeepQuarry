@@ -36,7 +36,7 @@
 	melee_damage_lower = 2
 	melee_damage_upper = 6
 	base_attack_cooldown = 1 SECOND
-	attack_sharp = TRUE //Bleeds, but it shouldn't rip off a limb?
+	attack_injury_kind = INJURY_PIERCE
 	attacktext = list("gouged")
 
 	say_list_type = /datum/say_list/diyaab

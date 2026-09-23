@@ -173,6 +173,7 @@
 	force = 15
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	hitsound = 'sound/weapons/bladeslice.ogg'
 
 
@@ -381,7 +382,7 @@
 	force = 10
 	throwforce = 3
 	w_class = ITEMSIZE_NORMAL
-	damtype = HALLOSS
+	injury_kind = INJURY_PAIN
 	attack_verb = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")
 
 //General use
@@ -1119,7 +1120,7 @@
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/active_state = "wolfgirlsword"
 	allowed = list(/obj/item/shield/fluff/wolfgirlshield)
-	damtype = HALLOSS
+	injury_kind = INJURY_PAIN
 
 /obj/item/melee/fluffstuff/wolfgirlsword/dropped(mob/user, equipping, slot)
 	..()
@@ -1135,7 +1136,7 @@
 	sharp = TRUE
 	edge = TRUE
 	icon_state = "[active_state]_sharp"
-	damtype = BRUTE
+	injury_kind = INJURY_CUT
 
 
 /obj/item/melee/fluffstuff/wolfgirlsword/deactivate(mob/living/user)
@@ -1144,6 +1145,7 @@
 	..()
 	attack_verb = list("bapped", "thwapped", "bonked", "whacked")
 	icon_state = initial(icon_state)
+	injury_kind = initial(injury_kind)
 
 //SilencedMP5A5 - Serdykov Antoz
 /obj/item/modkit_conversion/hasd
@@ -1514,6 +1516,7 @@ End */
 	force = 1
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 
 //YeCrowbarMan - Lemon Yellow
 /obj/item/toy/plushie/fluff/lemonplush

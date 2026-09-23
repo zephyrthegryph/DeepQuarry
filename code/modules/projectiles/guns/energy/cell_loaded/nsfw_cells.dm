@@ -43,7 +43,7 @@
 	spread_step = 10
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/ammo_casing/microbattery/combat/ion
 	name = "\'NSFW\' microbattery - ION"
@@ -63,7 +63,7 @@
 	agony = 5
 	embed_chance = 0
 	sharp = FALSE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 
 /obj/item/projectile/bullet/stripper/on_hit(atom/stripped)
 	if(ishuman(stripped))

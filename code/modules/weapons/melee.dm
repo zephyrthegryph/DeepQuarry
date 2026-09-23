@@ -4,6 +4,7 @@
 	projectile_parry_chance = 15
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_LARGE
 	slot_flags = SLOT_BACK
 	force = 35

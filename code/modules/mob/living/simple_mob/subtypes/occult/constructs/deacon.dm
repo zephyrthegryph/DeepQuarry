@@ -15,8 +15,7 @@
 	melee_damage_lower = 8 //not meant for combat but can hold its own in a pinch
 	melee_damage_upper = 12
 	attack_armor_pen = 60 //used to carve stone and other metals, cuts through armor just as well
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("violently stabbed")
 	friendly = list("caresses")
 	organ_names = /datum/decl/mob_organ_names/harvester

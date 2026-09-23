@@ -145,7 +145,12 @@
 		brain = new(destination)
 	set_brain(null)
 	brain.preserved = FALSE
-	brain.forceMove(destination)
+	if(!destination)
+		destination = drop_location()
+	if(destination)
+		brain.forceMove(destination)
+	else
+		brain.moveToNullspace()
 	var/datum/component/mind_host/brain_host = get_mind_host(brain)
 	brain_host.adopt_occupant(get_mind_host(src), reason)
 	update_occupied_state()

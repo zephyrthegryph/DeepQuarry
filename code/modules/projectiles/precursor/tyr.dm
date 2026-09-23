@@ -22,7 +22,6 @@
 	armor_penetration = 15
 	range = 6
 	penetrating = 2
-	check_armour = "laser"
 
 /obj/item/projectile/beam/precursor_tyr
 	name = "laser"
@@ -30,8 +29,6 @@
 	damage = 9
 	armor_penetration = 40
 	penetrating = 2
-	damage_type = BURN
-	check_armour = "laser"
 	range = 4
 	eyeblur = 0 //no no no no no
 	hitscan = 1
@@ -90,8 +87,8 @@
 /obj/item/projectile/energy/eclipse_boss/tyrjavelin //Five hits ought to end you
 	name = "energy javelin"
 	icon_state = "javelin"
-	damage_type = SEARING
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
+	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	damage = 20 //16 with intended armor
 	armor_penetration = 20
 	speed = 10
@@ -111,8 +108,6 @@
 	icon_state = "astral_sea_blade"
 	icon = 'icons/obj/guns/precursor/tyr.dmi'
 	damage = 25 //15
-	damage_type = BRUTE
-	check_armour = "melee"
 	embed_chance = 0
 	speed = 15
 	penetrating = 5
@@ -132,7 +127,7 @@
 
 /obj/item/projectile/energy/agate_lighting
 	damage = 15
-	damage_type = ELECTROCUTE
+	injury_kind = INJURY_ELECTRIC
 	icon_state = "tesla_projectile"
 	armor_penetration = 30
 	speed = 15

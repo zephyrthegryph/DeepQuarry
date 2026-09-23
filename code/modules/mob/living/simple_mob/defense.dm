@@ -45,34 +45,33 @@
 			L.do_attack_animation(src)
 
 		if(I_HURT)
-			var/armor = run_armor_check(def_zone = null, attack_flag = "melee")
 			if(ishuman(L))
 				var/mob/living/carbon/human/attacker = L //We are a human!
 				var/datum/unarmed_attack/attack = attacker.get_unarmed_attack(src, BP_TORSO) //What attack are we using? Also, just default to attacking the chest.
 				var/rand_damage = rand(1, 5) //Like normal human attacks, let's randomize the damage...
 				var/real_damage = rand_damage //Let's go ahead and start calculating our damage.
-				var/hit_dam_type = attack.damage_type //Let's get the type of damage. Brute? Burn? Defined by the unarmed_attack.
+				var/hit_kind = attack.injury_kind //What the unarmed attack inflicts.
 				real_damage += attack.get_unarmed_damage(attacker) //Add the damage that their special attack has. Some have 0. Some have 15.
 				if(attacker.gloves && attack.is_punch)
 					if(istype(attacker.gloves, /obj/item/clothing/gloves))
 						var/obj/item/clothing/gloves/G = attacker.gloves
 						real_damage += G.punch_force
-						hit_dam_type = G.punch_damtype
+						hit_kind = G.punch_injury_kind || hit_kind
 					else if(istype(attacker.gloves, /obj/item/clothing/accessory))
 						var/obj/item/clothing/accessory/G = attacker.gloves
 						real_damage += G.punch_force
-						hit_dam_type = G.punch_damtype
+						hit_kind = G.punch_injury_kind || hit_kind
 					if(HULK in attacker.mutations)
 						real_damage *= 2
 				if(real_damage <= damage_threshold)
 					L.visible_message(span_warning("\The [L] uselessly hits \the [src]!"))
 					L.do_attack_animation(src)
 					return
-				injure(injury_kind_for(hit_dam_type), real_damage, null, L, armor)
+				injure(hit_kind, real_damage, null, L, flags = INJURE_ARMORED)
 				L.visible_message(span_warning("\The [L] [pick(attack.attack_verb)] \the [src]!"))
 				L.do_attack_animation(src)
 				return
-			injure(INJURY_BLUNT, harm_intent_damage, null, L, armor)
+			injure(INJURY_BLUNT, harm_intent_damage, null, L, flags = INJURE_ARMORED)
 			L.visible_message(span_warning("\The [L] [response_harm] \the [src]!"))
 			L.do_attack_animation(src)
 
@@ -120,7 +119,7 @@
 	effective_force = O.force
 
 	//Animals can't be stunned(?)
-	if(O.damtype == HALLOSS)
+	if(O.injury_kind == INJURY_PAIN)
 		effective_force = 0
 	if(supernatural && istype(O,/obj/item/nullrod))
 		effective_force *= 2
@@ -149,7 +148,6 @@
 	if(severity > 3)
 		return
 
-	var/armor = run_armor_check(def_zone = null, attack_flag = "bomb")
 	var/bombdam = 500
 	switch (severity)
 		if (1.0)
@@ -159,7 +157,7 @@
 		if (3.0)
 			bombdam = 30
 
-	injure(INJURY_BLUNT, bombdam, null, null, armor)
+	injure(INJURY_BLUNT, bombdam * (100 - armor_against(ARMOR_BLAST)) / 100)
 
 	if(bombdam > get_endurance())
 		gib()
@@ -193,11 +191,7 @@
 	if(shock_damage < 1)
 		return 0
 
-	var/datum/damage_packet/packet = damage_packet(null, source)
-	packet.blocked = resistance
-	packet.add(DAMAGE_SHOCK, shock_damage)
-	receive_damage(packet)
-	packet.release()
+	receive_shock(shock_damage * (100 - resistance) / 100, source)
 	playsound(src, "sparks", 50, 1, -1)
 
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -220,15 +214,14 @@
 	if(taser_kill)
 		var/stunDam = 0
 		var/agonyDam = 0
-		var/armor = run_armor_check(def_zone = null, attack_flag = "energy")
 
 		if(stun_amount)
 			stunDam += stun_amount * 0.5
-			injure(INJURY_ELECTRIC, stunDam, null, used_weapon, armor)
+			injure(INJURY_ELECTRIC, stunDam, null, used_weapon, flags = INJURE_ARMORED)
 
 		if(agony_amount)
 			agonyDam += agony_amount * 0.5
-			injure(INJURY_ELECTRIC, agonyDam, null, used_weapon, armor) // Simple bodies ignore pain; taser_kill mobs take it as a real electrical injury.
+			injure(INJURY_ELECTRIC, agonyDam, null, used_weapon, flags = INJURE_ARMORED) // Simple bodies ignore pain; taser_kill mobs take it as a real electrical injury.
 
 
 // Electromagnetism
@@ -244,7 +237,7 @@
 	var/static/list/share_by_severity = list(0.5, 0.25, 0.125, 0.0625)
 	var/band = round(severity)
 	if(band >= 1 && band <= length(cap_by_severity))
-		deal_damage(DAMAGE_IONIC, min(cap_by_severity[band], endurance_scale * share_by_severity[band]), null)
+		deal_damage(DAMAGE_IONIC, min(cap_by_severity[band], endurance_scale * share_by_severity[band]), flags = DAMAGE_PACKET_UNARMORED)
 
 // Water
 /mob/living/simple_mob/get_water_protection()
@@ -255,12 +248,11 @@
 	return poison_resist
 
 // Armor
-/mob/living/simple_mob/getarmor(def_zone, attack_flag)
-	var/armorval = armor[attack_flag]
-	if(isnull(armorval))
-		armorval = 0
-
-	return armorval + factor_armor(attack_flag)
+/mob/living/simple_mob/injury_armor(kind, zone = null)
+	. = armor_factor(kind)
+	var/key = injury_armor_key(kind)
+	if(key && armor)
+		. += armor[key] || 0
 
 // Lightning
 /mob/living/simple_mob/lightning_act()

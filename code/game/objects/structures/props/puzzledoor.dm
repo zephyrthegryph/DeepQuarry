@@ -81,7 +81,7 @@
 		else if(src.density && (user.a_intent == I_HURT))
 			var/obj/item/W = C
 			user.setClickCooldown(user.get_attack_speed(W))
-			if(W.damtype == BRUTE || W.damtype == BURN)
+			if(W.obj_damage_type())
 				user.do_attack_animation(src)
 				user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
 

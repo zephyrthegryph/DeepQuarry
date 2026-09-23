@@ -128,13 +128,20 @@ GLOBAL_VAR(restart_counter)
 /world/New()
 	log_world("World loaded at [time_stamp()]!")
 
-	// Verdigris (Rust FFI) bring-up. Init must come before cleanup so the panic hook
-	// catches any failure inside cleanup itself. (Was a duplicate /world/New() in
-	// _verdigris.dm that the compiler silently discarded; folded in here.)
-	verdigris_init()
-	verdigris_cleanup()
-	configure_auxmos_world(world.maxx, world.maxy, world.maxz)
-	log_world("Verdigris loaded: [verdigris_version()] | features: [verdigris_features()]")
+	// Verdigris (Rust FFI) bring-up and version handshake. Init must come before
+	// cleanup so the panic hook catches any failure inside cleanup itself. A DLL
+	// built from a different bind set than this DM build fails here, loudly,
+	// instead of misrouting arguments later.
+	var/verdigris_abi = vg_verdigris_init(VERDIGRIS_ABI)
+	if(verdigris_abi != VERDIGRIS_ABI)
+		var/abi_error = "FATAL: verdigris library ABI [verdigris_abi || "(none)"] does not match the DM build's VERDIGRIS_ABI [VERDIGRIS_ABI]. Rebuild verdigris.dll and the DM from the same tree (tools/build/build.sh)."
+		log_world(abi_error)
+		world.log << abi_error
+		del(world)
+		return
+	vg_verdigris_cleanup()
+	vg_configure_world(world.maxx, world.maxy, world.maxz)
+	log_world("Verdigris loaded: [vg_verdigris_version()] | features: [vg_verdigris_features()]")
 
 	GLOB.world_startup_time = world.timeofday
 	GLOB.rollover_safety_date = world.realtime - world.timeofday // 00:00 today (ish, since floating point error with world.realtime) of today
@@ -679,7 +686,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 /world/proc/increment_max_z()
 	maxz++
 	. = maxz
-	configure_auxmos_world(maxx, maxy, maxz)
+	vg_configure_world(maxx, maxy, maxz)
 	max_z_changed()
 
 // Call this to change world.fps, don't modify it directly.

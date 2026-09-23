@@ -43,7 +43,7 @@
 	if(!istype(Proj, projectile_key) || timing)
 		return
 
-	if(istype(Proj, /obj/item/projectile/beam/heavylaser/cannon) || istype(Proj, /obj/item/projectile/beam/emitter) || (Proj.damage >= 80 && Proj.damtype == BURN))
+	if(istype(Proj, /obj/item/projectile/beam/heavylaser/cannon) || istype(Proj, /obj/item/projectile/beam/emitter) || (Proj.damage >= 80 && Proj.obj_damage_type() == BURN))
 		toggle_lock()
 		visible_message(span_notice("\The [src] [enabled ? "disengages" : "engages"] its locking mechanism."))
 

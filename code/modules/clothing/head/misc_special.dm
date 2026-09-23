@@ -154,12 +154,12 @@
 	onfire = !(onfire)
 	if (onfire)
 		force = 3
-		damtype = BURN
+		injury_kind = INJURY_BURN
 		icon_state = "cake1"
 		START_PROCESSING(SSobj, src)
 	else
 		force = null
-		damtype = BRUTE
+		injury_kind = INJURY_BLUNT
 		icon_state = "cake0"
 	return
 

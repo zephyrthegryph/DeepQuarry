@@ -136,6 +136,7 @@
 	if(girder_is_reflective())
 		return receive_projectile(P, def_zone, girder_material.reflectivity)
 	return receive_projectile(P, def_zone)
+
 /obj/structure/girder/blob_act()
 	dismantle()
 

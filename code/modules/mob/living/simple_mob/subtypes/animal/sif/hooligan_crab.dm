@@ -58,8 +58,7 @@
 	melee_damage_lower = 22
 	melee_damage_upper = 35
 	attack_armor_pen = 35
-	attack_sharp = TRUE
-	attack_edge = TRUE
+	attack_injury_kind = INJURY_CUT
 	melee_attack_delay = 1 SECOND
 
 	meat_type = /obj/item/reagent_containers/food/snacks/crabmeat

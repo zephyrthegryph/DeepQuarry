@@ -68,6 +68,9 @@ jobs:
       - name: Run Grep Checks
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: bash tools/ci/check_grep.sh
+      - name: Check Verdigris Bindings
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        run: bash tools/ci/check_verdigris_bindings.sh
       - name: Run Define Sanity Checks
         run: tools/bootstrap/python -m define_sanity.check
       - name: Run DreamChecker

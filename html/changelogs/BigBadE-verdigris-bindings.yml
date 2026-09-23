@@ -1,0 +1,4 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "All DM calls into verdigris now go through generated, handle-cached vg_* bindings; the DLL and DM build check a shared ABI hash at boot."

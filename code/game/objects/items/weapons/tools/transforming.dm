@@ -48,6 +48,7 @@
 	toolspeed = 0.25
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "pinched", "nipped")
 	possible_tooltypes = list(TOOL_CROWBAR,TOOL_WIRECUTTER)
 

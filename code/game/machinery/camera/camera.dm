@@ -131,7 +131,8 @@
 /obj/machinery/camera/blob_act(obj/structure/blob/B)
 	if((stat & BROKEN) || invuln)
 		return
-	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, MELEE, B)
+	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = B)
+
 /obj/machinery/camera/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
 	if (!isobj(source))
@@ -155,7 +156,7 @@
 		visible_message(span_warning("\The [user] slashes at [src]!"))
 		playsound(src, 'sound/weapons/slash.ogg', 100, 1)
 		add_hiddenprint(user)
-		take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
+		deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 
 /obj/machinery/camera/attack_generic(mob/user as mob)
 	if(isanimal(user))
@@ -166,7 +167,7 @@
 		visible_message(span_warning("\The [user] [pick(S.attacktext)] \the [src]!"))
 		playsound(src, S.attack_sound, 100, 1)
 		add_hiddenprint(user)
-		deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, MELEE, user, user)
+		deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 		return 1
 	return 0
 
@@ -254,7 +255,7 @@
 			to_chat(user, span_notice("Camera bugged."))
 			src.bugged = 1
 
-	else if(W.damtype == BRUTE || W.damtype == BURN) //bashing cameras
+	else if(W.obj_damage_type()) //bashing cameras
 		user.setClickCooldown(user.get_attack_speed(W))
 		if (W.force >= src.toughness)
 			user.do_attack_animation(src)
@@ -263,7 +264,7 @@
 				var/obj/item/I = W
 				if (I.hitsound)
 					playsound(src, I.hitsound, 50, 1, -1)
-		receive_weapon_hit(W, user, W.force, BRUTE, silent = FALSE)
+		receive_weapon_hit(W, user, silent = FALSE)
 
 	else
 		..()

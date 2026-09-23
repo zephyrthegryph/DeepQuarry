@@ -72,8 +72,7 @@
 
 	melee_damage_lower = 10
 	melee_damage_upper = 25
-	attack_sharp = TRUE
-	attack_edge = TRUE
+	attack_injury_kind = INJURY_CUT
 	attack_armor_pen = 30
 	attacktext = list("bitten", "gored", "gouged", "chomped", "slammed")
 

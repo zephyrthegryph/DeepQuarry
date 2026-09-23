@@ -34,6 +34,11 @@
 /// From base of /mob/living/proc/injure(), before mitigation: (kind, list/amount_ref, zone, atom/source, flags). amount_ref[1] may be modified.
 #define COMSIG_LIVING_INJURE "living_injure"
 	#define COMPONENT_CANCEL_INJURY (1<<0)
+/// From /mob/living/proc/injure(), mitigation stage 2 (energy shields), after armour: (kind, list/amount_ref, zone, atom/source, flags). Shields scale amount_ref[1].
+#define COMSIG_LIVING_SHIELD_INJURY "living_shield_injury"
+/// From /mob/living/proc/injure() once mitigation is done, when something listens or the injury trace is on:
+/// (incoming_kind, landed_kind, list/stages, zone, atom/source, flags). Each stage is list(INJURY_STAGE_*, amount_in, amount_out, detail).
+#define COMSIG_LIVING_INJURY_EXPLAINED "living_injury_explained"
 /// From base of /mob/living/proc/injure(), after the injury applied: (kind, applied, zone, atom/source, flags)
 #define COMSIG_LIVING_INJURED "living_injured"
 /// From /datum/body/proc/recompute_factors() when a body factor value changed: ()

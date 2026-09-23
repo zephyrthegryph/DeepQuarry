@@ -122,6 +122,7 @@
 
 /obj/structure/window/can_pathfinding_exit(atom/movable/actor, dir, datum/pathfinding/search)
 	return ..() || (!fulltile && (src.dir != dir))
+
 /obj/structure/window/ex_act(severity)
 	switch(severity)
 		if(1.0)
@@ -169,6 +170,7 @@
 
 /obj/structure/window/thrown_damage(atom/movable/source, datum/thrownthing/throwingdatum)
 	return receive_thrown(source, throwingdatum, reinf ? 0.25 : 1)
+
 /obj/structure/window/attack_tk(mob/user as mob)
 	user.visible_message(span_notice("Something knocks on [src]."))
 	playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
@@ -270,7 +272,7 @@
 		F.try_build(src, user)
 	else
 		user.setClickCooldown(user.get_attack_speed(W))
-		if(W.damtype == BRUTE || W.damtype == BURN)
+		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			hit(W.force)
 			if(get_integrity() <= 7)

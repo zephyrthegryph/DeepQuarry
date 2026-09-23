@@ -168,7 +168,7 @@
 	name = "Brute Resist, Minor"
 	desc = "Adds 10% resistance to brute damage sources."
 	cost = 1
-	var_changes = list("injury_mod_physical" = 0.9)
+	factors = alist(BF_INCOMING_PHYSICAL = 0.9)
 	custom_only = FALSE
 	banned_species = list(SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_XENOCHIMERA, SPECIES_VASILISSAN, SPECIES_WEREBEAST) //Most of these are already this resistant or stronger, or it'd be way too much of a boost for tesh.
 	excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/brute_resist_plus)
@@ -177,20 +177,20 @@
 	name = "Brute Resist"
 	desc = "Adds 20% resistance to brute damage sources."
 	cost = 2
-	var_changes = list("injury_mod_physical" = 0.8)
+	factors = alist(BF_INCOMING_PHYSICAL = 0.8)
 	//excludes = list(/datum/trait/positive/minor_burn_resist,/datum/trait/positive/burn_resist) //CHOMP disable, this is already handled in positive_ch.dm
 
 /datum/trait/positive/minor_burn_resist
 	name = "Burn Resist, Minor"
 	desc = "Adds 10% resistance to burn damage sources."
 	cost = 1
-	var_changes = list("injury_mod_thermal" = 0.9)
+	factors = alist(BF_INCOMING_THERMAL = 0.9)
 
 /datum/trait/positive/burn_resist
 	name = "Burn Resist"
 	desc = "Adds 20% resistance to burn damage sources."
 	cost = 2
-	var_changes = list("injury_mod_thermal" = 0.8)
+	factors = alist(BF_INCOMING_THERMAL = 0.8)
 	//excludes = list(/datum/trait/positive/minor_brute_resist,/datum/trait/positive/brute_resist) //CHOMP disable, this is already handled in positive_ch.dm
 
 
@@ -437,19 +437,19 @@
 	name = "Radiation Resistance"
 	desc = "You are generally more resistant to radiation, and it dissipates faster from your body."
 	cost = 1
-	var_changes = list("injury_mod_radiation" = 0.65, "rad_removal_mod" = 3.5, "rad_levels" = RESISTANT_RADIATION_RESISTANCE)
+	var_changes = list("radiation_mod" = 0.65, "rad_removal_mod" = 3.5, "rad_levels" = RESISTANT_RADIATION_RESISTANCE)
 
 /datum/trait/positive/rad_resistance_extreme
 	name = "Radiation Resistance, Major"
 	desc = "You are much more resistant to radiation, and it dissipates much faster from your body."
 	cost = 2
-	var_changes = list("injury_mod_radiation" = 0.5, "rad_removal_mod" = 5, "rad_levels" = MAJOR_RESISTANT_RADIATION_RESISTANCE)
+	var_changes = list("radiation_mod" = 0.5, "rad_removal_mod" = 5, "rad_levels" = MAJOR_RESISTANT_RADIATION_RESISTANCE)
 
 /datum/trait/positive/rad_immune
 	name = "Radiation Immunity"
 	desc = "For whatever reason, be it a more dense build or some quirk of your genetic code, your body is completely immune to radiation."
 	cost = 3
-	var_changes = list("injury_mod_radiation" = 0.0, "rad_removal_mod" = 10, "rad_levels" = IMMUNITY_RADIATION_RESISTANCE)
+	var_changes = list("radiation_mod" = 0.0, "rad_removal_mod" = 10, "rad_levels" = IMMUNITY_RADIATION_RESISTANCE)
 
 	// Traitgenes
 	is_genetrait = TRUE
@@ -765,14 +765,14 @@
 	name = "Burn Resist, Major"
 	desc = "Adds 40% resistance to burn damage sources."
 	cost = 4 // Exact Opposite of Burn Weakness Major, except Weakness Major is 50% incoming, this is -40% incoming.
-	var_changes = list("injury_mod_thermal" = 0.6)
+	factors = alist(BF_INCOMING_THERMAL = 0.6)
 	excludes = list(/datum/trait/positive/burn_resist, /datum/trait/positive/minor_burn_resist)
 
 /datum/trait/positive/brute_resist_plus // Equivalent to Brute Weakness Major, cannot be taken at the same time.
 	name = "Brute Resist, Major"
 	desc = "Adds 40% resistance to brute damage sources."
 	cost = 4 // Exact Opposite of Brute Weakness Major, except Weakness Major is 50% incoming, this is -40% incoming.
-	var_changes = list("injury_mod_physical" = 0.6)
+	factors = alist(BF_INCOMING_PHYSICAL = 0.6)
 	excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/minor_brute_resist)
 
 /datum/trait/positive/endurance_very_high
@@ -802,21 +802,21 @@
 	desc = "You are slightly more resistant to pain than most, and experience 10% less pain from all sources."
 	cost = 1
 	custom_only = FALSE
-	var_changes = list("injury_mod_pain" = 0.9)
+	factors = alist(BF_INCOMING_PAIN = 0.9)
 
 /datum/trait/positive/pain_tolerance
 	name = "Pain Tolerance"
 	desc = "You are noticeably more resistant to pain than most, and experience 20% less pain from all sources."
 	cost = 2
 	custom_only = FALSE
-	var_changes = list("injury_mod_pain" = 0.8)
+	factors = alist(BF_INCOMING_PAIN = 0.8)
 
 /datum/trait/positive/pain_tolerance_advanced // High Pain Intolerance is 50% incoming pain, but this is 40% reduced incoming pain.
 	name = "Pain Tolerance, Major"
 	desc = "You are extremely resistant to pain sources, and experience 40% less pain from all sources."
 	cost = 3 // Equivalent to High Pain Intolerance, but less pain resisted for balance reasons.
 	custom_only = FALSE
-	var_changes = list("injury_mod_pain" = 0.6)
+	factors = alist(BF_INCOMING_PAIN = 0.6)
 
 /datum/trait/positive/improved_biocompat
 	name = "Improved Biocompatibility"

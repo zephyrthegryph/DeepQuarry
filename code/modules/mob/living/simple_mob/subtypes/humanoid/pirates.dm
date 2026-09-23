@@ -36,8 +36,7 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 15		//Tac Knife damage
 	melee_damage_upper = 15
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 
 	attacktext = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	attack_sound = 'sound/weapons/bladeslice.ogg'

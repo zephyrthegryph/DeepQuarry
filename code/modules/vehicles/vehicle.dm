@@ -104,13 +104,13 @@
 		if(istype(W, /obj/item/cell) && !cell && open)
 			insert_cell(W, user)
 
-	else if(W.force && W.damtype)
+	else if(W.force && W.obj_damage_type())
 		user.setClickCooldown(user.get_attack_speed(W))
-		switch(W.damtype)
+		switch(W.obj_damage_type())
 			if(BURN)
-				receive_weapon_hit(W, user, W.force * fire_dam_coeff, BURN, silent = FALSE)
+				receive_weapon_hit(W, user, W.force * fire_dam_coeff, INJURY_BURN, silent = FALSE)
 			if(BRUTE)
-				receive_weapon_hit(W, user, W.force * brute_dam_coeff, BRUTE, silent = FALSE)
+				receive_weapon_hit(W, user, W.force * brute_dam_coeff, silent = FALSE)
 		..()
 	else
 		..()
@@ -160,11 +160,11 @@
 			explode()
 			return
 		if(2.0)
-			deal_damage(DAMAGE_BLAST, rand(5,10)*fire_dam_coeff + rand(10,20)*brute_dam_coeff, BOMB)
+			deal_damage(DAMAGE_BLAST, rand(5,10)*fire_dam_coeff + rand(10,20)*brute_dam_coeff)
 			return
 		if(3.0)
 			if (prob(50))
-				deal_damage(DAMAGE_BLAST, rand(1,5)*fire_dam_coeff + rand(1,5)*brute_dam_coeff, BOMB)
+				deal_damage(DAMAGE_BLAST, rand(1,5)*fire_dam_coeff + rand(1,5)*brute_dam_coeff)
 				return
 	return
 

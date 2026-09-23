@@ -255,9 +255,9 @@
 // /mob/living/carbon/human/update_transform on a size change, it tipped over.
 //
 // Splitting the work:
-//   1. update_preview_icon() — synchronous rebuild of character_preview_b64
-//      (apply pipeline + getFlatIcon × 4). Stays inside update_preference's
-//      call stack, but isn't itself recursive.
+//   1. update_preview_icon() — dresses the mannequin and queues an async
+//      iconforge render of character_preview_b64 (see preview_async.dm).
+//      Stays inside update_preference's call stack, but isn't itself recursive.
 //   2. After the rebuild, mark "push pending" and addtimer the actual
 //      send_full_update fan-out. The push runs on a fresh stack one tick later.
 //
@@ -330,6 +330,9 @@
 
 /datum/preferences/proc/dq_render_preview(south_only = FALSE)
 	var/play_mode = read_preference(/datum/preference/text/human/play_mode) || "human"
+	if(play_mode != "human")
+		// Robot/pAI previews are written synchronously; don't let a pending human render overwrite them.
+		dq_preview_generation++
 	if(play_mode == "robot")
 		dq_update_robot_preview(south_only)
 		return

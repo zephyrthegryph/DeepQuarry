@@ -7,10 +7,8 @@
 	difficulty = BLOB_DIFFICULTY_MEDIUM
 	color = "#571509"
 	complementary_color = "#ec4940"
-	damage_type = BRUTE
 	damage_lower = 5
 	damage_upper = 20
-	armor_check = "melee"
 	brute_multiplier = 1.2
 	burn_multiplier = 1.2
 	spread_modifier = 0.8

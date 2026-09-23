@@ -182,14 +182,14 @@
 		else if(src.density && (user.a_intent == I_HURT)) //If we can't pry it open and it's a weapon, let's hit it.
 			var/obj/item/W = C
 			user.setClickCooldown(user.get_attack_speed(W))
-			if(W.damtype == BRUTE || W.damtype == BURN)
+			if(W.obj_damage_type())
 				user.do_attack_animation(src)
 				if(W.force < min_force)
 					user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
 				else
 					user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 					playsound(src, hitsound, 100, 1)
-					receive_weapon_hit(W, user, W.force * 0.35, BRUTE, silent = FALSE) //it's a blast door, it should take a while. -Luke
+					receive_weapon_hit(W, user, W.force * 0.35, silent = FALSE) //it's a blast door, it should take a while. -Luke
 				return
 
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_PLASTEEL) // Repairing.
@@ -212,14 +212,14 @@
 	else if(src.density && (user.a_intent == I_HURT)) //If we can't pry it open and it's not a weapon.... Eh, let's attack it anyway.
 		var/obj/item/W = C
 		user.setClickCooldown(user.get_attack_speed(W))
-		if(istype(W) && (W.damtype == BRUTE || W.damtype == BURN))
+		if(istype(W) && (W.obj_damage_type()))
 			user.do_attack_animation(src)
 			if(W.force < min_force) //No actual non-weapon item shouls have a force greater than the min_force, but let's include this just in case.
 				user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
 			else
 				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 				playsound(src, hitsound, 100, 1)
-				receive_weapon_hit(W, user, W.force * 0.15, BRUTE, silent = FALSE) //If the item isn't a weapon, let's make this take longer than usual to break it down.
+				receive_weapon_hit(W, user, W.force * 0.15, silent = FALSE) //If the item isn't a weapon, let's make this take longer than usual to break it down.
 			return
 
 // Proc: attack_alien()

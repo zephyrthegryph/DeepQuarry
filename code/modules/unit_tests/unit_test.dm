@@ -131,7 +131,7 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	// turfs and publishing atmosphere topology.
 	while(SSexpedition && length(SSexpedition.teardown_z))
 		sleep(1)
-	SSair?.auxmos_topology_barrier()
+	vg_topology_barrier()
 	// DQ atmos integration tests operate on mapped turfs because the inherited
 	// per-test reservation is not implemented. Restore every turf they snapshot
 	// after each test so later tests and shuttles never inherit vacuum, test gas,

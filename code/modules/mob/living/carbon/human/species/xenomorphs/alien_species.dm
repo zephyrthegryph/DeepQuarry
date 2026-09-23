@@ -19,7 +19,7 @@
 	siemens_coefficient = 0
 	gluttonous = 2
 
-	injury_mod_groups = list("physical" = 0.6, "thermal" = 1.75)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 1.75)
 	// Hardened carapace. (brute)
 	// Weak to fire. (burn)
 
@@ -166,7 +166,7 @@
 	name = SPECIES_XENO_DRONE
 	caste_name = "drone"
 	weeds_plasma_rate = 15
-	factor_baseline = alist(BF_SLOWDOWN = 1)
+	factor_baseline = alist(BF_SLOWDOWN = 1, BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 1.75)
 	tail = "xenos_drone_tail"
 	rarity_value = 5
 
@@ -205,7 +205,7 @@
 	name = SPECIES_XENO_HUNTER
 	weeds_plasma_rate = 5
 	caste_name = "hunter"
-	factor_baseline = alist(BF_SLOWDOWN = -1)
+	factor_baseline = alist(BF_SLOWDOWN = -1, BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 1.75)
 	total_health = 150
 	tail = "xenos_hunter_tail"
 
@@ -234,7 +234,7 @@
 	name = SPECIES_XENO_SENTINEL
 	weeds_plasma_rate = 10
 	caste_name = "sentinel"
-	factor_baseline = alist(BF_SLOWDOWN = 0)
+	factor_baseline = alist(BF_SLOWDOWN = 0, BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 1.75)
 	total_health = 200
 	tail = "xenos_sentinel_tail"
 
@@ -268,7 +268,7 @@
 	weeds_heal_rate = 5
 	weeds_plasma_rate = 20
 	caste_name = "queen"
-	factor_baseline = alist(BF_SLOWDOWN = 3)
+	factor_baseline = alist(BF_SLOWDOWN = 3, BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 1.75)
 	tail = "xenos_queen_tail"
 	rarity_value = 10
 

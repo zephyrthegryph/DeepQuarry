@@ -2,6 +2,7 @@
 	name = "harpoon"
 	sharp = TRUE
 	edge = FALSE
+	injury_kind = INJURY_PIERCE
 	desc = "Tharr she blows!"
 	icon_state = "harpoon"
 	item_state = "harpoon"
@@ -174,7 +175,7 @@
 						return W.afterattack(target,H)
 
 		if(!(H.species.flags & NO_SLIP) && prob(10) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
-			var/armor_check = H.run_armor_check(user.zone_sel, "melee")
+			var/armor_check = H.armor_against(INJURY_BLUNT, user.zone_sel)
 			H.apply_effect(3, WEAKEN, armor_check)
 			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 			if(armor_check < 60)
@@ -236,6 +237,7 @@
 	w_class = ITEMSIZE_LARGE
 	edge = 1
 	sharp = 1
+	injury_kind = INJURY_CUT
 	force_divisor = 0.7 //42 When Wielded in line with a sword
 	thrown_force_divisor = 0.1 // 2 when thrown with weight 20 (steel) since frankly its too bulk to throw
 	//holy = 1

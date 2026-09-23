@@ -32,7 +32,6 @@
 	harm_intent_damage = 1
 	melee_damage_lower = 1
 	melee_damage_upper = 2
-	attack_sharp = FALSE
 	attacktext = list("hits")
 
 	mob_size = MOB_SMALL

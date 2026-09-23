@@ -121,8 +121,6 @@
 	name = "homing bolt"
 	icon_state = "force_missile"
 	damage = 20
-	damage_type = BURN
-	check_armour = "laser"
 
 /obj/item/projectile/energy/homing_bolt/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 	..()

@@ -157,7 +157,7 @@
 	// No alkysine yet — no side condition.
 	H.dq_check_chem_conditions()
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/alkysine_confusion))
+		if(istype(c, /datum/affliction/chem_side_effect/alkysine_confusion))
 			TEST_FAIL("alkysine_confusion should not exist without the chem")
 
 	// Dose past the 5u threshold — condition should spawn.
@@ -165,7 +165,7 @@
 	H.dq_check_chem_conditions()
 	var/found = FALSE
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/alkysine_confusion))
+		if(istype(c, /datum/affliction/chem_side_effect/alkysine_confusion))
 			found = TRUE
 			break
 	TEST_ASSERT(found, "alkysine_confusion should spawn when alkysine ≥ 5u")
@@ -174,7 +174,7 @@
 	H.bloodstr.remove_reagent(REAGENT_ID_ALKYSINE, 10)
 	H.dq_check_chem_conditions()
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/alkysine_confusion))
+		if(istype(c, /datum/affliction/chem_side_effect/alkysine_confusion))
 			TEST_FAIL("alkysine_confusion should clear when the chem is gone")
 
 
@@ -189,7 +189,7 @@
 	H.bloodstr.add_reagent(REAGENT_ID_INAPROVALINE, 10)
 	H.dq_check_chem_conditions()
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/tachycardia_chem))
+		if(istype(c, /datum/affliction/chem_interaction/tachycardia_chem))
 			TEST_FAIL("tachycardia interaction should NOT fire with only one chem present")
 
 	// Add hyperzine — both present, interaction fires.
@@ -197,7 +197,7 @@
 	H.dq_check_chem_conditions()
 	var/found = FALSE
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/tachycardia_chem))
+		if(istype(c, /datum/affliction/chem_interaction/tachycardia_chem))
 			found = TRUE
 			break
 	TEST_ASSERT(found, "tachycardia interaction should fire when both chems present")
@@ -206,7 +206,7 @@
 	H.bloodstr.remove_reagent(REAGENT_ID_INAPROVALINE, 10)
 	H.dq_check_chem_conditions()
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/tachycardia_chem))
+		if(istype(c, /datum/affliction/chem_interaction/tachycardia_chem))
 			TEST_FAIL("tachycardia interaction should clear when one chem leaves")
 
 
@@ -232,7 +232,7 @@
 	// Reset, add the interference marker, tick again — delta should
 	// be smaller.
 	C.severity = 50
-	var/datum/affliction/bicaridine_antibiotic_interference/M = _spawn_affliction_on(H, O_LIVER, /datum/affliction/bicaridine_antibiotic_interference)
+	var/datum/affliction/chem_interaction/bicaridine_antibiotic_interference/M = _spawn_affliction_on(H, O_LIVER, /datum/affliction/chem_interaction/bicaridine_antibiotic_interference)
 	TEST_ASSERT_NOTNULL(M, "interference marker spawn failed")
 	C.tick()
 	var/blocked_delta = 50 - C.severity
@@ -287,7 +287,7 @@
 	H.bloodstr.add_reagent(REAGENT_ID_HYPERZINE, 40)  // 10 over OD threshold of 30
 	for(var/i in 1 to 50)
 		H.dq_check_chem_conditions()
-	TEST_ASSERT(H.has_affliction(/datum/affliction/hyperzine_overdose), "40u of hyperzine should overdose")
+	TEST_ASSERT(H.has_affliction(/datum/affliction/overdose/hyperzine), "40u of hyperzine should overdose")
 	// The stimulant and its overdose stage both speed the patient up.
 	var/slow = H.factor(BF_SLOWDOWN) - base
 	TEST_ASSERT(slow < 0, "hyperzine OD should produce negative slowdown (boost): got [slow]")
@@ -314,9 +314,9 @@
 	// Ramp the OD condition to max severity so its boost is at full.
 	for(var/i in 1 to 50)
 		H.dq_check_chem_conditions()
-	var/datum/affliction/synaptizine_overdose/od
+	var/datum/affliction/overdose/synaptizine/od
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/synaptizine_overdose))
+		if(istype(c, /datum/affliction/overdose/synaptizine))
 			od = c
 			break
 	TEST_ASSERT_NOTNULL(od, "synaptizine OD should be spawned")
@@ -377,9 +377,9 @@
 	H.bloodstr.add_reagent(REAGENT_ID_PERIDAXON, 12)
 	for(var/i in 1 to 200)
 		H.dq_check_chem_conditions()
-		var/datum/affliction/peridaxon_overdose/od
+		var/datum/affliction/overdose/peridaxon/od
 		for(var/datum/affliction/c in H.get_afflictions())
-			if(istype(c, /datum/affliction/peridaxon_overdose))
+			if(istype(c, /datum/affliction/overdose/peridaxon))
 				od = c
 				break
 		if(!od)
@@ -415,14 +415,14 @@
 	H_low.dq_check_chem_conditions()
 	H_high.dq_check_chem_conditions()
 
-	var/datum/affliction/peridaxon_overdose/low_OD
-	var/datum/affliction/peridaxon_overdose/high_OD
+	var/datum/affliction/overdose/peridaxon/low_OD
+	var/datum/affliction/overdose/peridaxon/high_OD
 	for(var/datum/affliction/c in H_low.get_afflictions())
-		if(istype(c, /datum/affliction/peridaxon_overdose))
+		if(istype(c, /datum/affliction/overdose/peridaxon))
 			low_OD = c
 			break
 	for(var/datum/affliction/c in H_high.get_afflictions())
-		if(istype(c, /datum/affliction/peridaxon_overdose))
+		if(istype(c, /datum/affliction/overdose/peridaxon))
 			high_OD = c
 			break
 	TEST_ASSERT_NOTNULL(low_OD, "peridaxon at 11u should spawn OD condition")
@@ -440,9 +440,9 @@
 	// Pump severity up to peak.
 	for(var/i in 1 to 30)
 		H.dq_check_chem_conditions()
-	var/datum/affliction/peridaxon_overdose/od
+	var/datum/affliction/overdose/peridaxon/od
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/peridaxon_overdose))
+		if(istype(c, /datum/affliction/overdose/peridaxon))
 			od = c
 			break
 	TEST_ASSERT_NOTNULL(od, "peridaxon OD should be spawned")
@@ -477,9 +477,9 @@
 	for(var/i in 1 to 5)
 		H.dq_check_chem_conditions()
 
-	var/datum/affliction/alkysine_confusion/cc
+	var/datum/affliction/chem_side_effect/alkysine_confusion/cc
 	for(var/datum/affliction/c in H.get_afflictions())
-		if(istype(c, /datum/affliction/alkysine_confusion))
+		if(istype(c, /datum/affliction/chem_side_effect/alkysine_confusion))
 			cc = c
 			break
 	TEST_ASSERT_NOTNULL(cc, "alkysine_confusion should spawn at threshold dose")

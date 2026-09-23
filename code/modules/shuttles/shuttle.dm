@@ -312,7 +312,7 @@
 	// Turf translation is synchronous and authoritative. Do not let a detached
 	// atmos generation or queued equalization retain the pre-move graph while
 	// these turf identities and gas handles are relocated.
-	SSair?.auxmos_topology_barrier()
+	vg_topology_barrier()
 
 	// If shuttle has no internal gravity, update our gravity with destination gravity
 	if((flags & SHUTTLE_FLAGS_ZERO_G))
@@ -385,7 +385,7 @@
 	// translate_turfs republishes the completed footprint, but those topology
 	// updates may be queued while an atmos generation is finishing. Commit them
 	// before exposing the moved shuttle to another processing cycle.
-	SSair?.auxmos_topology_barrier()
+	vg_topology_barrier()
 	current_location = destination
 
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air

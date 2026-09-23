@@ -82,7 +82,7 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/opossum)
 	meat_amount = 2
 
-/mob/living/simple_mob/animal/passive/opossum/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE)
+/mob/living/simple_mob/animal/passive/opossum/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	. = ..()
 	if(. && amount >= 3)
 		var/category = injury_category(kind)

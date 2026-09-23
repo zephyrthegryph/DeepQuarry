@@ -102,7 +102,7 @@
 	// Record in the world model so retaliate_to_attacker.evaluate() can see
 	// who struck us even when they're outside view() range.
 	if(model && ismob(attacker))
-		model.record_damage(0, BRUTE, attacker)
+		model.record_damage(0, INJURY_BLUNT, attacker)
 	if(!primary_threat)
 		var/mob/old = primary_threat
 		primary_threat = attacker

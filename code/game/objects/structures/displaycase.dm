@@ -20,10 +20,10 @@
 			qdel(src)
 		if (2)
 			if (prob(50))
-				deal_damage(DAMAGE_BLAST, 15, BOMB)
+				deal_damage(DAMAGE_BLAST, 15)
 		if (3)
 			if (prob(50))
-				deal_damage(DAMAGE_BLAST, 5, BOMB)
+				deal_damage(DAMAGE_BLAST, 5)
 
 
 // Glass-on-glass hit sound while the case still stands.

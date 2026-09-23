@@ -5,6 +5,10 @@
 	var/active_armourpen
 	var/active_w_class
 	var/active_embed_chance = 0		//In the off chance one of these is supposed to embed, you can just tweak this var
+	/// What the lit blade inflicts.
+	var/active_injury_kind = INJURY_CUT
+	/// Mixed harm of the lit blade (see /obj/item/var/injury_kinds), or null.
+	var/alist/active_injury_kinds
 	sharp = FALSE
 	edge = FALSE
 	armor_penetration = 0
@@ -60,6 +64,8 @@
 	armor_penetration = active_armourpen
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = active_injury_kind
+	injury_kinds = active_injury_kinds
 	w_class = active_w_class
 	playsound(src, 'sound/weapons/saberon.ogg', 50, 1)
 	update_icon()
@@ -77,6 +83,8 @@
 	armor_penetration = initial(armor_penetration)
 	sharp = initial(sharp)
 	edge = initial(edge)
+	injury_kind = initial(injury_kind)
+	injury_kinds = null
 	w_class = initial(w_class)
 	update_icon()
 	set_light(0,0)
@@ -235,16 +243,16 @@
 	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	can_cleave = TRUE
+	active_injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 
 /obj/item/melee/energy/axe/activate(mob/living/user)
 	..()
-	damtype = SEARING
 	to_chat(user, span_notice("\The [src] is now energised."))
 
 /obj/item/melee/energy/axe/deactivate(mob/living/user)
 	..()
-	damtype = BRUTE
 	to_chat(user, span_notice("\The [src] is de-energised. It's just a regular axe now."))
 
 /obj/item/melee/energy/axe/charge
@@ -363,6 +371,7 @@
 	active_embed_chance = 0
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	armor_penetration = 0
 	flags = NOBLOODY
 	lrange = 2
@@ -432,6 +441,7 @@
 	armor_penetration = 100
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	anchored = TRUE    // Never spawned outside of inventory, should be fine.
 	throwforce = 1  //Throwing or dropping the item deletes it.
 	throw_speed = 1
@@ -520,6 +530,7 @@
 	armor_penetration = 0
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	force = 5
 	throwforce = 10
 	throw_speed = 7

@@ -234,6 +234,7 @@
 	..()
 	visible_message(span_danger("[name] was hit by [source]."))
 	playsound(src, hitsound, 100, 1)
+
 /obj/machinery/door/attack_ai(mob/user)
 	return attack_hand(user)
 
@@ -290,14 +291,14 @@
 	if(density && istype(I, /obj/item) && user.a_intent == I_HURT && !istype(I, /obj/item/card))
 		var/obj/item/W = I
 		user.setClickCooldown(user.get_attack_speed(W))
-		if(W.damtype == BRUTE || W.damtype == BURN)
+		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			if(W.force < min_force)
 				user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
 			else
 				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 				playsound(src, hitsound, 100, 1)
-				receive_weapon_hit(W, user, W.force, BRUTE, silent = FALSE)
+				receive_weapon_hit(W, user, silent = FALSE)
 		return
 
 	try_to_activate_door(user)

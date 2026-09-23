@@ -23,8 +23,7 @@
 	melee_damage_upper = 25
 	melee_attack_delay = 1.25 SECONDS
 	evasion = 20
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	projectile_dispersion = 0
 	armor = list(melee = 20, bullet = 20, laser = 20, energy = 60, bomb = 20, bio = 100, rad = 100)	// Simple mob immunuties plus minour armor

@@ -333,7 +333,7 @@
 		if(1.0)
 			die()
 		if(2.0)
-			deal_damage(DAMAGE_BLAST, 25, BOMB)
+			deal_damage(DAMAGE_BLAST, 25)
 
 /obj/item/uav/atom_destruction(damage_flag)
 	. = ..()

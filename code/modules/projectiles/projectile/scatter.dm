@@ -45,8 +45,7 @@
 	name = "prismatic beam"
 	icon_state = "omnilaser"
 	damage = 10
-	damage_type = BURN
-	check_armour = "laser"
+	injury_kind = INJURY_BURN
 	light_color = "#00C6FF"
 
 	stutter = 2

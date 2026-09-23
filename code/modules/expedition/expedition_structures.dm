@@ -103,7 +103,7 @@
 	if(!istype(W))
 		return ..()
 	user.setClickCooldown(user.get_attack_speed(W))
-	if(W.damtype == BRUTE || W.damtype == BURN)
+	if(W.obj_damage_type())
 		user.do_attack_animation(src)
 		receive_weapon_hit(W, user, silent = FALSE)
 		return
@@ -112,11 +112,11 @@
 /obj/structure/expedition_demo_target/ex_act(severity)
 	switch(severity)
 		if(1.0)
-			deal_damage(DAMAGE_BLAST, max_integrity, BOMB)
+			deal_damage(DAMAGE_BLAST, max_integrity)
 		if(2.0)
-			deal_damage(DAMAGE_BLAST, 80, BOMB, flags = DAMAGE_PACKET_SILENT)
+			deal_damage(DAMAGE_BLAST, 80, flags = DAMAGE_PACKET_SILENT)
 		if(3.0)
-			deal_damage(DAMAGE_BLAST, 30, BOMB, flags = DAMAGE_PACKET_SILENT)
+			deal_damage(DAMAGE_BLAST, 30, flags = DAMAGE_PACKET_SILENT)
 
 /obj/structure/expedition_demo_target/attack_generic(mob/user, damage)
 	user.setClickCooldown(user.get_attack_speed())

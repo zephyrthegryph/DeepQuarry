@@ -52,7 +52,7 @@
 	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
 
 	//Calculate damage
-	if(W.damtype == BRUTE || W.damtype == BURN)
+	if(W.obj_damage_type())
 		receive_weapon_hit(W, user)
 
 	set_opacity(1)
@@ -95,6 +95,7 @@
 	spawn(20) if(!QDELETED(src)) set_opacity(0)
 
 	..()
+
 /obj/machinery/shieldgen
 	emp_integrity_factor = 1
 	name = "Emergency shield projector"
@@ -223,13 +224,14 @@
 /obj/machinery/shieldgen/receive_emp(severity)
 	switch(severity)
 		if(1)
-			. = deal_damage(DAMAGE_IONIC, get_integrity() / 2, ENERGY, flags = DAMAGE_PACKET_SILENT) //cut health in half
+			. = deal_damage(DAMAGE_IONIC, get_integrity() / 2, flags = DAMAGE_PACKET_SILENT) //cut health in half
 			malfunction = 1
 			locked = pick(0,1)
 		if(2)
 			if(prob(50))
-				. = deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, ENERGY, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
+				. = deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
 				malfunction = 1
+
 /obj/machinery/shieldgen/attack_hand(mob/user as mob)
 	if(locked)
 		to_chat(user, "The machine is locked, you are unable to use it.")

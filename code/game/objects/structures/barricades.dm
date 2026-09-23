@@ -28,9 +28,10 @@
 /// Barricades are cover: small rounds mostly bury themselves, heavy ones and beams bite.
 /obj/structure/barricade/projectile_damage(obj/item/projectile/P, def_zone)
 	var/heavy = P.get_structure_damage() > 30
-	if(P.damage_type == BURN)
+	if(P.obj_damage_type() == BURN)
 		return receive_projectile(P, def_zone, heavy ? 0.5 : 0.25)
 	return receive_projectile(P, def_zone, heavy ? 0.25 : 0.1)
+
 /obj/structure/barricade/attackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(istype(W, /obj/item/stack))
@@ -53,11 +54,11 @@
 		playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
 	else
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
-	switch(W.damtype)
+	switch(W.obj_damage_type())
 		if(BURN)
-			receive_weapon_hit(W, user, W.force, BURN)
+			receive_weapon_hit(W, user, W.force, INJURY_BURN)
 		if(BRUTE)
-			receive_weapon_hit(W, user, W.force * 0.75, BRUTE)
+			receive_weapon_hit(W, user, W.force * 0.75)
 	..()
 
 /obj/structure/barricade/atom_destruction(damage_flag)
@@ -89,7 +90,7 @@
 		if(1.0)
 			dismantle()
 		if(2.0)
-			deal_damage(DAMAGE_BLAST, 25, BOMB)
+			deal_damage(DAMAGE_BLAST, 25)
 
 /obj/structure/barricade/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
 	if(istype(mover) && mover.checkpass(PASSTABLE))

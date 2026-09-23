@@ -393,7 +393,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 			return
 
 		var/target_zone = pick(BP_ALL)
-		var/amount_blocked = H.run_armor_check(target_zone, "melee")
+		var/amount_blocked = H.armor_against(INJURY_BLUNT, target_zone)
 
 		var/damage = rand(1,3)
 
@@ -401,7 +401,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 			return // No need to apply damage. Hardhats are 30. They should probably protect you from hail on your head.
 			//Voidsuits are likewise 40, and riot, 80. Clothes are all less than 30.
 
-		H.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
+		H.injure(INJURY_BLUNT, damage, target_zone, flags = INJURE_ARMORED)
 		if(show_message)
 			to_chat(H, effect_message)
 
@@ -734,14 +734,14 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 					H.drop_both_hands()
 
 		var/target_zone = pick(BP_ALL)
-		var/amount_blocked = L.run_armor_check(target_zone, "melee")
+		var/amount_blocked = L.armor_against(INJURY_BLUNT, target_zone)
 
 		var/damage = rand(10,30) //Ow
 
 		if(amount_blocked >= 30)
 			return
 
-		L.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
+		L.injure(INJURY_BLUNT, damage, target_zone, flags = INJURE_ARMORED)
 		L.Weaken(3)
 		if(show_message)
 			to_chat(L, effect_message)

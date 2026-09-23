@@ -65,7 +65,7 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 5
 	attack_armor_pen = 15
-	attack_sharp = TRUE
+	attack_injury_kind = INJURY_PIERCE
 	attacktext = list("nipped", "bit", "pinched")
 
 	organ_names = /datum/decl/mob_organ_names/leech

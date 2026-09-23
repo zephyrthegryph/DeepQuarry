@@ -12,11 +12,13 @@
 	return ..()
 
 /obj/structure/alien/ex_act(severity)
-	deal_damage(DAMAGE_BLAST, severity == 3 && prob(50) ? 25 : 50, BOMB)
+	deal_damage(DAMAGE_BLAST, severity == 3 && prob(50) ? 25 : 50)
+
 /obj/structure/alien/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	visible_message(span_danger("\The [src] was hit by \the [source]."))
 	playsound(loc, 'sound/effects/attackblob.ogg', 100, 1)
 	..()
+
 /obj/structure/alien/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)

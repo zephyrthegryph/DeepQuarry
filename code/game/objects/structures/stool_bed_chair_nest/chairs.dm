@@ -212,21 +212,21 @@
 			var/mob/living/occupant = unbuckle_mob(a)
 
 			var/def_zone = ran_zone()
-			var/blocked = occupant.run_armor_check(def_zone, "melee")
+			var/blocked = occupant.armor_against(INJURY_BLUNT, def_zone)
 			occupant.throw_at(A, 3, propelled)
 			occupant.apply_effect(6, STUN, blocked)
 			occupant.apply_effect(6, WEAKEN, blocked)
 			occupant.apply_effect(6, STUTTER, blocked)
-			occupant.injure(INJURY_BLUNT, 10, def_zone, src, blocked)
+			occupant.injure(INJURY_BLUNT, 10, def_zone, src, flags = INJURE_ARMORED)
 			playsound(src, 'sound/weapons/punch1.ogg', 50, 1, -1)
 			if(isliving(A))
 				var/mob/living/victim = A
 				def_zone = ran_zone()
-				blocked = victim.run_armor_check(def_zone, "melee")
+				blocked = victim.armor_against(INJURY_BLUNT, def_zone)
 				victim.apply_effect(6, STUN, blocked)
 				victim.apply_effect(6, WEAKEN, blocked)
 				victim.apply_effect(6, STUTTER, blocked)
-				victim.injure(INJURY_BLUNT, 10, def_zone, src, blocked)
+				victim.injure(INJURY_BLUNT, 10, def_zone, src, flags = INJURE_ARMORED)
 			occupant.visible_message(span_danger("[occupant] crashed into \the [A]!"))
 
 /obj/structure/bed/chair/office/light

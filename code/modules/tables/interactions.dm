@@ -44,7 +44,7 @@
 			else
 				return 1					//But only from one side
 		if(prob(chance))
-			take_damage(P.damage/2, P.damage_type, BULLET)
+			take_damage(P.damage/2, P.obj_damage_type(), BULLET)
 			if(!QDELETED(src))
 				visible_message(span_warning("[P] hits \the [src]!"))
 				return 0
