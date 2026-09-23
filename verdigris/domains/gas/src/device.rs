@@ -328,6 +328,11 @@ fn step_pump(a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, vol_b: f64, dt: f32, 
 	}
 }
 
+// device.rs is under concurrent edit on rewrite/m2 (device/pipe binds); not
+// restructuring this function's signature here per the rewrite/rustaudit
+// worktree brief. Each pair of (region, its volume) is a real distinct
+// physical quantity the pressure-gate math needs.
+#[allow(clippy::too_many_arguments)]
 fn step_passive_gate(
 	a: &mut PipeGas,
 	vol_a: f64,
@@ -375,6 +380,9 @@ fn step_passive_gate(
 	}
 }
 
+// See step_passive_gate above: device.rs is under concurrent edit on
+// rewrite/m2, so its signature is left as-is here.
+#[allow(clippy::too_many_arguments)]
 fn step_vent(
 	a: &mut PipeGas,
 	vol_a: f64,

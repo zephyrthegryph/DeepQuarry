@@ -615,72 +615,6 @@ fn upscale_nearest_rgba(width: u32, height: u32, pixels: &[u8], scale: u32) -> V
     output
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn fixture(id: &str, layer: FixtureLayer, facing: Facing) -> FixturePlacement {
-        FixturePlacement {
-            id: 1,
-            fixture_id: id.into(),
-            at: Point { x: 2, y: 2 },
-            facing,
-            layer,
-            department_id: 1,
-            room_id: Some(1),
-            network_id: None,
-            variant: 0,
-            blocks_movement: false,
-            required_access: Vec::new(),
-        }
-    }
-
-    #[test]
-    fn operational_computer_states_are_fixture_specific() {
-        let icon = "icons/obj/computer.dmi";
-        assert_eq!(
-            operational_icon_state("medical_console", icon),
-            Some("medcomp")
-        );
-        assert_eq!(
-            operational_icon_state("security_console", icon),
-            Some("security")
-        );
-        assert_eq!(
-            operational_icon_state("cargo_console", icon),
-            Some("supply")
-        );
-        assert_eq!(
-            operational_icon_state("medical_console", "icons/obj/surgery.dmi"),
-            None
-        );
-    }
-
-    #[test]
-    fn wall_fixtures_are_offset_toward_their_supporting_wall() {
-        assert_eq!(
-            fixture_pixel_offset(&fixture("apc", FixtureLayer::Wall, Facing::East)),
-            (22, 0)
-        );
-        assert_eq!(
-            fixture_pixel_offset(&fixture("wall_light", FixtureLayer::Wall, Facing::South)),
-            (0, -26)
-        );
-        assert_eq!(
-            fixture_pixel_offset(&fixture("apc", FixtureLayer::Machine, Facing::East)),
-            (0, 0)
-        );
-        assert_eq!(
-            fixture_sprite_facing(&fixture("air_alarm", FixtureLayer::Wall, Facing::North)),
-            Facing::South
-        );
-        assert_eq!(
-            fixture_sprite_facing(&fixture("apc", FixtureLayer::Wall, Facing::North)),
-            Facing::North
-        );
-    }
-}
-
 fn fill_tile(pixels: &mut [u8], width: u32, height: u32, point: Point, color: [u8; 4]) {
     let origin_x = u32::from(point.x) * 32;
     let origin_y = height - (u32::from(point.y) + 1) * 32;
@@ -796,7 +730,6 @@ pub fn render_blueprint_png(blueprint: &StationBlueprint, scale: u16) -> Vec<u8>
             paint(p, tile_rgb(layout.tile(p).class, layout.tile(p).owner), 0);
         }
     }
-    drop(paint);
     for room in &blueprint.rooms {
         let route: std::collections::BTreeSet<Point> = room.circulation.iter().copied().collect();
         for p in &room.circulation {
@@ -1253,4 +1186,70 @@ fn department_color(id: u16) -> &'static str {
         "#446f91", "#7a516f", "#4e7d62", "#815b43", "#65558a", "#897d42", "#3f7778", "#78504a",
     ];
     COLORS[usize::from(id) % COLORS.len()]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fixture(id: &str, layer: FixtureLayer, facing: Facing) -> FixturePlacement {
+        FixturePlacement {
+            id: 1,
+            fixture_id: id.into(),
+            at: Point { x: 2, y: 2 },
+            facing,
+            layer,
+            department_id: 1,
+            room_id: Some(1),
+            network_id: None,
+            variant: 0,
+            blocks_movement: false,
+            required_access: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn operational_computer_states_are_fixture_specific() {
+        let icon = "icons/obj/computer.dmi";
+        assert_eq!(
+            operational_icon_state("medical_console", icon),
+            Some("medcomp")
+        );
+        assert_eq!(
+            operational_icon_state("security_console", icon),
+            Some("security")
+        );
+        assert_eq!(
+            operational_icon_state("cargo_console", icon),
+            Some("supply")
+        );
+        assert_eq!(
+            operational_icon_state("medical_console", "icons/obj/surgery.dmi"),
+            None
+        );
+    }
+
+    #[test]
+    fn wall_fixtures_are_offset_toward_their_supporting_wall() {
+        assert_eq!(
+            fixture_pixel_offset(&fixture("apc", FixtureLayer::Wall, Facing::East)),
+            (22, 0)
+        );
+        assert_eq!(
+            fixture_pixel_offset(&fixture("wall_light", FixtureLayer::Wall, Facing::South)),
+            (0, -26)
+        );
+        assert_eq!(
+            fixture_pixel_offset(&fixture("apc", FixtureLayer::Machine, Facing::East)),
+            (0, 0)
+        );
+        assert_eq!(
+            fixture_sprite_facing(&fixture("air_alarm", FixtureLayer::Wall, Facing::North)),
+            Facing::South
+        );
+        assert_eq!(
+            fixture_sprite_facing(&fixture("apc", FixtureLayer::Wall, Facing::North)),
+            Facing::North
+        );
+    }
 }

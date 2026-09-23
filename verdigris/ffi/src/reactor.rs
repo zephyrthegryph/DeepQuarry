@@ -20,6 +20,18 @@
 //! exercised end to end from DM tests. Domains that live in other crates
 //! (gas, [`REACT_DOMAIN_GAS`]) register an [`ExternalDomain`] with
 //! [`register_domain`]; their wakes are collected at every step.
+//!
+//! `react_watch_threshold`/`react_watch_difference`'s DM call convention is
+//! one Rust parameter per DM argument, so their argument counts (9, 10) are
+//! inherent to what `REACT_WHEN` needs, not something to bundle away without
+//! also changing the generated binding (owned by `rewrite/bindings`, not
+//! this audit). clippy's `too_many_arguments` still flags them because the
+//! warning is generated inside `::byondapi::bind`'s own macro expansion,
+//! which doesn't inherit an item-level `#[allow]` from the `#[bind]`d fn
+//! (that macro isn't touched here either) -- hence the file-level allow
+//! below instead of one at each function.
+#![allow(clippy::too_many_arguments)]
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::time::Instant;
@@ -793,6 +805,13 @@ fn react_watch_changed(
 
 /// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
 /// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
+// One Rust parameter per DM call argument -- bundling these into a struct
+// would require the generated DM binding (owned by the rewrite/bindings
+// branch, not touched here) to change its call convention too. See the
+// file-level `#![allow(clippy::too_many_arguments)]` below: an item-level
+// #[allow] here doesn't reach the function clippy actually flags, because
+// it's generated inside `::byondapi::bind`'s own expansion (a macro this
+// audit doesn't touch) and doesn't inherit this fn's outer attributes.
 #[auxmacros::bind("/proc/react_watch_threshold")]
 fn react_watch_threshold(
     domain: ByondValue,
@@ -843,6 +862,9 @@ fn react_watch_band(
 
 /// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
 /// `ch` crosses `value` like a threshold.
+// See react_watch_threshold above: one Rust parameter per DM call
+// argument, so this can't be bundled without a binding-generator change,
+// and (also as above) needs the file-level allow, not an item-level one.
 #[auxmacros::bind("/proc/react_watch_difference")]
 fn react_watch_difference(
     domain: ByondValue,

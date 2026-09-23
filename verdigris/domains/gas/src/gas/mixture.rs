@@ -699,15 +699,12 @@ mod tests {
 		removed.set_moles(0, 22.0);
 		removed.set_moles(1, 82.0);
 		let new = removed.remove_ratio(0.5);
-		assert_eq!(removed.compare(&new) >= MINIMUM_MOLES_DELTA_TO_MOVE, false);
+		assert!(removed.compare(&new) < MINIMUM_MOLES_DELTA_TO_MOVE);
 		assert_eq!(removed.get_moles(0), 11.0);
 		assert_eq!(removed.get_moles(1), 41.0);
 		removed.mark_immutable();
 		let new_two = removed.remove_ratio(0.5);
-		assert_eq!(
-			removed.compare(&new_two) >= MINIMUM_MOLES_DELTA_TO_MOVE,
-			true
-		);
+		assert!(removed.compare(&new_two) >= MINIMUM_MOLES_DELTA_TO_MOVE);
 		assert_eq!(removed.get_moles(0), 11.0);
 		assert_eq!(removed.get_moles(1), 41.0);
 		assert_eq!(new_two.get_moles(0), 5.5);

@@ -148,9 +148,11 @@ pub fn generate_station_blueprint(
             if let Some((at, facing)) = wall_candidates.get(candidate_index).copied() {
                 used_wall_points.insert(at);
                 push_fixture(
-                    &mut fixtures,
-                    &mut room_fixture_ids,
-                    &mut next_fixture_id,
+                    &mut FixtureSink {
+                        fixtures: &mut fixtures,
+                        room_ids: &mut room_fixture_ids,
+                        next: &mut next_fixture_id,
+                    },
                     *spec,
                     at,
                     facing,
@@ -170,9 +172,11 @@ pub fn generate_station_blueprint(
         for (index, (at, facing)) in extra_light_candidates.into_iter().enumerate() {
             used_wall_points.insert(at);
             push_fixture(
-                &mut fixtures,
-                &mut room_fixture_ids,
-                &mut next_fixture_id,
+                &mut FixtureSink {
+                    fixtures: &mut fixtures,
+                    room_ids: &mut room_fixture_ids,
+                    next: &mut next_fixture_id,
+                },
                 FixtureSpec {
                     id: "wall_light",
                     layer: FixtureLayer::Wall,
@@ -224,9 +228,11 @@ pub fn generate_station_blueprint(
                     .into(),
                 );
                 push_fixture(
-                    &mut fixtures,
-                    &mut room_fixture_ids,
-                    &mut next_fixture_id,
+                    &mut FixtureSink {
+                        fixtures: &mut fixtures,
+                        room_ids: &mut room_fixture_ids,
+                        next: &mut next_fixture_id,
+                    },
                     FixtureSpec {
                         id: fixture_id,
                         layer: FixtureLayer::Machine,
@@ -319,18 +325,21 @@ pub fn generate_station_blueprint(
             .map(|placement| placement.at)
             .chain(occupied.iter().copied())
             .collect::<BTreeSet<_>>();
+        let room_placement_ctx = RoomPlacementContext {
+            layout: &layout,
+            tiles: &tiles,
+            reserved: &reserved,
+            doors: &door_tiles,
+            center,
+            protected_approaches: &protected_approaches,
+        };
         let program_with_fragments = fragments_valid.then(|| {
             place_room_program(
-                &layout,
+                &room_placement_ctx,
                 &program,
-                &tiles,
-                &reserved,
-                &door_tiles,
-                center,
                 &fragment_blocking,
                 &fragment_access,
                 &fragment_occupied,
-                &protected_approaches,
             )
         });
         let (program_placements, use_fragments) = match program_with_fragments {
@@ -345,16 +354,11 @@ pub fn generate_station_blueprint(
             }
             _ => {
                 let primary = place_room_program(
-                    &layout,
+                    &room_placement_ctx,
                     &program,
-                    &tiles,
-                    &reserved,
-                    &door_tiles,
-                    center,
                     &blocking,
                     &required_access,
                     &occupied,
-                    &protected_approaches,
                 );
                 match primary {
                     Ok(placements) => (placements, false),
@@ -373,16 +377,11 @@ pub fn generate_station_blueprint(
                             layout.seed ^ u64::from(room.id),
                         );
                         let placements = place_room_program(
-                            &layout,
+                            &room_placement_ctx,
                             &compact,
-                            &tiles,
-                            &reserved,
-                            &door_tiles,
-                            center,
                             &blocking,
                             &required_access,
                             &occupied,
-                            &protected_approaches,
                         )
                         .map_err(|compact_error| {
                             LayoutError(format!(
@@ -407,9 +406,11 @@ pub fn generate_station_blueprint(
                 }
                 occupied.insert(placement.at);
                 push_authored_fixture(
-                    &mut fixtures,
-                    &mut room_fixture_ids,
-                    &mut next_fixture_id,
+                    &mut FixtureSink {
+                        fixtures: &mut fixtures,
+                        room_ids: &mut room_fixture_ids,
+                        next: &mut next_fixture_id,
+                    },
                     &placement.fixture_id,
                     placement.layer,
                     placement.at,
@@ -435,9 +436,11 @@ pub fn generate_station_blueprint(
                 required_access.insert(step_facing(placement.at, placement.facing));
             }
             push_authored_fixture(
-                &mut fixtures,
-                &mut room_fixture_ids,
-                &mut next_fixture_id,
+                &mut FixtureSink {
+                    fixtures: &mut fixtures,
+                    room_ids: &mut room_fixture_ids,
+                    next: &mut next_fixture_id,
+                },
                 &placement.fixture_id,
                 placement.layer,
                 placement.at,
@@ -627,7 +630,6 @@ fn relocate_wall_services_away_from_furniture(
                 fixture.room_id == room_id
                     && fixture.layer == FixtureLayer::Wall
                     && fixture_is_wall_mounted(&fixture.fixture_id)
-                    && fixture.layer == FixtureLayer::Wall
             })
             .map(|(index, _)| index)
             .collect::<Vec<_>>();
@@ -745,6 +747,11 @@ fn orient_seats_toward_supports(rooms: &[RoomBlueprint], fixtures: &mut [Fixture
     }
 }
 
+// This function's args are the room-fill working set threaded through a
+// single call site (generate_station_blueprint): splitting them into a
+// context struct plus a separate output-accumulator struct would shuffle
+// the same 15 pieces of state one level deeper without reducing what the
+// caller has to assemble. Not bundled.
 #[allow(clippy::too_many_arguments)]
 fn fill_to_counterpart_density(
     layout: &StationLayout,
@@ -906,9 +913,11 @@ fn fill_to_counterpart_density(
         }
         let variant = room_fixture_ids.len() as u16;
         push_fixture(
-            fixtures,
-            room_fixture_ids,
-            next_fixture_id,
+            &mut FixtureSink {
+                fixtures,
+                room_ids: room_fixture_ids,
+                next: next_fixture_id,
+            },
             spec,
             at,
             facing,
@@ -923,18 +932,35 @@ fn fill_to_counterpart_density(
     Ok(())
 }
 
-fn place_room_program(
-    layout: &StationLayout,
-    program: &RoomProgram,
-    tiles: &BTreeSet<Point>,
-    reserved: &BTreeSet<Point>,
-    doors: &BTreeSet<Point>,
+/// The part of a room's placement context that stays the same across every
+/// `place_room_program` attempt for that room (primary program, fragment
+/// retry, compact fallback), grouped so the function stays under clippy's
+/// argument limit instead of taking each of these separately.
+#[derive(Clone, Copy)]
+struct RoomPlacementContext<'a> {
+    layout: &'a StationLayout,
+    tiles: &'a BTreeSet<Point>,
+    reserved: &'a BTreeSet<Point>,
+    doors: &'a BTreeSet<Point>,
     center: Point,
+    protected_approaches: &'a BTreeSet<Point>,
+}
+
+fn place_room_program(
+    ctx: &RoomPlacementContext<'_>,
+    program: &RoomProgram,
     initial_blocking: &BTreeSet<Point>,
     initial_required_access: &BTreeSet<Point>,
     initial_occupied: &BTreeSet<Point>,
-    protected_approaches: &BTreeSet<Point>,
 ) -> Result<Vec<AuthoredCompositionPlacement>, LayoutError> {
+    let RoomPlacementContext {
+        layout,
+        tiles,
+        reserved,
+        doors,
+        center,
+        protected_approaches,
+    } = *ctx;
     let entrance = doors
         .iter()
         .copied()
@@ -1178,6 +1204,9 @@ fn try_place_zone_at(
     Some((placements, trial_blocking, trial_access))
 }
 
+// Thin dispatcher: forwards straight into
+// place_adaptive_fixture_sequence's recursion below, so its argument list
+// exists only because that one does. Not bundled for the same reason.
 #[allow(clippy::too_many_arguments)]
 fn place_adaptive_activity_zone(
     layout: &StationLayout,
@@ -1211,6 +1240,10 @@ fn place_adaptive_activity_zone(
     )
 }
 
+// Recursive backtracking search: most of these args are per-call-frame
+// accumulators (occupied/blocking/access/placements) or loop state
+// (fixture_index/cluster_target) that change on every recursive step, not
+// a fixed context a struct would factor out cleanly. Not bundled.
 #[allow(clippy::too_many_arguments)]
 fn place_adaptive_fixture_sequence(
     layout: &StationLayout,
@@ -1937,10 +1970,17 @@ pub fn validate_station_blueprint(
     Ok(quality)
 }
 
+/// The output accumulators every fixture placed in a room is pushed into,
+/// grouped so `push_fixture`/`push_authored_fixture` stay under clippy's
+/// argument limit instead of threading each of these through separately.
+struct FixtureSink<'a> {
+    fixtures: &'a mut Vec<FixturePlacement>,
+    room_ids: &'a mut Vec<u32>,
+    next: &'a mut u32,
+}
+
 fn push_fixture(
-    fixtures: &mut Vec<FixturePlacement>,
-    room_ids: &mut Vec<u32>,
-    next: &mut u32,
+    sink: &mut FixtureSink<'_>,
     spec: FixtureSpec,
     at: Point,
     facing: Facing,
@@ -1948,9 +1988,9 @@ fn push_fixture(
     network_id: Option<String>,
     variant: u16,
 ) {
-    let id = *next;
-    *next += 1;
-    fixtures.push(FixturePlacement {
+    let id = *sink.next;
+    *sink.next += 1;
+    sink.fixtures.push(FixturePlacement {
         id,
         fixture_id: spec.id.into(),
         at,
@@ -1967,13 +2007,11 @@ fn push_fixture(
             Vec::new()
         },
     });
-    room_ids.push(id);
+    sink.room_ids.push(id);
 }
 
 fn push_authored_fixture(
-    fixtures: &mut Vec<FixturePlacement>,
-    room_ids: &mut Vec<u32>,
-    next: &mut u32,
+    sink: &mut FixtureSink<'_>,
     fixture_id: &str,
     layer: FixtureLayer,
     at: Point,
@@ -1981,10 +2019,10 @@ fn push_authored_fixture(
     room: &Room,
     variant: u16,
 ) {
-    let id = *next;
-    *next += 1;
+    let id = *sink.next;
+    *sink.next += 1;
     let blocks_movement = fixture_blocks_on_layer(fixture_id, layer);
-    fixtures.push(FixturePlacement {
+    sink.fixtures.push(FixturePlacement {
         id,
         fixture_id: fixture_id.to_string(),
         at,
@@ -2001,7 +2039,7 @@ fn push_authored_fixture(
             Vec::new()
         },
     });
-    room_ids.push(id);
+    sink.room_ids.push(id);
 }
 
 fn room_center(room: &Room, tiles: &BTreeSet<Point>) -> Point {
@@ -2934,6 +2972,9 @@ fn fixture_supports_seat(id: &str) -> bool {
             || matches!(id, "visitor_bench" | "waiting_bench" | "side_table"))
 }
 
+// Mutates 5 independent pieces of the same room-fill working set in
+// place; bundling them into a struct here would just move the same
+// 8-field initializer into the single call site instead of removing it.
 #[allow(clippy::too_many_arguments)]
 fn prune_excess_room_repetitions(
     role: &str,

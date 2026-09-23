@@ -450,8 +450,8 @@ impl PipeNet {
 			let Ok(region_b) = self.net.region(rb) else { continue };
 			let vol_a = *region_a.summary();
 			let vol_b = *region_b.summary();
-			let mut pa = region_a.payload().clone();
-			let mut pb = region_b.payload().clone();
+			let mut pa = *region_a.payload();
+			let mut pb = *region_b.payload();
 			let report = device::step(&params, &mut pa, vol_a, &mut pb, vol_b, dt);
 			if report.moles != 0.0 || report.power_w != 0.0 {
 				*self.net.payload_mut(ra).expect("resolved above") = pa;
