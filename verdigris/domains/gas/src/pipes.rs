@@ -17,7 +17,7 @@
 
 use std::collections::HashMap;
 
-use vg_core::handle::RawHandle;
+use vg_core::slot::RawHandle;
 use vg_core::network::{DeviceId, Endpoint, Network, NetworkKind, NodeId, RegionEvent, RegionId, Side};
 
 use crate::device::{self, DeviceParams, StepReport};

@@ -6,7 +6,7 @@ use vg_core::channel::{Quantity, Unit};
 use vg_core::channels;
 use vg_core::cow::ChunkLayout;
 use vg_core::frame::Task;
-use vg_core::handle::MAX_SLOTS;
+use vg_core::slot::MAX_SLOTS;
 use vg_core::network::NetworkKind;
 use vg_core::network::host::{Edit, EndKey, ViewSide, add_network, topo};
 use vg_core::outbox::{EventKind, Lane};

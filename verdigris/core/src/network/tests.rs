@@ -1,7 +1,7 @@
 use proptest::prelude::*;
 
 use super::*;
-use crate::handle::RawHandle;
+use crate::slot::RawHandle;
 
 /// Pipes: node data is a volume; the payload is (moles, energy), split by
 /// volume share.

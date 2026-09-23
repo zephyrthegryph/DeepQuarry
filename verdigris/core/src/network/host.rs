@@ -25,7 +25,7 @@ use std::sync::{Arc, Mutex};
 use crate::command::Seq;
 use crate::cow::{ChunkLayout, CowStore};
 use crate::frame::{Res, Task};
-use crate::handle::{MAX_SLOTS, RawHandle};
+use crate::slot::{MAX_SLOTS, RawHandle};
 use crate::mailbox::Latest;
 use crate::outbox::{Event, EventKind, Outbox, OutboxSlot, TakeResult};
 use crate::sim::SimBuilder;
@@ -438,7 +438,7 @@ impl<K: NetworkKind> NetworkState<K> {
         regions.dedup();
         for raw in regions {
             let slot = raw.index();
-            let entry = match self.net.region(crate::handle::Handle::from_raw(raw)) {
+            let entry = match self.net.region(crate::slot::Handle::from_raw(raw)) {
                 Ok(reg) => RegionEntry {
                     region: Some(raw),
                     members: reg.members(),
