@@ -10,31 +10,61 @@
 	var/obj/item/sample = null
 	var/report_num = 0
 
-/obj/machinery/microscope/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/microscope/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/microscope_insert_sample,
+		/datum/interaction/machine_hand/ungated/microscope_examine,
+		/datum/interaction/machine_alt/microscope_remove_sample,
+	)
+	..()
 
+/datum/interaction/machine_item/microscope_insert_sample
+	id = "microscope_insert_sample"
+	name = "Insert sample"
+	held_type = /obj/item
+	effect = /obj/machinery/microscope/proc/interaction_attackby
+
+/obj/machinery/microscope/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
 	if(sample)
 		to_chat(user, span_warning("There is already a slide in the microscope."))
-		return
+		return TRUE
 
-	if(istype(W, /obj/item/forensics/swab)|| istype(W, /obj/item/sample/fibers) || istype(W, /obj/item/sample/print))
-		to_chat(user, span_notice("You insert \the [W] into the microscope."))
-		user.unEquip(W)
-		W.forceMove(src)
-		sample = W
-		update_icon()
-		return
+	if(!istype(held, /obj/item/forensics/swab) && !istype(held, /obj/item/sample/fibers) && !istype(held, /obj/item/sample/print))
+		return FALSE
 
-/obj/machinery/microscope/attack_hand(mob/user)
+	to_chat(user, span_notice("You insert \the [held] into the microscope."))
+	user.unEquip(held)
+	held.forceMove(src)
+	sample = held
+	update_icon()
+	return TRUE
+
+/datum/interaction/machine_hand/ungated/microscope_examine
+	id = "microscope_examine"
+	name = "Examine sample"
+	effect = /obj/machinery/microscope/proc/interaction_examine
+
+/datum/interaction/machine_alt/microscope_remove_sample
+	id = "microscope_remove_sample"
+	name = "Remove sample"
+	consumes_input = FALSE
+	effect = /obj/machinery/microscope/proc/interaction_remove_sample
+
+/obj/machinery/microscope/proc/interaction_remove_sample(mob/user, obj/item/held, datum/interaction/interaction)
+	remove_sample(user)
+	return TRUE
+
+/obj/machinery/microscope/proc/interaction_examine(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(!sample)
 		to_chat(user, span_warning("The microscope has no sample to examine."))
-		return
+		return TRUE
 
 	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample]."))
 
 	if(!do_after(user, 2 SECONDS, target = sample) || !sample)
 		to_chat(user, span_notice("You stop examining \the [sample]."))
-		return
+		return TRUE
 
 	to_chat(user, span_notice("Printing findings now..."))
 	var/obj/item/paper/report = new(get_turf(src))
@@ -83,7 +113,7 @@
 		report.update_icon()
 		if(report.info)
 			to_chat(user,report.info)
-	return
+	return TRUE
 
 /obj/machinery/microscope/proc/remove_sample(mob/living/remover)
 	if(!istype(remover) || remover.incapacitated() || !Adjacent(remover))
@@ -96,9 +126,6 @@
 	remover.put_in_hands(sample)
 	sample = null
 	update_icon()
-
-/obj/machinery/microscope/click_alt()
-	remove_sample(usr)
 
 /obj/machinery/microscope/MouseDrop(atom/other)
 	if(usr == other)

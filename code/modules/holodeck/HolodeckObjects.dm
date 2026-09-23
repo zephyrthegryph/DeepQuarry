@@ -234,19 +234,47 @@
 	qdel(src)
 	return
 
-/obj/machinery/door/window/holowindoor/attackby(obj/item/I as obj, mob/user as mob)
+/obj/machinery/door/window/holowindoor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/holowindoor_hit,
+		/datum/interaction/machine_item/holowindoor_toggle,
+	)
+	..()
 
-	if (src.operating == 1)
-		return
+/// Old attackby: hitting the door with a weapon while it's still open/closed and not a card.
+/datum/interaction/machine_item/holowindoor_hit
+	id = "holowindoor_hit"
+	name = "Hit"
+	category = INTERACTION_CAT_ATTACK
+	held_type = /obj/item
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/holowindoor/proc/hit_offered, null))
+	effect = /obj/machinery/door/window/holowindoor/proc/interaction_hit
 
-	if(src.density && istype(I, /obj/item) && !istype(I, /obj/item/card))
-		var/aforce = I.force
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-		visible_message(span_bolddanger("[src] was hit by [I]."))
-		if(I.obj_damage_type())
-			take_damage(aforce, I.obj_damage_type(), MELEE)
-		return
+/obj/machinery/door/window/holowindoor/proc/hit_offered(mob/actor, atom/target, obj/item/held)
+	if(operating == 1)
+		return FALSE
+	return density && istype(held, /obj/item) && !istype(held, /obj/item/card)
 
+/obj/machinery/door/window/holowindoor/proc/interaction_hit(mob/user, obj/item/I, datum/interaction/interaction)
+	var/aforce = I.force
+	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	visible_message(span_bolddanger("[src] was hit by [I]."))
+	if(I.obj_damage_type())
+		take_damage(aforce, I.obj_damage_type(), MELEE)
+	return TRUE
+
+/// Old attackby: any other item toggles the door open/closed if allowed.
+/datum/interaction/machine_item/holowindoor_toggle
+	id = "holowindoor_toggle"
+	name = "Use"
+	held_type = /obj/item
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/holowindoor/proc/toggle_offered, null))
+	effect = /obj/machinery/door/window/holowindoor/proc/interaction_toggle
+
+/obj/machinery/door/window/holowindoor/proc/toggle_offered(mob/actor, atom/target, obj/item/held)
+	return operating != 1
+
+/obj/machinery/door/window/holowindoor/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	if (!src.requiresID())
 		user = null
@@ -260,7 +288,7 @@
 	else if (src.density)
 		flick(text("[]deny", src.base_state), src)
 
-	return
+	return TRUE
 
 /obj/machinery/door/window/holowindoor/shatter(display_message = 1)
 	src.density = FALSE
@@ -433,26 +461,46 @@
 	to_chat(user, "The station AI is not to interact with these devices!")
 	return
 
-/obj/machinery/readybutton/attackby(obj/item/W, mob/user)
+/obj/machinery/readybutton/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/readybutton_touch,
+		/datum/interaction/machine_hand/ungated/readybutton_press,
+	)
+	..()
+
+/// Old attackby: always refused.
+/datum/interaction/machine_item/readybutton_touch
+	id = "readybutton_touch"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/readybutton/proc/interaction_touch
+
+/obj/machinery/readybutton/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, "The device is a solid button, there's nothing you can do with it!")
+	return TRUE
 
-/obj/machinery/readybutton/attack_hand(mob/user)
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/readybutton_press
+	id = "readybutton_press"
+	name = "Press"
+	effect = /obj/machinery/readybutton/proc/interaction_press
 
+/obj/machinery/readybutton/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || stat & (NOPOWER|BROKEN))
 		to_chat(user, "This device is not powered.")
-		return
+		return TRUE
 
 	if(!user.IsAdvancedToolUser())
-		return 0
+		return TRUE
 
 	currentarea = get_area(src.loc)
 	if(!currentarea)
 		qdel(src)
-		return
+		return TRUE
 
 	if(eventstarted)
 		to_chat(user, "The event has already begun!")
-		return
+		return TRUE
 
 	ready = !ready
 
@@ -467,6 +515,7 @@
 
 	if(numbuttons == numready)
 		begin_event()
+	return TRUE
 
 /obj/machinery/readybutton/update_icon()
 	if(ready)

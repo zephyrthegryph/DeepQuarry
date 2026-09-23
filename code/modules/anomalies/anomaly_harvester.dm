@@ -68,21 +68,40 @@
 	else if (stats.stability == ANOMALY_GROWING)
 		playsound(src, 'sound/machines/buzzbeep.ogg', 75)
 
-/obj/machinery/anomaly_harvester/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
+/obj/machinery/anomaly_harvester/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/anomaly_harvester_part_replacement,
+		/datum/interaction/machine_item/anomaly_harvester_attach_scanner,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
+
+/// Old attackby added a fingerprint before the shared part-replacement check.
+/datum/interaction/machine_item/anomaly_harvester_part_replacement
+	id = "anomaly_harvester_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	effect = /obj/machinery/anomaly_harvester/proc/interaction_part_replacement
+
+/obj/machinery/anomaly_harvester/proc/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
+	return default_part_replacement(user, held) ? TRUE : FALSE
 
-	if(default_part_replacement(user, W))
-		return
-	if(istype(W, /obj/item/anomaly_scanner))
-		if(!anchored)
-			to_chat(user, span_danger("The [src] is not anchored!"))
-			return
-		var/obj/item/anomaly_scanner/scanner = W
-		if(scanner.buffered_anomaly && do_after(user, 2 SECONDS, src))
-			attach_anomaly(scanner.buffered_anomaly)
-		return
+/datum/interaction/machine_item/anomaly_harvester_attach_scanner
+	id = "anomaly_harvester_attach_scanner"
+	name = "Attach anomaly"
+	held_type = /obj/item/anomaly_scanner
+	effect = /obj/machinery/anomaly_harvester/proc/interaction_attach_scanner
 
-	return ..()
+/obj/machinery/anomaly_harvester/proc/interaction_attach_scanner(mob/user, obj/item/anomaly_scanner/scanner, datum/interaction/interaction)
+	add_fingerprint(user)
+	if(!anchored)
+		to_chat(user, span_danger("The [src] is not anchored!"))
+		return TRUE
+	if(scanner.buffered_anomaly && do_after(user, 2 SECONDS, src))
+		attach_anomaly(scanner.buffered_anomaly)
+	return TRUE
 
 /obj/machinery/anomaly_harvester/wrench_act(mob/user, obj/item/tool)
 	. = ..()
@@ -142,11 +161,6 @@
 				add_overlay("harvester_decay")
 			else
 				add_overlay("harvester_grow")
-
-/obj/machinery/anomaly_harvester/attack_hand(mob/user)
-	if(..())
-		return
-	tgui_interact(user)
 
 /obj/machinery/anomaly_harvester/tgui_state(mob/user)
 	return GLOB.tgui_default_state
