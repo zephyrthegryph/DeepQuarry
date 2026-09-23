@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added holder-provided clocks: time-based state can settle against the clock of whatever holds it, so a slowed holder slows everything inside it, however deeply nested."
+  - code_imp: "Timed life wakes now run on clocks, and a new lint stops new process() and addtimer timers in body code."
