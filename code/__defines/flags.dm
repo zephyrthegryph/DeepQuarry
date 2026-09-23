@@ -40,6 +40,8 @@ GLOBAL_LIST_INIT(bitflags, list(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 204
 #define ATOM_MATERIALIZED		(1<<21) // L2: on_materialize() has run and on_dematerialize() has not (state.md section 6).
 #define ADMIN_SPAWNED			(1<<22) // Admin Spawned
 #define ATOM_INITIALIZED		(1<<23) // Atom has been initialized. Using a flag instead of a variable saves ~25mb total.
+/// Lifecycle bits of /atom/var/flags; never saved (code/datums/state/codecs.dm).
+#define ATOM_RUNTIME_FLAGS (ATOM_INITIALIZED|ATOM_MATERIALIZED)
 
 //Flags for items (equipment) - Used in /obj/item/var/item_flags
 #define THICKMATERIAL			(1<<0)	// Prevents syringes, parapens and hyposprays if equipped to slot_suit or slot_head.

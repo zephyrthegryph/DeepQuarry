@@ -102,12 +102,12 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 		holder.add_reagent(entry[1], entry[2], ctx.decode_value(entry[3]), TRUE)
 
 // ---------------------------------------------------------------------------
-// atom_flags: /atom/var/flags without its runtime bits (ATOM_INITIALIZED).
+// atom_flags: /atom/var/flags without its runtime bits (ATOM_RUNTIME_FLAGS: initialized, materialized).
 // ---------------------------------------------------------------------------
 /datum/state_codec/atom_flags
 
 /datum/state_codec/atom_flags/encode(datum/owner, var_name, value, datum/state_context/ctx)
-	return value & ~ATOM_INITIALIZED
+	return value & ~ATOM_RUNTIME_FLAGS
 
 /datum/state_codec/atom_flags/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
-	owner.vars[var_name] = (owner.vars[var_name] & ATOM_INITIALIZED) | (encoded & ~ATOM_INITIALIZED)
+	owner.vars[var_name] = (owner.vars[var_name] & ATOM_RUNTIME_FLAGS) | (encoded & ~ATOM_RUNTIME_FLAGS)
