@@ -2,6 +2,13 @@
 //! registration, evaluated inside the frame next to their data, and turned
 //! into wakes in the domain's [`Outbox`].
 //!
+//! `rust_architecture.md` §4.7: "There is one module, watch, and
+//! revision.rs merges into it as the 'read-directly' variant" -- see
+//! [`revision`]. This module and its `revision` submodule are the *only*
+//! change-tracking primitives; a domain keeping its own revision counter or
+//! dirty set is exactly what `rust_architecture.md` §2 and the
+//! `check_rust_core_consolidation` CI check forbid.
+//!
 //! # Semantics
 //!
 //! Watches see **frame-end states**: each frame's evaluation compares the
@@ -35,6 +42,8 @@
 //! Registration goes through the main-thread [`WatchPort`], which checks the
 //! condition against the channel table (§6.3), hands DM a [`WatchId`] at
 //! once, and queues the watch for the next frame like any command.
+
+pub mod revision;
 
 use std::fmt;
 
