@@ -34,10 +34,28 @@
 	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
-/obj/structure/prop/nest/attack_hand(mob/living/user) // Used to tell the player that this isn't useful for anything.
+// The original attack_hand called ..() (prop's message) unconditionally, then always
+// continued below, so interaction_disturb() shows the message itself instead of also
+// offering prop_hand (which would tie with it and open the Menu).
+/obj/structure/prop/nest/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/nest_disturb,
+	)
 	..()
+	into -= /datum/interaction/entry_hand/prop_hand
+
+/// Old attack_hand: disturbing the nest may spawn a creature.
+/datum/interaction/entry_hand/nest_disturb
+	id = "nest_disturb"
+	name = "Use"
+	effect = /obj/structure/prop/nest/proc/interaction_disturb
+
+/obj/structure/prop/nest/proc/interaction_disturb(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_message)
+		to_chat(user, interaction_message)
 	if(user && prob(disturbance_spawn_chance))
 		spawn_creature(get_turf(src))
+	return TRUE
 
 /obj/structure/prop/nest/process()
 	update_creatures()

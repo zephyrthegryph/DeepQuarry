@@ -41,11 +41,15 @@
 	var/degrees_to_rotate = -1 * degrees_from_north
 	animate(src, transform = turn(src.transform, degrees_to_rotate), time = 2)
 
+// The original attack_hand called ..() (prop's message display) unconditionally, then always
+// continued into its own rotate prompt below, so prism_rotate() shows the message itself
+// instead of also offering prop_hand (which would tie with it and open the Menu).
 /obj/structure/prop/prism/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/prism_rotate,
 	)
 	..()
+	into -= /datum/interaction/entry_hand/prop_hand
 
 /// Old attack_hand: manually rotate the prism to a chosen bearing.
 /datum/interaction/entry_hand/prism_rotate
@@ -54,6 +58,8 @@
 	effect = /obj/structure/prop/prism/proc/interaction_rotate
 
 /obj/structure/prop/prism/proc/interaction_rotate(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_message)
+		to_chat(user, interaction_message)
 	if(rotation_lock)
 		to_chat(user, span_warning("\The [src] is locked at its current bearing."))
 		return TRUE
@@ -170,6 +176,7 @@
 		/datum/interaction/entry_hand/prismcontrol_rotate,
 	)
 	..()
+	into -= /datum/interaction/entry_hand/prop_hand
 
 /// Old attack_hand: rotate every linked prism to a chosen bearing.
 /datum/interaction/entry_hand/prismcontrol_rotate
@@ -178,6 +185,8 @@
 	effect = /obj/structure/prop/prismcontrol/proc/interaction_rotate
 
 /obj/structure/prop/prismcontrol/proc/interaction_rotate(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_message)
+		to_chat(user, interaction_message)
 	var/confirm = tgui_alert(user, "Do you want to try to rotate \the [src]?", "[name]", list("Yes", "No"))
 	if(confirm != "Yes")
 		visible_message(\

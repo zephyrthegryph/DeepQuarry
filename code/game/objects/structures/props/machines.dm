@@ -717,9 +717,19 @@
 	icon_state = "centrifuge"
 	var/on = FALSE
 
-/obj/structure/prop/machine/centrifuge/attack_hand(mob/user as mob)
+/obj/structure/prop/machine/centrifuge/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/centrifuge_toggle,
+	)
 	..()
 
+/// Old attack_hand: toggle the prop on/off.
+/datum/interaction/entry_hand/centrifuge_toggle
+	id = "centrifuge_toggle"
+	name = "Toggle"
+	effect = /obj/structure/prop/machine/centrifuge/proc/interaction_toggle
+
+/obj/structure/prop/machine/centrifuge/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		on = TRUE
 		user.visible_message("\The [user] turns on \the [src].")
@@ -730,6 +740,7 @@
 		icon_state = "centrifuge"
 
 	update_icon()
+	return TRUE
 
 /obj/structure/prop/machine/incubator
 	name = "incubator"
@@ -738,9 +749,19 @@
 	icon_state = "incubator"
 	var/on = FALSE
 
-/obj/structure/prop/machine/incubator/attack_hand(mob/user as mob)
+/obj/structure/prop/machine/incubator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/incubator_toggle,
+	)
 	..()
 
+/// Old attack_hand: toggle the prop on/off.
+/datum/interaction/entry_hand/incubator_toggle
+	id = "incubator_toggle"
+	name = "Toggle"
+	effect = /obj/structure/prop/machine/incubator/proc/interaction_toggle
+
+/obj/structure/prop/machine/incubator/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		on = TRUE
 		user.visible_message("\The [user] turns on \the [src].")
@@ -751,6 +772,7 @@
 		icon_state = "incubator"
 
 	update_icon()
+	return TRUE
 
 /obj/structure/prop/machine/disease_analyser
 	name = "disease analyser"
@@ -759,9 +781,19 @@
 	icon_state = "analyser"
 	var/on = FALSE
 
-/obj/structure/prop/machine/disease_analyser/attack_hand(mob/user as mob)
+/obj/structure/prop/machine/disease_analyser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/disease_analyser_toggle,
+	)
 	..()
 
+/// Old attack_hand: toggle the prop on/off.
+/datum/interaction/entry_hand/disease_analyser_toggle
+	id = "disease_analyser_toggle"
+	name = "Toggle"
+	effect = /obj/structure/prop/machine/disease_analyser/proc/interaction_toggle
+
+/obj/structure/prop/machine/disease_analyser/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		on = TRUE
 		user.visible_message("\The [user] turns on \the [src].")
@@ -772,6 +804,7 @@
 		icon_state = "analyser"
 
 	update_icon()
+	return TRUE
 
 /obj/structure/prop/machine/isolator
 	name = "disease isolator"
@@ -780,9 +813,19 @@
 	icon_state = "isolator_in"
 	var/on = FALSE
 
-/obj/structure/prop/machine/isolator/attack_hand(mob/user as mob)
+/obj/structure/prop/machine/isolator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/isolator_toggle,
+	)
 	..()
 
+/// Old attack_hand: toggle the prop on/off.
+/datum/interaction/entry_hand/isolator_toggle
+	id = "isolator_toggle"
+	name = "Toggle"
+	effect = /obj/structure/prop/machine/isolator/proc/interaction_toggle
+
+/obj/structure/prop/machine/isolator/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		on = TRUE
 		user.visible_message("\The [user] turns on \the [src].")
@@ -793,3 +836,4 @@
 		icon_state = "isolator_in"
 
 	update_icon()
+	return TRUE
