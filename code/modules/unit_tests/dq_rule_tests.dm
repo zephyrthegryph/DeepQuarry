@@ -6,14 +6,14 @@
 	name = "rule test item"
 	w_class = ITEMSIZE_SMALL
 
-/// Needs its temperature above 400 K for five seconds in total, then grows.
+/// Needs its temperature above 400 K for two seconds in total, then grows.
 /datum/rule/dq_test_hold
 	name = "test hold"
 	test_only = TRUE
 	condition = list(REQ_AT_LEAST(PRED_TARGET, PROP_TEMPERATURE, KELVIN(400)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_SET_STATE("w_class", ITEMSIZE_HUGE))
-	hold_for = 5 SECONDS
+	hold_for = 2 SECONDS
 
 /datum/rule/dq_test_band
 	name = "test band"
@@ -35,6 +35,15 @@
 	condition = list(REQ_ABOVE(PRED_ACTOR, PROP_TEMPERATURE, KELVIN(300)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_REMOVE)
+
+/// Let SSreactor step and dispatch.
+/proc/dq_rx_flush()
+	react_test_ticks(2)
+
+/// Let `ds` deciseconds of reactor time pass, then dispatch.
+/proc/dq_rx_test_advance(ds)
+	sleep(ds)
+	react_test_ticks(2)
 
 /// Writes `value` into property `id` of `thing` through its base provider.
 /proc/dq_rule_test_write(datum/thing, id, value)
@@ -181,19 +190,17 @@
 	TEST_ASSERT(!isnull(handle), "the hold rule watches a heat node")
 
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 450)
-	dq_rx_flush()
-	dq_rx_test_advance(3 SECONDS)
-	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "three seconds above is not enough")
+	TEST_ASSERT(dq_rx_node_in_rust(handle), "a hot node borrows a probe cell: its watch is a Rust REACT_WHEN watch")
+	dq_rx_test_advance(0.8 SECONDS)
+	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "under a second above is not enough")
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 300)
-	dq_rx_flush()
-	dq_rx_test_advance(10 SECONDS)
+	dq_rx_test_advance(1.5 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "time below the threshold does not count")
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 450)
-	dq_rx_flush()
-	dq_rx_test_advance(1.9 SECONDS)
-	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "4.9 seconds in total is not enough")
-	dq_rx_test_advance(0.2 SECONDS)
-	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 1, "five seconds in total fires it, from a timer, not polling")
+	dq_rx_test_advance(0.5 SECONDS)
+	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "about 1.5 seconds in total is not enough")
+	dq_rx_test_advance(1 SECONDS)
+	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 1, "two seconds in total fires it, from a rate model watch, not polling")
 	TEST_ASSERT_EQUAL(item.w_class, ITEMSIZE_HUGE, "the data transform set the state")
 	TEST_ASSERT_EQUAL(PROPERTY(item, PROP_SIZE_CLASS), ITEMSIZE_HUGE, "which overrides the property")
 	TEST_ASSERT(QDELETED(binding), "a once rule drops its binding after firing")

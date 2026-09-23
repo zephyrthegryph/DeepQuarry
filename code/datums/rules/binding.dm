@@ -78,7 +78,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/list/nodes
 	/// Key kinds the owner must publish.
 	var/list/key_kinds
-	/// The owner's reactor id, for keys.
+	/// This binding's reactor id: the id of the owner's DM-owned keys.
 	var/key_id
 	/// Heat exposure bookkeeping (dq_rule_expose_heat).
 	var/exposed_at
@@ -96,7 +96,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	hold_tokens = new /list(count)
 	GLOB.dq_rule_bindings[owner] = src
 	RegisterSignal(owner, COMSIG_QDELETING, PROC_REF(owner_deleted))
-	key_id = dq_rx_id(owner)
+	key_id = dq_rx_id(src)
 	for(var/i in 1 to count)
 		tokens[i] = subscribe(rules[i])
 		fired[i] = 0
@@ -193,6 +193,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/handle = nodes?[PROP_TEMPERATURE]
 	if(!isnull(handle))
 		dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, dq_ambient_temperature(owner))
+		dq_rx_node_idle(handle)
 
 /// Look at every live rule: fire on false -> true edges, run exits on true -> false.
 /datum/rule_binding/proc/evaluate()

@@ -41,6 +41,8 @@
 // ---- DM-owned keys (reactor.md §4). Kinds past S1's own (1-3). ----
 /// An atom's integrity changed. Id: the atom's reactor id.
 #define RULE_KEY_INTEGRITY 16
+/// A DM-mirrored heat node without a probe cell changed. Id: the node.
+#define RULE_KEY_NODE 17
 
 /// Seconds without fresh exposure before an exposed heat node relaxes to ambient.
 #define RULE_HEAT_EXPOSURE_HOLD (3 SECONDS)
@@ -51,13 +53,11 @@
 #define RULES_REPLACE(path, flag) (dq_rules_replace_flags(path) & (flag))
 
 // ---- Reactor adapter (code/datums/rules/reactor_adapter.dm) ----
-// Wake reasons passed to rule_wake(). S1: REACT_REASON_* from _bindings.dm.
-#define DQ_RX_REASON_CONDITION (1<<0)
-#define DQ_RX_REASON_CHANGED (1<<1)
-#define DQ_RX_REASON_TIMER (1<<2)
-#define DQ_RX_REASON_KEY (1<<3)
-#define DQ_RX_REASON_RATE (1<<4)
+// Wake reasons passed to rule_wake(): SSreactor's reason classes.
+#define DQ_RX_REASON_CONDITION REACT_REASON_CONDITION
+#define DQ_RX_REASON_TIMER REACT_REASON_TIMER
+#define DQ_RX_REASON_KEY REACT_REASON_KEY
+#define DQ_RX_REASON_RATE REACT_REASON_RATE
 
-/// Channel ids on a node. S1: CH_PROBE_TEMPERATURE.
+/// Channel ids on a heat node.
 #define DQ_RX_CH_TEMPERATURE 1
-
