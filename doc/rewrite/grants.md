@@ -86,7 +86,8 @@ by id and `stack_trace()` if nothing's registered for a kind.
 | Kind | `GRANT_KIND_*` | `id` is... | on_grant/on_revoke does... |
 |---|---|---|---|
 | ABILITY | `GRANT_KIND_ABILITY` | an ability id (`code/__defines/abilities.dm`) | nothing - `why_not()` reads `has_grant()` live |
-| LANGUAGE | `GRANT_KIND_LANGUAGE` | a `GLOB.all_languages` key | `add_language(id)` / `remove_language(id)` |
+| LANGUAGE | `GRANT_KIND_LANGUAGE` | a `GLOB.all_languages` key | `add_language(id, FALSE)` / `remove_language(id)` |
+| LANGUAGE_SPEECH | `GRANT_KIND_LANGUAGE_SPEECH` | same id space as LANGUAGE | adds/removes from a silicon's `speech_synthesizer_langs` |
 | FACTORS | `GRANT_KIND_FACTORS` | the source's own factor table (an `alist` of `BF_id -> value`) | `invalidate_factors()` + `life_wake()` |
 | TRAIT | *(reserved, DQ Medical)* | - | - |
 | GENE | *(reserved, DQ Medical)* | - | - |
@@ -95,11 +96,10 @@ by id and `stack_trace()` if nothing's registered for a kind.
 
 `code/datums/abilities/ability.dm`. Replaces the old `grant_ability()`/
 `revoke_ability()`/`ability_grants` mob var entirely - deleted, not shimmed.
-`has_ability(id)`/`ability_sources(id)` survive as thin one-line wrappers over
-`has_grant(GRANT_KIND_ABILITY, id)`/`grant_sources(GRANT_KIND_ABILITY, id)`,
-kept because `why_not()` and every caller read much better as
-`L.has_ability(id)` than `L.has_grant(GRANT_KIND_ABILITY, id)` - they add no
-logic, just a name.
+No wrapper either: `has_ability()`/`ability_sources()` are gone too, every
+caller (`why_not()`, tests) reads `L.has_grant(GRANT_KIND_ABILITY, id)`/
+`L.grant_sources(GRANT_KIND_ABILITY, id)` directly - one API, not one API plus
+a per-kind name for it.
 
 ```dm
 grant(L, GRANT_KIND_ABILITY, ABILITY_ID_SHADEKIN_PHASE_SHIFT, SK) // SK is the source
@@ -125,15 +125,53 @@ grant(L, GRANT_KIND_LANGUAGE, LANGUAGE_UNATHI, src)   // src is the granting mod
 revoke(L, GRANT_KIND_LANGUAGE, LANGUAGE_UNATHI, src)
 ```
 
+### LANGUAGE_SPEECH: the speech-synthesizer entitlement is its own grant
+
+A silicon's `add_language(language, can_speak=1)` bundles two different
+things: understanding, and whether the speech synthesizer can *voice* it
+(`/mob/living/silicon/var/list/speech_synthesizer_langs`). The LANGUAGE kind
+only ever grants understanding - `on_grant()` calls `add_language(id, FALSE)`
+(the `FALSE` is read by the silicon override and ignored by everyone else's
+one-arg `add_language()`), so it never toggles the synthesizer as a side
+effect. Voicing is `GRANT_KIND_LANGUAGE_SPEECH`, same `id` space, refcounted
+the same way, whose `on_grant()`/`on_revoke()` add/remove the language
+directly from `speech_synthesizer_langs`:
+
+```dm
+grant(R, GRANT_KIND_LANGUAGE, LANGUAGE_UNATHI, src)         // understands it
+grant(R, GRANT_KIND_LANGUAGE_SPEECH, LANGUAGE_UNATHI, src)   // AND can voice it
+```
+
+A source that only wants a silicon to *understand* a language (no speech)
+grants just the first kind. This is a no-op on a non-silicon mob (there's
+nothing to voice), so the same call is safe everywhere `GRANT_KIND_LANGUAGE`
+is used.
+
 Migrated (found via `rg` for `add_language`/`remove_language` pairs tied to a
 source that can go away independently of the mob):
 
 - **pAI Universal Translator** (`code/modules/mob/living/silicon/pai/software_modules.dm`,
   `/datum/pai_software/translator`) - the explicit motivating case. Toggling it
-  on/off now grants/revokes its whole language list keyed by the module
-  instance, instead of 27 unconditional `add_language()`/`remove_language()`
-  calls that didn't know or care whether something else also wanted one of
-  those languages active.
+  on/off now grants/revokes its whole language list (understanding AND speech)
+  keyed by the module instance, instead of 27 unconditional `add_language()`/
+  `remove_language()` calls that didn't know or care whether something else
+  also wanted one of those languages active.
+- **Robot base languages** (`code/modules/mob/living/silicon/robot/robot.dm`,
+  `Initialize()`) - `LANGUAGE_ROBOT_TALK`/`LANGUAGE_GALCOM`/`LANGUAGE_EAL` are
+  granted with the robot itself as the source, instead of a bare
+  `add_language()`. Making the innate set a tracked grant (not just the
+  module's) is what lets the module below drop its snapshot/restore entirely:
+  refcounting means removing the module's grant can never strip a language the
+  robot's own innate grant (or another module, or an implant) still wants.
+- **Robot module languages** (`code/modules/mob/living/silicon/robot/robot_modules/station.dm`,
+  `add_languages()`/`remove_languages()`) - previously snapshotted the robot's
+  entire pre-module language set (plus each one's synthesizer flag) before
+  granting its own, then tore its own back out and restored the snapshot
+  verbatim on `reset_module()`. With refcounting that snapshot/restore is
+  unnecessary: the module just grants its own `languages` table (both kinds
+  where an entry says `can_speak`) keyed by itself, and revoking it removes
+  only what nothing else - the robot's own innate grant included - still
+  grants. `var/list/original_languages` is gone.
 - **Borer "Cortical Link"** on the host, granted when a borer bonds
   (`borer_control.dm`) and revoked on `detatch()` (`borer.dm`) - keyed by the
   borer mob. (The borer's own innate `add_language("Cortical Link")` on itself,
@@ -144,17 +182,22 @@ source that can go away independently of the mob):
 - **Xenomorph hive node organ** (`code/modules/organs/subtypes/xenos.dm`) -
   granted in `replaced()`, revoked in `removed()`, keyed by the organ.
 
-**Left alone, on purpose:** the robot module language swap
-(`code/modules/mob/living/silicon/robot/robot_modules/station.dm`,
-`add_languages()`/`remove_languages()`) also snapshots and *restores* the
-robot's pre-module language set (including the per-language speech-synthesizer
-flag), which isn't a plain grant/revoke - converting it would either lose the
-synthesizer flag or need the API to carry extra per-grant data it doesn't have
-room for. Left as direct `add_language()`/`remove_language()` calls. Also left
-alone: every one-shot `add_language()` at mob spawn/creation with no matching
-removal (species defaults, AI/pAI/robot base kits, ghost-pod character
-creation, `transform_procs.dm`) - there's no source to track because nothing
-ever un-grants them.
+**Left alone, on purpose:** every one-shot `add_language()` at mob spawn/
+creation with no matching removal (species defaults, the rest of AI/pAI/robot
+base kits, ghost-pod character creation, `transform_procs.dm`) - there's no
+source to track because nothing ever un-grants them.
+
+**Known caveat:** `remove_language()` (the silicon override) unconditionally
+clears `speech_synthesizer_langs` for that language, regardless of whether a
+`GRANT_KIND_LANGUAGE_SPEECH` grant is still active for it from some other
+source. In practice every current caller grants both kinds together from the
+same source, so this never triggers - but a future source that grants ONLY
+`GRANT_KIND_LANGUAGE_SPEECH` for a language some other source still grants
+plain `GRANT_KIND_LANGUAGE` for could see its speech grant silently desync
+from `speech_synthesizer_langs` if that other source revokes first. Flagged
+here rather than solved: fixing it needs `remove_language()` itself to stop
+being unconditional, which is outside a "no shims, keep it generic" grants-only
+change.
 
 ### FACTORS
 
@@ -180,16 +223,26 @@ consistent with every other factors.dm source (an active modifier folds once,
 not once per thing that re-applied it).
 
 New factor ids for `rewrite/mobsrc` (`code/__defines/body_factors.dm`,
-contiguous block right before `BF_ARMOR_BASE`, which shifted from 69 to 72):
+contiguous block right before `BF_ARMOR_BASE`, which shifted from 69 to 73 -
+id 70 is `BF_CARDIAC_IRRITABILITY`, a placeholder reserved for w5/integrate,
+which owns the real definition):
 
-- **`BF_ALPHA`** (70) - `BF_RULE_MULT`, baseline 1, bounds [0, 1]. A generic
-  0..1 multiplier for grants that don't need a named factor.
-- **`BF_MOVE_FLAGS_DENY`** (71) - `BF_RULE_FLAGS`, deny mask. Effective move
+- **`BF_ALPHA`** (71) - `BF_RULE_MULT`, baseline 1, bounds [0, 1]. The mob's
+  visual alpha (opacity) **only** - not a generic multiplier. Derived ONLY on
+  `COMSIG_LIVING_FACTORS_CHANGED` (that's its one writer, the same way
+  `action_blocked()` derives blocked actions from `BF_ACTION_BLOCKS`); anything
+  else that wants a generic 0..1 multiplier declares its own named factor.
+- **`BF_MOVE_FLAGS_DENY`** (72) - `BF_RULE_FLAGS`, deny mask. Effective move
   flags = `base & ~factor(BF_MOVE_FLAGS_DENY)`; derive the mob var on
   `COMSIG_LIVING_FACTORS_CHANGED`, the same way `action_blocked()` derives
   blocked actions from `BF_ACTION_BLOCKS` - `rewrite/mobsrc` wires the actual
-  consumer. Nothing here converts alpha or pushes a user of either factor;
-  they're placeholders these two ids exist for.
+  consumer. Nothing here converts alpha or pushes a user of either factor.
+
+`body_factor_defs()` now rejects a hand-numbering collision instead of
+silently letting the later row win (`stack_trace` on a duplicate id while
+building), and `body_factor_defs_check_unique()` is a boot assert - also
+called directly by a unit test - that every id in `1..BF_ARMOR_BASE-1` has
+exactly one row.
 
 The `factors.dm` edit is one line (the new
 `acc = accumulate_grant_factors(acc)` call in `recompute_factors()`) plus two

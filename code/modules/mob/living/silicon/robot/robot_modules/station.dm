@@ -32,7 +32,6 @@
 	var/list/obj/item/borg/upgrade/supported_upgrades
 
 	// Bookkeeping
-	var/list/original_languages
 	var/list/added_networks
 	var/ui_theme
 	var/idcard_type = /obj/item/card/id/synthetic
@@ -148,23 +147,23 @@
 		if(O)
 			modules += O
 
+/// This module is the source for every language (and, where `languages[x]` is
+/// truthy, every speech-synthesizer entitlement) it grants - refcounted
+/// (doc/rewrite/grants.md), so removing the module only drops what nothing else
+/// (the robot's own innate grants, another module, an implant, ...) still grants.
+/// No snapshot/restore needed: whatever the robot already had stays granted under
+/// its own source.
 /obj/item/robot_module/proc/add_languages(mob/living/silicon/robot/R)
-	// Stores the languages as they were before receiving the module, and whether they could be synthezized.
-	for(var/datum/language/language_datum in R.languages)
-		LAZYSET(original_languages, language_datum, (language_datum in R.speech_synthesizer_langs))
-
 	for(var/language in languages)
-		R.add_language(language, languages[language])
+		grant(R, GRANT_KIND_LANGUAGE, language, src)
+		if(languages[language])
+			grant(R, GRANT_KIND_LANGUAGE_SPEECH, language, src)
 
 /obj/item/robot_module/proc/remove_languages(mob/living/silicon/robot/R)
-	// Clear all added languages, whether or not we originally had them.
 	for(var/language in languages)
-		R.remove_language(language)
-
-	// Then add back all the original languages, and the relevant synthezising ability
-	for(var/original_language in original_languages)
-		R.add_language(original_language, LAZYACCESS(original_languages, original_language))
-	LAZYCLEARLIST(original_languages)
+		revoke(R, GRANT_KIND_LANGUAGE, language, src)
+		if(languages[language])
+			revoke(R, GRANT_KIND_LANGUAGE_SPEECH, language, src)
 
 /obj/item/robot_module/proc/add_camera_networks(mob/living/silicon/robot/R)
 	if(R.camera && (NETWORK_ROBOTS in R.camera.network))

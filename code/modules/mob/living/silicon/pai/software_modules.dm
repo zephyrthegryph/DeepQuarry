@@ -376,8 +376,10 @@
 	for(var/language in translated_languages)
 		if(user.translator_on)
 			grant(user, GRANT_KIND_LANGUAGE, language, src)
+			grant(user, GRANT_KIND_LANGUAGE_SPEECH, language, src)
 		else
 			revoke(user, GRANT_KIND_LANGUAGE, language, src)
+			revoke(user, GRANT_KIND_LANGUAGE_SPEECH, language, src)
 
 /datum/pai_software/translator/is_active(mob/living/silicon/pai/user)
 	return user.translator_on

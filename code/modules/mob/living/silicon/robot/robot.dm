@@ -159,9 +159,12 @@
 	robotact = new(src)
 	RegisterSignal(src, COMSIG_LIVING_SHIELD_INJURY, PROC_REF(absorb_injury_with_shield))
 
-	add_language(LANGUAGE_ROBOT_TALK, 1)
-	add_language(LANGUAGE_GALCOM, 1)
-	add_language(LANGUAGE_EAL, 1)
+	// Innate, not a one-shot: tracked as a grant sourced from the robot itself, so a
+	// module that also grants one of these (station.dm's add_languages()) refcounts
+	// against it correctly instead of the module's removal stripping it back out.
+	for(var/innate_language in list(LANGUAGE_ROBOT_TALK, LANGUAGE_GALCOM, LANGUAGE_EAL))
+		grant(src, GRANT_KIND_LANGUAGE, innate_language, src)
+		grant(src, GRANT_KIND_LANGUAGE_SPEECH, innate_language, src)
 
 	set_wires(new /datum/wires/robot(src))
 

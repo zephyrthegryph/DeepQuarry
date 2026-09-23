@@ -207,8 +207,8 @@
 	. = ..()
 	into += list(/datum/interaction/attack_variant/disarm, /datum/interaction/attack_variant/grab)
 	// Abilities (doc/rewrite/rules.md §5): every ability type is offered to
-	// every living mob; a grant (ability.dm's has_ability()) decides who can
-	// actually use one.
+	// every living mob; a grant (has_grant(GRANT_KIND_ABILITY, id), ability.dm's
+	// why_not()) decides who can actually use one.
 	into += GLOB.ability_interaction_types
 
 /// Effect of the Disarm and Grab interactions.

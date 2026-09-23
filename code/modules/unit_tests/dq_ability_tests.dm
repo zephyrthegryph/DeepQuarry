@@ -104,7 +104,7 @@
 /datum/unit_test/dq_ability_phase_shift_needs_grant/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/datum/interaction/ability/A = dq_phase_ability()
-	TEST_ASSERT(!H.has_ability(ABILITY_ID_SHADEKIN_PHASE_SHIFT), "an ordinary human has no grant")
+	TEST_ASSERT(!H.has_grant(GRANT_KIND_ABILITY, ABILITY_ID_SHADEKIN_PHASE_SHIFT), "an ordinary human has no grant")
 	TEST_ASSERT_EQUAL(A.why_not(H, H, null), "you don't have that ability", "refused before any requirement runs")
 
 /// Two sources granting the same ability: it survives either one alone being revoked.
@@ -115,14 +115,14 @@
 	var/datum/source_a = new /datum()
 	var/datum/source_b = new /datum()
 	grant(H, GRANT_KIND_ABILITY, "dq_test_ability", source_a)
-	TEST_ASSERT(H.has_ability("dq_test_ability"), "granted by one source")
+	TEST_ASSERT(H.has_grant(GRANT_KIND_ABILITY, "dq_test_ability"), "granted by one source")
 	grant(H, GRANT_KIND_ABILITY, "dq_test_ability", source_b)
-	TEST_ASSERT_EQUAL(length(H.ability_sources("dq_test_ability")), 2, "both sources are tracked")
+	TEST_ASSERT_EQUAL(length(H.grant_sources(GRANT_KIND_ABILITY, "dq_test_ability")), 2, "both sources are tracked")
 	revoke(H, GRANT_KIND_ABILITY, "dq_test_ability", source_a)
-	TEST_ASSERT(H.has_ability("dq_test_ability"), "still granted through source_b")
+	TEST_ASSERT(H.has_grant(GRANT_KIND_ABILITY, "dq_test_ability"), "still granted through source_b")
 	revoke(H, GRANT_KIND_ABILITY, "dq_test_ability", source_b)
-	TEST_ASSERT(!H.has_ability("dq_test_ability"), "gone once every source has revoked")
-	TEST_ASSERT_NULL(H.ability_sources("dq_test_ability"), "no leftover empty source list")
+	TEST_ASSERT(!H.has_grant(GRANT_KIND_ABILITY, "dq_test_ability"), "gone once every source has revoked")
+	TEST_ASSERT_NULL(H.grant_sources(GRANT_KIND_ABILITY, "dq_test_ability"), "no leftover empty source list")
 	qdel(source_a)
 	qdel(source_b)
 
@@ -150,8 +150,8 @@
 /datum/unit_test/dq_ability_dark_respite_needs_full_variant/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	H.AddComponent(/datum/component/shadekin/phase_only)
-	TEST_ASSERT(H.has_ability(ABILITY_ID_SHADEKIN_PHASE_SHIFT), "phase_only still grants phase shift")
-	TEST_ASSERT(!H.has_ability(ABILITY_ID_SHADEKIN_DARK_RESPITE), "phase_only does not grant dark respite")
+	TEST_ASSERT(H.has_grant(GRANT_KIND_ABILITY, ABILITY_ID_SHADEKIN_PHASE_SHIFT), "phase_only still grants phase shift")
+	TEST_ASSERT(!H.has_grant(GRANT_KIND_ABILITY, ABILITY_ID_SHADEKIN_DARK_RESPITE), "phase_only does not grant dark respite")
 
 /// Toggling starts and stops a Dark Respite modifier.
 /datum/unit_test/dq_ability_dark_respite_toggles
@@ -289,7 +289,7 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
 	var/datum/interaction/ability/A = ABILITY_BY_ID(ABILITY_ID_ROBOT_TOGGLE_LIGHTS)
 	TEST_ASSERT_NOTNULL(A, "robot_toggle_lights is registered")
-	TEST_ASSERT(R.has_ability(ABILITY_ID_ROBOT_TOGGLE_LIGHTS), "every robot is granted this on spawn")
+	TEST_ASSERT(R.has_grant(GRANT_KIND_ABILITY, ABILITY_ID_ROBOT_TOGGLE_LIGHTS), "every robot is granted this on spawn")
 	var/before = R.lights_on
 	TEST_ASSERT_EQUAL(A.attempt(R, R, null), INTERACTION_TRY_RAN, "toggling runs")
 	TEST_ASSERT_NOTEQUAL(R.lights_on, before, "the light state flipped")

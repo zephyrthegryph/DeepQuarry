@@ -199,4 +199,32 @@
 	revoke(H1, GRANT_KIND_ABILITY, "dq_body_grant", body_source)
 	qdel(body_source)
 
+/// A robot module's language grants are refcounted against the robot's own innate
+/// grant (robot.dm's Initialize()): removing the module never needs to snapshot and
+/// restore anything, it just drops what nothing else still grants. Also checks
+/// GRANT_KIND_LANGUAGE_SPEECH: languages[lang] = 1 grants speech too, = 0 understanding only.
+/datum/unit_test/dq_grants_robot_module_languages
+
+/datum/unit_test/dq_grants_robot_module_languages/Run()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
+	var/datum/language/robot_talk = GLOB.all_languages[LANGUAGE_ROBOT_TALK]
+	var/datum/language/sol_common = GLOB.all_languages[LANGUAGE_SOL_COMMON]
+	var/datum/language/unathi = GLOB.all_languages[LANGUAGE_UNATHI]
+	TEST_ASSERT(robot_talk in R.languages, "every robot starts knowing robot talk (innate grant)")
+	TEST_ASSERT(robot_talk in R.speech_synthesizer_langs, "and can speak it")
+
+	var/obj/item/robot_module/module = new(R)
+	module.add_languages(R)
+	TEST_ASSERT(sol_common in R.languages, "the module's languages[LANGUAGE_SOL_COMMON]=1 entry is understood")
+	TEST_ASSERT(sol_common in R.speech_synthesizer_langs, "...and speakable (can_speak = 1)")
+	TEST_ASSERT(unathi in R.languages, "languages[LANGUAGE_UNATHI]=0 is still understood")
+	TEST_ASSERT(!(unathi in R.speech_synthesizer_langs), "...but not speakable (can_speak = 0)")
+
+	module.remove_languages(R)
+	TEST_ASSERT(!(sol_common in R.languages), "the module's own language is gone once the module is")
+	TEST_ASSERT(!(unathi in R.languages), "same for its understand-only language")
+	TEST_ASSERT(robot_talk in R.languages, "the robot's innate grant survived - no snapshot/restore needed")
+	TEST_ASSERT(robot_talk in R.speech_synthesizer_langs, "...still speakable too")
+	qdel(module)
+
 #undef GRANT_KIND_DQ_TEST_COUNTER

@@ -26,8 +26,8 @@
  *	revoke(L, GRANT_KIND_ABILITY, ABILITY_ID_SHADEKIN_PHASE_SHIFT, SK)
  *
  *	// Reading (rare - why_not()/attempt() already check this):
- *	L.has_ability(id)          // any source grants it right now?
- *	L.ability_sources(id)      // the list of sources, for UI/debugging
+ *	L.has_grant(GRANT_KIND_ABILITY, id)      // any source grants it right now?
+ *	L.grant_sources(GRANT_KIND_ABILITY, id)  // the list of sources, for UI/debugging
  *
  * Species `inherent_verbs` grants and item/trait ability grants are meant to
  * move onto this same API (DQ Medical's protean powers registry is the first
@@ -78,7 +78,7 @@
 	if(!isliving(actor))
 		return "you don't have that ability"
 	var/mob/living/L = actor
-	if(!L.has_ability(id))
+	if(!L.has_grant(GRANT_KIND_ABILITY, id))
 		return "you don't have that ability"
 	return ..()
 
@@ -113,16 +113,8 @@
 // ---------------------------------------------------------------------------
 // Grants: source-tracked, so an ability stays available while any source remains.
 // Backed by the generic grant system (code/datums/grants/, doc/rewrite/grants.md) -
-// grant(L, GRANT_KIND_ABILITY, id, source) / revoke(...) directly work too; these are
-// thin readability wrappers used by why_not(), tests and callers below.
-
-/// TRUE if any source currently grants `id`.
-/mob/living/proc/has_ability(id)
-	return has_grant(GRANT_KIND_ABILITY, id)
-
-/// The sources currently granting `id` (for UI/debugging), or null.
-/mob/living/proc/ability_sources(id)
-	return grant_sources(GRANT_KIND_ABILITY, id)
+// grant(L, GRANT_KIND_ABILITY, id, source) / revoke(...) / has_grant(GRANT_KIND_ABILITY, id) /
+// grant_sources(GRANT_KIND_ABILITY, id) directly, no ability-specific wrapper.
 
 // ---------------------------------------------------------------------------
 // Shared requirement helpers (code/__defines/abilities.dm's REQ_CONSCIOUS, REQ_ON_TURF).
