@@ -54,8 +54,8 @@
 	if(problem_timer)
 		deltimer(problem_timer)
 		problem_timer = null
-	if(region_id && SSmachines.power_regions["[region_id]"] == src)
-		SSmachines.power_regions -= "[region_id]"
+	if(region_id && SSmachines.power_regions[region_id] == src)
+		SSmachines.power_regions -= region_id
 	for(var/obj/machinery/power/M as anything in nodes)
 		if(M.powernet == src)
 			M.powernet = null
