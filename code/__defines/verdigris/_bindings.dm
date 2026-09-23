@@ -1017,10 +1017,12 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(operations)
 
-/// Runs every pipe-network device edge's flow law once (M2, `device.rs`) for
-/// `dt` seconds and returns a flat list of `id, moles, power_w,
-/// target_reached` per device that had a law set. `dt` is normally
-/// `SSair`'s tick length in seconds.
+/// Runs every device edge's flow law once (M2, `device.rs`) for `dt`
+/// seconds — region<->region edges (`PipeNet::step_devices`) and
+/// region<->turf edges (`GasWorld::step_turf_devices`, a vent pump or
+/// scrubber facing the R6 gas field) alike — and returns a flat list of
+/// `id, moles, power_w, target_reached` per device that had a law set. `dt`
+/// is normally `SSair`'s tick length in seconds.
 // /proc/auxmos_pipenet_step_devices (verdigris/domains/gas/src/lib.rs)
 /proc/vg_pipenet_step_devices(dt)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipenet_step_devices_ffi")

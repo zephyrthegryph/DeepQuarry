@@ -180,14 +180,20 @@ fn pipenet_device_batch(operations: ByondValue) -> Result<ByondValue> {
 	Ok(ByondValue::null())
 }
 
-/// Runs every pipe-network device edge's flow law once (M2, `device.rs`) for
-/// `dt` seconds and returns a flat list of `id, moles, power_w,
-/// target_reached` per device that had a law set. `dt` is normally
-/// `SSair`'s tick length in seconds.
+/// Runs every device edge's flow law once (M2, `device.rs`) for `dt`
+/// seconds — region<->region edges (`PipeNet::step_devices`) and
+/// region<->turf edges (`GasWorld::step_turf_devices`, a vent pump or
+/// scrubber facing the R6 gas field) alike — and returns a flat list of
+/// `id, moles, power_w, target_reached` per device that had a law set. `dt`
+/// is normally `SSair`'s tick length in seconds.
 #[auxmacros::bind("/proc/auxmos_pipenet_step_devices")]
 fn pipenet_step_devices(dt: ByondValue) -> Result<ByondValue> {
 	let dt = dt.get_number()?;
-	let steps = with_world(|w| w.pipes.step_devices(dt));
+	let steps = with_world(|w| {
+		let mut steps = w.pipes.step_devices(dt);
+		steps.extend(w.step_turf_devices(dt));
+		steps
+	});
 	let mut out = Vec::with_capacity(steps.len() * 4);
 	for s in steps {
 		out.extend([

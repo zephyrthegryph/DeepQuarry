@@ -265,6 +265,16 @@ impl PipeNet {
 		self.revisions.get(slot as usize).copied().unwrap_or(0)
 	}
 
+	/// Bumps the DM slot revision for a region, if it has one (M2's
+	/// turf-device bridge mutates region payloads from outside `PipeNet`,
+	/// via [`Network::payload_mut`], so it cannot reach the private
+	/// `slot_of`/`bump` bookkeeping directly).
+	pub fn touch_region(&mut self, r: RegionId<Pipes>) {
+		if let Some(&s) = self.slot_of.get(&r.raw()) {
+			self.bump(s);
+		}
+	}
+
 	pub fn bump(&mut self, slot: u32) {
 		if let Some(r) = self.revisions.get_mut(slot as usize) {
 			*r = r.wrapping_add(1);
