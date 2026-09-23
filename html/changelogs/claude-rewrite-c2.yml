@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "Fires now heat what is inside closets, crates, lockers and folders, softened by the container's insulation."
+  - rscadd: "Rounds and stabs can go through a closet or folder and hit something inside; blunt blows stay on the container."

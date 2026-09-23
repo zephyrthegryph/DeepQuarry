@@ -16,6 +16,8 @@
 	var/seal_tool = /obj/item/weldingtool	//Tool used to seal the closet, defaults to welder
 	var/wall_mounted = 0 //never solid (You can always pass over it)
 	max_integrity = 100
+	/// Sheet metal and an air gap (containment paths, C2).
+	insulation = 0.5
 
 	var/breakout = 0 //if someone is currently breaking out. mutex
 	var/breakout_time = 2 //2 minutes by default
@@ -76,7 +78,10 @@
 			color = null
 	update_icon()
 
-// ---- Containment (C1): one interior slot. The base Destroy() spills it. ----
+// ---- Containment (C1): one interior slot. The base Destroy() spills it.
+// C2: the interior is internal (it shares the room's air, so not sealed);
+// heat reaches it through the closet's insulation, and only rounds and stabs
+// that get through the sheet metal, and seeping acid, reach its contents. ----
 
 /obj/structure/closet/slot_def_types()
 	var/static/list/types = list(/datum/slot_def/closet_interior)
@@ -88,6 +93,8 @@
 	capacity_model = SLOT_CAPACITY_UNITS
 	accepts = /datum/predicate/slot_closet_interior
 	drop_policy = SLOT_DROP_SPILL
+	exposure = SLOT_EXPOSURE_INTERNAL
+	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
 
 /datum/slot_def/closet_interior/capacity_for(obj/structure/closet/holder)
 	return holder.storage_capacity
