@@ -24,6 +24,7 @@
 pub mod body;
 pub mod consts;
 pub mod couple;
+pub mod laws;
 pub mod mob;
 pub mod regulator;
 pub mod solid;
