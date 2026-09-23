@@ -13,20 +13,23 @@
 //! booked in the field's ledger.
 //!
 //! # The flux
-//! Two exponential kernels, each exact for its pair over any `dt`, so the
-//! scheme never overshoots whatever the sub-step:
-//! - **bulk flow** (the aperture kernel): moles move from the high-pressure
-//!   side at rate `G (pa/na + pb/nb)` toward pressure equality, carrying the
-//!   upwind side's composition and energy per mole. Against a vacuum
-//!   reservoir this is `n (1 - e^(-G p/n dt))`: explosive decompression is
-//!   the same law as every other pressure difference;
-//! - **diffusion**: each gas (and the energy density) relaxes toward equal
-//!   concentration at rate `K (1/Va + 1/Vb)`.
+//! Two of core's generic exchange kernels (`vg_core::field::kernel`),
+//! summed, each getting half the edge's donor share:
+//! - **bulk flow** (`kernel::pressure_flow`, the aperture kernel): moles
+//!   move from the high-pressure side at rate `G (pa/na + pb/nb)` toward
+//!   pressure equality, carrying the upwind side's composition and energy
+//!   per mole;
+//! - **diffusion** (`kernel::diffusion`): each gas (and the energy
+//!   density) relaxes toward equal concentration at rate `K (1/Va + 1/Vb)`.
 //!
-//! Each kernel takes at most half of the donor's `share` (the framework's
-//! positivity bound), so all edges together never overdraw a cell.
+//! Overshoot safety is the field framework's job, not this module's: it
+//! picks a sub-step from [`TurfGas::stiffness`] so that `dt * faces *
+//! stiffness <= 1` (the monotone bound of an explicit scheme), the same
+//! generic guarantee every `FieldKind` gets. Each kernel also never takes
+//! more than half the donor's `share` (the framework's positivity bound),
+//! so all edges together never overdraw a cell even before sub-stepping.
 
-use vg_core::field::kernel::Amounts;
+use vg_core::field::kernel::{self, Amounts, Operand};
 use vg_core::field::{FieldKind, Side};
 use vg_core::owner::{Applied, Domain};
 
@@ -306,6 +309,10 @@ impl Domain for TurfGas {
 
 /// Pressure's derivative in moles, `p / n` (0 for a reservoir or an empty
 /// side: a reservoir's pressure never moves).
+/// Pressure's derivative in moles, `p / n` (0 for a reservoir or an empty
+/// side: a reservoir's pressure never moves). Used only for [`stiffness`]:
+/// the flux itself is core's `kernel::pressure_flow`, which takes the raw
+/// pressures.
 fn dp_dn(side: &Side<'_, GasCell>, p: f32) -> f32 {
 	let n = side.cell.total_moles();
 	if side.reservoir || n <= GAS_MIN_MOLES {
@@ -315,89 +322,15 @@ fn dp_dn(side: &Side<'_, GasCell>, p: f32) -> f32 {
 	}
 }
 
-/// `1 - e^(-x)`, exact near 0.
-fn relax(x: f32) -> f32 {
-	if x.is_finite() && x > 0.0 {
-		-(-x).exp_m1()
-	} else {
-		0.0
+/// A [`Side`]'s amounts as a core [`Operand`], with its share halved: two
+/// kernels (bulk flow and diffusion) share one edge's donor-share budget.
+fn operand<'a>(side: &Side<'_, GasCell>, amounts: &'a [f32; Q]) -> Operand<'a, Q> {
+	Operand {
+		amounts,
+		capacity: side.capacity,
+		inv_capacity: side.inv_capacity,
+		share: side.share * 0.5,
 	}
-}
-
-struct Edge {
-	pa: f32,
-	pb: f32,
-	bulk_rate: f32,
-	diff_rate: f32,
-}
-
-fn edge(a: &Side<'_, GasCell>, b: &Side<'_, GasCell>) -> Edge {
-	let pa = a.cell.pressure_in(a.capacity);
-	let pb = b.cell.pressure_in(b.capacity);
-	let bulk_rate = BULK_CONDUCTANCE * (dp_dn(a, pa) + dp_dn(b, pb));
-	let diff_rate = DIFFUSION_CONDUCTANCE * (a.inv_capacity + b.inv_capacity);
-	Edge {
-		pa,
-		pb,
-		bulk_rate,
-		diff_rate,
-	}
-}
-
-/// The bulk-flow flux from `a` to `b` over `dt`.
-fn bulk(a: &Side<'_, GasCell>, b: &Side<'_, GasCell>, e: &Edge, dt: f32) -> [f32; Q] {
-	let dp = e.pa - e.pb;
-	let mut out = [0.0; Q];
-	if !dp.is_finite() || dp == 0.0 || e.bulk_rate <= 0.0 {
-		return out;
-	}
-	let (up, sign, pu) = if dp > 0.0 {
-		(a, 1.0, e.pa)
-	} else {
-		(b, -1.0, e.pb)
-	};
-	let (down, pd) = if dp > 0.0 { (b, e.pb) } else { (a, e.pa) };
-	let nu = up.cell.total_moles();
-	if nu <= 0.0 {
-		return out;
-	}
-	// Moles that equalize the pair's pressures (linearized), then the part
-	// of it the exponential relaxation reaches in dt.
-	let slope = dp_dn(up, pu) + dp_dn(down, pd);
-	let equalizing = if slope > 0.0 { dp.abs() / slope } else { nu };
-	let moved = equalizing * relax(e.bulk_rate * dt);
-	let fraction = (moved / nu).min(up.share * 0.5).min(1.0);
-	if !(fraction > 0.0) {
-		return out;
-	}
-	for (o, v) in out.iter_mut().zip(up.cell.amounts()) {
-		*o = sign * v * fraction;
-	}
-	out
-}
-
-/// The diffusion flux from `a` to `b` over `dt`.
-fn diffusion(a: &Side<'_, GasCell>, b: &Side<'_, GasCell>, e: &Edge, dt: f32) -> [f32; Q] {
-	let mut out = [0.0; Q];
-	let inv = a.inv_capacity + b.inv_capacity;
-	if inv <= 0.0 {
-		return out;
-	}
-	let reach = relax(e.diff_rate * dt) / inv;
-	let (xa, xb) = (a.cell.amounts(), b.cell.amounts());
-	for i in 0..Q {
-		let delta = xa[i] / a.capacity - xb[i] / b.capacity;
-		let q = delta * reach;
-		out[i] = if q > 0.0 {
-			q.min(xa[i] * a.share * 0.5)
-		} else {
-			q.max(-(xb[i] * b.share * 0.5))
-		};
-		if !out[i].is_finite() {
-			out[i] = 0.0;
-		}
-	}
-	out
 }
 
 /// Equal up to a few `f32` ulps.
@@ -411,12 +344,12 @@ impl FieldKind for TurfGas {
 	type Flux = Amounts<Q>;
 
 	fn flux(a: Side<'_, GasCell>, b: Side<'_, GasCell>, dt: f32) -> Amounts<Q> {
-		let e = edge(&a, &b);
-		let mut out = bulk(&a, &b, &e, dt);
-		for (o, d) in out.iter_mut().zip(diffusion(&a, &b, &e, dt)) {
-			*o += d;
-		}
-		Amounts(out)
+		let (xa, xb) = (a.cell.amounts(), b.cell.amounts());
+		let (op_a, op_b) = (operand(&a, &xa), operand(&b, &xb));
+		let (pa, pb) = (a.cell.pressure_in(a.capacity), b.cell.pressure_in(b.capacity));
+		let bulk = kernel::pressure_flow(op_a, pa, op_b, pb, N, BULK_CONDUCTANCE, dt);
+		let diffusion = kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt);
+		bulk + diffusion
 	}
 
 	fn apply_flux(cell: &mut GasCell, flux: Amounts<Q>) {
@@ -441,11 +374,12 @@ impl FieldKind for TurfGas {
 	}
 
 	fn stiffness(a: Side<'_, GasCell>, b: Side<'_, GasCell>) -> f32 {
-		let e = edge(&a, &b);
-		if (e.pa - e.pb).abs() > STIFF_PRESSURE {
-			e.bulk_rate + e.diff_rate
+		let diff_rate = kernel::exchange_stiffness(DIFFUSION_CONDUCTANCE, a.inv_capacity, b.inv_capacity);
+		let (pa, pb) = (a.cell.pressure_in(a.capacity), b.cell.pressure_in(b.capacity));
+		if (pa - pb).abs() > STIFF_PRESSURE {
+			diff_rate + kernel::pressure_stiffness(BULK_CONDUCTANCE, dp_dn(&a, pa), dp_dn(&b, pb))
 		} else {
-			e.diff_rate
+			diff_rate
 		}
 	}
 
