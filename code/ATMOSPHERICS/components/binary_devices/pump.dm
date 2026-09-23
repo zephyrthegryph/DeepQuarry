@@ -25,13 +25,20 @@ Thus, the two variables affect pump operation are set in New():
 	name = "gas pump"
 	desc = "A pump that moves gas from one place to another."
 
-	var/target_pressure = ONE_ATMOSPHERE
+	// R10 (doc/rewrite/rust_bindings.md §14): target_pressure and power_rating
+	// are Rust-owned config, reached only through get_/set_target_pressure()
+	// and get_/set_power_rating() (code/__defines/verdigris/_bindings_types.dm).
+	// There is no target_pressure var any more. power_rating is still declared
+	// on the shared /obj/machinery/atmospherics ancestor (other, not-yet-migrated
+	// devices still use it as a plain var, ATMOSPHERICS/atmospherics.dm:20); on
+	// pump it is dead weight until every atmos device migrates (M2) and that
+	// ancestor var is deleted.
+	init_target_pressure = ONE_ATMOSPHERE
 
 	//var/max_volume_transfer = 10000
 
 	use_power = USE_POWER_OFF
 	idle_power_usage = 150		//internal circuitry, friction losses and stuff
-	power_rating = 7500			//7500 W ~ 10 HP
 
 	var/max_pressure_setting = 15000	//kPa
 
@@ -46,7 +53,7 @@ Thus, the two variables affect pump operation are set in New():
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	if(frequency)
 		set_frequency(frequency)
-	// M2: the flow law is a Rust device edge, stepped from SSair every gas
+	// M2/R10: the flow law is a Rust device edge, stepped from SSair every gas
 	// tick; this has no process() at all any more.
 	STOP_MACHINE_PROCESSING(src)
 
@@ -54,9 +61,8 @@ Thus, the two variables affect pump operation are set in New():
 	unregister_radio(src, frequency)
 	. = ..()
 
-/obj/machinery/atmospherics/binary/pump/disconnect(obj/machinery/atmospherics/reference)
-	update_rust_device()
-	return ..()
+/obj/machinery/atmospherics/binary/pump/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::Pump). rust_bind_pipe_port fires once per port,
@@ -67,62 +73,29 @@ Thus, the two variables affect pump operation are set in New():
 	if(index == 2)
 		update_rust_device()
 
+/**
+ * R10/M2 bridge: target_pressure, power_rating and on are Rust-owned config
+ * on the binding layer's own Pump component (get_/set_target_pressure() etc,
+ * code/__defines/verdigris/_bindings_types.dm) — that is their one store.
+ * This reads them through those generated getters and republishes them to
+ * the legacy per-device-edge law (rust_pipenets.dm) that still does the
+ * actual gas moving until M2 lands the generic Flow law on top of this
+ * component (doc/rewrite/rust_bindings.md §14 step 2). No var is duplicated:
+ * this is a read-then-forward, not a second copy.
+ */
 /obj/machinery/atmospherics/binary/pump/proc/update_rust_device()
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
+	if(!vg_entity)
+		return
+	if((stat & (NOPOWER|BROKEN)) || !get_on())
 		rust_unregister_device()
 		return
-	rust_set_device(1, 2, RUST_DEVICE_LAW_PUMP, target_pressure, power_rating)
+	rust_set_device(1, 2, RUST_DEVICE_LAW_PUMP, get_target_pressure(), get_power_rating())
 
-/obj/machinery/atmospherics/binary/pump/rust_device_stepped(moles, power_w, target_reached)
-	last_flow_rate = abs(moles)
-	last_power_draw = power_w
-
-/obj/machinery/atmospherics/binary/pump/on
-	icon_state = "map_on"
-	use_power = USE_POWER_IDLE
-
-/obj/machinery/atmospherics/binary/pump/fuel
-	icon_state = "map_off-fuel"
-	base_icon = "pump-fuel"
-	icon_connect_type = "-fuel"
-	connect_types = CONNECT_TYPE_FUEL
-
-/obj/machinery/atmospherics/binary/pump/fuel/on
-	icon_state = "map_on-fuel"
-	use_power = USE_POWER_IDLE
-
-/obj/machinery/atmospherics/binary/pump/aux
-	icon_state = "map_off-aux"
-	base_icon = "pump-aux"
-	icon_connect_type = "-aux"
-	connect_types = CONNECT_TYPE_AUX
-
-/obj/machinery/atmospherics/binary/pump/aux/on
-	icon_state = "map_on-aux"
-	use_power = USE_POWER_IDLE
-
-/obj/machinery/atmospherics/binary/pump/update_icon()
-	if(!powered())
-		icon_state = "[base_icon]-off"
-	else
-		icon_state = "[use_power ? "[base_icon]-on" : "[base_icon]-off"]"
-
-/obj/machinery/atmospherics/binary/pump/update_underlays()
-	..()
-	underlays.Cut()
-	var/turf/T = get_turf(src)
-	if(!istype(T))
-		return
-	add_underlay(T, node1, turn(dir, -180), node1?.icon_connect_type)
-	add_underlay(T, node2, dir, node2?.icon_connect_type)
-
-/obj/machinery/atmospherics/binary/pump/hide(i)
-	update_underlays()
-
-// process() and its hibernate/gas-dependency machinery are deleted (M2,
-// simulation.md §5): the flow law is a Rust device edge, stepped every gas
-// tick from SSair.fire() regardless of DM's process() scheduling, so there
-// is nothing left to run and nothing to hibernate.
+/// operable comes from anchored and integrity (rust_bindings.md §7's classes
+/// 3-5) through the generated wiring: the atom_break()/atom_fix() hook pushes
+/// it whenever integrity changes, and the reconciler covers anchored.
+/obj/machinery/atmospherics/binary/pump/pump_input_operable()
+	return anchored && !(stat & BROKEN)
 
 //Radio remote control
 
@@ -144,7 +117,7 @@ Thus, the two variables affect pump operation are set in New():
 		"tag" = id,
 		"device" = "AGP",
 		"power" = use_power,
-		"target_output" = target_pressure,
+		"target_output" = get_target_pressure(),
 		"sigtype" = "status"
 	)
 
@@ -166,11 +139,10 @@ Thus, the two variables affect pump operation are set in New():
 
 	data = list(
 		"on" = use_power,
-		"pressure_set" = round(target_pressure*100),	//Nano UI can't handle rounded non-integers, apparently.
+		"pressure_set" = round(get_target_pressure()*100),	//Nano UI can't handle rounded non-integers, apparently.
 		"max_pressure" = max_pressure_setting,
-		"last_flow_rate" = round(last_flow_rate*10),
-		"last_power_draw" = round(last_power_draw),
-		"max_power_draw" = power_rating,
+		"last_flow_rate" = round(get_flow_rate()*10),
+		"max_power_draw" = get_power_rating(),
 	)
 
 	return data
@@ -182,14 +154,17 @@ Thus, the two variables affect pump operation are set in New():
 	if(signal.data["power"])
 		if(text2num(signal.data["power"]))
 			update_use_power(USE_POWER_IDLE)
+			set_on(TRUE)
 		else
 			update_use_power(USE_POWER_OFF)
+			set_on(FALSE)
 
 	if("power_toggle" in signal.data)
 		update_use_power(!use_power)
+		set_on(!!use_power)
 
 	if(signal.data["set_output_pressure"])
-		target_pressure = between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50)
+		set_target_pressure(between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50))
 
 	update_rust_device()
 
@@ -215,10 +190,6 @@ Thus, the two variables affect pump operation are set in New():
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/pump/proc/lets_in, "access denied"))
 	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl
 
-/// Old click_alt access check, shared with the hand entry.
-/obj/machinery/atmospherics/binary/pump/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
-
 /obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
@@ -234,7 +205,7 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/proc/interaction_max_output(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	to_chat(user, span_notice("You set the [name] to max output"))
-	target_pressure = max_pressure_setting
+	set_target_pressure(max_pressure_setting)
 	update_rust_device()
 	add_fingerprint(user)
 	return TRUE
@@ -246,17 +217,18 @@ Thus, the two variables affect pump operation are set in New():
 	switch(action)
 		if("power")
 			update_use_power(!use_power)
+			set_on(!!use_power)
 			. = TRUE
 		if("set_press")
 			var/press = params["press"]
 			switch(press)
 				if("min")
-					target_pressure = 0
+					set_target_pressure(0)
 				if("max")
-					target_pressure = max_pressure_setting
+					set_target_pressure(max_pressure_setting)
 				if("set")
-					var/new_pressure = tgui_input_number(ui.user,"Enter new output pressure (0-[max_pressure_setting]kPa)","Pressure control",src.target_pressure,max_pressure_setting,0)
-					src.target_pressure = between(0, new_pressure, max_pressure_setting)
+					var/new_pressure = tgui_input_number(ui.user,"Enter new output pressure (0-[max_pressure_setting]kPa)","Pressure control",get_target_pressure(),max_pressure_setting,0)
+					set_target_pressure(between(0, new_pressure, max_pressure_setting))
 			. = TRUE
 
 	if(.)
@@ -270,6 +242,59 @@ Thus, the two variables affect pump operation are set in New():
 	if(old_stat != stat)
 		update_rust_device()
 		update_icon()
+
+/obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
+	update_icon()
+
+/obj/machinery/atmospherics/binary/pump/update_icon()
+	if(!powered())
+		icon_state = "[base_icon]-off"
+	else
+		icon_state = "[use_power ? "[base_icon]-on" : "[base_icon]-off"]"
+
+/obj/machinery/atmospherics/binary/pump/update_underlays()
+	..()
+	underlays.Cut()
+	var/turf/T = get_turf(src)
+	if(!istype(T))
+		return
+	add_underlay(T, node1, turn(dir, -180), node1?.icon_connect_type)
+	add_underlay(T, node2, dir, node2?.icon_connect_type)
+
+/obj/machinery/atmospherics/binary/pump/hide(i)
+	update_underlays()
+
+// process() and its hibernate/gas-dependency machinery are deleted (M2,
+// simulation.md §5): the flow law is a Rust device edge, stepped every gas
+// tick from SSair.fire() regardless of DM's process() scheduling, so there
+// is nothing left to run and nothing to hibernate.
+
+/obj/machinery/atmospherics/binary/pump/on
+	icon_state = "map_on"
+	use_power = USE_POWER_IDLE
+	init_on = TRUE
+
+/obj/machinery/atmospherics/binary/pump/fuel
+	icon_state = "map_off-fuel"
+	base_icon = "pump-fuel"
+	icon_connect_type = "-fuel"
+	connect_types = CONNECT_TYPE_FUEL
+
+/obj/machinery/atmospherics/binary/pump/fuel/on
+	icon_state = "map_on-fuel"
+	use_power = USE_POWER_IDLE
+	init_on = TRUE
+
+/obj/machinery/atmospherics/binary/pump/aux
+	icon_state = "map_off-aux"
+	base_icon = "pump-aux"
+	icon_connect_type = "-aux"
+	connect_types = CONNECT_TYPE_AUX
+
+/obj/machinery/atmospherics/binary/pump/aux/on
+	icon_state = "map_on-aux"
+	use_power = USE_POWER_IDLE
+	init_on = TRUE
 
 /obj/machinery/atmospherics/binary/pump/wrench_act(mob/user, obj/item/W)
 	if (!(stat & NOPOWER) && use_power)
@@ -296,6 +321,7 @@ Thus, the two variables affect pump operation are set in New():
 		return CLICK_ACTION_BLOCKING
 
 	update_use_power(!use_power)
+	set_on(!!use_power)
 	update_rust_device()
 	update_icon()
 	add_fingerprint(user)
@@ -313,10 +339,11 @@ Thus, the two variables affect pump operation are set in New():
 	name = "high power gas pump"
 	desc = "A pump that moves gas from one place to another. Has double the power rating of the standard gas pump."
 
-	power_rating = 15000	//15000 W ~ 20 HP
+	init_power_rating = 15000	//15000 W ~ 20 HP
 
 /obj/machinery/atmospherics/binary/pump/high_power/on
 	use_power = USE_POWER_IDLE
+	init_on = TRUE
 	icon_state = "map_on"
 
 /obj/machinery/atmospherics/binary/pump/high_power/update_icon()

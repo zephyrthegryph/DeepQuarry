@@ -10,6 +10,7 @@ pub mod gas;
 pub mod gate;
 #[cfg(feature = "heat")]
 pub(crate) mod heat;
+pub mod kind;
 mod parser;
 pub mod pipes;
 mod reaction;

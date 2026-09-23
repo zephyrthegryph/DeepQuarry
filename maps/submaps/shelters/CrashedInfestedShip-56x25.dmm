@@ -103,7 +103,7 @@
 "cL" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 1;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/CrashedInfestedShip)
@@ -546,7 +546,7 @@
 /area/survivalpod/superpose/CrashedInfestedShip)
 "kD" = (
 /obj/machinery/atmospherics/binary/pump/on{
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/floor,
 /area/survivalpod/superpose/CrashedInfestedShip)
@@ -2077,7 +2077,7 @@
 "Qf" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 1;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/random/maintenance/engineering,
 /turf/simulated/floor,
@@ -2497,7 +2497,7 @@
 /area/survivalpod/superpose/CrashedInfestedShip)
 "Xi" = (
 /obj/machinery/atmospherics/binary/pump/on{
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/template_noop,
 /area/survivalpod/superpose/CrashedInfestedShip)

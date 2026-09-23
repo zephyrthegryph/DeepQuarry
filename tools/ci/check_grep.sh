@@ -130,6 +130,43 @@ if $grep -n 'call_ext|load_ext|VERDIGRIS_CALL' "${code_files[@]}" \
 	FAILED=1
 fi;
 
+part "R10 bindings: init_* seeds referenced outside a var-edit"
+# init_* (doc/rewrite/rust_bindings.md §3) are read exactly once, by the
+# generated vg_bind_<domain>() in _bindings_types.dm, to seed the Rust
+# store at bind time. Anywhere else, a reference to one looks like the live
+# value but isn't (the live value is get_*()) — so the only other place a
+# real seed (one _bindings_types.dm actually declares) may appear is a
+# var-edit ("init_x = value" as the whole statement), never inside a proc
+# body. The seed names are read from the generated file, not guessed, so
+# this never flags an unrelated init_* proc (init_dir() and the like).
+seeds_file="code/__defines/verdigris/_bindings_types.dm"
+seeds=$( [ -f "$seeds_file" ] && $grep -o 'var/tmp/init_[A-Za-z0-9_]+' "$seeds_file" | sed 's#var/tmp/##' | sort -u | paste -sd'|' - )
+if [ -n "$seeds" ] && $grep -nE "\\b($seeds)\\b" "${code_files[@]}" \
+	| $grep -v '^code/__defines/verdigris/' \
+	| $grep -vP ':\s*(//|/\*|\*)' \
+	| $grep -vP "^[^:]+:\d+:\s*($seeds)(\s*=\s*[^=].*)?\s*\$"; then
+	echo
+	echo -e "${RED}ERROR: an init_* seed was referenced outside a var-edit. It is a seed, read once at bind; use get_*() for the live value.${NC}"
+	FAILED=1
+fi;
+
+part "R10 bindings: no member-var caching of a binding read"
+# get_*()/*_query_*() (§6) return this tick's Rust state; DM must not stash
+# the result in a member var across ticks (a read right after a write must
+# see the write, and state can be up to one frame old — caching it defeats
+# both). Hand-written code only: the generated wrappers themselves return
+# the call directly and never assign it to a var. Names are read from the
+# generated file, not guessed (a blanket get_* would catch get_turf() and
+# every other ordinary getter in the codebase).
+readers=$( [ -f "$seeds_file" ] && $grep -oE 'proc/(get_[A-Za-z0-9_]+|[a-z][a-z0-9_]*_query_[A-Za-z0-9_]+)' "$seeds_file" | sed 's#proc/##' | sort -u | paste -sd'|' - )
+if [ -n "$readers" ] && $grep -nE "^\s*(src\.)?[A-Za-z_][A-Za-z0-9_.]*\s*=\s*(vg_)?($readers)\(" "${code_files[@]}" \
+	| $grep -vP '^[^:]+:\d+:\s*var/' \
+	| $grep -v '^code/__defines/verdigris/'; then
+	echo
+	echo -e "${RED}ERROR: a get_*()/*_query_*() result was assigned to a var. Read it again next time; do not cache Rust-owned state across ticks (rust_bindings.md §6).${NC}"
+	FAILED=1
+fi;
+
 part "life scheduler: no Life() overrides"
 # /mob/living/Life() is the life scheduler (code/modules/mob/living/life/scheduler.dm). Living
 # mobs change their upkeep by adding or overriding /datum/life_system variants, never by

@@ -4385,11 +4385,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/binary/pump/P = new(T)
 	P.stat = 0
 	P.use_power = USE_POWER_OFF
-	P.target_pressure = ONE_ATMOSPHERE
+	P.set_target_pressure(ONE_ATMOSPHERE)
 	P.rust_register_pipe_topology()
 	P.update_rust_device()
 	TEST_ASSERT(!(P in SSmachines.processing_machines), "powered-off binary pump should never be a DM process() subscriber")
 	P.use_power = USE_POWER_IDLE
+	P.set_on(TRUE)
 	P.update_rust_device()
 	TEST_ASSERT(!(P in SSmachines.processing_machines), "enabling a binary pump must not add DM process() scheduling")
 	P.air1.adjust_moles(/datum/gas/oxygen, 10)
@@ -5213,7 +5214,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(Pump, "binary pump construct failed")
 	Pump.use_power = USE_POWER_IDLE
 	Pump.stat &= ~(BROKEN | NOPOWER)
-	Pump.target_pressure = ONE_ATMOSPHERE * 5 // high target so pump runs
+	Pump.set_on(TRUE)
+	Pump.set_target_pressure(ONE_ATMOSPHERE * 5) // high target so pump runs
 	Pump.rust_register_pipe_topology() // allocates ports, binds air1/air2, registers the device edge
 	TEST_ASSERT_NOTNULL(Pump.air1, "binary pump air1 null")
 	TEST_ASSERT_NOTNULL(Pump.air2, "binary pump air2 null")

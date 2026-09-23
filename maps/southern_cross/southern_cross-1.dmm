@@ -2372,7 +2372,7 @@
 "afh" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 4;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /turf/simulated/floor/plating,
@@ -2973,7 +2973,7 @@
 "agA" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 8;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /turf/simulated/floor/plating,
@@ -18495,7 +18495,7 @@
 /obj/machinery/atmospherics/binary/pump/high_power/on{
 	dir = 4;
 	name = "Pump station in";
-	target_pressure = 4500
+	init_target_pressure = 4500
 	},
 /obj/machinery/firealarm{
 	pixel_y = 24
@@ -33860,7 +33860,7 @@
 "bnW" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 8;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/machinery/light/small{
 	dir = 1
@@ -39893,7 +39893,7 @@
 "bzK" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 8;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/effect/floor_decal/industrial/warning{
 	dir = 1
@@ -40623,7 +40623,7 @@
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 4;
 	name = "Air to Supply";
-	target_pressure = 301.325
+	init_target_pressure = 301.325
 	},
 /turf/simulated/floor/tiled,
 /area/engineering/atmos)
@@ -40854,7 +40854,7 @@
 	},
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 8;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/floor/plating,
 /area/maintenance/research)
@@ -41819,7 +41819,7 @@
 "bDe" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 4;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/machinery/access_button{
 	command = "cycle_interior";
@@ -45780,7 +45780,7 @@
 /obj/effect/floor_decal/industrial/warning/corner,
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 1;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/floor/plating,
 /area/engineering/drone_fabrication)
@@ -69393,7 +69393,7 @@
 	dir = 8
 	},
 /obj/machinery/atmospherics/binary/pump/on{
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/floor,
 /area/maintenance/cargo)
@@ -76560,7 +76560,7 @@
 /area/maintenance/medbay)
 "cTM" = (
 /obj/machinery/atmospherics/binary/pump/on{
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /turf/simulated/floor/plating,
 /area/maintenance/medbay)
@@ -89524,7 +89524,7 @@
 "dtv" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 1;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/structure/cable{
 	icon_state = "1-2"
@@ -94650,7 +94650,7 @@
 	},
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 8;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/structure/cable{
 	icon_state = "1-4"
@@ -94842,7 +94842,7 @@
 	},
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 4;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/effect/floor_decal/industrial/warning,
 /turf/simulated/floor/plating,
@@ -95709,7 +95709,7 @@
 "dFy" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 1;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/structure/table/rack,
 /obj/item/storage/toolbox/mechanical,
@@ -95828,7 +95828,7 @@
 "dFI" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 1;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/structure/largecrate,
 /obj/random/maintenance/clean,
@@ -102750,7 +102750,7 @@
 "dTz" = (
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 8;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/structure/cable{
 	icon_state = "1-4"
@@ -103088,7 +103088,7 @@
 	},
 /obj/machinery/atmospherics/binary/pump/on{
 	dir = 4;
-	target_pressure = 200
+	init_target_pressure = 200
 	},
 /obj/effect/floor_decal/industrial/warning{
 	dir = 1

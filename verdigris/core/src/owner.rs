@@ -24,7 +24,7 @@ use crate::arena::{Arena, ArenaError};
 use crate::command::{CommandBuffer, Op, Seq, Sequenced};
 use crate::cow::{ChunkLayout, CowStore};
 use crate::frame::{Res, TaskCtx};
-use crate::handle::Handle;
+use crate::slot::Handle;
 use crate::mailbox::Latest;
 use crate::outbox::{Outbox, OutboxSlot, TakeResult};
 use crate::overlay::{CellMap, Overlay};

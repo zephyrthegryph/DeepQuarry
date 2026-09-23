@@ -384,3 +384,79 @@ generated wiring, so the pump file doesn't mention it.
 4. **Stateless binds** (jobs, layout, metrics) become typed commands and queries.
 5. The old untyped paths are deleted with no shims, and the lints go
    repo-wide.
+
+## 16. Implementation notes (step 1, landed on `rewrite/bindings`)
+
+What the runtime, generator and pump component actually turned out to need,
+beyond what earlier sections specify exactly:
+
+- **The entity handle crosses as raw-plus-one.** A packed handle's bits can
+  themselves be `0` (index 0, generation 0 is an ordinary handle), so `0`
+  cannot mean both "the first entity ever bound" and "unbound" — that would
+  be exactly the hand-rolled sentinel collision §0 rules out. Every
+  `vg_entity` value is the raw handle plus one; DM never sees the offset,
+  and every FFI entry point that takes a `vg_entity` rejects anything below
+  1 as "not bound" before decoding.
+- **Per-domain bind and reconcile dispatch is override-based, not a
+  switch.** `vg_bind_<domain>(entity)` and `vg_reconcile_<domain>()` are
+  base no-op procs on `/atom/movable`, and the generator overrides them on
+  each bound type to call that type's own `vg_<kind>_bind`/`<kind>_reconcile`.
+  This is what the generic, domain-list-driven `vg_bind()`/`vg_reconcile()`
+  call, so adding a kind never means regenerating a switch statement across
+  every other kind in the domain.
+- **The reconciler's dispatch is generated per component**
+  (`<kind>_reconcile()`), comparing every declared input field's pure proc
+  against a generated read-only `get_*()` of Rust's stored value and pushing
+  a repair on mismatch. `SSvg` (`code/controllers/subsystems/vg.dm`) drives
+  a budgeted production sweep and exposes `vg_reconcile_all()`, a full pass
+  in one call, for the test sandbox teardown and the fuzz test.
+- **Event drain and dispatch are declared but not yet wired end to end.**
+  `#[vg::events]` gives each event a stable id and `snake_case` name, and the
+  generator emits the numeric defines and a no-op `on_<kind>_<event>()`
+  handler stub per event — satisfying §12's "every event has a handler, a
+  generated default." The outbox drain that would actually call one (§8) is
+  intentionally deferred: nothing emits a component event yet (that is
+  physics, M2's law), so building and testing a full drain-and-dispatch path
+  now would be exercising dead code. Its shape is fixed (id, name, handler)
+  so M2 does not need a generator change to start emitting `PumpEvent`s;
+  only the drain call and SSvg wiring remain.
+- **The pump keeps `update_rust_device()` as a bridge, not a second store.**
+  `target_pressure`/`power_rating`/`on` have exactly one store — the Pump
+  component behind `MainPort<PumpKind>` — reached only through the
+  generated `get_*`/`set_*`. `update_rust_device()` reads through those
+  getters and republishes to the legacy per-device-edge law
+  (`rust_pipenets.dm`, `RUST_DEVICE_LAW_PUMP`) that still does the actual
+  gas moving, so the pump keeps working exactly as before while the
+  binding layer becomes the source of truth. This bridge, `rust_set_device`
+  and `rust_unregister_device` are deleted in migration step 2 once M2's
+  generic Flow law reads `Pump` directly from the same `MainPort`.
+- **`power_rating` is still a live DM var — on other, not-yet-migrated
+  devices.** It is declared on the shared `/obj/machinery/atmospherics`
+  ancestor (`atmospherics.dm`), which `volume_pump.dm`, `outlet_injector.dm`
+  and others still read as a plain var. Binding `Pump` to it does not (and
+  cannot yet) remove the ancestor declaration; on `pump` specifically it is
+  inherited but never read or written by anything after this migration — a
+  latent, inert shadow rather than a live desync risk, resolved once every
+  atmos device migrates and the ancestor var is deleted.
+- **`from = [construction, integrity]` sources.** Only `integrity` gets a
+  generated hook today (`atom_break()`/`atom_fix()`, class 3): it is the one
+  source with a landed, unconditional framework transition point.
+  `construction` has no I5 graph to hook yet, so — like the `anchored`
+  BYOND built-in (class 5) — it relies on the reconciler alone until I5
+  lands; the generator accepts any source name but only emits a hook for
+  ones it recognizes as having a concrete transition point.
+- **Boot batching (§4) is not built yet.** `pump_bind()` today does one
+  entity-table reservation and one `MainPort::put` per call, exactly like
+  any other tick's bind — correct (every read after it sees it, same as
+  §4 promises), just not yet batched into one call per world-init block.
+  With one component kind live, boot-time bind traffic is negligible; this
+  is real follow-up work once several kinds (and therefore a real map-load
+  spike) exist, not a correctness gap the reference component needed to
+  prove.
+- **J1/C10 are not on master yet.** Unbind lives in
+  `/atom/movable/on_dematerialize()` (today's earliest guaranteed point,
+  the same hook L3's `leave_registries()` already piggybacks on), with a
+  single marked comment to move it once J1's `pre_destroy()` lands. There is
+  no latent-collapse integration yet, for the same reason (C10 not landed);
+  the state codec hook for save/load is not built yet either — deferred to
+  when a latent-safe atom actually needs one, since none does today.
