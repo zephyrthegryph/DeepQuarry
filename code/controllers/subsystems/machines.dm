@@ -343,21 +343,21 @@ SUBSYSTEM_DEF(machines)
 			return
 
 	var/wait = src.wait
-	var/list/processing_machines = src.processing_machines
+	var/list/roster = processing_machines
 	var/pass = machine_run_pass
 	while(machine_run_cursor > 0)
 		// Removals while we yielded can shrink the list below the cursor.
-		if(machine_run_cursor > length(processing_machines))
-			machine_run_cursor = length(processing_machines)
+		if(machine_run_cursor > length(roster))
+			machine_run_cursor = length(roster)
 			continue
-		var/obj/machinery/M = processing_machines[machine_run_cursor]
+		var/obj/machinery/M = roster[machine_run_cursor]
 		if(!istype(M))
 			// Hard-deleted entry: swap the last slot in and look at this slot again.
-			processing_machines[machine_run_cursor] = processing_machines[length(processing_machines)]
-			var/obj/machinery/moved = processing_machines[machine_run_cursor]
+			roster[machine_run_cursor] = roster[length(roster)]
+			var/obj/machinery/moved = roster[machine_run_cursor]
 			if(istype(moved))
 				moved.machine_processing_index = machine_run_cursor
-			processing_machines.len--
+			roster.len--
 			continue
 		machine_run_cursor--
 		if(M.machine_processing_pass == pass)
