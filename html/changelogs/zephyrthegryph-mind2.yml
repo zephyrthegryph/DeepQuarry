@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - balance: "A brain-dead brain can no longer be repaired by surgery, drugs or other treatment; the person has to be resleeved. Brain damage short of brain death is still repairable."
+  - bugfix: "Dominate prey, dominate predator, prey control, mob transforms, borers, morphs and other body swaps move players through their minds, so each character keeps its own name, flavour text, languages and OOC notes."
+  - bugfix: "Sleeves printed from a body record now get flavour text, languages and persistent traits from the mind put into them, not from the body record."
+  - code_imp: "Body and DNA records hold only the body; character data comes from the mind's identity."
