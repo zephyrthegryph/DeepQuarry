@@ -12,13 +12,13 @@
 	var/mob/living/carbon/human/victim = null
 	var/verbose = 1 //general speaker toggle
 	var/patientName = null
-	var/oxyAlarm = 30 //oxy damage at which the computer will beep
+	var/spo2Alarm = 90 //SpO2 (%) below which the computer will beep
 	var/choice = 0 //just for going into and out of the options menu
 	var/healthAnnounce = 1 //healther announcer toggle
 	var/crit = 1 //crit beeping toggle
 	var/nextTick = OP_COMPUTER_COOLDOWN
 	var/healthAlarm = 50
-	var/oxy = 1 //oxygen beeping toggle
+	var/spo2 = 1 //SpO2 beeping toggle
 
 /obj/machinery/computer/operating/Initialize(mapload)
 	. = ..()
@@ -66,65 +66,23 @@
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
-		// UI keys kept for the tgui interface: health is vitality as a percentage.
-		occupantData["health"] = round(occupant.vitality() * 100)
-		occupantData["maxHealth"] = 100
-		occupantData["minHealth"] = 0
-		occupantData["bruteLoss"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-		occupantData["oxyLoss"] = occupant.oxygen_debt()
-		occupantData["toxLoss"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
-		occupantData["fireLoss"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
+		occupantData["vitality"] = round(occupant.vitality() * 100)
 		occupantData["paralysis"] = occupant.paralysis
-		occupantData["hasBlood"] = 0
-		occupantData["bodyTemperature"] = occupant.bodytemperature
-		occupantData["maxTemp"] = 1000 // If you get a burning vox armalis into the sleeper, congratulations
-		// Because we can put simple_animals in here, we need to do something tricky to get things working nice
-		occupantData["temperatureSuitability"] = 0 // 0 is the baseline
-		if(ishuman(occupant) && occupant.species)
-			// I wanna do something where the bar gets bluer as the temperature gets lower
-			// For now, I'll just use the standard format for the temperature status
-			var/datum/species/sp = occupant.species
-			if(occupant.bodytemperature < sp.cold_level_3)
-				occupantData["temperatureSuitability"] = -3
-			else if(occupant.bodytemperature < sp.cold_level_2)
-				occupantData["temperatureSuitability"] = -2
-			else if(occupant.bodytemperature < sp.cold_level_1)
-				occupantData["temperatureSuitability"] = -1
-			else if(occupant.bodytemperature > sp.heat_level_3)
-				occupantData["temperatureSuitability"] = 3
-			else if(occupant.bodytemperature > sp.heat_level_2)
-				occupantData["temperatureSuitability"] = 2
-			else if(occupant.bodytemperature > sp.heat_level_1)
-				occupantData["temperatureSuitability"] = 1
-		else if(isanimal(occupant))
-			var/mob/living/simple_mob/silly = occupant
-			if(silly.bodytemperature < silly.minbodytemp)
-				occupantData["temperatureSuitability"] = -3
-			else if(silly.bodytemperature > silly.maxbodytemp)
-				occupantData["temperatureSuitability"] = 3
-		// Blast you, imperial measurement system
-		occupantData["btCelsius"] = occupant.bodytemperature - T0C
-		occupantData["btFaren"] = ((occupant.bodytemperature - T0C) * (9.0/5.0))+ 32
-
-		if(ishuman(occupant) && !(NO_BLOOD in occupant.species.flags) && occupant.vessel)
-			occupantData["pulse"] = occupant.get_pulse(GETPULSE_TOOL)
-			occupantData["hasBlood"] = 1
-			var/blood_volume = round(occupant.vessel.get_reagent_amount(REAGENT_ID_BLOOD))
-			occupantData["bloodLevel"] = blood_volume
-			occupantData["bloodMax"] = occupant.species.blood_volume
-			occupantData["bloodPercent"] = occupant.species.blood_volume ? round(100*(blood_volume/occupant.species.blood_volume), 0.01) : 0 //copy pasta ends here, some species have no blood volume
-
+		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/operating_computer)
+		occupantData["diagnosis"] = D.report_data()
+		qdel(D)
+		if(ishuman(occupant) && occupant.dna)
 			occupantData["bloodType"] = occupant.dna.b_type
 			occupantData["surgery"] = build_surgery_list(user)
 
 	data["occupant"] = occupantData
 	data["verbose"]=verbose
-	data["oxyAlarm"]=oxyAlarm
+	data["spo2Alarm"]=spo2Alarm
 	data["choice"]=choice
 	data["health"]=healthAnnounce
 	data["crit"]=crit
 	data["healthAlarm"]=healthAlarm
-	data["oxy"]=oxy
+	data["spo2"]=spo2
 
 	return data
 
@@ -148,12 +106,12 @@
 			crit = TRUE
 		if("critOff")
 			crit = FALSE
-		if("oxyOn")
-			oxy = TRUE
-		if("oxyOff")
-			oxy = FALSE
-		if("oxy_adj")
-			oxyAlarm = clamp(text2num(params["new"]), -100, 100)
+		if("spo2On")
+			spo2 = TRUE
+		if("spo2Off")
+			spo2 = FALSE
+		if("spo2_adj")
+			spo2Alarm = clamp(text2num(params["new"]), 0, 100)
 		if("choiceOn")
 			choice = TRUE
 		if("choiceOff")
@@ -180,7 +138,8 @@
 				nextTick=world.time + OP_COMPUTER_COOLDOWN
 				if(crit && victim.is_critical())
 					playsound(src.loc, 'sound/machines/defib_success.ogg', 50, 0)
-				if(oxy && victim.oxygen_debt() > oxyAlarm)
+				var/saturation = victim.body?.oxygenation()
+				if(spo2 && !isnull(saturation) && saturation < spo2Alarm)
 					playsound(src.loc, 'sound/machines/defib_safetyOff.ogg', 50, 0)
 				if(healthAnnounce && victim.vitality() * 100 <= healthAlarm)
 					atom_say("[round(victim.vitality() * 100)]% vitality.")

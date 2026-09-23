@@ -124,7 +124,7 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	return TRUE
 
 /// INJURY_* -> DAMAGE_*. 0 for the kinds that stay internal to the body
-/// (asphyxia, cellular, neural, digestion).
+/// (cellular, neural, digestion).
 /proc/damage_kind_for_injury(injury)
 	var/static/list/kinds = list(
 		DAMAGE_BLUNT,     // INJURY_BLUNT
@@ -135,7 +135,6 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 		DAMAGE_CORROSIVE, // INJURY_CORROSIVE
 		DAMAGE_SHOCK,     // INJURY_ELECTRIC
 		DAMAGE_TOXIC,     // INJURY_TOXIN
-		0,                // INJURY_ASPHYXIA
 		DAMAGE_RADIATION, // INJURY_RADIATION
 		0,                // INJURY_CELLULAR
 		0,                // INJURY_NEURAL

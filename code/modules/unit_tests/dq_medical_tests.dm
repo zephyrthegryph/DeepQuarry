@@ -591,8 +591,8 @@
 
 /datum/unit_test/dq_medical_examine_lists_visible_symptoms/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	// Without conditions, the examine helper returns an empty list.
-	var/list/empty = H.dq_externally_visible_symptom_lines()
+	// Without conditions, the glance diagnosis has no examine lines.
+	var/list/empty = H.diagnose(/datum/diagnostic_profile/glance).examine_lines()
 	TEST_ASSERT_EQUAL(length(empty), 0, "no conditions = no visible-symptom lines (got [length(empty)])")
 
 	// Spawn lacerated_artery and force-roll bleeding_visible into the
@@ -603,7 +603,7 @@
 	// Force bleeding_visible if RNG didn't pick it (typepaths: singletons).
 	if(!(/datum/affliction_symptom/bleeding_visible in C.active_symptoms))
 		LAZYADD(C.active_symptoms, /datum/affliction_symptom/bleeding_visible)
-	var/list/lines = H.dq_externally_visible_symptom_lines()
+	var/list/lines = H.diagnose(/datum/diagnostic_profile/glance).examine_lines()
 	TEST_ASSERT(length(lines) > 0, "examine helper should return at least one visible-symptom line")
 	var/found_bleeding = FALSE
 	for(var/line in lines)

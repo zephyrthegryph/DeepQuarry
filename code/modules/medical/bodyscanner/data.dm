@@ -1,21 +1,13 @@
 // Body scanner data builder.
 //
-// Replaces the upstream /obj/machinery/bodyscanner/tgui_data block. The
-// shape is intentionally reduced from the old version:
+// The patient's condition is the body scanner profile's diagnosis
+// (code/modules/medical/diagnosis/): vitals, findings (conditions, lesions,
+// wounds and presenting signs, with trends and hints) and per-limb bands,
+// rendered by /datum/diagnosis/proc/report_data() into `diagnosis`.
 //
-//   - Per-damage-type numbers become a qualitative `damagePanel` array —
-//     one band per injury category (from injury_load()).
-//   - Per-organ raw damage values are gone. Each organ emits an
-//     `injuryBand` qualitative string instead.
-//   - The old per-organ grab-bag lists (which dumped every active
-//     affliction's name) are gone. The TGUI gets a
-//     deduplicated `scanner_findings` array derived from active symptoms
-//     whose audiences flag includes SYMPTOM_AUDIENCE_SCANNER.
-//
-// What survives unchanged: name / species / blood / reagents / ingested /
-// allergens / abnormality flags / implants / discrete organ states
-// (broken, bleeding, splinted, robotic, dead, missing, lungRuptured,
-// inflamed appendix, internal bleeding).
+// Alongside it: identity, abnormality flags, reagents, implants and the
+// discrete organ states (broken, bleeding, splinted, robotic, dead, missing,
+// lung rupture, internal bleeding).
 
 /obj/machinery/bodyscanner/proc/dq_build_tgui_data()
 	var/list/data = list()
@@ -37,37 +29,11 @@
 	dq_emit_external_organs(H, occupantData)
 	dq_emit_internal_organs(H, occupantData)
 
-	// Scanner-detected DQ findings: dedup by (organ + phrase), then sort
-	// most-severe first so triage reads top-down. The Condition row on
-	// the occupant card escalates to match the worst finding so a medic
-	// glancing at the patient gets the urgency before reading details.
-	var/list/findings = dq_qualitative_scanner_findings(H)
-	var/list/seen = list()
-	// Bucket findings by severity band so the emit is sorted without
-	// an in-place comparator over nested lists (DM list.Insert can't
-	// reliably splice a list-of-lists by index).
-	var/list/by_band = list("critical" = list(), "severe" = list(), "moderate" = list(), "minor" = list(), "uninjured" = list())
-	var/worst = "uninjured"
-	for(var/list/f in findings)
-		var/key = "[f["organ"]]||[f["phrase"]]"
-		if(seen[key])
-			continue
-		seen[key] = TRUE
-		var/band = f["severity"] || "minor"
-		if(!by_band[band])
-			by_band[band] = list()
-		by_band[band] += list(f)
-		if(_dq_band_rank(band) > _dq_band_rank(worst))
-			worst = band
-	var/list/finding_out = list()
-	for(var/band in list("critical", "severe", "moderate", "minor", "uninjured"))
-		for(var/list/entry in by_band[band])
-			finding_out += list(entry)
-	occupantData["scannerFindings"] = finding_out
-	occupantData["worstFinding"] = worst
-
-	// Whole-body qualitative damage panel.
-	occupantData["damagePanel"] = dq_qualitative_damage_panel(H)
+	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
+	occupantData["diagnosis"] = D.report_data()
+	occupantData["healthBand"] = D.band
+	occupantData["worstFinding"] = D.worst_finding_band()
+	qdel(D)
 
 	// Pass-through fields the upstream layer still expects (vore prey
 	// detection etc.). dq_build_tgui_data fills them via the existing
@@ -99,21 +65,10 @@
 		fakedeath = TRUE
 	out["stat"] = stat
 	out["fakedeath"] = fakedeath
-	out["healthBand"] = fakedeath ? "critical" : dq_qualitative_vitality_band(H.vitality(), H.is_critical())
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_vitals(mob/living/carbon/human/H, list/out)
-	out["bodyTempC"] = H.bodytemperature - T0C
-	out["bodyTempF"] = (((H.bodytemperature - T0C) * 1.8) + 32)
 	out["paralysisSeconds"] = round(H.paralysis / 4)
-
-	var/list/bloodData = list()
-	if(H.vessel)
-		var/blood_volume = round(H.vessel.get_reagent_amount(REAGENT_ID_BLOOD))
-		var/blood_max = H.species.blood_volume
-		bloodData["volume"] = blood_volume
-		bloodData["percent"] = blood_max ? round(((blood_volume / blood_max) * 100)) : 0
-	out["blood"] = bloodData
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_abnormalities(mob/living/carbon/human/H, list/out)
@@ -182,8 +137,6 @@
 		od["open"] = E.open
 		od["germ_level"] = E.germ_level
 		od["injuryBand"] = dq_qualitative_damage_band(E.get_trauma() + E.get_burn(), E.max_damage)
-		od["hasBrute"] = E.get_trauma() > 0
-		od["hasBurn"] = E.get_burn() > 0
 
 		var/list/implantData = list()
 		for(var/obj/thing in E.implants)

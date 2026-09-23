@@ -1,5 +1,7 @@
 import type { BooleanLike } from 'tgui-core/react';
 
+import type { Diagnosis } from '../common/Diagnosis';
+
 export type Data = {
   isOperating: BooleanLike;
   hasOccupant: BooleanLike;
@@ -8,10 +10,7 @@ export type Data = {
     stat: number;
     vitality: number;
     critical: BooleanLike;
-    physicalLoad: number;
-    asphyxiaLoad: number;
-    toxicLoad: number;
-    thermalLoad: number;
+    diagnosis: Diagnosis;
     bodyTemperature: number;
   };
   cellTemperature: number;

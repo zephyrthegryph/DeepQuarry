@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Stack } from 'tgui-core/components';
+import { DIAGNOSIS_BAND } from '../../../common/Diagnosis';
 import { STAT_TO_COLOR } from '../../constants';
 import type { Data } from '../../types';
 
@@ -37,26 +38,13 @@ export const SleeperPatient = (props: { name: string }) => {
           {`- Overall Health: ${((100 * our_patient.health) / our_patient.max_health).toFixed()}`}
         </Box>
       </Stack.Item>
-      <Stack.Item>
-        <Box color={our_patient.brute < 60 ? 'label' : 'red'}>
-          {`- Brute Damage: ${our_patient.brute.toFixed()}`}
-        </Box>
-      </Stack.Item>
-      <Stack.Item>
-        <Box color={our_patient.oxy < 60 ? 'label' : 'red'}>
-          {`- Respiratory Damage: ${our_patient.oxy.toFixed()}`}
-        </Box>
-      </Stack.Item>
-      <Stack.Item>
-        <Box color={our_patient.tox < 60 ? 'label' : 'red'}>
-          {`- Toxin Content: ${our_patient.tox.toFixed()}`}
-        </Box>
-      </Stack.Item>
-      <Stack.Item>
-        <Box color={our_patient.burn < 60 ? 'label' : 'red'}>
-          {`- Burn Severity: ${our_patient.burn.toFixed()}`}
-        </Box>
-      </Stack.Item>
+      {our_patient.findings.map((finding) => (
+        <Stack.Item key={finding.name}>
+          <Box color={DIAGNOSIS_BAND[finding.band]?.color ?? 'label'}>
+            {`- ${finding.name}`}
+          </Box>
+        </Stack.Item>
+      ))}
       {(isParalysed ||
         !!our_patient.braindamage ||
         !!our_patient.clonedamage ||

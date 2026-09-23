@@ -6,6 +6,14 @@ export type Data = {
   crewmembers: Crewmember[];
 };
 
+export type CrewCondition =
+  | 'dead'
+  | 'critical'
+  | 'uninjured'
+  | 'minor'
+  | 'moderate'
+  | 'severe';
+
 export type Crewmember = {
   sensor_type: number;
   name: string;
@@ -13,10 +21,11 @@ export type Crewmember = {
   assignment: string;
   dead: BooleanLike;
   stat?: number;
-  oxy: number;
-  tox: number;
-  fire: number;
-  brute: number;
+  condition?: CrewCondition;
+  vitality?: number;
+  heartRate?: number | null;
+  oxygenation?: number | null;
+  temperature?: number | null;
   area: string;
   x: number;
   y: number;

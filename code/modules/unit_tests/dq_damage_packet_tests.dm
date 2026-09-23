@@ -119,7 +119,7 @@
 	packet.add_split(INJURY_BURN, alist(INJURY_BURN = 0.25, INJURY_CUT = 0.75), 8)
 	TEST_ASSERT(dq_near(packet.amounts[DAMAGE_THERMAL], 2), "a split should share its amount out")
 	TEST_ASSERT(dq_near(packet.amounts[DAMAGE_SHARP], 6), "a split should share its amount out")
-	TEST_ASSERT(!packet.add_injury(INJURY_ASPHYXIA, 5), "asphyxia has no packet kind")
+	TEST_ASSERT(!packet.add_injury(INJURY_CELLULAR, 5), "cellular injury has no packet kind")
 	packet.release()
 	var/datum/damage_packet/again = damage_packet()
 	TEST_ASSERT(again == packet, "a released packet should be reused")

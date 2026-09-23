@@ -7,6 +7,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import { DIAGNOSIS_BAND, DiagnosisVitalsList } from '../../common/Diagnosis';
 import {
   gridStatusToColor,
   gridStatusToText,
@@ -36,10 +37,7 @@ export const MedigunContent = (props: { smodule: SModule }) => {
     toxheal_vol,
     patient_name,
     patient_health,
-    patient_brute,
-    patient_burn,
-    patient_tox,
-    patient_oxy,
+    patient_diagnosis,
     blood_status,
     patient_status,
     organ_damage,
@@ -135,11 +133,7 @@ export const MedigunContent = (props: { smodule: SModule }) => {
       <Stack.Item grow>
         <Section fill title="Patient Status">
           <Stack vertical fill>
-            {patient_health !== null &&
-            patient_brute !== null &&
-            patient_burn !== null &&
-            patient_tox !== null &&
-            patient_oxy !== null ? (
+            {patient_health !== null ? (
               <>
                 <Stack.Item>
                   <LabeledList>
@@ -233,30 +227,29 @@ export const MedigunContent = (props: { smodule: SModule }) => {
                   </LabeledList>
                 </Stack.Item>
                 <Stack.Item>
-                  {!!data.patient_name && moduleLevel >= 2 && (
-                    <Stack>
-                      <Stack.Item basis="50%">
-                        <LabeledList>
-                          <LabeledList.Item label="Brute Damage">
-                            <Box color="red">{patient_brute}</Box>
-                          </LabeledList.Item>
-                          <LabeledList.Item label="Burn Damage">
-                            <Box color="orange">{patient_burn}</Box>
-                          </LabeledList.Item>
-                        </LabeledList>
-                      </Stack.Item>
-                      <Stack.Item>
-                        <LabeledList>
-                          <LabeledList.Item label="Tox Damage">
-                            <Box color="green">{patient_tox}</Box>
-                          </LabeledList.Item>
-                          <LabeledList.Item label="Oxy Damage">
-                            <Box color="blue">{patient_oxy}</Box>
-                          </LabeledList.Item>
-                        </LabeledList>
-                      </Stack.Item>
-                    </Stack>
-                  )}
+                  {!!data.patient_name &&
+                    moduleLevel >= 2 &&
+                    !!patient_diagnosis && (
+                      <Stack>
+                        <Stack.Item basis="50%">
+                          <DiagnosisVitalsList
+                            vitals={patient_diagnosis.vitals}
+                          />
+                        </Stack.Item>
+                        <Stack.Item grow>
+                          {patient_diagnosis.findings.length
+                            ? patient_diagnosis.findings.map((finding) => (
+                                <Box
+                                  key={`${finding.kind}-${finding.name}`}
+                                  color={DIAGNOSIS_BAND[finding.band]?.color}
+                                >
+                                  {finding.name}
+                                </Box>
+                              ))
+                            : 'No findings.'}
+                        </Stack.Item>
+                      </Stack>
+                    )}
                 </Stack.Item>
               </>
             ) : (

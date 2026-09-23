@@ -112,10 +112,7 @@
 		data["occupant_name"] = ""
 		data["status"] = ""
 		data["health_percent"] = 0
-		data["brute"] = 0
-		data["oxy"] = 0
-		data["tox"] = 0
-		data["fire"] = 0
+		data["diagnosis"] = null
 		data["body_temp_c"] = 0
 		data["body_temp_f"] = 0
 		data["reagents"] = list()
@@ -132,10 +129,9 @@
 		else
 			data["status"] = "Unknown"
 	data["health_percent"] = round(occupant.vitality()*100)
-	data["brute"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-	data["oxy"] = occupant.oxygen_debt()
-	data["tox"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
-	data["fire"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
+	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
+	data["diagnosis"] = D?.report_data()
+	qdel(D)
 	data["body_temp_c"] = round(occupant.bodytemperature - T0C, 0.1)
 	data["body_temp_f"] = round(occupant.bodytemperature * 1.8 - 459.67, 0.1)
 	var/list/rlist = list()
@@ -222,21 +218,11 @@
 	text += occupant.bodytemperature > 50 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
-	entry = span_bold("Brute Damage:") + " [occupant.injury_load(INJURY_CATEGORY_PHYSICAL)]%"
-	text += occupant.injury_load(INJURY_CATEGORY_PHYSICAL) < 60 ? span_blue(entry) : span_red(entry)
-	text += "<br />"
-
-	entry = span_bold("Respiratory Damage:") + " [occupant.oxygen_debt()]%"
-	text += occupant.oxygen_debt() < 60 ? span_blue(entry) : span_red(entry)
-	text += "<br />"
-
-	entry = span_bold("Toxin Content:") + " [occupant.injury_load(INJURY_CATEGORY_TOXIC)]%"
-	text += occupant.injury_load(INJURY_CATEGORY_TOXIC) < 60 ? span_blue(entry) : span_red(entry)
-	text += "<br />"
-
-	entry = span_bold("Burn Severity:") + " [occupant.injury_load(INJURY_CATEGORY_THERMAL)]%"
-	text += occupant.injury_load(INJURY_CATEGORY_THERMAL) < 60 ? span_blue(entry) : span_red(entry)
-	text += "<br />"
+	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
+	if(D)
+		text += D.render_chat()
+		text += "<br />"
+		qdel(D)
 
 	return text
 
