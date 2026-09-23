@@ -43,6 +43,9 @@ SUBSYSTEM_DEF(processing)
 	msg = "[stat_tag]:[length(processing)] S:1/[profile_sample_stride]"
 	return ..()
 
+/datum/controller/subsystem/processing/processing_work_items()
+	return length(processing)
+
 /datum/controller/subsystem/processing/fire(resumed = 0)
 	if (!resumed)
 		currentrun = processing.Copy()

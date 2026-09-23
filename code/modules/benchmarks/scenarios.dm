@@ -10,10 +10,10 @@
 	var/list/arena = vg_auxmos_diagnostics()
 	if(!islist(arena) || length(arena) < 10)
 		return
-	metric("[prefix]_gas_mixtures", arena[1], "mixtures")
-	metric("[prefix]_gas_slots", arena[2], "slots")
-	metric("[prefix]_atmos_turfs", arena[5], "turfs")
-	metric("[prefix]_pipe_regions", arena[3], "regions")
+	count_metric("[prefix]_gas_mixtures", arena[1], "mixtures")
+	count_metric("[prefix]_gas_slots", arena[2], "slots")
+	count_metric("[prefix]_atmos_turfs", arena[5], "turfs")
+	count_metric("[prefix]_pipe_regions", arena[3], "regions")
 	detail("[prefix]_atmos_arena", arena)
 	detail("[prefix]_gas_field", vg_gas_stats())
 
@@ -30,21 +30,21 @@
 	mark("booted")
 	record_atmos_arena("booted")
 	var/list/census = benchmark_census(param("top", 40))
-	metric("instances_total", census["total"], "instances")
+	count_metric("instances_total", census["total"], "instances")
 	for(var/root in census["by_root"])
-		metric("instances_[root]", census["by_root"][root], "instances")
+		count_metric("instances_[root]", census["by_root"][root], "instances")
 	detail("census_top_types", census["top_types"])
 	var/list/var_lists = benchmark_var_lists(param("list_top", 60))
-	metric("var_lists_total", var_lists["total"], "lists")
-	metric("var_lists_empty", var_lists["empty"], "lists")
-	metric("var_list_entries", var_lists["entries"], "entries")
+	count_metric("var_lists_total", var_lists["total"], "lists")
+	count_metric("var_lists_empty", var_lists["empty"], "lists")
+	count_metric("var_list_entries", var_lists["entries"], "entries")
 	detail("var_lists_top", var_lists["top"])
 	var/list/types = benchmark_type_counts()
 	for(var/kind in types)
-		metric("types_[kind]", types[kind], "types")
+		count_metric("types_[kind]", types[kind], "types")
 	metric("init_seconds", Master.initializations_seconds, "s")
 	metric("init_atmos_ms", SSair.init_time_ms, "ms")
-	metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
+	count_metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
 	// Per-instance composition lists. Blueprints are per type; an item owns a list only
 	// for an arbitrary mix (material_mix). Override lists are interned and shared.
 	var/items = 0
@@ -66,11 +66,11 @@
 			if(!(O.material_overrides in override_lists))
 				override_lists += list(O.material_overrides)
 		CHECK_TICK
-	metric("items_total", items, "instances")
-	metric("item_matter_lists", matter_lists, "lists")
-	metric("item_matter_entries", matter_entries, "entries")
-	metric("material_override_refs", override_refs, "instances")
-	metric("material_override_lists", length(override_lists), "lists")
+	count_metric("items_total", items, "instances")
+	count_metric("item_matter_lists", matter_lists, "lists")
+	count_metric("item_matter_entries", matter_entries, "entries")
+	count_metric("material_override_refs", override_refs, "instances")
+	count_metric("material_override_lists", length(override_lists), "lists")
 	matter_owners = sortTim(matter_owners, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 	if(length(matter_owners) > 20)
 		matter_owners.Cut(21)
@@ -87,8 +87,8 @@
 		else
 			dead_weakrefs++
 		CHECK_TICK
-	metric("weakrefs_total", weakrefs, "instances")
-	metric("weakrefs_dead", dead_weakrefs, "instances")
+	count_metric("weakrefs_total", weakrefs, "instances")
+	count_metric("weakrefs_dead", dead_weakrefs, "instances")
 	weakref_targets = sortTim(weakref_targets, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 	if(length(weakref_targets) > 20)
 		weakref_targets.Cut(21)
@@ -140,12 +140,12 @@
 		maxima["pressure_pushes"] = max(maxima["pressure_pushes"], SSair.gas_pressure_last)
 	end_window(prefix)
 	var/list/stats_after = vg_gas_stats()
-	metric("[prefix]_cycles", SSair.times_fired - start_cycle, "cycles", "none")
-	metric("[prefix]_gas_commands", stats_after[2] - stats_before[2], "commands")
-	metric("[prefix]_gas_frames_skipped", stats_after[13] - stats_before[13], "frames")
+	count_metric("[prefix]_cycles", SSair.times_fired - start_cycle, "cycles", "none")
+	count_metric("[prefix]_gas_commands", stats_after[2] - stats_before[2], "commands")
+	count_metric("[prefix]_gas_frames_skipped", stats_after[13] - stats_before[13], "frames")
 	metric("[prefix]_gas_last_frame_ms", stats_after[9] / 1000, "ms")
 	for(var/key in maxima)
-		metric("[prefix]_max_[key]", maxima[key], "count")
+		count_metric("[prefix]_max_[key]", maxima[key], "count")
 	record_atmos_arena(prefix)
 
 /// Builds a walled width x width floor fixture on a fresh z-level and returns
@@ -182,7 +182,7 @@
 			fixture_turf.air.set_moles(/datum/gas/oxygen, 500)
 			fixture_turf.air.set_temperature(T20C)
 		fixture_turf.air_update_turf(FALSE, FALSE)
-	metric("atmos_large_turfs", length(turfs), "turfs", "none")
+	count_metric("atmos_large_turfs", length(turfs), "turfs", "none")
 	measure_atmos_cycles("atmos_large", param("cycles", 120))
 	mark("atmos_large_end")
 
@@ -492,7 +492,7 @@
 	for(var/i in 1 to humans)
 		mobs += new /mob/living/carbon/human(pick(turfs))
 		CHECK_TICK
-	metric("idle_mobs_spawned", length(mobs), "mobs", "none")
+	count_metric("idle_mobs_spawned", length(mobs), "mobs", "none")
 	var/was_enabled = GLOB.mob_hibernation_enabled
 
 	GLOB.mob_hibernation_enabled = FALSE
@@ -503,7 +503,7 @@
 	wait_fires(SSmobs, SSmobs.life_slices * cycles)
 	end_window("hibernation_off")
 	metric("hibernation_off_ssmobs_cost_ms", SSmobs.cost, "ms")
-	metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
+	count_metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
 
 	GLOB.mob_hibernation_enabled = TRUE
 	wait_fires(SSmobs, SSmobs.life_slices * 4)
@@ -511,7 +511,7 @@
 	wait_fires(SSmobs, SSmobs.life_slices * cycles)
 	end_window("hibernation_on")
 	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
-	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
+	count_metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
 	var/list/awake_bits = list()
 	for(var/mob/living/L as anything in mobs)
 		if(!L.life_hibernating)
@@ -591,7 +591,7 @@
 	for(var/key in SSradiation.profile_source_cost_ms)
 		cost_after += SSradiation.profile_source_cost_ms[key]
 	var/pulses = SSradiation.profile_pulses_completed - pulses_before
-	metric("radiation_pulses", pulses, "pulses", "none")
+	count_metric("radiation_pulses", pulses, "pulses", "none")
 	metric("radiation_pulse_ms_total", cost_after - cost_before, "ms")
 	metric("radiation_pulse_ms_each", pulses ? (cost_after - cost_before) / pulses : 0, "ms")
 	detail("radiation_diagnostics", SSradiation.performance_diagnostics())

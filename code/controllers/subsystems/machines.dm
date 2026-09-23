@@ -127,6 +127,9 @@ SUBSYSTEM_DEF(machines)
 	fire()
 	return SS_INIT_SUCCESS
 
+/datum/controller/subsystem/machines/processing_work_items()
+	return length(processing_machines)
+
 /datum/controller/subsystem/machines/fire(resumed = 0)
 	var/timer = TICK_USAGE
 	// SSMACHINES_PIPENETS step removed; pipenets dispatch via SSair.
