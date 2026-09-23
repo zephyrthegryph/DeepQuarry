@@ -303,7 +303,7 @@
 	if(density && istype(I, /obj/item) && user.a_intent == I_HURT && !istype(I, /obj/item/card))
 		var/obj/item/W = I
 		user.setClickCooldown(user.get_attack_speed(W))
-		if(W.damtype == BRUTE || W.damtype == BURN)
+		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			if(W.force < min_force)
 				user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))

@@ -6,6 +6,7 @@ rust-version = "1.85"
 description = "Station layout planner and cave generator. Host-buildable; binds live in vg-ffi."
 
 [dependencies]
+vg-core = { path = "../../core" }
 eyre = { workspace = true }
 rand = "0.10.1"
 rand_distr = "0.6"

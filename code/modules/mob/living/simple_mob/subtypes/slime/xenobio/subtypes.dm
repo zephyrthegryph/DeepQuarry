@@ -147,10 +147,13 @@
 		to_chat(src, span_danger("You shock \the [L]."))
 		to_chat(L, span_danger("You've been shocked by \the [src]!"))
 
-/mob/living/simple_mob/slime/xenobio/yellow/handle_special()
-	if(stat == CONSCIOUS)
+/datum/life_system/special/slime/xenobio/yellow
+	mob_type = /mob/living/simple_mob/slime/xenobio/yellow
+
+/datum/life_system/special/slime/xenobio/yellow/tick(mob/living/simple_mob/slime/xenobio/yellow/self, datum/life_context/ctx)
+	if(self.stat == CONSCIOUS)
 		if(prob(25))
-			power_charge = between(0, power_charge + 1, 10)
+			self.power_charge = between(0, self.power_charge + 1, 10)
 	..()
 
 /obj/item/projectile/beam/lightning/slime
@@ -194,14 +197,14 @@
 	ignite()
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/bullet_act(obj/item/projectile/P, def_zone)
-	if(P.damage_type && P.damage_type == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
+	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
 		log_and_message_admins("ignited due to bring hit by a burning projectile[P.firer ? " by [key_name(P.firer)]" : ""].", src)
 		ignite()
 	else
 		..()
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/attackby(obj/item/W, mob/user)
-	if(istype(W) && W.force && W.damtype == BURN)
+	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("ignited due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		ignite()
 	else
@@ -233,9 +236,12 @@
 	minbodytemp = 0
 	cold_damage_per_tick = 0
 
-/mob/living/simple_mob/slime/xenobio/dark_blue/handle_special()
-	if(stat != DEAD)
-		cold_aura()
+/datum/life_system/special/slime/xenobio/dark_blue
+	mob_type = /mob/living/simple_mob/slime/xenobio/dark_blue
+
+/datum/life_system/special/slime/xenobio/dark_blue/tick(mob/living/simple_mob/slime/xenobio/dark_blue/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.cold_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/dark_blue/proc/cold_aura()
@@ -431,9 +437,12 @@
 		/mob/living/simple_mob/slime/xenobio/amber
 	)
 
-/mob/living/simple_mob/slime/xenobio/amber/handle_special()
-	if(stat != DEAD)
-		feed_aura()
+/datum/life_system/special/slime/xenobio/amber
+	mob_type = /mob/living/simple_mob/slime/xenobio/amber
+
+/datum/life_system/special/slime/xenobio/amber/tick(mob/living/simple_mob/slime/xenobio/amber/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.feed_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/amber/proc/feed_aura()
@@ -515,9 +524,12 @@
 			/mob/living/simple_mob/slime/xenobio/emerald
 		)
 
-/mob/living/simple_mob/slime/xenobio/green/handle_special()
-	if(stat != DEAD)
-		irradiate()
+/datum/life_system/special/slime/xenobio/green
+	mob_type = /mob/living/simple_mob/slime/xenobio/green
+
+/datum/life_system/special/slime/xenobio/green/tick(mob/living/simple_mob/slime/xenobio/green/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.irradiate()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/green/proc/irradiate()
@@ -548,9 +560,12 @@
 			/mob/living/simple_mob/slime/xenobio/pink
 		)
 
-/mob/living/simple_mob/slime/xenobio/pink/handle_special()
-	if(stat != DEAD)
-		heal_aura()
+/datum/life_system/special/slime/xenobio/pink
+	mob_type = /mob/living/simple_mob/slime/xenobio/pink
+
+/datum/life_system/special/slime/xenobio/pink/tick(mob/living/simple_mob/slime/xenobio/pink/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.heal_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/pink/proc/heal_aura()
@@ -669,14 +684,14 @@
 	explode()
 
 /mob/living/simple_mob/slime/xenobio/oil/bullet_act(obj/item/projectile/P, def_zone)
-	if(P.damage_type && P.damage_type == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
+	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
 		log_and_message_admins("exploded due to bring hit by a burning projectile[P.firer ? " by [key_name(P.firer)]" : ""].", src)
 		explode()
 	else
 		..()
 
 /mob/living/simple_mob/slime/xenobio/oil/attackby(obj/item/W, mob/living/user)
-	if(istype(W) && W.force && W.damtype == BURN)
+	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("exploded due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		explode()
 	else
@@ -719,9 +734,12 @@
 		/mob/living/simple_mob/slime/xenobio/emerald
 	)
 
-/mob/living/simple_mob/slime/xenobio/emerald/handle_special()
-	if(stat != DEAD)
-		zoom_aura()
+/datum/life_system/special/slime/xenobio/emerald
+	mob_type = /mob/living/simple_mob/slime/xenobio/emerald
+
+/datum/life_system/special/slime/xenobio/emerald/tick(mob/living/simple_mob/slime/xenobio/emerald/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.zoom_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/emerald/proc/zoom_aura()

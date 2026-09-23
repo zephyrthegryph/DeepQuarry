@@ -97,7 +97,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	add_verb(src, /mob/living/proc/ventcrawl)
 	update_mood()
 	glow_color = color
-	handle_light()
+	refresh_glow()
 	update_icon()
 	return ..()
 
@@ -117,13 +117,13 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 /mob/living/simple_mob/slime/death()
 	// Make dead slimes stop glowing.
 	glow_toggle = FALSE
-	handle_light()
+	refresh_glow()
 	..()
 
 /mob/living/simple_mob/slime/revive()
 	// Make revived slimes resume glowing.
 	glow_toggle = initial(glow_toggle)
-	handle_light()
+	refresh_glow()
 	..()
 
 /mob/living/simple_mob/slime/update_icon()
@@ -182,12 +182,15 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	// The other stuff was already checked in parent proc, and the . variable will implicitly return the correct value.
 
 // Slimes regenerate passively.
-/mob/living/simple_mob/slime/handle_special()
-	mend(TREAT_OXYGENATION, 1)
-	mend(TREAT_ANTITOXIN, 1)
-	mend(TREAT_BURN_CARE, 1)
-	mend(TREAT_GENETIC_REPAIR, 1)
-	mend(TREAT_TISSUE_REPAIR, 1)
+/datum/life_system/special/slime
+	mob_type = /mob/living/simple_mob/slime
+
+/datum/life_system/special/slime/tick(mob/living/simple_mob/slime/self, datum/life_context/ctx)
+	self.mend(TREAT_OXYGENATION, 1)
+	self.mend(TREAT_ANTITOXIN, 1)
+	self.mend(TREAT_BURN_CARE, 1)
+	self.mend(TREAT_GENETIC_REPAIR, 1)
+	self.mend(TREAT_TISSUE_REPAIR, 1)
 
 // Clicked on by empty hand.
 /mob/living/simple_mob/slime/attack_hand(mob/living/L)

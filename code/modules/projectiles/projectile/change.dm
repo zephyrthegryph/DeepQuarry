@@ -2,9 +2,8 @@
 	name = "bolt of change"
 	icon_state = "ice_1"
 	damage = 0
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	nodamage = 1
-	check_armour = "energy"
 
 	combustion = FALSE
 

@@ -1729,6 +1729,7 @@ name = "vg-bench"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "rayon",
  "vg-core",
  "vg-layout",
 ]
@@ -1751,6 +1752,7 @@ dependencies = [
  "const_format",
  "eyre",
  "serde_json",
+ "vg-core",
  "vg-layout",
 ]
 
@@ -1796,6 +1798,14 @@ dependencies = [
  "serde",
  "serde_json",
  "toml",
+ "vg-core",
+]
+
+[[package]]
+name = "vg-replay"
+version = "0.1.0"
+dependencies = [
+ "vg-core",
 ]
 
 [[package]]

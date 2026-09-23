@@ -19,8 +19,6 @@
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 40 //old 20
 	armor_penetration = 10
-	damage_type = BURN
-	check_armour = "laser"
 
 /obj/item/projectile/energy/mob/smalllaser
 	name = "laser"
@@ -29,8 +27,6 @@
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 30 //Old 10
 	armor_penetration = 0
-	damage_type = BURN
-	check_armour = "laser"
 
 
 /obj/item/projectile/energy/mob/drone
@@ -39,8 +35,6 @@
 	fire_sound = 'sound/weapons/Laser.ogg'
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 20 //Old 10
-	damage_type = BURN
-	check_armour = "laser"
 
 /obj/item/projectile/energy/mob/electric_spider
 	name = "stun beam"
@@ -92,7 +86,6 @@
 
 /obj/item/projectile/energy/electrode/eclipse
 	damage = 40 //old 20
-	damage_type = BURN
 	color = "#38b9ff"
 	speed = 3.2
 
@@ -123,7 +116,8 @@
 /obj/item/projectile/energy/mob/ionbeam
 	name = "Ion Burst"
 	damage = 20 //Old 10
-	damage_type = ELECTROMAG
+	injury_kind = INJURY_ELECTRIC
+	emp_on_hit = TRUE
 	light_color = "#00CCFF"
 	icon_state = "impact_blue"
 	fire_sound = 'sound/weapons/Laser.ogg'

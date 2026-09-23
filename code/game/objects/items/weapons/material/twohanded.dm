@@ -94,6 +94,7 @@
 	dulled_divisor = 0.75	//Still metal on a stick
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_LARGE
 	slot_flags = SLOT_BACK
 	force_wielded = 30
@@ -158,6 +159,7 @@
 	throw_speed = 3
 	edge = FALSE
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	mob_throw_hit_sound =  'sound/weapons/pierce.ogg'
 	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
@@ -328,6 +330,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	edge = TRUE
 	sharp = TRUE
+	injury_kind = INJURY_CUT
 
 /obj/item/material/twohanded/saber/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if (src.wielded == 1)

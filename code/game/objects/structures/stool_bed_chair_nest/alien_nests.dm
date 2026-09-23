@@ -78,7 +78,7 @@
 	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
 	for(var/mob/M in viewers(src, 7))
 		M.show_message(span_warning("[user] hits [src] with [W]!"), 1)
-	take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+	take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
 
 /obj/structure/bed/nest/atom_destruction(damage_flag)
 	density = FALSE

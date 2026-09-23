@@ -1,0 +1,4 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "Character setup previews are now rendered by rust-g iconforge in the background, so editing your character no longer stalls the server. The old preview stays up until the new one is ready."

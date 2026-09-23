@@ -86,10 +86,9 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 		tmp_owner = null
 
 /obj/item/organ/internal/brain/Initialize(mapload)
-	..()
+	. = ..()
 	defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2 // // Time vars measure things in ticks. Life tick happens every ~2 seconds, therefore dividing by 20
 	AddComponent(/datum/component/mind_host, src)
-	return INITIALIZE_HINT_LATELOAD
 
 /// THE brain-death decision. A brain at 100% damage, or a dead organ, cannot
 /// be defibrillated or treated back: the person needs a resleeve. Defib,
@@ -131,7 +130,7 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 		if(target.key)
 			target.ghostize()
 		host.release_mind(target, "brain implanted into [target]")
-		host.discard_occupant()
+	host?.discard_occupant() // an implanted brain shows no view
 	..()
 
 /obj/item/organ/internal/brain/proc/get_control_efficiency()
@@ -171,9 +170,9 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 /obj/item/organ/internal/brain/slime/Initialize(mapload)
 	. = ..()
 	create_reagents(50)
+	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/organ/internal/brain/slime/LateInitialize()
-	. = ..()
 	//Match the core to the Promethean's starting color.
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
@@ -253,8 +252,11 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	desc = "A piece of juicy meat found in a person's head. This one is strange."
 	icon_state = "brain_grey"
 
-/obj/item/organ/internal/brain/grey/colormatch/LateInitialize()
+/obj/item/organ/internal/brain/grey/colormatch/Initialize(mapload)
 	. = ..()
+	return INITIALIZE_HINT_LATELOAD
+
+/obj/item/organ/internal/brain/grey/colormatch/LateInitialize()
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		color = H.species.blood_color

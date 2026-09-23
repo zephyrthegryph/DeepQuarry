@@ -42,7 +42,7 @@
 	tame_chance = 0
 	has_eye_glow = TRUE
 
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 20,
 				"bullet" = 10,
 				"laser" = 20,
@@ -166,7 +166,7 @@
 
 	say_list_type = /datum/say_list/merc/blackhole
 
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 40,
 				"bullet" = 30,
 				"laser" = 20,
@@ -193,7 +193,7 @@
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	attack_sound = 'sound/weapons/blade1.ogg'
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 60,
 				"bullet" = 50,
 				"laser" = 40,
@@ -340,7 +340,7 @@
 
 	say_list_type = /datum/say_list/merc/blackhole
 
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 40,
 				"bullet" = 30,
 				"laser" = 20,
@@ -364,7 +364,7 @@
 	melee_damage_upper = 30
 	attacktext = list("stabbed","slashed","impaled")
 	attack_sound = 'sound/weapons/blade1.ogg'
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 60,
 				"bullet" = 50,
 				"laser" = 40,
@@ -453,7 +453,7 @@
 	var/explosion_delay_lower	= 0 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 1 SECONDS	// Upper bound.
 
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 40,
 				"bullet" = 30,
 				"laser" = 20,
@@ -541,7 +541,7 @@
 
 	say_list_type = /datum/say_list/merc/blackhole
 
-	armor = list(			// Values for normal getarmor() checks
+	armor = list(			// Values read by injury_armor()
 				"melee" = 40,
 				"bullet" = 30,
 				"laser" = 20,
@@ -737,13 +737,16 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	explosion_delay_lower	= 5 SECOND	// Lower bound for explosion delay.
 	explosion_delay_upper	= 8 SECONDS	// Upper bound.
 
-/mob/living/simple_mob/vore/blackhole_obelisk/Life()
+/datum/life_system/type_post/simple_mob/vore/blackhole_obelisk
+	mob_type = /mob/living/simple_mob/vore/blackhole_obelisk
+
+/datum/life_system/type_post/simple_mob/vore/blackhole_obelisk/tick(mob/living/simple_mob/vore/blackhole_obelisk/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
-	if(world.time > last_lifechecks + 15 SECONDS)
-		last_lifechecks = world.time
-		handle_hungry()
+	if(world.time > self.last_lifechecks + 15 SECONDS)
+		self.last_lifechecks = world.time
+		self.handle_hungry()
 
 // hackified shitcode poached from the pitcher plant for ~~cool flavor text~~ when you're near either 'structure'
 
@@ -978,7 +981,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 /obj/item/projectile/beam/shock/bh1
 	name = "tesla beam"
 	icon_state = "lightning"
-	damage_type = ELECTROCUTE
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning

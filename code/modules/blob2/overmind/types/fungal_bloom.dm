@@ -8,7 +8,7 @@
 	difficulty = BLOB_DIFFICULTY_MEDIUM // The spores are more of an annoyance but can be difficult to contain.
 	color = "#AAAAAA"
 	complementary_color = "#FFFFFF"
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	damage_lower = 15
 	damage_upper = 25
 	spread_modifier = 0.3 // Lower, since spores will do a lot of the spreading.

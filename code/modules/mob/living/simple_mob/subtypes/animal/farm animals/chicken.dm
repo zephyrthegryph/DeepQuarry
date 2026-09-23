@@ -63,14 +63,17 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	else
 		..()
 
-/mob/living/simple_mob/animal/passive/chicken/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/chicken
+	mob_type = /mob/living/simple_mob/animal/passive/chicken
+
+/datum/life_system/type_post/simple_mob/animal/passive/chicken/tick(mob/living/simple_mob/animal/passive/chicken/self, datum/life_context/ctx)
 	. =..()
 	if(!.)
 		return
-	if(!stat && prob(3) && eggsleft > 0)
-		visible_message("[src] [pick("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")]")
-		eggsleft--
-		var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
+	if(!self.stat && prob(3) && self.eggsleft > 0)
+		self.visible_message("[self] [pick("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")]")
+		self.eggsleft--
+		var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(self))
 		E.pixel_x = rand(-6,6)
 		E.pixel_y = rand(-6,6)
 		if(GLOB.chicken_count < GLOB.MAX_CHICKENS && prob(10))
@@ -135,18 +138,21 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	pixel_x = rand(-6, 6)
 	pixel_y = rand(0, 10)
 
-/mob/living/simple_mob/animal/passive/chick/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/chick
+	mob_type = /mob/living/simple_mob/animal/passive/chick
+
+/datum/life_system/type_post/simple_mob/animal/passive/chick/tick(mob/living/simple_mob/animal/passive/chick/self, datum/life_context/ctx)
 	. =..()
 	if(!.)
 		return
-	if(!stat)
-		amount_grown += rand(1,2)
-		if(amount_grown >= 100)
-			var/mob/living/simple_mob/animal/passive/chicken/C = new (src.loc)
+	if(!self.stat)
+		self.amount_grown += rand(1,2)
+		if(self.amount_grown >= 100)
+			var/mob/living/simple_mob/animal/passive/chicken/C = new (self.loc)
 			C.ghostjoin = 1
 			C.ghostjoin_icon()
 			GLOB.active_ghost_pods += C
-			qdel(src)
+			qdel(self)
 
 // Say Lists
 /datum/say_list/chicken

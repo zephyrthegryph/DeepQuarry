@@ -9,6 +9,7 @@ resolver = "2"
 #   ffi/callback     auxcallback  deferred callbacks to the BYOND main thread; i686 only
 #   verdigris/       verdigris  the DLL
 #   tools/bench/     vg-bench   criterion benchmarks
+#   tools/replay/    vg-replay  replays a flight-recorder log and verifies state hashes
 members = [
     "core",
     "domains/gas",
@@ -18,12 +19,13 @@ members = [
     "ffi/callback",
     "verdigris",
     "tools/bench",
+    "tools/replay",
 ]
 # byondapi-sys only builds for 32-bit targets, so a plain host `cargo test` / `cargo
 # check` covers the host-buildable crates. The i686 release build
 # (build-{linux,windows}.sh) builds the DLL and everything it links; gas tests run
 # with `cargo test --target i686-pc-windows-msvc -p vg-gas` (or i686-unknown-linux-gnu).
-default-members = ["core", "domains/layout", "verdigris", "tools/bench"]
+default-members = ["core", "domains/layout", "verdigris", "tools/bench", "tools/replay"]
 
 # Shared by the gas domain and the FFI crates (auxmos was originally its own
 # workspace; see domains/gas/UPSTREAM.md).
@@ -48,6 +50,14 @@ lto = "thin"
 split-debuginfo = "packed"
 # Must be "unwind" (the default) so #[auxmacros::panic_safe] can catch panics
 # across the FFI boundary. Auxmos's original "abort" was removed when vendoring.
+
+# Benches only need optimized code, not the DLL's LTO and full debug info,
+# which made every bench build relink the whole workspace slowly.
+[profile.bench]
+inherits = "release"
+lto = false
+debug = "line-tables-only"
+incremental = true
 
 [profile.dev]
 debug = "full"

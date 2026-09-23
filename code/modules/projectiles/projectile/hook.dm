@@ -10,8 +10,6 @@
 
 	damage = 5
 	speed = 2
-	damage_type = BURN
-	check_armour = "energy"
 	armor_penetration = 15
 
 	var/impact_sound = 'sound/effects/uncloak.ogg'
@@ -40,15 +38,12 @@
 	if(launcher_intent)
 		switch(launcher_intent)
 			if(I_HURT)
-				check_armour = "bullet"
 				damage *= 3
 				sharp = TRUE
 				agony = 20
 			if(I_GRAB)
-				check_armour = "melee"
 				injury_kind = INJURY_PAIN
 			if(I_DISARM)
-				check_armour = "melee"
 				if(prob(30))	// A chance for a successful hit to either knock someone down, or cause minor disorientation.
 					weaken = 1
 				else
@@ -94,7 +89,7 @@
 					return W.afterattack(target,H)
 
 		if(!(H.species.flags & NO_SLIP) && prob(50))
-			var/armor_check = H.run_armor_check(def_zone, "melee")
+			var/armor_check = H.armor_against(INJURY_BLUNT, def_zone)
 			H.apply_effect(3, WEAKEN, armor_check)
 			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 			if(armor_check < 60)

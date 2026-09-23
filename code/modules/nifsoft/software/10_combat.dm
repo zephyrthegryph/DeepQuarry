@@ -58,6 +58,7 @@ GLOBAL_DATUM_INIT(unarmed_hardclaws, /datum/unarmed_attack/hardclaws, new)
 	miss_sound = 'sound/weapons/punchmiss.ogg'
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	sparring_variant_type = /datum/unarmed_attack/hardclaws
 
 /datum/nifsoft/hidelaser

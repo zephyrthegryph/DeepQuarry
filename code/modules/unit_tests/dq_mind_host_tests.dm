@@ -111,7 +111,7 @@
 	var/fault = dq_test_mind_fault(M, view, I, H)
 	TEST_ASSERT_NULL(fault, "in the MMI: [fault]")
 
-	var/obj/item/organ/internal/brain/ejected = mmi.eject_brain(run_loc_floor_bottom_left, "unit test")
+	var/obj/item/organ/internal/brain/ejected = mmi.eject_brain(get_turf(mmi), "unit test")
 	TEST_ASSERT_EQUAL(ejected, brain, "ejecting returns the same organ")
 	TEST_ASSERT_NULL(mmi.get_occupant(), "the emptied MMI holds no view")
 	TEST_ASSERT_NULL(mmi.brainobj, "the emptied MMI holds no organ")
@@ -223,7 +223,7 @@
 	TEST_ASSERT_EQUAL(brain.damage, 35, "treating the view repairs the organ")
 
 	var/mob/living/carbon/human/recipient = dq_test_brainless_recipient(src)
-	mmi.eject_brain(run_loc_floor_bottom_left, "unit test")
+	mmi.eject_brain(get_turf(mmi), "unit test")
 	brain.replaced(recipient, recipient.get_organ(brain.parent_organ))
 	TEST_ASSERT(L in recipient.body.afflictions, "the lesion joins the new body")
 	TEST_ASSERT_EQUAL(brain.damage, 35, "the implanted brain keeps its damage")

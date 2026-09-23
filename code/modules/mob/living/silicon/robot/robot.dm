@@ -154,7 +154,7 @@
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 	robotact = new(src)
-	RegisterSignal(src, COMSIG_LIVING_INJURE, PROC_REF(absorb_injury_with_shield))
+	RegisterSignal(src, COMSIG_LIVING_SHIELD_INJURY, PROC_REF(absorb_injury_with_shield))
 
 	add_language(LANGUAGE_ROBOT_TALK, 1)
 	add_language(LANGUAGE_GALCOM, 1)
@@ -533,7 +533,7 @@
 	if(lights_on == new_state)
 		return
 	lights_on = new_state
-	handle_light()
+	refresh_glow()
 	recompute_power_demand()
 	update_icon()
 
@@ -547,9 +547,12 @@
 	set_lights(!lights_on)
 	to_chat(src, span_filter_notice("You [lights_on ? "enable" : "disable"] your integrated light."))
 
-/mob/living/silicon/robot/handle_light()
-	if(lights_on)
-		set_light(integrated_light_power, 1, robot_light_col)
+/datum/life_system/light/silicon/robot
+	mob_type = /mob/living/silicon/robot
+
+/datum/life_system/light/silicon/robot/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+	if(self.lights_on)
+		self.set_light(self.integrated_light_power, 1, self.robot_light_col)
 		return TRUE
 	return ..()
 

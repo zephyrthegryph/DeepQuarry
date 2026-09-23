@@ -149,7 +149,11 @@ Windows is the supported dev OS. Entry points (`bin/`):
   library (`verdigris.dll` on Windows, `libverdigris.so` on Linux) when its source
   is stale. You can also build it directly with `verdigris/build-windows.sh` /
   `verdigris/build-linux.sh`. The compiled library is a gitignored per-platform
-  artifact; the DM game loads it at runtime via `VERDIGRIS_CALL(...)`.
+  artifact; the DM game calls it through the generated `vg_*` procs in
+  `code/__defines/verdigris/_bindings.dm` (`tools/build/build.sh verdigris-bindings`
+  regenerates them; see `verdigris/README.md`).
+
+**Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing `verdigris.dll` instead of compiling the Rust workspace (each fresh worktree otherwise rebuilds it from scratch). Rust work should set `RUSTC_WRAPPER=sccache` so worktrees share compiled dependencies. The build also honours `CARGO_TARGET_DIR`.
 
 **Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing `verdigris.dll` instead of compiling the Rust workspace (each fresh worktree otherwise rebuilds it from scratch). Rust work should set `RUSTC_WRAPPER=sccache` so worktrees share compiled dependencies. The build also honours `CARGO_TARGET_DIR`.
 
@@ -163,6 +167,12 @@ warning.
 ### 4a. Testing
 
 `doc/testing.md` is the full reference. The short version:
+
+- **While developing, run only the tests you touch**, with
+  `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]`. It works from
+  a git worktree. It costs the compile plus about 25 seconds.
+- **Run the full suite only at integration** (before merging, or when asked).
+  It costs the compile plus about four minutes.
 
 | What | Command |
 |---|---|
@@ -256,7 +266,8 @@ accident or assume they work:
   `set_temperature()`/`set_volume()`, and cache reads in hot loops because each call crosses
   the FFI. Turf heat works the same way through `/turf/proc/set_temperature()` /
   `return_temperature()`. The `check_grep.sh` "gas mixture mirror writes" lint backs this up.
-  The hand-written FFI routes live in `auxmos_init_bridge.dm` and `dq_linda_turf_air.dm`.
+  The FFI routes are the generated `vg_*` procs; the DM wrappers with real logic live in
+  `gas_mixture.dm`, `auxmos_init_bridge.dm` and `dq_linda_turf_air.dm`.
   Verdigris builds on byondapi 0.6.x and **requires BYOND 516.1682+** (older builds crash at
   atmos init on a missing `ByondValue_DecTempRef`). Gas **reactions** deliberately stay in DM.
   `xgm_compat.dm` and `tg_infra_compat.dm` are the fork's stable compatibility API, not
@@ -358,6 +369,13 @@ accident or assume they work:
   no `chem_effects`/`add_chemical_effect`, no `mechanical_effects`/`vital_effects`/`od_boost`
   and no numeric modifier fields; `tools/ci/check_grep.sh` rejects them. Brief non-reagent
   effects are short modifiers (`/datum/modifier/numbness`, `withdrawal_strain`, …).
+- **Mob Life is a scheduler.** `/mob/living/Life()` (`code/modules/mob/living/life/scheduler.dm`)
+  runs an ordered list of `/datum/life_system` flyweights composed per mob type; see
+  `doc/mob_life_architecture.md` §4.8. Don't override `Life()` or add `handle_*` hooks on mobs:
+  add a system, or a variant whose path mirrors the mob path (`breathing/carbon/human`). Code
+  outside Life uses `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or
+  `run_life_system()`. Components tick via `add_trait_life_system()` (there is no
+  `COMSIG_LIVING_LIFE`). Hibernation plumbing exists but is off (`MOB_HIBERNATION_ENABLED`).
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
   cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf
@@ -366,7 +384,7 @@ accident or assume they work:
   migrated off `meowtonin` onto byondapi so `verdigris` links a single BYOND API.)
 
 Recent hardening (already landed): ban/admin/stats SQL is fully parameterized; every
-Verdigris bind carries `#[auxmacros::panic_safe]`; the tgui Rules-of-Hooks / XSS audit
+Verdigris bind is declared with `#[auxmacros::bind]` (panic-safe, generated DM binding); the tgui Rules-of-Hooks / XSS audit
 findings are fixed; the unit-test suite was audited for fake-passes and made genuinely
 falsifiable.
 

@@ -16,8 +16,7 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 35
 	attack_armor_pen = 15
-	attack_sharp = TRUE
-	attack_edge = TRUE
+	attack_injury_kind = INJURY_CUT
 	melee_attack_delay = 1 SECOND
 	attacktext = list("mauled")
 
@@ -35,10 +34,13 @@
 	emote_hear = list("rawrs","grumbles","grawls", "growls", "roars")
 
 // Is it time to be mad?
-/mob/living/simple_mob/animal/space/bear/handle_special()
-	if(((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !(ai_brain && ai_brain.busy) && isturf(loc))
-		if(vitality() <= 0.5) // At half health, and fighting someone currently.
-			berserk()
+/datum/life_system/special/animal/space/bear
+	mob_type = /mob/living/simple_mob/animal/space/bear
+
+/datum/life_system/special/animal/space/bear/tick(mob/living/simple_mob/animal/space/bear/self, datum/life_context/ctx)
+	if(((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
+		if(self.vitality() <= 0.5) // At half health, and fighting someone currently.
+			self.berserk()
 
 // So players can use it too.
 /mob/living/simple_mob/animal/space/bear/verb/berserk()

@@ -87,23 +87,24 @@
 		if(!already_active)
 			add_side_effect(effect_name)
 
-/mob/living/carbon/human/proc/handle_medical_side_effects()
-	if(!LAZYLEN(side_effects) || life_tick % 15 != 0)
+/// Medication side effects, every 15 life ticks.
+/datum/life_system/medical/proc/side_effects(mob/living/carbon/human/self)
+	if(!LAZYLEN(self.side_effects) || self.life_tick % 15 != 0)
 		return 0
 
 	// One full cycle(in terms of strength) every 10 minutes
-	for (var/datum/medical_effect/M in side_effects)
+	for (var/datum/medical_effect/M in self.side_effects)
 		if (!M) continue
-		var/strength_percent = sin((life_tick - M.start) / 2)
+		var/strength_percent = sin((self.life_tick - M.start) / 2)
 
 		// Only do anything if the effect is currently strong enough
 		if(strength_percent >= 0.4)
-			if (M.cure(src) || M.strength > 50)
-				LAZYREMOVE(side_effects, M)
+			if (M.cure(self) || M.strength > 50)
+				LAZYREMOVE(self.side_effects, M)
 				qdel(M)
 			else
-				if(life_tick % 45 == 0)
-					M.on_life(src, strength_percent*M.strength)
+				if(self.life_tick % 45 == 0)
+					M.on_life(self, strength_percent*M.strength)
 				// Effect slowly growing stronger
 				M.strength+=0.08
 

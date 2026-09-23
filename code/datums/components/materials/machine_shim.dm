@@ -14,7 +14,7 @@
 /datum/component/using_machine_shim/Initialize(obj/machinery/machine)
 	// Mob
 	host_mob = parent
-	RegisterSignal(host_mob, COMSIG_LIVING_LIFE, PROC_REF(on_mob_action))
+	add_trait_life_system(host_mob, /datum/life_system/trait/using_machine_shim)
 	RegisterSignal(host_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(on_mob_action))
 	RegisterSignal(host_mob, COMSIG_MOB_LOGOUT, PROC_REF(on_mob_logout))
 
@@ -35,7 +35,7 @@
 	linked_machine = null
 	// Mob
 	UnregisterSignal(host_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	UnregisterSignal(host_mob, COMSIG_LIVING_LIFE)
+	remove_trait_life_system(host_mob, /datum/life_system/trait/using_machine_shim)
 	UnregisterSignal(host_mob, COMSIG_MOB_LOGOUT)
 	host_mob.reset_perspective() // Required, because our machine may have been operating a remote view
 	host_mob = null
@@ -46,6 +46,10 @@
 	PRIVATE_PROC(TRUE)
 	if(host_mob.stat == DEAD || !host_mob.client || !host_mob.Adjacent(linked_machine))
 		qdel(src)
+
+/// Called by the using machine shim trait system each Life() cycle.
+/datum/component/using_machine_shim/proc/on_mob_life()
+	on_mob_action()
 
 /datum/component/using_machine_shim/proc/on_machine_qdelete()
 	SIGNAL_HANDLER
@@ -127,3 +131,11 @@
 /// deprecated, do not use
 /obj/machinery/CouldNotUseTopic(mob/user)
 	user.unset_machine()
+
+/// Trait system: release the machine when the user leaves it. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/using_machine_shim
+	name = "using machine shim"
+	component_type = /datum/component/using_machine_shim
+
+/datum/life_system/trait/using_machine_shim/tick_component(mob/living/self, datum/component/using_machine_shim/component)
+	component.on_mob_life()

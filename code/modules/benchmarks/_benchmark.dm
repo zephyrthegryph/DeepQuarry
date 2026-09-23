@@ -124,23 +124,32 @@
 		SSprofiler.DumpFile(allow_yield = FALSE)
 	return tick
 
-/// Records a named point in time with process and Rust heap memory.
+/// Records a named point in time with process memory and every Rust metric.
 /datum/benchmark/proc/mark(name)
 	var/list/process = benchmark_process_memory()
-	var/list/allocator = SSair.verdigris_allocator_diagnostics()
+	var/list/rust = verdigris_metrics_list()
 	phases += list(list(
 		"name" = name,
 		"world_time" = world.time,
 		"realtime" = REALTIMEOFDAY,
 		"process" = process,
-		"rust_allocator" = allocator,
+		"rust" = rust,
 	))
 	if(islist(process) && !isnull(process["private_mb"]))
 		metric("[name]_private_mb", process["private_mb"], "MB")
-	// verdigris_allocator_diagnostics() returns list(current_bytes, peak_bytes).
-	if(islist(allocator) && length(allocator) >= 2)
-		metric("[name]_rust_heap_mb", allocator[1] / (1024 * 1024), "MB")
-		metric("[name]_rust_heap_peak_mb", allocator[2] / (1024 * 1024), "MB")
+	if(!islist(rust))
+		return
+	if(!isnull(rust["alloc.heap.current_bytes"]))
+		metric("[name]_rust_heap_mb", rust["alloc.heap.current_bytes"] / (1024 * 1024), "MB")
+		metric("[name]_rust_heap_peak_mb", rust["alloc.heap.peak_bytes"] / (1024 * 1024), "MB")
+	// Per-domain Rust heap from the allocator tags (alloc.<tag>.current_bytes).
+	for(var/key in rust)
+		if(findtext(key, "alloc.") != 1 || findtext(key, ".current_bytes") != length(key) - 13)
+			continue
+		var/tag = copytext(key, 7, length(key) - 13)
+		if(tag == "heap" || tag == "total" || !rust[key])
+			continue
+		metric("[name]_rust_[tag]_mb", rust[key] / (1024 * 1024), "MB")
 
 /// Latest DreamDaemon memory sample written by the runner, or null.
 /proc/benchmark_process_memory()

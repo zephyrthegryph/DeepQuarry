@@ -11,7 +11,6 @@
 	icon_living = "harvester"
 	melee_damage_lower = 20
 	melee_damage_upper = 25
-	attack_sharp = TRUE
 	attacktext = list("violently stabbed")
 	friendly = list("caresses")
 	organ_names = /datum/decl/mob_organ_names/harvester
@@ -36,7 +35,7 @@
 			/datum/spell/targeted/construct_advanced/agonizing_sphere,
 			/datum/spell/rune_write
 		)
-	attack_edge = TRUE
+	attack_injury_kind = INJURY_CUT
 
 /datum/decl/mob_organ_names/harvester
 	hit_zones = list("cephalothorax", "eye", "carapace", "energy crystal", "mandible")
@@ -56,8 +55,6 @@
 	melee_damage_lower = 40 //Glass Cannon Mini-Boss/Semi-Boss large. Few hits is enough to end you.
 	melee_damage_upper = 50
 	attack_armor_pen = 60 //No Armor Shall Save you
-	attack_sharp = 1
-	attack_edge = 1
 	attacktext = list("violently stabbed")
 	friendly = list("caresses")
 	movement_cooldown = 0

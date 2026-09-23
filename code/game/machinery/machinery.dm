@@ -558,7 +558,7 @@ Class Procs:
 	. = ..()
 	var/structure_damage = P.get_structure_damage()
 	if(structure_damage)
-		take_damage(structure_damage, P.damage_type, BULLET, FALSE)
+		take_damage(structure_damage, P.obj_damage_type(), BULLET, FALSE)
 
 /obj/machinery/atom_destruction(damage_flag)
 	playsound(src, 'sound/machines/machine_die_short.ogg', 50, TRUE)

@@ -30,7 +30,6 @@
 	harm_intent_damage = 1
 	melee_damage_lower = 1
 	melee_damage_upper = 10
-	attack_sharp = FALSE
 	attacktext = list("chomped", "bashed", "monched", "bumped")
 
 
@@ -102,17 +101,20 @@
 		visible_message(span_danger("\The [src] trips \the [L]!"))
 		L.weakened += rand(1,10)
 
-/mob/living/simple_mob/vore/alienanimals/startreader/Life()
+/datum/life_system/type_post/simple_mob/vore/alienanimals/startreader
+	mob_type = /mob/living/simple_mob/vore/alienanimals/startreader
+
+/datum/life_system/type_post/simple_mob/vore/alienanimals/startreader/tick(mob/living/simple_mob/vore/alienanimals/startreader/self, datum/life_context/ctx)
 	. = ..()
-	if(flip_cooldown == 1)
-		flip_cooldown = 0
-		flipped = FALSE
-		handle_flip()
-		visible_message(span_notice("\The [src] rights itself!!!"))
+	if(self.flip_cooldown == 1)
+		self.flip_cooldown = 0
+		self.flipped = FALSE
+		self.handle_flip()
+		self.visible_message(span_notice("\The [self] rights itself!!!"))
 		return
-	if(flip_cooldown)
-		flip_cooldown --
-		SetStunned(2)
+	if(self.flip_cooldown)
+		self.flip_cooldown --
+		self.SetStunned(2)
 
 /mob/living/simple_mob/vore/alienanimals/startreader/proc/handle_flip()
 	if(flipped)

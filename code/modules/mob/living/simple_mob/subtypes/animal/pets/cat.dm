@@ -62,9 +62,12 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 /mob/living/simple_mob/animal/passive/cat/get_available_emotes()
 	return GLOB.cat_default_emotes.Copy()
 
-/mob/living/simple_mob/animal/passive/cat/handle_special()
-	if(!stat && prob(2)) // spooky
-		var/mob/observer/dead/spook = locate() in range(src, 5)
+/datum/life_system/special/animal/passive/cat
+	mob_type = /mob/living/simple_mob/animal/passive/cat
+
+/datum/life_system/special/animal/passive/cat/tick(mob/living/simple_mob/animal/passive/cat/self, datum/life_context/ctx)
+	if(!self.stat && prob(2)) // spooky
+		var/mob/observer/dead/spook = locate() in range(self, 5)
 		if(spook)
 			var/turf/T = get_turf(spook)
 			var/list/visible = list()
@@ -73,7 +76,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				visible_emote("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				self.visible_emote("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
 
 // Instakills mice.
 /mob/living/simple_mob/animal/passive/cat/apply_melee_effects(atom/A)
@@ -339,25 +342,28 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	meat_amount = 0
 	endurance = 50
 
-/mob/living/simple_mob/animal/passive/cat/tabiranth/handle_special()
+/datum/life_system/special/animal/passive/cat/tabiranth
+	mob_type = /mob/living/simple_mob/animal/passive/cat/tabiranth
+
+/datum/life_system/special/animal/passive/cat/tabiranth/tick(mob/living/simple_mob/animal/passive/cat/tabiranth/self, datum/life_context/ctx)
 	. = ..()
-	if ((ai_brain != null) && friend)
-		var/friend_dist = get_dist(src,friend)
+	if ((self.ai_brain != null) && self.friend)
+		var/friend_dist = get_dist(self,self.friend)
 		if (friend_dist <= 1)
-			if (friend.stat >= DEAD || friend.is_critical())
-				if (prob((friend.stat < DEAD)? 50 : 15))
+			if (self.friend.stat >= DEAD || self.friend.is_critical())
+				if (prob((self.friend.stat < DEAD)? 50 : 15))
 					var/verb = pick("meows", "mews", "mrowls")
-					audible_emote(pick("[verb] in distress.", "[verb] anxiously."))
+					self.audible_emote(pick("[verb] in distress.", "[verb] anxiously."))
 			else
 				if (prob(5))
-					visible_emote(pick("nuzzles [friend].",
-									"brushes against [friend].",
-									"rubs against [friend].",
+					self.visible_emote(pick("nuzzles [self.friend].",
+									"brushes against [self.friend].",
+									"rubs against [self.friend].",
 									"purrs."))
-		else if (friend.vitality() <= 0.5)
+		else if (self.friend.vitality() <= 0.5)
 			if (prob(10))
 				var/verb = pick("meows", "mews", "mrowls")
-				audible_emote("[verb] anxiously.")
+				self.audible_emote("[verb] anxiously.")
 
 //Emergency teleport - Until a spriter makes something better
 /mob/living/simple_mob/animal/passive/cat/tabiranth/death(gibbed, deathmessage = "teleports away!")

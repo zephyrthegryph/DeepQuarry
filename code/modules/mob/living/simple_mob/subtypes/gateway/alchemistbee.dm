@@ -190,7 +190,6 @@
 	icon_state = "blue_vial"
 	damage = 10
 	armor_penetration = 0
-	damage_type = BRUTE
 	splatter_volume = 60
 	my_chems = list(REAGENT_ID_FROSTOIL)
 	modifier_type_to_apply = /datum/modifier/wizpoison/frost
@@ -201,7 +200,6 @@
 	icon_state = "green_vial"
 	damage = 10
 	armor_penetration = 0
-	damage_type = BRUTE
 	splatter_volume = 60
 	my_chems = list(REAGENT_ID_TOXIN)
 	modifier_type_to_apply = /datum/modifier/wizpoison
@@ -212,7 +210,6 @@
 	icon_state = "red_vial"
 	damage = 10
 	armor_penetration = 0
-	damage_type = BRUTE
 	splatter_volume = 60
 	my_chems = list(REAGENT_ID_SACID)
 	modifier_type_to_apply = /datum/modifier/wizfire
@@ -223,7 +220,6 @@
 	icon_state = "orange_vial"
 	damage = 10
 	armor_penetration = 0
-	damage_type = BRUTE
 	splatter_volume = 60
 	my_chems = list(REAGENT_ID_SHREDDINGNANITES)
 	modifier_type_to_apply = /datum/modifier/wizfire/lighting
@@ -235,8 +231,6 @@
 	icon_state = "plasma"
 	damage = 25
 	armor_penetration = 50
-	damage_type = BURN
-	check_armour = "energy"
 	agony = 50
 	speed = 24.0
 	modifier_type_to_apply = /datum/modifier/grievous_wounds

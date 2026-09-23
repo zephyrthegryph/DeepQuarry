@@ -3,8 +3,7 @@
 	icon_state = "declone"
 	damage = 3
 	armor_penetration = 40
-	damage_type = BRUTE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 	pass_flags = PASSTABLE | PASSBLOB
 	fire_sound = 'sound/effects/slime_squish.ogg'
 	var/splatter = FALSE			// Will this make a cloud of reagents?
@@ -39,15 +38,13 @@
 
 /obj/item/projectile/energy/blob/toxic
 	injury_kind = INJURY_TOXIN
-	check_armour = "bio"
 	my_chems = list(REAGENT_ID_AMATOXIN)
 
 /obj/item/projectile/energy/blob/toxic/splattering
 	splatter = TRUE
 
 /obj/item/projectile/energy/blob/acid
-	damage_type = BURN
-	check_armour = "bio"
+	injury_kind = INJURY_BURN
 	my_chems = list(REAGENT_ID_SACID, REAGENT_ID_MOLD)
 
 /obj/item/projectile/energy/blob/acid/splattering
@@ -70,7 +67,7 @@
 	name = "spike"
 	icon_state = "SpearFlight"
 	damage = 20
-	damage_type = BIOACID
+	injury_kind = INJURY_CORROSIVE
 	armor_penetration = 20
 	penetrating = 3
 	fire_sound = 'sound/effects/slime_squish.ogg'

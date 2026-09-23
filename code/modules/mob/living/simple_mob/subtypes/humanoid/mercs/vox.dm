@@ -32,8 +32,6 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 20		//Vox Hunting rifle blade damage
 	melee_damage_upper = 20
-	attack_sharp = 1
-	attack_edge = 1
 	attacktext = list("slashed", "stabbed")
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 100)	// Matching Merc voidsuit stats to represent toughness.
 
@@ -78,8 +76,6 @@
 /mob/living/simple_mob/humanoid/merc/voxpirate/boarder
 	melee_damage_lower = 30		//Energy sword damage
 	melee_damage_upper = 30
-	attack_sharp = 1
-	attack_edge = 1
 
 	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_m
 	loot_list = list(/obj/item/melee/energy/sword = 100)

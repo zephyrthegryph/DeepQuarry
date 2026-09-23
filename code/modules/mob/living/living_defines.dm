@@ -52,7 +52,7 @@
 	var/glow_range = 2
 	var/glow_intensity = null
 	var/glow_color = "#FFFFFF"			// The color they're glowing!
-	// Last params applied by handle_light(), so we can skip redundant set_light() calls each tick.
+	// Last params applied by the light life system, so we can skip redundant set_light() calls each tick.
 	var/last_glow_range = null
 	var/last_glow_intensity = null
 	var/last_glow_color = null

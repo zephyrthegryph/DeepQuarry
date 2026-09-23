@@ -1,2 +1,2 @@
-///from /datum/species/proc/handle_species_components()
+///from the species components life system
 #define COMSIG_XENOCHIMERA_COMPONENT "xenochimera_component"

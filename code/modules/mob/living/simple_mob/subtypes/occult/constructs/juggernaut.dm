@@ -44,35 +44,37 @@
 				"bio" = 100,
 				"rad" = 100)
 
-/mob/living/simple_mob/construct/juggernaut/Life()
-	SetWeakened(0)
+/datum/life_system/type_pre/simple_mob/construct/juggernaut
+	mob_type = /mob/living/simple_mob/construct/juggernaut
+
+/datum/life_system/type_pre/simple_mob/construct/juggernaut/tick(mob/living/simple_mob/construct/juggernaut/self, datum/life_context/ctx)
+	self.SetWeakened(0)
 	..()
 
 /mob/living/simple_mob/construct/juggernaut/bullet_act(obj/item/projectile/P)
 	var/reflectchance = 100 - round(P.damage*2) // We have lower damage values now
 	if(prob(reflectchance))
 		var/damage_mod = rand(2,4)
-		var/projectile_dam_type = P.damage_type
+		var/projectile_kind = P.injury_kind
 		var/incoming_damage = (round(P.damage / damage_mod) - (round((P.damage / damage_mod) * 0.3)))
-		var/armorcheck = run_armor_check(null, P.check_armour)
 		if(!(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam)))
 			visible_message(span_danger("The [P.name] bounces off of [src]'s shell!"), \
 						span_userdanger("The [P.name] bounces off of [src]'s shell!"))
 			new /obj/item/material/shard/shrapnel(src.loc)
-			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
-				projectile_dam_type = BRUTE
+			if(!P.obj_damage_type())
+				projectile_kind = INJURY_BLUNT
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to brute for physical projectiles, though severely decreased.
-			injure(injury_kind_for(projectile_dam_type, is_sharp(P), has_edge(P)), incoming_damage, null, P, armorcheck)
+			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
 			visible_message(span_danger("The [P.name] gets reflected by [src]'s shell!"), \
 						span_userdanger("The [P.name] gets reflected by [src]'s shell!"))
 			damage_mod = rand(3,5)
 			incoming_damage = (round(P.damage / damage_mod) - (round((P.damage / damage_mod) * 0.3)))
-			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
-				projectile_dam_type = BURN
+			if(!P.obj_damage_type())
+				projectile_kind = INJURY_BURN
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to burn for energy-type projectiles, though severely decreased.
-			injure(injury_kind_for(projectile_dam_type, is_sharp(P), has_edge(P)), incoming_damage, null, P, armorcheck)
+			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)
@@ -181,6 +183,4 @@
 	color = "#FFFFFF"
 	agony = 0
 	damage = 15
-	damage_type = BURN
-	check_armour = "laser"
 	armor_penetration = 60

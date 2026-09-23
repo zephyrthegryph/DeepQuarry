@@ -139,27 +139,30 @@
 
 /mob/living/simple_mob/mechanical/mining_drone/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
 	return ..()
-/mob/living/simple_mob/mechanical/mining_drone/handle_special()
-	if(my_storage && ((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !(ai_brain && ai_brain.busy) && isturf(loc) && (world.time > last_search + search_cooldown) && (my_storage.contents.len < my_storage.max_storage_space))
-		last_search = world.time
+/datum/life_system/special/mechanical/mining_drone
+	mob_type = /mob/living/simple_mob/mechanical/mining_drone
 
-		for(var/turf/T in view(world.view,src))
-			if(my_storage.contents.len >= my_storage.max_storage_space)
+/datum/life_system/special/mechanical/mining_drone/tick(mob/living/simple_mob/mechanical/mining_drone/self, datum/life_context/ctx)
+	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc) && (world.time > self.last_search + self.search_cooldown) && (self.my_storage.contents.len < self.my_storage.max_storage_space))
+		self.last_search = world.time
+
+		for(var/turf/T in view(world.view,self))
+			if(self.my_storage.contents.len >= self.my_storage.max_storage_space)
 				break
 
 			if((locate(/obj/item/ore) in T) && prob(40))
-				src.Beam(T, icon_state = "holo_beam", time = 0.5 SECONDS)
-				my_storage.rangedload(T, src)
+				self.Beam(T, icon_state = "holo_beam", time = 0.5 SECONDS)
+				self.my_storage.rangedload(T, self)
 
-		if(my_storage.contents.len >= my_storage.max_storage_space)
-			visible_message(span_infoplain(span_bold("\The [src]") + " emits a shrill beep, indicating its storage is full."))
+		if(self.my_storage.contents.len >= self.my_storage.max_storage_space)
+			self.visible_message(span_infoplain(span_bold("\The [self]") + " emits a shrill beep, indicating its storage is full."))
 
-		var/obj/structure/ore_box/OB = locate() in view(2, src)
+		var/obj/structure/ore_box/OB = locate() in view(2, self)
 
-		if(istype(OB) && my_storage && my_storage.contents.len)
-			src.Beam(OB, icon_state = "rped_upgrade", time = 1 SECONDS)
-			for(var/obj/item/I in my_storage)
-				my_storage.remove_from_storage(I, OB)
+		if(istype(OB) && self.my_storage && self.my_storage.contents.len)
+			self.Beam(OB, icon_state = "rped_upgrade", time = 1 SECONDS)
+			for(var/obj/item/I in self.my_storage)
+				self.my_storage.remove_from_storage(I, OB)
 
 /datum/decl/mob_organ_names/miningdrone
 	hit_zones = list("chassis", "comms array", "sensor suite", "left excavator module", "right excavator module", "maneuvering thruster")

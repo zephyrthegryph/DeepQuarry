@@ -2,8 +2,7 @@
 	name = "energy"
 	icon_state = "spark"
 	damage = 0
-	damage_type = BURN
-	check_armour = "energy"
+	injury_kind = INJURY_BURN
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
@@ -121,11 +120,10 @@
 	name = "kinetic blast"
 	icon_state = "kinetic_blast"
 	fire_sound = 'sound/weapons/pulse3.ogg'
-	damage_type = BRUTE
+	injury_kind = INJURY_BLUNT
 	damage = 30
 	armor_penetration = 60
 	excavation_amount = 200
-	check_armour = "melee"
 
 	vacuum_traversal = 0
 	combustion = FALSE
@@ -141,7 +139,6 @@
 	damage = 5
 	injury_kind = INJURY_TOXIN
 	agony = 120
-	check_armour = "energy"
 	hud_state = "pistol_tranq"
 
 	combustion = FALSE
@@ -180,9 +177,7 @@
 	name = "acidic spit"
 	icon_state = "neurotoxin"
 	damage = 30
-	damage_type = BURN
 	agony = 10
-	check_armour = "bio"
 	armor_penetration = 25	// It's acid
 	hitsound_wall = 'sound/weapons/effects/alien_spit_wall.ogg'
 	hitsound = 'sound/weapons/effects/alien_spit_wall.ogg'
@@ -194,9 +189,8 @@
 	name = "neurotoxic spit"
 	icon_state = "neurotoxin"
 	damage = 0
-	damage_type = BIOACID
+	injury_kind = INJURY_CORROSIVE
 	agony = 60 // lowered agony damage
-	check_armour = "bio"
 	armor_penetration = 25	// It's acid-based
 	hitsound_wall = 'sound/weapons/effects/alien_spit_wall.ogg'
 	hitsound = 'sound/weapons/effects/alien_spit_wall.ogg'
@@ -208,10 +202,8 @@
 	name = "neurotoxic spit"
 	icon_state = "neurotoxin"
 	damage = 20
-	damage_type = BIOACID
 	agony = 20
 	hud_state = "electrothermal"
-	check_armour = "bio"
 	armor_penetration = 25	// It's acid-based
 
 /obj/item/projectile/energy/phoron
@@ -237,7 +229,6 @@
 	range = 4
 	damage = 5
 	agony = 55
-	damage_type = BURN
 	vacuum_traversal = 0	//Projectile disappears in empty space
 	hud_state = "plasma_rifle_blast"
 
@@ -279,8 +270,6 @@
 	damage = 5
 	armor_penetration = 75
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
-	damage_type = BURN
-	check_armour = "energy"
 	light_color = "#00AAFF"
 
 	embed_chance = 0
@@ -368,8 +357,6 @@
 	fire_sound = 'sound/weapons/serdy/vepr.ogg'
 	damage = 30
 	armor_penetration = 10
-	damage_type = BURN
-	check_armour = "energy"
 	muzzle_type = /obj/effect/projectile/muzzle/vepr
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	hitsound_wall = 'sound/weapons/effects/searwall.ogg'

@@ -6,193 +6,9 @@
 // 1 decisecond click delay (above and beyond mob/next_move)
 /mob/var/next_click = 0
 
-/*
-	Before anything else, defer these calls to a per-mobtype handler.  This allows us to
-	remove istype() spaghetti code, but requires the addition of other handler procs to simplify it.
-
-	Alternately, you could hardcode every mob's variation in a flat ClickOn() proc; however,
-	that's a lot of code duplication and is hard to maintain.
-
-	Note that this proc can be overridden, and is in the case of screen objects.
-*/
-
-/atom/Click(location, control, params) // This is their reaction to being clicked on (standard proc)
-	if(src)
-		SEND_SIGNAL(src, COMSIG_CLICK, location, control, params, usr)
-		usr.ClickOn(src, params)
-
-/atom/DblClick(location, control, params)
-	if(src)
-		usr.DblClickOn(src, params)
-
-/atom/MouseWheel(delta_x,delta_y,location,control,params)
-	if(src)
-		usr.MouseWheelOn(src, delta_x, delta_y, params)
-
-/*
-	Standard mob ClickOn()
-	Handles exceptions: Buildmode, middle click, modified clicks, mech actions
-
-	After that, mostly just check your state, check whether you're holding an item,
-	check whether you're adjacent to the target, then pass off the click to whoever
-	is recieving it.
-	The most common are:
-	* mob/UnarmedAttack(atom,adjacent) - used here only when adjacent, with no item in hand; in the case of humans, checks gloves
-	* atom/attackby(item,user) - used only when adjacent
-	* item/afterattack(atom,user,adjacent,params) - used both ranged and adjacent
-	* mob/RangedAttack(atom,params) - used only ranged, only used for tk and laser eyes but could be changed
-*/
-/mob/proc/ClickOn(atom/A, params)
-	if(!checkClickCooldown()) return
-	setClickCooldown(1) //1/10 of a second, 10 clicks allowed per second.
-
-	if(check_click_intercept(params,A) || HAS_TRAIT(src, TRAIT_NO_TRANSFORM))
-		return
-
-	if(client && client.buildmode)
-		build_click(src, client.buildmode, params, A)
-		return
-
-	var/list/modifiers = params2list(params)
-
-	if(LAZYACCESS(modifiers, BUTTON4) || LAZYACCESS(modifiers, BUTTON5))
-		return
-
-	if(LAZYACCESS(modifiers, SHIFT_CLICK))
-		if(LAZYACCESS(modifiers, MIDDLE_CLICK))
-			ShiftMiddleClickOn(A)
-			return
-		if(LAZYACCESS(modifiers, CTRL_CLICK))
-			CtrlShiftClickOn(A)
-			return
-		if (LAZYACCESS(modifiers, ALT_CLICK))
-			alt_shift_click_on(A)
-			return
-		ShiftClickOn(A)
-		return
-	if(LAZYACCESS(modifiers, MIDDLE_CLICK))
-		if(LAZYACCESS(modifiers, CTRL_CLICK))
-			CtrlMiddleClickOn(A)
-		else
-			MiddleClickOn(A, params)
-		return
-	if(LAZYACCESS(modifiers, ALT_CLICK)) // alt and alt-gr (rightalt)
-		if(LAZYACCESS(modifiers, RIGHT_CLICK))
-			AltClickSecondaryOn(A)
-		else
-			AltClickOn(A)
-		return
-	if(LAZYACCESS(modifiers, CTRL_CLICK))
-		CtrlClickOn(A)
-		return
-
-	//Replaces the old 'stat||paralysis||stunned' check
-	//Not fully implemented yet.
-	if(INCAPACITATED_IGNORING(src, INCAPABLE_RESTRAINTS|INCAPABLE_STASIS))
-		return
-
-	if(stat || paralysis || stunned)
-		return
-
-	face_atom(A) // change direction to face what you clicked on
-
-	if(istype(loc, /obj/mecha))
-		if(!locate(/turf) in list(A, A.loc)) // Prevents inventory from being drilled
-			return
-		var/obj/mecha/M = loc
-		return M.click_action(A, src, params)
-
-	/// So, this entire restrained check pretty much tells the rest of the code below you are restrained.
-	/// Primarily, this is just so you can do unarmed attacks while restrained (bites)
-	/// However, if you wanted to add some special interaction to objects or anything OTHER than mobs, use 'RestrainedClickOn' instead
-	/// If you want some interesting restrained interaction HERE, add it here.
-	var/currently_restrained = FALSE
-	if(restrained())
-		setClickCooldown(10)
-		RestrainedClickOn(A)
-		currently_restrained = TRUE
-
-	if(!currently_restrained && in_throw_mode && (isturf(A) || isturf(A.loc)) && throw_item(A))
-		trigger_aiming(TARGET_CAN_CLICK)
-		throw_mode_off()
-		return TRUE
-
-	var/obj/item/W = get_active_hand()
-
-	if(!currently_restrained && W == A) // Handle attack_self
-		if(LAZYACCESS(modifiers, RIGHT_CLICK))
-			W.attack_self_secondary(src, modifiers)
-			trigger_aiming(TARGET_CAN_CLICK)
-			update_inv_active_hand(0)
-			return TRUE
-		else
-			W.attack_self(src, modifiers)
-			trigger_aiming(TARGET_CAN_CLICK)
-			update_inv_active_hand(0)
-			return TRUE
-
-	//Atoms on your person
-	// A is your location but is not a turf; or is on you (backpack); or is on something on you (box in backpack); sdepth is needed here because contents depth does not equate inventory storage depth.
-	var/sdepth = A.storage_depth(src)
-	if(!currently_restrained && ((!isturf(A) && A == loc) || (sdepth <= MAX_STORAGE_REACH)))
-		if(W)
-			var/resolved = W.resolve_attackby(A, src, click_parameters = params)
-			//If we got a 'SUCCESS' it means resolve_attackby did something. Don't do afterattack in that case.
-			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, src, 1, params) // 1 indicates adjacency
-		else
-			if(ismob(A)) // No instant mob attacking
-				setClickCooldown(get_attack_speed())
-			UnarmedAttack(A, 1)
-
-		trigger_aiming(TARGET_CAN_CLICK)
-		return 1
-
-	if(!currently_restrained && isbelly(loc) && (loc == A.loc))
-		if(W)
-			var/resolved = W.resolve_attackby(A,src)
-			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, src, 1, params) // 1: clicking something Adjacent
-		else
-			if(ismob(A)) // No instant mob attacking
-				setClickCooldown(get_attack_speed())
-			UnarmedAttack(A, 1)
-		return
-
-	if(!isturf(loc)) // This is going to stop you from telekinesing from inside a closet, but I don't shed many tears for that
-		return
-
-	//Atoms on turfs (not on your person)
-	// A is a turf or is on a turf, or in something on a turf (pen in a box); but not something in something on a turf (pen in a box in a backpack)
-	sdepth = A.storage_depth_turf()
-	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
-		if(currently_restrained)
-			if(ismob(A) && A.Adjacent(src)) //We are RESTRAINED (handcuffed or otherwise) and ADJACENT
-				setClickCooldown(get_attack_speed())
-				UnarmedAttack(A, 1)
-				trigger_aiming(TARGET_CAN_CLICK)
-				return
-		else
-			if(A.Adjacent(src) || (W && W.attack_can_reach(src, A, W.reach)) ) // see adjacent.dm
-				if(W && !restrained())
-					// Return 1 in attackby() to prevent afterattack() effects (when safely moving items for example)
-					var/resolved = W.resolve_attackby(A,src, click_parameters = params)
-					if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-						W.afterattack(A, src, 1, params) // 1: clicking something Adjacent
-				else
-					if(ismob(A)) // No instant mob attacking
-						setClickCooldown(get_attack_speed())
-					UnarmedAttack(A, 1)
-				trigger_aiming(TARGET_CAN_CLICK)
-				return
-			else // non-adjacent click
-				if(W)
-					W.afterattack(A, src, 0, params) // 0: not Adjacent
-				else
-					RangedAttack(A, params)
-
-				trigger_aiming(TARGET_CAN_CLICK)
-	return 1
+// /atom/Click, DblClick, MouseWheel, MouseDrop and /mob/proc/ClickOn live with the
+// input router (code/modules/keybindings/router.dm); per-actor click handling is in
+// the capability adapters (code/modules/keybindings/adapters.dm).
 
 /mob/proc/setClickCooldown(timeout)
 	next_click = max(world.time + timeout, next_click)
@@ -250,10 +66,8 @@
 	if((LASER_EYES in mutations) && a_intent == I_HURT)
 		LaserEyes(A) // moved into a proc below
 	else if(has_telegrip())
-		if(get_dist(src, A) > TK_MAXRANGE)
-			to_chat(src, TK_OUTRANGED_MESSAGE)
-			return
-		A.attack_tk(src)
+		var/datum/input_adapter/telekinesis/telekinesis = INPUT_ADAPTER(telekinesis)
+		telekinesis.use(src, A, null, params)
 /*
 	Restrained ClickOn
 
@@ -317,7 +131,7 @@
 	if(nutrition>0)
 		..()
 		nutrition = max(nutrition - rand(1,5),0)
-		handle_regular_hud_updates()
+		refresh_hud()
 	else
 		to_chat(src, span_warning("You're out of energy!  You need food!"))
 
@@ -363,20 +177,21 @@
 	verbs.Cut()
 
 /atom/movable/screen/click_catcher/Click(location, control, params)
-	var/list/modifiers = params2list(params)
-	if(LAZYACCESS(modifiers, MIDDLE_CLICK) && istype(usr, /mob/living/carbon))
-		var/mob/living/carbon/C = usr
-		C.swap_hand()
-	else
-		var/list/P = params2list(params)
-		var/turf/T = get_turf(usr)
+	var/list/P = params2list(params)
+	switch(GLOB.input_router.classify(P, GLOB.input_router.click_catcher_table()))
+		if(INPUT_ACTION_SWAP_HANDS)
+			if(istype(usr, /mob/living/carbon))
+				var/mob/living/carbon/C = usr
+				C.swap_hand()
+				return 1
+	var/turf/T = get_turf(usr)
+	if(T)
+		T = screen_loc2turf(P[SCREEN_LOC], T)
 		if(T)
-			T = screen_loc2turf(P["screen-loc"], T)
-			if(T)
-				if(LAZYACCESS(modifiers, SHIFT_CLICK))
-					usr.face_atom(T)
-					return 1
-				T.Click(location, control, params)
+			if(GLOB.input_router.classify(P, GLOB.input_router.shift_table()) == INPUT_ACTION_INSPECT)
+				usr.face_atom(T)
+				return 1
+			T.Click(location, control, params)
 	return 1
 
 /// MouseWheelOn

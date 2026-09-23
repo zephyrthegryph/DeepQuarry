@@ -293,5 +293,5 @@
 /obj/item/melee/shock_maul/harmless
 	name = "rubber concussion maul"
 	desc = "A variant of the concussion maul that staggers and weakens victims. Despite their screams, does no real damage."
-	damtype = HALLOSS
+	injury_kind = INJURY_PAIN
 	launch_force = 0

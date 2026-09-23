@@ -375,14 +375,8 @@
 		///How much damage we'll inflect.
 		var/damage_to_inflict = 0
 
-		///What type of damage we'll inflict
-		var/damage_type = BRUTE
-
-		///If the item we get injured on has is sharp.
-		var/is_sharp = FALSE
-
-		///If the item we get injured on has an edge.
-		var/has_edge = FALSE
+		///What we'll inflict (a paper cut by default).
+		var/injury_kind = INJURY_CUT
 
 		///What verb we use to describe the injury.
 		var/injury_verb = "cuts"
@@ -400,16 +394,14 @@
 			var/obj/item/material/knife = item
 
 			injury_verb = "cuts"
-			is_sharp = knife.sharp
-			has_edge = knife.edge
+			injury_kind = knife.injury_kind
 			damage_to_inflict = knife.force
 
 		else if(istype(item, /obj/item/material/shard))
 			var/obj/item/material/shard/shard = item
 
 			injury_verb = "cuts"
-			is_sharp = shard.sharp
-			has_edge = shard.edge
+			injury_kind = shard.injury_kind
 			damage_to_inflict = shard.force
 
 		else if(istype(item, /obj/item/flame/lighter))
@@ -418,38 +410,35 @@
 				return
 
 			injury_verb = "burns"
-			damage_type = BURN
+			injury_kind = INJURY_BURN
 			damage_to_inflict = 5
 
 		else if(istype(item, /obj/item/tool/transforming/jawsoflife))
 			var/obj/item/tool/transforming/jawsoflife/jaws = item
 
 			injury_verb = "clamps"
-			is_sharp = jaws.sharp
-			has_edge = jaws.edge
+			injury_kind = jaws.injury_kind
 			damage_to_inflict = jaws.force
 
 		else if(istype(item, /obj/item/tool/screwdriver))
 			var/obj/item/tool/screwdriver/screwdriver = item
 
 			injury_verb = "stabs"
-			is_sharp = screwdriver.sharp
-			has_edge = screwdriver.edge
+			injury_kind = screwdriver.injury_kind
 			damage_to_inflict = screwdriver.force
 
 		else if(istype(item, /obj/item/tool/wirecutters))
 			var/obj/item/tool/wirecutters/wirecutters = item
 
 			injury_verb = "nips"
-			is_sharp = wirecutters.sharp
-			has_edge = wirecutters.edge
+			injury_kind = wirecutters.injury_kind
 			damage_to_inflict = wirecutters.force
 
 		if(!damage_to_inflict)
 			return
 
 		unlucky_human.visible_message(span_danger("[unlucky_human] accidentally [injury_verb] [unlucky_human.p_their()] hand on [item]!"))
-		unlucky_human.injure(injury_kind_for(damage_type, is_sharp, has_edge), damage_to_inflict * damage_mod, current_hand, item)
+		unlucky_human.injure(injury_kind, damage_to_inflict * damage_mod, current_hand, item)
 
 /datum/component/omen/proc/check_stairs(mob/living/unlucky_soul)
 	SIGNAL_HANDLER

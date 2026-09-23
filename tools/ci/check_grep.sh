@@ -115,6 +115,39 @@ fi;
 
 section "code issues"
 
+part "call_ext outside generated bindings"
+# Verdigris is reached only through the generated vg_* procs in
+# code/__defines/verdigris/_bindings.dm (tools/build/lib/verdigris_bindings.ts).
+# The allowlisted files bind other libraries (rust_g, tracy, the debugger,
+# vchatlog, TGS) or define the LIBCALL compat alias.
+if $grep -n 'call_ext|load_ext|VERDIGRIS_CALL' $code_files \
+	| $grep -v '^code/(__defines/verdigris/_bindings\.dm|__defines/rust_g\.dm|__defines/vchatlog\.dm|__byond_version_compat\.dm|modules/debugging/(tracy|debugger)\.dm|modules/tgs/)' \
+	| $grep -v ':\s*//|:\s*\*|// .*call_ext'; then
+	echo
+	echo -e "${RED}ERROR: call_ext/load_ext outside the generated verdigris bindings. Declare the Rust function with #[auxmacros::bind], run tools/build/build.sh verdigris-bindings, and call the generated vg_* proc.${NC}"
+	FAILED=1
+fi;
+
+part "life scheduler: no Life() overrides"
+# /mob/living/Life() is the life scheduler (code/modules/mob/living/life/scheduler.dm). Living
+# mobs change their upkeep by adding or overriding /datum/life_system variants, never by
+# overriding Life() (doc/mob_life_architecture.md §4).
+if $grep -n '^/mob/living[a-zA-Z0-9_/]*/(proc/)?Life\(' $code_files | grep -v '^code/modules/mob/living/life/scheduler\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: Life() override on a living mob. Add a /datum/life_system (or a variant of one) instead.${NC}"
+	FAILED=1
+fi;
+
+part "life scheduler: no handle_* life hooks"
+# The old Life() hooks became life systems. Their handle_* procs must not come back on mobs,
+# species or traits; put the work in a system's tick() (or a variant of the system).
+LIFE_HOOKS='addictions|ambience|blood|breath|breathing|changeling|chemical_smoke|chemicals_in_body|confused|darksight|defib_timer|diseases|disabilities|drugged|environment|environment_special|guts|heartbeat|hud_icons_health|hud_list|instability|light|medical_side_effects|modifiers|mutations|nif|npc|organs|pain|paralysed|phobias|post_breath|pulse|radiation|random_events|regular_hud_updates|regular_status_updates|sensory_recovery|shock|silent|sleeping|slurring|special|species_components|statuses|stomach|stunned|stuttering|supernatural|temperature_damage|tf_holder|vision|vr_derez|weakened'
+if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LIFE_HOOKS)\(" $code_files; then
+	echo
+	echo -e "${RED}ERROR: handle_* Life hook defined outside the life scheduler. Life() steps are /datum/life_system types (code/modules/mob/living/life/).${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`
@@ -125,6 +158,20 @@ part "gas mixture mirror writes"
 if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperature|volume)[[:space:]]*[-+*/]?=[^=]' $code_files | grep -vE 'return_temperature|return_volume'; then
 	echo
 	echo -e "${RED}ERROR: direct write to a gas mixture temperature/volume mirror detected. Use set_temperature() / set_volume() — a raw assignment updates only the DM mirror and is ignored by the Rust atmos arena.${NC}"
+	FAILED=1
+fi;
+
+part "input: modifier ladders"
+# Click modifiers (shift, ctrl, alt, middle, right, extra buttons) are read in one
+# place: the input router (code/modules/keybindings/router.dm), which turns them
+# into abstract actions for every mob (doc/rewrite/interactions.md §4). Branch on
+# the action instead. The files listed below predate the router (HUD buttons,
+# camera consoles, the admin spawn panel, the secondary item-interaction flag);
+# they are grandfathered and must not grow.
+input_ladder_allowlist='code/modules/keybindings/router\.dm|code/_onclick/item_attack\.dm|code/_onclick/hud/action/action_screen_objects\.dm|code/game/machinery/computer/(body)?camera\.dm|code/modules/admin/spawn_panel/spawn_panel\.dm|code/modules/mob/living/carbon/human/species/station/protean/protean_powers\.dm'
+if $grep -n '\bmodifiers\[\s*"(shift|ctrl|alt|middle|right|left|xbutton1|xbutton2)"|LAZYACCESS\(\s*modifiers\s*,\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)|\bmodifiers\[\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)\s*\]' $code_files | grep -vE "^($input_ladder_allowlist):"; then
+	echo
+	echo -e "${RED}ERROR: a click modifier check outside the input router. Add a row to a click table in code/modules/keybindings/router.dm and branch on the INPUT_ACTION_* it produces.${NC}"
 	FAILED=1
 fi;
 
@@ -165,6 +212,36 @@ fi;
 if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coefficient|heat_protection|cold_protection|vision_flags|armor_percent)\b' $code_files; then
 	echo
 	echo -e "${RED}ERROR: a modifier's slowdown/evasion/accuracy/... is read directly. Those are body factors: read factor(BF_X) on the holder.${NC}"
+	FAILED=1
+fi;
+
+part "weapon vocabulary: injury kinds, not damage types"
+# Weapons, projectiles, blobs, unarmed and animal attacks declare what they
+# inflict as INJURY_* kinds (`injury_kind`, or an `injury_kinds` alist for a
+# mixed hit). Object damage is derived with injury_kind_obj_damage_type().
+if $grep -n '(\.damtype\b|\bvar/damtype\b|^\s*damtype\s*=|\binjury_kind_for\b|\bget_injury_kind\b|\binjure_by_damtype\b|\bpunch_damtype\b|\bcheck_armour\b|\battack_(sharp|edge)\b)' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a legacy damage type (damtype / injury_kind_for / check_armour / attack_sharp...) detected. Declare injury_kind = INJURY_X (or injury_kinds) and derive object damage with injury_kind_obj_damage_type().${NC}"
+	FAILED=1
+fi;
+if $grep -n '^\s*(var/)?damage_type\s*=\s*(BRUTE|BURN)\b' $code_files | $grep -v '^code/modules/medical/conditions/wounds\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: damage_type = BRUTE/BURN on a mob-harming type. Declare injury_kind = INJURY_X; obj_integrity damage is derived from it.${NC}"
+	FAILED=1
+fi;
+if $grep -n '(#define\s+(TOX|OXY|CLONE|HALLOSS)\b|\b(HALLOSS|ELECTROCUTE|BIOACID|SEARING|ELECTROMAG)\b)' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a removed damage-type define (TOX/OXY/CLONE/HALLOSS/ELECTROCUTE/BIOACID/SEARING/ELECTROMAG) detected. Use INJURY_* kinds.${NC}"
+	FAILED=1
+fi;
+
+part "one mitigation pipeline"
+# Armour, shields, resistance factors and species multipliers apply inside
+# injure() (pass INJURE_ARMORED for hits from outside). The old parallel
+# armour procs are gone; ask armour with injury_armor(kind, zone).
+if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_armor|get_injury_mod|injury_mod_groups)\b' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a parallel mitigation path detected. Harm goes through injure(); armour is injury_armor(kind, zone); species resistances are factor_baseline BF_INCOMING_*.${NC}"
 	FAILED=1
 fi;
 

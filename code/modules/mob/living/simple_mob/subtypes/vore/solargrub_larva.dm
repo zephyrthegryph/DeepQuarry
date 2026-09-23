@@ -72,25 +72,28 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	QDEL_NULL(machine_effect)
 	return ..()
 
-/mob/living/simple_mob/animal/solargrub_larva/Life()
+/datum/life_system/type_post/simple_mob/animal/solargrub_larva
+	mob_type = /mob/living/simple_mob/animal/solargrub_larva
+
+/datum/life_system/type_post/simple_mob/animal/solargrub_larva/tick(mob/living/simple_mob/animal/solargrub_larva/self, datum/life_context/ctx)
 	. = ..()
 
-	if(machine_effect && !istype(loc, /obj/machinery))
-		QDEL_NULL(machine_effect)
+	if(self.machine_effect && !istype(self.loc, /obj/machinery))
+		QDEL_NULL(self.machine_effect)
 
 	if(!.)	// || ai_inactive
 		return
 
-	if(power_drained >= 7 MEGAWATTS && prob(5))
-		expand_grub()
+	if(self.power_drained >= 7 MEGAWATTS && prob(5))
+		self.expand_grub()
 		return
 
-	if(istype(loc, /obj/machinery))
-		if(machine_effect && SSair.times_fired%30) // LINDA renamed current_cycle → times_fired
+	if(istype(self.loc, /obj/machinery))
+		if(self.machine_effect && SSair.times_fired%30) // LINDA renamed current_cycle → times_fired
 			for(var/mob/M in GLOB.player_list)
-				M << machine_effect
+				M << self.machine_effect
 		if(prob(10))
-			sparks.start()
+			self.sparks.start()
 		return
 
 /mob/living/simple_mob/animal/solargrub_larva/attack_target(atom/A)
@@ -180,13 +183,16 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 //	grub.power_drained = power_drained //TODO
 	qdel(src)
 
-/mob/living/simple_mob/animal/solargrub_larva/handle_light()
+/datum/life_system/light/simple_mob/animal/solargrub_larva
+	mob_type = /mob/living/simple_mob/animal/solargrub_larva
+
+/datum/life_system/light/simple_mob/animal/solargrub_larva/tick(mob/living/simple_mob/animal/solargrub_larva/self, datum/life_context/ctx)
 	. = ..()
-	if(. == 0 && !is_dead())
-		set_light(1.5, 1, COLOR_YELLOW)
+	if(. == 0 && !self.is_dead())
+		self.set_light(1.5, 1, COLOR_YELLOW)
 		return 1
-	else if(is_dead())
-		glow_override = FALSE
+	else if(self.is_dead())
+		self.glow_override = FALSE
 
 
 /obj/machinery/abstract_grub_machine

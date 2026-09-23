@@ -108,6 +108,7 @@
 #include "material_tests.dm"
 #include "nuke_cinematic.dm"
 #include "pai_tests.dm"
+#include "preview_async_tests.dm"
 #include "poster_tests.dm"
 #include "special_roles.dm"
 #include "preferences.dm"
@@ -161,7 +162,10 @@
 #include "dq_mind_host_tests.dm"
 #include "dq_form_tests.dm"
 #include "dq_body_factor_tests.dm"
+#include "dq_harm_mitigation_tests.dm"
+#include "dq_property_tests.dm"
 #include "dq_robot_machine_tests.dm"
+#include "dq_life_scheduler_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_lesion_tests.dm"
 #include "dq_vital_systems_tests.dm"
@@ -174,6 +178,7 @@
 #include "dq_surgery_tests.dm"
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
+#include "dq_input_tests.dm"
 #include "xgm_total_moles_test.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

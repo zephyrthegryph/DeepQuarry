@@ -25,6 +25,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	edge = TRUE
 	sharp = TRUE
+	injury_kind = INJURY_CUT
 	embed_chance = 0
 	var/mob/living/carbon/human/last_touched //The last human that touched us
 	var/stored_blood = 0 //How much energy we have!

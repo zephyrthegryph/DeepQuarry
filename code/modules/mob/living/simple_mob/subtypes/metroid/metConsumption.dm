@@ -92,7 +92,7 @@
 	if(L.isSynthetic())
 		to_chat(src, "This subject is not biological...")
 		return FALSE
-	if(L.getarmor(null, "bio") >= 75)
+	if(L.injury_armor(INJURY_TOXIN, null) >= 75)
 		to_chat(src, "I cannot reach this subject's biological matter...")
 		return FALSE
 	if(!Adjacent(L))
@@ -126,7 +126,7 @@
 // 50% of giving +1 charge to the slime (same as above).
 /mob/living/simple_mob/metroid/juvenile/proc/consume(mob/living/victim, amount)
 	if(can_consume(victim))
-		var/armor_modifier = abs((victim.getarmor(null, "bio") / 100) - 1)
+		var/armor_modifier = abs((victim.injury_armor(INJURY_TOXIN, null) / 100) - 1)
 		var/damage_done = amount * armor_modifier
 		if(damage_done > 0)
 			playsound(src, 'sound/metroid/metroidattack.ogg', 100, 1)

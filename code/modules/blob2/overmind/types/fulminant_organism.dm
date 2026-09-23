@@ -8,7 +8,7 @@
 	difficulty = BLOB_DIFFICULTY_HARD // Loads of spores that can overwhelm, and spreads quickly.
 	color = "#FF0000" // Red
 	complementary_color = "#FFCC00" // Orange-ish
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	damage_lower = 10
 	damage_upper = 20
 	spread_modifier = 0.7

@@ -72,6 +72,14 @@ Every interaction is a definition, not a proc override. So every interaction can
 - **Capability adapters.** Non-player actors (AI, borgs, ghosts, telekinesis, simple mobs) produce the same actions. An adapter decides which interactions are available: "remote, no hands, needs camera sight" for the AI, "observer-only" for ghosts, and so on.
 - **Deletes the forwarding overrides:** the ~83 `attack_ai` → `attack_hand` forwards, ~13 of the `attack_robot` forwards, and the ghost UI openers.
 
+**As built (I1).** Code lives in `code/modules/keybindings/`.
+- `router.dm`: `GLOB.input_router`. Click tables (ordered rows of held modifiers → `INPUT_ACTION_*`) are the only place click modifiers are read; the `input: modifier ladders` lint in `tools/ci/check_grep.sh` enforces it.
+- `adapters.dm`: singleton adapters `hands`, `ghost`, `ai`, `robot` and `telekinesis`. Each decides whether a click is accepted, which click table it reads (the AI has its own), and what Use does. Until I2, Use and Alternate reach the legacy handlers.
+- `keybinding.dm`, `keybinding_defaults.dm`: `/datum/keybinding` records with default keys per profile (`default` reproduces the old `hotkeymode` set, `robot` reproduces `borghotkeymode`). Player overrides are stored in the preferences savefile as `key_bindings`, and `right_click_binding` holds the right-click choice.
+- `client_macros.dm`: writes the bindings into the skin's one empty `default` macro set with a single `winset`, and sets `mapwindow.map.right-click`. When right-click is bound to Menu, BYOND's native popup is kept; the resolver's Menu replaces it in I2.
+- `hover.dm`: `/atom/MouseEntered` returns early unless the client has a category key bound. Category keys (`.input-category`) are unbound by default and do nothing until I2.
+- `keybind_editor.dm` with `KeybindingEditor.tsx`: the Keybindings verb.
+
 ## 5. Interaction definitions
 
 ```dm

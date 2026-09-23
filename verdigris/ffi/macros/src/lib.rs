@@ -2,47 +2,70 @@ use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
 
-/// Wraps an FFI bind function body in `catch_unwind` so a panic (a bad DM arg, a
-/// missing compiled string, an out-of-bounds index, an `unwrap` on None) becomes a
-/// recoverable `Err` — which byondapi's bind macro then routes to
-/// `/proc/byondapi_stack_trace` (logged deduped) — instead of unwinding across the
-/// `extern "C"` boundary and aborting the whole DreamDaemon process.
-///
-/// Apply it BELOW `#[byondapi::bind(...)]` (so it transforms the fn body first, then
-/// bind wraps the result):
+/// The one verdigris bind macro. Every function DM can call is declared with it:
 /// ```ignore
-/// #[byondapi::bind("/proc/foo")]
-/// #[auxmacros::panic_safe]
-/// fn foo(src: ByondValue) -> Result<ByondValue> { ... }
+/// /// Doc comment, copied into the generated DM binding.
+/// #[auxmacros::bind("/datum/gas_mixture/proc/total_moles")]
+/// fn total_moles_hook(src: ByondValue) -> Result<ByondValue> { ... }
 /// ```
-/// The function MUST return `eyre::Result<ByondValue>` (every auxmos bind does).
+/// It expands to `#[byondapi::bind(...)]` (exported symbol `<fn>_ffi`) around a body
+/// that
+/// - catches panics, so a bad DM argument becomes a DM runtime through
+///   `/proc/byondapi_stack_trace` instead of unwinding across `extern "C"` and
+///   aborting DreamDaemon;
+/// - wraps every error with the bind's name, so the runtime says which bind failed.
+///
+/// The proc path argument is documentation only. DM never calls it: the generator
+/// (`tools/build/lib/verdigris_bindings.ts`) scans for this attribute and writes
+/// `/proc/vg_<fn>(args)` into `code/__defines/verdigris/_bindings.dm`, with a cached
+/// `load_ext` handle. The function MUST return `eyre::Result<ByondValue>`.
 #[proc_macro_attribute]
-pub fn panic_safe(
-	_: proc_macro::TokenStream,
+pub fn bind(
+	attr: proc_macro::TokenStream,
 	item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
+	wrap_bind(attr, item, quote!(::byondapi::bind))
+}
+
+/// As [`bind`], for variadic binds: the body sees the DM arguments as `args`.
+/// The generated DM proc is `/proc/vg_<fn>(...)`.
+#[proc_macro_attribute]
+pub fn bind_raw_args(
+	attr: proc_macro::TokenStream,
+	item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+	wrap_bind(attr, item, quote!(::byondapi::bind_raw_args))
+}
+
+fn wrap_bind(
+	attr: proc_macro::TokenStream,
+	item: proc_macro::TokenStream,
+	inner: TokenStream,
+) -> proc_macro::TokenStream {
+	let attr = TokenStream::from(attr);
 	let input = syn::parse_macro_input!(item as syn::ItemFn);
 	let attrs = &input.attrs;
 	let vis = &input.vis;
 	let sig = &input.sig;
 	let block = &input.block;
+	let context = format!("in verdigris bind `{}`", sig.ident);
 	quote! {
+		#[#inner(#attr)]
 		#(#attrs)*
 		#vis #sig {
-			match ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(move || #block)) {
-				::std::result::Result::Ok(__panic_safe_result) => __panic_safe_result,
-				::std::result::Result::Err(__panic_safe_payload) => {
-					let __panic_safe_msg = __panic_safe_payload
-						.downcast_ref::<&str>()
-						.map(|__s| (*__s).to_string())
-						.or_else(|| __panic_safe_payload.downcast_ref::<::std::string::String>().cloned())
-						.unwrap_or_else(|| "unknown panic".to_string());
-					::std::result::Result::Err(::eyre::eyre!(
-						"panic caught in auxmos FFI bind: {}",
-						__panic_safe_msg
-					))
-				}
-			}
+			let __vg_result: ::eyre::Result<::byondapi::value::ByondValue> =
+				match ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(move || #block)) {
+					::std::result::Result::Ok(__vg_result) => __vg_result,
+					::std::result::Result::Err(__vg_payload) => {
+						let __vg_msg = __vg_payload
+							.downcast_ref::<&str>()
+							.map(|__s| (*__s).to_string())
+							.or_else(|| __vg_payload.downcast_ref::<::std::string::String>().cloned())
+							.unwrap_or_else(|| "unknown panic".to_string());
+						::std::result::Result::Err(::eyre::eyre!("panic: {}", __vg_msg))
+					}
+				};
+			__vg_result.map_err(|__vg_err| __vg_err.wrap_err(#context))
 		}
 	}
 	.into()

@@ -35,7 +35,7 @@
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
-	take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+	take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
 
 /obj/structure/holosign/wetsign
 	name = "wet floor sign"

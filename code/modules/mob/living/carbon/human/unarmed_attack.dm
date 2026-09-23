@@ -9,8 +9,9 @@
 	var/shredding = FALSE // Calls the old attack_alien() behavior on objects/mobs when on harm intent.
 	var/sharp = FALSE
 	var/edge = FALSE
+	/// What the attack inflicts.
+	var/injury_kind = INJURY_BLUNT
 
-	var/damage_type = BRUTE
 	var/is_punch = FALSE //If the attack benefits from the damage increase things being on your hands give.
 	var/sparring_variant_type = /datum/unarmed_attack/light_strike
 
@@ -277,5 +278,5 @@
 	attack_noun = list("tap","light strike")
 	attack_verb = list("tapped", "lightly struck")
 	damage = 0
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	is_punch = TRUE

@@ -42,8 +42,7 @@
 	base_attack_cooldown = 1 SECOND
 	melee_attack_delay = 0.5 SECONDS
 	attack_armor_pen = 5
-	attack_sharp = TRUE
-	attack_edge = TRUE
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("gouged")
 
 	organ_names = /datum/decl/mob_organ_names/shantak

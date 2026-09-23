@@ -1,0 +1,10 @@
+[package]
+name = "vg-replay"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+description = "Replays a verdigris flight-recorder log (.vglog) and verifies its state hashes."
+
+[dependencies]
+vg-core = { path = "../../core" }

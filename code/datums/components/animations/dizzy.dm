@@ -10,7 +10,7 @@ dizzy process - wiggles the client's pixel offset over time
 	if (!ismob(parent))
 		return COMPONENT_INCOMPATIBLE
 	owner = parent
-	RegisterSignal(owner, COMSIG_LIVING_LIFE, PROC_REF(process_life))
+	add_trait_life_system(owner, /datum/life_system/trait/dizzy_shake)
 	RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(mob_death))
 	addtimer(CALLBACK(src, PROC_REF(handle_tick)), 1, TIMER_DELETE_ME) // Needs to be a LOT faster than life ticks
 
@@ -53,7 +53,7 @@ dizzy process - wiggles the client's pixel offset over time
 	qdel(src)
 
 /datum/component/dizzy_shake/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_LIVING_LIFE)
+	remove_trait_life_system(owner, /datum/life_system/trait/dizzy_shake)
 	UnregisterSignal(owner, COMSIG_MOB_DEATH)
 	// Reset the pixel offsets to zero
 	if(owner.client)
@@ -90,3 +90,11 @@ below 100 is not dizzy
 
 /mob/living/silicon/get_dizzy()
 	return 0
+
+/// Trait system: dizziness wears off. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/dizzy_shake
+	name = "dizzy shake"
+	component_type = /datum/component/dizzy_shake
+
+/datum/life_system/trait/dizzy_shake/tick_component(mob/living/self, datum/component/dizzy_shake/component)
+	component.process_life()

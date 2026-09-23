@@ -45,8 +45,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 	melee_damage_lower = 6 // hyenas go for the legs/lower bits
 	melee_damage_upper = 12 // not as high damage, but faster bites. nomnomnom <3
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	base_attack_cooldown = 2
 	attacktext = list("bit", "nipped", "chomped", "clawed", "scratched", "lewded")
 	attack_sound = 'sound/weapons/bite.ogg' // placeholder till I find a better bite

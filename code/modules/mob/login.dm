@@ -76,10 +76,8 @@
 	var/status_enabled = client.prefs?.read_preference(/datum/preference/toggle/status_indicators)
 	plane_holder.set_vis(VIS_STATUS, status_enabled)
 
-	//set macro to normal incase it was overriden (like cyborg currently does)
-	client.set_hotkeys_macro("macro", "hotkeymode")
-	// force hotkey mode regardless of player pref; non-hotkey is disabled in this fork.
-	winset(client, null, "mainwindow.macro=hotkeymode;hotkey_toggle.is-checked=true;mapwindow.map.focus=true")
+	// Write this mob's keybinding profile (default or cyborg) into the skin's macro set.
+	client.apply_keybindings()
 
 	if(!client.tooltips)
 		client.tooltips = new(client)

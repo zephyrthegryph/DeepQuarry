@@ -472,7 +472,7 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 /datum/gas_mixture/proc/multiply(num_val)
 	if(num_val == 1)
 		return
-	call_ext(VERDIGRIS, "byond:multiply_hook_ffi")(src, num_val)
+	vg_multiply_hook(src, num_val)
 
 // /obj/item/tank exposed return_pressure/return_temperature as forwarding
 // methods to air_contents. Re-declare for callers that still use them.

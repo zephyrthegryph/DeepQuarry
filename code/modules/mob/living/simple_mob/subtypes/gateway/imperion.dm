@@ -454,8 +454,6 @@
 	icon_state = "arcane_barrage"
 	damage = 35
 	armor_penetration = 35
-	damage_type = BURN
-	check_armour = "laser"
 	speed = 7.0
 
 	flash_strength = 0
@@ -477,8 +475,6 @@
 	icon_state = "dark_pellet"
 	damage = 15
 	armor_penetration = 100
-	damage_type = BURN
-	check_armour = "laser"
 	speed = 4.5
 
 	flash_strength = 0
@@ -500,8 +496,6 @@
 	icon_state = "tesla_projectile"
 	damage = 50
 	armor_penetration = 50
-	damage_type = BURN
-	check_armour = "energy"
 	agony = 50
 	speed = 10.0
 
@@ -511,8 +505,6 @@
 	name = "homing rocket"
 	icon_state = "atrocket"
 	damage = 40
-	damage_type = BURN
-	check_armour = "bullet"
 
 /obj/item/projectile/energy/homing_bolt/missile/on_hit(atom/target, blocked=0)
 	explosion(target, 0, 0, 2, 4)//No need to have a question.

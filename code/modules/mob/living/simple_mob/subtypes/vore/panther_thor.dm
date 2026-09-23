@@ -17,7 +17,6 @@
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
-	attack_sharp = TRUE
 
 	response_help = "pats"
 	response_disarm = "tries to shove"
@@ -82,9 +81,12 @@
 
 
 // Cloaks the spider automatically, if possible.
-/mob/living/simple_mob/vore/aggressive/panther/thor/handle_special()
-	if(!dq_get_cloaked(src) && can_cloak())
-		cloak()
+/datum/life_system/special/vore/aggressive/panther/thor
+	mob_type = /mob/living/simple_mob/vore/aggressive/panther/thor
+
+/datum/life_system/special/vore/aggressive/panther/thor/tick(mob/living/simple_mob/vore/aggressive/panther/thor/self, datum/life_context/ctx)
+	if(!dq_get_cloaked(self) && self.can_cloak())
+		self.cloak()
 
 
 // Applies bonus base damage if dq_get_cloaked(src).

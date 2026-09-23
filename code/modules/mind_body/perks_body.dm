@@ -1,7 +1,8 @@
 // Body perks. 22-ish per category, one tree per category. Pool sizes are set
 // to give a player room to invest in ~3-4 perks per category at age 18, sculpting a
 // build path rather than buying everything. var_changes effects are real where they
-// touch /datum/species vars (brute_mod, total_health, slowdown, etc.); softer effects
+// touch /datum/species vars (total_health, etc.) or grant body factors (incoming
+// injury, slowdown...); softer effects
 // are descriptive roadmaps the gameplay hooks read off mob flags or perk lookups.
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -19,7 +20,7 @@
 	cost = 1
 	tree = PERK_TREE_BODY_STRENGTH
 	sort_priority = 10
-	var_changes = list("brute_mod" = 0.9)
+	factors = alist(BF_INCOMING_PHYSICAL = 0.9)
 
 /datum/perk/body/str_iron_skin
 	name = "Iron Skin"
@@ -28,7 +29,7 @@
 	cost = 2
 	tree = PERK_TREE_BODY_STRENGTH
 	requires = list(/datum/perk/body/str_toughness)
-	var_changes = list("brute_mod" = 0.8)
+	factors = alist(BF_INCOMING_PHYSICAL = 0.9)
 
 /datum/perk/body/str_crusher
 	name = "Crusher"
@@ -37,7 +38,7 @@
 	cost = 3
 	tree = PERK_TREE_BODY_STRENGTH
 	requires = list(/datum/perk/body/str_iron_skin)
-	var_changes = list("brute_mod" = 0.7)
+	factors = alist(BF_INCOMING_PHYSICAL = 0.9)
 
 /datum/perk/body/str_powerful
 	name = "Powerful Build"
@@ -174,7 +175,7 @@
 	cost = 3
 	tree = PERK_TREE_BODY_STRENGTH
 	requires = list(/datum/perk/body/str_powerful, /datum/perk/body/str_iron_skin)
-	var_changes = list("brute_mod" = 0.75)
+	factors = alist(BF_INCOMING_PHYSICAL = 0.95)
 
 /datum/perk/body/str_slam
 	name = "Body Slam"
@@ -211,10 +212,8 @@
 	cost = 2
 	tree = PERK_TREE_BODY_VIGOR
 	requires = list(/datum/perk/body/vig_robust)
-	var_changes = list(
-		"total_health" = 160,
-		"burn_mod" = 0.9,
-	)
+	var_changes = list("total_health" = 160)
+	factors = alist(BF_INCOMING_THERMAL = 0.9)
 
 /datum/perk/body/vig_unkillable
 	name = "Unkillable"
@@ -677,7 +676,7 @@
 	icon_name = "fire"
 	cost = 2
 	tree = PERK_TREE_BODY_ENDURANCE
-	var_changes = list("burn_mod" = 0.9)
+	factors = alist(BF_INCOMING_THERMAL = 0.9)
 
 /datum/perk/body/end_bleed_tolerant
 	name = "Bleed Tolerant"

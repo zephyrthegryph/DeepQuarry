@@ -78,10 +78,13 @@
 
 	qdel(src) // Then delete us since we don't actually have a body.
 
-/mob/living/simple_mob/mechanical/mecha/handle_special()
-	if(has_repair_droid)
-		mend(TREAT_PLATING_REPAIR, 2)
-		mend(TREAT_WIRING_REPAIR, 2)
+/datum/life_system/special/mechanical/mecha
+	mob_type = /mob/living/simple_mob/mechanical/mecha
+
+/datum/life_system/special/mechanical/mecha/tick(mob/living/simple_mob/mechanical/mecha/self, datum/life_context/ctx)
+	if(self.has_repair_droid)
+		self.mend(TREAT_PLATING_REPAIR, 2)
+		self.mend(TREAT_WIRING_REPAIR, 2)
 	..()
 
 /mob/living/simple_mob/mechanical/mecha/update_icon()

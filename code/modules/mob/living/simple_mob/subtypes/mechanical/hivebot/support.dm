@@ -19,12 +19,15 @@
 	player_msg = "You <b>increase the performance of other hivebots near you</b> passively.<br>\
 	You are otherwise very weak offensively."
 
-/mob/living/simple_mob/mechanical/hivebot/support/commander/handle_special()
-	for(var/mob/living/L in range(4, src))
-		if(L == src)
+/datum/life_system/special/mechanical/hivebot/support/commander
+	mob_type = /mob/living/simple_mob/mechanical/hivebot/support/commander
+
+/datum/life_system/special/mechanical/hivebot/support/commander/tick(mob/living/simple_mob/mechanical/hivebot/support/commander/self, datum/life_context/ctx)
+	for(var/mob/living/L in range(4, self))
+		if(L == self)
 			continue // Don't buff ourselves.
-		if(IIsAlly(L) && L.isSynthetic()) // Don't buff enemies.
-			L.add_modifier(/datum/modifier/aura/hivebot_commander_buff, null, src)
+		if(self.IIsAlly(L) && L.isSynthetic()) // Don't buff enemies.
+			L.add_modifier(/datum/modifier/aura/hivebot_commander_buff, null, self)
 
 // Modifier added to friendly hivebots nearby.
 // Boosts most stats by 30%.
@@ -65,19 +68,22 @@
 	var/resupply_cooldown = 4 SECONDS
 	var/last_resupply = null
 
-/mob/living/simple_mob/mechanical/hivebot/support/logistics/handle_special()
-	if(last_resupply + resupply_cooldown > world.time)
+/datum/life_system/special/mechanical/hivebot/support/logistics
+	mob_type = /mob/living/simple_mob/mechanical/hivebot/support/logistics
+
+/datum/life_system/special/mechanical/hivebot/support/logistics/tick(mob/living/simple_mob/mechanical/hivebot/support/logistics/self, datum/life_context/ctx)
+	if(self.last_resupply + self.resupply_cooldown > world.time)
 		return // On cooldown.
 
-	for(var/mob/living/simple_mob/SM in hearers(resupply_range, src))
-		if(SM == src)
+	for(var/mob/living/simple_mob/SM in hearers(self.resupply_range, self))
+		if(SM == self)
 			continue // We don't use charges buuuuut in case that changes in the future...
-		if(IIsAlly(SM)) // Don't resupply enemies.
+		if(self.IIsAlly(SM)) // Don't resupply enemies.
 			if(!isnull(SM.special_attack_charges) && SM.special_attack_charges < initial(SM.special_attack_charges))
 				SM.special_attack_charges += 1
-				to_chat(SM, span_notice("\The [src] has resupplied you, and you can use your special ability one additional time."))
-				to_chat(src, span_notice("You have resupplied \the [SM]."))
-				last_resupply = world.time
+				to_chat(SM, span_notice("\The [self] has resupplied you, and you can use your special ability one additional time."))
+				to_chat(self, span_notice("You have resupplied \the [SM]."))
+				self.last_resupply = world.time
 				break // Only one resupply per pulse.
 
 /datum/decl/mob_organ_names/hivebotsupport

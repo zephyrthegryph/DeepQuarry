@@ -126,15 +126,15 @@
 		L.remove_modifiers_of_type(/datum/modifier/crusher_mark)
 		new /obj/effect/temp_visual/kinetic_blast(get_turf(L))
 		var/backstab_dir = get_dir(user, L)
-		var/def_check = L.getarmor(null, "bomb")
+		var/blast_through = (100 - L.armor_against(ARMOR_BLAST)) / 100 // Blast armour soaks the detonation.
 		var/detonation_damage = src.detonation_damage * (!ishuman(L)? 1 : human_damage_nerf)
 		var/backstab_bonus = src.backstab_bonus * (!ishuman(L)? 1 : human_backstab_nerf)
 		var/thrown_bonus = thrown? (src.thrown_bonus * (!ishuman(L)? 1 : human_damage_nerf)) : 0
 		if(thrown? (get_dir(src, L) & L.dir) : ((user.dir & backstab_dir) && (L.dir & backstab_dir)))
-			L.injure(INJURY_BLUNT, detonation_damage + backstab_bonus + thrown_bonus, null, src, def_check)
+			L.injure(INJURY_BLUNT, (detonation_damage + backstab_bonus + thrown_bonus) * blast_through, null, src)
 			playsound(src, 'sound/weapons/kenetic_accel.ogg', 100, 1) //Seriously who spelled it wrong
 		else
-			L.injure(INJURY_BLUNT, detonation_damage + thrown_bonus, null, src, def_check)
+			L.injure(INJURY_BLUNT, (detonation_damage + thrown_bonus) * blast_through, null, src)
 
 /obj/item/kinetic_crusher/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatumd)
 	. = ..()
@@ -200,6 +200,7 @@
 	requires_wield = FALSE
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	// yeah yeah buff but polaris mobs are meatwalls.
 	force = 24
 	detonation_damage = 36 // 60
@@ -343,8 +344,6 @@
 	icon_state = "pulse1"
 	nodamage = TRUE
 	damage = 0 //We're just here to mark people. This is still a melee weapon.
-	damage_type = BRUTE
-	check_armour = "bomb"
 	range = 6
 	accuracy = INFINITY	// NO.
 	var/obj/item/kinetic_crusher/hammer_synced

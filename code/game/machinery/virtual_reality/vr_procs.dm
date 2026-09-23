@@ -2,19 +2,25 @@
 /area/vr
 	name = "Virtual Reality"
 
-// Gross proc which is called on Life() to check for escaped VR mobs. Tried to do this with Exited() on area/vr but ended up being too heavy.
-/mob/living/proc/handle_vr_derez()
-	if(virtual_reality_mob && !istype(get_area(src), /area/vr))
-		log_admin("[src] escaped virtual reality")
-		visible_message("[src] blinks out of existence.")
-		return_from_vr()
-		for(var/obj/belly/B in vore_organs) // Assume anybody inside an escaped VR mob is also an escaped VR mob.
+// Gross system which runs every Life() to check for escaped VR mobs. Tried to do this with Exited() on area/vr but ended up being too heavy.
+/datum/life_system/vr_derez
+	name = "vr derez"
+	phase = LIFE_PHASE_OUTPUT
+	order = 50
+	segment = LIFE_SEG_LIVING
+
+/datum/life_system/vr_derez/tick(mob/living/self, datum/life_context/ctx)
+	if(self.virtual_reality_mob && !istype(get_area(self), /area/vr))
+		log_admin("[self] escaped virtual reality")
+		self.visible_message("[self] blinks out of existence.")
+		self.return_from_vr()
+		for(var/obj/belly/B in self.vore_organs) // Assume anybody inside an escaped VR mob is also an escaped VR mob.
 			for(var/mob/living/L in B)
-				log_vore("[L] was inside an escaped VR mob ([src]) and has been deleted.")
-				L.handle_vr_derez() //Recursive! Let's get EVERYONE properly out of here!
+				log_vore("[L] was inside an escaped VR mob ([self]) and has been deleted.")
+				L.run_life_system(/datum/life_system/vr_derez) //Recursive! Let's get EVERYONE properly out of here!
 				if(!QDELETED(L)) //This is so we don't double qdel() things when we're doing recursive removal.
 					qdel(L)
-		qdel(src) // Would like to convert escaped players into AR holograms in the future to encourage exploit finding.
+		qdel(self) // Would like to convert escaped players into AR holograms in the future to encourage exploit finding.
 
 // This proc checks to see two things: 1. If we have a tf_mob_holder (we are a simple mob) and 2. If we are a human. If so, we try to exit VR properly.
 /mob/living/proc/return_from_vr()

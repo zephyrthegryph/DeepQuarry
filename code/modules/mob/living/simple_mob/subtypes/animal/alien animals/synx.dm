@@ -104,9 +104,7 @@
 	var/initial_attacktext = list("clawed") //I hate needing to do it this way.
 	friendly = list("prods") // "The mob [friendly] the person."
 	attack_armor_pen = 0			// How much armor pen this attack has. //Changed from 40. -Lo
-	attack_sharp = 1
-	attack_edge = 1
-	attack_armor_type = "melee" //Default is melee but I'm stating this explicitly to make it more obvious to anybody reading this
+	attack_injury_kind = INJURY_CUT
 
 //Vore stuff//leaving most of this here even though its no going to be an AI controlled variant.
 	vore_active = 1
@@ -358,7 +356,7 @@
 	if(stomach_distended) //Hacky burn damage code
 		if(isliving(A)) //Only affect living mobs, should include silicons. This could be expanded to deal special effects to acid-vulnerable objects.
 			var/mob/living/L = A
-			var/armor_modifier = abs((L.getarmor(null, "bio") / 100) - 1) //Factor in victim bio armor
+			var/armor_modifier = abs((L.injury_armor(INJURY_TOXIN, null) / 100) - 1) //Factor in victim bio armor
 			var/amount = rand(acid_damage_lower, acid_damage_upper) //Select a damage value
 			var/damage_done = amount * armor_modifier
 			if(damage_done > 0) //sanity check, no healing the victim if somehow this is a negative value.
@@ -405,19 +403,25 @@
 	if(message=="Honk!")
 		bikehorn()
 
-/mob/living/simple_mob/animal/synx/ai/pet/clown/Life()
+/datum/life_system/type_post/simple_mob/animal/synx/ai/pet/clown
+	mob_type = /mob/living/simple_mob/animal/synx/ai/pet/clown
+
+/datum/life_system/type_post/simple_mob/animal/synx/ai/pet/clown/tick(mob/living/simple_mob/animal/synx/ai/pet/clown/self, datum/life_context/ctx)
 	..()
-	if(vore_fullness)
-		size_multiplier = 1+(0.5*vore_fullness)
-		update_icons()
-	if(!vore_fullness && size_multiplier != 1)
-		size_multiplier = 1
-		update_icons()
-/mob/living/simple_mob/animal/synx/Life()
+	if(self.vore_fullness)
+		self.size_multiplier = 1+(0.5*self.vore_fullness)
+		self.update_icons()
+	if(!self.vore_fullness && self.size_multiplier != 1)
+		self.size_multiplier = 1
+		self.update_icons()
+/datum/life_system/type_post/simple_mob/animal/synx
+	mob_type = /mob/living/simple_mob/animal/synx
+
+/datum/life_system/type_post/simple_mob/animal/synx/tick(mob/living/simple_mob/animal/synx/self, datum/life_context/ctx)
 	..()
 //mob/living/simple_mob/animal/synx/ai/handle_idle_speaking() //Only ai-controlled synx will randomly speak
-	if(voices && prob(speak_chance/2))
-		randomspeech()
+	if(self.voices && prob(self.speak_chance/2))
+		self.randomspeech()
 
 /mob/living/simple_mob/animal/synx/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay) //Synx can only eat people if their organs are on the inside.
 	if(stomach_distended)
@@ -560,7 +564,6 @@
 		melee_damage_lower = 1 //Hopefully this will make all brute damage not apply while stomach is distended. I don't see a better way to do this.
 		melee_damage_upper = 1
 		icon_living = stomach_distended_state
-		attack_armor_type = "bio" //apply_melee_effects should handle all burn damage code so this might not be necessary.
 		attacktext += distend_attacktext
 		attacktext -= initial_attacktext
 
@@ -578,7 +581,6 @@
 		melee_damage_lower = SYNX_LOWER_DAMAGE //This is why I'm using a define
 		melee_damage_upper = SYNX_UPPER_DAMAGE
 		icon_living = initial(icon_living)
-		attack_armor_type = "melee"
 		attacktext += initial_attacktext
 		attacktext -= distend_attacktext
 		update_icons()

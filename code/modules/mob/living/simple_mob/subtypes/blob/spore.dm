@@ -94,22 +94,25 @@
 		color = initial(color)//looks better.
 		add_overlay(blob_head_overlay)
 
-/mob/living/simple_mob/blob/spore/handle_special()
+/datum/life_system/special/blob/spore
+	mob_type = /mob/living/simple_mob/blob/spore
+
+/datum/life_system/special/blob/spore/tick(mob/living/simple_mob/blob/spore/self, datum/life_context/ctx)
 	..()
-	if(can_infest && !is_infesting && isturf(loc))
-		for(var/mob/living/carbon/human/H in view(src,1))
+	if(self.can_infest && !self.is_infesting && isturf(self.loc))
+		for(var/mob/living/carbon/human/H in view(self,1))
 			if(H.stat != DEAD) // We want zombies.
 				continue
 			if(H.isSynthetic()) // Not philosophical zombies.
 				continue
-			infest(H)
+			self.infest(H)
 			break
 
-	if(overmind)
-		overmind.blob_type.on_spore_lifetick(src)
+	if(self.overmind)
+		self.overmind.blob_type.on_spore_lifetick(self)
 
-	if(factory && z != factory.z) // This is to prevent spores getting lost in space and making the factory useless.
-		qdel(src)
+	if(self.factory && self.z != self.factory.z) // This is to prevent spores getting lost in space and making the factory useless.
+		qdel(self)
 
 /mob/living/simple_mob/blob/spore/proc/infest(mob/living/carbon/human/H)
 	is_infesting = TRUE

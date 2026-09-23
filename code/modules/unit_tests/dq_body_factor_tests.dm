@@ -5,7 +5,7 @@
 /// A test-only modifier touching many consumers at once.
 /datum/modifier/dq_test_factors
 	name = "test factors"
-	factors = alist(BF_EVASION = 30, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 1.5, BF_DISABLE_DURATION = 0.5, BF_INCOMING_PHYSICAL = 0.5, BF_ENDURANCE_FLAT = 10, BF_ARMOR_MELEE = 25, BF_SIEMENS = 0.5, BF_ACCURACY = -40, BF_DISPERSION = 2)
+	factors = alist(BF_EVASION = 30, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 1.5, BF_DISABLE_DURATION = 0.5, BF_INCOMING_PHYSICAL = 0.5, BF_ENDURANCE_FLAT = 10, BF_ARMOR(INJURY_BLUNT) = 25, BF_SIEMENS = 0.5, BF_ACCURACY = -40, BF_DISPERSION = 2)
 
 /datum/modifier/dq_test_slowdown
 	name = "test slowdown"
@@ -138,7 +138,7 @@
 /datum/unit_test/dq_body_factor_affliction_stages/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
-	var/datum/affliction/hyperzine_overdose/od = H.body.afflict(/datum/affliction/hyperzine_overdose, B)
+	var/datum/affliction/overdose/hyperzine/od = H.body.afflict(/datum/affliction/overdose/hyperzine, B)
 	TEST_ASSERT_NOTNULL(od, "hyperzine overdose should afflict")
 	var/list/stages = od.get_stages()
 	var/last_stage = stages[length(stages)]
@@ -214,7 +214,7 @@
 	var/base_evasion = H.get_evasion()
 	var/base_attack = H.get_attack_speed()
 	var/base_endurance = H.get_endurance()
-	var/base_armor = H.getarmor_organ(chest, "melee")
+	var/base_armor = H.injury_armor(INJURY_BLUNT, chest)
 	var/base_siemens = H.get_siemens_coefficient_organ(chest)
 	var/base_blunt = H.injure(INJURY_BLUNT, 4, BP_TORSO, flags = INJURE_SILENT)
 
@@ -222,7 +222,7 @@
 	TEST_ASSERT_EQUAL(H.get_evasion(), base_evasion + 30, "evasion should read BF_EVASION")
 	TEST_ASSERT(dq_near(H.get_attack_speed(), base_attack * 0.5), "attack delay should read BF_ATTACK_SPEED")
 	TEST_ASSERT_EQUAL(H.get_endurance(), base_endurance + 10, "endurance should read BF_ENDURANCE_FLAT")
-	TEST_ASSERT_EQUAL(H.getarmor_organ(chest, "melee"), base_armor + 25, "armour should read BF_ARMOR_MELEE")
+	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, chest), base_armor + 25, "armour should read BF_ARMOR(INJURY_BLUNT)")
 	TEST_ASSERT(dq_near(H.get_siemens_coefficient_organ(chest), base_siemens * 0.5), "conductivity should read BF_SIEMENS")
 	var/blunt = H.injure(INJURY_BLUNT, 4, BP_TORSO, flags = INJURE_SILENT)
 	TEST_ASSERT(dq_near(blunt, base_blunt * 0.5), "physical injury should read BF_INCOMING_PHYSICAL ([base_blunt] -> [blunt])")
@@ -276,7 +276,7 @@
 	TEST_ASSERT(H.l_hand != W, "a blocked left hand should drop what it holds")
 
 
-/// Energy shields keep their charge-dependent resistance on COMSIG_LIVING_INJURE.
+/// Energy shields keep their charge-dependent resistance (injure() stage 2, COMSIG_LIVING_SHIELD_INJURY).
 /datum/unit_test/dq_body_factor_energy_shield
 
 /datum/unit_test/dq_body_factor_energy_shield/Run()

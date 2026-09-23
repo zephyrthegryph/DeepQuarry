@@ -6,9 +6,8 @@
 	num_alternate_languages = 3
 	// slow, they're plants. Not as slow as full diona.
 	// slow metabolism
-	factor_baseline = alist(BF_METABOLISM = 0.75, BF_SLOWDOWN = 1)
+	factor_baseline = alist(BF_METABOLISM = 0.75, BF_SLOWDOWN = 1, BF_INCOMING_THERMAL = 1.5)
 	total_health = 100 //standard
-	injury_mod_groups = list("physical" = 1, "thermal" = 1.5)
 	//nothing special (brute)
 	//plants don't like fire (burn)
 	item_slowdown_mod = 0.25 //while they start slow, they don't get much slower
@@ -100,7 +99,7 @@
 		)
 
 
-/datum/species/alraune/handle_environment_special(mob/living/carbon/human/H)
+/datum/species/alraune/environment_effects(mob/living/carbon/human/H)
 	if(H.inStasisNow()) // if they're in stasis, they won't need this stuff.
 		return
 
@@ -135,7 +134,8 @@
 
 		if(environment2)
 			breath = environment2.remove_volume(BREATH_VOLUME)
-			H.handle_chemical_smoke(environment2) //handle chemical smoke while we're at it
+			var/datum/life_system/breathing/carbon/breathing = H.life_system_for(/datum/life_system/breathing)
+			breathing.inhale_smoke(H, environment2) //handle chemical smoke while we're at it
 
 	// NOW a crude copypasta of handle_breath. Leaving some things out that don't apply to plants.
 	if(H.does_not_breathe)

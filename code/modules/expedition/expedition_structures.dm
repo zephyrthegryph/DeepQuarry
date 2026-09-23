@@ -103,9 +103,9 @@
 	if(!istype(W))
 		return ..()
 	user.setClickCooldown(user.get_attack_speed(W))
-	if(W.damtype == BRUTE || W.damtype == BURN)
+	if(W.obj_damage_type())
 		user.do_attack_animation(src)
-		take_damage(W.force, W.damtype, MELEE)
+		take_damage(W.force, W.obj_damage_type(), MELEE)
 		return
 	return ..()
 
@@ -114,7 +114,7 @@
 	if(!proj_damage)
 		return
 	..()
-	take_damage(proj_damage, Proj.damage_type, BULLET)
+	take_damage(proj_damage, Proj.obj_damage_type(), BULLET)
 
 /obj/structure/expedition_demo_target/ex_act(severity)
 	switch(severity)

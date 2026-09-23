@@ -2,12 +2,15 @@
 	desc = "This one looks like it is growing huge!"
 	var/amount_grown = 0
 
-/mob/living/simple_mob/animal/passive/mouse/event/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/mouse/event
+	mob_type = /mob/living/simple_mob/animal/passive/mouse/event
+
+/datum/life_system/type_post/simple_mob/animal/passive/mouse/event/tick(mob/living/simple_mob/animal/passive/mouse/event/self, datum/life_context/ctx)
 	. = ..()
-	if(amount_grown >= 0)
-		amount_grown += rand(0,4)
-	if(amount_grown >= 100 && icon_state != icon_dead)
-		rat()
+	if(self.amount_grown >= 0)
+		self.amount_grown += rand(0,4)
+	if(self.amount_grown >= 100 && self.icon_state != self.icon_dead)
+		self.rat()
 		return
 
 /mob/living/simple_mob/animal/passive/mouse/event/proc/rat()

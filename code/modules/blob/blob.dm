@@ -126,7 +126,7 @@
 	if(!Proj)
 		return
 
-	switch(Proj.damage_type)
+	switch(Proj.obj_damage_type())
 		if(BRUTE)
 			take_damage(Proj.damage / brute_resist)
 		if(BURN)
@@ -138,7 +138,7 @@
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
 	var/damage = 0
-	switch(W.damtype)
+	switch(W.obj_damage_type())
 		if(BURN)
 			damage = (W.force / fire_resist)
 			if(istype(W, /obj/item/weldingtool))

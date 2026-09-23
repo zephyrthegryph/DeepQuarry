@@ -278,5 +278,6 @@
 	description_info = "The three prongs at the base of the tool are not, in fact, for show."
 	force = 9
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 	item_state = "analyzer"
 	icon_state = "hacktool"

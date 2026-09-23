@@ -60,6 +60,10 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	var/lastnews // Hash of last seen lobby news content.
 	var/lastlorenews //ID of last seen lore news article.
+	/// Keybinding overrides: profile -> (binding id -> list of keys). Null means all defaults.
+	var/list/key_bindings
+	/// What right-click does on the map: INPUT_ACTION_MENU (BYOND's popup) or INPUT_ACTION_ALTERNATE.
+	var/right_click_binding = INPUT_ACTION_MENU
 
 	// THIS IS NOT SAVED
 	// WE JUST HAVE NOWHERE ELSE TO STORE IT
@@ -155,7 +159,9 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 /datum/preferences/Destroy()
 	// character_preview_b64 is just a list of base64 strings, no
-	// atoms to qdel.
+	// atoms to qdel. Bumping the generation makes any in-flight async
+	// render discard its result (it also checks QDELETED).
+	dq_preview_generation++
 	character_preview_b64 = null
 	// `middleware` is a list of /datum/preference_middleware; QDEL_NULL would
 	// pass the list itself to qdel and trip the "lists should not be qdel'd" runtime.
@@ -202,10 +208,14 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 // on character_preview_b64. React displays them with <img> tags scaled by
 // CSS — no BYOND map control involved, no icon-size race, deterministic
 // sizing.
+//
+// The compositing itself runs in rust-g iconforge off the server thread (see
+// preferences/preview_async.dm); the old preview stays up until it lands. A
+// direction iconforge can't reproduce exactly falls back to getFlatIcon here.
 /datum/preferences/proc/update_character_previews(mob/living/carbon/human/mannequin, south_only = FALSE)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!mannequin)
 		return
-	LAZYINITLIST(character_preview_b64)
 	// bake size_multiplier + species icon scale into the flattened
 	// PNG. getFlatIcon ignores the mannequin's matrix transform (that's how
 	// in-world rendering applies size), so without this Scale() step the
@@ -214,24 +224,35 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/scale_x = size_multiplier * (mannequin.species?.icon_scale_x || 1)
 	var/scale_y = size_multiplier * (mannequin.species?.icon_scale_y || 1)
 	var/list/dirs = south_only ? list("south" = SOUTH) : list("south" = SOUTH, "north" = NORTH, "east" = EAST, "west" = WEST)
+	var/force_sync = dq_preview_force_sync
+	dq_preview_force_sync = FALSE
+	var/datum/dq_preview_flattener/flattener = new
+	var/list/sprites = list()
+	var/list/ready = list()
 	for(var/dir_key in dirs)
 		var/dir = dirs[dir_key]
 		mannequin.set_dir(dir)
 		mannequin.update_tail_showing()
 		mannequin.ImmediateOverlayUpdate()
-		var/icon/flat = getFlatIcon(mannequin, defdir = dir, no_anim = TRUE)
-		if(scale_x != 1 || scale_y != 1)
-			flat.Scale(max(1, round(flat.Width() * scale_x)), max(1, round(flat.Height() * scale_y)))
-		character_preview_b64[dir_key] = icon2base64(flat)
+		if(!force_sync)
+			var/list/flat_result = flattener.flatten(mannequin, dir)
+			if(flat_result && !flattener.unsupported)
+				sprites[dir_key] = flat_result[1]
+				continue
+			dq_last_preview_fallback = flattener.unsupported || "nothing to render"
+			flattener.unsupported = null
+		ready[dir_key] = dq_preview_icon_to_b64(getFlatIcon(mannequin, defdir = dir, no_anim = TRUE), scale_x, scale_y)
 	var/bgstate = read_preference(/datum/preference/text/human/bgstate)
 	if(bgstate)
 		var/icon/bg_icon = icon('icons/effects/setup_backgrounds_vr.dmi', bgstate)
-		character_preview_b64["bg"] = icon2base64(bg_icon)
+		ready["bg"] = icon2base64(bg_icon)
+	dq_queue_preview_render(sprites, ready, scale_x, scale_y)
 
 /datum/preferences/proc/show_character_previews()
 	return
 
 /datum/preferences/proc/clear_character_previews()
+	dq_preview_generation++
 	character_preview_b64 = null
 
 /datum/preferences/proc/process_link(mob/user, list/href_list)

@@ -13,7 +13,7 @@
 		target_zone = pick("l_foot", "r_foot", "l_leg", "r_leg")
 
 	//armour
-	var/blocked = L.run_armor_check(target_zone, "melee")
+	var/blocked = L.armor_against(INJURY_BURN, target_zone)
 
 	if(blocked >= 100)
 		return
@@ -21,7 +21,7 @@
 	if(L.buckled) //wheelchairs, office chairs, rollerbeds
 		return
 
-	if(!L.injure(INJURY_BURN, 30, target_zone, src, blocked))
+	if(!L.injure(INJURY_BURN, 30, target_zone, src, flags = INJURE_ARMORED))
 		return 0
 
 	shock(L, 100, target_zone)

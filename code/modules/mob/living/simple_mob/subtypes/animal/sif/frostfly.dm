@@ -98,11 +98,14 @@
 	threaten_sound = 'sound/effects/refill.ogg'
 	stand_down_sound = 'sound/effects/sparks5.ogg'
 
-/mob/living/simple_mob/animal/sif/frostfly/handle_special()
+/datum/life_system/special/animal/sif/frostfly
+	mob_type = /mob/living/simple_mob/animal/sif/frostfly
+
+/datum/life_system/special/animal/sif/frostfly/tick(mob/living/simple_mob/animal/sif/frostfly/self, datum/life_context/ctx)
 	..()
 
-	if(energy < max_energy)
-		energy++
+	if(self.energy < self.max_energy)
+		self.energy++
 
 /mob/living/simple_mob/animal/sif/frostfly/get_status_tab_items()
 	. = ..()

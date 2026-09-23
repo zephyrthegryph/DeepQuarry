@@ -133,7 +133,7 @@
 		return
 
 	if(!target_limb) target_limb = pick(BP_ALL)
-	var/blocked = target.run_armor_check(target_limb, "melee")
+	var/blocked = target.armor_against(INJURY_PIERCE, target_limb)
 
 	if(blocked >= 100)
 		return
@@ -147,7 +147,7 @@
 
 		if(affecting)
 			to_chat(target, span_danger("\The [fruit]'s thorns pierce your [affecting.name] greedily!"))
-			target.injure(injury_kind_for(BRUTE, TRUE, has_edge), damage, target_limb, fruit, blocked)
+			target.injure(has_edge ? INJURY_CUT : INJURY_PIERCE, damage, target_limb, fruit, flags = INJURE_ARMORED)
 		else
 			to_chat(target, span_danger("\The [fruit]'s thorns pierce your flesh greedily!"))
 			target.injure(INJURY_PIERCE, damage, source = fruit)
@@ -156,7 +156,7 @@
 		has_edge = prob(get_trait(TRAIT_POTENCY)/5)
 		if(affecting)
 			to_chat(target, span_danger("\The [fruit]'s thorns dig deeply into your [affecting.name]!"))
-			target.injure(injury_kind_for(BRUTE, TRUE, has_edge), damage, target_limb, fruit, blocked)
+			target.injure(has_edge ? INJURY_CUT : INJURY_PIERCE, damage, target_limb, fruit, flags = INJURE_ARMORED)
 		else
 			to_chat(target, span_danger("\The [fruit]'s thorns dig deeply into your flesh!"))
 			target.injure(INJURY_PIERCE, damage, source = fruit)

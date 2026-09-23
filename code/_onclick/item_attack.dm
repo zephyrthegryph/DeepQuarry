@@ -34,9 +34,6 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		return TRUE
 	return
 
-/// Called when the item is in the active hand, and right-clicked. Intended for alternate or opposite functions, such as lowering reagent transfer amount. At the moment, there is no verb or hotkey.
-/obj/item/proc/attack_self_secondary(mob/user, modifiers)
-
 /**
  * Called at the start of resolve_attackby(), before the actual attack.
  *
@@ -217,7 +214,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	M.lastattacker = user
 
 	if(!no_attack_log)
-		add_attack_logs(user,M,"attacked with [name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(damtype)])")
+		add_attack_logs(user,M,"attacked with [name] (INTENT: [uppertext(user.a_intent)]) (KIND: [injury_kind_name(injury_kind)])")
 	/////////////////////////
 
 	user.setClickCooldown(user.get_attack_speed(src))

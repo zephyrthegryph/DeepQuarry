@@ -639,40 +639,43 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		ghostjoin_icon()
 
 
-/mob/living/simple_mob/vore/alienanimals/teppi/Life()
+/datum/life_system/type_post/simple_mob/vore/alienanimals/teppi
+	mob_type = /mob/living/simple_mob/vore/alienanimals/teppi
+
+/datum/life_system/type_post/simple_mob/vore/alienanimals/teppi/tick(mob/living/simple_mob/vore/alienanimals/teppi/self, datum/life_context/ctx)
 	. =..()
-	if(!. || QDELETED(src))
+	if(!. || QDELETED(self))
 		return
-	wantpet += rand(0,2) * affection_factor
-	amount_grown += rand(1,5)
+	self.wantpet += rand(0,2) * self.affection_factor
+	self.amount_grown += rand(1,5)
 	var/not_hungy = FALSE
-	if(nutrition >= 500)
+	if(self.nutrition >= 500)
 		not_hungy = TRUE
-	if(amount_grown >= 1000)
-		if(teppi_adult)
-			if(not_hungy && !teppi_wool)
-				nutrition -= rand(250,500)
-				teppi_wool = TRUE
-				breedable = TRUE
-				meat_amount += rand(0,2)
-				update_icon()
+	if(self.amount_grown >= 1000)
+		if(self.teppi_adult)
+			if(not_hungy && !self.teppi_wool)
+				self.nutrition -= rand(250,500)
+				self.teppi_wool = TRUE
+				self.breedable = TRUE
+				self.meat_amount += rand(0,2)
+				self.update_icon()
 		else if (not_hungy)
-			var/nutrition_cost = 500 + (nutrition / 2)
-			adjust_nutrition(-nutrition_cost)
-			new /mob/living/simple_mob/vore/alienanimals/teppi(loc, store_teppi_data(src))
-			qdel(src)
+			var/nutrition_cost = 500 + (self.nutrition / 2)
+			self.adjust_nutrition(-nutrition_cost)
+			new /mob/living/simple_mob/vore/alienanimals/teppi(self.loc, self.store_teppi_data(self))
+			qdel(self)
 			return
 		else
-			visible_message("\The [src] whines pathetically...", runemessage = "whines")
+			self.visible_message("\The [self] whines pathetically...", runemessage = "whines")
 			if(prob(50))
-				playsound(src, 'sound/voice/teppi/whine1.ogg', 75, 1)
+				playsound(self, 'sound/voice/teppi/whine1.ogg', 75, 1)
 			else
-				playsound(src, 'sound/voice/teppi/whine2.ogg', 75, 1)
-			amount_grown -= rand(100,250)
+				playsound(self, 'sound/voice/teppi/whine2.ogg', 75, 1)
+			self.amount_grown -= rand(100,250)
 	if(not_hungy)
-		do_breeding()
-	if(!client && prob(0.5))
-		teppi_sound()
+		self.do_breeding()
+	if(!self.client && prob(0.5))
+		self.teppi_sound()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/do_breeding()
 	if(!breedable || prevent_breeding)

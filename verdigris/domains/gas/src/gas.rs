@@ -157,8 +157,13 @@ fn grow_gas_storage(
 const PRESSURE_DIRTY_EPSILON: f32 = 0.5;
 const TEMPERATURE_DIRTY_EPSILON: f32 = 0.5;
 const COMPOSITION_DIRTY_EPSILON: f32 = 0.01;
+// Dirty-mixture change bits. `@dm-define` exports each one to the generated
+// DM bindings, where machinery interest masks use them.
+/// @dm-define GAS_DEPENDENCY_PRESSURE
 pub const GAS_CHANGE_PRESSURE: u8 = 1;
+/// @dm-define GAS_DEPENDENCY_TEMPERATURE
 pub const GAS_CHANGE_TEMPERATURE: u8 = 2;
+/// @dm-define GAS_DEPENDENCY_COMPOSITION
 pub const GAS_CHANGE_COMPOSITION: u8 = 4;
 
 #[derive(Clone)]
@@ -999,8 +1004,7 @@ where
 	)
 }
 
-#[byondapi::bind("/datum/gas_mixture/proc/revision")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/gas_mixture/proc/revision")]
 fn hook_mix_revision(src: ByondValue) -> Result<ByondValue> {
 	let id = src.read_number_id(byond_string!("_extools_pointer_gasmixture"))? as usize;
 	Ok((GasArena::revision(id) as f32).into())

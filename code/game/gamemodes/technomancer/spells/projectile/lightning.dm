@@ -24,7 +24,7 @@
 	name = "lightning"
 	icon_state = "lightning"
 	nodamage = 1
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning

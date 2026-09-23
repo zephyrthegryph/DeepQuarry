@@ -27,7 +27,7 @@
 
 
 /obj/structure/displaycase/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
+	take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
 	..()
 	return
 
@@ -57,7 +57,7 @@
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
-	take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+	take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
 	..()
 	return
 

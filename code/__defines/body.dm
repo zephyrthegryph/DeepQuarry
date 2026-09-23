@@ -37,6 +37,22 @@
 #define INJURE_SILENT            (1<<1)
 /// The source was a projectile (dismemberment odds, etc).
 #define INJURE_PROJECTILE        (1<<2)
+/// The harm arrives from outside the body (a weapon, projectile, thrown
+/// object, animal, trap, falling debris): injure() applies armour for the hit
+/// part and kind as mitigation stage 1.
+#define INJURE_ARMORED           (1<<3)
+
+// --- Armour kinds -------------------------------------------------------------
+// Armour is asked for by the INJURY_* kind it resists (injury_armor(kind, zone)),
+// plus ARMOR_BLAST for explosive shockwaves. Body factors add BF_ARMOR(kind).
+#define ARMOR_BLAST       (INJURY_KIND_COUNT + 1)
+#define ARMOR_KIND_COUNT  (INJURY_KIND_COUNT + 1)
+
+// --- injure() mitigation stages (the explain facility) --------------------------
+#define INJURY_STAGE_ARMOR   "armour"
+#define INJURY_STAGE_SHIELD  "shield"
+#define INJURY_STAGE_FACTORS "factors"
+#define INJURY_STAGE_BODY    "body"
 
 // --- Biology -------------------------------------------------------------------
 // What a body part (or a whole body) is made of. Afflictions declare which

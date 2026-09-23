@@ -1,15 +1,8 @@
-// Damage things. TODO: Merge these down to reduce on defines.
-// Way to waste perfectly good damage-type names (BRUTE) on this... If you were really worried about case sensitivity, you could have just used lowertext(damagetype) in the proc.
+// obj_integrity damage types (TG take_damage / run_atom_armor). Harm to mobs
+// is declared as INJURY_* kinds; an object's damage type is derived from the
+// kind by injury_kind_obj_damage_type().
 #define BRUTE     "brute"
 #define BURN      "fire"
-#define TOX       "tox"
-#define OXY       "oxy"
-#define CLONE     "clone"
-#define HALLOSS   "halloss"
-#define ELECTROCUTE "electrocute"
-#define BIOACID   "bioacid"
-#define SEARING   "searing"
-#define ELECTROMAG "electromagnetic"
 
 #define CUT       "cut"
 #define BRUISE    "bruise"

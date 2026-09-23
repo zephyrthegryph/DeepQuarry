@@ -30,6 +30,12 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
 	return focused_tests.len > 0 ? focused_tests : null
 
+/// TRUE when this unit-test world runs only TEST_FOCUS tests
+/// (tools/dq_focused_test.sh). Focused runs skip boot and shutdown waits that
+/// only matter for the full suite; see "Focused runs" in doc/testing.md.
+/proc/unit_test_is_focused_run()
+	return !!length(GLOB.focused_tests)
+
 /datum/unit_test
 	//Bit of metadata for the future maybe
 	var/list/procs_tested
@@ -131,7 +137,7 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	// turfs and publishing atmosphere topology.
 	while(SSexpedition && length(SSexpedition.teardown_z))
 		sleep(1)
-	SSair?.auxmos_topology_barrier()
+	vg_topology_barrier()
 	// DQ atmos integration tests operate on mapped turfs because the inherited
 	// per-test reservation is not implemented. Restore every turf they snapshot
 	// after each test so later tests and shuttles never inherit vacuum, test gas,

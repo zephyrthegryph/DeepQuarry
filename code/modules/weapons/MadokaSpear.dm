@@ -126,5 +126,6 @@
 	throw_speed = 3
 	edge = 0
 	sharp = 1
+	injury_kind = INJURY_PIERCE
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")

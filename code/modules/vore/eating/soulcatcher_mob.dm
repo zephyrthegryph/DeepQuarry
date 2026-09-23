@@ -17,28 +17,31 @@
 	return ..()
 
 // Handling the automatic transcore backups in a set interval
-/mob/living/carbon/brain/caught_soul/vore/Life()
+/datum/life_system/type_post/carbon/brain/caught_soul/vore
+	mob_type = /mob/living/carbon/brain/caught_soul/vore
+
+/datum/life_system/type_post/carbon/brain/caught_soul/vore/tick(mob/living/carbon/brain/caught_soul/vore/self, datum/life_context/ctx)
 	. = ..()
-	if(QDELETED(src))
+	if(QDELETED(self))
 		return
 
-	if(!parent_mob && !transient &&(life_tick % 150 == 0) && gem.setting_flags & NIF_SC_BACKUPS)
-		SStranscore.m_backup(mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
+	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.gem.setting_flags & NIF_SC_BACKUPS)
+		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
-	if(!client)
+	if(!self.client)
 		return
 
-	if(ext_blind)
-		eye_blind = 5
-		client.screen.Remove(GLOB.global_hud.whitense)
-		overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+	if(self.ext_blind)
+		self.eye_blind = 5
+		self.client.screen.Remove(GLOB.global_hud.whitense)
+		self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 	else
-		eye_blind = 0
-		clear_fullscreen("blind")
-		if(!gem.flag_check(SOULGEM_SHOW_VORE_SFX))
-			client.screen.Add(GLOB.global_hud.whitense)
-	if(gem.flag_check(SOULGEM_SHOW_VORE_SFX))
-		client.screen.Remove(GLOB.global_hud.whitense)
+		self.eye_blind = 0
+		self.clear_fullscreen("blind")
+		if(!self.gem.flag_check(SOULGEM_SHOW_VORE_SFX))
+			self.client.screen.Add(GLOB.global_hud.whitense)
+	if(self.gem.flag_check(SOULGEM_SHOW_VORE_SFX))
+		self.client.screen.Remove(GLOB.global_hud.whitense)
 
 // Say proc for captures souls
 /mob/living/carbon/brain/caught_soul/vore/say(message, datum/language/speaking = null, whispering = 0)

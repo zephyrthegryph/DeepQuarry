@@ -159,8 +159,8 @@ Works together with spawning an observer, noted above.
 	if(!loc) return
 	if(!client) return 0
 
-	handle_regular_hud_updates()
-	handle_vision()
+	refresh_hud()
+	refresh_vision()
 	check_area()	//RS Port #658
 
 //RS Port #658 Start

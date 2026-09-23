@@ -6,39 +6,6 @@
 	adjacency code.
 */
 
-/// Modifier clicks (shift, ctrl, alt, middle and their combinations) route
-/// the same way for every mob. Returns TRUE if the click was a modifier click
-/// and has been handled.
-/mob/proc/dispatch_modifier_click(atom/A, list/modifiers, params)
-	if(LAZYACCESS(modifiers, SHIFT_CLICK))
-		if(LAZYACCESS(modifiers, MIDDLE_CLICK))
-			ShiftMiddleClickOn(A)
-			return TRUE
-		if(LAZYACCESS(modifiers, CTRL_CLICK))
-			CtrlShiftClickOn(A)
-			return TRUE
-		if(LAZYACCESS(modifiers, ALT_CLICK))
-			alt_shift_click_on(A)
-			return TRUE
-		ShiftClickOn(A)
-		return TRUE
-	if(LAZYACCESS(modifiers, MIDDLE_CLICK))
-		if(LAZYACCESS(modifiers, CTRL_CLICK))
-			CtrlMiddleClickOn(A)
-		else
-			MiddleClickOn(A, params)
-		return TRUE
-	if(LAZYACCESS(modifiers, ALT_CLICK)) // alt and alt-gr (rightalt)
-		if(LAZYACCESS(modifiers, RIGHT_CLICK))
-			AltClickSecondaryOn(A)
-		else
-			AltClickOn(A)
-		return TRUE
-	if(LAZYACCESS(modifiers, CTRL_CLICK))
-		CtrlClickOn(A)
-		return TRUE
-	return FALSE
-
 /// Can this cyborg act on a click at all right now?
 /mob/living/silicon/robot/proc/can_click_act()
 	return !(stat || lockdown || weakened || stunned || paralysis)
@@ -62,83 +29,7 @@
 /obj/machinery/turretid/is_ai_remote_interface()
 	return TRUE
 
-/mob/living/silicon/robot/ClickOn(atom/A, params)
-	if(!checkClickCooldown())
-		return
-
-	if(check_click_intercept(params,A))
-		return
-
-	setClickCooldown(1)
-
-	if(client.buildmode) // comes after object.Click to allow buildmode gui objects to be clicked
-		build_click(src, client.buildmode, params, A)
-		return
-
-	var/list/modifiers = params2list(params)
-
-	if(LAZYACCESS(modifiers, BUTTON4) || LAZYACCESS(modifiers, BUTTON5))
-		return
-
-	if(dispatch_modifier_click(A, modifiers, params))
-		return
-
-	if(!can_click_act())
-		return
-
-	face_atom(A) // change direction to face what you clicked on
-
-	if(aiCamera && aiCamera.in_camera_mode)
-		aiCamera.camera_mode_off()
-		if(is_component_functioning(ROBOT_SLOT_CAMERA))
-			aiCamera.captureimage(A, src)
-		else
-			to_chat(src, span_userdanger("Your camera isn't functional."))
-		return
-
-	var/obj/item/W = get_active_hand(A)
-
-	// Cyborgs have no range-checking unless there is item use
-	if(!W)
-		// A bolted cyborg can't remotely interface with anything but its own module.
-		if(get_restraining_bolt() && A.loc != module)
-			return
-		A.add_hiddenprint(src)
-		A.attack_robot(src)
-		return
-	// buckled cannot prevent machine interlinking but stops arm movement
-	if( buckled )
-		return
-
-	if(W == A)
-
-		W.attack_self(src)
-		return
-
-	// cyborgs are prohibited from using storage items so we can I think safely remove (A.loc in contents)
-	if(A == loc || (A in loc) || (A in contents))
-		// No adjacency checks
-
-		var/resolved = W.resolve_attackby(A, src, click_parameters = params)
-		if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-			W.afterattack(A,src,1,params)
-		return
-
-	if(!isturf(loc))
-		return
-
-	var/sdepth = A.storage_depth_turf()
-	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
-		if(A.Adjacent(src) || (W && W.attack_can_reach(src, A, W.reach))) // see adjacent.dm, allows robots to use ranged melee weapons
-			SEND_SIGNAL(src, COMSIG_ROBOT_ITEM_ATTACK, W, src, params) //This is we ATTEMPTED to attack someone.
-			var/resolved = W.resolve_attackby(A, src, click_parameters = params)
-			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, src, 1, params)
-			return
-		else
-			W.afterattack(A, src, 0, params)
-			return
-	return
+// Cyborg clicks route through the input router with the robot adapter (adapters.dm).
 
 //Middle click cycles through selected modules.
 /mob/living/silicon/robot/MiddleClickOn(atom/A)

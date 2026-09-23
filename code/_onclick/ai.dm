@@ -22,61 +22,8 @@
 		A.move_camera_by_click()
 
 
-/mob/living/silicon/ai/ClickOn(atom/A, params)
-	if(!checkClickCooldown())
-		return
-
-	setClickCooldown(1)
-
-	if(client.buildmode) // comes after object.Click to allow buildmode gui objects to be clicked
-		build_click(src, client.buildmode, params, A)
-		return
-
-	if(multicam_on)
-		var/turf/T = get_turf(A)
-		if(T)
-			for(var/atom/movable/screen/movable/pic_in_pic/ai/P in T.vis_locs)
-				if(P.ai == src)
-					P.Click(params)
-					break
-
-	if(check_click_intercept(params,A))
-		return
-
-	if(stat)
-		return
-
-	if(control_disabled)
-		return
-
-	var/list/modifiers = params2list(params)
-	if(modifiers["shift"] && modifiers["ctrl"])
-		CtrlShiftClickOn(A)
-		return
-	if(modifiers["middle"])
-		MiddleClickOn(A)
-		return
-	if(modifiers["shift"])
-		ShiftClickOn(A)
-		return
-	if(modifiers["alt"])
-		AltClickOn(A)
-		return
-	if(modifiers["ctrl"])
-		CtrlClickOn(A)
-		return
-
-	var/obj/effect/overlay/aiholo/hologram = holo ? LAZYACCESS(holo.masters, src) : null
-	if(istype(hologram))
-		hologram.set_dir(get_dir(get_turf(hologram), get_turf(A)))
-
-	if(aiCamera.in_camera_mode)
-		aiCamera.camera_mode_off()
-		aiCamera.captureimage(A, usr)
-		return
-
-	A.add_hiddenprint(src)
-	A.attack_ai(src)
+// AI clicks route through the input router with the AI adapter (adapters.dm):
+// its own click table, then attack_ai for Use.
 
 /*
 	AI has no need for the UnarmedAttack() and RangedAttack() procs,

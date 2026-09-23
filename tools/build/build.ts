@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
+import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BENCH_RUNS_DIR,
   type BenchIteration,
@@ -252,7 +253,7 @@ export const ValidateDmeTarget = new Juke.Target({
 
 // DQAdd Start — build the in-tree verdigris Rust FFI cdylib before the
 // server runs. Produces verdigris.dll (Windows) / libverdigris.so (Linux)
-// at the repo root, where DreamDaemon loads it via VERDIGRIS_CALL (cave-gen
+// at the repo root, where DreamDaemon loads it via the generated vg_* bindings (cave-gen
 // + vendored auxmos atmos). The compiled lib is a gitignored per-platform
 // artifact, so the build is responsible for producing it.
 //
@@ -270,7 +271,35 @@ const VERDIGRIS_RUST_TARGET =
     ? 'i686-pc-windows-msvc'
     : 'i686-unknown-linux-gnu';
 
+// DQAdd Start — generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
+// `verdigris-bindings` rewrites code/__defines/verdigris/_bindings.dm and
+// verdigris/ffi/src/abi.rs from the #[auxmacros::bind] functions. Every DM and
+// DLL build runs the check first and fails when either file is stale.
+export const VerdigrisBindingsTarget = new Juke.Target({
+  executes: () => {
+    const written = generateVerdigrisBindings(process.cwd(), false);
+    Juke.logger.info(
+      written.length ? `verdigris bindings: wrote ${written.join(', ')}` : 'verdigris bindings: up to date',
+    );
+  },
+});
+
+export const VerdigrisBindingsCheckTarget = new Juke.Target({
+  executes: () => {
+    const stale = generateVerdigrisBindings(process.cwd(), true);
+    if (stale.length) {
+      Juke.logger.error(
+        `verdigris bindings are stale (${stale.join(', ')}). `
+          + 'Run `tools/build/build.sh verdigris-bindings` and commit the result.',
+      );
+      throw new Juke.ExitCode(1);
+    }
+  },
+});
+// DQAdd End
+
 export const VerdigrisTarget = new Juke.Target({
+  dependsOn: [VerdigrisBindingsCheckTarget],
   onlyWhen: () => {
     // DM-only work (agents in worktrees, CI lint jobs) can reuse a prebuilt
     // library instead of compiling the whole Rust workspace.
@@ -344,6 +373,7 @@ export const DmTarget = new Juke.Target({
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
     ValidateDmeTarget, // DQAdd — fail fast if any code/ .dm is missing from the DME
+    VerdigrisBindingsCheckTarget, // DQAdd — _bindings.dm must match the Rust binds
     DreamCheckerTarget, // DQAdd — run SpacemanDMM lint before DM compile if available
     MapBoundsTarget, // boot reads template sizes from data/map_template_bounds.json
   ],

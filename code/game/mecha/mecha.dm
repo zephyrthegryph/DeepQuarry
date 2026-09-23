@@ -1217,7 +1217,7 @@
 		Test.hit |= occupant // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
 		return
 
-	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([Proj.check_armour]).",1)
+	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)
 	call((proc_res["dynbulletdamage"]||src), "dynbulletdamage")(Proj) //calls equipment
 	..()
 	return
@@ -1248,7 +1248,7 @@
 		src.log_append_to_last("Armor saved.")
 		return
 
-	if(Proj.get_injury_kind() == INJURY_PAIN)
+	if(Proj.injury_kind == INJURY_PAIN)
 		use_power(Proj.agony * 5)
 
 	if(!(Proj.nodamage))
@@ -1280,7 +1280,7 @@
 		// we can spark even when taking no damage. But don't check after a proc that might have deleted this
 		if(prob(25))
 			spark_system.start()
-		src.take_damage(pass_damage, Proj.check_armour)	//The take_damage() proc handles armor values
+		src.take_damage(pass_damage, injury_armor_key(Proj.injury_kind))	//The take_damage() proc handles armor values
 		if(pass_damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
 			src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),ignore_threshold)
 
@@ -1425,7 +1425,7 @@
 		pass_damage = (pass_damage*pass_damage_reduc_mod)	//Apply the reduction of damage from not having enough armor penetration. This is not regular armor values at play.
 		for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 			pass_damage = ME.handle_projectile_contact(W, user, pass_damage)
-		src.take_damage(pass_damage,W.damtype)	//The take_damage() proc handles armor values
+		src.take_damage(pass_damage, W.obj_damage_type())	//The take_damage() proc handles armor values
 		if(pass_damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
 			src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 	return
@@ -1667,7 +1667,7 @@
 		else
 			src.occupant_message(span_boldwarning("[user] hits [src] with [W].")))
 			user.visible_message(span_boldwarning("[user] hits [src] with [W]."))", span_boldwarning("You hit [src] with [W].")))
-			src.take_damage(W.force,W.damtype)
+			src.take_damage(W.force, W.obj_damage_type())
 			src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 */
 	return
@@ -3131,7 +3131,7 @@
 		return FALSE
 
 	var/damage = rand(blob.damage_lower, blob.damage_upper)
-	src.take_damage(damage, blob.damage_type)
+	src.take_damage(damage, injury_kind_obj_damage_type(blob.injury_kind))
 	visible_message(span_danger("\The [B] [blob.attack_verb] \the [src]!"), span_danger("[blob.attack_message_synth]!"))
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 

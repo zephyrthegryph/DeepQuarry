@@ -31,9 +31,9 @@
 // The hivebot's default projectile.
 /obj/item/projectile/bullet/hivebot
 	damage = 10
-	damage_type = BRUTE
 	sharp = FALSE
 	edge = FALSE
+	injury_kind = INJURY_BLUNT
 
 /mob/living/simple_mob/mechanical/hivebot/swarm
 	name = "swarm hivebot"

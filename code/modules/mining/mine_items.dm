@@ -26,6 +26,7 @@
 	var/drill_sound = "pickaxe"
 	var/drill_verb = "picking"
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 
 	var/excavation_amount = 200
 	var/destroy_artefacts = FALSE // some mining tools will destroy artefacts completely while avoiding side-effects.
@@ -112,13 +113,13 @@
 	icon_state = "plasmacutter"
 	item_state = "plasmacutter"
 	w_class = ITEMSIZE_NORMAL //it is smaller than the pickaxe
-	damtype = BURN
 	digspeed = 18 //Can slice though normal walls, all girders, or be used in reinforced wall deconstruction/light thermite on fire
 	matter = list(MAT_STEEL = 3000, MAT_PLASTEEL = 1500, MAT_DIAMONDS = 500, MAT_PHORON = 500)
 	drill_verb = "cutting"
 	drill_sound = 'sound/items/Welder.ogg'
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_BURN
 
 /obj/item/pickaxe/plasmacutter/borg
 	name = "mounted plasma cutter"

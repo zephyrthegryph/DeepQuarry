@@ -4,11 +4,11 @@
 
 /// Records the Rust atmos arena counters as metrics under `prefix`.
 /datum/benchmark/proc/record_atmos_arena(prefix)
-	// Layout of auxmos_diagnostics() (verdigris/atmos/src/lib.rs):
+	// Layout of vg_auxmos_diagnostics() (verdigris/atmos/src/lib.rs):
 	// gas slots, gas capacity, free gas slots, baselines, baseline capacity, dirty,
 	// turf map len, turf map capacity, graph nodes, graph edges, pending turfs,
 	// pending callbacks, heat state x3, node capacity, edge capacity.
-	var/list/arena = SSair.auxmos_diagnostics()
+	var/list/arena = vg_auxmos_diagnostics()
 	if(!islist(arena) || length(arena) < 10)
 		return
 	metric("[prefix]_gas_mixtures", arena[1] - arena[3], "mixtures")
@@ -375,3 +375,59 @@
 		if(pressure < 5)
 			vacuum++
 	return list("label" = label, "delay_s" = delay, "area" = affected_area.name, "cells" = count, "avg_kpa" = count ? total / count : 0, "min_kpa" = count ? lowest : 0, "max_kpa" = highest, "vacuum_cells" = vacuum)
+
+/// rust-g call dispatch: per-call cost of a cached load_ext() handle against
+/// the by-name call_ext(RUST_G, "name") that code/__defines/rust_g.dm uses.
+/// Both run in the same boot, alternating, five rounds each; the best round is
+/// reported, because one busy tick on a loaded machine swamps the difference.
+/// Run it before switching rust_g.dm to cached handles (see doc/testing.md).
+/datum/benchmark/rustg_dispatch
+	id = "rustg_dispatch"
+	description = "Per-call cost of rust-g calls, cached handle vs by-name dispatch"
+
+/datum/benchmark/rustg_dispatch/Run()
+	var/calls = param("calls", 20000)
+	var/rounds = param("rounds", 5)
+	var/text = "The quick brown fox jumps over the lazy dog"
+	var/json = "{\"a\":\[1,2,3\],\"b\":\"c\"}"
+	var/log_file = "data/bench/rustg_dispatch.log"
+	var/static/hash_handle = load_ext(RUST_G, "hash_string")
+	var/static/json_handle = load_ext(RUST_G, "json_is_valid")
+	var/static/log_handle = load_ext(RUST_G, "log_write")
+	var/list/best = list()
+	for(var/round in 1 to rounds)
+		stoplag() // start each round on a fresh tick
+		rustg_time_reset("rustg_dispatch")
+		for(var/i in 1 to calls)
+			RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text)
+		best["hash_string_by_name_us"] = min(best["hash_string_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
+		stoplag()
+		rustg_time_reset("rustg_dispatch")
+		for(var/i in 1 to calls)
+			call_ext(hash_handle)(RUSTG_HASH_XXH64, text)
+		best["hash_string_cached_us"] = min(best["hash_string_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
+		stoplag()
+		rustg_time_reset("rustg_dispatch")
+		for(var/i in 1 to calls)
+			RUSTG_CALL(RUST_G, "json_is_valid")(json)
+		best["json_is_valid_by_name_us"] = min(best["json_is_valid_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
+		stoplag()
+		rustg_time_reset("rustg_dispatch")
+		for(var/i in 1 to calls)
+			call_ext(json_handle)(json)
+		best["json_is_valid_cached_us"] = min(best["json_is_valid_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
+		stoplag()
+		rustg_time_reset("rustg_dispatch")
+		for(var/i in 1 to calls)
+			RUSTG_CALL(RUST_G, "log_write")(log_file, text, "false")
+		best["log_write_by_name_us"] = min(best["log_write_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
+		stoplag()
+		rustg_time_reset("rustg_dispatch")
+		for(var/i in 1 to calls)
+			call_ext(log_handle)(log_file, text, "false")
+		best["log_write_cached_us"] = min(best["log_write_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
+		fdel(log_file)
+	for(var/name in best)
+		metric(name, best[name], "us/call")
+	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
+		fail("cached and by-name hash_string disagree")

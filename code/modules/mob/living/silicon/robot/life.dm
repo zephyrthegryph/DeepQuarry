@@ -1,55 +1,129 @@
-// Robot Life: a fixed sequence of small systems (doc/mob_life_architecture.md §5.2).
-//   Status  - incapacitation counters wear off.
+// Robot Life: the robot life set, a fixed sequence of small systems (doc/mob_life_architecture.md §5.2).
+//   Cycle   - transform halt and power counter reset, then modifiers.
+//   Status  - incapacitation counters wear off; senses recover; instability decays.
 //   Power   - one ledger draw of the cached demand; brownout on shortfall; heat debt.
 //   Body    - afflictions, consciousness and death, ticked exactly once.
 //   HUD/Senses - client readouts. Camera, radio and lights change on events,
 //             not here (update_senses(), set_lights()).
 // Countdowns (killswitch, weapon lock) are timers (robot.dm).
 
-/mob/living/silicon/robot/Life()
-	set invisibility = INVISIBILITY_NONE
+/mob/living/silicon/robot
+	life_set = LIFE_SET_ROBOT
 
-	if(transforming)
-		return
+/// `if(transforming) return` and the per-cycle power counter reset.
+/datum/life_system/robot_cycle
+	name = "robot cycle"
+	bit = LIFE_SYS_MACHINE
+	phase = LIFE_PHASE_INPUT
+	order = 0
+	life_sets = LIFE_SET_ROBOT
+	mob_type = /mob/living/silicon/robot
 
-	used_power_this_tick = 0
-	handle_modifiers()
-	handle_statuses()
-	handle_sensory_recovery()
-	handle_instability()
+/datum/life_system/robot_cycle/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+	if(self.transforming)
+		return LIFE_HALT
+	self.used_power_this_tick = 0
 
-	if(stat != DEAD)
-		process_power()
+/datum/life_system/modifiers/silicon/robot
+	mob_type = /mob/living/silicon/robot
+	order = 10
+	segment = NONE
 
-	// Vitals, part breakage, consciousness and death: the machine plan decides.
-	body?.life_tick()
+/datum/life_system/statuses/silicon/robot
+	mob_type = /mob/living/silicon/robot
+	phase = LIFE_PHASE_INPUT
+	order = 20
+	segment = NONE
 
-	if(client)
-		handle_regular_hud_updates()
-		handle_vision()
-		update_items()
-	if(stat != DEAD)
-		process_queued_alarms()
-	update_canmove()
+/datum/life_system/instability/silicon/robot
+	mob_type = /mob/living/silicon/robot
+	order = 40
+
+/// One ledger draw of the cached demand; brownout on shortfall; heat debt.
+/datum/life_system/robot_power
+	name = "robot power"
+	bit = LIFE_SYS_MACHINE
+	phase = LIFE_PHASE_BODY
+	order = 10
+	life_sets = LIFE_SET_ROBOT
+	mob_type = /mob/living/silicon/robot
+
+/datum/life_system/robot_power/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.process_power()
+
+/// Vitals, part breakage, consciousness and death: the machine plan decides.
+/datum/life_system/robot_body
+	name = "robot body"
+	bit = LIFE_SYS_BODY
+	phase = LIFE_PHASE_BODY
+	order = 20
+	life_sets = LIFE_SET_ROBOT
+	mob_type = /mob/living/silicon/robot
+
+/datum/life_system/robot_body/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+	self.body?.life_tick()
+
+/// Client readouts: HUD, vision and module items. Camera, radio and lights change on events.
+/datum/life_system/robot_interface
+	name = "robot interface"
+	bit = LIFE_SYS_HUD
+	phase = LIFE_PHASE_OUTPUT
+	order = 10
+	life_sets = LIFE_SET_ROBOT
+	mob_type = /mob/living/silicon/robot
+
+/datum/life_system/robot_interface/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+	if(self.client)
+		self.refresh_hud()
+		self.refresh_vision()
+		self.update_items()
+
+/// Queued alarms reach the robot.
+/datum/life_system/robot_alarms
+	name = "robot alarms"
+	bit = LIFE_SYS_MACHINE
+	phase = LIFE_PHASE_OUTPUT
+	order = 20
+	life_sets = LIFE_SET_ROBOT
+	mob_type = /mob/living/silicon/robot
+
+/datum/life_system/robot_alarms/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.process_queued_alarms()
+
+/datum/life_system/canmove/silicon/robot
+	mob_type = /mob/living/silicon/robot
+	order = 30
+	segment = NONE
 
 /// Temporary blindness, deafness and blur wear off.
-/mob/living/silicon/robot/proc/handle_sensory_recovery()
+/datum/life_system/robot_senses
+	name = "robot senses"
+	bit = LIFE_SYS_SENSES
+	phase = LIFE_PHASE_INPUT
+	order = 30
+	life_sets = LIFE_SET_ROBOT
+	mob_type = /mob/living/silicon/robot
+
+/// Temporary blindness, deafness and blur wear off.
+/datum/life_system/robot_senses/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
 	var/senses_changed = FALSE
-	if(eye_blind)
-		AdjustBlinded(-1)
-		senses_changed = !eye_blind
-	if(ear_deaf > 0)
-		ear_deaf--
-	if(ear_damage < 25)
-		ear_damage = max(ear_damage - 0.05, 0)
-	if(ear_deaf <= 0)
-		deaf_loop.stop()
-	if(sdisabilities & DEAF)
-		ear_deaf = 1
-	if(eye_blurry > 0)
-		eye_blurry = max(0, eye_blurry - 1)
+	if(self.eye_blind)
+		self.AdjustBlinded(-1)
+		senses_changed = !self.eye_blind
+	if(self.ear_deaf > 0)
+		self.ear_deaf--
+	if(self.ear_damage < 25)
+		self.ear_damage = max(self.ear_damage - 0.05, 0)
+	if(self.ear_deaf <= 0)
+		self.deaf_loop.stop()
+	if(self.sdisabilities & DEAF)
+		self.ear_deaf = 1
+	if(self.eye_blurry > 0)
+		self.eye_blurry = max(0, self.eye_blurry - 1)
 	if(senses_changed)
-		update_senses()
+		self.update_senses()
 
 // --- Power system ------------------------------------------------------------------------------
 
@@ -82,139 +156,145 @@
 
 // --- Senses and HUD ------------------------------------------------------------------------------
 
-/mob/living/silicon/robot/handle_vision()
+/datum/life_system/vision/silicon/robot
+	mob_type = /mob/living/silicon/robot
+
+/datum/life_system/vision/silicon/robot/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
 	var/fullbright = FALSE
 	var/seemeson = FALSE
-	var/seejanhud = sight_mode & BORGJAN
+	var/seejanhud = self.sight_mode & BORGJAN
 
-	var/area/A = get_area(src)
+	var/area/A = get_area(self)
 	if(A?.flag_check(AREA_NO_SPOILERS))
-		disable_spoiler_vision()
+		self.disable_spoiler_vision()
 
-	if (stat == DEAD || (XRAY in mutations) || (sight_mode & BORGXRAY))
-		sight |= SEE_TURFS
-		sight |= SEE_MOBS
-		sight |= SEE_OBJS
-		see_in_dark = 8
-		see_invisible = SEE_INVISIBLE_MINIMUM
-	else if ((sight_mode & BORGMESON) && (sight_mode & BORGTHERM))
-		sight |= SEE_TURFS
-		sight |= SEE_MOBS
-		see_in_dark = 8
-		see_invisible = SEE_INVISIBLE_MINIMUM
+	if (self.stat == DEAD || (XRAY in self.mutations) || (self.sight_mode & BORGXRAY))
+		self.sight |= SEE_TURFS
+		self.sight |= SEE_MOBS
+		self.sight |= SEE_OBJS
+		self.see_in_dark = 8
+		self.see_invisible = SEE_INVISIBLE_MINIMUM
+	else if ((self.sight_mode & BORGMESON) && (self.sight_mode & BORGTHERM))
+		self.sight |= SEE_TURFS
+		self.sight |= SEE_MOBS
+		self.see_in_dark = 8
+		self.see_invisible = SEE_INVISIBLE_MINIMUM
 		fullbright = TRUE
-	else if (sight_mode & BORGMESON)
-		sight |= SEE_TURFS
-		see_in_dark = 8
-		see_invisible = SEE_INVISIBLE_MINIMUM
+	else if (self.sight_mode & BORGMESON)
+		self.sight |= SEE_TURFS
+		self.see_in_dark = 8
+		self.see_invisible = SEE_INVISIBLE_MINIMUM
 		fullbright = TRUE
 		seemeson = TRUE
-	else if (sight_mode & BORGMATERIAL)
-		sight |= SEE_OBJS
-		see_in_dark = 8
-		see_invisible = SEE_INVISIBLE_MINIMUM
+	else if (self.sight_mode & BORGMATERIAL)
+		self.sight |= SEE_OBJS
+		self.see_in_dark = 8
+		self.see_invisible = SEE_INVISIBLE_MINIMUM
 		fullbright = TRUE
-	else if (sight_mode & BORGTHERM)
-		sight |= SEE_MOBS
-		see_in_dark = 8
-		see_invisible = SEE_INVISIBLE_LEVEL_TWO
+	else if (self.sight_mode & BORGTHERM)
+		self.sight |= SEE_MOBS
+		self.see_in_dark = 8
+		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 		fullbright = TRUE
-	else if (sight_mode & BORGANOMALOUS)
-		see_in_dark = 8
-		see_invisible = INVISIBILITY_SHADEKIN
+	else if (self.sight_mode & BORGANOMALOUS)
+		self.see_in_dark = 8
+		self.see_invisible = INVISIBILITY_SHADEKIN
 		fullbright = TRUE
-	else if (!seedarkness)
-		sight &= ~SEE_MOBS
-		sight &= ~SEE_TURFS
-		sight &= ~SEE_OBJS
-		see_in_dark = 8
-		see_invisible = SEE_INVISIBLE_NOLIGHTING
-	else if (stat != DEAD)
-		sight &= ~SEE_MOBS
-		sight &= ~SEE_TURFS
-		sight &= ~SEE_OBJS
-		see_in_dark = 8 			 // see_in_dark means you can FAINTLY see in the dark, humans have a range of 3 or so, tajaran have it at 8
-		see_invisible = SEE_INVISIBLE_LIVING // This is normal vision (25), setting it lower for normal vision means you don't "see" things like darkness since darkness
+	else if (!self.seedarkness)
+		self.sight &= ~SEE_MOBS
+		self.sight &= ~SEE_TURFS
+		self.sight &= ~SEE_OBJS
+		self.see_in_dark = 8
+		self.see_invisible = SEE_INVISIBLE_NOLIGHTING
+	else if (self.stat != DEAD)
+		self.sight &= ~SEE_MOBS
+		self.sight &= ~SEE_TURFS
+		self.sight &= ~SEE_OBJS
+		self.see_in_dark = 8 			 // see_in_dark means you can FAINTLY see in the dark, humans have a range of 3 or so, tajaran have it at 8
+		self.see_invisible = SEE_INVISIBLE_LIVING // This is normal vision (25), setting it lower for normal vision means you don't "see" things like darkness since darkness
 											// has a "invisible" value of 15
 
-	if(plane_holder)
-		plane_holder.set_vis(VIS_FULLBRIGHT,fullbright)
-		plane_holder.set_vis(VIS_MESONS,seemeson)
-		plane_holder.set_vis(VIS_JANHUD,seejanhud)
+	if(self.plane_holder)
+		self.plane_holder.set_vis(VIS_FULLBRIGHT,fullbright)
+		self.plane_holder.set_vis(VIS_MESONS,seemeson)
+		self.plane_holder.set_vis(VIS_JANHUD,seejanhud)
 
 	// Call parent to handle signals
 	..()
 
-/mob/living/silicon/robot/handle_regular_hud_updates()
+/datum/life_system/hud/silicon/robot
+	mob_type = /mob/living/silicon/robot
+
+/datum/life_system/hud/silicon/robot/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
 
-	if (syndicate)
+	if (self.syndicate)
 		for(var/datum/mind/tra in GLOB.traitors.current_antagonists)
 			if(tra.current)
 				// TODO: Update to new antagonist system.
 				var/I = image('icons/mob/mob.dmi', loc = tra.current, icon_state = "traitor")
-				client.images += I
-		disconnect_from_ai()
-		if(mind)
+				self.client.images += I
+		self.disconnect_from_ai()
+		if(self.mind)
 			// TODO: Update to new antagonist system.
-			if(!mind.special_role)
-				mind.special_role = "traitor"
-				GLOB.traitors.current_antagonists |= mind
+			if(!self.mind.special_role)
+				self.mind.special_role = "traitor"
+				GLOB.traitors.current_antagonists |= self.mind
 
-	update_cell()
+	self.update_cell()
 
-	var/turf/T = get_turf(src)
+	var/turf/T = get_turf(self)
 	var/datum/gas_mixture/environment = T.return_air()
 	if(environment)
 		switch(environment.return_temperature()) //310.055 optimal body temp
 			if(400 to INFINITY)
-				throw_alert("temp", /atom/movable/screen/alert/hot/robot, HOT_ALERT_SEVERITY_MODERATE)
+				self.throw_alert("temp", /atom/movable/screen/alert/hot/robot, HOT_ALERT_SEVERITY_MODERATE)
 			if(360 to 400)
-				throw_alert("temp", /atom/movable/screen/alert/hot/robot, HOT_ALERT_SEVERITY_LOW)
+				self.throw_alert("temp", /atom/movable/screen/alert/hot/robot, HOT_ALERT_SEVERITY_LOW)
 			if(260 to 360)
-				clear_alert("temp")
+				self.clear_alert("temp")
 			if(200 to 260)
-				throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_LOW)
+				self.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_LOW)
 			else
-				throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_MODERATE)
+				self.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_MODERATE)
 
 	// Blindness is raised by update_senses() when the camera or stat changes.
-	if(stat != DEAD && !blinded)
-		set_fullscreen(eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-		set_fullscreen(druggy, "high", /atom/movable/screen/fullscreen/high)
+	if(self.stat != DEAD && !self.blinded)
+		self.set_fullscreen(self.eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
+		self.set_fullscreen(self.druggy, "high", /atom/movable/screen/fullscreen/high)
 
-	if(emagged)
-		throw_alert("hacked", /atom/movable/screen/alert/hacked)
+	if(self.emagged)
+		self.throw_alert("hacked", /atom/movable/screen/alert/hacked)
 	else
-		clear_alert("hacked")
+		self.clear_alert("hacked")
 
-/mob/living/silicon/robot/handle_hud_icons_health()
+/datum/life_system/hud/silicon/robot/health_icons(mob/living/silicon/robot/self)
 	. = ..()
-	if(!. || !healths)
+	if(!. || !self.healths)
 		return
 
-	if(stat == DEAD || (status_effects & FAKEDEATH))
-		healths.icon_state = "health7"
+	if(self.stat == DEAD || (self.status_effects & FAKEDEATH))
+		self.healths.icon_state = "health7"
 		return
 
 	// Same bands as the old 200..-200 health scale, read from vitality.
-	var/v = vitality()
+	var/v = self.vitality()
 	if(v >= 1)
-		healths.icon_state = "health0"
+		self.healths.icon_state = "health0"
 	else if(v >= 0.875)
-		healths.icon_state = "health1"
+		self.healths.icon_state = "health1"
 	else if(v >= 0.75)
-		healths.icon_state = "health2"
+		self.healths.icon_state = "health2"
 	else if(v >= 0.625)
-		healths.icon_state = "health3"
+		self.healths.icon_state = "health3"
 	else if(v >= 0.5)
-		healths.icon_state = "health4"
+		self.healths.icon_state = "health4"
 	else if(v > 0)
-		healths.icon_state = "health5"
+		self.healths.icon_state = "health5"
 	else
-		healths.icon_state = "health6"
+		self.healths.icon_state = "health6"
 
 /mob/living/silicon/robot/proc/update_cell()
 	if(cell)

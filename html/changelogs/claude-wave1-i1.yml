@@ -1,0 +1,8 @@
+author: "Claude"
+delete-after: true
+changes:
+  - rscadd: "Keybindings: a new Keybindings verb (OOC > Settings) opens an editor where you can rebind every hotkey, separately for cyborgs, and saves them with your preferences. Defaults are unchanged."
+  - rscadd: "Right-click can now be set to Alternate (the same as Alt-click) instead of opening BYOND's right-click menu."
+  - qol: "hotkeys-help now lists your actual bindings."
+  - refactor: "All mob clicks go through one input router with per-actor adapters (hands, ghost, AI, cyborg, telekinesis); the copied modifier ladders and the four hard-coded skin macro sets are gone."
+  - bugfix: "The swoopie's vacuum no longer runtimes when used on a disposal bin."

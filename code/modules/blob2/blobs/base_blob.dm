@@ -265,13 +265,13 @@ GLOBAL_LIST_EMPTY(all_blobs)
 		H.visible_message(span_danger("[H] strikes \the [src]!"))
 
 		var/real_damage = rand(3,6)
-		var/hit_dam_type = attack.damage_type
+		var/hit_kind = attack.injury_kind
 		real_damage += attack.get_unarmed_damage(H)
 		if(H.gloves)
 			if(istype(H.gloves, /obj/item/clothing/gloves))
 				var/obj/item/clothing/gloves/G = H.gloves
 				real_damage += G.punch_force
-				hit_dam_type = G.punch_damtype
+				hit_kind = G.punch_injury_kind || hit_kind
 		if(HULK in H.mutations)
 			real_damage *= 2 // Hulks do twice the damage
 
@@ -280,27 +280,20 @@ GLOBAL_LIST_EMPTY(all_blobs)
 		var/damage_mult_burn = 1
 		var/damage_mult_brute = 1
 
-		if(hit_dam_type == SEARING)
-			damage_mult_burn *= 0.3
-			damage_mult_brute *= 0.6
-
-		else if(hit_dam_type == BIOACID)
-			damage_mult_burn *= 0.6
-			damage_mult_brute = 0
-
-		else if(hit_dam_type in list(ELECTROCUTE, BURN))
-			damage_mult_brute = 0
-
-		else if(hit_dam_type in list(BRUTE, CLONE))
-			damage_mult_burn = 0
-
-		else if(hit_dam_type != HALLOSS) // Tox, Oxy, or something new. Half damage split to the organism.
-			damage_mult_burn = 0.25
-			damage_mult_brute = 0.25
-
-		else
-			damage_mult_brute = 0.25
-			damage_mult_burn = 0
+		switch(hit_kind)
+			if(INJURY_CORROSIVE)
+				damage_mult_burn *= 0.6
+				damage_mult_brute = 0
+			if(INJURY_BURN, INJURY_ELECTRIC)
+				damage_mult_brute = 0
+			if(INJURY_BLUNT, INJURY_CUT, INJURY_PIERCE, INJURY_CELLULAR)
+				damage_mult_burn = 0
+			if(INJURY_PAIN)
+				damage_mult_brute = 0.25
+				damage_mult_burn = 0
+			else // Toxins, asphyxia, or something new. Half damage split to the organism.
+				damage_mult_burn = 0.25
+				damage_mult_brute = 0.25
 
 		var/burn_amt = real_damage * damage_mult_burn
 		var/brute_amt = real_damage * damage_mult_brute
@@ -323,8 +316,8 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
 	var/damage = W.force
-	switch(W.damtype)
-		if(BURN, BIOACID, ELECTROCUTE, OXY)
+	switch(W.obj_damage_type())
+		if(BURN)
 			if(overmind)
 				damage *= overmind.blob_type.burn_multiplier
 			else
@@ -334,7 +327,7 @@ GLOBAL_LIST_EMPTY(all_blobs)
 				playsound(src, 'sound/items/Welder.ogg', 100, 1)
 			else
 				playsound(src, 'sound/weapons/tap.ogg', 50, 1)
-		if(BRUTE, SEARING, TOX, CLONE)
+		if(BRUTE)
 			if(overmind)
 				damage *= overmind.blob_type.brute_multiplier
 			else
@@ -345,7 +338,7 @@ GLOBAL_LIST_EMPTY(all_blobs)
 			else
 				playsound(src, 'sound/weapons/tap.ogg', 50, 1)
 	if(overmind)
-		damage = overmind.blob_type.on_received_damage(src, damage, W.damtype, user)
+		damage = overmind.blob_type.on_received_damage(src, damage, W.obj_damage_type(), user)
 	adjust_integrity(-damage)
 	return
 
@@ -360,7 +353,7 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	if(!damage)
 		return
 
-	switch(P.damage_type)
+	switch(P.obj_damage_type())
 		if(BRUTE)
 			if(overmind)
 				damage *= overmind.blob_type.brute_multiplier
@@ -369,7 +362,7 @@ GLOBAL_LIST_EMPTY(all_blobs)
 				damage *= overmind.blob_type.burn_multiplier
 
 	if(overmind)
-		damage = overmind.blob_type.on_received_damage(src, damage, P.damage_type, P.firer)
+		damage = overmind.blob_type.on_received_damage(src, damage, P.obj_damage_type(), P.firer)
 
 	adjust_integrity(-damage)
 
@@ -389,7 +382,7 @@ GLOBAL_LIST_EMPTY(all_blobs)
 
 		if(B.faction != faction)
 			var/damage = rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper)
-			var/inc_damage_type = B.overmind.blob_type.damage_type
+			var/inc_damage_type = injury_kind_obj_damage_type(B.overmind.blob_type.injury_kind)
 
 			if(overmind)
 				damage = overmind.blob_type.on_received_damage(src, damage, inc_damage_type, B)

@@ -111,15 +111,10 @@
 		/datum/unarmed_attack/bite
 		)
 	var/list/unarmed_attacks = null							// For empty hand harm-intent attack
-	/// Species tuning of injury multipliers by coarse group: "physical",
-	/// "thermal", "toxin", "asphyxia", "radiation", "cellular", "neural",
-	/// "pain" -> multiplier (omitted = 1). e.g. list("physical" = 0.85).
-	var/list/injury_mod_groups
-	/// Flat INJURY_* -> multiplier list built from injury_mod_groups at New();
-	/// NO_POISON / NO_PAIN / NO_DNA zero their kinds. Read via get_injury_mod().
-	var/list/injury_mods
-	/// Snapshot of injury_mods after species setup, so traits can restore it.
-	var/list/base_injury_mods
+	/// Multiplier on radiation's EFFECTS (mutation, sickness, radiation burns); the
+	/// dose absorbed is not scaled. Injury multipliers are body factors in
+	/// `factor_baseline` (BF_INCOMING_*).
+	var/radiation_mod = 1
 	var/flash_mod =     1								// Stun from blindness modifier (flashes and flashbangs)
 	var/flash_burn =    0								// how much damage to take from being flashed if light hypersensitive
 	var/sound_mod =     1								// Multiplier to the effective *range* of flashbangs. a flashbang's bang hits an entire screen radius, with some falloff.
@@ -388,8 +383,6 @@
 	var/default_custom_base = SPECIES_HUMAN
 
 /datum/species/proc/update_attack_types()
-	setup_injury_mods()
-
 	unarmed_attacks = list()
 	for(var/u_type in unarmed_types)
 		unarmed_attacks += new u_type()
@@ -404,8 +397,6 @@
 	if(!vision_organ && has_organ[O_EYES])
 		vision_organ = O_EYES
 
-	setup_injury_mods()
-
 	unarmed_attacks = list()
 	for(var/u_type in unarmed_types)
 		unarmed_attacks += new u_type()
@@ -415,94 +406,6 @@
 			inherent_verbs = list()
 
 	update_sort_hint()
-
-/// Build the flat per-kind injury multipliers from the species' groups,
-/// then apply the species immunity flags.
-/datum/species/proc/setup_injury_mods()
-	injury_mods = injury_mod_list()
-	for(var/group in injury_mod_groups)
-		for(var/kind in injury_mod_group_kinds(group))
-			injury_mods[kind] = injury_mod_groups[group]
-	if(flags & NO_POISON)
-		injury_mods[INJURY_TOXIN] = 0
-	if(flags & NO_PAIN)
-		injury_mods[INJURY_PAIN] = 0
-	if(flags & NO_DNA)
-		injury_mods[INJURY_CELLULAR] = 0
-	base_injury_mods = injury_mods.Copy()
-
-/// Multiplier for one INJURY_* kind.
-/datum/species/proc/get_injury_mod(kind)
-	if(length(injury_mods) != INJURY_KIND_COUNT)
-		setup_injury_mods()
-	return injury_mods[kind]
-
-/// Set every kind in an injury-mod group ("physical", "thermal", "toxin",
-/// "asphyxia", "radiation", "cellular", "neural", "pain") to `value`.
-/// Used by traits / perks (`var_changes` keys "injury_mod_<group>").
-/datum/species/proc/set_injury_mod_group(group, value)
-	if(length(injury_mods) != INJURY_KIND_COUNT)
-		setup_injury_mods()
-	for(var/kind in injury_mod_group_kinds(group))
-		injury_mods[kind] = value
-
-/// Restore a group to the species' own value (trait removal).
-/datum/species/proc/reset_injury_mod_group(group)
-	if(length(base_injury_mods) != INJURY_KIND_COUNT)
-		return
-	for(var/kind in injury_mod_group_kinds(group))
-		injury_mods[kind] = base_injury_mods[kind]
-
-/// Handle a trait/perk `var_changes` entry. Returns TRUE if it was an
-/// injury-mod key ("injury_mod_<group>") and has been applied.
-/datum/species/proc/apply_injury_mod_var_change(key, value)
-	if(!istext(key) || copytext(key, 1, 12) != "injury_mod_")
-		return FALSE
-	if(isnull(value))
-		reset_injury_mod_group(copytext(key, 12))
-	else
-		set_injury_mod_group(copytext(key, 12), value)
-	return TRUE
-
-/// INJURY_* kinds covered by a coarse injury-mod group.
-/proc/injury_mod_group_kinds(group)
-	switch(group)
-		if("physical")
-			return list(INJURY_BLUNT, INJURY_CUT, INJURY_PIERCE, INJURY_DIGESTION)
-		if("thermal")
-			return list(INJURY_BURN, INJURY_FROSTBITE, INJURY_CORROSIVE, INJURY_ELECTRIC)
-		if("toxin")
-			return list(INJURY_TOXIN)
-		if("asphyxia")
-			return list(INJURY_ASPHYXIA)
-		if("radiation")
-			return list(INJURY_RADIATION)
-		if("cellular")
-			return list(INJURY_CELLULAR)
-		if("neural")
-			return list(INJURY_NEURAL)
-		if("pain")
-			return list(INJURY_PAIN)
-	return list()
-
-/// A flat INJURY_* multiplier list from coarse group values.
-/proc/injury_mod_list(physical = 1, thermal = 1, toxin = 1, asphyxia = 1, radiation = 1, cellular = 1, neural = 1, pain = 1)
-	var/list/mods = new /list(INJURY_KIND_COUNT)
-	mods[INJURY_BLUNT] = physical
-	mods[INJURY_CUT] = physical
-	mods[INJURY_PIERCE] = physical
-	mods[INJURY_DIGESTION] = physical
-	mods[INJURY_BURN] = thermal
-	mods[INJURY_FROSTBITE] = thermal
-	mods[INJURY_CORROSIVE] = thermal
-	mods[INJURY_ELECTRIC] = thermal
-	mods[INJURY_TOXIN] = toxin
-	mods[INJURY_ASPHYXIA] = asphyxia
-	mods[INJURY_RADIATION] = radiation
-	mods[INJURY_CELLULAR] = cellular
-	mods[INJURY_NEURAL] = neural
-	mods[INJURY_PAIN] = pain
-	return mods
 
 /datum/species/proc/get_footsep_sounds()
 	return footstep
@@ -691,27 +594,12 @@
 /datum/species/proc/handle_death(mob/living/carbon/human/H) //Handles any species-specific death events (such as dionaea nymph spawns).
 	return
 
-// Used for traits and species that have special environmental effects.
-/datum/species/proc/handle_environment_special(mob/living/carbon/human/H)
+// Strategy called by the human environment system for species and traits with special
+// environmental effects.
+/datum/species/proc/environment_effects(mob/living/carbon/human/H)
 	for(var/datum/trait/env_trait in env_traits)
-		env_trait.handle_environment_special(H)
+		env_trait.environment_effects(H)
 	return
-
-/datum/species/proc/handle_species_components(mob/living/carbon/human/H)
-	SHOULD_NOT_OVERRIDE(TRUE)
-
-	//Xenochimera Species Component
-	var/datum/component/xenochimera/xc = H.get_xenochimera_component()
-	if(xc)
-		if(!H.stat || !(xc.revive_ready == REVIVING_NOW || xc.revive_ready == REVIVING_DONE))
-			SEND_SIGNAL(H, COMSIG_XENOCHIMERA_COMPONENT)
-
-	//Shadekin Species Component.
-	//For when shadekin actually have their component control everything.
-	var/datum/component/shadekin/sk = H.get_shadekin_component()
-	if(sk)
-		if(!H.stat)
-			SEND_SIGNAL(H, COMSIG_SHADEKIN_COMPONENT)
 
 // Used to update alien icons for aliens.
 /datum/species/proc/handle_login_special(mob/living/carbon/human/H)
@@ -752,8 +640,8 @@
 		shreds += damage
 	return shreds
 
-// Called in life() when the mob has no client.
-/datum/species/proc/handle_npc(mob/living/carbon/human/H)
+// Strategy called by the human NPC system each cycle the mob has no client.
+/datum/species/proc/npc_behaviour(mob/living/carbon/human/H)
 	if(H.stat == CONSCIOUS && H.ai_brain)
 		if(H.resting)
 			H.resting = FALSE

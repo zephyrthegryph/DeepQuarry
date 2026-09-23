@@ -11,7 +11,7 @@
 	var/light_y = 0
 	cooking_coeff = 0
 	cooking_power = 0
-	mobdamagetype = BURN
+	mob_injury_kind = INJURY_BURN
 	can_burn_food = TRUE
 
 	tgui_id = "CookingAppliance"

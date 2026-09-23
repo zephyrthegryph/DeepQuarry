@@ -9,6 +9,7 @@ description = "Criterion benchmarks for the host-buildable verdigris crates. Run
 [dependencies]
 vg-core = { path = "../../core" }
 vg-layout = { path = "../../domains/layout" }
+rayon = "1.10.0"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", default-features = false, features = ["cargo_bench_support"] }
@@ -19,4 +20,16 @@ harness = false
 
 [[bench]]
 name = "layout"
+harness = false
+
+[[bench]]
+name = "sim"
+harness = false
+
+[[bench]]
+name = "propagate"
+harness = false
+
+[[bench]]
+name = "watch"
 harness = false

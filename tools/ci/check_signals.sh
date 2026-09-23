@@ -80,6 +80,14 @@ for path, text in raw.items():
         if m.group(3) == '"':
             signals.setdefault(m.group(1), path)
 
+# Two defines with the same string are one signal: listeners of either get both.
+value_re = re.compile(r'^[ \t]*#define[ \t]+(COMSIG_\w+)[ \t]+("[^"]*")', re.M)
+by_value = {}
+for path, text in raw.items():
+    for m in value_re.finditer(text):
+        by_value.setdefault(m.group(2), set()).add(m.group(1))
+duplicate_values = [f"{value} is defined by {', '.join(sorted(names))}" for value, names in sorted(by_value.items()) if len(names) > 1]
+
 # Macros that wrap a send or a register count as that call.
 senders = {"SEND_SIGNAL", "SEND_GLOBAL_SIGNAL"}
 listeners = {"RegisterSignal", "RegisterSignals"}
@@ -178,6 +186,7 @@ for name in sorted(allowed - set(signals)):
     bad.append(f"tools/ci/signal_allowlist.txt: {name} is not a defined signal; remove it")
 for name in sorted(allowed & sent & heard):
     bad.append(f"tools/ci/signal_allowlist.txt: {name} is sent and listened to; remove it")
+bad.extend(duplicate_values)
 if bad:
     print("\n".join(bad))
     sys.exit(1)

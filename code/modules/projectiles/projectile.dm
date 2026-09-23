@@ -102,12 +102,12 @@
 	var/spread_submunition_damage = FALSE // Do we assign damage to our sub projectiles based on our main projectile damage?
 
 	var/damage = 10
-	var/damage_type = BRUTE //Object damage type (BRUTE/BURN for obj_integrity). Legacy mob kinds (TOX, OXY, CLONE, HALLOSS, ELECTROCUTE, BIOACID, SEARING, ELECTROMAG) are still accepted and translated by get_injury_kind().
-	// injury_kind (inherited from /obj/item): INJURY_* this projectile inflicts on living targets. Null = derived from damage_type + sharp + edge (see get_injury_kind()).
+	// injury_kind / injury_kinds (inherited from /obj/item): what this projectile inflicts. Armour is looked up by that kind.
+	/// Ion rounds: pulse the target with an EMP scaled by the unblocked damage instead of injuring it.
+	var/emp_on_hit = FALSE
 	var/mob_bonus_damage = 0 // Some bullets inflict extra damage on simple animals.
 	var/nodamage = 0 //Determines if the projectile will skip any damage inflictions
 	var/taser_effect = 0 //If set then the projectile will apply it's agony damage using stun_effect_act() to mobs it hits, and other damage will be ignored
-	var/check_armour = "bullet" //Defines what armor to use when it hits things.  Must be set to bullet, laser, energy,or bomb	//Cael - bio and rad are also valid
 	var/projectile_type = /obj/item/projectile
 	var/penetrating = 0 //If greater than zero, the projectile will pass through dense objects as specified by on_penetrate()
 		//Effects
@@ -679,58 +679,24 @@
 		L.add_modifier(modifier_type_to_apply, modifier_duration)
 	return 1
 
-/// INJURY_* this projectile inflicts. Explicit `injury_kind` wins; otherwise
-/// derived from the legacy damage_type + sharp/edge. `proj_sharp`/`proj_edge`
-/// let the caller pass the armour-adjusted sharpness (armour can blunt a round).
-/obj/item/projectile/get_injury_kind(proj_sharp = sharp, proj_edge = edge)
-	if(injury_kind)
-		return injury_kind
-	return injury_kind_for(damage_type, proj_sharp, proj_edge)
-
-/// Applies this projectile's damage to a living target. This is the single
-/// entry point mob/living/bullet_act() should call instead of apply_damage().
-/// armor: 0..100 percent absorbed (run_armor_check). Returns the amount applied.
-/// SEARING = one third burn + two thirds blunt; ELECTROMAG = an EMP scaled by
-/// the unblocked damage (no injury).
-/obj/item/projectile/proc/inflict_injury(mob/living/target, def_zone, armor = 0, proj_sharp = sharp, proj_edge = edge)
+/// Applies this projectile's harm to a living target: the single entry point
+/// mob/living/bullet_act() calls. Armour, shields and resistances apply in
+/// injure(). Ion rounds (emp_on_hit) pulse the target instead. Returns the
+/// amount applied.
+/obj/item/projectile/proc/inflict_injury(mob/living/target, def_zone)
 	if(nodamage || !damage || !istype(target))
 		return 0
-	if(!injury_kind)
-		switch(damage_type)
-			if(ELECTROMAG)
-				electromagnetic_hit(target, damage * (100 - armor) / 100)
-				return 0
-			if(SEARING)
-				. = target.injure(INJURY_BURN, damage / 3, def_zone, src, armor, null, INJURE_PROJECTILE)
-				. += target.injure(INJURY_BLUNT, damage * 2 / 3, def_zone, src, armor, null, INJURE_PROJECTILE)
-				return
-	return target.injure(get_injury_kind(proj_sharp, proj_edge), damage, def_zone, src, armor, null, INJURE_PROJECTILE)
-
-/// ELECTROMAG projectiles pulse the target instead of injuring it; strength
-/// scales with the unblocked damage.
-/obj/item/projectile/proc/electromagnetic_hit(mob/living/target, amount)
-	switch(round(amount))
-		if(91 to INFINITY)
-			target.emp_act(EMP_HEAVY)
-		if(76 to 90)
-			target.emp_act(prob(50) ? EMP_HEAVY : EMP_MEDIUM)
-		if(61 to 75)
-			target.emp_act(EMP_MEDIUM)
-		if(46 to 60)
-			target.emp_act(prob(50) ? EMP_MEDIUM : EMP_LIGHT)
-		if(31 to 45)
-			target.emp_act(EMP_LIGHT)
-		if(16 to 30)
-			target.emp_act(prob(50) ? EMP_LIGHT : EMP_HARMLESS)
-		else
-			target.emp_act(EMP_HARMLESS)
+	if(emp_on_hit)
+		target.electromagnetic_hit(damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
+		return 0
+	return target.injure_by(src, damage, def_zone, flags = INJURE_PROJECTILE)
 
 //called when the projectile stops flying because it Bump'd with something
 /obj/item/projectile/proc/on_impact(atom/A)
 	impact_sounds(A)
 	impact_visuals(A)
 
-	if(damage && damage_type == BURN)
+	if(damage && obj_damage_type() == BURN)
 		var/turf/T = get_turf(A)
 		if(T)
 			T.hotspot_expose(700, 5)
@@ -739,30 +705,20 @@
 	// same form-trigger path a substance blade uses on a strike. Only fires if the
 	// bullet carries a substance infusion AND the substance's trigger is one a strike
 	// presents (IMPACT/PRESSURE, plus ENERGY for energy shots); inert otherwise.
-	var/turf/impact_turf = get_turf(A) || get_turf(src)
-	if(damage_type == BURN)
-		material_response_impact(impact_turf, firer)
-	else
-		material_response_impact(impact_turf, firer)
+	material_response_impact(get_turf(A) || get_turf(src), firer)
 
 //Checks if the projectile is eligible for embedding. Not that it necessarily will.
 /obj/item/projectile/proc/can_embed()
-	//embed must be enabled and damage type must be brute
-	if(embed_chance == 0 || damage_type != BRUTE)
-		return 0
-	if(injury_kind && injury_category(injury_kind) != INJURY_CATEGORY_PHYSICAL)
+	//embed must be enabled and the round must do physical harm
+	if(embed_chance == 0 || injury_category(injury_kind) != INJURY_CATEGORY_PHYSICAL)
 		return 0
 	return 1
 
 /obj/item/projectile/proc/get_structure_damage()
-	// Non-physical injuries (pain, toxins, asphyxia, genetic, neural) don't hurt structures.
-	if(injury_kind)
-		var/category = injury_category(injury_kind)
-		if(category != INJURY_CATEGORY_PHYSICAL && category != INJURY_CATEGORY_THERMAL)
-			return 0
-	if(damage_type == BRUTE || damage_type == BURN)
-		return damage
-	return 0
+	// Only kinds with an object damage type (injury_kind_obj_damage_type()) hurt structures.
+	if(emp_on_hit || !obj_damage_type())
+		return 0
+	return damage
 
 //return 1 if the projectile should be allowed to pass through after all, 0 if not.
 /obj/item/projectile/proc/check_penetrate(atom/A)

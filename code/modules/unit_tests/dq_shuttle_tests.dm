@@ -155,7 +155,8 @@
 		return
 	// attempt_move() deliberately bypasses the autodock handshake used by launch(),
 	// so seal the mapped external hatch before exercising turf translation itself.
-	for(var/attempt in 1 to 10)
+	// Poll every tick (same 10 s budget) rather than once a second.
+	for(var/attempt in 1 to 100)
 		var/all_closed = TRUE
 		for(var/area/A as anything in shuttle.shuttle_area)
 			for(var/obj/machinery/door/airlock/D in A)
@@ -166,11 +167,11 @@
 						D.close(TRUE, TRUE)
 		if(all_closed)
 			break
-		sleep(1 SECOND)
+		sleep(1)
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/obj/machinery/door/airlock/D in A)
 			TEST_ASSERT(D.density, "Ferry-Demo test hatch did not close before repeated moves")
-	wait_for_atmos(5)
+	dq_unit_test_wait_air_until_quiescent(5, 1)
 	var/baseline = measure_oxygen(shuttle)
 	TEST_ASSERT(baseline > 0, "Ferry-Demo began without oxygen")
 	for(var/hop in 1 to 8)
@@ -179,18 +180,31 @@
 		for(var/area/topology_area as anything in shuttle.shuttle_area)
 			for(var/turf/open/topology_turf in topology_area)
 				if(!topology_turf.blocks_air && topology_turf.air)
-					TEST_ASSERT(auxmos_topology_matches(topology_turf), "Rust/DM atmos topology diverged after shuttle move [hop] at [topology_turf.x],[topology_turf.y],[topology_turf.z]")
+					TEST_ASSERT(vg_topology_matches(topology_turf), "Rust/DM atmos topology diverged after shuttle move [hop] at [topology_turf.x],[topology_turf.y],[topology_turf.z]")
 		var/immediate_oxygen = measure_oxygen(shuttle)
 		TEST_ASSERT(immediate_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen during turf translation on move [hop]: [baseline] -> [immediate_oxygen]")
 		if(next_landmark == shuttle.landmark_offsite)
 			var/leak = find_space_leak(shuttle)
 			TEST_ASSERT(!leak, "Ferry-Demo pressure volume was connected to space after move [hop]: [leak]")
+		// Up to five SSair fires, as before, but stop once the Rust worker has
+		// published nothing for two fires with no rebuild queued: nothing is
+		// pending, so later fires cannot move gas (see
+		// dq_unit_test_wait_air_until_quiescent). A leak keeps the worker
+		// publishing and uses all five.
+		var/last_generation = SSair.async_generation
+		var/idle_cycles = 0
 		for(var/cycle in 1 to 5)
 			wait_for_atmos(1)
 			for(var/area/cycle_area as anything in shuttle.shuttle_area)
 				for(var/turf/open/cycle_turf in cycle_area)
 					if(!cycle_turf.blocks_air && cycle_turf.air)
-						TEST_ASSERT(auxmos_topology_matches(cycle_turf), "Rust/DM atmos topology diverged after shuttle move [hop], atmos cycle [cycle], at [cycle_turf.x],[cycle_turf.y],[cycle_turf.z]")
+						TEST_ASSERT(vg_topology_matches(cycle_turf), "Rust/DM atmos topology diverged after shuttle move [hop], atmos cycle [cycle], at [cycle_turf.x],[cycle_turf.y],[cycle_turf.z]")
+			if(SSair.async_generation == last_generation && !length(SSair.adjacent_rebuild))
+				if(++idle_cycles >= 2)
+					break
+			else
+				idle_cycles = 0
+				last_generation = SSair.async_generation
 		var/hop_oxygen = measure_oxygen(shuttle)
 		if(next_landmark == shuttle.landmark_offsite)
 			TEST_ASSERT(hop_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen after returning offsite on repeated move [hop]: [baseline] -> [hop_oxygen]; [gas_diagnostics(shuttle)]")

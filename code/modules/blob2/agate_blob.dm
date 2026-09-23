@@ -17,8 +17,8 @@
 	attack_message_synth = ", and your external plating dissolves"
 	faction = FACTION_TYR
 
-	damage_type = SEARING
-	armor_check = "melee"
+	injury_kind = INJURY_BLUNT
+	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	armor_pen = 30
 	damage_lower = 20
 	damage_upper = 20

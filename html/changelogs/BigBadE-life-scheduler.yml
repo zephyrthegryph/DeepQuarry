@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Mob Life() is now a scheduler over small life systems (breathing, environment, status, HUD, organs and so on), each with an explicit order. Every old Life step moved into a system unchanged; mobs should behave exactly as before."
+  - refactor: "Trait components (dizziness, jitters, photosynthesis, gargoyle, weaver and others) now tick as life systems instead of listening for a Life signal."
+  - admin: "The mob profiler now also logs the cost of each life system (MOB_SYSTEM_PROFILE lines next to MOB_PROFILE)."

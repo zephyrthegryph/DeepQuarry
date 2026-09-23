@@ -8,8 +8,6 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 25
 	attack_armor_pen = 5
-	attack_sharp = FALSE
-	attack_edge = FALSE
 	melee_attack_delay = 1 SECOND
 	attacktext = list("clowned")
 

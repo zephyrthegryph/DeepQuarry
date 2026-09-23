@@ -94,6 +94,7 @@
 	force = 10.0
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	throwforce = 5.0
@@ -112,7 +113,7 @@
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks basic and could be improved."
 	icon_state = "scalpel_laser1"
-	damtype = BURN
+	injury_kind = INJURY_BURN
 	hitsound = 'sound/weapons/blade1.ogg'
 	clamp_chance = 75
 
@@ -120,7 +121,7 @@
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks somewhat advanced."
 	icon_state = "scalpel_laser2"
-	damtype = BURN
+	injury_kind = INJURY_BURN
 	hitsound = 'sound/weapons/blade1.ogg'
 	force = 12.0
 	clamp_chance = 85
@@ -129,7 +130,7 @@
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks to be the pinnacle of precision energy cutlery!"
 	icon_state = "scalpel_laser3"
-	damtype = BURN
+	injury_kind = INJURY_BURN
 	hitsound = 'sound/weapons/blade1.ogg'
 	force = 15.0
 	clamp_chance = 95
@@ -167,6 +168,7 @@
 	attack_verb = list("attacked", "slashed", "sawed", "cut")
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 
 /obj/item/surgical/circular_saw/manager
 	name = "energetic bone diverter"
@@ -174,7 +176,8 @@
 	icon_state = "adv_saw"
 	item_state = "saw3"
 	hitsound = 'sound/weapons/emitter2.ogg'
-	damtype = SEARING
+	injury_kind = INJURY_CUT
+	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 	w_class = ITEMSIZE_NORMAL
 	matter = list(MAT_STEEL = 25000,MAT_GLASS = 20000)
 	attack_verb = list("attacked", "slashed", "seared", "cut")

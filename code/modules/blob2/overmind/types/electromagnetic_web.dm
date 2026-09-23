@@ -7,7 +7,7 @@
 	difficulty = BLOB_DIFFICULTY_MEDIUM // Rough for robots but otherwise fragile and can be fought at range like most blobs anyways.
 	color = "#83ECEC"
 	complementary_color = "#EC8383"
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	damage_lower = 10
 	damage_upper = 20
 	brute_multiplier = 3

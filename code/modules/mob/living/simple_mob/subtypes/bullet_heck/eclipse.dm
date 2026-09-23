@@ -53,9 +53,12 @@
 					attackcycle = 0
 
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/handle_special()
-	if(stat != DEAD)
-		frozen_aura()
+/datum/life_system/special/mechanical/mecha/eclipse/battle_top
+	mob_type = /mob/living/simple_mob/mechanical/mecha/eclipse/battle_top
+
+/datum/life_system/special/mechanical/mecha/eclipse/battle_top/tick(mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.frozen_aura()
 	..()
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/proc/frozen_aura()

@@ -32,7 +32,6 @@
 
 	melee_damage_lower = 1
 	melee_damage_upper = 2
-	attack_sharp = FALSE
 	attacktext = list("nipped", "squeaked at", "hopped on", "kicked")
 
 
@@ -74,12 +73,15 @@
 	B.absorbchance = 0
 	B.escapechance = 25
 
-/mob/living/simple_mob/vore/alienanimals/dustjumper/Life()
+/datum/life_system/type_post/simple_mob/vore/alienanimals/dustjumper
+	mob_type = /mob/living/simple_mob/vore/alienanimals/dustjumper
+
+/datum/life_system/type_post/simple_mob/vore/alienanimals/dustjumper/tick(mob/living/simple_mob/vore/alienanimals/dustjumper/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
-	if(vore_fullness == 0 && movement_cooldown == 10)
-		movement_cooldown = initial(movement_cooldown)
+	if(self.vore_fullness == 0 && self.movement_cooldown == 10)
+		self.movement_cooldown = initial(self.movement_cooldown)
 
 /mob/living/simple_mob/vore/alienanimals/dustjumper/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
 	. = ..()

@@ -101,7 +101,15 @@
 	SSdbcore.SetRoundEnd()
 
 	ready_for_reboot = TRUE
-	addtimer(CALLBACK(src, PROC_REF(standard_reboot)), 5 SECONDS + extra_delay)
+	var/report_delay = 5 SECONDS
+	#ifdef UNIT_TESTS
+	// The 5 s lets players read the round-end report. A focused unit-test run
+	// has no players; the full suite keeps it so late timers still get their
+	// chance to runtime before shutdown.
+	if(unit_test_is_focused_run())
+		report_delay = 0
+	#endif
+	addtimer(CALLBACK(src, PROC_REF(standard_reboot)), report_delay + extra_delay)
 
 /datum/controller/subsystem/ticker/proc/standard_reboot()
 	if(ready_for_reboot)

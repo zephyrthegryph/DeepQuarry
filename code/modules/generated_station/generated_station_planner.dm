@@ -72,11 +72,11 @@
 	var/job_id
 	var/list/response
 	try
-		job_id = verdigris_submit_station_layout(request_json)
+		job_id = vg_verdigris_submit_station_layout(request_json)
 		if(!job_id)
 			throw EXCEPTION("Rust planner did not return a job handle")
 		while(TRUE)
-			var/status = verdigris_poll_station_layout(job_id)
+			var/status = vg_verdigris_job_poll(job_id)
 			if(status == "PENDING")
 				// The worker owns only immutable Rust data. BYOND remains free to
 				// service ordinary ticks until the serialized result is ready.
@@ -84,13 +84,15 @@
 				continue
 			if(findtext(status, "ERROR:") == 1)
 				throw EXCEPTION(copytext(status, 7))
+			if(status == "CANCELLED")
+				throw EXCEPTION("Rust planning job was cancelled")
 			break
 		response = generated_station_fetch_rust_plan(job_id)
-		verdigris_finish_station_layout(job_id)
+		vg_verdigris_job_finish(job_id)
 		job_id = null
 	catch(var/exception/error)
 		if(job_id)
-			verdigris_finish_station_layout(job_id)
+			vg_verdigris_job_finish(job_id)
 		rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
 		log_world("Generated station Rust planner failed for seed [seed]: [error]")
 		error_message = "[error]"
@@ -107,14 +109,14 @@
 /// monopolize a BYOND tick. Tile rows use smaller pages because they contain
 /// the dense run-length encoded tile plan.
 /proc/generated_station_fetch_rust_plan(job_id)
-	var/list/root = json_decode(verdigris_station_layout_section(job_id, "header", "0", "0"))
+	var/list/root = json_decode(vg_verdigris_station_layout_section(job_id, "header", "0", "0"))
 	var/static/list/sections = list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks")
 	for(var/section in sections)
 		var/list/rows = list()
 		var/offset = 0
 		var/page_size = section == "tile_rows" ? 4 : 24
 		while(TRUE)
-			var/list/page = json_decode(verdigris_station_layout_section(job_id, section, num2text(offset, 20), num2text(page_size, 20)))
+			var/list/page = json_decode(vg_verdigris_station_layout_section(job_id, section, num2text(offset, 20), num2text(page_size, 20)))
 			if(!length(page))
 				break
 			rows += page

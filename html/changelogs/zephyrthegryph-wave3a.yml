@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Weapons, projectiles, blobs and animal attacks now declare the injury they inflict (blunt, cut, pierce, burn, pain...) and armour is looked up by that injury kind."
+  - refactor: "All harm to mobs now runs through one mitigation pipeline: armour, then energy shields, then resistances, then species and limb multipliers. Admins can trace it per mob with the Trace Injury Mitigation verb."
+  - balance: "Stun and pain weapons are resisted by energy armour, acids by bio armour. Searing blades and precursor weapons now also damage objects."
+  - bugfix: "Brute and burn resistance perks no longer error when taken; species and trait resistances now stack multiplicatively."
+  - code_imp: "The drug side-effect, interaction and overdose catalogue is split by drug class under medical/conditions/pharmacology."

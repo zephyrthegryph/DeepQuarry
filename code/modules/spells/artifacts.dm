@@ -8,7 +8,7 @@
 	throw_speed = 3
 	throw_range = 7
 	throwforce = 10
-	damtype = BURN
+	injury_kind = INJURY_BURN
 	force = 10
 	hitsound = 'sound/items/Welder2.ogg'
 

@@ -62,8 +62,11 @@
 		to_chat(owner, span_warning("Your [src.name] inside [get_area(src)] was destroyed!"))
 	..()
 
-/mob/living/simple_mob/mechanical/ward/monitor/handle_special()
-	detect_mobs()
+/datum/life_system/special/mechanical/ward/monitor
+	mob_type = /mob/living/simple_mob/mechanical/ward/monitor
+
+/datum/life_system/special/mechanical/ward/monitor/tick(mob/living/simple_mob/mechanical/ward/monitor/self, datum/life_context/ctx)
+	self.detect_mobs()
 
 /mob/living/simple_mob/mechanical/ward/monitor/update_icon()
 	if(seen_mobs.len)
@@ -72,7 +75,7 @@
 	else
 		icon_living = "[initial(icon_state)]"
 		glow_color = "#00FF00"
-	handle_light() // Update the light immediately.
+	refresh_glow() // Update the light immediately.
 	..()
 
 /mob/living/simple_mob/mechanical/ward/monitor/Destroy()

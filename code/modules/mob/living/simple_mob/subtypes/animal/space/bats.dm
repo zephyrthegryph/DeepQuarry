@@ -25,7 +25,7 @@
 
 	melee_damage_lower = 5
 	melee_damage_upper = 5
-	attack_sharp = TRUE
+	attack_injury_kind = INJURY_PIERCE
 
 
 	has_langs = list(LANGUAGE_MOUSE, LANGUAGE_ECHOSONG)		// Haha squeak

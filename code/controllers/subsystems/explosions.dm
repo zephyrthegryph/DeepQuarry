@@ -446,7 +446,7 @@ SUBSYSTEM_DEF(explosions)
 	SSmachines.defer_powernet_rebuild()
 	if(!atmos_topology_batch_open)
 		atmos_topology_batch_open = TRUE
-		SSair.auxmos_topology_batch_begin()
+		vg_topology_batch_begin()
 	// waking from sleep, we are absolutely not resuming, and INSTANT feedback to players is required here.
 	if(can_fire) // already awake
 		return
@@ -480,7 +480,7 @@ SUBSYSTEM_DEF(explosions)
 	// Resolve all the stuff we put off for after the explosion resolved
 	if(atmos_topology_batch_open)
 		atmos_topology_batch_open = FALSE
-		SSair.auxmos_topology_batch_commit()
+		vg_topology_batch_commit()
 		SSair.rust_commit_pending_pipenets()
 	SSair.flush_automatic_shutoff_wake()
 	SSmachines.flush_gas_watch_updates()

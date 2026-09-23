@@ -8,7 +8,6 @@
 	difficulty = BLOB_DIFFICULTY_EASY // Potentially deadly to people not knowing the mechanics, but otherwise fairly tame, due to its slow spread and weakness.
 	color = "#9ACD32"
 	complementary_color = "#FFA500"
-	damage_type = BRUTE
 	damage_lower = 30
 	damage_upper = 40
 	armor_pen = 50 // Even with riot armor and tactical jumpsuit, you'd have 90 armor, reduced by 50, totaling 40.  Getting hit for around 21 damage is still rough.

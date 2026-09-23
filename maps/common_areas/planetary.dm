@@ -62,3 +62,6 @@
 
 //Mining Station
 
+
+// Wilderness parent: map-agnostic so common events (wildlife encounters) compile on every map.
+/area/surface/outside/wilderness

@@ -32,7 +32,7 @@
 
 	rarity_value = 0.1
 	total_health = 75
-	injury_mod_groups = list("physical" = 1.5, "thermal" = 1.5)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 1.5, BF_INCOMING_THERMAL = 1.5)
 
 	spawn_flags = SPECIES_IS_RESTRICTED
 
@@ -56,7 +56,7 @@
 		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right)
 		)
 
-/datum/species/monkey/handle_npc(mob/living/carbon/human/H)
+/datum/species/monkey/npc_behaviour(mob/living/carbon/human/H)
 	if(H.stat != CONSCIOUS)
 		return
 	// Traitgenes Monkeys perform emotes based on their traits

@@ -147,8 +147,6 @@
 	icon_state = "force_missile"
 	fire_sound = 'sound/voice/long_awoo.ogg'
 	damage = 1
-	damage_type = BRUTE
-	check_armour = "melee"
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
 	hitsound_wall = 'sound/voice/bork.ogg'

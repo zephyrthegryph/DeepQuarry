@@ -104,9 +104,9 @@
 		if(istype(W, /obj/item/cell) && !cell && open)
 			insert_cell(W, user)
 
-	else if(W.force && W.damtype)
+	else if(W.force && W.obj_damage_type())
 		user.setClickCooldown(user.get_attack_speed(W))
-		switch(W.damtype)
+		switch(W.obj_damage_type())
 			if(BURN)
 				take_damage(W.force * fire_dam_coeff, BURN, MELEE)
 			if(BRUTE)
@@ -149,7 +149,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/vehicle/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
+	take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
 	..()
 
 /obj/vehicle/proc/adjust_health(amount)

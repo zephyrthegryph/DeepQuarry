@@ -65,9 +65,8 @@
 	name = "concentrated spidertoxin"
 	icon_state = "neurotoxin"
 	damage = 35
-	damage_type = BIOACID
+	injury_kind = INJURY_CORROSIVE
 	agony = 15
-	check_armour = "bio"
 	armor_penetration = 40
 
 	combustion = FALSE

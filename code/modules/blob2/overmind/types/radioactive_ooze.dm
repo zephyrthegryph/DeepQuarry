@@ -7,10 +7,9 @@
 	difficulty = BLOB_DIFFICULTY_MEDIUM
 	color = "#33CC33"
 	complementary_color = "#99FF66"
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	damage_lower = 20
 	damage_upper = 30
-	armor_check = "rad"
 	brute_multiplier = 0.75
 	burn_multiplier = 0.2
 	spread_modifier = 0.8

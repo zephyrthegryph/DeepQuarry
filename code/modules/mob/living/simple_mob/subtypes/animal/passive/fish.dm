@@ -42,18 +42,22 @@
 		return ..() // Procede as normal.
 	return MOVEMENT_FAILED // Don't leave the water!
 
-// Take damage if we are not in water
-/mob/living/simple_mob/animal/passive/fish/handle_breathing()
-	if(istype(loc, /obj/item/glass_jar/fish))
-		var/obj/item/glass_jar/fish/F = loc
+
+/datum/life_system/breathing/simple_mob/animal/passive/fish
+	mob_type = /mob/living/simple_mob/animal/passive/fish
+
+/// Take damage if we are not in water.
+/datum/life_system/breathing/simple_mob/animal/passive/fish/tick(mob/living/simple_mob/animal/passive/fish/self, datum/life_context/ctx)
+	if(istype(self.loc, /obj/item/glass_jar/fish))
+		var/obj/item/glass_jar/fish/F = self.loc
 		if(F.filled)
 			return
 
-	var/turf/T = get_turf(src)
+	var/turf/T = get_turf(self)
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
-			say(pick("Blub", "Glub", "Burble"))
-		injure(INJURY_ASPHYXIA, unsuitable_atoms_damage, source = T)
+			self.say(pick("Blub", "Glub", "Burble"))
+		self.injure(INJURY_ASPHYXIA, self.unsuitable_atoms_damage, source = T)
 
 // Subtypes.
 /mob/living/simple_mob/animal/passive/fish/bass
@@ -331,11 +335,14 @@
 	reagents.add_reagent(REAGENT_ID_TOXIN, 45)
 	reagents.add_reagent(REAGENT_ID_IMPEDREZENE, 15)
 
-/mob/living/simple_mob/animal/passive/fish/koi/poisonous/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/fish/koi/poisonous
+	mob_type = /mob/living/simple_mob/animal/passive/fish/koi/poisonous
+
+/datum/life_system/type_post/simple_mob/animal/passive/fish/koi/poisonous/tick(mob/living/simple_mob/animal/passive/fish/koi/poisonous/self, datum/life_context/ctx)
 	..()
-	if(isbelly(loc) && prob(10))
-		var/obj/belly/B = loc
-		sting(B.owner)
+	if(isbelly(self.loc) && prob(10))
+		var/obj/belly/B = self.loc
+		self.sting(B.owner)
 
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/attack_hand(mob/living/L)
 	..()

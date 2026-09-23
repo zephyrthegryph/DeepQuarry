@@ -9,13 +9,13 @@
 
 // Directly exercises the verdigris cave-gen FFI the expedition carver depends on.
 // Cheap (one small grid, no z-allocation) so it runs even under slow emulation.
-// If verdigris isn't loaded/working, verdigris_generate_automata() returns null
+// If verdigris isn't loaded/working, vg_generate_automata() returns null
 // or a degenerate uniform grid.
 /datum/unit_test/dq_verdigris_cavegen_ffi
 
 /datum/unit_test/dq_verdigris_cavegen_ffi/Run()
-	var/list/grid = verdigris_generate_automata(48, 48, 4, 45)
-	TEST_ASSERT_NOTNULL(grid, "verdigris_generate_automata() returned null — cave-gen FFI not loaded/working")
+	var/list/grid = vg_generate_automata(48, 48, 4, 45)
+	TEST_ASSERT_NOTNULL(grid, "vg_generate_automata() returned null — cave-gen FFI not loaded/working")
 	TEST_ASSERT_EQUAL(length(grid), 48 * 48, "automata grid has [length(grid)] cells, expected [48 * 48]")
 	// A real carve yields a MIX of cell states; a uniform grid means the FFI
 	// produced nothing meaningful. Cell values are numbers, so key the set by

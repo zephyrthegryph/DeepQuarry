@@ -197,9 +197,12 @@
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/mob/living/simple_mob/vore/candy/bluecabold/handle_special()
-	if(stat != DEAD)
-		buff_aura()
+/datum/life_system/special/vore/candy/bluecabold
+	mob_type = /mob/living/simple_mob/vore/candy/bluecabold
+
+/datum/life_system/special/vore/candy/bluecabold/tick(mob/living/simple_mob/vore/candy/bluecabold/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.buff_aura()
 	..()
 
 /mob/living/simple_mob/vore/candy/bluecabold/proc/buff_aura()
@@ -246,9 +249,12 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 
-/mob/living/simple_mob/vore/candy/yellowcabold/handle_special()
-	if(stat != DEAD)
-		buff_aura()
+/datum/life_system/special/vore/candy/yellowcabold
+	mob_type = /mob/living/simple_mob/vore/candy/yellowcabold
+
+/datum/life_system/special/vore/candy/yellowcabold/tick(mob/living/simple_mob/vore/candy/yellowcabold/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.buff_aura()
 	..()
 
 /mob/living/simple_mob/vore/candy/yellowcabold/proc/buff_aura()
@@ -267,9 +273,12 @@
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/mob/living/simple_mob/vore/candy/orangecabold/handle_special()
-	if(stat != DEAD)
-		buff_aura()
+/datum/life_system/special/vore/candy/orangecabold
+	mob_type = /mob/living/simple_mob/vore/candy/orangecabold
+
+/datum/life_system/special/vore/candy/orangecabold/tick(mob/living/simple_mob/vore/candy/orangecabold/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.buff_aura()
 	..()
 
 /mob/living/simple_mob/vore/candy/orangecabold/proc/buff_aura()
@@ -288,9 +297,12 @@
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/mob/living/simple_mob/vore/candy/purplecabold/handle_special()
-	if(stat != DEAD)
-		buff_aura()
+/datum/life_system/special/vore/candy/purplecabold
+	mob_type = /mob/living/simple_mob/vore/candy/purplecabold
+
+/datum/life_system/special/vore/candy/purplecabold/tick(mob/living/simple_mob/vore/candy/purplecabold/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.buff_aura()
 	..()
 
 /mob/living/simple_mob/vore/candy/purplecabold/proc/buff_aura()
@@ -559,8 +571,6 @@
 	icon_state = "choclate_sphere"
 	damage = 20
 	armor_penetration = 30
-	damage_type = BURN
-	check_armour = "energy"
 	speed = 4.0
 	flash_strength = 0
 	modifier_type_to_apply = /datum/modifier/chilled
@@ -572,8 +582,6 @@
 	icon_state = "choclate_sphere"
 	damage = 15
 	armor_penetration = 40
-	damage_type = BURN
-	check_armour = "laser"
 	speed = 2.5
 	flash_strength = 0
 	modifier_type_to_apply = /datum/modifier/grievous_wounds

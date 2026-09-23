@@ -90,8 +90,7 @@
 	fire_sound = 'sound/weapons/eLuger.ogg'
 	damage = 35
 	armor_penetration = 35
-	damage_type = BRUTE
-	check_armour = "energy"
+	injury_kind = INJURY_BLUNT
 	light_color = "#8837A3"
 
 	embed_chance = 0
@@ -106,8 +105,7 @@
 	fire_sound = 'sound/weapons/eLuger.ogg'
 	damage = 20
 	armor_penetration = 35
-	damage_type = BRUTE
-	check_armour = "energy"
+	injury_kind = INJURY_BLUNT
 	light_color = "#8837A3"
 
 	embed_chance = 0
@@ -139,8 +137,6 @@
 	fire_sound = 'sound/effects/basscannon.ogg'
 	damage = 5
 	armor_penetration = 30
-	damage_type = BRUTE
-	check_armour = "melee"
 	embed_chance = 0
 	vacuum_traversal = 0
 

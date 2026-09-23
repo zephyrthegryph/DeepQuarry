@@ -239,9 +239,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 		// This scaling is capped at 100 total damage, which occurs if the thing that fell has more than 250 endurance.
 		var/damage = between(20, L.get_endurance() * 0.4, 100)
 		var/target_zone = ran_zone()
-		var/blocked = L.run_armor_check(target_zone, "melee") * harm
-
-		L.injure(INJURY_BLUNT, damage * harm, target_zone, src, blocked)
+		L.injure(INJURY_BLUNT, damage * harm, target_zone, src, flags = INJURE_ARMORED)
 
 		// Now fall off more cliffs below this one if they exist.
 		var/obj/structure/cliff/bottom_cliff = locate() in T

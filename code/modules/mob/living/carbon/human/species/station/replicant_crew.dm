@@ -10,7 +10,8 @@
 	max_age = 200
 	blood_color = "#C0C0C0"
 
-	injury_mod_groups = list("physical" = 0.9, "thermal" = 0.9, "toxin" = 0.85, "asphyxia" = 0.7, "radiation" = 1.2)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.9, BF_INCOMING_THERMAL = 0.9, BF_INCOMING_TOXIC = 0.85, BF_INCOMING_ASPHYXIA = 0.7)
+	radiation_mod = 1.2
 	//Affected more by radiation (radiation)
 	siemens_coefficient = 1.5 //Don't get electrocuted
 

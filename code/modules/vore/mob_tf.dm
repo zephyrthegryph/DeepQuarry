@@ -123,15 +123,22 @@
 	else
 		qdel(src)
 
-/mob/living/proc/handle_tf_holder()
-	if(!tf_mob_holder)
+/datum/life_system/tf_holder
+	name = "tf holder"
+	phase = LIFE_PHASE_OUTPUT
+	order = 40
+	segment = LIFE_SEG_LIVING
+
+/// Links life and death between a transformed mob and the body it holds.
+/datum/life_system/tf_holder/tick(mob/living/self, datum/life_context/ctx)
+	if(!self.tf_mob_holder)
 		return
-	if(tf_mob_holder.loc != src) return // Prevent bodyswapped creatures having their life linked
-	if(stat != tf_mob_holder.stat)
-		if(stat == DEAD)
-			tf_mob_holder.death(FALSE, null)
-		if(tf_mob_holder.stat == DEAD)
-			death()
+	if(self.tf_mob_holder.loc != self) return // Prevent bodyswapped creatures having their life linked
+	if(self.stat != self.tf_mob_holder.stat)
+		if(self.stat == DEAD)
+			self.tf_mob_holder.death(FALSE, null)
+		if(self.tf_mob_holder.stat == DEAD)
+			self.death()
 
 /mob/living/proc/copy_vore_prefs_to_mob(mob/living/new_mob)
 	//For primarily copying vore preference settings from a carbon mob to a simplemob

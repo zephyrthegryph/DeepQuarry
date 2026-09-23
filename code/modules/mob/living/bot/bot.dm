@@ -73,17 +73,31 @@
 		target_path.Cut()
 	return ..()
 
-/mob/living/bot/Life()
-	..()
-	if(stat == DEAD)
-		return
-	SetWeakened(0)
-	SetStunned(0)
-	SetParalysis(0)
+/// Bots shrug off stuns and run their AI (the old bot Life() tail after ..()).
+/datum/life_system/bot_core
+	name = "bot core"
+	bit = LIFE_SYS_BEHAVIOUR
+	phase = LIFE_PHASE_TAIL
+	order = 100
+	mob_type = /mob/living/bot
 
-	if(on && !client && !busy && !paicard)
+/datum/life_system/bot_core/tick(mob/living/bot/self, datum/life_context/ctx)
+	if(self.stat == DEAD)
+		return
+	self.SetWeakened(0)
+	self.SetStunned(0)
+	self.SetParalysis(0)
+
+	if(self.on && !self.client && !self.busy && !self.paicard)
 		spawn(0)
-			handleAI()
+			self.handleAI()
+
+/// Bot Life() returned nothing.
+/datum/life_system/type_post/bot
+	mob_type = /mob/living/bot
+
+/datum/life_system/type_post/bot/tick(mob/living/bot/self, datum/life_context/ctx)
+	return
 /*
 /mob/living/bot/examine(mob/user)
 	. = ..()

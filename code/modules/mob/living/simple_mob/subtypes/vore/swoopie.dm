@@ -185,36 +185,39 @@
 
 	size_factor_for_sprite = 5
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Life()
+/datum/life_system/type_post/simple_mob/vore/aggressive/corrupthound/swoopie
+	mob_type = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
+
+/datum/life_system/type_post/simple_mob/vore/aggressive/corrupthound/swoopie/tick(mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/self, datum/life_context/ctx)
 	. =..()
-	var/turf/T = get_turf(src)
-	if(istype(Vac))
-		if(Vac.loc != src)
-			var/turf/VT = get_turf(Vac)
-			if(!T.Adjacent(VT) || isturf(Vac.loc))
-				if(isliving(Vac.loc))
-					var/mob/living/L = Vac.loc
-					L.remove_from_mob(Vac, src)
+	var/turf/T = get_turf(self)
+	if(istype(self.Vac))
+		if(self.Vac.loc != self)
+			var/turf/VT = get_turf(self.Vac)
+			if(!T.Adjacent(VT) || isturf(self.Vac.loc))
+				if(isliving(self.Vac.loc))
+					var/mob/living/L = self.Vac.loc
+					L.remove_from_mob(self.Vac, self)
 				else
-					Vac.forceMove(src)
-		var/atom/movable/vac_output = Vac.output_dest?.resolve()
+					self.Vac.forceMove(self)
+		var/atom/movable/vac_output = self.Vac.output_dest?.resolve()
 		if(!vac_output)
-			if(isbelly(vore_selected))
-				Vac.output_dest = WEAKREF(vore_selected)
-	if(!istype(T) || !istype(Vac) || !(ai_brain != null) || Vac.loc != src || stat)
+			if(isbelly(self.vore_selected))
+				self.Vac.output_dest = WEAKREF(self.vore_selected)
+	if(!istype(T) || !istype(self.Vac) || !(self.ai_brain != null) || self.Vac.loc != self || self.stat)
 		return
 	if(istype(T, /turf/simulated))
 		var/turf/simulated/S = T
 		if(S.dirt > 50)
-			Vac.afterattack(S, src, 1)
+			self.Vac.afterattack(S, self, 1)
 			return
 	for(var/obj/O in T)
 		if(is_type_in_list(O, GLOB.edible_trash) && !O.anchored)
-			Vac.afterattack(T, src, 1)
+			self.Vac.afterattack(T, self, 1)
 			return
 	for(var/mob/living/L in T)
-		if(!L.anchored && L.devourable && L != src && !L.buckled && L.can_be_drop_prey)
-			Vac.afterattack(L, src, 1)
+		if(!L.anchored && L.devourable && L != self && !L.buckled && L.can_be_drop_prey)
+			self.Vac.afterattack(L, self, 1)
 			return
 
 /datum/say_list/swoopie
@@ -224,25 +227,22 @@
 	say_maybe_target = list("Pest detected?")
 	say_got_target = list("PEST DETECTED!")
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/ClickOn(atom/A, params)
-	var/list/modifiers = params2list(params)
-	if(modifiers["shift"] || modifiers["ctrl"] || modifiers["middle"] || modifiers["alt"])
-		return ..()
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/intercept_use(atom/A, params)
 	if(stat) //Cant suck if we're not able to...
-		return ..()
+		return FALSE
 	if(istype(A, /obj/item/storage)) //Dont put the nossle in bags
-		return ..()
+		return FALSE
 	if(istype(Vac) && A.Adjacent(src))
 		face_atom(A)
 		if(src.a_intent == I_DISARM && A == src) //Only if on disarm intent.
 			Vac.attack_self(src)
-			return
+			return TRUE
 		if(src.a_intent == I_GRAB && Vac.vac_power != 0) //Only on grab intent. if someone needs to use grab intent they can just turn off the vac
 			if(istype(A, /obj/machinery/disposal)) //You used that bin when the bird was right there? How inconsiderate!
-				var/obj/machinery/disposal/D
+				var/obj/machinery/disposal/D = A
 				if(D.flushing)
 					to_chat(src, "\The [D] has already began flushing, you're too late to grab whatever was inside!")
-					return
+					return TRUE
 				var/foundstuff = 0 //Check if we actually found anything in the bin...
 				for(var/atom/movable/AM in D)
 					if(istype(AM, /mob/living))
@@ -257,12 +257,12 @@
 					src.visible_message(span_warning("[src] plunges their head into \the [D], greedily sucking up everything inside!"))
 				else //Oh, Nothing was inside...
 					to_chat(src, span_infoplain("You poke your head into \the [D], but there doesnt seem to be anything of interest..."))
-				return
+				return TRUE
 			var/resolved = Vac.resolve_attackby(A, src, click_parameters = params)
 			if(!resolved && A && Vac)
 				Vac.afterattack(A, src, 1, params)
-				return
-	. = ..()
+				return TRUE
+	return FALSE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/attack_hand(mob/living/L)
 	if(stat) //Make sure we're alive

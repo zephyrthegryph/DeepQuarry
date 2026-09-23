@@ -23,8 +23,7 @@
 	melee_damage_upper = 25
 	melee_attack_delay = 1.25 SECONDS
 	evasion = 20
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	projectile_dispersion = 0
 	armor = list(melee = 20, bullet = 20, laser = 20, energy = 60, bomb = 20, bio = 100, rad = 100)	// Simple mob immunuties plus minour armor
@@ -470,9 +469,12 @@
 	mend(TREAT_TISSUE_REPAIR, 200)
 	mend(TREAT_BURN_CARE, 200)
 
-/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/handle_special()
-	if(stat != DEAD)
-		protection_aura()
+/datum/life_system/special/humanoid/astral_collective/soul/shield_projector
+	mob_type = /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector
+
+/datum/life_system/special/humanoid/astral_collective/soul/shield_projector/tick(mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.protection_aura()
 	..()
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/proc/protection_aura()

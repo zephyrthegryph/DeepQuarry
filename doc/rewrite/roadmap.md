@@ -60,8 +60,9 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 
 | ID | Work | Needs | Done when |
 |---|---|---|---|
-| M1 | **Gas** on the field framework, and pipes on the network framework. Rust builds adjacency from DM air-block masks, and the DM `atmos_adjacent_turfs` lists are deleted. Batched reads, scratch mixtures, integer gas IDs. Delete the old locks, gates and dead modules. | R3–R7 | atmos_idle and atmos_large results match the baseline within tolerance; conservation tests pass; FFI calls, Air time and boot Atmos time are down; the 445K per-turf DM lists are gone |
-| M2 | **Atmos devices** become edges with flow laws. Air alarms become Band watches and firedoors become Difference watches. | M1, S1 | Device `process()` is deleted, idle Machines time is down, and every flow law has tests |
+| M1a | **Gas groundwork on today's arena**: Rust builds adjacency from DM air-block masks and the DM `atmos_adjacent_turfs` lists are deleted; batched reads; integer gas IDs; delete the old locks, gates and dead modules. | R3 | atmos_idle and atmos_large results match the baseline within tolerance; FFI calls and boot Atmos time are down; the 445K per-turf DM lists are gone |
+| M1b | **Gas on the field framework, pipes on the network framework**, through owners, commands, views and the overlay | M1a, R4–R7 | Conservation tests pass, Air time is down, and the old arena, locks and gates are deleted |
+| M2 | **Atmos devices** become edges with flow laws. Air alarms become Band watches and firedoors become Difference watches. | M1b, S1 | Device `process()` is deleted, idle Machines time is down, and every flow law has tests |
 | M3 | **Power**: cables become a network kind, with a ledger, storage rate models, area channel events and the machinery power signals. Explosions batch their topology changes. | R7, S1 | DM powernet code is deleted, APCs and SMES sleep while idle, and major_events no longer pays for power rebuilds |
 | M4 | **Heat**: the turf field, heat bodies, couplings, ThresholdSet and the thermal regulator. Absorbs `material_service`'s thermal model. | R5, R6 | `superconduct.rs` and the DM formula copies are deleted, energy conservation tests pass, and sm_soak is no worse |
 | M5 | Propagation users: radiation through rays and an insulation layer; EMP falloff | R8 | Radiation time is down and behaviour tests pass |
@@ -73,7 +74,7 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 | ID | Work | Needs | Done when |
 |---|---|---|---|
 | S1 | SSreactor: wake dispatch, timers, the continuous lane, DM-owned keys and bounded metrics | R5 | The profiler and the benchmarks report wake reasons, and every API has unit tests |
-| S2 | Move the SSmachines reactive keys, the non-device gas subscriptions and SSai's chunk hibernation onto the reactor, and delete their tables and helpers | S1, M1 | The `machines.dm` dependency code is deleted, and every former subscriber has a wake test |
+| S2 | Move the SSmachines reactive keys, the non-device gas subscriptions and SSai's chunk hibernation onto the reactor, and delete their tables and helpers | S1, M1b | The `machines.dm` dependency code is deleted, and every former subscriber has a wake test |
 | S3 | Convert the pollers: airlocks, cameras, lights, status displays, looping sounds, shutoff valves and mob chunk keys | S1 | Idle Machines plus Timer time is down, and the deadline-polling lint is on |
 | S4 | Retire SSobj, SSprocessing, the SSfastprocess users, SSbellies, SSburning, SSmaterial_services and the heavy SStimer users | S3, C7, M4 | `START_PROCESSING` is gone outside the reactor, and every remaining continuous user is declared |
 | S5 | Machines start asleep, and `START_MACHINE_PROCESSING` is removed | S3, M2, M3 | The 200–420 always-awake machines fall to those actually working |
@@ -150,15 +151,15 @@ Items in the same wave can run in parallel, and every dependency sits in an earl
 |---|---|
 | 0 | F1–F7, L4, R1 |
 | 1 | R2, R3, L1, P1, I1, D1 |
-| 2 | R4, R5, P2, L2, C1 |
+| 2 | R4, R5, P2, L2, C1, M1a |
 | 3 | R6, R7, R8, R9, S1, P3, P4, L3, C2, I2, D5 |
-| 4 | M1, M6, S3, C3, C4, C9, I3, I4, I6, D3 |
+| 4 | M1b, M6, S3, C3, C4, C9, I3, I4, I6, D3 |
 | 5 | M2, M3, M4, M5, S2, C5, P5, I5, D2, D4 |
 | 6 | H1, S5, C6, C7, I7 |
 | 7 | H2, H3, H4, S4, C8 |
 | 8 | M7, then final guardrails and cleanup |
 
-The critical path runs R1 → R2 → R4 → R5 → R6/R7 → M1 → M2/M3/M4 → H. The DM tracks (I, L, P, C, D) do not wait for Rust until they need watches (P4) or heat (H).
+The critical path runs R1 → R2 → R4 → R5 → R6/R7 → M1b → M2/M3/M4 → H. The DM tracks (I, L, P, C, D) do not wait for Rust until they need watches (P4) or heat (H).
 
 ## Benchmark gates
 
@@ -192,7 +193,7 @@ These are CI lint rules. Each one comes on when the item that makes it possible 
 | Rule | On after |
 |---|---|
 | No `call_ext` outside the generated bindings | R3 |
-| No DM copies of Rust state (`atmos_adjacent_turfs` and similar) | M1 |
+| No DM copies of Rust state (`atmos_adjacent_turfs` and similar) | M1a |
 | No `var/list/x = list()` initializers on high-count types | F5 |
 | No deadline polling (comparing against `world.time`) inside `process()` | S3 |
 | No `START_PROCESSING`/`STOP_PROCESSING` outside the reactor, and no undeclared `process()` | S4, S5 |

@@ -39,7 +39,6 @@
 	icon_state = "force_missile"
 	armor_penetration = 10
 	damage = 50 // Mimics the precusor laser damage and armor peircing with a tad more damage because of the lobbying style.
-	damage_type = BURN
 	color = "#A020F0"
 
 /obj/item/shield_projector/rectangle/automatic/hivebot_drone

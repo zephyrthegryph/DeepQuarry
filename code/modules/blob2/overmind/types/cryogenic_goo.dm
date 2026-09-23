@@ -7,7 +7,7 @@
 	difficulty = BLOB_DIFFICULTY_MEDIUM
 	color = "#8BA6E9"
 	complementary_color = "#7D6EB4"
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	damage_lower = 15
 	damage_upper = 25
 	brute_multiplier = 0.25

@@ -53,7 +53,7 @@
 	var/proj_damage = Proj.get_structure_damage()
 	if(!proj_damage) return
 
-	take_damage(proj_damage, Proj.damage_type, BULLET)
+	take_damage(proj_damage, Proj.obj_damage_type(), BULLET)
 	..()
 	return
 
@@ -83,9 +83,9 @@
 	if (can_puncture(W))
 		visible_message(span_danger("[user] pierces [src] with [W]!"))
 		puncture()
-	if(W.damtype == BRUTE || W.damtype == BURN)
+	if(W.obj_damage_type())
 		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+		take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
 		..()
 	return
 

@@ -4,10 +4,6 @@
 
 ///from base of mob/living/revive() (full_heal, admin_revive)
 #define COMSIG_LIVING_REVIVE "living_revive"
-///From living/Life(). (deltatime, times_fired)
-#define COMSIG_LIVING_LIFE "living_life"
-	/// Block the Life() proc from proceeding... this should really only be done in some really wacky situations.
-	#define COMPONENT_LIVING_CANCEL_LIFE_PROCESSING (1<<0)
 
 
 /// from /datum/body/evaluate_status(), before death/unconsciousness is applied: ()
@@ -31,7 +27,7 @@
 
 
 // Non TG signals:
-///From /living/handle_disabilities().
+///From the disabilities life system.
 #define COMSIG_HANDLE_DISABILITIES "handle_disabilities"
 ///From /living/handle_allergens().
 #define COMSIG_HANDLE_ALLERGENS "handle_allergens"
@@ -45,7 +41,7 @@
 ///from /mob/living/proc/stun_effect_act(var/stun_amount, var/agony_amount, var/def_zone, var/used_weapon=null, var/electric = FALSE)
 #define COMSIG_STUN_EFFECT_ACT "stun_effect_act"
 
-///from /mob/living/proc/handle_radiation()
+///from the radiation life system
 #define COMSIG_HANDLE_RADIATION "handle_radiation"
 	#define COMPONENT_BLOCK_LIVING_RADIATION (1<<0)
 ///from base of /mob/living/proc/apply_effect(var/effect = 0,var/effecttype = STUN, var/blocked = 0, var/check_protection = 1, rad_protection)
@@ -56,7 +52,7 @@
 #define COMSIG_TAKING_APPLY_EFFECT "applying_effect"
 ///Return this in response if you don't want the effect to be applied
 	#define COMSIG_CANCEL_EFFECT (1<<0)
-///from /mob/living/proc/handle_mutations()
+///from the mutations life system
 #define COMSIG_HANDLE_MUTATIONS "handle_mutations"
 	#define COMPONENT_BLOCK_LIVING_MUTATIONS (1<<0)
 ///from base of /mob/living/regenerate_limbs(): (noheal, excluded_limbs)

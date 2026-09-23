@@ -127,11 +127,14 @@
 	var/mob/living/carbon/human/friend
 	var/befriend_job = null
 
-/mob/living/simple_mob/animal/passive/fox/fluff/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/fox/fluff
+	mob_type = /mob/living/simple_mob/animal/passive/fox/fluff
+
+/datum/life_system/type_post/simple_mob/animal/passive/fox/fluff/tick(mob/living/simple_mob/animal/passive/fox/fluff/self, datum/life_context/ctx)
 	. = ..()
 	if(!. || !friend) return
 
-	var/friend_dist = get_dist(src,friend)
+	var/friend_dist = get_dist(self,friend)
 
 	if (friend_dist <= 4)
 		if(stance == STANCE_IDLE)

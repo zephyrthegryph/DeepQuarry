@@ -36,7 +36,7 @@
 	blood_volume = 0
 	min_age = 18
 	max_age = 200
-	injury_mod_groups = list("physical" = 0.8, "thermal" = 1.5, "asphyxia" = 0)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.8, BF_INCOMING_THERMAL = 1.5, BF_INCOMING_ASPHYXIA = 0)
 	//radiation_mod = 0	//Can't be assed with fandangling rad protections while blob formed/suited
 	darksight = 10
 	siemens_coefficient = 2

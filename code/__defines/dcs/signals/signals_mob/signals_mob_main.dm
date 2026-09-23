@@ -45,15 +45,15 @@
 
 ///from base of /client/Move(n, direct) : (direction) returns bool, if component handled movement
 #define COMSIG_MOB_RELAY_MOVEMENT "mob_relay_movement"
-///From /mob/handle_vision().
+///From the vision life system (/mob/proc/refresh_vision() for mobs without one).
 #define COMSIG_MOB_HANDLE_VISION "mob_handle_vision"
-///From /mob/handle_regular_hud_updates().
+///From the HUD life system (/mob/proc/hud_available()).
 #define COMSIG_MOB_HANDLE_HUD "mob_handle_hud"
 	#define COMSIG_COMPONENT_HANDLED_HUD (1<<0)
-///From /mob/living/proc/handle_hud_icons_health().
+///From the HUD life system (health_icons()).
 #define COMSIG_MOB_HANDLE_HUD_HEALTH_ICON "living_handle_hud_health_icon"
 	#define COMSIG_COMPONENT_HANDLED_HEALTH_ICON (1<<0)
-///From /mob/living/proc/handle_darksight().
+///From the HUD life system (darksight()).
 #define COMSIG_MOB_HANDLE_HUD_DARKSIGHT "living_handle_hud_darksight"
 ///from /proc/domutcheck(): ()
 #define COMSIG_MOB_DNA_MUTATION "mob_dna_mutation"

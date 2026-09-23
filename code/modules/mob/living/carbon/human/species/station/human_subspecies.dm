@@ -9,8 +9,8 @@
 	icobase = 'icons/mob/human_races/subspecies/r_gravworlder.dmi'
 
 	flash_mod =     0.9
-	injury_mod_groups = list("physical" = 0.85, "asphyxia" = 1.1, "radiation" = 0.5)
-	factor_baseline = alist(BF_SLOWDOWN = 1)
+	radiation_mod = 0.5
+	factor_baseline = alist(BF_SLOWDOWN = 1, BF_INCOMING_PHYSICAL = 0.85, BF_INCOMING_ASPHYXIA = 1.1)
 
 /datum/species/human/spacer
 	name = "space-adapted Human"
@@ -20,7 +20,7 @@
 	toxins, but they suffer from weakened bone structure and a marked vulnerability to bright lights."
 	icobase = 'icons/mob/human_races/subspecies/r_spacer.dmi'
 
-	injury_mod_groups = list("physical" = 1.1, "thermal" = 1.1, "toxin" = 0.9, "asphyxia" = 0.8)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 1.1, BF_INCOMING_THERMAL = 1.1, BF_INCOMING_TOXIC = 0.9, BF_INCOMING_ASPHYXIA = 0.8)
 	flash_mod = 1.2
 
 /datum/species/human/vatgrown
@@ -31,8 +31,7 @@
 	paler than baseline, with no appendix and fewer inherited genetic disabilities, but a more aggressive metabolism."
 	icobase = 'icons/mob/human_races/subspecies/r_vatgrown.dmi'
 
-	injury_mod_groups = list("toxin" = 1.1)
-	factor_baseline = alist(BF_METABOLISM = 1.15)
+	factor_baseline = alist(BF_METABOLISM = 1.15, BF_INCOMING_TOXIC = 1.1)
 	has_organ = list(
 		O_HEART =    /obj/item/organ/internal/heart,
 		O_LUNGS =    /obj/item/organ/internal/lungs,

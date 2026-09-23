@@ -41,9 +41,12 @@
 
 	can_be_drop_prey = FALSE
 
-/mob/living/simple_mob/clockwork/handle_special()
-	if(!stat && prob(2)) // spooky
-		var/mob/observer/dead/spook = locate() in range(src, 5)
+/datum/life_system/special/clockwork
+	mob_type = /mob/living/simple_mob/clockwork
+
+/datum/life_system/special/clockwork/tick(mob/living/simple_mob/clockwork/self, datum/life_context/ctx)
+	if(!self.stat && prob(2)) // spooky
+		var/mob/observer/dead/spook = locate() in range(self, 5)
 		if(spook)
 			var/turf/T = get_turf(spook)
 			var/list/visible = list()
@@ -52,7 +55,7 @@
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				visible_emote("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				self.visible_emote("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
 
 
 
@@ -60,33 +63,6 @@
 /*/mob/living/simple_animal/clockwork/fluff
 	var/mob/living/carbon/human/friend
 	var/befriend_job = null
-
-/mob/living/simple_animal/clockwork/fluff/Life()
-	. = ..()
-	if(!. || ai_inactive || !friend) return
-
-	var/friend_dist = get_dist(src,friend)
-
-	if (friend_dist <= 4)
-		if(stance == STANCE_IDLE)
-			if(set_follow(friend))
-				handle_stance(STANCE_FOLLOW)
-
-	if (friend_dist <= 1)
-		if (friend.stat >= DEAD || friend.is_critical())
-			if (prob((friend.stat < DEAD)? 50 : 15))
-				var/verb = pick("meows", "mews", "mrowls")
-				audible_emote(pick("[verb] in distress.", "[verb] anxiously."))
-		else
-			if (prob(5))
-				visible_emote(pick("nuzzles [friend].",
-									"brushes against [friend].",
-									"rubs against [friend].",
-									"purrs."))
-	else if (friend.vitality() <= 0.5)
-		if (prob(10))
-			var/verb = pick("meows", "mews", "mrowls")
-			audible_emote("[verb] anxiously.")
 
 /mob/living/simple_animal/cat/fluff/verb/become_friends()
 	set name = "Become Friends"

@@ -52,14 +52,17 @@
 	..() // This will apply the correct icon_state and do the other overlay-related things.
 
 
-/mob/living/simple_mob/slime/xenobio/handle_special()
-	if(stat != DEAD)
-		handle_nutrition()
+/datum/life_system/special/slime/xenobio
+	mob_type = /mob/living/simple_mob/slime/xenobio
 
-		if(victim)
-			handle_consumption()
+/datum/life_system/special/slime/xenobio/tick(mob/living/simple_mob/slime/xenobio/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.handle_nutrition()
 
-		handle_stuttering() // ??
+		if(self.victim)
+			self.handle_consumption()
+
+		life_statuses().stuttering(self) // ??
 
 	..()
 

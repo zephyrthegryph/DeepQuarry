@@ -36,9 +36,7 @@
 	melee_damage_upper = 15
 	attacktext = list("attacked", "chomped", "gnawed on")
 	friendly = list("baps", "nuzzles")
-	attack_armor_type = "melee"
-	attack_sharp = 1
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 
 	//Damage resistances
 	shock_resist = 1
@@ -143,8 +141,7 @@
 	//Mob melee settings
 	melee_damage_lower = 5
 	melee_damage_upper = 10
-	attack_sharp = 0
-	attack_edge = 0
+	attack_injury_kind = INJURY_BLUNT
 
 	//Damage resistances
 	shock_resist = 0.6
@@ -194,8 +191,7 @@
 	//Mob melee settings
 	melee_damage_lower = 1
 	melee_damage_upper = 5
-	attack_sharp = 0
-	attack_edge = 0
+	attack_injury_kind = INJURY_BLUNT
 
 	//Damage resistances
 	shock_resist = 0.6
@@ -247,8 +243,6 @@
 	//Mob melee settings
 	melee_damage_lower = 15
 	melee_damage_upper = 20
-	attack_sharp = 1
-	attack_edge = 1
 
 	//Damage resistances
 	shock_resist = 0.6
@@ -295,9 +289,12 @@
 /mob/living/simple_mob/animal/space/mouse_army/stealth/is_cloaked()
 	return dq_get_cloaked(src)
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/handle_special()
-	if(!dq_get_cloaked(src) && can_cloak())
-		cloak()
+/datum/life_system/special/animal/space/mouse_army/stealth
+	mob_type = /mob/living/simple_mob/animal/space/mouse_army/stealth
+
+/datum/life_system/special/animal/space/mouse_army/stealth/tick(mob/living/simple_mob/animal/space/mouse_army/stealth/self, datum/life_context/ctx)
+	if(!dq_get_cloaked(self) && self.can_cloak())
+		self.cloak()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(dq_get_cloaked(src))

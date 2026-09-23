@@ -35,7 +35,6 @@
 	name = "phoronic bolt"
 	icon_state = "arcane_barrage"
 	icon_state = "red_pellet"
-	check_armour = "laser"
 	damage = 20
 	armor_penetration = 0
 	speed = 8

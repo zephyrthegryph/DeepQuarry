@@ -322,6 +322,58 @@ The stun, weaken, paralysis and sleep counters (about 570 references) move onto
 
 Minor effects (jitter, dizziness, blurred vision, stuttering) follow the same pattern.
 
+### 4.8 As built (phase 2)
+
+Phase 2 is a mechanical move: every old `Life()` step runs as a system, in the old order,
+with no behaviour change. The code is in `code/modules/mob/living/life/` and the defines in
+`code/__defines/life_systems.dm`.
+
+- **Scheduler.** `/mob/living/Life(seconds, profile)` is the only `Life()` for living mobs. It
+  builds a `/datum/life_context`, then runs the composition's systems in (phase, order). A system
+  is skipped when its wake bit is clear, when its `period` doesn't divide the cycle, or when a
+  gate blocked its `segment`. `tick()` may return `LIFE_SLEEP` (clear its wake bit) or
+  `LIFE_HALT` (end the cycle).
+- **Families and variants.** A family is one concern (for example `/datum/life_system/breathing`).
+  Its variants mirror the mob path (`breathing/carbon/human` with `mob_type =
+  /mob/living/carbon/human`). A mob gets the variant with the most derived `mob_type`, and a
+  variant's `..()` reaches its parent mob type's variant, exactly like the old `handle_*`
+  override chains. Helpers that used to be separate procs (`breathe()`, `handle_breath()`,
+  `handle_hud_icons_health()`) are procs on the family.
+- **Life sets.** `/mob/living/var/life_set` picks the sequence: living, robot, AI, pAI, decoy,
+  or delist (preview dummies and announcers). The silicon `Life()` procs never called the living
+  parent, so they compose from their own families.
+- **Gates and segments.** An old `if(...) return`, or an `if` around a block of hooks, became a
+  gate system that blocks a segment for the rest of the cycle (`LIFE_SEG_LIVING`,
+  `LIFE_SEG_LIVING_ALIVE`, `LIFE_SEG_LIVING_STATUS`, the human vitals segments,
+  `LIFE_SEG_SIMPLE`). An early return before `..()` in a subtype became `LIFE_HALT` from its
+  `type_pre` variant.
+- **Subtype code.** Code a subtype ran before `..()` is a `type_pre` variant. Code it ran after
+  `..()` is a `type_post` variant, whose `. = ..()` yields the legacy return value (for simple
+  mobs, TRUE alive and FALSE dead). Simple mob `handle_special()` overrides are `special` variants.
+- **Phases.** The move kept the legacy sequence, so each system sits in the phase where its code
+  ran: `LIFE_PHASE_TAIL` holds the code subtypes ran after the living core (the human, alien,
+  simple mob and bot tails and the `type_post` variants). Phases 3-5 re-home those systems.
+- **Composition cache.** `GLOB.life_system_compositions`, keyed by mob type plus the extra
+  (component-provided) systems. `recompose_life()` rebuilds it and calls `attach()` and
+  `detach()`.
+- **Trait systems.** The 16 `COMSIG_LIVING_LIFE` listeners are `/datum/life_system/trait/*`.
+  A component calls `add_trait_life_system()` when it attaches and `remove_trait_life_system()`
+  when it detaches. The signal is gone.
+- **Species hooks.** `handle_environment_special()` and `handle_npc()` are species strategy calls
+  (`environment_effects()`, `npc_behaviour()`). `handle_species_components()` became the
+  species components system.
+- **Public entry points.** Code outside `Life()` uses `refresh_hud()`, `refresh_vision()`,
+  `refresh_glow()`, `process_chemicals()`, `process_organs(force)` (humans) and
+  `run_life_system(family)`.
+- **Hibernation.** `wake(bits)`, `SSmobs.hibernate()` and `SSmobs.wake_mob()` exist but are off
+  (`MOB_HIBERNATION_ENABLED`). Every system stays awake until phase 5 gives them sleep rules.
+- **Profiling.** When SSmobs samples a mob, the scheduler times each system and SSmobs logs
+  `MOB_SYSTEM_PROFILE system=... estimated_cost_ms=... estimated_calls=...` next to
+  `MOB_PROFILE`. SSmobs passes elapsed seconds; systems keep their per-cycle amounts until
+  they are rewritten to scale by `ctx.seconds`.
+- **Lint.** `tools/ci/check_grep.sh` rejects `Life()` overrides on living mobs and `handle_*`
+  Life hooks on mobs, species and traits.
+
 ---
 
 ## 5. Cyborgs, drones and the AI

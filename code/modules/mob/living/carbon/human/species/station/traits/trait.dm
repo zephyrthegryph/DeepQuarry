@@ -57,8 +57,6 @@
 		for(var/V in var_changes)
 			if(V == "flags") // Is bitflag, implimentation means traits can only GIVE you flags, not remove them.
 				S.vars[V] |= var_changes[V]
-			else if(S.apply_injury_mod_var_change(V, var_changes[V])) // "injury_mod_<group>" keys
-				continue
 			else
 				S.vars[V] = var_changes[V]
 	if (trait_prefs)
@@ -96,8 +94,6 @@
 			if(V == "flags") // Is bitflag, this assumes traits can only ever GIVE you flags.
 				if(!(initial(S.vars[V]) & var_changes[V]))
 					S.vars[V] &= ~var_changes[V]
-			else if(S.apply_injury_mod_var_change(V, null)) // restores the species' own value
-				continue
 			else
 				S.vars[V] = initial(S.vars[V])
 	if (trait_prefs)
@@ -205,5 +201,5 @@
 		return default_value_for_pref(pref)
 	return input
 
-/datum/trait/proc/handle_environment_special(mob/living/carbon/human/H)
+/datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return

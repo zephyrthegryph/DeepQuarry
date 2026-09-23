@@ -38,19 +38,22 @@
 	var/list/preparing_arrest_sounds = list('sound/voice/bgod.ogg', 'sound/voice/biamthelaw.ogg', 'sound/voice/bsecureday.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bcreep.ogg')
 	var/list/fighting_sounds = list('sound/voice/biamthelaw.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bjustice.ogg')
 // They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
-/mob/living/bot/secbot/Life()
+/datum/life_system/type_post/bot/secbot
+	mob_type = /mob/living/bot/secbot
+
+/datum/life_system/type_post/bot/secbot/tick(mob/living/bot/secbot/self, datum/life_context/ctx)
 	..()
-	if(stat != DEAD && on && pulledby)
-		if(isliving(pulledby))
+	if(self.stat != DEAD && self.on && self.pulledby)
+		if(isliving(self.pulledby))
 			var/pull_allowed = FALSE
-			for(var/A in req_one_access)
-				if(A in pulledby.GetAccess())
+			for(var/A in self.req_one_access)
+				if(A in self.pulledby.GetAccess())
 					pull_allowed = TRUE
 			if(!pull_allowed)
-				var/mob/living/L = pulledby
-				UnarmedAttack(L)
-				say("Do not interfere with active law enforcement routines!")
-				GLOB.global_announcer.autosay("[src] was interfered with in <b>[get_area(src)]</b>, activating defense routines.", "[src]", "Security")
+				var/mob/living/L = self.pulledby
+				self.UnarmedAttack(L)
+				self.say("Do not interfere with active law enforcement routines!")
+				GLOB.global_announcer.autosay("[self] was interfered with in <b>[get_area(self)]</b>, activating defense routines.", "[self]", "Security")
 /mob/living/bot/secbot/beepsky
 	name = "Officer Beepsky"
 	desc = "It's Officer Beep O'sky! Powered by a potato and a shot of whiskey."

@@ -58,18 +58,21 @@
 
 	allow_mind_transfer = TRUE
 
-/mob/living/simple_mob/vore/pakkun/Life()
+/datum/life_system/type_post/simple_mob/vore/pakkun
+	mob_type = /mob/living/simple_mob/vore/pakkun
+
+/datum/life_system/type_post/simple_mob/vore/pakkun/tick(mob/living/simple_mob/vore/pakkun/self, datum/life_context/ctx)
 	. = ..()
-	if(client)
+	if(self.client)
 		return
-	if(!ai_brain)
+	if(!self.ai_brain)
 		return
 
-	if(autorest_cooldown)
-		autorest_cooldown --
-	else if(prob(5) && (resting || !ai_brain.primary_threat))
-		autorest_cooldown = rand(50,200)
-		lay_down()
+	if(self.autorest_cooldown)
+		self.autorest_cooldown --
+	else if(prob(5) && (self.resting || !self.ai_brain.primary_threat))
+		self.autorest_cooldown = rand(50,200)
+		self.lay_down()
 
 /mob/living/simple_mob/vore/pakkun/lay_down()
 	. = ..()
