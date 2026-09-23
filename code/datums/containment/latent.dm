@@ -54,6 +54,11 @@ GLOBAL_VAR(latent_last_refusal)
 	var/list/snapshot
 	/// Capacity one of them takes in its slot.
 	var/unit_cost = 0
+	/// Full pre-collapse state (roadmap C10, containment.md §4.7 "Safety"),
+	/// set only when the round-trip audit is on and this entry came from a
+	/// real collapse (not the original declared generator). Checked against
+	/// the next materialize from this entry, then cleared.
+	var/list/audit_blob
 
 /datum/latent_entry/Destroy()
 	blob = null
@@ -322,6 +327,8 @@ GLOBAL_VAR(latent_last_refusal)
 	var/path = entry.path
 	var/list/blob = entry.blob
 	var/slot = entry.slot
+	var/list/audit_blob = entry.audit_blob
+	entry.audit_blob = null // only the first materialize after a collapse is checked
 	// The ledger move: the entry gives them up before they exist.
 	latent_set_count(entry, entry.count - n)
 	for(var/i in 1 to n)
@@ -333,6 +340,10 @@ GLOBAL_VAR(latent_last_refusal)
 		var/list/record = entries[thing]
 		if(record && record[LEDGER_E_SLOT] != slot)
 			reslot(thing, slot)
+		dq_latency_log("materialized", path, holder.type)
+		if(audit_blob)
+			dq_latency_audit_check(thing, audit_blob)
+			audit_blob = null // one comparison per collapse, not per n
 		. += thing
 
 /// Every entry in `slot_id` (null: all) -> real things. Returns them.
@@ -420,15 +431,19 @@ GLOBAL_VAR(latent_last_refusal)
 	var/datum/ledger/L = loc.ledger
 	var/list/record = L.entries[src]
 	var/list/errors = list()
-	var/list/blob = state_serialize(src, STATE_FULL, errors)
-	if(!blob)
+	var/list/full_blob = state_serialize(src, STATE_FULL, errors)
+	if(!full_blob)
 		GLOB.latent_last_refusal = jointext(errors, "; ")
 		return FALSE
-	blob = dq_latent_entry_blob(blob)
+	var/list/blob = dq_latent_entry_blob(full_blob)
 	var/slot = record[LEDGER_E_SLOT]
 	var/path = type
+	var/holder_type = loc.type
 	qdel(src)
-	L.latent_add(path, 1, blob, slot)
+	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
+	if(entry && dq_latency_audit_enabled())
+		entry.audit_blob = full_blob
+	dq_latency_log("collapsed", path, holder_type)
 	return TRUE
 
 /// Why this can't collapse into an entry now, or null. `held_refs` counts

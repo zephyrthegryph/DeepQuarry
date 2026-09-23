@@ -34,6 +34,8 @@
 		// Building the ledger is the first exact question: resolve the generator (C5).
 		if(holder.latent_contents)
 			dq_latent_resolve(holder, L)
+			// Candidate for the latency sweep (roadmap C10, containment.md §4.7).
+			dq_latency_sweep_register(holder)
 	L.sync()
 	return L
 
@@ -204,6 +206,8 @@
 	tracked++
 	add_snapshot(snapshot)
 	propagate()
+	// Entering a slot is an interaction, not idle time (roadmap C10).
+	dq_latent_touch(thing)
 	holder.on_slot_changed(id, thing, TRUE)
 	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, id)
 

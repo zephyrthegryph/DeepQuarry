@@ -11,6 +11,19 @@
 // stack's amount, else 1), and the latent counts count towards its usage. The
 // holder's other contents (parts, circuit, coin) stay in an "internals" slot
 // whose drop policy leaves them to the machine's own Destroy (C6 owns them).
+//
+// dq_latency_policy_machinery_todo: the latency policy's budgeted sweep
+// (C10, containment.md §4.7) collapses through the general ledger's
+// latent_entry API (latent_collapse()/latent_add()); stock instances live in
+// /datum/stored_item.instances instead, a bespoke collapse of their own
+// (dq_stock_blob(), stock_records()) that already keeps a vending machine's
+// stock from materializing until vended. Vending/smartfridge holders do not
+// set latent_contents = TRUE, so can_be_latent() already skips them -- the
+// sweep is a no-op here, not a miswiring. Teaching latent_collapse() to fall
+// back to the stock API (or vice versa) is left for whoever lands C6's move
+// of machine internals onto the shared framework (rewrite/c6): folding stock
+// into the same latent_entry mechanism there would let this TODO go away
+// along with the machine_internals slot's own exclusion below.
 
 /// Machine internals: legacy contents the machine's Destroy handles.
 /datum/slot_def/machine_internals
