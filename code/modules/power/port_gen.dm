@@ -158,12 +158,10 @@
 	return ..()
 
 /obj/machinery/power/port_gen/pacman/RefreshParts()
-	var/temp_rating = 0
-	for(var/obj/item/stock_parts/SP in component_parts)
-		if(istype(SP, /obj/item/stock_parts/matter_bin))
-			max_sheets = SP.rating * SP.rating * 50
-		else if(istype(SP, /obj/item/stock_parts/micro_laser) || istype(SP, /obj/item/stock_parts/capacitor))
-			temp_rating += SP.rating
+	var/bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
+	if(bin_rating)
+		max_sheets = bin_rating * bin_rating * 50
+	var/temp_rating = get_part_rating(/obj/item/stock_parts/micro_laser) + get_part_rating(/obj/item/stock_parts/capacitor)
 
 	power_gen = round(initial(power_gen) * (max(2, temp_rating) / 2))
 
@@ -623,6 +621,7 @@
 	// Wipe old parts for new ones!
 	if(parts_found.len == 0)
 		return
+	materialize_parts()
 	if(locate(/obj/item/stock_parts/capacitor) in parts_found)
 		while(TRUE)
 			var/obj/item/stock_parts/capacitor/C = locate(/obj/item/stock_parts/capacitor) in component_parts
@@ -642,7 +641,7 @@
 	for(var/i = 1, i <= parts_found.len, i++)
 		var/obj/item/W = parts_found[i]
 		component_parts.Add(W)
-		W.forceMove(src)
+		W.move_into(src, CONTAINER_SLOT_INTERNALS)
 	RefreshParts()
 
 /obj/machinery/power/rtg/process()
@@ -659,9 +658,7 @@
 		)
 
 /obj/machinery/power/rtg/RefreshParts()
-	var/part_level = 0
-	for(var/obj/item/stock_parts/SP in component_parts)
-		part_level += SP.rating
+	var/part_level = total_component_rating_of_type(/obj/item/stock_parts)
 
 	power_gen = initial(power_gen) * part_level
 
@@ -938,10 +935,7 @@
 	buckled_mob.pixel_y = buckled_mob.default_pixel_y
 
 /obj/machinery/power/rtg/reg/RefreshParts()
-	var/n = 0
-	for(var/obj/item/stock_parts/SP in component_parts)
-		n += SP.rating
-	part_mult = n
+	part_mult = total_component_rating_of_type(/obj/item/stock_parts)
 
 /obj/machinery/power/rtg/reg/declare_interactions(list/into)
 	into += list(

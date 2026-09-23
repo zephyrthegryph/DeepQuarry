@@ -58,11 +58,9 @@
 	return ..()
 
 /obj/machinery/power/tesla_coil/RefreshParts()
-	input_power_multiplier = 0
 	zap_cooldown = 10
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		input_power_multiplier += C.rating
-		zap_cooldown -= (C.rating - 1)
+	input_power_multiplier = get_part_rating(/obj/item/stock_parts/capacitor)
+	zap_cooldown -= (input_power_multiplier - get_part_count(/obj/item/stock_parts/capacitor))
 
 /obj/machinery/power/tesla_coil/update_icon()
 	if(panel_open)
@@ -135,16 +133,18 @@
 			else //Should never happen.
 				return
 
-		//Get rid of the stock parts that get added by init.
-		for(var/obj/item/stock_parts/C in new_coil.component_parts)
-			new_coil.component_parts -= C
-			qdel(C)
-
-		//Move the stock parts from the old coil to the new one.
+		// Carry the installed parts over to new_coil (roadmap C6). new_coil's
+		// own default board+parts already resolved into latent entries the
+		// moment its Initialize() first asked the ledger a question, so clear
+		// those before src's parts (real, or still latent) replace them.
+		materialize_parts()
+		dq_ledger(new_coil)?.latent_clear()
 		for(var/obj/item/stock_parts/C in component_parts)
-			C.forceMove(new_coil)
 			component_parts -= C
-			new_coil.component_parts += C
+			C.move_into(new_coil, CONTAINER_SLOT_INTERNALS)
+		new_coil.component_parts = list()
+		for(var/obj/item/I in new_coil.slot_contents(CONTAINER_SLOT_INTERNALS))
+			new_coil.component_parts += I
 		new_coil.RefreshParts()
 
 		new_coil.anchored = anchored
@@ -202,9 +202,7 @@
 /obj/machinery/power/tesla_coil/relay/RefreshParts()
 	..()
 	input_power_multiplier = 1 //So we don't show the examine text further above.
-	relay_efficiency = 0.85
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		relay_efficiency += C.rating * 0.05
+	relay_efficiency = 0.85 + get_part_rating(/obj/item/stock_parts/capacitor) * 0.05
 
 /obj/machinery/power/tesla_coil/relay/coil_act(power, explosive, current_jumps)
 	var/diminishing_returns = 1 + ((current_jumps * 0.1)-0.1) //The more jumps, the less effective the amplifier is. At 10 jumps, it's only 1/2 as effective.
@@ -238,9 +236,7 @@
 
 /obj/machinery/power/tesla_coil/splitter/RefreshParts()
 	..()
-	split_count = 0
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		split_count += C.rating
+	split_count = get_part_rating(/obj/item/stock_parts/capacitor)
 
 /obj/machinery/power/tesla_coil/splitter/coil_act(power, explosive, current_jumps)
 	var/power_per_bolt = power / (split_count + 1)
@@ -269,9 +265,9 @@
 
 /obj/machinery/power/tesla_coil/amplifier/RefreshParts()
 	..()
-	amp_eff = 1.075
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		amp_eff += ((C.rating * AMPLIFIER_STRENGTH) - AMPLIFIER_STRENGTH)
+	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
+	var/cap_count = get_part_count(/obj/item/stock_parts/capacitor)
+	amp_eff = 1.075 + (cap_rating * AMPLIFIER_STRENGTH) - (cap_count * AMPLIFIER_STRENGTH)
 	input_power_multiplier = 1 //no mult for you
 
 /obj/machinery/power/tesla_coil/amplifier/coil_act(power, explosive, current_jumps)
@@ -304,9 +300,7 @@
 
 /obj/machinery/power/tesla_coil/recaster/RefreshParts()
 	..()
-	zap_range = 5
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		zap_range += C.rating * 1
+	zap_range = 5 + get_part_rating(/obj/item/stock_parts/capacitor)
 
 /obj/machinery/power/tesla_coil/recaster/coil_act(power, explosive, current_jumps)
 	var/power_relayed = power / power_loss
@@ -331,8 +325,11 @@
 /obj/machinery/power/tesla_coil/collector/RefreshParts()
 	..()
 	input_power_multiplier = 0
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		input_power_multiplier += C.rating * C.rating //T1 = 200% T2 = 400% T3 = 900% T4 = 1600% T5 = 2500%
+	for(var/obj/item/stock_parts/capacitor/C in slot_contents(CONTAINER_SLOT_INTERNALS))
+		input_power_multiplier += C.rating ** 2 //T1 = 200% T2 = 400% T3 = 900% T4 = 1600% T5 = 2500%
+	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
+		if(ispath(entry.path, /obj/item/stock_parts/capacitor))
+			input_power_multiplier += (dq_type_var(entry.path, "rating") ** 2) * entry.count
 	if(input_power_multiplier == 1)
 		input_power_multiplier = 2
 
