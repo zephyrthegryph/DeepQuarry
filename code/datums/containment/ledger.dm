@@ -232,12 +232,17 @@
 /// Changes to a child's own properties reach here through the reactor later
 /// (containment.md §2, invariant 5); until then callers refresh by hand.
 /datum/ledger/proc/refresh(atom/movable/thing)
+	if(!entries[thing])
+		return
+	// Compute first: reading the child can sync its ledger, which refreshes
+	// this entry re-entrantly. Swap whatever snapshot is current afterwards.
+	var/list/fresh = dq_ledger_contribution(thing)
 	var/list/entry = entries[thing]
 	if(!entry)
 		return
 	remove_snapshot(entry[LEDGER_E_SNAPSHOT])
-	entry[LEDGER_E_SNAPSHOT] = dq_ledger_contribution(thing)
-	add_snapshot(entry[LEDGER_E_SNAPSHOT])
+	entry[LEDGER_E_SNAPSHOT] = fresh
+	add_snapshot(fresh)
 	propagate()
 
 /// Our totals changed, so the holder's own contribution to its container did.
