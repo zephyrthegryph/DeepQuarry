@@ -392,11 +392,17 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	new_target.energy_spent += source_portion.energy_spent
 	new_target.temperature = (target_batch.temperature * target_before + source_batch.temperature * transferred) / max(target_before + transferred, 1)
 	new_target.recalculate()
+	// Stop any cooling model still decaying toward the old batch_state before it is
+	// replaced: settle_cooling() writes RATE_READ(cooling_model) into whatever
+	// batch_state currently is, and that stale model would otherwise clobber the
+	// merged temperature the instant update_thermal_processing() re-evaluates it.
+	processed_target.stop_cooling()
 	QDEL_NULL(processed_target.batch_state)
 	processed_target.batch_state = new_target
 	processed_target.update_thermal_processing()
 	if(!QDELETED(src))
 		var/datum/material_batch/new_source = source_batch.copy_for_amount(source_before - transferred)
+		stop_cooling()
 		QDEL_NULL(batch_state)
 		batch_state = new_source
 		update_thermal_processing()

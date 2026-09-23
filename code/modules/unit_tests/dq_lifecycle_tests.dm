@@ -10,6 +10,14 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored, list(
 	/datum/controller/subsystem/garbage,
 	/datum/controller/subsystem/overlays,
 	/datum/controller/subsystem/atoms,
+	// A sandboxed instance that ever calls REACT_AT/REACT_REARM keeps its
+	// reactor_id reserved (assign_id() is idempotent; the index is only
+	// released by REACT_CLEAR from Destroy(), reactor.md). materialize()/
+	// dematerialize() alone cancels its subscriptions but the instance is
+	// still alive when the round-trip snapshot is taken, so its registry
+	// slot legitimately stays checked out until the test's own qdel() —
+	// the same "test itself creates and deletes" bookkeeping as above.
+	/datum/controller/subsystem/reactor,
 ))
 
 /// Global state an object could register itself with, as key -> size.
