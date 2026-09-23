@@ -794,12 +794,13 @@
 	wiki_flag = WIKI_SPOILER
 	supply_conversion_value = REFINERYEXPORT_VALUE_NO
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
+	// Clog the lungs' exchange surfaces.
+	factors = alist(BF_GAS_EXCHANGE = 0.5)
 
 /datum/reagent/defective_nanites/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure_many(alist(
 		INJURY_BLUNT = 2 * removed,
 		INJURY_BURN = 2 * removed,
-		INJURY_ASPHYXIA = 4 * removed,
 		INJURY_TOXIN = 2 * removed,
 		INJURY_CELLULAR = 2 * removed,
 	), source = src)

@@ -12,6 +12,13 @@
 /datum/body/simple/machine
 	plan_flag = BODY_PLAN_MACHINE
 
+/// Machines don't breathe: no oxygen debt, and every respiratory query is null.
+/datum/body/simple/machine/add_oxygen_debt(amount, source)
+	return 0
+
+/datum/body/simple/machine/oxygen_debt()
+	return null
+
 /datum/body/simple/machine/is_dead()
 	ensure_vitals()
 	return total_load >= owner.get_endurance() * DQ_MACHINE_LETHAL_MULT

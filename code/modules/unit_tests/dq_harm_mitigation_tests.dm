@@ -8,6 +8,14 @@
 
 /// Weapons, projectiles, blobs and animal / unarmed attacks declare what they inflict.
 /datum/unit_test/dq_harm_kind_declarations
+	/// Amount entering injure()'s pipeline, keyed by kind, for the split-hit check.
+	var/list/split_shares
+
+/datum/unit_test/dq_harm_kind_declarations/proc/on_split_explained(mob/living/source, incoming_kind, kind, list/stages, zone, atom/injury_source, flags)
+	SIGNAL_HANDLER
+	if(length(stages))
+		var/list/first_stage = stages[1]
+		split_shares["[incoming_kind]"] = first_stage[2]
 
 /datum/unit_test/dq_harm_kind_declarations/Run()
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife)
@@ -35,14 +43,15 @@
 	TEST_ASSERT_NULL(axe.injury_kinds, "an unlit axe is a plain axe")
 	TEST_ASSERT_EQUAL(axe.injury_kind, INJURY_CUT, "an unlit axe still cuts")
 
-	// Fresh bodies each time: how much lands depends on the wounds already there.
-	var/mob/living/carbon/human/burn_only = allocate(/mob/living/carbon/human)
-	var/split_burn = burn_only.injure(INJURY_BURN, 5, BP_TORSO, flags = INJURE_SILENT)
-	var/mob/living/carbon/human/blunt_only = allocate(/mob/living/carbon/human)
-	var/split_blunt = blunt_only.injure(INJURY_BLUNT, 15, BP_TORSO, flags = INJURE_SILENT)
+	// A split hit sends each kind its share into injure(). Read what enters the
+	// pipeline, not what lands: how much lands depends on the body's prior state.
 	var/mob/living/carbon/human/split_victim = allocate(/mob/living/carbon/human)
-	var/applied = split_victim.injure_split(INJURY_BURN, alist(INJURY_BURN = 0.25, INJURY_BLUNT = 0.75), 20, BP_TORSO, flags = INJURE_SILENT)
-	TEST_ASSERT(dq_near(applied, split_burn + split_blunt, 0.01), "a split hit should land as its shares of each kind ([applied] vs [split_burn + split_blunt])")
+	split_shares = list()
+	RegisterSignal(split_victim, COMSIG_LIVING_INJURY_EXPLAINED, PROC_REF(on_split_explained))
+	split_victim.injure_split(INJURY_BURN, alist(INJURY_BURN = 0.25, INJURY_BLUNT = 0.75), 20, BP_TORSO, flags = INJURE_SILENT)
+	UnregisterSignal(split_victim, COMSIG_LIVING_INJURY_EXPLAINED)
+	TEST_ASSERT(dq_near(split_shares["[INJURY_BURN]"], 5), "a split hit should send its burn share (5), got [split_shares["[INJURY_BURN]"]]")
+	TEST_ASSERT(dq_near(split_shares["[INJURY_BLUNT]"], 15), "a split hit should send its blunt share (15), got [split_shares["[INJURY_BLUNT]"]]")
 
 	var/datum/blob_type/living_agate/agate = new
 	TEST_ASSERT_NOTNULL(agate.injury_kinds, "the agate blob should sear")
@@ -182,7 +191,7 @@
 		TEST_ASSERT_EQUAL(injury_kind_obj_damage_type(kind), BRUTE, "[injury_kind_name(kind)] should dent objects (BRUTE)")
 	for(var/kind in list(INJURY_BURN, INJURY_CORROSIVE))
 		TEST_ASSERT_EQUAL(injury_kind_obj_damage_type(kind), BURN, "[injury_kind_name(kind)] should scorch objects (BURN)")
-	for(var/kind in list(INJURY_PAIN, INJURY_TOXIN, INJURY_ELECTRIC, INJURY_RADIATION, INJURY_NEURAL, INJURY_ASPHYXIA, INJURY_CELLULAR))
+	for(var/kind in list(INJURY_PAIN, INJURY_TOXIN, INJURY_ELECTRIC, INJURY_RADIATION, INJURY_NEURAL, INJURY_CELLULAR))
 		TEST_ASSERT_NULL(injury_kind_obj_damage_type(kind), "[injury_kind_name(kind)] shouldn't damage objects")
 
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife)
@@ -205,7 +214,7 @@
 	var/list/expected = list(
 		/datum/affliction/chem_side_effect = list("Side effect", 10),
 		/datum/affliction/chem_interaction = list("Interaction", 7),
-		/datum/affliction/overdose = list("Overdose", 36),
+		/datum/affliction/overdose = list("Overdose", 37),
 	)
 	for(var/family in expected)
 		TEST_ASSERT(!(family in catalogued), "the abstract [family] shouldn't be catalogued")

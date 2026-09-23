@@ -1,6 +1,10 @@
 import { Box, LabeledList, ProgressBar, Section } from 'tgui-core/components';
 
-import { damageRange, damages, stats, tempColors } from './constants';
+import {
+  DiagnosisFindingsSection,
+  DiagnosisVitalsSection,
+} from '../common/Diagnosis';
+import { stats } from './constants';
 import type { occupant } from './types';
 
 export const OperatingComputerPatient = (props: { occupant: occupant }) => {
@@ -13,11 +17,11 @@ export const OperatingComputerPatient = (props: { occupant: occupant }) => {
           <LabeledList.Item label="Status" color={stats[occupant.stat][0]}>
             {stats[occupant.stat][1]}
           </LabeledList.Item>
-          <LabeledList.Item label="Health">
+          <LabeledList.Item label="Vitality">
             <ProgressBar
               minValue={0}
               maxValue={1}
-              value={occupant.health / occupant.maxHealth}
+              value={occupant.vitality / 100}
               ranges={{
                 good: [0.5, Infinity],
                 average: [0, 0.5],
@@ -25,53 +29,15 @@ export const OperatingComputerPatient = (props: { occupant: occupant }) => {
               }}
             />
           </LabeledList.Item>
-          {damages.map((d, i) => (
-            <LabeledList.Item key={i} label={`${d[0]} Damage`}>
-              <ProgressBar
-                key={i}
-                minValue={0}
-                maxValue={1}
-                value={occupant[d[1]] / 100}
-                ranges={damageRange}
-              >
-                {occupant[d[1]].toFixed()}
-              </ProgressBar>
+          {occupant.bloodType ? (
+            <LabeledList.Item label="Blood Type">
+              {occupant.bloodType}
             </LabeledList.Item>
-          ))}
-          <LabeledList.Item label="Temperature">
-            <ProgressBar
-              minValue={0}
-              maxValue={1}
-              value={occupant.bodyTemperature / occupant.maxTemp}
-              color={tempColors[occupant.temperatureSuitability + 3]}
-            >
-              {occupant.btCelsius.toFixed()}&deg;C, {occupant.btFaren.toFixed()}
-              &deg;F
-            </ProgressBar>
-          </LabeledList.Item>
-          {!!occupant.hasBlood && (
-            <>
-              <LabeledList.Item label="Blood Level">
-                <ProgressBar
-                  minValue={0}
-                  maxValue={1}
-                  value={occupant.bloodLevel! / occupant.bloodMax!}
-                  ranges={{
-                    bad: [-Infinity, 0.6],
-                    average: [0.6, 0.9],
-                    good: [0.6, Infinity],
-                  }}
-                >
-                  {occupant.bloodPercent}%, {occupant.bloodLevel}cl
-                </ProgressBar>
-              </LabeledList.Item>
-              <LabeledList.Item label="Pulse">
-                {occupant.pulse} BPM
-              </LabeledList.Item>
-            </>
-          )}
+          ) : null}
         </LabeledList>
       </Section>
+      <DiagnosisVitalsSection vitals={occupant.diagnosis.vitals} />
+      <DiagnosisFindingsSection findings={occupant.diagnosis.findings} />
       <Section title="Current Procedure">
         {occupant.surgery?.length ? (
           <LabeledList>

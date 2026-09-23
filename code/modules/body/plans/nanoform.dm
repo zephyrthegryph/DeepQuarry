@@ -1,12 +1,16 @@
 // Nanoform body plan: a protean's nanite swarm. See doc/mob_life_architecture.md §6.2.
 //
-// - Every part, and the whole body, is BIOLOGY_NANOFORM: repair mechanisms and
-//   biological mechanisms both reach it, and nothing claims it is organic.
+// - Every part, and the whole body, is BIOLOGY_NANOFORM. Only the nanite
+//   mechanisms reach it: plating, wiring and calibration repair, its own
+//   regeneration and refactory feedstock (treatment_tag_biology()).
 // - Regeneration is a TREAT_REGENERATION treatment funded by refactory steel,
-//   charged from what mend() actually repaired.
+//   charged from what mend() actually repaired, scaled by BF_HEALING.
+// - The swarm's own troubles are nanite afflictions
+//   (code/modules/medical/conditions/nanite.dm); this plan triggers them.
 // - A body that would die instead goes dormant: the core_dormancy affliction
-//   holds it alive through COMSIG_LIVING_BODY_STATUS until it is revived by
-//   calibration, plating repair and defibrillation.
+//   holds it alive through COMSIG_LIVING_BODY_STATUS, knocks it out through
+//   the consciousness model and leaves its control cluster inert, until it is
+//   revived by calibration, plating repair and defibrillation.
 
 /datum/body/humanoid/nanoform
 
@@ -15,11 +19,11 @@
 
 /// Regeneration is plating and wiring repair; it never revives dead organs or
 /// closes lesions that need surgery (bug 11).
-/datum/body/humanoid/nanoform/mend(tag, amount, zone = null)
+/datum/body/humanoid/nanoform/mend(tag, amount, target = null)
 	if(tag != TREAT_REGENERATION)
 		return ..()
-	. = mend(TREAT_PLATING_REPAIR, amount / 2, zone)
-	. += mend(TREAT_WIRING_REPAIR, amount / 2, zone)
+	. = mend(TREAT_PLATING_REPAIR, amount / 2, target)
+	. += mend(TREAT_WIRING_REPAIR, amount / 2, target)
 	. += ..() // afflictions that answer to regeneration itself
 
 /// Nanite repair is funded by the refactory (regenerate()), not natural regeneration.
@@ -32,10 +36,18 @@
 
 /datum/body/humanoid/nanoform/life_tick()
 	regenerate()
+	state_triggers()
 	return ..()
+
+/datum/body/humanoid/nanoform/receive_injury(kind, amount, target, atom/source, affliction_type, flags)
+	. = ..()
+	if(. > 0)
+		injury_triggers(kind, ., target)
 
 /// A body that would die goes dormant instead, on both the tick path
 /// (evaluate_status) and the immediate path after an injury (check_death).
+/// This holds whether the swarm collapsed on the floor or had folded itself
+/// into its control cluster.
 /datum/body/humanoid/nanoform/evaluate_status()
 	go_dormant_if_dying()
 	return ..()
@@ -44,15 +56,29 @@
 	go_dormant_if_dying()
 	return ..()
 
+/// A dormant core is held alive but is not awake: dormancy's consciousness
+/// penalty applies even though the keep-alive answers the status signal.
+/datum/body/humanoid/nanoform/is_unconscious()
+	if(!is_dormant() || (owner.status_flags & GODMODE))
+		return ..()
+	ensure_vitals()
+	return consciousness <= CONSCIOUSNESS_THRESHOLD
+
+/datum/body/humanoid/nanoform/proc/is_dormant()
+	return has_affliction(/datum/affliction/core_dormancy)
+
 /datum/body/humanoid/nanoform/proc/go_dormant_if_dying()
-	if(owner.stat != DEAD && !(owner.status_flags & GODMODE) && !find_affliction(/datum/affliction/core_dormancy) && is_dead())
-		afflict(/datum/affliction/core_dormancy)
+	if(owner.stat == DEAD || (owner.status_flags & GODMODE) || is_dormant() || !is_dead())
+		return
+	log_game("NANOFORM: [key_name(owner)] took lethal damage[istype(owner.loc, /obj/item/rig/protean) ? " while folded into their control cluster" : ""]; going dormant.")
+	afflict(/datum/affliction/core_dormancy)
 
 /// Spend refactory steel on repair at the current form's regeneration rate.
-/// Returns the points repaired.
+/// A swarm that needs repair and has no steel starts depleting its
+/// refactory. Returns the points repaired.
 /datum/body/humanoid/nanoform/proc/regenerate()
 	var/mob/living/carbon/human/H = owner
-	if(H.stat == DEAD || find_affliction(/datum/affliction/core_dormancy))
+	if(H.stat == DEAD || is_dormant())
 		return 0
 	var/datum/form/F = H.current_form()
 	if(!F || F.regeneration <= 0 || !is_injured())
@@ -60,7 +86,67 @@
 	var/obj/item/organ/internal/nano/refactory/R = H.nano_get_refactory()
 	if(!R)
 		return 0
-	return R.fund_repair(H, list(TREAT_REGENERATION), F.regeneration)
+	if(R.get_stored_material(MAT_STEEL) < NANOFORM_STEEL_PER_POINT)
+		afflict(/datum/affliction/nanite/refactory_depletion, R, NANITE_DEPLETION_PER_STARVED_TICK)
+		return 0
+	return R.fund_repair(H, list(TREAT_REGENERATION), F.regeneration * get_factor(BF_HEALING))
+
+/// Hits that land shake the swarm's cohesion; hits on the orchestrator, and
+/// shocks anywhere, damage its control.
+/datum/body/humanoid/nanoform/proc/injury_triggers(kind, amount, target)
+	var/category = injury_category(kind)
+	if((category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL) && amount >= NANITE_COHESION_MIN_HIT)
+		afflict(/datum/affliction/nanite/cohesion_loss, null, amount * NANITE_COHESION_PER_POINT)
+	var/mob/living/carbon/human/H = owner
+	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
+	if(!istype(O))
+		return
+	var/control_damage = 0
+	if(resolve_zone(target) == O)
+		control_damage += amount * NANITE_ORCHESTRATOR_PER_POINT
+	if(kind == INJURY_ELECTRIC)
+		control_damage += amount * NANITE_ORCHESTRATOR_PER_SHOCK
+	if(control_damage > 0)
+		afflict(/datum/affliction/nanite/orchestrator_damage, O, control_damage)
+
+/// Per-tick state the swarm reacts to: foreign reagents contaminate it.
+/datum/body/humanoid/nanoform/proc/state_triggers()
+	if(owner.stat == DEAD)
+		return
+	var/foreign = foreign_reagent_volume()
+	if(foreign <= 0)
+		return
+	var/mob/living/carbon/human/H = owner
+	afflict(/datum/affliction/nanite/contamination, H.nano_get_refactory(), min(foreign * NANITE_CONTAMINATION_PER_UNIT, NANITE_CONTAMINATION_MAX_PER_TICK))
+
+/// Units of reagent in the swarm that aren't nanite material.
+/datum/body/humanoid/nanoform/proc/foreign_reagent_volume()
+	var/static/list/nanite_reagents = list(REAGENT_ID_LIQUIDPROTEAN = TRUE, REAGENT_ID_HEALINGNANITES = TRUE)
+	if(dirty & BODY_DIRTY_TREATMENT)
+		build_treatment_snapshot()
+	. = 0
+	for(var/reagent_id in reagent_volumes)
+		if(!nanite_reagents[reagent_id])
+			. += reagent_volumes[reagent_id]
+
+/// Revival from dormancy: rebuild what the revival steps repaired. The
+/// missing structure regrows, nanopaste has rebuilt the vital parts' plating
+/// and wiring, the reboot programmer has recalibrated the orchestrator, and
+/// the swarm's cohesion is whole again. Everything else stays.
+/datum/body/humanoid/nanoform/proc/rebuild_cohesion()
+	var/mob/living/carbon/human/H = owner
+	regrow_structure()
+	for(var/obj/item/organ/external/E as anything in H.organs)
+		if(!E.vital)
+			continue
+		mend(TREAT_PLATING_REPAIR, E.get_trauma() + E.get_burn(), E)
+		mend(TREAT_WIRING_REPAIR, E.get_trauma() + E.get_burn(), E)
+	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
+	if(istype(O))
+		mend(TREAT_CALIBRATION, AFFLICTION_SEVERITY_TERMINAL, O)
+	var/datum/affliction/cohesion = find_affliction(/datum/affliction/nanite/cohesion_loss)
+	cohesion?.cure()
+	log_game("NANOFORM: [key_name(H)] rebuilt cohesion; [LAZYLEN(afflictions)] affliction(s) remain.")
 
 /// Rebuild missing or stumped limbs and missing internal organs from the
 /// species template. Used by a full heal and by revival.
@@ -97,7 +183,9 @@
 // --- Core dormancy ---------------------------------------------------------------------
 
 /// A nanoform body that lost cohesion retreats into its core. It neither dies
-/// nor acts; it is revived step by step by treatment mechanisms.
+/// nor acts: it is held alive (COMSIG_LIVING_BODY_STATUS) and unconscious
+/// (consciousness_at_max), its control cluster goes inert, and it is revived
+/// step by step by treatment mechanisms.
 /datum/affliction/core_dormancy
 	name = "core dormancy"
 	category = "Synthetic"
@@ -107,26 +195,30 @@
 	progression_rate = 0
 	min_symptoms = 0
 	max_symptoms = 0
+	/// At terminal severity the core is far below the consciousness threshold.
+	consciousness_at_max = 200
 	treated_by = list(TREAT_CALIBRATION = 1, TREAT_PLATING_REPAIR = 1, TREAT_DEFIBRILLATION = 1)
 	/// DORMANCY_* revival step.
 	var/revival_step = DORMANCY_SEALED
 	/// The mob whose COMSIG_LIVING_BODY_STATUS we answer.
 	var/mob/living/held_mob
+	/// The reboot timer, once the core is jump-started.
+	var/reboot_timer
 
 /datum/affliction/core_dormancy/on_added()
 	..()
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)
 	held_mob = owner
 	RegisterSignal(held_mob, COMSIG_LIVING_BODY_STATUS, PROC_REF(hold_alive))
-	held_mob.Paralyse(3)
 	log_game("NANOFORM: [key_name(held_mob)] entered core dormancy at [AREACOORD(held_mob)].")
 	playsound(held_mob, 'sound/voice/borg_deathsound.ogg', 50, 1)
 	held_mob.visible_message(span_bold("[held_mob.name]") + " shudders and retreats inwards, coalescing into a single core component!")
 	to_chat(held_mob, span_warning("Your swarm has lost cohesion! You are locked in your core control module until you are repaired. Instructions for your revival are shown when your module is examined."))
-	if(ishuman(held_mob))
-		var/mob/living/carbon/human/H = held_mob
-		var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
-		F?.enter_rig()
+	var/datum/component/forms/protean/F = held_mob.GetComponent(/datum/component/forms/protean)
+	if(!F)
+		return
+	F.enter_rig()
+	F.rig?.go_inert()
 
 /datum/affliction/core_dormancy/on_removed()
 	release()
@@ -137,9 +229,14 @@
 	return ..()
 
 /datum/affliction/core_dormancy/proc/release()
+	if(reboot_timer)
+		deltimer(reboot_timer)
+		reboot_timer = null
 	if(!held_mob)
 		return
 	UnregisterSignal(held_mob, COMSIG_LIVING_BODY_STATUS)
+	var/datum/component/forms/protean/F = held_mob.GetComponent(/datum/component/forms/protean)
+	F?.rig?.wake()
 	log_game("NANOFORM: [key_name(held_mob)] left core dormancy.")
 	held_mob = null
 
@@ -148,8 +245,8 @@
 	return COMPONENT_BODY_KEEP_ALIVE
 
 /// Dormant cores don't progress or heal on their own; they stay down.
-/datum/affliction/core_dormancy/tick()
-	owner?.Paralyse(3)
+/datum/affliction/core_dormancy/progress()
+	pending_treatment = 0
 
 /datum/affliction/core_dormancy/proc/open_panel()
 	if(revival_step == DORMANCY_SEALED)
@@ -157,6 +254,8 @@
 
 /// Each revival mechanism advances exactly one step, in order.
 /datum/affliction/core_dormancy/receive_tagged_treatment(tag, amount, continuous = FALSE)
+	if(continuous)
+		return 0
 	var/next_step
 	switch(revival_step)
 		if(DORMANCY_OPEN)
@@ -173,17 +272,26 @@
 	revival_step = next_step
 	log_game("NANOFORM: [key_name(owner)] dormancy advanced to step [revival_step] by [tag].")
 	if(revival_step == DORMANCY_REBOOTING)
-		addtimer(CALLBACK(src, PROC_REF(complete_revival)), DORMANCY_REBOOT_TIME, TIMER_STOPPABLE)
+		reboot_timer = addtimer(CALLBACK(src, PROC_REF(complete_revival)), DORMANCY_REBOOT_TIME, TIMER_STOPPABLE)
 	return 1
 
-/// Reassembly finished: rebuild the body. The full heal cures this affliction.
+/// Reassembly finished: rebuild cohesion and what the revival steps repaired,
+/// then leave dormancy. Afflictions the revival didn't touch stay.
 /datum/affliction/core_dormancy/proc/complete_revival()
+	if(reboot_timer)
+		deltimer(reboot_timer)
+		reboot_timer = null
 	var/mob/living/patient = owner
-	if(!patient)
+	var/datum/body/humanoid/nanoform/B = body
+	if(!patient || !istype(B))
 		return
-	log_game("NANOFORM: [key_name(patient)] reconstituted from core dormancy.")
-	patient.fully_heal()
-	patient.SetParalysis(0)
+	log_game("NANOFORM: [key_name(patient)] reconstituting from core dormancy.")
+	B.rebuild_cohesion()
+	cure()
+	B.on_status_changed()
+	if(B.is_dormant())
+		log_game("NANOFORM: [key_name(patient)] was still lethally damaged after reconstitution and fell dormant again.")
+		return
 	to_chat(patient, span_notice("You have finished reconstituting."))
 	playsound(get_turf(patient), 'sound/machines/ding.ogg', 50, 1)
 

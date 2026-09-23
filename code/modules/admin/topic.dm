@@ -1045,7 +1045,7 @@
 				if (1) status = span_orange(span_bold("Unconscious"))
 				if (2) status = span_red(span_bold("Dead"))
 			health_description = "Status = [status]"
-			health_description += "<BR>Vitality: [round(L.vitality() * 100)]%[L.is_critical() ? " (CRITICAL)" : ""] - Physical: [L.injury_load(INJURY_CATEGORY_PHYSICAL)] - Thermal: [L.injury_load(INJURY_CATEGORY_THERMAL)] - Toxic: [L.injury_load(INJURY_CATEGORY_TOXIC)] - Asphyxia: [L.injury_load(INJURY_CATEGORY_ASPHYXIA)] - Genetic: [L.injury_load(INJURY_CATEGORY_GENETIC)] - Neural: [L.injury_load(INJURY_CATEGORY_NEURAL)] - Pain: [L.current_pain()]"
+			health_description += "<BR>Vitality: [round(L.vitality() * 100)]%[L.is_critical() ? " (CRITICAL)" : ""] - Physical: [L.injury_load(INJURY_CATEGORY_PHYSICAL)] - Thermal: [L.injury_load(INJURY_CATEGORY_THERMAL)] - Toxic: [L.injury_load(INJURY_CATEGORY_TOXIC)] - Oxygen debt: [L.oxygen_debt()] - Genetic: [L.injury_load(INJURY_CATEGORY_GENETIC)] - Neural: [L.injury_load(INJURY_CATEGORY_NEURAL)] - Pain: [L.current_pain()]"
 		else
 			health_description = "This mob type has no health to speak of."
 

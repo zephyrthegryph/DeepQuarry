@@ -36,6 +36,9 @@
 	var/extra = FALSE
 	/// Family root type. Filled by the registry.
 	var/family
+	/// What wakes this system once it sleeps (for logs and the audit). A system that can
+	/// sleep says here which producers call life_wake() with its `bit`.
+	var/woken_by
 
 /// Does this mob get this system at all? Evaluated only when composing, so it may depend
 /// only on what the composition key covers (the mob type and its extras).
@@ -50,6 +53,18 @@
 /// Undo attach(). Called when a mob loses the system (recomposition or deletion).
 /datum/life_system/proc/detach(mob/living/self)
 	return
+
+/// Sleep rule (doc/mob_life_architecture.md §4.9). TRUE when this system has nothing to do
+/// until something wakes its `bit`. Evaluated after every tick and by the hibernation
+/// audit, so it must be cheap, read-only and correct for a mob that is not ticking: the
+/// audit treats a FALSE on a sleeping system as a missed wake. The default never sleeps.
+/datum/life_system/proc/idle(mob/living/self)
+	return FALSE
+
+/// For an idle system that still drifts slowly (ambience, AFK, darksight): deciseconds
+/// until it should be woken anyway, or 0 to wait for an event.
+/datum/life_system/proc/rewake_delay(mob/living/self)
+	return 0
 
 /// Do the work. Return LIFE_SLEEP when nothing is left to do until woken, LIFE_HALT to end
 /// the cycle. `ctx` is null when the system runs outside the schedule (run_life_system()).
@@ -72,17 +87,19 @@
 	var/core_result
 	/// The air this mob sits in (turf air, belly air or null), captured at the placed gate.
 	var/datum/gas_mixture/environment
-	/// Cached stasis state for this cycle; null until first read.
-	var/stasis
+	/// TRUE when the body's stasis clock paused this cycle. Set once by Life()
+	/// from /datum/body/proc/advance_stasis().
+	var/stasis = FALSE
+	/// Set by a gate that stopped the cycle for a reason no wake covers (transforming,
+	/// nullspace): nothing goes to sleep this cycle.
+	var/no_sleep = FALSE
 
 /datum/life_context/New(seconds, profile)
 	src.seconds = seconds
 	src.profile = profile
 
-/// Stasis for this cycle, read once (replaces the repeated inStasisNow() calls).
+/// Did stasis pause this cycle?
 /datum/life_context/proc/in_stasis(mob/living/self)
-	if(isnull(stasis))
-		stasis = self.inStasisNow() ? TRUE : FALSE
 	return stasis
 
 // --- Registry ---------------------------------------------------------------------------------
@@ -173,10 +190,14 @@ GLOBAL_VAR_INIT(life_system_registry_built, FALSE)
 	var/key
 	/// Systems in run order. Never mutated after composition.
 	var/list/ordered
+	/// Union of the systems' bits. A bit no system has can never go to sleep.
+	var/bits = NONE
 
 /datum/life_composition/New(key, list/ordered)
 	src.key = key
 	src.ordered = ordered
+	for(var/datum/life_system/S as anything in ordered)
+		bits |= S.bit
 
 /// Sort key: phase, then order. Stable insertion sort; compositions are small and built once.
 /proc/sort_life_systems(list/systems)

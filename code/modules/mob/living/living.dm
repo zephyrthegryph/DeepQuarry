@@ -1117,7 +1117,7 @@
 			PHYSICAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brute' id='brute'>[round(injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)]</a>") + {"
 			THERMAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=fire' id='fire'>[round(injury_load(INJURY_CATEGORY_THERMAL), 0.1)]</a>") + {"
 			TOXIC:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=toxin' id='toxin'>[round(injury_load(INJURY_CATEGORY_TOXIC), 0.1)]</a>") + {"
-			ASPHYXIA:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=oxygen' id='oxygen'>[round(injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1)]</a>") + {"
+			OXYGEN DEBT:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=oxygen' id='oxygen'>[round(oxygen_debt(), 0.1)]</a>") + {"
 			NEURAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brain' id='brain'>[round(injury_load(INJURY_CATEGORY_NEURAL), 0.1)]</a>") + {"
 			GENETIC:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=clone' id='clone'>[round(injury_load(INJURY_CATEGORY_GENETIC), 0.1)]</a>") + {"
 		"})

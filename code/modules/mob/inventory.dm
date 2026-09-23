@@ -265,6 +265,7 @@ GLOBAL_LIST_INIT(slot_equipment_priority, list(
 		has_unequipped(item_dropping, FALSE)
 	//SEND_SIGNAL(item_dropping, COMSIG_ITEM_POST_UNEQUIP, item_dropping, target)
 	SEND_SIGNAL(src, COMSIG_MOB_UNEQUIPPED_ITEM, item_dropping, target)
+	on_equipment_changed()
 	return TRUE
 
 //Returns the item equipped to the specified slot, if any.

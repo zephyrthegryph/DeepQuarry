@@ -150,6 +150,15 @@ if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LI
 	FAILED=1
 fi;
 
+part "life scheduler: wake and hibernate in one place"
+# Only /mob/living/proc/life_wake() and life_hibernate() (scheduler.dm) change whether a mob
+# runs; producers call life_wake() (doc/mob_life_architecture.md §4.9).
+if $grep -n '(life_hibernating|life_awake)\s*[|&]?=[^=]|hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' $code_files | grep -v '^code/modules/mob/living/life/scheduler\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+	echo
+	echo -e "${RED}ERROR: direct write to a mob's wake state. Call life_wake(bits, reason) or life_hibernate(reason).${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`
@@ -193,6 +202,17 @@ part "body factors: no chemical effects"
 if $grep -n '\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: chem_effects / add_chemical_effect detected. Declare body factors on the reagent (factors = alist(BF_X = value)) and read them with factor(BF_X).${NC}"
+	FAILED=1
+fi;
+
+part "physiology: no asphyxia injury"
+# Lack of oxygen is an outcome the physiology computes (code/modules/body/physiology.dm),
+# not an injury. Express the cause as a mechanism: an airway / breathing restriction, breath
+# quality, a factor (BF_O2_CARRIAGE, BF_TISSUE_UPTAKE, ...) or, with no mechanism at all,
+# add_oxygen_debt(). Read it with oxygen_debt().
+if $grep -n '(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)' $code_files; then
+	echo
+	echo -e "${RED}ERROR: asphyxia injury detected. Model the mechanism (restriction, breath quality, factor) or use add_oxygen_debt() / oxygen_debt().${NC}"
 	FAILED=1
 fi;
 
@@ -254,6 +274,17 @@ part "medical condition severity writes"
 if grep -RInE --include='*.dm' '\.severity[[:space:]]*[-+*/]?=[^=]' code/modules/medical code/modules/contracts; then
 	echo
 	echo -e "${RED}ERROR: direct medical-condition severity write detected. Use set_severity() or adjust_severity() so condition-dependent systems receive invalidation signals.${NC}"
+	FAILED=1
+fi;
+
+part "diagnosis: no four-number readouts"
+# Every scanner, monitor, HUD and UI renders body.diagnose(profile): vitals
+# plus findings (code/modules/medical/diagnosis/). The brute/burn/tox/oxy
+# readouts and their helpers are gone; injury_load() is an internal query,
+# not a UI.
+if grep -RInE --exclude-dir=node_modules --include='*.dm' --include='*.ts' --include='*.tsx' '\b(bruteLoss|oxyLoss|toxLoss|fireLoss|patient_brute|patient_burn|patient_tox|patient_oxy|physicalLoad|asphyxiaLoad|toxicLoad|thermalLoad|damagePanel|scannerFindings|dq_qualitative_damage_panel|dq_qualitative_scanner_findings|dq_crude_scan_readout|dq_externally_visible_symptom_lines)\b|Damage Specifics|Suffocation/Toxin/Burns/Brute' code tgui/packages/tgui/interfaces; then
+	echo
+	echo -e "${RED}ERROR: a four-number (brute/burn/tox/oxy) readout detected. Render a diagnosis instead: M.diagnose(/datum/diagnostic_profile/...) and its render_chat() / report_data().${NC}"
 	FAILED=1
 fi;
 

@@ -67,7 +67,9 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(self.stat != DEAD && self.bodytemperature >= 170)	//Dead or cryosleep people do not pump the blood.
 
 		var/blood_volume_raw = self.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
-		var/blood_volume = round((blood_volume_raw/self.species.blood_volume)*100) // Percentage.
+		// Perfusion is the physiology's: it reads the volume (and the heart's
+		// pumping) and decides whether the tissues starve.
+		self.body?.note_blood_fraction(self.species.blood_volume ? blood_volume_raw / self.species.blood_volume : 1)
 
 		//Blood regeneration if there is some space
 		if(blood_volume_raw < self.species.blood_volume)
@@ -81,73 +83,25 @@ BLOOD_VOLUME_SURVIVE = 40
 
 				B.volume += 0.1 + self.factor(BF_BLOOD_REGEN) // regenerate blood VERY slowly, faster with iron and friends
 
-		// Damaged heart virtually reduces the blood volume, as the blood isn't
-		// being pumped properly anymore.
-		if(self.species && self.should_have_organ(O_HEART))
-			var/obj/item/organ/internal/heart/heart = self.internal_organs_by_name[O_HEART]
-
-			if(self.has_modifier_of_type(/datum/modifier/bloodpump))
-				blood_volume_raw *= 1
-				blood_volume *= 1
-			else if(!heart)
-				blood_volume_raw = 0
-				blood_volume = 0
-			else if(heart.is_broken())
-				blood_volume_raw *= 0.3
-				blood_volume *= 0.3
-			else if(heart.is_bruised())
-				blood_volume_raw *= 0.7
-				blood_volume *= 0.7
-			else if(heart.damage > 5) // // so 0.00005 heart damage isnt 20% of blood missing, now its 5
-				blood_volume_raw *= 0.9 //chompedit from 0.8 to 0.9
-				blood_volume *= 0.9 //chompedit from 0.8 to 0.9
-			else if(heart.damage)
-				return
-
-		//Effects of bloodloss
-		var/dmg_coef = 1				//Lower means less damage taken
-		var/threshold_coef = 1			//Lower means the damage caps off lower
-
-		if(self.factor(BF_STABILIZATION))
-			dmg_coef = 0.5
-			threshold_coef = 0.75
-
-		// DQ medical owns blood-loss presentation. The
-		// vanilla branch below floods chat with "you feel woozy" etc.,
-		// which collides with our internal_hemorrhage/hypovolemic_shock
-		// symptoms. We keep the pale flag (sprite cue), the asphyxia
-		// (mechanical consequence of low O2 transport), and the fatal
-		// paralyse/sleep — but suppress the player-facing dizzy/woozy
-		// spam and skip the eye_blurry overrides (our symptoms own
-		// blurred_vision). Reasoning: DQ conditions provide messaging
-		// via /datum/affliction_symptom; doubled messages were confusing.
+		// DQ medical owns blood-loss presentation (internal_hemorrhage /
+		// hypovolemic_shock symptoms) and the physiology owns its consequence
+		// (low perfusion -> oxygen debt). Here: the pale sprite cue, and the
+		// fatal collapse below the survivable volume.
 		if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_safe)
 			if(self.pale)
 				self.pale = 0
 				self.update_icons_body()
-		else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_warning)
-			if(!self.pale)
-				self.pale = 1
-				self.update_icons_body()
-			if(self.injury_load(INJURY_CATEGORY_ASPHYXIA) < 20 * threshold_coef)
-				self.injure(INJURY_ASPHYXIA, 3 * dmg_coef)
-		else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_danger)
-			if(!self.pale)
-				self.pale = 1
-				self.update_icons_body()
-			if(self.injury_load(INJURY_CATEGORY_ASPHYXIA) < 50 * threshold_coef)
-				self.injure(INJURY_ASPHYXIA, 10 * dmg_coef)
-			self.injure(INJURY_ASPHYXIA, 1 * dmg_coef)
 		else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_fatal)
-			self.injure(INJURY_ASPHYXIA, 5 * dmg_coef)
+			if(!self.pale)
+				self.pale = 1
+				self.update_icons_body()
 		else //Not enough blood to survive (usually)
 			if(!self.pale)
 				self.pale = 1
 				self.update_icons_body()
 			self.Paralyse(3)
 			self.Sleeping(3)
-			self.injure(INJURY_TOXIN, 3 * dmg_coef, flags = INJURE_SILENT)
-			self.injure(INJURY_ASPHYXIA, 75 * dmg_coef)
+			self.injure(INJURY_TOXIN, (self.factor(BF_STABILIZATION) ? 1.5 : 3), flags = INJURE_SILENT)
 
 		// Without enough blood you slowly go hungry.
 		if(blood_volume_raw < self.species.blood_volume*self.species.blood_level_safe)
@@ -194,6 +148,9 @@ BLOOD_VOLUME_SURVIVE = 40
 
 		///First, we make sure it's not robotic.
 		if(temp.robotic >= ORGAN_ROBOT)
+			continue
+		///A tourniquet above the limb stops every bleed below it.
+		if(temp.flow_occluded())
 			continue
 
 		///Second, we process internal bleeding.

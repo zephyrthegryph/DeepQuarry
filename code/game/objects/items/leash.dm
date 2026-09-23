@@ -179,7 +179,7 @@
 			span_warning("Your leash pops from your collar!")
 		)
 		leash_pet.apply_effect(5, STUN, 0)
-		leash_pet.injure(INJURY_ASPHYXIA, 5, BP_HEAD, src)
+		leash_pet.body?.add_restriction(src, BF_AIRWAY, 0.2, 5 SECONDS) // the collar yanks the throat shut
 		clear_leash()
 
 /obj/item/leash/proc/on_pet_move()

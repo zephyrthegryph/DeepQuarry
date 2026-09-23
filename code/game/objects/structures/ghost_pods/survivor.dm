@@ -135,7 +135,7 @@
 			for(var/bu = 1, bu < burn_instances, bu++)
 				H.injure(INJURY_BURN, rand(1,burn_severity), null, src)
 		if(suffer_oxloss)
-			H.injure(INJURY_ASPHYXIA, rand(1,oxy_severity), null, src)
+			H.add_oxygen_debt(rand(1,oxy_severity), src) // spawned already suffocating
 		if(suffer_toxloss)
 			H.injure(INJURY_TOXIN, rand(1,tox_severity), null, src)
 		if(suffer_cloneloss)

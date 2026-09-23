@@ -22,8 +22,6 @@
 # Medical session areas (not edited here).
 /datum/robolimb/species_alternates # medical session owns code/modules/organs/robolimbs.dm; see memory_lists_audit.md
 /datum/robolimb/species_cannot_use # medical session owns code/modules/organs/robolimbs.dm; see memory_lists_audit.md
-/datum/surgery_status/in_progress # medical session owns code/modules/surgery/surgery.dm; see memory_lists_audit.md
-/datum/surgery_step/excludes_steps # medical session owns code/modules/surgery/surgery.dm; see memory_lists_audit.md
 /obj/item/organ/assists_languages # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
 /obj/item/organ/autopsy_data # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
 /obj/item/organ/external/children # medical session owns code/modules/organs/organ_external.dm; see memory_lists_audit.md

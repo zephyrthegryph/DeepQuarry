@@ -7,6 +7,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import {
+  type Diagnosis,
+  DiagnosisFindingsSection,
+  DiagnosisVitalsList,
+} from './common/Diagnosis';
 import { EmptyState } from './common/EmptyState';
 
 type Reagent = {
@@ -25,10 +30,7 @@ type Data = {
   occupant_name: string;
   status: string;
   health_percent: number;
-  brute: number;
-  oxy: number;
-  tox: number;
-  fire: number;
+  diagnosis: Diagnosis | null;
   body_temp_c: number;
   body_temp_f: number;
   reagents: Reagent[];
@@ -44,10 +46,7 @@ export const MechaSleeper = () => {
     occupant_name,
     status,
     health_percent,
-    brute,
-    oxy,
-    tox,
-    fire,
+    diagnosis,
     body_temp_c,
     body_temp_f,
     reagents,
@@ -89,20 +88,12 @@ export const MechaSleeper = () => {
                 {body_temp_c}°C / {body_temp_f}°F
               </Box>
             </LabeledList.Item>
-            <LabeledList.Item label="Brute">
-              <Box color={goodIf(brute < 60)}>{brute}%</Box>
-            </LabeledList.Item>
-            <LabeledList.Item label="Respiratory">
-              <Box color={goodIf(oxy < 60)}>{oxy}%</Box>
-            </LabeledList.Item>
-            <LabeledList.Item label="Toxin">
-              <Box color={goodIf(tox < 60)}>{tox}%</Box>
-            </LabeledList.Item>
-            <LabeledList.Item label="Burn">
-              <Box color={goodIf(fire < 60)}>{fire}%</Box>
-            </LabeledList.Item>
           </LabeledList>
+          {diagnosis ? <DiagnosisVitalsList vitals={diagnosis.vitals} /> : null}
         </Section>
+        {diagnosis ? (
+          <DiagnosisFindingsSection findings={diagnosis.findings} />
+        ) : null}
 
         <Section title="Reagents in bloodstream">
           {reagents.length === 0 ? (

@@ -1,5 +1,6 @@
 /datum/species/alraune
 	name = SPECIES_ALRAUNE
+	skin_breathing = TRUE
 	name_plural = "Alraunes"
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch, /datum/unarmed_attack/bite)
 	species_language = LANGUAGE_ENOCHIAN
@@ -103,11 +104,6 @@
 	if(H.inStasisNow()) // if they're in stasis, they won't need this stuff.
 		return
 
-	//setting these here 'cause ugh the defines for life are in the wrong place to compile properly
-	//set them back to HUMAN_MAX_OXYLOSS if we move the life defines to the defines folder at any point
-	var/ALRAUNE_MAX_OXYLOSS = 1 //Defines how much oxyloss humans can get per tick. A tile with no air at all (such as space) applies this value, otherwise it's a percentage of it.
-	var/ALRAUNE_CRIT_MAX_OXYLOSS = ( 2.0 / 6) //The amount of damage you'll get when in critical condition. We want this to be a 5 minute deal = 300s. There are 50HP to get through, so (1/6)*last_tick_duration per second. Breaths however only happen every 4 ticks. last_tick_duration = ~2.0 on average
-
 	//They don't have lungs so breathe() will just return. Instead, they breathe through their skin.
 	//This is mostly normal breath code with some tweaks that apply to their particular biology.
 
@@ -140,15 +136,12 @@
 	// NOW a crude copypasta of handle_breath. Leaving some things out that don't apply to plants.
 	if(H.does_not_breathe)
 		H.failed_last_breath = 0
-		H.mend(TREAT_OXYGENATION, 5)
 		return ..()// if somehow they don't breathe, abort breathing.
 
+	// The breath's quality goes to the physiology, which decides whether the plant suffocates.
 	if(!breath || (xgm_total_moles(breath) == 0)) // xgm_total_moles bridges XGM-var/LINDA-proc gap
 		H.failed_last_breath = 1
-		if(!H.is_critical())
-			H.injure(INJURY_ASPHYXIA, ALRAUNE_MAX_OXYLOSS)
-		else
-			H.injure(INJURY_ASPHYXIA, ALRAUNE_CRIT_MAX_OXYLOSS)
+		H.body?.set_breath_quality(0)
 
 		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
 
@@ -176,6 +169,7 @@
 
 	var/failed_inhale = 0
 	var/failed_exhale = 0
+	var/quality = 1
 
 	inhaling = LINDA_GAS_AMT(breath, GAS_CO2)
 	poison = LINDA_GAS_AMT(breath, poison_type)
@@ -190,9 +184,7 @@
 		if(prob(20))
 			spawn(0) H.emote("gasp")
 
-		var/ratio = (inhale_pp + exhaled_pp)/minimum_breath_pressure
-		// Don't fuck them up too fast (space only does HUMAN_MAX_OXYLOSS (1) after all!)
-		H.injure(INJURY_ASPHYXIA, max(ALRAUNE_MAX_OXYLOSS*(1-ratio), 0))
+		quality = clamp((inhale_pp + exhaled_pp) / minimum_breath_pressure, 0, 1)
 		failed_inhale = 1
 
 		H.throw_alert("oxy", /atom/movable/screen/alert/not_enough_co2)
@@ -256,11 +248,8 @@
 		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) // update after // was "sleeping_agent" string (XGM); LINDA uses GAS_N2O = "n2o"
 
 	// Were we able to breathe?
-	if (failed_inhale || failed_exhale)
-		H.failed_last_breath = 1
-	else
-		H.failed_last_breath = 0
-		H.mend(TREAT_OXYGENATION, 5)
+	H.failed_last_breath = (failed_inhale || failed_exhale) ? 1 : 0
+	H.body?.set_breath_quality(quality)
 
 
 	// Hot air hurts :(

@@ -35,7 +35,7 @@
 		C.does_not_breathe = FALSE	//This means they don't autoheal the oxy damage from the next step
 
 	if(C.stat != DEAD)
-		C.injure(INJURY_ASPHYXIA, C.get_endurance() * 2, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+		C.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, "changeling fake death")
 
 	C.forbid_seeing_deadchat = TRUE
 

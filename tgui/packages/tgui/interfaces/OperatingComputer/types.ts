@@ -1,38 +1,25 @@
 import type { BooleanLike } from 'tgui-core/react';
 
+import type { Diagnosis } from '../common/Diagnosis';
+
 export type Data = {
   hasOccupant: BooleanLike;
   occupant: occupant;
   verbose: BooleanLike;
-  oxyAlarm: number;
+  spo2Alarm: number;
   choice: BooleanLike;
   health: BooleanLike;
   crit: BooleanLike;
   healthAlarm: number;
-  oxy: BooleanLike;
+  spo2: BooleanLike;
 };
 
 export type occupant = {
   name: string;
   stat: number;
-  health: number;
-  maxHealth: number;
-  minHealth: number;
-  bruteLoss: number;
-  oxyLoss: number;
-  toxLoss: number;
-  fireLoss: number;
+  vitality: number;
   paralysis: number;
-  hasBlood: BooleanLike;
-  bodyTemperature: number;
-  maxTemp: number;
-  temperatureSuitability: number;
-  btCelsius: number;
-  btFaren: number;
-  pulse: number | undefined;
-  bloodLevel: number | undefined;
-  bloodMax: number | undefined;
-  bloodPercent: number | undefined;
+  diagnosis: Diagnosis;
   bloodType: string | undefined;
   surgery: { name: string; currentStage: string; nextSteps: string[] }[] | null;
 };

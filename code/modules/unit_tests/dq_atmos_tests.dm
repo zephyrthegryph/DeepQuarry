@@ -3439,13 +3439,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Near-vacuum breath (tiny moles).
 	var/datum/gas_mixture/breath = new(BREATH_VOLUME)
-	breath.adjust_gas(/datum/gas/oxygen, 0.01)
+	breath.adjust_gas(/datum/gas/oxygen, 0.002)
 	breath.set_temperature(T20C)
-	var/initial_hypoxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/initial_hypoxia = H.oxygen_debt()
 
 	life_test_breath(H, breath)
+	H.body.physiology_tick(2)
 
-	var/final_hypoxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/final_hypoxia = H.oxygen_debt()
 	TEST_ASSERT(final_hypoxia > initial_hypoxia, \
 		"human didn't become hypoxic from near-vacuum breath: [initial_hypoxia] → [final_hypoxia]")
 

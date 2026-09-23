@@ -342,7 +342,7 @@
 	var/digest_alert_prey = span_vnotice(belly_format_string(digest_messages_prey, M))
 	var/compensation = M.get_endurance() / 5 //Dead body bonus.
 	if(ishuman(M))
-		compensation += M.injury_load(INJURY_CATEGORY_ASPHYXIA) //How much of the prey's damage was caused by passive crit oxyloss to compensate the lost nutrition.
+		compensation += M.oxygen_debt() //How much of the prey's damage was caused by passive crit oxyloss to compensate the lost nutrition.
 
 	//Send messages
 	to_chat(owner, digest_alert_owner)

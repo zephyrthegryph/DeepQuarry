@@ -511,6 +511,7 @@
 			playsound(src, pickup_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
 	SEND_SIGNAL(src, COMSIG_ITEM_EQUIPPED, user, slot)
 	SEND_SIGNAL(user, COMSIG_MOB_EQUIPPED_ITEM, src, slot)
+	user.on_equipment_changed()
 	var/mob/living/M = loc
 	if(!istype(M))
 		return

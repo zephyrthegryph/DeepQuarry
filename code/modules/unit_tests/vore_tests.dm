@@ -32,10 +32,10 @@
 
 	TEST_ASSERT(prey.loc == pred.vore_selected, "Prey not inside predator belly")
 
-	var/start_oxy = prey.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/start_oxy = prey.oxygen_debt()
 	_vore_test_run_cycles(pred, prey, 10)
 
-	var/end_oxy = prey.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/end_oxy = prey.oxygen_debt()
 	if(end_oxy > start_oxy)
 		TEST_FAIL("Prey became hypoxic in belly (before: [start_oxy], after: [end_oxy])")
 
@@ -67,10 +67,10 @@
 
 	pred.forceMove(space_turf)
 
-	var/start_oxy = prey.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/start_oxy = prey.oxygen_debt()
 	_vore_test_run_cycles(pred, prey, 10)
 
-	var/end_oxy = prey.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/end_oxy = prey.oxygen_debt()
 	if(end_oxy > start_oxy)
 		TEST_FAIL("Prey became hypoxic in space belly (before: [start_oxy], after: [end_oxy])")
 
@@ -105,6 +105,7 @@
 	. = 0
 	for(var/category in 1 to INJURY_CATEGORY_COUNT)
 		. += L.injury_load(category)
+	. += L.oxygen_debt()
 	for(var/datum/affliction/A as anything in L.body?.afflictions)
 		if(A.injury_category)
 			. += A.load_value()

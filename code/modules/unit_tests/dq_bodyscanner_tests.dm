@@ -1,5 +1,6 @@
-// Unit tests for the qualitative bodyscanner output — damage bands,
-// vitality bands, the damage panel, and scanner-audience symptom filtering.
+// Unit tests for the qualitative bodyscanner output: damage bands,
+// vitality bands, and the body scanner diagnosis (signs, trends, GM
+// afflictions).
 //
 // See dq_surgery_tests.dm for the include scheme and macro scope.
 
@@ -38,28 +39,22 @@
 	TEST_ASSERT(_dq_band_rank(dq_qualitative_vitality_band(H.vitality(), H.is_critical())) > _dq_band_rank("uninjured"), "a heavy chest injury should lower the vitality band")
 
 
-// --- damage panel emits every kind ---------------------------------
-
-/datum/unit_test/dq_bodyscanner_damage_panel_emits_all_kinds
-
-/datum/unit_test/dq_bodyscanner_damage_panel_emits_all_kinds/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/list/panel = dq_qualitative_damage_panel(H)
-	TEST_ASSERT(length(panel) > 0, "damage panel should emit at least one row")
-	for(var/list/row in panel)
-		TEST_ASSERT(row["kind"], "panel row missing 'kind'")
-		TEST_ASSERT(row["label"], "panel row missing 'label'")
-		TEST_ASSERT(row["band"], "panel row missing 'band'")
-
-
-// --- scanner findings: SCANNER-audience symptoms show up -----------
+// --- body scanner diagnosis: SCANNER-audience symptoms present as signs ----
 
 /datum/unit_test/dq_bodyscanner_scanner_findings_filter
 
+/// Names of the body scanner diagnosis findings of `kind` (all when null).
+/datum/unit_test/proc/_body_scanner_finding_names(mob/living/carbon/human/H, kind = null)
+	. = list()
+	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
+	for(var/datum/diagnosis_finding/F as anything in D.findings_of(kind))
+		. += F.name
+	qdel(D)
+
 /datum/unit_test/dq_bodyscanner_scanner_findings_filter/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/list/empty = dq_qualitative_scanner_findings(H)
-	TEST_ASSERT_EQUAL(length(empty), 0, "no conditions = no findings")
+	var/list/empty = _body_scanner_finding_names(H)
+	TEST_ASSERT_EQUAL(length(empty), 0, "no conditions = no findings (got [english_list(empty)])")
 
 	var/datum/affliction/lacerated_artery/C = _spawn_affliction_on(H, BP_L_ARM, /datum/affliction/lacerated_artery)
 	TEST_ASSERT_NOTNULL(C, "lacerated_artery didn't spawn")
@@ -71,19 +66,24 @@
 	if(!(/datum/affliction_symptom/bleeding_visible in C.active_symptoms))
 		LAZYADD(C.active_symptoms, /datum/affliction_symptom/bleeding_visible)
 
-	var/list/findings = dq_qualitative_scanner_findings(H)
-	TEST_ASSERT(length(findings) > 0, "lacerated_artery with scanner symptom should produce a finding")
 	var/saw_bleed = FALSE
-	for(var/list/f in findings)
-		if(findtext(f["phrase"], "blood loss"))
+	for(var/name in _body_scanner_finding_names(H, DIAG_FINDING_SIGN))
+		if(findtext(name, "blood loss"))
 			saw_bleed = TRUE
 			break
-	TEST_ASSERT(saw_bleed, "scanner_phrase 'blood loss' should be reported in findings")
+	TEST_ASSERT(saw_bleed, "scanner_phrase 'blood loss' should be reported as a sign")
 
 
-// --- scanner findings: trend arrow tracks severity changes -----------
+// --- body scanner diagnosis: trend tracks severity changes -------------
 
 /datum/unit_test/dq_bodyscanner_finding_trend
+
+/datum/unit_test/proc/_lacerated_artery_trend(mob/living/carbon/human/H)
+	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
+	for(var/datum/diagnosis_finding/F as anything in D.findings)
+		if(F.source_type == /datum/affliction/lacerated_artery)
+			. = F.trend
+	qdel(D)
 
 /datum/unit_test/dq_bodyscanner_finding_trend/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
@@ -91,35 +91,17 @@
 	TEST_ASSERT_NOTNULL(C, "spawn failed")
 	C.severity = 50
 
-	// Force a SCANNER symptom into the active set so a finding is emitted.
-	C.active_symptoms = list(/datum/affliction_symptom/bleeding_visible)
-
-	// First scan: trend should be "new" — no prior baseline.
-	var/list/findings1 = dq_qualitative_scanner_findings(H)
-	TEST_ASSERT(length(findings1) > 0, "first scan should emit a finding")
-	TEST_ASSERT_EQUAL(findings1[1]["trend"], "new", "first scan trend should be 'new'")
-
-	// Severity unchanged between scans: "stable".
-	var/list/findings2 = dq_qualitative_scanner_findings(H)
-	TEST_ASSERT_EQUAL(findings2[1]["trend"], "stable", "unchanged severity should read 'stable'")
-
-	// Severity rises significantly: "worsening".
+	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "new", "first scan trend should be 'new'")
+	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "stable", "unchanged severity should read 'stable'")
 	C.severity = 70
-	var/list/findings3 = dq_qualitative_scanner_findings(H)
-	TEST_ASSERT_EQUAL(findings3[1]["trend"], "worsening", "rising severity should read 'worsening'")
-
-	// Severity drops significantly: "improving".
+	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "worsening", "rising severity should read 'worsening'")
 	C.severity = 30
-	var/list/findings4 = dq_qualitative_scanner_findings(H)
-	TEST_ASSERT_EQUAL(findings4[1]["trend"], "improving", "falling severity should read 'improving'")
-
-	// Tiny drift stays "stable" (dead zone).
+	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "improving", "falling severity should read 'improving'")
 	C.severity = 31
-	var/list/findings5 = dq_qualitative_scanner_findings(H)
-	TEST_ASSERT_EQUAL(findings5[1]["trend"], "stable", "tiny drift should stay in the dead zone")
+	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "stable", "tiny drift should stay in the dead zone")
 
 
-// --- scanner findings: PATIENT-only symptoms stay hidden -----------
+// --- body scanner diagnosis: PATIENT-only symptoms stay hidden ----------
 
 /datum/unit_test/dq_bodyscanner_patient_symptoms_hidden
 
@@ -130,13 +112,12 @@
 
 	C.active_symptoms = list(/datum/affliction_symptom/headache)
 
-	var/list/findings = dq_qualitative_scanner_findings(H)
-	for(var/list/f in findings)
-		if(findtext(f["phrase"], "headache"))
+	for(var/name in _body_scanner_finding_names(H, DIAG_FINDING_SIGN))
+		if(findtext(name, "headache"))
 			TEST_FAIL("PATIENT-only symptom 'headache' should not appear in scanner findings")
 
 
-// --- scanner findings: GM custom afflictions honour showscanner --------
+// --- body scanner diagnosis: GM custom afflictions honour showscanner ------
 
 /datum/unit_test/dq_bodyscanner_custom_affliction_findings
 
@@ -149,15 +130,16 @@
 	A.name = "glowing liver"
 
 	A.showscanner = FALSE
-	for(var/list/f in dq_qualitative_scanner_findings(H))
-		if(f["phrase"] == "glowing liver")
-			TEST_FAIL("a custom affliction hidden from scanners appeared in the findings")
+	if("glowing liver" in _body_scanner_finding_names(H))
+		TEST_FAIL("a custom affliction hidden from scanners appeared in the findings")
 
 	A.showscanner = TRUE
 	var/found = FALSE
-	for(var/list/f in dq_qualitative_scanner_findings(H))
-		if(f["phrase"] == "glowing liver" && f["organ"] == liver.name)
+	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
+	for(var/datum/diagnosis_finding/F as anything in D.findings)
+		if(F.name == "glowing liver" && F.location == liver.name)
 			found = TRUE
+	qdel(D)
 	TEST_ASSERT(found, "a scanner-visible custom affliction was not reported on its organ")
 
 #endif

@@ -93,7 +93,6 @@
 		list(BF_INCOMING_PHYSICAL, "Physical injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Blunt, cutting and piercing injury taken."),
 		list(BF_INCOMING_THERMAL, "Thermal injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Burn, frostbite, corrosive and electrical injury taken."),
 		list(BF_INCOMING_TOXIC, "Toxic injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Poisoning taken."),
-		list(BF_INCOMING_ASPHYXIA, "Asphyxia taken", BF_RULE_MULT, 1, 0, 10, "percent", "Asphyxiation taken."),
 		list(BF_INCOMING_GENETIC, "Genetic injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Radiation and cellular injury taken."),
 		list(BF_INCOMING_NEURAL, "Neural injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Neural injury taken."),
 		list(BF_INCOMING_PAIN, "Pain taken", BF_RULE_MULT, 1, 0, 10, "percent", "Pain inflicted by weapons."),
@@ -121,6 +120,9 @@
 		list(BF_WITHDRAWAL, "Withdrawal", BF_RULE_ADD, 0, 0, INFINITY, "points", "Withdrawal strain on the organs."),
 		list(BF_NEURAL_REPAIR, "Neural repair", BF_RULE_ADD, 0, 0, INFINITY, "points", "Extra brain repair per tick."),
 		list(BF_IMMUNE_SUPPRESSION, "Immune suppression", BF_RULE_ADD, 0, 0, INFINITY, "points", "Suppresses the immune response."),
+		list(BF_O2_CARRIAGE, "Oxygen carriage", BF_RULE_MULT, 1, 0, 2, "percent", "How much oxygen the blood carries."),
+		list(BF_TISSUE_UPTAKE, "Tissue oxygen uptake", BF_RULE_MULT, 1, 0, 2, "percent", "How well the tissues use the oxygen that reaches them."),
+		list(BF_STASIS, "Stasis", BF_RULE_MAX, 0, 0, 1, "points", "Share of life processes suspended: conditions, metabolism and breathing slow by this much."),
 	)
 	for(var/list/row as anything in rows)
 		defs[row[1]] = new /datum/body_factor_def(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])
@@ -251,8 +253,9 @@
 	var/list/old = factors
 	factors = body_factor_finalize(acc)
 	if(!factors_equal(old, factors))
-		// Pain and consciousness read analgesia, pain and sedation.
-		invalidate(BODY_DIRTY_VITALS)
+		// Pain and consciousness read analgesia, pain and sedation; the
+		// physiology reads the oxygen-transport factors.
+		invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
 		SEND_SIGNAL(owner, COMSIG_LIVING_FACTORS_CHANGED)
 
 /datum/body/proc/factors_equal(list/a, list/b)

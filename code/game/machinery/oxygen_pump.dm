@@ -362,6 +362,10 @@
 
 				else
 					H.add_modifier(/datum/modifier/bloodpump, 6 SECONDS)
+					// A ventilator and circulatory pump: floors under the
+					// breathing drive and cardiac output while attached.
+					H.body?.add_support(src, BF_RESP_DRIVE, 1, 6 SECONDS)
+					H.body?.add_support(src, BF_PUMP, 1, 6 SECONDS)
 
 	var/turf/T = get_turf(src)
 

@@ -107,6 +107,41 @@
 	)
 	return S
 
+/datum/affliction/overdose/norepinephrine
+	factors = alist(BF_HEART_RATE = 30, BF_BP_SYSTOLIC = 35, BF_BP_DIASTOLIC = 20)
+	name = "norepinephrine overdose"
+	clinical_description = "Too much vasopressor clamps the vessels down hard: severe hypertension, a racing heart, cold pale extremities and a pounding headache. Stop the infusion; it clears as the drug metabolises."
+	symptom_pool = list(
+		/datum/affliction_symptom/palpitations      = 80,
+		/datum/affliction_symptom/headache          = 70,
+		/datum/affliction_symptom/pallor            = 50,
+		/datum/affliction_symptom/cold_mottled_skin = 40,
+	)
+	min_symptoms = 2
+	max_symptoms = 3
+	caused_by_chems = list(REAGENT_ID_NOREPINEPHRINE = REAGENTS_OVERDOSE)
+	caused_by_chems_organ = O_HEART
+
+/datum/affliction/overdose/norepinephrine/get_stages()
+	var/static/list/S = overdose_stages(
+		chem_stage(list(
+			/datum/affliction_symptom/palpitations = 70,
+			/datum/affliction_symptom/headache     = 60,
+		), 1, 2, list("factors" = alist(BF_HEART_RATE = 10, BF_BP_SYSTOLIC = 12))),
+		chem_stage(list(
+			/datum/affliction_symptom/palpitations = 80,
+			/datum/affliction_symptom/headache     = 70,
+			/datum/affliction_symptom/pallor       = 50,
+		), 2, 3, list("factors" = alist(BF_HEART_RATE = 22, BF_BP_SYSTOLIC = 25, BF_BP_DIASTOLIC = 12))),
+		chem_stage(list(
+			/datum/affliction_symptom/palpitations      = 90,
+			/datum/affliction_symptom/headache          = 80,
+			/datum/affliction_symptom/pallor            = 70,
+			/datum/affliction_symptom/cold_mottled_skin = 60,
+		), 3, 4, list("factors" = alist(BF_HEART_RATE = 35, BF_BP_SYSTOLIC = 40, BF_BP_DIASTOLIC = 22))),
+	)
+	return S
+
 /datum/affliction/overdose/leporazine
 	name = "leporazine overdose"
 	clinical_description = "Leporazine overdose causes thermoregulatory chaos — the patient's temperature swings unpredictably, accompanied by chills and sweats."

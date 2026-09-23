@@ -116,10 +116,9 @@
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
 		occupantData["critical"] = occupant.is_critical()
-		occupantData["physicalLoad"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-		occupantData["asphyxiaLoad"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
-		occupantData["toxicLoad"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
-		occupantData["thermalLoad"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
+		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
+		occupantData["diagnosis"] = D.report_data()
+		qdel(D)
 		occupantData["bodyTemperature"] = occupant.bodytemperature
 	data["occupant"] = occupantData;
 
@@ -269,7 +268,6 @@
 		occupant.bodytemperature = 261									  // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
 	unbuckle_mob(occupant, force = TRUE)
 	occupant.cozyloop.stop() // Cozy Music
-	//REMOVE_TRAIT(occupant, TRAIT_STASIS, REF(src)) //Stops life almost entirely, so not done here.
 	occupant = null
 	update_use_power(USE_POWER_IDLE)
 	SStgui.update_uis(src)
@@ -300,7 +298,6 @@
 	if(on)
 		START_MACHINE_PROCESSING(src)
 	occupant.cozyloop.start() // Cozy Music
-	//ADD_TRAIT(occupant, TRAIT_STASIS, REF(src))  //Stops life almost entirely, so not done here.
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant
 	occupant.pixel_y += 19

@@ -384,12 +384,13 @@
 	if(digitalcamo)
 		msg += "[p_Theyre()] repulsively uncanny!"
 
-	// list externally-visible symptoms from cascading
-	// conditions. Anyone examining sees what's plainly visible (bleeding,
-	// pallor, blue lips, labored breathing). Patient-only sensations
+	// What the naked eye sees: the glance diagnosis profile (bleeding,
+	// pallor, blue lips, laboured breathing). Patient-only sensations
 	// (pain, dizziness) stay hidden.
-	for(var/line in dq_externally_visible_symptom_lines())
+	var/datum/diagnosis/glance = diagnose(/datum/diagnostic_profile/glance)
+	for(var/line in glance?.examine_lines())
 		msg += span_warning(line)
+	qdel(glance)
 
 	if(hasHUD(user,"security"))
 		var/perpname = name

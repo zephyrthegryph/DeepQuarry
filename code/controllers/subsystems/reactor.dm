@@ -454,9 +454,7 @@ SUBSYSTEM_DEF(reactor)
 /**
  * The one place a reactor wake reaches mob Life. A mob's on_react() (or a life system's watch)
  * calls this with the LIFE_SYS_* bits to wake and a short `what` ("gas", "timer", ...).
- * After the body rewrite's wave-4 merge this becomes `life_wake(bits, "reactor:[what]")`;
- * until then it uses the scheduler's current wake().
  */
 /mob/living/proc/reactor_wake(bits, what)
 	SHOULD_NOT_SLEEP(TRUE)
-	wake(bits)
+	life_wake(bits, "reactor:[what]")

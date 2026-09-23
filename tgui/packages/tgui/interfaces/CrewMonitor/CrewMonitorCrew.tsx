@@ -11,12 +11,43 @@ import {
 import { createSearch } from 'tgui-core/string';
 
 import {
+  getConditionInfo,
   getShownCrew,
   getSortedCrew,
   getStatColor,
   getStatText,
 } from './functions';
 import type { Crewmember, Data } from './types';
+
+// Suit-sensor vitals: a coarse condition plus pulse, SpO2 and temperature.
+const CrewVitals = (props: { cm: Crewmember }) => {
+  const { cm } = props;
+  const condition = getConditionInfo(cm);
+  const readings: string[] = [];
+  if (cm.heartRate !== null && cm.heartRate !== undefined) {
+    readings.push(`${cm.heartRate} bpm`);
+  }
+  if (cm.oxygenation !== null && cm.oxygenation !== undefined) {
+    readings.push(`SpO2 ${cm.oxygenation}%`);
+  }
+  if (cm.temperature !== null && cm.temperature !== undefined) {
+    readings.push(`${cm.temperature}\u00B0C`);
+  }
+  return (
+    <Box inline ml={1}>
+      {condition ? (
+        <Box inline color={condition.color} mr={1}>
+          {condition.label}
+        </Box>
+      ) : null}
+      {readings.length ? (
+        <Box inline color="label">
+          ({readings.join(' | ')})
+        </Box>
+      ) : null}
+    </Box>
+  );
+};
 
 export const CrewMonitorCrew = (props: { crew: Crewmember[] }) => {
   const { act, data } = useBackend<Data>();
@@ -172,27 +203,7 @@ export const CrewMonitorCrew = (props: { crew: Crewmember[] }) => {
               <Box inline color={getStatColor(cm)}>
                 {getStatText(cm)}
               </Box>
-              {cm.sensor_type >= 2 ? (
-                <Box inline>
-                  {'('}
-                  <Box inline color="red">
-                    {cm.brute}
-                  </Box>
-                  {'|'}
-                  <Box inline color="orange">
-                    {cm.fire}
-                  </Box>
-                  {'|'}
-                  <Box inline color="green">
-                    {cm.tox}
-                  </Box>
-                  {'|'}
-                  <Box inline color="blue">
-                    {cm.oxy}
-                  </Box>
-                  {')'}
-                </Box>
-              ) : null}
+              {cm.sensor_type >= 2 ? <CrewVitals cm={cm} /> : null}
             </Table.Cell>
             <Table.Cell>
               {cm.sensor_type === 3 ? (

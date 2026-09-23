@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Mob life systems now sleep when idle and wake on events (injury, treatment, reagents, stuns, movement, equipment, stat changes, login)."
+  - code_imp: "Mobs with nothing to do hibernate out of the mob subsystem, players included. A 30-second audit logs and wakes any mob that missed a wake."
+  - code_imp: "Voice, visible name and the periodic HUD refresh are event-driven, with slow backup timers."
+  - server: "New MOB_HIBERNATE_SUMMARY log line every two minutes. GLOB.mob_hibernation_trace turns on per-transition logging."

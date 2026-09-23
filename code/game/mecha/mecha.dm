@@ -3196,15 +3196,15 @@
 	var/physical = source_mob.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/thermal = source_mob.injury_load(INJURY_CATEGORY_THERMAL)
 	var/toxic = source_mob.injury_load(INJURY_CATEGORY_TOXIC)
-	var/asphyxia = source_mob.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/oxygen_debt = source_mob.oxygen_debt()
 	if(physical)
 		target_mob.injure(INJURY_BLUNT, physical, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	if(thermal)
 		target_mob.injure(INJURY_BURN, thermal, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	if(toxic)
 		target_mob.injure(INJURY_TOXIN, toxic, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	if(asphyxia)
-		target_mob.injure(INJURY_ASPHYXIA, asphyxia, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	if(oxygen_debt)
+		target_mob.add_oxygen_debt(oxygen_debt, src)
 
 /// Icon-state suffix for the melee-mode action button, keyed on the mecha's melee injury kind.
 /obj/mecha/proc/melee_damtype_icon()

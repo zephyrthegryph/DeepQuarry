@@ -443,6 +443,85 @@
 	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
 
+/// Idle mob Life cost with mob hibernation off, then on (doc/mob_life_architecture.md §4.9).
+/// Spawns idle mice (every system has a sleep rule, so they hibernate) and humans (partly
+/// asleep until the physiology systems gain sleep rules) on a fixture, then measures SSmobs
+/// with GLOB.mob_hibernation_enabled FALSE and TRUE.
+/datum/benchmark/idle_mobs
+	id = "idle_mobs"
+	description = "Idle mob Life cost with mob hibernation off and on"
+
+/datum/benchmark/idle_mobs/Run()
+	wait_for_assets()
+	var/list/turf/open/turfs = build_floor_fixture(param("width", 20))
+	var/list/mob/living/mobs = list()
+	var/mice = param("mice", 300)
+	var/humans = param("humans", 40)
+	var/cycles = param("cycles", 30)
+	for(var/i in 1 to mice)
+		var/mob/living/simple_mob/animal/passive/mouse/M = new(pick(turfs))
+		benchmark_quiet_simple_mob(M)
+		mobs += M
+		CHECK_TICK
+	for(var/i in 1 to humans)
+		mobs += new /mob/living/carbon/human(pick(turfs))
+		CHECK_TICK
+	metric("idle_mobs_spawned", length(mobs), "mobs", "none")
+	var/was_enabled = GLOB.mob_hibernation_enabled
+
+	GLOB.mob_hibernation_enabled = FALSE
+	for(var/mob/living/L as anything in mobs)
+		L.life_wake(LIFE_SYS_ALL, "benchmark")
+	wait_fires(SSmobs, SSmobs.life_slices * 2)
+	begin_window()
+	wait_fires(SSmobs, SSmobs.life_slices * cycles)
+	end_window("hibernation_off")
+	metric("hibernation_off_ssmobs_cost_ms", SSmobs.cost, "ms")
+	metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
+
+	GLOB.mob_hibernation_enabled = TRUE
+	wait_fires(SSmobs, SSmobs.life_slices * 4)
+	begin_window()
+	wait_fires(SSmobs, SSmobs.life_slices * cycles)
+	end_window("hibernation_on")
+	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
+	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
+	var/list/awake_bits = list()
+	for(var/mob/living/L as anything in mobs)
+		if(!L.life_hibernating)
+			awake_bits["[L.type]"] |= L.life_awake
+	detail("hibernation_on_awake_bits_by_type", awake_bits)
+
+	GLOB.mob_hibernation_enabled = was_enabled
+	for(var/mob/living/L as anything in mobs)
+		qdel(L)
+		CHECK_TICK
+
+/// Puts a simple mob's AI to sleep and opens its environment limits, so it idles without
+/// reacting to the fixture's air.
+/proc/benchmark_quiet_simple_mob(mob/living/simple_mob/M)
+	M.ai_brain?.go_sleep()
+	M.min_oxy = 0
+	M.max_oxy = 0
+	M.min_tox = 0
+	M.max_tox = 0
+	M.min_n2 = 0
+	M.max_n2 = 0
+	M.min_co2 = 0
+	M.max_co2 = 0
+	M.min_ch4 = 0
+	M.max_ch4 = 0
+	M.minbodytemp = 0
+	M.maxbodytemp = INFINITY
+	M.temperature_range = INFINITY
+
+/// How many of `mobs` are hibernating.
+/proc/benchmark_count_hibernating(list/mobs)
+	. = 0
+	for(var/mob/living/L as anything in mobs)
+		if(L.life_hibernating)
+			.++
+
 /// Radiation: pulses from many sources over a walled fixture full of mobs and
 /// insulating objects. Reports the time SSradiation spent inside pulses.
 /datum/benchmark/radiation
