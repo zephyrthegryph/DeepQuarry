@@ -35,6 +35,7 @@ use std::hash::BuildHasherDefault;
 use crate::overlay::{CellHasher, CellMap};
 
 use crate::outbox::{Lane, Subscriber, Wake, WatchId, reason};
+use crate::rate::RateModel;
 use crate::timer::{Tick, TimerId, TimerWheel};
 use crate::watch::Cmp;
 
@@ -194,125 +195,10 @@ impl WakeLanes {
 }
 
 // --- Rate models ------------------------------------------------------------
-
-/// A quantity that changes at a known rate between events (§7), in value
-/// units per tick. Reading evaluates it at a time; crossing times are
-/// solved exactly.
-#[derive(Clone, Debug, PartialEq)]
-pub enum RateModel {
-    /// `clamp(v0 + rate * (t - t0), min, max)`.
-    Linear {
-        v0: f64,
-        rate: f64,
-        t0: f64,
-        min: f64,
-        max: f64,
-    },
-    /// `target + (v0 - target) * e^(-k (t - t0))`, `k > 0`.
-    Relax {
-        target: f64,
-        v0: f64,
-        k: f64,
-        t0: f64,
-    },
-    /// A store with named inflows and outflows: linear with the summed
-    /// rate, clamped.
-    Sum {
-        v0: f64,
-        t0: f64,
-        terms: Vec<(u32, f64)>,
-        min: f64,
-        max: f64,
-    },
-}
-
-impl RateModel {
-    #[must_use]
-    pub const fn linear(v0: f64, rate: f64, t0: f64) -> Self {
-        Self::Linear {
-            v0,
-            rate,
-            t0,
-            min: f64::NEG_INFINITY,
-            max: f64::INFINITY,
-        }
-    }
-
-    fn line(&self) -> Option<(f64, f64, f64, f64, f64)> {
-        match self {
-            Self::Linear {
-                v0,
-                rate,
-                t0,
-                min,
-                max,
-            } => Some((*v0, *rate, *t0, *min, *max)),
-            Self::Sum {
-                v0,
-                t0,
-                terms,
-                min,
-                max,
-            } => Some((*v0, terms.iter().map(|t| t.1).sum(), *t0, *min, *max)),
-            Self::Relax { .. } => None,
-        }
-    }
-
-    /// The value at time `t`.
-    #[must_use]
-    pub fn value_at(&self, t: f64) -> f64 {
-        match self {
-            Self::Relax { target, v0, k, t0 } => target + (v0 - target) * (-k * (t - t0)).exp(),
-            _ => {
-                let (v0, rate, t0, min, max) = self.line().expect("linear");
-                rate.mul_add(t - t0, v0).clamp(min, max)
-            }
-        }
-    }
-
-    /// The first time strictly after `after` at which the value reaches
-    /// `level` from the side it is on at `after`, or `None` if it never
-    /// does. Exact up to floating point: no stepping.
-    #[must_use]
-    pub fn crossing(&self, level: f64, after: f64) -> Option<f64> {
-        let now = self.value_at(after);
-        if now == level || !level.is_finite() {
-            return None;
-        }
-        let t = match self {
-            Self::Relax { target, v0, k, t0 } => {
-                // Reachable only strictly between the current value and the
-                // target (the target itself is approached, never reached).
-                let between = (now < level && level < *target) || (*target < level && level < now);
-                if !between || *k <= 0.0 {
-                    return None;
-                }
-                t0 - ((level - target) / (v0 - target)).ln() / k
-            }
-            _ => {
-                let (v0, rate, t0, min, max) = self.line().expect("linear");
-                let heading_up = rate > 0.0;
-                if rate == 0.0 || (heading_up != (level > now)) || level < min || level > max {
-                    return None;
-                }
-                t0 + (level - v0) / rate
-            }
-        };
-        (t > after && t.is_finite()).then_some(t)
-    }
-
-    /// Restarts the model at time `now` from its current value, so a new
-    /// input applies from now on (§7 "input changes").
-    pub fn rebase(&mut self, now: f64) {
-        let v = self.value_at(now);
-        match self {
-            Self::Linear { v0, t0, .. } | Self::Relax { v0, t0, .. } | Self::Sum { v0, t0, .. } => {
-                *v0 = v;
-                *t0 = now;
-            }
-        }
-    }
-}
+//
+// RateModel itself moved to `core::rate` (`rust_architecture.md` §4.10);
+// callers use `vg_core::rate::RateModel` directly (see `use` below and
+// `vg_heat::body`/`vg_ffi::reactor`'s own imports) -- no re-export shim.
 
 /// A rate model, as index plus generation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -893,51 +779,9 @@ mod tests {
         assert_eq!(out[0].subscriber, 114);
     }
 
-    #[test]
-    fn linear_and_relax_crossings_are_exact() {
-        let m = RateModel::linear(100.0, -2.0, 10.0);
-        assert_eq!(m.value_at(15.0), 90.0);
-        assert_eq!(m.crossing(50.0, 10.0), Some(35.0));
-        assert_eq!(m.crossing(150.0, 10.0), None, "moving away");
-        assert_eq!(m.crossing(50.0, 40.0), None, "already past");
-        let clamped = RateModel::Linear {
-            v0: 0.0,
-            rate: 1.0,
-            t0: 0.0,
-            min: 0.0,
-            max: 10.0,
-        };
-        assert_eq!(clamped.value_at(50.0), 10.0);
-        assert_eq!(clamped.crossing(20.0, 0.0), None, "beyond the clamp");
-        assert_eq!(clamped.crossing(10.0, 0.0), Some(10.0));
-
-        let r = RateModel::Relax {
-            target: 20.0,
-            v0: 100.0,
-            k: 0.1,
-            t0: 0.0,
-        };
-        let t = r.crossing(50.0, 0.0).unwrap();
-        assert!((r.value_at(t) - 50.0).abs() < 1e-9);
-        assert!(r.value_at(t - 1e-6) > 50.0);
-        assert_eq!(r.crossing(20.0, 0.0), None, "the target is never reached");
-        assert_eq!(r.crossing(10.0, 0.0), None, "beyond the target");
-
-        let mut s = RateModel::Sum {
-            v0: 10.0,
-            t0: 0.0,
-            terms: vec![(1, 3.0), (2, -1.0)],
-            min: 0.0,
-            max: 100.0,
-        };
-        assert_eq!(s.crossing(30.0, 0.0), Some(10.0));
-        s.rebase(5.0);
-        if let RateModel::Sum { terms, .. } = &mut s {
-            terms[0].1 = 0.0;
-        }
-        assert_eq!(s.value_at(5.0), 20.0);
-        assert_eq!(s.crossing(0.0, 5.0), Some(25.0));
-    }
+    // RateModel's own tests (linear/relax/sum value_at/crossing/rebase) moved
+    // to core::rate with the type itself; rate_watches_fire_at_the_predicted_
+    // tick_without_polling below still covers the Reactor+RateModel integration.
 
     fn drained(r: &mut Reactor) -> Vec<Wake> {
         let mut out = Vec::new();

@@ -117,9 +117,9 @@ pub struct GasCell {
 	/// DM's `revision()`: bumped when pressure, temperature or total moles
 	/// (indices 0, 1, 2) leave the band around their values at the last
 	/// bump (the same bands as machines' dirty observations), never on
-	/// settling drift. `core::revision::BandRevision` (`rust_core.md` §15)
+	/// settling drift. `core::watch::revision::BandRevision` (`rust_core.md` §15, merged into `watch` per `rust_architecture.md` §4.7)
 	/// so this bookkeeping isn't reimplemented per domain.
-	pub bands: vg_core::revision::BandRevision<3>,
+	pub bands: vg_core::watch::revision::BandRevision<3>,
 	/// [`flags`].
 	pub flags: u8,
 	/// Planet atmosphere id (0: none). Planet cells are reservoirs that DM
@@ -137,7 +137,7 @@ impl Default for GasCell {
 			temperature: TCMB,
 			pressure: 0.0,
 			total: 0.0,
-			bands: vg_core::revision::BandRevision::new(),
+			bands: vg_core::watch::revision::BandRevision::new(),
 			flags: 0,
 			planet: 0,
 			vis: 0,

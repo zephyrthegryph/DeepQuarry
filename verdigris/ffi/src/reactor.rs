@@ -44,7 +44,8 @@ use vg_core::channels;
 use vg_core::cow::{ChunkLayout, CowStore};
 use vg_core::outbox::{Lane, MAX_SUBSCRIBER, Outbox, Subscriber, Wake, WatchId, reason};
 use vg_core::owner::{Applied, Domain};
-use vg_core::reactor::{ModelId, RateModel, Reactor};
+use vg_core::rate::RateModel;
+use vg_core::reactor::{ModelId, Reactor};
 use vg_core::timer::{Tick, TimerId};
 use vg_core::watch::{Cmp, Cond, Edge, Level, WatchPort, WatchState};
 
