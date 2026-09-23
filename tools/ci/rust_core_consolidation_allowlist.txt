@@ -1,7 +1,38 @@
 # Known current offenders for tools/ci/check_rust_core_consolidation.py
-# (doc/rewrite/rust_core.md §15). Format: <path>:<category>  # branch/plan
-# that removes it. Remove an entry once it no longer matches; a stale entry
-# fails the check, so the list only shrinks as domains migrate.
+# (doc/rewrite/rust_architecture.md §2, §7's migration order). Format:
+# <path>:<category>  # branch/plan that removes it. Remove an entry once it
+# no longer matches; a stale entry fails the check too, so the list only
+# shrinks as domains migrate. Target (§7 "definition of done"): empty.
 
-verdigris/domains/gas/src/pipes.rs:revision  # M2 (device/pipe binds, rewrite/m2): pipe-node revision is a plain generation counter, not band tracking; migrate onto core::revision::Counter (the primitive world.rs's Main-slot revision now uses) when M2's pipe restructuring lands.
-verdigris/domains/power/src/world.rs:smoothing  # rewrite/power-r10: shown_brown/shown_apc/shown_smes are exactly "power's 'shown' diff copies" from rust_core.md §15's table; removed when power's rewrite onto core components lands and DM reads values directly instead.
+# --- gas (M2: device flow law now; PipeGas on NetworkHost, GasMix
+# main-owned component, delete world.rs host/pipes.rs/Mains/Signature-Dirty/
+# lib.rs binds, next) ---
+verdigris/domains/gas/Cargo.toml:byondapi_dep  # M2/gas rewrite: the legacy ~60-bind gas mixture API DM calls directly still needs byondapi; becomes a GasMix component + queries, then the dependency moves to vg-ffi only.
+verdigris/domains/gas/src/gas/types.rs:bind_attr  # M2/gas rewrite: gas registry/reaction-info binds; move to vg-ffi (+vg-macros generated glue) with the rest of gas's FFI surface.
+verdigris/domains/gas/src/gate.rs:thread_local  # M2/gas rewrite: main-thread gate cache; folds into the unified entity/component store's main-thread ownership model.
+verdigris/domains/gas/src/heat.rs:bind_attr  # M2/gas rewrite (also heat): the M4 heat domain's binds currently live in vg-gas ("heat's bind move" in §7's migration order); move to vg-ffi once heat's Solid field kind and HeatBody component land.
+verdigris/domains/gas/src/heat.rs:thread_local  # M2/gas rewrite: the thread-local HeatWorld owner; folds into the one per-DLL Sim/driver.
+verdigris/domains/gas/src/lib.rs:bind_attr  # M2/gas rewrite: the legacy ~60-bind gas mixture API; becomes a GasMix component + queries (§5), and lib.rs shrinks to the generated surface.
+verdigris/domains/gas/src/pipes.rs:key_map  # M2/gas rewrite: PipeNet's ports/targets/devices maps; replaced by NetworkHost<Pipes> keyed by entity handle (§4.5).
+verdigris/domains/gas/src/pipes.rs:revision  # M2 (device/pipe binds, rewrite/m2): pipe-node revision is a plain generation counter, not band tracking; migrate onto core::watch::revision::Counter (the primitive world.rs's Main-slot revision now uses) when M2's pipe restructuring lands.
+verdigris/domains/gas/src/reaction.rs:thread_local  # M2/gas rewrite: cached reaction-priority table; folds into the unified store/registry.
+verdigris/domains/gas/src/turf.rs:bind_attr  # M2/gas rewrite: turf field lifecycle/topology binds; move to vg-ffi.
+verdigris/domains/gas/src/world.rs:dirty_set  # M2/gas rewrite: gas's own Signature/Dirty change tracking; replaced by core::watch (§4.7) -- this is the exact duplication rust_architecture.md §1's table names.
+verdigris/domains/gas/src/world.rs:key_map  # M2/gas rewrite: GasWorld's probes/watched/dirty/masks maps; replaced by NetworkHost/EntityTable-keyed storage and the unified Grid's block layers (§4.5, §4.6).
+verdigris/domains/gas/src/world.rs:sim_construct  # M2/gas rewrite: gas's own SimBuilder; deleted once gas's laws run on the one per-DLL driver (§4.3, §7: "delete the gas, heat and per-component-kind Sims").
+verdigris/domains/gas/src/world.rs:thread_local  # M2/gas rewrite: the thread-local GasWorld owner; folds into the one per-DLL Sim/driver.
+verdigris/domains/gas/src/world.rs:vec_f32_return  # M2/gas rewrite: drain_observations/tick/run_frames's flat Vec<f32> encoding; replaced by typed events (§4.8) once the R10 generator lands.
+
+# --- heat (rewrite/heat-r10: laws now; Solid on the unified grid,
+# HeatBody/MobHeat/Regulator components, coupling laws, then delete
+# world.rs host/BodyHandle/gas's heat.rs, next) ---
+verdigris/domains/heat/src/world.rs:key_map  # rewrite/heat-r10: HeatWorld's watches map; replaced by EntityTable/component-store-keyed storage (§4.1-4.2).
+verdigris/domains/heat/src/world.rs:sim_construct  # rewrite/heat-r10: heat's own SimBuilder; deleted once heat's laws run on the one per-DLL driver (§4.3).
+verdigris/domains/heat/src/world.rs:vec_f32_return  # rewrite/heat-r10: take_wakes(&mut Vec<f32>); replaced by typed events (§4.8).
+
+# --- power (rewrite/power-r10: NetworkHost<K>/unified Grid now, Core C;
+# then the power domain rewrite onto one generic producer/consumer/storage
+# rate model with R10 components, deleting all DM mirrors and power_sync()) ---
+verdigris/domains/power/src/world.rs:key_map  # rewrite/power-r10: PowerWorld's at/links/apc_terminal/supply/pulses/bound/shown_apc/shown_smes maps; replaced by NetworkHost<Cables> (entity-keyed, §4.5) and RateStore-backed components.
+verdigris/domains/power/src/world.rs:smoothing  # rewrite/power-r10: shown_brown/shown_apc/shown_smes are exactly "power's 'shown' diff copies" from rust_architecture.md §1's table; removed when power's rewrite onto core components lands and DM reads values directly instead.
+verdigris/domains/power/src/world.rs:vec_f32_return  # rewrite/power-r10: step()/take_events()'s flat Vec<f32> encoding; replaced by typed events (§4.8).

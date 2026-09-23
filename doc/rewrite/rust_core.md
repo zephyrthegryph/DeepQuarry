@@ -595,35 +595,50 @@ not migrated onto `vg_core::units`/`thermo` by this pass.
 
 `tools/ci/check_rust_core_consolidation.py` + `tools/ci/rust_core_consolidation_allowlist.txt`
 (wired into `run_linters.yml`, no Rust toolchain needed -- pure grep, runs
-alongside the other Python lints). Five heuristic categories over
-`verdigris/domains/*/src/**/*.rs`: `handle` (a domain-local generation-
-checked handle/id type), `revision` (a domain-local bump counter),
-`activity` (a domain-local per-entity awake/asleep map), `ffi_raw`
-(positional `kind + p0..p3` FFI marshalling), `smoothing` (a domain's own
-"shown" display-smoothed copy of a value). This is a grep, not a type
-checker: a real hit that isn't actually a violation should narrow the
-pattern, not get allow-listed.
+alongside the other Python lints). Extended (per the coordinator, after
+`rust_architecture.md` landed as authoritative) from the original 5
+heuristic categories to cover every `rust_architecture.md` §2 rule that's
+mechanically grep-checkable:
 
-Current allow-listed offenders (one per line in the allowlist, with the
-branch/plan that removes it; a stale entry -- nothing matches it any more
--- fails the check too, so the list only shrinks):
+- Domain-only categories (`verdigris/domains/*/src/**/*.rs`): `handle`,
+  `revision`, `dirty_set` (gas's old `Signature`/`Dirty`), `activity`,
+  `smoothing`, `ffi_raw`, `vec_f32_return` (`-> Vec<f32>`/`&mut Vec<f32>`
+  instead of typed events or `LawCtx::emit`), `thread_local`,
+  `static_mut`, `bind_attr` (`#[bind]`/`#[auxmacros::bind]` -- FFI belongs
+  in vg-ffi, not a domain), `sim_construct` (`Sim`/`SimBuilder::new` --
+  domains don't pace themselves, §4.3), `key_map`
+  (`HashMap<u32/u16, _>`-shaped identity tables), `unit_const_redefine`
+  (a domain-local `T0C`/`TCMB`/`T20C` instead of re-exporting
+  `vg_core::units::consts`, 16.4).
+- `reexport_shim` (crate-wide: `verdigris/core`, `verdigris/domains`,
+  `verdigris/ffi`, not just domains): a `pub use crate::…::Item;`/`pub use
+  super::…::Item;` naming one specific item through a fully-qualified path
+  -- almost always "X moved, keep the old path compiling" instead of
+  updating callers, which `AGENTS.md`'s no-shims rule forbids. Added after
+  this exact mistake during the rate merge (16.2): a `pub use
+  crate::rate::RateModel;` left in `core::reactor` "so existing references
+  keep working" -- caught by the coordinator, not by the check, which is
+  why the check gained this category afterward. A `mod.rs`/crate-root
+  aggregating its own submodules with an *unqualified* `pub use
+  submodule::Item;` doesn't match this pattern and isn't a shim.
+- `byondapi_dep`: not a grep -- each domain crate's `Cargo.toml` is checked
+  for a `byondapi` dependency line (§2: a domain may not depend on it).
 
-- `domains/gas/src/pipes.rs` (`revision`): the pipe-node generation
-  counter; M2's territory. `core::revision::Counter` (16.1) is there for
-  it to use when M2 restructures that file.
-- `domains/power/src/world.rs` (`smoothing`): `shown_brown`/`shown_apc`/
-  `shown_smes` -- exactly "power's 'shown' diff copies" from §15's
-  original table. Removed when power's rewrite lands.
+This is a grep, not a type checker: a real hit that isn't actually a
+violation should narrow the pattern, not get allow-listed. Not mechanically
+checked (needs human review, not a reliable regex): "re-implements a core
+kernel" (§2's last rule).
 
-No `handle`/`activity`/`ffi_raw` hits were found against the current
-tree with these patterns; that's a heuristic gap (these patterns are
-narrow, to avoid false positives on unrelated code -- e.g. `smooth_map` in
-`vg-layout`'s cellular-automaton map generator, or `smooth_department_claims`
-in the dead code removed by this same pass, are *not* the "display
-smoothing" §15 means), not a claim that no such code exists. Tightening
-these patterns (or adding new categories, e.g. for the R10 identity
-system's arrival) is expected as domains migrate and more examples of each
-violation become concrete.
+Extending the categories immediately surfaced real, current violations
+across all three domains -- almost exactly `rust_architecture.md` §1's own
+duplication table (key/handle maps in `gas::pipes`/`gas::world`/
+`heat::world`/`power::world`, gas's `Signature`/`Dirty`, `Vec<f32>` returns
+in all three domains' `world.rs`, each domain's own `SimBuilder`, gas's ~60
+legacy binds plus its `byondapi` dependency). All allow-listed with the
+owning branch and `rust_architecture.md` §7's migration plan as the reason
+(gas/M2, heat/`rewrite/heat-r10`, power/`rewrite/power-r10`); none were
+narrowed away as false positives. The `rust_architecture.md` §7 "definition
+of done" for the Rust phase is this allow-list reaching **empty**.
 
 ### 16.4 Units everywhere: `vg_core::units` -> `f64`
 
