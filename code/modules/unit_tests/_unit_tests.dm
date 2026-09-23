@@ -223,6 +223,7 @@
 #include "dq_interaction_tests.dm"
 #include "dq_interaction_entry_tests.dm"
 #include "dq_ability_tests.dm"
+#include "dq_grants_tests.dm"
 #include "dq_tool_tests.dm"
 #include "dq_construction_tests.dm"
 #include "dq_construction_mech_tests.dm"
