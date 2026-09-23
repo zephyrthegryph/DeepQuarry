@@ -1,4 +1,4 @@
-/mob/living/silicon/robot/platform/death(gibbed, deathmessage, show_dead_message)
+/mob/living/silicon/robot/platform/on_death(gibbed)
 
 	if(gibbed)
 

@@ -309,7 +309,10 @@
 		else
 			..()
 
-/mob/living/simple_mob/vore/otie/death(gibbed, deathmessage = "dies!")
+/mob/living/simple_mob/vore/otie
+	death_message = "dies!"
+
+/mob/living/simple_mob/vore/otie/on_death(gibbed)
 	.=..()
 	resting = 0
 	icon_state = icon_dead

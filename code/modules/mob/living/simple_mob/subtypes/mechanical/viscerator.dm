@@ -51,8 +51,11 @@
 	. = ..()
 	AddComponent(/datum/component/swarming)
 
-/mob/living/simple_mob/mechanical/viscerator/death()
-	..(null,"is smashed into pieces!")
+/mob/living/simple_mob/mechanical/viscerator
+	death_message = "is smashed into pieces!"
+
+/mob/living/simple_mob/mechanical/viscerator/on_death(gibbed)
+	..()
 	qdel(src)
 
 // Variant that is always loyal to mercenary antagonists.

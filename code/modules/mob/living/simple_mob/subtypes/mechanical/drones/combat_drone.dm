@@ -77,8 +77,11 @@
 	QDEL_NULL(shields)
 	return ..()
 
-/mob/living/simple_mob/mechanical/combat_drone/death()
-	..(null,"suddenly breaks apart.")
+/mob/living/simple_mob/mechanical/combat_drone
+	death_message = "suddenly breaks apart."
+
+/mob/living/simple_mob/mechanical/combat_drone/on_death(gibbed)
+	..()
 	qdel(src)
 
 /mob/living/simple_mob/mechanical/combat_drone/Process_Spacemove(check_drift = 0)

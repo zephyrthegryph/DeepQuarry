@@ -299,7 +299,7 @@
 	. = ..()
 	color = random_color(TRUE)
 
-/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/death()
+/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/on_death(gibbed)
 	. = ..()
 
 	qdel(src)

@@ -53,8 +53,11 @@
 	QDEL_NULL(sparks)
 	return ..()
 
-/mob/living/simple_mob/mechanical/mecha/death()
-	..(0,"explodes!") // Do everything else first.
+/mob/living/simple_mob/mechanical/mecha
+	death_message = "explodes!"
+
+/mob/living/simple_mob/mechanical/mecha/on_death(gibbed)
+	..() // Do everything else first.
 
 	// Make the exploding more convincing with an actual explosion and some sparks.
 	sparks?.start()

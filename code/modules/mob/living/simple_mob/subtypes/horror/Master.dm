@@ -28,7 +28,7 @@
 
 
 
-/mob/living/simple_mob/horror/Master/death()
+/mob/living/simple_mob/horror/Master/on_death(gibbed)
 	playsound(src, 'sound/h_sounds/imbeciles.ogg', 50, 1)
 	..()
 

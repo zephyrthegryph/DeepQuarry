@@ -93,7 +93,10 @@
 	P.faction = faction
 	playsound(src, projectilesound, 80, 1)
 
-/mob/living/simple_mob/vore/alienanimals/space_ghost/death(gibbed, deathmessage = "fades away!")
+/mob/living/simple_mob/vore/alienanimals/space_ghost
+	death_message = "fades away!"
+
+/mob/living/simple_mob/vore/alienanimals/space_ghost/on_death(gibbed)
 	. = ..()
 	qdel(src)
 
@@ -151,7 +154,10 @@
 	addtimer(CALLBACK(src, PROC_REF(death)), 35 SECONDS)
 	update_icon()
 
-/mob/living/simple_mob/vore/alienanimals/spooky_ghost/death(gibbed, deathmessage = "fades away!")
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost
+	death_message = "fades away!"
+
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/on_death(gibbed)
 	. = ..()
 	qdel(src)
 

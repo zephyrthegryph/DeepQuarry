@@ -50,7 +50,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	B.digest_brute = 0
 
 
-/mob/living/simple_mob/metroid/mine/death()
+/mob/living/simple_mob/metroid/mine/on_death(gibbed)
 	// playsound(src, 'sound/metroid/metroiddeath.ogg', 50, 1)
 	..()
 	if(prob(20))
@@ -174,7 +174,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	. = ..()
 	playsound(src, 'sound/metroid/metroidsee.ogg', 100, 1)
 
-/mob/living/simple_mob/metroid/juvenile/super/death()
+/mob/living/simple_mob/metroid/juvenile/super/on_death(gibbed)
 	// playsound(src, 'sound/metroid/metroiddeath.ogg', 100, 1)
 	..()
 
@@ -218,7 +218,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	. = ..()
 	playsound(src, 'sound/metroid/metroidsee.ogg', 100, 1)
 
-/mob/living/simple_mob/metroid/juvenile/alpha/death()
+/mob/living/simple_mob/metroid/juvenile/alpha/on_death(gibbed)
 	// playsound(src, 'sound/metroid/metroiddeath.ogg', 100, 1)
 	..()
 
@@ -286,7 +286,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	. = ..()
 	playsound(src, 'sound/metroid/metroidgamma.ogg', 100, 1)
 
-/mob/living/simple_mob/metroid/juvenile/gamma/death()
+/mob/living/simple_mob/metroid/juvenile/gamma/on_death(gibbed)
 	// playsound(src, 'sound/metroid/metroiddeath.ogg', 100, 1)
 	..()
 
@@ -375,7 +375,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	. = ..()
 	playsound(src, 'sound/metroid/metroidzeta.ogg', 100, 1)
 
-/mob/living/simple_mob/metroid/juvenile/zeta/death()
+/mob/living/simple_mob/metroid/juvenile/zeta/on_death(gibbed)
 	// playsound(src, 'sound/metroid/metroiddeath.ogg', 100, 1)
 	..()
 
@@ -465,7 +465,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	. = ..()
 	playsound(src, 'sound/metroid/metroidomega.ogg', 100, 1)
 
-/mob/living/simple_mob/metroid/juvenile/omega/death()
+/mob/living/simple_mob/metroid/juvenile/omega/on_death(gibbed)
 	// playsound(src, 'sound/metroid/metroidomegadeath.ogg', 100, 1)
 	..()
 
@@ -554,7 +554,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	playsound(src, 'sound/metroid/metroidqueen.ogg', 100, 1)
 	GLOB.queen_amount++
 
-/mob/living/simple_mob/metroid/juvenile/queen/death()
+/mob/living/simple_mob/metroid/juvenile/queen/on_death(gibbed)
 	// playsound(src, 'sound/metroid/metroidqueendeath.ogg', 100, 1)
 	GLOB.queen_amount--
 	..()

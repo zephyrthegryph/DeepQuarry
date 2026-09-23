@@ -2,8 +2,12 @@
 // Organ signals
 
 
-///from base of mob/living/revive() (full_heal, admin_revive)
-#define COMSIG_LIVING_REVIVE "living_revive"
+///from /mob/living/proc/return_from_death(), after the mob is alive again: (datum/source, reason)
+#define COMSIG_LIVING_REVIVED "living_revived"
+///from /mob/proc/death(), once per death, after EVERY death side effect (on_death(), HUD refresh,
+///antag win check): (gibbed). Never sent on a repeated or replaced death. Hang end-of-death work
+///(delete_on_death) here; death() itself never deletes the mob.
+#define COMSIG_LIVING_DEATH_FINAL "living_death_final"
 
 
 /// from /datum/body/evaluate_status(), before death/unconsciousness is applied: ()

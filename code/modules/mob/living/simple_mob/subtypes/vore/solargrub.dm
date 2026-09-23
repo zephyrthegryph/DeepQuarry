@@ -157,7 +157,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		to_chat(L, span_warning("You feel a small shock rushing through your veins."))
 		L.reagents.add_reagent(poison_type, poison_per_bite)
 
-/mob/living/simple_mob/vore/solargrub/death()
+/mob/living/simple_mob/vore/solargrub/on_death(gibbed)
 	src.anchored = FALSE
 	set_light(0)
 	..()

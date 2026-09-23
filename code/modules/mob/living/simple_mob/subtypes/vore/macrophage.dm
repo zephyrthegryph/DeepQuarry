@@ -121,7 +121,7 @@
 		H.ContractDisease(base_disease)
 	if(ai_brain) ai_brain.busy = FALSE
 */
-/mob/living/simple_mob/vore/aggressive/macrophage/death()
+/mob/living/simple_mob/vore/aggressive/macrophage/on_death(gibbed)
 	..()
 	if(isbelly(loc))
 		var/obj/belly/belly = loc

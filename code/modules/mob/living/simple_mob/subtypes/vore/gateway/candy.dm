@@ -659,7 +659,8 @@
 	endurance = 60
 
 
-/mob/living/simple_mob/vore/candy/worm/death()
+/mob/living/simple_mob/vore/candy/worm/on_death(gibbed)
+	. = ..()
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)

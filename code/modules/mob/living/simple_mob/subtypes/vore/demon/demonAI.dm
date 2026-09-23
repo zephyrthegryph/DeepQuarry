@@ -181,7 +181,7 @@
 		L.reagents.add_reagent(poison_type, poison_per_bite)
 
 
-/mob/living/simple_mob/vore/demonAI/death()
+/mob/living/simple_mob/vore/demonAI/on_death(gibbed)
 	playsound(src, 'sound/misc/demondeath.ogg', 50, 1)
 	..()
 

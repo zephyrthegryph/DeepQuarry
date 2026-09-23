@@ -125,7 +125,10 @@
 				self.succlet_move(pick(mylist))
 	self.succlet_last_health = self.vitality()	//The succlet will try to move if it has taken damage
 
-/mob/living/simple_mob/vore/alienanimals/succlet/death(gibbed, deathmessage = "shrieks in agony as it is eradicated from reality.")
+/mob/living/simple_mob/vore/alienanimals/succlet
+	death_message = "shrieks in agony as it is eradicated from reality."
+
+/mob/living/simple_mob/vore/alienanimals/succlet/on_death(gibbed)
 	. = ..()
 	if(isbelly(loc))
 		return

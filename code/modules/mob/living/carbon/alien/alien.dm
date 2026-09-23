@@ -16,7 +16,7 @@
 	var/max_grown = 200
 	var/time_of_birth
 	var/language
-	var/death_msg = "lets out a waning guttural screech, green blood bubbling from its maw."
+	death_message = "lets out a waning guttural screech, green blood bubbling from its maw."
 	var/can_namepick_as_adult = 0
 	var/adult_name
 	var/instance_num
