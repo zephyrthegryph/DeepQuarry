@@ -1803,17 +1803,15 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			. = t_air.return_pressure()
 	return
 
-//skytodo: //No idea what you want me to do here, mate.
-/obj/mecha/proc/return_temperature()
-	. = 0
+/// The pilot sees the cabin air on the internal tank, else the air outside.
+/obj/mecha/get_interior_temperature()
 	var/obj/item/mecha_parts/component/gas/GC = internal_components[MECH_GAS]
 	if(use_internal_tank && (GC && prob(GC.get_efficiency() * 100)))
-		. = cabin_air.return_temperature()
-	else
-		var/datum/gas_mixture/t_air = get_turf_air()
-		if(t_air)
-			. = t_air.return_temperature()
-	return
+		return cabin_air.return_temperature()
+	var/datum/gas_mixture/t_air = get_turf_air()
+	if(t_air)
+		return t_air.return_temperature()
+	return ..()
 
 // connect/disconnect plumb the mecha cabin atmosphere into a LINDA
 // portables_connector's pipe network, mirroring the canonical portable
@@ -2364,12 +2362,12 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	// Atmos.
 	data["use_internal_tank"] = !!use_internal_tank
 	data["tank_pressure"] = internal_tank ? round(internal_tank.return_pressure(), 0.01) : "None"
-	var/tt = internal_tank ? internal_tank.return_temperature() : null
+	var/tt = internal_tank?.air_contents?.return_temperature()
 	data["tank_temp_k"] = tt == null ? "Unknown" : round(tt, 0.1)
 	data["tank_temp_c"] = tt == null ? "Unknown" : round(tt - T0C, 0.1)
 	data["cabin_pressure"] = round(return_pressure(), 0.01)
-	data["cabin_temp_k"] = round(return_temperature(), 0.1)
-	data["cabin_temp_c"] = round(return_temperature() - T0C, 0.1)
+	data["cabin_temp_k"] = round(get_interior_temperature(), 0.1)
+	data["cabin_temp_c"] = round(get_interior_temperature() - T0C, 0.1)
 	data["lights"] = !!lights
 	data["dna_lock"] = dna || ""
 	data["defence_mode_possible"] = !!defence_mode_possible
@@ -2559,7 +2557,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 						<b>Airtank pressure: </b>[tank_pressure]kPa<br>
 						<b>Airtank temperature: </b>[tank_temperature]K|[tank_temperature - T0C]&deg;C<br>
 						<b>Cabin pressure: </b>[cabin_pressure>WARNING_HIGH_PRESSURE ? span_red("[cabin_pressure]"): cabin_pressure]kPa<br>
-						<b>Cabin temperature: </b> [return_temperature()]K|[return_temperature() - T0C]&deg;C<br>
+						<b>Cabin temperature: </b> [get_interior_temperature()]K|[get_interior_temperature() - T0C]&deg;C<br>
 						<b>Lights: </b>[lights?"on":"off"]<br>
 						[src.dna?"<b>DNA-locked:</b><br> <span style='font-size:10px;letter-spacing:-1px;'>[src.dna]</span> \[<a href='byond://?src=\ref[src];reset_dna=1'>Reset</a>\]<br>":null]
 					"}

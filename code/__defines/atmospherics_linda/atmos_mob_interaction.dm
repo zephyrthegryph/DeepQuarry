@@ -49,8 +49,8 @@
 /// The minimum temperature of Icebox
 #define ICEBOX_MIN_TEMPERATURE 180
 
-/// The natural temperature for a body
-#define BODYTEMP_NORMAL 310.15
+// BODYTEMP_NORMAL, the natural temperature for a body, is generated
+// (verdigris/domains/heat/src/consts.rs).
 /// This is the divisor which handles how much of the temperature difference between the current body temperature and 310.15K (optimal temperature) humans auto-regenerate each tick. The higher the number, the slower the recovery. This is applied each tick, so long as the mob is alive.
 #define BODYTEMP_AUTORECOVERY_DIVISOR 28
 /// Minimum amount of kelvin moved toward 310K per tick. So long as abs(310.15 - bodytemp) is more than 50.

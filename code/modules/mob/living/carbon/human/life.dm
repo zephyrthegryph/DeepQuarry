@@ -976,7 +976,7 @@
 		var/loc_temp = T0C
 		if(istype(self.loc, /obj/mecha))
 			var/obj/mecha/M = self.loc
-			loc_temp =  M.return_temperature()
+			loc_temp =  M.get_interior_temperature()
 		else if(istype(self.loc, /obj/machinery/atmospherics/unary/cryo_cell))
 			var/obj/machinery/atmospherics/unary/cryo_cell/cc = self.loc
 			loc_temp = cc.air_contents.return_temperature()

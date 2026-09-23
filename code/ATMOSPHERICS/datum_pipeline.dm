@@ -167,7 +167,7 @@
 
 			if((modeled_location.heat_capacity>0) && (partial_heat_capacity>0))
 				// Read the wall turf's live (arena-authoritative) temperature, not the stale DM mirror.
-				var/wall_temp = modeled_location.return_temperature()
+				var/wall_temp = modeled_location.get_temperature()
 				var/delta_temperature = air.return_temperature() - wall_temp
 
 				var/heat = thermal_conductivity*delta_temperature* \
