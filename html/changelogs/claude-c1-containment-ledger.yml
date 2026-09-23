@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Closets, crates, lockers and folders now move their contents through one containment ledger with capacity and acceptance checks, and it keeps track of what they hold."
+  - bugfix: "Deleting a closet or crate by any means now spills its contents, including anyone inside, instead of deleting them."
+  - code_imp: "A new CI lint forbids adding raw loc and contents writes."
