@@ -83,6 +83,9 @@
 	var/list/interaction_lines = interaction_examine_lines(src, A)
 	if(interaction_lines)
 		results += interaction_lines
+	var/list/construction_lines = construction_examine_lines(src, A)
+	if(construction_lines)
+		results += construction_lines
 	results += embedded_info(A)
 
 	var/final_string = span_infoplain("[jointext(results, "<br>")]")
