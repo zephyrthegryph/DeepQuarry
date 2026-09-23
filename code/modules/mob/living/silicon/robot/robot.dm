@@ -1116,6 +1116,12 @@
 	modtype = initial(modtype)
 	hands.icon_state = get_hud_module_icon()
 
+	// Basic upgrades (VTEC, ...) mutate the robot directly (verbs added,
+	// vars flipped) rather than living inside the module being reset, so
+	// they need their own undo pass or they'd leave permanent side effects
+	// behind after the reset.
+	robot_upgrade_prototype(/obj/item/borg/upgrade/basic/vtec)?.remove_upgrade(src)
+
 	if(notify)
 		notify_ai(ROBOT_NOTIFICATION_MODULE_RESET, module.name)
 	module.reset_module(src)
