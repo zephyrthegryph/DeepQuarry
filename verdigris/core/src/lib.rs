@@ -27,6 +27,7 @@ pub mod propagate;
 pub mod reactor;
 pub mod recorder;
 pub mod replay;
+pub mod revision;
 pub mod rng;
 pub mod sim;
 pub mod thermo;

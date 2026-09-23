@@ -115,11 +115,11 @@ pub struct GasCell {
 	/// Cached by `refresh`.
 	pub total: f32,
 	/// DM's `revision()`: bumped when pressure, temperature or total moles
-	/// leave the band around their values at the last bump (the same bands
-	/// as machines' dirty observations), never on settling drift.
-	pub revision: u32,
-	/// Pressure, temperature and total moles at the last revision bump.
-	pub rev_at: [f32; 3],
+	/// (indices 0, 1, 2) leave the band around their values at the last
+	/// bump (the same bands as machines' dirty observations), never on
+	/// settling drift. `core::revision::BandRevision` (`rust_core.md` §15)
+	/// so this bookkeeping isn't reimplemented per domain.
+	pub bands: vg_core::revision::BandRevision<3>,
 	/// [`flags`].
 	pub flags: u8,
 	/// Planet atmosphere id (0: none). Planet cells are reservoirs that DM
@@ -137,8 +137,7 @@ impl Default for GasCell {
 			temperature: TCMB,
 			pressure: 0.0,
 			total: 0.0,
-			revision: 0,
-			rev_at: [0.0; 3],
+			bands: vg_core::revision::BandRevision::new(),
 			flags: 0,
 			planet: 0,
 			vis: 0,
@@ -227,17 +226,19 @@ impl GasCell {
 		self.vis = vis_signature(&self.moles);
 	}
 
+	/// DM's `revision()`.
+	#[must_use]
+	pub const fn revision(&self) -> u32 {
+		self.bands.revision
+	}
+
 	/// Bumps the revision when a value left its band (`None`: pressure
 	/// unknown here, as in `Domain::apply`, which has no volume).
 	fn band_check(&mut self, pressure: Option<f32>, temperature: f32, total: f32) {
-		let [p0, t0, n0] = self.rev_at;
-		let moved = pressure.is_some_and(|p| (p - p0).abs() >= REVISION_KPA)
-			|| (temperature - t0).abs() >= REVISION_KELVIN
-			|| (total - n0).abs() >= REVISION_MOLES;
-		if moved {
-			self.revision = self.revision.wrapping_add(1);
-			self.rev_at = [pressure.unwrap_or(p0), temperature, total];
-		}
+		self.bands.update(
+			[pressure, Some(temperature), Some(total)],
+			[REVISION_KPA, REVISION_KELVIN, REVISION_MOLES],
+		);
 	}
 
 	/// The amounts vector (every gas, then energy).
