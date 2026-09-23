@@ -36,11 +36,11 @@
 	var/mob/living/carbon/human/H = spawn_thing(/mob/living/carbon/human)
 	live(H)
 	record("baseline.healthy.consciousness_after_first_life", H.body.get_consciousness(), "points")
-	record("baseline.healthy.sleeping_after_first_life", H.sleeping, "ticks")
+	record("baseline.healthy.sleeping_after_first_life", H.get_sleeping(), "ticks")
 	var/list/afflictions = list()
 	for(var/datum/affliction/A as anything in H.body.afflictions)
 		afflictions += "[A.type] ([round(A.severity, 0.1)])"
-	note("healthy human after one Life: stat [H.stat], consciousness [H.body.get_consciousness()], pain [H.current_pain()], sleeping [H.sleeping], paralysis [H.paralysis], afflictions: [length(afflictions) ? jointext(afflictions, ", ") : "none"]")
+	note("healthy human after one Life: stat [H.stat], consciousness [H.body.get_consciousness()], pain [H.current_pain()], sleeping [H.get_sleeping()], paralysis [H.get_paralysis()], afflictions: [length(afflictions) ? jointext(afflictions, ", ") : "none"]")
 	var/unconscious_at = is_down(H) ? BALANCE_LIFE_SECONDS : null
 	var/elapsed = BALANCE_LIFE_SECONDS
 	while(elapsed < BALANCE_BASELINE_SECONDS && !is_dead(H))
