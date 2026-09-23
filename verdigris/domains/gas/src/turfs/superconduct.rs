@@ -42,8 +42,7 @@ fn heat_channel() -> &'static (flume::Sender<SSheatInfo>, flume::Receiver<SSheat
 // world.maxx / world.maxy, needed to compute a turf's cardinal+multiz neighbours by
 // coordinate id. Reading world vars from Rust via byondapi is unreliable on BYOND 516
 // (a failed World-value read crashes in byondapi's own error path), so DM pushes the
-// dimensions in once at SSair init via auxmos_set_world_dims(). The map never resizes
-// at runtime, so a single set is sufficient.
+// dimensions in through the world-dimension binds in turfs.rs.
 static WORLD_DIMS: RwLock<Option<(i32, i32)>> = const_rwlock(None);
 
 fn world_dims() -> Result<(i32, i32)> {
@@ -52,14 +51,9 @@ fn world_dims() -> Result<(i32, i32)> {
 	})
 }
 
-// Called once by DM (SSair init) with world.maxx / world.maxy before any turf
-// adjacency is registered.
-#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_set_world_dims")]
-fn set_world_dims(max_x: ByondValue, max_y: ByondValue) -> Result<ByondValue> {
-	let max_x = max_x.get_number()? as i32;
-	let max_y = max_y.get_number()? as i32;
+/// Set by the world-dimension binds in `turfs.rs`.
+pub(super) fn set_heat_world_dims(max_x: i32, max_y: i32) {
 	*WORLD_DIMS.write() = Some((max_x, max_y));
-	Ok(ByondValue::null())
 }
 
 pub(super) fn reserve_heat_capacity(nodes: usize, _edges: usize) {
@@ -67,22 +61,6 @@ pub(super) fn reserve_heat_capacity(nodes: usize, _edges: usize) {
 	let heat = heat.as_mut().unwrap();
 	let map_capacity = heat.map.capacity();
 	heat.map.reserve(nodes.saturating_sub(map_capacity));
-}
-
-#[auxmacros::bind("/proc/auxmos_configure_world")]
-fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> Result<ByondValue> {
-	let max_x = max_x.get_number()? as i32;
-	let max_y = max_y.get_number()? as i32;
-	let max_z = max_z.get_number()? as i32;
-	*WORLD_DIMS.write() = Some((max_x, max_y));
-	let tiles = (max_x.max(1) as usize)
-		.saturating_mul(max_y.max(1) as usize)
-		.saturating_mul(max_z.max(1) as usize);
-	let edges = tiles.saturating_mul(4);
-	super::reserve_turf_capacity(tiles, edges);
-	reserve_heat_capacity(tiles, edges);
-	crate::gas::reserve_gas_capacity(tiles.saturating_add(8192));
-	Ok(ByondValue::null())
 }
 
 #[byondapi::init]
@@ -195,9 +173,13 @@ impl TurfHeat {
 				adjacent_tile_ids(Directions::ALL_CARDINALS - blocked_dirs, idx, max_x, max_y)
 			{
 				if let Some(&adjacent_node) = self.get_id(&adj_idx) {
-					//this fucking happens, I don't even know anymore
 					if adjacent_node != this_node {
 						self.graph.add_edge(this_node, adjacent_node, ());
+						// Registration order must not matter: a neighbour registered
+						// earlier never saw this cell, so give it the reverse edge.
+						if self.graph.find_edge(adjacent_node, this_node).is_none() {
+							self.graph.add_edge(adjacent_node, this_node, ());
+						}
 					}
 				}
 			}

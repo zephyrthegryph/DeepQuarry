@@ -10,7 +10,7 @@
 //     (record_feedback → feedback_add_details, wet_floor → CHOMP wet_floor,
 //      analyze_gases, fire_nuclear_particle → SSradiation.irradiate)
 //   - a real base no-op for a /tg/ hook that subtypes override
-//     (Initalize_Atmos, process_atmos, apply_fire_protection)
+//     (process_atmos, apply_fire_protection)
 //   - a var/list scaffold (multiz_levels, z_list, electrolyzer_reactions)
 //
 // CHOMP atmos MACHINERY (vents, scrubbers, pipes, canisters, alarms) is
@@ -91,15 +91,8 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 // flags_1 declaration moved to code/atmospherics/atom_flags_1.dm so
 // /atom/Initialize sets INITIALIZED_1 properly (was a dead zero stub).
 //
-// requires_activation and the base /turf/proc/Initalize_Atmos are kept here:
-// requires_activation is set by add_to_active's fall-through; the base
-// Initalize_Atmos is a legitimate no-op for /turf base (only /turf/open
-// participates in atmos). /turf/open/Initalize_Atmos in dq_linda_turf_air.dm
-// is the real implementation that builds adjacency.
-/turf/var/requires_activation = FALSE
+/// Whether SSair.setup_allturfs registers this turf's air at round start.
 /turf/var/init_air = TRUE
-/turf/proc/Initalize_Atmos(times_fired, register = TRUE)
-	return
 
 
 // === /tg/ looping_sound extra vars (LINDA fire ambience uses these) ===
@@ -260,8 +253,8 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 
 
 // === /turf zAir / atmos_expose hooks LINDA expects ===
-// Vertical atmos gate for multi-z (LINDA_system.dm:30 calls
-// `src.zAirOut(dir, target) && target.zAirIn(dir, src)` for UP/DOWN pairs).
+// Vertical atmos gate for multi-z: /turf/open/air_block_mask (LINDA_system.dm)
+// blocks a turf's UP/DOWN face unless air may both leave and enter through it.
 // These MUST NOT be blanket-TRUE: on a stacked-deck station every solid floor
 // would then atmos-merge with the tile directly above/below it THROUGH the
 // floor, so any deck tile overhanging space vents to vacuum forever (this was

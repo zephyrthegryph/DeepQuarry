@@ -107,7 +107,7 @@
 
 	var/turf/open/our_turf = loc
 	//on creation we check adjacent turfs for hot spot to start grouping, if surrounding do not have hot spots we create our own
-	for(var/turf/open/to_check as anything in our_turf.atmos_adjacent_turfs)
+	for(var/turf/open/to_check as anything in vg_atmos_adjacent_turfs(our_turf))
 		if(!to_check.active_hotspot)
 			continue
 		var/obj/effect/hotspot/enemy_spot = to_check.active_hotspot
@@ -143,8 +143,6 @@
 	if(COOLDOWN_FINISHED(our_turf, fire_puff_cooldown))
 		COOLDOWN_START(our_turf, fire_puff_cooldown, 5 SECONDS)
 
-	// Remove just_spawned protection if no longer processing the parent cell
-	just_spawned = (our_turf.current_cycle < SSair.times_fired)
 	update_color()
 
 /obj/effect/hotspot/set_smoothed_icon_state(new_junction)
@@ -331,7 +329,7 @@
 			var/radiated_temperature = air_temperature*FIRE_SPREAD_RADIOSITY_SCALE
 			if(cold_fire)
 				radiated_temperature = air_temperature * COLD_FIRE_SPREAD_RADIOSITY_SCALE
-			for(var/t in location.atmos_adjacent_turfs)
+			for(var/t in vg_atmos_adjacent_turfs(location))
 				var/turf/open/T = t
 				if(!T.active_hotspot)
 					T.hotspot_expose(radiated_temperature, CELL_VOLUME/4)

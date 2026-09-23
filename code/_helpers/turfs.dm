@@ -104,21 +104,12 @@
 			if(base_area) ChangeArea(source, base_area)
 
 	// ChangeTurf initially sees each destination before the shuttle's blocking
-	// objects have been relocated onto it. Rebuild the complete moved footprint
-	// only after every wall, window, and door is in its final location. Include
-	// every neighbor of both footprints: those stationary turfs previously held
-	// Rust edges into the source/destination and must publish their half of the
-	// new symmetric graph too.
-	var/list/topology_turfs = changed_turfs.Copy()
+	// objects have been relocated onto it. Republish every moved turf's air-block
+	// mask only after every wall, window, and door is in its final location.
+	// Rust derives each face from the masks on both sides, so the stationary
+	// neighbours need no update of their own.
 	for(var/turf/changed as anything in changed_turfs)
-		for(var/direction in GLOB.cardinals_multiz)
-			var/turf/neighbor = get_step_multiz(changed, direction)
-			if(neighbor)
-				topology_turfs |= neighbor
-	for(var/turf/changed as anything in topology_turfs)
-		changed.immediate_calculate_adjacent_turfs()
-	for(var/turf/changed as anything in topology_turfs)
-		changed.air_update_turf(FALSE, FALSE)
+		changed.air_update_turf(TRUE, FALSE)
 	vg_topology_transaction_commit()
 
 	//change the old turfs (Currently done by translate_turf for us)

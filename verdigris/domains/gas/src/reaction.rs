@@ -1,4 +1,4 @@
-use crate::gas::{gas_idx_to_id, total_num_gases, GasIDX, Mixture};
+use crate::gas::{gas_path, total_num_gases, GasIDX, Mixture};
 use byondapi::prelude::*;
 use eyre::{Context, Result};
 use float_ord::FloatOrd;
@@ -73,9 +73,11 @@ impl Reaction {
 			{
 				let mut min_gas_reqs: Vec<(GasIDX, f32)> = Vec::new();
 				for i in 0..total_num_gases() {
-					if let Ok(req_amount) = min_reqs
-						.read_list_index(gas_idx_to_id(i))
-						.and_then(|v| v.get_number())
+					let Some(path) = gas_path(i) else {
+						continue;
+					};
+					if let Ok(req_amount) =
+						min_reqs.read_list_index(path).and_then(|v| v.get_number())
 					{
 						min_gas_reqs.push((i, req_amount));
 					}

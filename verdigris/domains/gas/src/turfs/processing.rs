@@ -1897,10 +1897,12 @@ mod tests {
 				..Default::default()
 			});
 		}
-		arena.update_adjacencies_from_ids(1, &[(2, 0)]);
-		arena.update_adjacencies_from_ids(2, &[(1, 0), (3, 0)]);
-		arena.update_adjacencies_from_ids(3, &[(2, 0), (4, 0)]);
-		arena.update_adjacencies_from_ids(4, &[(3, 0)]);
+		arena.link(1, 2);
+		arena.link(2, 1);
+		arena.link(2, 3);
+		arena.link(3, 2);
+		arena.link(3, 4);
+		arena.link(4, 3);
 		let active_nodes = (1..=4)
 			.map(|id| arena.get_id(id).unwrap())
 			.collect::<rustc_hash::FxHashSet<_>>();
@@ -1936,7 +1938,9 @@ mod tests {
 			if id < region_size as u32 {
 				adjacent.push((id + 1, 0));
 			}
-			arena.update_adjacencies_from_ids(id, &adjacent);
+			for (other, _) in adjacent {
+				arena.link(id, other);
+			}
 		}
 		let start = arena.get_id(1).unwrap();
 		let region = connected_mutable_region(&arena, start);
@@ -1962,9 +1966,10 @@ mod tests {
 				..Default::default()
 			});
 		}
-		arena.update_adjacencies_from_ids(1, &[(2, 0)]);
-		arena.update_adjacencies_from_ids(2, &[(1, 0), (3, 0)]);
-		arena.update_adjacencies_from_ids(3, &[(2, 0)]);
+		arena.link(1, 2);
+		arena.link(2, 1);
+		arena.link(2, 3);
+		arena.link(3, 2);
 		let region = connected_mutable_region(&arena, arena.get_id(1).unwrap());
 		assert_eq!(region.len(), 1);
 	}
@@ -2046,8 +2051,8 @@ mod tests {
 			flags: SimulationFlags::empty(),
 			..Default::default()
 		});
-		arena.update_adjacencies_from_ids(1, &[(2, 0)]);
-		arena.update_adjacencies_from_ids(2, &[(1, 0)]);
+		arena.link(1, 2);
+		arena.link(2, 1);
 		let enabled = arena.get_id(1).unwrap();
 		let disabled = arena.get_id(2).unwrap();
 		let seeds = [enabled].into_iter().collect::<rustc_hash::FxHashSet<_>>();
@@ -2072,12 +2077,12 @@ mod tests {
 		}
 		let first = arena.get_id(1).unwrap();
 		let second = arena.get_id(2).unwrap();
-		arena.graph.add_edge(first, second, AdjacentFlags::empty());
+		arena.graph.add_edge(first, second, ());
 		let participants = [first, second]
 			.into_iter()
 			.collect::<rustc_hash::FxHashSet<_>>();
 		assert!(!solver_edge_enabled(&arena, first, second, &participants));
-		arena.graph.add_edge(second, first, AdjacentFlags::empty());
+		arena.graph.add_edge(second, first, ());
 		assert!(solver_edge_enabled(&arena, first, second, &participants));
 		assert!(solver_edge_enabled(&arena, second, first, &participants));
 	}

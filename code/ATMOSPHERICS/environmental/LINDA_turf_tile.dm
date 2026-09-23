@@ -5,19 +5,9 @@
 	// matter (most turfs are heat-able). Don't redeclare — runtime will use
 	// CHOMP's value (1) for all turfs, which means turfs CAN be heated by gas.
 	// This is closer to /tg/'s opt-OUT behavior anyway.
-	///Archived version of the temperature on a turf
-	var/temperature_archived
 	///All currently stored conductivities changes
 	var/list/thermal_conductivities
 
-	///list of turfs adjacent to us that air can flow onto
-	var/list/atmos_adjacent_turfs
-	///bitfield of dirs in which we are superconducitng
-	var/atmos_supeconductivity = NONE
-
-	///used to determine whether we should archive
-	var/archived_cycle = 0
-	var/current_cycle = 0
 
 	/**
 	 * used for mapping and for breathing while in walls (because that's a thing that needs to be accounted for...)
@@ -82,33 +72,22 @@
 				SSair.planetary[initial_gas_mix] = mix
 	. = ..()
 	// Register this turf's air ref in the Rust arena. During roundstart mapload
-	// SSair isn't initialised yet — setup_allturfs/Initalize_Atmos registers every
+	// SSair isn't initialised yet — SSair.setup_allturfs registers every
 	// turf then. For turfs created AFTER SSair init (ChangeTurf, runtime spawns)
-	// we register here so auxmos picks them up. air_update_turf (called by the
-	// ChangeTurf path) then rebuilds + pushes adjacency.
+	// we register here, with the air-block mask of whatever is already on the
+	// turf, so Rust builds its adjacency.
 	if(SSair.initialized)
-		update_air_ref(0)
+		update_air_ref(0, air_block_mask())
 
 /turf/open/Destroy()
 	if(active_hotspot)
 		QDEL_NULL(active_hotspot)
-	// Unregister src's air ref from the Rust arena BEFORE clearing adjacency so the
-	// next SSair tick doesn't process this dying turf. ChangeTurf-style replacement
-	// swaps a new turf into the same world coords; unregistering here drops the old
-	// slot cleanly (remove_from_active -> update_air_ref(-1)).
+	// Unregister src from the Rust arena so the next SSair tick doesn't process
+	// this dying turf. Rust drops its adjacency and wakes the turfs that shared
+	// air with it. ChangeTurf-style replacement swaps a new turf into the same
+	// coordinates, which registers itself in Initialize.
 	if(SSair)
 		SSair.remove_from_active(src)
-	// Clear src out of each neighbour's atmos_adjacent_turfs, push the corrected
-	// adjacency to the arena, and re-register the neighbour so auxmos reconsiders
-	// it now that a bordering turf is gone.
-	for(var/turf/near_turf as anything in atmos_adjacent_turfs)
-		if(near_turf.atmos_adjacent_turfs)
-			near_turf.atmos_adjacent_turfs -= src
-			UNSETEMPTY(near_turf.atmos_adjacent_turfs)
-		if(SSair?.initialized)
-			near_turf.__update_auxtools_turf_adjacency_info()
-		SSair.add_to_active(near_turf)
-	atmos_adjacent_turfs = null
 	if(immutable_atmos)
 		// Shared vacuum (see Initialize); other turfs still use it.
 		air = null

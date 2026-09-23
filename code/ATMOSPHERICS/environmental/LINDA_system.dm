@@ -21,168 +21,84 @@
 /turf/open
 	can_atmos_pass = ATMOS_PASS_PROC
 
-///Do NOT use this to see if 2 turfs are connected, it mutates state, and we cache that info anyhow.
-///Use TURFS_CAN_SHARE or TURF_SHARES depending on your usecase
-/turf/open/can_atmos_pass(turf/target_turf, vertical = FALSE)
-	var/can_pass = TRUE
-	var/direction = vertical ? get_dir_multiz(src, target_turf) : get_dir(src, target_turf)
-	var/opposite_direction = REVERSE_DIR(direction)
-	if(vertical && !(zAirOut(direction, target_turf) && target_turf.zAirIn(direction, src)))
-		can_pass = FALSE
-	if(blocks_air || target_turf.blocks_air)
-		can_pass = FALSE
-	//This path is a bit weird, if we're just checking with ourselves no sense asking objects on the turf
-	if (target_turf == src)
-		return can_pass
+// === Turf adjacency ===
+//
+// Rust owns turf adjacency (verdigris/domains/gas/src/turfs.rs, AirCells). DM
+// publishes one air-block mask per turf: the faces (NORTH|SOUTH|EAST|WEST|UP|DOWN)
+// that the turf and the atoms on it block. Two registered face neighbours share
+// air when neither blocks the shared face. A turf republishes its mask through
+// air_update_turf(TRUE) whenever something that blocks air changes on it: a door
+// opening, a window being built or moved, the turf itself changing. DM keeps no
+// copy of the adjacency; readers ask Rust (get_atmos_adjacent_turfs,
+// atmos_adjacent_turfs_bulk, SSair.air_blocked). tools/ci/check_grep.sh rejects
+// DM copies of this state.
 
-	//Can't just return if canpass is false here, we need to set superconductivity
-	for(var/obj/checked_object in contents + target_turf.contents)
-		// qdel runs Destroy() synchronously but BYOND keeps the object in loc.contents
-		// until garbage collection. A destroyed door/pipe must not keep an atmos
-		// edge sealed during that interval, especially inside an explosion epoch.
+/// The faces of this turf that air cannot cross, as direction bits. The turf's
+/// own block ORed with every atom on it. Only open turfs carry air.
+/turf/proc/air_block_mask()
+	return AIR_BLOCK_ALL
+
+/turf/open/air_block_mask()
+	if(blocks_air)
+		return AIR_BLOCK_ALL
+	. = NONE
+	// Vertical faces: air crosses a z-boundary only through an opening
+	// (zAirIn/zAirOut, tg_infra_compat.dm). Leaving through a face and entering
+	// through it are both checked, so the pair is symmetric.
+	if(!zAirOut(UP, null) || !zAirIn(DOWN, null))
+		. |= UP
+	if(!zAirOut(DOWN, null) || !zAirIn(UP, null))
+		. |= DOWN
+	for(var/obj/checked_object in contents)
+		// qdel runs Destroy() synchronously but BYOND keeps the object in
+		// contents until it is collected. A destroyed door must not keep a face
+		// sealed in the meantime, especially inside an explosion batch.
 		if(QDELETED(checked_object))
 			continue
-		var/turf/other = (checked_object.loc == src ? target_turf : src)
-		if(CANATMOSPASS(checked_object, other, vertical))
-			continue
-		can_pass = FALSE
-		//the direction and open/closed are already checked on can_atmos_pass() so there are no arguments
-		if(checked_object.block_superconductivity())
-			atmos_supeconductivity |= direction
-			target_turf.atmos_supeconductivity |= opposite_direction
-			return FALSE //no need to keep going, we got all we asked (Is this even faster? fuck you it's soul)
+		switch(checked_object.can_atmos_pass)
+			if(ATMOS_PASS_YES)
+				continue
+			if(ATMOS_PASS_NO)
+				return AIR_BLOCK_ALL
+			if(ATMOS_PASS_DENSITY)
+				if(checked_object.density)
+					return AIR_BLOCK_ALL
+				continue
+		// ATMOS_PASS_PROC: directional blockers (windows, firedoors, doors) are
+		// asked per face, with the neighbouring turf as the target.
+		for(var/direction in GLOB.cardinals_multiz)
+			if(. & direction)
+				continue
+			var/turf/neighbor = get_step_multiz(src, direction)
+			if(neighbor && !checked_object.can_atmos_pass(neighbor, (direction & (UP|DOWN))))
+				. |= direction
 
-	//Superconductivity is a bitfield of directions we can't conduct with
-	//Yes this is really weird. Fuck you
-	atmos_supeconductivity &= ~direction
-	target_turf.atmos_supeconductivity &= ~opposite_direction
-
-	return can_pass
-
-/atom/movable/proc/block_superconductivity() // objects that block air and don't let superconductivity act
-	return FALSE
-
-/// This proc is a more deeply optimized version of immediate_calculate_adjacent_turfs
-/// It contains dumbshit, and also stuff I just can't do at runtime
-/// If you're not editing behavior, just read that proc. It's less bad
-/turf/proc/init_immediate_calculate_adjacent_turfs()
-	//Basic optimization, if we can't share why bother asking other people ya feel?
-	// You know it's gonna be stupid when they include a unit test in the atmos code
-	// Yes, inlining the string concat does save 0.1 seconds
-	#ifdef UNIT_TESTS
-	ASSERT(UP == 16)
-	ASSERT(DOWN == 32)
-	#endif
-	LAZYINITLIST(src.atmos_adjacent_turfs)
-	var/list/atmos_adjacent_turfs = src.atmos_adjacent_turfs
-	var/canpass = CANATMOSPASS(src, src, FALSE)
-	// I am essentially inlineing two get_dir_multizs here, because they're way too slow on their own. I'm sorry brother
-	// guard SSmapping.multiz_levels[z] indexing: if SSmapping isn't
-	// fully initialized (e.g. early test setup) or this z hasn't been
-	// registered, fall back to no-multiz so the proc doesn't runtime.
-	var/list/z_traits = (SSmapping?.multiz_levels && length(SSmapping.multiz_levels) >= z) ? SSmapping.multiz_levels[z] : null
-	for(var/direction in GLOB.cardinals_multiz)
-		// Yes this is a reimplementation of get_step_mutliz. It's faster tho. fuck you
-		// Oh also yes UP and DOWN do just point to +1 and -1 and not z offsets
-		// Multiz is shitcode welcome home
-		// guard against z_traits being null (z-level has no multiz
-		// metadata registered with SSmapping). Skip vertical traversal entirely
-		// on such z-levels; horizontal cardinal still works.
-		var/turf/current_turf = (direction & (UP|DOWN)) ? \
-			(z_traits ? ( \
-				(direction & UP) ? \
-					(z_traits[Z_LEVEL_UP]) ? \
-						(get_step(locate(x, y, z + 1), NONE)) : \
-					(null) : \
-					(z_traits[Z_LEVEL_DOWN]) ? \
-						(get_step(locate(x, y, z - 1), NONE)) : \
-					(null) \
-			) : null) : \
-			(get_step(src, direction))
-		if(!istype(current_turf, /turf/open)) // was isopenturf(); after the /turf/simulated→/turf/open reparent we want all open turfs (floors included)
-			continue
-		// The assumption is that ONLY DURING INIT if two tiles have the same cycle, there's no way canpass(a->b) will be different then canpass(b->a), so this is faster
-		// Saves like 1.2 seconds
-		// Note: current cycle here goes DOWN as we sleep. this is to ensure we can use the >= logic in the first step of process_cell
-		// It's not a massive thing, and I'm sorry for the cursed code, but it be this way
-		if(current_turf.current_cycle <= current_cycle)
-			continue
-
-		//Can you and me form a deeper relationship, or is this just a passing wind
-		// (direction & (UP | DOWN)) is just "is this vertical" by the by
-		if(canpass && CANATMOSPASS(current_turf, src, (direction & (UP|DOWN))) && !(blocks_air || current_turf.blocks_air))
-			LAZYINITLIST(current_turf.atmos_adjacent_turfs)
-			atmos_adjacent_turfs[current_turf] = TRUE
-			current_turf.atmos_adjacent_turfs[src] = TRUE
-		else
-			atmos_adjacent_turfs -= current_turf
-			if (current_turf.atmos_adjacent_turfs)
-				current_turf.atmos_adjacent_turfs -= src
-			UNSETEMPTY(current_turf.atmos_adjacent_turfs)
-
-	UNSETEMPTY(atmos_adjacent_turfs)
-	src.atmos_adjacent_turfs = atmos_adjacent_turfs
-
-/turf/proc/immediate_calculate_adjacent_turfs()
-	LAZYINITLIST(src.atmos_adjacent_turfs)
-	var/list/atmos_adjacent_turfs = src.atmos_adjacent_turfs
-	var/canpass = CANATMOSPASS(src, src, FALSE)
-	for(var/direction in GLOB.cardinals_multiz)
-		var/turf/current_turf = get_step_multiz(src, direction)
-		if(!istype(current_turf, /turf/open)) // was isopenturf(); CHOMP isopenturf only matches /turf/simulated/open+/turf/space, after the /turf/simulated→/turf/open reparent we want all open turfs (floors included)
-			continue
-
-		//Can you and me form a deeper relationship, or is this just a passing wind
-		// (direction & (UP | DOWN)) is just "is this vertical" by the by
-		if(canpass && CANATMOSPASS(current_turf, src, (direction & (UP|DOWN))) && !(blocks_air || current_turf.blocks_air))
-			LAZYINITLIST(current_turf.atmos_adjacent_turfs)
-			atmos_adjacent_turfs[current_turf] = TRUE
-			current_turf.atmos_adjacent_turfs[src] = TRUE
-		else
-			atmos_adjacent_turfs -= current_turf
-			if (current_turf.atmos_adjacent_turfs)
-				current_turf.atmos_adjacent_turfs -= src
-			UNSETEMPTY(current_turf.atmos_adjacent_turfs)
-
-	UNSETEMPTY(atmos_adjacent_turfs)
-	src.atmos_adjacent_turfs = atmos_adjacent_turfs
+///Do NOT use this to see if 2 turfs are connected; ask Rust with SSair.air_blocked().
+///This recomputes both turfs' masks from their current contents.
+/turf/open/can_atmos_pass(turf/target_turf, vertical = FALSE)
+	if(target_turf == src)
+		return !blocks_air
+	if(!istype(target_turf, /turf/open))
+		return FALSE
+	var/direction = vertical ? get_dir_multiz(src, target_turf) : get_dir(src, target_turf)
+	return !(air_block_mask() & direction) && !(target_turf.air_block_mask() & REVERSE_DIR(direction))
 
 /**
- * returns a list of adjacent turfs that can share air with this one.
- * alldir includes adjacent diagonal tiles that can share
- * air with both of the related adjacent cardinal tiles
-**/
-/turf/proc/get_atmos_adjacent_turfs(alldir = 0)
-	var/adjacent_turfs
-	if (atmos_adjacent_turfs)
-		adjacent_turfs = atmos_adjacent_turfs.Copy()
-	else
-		adjacent_turfs = list()
+ * The turfs that share air with this one, as an assoc list (turf -> TRUE), read
+ * from Rust. Face neighbours only.
+ */
+/turf/proc/get_atmos_adjacent_turfs()
+	var/list/adjacent = list()
+	for(var/turf/neighbor as anything in vg_atmos_adjacent_turfs(src))
+		adjacent[neighbor] = TRUE
+	return adjacent
 
-	if (!alldir)
-		return adjacent_turfs
-
-	var/turf/current_location = src
-
-	for (var/direction in GLOB.diagonals_multiz)
-		var/matching_directions = 0
-		var/turf/checked_turf = get_step_multiz(current_location, direction)
-		if(!checked_turf)
-			continue
-
-		for (var/check_direction in GLOB.cardinals_multiz)
-			var/turf/secondary_turf = get_step(checked_turf, check_direction)
-			if(!checked_turf.atmos_adjacent_turfs || !checked_turf.atmos_adjacent_turfs[secondary_turf])
-				continue
-
-			if (adjacent_turfs[secondary_turf])
-				matching_directions++
-
-			if (matching_directions >= 2)
-				adjacent_turfs += checked_turf
-				break
-
-	return adjacent_turfs
+/**
+ * Batched adjacency read: one FFI call for a whole list of turfs. Returns a
+ * list of lists, parallel to `turfs`.
+ */
+/proc/atmos_adjacent_turfs_bulk(list/turfs)
+	return vg_atmos_adjacent_turfs_bulk(turfs)
 
 /atom/proc/air_update_turf(update = FALSE, remove = FALSE)
 	if(!SSair.initialized) // I'm sorry for polutting user code, I'll do 10 hail giacom's
@@ -193,53 +109,18 @@
 	local_turf.air_update_turf(update, remove)
 
 /**
- * A helper proc for dealing with atmos changes
+ * Tells the Rust arena that this turf's air or what blocks it changed.
  *
- * Ok so this thing is pretty much used as a catch all for all the situations someone might wanna change something
- * About a turfs atmos. It's real clunky, and someone needs to clean it up, but not today.
  * Arguments:
- * * update - Has the state of the structures in the world changed? If so, update our adjacent atmos turf list, if not, don't.
- * * remove - Are you removing an active turf (Read wall), or adding one
+ * * update - Has something that blocks air changed here (a door, a window, the
+ *   turf itself)? Then the air-block mask is recomputed and republished, and Rust
+ *   rebuilds this turf's adjacency. Otherwise the turf is only re-registered.
+ * * remove - Legacy; Rust drops a turf that stops sharing on its own.
 */
 /turf/air_update_turf(update = FALSE, remove = FALSE)
 	if(!SSair.initialized) // I'm sorry for polutting user code, I'll do 10 hail giacom's
 		return
-	// Under the DM engine `remove` meant "deactivate this turf" (excited = FALSE);
-	// it never destroyed the turf's air. Auxmos owns activity now, so `remove` no
-	// longer needs a distinct arena action — a live turf that stopped being able to
-	// share simply falls out of processing on its own once its (rebuilt) adjacency
-	// shows no neighbours. Genuine air teardown (a turf becoming a wall) goes
-	// through /turf/open/Destroy -> remove_from_active -> update_air_ref(-1), not
-	// this proc. So both cases here just refresh the arena registration + adjacency.
-	//
-	// Register the air ref FIRST — auxmos' update_adjacencies can only attach edges
-	// to turfs already present in the arena, so the air ref must land before the
-	// adjacency push.
-	update_air_ref(0)
-	// Rebuild the DM adjacency graph only when the world geometry actually changed
-	// (update=TRUE) — that's the expensive scan, so gas-only updates skip it.
-	if(update)
-		immediate_calculate_adjacent_turfs()
-	// ALWAYS (re)push adjacency into the Rust arena, both directions. auxmos stores
-	// adjacency as DIRECTED graph edges and the FDM shares across them; a turf built
-	// at runtime (ChangeTurf, a freshly loaded z-level like an expedition site or the
-	// unit-test room) may have a correct DM adjacency list that was never pushed to
-	// the arena, or only its own out-edges pushed — so the reverse edge (neighbour ->
-	// src) is missing and gas never flows back. Pushing src plus each neighbour keeps
-	// the arena graph symmetric. This is just the FFI push (reads the existing DM
-	// list) — NOT a recursive air_update_turf — so it's cheap and can't loop.
-	__update_auxtools_turf_adjacency_info()
-	// Also register + push each neighbour. Beyond making the adjacency graph
-	// symmetric, update_air_ref(0) ENABLES the neighbour (SIMULATION_ANY) in the
-	// arena. This matters because auxmos' FDM pushes gas INTO a neighbour from the
-	// active turf's process_cell without the neighbour itself being active — and the
-	// arena's post_process pass (which fires the gas-overlay + reaction callbacks)
-	// only visits ENABLED turfs. So a tile that merely RECEIVES gas would never get
-	// its overlay refreshed unless we enable it here when its active neighbour is
-	// (re)wired.
-	for(var/turf/open/near_turf as anything in atmos_adjacent_turfs)
-		near_turf.update_air_ref(0)
-		near_turf.__update_auxtools_turf_adjacency_info()
+	update_air_ref(0, update ? air_block_mask() : AIR_BLOCK_KEEP)
 
 /atom/movable/proc/move_update_air(turf/target_turf)
 	if(isturf(target_turf))

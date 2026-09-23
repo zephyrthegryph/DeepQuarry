@@ -65,7 +65,6 @@ SUBSYSTEM_DEF(profiler)
 			"superconductivity" = SSair.cost_superconductivity,
 			"pipenets" = SSair.cost_pipenets,
 			"rebuilds" = SSair.cost_rebuilds,
-			"adjacent" = SSair.cost_adjacent,
 			"callback_finalize" = SSair.cost_finalize,
 		),
 		"rust_worker_last" = list(
@@ -105,7 +104,6 @@ SUBSYSTEM_DEF(profiler)
 			"pipenets" = length(SSair.networks),
 			"rebuild" = length(SSair.rebuild_queue),
 			"expansion" = length(SSair.expansion_queue),
-			"adjacent" = length(SSair.adjacent_rebuild),
 		),
 	)
 	subsystems["machines"] += list(

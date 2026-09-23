@@ -9,9 +9,8 @@ use byondapi::prelude::*;
 use eyre::Result;
 use gas::constants::{ReactionReturn, GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
 use gas::{
-	amt_gases, constants, gas_idx_from_string, gas_idx_from_value, gas_idx_to_id, tot_gases, types,
-	with_gas_info, with_mix, with_mix_mut, with_mixes, with_mixes_custom, with_mixes_mut, GasArena,
-	Mixture,
+	amt_gases, constants, gas_idx_from_string, gas_idx_from_value, tot_gases, types, with_gas_info,
+	with_mix, with_mix_mut, with_mixes, with_mixes_custom, with_mixes_mut, GasArena, Mixture,
 };
 use pipenets::PIPE_TOPOLOGY;
 use reaction::react_by_id;
@@ -228,14 +227,14 @@ pub const GAS_OBSERVATION_STRIDE: usize = 15;
 fn drain_dirty_gas_observations() -> Result<ByondValue> {
 	let changes = GasArena::take_dirty_mixtures();
 	let gas_indices = [
-		gas_idx_from_string("/datum/gas/oxygen")?,
-		gas_idx_from_string("/datum/gas/carbon_dioxide")?,
-		gas_idx_from_string("/datum/gas/plasma")?,
-		gas_idx_from_string("/datum/gas/methane")?,
-		gas_idx_from_string("/datum/gas/nitrous_oxide")?,
-		gas_idx_from_string("/datum/gas/volatile_fuel")?,
-		gas_idx_from_string("/datum/gas/miasma")?,
-		gas_idx_from_string("/datum/gas/zauker")?,
+		gas::GAS_OXYGEN,
+		gas::GAS_CARBON_DIOXIDE,
+		gas::GAS_PLASMA,
+		gas::GAS_METHANE,
+		gas::GAS_NITROUS_OXIDE,
+		gas::GAS_VOLATILE_FUEL,
+		gas::GAS_MIASMA,
+		gas::GAS_ZAUKER,
 	];
 	let values = GasArena::with_all_mixtures(|gases| {
 		let mut values = Vec::with_capacity(changes.len() * GAS_OBSERVATION_STRIDE);
@@ -435,20 +434,71 @@ fn temperature_share_hook() -> Result<ByondValue> {
 	}
 }
 
-/// Returns: a list of the gases in the mixture, associated with their IDs.
+/// Returns: a flat list `id, moles, id, moles, ...` of every gas present in the
+/// mixture, with numeric `GAS_ID_*` IDs. One call replaces a get_gases() plus a
+/// get_moles() per gas.
 #[auxmacros::bind("/datum/gas_mixture/proc/get_gases")]
 fn get_gases_hook(src: ByondValue) -> Result<ByondValue> {
 	with_mix(&src, |mix| {
-		let mut gases_list = ByondValue::new_list()?;
-		mix.for_each_gas(|idx, gas| {
-			if gas > GAS_MIN_MOLES {
-				gases_list.push_list(gas_idx_to_id(idx))?;
+		let mut flat = Vec::new();
+		mix.for_each_gas(|idx, moles| {
+			if moles > GAS_MIN_MOLES {
+				flat.push(ByondValue::from(idx as f32));
+				flat.push(ByondValue::from(moles));
 			}
 			Ok(())
 		})?;
-
-		Ok(gases_list)
+		let list = ByondValue::new_list()?;
+		list.write_list(&flat)?;
+		Ok(list)
 	})
+}
+
+/// Floats per mixture in `read_mixtures`: pressure, temperature, volume,
+/// total moles, heat capacity, then the moles of every gas by ID.
+/// @dm-define GAS_READ_HEADER
+pub const GAS_READ_HEADER: usize = 5;
+
+/// Batched read. Args: (list of gas mixtures). Returns one flat list with, for
+/// each mixture in order, `GAS_READ_HEADER` floats (pressure, temperature,
+/// volume, total moles, heat capacity) followed by `GAS_ID_COUNT` mole counts.
+/// A null or unregistered entry reads as all zeroes. Used by DM loops that used
+/// to call several getters per mixture.
+#[auxmacros::bind("/proc/read_mixtures")]
+fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
+	// get_list_values, not iter(): iter() stops at the first null entry.
+	let ids = mixtures
+		.get_list_values()?
+		.iter()
+		.map(|mix| {
+			mix.read_number_id(byond_string!("_extools_pointer_gasmixture"))
+				.ok()
+				.map(|n| n as usize)
+		})
+		.collect::<Vec<_>>();
+	let stride = GAS_READ_HEADER + gas::GAS_COUNT;
+	let values = GasArena::with_all_mixtures(|all| {
+		let mut values = Vec::with_capacity(ids.len() * stride);
+		for id in &ids {
+			let Some(mix) = id.and_then(|id| all.get(id)) else {
+				values.extend(std::iter::repeat_n(0.0, stride));
+				continue;
+			};
+			let mix = mix.read();
+			values.extend([
+				mix.return_pressure(),
+				mix.get_temperature(),
+				mix.volume,
+				mix.total_moles(),
+				mix.heat_capacity(),
+			]);
+			values.extend((0..gas::GAS_COUNT).map(|gas| mix.get_moles(gas)));
+		}
+		values
+	});
+	let list = ByondValue::new_list()?;
+	list.write_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
+	Ok(list)
 }
 
 /// Args: (temperature). Sets the temperature of the mixture. Will be set to 2.7 if it's too low.
