@@ -11,6 +11,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 // ---------------------------------------------------------------------------
@@ -26,7 +27,7 @@ export type RunIdentity = {
   platform: string;
 };
 
-function git(...args: string[]): string {
+export function git(...args: string[]): string {
   const result = spawnSync('git', args, { encoding: 'utf-8' });
   return result.status === 0 ? result.stdout.trim() : '';
 }
@@ -178,7 +179,21 @@ export class ProcessSampler {
 // ---------------------------------------------------------------------------
 // Benchmark result documents
 
-export type Metric = { value: number; unit: string; better: 'lower' | 'higher' | 'none' };
+/**
+ * `class` distinguishes load-independent counts (FFI calls, reactor wakes,
+ * subsystem work-item counts, census/list counts, Rust heap bytes — the same
+ * work happens regardless of how fast the machine gets through it) from
+ * wall-clock/tick TIMING metrics, which this machine's other load visibly
+ * moves. Absent (older stored runs) is treated as 'timing'. See
+ * classOf()/loadSimilar() below and /datum/benchmark/proc/metric() in
+ * code/modules/benchmarks/_benchmark.dm.
+ */
+export type MetricClass = 'count' | 'timing';
+export type Metric = { value: number; unit: string; better: 'lower' | 'higher' | 'none'; class?: MetricClass };
+
+export function classOf(metric: { class?: MetricClass }): MetricClass {
+  return metric.class === 'count' ? 'count' : 'timing';
+}
 
 export type ScenarioResult = {
   id: string;
@@ -214,6 +229,7 @@ export type BenchIteration = WorldBenchDocument & {
 export type MetricStats = {
   unit: string;
   better: Metric['better'];
+  class: MetricClass;
   n: number;
   median: number;
   mean: number;
@@ -221,6 +237,24 @@ export type MetricStats = {
   max: number;
   stdev: number;
   values: number[];
+};
+
+/**
+ * Load conditions this run was taken under, sampled by LoadSampler while the
+ * world(s) ran. `exclusive` means it ran under the `bench --exclusive` lock
+ * with the DreamDaemon slots drained first (see BenchExclusiveLock /
+ * ddSlotBaseDir()) — the closest thing to a quiet machine this tooling can
+ * arrange. `other_dreamdaemon`/`other_dm`/`cargo_rustc` are averaged process
+ * counts (this run's own DreamDaemon is excluded); `cpu_percent` is the
+ * averaged system-wide CPU load sampled during the run.
+ */
+export type LoadContext = {
+  machine_id: string;
+  exclusive: boolean;
+  other_dreamdaemon: number;
+  other_dm: number;
+  cargo_rustc: number;
+  cpu_percent: number;
 };
 
 export type BenchRun = RunIdentity & {
@@ -234,9 +268,10 @@ export type BenchRun = RunIdentity & {
   /** Per scenario, per metric, over the non-warmup iterations. */
   summary: Record<string, Record<string, MetricStats>>;
   failures: string[];
+  load: LoadContext;
 };
 
-export function statsOf(values: number[], unit: string, better: Metric['better']): MetricStats {
+export function statsOf(values: number[], unit: string, better: Metric['better'], metricClass: MetricClass = 'timing'): MetricStats {
   const sorted = [...values].sort((a, b) => a - b);
   const n = sorted.length;
   const mean = n ? sorted.reduce((a, b) => a + b, 0) / n : 0;
@@ -245,6 +280,7 @@ export function statsOf(values: number[], unit: string, better: Metric['better']
   return {
     unit,
     better,
+    class: metricClass,
     n,
     median,
     mean,
@@ -258,20 +294,23 @@ export function statsOf(values: number[], unit: string, better: Metric['better']
 /** Process-level numbers become a synthetic `process` scenario. */
 export function summarize(iterations: BenchIteration[]): BenchRun['summary'] {
   const measured = iterations.filter((it) => !it.warmup);
-  const collected: Record<string, Record<string, { unit: string; better: Metric['better']; values: number[] }>> = {};
+  const collected: Record<string, Record<string, { unit: string; better: Metric['better']; class: MetricClass; values: number[] }>> = {};
   const add = (scenario: string, name: string, metric: Metric) => {
     if (typeof metric?.value !== 'number' || !Number.isFinite(metric.value)) return;
     collected[scenario] ??= {};
-    collected[scenario][name] ??= { unit: metric.unit, better: metric.better, values: [] };
+    collected[scenario][name] ??= { unit: metric.unit, better: metric.better, class: classOf(metric), values: [] };
     collected[scenario][name].values.push(metric.value);
   };
   for (const it of measured) {
+    // Process-level readings are all wall-clock/RSS numbers this machine's
+    // other load visibly moves, except the runtime-exception count, which
+    // reflects game logic, not speed.
     add('process', 'peak_private_mb', { value: it.process.peak_private_mb, unit: 'MB', better: 'lower' });
     add('process', 'final_private_mb', { value: it.process.final_private_mb, unit: 'MB', better: 'lower' });
     add('process', 'cpu_seconds', { value: it.process.cpu_seconds, unit: 's', better: 'lower' });
     add('process', 'wall_seconds', { value: it.process.wall_seconds, unit: 's', better: 'lower' });
     add('process', 'init_seconds', { value: it.init_seconds, unit: 's', better: 'lower' });
-    add('process', 'runtimes', { value: it.total_runtimes, unit: 'runtimes', better: 'lower' });
+    add('process', 'runtimes', { value: it.total_runtimes, unit: 'runtimes', better: 'lower', class: 'count' });
     for (const [scenarioId, scenario] of Object.entries(it.scenarios ?? {})) {
       for (const [name, metric] of Object.entries(scenario.metrics ?? {})) {
         add(scenarioId, name, metric);
@@ -282,7 +321,7 @@ export function summarize(iterations: BenchIteration[]): BenchRun['summary'] {
   for (const [scenario, metrics] of Object.entries(collected)) {
     summary[scenario] = {};
     for (const [name, m] of Object.entries(metrics)) {
-      summary[scenario][name] = statsOf(m.values, m.unit, m.better);
+      summary[scenario][name] = statsOf(m.values, m.unit, m.better, m.class);
     }
   }
   return summary;
@@ -295,19 +334,44 @@ export type Comparison = {
   scenario: string;
   metric: string;
   unit: string;
+  class: MetricClass;
   base: number;
   head: number;
   change_pct: number;
   noise_pct: number;
-  verdict: 'regression' | 'improvement' | 'unchanged' | 'new' | 'removed';
+  verdict: 'regression' | 'improvement' | 'unchanged' | 'new' | 'removed' | 'not_comparable';
 };
 
 /**
- * A change counts only if it exceeds both the threshold and twice the observed
- * run-to-run spread, so single noisy runs don't raise alarms.
+ * True when two runs' machine load is close enough that a TIMING metric
+ * between them means something. Both taken under the exclusive bench lock
+ * (see BenchExclusiveLock) always counts as similar — that's the point of
+ * the lock. Otherwise, similar means: same exclusivity, system CPU within 20
+ * points, and no more than one extra concurrent DreamDaemon/dm/cargo/rustc
+ * process apiece (and at most two total), which is noisy but not "someone is
+ * running a full build next to this benchmark."
+ */
+export function loadSimilar(a: LoadContext | undefined, b: LoadContext | undefined): boolean {
+  if (!a || !b) return false;
+  if (a.exclusive && b.exclusive) return true;
+  if (a.exclusive !== b.exclusive) return false;
+  const loadOf = (l: LoadContext) => l.other_dreamdaemon + l.other_dm + l.cargo_rustc;
+  const loadA = loadOf(a);
+  const loadB = loadOf(b);
+  return Math.abs(a.cpu_percent - b.cpu_percent) <= 20 && Math.abs(loadA - loadB) <= 1 && loadA <= 2 && loadB <= 2;
+}
+
+/**
+ * A change counts only if it exceeds both the threshold and twice the
+ * observed run-to-run spread, so single noisy runs don't raise alarms. COUNT
+ * metrics (see MetricClass) always compare, with a tight threshold, since
+ * they don't move with machine load. TIMING metrics only compare when both
+ * runs' recorded LoadContext (see BenchRun.load) are load-similar; otherwise
+ * they're reported 'not_comparable (load)' rather than silently skipped.
  */
 export function compareRuns(base: BenchRun, head: BenchRun, thresholdPct: number): Comparison[] {
   const rows: Comparison[] = [];
+  const timingComparable = loadSimilar(base.load, head.load);
   const scenarios = new Set([...Object.keys(base.summary), ...Object.keys(head.summary)]);
   for (const scenario of scenarios) {
     const b = base.summary[scenario] ?? {};
@@ -318,23 +382,32 @@ export function compareRuns(base: BenchRun, head: BenchRun, thresholdPct: number
       if (!bs || !hs) {
         const s = (bs ?? hs) as MetricStats;
         rows.push({
-          scenario, metric, unit: s.unit,
+          scenario, metric, unit: s.unit, class: s.class,
           base: bs?.median ?? NaN, head: hs?.median ?? NaN,
           change_pct: NaN, noise_pct: NaN, verdict: bs ? 'removed' : 'new',
         });
         continue;
       }
+      const metricClass = classOf(hs);
+      if (metricClass === 'timing' && !timingComparable) {
+        rows.push({
+          scenario, metric, unit: hs.unit, class: metricClass,
+          base: bs.median, head: hs.median, change_pct: NaN, noise_pct: NaN, verdict: 'not_comparable',
+        });
+        continue;
+      }
+      const effectiveThreshold = metricClass === 'count' ? Math.min(thresholdPct, 1) : thresholdPct;
       const denominator = Math.abs(bs.median) || 1e-9;
       const change = ((hs.median - bs.median) / denominator) * 100;
       const cv = (s: MetricStats) => (s.n > 1 && s.median ? (s.stdev / Math.abs(s.median)) * 100 : 0);
       const noise = 2 * Math.max(cv(bs), cv(hs));
       let verdict: Comparison['verdict'] = 'unchanged';
-      const significant = Math.abs(change) > Math.max(thresholdPct, noise) && bs.median !== hs.median;
+      const significant = Math.abs(change) > Math.max(effectiveThreshold, noise) && bs.median !== hs.median;
       if (significant && hs.better !== 'none') {
         const worse = hs.better === 'lower' ? change > 0 : change < 0;
         verdict = worse ? 'regression' : 'improvement';
       }
-      rows.push({ scenario, metric, unit: hs.unit, base: bs.median, head: hs.median, change_pct: change, noise_pct: noise, verdict });
+      rows.push({ scenario, metric, unit: hs.unit, class: metricClass, base: bs.median, head: hs.median, change_pct: change, noise_pct: noise, verdict });
     }
   }
   return rows;
@@ -349,17 +422,18 @@ export function formatNumber(value: number): string {
 }
 
 export function formatComparison(rows: Comparison[], onlyChanges = false): string {
-  const shown = onlyChanges ? rows.filter((r) => r.verdict !== 'unchanged') : rows;
+  const shown = onlyChanges ? rows.filter((r) => r.verdict !== 'unchanged' && r.verdict !== 'not_comparable') : rows;
   if (!shown.length) return 'No metric changed beyond the threshold.';
-  const header = ['scenario', 'metric', 'base', 'head', 'change', 'noise', 'verdict'];
+  const header = ['scenario', 'metric', 'class', 'base', 'head', 'change', 'noise', 'verdict'];
   const body = shown.map((r) => [
     r.scenario,
     r.metric,
+    r.class,
     `${formatNumber(r.base)} ${r.unit}`,
     `${formatNumber(r.head)} ${r.unit}`,
     Number.isFinite(r.change_pct) ? `${r.change_pct >= 0 ? '+' : ''}${r.change_pct.toFixed(1)}%` : '-',
     Number.isFinite(r.noise_pct) ? `±${r.noise_pct.toFixed(1)}%` : '-',
-    r.verdict,
+    r.verdict === 'not_comparable' ? 'not comparable (load)' : r.verdict,
   ]);
   const widths = header.map((h, i) => Math.max(h.length, ...body.map((row) => row[i].length)));
   const line = (cells: string[]) => cells.map((c, i) => c.padEnd(widths[i])).join('  ');
@@ -367,10 +441,240 @@ export function formatComparison(rows: Comparison[], onlyChanges = false): strin
 }
 
 // ---------------------------------------------------------------------------
+// Machine load sampling. Mirrors ProcessSampler's approach (one long-lived
+// PowerShell loop on Windows) so a benchmark run knows how contended the
+// machine was, which compareRuns()/loadSimilar() use to decide whether
+// TIMING metrics are even worth comparing.
+
+const WINDOWS_LOAD_SAMPLER = `
+$ErrorActionPreference = 'SilentlyContinue'
+while ($true) {
+  $procs = Get-Process -ErrorAction SilentlyContinue
+  $dd = ($procs | Where-Object { $_.ProcessName -ieq 'dreamdaemon' }).Count
+  $dmc = ($procs | Where-Object { $_.ProcessName -ieq 'dm' }).Count
+  $cr = ($procs | Where-Object { $_.ProcessName -ieq 'cargo' -or $_.ProcessName -ieq 'rustc' }).Count
+  $cpu = (Get-CimInstance Win32_Processor -ErrorAction SilentlyContinue | Measure-Object -Property LoadPercentage -Average).Average
+  Write-Output ("{0} {1} {2} {3}" -f $dd, $dmc, $cr, $cpu)
+  Start-Sleep -Milliseconds $args[0]
+}
+`;
+
+type LoadSample = { dd: number; dmc: number; cr: number; cpu: number };
+
+export class LoadSampler {
+  private samples: LoadSample[] = [];
+  private child: ReturnType<typeof spawn> | null = null;
+  private timer: ReturnType<typeof setInterval> | null = null;
+
+  constructor(private intervalMs = 3000) {}
+
+  start(): void {
+    if (process.platform === 'win32') {
+      const child = spawn(
+        'powershell',
+        ['-NoProfile', '-NonInteractive', '-Command', WINDOWS_LOAD_SAMPLER, String(this.intervalMs)],
+        { stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true },
+      );
+      let buffer = '';
+      child.stdout.on('data', (chunk: Buffer) => {
+        buffer += chunk.toString();
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const [dd, dmc, cr, cpu] = line.trim().split(/\s+/).map(Number);
+          if (Number.isFinite(dd)) this.samples.push({ dd, dmc, cr, cpu: Number.isFinite(cpu) ? cpu : 0 });
+        }
+      });
+      this.child = child;
+    } else {
+      const sampleOnce = () => {
+        try {
+          const psOut = spawnSync('ps', ['-eo', 'comm='], { encoding: 'utf-8' }).stdout ?? '';
+          const names = psOut.split(/\r?\n/).map((n) => n.trim().toLowerCase());
+          const dd = names.filter((n) => n.includes('dreamdaemon')).length;
+          const dmc = names.filter((n) => n === 'dm' || n === 'dreammaker').length;
+          const cr = names.filter((n) => n === 'cargo' || n === 'rustc').length;
+          const cpu = (os.loadavg()[0] / Math.max(os.cpus().length, 1)) * 100;
+          this.samples.push({ dd, dmc, cr, cpu });
+        } catch {
+          // a missed sample doesn't matter; the average absorbs it
+        }
+      };
+      sampleOnce();
+      this.timer = setInterval(sampleOnce, this.intervalMs);
+    }
+  }
+
+  /**
+   * Averages the samples into a LoadContext. `ownDreamDaemonRunning` subtracts
+   * one from the observed DreamDaemon count for the world this run itself
+   * booted, so `other_dreamdaemon` means "besides mine".
+   */
+  stop(ownDreamDaemonRunning: boolean, exclusive: boolean): LoadContext {
+    this.child?.kill();
+    this.child = null;
+    if (this.timer) clearInterval(this.timer);
+    this.timer = null;
+    const avg = (f: (s: LoadSample) => number) =>
+      this.samples.length ? this.samples.reduce((a, s) => a + f(s), 0) / this.samples.length : 0;
+    return {
+      machine_id: process.env.COMPUTERNAME || process.env.HOSTNAME || os.hostname() || 'unknown',
+      exclusive,
+      other_dreamdaemon: Math.max(0, Math.round(avg((s) => s.dd)) - (ownDreamDaemonRunning ? 1 : 0)),
+      other_dm: Math.round(avg((s) => s.dmc)),
+      cargo_rustc: Math.round(avg((s) => s.cr)),
+      cpu_percent: Math.round(avg((s) => s.cpu) * 10) / 10,
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Exclusive bench slot (`bench --exclusive`). Takes a machine-wide mkdir lock
+// so other exclusive runs queue behind it, then waits for the DreamDaemon
+// slot directories (tools/ci/dd-slot.sh) to drain before returning, so the
+// benchmark gets as close to a quiet machine as this tooling can arrange.
+// The lock self-expires after `maxHoldMs` so a stuck or killed holder can't
+// starve other agents forever.
+
+function readIntFile(file: string): number {
+  try {
+    return Number(fs.readFileSync(file, 'utf-8').trim()) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function processAlive(pid: number): boolean {
+  if (!pid) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export type ExclusiveLock = { release(): void };
+
+/** Acquires the exclusive bench lock, waiting out any other holder (including a stale one). */
+export async function acquireBenchExclusiveLock(maxHoldMs = 20 * 60 * 1000, pollMs = 5000): Promise<ExclusiveLock> {
+  const dir = benchExclusiveLockDir();
+  for (;;) {
+    try {
+      fs.mkdirSync(dir, { recursive: false });
+      break;
+    } catch {
+      const pid = readIntFile(path.join(dir, 'pid'));
+      const started = readIntFile(path.join(dir, 'started'));
+      const stale = !processAlive(pid) || (started > 0 && Date.now() - started > maxHoldMs);
+      if (stale) {
+        try {
+          fs.rmSync(dir, { recursive: true, force: true });
+        } catch {
+          // lost the race to reclaim it; loop and retry
+        }
+        continue;
+      }
+      await sleep(pollMs);
+    }
+  }
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'pid'), String(process.pid));
+  fs.writeFileSync(path.join(dir, 'started'), String(Date.now()));
+  let released = false;
+  return {
+    release: () => {
+      if (released) return;
+      released = true;
+      try {
+        fs.rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // best effort; a stale lock still self-expires via maxHoldMs
+      }
+    },
+  };
+}
+
+/** Waits until every DreamDaemon slot directory is empty (or stale-owned), or the timeout elapses. Returns whether it drained. */
+export async function waitForDreamDaemonsToDrain(timeoutMs = 5 * 60 * 1000, pollMs = 5000, log: (msg: string) => void = () => {}): Promise<boolean> {
+  const base = ddSlotBaseDir();
+  const deadline = Date.now() + timeoutMs;
+  let announced = false;
+  for (;;) {
+    let busy = false;
+    for (let i = 1; i <= 5; i++) {
+      const dir = `${base}${i}`;
+      const pidFile = path.join(dir, 'pid');
+      if (!fs.existsSync(pidFile)) continue;
+      const pid = readIntFile(pidFile);
+      if (processAlive(pid)) {
+        busy = true;
+      } else {
+        try {
+          fs.rmSync(dir, { recursive: true, force: true });
+        } catch {
+          // another process is reclaiming it too; fine either way
+        }
+      }
+    }
+    if (!busy) return true;
+    if (!announced) {
+      log('Waiting for other DreamDaemon runs to drain before starting the exclusive benchmark...');
+      announced = true;
+    }
+    if (Date.now() > deadline) return false;
+    await sleep(pollMs);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Locating stored runs
 
 export const BENCH_RUNS_DIR = 'data/bench/runs';
 export const TEST_RUNS_DIR = 'data/test-runs';
+
+/**
+ * Benchmark runs are per-worktree by default (data/ is gitignored and lives
+ * inside each worktree), so a branch worktree has no access to a master
+ * baseline unless it re-runs one itself. Setting DQ_BENCH_STORE to a
+ * directory outside any worktree (e.g. a sibling of the checkouts) turns
+ * runs/, the exclusive-bench lock and the DreamDaemon slot directory it looks
+ * for into shared, machine-wide state that every worktree on that machine can
+ * read and write. Nothing here hardcodes a path — an unset DQ_BENCH_STORE
+ * just falls back to the old per-worktree data/bench/runs behaviour.
+ */
+export function benchStoreDir(): string | null {
+  return process.env.DQ_BENCH_STORE || null;
+}
+
+export function benchRunsDir(): string {
+  const store = benchStoreDir();
+  return store ? path.join(store, 'runs') : BENCH_RUNS_DIR;
+}
+
+/** Where the `bench --exclusive` lock directory lives (see BenchExclusiveLock). */
+export function benchExclusiveLockDir(): string {
+  return process.env.DQ_BENCH_EXCLUSIVE_LOCK || path.join(benchStoreDir() || 'data/bench', '.dq-bench-exclusive');
+}
+
+/**
+ * Base path of the machine-wide DreamDaemon slot directories that
+ * tools/ci/dd-slot.sh (and the scratchpad copy agents use) hand out as
+ * `${base}1` .. `${base}5`. Configurable so the shared-store layout isn't
+ * assumed; defaults to a sibling of the bench store so the default
+ * DQ_BENCH_STORE=E:/projects/.dq-bench pairs with the slots agents already
+ * use at E:/projects/.dq-dd-slot-N.
+ */
+export function ddSlotBaseDir(): string {
+  if (process.env.DQ_DD_SLOT_BASE) return process.env.DQ_DD_SLOT_BASE;
+  const store = benchStoreDir();
+  const parent = store ? path.dirname(store) : path.resolve('data/bench');
+  return path.join(parent, '.dq-dd-slot-');
+}
 
 export function listRuns(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
@@ -400,6 +704,44 @@ export function resolveRun(dir: string, ref: string): string {
   });
   if (!matches.length) throw new Error(`No stored run matches '${ref}' in ${dir}.`);
   return matches[matches.length - 1];
+}
+
+// ---------------------------------------------------------------------------
+// Baseline lookup: the master ancestor to compare a branch bench against.
+
+export type BaselineLookup = { file: string; run: BenchRun; commit: string; isMergeBase: boolean };
+
+/**
+ * Finds the stored bench run (in the shared store, benchRunsDir()) for the
+ * given map that's closest to `git merge-base HEAD master` — the merge-base
+ * commit itself if a run was stored for it (see the `bench-baseline` target),
+ * else the nearest master ancestor of it that has one. Returns null if
+ * there's no merge-base (e.g. not on a branch off master) or no matching run
+ * was found within the walked history.
+ */
+export function findBaselineRun(map: string, opts: { label?: string | null; historyDepth?: number } = {}): BaselineLookup | null {
+  const mergeBase = git('merge-base', 'HEAD', 'master');
+  if (!mergeBase) return null;
+  const depth = opts.historyDepth ?? 1000;
+  const ancestors = git('log', '--format=%H', `-${depth}`, mergeBase)
+    .split(/\r?\n/)
+    .filter(Boolean);
+  if (!ancestors.length) return null;
+  const dir = benchRunsDir();
+  const files = listRuns(dir);
+  if (!files.length) return null;
+  const runs = files.map((file) => ({ file, run: readJson<BenchRun>(file) }));
+  for (const fullHash of ancestors) {
+    const shortHash = fullHash.slice(0, 10);
+    const matches = runs.filter(
+      (r) => r.run.commit === shortHash && r.run.map === map && (opts.label === undefined || r.run.label === opts.label),
+    );
+    if (matches.length) {
+      const chosen = matches[matches.length - 1];
+      return { file: chosen.file, run: chosen.run, commit: shortHash, isMergeBase: shortHash === mergeBase.slice(0, 10) };
+    }
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
