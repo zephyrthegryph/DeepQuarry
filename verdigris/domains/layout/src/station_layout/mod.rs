@@ -12,10 +12,7 @@ mod structural;
 pub use content::{generate_station_blueprint, validate_station_blueprint};
 pub use contract::{decode_catalog, encode_plan};
 pub use error::LayoutError;
-pub use jobs::{
-    finish_planning_job, generate_catalog_plan, planning_job_section, poll_planning_job,
-    submit_planning_job,
-};
+pub use jobs::{PLANNING_JOB, generate_catalog_plan, plan_catalog_job, plan_section};
 pub use model::*;
 pub use render::{
     render_blueprint_png, render_blueprint_sprites, render_blueprint_svg, render_png, render_svg,

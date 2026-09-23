@@ -1751,6 +1751,7 @@ dependencies = [
  "const_format",
  "eyre",
  "serde_json",
+ "vg-core",
  "vg-layout",
 ]
 
@@ -1796,6 +1797,7 @@ dependencies = [
  "serde",
  "serde_json",
  "toml",
+ "vg-core",
 ]
 
 [[package]]

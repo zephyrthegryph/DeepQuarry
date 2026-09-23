@@ -12,6 +12,7 @@ const_format = "0.2.33"
 serde_json = "1.0"
 auxmacros = { path = "macros" }
 vg-layout = { path = "../domains/layout" }
+vg-core = { path = "../core" }
 
 [build-dependencies]
 bosion = "2.0.0"

@@ -1,6 +1,8 @@
-//! Binds for `vg-layout`: cave generation and station-layout planning jobs.
+//! Binds for `vg-layout`: cave generation and station-layout planning, which
+//! runs on the job registry (`jobs.rs`).
 use byondapi::prelude::*;
 use eyre::Result;
+use vg_core::alloc::AllocTag;
 use vg_layout::{random_map, station_layout};
 
 /// Args: (limit_x, limit_y, iterations, initial_wall_cell). Returns a flat
@@ -14,12 +16,15 @@ fn generate_automata(
 ) -> Result<ByondValue> {
     // get_number() yields f32; widen to f64 so validation/ceiling math has
     // integer headroom.
-    let map = random_map::generate_automata(
+    let (x, y, iterations, wall) = (
         f64::from(limit_x.get_number()?),
         f64::from(limit_y.get_number()?),
         f64::from(iterations.get_number()?),
         f64::from(initial_wall_cell.get_number()?),
-    )?;
+    );
+    let map = crate::allocator::tagged(AllocTag::Layout, || {
+        random_map::generate_automata(x, y, iterations, wall)
+    })?;
     let elems: Vec<ByondValue> = map
         .iter()
         .map(|&b| ByondValue::from(if b { 1.0f32 } else { 0.0f32 }))
@@ -35,20 +40,23 @@ fn verdigris_generate_station_layout(payload: ByondValue) -> Result<ByondValue> 
     Ok(ByondValue::new_str(response.into_bytes())?)
 }
 
+/// Starts a station-layout planning job and returns its id. Plans for
+/// different sites may run at once, so there is no supersede key. Poll with
+/// `vg_verdigris_job_poll`, read with `vg_verdigris_station_layout_section`,
+/// release with `vg_verdigris_job_finish`.
 #[auxmacros::bind("/proc/verdigris_submit_station_layout")]
 fn verdigris_submit_station_layout(payload: ByondValue) -> Result<ByondValue> {
-    let job_id = station_layout::submit_planning_job(payload.get_string()?)
-        .map_err(|error| eyre::eyre!(error.to_string()))?;
-    Ok(ByondValue::new_str(job_id.to_string().into_bytes())?)
+    let payload = payload.get_string()?;
+    let id = crate::jobs::registry().submit(station_layout::PLANNING_JOB, None, move |ctx| {
+        crate::allocator::tagged(AllocTag::Layout, || {
+            station_layout::plan_catalog_job(&payload, ctx)
+        })
+    });
+    crate::jobs::id_value(id)
 }
 
-#[auxmacros::bind("/proc/verdigris_poll_station_layout")]
-fn verdigris_poll_station_layout(job_id: ByondValue) -> Result<ByondValue> {
-    let job_id = job_id.get_string()?.parse::<u64>()?;
-    let response = station_layout::poll_planning_job(job_id)?;
-    Ok(ByondValue::new_str(response.into_bytes())?)
-}
-
+/// One section of a finished plan (JSON): `header`, or rows
+/// `[offset, offset + limit)` of an array section.
 #[auxmacros::bind("/proc/verdigris_station_layout_section")]
 fn verdigris_station_layout_section(
     job_id: ByondValue,
@@ -56,17 +64,14 @@ fn verdigris_station_layout_section(
     offset: ByondValue,
     limit: ByondValue,
 ) -> Result<ByondValue> {
-    let job_id = job_id.get_string()?.parse::<u64>()?;
+    let job_id = crate::jobs::parse_id(&job_id)?;
     let section = section.get_string()?;
     let offset = offset.get_string()?.parse::<usize>()?;
     let limit = limit.get_string()?.parse::<usize>()?;
-    let response = station_layout::planning_job_section(job_id, &section, offset, limit)?;
+    let response = crate::jobs::registry()
+        .with_result(job_id, |root: &serde_json::Value| {
+            station_layout::plan_section(root, &section, offset, limit)
+        })
+        .ok_or_else(|| eyre::eyre!("station planning job is not ready"))??;
     Ok(ByondValue::new_str(serde_json::to_vec(&response)?)?)
-}
-
-#[auxmacros::bind("/proc/verdigris_finish_station_layout")]
-fn verdigris_finish_station_layout(job_id: ByondValue) -> Result<ByondValue> {
-    let job_id = job_id.get_string()?.parse::<u64>()?;
-    let removed = station_layout::finish_planning_job(job_id)?;
-    Ok(ByondValue::new_str(if removed { b"1" } else { b"0" })?)
 }

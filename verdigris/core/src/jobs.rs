@@ -466,14 +466,15 @@ mod tests {
         let reg = JobRegistry::new(1).unwrap();
         reg.set_frame_busy(true);
         let id = reg.submit("wait", None, |ctx| {
-            let t = Instant::now();
             ctx.checkpoint().map_err(|e| e.to_string())?;
-            Ok(t.elapsed())
+            Ok(())
         });
-        std::thread::sleep(Duration::from_millis(20));
+        std::thread::sleep(Duration::from_millis(30));
+        assert!(
+            matches!(reg.poll(id), JobStatus::Pending { .. }),
+            "a job must not pass a checkpoint while a frame runs"
+        );
         reg.set_frame_busy(false);
         assert_eq!(wait(&reg, id), JobStatus::Ready);
-        let parked = reg.take_result::<Duration>(id).unwrap();
-        assert!(parked >= Duration::from_millis(10), "{parked:?}");
     }
 }

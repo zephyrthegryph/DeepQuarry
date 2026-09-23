@@ -40,6 +40,8 @@ SUBSYSTEM_DEF(profiler)
 	SSmachines.request_adaptive_profile()
 	var/list/atmos_arena = vg_auxmos_diagnostics()
 	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
+	// Every Rust metric (allocator tags, jobs, ...) in one call.
+	var/list/rust_metrics = verdigris_metrics_list()
 	var/list/subsystems = list(
 		"atmos" = subsystem_diagnostics(SSair),
 		"machines" = subsystem_diagnostics(SSmachines),
@@ -131,6 +133,7 @@ SUBSYSTEM_DEF(profiler)
 		"subsystems" = subsystems,
 		"atmos_arena" = atmos_arena,
 		"rust_allocator" = rust_allocator,
+		"rust_metrics" = rust_metrics,
 	)
 	log_runtime("PERF_PROFILE [json_encode(profile)]")
 	// Keep the stable specialized records consumed by existing benchmark tools.
@@ -196,3 +199,16 @@ SUBSYSTEM_DEF(profiler)
 	WRITE_FILE(prof_file, current_profile_data)
 	WRITE_FILE(sendmaps_file, current_sendmaps_data)
 	write_cost = MC_AVERAGE(write_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
+
+/// Every Rust metric (counters, gauges, histograms; see verdigris/ffi/src/metrics.rs)
+/// from one verdigris call, decoded, or null if the library did not answer.
+/proc/verdigris_metrics_list()
+	var/text = vg_verdigris_metrics()
+	if(!istext(text) || !length(text))
+		return null
+	var/list/decoded
+	try
+		decoded = json_decode(text)
+	catch
+		return null
+	return decoded
