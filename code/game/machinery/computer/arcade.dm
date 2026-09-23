@@ -53,6 +53,31 @@
 			new	/obj/item/clothing/head/syndicatefake(src.loc)
 
 
+/obj/machinery/computer/arcade/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/arcade_ticket_redeem,
+	)
+	..()
+
+/// Turn in 2 arcade tickets for a prize.
+/datum/interaction/machine_item/arcade_ticket_redeem
+	id = "arcade_ticket_redeem"
+	name = "Redeem tickets"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/stack/arcadeticket
+	effect = /obj/machinery/computer/arcade/proc/interaction_redeem_tickets
+
+/obj/machinery/computer/arcade/proc/interaction_redeem_tickets(mob/user, obj/item/stack/arcadeticket/T, datum/interaction/interaction)
+	var/amount = T.get_amount()
+	if(amount < 2)
+		to_chat(user, span_warning("You need 2 tickets to claim a prize!"))
+		return TRUE
+	prizevend(user)
+	T.pay_tickets()
+	T.update_icon()
+	to_chat(user, span_notice("You turn in 2 tickets to the [src] and claim a prize!"))
+	return TRUE
+
 /obj/machinery/computer/arcade/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF || (stat & (NOPOWER|BROKEN)))
@@ -111,10 +136,11 @@
 	name = (name_action + name_part1 + name_part2)
 
 
-/obj/machinery/computer/arcade/battle/attack_hand(mob/user as mob)
-	if(..())
-		return
-	tgui_interact(user)
+/obj/machinery/computer/arcade/battle/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/computer/arcade/battle/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -1040,27 +1066,46 @@
 	var/gameprice = 1
 	var/winscreen = ""
 
-/// Payment
-/obj/machinery/computer/arcade/clawmachine/attackby(obj/item/I as obj, mob/user as mob)
-	if(..())
-		return
+/// Payment and Use. The old attackby tested the base arcade's own interactions
+/// (ticket redemption) first via `if(..()) return`, so our own payment
+/// interaction is declared after ..() rather than before it; attack_hand's
+/// `if(..()) return; tgui_interact(user)` is the shared open_ui interaction.
+/obj/machinery/computer/arcade/clawmachine/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
+	into += list(
+		/datum/interaction/machine_item/clawmachine_pay,
+	)
 
-	if(gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended)
-		var/paid = 0
-		var/obj/item/card/id/W = I.GetID()
-		if(W) //for IDs and PDAs and wallets with IDs
-			paid = pay_with_card(W, I, user)
-		else if(istype(I, /obj/item/spacecash/ewallet))
-			var/obj/item/spacecash/ewallet/C = I
-			paid = pay_with_ewallet(C, user)
-		else if(istype(I, /obj/item/spacecash))
-			var/obj/item/spacecash/C = I
-			paid = pay_with_cash(C, user)
-		if(paid)
-			gamepaid = 1
-			instructions = "Hit start to play!"
-			return
-		return
+/// Pay for a game of claw machine with an ID, ewallet or cash.
+/datum/interaction/machine_item/clawmachine_pay
+	id = "clawmachine_pay"
+	name = "Pay"
+	category = INTERACTION_CAT_INSERT
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/arcade/clawmachine/proc/wants_payment, null))
+	effect = /obj/machinery/computer/arcade/clawmachine/proc/interaction_pay
+
+/// Whether the claw machine still needs payment and can take it right now.
+/obj/machinery/computer/arcade/clawmachine/proc/wants_payment(mob/actor, atom/target, obj/item/held)
+	return gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended
+
+/obj/machinery/computer/arcade/clawmachine/proc/interaction_pay(mob/user, obj/item/I, datum/interaction/interaction)
+	var/paid = 0
+	var/obj/item/card/id/W = I.GetID()
+	if(W) //for IDs and PDAs and wallets with IDs
+		paid = pay_with_card(W, I, user)
+	else if(istype(I, /obj/item/spacecash/ewallet))
+		var/obj/item/spacecash/ewallet/C = I
+		paid = pay_with_ewallet(C, user)
+	else if(istype(I, /obj/item/spacecash))
+		var/obj/item/spacecash/C = I
+		paid = pay_with_cash(C, user)
+	if(paid)
+		gamepaid = 1
+		instructions = "Hit start to play!"
+	return TRUE
 
 ////// Cash
 /obj/machinery/computer/arcade/clawmachine/proc/pay_with_cash(obj/item/spacecash/cashmoney, mob/user)
@@ -1156,12 +1201,6 @@
 	T.time = stationtime2text()
 	GLOB.vendor_account.transaction_log.Add(T)
 
-/// End Payment
-/obj/machinery/computer/arcade/clawmachine/attack_hand(mob/living/user)
-	if(..())
-		return
-	tgui_interact(user)
-
 /// TGUI Stuff
 
 /obj/machinery/computer/arcade/clawmachine/tgui_interact(mob/user, datum/tgui/ui)
@@ -1242,24 +1281,6 @@
 		gameStatus = "CLAWMACHINE_NEW"
 		emagged = 1
 		return 1
-
-/obj/machinery/computer/arcade/attackby(obj/item/O, mob/user, params)
-	..()
-	if(istype(O, /obj/item/stack/arcadeticket))
-		var/obj/item/stack/arcadeticket/T = O
-		var/amount = T.get_amount()
-		if(amount <2)
-			to_chat(user, span_warning("You need 2 tickets to claim a prize!"))
-			return
-		prizevend(user)
-		T.pay_tickets()
-		T.update_icon()
-		O = T
-		to_chat(user, span_notice("You turn in 2 tickets to the [src] and claim a prize!"))
-		return
-	else
-		..() //You can now actually deconstruct these.
-
 
 // === merged from arcade_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/computer/arcade

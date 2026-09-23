@@ -195,23 +195,47 @@
 	), "budget-allocation:[REF(budget)]:[world.time]:automatic", src, user)
 	return TRUE
 
-/obj/machinery/computer/skills/attackby(obj/item/O as obj, mob/user)
-	if(istype(O, /obj/item/card/id) && !scan && user.unEquip(O))
-		O.loc = src
-		scan = O
-		to_chat(user, "You insert [O].")
-		tgui_interact(user)
-	else
-		..()
+/obj/machinery/computer/skills/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/skills_insert_id,
+		/datum/interaction/machine_hand/skills_open_ui,
+	)
+	..()
+
+/// Old attackby: insert an ID card, else falls through to ..().
+/datum/interaction/machine_item/skills_insert_id
+	id = "skills_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/computer/skills/proc/interaction_insert_id
+
+/obj/machinery/computer/skills/proc/interaction_insert_id(mob/user, obj/item/O, datum/interaction/interaction)
+	if(scan)
+		return FALSE
+	if(!user.unEquip(O))
+		return FALSE
+	O.loc = src
+	scan = O
+	to_chat(user, "You insert [O].")
+	tgui_interact(user)
+	return TRUE
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
-/obj/machinery/computer/skills/attack_hand(mob/user as mob)
-	if(..())
-		return
-	if (using_map && !(src.z in using_map.contact_levels))
-		to_chat(user, span_danger("Unable to establish a connection:") + " You're too far away from the station!")
-		return
+/// Old attack_hand.
+/datum/interaction/machine_hand/skills_open_ui
+	id = "skills_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/computer/skills/proc/within_contact_range, "you're too far away from the station!"))
+	effect = /obj/machinery/computer/skills/proc/interaction_open_ui
+
+/// Requirement clause: no message (like the old check) beyond the reason text.
+/obj/machinery/computer/skills/proc/within_contact_range(mob/actor, atom/target, obj/item/held)
+	var/obj/machinery/computer/skills/machine = target
+	return !using_map || (machine.z in using_map.contact_levels)
+
+/obj/machinery/computer/skills/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/skills/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

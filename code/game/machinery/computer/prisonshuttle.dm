@@ -25,18 +25,35 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
 // notification state — the to_chat() notice already covers that flow.
-/obj/machinery/computer/prison_shuttle/attack_hand(mob/user as mob)
+/obj/machinery/computer/prison_shuttle/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/prison_shuttle_open_ui,
+	)
+	..()
+
+/**
+ * Old attack_hand: access/hacked and prison_break checks ran BEFORE the `..()` gate call, so
+ * they used to fire even when the console itself was unpowered/broken. The machinery hand gate
+ * now always runs first (see machine_hand); kept whole body in the effect rather than split into
+ * requires, so behaviour is otherwise identical. Approximation: those two messages can no longer
+ * fire while the console is inoperable/unreachable (the gate's own message wins instead).
+ */
+/datum/interaction/machine_hand/prison_shuttle_open_ui
+	id = "prison_shuttle_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/prison_shuttle/proc/interaction_open_ui
+
+/obj/machinery/computer/prison_shuttle/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!src.allowed(user) && (!hacked))
 		to_chat(user, span_warning("Access Denied."))
-		return
+		return TRUE
 	if(prison_break)
 		to_chat(user, span_warning("Unable to locate shuttle."))
-		return
-	if(..())
-		return
+		return TRUE
 	user.set_machine(src)
 	post_signal("prison")
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/prison_shuttle/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

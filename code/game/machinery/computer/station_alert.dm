@@ -34,12 +34,23 @@
 	tgui_interact(user)
 	return
 
-/obj/machinery/computer/station_alert/attack_hand(mob/user)
+/obj/machinery/computer/station_alert/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/station_alert_open_ui,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/station_alert_open_ui
+	id = "station_alert_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/station_alert/proc/interaction_open_ui
+
+/obj/machinery/computer/station_alert/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
-	return
+	return TRUE
 
 /obj/machinery/computer/station_alert/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

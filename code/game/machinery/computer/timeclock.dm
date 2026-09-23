@@ -50,23 +50,30 @@
 	else
 		set_light(light_range_on, light_power_on)
 
-/obj/machinery/computer/timeclock/attackby(obj/I, mob/user)
-	if(istype(I, /obj/item/card/id))
-		if(!card && user.unEquip(I))
-			I.forceMove(src)
-			card = I
-			playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
-			SStgui.update_uis(src)
-			update_icon()
-		else if(card)
-			to_chat(user, span_warning("There is already ID card inside."))
-		return
-	. = ..()
+/obj/machinery/computer/timeclock/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/timeclock_insert_id,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
-/obj/machinery/computer/timeclock/attack_hand(mob/user as mob)
-	if(..())
-		return
-	tgui_interact(user)
+/// Old attackby: insert an ID card, or complain there's already one inside.
+/datum/interaction/machine_item/timeclock_insert_id
+	id = "timeclock_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/computer/timeclock/proc/interaction_insert_id
+
+/obj/machinery/computer/timeclock/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
+	if(!card && user.unEquip(I))
+		I.forceMove(src)
+		card = I
+		playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+		SStgui.update_uis(src)
+		update_icon()
+	else if(card)
+		to_chat(user, span_warning("There is already ID card inside."))
+	return TRUE
 
 /obj/machinery/computer/timeclock/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

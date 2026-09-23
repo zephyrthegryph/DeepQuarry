@@ -48,13 +48,22 @@
 			return
 	return
 
-/obj/machinery/computer/pod/attack_hand(mob/user as mob)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/computer/pod/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/pod_open_ui,
+	)
+	..()
+
+/datum/interaction/machine_hand/pod_open_ui
+	id = "pod_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/pod/proc/interaction_open_ui
+
+/obj/machinery/computer/pod/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user) && !issilicon(user))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/pod/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	. = ..()
@@ -136,11 +145,20 @@
 	title = "External Airlock Controls"
 	req_access = list(ACCESS_SYNDICATE)
 
-/obj/machinery/computer/pod/old/syndicate/attack_hand(mob/user as mob)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access Denied"))
-		return
+/obj/machinery/computer/pod/old/syndicate/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/pod_syndicate_open_ui,
+	)
 	..()
+
+/datum/interaction/machine_hand/pod_syndicate_open_ui
+	id = "pod_syndicate_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/computer/pod/old/syndicate/proc/lets_in, "access denied"))
+	effect = /obj/machinery/computer/pod/proc/interaction_open_ui
+
+/obj/machinery/computer/pod/old/syndicate/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
 
 /obj/machinery/computer/pod/old/swf
 	name = "Magix System IV"

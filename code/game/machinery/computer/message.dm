@@ -146,12 +146,26 @@
 
 	return data
 
-/obj/machinery/computer/message_monitor/attack_hand(mob/living/user as mob)
+/obj/machinery/computer/message_monitor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/message_monitor_open_ui,
+	)
+	..()
+
+/// Open the message monitor interface.
+/datum/interaction/machine_hand/ungated/message_monitor_open_ui
+	id = "message_monitor_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/computer/message_monitor/proc/interaction_open_ui
+
+/obj/machinery/computer/message_monitor/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	if(!istype(user))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/message_monitor/proc/BruteForce(mob/user as mob)
 	if(isnull(linkedServer))
