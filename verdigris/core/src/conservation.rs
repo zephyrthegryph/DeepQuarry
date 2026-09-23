@@ -125,32 +125,43 @@ pub fn assert_conserved(ledger: &mut Ledger, name: &'static str, total: f64, tol
     }
 }
 
+/// A conserved quantity's index into a [`ConservationSet`]'s table,
+/// interned once (typically at boot) via [`ConservationSet::intern`]. A
+/// [`Conserved`] source stores the ids it cares about at construction, so
+/// the per-frame summing path never touches a string.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct QuantityId(u32);
+
 /// Implemented by a field kind, a network payload or a conserved component
 /// column: the driver's per-frame auto-wiring (`rust_architecture.md` §4.9)
 /// sums every declared quantity across every registered source and checks
 /// it through a [`Ledger`], instead of each domain writing its own
 /// `HeatLedger`/`Totals`/`Books`-style summing code.
 ///
-/// Object-safe by design (`(name, value)` pairs, not a fixed-width `out`
-/// slice keyed by a separate `QUANTITIES` const) so a driver can hold a
-/// `Vec<Box<dyn Conserved>>` of heterogeneous sources.
+/// Object-safe (a slice parameter, no generics in the method) so a driver
+/// can hold a `Vec<Box<dyn Conserved>>` of heterogeneous sources.
 pub trait Conserved {
-    /// This source's contribution to each conserved quantity it
-    /// participates in, as `(name, value)`. A source that doesn't touch a
-    /// quantity simply omits it, rather than contributing `0.0` -- the two
-    /// are equivalent for summing, but omitting avoids every source having
-    /// to know every quantity's name.
-    fn contributions(&self) -> Vec<(&'static str, f64)>;
+    /// Adds this source's contribution to each conserved quantity into
+    /// `out`, indexed by [`QuantityId`] (`out.len() ==` the owning
+    /// [`ConservationSet`]'s quantity count). Every source sharing one
+    /// `out` this frame, so implementations must only **add**
+    /// (`out[id.0] += ...`), never overwrite -- and only touch the ids
+    /// they were given at construction, leaving every other index alone.
+    /// No allocation: this runs once per source per frame.
+    fn totals(&self, out: &mut [f64]);
 }
 
 /// The driver's registry of [`Conserved`] sources for one frame's check:
-/// collect every source, sum per quantity name, and check each sum through
-/// a [`Ledger`] (§4.9). Cross-domain transfers are a sink in one domain's
-/// source and a matching source in the other's, both recorded by the
-/// coupling law through [`crate::law::LawCtx::ledger`] -- this set only
-/// sums *totals*, it doesn't itself know about transfers.
+/// collect every source, sum per quantity (by interned [`QuantityId`], not
+/// by string, on the hot path), and check each sum through a [`Ledger`]
+/// (§4.9). Cross-domain transfers are a sink in one domain's source and a
+/// matching source in the other's, both recorded by the coupling law
+/// through [`crate::law::LawCtx::ledger`] -- this set only sums *totals*,
+/// it doesn't itself know about transfers.
 #[derive(Default)]
 pub struct ConservationSet {
+    names: Vec<&'static str>,
+    by_name: std::collections::HashMap<&'static str, QuantityId>,
     sources: Vec<Box<dyn Conserved>>,
 }
 
@@ -160,34 +171,53 @@ impl ConservationSet {
         Self::default()
     }
 
+    /// Interns `name`, returning its stable [`QuantityId`] (the same id on
+    /// repeat calls with the same name). Call once per quantity a source
+    /// participates in, before constructing that source, typically at
+    /// boot: the id is then baked into the source rather than looked up
+    /// every frame.
+    pub fn intern(&mut self, name: &'static str) -> QuantityId {
+        if let Some(&id) = self.by_name.get(name) {
+            return id;
+        }
+        #[allow(clippy::cast_possible_truncation)]
+        let id = QuantityId(self.names.len() as u32);
+        self.names.push(name);
+        self.by_name.insert(name, id);
+        id
+    }
+
     /// Registers a source. Order doesn't matter: contributions are summed
-    /// per quantity name regardless of registration order.
+    /// by quantity id regardless of registration order.
     pub fn register(&mut self, source: Box<dyn Conserved>) {
         self.sources.push(source);
     }
 
-    /// Sums every registered source's contributions per quantity name.
-    #[must_use]
-    pub fn totals(&self) -> std::collections::BTreeMap<&'static str, f64> {
-        let mut totals = std::collections::BTreeMap::new();
+    /// Sums every registered source's contributions per quantity into
+    /// `out` (cleared and resized to the current quantity count; reusing
+    /// the same `Vec` across frames keeps this allocation-free once its
+    /// capacity has grown to fit).
+    pub fn totals_into(&self, out: &mut Vec<f64>) {
+        out.clear();
+        out.resize(self.names.len(), 0.0);
         for source in &self.sources {
-            for (name, value) in source.contributions() {
-                *totals.entry(name).or_insert(0.0) += value;
-            }
+            source.totals(out);
         }
-        totals
     }
 
-    /// Sums every registered source and checks each quantity's total
-    /// through `ledger`, within `tolerance` for every quantity (a per-
-    /// quantity tolerance can be layered on top by calling
-    /// [`Ledger::check`] directly for quantities that need a different
-    /// one). Returns every violation found this frame, not just the first,
-    /// so a driver can report or panic on all of them at once.
-    pub fn check(&self, ledger: &mut Ledger, tolerance: f64) -> Vec<Violation> {
-        self.totals()
-            .into_iter()
-            .filter_map(|(name, total)| ledger.check(name, total, tolerance).err())
+    /// [`totals_into`](Self::totals_into), then checks each quantity's sum
+    /// through `ledger` within `tolerance` (a per-quantity tolerance can be
+    /// layered on top by calling [`Ledger::check`] directly for quantities
+    /// that need a different one). Returns every violation found this
+    /// frame, not just the first, so a driver can report or panic on all
+    /// of them at once. `out` is a scratch buffer the caller keeps between
+    /// frames, same as [`totals_into`](Self::totals_into)'s.
+    pub fn check(&self, ledger: &mut Ledger, out: &mut Vec<f64>, tolerance: f64) -> Vec<Violation> {
+        self.totals_into(out);
+        self.names
+            .iter()
+            .zip(out.iter())
+            .filter_map(|(&name, &total)| ledger.check(name, total, tolerance).err())
             .collect()
     }
 }
@@ -264,42 +294,83 @@ mod tests {
         assert_conserved(&mut ledger, "moles", 5.0, 1e-6);
     }
 
-    struct FixedSource(Vec<(&'static str, f64)>);
+    /// A source that adds a fixed value at one interned id, leaving every
+    /// other index in `out` untouched -- exactly the contract `Conserved`
+    /// requires, and the shape a real per-cell/per-region source has (its
+    /// id(s) baked in at construction, not looked up per frame).
+    struct FixedSource {
+        id: QuantityId,
+        value: f64,
+    }
     impl Conserved for FixedSource {
-        fn contributions(&self) -> Vec<(&'static str, f64)> {
-            self.0.clone()
+        fn totals(&self, out: &mut [f64]) {
+            out[self.id.0 as usize] += self.value;
         }
     }
 
     #[test]
     fn conservation_set_sums_across_sources() {
         let mut set = ConservationSet::new();
-        set.register(Box::new(FixedSource(vec![("moles", 10.0), ("energy", 1000.0)])));
-        set.register(Box::new(FixedSource(vec![("moles", 5.0)])));
-        let totals = set.totals();
-        assert_eq!(totals[&"moles"], 15.0);
-        assert_eq!(totals[&"energy"], 1000.0);
+        let moles = set.intern("moles");
+        let energy = set.intern("energy");
+        set.register(Box::new(FixedSource { id: moles, value: 10.0 }));
+        set.register(Box::new(FixedSource { id: energy, value: 1000.0 }));
+        set.register(Box::new(FixedSource { id: moles, value: 5.0 }));
+        let mut out = Vec::new();
+        set.totals_into(&mut out);
+        assert_eq!(out[moles.0 as usize], 15.0);
+        assert_eq!(out[energy.0 as usize], 1000.0);
+    }
+
+    #[test]
+    fn intern_returns_the_same_id_for_the_same_name() {
+        let mut set = ConservationSet::new();
+        let a = set.intern("moles");
+        let b = set.intern("energy");
+        let c = set.intern("moles");
+        assert_eq!(a, c);
+        assert_ne!(a, b);
     }
 
     #[test]
     fn conservation_set_check_catches_a_leak() {
         let mut set = ConservationSet::new();
-        set.register(Box::new(FixedSource(vec![("moles", 100.0)])));
+        let moles = set.intern("moles");
+        set.register(Box::new(FixedSource { id: moles, value: 100.0 }));
         let mut ledger = Ledger::new();
-        assert!(set.check(&mut ledger, 1e-6).is_empty(), "priming never fails");
-        // Same total: fine.
-        assert!(set.check(&mut ledger, 1e-6).is_empty());
+        let mut out = Vec::new();
+        assert!(
+            set.check(&mut ledger, &mut out, 1e-6).is_empty(),
+            "priming never fails"
+        );
+        // Same total every frame: fine.
+        assert!(set.check(&mut ledger, &mut out, 1e-6).is_empty());
     }
 
     #[test]
     fn conservation_set_check_reports_a_violation() {
         let mut set = ConservationSet::new();
-        set.register(Box::new(FixedSource(vec![("moles", 100.0)])));
+        let moles = set.intern("moles");
+        set.register(Box::new(FixedSource { id: moles, value: 100.0 }));
         let mut ledger = Ledger::new();
-        assert!(set.check(&mut ledger, 1e-6).is_empty(), "priming never fails");
-        set.sources[0] = Box::new(FixedSource(vec![("moles", 150.0)]));
-        let violations = set.check(&mut ledger, 1e-6);
+        let mut out = Vec::new();
+        assert!(
+            set.check(&mut ledger, &mut out, 1e-6).is_empty(),
+            "priming never fails"
+        );
+        set.sources[0] = Box::new(FixedSource { id: moles, value: 150.0 });
+        let violations = set.check(&mut ledger, &mut out, 1e-6);
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].name, "moles");
+    }
+
+    #[test]
+    fn totals_into_reuses_its_buffer_without_stale_values() {
+        let mut set = ConservationSet::new();
+        let moles = set.intern("moles");
+        set.register(Box::new(FixedSource { id: moles, value: 3.0 }));
+        let mut out = vec![999.0; 10]; // deliberately oversized and stale
+        set.totals_into(&mut out);
+        assert_eq!(out, vec![3.0], "cleared and resized, not left stale");
     }
 }
