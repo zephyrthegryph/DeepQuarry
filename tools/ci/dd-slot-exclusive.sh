@@ -73,5 +73,9 @@ drain() {
 acquire
 drain
 echo "[dd-slot-exclusive] running exclusive benchmark" >&2
-"$@"; rc=$?
+# Tell a nested `bench --exclusive` (or anything else that would otherwise
+# call waitForDreamDaemonsToDrain() itself) that this wrapper already drained
+# the machine, so it doesn't wait out its own timeout waiting on a slot this
+# wrapper -- not it -- holds.
+DQ_DD_SLOT_HELD=1 "$@"; rc=$?
 exit $rc
