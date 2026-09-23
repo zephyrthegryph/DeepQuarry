@@ -34,8 +34,8 @@
 	var/is_whitelisted = FALSE
 	var/whitelist_ckey
 	var/whitelist_charname
-	var/list/belly_light_list // Support multiple sleepers with r/g light "sleeper"
-	var/list/belly_capacity_list //Support multiple bellies with multiple sizes, default: "sleeper" = 1
+	var/list/belly_light_list = list() // Support multiple sleepers with r/g light "sleeper". Kept: code tests it for truth, so empty and null differ.
+	var/list/belly_capacity_list = list() //Support multiple bellies with multiple sizes, default: "sleeper" = 1. Kept, as above.
 	var/list/sprite_decals // Allow extra decals
 	var/list/sprite_animations // Allows to flick animations
 

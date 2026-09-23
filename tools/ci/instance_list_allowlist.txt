@@ -157,6 +157,8 @@
 /datum/react_test_subscriber/wakes # d: unit-test fixture; a handful of instances per test run
 /datum/reagent/drugs/high_message_list # kept: interned by contents in New() (intern_list); read-only
 /datum/reagent/drugs/sober_message_list # kept: interned by contents in New() (intern_list); read-only
+/datum/robot_sprite/belly_capacity_list # d: tested for truth (!belly_capacity_list), so an empty list and null behave differently
+/datum/robot_sprite/belly_light_list # d: tested for truth (!belly_light_list), so an empty list and null behave differently
 /datum/robot_sprite/hat_offset # kept: interned by contents in New() (intern_list); read-only
 /datum/say_list/speak # d: every say list defines its lines
 /datum/seed/traits # d: every seed has traits
@@ -600,5 +602,3 @@
 /mob/vore_fullness_ex # mob: 15 mobs at boot; per-instance state, see audit
 /mob/vore_icon_bellies # mob: 15 mobs at boot; per-instance state, see audit
 /mob/weight_messages # mob: 15 mobs at boot; per-instance state, see audit
-
-# Baseline: rare types not yet converted.

@@ -77,9 +77,7 @@
 	if(!check_functionality())
 		return 0
 
-	if(!stored_files)
-		return 0
-
+	// stored_files is lazy: LAZYADD below creates it for the first file.
 	// This file is already stored. Don't store it again.
 	if(F in stored_files)
 		return 0

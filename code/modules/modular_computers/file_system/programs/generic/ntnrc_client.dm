@@ -173,7 +173,7 @@
 	return data
 
 /datum/computer_file/program/chatclient/tgui_data(mob/user)
-	if(!GLOB.ntnet_global || !GLOB.ntnet_global.chat_channels)
+	if(!GLOB.ntnet_global) // chat_channels is lazy; no channels still shows the client
 		return list()
 
 	var/list/data = get_header_data()
