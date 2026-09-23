@@ -72,6 +72,10 @@
 		var/breaths = respiratory_rate()
 		if(!isnull(breaths))
 			D.respiratory_rate = flat ? 0 : round(breaths)
+	if(P.vitals & VITALS_RHYTHM)
+		var/rhythm = heart_rhythm()
+		if(!isnull(rhythm))
+			D.heart_rhythm = flat ? RHYTHM_ASYSTOLE : rhythm
 	if(P.vitals & VITALS_TEMP)
 		D.temperature = round((owner.bodytemperature - T0C + owner.factor(BF_TEMPERATURE)) * 10) / 10
 	if(P.vitals & VITALS_CONSCIOUSNESS)
@@ -174,7 +178,7 @@
 		if(!(biology_of(E) & P.biology))
 			continue
 		var/list/flags = list()
-		if(E.status & ORGAN_BROKEN)
+		if(E.is_fractured())
 			flags += E.splinted ? "splinted fracture" : "fracture"
 		if(E.status & ORGAN_BLEEDING)
 			flags += "bleeding"

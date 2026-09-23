@@ -728,6 +728,22 @@
 	var/air = new air_type(1000)
 	return air
 
+/// Breathing in a belly: a digesting belly's digest_oxy makes its air stale.
+/// At BELLY_AIR_STALE_AT and above there's nothing usable left to breathe. The
+/// prey's physiology turns the poor breaths into oxygen debt, so supports,
+/// internals and a better belly all help the way they would anywhere else.
+/// Sealed internals bypass the belly's air.
+/obj/belly/breath_quality_for(mob/living/L)
+	if(digest_mode != DM_DIGEST || digest_oxy <= 0 || !istype(L))
+		return 1
+	var/mob/living/carbon/C = L
+	if(istype(C) && C.internal)
+		return 1
+	var/datum/digest_mode/mode = GLOB.digest_modes[digest_mode]
+	if(mode?.consent_refusal(src, L))
+		return 1
+	return clamp(1 - digest_oxy / BELLY_AIR_STALE_AT, 0, 1)
+
 /mob/living/proc/get_perfect_belly_air_type()
 	return /datum/gas_mixture/belly_air
 

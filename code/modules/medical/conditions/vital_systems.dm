@@ -31,14 +31,16 @@
 //                                   back toward VF.
 //
 // Diagnosis is by symptom (singletons below, all SCANNER-visible) plus the
-// rhythm readout on the health analyser and vitals monitor
-// (cardiac_rhythm_reading()).
+// rhythm vital (VITALS_RHYTHM, /datum/body/proc/heart_rhythm()) on every
+// instrument with an ECG.
 
 // --- Tuning ------------------------------------------------------------------------
 /// % per tick an untreated VF degenerates to asystole.
 #define ARREST_VF_DECAY_CHANCE 2
 /// % per tick, per vasopressor level, that asystole coarsens into VF.
 #define ARREST_VASOPRESSOR_CONVERSION 20
+/// Severity per tick an unstable tachyarrhythmia gains, before BF_CARDIAC_IRRITABILITY.
+#define CARDIAC_TACHY_PROGRESSION 0.5
 /// Respiratory arrest severity at or above which the patient doesn't breathe.
 #define RESP_ARREST_APNEA_THRESHOLD 40
 /// Pneumothorax severity at which it becomes a tension pneumothorax.
@@ -374,13 +376,17 @@
 
 /// Move to `new_rhythm`, resetting its severity and progression.
 /datum/affliction/cardiac_arrhythmia/proc/set_rhythm(new_rhythm)
+	// Instability carries over only from a rhythm that was pumping; a fresh
+	// affliction (created as VF) or a pulseless one starts a tachycardia afresh.
+	if(new_rhythm == CARDIAC_RHYTHM_TACHY && !is_perfusing())
+		severity = 0
 	rhythm = new_rhythm
 	switch(rhythm)
 		if(CARDIAC_RHYTHM_SINUS)
 			progression_rate = -2
 			set_severity(20)
 		if(CARDIAC_RHYTHM_TACHY)
-			progression_rate = 0.5
+			progression_rate = CARDIAC_TACHY_PROGRESSION
 			set_severity(max(severity, 40))
 		else
 			progression_rate = 0
@@ -401,6 +407,7 @@
 	if(!heart || heart.is_broken())
 		return FALSE
 	set_rhythm(CARDIAC_RHYTHM_SINUS)
+	body?.begin_revival_grace("cardioversion")
 	return TRUE
 
 /// Asystole + a vasopressor in the blood: chance the rhythm coarsens into VF.
@@ -429,6 +436,9 @@
 	return ..()
 
 /datum/affliction/cardiac_arrhythmia/tick()
+	// An unstable rhythm degenerates faster in an irritable (hypoxic) heart.
+	if(rhythm == CARDIAC_RHYTHM_TACHY && body)
+		progression_rate = CARDIAC_TACHY_PROGRESSION * body.get_factor(BF_CARDIAC_IRRITABILITY)
 	if(!is_perfusing())
 		arrest_tick()
 		if(QDELETED(src) || !body)
@@ -446,7 +456,8 @@
 	var/compressed = is_receiving_compressions()
 	switch(rhythm)
 		if(CARDIAC_RHYTHM_VF)
-			if(prob(compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE))
+			var/decay = (compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE) * (body ? body.get_factor(BF_CARDIAC_IRRITABILITY) : 1)
+			if(prob(decay))
 				set_rhythm(CARDIAC_RHYTHM_ASYSTOLE)
 		if(CARDIAC_RHYTHM_ASYSTOLE)
 			try_vasopressor_conversion()
@@ -497,24 +508,6 @@
 /// Deliver a shock across the heart. TRUE if a shockable rhythm converted.
 /mob/living/carbon/human/proc/defibrillate_heart()
 	return mend(TREAT_DEFIBRILLATION, 1) > 0
-
-/// What a cardiac monitor shows.
-/mob/living/carbon/human/proc/cardiac_rhythm_reading()
-	if(!should_have_organ(O_HEART) || !internal_organs_by_name?[O_HEART])
-		return "no cardiac activity"
-	var/datum/affliction/cardiac_arrhythmia/A = cardiac_arrhythmia()
-	if(A)
-		switch(A.rhythm)
-			if(CARDIAC_RHYTHM_SINUS)
-				return "sinus rhythm (recovering)"
-			if(CARDIAC_RHYTHM_TACHY)
-				return "irregular tachycardia"
-			if(CARDIAC_RHYTHM_VF)
-				return "ventricular fibrillation - SHOCKABLE"
-		return "asystole - not shockable"
-	if(stat == DEAD)
-		return "no organised activity"
-	return "normal sinus rhythm"
 
 
 // --- Symptoms ----------------------------------------------------------------------------------
@@ -650,6 +643,7 @@
 	scanner_phrase = "asystole (not shockable)"
 
 #undef ARREST_VF_DECAY_CHANCE
+#undef CARDIAC_TACHY_PROGRESSION
 #undef ARREST_VASOPRESSOR_CONVERSION
 #undef RESP_ARREST_APNEA_THRESHOLD
 #undef PNEUMOTHORAX_TENSION_THRESHOLD

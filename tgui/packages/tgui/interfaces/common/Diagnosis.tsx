@@ -29,8 +29,17 @@ export type DiagnosisFinding = {
   hint?: string | null;
 };
 
+// RHYTHM_* (code/__defines/body.dm): what an ECG shows.
+export type HeartRhythm =
+  | 'sinus'
+  | 'post_arrest'
+  | 'tachy'
+  | 'vfib'
+  | 'asystole';
+
 export type DiagnosisVitals = {
   heartRate?: number | null;
+  heartRhythm?: HeartRhythm | null;
   bloodPressure?: [number, number] | null;
   oxygenation?: number | null;
   respiratoryRate?: number | null;
@@ -93,6 +102,17 @@ const TREND: Record<
   stable: { symbol: '=', color: 'label', tooltip: 'Stable since last scan.' },
 };
 
+export const HEART_RHYTHM: Record<
+  HeartRhythm,
+  { label: string; color: string }
+> = {
+  sinus: { label: 'Normal sinus rhythm', color: 'good' },
+  post_arrest: { label: 'Sinus rhythm (post-arrest)', color: 'average' },
+  tachy: { label: 'Irregular tachycardia', color: 'average' },
+  vfib: { label: 'Ventricular fibrillation - SHOCKABLE', color: 'bad' },
+  asystole: { label: 'Asystole - not shockable', color: 'bad' },
+};
+
 const isSet = (value: unknown) => value !== null && value !== undefined;
 
 // A vital outside its normal range reads in warning colours.
@@ -110,6 +130,14 @@ export const DiagnosisVitalsList = (props: { vitals: DiagnosisVitals }) => {
           color={rangeColor(vitals.heartRate as number, 50, 110)}
         >
           {vitals.heartRate} bpm
+        </LabeledList.Item>
+      ) : null}
+      {vitals.heartRhythm ? (
+        <LabeledList.Item
+          label="Rhythm"
+          color={HEART_RHYTHM[vitals.heartRhythm].color}
+        >
+          {HEART_RHYTHM[vitals.heartRhythm].label}
         </LabeledList.Item>
       ) : null}
       {pressure ? (

@@ -124,6 +124,19 @@
 /// Asystole: flatline, no output, NOT shockable.
 #define CARDIAC_RHYTHM_ASYSTOLE 4
 
+// --- Heart rhythm readings (/datum/body/proc/heart_rhythm()) --------------------------------
+// What an ECG shows: the diagnosis vital, derived from the heart and cardiac_arrhythmia.
+/// Normal sinus rhythm.
+#define RHYTHM_SINUS       "sinus"
+/// Sinus rhythm with post-arrest ectopy: a converted arrhythmia still settling.
+#define RHYTHM_POST_ARREST "post_arrest"
+/// Irregular tachyarrhythmia: perfusing but unstable.
+#define RHYTHM_TACHY       "tachy"
+/// Ventricular fibrillation: no output, shockable.
+#define RHYTHM_VFIB        "vfib"
+/// Asystole: flatline, not shockable (also a missing or dead heart).
+#define RHYTHM_ASYSTOLE    "asystole"
+
 /// Seconds of assisted breathing one CPR cycle of rescue breaths provides.
 #define CPR_RESCUE_BREATH_SECONDS 10
 /// How long one CPR compression cycle holds cardiac output at its floor.
@@ -240,6 +253,19 @@
 #define PHYSIOLOGY_APNEA_VENTILATION 0.05
 /// Oxygen debt is logged each time it crosses a multiple of this.
 #define PHYSIOLOGY_DEBT_LOG_BAND 25
+/// Tissue hypoxia severity (oxygen debt) past which the heart grows irritable:
+/// BF_CARDIAC_IRRITABILITY rises from 1 here to PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX at 100.
+#define PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD 40
+#define PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX 4
+/// Post-revival grace: how long after circulation is restored (defibrillation,
+/// revival) the debt is repaid faster and grows no new ischemic lesions.
+#define PHYSIOLOGY_REVIVAL_GRACE (60 SECONDS)
+/// Repayment multiplier during the post-revival grace.
+#define PHYSIOLOGY_REVIVAL_REPAY_MULT 3
+/// Severity a freshly broken bone's fracture affliction starts at.
+#define FRACTURE_INITIAL_SEVERITY 30
+/// A digesting belly's digest_oxy at which its air is no longer breathable.
+#define BELLY_AIR_STALE_AT 6
 // Supports: the floors equipment and hands provide.
 /// Bag-valve mask: breathing-drive floor while squeezing.
 #define SUPPORT_BVM_DRIVE 0.8
