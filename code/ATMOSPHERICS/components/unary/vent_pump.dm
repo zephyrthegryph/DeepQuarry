@@ -98,7 +98,10 @@
 
 
 /obj/machinery/atmospherics/unary/vent_pump/Destroy()
-	SSmachines.wake_vent(WEAKREF(src)) // So we are removed from hibernating list
+	// WEAKREF(src) would return null here -- qdel() marks the datum QDELETED
+	// before Destroy() runs, and WEAKREF() refuses QDELETED datums. Read the
+	// weakref we already hold (if any) instead; see unary_base.dm's Destroy().
+	SSmachines.wake_vent(weak_reference) // So we are removed from hibernating list
 	unregister_radio(src, frequency)
 	if(initial_loc)
 		LAZYREMOVE(initial_loc.air_vent_info, id_tag)
