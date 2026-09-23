@@ -6,6 +6,7 @@ use super::kernel::{
     Amounts, Operand, conduction, diffusion, exchange_stiffness, pressure_flow, pressure_stiffness,
 };
 use super::{FieldKind, Side};
+use crate::grid::BlockKind;
 use crate::owner::{Applied, Domain};
 
 /// Equal up to a few `f32` ulps: a step's change that is rounding noise.
@@ -79,6 +80,7 @@ fn heat_operand<'a>(s: &Side<'a, HeatCell>) -> Operand<'a, 1> {
 }
 
 impl FieldKind for HeatToy {
+    const BLOCK: BlockKind = BlockKind::Heat;
     const GEOMETRY_NAME: &'static str = "toy_heat_geometry";
     const QUANTITIES: usize = 1;
     type Flux = f32;
@@ -204,6 +206,7 @@ fn dp_dn(s: &Side<'_, GasCell>) -> f32 {
 }
 
 impl FieldKind for GasToy {
+    const BLOCK: BlockKind = BlockKind::Air;
     const GEOMETRY_NAME: &'static str = "toy_gas_geometry";
     const QUANTITIES: usize = 3;
     type Flux = Amounts<3>;

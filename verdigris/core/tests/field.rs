@@ -10,8 +10,8 @@ use vg_core::cow::{ChunkLayout, CowStore};
 use vg_core::field::toy::{
     GasCell, GasCmd, GasToy, HEAT_CONDUCTANCE, HeatCell, HeatCmd, HeatToy, heat_ch,
 };
-use vg_core::field::{FieldConfig, FieldKind, FieldState, Geom, GeomCmd, add_field};
-use vg_core::grid::{DirMask, Face, GridDims};
+use vg_core::field::{FieldConfig, FieldKind, FieldState, Geom, GeomCmd, GridBlocks, add_field};
+use vg_core::grid::{BlockKind, Blocks, DirMask, Face, GridDims};
 use vg_core::outbox::Lane;
 use vg_core::owner::apply_op;
 use vg_core::sim::{SimBuilder, SimConfig};
@@ -22,6 +22,7 @@ struct World<K: FieldKind> {
     dims: GridDims,
     cells: CowStore<K::Value>,
     geom: CowStore<Geom>,
+    blocks: CowStore<Blocks>,
     field: FieldState<K>,
 }
 
@@ -32,6 +33,7 @@ impl<K: FieldKind> World<K> {
             dims,
             cells: CowStore::new(layout),
             geom: CowStore::new(layout),
+            blocks: CowStore::new(layout),
             field: FieldState::new(dims, config),
         }
     }
@@ -41,7 +43,7 @@ impl<K: FieldKind> World<K> {
     }
 
     fn step(&mut self, pool: &rayon::ThreadPool) {
-        pool.install(|| self.field.step(&mut self.cells, &self.geom));
+        pool.install(|| self.field.step(&mut self.cells, &self.geom, &self.blocks));
     }
 
     fn cell(&self, i: u32) -> K::Value {
@@ -205,9 +207,11 @@ fn walled_regions_equilibrate_separately_then_together_when_opened() {
             let i = dims.index(x, y, 0).unwrap();
             let cap = 0.5 + f32::from(u8::try_from((x * 7 + y * 3) % 5).unwrap()) * 0.4;
             let t = 100.0 + f32::from(u8::try_from((x * 13 + y * 29) % 17).unwrap()) * 40.0;
-            let mut g = Geom::cell(cap);
+            let g = Geom::cell(cap);
             if x == wall_x {
-                g.blocked = DirMask::NONE.with(Face::East);
+                let mut b = Blocks::default();
+                b.set(BlockKind::Heat, DirMask::NONE.with(Face::East));
+                w.blocks.set(i, b);
             }
             w.geom.set(i, g);
             w.cells.set(i, HeatCell::at(cap, t));
@@ -225,14 +229,14 @@ fn walled_regions_equilibrate_separately_then_together_when_opened() {
             assert!((got - e / c).abs() < 0.3, "({x},{y}): {got} vs {}", e / c);
         }
     }
-    // Open the wall with one geometry command: its chunk wakes.
+    // Open the wall with one grid-blocks command: its chunk wakes.
     let door = dims.index(wall_x, 5, 0).unwrap();
-    let mut g = w.geom.get(door).unwrap();
-    apply_op::<vg_core::field::Geometry<HeatToy>>(
-        &mut g,
-        &vg_core::command::Op::Apply(GeomCmd::Blocked(DirMask::NONE)),
+    let mut b = w.blocks.get(door).unwrap();
+    apply_op::<GridBlocks>(
+        &mut b,
+        &vg_core::command::Op::Apply((BlockKind::Heat, DirMask::NONE)),
     );
-    w.geom.set(door, g);
+    w.blocks.set(door, b);
     let before = w.totals()[0];
     run_to_sleep(&mut w, &pool, 5000);
     let all = (region[0].0 + region[1].0) / (region[0].1 + region[1].1);
@@ -366,22 +370,24 @@ fn setup() -> impl Strategy<Value = Setup> {
     })
 }
 
-/// Capacity (a fifth of cells are walls), reservoir flag, blocked mask.
-fn geom_of(kind: u8, cap: u8, mask: u8) -> Geom {
+/// Capacity (a fifth of cells are walls), reservoir flag, blocked mask
+/// (the caller writes the mask into `w.blocks` at the field's own
+/// `K::BLOCK` layer -- blocking is shared across field kinds now, not
+/// part of `Geom`).
+fn geom_of(kind: u8, cap: u8, mask: u8) -> (Geom, DirMask) {
     let capacity = if kind % 5 == 0 {
         0.0
     } else {
         0.2 + f32::from(cap) / 50.0
     };
-    Geom {
-        capacity,
-        blocked: if mask % 4 == 0 {
-            DirMask(mask >> 2)
-        } else {
-            DirMask::NONE
+    let blocked = if mask % 4 == 0 { DirMask(mask >> 2) } else { DirMask::NONE };
+    (
+        Geom {
+            capacity,
+            reservoir: kind % 23 == 1,
         },
-        reservoir: kind % 23 == 1,
-    }
+        blocked,
+    )
 }
 
 /// Applies a command the way the owner does, returning it for replay.
@@ -411,8 +417,11 @@ fn check_conservation<K: FieldKind>(
     );
     for (i, &(kind, cap, mask, seed)) in s.cells.iter().enumerate() {
         let i = u32::try_from(i).unwrap();
-        let g = geom_of(kind, cap, mask);
+        let (g, mask) = geom_of(kind, cap, mask);
         w.geom.set(i, g);
+        let mut b = Blocks::default();
+        b.set(K::BLOCK, mask);
+        w.blocks.set(i, b);
         w.cells.set(i, make(seed, g.capacity.max(0.5)));
     }
     let pool = pool(threads);
@@ -455,17 +464,19 @@ fn check_conservation<K: FieldKind>(
                 _ => {
                     // Geometry: a new capacity or a new mask (never the
                     // reservoir flag, which moves a cell out of the sum).
-                    let mut g = w.geom.get(cell).unwrap();
                     if amount % 2 == 0 {
+                        let mut g = w.geom.get(cell).unwrap();
                         g.capacity = if amount % 3 == 0 {
                             0.0
                         } else {
                             0.3 + f32::from(amount % 200) / 40.0
                         };
+                        w.geom.set(cell, g);
                     } else {
-                        g.blocked = DirMask(u8::try_from(amount % 64).unwrap());
+                        let mut blk = w.blocks.get(cell).unwrap_or_default();
+                        blk.set(K::BLOCK, DirMask(u8::try_from(amount % 64).unwrap()));
+                        w.blocks.set(cell, blk);
                     }
-                    w.geom.set(cell, g);
                 }
             }
         }
@@ -543,12 +554,15 @@ fn busy_gas_world() -> World<GasToy> {
     let mut w = World::<GasToy>::new(dims, FieldConfig::default());
     for i in 0..w.len() {
         let seed = u16::try_from((u64::from(i) * 2_654_435_761 % 65_521) as u32 % 60_000).unwrap();
-        let g = geom_of(
+        let (g, mask) = geom_of(
             u8::try_from(seed % 251).unwrap(),
             (seed % 200) as u8,
             (seed % 97) as u8,
         );
         w.geom.set(i, g);
+        let mut b = Blocks::default();
+        b.set(GasToy::BLOCK, mask);
+        w.blocks.set(i, b);
         w.cells.set(i, gas_cell(seed, g.capacity.max(0.5)));
     }
     w
@@ -648,6 +662,7 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
         seed: 7,
         ..SimConfig::default()
     });
+    let blocks = b.add_domain::<GridBlocks>(ChunkLayout::spatial(dims));
     let key = add_field::<HeatToy>(
         &mut b,
         dims,
@@ -655,6 +670,7 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
             dt: 1.0,
             max_substeps: 16,
         },
+        blocks,
     );
     let watches = b.add_watches(key.cells);
     let mut sim = b.build().unwrap();

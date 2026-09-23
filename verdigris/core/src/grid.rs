@@ -324,6 +324,25 @@ impl BlockKind {
     ];
 }
 
+/// One cell's blocked-direction mask per [`BlockKind`]: the value every
+/// field kind's geometry shares instead of keeping its own copy
+/// (`rust_architecture.md` §4.6). A wall blocks Air/Heat/Movement/Opacity
+/// together; a window blocks Opacity only; they are one cell's worth of
+/// masks, not one store per kind.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Blocks([DirMask; BlockKind::COUNT]);
+
+impl Blocks {
+    #[must_use]
+    pub fn get(&self, kind: BlockKind) -> DirMask {
+        self.0[kind as usize]
+    }
+
+    pub fn set(&mut self, kind: BlockKind, mask: DirMask) {
+        self.0[kind as usize] = DirMask(mask.0 & DirMask::ALL.0);
+    }
+}
+
 /// Grid addressing plus one blocked-direction layer per [`BlockKind`].
 /// Every neighbour access goes through [`GridDims::neighbor`], so nothing
 /// wraps across a row or z-level edge.
