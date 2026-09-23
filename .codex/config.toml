@@ -3,4 +3,4 @@ command = "python"
 args = ["tools/mapstudio/mcp.py"]
 cwd = "E:/projects/CHOMPStation2"
 tool_timeout_sec = 120
-env = { DQ_MAPSTUDIO_URL = "http://127.0.0.1:8769/api" }
+env = { DQ_MAPSTUDIO_URL = "http://127.0.0.1:8771/api" }

@@ -116,7 +116,7 @@
 		checklist = items.Copy() // You should really trust Copy
 		if(istype(container, /obj/machinery))
 			var/obj/machinery/machine = container
-			for(var/obj/O in ((machine.contents - machine.component_parts) - machine.circuit))
+			for(var/obj/O in ((machine.contents - (machine.component_parts || list())) - machine.circuit))
 				if(istype(O,/obj/item/reagent_containers/food/snacks/grown))
 					continue // Fruit is handled in check_fruit().
 				var/found = FALSE
@@ -169,7 +169,7 @@
 	var/obj/result_obj = new result(container)
 	if(istype(container, /obj/machinery))
 		var/obj/machinery/machine = container
-		for (var/obj/O in ((machine.contents-result_obj - machine.component_parts) - machine.circuit))
+		for (var/obj/O in ((machine.contents-result_obj - (machine.component_parts || list())) - machine.circuit))
 			O.reagents.trans_to_obj(result_obj, O.reagents.total_volume)
 			qdel(O)
 	else
