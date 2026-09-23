@@ -1,0 +1,9 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Every hit now builds one damage packet and goes through receive_damage(): projectiles, melee, thrown objects, explosions, EMPs, fire, blobs, animal attacks and shocks."
+  - balance: "Integrity objects now take damage from projectiles, thrown objects, blobs and animal attacks by default, with one thrown-force formula."
+  - bugfix: "Weapon melee lands on non-human carbons (aliens, nymphs) again."
+  - bugfix: "The burn damage type and the fire armour flag are no longer the same string."
+  - bugfix: "Pre-EMP handlers no longer run twice per EMP."
+  - bugfix: "Spider webs, alien weeds and ant structures take damage instead of raising runtimes."
