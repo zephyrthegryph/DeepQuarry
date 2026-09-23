@@ -836,10 +836,6 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/portable_atmospherics/P = subscriber
 		P.clear_gas_dependency()
 		START_MACHINE_PROCESSING(P)
-	else if(istype(subscriber, /obj/machinery/atmospherics/binary/pump))
-		var/obj/machinery/atmospherics/binary/pump/P = subscriber
-		P.clear_gas_dependencies()
-		START_MACHINE_PROCESSING(P)
 	else if(istype(subscriber, /obj/machinery/atmospherics/binary/dp_vent_pump))
 		var/obj/machinery/atmospherics/binary/dp_vent_pump/V = subscriber
 		V.clear_gas_dependencies()

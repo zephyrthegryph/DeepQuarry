@@ -38,13 +38,6 @@ Thus, the two variables affect pump operation are set in New():
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
-	var/sleeping_input_mixture_id
-	var/sleeping_input_revision = -1
-	var/sleeping_input_temperature = 0
-	var/sleeping_input_moles = 0
-	var/sleeping_output_mixture_id
-	var/sleeping_output_revision = -1
-	var/sleeping_output_pressure = 0
 
 /obj/machinery/atmospherics/binary/pump/Initialize(mapload)
 	. = ..()
@@ -53,15 +46,36 @@ Thus, the two variables affect pump operation are set in New():
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	if(frequency)
 		set_frequency(frequency)
+	// M2: the flow law is a Rust device edge, stepped from SSair every gas
+	// tick; this has no process() at all any more.
+	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/binary/pump/Destroy()
-	clear_gas_dependencies()
 	unregister_radio(src, frequency)
 	. = ..()
 
 /obj/machinery/atmospherics/binary/pump/disconnect(obj/machinery/atmospherics/reference)
-	wake_for_state_change()
+	update_rust_device()
 	return ..()
+
+// M2 (simulation.md §5): the flow law lives on the Rust device edge
+// (device::DeviceParams::Pump). rust_bind_pipe_port fires once per port,
+// after that port's region exists in Rust, so re-publishing once the
+// second port is bound is the earliest point both are live.
+/obj/machinery/atmospherics/binary/pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 2)
+		update_rust_device()
+
+/obj/machinery/atmospherics/binary/pump/proc/update_rust_device()
+	if((stat & (NOPOWER|BROKEN)) || !use_power)
+		rust_unregister_device()
+		return
+	rust_set_device(1, 2, RUST_DEVICE_LAW_PUMP, target_pressure, power_rating)
+
+/obj/machinery/atmospherics/binary/pump/rust_device_stepped(moles, power_w, target_reached)
+	last_flow_rate = abs(moles)
+	last_power_draw = power_w
 
 /obj/machinery/atmospherics/binary/pump/on
 	icon_state = "map_on"
@@ -105,98 +119,10 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/hide(i)
 	update_underlays()
 
-/obj/machinery/atmospherics/binary/pump/process()
-	last_power_draw = 0
-	last_flow_rate = 0
-
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return PROCESS_KILL
-
-	var/power_draw = -1
-	var/pressure_delta = target_pressure - air2.return_pressure()
-
-	if(pressure_delta > BINARY_PUMP_PRESSURE_TOLERANCE && air1.return_temperature() > 0)
-		//Figure out how much gas to transfer to meet the target pressure.
-		var/transfer_moles = calculate_transfer_moles(air1, air2, pressure_delta, (network2)? network2.volume : 0)
-		power_draw = queue_pump_gas(src, air1, air2, transfer_moles, power_rating)
-
-	if(power_draw < 0)
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
-
-	return 1
-
-/obj/machinery/atmospherics/binary/pump/pump_transaction_committed(actual_moles)
-	if(actual_moles >= MINIMUM_MOLES_TO_PUMP)
-		network1?.mark_dirty()
-		network2?.mark_dirty()
-	if(actual_moles < MINIMUM_MOLES_TO_PUMP || target_pressure - air2.return_pressure() <= BINARY_PUMP_PRESSURE_TOLERANCE || air1.total_moles() < MINIMUM_MOLES_TO_PUMP)
-		hibernate_until_gas_changes()
-
-/obj/machinery/atmospherics/binary/pump/proc/hibernate_until_gas_changes()
-	var/datum/weakref/WR = WEAKREF(src)
-	sleeping_input_mixture_id = air1?.arena_id()
-	sleeping_input_revision = air1?.revision() || -1
-	sleeping_input_temperature = air1?.return_temperature() || 0
-	sleeping_input_moles = air1?.total_moles() || 0
-	sleeping_output_mixture_id = air2?.arena_id()
-	sleeping_output_revision = air2?.revision() || -1
-	sleeping_output_pressure = air2?.return_pressure() || 0
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
-	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
-	STOP_MACHINE_PROCESSING(src)
-
-/obj/machinery/atmospherics/binary/pump/proc/clear_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
-	SSmachines.unsubscribe_gas_dependency(sleeping_input_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_output_mixture_id, WR)
-	sleeping_input_mixture_id = null
-	sleeping_input_revision = -1
-	sleeping_input_temperature = 0
-	sleeping_input_moles = 0
-	sleeping_output_mixture_id = null
-	sleeping_output_revision = -1
-	sleeping_output_pressure = 0
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
-
-/obj/machinery/atmospherics/binary/pump/gas_dependency_interest_mask()
-	// A pump only needs P/T. Total moles follows pV=nRT; composition-only
-	// changes cannot make its pressure transfer predicate actionable.
-	return GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE
-
-/obj/machinery/atmospherics/binary/pump/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
-	if(!(change_mask & gas_dependency_interest_mask()) || !use_power || (stat & (NOPOWER|BROKEN)))
-		return FALSE
-	var/observed_revision = observation && observation_index ? observation[observation_index + 2] : null
-	if(mixture_id == sleeping_input_mixture_id)
-		if(!air1 || air1.arena_id() != sleeping_input_mixture_id)
-			return TRUE
-		if(!isnull(observed_revision))
-			sleeping_input_temperature = observation[observation_index + 4]
-			sleeping_input_moles = observation[observation_index + 14]
-		else if(air1.revision() == sleeping_input_revision)
-			return FALSE
-		else
-			sleeping_input_temperature = air1.return_temperature()
-			sleeping_input_moles = air1.total_moles()
-	else if(mixture_id == sleeping_output_mixture_id)
-		if(!air2 || air2.arena_id() != sleeping_output_mixture_id)
-			return TRUE
-		if(!isnull(observed_revision))
-			sleeping_output_pressure = observation[observation_index + 3]
-		else if(air2.revision() == sleeping_output_revision)
-			return FALSE
-		else
-			sleeping_output_pressure = air2.return_pressure()
-	else
-		return FALSE
-	return target_pressure - sleeping_output_pressure > BINARY_PUMP_PRESSURE_TOLERANCE && sleeping_input_temperature > 0 && sleeping_input_moles >= MINIMUM_MOLES_TO_PUMP
-
-/obj/machinery/atmospherics/binary/pump/proc/wake_for_state_change()
-	clear_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+// process() and its hibernate/gas-dependency machinery are deleted (M2,
+// simulation.md §5): the flow law is a Rust device edge, stepped every gas
+// tick from SSair.fire() regardless of DM's process() scheduling, so there
+// is nothing left to run and nothing to hibernate.
 
 //Radio remote control
 
@@ -252,7 +178,6 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))
 		return 0
-	wake_for_state_change()
 
 	if(signal.data["power"])
 		if(text2num(signal.data["power"]))
@@ -265,6 +190,8 @@ Thus, the two variables affect pump operation are set in New():
 
 	if(signal.data["set_output_pressure"])
 		target_pressure = between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50)
+
+	update_rust_device()
 
 	if(signal.data["status"])
 		addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
@@ -286,7 +213,6 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return TRUE
-	wake_for_state_change()
 
 	switch(action)
 		if("power")
@@ -304,6 +230,8 @@ Thus, the two variables affect pump operation are set in New():
 					src.target_pressure = between(0, new_pressure, max_pressure_setting)
 			. = TRUE
 
+	if(.)
+		update_rust_device()
 	add_fingerprint(ui.user)
 	update_icon()
 
@@ -311,7 +239,7 @@ Thus, the two variables affect pump operation are set in New():
 	var/old_stat = stat
 	..()
 	if(old_stat != stat)
-		wake_for_state_change()
+		update_rust_device()
 		update_icon()
 
 /obj/machinery/atmospherics/binary/pump/wrench_act(mob/user, obj/item/W)
@@ -338,7 +266,7 @@ Thus, the two variables affect pump operation are set in New():
 
 	to_chat(user, span_notice("You set the [name] to max output"))
 	target_pressure = max_pressure_setting
-	wake_for_state_change()
+	update_rust_device()
 	add_fingerprint(user)
 	return CLICK_ACTION_SUCCESS
 
@@ -350,7 +278,7 @@ Thus, the two variables affect pump operation are set in New():
 		return CLICK_ACTION_BLOCKING
 
 	update_use_power(!use_power)
-	wake_for_state_change()
+	update_rust_device()
 	update_icon()
 	add_fingerprint(user)
 	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))

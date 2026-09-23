@@ -4329,28 +4329,26 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_stable_binary_pump_hibernates_and_wakes
 
 /datum/unit_test/dq_stable_binary_pump_hibernates_and_wakes/Run()
+	// M2 (simulation.md §5): the binary pump's flow law is a Rust device
+	// edge, stepped every gas tick from SSair regardless of state, so it is
+	// never a DM process() subscriber at all — there is nothing left to
+	// hibernate or wake in DM, in any state.
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for binary pump hibernation test")
 	var/obj/machinery/atmospherics/binary/pump/P = new(T)
 	P.stat = 0
-	P.use_power = USE_POWER_IDLE
+	P.use_power = USE_POWER_OFF
 	P.target_pressure = ONE_ATMOSPHERE
-	TEST_ASSERT_EQUAL(P.process(), PROCESS_KILL, "empty stable binary pump remained scheduled")
-	var/datum/weakref/pump_ref = WEAKREF(P)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[pump_ref.reference], "stable binary pump did not subscribe to its gas mixtures")
-	P.air2.adjust_moles(/datum/gas/oxygen, 1)
-	TEST_ASSERT(!P.gas_dependency_changed(P.sleeping_output_mixture_id, GAS_DEPENDENCY_ALL), "non-actionable output change woke an empty binary pump")
+	P.rust_register_pipe_topology()
+	P.update_rust_device()
+	TEST_ASSERT(!(P in SSmachines.processing_machines), "powered-off binary pump should never be a DM process() subscriber")
+	P.use_power = USE_POWER_IDLE
+	P.update_rust_device()
+	TEST_ASSERT(!(P in SSmachines.processing_machines), "enabling a binary pump must not add DM process() scheduling")
 	P.air1.adjust_moles(/datum/gas/oxygen, 10)
-	TEST_ASSERT(P.gas_dependency_changed(P.sleeping_input_mixture_id, GAS_DEPENDENCY_ALL), "actionable input change was filtered from a sleeping binary pump")
-	for(var/pump_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(P.datum_flags & DF_ISPROCESSING)
-			break
-	TEST_ASSERT(P.datum_flags & DF_ISPROCESSING, "binary pump did not wake when its input gas changed")
-	P.clear_gas_dependencies()
-	P.air2.set_moles(/datum/gas/oxygen, 10)
-	P.target_pressure = P.air2.return_pressure() + (BINARY_PUMP_PRESSURE_TOLERANCE * 0.5)
-	TEST_ASSERT_EQUAL(P.process(), PROCESS_KILL, "binary pump remained scheduled for a sub-tolerance pressure error")
+	for(var/i in 1 to 10)
+		SSair.rust_step_pipe_devices()
+	TEST_ASSERT(!(P in SSmachines.processing_machines), "a running binary pump must not add DM process() scheduling")
 	qdel(P)
 
 /datum/unit_test/dq_idle_turret_wakes_for_nearby_mob
@@ -5166,6 +5164,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	var/obj/machinery/atmospherics/binary/pump/Pump = new(T)
 	TEST_ASSERT_NOTNULL(Pump, "binary pump construct failed")
+	Pump.use_power = USE_POWER_IDLE
+	Pump.stat &= ~(BROKEN | NOPOWER)
+	Pump.target_pressure = ONE_ATMOSPHERE * 5 // high target so pump runs
+	Pump.rust_register_pipe_topology() // allocates ports, binds air1/air2, registers the device edge
 	TEST_ASSERT_NOTNULL(Pump.air1, "binary pump air1 null")
 	TEST_ASSERT_NOTNULL(Pump.air2, "binary pump air2 null")
 
@@ -5173,17 +5175,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	Pump.air1.adjust_gas(/datum/gas/nitrogen, 200)
 	Pump.air1.set_temperature(T20C)
 	Pump.air2.set_temperature(T20C)
-	Pump.use_power = USE_POWER_IDLE
-	Pump.stat &= ~(BROKEN | NOPOWER)
-	Pump.target_pressure = ONE_ATMOSPHERE * 5 // high target so pump runs
+	Pump.update_rust_device()
 
 	var/air1_before = Pump.air1.get_moles(/datum/gas/nitrogen)
 	var/air2_before = Pump.air2.get_moles(/datum/gas/nitrogen)
 
-	// Manually satisfy can_pump-equivalent preconditions and call process.
-	for(var/i in 1 to 5)
-		Pump.process()
-		SSmachines.flush_pump_transfers()
+	// M2 (simulation.md §5): the flow law is a Rust device edge; SSair
+	// drives it, not Pump.process() (deleted).
+	for(var/i in 1 to 30)
+		SSair.rust_step_pipe_devices()
 
 	var/air1_after = Pump.air1.get_moles(/datum/gas/nitrogen)
 	var/air2_after = Pump.air2.get_moles(/datum/gas/nitrogen)
