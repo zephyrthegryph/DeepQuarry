@@ -5,4 +5,15 @@
 //! - no `byondapi` (it builds and tests on the host, not only on i686);
 //! - no global statics (tests run in parallel, and a `World` owns all state).
 
+pub mod alloc;
+pub mod arena;
+pub mod bitset;
 pub mod grid;
+pub mod handle;
+pub mod intern;
+pub mod rng;
+pub mod thermo;
+pub mod units;
+
+pub use arena::Arena;
+pub use handle::{Handle, RawHandle};
