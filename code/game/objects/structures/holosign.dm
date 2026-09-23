@@ -22,20 +22,38 @@
 		projector = null
 	return ..()
 
-/obj/structure/holosign/attack_hand(mob/user, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/structure/holosign/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/holosign_hand,
+		/datum/interaction/entry_item/holosign_item,
+	)
+	..()
+
+/// Old attack_hand: punch the sign.
+/datum/interaction/entry_hand/holosign_hand
+	id = "holosign_hand"
+	name = "Use"
+	effect = /obj/structure/holosign/proc/interaction_hand
+
+/obj/structure/holosign/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed())
 	user.do_attack_animation(src)
 	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
 	take_damage(5, BRUTE, MELEE, sound_effect = FALSE)
+	return TRUE
 
-/obj/structure/holosign/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: hit the sign with a weapon.
+/datum/interaction/entry_item/holosign_item
+	id = "holosign_item"
+	name = "Use"
+	effect = /obj/structure/holosign/proc/interaction_item
+
+/obj/structure/holosign/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
 	receive_weapon_hit(W, user)
+	return TRUE
 
 /obj/structure/holosign/wetsign
 	name = "wet floor sign"
