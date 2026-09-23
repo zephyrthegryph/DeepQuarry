@@ -242,14 +242,5 @@
 /obj/machinery/power/circuit_io
 	name = "embedded electrical I/O"
 
-/obj/machinery/power/circuit_io/connect_to_network()
-	var/turf/T = get_turf(src)
-	if(!T || !istype(T))
-		return FALSE
-
-	var/obj/structure/cable/C = T.get_cable_node()
-	if(!C || !C.powernet)
-		return FALSE
-
-	C.powernet.add_machine(src)
-	return TRUE
+/obj/machinery/power/circuit_io/power_turf()
+	return get_turf(src)

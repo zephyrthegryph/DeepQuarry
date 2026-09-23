@@ -106,6 +106,9 @@ Class Procs:
 	var/active_power_usage = 0
 	var/power_channel = EQUIP //EQUIP, ENVIRON or LIGHT
 	var/tmp/power_init_complete = FALSE
+	/// Re-checks power (power_change()) when its area's channels change.
+	/// Lights listen on the reactor key instead.
+	var/power_subscriber = TRUE
 	var/list/component_parts = null //list of all the parts used to build it, if made from certain kinds of frames.
 	var/tmp/uid
 	var/panel_open = FALSE

@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "1d9af36875538a87"
+#define VERDIGRIS_ABI "6ccd2ff67b8c7499"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -208,6 +208,101 @@
 /// Heat capacity of an 80 kg human body, J/K (about 3.5 kJ/(kg·K)).
 // verdigris/domains/heat/src/consts.rs
 #define HUMAN_HEAT_CAPACITY 280000.0
+
+/// APC flags.
+// verdigris/ffi/src/power.rs
+#define POWER_APC_ACTIVE 1
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_CHARGEMODE 32
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_FAILED 4
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_HAS_CELL 2
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_OPERATING 16
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_SHORTED 8
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_APC 4
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_BIND 1
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_BROWNOUT 6
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_REGION 2
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_RETIRED 3
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_SMES 5
+
+/// `key, terminal (-1 none), flags, max_charge, chargelevel, charge (-1
+/// keep), eqp, lgt, env (-1 keep), autoflag (-1 keep)`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_APC 6
+
+/// `key, eqp, lgt, env`: the area's static load (W).
+// verdigris/ffi/src/power.rs
+#define POWER_OP_AREA_LOAD 7
+
+/// `key, x, y, z, d1, d2, z_above, z_below, link_id`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_CABLE 1
+
+/// `key, charge`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_CHARGE 10
+
+/// `key, x, y, z`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_MACHINE 2
+
+/// `key, eqp, lgt, env`: one-off area use (W) for the next step.
+// verdigris/ffi/src/power.rs
+#define POWER_OP_ONEOFF 8
+
+/// `key, watts`: supply for the next step only.
+// verdigris/ffi/src/power.rs
+#define POWER_OP_PULSE 5
+
+/// `key`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_REMOVE 3
+
+/// `key`: forget an APC or SMES.
+// verdigris/ffi/src/power.rs
+#define POWER_OP_REMOVE_STORAGE 11
+
+/// `key, flags, capacity, input_level, output_level, charge (-1 keep),
+/// terminal keys...`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_SMES 9
+
+/// `key, watts`: persistent supply.
+// verdigris/ffi/src/power.rs
+#define POWER_OP_SUPPLY 4
+
+/// Numbers in a `vg_power_region` reply: region, avail, load, viewavail,
+/// viewload, netexcess, supply, eqp, lgt, env, capacity, members.
+// verdigris/ffi/src/power.rs
+#define POWER_REGION_STRIDE 12
+
+/// SMES flags.
+// verdigris/ffi/src/power.rs
+#define POWER_SMES_INPUT 1
+
+// verdigris/ffi/src/power.rs
+#define POWER_SMES_OUTPUT 2
 
 /// The probe domain: DM-written test cells (see the module docs).
 // verdigris/ffi/src/reactor.rs
@@ -878,6 +973,52 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:poll_material_power_graph_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(handle)
+
+/// Draws up to `watts` for `key` from its region now; returns what was
+/// delivered.
+// /proc/power_draw (verdigris/ffi/src/power.rs)
+/proc/vg_power_draw(key, watts)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_draw_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(key, watts)
+
+/// Applies a flat list of edits and commands (`op, n, n values` each; the
+/// `POWER_OP_*` defines). Topology waits for the next read or step, so a
+/// batch commits once.
+// /proc/power_edit (verdigris/ffi/src/power.rs)
+/proc/vg_power_edit(ops)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_edit_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(ops)
+
+/// Keys of every cable and machine on `key`'s region.
+// /proc/power_members (verdigris/ffi/src/power.rs)
+/proc/vg_power_members(key)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_members_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(key)
+
+/// The region `key` is on, `POWER_REGION_STRIDE` numbers, or null.
+// /proc/power_region (verdigris/ffi/src/power.rs)
+/proc/vg_power_region(key)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(key)
+
+/// Forgets everything (world start and tests).
+// /proc/power_reset (verdigris/ffi/src/power.rs)
+/proc/vg_power_reset()
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_reset_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// One machinery tick. Returns the events as `type, n, n values` records
+/// (the `POWER_EV_*` defines).
+// /proc/power_step (verdigris/ffi/src/power.rs)
+/proc/vg_power_step()
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_step_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
 
 /// Returns: If this cycle is interrupted by overtiming or not. Starts a processing turfs cycle.
 // /datum/controller/subsystem/air/proc/process_turfs_auxtools (verdigris/domains/gas/src/turfs/processing.rs)

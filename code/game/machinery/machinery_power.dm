@@ -42,7 +42,10 @@
 		stat &= ~NOPOWER
 	else
 		stat |= NOPOWER
-	return (stat != oldstat)
+	if(stat == oldstat)
+		return FALSE
+	SEND_SIGNAL(src, (stat & NOPOWER) ? COMSIG_MACHINERY_POWER_LOST : COMSIG_MACHINERY_POWER_RESTORED)
+	return TRUE
 
 // Get the amount of power this machine will consume each cycle.  Override by experts only!
 /obj/machinery/proc/get_power_usage()
@@ -84,6 +87,8 @@
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(0, power)
 	power_init_complete = TRUE
+	if(power_subscriber)
+		get_area(src)?.power_subscribe(src)
 
 // Or in Destroy at all, but especially after the ..().
 /obj/machinery/Destroy()
@@ -93,6 +98,8 @@
 	*/
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(power, 0)
+	if(power_subscriber)
+		get_area(src)?.power_unsubscribe(src)
 	. = ..()
 
 // Registering moved_event observers for all machines is too expensive.  Instead we do it ourselves.
@@ -117,6 +124,9 @@
 /obj/machinery/proc/area_changed(area/old_area, area/new_area)
 	if(old_area == new_area || !power_init_complete)
 		return
+	if(power_subscriber)
+		old_area?.power_unsubscribe(src)
+		new_area?.power_subscribe(src)
 	var/power = POWER_CONSUMPTION
 	if(!power)
 		return // This is the most likely case anyway.
