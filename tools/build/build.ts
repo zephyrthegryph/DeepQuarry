@@ -14,7 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
-import { acquireDdSlot } from './lib/dd_slot';
+import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BENCH_RUNS_DIR,
@@ -425,8 +425,29 @@ export const ScenarioParameter = new Juke.Parameter({ type: 'string[]', alias: '
 export const ArgParameter = new Juke.Parameter({ type: 'string[]' });
 export const ProfileParameter = new Juke.Parameter({ type: 'boolean' });
 export const LabelParameter = new Juke.Parameter({ type: 'string' });
-/** `dm-test --shards=N`: boots N DreamDaemon worlds instead of one. See doc/testing.md "Sharded sweeps". */
+/** `dm-test --shards=N`: boots N DreamDaemon worlds instead of one.
+ * `--shards=0` means "auto": size it from currently-free dd-slots (see
+ * pickAutoShardCount()). Omitted entirely, behavior is unchanged (one
+ * world) -- this is opt-in, not a new default for the plain `dm-test`
+ * every existing caller (CI, the merge-to-master run) uses. See
+ * doc/testing.md "Sharded sweeps". */
 export const ShardsParameter = new Juke.Parameter({ type: 'number' });
+
+/** Sizes `dm-test --shards=0` (auto) from a snapshot of currently-free
+ * dd-slots (lib/dd_slot.ts) -- "sized by dd-slot availability". Clamped to
+ * [2, 6]: below 2 there's nothing to shard, and above 6 per-shard
+ * boot/settle overhead and the bin-packer's coarsening returns start to
+ * outweigh the extra parallelism for this suite's size. It's a
+ * point-in-time read, not a reservation -- by the time each shard actually
+ * calls acquireDdSlot(), another process may have taken a slot; shards
+ * beyond what's free just queue like any acquireDdSlot() caller does. */
+function pickAutoShardCount(): number {
+  const priority = process.env.DQ_DD_PRIORITY === '1';
+  const free = countFreeDdSlots(priority);
+  const count = Math.min(Math.max(free, 2), 6);
+  Juke.logger.info(`dm-test --shards=0 (auto): ${free} dd-slot(s) free right now -> using ${count} shard(s).`);
+  return count;
+}
 export const BaseParameter = new Juke.Parameter({ type: 'string' });
 export const HeadParameter = new Juke.Parameter({ type: 'string' });
 export const ThresholdParameter = new Juke.Parameter({ type: 'number' });
@@ -695,6 +716,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
     );
   }
   if (!run.results) return null;
+  recordSweepHashes(run.results);
   const record = testRunRecord(runIdentity(label), label, defines, run.clean, run.durationSeconds, run.results);
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   Juke.logger.info(
@@ -800,23 +822,126 @@ function affectedDomains(): Set<string> {
 export const DomainsParameter = new Juke.Parameter({ type: 'string[]' });
 export const TierParameter = new Juke.Parameter({ type: 'string' });
 export const AffectedParameter = new Juke.Parameter({ type: 'boolean' });
+export const IncrementalParameter = new Juke.Parameter({ type: 'boolean' });
 
-/** Resolves --domains/--tier/--affected into an explicit test selection (null
- * = no filter, run everything), and reports what it picked. `--tier=sweep`
- * selects only the type-sweep tests; `--tier=fast` (default) excludes them;
- * `--domains=a,b` (any tier) keeps only tests in those domains; `--affected`
- * unions in every domain touched by changed files. Combining `--affected`
- * with explicit `--domains` unions both. */
+const SWEEP_HASH_CACHE_FILE = `${DMB_CACHE_DIR}/sweep-hashes.json`;
+
+/**
+ * Sweep tests eligible for `--incremental` skipping, mapped to the source
+ * paths that determine their outcome. A sweep NOT in this map is never
+ * skipped. This starts EMPTY on purpose, not as a placeholder:
+ *
+ * Every sweep here iterates `subtypesof()`/`typesof()` of some root and
+ * reads `initial()` var values (or property-provider-derived values) per
+ * type. That means its true input set is "every file that declares a
+ * subtype of the root, anywhere in the tree" -- for dq_lifecycle_sandbox and
+ * dq_state_latent_round_trip that's any /atom/movable subtype; a first
+ * attempt at scoping all_clothing_shall_be_valid to
+ * code/modules/clothing/ and dq_property_type_values_valid to
+ * code/datums/properties/ turned out to be exactly this mistake:
+ * /obj/item/clothing subtypes (and the vars property providers read) are
+ * declared all over the tree (cult items, changeling powers, holiday
+ * events, ...), so hashing only those folders would have silently skipped
+ * a sweep after a change to a file outside them -- a false skip that hides
+ * a real regression, the one thing "any doubt -> recheck" exists to
+ * prevent. Getting this right needs a real type -> declaring-file map (a
+ * source-level index, or a boot-time dump), not a hand-curated folder
+ * list; that hasn't been built yet. Add an entry here only once you have
+ * one for that sweep's actual type universe -- until then this map stays
+ * empty and `--incremental` runs the sweeps in full, same as `--full`.
+ */
+const SWEEP_INCREMENTAL_SCOPE: Record<string, string[]> = {};
+
+/** Content hash of every file under any of `paths` (a file, or a directory
+ * walked recursively via Juke.glob), sorted for a stable result. */
+function hashPaths(paths: string[]): string {
+  const files = new Set<string>();
+  for (const p of paths) {
+    if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+      files.add(p);
+      continue;
+    }
+    for (const f of Juke.glob(`${p.replace(/\/$/, '')}/**/*`)) {
+      if (fs.statSync(f).isFile()) files.add(f);
+    }
+  }
+  const hash = createHash('sha256');
+  for (const f of [...files].sort()) {
+    hash.update(f);
+    hash.update(fs.readFileSync(f));
+  }
+  return hash.digest('hex');
+}
+
+type SweepHashCache = Record<string, string>;
+
+function readSweepHashCache(): SweepHashCache {
+  try {
+    return readJson<SweepHashCache>(SWEEP_HASH_CACHE_FILE);
+  } catch {
+    return {};
+  }
+}
+
+/** Eligible sweeps whose scope is byte-identical to the last passing run's
+ * (per readSweepHashCache()) -- safe to skip under `--incremental`. Never
+ * called for `--full`/no-flag/master runs; those always run everything. */
+function incrementalSkips(): Set<string> {
+  const cache = readSweepHashCache();
+  const skip = new Set<string>();
+  for (const [name, paths] of Object.entries(SWEEP_INCREMENTAL_SCOPE)) {
+    const hash = hashPaths(paths);
+    if (cache[name] === hash) skip.add(name);
+  }
+  if (skip.size) {
+    Juke.logger.info(`--incremental: skipping ${skip.size} sweep(s) with unchanged inputs: ${[...skip].join(', ')}.`);
+  }
+  return skip;
+}
+
+/** After a run, records the current input hash for every eligible sweep that
+ * ACTUALLY RAN this time (skipped ones keep their existing stored hash) and
+ * passed -- a failed or skipped sweep's hash is left alone, so a real
+ * failure keeps demanding a rerun next time rather than being masked by a
+ * stale "unchanged" hash. */
+function recordSweepHashes(results: Record<string, UnitTestEntry>): void {
+  const cache = readSweepHashCache();
+  let changed = false;
+  for (const [name, paths] of Object.entries(SWEEP_INCREMENTAL_SCOPE)) {
+    const entry = results[name];
+    if (!entry || entry.status !== 0) continue; // didn't run, or didn't pass
+    cache[name] = hashPaths(paths);
+    changed = true;
+  }
+  if (changed) {
+    fs.mkdirSync(DMB_CACHE_DIR, { recursive: true });
+    writeJson(SWEEP_HASH_CACHE_FILE, cache);
+  }
+}
+
+/** Resolves --domains/--tier/--affected/--incremental into an explicit test
+ * selection (null = no filter, run everything), and reports what it picked.
+ * `--tier=sweep` selects only the type-sweep tests; `--tier=fast` (default)
+ * excludes them; `--domains=a,b` (any tier) keeps only tests in those
+ * domains; `--affected` unions in every domain touched by changed files.
+ * Combining `--affected` with explicit `--domains` unions both.
+ * `--incremental` additionally drops eligible sweeps whose inputs are
+ * unchanged since their last passing run (see SWEEP_INCREMENTAL_SCOPE) --
+ * conservative: anything not in that map always runs. CI and the
+ * merge-to-master run must never pass --incremental (or any of these
+ * flags): they need the full, unfiltered suite. */
 function resolveTestSelection(get: any): string[] | null {
   const tierRaw = get(TierParameter) as string | null;
   const explicitDomains = new Set(get(DomainsParameter) as string[]);
   const affected = get(AffectedParameter) as boolean;
-  // No --tier/--domains/--affected at all: run everything, unfiltered. This
-  // must stay a real "no filter" (return null, not a computed full list) --
-  // a plain `dm-test`/`dm-test --shards=N` with no flags is the default path
-  // every existing caller (CI, the merge-to-master run, dq_focused_test.sh)
-  // uses, and it must never silently drop tests.
-  if (!tierRaw && !explicitDomains.size && !affected) return null;
+  const incremental = get(IncrementalParameter) as boolean;
+  // No --tier/--domains/--affected/--incremental at all: run everything,
+  // unfiltered. This must stay a real "no filter" (return null, not a
+  // computed full list) -- a plain `dm-test`/`dm-test --shards=N` with no
+  // flags is the default path every existing caller (CI, the
+  // merge-to-master run, dq_focused_test.sh) uses, and it must never
+  // silently drop tests.
+  if (!tierRaw && !explicitDomains.size && !affected && !incremental) return null;
   const tier = tierRaw ?? 'fast';
 
   const domains = new Set(explicitDomains);
@@ -830,15 +955,17 @@ function resolveTestSelection(get: any): string[] | null {
 
   const includeSweeps = tier === 'sweep' || tier === 'full';
   const includeNonSweeps = tier !== 'sweep';
+  const skips = incremental ? incrementalSkips() : null;
   const all = enumerateUnitTestsWithDomain();
   const selected = all
     .filter((t) => (SWEEP_TEST_NAMES.has(t.name) ? includeSweeps : includeNonSweeps))
     .filter((t) => (domains.size ? domains.has(t.domain) : true))
+    .filter((t) => !skips?.has(t.name))
     .map((t) => t.name);
 
   Juke.logger.info(
-    `Test selection: tier=${tier}${domains.size ? `, domains=${[...domains].join(',')}` : ''} `
-      + `-> ${selected.length}/${all.length} test(s).`,
+    `Test selection: tier=${tier}${domains.size ? `, domains=${[...domains].join(',')}` : ''}`
+      + `${incremental ? ', incremental' : ''} -> ${selected.length}/${all.length} test(s).`,
   );
   return selected;
 }
@@ -1108,6 +1235,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     }
   }
   const { results, clean, totalCpuSeconds } = mergeShardResults(runs);
+  recordSweepHashes(results);
   const record = testRunRecord(
     runIdentity(get(LabelParameter)),
     get(LabelParameter),
@@ -1144,6 +1272,7 @@ export const DmTestTarget = new Juke.Target({
     DomainsParameter,
     TierParameter,
     AffectedParameter,
+    IncrementalParameter,
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
@@ -1153,7 +1282,8 @@ export const DmTestTarget = new Juke.Target({
     MapBoundsTarget, // tests boot the world, which reads template bounds
   ],
   executes: async ({ get }) => {
-    const shardCount = Math.max(get(ShardsParameter) ?? 1, 1);
+    const requestedShards = get(ShardsParameter);
+    const shardCount = requestedShards === 0 ? pickAutoShardCount() : Math.max(requestedShards ?? 1, 1);
     if (shardCount > 1) {
       await runSharded(shardCount, get);
       return;

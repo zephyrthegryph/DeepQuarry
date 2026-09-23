@@ -75,6 +75,35 @@ export type DdSlot = {
 };
 
 /**
+ * A snapshot count of currently-unoccupied slots (stale locks counted as
+ * free, same reclaim rule acquireDdSlot() uses), for sizing `dm-test
+ * --shards=auto`. This is a point-in-time read, not a reservation -- by the
+ * time the sharded runner actually calls acquireDdSlot() for each shard,
+ * another process may have taken one; shards beyond what's free just queue
+ * for a slot like any acquireDdSlot() caller does, they don't fail.
+ */
+export function countFreeDdSlots(priority: boolean): number {
+  const base = slotBase();
+  const top = priority ? SLOT_COUNT : Math.max(SLOT_COUNT - PRIORITY_RESERVED, 1);
+  if (exclusiveHeld()) return 0;
+  let free = 0;
+  for (let i = 1; i <= top; i++) {
+    const dir = `${base}${i}`;
+    if (!fs.existsSync(dir)) {
+      free++;
+      continue;
+    }
+    try {
+      const pid = Number(fs.readFileSync(path.join(dir, 'pid'), 'utf-8').trim());
+      if (!isAlive(pid)) free++;
+    } catch {
+      // Unreadable pid file: treat the slot as occupied rather than guess.
+    }
+  }
+  return free;
+}
+
+/**
  * Blocks until one machine-wide DreamDaemon slot is held, then returns it.
  * Call `release()` once that slot's DreamDaemon has exited. `priority` mirrors
  * `DQ_DD_PRIORITY=1` for shell callers -- true reaches every slot, false only

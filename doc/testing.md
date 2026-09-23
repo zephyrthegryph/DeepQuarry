@@ -147,9 +147,13 @@ DreamDaemon worlds in parallel and merges their results into one
   machine-wide `dd-slot.sh` budget everything else on the machine uses
   (`tools/build/lib/dd_slot.ts`: a TypeScript-native port of the same
   mkdir-lock-directory protocol, same lock paths, same priority lane), and
-  releases it the moment that shard exits -- shards are "sized by dd-slot
-  availability" in the sense that however many slots are actually free is
-  how many shards run concurrently; the rest queue.
+  releases it the moment that shard exits -- shards run concurrently up to
+  however many slots are actually free; the rest queue.
+- `--shards=0` picks the shard count automatically from a snapshot of
+  currently-free dd-slots (clamped to 2-6), instead of a fixed number you
+  have to guess -- `dm-test --shards=0`. This is opt-in: omitting `--shards`
+  entirely still means one world, unchanged, for every existing caller (CI,
+  the merge-to-master run, dq_focused_test.sh).
 - The merged summary reports wall time (when every shard finished) and
   summed CPU (each shard's `ProcessSampler` total, added up) side by side,
   plus the slowest 20 tests suite-wide (`testHotspots(..., 20)`) -- a sweep
@@ -192,8 +196,29 @@ nothing to do with the requested domains. It composes with `--shards=N`: the
 domain/tier selection narrows the pool bin-packing draws from, and the same
 selection file is passed to every shard so sweeps are filtered there too.
 
-Not implemented: `--incremental` (skipping a sweep's unchanged types via a
-per-type definition hash) is still on the roadmap, not built yet.
+### `dm-test --incremental`
+
+Skips an eligible sweep test entirely when its inputs are byte-identical to
+its last *passing* run (`data/dmb-cache/sweep-hashes.json`, keyed per test,
+updated after any run -- sharded or not -- where that sweep ran and passed).
+Composes with `--domains`/`--tier`/`--shards` via the same selection
+mechanism as those.
+
+**Currently skips nothing**, by design: eligibility (`SWEEP_INCREMENTAL_SCOPE`
+in `build.ts`) requires a trustworthy list of the source paths that determine
+a sweep's outcome, and every sweep here iterates `subtypesof()`/`typesof()`
+of some root, so its true input set is "every file that declares a subtype
+of that root, anywhere in the tree" -- not a tidy folder. A first attempt at
+scoping `all_clothing_shall_be_valid` to `code/modules/clothing/` and
+`dq_property_type_values_valid` to `code/datums/properties/` was exactly
+this mistake (clothing subtypes, and the vars property providers read, are
+declared all over the tree -- cult items, changeling powers, holiday
+events, ...), which would have produced false skips: a change outside those
+folders, silently not re-tested. Getting this right needs a real type ->
+declaring-file map (a source-level index, or a boot-time dump from the
+world itself), which doesn't exist yet. `--incremental` is safe to use
+today -- it just doesn't save anything until `SWEEP_INCREMENTAL_SCOPE` gets
+real, verified entries.
 
 ### Watchdog timeout
 
