@@ -222,12 +222,18 @@
 	var/obj/item/organ/external/chest = H.get_organ(BP_TORSO)
 	TEST_ASSERT_NOTNULL(chest, "no chest")
 	TEST_ASSERT(chest.vital, "the chest should be a vital part")
+	// Heavy hits can spill half their brute into an organ the chest holds (at
+	// random below integrity, always above it), which makes the chest's own share
+	// nondeterministic. This test is about the part itself, so hold no organs in it.
+	var/list/held_organs = chest.internal_organs
+	chest.internal_organs = null
 	H.injure(INJURY_BLUNT, chest.max_damage * (DQ_VITAL_PART_LETHAL_MULT - 0.5), BP_TORSO, flags = DQ_TEST_INJURE)
 	var/fraction = (chest.get_trauma() + chest.get_burn()) / chest.max_damage
 	TEST_ASSERT(fraction >= DQ_VITAL_PART_LETHAL_MULT - 0.6, "the chest should hold damage past its rated integrity (got [fraction]x)")
 	TEST_ASSERT(H.stat != DEAD, "a badly damaged but intact chest should not kill ([fraction]x integrity)")
 	H.injure(INJURY_BLUNT, chest.max_damage, BP_TORSO, flags = DQ_TEST_INJURE)
 	fraction = (chest.get_trauma() + chest.get_burn()) / chest.max_damage
+	chest.internal_organs = held_organs
 	TEST_ASSERT(fraction >= DQ_VITAL_PART_LETHAL_MULT, "the chest should reach its lethal multiple (got [fraction]x)")
 	TEST_ASSERT_EQUAL(H.stat, DEAD, "a destroyed vital body part should kill ([fraction]x integrity)")
 
