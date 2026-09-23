@@ -277,6 +277,169 @@ pub fn storage_output_share(offer: Watts, total_offer: Watts, storage_used: Watt
     Watts(storage_used.get() * offer.get() / total_offer.get())
 }
 
+// --- Law wiring (`rust_architecture.md` §4.3, §7; core::law, Core A) -------
+//
+// Each `Law` below is a thin adapter over the pure functions above: the
+// physics is proven by the tests those functions already have, so `step()`
+// only orchestrates reads/writes/events/ledger. `Reads`/`Writes` are plain
+// structs (core::law::Query is blanket-implemented) until Core B's real
+// component-store queries land -- exactly what core::law's own docs ask
+// for. `Settle::Active` throughout: a real sleep decision needs
+// `apc_cell_model`/`smes_charge_model`'s `RateModel` wired through
+// `LawCtx::schedule`, which doesn't exist until the driver integration
+// that follows Core B's stores (the coordinator's own sequencing).
+
+use vg_core::law::{Law, LawCtx, Period, Settle};
+use vg_core::units::Seconds;
+
+use crate::events::PowerEvent;
+use crate::kind::PowerLedger;
+
+fn region_grid(avail: Watts, load: &mut Watts) -> impl Grid + '_ {
+    struct RegionGrid<'a> {
+        avail: Watts,
+        load: &'a mut Watts,
+    }
+    impl Grid for RegionGrid<'_> {
+        fn avail(&self) -> Watts {
+            self.avail
+        }
+        fn surplus(&self) -> Watts {
+            Watts(self.avail.get() - self.load.get())
+        }
+        fn draw(&mut self, watts: Watts) -> Watts {
+            let d = watts.get().min(self.avail.get() - self.load.get()).max(0.0);
+            *self.load = Watts(self.load.get() + d);
+            Watts(d)
+        }
+    }
+    RegionGrid { avail, load }
+}
+
+/// `ApcTick`'s reads: the area demand it serves and its terminal region's
+/// planned supply this step.
+pub struct ApcTickReads {
+    pub demand: [Watts; 3],
+    pub grid_avail: Watts,
+}
+
+/// `ApcTick`'s writes: the component itself and the region load its grid
+/// draw adds to.
+pub struct ApcTickWrites {
+    pub apc: Apc,
+    pub grid_load: Watts,
+}
+
+/// The channel autoset ladder and charge mode, per APC, every tick
+/// ([`apc_tick`]).
+pub struct ApcTick;
+
+impl Law for ApcTick {
+    type Reads = ApcTickReads;
+    type Writes = ApcTickWrites;
+    const NAME: &'static str = "power_apc_tick";
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let demand = ctx.reads.demand;
+        let (discharged, charged) = {
+            let mut grid = region_grid(ctx.reads.grid_avail, &mut ctx.writes.grid_load);
+            apc_tick(&mut ctx.writes.apc, demand, &mut grid)
+        };
+        ctx.ledger().source("power_apc_charge", charged.get());
+        ctx.ledger().sink("power_apc_charge", discharged.get());
+        if ctx.writes.apc.alarm {
+            ctx.emit(PowerEvent::ApcChannelChanged as u32);
+        }
+        Settle::Active
+    }
+}
+
+/// `SmesPlanning`'s reads: whether each terminal is on a region, and this
+/// unit's already-resolved share of the region's leftover supply/storage-
+/// financed load (`storage_input_share`/`storage_output_share`, computed
+/// once per region across every SMES sharing it).
+pub struct SmesPlanningReads {
+    pub output_connected: bool,
+    pub input_connected: bool,
+    pub input_share: Watts,
+    pub output_share: Watts,
+}
+
+pub struct SmesPlanningWrites {
+    pub smes: Smes,
+}
+
+/// SMES input/output planning and charge/discharge, per unit, every tick
+/// ([`smes_plan`], [`smes_charge_in`], [`smes_discharge_out`]). Runs on a
+/// slower cadence than `ApcTick`/`PowerBalance` in the original design
+/// (every machinery tick, same as them, today -- `Period::Ticks` is here
+/// for when a domain wants to change that without touching the law).
+pub struct SmesPlanning;
+
+impl Law for SmesPlanning {
+    type Reads = SmesPlanningReads;
+    type Writes = SmesPlanningWrites;
+    const NAME: &'static str = "power_smes_planning";
+    const PERIOD: Period = Period::Ticks(1);
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let _plan = smes_plan(&ctx.writes.smes, ctx.reads.output_connected, ctx.reads.input_connected);
+        let absorbed = smes_charge_in(&mut ctx.writes.smes, ctx.reads.input_share);
+        let delivered = smes_discharge_out(&mut ctx.writes.smes, ctx.reads.output_share);
+        ctx.ledger().source("power_smes_charge", absorbed.get());
+        ctx.ledger().sink("power_smes_charge", delivered.get());
+        Settle::Active
+    }
+}
+
+/// `PowerBalance`'s reads: every producer's supply, every storage unit's
+/// offer, and the consumers this region must serve, already ordered
+/// highest priority first (the caller's job -- see [`consumer_draw`]).
+pub struct PowerBalanceReads {
+    pub producer_supply: Vec<Watts>,
+    pub storage_offers: Vec<Watts>,
+    pub consumers: Vec<Consumer>,
+}
+
+pub struct PowerBalanceWrites {
+    pub ledger: PowerLedger,
+}
+
+/// Per region: producers and storage offers plan the supply, consumers
+/// draw in priority order, then brownout ([`planned_supply`],
+/// [`consumer_draw`], [`brownout`]). Storage input/output pro-rata sharing
+/// ([`storage_input_share`]/[`storage_output_share`]) runs per SMES in
+/// [`SmesPlanning`], not here, since it needs every SMES sharing the
+/// region at once, not one region's worth of already-summed numbers.
+pub struct PowerBalance;
+
+impl Law for PowerBalance {
+    type Reads = PowerBalanceReads;
+    type Writes = PowerBalanceWrites;
+    const NAME: &'static str = "power_balance";
+
+    fn step(ctx: &mut LawCtx<'_, Self::Reads, Self::Writes>, _dt: Seconds) -> Settle {
+        let avail = planned_supply(ctx.reads.producer_supply.iter().copied(), ctx.reads.storage_offers.iter().copied());
+        ctx.writes.ledger.avail = avail;
+        ctx.writes.ledger.load = Watts::ZERO;
+        {
+            let mut grid = region_grid(ctx.writes.ledger.avail, &mut ctx.writes.ledger.load);
+            for consumer in &ctx.reads.consumers {
+                consumer_draw(consumer, &mut grid);
+            }
+        }
+        let was_brown = ctx.writes.ledger.brown;
+        let now_brown = brownout(ctx.writes.ledger.avail, ctx.writes.ledger.load);
+        ctx.writes.ledger.brown = now_brown;
+        match (was_brown, now_brown) {
+            (false, true) => ctx.emit(PowerEvent::Brownout as u32),
+            (true, false) => ctx.emit(PowerEvent::Restored as u32),
+            _ => {}
+        }
+        Settle::Active
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -528,5 +691,106 @@ mod tests {
                 prop_assert!(grid.load.get() <= avail + 1e-6);
             }
         }
+    }
+
+    // --- Law wiring: the same physics, driven through `Law::step` ---------
+
+    fn test_ledger() -> vg_core::conservation::Ledger {
+        vg_core::conservation::Ledger::new()
+    }
+
+    #[test]
+    fn apc_tick_law_matches_the_bare_function_and_reports_conservation() {
+        let reads = ApcTickReads { demand: [Watts(1000.0); 3], grid_avail: Watts::ZERO };
+        let mut writes = ApcTickWrites { apc: apc_with(1000.0, 1000.0), grid_load: Watts::ZERO };
+        let mut events = Vec::new();
+        let mut wakes = Vec::new();
+        let mut ledger = test_ledger();
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        assert_eq!(ApcTick::step(&mut ctx, Seconds(1.0)), Settle::Active);
+        // No grid at all: the cell alone must cover all 3000 W of demand.
+        let expect = 1000.0 - 3000.0 * crate::components::CELLRATE;
+        assert!((writes.apc.cell.charge - expect).abs() < 1e-9);
+        // check_conservation-style: the ledger's own source/sink calls
+        // match what actually moved the charge.
+        assert!(
+            ledger
+                .check("power_apc_charge", writes.apc.cell.charge, 1e-6)
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn smes_planning_law_charges_from_its_share_and_discharges_from_its_share() {
+        let reads = SmesPlanningReads {
+            output_connected: true,
+            input_connected: false,
+            input_share: Watts::ZERO,
+            output_share: Watts(50.0),
+        };
+        let mut writes = SmesPlanningWrites {
+            smes: Smes { charge: RateStore { charge: 1000.0, capacity: 1e6, rate: crate::components::SMESRATE }, ..Smes::default() },
+        };
+        let mut events = Vec::new();
+        let mut wakes = Vec::new();
+        let mut ledger = test_ledger();
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        assert_eq!(SmesPlanning::step(&mut ctx, Seconds(1.0)), Settle::Active);
+        let expect = 1000.0 - 50.0 * crate::components::SMESRATE;
+        assert!((writes.smes.charge.charge - expect).abs() < 1e-9);
+    }
+
+    #[test]
+    fn power_balance_law_serves_priority_order_before_any_leftover_runs_out() {
+        let reads = PowerBalanceReads {
+            producer_supply: vec![Watts(100.0)],
+            storage_offers: vec![],
+            consumers: vec![
+                Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 },
+                Consumer { demand: [Watts(50.0), Watts::ZERO, Watts::ZERO], priority: 1 },
+            ],
+        };
+        let mut writes = PowerBalanceWrites { ledger: PowerLedger::default() };
+        let mut events = Vec::new();
+        let mut wakes = Vec::new();
+        let mut ledger = test_ledger();
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        assert_eq!(PowerBalance::step(&mut ctx, Seconds(1.0)), Settle::Active);
+        // The first (highest-priority) consumer is served in full (80 of
+        // its 80 W); the second is starved by what's left (20 of its 50 W)
+        // -- never more than the region's 100 W total, and never negative.
+        assert_eq!(writes.ledger.load, Watts(100.0));
+        assert_eq!(writes.ledger.avail, Watts(100.0));
+        assert!(!writes.ledger.brown, "fully used, but not overdrawn: avail - load == 0, not < -1 W");
+    }
+
+    #[test]
+    fn power_balance_law_emits_brownout_then_restored_on_the_transition() {
+        let no_supply = PowerBalanceReads {
+            producer_supply: vec![Watts::ZERO],
+            storage_offers: vec![],
+            consumers: vec![Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 }],
+        };
+        let mut writes = PowerBalanceWrites { ledger: PowerLedger::default() };
+        let mut events = Vec::new();
+        let mut wakes = Vec::new();
+        let mut ledger = test_ledger();
+        {
+            let mut ctx = LawCtx::new(&no_supply, &mut writes, &mut events, &mut wakes, &mut ledger);
+            PowerBalance::step(&mut ctx, Seconds(1.0));
+        }
+        assert!(writes.ledger.brown, "no supply at all");
+        assert_eq!(events, vec![PowerEvent::Brownout as u32]);
+
+        let restored = PowerBalanceReads {
+            producer_supply: vec![Watts(1000.0)],
+            storage_offers: vec![],
+            consumers: vec![Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 }],
+        };
+        events.clear();
+        let mut ctx = LawCtx::new(&restored, &mut writes, &mut events, &mut wakes, &mut ledger);
+        PowerBalance::step(&mut ctx, Seconds(1.0));
+        assert!(!writes.ledger.brown);
+        assert_eq!(events, vec![PowerEvent::Restored as u32]);
     }
 }
