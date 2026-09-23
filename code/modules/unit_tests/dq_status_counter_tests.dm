@@ -204,7 +204,7 @@
 	var/datum/body_support/S = H.body.add_support(H, BF_RESP_DRIVE, 1, 10 SECONDS)
 	TEST_ASSERT_NOTNULL(S, "the support should be added")
 	TEST_ASSERT(!P.idle(H), "a timed support keeps the physiology awake")
-	TEST_ASSERT(H.life_timer_id && (H.life_timer_bits & LIFE_SYS_BODY), "a timed support schedules a wake for its expiry")
+	TEST_ASSERT((H.life_timed_wake_bits(CLOCK_KIND_WORLD) & LIFE_SYS_BODY), "a timed support schedules a wake for its expiry")
 	H.body.remove_supports(H)
 	H.body.ensure_physiology()
 	TEST_ASSERT(P.idle(H), "the physiology settles again once the support is gone")

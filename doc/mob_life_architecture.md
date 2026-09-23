@@ -404,7 +404,7 @@ asleep, and comes back on the first wake.
   FALSE (never sleeps), so a system nobody has audited keeps its mob awake. It must be cheap
   and read-only, because the hibernation audit calls it on mobs that aren't ticking.
 - `rewake_delay(self)` is for an idle system that still drifts slowly. It returns the
-  deciseconds after which the system wakes anyway (a per-mob timer, `life_wake_in()`).
+  deciseconds after which the system wakes anyway (`life_wake_in()`: one pending wake per mob per clock kind, on the world clock or, with `CLOCK_KIND_BODY`, the body clock; doc/medical_frameworks.md §1.5).
 - `woken_by` names the producers that wake it. The audit prints it when a wake was missed.
 - A family root's rule covers only the root (`type == /datum/life_system/<family>`). A variant
   with its own tick code stays awake until it declares its own rule.
