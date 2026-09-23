@@ -15,7 +15,8 @@
 		return ITEM_INTERACT_FAILURE
 	if(istype(M,/mob/living/silicon/robot) && can_use(1))	//Repairing cyborgs
 		var/mob/living/silicon/robot/R = M
-		if(R.injury_load(INJURY_CATEGORY_PHYSICAL) || R.injury_load(INJURY_CATEGORY_THERMAL))
+		var/list/demand = R.treatment_demand(/datum/diagnostic_profile/robot_analyzer)
+		if(demand?[TREAT_PLATING_REPAIR] || demand?[TREAT_WIRING_REPAIR])
 			if(do_after(user, 7 * toolspeed, target = R))
 				R.mend(TREAT_PLATING_REPAIR, 15)
 				R.mend(TREAT_WIRING_REPAIR, 15)
