@@ -249,6 +249,45 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		return 0
 	return ..()
 
+// C8a: pilot, equipment and cargo are slots (containment.md §10), so the
+// three roles that used to share raw contents each get their own ledger
+// entry. Equipment and cargo keep their own capacity checks (max_equip,
+// cargo_capacity) and their own component-tier bookkeeping -- the slots only
+// carry the move through the ledger so paths, drop policy and the future body
+// host interface (C8b) see them; nothing here changes what a hit does today
+// (/obj/mecha/receive_damage doesn't call propagate_damage).
+/obj/mecha/slot_def_types()
+	var/static/list/types = list(
+		/datum/slot_def/occupant/mecha_pilot,
+		/datum/slot_def/mecha_equipment_hardpoint,
+		/datum/slot_def/mecha_cargo,
+		/datum/slot_def/machine_internals, // component parts, cell, internal tank -- Destroy() owns them
+	)
+	return types
+
+/// Sealed: the cabin is the pilot's environment (cabin_air, life support),
+/// same as before the ledger tracked the move.
+/datum/slot_def/occupant/mecha_pilot
+	id = MECHA_SLOT_PILOT
+	name = "pilot"
+
+/// External: equipment is bolted to the hull's hardpoints, not inside it.
+/// Capacity stays with mecha_equipment.dm's per-category limits.
+/datum/slot_def/mecha_equipment_hardpoint
+	id = MECHA_SLOT_EQUIPMENT
+	name = "hardpoint"
+	exposure = SLOT_EXPOSURE_EXTERNAL
+	capacity_model = SLOT_CAPACITY_NONE
+	drop_policy = SLOT_DROP_HOLDER // the wreckage salvage/detach loop in Destroy() owns it
+
+/// Internal: the cargo compartment. Capacity stays with cargo_capacity.
+/datum/slot_def/mecha_cargo
+	id = MECHA_SLOT_CARGO
+	name = "cargo"
+	exposure = SLOT_EXPOSURE_INTERNAL
+	capacity_model = SLOT_CAPACITY_NONE
+	drop_policy = SLOT_DROP_HOLDER // Destroy()'s own cargo spill loop owns it
+
 /obj/mecha/Destroy()
 	src.go_out()
 	for(var/mob/M in src) //Be Extra Sure
@@ -1963,7 +2002,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/proc/moved_inside(mob/living/carbon/human/H)
 	if(H && H.client && (H in range(1)))
 		H.stop_pulling()
-		H.forceMove(src)
+		if(!H.move_into(src, MECHA_SLOT_PILOT))
+			return
 		src.occupant = H
 		START_PROCESSING(SSobj, src)
 		src.add_fingerprint(H)
@@ -2072,7 +2112,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		mob_container = brain.container
 	else
 		return
-	if(mob_container.forceMove(src.loc))//ejecting mob container
+	var/moved = ishuman(occupant) ? slot_remove(mob_container, src.loc) : mob_container.forceMove(src.loc)
+	if(moved)//ejecting mob container
 		src.mecha_log_message("[mob_container] moved out.")
 		// TGUI: close the exosuit interface on eject.
 		SStgui.close_uis(src)
@@ -2841,7 +2882,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		var/obj/O = locate(href_list["drop_from_cargo"])
 		if(O && (O in src.cargo))
 			src.occupant_message(span_notice("You unload [O]."))
-			O.forceMove(get_turf(src))
+			if(!slot_remove(O, get_turf(src)))
+				O.forceMove(get_turf(src))
 			LAZYREMOVE(src.cargo, O)
 			var/turf/T = get_turf(O)
 			if(T)
