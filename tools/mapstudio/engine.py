@@ -172,6 +172,7 @@ class MapStudio:
         self.latest_preview = None
         self.last_commit = None
         self.read_cache = {}
+        self.catalog_cache = {}
 
     def maps(self):
         return [str(p.relative_to(ROOT)).replace("\\", "/") for p in sorted((ROOT / "maps").rglob("*.dmm"))
@@ -206,6 +207,15 @@ class MapStudio:
             paths = {p for p in paths if query.lower() in p.lower()}
         return sorted(paths)
 
+    def catalog_for_revision(self, map_obj, revision):
+        cached = self.catalog_cache.get(revision)
+        if cached is None:
+            cached = frozenset(self.catalog(map_obj))
+            if len(self.catalog_cache) >= 8:
+                self.catalog_cache.pop(next(iter(self.catalog_cache)))
+            self.catalog_cache[revision] = cached
+        return cached
+
     def inspect(self, path, region):
         _, m, digest = self.read(path)
         r = rect(region, m.size, limit=12000)
@@ -227,7 +237,7 @@ class MapStudio:
             proposed = copy.copy(m)
             proposed.dictionary = m.dictionary.copy()
             proposed.grid = m.grid.copy()
-            catalog = set(self.catalog(m))
+            catalog = self.catalog_for_revision(m, revision)
             for operation in operations:
                 self._operation(proposed, operation, catalog)
             m = proposed
@@ -525,6 +535,14 @@ class MapStudio:
             validate_atom(atom, catalog)
             if kind(atom) != layer:
                 raise ValueError("Route type does not match its layer.")
+            anchor_port = op.get("anchor_port")
+            if anchor_port is not None and (layer != "power" or not isinstance(anchor_port, int) or
+                                            anchor_port not in OPPOSITE):
+                raise ValueError("Choose a valid cable connection port.")
+            end_port = op.get("end_port")
+            if end_port is not None and (layer != "power" or not isinstance(end_port, int) or
+                                         end_port not in OPPOSITE):
+                raise ValueError("Choose a valid cable connection port.")
             pts = [coord(p, *m.size) for p in op["points"]]
             if len(pts) < 2 or len(pts) > 500:
                 raise ValueError("A route needs 2 to 500 points.")
@@ -577,17 +595,22 @@ class MapStudio:
                     if not missing:
                         continue
                     current = list(m.get_tile(c))
-                    chosen = candidates[0]
+                    preferred_port = anchor_port if i == 0 else end_port if i == len(pts) - 1 else None
+                    chosen = next((candidate for candidate in candidates
+                                   if preferred_port in ports(candidate, layer)), candidates[0])
                     directions = ports(chosen, layer) | missing
                     if layer == "power" and (len(candidates) > 1 or len(directions) > 2):
                         # BYOND joins cables on the same turf only when they share
                         # a direction. A 0-newdir stub beside a straight cable
                         # looks connected, but forms a separate powernet.
                         for direction in sorted(missing):
-                            bridge = next((candidate for candidate in candidates
+                            bridge = chosen if ports(chosen, layer) else next((candidate for candidate in candidates
                                            if ports(candidate, layer)), chosen)
                             bridge_ports = ports(bridge, layer)
-                            bridge_port = (OPPOSITE[direction] if OPPOSITE[direction] in bridge_ports
+                            shared_route_ports = (wanted - missing) & bridge_ports
+                            bridge_port = (preferred_port if preferred_port in bridge_ports else
+                                           next(iter(sorted(shared_route_ports)), None) if shared_route_ports else
+                                           OPPOSITE[direction] if OPPOSITE[direction] in bridge_ports
                                            else next(iter(sorted(bridge_ports)), None))
                             current.append(route_atom(base(bridge), layer,
                                                       {direction, bridge_port} if bridge_port else {direction}))
@@ -630,7 +653,7 @@ class MapStudio:
             m = copy.copy(base_map)
             m.dictionary = base_map.dictionary.copy()
             m.grid = base_map.grid.copy()
-            catalog = set(self.catalog(base_map))
+            catalog = self.catalog_for_revision(base_map, digest)
             changed = set()
             before = {}
             for op in operations:
@@ -662,7 +685,7 @@ class MapStudio:
             m = copy.copy(base_map)
             m.dictionary = base_map.dictionary.copy()
             m.grid = base_map.grid.copy()
-            catalog = set(self.catalog(base_map))
+            catalog = self.catalog_for_revision(base_map, revision)
             for op in operations[:-1]:
                 self._operation(m, op, catalog)
             old_grid = m.grid.copy()

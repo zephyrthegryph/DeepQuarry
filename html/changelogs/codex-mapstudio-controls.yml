@@ -16,3 +16,7 @@ changes:
   - qol: "Added nearest-sprite click tolerance and agent tools for rooms, fills, networks, and placement."
   - bugfix: "Kept wire endpoints under the pointer while dragging and selected connected segments in unsaved proposals."
   - qol: "Reduced live network preview work during continuous dragging."
+  - bugfix: "Kept the live wire tip under the pointer and stopped distant selected cables from anchoring new routes."
+  - qol: "Made connected network selection visibly highlight every selected segment."
+  - bugfix: "Cached the map type catalog so wire drafts no longer rescan the whole map on every update."
+  - bugfix: "Removed the temporary wire line and attached new cable branches through the existing port nearest the cursor."

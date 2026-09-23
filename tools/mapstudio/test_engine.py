@@ -8,6 +8,7 @@ from PIL import Image
 
 from engine import ROOT, MapStudio, Coordinate, ports, route_atom
 import mcp
+import server
 from sprites import sprites
 
 
@@ -306,6 +307,46 @@ class MapStudioTests(unittest.TestCase):
         self.assertIn(f'{green}{{icon_state = "4-8"}}', cables)
         self.assertTrue(any(1 in ports(a, 'power') and ports(a, 'power') & {4, 8} for a in cables))
 
+    def test_route_branch_uses_port_chosen_near_pointer(self):
+        _, m, _ = self.studio.load(self.relative)
+        junction, north = Coordinate(2, 2, 1), Coordinate(2, 3, 1)
+        green = '/obj/structure/cable/green'
+        m.set_tile(junction, tuple(m.get_tile(junction)) + (f'{green}{{icon_state = "4-8"}}',))
+        m.to_file(self.path)
+        route = {"action": "route", "layer": "power", "atom": green,
+                 "points": [junction._asdict(), north._asdict()]}
+        for preferred, state in ((4, '1-4'), (8, '1-8')):
+            result = self.studio.preview(self.relative, [{**route, "anchor_port": preferred}])
+            changed = next(d for d in result['diff'] if d['y'] == junction.y)
+            self.assertIn(f'{green}{{icon_state = "{state}"}}', changed['after'])
+
+    def test_route_up_left_down_left_joins_through_left_port(self):
+        _, m, _ = self.studio.load(self.relative)
+        green = '/obj/structure/cable/green'
+        for x in (3, 4, 5):
+            point = Coordinate(x, 2, 1)
+            m.set_tile(point, tuple(m.get_tile(point)) + (f'{green}{{icon_state = "4-8"}}',))
+        m.to_file(self.path)
+        points = [Coordinate(x, y, 1)._asdict() for x, y in
+                  [(5, 2), (5, 3), (4, 3), (4, 2), (3, 2)]]
+        result = self.studio.preview(self.relative, [{"action": "route", "layer": "power",
+            "atom": green, "points": points, "anchor_port": 4}])
+        turn = next(d for d in result['diff'] if (d['x'], d['y']) == (4, 2))
+        self.assertIn(f'{green}{{icon_state = "1-8"}}', turn['after'])
+        self.assertNotIn(f'{green}{{icon_state = "1-4"}}', turn['after'])
+
+    def test_route_end_uses_port_nearest_release_pointer(self):
+        _, m, _ = self.studio.load(self.relative)
+        green = '/obj/structure/cable/green'
+        end = Coordinate(3, 2, 1)
+        m.set_tile(end, tuple(m.get_tile(end)) + (f'{green}{{icon_state = "4-8"}}',))
+        m.to_file(self.path)
+        points = [Coordinate(3, 3, 1)._asdict(), end._asdict()]
+        result = self.studio.preview(self.relative, [{"action": "route", "layer": "power",
+            "atom": green, "points": points, "end_port": 8}])
+        changed = next(d for d in result['diff'] if (d['x'], d['y']) == (3, 2))
+        self.assertIn(f'{green}{{icon_state = "1-8"}}', changed['after'])
+
     def test_new_three_way_cable_junction_keeps_all_bridges(self):
         _, m, _ = self.studio.load(self.relative)
         green = '/obj/structure/cable/green'
@@ -370,6 +411,15 @@ class MapStudioTests(unittest.TestCase):
         self.assertEqual(result['preview_id'], 'test')
         self.assertEqual(captured['method'], 'preview')
         self.assertEqual(captured['args']['operations'][0]['action'], 'route')
+
+    def test_catalog_request_primes_fast_route_preview(self):
+        result = server.dispatch('catalog', {'map': self.relative, 'layer': 'power', 'query': 'cable'})
+        self.assertTrue(result['paths'])
+        self.assertTrue(all('/cable' in path and path.startswith('/obj/structure/cable')
+                            for path in result['paths']))
+        _, m, revision = server.studio.read(self.relative)
+        self.assertIn(revision, server.studio.catalog_cache)
+        self.assertIs(server.studio.catalog_cache[revision], server.studio.catalog_for_revision(m, revision))
 
 
 if __name__ == "__main__":

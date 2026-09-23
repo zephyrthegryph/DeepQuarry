@@ -14,7 +14,7 @@ const state = {
   sceneDirty: true, previewQueue: Promise.resolve(),
   hitMasks: new Map(), temporaryLayer: null,
   hitBoxes: new Map(),
-  selectedNetwork: null, networkSelectionId: 0,
+  selectedNetwork: null, networkSelectionId: 0, strokeAnchorPort: null, strokeEndPort: null,
   draft: null, draftId: 0,
 };
 const key = (x, y, z) => `${x},${y},${z}`;
@@ -224,6 +224,10 @@ function buildScene() {
   ctx.strokeStyle = '#26393c';
   for (let y = b.y2; y >= b.y1; y--) for (let x = b.x1; x <= b.x2; x++)
     ctx.strokeRect((x - b.x1) * 32 + .5, (b.y2 - y) * 32 + .5, 32, 32);
+  if (state.selectedNetwork) for (const member of state.selectedNetwork.members) {
+    if (member.z !== b.z || member.x < b.x1 || member.x > b.x2 || member.y < b.y1 || member.y > b.y2) continue;
+    highlightNetworkAtom(member.atom,(member.x-b.x1)*32,(b.y2-member.y)*32);
+  }
   ctx = oldCtx; state.cell = oldCell; state.sceneDirty = false;
 }
 function draw() {
@@ -289,8 +293,6 @@ function draw() {
       ctx.fillStyle = '#2fbac84a'; ctx.fillRect(sx, sy, state.cell, state.cell);
       ctx.strokeStyle = '#52e0ea'; ctx.strokeRect(sx + .5, sy + .5, state.cell, state.cell);
     }
-    const members = state.selectedNetwork?.byTile.get(key(x,y,z));
-    if (members) for (const atom of members) highlightNetworkAtom(atom,sx,sy);
     if (atomSelectedHere) outlineAtom(state.selectedAtom.atom,sx,sy,true);
   }
   if (state.selection) {
@@ -306,7 +308,7 @@ function draw() {
     const stroke = activeStroke.points;
     const atom = brushAtom().split('{')[0];
     const network = activeStroke.mode === 'place' && ['power','atmos','disposals'].includes(activeStroke.layer);
-    if (network) drawNetworkBlueprint(stroke,activeStroke.layer,activeStroke.atom,originX,originY);
+    // Network drafts draw their actual sprite states in the cached scene.
     for (const p of network ? [] : stroke) {
       const sx = Math.round(originX + (p.x - 1) * state.cell), sy = Math.round(originY - p.y * state.cell);
       const previewAtom = atom;
@@ -379,8 +381,8 @@ function highlightNetworkAtom(atom, sx, sy) {
   const crop = sprite.crop || [0,0,sprite.img.naturalWidth,sprite.img.naturalHeight];
   const appearance = state.appearance[atom] || {};
   ctx.save();
-  ctx.globalAlpha = .44;
-  ctx.filter = 'brightness(1.5) saturate(1.2)';
+  ctx.globalAlpha = .78;
+  ctx.filter = 'grayscale(1) brightness(2)';
   ctx.drawImage(sprite.img,...crop,sx+(appearance.pixel_x || 0)*state.cell/32,
     sy-(appearance.pixel_y || 0)*state.cell/32,crop[2]*state.cell/32,crop[3]*state.cell/32);
   ctx.restore();
@@ -407,6 +409,7 @@ function hitAtomAt(event) {
     a.sy-b.sy || a.sx-b.sx || a.index-b.index);
   const ordered = candidates.reverse();
   let turfHit = null;
+  const exact = [];
   const grace = [];
   for (const item of ordered) {
     const {atom,point} = item;
@@ -419,14 +422,15 @@ function hitAtomAt(event) {
     }
     const sprite = imageFor(atom);
     if (!sprite.loaded) {
-      if (px >= sx && px < sx+state.cell && py >= sy && py < sy+state.cell) return {point,atom};
+      if (px >= sx && px < sx+state.cell && py >= sy && py < sy+state.cell) exact.push({point,atom});
       continue;
     }
     const crop = sprite.crop || [0,0,sprite.img.naturalWidth,sprite.img.naturalHeight];
     const ix = Math.floor((px-sx)*32/state.cell), iy = Math.floor((py-sy)*32/state.cell);
     const mask = hitMask(atom,sprite,crop);
-    if (ix >= 0 && iy >= 0 && ix < crop[2] && iy < crop[3] && mask[iy*crop[2]+ix] > 0)
-      return {point,atom};
+    if (ix >= 0 && iy >= 0 && ix < crop[2] && iy < crop[3] && mask[iy*crop[2]+ix] > 0) {
+      exact.push({point,atom}); continue;
+    }
     const radius = Math.max(1, Math.ceil(4*32/state.cell));
     let distance = Infinity;
     for (let y = Math.max(0,iy-radius); y <= Math.min(crop[3]-1,iy+radius); y++)
@@ -434,10 +438,11 @@ function hitAtomAt(event) {
         if (mask[y*crop[2]+x] > 0) distance = Math.min(distance, Math.hypot(x-ix,y-iy));
     if (distance <= radius) grace.push({point,atom,distance});
   }
-  if (grace.length) {
-    grace.sort((a,b) => a.distance-b.distance);
-    return {point:grace[0].point,atom:grace[0].atom};
-  }
+  grace.sort((a,b) => a.distance-b.distance);
+  const preferred = state.activeLayer !== 'turf' ? state.activeLayer : null;
+  const hit = (preferred && (exact.find((item) => atomLayer(item.atom) === preferred) ||
+    grace.find((item) => atomLayer(item.atom) === preferred))) || exact[0] || grace[0];
+  if (hit) return {point:hit.point,atom:hit.atom};
   if (turfHit) return turfHit;
   const area = atomsAt(tile).find((a) => a.startsWith('/area/'));
   return area && visible(area) ? {point:tile,atom:area} : null;
@@ -559,6 +564,7 @@ function selectAtom(point, atom) {
       state.selectedNetwork = {layer,members:result.members,byTile};
       for (const member of result.members) state.selected.add(key(member.x,member.y,member.z));
       selectionStatus();
+      state.sceneDirty = true;
       $('tool-tip').textContent = `${result.members.length} connected ${layer} segment${result.members.length === 1 ? '' : 's'}`;
       scheduleDraw();
     }).catch(() => {});
@@ -669,10 +675,10 @@ function scheduleNetworkDraft() {
   if (!state.stroke || state.strokeMode !== 'place' || state.stroke.length < 2 ||
       !['power','atmos','disposals'].includes(state.activeLayer)) return;
   state.draftOperation = {action:'route',layer:state.activeLayer,atom:brushAtom().split('{')[0],
-    points:state.stroke.map((point) => ({...point}))};
-  clearTimeout(state.draftTimer);
-  state.draftTimer = null;
-  if (state.draftLoading) return;
+    points:state.stroke.map((point) => ({...point})),
+    ...(state.activeLayer === 'power' && state.strokeAnchorPort ? {anchor_port:state.strokeAnchorPort} : {}),
+    ...(state.activeLayer === 'power' && state.strokeEndPort ? {end_port:state.strokeEndPort} : {})};
+  if (state.draftTimer || state.draftLoading) return;
   const draftId = state.draftId;
   state.draftTimer = setTimeout(async () => {
     state.draftTimer = null;
@@ -692,7 +698,7 @@ function scheduleNetworkDraft() {
       if (draftId === state.draftId && state.stroke && operation !== state.draftOperation)
         scheduleNetworkDraft();
     }
-  },120);
+  },25);
 }
 function clearNetworkDraft(preserve = false) {
   ++state.draftId;
@@ -702,6 +708,59 @@ function clearNetworkDraft(preserve = false) {
   if (state.draft && !preserve) { state.draft = null; state.sceneDirty = true; }
 }
 function brushAtom() { return $('brush-type').value.trim() || $('atom').value.trim(); }
+function nearestNetworkMember(candidates, mouseX, mouseY, originX, originY) {
+  let best = null;
+  for (const member of candidates) {
+    const centerX = originX + (member.x - .5) * state.cell;
+    const centerY = originY - (member.y - .5) * state.cell;
+    if (Math.hypot(centerX-mouseX,centerY-mouseY) > state.cell*2) continue;
+    let distance = Math.hypot(centerX-mouseX,centerY-mouseY);
+    const sprite = member.atom && imageFor(member.atom);
+    if (sprite?.loaded) {
+      const crop = sprite.crop || [0,0,sprite.img.naturalWidth,sprite.img.naturalHeight];
+      const mask = hitMask(member.atom,sprite,crop);
+      const appearance = state.appearance[member.atom] || {};
+      const sx = originX+(member.x-1)*state.cell+(appearance.pixel_x || 0)*state.cell/32;
+      const sy = originY-member.y*state.cell-(appearance.pixel_y || 0)*state.cell/32;
+      let pixels = Infinity;
+      for (let y=0;y<crop[3];y++) for (let x=0;x<crop[2];x++) {
+        if (!mask[y*crop[2]+x]) continue;
+        pixels = Math.min(pixels,Math.hypot(sx+(x+.5)*state.cell/32-mouseX,
+          sy+(y+.5)*state.cell/32-mouseY));
+      }
+      if (pixels < Infinity) distance = pixels;
+    }
+    if (!best || distance < best.distance - .01 ||
+        Math.abs(distance-best.distance) < .01 && member.atom === state.selectedAtom?.atom)
+      best = {point:member,distance};
+  }
+  return best;
+}
+function nearestPowerPort(member, mouseX, mouseY, originX, originY) {
+  if (!member?.atom) return null;
+  const iconState = state.appearance[member.atom]?.icon_state ||
+    member.atom.match(/icon_state\s*=\s*"([^"]+)"/)?.[1] || '0-1';
+  const ports = iconState.match(/^(\d+)-(\d+)$/)?.slice(1).map(Number).filter(Boolean) || [];
+  const deltas = {1:[0,-1],2:[0,1],4:[1,0],8:[-1,0],5:[1,-1],6:[1,1],9:[-1,-1],10:[-1,1]};
+  const cx = originX+(member.x-.5)*state.cell, cy = originY-(member.y-.5)*state.cell;
+  return ports.reduce((best,port) => {
+    const delta = deltas[port]; if (!delta) return best;
+    const distance = Math.hypot(cx+delta[0]*state.cell/2-mouseX,cy+delta[1]*state.cell/2-mouseY);
+    return !best || distance < best.distance ? {port,distance} : best;
+  },null)?.port || null;
+}
+function powerPortAtPointer(event, point) {
+  if (!point || state.activeLayer !== 'power') return null;
+  const candidates = atomsAt(point).filter((atom) => atomLayer(atom) === 'power')
+    .map((atom) => ({...point,atom}));
+  if (!candidates.length) return null;
+  const bounds = canvas.getBoundingClientRect();
+  const mouseX = event.clientX - bounds.left, mouseY = event.clientY - bounds.top;
+  const originX = canvas.clientWidth / 2 - (state.camera.x - .5) * state.cell;
+  const originY = canvas.clientHeight / 2 + (state.camera.y - .5) * state.cell;
+  const nearest = nearestNetworkMember(candidates,mouseX,mouseY,originX,originY);
+  return nearestPowerPort(nearest?.point,mouseX,mouseY,originX,originY);
+}
 function brushVars() {
   const fields = {dir:$('brush-dir').value, icon_state:$('brush-state').value,
     color:$('brush-color').value, pixel_x:$('brush-pixel-x').value, pixel_y:$('brush-pixel-y').value};
@@ -717,7 +776,9 @@ function operationForStroke(points, mode) {
   }
   if (['power', 'atmos', 'disposals'].includes(state.activeLayer)) {
     const atom = brushAtom().split('{')[0];
-    if (points.length >= 2) return {action:'route', layer:state.activeLayer, atom, points};
+    if (points.length >= 2) return {action:'route', layer:state.activeLayer, atom, points,
+      ...(state.activeLayer === 'power' && state.strokeAnchorPort ? {anchor_port:state.strokeAnchorPort} : {}),
+      ...(state.activeLayer === 'power' && state.strokeEndPort ? {end_port:state.strokeEndPort} : {})};
     const p = points[0];
     if (atomsAt(p).some((a) => atomLayer(a) === state.activeLayer)) return null;
     const offsets = state.activeLayer === 'power' ?
@@ -884,7 +945,8 @@ canvas.addEventListener('pointerdown', (event) => {
   if (state.mode === 'place') {
     const members = state.selectedNetwork?.layer === state.activeLayer ? state.selectedNetwork.members : [];
     const candidates = members.length ? members :
-      state.selectedAtom && atomLayer(state.selectedAtom.atom) === state.activeLayer ? [state.selectedAtom.point] : [];
+      state.selectedAtom && atomLayer(state.selectedAtom.atom) === state.activeLayer ?
+        [{...state.selectedAtom.point,atom:state.selectedAtom.atom}] : [];
     const bounds = canvas.getBoundingClientRect();
     const mouseX = event.clientX - bounds.left, mouseY = event.clientY - bounds.top;
     const originX = canvas.clientWidth / 2 - (state.camera.x - .5) * state.cell;
@@ -892,15 +954,15 @@ canvas.addEventListener('pointerdown', (event) => {
     const hit = hitAtomAt(event);
     const hitMember = hit && candidates.find((member) => member.x === hit.point.x &&
       member.y === hit.point.y && member.z === hit.point.z && (!member.atom || member.atom === hit.atom));
-    const nearest = hitMember ? {point:hitMember,distance:0} : candidates.reduce((best,member) => {
-      const centerX = originX + (member.x - .5) * state.cell;
-      const centerY = originY - (member.y - .5) * state.cell;
-      const distance = Math.hypot(centerX - mouseX, centerY - mouseY);
-      return !best || distance < best.distance ? {point:member,distance} : best;
-    },null);
-    const anchor = nearest && (nearest.point.x !== point.x || nearest.point.y !== point.y) && nearest.point.z === point.z ?
+    const nearest = hitMember ? {point:hitMember,distance:0} :
+      nearestNetworkMember(candidates,mouseX,mouseY,originX,originY);
+    const adjacent = nearest && Math.max(Math.abs(nearest.point.x-point.x),Math.abs(nearest.point.y-point.y)) <= 1;
+    const anchor = adjacent && (nearest.point.x !== point.x || nearest.point.y !== point.y) && nearest.point.z === point.z ?
       {x:nearest.point.x,y:nearest.point.y,z:nearest.point.z} : point;
     state.stroke = [anchor]; state.strokeMode = 'place';
+    state.strokeAnchorPort = adjacent && state.activeLayer === 'power' ?
+      nearestPowerPort(nearest.point,mouseX,mouseY,originX,originY) : null;
+    state.strokeEndPort = null;
     if (anchor !== point) { appendStroke(point); scheduleNetworkDraft(); }
     canvas.setPointerCapture(event.pointerId); scheduleDraw(); return;
   }
@@ -932,8 +994,13 @@ canvas.addEventListener('pointermove', (event) => {
     const area = state.tiles.get(key(point.x, point.y, point.z))?.atoms.find((atom) => atom.startsWith('/area/'));
     $('map-coord').textContent = `${point.x}, ${point.y}, ${point.z}${area ? ' · ' + area.split('/').slice(-2).join('/') : ''}`;
   }
-  if (point && state.stroke) {
-    if (appendStroke(point)) { scheduleNetworkDraft(); scheduleDraw(); }
+  if (state.stroke) {
+    const moved = point && appendStroke(point);
+    const endPort = powerPortAtPointer(event,point);
+    const changedPort = state.strokeEndPort !== endPort;
+    state.strokeEndPort = endPort;
+    if (moved || changedPort) scheduleNetworkDraft();
+    if (point) scheduleDraw();
     return;
   }
   if (point && state.routeDraw) { extendRoute(point); return; }
@@ -954,9 +1021,12 @@ canvas.addEventListener('pointerup', (event) => {
   if (state.stroke) {
     const releasePoint = coordinate(event);
     if (releasePoint) appendStroke(releasePoint);
+    state.strokeEndPort = powerPortAtPointer(event,releasePoint);
     const points = state.stroke, mode = state.strokeMode; state.stroke = null;
     clearNetworkDraft(true);
     const op = operationForStroke(points, mode);
+    state.strokeAnchorPort = null;
+    state.strokeEndPort = null;
     if (op) {
       const pending = {points,mode,layer:state.activeLayer,atom:brushAtom().split('{')[0]};
       state.pendingStroke = pending;
@@ -986,6 +1056,7 @@ canvas.addEventListener('pointerup', (event) => {
     if (hit) selectAtom(hit.point, hit.atom);
     else if (start && start.x === point.x && start.y === point.y) {
       state.selectedAtom = null; state.selectedNetwork = null; state.networkSelectionId++;
+      state.sceneDirty = true;
     }
     if (start && start.x === point.x && start.y === point.y) showTileSelect(hit?.point || point);
   }
@@ -1071,7 +1142,7 @@ $('discard').onclick = async () => {
 };
 $('clear-selection').onclick = () => { state.selectionHistory.push(new Set(state.selected)); state.selected.clear();
   state.selectedAtom = null; state.selectedNetwork = null; state.networkSelectionId++;
-  state.selection = null; selectionStatus(); draw(); };
+  state.selection = null; state.sceneDirty = true; selectionStatus(); draw(); };
 $('load').onclick = () => { state.camera = { x: +$('cx').value, y: +$('cy').value }; clampCamera(); loadView(); };
 for (const button of document.querySelectorAll('.pane-tabs button'))
   button.onclick = () => showPanel(button.dataset.side, button.dataset.panel);

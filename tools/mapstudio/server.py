@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from engine import studio
+from engine import LAYERS, kind, studio
 from sprites import sprites
 
 HERE = Path(__file__).resolve().parent
@@ -29,8 +29,16 @@ def dispatch(method, args):
             raise ValueError("Atlas needs at most 5,000 atom paths.")
         return sprites.atlas(atoms)
     if method == "catalog":
-        _, m, _ = studio.read(args["map"])
-        return {"paths": studio.catalog(m, args.get("query", ""), args.get("layer"))[:500]}
+        _, m, revision = studio.read(args["map"])
+        paths = studio.catalog_for_revision(m, revision)
+        layer, query = args.get("layer"), args.get("query", "").lower()
+        if layer:
+            if layer not in LAYERS:
+                raise ValueError("Unknown layer.")
+            paths = [path for path in paths if kind(path) == layer]
+        if query:
+            paths = [path for path in paths if query in path.lower()]
+        return {"paths": sorted(paths)[:500]}
     if method == "check":
         return studio.check_systems(args["map"], args["rect"])
     if method == "network_component":
