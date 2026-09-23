@@ -51,11 +51,11 @@
 	var/datum/gas_mixture/restore = dq_h3_oxygenate(test_floor())
 	var/obj/item/paper/paper = allocate(/obj/item/paper, test_floor())
 	var/ignition = PROPERTY(paper, PROP_IGNITION_POINT)
+	// dq_rule_test_write() flushes deterministically itself now (test_write()
+	// in dynamic_state.dm / dq_rx_node_write() in reactor_adapter.dm).
 	dq_rule_test_write(paper, PROP_TEMPERATURE, ignition - 1)
-	dq_rx_flush()
 	TEST_ASSERT(!(paper.resistance_flags & ON_FIRE), "a kelvin below its ignition point it does not burn")
 	dq_rule_test_write(paper, PROP_TEMPERATURE, ignition + 1)
-	dq_rx_flush()
 	TEST_ASSERT(paper.resistance_flags & ON_FIRE, "a kelvin above it, the ignition rule lights it")
 
 	// Heated at rest past its ignition point (its surroundings got hot while
@@ -81,10 +81,8 @@
 	var/melting = PROPERTY(bottle, PROP_MELTING_POINT)
 	TEST_ASSERT(melting > T20C, "the bottle's melting point comes from its plastic")
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, melting - 1)
-	dq_rx_flush()
 	TEST_ASSERT(!QDELETED(bottle), "a kelvin below its melting point it keeps its shape")
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, melting + 1)
-	dq_rx_flush()
 	TEST_ASSERT(QDELETED(bottle), "a kelvin above, it melts")
 	for(var/obj/effect/decal/cleanable/molten_item/goo in T)
 		qdel(goo)
@@ -113,7 +111,6 @@
 	hot.process(1)
 	TEST_ASSERT(window.get_integrity() < before, "and takes thermal damage through the pipeline")
 	dq_rule_test_write(window, PROP_TEMPERATURE, limit - 50)
-	dq_rx_flush()
 	TEST_ASSERT_NULL(window.GetComponent(/datum/component/overheating), "cooled below it, the stream stops")
 
 // ---- Reagents ----

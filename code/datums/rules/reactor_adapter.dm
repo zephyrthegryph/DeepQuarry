@@ -101,6 +101,19 @@
 /// at `value`, isolated from its surroundings so the value holds.
 /proc/dq_rx_node_write(node, ch, value)
 	dq_rx_nodes().set_value(node, value)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+	// Deterministic flush (doc/testing.md flaky notes): every current caller
+	// of dq_rx_node_write() is test code (property_provider/domain/test_write()
+	// and direct calls like dq_rule_hold_and_band), and a write alone doesn't
+	// run a heat frame or step SSreactor -- an assertion right after it was
+	// racing the Master controller's own schedule, which is exactly the
+	// "did not subscribe" / hold-and-band class of flake. Flushing here once
+	// means callers don't each need their own dq_rx_flush(). Guarded because
+	// dq_rx_flush() (code/modules/unit_tests/) only exists in a test/lint
+	// build, and because it runs a blocking unit-tests-only Rust debug proc
+	// that must never fire from real "DM authority" use in production.
+	dq_rx_flush()
+#endif
 
 /proc/dq_rx_node_read(node, ch)
 	return dq_rx_nodes().value_of(node)

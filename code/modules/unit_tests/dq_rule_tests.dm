@@ -203,8 +203,10 @@
 		if(!dq_rule_test_write(thing, trigger.property, quiet))
 			break
 		guard++
-	dq_rx_flush()
-	dq_rx_flush()
+	// dq_rule_test_write() flushes deterministically itself now (was two
+	// manual dq_rx_flush() calls here, a defensive workaround for the write
+	// not always being observed by the time this checked -- the actual root
+	// cause of "did not subscribe", now fixed at the write site instead).
 	// Heat-only rules subscribe when the object first gets a heat body.
 	if(!dq_rule_binding_of(thing))
 		TEST_FAIL("[label]: did not subscribe (diag del=[QDELETED(thing)] mat=[thing.flags & ATOM_MATERIALIZED] body=[thing.heat_body] t=[thing.get_temperature()] fired=[dq_rule_fire_count(thing, rule)])")
@@ -228,8 +230,8 @@
 		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag ? jointext(diag.holding, ",") : "-"] key=[diag?.key_id] kinds=[diag ? jointext(diag.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
 		return FALSE
 	if(!QDELETED(thing))
+		// dq_rule_test_write() flushes deterministically itself now.
 		dq_rule_test_write(thing, trigger.property, further)
-		dq_rx_flush()
 		if(dq_rule_fire_count(thing, rule) != 1)
 			TEST_FAIL("[label]: fired again at [further]")
 			return FALSE
@@ -300,7 +302,7 @@
 
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 450)
 	TEST_ASSERT(dq_rx_node_live(handle), "a hot node is a heat body: its watch is a heat-domain Threshold watch")
-	dq_rx_flush()
+	// dq_rx_node_write() flushes deterministically itself now (reactor_adapter.dm).
 	dq_rx_test_advance(0.8 SECONDS)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(item, hold), 0, "under a second above is not enough")
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, 300)
@@ -320,10 +322,8 @@
 	var/datum/rule_binding/band_binding = new(banded, list(band))
 	var/band_handle = band_binding.nodes[PROP_TEMPERATURE]
 	dq_rx_node_write(band_handle, DQ_RX_CH_TEMPERATURE, 280)
-	dq_rx_flush()
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(banded, band), 0, "below the band")
 	dq_rx_node_write(band_handle, DQ_RX_CH_TEMPERATURE, 320)
-	dq_rx_flush()
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(banded, band), 1, "entering the band fires")
 	TEST_ASSERT_EQUAL(banded.w_class, ITEMSIZE_TINY, "band transform applied")
 	GLOB.dq_rule_recording = FALSE
@@ -377,10 +377,8 @@
 	TEST_ASSERT_EQUAL(PROPERTY(bottle, PROP_MELTING_POINT), plastic.melting_point, "the bottle's melting point is its plastic's, through PROPERTY()")
 	var/obj/item/dq_rule_test/inside = new(bottle)
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point - 10)
-	dq_rx_flush()
 	TEST_ASSERT(!QDELETED(bottle), "below the melting point it keeps its shape")
 	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point + 10)
-	dq_rx_flush()
 	TEST_ASSERT(QDELETED(bottle), "at the melting point it is replaced")
 	TEST_ASSERT(locate(/obj/effect/decal/cleanable/molten_item) in T, "by a molten mass")
 	TEST_ASSERT_EQUAL(inside.loc, T, "and what was inside drops out")

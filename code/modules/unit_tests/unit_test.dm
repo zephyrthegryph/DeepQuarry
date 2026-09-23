@@ -62,33 +62,63 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	// while we're still loading the first copy doesn't start a second build.
 	GLOB.unit_test_block_pool_ready = TRUE
 
+	// load_new_z() -> initTemplateBounds() is a deliberate no-op while
+	// SSatoms.initialized is still FALSE (code/modules/maps/map_template.dm):
+	// during the main boot's own atom-init pass it assumes that pass will
+	// pick up anything newly loaded, instead of double-initializing. The
+	// unit-test suite can start running its first test (which builds this
+	// pool from New()) before SSatoms actually finishes that pass, so
+	// initTemplateBounds() silently skips calling SSatoms.InitializeAtoms()
+	// on every copy's atoms -- landmarks (and everything else) never run
+	// Initialize() and are never found below. This raced: it depended on
+	// how far the main boot sweep had gotten by the time we checked, which
+	// varies with machine load. Wait for real SSatoms completion first so
+	// initTemplateBounds() always takes its normal, synchronous path.
+	while(!SSatoms.initialized)
+		sleep(1)
+
 	for(var/i in 1 to UNIT_TEST_BLOCK_POOL_SIZE)
-		var/datum/map_template/unit_tests/template = new
-		var/new_z = template.load_new_z()
-		if(!new_z)
-			log_world("ensure_unit_test_block_pool: template failed to load copy #[i], the unit test block pool will be smaller than requested.")
-			continue
+		var/datum/unit_test_block/block
+		// load_new_z()'s underlying map load (parsed_map/build_coordinate)
+		// intermittently places nothing at all -- every turf on the new z
+		// comes back a bare /turf/space with empty contents, no error
+		// surfaced to us, no landmark to find. Confirmed by dumping the new
+		// z's contents when this happens; not yet root-caused (a map-loader
+		// or GLOB.cached_maps-reuse issue under this specific "allocate a
+		// brand new z, back to back, several times" pattern -- load_new_z()
+		// is also SSexpedition's z-allocation path, so this may not be
+		// unique to tests). Retry a few fresh attempts per slot rather than
+		// let one bad load silently shrink the pool.
+		for(var/attempt in 1 to 3)
+			var/datum/map_template/unit_tests/template = new
+			var/new_z = template.load_new_z()
+			if(!new_z)
+				continue
+			var/datum/unit_test_block/candidate = new
+			candidate.z = new_z
+			// Don't rely on GLOB.landmarks_list: atom Initialize() for a
+			// freshly loaded z can be queued rather than run synchronously
+			// inside load_new_z(), so the landmark may not be registered
+			// into that list yet. The atom instance itself is already in
+			// its turf's contents the moment load_map() places it, so
+			// locate it there directly. load_new_z() always places the
+			// template at (1,1) on its new z (centered = FALSE).
+			for(var/tx in 1 to template.width)
+				for(var/ty in 1 to template.height)
+					var/turf/T = locate(tx, ty, new_z)
+					if(!T)
+						continue
+					if(!candidate.bottom_left && locate(/obj/effect/landmark/unit_test_bottom_left) in T)
+						candidate.bottom_left = T
+					if(!candidate.top_right && locate(/obj/effect/landmark/unit_test_top_right) in T)
+						candidate.top_right = T
+			if(candidate.bottom_left && candidate.top_right)
+				block = candidate
+				break
+			log_world("ensure_unit_test_block_pool: copy #[i] attempt [attempt] on z[new_z] loaded no content (empty space, not a map-loader error) -- retrying on a fresh z.")
 
-		var/datum/unit_test_block/block = new
-		block.z = new_z
-		// Don't rely on GLOB.landmarks_list: atom Initialize() for a freshly
-		// loaded z can be queued rather than run synchronously inside
-		// load_new_z(), so the landmark may not be registered into that list
-		// yet. The atom instance itself is already in its turf's contents the
-		// moment load_map() places it, so locate it there directly. load_new_z()
-		// always places the template at (1,1) on its new z (centered = FALSE).
-		for(var/tx in 1 to template.width)
-			for(var/ty in 1 to template.height)
-				var/turf/T = locate(tx, ty, new_z)
-				if(!T)
-					continue
-				if(!block.bottom_left && locate(/obj/effect/landmark/unit_test_bottom_left) in T)
-					block.bottom_left = T
-				if(!block.top_right && locate(/obj/effect/landmark/unit_test_top_right) in T)
-					block.top_right = T
-
-		if(!block.bottom_left || !block.top_right)
-			log_world("ensure_unit_test_block_pool: copy #[i] on z[new_z] is missing its corner landmarks, discarding it.")
+		if(!block)
+			log_world("ensure_unit_test_block_pool: copy #[i] failed 3 attempts, the unit test block pool will be smaller than requested.")
 			continue
 
 		GLOB.unit_test_block_pool += block
