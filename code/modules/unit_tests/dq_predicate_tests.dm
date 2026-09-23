@@ -69,6 +69,20 @@
 	unit = PROP_UNIT_KELVIN
 	test_only = TRUE
 
+/// A floor turf with four more open floor turfs east of it, for reach tests.
+/datum/unit_test/proc/dq_pred_open_row()
+	for(var/turf/simulated/floor/T in world)
+		var/turf/cur = T
+		var/ok = TRUE
+		for(var/i in 1 to 4)
+			cur = get_step(cur, EAST)
+			if(!istype(cur, /turf/simulated/floor) || cur.density)
+				ok = FALSE
+				break
+		if(ok)
+			return T
+	return null
+
 /datum/unit_test/proc/dq_pred(list/spec, label = "test")
 	var/datum/predicate/P = new
 	P.name = label
@@ -156,7 +170,9 @@
 	TEST_ASSERT_EQUAL(empty.why_not(actor, light, knife), "needs an empty hand", "empty-handed reason")
 
 	// Reach and self.
-	var/turf/start = get_turf(actor)
+	var/turf/start = dq_pred_open_row()
+	TEST_ASSERT(start, "found five open tiles in a row")
+	actor.forceMove(start)
 	var/obj/item/dq_pred_test/near = allocate(/obj/item/dq_pred_test, locate(start.x + 1, start.y, start.z))
 	var/obj/item/dq_pred_test/far = allocate(/obj/item/dq_pred_test, locate(start.x + 4, start.y, start.z))
 	var/datum/predicate/adjacent = dq_pred(list(REQ_REACH_ADJACENT))
@@ -236,7 +252,8 @@
 	// Declared predicates compile cleanly at boot.
 	for(var/error in dq_predicates_validate(dq_property_registry()))
 		TEST_FAIL(error)
-	TEST_ASSERT(PREDICATE(/datum/predicate/dq_test_weld_light).errors == null, "the fixture compiles")
+	var/datum/predicate/fixture = PREDICATE(/datum/predicate/dq_test_weld_light)
+	TEST_ASSERT(isnull(fixture.errors), "the fixture compiles")
 
 	// Kelvin against kilograms fails, and the predicate then always fails.
 	var/datum/predicate/bad = new /datum/predicate/dq_test_bad_units
@@ -310,7 +327,9 @@
 
 /datum/unit_test/dq_predicate_table/Run()
 	var/mob/living/dq_pred_test/actor = allocate(/mob/living/dq_pred_test)
-	var/turf/start = get_turf(actor)
+	var/turf/start = dq_pred_open_row()
+	TEST_ASSERT(start, "found five open tiles in a row")
+	actor.forceMove(start)
 	var/alist/items = alist(
 		"light" = allocate(/obj/item/dq_pred_test, locate(start.x + 1, start.y, start.z)),
 		"heavy" = allocate(/obj/item/dq_pred_test/heavy, locate(start.x + 1, start.y, start.z)),
