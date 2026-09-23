@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - balance: "Explosions now damage objects by their integrity instead of rolling dice to delete them: a devastating blast destroys, a heavy one takes half an object's integrity, a light one a quarter."
+  - balance: "Lockers shield their contents one step from a blast and spill them when destroyed; morgue trays, transit pods, scanners and APCs pass the blast to what they hold."
+  - code_imp: "Explosions hand out damage in budgeted batches grouped by object type; EMPs and ion rounds share one severity ladder."

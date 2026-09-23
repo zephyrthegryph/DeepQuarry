@@ -46,12 +46,12 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 		var/list/old_chance = fixture[path]
 		for(var/severity in 1 to 3)
 			var/obj/O = allocate(path, test_floor())
-			var/max = O.max_integrity
+			var/max_int = O.max_integrity
 			blast(list(O), severity)
 			var/destroyed = QDELETED(O) ? 1 : 0
 			TEST_ASSERT(abs(destroyed - old_chance[severity]) <= 0.5, "[path] at severity [severity]: destroyed=[destroyed], the old ladder destroyed it [old_chance[severity] * 100]% of the time")
 			if(!destroyed)
-				TEST_ASSERT(abs(O.get_integrity() - max * remaining[severity]) <= 1, "[path] at severity [severity] kept [O.get_integrity()]/[max] integrity, expected [max * remaining[severity]]")
+				TEST_ASSERT(abs(O.get_integrity() - max_int * remaining[severity]) <= 1, "[path] at severity [severity] kept [O.get_integrity()]/[max_int] integrity, expected [max_int * remaining[severity]]")
 			if(severity == 1)
 				TEST_ASSERT(destroyed, "[path] survived a devastating blast")
 
@@ -147,8 +147,10 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	if(!SSmachines.powernet_is_defered())
 		TEST_NOTICE(src, "powernet rebuilds can't be deferred before the round starts; skipped")
 		return
-	blast(list(cables[2], cables[3]), 1)
-	TEST_ASSERT(QDELETED(cables[2]) && QDELETED(cables[3]), "a devastating blast should cut the cables")
+	var/obj/structure/cable/cut_a = cables[2]
+	var/obj/structure/cable/cut_b = cables[3]
+	blast(list(cut_a, cut_b), 1)
+	TEST_ASSERT(QDELETED(cut_a) && QDELETED(cut_b), "a devastating blast should cut the cables")
 	TEST_ASSERT(!network.topology_pending, "cables cut inside an explosion must not start a topology rebuild")
 	TEST_ASSERT_NULL(SSmachines.powernet_topology_jobs_by_net[network], "no topology job until the explosion commits")
 	var/noted = 0
