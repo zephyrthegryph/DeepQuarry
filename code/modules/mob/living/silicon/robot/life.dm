@@ -168,7 +168,7 @@
 	if(A?.flag_check(AREA_NO_SPOILERS))
 		self.disable_spoiler_vision()
 
-	if (self.stat == DEAD || (XRAY in self.mutations) || (self.sight_mode & BORGXRAY))
+	if (self.stat == DEAD || (self.has_mutation(XRAY)) || (self.sight_mode & BORGXRAY))
 		self.sight |= SEE_TURFS
 		self.sight |= SEE_MOBS
 		self.sight |= SEE_OBJS

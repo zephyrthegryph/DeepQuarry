@@ -138,8 +138,10 @@
 	var/custom_exclaim = null
 	var/custom_whisper = null
 //custom temperature discomfort vars
-	var/list/custom_heat = list()
-	var/list/custom_cold = list()
+	/// Lazy list (null when empty) of custom heat-discomfort messages. Null-safe reads only.
+	var/list/custom_heat
+	/// Lazy list (null when empty) of custom cold-discomfort messages. Null-safe reads only.
+	var/list/custom_cold
 
 //YW Add Start
 /mob

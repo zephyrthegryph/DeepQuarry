@@ -64,9 +64,9 @@ This saves us from having to call add_fingerprint() any time something is put in
 	..()
 	if(slot_id in GLOB.slot_ids_worn_clothing)
 		if(inserted)
-			worn_clothing |= thing
+			LAZYDISTINCTADD(worn_clothing, thing)
 		else
-			worn_clothing -= thing
+			LAZYREMOVE(worn_clothing, thing)
 	var/obj/item/I = thing
 	switch(slot_id)
 		if(SLOT_ID_HEAD)

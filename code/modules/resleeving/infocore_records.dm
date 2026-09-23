@@ -364,7 +364,7 @@
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
 		if(gene.name in H.active_genes)
 			gene.deactivate(H)
-			H.active_genes -= gene.name
+			LAZYREMOVE(H.active_genes, gene.name)
 
 	internal_producebody_updatednastate(H,FALSE)
 	internal_producebody_misc(H)

@@ -234,10 +234,10 @@
 	complication_amount = 15
 
 /datum/surgical_step/dehusk/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	return (HUSK in target.mutations)
+	return (target.has_mutation(HUSK))
 
 /datum/surgical_step/dehusk/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
-	target.mutations.Remove(HUSK)
+	target.remove_mutation(HUSK)
 	target.status_flags &= ~DISFIGURED
 	target.update_icons_body()
 	log_game("SURGERY: [key_name(user)] dehusked [key_name(target)]")

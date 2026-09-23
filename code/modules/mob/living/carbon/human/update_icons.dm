@@ -181,10 +181,10 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	var/husk_color_mod = rgb(96,88,80)
 	var/hulk_color_mod = rgb(48,224,40)
 
-	var/husk = (HUSK in src.mutations)
-	var/fat = (FAT in src.mutations)
-	var/hulk = (HULK in src.mutations)
-	var/skeleton = (SKELETON in src.mutations)
+	var/husk = (src.has_mutation(HUSK))
+	var/fat = (src.has_mutation(FAT))
+	var/hulk = (src.has_mutation(HULK))
+	var/skeleton = (src.has_mutation(SKELETON))
 
 	robolimb_count = 0 //TODO, here, really tho?
 	robobody_count = 0
@@ -430,7 +430,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		for(var/category in all_underwear)
 			if(hide_underwear[category])
 				continue
-			var/datum/category_item/underwear/UWI = all_underwear[category]
+			var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, category)
 			var/image/wear = UWI.generate_image(all_underwear_metadata[category], layer = BODY_LAYER+UNDERWEAR_LAYER, digitigrade = digitigrade)
 			overlays_standing[UNDERWEAR_LAYER] += wear
 
@@ -583,7 +583,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	var/image/standing	= image(icon = 'icons/effects/genetics.dmi', layer = BODY_LAYER+MUTATIONS_LAYER)
 
-	for(var/mut in mutations)
+	for(var/mut in get_mutations())
 		if(mut == LASER_EYES)
 			standing.overlays += "lasereyes_s" // Leaving this as overlays +=
 

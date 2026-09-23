@@ -19,7 +19,7 @@
 
 			M.put_in_active_hand(G)
 
-			grabbed_by += G
+			LAZYADD(grabbed_by, G)
 			G.affecting = src
 			G.synch()
 
@@ -33,7 +33,7 @@
 		else
 			var/damage = rand(1, 9)
 			if (prob(90))
-				if (HULK in M.mutations)
+				if (M.has_mutation(HULK))
 					damage += 5
 					spawn(0)
 						Paralyse(1)

@@ -260,7 +260,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 
 	var/power = force * user.factor(BF_MELEE_DAMAGE)
 
-	if(HULK in user.mutations)
+	if(user.has_mutation(HULK))
 		power *= 2
 
 	power *= attack_modifier

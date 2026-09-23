@@ -567,14 +567,14 @@
 							if(can_change(owner, APPEARANCE_MISC)) // allows empty to wipe flavor
 								if(msg == "!clear")
 									msg = ""
-								owner.flavor_texts[select_key] = msg
+								LAZYSET(owner.flavor_texts, select_key, msg)
 								return TRUE
 						else
 							var/msg = strip_html_simple(tgui_input_text(ui.user,"Set the flavor text for their [select_key]. Put in \"!clear\" to make blank.","Flavor Text",html_decode(owner.flavor_texts[select_key]), multiline = TRUE, prevent_enter = TRUE))
 							if(can_change(owner, APPEARANCE_MISC)) // allows empty to wipe flavor
 								if(msg == "!clear")
 									msg = ""
-								owner.flavor_texts[select_key] = msg
+								LAZYSET(owner.flavor_texts, select_key, msg)
 								return TRUE
 		if("load_saveslot") //saveslot_load
 			if(can_change(owner, APPEARANCE_ALL_COSMETIC))
@@ -799,16 +799,16 @@
 	data["species_sounds_female"] = owner.species.species_sounds_female
 	data["species_sounds_male"] = owner.species.species_sounds_male
 	// flavor
-	if(!owner.flavor_texts.len)
-		owner.flavor_texts["general"] = ""
-		owner.flavor_texts["head"] = ""
-		owner.flavor_texts["face"] = ""
-		owner.flavor_texts["eyes"] = ""
-		owner.flavor_texts["torso"] = ""
-		owner.flavor_texts["arms"] = ""
-		owner.flavor_texts["hands"] = ""
-		owner.flavor_texts["legs"] = ""
-		owner.flavor_texts["feet"] = ""
+	if(!LAZYLEN(owner.flavor_texts))
+		LAZYSET(owner.flavor_texts, "general", "")
+		LAZYSET(owner.flavor_texts, "head", "")
+		LAZYSET(owner.flavor_texts, "face", "")
+		LAZYSET(owner.flavor_texts, "eyes", "")
+		LAZYSET(owner.flavor_texts, "torso", "")
+		LAZYSET(owner.flavor_texts, "arms", "")
+		LAZYSET(owner.flavor_texts, "hands", "")
+		LAZYSET(owner.flavor_texts, "legs", "")
+		LAZYSET(owner.flavor_texts, "feet", "")
 	data["flavor_text"] = owner.flavor_texts.Copy()
 
 	data["name"] = owner.name

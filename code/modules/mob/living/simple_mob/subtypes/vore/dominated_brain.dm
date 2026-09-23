@@ -149,7 +149,6 @@
 
 	languages -= temp_languages
 	LAZYCLEARLIST(src.temp_languages)
-	src.temp_languages = list()
 	for(var/mob/living/L in contents)
 		if(istype(L,/mob/living/dominated_brain))
 			if(L.ckey)
@@ -164,7 +163,7 @@
 		for(var/datum/language/L in langlist)
 			if(L.flags & HIVEMIND)
 				add_verb(src, /mob/proc/adjust_hive_range)
-		temp_languages |= langlist
+		LAZYOR(temp_languages, langlist)
 		languages |= langlist
 
 //Welcome to the adapted borer code.
