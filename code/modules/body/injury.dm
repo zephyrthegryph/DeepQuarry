@@ -12,7 +12,6 @@
 		INJURY_CATEGORY_THERMAL,   // corrosive
 		INJURY_CATEGORY_THERMAL,   // electric
 		INJURY_CATEGORY_TOXIC,     // toxin
-		INJURY_CATEGORY_ASPHYXIA,  // asphyxia
 		INJURY_CATEGORY_GENETIC,   // radiation
 		INJURY_CATEGORY_GENETIC,   // cellular
 		INJURY_CATEGORY_NEURAL,    // neural
@@ -22,12 +21,12 @@
 	return categories[kind]
 
 /proc/injury_kind_name(kind)
-	var/static/list/names = list("blunt trauma", "laceration", "puncture", "burn", "frostbite", "chemical burn", "electrical burn", "poisoning", "asphyxiation", "radiation", "cellular damage", "neural damage", "pain", "digestion")
+	var/static/list/names = list("blunt trauma", "laceration", "puncture", "burn", "frostbite", "chemical burn", "electrical burn", "poisoning", "radiation", "cellular damage", "neural damage", "pain", "digestion")
 	return names[kind]
 
 /// Short name of an armour kind (INJURY_* or ARMOR_BLAST): "blunt", "blast".
 /proc/armor_kind_name(kind)
-	var/static/list/names = list("blunt", "cut", "pierce", "burn", "frostbite", "corrosive", "electric", "toxin", "asphyxia", "radiation", "cellular", "neural", "pain", "digestion", "blast")
+	var/static/list/names = list("blunt", "cut", "pierce", "burn", "frostbite", "corrosive", "electric", "toxin", "radiation", "cellular", "neural", "pain", "digestion", "blast")
 	return (kind >= 1 && kind <= ARMOR_KIND_COUNT) ? names[kind] : "unknown"
 
 /// Is `kind` located on a body part (vs systemic)?
@@ -118,7 +117,7 @@
 	if(!.)
 		return
 	BITSET(hud_updateflag, HEALTH_HUD)
-	if(!(flags & INJURE_SILENT) && injury_category(kind) != INJURY_CATEGORY_ASPHYXIA)
+	if(!(flags & INJURE_SILENT))
 		flash_weak_pain()
 	body.on_status_changed()
 	SEND_SIGNAL(src, COMSIG_LIVING_INJURED, kind, ., zone, source, flags)
@@ -175,7 +174,7 @@
 
 /// The key in a worn / natural `armor` list ("melee", "bullet", ...) that
 /// resists an armour kind (INJURY_* or ARMOR_BLAST), or null when no armour
-/// resists it (frostbite, asphyxia, cellular, neural, digestion).
+/// resists it (frostbite, cellular, neural, digestion).
 /proc/injury_armor_key(kind)
 	switch(kind)
 		if(INJURY_BLUNT, INJURY_CUT)

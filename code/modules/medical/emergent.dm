@@ -329,9 +329,9 @@
 	return 0
 
 
-/// Ischemic damage: sustained tissue hypoxia damages organs beyond just
-/// the brain. /datum/affliction/tissue_hypoxia already kills the brain past
-/// DQ_HYPOXIA_BRAIN_DAMAGE severity; we extend that to liver / kidneys /
+/// Ischemic damage: a sustained oxygen debt damages organs beyond just
+/// the brain. The physiology already kills the brain past
+/// DQ_HYPOXIA_BRAIN_DAMAGE debt; we extend that to liver / kidneys /
 /// heart so prolonged shock causes the secondary-failure modes real
 /// medicine cares about (acute kidney injury, shock liver, cardiogenic
 /// shock from poor coronary perfusion).
@@ -343,14 +343,14 @@
 /mob/living/carbon/human/proc/dq_check_ischemic_damage()
 	if(stat == DEAD)
 		return
-	var/hypoxia = injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/hypoxia = oxygen_debt()
 	if(hypoxia < DQ_ISCHEMIA_HYPOXIA_THRESHOLD)
 		return
 	// Damage scales with how far past threshold we are: at threshold,
 	// minimum rate; at 2× threshold, maximum rate.
 	var/scale = clamp((hypoxia - DQ_ISCHEMIA_HYPOXIA_THRESHOLD) / DQ_ISCHEMIA_HYPOXIA_THRESHOLD, 0, 1)
 	// Per-tick damage to non-brain organs from sustained hypoxia. The brain
-	// still takes the heaviest hit (tissue_hypoxia/tick). These are lower. Rates reflect each organ's
+	// still takes the heaviest hit (the physiology's debt consequences). These are lower. Rates reflect each organ's
 	// real-medicine ischemic sensitivity:
 	//   kidneys > liver > eyes > heart > lungs
 	for(var/tag in list(O_LIVER, O_KIDNEYS, O_HEART, O_EYES, O_LUNGS))

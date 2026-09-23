@@ -1,49 +1,40 @@
 // Vital systems — Airway, Breathing, Circulation — as afflictions.
 //
-// The ABCs of resuscitation, each a root-cause affliction with a mechanical
-// consequence the body actually feels (no health pools):
+// The ABCs of resuscitation, each a root-cause affliction whose consequence is
+// a body factor the physiology (code/modules/body/physiology.dm) reads. None of
+// them harms the patient directly: the physiology turns lost ventilation or
+// perfusion into oxygen debt, and the debt into hypoxia and brain lesions.
 //
 //   Airway      airway_obstruction  choking / aspirated vomit / facial trauma
 //               airway_edema        allergy / inhalation burns
-//               A blocked airway means NO gas exchange: breathe() takes no
-//               breath (/mob/living/carbon/proc/breath_blocked()).
-//               Cure: TREAT_AIRWAY (Heimlich, airway kit), TREAT_VASOPRESSOR
-//               (adrenaline / inaprovaline) for swelling.
+//               BF_AIRWAY falls with severity and closes (0) at the complete
+//               threshold. Cure: TREAT_AIRWAY (Heimlich, airway kit),
+//               TREAT_VASOPRESSOR (adrenaline / inaprovaline) for swelling.
 //
 //   Breathing   respiratory_arrest  opioid OD, brain herniation, deep hypoxia:
-//                                   no spontaneous breathing while apneic.
-//                                   TREAT_VENTILATION (bag-valve mask, CPR
-//                                   rescue breaths) breathes FOR the patient.
+//                                   BF_RESP_DRIVE 0 while apneic. A bag-valve
+//                                   mask or rescue breaths add a drive SUPPORT,
+//                                   which can't push past a closed airway.
 //               pneumothorax        air trapped in the chest (chest pierce, a
-//                                   perforated lung). Tension past severity 60.
-//                                   TREAT_DECOMPRESSION (needle, chest tube)
-//                                   vents it; a leaking lung perforation
-//                                   re-fills it until surgery closes the hole.
+//                                   perforated lung): BF_LUNG_MECHANICS, and in
+//                                   tension BF_PUMP too. TREAT_DECOMPRESSION
+//                                   (needle, chest tube) vents it; a leaking lung
+//                                   perforation re-fills it until surgery.
 //
 //   Circulation cardiac_arrhythmia  rhythm state machine:
 //                                   sinus (settling) / tachy (perfusing, unstable)
 //                                   / VF (no output, shockable) / asystole
-//                                   (no output, NOT shockable).
-//               No output -> unconscious, tissue hypoxia and anoxic brain
-//               lesions every tick. TREAT_CHEST_COMPRESSION (CPR) gives partial
-//               perfusion. TREAT_DEFIBRILLATION converts VF / tachy only.
-//               TREAT_VASOPRESSOR coaxes asystole back toward VF.
+//                                   (no output, NOT shockable). The rhythm's
+//                                   stage sets BF_PUMP. CPR adds a BF_PUMP
+//                                   support; TREAT_DEFIBRILLATION converts VF /
+//                                   tachy only; TREAT_VASOPRESSOR coaxes asystole
+//                                   back toward VF.
 //
 // Diagnosis is by symptom (singletons below, all SCANNER-visible) plus the
 // rhythm readout on the health analyser and vitals monitor
 // (cardiac_rhythm_reading()).
 
 // --- Tuning ------------------------------------------------------------------------
-/// Compressions count as ongoing for this long after the last cycle.
-#define CPR_COMPRESSION_WINDOW (7 SECONDS)
-/// Longest a single ventilation source can pre-load.
-#define VENTILATION_MAX_WINDOW (30 SECONDS)
-/// Fraction of arrest injury that still lands while CPR is ongoing.
-#define ARREST_CPR_FACTOR 0.35
-/// INJURY_ASPHYXIA per tick with no cardiac output.
-#define ARREST_HYPOXIA_PER_TICK 2
-/// Anoxic brain lesion damage per tick with no cardiac output.
-#define ARREST_BRAIN_ISCHEMIA_PER_TICK 0.8
 /// % per tick an untreated VF degenerates to asystole.
 #define ARREST_VF_DECAY_CHANCE 2
 /// % per tick, per vasopressor level, that asystole coarsens into VF.
@@ -76,6 +67,18 @@
 /datum/affliction/airway/proc/blocks_airway()
 	return severity >= complete_threshold
 
+/// Fraction of the airway still open: narrows to half just short of the
+/// complete threshold, then closes.
+/datum/affliction/airway/proc/patency()
+	if(blocks_airway())
+		return 0
+	return 1 - 0.5 * severity / complete_threshold
+
+/// The airway's patency is a factor the physiology reads.
+/datum/affliction/airway/accumulate_factors(list/acc)
+	acc = ..()
+	return body_factor_accumulate(acc, alist(BF_AIRWAY = patency()), 1)
+
 /// Something lodged in the airway: food, vomit, blood, a broken jaw.
 /datum/affliction/airway_obstruction
 	parent_type = /datum/affliction/airway
@@ -93,7 +96,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH, BF_HEART_RATE = 15, BF_O2_SAT = -10)
+	factors = alist(BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH, BF_HEART_RATE = 15)
 	spontaneous_emotes = list("cough", "gasp")
 	spontaneous_emote_prob = 8
 
@@ -116,7 +119,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_HEART_RATE = 20, BF_BP_SYSTOLIC = -15, BF_O2_SAT = -8)
+	factors = alist(BF_HEART_RATE = 20, BF_BP_SYSTOLIC = -15)
 	spontaneous_emotes = list("cough", "gasp")
 	spontaneous_emote_prob = 5
 
@@ -124,7 +127,7 @@
 
 /// The patient has stopped breathing on their own.
 /datum/affliction/respiratory_arrest
-	factors = alist(BF_HEART_RATE = 10, BF_O2_SAT = -10)
+	factors = alist(BF_HEART_RATE = 10)
 	name = "respiratory arrest"
 	category = "Respiratory"
 	clinical_description = "The drive to breathe has failed — an opioid overdose, brain herniation or profound hypoxia. The heart may still beat, but no breaths are taken. Someone must breathe for the patient: a bag-valve mask, or rescue breaths during CPR. The drive returns once its cause is treated."
@@ -132,9 +135,9 @@
 	body_plans = BODY_PLAN_HUMANOID
 	// The drive recovers on its own once nothing is suppressing it.
 	progression_rate = -1
-	// Ventilation doesn't cure: it breathes for the patient (see
-	// receive_tagged_treatment). Respiratory stimulants hasten recovery.
-	treated_by = list(TREAT_VENTILATION = 1.0, TREAT_STIMULANT = 0.4)
+	// Ventilation doesn't cure: a bag-valve mask or rescue breaths support the
+	// drive (a body support). Respiratory stimulants hasten recovery.
+	treated_by = list(TREAT_STIMULANT = 0.4)
 	symptom_pool = list(
 		/datum/affliction_symptom/absent_breath_sounds = 100,
 		/datum/affliction_symptom/cyanosis             = 70,
@@ -142,8 +145,6 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	/// world.time until which someone is breathing for the patient.
-	var/ventilated_until = 0
 
 /datum/affliction/respiratory_arrest/on_added()
 	. = ..()
@@ -154,8 +155,10 @@
 /datum/affliction/respiratory_arrest/proc/is_apneic()
 	return severity >= RESP_ARREST_APNEA_THRESHOLD
 
-/datum/affliction/respiratory_arrest/proc/is_ventilated()
-	return world.time < ventilated_until
+/// The drive to breathe is a factor the physiology reads: none while apneic.
+/datum/affliction/respiratory_arrest/accumulate_factors(list/acc)
+	acc = ..()
+	return body_factor_accumulate(acc, alist(BF_RESP_DRIVE = (is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL)), 1)
 
 /// Is something still suppressing the drive to breathe?
 /datum/affliction/respiratory_arrest/proc/is_sustained()
@@ -173,13 +176,6 @@
 	progression_rate = is_sustained() ? 0 : initial(progression_rate)
 	..()
 
-/// TREAT_VENTILATION: `amount` seconds of breaths delivered for the patient.
-/datum/affliction/respiratory_arrest/receive_tagged_treatment(tag, amount, continuous = FALSE)
-	if(tag == TREAT_VENTILATION)
-		ventilated_until = min(max(ventilated_until, world.time) + amount * (1 SECONDS), world.time + VENTILATION_MAX_WINDOW)
-		return 0
-	return ..()
-
 
 /// Air trapped in the pleural space, collapsing the lung.
 /datum/affliction/pneumothorax
@@ -189,7 +185,7 @@
 	biology = BIOLOGY_ORGANIC
 	body_plans = BODY_PLAN_HUMANOID
 	progression_rate = 1.0
-	treated_by = list(TREAT_DECOMPRESSION = 1.0, TREAT_OXYGENATION = 0.3)
+	treated_by = list(TREAT_DECOMPRESSION = 1.0, TREAT_OCCLUSIVE_SEAL = 0.6, TREAT_OXYGENATION = 0.3)
 	symptom_pool = list(
 		/datum/affliction_symptom/diminished_breath_sounds = 100,
 		/datum/affliction_symptom/labored_breathing        = 80,
@@ -222,7 +218,7 @@
 			),
 			"min_symptoms" = 1,
 			"max_symptoms" = 3,
-			"factors" = alist(BF_SLOWDOWN = 0.5, BF_O2_SAT = -6, BF_RESP_RATE = 6),
+			"factors" = alist(BF_SLOWDOWN = 0.5, BF_LUNG_MECHANICS = 0.7, BF_RESP_RATE = 6),
 		),
 		"Tension" = list(
 			"name" = "tension pneumothorax",
@@ -235,7 +231,7 @@
 			),
 			"min_symptoms" = 2,
 			"max_symptoms" = 4,
-			"factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -20, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -25, BF_O2_SAT = -18, BF_RESP_RATE = 12),
+			"factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -20, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -25, BF_RESP_RATE = 12, BF_LUNG_MECHANICS = 0.25, BF_PUMP = 0.6),
 			"spontaneous_emotes" = list("gasp", "wince"),
 			"spontaneous_emote_prob" = 6,
 		),
@@ -262,10 +258,6 @@
 	else
 		progression_rate = decompressed ? -1.5 : initial(progression_rate)
 	..()
-	if(QDELETED(src) || !owner || severity < PNEUMOTHORAX_TENSION_THRESHOLD)
-		return
-	// Tension: gas exchange collapses on top of the lung damage.
-	owner.injure(INJURY_ASPHYXIA, 1.5, source = src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 /datum/affliction/pneumothorax/receive_tagged_treatment(tag, amount, continuous = FALSE)
 	if(tag == TREAT_DECOMPRESSION)
@@ -296,8 +288,6 @@
 	max_symptoms = 3
 	/// CARDIAC_RHYTHM_*.
 	var/rhythm = CARDIAC_RHYTHM_VF
-	/// world.time of the last CPR cycle.
-	var/last_compression = 0
 
 /datum/affliction/cardiac_arrhythmia/on_added()
 	. = ..()
@@ -328,7 +318,7 @@
 			"min_symptoms" = 2,
 			"max_symptoms" = 3,
 			"consciousness_at_max" = 0,
-			"factors" = alist(BF_HEART_RATE = 55, BF_BP_SYSTOLIC = -15),
+			"factors" = alist(BF_HEART_RATE = 55, BF_BP_SYSTOLIC = -15, BF_PUMP = 0.85),
 		),
 		"VF" = list(
 			"name" = "ventricular fibrillation",
@@ -341,6 +331,7 @@
 			"min_symptoms" = 2,
 			"max_symptoms" = 3,
 			"consciousness_at_max" = 200,
+			"factors" = alist(BF_PUMP = 0),
 		),
 		"Asystole" = list(
 			"name" = "asystole",
@@ -353,6 +344,7 @@
 			"min_symptoms" = 2,
 			"max_symptoms" = 3,
 			"consciousness_at_max" = 200,
+			"factors" = alist(BF_PUMP = 0),
 		),
 	)
 	return S
@@ -376,8 +368,9 @@
 /datum/affliction/cardiac_arrhythmia/proc/is_shockable()
 	return rhythm == CARDIAC_RHYTHM_VF || rhythm == CARDIAC_RHYTHM_TACHY
 
+/// Is someone doing chest compressions (a cardiac-output support)?
 /datum/affliction/cardiac_arrhythmia/proc/is_receiving_compressions()
-	return last_compression && world.time - last_compression <= CPR_COMPRESSION_WINDOW
+	return body?.is_supported(BF_PUMP)
 
 /// Move to `new_rhythm`, resetting its severity and progression.
 /datum/affliction/cardiac_arrhythmia/proc/set_rhythm(new_rhythm)
@@ -429,7 +422,6 @@
 		if(TREAT_DEFIBRILLATION)
 			return defibrillate() ? 1 : 0
 		if(TREAT_CHEST_COMPRESSION)
-			last_compression = world.time
 			try_vasopressor_conversion()
 			return 0
 	if(!is_perfusing())
@@ -447,20 +439,11 @@
 	if(rhythm == CARDIAC_RHYTHM_TACHY && severity >= AFFLICTION_SEVERITY_TERMINAL)
 		set_rhythm(CARDIAC_RHYTHM_VF)
 
-/// One tick without cardiac output: oxygen debt, a dying brain, and the rhythm
-/// drifting (VF fades to asystole; vasopressors coarsen asystole to VF).
+/// One tick without cardiac output: the rhythm drifts (VF fades to asystole,
+/// slower under CPR; vasopressors coarsen asystole to VF). The lost output
+/// itself is BF_PUMP 0, which the physiology turns into oxygen debt.
 /datum/affliction/cardiac_arrhythmia/proc/arrest_tick()
-	var/mob/living/carbon/human/H = owner
-	if(!istype(H))
-		return
 	var/compressed = is_receiving_compressions()
-	var/factor = compressed ? ARREST_CPR_FACTOR : 1
-	H.injure(INJURY_ASPHYXIA, ARREST_HYPOXIA_PER_TICK * factor, source = src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name?[O_BRAIN]
-	if(istype(B) && B.robotic < ORGAN_ROBOT)
-		H.injure(INJURY_BLUNT, ARREST_BRAIN_ISCHEMIA_PER_TICK * factor, B, src, affliction = /datum/affliction/lesion/ischemic_injury, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	if(QDELETED(src) || !body)
-		return
 	switch(rhythm)
 		if(CARDIAC_RHYTHM_VF)
 			if(prob(compressed ? ARREST_VF_DECAY_CHANCE / 2 : ARREST_VF_DECAY_CHANCE))
@@ -475,11 +458,11 @@
 /mob/living/carbon/proc/breath_blocked()
 	return FALSE
 
+/// No air moves: the physiology's ventilation (drive, supports, mechanics and
+/// airway together) is below the apnea threshold.
 /mob/living/carbon/human/breath_blocked()
-	if(airway_obstructed())
-		return TRUE
-	var/datum/affliction/respiratory_arrest/R = body?.find_affliction(/datum/affliction/respiratory_arrest)
-	return R && R.is_apneic() && !R.is_ventilated()
+	var/ventilation = body?.ventilation()
+	return !isnull(ventilation) && ventilation < PHYSIOLOGY_APNEA_VENTILATION
 
 /// Is the upper airway closed? (Blocks rescue breaths and bag-valve masks too.)
 /mob/living/carbon/human/proc/airway_obstructed()
@@ -666,11 +649,6 @@
 	clinical_description = "A flatline: no electrical activity. Not shockable."
 	scanner_phrase = "asystole (not shockable)"
 
-#undef CPR_COMPRESSION_WINDOW
-#undef VENTILATION_MAX_WINDOW
-#undef ARREST_CPR_FACTOR
-#undef ARREST_HYPOXIA_PER_TICK
-#undef ARREST_BRAIN_ISCHEMIA_PER_TICK
 #undef ARREST_VF_DECAY_CHANCE
 #undef ARREST_VASOPRESSOR_CONVERSION
 #undef RESP_ARREST_APNEA_THRESHOLD

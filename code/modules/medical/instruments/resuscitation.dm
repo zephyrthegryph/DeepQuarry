@@ -1,8 +1,9 @@
 // Resuscitation kit: the hand tools of the vital-systems afflictions
-// (code/modules/medical/conditions/vital_systems.dm). Each one delivers a
-// treatment mechanism through mend(), so the affliction decides what it does.
+// (code/modules/medical/conditions/vital_systems.dm). The mask is a physiology
+// support; the others deliver a treatment mechanism through mend(), so the
+// affliction decides what it does.
 //
-//   bag-valve mask       TREAT_VENTILATION   breathes for an apneic patient
+//   bag-valve mask       drive support       breathes for an apneic patient
 //   airway kit           TREAT_AIRWAY        clears an obstruction / holds a swollen airway open
 //   decompression needle TREAT_DECOMPRESSION vents a (tension) pneumothorax
 
@@ -32,12 +33,14 @@
 		to_chat(user, span_warning("The bag won't empty - air isn't getting into [H]'s lungs!"))
 	return ITEM_INTERACT_SUCCESS
 
-/// Deliver a cycle of breaths. FALSE if the airway is closed.
+/// Deliver a cycle of breaths: a floor under the breathing drive. It can't
+/// push past a closed airway (the airway factor still multiplies it), so the
+/// bag tells the rescuer when it won't empty.
 /obj/item/bag_valve_mask/proc/apply_ventilation(mob/living/carbon/human/H)
-	if(H.airway_obstructed())
+	if(!H.body)
 		return FALSE
-	H.mend(TREAT_VENTILATION, BVM_BREATH_SECONDS)
-	return TRUE
+	H.body.add_support(src, BF_RESP_DRIVE, SUPPORT_BVM_DRIVE, BVM_BREATH_SECONDS SECONDS)
+	return !H.airway_obstructed()
 
 // --- Airway kit ---------------------------------------------------------------------------
 

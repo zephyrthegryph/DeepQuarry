@@ -22,27 +22,24 @@
 	min_symptoms = 0
 	max_symptoms = 0
 
-// --- Tissue hypoxia (INJURY_ASPHYXIA) -------------------------------------------------
+// --- Tissue hypoxia (oxygen debt) ------------------------------------------------------
+// The body-side mirror of the physiology's oxygen debt
+// (code/modules/body/physiology.dm): its severity IS the debt (capped at 100),
+// set by the physiology every time the debt moves. It costs consciousness
+// (unconscious at 50); the physiology grows the brain lesions.
 /datum/affliction/tissue_hypoxia
-	injury_category = INJURY_CATEGORY_ASPHYXIA
 	restoration_rate = 1
-	// Unconscious at severity 50 (the old "oxyloss > maxHealth/2" rule).
 	consciousness_at_max = 200
 
-/// Anoxic brain injury: nothing below DQ_HYPOXIA_BRAIN_DAMAGE, ramping to
-/// DQ_HYPOXIA_BRAIN_RATE per tick at severity 100. Suffocation kills through
-/// the brain — organ death — not through a number running out.
-/datum/affliction/tissue_hypoxia/tick()
-	..()
-	if(QDELETED(src) || severity < DQ_HYPOXIA_BRAIN_DAMAGE || !ishuman(owner))
-		return
-	var/mob/living/carbon/human/H = owner
-	if(!H.should_have_organ(O_BRAIN))
-		return
-	var/rate = DQ_HYPOXIA_BRAIN_RATE * (severity - DQ_HYPOXIA_BRAIN_DAMAGE) / (AFFLICTION_SEVERITY_TERMINAL - DQ_HYPOXIA_BRAIN_DAMAGE)
-	if(H.factor(BF_STABILIZATION))
-		rate *= 0.5
-	H.injure(INJURY_NEURAL, rate, source = src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+/// Oxygenation pays the debt down; the physiology then re-syncs severity.
+/datum/affliction/tissue_hypoxia/receive_tagged_treatment(tag, amount, continuous = FALSE)
+	if(!body)
+		return 0
+	return body.pay_oxygen_debt(amount)
+
+/// Severity follows the debt, never its own drift.
+/datum/affliction/tissue_hypoxia/progress()
+	pending_treatment = 0
 
 // --- Toxic poisoning (INJURY_TOXIN) ----------------------------------------------------
 /datum/affliction/toxic_poisoning
