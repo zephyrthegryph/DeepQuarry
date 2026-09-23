@@ -230,19 +230,6 @@
 	if(!.)
 		return
 
-	if (self.syndicate)
-		for(var/datum/mind/tra in GLOB.traitors.current_antagonists)
-			if(tra.current)
-				// TODO: Update to new antagonist system.
-				var/I = image('icons/mob/mob.dmi', loc = tra.current, icon_state = "traitor")
-				self.client.images += I
-		self.disconnect_from_ai()
-		if(self.mind)
-			// TODO: Update to new antagonist system.
-			if(!self.mind.special_role)
-				self.mind.special_role = "traitor"
-				LAZYOR(GLOB.traitors.current_antagonists, self.mind)
-
 	self.update_cell()
 
 	var/turf/T = get_turf(self)

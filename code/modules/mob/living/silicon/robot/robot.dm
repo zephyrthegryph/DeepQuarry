@@ -1,4 +1,8 @@
 /mob/living/silicon/robot
+	/// Traitor HUD images shown to a syndicate borg's client (see build_traitor_hud()).
+	var/list/traitor_hud_images
+	/// The client those images were added to.
+	var/client/traitor_hud_client
 	name = JOB_CYBORG
 	real_name = JOB_CYBORG
 	icon = 'icons/mob/robots.dmi'
@@ -279,19 +283,28 @@
 /mob/living/silicon/robot/Destroy()
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
 		if(mind)
-			var/turf/T = get_turf(loc)//To hopefully prevent run time errors.
+			// The MMI lands on the borg's turf (get_turf() sees through any container). The
+			// mind only follows it there: it must never stay in an MMI inside this deleting mob.
+			var/turf/T = get_turf(src)
+			var/datum/component/mind_host/host = get_mind_host(mmi)
 			if(T)
 				mmi.forceMove(T)
-			var/datum/component/mind_host/host = get_mind_host(mmi)
-			if(host)
+			if(T && host)
 				var/mob/living/carbon/brain/view = host.receive_mind(mind, "cyborg [src] destroyed")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-			else if(!shell) // Shells don't have brainmbos in their MMIs.
-				to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
-				ghostize()
-			mmi = null
+				mmi = null
+			else
+				if(!T)
+					log_game("MIND: cyborg [key_name(src)] was destroyed with no location; its MMI is lost and the mind is ghosted without re-entry.")
+					QDEL_NULL(mmi)
+				else if(!shell) // Shells don't have brainmobs in their MMIs.
+					log_game("MIND: cyborg [key_name(src)] was destroyed but its MMI [mmi] has no mind host; ghosting.")
+					to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
+				mmi = null
+				ghostize(FALSE)
 		else
 			QDEL_NULL(mmi)
+	clear_traitor_hud()
 	disconnect_from_ai(TRUE)
 	if(killswitch)
 		deltimer(killswitch)
@@ -1817,6 +1830,9 @@
 	..()
 
 /mob/living/silicon/robot/vv_edit_var(var_name, var_value)
+	if(var_name == NAMEOF(src, syndicate))
+		set_syndicate(var_value)
+		return TRUE
 	switch(var_name)
 		if(NAMEOF(src, emagged))
 			robotact?.update_static_data_for_all_viewers()
@@ -1824,6 +1840,49 @@
 			robotact?.update_static_data_for_all_viewers()
 
 	. = ..()
+
+// --- Syndicate cyborgs --------------------------------------------------------------------
+// The traitor HUD images are made once, when the borg turns syndicate or logs in,
+// and removed on logout or when it stops being syndicate. Never per tick.
+
+/mob/living/silicon/robot/proc/set_syndicate(state)
+	state = !!state
+	if(syndicate == state)
+		return
+	syndicate = state
+	log_game("CYBORG: [key_name(src)] syndicate state set to [state].")
+	if(syndicate)
+		apply_syndicate_state()
+	else
+		clear_traitor_hud()
+
+/// Cut the AI link, mark the mind and show the traitor HUD.
+/mob/living/silicon/robot/proc/apply_syndicate_state()
+	disconnect_from_ai()
+	// TODO: Update to new antagonist system.
+	if(mind && !mind.special_role)
+		mind.special_role = "traitor"
+		LAZYOR(GLOB.traitors.current_antagonists, mind)
+	build_traitor_hud()
+
+/mob/living/silicon/robot/proc/build_traitor_hud()
+	clear_traitor_hud()
+	if(!client)
+		return
+	for(var/datum/mind/tra in GLOB.traitors.current_antagonists)
+		if(!tra.current)
+			continue
+		LAZYADD(traitor_hud_images, image('icons/mob/mob.dmi', loc = tra.current, icon_state = "traitor"))
+	if(!LAZYLEN(traitor_hud_images))
+		return
+	traitor_hud_client = client
+	client.images += traitor_hud_images
+
+/mob/living/silicon/robot/proc/clear_traitor_hud()
+	if(traitor_hud_client && LAZYLEN(traitor_hud_images))
+		traitor_hud_client.images -= traitor_hud_images
+	traitor_hud_client = null
+	traitor_hud_images = null
 
 /// This proc checks to see if a borg has access to whatever they're interacting with
 /obj/proc/siliconaccess(mob/user)
