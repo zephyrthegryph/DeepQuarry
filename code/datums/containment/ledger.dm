@@ -227,8 +227,6 @@
 	for(var/atom/movable/thing as anything in entries.Copy())
 		if(thing.loc != holder)
 			note_exit(thing)
-	if(holder.datum_flags & DF_PRE_DESTROYING)
-		return // J1: being torn down -- don't re-adopt into a pre-destroying holder
 	for(var/atom/movable/thing as anything in holder.contents)
 		if(!entries[thing])
 			note_enter(thing)

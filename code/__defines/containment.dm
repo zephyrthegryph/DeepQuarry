@@ -144,6 +144,6 @@
 /// Skip the removal refusal, the acceptance refusal and both pre signals.
 /// The commit bookkeeping (note_exit/note_enter, COMSIG_SLOT_*, on_slotted/
 /// on_unslotted) still runs. Used to spill or transfer a holder's contents
-/// while it is being destroyed (ledger_release_contents(), J1), where the
+/// while it is being destroyed (ledger_apply_drop_policies()), where the
 /// move must not be refusable.
 #define LEDGER_MOVE_FORCED (1<<0)

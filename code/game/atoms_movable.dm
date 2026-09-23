@@ -89,11 +89,9 @@
 	return ..()
 
 /atom/movable/Destroy()
-	// J1: contents already went where each slot's drop policy said, in the
-	// pre-destroy phase (pre_destroy() -> ledger_release_contents()), while
-	// this was still fully valid. Nothing decides that here any more.
-	if((ledger || dq_slot_defs_for(src)) && (length(contents) || has_latent()))
-		stack_trace("[type] still holds contents/latent entries entering Destroy() -- its pre-destroy phase should have released them")
+	// Contents go where each slot's drop policy says (containment ledger, C1).
+	if((length(contents) || has_latent()) && (ledger || dq_slot_defs_for(src)))
+		ledger_apply_drop_policies()
 	if(em_block)
 		cut_overlay(em_block)
 		UnregisterSignal(em_block, COMSIG_QDELETING)

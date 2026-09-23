@@ -64,8 +64,9 @@
 			I.forget(thing)
 
 /obj/machinery/smartfridge/Destroy()
-	// J1: the pre-destroy phase already spilled the stock and contents while
-	// this was still valid, before the item records go.
+	// Spill the stock before the records go. The base Destroy runs this again,
+	// by then with nothing left to do.
+	ledger_apply_drop_policies()
 	qdel(wires)
 	for(var/A in item_records)	//Get rid of item records.
 		qdel(A)

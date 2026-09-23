@@ -267,17 +267,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /// Sealed: the cabin is the pilot's environment (cabin_air, life support),
 /// same as before the ledger tracked the move.
-///
-/// J1 audit (doc/rewrite/containment.md §2.4): HOLDER, not the SLOT_DROP_SPILL
-/// default, because go_out() -- called at the top of /obj/mecha/Destroy(),
-/// itself already through slot_remove() -- does the real ejection (mob
-/// state cleanup, UI close, verbs, messages). A generic pre-destroy spill
-/// would eject the pilot before any of that runs. J3 may revisit this once
-/// go_out()'s own move becomes the pilot's whole drop policy.
 /datum/slot_def/occupant/mecha_pilot
 	id = MECHA_SLOT_PILOT
 	name = "pilot"
-	drop_policy = SLOT_DROP_HOLDER
 
 /// External: equipment is bolted to the hull's hardpoints, not inside it.
 /// Capacity stays with mecha_equipment.dm's per-category limits.

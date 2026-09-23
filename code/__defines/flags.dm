@@ -21,12 +21,6 @@ GLOBAL_LIST_INIT(bitflags, list(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 204
 #define DF_VAR_EDITED			(1<<0)
 #define DF_ISPROCESSING			(1<<1)
 #define DF_USE_TAG				(1<<2)
-/// Set for the duration of qdel()'s pre-destroy phase (J1, doc/rewrite/containment.md
-/// §2.4): pre_destroy() is running on this datum right now. The only
-/// instance-level bit the phase needs -- everything else it gates is a
-/// per-type cache on /datum/qdel_item. A qdel() call that sees this set is a
-/// re-entrant qdel(src) from inside the phase itself, and is ignored.
-#define DF_PRE_DESTROYING		(1<<3)
 
 // /atom/movable movement_type
 #define UNSTOPPABLE				(1<<0)			//Can not be stopped from moving from Cross(), CanPass(), or Uncross() failing. Still bumps everything it passes through, though.
