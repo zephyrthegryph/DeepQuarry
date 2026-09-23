@@ -133,6 +133,7 @@
 	B.name = "fuel processor"
 	B.desc = "Uttering distorted growls and fragmented voice clips all the while, the corrupted hound gulps the rest of your squirming figure past its jaws... which snap shut with an audible click of metal on metal. Your trip down its slickly lubricated, rubbery gullet is a tight and efficient one... and once you spill out into the machine's fuel processor, your weight making it sag slightly, hot-and-thick slime begins oozing all over your form. Only time will tell if you're destined to become fuel for its next bout of rampaging... be it days, hours, or just mere minutes..."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Abruptly, your corrupt captor takes off at an unsteady gallop, sloshing and swaying your snugly kneading surroundings as it pursues something unseen.",
 		"A distorted, potentially content-sounding growl rumbles in through the all-encompassing, soft rubber, drowned out by the occasional gllrsh.",
@@ -141,6 +142,7 @@
 		"Over time, the constant kneading and massaging the processor's synth-flesh gives you, along with its humid warmth, relaxes the strength right out of your muscles.",
 		"'MIn3 m1NE, Al1 MInE', the corrupted canine growls, over and over, as its synthetic stomach possessively clenches and grips at your ooze-coated figure, the stretchy walls hesitant to let go again.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Your rubbery surroundings suddenly pitch all about as the corrupted hound takes off at an uneven gallop, hunting future prey while processing its current intake of meat!",
 		"A muffled, garbled howl, a victorious and maddened sound, pierces through the thick, flexible walls that work incessantly to churn you down!",
@@ -155,6 +157,7 @@
 	B.name = "fuel processor"
 	B.desc = "The twice-corrupted hound takes a moment to lather over the rest of your figure in heated, slimy synth-slobber before gulping you the rest of the way down its lubricated, rubbery throat. After a short string of slick-sounding, autonomous swallows, you spill out into its awaiting processor, your body immediately making its synth-flesh sag down slightly... and, as an oddly distorted rumble vibrates into the chamber, so too does a slowly accumulating pool of hot, viscous ooze. Only time will tell if whatever extra programming the hound has will spare you from being processed..."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Suddenly, your corrupted captor yowls robotically before bounding off at an unsteady gallop, its repeated footfalls vigorously sloshing and swinging its hammock-like stomach.",
 		"A distorted growl breaks away into an oddly content-sounding purring, the sound rumbling inwards through your all-encompassing, soft rubber trappings.",
@@ -163,6 +166,7 @@
 		"With time, the hound's staticky rumbling, the constant inward kneading of its processor's synth-flesh, and the humid warmth filling the chamber all combine to relax the strength right out of you.",
 		"'SO s0FT, CUDD1E Me', the twice-corrupted hound growl-purrs, the soft rubber lining of its synthetic stomach snugly clenching to and vibrating over your oozed-up figure in a voracious cuddle of its own design.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Your rubbery confines suddenly toss and tumble you about, the twice-corrupted hound unevenly galloping off in search of more edible cuddle partners as its current one processes away!",
 		"A harsh, high-pitched attempt of a bark escapes your captor, a cheerily mad sound, as its thick, flexible stomach walls relentlessly churn you down!",
@@ -377,6 +381,7 @@
 	B.name = "fuel processor"
 	B.desc = "Uttering distorted growls and fragmented voice clips all the while, the corrupted hound gulps the rest of your squirming figure past its jaws... which snap shut with an audible click of metal on metal. Your trip down its slickly lubricated, rubbery gullet is a tight and efficient one... and once you spill out into the machine's fuel processor, your weight making it sag slightly, hot-and-thick slime begins oozing all over your form. Only time will tell if you're destined to become fuel for its next bout of rampaging... be it days, hours, or just mere minutes..."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Abruptly, your corrupt captor takes off at an unsteady gallop, sloshing and swaying your snugly kneading surroundings as it pursues something unseen.",
 		"A distorted, potentially content-sounding growl rumbles in through the all-encompassing, soft rubber, drowned out by the occasional gllrsh.",
@@ -385,6 +390,7 @@
 		"Over time, the constant kneading and massaging the processor's synth-flesh gives you, along with its humid warmth, relaxes the strength right out of your muscles.",
 		"'MIn3 m1NE, Al1 MInE', the corrupted canine growls, over and over, as its synthetic stomach possessively clenches and grips at your ooze-coated figure, the stretchy walls hesitant to let go again.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Your rubbery surroundings suddenly pitch all about as the corrupted hound takes off at an uneven gallop, hunting future prey while processing its current intake of meat!",
 		"A muffled, garbled howl, a victorious and maddened sound, pierces through the thick, flexible walls that work incessantly to churn you down!",

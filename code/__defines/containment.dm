@@ -5,6 +5,8 @@
 #define CONTAINER_SLOT_INTERIOR "interior"
 /// A folder's pages.
 #define CONTAINER_SLOT_PAGES "pages"
+/// The sealed interior of a vore belly (C7).
+#define BELLY_SLOT_INTERIOR "belly"
 
 // ---- Exposure (containment.md §3.1) ----
 /// Outside the holder's shell: held, worn outer layer, mounted. Sees the

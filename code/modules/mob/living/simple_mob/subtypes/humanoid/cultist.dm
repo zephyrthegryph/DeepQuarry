@@ -736,11 +736,13 @@
 	B.name = "stomach"
 	B.desc = " Through fire and smoke, you have been grappled and shoved head first into a gapping maw. Rippling powerful red flesh dragging deep into the mage's gullet, your frame causing their stomach is swell out against crimson robes. As you're forced to curl up in the stomach, the walls would ripple, flickers of orange dancing as they press and knead against your flesh. Laughter, and gutteral stomach noises would fill your ears as the cultist firmly kneads their hanging gutt, sloshing it  further about."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your useless struggling and squirming only causes the cultist to pause, firmly grasping their gut and shoving down on their belly.",
 		"As you lay within the gullet, you would be rocked about as the cultist jaunts around the physical and redspace realm.",
 		"The bloated organ around you groans and rumbles, the flesh rippling as a wave of heat washes over you.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Your useless struggling would seem to just cause pleasured rubblings and cackling. The taunt stomach jostling around even further, as if attempt to encourage your squirming further.",
 		"Your body would be ushered upwards, you glimpsing the outside world as it looked as if you're about to be released. The cultist then gulps down, sending you plummet back down into the gullet, their taunt belly jiggling as it's walls squish firmly against you..",
@@ -774,11 +776,13 @@
 	B.name = "stomach"
 	B.desc = " Through fire and smoke, you have been grappled and shoved head first into a gapping maw. Rippling powerful red flesh dragging deep into the mage's gullet, your frame causing their stomach is swell out against crimson robes. As you're forced to curl up in the stomach, the walls would ripple, and knead against your flesh. Laughter, and gutteral stomach noises would fill your ears as the cultist firmly kneads their hanging gut, sloshing it  further about before shoving you deeper into their system, descending deep within the serpent."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"As you're forced to lay down in the gullet, you can feel each swift and strong movement of their tail. the stomach walls forcing your body to shift alongside it.",
 		"As you shift around, the dark red flesh would ripple, air rushing past you as the beast lets out a thunderous belch.",
 		"As you shift about, the beast lifts their tail and slams it down, trying to encourage you to relax. Your their's.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Your squirming and thrasing only causes the serpent to curl their tail around your frame, squeeze down on it in sync with the muscles, pressing you further into the caustic acids.",
 		"Your body would swish and slosh in the burbling caustic acid as it nips at your armor and flesh.",
@@ -813,11 +817,13 @@
 	B.name = "stomach"
 	B.desc = "Taking advantage of your weakened state, the %pred makes their pounce! The world going dark as the ravenous Teshari forces your battered frame down their throat. It all coming to a stop as you're packed neatly into their steaming guts. Low and content chuckling barely audible over the rising cacophony of the stomach's activity."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your body is bounced and jostled as the %pred purses their next prey.  Unimpeded by your weight and eager for more.",
 		"The already oprrssive hold of the %belly restrains you with a heavy clench and squeeze from the hands outside. The %pred securing their catch.",
 		"You're given a heavy squeeze as the stale air is forced out from the %pred giving a crass belch.  Suspending you in a claustrophobic hold until the organ relaxes with more stale air filling the space.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The bubbling of the carnivorous, little predator's belly cuts off the sounds outside, the greedy walls working in and giving you a fresh coat of enzymes.",
 		"The %pred traces their claws over your form and sings an incantation, and you feel your strength wane as the walls work in with renewed vigor.",
@@ -851,11 +857,13 @@
 	B.name = "stomach"
 	B.desc = "Not too long after you hit the ground the caster makes their way to your fallen self.  The ground below you glows a deep red and you sink through the surface, only to find yourself folded tightly in a cramped, slick, and caustic chamber! The mage's chanting barely audible over the sounds of the stomach walls making their claim."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your body is bounced and jostled as the %pred purses their next prey.  Unimpeded by your weight and eager for more.",
 		"The already oprrssive hold of the %belly restrains you with a heavy clench and squeeze from the hands outside. The %pred securing their catch.",
 		"You're given a heavy squeeze as the stale air is forced out from the %pred giving a crass belch.  Suspending you in a claustrophobic hold until the organ relaxes with more stale air filling the space.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The bubbling of the carnivorous, little predator's belly cuts off the sounds outside, the greedy walls working in and giving you a fresh coat of enzymes.",
 		"The %pred traces their claws over your form and sings an incantation, and you feel your strength wane as the walls work in with renewed vigor.",

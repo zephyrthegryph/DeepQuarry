@@ -165,6 +165,7 @@
 	B.colorization_enabled = TRUE
 
 	// Yes, these are copied + modified from the solargrub list. These are better placeholders than ~nothing~, and will give us more voremobs to work with.
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The air trapped within the grub is hot, humid, and tinged with soot, but otherwise mercifully harmless to you aside from being heavy on the lungs.",
 		"Your doughy, squishy surroundings heavily pulse around your body as the grub attempts to wriggle elsewhere, its solid prey weighing it down quite a bit.",
@@ -173,6 +174,7 @@
 		"For a moment, the grub's stomach walls clench down even more firmly than before, working into your muscles, steadily relaxing them down.",
 		"The incredible heat trapped within the grub helps daze and disorient you, ensuring that its new filling wouldn't interfere in its mineral-hunting.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every breath taken inside the grub is swelteringly hot, painfully thick, and more than subtly caustic, worsening with every passing moment spent inside!",
 		"As the grub wriggles off somewhere quiet to digest its meal, the resulting undulations help crush you down into a more compact, easier to handle morsel!",

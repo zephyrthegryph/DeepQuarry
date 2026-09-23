@@ -1,178 +1,189 @@
 /obj/belly
-	// Don't forget to watch your commas at the end of each line if you change these.
-	var/list/struggle_messages_outside = list(
-		"%pred's %belly wobbles with a squirming meal.",
-		"%pred's %belly jostles with movement.",
-		"%pred's %belly briefly swells outward as someone pushes from inside.",
-		"%pred's %belly fidgets with a trapped victim.",
-		"%pred's %belly jiggles with motion from inside.",
-		"%pred's %belly sloshes around.",
-		"%pred's %belly gushes softly.",
-		"%pred's %belly lets out a wet squelch.")
-
-	var/list/struggle_messages_inside = list(
-		"Your useless squirming only causes %pred's slimy %belly to squelch over your body.",
-		"Your struggles only cause %pred's %belly to gush softly around you.",
-		"Your movement only causes %pred's %belly to slosh around you.",
-		"Your motion causes %pred's %belly to jiggle.",
-		"You fidget around inside of %pred's %belly.",
-		"You shove against the walls of %pred's %belly, making it briefly swell outward.",
-		"You jostle %pred's %belly with movement.",
-		"You squirm inside of %pred's %belly, making it wobble around.")
-
-	var/list/absorbed_struggle_messages_outside = list(
-		"%pred's %belly wobbles, seemingly on its own.",
-		"%pred's %belly jiggles without apparent cause.",
-		"%pred's %belly seems to shake for a second without an obvious reason.")
-
-	var/list/absorbed_struggle_messages_inside = list(
-		"You try and resist %pred's %belly, but only cause it to jiggle slightly.",
-		"Your fruitless mental struggles only shift %pred's %belly a tiny bit.",
-		"You can't make any progress freeing yourself from %pred's %belly.")
-
-	var/list/escape_attempt_messages_owner = list(
-		"%prey is attempting to free themselves from your %belly!")
-
-	var/list/escape_attempt_messages_prey = list(
-		"You start to climb out of %pred's %belly.")
-
-	var/list/escape_messages_owner = list(
-		"%prey climbs out of your %belly!")
-
-	var/list/escape_messages_prey = list(
-		"You climb out of %pred's %belly.")
-
-	var/list/escape_messages_outside = list(
-		"%prey climbs out of %pred's %belly!")
-
-	var/list/escape_item_messages_owner = list(
-		"%item suddenly slips out of your %belly!")
-
-	var/list/escape_item_messages_prey = list(
-		"Your struggles successfully cause %pred to squeeze your %item out of their %belly.")
-
-	var/list/escape_item_messages_outside = list(
-		"%item suddenly slips out of %pred's %belly!")
-
-	var/list/escape_fail_messages_owner = list(
-		"%prey's attempt to escape from your %belly has failed!")
-
-	var/list/escape_fail_messages_prey = list(
-		"Your attempt to escape %pred's %belly has failed!")
-
-	var/list/escape_attempt_absorbed_messages_owner = list(
-		"%prey is attempting to free themselves from your %belly!")
-
-	var/list/escape_attempt_absorbed_messages_prey = list(
-		"You try to force yourself out of %pred's %belly.")
-
-	var/list/escape_absorbed_messages_owner = list(
-		"%prey forces themselves free of your %belly!")
-
-	var/list/escape_absorbed_messages_prey = list(
-		"You manage to free yourself from %pred's %belly.")
-
-	var/list/escape_absorbed_messages_outside = list(
-		"%prey climbs out of %pred's %belly!")
-
-	var/list/escape_fail_absorbed_messages_owner = list(
-		"%prey's attempt to escape form your %belly has failed!")
-
-	var/list/escape_fail_absorbed_messages_prey = list(
-		"Before you manage to reach freedom, you feel yourself getting dragged back into %pred's %belly!")
-
-	var/list/primary_transfer_messages_owner = list(
-		"%prey slid into your %dest due to their struggling inside your %belly!")
-
-	var/list/primary_transfer_messages_prey = list(
-		"Your attempt to escape %pred's %belly has failed and your struggles only results in you sliding into %pred's %dest!")
-
-	var/list/secondary_transfer_messages_owner = list(
-		"%prey slid into your %dest due to their struggling inside your %belly!")
-
-	var/list/secondary_transfer_messages_prey = list(
-		"Your attempt to escape %pred's %belly has failed and your struggles only results in you sliding into %pred's %dest!")
-
-	var/list/primary_autotransfer_messages_owner = list(
-		"%prey moves along into your %dest!")
-
-	var/list/primary_autotransfer_messages_prey = list(
-		"%pred's %belly moves you along into their %dest!")
-
-	var/list/secondary_autotransfer_messages_owner = list(
-		"%prey moves along into your %dest!")
-
-	var/list/secondary_autotransfer_messages_prey = list(
-		"%pred's %belly moves you along into their %dest!")
-
-	var/list/digest_chance_messages_owner = list(
-		"You feel your %belly beginning to become active!")
-
-	var/list/digest_chance_messages_prey = list(
-		"In response to your struggling, %pred's %belly begins to get more active...")
-
-	var/list/absorb_chance_messages_owner = list(
-		"You feel your %belly start to cling onto its contents...")
-
-	var/list/absorb_chance_messages_prey = list(
-		"In response to your struggling, %pred's %belly begins to cling more tightly...")
-
+	// Message lists are shared per type or default and replaced, never edited in place,
+	// when a player customizes one (belly_shared_lists.dm). Defaults: belly_default_message_lists().
+	var/list/struggle_messages_outside
+	var/list/struggle_messages_inside
+	var/list/absorbed_struggle_messages_outside
+	var/list/absorbed_struggle_messages_inside
+	var/list/escape_attempt_messages_owner
+	var/list/escape_attempt_messages_prey
+	var/list/escape_messages_owner
+	var/list/escape_messages_prey
+	var/list/escape_messages_outside
+	var/list/escape_item_messages_owner
+	var/list/escape_item_messages_prey
+	var/list/escape_item_messages_outside
+	var/list/escape_fail_messages_owner
+	var/list/escape_fail_messages_prey
+	var/list/escape_attempt_absorbed_messages_owner
+	var/list/escape_attempt_absorbed_messages_prey
+	var/list/escape_absorbed_messages_owner
+	var/list/escape_absorbed_messages_prey
+	var/list/escape_absorbed_messages_outside
+	var/list/escape_fail_absorbed_messages_owner
+	var/list/escape_fail_absorbed_messages_prey
+	var/list/primary_transfer_messages_owner
+	var/list/primary_transfer_messages_prey
+	var/list/secondary_transfer_messages_owner
+	var/list/secondary_transfer_messages_prey
+	var/list/primary_autotransfer_messages_owner
+	var/list/primary_autotransfer_messages_prey
+	var/list/secondary_autotransfer_messages_owner
+	var/list/secondary_autotransfer_messages_prey
+	var/list/digest_chance_messages_owner
+	var/list/digest_chance_messages_prey
+	var/list/absorb_chance_messages_owner
+	var/list/absorb_chance_messages_prey
 	var/static/list/select_chance_messages_owner = list(
 		"You feel your %belly beginning to become active!")
 
 	var/static/list/select_chance_messages_prey = list(
 		"In response to your struggling, %pred's %belly begins to get more active...")
 
-	var/list/digest_messages_owner = list(
-		"You feel %prey's body succumb to your digestive system, which breaks it apart into soft slurry.",
-		"You hear a lewd glorp as your %belly muscles grind %prey into a warm pulp.",
-		"Your %belly lets out a rumble as it melts %prey into sludge.",
-		"You feel a soft gurgle as %prey's body loses form in your %belly. They're nothing but a soft mass of churning slop now.",
-		"Your %belly begins gushing %prey's remains through your system, adding some extra weight to your thighs.",
-		"Your %belly begins gushing %prey's remains through your system, adding some extra weight to your rump.",
-		"Your %belly begins gushing %prey's remains through your system, adding some extra weight to your belly.",
-		"Your %belly groans as %prey falls apart into a thick soup. You can feel their remains soon flowing deeper into your body to be absorbed.",
-		"Your %belly kneads on every fiber of %prey, softening them down into mush to fuel your next hunt.",
-		"Your %belly churns %prey down into a hot slush. You can feel the nutrients coursing through your digestive track with a series of long, wet glorps.")
+	var/list/digest_messages_owner
+	var/list/digest_messages_prey
+	var/list/absorb_messages_owner
+	var/list/absorb_messages_prey
+	var/list/unabsorb_messages_owner
+	var/list/unabsorb_messages_prey
+	var/list/examine_messages
+	var/list/examine_messages_absorbed
+	var/list/trash_eater_in
+	var/list/trash_eater_out
 
-	var/list/digest_messages_prey = list(
-		"Your body succumbs to %pred's digestive system, which breaks you apart into soft slurry.",
-		"%pred's %belly lets out a lewd glorp as their muscles grind you into a warm pulp.",
-		"%pred's %belly lets out a rumble as it melts you into sludge.",
-		"%pred feels a soft gurgle as your body loses form in their %belly. You're nothing but a soft mass of churning slop now.",
-		"%pred's %belly begins gushing your remains through their system, adding some extra weight to %pred's thighs.",
-		"%pred's %belly begins gushing your remains through their system, adding some extra weight to %pred's rump.",
-		"%pred's %belly begins gushing your remains through their system, adding some extra weight to %pred's belly.",
-		"%pred's %belly groans as you fall apart into a thick soup. Your remains soon flow deeper into %pred's body to be absorbed.",
-		"%pred's %belly kneads on every fiber of your body, softening you down into mush to fuel their next hunt.",
-		"%pred's %belly churns you down into a hot slush. Your nutrient-rich remains course through their digestive track with a series of long, wet glorps.")
 
-	var/list/absorb_messages_owner = list(
-		"You feel %prey becoming part of you.")
-
-	var/list/absorb_messages_prey = list(
-		"You feel yourself becoming part of %pred's %belly!")
-
-	var/list/unabsorb_messages_owner = list(
-		"You feel %prey reform into a recognizable state again.")
-
-	var/list/unabsorb_messages_prey = list(
-		"You are released from being part of %pred's %belly.")
-
-	var/list/examine_messages = list(
-		"They have something solid in their %belly!",
-		"It looks like they have something in their %belly!")
-
-	var/list/examine_messages_absorbed = list(
-		"Their body looks somewhat larger than usual around the area of their %belly.",
-		"Their %belly looks larger than usual.")
-
-	var/list/trash_eater_in = list(
-		"%pred demonstrates their voracious capabilities by swallowing %item whole!"
+/// The default message lists every /obj/belly shares until a player customizes one (C7).
+/// Keyed by var name. Never mutate these: a write replaces the belly's var with a new list.
+/proc/belly_default_message_lists()
+	var/static/list/defaults = list(
+		"struggle_messages_outside" = list(
+			"%pred's %belly wobbles with a squirming meal.",
+			"%pred's %belly jostles with movement.",
+			"%pred's %belly briefly swells outward as someone pushes from inside.",
+			"%pred's %belly fidgets with a trapped victim.",
+			"%pred's %belly jiggles with motion from inside.",
+			"%pred's %belly sloshes around.",
+			"%pred's %belly gushes softly.",
+			"%pred's %belly lets out a wet squelch."),
+		"struggle_messages_inside" = list(
+			"Your useless squirming only causes %pred's slimy %belly to squelch over your body.",
+			"Your struggles only cause %pred's %belly to gush softly around you.",
+			"Your movement only causes %pred's %belly to slosh around you.",
+			"Your motion causes %pred's %belly to jiggle.",
+			"You fidget around inside of %pred's %belly.",
+			"You shove against the walls of %pred's %belly, making it briefly swell outward.",
+			"You jostle %pred's %belly with movement.",
+			"You squirm inside of %pred's %belly, making it wobble around."),
+		"absorbed_struggle_messages_outside" = list(
+			"%pred's %belly wobbles, seemingly on its own.",
+			"%pred's %belly jiggles without apparent cause.",
+			"%pred's %belly seems to shake for a second without an obvious reason."),
+		"absorbed_struggle_messages_inside" = list(
+			"You try and resist %pred's %belly, but only cause it to jiggle slightly.",
+			"Your fruitless mental struggles only shift %pred's %belly a tiny bit.",
+			"You can't make any progress freeing yourself from %pred's %belly."),
+		"escape_attempt_messages_owner" = list(
+			"%prey is attempting to free themselves from your %belly!"),
+		"escape_attempt_messages_prey" = list(
+			"You start to climb out of %pred's %belly."),
+		"escape_messages_owner" = list(
+			"%prey climbs out of your %belly!"),
+		"escape_messages_prey" = list(
+			"You climb out of %pred's %belly."),
+		"escape_messages_outside" = list(
+			"%prey climbs out of %pred's %belly!"),
+		"escape_item_messages_owner" = list(
+			"%item suddenly slips out of your %belly!"),
+		"escape_item_messages_prey" = list(
+			"Your struggles successfully cause %pred to squeeze your %item out of their %belly."),
+		"escape_item_messages_outside" = list(
+			"%item suddenly slips out of %pred's %belly!"),
+		"escape_fail_messages_owner" = list(
+			"%prey's attempt to escape from your %belly has failed!"),
+		"escape_fail_messages_prey" = list(
+			"Your attempt to escape %pred's %belly has failed!"),
+		"escape_attempt_absorbed_messages_owner" = list(
+			"%prey is attempting to free themselves from your %belly!"),
+		"escape_attempt_absorbed_messages_prey" = list(
+			"You try to force yourself out of %pred's %belly."),
+		"escape_absorbed_messages_owner" = list(
+			"%prey forces themselves free of your %belly!"),
+		"escape_absorbed_messages_prey" = list(
+			"You manage to free yourself from %pred's %belly."),
+		"escape_absorbed_messages_outside" = list(
+			"%prey climbs out of %pred's %belly!"),
+		"escape_fail_absorbed_messages_owner" = list(
+			"%prey's attempt to escape form your %belly has failed!"),
+		"escape_fail_absorbed_messages_prey" = list(
+			"Before you manage to reach freedom, you feel yourself getting dragged back into %pred's %belly!"),
+		"primary_transfer_messages_owner" = list(
+			"%prey slid into your %dest due to their struggling inside your %belly!"),
+		"primary_transfer_messages_prey" = list(
+			"Your attempt to escape %pred's %belly has failed and your struggles only results in you sliding into %pred's %dest!"),
+		"secondary_transfer_messages_owner" = list(
+			"%prey slid into your %dest due to their struggling inside your %belly!"),
+		"secondary_transfer_messages_prey" = list(
+			"Your attempt to escape %pred's %belly has failed and your struggles only results in you sliding into %pred's %dest!"),
+		"primary_autotransfer_messages_owner" = list(
+			"%prey moves along into your %dest!"),
+		"primary_autotransfer_messages_prey" = list(
+			"%pred's %belly moves you along into their %dest!"),
+		"secondary_autotransfer_messages_owner" = list(
+			"%prey moves along into your %dest!"),
+		"secondary_autotransfer_messages_prey" = list(
+			"%pred's %belly moves you along into their %dest!"),
+		"digest_chance_messages_owner" = list(
+			"You feel your %belly beginning to become active!"),
+		"digest_chance_messages_prey" = list(
+			"In response to your struggling, %pred's %belly begins to get more active..."),
+		"absorb_chance_messages_owner" = list(
+			"You feel your %belly start to cling onto its contents..."),
+		"absorb_chance_messages_prey" = list(
+			"In response to your struggling, %pred's %belly begins to cling more tightly..."),
+		"digest_messages_owner" = list(
+			"You feel %prey's body succumb to your digestive system, which breaks it apart into soft slurry.",
+			"You hear a lewd glorp as your %belly muscles grind %prey into a warm pulp.",
+			"Your %belly lets out a rumble as it melts %prey into sludge.",
+			"You feel a soft gurgle as %prey's body loses form in your %belly. They're nothing but a soft mass of churning slop now.",
+			"Your %belly begins gushing %prey's remains through your system, adding some extra weight to your thighs.",
+			"Your %belly begins gushing %prey's remains through your system, adding some extra weight to your rump.",
+			"Your %belly begins gushing %prey's remains through your system, adding some extra weight to your belly.",
+			"Your %belly groans as %prey falls apart into a thick soup. You can feel their remains soon flowing deeper into your body to be absorbed.",
+			"Your %belly kneads on every fiber of %prey, softening them down into mush to fuel your next hunt.",
+			"Your %belly churns %prey down into a hot slush. You can feel the nutrients coursing through your digestive track with a series of long, wet glorps."),
+		"digest_messages_prey" = list(
+			"Your body succumbs to %pred's digestive system, which breaks you apart into soft slurry.",
+			"%pred's %belly lets out a lewd glorp as their muscles grind you into a warm pulp.",
+			"%pred's %belly lets out a rumble as it melts you into sludge.",
+			"%pred feels a soft gurgle as your body loses form in their %belly. You're nothing but a soft mass of churning slop now.",
+			"%pred's %belly begins gushing your remains through their system, adding some extra weight to %pred's thighs.",
+			"%pred's %belly begins gushing your remains through their system, adding some extra weight to %pred's rump.",
+			"%pred's %belly begins gushing your remains through their system, adding some extra weight to %pred's belly.",
+			"%pred's %belly groans as you fall apart into a thick soup. Your remains soon flow deeper into %pred's body to be absorbed.",
+			"%pred's %belly kneads on every fiber of your body, softening you down into mush to fuel their next hunt.",
+			"%pred's %belly churns you down into a hot slush. Your nutrient-rich remains course through their digestive track with a series of long, wet glorps."),
+		"absorb_messages_owner" = list(
+			"You feel %prey becoming part of you."),
+		"absorb_messages_prey" = list(
+			"You feel yourself becoming part of %pred's %belly!"),
+		"unabsorb_messages_owner" = list(
+			"You feel %prey reform into a recognizable state again."),
+		"unabsorb_messages_prey" = list(
+			"You are released from being part of %pred's %belly."),
+		"examine_messages" = list(
+			"They have something solid in their %belly!",
+			"It looks like they have something in their %belly!"),
+		"examine_messages_absorbed" = list(
+			"Their body looks somewhat larger than usual around the area of their %belly.",
+			"Their %belly looks larger than usual."),
+		"trash_eater_in" = list(
+			"%pred demonstrates their voracious capabilities by swallowing %item whole!"
+			),
+		"trash_eater_out" = list( //handles all item expulsions regardless of whether they have the trash perk
+			"%pred expels %item from their %belly!"
+			)
 	)
-	var/list/trash_eater_out = list( //handles all item expulsions regardless of whether they have the trash perk
-		"%pred expels %item from their %belly!"
-	)
+	return defaults
 
 GLOBAL_LIST_INIT(vore_words_goo, list("muck","goo","sludge","slime","mire","ectoplasm","quagmire","glop","jelly","ooze","slush","mush","quicksand"))//%goo
 GLOBAL_LIST_INIT(vore_words_hbellynoises, list("gurgle","gloorp","squelch","gloosh","squish","groan","grrrrrrn","sloooooOrp","slooosh","grrrbles","worbles"))//%happybelly
@@ -429,7 +440,7 @@ GLOBAL_LIST_INIT(vore_words_snake, list("snake","serpent","reptilian","noodle","
 	var/list/raw_list
 
 	if(islist(raw_text))
-		raw_list = raw_text
+		raw_list = raw_text.Copy() // It may be a shared list; this one becomes the belly's own.
 	else if(findtext(raw_text, delim))
 		raw_list = splittext(raw_text, delim)
 	else
@@ -550,26 +561,37 @@ GLOBAL_LIST_INIT(vore_words_snake, list("snake","serpent","reptilian","noodle","
 		if(EXAMINES_ABSORBED)
 			examine_messages_absorbed = raw_list
 		if(BELLY_MODE_DIGEST)
+			own_emote_lists()
 			emote_lists[DM_DIGEST] = raw_list
 		if(BELLY_MODE_HOLD)
+			own_emote_lists()
 			emote_lists[DM_HOLD] = raw_list
 		if(BELLY_MODE_HOLD_ABSORB)
+			own_emote_lists()
 			emote_lists[DM_HOLD_ABSORBED] = raw_list
 		if(BELLY_MODE_ABSORB)
+			own_emote_lists()
 			emote_lists[DM_ABSORB] = raw_list
 		if(BELLY_MODE_HEAL)
+			own_emote_lists()
 			emote_lists[DM_HEAL] = raw_list
 		if(BELLY_MODE_DRAIN)
+			own_emote_lists()
 			emote_lists[DM_DRAIN] = raw_list
 		if(BELLY_MODE_STEAL)
+			own_emote_lists()
 			emote_lists[DM_SIZE_STEAL] = raw_list
 		if(BELLY_MODE_EGG)
+			own_emote_lists()
 			emote_lists[DM_EGG] = raw_list
 		if(BELLY_MODE_SHRINK)
+			own_emote_lists()
 			emote_lists[DM_SHRINK] = raw_list
 		if(BELLY_MODE_GROW)
+			own_emote_lists()
 			emote_lists[DM_GROW] = raw_list
 		if(BELLY_MODE_UNABSORB)
+			own_emote_lists()
 			emote_lists[DM_UNABSORB] = raw_list
 		if(BELLY_TRASH_EATER_IN)
 			trash_eater_in = raw_list

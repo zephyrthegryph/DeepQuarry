@@ -73,6 +73,7 @@
 	B.contamination_flavor = "Wet"
 
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The toothy walls scrape and grind against your body.",
 		"The humid air feels thick and heavy, stinging faintly with each breath.",

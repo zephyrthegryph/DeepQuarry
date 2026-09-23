@@ -23,8 +23,8 @@ GLOBAL_LIST_INIT(digest_modes, list())
 
 /datum/digest_mode/digest/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	var/oldstat = L.stat
-	//Pref protection!
-	if(!L.digestable || L.absorbed)
+	//Pref protection! (vore_consent.dm)
+	if(consent_refusal(B, L))
 		return null
 
 	//Person just died in guts!
@@ -101,7 +101,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	noise_chance = 10
 
 /datum/digest_mode/absorb/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
-	if(!L.absorbable || L.absorbed)
+	if(consent_refusal(B, L))
 		return null
 
 	var/old_nutrition = L.nutrition
@@ -181,8 +181,8 @@ GLOBAL_LIST_INIT(digest_modes, list())
 
 /datum/digest_mode/heal/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	var/oldstat = L.stat
-	if(L.stat == DEAD || !L.permit_healbelly) //healpref check
-		return null // Can't heal the dead with healbelly
+	if(consent_refusal(B, L)) //healpref check; can't heal the dead with healbelly
+		return null
 	var/old_vitality = L.vitality()
 	if(B.owner.nutrition > 90 && L.is_injured())
 		// Organic tissue: the body resolves which afflictions each mechanism can reach.
