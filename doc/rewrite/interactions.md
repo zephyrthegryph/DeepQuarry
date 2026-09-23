@@ -153,7 +153,7 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 
 **Compiling.** `declare_interactions()` (interaction.dm) calls `get_interactions()` and turns each spec into a `/datum/interaction/generic` singleton via `dq_interaction_from_spec()` (`code/datums/interactions/compact.dm`), interned by (kind, effect, held type, requires shape): two types whose `get_interactions()` names the *same* proc (most often inherited - a subtype that doesn't override the getter reuses the base's spec verbatim) resolve to the one shared instance, exactly like two types listing the same full-form `/datum/interaction` subtype today. Generated interactions carry a real `id` (derived from the kind and the effect proc, deduplicated against a collision) and plug into `GLOB.interactions_by_type`'s sibling registry the same way, so the resolver, the Menu, examine, screentips and keybinds need no changes to support them - `interaction_candidates()` accepts either a `/datum/interaction` type path (full form) or a live instance (compact form) in the same list.
 
-**The always-meant shapes.** `INTERACT_USE`/`HAND`/`ALT` runs are never in competition with a sibling interaction for the same click the way `attackby` candidates are (only one `attack_self` can be the "meant" one - there's no held item to disambiguate by), so their effect proc's own return value is ignored: `zoom()` can `return` nothing and the interaction still counts as run. This is the `run_effect()` hook on `/datum/interaction` (attempt()'s effect-call step, factored out for this reason) - `/datum/interaction/generic` overrides it for these shapes only; `INTERACT_ITEM`/`INTERACT_INSERT` still need their effect's TRUE/FALSE to decide fall-through, same as `attackby` falling through to `..()` today.
+**The one always-handled shape.** Only `INTERACT_USE`'s effect proc's own return value is ignored: `zoom()` can `return` nothing and the interaction still counts as run. A self-use has nothing left to fall through to once reached - the old `attack_self` chain ended there. This is the `run_effect()` hook on `/datum/interaction` (attempt()'s effect-call step, factored out for this reason); `/datum/interaction/generic` overrides it for `INTERACT_USE` only. Every other compact shape needs its effect's real TRUE/FALSE, same as the legacy handler it replaces: `INTERACT_HAND` falls through to `hand_gate()`/pickup, `INTERACT_ALT` to the default alt-click panel, and `INTERACT_ITEM`/`INTERACT_INSERT` may have sibling candidates competing for one `attackby`. Pointing `INTERACT_HAND`/`ALT` at a proc that doesn't return TRUE is a common mistake to check for in review - it silently turns "did something, then fall through" into "did nothing, ever."
 
 **Before/after, one per shape:**
 
@@ -206,8 +206,9 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 
 /obj/item/communicator/proc/remove_id_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(issilicon(user))
-		return FALSE
+		return FALSE // Not INTERACT_USE: a real FALSE, so this correctly falls through.
 	remove_id()
+	return TRUE
 ```
 
 **When to reach for the full form instead:** a menu that asks the player which of several things to do, an interaction whose display name or requirement varies with target state (`display_name()`/`applies_to()` overrides), one that needs the tool cost pipeline (`tool`/`duration`), or one two types must NOT share despite an identical-looking spec (interning is opt-out by writing distinct effect procs, even trivially different ones).

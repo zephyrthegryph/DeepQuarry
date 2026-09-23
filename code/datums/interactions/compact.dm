@@ -19,11 +19,14 @@
  * code.
  */
 /datum/interaction/generic
-	/// TRUE for shapes that are always meant once reached (use, hand, alt): the
-	/// effect proc's own return value is ignored, so a plain existing proc - not
-	/// written for the interaction system, with no TRUE return of its own - can
-	/// be pointed at with no wrapper. FALSE for item/insert, which stay
-	/// fall-through-capable (several candidates may compete for one attackby).
+	/// TRUE only for INTERACT_USE: a self-use has no legacy fallthrough once
+	/// reached (the old attack_self chain had nothing further to fall through
+	/// to), so its effect proc's own return value is ignored - a plain existing
+	/// proc, not written for the interaction system, can be pointed at with no
+	/// wrapper. FALSE for every other shape: attack_hand falls through to
+	/// hand_gate()/pickup, click_alt to the default alt-click panel, and
+	/// attackby/insert may have sibling candidates competing for one click -
+	/// all of those need the effect's real TRUE/FALSE, same as the full form.
 	var/always_handled = FALSE
 
 /datum/interaction/generic/New(id, name, category, priority, default_action, list/requires, effect, entry, held_type, list/offered_when, consumes_input, behind_gate, always_handled)
@@ -72,7 +75,6 @@
 		if(INTERACT_KIND_HAND)
 			entry = INTERACTION_ENTRY_HAND
 			category = INTERACTION_CAT_OPEN
-			always_handled = TRUE
 		if(INTERACT_KIND_ITEM)
 			entry = INTERACTION_ENTRY_ITEM
 			category = INTERACTION_CAT_INSERT
@@ -83,7 +85,6 @@
 			entry = INTERACTION_ENTRY_ALT
 			category = INTERACTION_CAT_TOGGLE
 			default_action = INPUT_ACTION_ALTERNATE
-			always_handled = TRUE
 		else
 			CRASH("dq_interaction_from_spec: unknown compact interaction kind [kind] on [owner_type]")
 

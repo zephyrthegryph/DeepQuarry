@@ -21,14 +21,16 @@
 
 /obj/dq_compact_probe/proc/zoom()
 	log += "zoom"
-	// Deliberately returns nothing: INTERACT_USE must not need a TRUE return.
+	// Deliberately returns nothing: INTERACT_USE is the one shape whose effect
+	// need not return TRUE - a self-use has no legacy fallthrough to decline into.
 
-/obj/dq_compact_probe/proc/poke()
+/obj/dq_compact_probe/proc/poke(mob/user, obj/item/held, datum/interaction/interaction)
 	log += "poke"
-	return FALSE // Also deliberately falsy.
+	return TRUE
 
-/obj/dq_compact_probe/proc/eject()
+/obj/dq_compact_probe/proc/eject(mob/user, obj/item/held, datum/interaction/interaction)
 	log += "eject"
+	return TRUE
 
 /obj/dq_compact_probe/proc/insert_crowbar(mob/user, obj/item/W, datum/interaction/interaction)
 	log += "insert_crowbar"
@@ -37,6 +39,25 @@
 /// A second type declaring the identical spec (same inherited zoom proc via subtyping),
 /// to check interning: get_interactions() returning the same spec shares one singleton.
 /obj/dq_compact_probe/child
+
+/**
+ * INTERACT_HAND/INTERACT_ALT respect their effect's own TRUE/FALSE, unlike
+ * INTERACT_USE: attack_hand falls through to hand_gate()/pickup and click_alt
+ * to the default alt-click panel when nothing was meant, exactly as the
+ * legacy handlers did, so a declining effect must actually decline.
+ */
+/obj/dq_compact_probe/declining
+
+/obj/dq_compact_probe/declining/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND("Poke", PROC_REF(decline)),
+		INTERACT_ALT("Eject", PROC_REF(decline)),
+	)
+	return L
+
+/obj/dq_compact_probe/declining/proc/decline(mob/user, obj/item/held, datum/interaction/interaction)
+	log += "declined"
+	return FALSE
 
 // ---- Tests ----
 
@@ -47,7 +68,6 @@
 	var/obj/dq_compact_probe/probe = allocate(/obj/dq_compact_probe, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
-	// INTERACT_USE: effect's own return value is ignored (always_handled).
 	var/list/candidates = interaction_candidates(probe)
 	TEST_ASSERT(length(candidates) == 4, "the probe offers all 4 compact interactions, got [length(candidates)]")
 
@@ -74,10 +94,10 @@
 	TEST_ASSERT(use_interaction.perform(H, probe, null), "Use runs even though zoom() returns nothing")
 	TEST_ASSERT("zoom" in probe.log, "zoom() ran")
 
-	TEST_ASSERT(hand_interaction.perform(H, probe, null), "Hand runs even though poke() returns FALSE")
+	TEST_ASSERT(hand_interaction.perform(H, probe, null), "Hand runs and reports TRUE from poke()")
 	TEST_ASSERT("poke" in probe.log, "poke() ran")
 
-	TEST_ASSERT(alt_interaction.perform(H, probe, null), "Alt runs even though eject() returns nothing")
+	TEST_ASSERT(alt_interaction.perform(H, probe, null), "Alt runs and reports TRUE from eject()")
 	TEST_ASSERT("eject" in probe.log, "eject() ran")
 
 	var/obj/item/tool/crowbar/crowbar_item = allocate(/obj/item/tool/crowbar, T)
@@ -97,6 +117,28 @@
 	probe.log = list()
 	probe.click_alt(H)
 	TEST_ASSERT("eject" in probe.log, "click_alt() reaches the compact alt interaction")
+
+/datum/unit_test/dq_compact_interaction_decline
+
+/datum/unit_test/dq_compact_interaction_decline/Run()
+	var/turf/T = test_floor()
+	var/obj/dq_compact_probe/declining/probe = allocate(/obj/dq_compact_probe/declining, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+
+	var/datum/interaction/hand_interaction
+	var/datum/interaction/alt_interaction
+	for(var/datum/interaction/candidate as anything in interaction_candidates(probe))
+		if(candidate.entry == INTERACTION_ENTRY_HAND)
+			hand_interaction = candidate
+		else if(candidate.entry == INTERACTION_ENTRY_ALT)
+			alt_interaction = candidate
+
+	TEST_ASSERT(!hand_interaction.perform(H, probe, null), "a declining INTERACT_HAND effect is not treated as handled")
+	TEST_ASSERT("declined" in probe.log, "the hand effect still ran")
+
+	probe.log = list()
+	TEST_ASSERT(!alt_interaction.perform(H, probe, null), "a declining INTERACT_ALT effect is not treated as handled")
+	TEST_ASSERT("declined" in probe.log, "the alt effect still ran")
 
 // Interning: two types declaring the identical spec share one singleton (no id in tested_ids
 // needed for the child's own copy - it is the same interaction object, already covered above).
