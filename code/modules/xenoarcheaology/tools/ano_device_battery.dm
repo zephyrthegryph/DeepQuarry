@@ -63,16 +63,29 @@
 	var/energy_consumed_on_touch = 100
 	var/mob/last_user_touched
 
+	/// REACT_AT token for the emission's scheduled shutdown (time_end); null when not armed.
+	var/tmp/shutdown_timer
+
 /obj/item/anodevice/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "runs the inserted artifact effect and drains its battery every tick while activated")
 
 /obj/item/anodevice/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
+	shutdown_timer = REACT_REARM(src, shutdown_timer, null)
 	inserted_battery = null
 	archived_loc = null
 	last_user_touched = null
 	. = ..()
+
+/obj/item/anodevice/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != shutdown_timer)
+		return
+	shutdown_timer = null
+	if(activated)
+		src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
+		shutdown_emission()
 
 /obj/item/anodevice/equipped(mob/user, slot)
 	last_user_touched = user
@@ -135,6 +148,7 @@
 			duration = clamp(text2num(params["duration"]), 0, 300)
 			if(activated)
 				time_end = world.time + duration
+				shutdown_timer = REACT_REARM(src, shutdown_timer, time_end)
 			return TRUE
 		if("changeinterval")
 			interval = clamp(text2num(params["interval"]), 0, 100)
@@ -146,6 +160,7 @@
 				if(!inserted_battery.battery_effect.activated)
 					inserted_battery.battery_effect.ToggleActivate(1)
 				time_end = world.time + duration
+				shutdown_timer = REACT_REARM(src, shutdown_timer, time_end)
 				last_process = world.time
 			else
 				to_chat(ui.user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
@@ -212,12 +227,9 @@
 			//process the effect
 			inserted_battery.battery_effect.process()
 
-			//work out if we need to shutdown
+			//work out if we need to shutdown (the time_end deadline is handled by shutdown_timer/on_react)
 			if(inserted_battery.stored_charge <= 0)
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
-				shutdown_emission()
-			else if(world.time > time_end)
-				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
 				shutdown_emission()
 		else
 			src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
@@ -227,6 +239,7 @@
 /obj/item/anodevice/proc/shutdown_emission()
 	if(activated)
 		activated = 0
+		shutdown_timer = REACT_REARM(src, shutdown_timer, null)
 		if(inserted_battery?.battery_effect?.activated)
 			inserted_battery.battery_effect.ToggleActivate(1)
 

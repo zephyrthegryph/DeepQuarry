@@ -63,11 +63,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 /obj/structure/event_collector/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/structure/event_collector/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	. = ..()
+	REACT_PROCESS(src, 2 SECONDS, "advances its active recipe's completion countdown")
 
 
 /obj/structure/event_collector/proc/get_blockers()

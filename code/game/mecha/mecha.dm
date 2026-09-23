@@ -216,7 +216,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
 			ME.attach(src)
 
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "runs the exosuit's life support, power and movement loop every tick")
 
 	update_transform()
 
@@ -332,7 +332,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	QDEL_NULL(spark_system)
 	QDEL_NULL(minihud)
 
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 
 	. = ..()
 
@@ -2061,7 +2061,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		H.stop_pulling()
 		H.forceMove(src)
 		src.occupant = H
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "runs the exosuit's life support, power and movement loop every tick")
 		src.add_fingerprint(H)
 		src.verbs += /obj/mecha/verb/eject
 		src.log_append_to_last("[H] moved in as pilot.")
@@ -3096,7 +3096,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /obj/mecha/proc/start_process(process)
 	current_processes |= process
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "runs the exosuit's life support, power and movement loop every tick")
 
 
 /////////////

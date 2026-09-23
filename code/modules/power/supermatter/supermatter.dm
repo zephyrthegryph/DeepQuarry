@@ -144,7 +144,6 @@
 			"metrics" = list("eer" = -1, "integrity" = 0),
 			"detail" = "Supermatter telemetry ended",
 		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
-	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(soundloop)
 	return ..()
 

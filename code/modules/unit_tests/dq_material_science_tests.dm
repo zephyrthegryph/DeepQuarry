@@ -366,7 +366,9 @@
 	TEST_ASSERT(vessel.material_environment_liner_integrity < before, "Unchanged acid must corrode over elapsed time")
 	var/cold_rate = service.chemical_rate
 	service.add_heat(service.thermal_mass() * 300)
-	TEST_ASSERT(service.chemical_rate > cold_rate * 1.9, "Heating unchanged chemicals must invalidate the cached corrosion rate immediately")
+	vg_heat_debug_run_frames(1) // heat is a command to the owner's heat body, applied by the frame
+	service.contents_changed()
+	TEST_ASSERT(service.chemical_rate > cold_rate * 1.9, "Heating unchanged chemicals must raise the corrosion rate ([cold_rate] -> [service.chemical_rate])")
 	service.chemical_last_update = world.time - 1 HOUR
 	service.contents_changed()
 	TEST_ASSERT(QDELETED(vessel), "A completely consumed liner must rupture the real vessel without continuing to access its deleted service owner")
@@ -404,14 +406,19 @@
 /datum/unit_test/dq_material_thermal_buffer_conserves_energy
 
 /datum/unit_test/dq_material_thermal_buffer_conserves_energy/Run()
-	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
+	// In nullspace the heat body has no coupling, so only the added heat moves it.
+	var/obj/item/cell/cell = new
 	var/datum/material_service/service = cell.material_service
-	var/before = service.temperature * service.thermal_mass() + service.buffer_energy
+	TEST_ASSERT_NOTNULL(service.ensure_body(), "A material assembly must keep its thermal state in a heat body")
+	vg_heat_debug_run_frames(1)
+	var/before = service.current_temperature()
 	service.add_heat(12000)
-	var/after = service.temperature * service.thermal_mass() + service.buffer_energy
-	TEST_ASSERT(abs(after - before - 12000) < 0.01, "Heating must add exactly the supplied energy")
+	vg_heat_debug_run_frames(1)
+	var/after = service.current_temperature()
+	TEST_ASSERT(abs((after - before) * service.thermal_mass() - 12000) < 1, "Heating must add exactly the supplied energy ([before] -> [after] K)")
 	service.add_heat(-12000)
-	TEST_ASSERT(abs(service.temperature * service.thermal_mass() + service.buffer_energy - before) < 0.01, "Cooling must remove exactly the supplied energy")
+	vg_heat_debug_run_frames(1)
+	TEST_ASSERT(abs(service.current_temperature() - before) < 0.01, "Cooling must remove exactly the supplied energy")
 	qdel(cell)
 
 /datum/unit_test/dq_material_pump_parts_change_operation
@@ -446,40 +453,58 @@
 /datum/unit_test/dq_material_cold_assembly_operates
 
 /datum/unit_test/dq_material_cold_assembly_operates/Run()
-	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
+	var/obj/item/cell/cell = new
 	var/datum/material/conductor_type = /datum/material/engineering_test_conductor
 	var/datum/material/buffer_type = /datum/material/engineering_test_buffer
 	cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = initial(conductor_type.name), MATERIAL_ROLE_THERMAL = initial(buffer_type.name)), material_template_path_for_application(MATERIAL_APPLICATION_CELL), 2000)
 	var/datum/material_service/service = cell.material_service
-	TEST_ASSERT_EQUAL(service.buffer_energy, 50000, "Room-temperature cryogenic stock must require cooling, not arrive with free cold capacity")
-	service.add_heat(-(service.temperature - 240) * service.thermal_mass() - service.buffer_energy)
-	TEST_ASSERT(abs(service.temperature - 240) < 0.01 && service.buffer_energy == 0, "Actual removed heat must cool and recharge the phase buffer")
-	var/cold = cell.construction_electrical_resistance(1, 1, service.temperature, 5)
-	var/quenched = cell.construction_electrical_resistance(1, 1, service.temperature, 50)
+	service.ensure_body()
+	vg_heat_debug_run_frames(1)
+	var/mass = service.thermal_mass()
+	var/latent = initial(buffer_type.phase_change_capacity)
+	// Room-temperature cryogenic stock arrives with its plateau full: cooling to 240 K must
+	// also remove the latent heat.
+	service.add_heat(-(service.current_temperature() - 250) * mass - latent / 2)
+	vg_heat_debug_run_frames(1)
+	TEST_ASSERT(abs(service.current_temperature() - 250) < 0.01, "Removing half the latent heat must hold the phase temperature ([service.current_temperature()] K)")
+	service.add_heat(-latent / 2 - 10 * mass)
+	vg_heat_debug_run_frames(1)
+	TEST_ASSERT(abs(service.current_temperature() - 240) < 0.01, "Actual removed heat must cool through the plateau ([service.current_temperature()] K)")
+	var/cold = cell.construction_electrical_resistance(1, 1, service.current_temperature(), 5)
+	var/quenched = cell.construction_electrical_resistance(1, 1, service.current_temperature(), 50)
 	TEST_ASSERT(quenched > cold * 100, "Exceeding critical current must quench the conductor even while cold")
-	service.add_heat(10 * service.thermal_mass() + 25000)
-	TEST_ASSERT(abs(service.temperature - 250) < 0.01 && abs(service.buffer_energy - 25000) < 0.01, "The finite buffer must hold temperature while absorbing real operating heat")
-	TEST_ASSERT(cell.construction_electrical_resistance(1, 1, service.temperature, 5) <= cold, "A suitable phase plateau must preserve superconducting operation")
-	service.add_heat(25000 + 20 * service.thermal_mass())
-	TEST_ASSERT(service.temperature > 260 && cell.construction_electrical_resistance(1, 1, service.temperature, 5) > cold * 100, "Exhausted cooling must expose the thermal limit")
+	service.add_heat(10 * mass + latent / 2)
+	vg_heat_debug_run_frames(1)
+	TEST_ASSERT(abs(service.current_temperature() - 250) < 0.01, "The finite buffer must hold temperature while absorbing real operating heat")
+	TEST_ASSERT(cell.construction_electrical_resistance(1, 1, service.current_temperature(), 5) <= cold, "A suitable phase plateau must preserve superconducting operation")
+	service.add_heat(latent / 2 + 20 * mass)
+	vg_heat_debug_run_frames(1)
+	TEST_ASSERT(service.current_temperature() > 260 && cell.construction_electrical_resistance(1, 1, service.current_temperature(), 5) > cold * 100, "Exhausted cooling must expose the thermal limit")
 	qdel(cell)
 
 /datum/unit_test/dq_superconducting_cell_automatic_envelope
 
 /datum/unit_test/dq_superconducting_cell_automatic_envelope/Run()
-	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
+	var/obj/item/cell/cell = new
 	var/datum/material/conductor_type = /datum/material/engineering_test_conductor
 	var/datum/material/buffer_type = /datum/material/engineering_test_buffer
 	cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = initial(conductor_type.name), MATERIAL_ROLE_THERMAL = initial(buffer_type.name)), material_template_path_for_application(MATERIAL_APPLICATION_CELL), 2000)
 	var/datum/material_service/service = cell.material_service
-	service.add_heat(-(service.temperature - 240) * service.thermal_mass() - service.buffer_energy)
+	service.ensure_body()
+	vg_heat_debug_run_frames(1)
+	var/mass = service.thermal_mass()
+	var/latent = initial(buffer_type.phase_change_capacity)
+	service.add_heat(-(service.current_temperature() - 240) * mass - latent)
+	vg_heat_debug_run_frames(1)
 	var/envelope = cell.material_output_envelope(10)
 	TEST_ASSERT(envelope > 1, "A physically cold superconductor must automatically expose enhanced output")
 	var/charge_before = cell.charge
 	TEST_ASSERT(cell.checked_use(10 * envelope), "The enhanced envelope must still debit real stored energy")
 	cell.material_record_enhanced_output(10, envelope)
 	TEST_ASSERT(cell.charge < charge_before - 10, "Enhanced output must cost more energy than an ordinary action")
-	service.add_heat((initial(conductor_type.critical_temperature) + 1 - service.temperature) * service.thermal_mass() + max(initial(buffer_type.phase_change_capacity) - service.buffer_energy, 0))
+	vg_heat_debug_run_frames(1)
+	service.add_heat((initial(conductor_type.critical_temperature) + 1 - service.current_temperature()) * mass + latent)
+	vg_heat_debug_run_frames(1)
 	TEST_ASSERT_EQUAL(cell.material_output_envelope(10), 1, "A hot or quenched conductor must fall back to ordinary device output")
 	qdel(cell)
 
@@ -501,23 +526,23 @@
 	for(var/subscribed_id in service.mixture_ids)
 		TEST_ASSERT(REF(service) in SSmachines.material_gas_subscribers["[subscribed_id]"], "Material subscriptions must use the coalesced mixture registry")
 	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
-	SSmaterial_services.unqueue(service)
-	service.timer = FALSE
+	service.timer = REACT_REARM(service, service.timer, null)
 	service.active = FALSE
 	service.last_update = world.time - 10 MINUTES
 	service.environment_changed()
 	TEST_ASSERT_EQUAL(service.last_update, world.time, "A newly changed environment must not be charged for the preceding sleep interval")
-	var/queued_count = length(SSmaterial_services.scheduled)
+	TEST_ASSERT(!isnull(service.timer), "An environment change must schedule the assembly")
+	var/token = service.timer
 	for(var/i in 1 to 1000)
 		service.environment_changed(FALSE)
-	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), queued_count, "Repeated gas publications must coalesce into one queued exposure, not allocate timers")
+	TEST_ASSERT_EQUAL(service.timer, token, "Repeated gas publications must coalesce into one REACT_AT, not allocate timers")
 	cell.forceMove(destination)
 	service.rebind()
 	var/list/ids = service.mixture_ids.Copy()
 	var/reference = REF(service)
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
-	TEST_ASSERT(!SSmaterial_services.scheduled_indices[reference], "Deleting an assembly must remove its queued exposure work")
+	TEST_ASSERT(!service.reactor_id, "Deleting an assembly must drop its scheduled advance (REACT_CLEAR)")
 	for(var/id in ids)
 		var/list/subscribers = SSmachines.gas_mixture_subscribers["[id]"]
 		TEST_ASSERT(!(reference in subscribers), "Deleted assemblies must release mixture subscriptions")
@@ -551,35 +576,22 @@
 	TEST_ASSERT(service.gas_dependency_changed(1, GAS_DEPENDENCY_PRESSURE, dangerous_pressure, 1), "A pressure vessel must wake when differential load approaches its material limit")
 	qdel(canister)
 
-/datum/unit_test/dq_material_service_due_heap
+/datum/unit_test/dq_material_service_schedule_moves_earlier
 
-/datum/unit_test/dq_material_service_due_heap/Run()
-	var/baseline_count = length(SSmaterial_services.scheduled)
+/// SSmaterial_services' heap is gone: each assembly keeps one REACT_AT, moved only earlier.
+/datum/unit_test/dq_material_service_schedule_moves_earlier/Run()
 	var/obj/item/cell/a = new(run_loc_floor_bottom_left)
-	var/obj/item/cell/b = new(run_loc_floor_bottom_left)
-	var/obj/item/cell/c = new(run_loc_floor_bottom_left)
-	var/datum/material_service/a_service = a.material_service
-	var/datum/material_service/b_service = b.material_service
-	var/datum/material_service/c_service = c.material_service
-	for(var/datum/material_service/service in list(a_service, b_service, c_service))
-		SSmaterial_services.unqueue(service)
-		service.timer = FALSE
-	a_service.schedule(10 SECONDS)
-	b_service.schedule(5 SECONDS)
-	c_service.schedule(7 SECONDS)
-	var/count = length(SSmaterial_services.scheduled)
-	for(var/index in 2 to count)
-		TEST_ASSERT(SSmaterial_services.scheduled_due[index >> 1] <= SSmaterial_services.scheduled_due[index], "Every exposure heap parent must be due before its children")
-	a_service.schedule(1 SECOND)
-	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), count, "Moving an existing service earlier must not duplicate queue entries")
-	var/a_index = SSmaterial_services.scheduled_indices[REF(a_service)]
-	TEST_ASSERT_EQUAL(SSmaterial_services.scheduled_due[a_index], a_service.next_update, "An accelerated environmental event must update the heap deadline")
-	for(var/index in 2 to count)
-		TEST_ASSERT(SSmaterial_services.scheduled_due[index >> 1] <= SSmaterial_services.scheduled_due[index], "Accelerating an exposure must preserve the heap invariant")
+	var/datum/material_service/service = a.material_service
+	service.timer = REACT_REARM(service, service.timer, null)
+	service.schedule(10 SECONDS)
+	var/token = service.timer
+	TEST_ASSERT(!isnull(token), "Scheduling must set a timer")
+	service.schedule(20 SECONDS)
+	TEST_ASSERT_EQUAL(service.timer, token, "A later request must not move the timer")
+	service.schedule(1 SECOND)
+	TEST_ASSERT(service.timer != token, "An earlier request must move the timer")
+	TEST_ASSERT_EQUAL(service.next_update, world.time + 1 SECOND, "An accelerated event must update the deadline")
 	qdel(a)
-	qdel(b)
-	qdel(c)
-	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), baseline_count, "Deleting queued assemblies must leave no stale heap entries")
 
 /datum/unit_test/dq_material_corrosion_interval_invariance
 
@@ -604,10 +616,10 @@
 	pump.enable_material_service()
 	pump.air1.adjust_moles(/datum/gas/nitrogen, 100)
 	pump.air2.adjust_moles(/datum/gas/nitrogen, 200)
-	var/before = pump.air1.thermal_energy() + pump.air2.thermal_energy() + pump.material_service.temperature * pump.material_service.thermal_mass() + pump.material_service.buffer_energy
+	var/before = pump.air1.thermal_energy() + pump.air2.thermal_energy() + pump.material_service.heat_added
 	var/input = pump_gas(pump, pump.air1, pump.air2, 1, 7500)
 	TEST_ASSERT(input > 0, "Pumping into higher pressure must require positive input energy")
-	var/after = pump.air1.thermal_energy() + pump.air2.thermal_energy() + pump.material_service.temperature * pump.material_service.thermal_mass() + pump.material_service.buffer_energy
+	var/after = pump.air1.thermal_energy() + pump.air2.thermal_energy() + pump.material_service.heat_added
 	TEST_ASSERT(abs(after - before - input) < max(1, input * 0.001), "Delivered compression work plus shell losses must equal paid pump energy")
 	TEST_ASSERT(abs(pump.material_service.input_joules - pump.material_service.output_joules - pump.material_service.loss_joules) < 0.01, "The pump operating ledger must close")
 	qdel(pump)
@@ -874,11 +886,11 @@
 	var/before = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
 		cable.enable_material_service()
-		before += cable.material_service.temperature * cable.material_service.thermal_mass() + cable.material_service.buffer_energy
+		before += cable.material_service.heat_added
 	graph.deposit_losses(12000)
 	var/after = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
-		after += cable.material_service.temperature * cable.material_service.thermal_mass() + cable.material_service.buffer_energy
+		after += cable.material_service.heat_added
 	TEST_ASSERT(abs(after - before - 12000) < 2, "Paid loss must become exactly that much heat across the real cable run")
 	TEST_ASSERT(!graph.resistance_dirty && length(graph.dirty_edges) == 1, "Heating a cable run must invalidate that run without requesting a full network resistance scan")
 	graph.resolve_loads(sources, list())

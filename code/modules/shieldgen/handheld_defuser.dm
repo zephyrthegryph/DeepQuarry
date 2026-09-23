@@ -15,7 +15,7 @@
 /obj/item/shield_diffuser/Destroy()
 	QDEL_NULL(cell)
 	if(enabled)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/shield_diffuser/get_cell()
@@ -49,9 +49,9 @@
 	enabled = !enabled
 	update_icon()
 	if(enabled)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "diffuses shields on adjacent tiles from its cell every tick while enabled")
 	else
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
 
 /obj/item/shield_diffuser/examine(mob/user)

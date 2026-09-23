@@ -114,10 +114,10 @@
 		return
 	if(speed_process) // high gear
 		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS(src, 0.2 SECONDS, "moves items sitting on the belt every tick while running in high gear")
 		update_use_power(USE_POWER_ACTIVE)
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS_STOP(src)
 		START_MACHINE_PROCESSING(src)
 		update_use_power(USE_POWER_ACTIVE)
 
@@ -247,7 +247,7 @@
 
 	var/list/conveyors		// the list of converyors that are controlled by this switch
 	anchored = TRUE
-	var/speed_active = FALSE // are the linked conveyors on SSfastprocess?
+	var/speed_active = FALSE // are the linked conveyors running in REACT_PROCESS high gear?
 
 
 

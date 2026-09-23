@@ -2,6 +2,9 @@
  * "Magic" "Guns"
  */
 
+/// Real-time period of one recharge tick (was the SSobj subsystem's 2 SECONDS wait, before its retirement).
+#define MAGIC_GUN_RECHARGE_PERIOD 2 SECONDS
+
 /obj/item/gun/magic
 	name = "staff of nothing"
 	desc = "This staff is boring to watch because even though it came first you've seen everything it can do in other staves for years."
@@ -18,8 +21,10 @@
 	var/max_charges = 6
 	var/charges = 0
 	var/recharge_rate = 4
-	var/charge_tick = 0
 	var/can_charge = TRUE
+
+	/// REACT_AT token for the next recharge tick; null when not recharging.
+	var/tmp/recharge_timer
 
 /obj/item/gun/magic/consume_next_projectile()
 	if(checks_antimagic && locate(/obj/item/nullrod) in usr) return null
@@ -27,6 +32,7 @@
 	if(charges <= 0) return null
 
 	charges -= 1
+	schedule_recharge()
 
 	return new projectile_type(src)
 
@@ -34,23 +40,23 @@
 	. = ..()
 	charges = max_charges
 	if(can_charge)
-		START_PROCESSING(SSobj, src)
+		schedule_recharge()
 
-/obj/item/gun/magic/Destroy()
-	if(can_charge)
-		STOP_PROCESSING(SSobj, src)
-	return ..()
-
-/obj/item/gun/magic/process()
-	if (charges >= max_charges)
-		charge_tick = 0
+/obj/item/gun/magic/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != recharge_timer)
 		return
-	charge_tick++
-	if(charge_tick < recharge_rate)
-		return 0
-	charge_tick = 0
-	charges++
-	return 1
+	recharge_timer = null
+	if(can_charge && charges < max_charges)
+		charges++
+	schedule_recharge()
+
+// Arms the next recharge tick, or cancels the timer once full / not charging.
+/obj/item/gun/magic/proc/schedule_recharge()
+	if(!can_charge || charges >= max_charges)
+		recharge_timer = REACT_REARM(src, recharge_timer, null)
+		return
+	recharge_timer = REACT_REARM(src, recharge_timer, world.time + recharge_rate * MAGIC_GUN_RECHARGE_PERIOD)
 
 /obj/item/gun/magic/handle_click_empty(mob/user)
 	if (user)

@@ -28,6 +28,9 @@
 	///If we're emagged or not.
 	var/emagged
 
+	/// REACT_AT token for our next heal tick; null when none.
+	var/tmp/react_timer
+
 /obj/item/clothing/suit/lasertag/suit_storage_constraint()
 	var/list/stores = list (/obj/item/gun/energy/lasertag)
 	return list(HOLD_ONLY(stores))
@@ -87,6 +90,7 @@
 		to_chat(user, span_danger("You must be adjacent to the suit to adjust its healing timer!"))
 		return null
 	time_to_heal = (new_heal_timer*10)
+	schedule_heal()
 	if(time_to_heal)
 		user.visible_message(span_notice("[src]'s heal speed has been set to [new_heal_timer] seconds!"))
 	else
@@ -94,15 +98,22 @@
 
 /obj/item/clothing/suit/lasertag/dropped(mob/user, equipping, slot)
 	..()
-	STOP_PROCESSING(SSobj, src)
+	react_timer = REACT_REARM(src, react_timer, null)
 	visible_message(span_notice("[src] is unequipped, its health going back to full!"))
 	lasertag_health = lasertag_max_health
 
 /obj/item/clothing/suit/lasertag/equipped()
 	..()
-	START_PROCESSING(SSobj, src)
+	schedule_heal()
 
-/obj/item/clothing/suit/lasertag/process()
+/obj/item/clothing/suit/lasertag/proc/schedule_heal()
+	if(lasertag_health >= lasertag_max_health || !time_to_heal) //Nothing to heal, or healing disabled.
+		react_timer = REACT_REARM(src, react_timer, null)
+		return
+	react_timer = REACT_REARM(src, react_timer, max(world.time, last_hit + time_to_heal))
+
+/obj/item/clothing/suit/lasertag/on_react(reason, source, source_kind)
+	react_timer = null
 	if(lasertag_health >= lasertag_max_health) //If we're at or above max health(due to admemes), no need to process.
 		return
 	if(!time_to_heal) //We have healing disabled.
@@ -116,6 +127,7 @@
 			if(ismob(src.loc)) //sanity check
 				var/mob/wearer = src.loc
 				to_chat(wearer, span_notice("Your [src] beeps happily as it fully recharges! You can now be hit [lasertag_health] times before you are downed!"))
+	schedule_heal()
 
 /obj/item/clothing/suit/lasertag/proc/handle_hit(damage)
 	if(lasertag_health > 0)
@@ -124,6 +136,7 @@
 		else
 			lasertag_health--
 		last_hit = world.time
+		schedule_heal()
 		if(isliving(src.loc))
 			var/mob/living/wearer = src.loc
 

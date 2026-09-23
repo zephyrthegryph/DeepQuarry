@@ -29,7 +29,7 @@
 		stack_trace("Holder was not passed a mob.")
 		return INITIALIZE_HINT_QDEL
 	held.forceMove(src)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "checks the held mob hasn't slipped out of the holder")
 
 /mob/living/get_status_tab_items()
 	. = ..()
@@ -93,7 +93,6 @@
 
 /// Dumps the mob if we still hold one, and if we are held by a mob clears us from its inventory.
 /obj/item/holder/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	if(held_mob)
 		var/mob/cached_mob = held_mob
 		dump_mob()

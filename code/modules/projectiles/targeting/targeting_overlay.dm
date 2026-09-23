@@ -18,6 +18,9 @@
 	var/active =    0          // Is our owner intending to take hostages?
 	var/target_permissions = 0 // Permission bitflags.
 
+	/// REACT_AT token for the lock-on deadline; null when not aiming or already locked.
+	var/tmp/lock_timer
+
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()
 	owner = loc
@@ -85,13 +88,25 @@
 	..()
 	update_aiming()
 
+/obj/aiming_overlay/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != lock_timer)
+		return
+	lock_timer = null
+	if(!locked)
+		locked = 1
+		to_chat(owner, span_notice("You are locked onto your target."))
+		to_chat(aiming_at, span_danger("The gun is trained on you!"))
+		update_icon()
+
 /obj/aiming_overlay/Destroy()
 	if(aiming_at)
 		aiming_at.aimed -= src
 		aiming_at = null
 	owner = null
 	aiming_with = null
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
+	lock_timer = REACT_REARM(src, lock_timer, null)
 	return ..()
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
@@ -108,12 +123,6 @@
 	if(QDELETED(aiming_at))
 		cancel_aiming()
 		return
-
-	if(!locked && lock_time <= world.time)
-		locked = 1
-		to_chat(owner, span_notice("You are locked onto your target."))
-		to_chat(aiming_at, span_danger("The gun is trained on you!"))
-		update_icon()
 
 	var/cancel_aim = 1
 
@@ -179,13 +188,14 @@
 	if(istype(aiming_with, /obj/item/gun))
 		playsound(owner, 'sound/weapons/targeton.ogg', 50,1)
 	forceMove(get_turf(target))
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "tracks its moving target and keeps it under aim every tick while active")
 
 	aiming_at.aimed |= src
 	toggle_active(1)
 	locked = 0
 	update_icon()
 	lock_time = world.time + 25
+	lock_timer = REACT_REARM(src, lock_timer, lock_time)
 
 /obj/aiming_overlay/update_icon()
 	if(locked)
@@ -225,4 +235,5 @@
 	aiming_at.aimed -= src
 	aiming_at = null
 	loc = null
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
+	lock_timer = REACT_REARM(src, lock_timer, null)

@@ -563,7 +563,7 @@
 /obj/item/clothing/accessory/collar/khcrystal/process()
 	check_owner()
 	if((state > 1) || !owner)
-		STOP_PROCESSING(SSobj, src)
+		return PROCESS_KILL
 
 /obj/item/clothing/accessory/collar/khcrystal/attack_self(mob/user)
 	. = ..(user)
@@ -577,7 +577,7 @@
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "watches its paired owner's vital status every tick while paired")
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/check_owner()
 	//He's dead, jim
@@ -732,7 +732,7 @@
 /obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
 	ambulance = !(ambulance)
 	if(ambulance)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "flashes the ambulance light every tick while active")
 		item_state = "tempestsaddlebag-amb"
 		icon_state = "tempestbag-amb"
 		if (ismob(loc))
@@ -752,8 +752,7 @@
 
 /obj/item/storage/backpack/saddlebag/tempest/process()
 	if(!ambulance)
-		STOP_PROCESSING(SSobj, src)
-		return
+		return PROCESS_KILL
 	if(world.time - ambulance_last_switch > 15)
 		ambulance_state = !(ambulance_state)
 		var/newlight = "#FF0000"

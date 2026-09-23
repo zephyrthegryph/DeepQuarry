@@ -110,7 +110,7 @@ def main():
     users = set()
     bad = []
     declarations = []
-    for path in sorted(glob.glob("code/**/*.dm", recursive=True)):
+    for path in sorted(glob.glob("code/**/*.dm", recursive=True) + glob.glob("maps/**/*.dm", recursive=True)):
         rel = path.replace("\\", "/")
         if rel in EXEMPT:
             continue

@@ -16,7 +16,7 @@
 
 /obj/singularity/narsie/large/exit/Initialize(mapload, ...)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "consumes nearby atoms and updates every viewing mob's rift overlay every tick")
 
 /obj/singularity/narsie/large/exit/update_icon()
 	overlays = 0

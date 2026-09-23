@@ -10,7 +10,6 @@
 	max_charges = 10
 	charges = 0
 	recharge_rate = 2
-	charge_tick = 0
 	can_charge = TRUE
 
 	projectile_type = /obj/item/projectile/energy/homing_bolt/wizard

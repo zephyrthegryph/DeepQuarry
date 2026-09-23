@@ -169,14 +169,21 @@
 	var/last_event = 0
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+	/// REACT_AT token for the next radiation pulse wake; null when not pulsing.
+	var/tmp/radiate_timer
 
 /obj/item/slime_irradiator/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	radiate_timer = REACT_REARM(src, radiate_timer, world.time + 2 SECONDS)
 	set_light(light_range, light_power, light_color)
 
-/obj/item/slime_irradiator/process()
+/obj/item/slime_irradiator/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != radiate_timer)
+		return
+	radiate_timer = null
 	radiate()
+	radiate_timer = REACT_REARM(src, radiate_timer, world.time + 2 SECONDS)
 
 /obj/item/slime_irradiator/proc/radiate()
 	SIGNAL_HANDLER
@@ -197,7 +204,7 @@
 	active = FALSE
 
 /obj/item/slime_irradiator/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	radiate_timer = REACT_REARM(src, radiate_timer, null)
 	return ..()
 
 

@@ -231,6 +231,47 @@ As built (S3):
   bodies comparing `world.time` with a variable. The rest (S4's SSobj/SSprocessing users and S5's
   machines) are in `tools/ci/deadline_polling_allowlist.txt`; a stale entry fails the check.
 
+As built (S4): **SSobj, SSprocessing, SSfastprocess, SSturfs, SSpriority_effects,
+SSobj_tab_items and SSmaterial_services are deleted.** SSburning stays for H3 (burning
+becomes a heat-node state there). `/datum/controller/subsystem/processing` is an abstract
+base (`abstract_subsystem`; the MC skips it) for the two dedicated processors left,
+SSprojectiles and SSinstruments.
+- **The continuous lane is bucketed.** Each declaration sits in `continuous_due["tick"]` for
+  its next run, so a fire touches only due entries, and the lane pauses on `MC_TICK_CHECK`.
+  Declarations start at their own time, so thousands of 2 s users no longer all fire in one tick.
+- **`REACT_PROCESS(D, period, why)`** declares `D.process(delta)` as continuous work, where
+  `delta` is the real elapsed deciseconds (the unit the retired subsystems passed) and
+  `PROCESS_KILL` cancels it; `REACT_PROCESS_STOP(D)` drops it, `REACT_PROCESSING(D)` tests it
+  (`DF_ISPROCESSING`). It is the target for users whose work really is continuous; every call
+  carries a justification. `REACT_REARM(D, token, time)` keeps one `REACT_AT` per purpose.
+- **Deadlines are timers.** Status effects (ticks, expiry, the shown duration: one
+  `REACT_AT` on the earliest; auto-ticking effects are declared), energy-gun recharge steps,
+  arming delays, burn-outs, cooldowns, weather and sun shifts, event and stock deadlines,
+  turbolift steps, escape-pod ejection, talking atoms (a geometric draw of the old
+  2 s x 10% poll), and the remaining allowlisted pollers.
+- **Rate models.** A self-recharging cell is a `RATE_LINEAR` store while it recharges: its
+  own procs (`use`, `give`, `check_charge`, `percent`, ...) settle `charge` from the model,
+  and a `REACT_RATE` wakes it at the next quarter of the meter (the icon's resolution) and
+  at full; a direct write to `charge` wins at the next settle. A hot processed alloy cools on
+  a `RATE_RELAX` read through `physical_batch()`.
+- **Material service on heat bodies (M4).** `material_service`'s temperature and phase buffer
+  are the owner's heat body: capacity from the thermal stock, `vg_heat_body_phase` for the
+  plateau, `vg_heat_body_power` for exothermic stock, coupling 0 to the surroundings and
+  coupling 1 to the contents' gas (`HEAT_TARGET_MIXTURE`), kept while the service lives.
+  A band watch over 0.8 x melting, melting and the conductor's critical temperature wakes it;
+  thermoelectric cells convert a share of `vg_heat_body_flow`. Heat added is a command applied
+  at the next heat frame (tests run `vg_heat_debug_run_frames`). The non-thermal state (liner
+  corrosion, pressure fatigue, leaks) stays in DM and is event-driven: gas composition and
+  pressure publications (SSmachines' material subscriptions) and a `REACT_AT` per assembly
+  replace the heap. Gas temperature alone no longer wakes a service.
+- **Lint.** `tools/ci/check_reactor_processing.py` ("Check Reactor Processing") rejects
+  `START_PROCESSING`/`STOP_PROCESSING` outside `tools/ci/processing_allowlist.txt` (SSburning,
+  SSprojectiles, SSinstruments), and any `REACT_EVERY`/`REACT_PROCESS` without a string
+  justification; `--list` prints every declaration. Stale entries fail it.
+- **Timer census.** While `SStimer.census_enabled` (benchmark windows turn it on), inserts
+  are counted by owner type and proc; each window records `<window>_timer_census`.
+- **Wake and parity tests** are in `code/modules/unit_tests/dq_reactor_s4_tests.dm`.
+
 As built (C7): **SSbellies** is deleted. An occupied belly declares one `REACT_EVERY` and cancels it when it empties; an empty belly making liquid waits on a `REACT_AT` (containment.md §9).
 
 ## 10. Lint rules

@@ -84,12 +84,12 @@
 /obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "grows toward hatching every tick")
 	. = ..()
 	get_light_and_color(parent)
 
 /obj/effect/spider/eggcluster/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	if(istype(loc, /obj/item/organ/external))
 		var/obj/item/organ/external/O = loc
 		O.implants -= src
@@ -130,7 +130,6 @@
 	anchored = FALSE
 	layer = HIDING_LAYER
 	max_integrity = 3
-	var/last_itch = 0
 	var/amount_grown = 0
 	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 	var/travelling_in_vent = 0
@@ -138,6 +137,8 @@
 	var/faction = FACTION_SPIDERS
 
 	var/stunted = FALSE
+	/// REACT_AT token gating the "itches" flavor message to once per 30 seconds; null when the itch is ready.
+	var/tmp/itch_timer
 
 /obj/effect/spider/spiderling/frost
 	grow_as = list(/mob/living/simple_mob/animal/giant_spider/frost)
@@ -153,7 +154,7 @@
 	. = ..()
 	pixel_x = rand(6,-6)
 	pixel_y = rand(6,-6)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "moves, grows and vent-crawls every tick while alive")
 	//50% chance to grow up
 	if(amount_grown != -1 && prob(50))
 		amount_grown = 1
@@ -161,8 +162,13 @@
 
 /obj/effect/spider/spiderling/Destroy()
 	walk(src, 0) // Because we might have called walk_to, we must stop the walk loop or BYOND keeps an internal reference to us forever.
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
+
+/obj/effect/spider/spiderling/on_react(reason, source, source_kind)
+	. = ..()
+	if((reason & REACT_REASON_TIMER) && source == itch_timer)
+		itch_timer = null
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))
@@ -201,8 +207,8 @@
 				O.owner.injure(INJURY_PIERCE, 1, O.organ_tag, src)
 		else if(prob(1))
 			O.owner.injure(INJURY_TOXIN, 1, O.organ_tag, src)
-			if(world.time > last_itch + 30 SECONDS)
-				last_itch = world.time
+			if(!itch_timer)
+				itch_timer = REACT_REARM(src, itch_timer, world.time + 30 SECONDS)
 				to_chat(O.owner, span_notice("Your [O.name] itches..."))
 	else if(prob(1))
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " skitters."))

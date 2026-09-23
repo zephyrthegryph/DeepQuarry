@@ -197,10 +197,10 @@
 
 /obj/effect/effect/foam/firefighting/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "counts down its own lifetime every tick before dissolving")
 
 /obj/effect/effect/foam/firefighting/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/effect/effect/foam/firefighting/process()

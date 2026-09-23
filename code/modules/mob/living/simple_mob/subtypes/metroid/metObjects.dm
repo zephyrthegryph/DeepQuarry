@@ -25,11 +25,7 @@
 	. = ..()
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
-	START_PROCESSING(SSobj, src)
-
-/obj/effect/metroid/egg/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
+	REACT_PROCESS(src, 2 SECONDS, "grows the egg toward hatching")
 
 /obj/effect/metroid/egg/process()
 	amount_grown += rand(0,2)

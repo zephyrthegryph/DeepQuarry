@@ -13,7 +13,6 @@
 	var/mode = 1
 	/// Amount of power this hypo will remove from the robot user's internal cell when a reagent's stores are replenished.
 	var/charge_cost = 325
-	var/charge_tick = 0
 	/// Time it takes for shots to recharge (in seconds)
 	var/recharge_time = 5
 	/// If true, can inject through things like spacesuits and armor.
@@ -104,17 +103,13 @@
 		var/datum/reagent/hypo_reagent = SSchemistry.chemical_reagents[T]
 		reagent_names += hypo_reagent.name
 
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, recharge_time * 2 SECONDS, "recharges its reagent stock from the wearer's cell every recharge_time seconds")
 
 /obj/item/reagent_containers/borghypo/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/reagent_containers/borghypo/process() //Every [recharge_time] seconds, recharge some reagents for the cyborg+
-	if(++charge_tick < recharge_time)
-		return 0
-	charge_tick = 0
-
 	if(isrobot(loc))
 		var/mob/living/silicon/robot/robot_user = loc
 		if(robot_user && robot_user.cell)

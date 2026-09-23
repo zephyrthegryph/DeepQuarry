@@ -23,10 +23,15 @@
 	var/datum/anomaly_stats/stats
 	var/danger_mult = 1
 
+	/// REACT_AT token for the anomaly's despawn deadline; null when not scheduled (immortal, or not armed yet).
+	var/tmp/death_timer
+	/// REACT_AT token for the next harvesting pulse; null when not scheduled (no stats yet).
+	var/tmp/pulse_timer
+
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "moves at random and drives its unique effect every tick while it lives")
 	impact_area = get_area(src)
 
 	if(!impact_area)
@@ -52,17 +57,32 @@
 	if(immortal)
 		return
 	countdown.start()
+	death_timer = REACT_REARM(src, death_timer, death_time)
 
 /obj/effect/anomaly/process(seconds_per_tick)
 	anomalyEffect(seconds_per_tick)
-	anomalyPulse()
-	if(death_time < world.time && !immortal)
-		if(loc)
-			detonate()
-		qdel(src)
+	// stats can be set directly by callers that bypass stabilize() (e.g. the
+	// suspension field generator); catch those and arm the pulse timer lazily.
+	if(stats && !pulse_timer)
+		pulse_timer = REACT_REARM(src, pulse_timer, max(stats.next_activation, world.time))
+
+/obj/effect/anomaly/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER))
+		return
+	if(source == death_timer)
+		death_timer = null
+		if(!immortal)
+			if(loc)
+				detonate()
+			qdel(src)
+		return
+	if(source == pulse_timer)
+		pulse_timer = null
+		anomalyPulse()
 
 /obj/effect/anomaly/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	QDEL_NULL(countdown)
 	QDEL_NULL(anomaly_core)
 	if(stats)
@@ -77,13 +97,12 @@
 /obj/effect/anomaly/proc/anomalyPulse()
 	if(!stats)
 		return FALSE
-	if(world.time < stats.next_activation)
-		return FALSE
 
 	stats.pulse_effect()
 	if(QDELETED(src))
 		return FALSE
 	stats.next_activation = world.time + rand(stats.min_activation, stats.max_activation)
+	pulse_timer = REACT_REARM(src, pulse_timer, stats.next_activation)
 	return TRUE
 
 /obj/effect/anomaly/proc/move_anomaly()
@@ -107,6 +126,7 @@
 
 /obj/effect/anomaly/proc/stabilize(anchor = FALSE, has_core = TRUE, add_stats = FALSE)
 	immortal = TRUE
+	death_timer = REACT_REARM(src, death_timer, null)
 	name = (has_core ? "stable " : "hollow ") + name
 	if(!has_core)
 		QDEL_NULL(anomaly_core)
@@ -117,6 +137,7 @@
 		stats.attached_anomaly = WEAKREF(src)
 		stats.calculate_points()
 		density = TRUE
+		pulse_timer = REACT_REARM(src, pulse_timer, world.time)
 	return
 
 /obj/effect/anomaly/attackby(obj/item/I, mob/user)

@@ -92,21 +92,31 @@
 
 /obj/structure/cult/pylon/proc/repair(mob/user as mob)
 	if(isbroken)
-		START_PROCESSING(SSobj, src)
 		to_chat(user, "You repair \the [src].")
 		isbroken = 0
 		density = TRUE
 		icon_state = initial(icon_state)
 		set_light(5)
+		schedule_pylon_activation(world.time)
 
 // Returns 1 if the pylon does something special.
 /obj/structure/cult/pylon/proc/pylon_unique()
 	last_activation = world.time
 	return 0
 
-/obj/structure/cult/pylon/process()
-	if(!isbroken && (last_activation + activation_cooldown < world.time) && pylon_unique())
+/// Arms (or rearms) the pylon's next activation attempt at `time`.
+/obj/structure/cult/pylon/proc/schedule_pylon_activation(time)
+	pylon_timer = REACT_REARM(src, pylon_timer, time)
+
+/obj/structure/cult/pylon/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != pylon_timer)
+		return
+	pylon_timer = null
+	if(!isbroken && pylon_unique())
 		flick("[initial(icon_state)]-surge",src)
+	if(!isbroken)
+		schedule_pylon_activation(last_activation + activation_cooldown)
 
 /obj/structure/cult/tome
 	name = "Desk"

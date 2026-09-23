@@ -47,7 +47,6 @@
 	max_charges = 5
 	charges = 5
 	recharge_rate = 1
-	charge_tick = 0
 	can_charge = TRUE
 
 	projectile_type = /obj/item/projectile/beam/inversion

@@ -10,7 +10,7 @@
 	equip_type = EQUIP_UTILITY
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/Destroy()
-	STOP_PROCESSING(SSfastprocess, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/process()
@@ -37,7 +37,7 @@
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/detach()
-	STOP_PROCESSING(SSfastprocess, src)
+	REACT_PROCESS_STOP(src)
 //	chassis.proc_res["dynusepower"] = null
 	chassis.proc_res["dyngetcharge"] = null
 	..()
@@ -80,11 +80,11 @@
 	..()
 	if(href_list["toggle_relay"])
 		if(datum_flags & DF_ISPROCESSING)
-			STOP_PROCESSING(SSfastprocess, src)
+			REACT_PROCESS_STOP(src)
 			set_ready_state(TRUE)
 			src.mecha_log_message("Deactivated.")
 		else
-			START_PROCESSING(SSfastprocess, src)
+			REACT_PROCESS(src, 0.2 SECONDS, "wirelessly drains area power into the chassis cell every tick while active")
 			set_ready_state(FALSE)
 			src.mecha_log_message("Activated.")
 	return

@@ -1198,23 +1198,18 @@
 
 /turf/simulated/floor/water/digestive_enzymes/Entered(atom/movable/source)
 	if(digest_stuff(source) && !we_process)
-		START_PROCESSING(SSturfs, src)
+		REACT_PROCESS(src, 2 SECONDS, "digests whatever is sitting in the enzyme pool")
 		we_process = TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(digest_stuff(source) && !we_process)
-		START_PROCESSING(SSturfs, src)
+		REACT_PROCESS(src, 2 SECONDS, "digests whatever is sitting in the enzyme pool")
 		we_process = TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/process()
 	if(!digest_stuff())
 		we_process = FALSE
 		return PROCESS_KILL
-
-/turf/simulated/floor/water/digestive_enzymes/Destroy()
-	if(we_process)
-		STOP_PROCESSING(SSturfs, src)
-	. = ..()
 
 /turf/simulated/floor/water/digestive_enzymes/proc/can_digest(atom/movable/digest_target)
 	. = FALSE
@@ -1348,11 +1343,10 @@
 /obj/structure/auto_flesh_door/Initialize(mapload)
 	. = ..()
 	countdown = rand(50,250)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "counts down to opening and weakens anyone trapped inside")
 	update_icon()
 
 /obj/structure/auto_flesh_door/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	update_nearby_tiles()
 	return ..()
 

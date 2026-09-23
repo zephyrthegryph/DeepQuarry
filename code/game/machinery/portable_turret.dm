@@ -746,11 +746,11 @@
 	// high gear
 	if(speed_process)
 		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS(src, 0.2 SECONDS, "tracks and fires on targets every tick while in fast-fire gear")
 		return
 
 	// low gear
-	STOP_PROCESSING(SSfastprocess, src)
+	REACT_PROCESS_STOP(src)
 	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/porta_turret/proc/assess_and_assign(mob/living/L, list/targets, list/secondarytargets)

@@ -180,14 +180,14 @@
 /obj/item/mapping_unit/proc/start_updates()
 	GLOB.mapping_units += src
 	updating = TRUE
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "redraws the holomap while showing it")
 	process()
 
 
 
 /obj/item/mapping_unit/proc/stop_updates()
 	GLOB.mapping_units -= src
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	updating = FALSE
 	if(hud_item)
 		hud_item.off(FALSE)

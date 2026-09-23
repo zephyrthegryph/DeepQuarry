@@ -101,11 +101,7 @@
 
 /obj/item/coin/uranium/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/item/coin/uranium/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	. = ..()
+	REACT_PROCESS(src, 2 SECONDS, "irradiates nearby mobs while carried")
 
 /obj/item/coin/uranium/process()
 	radiate()

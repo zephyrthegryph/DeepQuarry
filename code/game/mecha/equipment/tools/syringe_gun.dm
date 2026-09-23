@@ -26,7 +26,7 @@
 	create_reagents(max_volume)
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/detach()
-	STOP_PROCESSING(SSfastprocess, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/critfail()
@@ -121,7 +121,7 @@
 				m++
 		if(processed_reagents.len)
 			message += " added to production"
-			START_PROCESSING(SSfastprocess, src)
+			REACT_PROCESS(src, 0.2 SECONDS, "synthesizes selected reagents into the syringe gun every tick")
 			occupant_message(message)
 			occupant_message("Reagent processing started.")
 			src.mecha_log_message("Reagent processing started.")
@@ -188,7 +188,7 @@
 					processed_reagents += reagent_id
 					m++
 			if(processed_reagents.len)
-				START_PROCESSING(SSfastprocess, src)
+				REACT_PROCESS(src, 0.2 SECONDS, "synthesizes selected reagents into the syringe gun every tick")
 				occupant_message("Reagent processing started.")
 				src.mecha_log_message("Reagent processing started.")
 			return TRUE
@@ -378,16 +378,16 @@
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/attach(obj/mecha/M as obj)
 	. = ..(M)
 	if(chassis)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "scans for and heals nearby injured targets every tick while deployed")
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/detach(atom/moveto=null)
 	shut_down()
 	. = ..(moveto)
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/critfail()
 	. = ..()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	shut_down()
 	if(chassis && chassis.occupant)
 		to_chat(chassis.occupant, span_notice("\The [chassis] shudders as something jams!"))

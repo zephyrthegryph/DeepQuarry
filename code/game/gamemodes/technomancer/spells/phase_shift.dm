@@ -29,12 +29,12 @@
 /obj/effect/phase_shift/Initialize(mapload)
 	. = ..()
 	set_light(3, 5, l_color = "#FA58F4")
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "afflicts everyone inside the rift with instability every tick")
 
 /obj/effect/phase_shift/Destroy()
 	for(var/atom/movable/AM in contents) //Eject everything out.
 		AM.forceMove(get_turf(src))
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/effect/phase_shift/process()

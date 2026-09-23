@@ -135,7 +135,7 @@
 
 /obj/item/clothing/head/cakehat/process()
 	if(!onfire)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		return
 
 	var/turf/location = src.loc
@@ -156,7 +156,7 @@
 		force = 3
 		injury_kind = INJURY_BURN
 		icon_state = "cake1"
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "ignites its surroundings every tick while on fire")
 	else
 		force = null
 		injury_kind = INJURY_BLUNT
@@ -273,6 +273,8 @@
 	var/flavor_drop = null // Ditto, but for dropping it.
 	var/flavor_activate = null // Ditto, for but activating.
 	var/brainloss_cost = 3 // Whenever it activates, inflict this much brainloss on the wearer, as its not good for the mind to wear things that manipulate it.
+	/// REACT_AT token for our next cooldown/tension check; null when none.
+	var/tmp/react_timer
 
 /obj/item/clothing/head/psy_crown/proc/activate_ability(mob/living/wearer)
 	cooldown = world.time + cooldown_duration
@@ -284,7 +286,7 @@
 /obj/item/clothing/head/psy_crown/equipped(mob/living/carbon/human/user)
 	..()
 	if(istype(user) && user.head == src && user.is_sentient())
-		START_PROCESSING(SSobj, src)
+		react_timer = REACT_REARM(src, react_timer, max(world.time, cooldown))
 		if(flavor_equip)
 			to_chat(user, flavor_equip)
 
@@ -292,7 +294,7 @@
 	if(equipping || loc == user)
 		return ..()
 	..()
-	STOP_PROCESSING(SSobj, src)
+	react_timer = REACT_REARM(src, react_timer, null)
 	if(user.is_sentient())
 		if(loc == user) // Still inhand.
 			if(flavor_unequip)
@@ -301,15 +303,14 @@
 		if(flavor_drop)
 			to_chat(user, flavor_drop)
 
-/obj/item/clothing/head/psy_crown/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
-
-/obj/item/clothing/head/psy_crown/process()
+/obj/item/clothing/head/psy_crown/on_react(reason, source, source_kind)
+	react_timer = null
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(world.time >= cooldown && L.is_sentient() && L.get_tension() >= tension_threshold)
 			activate_ability(L)
+		if(L.is_sentient())
+			react_timer = REACT_REARM(src, react_timer, max(world.time + 2 SECONDS, cooldown))
 
 
 /obj/item/clothing/head/psy_crown/wrath

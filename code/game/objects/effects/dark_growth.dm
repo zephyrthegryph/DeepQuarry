@@ -111,10 +111,10 @@
 /obj/structure/prop/dark_node/Initialize(mapload)
 	. = ..()
 	set_light(light_range, -20, "#FFFFFF")
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "spreads and drives its linked dark tiles every tick")
 
 /obj/structure/prop/dark_node/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	for(var/obj/effect/dark/dark_tile in children_effects)
 		dark_tile.unlinked()
 	return ..()

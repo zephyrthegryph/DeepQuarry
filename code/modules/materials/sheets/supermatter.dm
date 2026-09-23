@@ -11,7 +11,7 @@
 
 /obj/item/stack/material/supermatter/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "irradiates its surroundings while carried")
 
 /obj/item/stack/material/supermatter/process()
 	radiate()
@@ -33,10 +33,6 @@
 	)
 	last_event = world.time
 	active = FALSE
-
-/obj/item/stack/material/supermatter/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
 
 
 /obj/item/stack/material/supermatter/proc/update_mass()	// Due to how dangerous they can be, the item will get heavier and larger the more are in the stack.

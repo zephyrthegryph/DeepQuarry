@@ -147,7 +147,6 @@
 	QDEL_NULL(power_system)
 
 	installed_modules = null
-	STOP_PROCESSING(SSobj, src)
 	qdel(wires)
 	wires = null
 	qdel(spark_system)
@@ -179,9 +178,9 @@
 // We only care about processing when we're on a mob
 /obj/item/rig/Moved(old_loc, direction, forced)
 	if(ismob(loc))
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "runs cooling, power drain and module upkeep while worn")
 	else
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		QDEL_NULL(minihud) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on

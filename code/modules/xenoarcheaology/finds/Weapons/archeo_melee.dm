@@ -38,7 +38,7 @@
 
 /obj/item/melee/artifact_blade/Initialize(mapload) //We will never spawn without xenoarch or SOMEONE unearthing us.
 	. = ..()
-	//START_PROCESSING(SSobj, src) //We could start processing here, but let's wait until someone touches us. Uncomment this if more stuff is added and you want it to do spooky passive things.
+	//REACT_PROCESS(src, 2 SECONDS, "drains its wielder's blood every tick while wielded") //We could start processing here, but let's wait until someone touches us. Uncomment this if more stuff is added and you want it to do spooky passive things.
 
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
@@ -49,9 +49,8 @@
 	if(!last_touched || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
 	if(!last_touched || last_touched.stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
-		STOP_PROCESSING(SSobj, src)
 		last_touched = null
-		return
+		return PROCESS_KILL
 	if(loc == last_touched && (last_touched.life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
 		/// First and foremost, the sword passively takes some blood from you when you hold it.
 		/// This doesn't INJURE you like using it but does take blood. And a LOT of it. If you just carry the sword around, it's going to drain you.
@@ -159,7 +158,7 @@
 	if((user != last_touched) && !iscultist(user) && ishuman(user))
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
 		last_touched = user
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "drains its wielder's blood every tick while wielded")
 
 /obj/item/melee/artifact_blade/attack_self(mob/user)
 	. = ..(user)

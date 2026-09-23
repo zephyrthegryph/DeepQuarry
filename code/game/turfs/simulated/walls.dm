@@ -45,10 +45,10 @@
 	if(!isnull(rmaterialtype))
 		reinf_material = get_material_by_name(rmaterialtype)
 	update_material()
-	START_PROCESSING(SSturfs, src)
+	REACT_PROCESS(src, 2 SECONDS, "irradiates nearby atoms every tick while its material is radioactive")
 
 /turf/simulated/wall/Destroy()
-	STOP_PROCESSING(SSturfs, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /turf/simulated/wall/examine_icon()

@@ -302,11 +302,11 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/strength = 5 // How much damage to do inside each affect()
 
 /obj/effect/effect/smoke/elemental/Initialize(mapload)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "affects every mob standing in the cloud every tick")
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)

@@ -21,7 +21,7 @@
 
 /obj/item/pinpointer/Destroy()
 	active = 0
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/pinpointer/attack_self(mob/user)
@@ -32,11 +32,11 @@
 		return
 	if(!active)
 		active = TRUE
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "recomputes its target's direction and distance every tick while active")
 		to_chat(user, span_notice("You activate the pinpointer"))
 	else
 		active = FALSE
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer"))
 
@@ -201,7 +201,7 @@
 		return TRUE
 	if(!active)
 		active = 1
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "recomputes its target's direction and distance every tick while active")
 		if(!mode)
 			workdisk()
 			to_chat(user, span_notice("Authentication Disk Locator active."))
@@ -210,7 +210,7 @@
 			to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		active = 0
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
@@ -290,11 +290,11 @@
 		return TRUE
 	if(!active)
 		active = TRUE
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "recomputes its target's direction and distance every tick while active")
 		to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		active = FALSE
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 

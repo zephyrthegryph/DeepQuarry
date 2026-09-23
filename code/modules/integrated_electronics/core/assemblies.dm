@@ -30,7 +30,6 @@
 	return ..()
 
 /obj/item/electronic_assembly/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	battery = null // It will be qdel'd by ..() if still in our contents
 	return ..()
 
@@ -47,13 +46,13 @@
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "draws or supplies idle power for its installed circuits")
 
 /obj/item/electronic_assembly/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "draws or supplies idle power for its installed circuits")
 
 // (Re)computes whether handle_idle_power() has anything to do: a battery to draw
 // from plus at least one circuit that makes or draws idle power.
@@ -70,16 +69,16 @@
 	net_power = 0 // Reset this. This gets increased/decreased with [give/draw]_power() outside of this loop.
 
 	// Early-out: no battery / nothing power-relevant means double-iterating
-	// contents every SSobj tick is pure waste. Cache the verdict, recompute only
+	// contents every reactor tick is pure waste. Cache the verdict, recompute only
 	// when a circuit/battery is added or removed (Entered/Exited null the flag).
 	if(isnull(power_relevant))
 		recompute_power_relevant()
 	if(!power_relevant)
 		return
 
-	// Normalize the per-tick draw to the current SSobj wait so the power economy
-	// is unchanged while the rate decouples from the scheduler. seconds_per_tick
-	// arrives in deciseconds from the processing subsystem; convert to seconds.
+	// Normalize the per-tick draw to the REACT_PROCESS baseline period so the power
+	// economy is unchanged while the rate decouples from the scheduler. seconds_per_tick
+	// arrives in elapsed deciseconds from the reactor; convert to seconds.
 	var/draw_scale = (seconds_per_tick / 10) / IC_IDLE_POWER_BASELINE_SPT
 	if(draw_scale <= 0)
 		draw_scale = 1

@@ -30,12 +30,12 @@
 
 /obj/structure/girder/Destroy()
 	if(girder_material && girder_material.products_need_process())
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/structure/girder/process()
 	if(!radiate())
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		return
 
 /obj/structure/girder/proc/radiate()
@@ -63,9 +63,9 @@
 	if(applies_material_colour)
 		color = girder_material.icon_colour
 	if(girder_material.products_need_process()) //Am I radioactive or some other? Process me!
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "irradiates nearby atoms every tick while its material is radioactive")
 	else if(datum_flags & DF_ISPROCESSING) //If I happened to be radioactive or s.o. previously, and am not now, stop processing.
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 
 /obj/structure/girder/get_material()
 	return girder_material

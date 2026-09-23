@@ -26,12 +26,12 @@
 	on = !on
 	if(on)
 		set_light(range, 2, "#007fff")
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "rescans nearby fluorescent atoms while switched on")
 		icon_state = "uv_on"
 	else
 		set_light(0)
 		clear_last_scan()
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		icon_state = "uv_off"
 
 /obj/item/uv_light/proc/clear_last_scan()

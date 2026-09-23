@@ -130,10 +130,10 @@
 
 	can_revert = revert
 
-	START_PROCESSING(SSprocessing, src)
+	REACT_PROCESS(src, 1 SECOND, "watches the encased mob's state every tick to revert or crumble")
 
 /obj/structure/gargoyle/Destroy()
-	STOP_PROCESSING(SSprocessing, src)
+	REACT_PROCESS_STOP(src)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle?.resolve()
 	if(!gargoyle)
 		return ..()

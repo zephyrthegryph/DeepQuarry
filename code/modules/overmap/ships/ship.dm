@@ -1,5 +1,5 @@
 #define SHIP_MOVE_RESOLUTION 0.00001
-/// Period between drift-decay wakes for a moving ship (was SSprocessing's 1 SECOND wait).
+/// Period between drift-decay wakes for a moving ship (formerly the 1 SECOND processing wait).
 #define SHIP_DRIFT_DECAY_PERIOD 1 SECOND
 #define MOVING(speed) abs(speed) >= min_speed
 #define SANITIZE_SPEED(speed) SIGN(speed) * CLAMP(abs(speed), 0, max_speed)

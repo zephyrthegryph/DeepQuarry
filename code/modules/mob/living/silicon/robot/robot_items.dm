@@ -487,14 +487,8 @@
 	var/shield_refresh = 15 SECONDS	//Time it takes for the shield to reboot after destabilizing
 	var/overload_time = 0			//Stores the time of overload
 	var/last_flash = 0				//Stores the time of last flash
-
-/obj/item/borg/combat/shield/Initialize(mapload)
-	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/item/borg/combat/shield/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	. = ..()
+	/// REACT_AT token for our next flash-decay/reactivation deadline; null when none.
+	var/tmp/react_timer
 
 /obj/item/borg/combat/shield/attack_self(mob/living/user)
 	. = ..(user)
@@ -502,7 +496,8 @@
 		return TRUE
 	set_shield_level()
 
-/obj/item/borg/combat/shield/process()
+/obj/item/borg/combat/shield/on_react(reason, source, source_kind)
+	react_timer = null
 	if(active)
 		if(flash_count && (last_flash + shield_refresh < world.time))
 			flash_count = 0
@@ -523,6 +518,7 @@
 
 		if(amount > 0)
 			last_flash = world.time
+			react_timer = REACT_REARM(src, react_timer, last_flash + shield_refresh)
 			if(flash_count >= overload_threshold)
 				overload(user)
 
@@ -531,6 +527,7 @@
 	user.visible_message(span_danger("[user]'s shield destabilizes!"), span_danger("Your shield destabilizes!"))
 	user.update_icon()
 	overload_time = world.time
+	react_timer = REACT_REARM(src, react_timer, overload_time + shield_refresh)
 
 /obj/item/borg/combat/shield/verb/set_shield_level()
 	set name = "Set shield level"

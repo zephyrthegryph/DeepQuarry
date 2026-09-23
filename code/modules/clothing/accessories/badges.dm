@@ -294,17 +294,16 @@
 	. = ..()
 	current_film = new /obj/item/dosimeter_film(src)
 	update_state(current_film.state)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "checks the wearer's radiation dose against the film")
 
 /obj/item/clothing/accessory/dosimeter/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(current_film)
 	return ..()
 
 /obj/item/clothing/accessory/dosimeter/process()
 	check_holder()
 	if(current_film.state > 1)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 
 /obj/item/clothing/accessory/dosimeter/attack_hand(mob/user as mob)
 	if(user.get_inactive_hand() == src)
@@ -313,7 +312,7 @@
 			current_film = null
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			update_state(0)
 			return
 		..()
@@ -332,7 +331,7 @@
 			desc = "This seems like a dosimeter. It has a film inside."
 
 			if(current_film.state < 2)
-				START_PROCESSING(SSobj, src)
+				REACT_PROCESS(src, 2 SECONDS, "checks the wearer's radiation dose against the film")
 		else
 			to_chat(user, span_notice("\The [src] already has a film inside."))
 	else

@@ -4301,7 +4301,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.auto_flicker = FALSE
 	L.begin_emergency_discharge()
 	TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency light did not schedule its discharge timer")
-	TEST_ASSERT(!(L in SSobj.processing), "ordinary emergency light retained SSobj polling")
+	TEST_ASSERT(!L.reactor_id || !SSreactor.continuous_by_id["[L.reactor_id]"], "ordinary emergency light is declared continuous")
 	qdel(L)
 
 /datum/unit_test/dq_idle_cooker_hibernates

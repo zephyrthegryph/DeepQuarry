@@ -24,25 +24,30 @@
 /obj/effect/map_effect/interval
 	var/interval_lower_bound = 5 SECONDS // Lower number for how often the map_effect will trigger.
 	var/interval_upper_bound = 5 SECONDS // Higher number for above.
+	/// REACT_AT token for the next attempt; null when not scheduled.
+	var/tmp/attempt_timer
 
 /obj/effect/map_effect/interval/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	attempt_timer = REACT_REARM(src, attempt_timer, world.time)
 
 /obj/effect/map_effect/interval/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	attempt_timer = REACT_REARM(src, attempt_timer, null)
 	return ..()
 
 // Override this for the specific thing to do.
 /obj/effect/map_effect/interval/proc/trigger()
 	return
 
-// Handles the delay and making sure it doesn't run when it would be bad.
-/obj/effect/map_effect/interval/process()
-	//Not yet!
-	if(world.time < next_attempt)
+/obj/effect/map_effect/interval/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != attempt_timer)
 		return
+	attempt_timer = null
+	attempt()
 
+// Handles making sure it doesn't run when it would be bad, and reschedules the next attempt.
+/obj/effect/map_effect/interval/proc/attempt()
 	// Check to see if we're useful first.
 	if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
 		next_attempt = world.time + retry_delay
@@ -50,6 +55,7 @@
 	else
 		next_attempt = world.time + rand(interval_lower_bound, interval_upper_bound)
 		trigger()
+	attempt_timer = REACT_REARM(src, attempt_timer, next_attempt)
 
 // Helper proc to optimize the use of effects by making sure they do not run if nobody is around to perceive it.
 /proc/check_for_player_proximity(atom/proximity_to, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE)

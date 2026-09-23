@@ -59,11 +59,11 @@
 
 /turf/simulated/floor/lava/Entered(atom/movable/AM)
 	if(burn_stuff(AM))
-		START_PROCESSING(SSturfs, src)
+		REACT_PROCESS(src, 2 SECONDS, "burns anything on the tile every tick while something is burning")
 
 /turf/simulated/floor/lava/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(burn_stuff(source))
-		START_PROCESSING(SSturfs, src)
+		REACT_PROCESS(src, 2 SECONDS, "burns anything on the tile every tick while something is burning")
 
 /turf/simulated/floor/lava/process()
 	if(!burn_stuff())

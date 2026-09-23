@@ -24,11 +24,11 @@
 /obj/item/spell/radiance/Initialize(mapload, coreless)
 	. = ..()
 	set_light(7, 4, l_color = "#D9D900")
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "irradiates and heats the surrounding area every tick while cast")
 	log_and_message_admins("has casted [src].")
 
 /obj/item/spell/radiance/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	log_and_message_admins("has stopped maintaining [src].")
 	return ..()
 

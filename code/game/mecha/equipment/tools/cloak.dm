@@ -36,7 +36,7 @@
 	if(chassis)
 		chassis.cloak()
 	src.mecha_log_message("Activated.")
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "drains chassis power every tick while cloaked")
 	set_ready_state(FALSE)
 	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
 
@@ -44,6 +44,6 @@
 	if(chassis)
 		chassis.uncloak()
 	src.mecha_log_message("Deactivated.")
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	set_ready_state(TRUE)
 	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)

@@ -340,7 +340,7 @@
 /obj/item/entrepreneur/emf/Initialize(mapload)
 	. = ..()
 	emf = rand(1,100)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "scans for nearby ghosts every tick")
 
 /obj/item/entrepreneur/emf/process()
 	search_for_ghosts()

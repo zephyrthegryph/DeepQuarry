@@ -151,7 +151,7 @@
 
 /obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "checks its target is still valid and stalks toward them")
 	set_target(targeting_mob)
 	create_images_from(clone_appearance_from)
 	append_client(targeting_mob.client)
@@ -160,7 +160,6 @@
 	set_dir(get_dir(src,targeting_mob))
 
 /obj/effect/fake_attacker/human/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /obj/effect/fake_attacker/human/process()

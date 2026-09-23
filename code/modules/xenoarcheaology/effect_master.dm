@@ -49,7 +49,7 @@
 
 	my_effects = list()
 
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "drives every attached artifact effect's per-tick update and environment triggers")
 
 	do_setup()
 	return
@@ -146,7 +146,7 @@
 		my_effects -= AE
 		qdel(AE)
 
-	STOP_PROCESSING(SSobj,src)
+	REACT_PROCESS_STOP(src)
 
 	. = ..()
 
@@ -188,7 +188,7 @@
 	//   - Subsequent passes halve the chance and add probabilistically.
 	// Minimum output: 1 effect (the first pass is always unconditional).
 	// Hard ceiling: ARTIFACT_MAX_EFFECTS prevents degenerate artifacts with 10+ simultaneous
-	// effects that would saturate SSobj tick budgets when all fire at once in process().
+	// effects that would saturate the continuous-lane tick budget when all fire at once in process().
 	while(effect_generation_chance > 0 && my_effects.len < ARTIFACT_MAX_EFFECTS)
 		var/chosen_path = pick(effect_registry)
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
@@ -427,7 +427,7 @@
 
 /datum/component/artifact_master/process()
 	if(!holder)	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		if(!QDELETED(src))
 			qdel(src)
 			return

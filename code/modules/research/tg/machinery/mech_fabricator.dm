@@ -497,7 +497,7 @@
 					return
 
 				process_queue = TRUE
-				START_PROCESSING(SSfastprocess, src)
+				REACT_PROCESS(src, 0.2 SECONDS, "advances the active build and dispenses finished parts every tick while the queue runs")
 			return
 
 		if("del_queue_part")
@@ -520,7 +520,7 @@
 				return
 
 			process_queue = TRUE
-			START_PROCESSING(SSfastprocess, src)
+			REACT_PROCESS(src, 0.2 SECONDS, "advances the active build and dispenses finished parts every tick while the queue runs")
 			return
 
 		if("stop_queue")

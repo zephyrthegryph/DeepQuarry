@@ -34,10 +34,10 @@
 	custombasecolor = spill_color
 
 	update_icon()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "reagent puddle subtypes may drive per-tick drying/spread behaviour")
 
 /obj/effect/decal/cleanable/blood/reagent/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/effect/decal/cleanable/blood/reagent/update_icon()

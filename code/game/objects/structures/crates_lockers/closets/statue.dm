@@ -14,6 +14,8 @@
 	/// Integrity the statue started at; damage below this is dealt to the mob on release.
 	var/original_int = 100
 	var/timer = 240 //eventually the person will be freed
+	/// REACT_AT token for the statue's release deadline; null when not scheduled.
+	var/tmp/free_timer
 
 /obj/structure/closet/statue/Initialize(mapload, mob/living/L)
 	. = ..()
@@ -44,14 +46,15 @@
 	if(!found_target) //meaning if the statue didn't find a valid target
 		return INITIALIZE_HINT_QDEL
 
-	START_PROCESSING(SSobj, src)
+	free_timer = REACT_REARM(src, free_timer, world.time + timer * 2 SECONDS)
 
-/obj/structure/closet/statue/process()
-	timer--
-	if (timer <= 0)
-		dump_contents()
-		STOP_PROCESSING(SSobj, src)
-		qdel(src)
+/obj/structure/closet/statue/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != free_timer)
+		return
+	free_timer = null
+	dump_contents()
+	qdel(src)
 
 /obj/structure/closet/statue/dump_contents()
 
@@ -67,6 +70,7 @@
 		M.reset_perspective() // Fixes a blackscreen flicker
 
 /obj/structure/closet/statue/Destroy()
+	free_timer = REACT_REARM(src, free_timer, null)
 	// Release the mob properly (unmuted, unregistered) before the base
 	// Destroy() spills the interior.
 	dump_contents()

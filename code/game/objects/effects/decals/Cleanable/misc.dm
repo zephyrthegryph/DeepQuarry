@@ -26,25 +26,28 @@
 	var/last_event = 0
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+	/// REACT_AT token for the next radiation pulse; null when not scheduled.
+	var/tmp/radiate_timer
 
 /obj/effect/decal/cleanable/greenglow/Initialize(mapload, _age)
 	. = ..()
 	QDEL_IN(src, 2 MINUTES)
-	START_PROCESSING(SSobj, src)
+	radiate_timer = REACT_REARM(src, radiate_timer, world.time)
 
 /obj/effect/decal/cleanable/greenglow/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	radiate_timer = REACT_REARM(src, radiate_timer, null)
 	. = ..()
 
-/obj/effect/decal/cleanable/greenglow/process()
+/obj/effect/decal/cleanable/greenglow/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != radiate_timer)
+		return
+	radiate_timer = null
 	radiate()
-	..()
+	radiate_timer = REACT_REARM(src, radiate_timer, world.time + 1.5 SECONDS)
 
 /obj/effect/decal/cleanable/greenglow/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
-		return
-	if(world.time <= last_event + 1.5 SECONDS)
 		return
 	active = TRUE
 	radiation_pulse(

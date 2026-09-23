@@ -70,6 +70,8 @@
 
 	var/start_time
 	var/time_til_open = 5 MINUTES
+	/// REACT_AT token for the door's opening deadline; null when not scheduled.
+	var/tmp/open_timer
 
 /obj/structure/timer_door/examine(mob/user, infix, suffix)
 	. = ..()
@@ -79,19 +81,21 @@
 
 /obj/structure/timer_door/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
-
 	start_time = world.time
+	open_timer = REACT_REARM(src, open_timer, start_time + time_til_open)
 
 /obj/structure/timer_door/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	open_timer = REACT_REARM(src, open_timer, null)
 	visible_message(span_danger("\The [src] opens up!"))
 	playsound(src, 'sound/effects/bang.ogg', 75, 1)
 	return ..()
 
-/obj/structure/timer_door/process()
-	if(start_time + time_til_open < world.time)
-		qdel(src)
+/obj/structure/timer_door/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != open_timer)
+		return
+	open_timer = null
+	qdel(src)
 
 /obj/structure/timer_door/ten
 	time_til_open = 10 MINUTES

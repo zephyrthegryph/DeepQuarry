@@ -41,13 +41,13 @@
 
 /obj/effect/countdown/proc/start()
 	if(!started)
-		START_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS(src, 0.2 SECONDS, "follows its attached atom and redraws its live display text every tick")
 		started = TRUE
 
 /obj/effect/countdown/proc/stop()
 	if(started)
 		maptext = null
-		STOP_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS_STOP(src)
 		started = FALSE
 
 /obj/effect/countdown/proc/get_value()
@@ -71,7 +71,7 @@
 
 /obj/effect/countdown/Destroy()
 	attached_to = null
-	STOP_PROCESSING(SSfastprocess, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/effect/countdown/singularity_pull(atom/singularity, current_size)

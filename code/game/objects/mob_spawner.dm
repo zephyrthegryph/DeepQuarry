@@ -22,13 +22,16 @@
 
 	var/list/spawned_mobs = list()
 
+	/// REACT_AT token for the next spawn attempt; null when not scheduled.
+	var/tmp/spawn_timer
+
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 	last_spawn = world.time + rand(0,spawn_delay)
+	spawn_timer = REACT_REARM(src, spawn_timer, last_spawn + spawn_delay)
 
 /obj/structure/mob_spawner/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	spawn_timer = REACT_REARM(src, spawn_timer, null)
 	for(var/spawned in spawned_mobs)
 		if(istype(spawned, /mob/living))
 			var/mob/living/L = spawned
@@ -39,12 +42,20 @@
 	spawned_mobs.Cut()
 	return ..()
 
-/obj/structure/mob_spawner/process()
-	if(!can_spawn())
+/obj/structure/mob_spawner/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != spawn_timer)
 		return
-	var/chosen_mob = choose_spawn()
-	if(chosen_mob)
-		do_spawn(chosen_mob)
+	spawn_timer = null
+	attempt_spawn()
+
+/// Attempts a single spawn if conditions allow, and reschedules the next attempt.
+/obj/structure/mob_spawner/proc/attempt_spawn()
+	if(can_spawn())
+		var/chosen_mob = choose_spawn()
+		if(chosen_mob)
+			do_spawn(chosen_mob)
+	spawn_timer = REACT_REARM(src, spawn_timer, max(last_spawn + spawn_delay, world.time + 2 SECONDS))
 
 /obj/structure/mob_spawner/proc/can_spawn()
 	if(!total_spawns)
@@ -176,16 +187,15 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 		mobs_in_range -= AM
 
 
-/obj/structure/mob_spawner/scanner/process()
-	if(!can_spawn())
-		return
-	if(world.time > last_spawn + spawn_delay)
-		for(var/mob/living/A in mobs_in_range) //No more calling fucking range(10) every goddamn processing tick, christ.
+/obj/structure/mob_spawner/scanner/attempt_spawn()
+	if(can_spawn())
+		for(var/mob/living/A in mobs_in_range)
 			if ((A.faction != mob_faction) && A.ckey)
 				var/chosen_mob = choose_spawn()
 				if(chosen_mob)
 					do_spawn(chosen_mob)
 					break //ALSO NO SPAWNING MULTIPLE MOBS
+	spawn_timer = REACT_REARM(src, spawn_timer, max(last_spawn + spawn_delay, world.time + 2 SECONDS))
 
 //////////////
 // Spawners //

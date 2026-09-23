@@ -3,7 +3,7 @@
 	icon_state = "hallucination"
 	anomaly_core = /obj/item/assembly/signaler/anomaly/hallucination
 	danger_mult = 0.9
-	/// Time passed since the last effect, increased by seconds_per_tick of the SSobj
+	/// Time passed since the last effect, increased by seconds_per_tick of the continuous lane
 	var/ticks = 0
 	/// How many seconds between each small hallucination pulses
 	var/release_delay = 5

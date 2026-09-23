@@ -242,10 +242,10 @@
 
 /obj/item/beacon_locator/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "points towards its target radio and updates its icon every tick")
 
 /obj/item/beacon_locator/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/beacon_locator/process()

@@ -8,11 +8,7 @@
 
 /obj/structure/tanning_rack/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
-
-/obj/structure/tanning_rack/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
+	REACT_PROCESS(src, 2 SECONDS, "dries the hide it holds a little more each tick") // fires ~every 2s , starting from wetness 30 takes ~1m
 
 /obj/structure/tanning_rack/process()
 	if(QDELETED(drying))

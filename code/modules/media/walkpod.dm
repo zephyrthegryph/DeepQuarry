@@ -25,6 +25,9 @@
 	w_class = ITEMSIZE_COST_SMALL
 	slot_flags = SLOT_BELT
 
+	/// REACT_AT token for our next listener/track check; null when none.
+	var/tmp/react_timer
+
 /obj/item/walkpod/Destroy()
 	remove_listener()
 	return ..()
@@ -51,7 +54,7 @@
 /obj/item/walkpod/proc/remove_listener()
 	if(playing)
 		StopPlaying()
-	STOP_PROCESSING(SSobj, src)
+	react_timer = REACT_REARM(src, react_timer, null)
 	if(deployed_headpods)
 		restore_headpods()
 	to_chat(listener, span_notice("You are no longer wearing the [src]'s headphones."))
@@ -62,7 +65,7 @@
 	if(listener)
 		remove_listener()
 	listener = L
-	START_PROCESSING(SSobj, src)
+	react_timer = REACT_REARM(src, react_timer, world.time + 2 SECONDS)
 	to_chat(L, span_notice("You put the [src]'s headphones on and power it up, preparing to listen to some <b>sick tunes</b>."))
 	update_icon()
 
@@ -85,17 +88,20 @@
 		set_listener(user)
 	tgui_interact(user)
 
-// Process ticks to ensure our listener remains valid and we do music-ing
-/obj/item/walkpod/process()
+// Wakes to ensure our listener remains valid and we do music-ing
+/obj/item/walkpod/on_react(reason, source, source_kind)
+	react_timer = null
 	if(!check_headpods())
 		restore_headpods()
 	if(!check_listener())
 		remove_listener()
 		return
 	if(!playing)
+		schedule_walkpod_check()
 		return
 	// If the current track isn't finished playing, let it keep going
 	if(current_track && world.time < media_start_time + current_track.duration)
+		schedule_walkpod_check()
 		return
 	// Oh... nothing in queue? Well then pick next according to our rules
 	var/list/tracks = getTracksList()
@@ -116,6 +122,7 @@
 			playing = 0
 			update_icon()
 	start_stop_song()
+	schedule_walkpod_check()
 
 // Track/music internals
 /obj/item/walkpod/proc/start_stop_song()
@@ -128,15 +135,25 @@
 		media_start_time = 0
 	update_music()
 
+/obj/item/walkpod/proc/schedule_walkpod_check()
+	if(!listener)
+		return
+	if(playing && current_track)
+		react_timer = REACT_REARM(src, react_timer, media_start_time + current_track.duration)
+	else
+		react_timer = REACT_REARM(src, react_timer, world.time + 2 SECONDS)
+
 /obj/item/walkpod/proc/StopPlaying()
 	playing = 0
 	start_stop_song()
+	schedule_walkpod_check()
 
 /obj/item/walkpod/proc/StartPlaying()
 	if(!current_track)
 		return
 	playing = 1
 	start_stop_song()
+	schedule_walkpod_check()
 
 // Advance to the next track - Don't start playing it unless we were already playing
 /obj/item/walkpod/proc/NextTrack()
@@ -147,6 +164,7 @@
 	current_track = tracks[newTrackIndex]
 	if(playing)
 		start_stop_song()
+		schedule_walkpod_check()
 
 // Unadvance to the notnext track - Don't start playing it unless we were already playing
 /obj/item/walkpod/proc/PrevTrack()
@@ -157,6 +175,7 @@
 	current_track = tracks[newTrackIndex]
 	if(playing)
 		start_stop_song()
+		schedule_walkpod_check()
 
 // UI
 /obj/item/walkpod/proc/getTracksList()

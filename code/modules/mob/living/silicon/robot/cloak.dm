@@ -10,11 +10,7 @@
 	var/active = FALSE				//If the shield is on
 /obj/item/borg/cloak/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/item/borg/cloak/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	. = ..()
+	REACT_PROCESS(src, 2 SECONDS, "drains the robot's cell while cloaking is active")
 
 /obj/item/borg/cloak/attack_self(mob/user)
 	. = ..(user)

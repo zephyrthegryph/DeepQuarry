@@ -159,11 +159,7 @@
 
 /obj/effect/blob/core/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/effect/blob/core/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
+	REACT_PROCESS(src, 2 SECONDS, "pulses outward in all four diagonal directions")
 
 /obj/effect/blob/core/process()
 	pulse(20, list(NORTH, EAST))

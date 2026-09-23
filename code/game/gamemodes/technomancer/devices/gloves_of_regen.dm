@@ -45,11 +45,11 @@
 
 /obj/item/clothing/gloves/regen/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "heals the wearer's afflictions at the cost of nutrition every tick while worn")
 
 /obj/item/clothing/gloves/regen/Destroy()
 	wearer = null
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/clothing/gloves/regen/process()

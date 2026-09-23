@@ -13,6 +13,8 @@
 	var/expired = 0
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
+	/// REACT_AT token for the pass's expiry deadline; null when not scheduled.
+	var/tmp/expiry_timer
 
 /obj/item/card/id/guest/update_icon()
 	return
@@ -61,6 +63,7 @@
 			update_icon()
 			expiration_time = world.time
 			expired = 1
+			expiry_timer = REACT_REARM(src, expiry_timer, null)
 	else
 		user.visible_message("\The [user] shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]",\
 			"You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]")
@@ -74,19 +77,24 @@
 /// Expiry ticking is world registration (L3): start it when the pass is live.
 /obj/item/card/id/guest/on_materialize()
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	if(!expired)
+		expiry_timer = REACT_REARM(src, expiry_timer, max(expiration_time, world.time))
 
 /obj/item/card/id/guest/on_dematerialize()
-	STOP_PROCESSING(SSobj, src)
+	expiry_timer = REACT_REARM(src, expiry_timer, null)
 	return ..()
 
-/obj/item/card/id/guest/process()
-	if(expired == 0 && world.time >= expiration_time)
-		visible_message(span_warning("\The [src] flashes a few times before turning red."))
-		icon_state = "guest-invalid"
-		update_icon()
-		expired = 1
+/obj/item/card/id/guest/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != expiry_timer)
 		return
+	expiry_timer = null
+	if(expired || world.time < expiration_time)
+		return
+	visible_message(span_warning("\The [src] flashes a few times before turning red."))
+	icon_state = "guest-invalid"
+	update_icon()
+	expired = 1
 
 /////////////////////////////////////////////
 //Guest pass terminal////////////////////////

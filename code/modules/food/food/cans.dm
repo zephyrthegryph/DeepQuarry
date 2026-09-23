@@ -15,12 +15,12 @@
 	if(IS_HARMING(user) && !is_open_container())
 		to_chat(user, span_warning("You shake [src]."))
 		if(!shaken)
-			START_PROCESSING(SSobj, src)
+			REACT_PROCESS(src, 2 SECONDS, "settles down after being shaken")
 		shaken += 3
 		return
 	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10)) // Because it's always funny
 		if(!shaken)
-			START_PROCESSING(SSobj, src)
+			REACT_PROCESS(src, 2 SECONDS, "settles down after being shaken")
 		shaken += 10
 
 /obj/item/reagent_containers/food/drinks/cans/open(mob/user)
@@ -39,13 +39,12 @@
 				explosion(get_turf(src), -1, -1, -1, 1)
 			qdel(src)
 
-/obj/item/reagent_containers/food/drinks/cans/process(seconds_per_tick)
+/obj/item/reagent_containers/food/drinks/cans/process(wait)
 	if(shaken <= 0)
 		return PROCESS_KILL
-	shaken -= seconds_per_tick
+	shaken -= wait * 0.1
 
 /obj/item/reagent_containers/food/drinks/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 //DRINKS

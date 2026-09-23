@@ -177,7 +177,6 @@ FIRE ALARM
 			alarm()
 			time = 0
 			timing = 0
-			STOP_PROCESSING(SSobj, src)
 	last_process = world.timeofday
 
 	if(detecting && (locate(/obj/effect/hotspot) in loc))

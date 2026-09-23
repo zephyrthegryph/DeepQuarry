@@ -42,7 +42,7 @@
 		return INITIALIZE_HINT_QDEL
 
 /obj/structure/simple_door/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	update_nearby_tiles()
 	return ..()
 
@@ -62,7 +62,7 @@
 	else
 		set_opacity(1)
 	if(material.products_need_process())
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "irradiates nearby atoms every tick while its material is radioactive")
 	update_nearby_tiles(need_rebuild=1)
 
 /obj/structure/simple_door/get_material()
@@ -259,19 +259,28 @@
 	var/last_event = 0
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+	/// REACT_AT token for the next radiation pulse; null when not scheduled.
+	var/tmp/radiate_timer
 
 /obj/structure/simple_door/uranium/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_URANIUM)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src) // Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
+	radiate_timer = REACT_REARM(src, radiate_timer, world.time)
 
-// Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
-/obj/structure/simple_door/uranium/process()
+/obj/structure/simple_door/uranium/Destroy()
+	radiate_timer = REACT_REARM(src, radiate_timer, null)
+	return ..()
+
+/obj/structure/simple_door/uranium/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != radiate_timer)
+		return
+	radiate_timer = null
 	radiate()
+	radiate_timer = REACT_REARM(src, radiate_timer, world.time + 1.5 SECONDS)
 
 /obj/structure/simple_door/uranium/proc/radiate()
 	if(active)
-		return
-	if(world.time <= last_event + 1.5 SECONDS)
 		return
 	active = TRUE
 	radiation_pulse(

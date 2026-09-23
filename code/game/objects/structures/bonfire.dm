@@ -18,6 +18,8 @@
 	var/set_temperature = T0C + 30	//K
 	var/heating_power = 80000
 	resistance_flags = FIRE_PROOF
+	/// REACT_AT token for the next fuel consumption; null when not scheduled.
+	var/tmp/fuel_timer
 
 /obj/structure/bonfire/Initialize(mapload, material_name)
 	. = ..()
@@ -177,15 +179,29 @@
 	if(burning)
 		burning = FALSE
 		update_icon()
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
+		fuel_timer = REACT_REARM(src, fuel_timer, null)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/bonfire/proc/ignite()
 	if(!burning && get_fuel_amount())
 		burning = TRUE
 		update_icon()
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "ignites nearby atoms and heats the surrounding air every tick while burning")
+		fuel_timer = REACT_REARM(src, fuel_timer, next_fuel_consumption)
 		visible_message(span_warning("\The [src] starts burning!"))
+
+/obj/structure/bonfire/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != fuel_timer)
+		return
+	fuel_timer = null
+	if(!burning)
+		return
+	if(!consume_fuel(pop(contents)))
+		extinguish()
+		return
+	fuel_timer = REACT_REARM(src, fuel_timer, max(next_fuel_consumption, world.time + 2 SECONDS))
 
 /obj/structure/bonfire/proc/burn_bonfire()
 	var/turf/current_location = get_turf(src)
@@ -237,10 +253,6 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption)
-		if(!consume_fuel(pop(contents)))
-			extinguish()
-			return
 	if(!grill)
 		burn_bonfire()
 
@@ -297,6 +309,8 @@
 	var/set_temperature = T0C + 20	//K
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF
+	/// REACT_AT token for the next fuel consumption; null when not scheduled.
+	var/tmp/fuel_timer
 
 /obj/structure/fireplace/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
@@ -373,15 +387,29 @@
 	if(burning)
 		burning = FALSE
 		update_icon()
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
+		fuel_timer = REACT_REARM(src, fuel_timer, null)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/fireplace/proc/ignite()
 	if(!burning && get_fuel_amount())
 		burning = TRUE
 		update_icon()
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "ignites nearby atoms and heats the surrounding air every tick while burning")
+		fuel_timer = REACT_REARM(src, fuel_timer, next_fuel_consumption)
 		visible_message(span_warning("\The [src] starts burning!"))
+
+/obj/structure/fireplace/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != fuel_timer)
+		return
+	fuel_timer = null
+	if(!burning)
+		return
+	if(!consume_fuel(pop(contents)))
+		extinguish()
+		return
+	fuel_timer = REACT_REARM(src, fuel_timer, max(next_fuel_consumption, world.time + 2 SECONDS))
 
 /obj/structure/fireplace/proc/burn_bonfire()
 	var/turf/current_location = get_turf(src)
@@ -422,10 +450,6 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption)
-		if(!consume_fuel(pop(contents)))
-			extinguish()
-			return
 
 	if(burning)
 		var/W = get_fuel_amount()

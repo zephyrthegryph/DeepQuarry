@@ -148,7 +148,7 @@
 	for(var/role in owner.material_roles())
 		var/datum/material/material = owner.material_for_role(role)
 		parts += list(list("role" = role, "material" = material.display_name || material.name, "meltingPoint" = material.melting_point, "corrosion" = material.corrosion_resistance, "purpose" = describe_part(role, material)))
-	var/list/data = list("status" = status, "temperature" = temperature, "buffer" = buffer_energy, "input" = last_input_watts, "output" = last_output_watts, "lossEnergy" = loss_joules, "parts" = parts, "limiting" = limiting_role, "configuration" = owner.material_configuration_revision, "liner" = owner.material_environment_liner_integrity, "shell" = owner.material_environment_exterior_integrity, "fatigue" = owner.material_environment_fatigue, "monitoring" = !!monitor_tool, "reading" = last_reading)
+	var/list/data = list("status" = status, "temperature" = current_temperature(), "buffer" = thermal_stock?.phase_change_capacity || 0, "input" = last_input_watts, "output" = last_output_watts, "lossEnergy" = loss_joules, "parts" = parts, "limiting" = limiting_role, "configuration" = owner.material_configuration_revision, "liner" = owner.material_environment_liner_integrity, "shell" = owner.material_environment_exterior_integrity, "fatigue" = owner.material_environment_fatigue, "monitoring" = !!monitor_tool, "reading" = last_reading)
 	if(istype(owner, /obj/machinery/power/emitter))
 		var/obj/machinery/power/emitter/emitter = owner
 		data["emitter"] = list("output" = emitter.material_output_setting, "cadence" = emitter.material_cadence_setting, "stored" = emitter.material_stored_energy, "active" = emitter.active)
@@ -206,7 +206,7 @@
 	monitor_minimum_output = INFINITY
 	monitor_minimum_flow = INFINITY
 	monitor_minimum_pressure = INFINITY
-	monitor_maximum_temperature = temperature
+	monitor_maximum_temperature = current_temperature()
 	monitor_stored_energy = owner.material_operating_reservoir()
 
 /// Only physical observation records an interval. Opening/refreshing a UI does
@@ -221,7 +221,7 @@
 	if(monitor_configuration != owner.material_configuration_revision)
 		monitor_configuration = owner.material_configuration_revision
 		reset_observation()
-	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature)
+	monitor_maximum_temperature = max(monitor_maximum_temperature, current_temperature())
 	var/datum/gas_mixture/destination = last_delivery_mixture?.resolve()
 	if(destination)
 		monitor_minimum_pressure = min(monitor_minimum_pressure, destination.return_pressure())
@@ -240,7 +240,7 @@
 	monitor_minimum_output = min(monitor_minimum_output, output / interval)
 	monitor_minimum_flow = min(monitor_minimum_flow, flow / interval)
 	monitor_minimum_pressure = min(monitor_minimum_pressure, last_delivery_pressure)
-	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature, last_delivery_temperature)
+	monitor_maximum_temperature = max(monitor_maximum_temperature, current_temperature(), last_delivery_temperature)
 	last_input_watts = input / interval
 	last_output_watts = output / interval
 	monitor_last_input = input_joules

@@ -69,7 +69,7 @@
 /obj/item/modular_computer/Initialize(mapload)
 	if(!overlay_icon)
 		overlay_icon = icon
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "runs its active program, network checks and power handling")
 	install_default_hardware()
 	if(hard_drive)
 		install_default_programs()
@@ -79,7 +79,6 @@
 
 /obj/item/modular_computer/Destroy()
 	kill_program(1)
-	STOP_PROCESSING(SSobj, src)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		qdel(CH)

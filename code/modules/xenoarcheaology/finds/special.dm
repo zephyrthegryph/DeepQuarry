@@ -4,7 +4,7 @@
 
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "endlessly regenerates its reagent every tick")
 	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
 		var/new_chem = pick(SSchemistry.chemical_reagents)
 		if(new_chem in GLOB.obtainable_chemical_blacklist)
@@ -14,7 +14,7 @@
 			break
 
 /obj/item/reagent_containers/glass/replenishing/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/reagent_containers/glass/replenishing/process()
@@ -28,10 +28,10 @@
 
 /obj/item/clothing/mask/gas/poltergeist/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "may repeat overheard speech through its wearer every tick")
 
 /obj/item/clothing/mask/gas/poltergeist/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/clothing/mask/gas/poltergeist/process()
@@ -62,35 +62,68 @@
 	var/wight_check_index = 1
 	var/list/shadow_wights = list()
 
+	/// REACT_AT token for the next bloodcall check; null when there's no nearby mob queued.
+	var/tmp/bloodcall_timer
+	/// REACT_AT token for the next blood-eating check; always armed while the statuette exists.
+	var/tmp/eat_timer
+
 /obj/item/vampiric/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "drains stored charges into spawns and tends its shadow wights every tick")
+	schedule_eat()
 
 /obj/item/vampiric/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
+	bloodcall_timer = REACT_REARM(src, bloodcall_timer, null)
+	eat_timer = REACT_REARM(src, eat_timer, null)
 	. = ..()
 
-/obj/item/vampiric/process()
+/obj/item/vampiric/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER))
+		return
+	if(source == bloodcall_timer)
+		bloodcall_timer = null
+		check_bloodcall()
+	else if(source == eat_timer)
+		eat_timer = null
+		check_eat()
+
+// Arms the next bloodcall check, or cancels the timer once there's nobody queued.
+/obj/item/vampiric/proc/schedule_bloodcall()
+	if(!nearby_mobs.len)
+		bloodcall_timer = REACT_REARM(src, bloodcall_timer, null)
+		return
+	bloodcall_timer = REACT_REARM(src, bloodcall_timer, max(world.time, last_bloodcall + bloodcall_interval))
+
+// Arms the next blood-eating check, always: it keeps retrying every tick once the interval has passed.
+/obj/item/vampiric/proc/schedule_eat()
+	eat_timer = REACT_REARM(src, eat_timer, max(world.time + 2 SECONDS, last_eat + eat_interval))
+
+/obj/item/vampiric/proc/check_bloodcall()
 	//see if we've identified anyone nearby
-	if(world.time - last_bloodcall > bloodcall_interval && nearby_mobs.len)
+	if(nearby_mobs.len)
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
 		if((M in view(7,src)) && M.vitality() > 0.6)
 			if(prob(50))
 				bloodcall(M)
 				nearby_mobs.Add(M)
+	schedule_bloodcall()
 
+/obj/item/vampiric/proc/check_eat()
 	//suck up some blood to gain power
-	if(world.time - last_eat > eat_interval)
-		var/obj/effect/decal/cleanable/blood/B = locate() in range(2,src)
-		if(B)
-			last_eat = world.time
-			B.loc = null
-			if(istype(B, /obj/effect/decal/cleanable/blood/drip))
-				charges += 0.25
-			else
-				charges += 1
-				playsound(src, 'sound/effects/splat.ogg', 50, 1, -3)
+	var/obj/effect/decal/cleanable/blood/B = locate() in range(2,src)
+	if(B)
+		last_eat = world.time
+		B.loc = null
+		if(istype(B, /obj/effect/decal/cleanable/blood/drip))
+			charges += 0.25
+		else
+			charges += 1
+			playsound(src, 'sound/effects/splat.ogg', 50, 1, -3)
+	schedule_eat()
 
+/obj/item/vampiric/process()
 	//use up stored charges
 	if(charges >= 10)
 		charges -= 10
@@ -140,6 +173,7 @@
 	if(istype(M))
 		playsound(src, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
 		nearby_mobs.Add(M)
+		schedule_bloodcall()
 
 		var/target = pick(M.organs_by_name)
 		M.injure(INJURY_CUT, rand(5, 10), target, src)
@@ -156,11 +190,11 @@
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "steps towards its target turf every tick, leaving blood drips behind")
 	loc_last_process = src.loc
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/effect/decal/cleanable/blood/splatter/animated/process()
@@ -191,10 +225,10 @@
 
 /obj/effect/shadow_wight/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "teleports around and haunts nearby mobs every tick")
 
 /obj/effect/shadow_wight/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/effect/shadow_wight/process()
@@ -222,7 +256,6 @@
 
 			src.loc = null
 	else
-		STOP_PROCESSING(SSobj, src)
 		qdel(src) //Let's not just sit in nullspace forever, yeah?
 
 /obj/effect/shadow_wight/Bump(atom/obstacle)

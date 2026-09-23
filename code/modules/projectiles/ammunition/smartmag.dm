@@ -26,15 +26,22 @@
 
 	var/emagged = 0		// If you emag the smart mag, you can get the bullets out by clicking it
 
+	/// REACT_AT token for the next production check; null when nothing is scheduled.
+	var/tmp/production_timer
+
 /obj/item/ammo_magazine/smart/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	schedule_production()
 
-/obj/item/ammo_magazine/smart/Destroy()
-	STOP_PROCESSING(SSobj, src)
+/obj/item/ammo_magazine/smart/on_react(reason, source, source_kind)
 	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != production_timer)
+		return
+	production_timer = null
+	check_production()
 
-/obj/item/ammo_magazine/smart/process()
+// Rechecks (and, if needed, produces) a bullet, then reschedules the next wake.
+/obj/item/ammo_magazine/smart/proc/check_production()
 	if(!holding_gun)	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
 		if(istype(src.loc, /obj/item/gun))
 			holding_gun = src.loc
@@ -42,12 +49,23 @@
 	if(caliber && ammo_type && attached_cell)
 		if(stored_ammo.len == max_ammo)
 			last_production_time = world.time	// Otherwise the max_ammo var is basically always off by 1
-			return
-		if(holding_gun && world.time < holding_gun.last_shot + production_delay)	// Same as recharging energy weapons.
-			return
-		if(world.time > last_production_time + production_time)
+		else if(holding_gun && world.time < holding_gun.last_shot + production_delay)	// Same as recharging energy weapons.
+			EMPTY_BLOCK_GUARD
+		else if(world.time > last_production_time + production_time)
 			last_production_time = world.time
 			produce()
+	schedule_production()
+
+// Arms the next production check at the earliest deadline that still applies, or cancels
+// the timer if there is nothing left to wait for.
+/obj/item/ammo_magazine/smart/proc/schedule_production()
+	if(!(caliber && ammo_type && attached_cell))
+		production_timer = REACT_REARM(src, production_timer, null)
+		return
+	var/earliest = max(world.time, last_production_time + production_time)
+	if(holding_gun)
+		earliest = max(earliest, holding_gun.last_shot + production_delay)
+	production_timer = REACT_REARM(src, production_timer, earliest)
 
 /obj/item/ammo_magazine/smart/examine(mob/user)
 	. = ..()

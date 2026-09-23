@@ -27,7 +27,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/detach()
 	chassis.cut_overlay(droid_overlay)
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	..()
 	return
 
@@ -42,13 +42,13 @@
 		chassis.cut_overlay(droid_overlay)
 		if(datum_flags & DF_ISPROCESSING)
 			droid_overlay = new(src.icon, icon_state = "repair_droid")
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			src.mecha_log_message("Deactivated.")
 			set_ready_state(TRUE)
 		else
 			droid_overlay = new(src.icon, icon_state = "repair_droid_a")
 			src.mecha_log_message("Activated.")
-			START_PROCESSING(SSobj, src)
+			REACT_PROCESS(src, 2 SECONDS, "repairs chassis damage every tick while active")
 		chassis.add_overlay(droid_overlay)
 		send_byjax(chassis.occupant,"exosuit.browser","\ref[src]",src.get_equip_info())
 	return

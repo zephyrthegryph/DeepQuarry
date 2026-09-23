@@ -46,7 +46,7 @@
 	update_equip_info()
 
 /obj/item/mecha_parts/mecha_equipment/generator/detach()
-	STOP_PROCESSING(SSfastprocess, src)
+	REACT_PROCESS_STOP(src)
 	..()
 	return
 
@@ -55,11 +55,11 @@
 	..()
 	if(href_list["toggle"])
 		if(datum_flags & DF_ISPROCESSING)
-			STOP_PROCESSING(SSfastprocess, src)
+			REACT_PROCESS_STOP(src)
 			set_ready_state(TRUE)
 			src.mecha_log_message("Deactivated.")
 		else
-			START_PROCESSING(SSfastprocess, src)
+			REACT_PROCESS(src, 0.2 SECONDS, "burns fuel to charge the chassis cell every tick while active")
 			set_ready_state(FALSE)
 			src.mecha_log_message("Activated.")
 	return

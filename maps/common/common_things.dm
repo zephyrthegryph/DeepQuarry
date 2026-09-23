@@ -239,6 +239,11 @@
 	//Internal use only
 	var/mob/living/simple_mob/my_mob
 	var/depleted = FALSE
+	/// REACT_AT token of the next look while someone is in view (null: none).
+	var/tmp/recheck_timer
+
+/// While someone is in view the spawner waits; it looks again this often.
+#define SC_SPAWNER_RECHECK (2 SECONDS)
 
 /obj/sc_away_spawner/Initialize(mapload)
 	. = ..()
@@ -247,13 +252,28 @@
 		log_mapping("Mob spawner at [x],[y],[z] ([get_area(src)]) had no mobs_to_pick_from set on it!")
 		flags |= ATOM_INITIALIZED
 		return INITIALIZE_HINT_QDEL
-	START_PROCESSING(SSobj, src)
+	recheck_timer = REACT_AT(src, world.time + SC_SPAWNER_RECHECK)
 
-/obj/sc_away_spawner/process()
-	if(my_mob && my_mob.stat != DEAD)
+/// Spawner wakes: its mob died or went away (signals), or the recheck timer while someone
+/// was in view. It sleeps while its mob lives.
+/obj/sc_away_spawner/on_react(reason, source, source_kind)
+	recheck_timer = null
+	try_spawn()
+
+/obj/sc_away_spawner/proc/mob_gone()
+	SIGNAL_HANDLER
+	if(my_mob)
+		UnregisterSignal(my_mob, list(COMSIG_MOB_DEATH, COMSIG_QDELETING))
+	my_mob = null
+	if(!depleted && isnull(recheck_timer))
+		recheck_timer = REACT_AT(src, world.time)
+
+/obj/sc_away_spawner/proc/try_spawn()
+	if(depleted || (my_mob && my_mob.stat != DEAD))
 		return //No need
 
 	if(LAZYLEN(loc.human_mobs(world.view)))
+		recheck_timer = REACT_REARM(src, recheck_timer, world.time + SC_SPAWNER_RECHECK)
 		return //I'll wait.
 
 	if(prob(prob_spawn))
@@ -261,6 +281,7 @@
 		var/picked_type = pickweight(mobs_to_pick_from)
 		my_mob = new picked_type(get_turf(src))
 		my_mob.low_priority = TRUE
+		RegisterSignal(my_mob, list(COMSIG_MOB_DEATH, COMSIG_QDELETING), PROC_REF(mob_gone))
 
 		if(faction)
 			my_mob.faction = faction
@@ -288,9 +309,10 @@
 */
 		return
 	else
-		STOP_PROCESSING(SSobj, src)
 		depleted = TRUE
 		return
+
+#undef SC_SPAWNER_RECHECK
 
 /obj/effect/map_effect/portal/master/side_a/retreat_west
 	portal_id = "retreat_west"

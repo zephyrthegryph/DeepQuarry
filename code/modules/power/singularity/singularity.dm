@@ -36,14 +36,14 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 	admin_investigate_setup()
 	. = ..()
 	energy = starting_energy
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "eats, moves and pulses radiation every tick while it exists")
 	for(var/obj/machinery/power/singularity_beacon/singubeacon in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(singubeacon.active)
 			target = singubeacon
 			break
 
 /obj/singularity/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/singularity/attack_hand(mob/user as mob)

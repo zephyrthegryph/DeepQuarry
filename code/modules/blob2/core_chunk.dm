@@ -18,6 +18,9 @@
 
 	var/can_genesis = TRUE	// Can the core chunk be used to grow a new blob?
 
+	/// REACT_AT token for our next passive-ability tick; null when none.
+	var/tmp/react_timer
+
 	drop_sound = 'sound/effects/slime_squish.ogg'
 
 /obj/item/blobcore_chunk/is_open_container()
@@ -30,8 +33,6 @@
 	setup_blobtype(parentblob)
 
 /obj/item/blobcore_chunk/Destroy()
-	STOP_PROCESSING(SSobj, src)
-
 	blob_type = null
 
 	. = ..()
@@ -57,7 +58,20 @@
 
 		blob_type.chunk_setup(src)
 
-		START_PROCESSING(SSobj, src)
+		schedule_chunk_tick()
+
+/obj/item/blobcore_chunk/proc/schedule_chunk_tick()
+	if(blob_type && should_tick)
+		react_timer = REACT_REARM(src, react_timer, max(world.time, passive_ability_cooldown + last_passive_use))
+	else
+		react_timer = REACT_REARM(src, react_timer, null)
+
+/obj/item/blobcore_chunk/on_react(reason, source, source_kind)
+	react_timer = null
+	if(blob_type && should_tick && world.time > passive_ability_cooldown + last_passive_use)
+		last_passive_use = world.time
+		blob_type.on_chunk_tick(src)
+	schedule_chunk_tick()
 
 /obj/item/blobcore_chunk/proc/call_chunk_unique()
 	SIGNAL_HANDLER
@@ -93,14 +107,10 @@
 	else
 		to_chat(user, span_notice("\The [src] doesn't seem to respond."))
 
-/obj/item/blobcore_chunk/process()
-	if(blob_type && should_tick && world.time > passive_ability_cooldown + last_passive_use)
-		last_passive_use = world.time
-		blob_type.on_chunk_tick(src)
-
 /obj/item/blobcore_chunk/click_alt(mob/living/carbon/user)
 	if(blob_type && blob_type.chunk_active_type == BLOB_CHUNK_TOGGLE)
 		should_tick = !should_tick
+		schedule_chunk_tick()
 
 		if(should_tick)
 			to_chat(user, span_alien("\The [src] shudders with life."))

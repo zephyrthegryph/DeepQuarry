@@ -208,6 +208,9 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/datum/material/thermal_stock
 	var/datum/material/electrical_stock
 	var/thermal_capacity = 1000
+	/// Cumulative heat (J) this assembly has commanded into its body: the DM side of the
+	/// energy books for operating losses (the body's own exchange is Rust's ledger).
+	var/heat_added = 0
 	/// The body needs its capacity, phase, power and couplings pushed again.
 	var/body_dirty = TRUE
 	var/watches_dirty = TRUE
@@ -545,6 +548,12 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/h = ensure_body()
 	if(isnull(h) || !vg_heat_body_add(h, joules))
 		return 0
+	heat_added += joules
+	if(istype(owner, /obj/structure/cable) && abs(joules) / max(thermal_capacity, 1) >= 0.1)
+		// The heat lands at the next frame; the cable's resistance follows it, so invalidate
+		// its run now rather than waiting for the advance.
+		var/obj/structure/cable/cable = owner
+		cable.powernet?.material_graph?.invalidate_cable(cable)
 	if(owner.reagents?.total_volume)
 		// Temperature is an input to chemical attack: re-rate after the frame applied the heat.
 		schedule(1 SECOND)

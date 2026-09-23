@@ -99,11 +99,7 @@
 
 /obj/item/clothing/gloves/stamina/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/item/clothing/gloves/stamina/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
+	REACT_PROCESS(src, 2 SECONDS, "restores the wearer's nutrition every tick while worn")
 
 /obj/item/clothing/gloves/stamina/process()
 	var/mob/living/carbon/human/H = wearer?.resolve()
@@ -125,6 +121,8 @@
 	var/flavor_drop = null // Ditto, but for dropping it.
 	var/flavor_activate = null // Ditto, for but activating.
 	var/brainloss_cost = 0
+	/// REACT_AT token for our next cooldown/tension check; null when none.
+	var/tmp/react_timer
 
 /obj/item/clothing/suit/armor/buffvest/proc/activate_ability(mob/living/wearer)
 	cooldown = world.time + cooldown_duration
@@ -136,13 +134,13 @@
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()
 	if(istype(H) && H.wear_suit == src && H.is_sentient())
-		START_PROCESSING(SSobj, src)
+		react_timer = REACT_REARM(src, react_timer, max(world.time, cooldown))
 		if(flavor_equip)
 			to_chat(H, span_info(flavor_equip))
 
 /obj/item/clothing/suit/armor/buffvest/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
-	STOP_PROCESSING(SSobj, src)
+	react_timer = REACT_REARM(src, react_timer, null)
 	if(H.is_sentient())
 		if(loc == H) // Still inhand.
 			if(flavor_unequip)
@@ -151,15 +149,14 @@
 			if(flavor_drop)
 				to_chat(H, span_info(flavor_drop))
 
-/obj/item/clothing/suit/armor/buffvest/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
-
-/obj/item/clothing/suit/armor/buffvest/process()
+/obj/item/clothing/suit/armor/buffvest/on_react(reason, source, source_kind)
+	react_timer = null
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(world.time >= cooldown && L.is_sentient() && L.get_tension() >= tension_threshold)
 			activate_ability(L)
+		if(L.is_sentient())
+			react_timer = REACT_REARM(src, react_timer, max(world.time + 2 SECONDS, cooldown))
 
 //vistor section
 /obj/item/clothing/suit/armor/alien/vistor

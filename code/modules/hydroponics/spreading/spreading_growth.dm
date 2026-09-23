@@ -42,6 +42,12 @@
 		if(neighbor.seed == src.seed)
 			neighbor.neighbors -= T
 
+/// The neighbour refresh timer fired.
+/obj/effect/plant/on_react(reason, source, source_kind)
+	neighbor_timer = null
+	last_tick = world.time
+	update_neighbors()
+
 /obj/effect/plant/process()
 
 	// Something is very wrong, kill ourselves.
@@ -80,9 +86,9 @@
 			if(seed.get_trait(TRAIT_CARNIVOROUS))
 				seed.do_thorns(L,src)
 
-	if(world.time >= last_tick+NEIGHBOR_REFRESH_TIME)
-		last_tick = world.time
-		update_neighbors()
+	// Neighbours are refreshed at most every NEIGHBOR_REFRESH_TIME, on a timer.
+	if(isnull(neighbor_timer))
+		neighbor_timer = REACT_AT(src, max(world.time, last_tick + NEIGHBOR_REFRESH_TIME))
 
 	if(sampled)
 		//Should be between 2-7 for given the default range of values for TRAIT_PRODUCTION

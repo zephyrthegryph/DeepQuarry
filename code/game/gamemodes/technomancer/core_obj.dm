@@ -35,11 +35,11 @@
 
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "regenerates energy and pays upkeep costs every tick while equipped")
 
 /obj/item/technomancer_core/Destroy()
 	dismiss_all_summons()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 // Add the spell buttons to the HUD.

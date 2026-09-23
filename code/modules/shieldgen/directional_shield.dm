@@ -104,9 +104,13 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+	/// REACT_AT token for the next shield regen tick; null when at full integrity.
+	var/tmp/regen_timer
+
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "the exosuit subtype drains its mecha's power every tick while its shield is active")
+	schedule_regen()
 	AddComponent(/datum/component/recursive_move)
 	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(moved_event))
 	if(always_on)
@@ -117,9 +121,33 @@
 
 /obj/item/shield_projector/Destroy()
 	destroy_shields()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
+	regen_timer = REACT_REARM(src, regen_timer, null)
 	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 	return ..()
+
+/obj/item/shield_projector/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != regen_timer)
+		return
+	regen_timer = null
+	if(get_integrity() < max_integrity && ((last_damaged_time + shield_regen_delay) < world.time))
+		adjust_health(shield_regen_amount)
+		if(always_on && !active) // Make shields as soon as possible if this is set.
+			create_shields()
+		if(get_integrity() >= max_integrity)
+			playsound(src, 'sound/machines/defib_ready.ogg', 75, 0)
+		else
+			playsound(src, 'sound/machines/defib_safetyOff.ogg', 75, 0)
+	schedule_regen()
+
+/// Arms the next shield regen tick, or cancels the timer once at full integrity.
+/obj/item/shield_projector/proc/schedule_regen()
+	if(get_integrity() >= max_integrity)
+		regen_timer = REACT_REARM(src, regen_timer, null)
+		return
+	var/earliest = max(world.time + 2 SECONDS, last_damaged_time + shield_regen_delay)
+	regen_timer = REACT_REARM(src, regen_timer, earliest)
 
 /obj/item/shield_projector/proc/moved_event()
 	SIGNAL_HANDLER
@@ -161,6 +189,7 @@
 	. = ..()
 	if(new_value < old_value)
 		last_damaged_time = world.time
+		schedule_regen()
 		if(new_value > 0)
 			if(new_value < max_integrity / 4) // Play a more urgent sounding beep if it's at 25% health.
 				playsound(src, 'sound/machines/defib_success.ogg', 75, 0)
@@ -227,14 +256,7 @@
 	on ? create_shields() : destroy_shields() // Harmless if called when in the wrong state.
 
 /obj/item/shield_projector/process()
-	if(get_integrity() < max_integrity && ( (last_damaged_time + shield_regen_delay) < world.time) )
-		adjust_health(shield_regen_amount)
-		if(always_on && !active) // Make shields as soon as possible if this is set.
-			create_shields()
-		if(get_integrity() >= max_integrity)
-			playsound(src, 'sound/machines/defib_ready.ogg', 75, 0)
-		else
-			playsound(src, 'sound/machines/defib_safetyOff.ogg', 75, 0)
+	return // Regen is handled by the react_timer/schedule_regen() chain; subtypes hook their own per-tick work.
 
 /obj/item/shield_projector/examine(mob/user)
 	. = ..()

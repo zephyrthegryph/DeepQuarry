@@ -113,10 +113,10 @@
 
 /obj/item/packageWrap/borg/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "slowly refills its paper stock every tick while equipped on a borg")
 
 /obj/item/packageWrap/borg/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/packageWrap/borg/process()

@@ -1,3 +1,6 @@
+/// Period between radiation pulses for an assembly with radioactivity (was the SSobj subsystem's 2 SECONDS wait, before its retirement).
+#define FUEL_ASSEMBLY_RADIATE_PERIOD 2 SECONDS
+
 /obj/item/fuel_assembly
 	name = "fuel rod assembly"
 	icon = 'icons/obj/machines/power/fusion.dmi'
@@ -14,9 +17,17 @@
 	var/last_event = 0
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+	/// REACT_AT token for the next radiation pulse wake; null when not radioactive.
+	var/tmp/radiate_timer
 
-/obj/item/fuel_assembly/process()
+/obj/item/fuel_assembly/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != radiate_timer)
+		return
+	radiate_timer = null
 	radiate()
+	if(radioactivity)
+		radiate_timer = REACT_REARM(src, radiate_timer, world.time + FUEL_ASSEMBLY_RADIATE_PERIOD)
 
 /obj/item/fuel_assembly/proc/radiate()
 	SIGNAL_HANDLER
@@ -35,10 +46,6 @@
 	last_event = world.time
 	active = FALSE
 
-/obj/item/fuel_assembly/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
-
 
 /obj/item/fuel_assembly/Initialize(mapload, _material, _colour)
 	. = ..()
@@ -56,7 +63,7 @@
 		if(mat_rad)
 			radioactivity = mat_rad
 			desc += " It is warm to the touch."
-			START_PROCESSING(SSobj, src)
+			radiate_timer = REACT_REARM(src, radiate_timer, world.time + FUEL_ASSEMBLY_RADIATE_PERIOD)
 		if(mat_lum)
 			set_light(mat_lum, mat_lum, material.icon_colour)
 	else

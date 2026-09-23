@@ -113,7 +113,7 @@
 
 /obj/machinery/mineral/stacking_machine/proc/wake_processing()
 	if(speed_process)
-		START_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS(src, 0.2 SECONDS, "stacks ore at high gear speed")
 	else
 		START_MACHINE_PROCESSING(src)
 
@@ -124,9 +124,9 @@
 		speed_process = !speed_process // switching gears
 	if(speed_process) // high gear
 		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS(src, 0.2 SECONDS, "stacks ore at high gear speed")
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS_STOP(src)
 		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/mineral/stacking_machine/process()

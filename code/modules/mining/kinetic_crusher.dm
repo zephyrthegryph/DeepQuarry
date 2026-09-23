@@ -231,16 +231,12 @@
 
 /obj/item/kinetic_crusher/machete/gauntlets/equipped()
 	. = ..()
-	START_PROCESSING(SSprocessing, src)
+	REACT_PROCESS(src, 1 SECOND, "checks the wielder still has a matching offhand")
 
 /obj/item/kinetic_crusher/machete/gauntlets/dropped(mob/user, equipping, slot)
 	ready_toggle(TRUE)
-	STOP_PROCESSING(SSprocessing, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
-
-/obj/item/kinetic_crusher/machete/gauntlets/Destroy()
-	. = ..()
-	STOP_PROCESSING(SSprocessing, src)
 
 /obj/item/kinetic_crusher/machete/gauntlets/attack_self(mob/user)
 	. = ..(user)

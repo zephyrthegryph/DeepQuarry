@@ -52,7 +52,7 @@
 /obj/item/reagent_containers/syringe/process()
 	dirtiness = min(dirtiness + targets.len,75)
 	if(dirtiness >= 75)
-		STOP_PROCESSING(SSobj, src)
+		return PROCESS_KILL
 	return 1
 
 /obj/item/reagent_containers/syringe/on_reagent_change()
@@ -451,7 +451,7 @@
 			target.ContractDisease(virus)
 
 	if(!used)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "dirtiness accumulates from targets while unclean, until fully dirty")
 
 /obj/item/reagent_containers/syringe/proc/infect_limb(obj/item/organ/external/eo)
 	src = null

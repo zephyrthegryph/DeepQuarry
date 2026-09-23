@@ -22,11 +22,11 @@
 
 /obj/item/spell/energy_siphon/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "drains the siphoned target's power into the core every tick while linked")
 
 /obj/item/spell/energy_siphon/Destroy()
 	stop_siphoning()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/spell/energy_siphon/process()

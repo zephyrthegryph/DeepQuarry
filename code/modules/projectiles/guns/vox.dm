@@ -18,20 +18,31 @@
 	fire_sound = 'sound/weapons/bladeslice.ogg'
 	fire_sound_text = "a strange noise"
 
+	/// REACT_AT token for the next spike regen; null when full (nothing scheduled).
+	var/tmp/regen_timer
+
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 	last_regen = world.time
+	schedule_regen()
 
-/obj/item/gun/launcher/spikethrower/Destroy()
-	STOP_PROCESSING(SSobj, src)
+/obj/item/gun/launcher/spikethrower/on_react(reason, source, source_kind)
 	. = ..()
-
-/obj/item/gun/launcher/spikethrower/process()
-	if(spikes < max_spikes && world.time > last_regen + spike_gen_time)
+	if(!(reason & REACT_REASON_TIMER) || source != regen_timer)
+		return
+	regen_timer = null
+	if(spikes < max_spikes)
 		spikes++
 		last_regen = world.time
 		update_icon()
+	schedule_regen()
+
+// Arms the next spike regen, or cancels the timer once the magazine is full.
+/obj/item/gun/launcher/spikethrower/proc/schedule_regen()
+	if(spikes >= max_spikes)
+		regen_timer = REACT_REARM(src, regen_timer, null)
+		return
+	regen_timer = REACT_REARM(src, regen_timer, last_regen + spike_gen_time)
 
 /obj/item/gun/launcher/spikethrower/examine(mob/user)
 	. = ..()
@@ -46,6 +57,9 @@
 /obj/item/gun/launcher/spikethrower/consume_next_projectile()
 	if(spikes < 1) return null
 	spikes--
+	if(isnull(regen_timer))
+		last_regen = world.time
+		schedule_regen()
 	return new /obj/item/spike(src)
 
 /*

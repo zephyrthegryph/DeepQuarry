@@ -91,10 +91,10 @@
 
 	linked_node = src
 
-	START_PROCESSING(SSobj, src) // Only the node processes in a subsystem, the rest are process()'d by the node
+	REACT_PROCESS(src, 2 SECONDS, "spreads and drives the weed patch's linked weeds every tick") // Only the node processes; the rest are process()'d by the node
 
 /obj/effect/alien/weeds/node/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/effect/alien/weeds/proc/updateWeedOverlays()

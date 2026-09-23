@@ -8,16 +8,19 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 	var/strength = 50
+	/// REACT_AT token for the next radiation pulse; null when not scheduled.
+	var/tmp/radiate_timer
 
-/obj/effect/map_effect/radiation_emitter/process()
+/obj/effect/map_effect/radiation_emitter/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != radiate_timer)
+		return
+	radiate_timer = null
 	radiate()
-	..()
+	radiate_timer = REACT_REARM(src, radiate_timer, world.time + 1.5 SECONDS)
 
 /obj/effect/map_effect/radiation_emitter/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
-		return
-	if(world.time <= last_event + 1.5 SECONDS)
 		return
 	active = TRUE
 	radiation_pulse(
@@ -33,11 +36,11 @@
 
 
 /obj/effect/map_effect/radiation_emitter/Initialize(mapload)
-	START_PROCESSING(SSobj, src)
+	radiate_timer = REACT_REARM(src, radiate_timer, world.time)
 	return ..()
 
 /obj/effect/map_effect/radiation_emitter/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	radiate_timer = REACT_REARM(src, radiate_timer, null)
 	return ..()
 
 /obj/effect/map_effect/radiation_emitter/strong

@@ -3,37 +3,15 @@
 # a stale entry fails the check. Format: <file>:<type>/process  # reason
 
 code/ATMOSPHERICS/components/binary_devices/circulator.dm:/obj/machinery/atmospherics/binary/circulator/process  # S5: machine poll; converts when machines start asleep
-code/game/gamemodes/cult/cult_structures.dm:/obj/structure/cult/pylon/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/game/machinery/bomb_tester.dm:/obj/machinery/bomb_tester/process  # S5: machine poll; converts when machines start asleep
 code/game/machinery/computer/Operating.dm:/obj/machinery/computer/operating/process  # S5: machine poll; converts when machines start asleep
-code/game/machinery/computer/guestpass.dm:/obj/item/card/id/guest/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/game/machinery/jukebox.dm:/obj/machinery/media/jukebox/process  # S5: machine poll; converts when machines start asleep
 code/game/machinery/supplybeacon.dm:/obj/machinery/power/supply_beacon/process  # S5: machine poll; converts when machines start asleep
-code/game/objects/effects/anomalies/_anomalies.dm:/obj/effect/anomaly/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/game/objects/effects/bluespace_spawner.dm:/obj/effect/bspawner/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/game/objects/effects/map_effects/map_effects.dm:/obj/effect/map_effect/interval/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/game/objects/effects/spiders.dm:/obj/effect/spider/spiderling/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/game/objects/micro_event.dm:/obj/structure/timer_door/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/game/objects/mob_spawner.dm:/obj/structure/mob_spawner/scanner/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/game/objects/structures/bonfire.dm:/obj/structure/bonfire/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/game/objects/structures/bonfire.dm:/obj/structure/fireplace/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/game/objects/structures/props/nest.dm:/obj/structure/prop/nest/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/blob2/blobs/core.dm:/obj/structure/blob/core/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/blob2/core_chunk.dm:/obj/item/blobcore_chunk/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/clothing/gateway/gateway.dm:/obj/item/clothing/suit/armor/buffvest/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/clothing/head/misc_special.dm:/obj/item/clothing/head/psy_crown/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/clothing/suits/lasertag.dm:/obj/item/clothing/suit/lasertag/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/modules/hydroponics/seed_machines.dm:/obj/machinery/botany/process  # S5: machine poll; converts when machines start asleep
-code/modules/hydroponics/spreading/spreading_growth.dm:/obj/effect/plant/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/media/walkpod.dm:/obj/item/walkpod/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/mob/living/silicon/robot/robot_items.dm:/obj/item/borg/combat/shield/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/modules/power/apc.dm:/obj/machinery/power/apc/process  # S5: machine poll; converts when machines start asleep
 code/modules/power/solar.dm:/obj/machinery/power/solar_control/process  # S5: machine poll; converts when machines start asleep
 code/modules/power/supermatter/supermatter.dm:/obj/machinery/power/supermatter/process  # S5: machine poll; converts when machines start asleep
-code/modules/projectiles/ammunition/smartmag.dm:/obj/item/ammo_magazine/smart/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/projectiles/guns/vox.dm:/obj/item/gun/launcher/spikethrower/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/modules/refinery/core/industrial_reagent_hub.dm:/obj/machinery/reagent_refinery/hub/process  # S5: machine poll; converts when machines start asleep
 code/modules/refinery/core/industrial_reagent_reactor.dm:/obj/machinery/reagent_refinery/reactor/process  # S5: machine poll; converts when machines start asleep
 code/modules/research/tg/machinery/mech_fabricator.dm:/obj/machinery/mecha_part_fabricator_tg/process  # S5: machine poll; converts when machines start asleep
-code/modules/xenoarcheaology/tools/ano_device_battery.dm:/obj/item/anodevice/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/modules/xenoarcheaology/tools/artifact_analyser.dm:/obj/machinery/artifact_analyser/process  # S5: machine poll; converts when machines start asleep

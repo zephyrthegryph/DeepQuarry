@@ -18,18 +18,17 @@
 	if(istype(H) && H.wear_mask == src)
 		canremove = FALSE
 		maskmaster = H
-		START_PROCESSING(SSprocessing, src)
+		REACT_PROCESS(src, 1 SECOND, "watches the wearer's stat to update the visor display")
 
 /obj/item/clothing/mask/synthfacemask/dropped(mob/user, equipping, slot)
 	canremove = TRUE
 	maskmaster = null
-	STOP_PROCESSING(SSprocessing, src)
+	REACT_PROCESS_STOP(src)
 	..()
 
 /obj/item/clothing/mask/synthfacemask/Destroy()
 	maskmaster = null
 	. = ..()
-	STOP_PROCESSING(SSprocessing, src)
 
 /obj/item/clothing/mask/synthfacemask/equip_constraint()
 	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade")))

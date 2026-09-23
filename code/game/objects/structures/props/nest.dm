@@ -19,19 +19,24 @@
 	var/tally = 0				//The counter referenced against total_creature_max, or just to see how many mobs it has spawned.
 	var/total_creature_max	//If set, it can spawn this many creatures, total, ever.
 
+	/// REACT_AT token for the next creature spawn attempt; null when not scheduled.
+	var/tmp/nest_spawn_timer
+
 /obj/structure/prop/nest/Initialize(mapload)
 	. = ..()
 	den_mobs = list()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "prunes dead creatures from its den roster every tick")
 	last_spawn = world.time
 	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
 		var/delayshift_clamp = spawn_delay / 10
 		var/delayshift = rand(delayshift_clamp, -1 * delayshift_clamp)
 		spawn_delay += delayshift
+	nest_spawn_timer = REACT_REARM(src, nest_spawn_timer, last_spawn + spawn_delay)
 
 /obj/structure/prop/nest/Destroy()
 	den_mobs = null
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
+	nest_spawn_timer = REACT_REARM(src, nest_spawn_timer, null)
 	. = ..()
 
 /obj/structure/prop/nest/attack_hand(mob/living/user) // Used to tell the player that this isn't useful for anything.
@@ -41,8 +46,14 @@
 
 /obj/structure/prop/nest/process()
 	update_creatures()
-	if(world.time > last_spawn + spawn_delay)
-		spawn_creature(get_turf(src))
+
+/obj/structure/prop/nest/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != nest_spawn_timer)
+		return
+	nest_spawn_timer = null
+	spawn_creature(get_turf(src))
+	nest_spawn_timer = REACT_REARM(src, nest_spawn_timer, max(last_spawn + spawn_delay, world.time + 2 SECONDS))
 
 /obj/structure/prop/nest/proc/spawn_creature(turf/spawnpoint)
 	update_creatures() //Paranoia.
