@@ -1,10 +1,25 @@
 //! `#[vg::component]`, `#[vg::query]` and `#[vg::events]`
-//! (`doc/rewrite/rust_bindings.md` §2). Everything these generate is
-//! `byondapi`-free: the struct, its command enum, the `Domain` impl and
-//! field validators. The FFI glue that turns them into `get_*`/`set_*`
-//! binds is hand-written per component (it is what differs between a gas
-//! device and, later, a power consumer), following the same shape each
-//! time; see `verdigris/domains/gas/src/kind/pump.rs`.
+//! (`doc/rewrite/rust_architecture.md` §5). The struct, its command enum,
+//! the `Domain` impl, field validators and the `Schema` are always
+//! `byondapi`-free (they build and run in `cargo test` on the host). The
+//! FFI glue — the store, get/set/describe and bind procs — is generated
+//! too, but only under `#[cfg(target_arch = "x86")]`, matching
+//! `byondapi-sys`'s own gate: on a host build (`cargo test -p vg-core`,
+//! x86_64) it is simply absent, so a component crate's host tests never
+//! need `byondapi` as a dependency; on the real i686 build it is exactly
+//! what `kind/pump.rs` used to write by hand (get_*/set_*/push_*/bind, the
+//! `KindStore`, the `DomainRegistry` impl), so a component module is just
+//! the struct, `#[vg::query]` and `#[vg::events]` — `rust_architecture.md`
+//! §5's "a component crate writes the struct and nothing else."
+//!
+//! **Known gap** (tracked, not silently dropped): this keeps the generated
+//! glue — and so the crate it expands into (today, `vg-gas`) — depending on
+//! `byondapi`, which §3's target crate map reserves for `vg-ffi` alone.
+//! Moving the glue to actually live in `vg-ffi` needs `vg-ffi` to depend on
+//! the domain crates instead of the other way around (the crate map's
+//! stated direction), which also touches gas's existing, unrelated
+//! `vg-ffi` usage (`turf.rs`'s watch registration) — a bigger, cross-track
+//! change coordinated with M2, not done here.
 
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
@@ -158,6 +173,55 @@ fn pascal_case(ident: &Ident) -> Ident {
     format_ident!("{out}", span = ident.span())
 }
 
+/// `Pump` -> `pump`, `GasPump` -> `gas_pump`: the lowercase prefix every
+/// generated get/set/push/bind/query proc shares with its DM-side caller.
+/// Mirrors `tools/build/lib/verdigris_bindings.ts`'s `snake()` character for
+/// character (underscore before an uppercase letter that follows a
+/// lowercase letter or digit, then lowercase) — not just today's one-word
+/// `Pump`, so a future multi-word component name still gets the same
+/// global proc name on both sides of the FFI boundary. `pub(crate)`: also
+/// used by `query.rs` to name `#[vg::component]`'s generated helpers from
+/// its own, separate macro invocation on the same struct (this module's
+/// naming-convention contract).
+pub(crate) fn snake_case(ident: &Ident) -> String {
+    let name = ident.to_string();
+    let mut out = String::with_capacity(name.len() + 4);
+    let chars: Vec<char> = name.chars().collect();
+    for (i, &c) in chars.iter().enumerate() {
+        if i > 0 && c.is_ascii_uppercase() {
+            let prev = chars[i - 1];
+            if prev.is_ascii_lowercase() || prev.is_ascii_digit() {
+                out.push('_');
+            }
+        }
+        out.extend(c.to_lowercase());
+    }
+    out
+}
+
+fn is_bool_type(ty: &syn::Type) -> bool {
+    quote!(#ty).to_string() == "bool"
+}
+
+/// A `#ty` value as a `ByondValue` (the two field types in use today: `f32`
+/// converts directly, `bool` as 1.0/0.0 — `ByondValue` has no bool `From`).
+fn value_to_byond(ty: &syn::Type, expr: TokenStream) -> TokenStream {
+    if is_bool_type(ty) {
+        quote! { ::byondapi::value::ByondValue::from(if #expr { 1.0f32 } else { 0.0f32 }) }
+    } else {
+        quote! { ::byondapi::value::ByondValue::from(#expr) }
+    }
+}
+
+/// The reverse of [`value_to_byond`], as a fallible expression (`?` inside).
+fn byond_to_value(ty: &syn::Type, expr: TokenStream) -> TokenStream {
+    if is_bool_type(ty) {
+        quote! { (#expr.get_number()? != 0.0) }
+    } else {
+        quote! { ((#expr.get_number()?) as #ty) }
+    }
+}
+
 /// Expands `#[component(...)] struct Foo { ... }`.
 pub fn expand(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let args = syn::parse_macro_input!(attr as ComponentArgs);
@@ -306,6 +370,8 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
     let field_name_strs: Vec<String> = field_names.iter().map(|i| i.to_string()).collect();
     let field_count = field_names.len();
 
+    let glue = component_glue(&struct_ident, &kind_ident, &command_ident, dm_str, &parsed);
+
     Ok(quote! {
         #input
 
@@ -369,5 +435,243 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
                 }
             }
         }
+
+        #glue
     })
+}
+
+/// The FFI glue (`rust_architecture.md` §5): the store, `DomainRegistry`
+/// impl and every get/set/push/bind proc. See the module docs for the
+/// `#[cfg(target_arch = "x86")]` gate and the known crate-boundary gap.
+#[allow(clippy::too_many_lines)]
+fn component_glue(
+    struct_ident: &Ident,
+    kind_ident: &Ident,
+    command_ident: &Ident,
+    dm: &LitStr,
+    parsed: &[ParsedField],
+) -> TokenStream {
+    let lower = snake_case(struct_ident);
+    let dm_path = dm.value();
+    let shared_ident = format_ident!("__{struct_ident}Shared");
+    let store_static = format_ident!("__{}_STORE", lower.to_uppercase());
+    let registered_static = format_ident!("__{}_REGISTERED", lower.to_uppercase());
+    let with_fn = format_ident!("__{lower}_with");
+    let cell_of_fn = format_ident!("__{lower}_cell_of");
+    let bind_fn = format_ident!("{lower}_bind");
+    let bind_path = LitStr::new(&format!("/proc/{lower}_bind"), struct_ident.span());
+
+    let config: Vec<&ParsedField> = parsed.iter().filter(|f| f.attr.role == Role::Config).collect();
+    let state: Vec<&ParsedField> = parsed.iter().filter(|f| f.attr.role == Role::State).collect();
+    let input: Vec<&ParsedField> = parsed.iter().filter(|f| f.attr.role == Role::Input).collect();
+
+    // --- describe(): every field, value plus its declared unit -----------
+    let describe_lines = parsed.iter().map(|f| {
+        let name = f.ident.to_string();
+        let ident = &f.ident;
+        let suffix = f.attr.unit.as_ref().map(|u| format!(" {}", u.value())).unwrap_or_default();
+        quote! { (#name.into(), ::std::format!("{}{}", v.#ident, #suffix)) }
+    });
+
+    // --- get_*/set_* (config), get_* (state), get_*/push_* (input) -------
+    let mut procs = TokenStream::new();
+    for f in &config {
+        let field = &f.ident;
+        let ty = &f.ty;
+        let field_str = field.to_string();
+        let get_fn = format_ident!("{lower}_get_{field}");
+        let set_fn = format_ident!("{lower}_set_{field}");
+        let get_path = LitStr::new(&format!("{dm_path}/proc/get_{field_str}"), field.span());
+        let set_path = LitStr::new(&format!("{dm_path}/proc/set_{field_str}"), field.span());
+        let validate = format_ident!("validate_{field}");
+        let variant = pascal_case(field);
+        let read_to_byond = value_to_byond(ty, quote! { v.#field });
+        let stored_to_byond = value_to_byond(ty, quote! { v });
+        let from_byond = byond_to_value(ty, quote! { value });
+        procs.extend(quote! {
+            #[cfg(target_arch = "x86")]
+            #[::auxmacros::bind(#get_path)]
+            fn #get_fn(entity: ::byondapi::value::ByondValue) -> ::eyre::Result<::byondapi::value::ByondValue> {
+                let cell = #cell_of_fn(&entity)?;
+                let v = #with_fn(|w| w.read(cell).ok_or_else(|| ::eyre::eyre!("{} row {cell} out of range", #dm)))?;
+                ::std::result::Result::Ok(#read_to_byond)
+            }
+
+            #[cfg(target_arch = "x86")]
+            #[::auxmacros::bind(#set_path)]
+            fn #set_fn(entity: ::byondapi::value::ByondValue, value: ::byondapi::value::ByondValue) -> ::eyre::Result<::byondapi::value::ByondValue> {
+                let cell = #cell_of_fn(&entity)?;
+                let raw = #from_byond;
+                let v = #struct_ident::#validate(raw).map_err(|e| ::eyre::eyre!("field `{}`: {}", #field_str, e))?;
+                #with_fn(|w| w.submit(cell, #command_ident::#variant(v)).map_err(|e| ::eyre::eyre!("{e}")))?;
+                ::std::result::Result::Ok(#stored_to_byond)
+            }
+        });
+    }
+    for f in &state {
+        let field = &f.ident;
+        let ty = &f.ty;
+        let field_str = field.to_string();
+        let get_fn = format_ident!("{lower}_get_{field}");
+        let get_path = LitStr::new(&format!("{dm_path}/proc/get_{field_str}"), field.span());
+        let read_to_byond = value_to_byond(ty, quote! { v.#field });
+        procs.extend(quote! {
+            #[cfg(target_arch = "x86")]
+            #[::auxmacros::bind(#get_path)]
+            fn #get_fn(entity: ::byondapi::value::ByondValue) -> ::eyre::Result<::byondapi::value::ByondValue> {
+                let cell = #cell_of_fn(&entity)?;
+                let v = #with_fn(|w| w.read(cell).ok_or_else(|| ::eyre::eyre!("{} row {cell} out of range", #dm)))?;
+                ::std::result::Result::Ok(#read_to_byond)
+            }
+        });
+    }
+    for f in &input {
+        let field = &f.ident;
+        let ty = &f.ty;
+        let field_str = field.to_string();
+        let get_fn = format_ident!("{lower}_get_{field}");
+        let push_fn = format_ident!("{lower}_push_{field}");
+        let get_path = LitStr::new(&format!("{dm_path}/proc/get_{field_str}"), field.span());
+        let push_path = LitStr::new(&format!("{dm_path}/proc/push_{field_str}"), field.span());
+        let variant = pascal_case(field);
+        let read_to_byond = value_to_byond(ty, quote! { v.#field });
+        let pushed_to_byond = value_to_byond(ty, quote! { v });
+        let from_byond = byond_to_value(ty, quote! { value });
+        procs.extend(quote! {
+            /// Rust's currently stored value, for the reconciler (§7):
+            /// compare against the type's pure input proc.
+            #[cfg(target_arch = "x86")]
+            #[::auxmacros::bind(#get_path)]
+            fn #get_fn(entity: ::byondapi::value::ByondValue) -> ::eyre::Result<::byondapi::value::ByondValue> {
+                let cell = #cell_of_fn(&entity)?;
+                let v = #with_fn(|w| w.read(cell).ok_or_else(|| ::eyre::eyre!("{} row {cell} out of range", #dm)))?;
+                ::std::result::Result::Ok(#read_to_byond)
+            }
+
+            /// Pushed by generated wiring on a source change (§7). Never
+            /// validated (an input has no declared range): identity.
+            #[cfg(target_arch = "x86")]
+            #[::auxmacros::bind(#push_path)]
+            fn #push_fn(entity: ::byondapi::value::ByondValue, value: ::byondapi::value::ByondValue) -> ::eyre::Result<::byondapi::value::ByondValue> {
+                let cell = #cell_of_fn(&entity)?;
+                let v = #from_byond;
+                #with_fn(|w| w.submit(cell, #command_ident::#variant(v)).map_err(|e| ::eyre::eyre!("{e}")))?;
+                ::std::result::Result::Ok(#pushed_to_byond)
+            }
+        });
+    }
+
+    // --- bind(): entity, init_<config>..., <input>... ---------------------
+    let bind_params = config
+        .iter()
+        .map(|f| {
+            let p = format_ident!("init_{}", f.ident);
+            quote! { #p: ::byondapi::value::ByondValue }
+        })
+        .chain(input.iter().map(|f| {
+            let p = &f.ident;
+            quote! { #p: ::byondapi::value::ByondValue }
+        }));
+    let config_assigns = config.iter().map(|f| {
+        let field = &f.ident;
+        let ty = &f.ty;
+        let p = format_ident!("init_{}", f.ident);
+        let validate = format_ident!("validate_{field}");
+        let field_str = field.to_string();
+        let from_byond = byond_to_value(ty, quote! { #p });
+        quote! {
+            #field: #struct_ident::#validate(#from_byond).map_err(|e| ::eyre::eyre!("field `{}`: {}", #field_str, e))?
+        }
+    });
+    let input_assigns = input.iter().map(|f| {
+        let field = &f.ident;
+        let ty = &f.ty;
+        let from_byond = byond_to_value(ty, quote! { #field });
+        quote! { #field: #from_byond }
+    });
+
+    quote! {
+        #[doc(hidden)]
+        struct #shared_ident(::std::rc::Rc<::std::cell::RefCell<::vg_core::store::KindStore<#kind_ident>>>);
+
+        #[cfg(target_arch = "x86")]
+        impl ::vg_ffi::registry::DomainRegistry for #shared_ident {
+            fn detach(&mut self, comp: ::vg_core::entity::ComponentRef) {
+                if comp.kind != #struct_ident::KIND {
+                    return;
+                }
+                self.0.borrow_mut().detach(comp.cell);
+            }
+            fn describe(&self, comp: ::vg_core::entity::ComponentRef) -> ::std::vec::Vec<(::std::string::String, ::std::string::String)> {
+                if comp.kind != #struct_ident::KIND {
+                    return ::std::vec::Vec::new();
+                }
+                let ::std::option::Option::Some(v) = self.0.borrow().read(comp.cell) else {
+                    return ::std::vec::Vec::new();
+                };
+                ::std::vec![ #(#describe_lines),* ]
+            }
+            fn tick(&mut self) {
+                self.0.borrow_mut().tick();
+            }
+            fn reset(&mut self) {
+                *self.0.borrow_mut() = ::vg_core::store::KindStore::new();
+            }
+            fn drain_events(&mut self, out: &mut ::std::vec::Vec<(u16, f32, u8)>) {
+                let mut raw = ::std::vec::Vec::new();
+                self.0.borrow_mut().drain_events(&mut raw);
+                out.extend(raw.into_iter().map(|(entity, id)| (#struct_ident::KIND, entity, id)));
+            }
+        }
+
+        #[cfg(target_arch = "x86")]
+        ::std::thread_local! {
+            #[doc(hidden)]
+            static #store_static: ::std::rc::Rc<::std::cell::RefCell<::vg_core::store::KindStore<#kind_ident>>> =
+                ::std::rc::Rc::new(::std::cell::RefCell::new(::vg_core::store::KindStore::new()));
+            #[doc(hidden)]
+            static #registered_static: ::std::cell::Cell<bool> = const { ::std::cell::Cell::new(false) };
+        }
+
+        #[cfg(target_arch = "x86")]
+        fn #with_fn<T>(f: impl FnOnce(&mut ::vg_core::store::KindStore<#kind_ident>) -> ::eyre::Result<T>) -> ::eyre::Result<T> {
+            #registered_static.with(|done| {
+                if !done.get() {
+                    #store_static.with(|s| {
+                        ::vg_ffi::registry::register_domain(DOMAIN as u32, ::std::boxed::Box::new(#shared_ident(::std::rc::Rc::clone(s))));
+                    });
+                    done.set(true);
+                }
+            });
+            #store_static.with(|s| f(&mut s.borrow_mut()))
+        }
+
+        #[cfg(target_arch = "x86")]
+        fn #cell_of_fn(entity: &::byondapi::value::ByondValue) -> ::eyre::Result<u32> {
+            let comp = ::vg_ffi::entity::resolve(entity.get_number()?, DOMAIN, #struct_ident::KIND)?;
+            ::std::result::Result::Ok(comp.cell)
+        }
+
+        #procs
+
+        /// Creates the entity (if `entity` is 0) or reuses it, attaches a
+        /// component seeded from the `init_*` values and the current
+        /// inputs, and returns the entity handle (§4, §5). DM's base
+        /// `on_materialize()` calls this once per component the type
+        /// declares.
+        #[cfg(target_arch = "x86")]
+        #[::auxmacros::bind(#bind_path)]
+        fn #bind_fn(entity: ::byondapi::value::ByondValue, #(#bind_params),*) -> ::eyre::Result<::byondapi::value::ByondValue> {
+            let value = #struct_ident {
+                #(#config_assigns,)*
+                #(#input_assigns,)*
+                ..::std::default::Default::default()
+            };
+            let id = ::vg_ffi::entity::bind_or_reuse(entity.get_number()?)?;
+            let entity_v = ::vg_ffi::entity::entity_value(id);
+            let cell = #with_fn(|w| w.bind(entity_v, value).map_err(|e| ::eyre::eyre!("{} bind: {}", #dm, e)))?;
+            ::vg_ffi::entity::attach(id, DOMAIN, ::vg_core::entity::ComponentRef::new(#struct_ident::KIND, cell)).map_err(|e| ::eyre::eyre!("{e}"))?;
+            ::std::result::Result::Ok(::byondapi::value::ByondValue::from(entity_v))
+        }
+    }
 }

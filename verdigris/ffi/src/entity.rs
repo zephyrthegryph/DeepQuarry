@@ -21,7 +21,7 @@ use crate::registry;
 pub const ENTITY_INDEX_MASK: u32 = 524_287;
 
 thread_local! {
-    static ENTITIES: RefCell<EntityTable> = RefCell::new(EntityTable::new());
+    static ENTITIES: RefCell<EntityTable> = const { RefCell::new(EntityTable::new()) };
 }
 
 // DM's `vg_entity == 0` means "unbound". A raw id's packed bits can

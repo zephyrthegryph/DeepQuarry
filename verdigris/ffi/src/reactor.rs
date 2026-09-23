@@ -36,7 +36,7 @@ use vg_core::reactor::{ModelId, RateModel, Reactor};
 use vg_core::timer::{Tick, TimerId};
 use vg_core::watch::{Cmp, Cond, Edge, Level, WatchPort, WatchState};
 
-use crate::registry::{self, DomainRegistry};
+use crate::registry;
 
 // --- DM constants ------------------------------------------------------------
 

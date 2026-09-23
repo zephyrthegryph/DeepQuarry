@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "a7d3f63e3eeff1ac"
+#define VERDIGRIS_ABI "f1e25b1b3fe15786"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -406,18 +406,20 @@
 // verdigris/domains/heat/src/consts.rs
 #define THERMAL_EMISSIVITY_DEFAULT 0.9
 
-/// This component's domain index in the entity table (§1). Gas is domain 0;
-/// later domains (power, heat, ...) take 1, 2, ... as they land.
+/// This component's domain index in the entity table (§4.1). Gas is domain
+/// 0; later domains (power, heat, ...) take 1, 2, ... as they land. Expected
+/// in scope by the generated glue (`DOMAIN` is a fixed name, not passed
+/// through the macro, since several kinds share one domain's number).
 // verdigris/domains/gas/src/kind/pump.rs
 #define VG_DOMAIN_GAS 0
 
 /// The bits of a `vg_entity` value (after subtracting the raw-plus-one
-/// offset) that carry the slot index, matching `vg_core::handle::INDEX_BITS`
+/// offset) that carry the slot index, matching `vg_core::entity::INDEX_BITS`
 /// (checked in this module's tests). DM computes an entity's table index
-/// with it to look up the bound atom for event dispatch (§8), without
-/// needing to know anything else about handle packing.
+/// with it to look up the bound atom for event dispatch, without needing to
+/// know anything else about id packing.
 // verdigris/ffi/src/entity.rs
-#define VG_ENTITY_INDEX_MASK 1048575
+#define VG_ENTITY_INDEX_MASK 524287
 
 // Binds.
 
@@ -615,7 +617,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// `vg_describe(atom)` (§3): every attached component's fields, as one
+/// `vg_describe(atom)`: every attached component's fields, as one
 /// semicolon-joined line (`domain field=value, field=value; domain ...`).
 // /proc/entity_describe (verdigris/ffi/src/entity.rs)
 /proc/vg_entity_describe(entity)
@@ -623,7 +625,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
 
-/// `SSvg`'s per-domain event drain (§8): every event raised by that
+/// `SSvg`'s per-domain event drain (§4.8): every event raised by that
 /// domain's components since the last drain, as a flat
 /// `[kind, entity, event_id, ...]` list. SSreactor/SSvg calls this once per
 /// domain per tick (or sweep), then resolves each `entity` to its bound
@@ -650,9 +652,10 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity, domain, kind)
 
-/// `SSvg`'s per-sweep maintenance: ticks every registered domain's `Sim`
-/// once (publishing a view, pruning the overlay), so state is never more
-/// than one sweep old even though nothing sets it per idle tick.
+/// `SSvg`'s per-sweep maintenance: ticks every registered domain once
+/// (publishing a view, pruning the overlay for worker-owned kinds), so
+/// state is never more than one sweep old even though nothing sets it per
+/// idle tick.
 // /proc/entity_tick_all (verdigris/ffi/src/entity.rs)
 /proc/vg_entity_tick_all()
 	var/static/__f = load_ext(VERDIGRIS, "byond:entity_tick_all_ffi")
@@ -1184,10 +1187,6 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// Creates the entity (if `entity` is 0) or reuses it, attaches a pump
-/// component seeded from the `init_*` values and the current input, and
-/// returns the entity handle (§4, §5). DM's base `on_materialize()` calls
-/// this once per component the type declares.
 // /proc/pump_bind (verdigris/domains/gas/src/kind/pump.rs)
 /proc/vg_pump_bind(entity, init_target_pressure, init_power_rating, init_on, operable)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pump_bind_ffi")
@@ -1206,8 +1205,6 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
 
-/// Rust's currently stored `operable`, for the reconciler (§7): it compares
-/// this against what `pump_input_operable()` recomputes on the DM side.
 // /obj/machinery/atmospherics/binary/pump/proc/get_operable (verdigris/domains/gas/src/kind/pump.rs)
 /proc/vg_pump_get_operable(entity)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_operable_ffi")
@@ -1226,20 +1223,13 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
 
-/// Pushes a recomputed `operable` (class 3/4 sources: construction,
-/// integrity). Never validated (booleans have no range): §2's `identity`
-/// path.
 // /obj/machinery/atmospherics/binary/pump/proc/push_operable (verdigris/domains/gas/src/kind/pump.rs)
 /proc/vg_pump_push_operable(entity, value)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pump_push_operable_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity, value)
 
-/// `pump_query_ui()` (§3, §6): every UI field in one call. Rust fn name
-/// intentionally matches the generated global proc the generator points
-/// `pump_query_ui()`'s DM wrapper at (`vg_<fn name>`, no `_ffi` suffix): see
-/// `tools/build/lib/verdigris_bindings.ts`'s component-binding convention.
-// /obj/machinery/atmospherics/binary/pump/proc/pump_query_ui (verdigris/domains/gas/src/kind/pump.rs)
+// /proc/pump_query_ui (verdigris/domains/gas/src/kind/pump.rs)
 /proc/vg_pump_query_ui(entity)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pump_query_ui_ffi")
 	VG_COUNT_FFI_CALL
