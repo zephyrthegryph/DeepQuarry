@@ -100,12 +100,12 @@
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		comm.voice_invites |= src
+		LAZYOR(comm.voice_invites, src)
 
 	if(!who)
 		return
 
-	voice_requests |= candidate
+	LAZYOR(voice_requests, candidate)
 
 	if(ringer && nif.human)
 		nif.notify("New commlink call from [who]. (<a href='byond://?src=\ref[nifsoft];open=1'>Open</a>)")
@@ -116,15 +116,15 @@
 	if(isobserver(candidate))
 		var/mob/observer/dead/ghost = candidate
 		who = ghost
-		im_list += list(list("address" = origin_address, "to_address" = exonet.address, "im" = text))
+		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		comm.im_contacts |= src
-		im_list += list(list("address" = origin_address, "to_address" = exonet.address, "im" = text))
+		LAZYOR(comm.im_contacts, src)
+		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else return
 
-	im_contacts |= candidate
+	LAZYOR(im_contacts, candidate)
 
 	if(!who)
 		return

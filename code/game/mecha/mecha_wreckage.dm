@@ -12,7 +12,7 @@
 	opacity = 0
 	var/list/welder_salvage = list(/obj/item/stack/material/plasteel,/obj/item/stack/material/steel,/obj/item/stack/rods)
 	var/static/list/wirecutters_salvage = list(/obj/item/stack/cable_coil)
-	var/list/crowbar_salvage = list()
+	var/list/crowbar_salvage
 	var/salvage_num = 5
 
 /obj/effect/decal/mecha_wreckage/bullet_act(obj/item/projectile/Proj)

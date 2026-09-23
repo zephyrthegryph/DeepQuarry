@@ -20,8 +20,8 @@
 
 	// These are local because they are different for every holochip.
 	// The maps and icons are all pixel_x and pixel_y'd so we're in the center.
-	var/list/map_image_cache = list()
-	var/list/icon_image_cache = list()
+	var/list/map_image_cache
+	var/list/icon_image_cache
 
 	var/pinging = FALSE
 	var/updating = FALSE
@@ -94,14 +94,14 @@
 	mark.icon = 'icons/effects/64x64.dmi'
 	mark.icon_state = "mapper_none"
 	mark.layer = 10
-	icon_image_cache["bad"] = mark
+	LAZYSET(icon_image_cache, "bad", mark)
 
 	var/atom/movable/screen/mapper/map/tmp = new()
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
 	tmp.icon = canvas
-	map_image_cache["bad"] = tmp
+	LAZYSET(map_image_cache, "bad", tmp)
 
 	if(uses_power && cell_type)
 		cell = new cell_type(src)
@@ -114,8 +114,8 @@
 
 	last_run()
 
-	map_image_cache.Cut()
-	icon_image_cache.Cut()
+	LAZYCLEARLIST(map_image_cache)
+	LAZYCLEARLIST(icon_image_cache)
 	QDEL_NULL(extras_holder)
 
 	return ..()
@@ -256,7 +256,7 @@
 		map_app.color = map_color
 
 		if(!SSholomaps.holoMiniMaps[T_z])
-			var/atom/movable/screen/mapper/map/baddo = map_image_cache["bad"]
+			var/atom/movable/screen/mapper/map/baddo = LAZYACCESS(map_image_cache, "bad")
 			map_app.icon = icon(baddo.icon)
 			badmap = TRUE
 		// SSholomaps did map it and we're allowed to see it
@@ -277,9 +277,9 @@
 
 			var/atom/movable/screen/mapper/map/tmp = new()
 			tmp.appearance = map_app
-			map_image_cache[map_cache_key] = tmp
+			LAZYSET(map_image_cache, map_cache_key, tmp)
 
-	bgmap = map_image_cache[map_cache_key]
+	bgmap = LAZYACCESS(map_image_cache, map_cache_key)
 
 	// The holomap moves around, the user is always in the center. This slides the holomap.
 	var/offset_x = bgmap.offset_x
@@ -333,7 +333,7 @@
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
 				mark.icon_state = "[HC.marker_prefix][mob_indicator]"
-				icon_image_cache[marker_cache_key] = mark
+				LAZYSET(icon_image_cache, marker_cache_key, mark)
 				switch(mob_indicator)
 					if(HOLOMAP_YOU)
 						mark.layer = 3 // Above the other markers
@@ -342,7 +342,7 @@
 					else
 						mark.layer = 1
 
-			var/atom/movable/screen/mapper/marker/mark = icon_image_cache[marker_cache_key]
+			var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
 			handle_marker(mark,TU.x,TU.y)
 			extras += mark
 
@@ -361,14 +361,14 @@
 			var/atom/movable/screen/mapper/marker/mark = new()
 			mark.icon_state = "beacon"
 			mark.layer = 1
-			icon_image_cache[marker_cache_key] = mark
+			LAZYSET(icon_image_cache, marker_cache_key, mark)
 
-		var/atom/movable/screen/mapper/marker/mark = icon_image_cache[marker_cache_key]
+		var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
 		handle_marker(mark,TB.x,TB.y)
 		extras += mark
 
 	if(badmap)
-		var/obj/O = icon_image_cache["bad"]
+		var/obj/O = LAZYACCESS(icon_image_cache, "bad")
 		O.pixel_x = T_x - offset_x
 		O.pixel_y = T_y - offset_y
 		extras += O

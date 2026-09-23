@@ -3,7 +3,7 @@
 	desc = "It's made of a slightly sturdier material than standard jumpsuits, to allow for robust protection."
 	icon_state = "swatunder"
 	item_state_slots = list(slot_r_hand_str = "green", slot_l_hand_str = "green")
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 	rolled_down = 0
@@ -19,7 +19,7 @@
 	desc = "The uniform worn by operations officers of the mid 2260s. It comes with extra security padding, but you feel strangely vulnerable just seeing this..."
 	icon_state = "trek_engsec"
 	item_state = "trek_engsec"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 //TNG
@@ -57,7 +57,7 @@
 	icon_state = "nullsuit_civ" //Default
 	item_state = "nullsuit_civ"
 	worn_state = "nullsuit_civ"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/nullsuit/civ
 	name = "civilian nullsuit"
@@ -68,7 +68,7 @@
 	icon_state = "nullsuit_civ"
 	item_state = "nullsuit_civ"
 	worn_state = "nullsuit_civ"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/nullsuit/cmd //Command version
 	name = "command nullsuit"
@@ -83,7 +83,7 @@
 	icon_state = "nullsuit_sec"
 	item_state = "nullsuit_sec"
 	worn_state = "nullsuit_sec"
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 
 /obj/item/clothing/under/rank/nullsuit/sec/hos //HoS version
 	name = "head of security nullsuit"
@@ -98,7 +98,7 @@
 	icon_state = "nullsuit_med"
 	item_state = "nullsuit_med"
 	worn_state = "nullsuit_med"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/nullsuit/med/cmo //Chief Medical Officer version
 	name = "Chief Medical Officer nullsuit"
@@ -113,7 +113,7 @@
 	icon_state = "nullsuit_eng"
 	item_state = "nullsuit_eng"
 	worn_state = "nullsuit_eng"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/nullsuit/eng/ce //Chief Engineer version
 	name = "chief engineer nullsuit"
@@ -128,7 +128,7 @@
 	icon_state = "nullsuit_sci"
 	item_state = "nullsuit_sci"
 	worn_state = "nullsuit_sci"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10"
 
 /obj/item/clothing/under/rank/nullsuit/sci/rd //Research Director version
 	name = "research director nullsuit"
@@ -318,7 +318,7 @@
 
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	flags_inv = HIDETIE|HIDEHOLSTER
 
 //For general use
@@ -336,7 +336,7 @@
 
 	blood_overlay_type = "coat"
 	body_parts_covered = CHEST|ARMS
-	armor = list(melee = 10, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0) //As much armor as the cyberpunk jacket. Also priced the same.
+	armor_spec = "melee=10;bullet=20;laser=10" //As much armor as the cyberpunk jacket. Also priced the same.
 	var/unbuttoned = FALSE
 
 /obj/item/clothing/suit/storage/fluff/fedcoat/suit_storage_constraint()
@@ -368,19 +368,19 @@
 	name = "Federation Uniform Jacket (Blue)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it. Wearing this may make you feel all scientific."
 	icon_state = "fedblue"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0) //As much armor as a normal labcoat.
+	armor_spec = "bio=50" //As much armor as a normal labcoat.
 
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedeng
 	name = "Federation Uniform Jacket (Yellow)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it.Wearing it may make you feel like checking a warp core, whatever that is."
 	icon_state = "fedeng"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 20) //I was going to say 'as much as a hazard vest' but then I checked and found that hazard vests either never HAD rad resistance or had it removed... Whatever. I gave the hazard vest it's rad resistance back as well.
+	armor_spec = "rad=20" //I was going to say 'as much as a hazard vest' but then I checked and found that hazard vests either never HAD rad resistance or had it removed... Whatever. I gave the hazard vest it's rad resistance back as well.
 
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedcapt
 	name = "Federation Uniform Jacket (Command)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it. You feel like a commanding officer of Starfleet."
 	icon_state = "fedcapt"
-	armor = list(melee = 10, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=20;laser=10"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat
 	name = "Modern Federation Uniform Jacket (Command)"
@@ -393,7 +393,7 @@
 
 	blood_overlay_type = "coat"
 	body_parts_covered = CHEST|ARMS
-	armor = list(melee = 10, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=20;laser=10"
 
 	//Variants
 
@@ -404,19 +404,19 @@
 	name = "Modern Federation Uniform Jacket (Blue)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. Wearing this makes you feel like a scientist or a pilot."
 	icon_state = "fedmodernblue"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedeng
 	name = "Modern Federation Uniform Jacket (Yellow)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. You feel like you can handle any type of technical engineering problems."
 	icon_state = "fedmoderneng"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedsec
 	name = "Modern Federation Uniform Jacket (Red)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. This uniform makes you want to protect and serve as an officer."
 	icon_state = "fedmodernsec"
-	armor = list(melee = 10, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=20;laser=10"
 
 /obj/item/clothing/head/caphat/formal/fedcover
 	name = "Federation Officer's Cap"
@@ -564,7 +564,7 @@
 	icon_state = "tasaldsuit"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 
 // bwoincognito:Tasald Corlethian
 /obj/item/clothing/suit/storage/det_suit/fluff/tasald
@@ -578,7 +578,7 @@
 
 	blood_overlay_type = "coat"
 	body_parts_covered = CHEST|LEGS|ARMS
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 //Event Costumes Below
 /obj/item/clothing/head/helmet/fluff/freddy
@@ -590,7 +590,7 @@
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	permeability_coefficient = 0.01
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	flags_inv = HIDEMASK|HIDEEARS
 	cold_protection = HEAD
 	siemens_coefficient = 0.9
@@ -627,7 +627,7 @@
 	gas_transfer_coefficient = 0.01
 	permeability_coefficient = 0.02
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT
 	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
 	siemens_coefficient = 0.9
@@ -783,7 +783,7 @@
 /obj/item/clothing/head/helmet/hos/fluff/lethe
 	name = "Lethe's Hat"
 	desc = " This is Lethe's Hat! A little tag attached inside reads: 'If found please return to Lethe! Or else!' It looks rather worn in. It also lacks armor."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 	icon = 'icons/inventory/head/item.dmi'
 	icon_state = "hoscap"
@@ -867,7 +867,7 @@
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.head == src)
+		if(H.get_equipped_item(SLOT_ID_HEAD) == src)
 			H.update_inv_head()
 //Viveret:Keturah
 /obj/item/clothing/under/dress/maid
@@ -903,7 +903,7 @@
 	where the suit is softer is a rectangular name-tag with the name 'Joan' on it. There are indications that the \
 	suit has seen combat."
 
-	armor = list(melee = 50, bullet = 40, laser = 45, energy = 25, bomb = 50, bio = 100, rad = 50) //These values were taken from the combat rigs and adjusted to be weaker than said rigs.
+	armor_spec = "melee=50;bullet=40;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60" //These values were taken from the combat rigs and adjusted to be weaker than said rigs.
 	slowdown = 0
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
@@ -951,43 +951,43 @@
 	name = "GE command suit" // Change to GE
 	desc = "Gilthari Exports uniform. An extra-comfortable command one, at that."
 	icon_state = "khi_uniform_cmd"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/sec //Security version
 	name = "GE security suit" // Change to GE
 	desc = "Gilthari Exports uniform. This one has angry red security stripes. Keepin' the peace in style."
 	icon_state = "khi_uniform_sec"
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 
 /obj/item/clothing/under/rank/khi/med //Medical version
 	name = "GE medical suit" // Change to GE
 	desc = "Gilthari Exports uniform. The medical version. Why not just get a new body, anyway?"
 	icon_state = "khi_uniform_med"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/khi/eng //Engineering version
 	name = "GE engineering suit" // Change to GE
 	desc = "Gilthari Exports uniform. One fit for an engineer, by the looks of it. Building the future, one disaster at a time."
 	icon_state = "khi_uniform_eng"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/khi/sci //Science version
 	name = "GE science suit" // Change to GE
 	desc = "Gilthari Exports uniform. For performing science in, based on the color! Only SCIENCE can save us now."
 	icon_state = "khi_uniform_sci"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10"
 
 /obj/item/clothing/under/rank/khi/crg //Cargo version
 	name = "GE cargo suit" // Change to GE
 	desc = "A sleek cargo uniform from Gilthari Exports."
 	icon_state = "khi_uniform_crg"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/civ //Science version
 	name = "GE civilian suit" // Change to GE
 	desc = "A sleek civilian uniform from Gilthari Exports."
 	icon_state = "khi_uniform_civ"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/fluff
 	name = DEVELOPER_WARNING_NAME
@@ -996,7 +996,7 @@
 	name = "KHI meditech suit"
 	desc = "An outdated uniform of some sort. You get the sense that whoever wore this must've been very full of themselves"
 	icon_state = "khi_uniform_aro"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 //jacobdragon:Earthen Breath
 /obj/item/clothing/under/fluff/earthenbreath
@@ -1053,7 +1053,7 @@
 	item_icons = list(
 		slot_wear_mask_str = 'icons/vore/custom_clothes_mob.dmi'
 		)
-	armor = list(melee = 0, bullet = 0, laser = 2,energy = 2, bomb = 0, bio = 90, rad = 0)
+	armor_spec = "laser=2;energy=2;bio=90"
 	body_parts_covered = HEAD|FACE|EYES
 
 //bwoincognito:Octavious Ward
@@ -1107,7 +1107,7 @@
 /obj/item/clothing/suit/storage/hazardvest/fluff/verin
 	name = "Green Haz-coat"
 	desc = "A well-worn green, long coat made with lightweight materials, it has a radioactive hazard icon on it's right sleeve. Smells faintly like sergal."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20"
 	body_parts_covered = UPPER_TORSO|ARMS
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
@@ -1117,7 +1117,7 @@
 /obj/item/clothing/head/welding/fluff/vinjj
 	name = "Vinjj's Stylish Bandana"
 	desc = "A lovely blue and purple bandanna with a refined topaz hanging from its tail end, a pair of goggles are hidden underneath its fabric. Although for some strange reason, wearing this seems to inspire lewd thoughts."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_icons = list(
@@ -1223,20 +1223,20 @@ Departamental Swimsuits, for general use
 	name = "Command Uniform"
 	desc = "The uniform worn by command officers in the mid 2260s."
 	icon_state = "trek_command"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // Considering only staff heads get to pick it
+	armor_spec = "" // Considering only staff heads get to pick it
 
 /obj/item/clothing/under/rank/trek/eng // Engineering only
 	name = "Operations Uniform"
 	desc = "The uniform worn by operations officers of the mid 2260s. You feel strangely vulnerable just seeing this..."
 	icon_state = "trek_engsec"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // since they're shared between jobs and kinda moot. // I'll tell you what, the armor values are NOT shared. Removed melee bonus.
+	armor_spec = "" // since they're shared between jobs and kinda moot. // I'll tell you what, the armor values are NOT shared. Removed melee bonus.
 
 /obj/item/clothing/under/rank/trek/medsci
 	name = "MedSci Uniform"
 	desc = "The uniform worn by medsci officers in the mid 2260s."
 	icon_state = "trek_medsci"
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0) // basically a copy of vanilla sci/med
+	armor_spec = "bio=10" // basically a copy of vanilla sci/med
 
 //TNG
 /obj/item/clothing/under/rank/trek/command/next
@@ -1285,7 +1285,7 @@ Departamental Swimsuits, for general use
 	icon_state = "trek_ds9_coat"
 	body_parts_covered = CHEST|ARMS
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/suit/storage/trek/ds9/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL)
@@ -1295,7 +1295,7 @@ Departamental Swimsuits, for general use
 	name = "Admiral Overcoat"
 	desc = "Admirality specialty coat to keep flag officers fashionable and protected."
 	icon_state = "trek_ds9_coat_adm"
-	armor = list(melee = 45, bullet = 35, laser = 35, energy = 20, bomb = 0, bio = 40, rad = 55)
+	armor_spec = "melee=45;bullet=35;laser=35;energy=20;bio=40;rad=55"
 
 /obj/item/clothing/under/rank/trek/command/ds9
 	desc = "The uniform worn by command officers of the 2380s."
@@ -1350,7 +1350,7 @@ Departamental Swimsuits, for general use
 	speed to compensate for custom padding and armor Kateryna made herself."
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "lilithsuit"
-	armor = list(melee = 40, bullet = 20, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 20)
+	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 
 //samanthafyre:Kateryna Petrovitch
 
@@ -1522,7 +1522,7 @@ Departamental Swimsuits, for general use
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanocoat"
 	item_state_slots = list(slot_r_hand_str = "kilanocoat", slot_l_hand_str = "kilanocoat")
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10;cold=40"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	//hoodtype = ??? //Needs a hoodtype to be created for it.
@@ -1536,7 +1536,7 @@ Departamental Swimsuits, for general use
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "kilanosuit"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 //BeyondMyLife: Ne'tra Ky'ram
@@ -1574,7 +1574,7 @@ Departamental Swimsuits, for general use
 	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = FEET|LEGS
 	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 //BeyondMyLife: Ne'tra Ky'ram
 
@@ -1708,7 +1708,7 @@ Departamental Swimsuits, for general use
 
 /obj/item/clothing/suit/space/void/security/hasd
 	name = "HASD EVA bodyplates"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "cold=60"
 	desc = "A series of armor plates painted black, deployed from a back-mounted module. They fit smoothly over the unit's armor plates and projects a skintight bubble shield over the unit's uncovered parts. Faceplate and coolant unit not included."
 	icon = 'icons/mob/taursuits_lizard.dmi'
 	icon_state = "hasd_suit"
@@ -1877,7 +1877,7 @@ Departamental Swimsuits, for general use
 /obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip/equipped()
 	..()
 	var/mob/living/carbon/human/H = loc
-	if(istype(H) && H.wear_suit == src)
+	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
 		icon_override = 'icons/vore/custom_clothes_mob.dmi'
 	update_clothing_icon()
 
@@ -1985,7 +1985,7 @@ Departamental Swimsuits, for general use
 	name = "cape"
 	desc = "Snazzy!"
 	flags = NONE
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0) // It's not armor, it's a dorky frickin cape
+	armor_spec = "" // It's not armor, it's a dorky frickin cape
 	body_parts_covered = null // Cape ain't gonna cover a THING
 	cold_protection = CHEST|ARMS // It will keep you toasty tho, it's more than big enough to help with that! Just wrap the thing around you when on the surface, idk
 	icon = 'icons/vore/custom_clothes_item.dmi'
@@ -2136,9 +2136,9 @@ Departamental Swimsuits, for general use
 			// YOU FOOL! YOU HAVE ACTIVATED MY STAND, 「ＶＯＲＥ　ＢＹ　ＨＡＴ」！
 			src.visible_message(span_danger("\The [src] falls over [user]'s head... and somehow falls over the rest of their body, causing them to vanish inside. Where did they go?!"), \
 			span_danger("The hat falls over your head as you put it on, enveloping you in a bright green light! <b>Uh oh.</b>"))
-			var/uh_oh = pick(translocator.beacons)
+			var/uh_oh = DEFAULTPICK(translocator.beacons, null)
 			user.remove_from_mob(src, get_turf(user))
-			translocator.destination = translocator.beacons[uh_oh]
+			translocator.destination = LAZYACCESS(translocator.beacons, uh_oh)
 			translocator.afterattack(user, user, proximity_flag = 1, ignore_fail_chance = 1)
 			add_attack_logs(user, user, "Tried to put on \the [src] and was involuntarily teleported by it (via \the [translocator] within)!")
 			return
@@ -2454,7 +2454,7 @@ Departamental Swimsuits, for general use
 /obj/item/clothing/head/welding/fluff/zera
 	name = "White Welding Mask"
 	desc = "It's a white welding mask. Zera likes it because it matches her labcoat."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "zera_weld"

@@ -4,7 +4,7 @@
 /obj/item/communicator/proc/add_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	communicating |= comm
+	LAZYOR(communicating, comm)
 	GLOB.listening_objects |= src
 	update_icon()
 
@@ -14,7 +14,7 @@
 /obj/item/communicator/proc/del_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	communicating.Remove(comm)
+	LAZYREMOVE(communicating, comm)
 	update_icon()
 
 // Proc: open_connection()
@@ -22,7 +22,7 @@
 // Description: Typechecks the candidate, then calls the correct proc for further connecting.
 /obj/item/communicator/proc/open_connection(mob/user, atom/candidate)
 	if(isobserver(candidate))
-		voice_invites.Remove(candidate)
+		LAZYREMOVE(voice_invites, candidate)
 		open_connection_to_ghost(user, candidate)
 	else
 		if(istype(candidate, /obj/item/communicator))
@@ -35,8 +35,8 @@
 	if(!istype(candidate, /obj/item/communicator))
 		return
 	var/obj/item/communicator/comm = candidate
-	voice_invites.Remove(candidate)
-	comm.voice_requests.Remove(src)
+	LAZYREMOVE(voice_invites, candidate)
+	LAZYREMOVE(comm.voice_requests, src)
 
 	if(user)
 		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connecting to [src]."))
@@ -61,8 +61,8 @@
 		return
 	//Handle moving the ghost into the new shell.
 	announce_ghost_joinleave(candidate, 0, "They are occupying a personal communications device now.")
-	voice_requests.Remove(candidate)
-	voice_invites.Remove(candidate)
+	LAZYREMOVE(voice_requests, candidate)
+	LAZYREMOVE(voice_invites, candidate)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the ghost is going to be.
 	new_voice.transfer_identity(candidate) 	//Now make the voice mob load from the ghost's active character in preferences.
 	//Do some simple logging since this is a tad risky as a concept.
@@ -72,7 +72,7 @@
 	log_game(msg)
 	new_voice.mind = candidate.mind			//Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
-	voice_mobs.Add(new_voice)
+	LAZYADD(voice_mobs, new_voice)
 	GLOB.listening_objects |= src
 
 	var/atom/movable/screen/blackness = new() 	//Makes a black screen, so the candidate can't see what's going on before actually 'connecting' to the communicator.
@@ -114,7 +114,7 @@
 // Description: Deletes specific voice_mobs or disconnects communicators, and shows a message to everyone when doing so.  If target is null, all communicators
 //				and voice mobs are removed.
 /obj/item/communicator/proc/close_connection(mob/user, atom/target, reason)
-	if(voice_mobs.len == 0 && communicating.len == 0)
+	if(length(voice_mobs) == 0 && length(communicating) == 0)
 		return
 
 	for(var/mob/living/voice/voice in voice_mobs) //Handle ghost-callers
@@ -122,7 +122,7 @@
 			continue
 		to_chat(voice, span_danger("[icon2html(src,voice.client)] [reason]."))
 		visible_message(span_danger("[icon2html(src,viewers(src))] [reason]."))
-		voice_mobs.Remove(voice)
+		LAZYREMOVE(voice_mobs, voice)
 		qdel(voice)
 		update_icon()
 
@@ -138,7 +138,7 @@
 		if(camera && comm.video_source == camera) //We hung up on them while they were watching us
 			comm.end_video()
 
-	if(voice_mobs.len == 0 && communicating.len == 0)
+	if(length(voice_mobs) == 0 && length(communicating) == 0)
 		GLOB.listening_objects.Remove(src)
 
 // Proc: request()
@@ -153,12 +153,12 @@
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		comm.voice_invites |= src
+		LAZYOR(comm.voice_invites, src)
 
 	if(!who)
 		return
 
-	voice_requests |= candidate
+	LAZYOR(voice_requests, candidate)
 
 	if(ringer)
 		playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
@@ -187,9 +187,9 @@
 		to_chat(candidate, span_warning("Your communicator call request was declined."))
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
-		comm.voice_invites -= src
+		LAZYREMOVE(comm.voice_invites, src)
 
-	voice_requests -= candidate
+	LAZYREMOVE(voice_requests, candidate)
 
 	//Search for holder of our device.
 	var/mob/living/us = null

@@ -27,108 +27,39 @@ SUBSYSTEM_DEF(air)
 	var/cost_superconductivity = 0
 	var/cost_pipenets = 0
 	var/cost_rebuilds = 0
-	// auxmos turf processing writes these cost mirrors back into SSair each tick
-	// (turfs/processing.rs writes cost_turfs/cost_post_process, groups.rs writes
-	// cost_groups, katmos.rs writes cost_equalize). They MUST be declared or the
-	// Rust write_var_id(byond_string!(...)) panics with NonExistentString.
-	var/cost_post_process = 0
-	var/cost_equalize = 0
-	/// Last atmosphere generation published by the detached Rust turf worker.
-	var/async_generation = 0
-	/// End-to-end worker time for the most recently published generation, in milliseconds.
-	var/async_compute_cost = 0
-	var/async_seed_limit = 0
-	var/async_selection_cost = 0
-	var/async_snapshot_cost = 0
-	var/async_fdm_cost = 0
-	var/async_equalize_cost = 0
-	var/async_publication_cost = 0
-	/// Compact Rust->DM semantic events produced by the latest generation.
-	var/async_semantic_events = 0
-	var/async_reaction_events = 0
-	var/async_overlay_events = 0
-	var/async_reaction_callback_cost = 0
-	var/async_overlay_callback_cost = 0
-	var/async_cancelled = FALSE
-	/// Largest immediate pressure mutation in the current/recent worker generation.
-	var/async_pressure_urgency = 0
-	var/cost_finalize_last = 0
-	var/cost_finalize = 0
-	var/unsteady_polling = FALSE
-	/// Turfs in the connected components considered by the last generation.
-	var/async_active_turfs = 0
-	/// Explicit active seeds consumed by the latest worker generation.
-	var/async_seed_turfs = 0
-	/// Turfs still materially divergent after the latest worker generation.
-	var/async_retained_turfs = 0
-	/// Retained turfs with at least one temperature residual above the solver threshold.
-	var/async_retained_temperature_turfs = 0
-	/// Retained turfs with at least one composition/mole residual above the solver threshold.
-	var/async_retained_mole_turfs = 0
-	/// Turfs queued for the next local-frontier generation.
-	var/async_pending_turfs = 0
-	/// Exact scheduler-lane breakdown for diagnosing persistent work.
-	var/async_pending_urgent_turfs = 0
-	var/async_pending_fresh_turfs = 0
-	var/async_pending_frontier_turfs = 0
-	/// Mixtures copied into the latest worker snapshot.
-	var/async_snapshot_mixtures = 0
-	/// Mixtures materially changed by the latest published generation.
-	var/async_published_mixtures = 0
-	/// Transactions discarded because synchronous mutations changed their inputs.
-	var/async_rejected_generations = 0
-	/// Generations rejected specifically because a closed component lost mass or energy.
-	var/async_conservation_rejections = 0
-	/// Closed mutable components checked by the latest async generation.
-	var/async_closed_components = 0
-	/// Closed components that violated conservation in the latest generation.
-	var/async_conservation_violation_components = 0
-	/// Mixture count in the largest violating component from the latest generation.
-	var/async_conservation_worst_component_mixtures = 0
-	/// Largest absolute per-gas mole discrepancy in the latest generation.
-	var/async_conservation_max_gas_delta = 0
-	/// Largest absolute thermal-energy discrepancy in the latest generation.
-	var/async_conservation_max_energy_delta = 0
-	/// Detailed diagnostic for the latest violating generation, populated by Rust.
-	var/async_conservation_diagnostic = ""
-	/// Last cumulative violation count emitted to runtime.log.
-	var/async_conservation_logged = 0
-
-	// === auxmos turf-processing tunables (read by the Rust binds) ===
-	// Every var below is read via read_number_id(byond_string!(...)) in the
-	// verdigris turf hooks; declaring them is mandatory (NonExistentString panic
-	// otherwise). Defaults per SSAIR_CONTRACT.
-	/// FDM sharing steps per process_turfs tick (turfs/processing.rs).
-	var/share_max_steps = 4
-	/// Fraction of the delta a planetary turf shares with its atmosphere each pass.
-	var/planet_share_ratio = 0.25
-
-	// auxmos turf processing writes these counters back each tick. Declared so the
-	// Rust write_var_id calls don't panic (NonExistentString). Informational only.
+	/// Main-thread cost of the gas tick and its events, in milliseconds.
+	var/cost_gas_events = 0
+	// Informational counters read by the stat panel, the profiler and benches.
 	var/low_pressure_turfs = 0
 	var/high_pressure_turfs = 0
 	var/num_group_turfs_processed = 0
 	var/num_equalize_processed = 0
 
-	// active_turfs / excited_groups are gone — turf sharing lives in the Rust
-	// arena now. hotspots stays (LINDA hotspot fires are still DM). networks stays
-	// (CHOMP pipenets). The rebuild/expansion queues below are unchanged.
+	/// Turf gas runs on the Rust gas field (verdigris/domains/gas, M1b): each
+	/// fire pins the newest frame, starts the next and hands DM its events.
+	/// Events of the current fire still to dispatch (GAS_EVENT_STRIDE each).
+	var/list/pending_gas_events
+	var/gas_event_index = 1
+	/// Gas frames started so far (vg_gas_stats()[1]).
+	var/gas_frames = 0
+	/// Events dispatched by the last fire.
+	var/gas_events_last = 0
+	/// Reaction, visual and spacewind events dispatched by the last fire.
+	var/gas_reactions_last = 0
+	var/gas_visuals_last = 0
+	var/gas_pressure_last = 0
+
+	// hotspots stays (LINDA hotspot fires are still DM). networks stays
+	// (pipe network wrappers). The rebuild/expansion queues below are unchanged.
 	var/list/hotspots = list()
 	var/list/networks = list()
 	var/list/rebuild_queue = list()
 	//Subservient to rebuild queue
 	var/list/expansion_queue = list()
-	/// Turfs that requested a high-pressure spacewind push this tick. auxmos
-	/// (katmos explosively_depressurize) appends to this list via
-	/// consider_pressure_difference; the DM high-pressure step drains it.
+	/// Turfs that requested a high-pressure spacewind push this tick
+	/// (consider_pressure_difference, from GAS_EVENT_PRESSURE); the DM
+	/// high-pressure step drains it.
 	var/list/high_pressure_delta = list()
-	// /tg/'s SSair.atmos_machinery (an atmos-tick-scheduled device
-	// queue) is dead code on this fork: atmospherics devices run via
-	// SSmachines.processing_machines (CHOMP-legacy /obj/machinery process()).
-	// Nothing ever called start_processing_machine, so the list was always
-	// empty. Removed along with cost_atmos_machinery, process_atmos_machinery,
-	// the SSAIR_ATMOSMACHINERY currentpart step, and the no-op
-	// /atom/proc/process_atmos hook.
 
 	var/list/pipe_init_dirs_cache = list()
 	//atmos singletons
@@ -160,49 +91,21 @@ SUBSYSTEM_DEF(air)
 
 
 /datum/controller/subsystem/air/stat_entry(msg)
-	var/list/arena_diag = vg_auxmos_diagnostics()
+	var/list/diag = vg_auxmos_diagnostics()
+	var/list/stats = vg_gas_stats()
 	msg += "\n  Cost:{"
-	msg += "AT:[round(cost_turfs,1)]|"
-	msg += "PP:[round(cost_post_process,1)]|"
+	msg += "GAS:[round(cost_turfs,1)]|"
+	msg += "EV:[round(cost_gas_events,1)]|"
 	msg += "HS:[round(cost_hotspots,1)]|"
-	msg += "EG:[round(cost_groups,1)]|"
-	msg += "EQ:[round(cost_equalize,1)]|"
 	msg += "HP:[round(cost_highpressure,1)]|"
 	msg += "PN:[round(cost_pipenets,1)]|"
-	msg += "RB:[round(cost_rebuilds,1)]|"
-	msg += "ASYNC:[round(async_compute_cost,1)]|"
 	msg += "} "
-	// Active-turf/excited-group counts now live in the Rust arena; the DM lists
-	// are gone. Surface the auxmos-reported per-tick turf counts instead.
-	msg += "\n  Count:{GT:[num_group_turfs_processed]|"
-	msg += "EQ:[num_equalize_processed]|"
-	msg += "LP:[low_pressure_turfs]|"
-	msg += "HP:[high_pressure_turfs]|"
-	msg += "HS:[hotspots.len]|"
-	msg += "HPD:[high_pressure_delta.len]|"
-	msg += "PN:[networks.len]|"
-	msg += "RB:[rebuild_queue.len]|"
-	msg += "EP:[expansion_queue.len]"
-	msg += "|GEN:[async_generation]"
-	msg += "|ACT:[async_active_turfs]"
-	msg += "|PEND:[async_pending_turfs]"
-	msg += "|SNAP:[async_snapshot_mixtures]"
-	msg += "|PUB:[async_published_mixtures]"
-	msg += "|EV:[async_semantic_events]"
-	msg += "|RX:[async_reaction_events]"
-	msg += "|VIS:[async_overlay_events]"
-	msg += "|RXms:[round(async_reaction_callback_cost, 0.01)]"
-	msg += "|VISms:[round(async_overlay_callback_cost, 0.01)]"
-	msg += "|REJ:[async_rejected_generations]"
-	msg += "|CREJ:[async_conservation_rejections]"
-	msg += "|CLOSED:[async_closed_components]"
-	msg += "|CV:[async_conservation_violation_components]"
-	msg += "|CW:[async_conservation_worst_component_mixtures]"
-	msg += "|CG:[round(async_conservation_max_gas_delta, 0.001)]"
-	msg += "|CE:[round(async_conservation_max_energy_delta, 0.1)]"
-	msg += "}"
-	if(length(arena_diag) >= 15)
-		msg += "\n  Arena:{MIX:[arena_diag[1]]/[arena_diag[2]]|FREE:[arena_diag[3]]|BASE:[arena_diag[4]]|BCAP:[arena_diag[5]]|DIRTY:[arena_diag[6]]|TURF:[arena_diag[7]]/[arena_diag[8]]|NODE:[arena_diag[9]]|EDGE:[arena_diag[10]]|ACTIVE:[arena_diag[11]]|CB:[arena_diag[12]]|HEAT:[arena_diag[13]]/[arena_diag[14]]/[arena_diag[15]]us}"
+	msg += "\n  Count:{HS:[hotspots.len]|HPD:[high_pressure_delta.len]|PN:[networks.len]"
+	msg += "|EV:[gas_events_last]|RX:[gas_reactions_last]|VIS:[gas_visuals_last]|PUSH:[gas_pressure_last]}"
+	if(length(stats) >= 17)
+		msg += "\n  Field:{FRAMES:[stats[1]]|CMD:[stats[2]]|FRAMEus:[round(stats[9], 1)]|BACKLOG:[stats[10]]|OVERLAY:[stats[11]]|AGE:[stats[12]]|SKIP:[stats[13]]|SHORT:[round(stats[14], 0.001)]|MODE:[stats[17] ? "fallback" : "overlay"]}"
+	if(length(diag) >= 10)
+		msg += "\n  Gas:{MIX:[diag[1]]/[diag[2]]|PIPE:[diag[3]]/[diag[4]]|TURF:[diag[5]]|CB:[diag[7]]|HEAT:[diag[8]]/[diag[9]]/[diag[10]]us}"
 	return ..()
 
 
@@ -219,11 +122,9 @@ SUBSYSTEM_DEF(air)
 	// before this runs) already triggered registration via gas_mixture/New().
 	ensure_auxmos_gas_registry()
 
-	// Hand Rust the map dimensions it needs to compute turf neighbours by
-	// coordinate id. MUST precede setup_allturfs(), whose registration builds
-	// adjacency from them; reading world vars from Rust is unreliable on BYOND 516
-	// so DM pushes them in.
-	vg_set_world_dims(world.maxx, world.maxy)
+	// The gas field was sized at world start (vg_configure_world); make sure it
+	// covers the map as loaded before registering turfs.
+	vg_configure_world(world.maxx, world.maxy, world.maxz)
 
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.
@@ -249,30 +150,9 @@ SUBSYSTEM_DEF(air)
 	//Rebuilds can happen at any time, so this needs to be done outside of the normal system
 	cost_rebuilds = 0
 
-	// /tg/-style rebuild_queue/expansion_queue dispatch removed — CHOMP pipes
-	// rebuild their networks through /obj/machinery/atmospherics/pipe Initialize
-	// and the ChangeTurf path, no SSair orchestration needed.
-
-	// Drain the Rust->DM atmos callback queue (gas-overlay updates + reactions the
-	// arena's post_process pass enqueues for every turf whose gas changed) up front,
-	// unconditionally, each fire. The stepped pipeline below only reaches its own
-	// drain step (SSAIR_FINALIZE_TURFS) once the turf + equalize steps finish without
-	// overtiming; with every turf registered active the turf step can pause on
-	// overtime every fire and never reach it, starving the drain — so gas clouds that
-	// spread onto a neighbouring tile via the FDM never get their overlay refreshed
-	// (the tile that RECEIVED gas, as opposed to the one a machine injected into,
-	// relies entirely on this callback). Draining here guarantees those run; it's a
-	// no-op when the queue is empty.
-	// Floor the drain budget: when the arena's post_process floods the queue (e.g. the
-	// round-start pass where every turf's vis hash flips from its 0 initial), a 1 ms
-	// slice can't keep up and real per-turf visual/react callbacks queue behind the
-	// backlog indefinitely. process_callbacks_for_millis returns as soon as the queue
-	// empties, so this floor only actually spends time when there IS a backlog.
+	// Drain the Rust->DM callback queue (errors reported from Rust).
 	if(initialized)
-		timer = TICK_USAGE_REAL
-		vg_finish_process_turfs(min(max(SSAIR_REMAINING_MS, 1), 3))
-		cost_finalize_last = TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer)
-		cost_finalize = cost_finalize ? MC_AVERAGE(cost_finalize, cost_finalize_last) : cost_finalize_last
+		vg_atmos_callback_handle(min(max(SSAIR_REMAINING_MS, 1), 3))
 
 	if(currentpart == SSAIR_PIPENETS || !resumed)
 		timer = TICK_USAGE_REAL
@@ -286,59 +166,28 @@ SUBSYSTEM_DEF(air)
 		resumed = FALSE
 		currentpart = SSAIR_TURFS
 
-	// SSAIR_ATMOSMACHINERY step removed: see vars block comment.
-
-	// === auxmos turf processing ===
-	// Turf diffusion runs on a detached Rust worker against a private snapshot.
-	// The hook returns TRUE while that generation is in flight, keeping SSair on
-	// this step until it atomically publishes or rejects the result. Reactions,
-	// visuals, and pressure callbacks remain queued for the main thread.
-	// NOTE on cost bookkeeping: the Rust binds maintain their own smoothed cost
-	// mirrors (cost_turfs, cost_post_process, cost_groups, cost_equalize) by
-	// read-modify-writing those SSair vars themselves. So we do NOT reassign them
-	// here — doing so would clobber the arena-reported timings.
+	// === Turf gas (the Rust gas field) ===
+	// One call pins the newest frame, collects its events and watch wakes,
+	// applies heat, and starts the next frame on the gas pool; it never waits.
+	// Then DM dispatches the frame's events: reactions, visuals, spacewind.
 	if(currentpart == SSAIR_TURFS)
-		var/overtimed = process_turfs_auxtools(src, SSAIR_REMAINING_MS)
+		timer = TICK_USAGE_REAL
+		if(!resumed)
+			cached_cost = 0
+			pending_gas_events = vg_gas_tick()
+			gas_event_index = 1
+			gas_frames++
+			cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
+			gas_events_last = 0
+			gas_reactions_last = 0
+			gas_visuals_last = 0
+			gas_pressure_last = 0
+		process_gas_events(resumed)
+		cached_cost += TICK_USAGE_REAL - timer
 		if(state != SS_RUNNING)
 			return
-		if(overtimed)
-			// The Rust worker owns this generation until publication. Marking the
-			// subsystem paused makes the MC immediately resume and busy-poll it
-			// thousands of times, preventing unrelated DM subsystems from running.
-			// Keep the stage and poll once at SSair's next scheduled fire instead.
-			unsteady_polling = TRUE
-			if(async_pressure_urgency >= 100)
-				wait = 1 // 10 Hz for breach/canister/explosion-scale changes.
-			else if(async_pressure_urgency >= 20 || async_pending_turfs > 100)
-				wait = 2 // 5 Hz for meaningful equalization.
-			else
-				wait = initial(wait) // Routine settling remains at the normal 2 Hz.
-			return
-		unsteady_polling = async_pressure_urgency >= 20 || async_pending_turfs > 100
-		wait = async_pressure_urgency >= 100 ? 1 : unsteady_polling ? 2 : initial(wait)
-		if(async_conservation_rejections > async_conservation_logged)
-			async_conservation_logged = async_conservation_rejections
-			log_runtime(async_conservation_diagnostic || "ATMOS_CONSERVATION_ERROR without Rust diagnostic payload")
-			#ifdef UNIT_TESTS
-			CRASH(async_conservation_diagnostic || "Atmos transaction violated conservation")
-			#endif
-		resumed = FALSE
-		currentpart = SSAIR_FINALIZE_TURFS
-
-	if(currentpart == SSAIR_FINALIZE_TURFS)
-		// Drain the Rust->DM callback queue on the main thread. finish drains the
-		// turf-processing callbacks; process_atmos_callbacks drains everything
-		// else queued (both return TRUE on overtime). These invoke DM
-		// air.react(turf) / turf.set_visuals(...) / turf.consider_pressure_difference().
-		var/callback_budget = min(max(SSAIR_REMAINING_MS, 1), 3)
-		var/overtimed = vg_finish_process_turfs(callback_budget)
-		if(!overtimed)
-			overtimed = vg_atmos_callback_handle(callback_budget)
-		if(state != SS_RUNNING)
-			return
-		if(overtimed)
-			pause()
-			return
+		cost_gas_events = MC_AVERAGE(cost_gas_events, TICK_DELTA_TO_MS(cached_cost))
+		pending_gas_events = null
 		resumed = FALSE
 		currentpart = SSAIR_HOTSPOTS
 
@@ -393,6 +242,60 @@ SUBSYSTEM_DEF(air)
 	high_pressure_delta = SSair.high_pressure_delta
 	currentrun = SSair.currentrun
 	queued_for_activation = SSair.queued_for_activation
+
+/// Dispatches the gas field's events for this fire (GAS_EVENT_STRIDE values
+/// each: kind, turf, value, other turf). Resumable.
+/datum/controller/subsystem/air/proc/process_gas_events(resumed = FALSE)
+	var/list/events = pending_gas_events
+	var/count = length(events)
+	while(gas_event_index <= count)
+		var/kind = events[gas_event_index]
+		var/turf/open/T = events[gas_event_index + 1]
+		var/value = events[gas_event_index + 2]
+		var/turf/other = events[gas_event_index + 3]
+		gas_event_index += GAS_EVENT_STRIDE
+		gas_events_last++
+		if(!istype(T))
+			continue
+		switch(kind)
+			if(GAS_EVENT_REACT)
+				gas_reactions_last++
+				if(T.air)
+					T.air.react(T)
+			if(GAS_EVENT_VISUAL)
+				gas_visuals_last++
+				T.set_visuals()
+			if(GAS_EVENT_PRESSURE)
+				gas_pressure_last++
+				T.consider_pressure_difference(other, value)
+		if(MC_TICK_CHECK)
+			return
+
+/// Test hook: runs `frames` gas frames to completion, deterministically (no
+/// wall clock), and dispatches their events like fire() does.
+/datum/controller/subsystem/air/proc/run_gas_frames(frames = 1)
+	pending_gas_events = vg_gas_run_frames(frames)
+	gas_event_index = 1
+	gas_frames += frames
+	while(gas_event_index <= length(pending_gas_events))
+		var/list/events = pending_gas_events
+		var/kind = events[gas_event_index]
+		var/turf/open/T = events[gas_event_index + 1]
+		var/value = events[gas_event_index + 2]
+		var/turf/other = events[gas_event_index + 3]
+		gas_event_index += GAS_EVENT_STRIDE
+		if(!istype(T))
+			continue
+		switch(kind)
+			if(GAS_EVENT_REACT)
+				if(T.air)
+					T.air.react(T)
+			if(GAS_EVENT_VISUAL)
+				T.set_visuals()
+			if(GAS_EVENT_PRESSURE)
+				T.consider_pressure_difference(other, value)
+	pending_gas_events = null
+	process_high_pressure_delta()
 
 /datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)
 	if (!resumed)

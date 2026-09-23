@@ -8,7 +8,7 @@
 	item_icons = list(slot_w_uniform_str = 'icons/inventory/uniform/mob.dmi', slot_r_hand_str = "black", slot_l_hand_str = "black")
 	icon_state = "blackutility"
 	worn_state = "blackutility"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/nanotrasen/security
@@ -16,7 +16,7 @@
 	desc = "The security uniform of NanoTrasen's security. It looks sturdy and well padded"
 	icon_state = "blackutility_crew"
 	worn_state = "blackutility_crew"
-	armor = list(melee = 10, bullet = 5, laser = 5, energy = 5, bomb = 5, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=5;laser=5;energy=5;bomb=5"
 
 /obj/item/clothing/under/nanotrasen/security/warden
 	name = "NanoTrasen warden uniform"
@@ -40,7 +40,7 @@
 		slot_l_hand_str = "darkbluesoft",
 		slot_r_hand_str = "darkbluesoft",
 		)
-	armor = list(melee = 10, bullet = 5, laser = 5, energy = 5, bomb = 5, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=5;laser=5;energy=5;bomb=5"
 
 /obj/item/clothing/head/beret/nanotrasen
 	name = "NanoTrasen security beret"
@@ -54,5 +54,5 @@
 	desc = "A Sturdy kevlar plate carrier with webbing attached."
 	icon_state = "webvest"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor = list(melee = 50, bullet = 40, laser = 40, energy = 25, bomb = 25, bio = 0, rad = 0)
+	armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"
 	slowdown = 0.5

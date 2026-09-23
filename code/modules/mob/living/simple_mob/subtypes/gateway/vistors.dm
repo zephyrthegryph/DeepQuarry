@@ -73,15 +73,7 @@
 	melee_damage_lower = 25 //Old 12
 	melee_damage_upper = 25
 
-	armor = list(
-				"melee"		= 20,
-				"bullet"	= 20,
-				"laser"		= 20,
-				"energy"	= 10,
-				"bomb"		= 10,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=20;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=100"
 
 	wreckage = null
 	pilot_type = null
@@ -209,15 +201,7 @@
 
 	var/obj/item/shield_projector/shields = null
 
-	armor = list(
-				"melee"		= 30,
-				"bullet"	= 30,
-				"laser"		= 30,
-				"energy"	= 30,
-				"bomb"		= 30,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 	wreckage = null
 	pilot_type = null
@@ -258,15 +242,7 @@
 	damage_fatigue_mult = 0
 	alpha = 175
 
-	armor = list(
-				"melee"		= 30,
-				"bullet"	= 30,
-				"laser"		= 30,
-				"energy"	= 30,
-				"bomb"		= 30,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 	wreckage = /obj/structure/loot_pile/mecha/phazon/forgotten
 	pilot_type = null

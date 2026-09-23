@@ -42,15 +42,7 @@
 	tame_chance = 0
 	has_eye_glow = TRUE
 
-	armor = list(			// Values read by injury_armor()
-				"melee" = 20,
-				"bullet" = 10,
-				"laser" = 20,
-				"energy" = 5,
-				"bomb" = 0,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=20;bullet=10;laser=20;energy=5;bio=100;rad=100" // Values read by injury_armor()
 	var/exploded = FALSE
 	var/explosion_dev_range		= 0
 	var/explosion_heavy_range	= 0
@@ -166,15 +158,7 @@
 
 	say_list_type = /datum/say_list/merc/blackhole
 
-	armor = list(			// Values read by injury_armor()
-				"melee" = 40,
-				"bullet" = 30,
-				"laser" = 20,
-				"energy" = 5,
-				"bomb" = 50,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/blackhole/shield
 	name = "Black Hole bulwark"
@@ -193,15 +177,7 @@
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	attack_sound = 'sound/weapons/blade1.ogg'
-	armor = list(			// Values read by injury_armor()
-				"melee" = 60,
-				"bullet" = 50,
-				"laser" = 40,
-				"energy" = 35,
-				"bomb" = 70,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100" // Values read by injury_armor()
 
 
 /mob/living/simple_mob/vore/blackhole/grotesque
@@ -340,15 +316,7 @@
 
 	say_list_type = /datum/say_list/merc/blackhole
 
-	armor = list(			// Values read by injury_armor()
-				"melee" = 40,
-				"bullet" = 30,
-				"laser" = 20,
-				"energy" = 5,
-				"bomb" = 50,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/blackhole/taur/shield
 	name = "Black Hole heavy bulwark"
@@ -364,15 +332,7 @@
 	melee_damage_upper = 30
 	attacktext = list("stabbed","slashed","impaled")
 	attack_sound = 'sound/weapons/blade1.ogg'
-	armor = list(			// Values read by injury_armor()
-				"melee" = 60,
-				"bullet" = 50,
-				"laser" = 40,
-				"energy" = 35,
-				"bomb" = 70,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/blackhole/taur/ranged
 	name = "Black Hole machinegunner"
@@ -453,15 +413,7 @@
 	var/explosion_delay_lower	= 0 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 1 SECONDS	// Upper bound.
 
-	armor = list(			// Values read by injury_armor()
-				"melee" = 40,
-				"bullet" = 30,
-				"laser" = 20,
-				"energy" = 5,
-				"bomb" = 50,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 	projectile_accuracy = 75
 
@@ -541,15 +493,7 @@
 
 	say_list_type = /datum/say_list/merc/blackhole
 
-	armor = list(			// Values read by injury_armor()
-				"melee" = 40,
-				"bullet" = 30,
-				"laser" = 20,
-				"energy" = 5,
-				"bomb" = 50,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 	projectiletype = /obj/item/projectile/bullet/pistol/bh3
 	projectilesound = 'sound/weapons/serdy/ak74.ogg'
@@ -582,15 +526,7 @@
 	endurance = 450
 	deflect_chance = 25
 	has_repair_droid = FALSE
-	armor = list(
-				"melee"		= 50,
-				"bullet"	= 50,
-				"laser"		= 50,
-				"energy"	= 30,
-				"bomb"		= 30,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
 
 /obj/structure/loot_pile/mecha/gygax/dark/adv/blackhole
 	icon = 'icons/blackhole/blackhole32x32.dmi'
@@ -612,15 +548,7 @@
 	icon_scale_y = 2
 	endurance = 400
 	deflect_chance = 20
-	armor = list(
-				"melee"		= 50,
-				"bullet"	= 50,
-				"laser"		= 50,
-				"energy"	= 30,
-				"bomb"		= 30,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
 	melee_damage_lower = 40
 	melee_damage_upper = 90
 
@@ -705,14 +633,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/explosion_delay_lower	= 5 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 8 SECONDS	// Upper bound.
 
-	armor = list(
-				"melee" = 100,
-				"bullet" = 80,
-				"laser" = 80,
-				"energy" = 97,
-				"bomb" = 0,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=100;bullet=80;laser=80;energy=97;bio=100;rad=100"
 	var/datum/looping_sound/obelisk/loopy = 1
 
 /mob/living/simple_mob/vore/blackhole_obelisk/monolith

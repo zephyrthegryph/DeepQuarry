@@ -122,11 +122,10 @@ FIRE ALARM
 
 	add_overlay(.)
 
-/obj/machinery/firealarm/fire_act(temperature, volume)
+/// Heat behaviour rule: the detector trips above 200 C.
+/obj/machinery/firealarm/proc/rule_heat_alarm(datum/rule/rule)
 	if(detecting)
-		if(temperature > T0C + 200)
-			alarm()			// added check of detector status here
-	return
+		alarm()
 
 /obj/machinery/firealarm/bullet_act(obj/item/projectile/Proj, def_zone)
 	alarm()
@@ -139,10 +138,22 @@ FIRE ALARM
 	if(prob(50 / severity))
 		alarm(rand(30 / severity, 60 / severity))
 
-/obj/machinery/firealarm/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/firealarm/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/firealarm_trigger,
+		/datum/interaction/machine_hand/ungated/firealarm_use,
+	)
+	..()
+
+/datum/interaction/machine_item/firealarm_trigger
+	id = "firealarm_trigger"
+	name = "Trigger"
+	effect = /obj/machinery/firealarm/proc/interaction_firealarm_trigger
+
+/obj/machinery/firealarm/proc/interaction_firealarm_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	alarm()
-	return
+	return TRUE
 
 /obj/machinery/firealarm/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -211,9 +222,15 @@ FIRE ALARM
 			if(causalitywarn)
 				causality.start()
 
-/obj/machinery/firealarm/attack_hand(mob/user as mob)
+/datum/interaction/machine_hand/ungated/firealarm_use
+	id = "firealarm_use"
+	name = "Use"
+	requires = list()
+	effect = /obj/machinery/firealarm/proc/interaction_firealarm_use
+
+/obj/machinery/firealarm/proc/interaction_firealarm_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || stat & (NOPOWER | BROKEN))
-		return
+		return TRUE
 
 	add_fingerprint(user)
 	var/area/A = get_area(src)
@@ -221,6 +238,7 @@ FIRE ALARM
 		reset(user)
 	else
 		alarm(0, user)
+	return TRUE
 
 /obj/machinery/firealarm/proc/reset(mob/user)
 	if(!(working))
@@ -271,11 +289,24 @@ FIRE ALARM
 
 // TGUI migration. PartyAlarm.tsx handles both clear-text
 // (humans/AI) and scrambled (everyone else) display via a data flag.
-/obj/machinery/partyalarm/attack_hand(mob/user as mob)
+/obj/machinery/partyalarm/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/partyalarm_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/partyalarm_use
+	id = "partyalarm_use"
+	name = "Use"
+	requires = list()
+	effect = /obj/machinery/partyalarm/proc/interaction_partyalarm_use
+
+/obj/machinery/partyalarm/proc/interaction_partyalarm_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	user.set_machine(src)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/partyalarm/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

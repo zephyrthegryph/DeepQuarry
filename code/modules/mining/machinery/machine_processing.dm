@@ -31,24 +31,42 @@
 		inserted_id.forceMove(loc) //Prevents deconstructing from deleting whatever ID was inside it.
 	. = ..()
 
-/obj/machinery/mineral/processing_unit_console/attack_hand(mob/user)
-	if(..())
-		return
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return
-	tgui_interact(user)
-
-/obj/machinery/mineral/processing_unit_console/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/card/id))
-		if(!powered())
-			return
-		if(!inserted_id && (user.unEquip(I) || isrobot(user)))
-			I.forceMove(src)
-			inserted_id = I
-			SStgui.update_uis(src)
-		return
+/obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/processing_console_insert_id,
+		/datum/interaction/machine_hand/processing_console_open_ui,
+	)
 	..()
+
+/// Old attackby: an ID card scanned. `!powered()` silently returned, so it stays in the effect.
+/datum/interaction/machine_item/processing_console_insert_id
+	id = "processing_console_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id
+
+/obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
+	if(!powered())
+		return TRUE
+	if(!inserted_id && (user.unEquip(I) || isrobot(user)))
+		I.forceMove(src)
+		inserted_id = I
+		SStgui.update_uis(src)
+	return TRUE
+
+/// Old attack_hand: `if(..()) return; if(!allowed(user)) ...; tgui_interact(user)`.
+/datum/interaction/machine_hand/processing_console_open_ui
+	id = "processing_console_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/mineral/processing_unit_console/proc/lets_in, "access denied"))
+	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl
+
+/obj/machinery/mineral/processing_unit_console/proc/lets_in(mob/actor, atom/target, obj/item/held)
+	return allowed(actor)
+
+/obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/mineral/processing_unit_console/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -82,7 +100,7 @@
 			"ore" = ore,
 			"name" = O.display_name,
 			"amount" = machine.ores_stored[ore],
-			"processing" = machine.ores_processing[ore] ? machine.ores_processing[ore] : 0,
+			"processing" = LAZYACCESS(machine.ores_processing, ore) ? LAZYACCESS(machine.ores_processing, ore) : 0,
 		)))
 	data["ores"] = ores
 	data["showAllOres"] = show_all_ores
@@ -109,7 +127,7 @@
 					if("Smelting") new_setting = PROCESS_SMELT
 					if("Compressing") new_setting = PROCESS_COMPRESS
 					if("Alloying") new_setting = PROCESS_ALLOY
-			machine.ores_processing[ore] = new_setting
+			LAZYSET(machine.ores_processing, ore, new_setting)
 			. = TRUE
 		if("power")
 			machine.active = !machine.active
@@ -161,7 +179,7 @@
 	var/obj/machinery/mineral/output = null
 	var/obj/machinery/mineral/console = null
 	var/sheets_per_tick = 10
-	var/list/ores_processing = list()
+	var/list/ores_processing
 	var/list/ores_stored = list()
 	var/active = FALSE
 
@@ -193,7 +211,7 @@
 	. = ..()
 	for(var/ore, value in GLOB.ore_data)
 		var/datum/ore/OD = value
-		ores_processing[OD.name] = 0
+		LAZYSET(ores_processing, OD.name, 0)
 		ores_stored[OD.name] = 0
 
 	// TODO - Eschew input/output machinery and just use dirs ~Leshana
@@ -270,13 +288,13 @@
 
 		if(sheets >= sheets_per_tick) break
 
-		if(ores_stored[metal] > 0 && ores_processing[metal] != 0)
+		if(ores_stored[metal] > 0 && LAZYACCESS(ores_processing, metal) != 0)
 
 			var/datum/ore/O = GLOB.ore_data[metal]
 
 			if(!O) continue
 
-			if(ores_processing[metal] == PROCESS_ALLOY && O.alloy) //Alloying.
+			if(LAZYACCESS(ores_processing, metal) == PROCESS_ALLOY && O.alloy) //Alloying.
 
 				for(var/datum/alloy/A in GLOB.alloy_data)
 
@@ -292,7 +310,7 @@
 
 						for(var/needs_metal in A.requires)
 							//Check if we're alloying the needed metal and have it stored.
-							if(ores_processing[needs_metal] != PROCESS_ALLOY || ores_stored[needs_metal] < A.requires[needs_metal])
+							if(LAZYACCESS(ores_processing, needs_metal) != PROCESS_ALLOY || ores_stored[needs_metal] < A.requires[needs_metal])
 								enough_metal = 0
 								break
 
@@ -309,7 +327,7 @@
 						for(var/i=0,i<total,i++)
 							new A.product(output.loc)
 
-			else if(ores_processing[metal] == PROCESS_COMPRESS && O.compresses_to) //Compressing.
+			else if(LAZYACCESS(ores_processing, metal) == PROCESS_COMPRESS && O.compresses_to) //Compressing.
 
 				var/can_make = CLAMP(ores_stored[metal],0,sheets_per_tick-sheets)
 				if(can_make%2>0) can_make--
@@ -324,7 +342,7 @@
 					sheets+=2
 					new M.stack_type(output.loc)
 
-			else if(ores_processing[metal] == PROCESS_SMELT && O.smelts_to) //Smelting.
+			else if(LAZYACCESS(ores_processing, metal) == PROCESS_SMELT && O.smelts_to) //Smelting.
 
 				var/can_make = CLAMP(ores_stored[metal],0,sheets_per_tick-sheets)
 

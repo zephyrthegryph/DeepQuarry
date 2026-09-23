@@ -57,8 +57,8 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 /datum/error_viewer/error_cache
 	var/list/errors = list()
-	var/list/error_sources = list()
-	var/list/errors_silenced = list()
+	var/list/error_sources
+	var/list/errors_silenced
 
 /datum/error_viewer/error_cache/show_to(user, datum/error_viewer/back_to, linear)
 	var/html = build_header()
@@ -67,7 +67,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		html += "organized | [make_link("linear", null, 1)]<hr>"
 		var/datum/error_viewer/error_source/error_source
 		for (var/erroruid in error_sources)
-			error_source = error_sources[erroruid]
+			error_source = LAZYACCESS(error_sources, erroruid)
 			html += "[error_source.make_link(null, src)]<br>"
 
 	else
@@ -82,10 +82,10 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		return // Abnormal exception, don't even bother
 
 	var/erroruid = "[e.file][e.line]"
-	var/datum/error_viewer/error_source/error_source = error_sources[erroruid]
+	var/datum/error_viewer/error_source/error_source = LAZYACCESS(error_sources, erroruid)
 	if (!error_source)
 		error_source = new(e)
-		error_sources[erroruid] = error_source
+		LAZYSET(error_sources, erroruid, error_source)
 
 	var/datum/error_viewer/error_entry/error_entry = new(e, desclines, skip_count)
 	error_entry.error_source = error_source

@@ -381,3 +381,57 @@
 	TEST_ASSERT(findtext(failure, "did not wake"), "the helper passed a subscriber that missed its input")
 
 #endif
+
+/// Gas is a reactor domain (M1b): a Threshold on a turf's gas pressure and a
+/// Changed on a main-owned mixture wake their subscribers, and stay quiet while
+/// the gas holds steady.
+/datum/unit_test/dq_reactor_gas_watches
+
+/datum/unit_test/dq_reactor_gas_watches/Run()
+	var/turf/open/T
+	for(var/turf/simulated/floor/cand in world)
+		if(cand.air && !cand.blocks_air && !cand.planetary_atmos && cand.air.arena_id() >= GAS_HANDLE_TURF_BASE)
+			T = cand
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor whose air is a gas field cell")
+	// Seal it so the injected gas stays over the threshold for the frame.
+	var/turf/open/partner = null
+	for(var/turf/open/N as anything in vg_atmos_adjacent_turfs(T))
+		partner = N
+		break
+	TEST_ASSERT_NOTNULL(partner, "the watched floor has no open neighbour")
+	dq_atmos_test_isolate_pair(T, partner)
+	var/datum/react_test_subscriber/turf_sub = allocate(/datum/react_test_subscriber)
+	var/datum/react_test_subscriber/tank_sub = allocate(/datum/react_test_subscriber)
+	var/datum/gas_mixture/tank = new(70)
+	tank.set_temperature(T20C)
+	tank.adjust_gas(/datum/gas/oxygen, 10)
+	SSair.run_gas_frames(2)
+	var/limit = T.air.return_pressure() + 200
+	SSreactor.when(turf_sub, COND_ABOVE(REACT_GAS(T.air), CH_GAS_PRESSURE, limit), REACT_LANE_URGENT)
+	SSreactor.on_change(tank_sub, REACT_GAS(tank), CH_BIT(CH_GAS_PRESSURE), REACT_LANE_URGENT)
+	SSair.run_gas_frames(2)
+	react_test_ticks(3)
+	TEST_ASSERT_EQUAL(length(turf_sub.wakes), 0, "turf gas threshold fired while below")
+	TEST_ASSERT_EQUAL(length(tank_sub.wakes), 0, "Changed on a tank fired at registration")
+
+	var/datum/gas_mixture/donor = new(70)
+	donor.set_temperature(T20C)
+	donor.adjust_gas(/datum/gas/nitrogen, 2000)
+	T.assume_air(donor)
+	tank.adjust_gas(/datum/gas/oxygen, 10)
+	SSair.run_gas_frames(1)
+	react_test_ticks(6)
+	TEST_ASSERT(length(turf_sub.wakes) >= 1, "turf gas pressure crossed [limit] kPa ([T.air.return_pressure()]) but the watch did not wake")
+	if(length(turf_sub.wakes))
+		var/list/wake = turf_sub.wakes[1]
+		TEST_ASSERT(wake[1] & REACT_REASON_CONDITION, "turf gas wake reason [wake[1]] lacks REACT_REASON_CONDITION")
+		TEST_ASSERT_EQUAL(wake[2], T.air.arena_id(), "a gas wake's source is the gas handle")
+	TEST_ASSERT(length(tank_sub.wakes) >= 1, "tank pressure changed but its Changed watch did not wake")
+
+	// Put the turf back.
+	var/datum/gas_mixture/removed = T.air.remove(2000)
+	qdel(removed)
+	qdel(tank)
+	dq_atmos_test_restore_walls()
+	SSair.run_gas_frames(2)

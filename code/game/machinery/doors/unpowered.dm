@@ -8,11 +8,25 @@
 	..()
 	return
 
-/obj/machinery/door/unpowered/attackby(obj/item/I as obj, mob/user as mob)
-	if(istype(I, /obj/item/melee/energy/blade))	return
-	if(src.locked)	return
+/obj/machinery/door/unpowered/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/unpowered_door_block,
+	)
 	..()
-	return
+
+/// Old attackby: silently blocks energy blades and anything while locked, else falls through to the base door attackby.
+/datum/interaction/machine_item/unpowered_door_block
+	id = "unpowered_door_block"
+	name = "Attack"
+	held_type = /obj/item
+	effect = /obj/machinery/door/unpowered/proc/interaction_block
+
+/obj/machinery/door/unpowered/proc/interaction_block(mob/user, obj/item/held, datum/interaction/interaction)
+	if(istype(held, /obj/item/melee/energy/blade))
+		return TRUE
+	if(locked)
+		return TRUE
+	return FALSE
 
 /obj/machinery/door/unpowered/emag_act()
 	return -1

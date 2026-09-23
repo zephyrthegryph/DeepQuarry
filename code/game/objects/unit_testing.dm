@@ -16,6 +16,10 @@
 /obj/distilling_tester/return_air()
 	return GM
 
+/// Tests set the temperature directly.
+/obj/distilling_tester/get_temperature()
+	return current_temp
+
 /obj/distilling_tester/proc/test_distilling(datum/decl/chemical_reaction/distilling/D, temp_prog)
 	QDEL_SWAP(GM,new())
 	if(D.require_xgm_gas)

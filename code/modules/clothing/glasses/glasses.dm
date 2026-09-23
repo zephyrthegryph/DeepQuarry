@@ -565,7 +565,7 @@ BLIND     // can't see anything
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/M = src.loc
 		to_chat(M, span_red("The Optical Thermal Scanner overloads and blinds you!"))
-		if(M.glasses == src)
+		if(M.get_equipped_item(SLOT_ID_EYES) == src)
 			M.Blind(3)
 			M.eye_blurry = 5
 			// Don't cure being nearsighted
@@ -704,7 +704,7 @@ BLIND     // can't see anything
 	//We're getting a prescription
 	else if(ishuman(target))
 		var/mob/living/carbon/human/T = target
-		if(T.glasses || (T.head && T.head.flags_inv & HIDEEYES))
+		if(T.get_equipped_item(SLOT_ID_EYES) || (T.get_equipped_item(SLOT_ID_HEAD) && T.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES))
 			to_chat(user, span_warning("The person's eyes can't be covered!"))
 			return
 

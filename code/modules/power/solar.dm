@@ -61,13 +61,27 @@ GLOBAL_LIST_EMPTY(solars_list)
 		control.remove_panel(src)
 	control = null
 
-/obj/machinery/power/solar/attackby(obj/item/W, mob/user)
-	if(W && IS_HARMING(user))
-		user.visible_message(span_warning("[user] strikes the solar panel with [W]."))
-		user.setClickCooldown(user.get_attack_speed(W))
-		add_fingerprint(user)
-		receive_weapon_hit(W, user)
+/obj/machinery/power/solar/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/solar_panel_strike,
+	)
 	..()
+
+/datum/interaction/machine_item/solar_panel_strike
+	id = "solar_panel_strike"
+	name = "Strike"
+	category = INTERACTION_CAT_ATTACK
+	held_type = /obj/item
+	offered_when = list(REQ_COMBAT_MODE)
+	tags = list(INTERACTION_TAG_HOSTILE)
+	effect = /obj/machinery/power/solar/proc/interaction_strike
+
+/obj/machinery/power/solar/proc/interaction_strike(mob/user, obj/item/held, datum/interaction/interaction)
+	user.visible_message(span_warning("[user] strikes the solar panel with [held]."))
+	user.setClickCooldown(user.get_attack_speed(held))
+	add_fingerprint(user)
+	receive_weapon_hit(held, user)
+	return FALSE
 
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
@@ -337,12 +351,19 @@ GLOBAL_LIST_EMPTY(solars_list)
 	GLOB.solars_list.Remove(src)
 	needs_panel_check = TRUE
 
-/obj/machinery/power/solar_control/connect_to_network()
+/obj/machinery/power/solar_control/connect_to_network(bind_now = TRUE)
 	var/to_return = ..()
 	if(powernet) //if connected and not already in solar_list...
 		GLOB.solars_list |= src //... add it
 		needs_panel_check = TRUE
 	return to_return
+
+/obj/machinery/power/solar_control/power_network_changed(datum/powernet/old, datum/powernet/network)
+	if(network)
+		GLOB.solars_list |= src
+	else
+		GLOB.solars_list -= src
+	needs_panel_check = TRUE
 
 //search for unconnected panels and trackers in the computer powernet and connect them
 /obj/machinery/power/solar_control/proc/search_for_connected()
@@ -387,10 +408,11 @@ GLOBAL_LIST_EMPTY(solars_list)
 		add_overlay(image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(cdir)))
 	return
 
-/obj/machinery/power/solar_control/attack_hand(mob/user)
-	if(..())
-		return TRUE
-	tgui_interact(user)
+/obj/machinery/power/solar_control/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/power/solar_control/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -460,8 +482,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 		for(var/obj/machinery/power/solar/S in connected_panels)
 			if (S.powernet != powernet)
 				S.unset_control()
-	if(powernet)
-		add_avail(connected_power)
+	set_power_supply(connected_power)
 	return PROCESS_KILL
 
 /obj/machinery/power/solar_control/tgui_act(action, params)
@@ -514,8 +535,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 	for(var/obj/machinery/power/solar/S in connected_panels)
 		sum += S.update_power_generation(src)
 	connected_power = sum
-	if(powernet)
-		add_avail(connected_power)
+	set_power_supply(connected_power)
 	update_icon()
 
 /obj/machinery/power/solar_control/power_change()

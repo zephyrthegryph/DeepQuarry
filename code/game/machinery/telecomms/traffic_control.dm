@@ -10,10 +10,10 @@
 	icon_screen = "generic"
 
 	var/screen = 0				// the screen number:
-	var/list/servers = list()	// the servers located by the computer
+	var/list/servers	// the servers located by the computer
 	var/mob/editingcode
 	var/mob/lasteditor
-	var/list/viewingcode = list()
+	var/list/viewingcode
 	var/obj/machinery/telecomms/server/SelectedServer
 	circuit = /obj/item/circuitboard/comm_traffic
 	req_access = list(ACCESS_TCOMSAT)
@@ -59,14 +59,14 @@
 					winset(M, "tcscode", "is-disabled=true")
 					winset(M, "tcscode", "text=\"[showcode]\"")
 				else
-					viewingcode.Remove(M)
+					LAZYREMOVE(viewingcode, M)
 					winshow(M, "Telecomms IDE", 0) // hide the window!
 
 		sleep(5)
 
 	if(length(viewingcode) > 0)
-		editingcode = pick(viewingcode)
-		viewingcode.Remove(editingcode)
+		editingcode = DEFAULTPICK(viewingcode, null)
+		LAZYREMOVE(viewingcode, editingcode)
 		update_ide()
 
 
@@ -104,18 +104,18 @@
 				screen = 0
 
 			if("scan")
-				if(servers.len > 0)
+				if(length(servers) > 0)
 					temp = span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -")
 
 				else
 					for(var/obj/machinery/telecomms/server/T in range(25, src))
 						if(T.network == network)
-							servers.Add(T)
+							LAZYADD(servers, T)
 
-					if(!servers.len)
+					if(!length(servers))
 						temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
 					else
-						temp = span_blue("- [servers.len] SERVERS PROBED & BUFFERED -")
+						temp = span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -")
 
 					screen = 0
 
@@ -136,7 +136,7 @@
 						update_ide()
 
 				else
-					viewingcode.Add(usr)
+					LAZYADD(viewingcode, usr)
 					winshow(usr, "Telecomms IDE", 1) // show the IDE
 					winset(usr, "tcscode", "is-disabled=true")
 					winset(editingcode, "tcscode", "text=\"\"")

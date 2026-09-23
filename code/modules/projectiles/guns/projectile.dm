@@ -109,10 +109,10 @@
 	if(chambered.leaves_residue)
 		var/mob/living/carbon/human/H = loc
 		if(istype(H))
-			if(!istype(H.gloves, /obj/item/clothing))
+			if(!istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing))
 				H.add_gunshotresidue(chambered)
 			else
-				var/obj/item/clothing/G = H.gloves
+				var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				G.add_gunshotresidue(chambered)
 
 	switch(handle_casings)
@@ -187,7 +187,7 @@
 	if(manual_chamber) // Gun Rework
 		if(do_after(user, 0.4 SECONDS, src)) // Gun Rework
 			bolt_handle(user) // Gun Rework
-	else if(firemodes.len > 1) // Gun Rework
+	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
 		unload_ammo(user)

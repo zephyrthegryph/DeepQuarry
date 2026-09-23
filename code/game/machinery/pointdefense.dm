@@ -10,7 +10,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "fire assist mainframe"
 	desc = "A specialized computer designed to synchronize a variety of weapon systems and a vessel's astronav data."
-	description_info = "To connect the mainframe to turrets, use a multitool to set the ident tag to that of the turrets."
 	icon = 'icons/obj/pointdefense.dmi'
 	icon_state = "control"
 	power_channel = EQUIP
@@ -43,11 +42,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		ui = new(user, src, "PointDefenseControl") // 400, 600
 		ui.open()
 
-/obj/machinery/pointdefense_control/attack_hand(mob/user)
-	if(..())
-		return TRUE
-	tgui_interact(user)
-	return TRUE
+/obj/machinery/pointdefense_control/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+		/datum/interaction/machine_item/part_replacement,
+	)
+	..()
 
 /obj/machinery/pointdefense_control/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
@@ -106,11 +106,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
-/obj/machinery/pointdefense_control/attackby(obj/item/item, mob/user)
-	if(default_part_replacement(user, item))
-		return TRUE
-	return ..()
-
 //
 // The acutal point defense battery
 //
@@ -120,7 +115,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	icon = 'icons/obj/pointdefense.dmi'
 	icon_state = "pointdefense2"
 	desc = "A Kuiper pattern anti-meteor battery. Capable of destroying most threats in a single salvo."
-	description_info = "Must have the same ident tag as a fire assist mainframe on the same facility. Use a multitool to set the ident tag."
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pointdefense
@@ -178,10 +172,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
-/obj/machinery/pointdefense/attackby(obj/item/item, mob/user)
-	if(default_part_replacement(user, item))
-		return TRUE
-	return ..()
+/obj/machinery/pointdefense/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+	)
+	..()
 
 //Guns cannot shoot through hull or generally dense turfs.
 /obj/machinery/pointdefense/proc/space_los(meteor)

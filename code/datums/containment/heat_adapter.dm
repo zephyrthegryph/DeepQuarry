@@ -20,7 +20,8 @@
 // heat capacity (the ledger's PROP_HEAT_CAPACITY aggregate) and thresholds.
 
 /// Temperature inside `holder` with no heat added: its turf's air, else 20 C.
-/// With the heat domain this becomes holder.get_interior_temperature().
+/// A holder's own heat body is not the reference: propagate_fire() scales a
+/// fire's excess over the room, and bodies carry the rest (H3).
 /proc/dq_heat_path_ambient(atom/holder)
 	var/turf/T = get_turf(holder)
 	var/datum/gas_mixture/air = T?.return_air()

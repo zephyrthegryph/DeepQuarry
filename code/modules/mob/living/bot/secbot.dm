@@ -329,7 +329,7 @@
 		var/mob/living/carbon/human/H = M
 		var/cuff = TRUE
 
-		if(!H.lying || H.handcuffed || arrest_type)
+		if(!H.lying || H.get_equipped_item(SLOT_ID_HANDCUFFED) || arrest_type)
 			cuff = FALSE
 		if(!cuff)
 			H.stun_effect_act(0, stun_strength, null, electric = TRUE)
@@ -347,12 +347,11 @@
 			visible_message(span_warning("\The [src] is trying to put handcuffs on \the [H]!"))
 			busy = TRUE
 			if(do_after(src, 6 SECONDS, H))
-				if(!H.handcuffed)
-					if(istype(H.back, /obj/item/rig) && istype(H.gloves,/obj/item/clothing/gloves/gauntlets/rig))
-						H.handcuffed = new /obj/item/handcuffs/cable(H) // Better to be cable cuffed than stun-locked
+				if(!H.get_equipped_item(SLOT_ID_HANDCUFFED))
+					if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/rig) && istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig))
+						H.equip_to_slot_or_del(new /obj/item/handcuffs/cable(H), slot_handcuffed) // Better to be cable cuffed than stun-locked
 					else
-						H.handcuffed = new /obj/item/handcuffs(H)
-					H.update_handcuffed()
+						H.equip_to_slot_or_del(new /obj/item/handcuffs(H), slot_handcuffed)
 			busy = FALSE
 	else if(isliving(M))
 		var/mob/living/L = M

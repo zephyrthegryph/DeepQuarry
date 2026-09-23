@@ -46,10 +46,21 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/account_database/attackby(obj/O, mob/user)
-	if(!istype(O, /obj/item/card/id))
-		return ..()
+/obj/machinery/account_database/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/account_database_insert_card,
+		/datum/interaction/machine_hand/ungated/account_database_open_ui,
+	)
+	..()
 
+/// Old attackby: insert an ID card, then reopen the UI.
+/datum/interaction/machine_item/account_database_insert_card
+	id = "account_database_insert_card"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/account_database/proc/interaction_insert_card
+
+/obj/machinery/account_database/proc/interaction_insert_card(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!held_card)
 		user.drop_item()
 		O.loc = src
@@ -58,13 +69,23 @@
 		SStgui.update_uis(src)
 
 	attack_hand(user)
+	return TRUE
 
 /obj/machinery/account_database/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
 
-/obj/machinery/account_database/attack_hand(mob/user as mob)
-	if(stat & (NOPOWER|BROKEN)) return
+/// Old attack_hand: never called ..(); silently did nothing when unpowered or broken.
+/datum/interaction/machine_hand/ungated/account_database_open_ui
+	id = "account_database_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/account_database/proc/interaction_open_ui_impl
+
+/obj/machinery/account_database/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+	if(stat & (NOPOWER|BROKEN))
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/account_database/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -217,7 +238,7 @@
 			<u>Holder:</u> [detailed_account_view.owner_name]<br>
 			<u>Balance:</u> $[detailed_account_view.money]<br>
 			<u>Status:</u> [detailed_account_view.suspended ? "Suspended" : "Active"]<br>
-			<u>Transactions:</u> ([detailed_account_view.transaction_log.len])<br>
+			<u>Transactions:</u> ([length(detailed_account_view.transaction_log)])<br>
 			<table>
 				<thead>
 					<tr>

@@ -11,6 +11,6 @@
 /datum/scope/New(datum/node/BlockDefinition/B, datum/scope/parent)
 	src.block = B
 	src.parent = parent
-	src.variables = B.initial_variables.Copy()
+	src.variables = LAZYCOPY(B.initial_variables)
 	src.functions = B.functions.Copy()
 	.=..()

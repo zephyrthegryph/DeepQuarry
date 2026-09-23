@@ -26,7 +26,7 @@
 	/// Records the reagents dispensed by the user if this list is not null
 	var/list/recording_recipe
 	/// Saves all the recipes recorded by the machine
-	var/list/saved_recipes = list()
+	var/list/saved_recipes
 	var/import_job = JOB_CHEMIST
 
 /obj/machinery/chemical_dispenser/Initialize(mapload)
@@ -75,34 +75,51 @@
 	cartridges -= label
 	SStgui.update_uis(src)
 
-/obj/machinery/chemical_dispenser/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/reagent_containers/chem_disp_cartridge))
-		add_cartridge(W, user)
+/obj/machinery/chemical_dispenser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/chemical_dispenser_add_cartridge,
+		/datum/interaction/machine_item/chemical_dispenser_set_container,
+		/datum/interaction/machine_hand/ungated/chemical_dispenser_use,
+	)
+	..()
 
-	else if(istype(W, /obj/item/reagent_containers/glass) || istype(W, /obj/item/reagent_containers/food))
-		if(container)
-			to_chat(user, span_warning("There is already \a [container] on \the [src]!"))
-			return
+/datum/interaction/machine_item/chemical_dispenser_add_cartridge
+	id = "chemical_dispenser_add_cartridge"
+	name = "Insert cartridge"
+	held_type = /obj/item/reagent_containers/chem_disp_cartridge
+	effect = /obj/machinery/chemical_dispenser/proc/interaction_add_cartridge
 
-		var/obj/item/reagent_containers/RC = W
+/obj/machinery/chemical_dispenser/proc/interaction_add_cartridge(mob/user, obj/item/W, datum/interaction/interaction)
+	add_cartridge(W, user)
+	return TRUE
 
-		if(!accept_drinking && istype(RC,/obj/item/reagent_containers/food))
-			to_chat(user, span_warning("This machine only accepts beakers!"))
-			return
+/datum/interaction/machine_item/chemical_dispenser_set_container
+	id = "chemical_dispenser_set_container"
+	name = "Set container"
+	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
+	effect = /obj/machinery/chemical_dispenser/proc/interaction_set_container
 
-		if(!RC.is_open_container())
-			to_chat(user, span_warning("You don't see how \the [src] could dispense reagents into \the [RC]."))
-			return
-		if(istype(RC, /obj/item/reagent_containers/glass/cooler_bottle))
-			to_chat(user, span_warning("You don't see how \the [RC] could fit into \the [src]."))
-			return
+/obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
+	if(container)
+		to_chat(user, span_warning("There is already \a [container] on \the [src]!"))
+		return TRUE
 
-		container =  RC
-		user.drop_from_inventory(RC)
-		RC.loc = src
-		to_chat(user, span_notice("You set \the [RC] on \the [src]."))
-	else
-		return ..()
+	if(!accept_drinking && istype(RC,/obj/item/reagent_containers/food))
+		to_chat(user, span_warning("This machine only accepts beakers!"))
+		return TRUE
+
+	if(!RC.is_open_container())
+		to_chat(user, span_warning("You don't see how \the [src] could dispense reagents into \the [RC]."))
+		return TRUE
+	if(istype(RC, /obj/item/reagent_containers/glass/cooler_bottle))
+		to_chat(user, span_warning("You don't see how \the [RC] could fit into \the [src]."))
+		return TRUE
+
+	container =  RC
+	user.drop_from_inventory(RC)
+	RC.loc = src
+	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
+	return TRUE
 
 /obj/machinery/chemical_dispenser/wrench_act(mob/user, obj/item/tool)
 	return ..()
@@ -150,7 +167,7 @@
 		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.reagents.total_volume))) // list in a list because Byond merges the first list...
 	data["chemicals"] = chemicals
 
-	data["recipes"] = saved_recipes
+	data["recipes"] = (saved_recipes || list())
 	data["recordingRecipe"] = recording_recipe
 	return data
 
@@ -230,7 +247,7 @@
 			var/name = tgui_input_text(ui.user, "What do you want to name this recipe?", "Recipe Name?", "Recipe Name", MAX_NAME_LEN)
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return
-			if(saved_recipes[name] && tgui_alert(ui.user, "\"[name]\" already exists, do you want to overwrite it?",, list("No", "Yes")) != "Yes")
+			if(LAZYACCESS(saved_recipes, name) && tgui_alert(ui.user, "\"[name]\" already exists, do you want to overwrite it?",, list("No", "Yes")) != "Yes")
 				return
 			if(name && recording_recipe)
 				for(var/list/L in recording_recipe)
@@ -241,12 +258,12 @@
 						to_chat(ui.user, span_warning("[src] cannot find <b>[label]</b>!"))
 						playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
 						return
-				saved_recipes[name] = recording_recipe
+				LAZYSET(saved_recipes, name, recording_recipe)
 				recording_recipe = null
 				. = TRUE
 
 		if("dispense_recipe")
-			var/list/chemicals_to_dispense = saved_recipes[params["recipe"]]
+			var/list/chemicals_to_dispense = LAZYACCESS(saved_recipes, params["recipe"])
 			if(!LAZYLEN(chemicals_to_dispense))
 				return
 
@@ -279,7 +296,7 @@
 				recording_recipe += chemicals_to_dispense
 			. = TRUE
 		if("remove_recipe")
-			saved_recipes -= params["recipe"]
+			LAZYREMOVE(saved_recipes, params["recipe"])
 			. = TRUE
 
 /obj/machinery/chemical_dispenser/attack_ghost(mob/user)
@@ -287,7 +304,13 @@
 		return
 	tgui_interact(user)
 
-/obj/machinery/chemical_dispenser/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/chemical_dispenser_use
+	id = "chemical_dispenser_use"
+	name = "Use"
+	effect = /obj/machinery/chemical_dispenser/proc/interaction_use
+
+/obj/machinery/chemical_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & BROKEN)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE

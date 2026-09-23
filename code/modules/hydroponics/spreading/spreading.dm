@@ -59,7 +59,7 @@
 	var/growth_threshold = 0
 	var/growth_type = 0
 	var/max_growth = 0
-	var/list/neighbors = list()
+	var/list/neighbors
 	var/obj/effect/plant/parent
 	var/datum/seed/seed
 	var/sampled = 0
@@ -72,7 +72,7 @@
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
 
 /obj/effect/plant/Destroy()
-	neighbors.Cut()
+	LAZYCLEARLIST(neighbors)
 	if(seed && seed.get_trait(TRAIT_SPREAD)==2)
 		unsense_proximity(callback = TYPE_PROC_REF(/atom, HasProximity), center = get_turf(src))
 	SSplants.remove_plant(src)

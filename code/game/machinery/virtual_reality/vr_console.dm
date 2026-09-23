@@ -87,12 +87,28 @@
 
 	return 1
 
-/obj/machinery/vr_sleeper/attackby(obj/item/I, mob/user)
+/obj/machinery/vr_sleeper/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/vr_sleeper_scan,
+		/datum/interaction/machine_drag/vr_sleeper_enter,
+		/datum/interaction/machine_verb/vr_sleeper_eject,
+		/datum/interaction/machine_verb/vr_sleeper_climb_in,
+	)
+	..()
+
+/// Old attackby: always fingerprints, then lets a medical scanner analyze the occupant.
+/datum/interaction/machine_item/vr_sleeper_scan
+	id = "vr_sleeper_scan"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/vr_sleeper/proc/interaction_scan
+
+/obj/machinery/vr_sleeper/proc/interaction_scan(mob/user, obj/item/I, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(occupant && (istype(I, /obj/item/healthanalyzer) || istype(I, /obj/item/robotanalyzer)))
 		I.attack(occupant, user)
-		return
+	return TRUE
 
 
 /obj/machinery/vr_sleeper/crowbar_act(mob/user, obj/item/tool)
@@ -105,10 +121,23 @@
 	return ..()
 
 
-/obj/machinery/vr_sleeper/MouseDrop_T(mob/target, mob/user)
+/datum/interaction/machine_drag/vr_sleeper_enter
+	id = "vr_sleeper_enter"
+	name = "Insert"
+	held_type = /mob
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/vr_sleeper/proc/drag_meant, null))
+	effect = /obj/machinery/vr_sleeper/proc/interaction_enter
+
+/// The old MouseDrop_T guard for the dragged mob.
+/obj/machinery/vr_sleeper/proc/drag_meant(mob/actor, atom/target, mob/dropping)
+	return isliving(dropping)
+
+/obj/machinery/vr_sleeper/proc/interaction_enter(mob/user, atom/movable/dropping, datum/interaction/interaction)
+	var/mob/target = dropping
 	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !isliving(target))
-		return
+		return TRUE
 	go_in(target, user)
+	return TRUE
 
 
 
@@ -128,29 +157,32 @@
 			smoke.start("#202020")
 		perform_exit()
 
-/obj/machinery/vr_sleeper/verb/eject()
-	set src in view(1)
-	set category = "Object"
-	set name = "Eject VR Capsule"
+/datum/interaction/machine_verb/vr_sleeper_eject
+	id = "vr_sleeper_eject"
+	name = "Eject VR Capsule"
+	category = INTERACTION_CAT_EJECT
+	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
+	effect = /obj/machinery/vr_sleeper/proc/interaction_eject
 
-	if(usr.incapacitated())
-		return
-
+/obj/machinery/vr_sleeper/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER) || occupant && occupant.stat == DEAD)
 		perform_exit()
 	else
 		go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
+	return TRUE
 
-/obj/machinery/vr_sleeper/verb/climb_in()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Enter VR Capsule"
+/datum/interaction/machine_verb/vr_sleeper_climb_in
+	id = "vr_sleeper_climb_in"
+	name = "Enter VR Capsule"
+	category = INTERACTION_CAT_INSERT
+	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
+	effect = /obj/machinery/vr_sleeper/proc/interaction_climb_in
 
-	if(usr.incapacitated())
-		return
-	go_in(usr, usr)
-	add_fingerprint(usr)
+/obj/machinery/vr_sleeper/proc/interaction_climb_in(mob/user, obj/item/held, datum/interaction/interaction)
+	go_in(user, user)
+	add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/vr_sleeper/relaymove(mob/user as mob)
 	..()

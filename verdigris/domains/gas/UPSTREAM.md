@@ -63,22 +63,13 @@ with `DQEdit` comments where modifications are inline.
    `atmos_adjacent_turfs` lists, and gases have fixed numeric IDs
    (`gas/ids.rs`) instead of string lookups.
 
-The source has diverged heavily from upstream since vendoring; treat it as
-DeepQuarry code, not a patch set.
+7. **The rewrite (M1b)**: the gas arena and its locks, the async turf worker
+   (`turfs/processing.rs`), `TurfGases`/`MIX_TO_TURF` (`turfs.rs`) and
+   `PipeTopology` (`pipenets.rs`) are deleted. Turf gas runs on vg-core's
+   field framework (`cell.rs`), pipes on its network framework (`pipes.rs`),
+   and the gas world (`world.rs`) owns every mixture. What remains from auxmos
+   is the mixture maths (`gas/mixture.rs`), the gas registry (`gas/types.rs`),
+   the reaction registry (`reaction.rs`) and the gas-string parser.
 
-## Updating
-
-To bump auxmos:
-
-1. Note the old commit hash from this file.
-2. In a fresh checkout: `git clone https://github.com/Putnam3145/auxmos /tmp/auxmos-new`.
-3. `rsync -a --delete /tmp/auxmos-new/ verdigris/domains/gas/` (excluding our
-   `UPSTREAM.md`).
-4. Re-apply the modifications above (or check `git diff` to spot
-   regressions in already-applied modifications).
-5. Update the pinned commit hash and version in this file.
-6. Run the test suite: `cd verdigris && cargo test --target i686-pc-windows-msvc -p vg-gas`.
-
-The DM-side gas-mixture API is sensitive to auxmos's internal mixture
-representation. After any bump, run a full atmos integration test before
-merging.
+The source has diverged from upstream past any merge; treat it as DeepQuarry
+code, not a patch set. Do not bump it from upstream.

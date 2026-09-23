@@ -11,7 +11,7 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/on = 1		// If we're currently active,
 	var/toggle = 1	// If we /should/ be active or not,
-	var/list/internal_PDAs = list() // Assoc list of PDAs inside of this, with the department name being the index,
+	var/list/internal_PDAs // Assoc list of PDAs inside of this, with the department name being the index,
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
@@ -57,8 +57,22 @@
 	else
 		icon_state = "[initial(icon_state)]_off"
 
-/obj/machinery/pda_multicaster/attack_hand(mob/user)
+/obj/machinery/pda_multicaster/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/pda_multicaster_toggle,
+	)
+	..()
+
+/// Old attack_hand (never called ..()): toggle the multicaster.
+/datum/interaction/machine_hand/ungated/pda_multicaster_toggle
+	id = "pda_multicaster_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/pda_multicaster/proc/interaction_toggle
+
+/obj/machinery/pda_multicaster/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_power(user)
+	return TRUE
 
 /obj/machinery/pda_multicaster/proc/toggle_power(mob/user)
 	toggle = !toggle

@@ -9,10 +9,25 @@
 
 /// A floor with air whose east neighbour is also a floor, for heat tests (the
 /// test map has no unit-test landmarks).
+///
+/// Each caller gets its own untouched pair: several heat unit tests call this
+/// independently and mutate whatever pair they get back, and restoring a
+/// mutated cell doesn't always leave `heat_has_air()` reporting exactly what
+/// it did before. Reusing a pair another test already touched therefore made
+/// the match — and so the pass/fail outcome — depend on unit test run order.
+/// A per-run "already handed out" set keeps every test's pair disjoint from
+/// every other test's, regardless of order.
 /proc/heat_test_turf()
+	var/static/list/handed_out = list()
 	for(var/turf/simulated/floor/T in world)
+		if(handed_out[T])
+			continue
 		var/turf/simulated/floor/east = get_step(T, EAST)
-		if(istype(east) && T.heat_has_air() && east.heat_has_air())
+		if(!istype(east) || handed_out[east])
+			continue
+		if(T.heat_has_air() && east.heat_has_air())
+			handed_out[T] = TRUE
+			handed_out[east] = TRUE
 			return T
 
 /// Gives `T` its own heat cell back, at room temperature.

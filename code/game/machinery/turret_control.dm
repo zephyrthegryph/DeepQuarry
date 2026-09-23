@@ -4,7 +4,7 @@
 
 /area
 	// Turrets use this list to see if individual power/lethal settings are allowed
-	var/list/turret_controls = list()
+	var/list/turret_controls
 
 /obj/machinery/turretid
 	name = "turret control panel"
@@ -48,7 +48,7 @@
 	if(control_area)
 		var/area/A = control_area
 		if(A && istype(A))
-			A.turret_controls -= src
+			LAZYREMOVE(A.turret_controls, src)
 	. = ..()
 
 /obj/machinery/turretid/Initialize(mapload)
@@ -65,7 +65,7 @@
 	if(control_area)
 		var/area/A = control_area
 		if(istype(A))
-			A.turret_controls += src
+			LAZYADD(A.turret_controls, src)
 		else
 			control_area = null
 
@@ -92,9 +92,24 @@
 
 	return FALSE
 
-/obj/machinery/turretid/attackby(obj/item/W, mob/user)
+/obj/machinery/turretid/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/turretid_toggle_lock,
+		/datum/interaction/machine_hand/ungated/turretid_open_ui,
+	)
+	..()
+
+/// The old attackby: toggled the lock with an ID/pda, else fell through to ..().
+/datum/interaction/machine_item/turretid_toggle_lock
+	id = "turretid_toggle_lock"
+	name = "Toggle lock"
+	category = INTERACTION_CAT_LOCK
+	held_type = /obj/item
+	effect = /obj/machinery/turretid/proc/interaction_toggle_lock
+
+/obj/machinery/turretid/proc/interaction_toggle_lock(mob/user, obj/item/W, datum/interaction/interaction)
 	if(stat & BROKEN)
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if(allowed(user))
@@ -103,8 +118,8 @@
 			else
 				locked = !locked
 				to_chat(user, span_notice("You [ locked ? "lock" : "unlock"] the panel."))
-		return
-	return ..()
+		return TRUE
+	return FALSE
 
 /obj/machinery/turretid/emag_act(remaining_charges, mob/user)
 	if(!emagged)
@@ -117,8 +132,15 @@
 /obj/machinery/turretid
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/turretid/attack_hand(mob/user as mob)
+/// The old attack_hand: never called ..(), just opened the UI.
+/datum/interaction/machine_hand/ungated/turretid_open_ui
+	id = "turretid_open_ui"
+	name = "Use"
+	effect = /obj/machinery/turretid/proc/interaction_open_ui_impl
+
+/obj/machinery/turretid/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/turretid/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

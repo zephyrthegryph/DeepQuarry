@@ -7,7 +7,7 @@
 	var/question = "Would you like to play as a thing?"
 	var/query_sound = 'sound/effects/ghost2.ogg' // A sound file to play to the ghost, to help people who are alt-tabbed know something might interest them.
 	var/be_special_flag = 0
-	var/list/check_bans = list()
+	var/list/check_bans
 	var/wait_time = 60 SECONDS 	// How long to wait until returning the list of candidates.
 	var/cutoff_number = 0		// If above 0, when candidates list reaches this number, further potential candidates are rejected.
 

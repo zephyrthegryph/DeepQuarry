@@ -56,9 +56,6 @@
 //3 Modules can be activated at any one time.
 	var/obj/item/robot_module/module = null
 	var/module_active = null
-	var/module_state_1 = null
-	var/module_state_2 = null
-	var/module_state_3 = null
 
 	var/obj/item/radio/borg/radio = null
 	var/obj/item/communicator/integrated/communicator = null
@@ -345,9 +342,6 @@
 	if(spark_system)
 		QDEL_NULL(spark_system)
 	module_active = null
-	module_state_1 = null
-	module_state_2 = null
-	module_state_3 = null
 
 	return ..()
 
@@ -1238,7 +1232,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		//if they are holding or wearing a card that has access, that works
-		if(check_access(H.get_active_hand()) || check_access(H.wear_id))
+		if(check_access(H.get_active_hand()) || check_access(H.get_equipped_item(SLOT_ID_ID)))
 			return 1
 	else if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
@@ -1704,7 +1698,7 @@
 		var/i = 0
 		// Borg inventory code is very . . interesting and as such, unequiping a specific item requires jumping through some (for) loops.
 		var/current_selection_index = get_selected_module() // Will be 0 if nothing is selected.
-		for(var/thing in list(module_state_1, module_state_2, module_state_3))
+		for(var/thing in get_active_modules())
 			i++
 			if(istype(thing, /obj/item/borg/sight))
 				var/obj/item/borg/sight/S = thing

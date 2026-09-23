@@ -511,6 +511,7 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/dragon/maw(src)
 	B.affects_vore_sprites = FALSE
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The dragon's breath continues to pant over you rhythmically, each exhale carrying a bone-shivering growl",
 		"The thick, heavy tongue lifts, curling around you, cramming you tightly against it's teeth, to squeeze some flavor out of you.",
@@ -521,6 +522,7 @@ I think I covered everything.
 	vore_selected = B
 	B = new /obj/belly/dragon/throat(src)
 	B.affects_vore_sprites = FALSE
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Gggllrrrk! Another loud, squelching swallow rings out in your ears, dragging you a little deeper into the furnace-like humid heat of the dragon's body.",
 		"Nestling in a still throat for a moment, you feel the walls quiver and undulate excitedly in tune with the beast's heartbeat.",
@@ -529,6 +531,7 @@ I think I covered everything.
 		"Blrrbles and squelching pops from it's stomach echo out below you. Each swallow brings greater clarity to those digestive sounds, and stronger acidity to the muggy air around you, inching you closer to it's grasp. Not long now.")
 	B = new /obj/belly/dragon/stomach(src)
 	B.affects_vore_sprites = TRUE
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The stomach walls spontaneously contract! Those wavey, fleshy walls binding your body in their embrace for the moment, slathering you with thick, caustic acids.",
 		"You hear a soft rumbling as the dragon’s insides churn around your body, the well-used stomach walls shuddering with a growl as you melt down.",
@@ -538,6 +541,7 @@ I think I covered everything.
 		"The drake happily wanders around while digesting its meal, almost like it is trying to show off the hanging gut you've given it.")
 	B = new /obj/belly/dragon/maw/heal(src)
 	B.affects_vore_sprites = FALSE
+	B.own_emote_lists()
 	B.emote_lists[DM_HEAL] = list(
 		"Gently, the dragon's hot, bumpy tongue cradles you, feeling like a slime-soaked memory-foam bed, twitching with life. The delicacy that the dragon holds you with is quite soothing.",
 		"The wide, slick throat infront of you constantly quivers and undulates. Every hot muggy exhale of the beast makes that throat spread, ropes of slime within it's hold shivering in the flow, inhales causing it to clench up somewhat.",
@@ -547,6 +551,7 @@ I think I covered everything.
 	gut2 = B
 	B = new /obj/belly/dragon/throat/heal(src)
 	B.affects_vore_sprites = FALSE
+	B.own_emote_lists()
 	B.emote_lists[DM_HEAL] = list(
 		"The tunnel of the gullet closely wraps around you, mummifying you in a hot writhing embrace of silky flesh. The walls are slick, soaked in a lubricating slime, and so very warm.",
 		"The walls around you pulse in time with the dragon's heartbeat, which itself pounds in your ears. Rushing wind of calm breaths fill the gaps, and distant squelches of slimy payloads shifted around by soft flesh echo down below.",
@@ -555,6 +560,7 @@ I think I covered everything.
 		"Clenchy embraces rhythmically squelch over you. Spreading outwards, the walls would relent, letting you spread a hot, gooey pocket of space around yourself. You linger, before another undulation of a swallow nudges you further down.")
 	B = new /obj/belly/dragon/stomach/heal(src)
 	B.affects_vore_sprites = TRUE
+	B.own_emote_lists()
 	B.emote_lists[DM_HEAL] = list(
 		"In tune with the beast's heartbeat, the walls heave and spread all around you. In, tight and close, and then outwards, spreading cobwebs of slime all around.",
 		"The thick folds of flesh around you blrrrble and sqllrrch, as the flesh itself secretes more of this strange, pure, goopy liquid, clenching it among it's crevices to squeeze it all over you in a mess.",

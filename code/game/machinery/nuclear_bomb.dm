@@ -19,7 +19,7 @@ GLOBAL_VAR(bomb_set)
 	var/yes_code = 0.0
 	var/safety = 1.0
 	var/obj/item/disk/nuclear/auth = null
-	var/list/wires_list = list()
+	var/list/wires_list
 	var/light_wire
 	var/safety_wire
 	var/timing_wire
@@ -34,13 +34,13 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/Initialize(mapload)
 	. = ..()
 	r_code = "[rand(10000, 99999.0)]"//Creates a random code upon object spawn.
-	wires_list["Red"] = 0
-	wires_list["Blue"] = 0
-	wires_list["Green"] = 0
-	wires_list["Marigold"] = 0
-	wires_list["Fuschia"] = 0
-	wires_list["Black"] = 0
-	wires_list["Pearl"] = 0
+	LAZYSET(wires_list, "Red", 0)
+	LAZYSET(wires_list, "Blue", 0)
+	LAZYSET(wires_list, "Green", 0)
+	LAZYSET(wires_list, "Marigold", 0)
+	LAZYSET(wires_list, "Fuschia", 0)
+	LAZYSET(wires_list, "Black", 0)
+	LAZYSET(wires_list, "Pearl", 0)
 	var/list/w = list("Red","Blue","Green","Marigold","Black","Fuschia","Pearl")
 	light_wire = pick(w)
 	w -= light_wire
@@ -61,14 +61,31 @@ GLOBAL_VAR(bomb_set)
 				attack_hand(M)
 	return ..()
 
-/obj/machinery/nuclearbomb/attackby(obj/item/O as obj, mob/user as mob)
-	if(extended && istype(O, /obj/item/disk/nuclear))
-		user.drop_item()
-		O.loc = src
-		auth = O
-		add_fingerprint(user)
-		return
+/obj/machinery/nuclearbomb/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/nuclearbomb_insert_disk,
+		/datum/interaction/machine_hand/ungated/nuclearbomb_use,
+		/datum/interaction/machine_verb/nuclearbomb_make_deployable,
+	)
 	..()
+
+/// Old attackby: only offered while `extended`, else falls through (`..()` did nothing here).
+/datum/interaction/machine_item/nuclearbomb_insert_disk
+	id = "nuclearbomb_insert_disk"
+	name = "Insert authentication disk"
+	held_type = /obj/item/disk/nuclear
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/nuclearbomb/proc/is_extended, "not deployed"))
+	effect = /obj/machinery/nuclearbomb/proc/interaction_insert_disk
+
+/obj/machinery/nuclearbomb/proc/is_extended(mob/actor, atom/target, obj/item/held)
+	return extended
+
+/obj/machinery/nuclearbomb/proc/interaction_insert_disk(mob/user, obj/item/O, datum/interaction/interaction)
+	user.drop_item()
+	O.loc = src
+	auth = O
+	add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/nuclearbomb/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, 1)
@@ -172,11 +189,17 @@ GLOBAL_VAR(bomb_set)
 // of NuclearBomb.tsx; nukehack_win switches to the wire-defusion view of
 // the same window. All keypad/auth/timer/safety/anchor and wire/pulse
 // actions are dispatched via tgui_act below.
-/obj/machinery/nuclearbomb/attack_hand(mob/user as mob)
+/// Old attack_hand: never called ..(), so ungated. Kept intact in the effect.
+/datum/interaction/machine_hand/ungated/nuclearbomb_use
+	id = "nuclearbomb_use"
+	name = "Use"
+	effect = /obj/machinery/nuclearbomb/proc/interaction_use
+
+/obj/machinery/nuclearbomb/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(extended)
 		if(!ishuman(user))
 			to_chat(user, span_warning("You don't have the dexterity to do this!"))
-			return 1
+			return TRUE
 		user.set_machine(src)
 		wire_view = FALSE
 		tgui_interact(user)
@@ -190,7 +213,7 @@ GLOBAL_VAR(bomb_set)
 			flick("nuclearbombc", src)
 			icon_state = "nuclearbomb1"
 		extended = 1
-	return
+	return TRUE
 
 /obj/machinery/nuclearbomb/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -206,7 +229,7 @@ GLOBAL_VAR(bomb_set)
 	for(var/wire in wires_list)
 		wires_out += list(list(
 			"name" = wire,
-			"cut" = !!wires_list[wire],
+			"cut" = !!LAZYACCESS(wires_list, wire),
 		))
 	data["wires"] = wires_out
 	data["auth"] = !!auth
@@ -336,7 +359,7 @@ GLOBAL_VAR(bomb_set)
 			if(!I?.has_tool_quality(TOOL_WIRECUTTER))
 				to_chat(usr, "You need wirecutters!")
 				return TRUE
-			wires_list[wire] = !wires_list[wire]
+			LAZYSET(wires_list, wire, !LAZYACCESS(wires_list, wire))
 			if(safety_wire == wire && timing)
 				explode()
 			if(timing_wire == wire)
@@ -356,7 +379,7 @@ GLOBAL_VAR(bomb_set)
 			if(!hand_item?.has_tool_quality(TOOL_MULTITOOL))
 				to_chat(usr, "You need a multitool!")
 				return TRUE
-			if(wires_list[wire])
+			if(LAZYACCESS(wires_list, wire))
 				to_chat(usr, "You can't pulse a cut wire.")
 				return TRUE
 			if(light_wire == wire)
@@ -381,24 +404,24 @@ GLOBAL_VAR(bomb_set)
 	wire_view = TRUE
 	tgui_interact(user)
 
-/obj/machinery/nuclearbomb/verb/make_deployable()
-	set category = "Object"
-	set name = "Make Deployable"
-	set src in oview(1)
+/datum/interaction/machine_verb/nuclearbomb_make_deployable
+	id = "nuclearbomb_make_deployable"
+	name = "Make Deployable"
+	effect = /obj/machinery/nuclearbomb/proc/interaction_make_deployable
 
-	if(!usr.canmove || usr.stat || usr.restrained())
-		return
-	if(!ishuman(usr))
-		to_chat(usr, span_warning("You don't have the dexterity to do this!"))
-		return 1
-
+/obj/machinery/nuclearbomb/proc/interaction_make_deployable(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
+		return TRUE
+	if(!ishuman(user))
+		to_chat(user, span_warning("You don't have the dexterity to do this!"))
+		return TRUE
 	if(deployable)
-		to_chat(usr, span_warning("You close several panels to make [src] undeployable."))
+		to_chat(user, span_warning("You close several panels to make [src] undeployable."))
 		deployable = 0
 	else
-		to_chat(usr, span_warning("You adjust some panels to make [src] deployable."))
+		to_chat(user, span_warning("You adjust some panels to make [src] deployable."))
 		deployable = 1
-	return
+	return TRUE
 
 #define NUKERANGE 80
 /obj/machinery/nuclearbomb/proc/explode()

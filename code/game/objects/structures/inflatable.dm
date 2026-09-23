@@ -163,7 +163,7 @@
 		if(M.client)
 			if(iscarbon(M))
 				var/mob/living/carbon/C = M
-				if(!C.handcuffed)
+				if(!C.get_equipped_item(SLOT_ID_HANDCUFFED))
 					SwitchState()
 			else
 				SwitchState()

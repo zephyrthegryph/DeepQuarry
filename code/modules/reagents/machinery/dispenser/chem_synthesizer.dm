@@ -36,10 +36,10 @@
 
 	var/list/recipes = list() // This holds chemical recipes up to a maximum determined by SYNTHESIZER_MAX_RECIPES. Two-dimensional.
 	var/list/queue = list() // This holds the recipe id's for queued up recipes.
-	var/list/catalyst_ids = list() // This keeps track of the chemicals in the catalyst to remove before bottling.
+	var/list/catalyst_ids // This keeps track of the chemicals in the catalyst to remove before bottling.
 	var/list/cartridges = list() // Associative, label -> cartridge
 
-	var/list/spawn_cartridges = list(
+	var/static/list/spawn_cartridges = list(
 			/obj/item/reagent_containers/chem_disp_cartridge/hydrogen,
 			/obj/item/reagent_containers/chem_disp_cartridge/lithium,
 			/obj/item/reagent_containers/chem_disp_cartridge/carbon,
@@ -190,35 +190,50 @@
 	cartridges -= label
 	SStgui.update_uis(src)
 
-/obj/machinery/chemical_synthesizer/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/reagent_containers/chem_disp_cartridge))
-		add_cartridge(W, user)
-		return
+/obj/machinery/chemical_synthesizer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/chem_synthesizer_add_cartridge,
+		/datum/interaction/machine_item/chem_synthesizer_add_catalyst,
+		/datum/interaction/machine_hand/ungated/chem_synthesizer_use,
+	)
+	..()
 
-	// We don't need a busy check here as the catalyst slot must be occupied for the machine to function.
-	if(istype(W, /obj/item/reagent_containers/glass))
-		if(catalyst)
-			to_chat(user, span_warning("There is already \a [catalyst] in \the [src] catalyst slot!"))
-			return
-		if(stat & (BROKEN|NOPOWER))
-			to_chat(user, span_warning("The clamp will not secure the catalyst while the machine is down!"))
-			return
+/datum/interaction/machine_item/chem_synthesizer_add_cartridge
+	id = "chem_synthesizer_add_cartridge"
+	name = "Insert cartridge"
+	held_type = /obj/item/reagent_containers/chem_disp_cartridge
+	effect = /obj/machinery/chemical_synthesizer/proc/interaction_add_cartridge
 
-		var/obj/item/reagent_containers/RC = W
+/obj/machinery/chemical_synthesizer/proc/interaction_add_cartridge(mob/user, obj/item/reagent_containers/chem_disp_cartridge/W, datum/interaction/interaction)
+	add_cartridge(W, user)
+	return TRUE
 
-		if(!RC.is_open_container())
-			to_chat(user, span_warning("You don't see how \the [src] could extract reagents from \the [RC]."))
-			return
+// We don't need a busy check here as the catalyst slot must be occupied for the machine to function.
+/datum/interaction/machine_item/chem_synthesizer_add_catalyst
+	id = "chem_synthesizer_add_catalyst"
+	name = "Set catalyst"
+	held_type = /obj/item/reagent_containers/glass
+	effect = /obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst
 
-		catalyst =  RC
-		user.drop_from_inventory(RC)
-		RC.loc = src
-		to_chat(user, span_notice("You set \the [RC] on \the [src]."))
-		update_icon()
+/obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
+	if(catalyst)
+		to_chat(user, span_warning("There is already \a [catalyst] in \the [src] catalyst slot!"))
+		return TRUE
+	if(stat & (BROKEN|NOPOWER))
+		to_chat(user, span_warning("The clamp will not secure the catalyst while the machine is down!"))
+		return TRUE
 
-		return
+	if(!RC.is_open_container())
+		to_chat(user, span_warning("You don't see how \the [src] could extract reagents from \the [RC]."))
+		return TRUE
 
-	return ..()
+	catalyst =  RC
+	user.drop_from_inventory(RC)
+	RC.loc = src
+	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
+	update_icon()
+
+	return TRUE
 
 /obj/machinery/chemical_synthesizer/wrench_act(mob/user, obj/item/tool)
 	if(busy)
@@ -470,10 +485,17 @@
 		return
 	tgui_interact(user)
 
-/obj/machinery/chemical_synthesizer/attack_hand(mob/user)
+/// Old attack_hand (never called ..()).
+/datum/interaction/machine_hand/ungated/chem_synthesizer_use
+	id = "chem_synthesizer_use"
+	name = "Use"
+	effect = /obj/machinery/chemical_synthesizer/proc/interaction_use
+
+/obj/machinery/chemical_synthesizer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/chemical_synthesizer/ui_assets(mob/user)
 	return list(
@@ -582,7 +604,7 @@
 	if(use_catalyst)
 		// Populate the list of catalyst chems. This is important when it's time to bottle_product().
 		for(var/datum/reagent/chem in catalyst.reagents.reagent_list)
-			catalyst_ids += chem.id
+			LAZYADD(catalyst_ids, chem.id)
 
 		// Transfer the catalyst to the synthesizer's reagent holder.
 		catalyst.reagents.trans_to_holder(src.reagents, catalyst.reagents.total_volume)
@@ -723,7 +745,7 @@
 	if(queue.len)
 		if(use_catalyst)
 			for(var/datum/reagent/chem in catalyst.reagents.reagent_list)
-				catalyst_ids += chem.id
+				LAZYADD(catalyst_ids, chem.id)
 			catalyst.reagents.trans_to_holder(src.reagents, catalyst.reagents.total_volume)
 		update_icon()
 		follow_recipe(queue[1], 1)

@@ -262,7 +262,7 @@
 
 /// The measure definition for `id`, or null after reporting why not.
 /datum/predicate_compiler/proc/measure(id)
-	var/datum/property_def/def = registry.defs[id]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, id)
 	if(!def)
 		error("unknown property [id]")
 		return null
@@ -283,7 +283,7 @@
 
 /// Channel-backed properties can become reactor watches (P4).
 /datum/predicate_compiler/proc/channel_backed(id)
-	for(var/datum/property_provider/provider as anything in registry.base_providers[id])
+	for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
 		if(provider.source == PROP_SOURCE_DOMAIN)
 			return TRUE
 	return FALSE
@@ -291,7 +291,7 @@
 /datum/predicate_compiler/proc/compile_tag(list/clause, negate)
 	if(!arity(clause, 3) || !valid_subject(clause[2]))
 		return null
-	var/datum/property_def/def = registry.defs[clause[3]]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, clause[3])
 	if(!def)
 		error("unknown tag [clause[3]]")
 		return null
@@ -659,7 +659,7 @@
 		return "needs something in hand"
 	return dq_pred_cmp_reason(def, subject, dq_property(a, property), op, dq_property(b, property_b))
 
-// ---- Types and fit (constraints, rules.md §3) ----
+// ---- Types and fit (constraints, rules.md ï¿½3) ----
 
 /datum/pred_node/type
 	var/subject
@@ -723,7 +723,7 @@
 	var/tier = 1
 
 /datum/pred_node/tool/test(mob/actor, atom/target, obj/item/held)
-	if(!held || !held.has_tool_quality(quality))
+	if(!istype(held) || !held.has_tool_quality(quality))
 		return FALSE
 	return tier <= 1 || dq_tool_tier(held, quality) >= tier
 
@@ -825,7 +825,7 @@
 	return FALSE
 
 /mob/living/carbon/human/dq_has_free_hand()
-	return !l_hand || !r_hand
+	return !get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R)
 
 /mob/living/simple_mob/dq_has_free_hand()
-	return has_hands && (!l_hand || !r_hand)
+	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))

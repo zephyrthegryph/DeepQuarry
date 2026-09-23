@@ -6,14 +6,15 @@
 	light_color = "#a97faa"
 	req_access = list(ACCESS_ROBOTICS)
 	circuit = /obj/item/circuitboard/mecha_control
-	var/list/located = list()
+	var/list/located
 	var/screen = 0
 	var/list/stored_data
 
-/obj/machinery/computer/mecha/attack_hand(mob/user)
-	if(..())
-		return
-	tgui_interact(user)
+/obj/machinery/computer/mecha/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/computer/mecha/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -94,7 +95,7 @@
 	data["active"] = M.selected
 	if(istype(M, /obj/mecha/working/ripley))
 		var/obj/mecha/working/ripley/RM = M
-		data["cargoUsed"] = RM.cargo.len
+		data["cargoUsed"] = length(RM.cargo)
 		data["cargoMax"] = RM.cargo_capacity
 
 	return data

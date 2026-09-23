@@ -94,9 +94,23 @@
 		return
 	hacked = newhacked
 
-/obj/machinery/media/jukebox/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/media/jukebox/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/jukebox_fingerprint,
+		/datum/interaction/machine_hand/ungated/jukebox_interact,
+	)
+	..()
+
+/// The old attackby: fingerprinted, then fell through to ..().
+/datum/interaction/machine_item/jukebox_fingerprint
+	id = "jukebox_fingerprint"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/media/jukebox/proc/interaction_fingerprint
+
+/obj/machinery/media/jukebox/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
-	return ..()
+	return FALSE
 
 /obj/machinery/media/jukebox/wirecutter_act(mob/user, obj/item/tool)
 	wires.Interact(user)
@@ -245,8 +259,15 @@
 				StopPlaying()
 			SSmedia_tracks.remove_track(ui.user, track_to_remove)
 
-/obj/machinery/media/jukebox/attack_hand(mob/user as mob)
+/// The old attack_hand: never called ..(), just interacted.
+/datum/interaction/machine_hand/ungated/jukebox_interact
+	id = "jukebox_interact"
+	name = "Use"
+	effect = /obj/machinery/media/jukebox/proc/interaction_interact_impl
+
+/obj/machinery/media/jukebox/proc/interaction_interact_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
+	return TRUE
 
 /obj/machinery/media/jukebox/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -331,7 +352,7 @@
 	use_power = USE_POWER_OFF
 	circuit = null
 
-	var/list/custom_tracks = list()
+	var/list/custom_tracks
 
 // Just junk to make it sneaky - I wish a lot more stuff was on /obj/machinery/media instead of /jukebox so I could use that.
 /obj/machinery/media/jukebox/ghost/is_incorporeal()
@@ -403,7 +424,7 @@
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
 
-	custom_tracks += new /datum/track(url, title, duration, artist, genre)
+	LAZYADD(custom_tracks, new /datum/track(url, title, duration, artist, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove()
 	var/client/C = usr.client
@@ -416,7 +437,7 @@
 
 	for(var/datum/track/T in custom_tracks)
 		if(T.title == track || T.url == track)
-			custom_tracks -= T
+			LAZYREMOVE(custom_tracks, T)
 			qdel(T)
 			return
 

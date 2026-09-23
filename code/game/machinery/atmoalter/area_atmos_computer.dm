@@ -19,10 +19,11 @@
 	. = ..()
 	scanscrubbers()
 
-/obj/machinery/computer/area_atmos/attack_hand(mob/user as mob)
-	if(..(user))
-		return
-	tgui_interact(user)
+/obj/machinery/computer/area_atmos/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/computer/area_atmos/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

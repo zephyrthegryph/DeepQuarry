@@ -40,14 +40,7 @@
 
 	//Damage resistances
 	shock_resist = 1
-	armor = list(
-				"melee" = 30,
-				"bullet" = 20,
-				"laser" = 20,
-				"energy" = 10,
-				"bomb" = 10,
-				"bio" = 0,
-				"rad" = 0)	//Standard armor vest stats, slightly dropped due to scale.
+	armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10" //Standard armor vest stats, slightly dropped due to scale.
 
 	has_langs = list("Mouse")
 
@@ -120,14 +113,7 @@
 	rank = "operative"
 
 	shock_resist = 1
-	armor = list(
-				"melee" = 40,
-				"bullet" = 40,
-				"laser" = 30,
-				"energy" = 15,
-				"bomb" = 35,
-				"bio" = 100,
-				"rad" = 100)	//Mercenary Voidsuit Resistances, slightly downscaled, due to size.
+	armor_spec = "melee=40;bullet=40;laser=30;energy=15;bomb=35;bio=100;rad=100" //Mercenary Voidsuit Resistances, slightly downscaled, due to size.
 
 //Pyro Mouse
 /mob/living/simple_mob/animal/space/mouse_army/pyro
@@ -145,14 +131,7 @@
 
 	//Damage resistances
 	shock_resist = 0.6
-	armor = list(
-				"melee" = 20,
-				"bullet" = 20,
-				"laser" = 20,
-				"energy" = 20,
-				"bomb" = 90,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=90;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/incendiary/flamethrower
 	base_attack_cooldown = 10
@@ -195,14 +174,7 @@
 
 	//Damage resistances
 	shock_resist = 0.6
-	armor = list(
-				"melee" = 40,
-				"bullet" = 30,
-				"laser" = 10,
-				"energy" = 10,
-				"bomb" = 15,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=40;bullet=30;laser=10;energy=10;bomb=15;bio=100;rad=100"
 
 	var/exploded = FALSE
 	var/explosion_dev_range		= 0
@@ -246,14 +218,7 @@
 
 	//Damage resistances
 	shock_resist = 0.6
-	armor = list(
-				"melee" = 50,
-				"bullet" = 10,
-				"laser" = 10,
-				"energy" = 10,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=50;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
 	player_msg = "You have an imperfect, but automatic stealth. If you attack something while 'hidden', then \
 	you will do bonus damage, stun the target, and unstealth for a period of time.<br>\
@@ -358,15 +323,7 @@
 	faction = FACTION_MOUSE_ARMY
 
 	endurance = 150
-	armor = list(
-				"melee" = 25,
-				"bullet" = 20,
-				"laser" = 30,
-				"energy" = 15,
-				"bomb" = 0,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=25;bullet=20;laser=30;energy=15;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/pistol/medium
 
@@ -396,15 +353,7 @@
 
 	endurance = 200
 	heat_resist = 1
-	armor = list(
-				"melee" = 0,
-				"bullet" = 20,
-				"laser" = 50,
-				"energy" = 0,
-				"bomb" = 50,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "bullet=20;laser=50;bomb=50;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/incendiary/dragonflame
 
@@ -433,15 +382,7 @@
 
 	endurance = 300
 	heat_resist = 1
-	armor = list(
-				"melee" = 20,
-				"bullet" = 50,
-				"laser" = 50,
-				"energy" = 20,
-				"bomb" = 80,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=20;bullet=50;laser=50;energy=20;bomb=80;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/gyro
 

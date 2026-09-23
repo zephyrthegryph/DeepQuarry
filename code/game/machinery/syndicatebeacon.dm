@@ -16,10 +16,20 @@
 	var/selfdestructing = 0
 	var/charges = 1
 
-/obj/machinery/syndicate_beacon/attack_hand(mob/user as mob)
-	// single-conversation device; tgui_alert is the right
-	// primitive. The dynamic "you can switch teams" branch becomes a
-	// labelled button on the alert.
+/obj/machinery/syndicate_beacon/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/syndicate_beacon_talk,
+	)
+	..()
+
+/// Old attack_hand: never called ..(). single-conversation device; tgui_alert is the right
+/// primitive. The dynamic "you can switch teams" branch becomes a labelled button on the alert.
+/datum/interaction/machine_hand/ungated/syndicate_beacon_talk
+	id = "syndicate_beacon_talk"
+	name = "Use"
+	effect = /obj/machinery/syndicate_beacon/proc/interaction_talk
+
+/obj/machinery/syndicate_beacon/proc/interaction_talk(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	var/message = "Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]... Identity confirmed.\n"
 	var/can_traitor = FALSE
@@ -40,6 +50,7 @@
 			Topic("betraitor=1;traitormob=\ref[user]", list("betraitor" = "1", "traitormob" = "\ref[user]"))
 	else
 		tgui_alert(user, message, "Ominous Beacon", list("Hang up"))
+	return TRUE
 
 /obj/machinery/syndicate_beacon/Topic(href, href_list)
 	if(..())
@@ -121,12 +132,28 @@
 /obj/machinery/power/singularity_beacon/attack_ai(mob/user as mob)
 	return
 
-/obj/machinery/power/singularity_beacon/attack_hand(mob/user as mob)
+/obj/machinery/power/singularity_beacon/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/singularity_beacon_toggle,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/singularity_beacon_toggle
+	id = "singularity_beacon_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/power/singularity_beacon/proc/interaction_toggle
+
+/obj/machinery/power/singularity_beacon/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
-		return active ? Deactivate(user) : Activate(user)
+		if(active)
+			Deactivate(user)
+		else
+			Activate(user)
 	else
 		to_chat(user, span_danger("You need to screw the beacon to the floor first!"))
-		return
+	return TRUE
 
 /obj/machinery/power/singularity_beacon/screwdriver_act(mob/user, obj/item/tool)
 	if(active)

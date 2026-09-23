@@ -315,7 +315,7 @@
 	icon_state = "pclamp0"
 	var/max_clamps = 3
 	var/busy
-	var/list/clamps = list()
+	var/list/clamps
 
 /obj/item/dogborg/stasis_clamp/afterattack(atom/A, mob/user as mob, proximity)
 	if(!proximity)
@@ -330,7 +330,7 @@
 	busy = FALSE
 
 /obj/item/dogborg/stasis_clamp/Destroy()
-	clamps.Cut()
+	LAZYCLEARLIST(clamps)
 	. = ..()
 
 //Pounce stuff for K-9

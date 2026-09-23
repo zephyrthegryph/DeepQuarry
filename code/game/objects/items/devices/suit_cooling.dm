@@ -101,7 +101,7 @@
 
 	var/mob/living/carbon/human/H = M
 
-	if (!H.wear_suit || (H.s_store != src && H.back != src))
+	if (!H.get_equipped_item(SLOT_ID_SUIT) || (H.get_equipped_item(SLOT_ID_SUIT_STORAGE) != src && H.get_equipped_item(SLOT_ID_BACK) != src))
 		return 0
 
 	return 1

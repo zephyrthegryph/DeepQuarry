@@ -105,12 +105,12 @@
 	flags = WALL_ITEM
 
 	var/obj/item/card/id/giver
-	var/list/accesses = list()
+	var/list/accesses
 	var/giv_name = "NOT SPECIFIED"
 	var/reason = "NOT SPECIFIED"
 	var/duration = 5
 
-	var/list/internal_log = list()
+	var/list/internal_log
 	var/mode = 0  // 0 - making pass, 1 - viewing logs
 
 /obj/machinery/computer/guestpass/Initialize(mapload)
@@ -118,48 +118,64 @@
 	uid = "[rand(100,999)]-G[rand(10,99)]"
 
 
-/obj/machinery/computer/guestpass/attackby(obj/I, mob/user)
-	if(istype(I, /obj/item/card/id/guest))
-		to_chat(user, span_warning("The guest pass terminal denies to accept the guest pass."))
-		return
-	if(istype(I, /obj/item/card/id))
-		if(stat & NOPOWER) //checking for power in here so crowbar and screwdriver and stuff still works.
-			to_chat(user, span_warning("The terminal refuses your I.D as it is unpowered!"))
-			return
-		if(!giver && user.unEquip(I))
-			I.forceMove(src)
-			giver = I
-			SStgui.update_uis(src)
-		else if(giver)
-			to_chat(user, span_warning("There is already ID card inside."))
-		return
+/obj/machinery/computer/guestpass/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/guestpass_reject_guest_card,
+		/datum/interaction/machine_item/guestpass_insert_id,
+		/datum/interaction/machine_verb/guestpass_eject_id,
+		/datum/interaction/machine_hand/open_ui,
+	)
 	..()
 
-/obj/machinery/computer/guestpass/verb/eject_id()
-	set category = "Object"
-	set name = "Eject ID Card"
-	set src in oview(1)
+/// A guest pass itself is refused.
+/datum/interaction/machine_item/guestpass_reject_guest_card
+	id = "guestpass_reject_guest_card"
+	name = "Insert ID"
+	held_type = /obj/item/card/id/guest
+	effect = /obj/machinery/computer/guestpass/proc/interaction_reject_guest_card
 
-	if(!usr || usr.stat || usr.lying)	return
+/obj/machinery/computer/guestpass/proc/interaction_reject_guest_card(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_warning("The guest pass terminal denies to accept the guest pass."))
+	return TRUE
 
+/// Insert an ID card to use as the source of grantable accesses.
+/datum/interaction/machine_item/guestpass_insert_id
+	id = "guestpass_insert_id"
+	name = "Insert ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/computer/guestpass/proc/interaction_insert_id
+
+/obj/machinery/computer/guestpass/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
+	if(stat & NOPOWER) //checking for power in here so crowbar and screwdriver and stuff still works.
+		to_chat(user, span_warning("The terminal refuses your I.D as it is unpowered!"))
+		return TRUE
+	if(!giver && user.unEquip(held))
+		held.forceMove(src)
+		giver = held
+		SStgui.update_uis(src)
+	else if(giver)
+		to_chat(user, span_warning("There is already ID card inside."))
+	return TRUE
+
+/datum/interaction/machine_verb/guestpass_eject_id
+	id = "guestpass_eject_id"
+	name = "Eject ID Card"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/computer/guestpass/proc/interaction_eject_id
+
+/obj/machinery/computer/guestpass/proc/interaction_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(giver)
-		to_chat(usr, span_notice("You remove \the [giver] from \the [src]."))
+		to_chat(user, span_notice("You remove \the [giver] from \the [src]."))
 		giver.loc = get_turf(src)
-		if(!usr.get_active_hand() && ishuman(usr))
-			usr.put_in_hands(giver)
+		if(!user.get_active_hand() && ishuman(user))
+			user.put_in_hands(giver)
 		else
 			giver.loc = src.loc
 		giver = null
-		accesses.Cut()
+		LAZYCLEARLIST(accesses)
 	else
-		to_chat(usr, span_warning("There is nothing to remove from the console."))
-	return
-
-/obj/machinery/computer/guestpass/attack_hand(mob/user as mob)
-	if(..())
-		return
-
-	tgui_interact(user)
+		to_chat(user, span_warning("There is nothing to remove from the console."))
+	return TRUE
 
 /obj/machinery/computer/guestpass/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -187,7 +203,7 @@
 	data["reason"] = reason
 	data["duration"] = duration
 	data["mode"] = mode
-	data["log"] = internal_log
+	data["log"] = (internal_log || list())
 	data["uid"] = uid
 
 	return data
@@ -218,10 +234,10 @@
 		if("access")
 			var/A = text2num(params["access"])
 			if(A in accesses)
-				accesses.Remove(A)
+				LAZYREMOVE(accesses, A)
 			else
 				if(A in giver.GetAccess())	//Let's make sure the ID card actually has the access.
-					accesses.Add(A)
+					LAZYADD(accesses, A)
 				else
 					to_chat(ui.user, span_warning("Invalid selection, please consult technical support if there are any issues."))
 					log_admin("[key_name_admin(ui.user)] tried selecting an invalid guest pass terminal option.")
@@ -235,7 +251,7 @@
 				else
 					giver.loc = src.loc
 					giver = null
-				accesses.Cut()
+				LAZYCLEARLIST(accesses)
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
@@ -255,16 +271,16 @@
 			if(giver)
 				var/number = add_zero("[rand(0,9999)]", 4)
 				var/entry = "\[[stationtime2text()]\] Pass #[number] issued by [giver.registered_name] ([giver.assignment]) to [giv_name]. Reason: [reason]. Grants access to following areas: "
-				for (var/i=1 to accesses.len)
-					var/A = accesses[i]
+				for (var/i=1 to length(accesses))
+					var/A = LAZYACCESS(accesses, i)
 					if(A)
 						var/area = SSaccess.get_access_desc(A)
 						entry += "[i > 1 ? ", [area]" : "[area]"]"
 				entry += ". Expires at [worldtime2stationtime(world.time + duration*10*60)]."
-				internal_log.Add(entry)
+				LAZYADD(internal_log, entry)
 
 				var/obj/item/card/id/guest/pass = new(src.loc)
-				pass.temp_access = accesses.Copy()
+				pass.temp_access = LAZYCOPY(accesses)
 				pass.registered_name = giv_name
 				pass.expiration_time = world.time + duration*10*60
 				pass.reason = reason

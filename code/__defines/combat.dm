@@ -27,5 +27,3 @@
 /// Involved in checking the likelihood of applying a wound to a mob.
 #define WOUND "wound"
 
-/// Calculates the new armour value after armour penetration. Can return negative values, and those must be caught.
-#define PENETRATE_ARMOUR(armour, penetration) (penetration >= 100 ? 0 : 100 * (armour - penetration) / (100 - penetration))

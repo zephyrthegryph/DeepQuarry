@@ -116,8 +116,8 @@
 		else if(user.zone_sel.selecting == O_MOUTH) //Check player target location, provided the rag is not on fire. Then check if mouth is exposed.
 			if(ishuman(target)) //Added this since player species process reagents in majority of cases.
 				var/mob/living/carbon/human/H = target
-				if(H.head && (H.head.body_parts_covered & FACE)) //Check human head coverage.
-					to_chat(user, span_warning("Remove their [H.head] first."))
+				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) //Check human head coverage.
+					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
 					return ITEM_INTERACT_FAILURE
 				else if(reagents.total_volume) //Final check. If the rag is not on fire and their face is uncovered, smother target.
 					user.do_attack_animation(src)
@@ -162,14 +162,16 @@
 			wipe_down(A, user)
 		return
 
-/obj/item/reagent_containers/glass/rag/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature >= 50 + T0C)
-		src.ignite()
-	if(exposed_temperature >= 900 + T0C)
-		var/turf/T = get_turf(src)
-		T?.feed_lingering_fire(0.1) // Lingering fire, feeding fires
-		new /obj/effect/decal/cleanable/ash(get_turf(src))
-		qdel(src)
+/// Heat behaviour rule: a soaked rag lights at 50 C.
+/obj/item/reagent_containers/glass/rag/proc/rule_ignite_rag(datum/rule/rule)
+	ignite()
+
+/// Heat behaviour rule: at 900 C the rag burns to ash and feeds the fire.
+/obj/item/reagent_containers/glass/rag/proc/rule_ash(datum/rule/rule)
+	var/turf/T = get_turf(src)
+	T?.feed_lingering_fire(0.1)
+	new /obj/effect/decal/cleanable/ash(T)
+	qdel(src)
 
 //rag must have a minimum of 2 units welder fuel or ehtanol based reagents and at least 80% of the reagents must so.
 /obj/item/reagent_containers/glass/rag/proc/can_ignite()

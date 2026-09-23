@@ -73,17 +73,15 @@
 	var/incoming_kind = kind
 	var/before = amount
 
-	// 1. Armour for the hit part and kind.
+	// 1. Armour for the hit part and kind: the armour datum's deterministic
+	// soak, which can also turn an edge or point (the force lands as blunt trauma).
 	if(flags & INJURE_ARMORED)
-		var/armor = armor_pen >= 100 ? 0 : clamp(injury_armor(kind, zone) - armor_pen, 0, 100)
-		if(armor > 0)
-			// Armour can stop an edge or point: the force still lands, as blunt trauma.
-			if((kind == INJURY_CUT || kind == INJURY_PIERCE) && prob(armor))
-				kind = INJURY_BLUNT
-			armor = roll_armor_variance(armor)
-			if(!(flags & INJURE_SILENT))
-				armor_feedback(armor, zone)
-			amount = armor >= 100 ? 0 : amount * (100 - armor) / 100
+		var/list/soaked = injury_armor_set(zone).soak(kind, amount, armor_pen, armor_factor(kind))
+		amount = soaked[ARMOR_SOAK_AMOUNT]
+		kind = soaked[ARMOR_SOAK_KIND]
+		var/armor = soaked[ARMOR_SOAK_PROTECTION]
+		if(armor > 0 && !(flags & INJURE_SILENT))
+			armor_feedback(armor, zone)
 		if(explain)
 			explain += list(list(INJURY_STAGE_ARMOR, before, amount, "[armor]% [armor_kind_name(incoming_kind)] armour[kind != incoming_kind ? ", deflected to [injury_kind_name(kind)]" : ""]"))
 
@@ -196,10 +194,16 @@
 
 /// THE armour lookup: armour points against `kind` (INJURY_* or ARMOR_BLAST)
 /// at `zone` (a BP_* zone, a limb or an organ; null = averaged over the body).
-/// Worn / natural armour plus the BF_ARMOR(kind) factor. injure()'s armour
-/// stage and every other armour question go through this.
+/// Worn / natural armour (injury_armor_set()) plus the BF_ARMOR(kind) factor.
 /mob/living/proc/injury_armor(kind, zone = null)
-	return armor_factor(kind)
+	return armor_factor(kind) + injury_armor_set(zone).value(injury_armor_key(kind))
+
+/// The worn / natural armour (/datum/armor) covering `zone`, before body
+/// factors: what injure()'s armour stage soaks with. Defaults to the mob's own
+/// innate armour (get_armor()); humans read the worn protection cache.
+/mob/living/proc/injury_armor_set(zone = null)
+	RETURN_TYPE(/datum/armor)
+	return get_armor()
 
 /// Armour points the body factors add against `kind`.
 /mob/living/proc/armor_factor(kind)
@@ -215,11 +219,6 @@
 	if(armor_pen >= 100)
 		return 0
 	return clamp(injury_armor(kind, zone) - armor_pen, 0, 100)
-
-/// Armour is +/-25% effective on any given hit.
-/proc/roll_armor_variance(armor)
-	var/spread = round(armor * 0.25)
-	return clamp(armor + rand(-spread, spread), 0, 100)
 
 /// Tell the victim their armour did something.
 /mob/living/proc/armor_feedback(armor, zone)

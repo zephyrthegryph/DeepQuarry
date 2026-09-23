@@ -67,16 +67,30 @@
 	spawn(1) //When built from frames, need to allow time for it to set pixel_x and pixel_y
 		update_icon()
 
-/obj/machinery/station_map/attack_hand(mob/user)
+/obj/machinery/station_map/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/station_map_watch,
+		/datum/interaction/machine_item/station_map_fingerprint,
+	)
+	..()
+
+/// Old attack_hand: never called ..(), so ungated.
+/datum/interaction/machine_hand/ungated/station_map_watch
+	id = "station_map_watch"
+	name = "Watch"
+	effect = /obj/machinery/station_map/proc/interaction_watch
+
+/obj/machinery/station_map/proc/interaction_watch(mob/user, obj/item/held, datum/interaction/interaction)
 	if(watching_mob && (watching_mob != user))
 		to_chat(user, span_warning("Someone else is currently watching the holomap."))
-		return
+		return TRUE
 	if(user.loc != loc)
 		to_chat(user, span_warning("You need to stand in front of \the [src]."))
-		return
+		return TRUE
 	if(watching_mob)
-		return
+		return TRUE
 	startWatching(user)
+	return TRUE
 
 // Let people bump up against it to watch
 /obj/machinery/station_map/Bumped(atom/movable/AM)
@@ -196,9 +210,16 @@
 	else
 		cut_overlay("station_map-panel")
 
-/obj/machinery/station_map/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: fingerprinted, then always fell through to ..().
+/datum/interaction/machine_item/station_map_fingerprint
+	id = "station_map_fingerprint"
+	name = "Touch"
+	held_type = /obj/item
+	effect = /obj/machinery/station_map/proc/interaction_fingerprint
+
+/obj/machinery/station_map/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
-	return ..()
+	return FALSE
 
 
 /datum/frame/frame_types/station_map

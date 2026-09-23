@@ -172,8 +172,8 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 		if("interact_module")
 			var/module_index = text2num(params["module"])
 
-			if(module_index > 0 && module_index <= installed_modules.len)
-				var/obj/item/rig_module/module = installed_modules[module_index]
+			if(module_index > 0 && module_index <= length(installed_modules))
+				var/obj/item/rig_module/module = LAZYACCESS(installed_modules, module_index)
 				switch(params["module_mode"])
 					if("select")
 						selected_module = module

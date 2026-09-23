@@ -41,7 +41,7 @@
 /datum/unit_test/dq_heat_constants_unified
 
 /datum/unit_test/dq_heat_constants_unified/Run()
-	TEST_ASSERT(abs(BODYTEMP_NORMAL - (T0C + 37)) < 0.001, "BODYTEMP_NORMAL is [BODYTEMP_NORMAL], not 37 °C")
+	TEST_ASSERT(abs((BODYTEMP_NORMAL - T0C) - 37) < 0.001, "BODYTEMP_NORMAL is [BODYTEMP_NORMAL], not 37 °C")
 	TEST_ASSERT(abs(FIRE_MINIMUM_TEMPERATURE_TO_EXIST - (T0C + 100)) < 0.001, "the ignition point is [FIRE_MINIMUM_TEMPERATURE_TO_EXIST], not 100 °C")
 	TEST_ASSERT_EQUAL(PLASMA_MINIMUM_BURN_TEMPERATURE, FIRE_MINIMUM_TEMPERATURE_TO_EXIST, "phoron has two ignition points")
 	var/mob/living/probe = /mob/living

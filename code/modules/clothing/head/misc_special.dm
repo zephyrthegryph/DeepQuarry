@@ -20,7 +20,7 @@
 	item_state_slots = list(slot_r_hand_str = "welding", slot_l_hand_str = "welding")
 	MATERIAL_MIX(list(MAT_STEEL = 3000, MAT_GLASS = 1000))
 	var/up = 0
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	flags_inv = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 	body_parts_covered = HEAD|FACE|EYES
 	actions_types = list(/datum/action/item_action/flip_welding_mask)
@@ -141,7 +141,7 @@
 	var/turf/location = src.loc
 	if(istype(location, /mob/))
 		var/mob/living/carbon/human/M = location
-		if(ishuman(M) && (M.item_is_in_hands(src) || M.head == src))
+		if(ishuman(M) && (M.item_is_in_hands(src) || M.get_equipped_item(SLOT_ID_HEAD) == src))
 			location = M.loc
 
 	if (istype(location, /turf))
@@ -283,7 +283,7 @@
 
 /obj/item/clothing/head/psy_crown/equipped(mob/living/carbon/human/user)
 	..()
-	if(istype(user) && user.head == src && user.is_sentient())
+	if(istype(user) && user.get_equipped_item(SLOT_ID_HEAD) == src && user.is_sentient())
 		START_PROCESSING(SSobj, src)
 		if(flavor_equip)
 			to_chat(user, flavor_equip)
@@ -354,7 +354,7 @@
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = HEAD
 	attack_verb = list("warned", "cautioned", "smashed")
-	armor = list("melee" = 5, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
+	armor_spec = "melee=5"
 
 
 /obj/item/clothing/head/cone

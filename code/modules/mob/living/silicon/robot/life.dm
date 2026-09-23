@@ -241,7 +241,7 @@
 			// TODO: Update to new antagonist system.
 			if(!self.mind.special_role)
 				self.mind.special_role = "traitor"
-				GLOB.traitors.current_antagonists |= self.mind
+				LAZYOR(GLOB.traitors.current_antagonists, self.mind)
 
 	self.update_cell()
 

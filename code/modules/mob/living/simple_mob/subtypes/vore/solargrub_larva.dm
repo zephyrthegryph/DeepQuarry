@@ -89,7 +89,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 		return
 
 	if(istype(self.loc, /obj/machinery))
-		if(self.machine_effect && SSair.times_fired%30) // LINDA renamed current_cycle → times_fired
+		if(self.machine_effect && SSair.times_fired%30)
 			for(var/mob/M in GLOB.player_list)
 				M << self.machine_effect
 		if(prob(10))

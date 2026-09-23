@@ -17,5 +17,7 @@
 
 // /atom/MouseDrop routes through the input router as the Drag action (router.dm).
 
+/// Something dragged onto this. Converted handlers (I7) are interactions with entry = INTERACTION_ENTRY_DRAG, `held` being the dragged atom.
 /atom/proc/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	return
+	var/datum/interaction/answered = run_interaction_entry(user, src, dropping, INTERACTION_ENTRY_DRAG)
+	return answered ? answered.consumes_input : FALSE

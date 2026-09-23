@@ -28,8 +28,14 @@
 	if(Adjacent(user))
 		. += "The screen shows there's [toner ? "[toner]" : "no"] toner left in the printer."
 
-/obj/machinery/photocopier/attack_hand(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/photocopier/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/open_ui,
+		/datum/interaction/machine_item/photocopier_insert,
+		/datum/interaction/machine_item/photocopier_toner,
+		/datum/interaction/machine_item/photocopier_catchall,
+	)
+	..()
 
 /obj/machinery/photocopier/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -144,31 +150,54 @@
 		use_power(active_power_usage)
 	copying = FALSE
 
-/obj/machinery/photocopier/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo) || istype(O, /obj/item/paper_bundle))
-		if(!copyitem)
-			user.drop_item()
-			copyitem = O
-			O.loc = src
-			to_chat(user, span_notice("You insert \the [O] into \the [src]."))
-			playsound(src, "sound/machines/click.ogg", 100, 1)
-			flick(insert_anim, src)
-		else
-			to_chat(user, span_notice("There is already something in \the [src]."))
-	else if(istype(O, /obj/item/toner))
-		if(toner <= 10) //allow replacing when low toner is affecting the print darkness
-			user.drop_item()
-			to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
-			flick("photocopier_toner", src)
-			playsound(loc, 'sound/machines/click.ogg', 50, 1)
-			var/obj/item/toner/T = O
-			toner += T.toner_amount
-			qdel(O)
-		else
-			to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
-			flick("photocopier_notoner", src)
-			playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
-	return
+/datum/interaction/machine_item/photocopier_insert
+	id = "photocopier_insert"
+	name = "Insert"
+	held_type = list(/obj/item/paper, /obj/item/photo, /obj/item/paper_bundle)
+	effect = /obj/machinery/photocopier/proc/interaction_insert
+
+/obj/machinery/photocopier/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
+	if(!copyitem)
+		user.drop_item()
+		copyitem = O
+		O.loc = src
+		to_chat(user, span_notice("You insert \the [O] into \the [src]."))
+		playsound(src, "sound/machines/click.ogg", 100, 1)
+		flick(insert_anim, src)
+	else
+		to_chat(user, span_notice("There is already something in \the [src]."))
+	return TRUE
+
+/datum/interaction/machine_item/photocopier_toner
+	id = "photocopier_toner"
+	name = "Insert toner"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/toner
+	effect = /obj/machinery/photocopier/proc/interaction_insert_toner
+
+/obj/machinery/photocopier/proc/interaction_insert_toner(mob/user, obj/item/toner/O, datum/interaction/interaction)
+	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
+		user.drop_item()
+		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
+		flick("photocopier_toner", src)
+		playsound(loc, 'sound/machines/click.ogg', 50, 1)
+		toner += O.toner_amount
+		qdel(O)
+	else
+		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
+		flick("photocopier_notoner", src)
+		playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
+	return TRUE
+
+/// Old attackby never called ..(): any other item is silently swallowed.
+/datum/interaction/machine_item/photocopier_catchall
+	id = "photocopier_catchall"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/photocopier/proc/interaction_catchall
+
+/obj/machinery/photocopier/proc/interaction_catchall(mob/user, obj/item/O, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/photocopier/screwdriver_act(mob/user, obj/item/tool)
 	return ..()
@@ -211,12 +240,12 @@
 		c.attach_contract_evidence(evidence_id)
 	var/list/temp_overlays = copy.overlays       //Iterates through stamps
 	var/image/img                                //and puts a matching
-	for (var/j = 1, j <= min(temp_overlays.len, copy.ico.len), j++) //gray overlay onto the copy
-		if (findtext(copy.ico[j], "cap") || findtext(copy.ico[j], "cent"))
+	for (var/j = 1, j <= min(temp_overlays.len, length(copy.ico)), j++) //gray overlay onto the copy
+		if (findtext(LAZYACCESS(copy.ico, j), "cap") || findtext(LAZYACCESS(copy.ico, j), "cent"))
 			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-circle")
-		else if (findtext(copy.ico[j], "tal"))
+		else if (findtext(LAZYACCESS(copy.ico, j), "tal"))
 			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-square")
-		else if (findtext(copy.ico[j], "deny"))
+		else if (findtext(LAZYACCESS(copy.ico, j), "deny"))
 			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-x")
 		else
 			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-dots")

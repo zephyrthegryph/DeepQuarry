@@ -147,7 +147,9 @@
 	B.nonhuman_prey_swallow_time = 5
 
 	/* todo
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list()
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list()
 	B.digest_messages_prey = list()
 	*/

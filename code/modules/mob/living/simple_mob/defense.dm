@@ -52,13 +52,13 @@
 				var/real_damage = rand_damage //Let's go ahead and start calculating our damage.
 				var/hit_kind = attack.injury_kind //What the unarmed attack inflicts.
 				real_damage += attack.get_unarmed_damage(attacker) //Add the damage that their special attack has. Some have 0. Some have 15.
-				if(attacker.gloves && attack.is_punch)
-					if(istype(attacker.gloves, /obj/item/clothing/gloves))
-						var/obj/item/clothing/gloves/G = attacker.gloves
+				if(attacker.get_equipped_item(SLOT_ID_GLOVES) && attack.is_punch)
+					if(istype(attacker.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves))
+						var/obj/item/clothing/gloves/G = attacker.get_equipped_item(SLOT_ID_GLOVES)
 						real_damage += G.punch_force
 						hit_kind = G.punch_injury_kind || hit_kind
-					else if(istype(attacker.gloves, /obj/item/clothing/accessory))
-						var/obj/item/clothing/accessory/G = attacker.gloves
+					else if(istype(attacker.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/accessory))
+						var/obj/item/clothing/accessory/G = attacker.get_equipped_item(SLOT_ID_GLOVES)
 						real_damage += G.punch_force
 						hit_kind = G.punch_injury_kind || hit_kind
 					if(HULK in attacker.mutations)
@@ -246,13 +246,6 @@
 // "Poison" (aka what reagents would do if we wanted to deal with those).
 /mob/living/simple_mob/get_poison_protection()
 	return poison_resist
-
-// Armor
-/mob/living/simple_mob/injury_armor(kind, zone = null)
-	. = armor_factor(kind)
-	var/key = injury_armor_key(kind)
-	if(key && armor)
-		. += armor[key] || 0
 
 // Lightning
 /mob/living/simple_mob/lightning_act()

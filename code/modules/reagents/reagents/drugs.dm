@@ -29,6 +29,12 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_ILLDRUG
 
+// Every reagent datum in every holder carries these; share identical message tables (read-only).
+/datum/reagent/drugs/New()
+	high_message_list = intern_list(high_message_list)
+	sober_message_list = intern_list(sober_message_list)
+	return ..()
+
 /datum/reagent/drugs/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return

@@ -4,7 +4,6 @@
 /obj/machinery/processor/monkey
 	name = "monkey processor"
 	desc = "An industrial grinder used to automate the process of monkey recycling."
-	description_info = "Clickdrag dead monkeys to it to insert them. It will make a new monkey cube for every monkey it processes."
 
 /obj/item/circuitboard/processor/monkey
 	name = T_BOARD("monkey processor")
@@ -32,7 +31,7 @@
 	if(istype(AM, /mob/living/carbon/human))
 		var/mob/living/carbon/human/M = AM
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		to_be_processed.Remove(M)
+		LAZYREMOVE(to_be_processed, M)
 		qdel(M)
 		monkeys_recycled++
 		sleep(1 SECOND)

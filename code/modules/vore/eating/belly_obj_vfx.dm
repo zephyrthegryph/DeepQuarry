@@ -38,6 +38,7 @@
 		return
 	living_prey.previewing_belly = src
 	vore_fx(living_prey)
+	belly_reschedule() // A previewed belly keeps its liquid overlay current each cycle.
 
 /obj/belly/proc/clear_preview(mob/living/living_prey)
 	living_prey.previewing_belly = null

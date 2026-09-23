@@ -103,12 +103,12 @@
 
 	if(open)
 		open = FALSE
-		loss = (heating_power / resistance) * 0.5
+		heat_recouple()
 		cooking = TRUE
 		START_MACHINE_PROCESSING(src)
 	else
 		open = TRUE
-		loss = (heating_power / resistance) * 4
+		heat_recouple()
 		//When the oven door is opened, heat is lost MUCH faster and you stop cooking (because the door is open)
 		cooking = FALSE
 		STOP_MACHINE_PROCESSING(src)
@@ -134,14 +134,9 @@
 		return ..()
 
 
-//If an oven's door is open it will lose heat every proc, even if it also gained it
-//But dont call equalize twice in one stack. A return value of -1 from the parent indicates equalize was already called
-/obj/machinery/appliance/cooker/oven/heat_up()
-	.=..()
-	if(open && . != -1)
-		var/turf/T = get_turf(src)
-		if(temperature > T.temperature)
-			equalize_temperature()
+/// An open door loses heat to the room eight times faster (the body's coupling).
+/obj/machinery/appliance/cooker/oven/cooker_conductance()
+	return open ? COOKER_CONDUCTANCE * 8 : COOKER_CONDUCTANCE
 
 /obj/machinery/appliance/cooker/oven/can_remove_items(mob/user, show_warning = TRUE)
 	if(!open)

@@ -56,7 +56,8 @@ SUBSYSTEM_DEF(profiler)
 	)
 	subsystems["material_exposure"] += SSmaterial_services.performance_diagnostics()
 	var/list/material_graphs = list()
-	for(var/datum/powernet/network as anything in SSmachines.powernets)
+	for(var/id in SSmachines.power_regions)
+		var/datum/powernet/network = SSmachines.power_regions[id]
 		var/datum/material_power_graph/graph = network.material_graph
 		if(graph)
 			material_graphs += list(list("cables" = length(network.cables), "vertices" = length(graph.vertices), "core" = length(graph.core_vertices), "edges" = length(graph.edges), "iterations" = graph.iterations, "solve_ms" = graph.solve_ms, "deposit_ms" = graph.deposit_ms, "resistance_ms" = graph.resistance_ms))
@@ -68,38 +69,15 @@ SUBSYSTEM_DEF(profiler)
 			"superconductivity" = SSair.cost_superconductivity,
 			"pipenets" = SSair.cost_pipenets,
 			"rebuilds" = SSair.cost_rebuilds,
-			"callback_finalize" = SSair.cost_finalize,
+			"gas_tick" = SSair.cost_turfs,
+			"gas_events" = SSair.cost_gas_events,
 		),
-		"rust_worker_last" = list(
-			"generation" = SSair.async_generation,
-			"total_ms" = SSair.async_compute_cost,
-			"selection_ms" = SSair.async_selection_cost,
-			"snapshot_ms" = SSair.async_snapshot_cost,
-			"fdm_ms" = SSair.async_fdm_cost,
-			"equalize_ms" = SSair.async_equalize_cost,
-			"publication_ms" = SSair.async_publication_cost,
-			"post_process_ms" = SSair.cost_post_process,
-			"seed_limit" = SSair.async_seed_limit,
-			"cancelled" = SSair.async_cancelled,
-			"pressure_urgency_kpa" = SSair.async_pressure_urgency,
-			"active_turfs" = SSair.async_active_turfs,
-			"seed_turfs" = SSair.async_seed_turfs,
-			"retained_turfs" = SSair.async_retained_turfs,
-			"retained_temperature_turfs" = SSair.async_retained_temperature_turfs,
-			"retained_mole_turfs" = SSair.async_retained_mole_turfs,
-			"pending_turfs" = SSair.async_pending_turfs,
-			"pending_urgent_turfs" = SSair.async_pending_urgent_turfs,
-			"pending_fresh_turfs" = SSair.async_pending_fresh_turfs,
-			"pending_frontier_turfs" = SSair.async_pending_frontier_turfs,
-			"snapshot_mixtures" = SSair.async_snapshot_mixtures,
-			"published_mixtures" = SSair.async_published_mixtures,
-			"rejected_generations" = SSair.async_rejected_generations,
-			"conservation_rejections" = SSair.async_conservation_rejections,
-			"closed_components" = SSair.async_closed_components,
-			"conservation_violation_components" = SSair.async_conservation_violation_components,
-			"conservation_worst_component_mixtures" = SSair.async_conservation_worst_component_mixtures,
-			"conservation_max_gas_delta" = SSair.async_conservation_max_gas_delta,
-			"conservation_max_energy_delta" = SSair.async_conservation_max_energy_delta,
+		"gas_field" = vg_gas_stats(),
+		"gas_last_fire" = list(
+			"events" = SSair.gas_events_last,
+			"reactions" = SSair.gas_reactions_last,
+			"visuals" = SSair.gas_visuals_last,
+			"pressure_pushes" = SSair.gas_pressure_last,
 		),
 		"queues" = list(
 			"hotspots" = length(SSair.hotspots),
@@ -113,8 +91,8 @@ SUBSYSTEM_DEF(profiler)
 		"stage_average_ms" = list("machinery" = SSmachines.cost_machinery, "powernets" = SSmachines.cost_powernets, "power_objects" = SSmachines.cost_power_objects),
 		"stage_last_logical_run_ms" = list("machinery" = SSmachines.last_cost_machinery, "powernets" = SSmachines.last_cost_powernets, "power_objects" = SSmachines.last_cost_power_objects),
 		"pump_commit" = list("active_ms" = SSmachines.last_pump_commit_ms, "wall_ms" = SSmachines.last_pump_commit_wall_ms, "suspended_ms" = SSmachines.last_pump_commit_suspended_ms, "operations" = SSmachines.last_pump_commit_operations, "turfs" = SSmachines.last_pump_commit_turfs),
-		"topology" = list("jobs" = length(SSmachines.powernet_topology_jobs), "work" = SSmachines.powernet_topology_last_work, "active_ms" = SSmachines.powernet_topology_last_ms),
-		"counts" = list("processing" = length(SSmachines.processing_machines), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.powernets), "active_powernets" = length(SSmachines.active_powernets), "power_objects" = length(SSmachines.powerobjs), "hibernating_vents" = length(SSmachines.hibernating_vents)),
+		"power" = list("events" = SSmachines.power_last_events, "edits_sent" = SSmachines.power_edits_sent),
+		"counts" = list("processing" = length(SSmachines.processing_machines), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.power_regions), "power_objects" = length(SSmachines.powerobjs), "hibernating_vents" = length(SSmachines.hibernating_vents)),
 		"gas_wakes" = list("dirty" = SSmachines.gas_dirty_last, "subscribers_checked" = SSmachines.gas_wake_subscribers_last, "scan_ms" = SSmachines.gas_wake_scan_last_ms, "woken" = SSmachines.gas_woken_last, "dead" = SSmachines.gas_dead_last, "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = length(GLOB.mob_list), "current" = length(SSmobs.currentrun), "slept" = SSmobs.slept_mobs, "deaths_pending" = length(SSmobs.death_list)))

@@ -22,14 +22,7 @@
 	attacktext = list("headbutted")
 	minbodytemp = 80
 	vore_icons = SA_ICON_LIVING
-	armor = list(
-				"melee" = 98,
-				"bullet" = 0,
-				"laser" = -50,
-				"energy" = -50,
-				"bomb" = 0,
-				"bio" = 0,
-				"rad" = 100) //Relatively harmless but agonizing to kill with melee.
+	armor_spec = "melee=98;laser=-50;energy=-50;rad=100" //Relatively harmless but agonizing to kill with melee.
 
 	glow_toggle = TRUE
 	glow_range = 1.3 //This seems to be the minimum range which makes glow visible.
@@ -73,6 +66,7 @@
 	B.contamination_flavor = "Wet"
 
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The toothy walls scrape and grind against your body.",
 		"The humid air feels thick and heavy, stinging faintly with each breath.",

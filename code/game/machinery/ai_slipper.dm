@@ -33,14 +33,27 @@
 	src.uses = uses
 	power_change()
 
-// TGUI migration. attack_hand opens AiSlipper.tsx; the
-// Topic-driven toggle/fire actions move to tgui_act. attackby keeps the
-// ID-swipe lock/unlock behavior and just closes the UI on lock.
-/obj/machinery/ai_slipper/attackby(obj/item/W, mob/user)
+// TGUI migration. The old attack_hand opened AiSlipper.tsx; the
+// Topic-driven toggle/fire actions move to tgui_act. The old attackby kept the
+// ID-swipe lock/unlock behavior and just closed the UI on lock.
+/obj/machinery/ai_slipper/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/ai_slipper_toggle_lock,
+		/datum/interaction/machine_hand/ungated/ai_slipper_use,
+	)
+	..()
+
+/datum/interaction/machine_item/ai_slipper_toggle_lock
+	id = "ai_slipper_toggle_lock"
+	name = "Swipe ID"
+	effect = /obj/machinery/ai_slipper/proc/interaction_toggle_lock
+
+/obj/machinery/ai_slipper/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	if(istype(user, /mob/living/silicon))
-		return attack_hand(user)
+		attack_hand(user)
+		return TRUE
 	if(allowed(user))
 		locked = !locked
 		to_chat(user, "You [ locked ? "lock" : "unlock"] the device.")
@@ -50,17 +63,24 @@
 			attack_hand(user)
 	else
 		to_chat(user, span_warning("Access denied."))
-	return
+	return TRUE
 
-/obj/machinery/ai_slipper/attack_hand(mob/user as mob)
+/datum/interaction/machine_hand/ungated/ai_slipper_use
+	id = "ai_slipper_use"
+	name = "Use"
+	requires = list()
+	effect = /obj/machinery/ai_slipper/proc/interaction_use
+
+/obj/machinery/ai_slipper/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	if(get_dist(src, user) > 1 && !istype(user, /mob/living/silicon))
 		to_chat(user, "Too far away.")
 		user.unset_machine()
 		SStgui.close_uis(src)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/ai_slipper/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

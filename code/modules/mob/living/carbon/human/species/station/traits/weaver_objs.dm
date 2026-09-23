@@ -23,9 +23,10 @@
 	if(Proj.get_structure_damage())
 		qdel(src)
 
-/obj/effect/weaversilk/fire_act(exposed_temperature, exposed_volume)
+/// Heat behaviour rule: silk burns away and feeds the fire.
+/obj/effect/weaversilk/proc/rule_burn_away(datum/rule/rule)
 	var/turf/T = get_turf(src)
-	T?.feed_lingering_fire(0.1) // Lingering fire, feeding fires
+	T?.feed_lingering_fire(0.1)
 	qdel(src)
 
 /obj/effect/weaversilk/attack_generic(mob/user as mob, damage)
@@ -113,7 +114,6 @@
 			trap_active = FALSE
 			desc += " Actually, it looks like it's been all spent."
 	..()
-
 
 
 /obj/effect/weaversilk/trap/MouseDrop_T(atom/movable/AM,mob/user)

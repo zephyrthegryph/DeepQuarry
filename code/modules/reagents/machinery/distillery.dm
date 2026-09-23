@@ -22,8 +22,6 @@
 	var/max_temp = T0C + 300
 	var/min_temp = T0C - 10
 
-	var/current_temp = T20C
-
 	var/use_atmos = FALSE	// If true, this machine will use the temperature of the connected gas mixtures as the source of heat, rather than its internal controls.
 
 	var/static/radial_examine = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_examine")
@@ -109,7 +107,7 @@
 		. += span_notice("\The [src]'s gauges read:")
 		if(!use_atmos)
 			. += span_notice("- Target Temperature:") + span_warning("[target_temp]")
-		. += span_notice("- Temperature:") + span_warning("[current_temp]")
+		. += span_notice("- Temperature:") + span_warning("[round(get_temperature(), 0.01)]")
 
 		if(InputBeaker)
 			if(InputBeaker.reagents.reagent_list.len)
@@ -128,11 +126,7 @@
 			else
 				. += span_notice("\The [src]'s output beaker is empty!")
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/verb/toggle_power(mob/user = usr)
-	set name = "Toggle Distillery Heating"
-	set category = "Object"
-	set src in view(1)
-
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_power(mob/user = usr)
 	if(powered())
 		on = !on
 		START_MACHINE_PROCESSING(src)
@@ -140,11 +134,7 @@
 	else
 		to_chat(user, span_notice(" Nothing happens."))
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/verb/toggle_mixing(mob/user = usr)
-	set name = "Start Distillery Mixing"
-	set category = "Object"
-	set src in view(1)
-
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_mixing(mob/user = usr)
 	to_chat(user, span_notice("You press \the [src]'s chamber agitator button."))
 	if(on)
 		visible_message(span_infoplain(span_bold("\The [src]") + " rattles to life."))
@@ -153,7 +143,39 @@
 		spawn(1 SECOND)
 			to_chat(user, span_notice("Nothing happens.."))
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/attack_hand(mob/user)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_verb/distillery_toggle_power,
+		/datum/interaction/machine_verb/distillery_toggle_mixing,
+		/datum/interaction/machine_item/distillery_install_beaker,
+		/datum/interaction/machine_hand/ungated/distillery_radial,
+	)
+	..()
+
+/datum/interaction/machine_verb/distillery_toggle_power
+	id = "distillery_toggle_power"
+	name = "Toggle Distillery Heating"
+	effect = /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_power
+
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_power(mob/user, obj/item/held, datum/interaction/interaction)
+	toggle_power(user)
+	return TRUE
+
+/datum/interaction/machine_verb/distillery_toggle_mixing
+	id = "distillery_toggle_mixing"
+	name = "Start Distillery Mixing"
+	effect = /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_mixing
+
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_mixing(mob/user, obj/item/held, datum/interaction/interaction)
+	toggle_mixing(user)
+	return TRUE
+
+/datum/interaction/machine_hand/ungated/distillery_radial
+	id = "distillery_radial"
+	name = "Use"
+	effect = /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_radial
+
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_radial(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/options = list()
 	options["examine"] = radial_examine
 	options["use"] = radial_use
@@ -169,7 +191,7 @@
 		options["adjust temp"] = radial_adjust_temp
 
 	if(length(options) < 1)
-		return
+		return TRUE
 
 	var/list/choice = list()
 	if(length(options) == 1)
@@ -189,7 +211,7 @@
 			to_chat(user, span_notice("\The [src]'s gauges read:"))
 			if(!use_atmos)
 				to_chat(user, span_notice("- Target Temperature:") + span_warning("[target_temp]"))
-			to_chat(user, span_notice("- Temperature:") + span_warning("[current_temp]"))
+			to_chat(user, span_notice("- Temperature:") + span_warning("[round(get_temperature(), 0.01)]"))
 
 		if("pulse agitator")
 			toggle_mixing(user)
@@ -210,18 +232,28 @@
 				target_temp = new_temp
 
 	update_icon()
+	return TRUE
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/attackby(obj/item/W as obj, mob/user as mob)
+/datum/interaction/machine_item/distillery_install_beaker
+	id = "distillery_install_beaker"
+	name = "Install beaker"
+	held_type = /obj/item/reagent_containers/glass
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/has_free_beaker_slot, null))
+	effect = /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_install_beaker
+
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/has_free_beaker_slot(mob/actor, atom/target, obj/item/held)
+	return !InputBeaker || !OutputBeaker
+
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_install_beaker(mob/user, obj/item/W, datum/interaction/interaction)
 	var/list/options = list()
-	if(istype(W, /obj/item/reagent_containers/glass))
-		if(!InputBeaker)
-			options["install input"] = radial_install_input
-		if(!OutputBeaker)
-			options["install output"] = radial_install_output
+	if(!InputBeaker)
+		options["install input"] = radial_install_input
+	if(!OutputBeaker)
+		options["install output"] = radial_install_output
 
 	if(!options || !options.len)
 		update_icon()
-		return ..()
+		return FALSE
 
 	var/list/choice = list()
 	if(length(options) == 1)
@@ -246,6 +278,7 @@
 				OutputBeaker = W
 
 	update_icon()
+	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/use_power(amount, chan = -1)
 	last_power_draw = amount
@@ -290,38 +323,28 @@
 	if(!powered())
 		on = FALSE
 
+	var/current_temp = get_temperature()
 	if(!on || (use_atmos && (!connected_port || (avg_pressure / avg_temp) < (1000 / T20C)))) // This mostly respects gas laws by ignoring volume but it should make it usable at low temps
-		current_temp = round((current_temp + T20C) / 2)
+		distillery_heat(0, null)
 
 	else if(on)
 		if(!use_atmos)
-			if(current_temp != round(target_temp))
-				// Some horrible bastardized attempt at approximating the values of a logistic function, bounded by (max_temp, target_temp, min_temp)
-				// So we can attempt to estimate the change in temperature for this process() step
-
-				// Apply inverse of the logistic function to fetch our x value
-				var/x = -1 * log((current_temp < target_temp ? (target_temp - min_temp) / (current_temp - min_temp) : (max_temp - target_temp) / (max_temp - current_temp)) - 1)
-				if(!x)
-					x = 0 // Keep null from propagating into the temp
-
-				// Apply the derivative of the logistic function to get the slope
-				var/dy = (NUM_E ** (-1 * x)) / ((1 + (NUM_E ** (-1 * x))) ** 2)
-
-				// Compute temperature diff, being farther from the target should result in larger steps
-				// IMPORTANT: If you want to tweak how quickly this changes, tweak this *10!
-				// As of initial testing, a *10 gives ~5-6 minutes to go from room temp to 500C (+/-0.5C)
-				var/temp_diff = (current_temp < target_temp ? dy * 10 * target_temp / current_temp : dy * -10 * current_temp / target_temp)
-
-				current_temp = CLAMP(round((current_temp + temp_diff), 0.01), min_temp, max_temp)
+			// Heater/cooler: a heat source on the distillery's body driven
+			// towards the target, at most power_rating watts either way.
+			var/target = clamp(target_temp, min_temp, max_temp)
+			distillery_heat(clamp((target - current_temp) * DISTILLERY_THERMOSTAT_GAIN, -power_rating, power_rating), null)
+			if(abs(target - current_temp) > 0.5)
 				use_power(power_rating * CELLRATE)
-
-				if(target_temp == round(current_temp, 1.0))
-					current_temp = target_temp // Hard set it so we don't need to worry about exact decimals any more, after we've been keeping track of it all this time
-					playsound(src, 'sound/machines/ping.ogg', 50, 0)
-					src.visible_message(span_infoplain(span_bold("\The [src]") + " pings as it reaches the target temperature."))
+				distillery_pinged = FALSE
+			else if(!distillery_pinged)
+				distillery_pinged = TRUE
+				playsound(src, 'sound/machines/ping.ogg', 50, 0)
+				src.visible_message(span_infoplain(span_bold("\The [src]") + " pings as it reaches the target temperature."))
 
 		else if(connected_port && avg_pressure > 1000)
-			current_temp = round((current_temp + avg_temp) / 2)
+			// Heat exchanger: the body couples to the port's gas, conserving energy.
+			var/datum/pipeline/line = connected_port.network.line_members[1]
+			distillery_heat(0, line?.air)
 		else if(!run_pump)
 			visible_message(span_notice("\The [src]'s motors wind down."))
 			on = FALSE
@@ -334,9 +357,10 @@
 			reagents.trans_to_holder(OutputBeaker.reagents, amount = rand(1, 5))
 
 	update_icon()
-	if(!on && abs(current_temp - T20C) <= 0.5)
-		current_temp = T20C
-		return PROCESS_KILL
+	if(!on)
+		distillery_heat(0, null)
+		if(isnull(heat_body))
+			return PROCESS_KILL
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/update_icon()
 	..()
@@ -351,9 +375,9 @@
 	if(on)
 		if(OutputBeaker && OutputBeaker.reagents.total_volume < OutputBeaker.reagents.maximum_volume)
 			add_overlay(overlay_dumping)
-		else if(current_temp == round(target_temp))
+		else if(abs(get_temperature() - target_temp) <= 0.5)
 			add_overlay(overlay_ready)
-		else if(current_temp < target_temp)
+		else if(get_temperature() < target_temp)
 			add_overlay(overlay_heating)
 		else
 			add_overlay(overlay_cooling)
@@ -382,3 +406,32 @@
 		if(our_port.network)
 			return our_port.network.gases[1]
 	. = ..()
+
+
+/obj/machinery/portable_atmospherics/powered/reagent_distillery
+	/// Pinged at the target since it last left it.
+	var/tmp/distillery_pinged = FALSE
+
+/// Sets the distillery's heat source (W; negative cools) and its coupling to
+/// a gas mixture (null: none). Its body is kept while either is active.
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/distillery_heat(watts, datum/gas_mixture/gas)
+	if(!watts && !gas)
+		if(!isnull(heat_body))
+			vg_heat_body_power(heat_body, 0)
+			vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
+			vg_heat_body_keep(heat_body, FALSE)
+		return
+	if(!create_heat_body(TRUE))
+		return
+	vg_heat_body_keep(heat_body, TRUE)
+	vg_heat_body_power(heat_body, watts)
+	if(gas)
+		vg_heat_body_couple(heat_body, 1, HEAT_TARGET_MIXTURE, gas, DISTILLERY_GAS_CONDUCTANCE)
+	else
+		vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
+
+/// The distillery's body carries the reagents it holds.
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/thermal_properties()
+	. = ..()
+	if(reagents)
+		.[THERMAL_CAPACITY] += reagents.heat_capacity()

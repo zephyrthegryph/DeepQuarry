@@ -79,7 +79,20 @@
 		if(!turn_on(1))
 			to_chat(user, "You try to turn on \the [src] but it does not work.")
 
-/obj/machinery/floodlight/attack_hand(mob/user as mob)
+/obj/machinery/floodlight/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/floodlight_item,
+		/datum/interaction/machine_hand/ungated/floodlight_use,
+	)
+	..()
+
+/// Old attack_hand, which never called ..(): no gate.
+/datum/interaction/machine_hand/ungated/floodlight_use
+	id = "floodlight_use"
+	name = "Use"
+	effect = /obj/machinery/floodlight/proc/interaction_use
+
+/obj/machinery/floodlight/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(open && cell)
 		if(ishuman(user))
 			if(!user.get_active_hand())
@@ -96,7 +109,7 @@
 		set_light(0)
 		to_chat(user, "You remove the power cell")
 		update_icon()
-		return
+		return TRUE
 
 	if(on)
 		turn_off(1)
@@ -105,8 +118,19 @@
 			to_chat(user, "You try to turn on \the [src] but it does not work.")
 
 	update_icon()
+	return TRUE
 
-/obj/machinery/floodlight/attackby(obj/item/W as obj, mob/user as mob)
+/**
+ * Old attackby: never called `..()`, and `update_icon()` ran regardless of the item type
+ * (outside the `istype` check), so it's a single interaction for any item, not just cells.
+ */
+/datum/interaction/machine_item/floodlight_item
+	id = "floodlight_item"
+	name = "Use item"
+	held_type = /obj/item
+	effect = /obj/machinery/floodlight/proc/interaction_item
+
+/obj/machinery/floodlight/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))
 		if(open)
 			if(cell)
@@ -117,6 +141,7 @@
 				cell = W
 				to_chat(user, "You insert the power cell.")
 	update_icon()
+	return TRUE
 
 /obj/machinery/floodlight/screwdriver_act(mob/user, obj/item/tool)
 	if(open)

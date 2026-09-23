@@ -63,15 +63,15 @@
 				target.visible_message(span_danger("[target] looks momentarily disoriented."), span_danger("You see stars."))
 				target.apply_effect(attack_damage*2, EYE_BLUR, armour)
 			if(BP_L_ARM, BP_L_HAND)
-				if (target.l_hand)
+				if (target.get_equipped_item(SLOT_ID_HAND_L))
 					// Disarm left hand
 					//Urist McAssistant dropped the macguffin with a scream just sounds odd.
-					target.visible_message(span_danger("\The [target.l_hand] was knocked right out of [target]'s grasp!"))
+					target.visible_message(span_danger("\The [target.get_equipped_item(SLOT_ID_HAND_L)] was knocked right out of [target]'s grasp!"))
 					target.drop_l_hand()
 			if(BP_R_ARM, BP_R_HAND)
-				if (target.r_hand)
+				if (target.get_equipped_item(SLOT_ID_HAND_R))
 					// Disarm right hand
-					target.visible_message(span_danger("\The [target.r_hand] was knocked right out of [target]'s grasp!"))
+					target.visible_message(span_danger("\The [target.get_equipped_item(SLOT_ID_HAND_R)] was knocked right out of [target]'s grasp!"))
 					target.drop_r_hand()
 			if(BP_TORSO)
 				if(!target.lying)
@@ -199,7 +199,7 @@
 /datum/unarmed_attack/kick/event1
 
 /datum/unarmed_attack/kick/is_usable(mob/living/carbon/human/user, mob/living/carbon/human/target, zone)
-	if(user.legcuffed || user.buckled)
+	if(user.get_equipped_item(SLOT_ID_LEGCUFFED) || user.buckled)
 		return FALSE
 
 	if(!(zone in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_GROIN)))
@@ -216,7 +216,7 @@
 	return FALSE
 
 /datum/unarmed_attack/kick/get_unarmed_damage(mob/living/carbon/human/user)
-	var/obj/item/clothing/shoes = user.shoes
+	var/obj/item/clothing/shoes = user.get_equipped_item(SLOT_ID_SHOES)
 	if(!istype(shoes))
 		return user.species.unarmed_bonus + damage
 	if(HAS_TRAIT(user, TRAIT_NONLETHAL_BLOWS))//don't add extra species strength when pulling punches
@@ -245,7 +245,7 @@
 
 /datum/unarmed_attack/stomp/is_usable(mob/living/carbon/human/user, mob/living/carbon/human/target, zone)
 
-	if (user.legcuffed || user.buckled)
+	if (user.get_equipped_item(SLOT_ID_LEGCUFFED) || user.buckled)
 		return FALSE
 
 	if(!istype(target))
@@ -265,7 +265,7 @@
 		return FALSE
 
 /datum/unarmed_attack/stomp/get_unarmed_damage(mob/living/carbon/human/user)
-	var/obj/item/clothing/shoes = user.shoes
+	var/obj/item/clothing/shoes = user.get_equipped_item(SLOT_ID_SHOES)
 	if(HAS_TRAIT(user, TRAIT_NONLETHAL_BLOWS))//don't add extra species strength when pulling punches
 		return damage + (shoes ? shoes.force : 0)
 	return user.species.unarmed_bonus + damage + (shoes ? shoes.force : 0)
@@ -273,7 +273,7 @@
 /datum/unarmed_attack/stomp/show_attack(mob/living/carbon/human/user, mob/living/carbon/human/target, zone, attack_damage)
 	var/obj/item/organ/external/affecting = target.get_organ(zone)
 	var/organ = affecting.name
-	var/obj/item/clothing/shoes = user.shoes
+	var/obj/item/clothing/shoes = user.get_equipped_item(SLOT_ID_SHOES)
 
 	attack_damage = CLAMP(attack_damage, 1, 5)
 

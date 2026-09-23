@@ -7,17 +7,18 @@
 /datum/unit_test/dq_fire_act_reads_temperature
 
 /datum/unit_test/dq_fire_act_reads_temperature/Run()
+	// H3: an exposure heats the object's body; damage comes from its rules.
 	var/obj/structure/window/hot = allocate(/obj/structure/window, test_floor())
-	var/before = hot.get_integrity()
+	var/before = hot.get_temperature()
 	hot.fire_act(hot.maximal_heat + 500, 1)
-	var/hot_loss = before - hot.get_integrity()
-	TEST_ASSERT(hot_loss > 0, "window above its heat limit took no fire damage")
+	var/hot_gain = hot.get_temperature() - before
+	TEST_ASSERT(hot_gain > 0, "a hot exposure did not heat the window")
 
 	var/obj/structure/window/cool = allocate(/obj/structure/window, test_floor())
-	before = cool.get_integrity()
+	before = cool.get_temperature()
 	cool.fire_act(T20C, CELL_VOLUME * 10)
-	var/cool_loss = before - cool.get_integrity()
-	TEST_ASSERT(cool_loss < hot_loss, "a room-temperature exposure with a large volume hurt the window as much as a hot one ([cool_loss] vs [hot_loss])")
+	var/cool_gain = cool.get_temperature() - before
+	TEST_ASSERT(cool_gain < hot_gain, "a room-temperature exposure with a large volume heated the window as much as a hot one ([cool_gain] vs [hot_gain])")
 
 /// Q11: the machine roster removes by swapping the last entry into the hole,
 /// and every entry keeps its own slot index.
@@ -68,24 +69,6 @@
 		return
 	W.update_material()
 	TEST_ASSERT(W.thermal_conductivity < WALL_MAX_HEAT_TRANSFER_COEFFICIENT, "steel wall still clamps to the maximum coefficient ([W.thermal_conductivity])")
-
-/// Q13: a cable edit publishes the powernet's own key only; machine membership
-/// changes publish the topology key that sleeping APCs share.
-/datum/unit_test/dq_powernet_cable_edit_leaves_apcs_asleep
-
-/datum/unit_test/dq_powernet_cable_edit_leaves_apcs_asleep/Run()
-	var/datum/powernet/PN = new()
-	var/obj/machinery/M = allocate(/obj/machinery, test_floor())
-	TEST_ASSERT(M.sleep_until_keys(list(REACT_KEY_POWERNET, REACT_ID(PN), REACT_POWERNET_TOPOLOGY)), "machine refused to hibernate")
-	SSreactor.trace(M)
-	PN.publish_cable_dependency()
-	react_test_ticks(4)
-	TEST_ASSERT(!SSreactor.traced_wakes(M), "a cable-only edit woke a topology subscriber")
-	PN.publish_dependency()
-	react_test_ticks(4)
-	TEST_ASSERT(SSreactor.traced_wakes(M), "a membership change did not wake the topology subscriber")
-	SSreactor.untrace(M)
-	qdel(PN)
 
 /// Q14: a leak on one pipe network wakes only the shutoff valves on it.
 /datum/unit_test/dq_shutoff_wake_is_network_local

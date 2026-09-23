@@ -8,7 +8,7 @@
 	var/feeling_type = 1 //If we're good, bad, or cannibalistic feelings. Defaults to good. Changed in init.
 	var/list/messages = list()
 
-	var/list/drastic_messages = list()
+	var/list/drastic_messages
 
 	effect_state = "summoning"
 	effect_color = "#69008f"

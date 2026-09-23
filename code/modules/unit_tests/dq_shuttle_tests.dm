@@ -109,13 +109,8 @@
 	return "turfs=[turf_count], total=[total_moles], oxygen=[oxygen], location=[shuttle.current_location?.landmark_tag] z=[shuttle.current_location?.z]"
 
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/wait_for_atmos(cycles)
-	var/target_fires = SSair.times_fired + cycles
-	var/deadline = world.time + 10 SECONDS
-	while(SSair.times_fired < target_fires)
-		if(world.time >= deadline)
-			TEST_FAIL("SSair did not advance [cycles] cycles before the shuttle-test deadline")
-			return FALSE
-		sleep(max(SSair.wait, 1))
+	// Deterministic gas frames (the test hook), no wall-clock wait.
+	SSair.run_gas_frames(cycles)
 	return TRUE
 
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/find_space_leak(datum/shuttle/shuttle)
@@ -186,25 +181,14 @@
 		if(next_landmark == shuttle.landmark_offsite)
 			var/leak = find_space_leak(shuttle)
 			TEST_ASSERT(!leak, "Ferry-Demo pressure volume was connected to space after move [hop]: [leak]")
-		// Up to five SSair fires, as before, but stop once the Rust worker has
-		// published nothing for two fires with no rebuild queued: nothing is
-		// pending, so later fires cannot move gas (see
-		// dq_unit_test_wait_air_until_quiescent). A leak keeps the worker
-		// publishing and uses all five.
-		var/last_generation = SSair.async_generation
-		var/idle_cycles = 0
+		// Five gas frames, run deterministically; a leak would drain the
+		// shuttle within them.
 		for(var/cycle in 1 to 5)
-			wait_for_atmos(1)
+			SSair.run_gas_frames(1)
 			for(var/area/cycle_area as anything in shuttle.shuttle_area)
 				for(var/turf/open/cycle_turf in cycle_area)
 					if(!cycle_turf.blocks_air && cycle_turf.air)
 						TEST_ASSERT(vg_topology_matches(cycle_turf), "Rust/DM atmos topology diverged after shuttle move [hop], atmos cycle [cycle], at [cycle_turf.x],[cycle_turf.y],[cycle_turf.z]")
-			if(SSair.async_generation == last_generation)
-				if(++idle_cycles >= 2)
-					break
-			else
-				idle_cycles = 0
-				last_generation = SSair.async_generation
 		var/hop_oxygen = measure_oxygen(shuttle)
 		if(next_landmark == shuttle.landmark_offsite)
 			TEST_ASSERT(hop_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen after returning offsite on repeated move [hop]: [baseline] -> [hop_oxygen]; [gas_diagnostics(shuttle)]")
@@ -219,13 +203,8 @@
 				. += T.air.get_moles(/datum/gas/oxygen)
 
 /datum/unit_test/dq_arrivals_shuttle_preserves_air/proc/wait_for_atmos(cycles)
-	var/target_fires = SSair.times_fired + cycles
-	var/deadline = world.time + 10 SECONDS
-	while(SSair.times_fired < target_fires)
-		if(world.time >= deadline)
-			TEST_FAIL("SSair did not advance [cycles] cycles before the arrivals-test deadline")
-			return FALSE
-		sleep(max(SSair.wait, 1))
+	// Deterministic gas frames (the test hook), no wall-clock wait.
+	SSair.run_gas_frames(cycles)
 	return TRUE
 
 /datum/unit_test/dq_arrivals_shuttle_preserves_air/Run()

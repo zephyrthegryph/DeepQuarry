@@ -43,14 +43,7 @@
 
 	loot_list = list(/obj/random/underdark/uncertain)
 
-	armor = list(
-		"melee" = 1000,
-		"bullet" = 1000,
-		"laser" = 1000,
-		"energy" = 1000,
-		"bomb" = 1000,
-		"bio" = 1000,
-		"rad" = 1000)
+	armor_spec = "melee=1000;bullet=1000;laser=1000;energy=1000;bomb=1000;bio=1000;rad=1000"
 
 	movement_cooldown = 5
 	copy_prefs_to_mob = FALSE
@@ -664,16 +657,16 @@
 /area/redgate/stardog/flesh_abyss/EvalValidSpawnTurfs()
 	for(var/turf/simulated/floor/F in src)
 		if(istype(F, /turf/simulated/floor/flesh))
-			valid_spawn_turfs |= F
+			LAZYOR(valid_spawn_turfs, F)
 
 		if(include_enzyme)
 			if(istype(F, /turf/simulated/floor/water/digestive_enzymes))
-				valid_spawn_turfs |= F
+				LAZYOR(valid_spawn_turfs, F)
 
 /area/redgate/stardog/flesh_abyss/spawn_flora_on_turf()
 	if(!spawnstuff)
 		return
-	if(!valid_flora.len)
+	if(!length(valid_flora))
 		log_mapping("[src] does not have a set valid flora list!")
 		return TRUE
 
@@ -681,15 +674,15 @@
 	var/turf/Turf
 	var/howmany = rand(0,floracountmax)
 	for(var/floracount = 1 to howmany)
-		F = pickweight(valid_flora)
-		Turf = pick(valid_spawn_turfs)
+		F = pickweight(valid_flora || list())
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			new F(Turf)
 
 /area/redgate/stardog/flesh_abyss/spawn_mob_on_turf()
 	if(!spawnstuff)
 		return
-	if(!valid_mobs.len)
+	if(!length(valid_mobs))
 		log_mapping("[src] does not have a set valid mobs list!")
 		return TRUE
 
@@ -697,18 +690,18 @@
 	var/turf/Turf
 	if(semirandom)
 		for(var/groupscount = 1 to (semirandom_groups))
-			var/ourgroup = pickweight(valid_mobs)
+			var/ourgroup = pickweight(valid_mobs || list())
 			var/goodnum = rand(semirandom_group_min, semirandom_group_max)
 			for(var/mobscount = 1 to (goodnum))
 				M = pickweight(ourgroup)
-				Turf = pick(valid_spawn_turfs)
+				Turf = DEFAULTPICK(valid_spawn_turfs, null)
 				if(!Turf.check_density())
 					var/mob/ourmob = new M(Turf)
 					adjust_mob(ourmob)
 	else
 		for(var/mobscount = 1 to mobcountmax)
-			M = pickweight(valid_mobs)
-			Turf = pick(valid_spawn_turfs)
+			M = pickweight(valid_mobs || list())
+			Turf = DEFAULTPICK(valid_spawn_turfs, null)
 			if(!Turf.check_density())
 				var/mob/ourmob = new M(Turf)
 				adjust_mob(ourmob)
@@ -716,7 +709,7 @@
 /area/redgate/stardog/flesh_abyss/proc/spawn_mob()
 	if(!spawnstuff)
 		return
-	if(!valid_mobs.len)
+	if(!length(valid_mobs))
 		log_mapping("[src] does not have a set valid mobs list!")
 		return
 
@@ -726,8 +719,8 @@
 	var/turf/Turf
 	var/goodnum = rand(semirandom_group_min, semirandom_group_max)
 	for(var/mobscount = 1 to goodnum)
-		M = pickweight(pickweight(valid_mobs))
-		Turf = pick(valid_spawn_turfs)
+		M = pickweight(pickweight(valid_mobs || list()))
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			var/mob/ourmob = new M(Turf)
 			adjust_mob(ourmob)
@@ -735,7 +728,7 @@
 /area/redgate/stardog/flesh_abyss/proc/spawn_ore()
 	if(!spawnstuff)
 		return
-	if(!valid_flora.len)
+	if(!length(valid_flora))
 		log_mapping("[src] does not have a set valid flora list!")
 		return
 
@@ -743,8 +736,8 @@
 	var/turf/Turf
 	var/howmany = rand(1,floracountmax)
 	for(var/ore = 1 to howmany)
-		F = pickweight(valid_flora)
-		Turf = pick(valid_spawn_turfs)
+		F = pickweight(valid_flora || list())
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			new F(Turf)
 
@@ -764,7 +757,7 @@
 		if(prob(treasure_chance))
 			continue
 		F = pickweight(valid_treasure)
-		Turf = pick(valid_spawn_turfs)
+		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			new F(Turf)
 
@@ -879,8 +872,20 @@
 	pixel_y = -16
 	clicksound = 'sound/vore/squish1.ogg'
 
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/attackby(I, user)
-	return
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/dog_eye_swallow,
+	)
+	..()
+
+/// The old attackby did nothing at all with any item, and never called ..(): swallow it silently.
+/datum/interaction/machine_item/dog_eye_swallow
+	id = "dog_eye_swallow"
+	name = "Use"
+	effect = /obj/machinery/computer/ship/navigation/telescreen/dog_eye/proc/interaction_dog_eye_swallow
+
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/proc/interaction_dog_eye_swallow(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/update_icon()
 	. = ..()
@@ -937,7 +942,7 @@
 	name = "eye"
 	icon_state = "bluwhicir"
 
-	var/list/our_eyes = list()
+	var/list/our_eyes
 
 
 /area/redgate/stardog/eyes/Entered(mob/M)
@@ -1000,7 +1005,7 @@
 	. = ..()
 	var/area/redgate/stardog/eyes/e = get_area(src)
 	if(istype(e,/area/redgate/stardog/eyes))
-		e.our_eyes |= src
+		LAZYOR(e.our_eyes, src)
 
 /obj/effect/dog_teleporter	//look, I could have just used a bump teleporter, and I don't have an excuse, also everyone is going to be angry but it hurts too much for me to care right now, hopefully I will finish this before I start caring
 	name = "mouth"

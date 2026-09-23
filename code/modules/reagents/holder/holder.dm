@@ -81,7 +81,20 @@
 			del_reagent(R.id)
 		else
 			total_volume += R.volume
+	// The holder's heat capacity changed with its contents (H3).
+	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
+		my_atom.heat_capacity_changed()
 	return
+
+/// Heat capacity of the contents, J/K: each reagent's volume x specific heat.
+/datum/reagents/proc/heat_capacity()
+	. = 0
+	for(var/datum/reagent/R as anything in reagent_list)
+		. += R.volume * R.specific_heat
+
+/// The contents' temperature: the holding atom's.
+/datum/reagents/proc/get_temperature()
+	return my_atom ? my_atom.get_temperature() : T20C
 
 /// Returns the SSchemistry reaction lookup list used by handle_reactions().
 /// Subtypes override this to select a different reaction bucket (e.g. distilled_reactions_by_reagent).
@@ -268,7 +281,7 @@
 
 /datum/reagents/proc/has_all_reagents(list/check_reagents)
 	//this only works if check_reagents has no duplicate entries... hopefully okay since it expects an associative list
-	var/missing = check_reagents.len
+	var/missing = length(check_reagents)
 	for(var/id in check_reagents)
 		var/datum/reagent/current = reagent_by_id[id]
 		if(current && current.volume >= check_reagents[id])

@@ -244,11 +244,10 @@
 		M.antibodies |= src.data[REAGENT_ID_ANTIBODIES]
 	..()
 
-#define WATER_LATENT_HEAT 19000 // How much heat is removed when applied to a hot turf, in J/unit (19000 makes 120 u of water roughly equivalent to 4L)
-
 /datum/reagent/water
 	name = REAGENT_WATER
 	id = REAGENT_ID_WATER
+	specific_heat = REAGENT_SPECIFIC_HEAT_WATER
 	taste_description = REAGENT_ID_WATER
 	description = "A ubiquitous chemical substance that is composed of hydrogen and oxygen."
 	reagent_state = LIQUID
@@ -269,21 +268,8 @@
 
 	..()
 
-	var/datum/gas_mixture/environment = T.return_air()
-	var/min_temperature = T0C + 100 // 100C, the boiling point of water
-
-	var/hotspot = (locate(/obj/effect/hotspot) in T)
-	if(hotspot && !istype(T, /turf/space))
-		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T:air:total_moles → LINDA helper
-		var/lowertemp_temperature = lowertemp.return_temperature()
-		lowertemp.set_temperature(max(min(lowertemp_temperature-2000, lowertemp_temperature / 2), 0))
-		lowertemp.react()
-		T.assume_air(lowertemp)
-		qdel(hotspot)
-
-	if (environment && environment.return_temperature() > min_temperature) // Abstracted as steam or something
-		var/removed_heat = between(0, volume * WATER_LATENT_HEAT, -environment.get_thermal_energy_change(min_temperature))
-		environment.add_thermal_energy(-removed_heat)
+	reagent_quench_hotspot(T)
+	if(reagent_boil_off(T, volume))
 		if (prob(5))
 			T.visible_message(span_warning("The water sizzles as it lands on \the [T]!"))
 
@@ -322,9 +308,9 @@
 		// Put out cigarettes if splashed.
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			if(H.wear_mask)
-				if(istype(H.wear_mask, /obj/item/clothing/mask/smokable))
-					var/obj/item/clothing/mask/smokable/S = H.wear_mask
+			if(H.get_equipped_item(SLOT_ID_MASK))
+				if(istype(H.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable))
+					var/obj/item/clothing/mask/smokable/S = H.get_equipped_item(SLOT_ID_MASK)
 					if(S.lit)
 						S.quench()
 						H.visible_message(span_notice("[H]\'s [S.name] is put out."))
@@ -348,7 +334,6 @@
 	..()
 // 
 
-#undef WATER_LATENT_HEAT
 
 /datum/reagent/fuel
 	name = REAGENT_FUEL

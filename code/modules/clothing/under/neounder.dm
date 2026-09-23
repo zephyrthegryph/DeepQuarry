@@ -347,7 +347,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_sec_red_skirt
@@ -356,7 +356,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_warden_red
@@ -365,7 +365,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_warden_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_warden_red_skirt
@@ -374,7 +374,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_warden_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_red
@@ -383,7 +383,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_red_skirt
@@ -392,7 +392,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_blackred
@@ -401,7 +401,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_blackred"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_blackred_skirt
@@ -410,7 +410,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_blackred_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_parade
@@ -419,7 +419,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_parade"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_parade_fem
@@ -428,7 +428,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_parade_fem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_sec_blue
@@ -437,7 +437,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_sec_suit
@@ -446,7 +446,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_suit"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_sec_suit_blue
@@ -455,7 +455,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_suit_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_warden_blue
@@ -464,7 +464,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_warden_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_blue
@@ -473,7 +473,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_blackblue
@@ -482,7 +482,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_blackblue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_blackblue_skirt
@@ -491,7 +491,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_blackblue_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_parade_blue
@@ -500,7 +500,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_parade_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_hos_parade_blue_fem
@@ -509,7 +509,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_hos_parade_blue_fem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_sec_turtle_red
@@ -518,7 +518,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_turtle_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_sec_turtle_red_skirt
@@ -527,7 +527,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_turtle_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_sec_turtle_blue
@@ -536,7 +536,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_turtle_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt
@@ -545,7 +545,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_turtle_blue_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_corrections
@@ -554,7 +554,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_corrections"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_corrections_skirt
@@ -563,7 +563,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_corrections_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/neo_runner
@@ -572,7 +572,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_runner"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 // Cargo
@@ -713,7 +713,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_engi"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/neo_engi_skirt
 	name = "engineer's jumpskirt"
@@ -721,7 +721,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_engi_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/neo_atmos
 	name = "atmos tech's jumpsuit"
@@ -743,7 +743,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_chiefengi"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/neo_chiefengi_skirt
 	name = "chief engineer's jumpskirt"
@@ -751,7 +751,7 @@ this file deals with uniforms/under. */
 	icon_state = "neo_chiefengi_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 
 // Sci
 
@@ -841,7 +841,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_med_skirt
 	name = "doctor's jumpskirt"
@@ -850,7 +850,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_cmo
 	name = "CMO's jumpsuit"
@@ -859,7 +859,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_cmo_skirt
 	name = "CMO's jumpskirt"
@@ -868,7 +868,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_cmo_turtle
 	name = "CMO's turtleneck"
@@ -877,7 +877,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_cmo_turtle_skirt
 	name = "CMO's turtleskirt"
@@ -886,7 +886,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_viro
 	name = "virologist's jumpsuit"
@@ -895,7 +895,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_viro_skirt
 	name = "virologist's jumpskirt"
@@ -904,7 +904,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_chem
 	name = "chemist's jumpsuit"
@@ -913,7 +913,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_chem_skirt
 	name = "chemist's jumpskirt"
@@ -922,7 +922,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_para
 	name = "paramedic's jumpsuit"
@@ -931,7 +931,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_para_skirt
 	name = "paramedic's jumpskirt"
@@ -940,7 +940,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_para_light
 	name = "paramedic's light jumpsuit"
@@ -949,7 +949,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_para_light_skirt
 	name = "paramedic's light jumpskirt"
@@ -958,7 +958,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_pharma
 	name = "pharmacist's jumpsuit"
@@ -967,7 +967,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_pharma_skirt
 	name = "pharmacist's jumpskirt"
@@ -976,7 +976,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_med_dark
 	name = "dark medical jumpsuit"
@@ -985,7 +985,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/neo_med_dark_skirt
 	name = "dark medical jumpskirt"
@@ -994,7 +994,7 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 // Neo Gorkas
 
@@ -1038,14 +1038,14 @@ this file deals with uniforms/under. */
 /obj/item/clothing/under/rank/neo_gorka/sec
 	name = "security officer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. For officers who expect to be patrolling in harsh conditions. It has a tag denoting it's made by Total Gear & Co."
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/sec)
 
 /obj/item/clothing/under/rank/neo_gorka/hos
 	name = "head of security's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Favoured by the Head of Security who wants to stay dry no matter what. It has a tag denoting it's made by Total Gear & Co."
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/sec,/obj/item/clothing/accessory/gorka/rank)
 
@@ -1062,13 +1062,13 @@ this file deals with uniforms/under. */
 /obj/item/clothing/under/rank/neo_gorka/engi
 	name = "engineer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Not rated for high-power electrical shocks. It has a tag denoting it's made by Total Gear & Co."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/engi)
 
 /obj/item/clothing/under/rank/neo_gorka/ce
 	name = "chief engineer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. For the chief engineer who values style <i>and</i> safety. It has a tag denoting it's made by Total Gear & Co."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/engi,/obj/item/clothing/accessory/gorka/rank)
 
 /obj/item/clothing/under/rank/neo_gorka/sci
@@ -1085,12 +1085,12 @@ this file deals with uniforms/under. */
 	name = "medical staff gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. A popular choice among paramedical personnel. It has a tag denoting it's made by Total Gear & Co."
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/med)
 
 /obj/item/clothing/under/rank/neo_gorka/cmo
 	name = "chief medical officer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Why worry about stains when everything slides right off? It has a tag denoting it's made by Total Gear & Co."
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/med,/obj/item/clothing/accessory/gorka/rank)

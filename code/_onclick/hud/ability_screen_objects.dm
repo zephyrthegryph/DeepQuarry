@@ -2,7 +2,7 @@
 	name = "Abilities"
 	icon = 'icons/mob/screen_spells.dmi'
 	icon_state = "grey_spell_ready"
-	var/list/atom/movable/screen/ability/ability_objects = list()
+	var/list/atom/movable/screen/ability/ability_objects
 	var/showing = 0 // If we're 'open' or not.
 
 	var/open_state = "master_open"		// What the button looks like when it's 'open', showing the other buttons.
@@ -24,7 +24,7 @@
 /atom/movable/screen/movable/ability_master/Destroy()
 	//Get rid of the ability objects.
 	remove_all_abilities()
-	ability_objects.Cut()
+	LAZYCLEARLIST(ability_objects)
 
 	// After that, remove ourselves from the mob seeing us, so we can qdel cleanly.
 	if(my_mob)
@@ -41,7 +41,7 @@
 	return ..()
 
 /atom/movable/screen/movable/ability_master/Click()
-	if(!ability_objects.len) // If we're empty for some reason.
+	if(!length(ability_objects)) // If we're empty for some reason.
 //		qdel(src)
 		return
 
@@ -77,8 +77,8 @@
 	var/y_position = decode_screen_Y(screen_loc_Y[1])
 	var/y_pix = screen_loc_Y[2]
 
-	for(var/i = 1; i <= ability_objects.len; i++)
-		var/atom/movable/screen/ability/A = ability_objects[i]
+	for(var/i = 1; i <= length(ability_objects); i++)
+		var/atom/movable/screen/ability/A = LAZYACCESS(ability_objects, i)
 		var/xpos = x_position + (x_position < 8 ? 1 : -1)*(i%7)
 		var/ypos = y_position + (y_position < 8 ? round(i/7) : -round(i/7))
 		A.screen_loc = "[encode_screen_X(xpos)]:[x_pix],[encode_screen_Y(ypos)]:[y_pix]"
@@ -100,7 +100,7 @@
 		i++
 
 /atom/movable/screen/movable/ability_master/update_icon()
-	if(ability_objects.len)
+	if(length(ability_objects))
 		invisibility = INVISIBILITY_NONE
 	else
 		invisibility = INVISIBILITY_ABSTRACT
@@ -120,17 +120,17 @@
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
 	new_button.update_icon(1)
-	ability_objects.Add(new_button)
+	LAZYADD(ability_objects, new_button)
 	if(my_mob.client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/ability_master/proc/remove_ability(atom/movable/screen/ability/ability)
 	if(!ability)
 		return
-	ability_objects.Remove(ability)
+	LAZYREMOVE(ability_objects, ability)
 	qdel(ability)
 
-	if(ability_objects.len)
+	if(length(ability_objects))
 		toggle_open(showing + 1)
 	update_icon()
 //	else
@@ -187,10 +187,10 @@
 
 /atom/movable/screen/ability/Destroy()
 	if(ability_master)
-		ability_master.ability_objects -= src
+		LAZYREMOVE(ability_master.ability_objects, src)
 		if(ability_master.my_mob && ability_master.my_mob.client)
 			ability_master.my_mob.client.screen -= src
-	if(ability_master && !ability_master.ability_objects.len)
+	if(ability_master && !length(ability_master.ability_objects))
 		ability_master.update_icon()
 //		qdel(ability_master)
 	ability_master = null
@@ -224,7 +224,7 @@
 	if(istype(A, /atom/movable/screen/ability))
 		var/atom/movable/screen/ability/ability = A
 		if(ability.ability_master && ability.ability_master == src.ability_master)
-			ability_master.ability_objects.Swap(src.index, ability.index)
+			LAZYINITLIST(ability_master.ability_objects); ability_master.ability_objects.Swap(src.index, ability.index)
 			ability_master.toggle_open(2) // To update the UI.
 
 // Makes the ability be triggered.  The subclasses of this are responsible for carrying it out in whatever way it needs to.
@@ -246,9 +246,9 @@
 		return // Bad input.
 	if(!mob.ability_master)
 		return // No abilities.
-	if(slot > mob.ability_master.ability_objects.len || slot <= 0)
+	if(slot > length(mob.ability_master.ability_objects) || slot <= 0)
 		return // Out of bounds.
-	var/atom/movable/screen/ability/A = mob.ability_master.ability_objects[slot]
+	var/atom/movable/screen/ability/A = LAZYACCESS(mob.ability_master.ability_objects, slot)
 	A.activate()
 
 //////////Verb Abilities//////////
@@ -279,7 +279,7 @@
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	ability_objects.Add(A)
+	LAZYADD(ability_objects, A)
 	if(my_mob.client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -303,7 +303,7 @@
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	ability_objects.Add(A)
+	LAZYADD(ability_objects, A)
 	if(my_mob.client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -333,6 +333,6 @@
 	A.object = object_given
 	A.ability_icon_state = ability_icon_given
 	A.name = object_given.name
-	ability_objects.Add(A)
+	LAZYADD(ability_objects, A)
 	if(my_mob.client)
 		toggle_open(2) //forces the icons to refresh on screen

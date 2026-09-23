@@ -62,14 +62,36 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 /obj/machinery/gravity_generator/part
 	var/obj/machinery/gravity_generator/main/main_part = null
 
-/obj/machinery/gravity_generator/part/attackby(obj/item/I, mob/user, params)
-	return main_part?.attackby(I, user)
+/obj/machinery/gravity_generator/part/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/gravity_part_forward,
+		/datum/interaction/machine_hand/ungated/gravity_part_forward,
+	)
+	..()
+
+/// Old attackby: forwarded straight to main_part's own attackby.
+/datum/interaction/machine_item/gravity_part_forward
+	id = "gravity_part_forward_item"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/gravity_generator/part/proc/interaction_forward_item
+
+/obj/machinery/gravity_generator/part/proc/interaction_forward_item(mob/user, obj/item/I, datum/interaction/interaction)
+	main_part?.attackby(I, user)
+	return TRUE
+
+/// Old attack_hand: forwarded straight to main_part's own attack_hand, never called ..().
+/datum/interaction/machine_hand/ungated/gravity_part_forward
+	id = "gravity_part_forward_hand"
+	name = "Use"
+	effect = /obj/machinery/gravity_generator/part/proc/interaction_forward_hand
+
+/obj/machinery/gravity_generator/part/proc/interaction_forward_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	main_part?.attack_hand(user)
+	return TRUE
 
 /obj/machinery/gravity_generator/part/get_status()
 	return main_part?.get_status()
-
-/obj/machinery/gravity_generator/part/attack_hand(mob/user)
-	return main_part?.attack_hand(user)
 
 /obj/machinery/gravity_generator/part/atom_break(damage_flag)
 	. = ..()
@@ -108,14 +130,14 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 	var/on = TRUE
 	var/breaker = TRUE
-	var/list/parts = list()
+	var/list/parts
 	var/obj/middle = null
 	var/charging_state = POWER_IDLE
 	var/charge_count = 100
 	var/current_overlay = null
 	var/broken_state = 0
-	var/list/levels = list()
-	var/list/areas = list()
+	var/list/levels
+	var/list/areas
 
 /obj/machinery/gravity_generator/main/Initialize(mapload)
 	..()
@@ -155,11 +177,11 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
 		part.main_part = src
-		parts += part
+		LAZYADD(parts, part)
 		part.update_icon()
 
 /obj/machinery/gravity_generator/main/proc/connected_parts()
-	return parts.len == 8
+	return length(parts) == 8
 
 /obj/machinery/gravity_generator/main/atom_break(damage_flag)
 	. = ..()
@@ -189,20 +211,36 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 // Interaction
 
 // Fixing the gravity generator.
-/obj/machinery/gravity_generator/main/attackby(obj/item/I, mob/user, params)
-	if(broken_state == GRAV_NEEDS_PLASTEEL)
-		if(istype(I, /obj/item/stack/material/plasteel))
-			var/obj/item/stack/material/plasteel/PS = I
-			if(PS.get_amount() >= 10)
-				PS.use(10)
-				to_chat(user, span_notice("You add the plating to the framework."))
-				playsound(src, 'sound/machines/click.ogg', 75, 1)
-				broken_state++
-				update_icon()
-			else
-				to_chat(user, span_warning("You need 10 sheets of plasteel!"))
-			return
-	return ..()
+/obj/machinery/gravity_generator/main/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/gravity_main_add_plasteel,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
+
+/// Old attackby: only branch; anything else (wrong item, or wrong broken_state) fell through to ..().
+/datum/interaction/machine_item/gravity_main_add_plasteel
+	id = "gravity_main_add_plasteel"
+	name = "Add plating"
+	category = INTERACTION_CAT_REPAIR
+	held_type = /obj/item/stack/material/plasteel
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/gravity_generator/main/proc/wants_plasteel, null))
+	effect = /obj/machinery/gravity_generator/main/proc/interaction_add_plasteel
+
+/// No side effects.
+/obj/machinery/gravity_generator/main/proc/wants_plasteel(mob/actor, atom/target, obj/item/held)
+	return broken_state == GRAV_NEEDS_PLASTEEL
+
+/obj/machinery/gravity_generator/main/proc/interaction_add_plasteel(mob/user, obj/item/stack/material/plasteel/PS, datum/interaction/interaction)
+	if(PS.get_amount() >= 10)
+		PS.use(10)
+		to_chat(user, span_notice("You add the plating to the framework."))
+		playsound(src, 'sound/machines/click.ogg', 75, 1)
+		broken_state++
+		update_icon()
+	else
+		to_chat(user, span_warning("You need 10 sheets of plasteel!"))
+	return TRUE
 
 /obj/machinery/gravity_generator/main/screwdriver_act(mob/user, obj/item/I)
 	if(broken_state != GRAV_NEEDS_SCREWDRIVER)
@@ -231,12 +269,6 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	playsound(src, I.usesound, 75, 1)
 	atom_fix()
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/gravity_generator/main/attack_hand(mob/user)
-	if((. = ..()))
-		return
-	tgui_interact(user)
-	return TRUE
 
 /obj/machinery/gravity_generator/main/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -405,7 +437,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	return FALSE
 
 /obj/machinery/gravity_generator/main/proc/update_list()
-	levels.Cut()
+	LAZYCLEARLIST(levels)
 	var/my_z = get_z(src)
 
 	//Actually doing it special this time instead of letting using_map decide
@@ -427,12 +459,12 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 			GLOB.gravity_generators["[z]"] -= src
 
 /obj/machinery/gravity_generator/main/proc/update_areas()
-	areas.Cut()
+	LAZYCLEARLIST(areas)
 	for(var/area/A)
 		if(istype(A, /area/shuttle))
 			continue //Skip shuttle areas
 		if(A.z in levels)
-			areas += A
+			LAZYADD(areas, A)
 
 // Misc
 // Taking out the comments on this. It will be needed.

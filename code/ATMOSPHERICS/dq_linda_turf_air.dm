@@ -17,23 +17,21 @@
 // (code/__defines/verdigris/_bindings.dm); pure passthroughs were deleted in
 // favour of calling vg_* directly.
 
-/// Starts or polls an asynchronous Rust turf-sharing generation.
-/// Returns TRUE while the worker is computing so SSair resumes this step.
-/datum/controller/subsystem/air/proc/process_turfs_auxtools(remaining)
-	return vg_process_turf_hook(src, remaining)
-
-/// Diagnostic/test query: whether this exact turf is in either Rust activation queue.
+/// Diagnostic/test query: whether this turf's gas is still moving (an open
+/// edge to a neighbour is not settled).
 /turf/proc/auxmos_is_atmos_active()
 	return vg_turf_active_hook(src)
 
-/// Monotonic gas revision used by sensors to avoid rescanning unchanged air.
+/// Gas revision (bumped whenever the turf's gas changes), used by sensors to
+/// avoid rescanning unchanged air.
 /turf/proc/air_revision()
 	return vg_hook_air_revision(src)
 
-/// Registers / refreshes (flag >= 0) or removes (flag < 0) this turf's air in the
-/// Rust arena and publishes its air-block mask (AIR_BLOCK_KEEP keeps the one Rust
-/// has). Rust reads blocks_air / air._extools_pointer_gasmixture / planetary_atmos
-/// / initial_gas_mix, and rebuilds the turf's adjacency from the masks.
+/// Registers / refreshes (flag >= 0) or removes (flag < 0) this turf's gas in the
+/// Rust gas field and publishes its air-block mask (AIR_BLOCK_KEEP keeps the one
+/// Rust has). On first registration the turf's air datum moves into its field
+/// cell (the datum becomes a handle to the cell). Rust reads blocks_air, air,
+/// immutable_atmos, planetary_atmos and initial_gas_mix.
 ///
 /// Base /turf is a NO-OP: only /turf/open carries an `air` var, and the Rust
 /// register reads `air._extools_pointer_gasmixture` when blocks_air == 0.

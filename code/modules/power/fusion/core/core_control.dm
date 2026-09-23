@@ -8,7 +8,7 @@
 
 	var/id_tag = ""
 	var/scan_range = 25
-	var/list/connected_devices = list()
+	var/list/connected_devices
 	var/obj/machinery/power/fusion_core/cur_viewed_device
 	var/datum/tgui_module/rustcore_monitor/monitor
 
@@ -21,20 +21,42 @@
 	QDEL_NULL(monitor)
 	. = ..()
 
-/obj/machinery/computer/fusion_core_control/attackby(obj/item/thing, mob/user)
+/obj/machinery/computer/fusion_core_control/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/fusion_core_control_multitool,
+		/datum/interaction/machine_hand/fusion_core_control_open_ui,
+	)
 	..()
-	if(thing.has_tool_quality(TOOL_MULTITOOL))
-		var/new_ident = sanitize_text(tgui_input_text(user, "Enter a new ident tag.", "Core Control", monitor.core_tag))
-		if(new_ident && user.Adjacent(src))
-			monitor.core_tag = new_ident
-		return
 
-/obj/machinery/computer/fusion_core_control/attack_hand(mob/user as mob)
-	..()
+/**
+ * Old attackby: called ..() unconditionally before its own check, so the base attack chain
+ * always ran regardless of the item. The effect always declines so the base still runs.
+ */
+/datum/interaction/machine_item/fusion_core_control_multitool
+	id = "fusion_core_control_multitool"
+	name = "Set core tag"
+	tool = TOOL_MULTITOOL
+	tool_volume = 0
+	effect = /obj/machinery/computer/fusion_core_control/proc/interaction_multitool
+
+/obj/machinery/computer/fusion_core_control/proc/interaction_multitool(mob/user, obj/item/thing, datum/interaction/interaction)
+	var/new_ident = sanitize_text(tgui_input_text(user, "Enter a new ident tag.", "Core Control", monitor.core_tag))
+	if(new_ident && user.Adjacent(src))
+		monitor.core_tag = new_ident
+	return FALSE
+
+/// Old attack_hand: called ..() unconditionally, then ignored its result and did its own stat check.
+/datum/interaction/machine_hand/fusion_core_control_open_ui
+	id = "fusion_core_control_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/fusion_core_control/proc/interaction_open_ui_impl
+
+/obj/machinery/computer/fusion_core_control/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 
 	monitor.tgui_interact(user)
+	return TRUE
 
 //Returns 1 if the machine can be interacted with via this console.
 /obj/machinery/computer/fusion_core_control/proc/check_core_status(obj/machinery/power/fusion_core/C)

@@ -213,7 +213,7 @@
 		return
 
 	var/mob/living/carbon/human/H = user
-	if(H.l_ear != src && H.r_ear != src)
+	if(H.get_equipped_item(SLOT_ID_EAR_L) != src && H.get_equipped_item(SLOT_ID_EAR_R) != src)
 		..()
 		return
 
@@ -222,8 +222,8 @@
 
 	var/obj/item/clothing/ears/O
 	if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
-		O = (H.l_ear == src ? H.r_ear : H.l_ear)
-		user.u_equip(O)
+		O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
+		user.drop_from_inventory(O)
 		if(!istype(src,/obj/item/clothing/ears/offear))
 			qdel(O)
 			O = src
@@ -249,7 +249,7 @@
 		var/mob/living/carbon/human/H = usr
 		// If this covers both ears, we want to return the result of unequipping the primary object, and kill the off-ear one
 		if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
-			var/obj/item/clothing/ears/O = (H.l_ear == src ? H.r_ear : H.l_ear)
+			var/obj/item/clothing/ears/O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 			if(istype(src, /obj/item/clothing/ears/offear))
 				. = O.MouseDrop(over_object)
 				H.drop_from_inventory(src)
@@ -363,16 +363,16 @@
 
 	//Equipping to our glove slot? Cover our former gloves, if applicable.
 	if(equipping && slot && slot == slot_gloves)
-		var/obj/item/clothing/G = H.gloves
+		var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
 		if(istype(G))
-			to_chat(user, "You slip \the [src] on over \the [H.gloves].")
+			to_chat(user, "You slip \the [src] on over \the [H.get_equipped_item(SLOT_ID_GLOVES)].")
 			if(istype(G, /obj/item/clothing/gloves))
-				gloves = H.gloves
+				gloves = H.get_equipped_item(SLOT_ID_GLOVES)
 			else if(istype(G, /obj/item/clothing/accessory))
-				ring = H.gloves
+				ring = H.get_equipped_item(SLOT_ID_GLOVES)
 			else
-				gloves = H.gloves //Fallback
-			H.unEquip(H.gloves, TRUE, src)
+				gloves = H.get_equipped_item(SLOT_ID_GLOVES) //Fallback
+			H.unEquip(H.get_equipped_item(SLOT_ID_GLOVES), TRUE, src)
 			if(!(flags & THICKMATERIAL))
 				if(istype(G, /obj/item/clothing/gloves) || istype(G, /obj/item/clothing/accessory)) //Because sometimes you can wear non-glove items on your hands.
 					punch_force += ring.punch_force
@@ -627,7 +627,7 @@
 	pickup_sound = 'sound/items/pickup/shoes.ogg'
 
 	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
-	var/list/inside_emotes = list()
+	var/list/inside_emotes
 	var/recent_squish = 0
 
 /obj/item/clothing/shoes/fit_constraint()
@@ -727,7 +727,7 @@
 			if(pred.step_mechanics_pref && M.step_mechanics_pref)
 				src.handle_inshoe_stepping(pred, M)
 			else if (prob(1)) // Same old inshoe mechanics
-				var/emote = pick(inside_emotes)
+				var/emote = DEFAULTPICK(inside_emotes, null)
 				to_chat(M,emote)
 	return
 
@@ -851,7 +851,7 @@
 	var/escape_message_macro = "Something is trying to climb out of your [src]!"
 	var/escape_time = 60
 
-	if(macro.shoes == src)
+	if(macro.get_equipped_item(SLOT_ID_SHOES) == src)
 		escape_message_micro = "You start to climb around the larger creature's feet and ankles!"
 		escape_time = 100
 
@@ -883,7 +883,7 @@
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi')
 	max_heat_protection_temperature = T0C+100
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING
 	heat_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
 	cold_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
@@ -972,10 +972,10 @@
 		return
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = src.loc
-		if(H.wear_suit != src)
+		if(H.get_equipped_item(SLOT_ID_SUIT) != src)
 			to_chat(H, span_warning("You must be wearing [src] to put up the hood!"))
 			return
-		if(H.head)
+		if(H.get_equipped_item(SLOT_ID_HEAD))
 			to_chat(H, span_warning("You're already wearing something on your head!"))
 			return
 		else
@@ -1041,7 +1041,7 @@
 	slot_flags = SLOT_ICLOTHING
 	heat_protection = ARMS|LEGS|CHEST
 	cold_protection = ARMS|LEGS|CHEST
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	equip_sound = 'sound/items/jumpsuit_equip.ogg'
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
@@ -1286,6 +1286,7 @@
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
 		to_chat(usr, span_notice("You roll up your [src]."))
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/under/verb/rollsleeves()
 	set name = "Roll Up Sleeves"
@@ -1322,6 +1323,7 @@
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
 		to_chat(usr, span_notice("You roll down your [src]'s sleeves."))
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/under/rank/Initialize(mapload)
 	sensor_mode = pick(0,1,2,3)
@@ -1515,7 +1517,7 @@
 		if(isvoice(user)) //Is this a possessed item? Spooky. It can move on it's own!
 			to_chat(H, span_red("The [src] shifts about, almost as if squirming!"))
 			to_chat(user, span_red("You cause the [src] to shift against [H]'s form! Well, what little you can get to, given your current state!"))
-		else if(H.shoes == src)
+		else if(H.get_equipped_item(SLOT_ID_SHOES) == src)
 			to_chat(H, span_red("[user]'s tiny body presses against you in \the [src], squirming!"))
 			to_chat(user, span_red("Your body presses out against [H]'s form! Well, what little you can get to!"))
 		else

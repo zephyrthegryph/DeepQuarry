@@ -13,8 +13,20 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/list/temp = null // output message
 
-/obj/machinery/telecomms/attackby(obj/item/P as obj, mob/user as mob)
+/obj/machinery/telecomms/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/telecomms_repair,
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
 
+/// Old attackby: never called ..() for any item, so the whole thing (including the non-nanopaste no-op) stays in the effect.
+/datum/interaction/machine_item/telecomms_repair
+	id = "telecomms_repair"
+	name = "Repair with Nanopaste"
+	effect = /obj/machinery/telecomms/proc/interaction_repair
+
+/obj/machinery/telecomms/proc/interaction_repair(mob/user, obj/item/P, datum/interaction/interaction)
 	// REPAIRING: Use Nanopaste to repair 10-20 integrity points.
 	if(istype(P, /obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/T = P
@@ -24,7 +36,7 @@
 				to_chat(user, "You apply the Nanopaste to [src], repairing some of the damage.")
 		else
 			to_chat(user, "This machine is already in perfect condition.")
-		return
+	return TRUE
 
 /obj/machinery/telecomms/multitool_act(mob/user, obj/item/tool)
 	attack_hand(user)
@@ -89,9 +101,6 @@
 		if(!hand_item?.get_multitool())
 			return STATUS_CLOSE
 	. = ..()
-
-/obj/machinery/telecomms/attack_hand(mob/user as mob)
-	tgui_interact(user)
 
 /obj/machinery/telecomms/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -279,7 +288,7 @@
 
 				else
 					for(var/obj/machinery/telecomms/T in links)
-						T.links.Remove(src)
+						LAZYREMOVE(T.links, src)
 
 					network = newnet
 					links = list()
@@ -292,37 +301,37 @@
 				if(findtext(num2text(newfreq), "."))
 					newfreq *= 10 // shift the decimal one place
 				if(!(newfreq in freq_listening) && newfreq < 10000)
-					freq_listening.Add(newfreq)
+					LAZYADD(freq_listening, newfreq)
 					set_temp("-% New frequency filter assigned: \"[newfreq/10] GHz\" %-", "average")
 				. = TRUE
 
 		if("delete")
 			var/x = text2num(params["delete"])
 			set_temp("-% Removed frequency filter [x] %-", "average")
-			freq_listening.Remove(x)
+			LAZYREMOVE(freq_listening, x)
 			. = TRUE
 
 		if("unlink")
 			var/unlink_index = text2num(params["unlink"])
 			if(unlink_index >= 1 && unlink_index <= length(links))
-				var/obj/machinery/telecomms/T = links[unlink_index]
+				var/obj/machinery/telecomms/T = LAZYACCESS(links, unlink_index)
 				set_temp("-% Removed \ref[T] [T.name] from linked entities. %-", "average")
 
 				// Remove link entries from both T and src.
 
 				if(src in T.links)
-					T.links.Remove(src)
-				links.Remove(T)
+					LAZYREMOVE(T.links, src)
+				LAZYREMOVE(links, T)
 				. = TRUE
 
 		if("link")
 			if(P)
 				if(P.buffer && P.buffer != src)
 					if(!(src in P.buffer.links))
-						P.buffer.links.Add(src)
+						LAZYADD(P.buffer.links, src)
 
 					if(!(P.buffer in src.links))
-						src.links.Add(P.buffer)
+						LAZYADD(src.links, P.buffer)
 
 					set_temp("-% Successfully linked with \ref[P.buffer] [P.buffer.name] %-", "average")
 

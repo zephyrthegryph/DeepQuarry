@@ -31,7 +31,7 @@
 	impact_type = /obj/effect/projectile/impact/lightning
 
 	var/bounces = 3				//How many times it 'chains'.  Note that the first hit is not counted as it counts /bounces/.
-	var/list/hit_mobs = list() 	//Mobs which were already hit.
+	var/list/hit_mobs 	//Mobs which were already hit.
 	var/power = 35				//How hard it will hit for with electrocute_act(), decreases with each bounce.
 
 /obj/item/projectile/beam/chain_lightning/attack_mob(mob/living/target_mob, distance, miss_modifier=0)
@@ -42,7 +42,7 @@
 		H.electrocute_act(power, src, H.get_siemens_coefficient_organ(affected), affected, 0)
 	else
 		target_mob.electrocute_act(power, src, 0.75, BP_TORSO)
-	hit_mobs |= target_mob
+	LAZYOR(hit_mobs, target_mob)
 
 	//Each bounce reduces the damage of the bolt.
 	power = power * 0.80

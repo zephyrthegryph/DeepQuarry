@@ -28,7 +28,7 @@
 	var/internal_formatting = FALSE
 
 	/// Ring buffer of log entries for this category
-	var/list/log_ring = list()
+	var/list/log_ring
 
 	/// Total number of entries this round so far
 	var/entry_count = 0
@@ -54,9 +54,9 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 	entry_count += 1
 
 	if(entry_count <= CONFIG_MAX_CACHED_LOG_ENTRIES)
-		log_ring += entry
+		LAZYADD(log_ring, entry)
 	else
-		log_ring[ring_write_index] = entry
+		LAZYSET(log_ring, ring_write_index, entry)
 	ring_write_index++
 	if(ring_write_index > CONFIG_MAX_CACHED_LOG_ENTRIES)
 		ring_write_index = 1
@@ -84,7 +84,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 
 	for(var/i = 0, i < count, i++)
 		var/index = ((ring_write_index - count + i - 1 + CONFIG_MAX_CACHED_LOG_ENTRIES) % CONFIG_MAX_CACHED_LOG_ENTRIES) + 1
-		result += log_ring[index]
+		result += LAZYACCESS(log_ring, index)
 
 	return result
 
@@ -94,7 +94,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 
 	for(var/i = 0, i < count, i++)
 		var/index = ((ring_write_index - count + i - 1 + CONFIG_MAX_CACHED_LOG_ENTRIES) % CONFIG_MAX_CACHED_LOG_ENTRIES) + 1
-		var/datum/log_entry/entry = log_ring[index]
+		var/datum/log_entry/entry = LAZYACCESS(log_ring, index)
 
 		entries += list(list(
 			"id" = entry.id,

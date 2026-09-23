@@ -12,7 +12,7 @@
 	icon_screen = "comm_monitor"
 
 	var/screen = 0				// the screen number:
-	var/list/machinelist = list()	// the machines located by the computer
+	var/list/machinelist	// the machines located by the computer
 	var/obj/machinery/telecomms/SelectedMachine
 	circuit = /obj/item/circuitboard/comm_monitor
 
@@ -50,10 +50,22 @@
 		data["selectedMachine"]["links"] = links
 	return data
 
-/obj/machinery/computer/telecomms/monitor/attack_hand(mob/user)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	tgui_interact(user)
+/obj/machinery/computer/telecomms/monitor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/telemonitor_open_ui,
+	)
+	..()
+
+/// Old attack_hand: `if(stat & (BROKEN|NOPOWER)) return; tgui_interact(user)`, no gate (never called ..()).
+/datum/interaction/machine_hand/ungated/telemonitor_open_ui
+	id = "telemonitor_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH,
+		REQ_ON(PRED_TARGET, /obj/machinery/computer/telecomms/monitor/proc/telemonitor_powered, "it isn't working"))
+	effect = /obj/machinery/proc/interaction_open_ui
+
+/obj/machinery/computer/telecomms/monitor/proc/telemonitor_powered(mob/actor, atom/target, obj/item/held)
+	return !(stat & (BROKEN|NOPOWER))
 
 /obj/machinery/computer/telecomms/monitor/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -85,18 +97,18 @@
 			. = TRUE
 
 		if("scan")
-			if(machinelist.len > 0)
+			if(length(machinelist) > 0)
 				set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
 				return TRUE
 
 			for(var/obj/machinery/telecomms/T in range(25, src))
 				if(T.network == network)
-					machinelist.Add(T)
+					LAZYADD(machinelist, T)
 
-			if(!machinelist.len)
+			if(!length(machinelist))
 				set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
 			else
-				set_temp("[machinelist.len] ENTITIES LOCATED & BUFFERED", "good")
+				set_temp("[length(machinelist)] ENTITIES LOCATED & BUFFERED", "good")
 			. = TRUE
 
 		if("network")

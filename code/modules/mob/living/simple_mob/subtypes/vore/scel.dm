@@ -115,6 +115,7 @@
 	B.escape_stun = 5
 	B.contamination_color = "grey"
 	B.contamination_flavor = "Wet"
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The walls smother and press against you with a marshmallowy softness. Mechanically compressing you in waves to ease in your digestion.",
 		"As the scel slithers about, you feel the squishy walls around you roll over your form, causing the pool of digestive liquids to splash and churn against you.",

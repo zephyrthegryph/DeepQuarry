@@ -16,7 +16,7 @@
 	/// Determines which subsystems this subsystem is dependant on to initialize. Will initialize after all specified subsystems.
 	/// If init_stage is earlier than a dependent subsystem, will throw an error and push the init stage forward to that subsystem.
 	/// Usage: Put the typepaths of the subsystems that need to init before this one in this list.
-	var/list/dependencies = list()
+	var/list/dependencies
 
 	/// The inverse of the dependencies. Can be set manually, but will also get evaluated at runtime. Turns into a list of instances at runtime.
 	/// Usage: Put the typepaths of the subsystems that need to init after this one in this list.

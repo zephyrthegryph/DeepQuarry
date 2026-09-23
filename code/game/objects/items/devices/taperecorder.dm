@@ -54,10 +54,9 @@
 	..()
 
 
-/obj/item/taperecorder/fire_act()
-	if(mytape)
-		mytape.ruin() //Fires destroy the tape
-	return ..()
+/// Heat behaviour rule: fire ruins the tape inside.
+/obj/item/taperecorder/proc/rule_ruin_tape(datum/rule/rule)
+	mytape?.ruin()
 
 
 /obj/item/taperecorder/attack_hand(mob/user)
@@ -235,7 +234,7 @@
 		to_chat(usr, span_notice("You can't wipe the tape while playing or recording!"))
 		return
 	else
-		if(mytape.storedinfo)	mytape.storedinfo.Cut()
+		if(mytape.storedinfo)	LAZYCLEARLIST(mytape.storedinfo)
 		if(mytape.timestamp)	mytape.timestamp.Cut()
 		mytape.used_capacity = 0
 		to_chat(usr, span_notice("You wipe the tape."))
@@ -266,16 +265,16 @@
 	for(var/i=1 , i < mytape.max_capacity , i++)
 		if(!mytape || !playing)
 			break
-		if(mytape.storedinfo.len < i)
+		if(length(mytape.storedinfo) < i)
 			break
 
 		var/turf/T = get_turf(src)
-		var/playedmessage = mytape.storedinfo[i]
+		var/playedmessage = LAZYACCESS(mytape.storedinfo, i)
 		if (findtextEx(playedmessage,"*",1,2)) //remove marker for action sounds
 			playedmessage = copytext(playedmessage,2)
 		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": [playedmessage]"), runemessage = playedmessage)
 
-		if(mytape.storedinfo.len < i+1)
+		if(length(mytape.storedinfo) < i+1)
 			playsleepseconds = 1
 			sleep(10)
 			T = get_turf(src)
@@ -339,8 +338,8 @@
 	to_chat(usr, span_notice("Transcript printed."))
 	var/obj/item/paper/P = new /obj/item/paper(get_turf(src))
 	var/t1 = span_bold("Transcript:") + "<BR><BR>"
-	for(var/i=1,mytape.storedinfo.len >= i,i++)
-		var/printedmessage = mytape.storedinfo[i]
+	for(var/i=1,length(mytape.storedinfo) >= i,i++)
+		var/printedmessage = LAZYACCESS(mytape.storedinfo, i)
 		if (findtextEx(printedmessage,"*",1,2)) //replace action sounds
 			printedmessage = "\[[time2text(mytape.timestamp[i]*10,"mm:ss")]\] (Unrecognized sound)"
 		t1 += "[printedmessage]<BR>"
@@ -371,7 +370,6 @@
 		icon_state = "taperecorder_idle"
 
 
-
 /obj/item/rectape
 	name = "tape"
 	desc = "A magnetic tape that can hold up to ten minutes of content."
@@ -384,7 +382,7 @@
 	throwforce = 0
 	var/max_capacity = 1800
 	var/used_capacity = 0
-	var/list/storedinfo = new/list()
+	var/list/storedinfo
 	var/list/timestamp = new/list()
 	var/ruined = 0
 
@@ -394,9 +392,6 @@
 	if(ruined)
 		add_overlay("ribbonoverlay")
 
-
-/obj/item/rectape/fire_act()
-	ruin()
 
 /obj/item/rectape/attack_self(mob/user)
 	. = ..(user)
@@ -419,13 +414,13 @@
 
 /obj/item/rectape/proc/record_speech(text)
 	timestamp += used_capacity
-	storedinfo += "\[[time2text(used_capacity*10,"mm:ss")]\] [text]"
+	LAZYADD(storedinfo, "\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
 
 
 //shows up on the printed transcript as (Unrecognized sound)
 /obj/item/rectape/proc/record_noise(text)
 	timestamp += used_capacity
-	storedinfo += "*\[[time2text(used_capacity*10,"mm:ss")]\] [text]"
+	LAZYADD(storedinfo, "*\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
 
 
 /obj/item/rectape/attackby(obj/item/I, mob/user, params)

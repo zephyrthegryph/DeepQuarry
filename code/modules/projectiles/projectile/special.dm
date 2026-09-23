@@ -275,7 +275,7 @@
 	if(ishuman(target))
 		var/mob/living/carbon/human/human_target = target
 		var/obj/item/handcuffs/legcuffs/bola/B = new(src.loc)
-		for(var/obj/item/clothing/cloth in list(human_target.wear_suit, human_target.w_uniform, human_target.shoes)) //Check if we have a thick material covering our feet.
+		for(var/obj/item/clothing/cloth in list(human_target.get_equipped_item(SLOT_ID_SUIT), human_target.get_equipped_item(SLOT_ID_UNIFORM), human_target.get_equipped_item(SLOT_ID_SHOES))) //Check if we have a thick material covering our feet.
 			if((cloth.body_parts_covered & FEET) && (cloth.item_flags & THICKMATERIAL))
 				..()
 				return

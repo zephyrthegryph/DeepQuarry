@@ -17,13 +17,6 @@
 
 	var/obj/item/card/id/inserted
 
-/obj/machinery/computer/id_restorer/attackby(obj/I, mob/user)
-	..()
-
-/obj/machinery/computer/id_restorer/attack_hand(mob/user)
-	if(..()) return
-	if(stat & (NOPOWER|BROKEN)) return
-
 //Frame
 /datum/frame/frame_types/id_restorer
 	name = "ID Restoration Terminal"

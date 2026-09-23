@@ -242,7 +242,7 @@ part "tools: istype checks on tool types"
 # checks (a particular subtype, not "any tool of this quality"), or belong to domains
 # converted later (mecha: I5; surgery and medical machines: the body rewrite). They
 # must not grow.
-tool_istype_allowlist='code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.modules.surgery.robotics\.dm|code.modules.surgery.hardsuit\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
+tool_istype_allowlist='code.modules.surgery.limbs\.dm|code.modules.surgery.operate\.dm|code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.modules.surgery.robotics\.dm|code.modules.surgery.hardsuit\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
 if $grep -n 'istype\([^,]+,\s*/obj/item/(tool|weldingtool|multitool)\b' "${code_files[@]}" | grep -vE "^($tool_istype_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: an istype() check on a tool type. Use has_tool_quality(TOOL_*), or get_welder()/get_multitool() to read the tool.${NC}"
@@ -268,6 +268,28 @@ a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/modules/medical/instru
 if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: a_intent is gone. Use combat mode: IS_HARMING(M), IS_HELPING(M), IS_DISARMING(M), IS_GRABBING(M) or M.use_stance() to read it, and set_combat_mode()/set_use_stance() to set it (code/__defines/combat_mode.dm).${NC}"
+	FAILED=1
+fi;
+
+part "interactions: converted domains (I7)"
+# Converted domains' input handlers are interaction definitions (roadmap I7,
+# doc/rewrite/interactions.md section 13): no attackby, attack_hand, attack_self,
+# click_alt or MouseDrop_T overrides and no object verbs on their types, and no
+# hand-written description_info in their directories (examine text is generated).
+# The old procs are the entry points; declare interactions with an `entry` instead.
+# The allowlist holds files other work owns (the body rewrite's medical code,
+# cooking, vore) and test fixtures. It must not grow.
+i7_converted_types='/obj/machinery'
+i7_converted_dirs='code/game/machinery/|code/ATMOSPHERICS/|code/modules/power/'
+i7_allowlist='code/modules/unit_tests/|code/game/dna/dna_modifier\.dm|code/game/machinery/(OpTable|Sleeper|adv_med|bioprinter|cloning|cryo|iv_drip|medical_kiosk|oxygen_pump|protean_reconstitutor|vitals_monitor)\.dm|code/game/machinery/computer/(Operating|cloning|medical)\.dm|code/modules/resleeving/|code/modules/food/kitchen/|code/modules/vore/|code/modules/examine/descriptions/medical\.dm'
+if $grep -nE "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)"; then
+	echo
+	echo -e "${RED}ERROR: converted domains take interactions, not handler overrides or object verbs. Declare an interaction with an entry (code/datums/interactions/entries.dm).${NC}"
+	FAILED=1
+fi;
+if $grep -nE '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
+	echo
+	echo -e "${RED}ERROR: description_info in a converted domain. Examine text is generated from the interactions.${NC}"
 	FAILED=1
 fi;
 
@@ -349,6 +371,17 @@ part "one mitigation pipeline"
 if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_armor|get_injury_mod|injury_mod_groups)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a parallel mitigation path detected. Harm goes through injure(); armour is injury_armor(kind, zone); species resistances are factor_baseline BF_INCOMING_*.${NC}"
+	FAILED=1
+fi;
+
+part "interned armour"
+# Armour is an interned /datum/armor (code/game/atom/armor.dm, damage.md §4):
+# a type declares armor_spec = "melee=40;bullet=30", readers call get_armor(),
+# and an instance changes it with set_armor()/set_armor_value(). No per-type or
+# per-instance armour lists, and no second random roll on top of the soak.
+if $grep -n '(^\s*(var/(list/)?)?armor\s*=\s*list\s*\(|\barmor\??\[|\.armor\b\s*(=|\[|\?)|\b(own_armor|roll_armor_variance)\b)' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: an armour list detected. Declare armor_spec = \"key=value;...\" and read get_armor().value(key) (code/game/atom/armor.dm).${NC}"
 	FAILED=1
 fi;
 

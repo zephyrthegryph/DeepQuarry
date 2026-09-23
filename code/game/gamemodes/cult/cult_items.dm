@@ -53,7 +53,7 @@
 	icon_state = "culthood"
 	desc = "A hood worn by the followers of Nar-Sie."
 	flags_inv = HIDEFACE
-	armor = list(melee = 50, bullet = 30, laser = 50, energy = 80, bomb = 25, bio = 10, rad = 0)
+	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
 	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0
 
@@ -75,7 +75,7 @@
 	desc = "A set of armored robes worn by the followers of Nar-Sie."
 	icon_state = "cultrobes"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	armor = list(melee = 50, bullet = 30, laser = 50, energy = 80, bomb = 25, bio = 10, rad = 0)
+	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
 	flags_inv = HIDEJUMPSUIT
 	siemens_coefficient = 0
 
@@ -100,7 +100,7 @@
 	name = "cult helmet"
 	desc = "A space worthy helmet used by the followers of Nar-Sie."
 	icon_state = "cult_helmet"
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 30, rad = 30)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
 	siemens_coefficient = 0
 
 /obj/item/clothing/head/helmet/space/cult/cultify()
@@ -112,7 +112,7 @@
 	desc = "A bulky suit of armour, bristling with spikes. It looks space-worthy."
 	w_class = ITEMSIZE_NORMAL
 	slowdown = 0.5
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 30, rad = 30)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
 	siemens_coefficient = 0
 	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 

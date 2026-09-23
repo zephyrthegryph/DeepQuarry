@@ -103,7 +103,7 @@
 	// List of all asset filenames sent to this client by the asset cache, along with their assoicated md5s
 	var/list/sent_assets = list()
 	/// List of all completed blocking send jobs awaiting acknowledgement by send_asset
-	var/list/completed_asset_jobs = list()
+	var/list/completed_asset_jobs
 	/// Last asset send job id.
 	var/last_asset_job = 0
 	var/last_completed_asset_job = 0
@@ -128,7 +128,7 @@
 	/// list of all tabs
 	var/list/panel_tabs = list()
 	/// list of tabs containing spells and abilities
-	var/list/spell_tabs = list()
+	var/list/spell_tabs
 	/// list of misc tabs from mob
 	var/list/misc_tabs = list()
 	///A lazy list of atoms we've examined in the last RECENT_EXAMINE_MAX_WINDOW (default 2) seconds, so that we will call [/atom/proc/examine_more] instead of [/atom/proc/examine] on them when examining

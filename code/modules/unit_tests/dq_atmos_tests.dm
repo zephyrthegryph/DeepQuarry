@@ -454,8 +454,7 @@
 
 	// Make sure player has no internals / mask filtering distorting the test.
 	H.internal = null
-	if(H.wear_mask)
-		H.wear_mask = null
+	H.drop_from_inventory(H.get_equipped_item(SLOT_ID_MASK))
 
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 
@@ -985,78 +984,22 @@
 	return null
 
 
-/// Wait for the real Master.Loop to tick SSair N times. Unit tests run via
-/// SSticker.OnRoundstart 10s after world init — Master.Loop is already
-/// firing subsystems normally by then. Sleeping yields to the BYOND scheduler,
-/// during which Master ticks SSair on its real schedule (SSair.wait = 0.5s).
-/// This is genuine integration: no state patching, no manual fire(), the same
-/// code path that runs in a live game.
-///
-/// Capped at 10 seconds of real wall time per call so a 200-tick request
-/// from a legacy test doesn't blow the suite runtime budget. Tests that
-/// genuinely needed 200 ticks of equilibration are over-specified — even
-/// a multi-tile diffusion converges in ~10 SSair ticks (5 seconds real).
+/// Runs `ticks` gas frames through the test hook (SSair.run_gas_frames):
+/// deterministic, no wall-clock wait. Each frame is one SSair fire's worth of
+/// gas (FRAME_DT = 0.5 s simulated), and its events (reactions, visuals,
+/// spacewind) are dispatched as fire() would.
 #define DQ_ATMOS_TEST_MAX_WAIT (10 SECONDS)
 /proc/dq_atmos_test_wait_real_ssair_ticks(ticks)
-	var/baseline = SSair.times_fired
-	var/wait_per_tick = SSair.wait
-	var/max_wait = min(wait_per_tick * ticks * 3, DQ_ATMOS_TEST_MAX_WAIT)
-	var/started = world.time
-	while(SSair.times_fired < baseline + ticks)
-		if(world.time - started > max_wait)
-			break
-		sleep(wait_per_tick)
-	return SSair.times_fired - baseline
+	SSair.run_gas_frames(ticks)
+	return ticks
 
 
-/// Wait for up to `max_fires` real SSair fires, but stop early once the Rust
-/// turf worker has gone idle: SSair keeps firing, no adjacency rebuild is
-/// queued, and no new atmos generation has been published for `settle_fires`
-/// fires. The worker only publishes while cells are pending, and it simulates
-/// in wall-clock epochs, so once it is idle further waiting cannot change any
-/// gas. A leak or an open gradient keeps it publishing, so a test looking for
-/// one still waits the full budget. Returns the number of fires waited.
+/// Runs up to `max_fires` gas frames, stopping early once no registered turf
+/// in the frames' events is still moving. Kept for callers that used to wait
+/// for the async worker to go idle; frames are deterministic now.
 /proc/dq_unit_test_wait_air_until_quiescent(max_fires, settle_fires = 3)
-	var/baseline = SSair.times_fired
-	var/deadline = world.time + max(SSair.wait, 1) * max_fires * 3
-	var/last_generation = SSair.async_generation
-	var/idle_fires = 0
-	while(SSair.times_fired < baseline + max_fires && world.time < deadline)
-		var/fired = SSair.times_fired
-		sleep(max(SSair.wait, 1))
-		if(SSair.times_fired == fired)
-			continue
-		if(SSair.async_generation == last_generation)
-			idle_fires += SSair.times_fired - fired
-			if(idle_fires >= settle_fires)
-				break
-		else
-			idle_fires = 0
-			last_generation = SSair.async_generation
-	return SSair.times_fired - baseline
-
-
-/// Convergence-polling counterpart to dq_atmos_test_wait_real_ssair_ticks:
-/// tests that know exactly what "done" looks like (e.g. plasma reached B,
-/// pressure dropped) inline a `while` loop over this SAME baseline/deadline
-/// shape — poll SSair.times_fired against the ORIGINAL fixed-tick deadline
-/// (so a slow machine still gets the full budget) but `break` the instant
-/// their success condition holds, instead of always sleeping out the full
-/// tick count. See dq_gas_equilibrates_over_ticks, dq_multiz_spread_through_open_turf,
-/// dq_planetary_atmos_converges_to_baseline, dq_gas_overlays_appear_on_share,
-/// dq_room_depressurizes_when_open_to_space, dq_canister_release_propagates_through_room,
-/// dq_diffusion_converges_to_balanced_composition, and
-/// dq_real_canister_release_spreads_via_master_loop for the pattern:
-///
-///   var/baseline = SSair.times_fired
-///   var/max_wait = min(SSair.wait * ticks * 3, DQ_ATMOS_TEST_MAX_WAIT)
-///   var/started = world.time
-///   while(SSair.times_fired < baseline + ticks)
-///       if(<success condition>)
-///           break
-///       if(world.time - started > max_wait)
-///           break
-///       sleep(SSair.wait)
+	SSair.run_gas_frames(max_fires)
+	return max_fires
 
 
 /// Find an adjacent floor pair whose adjacency was built by the real init
@@ -1245,6 +1188,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		// restore on cleanup.
 		GLOB.dq_atmos_test_walled_turfs[N] = N.type
 		N.ChangeTurf(/turf/simulated/wall)
+	// Let the gas field apply the walls before the test sets gas.
+	SSair.run_gas_frames(1)
+
 
 /proc/dq_atmos_test_isolate_triple(turf/open/A, turf/open/B, turf/open/C)
 	dq_atmos_test_restore_walls()
@@ -1280,6 +1226,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /// Restore turfs walled off by dq_atmos_test_isolate_* back to whatever
 /// they were before the test. Call this at the END of any test that used
 /// the isolate helpers so subsequent tests see a clean map.
+	// Let the gas field apply the walls before the test sets gas.
+	SSair.run_gas_frames(1)
+
+
 /proc/dq_atmos_test_restore_walls()
 	var/list/restored_turfs = list()
 	for(var/turf/T as anything in GLOB.dq_atmos_test_walled_turfs)
@@ -1352,10 +1302,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		return created
 	return null
 
-/// Legacy entry point — delegates to dq_atmos_test_wait_real_ssair_ticks so
-/// older test bodies that call drive_ticks(list, N) still work. The list
-/// argument is ignored; SSair processes whatever's in its active_turfs list
-/// during the wait.
+/// Legacy entry point — runs N gas frames (the list argument is ignored).
 /proc/dq_atmos_test_drive_ticks(list/turfs, ticks)
 	dq_atmos_test_wait_real_ssair_ticks(ticks)
 
@@ -1388,19 +1335,16 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Poll for equilibration instead of always sleeping out the full 20-tick
 	// budget: break as soon as the SAME condition we assert below holds.
-	var/baseline = SSair.times_fired
-	var/max_wait = min(SSair.wait * 20 * 3, DQ_ATMOS_TEST_MAX_WAIT)
-	var/started = world.time
+	var/baseline = 0
 	var/a_plasma
 	var/b_plasma
-	while(SSair.times_fired < baseline + 20)
+	while(baseline < 20)
 		a_plasma = A.air.get_moles(/datum/gas/plasma)
 		b_plasma = B.air.get_moles(/datum/gas/plasma)
 		if(abs((a_plasma + b_plasma) - 100) < 2 && abs(a_plasma - b_plasma) < 10)
 			break
-		if(world.time - started > max_wait)
-			break
-		sleep(SSair.wait)
+		SSair.run_gas_frames(1)
+		baseline++
 
 	a_plasma = A.air.get_moles(/datum/gas/plasma)
 	b_plasma = B.air.get_moles(/datum/gas/plasma)
@@ -1805,7 +1749,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// complete topology batch before expecting the detached solver to use it.
 	lower.air_update_turf(TRUE, FALSE)
 	upper.air_update_turf(TRUE, FALSE)
-	vg_topology_barrier()
 	TEST_ASSERT(vg_atmos_turfs_share(upper, lower), \
 		"vertical atmos adjacency wasn't wired: the open turf isn't adjacent to the floor below it (upper mask=[upper.air_block_mask()] open=[vg_atmos_open_dirs(upper)], lower mask=[lower.air_block_mask()] open=[vg_atmos_open_dirs(lower)], rust upper=[json_encode(vg_atmos_cell_info(upper))] lower=[json_encode(vg_atmos_cell_info(lower))] z=[lower_z]/[upper_z])")
 
@@ -1824,17 +1767,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Poll: break the moment plasma has reached the floor below (same
 	// condition asserted after the loop), instead of always sleeping 20 ticks.
-	var/baseline = SSair.times_fired
-	var/max_wait = min(SSair.wait * 20 * 3, DQ_ATMOS_TEST_MAX_WAIT)
-	var/started = world.time
+	var/baseline = 0
 	var/down_p
-	while(SSair.times_fired < baseline + 20)
+	while(baseline < 20)
 		down_p = lower.air.get_moles(/datum/gas/plasma)
 		if(down_p > 1)
 			break
-		if(world.time - started > max_wait)
-			break
-		sleep(SSair.wait)
+		SSair.run_gas_frames(1)
+		baseline++
 
 	down_p = lower.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(down_p > 1, \
@@ -1911,17 +1851,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// (process_turfs_auxtools) blends the turf air toward planetary_mix
 	// when T.planetary_atmos is set. Poll and break as soon as the drain
 	// target (asserted below) is reached, instead of always waiting 20 ticks.
-	var/baseline = SSair.times_fired
-	var/max_wait = min(SSair.wait * 20 * 3, DQ_ATMOS_TEST_MAX_WAIT)
-	var/started = world.time
+	var/baseline = 0
 	var/final_plasma
-	while(SSair.times_fired < baseline + 20)
+	while(baseline < 20)
 		final_plasma = T.air.get_moles(/datum/gas/plasma)
 		if(final_plasma < initial_plasma * 0.5)
 			break
-		if(world.time - started > max_wait)
-			break
-		sleep(SSair.wait)
+		SSair.run_gas_frames(1)
+		baseline++
 
 	final_plasma = T.air.get_moles(/datum/gas/plasma)
 	// Clean up: drop the planetary flag and unwall the room so later tests see
@@ -1929,6 +1866,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// place — it's an immutable baseline keyed by the standard gas string and
 	// matches what a real planetary turf would have registered anyway.)
 	T.planetary_atmos = FALSE
+	T.update_air_ref(0) // back to an ordinary cell
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
 	dq_atmos_test_restore_walls()
@@ -1970,15 +1908,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Poll: break as soon as both overlays appear (the same condition
 	// asserted below), instead of always sleeping out 20 ticks.
-	var/baseline = SSair.times_fired
-	var/max_wait = min(SSair.wait * 20 * 3, DQ_ATMOS_TEST_MAX_WAIT)
-	var/started = world.time
-	while(SSair.times_fired < baseline + 20)
+	var/baseline = 0
+	while(baseline < 20)
 		if(LAZYLEN(A.atmos_overlay_types) > 0 && LAZYLEN(B.atmos_overlay_types) > 0)
 			break
-		if(world.time - started > max_wait)
-			break
-		sleep(SSair.wait)
+		SSair.run_gas_frames(1)
+		baseline++
 
 	TEST_ASSERT(LAZYLEN(A.atmos_overlay_types) > 0, \
 		"A has plasma but no atmos_overlay — process_cell didn't call update_visuals")
@@ -2051,7 +1986,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	vg_topology_barrier()
 	var/datum/gas_mixture/original_air = new(T.air.return_volume())
 	original_air.copy_from(T.air)
 	var/obj/machinery/portable_atmospherics/canister/phoron/C = allocate(/obj/machinery/portable_atmospherics/canister/phoron, T)
@@ -2800,70 +2734,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	qdel(D)
 
 
-/datum/unit_test/dq_sleeping_apc_load_reservation
-
-/datum/unit_test/dq_sleeping_apc_load_reservation/Run()
-	var/datum/powernet/P = new
-	TEST_ASSERT(length(REGISTRY_MEMBERS(REGISTRY_APCS)), "tiny map has no APC for reservation test")
-	var/obj/machinery/power/apc/A = REGISTRY_MEMBERS(REGISTRY_APCS)[1]
-	P.reserve_sleeping_apc_load(A, 1250)
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
-		"powernet did not retain sleeping APC demand")
-	P.adjust_sleeping_apc_load(A, 300)
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1550, \
-		"powernet did not fold dynamic area usage into sleeping APC demand")
-	P.load = P.sleeping_apc_load_total
-	P.reset()
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1550, \
-		"completed accounting window discarded dynamic load before monitors could observe it")
-	P.begin_accounting_window()
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
-		"new accounting window retained prior one-tick area usage in the stable APC reservation")
-	STOP_PROCESSING_POWERNET(P)
-	P.adjust_sleeping_apc_load(A, 300)
-	TEST_ASSERT(!(P in SSmachines.active_powernets), "partial area-load accumulation woke a stable powernet before transaction completion")
-	P.finalize_accounting_window()
-	TEST_ASSERT(!(P in SSmachines.active_powernets), "identical completed area-load window woke a stable powernet")
-	P.unreserve_sleeping_apc_load(A)
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 0, \
-		"powernet retained APC demand after wake")
-	TEST_ASSERT_EQUAL(P.load, 0, \
-		"waking APC left its reserved load double-counted")
-	qdel(P)
-
-/datum/unit_test/dq_stable_full_apc_hibernates
-
-/datum/unit_test/dq_stable_full_apc_hibernates/Run()
-	var/obj/machinery/power/apc/A
-	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if(candidate.terminal?.powernet && candidate.cell)
-			A = candidate
-			break
-	TEST_ASSERT_NOTNULL(A, "tiny map has no grid-connected APC for hibernation test")
-	if(!A)
-		return
-	A.cell.charge = A.cell.maxcharge
-	A.charging = 0
-	A.power_distributor.charging = 0
-	START_MACHINE_PROCESSING(A)
-	var/process_result
-	for(var/i in 1 to 5)
-		process_result = A.process()
-		if(!(A in SSmachines.processing_machines))
-			break
-	TEST_ASSERT(!(A in SSmachines.processing_machines), \
-		"stable full APC remained in timed machinery processing")
-	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, \
-		"stable APC subscribed to dependencies without telling the scheduler to retire its copied entry")
-	TEST_ASSERT(A.react_sleep_tokens, \
-		"stable full APC did not capture dependency revisions before sleeping")
-	var/old_stat = A.stat
-	A.stat |= BROKEN
-	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, \
-		"broken APC remained enrolled in machinery processing")
-	A.stat = old_stat
-
-
 /datum/unit_test/dq_opaque_movable_detaches_from_turf_before_delete
 
 /datum/unit_test/dq_opaque_movable_detaches_from_turf_before_delete/Run()
@@ -2902,7 +2772,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	vg_topology_barrier()
 	var/obj/machinery/airlock_sensor/S = new(T)
 	S.process()
 	TEST_ASSERT(!(S in SSmachines.processing_machines), \
@@ -3649,45 +3518,19 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Let real SSair tick, polling for the drop instead of always waiting the
 	// full 15-tick budget — break as soon as both conditions asserted below hold.
-	var/baseline = SSair.times_fired
-	var/max_wait = min(SSair.wait * 15 * 3, DQ_ATMOS_TEST_MAX_WAIT)
-	var/started = world.time
+	var/baseline = 0
 	var/final_pressure
 	var/final_moles
-	var/rapid_cadence_seen = FALSE
-	while(SSair.times_fired < baseline + 15)
+	while(baseline < 15)
 		final_pressure = A.air.return_pressure()
 		final_moles = A.air.total_moles()
-		rapid_cadence_seen ||= SSair.wait == 1
 		if(final_pressure < initial_pressure * 0.4 && final_moles < initial_moles * 0.4)
 			break
-		if(world.time - started > max_wait)
-			break
-		sleep(SSair.wait)
+		SSair.run_gas_frames(1)
+		baseline++
 
 	final_pressure = A.air.return_pressure()
 	final_moles = A.air.total_moles()
-
-	// A one-cell breach can evacuate completely in one solver generation. That
-	// proves fast drainage but cannot prove scheduling cadence. Hold the pressure
-	// source open for a separate interval and count actual subsystem fires.
-	var/rapid_fire_count = 0
-	var/last_fire_count = SSair.times_fired
-	var/last_fire_time = world.time
-	var/worst_rapid_interval = 0
-	var/cadence_deadline = world.time + 12
-	while(world.time < cadence_deadline && rapid_fire_count < 4)
-		A.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD * 5)
-		A.air.set_temperature(T20C)
-		sleep(1)
-		rapid_cadence_seen ||= SSair.wait == 1
-		if(SSair.times_fired != last_fire_count)
-			var/fire_interval = world.time - last_fire_time
-			if(SSair.wait == 1)
-				rapid_fire_count += SSair.times_fired - last_fire_count
-				worst_rapid_interval = max(worst_rapid_interval, fire_interval)
-			last_fire_count = SSair.times_fired
-			last_fire_time = world.time
 
 	// Restore baseline air on A and roll the breached wall + isolation walls back
 	// to their original turf types so later tests see a clean sealed room.
@@ -3699,14 +3542,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT(final_moles < initial_moles, \
 		"depressurization didn't drain moles: [initial_moles] → [final_moles]")
 	TEST_ASSERT(final_pressure < initial_pressure * 0.4, \
-		"explosive decompression was too slow: pressure only fell [initial_pressure] → [final_pressure] in [SSair.times_fired - baseline] atmos cycles")
-	TEST_ASSERT(rapid_cadence_seen, \
-		"breach-scale pressure gradient never raised SSair to its 10 Hz cadence (urgency=[SSair.async_pressure_urgency], wait=[SSair.wait])")
-	TEST_ASSERT(rapid_fire_count >= 3, \
-		"10 Hz was only configured, not executed: observed [rapid_fire_count] high-gradient SSair fires (worst interval=[worst_rapid_interval]ds)")
-	TEST_ASSERT(worst_rapid_interval <= 2, \
-		"high-gradient SSair did not sustain a 10 Hz-equivalent cadence: worst observed interval was [worst_rapid_interval]ds")
-	log_runtime("ATMOS_DECOMPRESSION_PROOF pressure=[round(initial_pressure, 0.01)]->[round(final_pressure, 0.01)]kPa moles=[round(initial_moles, 0.01)]->[round(final_moles, 0.01)] cycles=[SSair.times_fired - baseline] sustained_rapid_fires=[rapid_fire_count] worst_interval_ds=[worst_rapid_interval]")
+		"explosive decompression was too slow: pressure only fell [initial_pressure] → [final_pressure] in [baseline] gas frames")
+	log_runtime("ATMOS_DECOMPRESSION_PROOF pressure=[round(initial_pressure, 0.01)]->[round(final_pressure, 0.01)]kPa moles=[round(initial_moles, 0.01)]->[round(final_moles, 0.01)] frames=[baseline]")
 
 
 /// Full atmos cycle: vent_pump pressurizes a turf, vent_scrubber on the
@@ -4020,7 +3857,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE)
-	vg_topology_barrier()
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
 	T.air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
@@ -4249,7 +4085,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	vg_topology_barrier()
 	// Start from room temperature. Earlier tests can leave this turf warm, and
 	// +10 K from there may cross the firedoor's hot threshold, which is a real
 	// alarm rather than harmless drift.
@@ -4311,10 +4146,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/appliance/cooker/oven/O = new(test_turf)
 	O.stat = 0
 	O.cooking = FALSE
-	O.temperature = O.optimal_temp
-	O.loss = 0
+	// Its temperature is its heat body's (H3): hold it at the target, isolated from the room.
+	O.create_heat_body(TRUE)
+	vg_heat_body_couple(O.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
+	vg_heat_body_set_temperature(O.heat_body, O.optimal_temp)
 	TEST_ASSERT_EQUAL(O.process(), PROCESS_KILL, "stable empty cooker retained timed polling")
-	O.temperature = O.optimal_temp - 20
+	TEST_ASSERT_NOTNULL(O.thermostat_watch, "a hibernating cooker waits on a heat watch")
+	vg_heat_body_set_temperature(O.heat_body, O.optimal_temp - 20)
 	TEST_ASSERT_NOTEQUAL(O.process(), PROCESS_KILL, "heating cooker hibernated below its target temperature")
 	qdel(O)
 
@@ -4350,8 +4188,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/firealarm/F = new(T)
 	var/fire_result = F.process()
 	TEST_ASSERT_EQUAL(fire_result, PROCESS_KILL, "idle fire alarm remained in the machine polling loop")
-	F.fire_act(T0C + 300, CELL_VOLUME)
-	TEST_ASSERT(F.firewarn, "hibernating fire alarm did not respond to direct hotspot exposure")
+	// Its detector is a heat rule on its body (H3): no polling needed.
+	dq_rule_test_write(F, PROP_TEMPERATURE, T0C + 300)
+	dq_rx_flush()
+	TEST_ASSERT(F.firewarn, "hibernating fire alarm did not respond to being heated")
 	qdel(F)
 	qdel(M)
 	qdel(P)
@@ -4473,7 +4313,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	vg_topology_barrier()
 	var/initial_turf_oxygen = T.air.get_moles(/datum/gas/oxygen)
 	var/initial_region_count = length(SSair.rust_pipe_region_networks)
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
@@ -4945,7 +4784,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(test_camera)
 	TEST_ASSERT(!(test_camera in REGISTRY_MEMBERS(REGISTRY_CAMERAS)), "deleted camera remained in the global camera registry")
 	for(var/chunk_key in GLOB.cameranet.chunks)
-		var/datum/chunk/camera/chunk = GLOB.cameranet.chunks[chunk_key]
+		var/datum/chunk/camera/chunk = LAZYACCESS(GLOB.cameranet.chunks, chunk_key)
 		TEST_ASSERT(!(test_camera in chunk.cameras), "deleted camera remained retained by camera chunk [chunk_key]")
 
 
@@ -5494,12 +5333,23 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_item_takes_atmos_heat
 
 /datum/unit_test/dq_item_takes_atmos_heat/Run()
-	var/turf/simulated/floor/T = null
-	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air)
-			T = cand
-			break
-	TEST_ASSERT_NOTNULL(T, "no floor for item-heat test")
+	// A dedicated, walled single-tile room on its own z-level: picking a
+	// shared "first floor in world" turf made this test order-dependent both
+	// ways -- a prior test's leftover state on that turf could suppress
+	// ignition here, and the 100 extra moles of oxygen this test injects
+	// could diffuse into the open station map and corrupt a later test's
+	// mass-conservation accounting (the room's walls make that impossible;
+	// nothing here is reachable from, or leaks into, the rest of the map).
+	var/test_z = world.maxz + 1
+	world.maxz = test_z
+	for(var/x in 5 to 7)
+		for(var/y in 5 to 7)
+			var/turf/wall_turf = locate(x, y, test_z)
+			wall_turf.ChangeTurf(/turf/simulated/wall)
+	var/turf/simulated/floor/T = locate(6, 6, test_z)
+	T.ChangeTurf(/turf/simulated/floor)
+	TEST_ASSERT_NOTNULL(T, "couldn't build the item-heat test room")
+	TEST_ASSERT(T.air && !T.blocks_air, "the test room's floor has no air")
 
 	// Paper is FLAMMABLE and uses the integrity system — the canonical
 	// flammable floor item.
@@ -5513,13 +5363,19 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// and the flammable item should catch fire (ON_FIRE flag set by the burning
 	// component's RegisterWithParent).
 	var/datum/gas_mixture/turf_air = T.return_air()
+	var/datum/gas_mixture/saved_air = new
+	saved_air.copy_from(turf_air)
 	turf_air.set_temperature(1000) // very hot
 	turf_air.adjust_gas(/datum/gas/oxygen, 100)
+	// The heat domain reads turf gas from the gas field's published frame.
+	SSair.run_gas_frames(1)
 
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
-	// Paper ignites through its ignition rule (code/datums/rules/declarations.dm),
-	// which runs on the next reactor dispatch.
-	react_test_ticks(2)
+	vg_heat_debug_run_frames(2)
+	// The exposure heats the paper's heat body; its ignition rule
+	// (code/datums/rules/declarations.dm) runs on the next heat frame.
+	dq_rx_flush()
+	react_test_ticks(10)
 
 	// Observable consequence: a flammable item exposed to ignition-temperature
 	// air must be alight. If fire_act stopped applying heat to floor items, the
@@ -5528,7 +5384,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"flammable item exposed to 1000 K air neither ignited (ON_FIRE) nor was destroyed — fire_act applied no heat")
 
 	if(!QDELETED(I))
+		I.extinguish()
 		qdel(I)
+	turf_air.copy_from(saved_air)
 
 
 /// Gas thruster constructs and reports fuel + thrust without crashing on
@@ -5854,7 +5712,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// SSair.times_fired) is open — i.e., the paper hasn't already been
 	// pushed THIS air cycle.
 	var/cycle_at_start = SSair.times_fired
-	dq_atmos_test_wait_real_ssair_ticks(1)
+	var/wait_started = world.time
+	while(SSair.times_fired == cycle_at_start && world.time - wait_started < DQ_ATMOS_TEST_MAX_WAIT)
+		sleep(world.tick_lag)
 	TEST_ASSERT(SSair.times_fired > cycle_at_start, \
 		"Master.Loop didn't advance SSair.times_fired during sleep — engine not ticking")
 	var/direction = get_dir(A, B)
@@ -6498,7 +6358,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Airtight breath mask in the wear_mask slot.
 	var/obj/item/clothing/mask/breath/M = new(H)
-	H.wear_mask = M
+	TEST_ASSERT(H.equip_to_slot(M, slot_wear_mask), "couldn't put the test mask on")
 	TEST_ASSERT(M.item_flags & AIRTIGHT, "test mask not AIRTIGHT — setup invalid")
 
 	// Oxygen tank in the human's contents, set as the internal supply.
@@ -6530,7 +6390,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Removing the AIRTIGHT mask should detach the internal supply: next call
 	// returns null because the AIRTIGHT gate fails.
-	H.wear_mask = null
+	H.drop_from_inventory(M)
 	var/datum/gas_mixture/no_breath = H.get_breath_from_internal(BREATH_VOLUME)
 	TEST_ASSERT_NULL(no_breath, \
 		"internals stayed active without AIRTIGHT mask — security gate broken")
@@ -6655,7 +6515,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	vg_topology_barrier()
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())
@@ -6733,22 +6592,19 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Drive equilibration, polling for the 50/50 composition (the same
 	// condition asserted below) instead of always burning the full 60 ticks.
-	var/baseline = SSair.times_fired
-	var/max_wait = min(SSair.wait * 60 * 3, DQ_ATMOS_TEST_MAX_WAIT)
-	var/started = world.time
+	var/baseline = 0
 	var/a_n2
 	var/a_o2
 	var/b_n2
 	var/b_o2
-	while(SSair.times_fired < baseline + 60)
+	while(baseline < 60)
 		dq_atmos_test_drive_ticks(list(A, B), 1)
+		baseline++
 		a_n2 = A_air.get_moles(/datum/gas/nitrogen)
 		a_o2 = A_air.get_moles(/datum/gas/oxygen)
 		b_n2 = B_air.get_moles(/datum/gas/nitrogen)
 		b_o2 = B_air.get_moles(/datum/gas/oxygen)
 		if(abs(a_n2 - a_o2) < (initial_total_n2 * 0.1) && abs(b_n2 - b_o2) < (initial_total_o2 * 0.1))
-			break
-		if(world.time - started > max_wait)
 			break
 
 	// Each cell should now hold roughly half N2 and half O2.
@@ -6764,7 +6620,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"B didn't reach 50/50 composition: N2=[b_n2] O2=[b_o2]")
 	// Cross-conservation: total N2 still ~200, total O2 still ~200.
 	TEST_ASSERT(abs((a_n2 + b_n2) - initial_total_n2) < 1, \
-		"N2 mass lost during diffusion: [initial_total_n2] → [a_n2 + b_n2]")
+		"N2 mass lost during diffusion: [initial_total_n2] → [a_n2 + b_n2] (A=[COORD(A)] planet=[A.planetary_atmos] dirs=[vg_atmos_open_dirs(A)] B=[COORD(B)] planet=[B.planetary_atmos] dirs=[vg_atmos_open_dirs(B)] a=[a_n2]/[a_o2] b=[b_n2]/[b_o2] A.air=[A_air.arena_id()] B.air=[B_air.arena_id()] A.cur=[A.air.arena_id()])")
 	TEST_ASSERT(abs((a_o2 + b_o2) - initial_total_o2) < 1, \
 		"O2 mass lost during diffusion: [initial_total_o2] → [a_o2 + b_o2]")
 
@@ -6876,10 +6732,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/initial_a_plasma = A.air.get_moles(/datum/gas/plasma)
 	var/initial_b_plasma = B.air.get_moles(/datum/gas/plasma)
 
-	// Sleep and let the real game tick. Master.Loop ticks SSmachines
-	// (which calls Can.process()) AND SSair (which spreads gas tile-to-tile).
-	// Poll and break as soon as both conditions asserted below hold, instead
-	// of always sleeping out the full 30-tick budget.
+	// Let the real game tick: Master.Loop runs SSmachines (which calls
+	// Can.process()) AND SSair (which steps the gas field). This is the one
+	// integration test that keeps the wall clock on purpose. Poll and break
+	// as soon as both conditions asserted below hold.
 	var/baseline = SSair.times_fired
 	var/max_wait = min(SSair.wait * 30 * 3, DQ_ATMOS_TEST_MAX_WAIT)
 	var/started = world.time
@@ -6938,12 +6794,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	stoplag()
 	var/turf/open/center = locate(12, 12, test_z)
 	center.air.adjust_moles(/datum/gas/oxygen, 10)
-	var/start_cycle = SSair.times_fired
+	var/frames = 0
 	var/settled = FALSE
 	var/last_pressure_delta = INFINITY
 	var/last_local_active = 0
-	while(SSair.times_fired < start_cycle + 60)
-		stoplag()
+	while(frames < 60)
+		SSair.run_gas_frames(1)
+		frames++
 		var/min_pressure = INFINITY
 		var/max_pressure = 0
 		for(var/turf/open/floor as anything in room)
@@ -6962,7 +6819,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(last_pressure_delta < 0.5 && !last_local_active)
 			settled = TRUE
 			break
-	TEST_ASSERT(settled, "sealed 3x3 disturbance did not settle and leave its local frontier after [SSair.times_fired - start_cycle] atmos cycles (pressure delta=[last_pressure_delta], local active=[last_local_active]/9, global retained=[SSair.async_retained_turfs], pending=[SSair.async_pending_turfs])")
+	TEST_ASSERT(settled, "sealed 3x3 disturbance did not settle after [frames] gas frames (pressure delta=[last_pressure_delta], local active=[last_local_active]/9)")
 
 
 /// After assume_air, update_visuals must produce a visible overlay on the

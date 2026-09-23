@@ -46,20 +46,37 @@
 	QDEL_NULL_LIST(products)
 	return ..()
 
-/obj/machinery/food_replicator/attack_hand(mob/user as mob)
+/obj/machinery/food_replicator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_item/food_replicator_scan,
+		/datum/interaction/machine_item/food_replicator_insert_container,
+		/datum/interaction/machine_hand/ungated/food_replicator_use,
+		/datum/interaction/machine_verb/food_replicator_eject_beaker,
+	)
+	..()
+
+/// Old attack_hand (never called ..()): opens the print dialogue.
+/datum/interaction/machine_hand/ungated/food_replicator_use
+	id = "food_replicator_use"
+	name = "Use"
+	effect = /obj/machinery/food_replicator/proc/interaction_use
+
+/obj/machinery/food_replicator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 
 	if(panel_open)
 		to_chat(user, span_warning("Close the panel first!"))
-		return
+		return TRUE
 
 	if(printing)
 		to_chat(user, span_warning("\The [src] is busy!"))
-		return
+		return TRUE
 
 	interact(user)
+	return TRUE
 
 /obj/machinery/food_replicator/interact(mob/user)
 	if(!isemptylist(products))
@@ -119,27 +136,37 @@
 		to_chat(user, span_warning("There is no food to replicate!"))
 
 
-/obj/machinery/food_replicator/attackby(obj/item/O, mob/user)
-	if(default_part_replacement(user, O))
-		return
-	if(istype(O, /obj/item/reagent_containers/food))
-		balloon_alert(user, "scanning...")
-		if(!do_after(user, 10, src))
-			return
-		foodcheck(O)
-		return
-	if(istype(O, /obj/item/reagent_containers/glass))
-		if(!isnull(container))
-			to_chat(user, span_warning("There is already a reagent container inserted!"))
-			return
+/// Scan a food item to learn its recipe.
+/datum/interaction/machine_item/food_replicator_scan
+	id = "food_replicator_scan"
+	name = "Scan food"
+	held_type = /obj/item/reagent_containers/food
+	effect = /obj/machinery/food_replicator/proc/interaction_scan
 
-		user.drop_item()
-		O.loc = src
-		container = O
-		balloon_alert(user, "placed \the [O] in \the [src]")
-		return
+/obj/machinery/food_replicator/proc/interaction_scan(mob/user, obj/item/reagent_containers/food/O, datum/interaction/interaction)
+	balloon_alert(user, "scanning...")
+	if(!do_after(user, 10, src))
+		return TRUE
+	foodcheck(O)
+	return TRUE
 
-	return ..()
+/// Insert a reagent container to supply nutriment.
+/datum/interaction/machine_item/food_replicator_insert_container
+	id = "food_replicator_insert_container"
+	name = "Insert container"
+	held_type = /obj/item/reagent_containers/glass
+	effect = /obj/machinery/food_replicator/proc/interaction_insert_container
+
+/obj/machinery/food_replicator/proc/interaction_insert_container(mob/user, obj/item/reagent_containers/glass/O, datum/interaction/interaction)
+	if(!isnull(container))
+		to_chat(user, span_warning("There is already a reagent container inserted!"))
+		return TRUE
+
+	user.drop_item()
+	O.loc = src
+	container = O
+	balloon_alert(user, "placed \the [O] in \the [src]")
+	return TRUE
 
 /obj/machinery/food_replicator/proc/foodcheck(obj/item/reagent_containers/food)
 	var/mob/living/mob = locate(/mob/living) in food
@@ -195,17 +222,17 @@
 	speed = cap_rating / 2
 
 
-/obj/machinery/food_replicator/verb/eject_beaker()
-	set name = "Eject Beaker"
-	set category = "Object"
-	set src in oview(1)
+/// Old verb/eject_beaker().
+/datum/interaction/machine_verb/food_replicator_eject_beaker
+	id = "food_replicator_eject_beaker"
+	name = "Eject Beaker"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/food_replicator/proc/interaction_eject_beaker
 
-	if(usr.stat != 0)
-		return
-
-	add_fingerprint(usr)
+/obj/machinery/food_replicator/proc/interaction_eject_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+	add_fingerprint(user)
 	remove_beaker()
-	return
+	return TRUE
 
 /obj/machinery/food_replicator/proc/remove_beaker()
 	if(container)

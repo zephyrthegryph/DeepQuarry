@@ -63,19 +63,37 @@
 		filling.color = reagents.get_color()
 		add_overlay(filling)
 
-/obj/machinery/reagent_refinery/filter/attack_hand(mob/user)
-	set_filter()
+/obj/machinery/reagent_refinery/filter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/reagent_filter_use,
+		/datum/interaction/machine_verb/reagent_filter_set_filter,
+		/datum/interaction/machine_verb/reagent_filter_flip,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/reagent_filter_use
+	id = "reagent_filter_use"
+	name = "Use"
+	effect = /obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_use
+
+/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_use(mob/user, obj/item/held, datum/interaction/interaction)
+	set_filter(user)
+	return TRUE
 
 /obj/machinery/reagent_refinery/filter/proc/get_filter_side()
 	return filter_side
 
-/obj/machinery/reagent_refinery/filter/verb/set_filter()
-	PRIVATE_PROC(TRUE)
-	set name = "Set Filter Chemical"
-	set category = "Object"
-	set src in view(1)
+/datum/interaction/machine_verb/reagent_filter_set_filter
+	id = "reagent_filter_set_filter"
+	name = "Set Filter Chemical"
+	effect = /obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_set_filter
 
-	if (usr.stat || usr.restrained())
+/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_set_filter(mob/user, obj/item/held, datum/interaction/interaction)
+	set_filter(user)
+	return TRUE
+
+/obj/machinery/reagent_refinery/filter/proc/set_filter(mob/user)
+	if (user.stat || user.restrained())
 		return
 
 	// Get a list of reagents currently inside!
@@ -92,22 +110,26 @@
 	else if(filter_reagent_id != "")
 		var/datum/reagent/R = SSchemistry.chemical_reagents[filter_reagent_id]
 		filter = "filtering [R.name]"
-	var/select = tgui_input_list(usr, "Select chemical to filter. It is currently [filter].", "Chemical Select", tgui_list)
+	var/select = tgui_input_list(user, "Select chemical to filter. It is currently [filter].", "Chemical Select", tgui_list)
 
-	if (usr.stat || usr.restrained())
+	if (user.stat || user.restrained())
 		return
 
 	// Select if possible
 	if(select && select != "")
 		filter_reagent_id = tgui_list[select]
 
-/obj/machinery/reagent_refinery/filter/verb/flip_filter()
-	PRIVATE_PROC(TRUE)
-	set name = "Flip Filter Direction"
-	set category = "Object"
-	set src in view(1)
+/datum/interaction/machine_verb/reagent_filter_flip
+	id = "reagent_filter_flip"
+	name = "Flip Filter Direction"
+	effect = /obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_flip
 
-	if (usr.stat || usr.restrained() || anchored)
+/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_flip(mob/user, obj/item/held, datum/interaction/interaction)
+	flip_filter(user)
+	return TRUE
+
+/obj/machinery/reagent_refinery/filter/proc/flip_filter(mob/user)
+	if (user.stat || user.restrained() || anchored)
 		return
 
 	filter_side *= -1

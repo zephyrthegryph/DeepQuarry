@@ -55,9 +55,19 @@
 	icon = 'icons/obj/power.dmi'
 	icon_state = "crema_switch"
 
-/obj/machinery/button/neonsign/attack_hand(mob/user as mob)
-	if(..())
-		return
+/obj/machinery/button/neonsign/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/neonsign_button_toggle,
+	)
+	..()
+
+/datum/interaction/machine_hand/neonsign_button_toggle
+	id = "neonsign_button_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/button/neonsign/proc/interaction_toggle
+
+/obj/machinery/button/neonsign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	use_power(5)
@@ -68,3 +78,4 @@
 	for(var/obj/machinery/neonsign/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.toggle()
+	return TRUE

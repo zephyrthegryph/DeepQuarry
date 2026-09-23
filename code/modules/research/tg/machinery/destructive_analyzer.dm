@@ -60,49 +60,75 @@ It is used to destroy hand-held objects and advance technological research. Used
 	else
 		icon_state = "d_analyzer"
 
-/obj/machinery/rnd/destructive_analyzer/attackby(obj/item/O as obj, mob/user as mob)
-	if(busy)
-		to_chat(user, span_notice("\The [src] is busy right now."))
-		return
-	if(default_part_replacement(user, O))
-		return
-	if(!panel_open)
-		var/current_item = loaded_item?.resolve()
-		if(current_item)
-			to_chat(user, span_notice("There is something already loaded into \the [src]."))
-		else
-			if(isrobot(user)) //Don't put your module items in there!
-				return
-			if(is_type_in_list(O, GLOB.item_deconstruction_blacklist))
-				to_chat(user, span_notice("The machine rejects \the [O]!"))
-				return
-			if((O.item_flags & DROPDEL) || (O.item_flags & NOSTRIP))
-				to_chat(user, span_notice("The machine rejects \the [O]!"))
-				return
-			if(O.tethered_host_item)
-				to_chat(user, span_notice("The machine rejects \the [O]!"))
-				return
-			if(LAZYLEN(O.contents))
-				var/bad_item = FALSE
-				for(var/obj/item/thing in O.contents)
-					if(thing.item_flags & ABSTRACT)
-						continue
-					bad_item = TRUE
-					break
-				if(bad_item)
-					to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
-					return
-			busy = TRUE
-			loaded_item = WEAKREF(O)
-			user.drop_item()
-			O.forceMove(src)
-			SStgui.update_uis(src)
-			to_chat(user, span_notice("You add \the [O] to \the [src]."))
-			flick("d_analyzer_la", src)
-			addtimer(CALLBACK(src, PROC_REF(analyze_finish)), 1 SECONDS, TIMER_DELETE_ME)
-		return TRUE
-	// Handle signal to remote_materials so we can link the DA to the silo
-	. = ..()
+/obj/machinery/rnd/destructive_analyzer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/destructive_analyzer_part_replace,
+		/datum/interaction/machine_item/destructive_analyzer_load,
+		/datum/interaction/machine_drag/destructive_analyzer_recycle,
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
+
+/obj/machinery/rnd/destructive_analyzer/proc/not_busy(mob/actor, atom/target, obj/item/held)
+	return !busy
+
+/datum/interaction/machine_item/destructive_analyzer_part_replace
+	id = "destructive_analyzer_part_replace"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/not_busy, "it's busy right now"))
+	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_part_replace
+
+/obj/machinery/rnd/destructive_analyzer/proc/interaction_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
+	return default_part_replacement(user, held) ? TRUE : FALSE
+
+/datum/interaction/machine_item/destructive_analyzer_load
+	id = "destructive_analyzer_load"
+	name = "Load"
+	held_type = /obj/item
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/panel_closed, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/not_busy, "it's busy right now"))
+	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_load
+
+/obj/machinery/rnd/destructive_analyzer/proc/panel_closed(mob/actor, atom/target, obj/item/held)
+	return !panel_open
+
+/obj/machinery/rnd/destructive_analyzer/proc/interaction_load(mob/user, obj/item/O, datum/interaction/interaction)
+	var/current_item = loaded_item?.resolve()
+	if(current_item)
+		to_chat(user, span_notice("There is something already loaded into \the [src]."))
+	else
+		if(isrobot(user)) //Don't put your module items in there!
+			return TRUE
+		if(is_type_in_list(O, GLOB.item_deconstruction_blacklist))
+			to_chat(user, span_notice("The machine rejects \the [O]!"))
+			return TRUE
+		if((O.item_flags & DROPDEL) || (O.item_flags & NOSTRIP))
+			to_chat(user, span_notice("The machine rejects \the [O]!"))
+			return TRUE
+		if(O.tethered_host_item)
+			to_chat(user, span_notice("The machine rejects \the [O]!"))
+			return TRUE
+		if(LAZYLEN(O.contents))
+			var/bad_item = FALSE
+			for(var/obj/item/thing in O.contents)
+				if(thing.item_flags & ABSTRACT)
+					continue
+				bad_item = TRUE
+				break
+			if(bad_item)
+				to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
+				return TRUE
+		busy = TRUE
+		loaded_item = WEAKREF(O)
+		user.drop_item()
+		O.forceMove(src)
+		SStgui.update_uis(src)
+		to_chat(user, span_notice("You add \the [O] to \the [src]."))
+		flick("d_analyzer_la", src)
+		addtimer(CALLBACK(src, PROC_REF(analyze_finish)), 1 SECONDS, TIMER_DELETE_ME)
+	return TRUE
 
 /obj/machinery/rnd/destructive_analyzer/proc/analyze_finish()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -113,37 +139,41 @@ It is used to destroy hand-held objects and advance technological research. Used
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // RPED recycling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-/obj/machinery/rnd/destructive_analyzer/MouseDrop_T(atom/dropping, mob/living/user)
-	if(istype(dropping, /obj/item/storage/part_replacer))
-		var/obj/item/storage/part_replacer/replacer = dropping
-		replacer.hide_from(user)
-		if(!rped_recycler_ready)
-			to_chat(user, span_notice("\The [src]'s stock parts recycler isn't ready yet."))
-			return FALSE
+/datum/interaction/machine_drag/destructive_analyzer_recycle
+	id = "destructive_analyzer_recycle"
+	name = "Recycle parts"
+	held_type = /obj/item/storage/part_replacer
+	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_recycle
 
-		// We want the lowest-part tier rating in the RPED so we only recycle the lowest-tier parts.
-		var/lowest_rating = INFINITY
-		for(var/obj/item/B in replacer.contents)
-			if(B.rped_rating() < lowest_rating)
-				lowest_rating = B.rped_rating()
-		if(lowest_rating == INFINITY)
-			atom_say("Mass part deconstruction attempt canceled - no valid parts for recycling detected.")
-			return FALSE
-		// Sending salvaged materials to the silo
-		var/datum/component/material_container/materials = get_silo_material_container_datum(TRUE)
-		if(!materials)
-			return FALSE
-		for(var/obj/item/B in replacer.contents)
-			if(B.rped_rating() > lowest_rating)
-				continue
-			materials.insert_item(B, decon_mod, src)
-		// Feedback
-		playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-		rped_recycler_ready = FALSE
-		addtimer(CALLBACK(src, PROC_REF(rped_ready)), 5 SECONDS, TIMER_DELETE_ME)
-		to_chat(user, span_notice("You deconstruct all the parts of rating [lowest_rating] in [replacer] with [src]."))
+/obj/machinery/rnd/destructive_analyzer/proc/interaction_recycle(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
+	var/obj/item/storage/part_replacer/replacer = dropping
+	replacer.hide_from(user)
+	if(!rped_recycler_ready)
+		to_chat(user, span_notice("\The [src]'s stock parts recycler isn't ready yet."))
 		return TRUE
-	. = ..()
+
+	// We want the lowest-part tier rating in the RPED so we only recycle the lowest-tier parts.
+	var/lowest_rating = INFINITY
+	for(var/obj/item/B in replacer.contents)
+		if(B.rped_rating() < lowest_rating)
+			lowest_rating = B.rped_rating()
+	if(lowest_rating == INFINITY)
+		atom_say("Mass part deconstruction attempt canceled - no valid parts for recycling detected.")
+		return TRUE
+	// Sending salvaged materials to the silo
+	var/datum/component/material_container/materials = get_silo_material_container_datum(TRUE)
+	if(!materials)
+		return TRUE
+	for(var/obj/item/B in replacer.contents)
+		if(B.rped_rating() > lowest_rating)
+			continue
+		materials.insert_item(B, decon_mod, src)
+	// Feedback
+	playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
+	rped_recycler_ready = FALSE
+	addtimer(CALLBACK(src, PROC_REF(rped_ready)), 5 SECONDS, TIMER_DELETE_ME)
+	to_chat(user, span_notice("You deconstruct all the parts of rating [lowest_rating] in [replacer] with [src]."))
+	return TRUE
 
 /obj/machinery/rnd/destructive_analyzer/proc/rped_ready()
 	PRIVATE_PROC(TRUE)
@@ -168,8 +198,6 @@ It is used to destroy hand-held objects and advance technological research. Used
 // Handling deconstruction
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/obj/machinery/rnd/destructive_analyzer/attack_hand(mob/user as mob)
-	tgui_interact(user)
 
 /obj/machinery/rnd/destructive_analyzer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -186,7 +214,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 		data["item_icon"] = icon2base64(getFlatIcon(image(icon = current_item.icon, icon_state = current_item.icon_state), no_anim = TRUE))
 		data["indestructible"] = is_type_in_list(current_item, GLOB.item_deconstruction_blacklist)
 		data["loaded_item"] = current_item
-		data["already_deconstructed"] = !!stored_research.deconstructed_items[current_item.type]
+		data["already_deconstructed"] = !!LAZYACCESS(stored_research.deconstructed_items, current_item.type)
 		var/list/points = techweb_item_point_check(current_item)
 		data["recoverable_points"] = techweb_point_display_generic(points)
 
@@ -196,7 +224,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 			var/list/node_data = list()
 			node_data["node_name"] = unlockable_node.display_name
 			node_data["node_id"] = unlockable_node.id
-			node_data["node_hidden"] = !!stored_research.hidden_nodes[unlockable_node.id]
+			node_data["node_hidden"] = !!LAZYACCESS(stored_research.hidden_nodes, unlockable_node.id)
 			data["node_data"] += list(node_data)
 	else
 		data["loaded_item"] = null

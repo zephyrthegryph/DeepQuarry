@@ -154,7 +154,7 @@
 	)
 
 	var/mob/living/carbon/human/H = user
-	var/obj/item/clothing/gloves/G = H.gloves
+	var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
 	if(istype(G) && ((G.flags & THICKMATERIAL && prob(70)) || istype(G, /obj/item/clothing/gloves/gauntlets)))
 		return
 

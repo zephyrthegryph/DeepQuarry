@@ -5,8 +5,6 @@
 	name = "chem analyzer PRO"
 	desc = "New and improved! Used to precisely scan chemicals and other liquids inside various containers. \
 	It can also identify the liquid contents of unknown objects and their chemical breakdowns."
-	description_info = "This machine will try to tell you what reagents are inside of something capable of holding reagents. \
-	It is also used to 'identify' specific reagent-based objects with their properties obscured from inspection by normal means."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "chem_analyzer"
 	density = TRUE
@@ -16,7 +14,7 @@
 	clicksound = "button"
 	circuit = /obj/item/circuitboard/chemical_analyzer
 	var/analyzing = FALSE
-	var/list/found_reagents = list()
+	var/list/found_reagents
 
 /obj/machinery/chemical_analyzer/Initialize(mapload)
 	. = ..()
@@ -25,41 +23,50 @@
 /obj/machinery/chemical_analyzer/update_icon()
 	icon_state = "chem_analyzer[analyzing ? "-working":""]"
 
-/obj/machinery/chemical_analyzer/attackby(obj/item/I, mob/living/user)
-	if(!istype(I))
-		return ..()
+/obj/machinery/chemical_analyzer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/chemical_analyzer_scan,
+		/datum/interaction/machine_hand/ungated/chemical_analyzer_open_ui,
+	)
+	..()
 
-	if(istype(I,/obj/item/reagent_containers))
-		analyzing = TRUE
-		update_icon()
-		to_chat(user, span_notice("Analyzing \the [I], please stand by..."))
+/datum/interaction/machine_item/chemical_analyzer_scan
+	id = "chemical_analyzer_scan"
+	name = "Analyze"
+	held_type = /obj/item/reagent_containers
+	effect = /obj/machinery/chemical_analyzer/proc/interaction_scan
 
-		if(!do_after(user, 2 SECONDS, src))
-			to_chat(user, span_warning("Sample moved outside of scan range, please try again and remain still."))
-			analyzing = FALSE
-			update_icon()
-			return
+/obj/machinery/chemical_analyzer/proc/interaction_scan(mob/user, obj/item/held, datum/interaction/interaction)
+	analyzing = TRUE
+	update_icon()
+	to_chat(user, span_notice("Analyzing \the [held], please stand by..."))
 
-		// First, identify it if it isn't already.
-		if(!I.is_identified(IDENTITY_FULL))
-			var/datum/identification/ID = I.identity
-			if(ID.identification_type == IDENTITY_TYPE_CHEMICAL) // This only solves chemical-based mysteries.
-				I.identify(IDENTITY_FULL, user)
-
-		// Now tell us everything that is inside.
-		if(I.reagents && I.reagents.reagent_list.len)
-			found_reagents.Cut()
-			for(var/datum/reagent/R in I.reagents.reagent_list)
-				if(!R.name)
-					continue
-				found_reagents[R.id] = R.volume
-			tgui_interact(user)
-		else
-			to_chat(user, span_warning("Nothing detected in [I]"))
-
+	if(!do_after(user, 2 SECONDS, src))
+		to_chat(user, span_warning("Sample moved outside of scan range, please try again and remain still."))
 		analyzing = FALSE
 		update_icon()
-		return
+		return TRUE
+
+	// First, identify it if it isn't already.
+	if(!held.is_identified(IDENTITY_FULL))
+		var/datum/identification/ID = held.identity
+		if(ID.identification_type == IDENTITY_TYPE_CHEMICAL) // This only solves chemical-based mysteries.
+			held.identify(IDENTITY_FULL, user)
+
+	// Now tell us everything that is inside.
+	if(held.reagents && held.reagents.reagent_list.len)
+		found_reagents.Cut()
+		for(var/datum/reagent/R in held.reagents.reagent_list)
+			if(!R.name)
+				continue
+			found_reagents[R.id] = R.volume
+		tgui_interact(user)
+	else
+		to_chat(user, span_warning("Nothing detected in [held]"))
+
+	analyzing = FALSE
+	update_icon()
+	return TRUE
 
 /obj/machinery/chemical_analyzer/screwdriver_act(mob/user, obj/item/tool)
 	return ..()
@@ -67,10 +74,19 @@
 /obj/machinery/chemical_analyzer/crowbar_act(mob/user, obj/item/tool)
 	return ..()
 
-/obj/machinery/chemical_analyzer/attack_hand(mob/user)
-	if(!found_reagents.len)
-		return ..()
+/datum/interaction/machine_hand/ungated/chemical_analyzer_open_ui
+	id = "chemical_analyzer_open_ui"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/chemical_analyzer/proc/has_results, null))
+	effect = /obj/machinery/chemical_analyzer/proc/interaction_open_ui_impl
+
+/obj/machinery/chemical_analyzer/proc/has_results(mob/actor, atom/target, obj/item/held)
+	return length(found_reagents) > 0
+
+/obj/machinery/chemical_analyzer/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user) // Show last analysis
+	return TRUE
 
 /obj/machinery/chemical_analyzer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -106,8 +122,8 @@
 		subdata["overdose"] = R.overdose
 		subdata["flavor"] = R.taste_description
 		subdata["allergen"] = assembly_allergy_list(R.allergen_type, R.medallergen_type)
-		subdata["beakerAmount"] = found_reagents[ID]
-		total_vol += found_reagents[ID]
+		subdata["beakerAmount"] = LAZYACCESS(found_reagents, ID)
+		total_vol += LAZYACCESS(found_reagents, ID)
 		SSinternal_wiki.assemble_reaction_data(subdata, R)
 		// Send as a big list of lists
 		reagents_sent += list(subdata)

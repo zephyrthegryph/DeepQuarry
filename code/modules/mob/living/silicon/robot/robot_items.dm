@@ -88,7 +88,7 @@
 					break
 
 				I.loc = src
-				carrying.Add(I)
+				LAZYADD(carrying, I)
 				add_overlay(image("icon" = I.icon, "icon_state" = I.icon_state, "layer" = 30 + I.layer))
 				addedSomething = 1
 		if ( addedSomething )
@@ -121,7 +121,7 @@
 
 		for(var/obj/item/I in carrying)
 			I.loc = dropspot
-			carrying.Remove(I)
+			LAZYREMOVE(carrying, I)
 			droppedSomething = 1
 			if(!foundtable && isturf(dropspot))
 				// if no table, presume that the person just shittily dropped the tray on the ground and made a mess everywhere!

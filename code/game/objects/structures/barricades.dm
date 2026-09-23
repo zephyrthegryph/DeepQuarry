@@ -151,7 +151,7 @@
 		if(can_join_with(S))
 			dirs += get_dir(src, S)
 
-	connections = dirs_to_corner_states(dirs)
+	connections = string_list(dirs_to_corner_states(dirs))
 
 	update_icon()
 

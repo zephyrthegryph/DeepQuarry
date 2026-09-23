@@ -62,7 +62,7 @@
 /// The slot definitions a holder type declares, in order, or null. Cached per type.
 /proc/dq_slot_defs_for(atom/holder)
 	var/static/list/cache = list()
-	var/key = holder.type
+	var/key = holder.slot_def_key()
 	. = cache[key]
 	if(isnull(.))
 		var/list/defs = list()
@@ -73,9 +73,16 @@
 	return . || null
 
 /// Override on a holder type to declare its slots: a list of /datum/slot_def
-/// paths. Return a proc-local static list. Must depend on the type only.
+/// paths. Return a proc-local static list. The result must depend only on
+/// slot_def_key(), which is the holder's type unless overridden.
 /atom/proc/slot_def_types()
 	return null
+
+/// What a holder's slot set is cached by. Holders whose slots depend on more
+/// than their type (a mob's body plan) return a key covering that too, e.g.
+/// "[type]|[body.plan.type]"; slot_def_types() must then return the set for it.
+/atom/proc/slot_def_key()
+	return type
 
 /// The limit for this holder. Override for per-instance capacities.
 /datum/slot_def/proc/capacity_for(atom/holder)

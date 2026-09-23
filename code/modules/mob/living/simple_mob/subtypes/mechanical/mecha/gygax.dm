@@ -21,15 +21,7 @@
 	wreckage = /obj/structure/loot_pile/mecha/gygax
 
 	endurance = 300
-	armor = list(
-				"melee"		= 25,
-				"bullet"	= 20,
-				"laser"		= 30,
-				"energy"	= 15,
-				"bomb"		= 0,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=25;bullet=20;laser=30;energy=15;bio=100;rad=100"
 
 	projectile_dispersion = 8
 	projectiletype = /obj/item/projectile/beam/midlaser
@@ -63,15 +55,7 @@
 	endurance = 400
 	deflect_chance = 25
 	has_repair_droid = TRUE
-	armor = list(
-				"melee"		= 40,
-				"bullet"	= 40,
-				"laser"		= 50,
-				"energy"	= 35,
-				"bomb"		= 20,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=40;bullet=40;laser=50;energy=35;bomb=20;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/medgax
 	name = "medgax"

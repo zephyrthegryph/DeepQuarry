@@ -290,7 +290,7 @@ GLOBAL_LIST(construction_frame_floor)
 	var/need_circuit = TRUE
 	var/datum/frame/frame_types/frame_type = new /datum/frame/frame_types/machine
 
-	var/list/components = list()
+	var/list/components
 	var/list/req_components = null
 	var/list/req_component_names = null
 
@@ -379,14 +379,14 @@ GLOBAL_LIST(construction_frame_floor)
 					components += CC
 					req_components[I] -= camt
 					update_desc()
-					break
-				user.drop_item()
-				P.forceMove(src)
-				components += P
-				req_components[I]--
-				update_desc()
 				break
-		to_chat(user, desc)
+			user.drop_item()
+			P.forceMove(src)
+			components += P
+			req_components[I]--
+			update_desc()
+			break
+	to_chat(user, desc)
 
 	else if(istype(P, /obj/item))
 		if(state == FRAME_WIRED)
@@ -412,7 +412,7 @@ GLOBAL_LIST(construction_frame_floor)
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
 				NS.update_icon()
 				ST.use(camt)
-				components += NS
+				LAZYADD(components, NS)
 				req_components[I] -= camt
 				break
 
@@ -422,7 +422,7 @@ GLOBAL_LIST(construction_frame_floor)
 		else
 			user.drop_item()
 			P.forceMove(src)
-		components += P
+		LAZYADD(components, P)
 		req_components[I]--
 		break
 

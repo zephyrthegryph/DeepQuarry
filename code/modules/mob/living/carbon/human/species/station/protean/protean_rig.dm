@@ -9,7 +9,7 @@
 	default_mob_icon = null	//Actually having a forced sprite for Proteans is ugly af. I'm not gonna make this a toggle
 	icon_state = "nanomachine_rig"
 	interface_intro = "Protean"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "bio=100;rad=100"
 	siemens_coefficient= 1
 	slowdown = 0
 	offline_slowdown = 0
@@ -81,8 +81,8 @@
 		F.rig.myprotean = null
 	F.rig = src
 	myprotean = P
-	if(P.back)
-		addtimer(CALLBACK(src, PROC_REF(AssimilateBag), P, 1, P.back), 3)
+	if(P.get_equipped_item(SLOT_ID_BACK))
+		addtimer(CALLBACK(src, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK)), 3)
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
@@ -101,8 +101,8 @@
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
 	if(istype(B,/obj/item/storage/backpack))
 		if(spawned)
-			B = P.back
-			P.unEquip(P.back)
+			B = P.get_equipped_item(SLOT_ID_BACK)
+			P.unEquip(P.get_equipped_item(SLOT_ID_BACK))
 		if(QDELETED(B)) // for mannequins or such
 			return
 		B.forceMove(src)
@@ -314,7 +314,7 @@
 	else if(istype(W,/obj/item/rig_module))
 		if(!installed_modules)
 			installed_modules = list()
-		if(installed_modules.len)
+		if(length(installed_modules))
 			for(var/obj/item/rig_module/installed_mod in installed_modules)
 				if(!installed_mod.redundant && istype(installed_mod,W))
 					to_chat(user, "The hardsuit already has a module of that class installed.")
@@ -329,7 +329,7 @@
 		if(!user.unEquip(mod))
 			return
 		to_chat(user, "You install \the [mod] into \the [src].")
-		installed_modules |= mod
+		LAZYOR(installed_modules, mod)
 		mod.forceMove(src)
 		mod.installed(src)
 		update_icon()
@@ -339,7 +339,7 @@
 			return
 	if(rig_storage)
 		var/obj/item/storage/backpack = rig_storage
-		if(backpack.can_be_inserted(W, 1))
+		if(!backpack.insert_refusal(W, user))
 			backpack.handle_item_insertion(W)
 	else
 		if(istype(W,/obj/item/storage/backpack))
@@ -351,7 +351,7 @@
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
 		return ITEM_INTERACT_BLOCKING
-	if(user.r_hand && user.l_hand)
+	if(user.get_equipped_item(SLOT_ID_HAND_R) && user.get_equipped_item(SLOT_ID_HAND_L))
 		air_supply.forceMove(get_turf(user))
 	else
 		user.put_in_hands(air_supply)
@@ -388,7 +388,7 @@
 		to_chat(user, "You detach \the [removed] from \the [src].")
 		removed.forceMove(get_turf(src))
 		removed.removed()
-		installed_modules -= removed
+		LAZYREMOVE(installed_modules, removed)
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
 
@@ -481,7 +481,7 @@
 		return
 	var/obj/item/organ/external/E = istext(zone) ? source.get_organ(check_zone(zone)) : null
 	var/obj/item/clothing/piece = covering_piece(source, E)
-	var/armor_value = piece?.armor?[armor_key]
+	var/armor_value = piece ? piece.get_armor().value(armor_key) : 0
 	if(!armor_value)
 		return
 	var/soaked = amount_ref[1] * clamp(armor_value, 0, 100) / 100
@@ -555,13 +555,13 @@
 		// Unworn modules refuse a polite shutdown; an inert cluster cuts them anyway.
 		module.active = FALSE
 	reset()
-	var/list/no_armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
-	armor = no_armor.Copy()
+	set_armor(dq_armor_none())
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
-		piece.armor = no_armor.Copy()
+		piece.set_armor(dq_armor_none())
 	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	wearer?.update_inv_back()
+	wearer?.worn_protection_changed()
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
 
 /// The protean has reconstituted: the cluster is its own again.
@@ -570,10 +570,11 @@
 		return
 	inert = FALSE
 	var/obj/item/rig/R = assimilated_rig
-	var/list/restored = istype(R) ? R.armor : initial_armor()
-	armor = restored.Copy()
+	var/datum/armor/restored = istype(R) ? R.get_armor() : initial_armor()
+	set_armor(restored)
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
-		piece.armor = restored.Copy()
+		piece.set_armor(restored)
+	wearer?.worn_protection_changed()
 	if(istype(R))
 		slowdown = initial(R.slowdown) * 0.5
 	else
@@ -583,8 +584,7 @@
 
 /// The unconfigured cluster's armour.
 /obj/item/rig/protean/proc/initial_armor()
-	var/static/list/base_armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 100)
-	return base_armor
+	return dq_armor(list(BIO = 100, ARMOR_RAD = 100))
 
 /// An inert cluster runs nothing: no seals, no modules.
 /obj/item/rig/protean/check_power_cost(mob/living/user, cost, use_unconcious, obj/item/rig_module/mod, user_is_ai)
@@ -621,7 +621,7 @@
 		unremovable = FALSE
 	else
 		unremovable = TRUE //It's like glue! If you put them on your back, YOU can't take them off!
-	if(istype(M) && (M.back == src || M.belt == src))
+	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		start_soaking(M)
 
 /obj/item/rig/protean/ai_can_move_suit(mob/user, check_user_module = 0, check_for_ai = 0)
@@ -631,7 +631,7 @@
 		if(user)
 			to_chat(user, span_warning("Your host rig is unpowered and unresponsive."))
 		return 0
-	if(!wearer || (wearer.back != src && wearer.belt != src))
+	if(!wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
 		if(user)
 			to_chat(user, span_warning("Your host rig is not being worn."))
 		return 0
@@ -670,9 +670,10 @@
 
 	rigsuit_max_pressure = R.rigsuit_max_pressure
 	for(var/obj/item/piece in list(gloves,helmet,boots,chest))
-		piece.armor = R.armor.Copy()
+		piece.set_armor(R.get_armor())
 		piece.max_pressure_protection = R.rigsuit_max_pressure
 		piece.max_heat_protection_temperature = R.max_heat_protection_temperature
+	wearer?.worn_protection_changed()
 	//I dislike this piece of code, but not every rig has the full set of parts
 	if(R.gloves)
 		gloves.sprite_sheets = R.gloves.sprite_sheets.Copy()
@@ -716,7 +717,7 @@
 	if(assimilated_rig)
 		rigsuit_max_pressure = initial(rigsuit_max_pressure)
 		for(var/obj/item/piece in list(gloves,helmet,boots,chest))
-			piece.armor = armor.Copy()
+			piece.set_armor(get_armor())
 			piece.max_pressure_protection = rigsuit_max_pressure
 			piece.max_heat_protection_temperature = max_heat_protection_temperature
 			piece.icon_state = src.icon_state
@@ -741,6 +742,7 @@
 		icon_state = tempRig.icon_state
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)
+		wearer?.worn_protection_changed()
 		usr.put_in_hands(assimilated_rig)
 		assimilated_rig = null
 		qdel(tempRig)

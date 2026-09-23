@@ -18,9 +18,9 @@
 	var/description = ""
 	/// Included when `bench` runs without a scenario list.
 	var/default_scenario = FALSE
-	var/list/metrics = list()
-	var/list/details = list()
-	var/list/phases = list()
+	var/list/metrics
+	var/list/details
+	var/list/phases
 	/// World parameters for this run; scenario options are `bench_<name>=value`.
 	var/list/params
 	/// Set by `bench_profile=1`: wrap each window in the BYOND proc profiler.
@@ -40,11 +40,11 @@
 /// Records a scalar measurement. `better` is "lower", "higher" or "none"; it
 /// drives regression detection in `bench-compare`.
 /datum/benchmark/proc/metric(name, value, unit = "", better = "lower")
-	metrics[name] = list("value" = value, "unit" = unit, "better" = better)
+	LAZYSET(metrics, name, list("value" = value, "unit" = unit, "better" = better))
 
 /// Records structured context that isn't compared (tables, breakdowns).
 /datum/benchmark/proc/detail(name, value)
-	details[name] = value
+	LAZYSET(details, name, value)
 
 /// Reads a scenario option from the `bench_<name>` world parameter.
 /datum/benchmark/proc/param(name, default_value)
@@ -124,13 +124,23 @@
 			"tick_overrun" = subsystem.tick_overrun,
 		)
 	detail("[prefix]_subsystems", subsystems)
+	// SSair's main-thread time over the window (M1b's "Air time"), from the same
+	// estimate as the subsystem details.
+	var/list/air = subsystems[SSair.name]
+	metric("[prefix]_air_ms", air ? air["estimated_total_ms"] : 0, "ms")
+	// Per-second rates: windows measured in subsystem cycles last as long as
+	// that subsystem's cadence, so totals only compare at equal length.
+	var/list/machines = subsystems[SSmachines.name]
+	metric("[prefix]_air_ms_per_s", (air ? air["estimated_total_ms"] : 0) / elapsed_seconds, "ms/s")
+	metric("[prefix]_machines_ms_per_s", (machines ? machines["estimated_total_ms"] : 0) / elapsed_seconds, "ms/s")
+	metric("[prefix]_ffi_calls_per_s", (__verdigris_ffi_calls - window_start_ffi_calls) / elapsed_seconds, "calls/s")
 	// Reactor wake reasons by type (cumulative since boot) and this window's wake count.
 	var/list/reactor = SSreactor.performance_diagnostics()
 	reactor["window_wakes"] = SSreactor.total_wakes - window_reactor_wakes
 	metric("[prefix]_reactor_wakes", reactor["window_wakes"], "wakes", "lower")
 	detail("[prefix]_reactor", reactor)
 	detail("[prefix]_outliers", Master.perf_outliers.Copy())
-	detail("[prefix]_worst_tick", Master.perf_worst_tick.Copy())
+	detail("[prefix]_worst_tick", LAZYCOPY(Master.perf_worst_tick))
 	if(profiling)
 		SSprofiler.StopProfiling()
 		SSprofiler.DumpFile(allow_yield = FALSE)
@@ -140,7 +150,7 @@
 /datum/benchmark/proc/mark(name)
 	var/list/process = benchmark_process_memory()
 	var/list/rust = verdigris_metrics_list()
-	phases += list(list(
+	LAZYINITLIST(phases); phases += list(list(
 		"name" = name,
 		"world_time" = world.time,
 		"realtime" = REALTIMEOFDAY,
@@ -333,9 +343,9 @@
 				log_test("::error::Benchmark [scenario_id] failed: [error.name]")
 			result["duration_seconds"] = (REALTIMEOFDAY - start) / 10
 			result["runtimes"] = GLOB.total_runtimes - runtimes_before
-			result["metrics"] = scenario.metrics
-			result["details"] = scenario.details
-			result["phases"] = scenario.phases
+			result["metrics"] = (scenario.metrics || list())
+			result["details"] = (scenario.details || list())
+			result["phases"] = (scenario.phases || list())
 			log_test("Benchmark [scenario_id]: [result["status"]] in [result["duration_seconds"]]s, [length(scenario.metrics)] metrics")
 			qdel(scenario)
 		results[scenario_id] = result

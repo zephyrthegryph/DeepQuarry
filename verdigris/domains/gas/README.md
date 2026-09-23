@@ -1,11 +1,17 @@
-Rust-based atmospherics for Space Station 13 using [byondapi](https://github.com/spacestation13/byondapi-rs).
+# vg-gas
 
-The compiled binary on Citadel is compiled for Citadel's CPU, which therefore means that it uses [AVX2 fused-multiply-accumulate](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions#Advanced_Vector_Extensions_2).
+The gas domain of Verdigris (`doc/rewrite/simulation.md` §4, roadmap M1b):
 
-Binaries in releases are without these optimizations for compatibility. But it runs slower and you might still run into issues, in that case, please build the project yourself.
+- `cell.rs`: turf gas as a vg-core field (`TurfGas`), with its flux, reaction
+  check, channels and commands;
+- `pipes.rs`: pipes as a vg-core network (`Pipes`, `PipeNet`);
+- `world.rs`: the gas world that owns every mixture and hands DM handles;
+- `turf.rs`, `lib.rs`: the BYOND binds; `heat.rs`: the heat domain's binds;
+- `gas/`: the gas registry and mixture maths, originally from
+  [auxmos](https://github.com/Putnam3145/auxmos) (see `UPSTREAM.md`).
 
-You can build auxmos like any rust project, though you're gonna need `clang` version `6` or more installed. And `LIBCLANG_PATH` environment variable set to the bin path of clang in case of windows. Auxmos only supports `i686-unknown-linux-gnu` or `i686-pc-windows-msvc` targets on the build.
+`verdigris/README.md` (M1b notes) describes ownership, frames, events, watches
+and what M2 builds on. `code/ATMOSPHERICS/README.md` describes the DM side.
 
-DeepQuarry note: this is the upstream auxmos README. In DeepQuarry the crate is `vg-gas` (`verdigris/domains/gas`); DM calls its binds through `code/ATMOSPHERICS`, not through a generated `bindings.dm`.
-
-The `master` branch is to be considered unstable; use the releases if you want to make sure it actually works. [The latest release is here](https://github.com/Putnam3145/auxmos/releases/latest).
+Tests: `cargo test --target i686-pc-windows-msvc -p vg-gas` (the crate links
+byondapi, so it builds for the i686 targets only).

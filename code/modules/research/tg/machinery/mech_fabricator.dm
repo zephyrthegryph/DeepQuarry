@@ -383,12 +383,13 @@
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	)
 
-/obj/machinery/mecha_part_fabricator_tg/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return
-
-	tgui_interact(user)
+/obj/machinery/mecha_part_fabricator_tg/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/mech_fabricator_guard,
+		/datum/interaction/machine_item/mech_fabricator_part_replace,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/mecha_part_fabricator_tg/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -482,7 +483,7 @@
 				if(!istext(design_id))
 					continue
 
-				if(!(stored_research.researched_designs.Find(design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
+				if(!(LAZYFIND(stored_research.researched_designs, design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
 					continue
 
 				var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
@@ -557,13 +558,26 @@
 	else
 		icon_state = "fab-idle"
 
-/obj/machinery/mecha_part_fabricator_tg/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
+/datum/interaction/machine_item/mech_fabricator_guard
+	id = "mech_fabricator_guard"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/mecha_part_fabricator_tg/proc/interaction_guard
+
+/obj/machinery/mecha_part_fabricator_tg/proc/interaction_guard(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(being_built)
 		to_chat(user, span_warning("\The [src] is currently processing! Please wait until completion."))
-		return FALSE
+		return TRUE
+	return FALSE
 
-	if(default_part_replacement(user, W))
-		return
-	return ..()
+/datum/interaction/machine_item/mech_fabricator_part_replace
+	id = "mech_fabricator_part_replace"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	effect = /obj/machinery/mecha_part_fabricator_tg/proc/interaction_part_replace
+
+/obj/machinery/mecha_part_fabricator_tg/proc/interaction_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
+	return default_part_replacement(user, held) ? TRUE : FALSE
