@@ -183,7 +183,14 @@
 /datum/unit_test/dq_ability_dark_respite_needs_dark_area
 
 /datum/unit_test/dq_ability_dark_respite_needs_dark_area/Run()
-	var/mob/living/carbon/human/H = dq_phase_test_human() // not moved into /area/shadekin
+	var/mob/living/carbon/human/H = dq_phase_test_human()
+	var/turf/T = get_turf(H)
+	// Explicitly not /area/shadekin: in the full suite, some other test earlier
+	// in the run may have left an /area/shadekin (or another area entirely) on
+	// whatever turf test_floor() resolves to - this test is about the
+	// requirement, not about what state the shared test floor happens to be in.
+	if(istype(get_area(T), /area/shadekin))
+		ChangeArea(T, new /area())
 	var/datum/interaction/ability/A = dq_respite_ability()
 	TEST_ASSERT_EQUAL(A.why_not(H, H, null), "you can only trigger Dark Respite in the Dark", "blocked outside the Dark")
 
