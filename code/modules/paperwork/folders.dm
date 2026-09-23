@@ -9,6 +9,26 @@
 	pickup_sound = 'sound/items/pickup/paper.ogg'
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 
+// ---- Containment (C1): one pages slot for paperwork. Destroying the folder
+// destroys its pages, as before. ----
+
+/obj/item/folder/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/folder_pages)
+	return types
+
+/datum/slot_def/folder_pages
+	id = CONTAINER_SLOT_PAGES
+	name = "pages"
+	accepts = /datum/predicate/slot_folder_pages
+	drop_policy = SLOT_DROP_DELETE
+
+/datum/predicate/slot_folder_pages
+	name = "folder pages"
+	spec = list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_PAPERWORK), "only paper, photos and bundles fit"))
+
+/obj/item/folder/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	update_icon()
+
 /obj/item/folder/blue
 	desc = "A blue folder."
 	icon_state = "folder_blue"
@@ -47,8 +67,7 @@
 	var/obj/item/paper/P = new()
 	P.name = "Memo RE: proper analysis procedure"
 	P.info = "<br>We keep test dummies in pens here for a reason"
-	src.contents += P
-	update_icon()
+	P.move_into(src)
 
 /obj/item/folder/yellow_ce
 	desc = "A yellow folder with CE markings."
@@ -65,11 +84,14 @@
 	return
 
 /obj/item/folder/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo) || istype(W, /obj/item/paper_bundle))
+	if(HAS_TAG(W, TAG_PAPERWORK))
+		var/why = dq_ledger_refusal(W, src, CONTAINER_SLOT_PAGES, user)
+		if(why)
+			to_chat(user, span_warning("You can't put \the [W] into \the [src]: [why]."))
+			return
 		user.drop_item()
-		W.loc = src
-		to_chat(user, span_notice("You put the [W] into \the [src]."))
-		update_icon()
+		if(W.move_into(src, CONTAINER_SLOT_PAGES, user))
+			to_chat(user, span_notice("You put the [W] into \the [src]."))
 	else if(istype(W, /obj/item/pen))
 		var/n_name = sanitizeSafe(tgui_input_text(user, "What would you like to label the folder?", "Folder Labelling", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 		if(in_range(user, src) && user.stat == 0)
@@ -78,9 +100,8 @@
 
 /obj/item/folder/afterattack(turf/T as turf, mob/user as mob)
 	for(var/obj/item/paper/P in T)
-		P.loc = src
-		update_icon()
-		to_chat(user, span_notice("You tuck the [P] into \the [src]."))
+		if(P.move_into(src, CONTAINER_SLOT_PAGES, user))
+			to_chat(user, span_notice("You tuck the [P] into \the [src]."))
 
 // TGUI migration. attack_self opens Folder.tsx; the Topic
 // remove/rename/read/look/browse actions move to tgui_act. Reading a
@@ -124,9 +145,8 @@
 		return TRUE
 	switch(action)
 		if("remove")
-			O.loc = usr.loc
-			usr.put_in_hands(O)
-			update_icon()
+			if(slot_remove(O, usr.loc, usr))
+				usr.put_in_hands(O)
 			return TRUE
 		if("rename")
 			if(istype(O, /obj/item/paper))

@@ -42,6 +42,46 @@ Every move goes through one API, which enforces five invariants.
 
 `forceMove` goes through the ledger whenever a slot holder is involved. Raw `loc =` and `contents +=`/`-=` writes (about 595 today) are converted and then forbidden by lint.
 
+### 2.1 As built (C1)
+
+The code is in `code/datums/containment/`; defines are in `code/__defines/containment.dm`.
+
+- **API** (`api.dm`):
+  - `thing.move_into(holder, slot_id, actor)` inserts. A null `slot_id` means the default slot.
+  - `holder.slot_remove(thing, destination, actor)` takes a thing out. If the destination has slots, it's a transfer.
+  - `holder.slot_transfer(thing, new_holder, slot_id, actor)` moves a thing from one holder's slot to another.
+  - `holder.slot_empty(slot_id, destination)` empties a slot.
+  - `dq_ledger_refusal(thing, holder, slot_id, actor)` returns the reason a move would fail, or null.
+  - Reads: `slot_contents`, `slot_used`, `slot_capacity`, `contents_property(id)`, `contents_has_tag(tag)`, `slot_entry_id(thing)` and `slot_find_entry(id)`.
+- **Checks before the commit.** The source slot's `removal_refusal()` and `COMSIG_SLOT_PRE_REMOVE` run first. Then the destination slot's acceptance predicate (P2, with the thing as `PRED_TARGET`), its capacity and `COMSIG_SLOT_PRE_INSERT`. Either pre signal can return `COMPONENT_SLOT_BLOCK` to refuse the move.
+- **The commit** is a single `forceMove`.
+- **Bookkeeping lives in `doMove()`.** Right after the `loc` write, and before `Exited()`/`Entered()`, it calls `note_exit()`/`note_enter()` on the ledgers of the old and new locations. Those calls fire `COMSIG_SLOT_REMOVED`/`COMSIG_SLOT_INSERTED` and the holder's `on_slot_changed()`. Legacy `forceMove`s into a holder are therefore still accounted for, and land in the default slot.
+- **Atoms created inside a holder** (`new X(holder)`) are recorded by `InitAtom`. The ledger's `sync()` catches anything else; it costs one `length(contents)` comparison when nothing is missing.
+- **Declaring slots.** A holder type overrides `slot_def_types()` and returns a list of `/datum/slot_def` paths. Each definition is a shared singleton with:
+  - an id;
+  - an exposure;
+  - a capacity model: none, count, size class, mass, or custom units through `cost()`;
+  - `capacity_for(holder)`, which gives the capacity per instance;
+  - an `accepts` predicate;
+  - a drop policy: spill, delete, or transfer.
+  The ledger itself (`/datum/ledger`) is created the first time the holder is used, so a closet nobody touches has none.
+- **Drop policies.** `/atom/movable/Destroy()` calls `ledger_apply_drop_policies()` before anything else.
+  - Spill moves things to `drop_location()`.
+  - Transfer moves things into the holder's container's default slot, and spills them if that fails.
+  - Delete deletes them.
+  - Anything with nowhere to go is deleted.
+- **Entry ids** have the form `slot#serial`. The serial is per holder and never reused, so an id goes stale once its thing leaves or changes slot. The state serializer numbers a holder's children in ledger order (`state_children()`). The collapse refcount check counts the ledger's references as belonging to the container.
+- **Aggregates.**
+  - Covered: every registered measure that has an aggregator (currently mass, heat capacity, size class, melting and ignition points, and heat protection), plus the tag words.
+  - Each insert and remove updates them through a `/datum/property_accumulator`.
+  - A thing's contribution is its own value combined with its own ledger's totals, so nested holders roll up. A change inside propagates to each enclosing holder.
+  - `verify()` compares everything against a recomputation from scratch.
+  - Changes to a child's own properties are not pushed yet. That waits for the reactor (S track); until then, callers use `ledger.refresh(thing)`.
+- **Migrated holders.**
+  - Closets, crates and lockers (`/obj/structure/closet`): one interior slot with custom units (`storage_cost_of()`) and the spill policy. `open()`, `close()`, `ex_act`, `examine` and `LateInitialize` all go through the API.
+  - Folders: one pages slot that accepts `TAG_PAPERWORK` and uses the delete policy.
+- **Lint.** `tools/ci/containment_lint.py` checks `tools/ci/containment_allowlist.txt`, which holds per-file counts of the legacy sites (681 in 310 files at C1). A file may not gain sites.
+
 ## 3. Slots
 
 **A slot definition** is a shared `/datum/slot_def` that holder types declare. It holds:

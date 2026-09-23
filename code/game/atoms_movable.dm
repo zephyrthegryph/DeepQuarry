@@ -89,6 +89,9 @@
 	return ..()
 
 /atom/movable/Destroy()
+	// Contents go where each slot's drop policy says (containment ledger, C1).
+	if(length(contents) && (ledger || dq_slot_defs_for(src)))
+		ledger_apply_drop_policies()
 	if(em_block)
 		cut_overlay(em_block)
 		UnregisterSignal(em_block, COMSIG_QDELETING)
@@ -107,6 +110,7 @@
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
 		qdel(AM)
+	QDEL_NULL(ledger)
 
 	moveToNullspace()
 
@@ -363,6 +367,13 @@
 		glide_for(movetime)
 		last_move = isnull(direction) ? 0 : direction
 		loc = destination
+		// The containment ledger's commit point: account for the move before
+		// anything else can react to it.
+		if(!same_loc)
+			if(oldloc?.ledger)
+				oldloc.ledger.note_exit(src)
+			if(destination.ledger)
+				destination.ledger.note_enter(src)
 
 		// Unset this in case it was set in some other proc. We're no longer moving diagonally for sure.
 		moving_diagonally = 0
@@ -422,6 +433,7 @@
 	//If no destination, move the atom into nullspace (don't do this unless you know what you're doing)
 	else if(oldloc)
 		loc = null
+		oldloc.ledger?.note_exit(src)
 
 		// Uncross everything where we left (no multitile safety like above because we are definitely not still there)
 		for(var/atom/movable/AM as anything in oldloc)

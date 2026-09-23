@@ -110,6 +110,9 @@ jobs:
       - name: Check State Schema
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/state_schema_lint.py
+      - name: Check Containment Writes
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        run: python3 tools/ci/containment_lint.py
       - name: Check Lifecycle
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/lifecycle_lint.py

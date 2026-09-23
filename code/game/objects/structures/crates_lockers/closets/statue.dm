@@ -67,8 +67,9 @@
 		M.reset_perspective() // Fixes a blackscreen flicker
 
 /obj/structure/closet/statue/Destroy()
-	for(var/mob/living/M in src)
-		UnregisterSignal(M, COMSIG_LIVING_INJURE)
+	// Release the mob properly (unmuted, unregistered) before the base
+	// Destroy() spills the interior.
+	dump_contents()
 	return ..()
 
 /// Go-go gadget stasis field: the encased mob can't be hurt while it's rock.
