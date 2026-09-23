@@ -107,11 +107,18 @@
 #define BF_STASIS            69
 /// Stasis deeper than this keeps the patient asleep.
 #define STASIS_SLEEP_THRESHOLD 0.5
+// --- Grants (code/datums/grants/kind_factors.dm) -----------------------------------------
+/// mult: generic 0..1 multiplier read wherever a grant's factor table needs a plain scalar
+/// (rewrite/mobsrc rules read this; nothing converts to it here - see grants.md).
+#define BF_ALPHA             70
+/// flags: deny mask ANDed OUT of a mob's move flags. Effective flags = base & ~factor;
+/// derive the mob var on COMSIG_LIVING_FACTORS_CHANGED, the same way action_blocked() does.
+#define BF_MOVE_FLAGS_DENY   71
 // --- Armour -----------------------------------------------------------------------------
 /// Armour points against one armour kind (INJURY_* or ARMOR_BLAST), added to
 /// worn / natural armour. BF_ARMOR(INJURY_BLUNT) .. BF_ARMOR(ARMOR_BLAST).
 /// BF_ARMOR(1) is the first id after the last named factor.
-#define BF_ARMOR_BASE        69
+#define BF_ARMOR_BASE        72
 #define BF_ARMOR(kind)       (BF_ARMOR_BASE + (kind))
 #define BF_COUNT             (BF_ARMOR_BASE + ARMOR_KIND_COUNT)
 

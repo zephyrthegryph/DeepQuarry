@@ -123,6 +123,8 @@
 		list(BF_O2_CARRIAGE, "Oxygen carriage", BF_RULE_MULT, 1, 0, 2, "percent", "How much oxygen the blood carries."),
 		list(BF_TISSUE_UPTAKE, "Tissue oxygen uptake", BF_RULE_MULT, 1, 0, 2, "percent", "How well the tissues use the oxygen that reaches them."),
 		list(BF_STASIS, "Stasis", BF_RULE_MAX, 0, 0, 1, "points", "Share of life processes suspended: conditions, metabolism and breathing slow by this much."),
+		list(BF_ALPHA, "Alpha", BF_RULE_MULT, 1, 0, 1, "percent", "Generic 0..1 multiplier for grants that don't need a named factor."),
+		list(BF_MOVE_FLAGS_DENY, "Movement flags denied", BF_RULE_FLAGS, 0, 0, INFINITY, "flags", "Move flags masked out of the mob's effective move flags."),
 	)
 	for(var/list/row as anything in rows)
 		defs[row[1]] = new /datum/body_factor_def(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])
@@ -250,6 +252,7 @@
 		acc = body_factor_accumulate(acc, M.factors)
 	acc = accumulate_reagent_factors(acc)
 	acc = accumulate_plan_factors(acc)
+	acc = accumulate_grant_factors(acc)
 	var/list/old = factors
 	factors = body_factor_finalize(acc)
 	if(!factors_equal(old, factors))
