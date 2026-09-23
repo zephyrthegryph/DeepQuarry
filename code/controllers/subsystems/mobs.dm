@@ -97,11 +97,15 @@ SUBSYSTEM_DEF(mobs)
 		if(!M || QDELETED(M))
 			GLOB.mob_list -= M
 			continue
-		else if(M.low_priority && !(M.loc && get_z(M) && process_z[get_z(M)]))
-			slept_mobs++
-			continue
+		else if(M.low_priority)
+			// A z-level created after the last player count (a benchmark fixture, a new
+			// expedition site) has no entry yet: nobody is there.
+			var/mob_z = M.loc ? get_z(M) : 0
+			if(!mob_z || mob_z > length(process_z) || !process_z[mob_z])
+				slept_mobs++
+				continue
 		// Enable pausing mobs (For transformation, holding until reformation, etc.)
-		else if(!M.enabled)
+		if(!M.enabled)
 			slept_mobs++
 			continue
 		else if(M.life_hibernating)

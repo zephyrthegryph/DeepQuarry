@@ -480,6 +480,15 @@
 /datum/benchmark/idle_mobs/Run()
 	wait_for_assets()
 	var/list/turf/open/turfs = build_floor_fixture(param("width", 20))
+	// Normal station air, so the humans are healthy and idle rather than decompressing.
+	for(var/turf/open/fixture_turf as anything in turfs)
+		for(var/datum/gas/gas as anything in fixture_turf.air.get_gases())
+			fixture_turf.air.set_moles(gas, 0)
+		fixture_turf.air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
+		fixture_turf.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+		fixture_turf.air.set_temperature(T20C)
+		fixture_turf.air_update_turf()
+		CHECK_TICK
 	var/list/mob/living/mobs = list()
 	var/mice = param("mice", 300)
 	var/humans = param("humans", 40)
@@ -537,8 +546,10 @@
 		CHECK_TICK
 
 /// Puts a simple mob's AI to sleep and opens its environment limits, so it idles without
-/// reacting to the fixture's air.
+/// reacting to the fixture's air. It stays in the SSmobs run although no player shares its
+/// z-level (so hibernation, not the NPC skip, is what is measured).
 /proc/benchmark_quiet_simple_mob(mob/living/simple_mob/M)
+	M.low_priority = FALSE
 	M.ai_brain?.go_sleep()
 	M.min_oxy = 0
 	M.max_oxy = 0
