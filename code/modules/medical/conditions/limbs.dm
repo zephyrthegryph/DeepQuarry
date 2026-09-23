@@ -45,6 +45,10 @@
 	var/mob/living/carbon/human/H = owner
 	if(!H.vessel)
 		return
+	// A tourniquet above the tear stops the arterial flow into it.
+	var/obj/item/organ/external/E = location
+	if(istype(E) && E.flow_occluded())
+		return
 	// Roughly 3× the rate of internal_hemorrhage. At severity 50 that's
 	// ~0.9 units/tick → 27 units/min. `drip` calls `remove_blood`
 	// internally and then splatters — leaves a visible blood trail.

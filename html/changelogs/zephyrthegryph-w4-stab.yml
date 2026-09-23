@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Added combat tourniquets. Cinch one on an arm or leg to stop every bleed below it, and right-click the patient to loosen it. Left on too long, the limb becomes ischemic and then necrotic."
+  - rscadd: "Added hemostatic gauze, pressure bandages, chest seals, a stabiliser autoinjector (inaprovaline and the new vasopressor norepinephrine), and a field stabilisation kit that holds them."
+  - balance: "Stasis (stasis bags, sleepers, cryopods, the mech sleeper, NIF emergency stasis, stasis cages) now slows every life process by its depth: conditions, metabolism, breathing and blood loss. Stasis bags run the body at a tenth of normal speed."
+  - balance: "Broken bones now cause pain and slowdown (legs) or poor aim (arms). A splint cuts both."
+  - code_imp: "Stasis is a body factor (BF_STASIS) read once per Life() cycle by the body's stasis clock. The old in_stasis/Stasis()/TRAIT_STASIS mechanism is gone."
