@@ -88,10 +88,13 @@
 /datum/affliction/lesion/finding_kind()
 	return DIAG_FINDING_LESION
 
-/// GM afflictions keep their per-instance analyzer tier.
+/// GM afflictions keep their per-instance visibility: an analyzer tier for
+/// handheld instruments, an on/off switch for medbay machines.
 /datum/affliction/custom/perceived_by(datum/diagnostic_profile/P)
 	if(!(P.senses & (PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB)))
 		return FALSE
+	if(P.scanner_machine)
+		return showscanner
 	return P.scan_level >= advscan
 
 /datum/affliction/custom/diagnostic_hint(datum/diagnostic_profile/P)

@@ -16,6 +16,8 @@
 //   hints        the report carries treatment_demand() as hints
 //   trends       findings carry a trend against the previous scan
 //   scan_level   SCANNABLE_* reagent / GM-affliction detection tier
+//   scanner_machine  a medbay machine (GM afflictions show only when the GM
+//                allows scanners to see them)
 //   sees_fake_death  reads through feigned death
 
 /datum/diagnostic_profile
@@ -29,6 +31,7 @@
 	var/hints = FALSE
 	var/trends = FALSE
 	var/scan_level = SCANNABLE_BENEFICIAL
+	var/scanner_machine = FALSE
 	var/sees_fake_death = FALSE
 
 /// The shared singleton for a profile type.
@@ -111,6 +114,7 @@
 	hints = TRUE
 	trends = TRUE
 	scan_level = SCANNABLE_SECRETIVE
+	scanner_machine = TRUE
 
 /// Operating table monitor.
 /datum/diagnostic_profile/operating_computer
@@ -120,6 +124,7 @@
 	vitals = VITALS_ALL
 	localize = TRUE
 	describe = TRUE
+	scanner_machine = TRUE
 
 /// Cyborg analyzer: the synthetic diagnostic bus.
 /datum/diagnostic_profile/robot_analyzer
