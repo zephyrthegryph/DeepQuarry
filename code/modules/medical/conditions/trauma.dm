@@ -203,7 +203,7 @@
 		"Splinted leg" = list(
 			"name" = "splinted fracture",
 			"description" = "A broken leg bone held still by a splint.",
-			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40),
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
 			"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 5),
 		),
 		"Unset arm" = list(
@@ -215,7 +215,7 @@
 		"Splinted arm" = list(
 			"name" = "splinted fracture",
 			"description" = "A broken arm bone held still by a splint.",
-			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40),
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
 			"factors" = alist(BF_ACCURACY = -5, BF_PAIN = 5),
 		),
 		"Unset" = list(
@@ -227,7 +227,7 @@
 		"Splinted" = list(
 			"name" = "splinted fracture",
 			"description" = "A broken bone held still by a splint.",
-			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40),
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
 			"factors" = alist(BF_PAIN = 5),
 		),
 	)

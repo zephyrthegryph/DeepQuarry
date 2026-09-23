@@ -4,6 +4,7 @@
 /// A test-only affliction that grows steadily, for measuring progression.
 /datum/affliction/dq_test_progressor
 	name = "test progressor"
+	catalogued = FALSE
 	progression_rate = 1
 
 /// A fresh bleeding cut on `limb` (deep cut, 20 damage).
@@ -79,6 +80,8 @@
 	var/base_gain = A.severity - 10
 	TEST_ASSERT(base_gain > 0, "the test affliction should progress")
 
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	var/turf/outside = H.loc
 	var/obj/structure/closet/body_bag/cryobag/bag = allocate(/obj/structure/closet/body_bag/cryobag)
 	A.set_severity(10)
 	H.forceMove(bag)
@@ -91,7 +94,7 @@
 	paused = dq_stab_run_cycles(H, 100)
 	TEST_ASSERT(paused >= 85 && paused <= 95, "deep stasis should pause about 90 of 100 cycles, paused [paused]")
 
-	H.forceMove(get_turf(bag))
+	H.forceMove(outside)
 	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "leaving the stasis bag should end stasis")
 	TEST_ASSERT(!H.get_modifier_of_type(/datum/modifier/stasis), "leaving the stasis bag should remove its stasis modifier")
 	A.set_severity(10)

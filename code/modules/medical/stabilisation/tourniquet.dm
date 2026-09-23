@@ -162,6 +162,8 @@
 	biology = BIOLOGY_ORGANIC
 	body_plans = BODY_PLAN_HUMANOID
 	progression_rate = LIMB_ISCHEMIA_OCCLUDED_RATE
+	// Loosening the tourniquet reperfuses the limb and the ischemia recedes.
+	recedes_without_cause = TRUE
 	pain_at_max = 40
 	symptom_pool = list(
 		/datum/affliction_symptom/cold_mottled_skin = 70,

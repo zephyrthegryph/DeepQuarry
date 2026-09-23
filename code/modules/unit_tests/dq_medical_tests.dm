@@ -427,6 +427,8 @@
 	// Confirm respiratory_failure causes hypoxia while present.
 	var/datum/affliction/respiratory_failure/rf = H.body.find_affliction(/datum/affliction/respiratory_failure, lungs)
 	if(rf)
+		// Established failure: mild failure alone still oxygenates above the critical ratio.
+		rf.set_severity(100)
 		var/oxy_before = H.oxygen_debt()
 		for(var/i in 1 to 5)
 			rf.tick()

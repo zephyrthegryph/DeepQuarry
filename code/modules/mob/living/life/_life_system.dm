@@ -190,10 +190,14 @@ GLOBAL_VAR_INIT(life_system_registry_built, FALSE)
 	var/key
 	/// Systems in run order. Never mutated after composition.
 	var/list/ordered
+	/// Union of the systems' bits. A bit no system has can never go to sleep.
+	var/bits = NONE
 
 /datum/life_composition/New(key, list/ordered)
 	src.key = key
 	src.ordered = ordered
+	for(var/datum/life_system/S as anything in ordered)
+		bits |= S.bit
 
 /// Sort key: phase, then order. Stable insertion sort; compositions are small and built once.
 /proc/sort_life_systems(list/systems)

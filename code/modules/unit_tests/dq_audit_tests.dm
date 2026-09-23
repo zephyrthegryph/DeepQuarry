@@ -95,7 +95,7 @@
 			// Chem-driven conditions clear when the chem leaves the
 			// body — implicit "stop dosing it" cure path.
 			curable = TRUE
-		else if(proto.progression_rate < 0)
+		else if(proto.progression_rate < 0 || proto.recedes_without_cause)
 			curable = TRUE
 		if(!curable)
 			failures += "[T]"

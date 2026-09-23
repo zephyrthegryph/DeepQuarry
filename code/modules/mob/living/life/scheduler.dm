@@ -81,6 +81,8 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 	life_in_cycle = FALSE
 	if(halted || ctx.no_sleep || QDELETED(src))
 		return
+	// Bits no system in this composition carries (woken by a broad wake) have nothing to run.
+	life_awake &= comp.bits
 	var/sleeping = considered & ~(busy | life_cycle_wakes | LIFE_SYS_GATE)
 	if(sleeping)
 		life_awake &= ~sleeping
