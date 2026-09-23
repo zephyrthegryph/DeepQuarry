@@ -42,6 +42,14 @@
 	SSair.dispatch_heat_wakes()
 	react_test_ticks(2)
 
+/// Flushes until `rule` has fired `count` times on `thing`, for at most
+/// `max_flushes` (a key wake can take a few reactor ticks under load).
+/proc/dq_rx_flush_until(datum/thing, datum/rule/rule, count, max_flushes = 10)
+	for(var/i in 1 to max_flushes)
+		dq_rx_flush()
+		if(QDELETED(thing) || dq_rule_fire_count(thing, rule) >= count)
+			return
+
 /// Let `ds` deciseconds of reactor time pass, then dispatch.
 /proc/dq_rx_test_advance(ds)
 	sleep(ds)
@@ -148,8 +156,11 @@
 		TEST_FAIL("[label]: fired at [quiet], on the quiet side of [level]")
 		return FALSE
 	dq_rule_test_write(thing, trigger.property, across)
-	dq_rx_flush()
-	dq_rx_flush()
+	if(rule.hold_for)
+		dq_rx_flush()
+		dq_rx_flush()
+	else
+		dq_rx_flush_until(thing, rule, 1)
 	if(rule.hold_for && !QDELETED(thing))
 		if(dq_rule_fire_count(thing, rule) != 0)
 			TEST_FAIL("[label]: fired before holding [rule.hold_for / 10] s")

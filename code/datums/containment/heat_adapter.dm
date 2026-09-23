@@ -19,10 +19,13 @@
 // Latent entries (C5) never get heat bodies: a container's body carries their
 // heat capacity (the ledger's PROP_HEAT_CAPACITY aggregate) and thresholds.
 
-/// Temperature inside `holder`: what its interior imposes (its heat body, or
-/// its surroundings).
+/// Temperature inside `holder` with no heat added: its turf's air, else 20 C.
+/// A holder's own heat body is not the reference: propagate_fire() scales a
+/// fire's excess over the room, and bodies carry the rest (H3).
 /proc/dq_heat_path_ambient(atom/holder)
-	var/temperature = holder?.get_interior_temperature()
+	var/turf/T = get_turf(holder)
+	var/datum/gas_mixture/air = T?.return_air()
+	var/temperature = air?.return_temperature()
 	return temperature > 0 ? temperature : T20C
 
 /// Conductance (W/K) of this atom's heat body to its holder's interior, from
