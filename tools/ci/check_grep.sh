@@ -255,6 +255,17 @@ if grep -RInE --include='*.dm' '\.severity[[:space:]]*[-+*/]?=[^=]' code/modules
 	FAILED=1
 fi;
 
+part "diagnosis: no four-number readouts"
+# Every scanner, monitor, HUD and UI renders body.diagnose(profile): vitals
+# plus findings (code/modules/medical/diagnosis/). The brute/burn/tox/oxy
+# readouts and their helpers are gone; injury_load() is an internal query,
+# not a UI.
+if grep -RInE --exclude-dir=node_modules --include='*.dm' --include='*.ts' --include='*.tsx' '\b(bruteLoss|oxyLoss|toxLoss|fireLoss|patient_brute|patient_burn|patient_tox|patient_oxy|physicalLoad|asphyxiaLoad|toxicLoad|thermalLoad|damagePanel|scannerFindings|dq_qualitative_damage_panel|dq_qualitative_scanner_findings|dq_crude_scan_readout|dq_externally_visible_symptom_lines)\b|Damage Specifics|Suffocation/Toxin/Burns/Brute' code tgui/packages/tgui/interfaces; then
+	echo
+	echo -e "${RED}ERROR: a four-number (brute/burn/tox/oxy) readout detected. Render a diagnosis instead: M.diagnose(/datum/diagnostic_profile/...) and its render_chat() / tgui_data().${NC}"
+	FAILED=1
+fi;
+
 part "organ damage outside the body"
 # Organ and limb integrity belong to the body (doc/body_architecture.md): harm
 # goes through injure(kind, amount, organ) and healing through
