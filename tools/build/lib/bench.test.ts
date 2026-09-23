@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  acquireBenchExclusiveLock,
   benchRunsDir,
   benchStoreDir,
   benchExclusiveLockDir,
@@ -166,5 +167,50 @@ describe('compareRuns metric-class gating', () => {
     const rows = compareRuns(base, head, 5);
     const row = rows.find((r) => r.metric === 'window_tick_avg');
     expect(row?.verdict).toBe('unchanged');
+  });
+});
+
+describe('acquireBenchExclusiveLock', () => {
+  // Regression test for a real deadlock found by actually running
+  // bench-baseline end-to-end: when DQ_BENCH_STORE's directory doesn't exist
+  // yet (a fresh machine/store), the first fs.mkdirSync(lockDir) attempt used
+  // to throw ENOENT (missing parent), which looked exactly like "someone else
+  // holds the lock" (readIntFile() on the nonexistent pid/started files
+  // returned 0, so it was always judged "stale"), so it tried to rmSync a
+  // directory that never existed and immediately retried -- forever, never
+  // creating the lock or the parent directory.
+  test('creates its parent directory instead of looping forever when the store is missing', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dq-bench-lock-test-'));
+    process.env.DQ_BENCH_STORE = path.join(tmp, 'does', 'not', 'exist', 'yet');
+    try {
+      expect(fs.existsSync(benchExclusiveLockDir())).toBe(false);
+      const lock = await acquireBenchExclusiveLock();
+      expect(fs.existsSync(benchExclusiveLockDir())).toBe(true);
+      lock.release();
+      expect(fs.existsSync(benchExclusiveLockDir())).toBe(false);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('a second acquire waits for the first to release', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dq-bench-lock-test-'));
+    process.env.DQ_BENCH_STORE = tmp;
+    try {
+      const first = await acquireBenchExclusiveLock();
+      let secondAcquired = false;
+      const secondPromise = acquireBenchExclusiveLock(20 * 60 * 1000, 50).then((lock) => {
+        secondAcquired = true;
+        return lock;
+      });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(secondAcquired).toBe(false);
+      first.release();
+      const second = await secondPromise;
+      expect(secondAcquired).toBe(true);
+      second.release();
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });

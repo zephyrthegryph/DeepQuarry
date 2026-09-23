@@ -563,6 +563,13 @@ export type ExclusiveLock = { release(): void };
 /** Acquires the exclusive bench lock, waiting out any other holder (including a stale one). */
 export async function acquireBenchExclusiveLock(maxHoldMs = 20 * 60 * 1000, pollMs = 5000): Promise<ExclusiveLock> {
   const dir = benchExclusiveLockDir();
+  // The lock dir's parent (e.g. DQ_BENCH_STORE) may not exist yet on a fresh
+  // machine/store -- create it up front so the mkdirSync below fails with
+  // EEXIST (contended, the case we want to detect and wait out) rather than
+  // ENOENT (missing parent, which looked identical to contention and would
+  // spin forever: "stale" was always true for a nonexistent dir, so it kept
+  // trying to rmSync a directory that was never created and retrying immediately).
+  fs.mkdirSync(path.dirname(dir), { recursive: true });
   for (;;) {
     try {
       fs.mkdirSync(dir, { recursive: false });
