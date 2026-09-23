@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "SSD sleep is one held status effect, applied on logout and released on login, so clientless humans hibernate without a sleep counter ticking."
+  - server: "The unit-test DreamDaemon watchdog allows 45 minutes (DQ_DD_WATCHDOG_MINUTES overrides it), so a slow full suite is no longer killed silently at 20 minutes."

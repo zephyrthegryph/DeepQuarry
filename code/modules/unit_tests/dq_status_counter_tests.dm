@@ -142,6 +142,35 @@
 	TEST_ASSERT_NULL(H.life_missed_wake(), "a freshly hibernated human has no missed wake")
 	TEST_ASSERT_NULL(SSmobs.audit_mob(H), "the audit must not flag a human that is correctly asleep")
 
+/// A clientless (SSD) human holds one permanent sleep that nothing processes, hibernates in
+/// clean air, and stays hibernating while real time passes. Occupying the body releases it.
+/datum/unit_test/dq_life_ssd_human_hibernates
+
+/datum/unit_test/dq_life_ssd_human_hibernates/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place_in_air(H), "no floor with breathable air for the test human")
+	TEST_ASSERT(H.sleep_should_hold(), "a clientless, unoccupied human is SSD")
+	TEST_ASSERT(life_test_settle_human(H), "an SSD human should hibernate; still busy: [life_test_busy(H)]; awake bits [H.life_awake]; organs: [life_test_organ_reasons(H)]; stat [H.stat] sleeping [H.get_sleeping()]")
+	var/datum/status_effect/counter/sleeping/S = H.has_status_effect(/datum/status_effect/counter/sleeping)
+	TEST_ASSERT(S, "an SSD human is asleep")
+	TEST_ASSERT(S.is_held(), "the SSD sleep is held (permanent), not re-applied on a timer; duration [S.duration] now [world.time]")
+	TEST_ASSERT(!(S in SSfastprocess.processing), "a held sleep is not processed")
+	TEST_ASSERT_EQUAL(H.stat, UNCONSCIOUS, "an SSD human is unconscious")
+
+	// Several SSmobs cycles of real time; the shortest human rewake timer is 10 seconds.
+	for(var/i in 1 to 4)
+		sleep(STATUS_COUNTER_TICK)
+		TEST_ASSERT(H.life_hibernating, "the SSD human stays hibernating (cycle [i]); awake bits [H.life_awake]; busy: [life_test_busy(H)]")
+	TEST_ASSERT(S == H.has_status_effect(/datum/status_effect/counter/sleeping) && S.is_held(), "the same held sleep persists, never re-applied")
+	TEST_ASSERT_NULL(H.life_missed_wake(), "a hibernating SSD human has no missed wake")
+
+	// Someone takes the body over: the producer releases the hold and wakes the mob.
+	H.teleop = allocate(/mob)
+	H.on_client_changed("login")
+	TEST_ASSERT(!H.life_hibernating, "occupying the body wakes it")
+	TEST_ASSERT(!S.is_held(), "occupying the body releases the held sleep")
+	TEST_ASSERT(S in SSfastprocess.processing, "a released sleep runs out on its own")
+
 /// Each normal interaction wakes a hibernating human: injury, a reagent, a stun, equipment
 /// and speech.
 /datum/unit_test/dq_life_interactions_wake_human

@@ -278,8 +278,10 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 	life_wake(LIFE_WAKE_STATUS, reason)
 
 /// A client logged into or out of this mob: the HUD, senses and client systems restart.
+/// A player arriving releases a held SSD sleep; one leaving a human holds it.
 /mob/living/proc/on_client_changed(reason)
 	life_wake(LIFE_SYS_ALL, reason)
+	update_sleep_hold()
 
 /// Marks one HUD_* image of this mob's HUD overlays stale and wakes the HUD to redraw it.
 /mob/living/proc/mark_hud_dirty(index)

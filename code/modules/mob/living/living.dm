@@ -1149,8 +1149,7 @@
 		return
 	toggled_sleeping = !toggled_sleeping
 	to_chat(src, span_notice("You are [toggled_sleeping ? "now sleeping. Use the Sleep verb again to wake up" : "no longer sleeping"]."))
-	if(toggled_sleeping)
-		Sleeping(1)
+	update_sleep_hold()
 
 /mob/living/proc/set_metainfo_favs(mob/user, reopen = TRUE)
 	if(user != src)

@@ -178,7 +178,8 @@
 	wake_bits = LIFE_WAKE_STATUS | LIFE_SYS_BODY
 
 /// Sleep. Deep sleepers (species waking_speed) wake faster. A held sleep (the Sleep verb, or a
-/// mind whose player left) doesn't run out until released.
+/// human whose player left) is one permanent, unprocessed effect: update_sleep_hold() applies
+/// it once and releases it, and nothing ticks it in between.
 /datum/status_effect/counter/sleeping
 	id = "asleep"
 	hud_alert = "asleep"
@@ -187,7 +188,6 @@
 	updates_canmove = TRUE
 	updates_blindness = TRUE
 	wake_bits = LIFE_WAKE_STATUS | LIFE_SYS_BODY
-	tick_interval = STATUS_COUNTER_TICK
 
 /datum/status_effect/counter/sleeping/tick_length()
 	var/mob/living/carbon/C = owner
@@ -195,20 +195,64 @@
 		return STATUS_COUNTER_TICK / C.species.waking_speed
 	return STATUS_COUNTER_TICK
 
-/// While held, the sleep never drops below one tick.
-/datum/status_effect/counter/sleeping/tick(seconds_between_ticks)
-	if(held())
-		duration = max(duration, world.time + STATUS_COUNTER_TICK * 2)
+/// A held sleep ignores timed changes; release() or setting it to zero ends it (the status
+/// system holds it again if the sleeper is still SSD).
+/datum/status_effect/counter/sleeping/set_remaining(ticks)
+	if(ticks > 0 && is_held())
+		return
+	return ..()
 
-/// The sleeper chose to sleep (the Sleep verb), or is a human with no player behind it
-/// (space sleep disorder): it stays asleep until someone logs in.
-/datum/status_effect/counter/sleeping/proc/held()
-	if(owner.stat == DEAD)
+/// TRUE while this sleep is held (permanent until released).
+/datum/status_effect/counter/sleeping/proc/is_held()
+	return duration == STATUS_EFFECT_PERMANENT
+
+/// Makes the sleep permanent and stops processing it.
+/datum/status_effect/counter/sleeping/proc/hold()
+	if(is_held())
+		return
+	duration = STATUS_EFFECT_PERMANENT
+	STOP_PROCESSING(SSfastprocess, src)
+	if(GLOB.mob_hibernation_trace)
+		log_runtime("MOB_STATUS: [key_name(owner)] ([owner.type]) [id] held")
+
+/// Ends the hold: the sleeper wakes after one more tick of sleep.
+/datum/status_effect/counter/sleeping/proc/release()
+	if(!is_held())
+		return
+	duration = world.time + tick_length()
+	START_PROCESSING(SSfastprocess, src)
+	if(GLOB.mob_hibernation_trace)
+		log_runtime("MOB_STATUS: [key_name(owner)] ([owner.type]) [id] released")
+	owner.life_wake(wake_bits, "[id] released")
+
+/// TRUE when this mob's sleep should be held: it chose to sleep (the Sleep verb), or it is a
+/// human with no player behind it (space sleep disorder) and stays asleep until someone logs in.
+/mob/living/proc/sleep_should_hold()
+	if(stat == DEAD)
 		return FALSE
-	if(owner.toggled_sleeping)
-		return TRUE
-	var/mob/living/carbon/human/H = owner
-	return istype(H) && !H.client && !H.teleop && H.species?.get_ssd(H)
+	return toggled_sleeping
+
+/mob/living/carbon/human/sleep_should_hold()
+	if(stat == DEAD)
+		return FALSE
+	return ..() || (!client && !teleop && species?.get_ssd(src))
+
+/// TRUE while this mob's sleep counter is held.
+/mob/living/proc/sleep_hold_active()
+	var/datum/status_effect/counter/sleeping/S = status_effects ? has_status_effect(/datum/status_effect/counter/sleeping) : null
+	return S?.is_held()
+
+/// Applies or releases the held sleep to match sleep_should_hold(). Idempotent: an already
+/// held sleep is left alone. Called by the producers (Login/Logout, the Sleep verb) and by
+/// the status system when it runs.
+/mob/living/proc/update_sleep_hold()
+	var/datum/status_effect/counter/sleeping/S = status_effects ? has_status_effect(/datum/status_effect/counter/sleeping) : null
+	if(sleep_should_hold())
+		if(!S)
+			S = apply_status_effect(/datum/status_effect/counter/sleeping, 1)
+		S?.hold()
+	else
+		S?.release()
 
 /datum/status_effect/counter/confused
 	id = "confused"

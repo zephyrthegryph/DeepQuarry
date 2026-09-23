@@ -519,16 +519,32 @@
 	metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
 
 	GLOB.mob_hibernation_enabled = TRUE
-	wait_fires(SSmobs, SSmobs.life_slices * 4)
-	begin_window()
-	wait_fires(SSmobs, SSmobs.life_slices * cycles)
-	end_window("hibernation_on")
-	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
-	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
 	var/list/humans_spawned = list()
 	for(var/mob/living/carbon/human/H in mobs)
 		humans_spawned += H
+	wait_fires(SSmobs, SSmobs.life_slices * 4)
+	// Sampled once per full SSmobs pass: the humans' slow rewake timers were armed together, so
+	// a single end-of-window count only says whether that one moment fell on a timer wake.
+	var/human_samples = 0
+	var/human_hibernating_total = 0
+	var/human_hibernating_peak = 0
+	begin_window()
+	for(var/i in 1 to cycles)
+		wait_fires(SSmobs, SSmobs.life_slices)
+		var/sampled = benchmark_count_hibernating(humans_spawned)
+		human_samples++
+		human_hibernating_total += sampled
+		human_hibernating_peak = max(human_hibernating_peak, sampled)
+	end_window("hibernation_on")
+	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
+	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
 	metric("hibernation_on_humans_hibernating", benchmark_count_hibernating(humans_spawned), "mobs", "higher")
+	metric("hibernation_on_humans_hibernating_mean", human_samples ? round(human_hibernating_total / human_samples, 0.1) : 0, "mobs", "higher")
+	metric("hibernation_on_humans_hibernating_peak", human_hibernating_peak, "mobs", "higher")
+	var/list/held_sleep = list("held" = 0, "unheld" = 0)
+	for(var/mob/living/carbon/human/H as anything in humans_spawned)
+		held_sleep[H.sleep_hold_active() ? "held" : "unheld"] += 1
+	detail("hibernation_on_human_ssd_sleep", held_sleep)
 	var/list/busy_human_systems = list()
 	for(var/mob/living/carbon/human/H as anything in humans_spawned)
 		if(H.life_hibernating)

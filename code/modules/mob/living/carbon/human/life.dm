@@ -1427,9 +1427,8 @@
 	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
 		return 0	// Cancelled by a component
 
-	//SSD check, if a logged player is awake put them back to sleep!
-	if(self.species.get_ssd(self) && !self.client && !self.teleop)
-		self.Sleeping(2)
+	// SSD: a human with no player behind it holds one permanent sleep until someone logs in.
+	self.update_sleep_hold()
 	if(self.stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
 		self.SetSilent(0)
 		self.SetDeaf(0)
@@ -1553,7 +1552,7 @@
 	// Asleep means unconscious and awake means conscious; a player's sleep dreams and snores.
 	if(self.stat != (asleep ? UNCONSCIOUS : CONSCIOUS) || (asleep && self.client))
 		return FALSE
-	if(!asleep && !self.client && !self.teleop && self.species.get_ssd(self))
+	if(!self.sleep_should_hold() != !self.sleep_hold_active())
 		return FALSE
 	if(self.body && !self.body.life_settled())
 		return FALSE
