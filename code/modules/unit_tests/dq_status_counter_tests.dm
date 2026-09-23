@@ -101,6 +101,11 @@
 			continue
 		if(LINDA_GAS_AMT(air, GAS_O2) / max(air.total_moles(), 0.01) < 0.19)
 			continue
+		// Only oxygen and nitrogen: other tests leave stray gas on shared floors.
+		if((LINDA_GAS_AMT(air, GAS_O2) + LINDA_GAS_AMT(air, GAS_N2)) / max(air.total_moles(), 0.01) < 0.999)
+			continue
+		if(locate(/mob/living) in T)
+			continue
 		H.forceMove(T)
 		return TRUE
 	return FALSE
@@ -143,28 +148,31 @@
 
 /datum/unit_test/dq_life_interactions_wake_human/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	// Occupied, so it isn't SSD: a clientless, unpiloted human is put to sleep every tick,
+	// and this test checks an awake human's canmove and sight.
+	H.teleop = allocate(/mob)
 	TEST_ASSERT(life_test_place_in_air(H), "no floor with breathable air for the test human")
 
-	TEST_ASSERT(life_test_settle_human(H), "the human should hibernate first; still busy: [life_test_busy(H)]")
+	TEST_ASSERT(life_test_settle_human(H), "the human should hibernate first; still busy: [life_test_busy(H)]; awake bits [H.life_awake]; organs: [life_test_organ_reasons(H)]; body settled [H.body?.life_settled()] dirty [H.body?.dirty] factors [H.body?.factors ? "yes" : "none"]; breath quality [H.body?.physiology?.breath_quality]; stat [H.stat]")
 	TEST_ASSERT(H.injure(INJURY_BLUNT, 5, BP_TORSO) > 0, "the injury should land")
 	TEST_ASSERT(!H.life_hibernating, "injure() should wake a hibernating human")
 	TEST_ASSERT(H.life_awake & LIFE_SYS_BODY, "injure() should wake the body systems")
 	H.fully_heal()
 
-	TEST_ASSERT(life_test_settle_human(H), "the healed human should hibernate again; still busy: [life_test_busy(H)]")
+	TEST_ASSERT(life_test_settle_human(H), "the healed human should hibernate again; still busy: [life_test_busy(H)]; awake bits [H.life_awake]; organs: [life_test_organ_reasons(H)]; body settled [H.body?.life_settled()] dirty [H.body?.dirty] factors [H.body?.factors ? "yes" : "none"]; breath quality [H.body?.physiology?.breath_quality]; stat [H.stat]")
 	H.bloodstr.add_reagent(REAGENT_ID_WATER, 5)
 	TEST_ASSERT(!H.life_hibernating, "a reagent should wake a hibernating human")
 	TEST_ASSERT(H.life_awake & LIFE_SYS_METABOLISM, "a reagent should wake metabolism")
 	H.bloodstr.clear_reagents()
 
-	TEST_ASSERT(life_test_settle_human(H), "the human should hibernate again; still busy: [life_test_busy(H)]")
+	TEST_ASSERT(life_test_settle_human(H), "the human should hibernate again; still busy: [life_test_busy(H)]; awake bits [H.life_awake]; organs: [life_test_organ_reasons(H)]; body settled [H.body?.life_settled()] dirty [H.body?.dirty] factors [H.body?.factors ? "yes" : "none"]; breath quality [H.body?.physiology?.breath_quality]; stat [H.stat]")
 	H.Stun(3)
 	TEST_ASSERT(!H.life_hibernating, "Stun() should wake a hibernating human")
 	TEST_ASSERT(!H.canmove, "a stunned human can't move")
 	TEST_ASSERT(life_test_expire_counter(H, /datum/status_effect/counter/stunned), "the stun should end at its deadline")
-	TEST_ASSERT(H.canmove, "the end of the stun restores canmove")
+	TEST_ASSERT(H.canmove, "the end of the stun restores canmove; stat [H.stat] stunned [H.get_stunned()] weakened [H.get_weakened()] paralysis [H.get_paralysis()] sleeping [H.get_sleeping()] resting [H.resting] lying [H.lying] buckled [H.buckled] grabbed [length(H.grabbed_by)] effects [json_encode(H.status_effects)]")
 
-	TEST_ASSERT(life_test_settle_human(H), "the human should hibernate again after the stun; still busy: [life_test_busy(H)]")
+	TEST_ASSERT(life_test_settle_human(H), "the human should hibernate again after the stun; still busy: [life_test_busy(H)]; awake bits [H.life_awake]; organs: [life_test_organ_reasons(H)]; body settled [H.body?.life_settled()] dirty [H.body?.dirty] factors [H.body?.factors ? "yes" : "none"]; breath quality [H.body?.physiology?.breath_quality]; stat [H.stat]")
 	var/obj/item/clothing/glasses/sunglasses/blindfold/B = allocate(/obj/item/clothing/glasses/sunglasses/blindfold)
 	TEST_ASSERT(H.equip_to_slot_if_possible(B, slot_glasses), "the blindfold should go on")
 	TEST_ASSERT(!H.life_hibernating, "equipping something should wake a hibernating human")
@@ -175,11 +183,11 @@
 	H.Life()
 	TEST_ASSERT(!H.blinded, "taking the blindfold off restores sight")
 
-	TEST_ASSERT(life_test_settle_human(H), "the human should hibernate again after the blindfold; still busy: [life_test_busy(H)]")
+	TEST_ASSERT(life_test_settle_human(H), "the human should hibernate again after the blindfold; still busy: [life_test_busy(H)]; awake bits [H.life_awake]; organs: [life_test_organ_reasons(H)]; body settled [H.body?.life_settled()] dirty [H.body?.dirty] factors [H.body?.factors ? "yes" : "none"]; breath quality [H.body?.physiology?.breath_quality]; stat [H.stat]")
 	H.Stutter(4)
 	TEST_ASSERT(!H.life_hibernating, "a speech impairment should wake a hibernating human")
 	TEST_ASSERT(H.get_stuttering() > 3.9, "the stutter should land")
-	TEST_ASSERT(life_test_settle_human(H), "a stutter runs on its own timer, so the human hibernates while stuttering; still busy: [life_test_busy(H)]")
+	TEST_ASSERT(life_test_settle_human(H), "a stutter runs on its own timer, so the human hibernates while stuttering; still busy: [life_test_busy(H)]; awake bits [H.life_awake]; organs: [life_test_organ_reasons(H)]; body settled [H.body?.life_settled()] dirty [H.body?.dirty] factors [H.body?.factors ? "yes" : "none"]; breath quality [H.body?.physiology?.breath_quality]; stat [H.stat]")
 	TEST_ASSERT(life_test_expire_counter(H, /datum/status_effect/counter/stuttering), "the stutter should end at its deadline")
 	TEST_ASSERT(!H.life_hibernating, "the end of the stutter wakes the human")
 	TEST_ASSERT_NULL(H.life_missed_wake(), "no interaction should leave a missed wake behind")

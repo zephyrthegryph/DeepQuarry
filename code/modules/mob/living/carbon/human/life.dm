@@ -2486,7 +2486,7 @@
 	if(self.stat != DEAD || !self.should_have_organ(O_BRAIN))
 		return TRUE
 	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
-	return !brain || brain.defib_timer <= 0
+	return !istype(brain) || brain.defib_timer <= 0
 
 /// Brain decay while dead, which closes the defibrillation window.
 /datum/life_system/defib_timer/tick(mob/living/carbon/human/self, datum/life_context/ctx)
@@ -2494,7 +2494,7 @@
 		return // No brain.
 
 	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
-	if(!brain)
+	if(!istype(brain))
 		return // Still no brain.
 
 	brain.tick_defib_timer()
