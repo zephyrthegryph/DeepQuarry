@@ -14,8 +14,11 @@
 //! - **Edges.** DM never sends topology. Binding a node at a cell is enough:
 //!   [`NetworkHost::bind_node`] derives edges by calling
 //!   [`NetworkKind::connects`] against every other node occupying that cell
-//!   or one of its six grid neighbors (via an occupancy index, not a scan of
-//!   every node), and connects the pairs it accepts.
+//!   or one of [`NetworkKind::reach`]'s target cells (via an occupancy
+//!   index, not a scan of every node), and connects the pairs it accepts.
+//!   `reach` is the domain's own rule (grid-face adjacency, a diagonal, an
+//!   explicit cross-z link, ...); a kind that never overrides it only ever
+//!   connects same-cell nodes.
 //! - **Batching.** [`NetworkHost::commit`] is exactly
 //!   [`Network::commit`]: split-then-merge, so an explosion's edits are one
 //!   batch, unchanged from `graph.rs`.
@@ -28,7 +31,6 @@
 use std::collections::HashMap;
 
 use crate::entity::EntitySlots;
-use crate::grid::{Face, GridDims};
 use crate::handle::{Handle, RawHandle};
 
 use super::graph::{
@@ -54,20 +56,25 @@ fn encode_entity(entity: Entity) -> u32 {
 /// §4.5). See the module docs.
 pub struct NetworkHost<K: NetworkKind> {
     net: Network<K>,
-    dims: GridDims,
     nodes: HashMap<Entity, NodeId<K>>,
     /// Cell -> entities with a node bound there, for [`bind_node`]'s edge
-    /// search (same cell and the six grid neighbors, not every node).
+    /// search (same cell and [`NetworkKind::reach`]'s targets, not every
+    /// node).
     occupants: HashMap<CellId, Vec<Entity>>,
     devices: HashMap<Entity, DeviceId<K>>,
 }
 
+impl<K: NetworkKind> Default for NetworkHost<K> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<K: NetworkKind> NetworkHost<K> {
     #[must_use]
-    pub fn new(dims: GridDims) -> Self {
+    pub fn new() -> Self {
         Self {
             net: Network::default(),
-            dims,
             nodes: HashMap::new(),
             occupants: HashMap::new(),
             devices: HashMap::new(),
@@ -77,11 +84,6 @@ impl<K: NetworkKind> NetworkHost<K> {
     #[must_use]
     pub fn network(&self) -> &Network<K> {
         &self.net
-    }
-
-    #[must_use]
-    pub fn dims(&self) -> GridDims {
-        self.dims
     }
 
     #[must_use]
@@ -95,9 +97,10 @@ impl<K: NetworkKind> NetworkHost<K> {
     }
 
     /// Binds `entity`'s node at `cell` in its own singleton region, and
-    /// connects it to every occupant of `cell` or a neighboring cell that
-    /// [`NetworkKind::connects`] accepts. Replaces whatever `entity` had
-    /// bound before (an edit, not an error).
+    /// connects it to every occupant of `cell` or one of
+    /// [`NetworkKind::reach`]'s target cells that [`NetworkKind::connects`]
+    /// accepts. Replaces whatever `entity` had bound before (an edit, not
+    /// an error).
     ///
     /// # Errors
     /// [`NetError`] if the underlying arena is full.
@@ -114,16 +117,6 @@ impl<K: NetworkKind> NetworkHost<K> {
         Ok(node)
     }
 
-    fn candidate_cells(&self, cell: CellId) -> Vec<CellId> {
-        let mut cells = vec![cell];
-        for face in Face::ALL {
-            if let Some(n) = self.dims.neighbor(cell, face) {
-                cells.push(n);
-            }
-        }
-        cells
-    }
-
     fn connect_new_node(&mut self, entity: Entity, node: NodeId<K>, cell: CellId) {
         let my_data = self
             .net
@@ -131,8 +124,12 @@ impl<K: NetworkKind> NetworkHost<K> {
             .expect("just added")
             .data
             .clone();
+        let mut candidates = K::reach(&my_data, cell);
+        if !candidates.contains(&cell) {
+            candidates.push(cell);
+        }
         let mut peers: Vec<NodeId<K>> = Vec::new();
-        for c in self.candidate_cells(cell) {
+        for c in candidates {
             let Some(occupants) = self.occupants.get(&c) else {
                 continue;
             };
@@ -290,6 +287,9 @@ mod tests {
         fn connects((_, a): (&(), CellId), (_, b): (&(), CellId)) -> bool {
             a.abs_diff(b) == 1
         }
+        fn reach((): &(), cell: CellId) -> Vec<CellId> {
+            [cell.wrapping_sub(1), cell + 1].into_iter().collect()
+        }
     }
 
     fn entity(i: u32) -> Entity {
@@ -304,13 +304,9 @@ mod tests {
         Handle::from_raw(last.raw())
     }
 
-    fn dims() -> GridDims {
-        GridDims::new(100, 1, 1).unwrap()
-    }
-
     #[test]
     fn adjacent_cells_connect_and_share_a_region() {
-        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let mut host: NetworkHost<Line> = NetworkHost::new();
         let a = entity(0);
         let b = entity(1);
         host.bind_node(a, 5, 0, ()).unwrap();
@@ -321,7 +317,7 @@ mod tests {
 
     #[test]
     fn distant_cells_do_not_connect() {
-        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let mut host: NetworkHost<Line> = NetworkHost::new();
         let a = entity(0);
         let b = entity(1);
         host.bind_node(a, 5, 0, ()).unwrap();
@@ -332,7 +328,7 @@ mod tests {
 
     #[test]
     fn unbind_splits_and_releases_a_conserved_share() {
-        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let mut host: NetworkHost<Line> = NetworkHost::new();
         let a = entity(0);
         let b = entity(1);
         let c = entity(2);
@@ -362,7 +358,7 @@ mod tests {
 
     #[test]
     fn members_resolve_back_to_the_entities_that_bound_them() {
-        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let mut host: NetworkHost<Line> = NetworkHost::new();
         let a = entity(0);
         let b = entity(1);
         host.bind_node(a, 1, 0, ()).unwrap();
@@ -378,7 +374,7 @@ mod tests {
 
     #[test]
     fn rebinding_the_same_entity_replaces_its_node() {
-        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let mut host: NetworkHost<Line> = NetworkHost::new();
         let a = entity(0);
         let b = entity(1);
         host.bind_node(a, 1, 0, ()).unwrap();

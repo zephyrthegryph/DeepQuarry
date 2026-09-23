@@ -89,14 +89,28 @@ pub trait NetworkKind:
 
     /// The topology law (`rust_architecture.md` §4.5): whether a node at
     /// `a`'s cell and one at `b`'s cell connect. [`super::host::NetworkHost`]
-    /// calls this for every candidate pair sharing or neighboring a cell, so
-    /// DM never sends topology -- binding a node at a cell is enough. The
-    /// default never connects anything (a kind that never calls
-    /// `NetworkHost::bind_node`, or connects nodes itself through
-    /// [`Network::connect`] directly, never needs to implement this).
+    /// calls this to confirm every candidate [`NetworkKind::reach`] finds, so
+    /// DM never sends topology -- binding a node at a cell is enough. Must be
+    /// symmetric (`connects(a, b) == connects(b, a)`): [`super::host::NetworkHost`]
+    /// only asks a new node's own `reach`, trusting that a kind whose reach
+    /// rule is direction-symmetric (a reverse of a reverse is the original
+    /// direction) never needs the other side's `reach` re-checked. The
+    /// default never connects anything.
     fn connects(a: (&Self::Node, CellId), b: (&Self::Node, CellId)) -> bool {
         let _ = (a, b);
         false
+    }
+
+    /// Cells a node at `cell` might connect to (`rust_architecture.md`
+    /// §4.5's occupancy index): the domain's own reach rule -- grid-face
+    /// adjacency, a diagonal combination, an explicit cross-z link,
+    /// whatever [`NetworkKind::connects`] cares about. A superset is fine;
+    /// [`NetworkKind::connects`] confirms each one. The default reaches
+    /// nothing beyond `cell` itself, which [`super::host::NetworkHost`]
+    /// always includes regardless (same-cell nodes are candidates too).
+    fn reach(node: &Self::Node, cell: CellId) -> Vec<CellId> {
+        let _ = node;
+        vec![cell]
     }
 }
 
