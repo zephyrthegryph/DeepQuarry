@@ -34,12 +34,12 @@
 
 
 /datum/modifier/ambush/on_applied()
-	holder.alpha = 30
+	holder.set_alpha_source(ALPHA_SOURCE_AMBUSH, 30/255)
 	return
 
 // Override this for special effects when it gets removed.
 /datum/modifier/ambush/on_expire()
-	holder.alpha = 255
+	holder.clear_alpha_source(ALPHA_SOURCE_AMBUSH)
 	return
 
 ////////// On-hit
