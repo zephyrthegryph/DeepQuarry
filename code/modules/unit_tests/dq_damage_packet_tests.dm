@@ -329,12 +329,13 @@
 	TEST_ASSERT(blunt >= 30 && blunt <= 40, "a blob without an overmind should strike blunt for 30-40: [probe.last?.describe()]")
 
 
-/// fire_act: thermal, flagged FIRE so the object burns down.
+/// Heat damage (H3): the overheating stream's step is thermal, flagged FIRE so
+/// the object burns down. fire_act() itself only heats the object's body.
 /datum/unit_test/dq_damage_packet/fire_act
 
 /datum/unit_test/dq_damage_packet/fire_act/Run()
 	make_probes()
-	probe.fire_act(T0C + 1000, 100)
+	probe.apply_heat_damage(OVERHEAT_DAMAGE_MAX)
 	var/thermal = probe.last?.amounts[DAMAGE_THERMAL]
 	TEST_ASSERT(thermal > 0 && thermal <= 20, "a fire should deliver 0-20 thermal: [probe.last?.describe()]")
 	TEST_ASSERT_EQUAL(probe.last.armor_flag, FIRE, "fire damage keeps the FIRE flag")

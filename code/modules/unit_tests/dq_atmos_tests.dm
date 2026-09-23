@@ -4146,10 +4146,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/appliance/cooker/oven/O = new(test_turf)
 	O.stat = 0
 	O.cooking = FALSE
-	O.temperature = O.optimal_temp
-	O.loss = 0
+	// Its temperature is its heat body's (H3): hold it at the target, isolated from the room.
+	O.create_heat_body(TRUE)
+	vg_heat_body_couple(O.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
+	vg_heat_body_set_temperature(O.heat_body, O.optimal_temp)
 	TEST_ASSERT_EQUAL(O.process(), PROCESS_KILL, "stable empty cooker retained timed polling")
-	O.temperature = O.optimal_temp - 20
+	TEST_ASSERT_NOTNULL(O.thermostat_watch, "a hibernating cooker waits on a heat watch")
+	vg_heat_body_set_temperature(O.heat_body, O.optimal_temp - 20)
 	TEST_ASSERT_NOTEQUAL(O.process(), PROCESS_KILL, "heating cooker hibernated below its target temperature")
 	qdel(O)
 
@@ -4185,8 +4188,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/firealarm/F = new(T)
 	var/fire_result = F.process()
 	TEST_ASSERT_EQUAL(fire_result, PROCESS_KILL, "idle fire alarm remained in the machine polling loop")
-	F.fire_act(T0C + 300, CELL_VOLUME)
-	TEST_ASSERT(F.firewarn, "hibernating fire alarm did not respond to direct hotspot exposure")
+	// Its detector is a heat rule on its body (H3): no polling needed.
+	dq_rule_test_write(F, PROP_TEMPERATURE, T0C + 300)
+	dq_rx_flush()
+	TEST_ASSERT(F.firewarn, "hibernating fire alarm did not respond to being heated")
 	qdel(F)
 	qdel(M)
 	qdel(P)
@@ -5358,6 +5363,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// and the flammable item should catch fire (ON_FIRE flag set by the burning
 	// component's RegisterWithParent).
 	var/datum/gas_mixture/turf_air = T.return_air()
+	var/datum/gas_mixture/saved_air = new
+	saved_air.copy_from(turf_air)
 	turf_air.set_temperature(1000) // very hot
 	turf_air.adjust_gas(/datum/gas/oxygen, 100)
 	// The heat domain reads turf gas from the gas field's published frame.
@@ -5365,8 +5372,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
 	vg_heat_debug_run_frames(2)
-	// Paper ignites through its ignition rule (code/datums/rules/declarations.dm),
-	// which runs on a reactor dispatch.
+	// The exposure heats the paper's heat body; its ignition rule
+	// (code/datums/rules/declarations.dm) runs on the next heat frame.
+	dq_rx_flush()
 	react_test_ticks(10)
 
 	// Observable consequence: a flammable item exposed to ignition-temperature
@@ -5376,7 +5384,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"flammable item exposed to 1000 K air neither ignited (ON_FIRE) nor was destroyed — fire_act applied no heat")
 
 	if(!QDELETED(I))
+		I.extinguish()
 		qdel(I)
+	turf_air.copy_from(saved_air)
 
 
 /// Gas thruster constructs and reports fuel + thrust without crashing on

@@ -520,7 +520,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	return 1
 
 
-
 /obj/mecha/proc/check_for_support()
 	var/list/things = orange(1, src)
 
@@ -1238,7 +1237,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				pass_damage_reduc_mod = 1
 
 
-
 			for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 				pass_damage = ME.handle_ranged_contact(A, pass_damage)
 
@@ -1387,12 +1385,10 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(prob(80))
 		check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
-/obj/mecha/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature>src.max_temperature)
-		src.mecha_log_message("Exposed to dangerous temperature.",1)
-		src.take_damage(5,"fire")	//The take_damage() proc handles armor values
-		src.check_for_internal_damage(list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL))
-	return
+/// Hull past max_temperature (the overheating rule): log it and risk internal damage.
+/obj/mecha/on_overheat()
+	mecha_log_message("Exposed to dangerous temperature.", 1)
+	check_for_internal_damage(list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL))
 
 /obj/mecha/proc/dynattackby(obj/item/W as obj, mob/user as mob)
 	user.setClickCooldown(user.get_attack_speed(W))
@@ -1688,7 +1684,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 */
 	return
-
 
 
 /*
@@ -2956,7 +2951,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	*/
 
 
-
 /*
 
 	if (href_list["ai_take_control"])
@@ -3109,7 +3103,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	if(occupant && occupant.client && dq_get_cloaked_selfimage(src))
 		occupant.client.images -= dq_get_cloaked_selfimage(src)
 	return ..()
-
 
 
 /obj/mecha/proc/update_cell_alerts()

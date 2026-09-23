@@ -4,8 +4,9 @@
 	desc = "A small, self-heating device designed for bringing chemical mixtures to a boil."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bunsen0"
-	var/current_temp = T0C
 	var/heating = FALSE
+	/// Heat the flame puts into the burner and what sits on it, W.
+	var/heat_power = BUNSEN_HEAT_POWER
 	var/obj/item/reagent_containers/held_container
 
 /obj/machinery/bunsen_burner/Initialize(mapload)
@@ -104,16 +105,13 @@
 	if(heating)
 		return
 
-	// Begin boiling
+	// Begin boiling: the flame is a heat source on the burner's heat body.
 	visible_message(span_notice("\The [src] starts to heat \the [held_container]."))
 	heating = TRUE
+	if(create_heat_body(TRUE))
+		vg_heat_body_keep(heat_body, TRUE)
+		vg_heat_body_power(heat_body, heat_power)
 	update_icon()
-
-	// Reset gas on start
-	current_temp = T0C
-	var/datum/gas_mixture/GM = return_air()
-	if(GM)
-		current_temp = GM.return_temperature()
 
 /obj/machinery/bunsen_burner/proc/drop_held_container()
 	if(!held_container)
@@ -134,9 +132,10 @@
 		end_boil()
 		return
 
-	// Increase temp
-	var/previous_temp = current_temp
-	current_temp += 15
+	// The flame heats the body; read where it is now.
+	var/previous_temp = bunsen_last_temp || get_temperature()
+	var/current_temp = get_temperature()
+	bunsen_last_temp = current_temp
 
 	// Slosh and toss. We use an internal distilling container, react it in there, then pass it back.
 	held_container.reagents.trans_to_obj(src, held_container.reagents.total_volume)
@@ -168,6 +167,10 @@
 
 /obj/machinery/bunsen_burner/proc/end_boil()
 	heating = FALSE
+	bunsen_last_temp = null
+	if(!isnull(heat_body))
+		vg_heat_body_power(heat_body, 0)
+		vg_heat_body_keep(heat_body, FALSE)
 	visible_message(span_notice("\The [src] clicks."))
 	update_icon()
 
@@ -184,4 +187,15 @@
 /obj/machinery/bunsen_burner/examine(mob/user, infix, suffix)
 	. = ..()
 	if(heating)
-		. += span_notice("It's current temperature is [current_temp - T0C]c")
+		. += span_notice("It's current temperature is [round(get_temperature() - T0C, 0.1)]c")
+
+
+/obj/machinery/bunsen_burner
+	/// Temperature at the last process(), for the progress messages.
+	var/tmp/bunsen_last_temp
+
+/// The burner heats what sits on it: its body carries the held reagents' heat capacity.
+/obj/machinery/bunsen_burner/thermal_properties()
+	. = ..()
+	if(held_container?.reagents)
+		.[THERMAL_CAPACITY] += held_container.reagents.heat_capacity()

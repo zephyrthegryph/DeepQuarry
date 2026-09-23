@@ -51,16 +51,10 @@
 		if(maximum_xgm_pressure && GM.return_pressure() > maximum_xgm_pressure)
 			return
 
-	// Special distilling conditions must be met, each object has different vars to meet it though.
-	if(istype(holder.my_atom,/obj/distilling_tester))
-		// Unit test needs some special handholding
-		var/obj/distilling_tester/distillery_tester = holder.my_atom
-		if(distillery_tester.current_temp < temp_range[1] || distillery_tester.current_temp > temp_range[2])
-			return FALSE
-	// /obj/machinery/portable_atmospherics/powered/reagent_distillery and
-	// /obj/machinery/reagent_refinery/reactor were deleted with the ZAS atmos
-	// machinery cleanup. Without those specific machines, the temperature checks
-	// degrade to "use ambient gas temperature" which is already the fallback below.
+	// The holder's temperature: the bunsen burner's or distillery's heat body (H3).
+	var/temperature = holder.get_temperature()
+	if(temperature < temp_range[1] || temperature > temp_range[2])
+		return FALSE
 
 	return ..()
 

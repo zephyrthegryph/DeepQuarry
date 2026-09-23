@@ -133,7 +133,6 @@
 	canister_color = "green"
 
 
-
 /obj/machinery/portable_atmospherics/canister/proc/check_change()
 	var/old_flag = update_flag
 	update_flag = desired_update_flag()
@@ -208,10 +207,6 @@ update_flag
 		add_overlay("can-o3")
 	return
 
-/obj/machinery/portable_atmospherics/canister/fire_act(exposed_temperature, exposed_volume)
-	var/datum/material/exterior = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
-	if(exterior && exposed_temperature >= exterior.melting_point)
-		deal_damage(DAMAGE_THERMAL, max(1, round((exposed_temperature - exterior.melting_point) / 100)), FIRE)
 
 // At zero integrity the canister ruptures: dumps its gas into the environment,
 // frees any connected port, and becomes a non-dense wreck (it is NOT qdel'd).

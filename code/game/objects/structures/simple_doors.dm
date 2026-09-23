@@ -27,8 +27,9 @@
 	var/keysound = 'sound/items/toolbelt_equip.ogg'
 	rad_insulation = RAD_MEDIUM_INSULATION
 
-/obj/structure/simple_door/fire_act(exposed_temperature, exposed_volume)
-	TemperatureAct(exposed_temperature)
+/// Heat behaviour rule: a flammable material door burns.
+/obj/structure/simple_door/proc/rule_burn(datum/rule/rule)
+	TemperatureAct(get_temperature())
 
 /obj/structure/simple_door/proc/TemperatureAct(temperature)
 	var/burnt = material.combustion_effect(get_turf(src),temperature, 0.3)

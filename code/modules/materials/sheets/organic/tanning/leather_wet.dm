@@ -30,12 +30,9 @@
 		return "almost dry"
 	return "dry"
 
-/obj/item/stack/wetleather/fire_act(exposed_temperature, exposed_volume)
-	..()
-	if(exposed_temperature >= drying_threshold_temperature)
-		wetness--
-		if(wetness == 0)
-			dry()
+/// Heat behaviour rule: ten seconds at 500 K dries it.
+/obj/item/stack/wetleather/proc/rule_dry(datum/rule/rule)
+	dry()
 
 /obj/item/stack/wetleather/proc/dry()
 	var/obj/item/stack/material/leather/L = new(src.loc, get_amount())

@@ -16,10 +16,6 @@
 /datum/property_provider/domain/proc/node_of(datum/D, create)
 	return dq_rule_node(D, property, create ? src : null)
 
-/// Initial value for a new node on `D`.
-/datum/property_provider/domain/proc/initial_value(datum/D)
-	return null
-
 /datum/property_provider/domain/instance_value(datum/D)
 	var/handle = node_of(D, FALSE)
 	return isnull(handle) ? null : dq_rx_node_read(handle, channel)
@@ -41,28 +37,25 @@
 	high_word = "hot"
 	low_word = "cold"
 
-/// Objects have no heat node in the heat domain yet. Until they do, a node is
-/// made when a rule subscribes, fed by fire_act() exposures, and it relaxes to
-/// the surrounding air once exposure stops (dq_rule_expose_heat()).
+/// An object's temperature is its heat body's, or its surroundings' at rest
+/// (M4). Rules over it watch the body (reactor_adapter.dm).
 /datum/property_provider/domain/heat
 	property = PROP_TEMPERATURE
 	applies_to = /obj
 	unit = PROP_UNIT_KELVIN
 	channel = DQ_RX_CH_TEMPERATURE
 
-/// Room temperature, not the turf's air: nodes are made at mapload, before
-/// air exists, and reading air per object would cost a gas mixture each.
-/datum/property_provider/domain/heat/initial_value(datum/D)
-	return T20C
-
-/// Temperature of the air around `D`, else 20 C.
-/proc/dq_ambient_temperature(datum/D)
+/datum/property_provider/domain/heat/instance_value(datum/D)
 	var/atom/A = D
-	if(!istype(A))
-		return T20C
-	var/turf/T = get_turf(A)
-	var/datum/gas_mixture/air = T?.return_air()
-	return air ? air.return_temperature() : T20C
+	return A.get_temperature()
+
+/datum/property_provider/domain/heat/test_write(datum/D, value)
+	var/atom/A = D
+	if(!A.create_heat_body())
+		return FALSE
+	vg_heat_body_couple(A.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
+	vg_heat_body_set_temperature(A.heat_body, value)
+	return TRUE
 
 // ---- DM-owned: integrity ----
 

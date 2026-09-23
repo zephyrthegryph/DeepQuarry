@@ -430,9 +430,9 @@
 	ignite(is_hot(held))
 	return FALSE
 
-/obj/machinery/door/airlock/phoron/fire_act(exposed_temperature, exposed_volume)
-	if(exposed_temperature > 300)
-		PhoronBurn(exposed_temperature)
+/// Heat behaviour rule: a phoron airlock over fire temperature burns.
+/obj/machinery/door/airlock/phoron/proc/rule_burn(datum/rule/rule)
+	PhoronBurn(get_temperature())
 
 /obj/machinery/door/airlock/phoron/proc/ignite(exposed_temperature)
 	if(exposed_temperature > 300)
