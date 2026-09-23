@@ -37,6 +37,9 @@
 
 /atom/movable/Initialize(mapload)
 	. = ..()
+	// L3 (doc/rewrite/lifecycle.md §5): a declared `lifetime` self-arms here
+	// instead of every timed-delete type calling expire()/QDEL_IN by hand.
+	lifecycle_arm_lifetime()
 
 #if EMISSIVE_BLOCK_GENERIC != 0
 	#error EMISSIVE_BLOCK_GENERIC is expected to be 0 to facilitate a weird optimization hack where we rely on it being the most common.
@@ -108,9 +111,12 @@
 	return ..()
 
 /atom/movable/Destroy()
-	// Contents go where each slot's drop policy says (containment ledger, C1).
-	if((length(contents) || has_latent()) && (ledger || dq_slot_defs_for(src)))
-		ledger_apply_drop_policies()
+	// L1 (doc/rewrite/lifecycle.md §2): contents already went where each
+	// slot's declared policy said, in the destroy transaction's phase 3
+	// (destroy_transaction() -> dq_lifecycle_resolve_contents()), before
+	// Destroy() ever runs. Nothing decides that here any more.
+	if((ledger || dq_slot_defs_for(src)) && (length(contents) || has_latent()))
+		stack_trace("[type] still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them")
 	if(em_block)
 		cut_overlay(em_block)
 		UnregisterSignal(em_block, COMSIG_QDELETING)
@@ -375,6 +381,11 @@
 	if(destination)
 		var/area/destarea = get_area(destination)
 
+		// J5: the before-hook, right before the loc write. Gated on one var
+		// test, so an unhooked mover (almost everything) pays nothing.
+		if(move_hooks)
+			move_hooks_dispatch(TRUE)
+
 		// Do The Move
 		glide_for(movetime)
 		last_move = isnull(direction) ? 0 : direction
@@ -386,6 +397,11 @@
 				oldloc.ledger.note_exit(src)
 			if(destination.ledger)
 				destination.ledger.note_enter(src)
+
+		// J5: the after-hook, right after note_enter(), before Exited()/
+		// Uncrossed(). Not run for a same-loc "move" (nothing left or entered).
+		if(move_hooks && !same_loc)
+			move_hooks_dispatch(FALSE)
 
 		// Unset this in case it was set in some other proc. We're no longer moving diagonally for sure.
 		moving_diagonally = 0
@@ -444,6 +460,11 @@
 
 	//If no destination, move the atom into nullspace (don't do this unless you know what you're doing)
 	else if(oldloc)
+		// J5: the before-hook still runs on a deletion move (there is no
+		// "after" -- nothing to settle into), so clocks settle and cancel
+		// instead of being silently dropped by moveToNullspace().
+		if(move_hooks)
+			move_hooks_dispatch(TRUE)
 		loc = null
 		oldloc.ledger?.note_exit(src)
 

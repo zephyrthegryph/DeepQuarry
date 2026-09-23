@@ -28,6 +28,16 @@
 	/// default slot. The first declared slot is the default unless another
 	/// sets this.
 	var/is_default = FALSE
+	/// Keyed slot (J4): a thing's `slot_key()` is stored on its ledger entry
+	/// at insert and indexed for O(1) `slot_lookup()`. A second thing with
+	/// the same key is refused. Only keyed slots pay for the index.
+	var/keyed = FALSE
+	/// L1 (doc/rewrite/lifecycle.md §2 phase 0.5, §3): a TRANSFER slot whose
+	/// contents must resolve in the destroy transaction's mind pre-order
+	/// pass, before anything else -- while the mob tree is still fully
+	/// registered and has a loc. Body plans declare this on the mind slot
+	/// (DQ Medical, O2). Nothing else may set it.
+	var/is_mind_slot = FALSE
 
 	// ---- Propagation (containment.md §3.2, C2; paths.dm walks these) ----
 	/// SLOT_LAYER_*: order among this holder's layered slots, higher is further
@@ -47,6 +57,29 @@
 	/// mobs get heat from their environment (H2) and hits through their own
 	/// occupant rules (C8).
 	var/reaches_mobs = FALSE
+
+/// SLOT_DROP_TRANSFER's destination (doc/rewrite/lifecycle.md §3). The
+/// default reproduces the pre-L1 behaviour: the holder's own container, if
+/// it has slots, else null (the caller falls back to spill). Override for
+/// anything else: occupant ejection to a turf, mind transfer to a ghost or
+/// MMI, a bellied mob to the predator's turf.
+/datum/slot_def/proc/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+	if(holder.loc && dq_slot_defs_for(holder.loc))
+		return holder.loc
+	return null
+
+/// SLOT_DROP_TO_LATENT's successor (doc/rewrite/lifecycle.md §3): the atom
+/// whose ledger gets a latent entry for each thing dropped from this slot,
+/// instead of the thing staying real. Null lets the entry go (debris/wreckage
+/// declares this once it exists; until then TO_LATENT behaves like DELETE).
+/datum/slot_def/proc/latent_successor(atom/holder)
+	return null
+
+/// SLOT_DROP_KEEP_WITH's destination slot id on replace_with()'s successor
+/// (doc/rewrite/lifecycle.md §3 and §5). Null names the successor's default
+/// slot.
+/datum/slot_def/proc/keep_with_slot()
+	return null
 
 /// The singleton for a slot definition type.
 /proc/dq_slot_def(path)

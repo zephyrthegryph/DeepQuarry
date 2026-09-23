@@ -110,6 +110,36 @@
 	var/atom/A = path
 	return initial(A.integrity_failure)
 
+// ---- J7: TAG_CLOCKED, a dynamic tag ----
+
+/datum/property_def/tag/clocked
+	id = TAG_CLOCKED
+	name = "Clocked"
+	desc = "Running on a holder-provided clock (DQ Medical K1) right now."
+
+/// Reads live, unlike a type/material tag: instance_value() is only ever
+/// re-read when something asks (aggregate(), recompute(), or a holder's
+/// ledger_refresh_contribution() call), never on a timer of its own. Source
+/// is TYPE, same as integrity_ratio above -- no type declares this possible
+/// yet (type_value() answers FALSE for all of them), and instance_value()
+/// is the whole point.
+/datum/property_provider/clocked
+	property = TAG_CLOCKED
+	source = PROP_SOURCE_TYPE
+	applies_to = /atom/movable
+
+/datum/property_provider/clocked/type_value(path, list/variant_vars)
+	return FALSE
+
+/datum/property_provider/clocked/instance_value(datum/D)
+	return D.is_lifecycle_clocked() ? TRUE : FALSE
+
+/// Hook point for DQ Medical's clock framework (K1): whether `src` is
+/// running on a holder-provided clock right now. False for everything until
+/// that track overrides it.
+/datum/proc/is_lifecycle_clocked()
+	return FALSE
+
 // ---- Fixed per-type values ----
 
 /// A constant for a type that has no var or material to read it from yet.

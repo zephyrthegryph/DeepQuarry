@@ -91,9 +91,12 @@
 	SEND_SIGNAL(src, COMSIG_OBJ_DECONSTRUCT, disassembled)
 
 	// Destroyed: each slot's drop policy decides what survives (damage.md §6,
-	// containment.md §2). Only what is left outside a slot falls out below.
+	// doc/rewrite/lifecycle.md §3). Only what is left outside a slot falls
+	// out below. This runs the same contents resolution the destroy
+	// transaction's phase 3 uses (code/datums/containment/lifecycle.dm),
+	// directly -- deconstruct() isn't itself going through qdel() yet here.
 	if(!disassembled)
-		ledger_apply_drop_policies()
+		dq_lifecycle_resolve_contents()
 
 	for(var/obj/item/item in contents)
 		if(item.item_flags & ABSTRACT)

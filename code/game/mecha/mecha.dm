@@ -267,26 +267,56 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /// Sealed: the cabin is the pilot's environment (cabin_air, life support),
 /// same as before the ledger tracked the move.
+///
+/// L1 audit (doc/rewrite/lifecycle.md §3, following the same finding the
+/// ledger-joint J1 audit made): HOLDER, not the SLOT_DROP_SPILL default,
+/// because go_out() -- called from /obj/mecha/Destroy() -- does the real
+/// ejection (mob state cleanup, UI close, verbs, messages), gated on its own
+/// slot_remove() reporting a move. The destroy transaction's contents phase
+/// now runs *before* any Destroy() code at all, so a generic phase-3 spill
+/// would eject the pilot first, and go_out()'s slot_remove() would then find
+/// the slot already empty and silently skip all of that cleanup. Turning
+/// this into a proper TRANSFER(eject_to_turf) belongs with migrating that
+/// cleanup into an on_unslotted() hook (J6) -- domain work, not this pass.
 /datum/slot_def/occupant/mecha_pilot
 	id = MECHA_SLOT_PILOT
 	name = "pilot"
+	drop_policy = SLOT_DROP_HOLDER
 
 /// External: equipment is bolted to the hull's hardpoints, not inside it.
 /// Capacity stays with mecha_equipment.dm's per-category limits.
+///
+/// J3 (doc/rewrite/lifecycle.md §3, §8 L1): TRANSFER, not the removed
+/// SLOT_DROP_HOLDER -- unlike the pilot slot above, Destroy()'s own
+/// equipment loop doesn't gate its wreckage-salvage/detach handling on a
+/// move having just succeeded (it walks the `equipment` list by ref and
+/// forceMoves unconditionally), so resolving this slot's own move first, in
+/// phase 3, is a safe no-op from that loop's point of view -- same
+/// destination either way, so the second move it makes is idempotent.
 /datum/slot_def/mecha_equipment_hardpoint
 	id = MECHA_SLOT_EQUIPMENT
 	name = "hardpoint"
 	exposure = SLOT_EXPOSURE_EXTERNAL
 	capacity_model = SLOT_CAPACITY_NONE
-	drop_policy = SLOT_DROP_HOLDER // the wreckage salvage/detach loop in Destroy() owns it
+	drop_policy = SLOT_DROP_TRANSFER
+
+/datum/slot_def/mecha_equipment_hardpoint/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+	return get_turf(holder)
 
 /// Internal: the cargo compartment. Capacity stays with cargo_capacity.
+/// J3: TRANSFER, same reasoning as mecha_equipment_hardpoint above --
+/// Destroy()'s own cargo loop forceMoves to get_turf(src) unconditionally,
+/// so this slot resolving to the same turf first is a harmless no-op second
+/// move from that loop's point of view.
 /datum/slot_def/mecha_cargo
 	id = MECHA_SLOT_CARGO
 	name = "cargo"
 	exposure = SLOT_EXPOSURE_INTERNAL
 	capacity_model = SLOT_CAPACITY_NONE
-	drop_policy = SLOT_DROP_HOLDER // Destroy()'s own cargo spill loop owns it
+	drop_policy = SLOT_DROP_TRANSFER
+
+/datum/slot_def/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+	return get_turf(holder)
 
 /obj/mecha/Destroy()
 	src.go_out()

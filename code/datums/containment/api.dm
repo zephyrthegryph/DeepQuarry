@@ -1,22 +1,32 @@
 // The transaction API (doc/rewrite/containment.md §2, invariant 2).
 //
 //   thing.move_into(holder, slot_id, actor)          insert (slot_id null: the default slot)
-//   holder.slot_remove(thing, destination, actor)     take out, to a place that has no slots
+//   holder.slot_remove(thing, destination, actor, flags)     take out, to a place that has no slots
 //   holder.slot_transfer(thing, new_holder, slot_id, actor)   from one slot to another
 //   holder.slot_empty(slot_id, destination, actor)    remove everything in a slot
+//   holder.slot_item(slot_id)                         the one thing in a single-item slot, or null
+//   holder.slot_lookup(slot_id, key)                  the thing keyed `key` in a keyed slot, or null
 //   dq_ledger_refusal(thing, holder, slot_id, actor)  why a move would fail, or null
 //
 // Each move checks both sides first: the thing can leave its current slot
 // (the slot's removal_refusal() and COMSIG_SLOT_PRE_REMOVE), and it can enter
-// the new one (the slot's acceptance predicate, capacity and
-// COMSIG_SLOT_PRE_INSERT). Nothing that can sleep runs in between: the check
-// procs and the pre signals' handlers are SIGNAL_HANDLERs. Then the move
-// commits with one forceMove, whose bookkeeping (ledger.dm) fires
-// COMSIG_SLOT_REMOVED and COMSIG_SLOT_INSERTED. A refused move changes nothing.
+// the new one (the slot's acceptance predicate, capacity, a keyed slot's
+// duplicate-key check, and COMSIG_SLOT_PRE_INSERT). Nothing that can sleep
+// runs in between: the check procs and the pre signals' handlers are
+// SIGNAL_HANDLERs. Then the move commits with one forceMove, whose
+// bookkeeping (ledger.dm) fires COMSIG_SLOT_REMOVED/COMSIG_SLOT_INSERTED and
+// the thing's on_unslotted()/on_slotted() hooks. A refused move changes
+// nothing.
 //
-// Drop policies: the base /atom/movable/Destroy() calls
-// ledger_apply_drop_policies() before anything else, so no holder type
-// decides what happens to its contents in its own Destroy().
+// slot_remove() takes a LEDGER_MOVE_FORCED flag that skips both refusals and
+// both pre signals but still runs the same commit bookkeeping (J2): used to
+// spill or transfer a holder's contents while it is being destroyed, where
+// the move must not be refusable.
+//
+// Drop policies: the destroy transaction (L1, doc/rewrite/lifecycle.md §2)
+// resolves every slot's declared policy in its contents phase, before any
+// leftover Destroy() runs, so no holder type decides what happens to its
+// contents by hand (code/datums/containment/lifecycle.dm).
 
 /// Why `thing` can't go into `slot_id` (null: the default slot) on `holder`,
 /// or null if it can. Checks both sides; changes nothing.
@@ -44,6 +54,12 @@
 	. = def.refusal(holder, thing, actor)
 	if(.)
 		return .
+	if(def.keyed)
+		var/key = thing.slot_key()
+		if(!isnull(key))
+			var/atom/movable/existing = dest.slot_lookup(id, key)
+			if(existing && existing != thing)
+				return "[existing] already has that"
 	if(def.capacity_model != SLOT_CAPACITY_NONE)
 		var/cost = def.cost(holder, thing)
 		if(dest.used[id] + def.latent_used(holder) + cost > def.capacity_for(holder))
@@ -69,18 +85,25 @@
 	return null
 
 /// Commits a checked move. Returns TRUE if the thing ended up in the slot.
-/proc/dq_ledger_commit(atom/movable/thing, atom/holder, slot_id)
+/// `flags` (LEDGER_MOVE_*) reaches note_enter()/reslot() and, through them,
+/// on_slotted()/on_unslotted() (J6).
+/proc/dq_ledger_commit(atom/movable/thing, atom/holder, slot_id, flags = 0)
 	var/datum/ledger/dest = holder.ledger
 	var/id = slot_id || dest.default_id
 	if(thing.loc == holder)
-		dest.reslot(thing, id)
+		dest.reslot(thing, id, flags)
 		return TRUE
 	dest.pending_thing = thing
 	dest.pending_slot = id
+	dest.pending_flags = flags
+	var/datum/ledger/source = dq_ledger_peek(thing.loc)
+	if(source)
+		source.pending_exit_flags = flags
 	thing.forceMove(holder)
 	if(dest.pending_thing == thing)
 		dest.pending_thing = null
 		dest.pending_slot = null
+		dest.pending_flags = null
 	var/list/entry = dest.entries?[thing]
 	return entry && entry[LEDGER_E_SLOT] == id
 
@@ -92,11 +115,16 @@
 	return dq_ledger_commit(src, holder, slot_id)
 
 /// Take `thing` out of this holder's slots to `destination`. A destination
-/// with slots makes this a transfer into its default slot.
-/atom/proc/slot_remove(atom/movable/thing, atom/destination, mob/actor)
+/// with slots makes this a transfer into its default slot. `flags` may carry
+/// LEDGER_MOVE_FORCED (J2): both refusals and pre signals are skipped, but
+/// the commit bookkeeping still runs, same as any other move. LEDGER_MOVE_DESTROYING
+/// (L1) always accompanies FORCED when the destroy transaction is the mover.
+/atom/proc/slot_remove(atom/movable/thing, atom/destination, mob/actor, flags = 0)
 	var/datum/ledger/L = dq_ledger(src)
 	if(!L?.entries[thing] || !destination || QDELETED(destination))
 		return FALSE
+	if(flags & LEDGER_MOVE_FORCED)
+		return dq_ledger_force_move(thing, destination, flags)
 	if(dq_slot_defs_for(destination))
 		return thing.move_into(destination, null, actor)
 	for(var/atom/A = destination; A; A = A.loc)
@@ -104,6 +132,26 @@
 			return FALSE
 	if(dq_ledger_removal_refusal(thing, actor))
 		return FALSE
+	thing.forceMove(destination)
+	return thing.loc == destination
+
+/// LEDGER_MOVE_FORCED's move: straight to the commit, no refusal checked and
+/// no pre signal sent on either side. If `destination` has slots, `thing`
+/// lands in `slot_id` (null: its default slot); otherwise this is a plain
+/// forced forceMove. Either way doMove()'s bookkeeping (note_exit/note_enter,
+/// COMSIG_SLOT_*, on_unslotted()/on_slotted()) runs as normal, carrying
+/// `flags` to the hooks. L1's contents phase (lifecycle.dm) is the only
+/// caller that ever names an explicit `slot_id` (KEEP_WITH).
+/proc/dq_ledger_force_move(atom/movable/thing, atom/destination, flags = 0, slot_id = null)
+	for(var/atom/A = destination; A; A = A.loc)
+		if(A == thing)
+			return FALSE
+	if(dq_slot_defs_for(destination))
+		dq_ledger(destination)
+		return dq_ledger_commit(thing, destination, slot_id, flags)
+	var/datum/ledger/source = dq_ledger_peek(thing.loc)
+	if(source)
+		source.pending_exit_flags = flags
 	thing.forceMove(destination)
 	return thing.loc == destination
 
@@ -151,6 +199,23 @@
 		return null
 	return def.capacity_for(src)
 
+/// The one thing in `slot_id` (null: the default slot), or null if it holds
+/// none. For a single-item slot (organ, equipment): the whole point of
+/// slot_item() over slot_contents() is not building a copied list to read
+/// one entry (J8).
+/atom/proc/slot_item(slot_id)
+	var/datum/ledger/L = dq_ledger(src)
+	if(!L)
+		return null
+	var/id = slot_id || L.default_id
+	var/list/things = L.slots[id]
+	return length(things) ? things[1] : null
+
+/// The thing keyed `key` in `slot_id` on this holder, or null (J4). O(1).
+/atom/proc/slot_lookup(slot_id, key)
+	var/datum/ledger/L = dq_ledger(src)
+	return L?.slot_lookup(slot_id, key)
+
 /// Aggregate of measure `id` over everything in this holder, nested holders
 /// included. Null when empty or when this holds no slots.
 /atom/proc/contents_property(id)
@@ -172,67 +237,6 @@
 	var/datum/ledger/L = dq_ledger(src)
 	return L?.find_entry(entry_id)
 
-/// The base Destroy() calls this first. Each slot's drop policy decides what
-/// happens to what it holds; things with nowhere to go are deleted.
-/atom/movable/proc/ledger_apply_drop_policies()
-	// dq_ledger()'s QDELETED guard exists to stop a stray reference from
-	// reviving a ledger on an object that already finished dying. That guard
-	// wrongly blocks this call too: qdel() sets gc_destroyed before calling
-	// Destroy(), which is the only place this runs, always on src, always
-	// legitimately -- an ungenerated latent holder (declared but never asked
-	// an exact question) must still resolve its generator here so its
-	// declared entries spill as data instead of vanishing. Build it directly.
-	var/datum/ledger/L = ledger
-	if(!L)
-		var/list/defs = dq_slot_defs_for(src)
-		if(defs)
-			L = new /datum/ledger(src, defs)
-			ledger = L
-			if(latent_contents)
-				dq_latent_resolve(src, L)
-	if(!L)
-		return
-	L.sync()
-	var/atom/drop = drop_location()
-	for(var/datum/slot_def/def as anything in L.defs)
-		if(def.drop_policy == SLOT_DROP_HOLDER)
-			continue
-		def.drop_latent(src, drop)
-		var/list/things = L.slots[def.id]
-		for(var/atom/movable/thing as anything in things.Copy())
-			if(QDELETED(thing))
-				continue
-			switch(def.drop_policy)
-				if(SLOT_DROP_DELETE)
-					qdel(thing)
-					continue
-				if(SLOT_DROP_TRANSFER)
-					if(loc && dq_slot_defs_for(loc) && thing.move_into(loc))
-						continue
-			if(drop && !QDELETED(drop))
-				thing.forceMove(drop)
-			if(thing.loc == src)
-				qdel(thing)
-	ledger_drop_latent(L, drop)
-
-/// Drop policies for latent entries, as data (damage.md §6): deleted entries
-/// are removed; spilled or transferred ones stay latent if they land in
-/// another latent holder, and are created only where they land on a turf.
-/atom/movable/proc/ledger_drop_latent(datum/ledger/L, atom/drop)
-	for(var/datum/latent_entry/entry as anything in L.latent_list())
-		var/datum/slot_def/def = L.def_by_id(entry.slot)
-		var/path = entry.path
-		var/list/blob = entry.blob
-		var/n = entry.count
-		L.latent_set_count(entry, 0)
-		if(def.drop_policy == SLOT_DROP_DELETE)
-			continue
-		var/atom/target = drop
-		if(def.drop_policy == SLOT_DROP_TRANSFER && loc && dq_slot_defs_for(loc))
-			target = loc
-		if(!target || QDELETED(target))
-			continue
-		if(!isturf(target) && target.latent_add(path, n, blob))
-			continue
-		for(var/i in 1 to n)
-			dq_latent_create(path, blob, target)
+// The destroy transaction's contents phase (L1, doc/rewrite/lifecycle.md §2-3)
+// replaces what used to live here (ledger_apply_drop_policies(),
+// ledger_drop_latent()): see code/datums/containment/lifecycle.dm.

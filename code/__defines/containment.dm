@@ -118,12 +118,28 @@
 // ---- Drop policies: what the base Destroy() does with a slot's contents ----
 /// Move them to the holder's drop location. Deleted if there is none.
 #define SLOT_DROP_SPILL 1
-/// Delete them with the holder.
+/// Delete them with the holder (recursively, children first -- L1 phase 3).
 #define SLOT_DROP_DELETE 2
-/// Move them into the holder's own container's default slot, else spill.
+/// A declared resolver (doc/rewrite/lifecycle.md §3's TRANSFER(resolver))
+/// picks the destination: /datum/slot_def/proc/drop_resolver(). The default
+/// resolver is today's behaviour (the holder's own container's default
+/// slot, else spill); override it for anything else -- occupant ejection,
+/// mind transfer, mecha equipment to the mech's turf.
 #define SLOT_DROP_TRANSFER 3
-/// Leave them: the holder's own Destroy() deals with them (legacy machine internals, until C6).
+/// Deprecated (doc/rewrite/lifecycle.md §3: "SLOT_DROP_HOLDER is removed").
+/// Left to the holder's own Destroy(), unmigrated. Restricted to the two
+/// remaining owners outside this track's scope: body equipment/organ slots
+/// (DQ Medical, O2/O4) and machine internals (stock.dm, C6). Nothing else
+/// may add a new use.
 #define SLOT_DROP_HOLDER 4
+/// Contents fold into latent entries on a declared successor instead of
+/// staying real (doc/rewrite/lifecycle.md §3's TO_LATENT): debris, wreckage.
+/// /datum/slot_def/proc/latent_successor(holder) names it.
+#define SLOT_DROP_TO_LATENT 5
+/// Moves into a slot of replace_with()'s successor (doc/rewrite/lifecycle.md
+/// §3's KEEP_WITH(slot)); falls back to SPILL when nothing is replacing the
+/// holder. /datum/slot_def/proc/keep_with_slot() names the destination slot.
+#define SLOT_DROP_KEEP_WITH 6
 
 // ---- Entry records (the ledger's per-thing list) ----
 #define LEDGER_E_SLOT 1
@@ -132,7 +148,47 @@
 /// Snapshot of the thing's contribution to the aggregates: measure values in
 /// the ledger's measure order, then tag words.
 #define LEDGER_E_SNAPSHOT 4
-#define LEDGER_E_LEN 4
+/// The thing's `slot_key()` at insert time, for a keyed slot (J4). Null for
+/// an unkeyed slot, or a keyed slot whose thing has no key right now.
+#define LEDGER_E_KEY 5
+#define LEDGER_E_LEN 5
 
 /// Separates a slot id from the serial in an entry id: "interior#12".
 #define LEDGER_ENTRY_SEPARATOR "#"
+
+// ---- slot_remove() flags (J2) ----
+/// Skip the removal refusal, the acceptance refusal and both pre signals.
+/// The commit bookkeeping (note_exit/note_enter, COMSIG_SLOT_*, on_slotted/
+/// on_unslotted) still runs. Used to spill or transfer a holder's contents
+/// while it is being destroyed (dq_lifecycle_resolve_contents(), L1), where
+/// the move must not be refusable.
+#define LEDGER_MOVE_FORCED (1<<0)
+/// L1 (doc/rewrite/lifecycle.md §3): this move is the destroy transaction
+/// resolving a slot's declared policy, not an ordinary player/game move.
+/// Passed to on_slotted()/on_unslotted() (J6) and holder_destroying() is
+/// queryable during it, so a hook can skip re-derivation (body invalidate,
+/// life_wake, HUD, factor recompute) that a moment-later qdel would waste.
+/// Always combined with LEDGER_MOVE_FORCED.
+#define LEDGER_MOVE_DESTROYING (1<<1)
+
+// ---- J5: the move hook gate (atom/movable/var/move_hooks) ----
+// One shared mechanism for anything that needs to react to every move of a
+// specific thing, cheaply, even when it's nested arbitrarily deep in
+// holders that themselves aren't hooked (a clocked item in a carried bag).
+// The gate is one var test (doMove(), atoms_movable.dm): `if(move_hooks)`.
+// Own-hook bits mean "call my own move_hook_before()/move_hook_after()".
+// MOVE_HOOK_SUBTREE means "walk my contents; something inside is hooked",
+// kept accurate by the ledger's note_enter()/note_exit() (an O(1) counter,
+// not a rescan) the same way it already bubbles aggregate changes.
+/// DQ Medical's clock framework (K1): a holder-provided clock following
+/// this thing. Reserved here; K1 writes the handler.
+#define MOVE_HOOK_CLOCK (1<<0)
+/// C10 (latency policy): reserved here; C10 writes the handler. C10's
+/// dq_latent_touch in note_enter stays unconditional -- only its
+/// collapse-cancel uses this bit.
+#define MOVE_HOOK_LATENCY (1<<1)
+/// Set (by the ledger, not by hand) on any holder with a hooked descendant
+/// somewhere in its slots, so a move of the holder itself knows to walk in
+/// and fire that descendant's hooks too, since the descendant's own `loc`
+/// doesn't change when its container moves.
+#define MOVE_HOOK_SUBTREE (1<<2)

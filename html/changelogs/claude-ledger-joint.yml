@@ -1,0 +1,7 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Containment ledger: forced ledger transactions (LEDGER_MOVE_FORCED) back spill and transfer drop policies instead of raw forceMove."
+  - rscadd: "Containment ledger: keyed slots (slot_key(), slot_lookup(), ledger_rekey()) for O(1) duplicate-refusing lookups such as organ tags."
+  - rscadd: "Containment ledger: thing-side on_slotted()/on_unslotted() commit hooks, gated per type by has_slot_hooks."
+  - rscadd: "Containment ledger: slot_item() accessor for single-item slots."
