@@ -34,7 +34,7 @@ use vg_core::frame::{Res, Task};
 use vg_core::grid::{DirMask, Face, GridDims};
 use vg_core::outbox::{Event, EventKind, Lane, Outbox, Wake, WatchId};
 use vg_core::owner::{DomainState, View};
-use vg_core::revision::Counter;
+use vg_core::watch::revision::Counter;
 use vg_core::sim::{Mode, Sim, SimBuilder, SimConfig, WatchKey};
 use vg_core::watch::{Cond, WatchPort, WatchState};
 
