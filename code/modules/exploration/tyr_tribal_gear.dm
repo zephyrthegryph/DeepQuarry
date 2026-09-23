@@ -216,8 +216,7 @@
 	name = "tyrian energy barrier"
 	desc = "An automatic shield generator made from tyr tech. Wearable as a belt."
 	description_info = "The barrier has 150 health, and does not benefit from armor. It will fully regenerate every 180 seconds."
-	shield_health = 125
-	max_shield_health = 125
+	max_integrity = 125
 	shield_regen_delay = 180 SECONDS
 	shield_regen_amount = 125
 	w_class = ITEMSIZE_NO_CONTAINER

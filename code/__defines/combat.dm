@@ -1,5 +1,8 @@
 //We will round to this value in damage calculations.
 #define DAMAGE_PRECISION 0.1
+/// Material weapons, armour and traps wear down one of these (in integrity) per
+/// blow; their max integrity is the material's integrity, rounded to wear units.
+#define MATERIAL_WEAR_UNIT 10
 
 //Damage flag defines //
 

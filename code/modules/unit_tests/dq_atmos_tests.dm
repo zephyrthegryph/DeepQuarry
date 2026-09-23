@@ -5956,7 +5956,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 
 	// Stash baseline integrity, then push pressure into the rupture band (40-50 atm).
-	var/initial_integrity = Tank.integrity
+	var/initial_integrity = Tank.get_integrity()
 	TEST_ASSERT(initial_integrity > 0, "tank integrity zero at construct")
 
 	// Pressure target: ~37 atm. DQ's TANK_RUPTURE_PRESSURE is 35 atm and
@@ -5974,8 +5974,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	Tank.check_status()
 
-	TEST_ASSERT(Tank.integrity < initial_integrity, \
-		"check_status didn't reduce integrity under rupture pressure: [initial_integrity] → [Tank.integrity]")
+	TEST_ASSERT(Tank.get_integrity() < initial_integrity, \
+		"check_status didn't reduce integrity under rupture pressure: [initial_integrity] → [Tank.get_integrity()]")
 
 	qdel(Tank)
 

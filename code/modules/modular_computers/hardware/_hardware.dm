@@ -12,14 +12,12 @@
 	var/critical = 1
 	/// Limits which devices can contain this component. 1: All, 2: Laptops/Consoles, 3: Consoles only
 	var/hardware_size = 1
-	/// Current damage level
-	var/damage = 0
-	/// Maximal damage level.
-	var/max_damage = 100
-	/// "Malfunction" threshold. When damage exceeds this value the hardware piece will semi-randomly fail and do !!FUN!! things
+	// Hardware uses integrity. Below integrity_failure it does not work at all;
+	// at zero it is wrecked, but it stays a (broken) part.
+	max_integrity = 100
+	integrity_failure = 0.5
+	/// "Malfunction" threshold. When missing integrity exceeds this value the hardware piece will semi-randomly fail and do !!FUN!! things
 	var/damage_malfunction = 20
-	/// "Failure" threshold. When damage exceeds this value the hardware piece will not work at all.
-	var/damage_failure = 50
 	/// Chance of malfunction when the component is damaged
 	var/malfunction_probability = 10
 	var/usage_flags = PROGRAM_ALL
@@ -36,21 +34,21 @@
 	// Nanopaste. Repair all damage if present for a single unit.
 	var/obj/item/stack/S = W
 	if(istype(S, /obj/item/stack/nanopaste))
-		if(!damage)
+		if(!get_integrity_damage())
 			to_chat(user, "\The [src] doesn't seem to require repairs.")
 			return TRUE
 		if(S.use(1))
 			to_chat(user, "You apply a bit of \the [W] to \the [src]. It immediately repairs all damage.")
-			damage = 0
+			repair_damage(max_integrity)
 		return TRUE
 	// Cable coil. Works as repair method, but will probably require multiple applications and more cable.
 	if(istype(S, /obj/item/stack/cable_coil))
-		if(!damage)
+		if(!get_integrity_damage())
 			to_chat(user, "\The [src] doesn't seem to require repairs.")
 			return 1
 		if(S.use(1))
 			to_chat(user, "You patch up \the [src] with a bit of \the [W].")
-			take_damage(-10)
+			repair_damage(10)
 		return TRUE
 	return ..()
 
@@ -73,7 +71,8 @@
 
 /// Returns a list of lines containing diagnostic information for display.
 /obj/item/computer_hardware/proc/diagnostics(mob/user)
-	to_chat(user, "Hardware Integrity Test... (Corruption: [damage]/[max_damage]) [damage > damage_failure ? "FAIL" : damage > damage_malfunction ? "WARN" : "PASS"]")
+	var/missing = get_integrity_damage()
+	to_chat(user, "Hardware Integrity Test... (Corruption: [missing]/[max_integrity]) [hardware_failed() ? "FAIL" : missing > damage_malfunction ? "WARN" : "PASS"]")
 
 /obj/item/computer_hardware/Initialize(mapload)
 	. = ..()
@@ -91,10 +90,10 @@
 	if(!enabled)
 		return FALSE
 	// Too damaged to work at all.
-	if(damage > damage_failure)
+	if(hardware_failed())
 		return FALSE
 	// Still working. Well, sometimes...
-	if(damage > damage_malfunction)
+	if(get_integrity_damage() > damage_malfunction)
 		if(prob(malfunction_probability))
 			return FALSE
 	// Good to go.
@@ -102,14 +101,19 @@
 
 /obj/item/computer_hardware/examine(mob/user)
 	. = ..()
-	if(damage > damage_failure)
+	var/missing = get_integrity_damage()
+	if(hardware_failed())
 		. += span_danger("It seems to be severely damaged!")
-	else if(damage > damage_malfunction)
+	else if(missing > damage_malfunction)
 		. += span_notice("It seems to be damaged!")
-	else if(damage)
+	else if(missing)
 		. += "It seems to be slightly damaged."
 
-/// Damages the component. Contains necessary checks. Negative damage "heals" the component.
-/obj/item/computer_hardware/take_damage(amount)
-	damage += round(amount) 					// We want nice rounded numbers here.
-	damage = between(0, damage, max_damage)		// Clamp the value.
+/// Below integrity_failure the part does not work at all.
+/obj/item/computer_hardware/proc/hardware_failed()
+	return get_integrity() < max_integrity * integrity_failure
+
+/// A wrecked part stays a (useless) part. Fire and acid still destroy it.
+/obj/item/computer_hardware/atom_destruction(damage_flag)
+	if(damage_flag == FIRE || damage_flag == ACID)
+		return ..()

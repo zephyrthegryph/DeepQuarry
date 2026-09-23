@@ -3,13 +3,16 @@
 	base_name = "blob"
 	icon_state = "blob"
 	light_range = 0
-	integrity = 21 //doesn't start at full health
 	max_integrity = 25
 	health_regen = 1
 
+/obj/structure/blob/normal/Initialize(mapload, new_overmind)
+	. = ..()
+	update_integrity(21) // Doesn't start at full health.
+
 /obj/structure/blob/normal/update_icon()
 	..()
-	if(integrity <= 15)
+	if(get_integrity() <= 15)
 		icon_state = "blob_damaged"
 		desc = "A thin lattice of slightly twitching tendrils."
 	else

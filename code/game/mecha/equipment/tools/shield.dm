@@ -45,7 +45,7 @@
 /obj/item/mecha_parts/mecha_equipment/combat_shield/attach(obj/mecha/M as obj)
 	..()
 	if(chassis)
-		my_shield.shield_health = 0
+		my_shield.update_integrity(0)
 		my_shield.my_mecha = chassis
 		my_shield.forceMove(chassis)
 	return
@@ -55,7 +55,7 @@
 	..()
 	my_shield.destroy_shields()
 	my_shield.my_mecha = null
-	my_shield.shield_health = my_shield.max_shield_health
+	my_shield.repair_damage(my_shield.max_integrity)
 	my_shield.forceMove(src)
 	return
 

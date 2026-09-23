@@ -56,8 +56,8 @@
 	icon_state = "ruggedplus-open"
 	icon_state_closed = "ruggedplus-closed"
 
-	max_damage = 300
-	broken_damage = 200
+	max_integrity = 300
+	integrity_failure = 1/3 // Stops working below 100 integrity.
 
 /obj/item/modular_computer/laptop/preset/custom_loadout/rugged/install_default_hardware()
 	..()

@@ -75,7 +75,7 @@ GLOBAL_LIST_EMPTY(overminds)
 	. += ""
 	. += "BLOB STATUS"
 	if(blob_core)
-		. += "Core Health: [blob_core.integrity]"
+		. += "Core Health: [blob_core.get_integrity()]"
 	. += "Power Stored: [blob_points]/[max_blob_points]"
 	. += "Total Blobs: [GLOB.all_blobs.len]"
 

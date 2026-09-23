@@ -3,7 +3,7 @@
 
 /turf/simulated/wall/get_description_interaction()
 	var/list/results = list()
-	if(damage)
+	if(get_integrity_damage())
 		results += "[desc_panel_image("welder")]to repair."
 
 	if(isnull(construction_stage) || !reinf_material)

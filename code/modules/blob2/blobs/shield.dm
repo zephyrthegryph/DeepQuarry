@@ -13,7 +13,7 @@
 
 /obj/structure/blob/shield/update_icon()
 	..()
-	if(integrity <= 75)
+	if(get_integrity() <= 75)
 		icon_state = "blob_shield_damaged"
 		desc = "A wall of twitching tendrils."
 	else

@@ -15,8 +15,8 @@
 	max_hardware_size = 3
 	steel_sheet_cost = 20
 	light_strength = 4
-	max_damage = 300
-	broken_damage = 150
+	max_integrity = 300
+	integrity_failure = 0.5 // Stops working below 150 integrity.
 
 /obj/item/modular_computer/console/update_icon()
 	. = ..()

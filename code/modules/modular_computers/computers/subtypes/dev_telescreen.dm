@@ -15,8 +15,8 @@
 	max_hardware_size = 2
 	steel_sheet_cost = 10
 	light_strength = 4
-	max_damage = 300
-	broken_damage = 150
+	max_integrity = 300
+	integrity_failure = 0.5 // Stops working below 150 integrity.
 	w_class = ITEMSIZE_HUGE
 
 /obj/item/modular_computer/telescreen/crowbar_act(mob/user, obj/item/tool)

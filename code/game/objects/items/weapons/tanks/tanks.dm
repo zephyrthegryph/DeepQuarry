@@ -25,8 +25,10 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 	var/datum/gas_mixture/air_contents = null
 	var/distribute_pressure = ONE_ATMOSPHERE
-	var/integrity = 20
-	var/maxintegrity = 20
+	// The tank's integrity is its pressure seal: over-pressure and heat wear it
+	// down (tank_stress) and it recovers while the tank is at rest. At zero the
+	// seal has failed; the tank ruptures if it is still over-pressured.
+	max_integrity = 200
 	var/valve_welded = 0
 	var/obj/item/tankassemblyproxy/proxyassembly
 
@@ -86,7 +88,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 /obj/item/tank/material_environment_repaired()
 	leaking = FALSE
-	integrity = initial(integrity)
+	repair_damage(max_integrity)
 	return ..()
 
 /obj/item/tank/material_environment_owns_leak()
@@ -95,7 +97,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 /obj/item/tank/material_environment_rupture()
 	// The established tank rupture path supplies fragments, gas release, and
 	// explosion strength. Drive it by state instead of bypassing it with qdel.
-	integrity = 0
+	update_integrity(0)
 	leaking = TRUE
 	START_PROCESSING(SSobj, src)
 	check_status()
@@ -221,8 +223,9 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 					message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
 					if(WT.welding)
 						to_chat(user, span_danger("You accidentally rake \the [W] across \the [src]!"))
-						maxintegrity -= rand(2,6)
-						integrity = min(integrity,maxintegrity)
+						max_integrity -= rand(20,60)
+						if(get_integrity() > max_integrity)
+							update_integrity(max_integrity)
 						src.air_contents.add_thermal_energy(rand(2000,50000))
 				WT.eyecheck(user)
 			else
@@ -438,7 +441,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		material_failure_temperature = T0C + failure_temp * insulation.melting_point / plastic.melting_point
 
 	if(pressure > material_fragment_pressure)
-		if(integrity <= 7)
+		if(get_integrity() <= 70)
 			if(!istype(src.loc,/obj/item/transfer_valve))
 				message_admins("Explosive tank rupture! last key to touch the tank was [forensic_data?.get_lastprint()].")
 				log_game("Explosive tank rupture! last key to touch the tank was [forensic_data?.get_lastprint()].")
@@ -484,17 +487,17 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				qdel(src)
 
 		else
-			integrity -=7
+			tank_stress(70)
 
 
 	else if(pressure > material_rupture_pressure)
 		#ifdef FIREDBG
-		log_world(span_warning("[x],[y] tank is rupturing: [pressure] kPa, integrity [integrity]"))
+		log_world(span_warning("[x],[y] tank is rupturing: [pressure] kPa, integrity [get_integrity()]"))
 		#endif
 
 		air_contents.react()
 
-		if(integrity <= 0)
+		if(get_integrity() <= 0)
 			var/turf/simulated/T = get_turf(src)
 			if(!T)
 				return
@@ -520,15 +523,15 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 		else
 			if(!valve_welded)
-				integrity-= 3
+				tank_stress(30)
 				src.leaking = 1
 			else
-				integrity-= 5
+				tank_stress(50)
 
 
 	else if(leaking || pressure > material_leak_pressure || air_contents.return_temperature() > material_failure_temperature)
 
-		if((integrity <= 17 || src.leaking) && !valve_welded)
+		if((get_integrity() <= 170 || src.leaking) && !valve_welded)
 			var/turf/simulated/T = get_turf(src)
 			if(!T)
 				return
@@ -549,21 +552,30 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				playsound(src, 'sound/effects/spray.ogg', 10, 1, -3)
 				leaking = 1
 				#ifdef FIREDBG
-				log_world(span_warning("[x],[y] tank is leaking: [pressure] kPa, integrity [integrity]"))
+				log_world(span_warning("[x],[y] tank is leaking: [pressure] kPa, integrity [get_integrity()]"))
 				#endif
 
 
 		else
-			integrity-= 1
+			tank_stress(10)
 
 
 	else
-		if(integrity < maxintegrity)
-			integrity++
-			if(leaking)
-				integrity++
-			if(integrity == maxintegrity)
+		if(get_integrity() < max_integrity)
+			repair_damage(leaking ? 20 : 10)
+			if(get_integrity() >= max_integrity)
 				leaking = 0
+
+/// Pressure and heat wear on the seal. Armour doesn't help a seal from the inside.
+/obj/item/tank/proc/tank_stress(amount)
+	take_damage(amount, BRUTE, null, FALSE)
+
+/// A failed seal is a state, not a wreck: the tank keeps its gas until the next
+/// pressure check ruptures or vents it. Fire and acid still destroy it.
+/obj/item/tank/atom_destruction(damage_flag)
+	if(damage_flag == FIRE || damage_flag == ACID)
+		return ..()
+	START_PROCESSING(SSobj, src)
 
 /////////////////////////////////
 ///Prewelded tanks

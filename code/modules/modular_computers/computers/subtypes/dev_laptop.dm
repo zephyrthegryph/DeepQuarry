@@ -11,8 +11,8 @@
 	base_active_power_usage = 200
 	max_hardware_size = 2
 	light_strength = 3
-	max_damage = 200
-	broken_damage = 100
+	max_integrity = 200
+	integrity_failure = 0.5 // Stops working below 100 integrity.
 	w_class = ITEMSIZE_NORMAL
 	var/icon_state_closed = "laptop-closed"
 

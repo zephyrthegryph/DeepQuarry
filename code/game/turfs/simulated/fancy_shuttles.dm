@@ -128,12 +128,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 
 	apply_underlay()
 
-	if(damage != 0)
-		var/integrity = material.integrity
-		if(reinf_material)
-			integrity += reinf_material.integrity
-
-		var/overlay = round(damage / integrity * damage_overlays.len) + 1
+	var/damage_fraction = wall_damage_fraction()
+	if(damage_fraction > 0)
+		var/overlay = round(damage_fraction * damage_overlays.len) + 1
 		if(overlay > damage_overlays.len)
 			overlay = damage_overlays.len
 

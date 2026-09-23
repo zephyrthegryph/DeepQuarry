@@ -61,8 +61,7 @@
 
 ////// The shield projector object
 /obj/item/shield_projector/rectangle/mecha
-	shield_health = 200
-	max_shield_health = 200
+	max_integrity = 200
 	shield_regen_delay = 10 SECONDS
 	shield_regen_amount = 10
 	size_x = 1
@@ -102,7 +101,7 @@
 /obj/item/shield_projector/rectangle/mecha/adjust_health(amount)
 	. = ..()
 	my_mech.use_power(OMNI_SHIELD_DRAIN)
-	if(!active && shield_health < shield_regen_amount)
+	if(!active && get_integrity() < shield_regen_amount)
 		my_mech.use_power(OMNI_SHIELD_DRAIN * 4)
 
 #undef OMNI_SHIELD_DRAIN

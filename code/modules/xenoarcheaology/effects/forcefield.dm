@@ -23,7 +23,7 @@
 		while(created_field.len < 16)
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T.z))
 			created_field.Add(E)
-			E.strength = 1
+			E.set_strength(1)
 			E.density = TRUE
 			E.anchored = TRUE
 			E.invisibility = INVISIBILITY_NONE
@@ -34,9 +34,10 @@
 /datum/artifact_effect/forcefield/process()
 	..()
 	for(var/obj/effect/energy_field/E in created_field)
-		if(E.strength < 1)
+		var/field_strength = E.get_strength()
+		if(field_strength < 1)
 			E.adjust_strength(0.15, 0)
-		else if(E.strength < 5)
+		else if(field_strength < 5)
 			E.adjust_strength(0.25, 0)
 
 /datum/artifact_effect/forcefield/UpdateMove()

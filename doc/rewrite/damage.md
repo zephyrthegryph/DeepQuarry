@@ -134,6 +134,24 @@ These are applied in order:
 - **Borgs** already use the body model (machine plan).
 - **Simple vehicles** stay on integrity.
 
+**D3 status (Sept 2026).** Done:
+- **Walls** use integrity. `max_integrity` is the material cap (plating plus reinforcement), set by `update_material()`, which keeps damage already taken. Projectiles, throws, generic attacks and blobs reach walls through the turf adapters (`projectile_damage`, `thrown_damage`, `receive_generic_attack`, `deal_damage`). Wall-rot multiplies each hit by ten in `run_atom_armor()`. Welder repair calls `repair_damage()`, and zero integrity dismantles the wall.
+- **Pools converted:** blob2 `integrity`, the old `/obj/effect/blob` `blob_health`, energy-field `strength` (20 integrity to the Renwick; the field drops below one Renwick and is never destroyed), simple-door `hardness` (10 integrity to the point), target `hp`, tank `integrity` (the pressure seal, ten per old point), shield-projector `shield_health`, modular-computer and hardware `damage`/`max_damage`/`broken_damage`/`damage_failure` (now `integrity_failure`), material weapon, armour, ashtray and barbed-wire item `health` (`MATERIAL_WEAR_UNIT` integrity per blow), smoleworld building `health`, and mech component `integrity`.
+- The **energy shield** segment has no pool of its own: it drains the generator's shared energy. It gains a `receive_damage()` sink that maps kinds to shield damage types.
+- **Mechs:** `receive_damage()` now applies packets through the mech's own model (`take_damage` → `absorbDamage` → `components_handle_damage`). Projectiles and throws keep `dynbulletdamage`/`dynhitby`. The body-model step above is still to do.
+
+**D5 shims.** Some explosion and EMP procs still read or write an old var, so a mirror or accumulator survives until D5 deletes the ladder:
+- simple door `hardness`: `ex_act` subtracts from it, and `CheckHardness()` moves it onto integrity;
+- shield projector `max_shield_health`: `emp_act` reads it, and it mirrors `max_integrity`;
+- mech component `integrity`: `emp_act` reads it, and it mirrors `get_integrity()`;
+- modular computer `take_damage(amount, component_probability, damage_casing)`: `ex_act` and `emp_act` still make this legacy call, and the override forwards it to `damage_computer()`;
+- energy shield `take_damage(damage, SHIELD_DAMTYPE_*, hitby)`: `ex_act`, `emp_act` and `fire_act` still call it.
+
+**Not converted (listed):**
+- **Growth or other stats, not integrity:** hydroponics tray `health`, spreading-vine `health`/`max_health` (they drive growth stage and maturity), `/obj/effect/dark` `health` (a light balance), anomaly `curr_health`, laser-tag hits and supermatter `damage` (instability).
+- **Equipment on mobs** (the body rewrite): rig `take_hit()`, space-suit breaches and NIF `durability`.
+- **Organs:** item `health` survives only for them.
+
 ## 6. Thresholds and destruction
 
 Each type declares its breakpoints as rules ([rules.md §4](rules.md#4-rules)):

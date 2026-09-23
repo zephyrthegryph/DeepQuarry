@@ -14,9 +14,12 @@
 
 	var/list/required_type = null	// List, if it exists. Exosuits meant to use the component (Unique var changes / effects)
 
+	// A component's condition is its integrity. At zero it is wrecked but stays
+	// installed (efficiency 0) until it is repaired or replaced.
+	max_integrity = 100
+	/// D5 shim: emp_act still reads this; it mirrors get_integrity(). Delete with the EMP ladder.
 	var/integrity
 	var/integrity_danger_mod = 0.5	// Multiplier for comparison to max_integrity before problems start.
-	max_integrity = 100
 
 	var/step_delay = 0
 
@@ -26,7 +29,7 @@
 
 /obj/item/mecha_parts/component/examine(mob/user)
 	. = ..()
-	var/show_integrity = round(integrity/max_integrity*100, 0.1)
+	var/show_integrity = round(get_integrity()/max_integrity*100, 0.1)
 	switch(show_integrity)
 		if(85 to 100)
 			. += "It's fully intact."
@@ -43,10 +46,10 @@
 
 /obj/item/mecha_parts/component/Initialize(mapload)
 	. = ..()
-	integrity = max_integrity
+	integrity = get_integrity()
 
 	if(start_damaged)
-		integrity = round(integrity * integrity_danger_mod)
+		update_integrity(round(max_integrity * integrity_danger_mod))
 
 /obj/item/mecha_parts/component/Destroy()
 	detach()
@@ -65,9 +68,22 @@
 
 	take_damage((4 - severity) * round(integrity * 0.1, 0.1))
 
+/// Repairs (positive) or wears (negative) the component. Wear passed on from the
+/// chassis has already been through the mech's armour.
 /obj/item/mecha_parts/component/proc/adjust_integrity(amt = 0)
-	integrity = clamp(integrity + amt, 0, max_integrity)
-	return
+	if(amt > 0)
+		repair_damage(amt)
+	else if(amt < 0)
+		take_damage(-amt, BRUTE, null, FALSE)
+
+/obj/item/mecha_parts/component/on_update_integrity(old_value, new_value)
+	. = ..()
+	integrity = new_value
+
+/// A wrecked component stays a (useless) component. Fire and acid still destroy it.
+/obj/item/mecha_parts/component/atom_destruction(damage_flag)
+	if(damage_flag == FIRE || damage_flag == ACID)
+		return ..()
 
 /obj/item/mecha_parts/component/proc/damage_part(dam_amt = 0, type = BRUTE)
 	if(dam_amt <= 0)
@@ -84,8 +100,9 @@
 /obj/item/mecha_parts/component/proc/get_efficiency()
 	var/integ_limit = round(max_integrity * integrity_danger_mod)
 
-	if(integrity < integ_limit)
-		var/int_percent = round(integrity / integ_limit, 0.1)
+	var/current = get_integrity()
+	if(current < integ_limit)
+		var/int_percent = round(current / integ_limit, 0.1)
 
 		return int_percent
 
@@ -109,7 +126,7 @@
 		forceMove(target)
 
 		if(internal_damage_flag)
-			if(integrity > (max_integrity * integrity_danger_mod))
+			if(get_integrity() > (max_integrity * integrity_danger_mod))
 				if(chassis.hasInternalDamage(internal_damage_flag))
 					chassis.clearInternalDamage(internal_damage_flag)
 
@@ -139,14 +156,14 @@
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/NP = W
 
-		if(integrity < max_integrity)
+		if(get_integrity() < max_integrity)
 			to_chat(user, span_notice("You start to repair damage to \the [src]."))
-			while(integrity < max_integrity && NP)
+			while(get_integrity() < max_integrity && NP)
 				if(do_after(user, 1 SECOND, target = src))
 					NP.use(1)
 					adjust_integrity(NP.mech_repair)
 
-					if(integrity >= max_integrity)
+					if(get_integrity() >= max_integrity)
 						to_chat(user, span_notice("You finish repairing \the [src]."))
 						break
 

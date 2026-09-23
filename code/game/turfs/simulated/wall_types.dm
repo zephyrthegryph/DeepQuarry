@@ -429,12 +429,9 @@
 	else
 		icon_state = "[wall_base_state][wall_connections]"
 
-	if(damage != 0)
-		var/integrity = material.integrity
-		if(reinf_material)
-			integrity += reinf_material.integrity
-
-		var/overlay = round(damage / integrity * damage_overlays.len) + 1
+	var/damage_fraction = wall_damage_fraction()
+	if(damage_fraction > 0)
+		var/overlay = round(damage_fraction * damage_overlays.len) + 1
 		if(overlay > damage_overlays.len)
 			overlay = damage_overlays.len
 

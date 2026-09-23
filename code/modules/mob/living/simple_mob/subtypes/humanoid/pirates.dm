@@ -448,8 +448,7 @@
 	return TRUE
 
 /obj/item/shield_projector/rectangle/automatic/drone
-	shield_health = 150
-	max_shield_health = 150
+	max_integrity = 150
 	shield_regen_delay = 10 SECONDS
 	shield_regen_amount = 10
 	size_x = 1
