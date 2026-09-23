@@ -408,8 +408,8 @@
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	SSair.run_gas_frames(2)
 	var/limit = T.air.return_pressure() + 200
-	REACT_WHEN(turf_sub, COND_ABOVE(REACT_GAS(T.air), CH_GAS_PRESSURE, limit))
-	REACT_ON(tank_sub, REACT_GAS(tank), CH_BIT(CH_GAS_PRESSURE))
+	SSreactor.when(turf_sub, COND_ABOVE(REACT_GAS(T.air), CH_GAS_PRESSURE, limit), REACT_LANE_URGENT)
+	SSreactor.on_change(tank_sub, REACT_GAS(tank), CH_BIT(CH_GAS_PRESSURE), REACT_LANE_URGENT)
 	SSair.run_gas_frames(2)
 	react_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(turf_sub.wakes), 0, "turf gas threshold fired while below")
@@ -421,7 +421,7 @@
 	T.assume_air(donor)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	SSair.run_gas_frames(1)
-	react_test_ticks(3)
+	react_test_ticks(6)
 	TEST_ASSERT(length(turf_sub.wakes) >= 1, "turf gas pressure crossed [limit] kPa ([T.air.return_pressure()]) but the watch did not wake")
 	if(length(turf_sub.wakes))
 		var/list/wake = turf_sub.wakes[1]

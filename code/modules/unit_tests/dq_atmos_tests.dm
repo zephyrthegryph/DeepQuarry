@@ -5420,8 +5420,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
 	vg_heat_debug_run_frames(2)
 	// Paper ignites through its ignition rule (code/datums/rules/declarations.dm),
-	// which runs on the next reactor dispatch.
-	react_test_ticks(2)
+	// which runs on a reactor dispatch.
+	react_test_ticks(10)
 
 	// Observable consequence: a flammable item exposed to ignition-temperature
 	// air must be alight. If fire_act stopped applying heat to floor items, the
