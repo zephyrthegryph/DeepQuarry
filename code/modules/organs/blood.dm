@@ -60,7 +60,7 @@ BLOOD_VOLUME_SURVIVE = 40
 /// Continuous while the volume is below normal or the sprite still shows pale; bleeding and
 /// blood draws change the volume through the body, which wakes it.
 /datum/life_system/blood/carbon/human/idle(mob/living/carbon/human/self)
-	if(!self.should_have_organ(O_HEART) || self.stat == DEAD)
+	if(!self.should_have_organ(O_HEART) || self.is_dead())
 		return TRUE
 	return !self.pale && self.vessel.get_reagent_amount(REAGENT_ID_BLOOD) >= self.species.blood_volume
 
@@ -71,7 +71,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(!self.should_have_organ(O_HEART))
 		return
 
-	if(self.stat != DEAD && self.bodytemperature >= 170)	//Dead or cryosleep people do not pump the blood.
+	if(self.is_alive() && self.bodytemperature >= 170)	//Dead or cryosleep people do not pump the blood.
 
 		var/blood_volume_raw = self.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
 		// Perfusion is the physiology's: it reads the volume (and the heart's

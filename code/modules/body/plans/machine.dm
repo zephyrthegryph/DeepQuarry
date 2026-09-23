@@ -19,7 +19,7 @@
 /datum/body/simple/machine/oxygen_debt()
 	return null
 
-/datum/body/simple/machine/is_dead()
+/datum/body/simple/machine/is_lethal()
 	ensure_vitals()
 	return total_load >= owner.get_endurance() * DQ_MACHINE_LETHAL_MULT
 
@@ -71,7 +71,7 @@
 /datum/body/simple/machine/robot
 
 /// Robots also die when their processor core is destroyed.
-/datum/body/simple/machine/robot/is_dead()
+/datum/body/simple/machine/robot/is_lethal()
 	if(..())
 		return TRUE
 	var/mob/living/silicon/robot/R = owner
@@ -207,7 +207,7 @@
 /// capacitor.
 /datum/body/simple/machine/ai
 
-/datum/body/simple/machine/ai/is_dead()
+/datum/body/simple/machine/ai/is_lethal()
 	if(..())
 		return TRUE
 	var/mob/living/silicon/ai/AI = owner
