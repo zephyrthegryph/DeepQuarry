@@ -77,6 +77,14 @@
 	// Create and destroy is weird and I wanna cover my bases
 	var/tmp/harddel_deets_dumped = FALSE
 
+	/// Opts a type into qdel()'s pre-destroy phase (J1, doc/rewrite/containment.md
+	/// §2.4) even though it isn't a containment holder and declares no latent
+	/// contents: set TRUE on a type whose pre_destroy() override does real work.
+	/// Checked once per type (SSgarbage caches the answer on /datum/qdel_item),
+	/// so an ordinary datum that never sets this pays nothing beyond the field
+	/// read qdel() already does.
+	var/has_pre_destroy_override = FALSE
+
 /**
  * Called when a href for this datum is clicked
  */
@@ -151,6 +159,28 @@
 	#endif
 
 	return QDEL_HINT_QUEUE
+
+/**
+ * The pre-destroy phase (J1, doc/rewrite/containment.md §2.4): qdel() calls
+ * this before it sets gc_destroyed, on a datum that is otherwise still fully
+ * valid -- so this is where a holder's contents are released through the
+ * normal transaction API (dq_ledger(), move_into(), slot_remove(), signals
+ * and hooks all work normally here) instead of inside Destroy(), where they
+ * would already be QDELETED.
+ *
+ * Must not set gc_destroyed. Must not sleep. A qdel(src) called from inside
+ * this (or from a handler of the COMSIG_PRE_QDELETING signal qdel() sends
+ * first) is allowed and completes the deletion; the outer qdel() call that
+ * is already inside this phase notices and returns without repeating any of
+ * it (its own datum_flags & DF_PRE_DESTROYING check).
+ *
+ * Only runs at all for a type qdel() decided needs it (dq_qdel_needs_pre_destroy()):
+ * a containment holder (slot_def_types()), a latent-contents holder, or a
+ * type that sets has_pre_destroy_override. Every other datum's qdel() never
+ * calls this, so the base no-op costs nothing beyond a field read.
+ */
+/datum/proc/pre_destroy(force = FALSE)
+	return
 
 ///Only override this if you know what you're doing. You do not know what you're doing
 ///This is a threat

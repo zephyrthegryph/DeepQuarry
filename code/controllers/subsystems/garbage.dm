@@ -395,9 +395,28 @@ SUBSYSTEM_DEF(garbage)
 	var/slept_destroy = 0 //!Number of times it's slept in its destroy
 	var/qdel_flags = 0 //!Flags related to this type's trip thru qdel.
 	var/list/extra_details //!Lazylist of string metadata about the deleted objects
+	/// J1 (doc/rewrite/containment.md §2.4): whether this type needs qdel()'s
+	/// pre-destroy phase. Computed once, from the first instance qdel() ever
+	/// sees of this type (dq_qdel_needs_pre_destroy()); null until then.
+	var/has_pre_destroy
 
 /datum/qdel_item/New(mytype)
 	name = "[mytype]"
+
+/// Whether `to_delete`'s type needs qdel()'s pre-destroy phase (J1,
+/// doc/rewrite/containment.md §2.4): a containment holder (declares slots),
+/// a latent-contents holder, or a type that opts in with
+/// has_pre_destroy_override. Computed from the live instance qdel() has in
+/// hand the first time it sees the type, then cached on /datum/qdel_item.
+/proc/dq_qdel_needs_pre_destroy(datum/to_delete)
+	if(to_delete.has_pre_destroy_override)
+		return TRUE
+	if(!isatom(to_delete))
+		return FALSE
+	var/atom/A = to_delete
+	if(dq_slot_defs_for(A))
+		return TRUE
+	return A.latent_contents ? TRUE : FALSE
 
 /// Should be treated as a replacement for the 'del' keyword.
 ///
@@ -423,6 +442,20 @@ SUBSYSTEM_DEF(garbage)
 			CRASH("[to_delete.type] destroy proc was called multiple times, likely due to a qdel loop in the Destroy logic")
 		return
 
+	// Pre-destroy phase (J1, doc/rewrite/containment.md §2.4). A holder's
+	// contents are released through the normal transaction API while it is
+	// still fully valid, before Destroy() tears anything down.
+	if(to_delete.datum_flags & DF_PRE_DESTROYING)
+		return // re-entrant qdel(src) from inside our own pre phase: ignored
+	if(isnull(trash.has_pre_destroy))
+		trash.has_pre_destroy = dq_qdel_needs_pre_destroy(to_delete)
+	if(trash.has_pre_destroy)
+		to_delete.datum_flags |= DF_PRE_DESTROYING
+		SEND_SIGNAL(to_delete, COMSIG_PRE_QDELETING, force)
+		to_delete.pre_destroy(force) // must not set gc_destroyed
+		to_delete.datum_flags &= ~DF_PRE_DESTROYING
+		if(!isnull(to_delete.gc_destroyed))
+			return // qdel(src) called from inside pre_destroy() already completed it
 
 	to_delete.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 	var/start_time = world.time

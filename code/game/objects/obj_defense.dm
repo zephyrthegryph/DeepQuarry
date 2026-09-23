@@ -93,7 +93,7 @@
 	// Destroyed: each slot's drop policy decides what survives (damage.md §6,
 	// containment.md §2). Only what is left outside a slot falls out below.
 	if(!disassembled)
-		ledger_apply_drop_policies()
+		ledger_release_contents()
 
 	for(var/obj/item/item in contents)
 		if(item.item_flags & ABSTRACT)

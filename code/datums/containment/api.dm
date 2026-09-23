@@ -23,9 +23,10 @@
 // spill or transfer a holder's contents while it is being destroyed, where
 // the move must not be refusable.
 //
-// Drop policies: the base /atom/movable/Destroy() calls
-// ledger_apply_drop_policies() before anything else, so no holder type
-// decides what happens to its contents in its own Destroy().
+// Drop policies: qdel()'s pre-destroy phase (J1) calls pre_destroy() ->
+// ledger_release_contents() while the holder is still fully valid, before
+// its own Destroy() runs at all, so no holder type decides what happens to
+// its contents in its own Destroy().
 
 /// Why `thing` can't go into `slot_id` (null: the default slot) on `holder`,
 /// or null if it can. Checks both sides; changes nothing.
@@ -34,6 +35,8 @@
 		return "it is gone"
 	if(!holder || QDELETED(holder))
 		return "there is nowhere to put it"
+	if(holder.datum_flags & DF_PRE_DESTROYING)
+		return "it is being destroyed" // J1: nothing refills it while it empties
 	for(var/atom/A = holder; A; A = A.loc)
 		if(A == thing)
 			return "it can't go inside itself"
@@ -223,27 +226,21 @@
 	var/datum/ledger/L = dq_ledger(src)
 	return L?.find_entry(entry_id)
 
-/// The base Destroy() calls this first. Each slot's drop policy decides what
-/// happens to what it holds; things with nowhere to go are deleted.
-/atom/movable/proc/ledger_apply_drop_policies()
-	// dq_ledger()'s QDELETED guard exists to stop a stray reference from
-	// reviving a ledger on an object that already finished dying. That guard
-	// wrongly blocks this call too: qdel() sets gc_destroyed before calling
-	// Destroy(), which is the only place this runs, always on src, always
-	// legitimately -- an ungenerated latent holder (declared but never asked
-	// an exact question) must still resolve its generator here so its
-	// declared entries spill as data instead of vanishing. Build it directly.
-	var/datum/ledger/L = ledger
-	if(!L)
-		var/list/defs = dq_slot_defs_for(src)
-		if(defs)
-			L = new /datum/ledger(src, defs)
-			ledger = L
-			if(latent_contents)
-				dq_latent_resolve(src, L)
+/// pre_destroy() calls this (J1, doc/rewrite/containment.md §2.4): each
+/// slot's drop policy decides what happens to what it holds, while the
+/// holder is still fully valid (not QDELETED -- pre_destroy() runs before
+/// qdel() sets gc_destroyed). Things with nowhere to go are deleted.
+///
+/// Also called directly by /obj/deconstruct() (obj_defense.dm), which needs
+/// the same release on an object that isn't being qdel'd at all (yet); that
+/// call site predates and is unrelated to the pre-destroy phase.
+/atom/movable/proc/ledger_release_contents(force = FALSE)
+	// dq_ledger() builds the ledger (and resolves an ungenerated latent
+	// generator) on first use, same as any other holder read -- no special
+	// case needed here now that this always runs on a fully valid src.
+	var/datum/ledger/L = dq_ledger(src) // syncs
 	if(!L)
 		return
-	L.sync()
 	var/atom/drop = drop_location()
 	for(var/datum/slot_def/def as anything in L.defs)
 		if(def.drop_policy == SLOT_DROP_HOLDER)
@@ -270,6 +267,13 @@
 			if(thing.loc == src)
 				qdel(thing)
 	ledger_drop_latent(L, drop)
+
+/// J1: the pre-destroy phase releases a holder's contents while it is still
+/// fully valid. dq_qdel_needs_pre_destroy() is what decides a type needs
+/// this at all (declares slots, or latent_contents), so this only runs its
+/// real work for holders; a plain movable's qdel() never calls it.
+/atom/movable/pre_destroy(force)
+	ledger_release_contents(force)
 
 /// Drop policies for latent entries, as data (damage.md §6): deleted entries
 /// are removed; spilled or transferred ones stay latent if they land in

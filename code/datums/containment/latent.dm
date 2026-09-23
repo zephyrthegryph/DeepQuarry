@@ -369,9 +369,14 @@ GLOBAL_VAR(latent_last_refusal)
 	return L ? L.latent_count(slot_id) : 0
 
 /// Adds `n` latent things of `path` to `slot_id`. Refuses types that can't be
-/// latent and holders that don't keep entries. Returns the entry or null.
+/// latent, holders that don't keep entries, and (J1) a holder that is being
+/// destroyed -- nothing refills it while it empties. The pre-destroy phase's
+/// own generator resolve (dq_latent_resolve(), which runs while this flag is
+/// already set) calls the ledger's latent_add() directly and is unaffected.
 /atom/proc/latent_add(path, n = 1, list/blob = null, slot_id = null)
 	if(!latent_contents || !dq_latent_eligible(path))
+		return null
+	if(datum_flags & DF_PRE_DESTROYING)
 		return null
 	var/datum/ledger/L = dq_ledger(src)
 	return L?.latent_add(path, n, blob, slot_id)
