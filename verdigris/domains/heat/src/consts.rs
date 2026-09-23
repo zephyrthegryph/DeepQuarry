@@ -9,15 +9,15 @@
 /// @dm-define STEFAN_BOLTZMANN_CONSTANT
 #[allow(clippy::excessive_precision, clippy::unreadable_literal)]
 pub const STEFAN_BOLTZMANN: f64 = 0.000_000_056_703_744_19;
+/// 0 °C, K. Single source is `vg_core::units::T0C`.
+pub use vg_core::units::T0C;
+/// 20 °C, K. Single source is `vg_core::units::T20C`.
+pub use vg_core::units::T20C;
 /// Cosmic microwave background, K. The floor of every body and gas.
 /// Single source is `vg_core::units::TCMB` (`rust_core.md` §15); re-exported
 /// here (no second `@dm-define` -- the generator would reject a duplicate
 /// name) so existing `vg_heat::consts::TCMB` call sites are unaffected.
 pub use vg_core::units::TCMB;
-/// 0 °C, K. Single source is `vg_core::units::T0C`.
-pub use vg_core::units::T0C;
-/// 20 °C, K. Single source is `vg_core::units::T20C`.
-pub use vg_core::units::T20C;
 
 /// The effective radiative sink temperature of space, K.
 ///
@@ -100,6 +100,21 @@ pub const MAX_BODIES: u32 = 1 << 16;
 /// Body handle bits for the generation (index is 16 bits; the handle is
 /// `index | generation << 16`, below 2²⁴ so exact as an f32).
 pub const BODY_GENERATION_BITS: u32 = 8;
+
+/// Watch slots the host allocator hands out (`world.rs`'s own generation-
+/// checked handles, mirroring `MAX_BODIES`/[`BODY_GENERATION_BITS`]).
+/// `slot*2 + domain_bit` must fit the low 16 bits alongside an 8-bit
+/// generation so the packed handle stays below 2²⁴ (exact as an f32).
+pub const MAX_WATCHES: u32 = 1 << 15;
+/// Watch handle generation bits. Was 4 (the DM-facing handle packed the
+/// *sim's own* table generation as `index * 16 + generation & 15`), which
+/// aliased a still-live watch's handle with an unrelated one after only 16
+/// reuses of the same sim table slot -- a stale DM handle could then
+/// silently act on the wrong watch. Watches now get their own host-owned
+/// slot/generation allocation (like bodies), so a handle only repeats after
+/// this many *host* slot reuses, each requiring an explicit `unwatch()` in
+/// between.
+pub const WATCH_GENERATION_BITS: u32 = 8;
 
 #[cfg(test)]
 mod tests {

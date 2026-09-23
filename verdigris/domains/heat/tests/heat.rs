@@ -498,6 +498,92 @@ fn threshold_set_entries_report_crossings() {
     w.unwatch(set).unwrap();
 }
 
+/// Regression (H1 audit): a watch's DM handle used to pack the sim's own
+/// watch-table generation into only 4 bits (`index * 16 + generation & 15`),
+/// so after 16 watch/unwatch cycles on the same underlying sim slot a new
+/// watch's handle would numerically collide with an old, already-removed
+/// one. Cycling well past that (48 registrations on one cell) and checking
+/// every handle ever handed out stays unique, and that a stale handle from
+/// an early cycle is rejected rather than quietly hitting whatever now
+/// holds that number, proves the host's own generation-checked allocator
+/// (mirroring body handles) replaced the aliasing scheme.
+#[test]
+fn watch_handles_never_alias_across_many_slot_reuses() {
+    let (mut w, _) = world(8, 8);
+    let a = idx(&w, 2, 2);
+    w.set_cell(a, CellSpec::solid(1_000.0, 0.05, 293.0));
+
+    let mut seen = std::collections::HashSet::new();
+    let mut first_handle = None;
+    for i in 0..48u32 {
+        let h = w
+            .watch(
+                WatchTarget::Cell(a),
+                1,
+                Lane::Normal,
+                &WatchCond::Above {
+                    limit: 373.0 + i as f32, // distinct condition per cycle
+                    both: false,
+                },
+            )
+            .unwrap();
+        assert!(
+            seen.insert(h),
+            "watch handle {h} reused after only {i} slot cycles"
+        );
+        if i == 0 {
+            first_handle = Some(h);
+        }
+        w.unwatch(h).unwrap();
+    }
+
+    // The very first handle is long since freed: using it again as if it
+    // were still live must fail, not silently succeed against whatever
+    // watch now occupies that sim table slot.
+    let stale = first_handle.unwrap();
+    assert!(
+        w.unwatch(stale).is_err(),
+        "a stale watch handle from 48 cycles ago must not still resolve"
+    );
+    assert!(
+        w.set_add(stale, 1, 1, Cmp::Above, 400.0, false).is_err(),
+        "a stale watch handle must not accept set_add either"
+    );
+}
+
+/// Regression (H1 audit): a wake or event reported for a sim watch-table
+/// slot after that watch was `unwatch()`-ed, but before the slot is reused,
+/// must be dropped -- not misattributed to nothing under a bogus handle.
+/// (`collect()`'s owner-map lookup returns `None` and the record is simply
+/// not pushed; this exercises the live path directly.)
+#[test]
+fn crossing_after_unwatch_reports_nothing_for_the_old_handle() {
+    let (mut w, _) = world(8, 8);
+    let a = idx(&w, 3, 3);
+    w.set_cell(a, CellSpec::solid(1_000.0, 0.05, 293.0));
+    let hot = w
+        .watch(
+            WatchTarget::Cell(a),
+            5,
+            Lane::Urgent,
+            &WatchCond::Above {
+                limit: 373.0,
+                both: false,
+            },
+        )
+        .unwrap();
+    w.run_frames(2);
+    let _ = w.drain_wakes();
+    w.unwatch(hot).unwrap();
+    w.add_cell_heat(a, 1_000.0 * 200.0);
+    w.run_frames(4);
+    let wakes = w.drain_wakes();
+    assert!(
+        wakes.iter().all(|x| x.watch.index != hot),
+        "an unwatched handle must never appear in a later wake: {wakes:?}"
+    );
+}
+
 /// Regression: releasing a large body into a tiny analytic container
 /// must not overdraw the container (its floor would create energy).
 #[test]
