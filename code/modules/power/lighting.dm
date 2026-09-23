@@ -1018,12 +1018,12 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/proc/start_flicker_watch()
 	if(!auto_flicker || flicker_chunk_tokens)
 		return
-	flicker_chunk_tokens = SSreactor.subscribe_chunks(src, get_turf(src), 12, REACT_CHUNK_PLAYER)
+	flicker_chunk_tokens = SSreactor.subscribe_player_chunks(src, get_turf(src), 12)
 	auto_flicker_check()
 
 /obj/machinery/light/proc/stop_flicker_watch()
 	if(flicker_chunk_tokens)
-		flicker_chunk_tokens = SSreactor.unsubscribe_chunks(src, flicker_chunk_tokens, REACT_CHUNK_PLAYER)
+		flicker_chunk_tokens = SSreactor.unsubscribe_player_chunks(src, flicker_chunk_tokens)
 	flicker_check_at = 0
 
 /obj/machinery/light/proc/auto_flicker_check()

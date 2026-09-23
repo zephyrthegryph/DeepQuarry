@@ -4205,6 +4205,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.upgradeMotion()
 	C.motionTargets = null
 	C.detectTime = 0
+	C.stat &= ~NOPOWER
 	C.schedule_camera_timer()
 	TEST_ASSERT(!C.camera_timer_token, "idle motion camera kept a timer")
 	var/mob/living/carbon/human/H = new(test_turf)
@@ -4296,7 +4297,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.emergency_mode = FALSE
 	L.auto_flicker = FALSE
 	L.cell.charge = 0
-	L.update(FALSE)
+	L.continue_emergency_discharge()
 	TEST_ASSERT(!L.emergency_discharge_at && !L.flicker_chunk_tokens, "unpowered light without emergency charge kept a timer or chunk keys")
 	qdel(L)
 

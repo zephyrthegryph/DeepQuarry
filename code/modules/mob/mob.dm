@@ -1,8 +1,6 @@
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	SSmachines?.publish_mob_chunk(src)
 	SSai?.publish_mob_chunk(src)
-	if(SSreactor?.mob_chunk_subscriptions)
-		SSreactor.publish_mob_chunk(get_turf(src), REACT_CHUNK_MOB)
 	if(client)
 		stack_trace("Mob with client has been deleted.")
 
@@ -97,8 +95,6 @@
 	. = ..()
 	SSmachines?.publish_mob_chunk(src)
 	SSai?.publish_mob_chunk(src)
-	if(client ? SSreactor?.player_chunk_subscriptions : SSreactor?.mob_chunk_subscriptions)
-		SSreactor.publish_mob_chunk(get_turf(src), client ? (REACT_CHUNK_MOB|REACT_CHUNK_PLAYER) : REACT_CHUNK_MOB)
 	log_mob_tag("TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 

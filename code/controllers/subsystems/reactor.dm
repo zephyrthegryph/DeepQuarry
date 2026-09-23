@@ -62,12 +62,10 @@ SUBSYSTEM_DEF(reactor)
 	var/audit_sample = 64
 	var/list/last_audit_findings = list()
 
-	/// Live REACT_KEY_MOB_CHUNK subscriptions made through subscribe_chunks(): all of them,
-	/// and those that also want non-player mobs. A player's move publishes only while the
-	/// first is non-zero, any other mob's only while the second is. A subscription dropped
-	/// by REACT_CLEAR without unsubscribe_chunks() leaves a count high, which only costs publishes.
+	/// Live REACT_KEY_PLAYER_CHUNK subscriptions. A player's move publishes only while this is
+	/// non-zero. A subscription dropped by REACT_CLEAR without unsubscribe_player_chunks()
+	/// leaves it high, which only costs publishes.
 	var/player_chunk_subscriptions = 0
-	var/mob_chunk_subscriptions = 0
 
 /datum/controller/subsystem/reactor/stat_entry(msg)
 	msg = "S:[length(subscribers) - length(free_ids) - length(released_ids)] W:[last_wakes] C:[length(continuous)] [round(last_dispatch_ms, 0.01)]ms"
@@ -83,7 +81,6 @@ SUBSYSTEM_DEF(reactor)
 	wake_counts = SSreactor.wake_counts
 	continuous_cost = SSreactor.continuous_cost
 	player_chunk_subscriptions = SSreactor.player_chunk_subscriptions
-	mob_chunk_subscriptions = SSreactor.mob_chunk_subscriptions
 
 /// The wheel tick for world.time `time`: the first tick at or after it.
 /datum/controller/subsystem/reactor/proc/tick_of(time)
@@ -227,12 +224,11 @@ SUBSYSTEM_DEF(reactor)
 		return TRUE
 	return !!vg_react_cancel(token)
 
-// --- Mob chunk keys (Q12) ---------------------------------------------------------------------
+// --- Player chunk keys (Q5) ---------------------------------------------------------------
 
-/// Subscribes `D` to REACT_KEY_MOB_CHUNK for every chunk within `radius` tiles of `center`.
-/// `mask` REACT_CHUNK_PLAYER wakes only for players; REACT_CHUNK_MOB for any mob.
-/// Returns the tokens, for unsubscribe_chunks() with the same mask.
-/datum/controller/subsystem/reactor/proc/subscribe_chunks(datum/D, turf/center, radius, mask = REACT_CHUNK_MOB)
+/// Subscribes `D` to REACT_KEY_PLAYER_CHUNK for every chunk within `radius` tiles of `center`.
+/// Returns the tokens, for unsubscribe_player_chunks().
+/datum/controller/subsystem/reactor/proc/subscribe_player_chunks(datum/D, turf/center, radius)
 	. = list()
 	if(!center)
 		return
@@ -242,25 +238,20 @@ SUBSYSTEM_DEF(reactor)
 	var/max_y = MOB_CHUNK_COORD(min(center.y + radius, world.maxy))
 	for(var/chunk_x in min_x to max_x)
 		for(var/chunk_y in min_y to max_y)
-			. += on_key(D, REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(center.z, chunk_x, chunk_y), mask)
+			. += on_key(D, REACT_KEY_PLAYER_CHUNK, MOB_CHUNK_NUMERIC_KEY(center.z, chunk_x, chunk_y), 1)
 	player_chunk_subscriptions += length(.)
-	if(mask & REACT_CHUNK_MOB)
-		mob_chunk_subscriptions += length(.)
 
-/// Drops tokens from subscribe_chunks(). Returns null, for `tokens = unsubscribe_chunks(...)`.
-/datum/controller/subsystem/reactor/proc/unsubscribe_chunks(datum/D, list/tokens, mask = REACT_CHUNK_MOB)
+/// Drops tokens from subscribe_player_chunks(). Returns null, for `tokens = unsubscribe_player_chunks(...)`.
+/datum/controller/subsystem/reactor/proc/unsubscribe_player_chunks(datum/D, list/tokens)
 	for(var/token in tokens)
-		if(!cancel(D, token))
-			continue
-		player_chunk_subscriptions = max(player_chunk_subscriptions - 1, 0)
-		if(mask & REACT_CHUNK_MOB)
-			mob_chunk_subscriptions = max(mob_chunk_subscriptions - 1, 0)
+		if(cancel(D, token))
+			player_chunk_subscriptions = max(player_chunk_subscriptions - 1, 0)
 	return null
 
-/// A mob is in `T`'s chunk (moved in, appeared or left it). Callers check the counts first.
-/datum/controller/subsystem/reactor/proc/publish_mob_chunk(turf/T, mask)
+/// A player is in `T`'s chunk. Callers check player_chunk_subscriptions first.
+/datum/controller/subsystem/reactor/proc/publish_player_chunk(turf/T)
 	if(T)
-		vg_react_publish(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y)), mask)
+		vg_react_publish(REACT_KEY_PLAYER_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y)), 1)
 
 // --- The continuous lane (reactor.md §2) --------------------------------------------------------
 

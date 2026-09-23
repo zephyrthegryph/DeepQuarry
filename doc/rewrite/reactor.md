@@ -197,17 +197,17 @@ As built (S3):
   plus one `REACT_AT` only for content that moves by itself (a countdown, the clock at the next
   station minute, a scrolling message).
 - **Looping sounds.** Each loop is a `REACT_AT`; a loop nobody can hear parks on the
-  `REACT_KEY_MOB_CHUNK` player keys in hearing range with a 10 s recheck timer. SSsounds'
+  `REACT_KEY_PLAYER_CHUNK` keys in hearing range with a 10 s recheck timer. SSsounds'
   `dormant_loops_by_chunk` is gone.
 - **Shutoff valves.** `wake_automatic_shutoff_valves(network)` publishes `REACT_KEY_PIPE_NETWORK`
   for that network (`REACT_ID_GLOBAL` for construction of unknown network); each valve subscribes
   to its two networks' keys and the global one and re-subscribes on `reassign_network()`,
   `rust_bind_pipe_port()` and `disconnect()`. SSair's bulk-blast batching is gone: publications merge.
-- **Mob chunk keys.** `REACT_KEY_MOB_CHUNK` (id `MOB_CHUNK_NUMERIC_KEY`, mask `REACT_CHUNK_MOB` or
-  `REACT_CHUNK_PLAYER`). Subscribe with `SSreactor.subscribe_chunks()`; `/mob/Moved()`, mob
-  `Initialize()` and `Destroy()` publish only while `player_chunk_subscriptions` (for players) or
-  `mob_chunk_subscriptions` (for any mob) is non-zero. SSmachines' `mob_chunk_subscriptions` and
-  SSai's `chunk_subscribers` still publish from the same place until S2 moves them onto this key.
+- **Player chunk keys.** `REACT_KEY_PLAYER_CHUNK` (id `MOB_CHUNK_NUMERIC_KEY`) is published by
+  `/mob/Moved()` for mobs with a client, only while `SSreactor.player_chunk_subscriptions` is
+  non-zero; subscribe with `SSreactor.subscribe_player_chunks()`. Looping sounds and auto-flicker
+  lights use it. S2's `REACT_KEY_MOB_CHUNK` covers any mob (AI, turrets); the two could merge
+  into one key with a player mask bit once both land.
 - **Lint.** `tools/ci/check_deadline_polling.py` (CI: "Check Deadline Polling") flags `process()`
   bodies comparing `world.time` with a variable. The rest (S4's SSobj/SSprocessing users and S5's
   machines) are in `tools/ci/deadline_polling_allowlist.txt`; a stale entry fails the check.

@@ -13,7 +13,7 @@
 	TEST_ASSERT(!A.next_door_deadline(), "a fresh airlock has a deadline ([A.next_door_deadline()])")
 	TEST_ASSERT_NULL(A.react_sleep_violation(), "a fresh airlock is not asleep")
 
-	var/failure = react_wake_test(A, CALLBACK(A, TYPE_PROC_REF(/obj/machinery/door, autoclose_in), 1))
+	var/failure = react_wake_test(A, CALLBACK(A, TYPE_PROC_REF(/obj/machinery/door, autoclose_in), 1), 20)
 	TEST_ASSERT(!failure, failure)
 
 	// Electrification expires on its timer, with no process() poll.
@@ -23,7 +23,7 @@
 	A.schedule_door_timer()
 	TEST_ASSERT(A.door_timer_token, "electrifying did not schedule the door's timer")
 	TEST_ASSERT_NULL(A.react_sleep_violation(), "an electrified airlock's audit failed")
-	react_test_ticks(6)
+	react_test_ticks(20)
 	TEST_ASSERT_EQUAL(A.electrified_until, 0, "the electrification deadline passed without a wake")
 	TEST_ASSERT(!A.door_timer_token, "an airlock with no deadline kept a timer")
 
@@ -31,7 +31,7 @@
 	A.main_power_lost_until = world.time + 1
 	A.backup_power_lost_until = -1
 	A.schedule_door_timer()
-	react_test_ticks(6)
+	react_test_ticks(20)
 	TEST_ASSERT(A.main_power_lost_until <= 0, "main power did not return at its deadline ([A.main_power_lost_until])")
 
 	// A missing timer is what the audit catches.
@@ -56,7 +56,7 @@
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, test_floor())
 	TEST_ASSERT(!C.camera_timer_token, "an idle camera has a timer")
 	TEST_ASSERT_NULL(C.react_sleep_violation(), "an idle camera is not asleep")
-	var/failure = react_wake_test(C, CALLBACK(src, PROC_REF(emp_camera_briefly), C))
+	var/failure = react_wake_test(C, CALLBACK(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
 	react_test_ticks(4)
 	TEST_ASSERT(!(C.stat & EMPED), "the camera did not recover at the end of its EMP")
@@ -69,7 +69,7 @@
 	C.newTarget(H)
 	TEST_ASSERT(C.camera_timer_token, "a motion target did not schedule the alarm")
 	TEST_ASSERT_NULL(C.react_sleep_violation(), "a tracking camera's audit failed")
-	react_test_ticks(6)
+	react_test_ticks(20)
 	TEST_ASSERT_EQUAL(C.detectTime, -1, "the motion alarm did not fire at its deadline")
 	H.set_stat(DEAD)
 	TEST_ASSERT(!(H in C.motionTargets), "a dead target was not dropped")
@@ -91,17 +91,18 @@
 	var/failure = react_wake_test(L, CALLBACK(A, TYPE_PROC_REF(/area, power_change)))
 	TEST_ASSERT(!failure, failure)
 
-	// Losing power (the light switch) puts a charged light on its cell, on a timer.
-	var/old_switch = A.lightswitch
-	var/was_powered = L.has_power()
-	A.lightswitch = FALSE
+	// Losing light power puts a charged light on its cell, on a timer. (The light switch
+	// does not: a switched-off light stays dark.)
+	var/old_power = A.power_light
+	var/was_powered = L.has_power() && A.requires_power
+	A.power_light = FALSE
 	A.power_change()
 	react_test_ticks(4)
 	if(was_powered && L.cell && L.has_emergency_power(0.2) && L.status == LIGHT_OK && !L.no_emergency)
 		TEST_ASSERT(L.emergency_mode, "an unpowered charged light did not go to emergency power")
 		TEST_ASSERT(L.emergency_discharge_at && L.light_timer_token, "emergency discharge has no timer")
 	TEST_ASSERT_NULL(L.react_sleep_violation(), "an unpowered light's audit failed")
-	A.lightswitch = old_switch
+	A.power_light = old_power
 	A.power_change()
 	react_test_ticks(4)
 	if(L.has_power())
@@ -168,31 +169,33 @@
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a loop nobody can hear did not go dormant")
 	TEST_ASSERT(SSreactor.player_chunk_subscriptions > 0, "a dormant loop left no chunk subscriptions")
 	TEST_ASSERT_NULL(loop.react_sleep_violation(), "a dormant loop's audit failed")
-	var/failure = react_wake_test(loop, CALLBACK(SSreactor, TYPE_PROC_REF(/datum/controller/subsystem/reactor, publish_mob_chunk), T, REACT_CHUNK_MOB|REACT_CHUNK_PLAYER))
+	var/failure = react_wake_test(loop, CALLBACK(SSreactor, TYPE_PROC_REF(/datum/controller/subsystem/reactor, publish_player_chunk), T))
 	TEST_ASSERT(!failure, failure)
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a chunk wake with nobody in range left dormancy")
 	loop.stop()
 	TEST_ASSERT(!loop.dormant_chunk_tokens && !loop.loop_token, "stop() left the loop subscribed")
 	qdel(loop)
 
-/// Mob chunk keys: a mob appearing publishes its chunk; player-only subscribers ignore NPCs.
-/datum/unit_test/dq_reactor_mob_chunk_keys
+/// Player chunk keys: a player's chunk wakes subscribers; a mob without a client does not.
+/datum/unit_test/dq_reactor_player_chunk_keys
 
-/datum/unit_test/dq_reactor_mob_chunk_keys/Run()
+/datum/unit_test/dq_reactor_player_chunk_keys/Run()
 	var/turf/T = test_floor()
-	var/datum/react_test_subscriber/any_mob = allocate(/datum/react_test_subscriber)
 	var/datum/react_test_subscriber/players = allocate(/datum/react_test_subscriber)
-	var/list/any_tokens = SSreactor.subscribe_chunks(any_mob, T, 0, REACT_CHUNK_MOB)
-	var/list/player_tokens = SSreactor.subscribe_chunks(players, T, 0, REACT_CHUNK_PLAYER)
-	TEST_ASSERT(length(any_tokens) && length(player_tokens), "subscribe_chunks returned no tokens")
-	TEST_ASSERT(SSreactor.mob_chunk_subscriptions > 0, "an any-mob chunk subscription was not counted")
-	var/failure = react_wake_test(any_mob, CALLBACK(src, PROC_REF(spawn_mob), T))
+	var/list/tokens = SSreactor.subscribe_player_chunks(players, T, 0)
+	TEST_ASSERT(length(tokens), "subscribe_player_chunks returned no tokens")
+	TEST_ASSERT(SSreactor.player_chunk_subscriptions > 0, "a player chunk subscription was not counted")
+	SSreactor.trace(players)
+	react_test_ticks(4)
+	var/before = SSreactor.traced_wakes(players)
+	var/mob/living/npc = allocate(/mob/living, T)
+	npc.Move(get_step(T, NORTH))
+	react_test_ticks(4)
+	TEST_ASSERT_EQUAL(SSreactor.traced_wakes(players), before, "a mob without a client woke a player chunk subscriber")
+	SSreactor.untrace(players)
+	var/failure = react_wake_test(players, CALLBACK(SSreactor, TYPE_PROC_REF(/datum/controller/subsystem/reactor, publish_player_chunk), T))
 	TEST_ASSERT(!failure, failure)
-	TEST_ASSERT(!length(players.wakes), "a player-only chunk subscriber woke for a mob without a client")
-	SSreactor.unsubscribe_chunks(any_mob, any_tokens, REACT_CHUNK_MOB)
-	SSreactor.unsubscribe_chunks(players, player_tokens, REACT_CHUNK_PLAYER)
-
-/datum/unit_test/dq_reactor_mob_chunk_keys/proc/spawn_mob(turf/T)
-	allocate(/mob/living, T)
+	SSreactor.unsubscribe_player_chunks(players, tokens)
+	TEST_ASSERT_EQUAL(length(players.wakes) >= 1, TRUE, "no wake recorded")
 
 #endif

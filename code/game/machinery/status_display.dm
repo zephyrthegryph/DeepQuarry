@@ -171,7 +171,7 @@
 		if(STATUS_DISPLAY_BLANK)	//blank
 			return 1
 		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)				//emergency shuttle timer
-			if(!SSemergency_shuttle)
+			if(!SSemergency_shuttle?.shuttle)
 				message1 = "-ETA-"
 				message2 = "Never" // You're here forever.
 				return 1
