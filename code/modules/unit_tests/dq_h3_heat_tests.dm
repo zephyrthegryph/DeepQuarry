@@ -24,6 +24,10 @@
 /proc/dq_h3_cool_floor(turf/open/T)
 	T.air?.set_temperature(T20C)
 
+/// wait_for_condition() helper: TRUE once A is warmer than `start`.
+/proc/dq_h3_probe_warmer_than(atom/A, start)
+	return A.get_temperature() > start
+
 /// A fire needs oxygen; the test map's floor has little. Returns the air to restore.
 /proc/dq_h3_oxygenate(turf/open/T)
 	var/datum/gas_mixture/saved = new
@@ -236,8 +240,17 @@
 	TEST_ASSERT_EQUAL(probe.heat_fire_turf, T, "the hotspot coupled the item to the burning gas")
 	TEST_ASSERT(!isnull(probe.heat_body), "through its heat body")
 	var/start = probe.get_temperature()
-	vg_heat_debug_run_frames(3)
-	TEST_ASSERT(probe.get_temperature() > start, "the heat domain heats it")
+	// Was a fixed vg_heat_debug_run_frames(3): that assumed 3 frames is always
+	// enough for the heat domain to measurably warm the probe, which held only
+	// by accident when this test ran on a floor left warm by a previous test
+	// sharing the same turf. On a genuinely isolated, cold floor, wait for the
+	// actual condition instead of guessing a frame count.
+	var/heated = wait_for_condition(
+		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
+		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_heat_debug_run_frames), 1),
+		30,
+	)
+	TEST_ASSERT(heated, "the heat domain heats it")
 	hotspot.perform_exposure()
 	TEST_ASSERT_EQUAL(probe.fire_acts, 0, "without a fire_act() call per SSair fire")
 	qdel(hotspot)

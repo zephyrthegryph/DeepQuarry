@@ -71,14 +71,21 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 
 		var/datum/unit_test_block/block = new
 		block.z = new_z
-		for(var/obj/effect/landmark/unit_test_bottom_left/L in GLOB.landmarks_list)
-			if(L.z == new_z)
-				block.bottom_left = get_turf(L)
-				break
-		for(var/obj/effect/landmark/unit_test_top_right/L in GLOB.landmarks_list)
-			if(L.z == new_z)
-				block.top_right = get_turf(L)
-				break
+		// Don't rely on GLOB.landmarks_list: atom Initialize() for a freshly
+		// loaded z can be queued rather than run synchronously inside
+		// load_new_z(), so the landmark may not be registered into that list
+		// yet. The atom instance itself is already in its turf's contents the
+		// moment load_map() places it, so locate it there directly. load_new_z()
+		// always places the template at (1,1) on its new z (centered = FALSE).
+		for(var/tx in 1 to template.width)
+			for(var/ty in 1 to template.height)
+				var/turf/T = locate(tx, ty, new_z)
+				if(!T)
+					continue
+				if(!block.bottom_left && locate(/obj/effect/landmark/unit_test_bottom_left) in T)
+					block.bottom_left = T
+				if(!block.top_right && locate(/obj/effect/landmark/unit_test_top_right) in T)
+					block.top_right = T
 
 		if(!block.bottom_left || !block.top_right)
 			log_world("ensure_unit_test_block_pool: copy #[i] on z[new_z] is missing its corner landmarks, discarding it.")
@@ -166,6 +173,23 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			if(T)
 				turfs += T
 	return turfs
+
+/// Waits for `condition` to hold, ticking `advance` once per attempt, instead
+/// of assuming a fixed number of ticks/frames is always enough (the "timing
+/// assumptions" flakiness pattern: a test that only passed because a shared
+/// turf happened to already be warm, or because the CI machine happened to be
+/// fast enough that round N finished within a guessed frame count). Returns
+/// TRUE the moment `condition.Invoke()` is truthy, FALSE if `max_attempts` is
+/// exhausted first. `advance` may be null to just poll `condition` on a sleep.
+/proc/wait_for_condition(datum/callback/condition, datum/callback/advance, max_attempts = 60)
+	for(var/i in 1 to max_attempts)
+		if(condition.Invoke())
+			return TRUE
+		if(advance)
+			advance.Invoke()
+		else
+			sleep(world.tick_lag)
+	return condition.Invoke()
 
 /proc/focused_tests()
 	var/list/focused_tests = list()
