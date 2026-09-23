@@ -719,10 +719,8 @@
 	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32
 	//Spells that will be added on equip
-	var/static/list/spells = list("/spell/targeted/unrestricted/mend", "/spell/targeted/unrestricted/plasmastun")
+	var/static/list/spells = list(/datum/spell/targeted/unrestricted/mend, /datum/spell/targeted/unrestricted/plasmastun)
 	var/list/remove_spells	//Reference to spells that'll get removed
-	/// Whether equip grants `spells` at all. Subtypes can opt out.
-	var/grant_spells = TRUE
 	/// Movement delay added while worn (a body factor, via worn_factors). Admins may edit it in-round.
 	var/slowdown_to_set = 0.5
 	light_range = 6
@@ -746,7 +744,7 @@
 			effect_overlay.plane = PLANE_LIGHTING_ABOVE
 			effect_overlay.layer = MOB_LAYER
 			H.add_overlay(effect_overlay)
-		if(grant_spells && spells.len)
+		if(spells.len)
 			for(var/thing in spells)
 				var/datum/spell/SP = new thing(H)
 				H.add_spell(SP)
