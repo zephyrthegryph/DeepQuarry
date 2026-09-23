@@ -42,6 +42,11 @@
 	else if(!(A.flags & ATOM_INITIALIZED))
 		BadInitializeCalls[the_type] |= BAD_INIT_DIDNT_INIT
 	else
+		// L2 lifecycle: enter the live world. A mapload LateInitialize() is
+		// deferred to the end of the batch; materializing does not wait for it,
+		// so the registrations moved out of Initialize() keep their old timing.
+		if(!materialize_suppressed && !qdeleted && !QDELING(A))
+			A.materialize()
 		var/atom/location = A.loc
 		if(location)
 			/// Sends a signal that the new atom `src`, has been created at `loc`

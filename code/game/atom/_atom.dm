@@ -57,6 +57,10 @@
 	var/datum/wires/wires = null
 
 /atom/Destroy()
+	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
+	// The only L2 line in this proc; the containment ledger (C1) owns the rest.
+	dematerialize()
+	// ---- end L2 ----
 	if(reagents)
 		QDEL_NULL(reagents)
 	if(light)

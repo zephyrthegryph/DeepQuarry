@@ -15,12 +15,16 @@
 
 /obj/item/ammo_casing/macrobattery/Initialize(mapload, ...)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 	charge = max_charge
 
-/obj/item/ammo_casing/macrobattery/Destroy()
-	STOP_PROCESSING(SSobj, src)
+/// The recharge loop is running behaviour, so it starts when the cell goes live.
+/obj/item/ammo_casing/macrobattery/on_materialize()
 	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/item/ammo_casing/macrobattery/on_dematerialize()
+	STOP_PROCESSING(SSobj, src)
+	return ..()
 
 /obj/item/ammo_casing/macrobattery/process()
 	ticks++

@@ -229,7 +229,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /// Encoded list vars of a fresh instance of `path`, for latent-safe types.
 /datum/state_context/proc/pristine_lists(path)
 	. = list()
-	var/datum/probe = new path
+	var/datum/probe = new_unmaterialized(path, null) // sandboxed: no world registration (L2)
 	var/datum/state_context/probe_ctx = new(NONE)
 	probe_ctx.ids = list()
 	var/datum/state_schema/schema = state_schema_for(probe)
