@@ -61,6 +61,19 @@
 	var/datum/property_provider/provider = registry.base_provider(thing.type, id)
 	return provider ? provider.test_write(thing, value) : FALSE
 
+/// Whether `thing`'s current value of `id` reads back strictly on the quiet
+/// side of `level` (below it when `direction` is +1/fires-above, above it
+/// otherwise). QDELETED or unreadable counts as not quiet, so a caller that's
+/// growing its offset keeps trying rather than declaring victory on a
+/// destroyed object.
+/proc/dq_rule_value_is_quiet(datum/thing, id, level, direction)
+	if(QDELETED(thing))
+		return FALSE
+	var/value = PROPERTY(thing, id)
+	if(isnull(value))
+		return FALSE
+	return direction > 0 ? (value < level) : (value > level)
+
 // ---- Compilation ----
 
 /datum/unit_test/dq_rule_compile
@@ -118,6 +131,8 @@
 	var/list/rules = dq_rules()
 	for(var/rule_path in rules)
 		var/datum/rule/rule = rules[rule_path]
+		if(rule.skip_generated_test)
+			continue
 		for(var/root in (rule.test_types || rule.applies_to))
 			for(var/declaring in dq_rule_declaring_types(rule, root))
 				for(var/datum/rule_trigger/trigger as anything in rule.thresholds())
@@ -163,7 +178,13 @@
 	if(isnull(level))
 		TEST_FAIL("[label]: has no level")
 		return FALSE
-	var/step = dq_rule_epsilon(level) * 10
+	// A ratio-unit property (integrity, size...) is usually backed by a small
+	// integer on the object's side (obj_integrity, size class...): a step this
+	// coarse survives being rounded back into that native representation far
+	// more reliably than the raw reactor epsilon, which is tuned for
+	// continuous channels like temperature.
+	var/datum/property_def/def = dq_property_registry().defs[trigger.property]
+	var/step = def?.unit == PROP_UNIT_RATIO ? 0.05 : dq_rule_epsilon(level) * 10
 	var/direction = trigger.fires_above() ? 1 : -1
 	var/quiet = level - direction * step
 	var/across = level + direction * step
@@ -171,6 +192,17 @@
 	if(!dq_rule_test_write(thing, trigger.property, quiet))
 		TEST_FAIL("[label]: [trigger.property] has no test writer")
 		return FALSE
+	// A DM-owned property can be coarser than the epsilon step (e.g. integer
+	// integrity on a low-max_integrity object rounds a tiny ratio offset back
+	// to the threshold itself). Grow the offset until the written value reads
+	// back on the safe side of level, so "quiet" never silently crosses it.
+	var/guard = 0
+	while(guard < 8 && !dq_rule_value_is_quiet(thing, trigger.property, level, direction))
+		step *= 4
+		quiet = level - direction * step
+		if(!dq_rule_test_write(thing, trigger.property, quiet))
+			break
+		guard++
 	dq_rx_flush()
 	dq_rx_flush()
 	// Heat-only rules subscribe when the object first gets a heat body.

@@ -50,6 +50,12 @@
 	var/test_only = FALSE
 	/// Concrete types the generated threshold test instantiates; default applies_to.
 	var/list/test_types
+	/// Skips the generated threshold test (dq_rule_thresholds) entirely: for
+	/// rules whose effect has consequences the synchronous quiet/across/further
+	/// check can't safely contain on a shared test turf (a delayed explosion,
+	/// a spawned singularity, ...). Compilation and boot validation still cover
+	/// these rules; only the auto-instantiated firing test is skipped.
+	var/skip_generated_test = FALSE
 	/// Every trigger watches the object's heat node (set by compile()). An
 	/// object whose rules are all heat-only subscribes when it first gets a
 	/// heat body, not when it materializes: at rest it cannot cross anything.

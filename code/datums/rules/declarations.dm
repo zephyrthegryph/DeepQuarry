@@ -195,11 +195,18 @@
 	name = "void core explodes"
 	applies_to = list(/obj/machinery/power/rtg/abductor)
 	effect_proc = /obj/machinery/power/rtg/abductor/proc/rule_asplod
+	// asplod() schedules a real explosion() on a 10-second delayed timer, well
+	// outside the generated test's own case: it detonates on whatever shares
+	// the test's floor turf several unrelated cases later.
+	skip_generated_test = TRUE
 
 /datum/rule/heat_behaviour/kugelblitz_explodes
 	name = "kugelblitz explodes"
 	applies_to = list(/obj/machinery/power/rtg/kugelblitz)
 	effect_proc = /obj/machinery/power/rtg/kugelblitz/proc/rule_asplod
+	// asplod() spawns a persistent /obj/singularity on the test floor, which
+	// keeps eating whatever later cases place there.
+	skip_generated_test = TRUE
 
 /datum/rule/heat_behaviour/fire_alarm
 	name = "fire alarm trips"
