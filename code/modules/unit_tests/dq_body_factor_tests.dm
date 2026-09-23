@@ -138,7 +138,7 @@
 /datum/unit_test/dq_body_factor_affliction_stages/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
-	var/datum/affliction/hyperzine_overdose/od = H.body.afflict(/datum/affliction/hyperzine_overdose, B)
+	var/datum/affliction/overdose/hyperzine/od = H.body.afflict(/datum/affliction/overdose/hyperzine, B)
 	TEST_ASSERT_NOTNULL(od, "hyperzine overdose should afflict")
 	var/list/stages = od.get_stages()
 	var/last_stage = stages[length(stages)]
