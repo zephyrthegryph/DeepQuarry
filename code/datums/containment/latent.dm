@@ -54,10 +54,14 @@ GLOBAL_VAR(latent_last_refusal)
 	var/list/snapshot
 	/// Capacity one of them takes in its slot.
 	var/unit_cost = 0
-	/// Full pre-collapse state (roadmap C10, containment.md §4.7 "Safety"),
-	/// set only when the round-trip audit is on and this entry came from a
-	/// real collapse (not the original declared generator). Checked against
-	/// the next materialize from this entry, then cleared.
+	/// The blob captured right after a real collapse (roadmap C10,
+	/// containment.md §4.7 "Safety"), set only when the round-trip audit is
+	/// on (not for the original declared generator, which was never a real
+	/// atom). This is the same list object as `blob` (dq_latent_entry_blob()
+	/// mutates and returns its argument in place) at the moment of capture,
+	/// so it verifies the entry's own state round-trips through
+	/// materialize -> serialize, not a byte-for-byte pre-strip snapshot.
+	/// Checked against the next materialize from this entry, then cleared.
 	var/list/audit_blob
 
 /datum/latent_entry/Destroy()
@@ -431,18 +435,22 @@ GLOBAL_VAR(latent_last_refusal)
 	var/datum/ledger/L = loc.ledger
 	var/list/record = L.entries[src]
 	var/list/errors = list()
-	var/list/full_blob = state_serialize(src, STATE_FULL, errors)
-	if(!full_blob)
+	var/list/blob = state_serialize(src, STATE_FULL, errors)
+	if(!blob)
 		GLOB.latent_last_refusal = jointext(errors, "; ")
 		return FALSE
-	var/list/blob = dq_latent_entry_blob(full_blob)
+	// dq_latent_entry_blob() mutates and returns its argument, so `blob` is
+	// the entry blob from here on -- audit_blob below is that same object,
+	// captured before merging (an identical existing entry would otherwise
+	// share it with a different collapse's copy).
+	blob = dq_latent_entry_blob(blob)
 	var/slot = record[LEDGER_E_SLOT]
 	var/path = type
 	var/holder_type = loc.type
 	qdel(src)
 	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
 	if(entry && dq_latency_audit_enabled())
-		entry.audit_blob = full_blob
+		entry.audit_blob = blob
 	dq_latency_log("collapsed", path, holder_type)
 	return TRUE
 
