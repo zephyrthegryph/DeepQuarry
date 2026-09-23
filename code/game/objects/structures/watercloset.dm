@@ -28,7 +28,7 @@
 	var/refilling = FALSE
 	var/datum/weakref/swirlie_mob = null //the mob being given a swirlie
 	var/datum/weakref/teleplumb_dest_ref //the destination of this toilet if it's teleplumbed
-	var/list/currently_held_objects = list() //List of objects currently in the toilet, used for flushing.
+	var/list/currently_held_objects //List of objects currently in the toilet, used for flushing.
 	COOLDOWN_DECLARE(panic_flush)
 
 /obj/structure/toilet/Initialize(mapload)
@@ -268,7 +268,7 @@
 /obj/structure/toilet/proc/tertiary_flush(atom/movable/flushed, flush_completed)
 	if(flushed.loc == loc)
 		flushed.forceMove(src)
-		currently_held_objects += flushed
+		LAZYADD(currently_held_objects, flushed)
 
 	if(flush_completed) //Flushed it all.
 		addtimer(CALLBACK(src, PROC_REF(flush_send), currently_held_objects), 1 SECOND, TIMER_DELETE_ME)

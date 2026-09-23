@@ -77,7 +77,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 /datum/radial_menu
 	/// List of choice IDs
-	var/list/choices = list()
+	var/list/choices
 
 	/// choice_id -> icon
 	var/list/choices_icons
@@ -156,7 +156,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		zone = 360 - starting_angle + ending_angle
 
 	max_elements = round(zone / min_angle)
-	var/paged = max_elements < choices.len
+	var/paged = max_elements < length(choices)
 	if(length(elements) < max_elements)
 		var/elements_to_add = max_elements - elements.len
 		for(var/i in 1 to elements_to_add) //Create all elements
@@ -168,7 +168,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	var/page = 1
 	page_data = list(null)
 	var/list/current = list()
-	var/list/choices_left = choices.Copy()
+	var/list/choices_left = LAZYCOPY(choices)
 	while(choices_left.len)
 		if(current.len == max_elements)
 			LAZYSET(page_data, page, current)
@@ -271,7 +271,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	close_button.set_parent(src)
 
 /datum/radial_menu/proc/Reset()
-	choices.Cut()
+	LAZYCLEARLIST(choices)
 	LAZYCLEARLIST(choices_icons)
 	LAZYCLEARLIST(choices_values)
 	LAZYCLEARLIST(choice_datums)
@@ -281,14 +281,14 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	selected_choice = LAZYACCESS(choices_values, choice_id)
 
 /datum/radial_menu/proc/get_next_id()
-	return "c_[choices.len]"
+	return "c_[length(choices)]"
 
 /datum/radial_menu/proc/set_choices(list/new_choices, use_tooltips, click_on_hover = FALSE, set_page = 1)
-	if(choices.len)
+	if(length(choices))
 		Reset()
 	for(var/E in new_choices)
 		var/id = get_next_id()
-		choices += id
+		LAZYADD(choices, id)
 		LAZYSET(choices_values, id, E)
 		if(new_choices[E])
 			var/I = extract_image(new_choices[E])

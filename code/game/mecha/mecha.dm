@@ -89,7 +89,7 @@
 
 //mechaequipt2 stuffs
 	var/list/hull_equipment
-	var/list/weapon_equipment = list()
+	var/list/weapon_equipment
 	var/list/utility_equipment
 	var/list/universal_equipment
 	var/list/special_equipment
@@ -278,7 +278,7 @@
 	if(wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
 		LAZYCLEARLIST(hull_equipment)
-		weapon_equipment.Cut()
+		LAZYCLEARLIST(weapon_equipment)
 		LAZYCLEARLIST(utility_equipment)
 		LAZYCLEARLIST(universal_equipment)
 		LAZYCLEARLIST(special_equipment)
@@ -2439,7 +2439,7 @@
 	// Slot capacity.
 	data["slots"] = list(
 		list("label" = "Hull",          "used" = length(hull_equipment),          "max" = max_hull_equip),
-		list("label" = "Weapon",        "used" = weapon_equipment.len,        "max" = max_weapon_equip),
+		list("label" = "Weapon",        "used" = length(weapon_equipment),        "max" = max_weapon_equip),
 		list("label" = "Micro Weapon",  "used" = length(micro_weapon_equipment),  "max" = max_micro_weapon_equip),
 		list("label" = "Utility",       "used" = length(utility_equipment),       "max" = max_utility_equip),
 		list("label" = "Micro Utility", "used" = length(micro_utility_equipment), "max" = max_micro_utility_equip),

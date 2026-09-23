@@ -38,7 +38,7 @@
 	var/available_shares = 500000
 
 	var/list/borrow_brokers
-	var/list/shareholders = list()
+	var/list/shareholders
 	var/list/borrows
 	var/list/events = list()
 	var/list/articles
@@ -162,13 +162,13 @@
 
 /datum/stock/proc/unifyShares()
 	for (var/I in shareholders)
-		var/shr = shareholders[I]
+		var/shr = LAZYACCESS(shareholders, I)
 		if (shr % 2)
 			sellShares(I, 1)
 		shr -= 1
 		shareholders[I] /= 2
-		if (!shareholders[I])
-			shareholders -= I
+		if (!LAZYACCESS(shareholders, I))
+			LAZYREMOVE(shareholders, I)
 	for (var/datum/borrow/B in borrow_brokers)
 		B.share_amount = round(B.share_amount / 2)
 		B.share_debt = round(B.share_debt / 2)
@@ -193,7 +193,7 @@
 			qdel(borrow)
 		else if (world.time > borrow.lease_expires)
 			if (borrow.borrower in shareholders)
-				var/amt = shareholders[borrow.borrower]
+				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
 					LAZYREMOVE(borrows, borrow)
@@ -203,7 +203,7 @@
 						GLOB.FrozenAccounts -= borrow.borrower
 					qdel(borrow)
 				else
-					shareholders -= borrow.borrower
+					LAZYREMOVE(shareholders, borrow.borrower)
 					borrow.share_debt -= amt
 	if (bankrupt)
 		return
@@ -260,9 +260,9 @@
 		return 0
 	B.deposit = d_amt
 	if (!(who in shareholders))
-		shareholders[who] = B.share_amount
+		LAZYSET(shareholders, who, B.share_amount)
 	else
-		shareholders[who] += B.share_amount
+		LAZYADDASSOC(shareholders, who, B.share_amount)
 	LAZYREMOVE(borrow_brokers, B)
 	LAZYADD(borrows, B)
 	B.borrower = who
@@ -283,9 +283,9 @@
 	if (modifyAccount(who, -loss))
 		supplyDrop(howmany)
 		if (!(who in shareholders))
-			shareholders[who] = howmany
+			LAZYSET(shareholders, who, howmany)
 		else
-			shareholders[who] += howmany
+			LAZYADDASSOC(shareholders, who, howmany)
 		return 1
 	return 0
 
@@ -294,13 +294,13 @@
 		return
 	howmany = round(howmany)
 	var/gain = howmany * current_value
-	if (shareholders[whose] < howmany)
+	if (LAZYACCESS(shareholders, whose) < howmany)
 		return 0
 	if (modifyAccount(whose, gain))
 		supplyGrowth(howmany)
 		shareholders[whose] -= howmany
-		if (shareholders[whose] <= 0)
-			shareholders -= whose
+		if (LAZYACCESS(shareholders, whose) <= 0)
+			LAZYREMOVE(shareholders, whose)
 		return 1
 	return 0
 

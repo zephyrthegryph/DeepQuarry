@@ -9,7 +9,7 @@
 	/// Note that stacks have special handling: the logic accounts for having '23' available
 	/// in the case of just having one stack of 23 amount, so stack/steel = 23 is fine
 	var/list/reqs
-	var/list/blacklist = list() //type paths of items explicitly not allowed as an ingredient
+	var/list/blacklist //type paths of items explicitly not allowed as an ingredient
 	var/result //type path of item resulting from this craft
 	/// String defines of items needed but not consumed. Lazy list.
 	var/list/tool_behaviors
@@ -48,7 +48,7 @@
 			material_slots = inferred_slots
 			reqs = remaining_requirements
 	if(!(result in reqs))
-		blacklist += result
+		LAZYADD(blacklist, result)
 	if(tool_behaviors)
 		tool_behaviors = string_list(tool_behaviors)
 	if(tool_paths)

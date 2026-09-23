@@ -1,6 +1,6 @@
 /datum/eventkit/fake_pdaconvos
 	var/list/names = list()		//Assoc list of refs in fakeRefs = name
-	var/list/fakeRefs = list() //Used to find elements in other lists and tracking conversations. MUST BE UNIQUE.
+	var/list/fakeRefs //Used to find elements in other lists and tracking conversations. MUST BE UNIQUE.
 	var/list/fakeJobs //Assoc list of name in names = job
 
 ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identities for use in setting up PDA props", ADMIN_CATEGORY_FUN_EVENT_KIT)
@@ -22,7 +22,7 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 		var/newRef = tgui_input_text(user, "Input unique reference. Duplicates are FORBIDDEN!. Players can't see this.\
 		Used to uniquely identify conversations in PDAs", null, MAX_MESSAGE_LEN)
 		if(!newRef) return
-		FPC.fakeRefs.Add(newRef)
+		LAZYADD(FPC.fakeRefs, newRef)
 		FPC.names[newRef] = tgui_input_text(user, "Input fake name",newRef, "", MAX_MESSAGE_LEN)
 		LAZYSET(FPC.fakeJobs, newRef, tgui_input_text(user, "Input fake assignment.",newRef, "", MAX_MESSAGE_LEN))
 		to_chat(user, span_notice("You have created [newRef]. Current name: [FPC.names[newRef]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, newRef)]"))
@@ -43,7 +43,7 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 		var/ref = tgui_input_list(user, "Pick which identity to delete (details are printed to chat)", "identities", FPC.fakeRefs)
 		if(tgui_alert(user, "You are deleting [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]",
 		"are you sure?", list("Yes", "No"))=="Yes")
-			FPC.fakeRefs -= ref
+			LAZYREMOVE(FPC.fakeRefs, ref)
 			LAZYREMOVE(FPC.fakeJobs, ref)
 			FPC.names -= ref
 		return

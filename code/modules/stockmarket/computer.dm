@@ -116,7 +116,7 @@
 				for (var/datum/stock/S in GLOB.stockExchange.stocks)
 					var/mystocks = 0
 					if (logged_in && (logged_in in S.shareholders))
-						mystocks = S.shareholders[logged_in]
+						mystocks = LAZYACCESS(S.shareholders, logged_in)
 
 					var/value = 0
 					if (!S.bankrupt)
@@ -150,7 +150,7 @@
 				for (var/datum/stock/S in GLOB.stockExchange.stocks)
 					var/mystocks = 0
 					if (logged_in && (logged_in in S.shareholders))
-						mystocks = S.shareholders[logged_in]
+						mystocks = LAZYACCESS(S.shareholders, logged_in)
 
 					var/unification = 0
 					if (S.last_unification)
@@ -266,13 +266,13 @@
 		to_chat(user, span_danger("No active account on the console!"))
 		return
 	var/b = SSsupply.budget_balance()
-	var/avail = S.shareholders[logged_in]
+	var/avail = LAZYACCESS(S.shareholders, logged_in)
 	if (!avail)
 		to_chat(user, span_danger("This account does not own any shares of [S.name]!"))
 		return
 	var/price = S.current_value
 	var/amt = round(tgui_input_number(user, "How many shares? \n(Have: [avail], unit price: [price])", "Sell shares in [S.name]", 0))
-	amt = min(amt, S.shareholders[logged_in])
+	amt = min(amt, LAZYACCESS(S.shareholders, logged_in))
 
 	if (!user || (!(user in range(1, src)) && iscarbon(user)))
 		return

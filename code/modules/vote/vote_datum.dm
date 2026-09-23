@@ -14,7 +14,7 @@
 	// Was this this vote custom started?
 	var/is_custom = FALSE
 	// Choices available in the vote
-	var/list/choices = list()
+	var/list/choices
 	// Assoc list of [ckeys => choice] who have voted. We don't want to hold clients refs.___callbackvarset(list_or_datum, var_name, var_value)
 	var/list/voted
 	// For how long will it be up
@@ -167,7 +167,7 @@
 		data["user_vote"] = LAZYACCESS(voted, user.ckey)
 
 	data["question"] = question
-	data["choices"] = choices
+	data["choices"] = (choices || list())
 
 	if(show_counts || check_rights_for(user.client, R_ADMIN))
 		data["show_counts"] = TRUE

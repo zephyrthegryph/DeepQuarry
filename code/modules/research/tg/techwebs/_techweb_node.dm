@@ -97,8 +97,8 @@
 			if(LAZYACCESS(host.completed_experiments, experiment_type)) //do we have this discount_experiment unlocked?
 				actual_costs[cost_type] -= discount_experiments[experiment_type]
 
-	if(host.boosted_nodes[id]) // Boosts should be subservient to experiments. Discount from boosts are capped when costs fall below 250.
-		var/list/boostlist = host.boosted_nodes[id]
+	if(LAZYACCESS(host.boosted_nodes, id)) // Boosts should be subservient to experiments. Discount from boosts are capped when costs fall below 250.
+		var/list/boostlist = LAZYACCESS(host.boosted_nodes, id)
 		for(var/booster in boostlist)
 			if(actual_costs[booster])
 				actual_costs[booster] = max(actual_costs[booster] - boostlist[booster], 0)

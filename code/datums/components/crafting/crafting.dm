@@ -124,7 +124,7 @@
 			var/needed_amount = requirement[requirement_path]
 			for(var/content_item_path in contents)
 				// Right path and not blacklisted
-				if(!ispath(content_item_path, requirement_path) || R.blacklist.Find(content_item_path))
+				if(!ispath(content_item_path, requirement_path) || LAZYFIND(R.blacklist, content_item_path))
 					continue
 
 				needed_amount -= contents[content_item_path]

@@ -5,7 +5,7 @@ GLOBAL_LIST_EMPTY(map_reports)
 /datum/map_report
 	var/original_path
 	var/list/bad_paths
-	var/list/bad_keys = list()
+	var/list/bad_keys
 	/// Whether this map can be loaded safely despite the errors.
 	var/loadable = TRUE
 	var/crashed = TRUE
@@ -66,16 +66,16 @@ GLOBAL_LIST_EMPTY(map_reports)
 
 		if(turfs == 0)
 			report.loadable = FALSE
-			LAZYADD(report.bad_keys[key], "no turf")
+			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "no turf")
 		else if(turfs > 1)
-			LAZYADD(report.bad_keys[key], "[turfs] stacked turfs")
+			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "[turfs] stacked turfs")
 
 		if(areas != 1)
 			report.loadable = FALSE
-			LAZYADD(report.bad_keys[key], "[areas] areas instead of 1")
+			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "[areas] areas instead of 1")
 
 	// return the report
-	if(length(report.bad_paths) || report.bad_keys.len || !report.loadable)
+	if(length(report.bad_paths) || length(report.bad_keys) || !report.loadable)
 		// keep the report around so it can be referenced later
 		report.tag = "mapreport_[++report.tag_number]"
 		report.crashed = FALSE

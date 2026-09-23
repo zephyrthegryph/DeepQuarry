@@ -732,7 +732,7 @@ SUBSYSTEM_DEF(machines)
 	var/complete = FALSE
 	var/phase = 1
 	var/list/remaining = list()
-	var/list/frontier = list()
+	var/list/frontier
 	var/list/current_component
 	var/list/components
 	var/list/target_nets
@@ -783,7 +783,7 @@ SUBSYSTEM_DEF(machines)
 	remaining.Remove(seed)
 	current_component = list(seed)
 	LAZYADD(components, list(current_component))
-	frontier += seed
+	LAZYADD(frontier, seed)
 	return TRUE
 
 /datum/powernet_topology_job/proc/process_slice()
@@ -805,7 +805,7 @@ SUBSYSTEM_DEF(machines)
 				if(remaining[neighbor] && neighbor.powernet == source_net)
 					remaining.Remove(neighbor)
 					current_component += neighbor
-					frontier += neighbor
+					LAZYADD(frontier, neighbor)
 			work_done++
 		else if(phase == 2)
 			old_nodes = LAZYCOPY(source_net.nodes)

@@ -59,7 +59,7 @@
 				LAZYREMOVE(chassis.hull_equipment, src)
 				listclearnulls(chassis.hull_equipment)
 			if(equip_type == EQUIP_WEAPON)
-				chassis.weapon_equipment -= src
+				LAZYREMOVE(chassis.weapon_equipment, src)
 				listclearnulls(chassis.weapon_equipment)
 			if(equip_type == EQUIP_UTILITY)
 				LAZYREMOVE(chassis.utility_equipment, src)
@@ -151,7 +151,7 @@
 				return 0
 	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip)
 		return 1
-	if(equip_type == EQUIP_WEAPON && M.weapon_equipment.len < M.max_weapon_equip)
+	if(equip_type == EQUIP_WEAPON && length(M.weapon_equipment) < M.max_weapon_equip)
 		return 1
 	if(equip_type == EQUIP_UTILITY && length(M.utility_equipment) < M.max_utility_equip)
 		return 1
@@ -175,8 +175,8 @@
 	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip && !has_equipped)
 		LAZYADD(M.hull_equipment, src)
 		has_equipped = 1
-	if(equip_type == EQUIP_WEAPON && M.weapon_equipment.len < M.max_weapon_equip && !has_equipped)
-		M.weapon_equipment += src
+	if(equip_type == EQUIP_WEAPON && length(M.weapon_equipment) < M.max_weapon_equip && !has_equipped)
+		LAZYADD(M.weapon_equipment, src)
 		has_equipped = 1
 	if(equip_type == EQUIP_UTILITY && length(M.utility_equipment) < M.max_utility_equip && !has_equipped)
 		LAZYADD(M.utility_equipment, src)
@@ -223,7 +223,7 @@
 			if(EQUIP_HULL)
 				LAZYREMOVE(chassis.hull_equipment, src)
 			if(EQUIP_WEAPON)
-				chassis.weapon_equipment -= src
+				LAZYREMOVE(chassis.weapon_equipment, src)
 			if(EQUIP_UTILITY)
 				LAZYREMOVE(chassis.utility_equipment, src)
 			if(EQUIP_SPECIAL)

@@ -13,7 +13,7 @@
 	release_force = 5
 
 	var/obj/item/grenade/chambered
-	var/list/grenades = new/list()
+	var/list/grenades
 	var/max_grenades = 5 //holds this + one in the chamber
 	matter = list(MAT_STEEL = 2000)
 	special_handling = TRUE
@@ -24,13 +24,13 @@
 	playsound(user, 'sound/weapons/shotgunpump.ogg', 60, 1)
 
 	var/obj/item/grenade/next
-	if(grenades.len)
-		next = grenades[1] //get this first, so that the chambered grenade can still be removed if the grenades list is empty
+	if(length(grenades))
+		next = LAZYACCESS(grenades, 1) //get this first, so that the chambered grenade can still be removed if the grenades list is empty
 	if(chambered)
-		grenades += chambered //rotate the revolving magazine
+		LAZYADD(grenades, chambered) //rotate the revolving magazine
 		chambered = null
 	if(next)
-		grenades -= next //Remove grenade from loaded list.
+		LAZYREMOVE(grenades, next) //Remove grenade from loaded list.
 		chambered = next
 		to_chat(user, span_warning("You pump [src], loading \a [next] into the chamber."))
 	else
@@ -40,25 +40,25 @@
 /obj/item/gun/launcher/grenade/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) <= 2)
-		var/grenade_count = grenades.len + (chambered? 1 : 0)
+		var/grenade_count = length(grenades) + (chambered? 1 : 0)
 		. += "Has [grenade_count] grenade\s remaining."
 		if(chambered)
 			. += "\A [chambered] is chambered."
 
 /obj/item/gun/launcher/grenade/proc/load(obj/item/grenade/G, mob/user)
 	if(G.loadable)
-		if(grenades.len >= max_grenades)
+		if(length(grenades) >= max_grenades)
 			to_chat(user, span_warning("[src] is full."))
 			return
 		user.remove_from_mob(G)
 		G.loc = src
-		grenades.Insert(1, G) //add to the head of the list, so that it is loaded on the next pump
+		LAZYINITLIST(grenades); grenades.Insert(1, G) //add to the head of the list, so that it is loaded on the next pump
 		user.visible_message("[user] inserts \a [G] into [src].", span_notice("You insert \a [G] into [src]."))
 		return
 	to_chat(user, span_warning("[G] doesn't seem to fit in the [src]!"))
 
 /obj/item/gun/launcher/grenade/proc/unload(mob/user)
-	if(grenades.len)
+	if(length(grenades))
 		var/obj/item/grenade/G = grenades[grenades.len]
 		grenades.len--
 		user.put_in_hands(G)

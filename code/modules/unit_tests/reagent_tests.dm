@@ -66,20 +66,20 @@
 
 		TEST_ASSERT(CR.result_amount >= 0, "[CR.type]: Reagents - chemical reaction ID \"[CR.name]\" had less than 0 as as result_amount?")
 
-		if(CR.required_reagents && CR.required_reagents.len)
+		if(CR.required_reagents && length(CR.required_reagents))
 			for(var/RR in CR.required_reagents)
 				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(CR.required_reagents[RR] > 0, "[CR.type]: Reagents - chemical reaction had invalid required reagent amount or in invalid format \"[CR.required_reagents[RR]]\".")
+				TEST_ASSERT(LAZYACCESS(CR.required_reagents, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid required reagent amount or in invalid format \"[LAZYACCESS(CR.required_reagents, RR)]\".")
 
-		if(CR.catalysts && CR.catalysts.len)
+		if(CR.catalysts && length(CR.catalysts))
 			for(var/RR in CR.catalysts)
 				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(CR.catalysts[RR] > 0, "[CR.type]: Reagents - chemical reaction had invalid catalysts amount or in invalid format \"[CR.catalysts[RR]]\".")
+				TEST_ASSERT(LAZYACCESS(CR.catalysts, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid catalysts amount or in invalid format \"[LAZYACCESS(CR.catalysts, RR)]\".")
 
-		if(CR.inhibitors && CR.inhibitors.len)
+		if(CR.inhibitors && length(CR.inhibitors))
 			for(var/RR in CR.inhibitors)
 				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
-				TEST_ASSERT(CR.inhibitors[RR] > 0, "[CR.type]: Reagents - chemical reaction had invalid inhibitors amount or in invalid format \"[CR.inhibitors[RR]]\".")
+				TEST_ASSERT(LAZYACCESS(CR.inhibitors, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid inhibitors amount or in invalid format \"[LAZYACCESS(CR.inhibitors, RR)]\".")
 
 		if(CR.result)
 			TEST_ASSERT(SSchemistry.chemical_reagents[CR.result], "[CR.type]: Reagents - chemical reaction had invalid result reagent ID \"[CR.result]\".")
@@ -190,10 +190,10 @@
 				fake_beaker.reagents.add_reagent(RR, inhib[RR]) // Does not need to scale
 		if(CR.catalysts) // Required for reaction
 			for(var/RR in CR.catalysts)
-				fake_beaker.reagents.add_reagent(RR, CR.catalysts[RR]) // Does not need to scale
+				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.catalysts, RR)) // Does not need to scale
 		if(CR.required_reagents)
 			for(var/RR in CR.required_reagents)
-				fake_beaker.reagents.add_reagent(RR, CR.required_reagents[RR] * scale)
+				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.required_reagents, RR) * scale)
 
 		if(!istype(CR, /datum/decl/chemical_reaction/distilling))
 			fake_beaker.reagents.handle_reactions()
@@ -229,7 +229,7 @@
 	for(var/datum/decl/chemical_reaction/test_react in result_reactions)
 		if(!test_react)
 			continue
-		if(!test_react.inhibitors.len)
+		if(!length(test_react.inhibitors))
 			continue
 		// Test one by one
 		for(var/each in test_react.inhibitors)

@@ -37,10 +37,10 @@
 
 	var/list/stacktypes = list()
 	for(var/stacktype in machine.stack_storage)
-		if(machine.stack_storage[stacktype] > 0)
+		if(LAZYACCESS(machine.stack_storage, stacktype) > 0)
 			stacktypes.Add(list(list(
 				"type" = stacktype,
-				"amt" = machine.stack_storage[stacktype],
+				"amt" = LAZYACCESS(machine.stack_storage, stacktype),
 			)))
 	data["stacktypes"] = stacktypes
 	data["stackingAmt"] = machine.stack_amt
@@ -58,10 +58,10 @@
 
 		if("release_stack")
 			var/stack = params["stack"]
-			if(machine.stack_storage[stack] > 0)
+			if(LAZYACCESS(machine.stack_storage, stack) > 0)
 				var/stacktype = LAZYACCESS(machine.stack_paths, stack)
-				new stacktype(get_turf(machine.output), machine.stack_storage[stack])
-				machine.stack_storage[stack] = 0
+				new stacktype(get_turf(machine.output), LAZYACCESS(machine.stack_storage, stack))
+				LAZYSET(machine.stack_storage, stack, 0)
 			. = TRUE
 
 	add_fingerprint(ui.user)
@@ -78,7 +78,7 @@
 	var/obj/machinery/mineral/stacking_unit_console/console
 	var/obj/machinery/mineral/input = null
 	var/obj/machinery/mineral/output = null
-	var/list/stack_storage[0]
+	var/list/stack_storage
 	var/list/stack_paths
 	var/stack_amt = 50; // Amount to stack before releassing
 
@@ -86,7 +86,7 @@
 	. = ..()
 	for(var/obj/item/stack/material/S as anything in (subtypesof(/obj/item/stack/material) - typesof(/obj/item/stack/material/cyborg)))
 		var/s_matname = initial(S.default_type)
-		stack_storage[s_matname] = 0
+		LAZYSET(stack_storage, s_matname, 0)
 		LAZYSET(stack_paths, s_matname, S)
 
 	for (var/dir in GLOB.cardinal)
@@ -140,8 +140,8 @@
 			if(istype(O,/obj/item/stack/material))
 				var/obj/item/stack/material/S = O
 				var/matname = S.material.name
-				if(!isnull(stack_storage[matname]))
-					stack_storage[matname] += S.get_amount()
+				if(!isnull(LAZYACCESS(stack_storage, matname)))
+					LAZYADDASSOC(stack_storage, matname, S.get_amount())
 					qdel(S)
 				else
 					O.loc = output.loc
@@ -150,7 +150,7 @@
 
 	//Output amounts that are past stack_amt.
 	for(var/sheet in stack_storage)
-		if(stack_storage[sheet] >= stack_amt)
+		if(LAZYACCESS(stack_storage, sheet) >= stack_amt)
 			did_work = TRUE
 			var/stacktype = LAZYACCESS(stack_paths, sheet)
 			new stacktype (get_turf(output), stack_amt)

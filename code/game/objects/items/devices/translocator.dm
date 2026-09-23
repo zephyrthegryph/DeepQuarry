@@ -14,7 +14,7 @@
 	var/longrange = 0 //Can teleport very long distances
 	var/abductor = 0 //Can be used on teleportation blocking turfs
 
-	var/list/beacons = list()
+	var/list/beacons
 	var/loc_network = null //Used if you want to create pre-made beacons on the maps
 	var/ready = 1
 	var/beacons_left = 3
@@ -54,7 +54,7 @@
 	// Must clear the beacon's backpointer or we won't GC. Someday maybe do something nicer even.
 	for(var/obj/item/perfect_tele_beacon/B in beacons)
 		B.tele_hand = null
-	beacons.Cut()
+	LAZYCLEARLIST(beacons)
 	QDEL_NULL(power_source)
 	QDEL_NULL(spk)
 	return ..()
@@ -76,7 +76,7 @@
 	for(var/bcn in beacons) //Grumble
 		var/image/I = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]")
 
-		var/obj/item/perfect_tele_beacon/beacon = beacons[bcn]
+		var/obj/item/perfect_tele_beacon/beacon = LAZYACCESS(beacons, bcn)
 		if(destination == beacon)
 			I.add_overlay(radial_seton)
 		else
@@ -128,7 +128,7 @@
 	if(loc_network)
 		for(var/obj/item/perfect_tele_beacon/stationary/nb in GLOB.premade_tele_beacons)
 			if(nb.tele_network == loc_network)
-				beacons[nb.tele_name] = nb
+				LAZYSET(beacons, nb.tele_name, nb)
 		loc_network = null //Consumed
 
 	if(!(user.ckey in warned_users))
@@ -164,7 +164,7 @@ This device records all warnings given and teleport events for admin review in c
 		nb.tele_name = new_name
 		nb.tele_hand = src
 		nb.creator = user.ckey
-		beacons[new_name] = nb
+		LAZYSET(beacons, new_name, nb)
 		beacons_left--
 		if(isliving(user))
 			var/mob/living/L = user
@@ -172,7 +172,7 @@ This device records all warnings given and teleport events for admin review in c
 		rebuild_radial_images()
 
 	else
-		destination = beacons[choice]
+		destination = LAZYACCESS(beacons, choice)
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/attackby(obj/W, mob/user)
@@ -188,7 +188,7 @@ This device records all warnings given and teleport events for admin review in c
 		var/obj/item/perfect_tele_beacon/tb = W
 		if(tb.tele_name in beacons)
 			to_chat(user,span_notice("You re-insert \the [tb] into \the [src]."))
-			beacons -= tb.tele_name
+			LAZYREMOVE(beacons, tb.tele_name)
 			user.unEquip(tb)
 			qdel(tb)
 			beacons_left++
@@ -291,10 +291,10 @@ This device records all warnings given and teleport events for admin review in c
 
 	//Failure chance
 	if (!ignore_fail_chance)
-		if(prob(failure_chance) && beacons.len >= 2)
+		if(prob(failure_chance) && length(beacons) >= 2)
 			var/list/wrong_choices = beacons - destination.tele_name
 			var/wrong_name = pick(wrong_choices)
-			destination = beacons[wrong_name]
+			destination = LAZYACCESS(beacons, wrong_name)
 			to_chat(user,span_warning("\The [src] malfunctions and sends you to the wrong beacon!"))
 
 	//Destination beacon vore checking

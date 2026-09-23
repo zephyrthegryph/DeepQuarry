@@ -311,7 +311,7 @@
 	if(loc_network)
 		for(var/obj/item/perfect_tele_beacon/stationary/nb in GLOB.premade_tele_beacons)
 			if(nb.tele_network == loc_network)
-				beacons[nb.tele_name] = nb
+				LAZYSET(beacons, nb.tele_name, nb)
 		loc_network = null //Consumed
 
 	if(!(user.ckey in warned_users))
@@ -347,7 +347,7 @@ This device records all warnings given and teleport events for admin review in c
 		nb.tele_name = new_name
 		nb.tele_hand = src
 		nb.creator = user.ckey
-		beacons[new_name] = nb
+		LAZYSET(beacons, new_name, nb)
 		beacons_left--
 		if(isliving(user))
 			var/mob/living/L = user
@@ -355,7 +355,7 @@ This device records all warnings given and teleport events for admin review in c
 		rebuild_radial_images()
 
 	else
-		destination = beacons[choice]
+		destination = LAZYACCESS(beacons, choice)
 		rebuild_radial_images()
 
 //sizegun
