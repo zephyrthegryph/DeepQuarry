@@ -343,6 +343,36 @@ impl<T: Clone + Default + Send + Sync> CowStore<T> {
                 }
             });
     }
+
+    /// Calls `f(chunk, cells)` in parallel for each chunk in `chunks`,
+    /// allocating it first (and copying it if a snapshot shares it). Chunks
+    /// not listed are not touched, so they stay shared with every snapshot:
+    /// this is how a field step over its active chunks leaves sleeping
+    /// regions alone. Out-of-range entries are ignored.
+    pub fn par_for_listed_chunks_mut(
+        &mut self,
+        chunks: &[usize],
+        f: impl Fn(usize, &mut [T]) + Sync + Send,
+    ) {
+        use rayon::prelude::*;
+        let len = self.layout.chunk_len();
+        let mut listed = vec![false; self.chunks.len()];
+        for &c in chunks {
+            if let Some(slot) = self.chunks.get_mut(c) {
+                slot.get_or_insert_with(|| Arc::new(vec![T::default(); len]));
+                listed[c] = true;
+            }
+        }
+        self.chunks
+            .par_iter_mut()
+            .enumerate()
+            .filter(|(i, _)| listed[*i])
+            .for_each(|(i, chunk)| {
+                if let Some(chunk) = chunk {
+                    f(i, Arc::make_mut(chunk).as_mut_slice());
+                }
+            });
+    }
 }
 
 #[cfg(test)]

@@ -808,6 +808,9 @@
 
 /datum/config_entry/flag/auto_profile
 
+/// Run SSreactor's missed-wake audit (sampling sleepers) this round. Always on in test builds.
+/datum/config_entry/flag/reactor_audit
+
 /datum/config_entry/number/profiler_interval
 	// Compact diagnostic snapshots, not full world.Profile serialization.
 	default = 1 MINUTE
