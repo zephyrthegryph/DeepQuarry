@@ -172,18 +172,20 @@ class SpriteIndex:
                 return {"url": f"/atlas?id={key}", "frames": cached[1], "appearance": {a: self.appearance(a) for a in selected}}
             positions = {}
             frames = []
-            x = y = row_height = 0
+            padding = 8  # Keep mip levels from sampling the neighboring sprite.
+            x = y = padding
+            row_height = 0
             for atom in selected:
                 frame = self.frame(atom)
                 if frame is None:
                     continue
-                if x + frame.width > 2048 and x:
-                    x, y, row_height = 0, y + row_height, 0
+                if x + frame.width + padding > 2048 and x > padding:
+                    x, y, row_height = padding, y + row_height + padding, 0
                 positions[atom] = [x, y, frame.width, frame.height]
                 frames.append((frame, x, y))
-                x += frame.width
+                x += frame.width + padding
                 row_height = max(row_height, frame.height)
-            image = Image.new("RGBA", (2048, max(1, y + row_height)))
+            image = Image.new("RGBA", (2048, max(1, y + row_height + padding)))
             for frame, px, py in frames:
                 image.paste(frame, (px, py))
             output = io.BytesIO()
