@@ -291,7 +291,10 @@ impl<K: NetworkKind> NetworkState<K> {
     pub fn step(&mut self) {
         self.events.clear();
         self.changed_slots.clear();
-        let rx = self.rx.get_mut().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let rx = self
+            .rx
+            .get_mut()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let messages: Vec<Message<K>> = rx.try_iter().collect();
         for msg in messages {
             match msg {
@@ -464,7 +467,9 @@ impl<K: NetworkKind> NetworkState<K> {
         for &n in &nodes {
             if let Ok(node) = self.net.node(n) {
                 if node.key < MAX_KEY && slot(&self.node_keys, node.key) == Some(n) {
-                    self.view.nodes.set(node.key, node.region().raw().bits() + 1);
+                    self.view
+                        .nodes
+                        .set(node.key, node.region().raw().bits() + 1);
                 }
             }
         }
@@ -542,7 +547,13 @@ impl<K: NetworkKind> NetworkState<K> {
             let value = self
                 .view
                 .regions
-                .with(slot, |e| if e.region.is_some() { f(e) } else { V::default() })
+                .with(slot, |e| {
+                    if e.region.is_some() {
+                        f(e)
+                    } else {
+                        V::default()
+                    }
+                })
                 .unwrap_or_default();
             store.set(slot, value);
         }

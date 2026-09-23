@@ -166,7 +166,12 @@ fn canonical(net: &Network<Pipes>) -> Vec<(Vec<RawHandle>, [f64; 2])> {
     let mut out: Vec<_> = net
         .regions()
         .map(|(r, reg)| {
-            let mut m: Vec<_> = net.members(r).unwrap().into_iter().map(|n| n.raw()).collect();
+            let mut m: Vec<_> = net
+                .members(r)
+                .unwrap()
+                .into_iter()
+                .map(|n| n.raw())
+                .collect();
             m.sort_unstable();
             (m, *reg.payload())
         })
@@ -183,7 +188,12 @@ fn check_summaries(net: &Network<Pipes>) -> Result<(), TestCaseError> {
             .iter()
             .map(|&n| net.node(n).unwrap().data)
             .sum();
-        prop_assert!(close(sum, *reg.summary()), "summary {} vs {}", sum, reg.summary());
+        prop_assert!(
+            close(sum, *reg.summary()),
+            "summary {} vs {}",
+            sum,
+            reg.summary()
+        );
     }
     Ok(())
 }
@@ -423,8 +433,14 @@ fn clone_net(base: &Network<Pipes>, setup: &[Op]) -> Network<Pipes> {
 fn line(net: &mut Network<Pipes>, n: usize) -> Vec<NodeId<Pipes>> {
     let nodes: Vec<_> = (0..n)
         .map(|i| {
-            net.add_node(u32::try_from(i).unwrap(), 0, u32::try_from(i).unwrap(), 1.0, [1.0, 2.0])
-                .unwrap()
+            net.add_node(
+                u32::try_from(i).unwrap(),
+                0,
+                u32::try_from(i).unwrap(),
+                1.0,
+                [1.0, 2.0],
+            )
+            .unwrap()
         })
         .collect();
     for w in nodes.windows(2) {
@@ -447,14 +463,23 @@ fn merge_keeps_the_larger_region_and_split_keeps_the_open_side() {
     assert_eq!(net.region_count(), 2);
     assert_eq!(net.region_of(nodes[0]).unwrap(), r);
     let tail = net.region_of(nodes[9]).unwrap();
-    assert!(events.contains(&RegionEvent::Split { from: r, into: tail }));
+    assert!(events.contains(&RegionEvent::Split {
+        from: r,
+        into: tail
+    }));
     assert_eq!(*net.region(tail).unwrap().payload(), [2.0, 4.0]);
     assert_eq!(*net.region(r).unwrap().payload(), [8.0, 16.0]);
     assert!(net.stats().visited <= 6, "{:?}", net.stats());
     // Rejoin: the larger region's ID survives.
     net.connect(nodes[8], nodes[7]).unwrap();
     let events = net.commit();
-    assert_eq!(events, vec![RegionEvent::Merged { into: r, from: tail }]);
+    assert_eq!(
+        events,
+        vec![RegionEvent::Merged {
+            into: r,
+            from: tail
+        }]
+    );
     assert_eq!(*net.region(r).unwrap().payload(), [10.0, 20.0]);
 }
 
@@ -479,10 +504,7 @@ fn removing_a_node_releases_its_share_and_detaches_devices() {
         .add_device(Endpoint::Node(nodes[2]), Endpoint::Cell(77), 1, 9, 3)
         .unwrap();
     let r = net.region_of(nodes[2]).unwrap();
-    assert_eq!(
-        net.resolve(net.device(pump).unwrap().a),
-        Side::Region(r)
-    );
+    assert_eq!(net.resolve(net.device(pump).unwrap().a), Side::Region(r));
     net.remove_node(nodes[2]).unwrap();
     let events = net.commit();
     assert!(events.contains(&RegionEvent::Released {

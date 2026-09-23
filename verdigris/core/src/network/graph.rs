@@ -73,8 +73,11 @@ pub trait NetworkKind:
     /// whose summary is `whole`, leaving the rest in `payload`, and returns
     /// it. **Must conserve**: the returned value plus what is left equals
     /// the input. `part` may equal `whole` (the last node of a region).
-    fn split(payload: &mut Self::Payload, whole: &Self::Summary, part: &Self::Summary)
-    -> Self::Payload;
+    fn split(
+        payload: &mut Self::Payload,
+        whole: &Self::Summary,
+        part: &Self::Summary,
+    ) -> Self::Payload;
 
     /// Pools `other` into `into`. **Must conserve.**
     fn merge(into: &mut Self::Payload, other: Self::Payload);
@@ -203,9 +206,15 @@ pub enum RegionEvent<K: NetworkKind> {
     /// as [`RegionEvent::Split`] instead.
     Created { region: RegionId<K> },
     /// `from` was pooled into `into` and retired.
-    Merged { into: RegionId<K>, from: RegionId<K> },
+    Merged {
+        into: RegionId<K>,
+        from: RegionId<K>,
+    },
     /// `into` was carved out of `from`; `from` keeps the remainder and its ID.
-    Split { from: RegionId<K>, into: RegionId<K> },
+    Split {
+        from: RegionId<K>,
+        into: RegionId<K>,
+    },
     /// The region lost its last node.
     Retired { region: RegionId<K> },
     /// Node data or the payload changed without a topology change.

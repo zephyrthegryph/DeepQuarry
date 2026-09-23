@@ -70,7 +70,9 @@ fn line() -> (Network<Pipes>, Vec<NodeId<Pipes>>) {
 fn build(c: &mut Criterion) {
     let mut g = c.benchmark_group("network");
     g.sample_size(10);
-    g.bench_function("build_grid_50k", |b| b.iter(|| black_box(grid().0.region_count())));
+    g.bench_function("build_grid_50k", |b| {
+        b.iter(|| black_box(grid().0.region_count()))
+    });
     g.finish();
 }
 

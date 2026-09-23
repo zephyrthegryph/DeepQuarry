@@ -7,8 +7,8 @@ use vg_core::channels;
 use vg_core::cow::ChunkLayout;
 use vg_core::frame::Task;
 use vg_core::handle::MAX_SLOTS;
-use vg_core::network::host::{EndKey, Edit, ViewSide, add_network, topo};
 use vg_core::network::NetworkKind;
+use vg_core::network::host::{Edit, EndKey, ViewSide, add_network, topo};
 use vg_core::outbox::{EventKind, Lane};
 use vg_core::owner::{Applied, Domain};
 use vg_core::sim::{SimBuilder, SimConfig};
@@ -195,5 +195,11 @@ fn batches_commands_views_outbox_and_region_watches() {
             .iter()
             .any(|e| e.value == topo::DEVICE_DETACHED && e.key == 3)
     );
-    assert!(out.events().iter().filter(|e| e.value == topo::SPLIT).count() >= 2);
+    assert!(
+        out.events()
+            .iter()
+            .filter(|e| e.value == topo::SPLIT)
+            .count()
+            >= 2
+    );
 }
