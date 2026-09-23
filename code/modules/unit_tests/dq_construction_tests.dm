@@ -236,3 +236,128 @@
 	TEST_ASSERT_EQUAL(best[1], INTERACTION(/datum/interaction/wall_light_thermite), "thermite is lit ahead of the graph")
 	wall.thermite = FALSE
 	wall_turf.ChangeTurf(old_type)
+
+// ---- Floors ----
+
+/// A carpet pries up to plating (returning its tile), damaged plating welds back, and plating cuts through in 10 s for 5 fuel.
+/datum/unit_test/dq_construction_floor
+
+/datum/unit_test/dq_construction_floor/Run()
+	var/turf/T = test_floor()
+	var/turf/simulated/floor/floor = get_step(T, NORTH) || get_step(T, SOUTH)
+	var/old_type = floor.type
+	floor = floor.ChangeTurf(/turf/simulated/floor)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.a_intent = I_HELP
+	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
+	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
+
+	floor.set_flooring(get_flooring_data(/datum/decl/flooring/carpet))
+	var/datum/construction_graph/graph = construction_graph_of(floor)
+	TEST_ASSERT_EQUAL(graph.state_of(floor), "floored", "carpeted")
+	H.put_in_active_hand(crowbar)
+	floor.tool_interaction(H, crowbar)
+	TEST_ASSERT_EQUAL(graph.state_of(floor), "plating", "the crowbar pries the carpet up")
+	TEST_ASSERT(locate(/obj/item/stack/tile/carpet) in floor, "the carpet comes back as a tile")
+	H.drop_from_inventory(crowbar)
+
+	floor.broken = TRUE
+	TEST_ASSERT_EQUAL(graph.state_of(floor), "damaged", "broken plating")
+	H.put_in_active_hand(welder)
+	floor.tool_interaction(H, welder)
+	TEST_ASSERT_EQUAL(graph.state_of(floor), "plating", "welded smooth")
+
+	var/datum/interaction/construction/cut = dq_edge(floor, "plating>done:welder")
+	TEST_ASSERT(cut, "plating offers the cut")
+	TEST_ASSERT_EQUAL(cut.duration, 10 SECONDS, "cutting takes 10 s")
+	TEST_ASSERT(!cut.tool_scaled, "whatever the welder")
+	TEST_ASSERT_EQUAL(cut.tool_amount, 5, "and 5 fuel")
+	H.drop_from_inventory(welder)
+	for(var/obj/item/thing in floor)
+		qdel(thing)
+	floor.ChangeTurf(old_type)
+
+// ---- Exosuit maintenance ----
+
+/// Bolts, hatch and cell: each step forward and back, the cell coming out and going back in.
+/datum/unit_test/dq_construction_mecha_maintenance
+
+/datum/unit_test/dq_construction_mecha_maintenance/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
+	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
+	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
+	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
+	TEST_ASSERT(!length(construction_edges_for(mech)), "an operating exosuit offers no steps")
+	if(!mech.cell)
+		mech.cell = new /obj/item/cell/high(mech)
+	var/obj/item/cell/cell = mech.cell
+	mech.state = MECHA_BOLTS_SECURED
+
+	var/list/forward = list(list(wrench, MECHA_PANEL_LOOSE), list(crowbar, MECHA_CELL_OPEN), list(screwdriver, MECHA_CELL_OUT))
+	for(var/list/step in forward)
+		var/obj/item/tool = step[1]
+		H.put_in_active_hand(tool)
+		mech.tool_interaction(H, tool)
+		TEST_ASSERT_EQUAL(mech.state, step[2], "[tool] -> state [step[2]]")
+		H.drop_from_inventory(tool)
+	TEST_ASSERT_NULL(mech.cell, "the cell is out")
+	TEST_ASSERT_EQUAL(cell.loc, mech.loc, "on the floor")
+
+	cell.forceMove(mech)
+	mech.cell = cell
+	var/list/back = list(list(screwdriver, MECHA_CELL_OPEN), list(crowbar, MECHA_PANEL_LOOSE), list(wrench, MECHA_BOLTS_SECURED))
+	for(var/list/step in back)
+		var/obj/item/tool = step[1]
+		H.put_in_active_hand(tool)
+		mech.tool_interaction(H, tool)
+		TEST_ASSERT_EQUAL(mech.state, step[2], "[tool] back -> state [step[2]]")
+		H.drop_from_inventory(tool)
+
+	mech.setInternalDamage(MECHA_INT_TEMP_CONTROL)
+	H.put_in_active_hand(screwdriver)
+	mech.tool_interaction(H, screwdriver)
+	TEST_ASSERT(!mech.hasInternalDamage(MECHA_INT_TEMP_CONTROL), "the screwdriver fixes temperature control first")
+	TEST_ASSERT_EQUAL(mech.state, MECHA_BOLTS_SECURED, "without a step")
+	H.drop_from_inventory(screwdriver)
+
+	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
+	mech.take_damage(20)
+	var/before = mech.get_integrity()
+	H.a_intent = I_HELP
+	H.put_in_active_hand(welder)
+	mech.tool_interaction(H, welder)
+	TEST_ASSERT_EQUAL(mech.get_integrity(), min(mech.max_integrity, before + 10), "a weld patches 10")
+	H.a_intent = I_HURT
+	TEST_ASSERT(mech.tool_interaction(H, welder) & ITEM_INTERACT_SKIP_TO_ATTACK, "on harm intent the welder attacks")
+	H.a_intent = I_HELP
+
+// ---- Wreckage ----
+
+/// Salvage steps leave the wreck in its one state and use up its salvage.
+/datum/unit_test/dq_construction_wreckage
+
+/datum/unit_test/dq_construction_wreckage/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/effect/decal/mecha_wreckage/ripley/wreck = allocate(/obj/effect/decal/mecha_wreckage/ripley, T)
+	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
+	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
+	var/obj/item/stack/rods/loot = allocate(/obj/item/stack/rods, wreck)
+	wreck.crowbar_salvage = list(loot)
+	H.put_in_active_hand(crowbar)
+	wreck.tool_interaction(H, crowbar)
+	TEST_ASSERT_EQUAL(loot.loc, get_turf(H), "the crowbar pries out what the wreck held")
+	H.drop_from_inventory(crowbar)
+	var/datum/interaction/construction/pry = dq_edge(wreck, "wreck>wreck:crowbar")
+	TEST_ASSERT_EQUAL(pry.why_not(H, wreck, crowbar), "you don't see anything that can be pried out", "nothing left to pry")
+
+	wreck.salvage_num = 3
+	H.put_in_active_hand(welder)
+	for(var/i in 1 to 20)
+		wreck.tool_interaction(H, welder)
+	TEST_ASSERT_EQUAL(wreck.salvage_num, 0, "the welder cuts until the salvage runs out")
+	var/datum/interaction/construction/cut = dq_edge(wreck, "wreck>wreck:welder")
+	TEST_ASSERT(cut.why_not(H, wreck, welder), "and then can't cut any more")
+	TEST_ASSERT_EQUAL(construction_graph_of(wreck).state_of(wreck), "wreck", "still a wreck")

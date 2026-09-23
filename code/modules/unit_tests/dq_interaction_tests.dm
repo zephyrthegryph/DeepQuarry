@@ -106,7 +106,7 @@
 		"disarm", "grab", "dq_combat_friendly", "dq_combat_hostile", "dq_combat_needs_combat", "dq_combat_needs_peace",
 		"dq_tool_weld", "dq_tool_dig", // dq_tool_tests.dm
 		// Construction (dq_construction_tests.dm and its per-domain files). Graph edges are checked there, not here.
-		"wall_burn_rot", "wall_light_thermite", "wall_repair",
+		"wall_burn_rot", "wall_light_thermite", "wall_repair", "mecha_fix_temperature", "mecha_weld_repair",
 	)
 
 /datum/unit_test/dq_interaction_definitions/Run()

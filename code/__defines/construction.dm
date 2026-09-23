@@ -134,3 +134,10 @@
 
 /// Tag on every construction edge.
 #define INTERACTION_TAG_CONSTRUCTION "construction"
+
+// Exosuit maintenance states (/obj/mecha `state`, mecha_maintenance.dm).
+#define MECHA_OPERATING     0
+#define MECHA_BOLTS_SECURED 1
+#define MECHA_PANEL_LOOSE   2
+#define MECHA_CELL_OPEN     3
+#define MECHA_CELL_OUT      4
