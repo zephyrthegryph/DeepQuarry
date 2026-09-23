@@ -28,7 +28,7 @@
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
 	var/close_door_at = 0 //When to automatically close the door, if possible
 	/// The REACT_AT token for next_door_deadline(), and the deadline it was set for.
-	var/tmp/door_timer_token = 0
+	var/tmp/door_timer_token
 	var/tmp/door_timer_at = 0
 	var/list/autoclose_blockers
 
@@ -104,11 +104,11 @@
 /// Keeps one REACT_AT on next_door_deadline(). Call after changing any deadline.
 /obj/machinery/door/proc/schedule_door_timer()
 	var/deadline = next_door_deadline()
-	if(deadline == door_timer_at && (door_timer_token || !deadline))
+	if(deadline == door_timer_at && (!isnull(door_timer_token) || !deadline))
 		return
-	if(door_timer_token)
+	if(!isnull(door_timer_token))
 		REACT_CANCEL(src, door_timer_token)
-		door_timer_token = 0
+		door_timer_token = null
 	door_timer_at = deadline
 	if(deadline)
 		door_timer_token = REACT_AT(src, deadline)
@@ -116,7 +116,7 @@
 /obj/machinery/door/on_react(reason, source, source_kind)
 	. = ..()
 	if(reason & REACT_REASON_TIMER)
-		door_timer_token = 0
+		door_timer_token = null
 		door_timer_at = 0
 		door_deadlines_due()
 		schedule_door_timer()
@@ -136,7 +136,7 @@
 	var/deadline = next_door_deadline()
 	if(!deadline)
 		return null
-	if(!door_timer_token || door_timer_at > deadline)
+	if(isnull(door_timer_token) || door_timer_at > deadline)
 		return "deadline [deadline] (now [world.time]) has no timer (timer at [door_timer_at])"
 	return null
 

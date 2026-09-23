@@ -92,6 +92,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	// NOTE: BayStation calles area.Exited/Entered for the TURF T.  So far we don't do that.s
 	// NOTE: There probably won't be any atoms in these turfs, but just in case we should call these procs.
 	A.contents.Add(T)
+	T.reactor_area_changed()
 	if(old_area)
 		// Handle dynamic lighting update if
 		if(SSlighting.initialized && T.dynamic_lighting && old_area.dynamic_lighting != A.dynamic_lighting)

@@ -55,9 +55,9 @@
 
 	/// The REACT_AT for the next redraw (a countdown, the clock or a scrolling message) and
 	/// when it is due; the shuttle key watched in shuttle modes (REACT_SHUTTLE_*, 0 for none).
-	var/tmp/refresh_token = 0
+	var/tmp/refresh_token
 	var/tmp/refresh_at = 0
-	var/tmp/shuttle_key_token = 0
+	var/tmp/shuttle_key_token
 	var/tmp/shuttle_key_id = 0
 
 /obj/machinery/status_display/Destroy()
@@ -115,19 +115,19 @@
 	var/powered = !(stat & NOPOWER)
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
-		if(shuttle_key_token)
+		if(!isnull(shuttle_key_token))
 			REACT_CANCEL(src, shuttle_key_token)
-			shuttle_key_token = 0
+			shuttle_key_token = null
 		shuttle_key_id = want_shuttle
 		if(want_shuttle)
 			shuttle_key_token = REACT_ON_KEY(src, REACT_KEY_SHUTTLE_SCHEDULE, want_shuttle, 1)
 	var/delay = powered ? next_refresh_delay() : 0
 	var/at = delay ? world.time + delay : 0
-	if(refresh_token)
+	if(!isnull(refresh_token))
 		if(at && at == refresh_at)
 			return
 		REACT_CANCEL(src, refresh_token)
-		refresh_token = 0
+		refresh_token = null
 	refresh_at = at
 	if(at)
 		refresh_token = REACT_AT(src, at)
@@ -135,16 +135,16 @@
 /obj/machinery/status_display/on_react(reason, source, source_kind)
 	. = ..()
 	if(reason & REACT_REASON_TIMER)
-		refresh_token = 0
+		refresh_token = null
 		refresh_at = 0
 	refresh()
 
 /obj/machinery/status_display/react_sleep_violation()
 	if(stat & NOPOWER)
 		return null
-	if(next_refresh_delay() && !refresh_token)
+	if(next_refresh_delay() && isnull(refresh_token))
 		return "mode [mode] needs redrawing but has no timer"
-	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && !shuttle_key_token))
+	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token)))
 		return "mode [mode] is not watching its shuttle"
 	return null
 

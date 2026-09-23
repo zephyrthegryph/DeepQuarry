@@ -4207,10 +4207,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.detectTime = 0
 	C.stat &= ~NOPOWER
 	C.schedule_camera_timer()
-	TEST_ASSERT(!C.camera_timer_token, "idle motion camera kept a timer")
+	TEST_ASSERT(isnull(C.camera_timer_token), "idle motion camera kept a timer")
 	var/mob/living/carbon/human/H = new(test_turf)
 	C.newTarget(H)
-	TEST_ASSERT(C.camera_timer_token, "motion target did not schedule its camera's alarm timer")
+	TEST_ASSERT(!isnull(C.camera_timer_token), "motion target did not schedule its camera's alarm timer")
 	qdel(H)
 	qdel(C)
 
@@ -4310,7 +4310,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.emergency_mode = TRUE
 	L.auto_flicker = FALSE
 	L.begin_emergency_discharge()
-	TEST_ASSERT(L.emergency_discharge_at && L.light_timer_token, "emergency light did not schedule its discharge timer")
+	TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency light did not schedule its discharge timer")
 	TEST_ASSERT(!(L in SSobj.processing), "ordinary emergency light retained SSobj polling")
 	qdel(L)
 
@@ -4418,11 +4418,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"
 	D.receive_signal(blank)
-	TEST_ASSERT(!D.refresh_token, "blank status display kept a refresh timer")
+	TEST_ASSERT(isnull(D.refresh_token), "blank status display kept a refresh timer")
 	var/datum/signal/time_signal = new
 	time_signal.data["command"] = "time"
 	D.receive_signal(time_signal)
-	TEST_ASSERT(D.refresh_token || (D.stat & NOPOWER), "time signal did not schedule the clock's next redraw")
+	TEST_ASSERT(!isnull(D.refresh_token) || (D.stat & NOPOWER), "time signal did not schedule the clock's next redraw")
 	qdel(D)
 	qdel(canister)
 	qdel(C)
@@ -4559,10 +4559,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!A.close_door_at, "blocked airlock retained a timed polling retry")
 	TEST_ASSERT(LAZYLEN(A.autoclose_blockers), "blocked airlock did not subscribe to its blocker")
 	TEST_ASSERT(blocker._listen_lookup?[COMSIG_MOVABLE_MOVED], "blocked airlock did not register a movement signal on its blocker")
-	TEST_ASSERT(!A.door_timer_token || A.next_door_deadline(), "blocked airlock kept an autoclose timer")
+	TEST_ASSERT(isnull(A.door_timer_token) || A.next_door_deadline(), "blocked airlock kept an autoclose timer")
 	blocker.Moved(T, NORTH, TRUE, 0)
 	TEST_ASSERT(A.close_door_at, "woken airlock did not schedule an immediate close attempt")
-	TEST_ASSERT(A.door_timer_token, "woken airlock has no autoclose timer (close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
+	TEST_ASSERT(!isnull(A.door_timer_token), "woken airlock has no autoclose timer (close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
 	qdel(blocker)
 	qdel(A)
 
@@ -4673,7 +4673,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	shield_capacitor.stored_charge = shield_capacitor.max_charge
 	TEST_ASSERT_EQUAL(shield_capacitor.process(), PROCESS_KILL, "full shield capacitor remained scheduled")
 	var/obj/machinery/atmospherics/valve/shutoff/shutoff = new(T)
-	TEST_ASSERT(shutoff.global_leak_token, "automatic shutoff valve did not subscribe to the global leak key")
+	TEST_ASSERT(!isnull(shutoff.global_leak_token), "automatic shutoff valve did not subscribe to the global leak key")
 	var/shutoff_wake = react_wake_test(shutoff, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
 	TEST_ASSERT(!shutoff_wake, shutoff_wake)
 	var/obj/machinery/sleeper/sleeper = new(T)

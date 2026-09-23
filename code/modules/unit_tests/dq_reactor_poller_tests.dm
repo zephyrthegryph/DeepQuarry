@@ -21,11 +21,11 @@
 	A.schedule_door_timer()
 	A.electrified_until = world.time + 1
 	A.schedule_door_timer()
-	TEST_ASSERT(A.door_timer_token, "electrifying did not schedule the door's timer")
+	TEST_ASSERT(!isnull(A.door_timer_token), "electrifying did not schedule the door's timer")
 	TEST_ASSERT_NULL(A.react_sleep_violation(), "an electrified airlock's audit failed")
 	react_test_ticks(20)
 	TEST_ASSERT_EQUAL(A.electrified_until, 0, "the electrification deadline passed without a wake")
-	TEST_ASSERT(!A.door_timer_token, "an airlock with no deadline kept a timer")
+	TEST_ASSERT(isnull(A.door_timer_token), "an airlock with no deadline kept a timer")
 
 	// Main power returns on its timer.
 	A.main_power_lost_until = world.time + 1
@@ -54,7 +54,7 @@
 
 /datum/unit_test/dq_reactor_camera_timers/Run()
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, test_floor())
-	TEST_ASSERT(!C.camera_timer_token, "an idle camera has a timer")
+	TEST_ASSERT(isnull(C.camera_timer_token), "an idle camera has a timer")
 	TEST_ASSERT_NULL(C.react_sleep_violation(), "an idle camera is not asleep")
 	var/failure = react_wake_test(C, CALLBACK(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
@@ -67,7 +67,7 @@
 	C.alarm_delay = 1
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_turf(C))
 	C.newTarget(H)
-	TEST_ASSERT(C.camera_timer_token, "a motion target did not schedule the alarm")
+	TEST_ASSERT(!isnull(C.camera_timer_token), "a motion target did not schedule the alarm")
 	TEST_ASSERT_NULL(C.react_sleep_violation(), "a tracking camera's audit failed")
 	react_test_ticks(20)
 	TEST_ASSERT_EQUAL(C.detectTime, -1, "the motion alarm did not fire at its deadline")
@@ -86,7 +86,7 @@
 /datum/unit_test/dq_reactor_light_area_power/Run()
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, test_floor())
 	var/area/A = get_area(L)
-	TEST_ASSERT(L.area_power_token, "a light did not subscribe to its area's power key")
+	TEST_ASSERT(!isnull(L.area_power_token), "a light did not subscribe to its area's power key")
 	TEST_ASSERT_NULL(L.react_sleep_violation(), "a new light is not asleep")
 	var/failure = react_wake_test(L, CALLBACK(A, TYPE_PROC_REF(/area, power_change)))
 	TEST_ASSERT(!failure, failure)
@@ -100,7 +100,7 @@
 	react_test_ticks(4)
 	if(was_powered && L.cell && L.has_emergency_power(0.2) && L.status == LIGHT_OK && !L.no_emergency)
 		TEST_ASSERT(L.emergency_mode, "an unpowered charged light did not go to emergency power")
-		TEST_ASSERT(L.emergency_discharge_at && L.light_timer_token, "emergency discharge has no timer")
+		TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency discharge has no timer")
 	TEST_ASSERT_NULL(L.react_sleep_violation(), "an unpowered light's audit failed")
 	A.power_light = old_power
 	A.power_change()
@@ -118,32 +118,32 @@
 	var/datum/signal/S = new
 	S.data["command"] = "blank"
 	D.receive_signal(S)
-	TEST_ASSERT(!D.refresh_token, "a blank display kept a timer")
+	TEST_ASSERT(isnull(D.refresh_token), "a blank display kept a timer")
 	TEST_ASSERT_NULL(D.react_sleep_violation(), "a blank display is not asleep")
 
 	S = new
 	S.data["command"] = "time"
 	D.receive_signal(S)
-	TEST_ASSERT(D.refresh_token, "the clock did not schedule its next minute")
+	TEST_ASSERT(!isnull(D.refresh_token), "the clock did not schedule its next minute")
 	TEST_ASSERT(D.refresh_at <= world.time + 1 MINUTE, "the clock's next redraw is more than a minute away")
 
 	S = new
 	S.data["command"] = "message"
 	S.data["msg1"] = "SHORT"
 	D.receive_signal(S)
-	TEST_ASSERT(!D.refresh_token, "a message that fits kept a timer")
+	TEST_ASSERT(isnull(D.refresh_token), "a message that fits kept a timer")
 	S = new
 	S.data["command"] = "message"
 	S.data["msg1"] = "A MESSAGE TOO LONG TO FIT"
 	D.receive_signal(S)
-	TEST_ASSERT(D.refresh_token, "a scrolling message has no timer")
+	TEST_ASSERT(!isnull(D.refresh_token), "a scrolling message has no timer")
 
 	S = new
 	S.data["command"] = "shuttle"
 	D.receive_signal(S)
 	TEST_ASSERT_EQUAL(D.shuttle_key_id, REACT_SHUTTLE_EVAC, "shuttle mode is not watching the evac shuttle")
 	TEST_ASSERT_NULL(D.react_sleep_violation(), "a shuttle display's audit failed")
-	if(!D.refresh_token) // No evac under way: only the key wakes it.
+	if(isnull(D.refresh_token)) // No evac under way: only the key wakes it.
 		var/failure = react_wake_test(D, CALLBACK(src, PROC_REF(publish_evac)))
 		TEST_ASSERT(!failure, failure)
 
@@ -173,7 +173,7 @@
 	TEST_ASSERT(!failure, failure)
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a chunk wake with nobody in range left dormancy")
 	loop.stop()
-	TEST_ASSERT(!loop.dormant_chunk_tokens && !loop.loop_token, "stop() left the loop subscribed")
+	TEST_ASSERT(!loop.dormant_chunk_tokens && isnull(loop.loop_token), "stop() left the loop subscribed")
 	qdel(loop)
 
 /// Player chunk keys: a player's chunk wakes subscribers; a mob without a client does not.

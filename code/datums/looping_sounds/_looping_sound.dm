@@ -51,7 +51,7 @@
 	/// TRUE from start() until stop(): the loop is waiting to start, looping or dormant.
 	var/tmp/running = FALSE
 	/// The pending REACT_AT: the next loop, the start delay or the dormant recheck.
-	var/tmp/loop_token = 0
+	var/tmp/loop_token
 	/// world.time of the first loop, so max_loops counts from the real start.
 	var/tmp/loop_starttime
 	/// REACT_KEY_PLAYER_CHUNK tokens while nobody can hear the loop; null while it is looping (Q5).
@@ -107,9 +107,9 @@
 	loop_starttime = null
 
 /datum/looping_sound/proc/cancel_loop_timer()
-	if(loop_token)
+	if(!isnull(loop_token))
 		REACT_CANCEL(src, loop_token)
-		loop_token = 0
+		loop_token = null
 
 /datum/looping_sound/on_react(reason, source, source_kind)
 	if(!running)
@@ -117,13 +117,13 @@
 	if(dormant_chunk_tokens)
 		wake_from_dormancy(reason & REACT_REASON_TIMER)
 	else if(reason & REACT_REASON_TIMER)
-		loop_token = 0
+		loop_token = null
 		sound_loop()
 
 /datum/looping_sound/react_sleep_violation()
-	if(running && !loop_token && !dormant_chunk_tokens)
+	if(running && isnull(loop_token) && !dormant_chunk_tokens)
 		return "running with no loop timer and no chunk keys"
-	if(dormant_chunk_tokens && !loop_token)
+	if(dormant_chunk_tokens && isnull(loop_token))
 		return "dormant without its recheck timer"
 	return null
 

@@ -38,7 +38,7 @@
 
 	var/affected_by_emp_until = 0
 	/// The REACT_AT token for next_camera_deadline(), and the deadline it was set for.
-	var/tmp/camera_timer_token = 0
+	var/tmp/camera_timer_token
 	var/tmp/camera_timer_at = 0
 
 	var/client_huds = null
@@ -111,11 +111,11 @@
 
 /obj/machinery/camera/proc/schedule_camera_timer()
 	var/deadline = next_camera_deadline()
-	if(deadline == camera_timer_at && (camera_timer_token || !deadline))
+	if(deadline == camera_timer_at && (!isnull(camera_timer_token) || !deadline))
 		return
-	if(camera_timer_token)
+	if(!isnull(camera_timer_token))
 		REACT_CANCEL(src, camera_timer_token)
-		camera_timer_token = 0
+		camera_timer_token = null
 	camera_timer_at = deadline
 	if(deadline)
 		camera_timer_token = REACT_AT(src, deadline)
@@ -124,7 +124,7 @@
 	. = ..()
 	if(!(reason & REACT_REASON_TIMER))
 		return
-	camera_timer_token = 0
+	camera_timer_token = null
 	camera_timer_at = 0
 	if((stat & EMPED) && world.time >= affected_by_emp_until)
 		stat &= ~EMPED
@@ -136,7 +136,7 @@
 
 /obj/machinery/camera/react_sleep_violation()
 	var/deadline = next_camera_deadline()
-	if(deadline && (!camera_timer_token || camera_timer_at > deadline))
+	if(deadline && (isnull(camera_timer_token) || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	return null
 

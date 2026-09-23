@@ -20,10 +20,10 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 	level = 1
 	/// REACT_KEY_PIPE_NETWORK subscriptions: the global key, and one per bordering network
 	/// with the network ids they were made for.
-	var/tmp/global_leak_token = 0
-	var/tmp/network1_token = 0
+	var/tmp/global_leak_token
+	var/tmp/network1_token
 	var/tmp/network1_id = 0
-	var/tmp/network2_token = 0
+	var/tmp/network2_token
 	var/tmp/network2_id = 0
 
 /obj/machinery/atmospherics/valve/shutoff/update_icon()
@@ -72,15 +72,15 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 	var/id1 = network_node1 ? REACT_ID(network_node1) : 0
 	var/id2 = network_node2 ? REACT_ID(network_node2) : 0
 	if(id1 != network1_id)
-		if(network1_token)
+		if(!isnull(network1_token))
 			REACT_CANCEL(src, network1_token)
 		network1_id = id1
-		network1_token = id1 ? REACT_ON_KEY(src, REACT_KEY_PIPE_NETWORK, id1, REACT_PIPE_LEAKS) : 0
+		network1_token = id1 ? REACT_ON_KEY(src, REACT_KEY_PIPE_NETWORK, id1, REACT_PIPE_LEAKS) : null
 	if(id2 != network2_id)
-		if(network2_token)
+		if(!isnull(network2_token))
 			REACT_CANCEL(src, network2_token)
 		network2_id = id2
-		network2_token = id2 ? REACT_ON_KEY(src, REACT_KEY_PIPE_NETWORK, id2, REACT_PIPE_LEAKS) : 0
+		network2_token = id2 ? REACT_ON_KEY(src, REACT_KEY_PIPE_NETWORK, id2, REACT_PIPE_LEAKS) : null
 
 // A network change re-subscribes and re-checks: the new network may already leak.
 /obj/machinery/atmospherics/valve/shutoff/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
@@ -110,9 +110,9 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 /obj/machinery/atmospherics/valve/shutoff/react_sleep_violation()
 	var/id1 = network_node1?.reactor_id || 0
 	var/id2 = network_node2?.reactor_id || 0
-	if((network_node1 && (!network1_token || id1 != network1_id)) || (network_node2 && (!network2_token || id2 != network2_id)))
+	if((network_node1 && (isnull(network1_token) || id1 != network1_id)) || (network_node2 && (isnull(network2_token) || id2 != network2_id)))
 		return "not subscribed to its networks' keys"
-	if(!global_leak_token)
+	if(isnull(global_leak_token))
 		return "not subscribed to the global leak key"
 	if(close_on_leaks && !open && network_node1 && network_node2 && node1 && node2 && !length(network_node1.leaks) && !length(network_node2.leaks))
 		return "closed with no leak on either side"

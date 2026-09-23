@@ -235,10 +235,10 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/emergency_discharge_started
 	/// Reactor state: the area power key, the one REACT_AT on next_light_deadline(), and the
 	/// auto-flicker chunk keys and recheck.
-	var/tmp/area_power_token = 0
+	var/tmp/area_power_token
 	var/tmp/area_power_area_id = 0
 	var/tmp/last_area_power = null
-	var/tmp/light_timer_token = 0
+	var/tmp/light_timer_token
 	var/tmp/light_timer_at = 0
 	var/tmp/flicker_check_at = 0
 	var/tmp/list/flicker_chunk_tokens
@@ -884,11 +884,11 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/proc/subscribe_area_power()
 	var/area/A = get_area(src)
 	var/id = A ? REACT_ID(A) : 0
-	if(id == area_power_area_id && (area_power_token || !id))
+	if(id == area_power_area_id && (!isnull(area_power_token) || !id))
 		return
-	if(area_power_token)
+	if(!isnull(area_power_token))
 		REACT_CANCEL(src, area_power_token)
-		area_power_token = 0
+		area_power_token = null
 	area_power_area_id = id
 	if(id)
 		area_power_token = REACT_ON_KEY(src, REACT_KEY_AREA_POWER, id, REACT_AREA_POWER_CHANGED)
@@ -906,11 +906,11 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/proc/schedule_light_timer()
 	var/deadline = next_light_deadline()
-	if(deadline == light_timer_at && (light_timer_token || !deadline))
+	if(deadline == light_timer_at && (!isnull(light_timer_token) || !deadline))
 		return
-	if(light_timer_token)
+	if(!isnull(light_timer_token))
 		REACT_CANCEL(src, light_timer_token)
-		light_timer_token = 0
+		light_timer_token = null
 	light_timer_at = deadline
 	if(deadline)
 		light_timer_token = REACT_AT(src, deadline)
@@ -925,7 +925,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		if(flicker_chunk_tokens && !flicker_check_at)
 			auto_flicker_check()
 	if(reason & REACT_REASON_TIMER)
-		light_timer_token = 0
+		light_timer_token = null
 		light_timer_at = 0
 		if(emergency_discharge_at && world.time >= emergency_discharge_at)
 			continue_emergency_discharge()
@@ -938,11 +938,10 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/react_sleep_violation()
 	var/deadline = next_light_deadline()
-	if(deadline && (!light_timer_token || light_timer_at > deadline))
+	if(deadline && (isnull(light_timer_token) || light_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
-	var/area/A = get_area(src)
-	if(A && (!area_power_token || A.reactor_id != area_power_area_id))
-		return "not subscribed to its area's power key"
+	if(get_area(src) && isnull(area_power_token))
+		return "not subscribed to an area power key"
 	return null
 
 /// The area's power_change() ran: act only if this light's power actually changed.
