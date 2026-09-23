@@ -191,7 +191,7 @@
 			attacked = TRUE
 			VARSET_IN(src, attacked, FALSE, 6 SECONDS)
 
-	take_damage(damage, Proj.damage_type, Proj.check_armour)
+	take_damage(damage, Proj.obj_damage_type(), injury_armor_key(Proj.injury_kind))
 
 /obj/machinery/porta_turret/industrial/attack_generic(mob/living/L, damage)
 	return ..(L, damage * 0.8)
