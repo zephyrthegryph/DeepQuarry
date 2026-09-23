@@ -210,12 +210,21 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if(!latent)
 		return FALSE
 	var/list/L = D.vars[name]
-	if(isnull(schema.list_baseline))
-		schema.list_baseline = pristine_lists(D.type)
-	var/baseline = schema.list_baseline[name]
+	var/list/baselines = list_baseline_of(D.type)
+	var/baseline = baselines[name]
 	if(isnull(baseline))
 		return !length(L)
 	return state_canonical(baseline) == state_canonical(encoded)
+
+/// Encoded list vars of a pristine instance of `path`, made once and cached on its schema.
+/datum/state_context/proc/list_baseline_of(path)
+	var/datum/state_schema/schema = GLOB.state_schemas[path]
+	if(schema?.list_baseline)
+		return schema.list_baseline
+	var/list/baseline = pristine_lists(path)
+	schema = GLOB.state_schemas[path]
+	schema.list_baseline = baseline
+	return baseline
 
 /// Encoded list vars of a fresh instance of `path`, for latent-safe types.
 /datum/state_context/proc/pristine_lists(path)
@@ -462,8 +471,9 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	// The delta is the difference from initial(), so every other saved scalar
 	// goes back to its default: Initialize() may have rolled something else.
 	var/list/excluded = D.state_exclude()
+	var/list/variant = D.state_variant_baseline()
 	for(var/name in schema.saved_vars)
-		if((name in vars) || (name in excluded) || schema.codecs[name])
+		if((name in vars) || (name in excluded) || (name in variant) || schema.codecs[name])
 			continue
 		var/value = D.vars[name]
 		if(islist(value))

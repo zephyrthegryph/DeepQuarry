@@ -38,6 +38,9 @@
  *   state_canonical(list/blob)                      -> canonical text (sorted keys, normalized numbers)
  *   state_hash(list/blob)                           -> md5 of the canonical text
  *   state_saved_vars(datum/D)                       -> the type's schema: list of saved var names
+ *   state_is_saved(datum/D, var_name)               -> TRUE if var_name is part of D's saved state
+ *   state_type_list_default(path, var_name)         -> a latent-safe type's default for a list var
+ *                                                      (initial() is null for lists), or null
  *   state_can_serialize(datum/D, flags)             -> TRUE if state_serialize() would succeed
  *   D.state_collapse_blockers(held_refs = 1)        -> reasons D cannot collapse into a latent entry
  *                                                      (collapse.dm): refused refs, timers, processing,
@@ -158,6 +161,24 @@ GLOBAL_LIST_INIT(state_type_migrations, list())
 /proc/state_saved_vars(datum/D)
 	var/datum/state_schema/schema = state_schema_for(D)
 	return schema.saved_vars.Copy()
+
+/// TRUE if `var_name` is part of `D`'s saved state (its type's schema).
+/proc/state_is_saved(datum/D, var_name)
+	var/datum/state_schema/schema = state_schema_for(D)
+	return var_name in schema.saved_vars
+
+/// The default value of list var `var_name` on type `path`, which initial()
+/// cannot give. Read from a pristine instance, made once per type, so only
+/// latent-safe types (whose Initialize() has no side effects) answer; others
+/// return null.
+/proc/state_type_list_default(path, var_name)
+	var/atom/movable/typed = path
+	if(!ispath(path, /atom/movable) || !initial(typed.latent_safe))
+		return null
+	var/datum/state_context/ctx = new(NONE)
+	var/list/baseline = ctx.list_baseline_of(path)
+	. = isnull(baseline[var_name]) ? null : ctx.decode_value(baseline[var_name])
+	qdel(ctx)
 
 /// Canonical text of a blob: keys sorted, numbers normalized. Equal state gives equal text.
 /proc/state_canonical(list/blob)

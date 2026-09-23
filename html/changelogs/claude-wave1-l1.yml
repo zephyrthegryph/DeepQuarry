@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - code_imp: "L1: objects now have a state schema. Their saved state is their saved vars, written and read by one serializer with codecs for references, reagents and materials, canonical deltas, and schema versions with migrations."
+  - code_imp: "Vore belly and soulcatcher preferences are saved through the new serializer. Existing saves still load."
+  - code_imp: "A CI lint flags saved vars that hold references on latent-safe types."

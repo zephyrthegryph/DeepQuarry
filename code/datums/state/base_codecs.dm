@@ -15,6 +15,18 @@
 	if(atom_integrity == max_integrity)
 		. += "atom_integrity"
 
+// Variants (code/datums/variants/): a variant's own vars are left out of the
+// delta, and restored by applying the variant before the delta is written.
+/obj/item/state_variant_baseline()
+	return dq_variant_vars(type, variant)
+
+/obj/item/state_pre_apply(list/vars, flags)
+	..()
+	if(!("variant" in vars) || vars["variant"] == variant)
+		return
+	variant = vars["variant"]
+	apply_variant()
+
 /obj/machinery/state_codecs()
 	return ..() + list(
 		"circuit" = /datum/state_codec/child,

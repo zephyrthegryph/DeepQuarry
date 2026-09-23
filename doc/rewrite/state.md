@@ -20,31 +20,42 @@ Latent contents ([containment.md](containment.md)), persistence, admin tools and
 
 The last row is the safety mechanism. Collapsing an object into data is just serializing it; if the serializer meets a relationship or running behaviour, it fails and the object stays real. No gameplay code decides eligibility, so there is no "if" to forget.
 
+`/datum/proc/state_collapse_blockers()` (`code/datums/state/collapse.dm`) returns every reason an object can't collapse: references the codecs refuse, timers, processing, signal registrations with anything outside the subtree (type elements don't count), and extra incoming references. Serializing for persistence refuses only the references, since a running object, such as a processing belly, still has saveable state.
+
 **Incoming references.** The checks above cover what an object holds, not who holds it. Collapse also requires BYOND's `refcount(obj)` to equal the references its container and contents account for. Any extra reference means another object or list points at it, so it stays real. Test builds run the reference finder on refusals to name the holder, which then becomes a registry entry, a codec or a `tmp` var.
 
 ## 2. Schema
 
 BYOND already separates saved from unsaved vars: `issaved()` is false for `tmp`, `const` and `global` vars. So the schema of a type is its saved vars.
 
+The API is `code/datums/state/schema.dm`. Built-in vars are skipped except a fixed appearance set (`STATE_BUILTIN_SAVED`: name, desc, icon, icon_state, dir, color, pixel offsets, …).
+
 - **Hygiene pass.** Caches, references and runtime handles become `tmp`.
-- **Reference lint (CI).** A typed var declaration that holds an object (`var/datum/…`, `var/obj/…`, `var/mob/…`, `var/list` of datums) must be `tmp` or have a codec. SpacemanDMM's parse makes this checkable. It is what stops a new var from quietly breaking serialization.
-- **Components** that hold per-instance state serialize through the same codecs, as the component type plus its state. The sparse-var components (`code/datums/components/sparse_vars/`: forensics, alt appearance, …) get codecs first.
+- **Reference lint (CI).** A typed var declaration that holds an object (`var/datum/…`, `var/obj/…`, `var/mob/…`, `var/list` of datums) must be `tmp` or have a codec. `tools/ci/state_schema_lint.py` parses the declarations and checks every saved var of each latent-safe type and its ancestors. Relationships that should keep an object real are listed, with a reason, in `tools/ci/state_ref_allowlist.txt`. It is what stops a new var from quietly breaking serialization.
+- **Latent-safe types** set `latent_safe = TRUE` (`code/datums/state/latent_safe_types.dm`), and subtypes inherit it.
+- **Components** that hold per-instance state serialize through the same codecs, as the component type plus its state. A component declares `state_mode`: saved, derived (dropped and rebuilt), or refused (the default). The sparse-var components (`code/datums/components/sparse_vars/`: forensics, alt appearance, …) come first.
 
 ## 3. Codecs
 
 | Value | Encoding |
 |---|---|
-| Number, text, path, null | As is |
-| Flat list, assoc list | Element by element, recursively |
-| Reference to a child entry in the same subtree | A stable child ID |
-| Reference to a registered singleton (material, reagent, gas, species) | Its registry ID |
+| Number, text, null | As is |
+| Path | `{"#path": "/type"}` |
+| Flat list, assoc list | Element by element, recursively; lists with non-text keys as `{"#pairs": [[k, v], …]}` |
+| Reference to a child entry in the same subtree | A stable child ID: `{"#child": "2.1"}`, the contents index path |
+| Reference to a registered singleton (material, reagent, decl, species) | Its registry ID: `{"#reg": [kind, id]}` |
+| File resource | `{"#rsc": "icons/…"}` |
 | Any other reference | **Refused.** Serialization fails and the object stays real. |
+
+A var can name a codec in its type's `state_codecs()`: `child`, `owned` (a datum only this object refers to, saved as its own nested state), `reagents` (the holder's capacity and reagents) and `atom_flags` (flags without runtime bits) exist today.
 
 ## 4. Deltas
 
 - A **delta** is the saved vars whose values differ from the type's defaults plus its variant (the `code/datums/variants/` tables).
+  - Scalars compare with `initial()`. Applying a delta also resets every other saved scalar to `initial()`, so randomness in `Initialize()` can't leak into a materialized copy.
+  - `initial()` is null for list vars. In a latent-safe subtree, lists compare with a pristine instance, made once per type; `state_type_list_default()` exposes those defaults (the property registry reads per-type `matter` through it). Other types save every list var that is set, as the vore serializer did.
 - The **canonical form** sorts keys and normalizes numbers, and its hash identifies identical items. The ledger merges and splits entries by that hash ([containment.md §4](containment.md#4-latent-contents)).
-- **Versioning.** A schema version and a migration table cover renamed or removed types and vars, so saved data outlives refactors. This follows the vore serializer's semver approach.
+- **Versioning.** Each type has an integer `state_version`. Bumping it comes with a `state_migrate()` step that upgrades older deltas, and `GLOB.state_type_migrations` maps renamed or removed types. Pre-L1 flat blobs load as version 0.
 
 ## 5. One serializer, many uses
 
@@ -56,9 +67,9 @@ BYOND already separates saved from unsaved vars: `issaved()` is false for `tmp`,
 - **parity tests**: for every latent-safe type, `materialize(serialize(x))` must equal `x` for sampled states.
 
 **Existing pieces to fold in:**
-- `/datum/belly_serializer` (`code/modules/vore/eating/belly_serializer.dm`) is already schema-driven, with field types and boot-time validation. It becomes a client of the generic serializer.
+- `/datum/belly_serializer` is gone (L1). Bellies and soulgems save through the generic serializer, and older saved bellies still load.
 - `json_savefile` stays as a storage format.
-- `/datum/proc/serialize_list` (`code/datums/datum.dm:176`) is a stub with one caller, and is replaced.
+- `/datum/proc/serialize_list` is gone (L1): the logger now writes a datum as its saved state.
 
 ## 6. Lifecycle
 
