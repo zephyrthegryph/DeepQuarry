@@ -167,6 +167,7 @@
 #include "dq_involuntary_emote_tests.dm"
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
+#include "dq_rule_tests.dm"
 #include "dq_damage_packet_tests.dm"
 #include "dq_robot_machine_tests.dm"
 #include "dq_life_scheduler_tests.dm"

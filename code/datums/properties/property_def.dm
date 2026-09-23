@@ -28,6 +28,9 @@
 	var/adjective
 	/// Test fixtures set this so the global registry skips them.
 	var/test_only = FALSE
+	/// DM-owned properties: the reactor key kind published when the value
+	/// changes (reactor.md §4), so rules re-evaluate on it (rules.md §4).
+	var/dm_key_kind
 
 /// Tags: capability flags, TRUE or FALSE, combined with OR.
 /datum/property_def/tag
