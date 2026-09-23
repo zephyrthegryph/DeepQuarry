@@ -16,6 +16,28 @@
 /// A storage item's interior (/obj/item/storage, C4).
 #define CONTAINER_SLOT_STORAGE "storage"
 
+// ---- Occupant machines (C8, containment.md §10) ----
+/// The sealed occupant slot of a cryopod-family despawner.
+#define OCCUPANT_SLOT_CRYOPOD "cryopod_occupant"
+/// The sealed occupant slot of a resleeving pod.
+#define OCCUPANT_SLOT_RESLEEVER "resleever_occupant"
+/// The sealed occupant slot of an implant chair.
+#define OCCUPANT_SLOT_IMPLANT_CHAIR "implant_chair_occupant"
+/// The sealed occupant slot of a gibber.
+#define OCCUPANT_SLOT_GIBBER "gibber_occupant"
+/// The sealed occupant slot of a cyborg recharge station.
+#define OCCUPANT_SLOT_RECHARGE_STATION "recharge_occupant"
+/// The sealed occupant slot of a DNA modifier scanner.
+#define OCCUPANT_SLOT_DNA_SCANNER "dna_scanner_occupant"
+/// The sealed occupant slot of a suit storage unit.
+#define OCCUPANT_SLOT_SUIT_STORAGE "suit_storage_occupant"
+/// A mecha's sealed pilot slot.
+#define MECHA_SLOT_PILOT "mecha_pilot"
+/// A mecha's external hardpoint slot for attached equipment.
+#define MECHA_SLOT_EQUIPMENT "mecha_equipment"
+/// A mecha's internal cargo compartment slot.
+#define MECHA_SLOT_CARGO "mecha_cargo"
+
 // ---- Body slots (C3, code/modules/body/slots.dm): a mob's slots, per body plan ----
 /// Everything inside a mob that isn't equipment: organs, implants, bellies,
 /// held abilities. The default slot, so legacy moves into a mob land here.

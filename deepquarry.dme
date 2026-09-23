@@ -613,6 +613,7 @@
 #include "code\datums\containment\heat_adapter.dm"
 #include "code\datums\containment\latent.dm"
 #include "code\datums\containment\ledger.dm"
+#include "code\datums\containment\occupant_slot.dm"
 #include "code\datums\containment\paths.dm"
 #include "code\datums\containment\slot_def.dm"
 #include "code\datums\containment\stock.dm"
