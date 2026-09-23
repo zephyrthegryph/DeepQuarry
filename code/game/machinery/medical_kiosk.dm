@@ -158,17 +158,21 @@
 	if(HUSK in user.mutations)
 		problems |= HUSKED_BODY
 
-	if(user.injury_load(INJURY_CATEGORY_TOXIC) > 0)
+	// The kiosk's own triage sensors: what the detected conditions respond to.
+	var/list/demand = user.body?.treatment_demand(/datum/diagnostic_profile/automation)
+	if(demand?[TREAT_ANTITOXIN])
 		problems |= TOXIN_DAMAGE
-	if(user.injury_load(INJURY_CATEGORY_ASPHYXIA) > 0)
+	var/saturation = user.body?.oxygenation()
+	if(!isnull(saturation) && saturation < 93)
 		problems |= OXY_DAMAGE
 	if(user.radiation > 0)
 		problems |= ACUTE_RADIATION_DOSE
 	if(user.accumulated_rads > 0)
 		problems |= CHRONIC_RADIATION_DOSE
-	if(user.injury_load(INJURY_CATEGORY_THERMAL) > 40 || user.injury_load(INJURY_CATEGORY_PHYSICAL) > 40)
-		problems |= SERIOUS_EXTERNAL_DAMAGE
-	if(user.injury_load(INJURY_CATEGORY_GENETIC))
+	for(var/tag in list(TREAT_TISSUE_REPAIR, TREAT_BURN_CARE))
+		if(_dq_band_rank(demand?[tag]) >= _dq_band_rank(DIAG_BAND_SEVERE))
+			problems |= SERIOUS_EXTERNAL_DAMAGE
+	if(demand?[TREAT_GENETIC_REPAIR])
 		problems |= CLONE_DAMAGE
 
 	var/is_drunk = FALSE //Just so we don't have to do another ishuman() check down there in !problems
