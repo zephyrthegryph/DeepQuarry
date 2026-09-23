@@ -139,10 +139,8 @@
 	SStgui.update_uis(src)
 	return
 
-/obj/machinery/bodyscanner/ex_act(severity)
-	for(var/atom/movable/occupant as mob|obj in src)
-		occupant.ex_act(severity)
-	return ..()
+/obj/machinery/bodyscanner/explosion_contents_severity(severity)
+	return severity
 
 /obj/machinery/bodyscanner/tgui_host(mob/user)
 	if(user == occupant)

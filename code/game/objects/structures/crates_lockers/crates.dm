@@ -115,25 +115,6 @@
 	attack_hand(user)
 	return TRUE
 
-/obj/structure/closet/crate/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			for(var/obj/O in src.contents)
-				qdel(O)
-			qdel(src)
-			return
-		if(2.0)
-			for(var/obj/O in src.contents)
-				if(prob(50))
-					qdel(O)
-			qdel(src)
-			return
-		if(3.0)
-			if (prob(50))
-				qdel(src)
-			return
-	return
-
 /obj/structure/closet/req_breakout()
 	if(opened || !sealed)
 		return FALSE

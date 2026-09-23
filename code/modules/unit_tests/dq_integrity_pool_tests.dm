@@ -181,8 +181,8 @@
 	TEST_ASSERT(F.density, "a recharged field comes back up")
 
 
-/// Simple doors: integrity is the material's, rounded to tens; the explosion
-/// ladder's hardness points still land on it; zero dismantles the door.
+/// Simple doors: integrity is the material's, rounded to tens; explosions
+/// land on it as blast packets; zero dismantles the door.
 /datum/unit_test/dq_integrity_pool/simple_door
 
 /datum/unit_test/dq_integrity_pool/simple_door/Run()
@@ -194,10 +194,8 @@
 	D.take_damage(25)
 	TEST_ASSERT_EQUAL(D.get_integrity(), D.max_integrity - 25, "hits come off integrity")
 
-	D.hardness -= 1
-	D.CheckHardness()
-	TEST_ASSERT_EQUAL(D.get_integrity(), D.max_integrity - 35, "a hardness point from the explosion ladder is 10 integrity")
-	TEST_ASSERT_EQUAL(D.hardness, 0, "the ladder's hardness is consumed")
+	D.ex_act(3)
+	TEST_ASSERT_EQUAL(D.get_integrity(), D.max_integrity * 0.75 - 25, "a light blast takes a quarter of the door's integrity")
 
 	D.repair_damage(D.max_integrity)
 	TEST_ASSERT_EQUAL(D.get_integrity(), D.max_integrity, "doors repair")
@@ -250,7 +248,6 @@
 	var/turf/T = scratch_turf()
 	var/obj/item/shield_projector/rectangle/projector = allocate(/obj/item/shield_projector/rectangle, T)
 	var/full = projector.max_integrity
-	TEST_ASSERT_EQUAL(projector.max_shield_health, full, "the EMP ladder's mirror matches max integrity")
 	projector.set_on(TRUE)
 	TEST_ASSERT(projector.active, "the projector comes on")
 	projector.adjust_health(-50)
@@ -282,11 +279,12 @@
 	TEST_ASSERT_EQUAL(laptop.get_integrity(), 150, "casing damage comes off integrity")
 	TEST_ASSERT(!laptop.computer_broken(), "a scratched laptop still works")
 
-	// The explosion/EMP ladders' legacy call: take_damage(amount, component_probability).
-	laptop.take_damage(60, 0)
-	TEST_ASSERT(laptop.get_integrity() >= 150 - 75 && laptop.get_integrity() <= 150 - 45, "the ladder's legacy call damages the casing ([laptop.get_integrity()])")
-	laptop.take_damage(40, 0, 0)
-	TEST_ASSERT(laptop.get_integrity() >= 150 - 75, "an EMP's legacy call spares the casing")
+	// Blasts hit the casing; EMPs only the components.
+	laptop.ex_act(3)
+	var/after_blast = laptop.get_integrity()
+	TEST_ASSERT(after_blast < 150, "a blast damages the casing ([after_blast])")
+	laptop.emp_act(EMP_LIGHT)
+	TEST_ASSERT_EQUAL(laptop.get_integrity(), after_blast, "an EMP spares the casing")
 
 	laptop.repair_damage(full)
 	laptop.damage_computer(110, 0, TRUE, FALSE)
@@ -408,7 +406,6 @@
 	TEST_ASSERT_EQUAL(hull.get_efficiency(), 1, "an intact hull is fully efficient")
 	hull.damage_part(full * 0.75)
 	TEST_ASSERT_EQUAL(hull.get_integrity(), full * 0.25, "component damage comes off integrity")
-	TEST_ASSERT_EQUAL(hull.integrity, hull.get_integrity(), "the EMP ladder's mirror follows integrity")
 	TEST_ASSERT(hull.get_efficiency() < 1, "a damaged hull loses efficiency")
 	hull.damage_part(full)
 	TEST_ASSERT_EQUAL(hull.get_integrity(), 0, "a component can be wrecked")

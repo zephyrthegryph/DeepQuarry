@@ -861,6 +861,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	buildstackamount = 2
 
 /obj/structure/fans/hardlight
+	resistance_flags = BOMB_PROOF
 	name = "hardlight shield"
 	desc = "Retains air, allows passage."
 	plane = TURF_PLANE
@@ -874,9 +875,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	light_power = 1
 	light_color = "#FFFFFF"
 	light_on = TRUE
-
-/obj/structure/fans/hardlight/ex_act()
-	return
 
 /obj/structure/fans/hardlight/colorable
 	name = "hardlight shield"

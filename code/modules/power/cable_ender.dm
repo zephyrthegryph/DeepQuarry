@@ -4,6 +4,7 @@
 
 //if powernetless_only = 1, will only get connections without powernet
 /obj/structure/cable/ender
+	resistance_flags = BOMB_PROOF
 	// Pretend to be heavy duty power cable
 	icon = 'icons/obj/power_cond_heavy.dmi'
 	name = "large power cable"
@@ -35,5 +36,3 @@
 	return ITEM_INTERACT_BLOCKING
 
 // Because they cannot be rebuilt, they are hard to destroy
-/obj/structure/cable/ender/ex_act(severity)
-	return

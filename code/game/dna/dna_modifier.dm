@@ -275,10 +275,8 @@
 	icon_state = "scanner_0"
 	SStgui.update_uis(src)
 
-/obj/machinery/dna_scannernew/ex_act(severity)
-	for(var/atom/movable/occupant as mob|obj in src)
-		occupant.ex_act(severity)
-	return ..()
+/obj/machinery/dna_scannernew/explosion_contents_severity(severity)
+	return severity
 
 /obj/machinery/computer/scan_consolenew
 	name = "DNA Modifier Access Console"

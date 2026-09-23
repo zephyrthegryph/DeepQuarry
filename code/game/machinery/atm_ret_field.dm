@@ -183,6 +183,7 @@
 			areas_added += A
 
 /obj/structure/atmospheric_retention_field
+	resistance_flags = BOMB_PROOF
 	name = "atmospheric retention field"
 	desc = "A shimmering forcefield that keeps the good air inside and the bad air outside. This field has been modulated so that it doesn't impede movement or projectiles.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
 	icon = 'icons/obj/atm_fieldgen.dmi'
@@ -234,9 +235,6 @@
 		visible_message("You touch the retention field, and it crackles faintly. Tingly!")
 	else
 		visible_message("You try to touch the retention field, but pass through it like it isn't even there.")
-
-/obj/structure/atmospheric_retention_field/ex_act()
-	return
 
 /obj/structure/atmospheric_retention_field/impassable
 	desc = "A shimmering forcefield that keeps the good air inside and the bad air outside. It seems fairly solid, almost like it's made out of some kind of hardened light.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."

@@ -251,22 +251,9 @@
 		to_chat(user, span_notice("It won't budge!"))
 		return
 
-/obj/structure/closet/ex_act(severity)
-	switch(severity)
-		if(1)
-			for(var/atom/movable/A as anything in slot_contents(CONTAINER_SLOT_INTERIOR))//pulls everything out of the locker and hits it with an explosion
-				if(slot_remove(A, loc))
-					A.ex_act(severity + 1)
-			qdel(src)
-		if(2)
-			if(prob(50))
-				for(var/atom/movable/A as anything in slot_contents(CONTAINER_SLOT_INTERIOR))
-					if(slot_remove(A, loc))
-						A.ex_act(severity + 1)
-				qdel(src)
-		if(3)
-			if(prob(5))
-				qdel(src) // the base Destroy() spills the interior
+/// A closet shields its contents a step; a destroyed one spills them (atom_destruction).
+/obj/structure/closet/explosion_contents_severity(severity)
+	return severity < 3 ? severity + 1 : 0
 
 /obj/structure/closet/attackby(obj/item/W as obj, mob/user as mob)
 	if(opened)

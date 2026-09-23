@@ -98,10 +98,8 @@
 		for(var/mob/M in src)
 			shatter(M)
 
-/obj/structure/closet/statue/ex_act(severity)
-	for(var/mob/M in src)
-		M.ex_act(severity)
-	deal_damage(DAMAGE_BLAST, 60 / severity)
+/obj/structure/closet/statue/explosion_contents_severity(severity)
+	return severity
 
 /obj/structure/closet/statue/attackby(obj/item/I as obj, mob/user as mob)
 	user.do_attack_animation(src)

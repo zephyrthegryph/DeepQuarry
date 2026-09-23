@@ -1345,35 +1345,14 @@
 //This refer to whenever you are caught in an explosion.
 /obj/mecha/ex_act(severity)
 	var/obj/item/mecha_parts/component/armor/ArmC = internal_components[MECH_ARMOR]
-
-	var/temp_deflect_chance = deflect_chance
-
-	if(!ArmC)
-		temp_deflect_chance = 0
-
-	else
-		temp_deflect_chance = round(ArmC.get_efficiency() * ArmC.deflect_chance + (defence_mode ? 25 : 0))
-
+	var/temp_deflect_chance = ArmC ? round(ArmC.get_efficiency() * ArmC.deflect_chance + (defence_mode ? 25 : 0)) : 0
 	src.mecha_log_message("Affected by explosion of severity: [severity].",1)
 	if(prob(temp_deflect_chance))
 		severity++
 		src.log_append_to_last("Armor saved, changing severity to [severity].")
-	switch(severity)
-		if(1.0)
-			src.take_damage(max_integrity, "bomb")
-		if(2.0)
-			if (prob(30))
-				src.take_damage(max_integrity, "bomb")
-			else
-				src.take_damage(max_integrity/2, "bomb")
-				src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
-		if(3.0)
-			if (prob(5))
-				qdel(src)
-			else
-				src.take_damage(max_integrity/5, "bomb")
-				src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
-	return
+	. = ..(severity)
+	if(!QDELETED(src) && severity <= 3)
+		src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
 /*Will fix later -Sieve
 /obj/mecha/attack_blob(mob/user as mob)

@@ -65,15 +65,6 @@
 		I.color = plating_color
 		add_overlay(I)
 
-/obj/structure/catwalk/ex_act(severity)
-	switch(severity)
-		if(1)
-			new /obj/item/stack/rods(src.loc, 2)
-			qdel(src)
-		if(2)
-			new /obj/item/stack/rods(src.loc, 2)
-			qdel(src)
-
 /obj/structure/catwalk/attack_robot(mob/user)
 	if(Adjacent(user))
 		attack_hand(user)

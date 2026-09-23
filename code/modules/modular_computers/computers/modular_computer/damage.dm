@@ -50,24 +50,17 @@
 		return take_damage(amount, BRUTE, null, FALSE)
 	return 0
 
-/// D5 shim: ex_act and emp_act still call take_damage(amount, component_probability, damage_casing).
-/// A number where the damage type belongs is that legacy call. Delete with the ladders.
-/obj/item/modular_computer/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(isnum(damage_type))
-		return damage_computer(damage_amount, damage_type, isnum(damage_flag) ? damage_flag : TRUE)
-	return ..()
-
 // Stronger explosions cause serious damage to internal components
 // Minor explosions are mostly mitigitated by casing.
 /obj/item/modular_computer/ex_act(severity)
-	take_damage(rand(100,200) / severity, 30 / severity)
+	damage_computer(rand(100,200) / severity, 30 / severity, TRUE)
 
 // EMPs are similar to explosions, but don't cause physical damage to the casing. Instead they screw up the components
 /obj/item/modular_computer/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	take_damage(rand(100,200) / severity, 50 / severity, 0)
+	damage_computer(rand(100,200) / severity, 50 / severity, FALSE)
 
 // "Stun" weapons can cause minor damage to components (short-circuits?)
 // "Burn" damage is equally strong against internal components and exterior casing
