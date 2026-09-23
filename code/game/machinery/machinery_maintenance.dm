@@ -92,7 +92,7 @@
 
 /datum/interaction/maintainable/anchor/duration_for(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/machine = target
-	return machine.maintenance_wrench_time * (held ? held.toolspeed : 1)
+	return tool_delay(actor, held, machine.maintenance_wrench_time, tool)
 
 /datum/interaction/maintainable/anchor/start_messages(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/machine = target
@@ -128,7 +128,7 @@
 
 /datum/interaction/maintainable/repair/duration_for(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/machine = target
-	return machine.maintenance_weld_time * (held ? held.toolspeed : 1)
+	return tool_delay(actor, held, machine.maintenance_weld_time, tool)
 
 /datum/interaction/maintainable/repair/messages(mob/actor, atom/target, obj/item/held)
 	return list("You repair %TARGET%.", "%ACTOR% repairs %TARGET%.")

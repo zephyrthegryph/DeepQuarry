@@ -126,3 +126,6 @@
 		treated += H.mend(TREAT_SYSTEM_RESTORE, 20, BP_HEAD)
 	to_chat(user, treated ? span_notice("Calibration offsets corrected.") : span_notice("Everything already reads within tolerance."))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/multitool/get_multitool()
+	return src

@@ -130,7 +130,7 @@
 			var/integrity = Mecha.get_integrity()/Mecha.max_integrity*100
 			var/cell_charge = Mecha.get_charge()
 			var/tank_pressure = Mecha.internal_tank ? round(Mecha.internal_tank.return_pressure(),0.01) : "None"
-			var/tank_temperature = Mecha.internal_tank ? Mecha.internal_tank.return_temperature() : "Unknown"
+			var/tank_temperature = Mecha.internal_tank?.air_contents ? Mecha.internal_tank.air_contents.return_temperature() : "Unknown"
 			var/cabin_pressure = round(Mecha.return_pressure(),0.01)
 
 			var/output = span_notice("Analyzing Results for \the [Mecha]:") + {"<br>
@@ -140,7 +140,7 @@
 				<b>Airtank pressure: </b>[tank_pressure]kPa<br>
 				<b>Airtank temperature: </b>[tank_temperature]K|[tank_temperature - T0C]&deg;C<br>
 				<b>Cabin pressure: </b>[cabin_pressure>WARNING_HIGH_PRESSURE ? span_red("[cabin_pressure]"): cabin_pressure]kPa<br>
-				<b>Cabin temperature: </b> [Mecha.return_temperature()]K|[Mecha.return_temperature() - T0C]&deg;C<br>
+				<b>Cabin temperature: </b> [Mecha.get_interior_temperature()]K|[Mecha.get_interior_temperature() - T0C]&deg;C<br>
 				<b>DNA Lock: </b> [Mecha.dna?"Mecha.dna":"Not Found"]<br>
 				"}
 

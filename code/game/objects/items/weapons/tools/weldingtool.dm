@@ -101,7 +101,7 @@
 	return ..()
 
 /obj/item/weldingtool/attackby(obj/item/W as obj, mob/living/user as mob)
-	if(istype(W,/obj/item/tool/screwdriver))
+	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(welding)
 			to_chat(user, span_danger("Stop welding first!"))
 			return

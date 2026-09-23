@@ -70,6 +70,7 @@
 	B.fancy_vore = 1
 	B.vore_verb = "slurps"
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The constantly undulating walls of \the [name] work stinging acid into your form.",
 		"Slimy gastric juices and constant jiggling serve to disorient you as you are digested by \the [name].",
@@ -78,6 +79,7 @@
 		"Rippling flesh squeezes you over and over and over again. Your body burns all over as you are soaked in a corrosive mucus.",
 		"Somehow, all of your belongings are being stripped off one by one. If you're not already naked, you soon will be.",
 		"The continuing peristalsis has nowhere left to push you, so you're just squashed to the floor of the soupy wet chamber.")
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The constantly undulating walls of \the [name] work you over with a lubricating slime.",
 		"Slimy fluids and constant jiggling serve to disorient you as you are held captive by \the [name].",

@@ -90,16 +90,19 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	B.contamination_color = "purple"
 	B.contamination_flavor = "Wet"
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Slick fluid trickles over you, carrying threads of sweetness.",
 		"Everything is still, dark, and quiet. Your breaths echo quietly.",
 		"The surrounding air feels thick and humid.")
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The slimy puddle stings faintly. It seems the plant has no need to quickly break down victims.",
 		"The humid air settles in your lungs, keeping each breath more labored than the last.",
 		"Fluid drips onto you, burning faintly as your body heat warms it.",
 		"Digestive enzymes itch at your flesh as you are slowly dissolved into soupy nutrients."
 		)
+	B.own_emote_lists()
 	B.emote_lists[DM_DRAIN] = list(
 		"Each bead of slick fluid running down your body leaves you feeling weaker.",
 		"It's cramped and dark, the air thick and heavy. Your limbs feel like lead.",

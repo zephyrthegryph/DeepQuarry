@@ -78,16 +78,6 @@
 	anchored = TRUE
 	max_integrity = 150
 
-/obj/structure/expedition_demo_target/examine(mob/user)
-	. = ..()
-	var/perc = get_integrity() / max_integrity
-	if(perc > 0.66)
-		. += span_warning("Its containment is holding — barely.")
-	else if(perc > 0.33)
-		. += span_danger("The containment field is failing.")
-	else
-		. += span_danger("CRITICAL — it's about to rupture!")
-
 // Use the unstable-core glass impact instead of the default structure smash sound.
 /obj/structure/expedition_demo_target/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
 	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)

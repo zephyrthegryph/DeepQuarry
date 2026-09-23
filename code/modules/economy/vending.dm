@@ -160,7 +160,24 @@ GLOBAL_LIST_EMPTY(vending_products)
 		if(!current_product)
 			continue
 		else
-			current_product.refill_products(refill[entry])
+			// Restocking adds to the latent count; nothing is created.
+			var/list/spec = dq_resolve_spawn_value(refill[entry])
+			current_product.refill_products(spec["count"])
+
+// Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm): each
+// product is a record with a latent count, and a real item is made only when
+// one is vended. Items stocked by hand stay real when their state is their own.
+/obj/machinery/vending/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/machine_internals, /datum/slot_def/stock/vending)
+	return types
+
+/obj/machinery/vending/stock_records()
+	return product_records
+
+/obj/machinery/vending/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	if(!inserted && slot_id == CONTAINER_SLOT_STOCK)
+		for(var/datum/stored_item/R as anything in product_records)
+			R.forget(thing)
 
 /obj/machinery/vending/Destroy()
 	qdel(wires)
@@ -517,7 +534,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		flick("[icon_state]-deny",src)
 		playsound(src, 'sound/machines/deniedbeep.ogg', 50, 0)
 		return FALSE
-	if(R.amount < 1)
+	if(R.get_amount() < 1)
 		return FALSE
 	return TRUE
 
@@ -525,7 +542,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(!can_buy(R, user))
 		return
 
-	if(!R.amount)
+	if(!R.get_amount())
 		to_chat(user, span_warning("[src] has ran out of that product."))
 		vend_ready = TRUE
 		return
@@ -687,7 +704,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			R.get_product(loc)
 		break
 
-	stat |= BROKEN
+	atom_break()
 	icon_state = "[initial(icon_state)]-broken"
 	return
 

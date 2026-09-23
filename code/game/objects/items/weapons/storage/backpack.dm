@@ -13,12 +13,14 @@
 		)
 	w_class = ITEMSIZE_LARGE
 	slot_flags = SLOT_BACK
-	max_w_class = ITEMSIZE_LARGE
 	max_storage_space = INVENTORY_STANDARD_SPACE
 	var/flippable = 0
 	var/side = 0 //0 = right, 1 = left
 	drop_sound = 'sound/items/drop/backpack.ogg'
 	pickup_sound = 'sound/items/pickup/backpack.ogg'
+
+/obj/item/storage/backpack/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_LARGE))
 
 
 /obj/item/storage/backpack/equipped(mob/user, slot)
@@ -54,9 +56,12 @@
 	name = "bag of holding"
 	desc = "A backpack that opens into a localized pocket of Blue Space."
 	icon_state = "holdingpack"
-	max_w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14 // 56
 	storage_cost = INVENTORY_STANDARD_SPACE + 1
+
+/obj/item/storage/backpack/holding/hold_constraint()
+	var/list/refuses = list(/obj/item/storage/backpack/holding)
+	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
 
 /obj/item/storage/backpack/holding/duffle
 	name = "dufflebag of holding"
@@ -93,12 +98,6 @@
 		qdel(W)
 		return
 	. = ..()
-
-//Please don't clutter the parent storage item with stupid hacks.
-/obj/item/storage/backpack/holding/can_be_inserted(obj/item/W as obj, stop_messages = 0)
-	if(istype(W, /obj/item/storage/backpack/holding))
-		return FALSE
-	return ..()
 
 /obj/item/storage/backpack/cultpack
 	name = "trophy rack"
@@ -481,10 +480,12 @@
 	icon_state = "purse"
 	item_state_slots = list(slot_r_hand_str = "lgpurse", slot_l_hand_str = "lgpurse")
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
 
 //Parachutes
+
+/obj/item/storage/backpack/purse/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/backpack/parachute
 	name = "parachute"
 	desc = "A specially made backpack, designed to help one survive jumping from incredible heights. It sacrifices some storage space for that added functionality."
@@ -568,13 +569,11 @@
 	var/taurtype = /datum/sprite_accessory/tail/taur/horse //Acceptable taur type to be wearing this
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
-/obj/item/storage/backpack/saddlebag/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(istype(H) && istype(H.tail_style, taurtype))
-			return 1
-		else
-			to_chat(H, span_warning("[no_message]"))
-			return 0
+/obj/item/storage/backpack/saddlebag/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag/proc/taur_fit, null)))
+
+/obj/item/storage/backpack/saddlebag/proc/taur_fit(mob/living/carbon/human/H)
+	return (istype(H) && istype(H.tail_style, taurtype)) ? TRUE : lowertext(no_message)
 
 /* If anyone wants to make some... this is how you would.
 /obj/item/storage/backpack/saddlebag/spider
@@ -594,16 +593,16 @@
 	slowdown = 0.5 //And are slower, too...
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
-/obj/item/storage/backpack/saddlebag_common/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(!istype(H))//Error, non HUMAN.
-			log_runtime("[H] was not a valid human!")
-			return
+/obj/item/storage/backpack/saddlebag_common/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag_common/proc/taur_fit, null)))
 
-		var/datum/sprite_accessory/tail/taur/TT = H.tail_style
-		if(istype(TT))
-			item_state = "[icon_base]_[TT.icon_sprite_tag]"	//icon_sprite_tag is something like "deer"
-			return 1
+/// Any taur half; the bags take the look of the wearer's.
+/obj/item/storage/backpack/saddlebag_common/proc/taur_fit(mob/living/carbon/human/H)
+	var/datum/sprite_accessory/tail/taur/TT = istype(H) ? H.tail_style : null
+	if(!istype(TT))
+		return lowertext(no_message)
+	item_state = "[icon_base]_[TT.icon_sprite_tag]"	//icon_sprite_tag is something like "deer"
+	return TRUE
 
 
 

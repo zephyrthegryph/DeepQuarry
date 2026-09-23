@@ -168,7 +168,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 	if(default_part_replacement(user, W))
 		return
 
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Fusion Core", id_tag, MAX_NAME_LEN)
 		if(new_ident && user.Adjacent(src))
 			id_tag = new_ident

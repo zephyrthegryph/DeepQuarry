@@ -79,21 +79,18 @@
 /obj/structure/firedoor_assembly/welder_act(mob/user, obj/item/tool)
 	if(!glass && anchored)
 		return FALSE
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.remove_fuel(0, user))
-		to_chat(user, span_notice("You need more welding fuel."))
-		return TRUE
-	playsound(src, welder.usesound, 50, TRUE)
 	if(glass)
-		user.visible_message(span_warning("[user] welds the glass panel out of \the [src]."), span_notice("You start to weld the glass panel out of \the [src]."))
-		if(do_after(user, 4 SECONDS * welder.toolspeed, target = src) && welder.isOn())
+		if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0,
+				message_self = "You start to weld the glass panel out of \the [src].",
+				message_others = "[user] welds the glass panel out of \the [src]."))
 			to_chat(user, span_notice("You welded the glass panel out!"))
 			new /obj/item/stack/material/glass/reinforced(drop_location())
 			glass = FALSE
 			update_icon()
 		return TRUE
-	user.visible_message(span_warning("[user] disassembles \the [src]."), "You start to disassemble \the [src].")
-	if(do_after(user, 4 SECONDS * welder.toolspeed, target = src) && welder.isOn())
+	if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0,
+			message_self = "You start to disassemble \the [src].",
+			message_others = "[user] disassembles \the [src]."))
 		user.visible_message(span_warning("[user] has disassembled \the [src]."), "You have disassembled \the [src].")
 		new /obj/item/stack/material/steel(drop_location(), 2)
 		qdel(src)

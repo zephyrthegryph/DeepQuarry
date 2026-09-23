@@ -47,17 +47,12 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 /obj/machinery/floor_light/welder_act(mob/user, obj/item/tool)
 	if(!(damaged || (stat & BROKEN)))
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/WT = tool.get_welder()
-	if(!WT.remove_fuel(0, user))
-		to_chat(user, span_warning("\The [src] must be on to complete this task."))
+	if(!use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, WT.usesound, 50, TRUE)
-	if(!do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-		return ITEM_INTERACT_BLOCKING
-	if(QDELETED(src) || !WT.isOn())
+	if(QDELETED(src))
 		return ITEM_INTERACT_BLOCKING
 	visible_message(span_notice("\The [user] has repaired \the [src]."))
-	stat &= ~BROKEN
+	atom_fix()
 	damaged = null
 	update_brightness()
 	return ITEM_INTERACT_SUCCESS
@@ -73,7 +68,7 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 		if(!isnull(damaged) && !(stat & BROKEN))
 			visible_message(span_danger("\The [user] smashes \the [src]!"))
 			playsound(src, "shatter", 70, 1)
-			stat |= BROKEN
+			atom_break()
 		else
 			visible_message(span_danger("\The [user] attacks \the [src]!"))
 			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)

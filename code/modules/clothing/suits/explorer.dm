@@ -5,7 +5,10 @@
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret)
+
+/obj/item/clothing/suit/storage/explorer/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/explorer/crew
 	name = "\improper Explorer jacket"

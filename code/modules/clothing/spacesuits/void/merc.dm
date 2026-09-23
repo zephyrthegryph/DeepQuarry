@@ -16,10 +16,13 @@
 	item_state_slots = list(slot_r_hand_str = "syndie_voidsuit", slot_l_hand_str = "syndie_voidsuit")
 	w_class = ITEMSIZE_NORMAL
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 60)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY)
 	siemens_coefficient = 0.6
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
+
+/obj/item/clothing/suit/space/void/merc/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/void/merc/fire
 	icon_state = "rig0-firebug"
@@ -40,10 +43,13 @@
 	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 20* ONE_ATMOSPHERE
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, /obj/item/material/twohanded/fireaxe, /obj/item/flamethrower)
 	siemens_coefficient = 0.7
 	breach_threshold = 18 //Super Extra Thicc
 	slowdown = 1
+
+/obj/item/clothing/suit/space/void/merc/fire/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, /obj/item/material/twohanded/fireaxe, /obj/item/flamethrower)
+	return list(HOLD_ONLY(stores))
 
 
 /obj/item/clothing/head/helmet/space/void/merc

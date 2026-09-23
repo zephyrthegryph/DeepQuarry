@@ -135,6 +135,9 @@ avoid code duplication. This includes items that may sometimes act as a standard
 			if(TOOL_WIRECUTTER) return wirecutter_act(user, tool)
 			if(TOOL_MULTITOOL) return multitool_act(user, tool)
 			if(TOOL_WELDER) return welder_act(user, tool)
+		// Every other TOOL_* quality has no focused hook: it goes straight to the
+		// interactions that name it (doc/rewrite/interactions.md §9).
+		return interaction_tool_act(user, tool, tool_quality)
 	return NONE
 
 /atom/proc/screwdriver_act(mob/user, obj/item/tool)

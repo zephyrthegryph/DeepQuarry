@@ -16,10 +16,13 @@
 	vision_restriction = 0  //This is dumb as hell and should be 0 if we want the suit to be even vaguely useful.
 	offline_vision_restriction = 2 //This actually serves as a good weakness for them, making them vulnerable to Ion weapons.
 	siemens_coefficient = 0.75
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE) // end
 	chest_type = /obj/item/clothing/suit/space/rig/breacher
 	helm_type = /obj/item/clothing/head/helmet/space/rig/breacher
 	boot_type = /obj/item/clothing/shoes/magboots/rig/breacher
+
+/obj/item/rig/breacher/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/rig/breacher/fancy
 	name = "breacher chassis control module"
@@ -33,20 +36,29 @@
 	offline_slowdown = 10
 
 /obj/item/clothing/head/helmet/space/rig/breacher
-	species_restricted = list(SPECIES_UNATHI)
 	force = 5
 
+/obj/item/clothing/head/helmet/space/rig/breacher/fit_constraint()
+	var/list/bodytypes = list(SPECIES_UNATHI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/suit/space/rig/breacher
-	species_restricted = list(SPECIES_UNATHI)
+
+/obj/item/clothing/suit/space/rig/breacher/fit_constraint()
+	var/list/bodytypes = list(SPECIES_UNATHI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/shoes/magboots/rig/breacher
-	species_restricted = list(SPECIES_UNATHI)
 
 // s
 
 /*
  *	VOX
  */
+
+/obj/item/clothing/shoes/magboots/rig/breacher/fit_constraint()
+	var/list/bodytypes = list(SPECIES_UNATHI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/rig/vox	//Just to get the flags set up
 	name = "alien control module"
@@ -58,7 +70,6 @@
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.2
 	offline_slowdown = 2.5
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT)
 
 	air_type = /obj/item/tank/vox
 
@@ -67,27 +78,43 @@
 	chest_type = /obj/item/clothing/suit/space/rig/vox
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox
 
+/obj/item/rig/vox/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT)
+	return list(HOLD_ONLY(stores))
+
 /obj/item/clothing/head/helmet/space/rig/vox
-	species_restricted = list(SPECIES_VOX)
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
+
+/obj/item/clothing/head/helmet/space/rig/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/shoes/magboots/rig/vox
 	name = "talons"
-	species_restricted = list(SPECIES_VOX)
 	sprite_sheets = list(
 		SPECIES_VOX = 'icons/inventory/feet/mob_vox.dmi'
 		)
 
+/obj/item/clothing/shoes/magboots/rig/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/suit/space/rig/vox
-	species_restricted = list(SPECIES_VOX)
+
+/obj/item/clothing/suit/space/rig/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/gloves/gauntlets/rig/vox
 	name = DEVELOPER_WARNING_NAME
 	siemens_coefficient = 0
-	species_restricted = list(SPECIES_VOX)
 	sprite_sheets = list(
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
+
+/obj/item/clothing/gloves/gauntlets/rig/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/rig/vox/carapace
 	name = "dense alien control module"
@@ -173,7 +200,6 @@
 
 	req_one_access = list()
 	req_access = list(ACCESS_ENGINE)
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS)
 	offline_vision_restriction = 1
 
 	initial_modules = list(
@@ -192,6 +218,10 @@
 	chest_type = /obj/item/clothing/suit/space/rig/vox/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
+/obj/item/rig/vox/engineering/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS)
+	return list(HOLD_ONLY(stores))
+
 /obj/item/rig/vox/security
 	name = "sturdy alien control module"
 	suit_type = "\improper sturdy alien"
@@ -206,7 +236,6 @@
 	emp_protection = 40 //change this to 30 if too high.
 
 	req_one_access = list()
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS)
 	offline_vision_restriction = 1
 
 	initial_modules = list(
@@ -220,3 +249,7 @@
 	boot_type = /obj/item/clothing/shoes/magboots/rig/vox/ch
 	chest_type = /obj/item/clothing/suit/space/rig/vox/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
+
+/obj/item/rig/vox/security/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS)
+	return list(HOLD_ONLY(stores))

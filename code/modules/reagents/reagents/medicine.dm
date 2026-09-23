@@ -1362,7 +1362,7 @@
 /datum/reagent/leporazine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	var/temp = 310
+	var/temp = BODYTEMP_NORMAL
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		temp = H.species.body_temperature

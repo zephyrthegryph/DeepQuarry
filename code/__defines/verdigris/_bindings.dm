@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "41ecbe2e3297049f"
+#define VERDIGRIS_ABI "6ccd2ff67b8c7499"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -35,6 +35,17 @@
 /// Mask argument meaning "keep the mask Rust already has for this turf".
 // verdigris/domains/gas/src/turfs.rs
 #define AIR_BLOCK_KEEP -1
+
+/// Normal human core body temperature, 37 °C in K. The one body temperature:
+/// species, mobs, reagents and machines all read this define.
+// verdigris/domains/heat/src/consts.rs
+#define BODYTEMP_NORMAL 310.15
+
+/// Lowest temperature a fire exists at, and phoron's ignition point, K
+/// (100 °C). The gas crate's `FIRE_MINIMUM_TEMPERATURE_TO_EXIST` and
+/// `PLASMA_MINIMUM_BURN_TEMPERATURE` must equal it (tested there).
+// verdigris/domains/heat/src/consts.rs
+#define FIRE_MINIMUM_TEMPERATURE_TO_EXIST 373.15
 
 // verdigris/domains/gas/src/gas.rs
 #define GAS_DEPENDENCY_COMPOSITION 4
@@ -146,6 +157,11 @@
 // verdigris/domains/gas/src/lib.rs
 #define GAS_READ_HEADER 5
 
+/// Heat capacity DM gives vacuum (`HEAT_CAPACITY_VACUUM`), J/K: the capacity
+/// of a space or planet reservoir cell.
+// verdigris/domains/heat/src/consts.rs
+#define HEAT_CAPACITY_VACUUM 7000.0
+
 // verdigris/domains/gas/src/turfs/heat.rs
 #define HEAT_CELL_PLANET 2
 
@@ -188,6 +204,10 @@
 
 // verdigris/domains/gas/src/turfs/heat.rs
 #define HEAT_WATCH_SET 3
+
+/// Heat capacity of an 80 kg human body, J/K (about 3.5 kJ/(kg·K)).
+// verdigris/domains/heat/src/consts.rs
+#define HUMAN_HEAT_CAPACITY 280000.0
 
 /// APC flags.
 // verdigris/ffi/src/power.rs
@@ -320,6 +340,43 @@
 /// Registration flag DM passes for a simulated turf (`SimulationFlags::SIMULATION_ANY`).
 // verdigris/domains/gas/src/turfs.rs
 #define SIMULATION_ANY 3
+
+/// Stefan–Boltzmann constant, W/(m²·K⁴). Written out in decimal because the
+/// define scanner reads plain literals only.
+// verdigris/domains/heat/src/consts.rs
+#define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
+
+/// 0 °C, K.
+// verdigris/domains/heat/src/consts.rs
+#define T0C 273.15
+
+/// 20 °C, K.
+// verdigris/domains/heat/src/consts.rs
+#define T20C 293.15
+
+/// Cosmic microwave background, K. The floor of every body and gas.
+// verdigris/domains/heat/src/consts.rs
+#define TCMB 2.7
+
+/// Default heat capacity of an atom that declares no thermal properties, J/K.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_CAPACITY_DEFAULT 2000.0
+
+/// An item's heat capacity per `w_class` step, J/K.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_CAPACITY_PER_W_CLASS 400.0
+
+/// Default conductance of an atom to its surroundings, W/K.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_CONDUCTANCE_DEFAULT 2.0
+
+/// An item's conductance per `w_class` step, W/K.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_CONDUCTANCE_PER_W_CLASS 0.5
+
+/// Emissivity used when DM declares none.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_EMISSIVITY_DEFAULT 0.9
 
 // Binds.
 
@@ -663,8 +720,9 @@
 	return call_ext(__f)(turf)
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan–Boltzmann constant,
-/// default emissivity, seconds per heat frame)`: the heat constants DM reads
-/// instead of duplicating them (H1 generates defines from these).
+/// default emissivity, seconds per heat frame, normal body temperature, human
+/// heat capacity, ignition temperature, vacuum heat capacity)`. DM gets these
+/// as generated defines; the unit tests compare the two (H1).
 // /proc/heat_constants (verdigris/domains/gas/src/turfs/heat.rs)
 /proc/vg_heat_constants()
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_constants_ffi")

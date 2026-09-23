@@ -181,6 +181,15 @@ fn raw_id(r: RawHandle) -> u32 {
     r.bits() + 1
 }
 
+/// A monitor-visible change: any number moving by more than 1% (or 1 W), or
+/// crossing zero. The smoothed view settles geometrically; without this each
+/// region would publish for ~50 steps after every change.
+fn visibly_changed(old: &[f64; 5], new: &[f64; 5]) -> bool {
+    old.iter().zip(new).any(|(&a, &b)| {
+        (a > 0.0) != (b > 0.0) || (a - b).abs() > (0.01 * a.abs().max(b.abs())).max(1.0)
+    })
+}
+
 fn push(out: &mut Vec<f32>, kind: u32, values: &[f64]) {
     out.push(kind as f32);
     out.push(values.len() as f32);
@@ -826,7 +835,7 @@ impl PowerWorld {
             if !l.fresh {
                 l.shown_brown = l.brown;
             }
-            if !l.fresh || shown != l.shown {
+            if !l.fresh || visibly_changed(&l.shown, &shown) {
                 l.shown = shown;
                 l.fresh = true;
                 push(&mut self.out, ev::REGION, &[id, shown[0], shown[1], shown[2], shown[3], shown[4]]);

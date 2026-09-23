@@ -88,7 +88,7 @@
 		return TRUE
 	var/environment_temperature
 	if(simulated_turf.blocks_air)
-		environment_temperature = simulated_turf.return_temperature()
+		environment_temperature = simulated_turf.get_temperature()
 	else
 		var/datum/gas_mixture/environment = simulated_turf.return_air()
 		environment_temperature = environment?.return_temperature()
@@ -175,7 +175,7 @@
 		if(has_buckled_mobs())
 			for(var/mob/living/L as anything in buckled_mobs)
 				var/hc = pipe_air.heat_capacity()
-				var/avg_temp = (pipe_air.return_temperature() * hc + L.bodytemperature * 3500) / (hc + 3500)
+				var/avg_temp = (pipe_air.return_temperature() * hc + L.bodytemperature * HUMAN_HEAT_CAPACITY) / (hc + HUMAN_HEAT_CAPACITY)
 				pipe_air.set_temperature(avg_temp)
 				L.bodytemperature = avg_temp
 

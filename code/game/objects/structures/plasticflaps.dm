@@ -17,9 +17,8 @@
 		)
 
 /obj/structure/plasticflaps/wirecutter_act(mob/user, obj/item/P)
-	playsound(src, P.usesound, 50, 1)
-	to_chat(user, span_notice("You start to cut the plastic flaps."))
-	if(do_after(user, 1 SECOND * P.toolspeed, target = src))
+	if(use_tool(user, P, src, delay = 1 SECOND, quality = TOOL_WIRECUTTER, volume = 50,
+			message_self = "You start to cut the plastic flaps."))
 		to_chat(user, span_notice("You cut the plastic flaps."))
 		new /obj/item/stack/material/plastic(loc, 4)
 		qdel(src)

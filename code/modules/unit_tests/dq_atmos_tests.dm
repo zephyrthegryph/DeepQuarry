@@ -700,7 +700,7 @@
 			alarm_turfs += start
 			alarm_pressures += start.air.return_pressure()
 			alarm_temperatures += start.air.return_temperature()
-			alarm_turf_temperatures += start.return_temperature()
+			alarm_turf_temperatures += start.get_temperature()
 		var/list/queue = list(start)
 		checked[start] = TRUE
 		var/head = 1
@@ -736,7 +736,7 @@
 		var/turf/open/alarm_turf = alarm_turfs[alarm_index]
 		var/final_pressure = alarm_turf.air.return_pressure()
 		var/final_temperature = alarm_turf.air.return_temperature()
-		var/final_turf_temperature = alarm_turf.return_temperature()
+		var/final_turf_temperature = alarm_turf.get_temperature()
 		if(final_pressure < alarm_pressures[alarm_index] * 0.98 || final_temperature < alarm_temperatures[alarm_index] * 0.98)
 			alarm_pressure_losses += "[get_area(alarm_turf)] at [alarm_turf.x],[alarm_turf.y],[alarm_turf.z]: [alarm_pressures[alarm_index]] -> [final_pressure] kPa, gas [alarm_temperatures[alarm_index]] -> [final_temperature] K, turf [alarm_turf_temperatures[alarm_index]] -> [final_turf_temperature] K"
 	var/alarm_loss_report = jointext(alarm_pressure_losses, "; ")
@@ -6963,7 +6963,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /// The heat domain's turf field is wired end-to-end. A heat-eligible turf
 /// (thermal_conductivity > 0 and heat_capacity > 0) must report its solid heat
-/// cell's temperature through get_temperature() / return_temperature(): the value
+/// cell's temperature through get_temperature(): the value
 /// update_heat_cell() seeded from turf.temperature when SSair registered the turf.
 /// It fails if the heat feature is dropped from the DLL, the registration path
 /// (setup_allturfs -> heat_register_turfs, update_air_ref -> update_heat_cell)
@@ -6979,7 +6979,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(T.thermal_conductivity <= 0 || T.heat_capacity <= 0)
 			continue
 		eligible++
-		var/arena_temp = T.return_temperature()
+		var/arena_temp = T.get_temperature()
 		// A genuinely tracked room-temperature floor reports a physical temperature.
 		// Bound the top end to reject NaN/garbage too.
 		if(isnum(arena_temp) && arena_temp > 150 && arena_temp < 6000)
@@ -7004,8 +7004,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			continue
 		checked++
 		TEST_ASSERT(T.air.return_pressure() < 0.01, "airless floor contains pressurized gas")
-		TEST_ASSERT(abs(T.return_temperature() - T20C) < 1, \
-			"airless floor solid initialized at [T.return_temperature()] K instead of room temperature; it will refrigerate the station through superconductivity")
+		TEST_ASSERT(abs(T.get_temperature() - T20C) < 1, \
+			"airless floor solid initialized at [T.get_temperature()] K instead of room temperature; it will refrigerate the station through superconductivity")
 		if(checked >= 16)
 			break
 	TEST_ASSERT(checked > 0, "test map has no airless floors to validate")

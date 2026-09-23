@@ -43,8 +43,10 @@
 	desc = "A storage case for a multi-purpose healing gun. Variety hour!"
 	icon_state = "medbriefcase"
 	w_class = ITEMSIZE_NORMAL
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/gun/projectile/cell_loaded/medical,/obj/item/ammo_magazine/cell_mag/medical,/obj/item/ammo_casing/microbattery/medical)
+
+/obj/item/storage/secure/briefcase/nerd_pack_med/hold_constraint()
+	var/list/holds = list(/obj/item/gun/projectile/cell_loaded/medical,/obj/item/ammo_magazine/cell_mag/medical,/obj/item/ammo_casing/microbattery/medical)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/secure/briefcase/nerd_pack_med/Initialize(mapload)
 	. = ..()
@@ -59,8 +61,10 @@
 	desc = "A storage case for a multi-purpose healing gun. Variety hour!"
 	icon_state = "medbriefcase"
 	w_class = ITEMSIZE_NORMAL
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/gun/projectile/cell_loaded/medical,/obj/item/ammo_magazine/cell_mag/medical,/obj/item/ammo_casing/microbattery/medical)
+
+/obj/item/storage/secure/briefcase/nerd_pack_cmo/hold_constraint()
+	var/list/holds = list(/obj/item/gun/projectile/cell_loaded/medical,/obj/item/ammo_magazine/cell_mag/medical,/obj/item/ammo_casing/microbattery/medical)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/secure/briefcase/nerd_pack_cmo/Initialize(mapload)
 	. = ..()

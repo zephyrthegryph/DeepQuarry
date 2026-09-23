@@ -63,7 +63,26 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "surgerykit"
 	item_state = "firstaid-surgery"
-	max_w_class = ITEMSIZE_NORMAL
+
+/obj/item/storage/firstaid/surgery/hold_constraint()
+	var/list/holds = list(
+		/obj/item/surgical/bone_clamp,
+		/obj/item/surgical/bonesetter,
+		/obj/item/surgical/cautery,
+		/obj/item/surgical/circular_saw,
+		/obj/item/surgical/hemostat,
+		/obj/item/surgical/retractor,
+		/obj/item/surgical/scalpel,
+		/obj/item/surgical/surgicaldrill,
+		/obj/item/surgical/bonegel,
+		/obj/item/surgical/FixOVein,
+		/obj/item/stack/medical/advanced/bruise_pack,
+		/obj/item/stack/nanopaste,
+		/obj/item/healthanalyzer,
+		/obj/item/autopsy_scanner,
+		/obj/item/surgical/bioregen
+		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/firstaid/clotting
 	name = "clotting kit"
@@ -89,19 +108,21 @@
 	pickup_sound = 'sound/items/pickup/pillbottle.ogg'
 	item_state_slots = list(slot_r_hand_str = "contsolid", slot_l_hand_str = "contsolid")
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/reagent_containers/pill,/obj/item/dice,/obj/item/paper)
 	allow_quick_gather = 1
 	allow_quick_empty = 1
 	use_to_pickup = TRUE
 	use_sound = 'sound/items/storage/pillbottle.ogg'
 	max_storage_space = ITEMSIZE_COST_TINY * 14
-	max_w_class = ITEMSIZE_TINY
 	var/wrapper_color
 	var/label
 
 	var/label_text = ""
 	var/base_name = " "
 	var/base_desc = " "
+
+/obj/item/storage/pill_bottle/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/pill,/obj/item/dice,/obj/item/paper)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
 
 /obj/item/storage/pill_bottle/Initialize(mapload)
 	. = ..()
@@ -275,23 +296,6 @@
 	)
 
 /obj/item/storage/firstaid/surgery
-	can_hold = list(
-		/obj/item/surgical/bone_clamp,
-		/obj/item/surgical/bonesetter,
-		/obj/item/surgical/cautery,
-		/obj/item/surgical/circular_saw,
-		/obj/item/surgical/hemostat,
-		/obj/item/surgical/retractor,
-		/obj/item/surgical/scalpel,
-		/obj/item/surgical/surgicaldrill,
-		/obj/item/surgical/bonegel,
-		/obj/item/surgical/FixOVein,
-		/obj/item/stack/medical/advanced/bruise_pack,
-		/obj/item/stack/nanopaste,
-		/obj/item/healthanalyzer,
-		/obj/item/autopsy_scanner,
-		/obj/item/surgical/bioregen
-		)
 
 	starts_with = list(
 		/obj/item/surgical/bonesetter,
@@ -451,8 +455,6 @@
 	name = "vacuum-sealed pill"
 	desc = "A small vacuum-sealed package containing a singular pill. For emergencies only."
 	icon_state = "pouch_small"
-	max_w_class = ITEMSIZE_TINY
-	can_hold = list(/obj/item/reagent_containers/pill)
 
 /*
 /obj/item/storage/mrebag/pill/sleevingcure
@@ -460,6 +462,10 @@
 	desc = "A small vacuum-sealed package containing a singular pill. For emergencies only."
 	starts_with = list(/obj/item/reagent_containers/pill/sleevingcure)
 */
+
+/obj/item/storage/mrebag/pill/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/pill)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
 
 /obj/item/storage/pill_bottle/paracetamol
 	name = "pill bottle (" + REAGENT_PARACETAMOL + ")"

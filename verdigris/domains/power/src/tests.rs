@@ -227,8 +227,8 @@ fn an_idle_apc_and_smes_report_nothing() {
         vec![201],
         Some(1e6),
     );
-    // The monitor view settles geometrically (0.8 per step).
-    for _ in 0..80 {
+    // The monitor view settles (published only on visible changes).
+    for _ in 0..30 {
         w.step();
     }
     for _ in 0..20 {

@@ -131,6 +131,7 @@
 // the bottom of this file.
 #include "dq_atmos_tests.dm"
 #include "dq_heat_domain_tests.dm"
+#include "dq_heat_api_tests.dm"
 #include "dq_thermal_power_fixes_tests.dm"
 #include "dq_performance_diagnostics_tests.dm"
 #include "dq_audit_tests.dm"
@@ -173,8 +174,13 @@
 #include "dq_matter_tests.dm"
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
+#include "dq_constraint_tests.dm"
 #include "dq_containment_tests.dm"
 #include "dq_rule_tests.dm"
+#include "dq_containment_path_tests.dm"
+#include "dq_vore_slot_tests.dm"
+#include "dq_stock_tests.dm"
+#include "dq_breakpoint_tests.dm"
 #include "dq_damage_packet_tests.dm"
 #include "dq_explosion_batch_tests.dm"
 #include "dq_integrity_pool_tests.dm"
@@ -203,6 +209,7 @@
 #include "dq_combat_mode_tests.dm"
 #include "dq_input_tests.dm"
 #include "dq_interaction_tests.dm"
+#include "dq_tool_tests.dm"
 #include "xgm_total_moles_test.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

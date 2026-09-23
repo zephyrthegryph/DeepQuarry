@@ -141,10 +141,19 @@
 				. += span_notice("The capacitor charge indicator is [span_green("green")].")
 
 /obj/item/gun/magnetic/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	if(!removable_components)
+		return NONE
+	if(!capacitor)
+		to_chat(user, span_warning("\The [src] has no capacitor installed."))
+		return ITEM_INTERACT_SUCCESS
+	user.put_in_hands(capacitor)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " unscrews \the [capacitor] from \the [src]."))
+	playsound(src, tool.usesound, 50, 1)
+	capacitor = null
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/magnetic/attackby(obj/item/thing, mob/user, tool_quality)
+/obj/item/gun/magnetic/attackby(obj/item/thing, mob/user)
 
 	if(removable_components)
 		if(istype(thing, /obj/item/cell))
@@ -155,17 +164,6 @@
 			user.drop_from_inventory(cell, src)
 			playsound(src, 'sound/machines/click.ogg', 10, 1)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [cell] into \the [src]."))
-			update_icon()
-			return
-
-		if(tool_quality == TOOL_SCREWDRIVER)
-			if(!capacitor)
-				to_chat(user, span_warning("\The [src] has no capacitor installed."))
-				return
-			user.put_in_hands(capacitor)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " unscrews \the [capacitor] from \the [src]."))
-			playsound(src, thing.usesound, 50, 1)
-			capacitor = null
 			update_icon()
 			return
 

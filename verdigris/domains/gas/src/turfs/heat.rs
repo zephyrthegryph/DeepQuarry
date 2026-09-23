@@ -646,8 +646,9 @@ fn heat_debug_run_frames(frames: ByondValue) -> Result<ByondValue> {
 }
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan–Boltzmann constant,
-/// default emissivity, seconds per heat frame)`: the heat constants DM reads
-/// instead of duplicating them (H1 generates defines from these).
+/// default emissivity, seconds per heat frame, normal body temperature, human
+/// heat capacity, ignition temperature, vacuum heat capacity)`. DM gets these
+/// as generated defines; the unit tests compare the two (H1).
 #[auxmacros::bind("/proc/heat_constants")]
 fn heat_constants() -> Result<ByondValue> {
 	let list = ByondValue::new_list()?;
@@ -659,6 +660,10 @@ fn heat_constants() -> Result<ByondValue> {
 		(hc::STEFAN_BOLTZMANN as f32).into(),
 		hc::DEFAULT_EMISSIVITY.into(),
 		hc::HEAT_DT.into(),
+		hc::BODYTEMP_NORMAL.into(),
+		hc::HUMAN_HEAT_CAPACITY.into(),
+		hc::IGNITION_TEMPERATURE.into(),
+		hc::HEAT_CAPACITY_VACUUM.into(),
 	])?;
 	Ok(list)
 }
@@ -670,4 +675,21 @@ pub(crate) fn heat_diagnostics() -> (usize, usize, u64) {
 		(dispatched as usize, bodies, micros)
 	})
 	.unwrap_or((0, 0, 0))
+}
+
+#[cfg(test)]
+mod constant_tests {
+	use super::hc;
+	use crate::gas::constants as gc;
+
+	/// The gas crate keeps its own copies of the shared temperatures; they must
+	/// equal the heat constants DM's defines are generated from (B12).
+	#[test]
+	fn gas_constants_match_heat_constants() {
+		assert_eq!(gc::TCMB, hc::TCMB);
+		assert_eq!(gc::T0C, hc::T0C);
+		assert_eq!(gc::T20C, hc::T20C);
+		assert!((gc::FIRE_MINIMUM_TEMPERATURE_TO_EXIST - hc::IGNITION_TEMPERATURE).abs() < 1e-4);
+		assert!((gc::PLASMA_MINIMUM_BURN_TEMPERATURE - hc::IGNITION_TEMPERATURE).abs() < 1e-4);
+	}
 }

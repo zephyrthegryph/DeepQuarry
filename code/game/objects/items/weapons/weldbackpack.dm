@@ -56,8 +56,8 @@
 	nozzle_attached = 1
 
 /obj/item/weldpack/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/weldingtool) && !(W == nozzle))
-		var/obj/item/weldingtool/T = W
+	var/obj/item/weldingtool/T = W.get_welder()
+	if(T && !(W == nozzle))
 		if(T.welding && prob(50))
 			message_admins("[key_name_admin(user)] triggered a fueltank explosion.")
 			log_game("[key_name(user)] triggered a fueltank explosion.")
@@ -69,7 +69,7 @@
 		else if(T.status)
 			if(T.welding)
 				to_chat(user, span_danger("That was close!"))
-			src.reagents.trans_to_obj(W, T.max_fuel)
+			src.reagents.trans_to_obj(T, T.max_fuel)
 			to_chat(user, span_notice("Welder refilled!"))
 			playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
 			return

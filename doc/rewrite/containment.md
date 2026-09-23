@@ -23,7 +23,7 @@ Today these are about a dozen separate systems.
 | Machine occupants | A typed `occupant` var plus `forceMove`; some use weakrefs; the suit storage unit has named slots | About 18 copies of go-in/go-out code; the sleeper's eject skips the beaker, board and parts |
 | Mechs | `occupant`, `equipment`, `internal_components` and `cargo` all mixed in one `contents` | Six roles in one list |
 | Closets | `starts_with`, spawned in `LateInitialize` | 699 mapped closets spawn about 5.4k direct items, roughly 10k+ atoms including nested contents |
-| Vending | `/datum/stored_item`, virtual until the first vend | Then materializes the product's whole amount |
+| Vending | `/datum/stored_item`, virtual until the first vend | Then materializes the product's whole amount (fixed in C9: stock slots) |
 | Circuits | Plain `contents` of an assembly | Pin datums built eagerly; one instance of all ~195 circuit types at boot |
 | Movement | `doMove` calls `Crossed`/`Uncrossed` on every atom in both locations, including a full bag, closet or belly; `onTransitZ` recurses through all contents | Cost grows with everything carried |
 
@@ -62,7 +62,7 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
   - an exposure;
   - a capacity model: none, count, size class, mass, or custom units through `cost()`;
   - `capacity_for(holder)`, which gives the capacity per instance;
-  - an `accepts` predicate;
+  - an `accepts` predicate, plus an optional `holder_constraint` (P3): a `CONSTRAINT_*` kind read from the holder, for holders whose acceptance varies by type ([rules.md §3.1](rules.md#31-as-built-p3));
   - a drop policy: spill, delete, or transfer.
   The ledger itself (`/datum/ledger`) is created the first time the holder is used, so a closet nobody touches has none.
 - **Drop policies.** `/atom/movable/Destroy()` calls `ledger_apply_drop_policies()` before anything else.
@@ -80,6 +80,12 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
 - **Migrated holders.**
   - Closets, crates and lockers (`/obj/structure/closet`): one interior slot with custom units (`storage_cost_of()`) and the spill policy. `open()`, `close()`, `ex_act`, `examine` and `LateInitialize` all go through the API.
   - Folders: one pages slot that accepts `TAG_PAPERWORK` and uses the delete policy.
+- **Stock slots (C9)** (`stock.dm`, `code/datums/vending/stored_item.dm`):
+  - Vending machines and smartfridges declare an `internals` slot (parts, circuit, coin; policy `SLOT_DROP_HOLDER`, left to the machine's Destroy until C6) and a custom-units `stock` slot.
+  - Each product is a `/datum/stored_item` record: type path, latent `amount`, and deltas (price, category, variant, or a shared state blob). A real item is made only when one is taken out; cartridge restock adds to `amount`.
+  - An inserted item whose state serializes, with no contents and nothing running, folds into the count when its `state_hash` matches the record's (vending: a pristine item's; smartfridge: the first one's). Anything else stays real in the stock slot and the record's `instances`.
+  - Slot definitions gained `latent_used()` (counts towards capacity and `slot_used`) and `drop_latent()`, which the base Destroy calls before the real contents. Smartfridge stock spills (latent copies made real); vending stock is deleted with the machine, as before.
+  - Material stacks don't serialize yet (`recipes` has no codec), so sheet storage keeps them real.
 - **Lint.** `tools/ci/containment_lint.py` checks `tools/ci/containment_allowlist.txt`, which holds per-file counts of the legacy sites (681 in 310 files at C1). A file may not gain sites.
 
 ## 3. Slots
@@ -117,6 +123,59 @@ Heat, damage, pressure and radiation all walk the same path:
 5. contents.
 
 Each step on the path carries its couplings: thermal conductance, damage pass-through and armour, pressure sealing, radiation shielding. No type writes its own "does heat reach the pockets" code. In Rust, only containers that matter thermally get a heat node, and its coupling to the parent node comes from that step ([simulation.md §7](simulation.md#7-heat-m4)).
+
+### 3.3 As built (C2)
+
+The code is in `code/datums/containment/paths.dm`, with the heat coupling in `heat_adapter.dm`; defines are in `code/__defines/containment.dm`.
+
+- **Exposure.** `SLOT_EXPOSURE_EXTERNAL`, `SLOT_EXPOSURE_INTERNAL` and `SLOT_EXPOSURE_SEALED`. Internal and sealed slots are inside the holder's shell, so the holder's insulation and armour cover them. A sealed slot has its own interior and blocks gas.
+- **Slot data.** Each `/datum/slot_def` also carries:
+  - `layer`: a `SLOT_LAYER_*` value, higher is further out; `SLOT_LAYER_NONE` means the slot is not layered;
+  - `heat_transmission` and `radiation_transmission`: what crosses the slot's own boundary;
+  - `damage_transmission`: the share of each `DAMAGE_*` kind that passes from a hit on the holder. Null takes the exposure's default from `dq_path_default_damage()`;
+  - `reaches_mobs`: off by default, so living contents take no heat or damage along the path. They get heat from their environment (H2) and hits through occupant rules (C8).
+- **Default damage shares.** They are conservative:
+  - External slots get 0 for every kind; equipment zones decide (C3, D2).
+  - Internal slots let through 0.5 of pierce and 0.25 of corrosive. Sealed slots let through 0.5 of pierce and no corrosive.
+  - Thermal and cold go by the heat path, and radiation by its own path.
+  - Ionic and blast get 0, because `emp_act` recursion and D5's `explosion_contents_severity()` already reach contents.
+- **One step,** `dq_path_step(holder, child, effect, kind, penetration)`, multiplies three factors:
+  1. the slot's own transmission;
+  2. for internal and sealed slots, the holder's attenuation: `1 - PROP_INSULATION` for heat, or `1 - armour` for damage (the kind's armour key, after penetration) and for radiation (`"rad"`);
+  3. the same attenuation from every thing in the holder's layers further out, outermost first.
+
+  Gas crosses a step unless the slot is sealed. `dq_path_share(child, from, ...)` multiplies the steps down a nested chain. A holder without slots passes nothing.
+- **Damage.** `/atom/receive_damage()` ends with `propagate_damage(packet)`, and each child gets a packet of its own through its own `receive_damage()`, so nested holders pass it on in turn. Point kinds (blunt, sharp, pierce) land on one thing per slot; the other kinds reach every thing. A holder destroyed by the hit has already spilled its contents, so they get nothing.
+- **Heat.** `/obj/fire_act()` calls `propagate_fire()` first. Each child is exposed at `ambient + (T - ambient) × share`, where the ambient temperature comes from `dq_heat_path_ambient()`. When M4 lands, `heat_coupling()`, `create_heat_body()` and `heat_recouple()` should pass the body's conductance through `heat_path_conductance()`, and `dq_heat_path_ambient()` becomes `get_interior_temperature()`. Latent entries get no bodies.
+- **Insulation** is `PROP_INSULATION`, a P1 property on a ratio scale, read from the `/obj/var/insulation` type var.
+- **Declared holders:**
+
+  | Holder | Slot exposure | Insulation | Damage that passes |
+  |---|---|---|---|
+  | Closets, crates, lockers | internal (they share the room's air) | 0.5 | pierce 0.25, corrosive 0.25 |
+  | Folders | internal | 0.1 | sharp 0.5, pierce 1, corrosive 0.5 |
+
+- **Tests** are in `dq_containment_path_tests.dm`:
+  - a closet and a freezer in a fire protect their contents per their insulation;
+  - the path through a closet and then a folder;
+  - weapon hits on a bag: blunt and cutting blows stay on the bag, a stab goes through, and armour and penetration change how much;
+  - a closet, and a bag inside it, reached through the real `receive_weapon_hit()`;
+  - a sealed slot blocks gas, including when nested;
+  - three worn layers attenuate heat and blows in order.
+
+**What later items need**
+- **C3 (equipment).**
+  - Declare body-part equipment slots with `layer` (`SLOT_LAYER_UNDERSUIT` .. `SLOT_LAYER_PLATE`) and external exposure. Pockets and the inside of a suit storage are internal.
+  - Clothing sets `insulation` from its heat-protection data. `worn_factors` and zone armour then read the path instead of scanning.
+  - Route mob hits to the covering layers through `dq_path_step`, with zones (`zones covered` in §3 is not built yet).
+  - Decide `reaches_mobs` for anything that holds a mob.
+- **C4 (storage).** `/obj/item/storage` gets an internal slot, and bags then take the default shares. Until then a bag passes nothing.
+- **C5 (latent).** A damage share that reaches a slot holding entries resolves them, with one roll per group (§4.2). Heat stays on the container's body.
+- **C6 (machine internals).** Internals are internal slots. Circuit boards and parts expressed as tiers take shares only once they are materialized.
+- **C7 (vore).** A belly is a sealed slot with `reaches_mobs = TRUE` and its own damage and heat rules, replacing digestion's direct damage.
+- **C8 (occupants and mechs).** Occupant slots set `reaches_mobs` and their shares, such as a pod's glass. D5's `explosion_contents_severity()` overrides become blast shares on those slots.
+- **D2** interns armour. `dq_path_armor()` is the single read to switch over.
+- **H2 and M4** wire in `heat_path_conductance()` as described above.
 
 ## 4. Latent contents
 
@@ -252,6 +311,14 @@ These are interactions that perform ledger moves, so each one is a single atomic
 - **Message lists** are shared per preset and copied only when customized.
 - **Serialization.** The belly serializer becomes a client of the generic serializer.
 - **What stays in the vore module:** the vore UI, messages and preferences.
+
+**As built (C7).** Code: `code/modules/vore/eating/belly_slot.dm`, `belly_shared_lists.dm`, `vore_consent.dm`; tests in `code/modules/unit_tests/dq_vore_slot_tests.dm`.
+- **Slot.** `/datum/slot_def/belly_interior` (`BELLY_SLOT_INTERIOR`): sealed, `reaches_mobs`, no heat or damage share from outside (the belly's own modes act on its contents). Eating, releasing, transfers, absorbing, egging and in-belly spawning go through `belly_insert()` (`move_into`), `belly_release_to()` (`slot_remove`, falling back to the turf when a full holder refuses) and `slot_transfer()`. The ledger is made on first use.
+- **Scheduling.** SSbellies is deleted. `belly_reschedule()` declares one `REACT_EVERY` (6 s, 2 s in turbo) when something enters and cancels it when the belly empties; an empty belly that makes liquid from nutrition waits on a `REACT_AT` for its next batch. Callers: `Initialize`, `Entered`/`Exited`, `state_post_apply`, the vore panel's attribute setters and the belly preview.
+- **Rates.** `belly_cycle(seconds)` replaces `process()`. Every mode's per-cycle amount is a rate per `BELLY_BASELINE_TICK`, scaled by the reactor's elapsed seconds, so late and turbo cycles give the same totals (drain and resize exactly). Digestion damage goes through `injure()`, as before. The body's `injure()` is not linear in the size of a hit (many small hits land more than a few big ones), so turbo digestion still lands more injury than normal digestion over the same time; that is the body's to settle.
+- **Modes as rules.** A mode is trigger (the cycle), condition (its `consent` predicate) and effect (`process_mob()`). The mode datums stay: they do not fit P4's compiled watches, which need channel-backed properties.
+- **Consent.** `/datum/predicate/vore_devour`, `vore_digest`, `vore_absorb`, `vore_heal`, `vore_strip`, `vore_affect_worn`, with reasons. `vore_sanity_checks()` shows the devour reason; a prey who refuses the belly's mode is held, and the predator is told why on entry.
+- **Shared lists.** 43 message lists, the 5 fullness lists, `emote_lists`, `generated_reagents`, both extra autotransfer lists and the vore-spawn whitelist point at one copy per type or the base default (`belly_default_lists()`). They are replaced, never edited; `own_emote_lists()` comes before a keyed emote write. Saves leave out lists still shared, and a load swaps equal lists back to the shared copy. `items_preserved` and `belly_surrounding` are lazy; `autotransfer_queue` was unused and is gone. A default empty belly owns no lists.
 
 ## 10. Occupants and mechs (C8, with the body rewrite)
 

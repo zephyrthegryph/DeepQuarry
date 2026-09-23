@@ -14,9 +14,8 @@
 	return TRUE
 
 /obj/structure/dancepole/wrench_act(mob/user, obj/item/O)
-	playsound(src, O.usesound, 50, 1)
-	to_chat(user, span_notice("Now disassembling \the [src]..."))
-	if(do_after(user, 3 SECONDS * O.toolspeed, target = src))
+	if(use_tool(user, O, src, delay = 3 SECONDS, quality = TOOL_WRENCH, volume = 50,
+			message_self = "Now disassembling \the [src]..."))
 		to_chat(user, span_notice("You disassembled \the [src]!"))
 		new /obj/item/stack/material/steel(loc, 1)
 		qdel(src)

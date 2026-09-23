@@ -1,9 +1,21 @@
+/obj
+	/// Debris created when the object is destroyed (not disassembled). Declared per
+	/// type; atom_destruction() spawns it before the slots' drop policies run.
+	/// Types with several kinds of debris override debris_entries().
+	var/debris_type
+	var/debris_amount = 1
+
 ///Called when the obj is exposed to fire.
 /obj/fire_act(exposed_temperature, exposed_volume)
 	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR))
 		return
 	// Objects whose rules watch their temperature take the exposure on their heat node.
 	dq_rule_expose_heat(src, exposed_temperature)
+	// Heat reaches the holder's contents through its slots' paths (C2).
+	if(length(contents))
+		propagate_fire(exposed_temperature, exposed_volume)
+		if(QDELETED(src))
+			return
 	// Generic map machinery remains dormant under nominal room conditions, but
 	// crossing into an actual thermal hazard activates its material assembly so
 	// continued exposure, cooling, diagnostics, and repair use the same model as
@@ -92,6 +104,11 @@
 	//inform objects we were deconstructed
 	SEND_SIGNAL(src, COMSIG_OBJ_DECONSTRUCT, disassembled)
 
+	// Destroyed: each slot's drop policy decides what survives (damage.md §6,
+	// containment.md §2). Only what is left outside a slot falls out below.
+	if(!disassembled)
+		ledger_apply_drop_policies()
+
 	for(var/obj/item/item in contents)
 		if(item.item_flags & ABSTRACT)
 			continue
@@ -101,6 +118,7 @@
 	qdel(src)
 
 ///what happens when the obj's integrity reaches zero.
+/// Destruction (damage.md §6): debris entries first, then each slot's drop policy.
 /obj/atom_destruction(damage_flag)
 	. = ..()
 	if(damage_flag == ACID)
@@ -108,4 +126,25 @@
 	else if(damage_flag == FIRE)
 		burn()
 	else
+		spawn_debris()
 		deconstruct(FALSE)
+
+/// This type's debris: path -> amount, or null. A shared list; don't modify it.
+/obj/proc/debris_entries()
+	if(!debris_type)
+		return null
+	return list((debris_type) = debris_amount)
+
+/// Create the debris entries on the turf. Stacks get their amount.
+/obj/proc/spawn_debris()
+	var/turf/T = get_turf(src)
+	var/list/entries = debris_entries()
+	if(!T || !length(entries))
+		return
+	for(var/path in entries)
+		var/amount = entries[path] || 1
+		if(ispath(path, /obj/item/stack))
+			new path(T, amount)
+			continue
+		for(var/i in 1 to amount)
+			new path(T)

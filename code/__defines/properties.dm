@@ -51,11 +51,33 @@
 #define PROP_TEMPERATURE "temperature"
 #define PROP_INTEGRITY_RATIO "integrity_ratio"
 #define PROP_INTEGRITY_FAILURE "integrity_failure"
+/// Fraction of heat a holder's shell (or a worn layer) keeps from what it covers, 0..1.
+#define PROP_INSULATION "insulation"
 // Tag ids.
 #define TAG_SHARP "sharp"
 #define TAG_FLAMMABLE "flammable"
 #define TAG_CONDUCTIVE "conductive"
 #define TAG_PAPERWORK "paperwork"
+// Wearable tags: what the item's slot_flags allow (constraints, rules.md §3).
+// The equip slot constraints (code/datums/properties/equip_slots.dm) read these.
+#define TAG_WEAR_SUIT "wear_suit"
+#define TAG_WEAR_UNIFORM "wear_uniform"
+#define TAG_WEAR_GLOVES "wear_gloves"
+#define TAG_WEAR_EYES "wear_eyes"
+#define TAG_WEAR_EARS "wear_ears"
+#define TAG_WEAR_TWO_EARS "wear_two_ears"
+#define TAG_WEAR_MASK "wear_mask"
+#define TAG_WEAR_HEAD "wear_head"
+#define TAG_WEAR_FEET "wear_feet"
+#define TAG_WEAR_ID "wear_id"
+#define TAG_WEAR_BELT "wear_belt"
+#define TAG_WEAR_BACK "wear_back"
+#define TAG_WEAR_TIE "wear_tie"
+#define TAG_POCKETABLE "pocketable"
+#define TAG_NO_POCKET "no_pocket"
+#define TAG_HOLSTERABLE "holsterable"
+/// Worn over whatever already fills its slot (gloves over rings, magboots over shoes).
+#define TAG_WEAR_OVER "wear_over"
 
 /// Mass of one unit of an item's `matter` list. Matter amounts are treated as
 /// grams of that material (a sheet is SHEET_MATERIAL_AMOUNT = 2000, so 2 kg).

@@ -171,8 +171,11 @@ verdigris/                  <- workspace root (this dir)
   B10). H4 wires it to bodies (a machine body plus a gas mixture coupling) and
   publishes `work` to the power domain.
 - **Not built here.** Heat-exchange pipe regions as a network kind (M3/H4); the
-  per-zone clothing insulation chain (H2); generated DM defines for the float
-  constants (H1: `vg_heat_constants()` returns them for now).
+  per-zone clothing insulation chain (H2).
+- **Constants (H1).** `consts.rs` entries marked `/// @dm-define` are the DM
+  defines (T0C, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY, the THERMAL_* defaults,
+  …); DM must not redefine them (check_grep.sh). `vg_heat_constants()` returns
+  the same values at runtime for `dq_heat_constants_match_rust`.
 
 ## Building
 

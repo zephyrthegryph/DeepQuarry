@@ -16,6 +16,8 @@
 	var/seal_tool = /obj/item/weldingtool	//Tool used to seal the closet, defaults to welder
 	var/wall_mounted = 0 //never solid (You can always pass over it)
 	max_integrity = 100
+	/// Sheet metal and an air gap (containment paths, C2).
+	insulation = 0.5
 
 	var/breakout = 0 //if someone is currently breaking out. mutex
 	var/breakout_time = 2 //2 minutes by default
@@ -76,7 +78,10 @@
 			color = null
 	update_icon()
 
-// ---- Containment (C1): one interior slot. The base Destroy() spills it. ----
+// ---- Containment (C1): one interior slot. The base Destroy() spills it.
+// C2: the interior is internal (it shares the room's air, so not sealed);
+// heat reaches it through the closet's insulation, and only rounds and stabs
+// that get through the sheet metal, and seeping acid, reach its contents. ----
 
 /obj/structure/closet/slot_def_types()
 	var/static/list/types = list(/datum/slot_def/closet_interior)
@@ -88,6 +93,8 @@
 	capacity_model = SLOT_CAPACITY_UNITS
 	accepts = /datum/predicate/slot_closet_interior
 	drop_policy = SLOT_DROP_SPILL
+	exposure = SLOT_EXPOSURE_INTERNAL
+	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
 
 /datum/slot_def/closet_interior/capacity_for(obj/structure/closet/holder)
 	return holder.storage_capacity
@@ -284,11 +291,10 @@
 		return
 	else if(seal_tool)
 		if(istype(W, seal_tool))
-			var/obj/item/S = W
-			if(do_after(user, 2 SECONDS * S.toolspeed, target = src))
+			if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
 				if(opened) // cancel weld if opened mid-progress to prevent welder-traps
 					return
-				playsound(src, S.usesound, 50)
+				playsound(src, W.usesound, 50)
 				sealed = !sealed
 				update_icon()
 				for(var/mob/M in viewers(src))
@@ -302,7 +308,7 @@
 		to_chat(user, span_notice("You can't reach the anchoring bolts when the door is closed!"))
 		return TRUE
 	user.visible_message("\The [user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 0))
 		anchored = !anchored
 		to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 	return TRUE
@@ -322,7 +328,7 @@
 		return TRUE
 	if(!seal_tool || !istype(W, seal_tool))
 		return TRUE
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src) && !opened)
+	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0) && !opened)
 		playsound(src, W.usesound, 50)
 		sealed = !sealed
 		update_icon()

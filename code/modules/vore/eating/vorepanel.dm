@@ -327,7 +327,9 @@
 			return TRUE
 
 		if("set_attribute")
-			return set_attr(ui.user, params)
+			. = set_attr(ui.user, params)
+			host.vore_selected?.belly_reschedule() // Turbo mode or liquid settings may have changed.
+			return .
 
 		if("saveprefs")
 			if(isnewplayer(host))
@@ -571,7 +573,9 @@
 			return TRUE
 		// liquid belly code
 		if("liq_set_attribute")
-			return liq_set_attr(ui.user, params)
+			. = liq_set_attr(ui.user, params)
+			host.vore_selected?.belly_reschedule() // Liquid generation may have started or stopped.
+			return .
 		if("toggle_liq_rec")
 			host.receive_reagents = !host.receive_reagents
 			if(host.client.prefs_vr)

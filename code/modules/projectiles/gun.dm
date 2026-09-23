@@ -323,9 +323,7 @@
 	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
 		to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
 		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You begin removing \the [attached_lock] from \the [src]."))
-	playsound(src, tool.usesound, 50, TRUE)
-	if(!do_after(user, 2.5 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You begin removing \the [attached_lock] from \the [src]."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)

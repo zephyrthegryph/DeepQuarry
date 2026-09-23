@@ -264,8 +264,11 @@ accident or assume they work:
   **`/datum/gas_mixture` is an opaque handle.** There is no public `temperature`/`volume`
   var: read with `return_temperature()`/`return_volume()`, write with
   `set_temperature()`/`set_volume()`, and cache reads in hot loops because each call crosses
-  the FFI. Turf heat works the same way through `/turf/proc/set_temperature()` /
-  `return_temperature()`. The `check_grep.sh` "gas mixture mirror writes" lint backs this up.
+  the FFI. Atoms (turfs included) have one temperature API in `code/modules/heat/heat.dm`:
+  `get_temperature()` / `get_interior_temperature()` to read, `add_heat()` to heat,
+  `/turf/proc/set_temperature()` for map/admin authority. `return_temperature()` is the gas
+  mixture accessor only, and shared thermal constants (`T0C`, `BODYTEMP_NORMAL`,
+  `HUMAN_HEAT_CAPACITY`, …) are generated from `verdigris/domains/heat/src/consts.rs`. The `check_grep.sh` "gas mixture mirror writes" lint backs this up.
   The FFI routes are the generated `vg_*` procs; the DM wrappers with real logic live in
   `gas_mixture.dm`, `auxmos_init_bridge.dm` and `dq_linda_turf_air.dm`.
   Verdigris builds on byondapi 0.6.x and **requires BYOND 516.1682+** (older builds crash at

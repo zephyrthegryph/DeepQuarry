@@ -52,7 +52,7 @@
 /obj/machinery/bunsen_burner/crowbar_act(mob/user, obj/item/tool)
 	if(!panel_open || !isturf(loc))
 		return ITEM_INTERACT_BLOCKING
-	if(!do_after(user, 5 * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 5))
 		return ITEM_INTERACT_BLOCKING
 	drop_held_container()
 	to_chat(user, span_notice("You disassemble \the [src]."))

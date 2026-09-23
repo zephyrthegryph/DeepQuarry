@@ -91,12 +91,15 @@
 	desc = "Clearly not designed for a human face."
 	flags = PHORONGUARD
 	item_flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT
-	species_restricted = list(SPECIES_VOX)
 	filtered_gases = list(GAS_O2, GAS_N2O)
 	var/mask_open = FALSE	// Controls if the Vox can eat through this mask
 	actions_types = list(/datum/action/item_action/toggle_feeding_port)
 	helmet_handling = TRUE
 	special_handling = TRUE
+
+/obj/item/clothing/mask/gas/swat/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/mask/gas/swat/vox/proc/feeding_port(mob/user)
 	if(user.canmove && !user.stat)
@@ -121,9 +124,12 @@
 	icon_state = "zaddat_mask"
 	item_state = "vax_mask"
 	//body_parts_covered = 0
-	species_restricted = list(SPECIES_ZADDAT)
 	flags_inv = HIDEEARS //semi-transparent
 	filtered_gases = list(GAS_PHORON, GAS_N2, GAS_N2O)
+
+/obj/item/clothing/mask/gas/zaddat/fit_constraint()
+	var/list/bodytypes = list(SPECIES_ZADDAT)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/mask/gas/syndicate
 	name = "tactical mask"

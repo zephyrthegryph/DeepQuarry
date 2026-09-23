@@ -9,7 +9,7 @@
 		return FALSE
 	if(!istype(pred) || !istype(prey))
 		return FALSE
-	if(!prey.devourable)
+	if(!vore_consents(/datum/predicate/vore_devourable, pred, prey))
 		return FALSE
 	if(!is_vore_predator(pred))
 		return FALSE

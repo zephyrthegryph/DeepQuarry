@@ -115,6 +115,7 @@
 	B.escape_stun = 5
 	B.contamination_color = "grey"
 	B.contamination_flavor = "Wet"
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The ddraig coos contentedly as the walls crush and squeeze over your body!",
 		"As the ddraig moves about, it becomes more difficult to keep yourself upright, being forced to turn and slip of the slime slickened stomach lining.",

@@ -32,7 +32,7 @@
 	RegisterSignal(owner, COMSIG_ATOM_EXAMINE, PROC_REF(examine_service))
 
 /obj/proc/material_diagnostics_tool_act(mob/user, obj/item/tool)
-	if(!has_functional_construction() || !istype(tool, /obj/item/multitool))
+	if(!has_functional_construction() || !tool?.has_tool_quality(TOOL_MULTITOOL))
 		return NONE
 	var/datum/material_service/service = material_service_event(MATERIAL_EVENT_MONITORING)
 	if(!service)
@@ -66,7 +66,7 @@
 
 /datum/material_service/proc/inspect_with_tool(datum/source, mob/user, obj/item/tool)
 	SIGNAL_HANDLER
-	if(!user.Adjacent(owner) || !istype(tool, /obj/item/multitool))
+	if(!user.Adjacent(owner) || !tool?.has_tool_quality(TOOL_MULTITOOL))
 		return ITEM_INTERACT_BLOCKING
 	monitor_tool = WEAKREF(tool)
 	monitor_user = WEAKREF(user)

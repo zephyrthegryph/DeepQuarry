@@ -104,6 +104,7 @@
 		"dq_actor_observe", "dq_actor_handless", "dq_actor_tool", // dq_actor_adapter_tests.dm
 		// Combat mode (dq_combat_mode_tests.dm): the Disarm and Grab interactions and its fixtures.
 		"disarm", "grab", "dq_combat_friendly", "dq_combat_hostile", "dq_combat_needs_combat", "dq_combat_needs_peace",
+		"dq_tool_weld", "dq_tool_dig", // dq_tool_tests.dm
 	)
 
 /datum/unit_test/dq_interaction_definitions/Run()

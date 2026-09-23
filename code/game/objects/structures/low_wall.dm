@@ -58,21 +58,6 @@
 		W.update_connections()
 		W.update_icon()
 
-
-/obj/structure/low_wall/examine(mob/user)
-	. = ..()
-
-	if(get_integrity() >= max_integrity)
-		to_chat(user, span_notice("It seems to be in fine condition."))
-	else
-		var/dam = get_integrity() / max_integrity
-		if(dam <= 0.3)
-			to_chat(user, span_notice("It's got a few dents and scratches."))
-		else if(dam <= 0.7)
-			to_chat(user, span_warning("A few pieces of panelling have fallen off."))
-		else
-			to_chat(user, span_danger("It's nearly falling to pieces."))
-
 /obj/structure/low_wall/attackby(obj/item/W, mob/user, hit_modifier, click_parameters)
 	src.add_fingerprint(user)
 

@@ -258,6 +258,10 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 		// A destroyed wall becomes a floor in place (same turf, no integrity).
 		if(QDELETED(src) || !uses_integrity)
 			return
+	// What the shell let through reaches the holder's contents (containment
+	// paths, C2). A holder destroyed above has already spilled them.
+	if(length(contents))
+		propagate_damage(packet)
 
 /atom
 	/// How much of an incoming ionic (EMP) amount becomes burn integrity damage.
