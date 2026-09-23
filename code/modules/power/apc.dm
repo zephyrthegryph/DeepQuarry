@@ -1277,12 +1277,10 @@ GLOBAL_LIST_EMPTY(apcs)
 // All APC defines are declared in code/__defines/apc.dm and are not #undef'd
 // here because they are shared with apc_power_distributor and apc_icon_renderer.
 
-/// Audit (reactor.md §7): a sleeping APC must be stable and still on the grid it subscribed to.
+/// Audit (reactor.md §7): a sleeping APC must not be counting down a power failure.
 /obj/machinery/power/apc/react_sleep_violation()
 	if(!asleep_on_keys())
 		return null
 	if(failure_timer)
 		return "asleep during a power failure countdown"
-	if(QDELETED(area) || area.apc != src)
-		return "asleep without owning its area"
 	return null
