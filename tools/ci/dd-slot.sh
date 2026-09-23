@@ -15,9 +15,17 @@
 # that's a sibling of all your worktree checkouts) to make DreamDaemon
 # scheduling and bench baselines actually machine-wide. See doc/testing.md.
 #
+# Priority lane: pass DQ_DD_PRIORITY=1 for test/bench-infrastructure work
+# that other agents are blocked on. The last DQ_DD_PRIORITY_RESERVED slots
+# (default 2 of 5) are held back for priority runs only, so infra work
+# doesn't queue behind the general pool; ordinary (non-priority) runs use the
+# remaining slots as before.
+#
 # Usage: dd-slot.sh <command...>
+# Usage (priority lane): DQ_DD_PRIORITY=1 dd-slot.sh <command...>
 
 SLOT_COUNT=${DQ_DD_SLOT_COUNT:-5}
+PRIORITY_RESERVED=${DQ_DD_PRIORITY_RESERVED:-2}
 
 default_base_parent() {
   if [ -n "$DQ_BENCH_STORE" ]; then
@@ -51,7 +59,13 @@ while true; do
     fi
   fi
   acquired=0
-  for i in $(seq 1 "$SLOT_COUNT"); do
+  if [ "${DQ_DD_PRIORITY:-0}" = "1" ]; then
+    top=$SLOT_COUNT
+  else
+    top=$((SLOT_COUNT - PRIORITY_RESERVED))
+    [ "$top" -lt 1 ] && top=1 # never fully lock ordinary runs out
+  fi
+  for i in $(seq 1 "$top"); do
     d="${SLOT_BASE}${i}"
     if mkdir "$d" 2>/dev/null; then
       echo $$ > "$d/pid"
