@@ -21,7 +21,20 @@
 		fireaxe = new /obj/item/material/twohanded/fireaxe()
 	update_icon()
 
-/obj/structure/fireaxecabinet/attackby(obj/item/O as obj, mob/user as mob)  //Marker -Agouri
+/obj/structure/fireaxecabinet/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/fireaxecabinet_item,
+		/datum/interaction/entry_hand/fireaxecabinet_hand,
+	)
+	..()
+
+/// Old attackby: unlock/lock the case, smash the glass, or take/replace the axe, depending on state and item.
+/datum/interaction/entry_item/fireaxecabinet_item
+	id = "fireaxecabinet_item"
+	name = "Use"
+	effect = /obj/structure/fireaxecabinet/proc/interaction_item
+
+/obj/structure/fireaxecabinet/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)  //Marker -Agouri
 	//..() //That's very useful, Erro
 
 	// This could stand to be put further in, made better, etc. but fuck you. Fuck whoever
@@ -37,13 +50,13 @@
 				locked = 0
 				to_chat(user, span_warning("You disable the locking modules."))
 				update_icon()
-			return
+			return TRUE
 		else if(istype(O, /obj/item))
 			var/obj/item/W = O
 			if(smashed || open)
 				if(open)
 					toggle_close_open()
-				return
+				return TRUE
 			else
 				playsound(src, 'sound/effects/Glasshit.ogg', 100, 1) //We don't want this playing every time
 			if(W.force < 15)
@@ -56,7 +69,7 @@
 					locked = 0
 					open= 1
 			update_icon()
-		return
+		return TRUE
 	if (istype(O, /obj/item/material/twohanded/fireaxe) && open)
 		if(!fireaxe)
 			if(O:wielded)
@@ -69,33 +82,40 @@
 			update_icon()
 		else
 			if(smashed)
-				return
+				return TRUE
 			else
 				toggle_close_open()
 	else
 		if(smashed)
-			return
+			return TRUE
 		if(O.has_tool_quality(TOOL_MULTITOOL))
 			if(open)
 				open = 0
 				update_icon()
 				flick("[icon_state]closing", src)
-				return
+				return TRUE
 			else
 				to_chat(user, span_warning("Resetting circuitry..."))
 				playsound(src, 'sound/machines/lockenable.ogg', 50, 1)
 				if(use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0))
 					locked = 1
 					to_chat(user, span_warning("You re-enable the locking modules."))
-				return
+				return TRUE
 		else
 			toggle_close_open()
+	return TRUE
 
-/obj/structure/fireaxecabinet/attack_hand(mob/user as mob)
+/// Old attack_hand: take the axe if open, or toggle the case.
+/datum/interaction/entry_hand/fireaxecabinet_hand
+	id = "fireaxecabinet_hand"
+	name = "Use"
+	effect = /obj/structure/fireaxecabinet/proc/interaction_hand
+
+/obj/structure/fireaxecabinet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(locked)
 		to_chat(user, span_warning("The cabinet won't budge!"))
-		return
+		return TRUE
 
 	if(open)
 		if(fireaxe)
@@ -106,12 +126,13 @@
 			update_icon()
 		else
 			if(smashed)
-				return
+				return TRUE
 			else
 				toggle_close_open()
 
 	else
 		toggle_close_open()
+	return TRUE
 
 /obj/structure/fireaxecabinet/attack_tk(mob/user as mob)
 	if(open && fireaxe)

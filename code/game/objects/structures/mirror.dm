@@ -25,11 +25,25 @@
 	QDEL_NULL(M)
 	. = ..()
 
-/obj/structure/mirror/attack_hand(mob/user)
-	if(!glass) return
-	if(shattered)	return
+/obj/structure/mirror/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/mirror_open_ui,
+		/datum/interaction/entry_item/mirror_item,
+	)
+	..()
+
+/// Old attack_hand: open the appearance changer.
+/datum/interaction/entry_hand/mirror_open_ui
+	id = "mirror_open_ui"
+	name = "Use"
+	effect = /obj/structure/mirror/proc/interaction_open_ui
+
+/obj/structure/mirror/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!glass) return TRUE
+	if(shattered)	return TRUE
 
 	M.tgui_interact(user)
+	return TRUE
 
 /obj/structure/mirror/attack_ai(mob/user)
 	if(!glass) return
@@ -56,13 +70,19 @@
 			playsound(src, 'sound/effects/hit_on_shattered_glass.ogg', 70, 1)
 	..()
 
-/obj/structure/mirror/attackby(obj/item/I as obj, mob/user as mob)
+/// Old attackby: re-glaze with two sheets of glass, or smash it.
+/datum/interaction/entry_item/mirror_item
+	id = "mirror_item"
+	name = "Use"
+	effect = /obj/structure/mirror/proc/interaction_item
+
+/obj/structure/mirror/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/stack/material/glass))
 		if(!glass)
 			var/obj/item/stack/material/glass/G = I
 			if (G.get_amount() < 2)
 				to_chat(user, span_warning("You need two sheets of glass to add them to the frame."))
-				return
+				return TRUE
 			to_chat(user, span_notice("You start to add the glass to the frame."))
 			if(do_after(user, 2 SECONDS, target = src))
 				if (G.use(2))
@@ -70,11 +90,11 @@
 					glass = 1
 					icon_state = "mirror"
 					to_chat(user, span_notice("You add the glass to the frame."))
-			return
+			return TRUE
 
 	if(shattered && glass)
 		playsound(src, 'sound/effects/hit_on_shattered_glass.ogg', 70, 1)
-		return
+		return TRUE
 
 	if(prob(I.force * 2))
 		visible_message(span_warning("[user] smashes [src] with [I]!"))
@@ -83,6 +103,7 @@
 	else
 		visible_message(span_warning("[user] hits [src] with [I]!"))
 		playsound(src, 'sound/effects/Glasshit.ogg', 70, 1)
+	return TRUE
 
 /obj/structure/mirror/wrench_act(mob/user, obj/item/I)
 	if(!glass)

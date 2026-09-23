@@ -22,9 +22,22 @@
 
 	update_icon()
 
-/obj/structure/extinguisher_cabinet/attackby(obj/item/O, mob/user)
+/obj/structure/extinguisher_cabinet/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/extinguisher_cabinet_item,
+		/datum/interaction/entry_hand/extinguisher_cabinet_hand,
+	)
+	..()
+
+/// Old attackby: store the extinguisher, or just toggle the cabinet open.
+/datum/interaction/entry_item/extinguisher_cabinet_item
+	id = "extinguisher_cabinet_item"
+	name = "Use"
+	effect = /obj/structure/extinguisher_cabinet/proc/interaction_item
+
+/obj/structure/extinguisher_cabinet/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(isrobot(user))
-		return
+		return TRUE
 	if(istype(O, /obj/item/extinguisher))
 		if(!has_extinguisher && opened)
 			user.remove_from_mob(O)
@@ -37,6 +50,7 @@
 	else
 		opened = !opened
 	update_icon()
+	return TRUE
 
 /obj/structure/extinguisher_cabinet/wrench_act(mob/user, obj/item/O)
 	if(isrobot(user))
@@ -53,9 +67,15 @@
 	return TRUE
 
 
-/obj/structure/extinguisher_cabinet/attack_hand(mob/living/user)
+/// Old attack_hand: take the extinguisher, or toggle the cabinet open.
+/datum/interaction/entry_hand/extinguisher_cabinet_hand
+	id = "extinguisher_cabinet_hand"
+	name = "Use"
+	effect = /obj/structure/extinguisher_cabinet/proc/interaction_hand
+
+/obj/structure/extinguisher_cabinet/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user))
-		return
+		return TRUE
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -63,7 +83,7 @@
 			temp = H.organs_by_name[BP_L_HAND]
 		if(temp && !temp.is_usable())
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
-			return
+			return TRUE
 	if(has_extinguisher)
 		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
 		user.put_in_hands(has_extinguisher)
@@ -73,6 +93,7 @@
 	else
 		opened = !opened
 	update_icon()
+	return TRUE
 
 /obj/structure/extinguisher_cabinet/attack_tk(mob/user)
 	if(has_extinguisher)
