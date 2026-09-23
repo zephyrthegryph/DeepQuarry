@@ -11,7 +11,7 @@
 
 #define BREATH_MOLES        (ONE_ATMOSPHERE * BREATH_VOLUME / (T20C * R_IDEAL_GAS_EQUATION)) // Amount of air to take a from a tile
 #define HUMAN_NEEDED_OXYGEN (MOLES_CELLSTANDARD * BREATH_PERCENTAGE * 0.16)
-#define HUMAN_HEAT_CAPACITY 280000 //J/K For 80kg person
+// HUMAN_HEAT_CAPACITY (J/K, 80 kg person) is generated (verdigris/domains/heat/src/consts.rs).
 
 #define         LOW_PRESSURE_DAMAGE 2 // The amount of damage someone takes when in a low pressure area. (The pressure threshold is so low that it doesn't make sense to do any calculations, so it just applies this flat value).
 

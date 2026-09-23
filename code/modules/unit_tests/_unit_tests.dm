@@ -131,6 +131,7 @@
 // the bottom of this file.
 #include "dq_atmos_tests.dm"
 #include "dq_heat_domain_tests.dm"
+#include "dq_heat_api_tests.dm"
 #include "dq_thermal_power_fixes_tests.dm"
 #include "dq_performance_diagnostics_tests.dm"
 #include "dq_audit_tests.dm"

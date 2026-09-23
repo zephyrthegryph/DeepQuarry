@@ -293,12 +293,6 @@ update_flag
 /obj/machinery/portable_atmospherics/canister/return_air()
 	return air_contents
 
-/obj/machinery/portable_atmospherics/canister/proc/return_temperature()
-	var/datum/gas_mixture/GM = src.return_air()
-	if(GM && GM.return_volume()>0)
-		return GM.return_temperature()
-	return 0
-
 /obj/machinery/portable_atmospherics/canister/proc/return_pressure()
 	var/datum/gas_mixture/GM = src.return_air()
 	if(GM && GM.return_volume()>0)

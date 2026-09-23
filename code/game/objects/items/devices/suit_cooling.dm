@@ -80,7 +80,7 @@
 		var/mob/living/carbon/human/H = loc
 		if(istype(H.loc, /obj/mecha))
 			var/obj/mecha/M = H.loc
-			return M.return_temperature()
+			return M.get_interior_temperature()
 		else if(istype(H.loc, /obj/machinery/atmospherics/unary/cryo_cell))
 			var/obj/machinery/atmospherics/unary/cryo_cell/cc = H.loc
 			return cc.air_contents.return_temperature()

@@ -172,6 +172,43 @@ if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperatu
 	FAILED=1
 fi;
 
+part "thermal constants: generated, not redefined (H1)"
+# Temperatures, heat capacities and thermal defaults are generated from
+# verdigris/domains/heat/src/consts.rs (`/// @dm-define`) into the bindings. A DM
+# #define of a generated name is a second definition that can drift (B12).
+generated_defines=$(sed -n 's/^#define \([A-Z][A-Z0-9_]*\) .*/\1/p' code/__defines/verdigris/_bindings.dm | paste -sd'|' -)
+if [ -n "$generated_defines" ] && $grep -n "^[[:space:]]*#define[[:space:]]+($generated_defines)\b" "${code_files[@]}" | grep -v '^code/__defines/verdigris/_bindings\.dm'; then
+	echo
+	echo -e "${RED}ERROR: a generated verdigris constant is redefined in DM. Change it in the Rust source (@dm-define) and regenerate the bindings.${NC}"
+	FAILED=1
+fi;
+
+part "thermal constants: no hardcoded body temperatures or human heat capacities (H1)"
+# 310.15 K is BODYTEMP_NORMAL and 280000 J/K is HUMAN_HEAT_CAPACITY. Comments are
+# ignored. emergent.dm's T0C + 37 belongs to the body rewrite (fixes.md B22).
+if $grep -n '\b(310(\.(15|055|0?5))?|280000|249840)\b' "${code_files[@]}" | sed 's#//.*##' \
+	| grep -E '^[^:]+:[0-9]+:.*\b(310(\.(15|055|0?5))?|280000|249840)\b' | grep -iE 'temp|heat|capacit' \
+	| grep -v '^code/__defines/verdigris/_bindings\.dm'; then
+	echo
+	echo -e "${RED}ERROR: hardcoded body temperature or human heat capacity. Use BODYTEMP_NORMAL / HUMAN_HEAT_CAPACITY (generated from verdigris/domains/heat/src/consts.rs).${NC}"
+	FAILED=1
+fi;
+if $grep -n '^[^/]*(\bT0C[[:space:]]*\+[[:space:]]*37\b|\b37[[:space:]]*\+[[:space:]]*T0C\b)' "${code_files[@]}" | grep -v '^code/modules/medical/emergent\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: T0C + 37 is BODYTEMP_NORMAL.${NC}"
+	FAILED=1
+fi;
+
+part "one temperature API: no ad-hoc return_temperature procs (H1)"
+# Atoms read get_temperature() / get_interior_temperature() and heat with
+# add_heat() (code/modules/heat/heat.dm). return_temperature() is the gas
+# mixture accessor only.
+if $grep -n '^/[A-Za-z0-9_/]*/return_temperature\(' "${code_files[@]}" | grep -v '^code/ATMOSPHERICS/gasmixtures/gas_mixture\.dm:[0-9]*:/datum/gas_mixture/proc/return_temperature('; then
+	echo
+	echo -e "${RED}ERROR: return_temperature() is only the gas mixture accessor. Atoms override get_temperature() / get_interior_temperature() (code/modules/heat/heat.dm).${NC}"
+	FAILED=1
+fi;
+
 part "input: modifier ladders"
 # Click modifiers (shift, ctrl, alt, middle, right, extra buttons) are read in one
 # place: the input router (code/modules/keybindings/router.dm), which turns them
