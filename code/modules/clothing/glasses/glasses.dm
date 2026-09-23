@@ -184,8 +184,11 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/night/vox
 	name = "Alien Optics"
-	species_restricted = list("Vox")
 	flags = PHORONGUARD
+
+/obj/item/clothing/glasses/night/vox/fit_constraint()
+	var/list/bodytypes = list("Vox")
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/glasses/night/Initialize(mapload)
 	. = ..()
@@ -621,8 +624,11 @@ BLIND     // can't see anything
 	var/up = 0
 	item_flags = AIRTIGHT
 	body_parts_covered = EYES
-	species_restricted = list(SPECIES_TESHARI)
 	specialty_goggles = TRUE
+
+/obj/item/clothing/glasses/aerogelgoggles/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/glasses/aerogelgoggles/attack_self(mob/user)
 	. = ..(user)

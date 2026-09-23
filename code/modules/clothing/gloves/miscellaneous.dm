@@ -115,7 +115,6 @@
 	flags = PHORONGUARD
 	siemens_coefficient = 0
 	permeability_coefficient = 0.05
-	species_restricted = list("Vox")
 	drop_sound = 'sound/items/drop/metalboots.ogg'
 	pickup_sound = 'sound/items/pickup/toolbox.ogg'
 	armor = list (melee = 20, bullet = 15, laser = 10, energy = 10, bomb =5, bio = 30, rad = 30) // gently bumped up Heavy engineering gloves value for protection //
@@ -123,6 +122,10 @@
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	resistance_flags = FIRE_PROOF
+
+/obj/item/clothing/gloves/vox/fit_constraint()
+	var/list/bodytypes = list("Vox")
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/gloves/ranger
 	var/glovecolor = "white"

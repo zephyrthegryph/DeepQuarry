@@ -571,8 +571,10 @@
 	var/special_handling = FALSE
 
 /obj/item/storage/internal/gripper
-	max_w_class = ITEMSIZE_HUGE
 	max_storage_space = ITEMSIZE_COST_HUGE
+
+/obj/item/storage/internal/gripper/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_HUGE))
 
 /obj/item/gripper/Initialize(mapload)
 	. = ..()

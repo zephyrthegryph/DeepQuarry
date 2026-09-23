@@ -55,16 +55,18 @@
 	name = "roulette ball box"
 	desc = "A box of spare roulette balls."
 	icon_state = "balls"
-	can_hold = list(/obj/item/roulette_ball)
 	starts_with = list(
 		/obj/item/roulette_ball = 7,
 		/obj/item/roulette_ball/hollow = 2)
+
+/obj/item/storage/box/roulette_balls_normal/hold_constraint()
+	var/list/holds = list(/obj/item/roulette_ball)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/roulette_balls_fancy
 	name = "fancy roulette ball box"
 	desc = "A box of extra-pretty roulette balls."
 	icon_state = "balls"
-	can_hold = list(/obj/item/roulette_ball)
 	starts_with = list(
 		/obj/item/roulette_ball,
 		/obj/item/roulette_ball/hollow,
@@ -78,11 +80,14 @@
 		/obj/item/roulette_ball/planet,
 		/obj/item/roulette_ball/gold)
 
+/obj/item/storage/box/roulette_balls_fancy/hold_constraint()
+	var/list/holds = list(/obj/item/roulette_ball)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+
 /obj/item/storage/box/roulette_balls_cheat
 	name = "special roulette ball box"
 	desc = "A box of 'special' roulette balls."
 	icon_state = "balls"
-	can_hold = list(/obj/item/roulette_ball)
 	starts_with = list(
 		/obj/item/roulette_ball/cheat/first_twelve,
 		/obj/item/roulette_ball/cheat/second_twelve,
@@ -92,3 +97,7 @@
 		/obj/item/roulette_ball/cheat/zeros,
 		/obj/item/roulette_ball/cheat/odd,
 		/obj/item/roulette_ball/cheat/even)
+
+/obj/item/storage/box/roulette_balls_cheat/hold_constraint()
+	var/list/holds = list(/obj/item/roulette_ball)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))

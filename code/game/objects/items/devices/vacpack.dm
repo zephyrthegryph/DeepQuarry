@@ -313,7 +313,7 @@
 		var/obj/item/target_item = target
 		if(istype(output_atom, /obj/item/storage))//if it's storage, does it fit?
 			var/obj/item/storage/target_storage = output_atom
-			if(target_storage.can_be_inserted(target_item, TRUE))
+			if(!target_storage.insert_refusal(target_item, user))
 				return TRUE
 		else//if it's not a trash bag, it's a vorebelly or borg belly. Check trash eat
 			if(is_type_in_list(target_item, GLOB.edible_trash) && target_item.trash_eatable && !is_type_in_list(target_item, GLOB.item_vore_blacklist))

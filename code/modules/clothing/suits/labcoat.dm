@@ -6,8 +6,11 @@
 	blood_overlay_type = "coat"
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+
+/obj/item/clothing/suit/storage/toggle/labcoat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/toggle/labcoat/red
 	name = "red labcoat"

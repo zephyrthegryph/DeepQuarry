@@ -49,7 +49,7 @@
 	for(var/obj/item/I in loc)
 		if(istype(I, /obj/item/clothing))
 			var/obj/item/clothing/C = I
-			C.species_restricted = null
+			C.restrict_fit(null)
 		equip_to_appropriate_slot(I)
 
 	if(istype(back, /obj/item/rig))

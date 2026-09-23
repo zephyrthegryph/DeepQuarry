@@ -1764,7 +1764,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	. = ..()
 	if (!istype(user))
 		return
-	if(("[slot_equipped]" in GLOB.slot_flags_enumeration) && (slot_flags & GLOB.slot_flags_enumeration["[slot_equipped]"]))
+	if(dq_item_fits_slot_flags(src, slot_equipped))
 		if (LAZYLEN(user_vars_to_edit))
 			for(var/variable in user_vars_to_edit)
 				if(variable in user.vars)

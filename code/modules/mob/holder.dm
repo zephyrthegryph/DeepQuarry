@@ -388,7 +388,6 @@
 /obj/item/holder/protoblob
 	slot_flags = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS
 	w_class = ITEMSIZE_TINY
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/lefthand_holder.dmi',
 		slot_r_hand_str = 'icons/mob/righthand_holder.dmi',
@@ -397,3 +396,7 @@
 		slot_wear_suit_str = 'icons/mob/suit.dmi',
 		slot_r_ear_str = 'icons/mob/ears.dmi',
 		slot_l_ear_str = 'icons/mob/ears.dmi')
+
+/obj/item/holder/protoblob/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
+	return list(HOLD_ONLY(stores))

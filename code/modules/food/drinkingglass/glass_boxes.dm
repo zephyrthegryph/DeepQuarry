@@ -2,7 +2,6 @@
 	name = "glassware box"
 	desc = "A box of assorted glassware"
 	icon_state = "glass"
-	can_hold = list(/obj/item/reagent_containers/food/drinks/glass2)
 	starts_with = list(
 		/obj/item/reagent_containers/food/drinks/glass2/square,
 		/obj/item/reagent_containers/food/drinks/glass2/rocks,
@@ -16,14 +15,21 @@
 		/obj/item/reagent_containers/food/drinks/metaglass/metapint
 	)
 
+/obj/item/storage/box/mixedglasses/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/drinks/glass2)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+
 /obj/item/storage/box/glasses
 	name = "box of glasses"
-	can_hold = list(/obj/item/reagent_containers/food/drinks/glass2,
+	starts_with = list(/obj/item/reagent_containers/food/drinks/glass2 = 7)
+
+/obj/item/storage/box/glasses/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/drinks/glass2,
 		/obj/item/reagent_containers/food/drinks/cup,
 		/obj/item/reagent_containers/food/drinks/tall,
 		/obj/item/reagent_containers/food/drinks/grande,
 		/obj/item/reagent_containers/food/drinks/venti)
-	starts_with = list(/obj/item/reagent_containers/food/drinks/glass2 = 7)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/glasses/square
 	name = "box of half-pint glasses"
@@ -67,9 +73,12 @@
 
 /obj/item/storage/box/glass_extras
 	name = "box of cocktail garnishings"
-	can_hold = list(/obj/item/glass_extra)
 	storage_slots = 14
 	starts_with = list(/obj/item/glass_extra = 14)
+
+/obj/item/storage/box/glass_extras/hold_constraint()
+	var/list/holds = list(/obj/item/glass_extra)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/glass_extras/straws
 	name = "box of straws"

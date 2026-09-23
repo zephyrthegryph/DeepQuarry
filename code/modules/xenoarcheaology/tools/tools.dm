@@ -15,8 +15,10 @@
 	w_class = ITEMSIZE_NORMAL
 	storage_slots = 50
 	max_storage_space = ITEMSIZE_COST_NORMAL * 50
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/fossil)
+
+/obj/item/storage/bag/fossils/hold_constraint()
+	var/list/holds = list(/obj/item/fossil)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/box/samplebags
 	name = "sample bag box"
