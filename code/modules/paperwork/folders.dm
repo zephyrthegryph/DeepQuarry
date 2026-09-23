@@ -26,9 +26,6 @@
 	drop_policy = SLOT_DROP_DELETE
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0.5, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0)
-	// Inside the cover; opening the folder materializes its pages (C10).
-	rendered = FALSE
-	interactive = FALSE
 
 /datum/predicate/slot_folder_pages
 	name = "folder pages"

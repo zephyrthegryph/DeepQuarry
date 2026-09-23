@@ -100,10 +100,6 @@
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
-	// Closed until opened; materializing on open (containment.md §4.3) is
-	// what shows the contents, not a standing rendered slot (C10).
-	rendered = FALSE
-	interactive = FALSE
 
 /datum/slot_def/closet_interior/capacity_for(obj/structure/closet/holder)
 	return holder.storage_capacity

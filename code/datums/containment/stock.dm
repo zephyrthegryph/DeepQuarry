@@ -18,12 +18,6 @@
 	name = "internals"
 	drop_policy = SLOT_DROP_HOLDER
 	is_default = TRUE
-	// Not shown or reachable except by deconstructing the machine (C10). C6
-	// is converting machine internals onto the latent framework on
-	// rewrite/c6; the latency policy itself is not enabled for machinery
-	// until that lands (dq_latency_policy_machinery_todo below).
-	rendered = FALSE
-	interactive = FALSE
 
 /// Stock: latent records plus real items with unique state. Spilled on destroy.
 /datum/slot_def/stock
@@ -31,11 +25,6 @@
 	name = "stock"
 	capacity_model = SLOT_CAPACITY_UNITS
 	drop_policy = SLOT_DROP_SPILL
-	// A vending machine's product face and a smartfridge's shelf are
-	// interactive (they can be vended/taken from directly) but the stock
-	// itself is already virtual counts, not rendered atoms (C10).
-	rendered = FALSE
-	interactive = TRUE
 
 /// Vending stock is deleted with the machine, as it always was: a wrecked
 /// vendor does not shower its whole inventory.
