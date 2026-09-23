@@ -209,8 +209,13 @@
 /obj/item/storage/mrebag
 	latent_contents = FALSE
 
-/obj/item/storage/pill_bottle
-	latent_contents = FALSE
+// ---- C5 step 5: pill bottles ----
+// A pill bottle is ordinary mapped storage (storage.dm handles the generator
+// and materializes before use, open, examine, ...): plain starts_with lines
+// of latent-safe pills stay declared. chem_master.dm makes a loaded bottle's
+// pills real before it reads .contents. Nothing to opt out here; bottles
+// whose Initialize() fills itself directly (dice, benzilate, ...) never set
+// starts_with, so the generator is a no-op for them regardless.
 
 /obj/item/storage/pouch/baton
 	latent_contents = FALSE
@@ -600,3 +605,10 @@
 
 /obj/item/storage/toolbox/syndicate/powertools
 	latent_safe = FALSE
+
+// ---- C5 step 4: ammo ----
+// Magazines keep their initial rounds as latent_rounds while on a turf or in
+// a latent holder (ammunition.dm), and may be entries in closets and storage.
+
+/obj/item/ammo_magazine
+	latent_safe = TRUE

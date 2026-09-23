@@ -50,12 +50,17 @@
 		update_icon()
 
 	else if(istype(B, /obj/item/storage/pill_bottle))
+		var/obj/item/storage/pill_bottle/PB = B
 
 		if(src.loaded_pill_bottle)
 			to_chat(user, "A \the [loaded_pill_bottle] s already loaded into the machine.")
 			return
 
-		src.loaded_pill_bottle = B
+		// The machine reads .contents directly below (C5); a bottle loaded
+		// straight off a turf or out of a latent holder still holds its
+		// pills as a declared generator until now.
+		PB.make_contents_real()
+		src.loaded_pill_bottle = PB
 		user.drop_item()
 		B.loc = src
 		to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")

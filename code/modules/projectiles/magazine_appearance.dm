@@ -92,7 +92,7 @@
 	var/new_state = null
 	for(var/idx in 1 to thresholds.len)
 		var/threshold = thresholds[idx]
-		if(threshold >= mag.stored_ammo.len)
+		if(threshold >= mag.ammo_count())
 			new_state = state_names[idx]
 			break
 	mag.icon_state = (new_state) ? new_state : initial(mag.icon_state)

@@ -406,3 +406,85 @@
 	L.use_emergency_power(1)
 	TEST_ASSERT(L.cell, "drawing on it does")
 	TEST_ASSERT(abs(L.cell.charge - 99) < 0.01, "from the declared charge: [L.cell.charge]")
+
+// ---- Step 4: ammo ----
+
+/// A mapped magazine holds its rounds as a count; handling it gives the same
+/// rounds an eager one has, and the count survives the serializer.
+/datum/unit_test/dq_latent_magazine_rounds
+
+/datum/unit_test/dq_latent_magazine_rounds/Run()
+	var/obj/item/ammo_magazine/m380/latent = allocate(/obj/item/ammo_magazine/m380, test_floor())
+	TEST_ASSERT(latent.latent_rounds > 0, "a magazine on the floor keeps a count")
+	TEST_ASSERT_EQUAL(length(latent.contents), 0, "and no casing atoms")
+	TEST_ASSERT_EQUAL(latent.ammo_count(), latent.max_ammo, "counting them all")
+	var/list/errors = list()
+	var/list/blob = state_serialize(latent, STATE_FULL, errors)
+	TEST_ASSERT(blob, "serialize: [jointext(errors, "; ")]")
+	var/obj/item/ammo_magazine/copy = state_materialize(json_decode(json_encode(blob)), test_floor(), STATE_FULL, errors)
+	TEST_ASSERT(copy, "materialize: [jointext(errors, "; ")]")
+	TEST_ASSERT_EQUAL(state_canonical(state_serialize(copy, STATE_FULL)), state_canonical(blob), "round trip")
+	var/obj/item/storage/box/holder = allocate(/obj/item/storage/box, test_floor())
+	var/obj/item/ammo_magazine/m380/eager = new(holder)
+	eager.make_rounds_real()
+	for(var/obj/item/ammo_magazine/M as anything in list(latent, copy))
+		M.make_rounds_real()
+		TEST_ASSERT_EQUAL(M.latent_rounds, 0, "all real")
+		TEST_ASSERT_EQUAL(dq_latent_census(M), dq_latent_census(eager), "same rounds as an eager magazine")
+		TEST_ASSERT_EQUAL(length(M.stored_ammo), length(eager.stored_ammo), "all loaded")
+	// Moving into something that isn't a latent holder makes them real.
+	var/obj/item/ammo_magazine/m380/moved = allocate(/obj/item/ammo_magazine/m380, test_floor())
+	var/obj/item/dq_containment_box/plain = allocate(/obj/item/dq_containment_box, test_floor())
+	moved.forceMove(plain)
+	TEST_ASSERT_EQUAL(moved.latent_rounds, 0, "moving into a plain holder makes rounds real")
+	TEST_ASSERT_EQUAL(length(moved.stored_ammo), moved.max_ammo, "all of them")
+	qdel(copy)
+
+// ---- Step 5: pill bottles ----
+
+/// A mapped pill bottle is ordinary latent storage: its pills stay declared
+/// until picked up, and round-trip through the serializer the same as the
+/// step 2 fixture box.
+/datum/unit_test/dq_latent_pill_bottle_declared
+
+/datum/unit_test/dq_latent_pill_bottle_declared/Run()
+	var/obj/item/storage/pill_bottle/antitox/bottle = allocate(/obj/item/storage/pill_bottle/antitox, test_floor())
+	TEST_ASSERT_EQUAL(length(bottle.contents), 0, "the pills are latent")
+	TEST_ASSERT(bottle.has_latent(), "declared, not rolled")
+	var/list/errors = list()
+	var/list/blob = state_serialize(bottle, STATE_FULL, errors)
+	TEST_ASSERT(blob, "serialize: [jointext(errors, "; ")]")
+	var/obj/item/storage/pill_bottle/copy = state_materialize(json_decode(json_encode(blob)), test_floor(), STATE_FULL, errors)
+	TEST_ASSERT(copy, "materialize: [jointext(errors, "; ")]")
+	TEST_ASSERT_EQUAL(state_canonical(state_serialize(copy, STATE_FULL)), state_canonical(blob), "round trip")
+	bottle.make_contents_real()
+	copy.make_contents_real()
+	TEST_ASSERT_EQUAL(dq_latent_census(bottle), "/obj/item/reagent_containers/pill/antitox=14", "all fourteen pills")
+	TEST_ASSERT_EQUAL(dq_latent_census(copy), dq_latent_census(bottle), "the copy holds the same")
+	qdel(copy)
+
+/// Picking a bottle up makes its pills real, same as any other latent storage.
+/datum/unit_test/dq_latent_pill_bottle_pickup
+
+/datum/unit_test/dq_latent_pill_bottle_pickup/Run()
+	var/obj/item/storage/pill_bottle/antitox/bottle = allocate(/obj/item/storage/pill_bottle/antitox, test_floor())
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	TEST_ASSERT(H.put_in_active_hand(bottle), "picked up")
+	TEST_ASSERT(!bottle.has_latent(), "nothing latent once held")
+	TEST_ASSERT_EQUAL(length(bottle.contents), 14, "all fourteen pills are real")
+
+/// The ChemMaster reads a loaded bottle's .contents directly (chem_master.dm);
+/// loading a still-latent bottle must make its pills real first.
+/datum/unit_test/dq_latent_pill_bottle_chem_master
+
+/datum/unit_test/dq_latent_pill_bottle_chem_master/Run()
+	var/turf/T = test_floor()
+	var/obj/item/storage/pill_bottle/antitox/bottle = allocate(/obj/item/storage/pill_bottle/antitox, T)
+	TEST_ASSERT(bottle.has_latent(), "declared on the floor")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/chem_master/master = allocate(/obj/machinery/chem_master, T)
+	master.attackby(bottle, H)
+	TEST_ASSERT_EQUAL(master.loaded_pill_bottle, bottle, "the bottle loaded")
+	TEST_ASSERT(!bottle.has_latent(), "nothing latent once loaded")
+	TEST_ASSERT_EQUAL(length(bottle.contents), 14, "its pills are real")
+	qdel(master)
