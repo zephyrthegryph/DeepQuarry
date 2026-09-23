@@ -17,10 +17,13 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use crate::channel::{ChannelError, ChannelInfo, Channels, channel_infos, validate_channels};
 use crate::cow::ChunkLayout;
 use crate::frame::{FrameInfo, Res, ResourceId, Resources, Schedule, Task, run_frame};
 use crate::mailbox::Latest;
+use crate::outbox::{Outbox, OutboxSlot};
 use crate::owner::{Domain, DomainKey, DomainState, MainPort};
+use crate::watch::{Cond, WatchError, WatchPort, WatchState, validate};
 
 /// How DM writes to worker-owned cells are handled.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -219,6 +222,137 @@ pub struct SimBuilder {
     tasks: Vec<Task>,
     publishers: Vec<(ResourceId, PublishFn)>,
     ports: Vec<Box<dyn PortDyn>>,
+    watch_tasks: Vec<Task>,
+    watch_ports: Vec<Box<dyn WatchPortDyn>>,
+    /// Per domain index: its channel table and watch port, once declared.
+    channel_tables: Vec<Option<(Vec<ChannelInfo>, usize)>>,
+    declared: Vec<Declared>,
+    boot_errors: Vec<BootError>,
+}
+
+/// A condition declared at boot (a per-type rule, section 6.3), checked
+/// once by [`SimBuilder::build`].
+struct Declared {
+    name: String,
+    domain: usize,
+    domain_name: &'static str,
+    cond: Cond,
+}
+
+/// One problem found by boot validation.
+#[derive(Clone, Debug, PartialEq)]
+pub enum BootError {
+    Channel(ChannelError),
+    Condition {
+        name: String,
+        domain: &'static str,
+        error: WatchError,
+    },
+    /// A condition was declared on a domain with no watches.
+    NoWatches {
+        name: String,
+        domain: &'static str,
+    },
+}
+
+impl std::fmt::Display for BootError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Channel(e) => write!(f, "channel declaration: {e}"),
+            Self::Condition {
+                name,
+                domain,
+                error,
+            } => write!(f, "condition `{name}` on {domain}: {error}"),
+            Self::NoWatches { name, domain } => write!(
+                f,
+                "condition `{name}` is declared on {domain}, which has no watches"
+            ),
+        }
+    }
+}
+
+/// Why [`SimBuilder::build`] failed.
+#[derive(Debug)]
+pub enum BuildError {
+    Pool(rayon::ThreadPoolBuildError),
+    /// Every declared channel and condition that failed validation.
+    Boot(Vec<BootError>),
+}
+
+impl std::fmt::Display for BuildError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pool(e) => write!(f, "frame pool: {e}"),
+            Self::Boot(errors) => {
+                writeln!(f, "boot validation failed ({} problems):", errors.len())?;
+                for e in errors {
+                    writeln!(f, "  {e}")?;
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+impl std::error::Error for BuildError {}
+
+impl From<rayon::ThreadPoolBuildError> for BuildError {
+    fn from(e: rayon::ThreadPoolBuildError) -> Self {
+        Self::Pool(e)
+    }
+}
+
+/// A typed key for a domain's watches.
+pub struct WatchKey<D: Channels> {
+    domain: DomainKey<D>,
+    port: usize,
+    state: Res<WatchState<D>>,
+}
+
+impl<D: Channels> WatchKey<D> {
+    #[must_use]
+    pub const fn domain(self) -> DomainKey<D> {
+        self.domain
+    }
+
+    /// The worker-side watch state.
+    #[must_use]
+    pub const fn state(self) -> Res<WatchState<D>> {
+        self.state
+    }
+}
+
+impl<D: Channels> Clone for WatchKey<D> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<D: Channels> Copy for WatchKey<D> {}
+
+trait WatchPortDyn: Any {
+    fn dispatch(&mut self, res: &mut Resources);
+    fn filter_any(&self, outbox: &mut dyn Any);
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+}
+
+struct WatchPortEntry<D: Channels> {
+    port: WatchPort<D>,
+    state: Res<WatchState<D>>,
+}
+
+impl<D: Channels> WatchPortDyn for WatchPortEntry<D> {
+    fn dispatch(&mut self, res: &mut Resources) {
+        self.port.dispatch(res.get_mut(self.state));
+    }
+    fn filter_any(&self, outbox: &mut dyn Any) {
+        if let Some(out) = outbox.downcast_mut::<Outbox<D::Value>>() {
+            self.port.filter(out);
+        }
+    }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 }
 
 impl SimBuilder {
@@ -231,16 +365,112 @@ impl SimBuilder {
             tasks: Vec::new(),
             publishers: Vec::new(),
             ports: Vec::new(),
+            watch_tasks: Vec::new(),
+            watch_ports: Vec::new(),
+            channel_tables: Vec::new(),
+            declared: Vec::new(),
+            boot_errors: Vec::new(),
         }
+    }
+
+    /// Gives a domain watches (section 6.4): validates its channel table,
+    /// adds its watch state, and adds a watch task that runs after every
+    /// other task of the frame. A bad channel table is reported by
+    /// [`build`](Self::build).
+    ///
+    /// # Panics
+    /// If the domain already has watches, or `key` is from another builder.
+    pub fn add_watches<D: Channels>(&mut self, key: DomainKey<D>) -> WatchKey<D> {
+        assert!(
+            self.channel_tables[key.index].is_none(),
+            "{} already has watches",
+            D::NAME
+        );
+        if let Err(errors) = validate_channels::<D>() {
+            self.boot_errors
+                .extend(errors.into_iter().map(BootError::Channel));
+        }
+        let layout = self.ports[key.index]
+            .as_any()
+            .downcast_ref::<MainPort<D>>()
+            .expect("domain key from this builder")
+            .layout();
+        let state = self
+            .resources
+            .insert(format!("watch:{}", D::NAME), WatchState::<D>::new(layout));
+        let domain_state = key.state;
+        self.watch_tasks.push(
+            Task::new(format!("watch:{}", D::NAME), move |ctx| {
+                let mut dom = ctx.write(domain_state);
+                ctx.write(state).run(&mut dom);
+            })
+            .writes(state.id())
+            .writes(domain_state.id()),
+        );
+        let port = self.watch_ports.len();
+        self.watch_ports.push(Box::new(WatchPortEntry {
+            port: WatchPort::<D>::new(layout),
+            state,
+        }));
+        self.channel_tables[key.index] = Some((channel_infos::<D>(), port));
+        WatchKey {
+            domain: key,
+            port,
+            state,
+        }
+    }
+
+    /// Declares a condition that a rule will use (cells are not checked:
+    /// declared conditions are templates). [`build`](Self::build) validates
+    /// every declaration once and fails on any error (section 6.3).
+    pub fn declare_condition<D: Domain>(
+        &mut self,
+        key: DomainKey<D>,
+        name: impl Into<String>,
+        cond: Cond,
+    ) -> &mut Self {
+        self.declared.push(Declared {
+            name: name.into(),
+            domain: key.index,
+            domain_name: D::NAME,
+            cond,
+        });
+        self
+    }
+
+    /// Every channel and declared-condition problem found so far.
+    #[must_use]
+    pub fn boot_errors(&self) -> Vec<BootError> {
+        let mut errors = self.boot_errors.clone();
+        for d in &self.declared {
+            match &self.channel_tables[d.domain] {
+                None => errors.push(BootError::NoWatches {
+                    name: d.name.clone(),
+                    domain: d.domain_name,
+                }),
+                Some((chans, _)) => {
+                    if let Err(error) = validate(&d.cond, chans, None) {
+                        errors.push(BootError::Condition {
+                            name: d.name.clone(),
+                            domain: d.domain_name,
+                            error,
+                        });
+                    }
+                }
+            }
+        }
+        errors
     }
 
     /// Registers a domain with one cell per index of `layout`. Its apply
     /// task runs before every other task each frame.
     pub fn add_domain<D: Domain>(&mut self, layout: ChunkLayout) -> DomainKey<D> {
-        let outbox = Arc::new(Latest::new());
-        let state = self
-            .resources
-            .insert(D::NAME, DomainState::<D>::new(layout, Arc::clone(&outbox)));
+        let views = Arc::new(Latest::new());
+        let outbox = Arc::new(OutboxSlot::default());
+        let state = self.resources.insert(
+            D::NAME,
+            DomainState::<D>::new(layout, Arc::clone(&views), Arc::clone(&outbox)),
+        );
         let index = self.ports.len();
         self.apply_tasks.push(
             Task::new(format!("apply:{}", D::NAME), move |ctx| {
@@ -252,8 +482,9 @@ impl SimBuilder {
             .push((state.id(), DomainState::<D>::publish));
         let fallback = matches!(self.config.mode, Mode::Fallback { .. });
         self.ports.push(Box::new(MainPort::<D>::new(
-            layout, outbox, state, fallback,
+            layout, views, outbox, state, fallback,
         )));
+        self.channel_tables.push(None);
         DomainKey { index, state }
     }
 
@@ -272,17 +503,24 @@ impl SimBuilder {
         self
     }
 
-    /// Builds the pool and the world.
+    /// Validates every channel table and declared condition, then builds
+    /// the pool and the world.
     ///
     /// # Errors
-    /// If the thread pool cannot be created.
-    pub fn build(self) -> Result<Sim, rayon::ThreadPoolBuildError> {
+    /// [`BuildError::Boot`] listing every bad declaration, or
+    /// [`BuildError::Pool`] if the thread pool cannot be created.
+    pub fn build(self) -> Result<Sim, BuildError> {
+        let errors = self.boot_errors();
+        if !errors.is_empty() {
+            return Err(BuildError::Boot(errors));
+        }
         let pool = rayon::ThreadPoolBuilder::new()
             .num_threads(self.config.threads.max(1))
             .thread_name(|i| format!("vg-frame-{i}"))
             .build()?;
         let mut tasks = self.apply_tasks;
         tasks.extend(self.tasks);
+        tasks.extend(self.watch_tasks);
         let schedule = Schedule::build(&tasks);
         let domains = self.publishers.len();
         let world = World {
@@ -304,6 +542,12 @@ impl SimBuilder {
             world: Some(Box::new(world)),
             done: Arc::new(Latest::new()),
             ports: self.ports,
+            watch_ports: self.watch_ports,
+            watch_of: self
+                .channel_tables
+                .iter()
+                .map(|t| t.as_ref().map(|(_, p)| *p))
+                .collect(),
             next_frame: 0,
             metrics: SimMetrics::default(),
             log,
@@ -322,6 +566,9 @@ pub struct Sim {
     world: Option<Box<World>>,
     done: Arc<Latest<Box<World>>>,
     ports: Vec<Box<dyn PortDyn>>,
+    watch_ports: Vec<Box<dyn WatchPortDyn>>,
+    /// Per domain index, its watch port.
+    watch_of: Vec<Option<usize>>,
     next_frame: u64,
     metrics: SimMetrics,
     log: Option<FrameLog>,
@@ -374,6 +621,9 @@ impl Sim {
             .iter_mut()
             .map(|p| p.dispatch(&mut world.resources, record))
             .collect();
+        for w in &mut self.watch_ports {
+            w.dispatch(&mut world.resources);
+        }
         if let Some(log) = &mut self.log {
             log.frames.push(FrameRecord { frame, batches });
         }
@@ -445,6 +695,34 @@ impl Sim {
             .expect("domain key from another Sim")
     }
 
+    /// A domain's watch registration port (main thread).
+    ///
+    /// # Panics
+    /// If `key` is from another `Sim`.
+    pub fn watches<D: Channels>(&mut self, key: WatchKey<D>) -> &mut WatchPort<D> {
+        &mut self.watch_ports[key.port]
+            .as_any_mut()
+            .downcast_mut::<WatchPortEntry<D>>()
+            .expect("watch key from another Sim")
+            .port
+    }
+
+    /// Drains a domain's outbox: every wake, event and `Take` result its
+    /// frames produced since the last drain, with wakes and crossings of
+    /// removed watches dropped (section 6.4). Call once per tick after
+    /// [`begin_tick`](Self::begin_tick) and hand the wakes to the
+    /// [`Reactor`](crate::reactor::Reactor).
+    ///
+    /// # Panics
+    /// If `key` is from another `Sim`.
+    pub fn drain<D: Domain>(&mut self, key: DomainKey<D>) -> Outbox<D::Value> {
+        let mut out = self.port(key).take_outbox();
+        if let Some(Some(w)) = self.watch_of.get(key.index) {
+            self.watch_ports[*w].filter_any(&mut out);
+        }
+        out
+    }
+
     /// Shared access to a domain's port.
     ///
     /// # Panics
@@ -494,15 +772,12 @@ impl Sim {
     /// session bit for bit (§3.9).
     ///
     /// # Errors
-    /// If the thread pool cannot be created.
+    /// As [`SimBuilder::build`].
     ///
     /// # Panics
     /// If the builder is in fallback mode, or its domains differ from the
     /// recorded ones.
-    pub fn replay(
-        mut builder: SimBuilder,
-        log: &FrameLog,
-    ) -> Result<Sim, rayon::ThreadPoolBuildError> {
+    pub fn replay(mut builder: SimBuilder, log: &FrameLog) -> Result<Sim, BuildError> {
         assert_eq!(
             builder.config.mode,
             Mode::Overlay,

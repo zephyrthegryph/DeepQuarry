@@ -8,6 +8,7 @@
 pub mod alloc;
 pub mod arena;
 pub mod bitset;
+pub mod channel;
 pub mod command;
 pub mod cow;
 pub mod frame;
@@ -17,15 +18,19 @@ pub mod intern;
 pub mod jobs;
 pub mod mailbox;
 pub mod metrics;
+pub mod outbox;
 pub mod overlay;
 pub mod owner;
 pub mod propagate;
+pub mod reactor;
 pub mod recorder;
 pub mod replay;
 pub mod rng;
 pub mod sim;
 pub mod thermo;
+pub mod timer;
 pub mod units;
+pub mod watch;
 
 pub use arena::Arena;
 pub use handle::{Handle, RawHandle};
