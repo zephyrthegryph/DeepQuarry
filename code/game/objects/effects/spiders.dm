@@ -207,7 +207,7 @@
 				O.owner.injure(INJURY_PIERCE, 1, O.organ_tag, src)
 		else if(prob(1))
 			O.owner.injure(INJURY_TOXIN, 1, O.organ_tag, src)
-			if(!itch_timer)
+			if(isnull(itch_timer))
 				itch_timer = REACT_REARM(src, itch_timer, world.time + 30 SECONDS)
 				to_chat(O.owner, span_notice("Your [O.name] itches..."))
 	else if(prob(1))

@@ -208,9 +208,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	return was_on != on
 
 /obj/machinery/telecomms/process()
-	if(thermal_timer)
-		deltimer(thermal_timer)
-		thermal_timer = null
+	thermal_timer = REACT_REARM(src, thermal_timer, null)
 	var/power_changed = update_power()
 
 	// Preserve the former per-fire probabilities while doing the work once per

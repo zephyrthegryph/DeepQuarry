@@ -106,6 +106,11 @@ It replaces five copies of the coefficient-of-performance maths, the heat-deleti
 - Heat capacity, conductance, emissivity, melting, ignition and critical temperatures, and latent heat all come from `/datum/material` (`_materials.dm:219-297`), and composites derive them.
 - Fixing the conductance scale (B8) makes wall materials matter.
 - `material_service`'s thermal state moves to Rust heat nodes (M4), and SSmaterial_services is deleted (S4). Its non-thermal state stays with material science.
+  As built (S4): the service's temperature, phase buffer and exothermic output are the owner's
+  heat body (`ensure_body()`/`configure_body()` in `material_service.dm`; couplings to the
+  surroundings and the contained gas), a band watch over 0.8 x melting, melting and the
+  conductor's critical temperature wakes it, and each assembly schedules its advance with one
+  `REACT_AT`. `heat_added` keeps the DM side of the operating-loss books.
 
 ## 8. Tests and lint
 

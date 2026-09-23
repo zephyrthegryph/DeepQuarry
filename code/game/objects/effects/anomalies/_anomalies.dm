@@ -63,7 +63,7 @@
 	anomalyEffect(seconds_per_tick)
 	// stats can be set directly by callers that bypass stabilize() (e.g. the
 	// suspension field generator); catch those and arm the pulse timer lazily.
-	if(stats && !pulse_timer)
+	if(stats && isnull(pulse_timer))
 		pulse_timer = REACT_REARM(src, pulse_timer, max(stats.next_activation, world.time))
 
 /obj/effect/anomaly/on_react(reason, source, source_kind)

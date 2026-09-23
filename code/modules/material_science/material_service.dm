@@ -401,7 +401,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/material_service/proc/environment_changed(topology_changed = TRUE)
 	// Sleeping means the previous environment had no continuing effect. Do not
 	// charge minutes spent asleep against a newly hot or corrosive mixture.
-	if(!active && !timer)
+	if(!active && isnull(timer))
 		last_update = world.time
 	if(topology_changed)
 		watches_dirty = TRUE
