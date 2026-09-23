@@ -95,8 +95,21 @@
 	name = "\improper Master " + name
 	add_overlay("RD-server-objective-stripes")
 
-/obj/machinery/rnd/server/master/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
+/obj/machinery/rnd/server/master/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/rnd_server_master_block,
+	)
+	..()
+
+/// Old attackby: never called ..(), so the whole thing (a deliberate no-op) stays in the effect.
+/datum/interaction/machine_item/rnd_server_master_block
+	id = "rnd_server_master_block"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/rnd/server/master/proc/interaction_block
+
+/obj/machinery/rnd/server/master/proc/interaction_block(mob/user, obj/item/W, datum/interaction/interaction)
 	// No doing anything to the master server
-	return
+	return TRUE
 
 #undef SERVER_NOMINAL_TEXT

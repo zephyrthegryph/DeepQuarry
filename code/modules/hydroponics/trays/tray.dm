@@ -140,13 +140,29 @@
 	REAGENT_ID_PITCHERNECTAR =  1
 	)
 
-/obj/machinery/portable_atmospherics/hydroponics/click_alt(mob/living/user)
-	if(!istype(user))
-		return
-	if(mechanical && !user.incapacitated() && Adjacent(user))
-		close_lid(user)
-		return 1
-	return ..()
+/obj/machinery/portable_atmospherics/hydroponics/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/hydroponics_attackby,
+		/datum/interaction/machine_hand/ungated/hydroponics_interact,
+		/datum/interaction/machine_alt/hydroponics_close_lid,
+		/datum/interaction/machine_verb/hydroponics_remove_label,
+		/datum/interaction/machine_verb/hydroponics_set_light,
+		/datum/interaction/machine_verb/hydroponics_toggle_lid,
+	)
+	..()
+
+/datum/interaction/machine_alt/hydroponics_close_lid
+	id = "hydroponics_close_lid"
+	name = "Toggle lid"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid, null))
+	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid(mob/actor, atom/target, obj/item/held)
+	return mechanical && !actor.incapacitated() && Adjacent(actor)
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid(mob/user, obj/item/held, datum/interaction/interaction)
+	close_lid(user)
+	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/attack_ghost(mob/observer/dead/user)
 
@@ -461,36 +477,33 @@
 
 	return
 
-/obj/machinery/portable_atmospherics/hydroponics/verb/remove_label()
+/datum/interaction/machine_verb/hydroponics_remove_label
+	id = "hydroponics_remove_label"
+	name = "Remove Label"
+	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_remove_label
 
-	set name = "Remove Label"
-	set category = "Object"
-	set src in view(1)
-
-	if(usr.incapacitated())
-		return
-	if(ishuman(usr) || isrobot(usr))
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_remove_label(mob/user, obj/item/held, datum/interaction/interaction)
+	if(ishuman(user) || isrobot(user))
 		if(labelled)
-			to_chat(usr, span_filter_notice("You remove the label."))
+			to_chat(user, span_filter_notice("You remove the label."))
 			labelled = null
 			update_icon()
 		else
-			to_chat(usr, span_filter_notice("There is no label to remove."))
-	return
+			to_chat(user, span_filter_notice("There is no label to remove."))
+	return TRUE
 
-/obj/machinery/portable_atmospherics/hydroponics/verb/setlight()
-	set name = "Set Light"
-	set category = "Object"
-	set src in view(1)
+/datum/interaction/machine_verb/hydroponics_set_light
+	id = "hydroponics_set_light"
+	name = "Set Light"
+	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light
 
-	if(usr.incapacitated())
-		return
-	if(ishuman(usr) || isrobot(usr))
-		var/new_light = tgui_input_list(usr, "Specify a light level.", "Light Level", list(0,1,2,3,4,5,6,7,8,9,10))
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(mob/user, obj/item/held, datum/interaction/interaction)
+	if(ishuman(user) || isrobot(user))
+		var/new_light = tgui_input_list(user, "Specify a light level.", "Light Level", list(0,1,2,3,4,5,6,7,8,9,10))
 		if(new_light)
 			tray_light = new_light
-			to_chat(usr, span_filter_notice("You set the tray to a light level of [tray_light] lumens."))
-	return
+			to_chat(user, span_filter_notice("You set the tray to a light level of [tray_light] lumens."))
+	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/check_level_sanity()
 	//Make sure various values are sane.
@@ -530,14 +543,22 @@
 
 	return
 
-/obj/machinery/portable_atmospherics/hydroponics/attackby(obj/item/O as obj, mob/user as mob)
+/// Kept as one effect: the guards and branches below all sit at the same level and the old
+/// proc only ever chained to ..() from the single "syringe, extract mode, seed present" case.
+/datum/interaction/machine_item/hydroponics_attackby
+	id = "hydroponics_attackby"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_attackby
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 
 	if(O.is_open_container())
-		return 0
+		return TRUE
 
 	if(istype(O, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
-		return
+		return TRUE
 
 	else if(istype(O, /obj/item/reagent_containers/syringe))
 
@@ -545,17 +566,17 @@
 
 		if (S.mode == 1)
 			if(seed)
-				return ..()
+				return FALSE
 			else
 				to_chat(user, span_filter_notice("There's no plant to inject."))
-				return 1
+				return TRUE
 		else
 			if(seed)
 				//Leaving this in in case we want to extract from plants later.
 				to_chat(user, span_filter_notice("You can't get any extract out of this plant."))
 			else
 				to_chat(user, span_filter_notice("There's nothing to draw something from."))
-			return 1
+			return TRUE
 
 	else if (istype(O, /obj/item/seeds))
 
@@ -567,7 +588,7 @@
 			if(!S.seed)
 				to_chat(user, span_filter_notice("The packet seems to be empty. You throw it away."))
 				qdel(O)
-				return
+				return TRUE
 
 			to_chat(user, span_filter_notice("You plant the [S.seed.seed_name] [S.seed.seed_noun]."))
 			plant_seeds(S)
@@ -593,7 +614,7 @@
 			var/refusal = S.insert_refusal(G, user)
 			if(refusal)
 				S.refuse_insert(G, user, refusal)
-				return
+				return TRUE
 			S.handle_item_insertion(G, 1)
 
 	else if ( istype(O, /obj/item/plantspray) )
@@ -615,7 +636,7 @@
 			health -= O.force
 			check_health()
 
-	return
+	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/take_plant_sample(mob/user)
 	if(!seed)
@@ -670,16 +691,21 @@
 	else if(harvest)
 		harvest(user)
 
-/obj/machinery/portable_atmospherics/hydroponics/attack_hand(mob/user)
+/datum/interaction/machine_hand/ungated/hydroponics_interact
+	id = "hydroponics_interact"
+	name = "Use"
+	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand
 
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(user,/mob/living/silicon))
-		return
+		return TRUE
 	if(frozen == 1)
 		to_chat(user, span_warning("Disable the cryogenic freezing first!"))
 	if(harvest)
 		harvest(user)
 	else if(dead)
 		remove_dead(user)
+	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/examine(mob/user)
 	. = ..()
@@ -730,16 +756,15 @@
 
 		. += "The tray's sensor suite is reporting [light_string] and a temperature of [environment.return_temperature()]K at [environment.return_pressure()] kPa in the [environment_type] environment."
 
-/obj/machinery/portable_atmospherics/hydroponics/verb/close_lid_verb()
-	set name = "Toggle Tray Lid"
-	set category = "Object"
-	set src in view(1)
-	if(usr.incapacitated())
-		return
+/datum/interaction/machine_verb/hydroponics_toggle_lid
+	id = "hydroponics_toggle_lid"
+	name = "Toggle Tray Lid"
+	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_toggle_lid_verb
 
-	if(ishuman(usr) || isrobot(usr))
-		close_lid(usr)
-	return
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_toggle_lid_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(ishuman(user) || isrobot(user))
+		close_lid(user)
+	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/close_lid(mob/living/user)
 	closed_system = !closed_system

@@ -72,17 +72,31 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 /obj/machinery/computer/ship/attack_ghost(mob/user)
 	interface_interact(user)
 
-/obj/machinery/computer/ship/attack_hand(mob/user)
-	if((. = ..()))
-		return
-	if(!ai_control && issilicon(user))
-		to_chat(user, span_warning("Access Denied."))
-		return TRUE
-	if(!allowed(user))
-		to_chat(user, span_warning("Access Denied."))
-		return TRUE
+/obj/machinery/computer/ship/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ship_use,
+	)
+	..()
+
+/// Old attack_hand: access checks, then open the interface if it isn't already.
+/datum/interaction/machine_hand/ship_use
+	id = "ship_console_use"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/computer/ship/proc/ship_access_allowed, "access denied"))
+	effect = /obj/machinery/computer/ship/proc/interaction_use
+
+/// Whether `actor` is allowed to use this console: AI/silicon control, then ID access.
+/obj/machinery/computer/ship/proc/ship_access_allowed(mob/actor, atom/target, obj/item/held)
+	if(!ai_control && issilicon(actor))
+		return FALSE
+	if(!allowed(actor))
+		return FALSE
+	return TRUE
+
+/obj/machinery/computer/ship/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(tgui_status(user, tgui_state()) > STATUS_CLOSE)
-		return interface_interact(user)
+		interface_interact(user)
+	return TRUE
 
 /obj/machinery/computer/ship/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())

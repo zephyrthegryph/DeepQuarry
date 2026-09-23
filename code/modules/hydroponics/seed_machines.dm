@@ -78,8 +78,15 @@
 	if(world.time > last_action + action_time)
 		finished_task()
 
-/obj/machinery/botany/attack_hand(mob/user as mob)
+/// Old attack_hand (never called ..()): open the interface.
+/datum/interaction/machine_hand/ungated/botany_open_ui
+	id = "botany_open_ui"
+	name = "Use"
+	effect = /obj/machinery/botany/proc/interaction_open_ui
+
+/obj/machinery/botany/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/botany/proc/finished_task()
 	active = 0
@@ -96,47 +103,78 @@
 			visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk]."))
 			loaded_disk = null
 
-/obj/machinery/botany/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W,/obj/item/seeds))
-		if(seed)
-			to_chat(user, span_filter_notice("There is already a seed loaded."))
-			return
-		var/obj/item/seeds/S =W
-		if(S.seed && S.seed.get_trait(TRAIT_IMMUTABLE) > 0)
-			to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
-		else
-			user.drop_from_inventory(W)
-			W.forceMove(src)
-			seed = W
-			to_chat(user, span_filter_notice("You load [W] into [src]."))
-		return
-
-	if(!active)
-		if(default_part_replacement(user, W))
-			return
-	if(istype(W,/obj/item/disk/botany))
-		if(loaded_disk)
-			to_chat(user, span_filter_notice("There is already a data disk loaded."))
-			return
-		else
-			var/obj/item/disk/botany/B = W
-
-			if(B.genes && B.genes.len)
-				if(!disk_needs_genes)
-					to_chat(user, span_filter_notice("That disk already has gene data loaded."))
-					return
-			else
-				if(disk_needs_genes)
-					to_chat(user, span_filter_notice("That disk does not have any gene data loaded."))
-					return
-
-			user.drop_from_inventory(W)
-			W.forceMove(src)
-			loaded_disk = W
-			to_chat(user, span_filter_notice("You load [W] into [src]."))
-
-		return
+/obj/machinery/botany/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/botany_open_ui,
+		/datum/interaction/machine_item/botany_load_seed,
+		/datum/interaction/machine_item/botany_part_replacement,
+		/datum/interaction/machine_item/botany_load_disk,
+	)
 	..()
+
+/// Old attackby: load a seed packet.
+/datum/interaction/machine_item/botany_load_seed
+	id = "botany_load_seed"
+	name = "Load seed"
+	held_type = /obj/item/seeds
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_no_seed_loaded, "there is already a seed loaded"))
+	effect = /obj/machinery/botany/proc/interaction_load_seed
+
+/obj/machinery/botany/proc/botany_no_seed_loaded(mob/actor, atom/target, obj/item/held)
+	return !seed
+
+/obj/machinery/botany/proc/interaction_load_seed(mob/user, obj/item/W, datum/interaction/interaction)
+	var/obj/item/seeds/S = W
+	if(S.seed && S.seed.get_trait(TRAIT_IMMUTABLE) > 0)
+		to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
+	else
+		user.drop_from_inventory(W)
+		W.forceMove(src)
+		seed = W
+		to_chat(user, span_filter_notice("You load [W] into [src]."))
+	return TRUE
+
+/// Old attackby: `if(!active) if(default_part_replacement(user, W)) return`.
+/datum/interaction/machine_item/botany_part_replacement
+	id = "botany_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_not_active, null))
+	effect = /obj/machinery/botany/proc/interaction_part_replacement
+
+/obj/machinery/botany/proc/botany_not_active(mob/actor, atom/target, obj/item/held)
+	return !active
+
+/obj/machinery/botany/proc/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
+	return default_part_replacement(user, held) ? TRUE : FALSE
+
+/// Old attackby: load a botany data disk.
+/datum/interaction/machine_item/botany_load_disk
+	id = "botany_load_disk"
+	name = "Load disk"
+	held_type = /obj/item/disk/botany
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_disk_slot_reason, null))
+	effect = /obj/machinery/botany/proc/interaction_load_disk
+
+/obj/machinery/botany/proc/botany_disk_slot_reason(mob/actor, atom/target, obj/item/held)
+	if(loaded_disk)
+		return "there is already a data disk loaded"
+	var/obj/item/disk/botany/B = held
+	if(B.genes && B.genes.len)
+		if(!disk_needs_genes)
+			return "that disk already has gene data loaded"
+	else
+		if(disk_needs_genes)
+			return "that disk does not have any gene data loaded"
+	return TRUE
+
+/obj/machinery/botany/proc/interaction_load_disk(mob/user, obj/item/W, datum/interaction/interaction)
+	user.drop_from_inventory(W)
+	W.forceMove(src)
+	loaded_disk = W
+	to_chat(user, span_filter_notice("You load [W] into [src]."))
+	return TRUE
 
 /obj/machinery/botany/screwdriver_act(mob/user, obj/item/tool)
 	return ..()

@@ -15,12 +15,27 @@
 	if(!stored_research)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 
-/obj/machinery/computer/rdservercontrol/attackby(obj/item/I, user)
+/obj/machinery/computer/rdservercontrol/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/rdservercontrol_connect_techweb,
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
+
+/// The old attackby: never called ..(), connected a techweb via a multitool buffer.
+/datum/interaction/machine_item/rdservercontrol_connect_techweb
+	id = "rdservercontrol_connect_techweb"
+	name = "Connect techweb"
+	held_type = /obj/item
+	effect = /obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb
+
+/obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/multitool/tool = I.get_multitool()
 	if(tool)
 		if(!QDELETED(tool.buffer) && istype(tool.buffer, /datum/techweb))
 			stored_research = tool.buffer
 			balloon_alert(user, "techweb connected")
+	return TRUE
 
 /obj/machinery/computer/rdservercontrol/emag_act(remaining_charges, mob/user, emag_source)
 	if(emagged)
@@ -29,9 +44,6 @@
 	playsound(src, "sparks", 75, TRUE)
 	balloon_alert(user, "console emagged")
 	return TRUE
-
-/obj/machinery/computer/rdservercontrol/attack_hand(mob/user)
-	return tgui_interact(user)
 
 /obj/machinery/computer/rdservercontrol/tgui_interact(mob/user, datum/tgui/ui)
 	. = ..()
