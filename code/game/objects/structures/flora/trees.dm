@@ -35,20 +35,29 @@
 		. = TRUE
 	return .
 
-/obj/structure/flora/tree/attackby(obj/item/W, mob/living/user)
-	if(can_harvest(W))
-		..(W, user)
-		return
+// Trees harvest through flora's own interaction_item() (called directly, by inheritance)
+// when the item qualifies; otherwise the tree fully replaces it with its own hit/dig logic.
+/obj/structure/flora/tree/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/tree_item,
+	)
 
-	if(!istype(W))
-		return ..()
+/// Old attackby: harvest (delegates to flora's own harvest logic), dig up a stump, or take a hit.
+/datum/interaction/entry_item/tree_item
+	id = "tree_item"
+	name = "Use"
+	effect = /obj/structure/flora/tree/proc/interaction_hit
+
+/obj/structure/flora/tree/proc/interaction_hit(mob/living/user, obj/item/W, datum/interaction/interaction)
+	if(can_harvest(W))
+		return interaction_item(user, W, interaction)
 
 	if(is_stump)
 		if(istype(W,/obj/item/shovel))
 			if(do_after(user, 5 SECONDS, target = src))
 				visible_message(span_infoplain(span_bold("\The [user]") + " digs up \the [src] stump with \the [W]."))
 				qdel(src)
-		return
+		return TRUE
 
 	visible_message(span_danger("\The [user] hits \the [src] with \the [W]!"))
 
@@ -68,6 +77,7 @@
 	hit_animation()
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
+	return TRUE
 
 // Shakes the tree slightly, more or less stolen from lockers.
 /obj/structure/flora/tree/proc/hit_animation()
@@ -176,20 +186,30 @@
 /obj/structure/flora/tree/pine/xmas/presents/choose_icon_state()
 	return "pinepresents"
 
-/obj/structure/flora/tree/pine/xmas/presents/attack_hand(mob/living/user)
-	. = ..()
-	if(.)
-		return
+/obj/structure/flora/tree/pine/xmas/presents/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/xmas_presents_hand,
+	)
+	..()
+
+/// Old attack_hand: take a present, once per ckey.
+/datum/interaction/entry_hand/xmas_presents_hand
+	id = "xmas_presents_hand"
+	name = "Take a present"
+	effect = /obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand
+
+/obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!user.ckey)
-		return
+		return TRUE
 
 	if(LAZYACCESS(ckeys_that_took, user.ckey))
 		to_chat(user, span_warning("There are no presents with your name on."))
-		return
+		return TRUE
 	to_chat(user, span_notice("After a bit of rummaging, you locate a gift with your name on it!"))
 	LAZYSET(ckeys_that_took, user.ckey, TRUE)
 	var/obj/item/G = new gift_type(src)
 	user.put_in_hands(G)
+	return TRUE
 
 // Palm trees
 

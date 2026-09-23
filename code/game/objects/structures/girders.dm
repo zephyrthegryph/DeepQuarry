@@ -195,11 +195,24 @@
 		displace()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/girder/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/girder/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/girder_item,
+		/datum/interaction/entry_hand/girder_hulk_smash,
+	)
+	..()
+
+/// Old attackby: cut/drill apart, reinforce, or build up into a wall.
+/datum/interaction/entry_item/girder_item
+	id = "girder_item"
+	name = "Use"
+	effect = /obj/structure/girder/proc/interaction_item
+
+/obj/structure/girder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
 		if(do_after(user, 3 SECONDS * W.toolspeed, target = src))
-			if(!src) return
+			if(!src) return TRUE
 			to_chat(user, span_notice("You slice apart the girder!"))
 			dismantle()
 
@@ -209,19 +222,17 @@
 
 	else if(istype(W, /obj/item/stack/material))
 		if(reinforcing && !reinf_material)
-			if(!reinforce_with_material(W, user))
-				return ..()
+			reinforce_with_material(W, user)
 		else
 			if(upgrading)
-				return
+				return TRUE
 			upgrading = TRUE
 			if(!construct_wall(W, user))
 				upgrading = FALSE
-				return ..()
+				return TRUE
 			upgrading = FALSE
 
-	else
-		return ..()
+	return TRUE
 
 // Reaching 0 integrity dismantles the girder back into its material.
 /obj/structure/girder/atom_destruction(damage_flag)
@@ -305,12 +316,20 @@
 	girder_material.place_dismantled_product(get_turf(src), 2)
 	qdel(src)
 
-/obj/structure/girder/attack_hand(mob/user as mob)
-	if (HULK in user.mutations)
-		visible_message(span_danger("[user] smashes [src] apart!"))
-		dismantle()
-		return
-	return ..()
+/// Old attack_hand: a Hulk smashes the girder apart.
+/datum/interaction/entry_hand/girder_hulk_smash
+	id = "girder_hulk_smash"
+	name = "Smash"
+	offered_when = list(REQ_ON(PRED_ACTOR, /obj/structure/girder/proc/girder_actor_is_hulk, null))
+	effect = /obj/structure/girder/proc/interaction_hulk_smash
+
+/obj/structure/girder/proc/girder_actor_is_hulk(mob/actor, atom/target, obj/item/held)
+	return (HULK in actor.mutations)
+
+/obj/structure/girder/proc/interaction_hulk_smash(mob/user, obj/item/held, datum/interaction/interaction)
+	visible_message(span_danger("[user] smashes [src] apart!"))
+	dismantle()
+	return TRUE
 
 /obj/structure/girder/cult
 	name = "column"
@@ -331,7 +350,8 @@
 	new /obj/effect/decal/remains/human(get_turf(src))
 	qdel(src)
 
-/obj/structure/girder/cult/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides girder's interaction_item(): a cult girder just slices/drills apart, no reinforcing.
+/obj/structure/girder/cult/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
 		if(do_after(user, 3 SECONDS * W.toolspeed, target = src))
@@ -341,6 +361,7 @@
 		to_chat(user, span_notice("You drill through the girder!"))
 		new /obj/effect/decal/remains/human(get_turf(src))
 		dismantle()
+	return TRUE
 
 /obj/structure/girder/cult/wrench_act(mob/user, obj/item/W)
 	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, message_self = "Now disassembling the girder..."))
