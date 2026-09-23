@@ -5,7 +5,17 @@
 	icon = 'icons/obj/wallet.dmi'
 	icon_state = "wallet-orange"
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(
+	slot_flags = SLOT_ID
+
+	var/obj/item/card/id/front_id = null
+
+	drop_sound = 'sound/items/drop/leather.ogg'
+	pickup_sound = 'sound/items/pickup/leather.ogg'
+
+	var/original_name // Due to loadout customizations and such
+
+/obj/item/storage/wallet/hold_constraint()
+	var/list/holds = list(
 		/obj/item/spacecash,
 		/obj/item/card,
 		/obj/item/clothing/mask/smokable/cigarette/,
@@ -40,14 +50,7 @@
 		/obj/item/pizzavoucher,
 		/obj/item/card_fluff
 		)
-	slot_flags = SLOT_ID
-
-	var/obj/item/card/id/front_id = null
-
-	drop_sound = 'sound/items/drop/leather.ogg'
-	pickup_sound = 'sound/items/pickup/leather.ogg'
-
-	var/original_name // Due to loadout customizations and such
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/wallet/remove_from_storage(obj/item/W as obj, atom/new_location)
 	. = ..(W, new_location)

@@ -8,7 +8,7 @@ These are a bit weird to wrap your head around, because it's not possible to
 add lists together when defining an item... We instead need to provides the
 contents that should be IN the list, and then wrap these macros in a list()
 
-ex: allowed = list(POCKET_GENERIC, POCKET_CULT)
+ex: var/list/stores = list(POCKET_GENERIC, POCKET_CULT) in a suit_storage_constraint()
 NOTICE: Do not leave trailing commas!!!!
 */
 

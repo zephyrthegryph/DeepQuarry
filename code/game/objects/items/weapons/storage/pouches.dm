@@ -10,13 +10,14 @@
 	pickup_sound = 'sound/items/pickup/backpack.ogg'
 
 	icon_state = "medium_generic"
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = INVENTORY_POUCH_SPACE
-	can_hold = null
 	pocketable = TRUE
 
 	var/insert_delay = 0 SECONDS
 	var/remove_delay = 0 SECONDS // Faster, QOL.
+
+/obj/item/storage/pouch/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/pouch/stall_insertion(obj/item/W, mob/user)
 	// No delay if you have the pouch in your hands
@@ -63,14 +64,19 @@
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Can only hold ammunition, cells, explosives, and grenades."
 	icon_state = "ammo"
 	max_storage_space = INVENTORY_POUCH_SPACE
-	can_hold = list(/obj/item/ammo_magazine, /obj/item/ammo_casing, /obj/item/cell/device, /obj/item/grenade, /obj/item/plastique) // make it more useful for non-sec/explo //Chompstation Edit - Adds more variety of device cells it can store
+
+/obj/item/storage/pouch/ammo/hold_constraint()
+	var/list/holds = list(/obj/item/ammo_magazine, /obj/item/ammo_casing, /obj/item/cell/device, /obj/item/grenade, /obj/item/plastique)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/pouch/eng_tool
 	name = "storage pouch (tools)"
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Can only hold tools."
 	icon_state = "engineering_tool"
 	max_storage_space = INVENTORY_POUCH_SPACE
-	can_hold = list(
+
+/obj/item/storage/pouch/eng_tool/hold_constraint()
+	var/list/holds = list(
 		/obj/item/tool/crowbar,
 		/obj/item/tool/screwdriver,
 		/obj/item/weldingtool,
@@ -102,13 +108,16 @@
 		/obj/item/stack/nanopaste,
 		/obj/item/geiger
 	) // make it the same as the tool-belt why was it not like this to start with wtf
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/pouch/eng_supply
 	name = "storage pouch (supplies)"
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Can only hold engineering supplies."
 	icon_state = "engineering_supply"
 	max_storage_space = INVENTORY_POUCH_SPACE
-	can_hold = list(
+
+/obj/item/storage/pouch/eng_supply/hold_constraint()
+	var/list/holds = list(
 		/obj/item/cell/device,
 		/obj/item/stack/cable_coil,
 		/obj/item/taperoll,
@@ -119,22 +128,26 @@
 		/obj/item/lightreplacer,
 		/obj/item/cell
 	) // makes it actually useful lmao, adds sheets and cells as well as light replacers and lets you take any extinguisher that fits
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/pouch/eng_parts
 	name = "storage pouch (parts)"
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Can only hold machinery components."
 	icon_state = "part_pouch"
 	max_storage_space = INVENTORY_POUCH_SPACE*2 // yeah lemme give up my pocket to hold FOUR CAPACITORS or have an inferior box... now you can hold eight in your pocket so its at least a box
-	can_hold = list(
-		/obj/item/stock_parts,
-		/obj/item/stack/cable_coil,
-		/obj/item/circuitboard
-	)
 	// Because you deal with so many parts, and the borg needs this anyway...
 	use_to_pickup = TRUE
 	allow_quick_gather = TRUE
 	allow_quick_empty = TRUE
 	collection_mode = TRUE
+
+/obj/item/storage/pouch/eng_parts/hold_constraint()
+	var/list/holds = list(
+		/obj/item/stock_parts,
+		/obj/item/stack/cable_coil,
+		/obj/item/circuitboard
+	)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/pouch/eng_parts/borg
 	name = "parts storage unit"
@@ -146,7 +159,11 @@
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Can only hold medical supplies."
 	icon_state = "medical_supply"
 	max_storage_space = INVENTORY_POUCH_SPACE
-	can_hold = list(
+	max_storage_space = ITEMSIZE_COST_SMALL*3 // makes it slightly smaller since its a lot of stuff with pocket access
+	remove_delay = 5 // .5 second delay, get the medical things faster because there is no reason to use this otherwise. still gotta stop moving to take things out.
+
+/obj/item/storage/pouch/medical/hold_constraint()
+	var/list/holds = list(
 		/obj/item/healthanalyzer,
 		/obj/item/dnainjector,
 		/obj/item/reagent_containers/dropper,
@@ -172,8 +189,7 @@
 		/obj/item/extrapolator,
 		/obj/item/gene_scanner,
 	) // added a bunch of misc medical stuff
-	max_storage_space = ITEMSIZE_COST_SMALL*3 // makes it slightly smaller since its a lot of stuff with pocket access
-	remove_delay = 5 // .5 second delay, get the medical things faster because there is no reason to use this otherwise. still gotta stop moving to take things out.
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/pouch/flares
 	name = "storage pouch (flares)"
@@ -181,7 +197,10 @@
 	icon_state = "flare"
 	storage_slots = 14 // Full box of flares.
 	remove_delay = 0 // Quick access to light sources.
-	can_hold = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick)
+
+/obj/item/storage/pouch/flares/hold_constraint()
+	var/list/holds = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/pouch/flares/full_flare
 	starts_with = list(/obj/item/flashlight/flare = 14) // Full box of flares.
 /obj/item/storage/pouch/flares/full_glow
@@ -198,8 +217,11 @@
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Can hold one normal sized weapon."
 	icon_state = "pistol_holster"
 	storage_slots = 1
-	can_hold = list(/obj/item/gun) //this covers basically everything I think so its fine
 	remove_delay = 0
+
+/obj/item/storage/pouch/holster/hold_constraint()
+	var/list/holds = list(/obj/item/gun)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/pouch/holster/full_stunrevolver
 	starts_with = list(/obj/item/gun/energy/stunrevolver)
 /obj/item/storage/pouch/holster/full_taser
@@ -216,8 +238,11 @@
 	desc = "This storage pouch can be used to provide some additional storage for quick access. Can hold one normal size melee." // make it a melee pouch literally why would you hold ONE BATON
 	icon_state = "baton_holster"
 	storage_slots = 1
-	can_hold = list(/obj/item/melee, /obj/item/material, /obj/item/tool/wrench) //should be like, every melee weapon I could think of that was normal size. Can make it more specific if needed. Also wrench because I thought it was funny.
 	remove_delay = 0
+
+/obj/item/storage/pouch/baton/hold_constraint()
+	var/list/holds = list(/obj/item/melee, /obj/item/material, /obj/item/tool/wrench)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/pouch/baton/full
 	starts_with = list(/obj/item/melee/baton)
 

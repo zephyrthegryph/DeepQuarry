@@ -4,7 +4,10 @@
 	desc = "Smoothly contoured and polished to a shine. Still looks like a fishbowl."
 	armor = list(melee = 20, bullet = 20, laser = 20, energy = 50, bomb = 50, bio = 100, rad = 50)
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	species_restricted = list(SPECIES_SKRELL,SPECIES_HUMAN)
+
+/obj/item/clothing/head/helmet/space/skrell/fit_constraint()
+	var/list/bodytypes = list(SPECIES_SKRELL,SPECIES_HUMAN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/head/helmet/space/skrell/white
 	icon_state = "skrell_helmet_white"
@@ -16,9 +19,15 @@
 	name = "Skrellian voidsuit"
 	desc = "Seems like a wetsuit with reinforced plating seamlessly attached to it. Very chic."
 	armor = list(melee = 20, bullet = 20, laser = 20, energy = 50, bomb = 50, bio = 100, rad = 50)
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_MINING, /obj/item/t_scanner, /obj/item/rcd)
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	species_restricted = list(SPECIES_SKRELL,SPECIES_HUMAN)
+
+/obj/item/clothing/suit/space/skrell/fit_constraint()
+	var/list/bodytypes = list(SPECIES_SKRELL,SPECIES_HUMAN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/skrell/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_MINING, /obj/item/t_scanner, /obj/item/rcd)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/skrell/white
 	icon_state = "skrell_suit_white"
@@ -32,11 +41,17 @@
 	w_class = ITEMSIZE_NORMAL
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
-	allowed = list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword)
 	armor = list(melee = 60, bullet = 50, laser = 40,energy = 15, bomb = 30, bio = 100, rad = 50)
 	siemens_coefficient = 0.2
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	species_restricted = list(SPECIES_VOX)
+
+/obj/item/clothing/suit/space/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/vox/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/vox
 	armor = list(melee = 60, bullet = 50, laser = 40, energy = 15, bomb = 30, bio = 100, rad = 50)
@@ -44,7 +59,10 @@
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL | AIRTIGHT
 	flags_inv = 0
-	species_restricted = list(SPECIES_VOX)
+
+/obj/item/clothing/head/helmet/space/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/head/helmet/space/vox/pressure
 	name = "alien helmet"

@@ -14,7 +14,6 @@
 	throw_speed = 1
 	throw_range = 7
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 //enough to hold all starting contents
 	attack_verb = list("robusted")
 	use_sound = 'sound/items/storage/toolbox.ogg'
@@ -22,6 +21,9 @@
 	pickup_sound = 'sound/items/pickup/toolbox.ogg'
 
 //Emergency
+
+/obj/item/storage/toolbox/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/toolbox/emergency
 	name = "emergency toolbox"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -145,9 +147,11 @@
 	item_state_slots = list(slot_r_hand_str = "toolbox_pink", slot_l_hand_str = "toolbox_pink")
 	desc = "A little lunchbox. This one is the colors of the rainbow!"
 	w_class = ITEMSIZE_NORMAL
-	max_w_class = ITEMSIZE_SMALL
 	var/filled = FALSE
 	attack_verb = list("lunched")
+
+/obj/item/storage/toolbox/lunchbox/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/toolbox/lunchbox/Initialize(mapload)
 	if(filled)

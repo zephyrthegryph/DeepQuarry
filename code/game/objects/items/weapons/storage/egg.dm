@@ -10,11 +10,13 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_storage.dmi',
 		)
 	w_class = ITEMSIZE_SMALL
-	max_w_class = 0
 	show_messages = 0
 	allow_quick_empty = TRUE
 	use_sound = 'sound/items/drop/flesh.ogg'
 	var/egg_name = null
+
+/obj/item/storage/vore_egg/hold_constraint()
+	return list(HOLD_MAX_SIZE(0))
 
 /obj/item/storage/vore_egg/Initialize(mapload)
 	. = ..()

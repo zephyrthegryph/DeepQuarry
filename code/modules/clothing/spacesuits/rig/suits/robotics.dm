@@ -20,10 +20,12 @@
 	glove_type = null
 	cell_type =  null
 
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact)
-
 	req_access = list()
 	req_one_access = list()
+
+/obj/item/rig/robotics/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/rig/advsuit
 	name = "suit helmet"

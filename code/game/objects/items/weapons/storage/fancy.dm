@@ -55,11 +55,14 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 7
 	storage_slots = 12
-	can_hold = list(
+	starts_with = list(/obj/item/reagent_containers/food/snacks/egg = 12)
+
+/obj/item/storage/fancy/egg_box/hold_constraint()
+	var/list/holds = list(
 		/obj/item/reagent_containers/food/snacks/egg,
 		/obj/item/reagent_containers/food/snacks/boiledegg
 		)
-	starts_with = list(/obj/item/reagent_containers/food/snacks/egg = 12)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/egg_box/Initialize(mapload)
 	if(!open_state)
@@ -104,8 +107,11 @@
 	throwforce = 2
 	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
-	can_hold = list(/obj/item/flame/candle)
 	starts_with = list(/obj/item/flame/candle = 5)
+
+/obj/item/storage/fancy/candle_box/hold_constraint()
+	var/list/holds = list(/obj/item/flame/candle)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/whitecandle_box
 	name = "white candle pack"
@@ -117,8 +123,11 @@
 	throwforce = 2
 	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
-	can_hold = list(/obj/item/flame/candle)
 	starts_with = list(/obj/item/flame/candle/white = 5)
+
+/obj/item/storage/fancy/whitecandle_box/hold_constraint()
+	var/list/holds = list(/obj/item/flame/candle)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/blackcandle_box
 	name = "black candle pack"
@@ -130,13 +139,16 @@
 	throwforce = 2
 	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
-	can_hold = list(/obj/item/flame/candle)
 	starts_with = list(/obj/item/flame/candle/black = 5)
 
 
 /*
  * Crayon Box
  */
+
+/obj/item/storage/fancy/blackcandle_box/hold_constraint()
+	var/list/holds = list(/obj/item/flame/candle)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/storage/fancy/crayons
 	name = "box of crayons"
 	desc = "A box of crayons for all your rune drawing needs."
@@ -144,13 +156,16 @@
 	icon_state = "crayonbox"
 	w_class = ITEMSIZE_SMALL
 	icon_type = "crayon"
-	can_hold = list(
-		/obj/item/pen/crayon
-	)
 	// variant-based crayon spawn (see code/datums/variants/crayon_variants.dm). The 6
 	// plain-color subtypes (red/orange/yellow/green/blue/purple) have been
 	// collapsed into the parent type with a `variant` arg.
 	starts_with = list()
+
+/obj/item/storage/fancy/crayons/hold_constraint()
+	var/list/holds = list(
+		/obj/item/pen/crayon
+	)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/crayons/Initialize(mapload)
 	. = ..()
@@ -186,11 +201,14 @@
 	icon_state = "markerbox"
 	w_class = ITEMSIZE_SMALL
 	icon_type = "marker"
-	can_hold = list(
-		/obj/item/pen/crayon/marker
-	)
 	// variant-based marker spawn (see code/datums/variants/crayon_variants.dm).
 	starts_with = list()
+
+/obj/item/storage/fancy/markers/hold_constraint()
+	var/list/holds = list(
+		/obj/item/pen/crayon/marker
+	)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/markers/Initialize(mapload)
 	. = ..()
@@ -228,14 +246,16 @@
 	icon_state = "crackerbox"
 	icon_type = "cracker"
 	max_storage_space = ITEMSIZE_COST_TINY * 6
-	max_w_class = ITEMSIZE_TINY
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/reagent_containers/food/snacks/cracker)
 	starts_with = list(/obj/item/reagent_containers/food/snacks/cracker = 6)
 
 /*
  * Cigarette Pack
  */
+
+/obj/item/storage/fancy/crackers/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/cracker)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
 /obj/item/storage/fancy/cigarettes
 	name = "\improper pack of Trans-Stellar Duty-frees"
 	desc = "A ubiquitous brand of cigarettes, found in every major spacefaring corporation in the universe. As mild and flavorless as it gets."
@@ -247,10 +267,13 @@
 	throwforce = 2
 	slot_flags = SLOT_BELT
 	storage_slots = 6
-	can_hold = list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)
 	icon_type = "cigarette"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 6)
 	var/brand = "\improper Trans-Stellar Duty-free"
+
+/obj/item/storage/fancy/cigarettes/hold_constraint()
+	var/list/holds = list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/cigarettes/Initialize(mapload)
 	if(!open_state)
@@ -311,7 +334,7 @@
 
 		// Instead of running equip_to_slot_if_possible() we check here first,
 		// to avoid dousing cig with reagents if we're not going to equip it
-		if(!cig.mob_can_equip(user, slot_wear_mask))
+		if(cig.equip_refusal(user, slot_wear_mask))
 			return ITEM_INTERACT_FAILURE
 
 		// We call remove_from_storage first to manage the reagent transfer and
@@ -389,9 +412,12 @@
 	throwforce = 2
 	slot_flags = SLOT_BELT
 	storage_slots = 5
-	can_hold = list(/obj/item/clothing/mask/smokable/cigarette/cigar, /obj/item/trash/cigbutt/cigarbutt)
 	icon_type = "cigar"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar = 5)
+
+/obj/item/storage/fancy/cigar/hold_constraint()
+	var/list/holds = list(/obj/item/clothing/mask/smokable/cigarette/cigar, /obj/item/trash/cigbutt/cigarbutt)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/cigar/Initialize(mapload)
 	if(!open_state)
@@ -462,20 +488,26 @@
 	throwforce = 2
 	slot_flags = SLOT_BELT
 	storage_slots = 14
-	can_hold = list(/obj/item/reagent_containers/rollingpaper)
 	starts_with = list(/obj/item/reagent_containers/rollingpaper = 14)
+
+/obj/item/storage/rollingpapers/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/rollingpaper)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/rollingpapers/blunt
 	name = "blunt wrap pack"
 	desc = "A small cardboard pack containing several folded blunt wraps."
 	icon_state = "bluntbox"
 	storage_slots = 7
-	can_hold = list(/obj/item/reagent_containers/rollingpaper/blunt)
 	starts_with = list(/obj/item/reagent_containers/rollingpaper/blunt = 7)
 
 /*
  * Vial Box
  */
+
+/obj/item/storage/rollingpapers/blunt/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/rollingpaper/blunt)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/storage/fancy/vials
 	icon = 'icons/obj/vialbox.dmi'
 	icon_state = "vialbox6"
@@ -483,8 +515,11 @@
 	name = "vial storage box"
 	desc = "A helpful rack to hold test tubes."
 	storage_slots = 6
-	can_hold = list(/obj/item/reagent_containers/glass/beaker/vial)
 	starts_with = list(/obj/item/reagent_containers/glass/beaker/vial = 6)
+
+/obj/item/storage/fancy/vials/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/glass/beaker/vial)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/lockbox/vials
 	name = "secure vial storage box"
@@ -492,11 +527,13 @@
 	icon = 'icons/obj/vialbox.dmi'
 	icon_state = "vialbox0"
 	item_state_slots = list(slot_r_hand_str = "syringe_kit", slot_l_hand_str = "syringe_kit")
-	max_w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/reagent_containers/glass/beaker/vial)
 	max_storage_space = ITEMSIZE_COST_SMALL * 6 //The sum of the w_classes of all the items in this storage item.
 	storage_slots = 6
 	req_access = list(ACCESS_VIROLOGY)
+
+/obj/item/storage/lockbox/vials/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/glass/beaker/vial)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/lockbox/vials/Initialize(mapload)
 	. = ..()
@@ -527,11 +564,6 @@
 
 	var/startswith = 6
 	max_storage_space = ITEMSIZE_COST_SMALL * 6
-	can_hold = list(
-		/obj/item/reagent_containers/food/snacks/chocolatepiece,
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/white,
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle
-		)
 	starts_with = list(
 		/obj/item/reagent_containers/food/snacks/chocolatepiece,
 		/obj/item/reagent_containers/food/snacks/chocolatepiece,
@@ -540,6 +572,14 @@
 		/obj/item/reagent_containers/food/snacks/chocolatepiece/white,
 		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle
 	)
+
+/obj/item/storage/fancy/heartbox/hold_constraint()
+	var/list/holds = list(
+		/obj/item/reagent_containers/food/snacks/chocolatepiece,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/white,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle
+		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/heartbox/Initialize(mapload)
 	. = ..()

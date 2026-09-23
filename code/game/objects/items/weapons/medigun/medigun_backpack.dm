@@ -508,9 +508,9 @@
 	if(!istype(M))
 		return FALSE //not equipped
 
-	if((slot_flags & SLOT_BACK) && M.get_equipped_item(slot_back) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_back) == src)
 		return TRUE
-	if((slot_flags & SLOT_BACK) && M.get_equipped_item(slot_s_store) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_s_store) == src)
 		return TRUE
 	return FALSE
 

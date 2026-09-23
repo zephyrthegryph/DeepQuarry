@@ -174,6 +174,7 @@
 #include "dq_matter_tests.dm"
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
+#include "dq_constraint_tests.dm"
 #include "dq_containment_tests.dm"
 #include "dq_rule_tests.dm"
 #include "dq_containment_path_tests.dm"

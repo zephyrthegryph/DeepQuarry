@@ -16,9 +16,12 @@
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
 	siemens_coefficient = 0.9
 	flags_inv = HIDEHOLSTER
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret)
 	valid_accessory_slots = (ACCESSORY_SLOT_ARMBAND|ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK|ACCESSORY_SLOT_DEPT)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
+
+/obj/item/clothing/suit/storage/solgov/service/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/solgov/service/sifguard
 	name = "\improper NDF jacket"
@@ -186,9 +189,12 @@
 	body_parts_covered = UPPER_TORSO|ARMS
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
 	siemens_coefficient = 0.9
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
+
+/obj/item/clothing/suit/storage/solgov/dress/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/suit/storage/solgov/dress/sifguard/chief
 	name = "\improper NDF chief's dress coat"
 	icon_state = "ecdress_cxpl"
@@ -242,8 +248,11 @@
 	body_parts_covered = UPPER_TORSO|ARMS
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
 	siemens_coefficient = 0.9
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
+
+/obj/item/clothing/suit/dress/solgov/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/dress/solgov/fleet/sailor
 	name = "fleet dress overwear"
@@ -351,8 +360,11 @@
 	body_parts_covered = UPPER_TORSO|ARMS
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
 	siemens_coefficient = 0.9
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
+
+/obj/item/clothing/suit/dress/saare/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/dress/terran/navy
 	name = "Ares dress cloak"

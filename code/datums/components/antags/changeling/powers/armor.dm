@@ -39,9 +39,12 @@
 	flags = NONE	//Not THICKMATERIAL because it's organic tissue, so if somebody tries to inject something into it,
 				//it still ends up in your blood. (also balance but muh fluff)
 	item_flags = THICKMATERIAL | DROPDEL | NOSTRIP
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS)
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) //No armor at all.
 	canremove = FALSE
+
+/obj/item/clothing/suit/space/changeling/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/changeling/Initialize(mapload)
 	. = ..()

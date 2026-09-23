@@ -57,8 +57,7 @@
 		holder.verbs |= /obj/item/rig/proc/toggle_boots
 	if(holder.chest_type)
 		holder.chest = new holder.chest_type(holder)
-		if(holder.allowed)
-			holder.chest.allowed = holder.allowed
+		holder.chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder)
 		holder.verbs |= /obj/item/rig/proc/toggle_chest
 
 	// Apply shared stats to equippable pieces
