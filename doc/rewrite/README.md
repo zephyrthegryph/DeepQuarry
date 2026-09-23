@@ -62,6 +62,9 @@ Rust  vg-ffi ──────────────────────�
 | [interactions.md](interactions.md) | Input actions, keybinds, interactions, tools and construction |
 | [damage.md](damage.md) | Damage packets, mitigation, where damage lands, and thresholds |
 | [temperature.md](temperature.md) | One thermal model covering Rust, mobs, items, reagents and machines |
+| [object_model.md](object_model.md) | Object kinds, ownership, relations, archetypes, behaviours, requirements, events, scheduling, tasks, UI and dm-health (authoritative) |
+| [lifecycle.md](lifecycle.md) | Destruction as a framework transaction: phases, slot policies and verbs |
+| [rust_architecture.md](rust_architecture.md) | Verdigris: domains as declarations plus laws, the generic core, crate map and plan (authoritative) |
 
 ## How the work runs
 
