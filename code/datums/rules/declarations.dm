@@ -11,7 +11,7 @@
 /// "FLAMMABLE catches fire on any exposure".
 /datum/rule/ignition
 	name = "ignition point"
-	applies_to = list(/obj)
+	applies_to = list(/obj/item, /obj/structure, /obj/machinery, /obj/vehicle, /obj/effect/alien, /obj/effect/spider)
 	test_types = list(/obj/item/paper)
 	condition = list(
 		REQ_COMPARE(PRED_TARGET, PROP_TEMPERATURE, PRED_CMP_GTE, PRED_TARGET, PROP_IGNITION_POINT),
@@ -51,8 +51,8 @@
 /// exosuits, weeds, webs, shields, gargoyles).
 /datum/rule/overheating
 	name = "overheating"
-	applies_to = list(/obj)
-	excludes = list(/obj/item, /obj/machinery/door/blast, /obj/effect/hotspot)
+	applies_to = list(/obj/structure, /obj/machinery, /obj/mecha, /obj/vehicle, /obj/effect/alien/weeds, /obj/effect/spider, /obj/effect/shield)
+	excludes = list(/obj/machinery/door/blast)
 	test_types = list(/obj/structure/window/basic)
 	condition = list(
 		REQ_COMPARE(PRED_TARGET, PROP_TEMPERATURE, PRED_CMP_GTE, PRED_TARGET, PROP_MELTING_POINT),

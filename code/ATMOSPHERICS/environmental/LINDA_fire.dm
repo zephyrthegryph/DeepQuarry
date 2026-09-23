@@ -376,7 +376,7 @@
 	if(isliving(arrived))
 		var/mob/living/immolated = arrived
 		immolated.fire_act(temperature, volume)
-	else if(isobj(arrived) && !HAS_TRAIT(arrived, TRAIT_UNDERFLOOR))
+	else if(arrived.heats_in_fire())
 		arrived.couple_to_fire(loc)
 
 /obj/effect/hotspot/singularity_pull(atom/singularity, current_size)

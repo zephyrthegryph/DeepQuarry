@@ -97,12 +97,19 @@
 			continue
 		if(thing.heat_fire_turf == location && !isnull(thing.heat_body))
 			continue
-		if(!isobj(thing) || HAS_TRAIT(thing, TRAIT_UNDERFLOOR))
-			continue
-		var/obj/O = thing
-		if(O.resistance_flags & INDESTRUCTIBLE)
+		if(!thing.heats_in_fire())
 			continue
 		thing.couple_to_fire(location)
+
+/// Whether a fire on this object's tile heats it: a physical object that
+/// something happens to when hot (it has heat rules).
+/atom/movable/proc/heats_in_fire()
+	return FALSE
+
+/obj/heats_in_fire()
+	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR) || (resistance_flags & INDESTRUCTIBLE))
+		return FALSE
+	return dq_rules_for_type(type) ? TRUE : FALSE
 
 /// The tile stopped burning: uncouple what it heated.
 /obj/effect/hotspot/proc/cool_tile(turf/location)
