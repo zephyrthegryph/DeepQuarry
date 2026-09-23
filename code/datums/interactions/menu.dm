@@ -116,7 +116,8 @@
 			if(!valid)
 				return
 			ui.close()
-			var/handler = user.input_adapter().handler_for(action_id)
+			var/datum/input_adapter/adapter = user.input_adapter()
+			var/handler = adapter.handler_for(action_id)
 			if(handler)
 				call(user, handler)(target, "")
 			return TRUE
