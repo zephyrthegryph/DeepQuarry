@@ -91,6 +91,10 @@
 /datum/interaction/proc/duration_for(mob/actor, atom/target, obj/item/held)
 	return tool ? tool_delay(actor, held, duration, tool) : duration
 
+/// The unscaled time for this target, before the tool's speed and skill: `duration` unless it depends on the target.
+/datum/interaction/proc/base_duration(mob/actor, atom/target)
+	return duration
+
 /// Messages as list(self, others), worked out before the effect changes the target's state.
 /datum/interaction/proc/messages(mob/actor, atom/target, obj/item/held)
 	return list(message_self, message_others)

@@ -19,10 +19,15 @@
 			amount = stack.get_amount()
 		.[thing.type] += amount
 
-/// The edge leaving `target`'s current state whose id ends with `suffix` (or equals it). Null if none.
+/// The edge leaving `target`'s current state whose id ends with `suffix` (or equals it). `suffix` may
+/// be just the "from>to" transition (e.g. "0>1") or the full "from>to:tool_or_item" tail (e.g.
+/// "2>3:spring"): ids are "graph_id:from>to:tool_or_item", so both are checked against the tail.
 /datum/unit_test/proc/dq_edge(atom/target, suffix)
 	for(var/datum/interaction/construction/edge as anything in construction_edges_for(target))
-		if(edge.id == suffix || findtext(edge.id, suffix, -length(suffix)))
+		var/list/parts = splittext(edge.id, ":")
+		var/transition = (length(parts) >= 2) ? parts[2] : null
+		var/tail = (length(parts) >= 3) ? "[parts[2]]:[parts[3]]" : transition
+		if(edge.id == suffix || transition == suffix || tail == suffix)
 			return edge
 	return null
 
@@ -248,7 +253,7 @@
 	var/old_type = floor.type
 	floor = floor.ChangeTurf(/turf/simulated/floor)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	H.a_intent = I_HELP
+	H.set_combat_mode(FALSE)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 
@@ -325,13 +330,13 @@
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	mech.take_damage(20)
 	var/before = mech.get_integrity()
-	H.a_intent = I_HELP
+	H.set_combat_mode(FALSE)
 	H.put_in_active_hand(welder)
 	mech.tool_interaction(H, welder)
 	TEST_ASSERT_EQUAL(mech.get_integrity(), min(mech.max_integrity, before + 10), "a weld patches 10")
-	H.a_intent = I_HURT
+	H.set_combat_mode(TRUE)
 	TEST_ASSERT(mech.tool_interaction(H, welder) & ITEM_INTERACT_SKIP_TO_ATTACK, "on harm intent the welder attacks")
-	H.a_intent = I_HELP
+	H.set_combat_mode(FALSE)
 
 // ---- Wreckage ----
 
@@ -361,3 +366,158 @@
 	var/datum/interaction/construction/cut = dq_edge(wreck, "wreck>wreck:welder")
 	TEST_ASSERT(cut.why_not(H, wreck, welder), "and then can't cut any more")
 	TEST_ASSERT_EQUAL(construction_graph_of(wreck).state_of(wreck), "wreck", "still a wreck")
+
+// ---- Girders ----
+
+/// Dislodge and secure (4 s each), struts off (4 s + 4 s, returning the reinforcement), disassemble (35 + integrity/50).
+/datum/unit_test/dq_construction_girder
+
+/datum/unit_test/dq_construction_girder/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
+	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
+	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
+	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
+	var/obj/structure/girder/girder = allocate(/obj/structure/girder, T)
+	var/datum/construction_graph/graph = construction_graph_of(girder)
+
+	girder.tool_interaction(H, crowbar)
+	TEST_ASSERT_EQUAL(graph.state_of(girder), "displaced", "dislodged")
+	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "in 4 s")
+	girder.tool_interaction(H, wrench)
+	TEST_ASSERT_EQUAL(graph.state_of(girder), "anchored", "secured again")
+	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "in 4 s")
+
+	girder.tool_interaction(H, screwdriver)
+	TEST_ASSERT(girder.reinforcing, "the screwdriver readies it for reinforcing")
+	girder.tool_interaction(H, screwdriver)
+	TEST_ASSERT(!girder.reinforcing, "and back")
+
+	girder.reinf_material = get_material_by_name(MAT_STEEL)
+	girder.reinforce_girder()
+	TEST_ASSERT_EQUAL(graph.state_of(girder), "reinforced", "reinforced")
+	var/list/before = dq_materials_on(T)
+	girder.tool_interaction(H, screwdriver)
+	TEST_ASSERT_EQUAL(graph.state_of(girder), "struts_loose", "struts unsecured")
+	girder.tool_interaction(H, cutters)
+	TEST_ASSERT_EQUAL(graph.state_of(girder), "anchored", "struts removed")
+	TEST_ASSERT_NULL(girder.reinf_material, "no reinforcement left")
+	var/list/after = dq_materials_on(T)
+	TEST_ASSERT(after[/obj/item/stack/material/steel] > before[/obj/item/stack/material/steel], "the reinforcement comes back as sheets")
+
+	var/expected = 35 + round(girder.max_integrity / 50)
+	girder.tool_interaction(H, wrench)
+	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], expected, "disassembling takes 35 + integrity/50")
+	TEST_ASSERT(QDELETED(girder), "disassembled")
+
+// ---- Windows ----
+
+/// A reinforced window: unfasten, pry out, unscrew, dismantle into its sheet; and each step back.
+/datum/unit_test/dq_construction_window
+
+/datum/unit_test/dq_construction_window/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.set_combat_mode(FALSE)
+	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
+	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
+	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
+	var/obj/structure/window/reinforced/window = allocate(/obj/structure/window/reinforced, T)
+	var/datum/construction_graph/graph = construction_graph_of(window)
+	TEST_ASSERT_EQUAL(graph.state_of(window), "a2", "mapped: anchored and fastened")
+
+	var/list/walk = list(list(screwdriver, "a1"), list(crowbar, "a0"), list(screwdriver, "u0"))
+	for(var/list/step in walk)
+		window.tool_interaction(H, step[1])
+		TEST_ASSERT_EQUAL(graph.state_of(window), step[2], "-> [step[2]]")
+	var/list/back = list(list(screwdriver, "a0"), list(crowbar, "a1"), list(screwdriver, "a2"))
+	for(var/list/step in back)
+		window.tool_interaction(H, step[1])
+		TEST_ASSERT_EQUAL(graph.state_of(window), step[2], "back -> [step[2]]")
+	for(var/list/step in walk)
+		window.tool_interaction(H, step[1])
+	var/turf/where = window.loc
+	window.tool_interaction(H, wrench)
+	TEST_ASSERT(QDELETED(window), "dismantled")
+	var/obj/item/stack/material/glass/reinforced/sheet = locate() in where
+	TEST_ASSERT(sheet, "into reinforced glass")
+	TEST_ASSERT_EQUAL(sheet?.get_amount(), 1, "one sheet for a border window")
+
+	var/obj/structure/window/basic/plain = allocate(/obj/structure/window/basic, T)
+	plain.take_damage(5)
+	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
+	plain.tool_interaction(H, welder)
+	TEST_ASSERT_EQUAL(plain.get_integrity(), plain.max_integrity, "the welder repairs a window")
+	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "in 4 s")
+	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["amount"], 1, "for 1 fuel")
+
+// ---- Machine frames ----
+
+/// A computer frame: anchor, board, screw, wire (5 cable), glass (2), and every step back returning its materials.
+/datum/unit_test/dq_construction_frame
+
+/datum/unit_test/dq_construction_frame/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
+	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
+	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
+	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
+	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T, SOUTH, TRUE, new /datum/frame/frame_types/computer)
+	var/datum/construction_graph/graph = construction_graph_of(frame)
+	TEST_ASSERT_EQUAL(graph.state_of(frame), "loose", "a new frame is loose")
+
+	frame.tool_interaction(H, wrench)
+	TEST_ASSERT_EQUAL(graph.state_of(frame), FRAME_PLACED, "wrenched down")
+	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 2 SECONDS, "in 2 s")
+
+	var/obj/item/circuitboard/board = allocate(/obj/item/circuitboard/crew, T)
+	TEST_ASSERT(board, "found a computer board")
+	H.put_in_active_hand(board)
+	var/datum/interaction/construction/insert = dq_edge_for_held(H, frame, board)
+	TEST_ASSERT(insert, "the board goes in")
+	dq_walk(H, frame, insert, board)
+	TEST_ASSERT_EQUAL(frame.state, FRAME_UNFASTENED, "board placed")
+	TEST_ASSERT_EQUAL(board.loc, frame, "inside the frame")
+	frame.tool_interaction(H, screwdriver)
+	TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "board screwed in")
+
+	var/obj/item/stack/cable_coil/coil = allocate(/obj/item/stack/cable_coil, T, 10)
+	H.put_in_active_hand(coil)
+	var/datum/interaction/construction/wire = dq_edge_for_held(H, frame, coil)
+	TEST_ASSERT_EQUAL(wire?.duration, 2 SECONDS, "wiring takes 2 s")
+	dq_walk(H, frame, wire, coil)
+	TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED, "wired")
+	TEST_ASSERT_EQUAL(coil.get_amount(), 5, "for 5 cable")
+
+	var/obj/item/stack/material/glass/glass = allocate(/obj/item/stack/material/glass, T, 5)
+	H.put_in_active_hand(glass)
+	var/datum/interaction/construction/add_glass = dq_edge_for_held(H, frame, glass)
+	dq_walk(H, frame, add_glass, glass)
+	TEST_ASSERT_EQUAL(frame.state, FRAME_PANELED, "paneled")
+	TEST_ASSERT_EQUAL(glass.get_amount(), 3, "for 2 glass")
+
+	// Back down, and the materials come back.
+	var/list/before = dq_materials_on(T)
+	frame.tool_interaction(H, crowbar)
+	TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED, "glass out")
+	frame.tool_interaction(H, cutters)
+	TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "cables out")
+	var/list/after = dq_materials_on(T)
+	TEST_ASSERT_EQUAL(after[/obj/item/stack/material/glass] - before[/obj/item/stack/material/glass], 2, "2 glass back")
+	TEST_ASSERT_EQUAL(after[/obj/item/stack/cable_coil] - before[/obj/item/stack/cable_coil], 5, "5 cable back")
+	frame.tool_interaction(H, screwdriver)
+	TEST_ASSERT_EQUAL(frame.state, FRAME_UNFASTENED, "board unfastened")
+	frame.tool_interaction(H, crowbar)
+	TEST_ASSERT_EQUAL(frame.state, FRAME_PLACED, "board out")
+	TEST_ASSERT_EQUAL(board.loc, frame.loc, "on the floor")
+	frame.tool_interaction(H, wrench)
+	TEST_ASSERT_EQUAL(graph.state_of(frame), "loose", "unfastened from the floor")
+
+	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
+	before = dq_materials_on(T)
+	frame.tool_interaction(H, welder)
+	TEST_ASSERT(QDELETED(frame), "cut apart")
+	after = dq_materials_on(T)
+	TEST_ASSERT_EQUAL(after[/obj/item/stack/material/steel] - before[/obj/item/stack/material/steel], 5, "into its 5 sheets")

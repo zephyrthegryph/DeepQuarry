@@ -226,11 +226,10 @@ fi;
 part "tools: *_act procs that bounce into attackby"
 # A tool hook does its own work through use_tool() (doc/rewrite/interactions.md §9,
 # code/datums/interactions/tools.dm). It must not hand the tool back to attackby().
-# The focused_tool_stage construction ladders listed here are replaced by
-# construction graphs in I5 and must not grow.
-tool_bounce_allowlist='code.modules.vehicles.construction\.dm|code.modules.mob.living.bot.secbot\.dm'
+# The last focused_tool_stage construction ladders (vehicles, secbots) were
+# converted to construction graphs in I5; none may be reintroduced.
 if [ "$pcre2_support" -eq 1 ]; then
-	if $grep -PUn '(?m)^/[^\n]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act(_secondary)?\([^\n]*\)\n(?:(?:\t[^\n]*|[ \t]*)\n)*?\t[^\n]*(?<![.\w])attackby\(' code --glob '*.dm' | grep -E '_act' | grep -vE "^($tool_bounce_allowlist):"; then
+	if $grep -PUn '(?m)^/[^\n]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act(_secondary)?\([^\n]*\)\n(?:(?:\t[^\n]*|[ \t]*)\n)*?\t[^\n]*(?<![.\w])attackby\(' code --glob '*.dm' | grep -E '_act'; then
 		echo
 		echo -e "${RED}ERROR: a *_act tool hook calls attackby(). Do the tool's work in the hook with use_tool().${NC}"
 		FAILED=1
