@@ -229,7 +229,7 @@
 		var/wound_heal = 5
 		// Organ repair is adminordrazine's TREAT_RESTORATION tag (body/treatment.dm).
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			if(O.status & ORGAN_BROKEN)
+			if(O.is_fractured())
 				O.mend_fracture()		//Only works if the bone won't rebreak, as usual
 			dq_reagent_close_wounds(O, wound_heal)
 

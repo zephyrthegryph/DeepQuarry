@@ -215,7 +215,7 @@
 					. += span_bolddanger("The attached [child_organ.name] is dead.")
 				if(child_organ.status & ORGAN_MUTATED)
 					. += span_danger("The attached [child_organ.name] is mutated and deformed.")
-				if(child_organ.status & ORGAN_BROKEN)
+				if(child_organ.is_fractured())
 					. += span_danger("The attached [child_organ.name] is broken.")
 
 				//Handling infections on attached limbs.
@@ -389,8 +389,8 @@
 
 /obj/item/organ/external/proc/is_fracturable()
 	if(robotic >= ORGAN_ROBOT)
-		return FALSE	//ORGAN_BROKEN doesn't have the same meaning for robot limbs
-	if((status & ORGAN_BROKEN) || cannot_break)
+		return FALSE	//robot limbs don't fracture
+	if(is_fractured() || cannot_break)
 		return FALSE
 	return TRUE
 
@@ -428,7 +428,7 @@
 			if(istype(spilled))
 				spilled.apply_lesion_damage(brute, spill_lesion)
 
-	if(status & ORGAN_BROKEN && brute)
+	if(is_fractured() && brute)
 		jostle_bone(brute)
 		if(organ_can_feel_pain() && prob(40) && !isbelly(owner.loc) && !istype(owner.loc, /obj/item/dogborg/sleeper))
 			owner.emote("scream")	//getting hit on broken hand hurts
@@ -594,9 +594,6 @@
 			burn = W.heal_damage(burn)
 		else
 			brute = W.heal_damage(brute)
-
-	if(internal)
-		status &= ~ORGAN_BROKEN
 
 	//Sync the organ's damage with its wounds
 	src.update_damages()
@@ -782,11 +779,11 @@ This function completely restores a damaged organ to perfect condition.
 //external organs handle brokenness a bit differently when it comes to damage. Instead get_trauma() is checked in update_damages()
 //this also ensures that an external organ cannot be "broken" without broken_description being set.
 /obj/item/organ/external/is_broken()
-	return ((status & ORGAN_CUT_AWAY) || (status & ORGAN_BROKEN) && (!splinted || (splinted && (splinted in src.contents) && prob(30))))
+	return ((status & ORGAN_CUT_AWAY) || is_fractured() && (!splinted || (splinted && (splinted in src.contents) && prob(30))))
 
 //Determines if we even need to process this organ.
 /obj/item/organ/external/proc/need_process()
-	if(status & (ORGAN_CUT_AWAY|ORGAN_BLEEDING|ORGAN_BROKEN|ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED))
+	if((status & (ORGAN_CUT_AWAY|ORGAN_BLEEDING|ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED)) || is_fractured())
 		return 1
 	var/current_dam = get_trauma() + get_burn()
 	if(current_dam) // But they do for medichines! ---&& (robotic < ORGAN_ROBOT)) //Robot limbs don't autoheal and thus don't need to process when damaged
@@ -1254,10 +1251,18 @@ Note that amputating the affected organ does in fact remove the infection from t
 		W.clamped = 1
 	return rval
 
+/// The limb's fracture IS its untreated_fracture affliction: present means
+/// broken. Robot limbs don't fracture.
+/obj/item/organ/external/is_fractured()
+	return !!owner?.body?.find_affliction(/datum/affliction/untreated_fracture, src)
+
+/// Break the bone: afflict the limb with a fracture.
 /obj/item/organ/external/proc/fracture()
 	if(robotic >= ORGAN_ROBOT)
-		return	//ORGAN_BROKEN doesn't have the same meaning for robot limbs
-	if((status & ORGAN_BROKEN) || cannot_break)
+		return
+	if(!owner?.body || is_fractured() || cannot_break)
+		return
+	if(!owner.body.afflict(/datum/affliction/untreated_fracture, src, FRACTURE_INITIAL_SEVERITY))
 		return
 
 	if(owner)
@@ -1284,7 +1289,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		playsound(src, "fracture", 90, 1, -6.5)
 	else
 		playsound(src, "fracture", 90, 1, -2) // Much more audible bonebreaks.
-	status |= ORGAN_BROKEN
+	log_runtime("FRACTURE: [key_name(owner)] fractured their [name].")
 	broken_description = pick("broken","fracture","hairline fracture")
 
 	// Fractures have a chance of getting you out of restraints
@@ -1301,13 +1306,18 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	return 1
 
+/// Knit the bone at once (magic and chemical bone heals): cure the fracture
+/// affliction. Surgery sets bones through TREAT_BONE_SETTING instead.
 /obj/item/organ/external/proc/mend_fracture()
 	if(robotic >= ORGAN_ROBOT)
-		return 0	//ORGAN_BROKEN doesn't have the same meaning for robot limbs
+		return 0
 	if(get_trauma() > min_broken_damage * CONFIG_GET(number/organ_health_multiplier))
 		return 0	//will just immediately fracture again
-
-	status &= ~ORGAN_BROKEN
+	var/datum/affliction/untreated_fracture/F = owner?.body?.find_affliction(/datum/affliction/untreated_fracture, src)
+	if(!F)
+		return 0
+	F.cure()
+	log_runtime("FRACTURE: [key_name(owner)]'s [name] fracture mended.")
 	return 1
 
 /obj/item/organ/external/proc/apply_splint(atom/movable/splint)
@@ -1532,7 +1542,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	disfigured = 1
 
 /obj/item/organ/external/proc/jostle_bone(force)
-	if(!(status & ORGAN_BROKEN)) //intact bones stay still
+	if(!is_fractured()) //intact bones stay still
 		return
 	var/trauma = get_trauma()
 	if(trauma + force < min_broken_damage/5)	//no papercuts moving bones

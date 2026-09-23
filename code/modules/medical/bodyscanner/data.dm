@@ -152,7 +152,7 @@
 		var/list/organStatus = list()
 		if(E.status & ORGAN_DESTROYED)
 			organStatus["destroyed"] = 1
-		if(E.status & ORGAN_BROKEN)
+		if(E.is_fractured())
 			organStatus["broken"] = E.broken_description
 		if(E.robotic >= ORGAN_ROBOT)
 			organStatus["robotic"] = 1

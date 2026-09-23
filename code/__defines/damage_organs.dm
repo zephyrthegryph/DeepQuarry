@@ -30,7 +30,6 @@
 // Organ defines.
 #define ORGAN_CUT_AWAY   (1<<0)
 #define ORGAN_BLEEDING   (1<<1)
-#define ORGAN_BROKEN     (1<<2)
 #define ORGAN_DESTROYED  (1<<3)
 #define ORGAN_DEAD       (1<<4)
 #define ORGAN_MUTATED    (1<<5)

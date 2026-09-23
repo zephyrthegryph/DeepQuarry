@@ -966,8 +966,8 @@
 
 				for(var/obj/item/organ/E in H.bad_external_organs)
 					var/obj/item/organ/external/affected = E
-					if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
-						affected.status &= ~ORGAN_BROKEN
+					if(affected.is_fractured())
+						affected.mend_fracture()
 
 					for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
 						affected.remove_wound(W)
