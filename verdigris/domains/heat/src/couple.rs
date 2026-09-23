@@ -87,10 +87,10 @@ impl GasExchange for NoGas {
 #[must_use]
 pub fn pair_exchange(ta: f32, ca: f32, tb: f32, cb: f32, g: f32, dt: f32) -> f32 {
     use vg_core::thermo::{self, ThermalBody};
-    use vg_core::units::{HeatCapacity, Kelvin};
-    let a = ThermalBody::new(HeatCapacity(ca), Kelvin(ta));
-    let b = ThermalBody::new(HeatCapacity(cb), Kelvin(tb));
-    thermo::pair_exchange(a, b, g, dt).0
+    use vg_core::units::{HeatCapacity, Kelvin, Seconds};
+    let a = ThermalBody::new(HeatCapacity::from(ca), Kelvin::from(ta));
+    let b = ThermalBody::new(HeatCapacity::from(cb), Kelvin::from(tb));
+    thermo::pair_exchange(a, b, f64::from(g), Seconds::from(dt)).into()
 }
 
 /// As [`pair_exchange`], with the pair's relaxation rate (1/s) given
@@ -99,10 +99,10 @@ pub fn pair_exchange(ta: f32, ca: f32, tb: f32, cb: f32, g: f32, dt: f32) -> f32
 #[must_use]
 pub fn pair_exchange_at_rate(ta: f32, ca: f32, tb: f32, cb: f32, rate: f32, dt: f32) -> f32 {
     use vg_core::thermo::{self, ThermalBody};
-    use vg_core::units::{HeatCapacity, Kelvin};
-    let a = ThermalBody::new(HeatCapacity(ca), Kelvin(ta));
-    let b = ThermalBody::new(HeatCapacity(cb), Kelvin(tb));
-    thermo::pair_exchange_at_rate(a, b, rate, dt).0
+    use vg_core::units::{HeatCapacity, Kelvin, Seconds};
+    let a = ThermalBody::new(HeatCapacity::from(ca), Kelvin::from(ta));
+    let b = ThermalBody::new(HeatCapacity::from(cb), Kelvin::from(tb));
+    thermo::pair_exchange_at_rate(a, b, f64::from(rate), Seconds::from(dt)).into()
 }
 
 /// Where energy went that no store kept. Cells of the [`HeatLedger`]

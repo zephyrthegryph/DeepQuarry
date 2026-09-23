@@ -109,13 +109,18 @@ impl Regulator {
     /// applied: see [`apply`](Self::apply).
     #[must_use]
     pub fn step(&self, controlled: ThermalBody, other: ThermalBody, dt: f32) -> RegulatorStep {
+        // `ThermalBody`'s fields are `f64` (`vg_core::units`, "units
+        // everywhere"); this function's own public inputs/outputs stay
+        // `f32` (a regulator's settings and one step's flows are small,
+        // display-facing numbers, not accumulated state), so the boundary
+        // conversion happens here rather than changing this type's API.
         let (t, c) = (controlled.temperature.0, controlled.capacity.0);
-        let budget = self.max_power.max(0.0) * dt.max(0.0);
+        let budget = f64::from(self.max_power.max(0.0)) * f64::from(dt.max(0.0));
         if budget <= 0.0 || c <= 0.0 || !t.is_finite() {
             return RegulatorStep::default();
         }
-        let gap = self.target - t;
-        if gap.abs() <= self.deadband {
+        let gap = f64::from(self.target) - t;
+        if gap.abs() <= f64::from(self.deadband) {
             return RegulatorStep::default();
         }
         let needed = gap.abs() * c;
@@ -123,31 +128,43 @@ impl Regulator {
             if self.resistive_heating {
                 let q = budget.min(needed);
                 return RegulatorStep {
-                    work: q,
-                    moved: q,
+                    work: q as f32,
+                    moved: q as f32,
                     other: 0.0,
                 };
             }
-            let cop = heating_cop(t, other.temperature.0, self.carnot_fraction, self.max_cop);
+            #[allow(clippy::cast_possible_truncation)]
+            let cop = f64::from(heating_cop(
+                t as f32,
+                other.temperature.0 as f32,
+                self.carnot_fraction,
+                self.max_cop,
+            ));
             let q = (budget * cop).min(needed);
             let w = q / cop;
             return RegulatorStep {
-                work: w,
-                moved: q,
-                other: w - q,
+                work: w as f32,
+                moved: q as f32,
+                other: (w - q) as f32,
             };
         }
         if gap < 0.0 && self.mode != RegulatorMode::Heat {
-            let cop = cooling_cop(t, other.temperature.0, self.carnot_fraction, self.max_cop);
+            #[allow(clippy::cast_possible_truncation)]
+            let cop = f64::from(cooling_cop(
+                t as f32,
+                other.temperature.0 as f32,
+                self.carnot_fraction,
+                self.max_cop,
+            ));
             if cop <= 0.0 {
                 return RegulatorStep::default();
             }
             let q = (budget * cop).min(needed);
             let w = q / cop;
             return RegulatorStep {
-                work: w,
-                moved: -q,
-                other: q + w,
+                work: w as f32,
+                moved: -q as f32,
+                other: (q + w) as f32,
             };
         }
         RegulatorStep::default()
@@ -164,14 +181,14 @@ impl Regulator {
 fn add_energy(body: &mut ThermalBody, joules: f32) {
     let c = body.capacity.0;
     if c.is_finite() && c > 0.0 {
-        body.temperature = Kelvin(body.temperature.0 + joules / c);
+        body.temperature = Kelvin(body.temperature.0 + f64::from(joules) / c);
     }
 }
 
 /// A reservoir side for [`Regulator::step`].
 #[must_use]
 pub fn reservoir(temperature: f32) -> ThermalBody {
-    ThermalBody::new(HeatCapacity(f32::INFINITY), Kelvin(temperature))
+    ThermalBody::new(HeatCapacity(f64::INFINITY), Kelvin::from(temperature))
 }
 
 #[cfg(test)]
@@ -180,7 +197,7 @@ mod tests {
     use proptest::prelude::*;
 
     fn body(c: f32, t: f32) -> ThermalBody {
-        ThermalBody::new(HeatCapacity(c), Kelvin(t))
+        ThermalBody::new(HeatCapacity::from(c), Kelvin::from(t))
     }
 
     #[test]
@@ -213,7 +230,7 @@ mod tests {
         Regulator::apply(s, &mut cold, &mut hot);
         let de = (cold.energy().0 - e0) + (hot.energy().0 - e1);
         assert!(
-            (de - s.work).abs() < 0.5,
+            (de - f64::from(s.work)).abs() < 0.5,
             "heat in = work: {de} vs {}",
             s.work
         );

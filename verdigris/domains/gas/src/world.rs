@@ -1409,7 +1409,7 @@ impl GasWorld {
 				.field
 				.as_ref()
 				.and_then(|f| f.read(c))
-				.map_or(0, |(cell, _)| cell.revision),
+				.map_or(0, |(cell, _)| cell.revision()),
 		}
 	}
 

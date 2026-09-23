@@ -530,3 +530,118 @@ storage rate model with R10 components; all DM mirrors and `power_sync()` are
 deleted), heat (binds move out of vg-gas; heat bodies become components; the
 regulator is wired to air conditioners, heaters and thermoregulators, or
 deleted), then turf gas and heat as grid kinds.
+
+## 16. §15 extensions landed by the rustaudit pass
+
+Extending §15's table with three more entries, and reporting what
+`rewrite/rustaudit` actually built against it (a CI-enforced architecture
+check, plus the two entries it had the most direct evidence for already:
+change tracking, since GasCell's `revision()` was mid-investigation when
+this was scoped in, and thermo, since heat-r10 needed to know where to
+build). Units-everywhere and the activity/sleep service are scoped and
+documented here but **not implemented** by this pass -- see 16.4.
+
+| Mechanism | Core home | Replaces |
+|---|---|---|
+| Units everywhere | `vg_core::units`, `f64`-backed, the *only* way a quantity crosses a module or FFI boundary | raw `f32` physical quantities in domain public APIs (flagged by the consolidation check once a domain migrates) |
+| Conservation audit | `vg_core::conservation::Ledger` | ad hoc per-test `close()`-style diff helpers a domain writes for itself |
+| (already in the original table, landed this pass) | `vg_core::thermo::pair_exchange`/`pair_exchange_at_rate`, `vg_core::revision::BandRevision` | vg-heat's two exchange laws; one of gas's three `revision()`s |
+
+### 16.1 Change tracking: `core::revision::BandRevision`
+
+`core::watch::Cond::Band` is the right tool for a *registered* condition
+evaluated through the frame/channel/outbox pipeline (§6). `GasCell`'s
+`revision()` is a cheaper, unregistered sibling: "bump a `u32` when
+pressure/temperature/total moles moved past a band since the last bump",
+read directly by an FFI bind, no registration or frame evaluation involved.
+Generalized into `core::revision::BandRevision<const N: usize>`
+(`core/src/revision.rs`): N independent scalar channels, each with its own
+band; a `None` value that call never triggers or blocks the others; NaN
+never triggers. `GasCell`'s `revision: u32` + `rev_at: [f32; 3]` fields
+became one `bands: BandRevision<3>` field; `band_check` is a two-line call
+into `bands.update(...)`.
+
+Of gas's three `revision()`s, this is the only one that's actually
+band-based. `world.rs`'s per-"Main"-slot revision and `pipes.rs`'s per-node
+revision are both plain bump-on-every-write generation counters -- a
+different, simpler shape `BandRevision` doesn't fit as-is. Left as-is and
+allow-listed (16.3); `pipes.rs` is also one of M2's concurrently-edited
+files regardless.
+
+### 16.2 Thermo: `core::thermo::pair_exchange`
+
+See the branch's commit `efe6e5b1ee`. `core::thermo` already had
+`exchange(a, b, coefficient)` (instant relaxation by a precomputed
+fraction) but not the conductance+`dt` form vg-heat's `couple.rs` actually
+uses (`pair_exchange(ta, ca, tb, cb, g, dt)`, deriving the fraction itself
+via `1 - e^(-g(1/Ca+1/Cb)dt)`, correct for a reservoir side). Added
+`pair_exchange`/`pair_exchange_at_rate` to `core::thermo` on the module's
+`ThermalBody`/`HeatCapacity`/`Kelvin` types, with the property tests ported
+over; `vg_heat::couple::pair_exchange`/`pair_exchange_at_rate` are now thin
+`f32`-signature wrappers over them. `rewrite/heat-r10` was pointed at this
+location and API directly (message relayed by the coordinator).
+
+Gas's own thermal constant copies (`domains/gas/src/gas/constants.rs`) are
+not migrated onto `vg_core::units`/`thermo` by this pass.
+
+### 16.3 The consolidation CI check
+
+`tools/ci/check_rust_core_consolidation.py` + `tools/ci/rust_core_consolidation_allowlist.txt`
+(wired into `run_linters.yml`, no Rust toolchain needed -- pure grep, runs
+alongside the other Python lints). Five heuristic categories over
+`verdigris/domains/*/src/**/*.rs`: `handle` (a domain-local generation-
+checked handle/id type), `revision` (a domain-local bump counter),
+`activity` (a domain-local per-entity awake/asleep map), `ffi_raw`
+(positional `kind + p0..p3` FFI marshalling), `smoothing` (a domain's own
+"shown" display-smoothed copy of a value). This is a grep, not a type
+checker: a real hit that isn't actually a violation should narrow the
+pattern, not get allow-listed.
+
+Current allow-listed offenders (one per line in the allowlist, with the
+branch/plan that removes it; a stale entry -- nothing matches it any more
+-- fails the check too, so the list only shrinks):
+
+- `domains/gas/src/pipes.rs` (`revision`): the pipe-node generation
+  counter; M2's territory regardless.
+- `domains/gas/src/world.rs` (`revision`): the "Main"-slot generation
+  counter; needs its own core primitive (a plain version counter, not
+  band-based), not built this pass.
+- `domains/power/src/world.rs` (`smoothing`): `shown_brown`/`shown_apc`/
+  `shown_smes` -- exactly "power's 'shown' diff copies" from §15's
+  original table. Removed when power's rewrite lands.
+
+No `handle`/`activity`/`ffi_raw` hits were found against the current
+tree with these patterns; that's a heuristic gap (these patterns are
+narrow, to avoid false positives on unrelated code -- e.g. `smooth_map` in
+`vg-layout`'s cellular-automaton map generator, or `smooth_department_claims`
+in the dead code removed by this same pass, are *not* the "display
+smoothing" §15 means), not a claim that no such code exists. Tightening
+these patterns (or adding new categories, e.g. for the R10 identity
+system's arrival) is expected as domains migrate and more examples of each
+violation become concrete.
+
+### 16.4 Not implemented by this pass
+
+- **Units everywhere (new §15 row).** Making `vg_core::units` the *only*
+  way a physical quantity crosses a module or FFI boundary is a real
+  `f32`-\>`f64` API change to every unit newtype (`Kelvin`, `Joules`,
+  `HeatCapacity`, `Moles`, plus new `Watts`/`Kpa`/`Liters`/`Seconds`), and
+  `core::thermo` (just landed, 16.2) and every consumer of it (`vg_heat`,
+  soon `heat-r10`) would need updating in lockstep. Attempting this as a
+  drive-by in an already-large pass risked a half-converted state across
+  crate boundaries I don't own (bindings, heat-r10, power-r10) with no way
+  to verify the other sides. Scoped and named here; not started.
+- **Activity and sleep service.** Gas's own activity/wake tracking (the
+  field's active-cell sets, `simulation.md` §1/§4's "urgent/fresh/frontier
+  lanes", already partly on `core::field`'s active-set machinery per
+  §13's table) and its per-device equivalent were not audited in enough
+  depth this pass to design a correct generic replacement -- doing so
+  without fully understanding the field framework's existing active-set
+  invariants risks a live-simulation correctness bug (frozen or
+  perpetually-active gas cells) that only a full DM atmos run would catch,
+  and the test-budget rule for this pass is one DM run, at the very end,
+  for everything above combined. Scoped in §15's table; not started.
+- **Rate-model library** (for `rewrite/power-r10`): not built. The
+  coordinator is relaying between agents; if `power-r10` hasn't produced
+  one by the time this lands, that coordination should happen as its own
+  piece of work, not a rushed addition here.
