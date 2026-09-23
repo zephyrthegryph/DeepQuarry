@@ -331,7 +331,7 @@
 	use_power = USE_POWER_OFF
 	circuit = null
 
-	var/list/custom_tracks = list()
+	var/list/custom_tracks
 
 // Just junk to make it sneaky - I wish a lot more stuff was on /obj/machinery/media instead of /jukebox so I could use that.
 /obj/machinery/media/jukebox/ghost/is_incorporeal()
@@ -403,7 +403,7 @@
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
 
-	custom_tracks += new /datum/track(url, title, duration, artist, genre)
+	LAZYADD(custom_tracks, new /datum/track(url, title, duration, artist, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove()
 	var/client/C = usr.client
@@ -416,7 +416,7 @@
 
 	for(var/datum/track/T in custom_tracks)
 		if(T.title == track || T.url == track)
-			custom_tracks -= T
+			LAZYREMOVE(custom_tracks, T)
 			qdel(T)
 			return
 

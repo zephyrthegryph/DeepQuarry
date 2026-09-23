@@ -3,7 +3,7 @@
 	//The name of the job
 	var/title = "NOPE"
 	// Job access. The use of minimal_access or access is determined by a config setting: CONFIG_GET(flag/jobs_have_minimal_access) //
-	var/list/minimal_access = list()      // Useful for servers which prefer to only have access given to the places a job absolutely needs (Larger server population)
+	var/list/minimal_access      // Useful for servers which prefer to only have access given to the places a job absolutely needs (Larger server population)
 	var/list/access = list()              // Useful for servers which either have fewer players, so each person needs to fill more than one role, or servers which like to give more access, so players can't hide forever in their super secure departments (I'm looking at you, chemistry!)
 	var/flag = 0 	                      // Bitflags for the job
 	var/department_flag = 0
@@ -40,8 +40,8 @@
 	var/job_description = "This Job doesn't have a description! Please report it!"
 
 	var/camp_protection = FALSE
-	var/list/restricted_keys = list()
-	var/list/shift_keys = list()
+	var/list/restricted_keys
+	var/list/shift_keys
 
 	//Requires a ckey to be whitelisted in jobwhitelist.txt
 	var/whitelist_only = 0
@@ -114,8 +114,8 @@
 		remembered_info += span_bold("Your account pin is:") + " [M.remote_access_pin]<br>"
 		remembered_info += span_bold("Your account funds are:") + " $[M.money]<br>"
 
-		if(M.transaction_log.len)
-			var/datum/transaction/T = M.transaction_log[1]
+		if(length(M.transaction_log))
+			var/datum/transaction/T = LAZYACCESS(M.transaction_log, 1)
 			remembered_info += span_bold("Your account was created:") + " [T.time], [T.date] at [T.source_terminal]<br>"
 		H.mind.store_memory(remembered_info)
 
@@ -138,7 +138,7 @@
 	// duplicate its full access list in minimal_access.
 	var/list/result
 	if(!config || CONFIG_GET(flag/jobs_have_minimal_access))
-		result = src.minimal_access.len ? src.minimal_access.Copy() : src.access.Copy()
+		result = length(src.minimal_access) ? LAZYCOPY(src.minimal_access) : src.access.Copy()
 	else
 		result = src.access.Copy()
 
@@ -152,7 +152,7 @@
 			var/datum/department/dept = LAZYACCESS(SSjob.department_datums, dept_name)
 			if(!istype(dept) || !LAZYLEN(dept.default_access))
 				continue
-			result |= dept.default_access
+			if(length(dept.default_access)) result |= dept.default_access
 
 	return result
 
@@ -238,7 +238,7 @@
 /datum/job/proc/register_shift_key(key)
 	if(key)
 		var/list/keylist = list(key)
-		SSjob.shift_keys[title] += keylist
+		LAZYADDASSOC(SSjob.shift_keys, title, keylist)
 // end
 
 /datum/job/proc/update_limit(comperator)

@@ -288,11 +288,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	if(!(effective_gen >= max_power / 2 && powernet)) // Don't make a spike if we're not making a whole lot of power.
 		return
 
-	var/list/powernet_union = powernet.nodes.Copy()
+	var/list/powernet_union = LAZYCOPY(powernet.nodes)
 	for(var/obj/machinery/power/terminal/T in powernet.nodes)
 		if(T.master && istype(T.master, /obj/machinery/power/smes))
 			var/obj/machinery/power/smes/S = T.master
-			powernet_union |= S.powernet.nodes
+			if(length(S.powernet.nodes)) powernet_union |= S.powernet.nodes
 
 	var/found_grid_checker = FALSE
 	for(var/obj/machinery/power/grid_checker/G in powernet_union)

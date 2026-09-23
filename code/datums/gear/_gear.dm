@@ -62,7 +62,7 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 	var/show_roles = TRUE	//Show the role restrictions on this item?
 	var/whitelisted        //Term to check the whitelist for..
 	var/sort_category = "General"
-	var/list/gear_tweaks = list() //List of datums which will alter the item after it has been spawned.
+	var/list/gear_tweaks //List of datums which will alter the item after it has been spawned.
 	var/exploitable = 0		//Does it go on the exploitable information list?
 	var/type_category = null
 	var/list/ckeywhitelist	//restricted based on these ckeys?
@@ -151,13 +151,13 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 	// also writes by index.
 	if(length(gear_tweaks) && metadata)
 		for(var/i in 1 to length(gear_tweaks))
-			var/datum/gear_tweak/gt = gear_tweaks[i]
+			var/datum/gear_tweak/gt = LAZYACCESS(gear_tweaks, i)
 			gt.tweak_gear_data(metadata["[i]"], gd)
 	// spawn via helper to apply variant.
 	var/item = spawn_with_variant(gd.path, gd.location, gd.variant)
 	if(length(gear_tweaks) && metadata)
 		for(var/i in 1 to length(gear_tweaks))
-			var/datum/gear_tweak/gt = gear_tweaks[i]
+			var/datum/gear_tweak/gt = LAZYACCESS(gear_tweaks, i)
 			gt.tweak_item(item, metadata["[i]"])
 	var/mob/M = location
 	if(istype(M) && exploitable) //Update exploitable info records for the mob without creating a duplicate object at their feet.

@@ -50,7 +50,7 @@
 	var/datum/node/statement/ReturnStatement/stmt=new
 	parser.NextToken()   //skip 'return' token
 	stmt.value=parser.ParseExpression()
-	parser.curBlock.statements+=stmt
+	LAZYADD(parser.curBlock.statements, stmt)
 
 /datum/n_Keyword/nS_Keyword/kwIf/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
@@ -61,7 +61,7 @@
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0)) //Token needs to be preserved for parse loop, so skip=0
 		return KW_ERR
-	parser.curBlock.statements+=stmt
+	LAZYADD(parser.curBlock.statements, stmt)
 	stmt.block=new
 	parser.AddBlock(stmt.block)
 
@@ -88,7 +88,7 @@
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
 		return KW_ERR
-	parser.curBlock.statements+=stmt
+	LAZYADD(parser.curBlock.statements, stmt)
 	stmt.block=new
 	parser.AddBlock(stmt.block)
 
@@ -99,7 +99,7 @@
 		. = KW_WARN
 	var/datum/node/statement/BreakStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
-	parser.curBlock.statements+=stmt
+	LAZYADD(parser.curBlock.statements, stmt)
 
 /datum/n_Keyword/nS_Keyword/kwContinue/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
@@ -108,7 +108,7 @@
 		. = KW_WARN
 	var/datum/node/statement/ContinueStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
-	parser.curBlock.statements+=stmt
+	LAZYADD(parser.curBlock.statements, stmt)
 
 /datum/n_Keyword/nS_Keyword/kwDef/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
@@ -142,10 +142,10 @@
 		return KW_FAIL
 
 	if(istype(parser.curToken, /datum/token/end)) //Function prototype
-		parser.curBlock.statements+=def
+		LAZYADD(parser.curBlock.statements, def)
 	else if(parser.curToken.value=="{" && istype(parser.curToken, /datum/token/symbol))
 		def.block = new
-		parser.curBlock.statements+=def
+		LAZYADD(parser.curBlock.statements, def)
 		parser.curBlock.functions[def.func_name]=def
 		parser.AddBlock(def.block)
 	else

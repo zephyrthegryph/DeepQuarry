@@ -24,7 +24,7 @@
 		var/datum/techweb_node/TN = SSresearch.techweb_nodes[i]
 		research_node(TN, TRUE, TRUE, FALSE)
 	for(var/i in SSresearch.point_types)
-		research_points[i] = INFINITY
+		LAZYSET(research_points, i, INFINITY)
 	hidden_nodes = list()
 
 /**

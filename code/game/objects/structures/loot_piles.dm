@@ -22,7 +22,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	density = FALSE
 	anchored = TRUE
 	unacidable = TRUE
-	var/list/icon_states_to_use = list() // List of icon states the pile can choose from on initialization. If empty or null, it will stay the initial icon_state.
+	var/list/icon_states_to_use // List of icon states the pile can choose from on initialization. If empty or null, it will stay the initial icon_state.
 
 	var/list/searchedby = list()	// Keys that have searched this loot pile, with values of searched time.
 	var/busy = FALSE				// Used so you can't spamclick to loot.
@@ -52,8 +52,8 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		return ..()
 
 /obj/structure/loot_pile/Initialize(mapload)
-	if(icon_states_to_use && icon_states_to_use.len)
-		icon_state = pick(icon_states_to_use)
+	if(icon_states_to_use && length(icon_states_to_use))
+		icon_state = DEFAULTPICK(icon_states_to_use, null)
 	. = ..()
 	if(loot_element_path)
 		AddElement(loot_element_path)

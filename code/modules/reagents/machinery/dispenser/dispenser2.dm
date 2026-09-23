@@ -26,7 +26,7 @@
 	/// Records the reagents dispensed by the user if this list is not null
 	var/list/recording_recipe
 	/// Saves all the recipes recorded by the machine
-	var/list/saved_recipes = list()
+	var/list/saved_recipes
 	var/import_job = JOB_CHEMIST
 
 /obj/machinery/chemical_dispenser/Initialize(mapload)
@@ -150,7 +150,7 @@
 		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.reagents.total_volume))) // list in a list because Byond merges the first list...
 	data["chemicals"] = chemicals
 
-	data["recipes"] = saved_recipes
+	data["recipes"] = (saved_recipes || list())
 	data["recordingRecipe"] = recording_recipe
 	return data
 
@@ -230,7 +230,7 @@
 			var/name = tgui_input_text(ui.user, "What do you want to name this recipe?", "Recipe Name?", "Recipe Name", MAX_NAME_LEN)
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return
-			if(saved_recipes[name] && tgui_alert(ui.user, "\"[name]\" already exists, do you want to overwrite it?",, list("No", "Yes")) != "Yes")
+			if(LAZYACCESS(saved_recipes, name) && tgui_alert(ui.user, "\"[name]\" already exists, do you want to overwrite it?",, list("No", "Yes")) != "Yes")
 				return
 			if(name && recording_recipe)
 				for(var/list/L in recording_recipe)
@@ -241,12 +241,12 @@
 						to_chat(ui.user, span_warning("[src] cannot find <b>[label]</b>!"))
 						playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
 						return
-				saved_recipes[name] = recording_recipe
+				LAZYSET(saved_recipes, name, recording_recipe)
 				recording_recipe = null
 				. = TRUE
 
 		if("dispense_recipe")
-			var/list/chemicals_to_dispense = saved_recipes[params["recipe"]]
+			var/list/chemicals_to_dispense = LAZYACCESS(saved_recipes, params["recipe"])
 			if(!LAZYLEN(chemicals_to_dispense))
 				return
 
@@ -279,7 +279,7 @@
 				recording_recipe += chemicals_to_dispense
 			. = TRUE
 		if("remove_recipe")
-			saved_recipes -= params["recipe"]
+			LAZYREMOVE(saved_recipes, params["recipe"])
 			. = TRUE
 
 /obj/machinery/chemical_dispenser/attack_ghost(mob/user)

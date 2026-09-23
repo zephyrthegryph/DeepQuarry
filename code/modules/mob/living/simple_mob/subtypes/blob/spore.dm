@@ -50,12 +50,12 @@
 /mob/living/simple_mob/blob/spore/Initialize(mapload, obj/structure/blob/factory/my_factory)
 	if(istype(my_factory))
 		factory = my_factory
-		factory.spores += src
+		LAZYADD(factory.spores, src)
 	return ..()
 
 /mob/living/simple_mob/blob/spore/Destroy()
 	if(factory)
-		factory.spores -= src
+		LAZYREMOVE(factory.spores, src)
 	factory = null
 	if(infested)
 		infested.forceMove(get_turf(src))

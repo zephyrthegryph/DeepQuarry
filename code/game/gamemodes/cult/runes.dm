@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			break
 
 	if(!target) //didn't find any new targets
-		if(!converting.len)
+		if(!length(converting))
 			fizzle(user)
 		else
 			to_chat(user, span_danger("You sense that the power of the dark one is already working away at them."))
@@ -116,12 +116,12 @@ GLOBAL_LIST_EMPTY(sacrificed)
 
 	user.say("Mah[pick("'","`")]weyh pleggh at e'ntrath!")
 
-	converting |= target
+	LAZYOR(converting, target)
 	var/list/waiting_for_input = list(target = 0) //need to box this up in order to be able to reset it again from inside spawn, apparently
 	var/initial_message = 0
 	while(target in converting)
 		if(target.loc != src.loc || target.stat == DEAD)
-			converting -= target
+			LAZYREMOVE(converting, target)
 			if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
 				target.hallucination = min(target.hallucination, 500)
 			return 0
@@ -175,7 +175,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				waiting_for_input[target] = 0
 				if(choice == "Submit") //choosing 'Resist' does nothing of course.
 					GLOB.cult.add_antagonist(target.mind)
-					converting -= target
+					LAZYREMOVE(converting, target)
 					target.hallucination = 0 //sudden clarity
 
 		sleep(100) //proc once every 10 seconds

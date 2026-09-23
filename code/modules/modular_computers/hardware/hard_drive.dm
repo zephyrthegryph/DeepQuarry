@@ -8,7 +8,7 @@
 	var/max_capacity = 128
 	var/used_capacity = 0
 	/// List of stored files on this drive. DO NOT MODIFY DIRECTLY!
-	var/list/stored_files = list()
+	var/list/stored_files
 	/// Whether drive is protected against changes
 	var/read_only = FALSE
 
@@ -62,7 +62,7 @@
 /obj/item/computer_hardware/hard_drive/diagnostics(mob/user)
 	..()
 	// 999 is a byond limit that is in place. It's unlikely someone will reach that many files anyway, since you would sooner run out of space.
-	to_chat(user, "NT-NFS File Table Status: [stored_files.len]/999")
+	to_chat(user, "NT-NFS File Table Status: [length(stored_files)]/999")
 	to_chat(user, "Storage capacity: [used_capacity]/[max_capacity]GQ")
 	to_chat(user, "Read-only mode: [(read_only ? "ON" : "OFF")]")
 
@@ -77,15 +77,13 @@
 	if(!check_functionality())
 		return 0
 
-	if(!stored_files)
-		return 0
-
+	// stored_files is lazy: LAZYADD below creates it for the first file.
 	// This file is already stored. Don't store it again.
 	if(F in stored_files)
 		return 0
 
 	F.holder = src
-	stored_files.Add(F)
+	LAZYADD(stored_files, F)
 	recalculate_size()
 	return 1
 
@@ -108,7 +106,7 @@
 		return 0
 
 	if(F in stored_files)
-		stored_files -= F
+		LAZYREMOVE(stored_files, F)
 		recalculate_size()
 		return 1
 	else
@@ -126,7 +124,7 @@
 /obj/item/computer_hardware/hard_drive/proc/can_store_file(size = 1)
 	// In the unlikely event someone manages to create that many files.
 	// BYOND is acting weird with numbers above 999 in loops (infinite loop prevention)
-	if(stored_files.len >= 999)
+	if(length(stored_files) >= 999)
 		return 0
 	if(used_capacity + size > max_capacity)
 		return 0

@@ -1,7 +1,7 @@
 //I AM THE LOREMASTER, ARE YOU THE GATEKEEPER?
 
 /datum/lore/loremaster
-	var/list/organizations = list()
+	var/list/organizations
 
 /datum/lore/loremaster/New()
 
@@ -11,4 +11,4 @@
 		var/datum/lore/organization/instance = path
 		if(initial(instance.name))
 			instance = new path()
-			organizations[path] = instance
+			LAZYSET(organizations, path, instance)

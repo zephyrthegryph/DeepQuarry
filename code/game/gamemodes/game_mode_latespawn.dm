@@ -47,7 +47,7 @@
 	message_admins("[uppertext(name)]: Attempting spawn.")
 
 	var/list/usable_templates
-	if(latejoin_only && latejoin_templates.len)
+	if(latejoin_only && length(latejoin_templates))
 		usable_templates = get_usable_templates(latejoin_templates)
 	else if (antag_templates && antag_templates.len)
 		usable_templates = get_usable_templates(antag_templates)

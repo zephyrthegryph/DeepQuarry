@@ -168,7 +168,7 @@
 /mob/living/carbon/human/monkey/CanContractDisease(datum/disease/D)
 	. = ..()
 	if(. == -1)
-		if(D.viable_mobtypes.Find(/mob/living/carbon/human))
+		if(LAZYFIND(D.viable_mobtypes, /mob/living/carbon/human))
 			return
 
 /mob/living/proc/CanSpreadAirborneDisease()

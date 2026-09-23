@@ -9,10 +9,10 @@
 	var/loot_left = 0				// Maximum number of times a pile can be looted before no loot will remain for anyone
 	var/delete_on_depletion = FALSE	// If true, and if the loot gets depleted as above, the pile is deleted.
 
-	var/list/unlucky_loot = list()	// Unlucky is the worst tier. Only people with the unlucky trait can get this stuff. Primed grenades, dangerous syringes, etc.
-	var/list/common_loot = list()	// Common is generally less-than-useful junk and filler, at least for maint loot piles.
-	var/list/uncommon_loot = list()	// Uncommon is actually maybe some useful items, usually the reason someone bothers looking inside.
-	var/list/rare_loot = list()		// Rare is really powerful, or at least unique items.
+	var/list/unlucky_loot	// Unlucky is the worst tier. Only people with the unlucky trait can get this stuff. Primed grenades, dangerous syringes, etc.
+	var/list/common_loot	// Common is generally less-than-useful junk and filler, at least for maint loot piles.
+	var/list/uncommon_loot	// Uncommon is actually maybe some useful items, usually the reason someone bothers looking inside.
+	var/list/rare_loot		// Rare is really powerful, or at least unique items.
 
 	var/static/list/piles_looted = list() // Keeps track of the number of times a specific pile has been looted if the specific lootable type has loot_depletion on
 
@@ -54,7 +54,7 @@
 	var/obj/item/loot = null
 	var/span = "notice" // Blue
 
-	if(HAS_TRAIT(L, TRAIT_UNLUCKY) && unlucky_loot.len) // If you're unlucky, you will always find bad stuff.
+	if(HAS_TRAIT(L, TRAIT_UNLUCKY) && length(unlucky_loot)) // If you're unlucky, you will always find bad stuff.
 		loot = produce_unlucky_item(source)
 		span = "cult" // Purple and bold.
 		if(prob(1))
@@ -64,11 +64,11 @@
 			random_disease.spread_flags |= DISEASE_SPREAD_NON_CONTAGIOUS
 			L.ForceContractDisease(random_disease)
 
-	else if(prob(chance_uncommon) && uncommon_loot.len) // You might still get something good.
+	else if(prob(chance_uncommon) && length(uncommon_loot)) // You might still get something good.
 		loot = produce_uncommon_item(source)
 		span = "alium" // Green
 
-	else if(prob(chance_rare) && rare_loot.len) // You won THE GRAND PRIZE!
+	else if(prob(chance_rare) && length(rare_loot)) // You won THE GRAND PRIZE!
 		loot = produce_rare_item(source)
 		span = "cult" // Purple and bold.
 
@@ -118,19 +118,19 @@
 		qdel(source)
 
 /datum/element/lootable/proc/produce_unlucky_item(atom/source)
-	var/path = pick(unlucky_loot)
+	var/path = DEFAULTPICK(unlucky_loot, null)
 	return new path(source)
 
 /datum/element/lootable/proc/produce_common_item(atom/source)
-	var/path = pick(common_loot)
+	var/path = DEFAULTPICK(common_loot, null)
 	return new path(source)
 
 /datum/element/lootable/proc/produce_uncommon_item(atom/source)
-	var/path = pick(uncommon_loot)
+	var/path = DEFAULTPICK(uncommon_loot, null)
 	return new path(source)
 
 /datum/element/lootable/proc/produce_rare_item(atom/source)
-	var/path = pick(rare_loot)
+	var/path = DEFAULTPICK(rare_loot, null)
 	return new path(source)
 
 /// These are types that can only spawn once, and then will be removed from this list.

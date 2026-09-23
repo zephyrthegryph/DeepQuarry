@@ -9,15 +9,15 @@
 	var/enabled = 0
 	var/lockID = null
 
-	var/list/linked_objects = list()
+	var/list/linked_objects
 
 /obj/structure/prop/lock/Destroy()
-	if(linked_objects.len)
+	if(length(linked_objects))
 		for(var/obj/O in linked_objects)
 			if(istype(O, /obj/machinery/door/blast/puzzle))
 				var/obj/machinery/door/blast/puzzle/P = O
-				P.locks -= src
-				linked_objects -= P
+				LAZYREMOVE(P.locks, src)
+				LAZYREMOVE(linked_objects, P)
 	. = ..()
 
 /obj/structure/prop/lock/proc/toggle_lock()

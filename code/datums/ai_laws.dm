@@ -26,7 +26,7 @@
 	var/list/datum/ai_law/inherent_laws = list()
 	var/list/datum/ai_law/supplied_laws = list()
 	var/list/datum/ai_law/ion/ion_laws = list()
-	var/list/datum/ai_law/sorted_laws = list()
+	var/list/datum/ai_law/sorted_laws
 
 	var/state_zeroth = 0
 	var/list/state_ion = list()
@@ -40,7 +40,7 @@
 /* General ai_law functions */
 /datum/ai_laws/proc/all_laws()
 	sort_laws()
-	return sorted_laws
+	return sorted_laws || list()
 
 /datum/ai_laws/proc/laws_to_state()
 	sort_laws()
@@ -52,24 +52,24 @@
 	return statements
 
 /datum/ai_laws/proc/sort_laws()
-	if(sorted_laws.len)
+	if(length(sorted_laws))
 		return
 
 	for(var/ion_law in ion_laws)
-		sorted_laws += ion_law
+		LAZYADD(sorted_laws, ion_law)
 
 	if(zeroth_law)
-		sorted_laws += zeroth_law
+		LAZYADD(sorted_laws, zeroth_law)
 
 	var/index = 1
 	for(var/datum/ai_law/inherent_law in inherent_laws)
 		inherent_law.index = index++
 		if(supplied_laws.len < inherent_law.index || !istype(supplied_laws[inherent_law.index], /datum/ai_law))
-			sorted_laws += inherent_law
+			LAZYADD(sorted_laws, inherent_law)
 
 	for(var/datum/ai_law/AL in supplied_laws)
 		if(istype(AL))
-			sorted_laws += AL
+			LAZYADD(sorted_laws, AL)
 
 /datum/ai_laws/proc/sync(mob/living/silicon/S, full_sync = 1)
 	// Add directly to laws to avoid log-spam
@@ -114,7 +114,7 @@
 		zeroth_law_borg = new(law_borg)
 	else
 		zeroth_law_borg = null
-	sorted_laws.Cut()
+	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/add_ion_law(law)
 	if(!law)
@@ -129,7 +129,7 @@
 	if(state_ion.len < ion_laws.len)
 		state_ion += 1
 
-	sorted_laws.Cut()
+	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/add_inherent_law(law)
 	if(!law)
@@ -144,7 +144,7 @@
 	if(state_inherent.len < inherent_laws.len)
 		state_inherent += 1
 
-	sorted_laws.Cut()
+	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/add_supplied_law(number, law)
 	if(!law)
@@ -168,7 +168,7 @@
 	if(state_supplied.len < supplied_laws.len)
 		state_supplied += 1
 
-	sorted_laws.Cut()
+	LAZYCLEARLIST(sorted_laws)
 
 /****************
 *	Remove Laws	*
@@ -200,7 +200,7 @@
 		laws -= law
 		for(index, index < state.len, index++)
 			state[index] = state[index+1]
-	sorted_laws.Cut()
+	LAZYCLEARLIST(sorted_laws)
 
 /****************
 *	Clear Laws	*
@@ -211,15 +211,15 @@
 
 /datum/ai_laws/proc/clear_ion_laws()
 	ion_laws.Cut()
-	sorted_laws.Cut()
+	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/clear_inherent_laws()
 	inherent_laws.Cut()
-	sorted_laws.Cut()
+	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/clear_supplied_laws()
 	supplied_laws.Cut()
-	sorted_laws.Cut()
+	LAZYCLEARLIST(sorted_laws)
 
 /datum/ai_laws/proc/get_formatted_laws()
 	sort_laws()

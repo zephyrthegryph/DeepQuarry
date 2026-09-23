@@ -75,10 +75,7 @@
 
 /datum/say_list/catslug	//Quiet quiet, no noise! We speak in sign so only people with sign will understand our questions.
 	speak = list("Have any porl?", "What is that?", "Where is this?", "What are you doing?", "How did you get here?", "Don't go into the rain.")
-	emote_hear = list()
 	emote_see = list("turns their head.", "looks at you.", "watches something unseen.", "sways its tail.", "flicks its ears.", "stares at you.", "gestures an unintelligible message.", "points into the distance!")
-	say_maybe_target = list()
-	say_got_target = list()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/load_default_bellies()
 	. = ..()

@@ -78,7 +78,7 @@
 	layer = ABOVE_TURF_LAYER
 
 /obj/effect/dark/proc/unlinked()
-	linked_node.children_effects -= src
+	LAZYREMOVE(linked_node.children_effects, src)
 	linked_node = null
 	addtimer(CALLBACK(src, PROC_REF(perform_unlink)), rand(20, 70), TIMER_DELETE_ME)
 
@@ -102,7 +102,7 @@
 	icon = 'icons/obj/props/decor.dmi'
 	icon_state = "bsc"
 
-	var/list/children_effects = list()
+	var/list/children_effects
 	var/until_full_process = 0
 
 	light_range = 3
@@ -121,7 +121,7 @@
 
 /obj/effect/dark/Destroy()
 	if(linked_node)
-		linked_node.children_effects -= src
+		LAZYREMOVE(linked_node.children_effects, src)
 		linked_node = null
 	. = ..()
 
@@ -153,7 +153,7 @@
 			var/obj/effect/dark/floor/new_dark_tile = new /obj/effect/dark/floor(T2, null, linked_node)
 			if(QDELETED(new_dark_tile))
 				continue
-			linked_node.children_effects += new_dark_tile
+			LAZYADD(linked_node.children_effects, new_dark_tile)
 
 /obj/structure/prop/dark_node/process()
 	//set background = 1
@@ -161,7 +161,7 @@
 	if(!(locate(/obj/effect/dark) in get_turf(src)))
 		var/obj/effect/dark/floor/new_dark_tile = new /obj/effect/dark/floor(get_turf(src), null, src)
 		if(!QDELETED(new_dark_tile))
-			children_effects += new_dark_tile
+			LAZYADD(children_effects, new_dark_tile)
 
 	if(until_full_process-- <= 0)
 		for(var/obj/effect/dark/dark_tile in orange(node_range, src))
@@ -169,7 +169,7 @@
 				continue
 			if(dark_tile.linked_node)
 				continue
-			children_effects += dark_tile
+			LAZYADD(children_effects, dark_tile)
 			dark_tile.linked_node = src
 		until_full_process = 4
 
@@ -177,7 +177,7 @@
 //		W.color = W.linked_node.set_color
 
 		dark_tile.light_check()
-		if(dark_tile.linked_node == src && prob(max(10, 60 - (children_effects.len))))
+		if(dark_tile.linked_node == src && prob(max(10, 60 - (length(children_effects)))))
 			dark_tile.do_process()
 
 /obj/structure/prop/dark_node/dust

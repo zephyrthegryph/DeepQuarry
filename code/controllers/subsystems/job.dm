@@ -56,8 +56,8 @@ SUBSYSTEM_DEF(job)
 	sortTim(occupations, GLOBAL_PROC_REF(cmp_job_datums))
 	for(var/department, value in department_datums)
 		var/datum/department/dept = value
-		sortTim(dept.jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
-		sortTim(dept.primary_jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
+		if(length(dept.jobs)) sortTim(dept.jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
+		if(length(dept.primary_jobs)) sortTim(dept.primary_jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
 
 	return TRUE
 
@@ -68,7 +68,7 @@ SUBSYSTEM_DEF(job)
 		if(!istype(dept))
 			job_debug_message("Job '[J.title]' is defined as being inside department '[D]', but it does not exist.")
 			continue
-		dept.jobs[J.title] = J
+		LAZYSET(dept.jobs, J.title, J)
 
 	// Now for the 'primary' department for a job, which is defined as being the first department in the list for a job.
 	// This results in no duplicates, which can be useful in some situations.
@@ -78,7 +78,7 @@ SUBSYSTEM_DEF(job)
 		if(!istype(dept))
 			job_debug_message("Job '[J.title]' has their primary department be '[primary_department]', but it does not exist.")
 		else
-			dept.primary_jobs[J.title] = J
+			LAZYSET(dept.primary_jobs, J.title, J)
 
 /datum/controller/subsystem/job/proc/setup_departments()
 	for(var/t in subtypesof(/datum/department))
@@ -400,7 +400,7 @@ SUBSYSTEM_DEF(job)
 
 			// Loop through all jobs
 			for(var/datum/job/job in shuffledoccupations) // SHUFFLE ME BABY
-				if(!job || SSticker.mode.disabled_jobs.Find(job.title) )
+				if(!job || LAZYFIND(SSticker.mode.disabled_jobs, job.title) )
 					continue
 
 				if(jobban_isbanned(player, job.title))

@@ -30,7 +30,7 @@
 
 
 /datum/radial_menu/persistent/element_chosen(choice_id,mob/user)
-	select_proc_callback.Invoke(choices_values[choice_id])
+	select_proc_callback.Invoke(LAZYACCESS(choices_values, choice_id))
 
 
 /datum/radial_menu/persistent/proc/change_choices(list/newchoices, tooltips)

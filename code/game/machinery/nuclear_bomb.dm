@@ -19,7 +19,7 @@ GLOBAL_VAR(bomb_set)
 	var/yes_code = 0.0
 	var/safety = 1.0
 	var/obj/item/disk/nuclear/auth = null
-	var/list/wires_list = list()
+	var/list/wires_list
 	var/light_wire
 	var/safety_wire
 	var/timing_wire
@@ -34,13 +34,13 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/Initialize(mapload)
 	. = ..()
 	r_code = "[rand(10000, 99999.0)]"//Creates a random code upon object spawn.
-	wires_list["Red"] = 0
-	wires_list["Blue"] = 0
-	wires_list["Green"] = 0
-	wires_list["Marigold"] = 0
-	wires_list["Fuschia"] = 0
-	wires_list["Black"] = 0
-	wires_list["Pearl"] = 0
+	LAZYSET(wires_list, "Red", 0)
+	LAZYSET(wires_list, "Blue", 0)
+	LAZYSET(wires_list, "Green", 0)
+	LAZYSET(wires_list, "Marigold", 0)
+	LAZYSET(wires_list, "Fuschia", 0)
+	LAZYSET(wires_list, "Black", 0)
+	LAZYSET(wires_list, "Pearl", 0)
 	var/list/w = list("Red","Blue","Green","Marigold","Black","Fuschia","Pearl")
 	light_wire = pick(w)
 	w -= light_wire
@@ -206,7 +206,7 @@ GLOBAL_VAR(bomb_set)
 	for(var/wire in wires_list)
 		wires_out += list(list(
 			"name" = wire,
-			"cut" = !!wires_list[wire],
+			"cut" = !!LAZYACCESS(wires_list, wire),
 		))
 	data["wires"] = wires_out
 	data["auth"] = !!auth
@@ -336,7 +336,7 @@ GLOBAL_VAR(bomb_set)
 			if(!I?.has_tool_quality(TOOL_WIRECUTTER))
 				to_chat(usr, "You need wirecutters!")
 				return TRUE
-			wires_list[wire] = !wires_list[wire]
+			LAZYSET(wires_list, wire, !LAZYACCESS(wires_list, wire))
 			if(safety_wire == wire && timing)
 				explode()
 			if(timing_wire == wire)
@@ -356,7 +356,7 @@ GLOBAL_VAR(bomb_set)
 			if(!hand_item?.has_tool_quality(TOOL_MULTITOOL))
 				to_chat(usr, "You need a multitool!")
 				return TRUE
-			if(wires_list[wire])
+			if(LAZYACCESS(wires_list, wire))
 				to_chat(usr, "You can't pulse a cut wire.")
 				return TRUE
 			if(light_wire == wire)

@@ -46,7 +46,7 @@
 	data["server_connected"] = !!stored_research
 
 	if(stored_research)
-		data["logs"] += stored_research.research_logs
+		if(length(stored_research.research_logs)) data["logs"] += stored_research.research_logs
 
 		for(var/obj/machinery/rnd/server/server as anything in stored_research.techweb_servers)
 			data["servers"] += list(list(

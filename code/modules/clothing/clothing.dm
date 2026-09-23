@@ -627,7 +627,7 @@
 	pickup_sound = 'sound/items/pickup/shoes.ogg'
 
 	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
-	var/list/inside_emotes = list()
+	var/list/inside_emotes
 	var/recent_squish = 0
 
 /obj/item/clothing/shoes/fit_constraint()
@@ -727,7 +727,7 @@
 			if(pred.step_mechanics_pref && M.step_mechanics_pref)
 				src.handle_inshoe_stepping(pred, M)
 			else if (prob(1)) // Same old inshoe mechanics
-				var/emote = pick(inside_emotes)
+				var/emote = DEFAULTPICK(inside_emotes, null)
 				to_chat(M,emote)
 	return
 

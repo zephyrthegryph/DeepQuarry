@@ -148,6 +148,9 @@
 
 /obj/item/Initialize(mapload)
 	. = ..()
+	// Read-only per-type tables: share identical ones (writers assign a new list).
+	attack_verb = intern_list(attack_verb)
+	tool_qualities = intern_list(tool_qualities)
 
 	for(var/path in actions_types)
 		add_item_action(path)

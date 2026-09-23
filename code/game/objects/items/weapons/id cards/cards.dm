@@ -23,7 +23,7 @@
 	var/base_icon = 'icons/obj/card_new.dmi'
 	var/list/sprite_stack
 
-	var/list/files = list(  )
+	var/list/files
 	drop_sound = 'sound/items/drop/card.ogg'
 	pickup_sound = 'sound/items/pickup/card.ogg'
 

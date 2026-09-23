@@ -9,7 +9,7 @@
 	var/chem_volume = 0
 	var/chewtime = 0
 	var/brand
-	var/list/filling = list()
+	var/list/filling
 	var/wrapped = FALSE
 
 /obj/item/clothing/mask/chewable/attack_self(mob/user)
@@ -33,7 +33,7 @@
 	flags |= NOREACT // so it doesn't react until you light it
 	create_reagents(chem_volume) // making the cigarrete a chemical holder with a maximum volume of 15
 	for(var/R in filling)
-		reagents.add_reagent(R, filling[R])
+		reagents.add_reagent(R, LAZYACCESS(filling, R))
 	if(wrapped)
 		slot_flags = null
 

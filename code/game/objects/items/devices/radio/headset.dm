@@ -713,8 +713,8 @@
 	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32
 	//Spells that will be added on equip
-	var/list/spells = list("/spell/targeted/unrestricted/mend", "/spell/targeted/unrestricted/plasmastun")
-	var/list/remove_spells = list()	//Reference to spells that'll get removed
+	var/static/list/spells = list("/spell/targeted/unrestricted/mend", "/spell/targeted/unrestricted/plasmastun")
+	var/list/remove_spells	//Reference to spells that'll get removed
 	/// Movement delay added while worn (a body factor). Admins may edit it in-round.
 	var/slowdown_to_set = 0.5
 	var/item_slowdown_reset = 0	//Vars to copy and reset later
@@ -743,7 +743,7 @@
 			for(var/thing in spells)
 				var/datum/spell/SP = new thing(H)
 				H.add_spell(SP)
-				remove_spells += SP
+				LAZYADD(remove_spells, SP)
 		if(slowdown_to_set != 0)
 			item_slowdown_reset = H.species.item_slowdown_mod
 			H.species.item_slowdown_mod = 0
@@ -756,7 +756,7 @@
 			light_on = 0
 		if(effect_icon)
 			H.cut_overlay(effect_overlay)
-		if(remove_spells.len)
+		if(length(remove_spells))
 			for(var/datum/spell/SP in remove_spells)
 				H.remove_spell(SP)
 				qdel(SP)

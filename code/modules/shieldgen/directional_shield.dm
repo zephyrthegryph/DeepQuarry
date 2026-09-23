@@ -49,7 +49,7 @@
 
 /obj/effect/directional_shield/Destroy()
 	if(projector)
-		projector.active_shields -= src
+		LAZYREMOVE(projector.active_shields, src)
 		projector = null
 	return ..()
 
@@ -96,7 +96,7 @@
 	var/shield_regen_amount = 20		// How much to recharge every process(), after the delay.
 	var/shield_regen_delay = 5 SECONDS	// If the shield takes damage, it won't recharge for this long.
 	var/last_damaged_time = null		// world.time when the shields took damage, used for the delay.
-	var/list/active_shields = list()	// Shields that are active and deployed.
+	var/list/active_shields	// Shields that are active and deployed.
 	var/always_on = FALSE				// If true, will always try to reactivate if disabled for whatever reason, ideal if AI mobs are holding this.
 	var/high_color = "#0099FF"			// Color the shield will be when at max health.  A light blue.
 	var/low_color = "#FF0000"			// Color the shield will drift towards as health is lowered.  Deep red.
@@ -128,7 +128,7 @@
 /obj/item/shield_projector/proc/create_shield(newloc, new_dir)
 	var/obj/effect/directional_shield/S = new(newloc, src)
 	S.dir = new_dir
-	active_shields += S
+	LAZYADD(active_shields, S)
 
 /obj/item/shield_projector/proc/create_shields() // Override this for a specific shape.  Be sure to call ..() for the checks, however.
 	if(active) // Already made.
@@ -140,7 +140,7 @@
 
 /obj/item/shield_projector/proc/destroy_shields()
 	for(var/obj/effect/directional_shield/S in active_shields)
-		active_shields -= S
+		LAZYREMOVE(active_shields, S)
 		qdel(S)
 	set_light(0)
 	active = FALSE

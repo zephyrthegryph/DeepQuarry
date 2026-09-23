@@ -56,7 +56,7 @@
 	update()
 
 /datum/feed_network
-	var/list/datum/feed_channel/network_channels = list()
+	var/list/datum/feed_channel/network_channels
 	var/datum/feed_message/wanted_issue
 
 /datum/feed_network/proc/CreateFeedChannel(channel_name, author, locked, adminChannel = 0, announcement_message)
@@ -69,7 +69,7 @@
 		newChannel.announcement = announcement_message
 	else
 		newChannel.announcement = "Breaking news from [channel_name]!"
-	network_channels += newChannel
+	LAZYADD(network_channels, newChannel)
 
 /datum/feed_network/proc/SubmitArticle(msg, author, channel_name, obj/item/photo/photo, adminMessage = 0, message_type = "", title)
 	var/datum/feed_message/newMsg = new /datum/feed_message
@@ -670,7 +670,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	feedback_inc("newscaster_newspapers_printed",1)
 	var/obj/item/newspaper/NEWSPAPER = new /obj/item/newspaper
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-		NEWSPAPER.news_content += FC
+		LAZYADD(NEWSPAPER.news_content, FC)
 	if(GLOB.news_network.wanted_issue)
 		NEWSPAPER.important_message = GLOB.news_network.wanted_issue
 	NEWSPAPER.loc = get_turf(src)

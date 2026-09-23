@@ -7,7 +7,7 @@
 /datum/board_game/rpg_dice
 	name = GAME_RGP_DICE
 	table_icon = "gamble_dice"
-	var/list/last_rolls = list()
+	var/list/last_rolls
 
 /datum/board_game/rpg_dice/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -17,7 +17,7 @@
 
 /datum/board_game/rpg_dice/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
-		"last_rolls" = last_rolls,
+		"last_rolls" = (last_rolls || list()),
 	)
 
 /datum/board_game/rpg_dice/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -47,7 +47,7 @@
 			UNTYPED_LIST_ADD(last_rolls, list("player" = ui.user, "count" = dice_count, "size" = dice_size, "results" = results, "mod" = modifier, "apply_to_all" = apply_to_all, "sum" = sum))
 			return TRUE
 		if("clear_history")
-			last_rolls.Cut()
+			LAZYCLEARLIST(last_rolls)
 			return TRUE
 
 /datum/board_game/rpg_dice/proc/check_crit(low, max, result)

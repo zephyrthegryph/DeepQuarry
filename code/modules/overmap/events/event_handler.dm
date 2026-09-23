@@ -1,7 +1,7 @@
 GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 
 /datum/decl/overmap_event_handler
-	var/list/hazard_by_turf = list()
+	var/list/hazard_by_turf
 	var/list/ship_events = list()
 
 // Populates overmap with random events!  Should be called once at startup at some point.
@@ -98,7 +98,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 	if(new_loc == old_loc)
 		return
 
-	for(var/obj/effect/overmap/event/E in hazard_by_turf[new_loc])
+	for(var/obj/effect/overmap/event/E in LAZYACCESS(hazard_by_turf, new_loc))
 		start_hazard(ship, E)
 
 /datum/decl/overmap_event_handler/proc/on_turf_exited(turf/old_loc, obj/effect/overmap/visitable/ship/ship, new_loc)
@@ -107,8 +107,8 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 	if(new_loc == old_loc)
 		return
 
-	for(var/obj/effect/overmap/event/E in hazard_by_turf[old_loc])
-		if(is_event_included(hazard_by_turf[new_loc], E))
+	for(var/obj/effect/overmap/event/E in LAZYACCESS(hazard_by_turf, old_loc))
+		if(is_event_included(LAZYACCESS(hazard_by_turf, new_loc), E))
 			continue // If new turf has the same event as well... keep it going!
 		stop_hazard(ship, E)
 
@@ -123,10 +123,10 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 		active_hazards += E
 
 	if(!active_hazards.len)
-		hazard_by_turf -= T
+		LAZYREMOVE(hazard_by_turf, T)
 	else
-		hazard_by_turf |= T
-		hazard_by_turf[T] = active_hazards
+		LAZYOR(hazard_by_turf, T)
+		LAZYSET(hazard_by_turf, T, active_hazards)
 
 	for(var/obj/effect/overmap/visitable/ship/ship in T)
 		for(var/datum/event/E in ship_events[ship])
@@ -139,7 +139,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 			start_hazard(ship, E)
 
 /datum/decl/overmap_event_handler/proc/is_event_in_turf(datum/event/E, turf/T)
-	for(var/obj/effect/overmap/event/hazard in hazard_by_turf[T])
+	for(var/obj/effect/overmap/event/hazard in LAZYACCESS(hazard_by_turf, T))
 		if((E in hazard.events) && E.severity == hazard.difficulty)
 			return TRUE
 

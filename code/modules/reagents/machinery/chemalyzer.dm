@@ -16,7 +16,7 @@
 	clicksound = "button"
 	circuit = /obj/item/circuitboard/chemical_analyzer
 	var/analyzing = FALSE
-	var/list/found_reagents = list()
+	var/list/found_reagents
 
 /obj/machinery/chemical_analyzer/Initialize(mapload)
 	. = ..()
@@ -48,11 +48,11 @@
 
 		// Now tell us everything that is inside.
 		if(I.reagents && I.reagents.reagent_list.len)
-			found_reagents.Cut()
+			LAZYCLEARLIST(found_reagents)
 			for(var/datum/reagent/R in I.reagents.reagent_list)
 				if(!R.name)
 					continue
-				found_reagents[R.id] = R.volume
+				LAZYSET(found_reagents, R.id, R.volume)
 			tgui_interact(user)
 		else
 			to_chat(user, span_warning("Nothing detected in [I]"))
@@ -68,7 +68,7 @@
 	return ..()
 
 /obj/machinery/chemical_analyzer/attack_hand(mob/user)
-	if(!found_reagents.len)
+	if(!length(found_reagents))
 		return ..()
 	tgui_interact(user) // Show last analysis
 
@@ -106,8 +106,8 @@
 		subdata["overdose"] = R.overdose
 		subdata["flavor"] = R.taste_description
 		subdata["allergen"] = assembly_allergy_list(R.allergen_type, R.medallergen_type)
-		subdata["beakerAmount"] = found_reagents[ID]
-		total_vol += found_reagents[ID]
+		subdata["beakerAmount"] = LAZYACCESS(found_reagents, ID)
+		total_vol += LAZYACCESS(found_reagents, ID)
 		SSinternal_wiki.assemble_reaction_data(subdata, R)
 		// Send as a big list of lists
 		reagents_sent += list(subdata)

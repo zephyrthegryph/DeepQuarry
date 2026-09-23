@@ -26,15 +26,15 @@ GLOBAL_LIST_INIT(diseases, subtypesof(/datum/disease))
 	var/discovery_threshold = 0.5
 
 	// Other
-	var/list/viable_mobtypes = list()
+	var/list/viable_mobtypes
 	var/mob/living/carbon/affected_mob
 	var/list/cures = list()
 	var/infectivity = 10
 	var/cure_chance = 8
 	var/permeability_mod = 1
 	var/danger = DISEASE_MINOR
-	var/list/required_organs = list()
-	var/list/strain_data = list()
+	var/list/required_organs
+	var/list/strain_data
 	var/initial = TRUE
 
 /datum/disease/Destroy()
@@ -189,7 +189,7 @@ GLOBAL_LIST_INIT(diseases, subtypesof(/datum/disease))
 
 /datum/disease/proc/Copy()
 	var/datum/disease/D = new type()
-	D.strain_data = strain_data.Copy()
+	D.strain_data = LAZYCOPY(strain_data)
 	D.virus_modifiers = virus_modifiers
 	return D
 

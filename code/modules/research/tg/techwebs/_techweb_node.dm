@@ -20,8 +20,8 @@
 	var/experimental = FALSE
 	/// Whether it's available without any research
 	var/starting_node = FALSE
-	var/list/prereq_ids = list()
-	var/list/design_ids = list()
+	var/list/prereq_ids
+	var/list/design_ids
 	/// CALCULATED FROM OTHER NODE'S PREREQUISITIES. Associated list id = TRUE
 	var/list/unlock_ids // Lazy: leaf nodes unlock nothing.
 	/// List of items you need to deconstruct to unlock this node.
@@ -29,7 +29,7 @@
 	/// Boosting this will autounlock this node
 	var/autounlock_by_boost = TRUE
 	/// The points cost to research the node, type = amount
-	var/list/research_costs = list()
+	var/list/research_costs
 	/// The category of the node
 	var/category = "Misc"
 	/// The list of experiments required to research the node
@@ -58,9 +58,9 @@
 /datum/techweb_node/proc/Initialize()
 	//Make lists associative for lookup
 	for(var/id in prereq_ids)
-		prereq_ids[id] = TRUE
+		LAZYSET(prereq_ids, id, TRUE)
 	for(var/id in design_ids)
-		design_ids[id] = TRUE
+		LAZYSET(design_ids, id, TRUE)
 	for(var/id in unlock_ids)
 		unlock_ids[id] = TRUE
 
@@ -80,25 +80,25 @@
 	prune_node_id(TN.id)
 
 /datum/techweb_node/proc/prune_design_id(design_id)
-	design_ids -= design_id
+	LAZYREMOVE(design_ids, design_id)
 
 /datum/techweb_node/proc/prune_node_id(node_id)
-	prereq_ids -= node_id
+	LAZYREMOVE(prereq_ids, node_id)
 	unlock_ids -= node_id
 
 /datum/techweb_node/proc/get_price(datum/techweb/host)
 	if(!host)
-		return research_costs
+		return research_costs || list()
 
-	var/list/actual_costs = research_costs.Copy()
+	var/list/actual_costs = LAZYCOPY(research_costs)
 
 	for(var/cost_type in actual_costs)
 		for(var/experiment_type in discount_experiments)
-			if(host.completed_experiments[experiment_type]) //do we have this discount_experiment unlocked?
+			if(LAZYACCESS(host.completed_experiments, experiment_type)) //do we have this discount_experiment unlocked?
 				actual_costs[cost_type] -= discount_experiments[experiment_type]
 
-	if(host.boosted_nodes[id]) // Boosts should be subservient to experiments. Discount from boosts are capped when costs fall below 250.
-		var/list/boostlist = host.boosted_nodes[id]
+	if(LAZYACCESS(host.boosted_nodes, id)) // Boosts should be subservient to experiments. Discount from boosts are capped when costs fall below 250.
+		var/list/boostlist = LAZYACCESS(host.boosted_nodes, id)
 		for(var/booster in boostlist)
 			if(actual_costs[booster])
 				actual_costs[booster] = max(actual_costs[booster] - boostlist[booster], 0)

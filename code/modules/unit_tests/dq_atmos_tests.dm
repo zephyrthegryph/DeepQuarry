@@ -4880,7 +4880,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(test_camera)
 	TEST_ASSERT(!(test_camera in REGISTRY_MEMBERS(REGISTRY_CAMERAS)), "deleted camera remained in the global camera registry")
 	for(var/chunk_key in GLOB.cameranet.chunks)
-		var/datum/chunk/camera/chunk = GLOB.cameranet.chunks[chunk_key]
+		var/datum/chunk/camera/chunk = LAZYACCESS(GLOB.cameranet.chunks, chunk_key)
 		TEST_ASSERT(!(test_camera in chunk.cameras), "deleted camera remained retained by camera chunk [chunk_key]")
 
 

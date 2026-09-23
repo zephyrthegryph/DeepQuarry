@@ -2,9 +2,9 @@
 	vore_icon_bellies = list() //Clear any belly options that may not exist now
 	vore_capacity_ex = list()
 	vore_fullness_ex = list()
-	if(sprite_datum.belly_capacity_list.len)
+	if(length(sprite_datum.belly_capacity_list))
 		for(var/belly in sprite_datum.belly_capacity_list) //vore icons list only contains a list of names with no associated data
-			vore_capacity_ex[belly] = sprite_datum.belly_capacity_list[belly] //I dont know why but this wasnt working when I just
+			vore_capacity_ex[belly] = LAZYACCESS(sprite_datum.belly_capacity_list, belly) //I dont know why but this wasnt working when I just
 			vore_fullness_ex[belly] = 0 //set the lists equal to the old lists
 			vore_icon_bellies += belly
 		for(var/belly in sprite_datum.belly_light_list)
@@ -19,11 +19,11 @@
 	handle_belly_update() //Set how full the newly defined bellies are, if they're already full
 
 /mob/living/silicon/robot/proc/reset_belly_lights(b_class)
-	if(sprite_datum.belly_light_list.len && sprite_datum.belly_light_list.Find(b_class))
+	if(length(sprite_datum.belly_light_list) && LAZYFIND(sprite_datum.belly_light_list, b_class))
 		vore_light_states[b_class] = 0
 
 /mob/living/silicon/robot/proc/update_belly_lights(b_class)
-	if(sprite_datum.belly_light_list.len && sprite_datum.belly_light_list.Find(b_class))
+	if(length(sprite_datum.belly_light_list) && LAZYFIND(sprite_datum.belly_light_list, b_class))
 		vore_light_states[b_class] = 2
 		for (var/belly in vore_organs)
 			var/obj/belly/B = belly

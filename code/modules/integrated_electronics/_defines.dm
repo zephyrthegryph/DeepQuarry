@@ -53,9 +53,9 @@ GLOBAL_LIST_INIT(all_integrated_circuits, initialize_integrated_circuits_list())
 	var/obj/item/electronic_assembly/assembly = null // Reference to the assembly holding this circuit, if any.
 	var/extended_desc = null
 	var/list/inputs = list()
-	var/list/inputs_default = list()			// Assoc list which will fill a pin with data upon creation.  e.g. "2" = 0 will set input pin 2 to equal 0 instead of null.
+	var/list/inputs_default			// Assoc list which will fill a pin with data upon creation.  e.g. "2" = 0 will set input pin 2 to equal 0 instead of null.
 	var/list/outputs = list()
-	var/list/outputs_default = list()		// Ditto, for output.
+	var/list/outputs_default		// Ditto, for output.
 	var/list/activators = list()
 	var/next_use = 0 //Uses world.time
 	/// Transient: circuits remaining in the current synchronous pulse propagation

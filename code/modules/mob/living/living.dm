@@ -44,7 +44,7 @@
 			N.remove_creature(src)
 		if(istype(nest, /obj/structure/blob/factory))
 			var/obj/structure/blob/factory/F = nest
-			F.spores -= src
+			LAZYREMOVE(F.spores, src)
 		if(istype(nest, /obj/structure/mob_spawner))
 			var/obj/structure/mob_spawner/S = nest
 			S.get_death_report(src)

@@ -130,8 +130,8 @@
 	var/buffer_book
 	var/buffer_mob
 	var/upload_category = "Fiction"
-	var/list/checkouts = list()
-	var/list/inventory = list()
+	var/list/checkouts
+	var/list/inventory
 	var/checkoutperiod = 5 // In minutes
 	var/obj/machinery/libraryscanner/scanner // Book scanner that will be used when uploading books to the Archive
 
@@ -326,17 +326,17 @@
 			b.mobname = sanitize(buffer_mob)
 			b.getdate = world.time
 			b.duedate = world.time + (checkoutperiod * 600)
-			checkouts.Add(b)
+			LAZYADD(checkouts, b)
 			return TRUE
 		if("checkin")
 			var/datum/borrowbook/b = locate(params["ref"])
 			if(b)
-				checkouts.Remove(b)
+				LAZYREMOVE(checkouts, b)
 			return TRUE
 		if("delbook")
 			var/obj/item/book/b = locate(params["ref"])
 			if(b)
-				inventory.Remove(b)
+				LAZYREMOVE(inventory, b)
 			return TRUE
 		if("setauthor")
 			var/newauthor = tgui_input_text(usr, "Enter the author's name:", "", "", MAX_MESSAGE_LEN)

@@ -1,6 +1,6 @@
 /datum/event/hostile_runtime
 	var/area/picked_area
-	var/list/obj/machinery/door/airlock/target_airlocks = list()
+	var/list/obj/machinery/door/airlock/target_airlocks
 	var/obj/machinery/power/apc/apc
 
 	var/static/list/excluded = list(
@@ -27,7 +27,7 @@
 	for(var/obj/machinery/door/airlock/airlock in picked_area)
 		if(airlock.isElectrified() && !airlock.arePowerSystemsOn())
 			continue
-		target_airlocks.Add(airlock)
+		LAZYADD(target_airlocks, airlock)
 
 	if(!picked_area)
 		log_game("Hostile Runtime event: No areas was chosen!")

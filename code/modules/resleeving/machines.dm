@@ -13,7 +13,7 @@
 /obj/machinery/clonepod/transhuman/full/Initialize(mapload)
 	. = ..()
 	for(var/i = 1 to container_limit)
-		containers += new /obj/item/reagent_containers/glass/bottle/biomass(src)
+		LAZYADD(containers, new /obj/item/reagent_containers/glass/bottle/biomass(src))
 
 /obj/machinery/clonepod/transhuman/growclone(datum/transhuman/body_record/current_project)
 	//Manage machine-specific stuff.

@@ -4,7 +4,7 @@
 
 /datum/visualnet
 	// The chunks of the map, mapping the areas that an object can see.
-	var/list/chunks = list()
+	var/list/chunks
 	var/ready = 0
 	var/chunk_type = /datum/chunk
 
@@ -21,7 +21,7 @@
 	x &= ~0xf
 	y &= ~0xf
 	var/key = "[x],[y],[z]"
-	return (chunks[key])
+	return (LAZYACCESS(chunks, key))
 
 // Returns the chunk in the x, y, z.
 // If there is no chunk, it creates a new chunk and returns that.
@@ -29,10 +29,10 @@
 	x &= ~0xf
 	y &= ~0xf
 	var/key = "[x],[y],[z]"
-	if(!chunks[key])
-		chunks[key] = new chunk_type(null, x, y, z)
+	if(!LAZYACCESS(chunks, key))
+		LAZYSET(chunks, key, new chunk_type(null, x, y, z))
 
-	return chunks[key]
+	return LAZYACCESS(chunks, key)
 
 // Updates what the aiEye can see. It is recommended you use this when the aiEye moves or it's location is set.
 
@@ -86,7 +86,7 @@
 			C.images -= c.obscured
 
 		for(var/datum/chunk/c as anything in add)
-			C.images += c.obscured
+			if(length(c.obscured)) C.images += c.obscured
 
 // Updates the chunks that the turf is located in. Use this when obstacles are destroyed or	when doors open.
 

@@ -53,7 +53,7 @@
 			P.computer_emagged = computer_emagged
 			P.process_tick()
 		else
-			idle_threads.Remove(P)
+			LAZYREMOVE(idle_threads, P)
 
 	handle_power() // Handles all computer power interaction
 	check_update_ui_need()
@@ -188,7 +188,7 @@
 	kill_program(1)
 	for(var/datum/computer_file/program/P in idle_threads)
 		P.kill_program(1)
-		idle_threads.Remove(P)
+		LAZYREMOVE(idle_threads, P)
 	if(loud)
 		visible_message("\The [src] shuts down.")
 	enabled = 0
@@ -210,7 +210,7 @@
 	if(!active_program || !processor_unit)
 		return
 
-	idle_threads.Add(active_program)
+	LAZYADD(idle_threads, active_program)
 	active_program.program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 	SStgui.close_uis(active_program.TM ? active_program.TM : active_program)
 	active_program = null
@@ -236,11 +236,11 @@
 	if(P in idle_threads)
 		P.program_state = PROGRAM_STATE_ACTIVE
 		active_program = P
-		idle_threads.Remove(P)
+		LAZYREMOVE(idle_threads, P)
 		update_icon()
 		return
 
-	if(idle_threads.len >= processor_unit.max_idle_programs+1)
+	if(length(idle_threads) >= processor_unit.max_idle_programs+1)
 		to_chat(user, span_notice("\The [src] displays a \"Maximal CPU load reached. Unable to run another program.\" error"))
 		return
 
@@ -292,7 +292,7 @@
 		last_world_time = stationtime2text()
 		ui_update_needed = 1
 
-	if(idle_threads.len)
+	if(length(idle_threads))
 		var/list/current_header_icons = list()
 		for(var/datum/computer_file/program/P in idle_threads)
 			if(!P.ui_header)

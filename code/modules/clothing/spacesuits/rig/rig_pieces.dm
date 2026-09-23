@@ -129,7 +129,7 @@
 		return 0
 
 	var/obj/item/rig/suit = H.get_equipped_item(SLOT_ID_BACK)
-	if(!suit || !istype(suit) || !suit.installed_modules.len)
+	if(!suit || !istype(suit) || !length(suit.installed_modules))
 		return 0
 
 	for(var/obj/item/rig_module/module in suit.installed_modules)

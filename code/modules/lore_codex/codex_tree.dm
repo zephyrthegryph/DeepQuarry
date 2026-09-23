@@ -5,7 +5,7 @@
 	var/root_type = null
 	var/datum/lore/codex/home = null // Top-most page.
 	var/list/current_page = list() // Current page or category to display to the user. // converted to list to track multiple players.
-	var/list/indexed_pages = list() // Assoc list with search terms pointing to a ref of the page.  It's created on New().
+	var/list/indexed_pages // Assoc list with search terms pointing to a ref of the page.  It's created on New().
 	var/list/history = list() // List of pages we previously visited. // now a 2D list
 
 /datum/codex_tree/New(new_holder, new_root_type)
@@ -40,12 +40,12 @@
 /datum/codex_tree/proc/quick_link(search_word, mob/user)
 	for(var/word in indexed_pages)
 		if(lowertext(search_word) == lowertext(word)) // Exact matches unfortunately limit our ability to perform SEOs.
-			go_to_page(indexed_pages[word], FALSE, user)
+			go_to_page(LAZYACCESS(indexed_pages, word), FALSE, user)
 			return
 
 /datum/codex_tree/proc/get_page_from_type(desired_type)
 	for(var/word in indexed_pages)
-		var/datum/lore/codex/C = indexed_pages[word]
+		var/datum/lore/codex/C = LAZYACCESS(indexed_pages, word)
 		if(C.type == desired_type)
 			return C
 	return null

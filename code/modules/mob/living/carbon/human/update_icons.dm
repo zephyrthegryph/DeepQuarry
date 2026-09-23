@@ -1469,9 +1469,9 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		client.prefs.copy_to(Dummy)
 		//Important, since some sprites only work for specific species
 		custom_species = Dummy.custom_species
-		var/list/traits = dna.species_traits.Copy()
+		var/list/traits = LAZYCOPY(dna.species_traits)
 		dna = Dummy.dna.Clone()
-		dna.species_traits.Cut()
+		LAZYCLEARLIST(dna.species_traits)
 		dna.species_traits = traits.Copy()
 		UpdateAppearance()
 		icon = Dummy.icon

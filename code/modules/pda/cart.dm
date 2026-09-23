@@ -59,8 +59,8 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/charges = 0
 
 	var/list/stored_data = list()
-	var/list/programs = list()
-	var/list/messenger_plugins = list()
+	var/list/programs
+	var/list/messenger_plugins
 
 /obj/item/cartridge/Destroy()
 	QDEL_NULL(radio)
@@ -273,7 +273,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 
 /obj/item/cartridge/syndicate/Initialize(mapload)
 	. = ..()
-	var/datum/data/pda/utility/toggle_door/D = programs[1]
+	var/datum/data/pda/utility/toggle_door/D = LAZYACCESS(programs, 1)
 	if(istype(D))
 		D.remote_door_id = initial_remote_door_id
 
