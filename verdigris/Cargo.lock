@@ -1812,6 +1812,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "vg-power"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "vg-core",
+]
+
+[[package]]
 name = "vg-replay"
 version = "0.1.0"
 dependencies = [
