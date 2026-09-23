@@ -30,6 +30,9 @@
 //! ```
 
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::hash::BuildHasherDefault;
+
+use crate::overlay::{CellHasher, CellMap};
 
 use crate::outbox::{Lane, Subscriber, Wake, WatchId, reason};
 use crate::timer::{Tick, TimerId, TimerWheel};
@@ -45,9 +48,9 @@ struct Pending {
 
 #[derive(Debug, Default)]
 struct LaneQueue {
-    pending: HashMap<Subscriber, Pending>,
+    pending: CellMap<Pending>,
     order: VecDeque<Subscriber>,
-    delivered: HashSet<Subscriber>,
+    delivered: HashSet<Subscriber, BuildHasherDefault<CellHasher>>,
 }
 
 impl LaneQueue {

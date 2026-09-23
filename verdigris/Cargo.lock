@@ -1729,6 +1729,7 @@ name = "vg-bench"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "rayon",
  "vg-core",
  "vg-layout",
 ]

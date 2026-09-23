@@ -150,6 +150,12 @@ pub struct Outbox<V> {
     takes: Vec<TakeResult<V>>,
     wake_capacity: usize,
     event_capacity: usize,
+    /// Lengths that trigger the next merge. They start at the capacity and
+    /// double past what a merge could not shrink (all keys distinct), so a
+    /// buffer over capacity costs amortised O(log n) per record, not a sort
+    /// per push.
+    wake_merge_at: usize,
+    event_merge_at: usize,
     /// Records merged away because a buffer was over capacity.
     pub merged_on_overflow: u64,
 }
@@ -170,6 +176,8 @@ impl<V> Outbox<V> {
             takes: Vec::new(),
             wake_capacity: wakes,
             event_capacity: events,
+            wake_merge_at: wakes,
+            event_merge_at: events,
             merged_on_overflow: 0,
         }
     }
@@ -181,14 +189,14 @@ impl<V> Outbox<V> {
 
     pub fn push_wake(&mut self, wake: Wake) {
         self.wakes.push(wake);
-        if self.wakes.len() > self.wake_capacity {
+        if self.wakes.len() > self.wake_merge_at {
             self.merge_wakes();
         }
     }
 
     pub fn push_event(&mut self, event: Event) {
         self.events.push(event);
-        if self.events.len() > self.event_capacity {
+        if self.events.len() > self.event_merge_at {
             self.merge_events();
         }
     }
@@ -244,10 +252,10 @@ impl<V> Outbox<V> {
         self.events.append(&mut later.events);
         self.takes.append(&mut later.takes);
         self.merged_on_overflow += later.merged_on_overflow;
-        if self.wakes.len() > self.wake_capacity {
+        if self.wakes.len() > self.wake_merge_at {
             self.merge_wakes();
         }
-        if self.events.len() > self.event_capacity {
+        if self.events.len() > self.event_merge_at {
             self.merge_events();
         }
     }
@@ -277,6 +285,7 @@ impl<V> Outbox<V> {
             );
         }
         self.merged_on_overflow += (before - self.wakes.len()) as u64;
+        self.wake_merge_at = self.wake_capacity.max(self.wakes.len() * 2);
     }
 
     /// Merges events with the same kind and key; the latest record wins.
@@ -288,6 +297,7 @@ impl<V> Outbox<V> {
             |a, b| *a = *b,
         );
         self.merged_on_overflow += (before - self.events.len()) as u64;
+        self.event_merge_at = self.event_capacity.max(self.events.len() * 2);
     }
 
     /// Wakes as `[subscriber, lane, reason, source]` quads.

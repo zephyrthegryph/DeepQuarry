@@ -348,7 +348,7 @@ fn compile(
             Node::Changed {
                 cell: *cell,
                 mask: *mask,
-                baseline: vec![0.0; width].into_boxed_slice(),
+                baseline: Baseline::new(width),
                 primed: false,
             }
         }
@@ -470,6 +470,31 @@ fn compile(
     })
 }
 
+/// `Changed` baselines. Most watches cover a few scalar channels, so the
+/// baseline lives inline in the watch (no pointer chase per evaluation).
+#[derive(Clone, Debug)]
+enum Baseline {
+    Inline([f32; 4]),
+    Heap(Box<[f32]>),
+}
+
+impl Baseline {
+    fn new(width: usize) -> Self {
+        if width <= 4 {
+            Self::Inline([0.0; 4])
+        } else {
+            Self::Heap(vec![0.0; width].into_boxed_slice())
+        }
+    }
+
+    fn as_mut(&mut self) -> &mut [f32] {
+        match self {
+            Self::Inline(a) => a,
+            Self::Heap(b) => b,
+        }
+    }
+}
+
 /// A compiled threshold with its state.
 #[derive(Clone, Debug)]
 struct Thresh {
@@ -517,7 +542,7 @@ enum Node {
     Changed {
         cell: u32,
         mask: u32,
-        baseline: Box<[f32]>,
+        baseline: Baseline,
         primed: bool,
     },
     Threshold {
@@ -626,7 +651,7 @@ impl Node {
                     let decl = &D::CHANNELS[ch];
                     let w = decl.kind.width();
                     r.components(*cell, ch, &mut buf[..w]);
-                    let base = &mut baseline[at..at + w];
+                    let base = &mut baseline.as_mut()[at..at + w];
                     let past = *primed
                         && buf[..w].iter().zip(base.iter()).any(|(&v, &b)| {
                             v.is_finite()

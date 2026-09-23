@@ -56,6 +56,18 @@ verdigris/                  <- workspace root (this dir)
 | `vg-core` `cow` | `CowStore<T>`: chunked copy-on-write per-cell store (4096-slot linear or 16x16 spatial chunks); snapshots share unchanged chunks. |
 | `vg-core` `owner` / `overlay` / `command` | R4 owners: a `Domain` has one worker-side writer (`DomainState`) and one DM-facing `MainPort` (sequenced command buffer, overlay of this tick's writes, the pinned `View`, scratch values). No locks on the DM path. |
 | `vg-core` `frame` / `sim` / `mailbox` | The frame task graph (declared reads/writes, levels run in parallel), the dedicated rayon frame pool, backpressure metrics, the flight recorder and `Sim::replay`, and `Mode::Fallback` (main-thread deltas within a budget, rust_core.md section 3.11). |
+| `vg-core` `channel` | R5 channels: `channels!` declares a domain's typed, unit-tagged channels (scalar, vector, enum) with hysteresis and extractors; `validate_channels` checks them at boot; DM defines (`CH_<DOMAIN>_<NAME>`, `KPA(x)`). |
+| `vg-core` `watch` | R5 watches: `Changed`, `Threshold`, `Band`, `Difference`, `ThresholdSet`, `Any`/`All`, checked at registration by `WatchPort` and evaluated in a per-domain frame task over changed chunks only (semantics table in the module docs). |
+| `vg-core` `outbox` | R5 per-frame outbox next to each view: wakes, typed domain events and exact `Take` results; unread batches merge instead of being replaced; merge-by-key on overflow; flat fixed-stride DM encodings. |
+| `vg-core` `timer` / `reactor` | R5 main side: hierarchical timer wheel (O(1) insert/cancel, tick precision), wake lanes (urgent/normal/background, merged per subscriber, once per lane per tick, budgeted), exact rate models (`Linear`, `Relax`, `Sum`) whose crossings go on the wheel, DM-owned keys. |
+
+### R5 notes (for S1 and R6/R7)
+
+- **Wiring.** `SimBuilder::add_watches(domain)` adds a domain's watch state and a `watch:<name>` task that runs after every other task; `declare_condition` registers rule templates. `build()` now returns `BuildError`, and fails with `BuildError::Boot` listing every bad channel table and declared condition.
+- **Per tick (S1).** `sim.begin_tick()`, then `sim.drain(domain)` for each domain (stale wakes of removed watches and superseded `ThresholdSet` generations are already dropped), `reactor.ingest(out.wakes())`, `reactor.tick(now)`, and `reactor.drain(budget, &mut wakes)`. Bind sketches are in the `watch::WatchPort` and `reactor` module docs.
+- **Semantics.** Watches see frame-end states, so a crossing undone within one frame never fires. Thresholds and set entries fire at the first evaluation if they already hold, and `Band` always reports its starting band. `Changed` never fires at registration.
+- **Take conserves.** The worker records the exact value each `Take` removed in the outbox (`TakeResult`); DM's `take()` still returns the pinned value at once, and the difference is the transfer-out reconciliation (tested in `sim_toy.rs`).
+- **Not recorded.** Watch registrations are not in the flight recorder. Views still replay bit for bit, because watches never write domain state, but replaying the outbox would need them.
 
 ## Building
 
