@@ -39,7 +39,19 @@
 
 	refresh_parts()
 
-/obj/item/extrapolator/attackby(obj/item/item, mob/user, params)
+/obj/item/extrapolator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/extrapolator_install,
+		/datum/interaction/entry_self/extrapolator_self,
+	)
+	..()
+
+/datum/interaction/entry_item/extrapolator_install
+	id = "extrapolator_install"
+	name = "Install"
+	effect = /obj/item/extrapolator/proc/interaction_item
+
+/obj/item/extrapolator/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	if(istype(item, /obj/item/stock_parts/scanning_module))
 		if(!scanner)
 			user.drop_item()
@@ -49,9 +61,8 @@
 			refresh_parts()
 		else
 			to_chat(user, span_notice("[src] already has \the [scanner] installed."))
-		return
-
-	return ..()
+		return TRUE
+	return FALSE
 
 /obj/item/extrapolator/screwdriver_act(mob/user, obj/item/tool)
 	if(!scanner)
@@ -63,8 +74,12 @@
 	playsound(src, tool.usesound, 50, 1)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/extrapolator/attack_self(mob/user)
-	. = ..(user)
+/datum/interaction/entry_self/extrapolator_self
+	id = "extrapolator_self"
+	name = "Toggle mode"
+	effect = /obj/item/extrapolator/proc/interaction_self
+
+/obj/item/extrapolator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	playsound(src, 'sound/machines/click.ogg', 50, TRUE)
 	if(scan)
 		icon_state = "extrapolator_sample"
@@ -74,6 +89,7 @@
 		icon_state = "extrapolator_scan"
 		scan = TRUE
 		to_chat(user, span_notice("You put the probe back into the device and set it to SCAN."))
+	return TRUE
 
 /obj/item/extrapolator/examine(mob/user)
 	. = ..()

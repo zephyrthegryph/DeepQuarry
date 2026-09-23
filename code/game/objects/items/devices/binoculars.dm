@@ -13,11 +13,20 @@
 
 	//MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
-/obj/item/binoculars/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/binoculars/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_self/binoculars_self,
+	)
+	..()
+
+/datum/interaction/entry_self/binoculars_self
+	id = "binoculars_self"
+	name = "Use"
+	effect = /obj/item/binoculars/proc/interaction_self
+
+/obj/item/binoculars/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	zoom()
+	return TRUE
 
 /obj/item/binoculars/spyglass
 	name = "spyglass"

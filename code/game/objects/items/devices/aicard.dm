@@ -22,11 +22,20 @@
 		to_chat(user, span_infoplain(span_bold("ERROR ERROR ERROR")))
 		return ITEM_INTERACT_SUCCESS
 
-/obj/item/aicard/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/aicard/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_self/aicard_self,
+	)
+	..()
+
+/datum/interaction/entry_self/aicard_self
+	id = "aicard_self"
+	name = "Use"
+	effect = /obj/item/aicard/proc/interaction_self
+
+/obj/item/aicard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/aicard/tgui_interact(mob/user, datum/tgui/ui = null, datum/tgui_state/custom_state)
 	ui = SStgui.try_update_ui(user, src, ui)

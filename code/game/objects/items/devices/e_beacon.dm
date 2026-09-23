@@ -23,10 +23,20 @@
 /obj/item/gps/emergency_beacon
 	gps_tag = "EMERGENCY BEACON"
 
-/obj/item/emergency_beacon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/emergency_beacon/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_self/emergency_beacon_self,
+		/datum/interaction/entry_hand/emergency_beacon_hand,
+		/datum/interaction/entry_item/emergency_beacon_disassemble,
+	)
+	..()
+
+/datum/interaction/entry_self/emergency_beacon_self
+	id = "emergency_beacon_self"
+	name = "Activate"
+	effect = /obj/item/emergency_beacon/proc/interaction_self
+
+/obj/item/emergency_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/T = user.loc
 	if(!beacon_active)
 		if(!isturf(T))
@@ -56,16 +66,30 @@
 					GLOB.priority_announcement.Announce(message, new_title = "Automated Personal Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
 	else
 		to_chat(user,"\The [src] is already active, or is otherwise malfunctioning. There's nothing you can do but wait. And possibly pray.")
+	return TRUE
 
-/obj/item/emergency_beacon/attack_hand(mob/user)
+/// Old attack_hand: block pickup while the beacon is active.
+/datum/interaction/entry_hand/emergency_beacon_hand
+	id = "emergency_beacon_hand"
+	name = "Use"
+	effect = /obj/item/emergency_beacon/proc/interaction_hand
+
+/obj/item/emergency_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(beacon_active)
 		to_chat(user,span_warning("The beacon is already active and cannot be moved!"))
-		return
+		return TRUE
+	return FALSE
 
-	. = ..()
+/// Old attackby: wrench it apart once active.
+/datum/interaction/entry_item/emergency_beacon_disassemble
+	id = "emergency_beacon_disassemble"
+	name = "Disassemble"
+	effect = /obj/item/emergency_beacon/proc/interaction_item
 
-/obj/item/emergency_beacon/attackby(obj/item/W, mob/user)
+/obj/item/emergency_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
 		gps.tracking = FALSE
 		user.visible_message("[user] disassembles \the [src].")
 		qdel(src)
+		return TRUE
+	return FALSE
