@@ -510,10 +510,11 @@ history for the per-concern breakdown.
 Extending §15's table with three more entries, and reporting what
 `rewrite/rustaudit` actually built against it: change tracking (16.1),
 thermo (16.2, so heat-r10 could build on it), a CI-enforced architecture
-check (16.3), and units-everywhere (16.4, `vg_core::units` -> `f64`,
+check (16.3), units-everywhere (16.4, `vg_core::units` -> `f64`,
 coordinator-approved as a follow-up once heat-r10 was pointed at
-`core::thermo`'s pre-`f64` form). The activity/sleep service is scoped
-here but **not implemented** by this pass -- see 16.5.
+`core::thermo`'s pre-`f64` form), and activity/sleep (16.6: already on
+`core::field`, pinned with new gas-level tests rather than migrated, since
+there was no gas-local duplicate to replace).
 
 | Mechanism | Core home | Replaces |
 |---|---|---|
@@ -635,19 +636,46 @@ row ("raw `f32` physical quantities in domain public APIs, flagged by the
 consolidation check once a domain migrates") is for each domain's own
 migration, not a blanket rewrite here. Landed as commit `ea6fb5d41c`.
 
-### 16.5 Not implemented by this pass
+### 16.5 Activity and sleep: already on the core service
 
-- **Activity and sleep service.** Gas's own activity/wake tracking (the
-  field's active-cell sets, `simulation.md` §1/§4's "urgent/fresh/frontier
-  lanes", already partly on `core::field`'s active-set machinery per
-  §13's table) and its per-device equivalent were not audited in enough
-  depth this pass to design a correct generic replacement -- doing so
-  without fully understanding the field framework's existing active-set
-  invariants risks a live-simulation correctness bug (frozen or
-  perpetually-active gas cells) that only a full DM atmos run would catch,
-  and the test-budget rule for this pass is one DM run, at the very end,
-  for everything above combined. Scoped in §15's table; not started.
-- **Rate-model library** (for `rewrite/power-r10`): not built. The
-  coordinator is relaying between agents; if `power-r10` hasn't produced
-  one by the time this lands, that coordination should happen as its own
-  piece of work, not a rushed addition here.
+Investigated per the coordinator's instruction ("first pin gas's active-
+cell invariants with tests, then replace the tracking with the core
+service, keep those tests green"). Turf gas (`TurfGas`, `domains/gas/src/cell.rs`)
+runs as `core::field::FieldState<TurfGas>` (`domains/gas/src/world.rs`
+constructs it via `add_field::<TurfGas>`), not a gas-local reimplementation
+-- `core::field` already *is* the activity/sleep service §15 (2) asks for:
+wake on a command/input (`wake_cell`), settle and sleep per chunk
+(`active_changed`), and neighbour wake (an edge with either side's chunk
+active stays live, so activity spreads one chunk at a time and stops at the
+boundary where it settled). This is exercised by an existing framework-
+level test, `core::tests::field::settled_regions_sleep_untouched_and_wake_on_commands_and_neighbours`,
+which already pins all four invariants (wake on input, settle, neighbour
+wake, a sleeping chunk's storage literally never copied -- pointer
+identity) against the generic `World<HeatToy>` harness.
+
+There was nothing gas-local to *replace* -- gas's per-cell activity was
+never duplicated outside `core::field` to begin with. What this pass adds
+is `domains/gas/src/tests.rs`'s
+`nudging_one_cell_wakes_only_its_neighbourhood_and_settles_again`: the same
+four invariants, pinned specifically against real `GasWorld`/`TurfGas`
+(not the toy harness) -- a 48x48 room settles, a heat nudge near one
+corner wakes only some of its `awake_chunks()` (not the whole map), a
+cell in the far corner reads bit-identical gas throughout, and the field
+settles again afterward. `cargo test -p vg-gas --features
+turf_processing,heat` is green (46 passed) with it.
+
+Gas's **per-device** activity ("§15 (2)... gas's per-device activity
+maps") turned out not to exist as code to migrate either: `pipes.rs` and
+`device.rs` have no activity/sleep/dirty tracking at all currently (every
+pipe/device steps unconditionally each frame) -- confirmed by grep, not
+just absence of a hit. That's a future *optimization* opportunity (adding
+sleep tracking to pipes/devices, which `core::field`'s machinery isn't
+directly applicable to, since pipe topology isn't a spatial grid), not a
+currently-duplicated mechanism this pass needed to consolidate.
+
+### 16.6 Not implemented by this pass
+
+- **Rate-model library** (for `rewrite/power-r10`): confirmed not needed
+  from this side -- the coordinator reports `power-r10` already has
+  `vg_core::rate::RateStore` (branch commit `1b780a4960`). Not duplicated
+  here.
