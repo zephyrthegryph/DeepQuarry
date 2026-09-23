@@ -14,7 +14,6 @@ use tinyvec::TinyVec;
 #[derive(Clone, Copy)]
 struct TurfProcessRequest {
 	fdm_max_steps: i32,
-	equalize_enabled: bool,
 	planet_share_ratio: f32,
 	target_worker_ms: f32,
 }
@@ -770,13 +769,11 @@ fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<Byond
 	let fdm_max_steps = src
 		.read_number_id(byond_string!("share_max_steps"))
 		.unwrap_or(1.0) as i32;
-	let equalize_enabled = src.read_number_id(byond_string!("equalize_enabled"))? != 0.0;
 	let planet_share_ratio = src
 		.read_number_id(byond_string!("planet_share_ratio"))
 		.unwrap_or(GAS_DIFFUSION_CONSTANT);
 	let request = TurfProcessRequest {
 		fdm_max_steps,
-		equalize_enabled,
 		planet_share_ratio,
 		// This is a latency bound for one independently publishable shard, not a
 		// budget for the persistent worker as a whole.
@@ -1072,7 +1069,6 @@ fn process_turf(
 				} else {
 					request.fdm_max_steps
 				},
-				request.equalize_enabled,
 				true,
 				snapshot,
 				&active_nodes,
@@ -1615,7 +1611,6 @@ fn conservative_solver_inputs(
 fn fdm(
 	(start_time, remaining_time): (&Instant, Duration),
 	fdm_max_steps: i32,
-	_equalize_enabled: bool,
 	explosive_decompression: bool,
 	all_mixtures: &MixtureSnapshot,
 	active_nodes: &rustc_hash::FxHashSet<NodeIndex>,

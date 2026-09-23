@@ -312,7 +312,12 @@ impl TurfGases {
 			let Some(other) = self.get_id(other_id) else {
 				continue;
 			};
-			let open = cells.open_neighbor(id, face) == Some(other_id);
+			// Two immutable cells (space, planet boundaries) never exchange gas,
+			// so the solver gets no edge between them. Queries still see the
+			// adjacency through AirCells.
+			let both_immutable = self.get(node).is_some_and(TurfMixture::is_immutable)
+				&& self.get(other).is_some_and(TurfMixture::is_immutable);
+			let open = !both_immutable && cells.open_neighbor(id, face) == Some(other_id);
 			for (from, to) in [(node, other), (other, node)] {
 				match (open, self.graph.find_edge(from, to)) {
 					(true, None) => {
@@ -1479,22 +1484,30 @@ fn register_turf_impl(
 				}
 			}
 		}
-		with_air_cells_mut(|cells| {
-			let entry = cells.masks.entry(id).or_insert(0);
-			if let Some(mask) = mask {
-				*entry = mask;
+		// A re-registration that keeps the mask (a device waking the turf) changes
+		// no topology, so it must not touch the heat graph either.
+		let topology_changed = with_air_cells_mut(|cells| match cells.masks.get_mut(&id) {
+			Some(current) => mask.is_some_and(|mask| std::mem::replace(current, mask) != mask),
+			None => {
+				cells.masks.insert(id, mask.unwrap_or(0));
+				true
 			}
 		});
 		apply_or_queue_topology_update(PendingTopologyUpdate::Insert(to_insert));
+		#[cfg(feature = "superconductivity")]
+		{
+			superconduct::supercond_update_ref(src)?;
+			if topology_changed {
+				superconduct::supercond_update_adjacencies(id)?;
+			}
+		}
+		#[cfg(not(feature = "superconductivity"))]
+		let _ = topology_changed;
 	} else {
 		with_air_cells_mut(|cells| cells.masks.remove(&id));
 		apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
-	}
-
-	#[cfg(feature = "superconductivity")]
-	{
+		#[cfg(feature = "superconductivity")]
 		superconduct::supercond_update_ref(src)?;
-		superconduct::supercond_update_adjacencies(id)?;
 	}
 	Ok(())
 }
@@ -1610,8 +1623,19 @@ fn topology_matches(src: ByondValue) -> Result<ByondValue> {
 	let expected_mix = src
 		.read_var_id(byond_string!("air"))?
 		.read_number_id(byond_string!("_extools_pointer_gasmixture"))? as usize;
-	let mut expected = with_air_cells(|cells| cells.open_neighbors(id).collect::<Vec<_>>());
-	let (mut actual, mut incoming, actual_mix) = with_turf_gases_read(|arena| {
+	let open = with_air_cells(|cells| cells.open_neighbors(id).collect::<Vec<_>>());
+	let (mut expected, mut actual, mut incoming, actual_mix) = with_turf_gases_read(|arena| {
+		// sync_edges gives two immutable cells no solver edge.
+		let immutable = |cell: TurfID| {
+			arena
+				.get_from_id(cell)
+				.is_some_and(TurfMixture::is_immutable)
+		};
+		let expected = open
+			.iter()
+			.copied()
+			.filter(|&other| !(immutable(id) && immutable(other)))
+			.collect::<Vec<_>>();
 		let outgoing = arena
 			.get_id(id)
 			.into_iter()
@@ -1628,7 +1652,7 @@ fn topology_matches(src: ByondValue) -> Result<ByondValue> {
 			.get_id(id)
 			.and_then(|node| arena.get(node))
 			.map(|turf| turf.mix);
-		(outgoing, reverse, mix)
+		(expected, outgoing, reverse, mix)
 	});
 	expected.sort_unstable();
 	actual.sort_unstable();
@@ -1900,6 +1924,8 @@ mod tests {
 
 	#[test]
 	fn topology_updates_wait_for_generation_barrier() {
+		// initialize_turfs() resets process-wide statics other tests use.
+		let _globals = crate::gas::types::TEST_GAS_GLOBALS_LOCK.lock().unwrap();
 		initialize_turfs();
 		let id = 42;
 		let mixture = TurfMixture {
@@ -1929,6 +1955,8 @@ mod tests {
 	/// that mix id.
 	#[test]
 	fn shared_immutable_mix_survives_sibling_removal() {
+		// initialize_turfs() resets process-wide statics other tests use.
+		let _globals = crate::gas::types::TEST_GAS_GLOBALS_LOCK.lock().unwrap();
 		initialize_turfs();
 		const SHARED_MIX: usize = 999;
 

@@ -100,19 +100,8 @@ SUBSYSTEM_DEF(air)
 	// otherwise). Defaults per SSAIR_CONTRACT.
 	/// FDM sharing steps per process_turfs tick (turfs/processing.rs).
 	var/share_max_steps = 4
-	/// Enables katmos equalize (turfs/processing.rs gates on this AND cfg!(fastmos)).
-	var/equalize_enabled = TRUE
 	/// Fraction of the delta a planetary turf shares with its atmosphere each pass.
 	var/planet_share_ratio = 0.25
-	/// Pressure delta below which an excited group is considered equalized (groups.rs).
-	var/excited_group_pressure_goal = 0.5
-	/// Hard cap on turfs a single katmos equalize pass may touch (katmos.rs).
-	// A pressure wave is solved as one connected snapshot. Two thousand cells is
-	// smaller than a breached hangar or combined hallway network and causes the
-	// wave to be arbitrarily chopped into slow queue fragments. The detached Rust
-	// worker remains time-budgeted, so this is a reachability cap rather than a DM
-	// tick-time budget.
-	var/equalize_hard_turf_limit = 8192
 
 	// auxmos turf processing writes these counters back each tick. Declared so the
 	// Rust write_var_id calls don't panic (NonExistentString). Informational only.

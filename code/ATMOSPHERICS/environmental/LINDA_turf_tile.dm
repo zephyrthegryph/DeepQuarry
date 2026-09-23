@@ -23,17 +23,6 @@
 	var/pressure_difference = 0
 	///Where the difference come from (from higher pressure to lower pressure)
 	var/pressure_direction = 0
-	/// katmos target turf ref, written/read by the Rust equalize pass
-	/// (turf.pressure_specific_target). Declared so the auxmos read/write_var_id
-	/// calls don't panic (NonExistentString); DM never sets it directly.
-	var/pressure_specific_target
-
-	/// Excited-group tracking moved to the Rust arena. This var is retained
-	/// (untyped) only so lingering external readers (e.g. LINDA_fire hotspot
-	/// processing) still resolve; the DM engine no longer maintains it.
-	var/excited_group
-	///Are we active? Retained for legacy readers; auxmos owns activity now.
-	var/excited = FALSE
 	///Our gas mix
 	var/datum/gas_mixture/air
 
