@@ -717,7 +717,18 @@ export const TestBaselineTarget = new Juke.Target({
     if (fs.existsSync('icons/gen') && !fs.existsSync(path.join(worktree, 'icons/gen'))) {
       fs.cpSync('icons/gen', path.join(worktree, 'icons/gen'), { recursive: true });
     }
-    const script = process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh';
+    // Juke.exec() resolves a relative `executable` (via fs.existsSync +
+    // path.resolve) against ITS OWN process's cwd, not the `cwd` spawn
+    // option -- so a relative script path here would almost always resolve
+    // back to THIS worktree's copy (since the same relative path exists
+    // here too), run it, and that script's own `cd "$(dirname "$0")"`
+    // would then cd right back into this worktree, discarding `cwd:
+    // worktree` entirely. The nested build would silently build and test
+    // THIS worktree's checkout instead of the baseline commit's -- found by
+    // actually running bench-baseline end-to-end and noticing the stored
+    // baseline run's commit was this branch's HEAD, not the ref it was
+    // supposed to baseline. Always pass an absolute, worktree-rooted path.
+    const script = path.join(worktree, process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh');
     // Juke's CLI parser treats any bare (non-dash) argv token as the start of
     // a new target, and a long flag's value only registers with `=` in the
     // same token (see doc/testing.md's "Juke options take `=`" note) -- so
@@ -967,7 +978,11 @@ export const BenchBaselineTarget = new Juke.Target({
     if (fs.existsSync('icons/gen') && !fs.existsSync(path.join(worktree, 'icons/gen'))) {
       fs.cpSync('icons/gen', path.join(worktree, 'icons/gen'), { recursive: true });
     }
-    const script = process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh';
+    // See the matching comment (and the "found by actually running this end
+    // to end" story) in TestBaselineTarget above: the script path must be
+    // absolute and worktree-rooted, or Juke.exec silently builds/runs THIS
+    // worktree's checkout instead of the worktree passed via `cwd`.
+    const script = path.join(worktree, process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh');
     // See the matching comment in TestBaselineTarget above: every flag with a
     // value must be one argv token (`--x=y` / `-Dy`), never split across two.
     const defines = get(DefineParameter).map((d) => `-D${d}`);
