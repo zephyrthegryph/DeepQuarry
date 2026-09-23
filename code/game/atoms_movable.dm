@@ -87,6 +87,8 @@
 	// REGISTRY_MACHINES via join_registries() in the base on_materialize())
 	// are already in place.
 	vg_bind()
+	if(vg_entity)
+		SSvg.register(src)
 
 /atom/movable/on_dematerialize()
 	// R10 unbind. J1's pre_destroy() is the design's intended call site
@@ -96,6 +98,7 @@
 	// same hook, __defines/misc.dm). Move this single call into pre_destroy()
 	// when J1 lands; do not add a second unbind mechanism.
 	if(vg_entity)
+		SSvg.unregister(src)
 		vg_entity_unbind(vg_entity)
 		vg_entity = 0
 	if(rad_insulation != RAD_NO_INSULATION)
