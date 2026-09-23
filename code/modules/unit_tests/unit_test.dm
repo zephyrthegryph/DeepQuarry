@@ -36,6 +36,33 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 /proc/unit_test_is_focused_run()
 	return !!length(GLOB.focused_tests)
 
+// ---- Sharded sweeps (doc/testing.md "Sharded sweeps") ----
+
+/// This world's 0-based shard index and shard count for a sharded dm-test
+/// run. Read once from world params (-params shard-index=K&shard-count=N) by
+/// dq_test_shard_init(), called from world/proc/HandleTestRun(). The default
+/// (count 1, index 0) means "not sharded" -- a plain dm-test or focused run.
+GLOBAL_VAR_INIT(dq_test_shard_index, 0)
+/// See dq_test_shard_index.
+GLOBAL_VAR_INIT(dq_test_shard_count, 1)
+
+/// Reads shard-index/shard-count from world params into the globals above.
+/// Called once, early, from world/proc/HandleTestRun(). Missing params leave
+/// the "not sharded" default in place; malformed ones fall back to it too
+/// (loud, via stack_trace()) rather than silently running a wrong slice.
+/proc/dq_test_shard_init()
+	var/count_text = world.params[TEST_SHARD_COUNT_PARAMETER]
+	var/index_text = world.params[TEST_SHARD_INDEX_PARAMETER]
+	if(isnull(count_text) && isnull(index_text))
+		return
+	var/count = text2num(count_text)
+	var/index = text2num(index_text)
+	if(!count || count < 1 || isnull(index) || index < 0 || index >= count)
+		stack_trace("dq_test_shard_init: ignoring malformed shard params index=[index_text] count=[count_text]")
+		return
+	GLOB.dq_test_shard_count = count
+	GLOB.dq_test_shard_index = index
+
 /datum/unit_test
 	//Bit of metadata for the future maybe
 	var/list/procs_tested
@@ -129,6 +156,29 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 		return run_loc_floor_bottom_left
 	for(var/turf/simulated/floor/T in world)
 		return T
+
+/// Returns this world's shard of `types`, for a type-sweep test running
+/// under a sharded dm-test run (`dm-test --shards=N`; see doc/testing.md
+/// "Sharded sweeps"). Splits by round-robin index rather than a contiguous
+/// range, so a shard's slice stays representative even when `types` is
+/// clustered (e.g. many cheap subtypes of one branch followed by a few
+/// costly ones from another) -- every shard ends up with a similar-cost
+/// slice of THIS sweep automatically, without the runner having to bin-pack
+/// what's inside it. With no sharding configured (a plain dm-test or
+/// focused run, the default), returns `types` unchanged.
+///
+/// `types` is typically subtypesof()/typesof() of some root; pass it
+/// straight through, e.g.:
+///   for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
+/datum/unit_test/proc/sweep_types(list/types)
+	if(GLOB.dq_test_shard_count <= 1)
+		return types
+	. = list()
+	var/i = 0
+	for(var/entry in types)
+		if((i % GLOB.dq_test_shard_count) == GLOB.dq_test_shard_index)
+			. += entry
+		i++
 
 /// Resets the air of our testing room to its default
 /datum/unit_test/proc/restore_atmos()
