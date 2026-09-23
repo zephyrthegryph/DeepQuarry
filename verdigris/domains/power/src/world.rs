@@ -342,6 +342,16 @@ impl PowerWorld {
         }
         let _ = self.net.remove_node(obj.node);
         self.pulses.remove(&key);
+        self.supply.remove(&key);
+        // If this key was serving as some APC's terminal, that APC no
+        // longer has one: without this, a reused key would silently
+        // inherit the old occupant's APC as its own (rust_bindings.md
+        // R10 identity: a reused cell must start clean).
+        if let Some(apc_key) = self.apc_terminal.remove(&key)
+            && let Some(apc) = self.apcs.get_mut(&apc_key)
+        {
+            apc.terminal = None;
+        }
         if obj.shape.is_none() {
             // Reported as unbound at the next commit.
             self.bound.insert(key, u32::MAX);

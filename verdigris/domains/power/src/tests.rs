@@ -358,3 +358,53 @@ fn apc_parity_with_dm_distributor_constants() {
     let after = w.apc(300).unwrap().state.charge;
     assert!((before - after - 4000.0 * CELLRATE).abs() < 1e-9);
 }
+
+/// Identity (`rust_bindings.md` R10): once entities own cable/machine
+/// identity, a stale handle can never resolve to a reused cell (the entity
+/// table is generation-checked) -- but that alone isn't enough. Whatever
+/// external allocator hands out cells (DM's dense key today, an entity's
+/// `ComponentRef.cell` after the move) *will* reuse a freed slot, so a
+/// fresh bind at that slot must start from a clean state: nothing left
+/// over from whatever used to live there. This drives that reuse directly
+/// (remove, then add a different kind of node at the same key) and checks
+/// every per-key side table the world keeps.
+#[test]
+fn a_reused_key_starts_with_no_leftover_state() {
+    let mut w = PowerWorld::new();
+    // A supplied, pulsed machine, on a cable network, with a cable on top
+    // of it sharing the position.
+    w.add_cable(1, pos(1, 1, 1), wire(0, EAST)).unwrap();
+    w.add_cable(2, pos(2, 1, 1), wire(WEST, 0)).unwrap();
+    w.add_machine(10, pos(1, 1, 1)).unwrap();
+    w.set_supply(10, 5000.0);
+    w.pulse(10, 900.0);
+    w.commit();
+    let region_before = w.region_info(10).unwrap().region;
+    assert!(region_before > 0);
+
+    // Free the key: a real unbind (the entity's generation now makes the
+    // old handle stale; nothing can reach this cell through it again).
+    w.remove(10);
+    assert!(!w.contains(10));
+
+    // The cell is reused for an unrelated machine with no supply of its
+    // own: a fresh bind at a recycled ComponentRef.cell.
+    w.add_machine(10, pos(2, 1, 1)).unwrap();
+    w.commit();
+    let events = w.step();
+
+    // No leftover generator supply or pulse from the old occupant.
+    let info = w.region_info(10).unwrap();
+    assert_eq!(info.avail, 0.0, "the reused key must not inherit the old supply");
+    let regions = records(&events, ev::REGION);
+    assert!(
+        regions.iter().all(|r| r[1] == 0.0),
+        "no region should report the old occupant's avail after reuse: {regions:?}"
+    );
+
+    // No leftover APC/SMES binding: a fresh add_apc at the same key is a
+    // brand new APC, not a resurrection of anything.
+    w.remove(10);
+    w.set_apc(10, ApcConfig { max_charge: 100.0, ..ApcConfig::default() }, None, None);
+    assert_eq!(w.apc(10).unwrap().state.charge, 0.0, "a fresh APC at a reused key starts uncharged");
+}
