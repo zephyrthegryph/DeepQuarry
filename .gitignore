@@ -73,6 +73,10 @@ define_sanity_output.txt
 /tools/_*.txt
 /tools/_*.py
 /tools/_*.json
+/tools/dm-health/target/
+/tools/dm-health/findings.tmp.json
+/tools/dm-health/opendream-bridge/bin/
+/tools/dm-health/opendream-bridge/obj/
 # In-tree audit/report scratch files (not part of the build)
 /architectural_findings.md
 /architectural_synthesis.md

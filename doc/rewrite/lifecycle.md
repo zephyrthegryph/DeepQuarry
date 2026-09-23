@@ -60,7 +60,7 @@ place the ordering hazards now scattered through code comments are encoded:
 | 2 | **Dematerialize.** Leave registries (L3) and drop rule bindings, as today. Every remaining `GLOB.x += src` moves into a registry declaration. | registries | ~72 list removals |
 | 3 | **Contents.** Resolve every slot's **declared destroy policy** (§3). This is depth-first post-order through nested holders: children before parents. No holder-managed or leftover `contents` loops remain. | containment ledger | hand spills, `QDEL_LIST` of parts, machinery `component_parts` loops, the movable `contents` sweep |
 | 4 | **Links.** Clear every declared relationship (§4): owned children deleted, pairs' other sides nulled, back-list memberships removed. | links framework | ~400 null/QDEL_NULL/pair bodies |
-| 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; clock callbacks (DQ Medical `w6/k1` teardown entry point); grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
+| 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; clock callbacks (DQ Medical `w6/k1`: `clock_teardown(datum)` cancels callbacks owned by and targeting the datum); grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
 | 6 | **Effects.** Declared `destroy_effects` data: message, sound, debris type, neighbour update. | effects | ~60 effect bodies |
 | 7 | **Leftover `Destroy()`.** Only domain consequences remain. Linted: an override must justify itself with a `// LIFECYCLE:` reason, and the count is ratcheted. | type | — |
 | 8 | **Scrub.** Null outbound declared owned and pair vars to break reference cycles, then hand the datum to GC. Nothing is parked in nullspace pending deletion. | links | cycle-breaking null-only bodies |
@@ -85,10 +85,18 @@ Destroy) is **removed**.
 - **Nested holders** (limb trees, organs in limbs, items in bags in bags)
   resolve **children before parents**. Each child's own slots resolve first,
   within the same transaction.
-- **Mind and brain before the body** (DQ Medical requirement). The mind slot is
-  resolved first in its holder's phase 3, via `TRANSFER(mind_destination)`.
-  The body plan declares that resolver (ghost or MMI); it is not a Destroy
-  override.
+- **Mind and brain before the body** (DQ Medical requirement). `TRANSFER(mind)`
+  slots resolve in **phase 0.5, pre-order** across the whole tree, before any
+  registry drop and before the post-order walk reaches head→brain (which may
+  carry `mind_host`). The body plan declares the resolver (ghost or MMI).
+  Everything else resolves **post-order** in phase 3.
+- **Hooks during destruction.** Every slot move made by the transaction passes
+  `LEDGER_MOVE_DESTROYING`, and `holder_destroying(holder)` is queryable.
+  `on_unslotted` hooks (J6) must skip re-derivation (body invalidate,
+  life_wake, HUD, factor recompute) when it's set.
+- **Gib vs qdel.** Policies are static per slot. Gib is `ledger_empty(SPILL)`
+  on the part slots followed by `qdel`. There is no per-transaction
+  disposition override.
 - **Occupant slots** (C8a: mecha pilot, DNA scanner, sleepers) use
   `TRANSFER(eject_to_turf)`. The ledger-joint audit found two holders whose own
   `go_out()` ejection ran against an already-emptied slot. With this design
@@ -112,6 +120,10 @@ enforces it.
 | weak (`datum/weakref` typed var) | the default for everything else. Resolved on read and never cleaned | all incidental refs |
 | `tmp` cache | recomputable, and scrubbed in phase 8 | caches |
 
+- The lint allow-lists DQ Medical areas (body, organs, afflictions, surgery,
+  protean) until they convert. Their planned mapping: body `REF_OWNED` from the
+  mob; afflictions and the clock schedule `REF_OWNED_LIST`; organs as slot
+  content (O2); mind via `mind_host` `TRANSFER`.
 - Per-type relationship tables are **precomputed at boot**, following the
   pattern of `registries_by_type`, so phase 4 is a table walk with no `vars[]`
   reflection.
@@ -127,7 +139,7 @@ enforces it.
 | `replace_with(path, …)` | creates the successor at the same loc or slot, carries over declared state and contents via `KEEP_WITH`/`TO_LATENT`, destroys the original. Replaces the 175 `new X(); qdel(src)` sites and deconstruction debris |
 | `lifetime = N` / `expire(after)` | effects, projectiles, spawners and helpers. Replaces the ~90 timed deletes and most `qdel(src)` in effects |
 | `slot_clear(slot)` / `ledger_empty(policy)` | replaces the 143 qdel-in-loop owned-children sites |
-| `delete_on_death` declaration | death-driven deletion (spores, shades) |
+| `delete_on_death` declaration | death-driven deletion (spores, shades). Subscribes to the final hook of DQ Medical's ordered death pipeline (O5), never to stat changes. The destroy transaction never calls `death()` |
 
 `qdel()` remains the engine underneath these verbs. Direct calls outside the
 frameworks are linted and ratcheted.
@@ -168,7 +180,8 @@ This design is sent to DQ Medical for review before code lands.
 Tests (written now, run when the testing freeze lifts):
 - phase ordering;
 - children-first nested resolution;
-- mind transfer before body deletion;
+- mind transfer before body deletion, including a brain inside a head inside a body, destroyed from the body (pre-order, fully registered, has a loc);
+- `LEDGER_MOVE_DESTROYING` passed to every hook during the transaction;
 - occupant ejection;
 - pair symmetry on both-sides destroy;
 - re-entrancy (a partner destroyed inside our transaction);
