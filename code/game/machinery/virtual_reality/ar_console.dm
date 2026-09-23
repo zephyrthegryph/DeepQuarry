@@ -86,7 +86,7 @@
 	for(var/atom/movable/A in src) // In case an object was dropped inside or something
 		if(A == circuit)
 			continue
-		if(A in component_parts)
+		if(component_parts && (A in component_parts))
 			continue
 		A.loc = src.loc
 	update_use_power(USE_POWER_IDLE)

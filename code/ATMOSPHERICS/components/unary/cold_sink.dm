@@ -180,15 +180,9 @@
 	..()
 	var/cap_rating = 0
 	var/manip_rating = 0
-	var/bin_rating = 0
-
-	for(var/obj/item/stock_parts/P in component_parts)
-		if(istype(P, /obj/item/stock_parts/capacitor))
-			cap_rating += P.rating
-		if(istype(P, /obj/item/stock_parts/manipulator))
-			manip_rating += P.rating
-		if(istype(P, /obj/item/stock_parts/matter_bin))
-			bin_rating += P.rating
+	var/bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
+	cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
+	manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 
 	max_power_rating = initial(max_power_rating) * cap_rating / 2			//more powerful
 	heatsink_temperature = initial(heatsink_temperature) / ((manip_rating + bin_rating) / 2)	//more efficient

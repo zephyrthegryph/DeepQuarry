@@ -880,16 +880,9 @@
 
 /obj/machinery/appliance/RefreshParts()
 	..()
-	var/scan_rating = 0
-	var/cap_rating = 0
-
-	for(var/obj/item/stock_parts/P in src.component_parts)
-		if(istype(P, /obj/item/stock_parts/scanning_module))
-			scan_rating += P.rating - 1 // Default parts shouldn't mess with stats
-			// to_world("RefreshParts returned scan rating of [scan_rating] during this step.") // Debug lines, uncomment if you need to test.
-		else if(istype(P, /obj/item/stock_parts/capacitor))
-			cap_rating += P.rating - 1 // Default parts shouldn't mess with stats
-			// to_world("RefreshParts returned cap rating of [cap_rating] during this step.") // Debug lines, uncomment if you need to test.
+	// Default parts shouldn't mess with stats, so this reads the sum of (rating - 1).
+	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module) - get_part_count(/obj/item/stock_parts/scanning_module)
+	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 
 	active_power_usage = initial(active_power_usage) - scan_rating * 25
 	heating_power = initial(heating_power) + cap_rating * 25

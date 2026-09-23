@@ -116,12 +116,9 @@
 	scan_level = 0
 	damage_coeff = 0
 	precision_coeff = 0
-	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
-		scan_level += P.rating
-	for(var/obj/item/stock_parts/manipulator/P in component_parts)
-		precision_coeff = P.rating
-	for(var/obj/item/stock_parts/micro_laser/P in component_parts)
-		damage_coeff = P.rating
+	scan_level += get_part_rating(/obj/item/stock_parts/scanning_module)
+	precision_coeff = get_part_rating(/obj/item/stock_parts/manipulator)
+	damage_coeff = get_part_rating(/obj/item/stock_parts/micro_laser)
 
 /obj/machinery/dna_scannernew/relaymove(mob/user as mob)
 	if(user.stat)

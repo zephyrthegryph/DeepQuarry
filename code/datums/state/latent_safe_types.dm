@@ -3,6 +3,31 @@
 // vars, and dq_state_latent_round_trip round-trips every subtype). Initialize()
 // side effects are audited by L2. Rollout order is containment.md section 4.6.
 
+// ---- Machine internals (roadmap C6): board and stock parts ----
+// Initialize() side effects are cosmetic (random pixel offset) or a static
+// read into an instance var (security board networks); nothing registers
+// with a subsystem or builds a child eagerly.
+
+// NOT marked latent_safe: board_type is a nested /datum/frame/frame_types
+// instance built inline (`var/board_type = new /datum/frame/frame_types/X`)
+// and that type has no state codec, so every circuitboard subtype fails
+// dq_state_latent_round_trip. A board whose generator line can't be latent
+// is still created for real immediately (dq_latent_declare()), so this
+// keeps the pre-C6 one-real-board-per-machine behavior; giving
+// /datum/frame/frame_types a codec (or moving board_type off the instance)
+// is a follow-up, not blocking the parts-as-data win below.
+/obj/item/circuitboard
+	latent_safe = FALSE
+
+/obj/item/stock_parts
+	latent_safe = TRUE
+
+/obj/item/smes_coil
+	latent_safe = TRUE
+
+/obj/item/bluespace_crystal
+	latent_safe = TRUE
+
 /obj/item/paper
 	latent_safe = TRUE
 

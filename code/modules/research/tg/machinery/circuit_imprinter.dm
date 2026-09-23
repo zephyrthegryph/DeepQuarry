@@ -11,8 +11,6 @@
 	set_wires(new /datum/wires/circuit_imprinter(src))
 
 /obj/machinery/rnd/production/circuit_imprinter/compute_efficiency()
-	var/rating = 0
-	for(var/obj/item/stock_parts/manipulator/manip in component_parts)
-		rating += manip.rating
+	var/rating = get_part_rating(/obj/item/stock_parts/manipulator)
 
 	return 0.5 ** max(rating - 1, 0) // One sheet, half sheet, quarter sheet, eighth sheet.

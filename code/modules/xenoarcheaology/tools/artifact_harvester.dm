@@ -34,19 +34,17 @@
 	// Applying a straight rating * X resultes in either being too strong early or too weak late. So we do a switch depending on rating.
 	// This means for a base 500 battery: Tier 1 takes 100 seconds, tier 2 takes 40 seconds, tier 3 takes 20 seconds, tier 4 takes 4 seconds, tier 5 takes 1 second.
 	// Tier 4 and 5 may seem overkill, but when you get to the REALLY strong batteries, you'll want them.
-	for(var/obj/item/stock_parts/P in component_parts)
-		if(istype(P, /obj/item/stock_parts/capacitor))
-			switch(P.rating)
-				if(1)
-					harvesting_speed += 2
-				if(2)
-					harvesting_speed += 5
-				if(3)
-					harvesting_speed += 10
-				if(4)
-					harvesting_speed += 50
-				if(5)
-					harvesting_speed += 100
+	switch(get_part_rating(/obj/item/stock_parts/capacitor))
+		if(1)
+			harvesting_speed += 2
+		if(2)
+			harvesting_speed += 5
+		if(3)
+			harvesting_speed += 10
+		if(4)
+			harvesting_speed += 50
+		if(5)
+			harvesting_speed += 100
 
 /obj/machinery/artifact_harvester/declare_interactions(list/into)
 	into += list(

@@ -41,14 +41,10 @@
 	..()
 	charge = 0
 	repair = -5
-	for(var/obj/item/stock_parts/P in component_parts)
-		if(istype(P, /obj/item/stock_parts/capacitor))
-			charge += P.rating * 20
-		if(istype(P, /obj/item/stock_parts/scanning_module))
-			charge += P.rating * 5
-			repair += P.rating
-		if(istype(P, /obj/item/stock_parts/manipulator))
-			repair += P.rating * 2
+	charge += get_part_rating(/obj/item/stock_parts/capacitor) * 20
+	charge += get_part_rating(/obj/item/stock_parts/scanning_module) * 5
+	repair += get_part_rating(/obj/item/stock_parts/scanning_module)
+	repair += get_part_rating(/obj/item/stock_parts/manipulator) * 2
 
 /obj/machinery/mech_recharger/process()
 	..()

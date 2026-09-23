@@ -360,14 +360,24 @@
 
 	circuit.construct(new_machine)
 
+	// new_machine's own default board+parts (latent_generator(), roadmap C6)
+	// already resolved into entries the moment its Initialize() first asked
+	// the ledger a question (RefreshParts, typically). The frame's real,
+	// player-installed parts replace them, not add to them.
+	dq_ledger(new_machine)?.latent_clear()
+
+	// The frame's installed parts are real physical items the player put in;
+	// move_into() keeps the new machine's ledger (roadmap C6) current, so
+	// RefreshParts() and get_part_rating() see them straight away.
 	for(var/obj/O in components)
 		if(circuit.contain_parts)
-			O.loc = new_machine
+			O.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 		else
 			O.loc = null
 		new_machine.component_parts += O
 
 	circuit.loc = null
+	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 	new_machine.circuit = circuit
 
 	new_machine.RefreshParts()

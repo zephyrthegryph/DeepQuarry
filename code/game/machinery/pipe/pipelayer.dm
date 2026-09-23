@@ -33,9 +33,7 @@
 	. = ..()
 
 /obj/machinery/pipelayer/RefreshParts()
-	var/mb_rating = 0
-	for(var/obj/item/stock_parts/matter_bin/M in component_parts)
-		mb_rating += M.rating
+	var/mb_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 	max_metal = mb_rating * initial(max_metal)
 
 /obj/machinery/pipelayer/dismantle()

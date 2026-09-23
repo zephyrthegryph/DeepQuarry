@@ -12,27 +12,58 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored, list(
 	/datum/controller/subsystem/atoms,
 ))
 
-/// Global state an object could register itself with, as key -> size.
-/// Covers every list var on GLOB and on every subsystem (processing lists,
-/// machine lists, lighting queues, registries), each radio frequency's device
-/// lists, and the listeners of every global signal.
-/proc/dq_lifecycle_snapshot()
-	var/list/snapshot = list()
+/// Cached (container, varname) pairs for every list-valued var on GLOB and on
+/// every non-ignored subsystem, keyed by the same string dq_lifecycle_snapshot()
+/// used to use as a snapshot key. Building this means walking GLOB.vars and
+/// every subsystem's vars table (hundreds of entries each) with dynamic
+/// per-name dereferences to find which vars are lists in the first place --
+/// the set of *which* vars are list-valued never changes for the lifetime of
+/// a test world, so dq_lifecycle_sandbox (which snapshots three times per
+/// latent-safe type, ~800+ types) only pays that walk once instead of ~2400
+/// times. Null until dq_lifecycle_snapshot_var_keys() first builds it.
+GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
+
+/// Builds (and caches) the list-valued-var key set described above.
+/// Each value is a 2-element list: [container, varname], so the snapshot proc
+/// can re-read the current length without re-walking any vars table.
+/proc/dq_lifecycle_snapshot_var_keys()
+	if(GLOB.dq_lifecycle_snapshot_var_keys)
+		return GLOB.dq_lifecycle_snapshot_var_keys
+	var/list/keys = list()
 	for(var/name in GLOB.vars)
 		if(name == "vars")
 			continue
-		var/value = GLOB.vars[name]
-		if(islist(value))
-			snapshot["GLOB.[name]"] = length(value)
+		if(islist(GLOB.vars[name]))
+			keys["GLOB.[name]"] = list(GLOB, name)
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		if(subsystem.type in GLOB.dq_lifecycle_snapshot_ignored)
 			continue
 		for(var/name in subsystem.vars)
 			if(name == "vars")
 				continue
-			var/value = subsystem.vars[name]
-			if(islist(value))
-				snapshot["[subsystem.type].[name]"] = length(value)
+			if(islist(subsystem.vars[name]))
+				keys["[subsystem.type].[name]"] = list(subsystem, name)
+	GLOB.dq_lifecycle_snapshot_var_keys = keys
+	return keys
+
+/// Global state an object could register itself with, as key -> size.
+/// Covers every list var on GLOB and on every subsystem (processing lists,
+/// machine lists, lighting queues, registries), each radio frequency's device
+/// lists, and the listeners of every global signal.
+/proc/dq_lifecycle_snapshot()
+	var/list/snapshot = list()
+	var/list/var_keys = dq_lifecycle_snapshot_var_keys()
+	for(var/key in var_keys)
+		var/list/container_and_name = var_keys[key]
+		var/datum/container = container_and_name[1]
+		var/name = container_and_name[2]
+		var/value = container.vars[name]
+		// Defensive: the cached key set only records which vars were
+		// list-valued at cache-build time. If a var was ever reassigned to a
+		// non-list (shouldn't happen for these bookkeeping lists, but a
+		// runtime here would be worse than a missed diff), treat it as absent
+		// rather than erroring length() on a non-list value.
+		snapshot[key] = islist(value) ? length(value) : 0
 	for(var/frequency_text in SSradio.frequencies)
 		var/datum/radio_frequency/frequency = SSradio.frequencies[frequency_text]
 		for(var/radio_filter in frequency.devices)
@@ -81,7 +112,7 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 /datum/unit_test/dq_lifecycle_sandbox/Run()
 	var/list/failures = list()
 	var/tested = 0
-	for(var/atom/movable/path as anything in subtypesof(/atom/movable))
+	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
 		if(!(initial(path.latent_safe) || (path in GLOB.dq_lifecycle_clean_types)) || is_abstract(path))
 			continue
 		tested++
