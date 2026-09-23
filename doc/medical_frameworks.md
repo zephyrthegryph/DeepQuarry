@@ -834,7 +834,15 @@ ending, not a revive).
   string from `can_return_from_death(flags)`: "not dead", "lethal injuries" (`body.is_lethal()`,
   the renamed `body.is_dead()`), or `revival_window_refusal()` (human: no brain, brain dead,
   brain decayed, husked, brain stem, a failed vital organ). The vorepanel's hand-written
-  eligibility is gone; it now refuses exactly what the defib refuses (P2-D2).
+  eligibility is gone (P2-D2). By user decision vore reform never refuses: both reform paths
+  pass `REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL | REVIVE_UNCONSCIOUS`.
+  `REVIVE_RESTORE` (new) calls `restore_for_revival()`, which for humans regrows missing
+  vital organs (brain included), clears brain death, brain decay, husk and brain-stem damage,
+  then heals, so `can_return_from_death()` cannot refuse a dead, undeleted mob. Both reform
+  paths (ghost and MMI) call `H.reform_restore()`: `return_from_death()` with
+  `REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL`, then `rejuvenate()`, so the stored
+  body comes back fully restored. The incremental `reform_treatments` loop and the MMI path's
+  partial mends are deleted; the MMI path still installs the MMI as the brain holder first.
 - **Extra flag `REVIVE_UNCONSCIOUS`.** Defib, CPR, the buzzer ring, vore reform and redspace
   corruption all landed the patient UNCONSCIOUS; step 4's `set_stat(CONSCIOUS)` would have
   changed that, so the flag keeps it.

@@ -190,6 +190,53 @@
 	TEST_ASSERT_EQUAL(listener.revivals, 1, "through return_from_death()")
 	qdel(listener)
 
+/// Vore reform's flags revive anything dead: a husked body whose brain decayed and died.
+/datum/unit_test/dq_revive_restore_always_succeeds
+
+/datum/unit_test/dq_revive_restore_always_succeeds/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.death()
+	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	TEST_ASSERT(istype(brain), "a human has a brain")
+	brain.defib_timer = 0
+	brain.damage = brain.max_damage
+	H.ChangeToHusk()
+	TEST_ASSERT(H.return_from_death("unit test", src, REVIVE_HEAL) != TRUE, "without REVIVE_RESTORE the dead brain refuses")
+	TEST_ASSERT_EQUAL(H.return_from_death("unit test", src, REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL | REVIVE_UNCONSCIOUS), TRUE, "reform flags always revive")
+	TEST_ASSERT(H.stat != DEAD, "the reformed body is alive")
+	TEST_ASSERT(!(HUSK in H.mutations), "the husk is cleared")
+	TEST_ASSERT(!H.is_brain_dead(), "the brain is restored")
+
+/// REVIVE_RESTORE regrows a missing brain.
+/datum/unit_test/dq_revive_restore_regrows_brain
+
+/datum/unit_test/dq_revive_restore_regrows_brain/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.death()
+	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	brain.removed()
+	qdel(brain)
+	TEST_ASSERT_NULL(H.internal_organs_by_name[O_BRAIN], "the brain is gone")
+	TEST_ASSERT_EQUAL(H.return_from_death("unit test", src, REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL), TRUE, "reform flags revive a brainless body")
+	TEST_ASSERT_NOTNULL(H.internal_organs_by_name[O_BRAIN], "the brain is regrown")
+
+/// Vore reform fully restores the stored body: a husked, brain-dead, badly hurt corpse comes back whole.
+/datum/unit_test/dq_revive_reform_restore_full
+
+/datum/unit_test/dq_revive_reform_restore_full/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.injure(INJURY_BLUNT, 60, BP_TORSO, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	H.death()
+	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	brain.defib_timer = 0
+	brain.damage = brain.max_damage
+	H.ChangeToHusk()
+	H.reform_restore("unit test", src)
+	TEST_ASSERT(H.stat != DEAD, "reform always revives")
+	TEST_ASSERT(!(HUSK in H.mutations), "the husk is cleared")
+	TEST_ASSERT(!H.is_brain_dead(), "the brain is restored")
+	TEST_ASSERT(!H.is_injured(), "the body is fully healed, not left barely out of crit")
+
 // --- Vital-state predicates --------------------------------------------------------------
 
 /// alive / dead / band follow stat and vitality.

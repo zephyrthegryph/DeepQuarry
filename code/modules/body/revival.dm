@@ -43,12 +43,52 @@
 		return "[bad_vital_organ] failed"
 	return null
 
+/// REVIVE_RESTORE: rebuild what would refuse a revival. The base mob has nothing to rebuild.
+/mob/living/proc/restore_for_revival()
+	log_game("REVIVE RESTORE: [key_name(src)] ([type]) rebuilt for revival.")
+
+/// Humans: replace missing vital organs, clear brain death, decay, husking and brain-stem damage.
+/mob/living/carbon/human/restore_for_revival()
+	..()
+	for(var/organ_tag in species.has_organ)
+		var/organ_type = species.has_organ[organ_tag]
+		var/obj/item/organ/prototype = organ_type
+		if(!initial(prototype.vital) || internal_organs_by_name[organ_tag])
+			continue
+		var/obj/item/organ/O = new organ_type(src, 1)
+		O.organ_tag = organ_tag
+		internal_organs_by_name[organ_tag] = O
+		log_game("REVIVE RESTORE: [key_name(src)] regrew missing vital organ [organ_tag].")
+	restore_all_organs()
+	for(var/obj/item/organ/internal/I in internal_organs)
+		I.rejuvenate()
+	var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+	if(istype(brain))
+		brain.status &= ~ORGAN_DEAD
+		brain.damage = 0
+		brain.defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2
+	mutations -= HUSK
+	status_flags &= ~DISFIGURED
+	can_defib = TRUE
+	update_icons_body()
+
+/// Vore reform: the stored body comes back fully restored, never refused. Rebuild what would
+/// refuse (REVIVE_RESTORE), revive through the one path, then heal to rejuvenate level.
+/mob/living/carbon/human/proc/reform_restore(reason, datum/source)
+	if(stat == DEAD)
+		var/revived = return_from_death(reason, source, REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL)
+		if(revived != TRUE)
+			stack_trace("reform of [key_name(src)] refused despite REVIVE_RESTORE: [revived]")
+	rejuvenate()
+
 /// The only way a dead mob becomes alive. Returns TRUE on success, or the refusal reason (a
 /// string) from can_return_from_death(). `reason` is logged; `source` is what did it (defib,
 /// spell, admin, reagent). `flags` are REVIVE_* (code/__defines/vital_state.dm).
 /mob/living/proc/return_from_death(reason, datum/source, flags = NONE)
-	// 1. Heal first when asked.
-	if(flags & REVIVE_HEAL)
+	// 1. Rebuild and heal first when asked.
+	if((flags & REVIVE_RESTORE) && stat == DEAD && !QDELETED(src))
+		restore_for_revival()
+	if(flags & (REVIVE_HEAL | REVIVE_RESTORE))
 		fully_heal()
 
 	// 2. Eligibility.

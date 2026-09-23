@@ -11,6 +11,10 @@
 #define REVIVE_KEEP_TIMEOFDEATH (1<<2)
 /// Land unconscious; Life() brings the patient round when vitals allow (defib, CPR).
 #define REVIVE_UNCONSCIOUS (1<<3)
+/// Rebuild whatever would refuse: missing vital organs (brain included), brain death and decay,
+/// husking and brain-stem damage, then heal. With REVIVE_IGNORE_WINDOW the revive cannot refuse
+/// a dead, undeleted mob. Used by vore reform, which must always succeed.
+#define REVIVE_RESTORE (1<<4)
 
 // --- Vitality bands (L.vital_band()) ---------------------------------------------------------
 // Ordered worst to best, so `vital_band() <= VITAL_BAND_CRITICAL` reads "critical or worse".

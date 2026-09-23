@@ -1201,25 +1201,7 @@
 					var/mob/living/body_backup = T.body_backup
 					if(ishuman(body_backup))
 						var/mob/living/carbon/human/H = body_backup
-						H.mend(TREAT_OXYGENATION, 1000)
-						H.mend(TREAT_ANTITOXIN, 25)
-						H.mend(TREAT_SYSTEM_RESTORE, 1000)
-						if(H.vitality() <= 0)
-							var/static/list/reform_treatments = list(TREAT_ANTITOXIN, TREAT_BURN_CARE, TREAT_WIRING_REPAIR, TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR, TREAT_GENETIC_REPAIR)
-							for(var/treat_tag in reform_treatments)
-								H.mend(treat_tag, 25)
-							//Heal up to 'barely in crit', starting with toxins and moving up to the harder to heal types.
-							//Once one mechanism has nothing left to fix, move on to the next; stop as soon as the body is viable again.
-							for(var/treat_tag in reform_treatments)
-								var/guard = 20
-								while(H.vitality() <= 0 && guard-- > 0)
-									if(!H.mend(treat_tag, 10))
-										break
-								if(H.vitality() > 0)
-									break
-						// Revive if the body can come back (same eligibility as a defib). Life() brings them round.
-						if(H.stat == DEAD)
-							H.return_from_death("reformed in [host]", host, REVIVE_UNCONSCIOUS)
+						H.reform_restore("reformed in [host]", host)
 					else
 						body_backup.revive()
 					body_backup.forceMove(T.loc)
@@ -1281,16 +1263,7 @@
 						mmi_host.release_mind(body_backup, "reformed by [key_name(user)]")
 						//You've hopefully already named yourself, so... not implementing that bit.
 						var/mob/living/carbon/human/H = body_backup
-						body_backup.mend(TREAT_TISSUE_REPAIR, 6)
-						body_backup.mend(TREAT_PLATING_REPAIR, 6)
-						body_backup.mend(TREAT_BURN_CARE, 6)
-						body_backup.mend(TREAT_WIRING_REPAIR, 6)
-						body_backup.mend(TREAT_OXYGENATION, 1000)
-						H.mend(TREAT_ANTITOXIN, 1000)
-						body_backup.mend(TREAT_GENETIC_REPAIR, 6)
-						// Revive if the body can come back (same eligibility as a defib). Life() brings them round.
-						if(H.stat == DEAD)
-							H.return_from_death("reformed around [MMI] in [host]", host, REVIVE_UNCONSCIOUS)
+						H.reform_restore("reformed around [MMI] in [host]", host)
 					MMI.body_backup = null
 			return TRUE
 		if("Health")
