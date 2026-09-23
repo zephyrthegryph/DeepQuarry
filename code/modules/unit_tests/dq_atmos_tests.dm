@@ -6415,6 +6415,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	var/obj/machinery/atmospherics/binary/volume_pump/V = new(T)
 	TEST_ASSERT_NOTNULL(V, "volume_pump construct failed")
+	V.use_power = USE_POWER_IDLE
+	V.stat &= ~(NOPOWER | BROKEN)
+	V.rust_register_pipe_topology() // allocates ports, binds air1/air2, registers the device edge
 	TEST_ASSERT_NOTNULL(V.air1, "volume_pump air1 null")
 	TEST_ASSERT_NOTNULL(V.air2, "volume_pump air2 null")
 
@@ -6424,15 +6427,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// volume_pump should still transfer.
 	V.air2.adjust_gas(/datum/gas/nitrogen, 100)
 	V.air2.set_temperature(T20C)
-
-	V.use_power = USE_POWER_IDLE
-	V.stat &= ~(NOPOWER | BROKEN)
+	V.update_rust_device()
 
 	var/air1_initial = V.air1.total_moles()
 	var/air2_initial = V.air2.total_moles()
 
+	// M2 (simulation.md §5): the flow law is a Rust device edge; SSair
+	// drives it, not V.process() (deleted).
 	for(var/i in 1 to 5)
-		V.process()
+		SSair.rust_step_pipe_devices()
 
 	var/air1_after = V.air1.total_moles()
 	var/air2_after = V.air2.total_moles()

@@ -51,8 +51,10 @@ pub enum DeviceParams {
 	/// Moves gas towards a target pressure on `b`, limited by power:
 	/// isothermal work `n R T ln(P2/P1)`.
 	Pump { target_kpa: f32, power_w: f32 },
-	/// A fixed volume per second, uncapped by power.
-	VolumePump { rate_l_s: f32 },
+	/// A fixed volume per second, uncapped by power. Refuses to add more
+	/// while `b` is at or above `max_output_kpa` (0: no cap — an
+	/// "overclocked" volume pump ignores its output pressure limit).
+	VolumePump { rate_l_s: f32, max_output_kpa: f32 },
 	/// A one-way regulator: flows from `a` to `b` while the regulated side
 	/// has not met `target_kpa`, up to `max_rate_l_s`.
 	PassiveGate {
@@ -121,7 +123,10 @@ impl DeviceParams {
 				target_kpa: p[0],
 				power_w: p[1],
 			},
-			2 => Self::VolumePump { rate_l_s: p[0] },
+			2 => Self::VolumePump {
+				rate_l_s: p[0],
+				max_output_kpa: p[1],
+			},
 			3 => Self::PassiveGate {
 				mode: Regulate::decode(p[0]),
 				target_kpa: p[1],
@@ -204,7 +209,16 @@ pub fn step(
 	match *params {
 		DeviceParams::None => StepReport::default(),
 		DeviceParams::Pump { target_kpa, power_w } => step_pump(a, vol_a, b, vol_b, dt, target_kpa, power_w),
-		DeviceParams::VolumePump { rate_l_s } => {
+		DeviceParams::VolumePump {
+			rate_l_s,
+			max_output_kpa,
+		} => {
+			if max_output_kpa > 0.0 && pressure(b, vol_b) >= max_output_kpa {
+				return StepReport {
+					target_reached: true,
+					..Default::default()
+				};
+			}
 			let moles = moles_for_volume(a, vol_a, f64::from(rate_l_s) * f64::from(dt));
 			let moved = transfer(a, b, moles);
 			StepReport {
@@ -608,10 +622,35 @@ mod tests {
 		let mut a = atmosphere(1000.0, 293.0);
 		let mut b = PipeGas::default();
 		let before_a = total(&a);
-		let r = step(&DeviceParams::VolumePump { rate_l_s: 200.0 }, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		let r = step(&DeviceParams::VolumePump { rate_l_s: 200.0, max_output_kpa: 0.0 }, &mut a, 1000.0, &mut b, 1000.0, 1.0);
 		assert!(r.moles > 0.0);
 		assert!((total(&a) - (before_a - r.moles)).abs() < 1e-9);
 		assert!((total(&b) - r.moles).abs() < 1e-9);
+	}
+
+	#[test]
+	fn volume_pump_refuses_above_max_output_pressure() {
+		let mut a = atmosphere(1000.0, 293.0);
+		let mut b = atmosphere(100_000.0, 293.0); // already far above any sane cap
+		let params = DeviceParams::VolumePump {
+			rate_l_s: 200.0,
+			max_output_kpa: 101.325,
+		};
+		let r = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		assert_eq!(r.moles, 0.0);
+		assert!(r.target_reached);
+	}
+
+	#[test]
+	fn volume_pump_uncapped_ignores_output_pressure() {
+		let mut a = atmosphere(1000.0, 293.0);
+		let mut b = atmosphere(100_000.0, 293.0);
+		let params = DeviceParams::VolumePump {
+			rate_l_s: 200.0,
+			max_output_kpa: 0.0, // overclocked: no cap
+		};
+		let r = step(&params, &mut a, 1000.0, &mut b, 1000.0, 1.0);
+		assert!(r.moles > 0.0);
 	}
 
 	#[test]
@@ -779,7 +818,7 @@ mod tests {
 		);
 		assert_eq!(
 			DeviceParams::decode(2, [200.0, 0.0, 0.0, 0.0]),
-			DeviceParams::VolumePump { rate_l_s: 200.0 }
+			DeviceParams::VolumePump { rate_l_s: 200.0, max_output_kpa: 0.0 }
 		);
 		assert_eq!(
 			DeviceParams::decode(3, [0.0, 50.0, 1000.0, 0.0]),

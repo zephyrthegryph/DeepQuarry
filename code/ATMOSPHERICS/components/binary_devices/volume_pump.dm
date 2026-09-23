@@ -44,10 +44,62 @@ Thus, the two variables affect pump operation are set in New():
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	if(frequency)
 		set_frequency(frequency)
+	// M2: the flow law is a Rust device edge, stepped from SSair every gas
+	// tick; this has no process() at all any more.
+	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/binary/volume_pump/Destroy()
 	unregister_radio(src, frequency)
 	. = ..()
+
+// M2 (simulation.md §5): the flow law lives on the Rust device edge
+// (device::DeviceParams::VolumePump). rust_bind_pipe_port fires once per
+// port, after that port's region exists in Rust, so re-publishing once the
+// second port is bound is the earliest point both are live.
+/obj/machinery/atmospherics/binary/volume_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 2)
+		update_rust_device()
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/update_rust_device()
+	if((stat & (NOPOWER|BROKEN)) || !use_power)
+		rust_unregister_device()
+		return
+	var/effective_rate = transfer_rate * material_pump_power(power_rating) / max(power_rating, 1)
+	var/max_output = overclocked ? 0 : VOLUME_PUMP_MAX_OUTPUT_PRESSURE
+	rust_set_device(1, 2, RUST_DEVICE_LAW_VOLUME_PUMP, effective_rate, max_output)
+
+/obj/machinery/atmospherics/binary/volume_pump/rust_device_stepped(moles, power_w, target_reached)
+	last_flow_rate = 0
+	last_power_draw = 0
+	if(moles <= 0)
+		return
+
+	// Overclocked pumps leak a share of what they just moved into air2 back
+	// into the local turf (the Rust edge already merged it into air2).
+	if(overclocked && isturf(loc))
+		var/turf/open/T = loc
+		if(istype(T) && T.air)
+			var/air2_total = air2.total_moles()
+			if(air2_total > 0)
+				var/leak_fraction = min(VOLUME_PUMP_LEAK_AMOUNT * moles / air2_total, 1)
+				var/datum/gas_mixture/leaked = air2.remove_ratio(leak_fraction)
+				T.air.merge(leaked)
+				qdel(leaked)
+				T.update_visuals()
+				T.air_update_turf(FALSE, FALSE)
+
+	last_flow_rate = moles
+	// Matches the pre-M2 formula: power scales with the configured transfer
+	// ratio (rate / volume, times the material power ratio), not with the
+	// moles actually available this tick — a pump "tries" at a fixed power
+	// draw regardless of how starved its input is.
+	var/transfer_ratio = (transfer_rate / air1.return_volume()) * (material_pump_power(power_rating) / max(power_rating, 1))
+	var/power_draw = transfer_ratio * power_rating * 0.8 / material_pump_efficiency()
+	if(power_draw >= 0)
+		last_power_draw = power_draw
+		use_power(power_draw)
+		record_material_pumping(power_draw, air2, moles * (overclocked ? 1 - VOLUME_PUMP_LEAK_AMOUNT : 1))
 
 /obj/machinery/atmospherics/binary/volume_pump/on
 	icon_state = "map_on"
@@ -97,62 +149,9 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/volume_pump/hide(i)
 	update_underlays()
 
-/obj/machinery/atmospherics/binary/volume_pump/process()
-	last_power_draw = 0
-	last_flow_rate = 0
-	var/power_draw = 0
-
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return
-
-	var/input_starting_moles = air1.total_moles()
-	var/output_starting_pressure = air2.return_pressure()
-
-	// The pump will refuse to do anything if the pressure is too high or low, unless it is overclocked.
-	if((input_starting_moles < MINIMUM_MOLES_TO_PUMP  || output_starting_pressure > VOLUME_PUMP_MAX_OUTPUT_PRESSURE) && !overclocked)
-		return
-
-	var/transfer_ratio = transfer_rate / air1.return_volume() * material_pump_power(power_rating) / max(power_rating, 1)
-	if(!transfer_ratio)
-		return
-
-	var/datum/gas_mixture/removed = air1.remove_ratio(transfer_ratio)
-	var/transfer_moles = removed.total_moles()
-	last_flow_rate = (transfer_moles/input_starting_moles)*air1.return_volume()
-
-	// Some gases will leak if overclocked. Trade off for no pump limits.
-	if(overclocked)
-		var/datum/gas_mixture/environment = loc.return_air()
-		var/datum/gas_mixture/leaked = removed.remove_ratio(VOLUME_PUMP_LEAK_AMOUNT)
-		environment.merge(leaked)
-		qdel(leaked)
-		// leaked gas just mutated the turf's air mix; enroll the turf
-		// so SSair sees the change and the overlay updates.
-		if(isturf(loc))
-			var/turf/open/T = loc
-			if(istype(T))
-				T.update_visuals()
-				T.air_update_turf(FALSE, FALSE)
-
-	air2.merge(removed)
-	qdel(removed)
-
-	// This part is necessary, as the function pump_gas has limits that reduces the volume pump to just a glorified pressure pump.
-	// The gas pump does not care about trying to meet a specific pressure. It will keep moving gas till a pressure limit is reached.
-	power_draw = (transfer_moles/input_starting_moles)*power_rating * 0.8 / material_pump_efficiency()
-	record_material_pumping(power_draw, air2, transfer_moles * (overclocked ? 1 - VOLUME_PUMP_LEAK_AMOUNT : 1))
-
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
-
-		if(network1)
-			network1.mark_dirty()
-
-		if(network2)
-			network2.mark_dirty()
-
-	return TRUE
+// process() is deleted (M2, simulation.md §5): the flow law above is a Rust
+// device edge, stepped every gas tick from SSair.fire() regardless of DM's
+// process() scheduling.
 
 //Radio remote control
 
@@ -219,6 +218,8 @@ Thus, the two variables affect pump operation are set in New():
 	if(signal.data["set_volume_rate"])
 		transfer_rate = between(0, text2num(signal.data["set_volume_rate"]), air1.return_volume())
 
+	update_rust_device()
+
 	if(signal.data["status"])
 		broadcast_status()
 		return //do not update_icon
@@ -256,6 +257,8 @@ Thus, the two variables affect pump operation are set in New():
 					src.transfer_rate = between(0, new_rate, max_transfer_rate)
 			. = TRUE
 
+	if(.)
+		update_rust_device()
 	add_fingerprint(ui.user)
 	update_icon()
 
@@ -263,6 +266,7 @@ Thus, the two variables affect pump operation are set in New():
 	var/old_stat = stat
 	..()
 	if(old_stat != stat)
+		update_rust_device()
 		update_icon()
 
 /obj/machinery/atmospherics/binary/volume_pump/examine(mob/user)
@@ -298,6 +302,7 @@ Thus, the two variables affect pump operation are set in New():
 	else
 		overclocked = FALSE
 		to_chat(user, span_notice("The pump quiets down as you turn its limiters back on."))
+	update_rust_device()
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -309,6 +314,7 @@ Thus, the two variables affect pump operation are set in New():
 
 	to_chat(user, span_notice("You set the [name] to max output"))
 	transfer_rate = max_transfer_rate
+	update_rust_device()
 	add_fingerprint(user)
 	return CLICK_ACTION_SUCCESS
 
@@ -320,6 +326,7 @@ Thus, the two variables affect pump operation are set in New():
 		return CLICK_ACTION_BLOCKING
 
 	update_use_power(!use_power)
+	update_rust_device()
 	update_icon()
 	add_fingerprint(user)
 	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
