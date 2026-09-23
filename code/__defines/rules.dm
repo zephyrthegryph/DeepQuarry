@@ -41,11 +41,12 @@
 // ---- DM-owned keys (reactor.md §4). Kinds past S1's own (1-3). ----
 /// An atom's integrity changed. Id: the atom's reactor id.
 #define RULE_KEY_INTEGRITY 16
-/// A DM-mirrored heat node without a probe cell changed. Id: the node.
-#define RULE_KEY_NODE 17
 
 /// Seconds without fresh exposure before an exposed heat node relaxes to ambient.
 #define RULE_HEAT_EXPOSURE_HOLD (3 SECONDS)
+
+/// hold_for bookkeeping: the rule fired during the current spell. Rate model ids can be 0.
+#define RULE_HOLD_SPENT "spent"
 
 /// The rules that apply to `path`: a shared list, or null.
 #define RULES_FOR_TYPE(path) dq_rules_for_type(path)

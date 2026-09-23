@@ -17,9 +17,9 @@
 // object's heat node is DM-mirrored, and borrows a probe cell only while it is
 // away from ambient (dq_rx_node_write promotes it, dq_rx_node_idle returns the
 // cell). While it holds a cell its watches are real REACT_WHEN watches in
-// Rust; at rest, or when every cell is taken, the same watches fall back to a
-// DM-owned key (RULE_KEY_NODE) published on each write, and the rule re-checks
-// its predicate on the wake. When items get heat nodes in the heat domain,
+// Rust. At rest they exist only here, so a resting object costs SSreactor
+// nothing (and round-trips materialize/dematerialize); if every cell is taken,
+// a write wakes the watchers directly and the rule re-checks its predicate. When items get heat nodes in the heat domain,
 // dq_rx_node_* become thin wrappers over that domain's handles and the pool
 // and the fallback go away.
 
@@ -83,14 +83,14 @@
 /proc/dq_rx_on_change(datum/D, node, ch)
 	return dq_rx_nodes().watch(D, node, ch, RULE_TRIGGER_DIFFERENCE, null)
 
-/proc/dq_rx_node_new(list/initial)
-	return dq_rx_nodes().create(initial)
+/proc/dq_rx_node_new(list/start)
+	return dq_rx_nodes().create(start)
 
 /proc/dq_rx_node_write(node, ch, value)
-	dq_rx_nodes().write(node, ch, value)
+	dq_rx_nodes().set_value(node, ch, value)
 
 /proc/dq_rx_node_read(node, ch)
-	return dq_rx_nodes().read(node, ch)
+	return dq_rx_nodes().value_of(node, ch)
 
 /// The node is back at rest: give its probe cell back.
 /proc/dq_rx_node_idle(node)
@@ -134,16 +134,16 @@
 	for(var/cell in REACT_PROBE_CELLS - 1 to DQ_RX_FIRST_CELL step -1)
 		free_cells += cell
 
-/datum/dq_rx_nodes/proc/create(list/initial)
+/datum/dq_rx_nodes/proc/create(list/start)
 	var/node = next_node++
-	values["[node]"] = initial ? initial.Copy() : list()
+	values["[node]"] = start ? start.Copy() : list()
 	return node
 
-/datum/dq_rx_nodes/proc/read(node, ch)
+/datum/dq_rx_nodes/proc/value_of(node, ch)
 	var/list/node_values = values["[node]"]
 	return node_values ? node_values["[ch]"] : null
 
-/datum/dq_rx_nodes/proc/write(node, ch, value)
+/datum/dq_rx_nodes/proc/set_value(node, ch, value)
 	var/list/node_values = values["[node]"]
 	if(!node_values || node_values["[ch]"] == value)
 		return
@@ -153,7 +153,7 @@
 		promote(node)
 		return
 	if(isnull(cell))
-		REACT_PUBLISH(RULE_KEY_NODE, node, 1)
+		wake_all(node)
 	else
 		set_cell(cell, node_values)
 
@@ -202,7 +202,7 @@
 /datum/dq_rx_nodes/proc/relink(token)
 	var/list/entry = watches[token]
 	var/datum/D = entry[1]
-	if(entry[6])
+	if(!isnull(entry[6]))
 		REACT_CANCEL(D, entry[6])
 		entry[6] = null
 	if(QDELETED(D))
@@ -210,8 +210,7 @@
 	var/node = entry[2]
 	var/cell = cells["[node]"]
 	if(isnull(cell))
-		entry[6] = REACT_ON_KEY(D, RULE_KEY_NODE, node, 1)
-		return
+		return // at rest: DM-only, woken directly by write()
 	var/handle = REACT_HANDLE(REACT_DOMAIN_PROBE, cell)
 	var/ch = entry[3] == DQ_RX_CH_TEMPERATURE ? CH_PROBE_TEMPERATURE : entry[3]
 	var/list/params = entry[5]
@@ -223,11 +222,22 @@
 		else
 			entry[6] = REACT_ON(D, handle, CH_BIT(ch))
 
+/// No cell (every cell taken): wake the node's watchers directly.
+/datum/dq_rx_nodes/proc/wake_all(node)
+	var/list/tokens = node_watches["[node]"]
+	if(!tokens)
+		return
+	for(var/token in tokens.Copy())
+		var/list/entry = watches[token]
+		var/datum/D = entry ? entry[1] : null
+		if(D && !QDELETED(D))
+			D.rule_wake(DQ_RX_REASON_CONDITION, node)
+
 /datum/dq_rx_nodes/proc/unwatch(token)
 	var/list/entry = watches[token]
 	if(!entry)
 		return
-	if(entry[6])
+	if(!isnull(entry[6]))
 		REACT_CANCEL(entry[1], entry[6])
 	watches -= token
 	LAZYREMOVE(node_watches["[entry[2]]"], token)

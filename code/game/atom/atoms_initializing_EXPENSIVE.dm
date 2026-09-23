@@ -51,9 +51,6 @@
 		if(location)
 			/// Sends a signal that the new atom `src`, has been created at `loc`
 			SEND_SIGNAL(location, COMSIG_ATOM_AFTER_SUCCESSFUL_INITIALIZED_ON, A, arguments[1])
-		// L2-INTERIM: rules subscribe here until on_materialize() exists (code/datums/rules/binding.dm).
-		if(dq_rules_for_type(the_type))
-			dq_rules_on_materialize(A)
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables
 			created_atoms += A.get_all_contents()
 

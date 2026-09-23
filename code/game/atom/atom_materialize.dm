@@ -57,13 +57,15 @@
 /atom/proc/on_materialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	return
+	// Rules (code/datums/rules/): subscribe the type's rules, if it has any.
+	if(dq_rules_for_type(type))
+		dq_rules_on_materialize(src)
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	return
+	dq_rules_on_dematerialize(src)
 
 /// Creates `path` at `loc` and runs its Initialize() without materializing it.
 /// Extra arguments go to Initialize(). The result is a sandboxed object: it has

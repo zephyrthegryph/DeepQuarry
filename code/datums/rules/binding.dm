@@ -8,11 +8,8 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /proc/dq_rule_binding_of(datum/thing)
 	return GLOB.dq_rule_bindings[thing]
 
-/// ---- Materialize hook ----
-/// Subscribes `A`'s rules. Called once A exists as a real object.
-/// L2-INTERIM: until L2's on_materialize() hook lands, SSatoms.InitAtom calls
-/// this after a successful Initialize() (DQ_RULES_AFTER_INITIALIZE). Move the
-/// call into on_materialize() then, and delete the macro.
+/// ---- Lifecycle (L2) ----
+/// Subscribes `A`'s rules. /atom/on_materialize() calls it.
 /proc/dq_rules_on_materialize(atom/A)
 	var/list/rules = dq_rules_for_type(A.type)
 	if(!rules || GLOB.dq_rule_bindings[A])
@@ -22,6 +19,12 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 		qdel(binding)
 		return
 	return binding
+
+/// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
+/proc/dq_rules_on_dematerialize(atom/A)
+	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[A]
+	if(binding)
+		qdel(binding)
 
 /// Evaluate `thing`'s rules now instead of at the next dispatch. For code about
 /// to destroy the object (take_damage before atom_destruction), so every rule
@@ -33,7 +36,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
 	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[thing]
-	if(binding && (key_kind in binding.key_kinds))
+	if(binding?.key_id && (key_kind in binding.key_kinds))
 		dq_rx_publish(key_kind, binding.key_id, 1)
 
 /// The node handle for (thing, property), created by `provider` when given.
@@ -41,9 +44,11 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[thing]
 	if(!binding)
 		return null
-	. = binding.nodes?[property]
+	. = binding.nodes ? binding.nodes[property] : null
 	if(isnull(.) && provider)
-		. = dq_rx_node_new(list("[provider.channel]" = provider.initial_value(thing)))
+		var/list/start = list()
+		start["[provider.channel]"] = provider.initial_value(thing)
+		. = dq_rx_node_new(start)
 		LAZYSET(binding.nodes, property, .)
 
 /// fire_act() exposure: the object's heat node takes the exposure temperature,
@@ -53,12 +58,12 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[O]
 	if(!binding || isnull(temperature))
 		return
-	var/handle = binding.nodes?[PROP_TEMPERATURE]
+	var/handle = binding.nodes ? binding.nodes[PROP_TEMPERATURE] : null
 	if(isnull(handle))
 		return
 	dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, temperature)
 	binding.exposed_at = dq_rx_now()
-	if(!binding.cool_token)
+	if(isnull(binding.cool_token))
 		binding.cool_token = dq_rx_at(binding, binding.exposed_at + RULE_HEAT_EXPOSURE_HOLD)
 
 /datum/rule_binding
@@ -71,7 +76,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/list/fired
 	/// Per rule: its subscription tokens, or null once done.
 	var/list/tokens
-	/// Per rule: hold_for rate model and its watch token.
+	/// Per rule: hold_for rate model (RULE_HOLD_SPENT once fired this spell) and its watch token.
 	var/list/hold_models
 	var/list/hold_tokens
 	/// property -> node handle (channel-backed properties without a domain node yet).
@@ -96,7 +101,6 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	hold_tokens = new /list(count)
 	GLOB.dq_rule_bindings[owner] = src
 	RegisterSignal(owner, COMSIG_QDELETING, PROC_REF(owner_deleted))
-	key_id = dq_rx_id(src)
 	for(var/i in 1 to count)
 		tokens[i] = subscribe(rules[i])
 		fired[i] = 0
@@ -155,6 +159,8 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 			if(RULE_TRIGGER_KEY)
 				if(trigger.is_threshold() && isnull(trigger.level_for(owner)))
 					return cancel_all(out)
+				if(!key_id)
+					key_id = dq_rx_id(src)
 				out += dq_rx_on_key(src, trigger.key_kind, key_id, 1)
 				LAZYOR(key_kinds, trigger.key_kind)
 	return out
@@ -170,7 +176,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	if(rule_tokens)
 		cancel_all(rule_tokens)
 		tokens[i] = null
-	if(hold_models[i])
+	if(!isnull(hold_models[i]) && hold_models[i] != RULE_HOLD_SPENT)
 		dq_rx_rate_remove(hold_models[i])
 		hold_models[i] = null
 		hold_tokens[i] = null
@@ -179,7 +185,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	return rule.predicate.check(null, owner, null) ? TRUE : FALSE
 
 /datum/rule_binding/rule_wake(reason, source)
-	if(cool_token && (reason & DQ_RX_REASON_TIMER))
+	if(!isnull(cool_token) && (reason & DQ_RX_REASON_TIMER))
 		cool_down()
 	evaluate()
 
@@ -190,7 +196,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 		cool_token = dq_rx_at(src, exposed_at + RULE_HEAT_EXPOSURE_HOLD)
 		return
 	cool_token = null
-	var/handle = nodes?[PROP_TEMPERATURE]
+	var/handle = nodes ? nodes[PROP_TEMPERATURE] : null
 	if(!isnull(handle))
 		dq_rx_node_write(handle, DQ_RX_CH_TEMPERATURE, dq_ambient_temperature(owner))
 		dq_rx_node_idle(handle)
@@ -218,26 +224,32 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 /// reaches the hold time. It pauses while the condition doesn't hold.
 /datum/rule_binding/proc/update_hold(i, datum/rule/rule, now)
 	var/model = hold_models[i]
-	if(model == 0)
+	if(model == RULE_HOLD_SPENT)
 		// Fired during this spell; re-arm once the condition stops holding.
 		if(!now)
 			hold_models[i] = null
 			rule.exit(owner)
 		return
-	if(!model)
+	if(isnull(model))
 		if(!now)
 			return
 		model = dq_rx_rate_linear(0, 1, 0, null)
 		hold_models[i] = model
 		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
 		return
-	if(now && dq_rx_rate_read(model) >= rule.hold_for / 10)
+	// Within a tick of the hold time counts: the model reads at step ticks.
+	if(now && dq_rx_rate_read(model) >= (rule.hold_for - world.tick_lag) / 10)
 		dq_rx_rate_remove(model)
-		hold_models[i] = 0
+		hold_models[i] = RULE_HOLD_SPENT
 		hold_tokens[i] = null
 		fire(i)
 		return
 	dq_rx_rate_set_rate(model, now ? 1 : 0)
+	if(now)
+		// Re-arm the crossing watch from the resumed rate.
+		if(!isnull(hold_tokens[i]))
+			dq_rx_cancel(src, hold_tokens[i])
+		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
 
 /datum/rule_binding/proc/fire(i)
 	var/datum/rule/rule = rules[i]

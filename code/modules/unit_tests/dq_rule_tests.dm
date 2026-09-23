@@ -162,7 +162,7 @@
 	var/obj/item/paper/paper = allocate(/obj/item/paper)
 	var/datum/rule_binding/binding = dq_rule_binding_of(paper)
 	TEST_ASSERT(binding, "paper subscribes when it materializes")
-	TEST_ASSERT(!isnull(binding.nodes?[PROP_TEMPERATURE]), "its ignition watch made a heat node")
+	TEST_ASSERT(!isnull(binding.nodes[PROP_TEMPERATURE]), "its ignition watch made a heat node")
 	TEST_ASSERT_EQUAL(PROPERTY(paper, PROP_TEMPERATURE), T20C, "the node starts at room temperature")
 	TEST_ASSERT(!dq_rx_node_in_rust(binding.nodes[PROP_TEMPERATURE]), "at rest it holds no probe cell")
 	qdel(paper)
@@ -174,7 +174,8 @@
 	var/obj/item/reagent_containers/glass/cooler_bottle/bare = allocate(/obj/item/reagent_containers/glass/cooler_bottle)
 	var/datum/rule_binding/bare_binding = dq_rule_binding_of(bare)
 	TEST_ASSERT(bare_binding, "a cooler bottle subscribes")
-	qdel(bare_binding)
+	bare.dematerialize()
+	TEST_ASSERT(QDELETED(bare_binding), "dematerializing drops the subscriptions")
 	bare.matter = null
 	TEST_ASSERT_NULL(dq_rules_on_materialize(bare), "without a melting point there is nothing to watch")
 
