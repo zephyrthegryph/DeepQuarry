@@ -978,7 +978,11 @@ export const BenchBaselineTarget = new Juke.Target({
     } catch {
       // A failing scenario still writes a run; the check below decides.
     }
-    const baselineRuns = listRuns(path.join(worktree, benchStoreDir() ? path.relative(worktree, path.join(benchStoreDir() as string, 'runs')) : BENCH_RUNS_DIR));
+    // benchRunsDir() is an absolute path when DQ_BENCH_STORE is set (both
+    // this process and the worktree child resolve it the same way, since the
+    // env var is inherited below), and relative to the worktree otherwise.
+    const store = benchStoreDir();
+    const baselineRuns = listRuns(store ? path.join(store, 'runs') : path.join(worktree, BENCH_RUNS_DIR));
     if (!baselineRuns.length) {
       Juke.logger.error('The baseline bench produced no stored run (compile, boot or scenario failure). See the output above.');
       throw new Juke.ExitCode(1);
