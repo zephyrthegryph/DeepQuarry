@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Storage items keep their contents on a containment slot: capacity and count come from the slot instead of re-adding everything inside on each insert."
+  - code_imp: "Storage screen objects are made when someone opens a bag and deleted when the last viewer closes it, instead of 2-4 per storage at roundstart."

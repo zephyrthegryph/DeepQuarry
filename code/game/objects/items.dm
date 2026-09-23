@@ -351,7 +351,7 @@
 	var/old_loc = src.loc
 	if (istype(src.loc, /obj/item/storage))
 		var/obj/item/storage/S = src.loc
-		if(!S.remove_from_storage(src))
+		if(!S.remove_from_storage(src, null, user))
 			return
 
 	src.pickup(user)
@@ -397,11 +397,7 @@
 					S.gather_all(src.loc, user)
 
 			else
-				var/refusal = S.insert_refusal(src, user)
-				if(refusal)
-					S.refuse_insert(src, user, refusal)
-				else
-					S.handle_item_insertion(src)
+				S.try_insert(src, user)
 	return
 
 /obj/item/proc/talk_into(mob/M as mob, text)

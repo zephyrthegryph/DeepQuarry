@@ -125,7 +125,6 @@ code/game/objects/items/weapons/material/ashtray.dm 2
 code/game/objects/items/weapons/material/material_armor.dm 1
 code/game/objects/items/weapons/melee/energy.dm 1
 code/game/objects/items/weapons/melee/shock_maul.dm 1
-code/game/objects/items/weapons/storage/bags.dm 2
 code/game/objects/items/weapons/stunbaton.dm 2
 code/game/objects/items/weapons/tape.dm 1
 code/game/objects/items/weapons/tools/weldingtool.dm 1
@@ -311,6 +310,5 @@ code/modules/xenoarcheaology/sampling.dm 1
 code/modules/xenoarcheaology/tools/ano_device_battery.dm 1
 code/modules/xenoarcheaology/tools/artifact_harvester.dm 1
 code/modules/xenoarcheaology/tools/suspension_generator.dm 3
-code/modules/xenoarcheaology/tools/tools_pickaxe.dm 2
 code/modules/xenobio/items/extracts.dm 1
 code/modules/xenobio/items/weapons.dm 2

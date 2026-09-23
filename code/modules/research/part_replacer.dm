@@ -58,8 +58,9 @@
 	reskin_ran = TRUE
 	to_chat(M, "[src] is now '[pick]'.")
 
-/obj/item/storage/part_replacer/drop_contents() // hacky-feeling tier-based drop system
-	hide_from(usr)
+/obj/item/storage/part_replacer/drop_contents(mob/user) // hacky-feeling tier-based drop system
+	if(user)
+		hide_from(user)
 	var/turf/T = get_turf(src)
 	var/lowest_rating = INFINITY // We want the lowest-part tier rating in the RPED so we only drop the lowest-tier parts.
 	/*
@@ -74,7 +75,7 @@
 	for(var/obj/item/B in contents)
 		if(B.rped_rating() > lowest_rating)
 			continue
-		remove_from_storage(B, T)
+		remove_from_storage(B, T, user)
 
 /obj/item/storage/part_replacer/adv
 	name = "advanced rapid part exchange device"
