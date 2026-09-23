@@ -91,6 +91,7 @@
 	TEST_ASSERT_EQUAL(limit, window.maximal_heat, "a window's heat limit is its maximal_heat")
 	dq_rule_test_write(window, PROP_TEMPERATURE, limit + 50)
 	dq_rx_flush()
+	dq_rx_flush()
 	var/datum/component/overheating/hot = window.GetComponent(/datum/component/overheating)
 	TEST_ASSERT(hot, "above it the window overheats")
 	var/before = window.get_integrity()

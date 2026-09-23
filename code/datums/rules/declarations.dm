@@ -173,6 +173,10 @@
 	name = "fuel tank explodes"
 	applies_to = list(/obj/structure/reagent_dispensers/fueltank)
 	effect_proc = /obj/structure/reagent_dispensers/fueltank/proc/rule_explode
+	// explode()'s explosion() has a real blast radius reaching neighbouring
+	// tiles, which can damage whatever a later generated case places on the
+	// shared test floor.
+	skip_generated_test = TRUE
 
 /datum/rule/heat_behaviour/fueltank_explodes/kelvin()
 	return T0C + 500
@@ -182,6 +186,7 @@
 	applies_to = list(/obj/structure/reagent_dispensers/fueltank)
 	effect_proc = /obj/structure/reagent_dispensers/fueltank/proc/rule_modded_explode
 	once = FALSE
+	skip_generated_test = TRUE
 
 /datum/rule/heat_behaviour/light_breaks
 	name = "light breaks"
