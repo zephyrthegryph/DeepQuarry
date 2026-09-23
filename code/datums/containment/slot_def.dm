@@ -81,3 +81,13 @@
 /// Why `thing` can't leave this slot on `holder`, or null. Default: it can.
 /datum/slot_def/proc/removal_refusal(atom/holder, atom/movable/thing, mob/actor)
 	return null
+
+/// Capacity used by latent contents that have no atom (stock counts, C9).
+/datum/slot_def/proc/latent_used(atom/holder)
+	return 0
+
+/// Applies the drop policy to latent contents when the holder is destroyed:
+/// materialize them at `drop` or let them go. The ledger then applies the
+/// policy to the real contents. Default: there are none.
+/datum/slot_def/proc/drop_latent(atom/holder, atom/drop)
+	return
