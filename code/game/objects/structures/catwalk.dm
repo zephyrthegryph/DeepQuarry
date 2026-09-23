@@ -1,5 +1,6 @@
 /obj/structure/catwalk
 	name = "catwalk"
+	debris_type = /obj/item/stack/rods
 	desc = "Cats really don't like these things."
 	icon = 'icons/turf/catwalks.dmi'
 	icon_state = "catwalk"
@@ -123,7 +124,6 @@
 /obj/structure/catwalk/atom_destruction(damage_flag)
 	visible_message(span_warning("\The [src] breaks down!"))
 	playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
-	new /obj/item/stack/rods(get_turf(src))
 	return ..()
 
 /obj/structure/catwalk/Crossed(atom/movable/AM)

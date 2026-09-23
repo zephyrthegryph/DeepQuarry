@@ -620,7 +620,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 				user.visible_message(span_notice("[user.name] has replaced the damaged APC cover with a new one."),\
 					"You replace the damaged APC cover with a new one.")
 				qdel(W)
-				stat &= ~BROKEN
+				atom_fix()
 				reboot()
 				if(opened == 2)
 					opened = 1
@@ -1135,21 +1135,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 /obj/machinery/power/apc/atom_break(damage_flag)
 	. = ..()
-	set_broken()
+	if(!.)
+		return
+	visible_message(span_warning("[src]'s screen flickers suddenly, then explodes in a rain of sparks and small debris!"))
+	operating = 0
+	update()
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	wake_for_power_dependency()
 	if(terminal)
 		terminal.master = null
 		terminal = null
-
-/obj/machinery/power/apc/proc/set_broken()
-	spawn(rand(2, 5))
-		visible_message(span_warning("[src]'s screen flickers suddenly, then explodes in a rain of sparks and small debris!"))
-		stat |= BROKEN
-		operating = 0
-		update_icon()
-		update()
 
 /obj/machinery/power/apc/proc/overload_lighting(chance = 100)
 	if(!operating || shorted || grid_check)
@@ -1235,7 +1231,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		for(var/obj/machinery/computer/comp in area)
 			comp.ex_act(3)
 	if(prob(5))
-		set_broken()
+		atom_break()
 
 /obj/machinery/power/apc/do_grid_check()
 	if(is_critical)

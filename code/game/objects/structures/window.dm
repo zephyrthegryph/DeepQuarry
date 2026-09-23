@@ -1,4 +1,5 @@
 /obj/structure/window
+	damage_wear = "cracks"
 	name = "window"
 	desc = "A window."
 	icon = 'icons/obj/structures_vr.dmi' // New icons
@@ -27,18 +28,6 @@
 /obj/structure/window/examine(mob/user)
 	. = ..()
 
-	if(get_integrity() >= max_integrity)
-		. += span_notice("It looks fully intact.")
-	else
-		var/perc = get_integrity() / max_integrity
-		if(perc > 0.75)
-			. += span_notice("It has a few cracks.")
-		else if(perc > 0.5)
-			. += span_warning("It looks slightly damaged.")
-		else if(perc > 0.25)
-			. += span_warning("It looks moderately damaged.")
-		else
-			. += span_danger("It looks heavily damaged.")
 	if(silicate)
 		if (silicate < 30)
 			. += span_notice("It has a thin layer of silicate.")

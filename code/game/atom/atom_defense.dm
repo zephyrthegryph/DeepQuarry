@@ -9,6 +9,10 @@
 	var/damage_deflection = 0
 
 	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
+	/// The damage flag of the last take_damage(), for the breakpoint rules' effects.
+	var/tmp/last_damage_flag
+	/// DAMAGE_BAND_*, kept by the damage-flavour rules (damage.md §6).
+	var/tmp/damage_band = DAMAGE_BAND_NONE
 
 /// The essential proc to call when an atom must receive damage of any kind.
 /atom/proc/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
@@ -50,18 +54,23 @@
 		var/obj/damaged_object = src
 		damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, 1 - atom_integrity / max_integrity)
 
-	var/integrity_failure_amount = integrity_failure * max_integrity
-
-	//BREAKING FIRST (types with a breaking-point rule break through the rule)
-	// Settling runs the rule here, in the same order as the check it replaces.
-	var/rule_breaks = RULES_REPLACE(type, RULE_REPLACES_INTEGRITY_BREAK)
-	if(rule_breaks)
+	// Breakpoints are rules (damage.md §6, declarations.dm). Settling runs every
+	// rule the change triggered now, in declaration order: break, then destroyed.
+	// Objects of those types that never materialized keep the legacy crossings.
+	last_damage_flag = damage_flag
+	var/datum/rule_binding/binding = dq_rules_binding_replacing(src, RULE_REPLACES_INTEGRITY_BREAK|RULE_REPLACES_INTEGRITY_DESTRUCTION)
+	var/rule_breaks = binding?.replaces(RULE_REPLACES_INTEGRITY_BREAK)
+	var/rule_destroys = binding?.replaces(RULE_REPLACES_INTEGRITY_DESTRUCTION)
+	if(binding)
 		dq_rules_settle(src)
-	else if(integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
+
+	var/integrity_failure_amount = integrity_failure * max_integrity
+	//BREAKING FIRST
+	if(!rule_breaks && integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
 		atom_break(damage_flag)
 
 	//DESTROYING SECOND
-	if(atom_integrity <= 0 && previous_atom_integrity > 0)
+	if(!rule_destroys && atom_integrity <= 0 && previous_atom_integrity > 0)
 		atom_destruction(damage_flag)
 
 ///the sound played when the atom is damaged.
@@ -108,7 +117,7 @@
 	var/previous_atom_integrity = atom_integrity
 	update_integrity(min(max_integrity, atom_integrity + repair_amount))
 	contract_report_station_repair(src, atom_integrity - previous_atom_integrity)
-	if(RULES_REPLACE(type, RULE_REPLACES_INTEGRITY_BREAK))
+	if(dq_rules_binding_replacing(src, RULE_REPLACES_INTEGRITY_BREAK))
 		dq_rules_settle(src)
 	else if(integrity_failure && previous_atom_integrity <= integrity_failure_amount && atom_integrity > integrity_failure_amount)
 		atom_fix()

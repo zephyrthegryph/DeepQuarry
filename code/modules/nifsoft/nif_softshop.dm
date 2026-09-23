@@ -47,7 +47,7 @@
 				entopic.hide()
 
 /obj/machinery/vending/nifsoft_shop/malfunction()
-	stat |= BROKEN
+	atom_break()
 	icon_state = "[initial(icon_state)]-broken"
 	entopic.hide()
 	return

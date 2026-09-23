@@ -334,11 +334,11 @@
 
 /obj/machinery/camera/atom_break(damage_flag)
 	. = ..()
-	stat |= BROKEN
+	if(!.)
+		return
 	wires.cut_all()
 
 	triggerCameraAlarm()
-	update_icon()
 	update_coverage()
 
 	//sparks
@@ -349,10 +349,10 @@
 
 /obj/machinery/camera/atom_fix()
 	. = ..()
+	if(!.)
+		return
 	wires.mend_all()
-	stat &= ~BROKEN
 	cancelCameraAlarm()
-	update_icon()
 	update_coverage()
 
 /obj/machinery/camera/proc/set_status(newstatus)
@@ -536,8 +536,7 @@
 /obj/machinery/camera/proc/reset_wires()
 	if(!wires)
 		return
-	if (stat & BROKEN) // Fix the camera
-		stat &= ~BROKEN
+	atom_fix() // Fix the camera
 	wires.repair()
 	update_icon()
 	update_coverage()

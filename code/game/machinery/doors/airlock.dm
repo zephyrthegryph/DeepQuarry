@@ -114,7 +114,7 @@
 				welded = FALSE
 				update_icon()
 				open(TRUE)
-				set_broken() //These aren't emags, these be CLAWS
+				atom_break() //These aren't emags, these be CLAWS
 		else if(density)
 			visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
 			if(do_after(user, 5 SECONDS, target = src))
@@ -913,9 +913,8 @@ About the new airlock wires panel:
 		unFreeze()
 		to_chat(user, span_notice("You finish chipping the ice off \the [src]"))
 
-/obj/machinery/door/airlock/set_broken()
+/obj/machinery/door/airlock/on_broken()
 	p_open = TRUE
-	stat |= BROKEN
 	if (secured_wires)
 		lock()
 	for (var/mob/O in viewers(src, null))

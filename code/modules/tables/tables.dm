@@ -91,17 +91,6 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		T.update_icon()
 	. = ..()
 
-/obj/structure/table/examine(mob/user)
-	. = ..()
-	if(get_integrity() < max_integrity)
-		switch(get_integrity() / max_integrity)
-			if(0.0 to 0.5)
-				. += span_warning("It looks severely damaged!")
-			if(0.25 to 0.5)
-				. += span_warning("It looks damaged!")
-			if(0.5 to 1.0)
-				. += span_notice("It has a few scrapes and dents.")
-
 /obj/structure/table/attackby(obj/item/W, mob/user)
 	if(!carpeted && material && istype(W, /obj/item/stack/tile/carpet))
 		var/obj/item/stack/tile/carpet/C = W
