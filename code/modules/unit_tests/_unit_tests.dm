@@ -164,6 +164,7 @@
 #include "dq_form_tests.dm"
 #include "dq_body_factor_tests.dm"
 #include "dq_harm_mitigation_tests.dm"
+#include "dq_involuntary_emote_tests.dm"
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
 #include "dq_damage_packet_tests.dm"
