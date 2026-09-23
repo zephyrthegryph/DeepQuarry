@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "802fa98ca5c85110"
+#define VERDIGRIS_ABI "031a51b94a27185d"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -364,6 +364,16 @@
 /// `subscriber, lane, reason, source, source_kind`.
 // verdigris/ffi/src/reactor.rs
 #define REACT_WAKE_STRIDE 5
+
+// verdigris/ffi/src/heat_regulator.rs
+#define REGULATOR_MODE_BOTH 2
+
+// verdigris/ffi/src/heat_regulator.rs
+#define REGULATOR_MODE_COOL 1
+
+/// `RegulatorMode` as DM sends it.
+// verdigris/ffi/src/heat_regulator.rs
+#define REGULATOR_MODE_HEAT 0
 
 /// Registration flag DM passes for a simulated turf.
 // verdigris/domains/gas/src/turf.rs
@@ -925,6 +935,34 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_mob_tick_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(elapsed)
+
+/// Just the cooling-side Carnot-bounded COP (`cold`/`hot` in K), for a
+/// caller that owns its own power-budget accounting (grid `draw_power()`)
+/// and only wants the COP formula itself off DM -- a smaller surface than
+/// [`heat_regulator_step`] for a machine that can't hand its whole budget
+/// to the generic step without also rewriting how it draws from the power
+/// grid.
+///
+/// # Errors
+/// A non-numeric argument.
+// /proc/heat_regulator_cooling_cop (verdigris/ffi/src/heat_regulator.rs)
+/proc/vg_heat_regulator_cooling_cop(cold, hot, carnot_fraction, max_cop)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_regulator_cooling_cop_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(cold, hot, carnot_fraction, max_cop)
+
+/// One regulator step. `other_capacity < 0` means an infinite (reservoir)
+/// other side (space, a planet's atmosphere, an unlimited external loop).
+/// Returns `list(work, moved, other)` (`RegulatorStep`'s three flows, W or
+/// J per `dt`, matching whichever unit the caller passed capacities in).
+///
+/// # Errors
+/// A non-numeric argument.
+// /proc/heat_regulator_step (verdigris/ffi/src/heat_regulator.rs)
+/proc/vg_heat_regulator_step(target, max_power, mode, carnot_fraction, max_cop, resistive_heating, deadband, controlled_capacity, controlled_temp, other_capacity, other_temp, dt)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_regulator_step_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(target, max_power, mode, carnot_fraction, max_cop, resistive_heating, deadband, controlled_capacity, controlled_temp, other_capacity, other_temp, dt)
 
 /// Drops the heat world (world boot, before `auxmos_configure_world`), so a
 /// rebooted world starts with no stale cells or bodies.
