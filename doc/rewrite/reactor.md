@@ -96,6 +96,23 @@ State that only DM changes (door modes, area alarms, turret targets) is publishe
 - Keys are numeric, built from registry IDs rather than strings, so publishing costs no string building. Today every `use_power_*` call builds an `area_power:[REF]` string.
 - A key with no subscribers is never stored.
 
+As built (S2): the key kinds are in `code/__defines/reactor.dm` (`REACT_KEY_APC`, `_POWERNET`,
+`_TURRET`, `_DISPOSAL`, `_METEORS`, `_MOB_CHUNK`, with `REACT_KEY_AREA_POWER` from S1). Ids are
+the owner's `REACT_ID`; a mob chunk's id is `MOB_CHUNK_NUMERIC_KEY`, a meteor's is 1.
+- Publishers use `REACT_PUBLISH_OWN(owner, kind, mask)`, which skips the bind call when the
+  owner has no registry id: a subscriber builds the key with `REACT_ID(owner)`, so no id means
+  no subscriber. `use_power_*` no longer builds an `area_power:[REF]` string.
+- A sleeping machine calls `sleep_until_keys(list(kind, id, mask, ...))`, which subscribes,
+  keeps the tokens in `react_sleep_tokens` and stops polling. `/obj/machinery/on_react()`
+  cancels them and restarts polling; `Destroy()` cancels them. Calm AI brains do the same
+  with `hibernate_calm()` / `wake_from_chunks()` on mob-chunk keys.
+- Wakes arrive at the next reactor step, not inside the publishing call. The old
+  revision capture (subscribe, then re-check) is not needed: a publication after the
+  subscription always wakes.
+- `SSreactor.mob_chunk_subscriptions` counts live mob-chunk subscriptions, so mob movement
+  skips the turf lookup and the bind call while nothing sleeps on a chunk (Q12).
+- The wake tests are in `code/modules/unit_tests/dq_reactor_s2_tests.dm`.
+
 ## 5. Rate models for DM-owned quantities
 
 Quantities that change at a known rate use the main-side rate models ([rust_core.md §7](rust_core.md#7-the-main-side-reactor)): item rot, consumable fuel, cooldown meters, digestion progress. DM reads the current value, and thresholds become timers at the exact crossing time.
@@ -197,17 +214,19 @@ As built (S3):
   plus one `REACT_AT` only for content that moves by itself (a countdown, the clock at the next
   station minute, a scrolling message).
 - **Looping sounds.** Each loop is a `REACT_AT`; a loop nobody can hear parks on the
-  `REACT_KEY_PLAYER_CHUNK` keys in hearing range with a 10 s recheck timer. SSsounds'
+  player chunk keys in hearing range with a 10 s recheck timer. SSsounds'
   `dormant_loops_by_chunk` is gone.
 - **Shutoff valves.** `wake_automatic_shutoff_valves(network)` publishes `REACT_KEY_PIPE_NETWORK`
   for that network (`REACT_ID_GLOBAL` for construction of unknown network); each valve subscribes
   to its two networks' keys and the global one and re-subscribes on `reassign_network()`,
   `rust_bind_pipe_port()` and `disconnect()`. SSair's bulk-blast batching is gone: publications merge.
-- **Player chunk keys.** `REACT_KEY_PLAYER_CHUNK` (id `MOB_CHUNK_NUMERIC_KEY`) is published by
-  `/mob/Moved()` for mobs with a client, only while `SSreactor.player_chunk_subscriptions` is
-  non-zero; subscribe with `SSreactor.subscribe_player_chunks()`. Looping sounds and auto-flicker
-  lights use it. S2's `REACT_KEY_MOB_CHUNK` covers any mob (AI, turrets); the two could merge
-  into one key with a player mask bit once both land.
+- **Mob chunk keys (merged with S2).** One key, `REACT_KEY_MOB_CHUNK` (id
+  `MOB_CHUNK_NUMERIC_KEY`), with two mask bits: `REACT_CHUNK_ANY_MOB` (sleeping turrets, calm AI
+  brains; subscribed through `sleep_on_keys()`, counted in `SSreactor.mob_chunk_subscriptions`) and
+  `REACT_CHUNK_PLAYER` (looping sounds, auto-flicker lights; `subscribe_player_chunks()`, counted
+  in `player_chunk_subscriptions`). `/mob/Moved()` makes one call, `SSreactor.publish_mob_move()`,
+  gated on the two counters: the new chunk gets the any-mob bit plus the player bit for a mob with
+  a client, and the old chunk gets the any-mob bit when the step crossed a chunk edge.
 - **Lint.** `tools/ci/check_deadline_polling.py` (CI: "Check Deadline Polling") flags `process()`
   bodies comparing `world.time` with a variable. The rest (S4's SSobj/SSprocessing users and S5's
   machines) are in `tools/ci/deadline_polling_allowlist.txt`; a stale entry fails the check.

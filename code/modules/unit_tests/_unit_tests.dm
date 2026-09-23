@@ -191,6 +191,7 @@
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_reactor_tests.dm"
+#include "dq_reactor_s2_tests.dm"
 #include "dq_reactor_poller_tests.dm"
 #include "dq_input_tests.dm"
 #include "dq_interaction_tests.dm"

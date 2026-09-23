@@ -151,7 +151,7 @@ Class Procs:
 		power_change()
 
 /obj/machinery/Destroy()
-	SSmachines.wake_reactive_machine(WEAKREF(src))
+	cancel_sleep_keys()
 	if(!speed_process)
 		STOP_MACHINE_PROCESSING(src)
 	else
@@ -501,3 +501,36 @@ Class Procs:
 	sparks.start()
 	qdel(sparks)
 	return ..()
+
+// --- Sleeping on DM-owned keys (reactor.md §4, S2) ----------------------------------------------
+
+/obj/machinery
+	/// While asleep on keys: the (token, kind) pairs from SSreactor.sleep_on_keys().
+	var/tmp/list/react_sleep_tokens
+
+/**
+ * Stops polling until any key in `keys` (a flat list of (kind, id, mask) triples) is published.
+ * Replaces any keys the machine already slept on. The wake arrives through on_react() at the
+ * next reactor step, so a publication after this call (even in the same tick) is never missed.
+ */
+/obj/machinery/proc/sleep_until_keys(list/keys)
+	cancel_sleep_keys()
+	if(QDELETED(src) || !length(keys))
+		return FALSE
+	react_sleep_tokens = SSreactor.sleep_on_keys(src, keys)
+	STOP_MACHINE_PROCESSING(src)
+	return TRUE
+
+/obj/machinery/proc/cancel_sleep_keys()
+	if(react_sleep_tokens)
+		SSreactor.cancel_keys(src, react_sleep_tokens)
+		react_sleep_tokens = null
+
+/// TRUE while the machine sleeps on keys and is not polled.
+/obj/machinery/proc/asleep_on_keys()
+	return react_sleep_tokens && !(datum_flags & DF_ISPROCESSING)
+
+/obj/machinery/on_react(reason, source, source_kind)
+	if((reason & REACT_REASON_KEY) && react_sleep_tokens)
+		cancel_sleep_keys()
+		START_MACHINE_PROCESSING(src)

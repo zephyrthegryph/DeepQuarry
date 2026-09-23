@@ -18,15 +18,7 @@ SUBSYSTEM_DEF(ai)
 	var/deferred_brains = 0
 	var/profile_cost = 0
 	var/profile_calls = 0
-	/// MOB_CHUNK_NUMERIC_KEY -> weakrefs of calm brains. Movement into or out
-	/// of a watched chunk wakes only nearby brains.
-	var/alist/chunk_subscribers
-	var/list/sleeping_brains = list()
 	var/navigation_revision = 1
-
-/datum/controller/subsystem/ai/New()
-	chunk_subscribers = alist()
-	return ..()
 
 /datum/controller/subsystem/ai/proc/publish_navigation_change()
 	navigation_revision++
@@ -76,69 +68,47 @@ SUBSYSTEM_DEF(ai)
 		if(MC_TICK_CHECK)
 			return
 
-/datum/controller/subsystem/ai/proc/hibernate_calm_brain(datum/ai_brain/A)
-	var/turf/T = get_turf(A?.holder)
-	if(!T || A.primary_threat || A.active_behavior_type || A.holder.client)
+// --- Calm-brain hibernation on mob-chunk keys (reactor.md §9, S2) ---------------------------------
+
+/// A calm brain stops strategic processing until a mob moves in a chunk within its vision
+/// (REACT_KEY_MOB_CHUNK). FALSE if it has a threat, a behavior or a player.
+/datum/ai_brain/proc/hibernate_calm()
+	var/turf/T = get_turf(holder)
+	if(!T || primary_threat || active_behavior_type || holder.client)
 		return FALSE
-	var/datum/weakref/WR = WEAKREF(A)
-	A.sleeping_reference = WR.reference
-	var/min_chunk_x = FLOOR(max(T.x - A.vision_range - 1, 0), CHUNK_SIZE) / CHUNK_SIZE
-	var/max_chunk_x = FLOOR(T.x + A.vision_range - 1, CHUNK_SIZE) / CHUNK_SIZE
-	var/min_chunk_y = FLOOR(max(T.y - A.vision_range - 1, 0), CHUNK_SIZE) / CHUNK_SIZE
-	var/max_chunk_y = FLOOR(T.y + A.vision_range - 1, CHUNK_SIZE) / CHUNK_SIZE
+	cancel_chunk_sleep()
 	var/list/keys = list()
-	for(var/cx in min_chunk_x to max_chunk_x)
-		for(var/cy in min_chunk_y to max_chunk_y)
-			var/key = MOB_CHUNK_NUMERIC_KEY(T.z, cx, cy)
-			keys += key
-			var/list/subscribers = chunk_subscribers[key]
-			if(!subscribers)
-				subscribers = list()
-				chunk_subscribers[key] = subscribers
-			subscribers[WR.reference] = WR
-	sleeping_brains[WR.reference] = keys
-	A.manage_processing(0)
+	for(var/cx in MOB_CHUNK_COORD(max(T.x - vision_range, 1)) to MOB_CHUNK_COORD(T.x + vision_range))
+		for(var/cy in MOB_CHUNK_COORD(max(T.y - vision_range, 1)) to MOB_CHUNK_COORD(T.y + vision_range))
+			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, cx, cy), REACT_CHUNK_ANY_MOB)
+	react_sleep_tokens = SSreactor.sleep_on_keys(src, keys)
+	manage_processing(0)
 	return TRUE
 
-/datum/controller/subsystem/ai/proc/wake_brain(datum/weakref/WR)
-	var/list/keys = sleeping_brains[WR?.reference]
-	if(!keys)
-		return
-	for(var/key in keys)
-		var/list/subscribers = chunk_subscribers[key]
-		subscribers?.Remove(WR.reference)
-		if(subscribers && !length(subscribers))
-			chunk_subscribers.Remove(key)
-	sleeping_brains.Remove(WR.reference)
-	var/datum/ai_brain/A = WR.resolve()
-	if(A && !QDELETED(A))
-		A.sleeping_reference = null
-		A.next_strategic_at = 0
-		A.manage_processing(DQAI_PROCESSING)
+/// Drops the chunk subscriptions without waking (Destroy, or before re-subscribing).
+/datum/ai_brain/proc/cancel_chunk_sleep()
+	if(react_sleep_tokens)
+		SSreactor.cancel_keys(src, react_sleep_tokens)
+		react_sleep_tokens = null
 
-/datum/controller/subsystem/ai/proc/forget_brain(datum/ai_brain/A)
-	var/reference = A?.sleeping_reference
-	if(!reference)
+/// Wakes a hibernating brain now. No-op unless it sleeps on chunk keys.
+/datum/ai_brain/proc/wake_from_chunks()
+	if(!react_sleep_tokens)
 		return
-	var/list/keys = sleeping_brains[reference]
-	for(var/key in keys)
-		var/list/subscribers = chunk_subscribers[key]
-		subscribers?.Remove(reference)
-		if(subscribers && !length(subscribers))
-			chunk_subscribers.Remove(key)
-	sleeping_brains.Remove(reference)
-	A.sleeping_reference = null
+	cancel_chunk_sleep()
+	if(QDELETED(src))
+		return
+	next_strategic_at = 0
+	manage_processing(DQAI_PROCESSING)
 
-/datum/controller/subsystem/ai/proc/publish_mob_chunk(atom/location)
-	// Nothing sleeping means nothing to wake; skip the turf lookup (Q12).
-	if(!length(chunk_subscribers))
-		return
-	var/turf/T = get_turf(location)
-	if(!T)
-		return
-	var/key = MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y))
-	var/list/subscribers = chunk_subscribers[key]
-	if(!length(subscribers))
-		return
-	for(var/subscriber_key in subscribers.Copy())
-		wake_brain(subscribers[subscriber_key])
+/datum/ai_brain/on_react(reason, source, source_kind)
+	if(reason & REACT_REASON_KEY)
+		wake_from_chunks()
+
+/// Asleep with a threat in hand: it should be awake.
+/datum/ai_brain/react_sleep_violation()
+	if(!react_sleep_tokens || (process_flags & DQAI_PROCESSING))
+		return null
+	if(primary_threat)
+		return "hibernating with a primary threat"
+	return null

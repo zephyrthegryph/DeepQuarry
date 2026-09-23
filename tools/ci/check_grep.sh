@@ -511,6 +511,13 @@ if [ "$pcre2_support" -eq 1 ]; then
 		FAILED=1
 	fi;
 
+	part "string-built reactive keys"
+	if $grep -P '(publish_reactive_dependency|hibernate_reactive_machine|wake_reactive_machine)\(|REACT_(PUBLISH|ON_KEY)\([^)]*"' "${code_files[@]}"; then
+		echo
+		echo -e "${RED}ERROR: Reactive keys are numeric (REACT_PUBLISH / REACT_ON_KEY with REACT_KEY_* and REACT_ID), never strings (reactor.md §10).${NC}"
+		FAILED=1
+	fi;
+
 	part "trailing newlines"
 	if $grep -PU '[^\n]$(?!\n)' "${code_files[@]}"; then
 		echo

@@ -291,18 +291,9 @@
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
-	// Every publisher returns before any turf lookup while nothing is subscribed (Q12).
-	if(SSmachines?.mob_chunk_subscriptions || length(SSai?.chunk_subscribers) || (client && SSreactor?.player_chunk_subscriptions))
-		var/turf/old_turf = get_turf(old_loc)
-		var/turf/new_turf = get_turf(src)
-		if(client && SSreactor.player_chunk_subscriptions)
-			SSreactor.publish_player_chunk(new_turf) // Looping sounds and auto-flicker lights (Q5).
-		// A step inside one chunk only needs one publish: the first wakes every subscriber.
-		if(old_turf && (!new_turf || old_turf.z != new_turf.z || MOB_CHUNK_COORD(old_turf.x) != MOB_CHUNK_COORD(new_turf.x) || MOB_CHUNK_COORD(old_turf.y) != MOB_CHUNK_COORD(new_turf.y)))
-			SSmachines?.publish_mob_chunk(old_turf)
-			SSai?.publish_mob_chunk(old_turf)
-		SSmachines?.publish_mob_chunk(new_turf)
-		SSai?.publish_mob_chunk(new_turf)
+	// One publish; it returns before any turf lookup while nothing is subscribed (Q12).
+	if(SSreactor?.mob_chunk_subscriptions || (client && SSreactor?.player_chunk_subscriptions))
+		SSreactor.publish_mob_move(old_loc, src, !!client)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
 		restore_remote_views()

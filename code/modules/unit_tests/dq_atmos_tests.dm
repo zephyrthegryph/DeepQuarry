@@ -2855,8 +2855,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"stable full APC remained in timed machinery processing")
 	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, \
 		"stable APC subscribed to dependencies without telling the scheduler to retire its copied entry")
-	var/datum/weakref/apc_ref = WEAKREF(A)
-	TEST_ASSERT(SSmachines.reactive_sleepers[apc_ref.reference], \
+	TEST_ASSERT(A.react_sleep_tokens, \
 		"stable full APC did not capture dependency revisions before sleeping")
 	var/old_stat = A.stat
 	A.stat |= BROKEN
@@ -4524,10 +4523,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	turret.stat = 0
 	turret.enabled = TRUE
 	TEST_ASSERT_EQUAL(turret.process(), PROCESS_KILL, "turret with an empty field of view remained scheduled")
-	var/datum/weakref/turret_ref = WEAKREF(turret)
-	TEST_ASSERT(SSmachines.reactive_sleepers[turret_ref.reference], "idle turret did not subscribe to nearby mob chunks")
+	TEST_ASSERT(turret.react_sleep_tokens, "idle turret did not subscribe to nearby mob chunks")
+	SSreactor.trace(turret)
 	var/mob/living/arrival = new(get_step(T, NORTH))
-	TEST_ASSERT(turret.datum_flags & DF_ISPROCESSING, "idle turret did not wake when a mob appeared nearby")
+	react_test_ticks(4)
+	TEST_ASSERT(SSreactor.traced_wakes(turret), "idle turret did not wake when a mob appeared nearby")
+	SSreactor.untrace(turret)
 	qdel(arrival)
 	qdel(turret)
 
@@ -4606,10 +4607,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	START_MACHINE_PROCESSING(M)
 	M.process()
 	TEST_ASSERT(!(M in SSmachines.processing_machines), "stable power monitor remained scheduled")
-	var/datum/weakref/monitor_ref = WEAKREF(M)
-	TEST_ASSERT(SSmachines.reactive_sleepers[monitor_ref.reference], "power monitor did not subscribe before sleeping")
+	TEST_ASSERT(M.react_sleep_tokens, "power monitor did not subscribe before sleeping")
+	SSreactor.trace(M)
 	P.trigger_warning()
-	TEST_ASSERT(M in SSmachines.processing_machines, "grid warning did not wake the sleeping power monitor")
+	react_test_ticks(4)
+	TEST_ASSERT(SSreactor.traced_wakes(M), "grid warning did not wake the sleeping power monitor")
+	SSreactor.untrace(M)
 	qdel(M)
 	qdel(S)
 	qdel(P)
@@ -4789,10 +4792,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	point_defense.stat = 0
 	point_defense.active = TRUE
 	TEST_ASSERT_EQUAL(point_defense.process(), PROCESS_KILL, "point defense polled with no meteors")
-	var/datum/weakref/point_defense_ref = WEAKREF(point_defense)
-	TEST_ASSERT(SSmachines.reactive_sleepers[point_defense_ref.reference], "point defense did not subscribe before sleeping")
-	SSmachines.publish_reactive_dependency("meteors")
-	TEST_ASSERT(point_defense in SSmachines.processing_machines, "meteor dependency did not wake point defense")
+	TEST_ASSERT(point_defense.react_sleep_tokens, "point defense did not subscribe before sleeping")
+	SSreactor.trace(point_defense)
+	REACT_PUBLISH(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED)
+	react_test_ticks(4)
+	TEST_ASSERT(SSreactor.traced_wakes(point_defense), "meteor dependency did not wake point defense")
+	SSreactor.untrace(point_defense)
 	var/obj/machinery/computer/pod/pod_console = new(T)
 	pod_console.stat = 0
 	pod_console.timing = FALSE

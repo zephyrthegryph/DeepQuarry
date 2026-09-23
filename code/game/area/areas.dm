@@ -306,7 +306,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(ENVIRON)
 			oneoff_environ += amount
 	if(amount)
-		SSmachines.publish_reactive_dependency("area_power:[REF(src)]")
+		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
 	return amount
 
 // This is used by machines to properly update the area of power changes.
@@ -323,7 +323,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(ENVIRON)
 			static_environ += amount
 	if(amount)
-		SSmachines.publish_reactive_dependency("area_power:[REF(src)]")
+		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
 /area/proc/retally_power()

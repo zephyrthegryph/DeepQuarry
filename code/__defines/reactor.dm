@@ -32,10 +32,38 @@
 #define REACT_KEY_AREA_POWER 2
 /// A door's mode (bolts, emergency access, ...) changed. Id: the door's REACT_ID.
 #define REACT_KEY_DOOR_MODE 3
-/// A player (a mob with a client) moved into a mob chunk (Q5). Id: MOB_CHUNK_NUMERIC_KEY.
-/// Subscribe with SSreactor.subscribe_player_chunks(); /mob/Moved() publishes only while
-/// something is subscribed. S2's REACT_KEY_MOB_CHUNK is the key for any mob.
-#define REACT_KEY_PLAYER_CHUNK 20
+/// An APC's own state or its grid supply class changed. Id: the APC's REACT_ID.
+#define REACT_KEY_APC 4
+	#define REACT_APC_STATE 1
+	#define REACT_APC_SUPPLY 2
+/// A powernet changed. Id: the powernet's REACT_ID.
+#define REACT_KEY_POWERNET 5
+	/// Supply or load moved (exact-rate consumers).
+	#define REACT_POWERNET_RATE 1
+	/// Cables, warnings or monitor-visible state.
+	#define REACT_POWERNET_STATE 2
+	/// Machine membership (sleeping APCs).
+	#define REACT_POWERNET_TOPOLOGY 4
+/// A turret's settings or power changed. Id: the turret's REACT_ID.
+#define REACT_KEY_TURRET 6
+/// A disposal unit's state changed. Id: the unit's REACT_ID.
+#define REACT_KEY_DISPOSAL 7
+/// A meteor appeared or went away. Id: always 1.
+#define REACT_KEY_METEORS 8
+/// A mob entered, left or moved in a 16x16 chunk. Id: MOB_CHUNK_NUMERIC_KEY (z < 256).
+/// One key for every mob; the mask says whether the mover was a player.
+#define REACT_KEY_MOB_CHUNK 9
+	/// Any mob (sleeping turrets, calm AI brains). Subscribe with sleep_on_keys().
+	#define REACT_CHUNK_ANY_MOB (1<<0)
+	/// A mob with a client (looping sounds, auto-flicker lights, Q5). Subscribe with
+	/// SSreactor.subscribe_player_chunks().
+	#define REACT_CHUNK_PLAYER (1<<1)
+/// The mask for keys with a single meaning.
+#define REACT_KEY_CHANGED 1
+
+/// Publish key (kind, D's id) only if D was ever given a registry id: a subscriber builds
+/// the key with REACT_ID(D), so a datum without one has no subscribers. Saves the bind call.
+#define REACT_PUBLISH_OWN(D, kind, mask) if((D).reactor_id) { REACT_PUBLISH(kind, (D).reactor_id, mask) }
 /// A pipe network's leaks or topology changed. Id: the network's REACT_ID, or
 /// REACT_ID_GLOBAL for a change whose network is not known yet (new construction).
 #define REACT_KEY_PIPE_NETWORK 21

@@ -211,7 +211,7 @@ GLOBAL_LIST_EMPTY(apcs)
 		deltimer(failure_wake_timer)
 		failure_wake_timer = null
 	terminal?.powernet?.unreserve_sleeping_apc_load(src)
-	SSmachines.publish_reactive_dependency("apc:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_APC, REACT_APC_STATE)
 	update()
 
 	if(area)
@@ -241,7 +241,7 @@ GLOBAL_LIST_EMPTY(apcs)
 	return ..()
 
 /obj/machinery/power/apc/proc/wake_for_power_dependency()
-	SSmachines.publish_reactive_dependency("apc:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_APC, REACT_APC_STATE)
 	START_MACHINE_PROCESSING(src)
 
 /// Fold routine area consumption into this APC's retained grid reservation.
@@ -1053,14 +1053,12 @@ GLOBAL_LIST_EMPTY(apcs)
 	// instead of polling on every machinery tick.
 	if(!changed && !force_update && !failure_timer)
 		connected_powernet?.reserve_sleeping_apc_load(src, lastused_total)
-		var/list/wake_keys = list(
-			"apc-power:[REF(src)]",
-			"area_power:[REF(area)]",
-			"apc:[REF(src)]"
-		)
+		var/list/wake_keys = list(REACT_KEY_APC, REACT_ID(src), REACT_APC_STATE|REACT_APC_SUPPLY)
+		if(area)
+			wake_keys += list(REACT_KEY_AREA_POWER, REACT_ID(area), REACT_KEY_CHANGED)
 		if(connected_powernet)
-			wake_keys += "powernet-topology:[REF(connected_powernet)]"
-		SSmachines.hibernate_reactive_machine(src, wake_keys)
+			wake_keys += list(REACT_KEY_POWERNET, REACT_ID(connected_powernet), REACT_POWERNET_TOPOLOGY)
+		sleep_until_keys(wake_keys)
 		// Connected, stable APC demand is represented directly in the powernet and
 		// needs no timer. An isolated battery must only wake to integrate elapsed
 		// discharge (or while charging), not poll on every machinery fire.
@@ -1278,3 +1276,11 @@ GLOBAL_LIST_EMPTY(apcs)
 
 // All APC defines are declared in code/__defines/apc.dm and are not #undef'd
 // here because they are shared with apc_power_distributor and apc_icon_renderer.
+
+/// Audit (reactor.md §7): a sleeping APC must not be counting down a power failure.
+/obj/machinery/power/apc/react_sleep_violation()
+	if(!asleep_on_keys())
+		return null
+	if(failure_timer)
+		return "asleep during a power failure countdown"
+	return null

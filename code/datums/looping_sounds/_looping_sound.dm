@@ -25,7 +25,7 @@
 
 /**
  * A looping sound runs on SSreactor (reactor.md §9, Q5): each loop is a REACT_AT timer, and a
- * loop nobody can hear parks on the REACT_KEY_PLAYER_CHUNK keys around it until a player
+ * loop nobody can hear parks on the player chunk keys (REACT_KEY_MOB_CHUNK, REACT_CHUNK_PLAYER) around it until a player
  * moves into range (with a slow recheck timer).
  */
 /datum/looping_sound
@@ -54,7 +54,7 @@
 	var/tmp/loop_token
 	/// world.time of the first loop, so max_loops counts from the real start.
 	var/tmp/loop_starttime
-	/// REACT_KEY_PLAYER_CHUNK tokens while nobody can hear the loop; null while it is looping (Q5).
+	/// Player chunk tokens while nobody can hear the loop; null while it is looping (Q5).
 	var/tmp/list/dormant_chunk_tokens
 
 /datum/looping_sound/New(list/_output_atoms=list(), start_immediately=FALSE, disable_direct=FALSE)
