@@ -60,6 +60,10 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	var/lastnews // Hash of last seen lobby news content.
 	var/lastlorenews //ID of last seen lore news article.
+	/// Keybinding overrides: profile -> (binding id -> list of keys). Null means all defaults.
+	var/list/key_bindings
+	/// What right-click does on the map: INPUT_ACTION_MENU (BYOND's popup) or INPUT_ACTION_ALTERNATE.
+	var/right_click_binding = INPUT_ACTION_MENU
 
 	// THIS IS NOT SAVED
 	// WE JUST HAVE NOWHERE ELSE TO STORE IT

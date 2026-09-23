@@ -131,7 +131,6 @@
 #define COMSIG_ITEM_ATTACK "item_attack"
 ///from base of obj/item/attack_self(): (/mob)
 #define COMSIG_ITEM_ATTACK_SELF "item_attack_self"
-//from base of obj/item/attack_self_secondary(): (/mob)
 ///from base of obj/item/pre_attack(): (atom/target, mob/user, list/modifiers, list/attack_modifiers)
 #define COMSIG_ITEM_PRE_ATTACK "item_pre_attack"
 

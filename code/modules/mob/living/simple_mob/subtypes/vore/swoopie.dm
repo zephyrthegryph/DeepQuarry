@@ -224,25 +224,22 @@
 	say_maybe_target = list("Pest detected?")
 	say_got_target = list("PEST DETECTED!")
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/ClickOn(atom/A, params)
-	var/list/modifiers = params2list(params)
-	if(modifiers["shift"] || modifiers["ctrl"] || modifiers["middle"] || modifiers["alt"])
-		return ..()
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/intercept_use(atom/A, params)
 	if(stat) //Cant suck if we're not able to...
-		return ..()
+		return FALSE
 	if(istype(A, /obj/item/storage)) //Dont put the nossle in bags
-		return ..()
+		return FALSE
 	if(istype(Vac) && A.Adjacent(src))
 		face_atom(A)
 		if(src.a_intent == I_DISARM && A == src) //Only if on disarm intent.
 			Vac.attack_self(src)
-			return
+			return TRUE
 		if(src.a_intent == I_GRAB && Vac.vac_power != 0) //Only on grab intent. if someone needs to use grab intent they can just turn off the vac
 			if(istype(A, /obj/machinery/disposal)) //You used that bin when the bird was right there? How inconsiderate!
-				var/obj/machinery/disposal/D
+				var/obj/machinery/disposal/D = A
 				if(D.flushing)
 					to_chat(src, "\The [D] has already began flushing, you're too late to grab whatever was inside!")
-					return
+					return TRUE
 				var/foundstuff = 0 //Check if we actually found anything in the bin...
 				for(var/atom/movable/AM in D)
 					if(istype(AM, /mob/living))
@@ -257,12 +254,12 @@
 					src.visible_message(span_warning("[src] plunges their head into \the [D], greedily sucking up everything inside!"))
 				else //Oh, Nothing was inside...
 					to_chat(src, span_infoplain("You poke your head into \the [D], but there doesnt seem to be anything of interest..."))
-				return
+				return TRUE
 			var/resolved = Vac.resolve_attackby(A, src, click_parameters = params)
 			if(!resolved && A && Vac)
 				Vac.afterattack(A, src, 1, params)
-				return
-	. = ..()
+				return TRUE
+	return FALSE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/attack_hand(mob/living/L)
 	if(stat) //Make sure we're alive

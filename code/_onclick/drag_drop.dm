@@ -15,15 +15,7 @@
 		return FALSE // should stop you from dragging through windows
 	return TRUE
 
-/atom/MouseDrop(atom/over, src_location, over_location, src_control, over_control, params)
-	if(!usr || !over)
-		return
-	if(!Adjacent(usr) || !over.Adjacent(usr))
-		return // should stop you from dragging through windows
-	if(usr.is_incorporeal())
-		return
-
-	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), src, usr, src_location, over_location, src_control, over_control, params)
+// /atom/MouseDrop routes through the input router as the Drag action (router.dm).
 
 /atom/proc/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
 	return

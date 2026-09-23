@@ -1,0 +1,388 @@
+/**
+ * Capability adapters (doc/rewrite/interactions.md §4).
+ *
+ * An adapter says how one kind of actor turns actions into effects: whether a
+ * click is accepted at all, which click table it reads, and what Use does. The
+ * modifier actions (Inspect, Alternate, Pull, ...) go through handler_for(),
+ * which names the mob proc that runs them; AI and borgs override those procs.
+ *
+ * Until the interaction resolver lands (I2), Use and Alternate dispatch to
+ * today's handlers: attackby through resolve_attackby, attack_hand through
+ * UnarmedAttack, attack_ai, attack_robot, attack_ghost, attack_tk, click_alt.
+ */
+/datum/input_adapter
+	var/name = "abstract"
+
+/// Adapters are singletons; GLOB.input_adapters maps type -> instance.
+GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
+
+/proc/init_input_adapters()
+	var/list/adapters = list()
+	for(var/datum/input_adapter/adapter_type as anything in subtypesof(/datum/input_adapter))
+		adapters[adapter_type] = new adapter_type
+	return adapters
+
+/// This mob's capability adapter.
+/mob/proc/input_adapter()
+	return INPUT_ADAPTER(hands)
+
+/mob/observer/dead/input_adapter()
+	return INPUT_ADAPTER(ghost)
+
+/mob/living/silicon/ai/input_adapter()
+	return INPUT_ADAPTER(ai)
+
+/mob/living/silicon/robot/input_adapter()
+	return INPUT_ADAPTER(robot)
+
+/// Returns TRUE if the click should be routed. Handles cooldowns, click intercepts and buildmode.
+/datum/input_adapter/proc/accept_click(mob/user, atom/target, params)
+	if(!user.checkClickCooldown())
+		return FALSE
+	user.setClickCooldown(1)
+	if(user.check_click_intercept(params, target))
+		return FALSE
+	if(user.client?.buildmode)
+		build_click(user, user.client.buildmode, params, target)
+		return FALSE
+	return TRUE
+
+/datum/input_adapter/proc/click_table()
+	return GLOB.input_router.standard_click_table()
+
+/// The mob proc that runs a non-Use action, or null if the action does nothing.
+/datum/input_adapter/proc/handler_for(action)
+	switch(action)
+		if(INPUT_ACTION_INSPECT)
+			return TYPE_PROC_REF(/mob, ShiftClickOn)
+		if(INPUT_ACTION_POINT)
+			return TYPE_PROC_REF(/mob, ShiftMiddleClickOn)
+		if(INPUT_ACTION_QUICK)
+			return TYPE_PROC_REF(/mob, CtrlShiftClickOn)
+		if(INPUT_ACTION_LOOT)
+			return TYPE_PROC_REF(/mob, alt_shift_click_on)
+		if(INPUT_ACTION_TAG)
+			return TYPE_PROC_REF(/mob, CtrlMiddleClickOn)
+		if(INPUT_ACTION_SWAP_HANDS)
+			return TYPE_PROC_REF(/mob, MiddleClickOn)
+		if(INPUT_ACTION_ALTERNATE_SECONDARY)
+			return TYPE_PROC_REF(/mob, AltClickSecondaryOn)
+		if(INPUT_ACTION_ALTERNATE)
+			return TYPE_PROC_REF(/mob, AltClickOn)
+		if(INPUT_ACTION_PULL)
+			return TYPE_PROC_REF(/mob, CtrlClickOn)
+	return null
+
+/datum/input_adapter/proc/perform(mob/user, atom/target, action, list/modifiers, params)
+	if(action == INPUT_ACTION_USE)
+		return use(user, target, modifiers, params)
+	var/handler = handler_for(action)
+	if(handler)
+		call(user, handler)(target, params)
+	// INPUT_ACTION_MENU: right-click bound to Menu keeps BYOND's native popup, so
+	// it never reaches the router. The resolver's Menu arrives with I2.
+
+/// The Use action.
+/datum/input_adapter/proc/use(mob/user, atom/target, list/modifiers, params)
+	return
+
+/// The Self-use action: the held item used on itself.
+/datum/input_adapter/proc/self_use(mob/user, obj/item/held, list/modifiers)
+	held.attack_self(user, modifiers)
+
+/// The Drag action.
+/datum/input_adapter/proc/drag(mob/user, atom/dragged, atom/over, src_location, over_location, src_control, over_control, params)
+	if(!dragged.Adjacent(user) || !over.Adjacent(user))
+		return // should stop you from dragging through windows
+	if(user.is_incorporeal())
+		return
+	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, src_location, over_location, src_control, over_control, params)
+
+/// A category key. The resolver that picks the interaction arrives with I2.
+/datum/input_adapter/proc/perform_category(mob/user, atom/target, category)
+	to_chat(user, span_notice("There is nothing to [category] on \the [target] yet."))
+	return FALSE
+
+// ---------------------------------------------------------------------------
+// Hands: every mob that interacts by touch (humans, animals, simple mobs, pAIs).
+
+/datum/input_adapter/hands
+	name = "hands"
+
+/datum/input_adapter/hands/accept_click(mob/user, atom/target, params)
+	if(!user.checkClickCooldown())
+		return FALSE
+	user.setClickCooldown(1)
+	if(user.check_click_intercept(params, target) || HAS_TRAIT(user, TRAIT_NO_TRANSFORM))
+		return FALSE
+	if(user.client?.buildmode)
+		build_click(user, user.client.buildmode, params, target)
+		return FALSE
+	return TRUE
+
+/*
+	Use for a mob with hands. Checks state, whether an item is held and whether
+	the target is in reach, then passes the click to whoever receives it:
+	* mob/UnarmedAttack(atom, adjacent) - adjacent, no item in hand
+	* atom/attackby(item, user) - adjacent, through resolve_attackby
+	* item/afterattack(atom, user, adjacent, params) - ranged and adjacent
+	* mob/RangedAttack(atom, params) - ranged, no item: laser eyes and telekinesis
+*/
+/datum/input_adapter/hands/use(mob/user, atom/A, list/modifiers, params)
+	if(user.intercept_use(A, params))
+		return
+
+	if(INCAPACITATED_IGNORING(user, INCAPABLE_RESTRAINTS|INCAPABLE_STASIS))
+		return
+
+	if(user.stat || user.paralysis || user.stunned)
+		return
+
+	user.face_atom(A) // change direction to face what you clicked on
+
+	if(istype(user.loc, /obj/mecha))
+		if(!locate(/turf) in list(A, A.loc)) // Prevents inventory from being drilled
+			return
+		var/obj/mecha/M = user.loc
+		return M.click_action(A, user, params)
+
+	// A restrained mob can still make unarmed attacks on adjacent mobs (bites).
+	// For other restrained interactions, override RestrainedClickOn.
+	var/currently_restrained = FALSE
+	if(user.restrained())
+		user.setClickCooldown(10)
+		user.RestrainedClickOn(A)
+		currently_restrained = TRUE
+
+	if(!currently_restrained && user.in_throw_mode && (isturf(A) || isturf(A.loc)) && user.throw_item(A))
+		user.trigger_aiming(TARGET_CAN_CLICK)
+		user.throw_mode_off()
+		return TRUE
+
+	var/obj/item/W = user.get_active_hand()
+
+	if(!currently_restrained && W == A)
+		self_use(user, W, modifiers)
+		user.trigger_aiming(TARGET_CAN_CLICK)
+		user.update_inv_active_hand(0)
+		return TRUE
+
+	// Atoms on your person: A is your location but not a turf; or on you (backpack);
+	// or on something on you (box in backpack). sdepth is needed because contents
+	// depth does not equal inventory storage depth.
+	var/sdepth = A.storage_depth(user)
+	if(!currently_restrained && ((!isturf(A) && A == user.loc) || (sdepth <= MAX_STORAGE_REACH)))
+		if(W)
+			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
+			// A consumed result means resolve_attackby did something; skip afterattack.
+			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
+				W.afterattack(A, user, 1, params) // 1 indicates adjacency
+		else
+			if(ismob(A)) // No instant mob attacking
+				user.setClickCooldown(user.get_attack_speed())
+			user.UnarmedAttack(A, 1)
+
+		user.trigger_aiming(TARGET_CAN_CLICK)
+		return 1
+
+	if(!currently_restrained && isbelly(user.loc) && (user.loc == A.loc))
+		if(W)
+			var/resolved = W.resolve_attackby(A, user)
+			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
+				W.afterattack(A, user, 1, params) // 1: clicking something Adjacent
+		else
+			if(ismob(A)) // No instant mob attacking
+				user.setClickCooldown(user.get_attack_speed())
+			user.UnarmedAttack(A, 1)
+		return
+
+	if(!isturf(user.loc)) // No telekinesis from inside a closet
+		return
+
+	// Atoms on turfs: A is a turf, on a turf, or in something on a turf (pen in a box),
+	// but not something in something on a turf (pen in a box in a backpack).
+	sdepth = A.storage_depth_turf()
+	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
+		if(currently_restrained)
+			if(ismob(A) && A.Adjacent(user)) // restrained and adjacent
+				user.setClickCooldown(user.get_attack_speed())
+				user.UnarmedAttack(A, 1)
+				user.trigger_aiming(TARGET_CAN_CLICK)
+				return
+		else
+			if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, W.reach))) // see adjacent.dm
+				if(W && !user.restrained())
+					// Return 1 in attackby() to prevent afterattack() effects (when safely moving items for example)
+					var/resolved = W.resolve_attackby(A, user, click_parameters = params)
+					if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
+						W.afterattack(A, user, 1, params) // 1: clicking something Adjacent
+				else
+					if(ismob(A)) // No instant mob attacking
+						user.setClickCooldown(user.get_attack_speed())
+					user.UnarmedAttack(A, 1)
+				user.trigger_aiming(TARGET_CAN_CLICK)
+				return
+			else // non-adjacent click
+				if(W)
+					W.afterattack(A, user, 0, params) // 0: not Adjacent
+				else
+					user.RangedAttack(A, params)
+
+				user.trigger_aiming(TARGET_CAN_CLICK)
+	return 1
+
+/// Hook for mobs that take over a plain Use click before the hands chain runs
+/// (the swoopie's vacuum). Return TRUE if handled. Modifier clicks never get here.
+/mob/proc/intercept_use(atom/A, params)
+	return FALSE
+
+// ---------------------------------------------------------------------------
+// Telekinesis: remote reach for a mob with a telekinetic grip.
+
+/datum/input_adapter/telekinesis
+	name = "telekinesis"
+
+/// Use at range: grab or poke the target telekinetically.
+/datum/input_adapter/telekinesis/use(mob/user, atom/target, list/modifiers, params)
+	if(get_dist(user, target) > TK_MAXRANGE)
+		to_chat(user, TK_OUTRANGED_MESSAGE)
+		return
+	target.attack_tk(user)
+
+// ---------------------------------------------------------------------------
+// Ghosts: observer-only.
+
+/datum/input_adapter/ghost
+	name = "ghost"
+
+/// Checking config.ghost_interaction is the responsibility of attack_ghost overrides.
+/datum/input_adapter/ghost/use(mob/user, atom/target, list/modifiers, params)
+	target.attack_ghost(user)
+
+// ---------------------------------------------------------------------------
+// AI: remote, no hands, acts through the camera network.
+
+/datum/input_adapter/ai
+	name = "ai"
+
+/datum/input_adapter/ai/accept_click(mob/living/silicon/ai/user, atom/target, params)
+	if(!user.checkClickCooldown())
+		return FALSE
+	user.setClickCooldown(1)
+	if(user.client?.buildmode) // comes after object.Click to allow buildmode gui objects to be clicked
+		build_click(user, user.client.buildmode, params, target)
+		return FALSE
+	if(user.multicam_on)
+		var/turf/T = get_turf(target)
+		if(T)
+			for(var/atom/movable/screen/movable/pic_in_pic/ai/P in T.vis_locs)
+				if(P.ai == user)
+					P.Click(params)
+					break
+	if(user.check_click_intercept(params, target))
+		return FALSE
+	if(user.stat || user.control_disabled)
+		return FALSE
+	return TRUE
+
+/// The AI reads fewer modifiers than other mobs: no extra mouse buttons, no
+/// point, no loot panel, and alt-click ignores right-click.
+/datum/input_adapter/ai/click_table()
+	var/static/list/table = list(
+		list(list(SHIFT_CLICK, CTRL_CLICK), INPUT_ACTION_QUICK),
+		list(list(MIDDLE_CLICK), INPUT_ACTION_SWAP_HANDS),
+		list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT),
+		list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE),
+		list(list(CTRL_CLICK), INPUT_ACTION_PULL),
+		list(list(RIGHT_CLICK), INPUT_ACTION_RIGHT_CLICK_BINDING),
+	)
+	return table
+
+/datum/input_adapter/ai/use(mob/living/silicon/ai/user, atom/target, list/modifiers, params)
+	var/obj/effect/overlay/aiholo/hologram = user.holo ? LAZYACCESS(user.holo.masters, user) : null
+	if(istype(hologram))
+		hologram.set_dir(get_dir(get_turf(hologram), get_turf(target)))
+
+	if(user.aiCamera?.in_camera_mode)
+		user.aiCamera.camera_mode_off()
+		user.aiCamera.captureimage(target, user)
+		return
+
+	target.add_hiddenprint(user)
+	target.attack_ai(user)
+
+// ---------------------------------------------------------------------------
+// Cyborgs: AI-style remote interfacing with an empty gripper, reach-limited items.
+
+/datum/input_adapter/robot
+	name = "robot"
+
+/datum/input_adapter/robot/accept_click(mob/living/silicon/robot/user, atom/target, params)
+	if(!user.checkClickCooldown())
+		return FALSE
+	if(user.check_click_intercept(params, target))
+		return FALSE
+	user.setClickCooldown(1)
+	if(user.client?.buildmode) // comes after object.Click to allow buildmode gui objects to be clicked
+		build_click(user, user.client.buildmode, params, target)
+		return FALSE
+	return TRUE
+
+/*
+	Cyborgs have no range restriction on attack_robot(), because it is basically an
+	AI click. They do have a range restriction on item use.
+*/
+/datum/input_adapter/robot/use(mob/living/silicon/robot/user, atom/A, list/modifiers, params)
+	if(!user.can_click_act())
+		return
+
+	user.face_atom(A) // change direction to face what you clicked on
+
+	if(user.aiCamera && user.aiCamera.in_camera_mode)
+		user.aiCamera.camera_mode_off()
+		if(user.is_component_functioning(ROBOT_SLOT_CAMERA))
+			user.aiCamera.captureimage(A, user)
+		else
+			to_chat(user, span_userdanger("Your camera isn't functional."))
+		return
+
+	var/obj/item/W = user.get_active_hand(A)
+
+	// Cyborgs have no range-checking unless there is item use
+	if(!W)
+		// A bolted cyborg can't remotely interface with anything but its own module.
+		if(user.get_restraining_bolt() && A.loc != user.module)
+			return
+		A.add_hiddenprint(user)
+		A.attack_robot(user)
+		return
+	// buckled cannot prevent machine interlinking but stops arm movement
+	if(user.buckled)
+		return
+
+	if(W == A)
+		self_use(user, W)
+		return
+
+	// cyborgs are prohibited from using storage items, so (A.loc in contents) is not needed
+	if(A == user.loc || (A in user.loc) || (A in user.contents))
+		// No adjacency checks
+		var/resolved = W.resolve_attackby(A, user, click_parameters = params)
+		if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
+			W.afterattack(A, user, 1, params)
+		return
+
+	if(!isturf(user.loc))
+		return
+
+	var/sdepth = A.storage_depth_turf()
+	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
+		if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, W.reach))) // see adjacent.dm, allows robots to use ranged melee weapons
+			SEND_SIGNAL(user, COMSIG_ROBOT_ITEM_ATTACK, W, user, params) // we ATTEMPTED to attack someone.
+			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
+			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
+				W.afterattack(A, user, 1, params)
+			return
+		else
+			W.afterattack(A, user, 0, params)
+			return
