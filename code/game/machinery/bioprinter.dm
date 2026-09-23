@@ -109,10 +109,8 @@
 /obj/machinery/organ_printer/RefreshParts()
 	// Print Delay updating
 	print_delay = base_print_delay
-	var/manip_rating = 0
-	for(var/obj/item/stock_parts/manipulator/manip in component_parts)
-		manip_rating += manip.rating
-		print_delay -= (manip.rating-1)*10
+	var/manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
+	print_delay -= (manip_rating - get_part_count(/obj/item/stock_parts/manipulator))*10
 	print_delay = max(0,print_delay)
 
 	manip_rating = round(manip_rating / 2)

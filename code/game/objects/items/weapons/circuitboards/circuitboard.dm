@@ -20,6 +20,11 @@
 	/// If true, this board should be ignored during the circuitboard printing unit test, and give an examine hint that the board may be hard to get if so.
 	var/hidden = FALSE
 
+/// board_type is a /datum/frame/frame_types instance owned only by this
+/// board (or, for a few boards, a plain string) -- see the frame_type codec.
+/obj/item/circuitboard/state_codecs()
+	return ..() + list("board_type" = /datum/state_codec/frame_type)
+
 /obj/item/circuitboard/Destroy()
 	// Explosions can destroy an installed board before their containing machine.
 	// Sever the owner's typed reference immediately so the board never waits in
@@ -45,21 +50,3 @@
 		return 1
 	return 0
 
-//Should be called from the constructor of any machine to automatically populate the default parts
-/obj/item/circuitboard/proc/apply_default_parts(obj/machinery/M)
-	if(!istype(M))
-		return
-	if(!req_components)
-		return
-	M.component_parts = list()
-	for(var/comp_path in req_components)
-		var/comp_amt = req_components[comp_path]
-		if(!comp_amt)
-			continue
-
-		if(ispath(comp_path, /obj/item/stack))
-			M.component_parts += new comp_path(contain_parts ? M : null, comp_amt)
-		else
-			for(var/i in 1 to comp_amt)
-				M.component_parts += new comp_path(contain_parts ? M : null)
-	return

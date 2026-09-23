@@ -109,23 +109,17 @@
 
 /obj/machinery/mecha_part_fabricator_tg/RefreshParts()
 	. = ..()
-	var/T = 0
+	var/T = get_part_rating(/obj/item/stock_parts/matter_bin)
 
 	//maximum stocking amount (default 300000, 600000 at T4)
-	for(var/obj/item/stock_parts/matter_bin/matter_bin in component_parts)
-		T += matter_bin.rating
 	rmat.set_local_size(((100 * SHEET_MATERIAL_AMOUNT) + (T * (25 * SHEET_MATERIAL_AMOUNT))))
 
 	//resources adjustment coefficient (1 -> 0.85 -> 0.7 -> 0.55)
-	T = 1.15
-	for(var/obj/item/stock_parts/micro_laser/micro_laser in component_parts)
-		T -= micro_laser.rating * 0.15
+	T = 1.15 - get_part_rating(/obj/item/stock_parts/micro_laser) * 0.15
 	component_coeff = T
 
 	//building time adjustment coefficient (1 -> 0.8 -> 0.6)
-	T = -1
-	for(var/obj/item/stock_parts/manipulator/manip in component_parts)
-		T += manip.rating
+	T = get_part_rating(/obj/item/stock_parts/manipulator) - 1
 	time_coeff = round(initial(time_coeff) - (initial(time_coeff)*(T))/5,0.01)
 
 	// Adjust the build time of any item currently being built.

@@ -95,11 +95,7 @@
 
 /obj/machinery/recycling/crusher/RefreshParts()
 	. = ..()
-	var/total_rating = 0
-	for(var/obj/item/stock_parts/matter_bin/M in component_parts)
-		total_rating += M.rating
-	for(var/obj/item/stock_parts/manipulator/M in component_parts)
-		total_rating += M.rating
+	var/total_rating = get_part_rating(/obj/item/stock_parts/matter_bin) + get_part_rating(/obj/item/stock_parts/manipulator)
 
 	total_rating *= 0.1
 

@@ -47,14 +47,10 @@
 		. += span_notice("The <i>linking</i> device is now able to be <i>scanned</i> with a multitool.")
 
 /obj/machinery/power/quantumpad/RefreshParts()
-	var/E = 0
-	for(var/obj/item/stock_parts/manipulator/M in component_parts)
-		E += M.rating
+	var/E = get_part_rating(/obj/item/stock_parts/manipulator)
 	power_efficiency = E
 
-	E = 0
-	for(var/obj/item/stock_parts/capacitor/C in component_parts)
-		E += C.rating
+	E = get_part_rating(/obj/item/stock_parts/capacitor)
 
 	teleport_speed = initial(teleport_speed)
 	teleport_speed = max(15, (teleport_speed - (E * 10)))

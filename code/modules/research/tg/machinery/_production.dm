@@ -172,9 +172,7 @@
 /obj/machinery/rnd/production/RefreshParts()
 	. = ..()
 
-	var/total_storage = 0
-	for(var/obj/item/stock_parts/matter_bin/bin in component_parts)
-		total_storage += bin.rating * 37.5 * SHEET_MATERIAL_AMOUNT
+	var/total_storage = get_part_rating(/obj/item/stock_parts/matter_bin) * 37.5 * SHEET_MATERIAL_AMOUNT
 	materials.set_local_size(total_storage)
 
 	efficiency_coeff = compute_efficiency()
@@ -185,9 +183,7 @@
 /obj/machinery/rnd/production/proc/compute_efficiency()
 	PROTECTED_PROC(TRUE)
 
-	var/efficiency = 1.2
-	for(var/obj/item/stock_parts/manipulator/manip in component_parts)
-		efficiency -= manip.rating * 0.1
+	var/efficiency = 1.2 - get_part_rating(/obj/item/stock_parts/manipulator) * 0.1
 
 	return efficiency
 

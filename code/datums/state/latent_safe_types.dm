@@ -11,6 +11,31 @@
 // comment above the var assignment -- the comment stays too, since it often
 // covers a whole block of related types at once.
 
+// ---- Machine internals (roadmap C6): board and stock parts ----
+// Initialize() side effects are cosmetic (random pixel offset) or a static
+// read into an instance var (security board networks); nothing registers
+// with a subsystem or builds a child eagerly.
+
+// board_type is a nested /datum/frame/frame_types instance built inline
+// (`var/board_type = new /datum/frame/frame_types/X`), owned only by this
+// board; the frame_type codec (codecs.dm) saves it as a nested blob (or
+// passes it through as plain text for the few boards that set it to a
+// string instead -- circuitboard.dm's own comment). frame_types' own vars
+// (name, frame_size, frame_class, a circuit type path, frame_style,
+// x_offset, y_offset, an icon_override resource) are all plain values the
+// generic encoder already handles, so it needs no codec of its own.
+/obj/item/circuitboard
+	latent_safe = TRUE
+
+/obj/item/stock_parts
+	latent_safe = TRUE
+
+/obj/item/smes_coil
+	latent_safe = TRUE
+
+/obj/item/bluespace_crystal
+	latent_safe = TRUE
+
 /obj/item/paper
 	latent_safe = TRUE
 

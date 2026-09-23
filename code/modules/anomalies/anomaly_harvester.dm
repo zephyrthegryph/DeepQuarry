@@ -26,12 +26,8 @@
 	return ..()
 
 /obj/machinery/anomaly_harvester/RefreshParts()
-	var/efficient = 0
-	var/rating = 0
-	for(var/obj/item/stock_parts/manipulator/manipulator in component_parts)
-		efficient += manipulator.rating - 2
-	for(var/obj/item/stock_parts/micro_laser/laser in component_parts)
-		rating += laser.rating - 2
+	var/efficient = get_part_rating(/obj/item/stock_parts/manipulator) - 2 * get_part_count(/obj/item/stock_parts/manipulator)
+	var/rating = get_part_rating(/obj/item/stock_parts/micro_laser) - 2 * get_part_count(/obj/item/stock_parts/micro_laser)
 
 	efficiency = max(1, (efficient/10+1))
 	points_to_create = min(100, (100 - (rating * 5)))

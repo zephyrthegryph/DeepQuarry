@@ -520,14 +520,10 @@
 
 /obj/machinery/autolathe/RefreshParts()
 	. = ..()
-	var/mat_capacity = 0
-	for(var/obj/item/stock_parts/matter_bin/new_matter_bin in component_parts)
-		mat_capacity += new_matter_bin.rating * (37.5*SHEET_MATERIAL_AMOUNT)
+	var/mat_capacity = get_part_rating(/obj/item/stock_parts/matter_bin) * (37.5*SHEET_MATERIAL_AMOUNT)
 	materials.max_amount = mat_capacity
 
-	var/man_rating = 0
-	for(var/obj/item/stock_parts/manipulator/manip in component_parts)
-		man_rating += manip.rating;
+	var/man_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 	creation_efficiency = max(0.6, round(1.1 - (man_rating * 0.1), 0.1)) // creation_efficiency goes 1 -> 0.9 -> 0.8 -> 0.7 -> 0.6 per level of manipulator efficiency
 	lathe_build_rate = 0.85 - (man_rating * 0.05) // lathe_build_rate goes 0.8 -> 0.75 -> 0.7 -> 0.65 -> 0.6 per level of manipulator efficiency
 

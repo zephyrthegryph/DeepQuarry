@@ -173,15 +173,9 @@
 
 	var/cap_rating = 0
 	var/bin_rating = 0
-	var/manip_rating = 0
-
-	for(var/obj/item/stock_parts/P in component_parts)
-		if(istype(P, /obj/item/stock_parts/capacitor))
-			cap_rating += P.rating
-		if(istype(P, /obj/item/stock_parts/matter_bin))
-			bin_rating += P.rating
-		if(istype(P, /obj/item/stock_parts/manipulator))
-			manip_rating += P.rating
+	var/manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
+	cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
+	bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 
 	power_per_mole = round(initial(power_per_mole) / cap_rating)
 

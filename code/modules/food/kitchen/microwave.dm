@@ -53,19 +53,10 @@
 ********************/
 
 /obj/machinery/microwave/RefreshParts()
-	var/smrating = 0
-	var/mbrating = 0
-	var/mlrating = 0
-	var/caprating = 0
-
-	for(var/obj/item/stock_parts/scanning_module/scanning_module in component_parts)
-		smrating += scanning_module.rating
-	for(var/obj/item/stock_parts/matter_bin/matter_bin in component_parts)
-		mbrating += matter_bin.rating
-	for(var/obj/item/stock_parts/micro_laser/micro_laser in component_parts)
-		mlrating += micro_laser.rating
-	for(var/obj/item/stock_parts/capacitor/capacitor in component_parts)
-		caprating += capacitor.rating
+	var/smrating = get_part_rating(/obj/item/stock_parts/scanning_module)
+	var/mbrating = get_part_rating(/obj/item/stock_parts/matter_bin)
+	var/mlrating = get_part_rating(/obj/item/stock_parts/micro_laser)
+	var/caprating = get_part_rating(/obj/item/stock_parts/capacitor)
 
 	// If it's advanced
 	if(smrating >= 3 || always_advanced)
@@ -618,7 +609,8 @@
 
 /obj/machinery/microwave/proc/cookingContents() // this is a better way to deal with the contents of a microwave, since the previous method is stupid.
 	var/list/workingList = contents.Copy() // Using the copy proc because otherwise the two lists seem to become soul bonded.
-	workingList -= component_parts
+	if(component_parts)
+		workingList -= component_parts
 	workingList -= circuit
 	if(paicard)
 		workingList -= paicard

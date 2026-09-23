@@ -81,9 +81,7 @@
 
 /obj/machinery/bomb_tester/RefreshParts()
 	..()
-	var/scan_rating = 0
-	for(var/obj/item/stock_parts/scanning_module/S in component_parts)
-		scan_rating += S.rating
+	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
 /obj/machinery/bomb_tester/declare_interactions(list/into)

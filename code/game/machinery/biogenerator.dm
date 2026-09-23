@@ -322,14 +322,8 @@
 
 /obj/machinery/biogenerator/RefreshParts()
 	..()
-	var/man_rating = 0
-	var/bin_rating = 0
-
-	for(var/obj/item/stock_parts/P in component_parts)
-		if(istype(P, /obj/item/stock_parts/matter_bin))
-			bin_rating += P.rating
-		if(istype(P, /obj/item/stock_parts/manipulator))
-			man_rating += P.rating
+	var/man_rating = get_part_rating(/obj/item/stock_parts/manipulator)
+	var/bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 
 	build_eff = man_rating
 	eat_eff = bin_rating
