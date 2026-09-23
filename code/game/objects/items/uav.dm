@@ -328,13 +328,6 @@
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[msg]"))))
 		master.show_message(rendered, type)
 
-/obj/item/uav/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			die()
-		if(2.0)
-			deal_damage(DAMAGE_BLAST, 25)
-
 /obj/item/uav/atom_destruction(damage_flag)
 	. = ..()
 	die()

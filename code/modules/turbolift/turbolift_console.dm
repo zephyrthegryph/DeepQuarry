@@ -1,5 +1,6 @@
 // Base type, do not use.
 /obj/structure/lift
+	resistance_flags = BOMB_PROOF
 	name = "turbolift control component"
 	icon = 'icons/obj/turbolift.dmi'
 	anchored = TRUE
@@ -210,8 +211,3 @@
 // End panel.
 
 
-/obj/structure/lift/button/ex_act()
-	return
-
-/obj/structure/lift/panel/ex_act()
-	return

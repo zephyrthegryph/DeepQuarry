@@ -46,9 +46,6 @@
 		return 1
 
 
-/obj/machinery/containment_field/ex_act(severity)
-	return 0
-
 /obj/machinery/containment_field/Crossed(atom/A)
 	if(!istype(A) || A.is_incorporeal())
 		return

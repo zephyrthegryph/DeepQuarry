@@ -88,20 +88,6 @@
 		return ITEM_INTERACT_SUCCESS
 	..()
 
-/obj/item/stool/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-				return
-		if(3.0)
-			if (prob(5))
-				qdel(src)
-				return
-
 /obj/item/stool/proc/dismantle()
 	if(material)
 		material.place_sheet(get_turf(src), 1)

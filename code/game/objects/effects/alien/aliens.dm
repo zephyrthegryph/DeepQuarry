@@ -171,18 +171,6 @@
 		if(prob(max(10, 60 - (5 * nearby_weeds.len))))
 			W.process()
 
-/obj/effect/alien/weeds/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-		if(3.0)
-			if (prob(5))
-				qdel(src)
-	return
-
 /obj/effect/alien/weeds/attackby(obj/item/W, mob/user)
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(LAZYLEN(W.attack_verb))

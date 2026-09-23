@@ -171,25 +171,6 @@
 
 	return 1
 
-/// Electromagnetic "damage" pulses the mob instead of injuring it (ion
-/// projectiles, emp_on_hit). Strength scales with the unblocked amount.
-/mob/living/proc/electromagnetic_hit(amount)
-	switch(round(amount))
-		if(91 to INFINITY)
-			emp_act(EMP_HEAVY)
-		if(76 to 90)
-			emp_act(prob(50) ? EMP_HEAVY : EMP_MEDIUM)
-		if(61 to 75)
-			emp_act(EMP_MEDIUM)
-		if(46 to 60)
-			emp_act(prob(50) ? EMP_MEDIUM : EMP_LIGHT)
-		if(31 to 45)
-			emp_act(EMP_LIGHT)
-		if(16 to 30)
-			emp_act(prob(50) ? EMP_LIGHT : EMP_HARMLESS)
-		else
-			emp_act(EMP_HARMLESS)
-
 //this proc handles being hit by a thrown atom
 /mob/living/hitby(atom/movable/source, datum/thrownthing/throwingdatum)//Standardization and logging -Sieve
 	if(is_incorporeal())

@@ -72,6 +72,7 @@
 	qdel(src)
 
 /obj/structure/meteorite
+	resistance_flags = BOMB_PROOF
 	name = "meteorite"
 	desc = "A big hunk of star-stuff."
 	icon = 'icons/obj/meteor.dmi'
@@ -94,9 +95,6 @@
 		if(91 to 100)
 			new /obj/machinery/artifact(src)
 	AddElement(/datum/element/climbable)
-
-/obj/structure/meteorite/ex_act()
-	return
 
 /obj/structure/meteorite/attackby(obj/item/I, mob/M)
 	if(istype(I, /obj/item/pickaxe))

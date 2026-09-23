@@ -292,20 +292,11 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	return 0
 
 //explosion handling
-/obj/structure/cable/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-		if(2.0)
-			if (prob(50))
-				recover_coil(src.loc, src.d1 ? 2 : 1)
-				qdel(src)
-
-		if(3.0)
-			if (prob(25))
-				recover_coil(src.loc, src.d1 ? 2 : 1)
-				qdel(src)
-	return
+/// Blasted cables leave a length of coil behind.
+/obj/structure/cable/atom_destruction(damage_flag)
+	if(damage_flag == BOMB)
+		recover_coil(loc, d1 ? 2 : 1)
+	return ..()
 
 /obj/structure/cable/proc/cableColor(colorC)
 	var/color_n = "#DD0000"

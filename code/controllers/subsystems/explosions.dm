@@ -28,10 +28,18 @@ SUBSYSTEM_DEF(explosions)
 	VAR_PRIVATE/epoch_submissions = 0
 	VAR_PRIVATE/epoch_visuals = 0
 	VAR_PRIVATE/last_epoch_ms = 0
-	/// Epoch-wide atom queue. Turfs collect strongest severity first; atoms are
-	/// resolved only after all turf transformations complete.
-	VAR_PRIVATE/list/resolve_atom_queue
-	VAR_PRIVATE/resolve_atom_index = 1
+	/// Epoch-wide blast batches (damage.md §7): type -> list of atoms. Turfs
+	/// collect strongest severity first; atoms receive their packets only after
+	/// all turf transformations complete, one type batch at a time.
+	VAR_PRIVATE/list/blast_batches = list()
+	/// Every batch (a list of atoms) in the order it was opened. A type whose
+	/// batch is already delivered opens a new one (contents spilled late).
+	VAR_PRIVATE/list/blast_batch_order = list()
+	VAR_PRIVATE/blast_batch_type_index = 1
+	VAR_PRIVATE/blast_batch_atom_index = 2
+	/// Most atoms that receive a blast packet in one fire(); the rest resume next fire.
+	var/blast_batch_budget = 1024
+	VAR_PRIVATE/epoch_blast_batches = 0
 	/// Atoms may move between affected turfs or be reached by several nested cell
 	/// blasts. Strongest-first resolution plus this epoch set guarantees one
 	/// ex_act per atom instead of repeatedly destroying the same ownership graph.
@@ -83,6 +91,7 @@ SUBSYSTEM_DEF(explosions)
 		"epoch_visuals" = epoch_visuals,
 		"epoch_atoms_resolved" = epoch_atoms_resolved,
 		"epoch_atoms_deduplicated" = epoch_atoms_deduplicated,
+		"epoch_blast_batches" = epoch_blast_batches,
 		"epoch_atom_collect_ms" = epoch_atom_collect_ms,
 		"epoch_atom_resolve_ms" = epoch_atom_resolve_ms,
 		"deferred_turf_updates" = max(0, length(deferred_turf_update_keys) - deferred_turf_update_index + 1),
@@ -152,7 +161,7 @@ SUBSYSTEM_DEF(explosions)
 			return
 	record_turf_phase_cost(profile_resolve_phase, phase_profile_start)
 
-	if(resolve_explosions && !flush_resolve_atom_queue())
+	if(resolve_explosions && !deliver_blast_batches())
 		return
 	if(resolve_explosions && !flush_deferred_turf_updates())
 		return
@@ -327,44 +336,95 @@ SUBSYSTEM_DEF(explosions)
 							//															want each one to take up a third of the crater
 	var/collect_start = TICK_USAGE
 	for(var/atom/movable/AM as anything in T)
-		if(AM && !QDELETED(AM) && AM.simulated)
-			var/prior_severity = resolved_atoms[AM]
-			if(prior_severity)
-				epoch_atoms_deduplicated++
-				if(severity < prior_severity)
-					resolved_atoms[AM] = severity
-			else
-				resolved_atoms[AM] = severity
-				resolve_atom_queue += AM
+		queue_blast(AM, severity)
 	epoch_atom_collect_ms += TICK_DELTA_TO_MS(TICK_USAGE - collect_start)
 	T.ex_act(severity)
 	return TRUE
 
-/datum/controller/subsystem/explosions/proc/flush_resolve_atom_queue()
+/// Queue `AM` for a blast packet this epoch. Each atom is hit once, at the
+/// strongest severity that reached it. Bomb-proof atoms are never queued.
+/datum/controller/subsystem/explosions/proc/queue_blast(atom/movable/AM, severity)
+	if(!AM || QDELETED(AM) || !AM.simulated)
+		return
+	if(isobj(AM))
+		var/obj/O = AM
+		if(O.resistance_flags & BOMB_PROOF)
+			return
+	var/prior_severity = resolved_atoms[AM]
+	if(prior_severity)
+		epoch_atoms_deduplicated++
+		if(severity < prior_severity)
+			resolved_atoms[AM] = severity
+		return
+	resolved_atoms[AM] = severity
+	var/list/batch = blast_batches[AM.type]
+	if(!batch)
+		batch = list(AM.type) // [1] is the batch's type; atoms follow
+		blast_batches[AM.type] = batch
+		blast_batch_order[++blast_batch_order.len] = batch
+	batch += AM
+
+/// Deliver queued blast packets, one type batch at a time, to at most
+/// `budget` atoms. Containers queue their contents into the same epoch, in
+/// bulk, before their own packet lands (a destroyed container spills them).
+/// Returns TRUE once every batch is delivered.
+/datum/controller/subsystem/explosions/proc/deliver_blast_batches(budget = blast_batch_budget, tick_checked = TRUE)
 	var/profile_start = TICK_USAGE
-	while(resolve_atom_index <= length(resolve_atom_queue))
-		var/atom/movable/AM = resolve_atom_queue[resolve_atom_index++]
-		if(AM && !QDELETED(AM) && AM.simulated)
+	var/delivered = 0
+	while(blast_batch_type_index <= length(blast_batch_order))
+		var/list/batch = blast_batch_order[blast_batch_type_index]
+		if(blast_batch_atom_index == 2)
+			epoch_blast_batches++
+		while(blast_batch_atom_index <= length(batch))
+			if(delivered >= budget || (tick_checked && MC_TICK_CHECK))
+				epoch_atom_resolve_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
+				return FALSE
+			var/atom/movable/AM = batch[blast_batch_atom_index++]
+			delivered++
+			if(!AM || QDELETED(AM))
+				continue
 			var/severity = resolved_atoms[AM]
-			if(severity)
-				epoch_atoms_resolved++
-				atom_profile_index++
-				if(profile_atom_types && !(atom_profile_index % atom_profile_stride))
-					var/atom_type = "[AM.type]"
-					var/atom_started = TICK_USAGE
-					AM.ex_act(severity)
-					atom_profile_cost[atom_type] += TICK_DELTA_TO_MS(TICK_USAGE - atom_started) * atom_profile_stride
-					atom_profile_calls[atom_type] += atom_profile_stride
-				else
-					AM.ex_act(severity)
-		if(MC_TICK_CHECK)
-			epoch_atom_resolve_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
-			return FALSE
+			if(!severity)
+				continue
+			var/contents_severity = length(AM.contents) ? AM.explosion_contents_severity(severity) : 0
+			if(contents_severity)
+				for(var/atom/movable/inner as anything in AM.contents)
+					queue_blast(inner, contents_severity)
+			epoch_atoms_resolved++
+			atom_profile_index++
+			if(profile_atom_types && !(atom_profile_index % atom_profile_stride))
+				var/atom_type = "[AM.type]"
+				var/atom_started = TICK_USAGE
+				AM.ex_act(severity)
+				atom_profile_cost[atom_type] += TICK_DELTA_TO_MS(TICK_USAGE - atom_started) * atom_profile_stride
+				atom_profile_calls[atom_type] += atom_profile_stride
+			else
+				AM.ex_act(severity)
+		// Later atoms of this type (spilled contents) open a fresh batch.
+		var/batch_type = batch[1]
+		if(blast_batches[batch_type] == batch)
+			blast_batches -= batch_type
+		blast_batch_type_index++
+		blast_batch_atom_index = 2
 	epoch_atom_resolve_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
-	resolve_atom_queue.Cut()
-	resolve_atom_index = 1
-	resolved_atoms.Cut()
+	clear_blast_batches()
 	return TRUE
+
+/datum/controller/subsystem/explosions/proc/clear_blast_batches()
+	blast_batches.Cut()
+	blast_batch_order.Cut()
+	blast_batch_type_index = 1
+	blast_batch_atom_index = 2
+	resolved_atoms.Cut()
+
+/// Pending atoms, for tests and diagnostics.
+/datum/controller/subsystem/explosions/proc/pending_blast_count()
+	. = 0
+	for(var/i in blast_batch_type_index to length(blast_batch_order))
+		var/list/batch = blast_batch_order[i]
+		. += length(batch) - 1
+	if(blast_batch_type_index <= length(blast_batch_order))
+		. -= blast_batch_atom_index - 2
 
 /datum/controller/subsystem/explosions/proc/dump_atom_profile()
 	if(!profile_atom_types || !length(atom_profile_cost))
@@ -392,8 +452,6 @@ SUBSYSTEM_DEF(explosions)
 	PRIVATE_PROC(TRUE)
 	resolve_explosions = TRUE
 	bulk_resolution_active = TRUE
-	resolve_atom_queue = list()
-	resolve_atom_index = 1
 
 /datum/controller/subsystem/explosions/proc/end_resolve()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -459,12 +517,13 @@ SUBSYSTEM_DEF(explosions)
 	epoch_visuals = 0
 	epoch_atoms_resolved = 0
 	epoch_atoms_deduplicated = 0
+	epoch_blast_batches = 0
 	epoch_atom_collect_ms = 0
 	epoch_atom_resolve_ms = 0
 	atom_profile_index = 0
 	atom_profile_cost.Cut()
 	atom_profile_calls.Cut()
-	resolved_atoms.Cut()
+	clear_blast_batches()
 	explosion_resistance_cache.Cut()
 	deferred_turf_updates.Cut()
 	deferred_turf_update_keys.Cut()

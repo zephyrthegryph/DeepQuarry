@@ -154,20 +154,6 @@
 	else
 		repair_damage(amount)
 
-/obj/vehicle/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			explode()
-			return
-		if(2.0)
-			deal_damage(DAMAGE_BLAST, rand(5,10)*fire_dam_coeff + rand(10,20)*brute_dam_coeff)
-			return
-		if(3.0)
-			if (prob(50))
-				deal_damage(DAMAGE_BLAST, rand(1,5)*fire_dam_coeff + rand(1,5)*brute_dam_coeff)
-				return
-	return
-
 /obj/vehicle/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF || !mechanical)

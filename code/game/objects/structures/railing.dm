@@ -234,19 +234,6 @@
 		update_icon()
 	return TRUE
 
-/obj/structure/railing/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			qdel(src)
-			return
-		if(3.0)
-			qdel(src)
-			return
-	return
-
 /obj/structure/railing/overhang/hazard
 	name = "hazardous ledge"
 	desc = "An overhang made of a steel. It's painted with vibrant hazard markings."

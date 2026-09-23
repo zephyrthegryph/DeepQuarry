@@ -20,13 +20,11 @@
 	set_light(3, 2, l_color = "#FA58F4")
 
 /obj/effect/phase_shift
+	resistance_flags = BOMB_PROOF
 	name = "rift"
 	desc = "There was a maniac here a moment ago..."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "rift"
-
-/obj/effect/phase_shift/ex_act()
-	return
 
 /obj/effect/phase_shift/Initialize(mapload)
 	. = ..()

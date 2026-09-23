@@ -687,7 +687,7 @@
 	if(nodamage || !damage || !istype(target))
 		return 0
 	if(emp_on_hit)
-		target.electromagnetic_hit(damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
+		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
 		return 0
 	return target.receive_projectile(src, def_zone)
 

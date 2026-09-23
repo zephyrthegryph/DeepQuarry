@@ -49,27 +49,8 @@
 
 
 // When destroyed by explosions, properly handle contents.
-/obj/structure/transit_tube_pod/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			for(var/atom/movable/AM in contents)
-				AM.forceMove(get_turf(src))
-				AM.ex_act(severity)
-
-			qdel(src)
-			return
-		if(2.0)
-			if(prob(50))
-				for(var/atom/movable/AM in contents)
-					AM.forceMove(get_turf(src))
-					AM.ex_act(severity)
-
-				qdel(src)
-				return
-		if(3.0)
-			return
-
-
+/obj/structure/transit_tube_pod/explosion_contents_severity(severity)
+	return severity
 
 /obj/structure/transit_tube_pod/Initialize(mapload)
 	. = ..()

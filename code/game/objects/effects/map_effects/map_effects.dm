@@ -1,6 +1,7 @@
 // These are objects you can use inside special maps (like PoIs), or for adminbuse.
 // Players cannot see or interact with these.
 /obj/effect/map_effect
+	resistance_flags = BOMB_PROOF
 	anchored = TRUE
 	invisibility = INVISIBILITY_BADMIN // So a badmin can go view these by changing their see_invisible.
 	icon = 'icons/effects/map_effects.dmi'
@@ -12,9 +13,6 @@
 	var/ignore_afk = TRUE				// If true, AFK people (5 minutes) won't satisfy it as well.
 	var/retry_delay = 5 SECONDS			// How long until we check for players again.
 	var/next_attempt = 0				// Next time we're going to do ACTUAL WORK
-
-/obj/effect/map_effect/ex_act()
-	return
 
 /obj/effect/map_effect/singularity_pull()
 	return

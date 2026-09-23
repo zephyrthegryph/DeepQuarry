@@ -1,6 +1,7 @@
 GLOBAL_VAR_INIT(narsie_behaviour, "CultStation13")
 GLOBAL_VAR_INIT(narsie_cometh, 0)
 /obj/singularity/narsie //Moving narsie to its own file for the sake of being clearer
+	resistance_flags = BOMB_PROOF
 	name = "Nar-Sie"
 	desc = "Your mind begins to bubble and ooze as it tries to comprehend what it sees."
 	icon = 'icons/obj/narsie.dmi'
@@ -267,9 +268,6 @@ GLOBAL_VAR_INIT(narsie_cometh, 0)
 		if (dist <= consume_range && !istype(A, get_base_turf_by_area(A)))
 			var/turf/T2 = A
 			T2.ChangeTurf(get_base_turf_by_area(A))
-
-/obj/singularity/narsie/ex_act(severity) //No throwing bombs at it either. --NEO
-	return
 
 /obj/singularity/narsie/proc/pickcultist() //Narsie rewards his cultists with being devoured first, then picks a ghost to follow. --NEO
 	var/list/cultists = list()

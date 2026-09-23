@@ -1,5 +1,6 @@
 //temporary visual effects
 /obj/effect/temp_visual
+	resistance_flags = BOMB_PROOF
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "nothing"
 	anchored = TRUE
@@ -23,9 +24,6 @@
 	return
 
 /obj/effect/temp_visual/singularity_pull()
-	return
-
-/obj/effect/temp_visual/ex_act()
 	return
 
 /obj/effect/temp_visual/dir_setting

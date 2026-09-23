@@ -82,6 +82,7 @@
 ////////////////Expedition Frontier Phaser////////////////
 
 /obj/item/gun/energy/locked/frontier
+	resistance_flags = BOMB_PROOF
 	name = "frontier phaser"
 	desc = "An extraordinarily rugged laser weapon, built to last and requiring effectively no maintenance. Includes a built-in crank charger for recharging away from civilization. This one has a safety interlock that prevents firing while in proximity to the facility."
 	description_fluff = "The NT Brand Model E2 Secured Phaser System, a specialty phaser that has an intergrated chip that prevents the user from opperating the weapon within the vicinity of any NanoTrasen opperated outposts/stations/bases. However, this chip can be disabled so the weapon CAN BE used in the vicinity of any NanoTrasen opperated outposts/stations/bases. The weapon doesn't use traditional weapon power cells and instead works via a pump action that recharges the internal cells. It is a staple amongst exploration personell who usually don't have the license to opperate a lethal weapon through NT and provides them with a weapon that can be recharged away from civilization."
@@ -133,9 +134,6 @@
 
 /obj/item/gun/energy/locked/frontier/emp_act(severity)
 	return ..(severity+2)
-
-/obj/item/gun/energy/locked/frontier/ex_act() //|rugged|
-	return
 
 /obj/item/gun/energy/locked/frontier/unlocked
 	desc = "An extraordinarily rugged laser weapon, built to last and requiring effectively no maintenance. Includes a built-in crank charger for recharging away from civilization."

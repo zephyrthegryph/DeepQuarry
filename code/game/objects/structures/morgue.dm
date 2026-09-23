@@ -54,29 +54,13 @@
 			src.icon_state = "morgue1"
 	return
 
-/obj/structure/morgue/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			for(var/atom/movable/A as mob|obj in src)
-				A.forceMove(src.loc)
-				ex_act(severity)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(src.loc)
-					ex_act(severity)
-				qdel(src)
-				return
-		if(3.0)
-			if (prob(5))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(src.loc)
-					ex_act(severity)
-				qdel(src)
-				return
-	return
+/obj/structure/morgue/explosion_contents_severity(severity)
+	return severity
+
+/obj/structure/morgue/atom_destruction(damage_flag)
+	for(var/atom/movable/A as anything in contents)
+		A.forceMove(loc)
+	return ..()
 
 /obj/structure/morgue/attack_robot(mob/user)
 	if(Adjacent(user))

@@ -6,6 +6,7 @@ FLOOR SAFES
 
 //SAFES
 /obj/structure/safe
+	resistance_flags = BOMB_PROOF
 	name = "safe"
 	desc = "A huge chunk of metal with a dial embedded in it. Fine print on the dial reads \"Scarborough Arms - 2 tumbler safe, guaranteed thermite resistant, explosion resistant, and assistant resistant.\""
 	icon = 'icons/obj/structures.dmi'
@@ -165,9 +166,6 @@ FLOOR SAFES
 			to_chat(user, "Hold [I] in one of your hands while you manipulate the dial.")
 			return
 
-
-/obj/structure/safe/ex_act(severity)
-	return
 
 //FLOOR SAFES
 /obj/structure/safe/floor

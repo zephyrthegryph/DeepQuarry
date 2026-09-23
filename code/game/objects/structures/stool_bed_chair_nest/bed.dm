@@ -81,20 +81,6 @@
 		return TRUE
 	return ..()
 
-/obj/structure/bed/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-				return
-		if(3.0)
-			if (prob(5))
-				qdel(src)
-				return
-
 /obj/structure/bed/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/stack))
 		if(padding_material)

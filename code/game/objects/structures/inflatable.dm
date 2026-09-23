@@ -49,19 +49,6 @@
 	update_nearby_tiles()
 	return ..()
 
-/obj/structure/inflatable/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			puncture()
-			return
-		if(3.0)
-			if(prob(50))
-				puncture()
-				return
-
 /obj/structure/inflatable/blob_act()
 	puncture()
 

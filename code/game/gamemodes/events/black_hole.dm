@@ -1,4 +1,5 @@
 /obj/effect/bhole
+	resistance_flags = BOMB_PROOF
 	name = "black hole"
 	icon = 'icons/obj/objects.dmi'
 	desc = "FUCK FUCK FUCK AAAHHH"
@@ -111,5 +112,3 @@
 		if(ST.type != base_turf)
 			ST.ChangeTurf(base_turf)
 
-/obj/effect/bhole/ex_act(strength) // Don't get destroyed by explosions. Why would we?
-	return

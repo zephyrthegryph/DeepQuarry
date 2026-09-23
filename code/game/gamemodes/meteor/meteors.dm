@@ -110,6 +110,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 //////////////////////
 
 /obj/effect/meteor
+	resistance_flags = BOMB_PROOF
 	name = "the concept of meteor"
 	desc = "You should probably run instead of gawking at this."
 	icon = 'icons/obj/meteor.dmi'
@@ -208,9 +209,6 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	make_debris()
 	meteor_effect(explode)
 	qdel(src)
-
-/obj/effect/meteor/ex_act()
-	return
 
 /obj/effect/meteor/attackby(obj/item/W as obj, mob/user as mob, params)
 	if(istype(W, /obj/item/pickaxe))

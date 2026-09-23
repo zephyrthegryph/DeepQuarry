@@ -1,4 +1,5 @@
 /obj/effect/falling_effect
+	resistance_flags = BOMB_PROOF
 	name = DEVELOPER_WARNING_NAME
 	desc = "no data"
 	invisibility = INVISIBILITY_ABSTRACT
@@ -63,5 +64,3 @@
 /obj/effect/falling_effect/singularity_pull()
 	return
 
-/obj/effect/falling_effect/ex_act()
-	return
