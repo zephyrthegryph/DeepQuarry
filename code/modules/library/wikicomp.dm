@@ -22,9 +22,19 @@
 /obj/machinery/librarywikicomp/Initialize(mapload)
 	. = ..()
 
-/obj/machinery/librarywikicomp/attack_hand(mob/user)
-	if(..())
-		return 1
+/obj/machinery/librarywikicomp/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/wikicomp_open_ui,
+	)
+	..()
+
+/// Old attack_hand: `if(..()) return; ` then percussive maintenance / open the interface.
+/datum/interaction/machine_hand/wikicomp_open_ui
+	id = "wikicomp_open_ui"
+	name = "Use"
+	effect = /obj/machinery/librarywikicomp/proc/interaction_open_ui
+
+/obj/machinery/librarywikicomp/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(crash)
 		user.visible_message("[user] performs percussive maintenance on \the [src].", "You try to smack some sense into \the [src].")
 		if(prob(10))
@@ -32,6 +42,7 @@
 	if(!crash)
 		tgui_interact(user)
 		playsound(src, "keyboard", 40) // into console
+	return TRUE
 
 /obj/machinery/librarywikicomp/allow_pai_interaction()
 	return TRUE
