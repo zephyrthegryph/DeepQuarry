@@ -58,10 +58,7 @@
 	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
-	/// Shared between items with the same values after Initialize(); call own_armor() before writing to it.
-	var/list/armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)
-	/// TRUE once armor is this item's own list rather than the shared table.
-	var/tmp/armor_owned = FALSE
+
 	var/obj/item/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
@@ -151,8 +148,6 @@
 
 /obj/item/Initialize(mapload)
 	. = ..()
-	if(islist(armor) && !armor_owned)
-		armor = string_assoc_list(armor)
 	// Read-only per-type tables: share identical ones (writers assign a new list).
 	attack_verb = intern_list(attack_verb)
 	tool_qualities = intern_list(tool_qualities)
@@ -1145,9 +1140,4 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 			return TRUE
 	return FALSE
 
-/// Copy-on-write: give this item a private armor list before editing it.
-/obj/item/proc/own_armor()
-	if(armor_owned)
-		return
-	armor = islist(armor) ? armor.Copy() : list()
-	armor_owned = TRUE
+

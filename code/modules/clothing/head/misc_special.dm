@@ -20,7 +20,7 @@
 	item_state_slots = list(slot_r_hand_str = "welding", slot_l_hand_str = "welding")
 	MATERIAL_MIX(list(MAT_STEEL = 3000, MAT_GLASS = 1000))
 	var/up = 0
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	flags_inv = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 	body_parts_covered = HEAD|FACE|EYES
 	actions_types = list(/datum/action/item_action/flip_welding_mask)
@@ -354,7 +354,7 @@
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = HEAD
 	attack_verb = list("warned", "cautioned", "smashed")
-	armor = list("melee" = 5, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
+	armor_spec = "melee=5"
 
 
 /obj/item/clothing/head/cone

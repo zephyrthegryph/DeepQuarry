@@ -67,7 +67,7 @@
 	name = "hawaiian shirt"
 	desc = "You probably need some welder googles to look at this."
 	icon_state = "hawaiian_cyan"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
 	heat_protection = CHEST
@@ -118,7 +118,7 @@
 	name = "black tropical shirt"
 	desc = "A classic themed neosilk tropical shirt. This one makes you feel like an animal."
 	icon_state = "animalstyle"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
 	heat_protection = CHEST
@@ -178,7 +178,7 @@
 	item_state = "classicponcho"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	max_heat_protection_temperature = T0C+100
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST|ARMS|LEGS
 	heat_protection = CHEST|ARMS|LEGS
@@ -380,7 +380,7 @@
 	item_state = "vest"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	item_state_slots = list(slot_r_hand_str = "wcoat", slot_l_hand_str = "wcoat")
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
 	heat_protection = CHEST

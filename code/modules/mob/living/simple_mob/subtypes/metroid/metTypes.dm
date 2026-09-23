@@ -15,14 +15,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	melee_damage_upper = 0
 	movement_cooldown = 6
 	harm_intent_damage = 2
-	armor = list(
-				"melee" = 50,
-				"bullet" = -90,
-				"laser" = 0,
-				"energy" = -50,
-				"bomb" = -100,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=50;bullet=-90;energy=-50;bomb=-100;bio=100;rad=100"
 	vore_active = 1
 	vore_bump_chance = 25
 	vore_capacity = 1
@@ -84,14 +77,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	melee_damage_lower = 1
 	melee_damage_upper = 5
 	melee_miss_chance = 0
-	armor = list(
-				"melee" = 0,
-				"bullet" = -60,
-				"laser" = 60,
-				"energy" = 10,
-				"bomb" = -100,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "bullet=-60;laser=60;energy=10;bomb=-100;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
@@ -144,14 +130,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	melee_damage_lower = 2
 	melee_damage_upper = 9
 	melee_miss_chance = 0
-	armor = list(
-				"melee" = 0,
-				"bullet" = -50,
-				"laser" = 70,
-				"energy" = 10,
-				"bomb" = -100,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "bullet=-50;laser=70;energy=10;bomb=-100;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
@@ -213,14 +192,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	melee_damage_upper = 15
 	melee_miss_chance = 5
 	attacktext = list("rammed")
-	armor = list(
-				"melee" = 40,
-				"bullet" = 15,
-				"laser" = 50,
-				"energy" = 60,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=40;bullet=15;laser=50;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
@@ -284,14 +256,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	melee_damage_upper = 20
 	melee_miss_chance = 5
 	attacktext = list("rammed")
-	armor = list(
-				"melee" = 55,
-				"bullet" = 15,
-				"laser" = 50,
-				"energy" = 90,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=55;bullet=15;laser=50;energy=90;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
@@ -374,14 +339,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	ranged_cooldown_time = 5 SECOND
 	attack_armor_pen = 10
 	attacktext = list("slashed")
-	armor = list(
-				"melee" = 70,
-				"bullet" = 0,
-				"laser" = 50,
-				"energy" = 60,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=70;laser=50;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
@@ -469,14 +427,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	ranged_cooldown_time = 2.5 SECOND
 	attack_armor_pen = 20
 	attacktext = list("slashed")
-	armor = list(
-				"melee" = 75,
-				"bullet" = 20,
-				"laser" = 55,
-				"energy" = 60,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=75;bullet=20;laser=55;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
@@ -565,14 +516,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	melee_miss_chance = 5
 	attack_armor_pen = 20
 	attacktext = list("gnashed")
-	armor = list(
-				"melee" = 75,
-				"bullet" = 40,
-				"laser" = 60,
-				"energy" = 90,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=75;bullet=40;laser=60;energy=90;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200

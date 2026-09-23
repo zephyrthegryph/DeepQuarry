@@ -151,7 +151,7 @@
 	gas_transfer_coefficient = 0.01
 	permeability_coefficient = 0.01
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	armor = list(melee = 100, bullet = 100, laser = 100,energy = 100, bomb = 100, bio = 100, rad = 100)
+	armor_spec = "melee=100;bullet=100;laser=100;energy=100;bomb=100;bio=100;rad=100"
 	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0
@@ -1148,7 +1148,7 @@
 
 /obj/item/clothing/under/explorer/armored
 	desc = "A green uniform for operating in hazardous environments. This one looks like it's been modified."
-	armor = list(melee = 10, bullet = 10, laser = 10,energy = 10, bomb = 10, bio = 10, rad = 30)
+	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=10;rad=30"
 
 /obj/item/clothing/under/cohesion
 	name = "black cohesion suit"
@@ -1485,7 +1485,7 @@
 	desc = "A sturdy civilian law enforcement uniform belonging to the Hedberg-Hammarstrom private security corporation."
 	icon_state = "hedberg"
 	worn_state = "hedberg"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) //Equivalent to security officer's jumpsuit
+	armor_spec = "melee=10" //Equivalent to security officer's jumpsuit
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/corp/hedbergtech
@@ -1493,7 +1493,7 @@
 	desc = "A technician's uniform belonging to the Hedberg-Hammarstrom private security corporation. It is lightly shielded against radiation."
 	icon_state = "hedberg_tech"
 	worn_state = "hedberg_tech"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10) // Equivalent to engineer's jumpsuit.
+	armor_spec = "rad=10" // Equivalent to engineer's jumpsuit.
 	rolled_sleeves = 0
 
 //christmas stuff
@@ -1935,7 +1935,7 @@
 
 //Same as Nanotrasen Security Uniforms
 /obj/item/clothing/under/ert
-	armor = list(melee = 5, bullet = 10, laser = 10, energy = 5, bomb = 5, bio = 0, rad = 0)
+	armor_spec = "melee=5;bullet=10;laser=10;energy=5;bomb=5"
 
 /obj/item/clothing/under/qipao
 	name = "black qipao"

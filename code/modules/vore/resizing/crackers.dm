@@ -177,7 +177,7 @@
 	desc = "A paper crown so thin that you can see through it."
 	flags_inv = 0
 	body_parts_covered = 0
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/head/paper_crown/Initialize(mapload)
 	var/list/styles = list("paper_crown_blue","paper_crown_green","paper_crown_yellow","paper_crown_red","paper_crown_pink")

@@ -130,15 +130,7 @@
 	//Damage resistances
 	var/grab_resist = 0				// Chance for a grab attempt to fail. Note that this is not a true resist and is just a prob() of failure.
 	var/resistance = 0				// Damage reduction for all types
-	var/list/armor = list(			// Values read by injury_armor()
-				"melee" = 0,
-				"bullet" = 0,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "bio=100;rad=100" // Innate armour, read by injury_armor() through get_armor().
 	// Protection against heat/cold/electric/water effects.
 	// 0 is no protection, 1 is total protection. Negative numbers increase vulnerability.
 	var/heat_resist = 0.0

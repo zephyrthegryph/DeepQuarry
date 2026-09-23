@@ -36,7 +36,7 @@
 	item_flags = FLEXIBLEMATERIAL
 	gas_transfer_coefficient = 0.90
 	permeability_coefficient = 0.01
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 60, rad = 0)
+	armor_spec = "bio=60"
 	var/hanging = 0
 
 /obj/item/clothing/mask/surgical/proc/adjust_mask(mob/user)
@@ -45,15 +45,14 @@
 		if (src.hanging)
 			gas_transfer_coefficient = 1
 			body_parts_covered = body_parts_covered & ~FACE
-			armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+			set_armor(dq_armor_none())
 			icon_state = "steriledown"
 			to_chat(user, "You pull the mask below your chin.")
 		else
 			gas_transfer_coefficient = initial(gas_transfer_coefficient)
 			body_parts_covered = initial(body_parts_covered)
 			icon_state = initial(icon_state)
-			armor = initial(armor)
-			armor_owned = FALSE
+			set_armor(null)
 			to_chat(user, "You pull the mask up to cover your face.")
 		update_clothing_icon()
 		worn_protection_changed()
@@ -74,14 +73,14 @@
 	desc = "A dust mask designed to protect the wearer against construction and/or custodial particulate."
 	icon_state = "dust"
 	item_state_slots = list(slot_r_hand_str = "dust", slot_l_hand_str = "dust")
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 30, rad = 0)
+	armor_spec = "bio=30"
 
 /obj/item/clothing/mask/surgical/cloth
 	name = "cloth mask"
 	desc = "A cloth mask designed to protect the wearer against allergens, illnesses, and social interaction."
 	icon_state = "cloth"
 	item_state_slots = list(slot_r_hand_str = "cloth", slot_l_hand_str = "cloth")
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 20, rad = 0)
+	armor_spec = "bio=20"
 
 /obj/item/clothing/mask/fakemoustache
 	name = "fake moustache"

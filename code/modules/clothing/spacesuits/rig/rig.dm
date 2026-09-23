@@ -17,7 +17,7 @@
 	w_class = ITEMSIZE_HUGE
 
 	// These values are passed on to all component pieces.
-	armor = list(melee = 40, bullet = 5, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 20)
+	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20"
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0.2
@@ -350,11 +350,10 @@
 								helmet.update_light(wearer)
 
 					//sealed pieces become airtight, protecting against diseases
-					piece.own_armor()
 					if (!seal_target)
-						piece.armor["bio"] = 100
+						piece.set_armor_value("bio", 100)
 					else
-						piece.armor["bio"] = src.armor["bio"]
+						piece.set_armor_value("bio", src.get_armor().value("bio"))
 					piece.worn_protection_changed()
 					playsound(src,'sound/machines/rig/rigservo.ogg', 10, FALSE)
 

@@ -154,7 +154,7 @@
 	icon = 'icons/mob/tribal_gear.dmi'
 	icon_override = 'icons/mob/tribal_gear.dmi'
 	icon_state = "lilly_cloak"
-	armor = list(melee = 20, bullet = 20, laser = 20, energy = 20, bomb = 0, bio = 60, rad = 60) //Seemingly medicore, but tack on the 20% chance to completly negate something and you get something that is average.
+	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bio=60;rad=60" //Seemingly medicore, but tack on the 20% chance to completly negate something and you get something that is average.
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS //Head be vunerable but cloak covers the other bits.
 	var/block_chance = 20
 

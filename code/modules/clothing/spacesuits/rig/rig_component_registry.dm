@@ -86,8 +86,7 @@
 			piece.siemens_coefficient = holder.siemens_coefficient
 		piece.permeability_coefficient = holder.permeability_coefficient
 		piece.unacidable = holder.unacidable
-		if(islist(holder.armor))
-			piece.armor = holder.armor.Copy()
+		piece.set_armor(holder.get_armor())
 		piece.worn_protection_changed()
 
 /*

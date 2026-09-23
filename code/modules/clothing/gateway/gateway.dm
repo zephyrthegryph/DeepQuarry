@@ -3,7 +3,7 @@
 	name = "wizard hat"
 	desc = "A pointy pixelated-looking hat, 0s and 1s dancing off the fabric"
 	icon_state = "redwizard"
-	armor = list(melee = 20, bullet = 20, laser = 60, energy = 60, bomb = 70, bio = 50, rad = 50)
+	armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"
 	siemens_coefficient = 0.1
 	cold_protection = HEAD
 	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
@@ -16,7 +16,7 @@
 	name = "wizard robes"
 	desc = "A silky robe with 0s and 1s flying off the seams."
 	icon_state = "redwizard"
-	armor = list(melee = 20, bullet = 20, laser = 60, energy = 60, bomb = 70, bio = 50, rad = 50)
+	armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"
 	siemens_coefficient = 0.1
 	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
@@ -33,7 +33,7 @@
 	desc = "The hat holding the most attack and defense"
 	icon_state = "redwizard"
 	color = "#660066"
-	armor = list(melee = 70, bullet = 70, laser = 40, energy = 40, bomb = 90, bio = 70, rad = 70)
+	armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"
 	siemens_coefficient = 0.1
 	cold_protection = HEAD
 	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
@@ -46,7 +46,7 @@
 	name = "wizard robes"
 	desc = "Robes holding the most attack and defense."
 	icon_state = "psyamp"
-	armor = list(melee = 70, bullet = 70, laser = 40, energy = 40, bomb = 90, bio = 70, rad = 70)
+	armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"
 	siemens_coefficient = 0.1
 	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
@@ -66,7 +66,7 @@
 	icon_state = "wrathcrown"
 	cooldown_duration = 1 MINUTES // How long the cooldown should be.
 	brainloss_cost = 0
-	armor = list(melee = 70, bullet = 60, laser = 50, energy = 50, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=70;bullet=60;laser=50;energy=50"
 
 /obj/item/clothing/head/psy_crown/candycrown/activate_ability(mob/living/wearer)
 	..()
@@ -79,7 +79,7 @@
 	icon_state = "regen"
 	item_state = "graygloves"
 	siemens_coefficient = 0
-	armor = list(melee = 70, bullet = 60, laser = 50, energy = 50, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=70;bullet=60;laser=50;energy=50"
 
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	..()
@@ -116,7 +116,7 @@
 	desc = "A really strange armor made of a similar substance as the creatures near it."
 	icon_state = "armor"
 	blood_overlay_type = "armor"
-	armor = list(melee = 70, bullet = 60, laser = 50, energy = 50, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=70;bullet=60;laser=50;energy=50"
 	var/tension_threshold = 125
 	var/cooldown = null // world.time of when this was last triggered.
 	var/cooldown_duration = 3 MINUTES // How long the cooldown should be.
@@ -169,7 +169,7 @@
 	icon_state = "alien_tank"
 	slowdown = 0
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	armor = list(melee = 25, bullet = 25, laser = 25, energy = 25, bomb = 25, bio = 25, rad = 25) //Should be good enough to mimic the old '12% reduction'.
+	armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=25;bio=25;rad=25" //Should be good enough to mimic the old '12% reduction'.
 	block_chance = 12
 
 /obj/item/clothing/suit/armor/tesla/vistor
@@ -177,21 +177,21 @@
 	desc = "A strange set of armor crackling with lighting"
 	slowdown = 0
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	armor = list(melee = 60, bullet = 60, laser = 60, energy = 60, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=60;bullet=60;laser=60;energy=60"
 
 /obj/item/clothing/suit/armor/reactive/vistor
 	name = "vibrating suit"
 	desc = "A strange set of armor that crackles with energy"
 	icon_state = "reactiveoff"
 	slowdown = 0
-	armor = list(melee = 35, bullet = 35, laser = 35, energy = 35, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=35;bullet=35;laser=35;energy=35"
 
 /obj/item/clothing/suit/armor/protectionbubble
 	name = "protective bubble"
 	desc = "A strange set of armor that seems to coat your entire body in a thing protective bubble"
 	icon_state = "armor"
 	blood_overlay_type = "armor"
-	armor = list(melee = 25, bullet = 25, laser = 25, energy = 25, bomb = 50, bio = 100, rad = 75)
+	armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=50;bio=100;rad=75"
 	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS | HEAD
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	min_pressure_protection = 0 * ONE_ATMOSPHERE

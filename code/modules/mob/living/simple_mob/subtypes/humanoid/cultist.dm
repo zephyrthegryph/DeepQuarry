@@ -66,7 +66,7 @@
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 100, rad = 100)	// Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
+	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
@@ -225,7 +225,7 @@
 	attack_armor_pen = 25
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 45, bullet = 40, laser = 30, energy = 80, bomb = 20, bio = 100, rad = 100)	// Reduced Resistance to Approximate increased Tesh damage.
+	armor_spec = "melee=45;bullet=40;laser=30;energy=80;bomb=20;bio=100;rad=100" // Reduced Resistance to Approximate increased Tesh damage.
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
@@ -271,7 +271,7 @@
 	melee_damage_upper = 15
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 70, bullet = 60, laser = 30, energy = 80, bomb = 35, bio = 100, rad = 100)	// Better Armor to match lizard brute resist
+	armor_spec = "melee=70;bullet=60;laser=30;energy=80;bomb=35;bio=100;rad=100" // Better Armor to match lizard brute resist
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	movement_cooldown = 4
 	base_attack_cooldown = 7.5 //Two knives mean double stab.
@@ -317,7 +317,7 @@
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 50, bullet = 30, laser = 50, energy = 80, bomb = 25, bio = 100, rad = 100)	//Armor Rebalanced for Cult Robes.
+	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
 
@@ -363,7 +363,7 @@
 	melee_damage_upper = 15
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 50, bullet = 30, laser = 50, energy = 80, bomb = 25, bio = 100, rad = 100)	//Armor Rebalanced for Cult Robes.
+	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	movement_cooldown = 4
 
@@ -405,7 +405,7 @@
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 35, bullet = 20, laser = 35, energy = 60, bomb = 20, bio = 100, rad = 100)	//Rebalanced for Robes and Tesh damage
+	armor_spec = "melee=35;bullet=20;laser=35;energy=60;bomb=20;bio=100;rad=100" //Rebalanced for Robes and Tesh damage
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	base_attack_cooldown = 7.5
 	projectilesound = 'sound/weapons/spiderlunge.ogg'
@@ -449,7 +449,7 @@
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 80, bomb = 30, bio = 100, rad = 100)	// Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
+	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
@@ -517,7 +517,7 @@
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 100, rad = 100)	//Super Armor since Boss Mob
+	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 	base_attack_cooldown = 5
@@ -568,7 +568,7 @@
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 100, rad = 100)	//Super Armor since Boss Mob
+	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
@@ -688,7 +688,7 @@
 	melee_damage_upper = 25 //old 15
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor = list(melee = 60, bullet = 40, laser = 60, energy = 80, bomb = 25, bio = 100, rad = 100)
+	armor_spec = "melee=60;bullet=40;laser=60;energy=80;bomb=25;bio=100;rad=100"
 	attack_sound = 'sound/weapons/rapidslice.ogg'
 	projectiletype = /obj/item/projectile/energy/plasma/vepr
 	projectilesound = 'sound/weapons/spiderlunge.ogg'

@@ -247,13 +247,6 @@
 /mob/living/simple_mob/get_poison_protection()
 	return poison_resist
 
-// Armor
-/mob/living/simple_mob/injury_armor(kind, zone = null)
-	. = armor_factor(kind)
-	var/key = injury_armor_key(kind)
-	if(key && armor)
-		. += armor[key] || 0
-
 // Lightning
 /mob/living/simple_mob/lightning_act()
 	..()

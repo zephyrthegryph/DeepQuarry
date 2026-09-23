@@ -181,7 +181,7 @@
 	desc = "It's an orange high visibility jumpskirt worn by engineers. It has minor radiation shielding."
 	name = "engineer's jumpskirt"
 	icon_state = "enginef"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 	item_state_slots = list(slot_r_hand_str = "engine", slot_l_hand_str = "engine")
 
 /obj/item/clothing/under/rank/chief_engineer/skirt
@@ -206,7 +206,7 @@
 	name = "scientist's jumpskirt"
 	icon_state = "sciencef"
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10"
 
 /obj/item/clothing/under/rank/medical/skirt
 	name = "medical doctor's jumpskirt"
@@ -233,7 +233,7 @@
 	name = "security officer's jumpskirt"
 	desc = "Standard feminine fashion for Security Officers.  It's made of sturdier material than the standard jumpskirts."
 	icon_state = "securityf"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/rank/warden/skirt

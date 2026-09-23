@@ -353,6 +353,17 @@ if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_a
 	FAILED=1
 fi;
 
+part "interned armour"
+# Armour is an interned /datum/armor (code/game/atom/armor.dm, damage.md §4):
+# a type declares armor_spec = "melee=40;bullet=30", readers call get_armor(),
+# and an instance changes it with set_armor()/set_armor_value(). No per-type or
+# per-instance armour lists, and no second random roll on top of the soak.
+if $grep -n '(^\s*(var/(list/)?)?armor\s*=\s*list\s*\(|\barmor\??\[|\.armor\b\s*(=|\[|\?)|\b(own_armor|roll_armor_variance)\b)' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: an armour list detected. Declare armor_spec = \"key=value;...\" and read get_armor().value(key) (code/game/atom/armor.dm).${NC}"
+	FAILED=1
+fi;
+
 part "medical condition severity writes"
 # Condition severity is observable contract state. All writes, including
 # pre-attachment initialization, go through set_severity()/adjust_severity()

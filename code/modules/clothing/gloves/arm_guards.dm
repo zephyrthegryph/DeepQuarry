@@ -28,7 +28,7 @@
 	icon_state = "arm_guards_laser"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	siemens_coefficient = 0.4 //This is worse than the other ablative pieces, to avoid this from becoming the poor warden's insulated gloves.
-	armor = list(melee = 10, bullet = 10, laser = 80, energy = 50, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
 
 /obj/item/clothing/gloves/arm_guard/bulletproof
 	name = "bullet resistant arm guards"
@@ -36,7 +36,7 @@
 	icon_state = "arm_guards_bullet"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	siemens_coefficient = 0.7
-	armor = list(melee = 10, bullet = 80, laser = 10, energy = 10, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
 
 /obj/item/clothing/gloves/arm_guard/riot
 	name = "riot arm guards"
@@ -44,7 +44,7 @@
 	icon_state = "arm_guards_riot"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	siemens_coefficient = 0.5
-	armor = list(melee = 80, bullet = 10, laser = 10, energy = 10, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
 
 /obj/item/clothing/gloves/arm_guard/combat
 	name = "combat arm guards"
@@ -52,7 +52,7 @@
 	icon_state = "arm_guards_combat"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	siemens_coefficient = 0.6
-	armor = list(melee = 50, bullet = 50, laser = 50, energy = 30, bomb = 30, bio = 0, rad = 0)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"
 
 /obj/item/clothing/gloves/arm_guard/flexitac
 	name = "tactical arm guards"
@@ -60,7 +60,7 @@
 	icon_state = "arm_guards_flexitac"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 40, laser = 60, energy = 35, bomb = 30, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 	min_cold_protection_temperature = T0C - 20
 	cold_protection = ARMS
 

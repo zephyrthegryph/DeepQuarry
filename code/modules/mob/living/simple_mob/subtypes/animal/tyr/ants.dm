@@ -140,7 +140,7 @@
 	name = "quartz metal ant"
 	icon_state = "quartz_ant"
 	icon_living = "quartz_ant"
-	armor = list(melee = 80, bullet = 80, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "melee=80;bullet=80;bio=100;rad=100"
 	butchery_loot = list(\
 		/obj/item/stack/material/quartz = 18\
 		)

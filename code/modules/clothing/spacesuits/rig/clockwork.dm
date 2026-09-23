@@ -5,7 +5,7 @@
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "clockwork_rig"
 	slot_flags = SLOT_BELT
-	armor = list(melee = 70, bullet = 55, laser = 65, energy = 65, bomb = 65, bio = 0, rad = 100)
+	armor_spec = "melee=70;bullet=55;laser=65;energy=65;bomb=65;rad=100"
 	slowdown = 2
 	offline_slowdown = 4
 	offline_vision_restriction = 1

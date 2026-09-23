@@ -81,26 +81,29 @@ emp_act
 
 	..(stun_amount, agony_amount, def_zone, used_weapon, electric)
 
-/mob/living/carbon/human/injury_armor(kind, zone = null)
-	. = armor_factor(kind)
-	var/key = injury_armor_key(kind)
-	if(!key)
-		return
+/// Worn armour on the struck part, from the body's worn protection cache.
+/// No part given: every part's covering, weighted by its size.
+/mob/living/carbon/human/injury_armor_set(zone = null)
 	if(zone)
 		var/obj/item/organ/external/affecting = zone_to_external(zone)
 		if(affecting)
-			return . + worn_armor_organ(affecting, key)
-	// No part given: the covering of every part, weighted by its size.
-	var/armorval = 0
+			return body.worn_armor_set(affecting.body_part)
+	var/list/sum = list()
 	var/total = 0
 	for(var/organ_name in organs_by_name)
 		if(organ_name in GLOB.organ_rel_size)
 			var/obj/item/organ/external/organ = organs_by_name[organ_name]
 			if(organ)
 				var/weight = GLOB.organ_rel_size[organ_name]
-				armorval += worn_armor_organ(organ, key) * weight
+				var/list/values = body.worn_armor_set(organ.body_part).raw_values()
+				for(var/key in values)
+					sum[key] += values[key] * weight
 				total += weight
-	return . + armorval / max(total, 1)
+	if(!total || !length(sum))
+		return dq_armor_none()
+	for(var/key in sum)
+		sum[key] /= total
+	return dq_armor(sum)
 
 /// The external limb a zone refers to: a BP_* zone, a limb, or an internal
 /// organ (its parent limb).
@@ -183,13 +186,6 @@ emp_act
 		if(istype(gear) && (gear.body_parts_covered & FACE) && !(gear.item_flags & FLEXIBLEMATERIAL) && !(gear.item_flags & ALLOW_SURVIVALFOOD))
 			return gear
 	return null
-
-/mob/living/carbon/human/proc/check_shields(damage = 0, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	for(var/obj/item/shield in list(get_equipped_item(SLOT_ID_HAND_L), get_equipped_item(SLOT_ID_HAND_R), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_EAR_L), get_equipped_item(SLOT_ID_EAR_R))) // included ears for the headset/event item
-		if(!shield) continue
-		. = shield.handle_shield(src, damage, damage_source, attacker, def_zone, attack_text)
-		if(.) return
-	return 0
 
 /mob/living/carbon/human/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
 	if(check_neckgrab_attack(I, user, target_zone))

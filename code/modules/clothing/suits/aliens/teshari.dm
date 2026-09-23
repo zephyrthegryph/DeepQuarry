@@ -207,7 +207,7 @@
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) // end
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/hos/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_SECURITY)
@@ -220,7 +220,7 @@
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) // end
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/sec/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_SECURITY)
@@ -520,7 +520,7 @@
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) // end
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_SECURITY)
@@ -553,7 +553,7 @@
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.6
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0) // end
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_SECURITY)

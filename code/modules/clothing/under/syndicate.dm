@@ -5,7 +5,7 @@
 	icon_state = "syndicate"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
 	has_sensor = 0
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/syndicate/combat //ERT tactleneck
@@ -14,7 +14,7 @@
 	icon_state = "combat"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
 	has_sensor = 1
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/syndicate/tacticool
@@ -28,4 +28,4 @@
 
 /obj/item/clothing/under/syndicate/tacticool/loadout //loadout tacticool option. No armor, but has sensors
 	has_sensor = 1
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""

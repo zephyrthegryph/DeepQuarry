@@ -108,9 +108,9 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 		temparmor = armor_settings + temparmor
 		to_chat(usr, span_boldnotice("You signal the suit to harden."))
 		to_chat(H, span_notice("Your suit hardens in response to physical trauma."))
-		holder.armor = temparmor.Copy()
+		holder.set_armor(dq_armor(temparmor))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
-			piece.armor = temparmor.Copy()
+			piece.set_armor(dq_armor(temparmor))
 		holder.slowdown = slowdown
 		active = 1
 		H.worn_protection_changed()
@@ -121,9 +121,9 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	if(!..(1))
 		return 0
 	if(forced)
-		holder.armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)
+		holder.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
-			piece.armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)
+			piece.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		holder.slowdown = initial(slowdown)
 		active = 0
 		holder.wearer?.worn_protection_changed()
@@ -132,9 +132,9 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	if(H)
 		to_chat(usr, span_boldnotice("You signal the suit to relax."))
 		to_chat(H, span_warning("Your suit softens."))
-		holder.armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)
+		holder.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
-			piece.armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)
+			piece.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		holder.slowdown = initial(slowdown)
 		active = 0
 		H.worn_protection_changed()

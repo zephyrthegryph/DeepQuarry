@@ -8,7 +8,7 @@
 	item_icons = list(slot_w_uniform_str = 'icons/inventory/uniform/mob.dmi')
 	rolled_down = 0
 	rolled_sleeves = 0
-	armor = list(melee = 5, bullet = 0, laser = 5, energy = 5, bomb = 0, bio = 5, rad = 5)
+	armor_spec = "melee=5;laser=5;energy=5;bio=5;rad=5"
 	siemens_coefficient = 0.8
 
 //PT
@@ -17,7 +17,7 @@
 	desc = "Shorts! Shirt! Miami! Sexy!"
 	icon_state = "miami"
 	worn_state = "miami"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 0.9
 	body_parts_covered = CHEST
 
@@ -48,7 +48,7 @@
 	icon_state = "blackutility"
 	worn_state = "blackutility"
 	rolled_sleeves = 0
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/utility/blue
@@ -81,14 +81,14 @@
 	desc = "The utility uniform of the Nanotrasen Defense Force, made from biohazard resistant material. This one has silver trim."
 	icon_state = "blackutility_crew"
 	worn_state = "blackutility_crew"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 10)
+	armor_spec = "bio=10;rad=10"
 
 /obj/item/clothing/under/sifcop
 	name = "\improper SifGuard law enforcement uniform"
 	desc = "A sturdy law enforcement uniform typical of Vir's civilian law enforcement officers."
 	icon_state = "sifcop"
 	worn_state = "sifcop"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) //Equivalent to security officer's jumpsuit
+	armor_spec = "melee=10" //Equivalent to security officer's jumpsuit
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/solgov/utility/sifguard_skirt
@@ -162,7 +162,7 @@
 	desc = "The utility uniform of the USDF Fleet, made from an insulated material."
 	icon_state = "navyutility"
 	worn_state = "navyutility"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 10, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "energy=10"
 	siemens_coefficient = 0.7
 
 /obj/item/clothing/under/solgov/utility/fleet/command
@@ -286,7 +286,7 @@
 	desc = "A service uniform of some kind."
 	icon_state = "whiteservice"
 	worn_state = "whiteservice"
-	armor = list(melee = 5, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 5, rad = 0)
+	armor_spec = "melee=5;bio=5"
 	siemens_coefficient = 0.9
 	siemens_coefficient = 0.9
 
@@ -499,7 +499,7 @@
 	icon_state = "hazard"
 	worn_state = "hazard"
 	siemens_coefficient = 0.8
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 20, bio = 0, rad = 20)
+	armor_spec = "bomb=20;rad=20"
 	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
 /obj/item/clothing/under/sterile
@@ -508,7 +508,7 @@
 	icon_state = "sterile"
 	worn_state = "sterile"
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 30, rad = 0)
+	armor_spec = "bio=30"
 
 //SAARE
 
@@ -517,7 +517,7 @@
 	desc = "You shouldn't be seeing this."
 	icon = 'icons/inventory/uniform/item.dmi'
 	item_icons = list(slot_w_uniform_str = 'icons/inventory/uniform/mob.dmi')
-	armor = list(melee = 5, bullet = 0, laser = 5, energy = 5, bomb = 0, bio = 5, rad = 5)
+	armor_spec = "melee=5;laser=5;energy=5;bio=5;rad=5"
 	siemens_coefficient = 0.8
 
 /obj/item/clothing/under/saare/utility
@@ -531,7 +531,7 @@
 	desc = "The service uniform of Stealth Assault Enterprises, for low-ranking mercenaries."
 	icon_state = "terranservice"
 	worn_state = "terranservice"
-	armor = list(melee = 5, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 5, rad = 0)
+	armor_spec = "melee=5;bio=5"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/under/saare/service/command
@@ -554,5 +554,5 @@
 	desc = "A padded work suit belonging to the Galactic Survey Administration, SolGov's scientific exploration division. It has minor radiation shielding."
 	icon_state = "gsa_work"
 	worn_state = "gsa_work"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 	rolled_sleeves = 0

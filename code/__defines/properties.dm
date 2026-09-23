@@ -53,6 +53,12 @@
 #define PROP_INTEGRITY_FAILURE "integrity_failure"
 /// Fraction of heat a holder's shell (or a worn layer) keeps from what it covers, 0..1.
 #define PROP_INSULATION "insulation"
+/// Weakest hardness of the object's materials (resists blunt impacts).
+#define PROP_HARDNESS "hardness"
+/// Weakest yield strength of the object's materials (resists cuts and punctures).
+#define PROP_YIELD_STRENGTH "yield_strength"
+/// Weakest fracture toughness of the object's materials (resists punctures).
+#define PROP_FRACTURE_TOUGHNESS "fracture_toughness"
 // Tag ids.
 #define TAG_SHARP "sharp"
 #define TAG_FLAMMABLE "flammable"

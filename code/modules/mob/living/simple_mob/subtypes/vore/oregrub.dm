@@ -65,15 +65,7 @@
 	poison_resist = 1.0
 
 	//these things are resilient, on account of being infused with all the minerals they eat
-	armor = list(
-				"melee"		= 25,
-				"bullet"	= 15,
-				"laser"		= 15,
-				"energy"	= 0,
-				"bomb"		= 25,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=25;bullet=15;laser=15;bomb=25;bio=100;rad=100"
 
 	can_be_drop_prey = FALSE
 	glow_override = TRUE
@@ -91,15 +83,7 @@
 	vore_pounce_chance = 80 // Full-grown grubs should pounce. More homf opportunities if you're dumb enough to poke it.
 	vore_pounce_maxhealth = 100 // They won't pounce by default, as they're passive. This is just so the nom check succeeds (and allows it to try and eat you) once you poke the damn thing. :u
 	//lavagrubs have even more armor than oregrubs
-	armor = list(
-				"melee"		= 50,
-				"bullet"	= 25,
-				"laser"		= 25,
-				"energy"	= 0,
-				"bomb"		= 50,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=50;bullet=25;laser=25;bomb=50;bio=100;rad=100"
 
 	var/lava_min_ore = 6
 	var/lava_max_ore = 10
