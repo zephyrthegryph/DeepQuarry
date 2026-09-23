@@ -234,9 +234,7 @@
 	brainmob.nif = nif
 	brainmob.soulcatcher = src
 	brainmob.container = src
-	brainmob.stat = 0
 	brainmob.SetSilent(FALSE)
-	GLOB.dead_mob_list -= brainmob
 	brainmob.add_language(LANGUAGE_GALCOM)
 	brainmobs |= brainmob
 

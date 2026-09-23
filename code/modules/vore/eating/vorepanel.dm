@@ -1217,31 +1217,9 @@
 										break
 								if(H.vitality() > 0)
 									break
-						// Now we do the check to see if we should revive...
-						var/should_proceed_with_revive = TRUE
-						var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
-						should_proceed_with_revive &&= !H.should_have_organ(O_BRAIN) || (brain && (!istype(brain) || brain.defib_timer > 0))
-						if(!H.isSynthetic())
-							should_proceed_with_revive &&= !(HUSK in H.mutations) && H.can_defib
-						if(should_proceed_with_revive)
-							for(var/organ_tag in H.species.has_organ)
-								var/obj/item/organ/O = H.species.has_organ[organ_tag]
-								var/vital = initial(O.vital) //check for vital organs
-								if(vital)
-									O = H.internal_organs_by_name[organ_tag]
-									if(!O || O.damage > O.max_damage)
-										should_proceed_with_revive = FALSE
-										break
-						if(should_proceed_with_revive)
-							GLOB.dead_mob_list.Remove(H)
-							if((H in GLOB.living_mob_list) || (H in GLOB.dead_mob_list))
-								WARNING("Mob [H] was reformed but already in the living or dead list still!")
-							GLOB.living_mob_list += H
-
-							H.timeofdeath = 0
-							H.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
-							H.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
-							H.reload_fullscreen()
+						// Revive if the body can come back (same eligibility as a defib). Life() brings them round.
+						if(H.stat == DEAD)
+							H.return_from_death("reformed in [host]", host, REVIVE_UNCONSCIOUS)
 					else
 						body_backup.revive()
 					body_backup.forceMove(T.loc)
@@ -1310,29 +1288,9 @@
 						body_backup.mend(TREAT_OXYGENATION, 1000)
 						H.mend(TREAT_ANTITOXIN, 1000)
 						body_backup.mend(TREAT_GENETIC_REPAIR, 6)
-						// Now we do the check to see if we should revive...
-						var/should_proceed_with_revive = TRUE
-						var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
-						should_proceed_with_revive &&= !H.should_have_organ(O_BRAIN) || (brain && brain.defib_timer > 0 )
-						if(should_proceed_with_revive)
-							for(var/organ_tag in H.species.has_organ)
-								var/obj/item/organ/O = H.species.has_organ[organ_tag]
-								var/vital = initial(O.vital) //check for vital organs
-								if(vital)
-									O = H.internal_organs_by_name[organ_tag]
-									if(!O || O.damage > O.max_damage)
-										should_proceed_with_revive = FALSE
-										break
-						if(should_proceed_with_revive)
-							GLOB.dead_mob_list.Remove(H)
-							if((H in GLOB.living_mob_list) || (H in GLOB.dead_mob_list))
-								WARNING("Mob [H] was defibbed but already in the living or dead list still!")
-							GLOB.living_mob_list += H
-
-							H.timeofdeath = 0
-							H.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
-							H.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
-							H.reload_fullscreen()
+						// Revive if the body can come back (same eligibility as a defib). Life() brings them round.
+						if(H.stat == DEAD)
+							H.return_from_death("reformed around [MMI] in [host]", host, REVIVE_UNCONSCIOUS)
 					MMI.body_backup = null
 			return TRUE
 		if("Health")

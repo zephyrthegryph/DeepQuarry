@@ -199,6 +199,17 @@ if $grep -n '\bcell\.(use|give)\(' $(find code/modules/clothing/spacesuits/rig -
 	FAILED=1
 fi;
 
+part "one revive path: return_from_death()"
+# A dead mob comes back only through /mob/living/proc/return_from_death() (body/revival.dm), and
+# dies only through the sealed /mob/proc/death() pipeline (mob/death.dm). No hand-rolled list swaps
+# or time-of-death resets elsewhere; the allowlisted files are creation/deletion bookkeeping.
+if $grep -n '(dead_mob_list\s*-=|dead_mob_list\.Remove\(|living_mob_list\s*(\+=|\|=)|living_mob_list\.Add\(|\btimeofdeath\s*=\s*(0|null)\b)' "${code_files[@]}" \
+	| grep -vE '^code/modules/body/revival\.dm:|^code/modules/mob/death\.dm:|^code/modules/mob/mob\.dm:|^code/_helpers/unsorted\.dm:|^code/modules/mob/living/carbon/human/human_species\.dm:|^code/modules/mob/living/silicon/ai/ai\.dm:|^code/game/objects/items/weapons/autopsy\.dm:' | grep -v 'var/'; then
+	echo
+	echo -e "${RED}ERROR: hand-rolled revive (living/dead list swap or time-of-death reset). Call L.return_from_death(reason, source, flags).${NC}"
+	FAILED=1
+fi;
+
 part "thermal constants: generated, not redefined (H1)"
 # Temperatures, heat capacities and thermal defaults are generated from
 # verdigris/domains/heat/src/consts.rs (`/// @dm-define`) into the bindings. A DM

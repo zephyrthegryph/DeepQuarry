@@ -75,11 +75,7 @@
 			var/mob/living/simple_mob/SM = L
 			SM.fully_heal()
 			SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, null, null, 0, null, INJURE_SILENT)
-			SM.stat = CONSCIOUS
-			GLOB.dead_mob_list -= SM
-			GLOB.living_mob_list += SM
-			SM.update_icon()
-			SM.revive()
+			SM.return_from_death("artifact resurrection", holder, REVIVE_IGNORE_WINDOW)
 			holder.visible_message(span_alien("\The [SM]'s eyes open in a flash of light!"))
 		else if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -97,12 +93,7 @@
 			holder.visible_message(span_alien("\The [H]'s body begins to shift and stir, loud, wet cracks emitting from within!"))
 
 			sleep(10 SECONDS)
-			if(H.client)
-				L.stat = CONSCIOUS
-				GLOB.dead_mob_list -= H
-				GLOB.living_mob_list += H
-				H.timeofdeath = null
-
+			if(H.client && H.return_from_death("artifact resurrection", holder, REVIVE_IGNORE_WINDOW) == TRUE)
 				holder.visible_message(span_alien("\The [H]'s eyes open in a flash of light!"))
 			else
 				holder.visible_message(span_alien("\The [H]'s body stays still...Perhaps their mind was not ready to rejoin their body."))
