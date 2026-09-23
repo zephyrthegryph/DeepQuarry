@@ -56,7 +56,7 @@
 			list("id" = KEYBIND_PROFILE_ROBOT, "name" = "Cyborg"),
 		),
 		"right_click_options" = list(
-			list("id" = INPUT_ACTION_MENU, "name" = "Menu (BYOND's right-click menu)"),
+			list("id" = INPUT_ACTION_MENU, "name" = "Menu (the interaction menu)"),
 			list("id" = INPUT_ACTION_ALTERNATE, "name" = "Alternate (same as Alt-click)"),
 		),
 		"max_keys" = KEYBIND_MAX_KEYS,

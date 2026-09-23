@@ -80,6 +80,9 @@
 	if(!results || !results.len)
 		results = list("You were unable to examine that. Tell a developer!")
 
+	var/list/interaction_lines = interaction_examine_lines(src, A)
+	if(interaction_lines)
+		results += interaction_lines
 	results += embedded_info(A)
 
 	var/final_string = span_infoplain("[jointext(results, "<br>")]")

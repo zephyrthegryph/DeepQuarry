@@ -1,6 +1,6 @@
 // Hover tracking (doc/rewrite/interactions.md §3). MouseEntered on map atoms
-// records the hovered atom for category keys (and, with I2, screentips). It is
-// throttled per client and does nothing for clients that don't use it.
+// records the hovered atom for category keys, the Menu key and screentips. It
+// is throttled per client and does nothing for clients that don't use it.
 
 /// The atom this client last hovered on the map, when hover tracking is on.
 /client/var/tmp/datum/weakref/hovered_ref
@@ -17,6 +17,8 @@
 		return
 	hover_next_update = world.time + INPUT_HOVER_THROTTLE
 	hovered_ref = WEAKREF(hovered)
+	if(screentip || screentips_enabled())
+		update_screentip()
 
 /// The hovered atom if it is still valid and on the mob's z-level, else null.
 /client/proc/hovered_atom()

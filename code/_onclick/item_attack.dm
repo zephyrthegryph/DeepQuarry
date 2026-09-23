@@ -72,11 +72,22 @@ avoid code duplication. This includes items that may sometimes act as a standard
 
 /**
  * Modern item interaction entry point: every quality offered by a multi-purpose
- * tool, in order. Returning no flags falls through to the legacy attackby path
- * in resolve_attackby().
+ * tool, in order, then the interactions that answer Use without a tool
+ * (doc/rewrite/interactions.md §7). The base *_act procs below end in the
+ * resolver too, so tool interactions run there. Returning no flags falls
+ * through to the legacy attackby path in resolve_attackby().
  */
 /atom/proc/item_interaction(mob/user, obj/item/tool, list/modifiers)
-	return tool_interaction(user, tool, modifiers, FALSE)
+	. = tool_interaction(user, tool, modifiers, FALSE)
+	if(.)
+		return
+	// Interactions that need no tool quality but answer Use with an item in hand.
+	switch(try_interaction(user, src, tool, INPUT_ACTION_USE, null, TRUE))
+		if(INTERACTION_TRY_RAN)
+			return ITEM_INTERACT_SUCCESS
+		if(INTERACTION_TRY_MENU, INTERACTION_TRY_BLOCKED)
+			return ITEM_INTERACT_BLOCKING
+	return NONE
 
 /// Right-click counterpart to item_interaction().
 /atom/proc/item_interaction_secondary(mob/user, obj/item/tool, list/modifiers)
@@ -127,17 +138,17 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	return NONE
 
 /atom/proc/screwdriver_act(mob/user, obj/item/tool)
-	return NONE
+	return interaction_tool_act(user, tool, TOOL_SCREWDRIVER)
 /atom/proc/crowbar_act(mob/user, obj/item/tool)
-	return NONE
+	return interaction_tool_act(user, tool, TOOL_CROWBAR)
 /atom/proc/wrench_act(mob/user, obj/item/tool)
-	return NONE
+	return interaction_tool_act(user, tool, TOOL_WRENCH)
 /atom/proc/wirecutter_act(mob/user, obj/item/tool)
-	return NONE
+	return interaction_tool_act(user, tool, TOOL_WIRECUTTER)
 /atom/proc/multitool_act(mob/user, obj/item/tool)
-	return NONE
+	return interaction_tool_act(user, tool, TOOL_MULTITOOL)
 /atom/proc/welder_act(mob/user, obj/item/tool)
-	return NONE
+	return interaction_tool_act(user, tool, TOOL_WELDER)
 /atom/proc/screwdriver_act_secondary(mob/user, obj/item/tool)
 	return NONE
 /atom/proc/crowbar_act_secondary(mob/user, obj/item/tool)

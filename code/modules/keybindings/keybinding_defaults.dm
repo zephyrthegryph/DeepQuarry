@@ -101,9 +101,10 @@
 		list("esay", "Event say", KEYBIND_CAT_ADMIN, "esay", null, KB_BOTH("F10")),
 		list("mentorsay", "Mentor chat", KEYBIND_CAT_ADMIN, "mentorsay", null, KB_BOTH("F11")),
 	)
-	// Interaction categories (I2 resolves them). Unbound by default.
+	// The interaction Menu and the interaction categories (code/datums/interactions/). Unbound by default.
+	. += list(list(INTERACTION_MENU_BINDING, "Interaction menu (hovered or in front)", KEYBIND_CAT_INTERACTION, ".input-menu", null, null))
 	for(var/category in INTERACTION_CATEGORIES)
-		. += list(list("category_[category]", "[capitalize(category)] (hovered or in front)", KEYBIND_CAT_INTERACTION, ".input-category [category]", null, null))
+		. += list(list(INTERACTION_CATEGORY_BINDING(category), "[capitalize(category)] (hovered or in front)", KEYBIND_CAT_INTERACTION, ".input-category [category]", null, null))
 
 #undef KB_BOTH
 #undef KB_HUMAN
