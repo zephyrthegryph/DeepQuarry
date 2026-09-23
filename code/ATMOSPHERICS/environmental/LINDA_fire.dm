@@ -387,7 +387,7 @@
 #define MIN_SIZE_SOUND 2
 ///handle the grouping of hotspot and then determining an average center to play sound in
 /datum/hot_group
-	var/list/obj/effect/hotspot/spot_list = list()
+	var/list/obj/effect/hotspot/spot_list
 	///the sound center turf which the looping sound will play
 	var/turf/open/current_sound_loc
 	var/datum/looping_sound/fire/sound
@@ -407,7 +407,7 @@
 	qdel(sound)
 
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
-	spot_list -= target
+	LAZYREMOVE(spot_list, target)
 	if(!length(spot_list))
 		qdel(src)
 		return
@@ -415,7 +415,7 @@
 /datum/hot_group/proc/add_to_group(obj/effect/hotspot/target)
 	if(QDELETED(target))
 		return
-	spot_list += target
+	LAZYADD(spot_list, target)
 	target.our_hot_group = src
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
 		update_sound()
@@ -434,7 +434,7 @@
 		sacrificial_group = src
 	for(var/obj/effect/hotspot/reference as anything in sacrificial_group.spot_list)
 		reference.our_hot_group = saving_group
-	saving_group.spot_list += sacrificial_group.spot_list
+	LAZYADD(saving_group.spot_list, sacrificial_group.spot_list)
 	qdel(sacrificial_group)
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
 		update_sound()

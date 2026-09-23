@@ -56,7 +56,7 @@
 					failed = TRUE
 
 		// Must have valid prereqs
-		if(node.prereq_ids.len)
+		if(length(node.prereq_ids))
 			for(var/req in node.prereq_ids)
 				if(!(req in SSresearch.techweb_nodes))
 					TEST_NOTICE(src, "TECHWEB NODE - [node.type] has a non-existant prereq_id: \"[req]\"")
@@ -68,7 +68,7 @@
 			var/datum/techweb_node/node = SSresearch.techweb_nodes[node_id]
 
 			// Check that our cost and make sure it's more expensive than our prior tier, unless they have a required experiment.
-			if(!length(node.required_experiments) && node.prereq_ids.len)
+			if(!length(node.required_experiments) && length(node.prereq_ids))
 				if(!node.starting_node)
 					var/current_cost = node.research_costs.len ? INFINITY : 0
 					for(var/check_cost_type in node.research_costs)

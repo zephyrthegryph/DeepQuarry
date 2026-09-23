@@ -14,7 +14,7 @@
 	/// If TRUE, grenade is permanently sealed when fully assembled, useful for things like off-the-shelf grenades.
 	var/sealed = FALSE
 	var/obj/item/assembly_holder/detonator = null
-	var/list/beakers = new/list()
+	var/list/beakers
 	var/list/allowed_containers = list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle)
 	var/affected_area = 3
 	special_handling = TRUE
@@ -41,10 +41,10 @@
 			det_time = null
 			stage=0
 			icon_state = initial(icon_state)
-		else if(beakers.len)
+		else if(length(beakers))
 			for(var/obj/B in beakers)
 				if(istype(B))
-					beakers -= B
+					LAZYREMOVE(beakers, B)
 					user.put_in_hands(B)
 		name = "unsecured grenade with [beakers.len] containers[detonator?" and detonator":""]"
 	if(stage > 1 && !active && clown_check(user))
@@ -84,7 +84,7 @@
 		stage = 1
 	else if(is_type_in_list(W, allowed_containers) && (!stage || stage==1) && path != 2)
 		path = 1
-		if(beakers.len == 2)
+		if(length(beakers) == 2)
 			to_chat(user, span_warning("The grenade can not hold more containers."))
 			return
 		else
@@ -92,7 +92,7 @@
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
 				user.drop_item()
 				W.loc = src
-				beakers += W
+				LAZYADD(beakers, W)
 				stage = 1
 				name = "unsecured grenade with [beakers.len] containers[detonator?" and detonator":""]"
 			else
@@ -103,7 +103,7 @@
 		return ..()
 	if(stage == 1)
 		path = 1
-		if(beakers.len)
+		if(length(beakers))
 			to_chat(user, span_notice("You lock the assembly."))
 			name = "grenade"
 		else
@@ -227,8 +227,8 @@
 
 	detonator = new/obj/item/assembly_holder/timer_igniter(src)
 
-	beakers += B1
-	beakers += B2
+	LAZYADD(beakers, B1)
+	LAZYADD(beakers, B2)
 
 /obj/item/grenade/chem_grenade/incendiary
 	name = "incendiary grenade"
@@ -251,8 +251,8 @@
 
 	detonator = new/obj/item/assembly_holder/timer_igniter(src)
 
-	beakers += B1
-	beakers += B2
+	LAZYADD(beakers, B1)
+	LAZYADD(beakers, B2)
 
 /obj/item/grenade/chem_grenade/antiweed
 	name = "weedkiller grenade"
@@ -273,8 +273,8 @@
 
 	detonator = new/obj/item/assembly_holder/timer_igniter(src)
 
-	beakers += B1
-	beakers += B2
+	LAZYADD(beakers, B1)
+	LAZYADD(beakers, B2)
 	icon_state = "grenade"
 
 /obj/item/grenade/chem_grenade/cleaner
@@ -296,8 +296,8 @@
 
 	detonator = new/obj/item/assembly_holder/timer_igniter(src)
 
-	beakers += B1
-	beakers += B2
+	LAZYADD(beakers, B1)
+	LAZYADD(beakers, B2)
 
 /obj/item/grenade/chem_grenade/teargas
 	name = "tear gas grenade"
@@ -320,5 +320,5 @@
 
 	detonator = new/obj/item/assembly_holder/timer_igniter(src)
 
-	beakers += B1
-	beakers += B2
+	LAZYADD(beakers, B1)
+	LAZYADD(beakers, B2)

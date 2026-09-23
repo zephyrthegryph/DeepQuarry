@@ -6,7 +6,7 @@
 	var/wind_dir = 0 // The direction the wind is blowing. Moving against the wind slows you down, while moving with it speeds you up.
 	var/wind_speed = 0 // How fast or slow a mob can be due to wind acting on them.
 	var/list/allowed_weather_types // Assoc list of weather identifiers, containing the actual weather datum.
-	var/list/roundstart_weather_chances = list() // Assoc list of weather identifiers and their odds of being picked to happen at roundstart.
+	var/list/roundstart_weather_chances // Assoc list of weather identifiers and their odds of being picked to happen at roundstart.
 	var/next_weather_shift = null // world.time when the weather subsystem will advance the forecast.
 	var/imminent_weather_shift = null // world.time when weather will shift towards pre-set imminent weather type.
 	var/list/forecast = list() // A list of what the weather will be in the future. This allows it to be pre-determined and planned around.
@@ -88,7 +88,7 @@
 // The forecast is made by calling this repeatively, from the bottom (highest index) of the forecast list.
 /datum/weather_holder/proc/get_next_weather(datum/weather/W)
 	if(!current_weather) // At roundstart, choose a suitable initial weather.
-		return pickweight(roundstart_weather_chances)
+		return pickweight(roundstart_weather_chances || list())
 	return pickweight(W.transition_chances)
 
 /datum/weather_holder/proc/advance_forecast()

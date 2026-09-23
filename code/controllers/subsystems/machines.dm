@@ -734,7 +734,7 @@ SUBSYSTEM_DEF(machines)
 	var/list/remaining = list()
 	var/list/frontier = list()
 	var/list/current_component
-	var/list/components = list()
+	var/list/components
 	var/list/target_nets
 	var/list/old_nodes
 	var/component_index = 1
@@ -782,7 +782,7 @@ SUBSYSTEM_DEF(machines)
 		return FALSE
 	remaining.Remove(seed)
 	current_component = list(seed)
-	components += list(current_component)
+	LAZYADD(components, list(current_component))
 	frontier += seed
 	return TRUE
 
@@ -816,7 +816,7 @@ SUBSYSTEM_DEF(machines)
 				continue
 			var/largest_index = 1
 			for(var/i in 2 to length(components))
-				if(length(components[i]) > length(components[largest_index]))
+				if(length(LAZYACCESS(components, i)) > length(LAZYACCESS(components, largest_index)))
 					largest_index = i
 			for(var/i in 1 to length(components))
 				var/datum/powernet/target = (i == largest_index) ? source_net : new()
@@ -826,7 +826,7 @@ SUBSYSTEM_DEF(machines)
 			source_net.cables = list()
 			phase = 3
 		else if(phase == 3)
-			var/list/component = components[component_index]
+			var/list/component = LAZYACCESS(components, component_index)
 			var/datum/powernet/target = LAZYACCESS(target_nets, component_index)
 			var/obj/structure/cable/cable = component[member_index]
 			cable.powernet = target

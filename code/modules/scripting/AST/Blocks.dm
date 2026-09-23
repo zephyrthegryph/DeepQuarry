@@ -9,7 +9,7 @@
 	and not just in the global scope as in many languages.
 */
 /datum/node/BlockDefinition
-	var/list/statements = list()
+	var/list/statements
 	var/list/functions  = list()
 	var/list/initial_variables
 

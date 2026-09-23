@@ -14,7 +14,7 @@
 	var/list/email_accounts
 	var/list/banned_nids
 	/// A list of nid - os datum pairs. An OS in this list is not necessarily connected to NTNet or visible on it.
-	var/list/registered_nids = list()
+	var/list/registered_nids
 	/// Amount of log entries the system tries to keep in memory. Keep below 999 to prevent byond from acting weirdly. High values make displaying logs much laggier.
 	var/setting_maxlogcount = 100
 
@@ -72,10 +72,10 @@
 				break
 
 /datum/ntnet/proc/get_os_by_nid(NID)
-	return registered_nids["[NID]"]
+	return LAZYACCESS(registered_nids, "[NID]")
 
 /datum/ntnet/proc/unregister(NID)
-	registered_nids -= "[NID]"
+	LAZYREMOVE(registered_nids, "[NID]")
 
 /datum/ntnet/proc/check_banned(NID)
 	if(!relays || !length(relays))

@@ -12,7 +12,7 @@
 	var/number    = 0          // Unused — TODEL
 
 	var/smes_demand    = 0     // total power demanded by SMESs from this network (for load balancing)
-	var/list/inputting = list()// terminals whose SMES masters are demanding input this tick
+	var/list/inputting// terminals whose SMES masters are demanding input this tick
 	var/smes_avail     = 0     // power (avail) contributed by SMESes
 	var/smes_newavail  = 0     // as above, for newavail
 	/// Persistent source rates. Republishing an unchanged rate is free.
@@ -35,12 +35,12 @@
 	var/problem_timer
 	var/material_problem = FALSE
 	/// Stable demand retained for APCs that are dependency-sleeping.
-	var/list/sleeping_apc_loads = list()
+	var/list/sleeping_apc_loads
 	/// Last semantic supply class observed by each sleeping APC. Accounting
 	/// jitter which remains inside a class never wakes the APC.
 	var/list/sleeping_apc_power_classes
 	/// One-tick machine usage folded into sleeping APC reservations.
-	var/list/sleeping_apc_dynamic_loads = list()
+	var/list/sleeping_apc_dynamic_loads
 	var/sleeping_apc_load_total = 0
 	/// Demand solved by the last completed accounting window. Repeated one-off
 	/// area use is compared against this completed value, not against the cleared
@@ -96,9 +96,9 @@
 		problem_timer = null
 	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
 		A?.wake_for_power_dependency()
-	sleeping_apc_loads.Cut()
+	LAZYCLEARLIST(sleeping_apc_loads)
 	LAZYCLEARLIST(sleeping_apc_power_classes)
-	sleeping_apc_dynamic_loads.Cut()
+	LAZYCLEARLIST(sleeping_apc_dynamic_loads)
 	for(var/obj/structure/cable/C in cables)
 		cables -= C
 		C.powernet = null
@@ -278,7 +278,7 @@
 	var/previous_supply_class = LAZYACCESS(sleeping_apc_power_classes, A)
 	unreserve_sleeping_apc_load(A)
 	amount = max(amount, 0)
-	sleeping_apc_loads[A] = amount
+	LAZYSET(sleeping_apc_loads, A, amount)
 	sleeping_apc_load_total += amount
 	LAZYSET(sleeping_apc_power_classes, A, isnull(previous_supply_class) ? apc_supply_class(amount) : previous_supply_class)
 	material_flow_dirty = TRUE
@@ -287,12 +287,12 @@
 /datum/powernet/proc/unreserve_sleeping_apc_load(obj/machinery/power/apc/A)
 	if(!A || !(A in sleeping_apc_loads))
 		return
-	var/reserved = sleeping_apc_loads[A]
+	var/reserved = LAZYACCESS(sleeping_apc_loads, A)
 	sleeping_apc_load_total -= reserved
 	load = max(load - reserved, 0)
-	sleeping_apc_loads.Remove(A)
+	LAZYREMOVE(sleeping_apc_loads, A)
 	LAZYREMOVE(sleeping_apc_power_classes, A)
-	sleeping_apc_dynamic_loads.Remove(A)
+	LAZYREMOVE(sleeping_apc_dynamic_loads, A)
 	material_flow_dirty = TRUE
 	mark_accounting_dirty()
 
@@ -301,10 +301,10 @@
 	if(!A || !delta || !(A in sleeping_apc_loads))
 		return FALSE
 	SSmachines.touch_accounting_powernet(src)
-	var/old_amount = sleeping_apc_loads[A]
+	var/old_amount = LAZYACCESS(sleeping_apc_loads, A)
 	var/new_amount = max(old_amount + delta, 0)
-	sleeping_apc_loads[A] = new_amount
-	sleeping_apc_dynamic_loads[A] = (sleeping_apc_dynamic_loads[A] || 0) + delta
+	LAZYSET(sleeping_apc_loads, A, new_amount)
+	LAZYSET(sleeping_apc_dynamic_loads, A, (LAZYACCESS(sleeping_apc_dynamic_loads, A) || 0) + delta)
 	sleeping_apc_load_total += new_amount - old_amount
 	load = max(load + new_amount - old_amount, 0)
 	return TRUE
@@ -316,12 +316,12 @@
 /datum/powernet/proc/begin_accounting_window()
 	window_start_balance_class = supply_balance_class(registered_supply_total)
 	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_dynamic_loads)
-		var/dynamic_amount = sleeping_apc_dynamic_loads[A]
+		var/dynamic_amount = LAZYACCESS(sleeping_apc_dynamic_loads, A)
 		if(A in sleeping_apc_loads)
-			sleeping_apc_loads[A] = max(sleeping_apc_loads[A] - dynamic_amount, 0)
+			LAZYSET(sleeping_apc_loads, A, max(LAZYACCESS(sleeping_apc_loads, A) - dynamic_amount, 0))
 			sleeping_apc_load_total = max(sleeping_apc_load_total - dynamic_amount, 0)
 	load = sleeping_apc_load_total + material_loss_watts
-	sleeping_apc_dynamic_loads.Cut()
+	LAZYCLEARLIST(sleeping_apc_dynamic_loads)
 
 /// Publish a completed demand transaction once, after every APC has reported.
 /// Comparing partial accumulation made a healthy grid appear to cross deficit
@@ -391,7 +391,7 @@
 	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
 		if(!A || QDELETED(A))
 			continue
-		var/new_class = apc_supply_class(sleeping_apc_loads[A])
+		var/new_class = apc_supply_class(LAZYACCESS(sleeping_apc_loads, A))
 		if(LAZYACCESS(sleeping_apc_power_classes, A) == new_class)
 			continue
 		LAZYSET(sleeping_apc_power_classes, A, new_class)
@@ -539,9 +539,9 @@
 	LAZYINITLIST(material_consumers)
 	for(var/obj/machinery/power/apc/apc as anything in sleeping_apc_loads)
 		if(apc.terminal)
-			material_consumers[WEAKREF(apc.terminal)] += sleeping_apc_loads[apc]
+			material_consumers[WEAKREF(apc.terminal)] += LAZYACCESS(sleeping_apc_loads, apc)
 			var/efficiency = material_graph?.efficiencies?[REF(apc.terminal)] || 1
-			var/extra = sleeping_apc_loads[apc] * (1 / efficiency - 1)
+			var/extra = LAZYACCESS(sleeping_apc_loads, apc) * (1 / efficiency - 1)
 			var/paid = min(extra, max(avail - load, 0))
 			load += paid
 			material_paid_losses += paid
@@ -710,7 +710,7 @@
 		perapc = (numapc > 0) ? (avail / numapc + perapc_excess) : 0
 
 	// 2. Legacy transient SMES input requests remain supported.
-	if(inputting.len && smes_demand > 0)
+	if(length(inputting) && smes_demand > 0)
 		var/datum/powernet_balancer/balancer = new(src)
 		balancer.execute()
 		qdel(balancer)
@@ -746,7 +746,7 @@
 	// pass reports current use.
 	avail        = newavail
 	smes_avail   = smes_newavail
-	inputting.Cut()
+	LAZYCLEARLIST(inputting)
 	smes_demand  = 0
 	newavail     = registered_supply_total
 	smes_newavail = registered_smes_total
@@ -755,7 +755,7 @@
 	// charging progress has its own coarse elapsed-time wakeup.
 	if((avail <= 0) != (old_avail <= 0) || ((netexcess < -1) != (old_netexcess < -1)))
 		publish_monitor_dependency()
-	var/has_live_accounting = accounting_dirty || inputting.len || smes_demand
+	var/has_live_accounting = accounting_dirty || length(inputting) || smes_demand
 	if(has_live_accounting)
 		idle_accounting_windows = 0
 		return

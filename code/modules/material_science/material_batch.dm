@@ -1,19 +1,19 @@
 /// Canonical state for a physical batch. Recipes do not select an alloy: player inputs and
 /// processing history produce one, and all consumers derive their properties from this datum.
 /datum/material_batch
-	var/list/composition = list()
-	var/list/impurities = list()
+	var/list/composition
+	var/list/impurities
 	var/list/process_history
 	var/list/contributors = list()
-	var/list/feedstock_lots = list()
+	var/list/feedstock_lots
 	var/list/test_results
-	var/list/process_counts = list()
+	var/list/process_counts
 	/// Persistent physical surface treatments. These are layers, not bulk ingredients.
-	var/list/surface_layers = list()
+	var/list/surface_layers
 	/// Gases incorporated from the real processing atmosphere, in abstract retained units.
-	var/list/dissolved_gases = list()
+	var/list/dissolved_gases
 	/// High-energy or field treatments applied to the lattice.
-	var/list/field_treatments = list()
+	var/list/field_treatments
 	var/list/cost_ledger = list(
 		MATERIAL_COST_FEEDSTOCK = 0,
 		MATERIAL_COST_CHEMICALS = 0,
@@ -76,12 +76,12 @@
 	var/datum/material/material = get_material_by_name(material_name)
 	if(!material || sheets <= 0)
 		return FALSE
-	composition[material.name] = (composition[material.name] || 0) + sheets
+	LAZYSET(composition, material.name, (LAZYACCESS(composition, material.name) || 0) + sheets)
 	var/old_amount = amount
 	amount += sheets
 	purity = round((purity * old_amount + clamp(source_purity, 20, 100) * sheets) / max(amount, 1))
 	if(lot_id)
-		feedstock_lots[lot_id] = (feedstock_lots[lot_id] || 0) + sheets
+		LAZYSET(feedstock_lots, lot_id, (LAZYACCESS(feedstock_lots, lot_id) || 0) + sheets)
 	var/feedstock_cost = max(material.supply_conversion_value, 0.1) * sheets
 	cost_basis += feedstock_cost
 	record_cost(MATERIAL_COST_FEEDSTOCK, feedstock_cost)
@@ -93,7 +93,7 @@
 /datum/material_batch/proc/add_additive(additive_name, units, unit_cost = 1, cost_category = MATERIAL_COST_CHEMICALS)
 	if(!additive_name || units <= 0)
 		return FALSE
-	impurities[additive_name] = (impurities[additive_name] || 0) + units
+	LAZYSET(impurities, additive_name, (LAZYACCESS(impurities, additive_name) || 0) + units)
 	var/concentration = units / max(amount, 1)
 	purity = clamp(purity - round(concentration * 0.4), 20, 100)
 	homogeneity = clamp(homogeneity - round(concentration * 0.2), 0, 100)
@@ -107,9 +107,9 @@
 /datum/material_batch/proc/add_surface_layer(layer_name, strength, additive_name, additive_units = 0)
 	if(!layer_name || strength <= 0)
 		return FALSE
-	surface_layers[layer_name] = clamp((surface_layers[layer_name] || 0) + strength, 0, 100)
+	LAZYSET(surface_layers, layer_name, clamp((LAZYACCESS(surface_layers, layer_name) || 0) + strength, 0, 100))
 	if(additive_name && additive_units > 0)
-		impurities[additive_name] = (impurities[additive_name] || 0) + additive_units
+		LAZYSET(impurities, additive_name, (LAZYACCESS(impurities, additive_name) || 0) + additive_units)
 	LAZYADD(process_history, "applied [layer_name]")
 	recalculate()
 	return TRUE
@@ -117,7 +117,7 @@
 /datum/material_batch/proc/add_dissolved_gas(gas_name, units)
 	if(!gas_name || units <= 0)
 		return FALSE
-	dissolved_gases[gas_name] = clamp((dissolved_gases[gas_name] || 0) + units, 0, 100)
+	LAZYSET(dissolved_gases, gas_name, clamp((LAZYACCESS(dissolved_gases, gas_name) || 0) + units, 0, 100))
 	LAZYADD(process_history, "infused with [gas_name]")
 	recalculate()
 	return TRUE
@@ -125,7 +125,7 @@
 /datum/material_batch/proc/add_field_treatment(treatment_name, strength)
 	if(!treatment_name || strength <= 0)
 		return FALSE
-	field_treatments[treatment_name] = clamp((field_treatments[treatment_name] || 0) + strength, 0, 100)
+	LAZYSET(field_treatments, treatment_name, clamp((LAZYACCESS(field_treatments, treatment_name) || 0) + strength, 0, 100))
 	LAZYADD(process_history, treatment_name)
 	recalculate()
 	return TRUE
@@ -184,8 +184,8 @@
 			for(var/impurity in impurities.Copy())
 				var/lower_impurity = lowertext(impurity)
 				if(findtext(lower_impurity, "oxide") || findtext(lower_impurity, "sulfur"))
-					removed_contamination += impurities[impurity]
-					impurities -= impurity
+					removed_contamination += LAZYACCESS(impurities, impurity)
+					LAZYREMOVE(impurities, impurity)
 			purity = clamp(purity + min(10, 2 + round(removed_contamination)), 0, 100)
 			oxidation = max(0, oxidation - 20)
 			homogeneity = clamp(homogeneity + 12, 0, 100)
@@ -204,7 +204,7 @@
 		else
 			return FALSE
 	LAZYADD(process_history, option ? "[process] ([option])" : process)
-	process_counts[process] = (process_counts[process] || 0) + 1
+	LAZYSET(process_counts, process, (LAZYACCESS(process_counts, process) || 0) + 1)
 	if(yield_fraction < old_yield)
 		record_yield_loss(old_yield - yield_fraction)
 	normalize_structure()
@@ -261,7 +261,7 @@
 		if(MATERIAL_PROCESS_QUENCH)
 			return phase == MATERIAL_PHASE_SOLID && solution_treated && temperature >= melting_temperature() * 0.62
 		if(MATERIAL_PROCESS_FORGE)
-			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.45 && temperature <= melting_temperature() * 0.9 && (process_counts[MATERIAL_PROCESS_FORGE] || 0) < 2
+			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.45 && temperature <= melting_temperature() * 0.9 && (LAZYACCESS(process_counts, MATERIAL_PROCESS_FORGE) || 0) < 2
 		if(MATERIAL_PROCESS_HOMOGENIZE)
 			return phase == MATERIAL_PHASE_MOLTEN
 		if(MATERIAL_PROCESS_SOLUTION_TREAT)
@@ -285,7 +285,7 @@
 		var/datum/material/material = get_material_by_name(material_name)
 		if(!material)
 			continue
-		var/share = composition[material_name] / amount
+		var/share = LAZYACCESS(composition, material_name) / amount
 		var/material_heat = max(material.heat_resistance, clamp((material.melting_point - 500) / 60, 10, 100))
 		var/material_corrosion = max(material.corrosion_resistance, clamp(58 - material.reactivity * 0.4, 10, 85))
 		base_hardness += max(material.hardness, 20) * share
@@ -304,11 +304,11 @@
 	var/thermal_catalyst = additive_units_matching("thermal phase")
 	var/corrosion_inhibitor = additive_units_matching("corrosion inhibitor")
 	var/grain_refiner = additive_units_matching("grain refiner")
-	var/nitrogen_infusion = (dissolved_gases["nitrogen"] || 0) / max(amount, 1)
-	var/hydrogen_infusion = (dissolved_gases["hydrogen"] || 0) / max(amount, 1)
-	var/oxygen_infusion = (dissolved_gases["oxygen"] || 0) / max(amount, 1)
-	var/phoron_infusion = (dissolved_gases["phoron"] || 0) / max(amount, 1)
-	var/carbon_case = surface_layers[MATERIAL_SURFACE_CARBON] || 0
+	var/nitrogen_infusion = (LAZYACCESS(dissolved_gases, "nitrogen") || 0) / max(amount, 1)
+	var/hydrogen_infusion = (LAZYACCESS(dissolved_gases, "hydrogen") || 0) / max(amount, 1)
+	var/oxygen_infusion = (LAZYACCESS(dissolved_gases, "oxygen") || 0) / max(amount, 1)
+	var/phoron_infusion = (LAZYACCESS(dissolved_gases, "phoron") || 0) / max(amount, 1)
+	var/carbon_case = LAZYACCESS(surface_layers, MATERIAL_SURFACE_CARBON) || 0
 	var/effective_porosity = max(0, porosity - min(flux_units, 8))
 	var/carbon_window = max(0, 18 - abs(carbon_units - 6) * 3)
 	var/silicon_window = max(0, 14 - abs(silicon_units - 4) * 2)
@@ -329,7 +329,7 @@
 	var/total = 0
 	for(var/additive in impurities)
 		if(findtext(lowertext(additive), lowertext(fragment)))
-			total += impurities[additive]
+			total += LAZYACCESS(impurities, additive)
 	return total / max(amount, 1)
 
 /datum/material_batch/proc/functional_roles()
@@ -376,7 +376,7 @@
 	for(var/material_name in composition)
 		var/datum/material/material = get_material_by_name(material_name)
 		if(material)
-			weighted += material.melting_point * (composition[material_name] / max(amount, 1))
+			weighted += material.melting_point * (LAZYACCESS(composition, material_name) / max(amount, 1))
 	return max(round(weighted), 500)
 
 /datum/material_batch/proc/hazard_score()
@@ -384,7 +384,7 @@
 	for(var/material_name in composition)
 		var/datum/material/material = get_material_by_name(material_name)
 		if(material)
-			reactivity += material.reactivity * composition[material_name] / max(amount, 1)
+			reactivity += material.reactivity * LAZYACCESS(composition, material_name) / max(amount, 1)
 	var/thermal_fraction = temperature / max(melting_temperature(), 1)
 	var/atmosphere_risk = atmosphere == MATERIAL_ATMOSPHERE_AIR ? 22 : (atmosphere == MATERIAL_ATMOSPHERE_REDUCING ? 10 : -10)
 	return clamp(round(reactivity * 0.45 + thermal_fraction * 35 + atmosphere_risk + oxidation * 0.3), 0, 100)
@@ -392,15 +392,15 @@
 /datum/material_batch/proc/fingerprint()
 	var/list/parts = list()
 	var/quantity = max(amount, 0.01)
-	for(var/material_name in sortList(composition.Copy()))
+	for(var/material_name in sortList(LAZYCOPY(composition)))
 		parts += "[material_name]=[round(composition[material_name] / quantity, 0.001)]"
-	for(var/impurity in sortList(impurities.Copy()))
+	for(var/impurity in sortList(LAZYCOPY(impurities)))
 		parts += "+[impurity]=[round(impurities[impurity] / quantity, 0.001)]"
-	for(var/layer_name in sortList(surface_layers.Copy()))
+	for(var/layer_name in sortList(LAZYCOPY(surface_layers)))
 		parts += "l[layer_name]=[surface_layers[layer_name]]"
-	for(var/gas_name in sortList(dissolved_gases.Copy()))
+	for(var/gas_name in sortList(LAZYCOPY(dissolved_gases)))
 		parts += "g[gas_name]=[round(dissolved_gases[gas_name] / quantity, 0.001)]"
-	for(var/treatment_name in sortList(field_treatments.Copy()))
+	for(var/treatment_name in sortList(LAZYCOPY(field_treatments)))
 		parts += "t[treatment_name]=[field_treatments[treatment_name]]"
 	for(var/structure_name in sortList(structure.Copy()))
 		parts += "#[structure_name]=[structure[structure_name]]"
@@ -441,16 +441,16 @@
 
 /datum/material_batch/proc/copy_batch()
 	var/datum/material_batch/copy = new
-	copy.composition = composition.Copy()
-	copy.impurities = impurities.Copy()
+	copy.composition = LAZYCOPY(composition)
+	copy.impurities = LAZYCOPY(impurities)
 	copy.process_history = LAZYCOPY(process_history)
 	copy.contributors = contributors.Copy()
-	copy.feedstock_lots = feedstock_lots.Copy()
+	copy.feedstock_lots = LAZYCOPY(feedstock_lots)
 	copy.test_results = LAZYCOPY(test_results)
-	copy.process_counts = process_counts.Copy()
-	copy.surface_layers = surface_layers.Copy()
-	copy.dissolved_gases = dissolved_gases.Copy()
-	copy.field_treatments = field_treatments.Copy()
+	copy.process_counts = LAZYCOPY(process_counts)
+	copy.surface_layers = LAZYCOPY(surface_layers)
+	copy.dissolved_gases = LAZYCOPY(dissolved_gases)
+	copy.field_treatments = LAZYCOPY(field_treatments)
 	copy.cost_ledger = cost_ledger.Copy()
 	copy.structure = structure.Copy()
 	copy.amount = amount
@@ -499,7 +499,7 @@
 	for(var/material_name in composition)
 		var/datum/material/material = get_material_by_name(material_name)
 		if(material)
-			weighted_specific_heat += max(material.specific_heat, 100) * composition[material_name] / max(amount, 1)
+			weighted_specific_heat += max(material.specific_heat, 100) * LAZYACCESS(composition, material_name) / max(amount, 1)
 	return max(1, amount * weighted_specific_heat / 160)
 
 /datum/material_batch/proc/add_thermal_energy(joules)

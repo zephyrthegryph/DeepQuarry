@@ -45,7 +45,7 @@
 
 /atom/movable/screen/inventory/MouseExited()
 	..()
-	cut_overlay(object_overlays)
+	if(object_overlays) cut_overlay(object_overlays)
 	object_overlays.Cut()
 
 

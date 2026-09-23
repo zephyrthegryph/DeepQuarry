@@ -2,11 +2,11 @@
 
 /datum/event2/event/ghost_pod_spawner
 	var/pod_type = null
-	var/list/desired_turf_areas = list() // If this is left empty, it will default to a global list of 'station' turfs.
+	var/list/desired_turf_areas // If this is left empty, it will default to a global list of 'station' turfs.
 	var/list/free_turfs
 
 /datum/event2/event/ghost_pod_spawner/set_up()
-	free_turfs = find_random_turfs(5, desired_turf_areas)
+	free_turfs = find_random_turfs(5, desired_turf_areas || list())
 
 	if(!length(free_turfs))
 		log_game("Ghost Pod Spawning event failed to find a place to spawn. Aborting.")

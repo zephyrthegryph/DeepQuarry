@@ -439,7 +439,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	////////////////////////////////////////////////////////////////////////////////
 	// Get a copy of the species datum to edit for ourselves
 	// anything that sets stuff in species MUST be done beyond here!
-	H.species.produceCopy(species_traits, H, base_species, FALSE) // Traitgenes edit - reset_dna flag required, or genes get reset on resleeve
+	LAZYINITLIST(species_traits); H.species.produceCopy(species_traits, H, base_species, FALSE) // Traitgenes edit - reset_dna flag required, or genes get reset on resleeve
 
 	// Update species blood with our blood color from dna!
 	H.species.blood_reagents = blood_reagents

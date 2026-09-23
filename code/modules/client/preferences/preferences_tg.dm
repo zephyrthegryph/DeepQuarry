@@ -16,7 +16,7 @@
 	var/current_window = PREFERENCE_TAB_GAME_PREFERENCES
 
 	/// A list of instantiated middleware
-	var/list/datum/preference_middleware/middleware = list()
+	var/list/datum/preference_middleware/middleware
 
 /// Applies all PREFERENCE_PLAYER preferences
 /datum/preferences/proc/apply_all_client_preferences()

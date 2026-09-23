@@ -232,7 +232,7 @@
 	var/design_id = params["id"]
 	if(!design_id)
 		return
-	var/valid_design = stored_research.researched_designs[design_id]
+	var/valid_design = LAZYACCESS(stored_research.researched_designs, design_id)
 	valid_design ||= imported_designs[design_id]
 	if(!valid_design)
 		return
@@ -455,7 +455,7 @@
 		for(var/datum/design_techweb/blueprint as anything in disky.blueprints)
 			if(!blueprint)
 				continue
-			if(imported_designs[blueprint.id] || stored_research.researched_designs[blueprint.id])
+			if(imported_designs[blueprint.id] || LAZYACCESS(stored_research.researched_designs, blueprint.id))
 				continue
 			if(blueprint.build_type & AUTOLATHE)
 				imported_designs[blueprint.id] = TRUE
@@ -469,7 +469,7 @@
 		var/datum/techweb/disk_web = disky.stored_research
 		for(var/design_id in disk_web.researched_designs)
 			var/datum/design_techweb/blueprint = SSresearch.techweb_design_by_id(design_id)
-			if(imported_designs[blueprint.id] || stored_research.researched_designs[blueprint.id])
+			if(imported_designs[blueprint.id] || LAZYACCESS(stored_research.researched_designs, blueprint.id))
 				continue
 			if(blueprint.build_type & AUTOLATHE)
 				imported_designs[blueprint.id] = TRUE

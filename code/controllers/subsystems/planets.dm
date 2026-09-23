@@ -49,7 +49,7 @@ SUBSYSTEM_DEF(planets)
 		if(istype(T, /turf/unsimulated/wall/planetary))
 			LAZYADD(P.planet_walls, T)
 		else if(istype(T, /turf/simulated) && T.is_outdoors())
-			P.planet_floors += T
+			LAZYADD(P.planet_floors, T)
 			P.weather_holder.apply_to_turf(T)
 
 /datum/controller/subsystem/planets/proc/removeTurf(turf/T,is_edge)
@@ -60,7 +60,7 @@ SUBSYSTEM_DEF(planets)
 		if(istype(T, /turf/unsimulated/wall/planetary))
 			LAZYREMOVE(P.planet_walls, T)
 		else
-			P.planet_floors -= T
+			LAZYREMOVE(P.planet_floors, T)
 			P.weather_holder.remove_from_turf(T)
 			P.sun_holder.remove_from_turf(T)
 
@@ -109,7 +109,7 @@ SUBSYSTEM_DEF(planets)
 
 /datum/controller/subsystem/planets/proc/updateSunlight(datum/planet/P)
 	var/new_brightness = P.sun["brightness"]
-	P.sun_holder.update_brightness(new_brightness, P.planet_floors)
+	P.sun_holder.update_brightness(new_brightness, P.planet_floors || list())
 
 	var/new_color = P.sun["color"]
 	P.sun_holder.update_color(new_color)

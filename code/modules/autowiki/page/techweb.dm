@@ -57,7 +57,7 @@
 	var/datum/techweb_node/node_a = SSresearch.techweb_nodes[node_id_a]
 	var/datum/techweb_node/node_b = SSresearch.techweb_nodes[node_id_b]
 
-	var/prereq_difference = node_a.prereq_ids.len - node_b.prereq_ids.len
+	var/prereq_difference = length(node_a.prereq_ids) - node_b.prereq_ids.len
 	if (prereq_difference != 0)
 		return prereq_difference
 

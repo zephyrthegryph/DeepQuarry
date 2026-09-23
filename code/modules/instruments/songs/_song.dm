@@ -71,7 +71,7 @@
 	/// Channel as text = current volume percentage but it's 0 to 100 instead of 0 to 1.
 	var/list/channels_playing
 	/// List of channels that aren't being used, as text. This is to prevent unnecessary freeing and reallocations from SSsounds/SSinstruments.
-	var/list/channels_idle = list()
+	var/list/channels_idle
 	/// Who or what's playing us
 	var/atom/music_player
 	//////////////////////////////////////////////////////

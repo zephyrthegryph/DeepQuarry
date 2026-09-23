@@ -23,8 +23,8 @@
 	var/list/shots_fired_ptwo = list()
 	var/list/ships_placed_pone = list()
 	var/list/ships_placed_ptwo = list()
-	var/list/destroyed_ships_pone = list()
-	var/list/destroyed_ships_ptwo = list()
+	var/list/destroyed_ships_pone
+	var/list/destroyed_ships_ptwo
 	var/static/list/total_ships = list(
 		"Carrier" = 1,
 		"Cruiser" = 2,
@@ -74,8 +74,8 @@
 		"all_placed" = ships_have_been_placed,
 		"shots_fired_pone" = shots_fired_pone,
 		"shots_fired_ptwo" = shots_fired_ptwo,
-		"destroyed_ships_pone" = destroyed_ships_pone,
-		"destroyed_ships_ptwo" = destroyed_ships_ptwo,
+		"destroyed_ships_pone" = (destroyed_ships_pone || list()),
+		"destroyed_ships_ptwo" = (destroyed_ships_ptwo || list()),
 		"visible_ships" = visible_ships,
 		"ship_count_pone" = (ship_count_pone || list()),
 		"ship_count_ptwo" = (ship_count_ptwo || list()),
@@ -276,8 +276,8 @@
 	shots_fired_ptwo.Cut()
 	ships_placed_pone.Cut()
 	ships_placed_ptwo.Cut()
-	destroyed_ships_pone.Cut()
-	destroyed_ships_ptwo.Cut()
+	LAZYCLEARLIST(destroyed_ships_pone)
+	LAZYCLEARLIST(destroyed_ships_ptwo)
 	winner = null
 	ships_have_been_placed = NONE
 	if(full)
@@ -336,11 +336,11 @@
 
 		if(ship_destroyed)
 			if(game_state == GAME_PLAYER_ONE)
-				if(!(destroyed_ships_pone.Find(ship)))
+				if(!(LAZYFIND(destroyed_ships_pone, ship)))
 					UNTYPED_LIST_ADD(destroyed_ships_pone, ship)
 					ship_count_pone = get_alive_ships(1)
 			else
-				if(!(destroyed_ships_ptwo.Find(ship)))
+				if(!(LAZYFIND(destroyed_ships_ptwo, ship)))
 					UNTYPED_LIST_ADD(destroyed_ships_ptwo, ship)
 					ship_count_ptwo = get_alive_ships(2)
 
@@ -419,10 +419,10 @@
 		return alive_ships
 
 	for(var/list/ship in ships)
-		if(game_state == GAME_PLAYER_ONE && !(destroyed_ships_pone.Find(ship)))
+		if(game_state == GAME_PLAYER_ONE && !(LAZYFIND(destroyed_ships_pone, ship)))
 			alive_ships[ship["name"]] = length(alive_ships) ? alive_ships[ship["name"]] + 1 : 1
 
-		if(game_state == GAME_PLAYER_TWO && !(destroyed_ships_ptwo.Find(ship)))
+		if(game_state == GAME_PLAYER_TWO && !(LAZYFIND(destroyed_ships_ptwo, ship)))
 			alive_ships[ship["name"]] = length(alive_ships) ? alive_ships[ship["name"]] + 1 : 1
 
 	return alive_ships

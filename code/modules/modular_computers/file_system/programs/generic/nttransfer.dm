@@ -19,7 +19,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	var/server_password = ""							// Optional password to download the file.
 	var/datum/computer_file/provided_file = null		// File which is provided to clients.
 	var/datum/computer_file/downloaded_file = null		// File which is being downloaded
-	var/list/connected_clients = list()					// List of connected clients.
+	var/list/connected_clients					// List of connected clients.
 	var/datum/computer_file/program/nttransfer/remote	// Client var, specifies who are we downloading from.
 	var/download_completion = 0							// Download progress in GQ
 	var/actual_netspeed = 0								// Displayed in the UI, this is the actual transfer speed.
@@ -73,7 +73,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 // Cleans up variables for next use
 /datum/computer_file/program/nttransfer/proc/finalize_download()
 	if(remote)
-		remote.connected_clients.Remove(src)
+		LAZYREMOVE(remote.connected_clients, src)
 	downloaded_file = null
 	remote = null
 	download_completion = 0
@@ -93,7 +93,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	data["uploading"] = !!provided_file
 	if(provided_file)
 		data["upload_uid"] = unique_token
-		data["upload_clients"] = connected_clients.len
+		data["upload_clients"] = length(connected_clients)
 		data["upload_haspassword"] = server_password ? 1 : 0
 		data["upload_filename"] = "[provided_file.filename].[provided_file.filetype]"
 
@@ -141,7 +141,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 					error = "Incorrect Password"
 					return
 			downloaded_file = remote.provided_file.clone()
-			remote.connected_clients.Add(src)
+			LAZYADD(remote.connected_clients, src)
 			return TRUE
 		if("PRG_reset")
 			error = ""

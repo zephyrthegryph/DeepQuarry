@@ -92,7 +92,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 
 	var/selected_choice
-	var/list/atom/movable/screen/elements = list()
+	var/list/atom/movable/screen/elements
 	var/atom/movable/screen/radial/center/close_button
 	var/client/current_user
 	var/atom/anchor
@@ -157,13 +157,13 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 	max_elements = round(zone / min_angle)
 	var/paged = max_elements < choices.len
-	if(elements.len < max_elements)
+	if(length(elements) < max_elements)
 		var/elements_to_add = max_elements - elements.len
 		for(var/i in 1 to elements_to_add) //Create all elements
 			var/atom/movable/screen/radial/slice/new_element = new /atom/movable/screen/radial/slice
 			new_element.tooltips = use_tooltips
 			new_element.set_parent(src)
-			elements += new_element
+			LAZYADD(elements, new_element)
 
 	var/page = 1
 	page_data = list(null)
@@ -191,8 +191,8 @@ GLOBAL_LIST_EMPTY(radial_menus)
 /datum/radial_menu/proc/update_screen_objects(anim = FALSE, click_on_hover = FALSE)
 	var/list/page_choices = LAZYACCESS(page_data, current_page)
 	var/angle_per_element = round(zone / page_choices.len)
-	for(var/i in 1 to elements.len)
-		var/atom/movable/screen/radial/element = elements[i]
+	for(var/i in 1 to length(elements))
+		var/atom/movable/screen/radial/element = LAZYACCESS(elements, i)
 		var/angle = WRAP(starting_angle + (i - 1) * angle_per_element,0,360)
 		if(i > page_choices.len)
 			HideElement(element)

@@ -18,7 +18,7 @@
 	for(var/antag_id in SSantag_job.all_antag_types)
 		if(i > grab_antags)
 			break
-		antag_tags |= antag_id
+		LAZYOR(antag_tags, antag_id)
 		i++
 	..()
 

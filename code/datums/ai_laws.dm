@@ -40,7 +40,7 @@
 /* General ai_law functions */
 /datum/ai_laws/proc/all_laws()
 	sort_laws()
-	return sorted_laws
+	return sorted_laws || list()
 
 /datum/ai_laws/proc/laws_to_state()
 	sort_laws()

@@ -20,7 +20,7 @@
 		shortcut_cat_order = list()
 		var/prog_list = programs.Copy()
 		if(cartridge)
-			prog_list |= cartridge.programs
+			if(length(cartridge.programs)) prog_list |= cartridge.programs
 
 		for(var/datum/data/pda/P as anything in prog_list)
 

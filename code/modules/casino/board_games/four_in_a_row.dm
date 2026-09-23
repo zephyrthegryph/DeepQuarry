@@ -15,8 +15,8 @@
 	table_icon = "gamble_four"
 	var/datum/weakref/player_one
 	var/datum/weakref/player_two
-	var/list/placed_chips_pone = list()
-	var/list/placed_chips_ptwo = list()
+	var/list/placed_chips_pone
+	var/list/placed_chips_ptwo
 	var/list/winning_tiles
 	var/grid_x_size = 7
 	var/grid_y_size = 6
@@ -49,8 +49,8 @@
 	return list(
 		"player_one" = player_one_mob,
 		"player_two" = player_two_mob,
-		"placed_chips_pone" = placed_chips_pone,
-		"placed_chips_ptwo" = placed_chips_ptwo,
+		"placed_chips_pone" = (placed_chips_pone || list()),
+		"placed_chips_ptwo" = (placed_chips_ptwo || list()),
 		"game_state" = game_state,
 		"grid_x_size" = grid_x_size,
 		"grid_y_size" = grid_y_size,
@@ -176,8 +176,8 @@
 	return TRUE
 
 /datum/board_game/four_row/proc/reset(full)
-	placed_chips_pone.Cut()
-	placed_chips_ptwo.Cut()
+	LAZYCLEARLIST(placed_chips_pone)
+	LAZYCLEARLIST(placed_chips_ptwo)
 	LAZYCLEARLIST(winning_tiles)
 	winner = null
 	if(full)
@@ -198,7 +198,7 @@
 			var/target_y = 0
 			for(var/y = grid_y_size; y >= 1; y--)
 				var/key = "[x_loc],[y]"
-				if(!placed_chips_pone[key] && !placed_chips_ptwo[key])
+				if(!LAZYACCESS(placed_chips_pone, key) && !LAZYACCESS(placed_chips_ptwo, key))
 					target_y = y
 					break
 
@@ -208,9 +208,9 @@
 			var/key = "[x_loc],[target_y]"
 
 			if(game_state == GAME_PLAYER_ONE)
-				placed_chips_pone[key] = TRUE
+				LAZYSET(placed_chips_pone, key, TRUE)
 			else
-				placed_chips_ptwo[key] = TRUE
+				LAZYSET(placed_chips_ptwo, key, TRUE)
 
 			validate_victory(x_loc, target_y, user.name)
 			return TRUE
@@ -235,9 +235,9 @@
 	var/list/current_list
 
 	if(game_state == GAME_PLAYER_ONE)
-		current_list = placed_chips_pone
+		current_list = placed_chips_pone || list()
 	else
-		current_list = placed_chips_ptwo
+		current_list = placed_chips_ptwo || list()
 
 	var/list/h1 = collect_direction(current_list, x, y, 1, 0)
 	var/list/h2 = collect_direction(current_list, x, y, -1, 0)
@@ -288,7 +288,7 @@
 	for(var/x = 1 to grid_x_size)
 		for(var/y = 1 to grid_y_size)
 			var/key = "[x],[y]"
-			if(!placed_chips_pone[key] && !placed_chips_ptwo[key])
+			if(!LAZYACCESS(placed_chips_pone, key) && !LAZYACCESS(placed_chips_ptwo, key))
 				return FALSE
 
 	winner = null

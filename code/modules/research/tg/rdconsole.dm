@@ -84,21 +84,21 @@ Nothing else in the console has ID requirements.
 	return ..()
 
 /obj/machinery/computer/rdconsole_tg/proc/enqueue_node(id, mob/user)
-	if(!stored_research || !stored_research.available_nodes[id] || stored_research.researched_nodes[id])
+	if(!stored_research || !LAZYACCESS(stored_research.available_nodes, id) || LAZYACCESS(stored_research.researched_nodes, id))
 		atom_say("Node enqueue failed: Either no techweb is found, node is already researched or is not available!")
 		return FALSE
 	stored_research.enqueue_node(id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/dequeue_node(id, mob/user)
-	if(!stored_research || !stored_research.available_nodes[id] || stored_research.researched_nodes[id])
+	if(!stored_research || !LAZYACCESS(stored_research.available_nodes, id) || LAZYACCESS(stored_research.researched_nodes, id))
 		atom_say("Node dequeue failed: Either no techweb is found, node is already researched or is not available!")
 		return FALSE
 	stored_research.dequeue_node(id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/research_node(id, mob/user)
-	if(!stored_research || !stored_research.available_nodes[id] || stored_research.researched_nodes[id])
+	if(!stored_research || !LAZYACCESS(stored_research.available_nodes, id) || LAZYACCESS(stored_research.researched_nodes, id))
 		atom_say("Node unlock failed: Either no techweb is found, node is already researched or is not available!")
 		return FALSE
 	var/datum/techweb_node/TN = SSresearch.techweb_node_by_id(id)
@@ -179,8 +179,8 @@ Nothing else in the console has ID requirements.
 		"nodes" = list(),
 		"queue_nodes" = (stored_research.research_queue_nodes || list()),
 		"experiments" = list(),
-		"researched_designs" = stored_research.researched_designs,
-		"points" = stored_research.research_points,
+		"researched_designs" = (stored_research.researched_designs || list()),
+		"points" = (stored_research.research_points || list()),
 		"points_last_tick" = (stored_research.last_bitcoins || list()),
 		"web_org" = stored_research.organization,
 		"sec_protocols" = FALSE, // !(obj_flags & EMAGGED),
@@ -190,7 +190,7 @@ Nothing else in the console has ID requirements.
 
 	if(t_disk)
 		data["t_disk"] = list (
-			"stored_research" = t_disk.stored_research.researched_nodes,
+			"stored_research" = (t_disk.stored_research.researched_nodes || list()),
 		)
 	if(d_disk)
 		data["d_disk"] = list("blueprints" = list())

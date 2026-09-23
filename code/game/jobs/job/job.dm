@@ -152,7 +152,7 @@
 			var/datum/department/dept = LAZYACCESS(SSjob.department_datums, dept_name)
 			if(!istype(dept) || !LAZYLEN(dept.default_access))
 				continue
-			result |= dept.default_access
+			if(length(dept.default_access)) result |= dept.default_access
 
 	return result
 

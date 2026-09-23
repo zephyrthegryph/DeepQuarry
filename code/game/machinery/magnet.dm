@@ -188,7 +188,7 @@
 	idle_power_usage = 45
 	var/frequency = AMAG_ELE_FREQ
 	var/code = 0
-	var/list/magnets = list()
+	var/list/magnets
 	var/title = "Magnetic Control Console"
 	var/autolink = 0 // if set to 1, can't probe for other magnets!
 
@@ -208,7 +208,7 @@
 	if(autolink)
 		for(var/obj/machinery/magnetic_module/M in GLOB.machines)
 			if(M.freq == frequency && M.code == code)
-				magnets.Add(M)
+				LAZYADD(magnets, M)
 
 	if(SSradio)
 		radio_connection = SSradio.add_object(src, frequency, RADIO_MAGNETS)
@@ -217,10 +217,10 @@
 		filter_path() // renders rpath
 
 /obj/machinery/magnetic_controller/process()
-	if(magnets.len == 0 && autolink)
+	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in GLOB.machines)
 			if(M.freq == frequency && M.code == code)
-				magnets.Add(M)
+				LAZYADD(magnets, M)
 
 /obj/machinery/magnetic_controller/attack_ai(mob/user as mob)
 	return attack_hand(user)

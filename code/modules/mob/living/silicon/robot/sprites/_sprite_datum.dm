@@ -34,8 +34,8 @@
 	var/is_whitelisted = FALSE
 	var/whitelist_ckey
 	var/whitelist_charname
-	var/list/belly_light_list = list() // Support multiple sleepers with r/g light "sleeper"
-	var/list/belly_capacity_list = list() //Support multiple bellies with multiple sizes, default: "sleeper" = 1
+	var/list/belly_light_list // Support multiple sleepers with r/g light "sleeper"
+	var/list/belly_capacity_list //Support multiple bellies with multiple sizes, default: "sleeper" = 1
 	var/list/sprite_decals // Allow extra decals
 	var/list/sprite_animations // Allows to flick animations
 
@@ -106,9 +106,9 @@
 
 /datum/robot_sprite/proc/get_belly_overlay(mob/living/silicon/robot/ourborg, size = 1, b_class)
 	//Size
-	if(has_sleeper_light_indicator || belly_light_list.len)
-		if(belly_light_list.len)
-			if(belly_light_list.Find(b_class))
+	if(has_sleeper_light_indicator || length(belly_light_list))
+		if(length(belly_light_list))
+			if(LAZYFIND(belly_light_list, b_class))
 				//First, Sleeper base icon is input. Second the belly class, supposedly taken from the borg's vore_fullness_ex list.
 				//The belly class should be the same as the belly sprite's name, with as many size values as you defined in the
 				//vore_capacity_ex list. Finally, if the borg has a red/green light sleeper, it'll use g or r appended to the end.

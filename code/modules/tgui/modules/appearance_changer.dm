@@ -932,7 +932,7 @@
 		for(var/path in GLOB.ear_styles_list)
 			var/datum/sprite_accessory/ears/instance = GLOB.ear_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				valid_earstyles.Add(list(list(
+				LAZYINITLIST(valid_earstyles); valid_earstyles.Add(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,
@@ -945,7 +945,7 @@
 		for(var/path in GLOB.tail_styles_list)
 			var/datum/sprite_accessory/tail/instance = GLOB.tail_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				valid_tailstyles.Add(list(list(
+				LAZYINITLIST(valid_tailstyles); valid_tailstyles.Add(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,
@@ -958,7 +958,7 @@
 		for(var/path in GLOB.wing_styles_list)
 			var/datum/sprite_accessory/wing/instance = GLOB.wing_styles_list[path]
 			if(can_use_sprite(instance, target, user))
-				valid_wingstyles.Add(list(list(
+				LAZYINITLIST(valid_wingstyles); valid_wingstyles.Add(list(list(
 					"name" = instance.name,
 					"instance" = REF(instance),
 					"color" = !!instance.do_colouration,

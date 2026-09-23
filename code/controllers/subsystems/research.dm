@@ -293,14 +293,14 @@ SUBSYSTEM_DEF(research)
 			var/datum/techweb_node/P = techweb_nodes[p]
 			if(!istype(P))
 				WARNING("Invalid research prerequisite node with ID [p] detected in node [N.display_name]\[[N.id]\] removed.")
-				N.prereq_ids  -= p
+				LAZYREMOVE(N.prereq_ids, p)
 				research_node_id_error(p)
 				. = FALSE
 		for(var/d in N.design_ids)
 			var/datum/design_techweb/D = techweb_designs[d]
 			if(!istype(D))
 				WARNING("Invalid research design with ID [d] detected in node [N.display_name]\[[N.id]\] removed.")
-				N.design_ids -= d
+				LAZYREMOVE(N.design_ids, d)
 				design_id_error(d)
 				. = FALSE
 		for(var/u in N.unlock_ids)
@@ -357,7 +357,7 @@ SUBSYSTEM_DEF(research)
 			var/datum/design_techweb/D = techweb_designs[i]
 			if(!D)
 				continue // verify_techweb_nodes() will have already flagged this.
-			node.design_ids[i] = TRUE
+			LAZYSET(node.design_ids, i, TRUE)
 			// unlocked_by is the precomputed reverse-index: design → list of node IDs that unlock it.
 			// After this proc returns, unlocked_by is considered immutable for the lifetime of the round.
 			LAZYADD(D.unlocked_by, node.id)

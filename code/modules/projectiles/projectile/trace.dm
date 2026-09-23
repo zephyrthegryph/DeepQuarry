@@ -31,7 +31,7 @@
 	. = ..()
 	if(!QDELING(src))
 		qdel(src)
-	return hit
+	return hit || list()
 
 /obj/item/projectile/test/Bump(atom/A)
 	if(A != src)
@@ -48,7 +48,7 @@
 	if(direct_target)
 		if(direct_target != src)
 			hit |= direct_target
-		. = hit
+		. = hit || list()
 
 
 /obj/item/projectile/test/attack_mob()

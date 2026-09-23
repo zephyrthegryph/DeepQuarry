@@ -9,7 +9,6 @@
 	charge_cost = 240
 	projectile_type = /obj/item/projectile/beam/mouselaser
 	battery_lock = 1
-	firemodes = list()
 	force = 0
 	var/tf_type = /mob/living/simple_mob/animal/passive/mouse	//This type is what kind of mob it will try to turn people into!
 	var/cooldown = 0											//automatically set when used

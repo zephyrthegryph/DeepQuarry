@@ -13,7 +13,7 @@
 	var/machine_id = ""
 	var/transaction_amount = 0 // cumulatd amount of money to pay in a single purchase
 	var/transaction_purpose = "" // text that gets used in ATM transaction logs
-	var/list/transaction_logs = list() // list of strings using html code to visualise data
+	var/list/transaction_logs // list of strings using html code to visualise data
 	var/list/item_list = list()  // entities and according
 	var/list/price_list = list() // prices for each purchase
 	/// Physical objects scanned into this ticket, keyed by object with scanned price.
@@ -93,7 +93,7 @@
 		"machine_id" = machine_id,
 		"department_checkout" = department_checkout,
 		"subsidized_checkout" = linked_account?.department_id == DEPARTMENT_CIVILIAN,
-		"transaction_logs" = linked_account?.is_department_budget() ? SSsupply.service_invoice_rows(0, linked_account.department_id) : transaction_logs,
+		"transaction_logs" = linked_account?.is_department_budget() ? SSsupply.service_invoice_rows(0, linked_account.department_id) : (transaction_logs || list()),
 		"current_transactioon" = get_current_transaction()
 	)
 
@@ -229,7 +229,7 @@
 		if("reset_log")
 			if(linked_account?.department_id == DEPARTMENT_CIVILIAN)
 				return FALSE
-			transaction_logs.Cut()
+			LAZYCLEARLIST(transaction_logs)
 			to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 			return TRUE
 

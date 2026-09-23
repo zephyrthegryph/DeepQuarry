@@ -86,7 +86,7 @@
 			C.images -= c.obscured
 
 		for(var/datum/chunk/c as anything in add)
-			C.images += c.obscured
+			if(length(c.obscured)) C.images += c.obscured
 
 // Updates the chunks that the turf is located in. Use this when obstacles are destroyed or	when doors open.
 

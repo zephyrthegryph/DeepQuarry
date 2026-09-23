@@ -84,7 +84,7 @@
 	Variable: delim
 	A list of characters that denote the start of a new token. This list is automatically populated.
 */
-	var/list/delim = list()
+	var/list/delim
 
 /*
 	Macro: COL
@@ -101,7 +101,7 @@
 /datum/n_Scanner/nS_Scanner/New(code, datum/n_scriptOptions/nS_Options/options)
 	.=..()
 	ignore+= ascii2text(13) //Carriage return
-	delim += ignore + options.symbols + end_stmt + string_delim
+	LAZYADD(delim, ignore + options.symbols + end_stmt + string_delim)
 	src.options=options
 	LoadCode(code)
 
@@ -181,7 +181,7 @@ Reads characters separated by an item in <delim> into a token.
 /datum/n_Scanner/nS_Scanner/proc/ReadWord()
 	var/char=copytext(code, codepos, codepos+1)
 	var/buf
-	while(!delim.Find(char) && codepos<=length(code))
+	while(!LAZYFIND(delim, char) && codepos<=length(code))
 		buf+=char
 		char=copytext(code, ++codepos, codepos+1)
 	codepos-- //allow main Scan() proc to read the delimiter

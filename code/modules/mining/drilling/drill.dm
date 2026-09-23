@@ -13,7 +13,7 @@
 	circuit = /obj/item/circuitboard/miningdrill
 	var/braces_needed = 2
 	var/total_brace_tier = 0
-	var/list/obj/machinery/mining/brace/supports = list()
+	var/list/obj/machinery/mining/brace/supports
 	var/supported = 0
 	var/active = 0
 	var/list/resource_field
@@ -362,7 +362,7 @@
 	supported = 0
 	total_brace_tier = 0
 
-	if((!supports || !supports.len) && initial(anchored) == 0)
+	if((!supports || !length(supports)) && initial(anchored) == 0)
 		icon_state = "mining_drill"
 		anchored = FALSE
 		active = 0
@@ -370,7 +370,7 @@
 		anchored = TRUE
 
 	if(supports)
-		if(supports.len >= braces_needed)
+		if(length(supports) >= braces_needed)
 			supported = 1
 		else for(var/obj/machinery/mining/brace/check in supports)
 			if(check.brace_tier >= 3)
@@ -524,7 +524,7 @@
 
 	icon_state = "mining_brace_active"
 
-	connected.supports += src
+	LAZYADD(connected.supports, src)
 	connected.check_supports()
 
 /obj/machinery/mining/brace/proc/disconnect()
@@ -535,6 +535,6 @@
 
 	icon_state = "mining_brace"
 
-	connected.supports -= src
+	LAZYREMOVE(connected.supports, src)
 	connected.check_supports()
 	connected = null

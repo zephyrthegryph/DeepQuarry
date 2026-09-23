@@ -18,8 +18,8 @@
 	var/description = ""
 	/// Included when `bench` runs without a scenario list.
 	var/default_scenario = FALSE
-	var/list/metrics = list()
-	var/list/details = list()
+	var/list/metrics
+	var/list/details
 	var/list/phases
 	/// World parameters for this run; scenario options are `bench_<name>=value`.
 	var/list/params
@@ -38,11 +38,11 @@
 /// Records a scalar measurement. `better` is "lower", "higher" or "none"; it
 /// drives regression detection in `bench-compare`.
 /datum/benchmark/proc/metric(name, value, unit = "", better = "lower")
-	metrics[name] = list("value" = value, "unit" = unit, "better" = better)
+	LAZYSET(metrics, name, list("value" = value, "unit" = unit, "better" = better))
 
 /// Records structured context that isn't compared (tables, breakdowns).
 /datum/benchmark/proc/detail(name, value)
-	details[name] = value
+	LAZYSET(details, name, value)
 
 /// Reads a scenario option from the `bench_<name>` world parameter.
 /datum/benchmark/proc/param(name, default_value)
@@ -329,8 +329,8 @@
 				log_test("::error::Benchmark [scenario_id] failed: [error.name]")
 			result["duration_seconds"] = (REALTIMEOFDAY - start) / 10
 			result["runtimes"] = GLOB.total_runtimes - runtimes_before
-			result["metrics"] = scenario.metrics
-			result["details"] = scenario.details
+			result["metrics"] = (scenario.metrics || list())
+			result["details"] = (scenario.details || list())
 			result["phases"] = (scenario.phases || list())
 			log_test("Benchmark [scenario_id]: [result["status"]] in [result["duration_seconds"]]s, [length(scenario.metrics)] metrics")
 			qdel(scenario)

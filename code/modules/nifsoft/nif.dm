@@ -600,7 +600,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	if(stat != NIF_WORKING)
 		return list() //None!
 
-	return planes_visible
+	return planes_visible || list()
 
 /obj/item/nif/proc/add_plane(planeid = null)
 	if(!planeid)

@@ -56,8 +56,8 @@ SUBSYSTEM_DEF(job)
 	sortTim(occupations, GLOBAL_PROC_REF(cmp_job_datums))
 	for(var/department, value in department_datums)
 		var/datum/department/dept = value
-		sortTim(dept.jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
-		sortTim(dept.primary_jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
+		if(length(dept.jobs)) sortTim(dept.jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
+		if(length(dept.primary_jobs)) sortTim(dept.primary_jobs, GLOBAL_PROC_REF(cmp_job_datums), TRUE)
 
 	return TRUE
 

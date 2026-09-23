@@ -3,7 +3,7 @@
 //We manually add to list element with procs to avoid dealing with clunky global lists that might not be relevant
 //and for ability to narrate from long range.
 /datum/entity_narrate
-	var/list/entity_names = list()
+	var/list/entity_names
 	var/list/entity_refs
 
 
@@ -50,7 +50,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
 			SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/add_mob_for_narration, L) //Recursively calling ourselves until cancelled or a unique name is given.
 			return
-		holder.entity_names += unique_name
+		LAZYADD(holder.entity_names, unique_name)
 		LAZYSET(holder.entity_refs, unique_name, WEAKREF(L))
 		log_and_message_admins("added [L.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
 
@@ -63,7 +63,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			to_chat(user, span_notice("[unique_name] is not unique! Pick another!"))
 			SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/add_mob_for_narration, A)
 			return
-		holder.entity_names += unique_name
+		LAZYADD(holder.entity_names, unique_name)
 		LAZYSET(holder.entity_refs, unique_name, WEAKREF(A))
 		log_and_message_admins("added [A.name] for their personal list to narrate", user) //Logging here to avoid spam, while still safeguarding abuse
 
@@ -77,7 +77,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 		return
 	var/datum/entity_narrate/holder = user.entity_narrate_holder
 
-	var/options = holder.entity_names + "Clear All"
+	var/options = (holder.entity_names || list()) + "Clear All"
 	var/removekey = tgui_input_list(user, "Choose which entity to remove", "remove reference", options, null)
 	if(removekey == "Clear All")
 		if(tgui_alert(user, "Do you really want to clear your entity list?", "confirm", list("Yes", "No")) != "Yes")
@@ -86,7 +86,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 		holder.entity_refs = list()
 	else if(removekey)
 		LAZYREMOVE(holder.entity_refs, removekey)
-		holder.entity_names -= removekey
+		LAZYREMOVE(holder.entity_names, removekey)
 
 //Planned to have TGUI functionality
 //For now brings up a list of all entities on our reference list and gives us the option to choose what we wanna do
@@ -102,7 +102,7 @@ ADMIN_VERB(narrate_mob, R_FUN, "Narrate Entity (Interface)", "Send either a visi
 	var/datum/entity_narrate/holder = user.entity_narrate_holder
 
 	//Obtaining and sanitizing arguments for the actual proc
-	var/choices = holder.entity_names + "Open TGUI"
+	var/choices = (holder.entity_names || list()) + "Open TGUI"
 	var/which_entity = tgui_input_list(user, "Choose which mob to narrate", "Narrate mob", choices, null)
 	if(!which_entity) return
 	if(which_entity == "Open TGUI")
@@ -142,7 +142,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 	var/selection = wref?.resolve()
 	if(!selection)
 		to_chat(user, span_notice("[name] has invalid reference, deleting"))
-		holder.entity_names -= name
+		LAZYREMOVE(holder.entity_names, name)
 		LAZYREMOVE(holder.entity_refs, name)
 		return
 	if(isliving(selection))
@@ -192,7 +192,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 	data["selection_mode"] = tgui_selection_mode
 	data["multi_id_selection"] = (tgui_selected_id_multi || list())
 	data["number_mob_selected"] = LAZYLEN(tgui_selected_id_multi)
-	data["entity_names"] = entity_names
+	data["entity_names"] = (entity_names || list())
 
 	return data
 
@@ -239,7 +239,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 					tgui_selected_refs = wref.resolve()
 					if(!tgui_selected_refs)
 						to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
-						entity_names -= tgui_selected_id
+						LAZYREMOVE(entity_names, tgui_selected_id)
 						LAZYREMOVE(entity_refs, tgui_selected_id)
 						tgui_selected_id = ""
 						tgui_selected_type = ""
@@ -271,7 +271,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 						var/ref = wref.resolve()
 						if(!ref)
 							to_chat(ui.user, span_notice("[entity] has invalid reference, deleting"))
-							entity_names -= entity
+							LAZYREMOVE(entity_names, entity)
 							LAZYREMOVE(entity_refs, entity)
 							LAZYREMOVE(tgui_selected_id_multi, entity)
 							continue
@@ -288,7 +288,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 					var/ref = wref.resolve()
 					if(!ref)
 						to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
-						entity_names -= tgui_selected_id
+						LAZYREMOVE(entity_names, tgui_selected_id)
 						LAZYREMOVE(entity_refs, tgui_selected_id)
 						tgui_selected_id = ""
 						tgui_selected_type = ""

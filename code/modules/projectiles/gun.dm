@@ -78,7 +78,7 @@
 	var/next_fire_time = 0
 
 	var/sel_mode = 1 //index of the currently selected mode
-	var/list/firemodes = list()
+	var/list/firemodes
 
 	var/reload_time = 1		//Base reload time in seconds
 
@@ -135,8 +135,8 @@
 
 /obj/item/gun/Initialize(mapload)
 	. = ..()
-	for(var/i in 1 to firemodes.len)
-		firemodes[i] = new /datum/firemode(src, firemodes[i])
+	for(var/i in 1 to length(firemodes))
+		LAZYSET(firemodes, i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
 
 	if(isnull(scoped_accuracy))
 		scoped_accuracy = accuracy
@@ -149,7 +149,7 @@
 		verbs -= /obj/item/gun/verb/allow_dna
 
 	if(sel_mode <= length(firemodes))
-		var/datum/firemode/new_mode = firemodes[sel_mode]
+		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
 		new_mode.apply_to(src)
 
 	// Initialise the firemode selector.
@@ -793,15 +793,15 @@
 
 /obj/item/gun/examine(mob/user)
 	. = ..()
-	if(firemodes.len > 1)
+	if(length(firemodes) > 1)
 		var/description = firemode_selector ? firemode_selector.describe() : null
 		if(!description)
-			var/datum/firemode/current_mode = firemodes[sel_mode]
+			var/datum/firemode/current_mode = LAZYACCESS(firemodes, sel_mode)
 			description = "The fire selector is set to [current_mode.name]."
 		. += description
 
 /obj/item/gun/proc/switch_firemodes(mob/user)
-	if(firemodes.len <= 1)
+	if(length(firemodes) <= 1)
 		return null
 
 	// Delegate to the selector datum when available; fall back to inline logic
@@ -810,9 +810,9 @@
 		return firemode_selector.cycle(user)
 
 	sel_mode++
-	if(sel_mode > firemodes.len)
+	if(sel_mode > length(firemodes))
 		sel_mode = 1
-	var/datum/firemode/new_mode = firemodes[sel_mode]
+	var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
 	new_mode.apply_to(src)
 	to_chat(user, span_notice("\The [src] is now set to [new_mode.name]."))
 	user.hud_used.update_ammo_hud(user, src) // TGMC Ammo HUD

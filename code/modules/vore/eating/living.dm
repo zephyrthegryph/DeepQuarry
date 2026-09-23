@@ -317,7 +317,7 @@
 		if(soulgem)
 			src.soulgem.release_mobs()
 			QDEL_NULL(soulgem)
-		if(P.soulcatcher_prefs.len)
+		if(length(P.soulcatcher_prefs))
 			var/list/errors = list()
 			soulgem = state_materialize(P.soulcatcher_prefs, src, NONE, errors)
 			if(!soulgem)

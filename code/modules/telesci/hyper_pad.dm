@@ -23,7 +23,7 @@
 	var/map_pad_id = "" as text //what's my name
 	var/map_pad_link_id = "" as text //who's my friend
 	var/ready = 0
-	var/list/linked = list()
+	var/list/linked
 	var/max_item_teleport = 30
 
 /obj/machinery/hyperpad/centre/Initialize(mapload)
@@ -39,7 +39,7 @@
 	for(var/obj/machinery/hyperpad/P in linked)
 		P.primary = null
 		qdel(P)
-	linked.Cut()
+	LAZYCLEARLIST(linked)
 	linked_pad = null
 	return ..()
 
@@ -104,11 +104,11 @@
 		var/iterate = 1
 		for(var/turf/T in turfs)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
-			linked.Add(new_pad)
+			LAZYADD(linked, new_pad)
 			new_pad.primary = src
 			new_pad.dir = dirs[iterate]
 			iterate += 1
-		if(linked.len == 8)
+		if(length(linked) == 8)
 			ready = 1
 			start_charge()
 		else

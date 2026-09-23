@@ -288,7 +288,7 @@ GLOBAL_LIST(construction_frame_floor)
 	var/need_circuit = TRUE
 	var/datum/frame/frame_types/frame_type = new /datum/frame/frame_types/machine
 
-	var/list/components = list()
+	var/list/components
 	var/list/req_components = null
 	var/list/req_component_names = null
 
@@ -531,7 +531,7 @@ GLOBAL_LIST(construction_frame_floor)
 		else if(state == FRAME_WIRED)
 			if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 				playsound(src, P.usesound, 50, 1)
-				if(components.len == 0)
+				if(length(components) == 0)
 					to_chat(user, span_notice("There are no components to remove."))
 				else
 					to_chat(user, span_notice("You remove the components."))
@@ -580,14 +580,14 @@ GLOBAL_LIST(construction_frame_floor)
 								var/obj/item/stack/cable_coil/CC = new /obj/item/stack/cable_coil(src, camt)
 								CC.update_icon()
 								CP.use(camt)
-								components += CC
+								LAZYADD(components, CC)
 								req_components[I] -= camt
 								update_desc()
 								break
 
 						user.drop_item()
 						P.forceMove(src)
-						components += P
+						LAZYADD(components, P)
 						req_components[I]--
 						update_desc()
 						break
@@ -602,7 +602,7 @@ GLOBAL_LIST(construction_frame_floor)
 				frame_type.frame_class == FRAME_CLASS_MACHINE \
 			)
 				playsound(src, P.usesound, 50, 1)
-				if (components.len == 0)
+				if (length(components) == 0)
 					to_chat(user, span_notice("You remove the cables."))
 				else
 					to_chat(user, span_notice("You remove the cables and components."))
@@ -683,7 +683,7 @@ GLOBAL_LIST(construction_frame_floor)
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
 				NS.update_icon()
 				ST.use(camt)
-				components += NS
+				LAZYADD(components, NS)
 				req_components[I] -= camt
 				break
 
@@ -693,7 +693,7 @@ GLOBAL_LIST(construction_frame_floor)
 		else
 			user.drop_item()
 			P.forceMove(src)
-		components += P
+		LAZYADD(components, P)
 		req_components[I]--
 		break
 

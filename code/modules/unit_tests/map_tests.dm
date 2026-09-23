@@ -108,7 +108,7 @@
 	var/list/cable_turfs
 	var/list/dirs_checked
 
-	var/list/exempt_from_wires = list()
+	var/list/exempt_from_wires
 
 /datum/unit_test/wire_test/Run()
 	set background = 1
@@ -116,7 +116,7 @@
 	if(using_map.skip_map_validity_tests)
 		return // minimal CI harness map — wiring validity runs on the live map
 
-	exempt_from_wires += using_map.unit_test_exempt_from_wires.Copy()
+	LAZYADD(exempt_from_wires, using_map.unit_test_exempt_from_wires.Copy())
 
 	var/list/zs_to_test = using_map.unit_test_z_levels || list(1) //Either you set it, or you just get z1
 

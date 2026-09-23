@@ -78,7 +78,7 @@
 		C.parameters += new/datum/node/expression/value/variable(p)
 	var/datum/node/statement/ReturnStatement/R=new()
 	R.value=C
-	S.block.statements += R
+	LAZYADD(S.block.statements, R)
 	globalScope.functions[name] = S
 /*
 	Proc: VarExists

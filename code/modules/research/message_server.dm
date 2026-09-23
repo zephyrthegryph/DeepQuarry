@@ -263,19 +263,19 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	idle_power_usage = 10
 	active_power_usage = 100
 	var/list/messages = list()		//Stores messages of non-standard frequencies
-	var/list/messages_admin = list()
+	var/list/messages_admin
 
-	var/list/msg_common = list()
-	var/list/msg_science = list()
-	var/list/msg_command = list()
-	var/list/msg_medical = list()
-	var/list/msg_engineering = list()
-	var/list/msg_security = list()
-	var/list/msg_deathsquad = list()
-	var/list/msg_syndicate = list()
+	var/list/msg_common
+	var/list/msg_science
+	var/list/msg_command
+	var/list/msg_medical
+	var/list/msg_engineering
+	var/list/msg_security
+	var/list/msg_deathsquad
+	var/list/msg_syndicate
 	var/list/msg_raider
-	var/list/msg_cargo = list()
-	var/list/msg_service = list()
+	var/list/msg_cargo
+	var/list/msg_service
 	var/list/msg_explorer
 
 	var/list/datum/feedback_variable/feedback = new()

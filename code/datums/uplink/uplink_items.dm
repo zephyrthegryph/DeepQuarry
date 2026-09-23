@@ -93,7 +93,7 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 /datum/uplink_item/proc/purchase_log(mob/M)
 	feedback_add_details("traitor_uplink_items_bought", "[src]")
 	log_and_message_admins("\the [M] bought \a [src] through the uplink")
-	M.mind.purchase_log[src] += 1
+	LAZYADDASSOC(M.mind.purchase_log, src, 1)
 
 /datum/uplink_item/dd_SortValue()
 	return item_cost

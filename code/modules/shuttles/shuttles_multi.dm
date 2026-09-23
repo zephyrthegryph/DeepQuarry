@@ -37,7 +37,7 @@
 /datum/shuttle/autodock/multi/proc/get_destinations()
 	if (last_cache_rebuild_time < SSshuttles.last_landmark_registration_time)
 		build_destinations_cache()
-	return destinations_cache
+	return destinations_cache || list()
 
 /datum/shuttle/autodock/multi/proc/build_destinations_cache()
 	last_cache_rebuild_time = world.time
@@ -45,7 +45,7 @@
 	for(var/destination_tag in destination_tags)
 		var/obj/effect/shuttle_landmark/landmark = SSshuttles.get_landmark(destination_tag)
 		if (istype(landmark))
-			destinations_cache["[landmark.name]"] = landmark
+			LAZYSET(destinations_cache, "[landmark.name]", landmark)
 
 /datum/shuttle/autodock/multi/perform_shuttle_move()
 	..()

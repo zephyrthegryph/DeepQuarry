@@ -67,8 +67,8 @@
 	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5)
 	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5)
 
-	beakers += B1
-	beakers += B2
+	LAZYADD(beakers, B1)
+	LAZYADD(beakers, B2)
 
 	icon_state = null
 

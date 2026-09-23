@@ -469,7 +469,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	var/list/drips = list()
 	// Only a certain number of drips (or one large splatter) can be on a given turf.
 	for(var/obj/effect/decal/cleanable/blood/drip/drop in T)
-		drips |= drop.drips
+		LAZYOR(drips, drop.drips)
 		qdel(drop)
 	if(!large && drips.len < 3)
 		decal_type = /obj/effect/decal/cleanable/blood/drip
@@ -482,7 +482,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	var/obj/effect/decal/cleanable/blood/drip/drop = B
 	if(istype(drop) && drips && drips.len && !large)
 		drop.add_overlay(drips)
-		drop.drips |= drips
+		LAZYOR(drop.drips, drips)
 
 	// If there's no data to copy, call it quits here.
 	if(!istype(source))

@@ -673,7 +673,7 @@
 /area/redgate/stardog/flesh_abyss/spawn_flora_on_turf()
 	if(!spawnstuff)
 		return
-	if(!valid_flora.len)
+	if(!length(valid_flora))
 		log_mapping("[src] does not have a set valid flora list!")
 		return TRUE
 
@@ -681,7 +681,7 @@
 	var/turf/Turf
 	var/howmany = rand(0,floracountmax)
 	for(var/floracount = 1 to howmany)
-		F = pickweight(valid_flora)
+		F = pickweight(valid_flora || list())
 		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			new F(Turf)
@@ -735,7 +735,7 @@
 /area/redgate/stardog/flesh_abyss/proc/spawn_ore()
 	if(!spawnstuff)
 		return
-	if(!valid_flora.len)
+	if(!length(valid_flora))
 		log_mapping("[src] does not have a set valid flora list!")
 		return
 
@@ -743,7 +743,7 @@
 	var/turf/Turf
 	var/howmany = rand(1,floracountmax)
 	for(var/ore = 1 to howmany)
-		F = pickweight(valid_flora)
+		F = pickweight(valid_flora || list())
 		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		if(!Turf.check_density())
 			new F(Turf)

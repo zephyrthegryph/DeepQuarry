@@ -158,11 +158,11 @@
 	icon_state = "1"
 	random_icon_states = list("1","2","3","4","5")
 	amount = 0
-	var/list/drips = list()
+	var/list/drips
 
 /obj/effect/decal/cleanable/blood/drip/Initialize(mapload)
 	. = ..()
-	drips |= icon_state
+	LAZYOR(drips, icon_state)
 
 /obj/effect/decal/cleanable/blood/writing
 	icon_state = "tracks"

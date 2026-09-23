@@ -18,7 +18,7 @@
 	dir = EAST
 	density = TRUE
 	var/obj/structure/m_tray/connected = null
-	var/list/occupants = list()
+	var/list/occupants
 	anchored = TRUE
 	unacidable = TRUE
 
@@ -29,11 +29,11 @@
 	return ..()
 
 /obj/structure/morgue/proc/get_occupants()
-	occupants.Cut()
+	LAZYCLEARLIST(occupants)
 	for(var/mob/living/carbon/human/H in contents)
-		occupants += H
+		LAZYADD(occupants, H)
 	for(var/obj/structure/closet/body_bag/B in contents)
-		occupants += B.get_occupants()
+		LAZYADD(occupants, B.get_occupants())
 
 /obj/structure/morgue/proc/update(broadcast=0)
 	if (src.connected)

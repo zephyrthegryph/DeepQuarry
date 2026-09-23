@@ -10,7 +10,7 @@
 	anchored = TRUE
 	var/list/things_in_range//what is in a radius of us?
 	var/list/fields_in_range//What EM fields are in that radius?
-	var/list/active_field = list()//Our active field.
+	var/list/active_field//Our active field.
 	var/active = 0 //are we even on?
 	var/id_tag //needed for !!rasins!!
 	circuit = /obj/item/circuitboard/hydromagnetic_trap
@@ -32,7 +32,7 @@
 
 	else
 		if(powernet)
-			active_field.Cut()
+			LAZYCLEARLIST(active_field)
 			disconnect_from_network()
 		return PROCESS_KILL
 
@@ -50,16 +50,16 @@
 			LAZYREMOVE(fields_in_range, FFF)
 			continue
 
-		if (active_field.len > 0)
+		if (length(active_field) > 0)
 			return
-		else if (active_field.len == 0)
+		else if (length(active_field) == 0)
 			Link()
 	return
 
 /obj/machinery/power/hydromagnetic_trap/proc/Link() //discover our EM field
 	var/obj/effect/fusion_em_field/FFF
 	for(FFF in fields_in_range)
-		active_field += FFF
+		LAZYADD(active_field, FFF)
 		active = 1
 	return
 

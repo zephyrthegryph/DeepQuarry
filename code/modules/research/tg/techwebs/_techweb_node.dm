@@ -20,8 +20,8 @@
 	var/experimental = FALSE
 	/// Whether it's available without any research
 	var/starting_node = FALSE
-	var/list/prereq_ids = list()
-	var/list/design_ids = list()
+	var/list/prereq_ids
+	var/list/design_ids
 	/// CALCULATED FROM OTHER NODE'S PREREQUISITIES. Associated list id = TRUE
 	var/list/unlock_ids // Lazy: leaf nodes unlock nothing.
 	/// List of items you need to deconstruct to unlock this node.
@@ -58,9 +58,9 @@
 /datum/techweb_node/proc/Initialize()
 	//Make lists associative for lookup
 	for(var/id in prereq_ids)
-		prereq_ids[id] = TRUE
+		LAZYSET(prereq_ids, id, TRUE)
 	for(var/id in design_ids)
-		design_ids[id] = TRUE
+		LAZYSET(design_ids, id, TRUE)
 	for(var/id in unlock_ids)
 		unlock_ids[id] = TRUE
 
@@ -80,10 +80,10 @@
 	prune_node_id(TN.id)
 
 /datum/techweb_node/proc/prune_design_id(design_id)
-	design_ids -= design_id
+	LAZYREMOVE(design_ids, design_id)
 
 /datum/techweb_node/proc/prune_node_id(node_id)
-	prereq_ids -= node_id
+	LAZYREMOVE(prereq_ids, node_id)
 	unlock_ids -= node_id
 
 /datum/techweb_node/proc/get_price(datum/techweb/host)

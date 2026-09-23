@@ -16,7 +16,7 @@
 	// Choices available in the vote
 	var/list/choices = list()
 	// Assoc list of [ckeys => choice] who have voted. We don't want to hold clients refs.___callbackvarset(list_or_datum, var_name, var_value)
-	var/list/voted = list()
+	var/list/voted
 	// For how long will it be up
 	var/vote_time = 60 SECONDS
 
@@ -60,7 +60,7 @@
 		to_chat(world, span_interface("No votes were cast. Do you all hate democracy?!"))
 		return null
 
-	return calculate_vote_result(voted, choices, vote_result_type)
+	return calculate_vote_result(voted || list(), choices, vote_result_type)
 
 
 /datum/vote/proc/calculate_vote_result(list/voted, list/choices, vote_result_type)
@@ -164,7 +164,7 @@
 	data["remaining"] = remaining()
 	data["user_vote"] = null
 	if(user.ckey in voted)
-		data["user_vote"] = voted[user.ckey]
+		data["user_vote"] = LAZYACCESS(voted, user.ckey)
 
 	data["question"] = question
 	data["choices"] = choices
@@ -174,10 +174,10 @@
 
 		var/list/counts = list()
 		for(var/ck in voted)
-			if(voted[ck] in counts)
-				counts[voted[ck]]++
+			if(LAZYACCESS(voted, ck) in counts)
+				counts[LAZYACCESS(voted, ck)]++
 			else
-				counts[voted[ck]] = 1
+				counts[LAZYACCESS(voted, ck)] = 1
 
 		data["counts"] = counts
 	else
@@ -195,6 +195,6 @@
 	switch(action)
 		if("vote")
 			if(params["target"] in choices)
-				voted[ui.user.ckey] = params["target"]
+				LAZYSET(voted, ui.user.ckey, params["target"])
 			else
 				message_admins(span_warning("User [key_name_admin(ui.user)] spoofed a vote in the vote panel!"))

@@ -237,10 +237,10 @@ SUBSYSTEM_DEF(robot_sprites)
 				if(!RS.belly_light_list)
 					RS.belly_light_list = list()
 				if(isnum(capacity))
-					if(!RS.belly_light_list[belly[2]])
-						RS.belly_light_list[belly[2]] = capacity
-					else if(RS.belly_light_list[belly[2]] < capacity)
-						RS.belly_light_list[belly[2]] = capacity
+					if(!LAZYACCESS(RS.belly_light_list, belly[2]))
+						LAZYSET(RS.belly_light_list, belly[2], capacity)
+					else if(LAZYACCESS(RS.belly_light_list, belly[2]) < capacity)
+						LAZYSET(RS.belly_light_list, belly[2], capacity)
 				continue
 			if(findtext(icon, regex("-\\d$")))
 				var/list/belly = splittext(icon, "-")
@@ -248,10 +248,10 @@ SUBSYSTEM_DEF(robot_sprites)
 				if(!RS.belly_capacity_list)
 					RS.belly_capacity_list = list()
 				if(isnum(capacity))
-					if(!RS.belly_capacity_list[belly[2]])
-						RS.belly_capacity_list[belly[2]] = capacity
-					else if(RS.belly_capacity_list[belly[2]] < capacity)
-						RS.belly_capacity_list[belly[2]] = capacity
+					if(!LAZYACCESS(RS.belly_capacity_list, belly[2]))
+						LAZYSET(RS.belly_capacity_list, belly[2], capacity)
+					else if(LAZYACCESS(RS.belly_capacity_list, belly[2]) < capacity)
+						LAZYSET(RS.belly_capacity_list, belly[2], capacity)
 				continue
 			if(findtext(icon, regex("-sit")))
 				RS.has_rest_sprites = TRUE

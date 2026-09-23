@@ -64,56 +64,56 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.yield_strength = clamp(round(batch.hardness * 8 + batch.toughness * 3 - batch.porosity * 2), 25, 1200)
 	material.fracture_toughness = clamp(round(batch.toughness - batch.brittleness * 0.5), 5, 150)
 	material.dielectric_strength = clamp(round((100 - batch.conductivity) * 1.2 + batch.corrosion_resistance * 0.25), 1, 150)
-	var/cryo_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_CRYO] || 0
-	var/thermal_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] || 0
-	var/metal_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_METAL] || 0
-	var/corrosion_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_CORROSION] || 0
-	var/bluespace_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_BLUESPACE] || 0
+	var/cryo_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CRYO) || 0
+	var/thermal_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_THERMAL) || 0
+	var/metal_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_METAL) || 0
+	var/corrosion_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CORROSION) || 0
+	var/bluespace_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_BLUESPACE) || 0
 	if(metal_skin)
 		material.hardness = clamp(material.hardness + metal_skin * 0.2, 1, 100)
 		material.integrity = clamp(material.integrity + round(metal_skin * 0.8), 5, 250)
 	if(corrosion_skin)
 		material.corrosion_resistance = clamp(material.corrosion_resistance + corrosion_skin * 0.6, 0, 100)
-	var/metal_hydrogen_share = (batch.composition[MAT_METALHYDROGEN] || 0) / max(batch.amount, 1)
+	var/metal_hydrogen_share = (LAZYACCESS(batch.composition, MAT_METALHYDROGEN) || 0) / max(batch.amount, 1)
 	if((metal_hydrogen_share >= 0.15 || (batch.additive_units_matching("cryogenic stabilizer") && cryo_skin)) && batch.conductivity >= 75 && batch.purity >= 90)
 		material.critical_temperature = clamp(T0C - 120 + cryo_skin * 0.8, 40, T0C - 5)
 		material.critical_current_density = clamp(batch.conductivity * batch.purity / 8, 100, 1500)
 	if(cryo_skin || thermal_skin)
 		material.phase_change_temperature = cryo_skin ? max(60, T0C - cryo_skin) : T0C + thermal_skin * 2
 		material.phase_change_capacity = clamp(round((cryo_skin + thermal_skin) * material.specific_heat * 4), 1000, 500000)
-	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_CATALYTIC] || batch.additive_units_matching("platinum plating") || batch.additive_units_matching("gold plating"))
+	if(LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CATALYTIC) || batch.additive_units_matching("platinum plating") || batch.additive_units_matching("gold plating"))
 		material.catalytic_activity = clamp(round(batch.purity * 0.7 + batch.corrosion_resistance * 0.3), 1, 100)
-	var/crystal_amount = (batch.composition[MAT_QUARTZ] || 0) + (batch.composition[MAT_DIAMOND] || 0) + (batch.composition[MAT_GLASS] || 0) + (batch.composition[MAT_VOLTAIC_CRYSTAL] || 0) + (batch.composition[MAT_KINETIC_CRYSTAL] || 0) + (batch.composition[MAT_LUMEN_CRYSTAL] || 0) + (batch.composition[MAT_RIFT_GLASS] || 0)
-	var/biological_amount = (batch.composition[MAT_BIOMASS] || 0) + (batch.composition[MAT_FLESH] || 0) + (batch.composition[MAT_CHITIN] || 0) + (batch.composition[MAT_ALIENCHITIN] || 0) + (batch.composition[MAT_SPORE_BIOMASS] || 0)
+	var/crystal_amount = (LAZYACCESS(batch.composition, MAT_QUARTZ) || 0) + (LAZYACCESS(batch.composition, MAT_DIAMOND) || 0) + (LAZYACCESS(batch.composition, MAT_GLASS) || 0) + (LAZYACCESS(batch.composition, MAT_VOLTAIC_CRYSTAL) || 0) + (LAZYACCESS(batch.composition, MAT_KINETIC_CRYSTAL) || 0) + (LAZYACCESS(batch.composition, MAT_LUMEN_CRYSTAL) || 0) + (LAZYACCESS(batch.composition, MAT_RIFT_GLASS) || 0)
+	var/biological_amount = (LAZYACCESS(batch.composition, MAT_BIOMASS) || 0) + (LAZYACCESS(batch.composition, MAT_FLESH) || 0) + (LAZYACCESS(batch.composition, MAT_CHITIN) || 0) + (LAZYACCESS(batch.composition, MAT_ALIENCHITIN) || 0) + (LAZYACCESS(batch.composition, MAT_SPORE_BIOMASS) || 0)
 	var/has_crystal = crystal_amount / max(batch.amount, 1) >= 0.1
 	var/has_biological = biological_amount / max(batch.amount, 1) >= 0.15
-	var/particle_conditioned = batch.field_treatments[MATERIAL_FIELD_PARTICLE] || 0
-	var/emitter_charged = batch.field_treatments[MATERIAL_FIELD_EMITTER] || 0
-	var/fusion_stabilized = batch.field_treatments[MATERIAL_FIELD_FUSION] || 0
-	var/energy_storage = batch.field_treatments[MATERIAL_FIELD_ENERGY_STORAGE] || 0
-	var/nickel_share = (batch.composition[MAT_NICKEL] || 0) / max(batch.amount, 1)
-	var/copper_share = (batch.composition[MAT_COPPER] || 0) / max(batch.amount, 1)
-	var/titanium_share = (batch.composition[MAT_TITANIUM] || 0) / max(batch.amount, 1)
-	var/chromium_share = (batch.composition[MAT_CHROMIUM] || 0) / max(batch.amount, 1)
-	var/tungsten_share = (batch.composition[MAT_TUNGSTEN] || 0) / max(batch.amount, 1)
-	var/ceramic_share = (batch.composition[MAT_TECH_CERAMIC] || 0) / max(batch.amount, 1)
-	var/phoron_share = ((batch.composition[MAT_PHORON] || 0) + (batch.dissolved_gases["fusion phoron"] || 0) * 0.1) / max(batch.amount, 1)
+	var/particle_conditioned = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_PARTICLE) || 0
+	var/emitter_charged = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_EMITTER) || 0
+	var/fusion_stabilized = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0
+	var/energy_storage = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_ENERGY_STORAGE) || 0
+	var/nickel_share = (LAZYACCESS(batch.composition, MAT_NICKEL) || 0) / max(batch.amount, 1)
+	var/copper_share = (LAZYACCESS(batch.composition, MAT_COPPER) || 0) / max(batch.amount, 1)
+	var/titanium_share = (LAZYACCESS(batch.composition, MAT_TITANIUM) || 0) / max(batch.amount, 1)
+	var/chromium_share = (LAZYACCESS(batch.composition, MAT_CHROMIUM) || 0) / max(batch.amount, 1)
+	var/tungsten_share = (LAZYACCESS(batch.composition, MAT_TUNGSTEN) || 0) / max(batch.amount, 1)
+	var/ceramic_share = (LAZYACCESS(batch.composition, MAT_TECH_CERAMIC) || 0) / max(batch.amount, 1)
+	var/phoron_share = ((LAZYACCESS(batch.composition, MAT_PHORON) || 0) + (LAZYACCESS(batch.dissolved_gases, "fusion phoron") || 0) * 0.1) / max(batch.amount, 1)
 	if((nickel_share >= 0.15 && copper_share >= 0.15) || (batch.additive_units_matching("thermal phase catalyst") && thermal_skin && batch.conductivity >= 45))
 		material.thermoelectric_coefficient = clamp((batch.conductivity + batch.heat_resistance) / 200, 0, 1)
 	if(has_crystal && batch.conductivity >= 30 && batch.homogeneity >= 70)
 		material.piezoelectric_coefficient = clamp((batch.conductivity + batch.homogeneity - batch.porosity) / 200, 0, 1)
-	if(batch.composition[MAT_KINETIC_CRYSTAL])
-		var/kinetic_share = batch.composition[MAT_KINETIC_CRYSTAL] / max(batch.amount, 1)
+	if(LAZYACCESS(batch.composition, MAT_KINETIC_CRYSTAL))
+		var/kinetic_share = LAZYACCESS(batch.composition, MAT_KINETIC_CRYSTAL) / max(batch.amount, 1)
 		material.piezoelectric_coefficient = max(material.piezoelectric_coefficient, clamp(0.68 * kinetic_share * batch.homogeneity / 100, 0, 1))
-	if(batch.composition[MAT_THERMIC_CERAMIC])
-		var/thermic_share = batch.composition[MAT_THERMIC_CERAMIC] / max(batch.amount, 1)
+	if(LAZYACCESS(batch.composition, MAT_THERMIC_CERAMIC))
+		var/thermic_share = LAZYACCESS(batch.composition, MAT_THERMIC_CERAMIC) / max(batch.amount, 1)
 		material.phase_change_temperature = T0C + 40
 		material.phase_change_capacity = max(material.phase_change_capacity, round(65000 * thermic_share * batch.purity / 100))
-	if(batch.composition[MAT_ETCHING_CERAMIC])
+	if(LAZYACCESS(batch.composition, MAT_ETCHING_CERAMIC))
 		material.catalytic_activity = max(material.catalytic_activity, clamp(batch.purity * batch.corrosion_resistance / 100, 0, 100))
-	if(batch.additive_units_matching("conductive dopant") && batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE] && batch.conductivity >= 40 && batch.homogeneity >= 60)
+	if(batch.additive_units_matching("conductive dopant") && LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CONDUCTIVE) && batch.conductivity >= 40 && batch.homogeneity >= 60)
 		material.electrogenic_rate = clamp((batch.conductivity + batch.homogeneity) / 4, 0, 50)
-	if(((batch.composition[MAT_MORPHIUM] || 0) / max(batch.amount, 1) >= 0.15 || (nickel_share >= 0.2 && titanium_share >= 0.2) || (titanium_share >= 0.25 && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
+	if(((LAZYACCESS(batch.composition, MAT_MORPHIUM) || 0) / max(batch.amount, 1) >= 0.15 || (nickel_share >= 0.2 && titanium_share >= 0.2) || (titanium_share >= 0.25 && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
 		material.shape_recovery_rate = clamp((batch.toughness + batch.homogeneity - batch.internal_stress) / 40, 0, 5)
 		material.shape_recovery_temperature = T0C + 80
 	if(nickel_share >= 0.15 && chromium_share >= 0.15)
@@ -129,7 +129,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(has_crystal && batch.conductivity >= 35 && (particle_conditioned >= 20 || emitter_charged >= 20))
 		material.field_charge_efficiency = clamp((batch.conductivity + batch.homogeneity + particle_conditioned + emitter_charged) / 400, 0.1, 0.9)
 		material.field_energy_capacity = clamp((energy_storage + particle_conditioned + emitter_charged) * batch.purity * 8, 1000, 100000)
-	var/radiation_hardened = batch.field_treatments[MATERIAL_FIELD_RADIATION_HARDENED] || 0
+	var/radiation_hardened = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_RADIATION_HARDENED) || 0
 	if(radiation_hardened)
 		material.heat_resistance = clamp(material.heat_resistance + radiation_hardened * 0.2, 0, 120)
 		material.yield_strength = clamp(material.yield_strength * (1 + radiation_hardened / 250), 25, 1600)
@@ -137,19 +137,19 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(fusion_stabilized && metal_hydrogen_share >= 0.15 && material.critical_temperature)
 		material.critical_temperature = clamp(material.critical_temperature + fusion_stabilized * 0.45, 40, T0C + 25)
 		material.critical_current_density = clamp(material.critical_current_density * (1 + fusion_stabilized / 100), 100, 3000)
-	if((batch.composition[MAT_WARD_METAL] || 0) / max(batch.amount, 1) >= 0.15 || ((batch.composition[MAT_PLASTEEL] || 0) / max(batch.amount, 1) >= 0.25 && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
+	if((LAZYACCESS(batch.composition, MAT_WARD_METAL) || 0) / max(batch.amount, 1) >= 0.15 || ((LAZYACCESS(batch.composition, MAT_PLASTEEL) || 0) / max(batch.amount, 1) >= 0.25 && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
 		material.reactive_energy_capacity = clamp((batch.toughness + batch.hardness) * 25, 0, 5000)
-	if(((batch.composition[MAT_SILVER] || 0) / max(batch.amount, 1) >= 0.1 || batch.additive_units_matching("silver plating")) && batch.corrosion_resistance >= 50)
+	if(((LAZYACCESS(batch.composition, MAT_SILVER) || 0) / max(batch.amount, 1) >= 0.1 || batch.additive_units_matching("silver plating")) && batch.corrosion_resistance >= 50)
 		material.antimicrobial_activity = clamp((batch.corrosion_resistance + batch.purity) / 2, 0, 100)
-	if(has_biological && (batch.composition[MAT_IRON] || batch.additive_units_matching("precipitation catalyst")))
+	if(has_biological && (LAZYACCESS(batch.composition, MAT_IRON) || batch.additive_units_matching("precipitation catalyst")))
 		material.hemostatic_activity = clamp((batch.homogeneity + batch.purity) / 2, 0, 100)
-	if(has_biological && (batch.composition[MAT_MORPHIUM] || batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] >= 20))
+	if(has_biological && (LAZYACCESS(batch.composition, MAT_MORPHIUM) || batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] >= 20))
 		material.biocompatibility = clamp((batch.toughness + batch.homogeneity) / 2, 0, 100)
-	if(batch.porosity >= 18 && (batch.composition[MAT_TITANIUM] || batch.composition[MAT_ALUMINIUM] || batch.composition[MAT_GRAPHITE]))
+	if(batch.porosity >= 18 && (LAZYACCESS(batch.composition, MAT_TITANIUM) || LAZYACCESS(batch.composition, MAT_ALUMINIUM) || LAZYACCESS(batch.composition, MAT_GRAPHITE)))
 		material.gas_sorption_capacity = clamp(batch.porosity / 5 + batch.corrosion_resistance / 20, 0, 25)
 	if(bluespace_skin)
 		material.gas_sorption_capacity = max(material.gas_sorption_capacity, clamp(bluespace_skin / 2, 0, 50))
-	if((batch.composition[MAT_RIFT_GLASS] || 0) / max(batch.amount, 1) >= 0.15)
+	if((LAZYACCESS(batch.composition, MAT_RIFT_GLASS) || 0) / max(batch.amount, 1) >= 0.15)
 		material.gas_sorption_capacity = max(material.gas_sorption_capacity, clamp(batch.porosity / 4 + batch.purity / 8, 0, 25))
 	if(batch.porosity >= 22 && batch.corrosion_resistance >= 45)
 		material.reagent_porosity = clamp(batch.porosity / 4, 0, 25)
@@ -163,7 +163,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/weighted_radiation_resistance = 0
 	material.composite_material = list()
 	for(var/component in batch.composition)
-		var/share = batch.composition[component] / max(batch.amount, 1)
+		var/share = LAZYACCESS(batch.composition, component) / max(batch.amount, 1)
 		material.composite_material[component] = SHEET_MATERIAL_AMOUNT * share
 		var/datum/material/component_material = get_material_by_name(component)
 		if(!component_material)
@@ -185,12 +185,12 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.opacity = clamp(weighted_opacity > 0 ? weighted_opacity : 1, 0, 1)
 	material.luminescence = max(0, round(weighted_luminescence))
 	material.radioactivity = max(0, round(weighted_radioactivity))
-	var/radioactive_share = ((batch.composition[MAT_URANIUM] || 0) + (batch.composition[MAT_TRITIUM] || 0)) / max(batch.amount, 1)
+	var/radioactive_share = ((LAZYACCESS(batch.composition, MAT_URANIUM) || 0) + (LAZYACCESS(batch.composition, MAT_TRITIUM) || 0)) / max(batch.amount, 1)
 	if(radioactive_share >= 0.1 && batch.conductivity >= 35 && particle_conditioned >= 20)
 		material.radiovoltaic_efficiency = clamp((batch.conductivity + material.radioactivity) / 200, 0, 1)
 	if(radioactive_share >= 0.1 && has_crystal && batch.homogeneity >= 65 && particle_conditioned >= 20)
 		material.scintillation_efficiency = clamp((batch.homogeneity + material.reflectivity * 100) / 200, 0, 1)
-	if((batch.composition[MAT_LUMEN_CRYSTAL] || 0) / max(batch.amount, 1) >= 0.15 && batch.homogeneity >= 60)
+	if((LAZYACCESS(batch.composition, MAT_LUMEN_CRYSTAL) || 0) / max(batch.amount, 1) >= 0.15 && batch.homogeneity >= 60)
 		material.scintillation_efficiency = max(material.scintillation_efficiency, clamp((batch.homogeneity + batch.purity) / 220, 0, 1))
 	material.toxicity = max(0, round(weighted_toxicity * (1 - batch.corrosion_resistance / 200)))
 	material.radiation_resistance = max(0, round(weighted_radiation_resistance + material.density / 12))
@@ -204,9 +204,9 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/datum/material/dominant
 	var/dominant_amount = 0
 	for(var/component in batch.composition)
-		if(batch.composition[component] > dominant_amount)
+		if(LAZYACCESS(batch.composition, component) > dominant_amount)
 			dominant = get_material_by_name(component)
-			dominant_amount = batch.composition[component]
+			dominant_amount = LAZYACCESS(batch.composition, component)
 	if(dominant)
 		material.icon_colour = dominant.icon_colour
 	GLOB.name_to_material[key] = material
@@ -332,11 +332,11 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/datum/material_batch/source_portion = source_batch.copy_for_amount(transferred)
 	new_target.amount += source_portion.amount
 	for(var/material_name in source_portion.composition)
-		new_target.composition[material_name] = (new_target.composition[material_name] || 0) + source_portion.composition[material_name]
+		LAZYSET(new_target.composition, material_name, (LAZYACCESS(new_target.composition, material_name) || 0) + LAZYACCESS(source_portion.composition, material_name))
 	for(var/impurity in source_portion.impurities)
-		new_target.impurities[impurity] = (new_target.impurities[impurity] || 0) + source_portion.impurities[impurity]
+		LAZYSET(new_target.impurities, impurity, (LAZYACCESS(new_target.impurities, impurity) || 0) + LAZYACCESS(source_portion.impurities, impurity))
 	for(var/lot_id in source_portion.feedstock_lots)
-		new_target.feedstock_lots[lot_id] = (new_target.feedstock_lots[lot_id] || 0) + source_portion.feedstock_lots[lot_id]
+		LAZYSET(new_target.feedstock_lots, lot_id, (LAZYACCESS(new_target.feedstock_lots, lot_id) || 0) + LAZYACCESS(source_portion.feedstock_lots, lot_id))
 	for(var/account_number in source_portion.contributors)
 		new_target.contributors[account_number] = (new_target.contributors[account_number] || 0) + source_portion.contributors[account_number]
 	for(var/category in source_portion.cost_ledger)

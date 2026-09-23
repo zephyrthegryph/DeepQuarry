@@ -51,7 +51,7 @@
 	if(C)
 
 		for(var/datum/chunk/c as anything in chunks_post_seen)
-			C.images += c.obscured
+			if(length(c.obscured)) C.images += c.obscured
 
 // Removes a area from a chunk.
 /datum/visualnet/ghost/proc/removeArea(area/A)

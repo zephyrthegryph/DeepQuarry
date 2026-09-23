@@ -241,7 +241,7 @@
 
 // Autopilot stuff.
 /datum/shuttle_web_master/proc/build_autopaths()
-	init_subtypes(autopath_class, autopaths)
+	autopaths = init_subtypes(autopath_class, autopaths)
 	for(var/datum/shuttle_autopath/P in autopaths)
 		P.master = src
 	// Drop autopaths that reference destinations pruned in build_destinations()

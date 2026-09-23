@@ -31,8 +31,8 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/mob/living/carbon/human/owner = null
 	var/list/spell_instances
 	var/list/equipment_instances
-	var/list/consumable_instances = list()
-	var/list/assistance_instances = list()
+	var/list/consumable_instances
+	var/list/assistance_instances
 	var/tab = 4 // Info tab, so new players can read it before doing anything.
 	var/spell_tab = ALL_SPELLS
 	var/show_scepter_text = 0
@@ -81,17 +81,17 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	if(!length(equipment_instances))
 		for(var/E in GLOB.all_technomancer_equipment)
 			LAZYADD(equipment_instances, new E())
-	if(!consumable_instances.len)
+	if(!length(consumable_instances))
 		for(var/C in GLOB.all_technomancer_consumables)
-			consumable_instances += new C()
-	if(!assistance_instances.len)
+			LAZYADD(consumable_instances, new C())
+	if(!length(assistance_instances))
 		for(var/A in GLOB.all_technomancer_assistance)
-			assistance_instances += new A()
+			LAZYADD(assistance_instances, new A())
 
 /obj/item/technomancer_catalog/apprentice/set_up()
 	..()
 	for(var/datum/technomancer/assistance/apprentice/A in assistance_instances)
-		assistance_instances.Remove(A)
+		LAZYREMOVE(assistance_instances, A)
 
 // Proc: show_categories()
 // Parameters: 1 (category - the category link to display)

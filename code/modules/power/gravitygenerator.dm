@@ -114,7 +114,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 	var/on = TRUE
 	var/breaker = TRUE
-	var/list/parts = list()
+	var/list/parts
 	var/obj/middle = null
 	var/charging_state = POWER_IDLE
 	var/charge_count = 100
@@ -161,11 +161,11 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
 		part.main_part = src
-		parts += part
+		LAZYADD(parts, part)
 		part.update_icon()
 
 /obj/machinery/gravity_generator/main/proc/connected_parts()
-	return parts.len == 8
+	return length(parts) == 8
 
 /obj/machinery/gravity_generator/main/set_broken()
 	..()

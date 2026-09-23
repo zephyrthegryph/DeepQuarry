@@ -153,7 +153,7 @@
 		stmt.value:exp2=ParseExpression()
 	else
 		stmt.value=ParseExpression()
-	curBlock.statements+=stmt
+	LAZYADD(curBlock.statements, stmt)
 
 /datum/n_Parser/nS_Parser/proc/ParseFunctionStatement()
 	if(!istype(curToken, /datum/token/word))
@@ -174,7 +174,7 @@
 			errors+=new/datum/scriptError/EndOfFile()
 			return
 		if(istype(curToken, /datum/token/symbol) && curToken.value==")")
-			curBlock.statements+=stmt
+			LAZYADD(curBlock.statements, stmt)
 			NextToken() //Skip close parenthesis
 			return
 		var/datum/node/expression/P=ParseParamExpression()

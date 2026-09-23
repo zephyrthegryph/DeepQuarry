@@ -18,7 +18,7 @@
 	/// that lists this department, so adding a new shared access requires only one edit here.
 	/// Must be a strict subset of every member job's full access list so that current behaviour
 	/// is preserved — the union of job.access and department.default_access equals job.access.
-	var/list/default_access = list()
+	var/list/default_access
 
 	/// The full set of access flags associated with this department's facilities.
 	/// Not all jobs receive all of these; the list exists so designers can see the

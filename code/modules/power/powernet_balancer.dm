@@ -32,7 +32,7 @@
 		return
 
 	// Skip the pass entirely if no SMES is requesting input.
-	if(!net.inputting.len || net.smes_demand <= 0)
+	if(!length(net.inputting) || net.smes_demand <= 0)
 		return
 
 	// Compute what fraction of SMES demand can be met this tick.

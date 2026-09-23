@@ -93,7 +93,7 @@
 	var/no_latejoin_prey_warning_persists = FALSE
 	var/belly_rub_target = null
 	var/soulcatcher_pref_flags = NONE
-	var/list/soulcatcher_prefs = list()
+	var/list/soulcatcher_prefs
 	var/max_voreoverlay_alpha = 255
 	var/persistend_edit_mode = FALSE
 
@@ -477,7 +477,7 @@
 			"no_latejoin_prey_warning_persists"		= no_latejoin_prey_warning_persists,
 			"belly_rub_target" = belly_rub_target,
 			"soulcatcher_pref_flags" = soulcatcher_pref_flags,
-			"soulcatcher_prefs"			= soulcatcher_prefs,
+			"soulcatcher_prefs"			= (soulcatcher_prefs || list()),
 			"persistend_edit_mode" = persistend_edit_mode,
 			"max_voreoverlay_alpha" = max_voreoverlay_alpha,
 		)

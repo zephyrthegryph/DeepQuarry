@@ -4,7 +4,7 @@
 /obj/item/communicator/proc/add_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	communicating |= comm
+	LAZYOR(communicating, comm)
 	GLOB.listening_objects |= src
 	update_icon()
 
@@ -14,7 +14,7 @@
 /obj/item/communicator/proc/del_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	communicating.Remove(comm)
+	LAZYREMOVE(communicating, comm)
 	update_icon()
 
 // Proc: open_connection()
@@ -72,7 +72,7 @@
 	log_game(msg)
 	new_voice.mind = candidate.mind			//Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
-	voice_mobs.Add(new_voice)
+	LAZYADD(voice_mobs, new_voice)
 	GLOB.listening_objects |= src
 
 	var/atom/movable/screen/blackness = new() 	//Makes a black screen, so the candidate can't see what's going on before actually 'connecting' to the communicator.
@@ -114,7 +114,7 @@
 // Description: Deletes specific voice_mobs or disconnects communicators, and shows a message to everyone when doing so.  If target is null, all communicators
 //				and voice mobs are removed.
 /obj/item/communicator/proc/close_connection(mob/user, atom/target, reason)
-	if(voice_mobs.len == 0 && communicating.len == 0)
+	if(length(voice_mobs) == 0 && length(communicating) == 0)
 		return
 
 	for(var/mob/living/voice/voice in voice_mobs) //Handle ghost-callers
@@ -122,7 +122,7 @@
 			continue
 		to_chat(voice, span_danger("[icon2html(src,voice.client)] [reason]."))
 		visible_message(span_danger("[icon2html(src,viewers(src))] [reason]."))
-		voice_mobs.Remove(voice)
+		LAZYREMOVE(voice_mobs, voice)
 		qdel(voice)
 		update_icon()
 
@@ -138,7 +138,7 @@
 		if(camera && comm.video_source == camera) //We hung up on them while they were watching us
 			comm.end_video()
 
-	if(voice_mobs.len == 0 && communicating.len == 0)
+	if(length(voice_mobs) == 0 && length(communicating) == 0)
 		GLOB.listening_objects.Remove(src)
 
 // Proc: request()

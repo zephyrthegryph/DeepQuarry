@@ -2,7 +2,7 @@
 	name = "forensic sample"
 	icon = 'icons/obj/forensics.dmi'
 	w_class = ITEMSIZE_TINY
-	var/list/evidence = list()
+	var/list/evidence
 
 /obj/item/sample/Initialize(mapload, atom/supplied)
 	. = ..()
@@ -12,7 +12,7 @@
 
 /obj/item/sample/print/Initialize(mapload, supplied)
 	. = ..()
-	if(evidence && evidence.len)
+	if(evidence && length(evidence))
 		icon_state = "fingerprint1"
 
 /obj/item/sample/proc/copy_evidence(atom/supplied)
@@ -22,21 +22,21 @@
 		supplied.forensic_data.clear_fibres()
 
 /obj/item/sample/proc/merge_evidence(obj/item/sample/supplied, mob/user)
-	if(!supplied.evidence || !supplied.evidence.len)
+	if(!supplied.evidence || !length(supplied.evidence))
 		return 0
-	evidence |= supplied.evidence
+	LAZYOR(evidence, supplied.evidence)
 	name = "[initial(name)] (combined)"
 	to_chat(user, span_notice("You transfer the contents of \the [supplied] into \the [src]."))
 	return 1
 
 /obj/item/sample/print/merge_evidence(obj/item/sample/supplied, mob/user)
-	if(!supplied.evidence || !supplied.evidence.len)
+	if(!supplied.evidence || !length(supplied.evidence))
 		return 0
 	for(var/print in supplied.evidence)
-		if(evidence[print])
-			evidence[print] = stringmerge(evidence[print],supplied.evidence[print])
+		if(LAZYACCESS(evidence, print))
+			LAZYSET(evidence, print, stringmerge(LAZYACCESS(evidence, print),LAZYACCESS(supplied.evidence, print)))
 		else
-			evidence[print] = supplied.evidence[print]
+			LAZYSET(evidence, print, LAZYACCESS(supplied.evidence, print))
 	name = "[initial(name)] (combined)"
 	to_chat(user, span_notice("You overlay \the [src] and \the [supplied], combining the print records."))
 	return 1
@@ -65,7 +65,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(evidence && evidence.len)
+	if(evidence && length(evidence))
 		return
 	if(!ishuman(user))
 		return
@@ -76,7 +76,7 @@
 
 	to_chat(user, span_notice("You firmly press your fingertips onto the card."))
 	var/fullprint = H.get_full_print()
-	evidence[fullprint] = fullprint
+	LAZYSET(evidence, fullprint, fullprint)
 	name = "[initial(name)] (\the [H])"
 	icon_state = "fingerprint1"
 
@@ -85,7 +85,7 @@
 	if(!ishuman(M))
 		return ..()
 
-	if(evidence && evidence.len)
+	if(evidence && length(evidence))
 		return ITEM_INTERACT_FAILURE
 
 	var/mob/living/carbon/human/H = M
@@ -112,7 +112,7 @@
 			return ITEM_INTERACT_FAILURE
 		user.visible_message("[user] takes a copy of \the [H]'s fingerprints.")
 		var/fullprint = H.get_full_print()
-		evidence[fullprint] = fullprint
+		LAZYSET(evidence, fullprint, fullprint)
 		copy_evidence(src)
 		name = "[initial(name)] (\the [H])"
 		icon_state = "fingerprint1"
@@ -123,7 +123,7 @@
 	var/list/print_data = supplied.forensic_data.get_prints()
 	if(print_data && print_data.len)
 		for(var/print in print_data)
-			evidence[print] = print_data[print]
+			LAZYSET(evidence, print, print_data[print])
 		supplied.forensic_data.clear_prints()
 
 /obj/item/forensics/sample_kit

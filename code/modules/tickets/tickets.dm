@@ -27,9 +27,9 @@
 GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 
 /datum/tickets
-	var/list/active_tickets = list()
-	var/list/closed_tickets = list()
-	var/list/resolved_tickets = list()
+	var/list/active_tickets
+	var/list/closed_tickets
+	var/list/resolved_tickets
 
 	var/obj/effect/statclick/ticket_list/astatclick = new(null, null, AHELP_ACTIVE)
 	var/obj/effect/statclick/ticket_list/cstatclick = new(null, null, AHELP_CLOSED)

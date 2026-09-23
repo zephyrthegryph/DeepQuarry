@@ -368,7 +368,7 @@
 	..()
 
 	if(append_ship_names)
-		ship_names.Add(added_ship_names)
+		if(length(added_ship_names)) ship_names.Add(added_ship_names)
 
 	if(autogenerate_destination_names) // Lets pad out the destination names.
 		var/i = rand(20, 30) //significantly increased from original values due to the greater length of rounds

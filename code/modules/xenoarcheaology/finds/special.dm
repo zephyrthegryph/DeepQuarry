@@ -22,7 +22,7 @@
 
 //a talking gas mask!
 /obj/item/clothing/mask/gas/poltergeist
-	var/list/heard_talk = list()
+	var/list/heard_talk
 	var/last_twitch = 0
 	var/max_stored_messages = 100
 
@@ -35,15 +35,15 @@
 	. = ..()
 
 /obj/item/clothing/mask/gas/poltergeist/process()
-	if(heard_talk.len && isliving(src.loc) && prob(10))
+	if(length(heard_talk) && isliving(src.loc) && prob(10))
 		var/mob/living/M = src.loc
-		M.say(pick(heard_talk))
+		M.say(DEFAULTPICK(heard_talk, null))
 
 /obj/item/clothing/mask/gas/poltergeist/hear_talk(mob/M, list/message_pieces, verb)
 	..()
-	if(heard_talk.len > max_stored_messages)
-		heard_talk.Remove(pick(heard_talk))
-	heard_talk.Add(multilingual_to_message(message_pieces))
+	if(length(heard_talk) > max_stored_messages)
+		LAZYREMOVE(heard_talk, DEFAULTPICK(heard_talk, null))
+	LAZYADD(heard_talk, multilingual_to_message(message_pieces))
 	if(isliving(src.loc) && world.time - last_twitch > 50)
 		last_twitch = world.time
 

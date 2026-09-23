@@ -24,7 +24,7 @@
 	var/list/warned_users
 	var/list/logged_events = list()
 
-	var/list/radial_images = list()
+	var/list/radial_images
 
 	var/static/radial_plus = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_plus")
 	var/static/radial_set = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_set")
@@ -70,7 +70,7 @@
 	..()
 
 /obj/item/perfect_tele/proc/rebuild_radial_images()
-	radial_images.Cut()
+	LAZYCLEARLIST(radial_images)
 
 	var/index = 1
 	for(var/bcn in beacons) //Grumble
@@ -82,14 +82,14 @@
 		else
 			I.add_overlay(radial_set)
 
-		radial_images[bcn] = I
+		LAZYSET(radial_images, bcn, I)
 
 		index++
 
 	if(beacons_left)
 		var/image/I = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]")
 		I.add_overlay(radial_plus)
-		radial_images["New Beacon"] = I
+		LAZYSET(radial_images, "New Beacon", I)
 
 /obj/item/perfect_tele/attack_hand(mob/user)
 	if(user.get_inactive_hand() == src)

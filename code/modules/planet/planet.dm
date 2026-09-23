@@ -18,7 +18,7 @@
 
 	var/turf/unsimulated/wall/planetary/planetary_wall_type = /turf/unsimulated/wall/planetary
 
-	var/list/turf/simulated/floor/planet_floors = list()
+	var/list/turf/simulated/floor/planet_floors
 	var/list/turf/unsimulated/wall/planetary/planet_walls
 
 	var/needs_work = 0 // Bitflags to signal to the planet controller these need (properly deferrable) work. Flags defined in controller.

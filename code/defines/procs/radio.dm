@@ -39,7 +39,7 @@
 /datum/receptions
 	var/obj/machinery/message_server/message_server = null
 	var/sender_reception = TELECOMMS_RECEPTION_NONE
-	var/list/receiver_reception = list()
+	var/list/receiver_reception
 
 /proc/get_message_server()
 	if(GLOB.message_servers)
@@ -91,6 +91,6 @@
 	for(var/atom/receiver in receivers)
 		if(!signal)
 			signal = receiver.telecomms_process()
-		receptions.receiver_reception[receiver] = get_receiver_reception(receiver, signal)
+		LAZYSET(receptions.receiver_reception, receiver, get_receiver_reception(receiver, signal))
 
 	return receptions

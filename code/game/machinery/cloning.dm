@@ -52,7 +52,7 @@
 	var/attempting = 0				// One clone attempt at a time thanks
 	var/eject_wait = 0				// Don't eject them as soon as they are created fuckkk
 
-	var/list/containers = list()	// Beakers for our liquid biomass
+	var/list/containers	// Beakers for our liquid biomass
 	var/container_limit = 3			// How many beakers can the machine hold?
 
 	var/speed_coeff
@@ -67,7 +67,7 @@
 	for(var/obj/container in containers)
 		UnregisterSignal(container, COMSIG_QDELETING)
 		container.forceMove(get_turf(src))
-	containers.Cut()
+	LAZYCLEARLIST(containers)
 	locked = FALSE
 	go_out()
 	. = ..()
@@ -427,7 +427,7 @@
 			for(var/obj/item/reagent_containers/glass/G in containers)
 				UnregisterSignal(G, COMSIG_QDELETING)
 				G.forceMove(T)
-				containers -= G
+				LAZYREMOVE(containers, G)
 		return	1
 	return 0
 
@@ -474,12 +474,12 @@
 /obj/machinery/clonepod/proc/track_biomass_container(obj/item/reagent_containers/glass/container)
 	if(!container || (container in containers))
 		return
-	containers += container
+	LAZYADD(containers, container)
 	RegisterSignal(container, COMSIG_QDELETING, PROC_REF(on_biomass_container_qdel))
 
 /obj/machinery/clonepod/proc/on_biomass_container_qdel(obj/item/reagent_containers/glass/container)
 	SIGNAL_HANDLER
-	containers -= container
+	LAZYREMOVE(containers, container)
 
 //Health Tracker Implant
 

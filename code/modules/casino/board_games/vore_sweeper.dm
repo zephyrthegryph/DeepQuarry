@@ -15,7 +15,7 @@
 	var/grid_size = 8
 	var/mine_count = 10
 	var/datum/weakref/dealer
-	var/list/placed_mines = list()
+	var/list/placed_mines
 	var/list/revealed_fields
 	var/list/placed_flags
 
@@ -37,7 +37,7 @@
 /datum/board_game/vore_sweeper/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/dealer_mob = dealer?.resolve()
 
-	var/placed_mine_data = game_state > GAME_PLAYING || (ui.user == dealer_mob) ? placed_mines : null
+	var/placed_mine_data = game_state > GAME_PLAYING || (ui.user == dealer_mob) ? (placed_mines || list()) : null
 	var/total_tiles = grid_size * grid_size
 	return list(
 		"grid_size" = grid_size,
@@ -79,7 +79,7 @@
 			var/mob/dealer_mob = dealer?.resolve()
 			if(game_state < GAME_PLAYING)
 				return FALSE
-			placed_mines.Cut()
+			LAZYCLEARLIST(placed_mines)
 			LAZYCLEARLIST(revealed_fields)
 			LAZYCLEARLIST(placed_flags)
 			if(!dealer_mob && game_state > GAME_PLAYING)
@@ -111,7 +111,7 @@
 				return FALSE
 			if(LAZYACCESS(revealed_fields, key))
 				return FALSE
-			if(placed_mines[key])
+			if(LAZYACCESS(placed_mines, key))
 				game_state = GAME_LOST
 				LAZYSET(revealed_fields, key, "M")
 				return TRUE
@@ -145,12 +145,12 @@
 	var/all_flagged = TRUE
 
 	for(var/mine_key in placed_mines)
-		if(placed_mines[mine_key] && !LAZYACCESS(placed_flags, mine_key))
+		if(LAZYACCESS(placed_mines, mine_key) && !LAZYACCESS(placed_flags, mine_key))
 			all_flagged = FALSE
 			break
 
 	for(var/flag_key in placed_flags)
-		if(!placed_mines[flag_key])
+		if(!LAZYACCESS(placed_mines, flag_key))
 			all_flagged = FALSE
 			break
 
@@ -161,7 +161,7 @@
 		for(var/y = 1 to grid_size)
 			var/key = "[x],[y]"
 
-			if(placed_mines[key])
+			if(LAZYACCESS(placed_mines, key))
 				continue
 
 			LAZYSET(revealed_fields, key, count_surrounding_mines(x, y))
@@ -196,9 +196,9 @@
 			if(!validated_data)
 				return FALSE
 			var/key = validated_data[1]
-			if(placed_mines[key])
+			if(LAZYACCESS(placed_mines, key))
 				return FALSE
-			placed_mines[key] = TRUE
+			LAZYSET(placed_mines, key, TRUE)
 			return TRUE
 		if("remove_mine")
 			if(game_state != GAME_SETUP)
@@ -209,14 +209,14 @@
 			if(!validated_data)
 				return FALSE
 			var/key = validated_data[1]
-			placed_mines -= key
+			LAZYREMOVE(placed_mines, key)
 			return TRUE
 		if("auto_place_mines")
 			return auto_place_mines(user)
 		if("auto_place_mines_self")
 			return auto_place_mines(user, TRUE)
 		if("clear_all_mines")
-			placed_mines.Cut()
+			LAZYCLEARLIST(placed_mines)
 			return TRUE
 		if("start_game")
 			game_state = GAME_PLAYING
@@ -262,8 +262,8 @@
 		var/x = rand(1, grid_size)
 		var/y = rand(1, grid_size)
 		var/key = "[x],[y]"
-		if(!placed_mines[key])
-			placed_mines[key] = TRUE
+		if(!LAZYACCESS(placed_mines, key))
+			LAZYSET(placed_mines, key, TRUE)
 			placed++
 	if(play)
 		dealer = null
@@ -288,7 +288,7 @@
 			var/check_x = x + dx
 			var/check_y = y + dy
 
-			if(placed_mines["[check_x],[check_y]"])
+			if(LAZYACCESS(placed_mines, "[check_x],[check_y]"))
 				count++
 
 	return count

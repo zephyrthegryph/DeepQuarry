@@ -3,7 +3,7 @@
 	icon_state = "away"
 	var/list/valid_spawn_turfs
 	var/list/valid_mobs = list()
-	var/list/valid_flora = list()
+	var/list/valid_flora
 	var/mobcountmax = 0
 	var/floracountmax = 0
 	var/semirandom = FALSE
@@ -86,7 +86,7 @@
 		if("passive")
 			brain.set_hostile(FALSE)
 /area/proc/spawn_flora_on_turf()
-	if(!valid_flora.len)
+	if(!length(valid_flora))
 		log_mapping("[src] does not have a set valid flora list!")
 		return TRUE
 
@@ -95,7 +95,7 @@
 	for(var/floracount = 1 to floracountmax)
 		if(!length(valid_spawn_turfs))
 			break
-		F = pick(valid_flora)
+		F = DEFAULTPICK(valid_flora, null)
 		Turf = DEFAULTPICK(valid_spawn_turfs, null)
 		LAZYREMOVE(valid_spawn_turfs, Turf)
 		new F(Turf)

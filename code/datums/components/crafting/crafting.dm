@@ -322,7 +322,7 @@
 		// If the path is in R.parts, we want to grab those to stuff into the product
 		var/amt_to_transfer = 0
 		if(is_path_in_list(path_key, R.parts))
-			amt_to_transfer = R.parts[path_key]
+			amt_to_transfer = LAZYACCESS(R.parts, path_key)
 
 
 		// Reagent: gotta go sniffing in all the beakers

@@ -29,7 +29,7 @@
 	var/obj/machinery/camera/communicator/video_source	// Their camera
 	var/obj/machinery/camera/communicator/camera		// Our camera
 
-	var/list/voice_mobs = list()
+	var/list/voice_mobs
 	var/list/voice_requests
 	var/list/voice_invites
 
@@ -65,7 +65,7 @@
 	var/ringer = 1
 	var/list/known_devices
 	var/datum/exonet_protocol/exonet = null
-	var/list/communicating = list()
+	var/list/communicating
 	var/update_ticks = 0
 	var/newsfeed_channel = 0
 
@@ -386,13 +386,13 @@
 	// ITION END
 	// Snapshot: qdel pulls the voice out of contents mid-iteration.
 	for(var/mob/living/voice/voice in contents.Copy())
-		voice_mobs.Remove(voice)
+		LAZYREMOVE(voice_mobs, voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
 		qdel(voice)
 	close_connection(reason = "Connection timed out")
 
 	//Clean up all references we might have to others
-	communicating.Cut()
+	LAZYCLEARLIST(communicating)
 	LAZYCLEARLIST(voice_requests)
 	LAZYCLEARLIST(voice_invites)
 	node = null
@@ -419,7 +419,7 @@
 		icon_state = "communicator-video"
 		return
 
-	if(voice_mobs.len || communicating.len)
+	if(length(voice_mobs) || length(communicating))
 		icon_state = "communicator-active"
 		return
 
@@ -452,7 +452,7 @@
 		icon_state = "commwatch-video"
 		return
 
-	if(voice_mobs.len || communicating.len)
+	if(length(voice_mobs) || length(communicating))
 		icon_state = "commwatch-active"
 		return
 
