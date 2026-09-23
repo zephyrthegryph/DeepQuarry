@@ -6,12 +6,9 @@
 	light_color = "#a97faa"
 	req_access = list(ACCESS_ROBOTICS)
 	circuit = /obj/item/circuitboard/mecha_control
-	var/list/located = list()
+	var/list/located
 	var/screen = 0
 	var/list/stored_data
-
-/obj/machinery/computer/mecha/attack_ai(mob/user)
-	return attack_hand(user)
 
 /obj/machinery/computer/mecha/attack_hand(mob/user)
 	if(..())
@@ -97,7 +94,7 @@
 	data["active"] = M.selected
 	if(istype(M, /obj/mecha/working/ripley))
 		var/obj/mecha/working/ripley/RM = M
-		data["cargoUsed"] = RM.cargo.len
+		data["cargoUsed"] = length(RM.cargo)
 		data["cargoMax"] = RM.cargo_capacity
 
 	return data

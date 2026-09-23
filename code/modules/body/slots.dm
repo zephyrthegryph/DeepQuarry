@@ -1,0 +1,426 @@
+// Body slots (doc/rewrite/containment.md §6, roadmap C3).
+//
+// A mob's slots belong to its body plan. Each plan returns its slot list from
+// /datum/body/proc/slot_def_types(); the mob hands it to the ledger through
+// /mob/living/slot_def_types(), keyed by "[mob type]|[plan type]".
+//
+// A body slot refuses a thing when:
+//   1. the body part it hangs on is missing (required_parts / any_parts,
+//      the part map below);
+//   2. the holder's own rules say no (body_slot_refusal(): the species has no
+//      such slot, a simple mob has no hands);
+//   3. the slot's `accepts` predicate says no. For worn slots that is P3's
+//      equip slot predicate (code/datums/properties/equip_slots.dm),
+//      evaluated with the WEARER as PRED_ACTOR, as those predicates expect.
+//
+// Part map (humanoid; mirrors the old has_organ_for_slot()):
+//   hand_l            BP_L_HAND
+//   hand_r            BP_R_HAND
+//   gloves            BP_L_HAND or BP_R_HAND
+//   handcuffed        BP_L_HAND and BP_R_HAND
+//   shoes             BP_L_FOOT or BP_R_FOOT
+//   legcuffed         BP_L_FOOT and BP_R_FOOT
+//   head, mask, eyes, ear_l, ear_r                                BP_HEAD
+//   back, belt, uniform, suit, suit_storage, pocket_l, pocket_r   BP_TORSO
+//   id, body          none
+//
+// Not slots: slot_tie (an accessory goes on the clothing, not the body),
+// slot_in_backpack (a move into the back item's storage) and slot_legs (unused).
+//
+// Equipping, picking up, dropping and throwing are ledger moves into these
+// slots (code/modules/mob/inventory.dm); the ledger is the only record of what
+// a mob wears and holds.
+
+/datum/slot_def/body
+	name = "body slot"
+	exposure = SLOT_EXPOSURE_EXTERNAL
+	capacity_model = SLOT_CAPACITY_COUNT
+	capacity = 1
+	// Deleting a mob deletes what it wears and holds, as it always has (the
+	// base Destroy() qdels contents); gibbing and death drops move items out
+	// first. SPILL here would litter every deleted mob's turf.
+	drop_policy = SLOT_DROP_HOLDER
+	// Hits on the mob reach equipment through the zone armour (worn_protection.dm), not this path.
+	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	/// slot_* number the equip API names this slot by, or null.
+	var/legacy_slot
+	/// BODY_SLOT_* roles.
+	var/roles = NONE
+	/// BP_* parts that must all be present (and not stumps).
+	var/list/required_parts
+	/// BP_* parts of which at least one must be present.
+	var/list/any_parts
+
+/datum/slot_def/body/refusal(atom/holder, atom/movable/thing, mob/actor)
+	var/mob/living/wearer = holder
+	if(!istype(wearer))
+		return "there's nowhere to put it"
+	. = wearer.body_slot_refusal(src)
+	if(.)
+		return .
+	if(accepts)
+		var/datum/predicate/P = dq_predicate(accepts)
+		return P.why_not(wearer, thing, null)
+	return null
+
+// ---- The shared slot ----
+
+/// Organs, implants, bellies and anything else inside the mob.
+/datum/slot_def/body/interior
+	id = SLOT_ID_BODY
+	name = "body"
+	exposure = SLOT_EXPOSURE_INTERNAL
+	capacity_model = SLOT_CAPACITY_NONE
+	capacity = 0
+	is_default = TRUE
+	// The body model handles what reaches organs; nothing passes this way.
+	heat_transmission = 0
+	radiation_transmission = 0
+
+// ---- Hands ----
+
+/datum/slot_def/body/hand
+	exposure = SLOT_EXPOSURE_EXTERNAL
+
+/datum/slot_def/body/hand/left
+	id = SLOT_ID_HAND_L
+	name = "left hand"
+	legacy_slot = slot_l_hand
+	required_parts = list(BP_L_HAND)
+
+/datum/slot_def/body/hand/right
+	id = SLOT_ID_HAND_R
+	name = "right hand"
+	legacy_slot = slot_r_hand
+	required_parts = list(BP_R_HAND)
+
+// ---- Humanoid equipment ----
+
+/datum/slot_def/body/head
+	id = SLOT_ID_HEAD
+	name = "head"
+	legacy_slot = slot_head
+	accepts = /datum/predicate/equip_slot/head
+	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
+	required_parts = list(BP_HEAD)
+
+/datum/slot_def/body/mask
+	id = SLOT_ID_MASK
+	name = "mask"
+	legacy_slot = slot_wear_mask
+	accepts = /datum/predicate/equip_slot/mask
+	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
+	required_parts = list(BP_HEAD)
+
+/datum/slot_def/body/suit
+	id = SLOT_ID_SUIT
+	name = "suit"
+	legacy_slot = slot_wear_suit
+	accepts = /datum/predicate/equip_slot/suit
+	layer = SLOT_LAYER_SUIT
+	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
+	required_parts = list(BP_TORSO)
+
+/datum/slot_def/body/uniform
+	id = SLOT_ID_UNIFORM
+	name = "uniform"
+	legacy_slot = slot_w_uniform
+	accepts = /datum/predicate/equip_slot/uniform
+	layer = SLOT_LAYER_UNIFORM
+	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
+	required_parts = list(BP_TORSO)
+
+/datum/slot_def/body/gloves
+	id = SLOT_ID_GLOVES
+	name = "gloves"
+	legacy_slot = slot_gloves
+	accepts = /datum/predicate/equip_slot/gloves
+	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
+	any_parts = list(BP_L_HAND, BP_R_HAND)
+
+/datum/slot_def/body/shoes
+	id = SLOT_ID_SHOES
+	name = "shoes"
+	legacy_slot = slot_shoes
+	accepts = /datum/predicate/equip_slot/shoes
+	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
+	any_parts = list(BP_L_FOOT, BP_R_FOOT)
+
+/// Glasses: armour (get_covering_clothing() counts them) but not conductivity
+/// or thermal protection, as before.
+/datum/slot_def/body/eyes
+	id = SLOT_ID_EYES
+	name = "eyes"
+	legacy_slot = slot_glasses
+	accepts = /datum/predicate/equip_slot/glasses
+	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR
+	required_parts = list(BP_HEAD)
+
+/datum/slot_def/body/ear_left
+	id = SLOT_ID_EAR_L
+	name = "left ear"
+	legacy_slot = slot_l_ear
+	accepts = /datum/predicate/equip_slot/ear/left
+	roles = BODY_SLOT_WORN
+	required_parts = list(BP_HEAD)
+
+/datum/slot_def/body/ear_right
+	id = SLOT_ID_EAR_R
+	name = "right ear"
+	legacy_slot = slot_r_ear
+	accepts = /datum/predicate/equip_slot/ear/right
+	roles = BODY_SLOT_WORN
+	required_parts = list(BP_HEAD)
+
+/datum/slot_def/body/back
+	id = SLOT_ID_BACK
+	name = "back"
+	legacy_slot = slot_back
+	accepts = /datum/predicate/equip_slot/back
+	roles = BODY_SLOT_WORN
+	required_parts = list(BP_TORSO)
+
+/datum/slot_def/body/belt
+	id = SLOT_ID_BELT
+	name = "belt"
+	legacy_slot = slot_belt
+	accepts = /datum/predicate/equip_slot/belt
+	roles = BODY_SLOT_WORN
+	required_parts = list(BP_TORSO)
+
+/datum/slot_def/body/id
+	id = SLOT_ID_ID
+	name = "ID"
+	legacy_slot = slot_wear_id
+	accepts = /datum/predicate/equip_slot/id
+	roles = BODY_SLOT_WORN
+
+/// Suit storage: clipped inside the suit.
+/datum/slot_def/body/suit_storage
+	id = SLOT_ID_SUIT_STORAGE
+	name = "suit storage"
+	legacy_slot = slot_s_store
+	exposure = SLOT_EXPOSURE_INTERNAL
+	accepts = /datum/predicate/equip_slot/suit_storage
+	roles = BODY_SLOT_WORN
+	required_parts = list(BP_TORSO)
+
+/datum/slot_def/body/pocket
+	exposure = SLOT_EXPOSURE_INTERNAL
+	required_parts = list(BP_TORSO)
+
+/datum/slot_def/body/pocket/left
+	id = SLOT_ID_POCKET_L
+	name = "left pocket"
+	legacy_slot = slot_l_store
+	accepts = /datum/predicate/equip_slot/pocket/left
+
+/datum/slot_def/body/pocket/right
+	id = SLOT_ID_POCKET_R
+	name = "right pocket"
+	legacy_slot = slot_r_store
+	accepts = /datum/predicate/equip_slot/pocket/right
+
+/datum/slot_def/body/handcuffed
+	id = SLOT_ID_HANDCUFFED
+	name = "wrists"
+	legacy_slot = slot_handcuffed
+	accepts = /datum/predicate/equip_slot/handcuffs
+	required_parts = list(BP_L_HAND, BP_R_HAND)
+
+/datum/slot_def/body/legcuffed
+	id = SLOT_ID_LEGCUFFED
+	name = "ankles"
+	legacy_slot = slot_legcuffed
+	accepts = /datum/predicate/equip_slot/legcuffs
+	required_parts = list(BP_L_FOOT, BP_R_FOOT)
+
+// ---- Cyborg modules ----
+
+/// A cyborg's active module slot: takes only its own module's tools.
+/datum/slot_def/body/module
+	/// Module slot number, 1-3.
+	var/module_index
+
+/datum/slot_def/body/module/one
+	id = SLOT_ID_MODULE_1
+	name = "module 1"
+	module_index = 1
+
+/datum/slot_def/body/module/two
+	id = SLOT_ID_MODULE_2
+	name = "module 2"
+	module_index = 2
+
+/datum/slot_def/body/module/three
+	id = SLOT_ID_MODULE_3
+	name = "module 3"
+	module_index = 3
+
+// ---- Per-plan slot lists ----
+
+/// The /datum/slot_def paths this body's mob has. A proc-local static list;
+/// it may depend only on the plan type and the owner's type (slot_def_key()).
+/datum/body/proc/slot_def_types()
+	return null
+
+/// Simple bodies (simple mobs, bots, pAI, larvae, nymphs, brains): two hands,
+/// which only hand-having mobs can use (body_slot_refusal()).
+/datum/body/simple/slot_def_types()
+	var/static/list/types = list(
+		/datum/slot_def/body/hand/left,
+		/datum/slot_def/body/hand/right,
+		/datum/slot_def/body/interior,
+	)
+	return types
+
+/// Cyborgs and drones: three module slots. Other machine mobs and AI cores: none.
+/datum/body/simple/machine/slot_def_types()
+	var/static/list/types = list(
+		/datum/slot_def/body/module/one,
+		/datum/slot_def/body/module/two,
+		/datum/slot_def/body/module/three,
+		/datum/slot_def/body/interior,
+	)
+	return isrobot(owner) ? types : null
+
+/datum/body/simple/machine/ai/slot_def_types()
+	return null
+
+/// Humanoids and nanoforms (a subtype). Declaration order matters to the worn
+/// protection cache: head, mask, suit, uniform, gloves, shoes, eyes is the old
+/// covering-clothing order.
+/datum/body/humanoid/slot_def_types()
+	var/static/list/types = list(
+		/datum/slot_def/body/hand/left,
+		/datum/slot_def/body/hand/right,
+		/datum/slot_def/body/head,
+		/datum/slot_def/body/mask,
+		/datum/slot_def/body/suit,
+		/datum/slot_def/body/uniform,
+		/datum/slot_def/body/gloves,
+		/datum/slot_def/body/shoes,
+		/datum/slot_def/body/eyes,
+		/datum/slot_def/body/ear_left,
+		/datum/slot_def/body/ear_right,
+		/datum/slot_def/body/back,
+		/datum/slot_def/body/belt,
+		/datum/slot_def/body/id,
+		/datum/slot_def/body/suit_storage,
+		/datum/slot_def/body/pocket/left,
+		/datum/slot_def/body/pocket/right,
+		/datum/slot_def/body/handcuffed,
+		/datum/slot_def/body/legcuffed,
+		/datum/slot_def/body/interior,
+	)
+	return types
+
+// ---- The mob side ----
+
+/mob/living/slot_def_key()
+	return "[type]|[body?.type]"
+
+/mob/living/slot_def_types()
+	return body?.slot_def_types()
+
+/// A slot's contents changed (ledger moves): worn protection and, for items
+/// with worn factors, the body factors are stale.
+/mob/living/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	. = ..()
+	var/obj/item/I = thing
+	var/domains = BODY_DIRTY_ARMOR
+	if(istype(I) && I.worn_factors)
+		domains |= BODY_DIRTY_FACTORS
+	body?.invalidate(domains)
+	on_equipment_changed()
+
+/// Why this mob can't use body slot `def` right now, or null: the holder's own
+/// rules, checked before the slot's `accepts`.
+/mob/living/proc/body_slot_refusal(datum/slot_def/body/def)
+	if(istype(def, /datum/slot_def/body/hand) && !has_hands_to_hold())
+		return "you have no hands"
+	return null
+
+/// Whether this mob has working hands for its hand slots.
+/mob/living/proc/has_hands_to_hold()
+	return FALSE
+
+/mob/living/carbon/has_hands_to_hold()
+	return !istype(src, /mob/living/carbon/brain)
+
+/mob/living/simple_mob/has_hands_to_hold()
+	return has_hands
+
+/mob/living/silicon/robot/body_slot_refusal(datum/slot_def/body/def)
+	if(istype(def, /datum/slot_def/body/module))
+		return module ? null : "you have no module"
+	return ..()
+
+/mob/living/silicon/robot/has_hands_to_hold()
+	return FALSE
+
+/// Species slots and body parts. Species gating is the species HUD's slot list
+/// (what mob_can_equip() checked); body parts are the part map above.
+/mob/living/carbon/human/body_slot_refusal(datum/slot_def/body/def)
+	if(def.legacy_slot && species && !(def.legacy_slot in dq_equip_slots_of(src)))
+		return "you have nowhere to wear it"
+	for(var/part in def.required_parts)
+		if(!has_body_part(part))
+			return "you have no [parse_zone(part)]"
+	if(length(def.any_parts))
+		for(var/part in def.any_parts)
+			if(has_body_part(part))
+				return null
+		return "you have no [parse_zone(def.any_parts[1])]"
+	return null
+
+/mob/living/carbon/human/has_hands_to_hold()
+	return TRUE
+
+/// Whether external part `part` (BP_*) is attached and not a stump.
+/mob/living/carbon/human/proc/has_body_part(part)
+	var/obj/item/organ/external/E = organs_by_name[part]
+	return E && !E.is_stump()
+
+/// Whether this mob has body slot `id` and can use it now (its body part is
+/// there, its species has it): the old has_organ_for_slot().
+/mob/living/proc/body_slot_usable(id)
+	var/datum/ledger/L = dq_ledger(src)
+	var/datum/slot_def/body/def = L?.def_by_id(id)
+	return istype(def) && !body_slot_refusal(def)
+
+/// What is in body slot `def`.
+/mob/living/proc/body_slot_item(datum/slot_def/body/def)
+	var/datum/ledger/L = dq_ledger(src)
+	var/list/things = L?.slots[def.id]
+	return length(things) ? things[1] : null
+
+/// Every item in this mob's body slots with any of `roles` (BODY_SLOT_*), in
+/// slot declaration order.
+/mob/living/proc/body_slot_items(roles)
+	. = list()
+	for(var/datum/slot_def/body/def in dq_slot_defs_for(src))
+		if(!(def.roles & roles))
+			continue
+		var/obj/item/I = body_slot_item(def)
+		if(I)
+			. += I
+
+/// The body plan changed (species change): the slot set is keyed by plan, so
+/// the ledger is rebuilt from the new set. Things keep their slot where the
+/// new plan has it and fall back to the default slot where it doesn't.
+/mob/living/proc/rebuild_slot_ledger()
+	var/datum/ledger/old = ledger
+	if(!old)
+		return
+	var/list/placed = list()
+	for(var/atom/movable/thing as anything in old.entries)
+		placed[thing] = old.entries[thing][LEDGER_E_SLOT]
+	qdel(old)
+	var/datum/ledger/fresh = dq_ledger(src)
+	if(!fresh)
+		return
+	for(var/atom/movable/thing as anything in placed)
+		if(thing.loc == src && fresh.entries[thing] && fresh.def_by_id(placed[thing]))
+			fresh.reslot(thing, placed[thing])
+	body?.invalidate(BODY_DIRTY_ARMOR | BODY_DIRTY_FACTORS)

@@ -28,7 +28,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 	var/name
 	var/item_path = /obj/item
 	var/req_access = 0
-	var/list/req_titles = list()
+	var/list/req_titles
 	var/kit_name
 	var/kit_desc
 	var/kit_icon
@@ -189,14 +189,14 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 			continue
 
 		// Check for required access.
-		var/obj/item/card/id/current_id = M.wear_id
+		var/obj/item/card/id/current_id = M.get_equipped_item(SLOT_ID_ID)
 		if(citem.req_access && citem.req_access > 0) // These are numbers, not lists
 			if(!(istype(current_id) && (citem.req_access in current_id.GetAccess())))
 				// to_chat(world, "Custom Item: [key_name(M)] Does not have required access.")
 				continue
 
 		// Check for required job title.
-		if(citem.req_titles && citem.req_titles.len > 0)
+		if(citem.req_titles && length(citem.req_titles) > 0)
 			var/has_title
 			var/current_title = M.mind.role_alt_title ? M.mind.role_alt_title : M.mind.assigned_role
 			for(var/title in citem.req_titles)
@@ -210,7 +210,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 		// ID cards and PDAs are applied directly to the existing object rather than spawned fresh.
 		var/obj/item/existing_item
 		if(citem.item_path == /obj/item/card/id && istype(current_id)) //Set earlier.
-			existing_item = M.wear_id
+			existing_item = M.get_equipped_item(SLOT_ID_ID)
 		else if(citem.item_path == /obj/item/pda)
 			existing_item = locate(/obj/item/pda) in M.contents
 		else if(citem.item_path == /obj/item/storage/backpack)

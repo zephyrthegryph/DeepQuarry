@@ -48,7 +48,7 @@
 
 /datum/gear/shoes/colorboots/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/jackboots_white
 	display_name = "jackboots, white"
@@ -88,7 +88,7 @@
 	for(var/lace in typesof(/obj/item/clothing/shoes/laceup))
 		var/obj/item/clothing/shoes/laceup/lace_type = lace
 		laces[initial(lace_type.name)] = lace_type
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(laces))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(laces)))
 
 /datum/gear/shoes/green
 	display_name = "shoes, green"
@@ -128,7 +128,7 @@
 	for(var/hitop in typesof(/obj/item/clothing/shoes/hitops))
 		var/obj/item/clothing/shoes/hitops/hitop_type = hitop
 		hitops[initial(hitop_type.name)] = hitop_type
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(hitops))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(hitops)))
 
 /datum/gear/shoes/flipflops
 	display_name = "flip flops"
@@ -136,7 +136,7 @@
 
 /datum/gear/shoes/flipflops/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/athletic
 	display_name = "athletic shoes"
@@ -144,7 +144,7 @@
 
 /datum/gear/shoes/athletic/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/skater
 	display_name = "skater shoes"
@@ -152,7 +152,7 @@
 
 /datum/gear/shoes/skater/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/flats
 	display_name = "flats"
@@ -160,7 +160,7 @@
 
 /datum/gear/shoes/flats/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/cowboy
 	display_name = "cowboy boots selection"
@@ -180,7 +180,7 @@
 		//"cowboy boots, green"=/obj/item/clothing/shoes/boots/cowboy/green,
 		//"cowboy boots, blue"=/obj/item/clothing/shoes/boots/cowboy/blue
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/shoes/jungle
 	display_name = "jungle boots"
@@ -206,7 +206,7 @@
 
 /datum/gear/shoes/heels/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/slippers
 	display_name = "bunny slippers"
@@ -265,7 +265,7 @@
 
 /datum/gear/shoes/ballet/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/halfmoon
 	display_name = "half moon boots"
@@ -277,7 +277,7 @@
 
 /datum/gear/shoes/sandals/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/toeless
 	display_name = "toe-less jackboots"
@@ -305,7 +305,7 @@
 
 /datum/gear/shoes/sandals_elegant/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/shoes/none
 	display_name = "Adjust - No Shoes"
@@ -317,7 +317,9 @@
 	desc = "shoeless?"
 	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
-	species_restricted = null
+
+/obj/item/clothing/shoes/none/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/none/Initialize(mapload)
 	. = ..()

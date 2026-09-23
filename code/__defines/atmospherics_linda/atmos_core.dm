@@ -28,12 +28,8 @@
 #define R_IDEAL_GAS_EQUATION 8.31
 /// kPa
 #define ONE_ATMOSPHERE 101.325
-/// -270.3degC
-#define TCMB 2.7
-/// 0degC
-#define T0C 273.15
-/// 20degC
-#define T20C 293.15
+// Generated from verdigris/domains/heat/src/consts.rs into code/__defines/verdigris/_bindings.dm:
+// TCMB, T0C, T20C.
 /// -14C - Temperature used for kitchen cold room, medical freezer, etc.
 #define COLD_ROOM_TEMP 259.15
 
@@ -127,14 +123,13 @@
 #define WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT 4000
 /// Most heat a wall passes per exchange, whatever it is made of.
 #define WALL_MAX_HEAT_TRANSFER_COEFFICIENT 0.25
-/// a hack to help make vacuums "cold", sacrificing realism for gameplay
-#define HEAT_CAPACITY_VACUUM 7000
+// HEAT_CAPACITY_VACUUM is generated (verdigris/domains/heat/src/consts.rs).
 
 //FIRE
 ///Minimum temperature for fire to move to the next turf (150 °C or 433 K)
 #define FIRE_MINIMUM_TEMPERATURE_TO_SPREAD (150+T0C)
-///Minimum temperature for fire to exist on a turf (100 °C or 373 K)
-#define FIRE_MINIMUM_TEMPERATURE_TO_EXIST (100+T0C)
+// FIRE_MINIMUM_TEMPERATURE_TO_EXIST (100 °C, phoron's ignition point) is generated
+// (verdigris/domains/heat/src/consts.rs).
 ///Multiplier for the temperature shared to other turfs
 #define FIRE_SPREAD_RADIOSITY_SCALE 0.85
 ///Helper for small fires to grow

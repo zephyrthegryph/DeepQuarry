@@ -153,9 +153,6 @@
 		return
 	tgui_interact(user)
 
-/obj/machinery/computer/message_monitor/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/computer/message_monitor/proc/BruteForce(mob/user as mob)
 	if(isnull(linkedServer))
 		to_chat(user, span_warning("Could not complete brute-force: Linked Server Disconnected!"))
@@ -257,9 +254,9 @@
 		//Delete the log.
 		if("delete")
 			if(params["type"] == "pda")
-				linkedServer.pda_msgs -= locate(params["id"])
+				LAZYREMOVE(linkedServer.pda_msgs, locate(params["id"]))
 			else
-				linkedServer.rc_msgs -= locate(params["id"])
+				LAZYREMOVE(linkedServer.rc_msgs, locate(params["id"]))
 			set_temp("NOTICE: Log Deleted!", "average")
 			. = TRUE
 		//Fake messaging selection - KEY REQUIRED

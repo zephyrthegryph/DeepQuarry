@@ -36,9 +36,12 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	center_of_mass_x = 16
 	center_of_mass_y = 9
 	max_storage_space = ITEMSIZE_COST_SMALL * 6
-	can_hold = list(/obj/item/reagent_containers/food/snacks/donut)
 	foldable = /obj/item/stack/material/cardboard
 	//starts_with = list(/obj/item/reagent_containers/food/snacks/donut/normal = 6)
+
+/obj/item/storage/box/donut/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/donut)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/donut/Initialize(mapload)
 	if(!empty)
@@ -66,12 +69,15 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	name = "can of worms"
 	desc = "You probably do want to open this can of worms."
 	max_storage_space = ITEMSIZE_COST_TINY * 6
-	can_hold = list(
+	starts_with = list(/obj/item/reagent_containers/food/snacks/worm = 6)
+
+/obj/item/storage/box/wormcan/hold_constraint()
+	var/list/holds = list(
 		/obj/item/reagent_containers/food/snacks/wormsickly,
 		/obj/item/reagent_containers/food/snacks/worm,
 		/obj/item/reagent_containers/food/snacks/wormdeluxe
 	)
-	starts_with = list(/obj/item/reagent_containers/food/snacks/worm = 6)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/wormcan/Initialize(mapload)
 	. = ..()

@@ -4,7 +4,7 @@
 	suit_type = "precursor hardsuit"
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "precursor_rig"
-	armor = list(melee = 50, bullet = 50, laser = 70, energy = 70, bomb = 60, bio = 100, rad = 80)
+	armor_spec = "melee=50;bullet=50;laser=70;energy=70;bomb=60;bio=100;rad=80"
 	MATERIAL_MIX(list(MAT_PLASTEEL = 1200, MAT_GOLD = 500, MAT_GRAPHITE = 800, MAT_OSMIUM = 300, MAT_PLASTIC = 600, MAT_VERDANTIUM = 750, MAT_MORPHIUM = 2000))
 	var/block_chance = 15
 	slowdown = 0

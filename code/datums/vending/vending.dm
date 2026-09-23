@@ -11,3 +11,5 @@
 	src.price = price
 	src.display_color = color
 	src.category = category
+	// Latent vending stock is always pristine; only identical items fold back in.
+	adopt_state = FALSE

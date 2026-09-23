@@ -11,15 +11,7 @@
 	melee_attack_delay = 1 SECOND
 	attacktext = list("punched", "slammed", "uppercutted", "pummeled")
 
-	armor = list(
-				"melee"		= 30,
-				"bullet"	= 30,
-				"laser"		= 15,
-				"energy"	= 0,
-				"bomb"		= 20,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=30;bullet=30;laser=15;bomb=20;bio=100;rad=100"
 
 	var/weaken_amount = 2 // Be careful with this number. High values can equal a permastun.
 

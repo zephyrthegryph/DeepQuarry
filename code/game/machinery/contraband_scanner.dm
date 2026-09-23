@@ -24,7 +24,7 @@
 	var/trigger_message	=	"The contraband scanner has been tripped!"
 	var/trigger_sound	=	'sound/machines/airalarm.ogg'	//sound that plays when we're set off
 
-	var/list/contraband = list(/obj/item/melee,/obj/item/gun,/obj/item/material)
+	var/static/list/contraband = list(/obj/item/melee,/obj/item/gun,/obj/item/material)
 
 /obj/machinery/contraband_scanner/Crossed(mob/living/M as mob)
 	if(M.is_incorporeal())

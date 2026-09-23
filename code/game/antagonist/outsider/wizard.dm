@@ -99,7 +99,7 @@ GLOBAL_DATUM(wizards, /datum/antagonist/wizard)
 		break
 	if(!survivor)
 		feedback_set_details("round_end_result","loss - wizard killed")
-		to_chat(world, span_boldannounce(span_large("The [(current_antagonists.len>1)?"[role_text_plural] have":"[role_text] has"] been killed by the crew!")))
+		to_chat(world, span_boldannounce(span_large("The [(length(current_antagonists)>1)?"[role_text_plural] have":"[role_text] has"] been killed by the crew!")))
 
 // Removing antag should remove spells
 /datum/antagonist/wizard/remove_antagonist(datum/mind/player, show_message, implanted)
@@ -130,13 +130,13 @@ Made a proc so this is not repeated 14 (or more) times.*/
 
 // Humans can wear clothes.
 /mob/living/carbon/human/wearing_wiz_garb()
-	if(!is_wiz_garb(src.wear_suit))
+	if(!is_wiz_garb(get_equipped_item(SLOT_ID_SUIT)))
 		to_chat(src, span_warning("I don't feel strong enough without my robe."))
 		return 0
-	if(!is_wiz_garb(src.shoes))
+	if(!is_wiz_garb(get_equipped_item(SLOT_ID_SHOES)))
 		to_chat(src, span_warning("I don't feel strong enough without my sandals."))
 		return 0
-	if(!is_wiz_garb(src.head))
+	if(!is_wiz_garb(get_equipped_item(SLOT_ID_HEAD)))
 		to_chat(src, span_warning("I don't feel strong enough without my hat."))
 		return 0
 	return 1

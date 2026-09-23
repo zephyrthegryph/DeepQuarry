@@ -12,7 +12,7 @@
 	siemens_coefficient = 0.9
 	var/gas_filter_strength = 1			//For gas mask filters
 	var/list/filtered_gases = list(GAS_PHORON, GAS_N2O)
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 75, rad = 0)
+	armor_spec = "bio=75"
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
 	resistance_flags = FIRE_PROOF
 
@@ -44,7 +44,7 @@
 	siemens_coefficient = 0.7
 	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
-	armor = list(melee = 10, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 55, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 
 //Turn it into a hailer mask
 /obj/item/clothing/mask/gas/half/attackby(obj/item/I, mob/user)
@@ -68,7 +68,7 @@
 	desc = "A modernised version of the classic design, this mask will not only filter out phoron but it can also be connected to an air supply."
 	icon_state = "plaguedoctor"
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
-	armor = list(melee = 0, bullet = 0, laser = 2,energy = 2, bomb = 0, bio = 90, rad = 0)
+	armor_spec = "laser=2;energy=2;bio=90"
 	body_parts_covered = HEAD|FACE|EYES
 	heat_protection = HEAD
 	cold_protection = HEAD
@@ -91,12 +91,15 @@
 	desc = "Clearly not designed for a human face."
 	flags = PHORONGUARD
 	item_flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT
-	species_restricted = list(SPECIES_VOX)
 	filtered_gases = list(GAS_O2, GAS_N2O)
 	var/mask_open = FALSE	// Controls if the Vox can eat through this mask
 	actions_types = list(/datum/action/item_action/toggle_feeding_port)
 	helmet_handling = TRUE
 	special_handling = TRUE
+
+/obj/item/clothing/mask/gas/swat/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/mask/gas/swat/vox/proc/feeding_port(mob/user)
 	if(user.canmove && !user.stat)
@@ -121,9 +124,12 @@
 	icon_state = "zaddat_mask"
 	item_state = "vax_mask"
 	//body_parts_covered = 0
-	species_restricted = list(SPECIES_ZADDAT)
 	flags_inv = HIDEEARS //semi-transparent
 	filtered_gases = list(GAS_PHORON, GAS_N2, GAS_N2O)
+
+/obj/item/clothing/mask/gas/zaddat/fit_constraint()
+	var/list/bodytypes = list(SPECIES_ZADDAT)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/mask/gas/syndicate
 	name = "tactical mask"
@@ -136,7 +142,7 @@
 	desc = "A military-grade gas mask that can be connected to an air supply."
 	icon_state = "explorer"
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
-	armor = list(melee = 10, bullet = 5, laser = 5,energy = 5, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "melee=10;bullet=5;laser=5;energy=5;bio=50"
 	siemens_coefficient = 0.9
 
 /obj/item/clothing/mask/gas/clown_hat

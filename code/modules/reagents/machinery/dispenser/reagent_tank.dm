@@ -392,7 +392,7 @@
 		bottle = FALSE
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
-	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 0))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	anchored = !anchored
@@ -412,9 +412,7 @@
 		return ITEM_INTERACT_SUCCESS
 	if(bottle)
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_notice("You start taking the water-cooler apart."))
-	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src) || bottle || cupholder)
+	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start taking the water-cooler apart.") || bottle || cupholder)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You take the water-cooler apart."))
 	new /obj/item/stack/material/plastic(loc, 4)

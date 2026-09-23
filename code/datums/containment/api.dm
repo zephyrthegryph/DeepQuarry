@@ -46,7 +46,7 @@
 		return .
 	if(def.capacity_model != SLOT_CAPACITY_NONE)
 		var/cost = def.cost(holder, thing)
-		if(dest.used[id] + cost > def.capacity_for(holder))
+		if(dest.used[id] + def.latent_used(holder) + cost > def.capacity_for(holder))
 			return "there's no room for it"
 	if(SEND_SIGNAL(holder, COMSIG_SLOT_PRE_INSERT, thing, id, actor) & COMPONENT_SLOT_BLOCK)
 		return "it won't go in"
@@ -135,7 +135,11 @@
 /// Capacity used in `slot_id`, in its capacity model's units.
 /atom/proc/slot_used(slot_id)
 	var/datum/ledger/L = dq_ledger(src)
-	return L?.used[slot_id || L.default_id] || 0
+	if(!L)
+		return 0
+	var/id = slot_id || L.default_id
+	var/datum/slot_def/def = L.def_by_id(id)
+	return (L.used[id] || 0) + (def ? def.latent_used(src) : 0)
 
 /// The limit of `slot_id` on this holder, or null when it has none.
 /atom/proc/slot_capacity(slot_id)
@@ -174,6 +178,9 @@
 		return
 	var/atom/drop = drop_location()
 	for(var/datum/slot_def/def as anything in L.defs)
+		if(def.drop_policy == SLOT_DROP_HOLDER)
+			continue
+		def.drop_latent(src, drop)
 		var/list/things = L.slots[def.id]
 		for(var/atom/movable/thing as anything in things.Copy())
 			if(QDELETED(thing))

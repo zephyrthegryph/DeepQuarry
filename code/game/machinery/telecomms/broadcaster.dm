@@ -28,12 +28,12 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	var/overmap_range_min = 0
 	var/overmap_range_max = 5
 	//Linked bluespace radios
-	var/list/linked_radios_weakrefs = list()
+	var/list/linked_radios_weakrefs
 
 /obj/machinery/telecomms/broadcaster/proc/link_radio(obj/item/radio/R)
 	if(!istype(R))
 		return
-	linked_radios_weakrefs |= WEAKREF(R)
+	LAZYOR(linked_radios_weakrefs, WEAKREF(R))
 
 /obj/machinery/telecomms/broadcaster/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 	// Don't broadcast rejected signals
@@ -144,12 +144,12 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	var/intercept = 0 // if nonzero, broadcasts all messages to syndicate channel
 	var/overmap_range = 0
 
-	var/list/linked_radios_weakrefs = list()
+	var/list/linked_radios_weakrefs
 
 /obj/machinery/telecomms/allinone/proc/link_radio(obj/item/radio/R)
 	if(!istype(R))
 		return
-	linked_radios_weakrefs |= WEAKREF(R)
+	LAZYOR(linked_radios_weakrefs, WEAKREF(R))
 
 /obj/machinery/telecomms/allinone/receive_signal(datum/signal/signal)
 
@@ -489,29 +489,29 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		if(istype(GLOB.blackbox))
 			switch(display_freq)
 				if(PUB_FREQ)
-					GLOB.blackbox.msg_common += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_common, blackbox_msg)
 				if(SCI_FREQ)
-					GLOB.blackbox.msg_science += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_science, blackbox_msg)
 				if(COMM_FREQ)
-					GLOB.blackbox.msg_command += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_command, blackbox_msg)
 				if(MED_FREQ)
-					GLOB.blackbox.msg_medical += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_medical, blackbox_msg)
 				if(ENG_FREQ)
-					GLOB.blackbox.msg_engineering += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_engineering, blackbox_msg)
 				if(SEC_FREQ)
-					GLOB.blackbox.msg_security += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_security, blackbox_msg)
 				if(DTH_FREQ)
-					GLOB.blackbox.msg_deathsquad += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_deathsquad, blackbox_msg)
 				if(SYND_FREQ)
-					GLOB.blackbox.msg_syndicate += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_syndicate, blackbox_msg)
 				if(RAID_FREQ)
-					GLOB.blackbox.msg_raider += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_raider, blackbox_msg)
 				if(SUP_FREQ)
-					GLOB.blackbox.msg_cargo += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_cargo, blackbox_msg)
 				if(SRV_FREQ)
-					GLOB.blackbox.msg_service += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_service, blackbox_msg)
 				if(EXP_FREQ)
-					GLOB.blackbox.msg_explorer += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_explorer, blackbox_msg)
 				else
 					GLOB.blackbox.messages += blackbox_msg
 
@@ -677,27 +677,27 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		if(istype(GLOB.blackbox))
 			switch(display_freq)
 				if(PUB_FREQ)
-					GLOB.blackbox.msg_common += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_common, blackbox_msg)
 				if(SCI_FREQ)
-					GLOB.blackbox.msg_science += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_science, blackbox_msg)
 				if(COMM_FREQ)
-					GLOB.blackbox.msg_command += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_command, blackbox_msg)
 				if(MED_FREQ)
-					GLOB.blackbox.msg_medical += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_medical, blackbox_msg)
 				if(ENG_FREQ)
-					GLOB.blackbox.msg_engineering += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_engineering, blackbox_msg)
 				if(SEC_FREQ)
-					GLOB.blackbox.msg_security += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_security, blackbox_msg)
 				if(DTH_FREQ)
-					GLOB.blackbox.msg_deathsquad += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_deathsquad, blackbox_msg)
 				if(SYND_FREQ)
-					GLOB.blackbox.msg_syndicate += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_syndicate, blackbox_msg)
 				if(RAID_FREQ)
-					GLOB.blackbox.msg_raider += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_raider, blackbox_msg)
 				if(SUP_FREQ)
-					GLOB.blackbox.msg_cargo += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_cargo, blackbox_msg)
 				if(SRV_FREQ)
-					GLOB.blackbox.msg_service += blackbox_msg
+					LAZYADD(GLOB.blackbox.msg_service, blackbox_msg)
 				else
 					GLOB.blackbox.messages += blackbox_msg
 

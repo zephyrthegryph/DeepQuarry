@@ -150,10 +150,17 @@
 
 
 /obj/item/gun/launcher/crossbow/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	if(cell)
+		var/obj/item/C = cell
+		C.loc = get_turf(user)
+		to_chat(user, span_notice("You jimmy [cell] out of [src] with [tool]."))
+		playsound(src, tool.usesound, 50, 1)
+		cell = null
+	else
+		to_chat(user, span_notice("[src] doesn't have a cell installed."))
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/launcher/crossbow/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/item/gun/launcher/crossbow/attackby(obj/item/W as obj, mob/user as mob)
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
 			user.drop_from_inventory(W, src)
@@ -181,16 +188,6 @@
 			superheat_rod(user)
 		else
 			to_chat(user, span_notice("[src] already has a cell installed."))
-
-	else if(tool_quality == TOOL_SCREWDRIVER)
-		if(cell)
-			var/obj/item/C = cell
-			C.loc = get_turf(user)
-			to_chat(user, span_notice("You jimmy [cell] out of [src] with [W]."))
-			playsound(src, W.usesound, 50, 1)
-			cell = null
-		else
-			to_chat(user, span_notice("[src] doesn't have a cell installed."))
 
 	else
 		..()
@@ -242,14 +239,25 @@
 			. += "It has a steel cable loosely strung across the lath."
 
 /obj/item/crossbowframe/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	if(buildstate == 5)
+		to_chat(user, span_notice("You secure the crossbow's various parts."))
+		playsound(src, tool.usesound, 50, 1)
+		new /obj/item/gun/launcher/crossbow(get_turf(src))
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/crossbowframe/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	if(buildstate == 1)
+		var/obj/item/weldingtool/T = tool.get_welder()
+		if(T.remove_fuel(0,user))
+			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
+			playsound(src, tool.usesound, 50, 1)
+			to_chat(user, span_notice("You weld the rods into place."))
+		buildstate++
+		update_icon()
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/crossbowframe/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/item/crossbowframe/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/stack/rods))
 		if(buildstate == 0)
 			var/obj/item/stack/rods/R = W
@@ -260,16 +268,6 @@
 			else
 				to_chat(user, span_notice("You need at least three rods to complete this task."))
 			return
-	else if(tool_quality == TOOL_WELDER)
-		if(buildstate == 1)
-			var/obj/item/weldingtool/T = W.get_welder()
-			if(T.remove_fuel(0,user))
-				if(!src || !T.isOn()) return
-				playsound(src, W.usesound, 50, 1)
-				to_chat(user, span_notice("You weld the rods into place."))
-			buildstate++
-			update_icon()
-		return
 	else if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(buildstate == 2)
@@ -298,12 +296,5 @@
 			else
 				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
 			return
-	else if(tool_quality == TOOL_SCREWDRIVER)
-		if(buildstate == 5)
-			to_chat(user, span_notice("You secure the crossbow's various parts."))
-			playsound(src, W.usesound, 50, 1)
-			new /obj/item/gun/launcher/crossbow(get_turf(src))
-			qdel(src)
-		return
 	else
 		..()

@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - rscadd: "Combat mode replaces intents. Toggle it with F, G or Insert, set it with 1 (off) and 4 (on), or click the HUD button. With it on, attacks come first when you use things."
+  - rscadd: "Disarm and grab are now held keys: hold 2 to disarm or 3 to grab while you click or step. Both are also in the interaction menu on living targets."
+  - bugfix: "Hitting a floor light with a weapon in combat mode smashes it, as intended."

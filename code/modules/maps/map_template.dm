@@ -102,9 +102,6 @@
 	for(var/obj/machinery/atmospherics/AM as anything in atmos_machines)
 		AM.atmos_init()
 
-	admin_notice(span_danger("Rebuilding powernets due to submap creation."), R_DEBUG)
-	SSmachines.setup_powernets_for_cables(cables)
-
 	// Ensure all machines in loaded areas get notified of power status
 	for(var/area/A as anything in areas)
 		A.power_change()

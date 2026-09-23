@@ -180,15 +180,15 @@
 		for(var/number in list(melee_armor, bullet_armor, laser_armor, energy_armor, bomb_armor))
 			number = between(0, number, 100)
 
-		own_armor()
-		armor["melee"] = melee_armor
-		armor["bullet"] = bullet_armor
-		armor["laser"] = laser_armor
-		armor["energy"] = energy_armor
-		armor["bomb"] = bomb_armor
+		set_armor_value("melee", melee_armor)
+		set_armor_value("bullet", bullet_armor)
+		set_armor_value("laser", laser_armor)
+		set_armor_value("energy", energy_armor)
+		set_armor_value("bomb", bomb_armor)
 
 		if(!isnull(material.conductivity))
 			siemens_coefficient = between(0, material.conductivity / 10, 10)
+		worn_protection_changed()
 
 		var/slowdownModified = between(0, round(material.density / 10, 0.1), 6) // weight renamed to density.
 
@@ -320,20 +320,9 @@
 		..()
 
 //Make plating inserts for modular armour.
-/obj/item/material/armor_plating/insert/attackby(obj/item/O, mob/user, tool_quality)
+/obj/item/material/armor_plating/insert/attackby(obj/item/O, mob/user)
 
 	. = ..()
-
-	if(tool_quality == TOOL_WELDER)
-		var /obj/item/weldingtool/S = O.get_welder()
-		if(S.remove_fuel(0,user))
-			if(!src || !S.isOn()) return
-			to_chat(user, span_notice("You trim down the edges to size."))
-			user.drop_from_inventory(src)
-			var/obj/item/clothing/accessory/material/makeshift/light/new_armor = new(null, src.material.name)
-			user.put_in_hands(new_armor)
-			qdel(src)
-			return
 
 	if(istype(O, /obj/item/material/armor_plating/insert))
 		var/obj/item/material/armor_plating/insert/second_plate = O
@@ -349,14 +338,6 @@
 		qdel(src)
 		return
 
-	if(tool_quality == TOOL_WIRECUTTER)
-		to_chat(user, span_notice("You split the plate down the middle, and joint it at the elbow."))
-		user.drop_from_inventory(src)
-		var/obj/item/clothing/accessory/material/makeshift/armguards/new_armor = new(null, src.material.name)
-		user.put_in_hands(new_armor)
-		qdel(src)
-		return
-
 	if(istype(O, /obj/item/stack/material))
 		var/obj/item/stack/material/S = O
 		if(S.material == get_material_by_name(MAT_LEATHER))
@@ -369,12 +350,23 @@
 				return
 
 /obj/item/material/armor_plating/insert/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	var/obj/item/weldingtool/S = tool.get_welder()
+	if(S.remove_fuel(0,user))
+		if(!src || !S.isOn()) return ITEM_INTERACT_SUCCESS
+		to_chat(user, span_notice("You trim down the edges to size."))
+		user.drop_from_inventory(src)
+		var/obj/item/clothing/accessory/material/makeshift/light/new_armor = new(null, src.material.name)
+		user.put_in_hands(new_armor)
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/armor_plating/insert/wirecutter_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WIRECUTTER)
-	return TRUE
+	to_chat(user, span_notice("You split the plate down the middle, and joint it at the elbow."))
+	user.drop_from_inventory(src)
+	var/obj/item/clothing/accessory/material/makeshift/armguards/new_armor = new(null, src.material.name)
+	user.put_in_hands(new_armor)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 // Used to craft the makeshift helmet
 /obj/item/clothing/head/helmet/bucket
@@ -382,7 +374,7 @@
 	desc = "It's a bucket with a large hole cut into it.  You could wear it on your head and look really stupid."
 	flags_inv = HIDEEARS|HIDEEYES|BLOCKHAIR
 	icon_state = "bucket"
-	armor = list(melee = 5, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=5"
 
 /obj/item/clothing/head/helmet/bucket/wood
 	name = "wooden bucket"

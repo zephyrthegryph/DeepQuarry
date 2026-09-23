@@ -30,7 +30,7 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	var/department = "Unknown" //The list of all departments on the station (Determined from this variable on each unit) Set this to the same thing if you want several consoles in one department
-	var/list/message_log = list() //List of all messages
+	var/list/message_log //List of all messages
 	var/departmentType = 0 		//Bitflag. Zero is reply-only. Map currently uses raw numbers instead of defines.
 	var/newmessagepriority = 0
 		// 0 = no new message
@@ -120,7 +120,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	var/list/data = ..()
 	data["department"] = department
 	data["screen"] = screen
-	data["message_log"] = message_log
+	data["message_log"] = (message_log || list())
 	data["newmessagepriority"] = newmessagepriority
 	data["silent"] = silent
 	data["announcementConsole"] = announcementConsole
@@ -191,7 +191,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 				pass = 1
 			if(pass)
 				screen = RCS_SENTPASS
-				message_log += list(list("Message sent to [recipient]", "[message]"))
+				LAZYADD(message_log, list(list("Message sent to [recipient]", "[message]")))
 			else
 				audible_message(text("[icon2html(src,viewers(src))] *The Requests Console beeps: 'NOTICE: No server detected!'"),,4)
 			. = TRUE
@@ -201,7 +201,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			var/print_index = text2num(params["print"])
 			if(!print_index || print_index < 1 || print_index > length(message_log))
 				return
-			var/msg = message_log[print_index]
+			var/msg = LAZYACCESS(message_log, print_index)
 			if(msg)
 				msg = span_bold("[msg[1]]:") + "<br>[msg[2]]"
 				msg = replacetext(msg, "<BR>", "\n")

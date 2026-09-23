@@ -28,7 +28,7 @@
  */
 /datum/lootpanel/proc/process_images()
 	for(var/datum/search_object/index as anything in to_image)
-		to_image -= index
+		LAZYREMOVE(to_image, index)
 
 		if(QDELETED(index) || index.icon)
 			continue

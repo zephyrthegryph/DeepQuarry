@@ -7,7 +7,7 @@
 	density = FALSE
 	max_integrity = 1800
 	var/icon/virtualIcon
-	var/list/bulletholes = list()
+	var/list/bulletholes
 
 /obj/item/target/atom_destruction(damage_flag)
 	for(var/mob/O in oviewers(src))
@@ -128,7 +128,7 @@
 			// Bullets are hard. They make dents!
 			bmark.icon_state = "dent"
 
-		if(Proj.damage >= 10 && bulletholes.len <= 35) // maximum of 35 bullet holes
+		if(Proj.damage >= 10 && length(bulletholes) <= 35) // maximum of 35 bullet holes
 			if(decaltype == 2) // bullet
 				if(prob(Proj.damage+30)) // bullets make holes more commonly!
 					new/datum/bullethole(src, bmark.pixel_x, bmark.pixel_y) // create new bullet hole
@@ -180,4 +180,4 @@
 	b2y1 = pixel_y + pick(1,1,1,1,2,2,3,3,4)
 	b2y2 = pixel_y - pick(1,1,1,1,2,2,3,3,4)
 
-	Target.bulletholes.Add(src)
+	LAZYADD(Target.bulletholes, src)

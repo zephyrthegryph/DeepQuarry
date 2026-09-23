@@ -5,14 +5,12 @@
 	icon_state = "RPED"
 	item_state = "RPED"
 	w_class = ITEMSIZE_HUGE
-	can_hold = list(/obj/item/stock_parts)
 	storage_slots = 50
 	use_to_pickup = TRUE
 	allow_quick_gather = 1
 	allow_quick_empty = 1
 	collection_mode = 1
 	display_contents_with_number = 1
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = 100
 	drop_sound = 'sound/items/drop/device.ogg'
 	pickup_sound = 'sound/items/pickup/device.ogg'
@@ -21,6 +19,10 @@
 	var/reskin_ran = FALSE
 	var/unique_reskin = list("Soulless" = "RPED",
 							"Soulful" = "RPED_old")
+
+/obj/item/storage/part_replacer/hold_constraint()
+	var/list/holds = list(/obj/item/stock_parts)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/part_replacer/proc/play_rped_sound()
 	//Plays the sound for RPED exhanging or installing parts.
@@ -56,8 +58,9 @@
 	reskin_ran = TRUE
 	to_chat(M, "[src] is now '[pick]'.")
 
-/obj/item/storage/part_replacer/drop_contents() // hacky-feeling tier-based drop system
-	hide_from(usr)
+/obj/item/storage/part_replacer/drop_contents(mob/user) // hacky-feeling tier-based drop system
+	if(user)
+		hide_from(user)
 	var/turf/T = get_turf(src)
 	var/lowest_rating = INFINITY // We want the lowest-part tier rating in the RPED so we only drop the lowest-tier parts.
 	/*
@@ -72,15 +75,18 @@
 	for(var/obj/item/B in contents)
 		if(B.rped_rating() > lowest_rating)
 			continue
-		remove_from_storage(B, T)
+		remove_from_storage(B, T, user)
 
 /obj/item/storage/part_replacer/adv
 	name = "advanced rapid part exchange device"
 	desc = "A special mechanical module made to store, sort, and apply standard machine parts. This one has a greatly upgraded storage capacity, \
 	and the ability to hold beakers."
-	can_hold = list(/obj/item/stock_parts, /obj/item/reagent_containers/glass/beaker)
 	storage_slots = 200
 	max_storage_space = 400
+
+/obj/item/storage/part_replacer/adv/hold_constraint()
+	var/list/holds = list(/obj/item/stock_parts, /obj/item/reagent_containers/glass/beaker)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/part_replacer/adv/discount_bluespace
 	name = "prototype bluespace rapid part exchange device"

@@ -221,14 +221,7 @@
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/rockfish)
 
-	armor = list(
-		"melee" = 90,
-		"bullet" = 50,
-		"laser" = -15,
-		"energy" = 30,
-		"bomb" = 30,
-		"bio" = 100,
-		"rad" = 100)
+	armor_spec = "melee=90;bullet=50;laser=-15;energy=30;bomb=30;bio=100;rad=100"
 
 	var/max_red = 255
 	var/min_red = 50

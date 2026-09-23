@@ -22,7 +22,7 @@
 	length_upper_bound = 12 MINUTES
 	var/turf/chosen_turf_with_windows = null
 	var/obj/structure/window/chosen_window = null
-	var/list/collateral_windows = list()
+	var/list/collateral_windows
 
 /datum/event2/event/window_break/set_up()
 	var/list/areas = find_random_areas()
@@ -97,9 +97,9 @@
 	// Otherwise a bunch of windows shatter.
 	chosen_window?.shatter()
 
-	var/windows_to_shatter = min(rand(4, 10), collateral_windows.len)
+	var/windows_to_shatter = min(rand(4, 10), length(collateral_windows))
 	for(var/i = 1 to windows_to_shatter)
-		var/obj/structure/window/W = collateral_windows[i]
+		var/obj/structure/window/W = LAZYACCESS(collateral_windows, i)
 		W?.shatter()
 
 	log_game("Window Break event ended with [windows_to_shatter] shattered windows and a breach.")

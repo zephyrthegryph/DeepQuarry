@@ -188,14 +188,14 @@
 	idle_power_usage = 45
 	var/frequency = AMAG_ELE_FREQ
 	var/code = 0
-	var/list/magnets = list()
+	var/list/magnets
 	var/title = "Magnetic Control Console"
 	var/autolink = 0 // if set to 1, can't probe for other magnets!
 
 	var/pathpos = 1 // position in the path
 	var/path = "NULL" // text path of the magnet
 	var/speed = 1 // lowest = 1, highest = 10
-	var/list/rpath = list() // real path of the magnet, used in iterator
+	var/list/rpath // real path of the magnet, used in iterator
 
 	var/moving = 0 // 1 if scheduled to loop
 	var/looping = 0 // 1 if looping
@@ -208,7 +208,7 @@
 	if(autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
-				magnets.Add(M)
+				LAZYADD(magnets, M)
 
 	if(SSradio)
 		radio_connection = SSradio.add_object(src, frequency, RADIO_MAGNETS)
@@ -217,13 +217,10 @@
 		filter_path() // renders rpath
 
 /obj/machinery/magnetic_controller/process()
-	if(magnets.len == 0 && autolink)
+	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
-				magnets.Add(M)
-
-/obj/machinery/magnetic_controller/attack_ai(mob/user as mob)
-	return attack_hand(user)
+				LAZYADD(magnets, M)
 
 /obj/machinery/magnetic_controller/attack_hand(mob/user as mob)
 	// structured TGUI MagneticConsole (see
@@ -295,7 +292,7 @@
 /obj/machinery/magnetic_controller/proc/MagnetMove()
 	if(looping) return
 
-	while(moving && rpath.len >= 1)
+	while(moving && length(rpath) >= 1)
 
 		if(stat & (BROKEN|NOPOWER))
 			break
@@ -309,10 +306,10 @@
 		signal.frequency = frequency
 		signal.data["code"] = code
 
-		if(pathpos > rpath.len) // if the position is greater than the length, we just loop through the list!
+		if(pathpos > length(rpath)) // if the position is greater than the length, we just loop through the list!
 			pathpos = 1
 
-		var/nextmove = uppertext(rpath[pathpos]) // makes it un-case-sensitive
+		var/nextmove = uppertext(LAZYACCESS(rpath, pathpos)) // makes it un-case-sensitive
 
 		if(!(nextmove in list("N","S","E","W","C","R")))
 			// N, S, E, W are directional
@@ -347,7 +344,7 @@
 		var/nextchar = copytext(path, i, i+1) // find next character
 
 		if(!(nextchar in list(";", "&", "*", " "))) // if char is a separator, ignore
-			rpath += copytext(path, i, i+1) // else, add to list
+			LAZYADD(rpath, copytext(path, i, i+1)) // else, add to list
 
 		// there doesn't HAVE to be separators but it makes paths syntatically visible
 

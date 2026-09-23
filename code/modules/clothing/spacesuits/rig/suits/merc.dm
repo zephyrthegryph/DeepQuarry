@@ -7,14 +7,13 @@
 	desc = "A blood-red hardsuit featuring some fairly illegal technology."
 	icon_state = "merc_rig"
 	suit_type = "crimson hardsuit"
-	armor = list(melee = 80, bullet = 65, laser = 50, energy = 15, bomb = 80, bio = 100, rad = 60)
+	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=60"
 	slowdown = 0.5
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 	siemens_coefficient = 0.3
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva
 	helm_type = /obj/item/clothing/head/helmet/space/rig/merc
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT)
 
 	initial_modules = list(
 		/obj/item/rig_module/mounted,
@@ -28,6 +27,10 @@
 		)
 
 //Has most of the modules removed
+
+/obj/item/rig/merc/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT)
+	return list(HOLD_ONLY(stores))
 /obj/item/rig/merc/empty
 	initial_modules = list(
 		/obj/item/rig_module/ai_container,

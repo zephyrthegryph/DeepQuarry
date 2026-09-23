@@ -302,6 +302,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	B.name = "Stomach"
 	B.desc = "The slimy wet insides of Runtime! Not quite as clean as the cat on the outside."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Runtime's stomach kneads gently on you and you're fairly sure you can hear her start purring.",
 		"Most of what you can hear are slick noises, Runtime breathing, and distant purring.",
@@ -310,6 +311,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 		"Runtime mostly just lazes about, and you're left to simmer in the hot, slick guts unharmed.",
 		"Runtime's master might let you out of this fleshy prison, eventually. Maybe. Hopefully?")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Runtime's stomach is treating you rather like a mouse, kneading acids into you with vigor.",
 		"A thick dollop of bellyslime drips from above while the CMO's pet's gut works on churning you up.",

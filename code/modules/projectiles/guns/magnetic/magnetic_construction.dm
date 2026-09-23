@@ -8,14 +8,40 @@
 	var/construction_stage = 1
 
 /obj/item/coilgun_assembly/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	if(construction_stage != 4)
+		return NONE
+	var/obj/item/weldingtool/welder = tool.get_welder()
+
+	if(!welder.isOn())
+		to_chat(user, span_warning("Turn it on first!"))
+		return ITEM_INTERACT_SUCCESS
+
+	if(!welder.remove_fuel(0,user))
+		to_chat(user, span_warning("You need more fuel!"))
+		return ITEM_INTERACT_SUCCESS
+
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " welds the barrel of \the [src] into place."))
+	playsound(src, 'sound/items/Welder2.ogg', 100, 1)
+	increment_construction_stage()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/coilgun_assembly/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	if(construction_stage < 9)
+		return NONE
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " secures \the [src] and finishes it off."))
+	playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+	var/obj/item/gun/magnetic/coilgun = new(loc)
+	var/put_in_hands
+	var/mob/M = src.loc
+	if(istype(M))
+		put_in_hands = M == user
+		M.drop_from_inventory(src)
+	if(put_in_hands)
+		user.put_in_hands(coilgun)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/coilgun_assembly/attackby(obj/item/thing, mob/user, tool_quality)
+/obj/item/coilgun_assembly/attackby(obj/item/thing, mob/user)
 
 	if(istype(thing, /obj/item/stack/material) && construction_stage == 1)
 		var/obj/item/stack/material/reinforcing = thing
@@ -41,22 +67,6 @@
 		increment_construction_stage()
 		return
 
-	if(tool_quality == TOOL_WELDER && construction_stage == 4)
-		var/obj/item/weldingtool/welder = thing.get_welder()
-
-		if(!welder.isOn())
-			to_chat(user, span_warning("Turn it on first!"))
-			return
-
-		if(!welder.remove_fuel(0,user))
-			to_chat(user, span_warning("You need more fuel!"))
-			return
-
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " welds the barrel of \the [src] into place."))
-		playsound(src, 'sound/items/Welder2.ogg', 100, 1)
-		increment_construction_stage()
-		return
-
 	if(istype(thing, /obj/item/stack/cable_coil) && construction_stage == 5)
 		var/obj/item/stack/cable_coil/cable = thing
 		if(cable.get_amount() < 5)
@@ -72,20 +82,6 @@
 		user.drop_from_inventory(thing)
 		qdel(thing)
 		increment_construction_stage()
-		return
-
-	if(tool_quality == TOOL_SCREWDRIVER && construction_stage >= 9)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " secures \the [src] and finishes it off."))
-		playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
-		var/obj/item/gun/magnetic/coilgun = new(loc)
-		var/put_in_hands
-		var/mob/M = src.loc
-		if(istype(M))
-			put_in_hands = M == user
-			M.drop_from_inventory(src)
-		if(put_in_hands)
-			user.put_in_hands(coilgun)
-		qdel(src)
 		return
 
 	return ..()

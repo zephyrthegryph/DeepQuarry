@@ -47,7 +47,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/list/all_arfgs = null		//Similar, but a list of all arfgs adjacent to this area
 	var/firedoors_closed = 0
 	var/arfgs_active = 0
-	var/list/ambience = list()
+	var/list/ambience
 	var/list/forced_ambience = null
 	var/sound_env = STANDARD_STATION
 	var/turf/base_turf //The base turf type of the area, which can be used to override the z-level's base turf
@@ -263,13 +263,23 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 	return 0
 
-// called when power status changes
+/// Machines told about this area's channel changes (see power_subscriber).
+/area/var/list/power_machines
+
+/area/proc/power_subscribe(obj/machinery/M)
+	LAZYADD(power_machines, M)
+
+/area/proc/power_unsubscribe(obj/machinery/M)
+	LAZYREMOVE(power_machines, M)
+
+// Called once per area channel change (the APC's Rust power event). Lights and
+// other reactor subscribers hear the key; subscribed machines re-check their
+// power, and the base power_change() sends COMSIG_MACHINERY_POWER_LOST or
+// COMSIG_MACHINERY_POWER_RESTORED when it flips.
 /area/proc/power_change()
-	// Lights (and anything else that subscribes) hear this through the reactor key; the scan
-	// below stays for the other machines until M3's area channel event replaces it.
 	REACT_PUBLISH(REACT_KEY_AREA_POWER, REACT_ID(src), REACT_AREA_POWER_CHANGED)
-	for(var/obj/machinery/M in src)	// for each machine in the area
-		M.power_change()			// reverify power status (to update icons etc.)
+	for(var/obj/machinery/M as anything in power_machines)
+		M.power_change()
 	if (fire || eject || party)
 		update_icon()
 
@@ -296,8 +306,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 // Use this for a one-time power draw from the area, typically for non-machines.
 /area/proc/use_power_oneoff(amount, chan)
-	if(amount && apc?.adjust_sleeping_area_load(amount, chan))
-		return amount
 	switch(chan)
 		if(EQUIP)
 			oneoff_equip += amount
@@ -306,6 +314,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(ENVIRON)
 			oneoff_environ += amount
 	if(amount)
+		power_loads_changed()
 		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
 	return amount
 
@@ -323,6 +332,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(ENVIRON)
 			static_environ += amount
 	if(amount)
+		power_loads_changed()
 		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
@@ -338,6 +348,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 				static_light += M.get_power_usage()
 			if(ENVIRON)
 				static_environ += M.get_power_usage()
+	power_loads_changed()
 
 //////////////////////////////////////////////////////////////////
 
@@ -427,10 +438,10 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 			L << chosen_ambiance
 		else
 			L << sound(null, channel = CHANNEL_AMBIENCE_FORCED)
-	else if(src.ambience && src.ambience.len)
+	else if(src.ambience && length(src.ambience))
 		var/ambience_odds = L.read_preference(/datum/preference/numeric/ambience_chance)
 		if(prob(ambience_odds) && (world.time >= L.client.time_last_ambience_played + 1 MINUTE))
-			var/sound = pick(ambience)
+			var/sound = DEFAULTPICK(ambience, null)
 			L << sound(sound, repeat = 0, wait = 0, volume = 50 * volume_mod, channel = CHANNEL_AMBIENCE)
 			L.client.time_last_ambience_played = world.time
 
@@ -451,7 +462,7 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 		var/mob/living/carbon/human/H = mob
 		if(H.buckled)
 			return // Being buckled to something solid keeps you in place.
-		if(istype(H.shoes, /obj/item/clothing/shoes/magboots) && (H.shoes.item_flags & NOSLIP))
+		if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
 			return
 		if(H.is_incorporeal()) // Phaseshifted beings should not be affected by gravity
 			return

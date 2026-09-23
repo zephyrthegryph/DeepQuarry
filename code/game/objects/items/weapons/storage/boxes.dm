@@ -29,7 +29,6 @@
 	center_of_mass_y = 10
 	var/foldable = /obj/item/stack/material/cardboard	// BubbleWrap - if set, can be folded (when empty) into a sheet of cardboard
 	var/trash = null  // if set, can be crushed into a trash item when empty
-	max_w_class = ITEMSIZE_SMALL
 	max_storage_space = INVENTORY_BOX_SPACE
 	use_sound = 'sound/items/storage/box.ogg'
 	drop_sound = 'sound/items/drop/cardboardbox.ogg'
@@ -37,6 +36,9 @@
 	resistance_flags = FLAMMABLE
 
 // BubbleWrap - A box can be folded up to make card
+
+/obj/item/storage/box/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/storage/box/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -63,7 +65,7 @@
 
 	//try to crush it
 	if(ispath(trash))
-		if(contents.len &&  user.a_intent == I_HURT)  // only crumple with things inside on harmintent.
+		if(contents.len &&  IS_HARMING(user))  // only crumple with things inside on harmintent.
 			user.visible_message(span_danger("[user] crushes \the [src], spilling its contents everywhere!"), span_danger("You crush \the [src], spilling its contents everywhere!"))
 			spill()
 		else
@@ -320,8 +322,11 @@
 	desc = "Drymate brand monkey cubes. Just add water!"
 	icon = 'icons/obj/food.dmi'
 	icon_state = "monkeycubebox"
-	can_hold = list(/obj/item/reagent_containers/food/snacks/monkeycube)
 	starts_with = list(/obj/item/reagent_containers/food/snacks/monkeycube/wrapped = 4)
+
+/obj/item/storage/box/monkeycubes/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/monkeycube)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/monkeycubes/farwacubes
 	name = "farwa cube box"
@@ -424,8 +429,11 @@
 	desc = "Eight wrappers of fun! Ages 8 and up. Not suitable for children."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "spbox"
-	can_hold = list(/obj/item/toy/snappop)
 	starts_with = list(/obj/item/toy/snappop = 8)
+
+/obj/item/storage/box/snappops/hold_constraint()
+	var/list/holds = list(/obj/item/toy/snappop)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/matches
 	name = "matchbox"
@@ -434,10 +442,13 @@
 	icon_state = "matchbox"
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_BELT
-	can_hold = list(/obj/item/flame/match)
 	starts_with = list(/obj/item/flame/match = 10)
 	drop_sound = 'sound/items/drop/matchbox.ogg'
 	pickup_sound =  'sound/items/pickup/matchbox.ogg'
+
+/obj/item/storage/box/matches/hold_constraint()
+	var/list/holds = list(/obj/item/flame/match)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/matches/attackby(obj/item/flame/match/W, mob/user)
 	if(istype(W) && !W.lit && !W.burnt)
@@ -462,9 +473,12 @@
 	desc = "This box is shaped on the inside so that only light tubes and bulbs fit."
 	item_state_slots = list(slot_r_hand_str = "syringe_kit", slot_l_hand_str = "syringe_kit")
 	storage_slots = 24
-	can_hold = list(/obj/item/light/tube, /obj/item/light/bulb)
 	max_storage_space = ITEMSIZE_COST_SMALL * 24 //holds 24 items of w_class 2
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
+
+/obj/item/storage/box/lights/hold_constraint()
+	var/list/holds = list(/obj/item/light/tube, /obj/item/light/bulb)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/lights/bulbs
 	starts_with = list(
@@ -497,10 +511,12 @@
 	icon_state = "portafreezer"
 	item_state_slots = list(slot_r_hand_str = "medicalpack", slot_l_hand_str = "medicalpack")
 	foldable = null
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/organ)
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5 // Formally 21.  Odd numbers are bad.
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
+
+/obj/item/storage/box/freezer/hold_constraint()
+	var/list/holds = list(/obj/item/organ, /obj/item/reagent_containers/blood, /obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/box/freezer/red
 	icon_state = "portafreezer_red"
@@ -538,14 +554,16 @@
 	desc = "This box is shaped on the inside so that only the \"Zipper\" Capgun and extra caps can fit."
 	item_state_slots = list(slot_r_hand_str = "syringe_kit", slot_l_hand_str = "syringe_kit")
 	storage_slots = 2
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap)
 	starts_with = list(
 		/obj/item/gun/projectile/revolver/capgun = 1,
 		/obj/item/ammo_magazine/ammo_box/cap = 1
 	)
 
 //Donk-pockets
+
+/obj/item/storage/box/capguntoy/hold_constraint()
+	var/list/holds = list(/obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/box/donkpockets
 	name = "box of donk-pockets"
 	desc = span_bold("Instructions:") + " " + span_italics("Heat in microwave. Product will cool if not eaten within seven minutes.")
@@ -620,15 +638,17 @@
 	name = "\improper BrainzSnax box"
 	icon_state = "brainzsnax_box"
 	desc = "A box designed to hold canned food. This one has BrainzSnax branding printed on it."
-	can_hold = list(/obj/item/reagent_containers/food/snacks/canned)
 	max_storage_space = ITEMSIZE_COST_NORMAL * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax = 6)
+
+/obj/item/storage/box/brainzsnax/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/canned)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/brainzsnax/red
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax/red = 6)
 
 /obj/item/storage/box/freezer
-	can_hold = list(/obj/item/organ, /obj/item/reagent_containers/blood, /obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
 
 /obj/item/storage/box/altevian_ammo
 	name = "SAM .48 ammo box"

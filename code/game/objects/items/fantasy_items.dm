@@ -311,11 +311,11 @@
 	if(loc_network)
 		for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
 			if(nb.tele_network == loc_network)
-				beacons[nb.tele_name] = nb
+				LAZYSET(beacons, nb.tele_name, nb)
 		loc_network = null //Consumed
 
 	if(!(user.ckey in warned_users))
-		warned_users |= user.ckey
+		LAZYOR(warned_users, user.ckey)
 		tgui_alert_async(user,{"
 This device can be easily used to break ERP preferences due to the nature of teleporting and tele-vore.
 Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.
@@ -347,7 +347,7 @@ This device records all warnings given and teleport events for admin review in c
 		nb.tele_name = new_name
 		nb.tele_hand = src
 		nb.creator = user.ckey
-		beacons[new_name] = nb
+		LAZYSET(beacons, new_name, nb)
 		beacons_left--
 		if(isliving(user))
 			var/mob/living/L = user
@@ -355,7 +355,7 @@ This device records all warnings given and teleport events for admin review in c
 		rebuild_radial_images()
 
 	else
-		destination = beacons[choice]
+		destination = LAZYACCESS(beacons, choice)
 		rebuild_radial_images()
 
 //sizegun

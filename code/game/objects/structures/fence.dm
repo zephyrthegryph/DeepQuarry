@@ -97,8 +97,7 @@
 		to_chat(user, span_notice("This fence has too much cut out of it already."))
 		return TRUE
 	user.visible_message(span_danger("\The [user] starts cutting through \the [src] with \the [W]."), span_danger("You start cutting through \the [src] with \the [W]."))
-	playsound(src, W.usesound, 50, 1)
-	if(do_after(user, CUT_TIME * W.toolspeed, target = src) && current_stage == hole_size)
+	if(use_tool(user, W, src, delay = CUT_TIME, quality = TOOL_WIRECUTTER, volume = 50) && current_stage == hole_size)
 		switch(++hole_size)
 			if(MEDIUM_HOLE)
 				visible_message(span_notice("\The [user] cuts into \the [src] some more."))

@@ -1,7 +1,7 @@
 /datum/random_map/automata/cave_system
 	iterations = 5
 	descriptor = "moon caves"
-	var/list/ore_turfs = list()
+	var/list/ore_turfs
 	var/list/turfs_changed
 	var/make_cracked_turfs = TRUE
 
@@ -26,21 +26,21 @@
 		for (var/y = 1 to limit_y)
 			tmp_cell = TRANSLATE_COORD(x, y)
 			if (CELL_ALIVE(map[tmp_cell]))
-				ore_turfs += tmp_cell
+				LAZYADD(ore_turfs, tmp_cell)
 
 	#ifdef TESTING
-	testing("ASGEN: Found [ore_turfs.len] ore turfs.")
+	testing("ASGEN: Found [length(ore_turfs)] ore turfs.")
 	#endif
 	var/ore_count = round(map.len/20)
 	var/door_count = 0
 	var/empty_count = 0
-	while((ore_count>0) && (ore_turfs.len>0))
+	while((ore_count>0) && (length(ore_turfs)>0))
 
 		if(!priority_process)
 			CHECK_TICK
 
-		var/check_cell = pick(ore_turfs)
-		ore_turfs -= check_cell
+		var/check_cell = DEFAULTPICK(ore_turfs, null)
+		LAZYREMOVE(ore_turfs, check_cell)
 		if(prob(75))
 			map[check_cell] = DOOR_CHAR  // Mineral block
 			door_count += 1

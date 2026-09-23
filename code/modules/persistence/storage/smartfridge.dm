@@ -116,8 +116,7 @@
 	for(var/datum/stored_item/I in entry.item_records)
 		if(prob(go_missing_chance))
 			continue
-		if(LAZYLEN(I.instances))
-			var/obj/item/reagent_containers/food/snacks/grown/G = I.instances[1]
-			if(!istype(G))
-				continue
-			.[G.plantname] = I.get_amount() // Store the seed type, because that's what's used to generate the fruit
+		if(I.get_amount() && ispath(I.item_path, /obj/item/reagent_containers/food/snacks/grown))
+			var/plantname = I.sample_var("plantname")
+			if(plantname)
+				.[plantname] = I.get_amount() // Store the seed type, because that's what's used to generate the fruit

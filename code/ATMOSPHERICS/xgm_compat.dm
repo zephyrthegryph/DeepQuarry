@@ -454,16 +454,11 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 		return
 	vg_multiply_hook(src, num_val)
 
-// /obj/item/tank exposed return_pressure/return_temperature as forwarding
-// methods to air_contents. Re-declare for callers that still use them.
+// /obj/item/tank exposed return_pressure as a forwarding method to air_contents.
+// Its temperature is its gas's: read air_contents.return_temperature().
 /obj/item/tank/proc/return_pressure()
 	if(air_contents)
 		return air_contents.return_pressure()
-	return 0
-
-/obj/item/tank/proc/return_temperature()
-	if(air_contents)
-		return air_contents.return_temperature()
 	return 0
 
 // /datum/decl/xgm_gas — base type for the per-gas decls in code/defines/gases.dm.
@@ -501,13 +496,13 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 // is considered sealed.
 
 /mob/living/carbon/human/proc/pl_suit_protected()
-	var/obj/item/clothing/C = wear_suit
+	var/obj/item/clothing/C = get_equipped_item(SLOT_ID_SUIT)
 	if(istype(C) && C.permeability_coefficient <= 0.1)
 		return TRUE
 	return FALSE
 
 /mob/living/carbon/human/proc/pl_head_protected()
-	var/obj/item/clothing/C = head
+	var/obj/item/clothing/C = get_equipped_item(SLOT_ID_HEAD)
 	if(istype(C) && C.permeability_coefficient <= 0.1)
 		return TRUE
 	return FALSE

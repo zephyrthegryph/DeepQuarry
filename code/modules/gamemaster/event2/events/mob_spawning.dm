@@ -1,7 +1,7 @@
 // A subtype that involves spawning mobs like carp, rogue drones, spiders, etc.
 
 /datum/event2/event/mob_spawning
-	var/list/spawned_mobs = list()
+	var/list/spawned_mobs
 	var/use_map_edge_with_landmarks = TRUE // Use both landmarks and spawning from the "edge" of the map. Otherise uses landmarks over map edge.
 	var/landmark_name = "carpspawn" // Which landmark to use for spawning.
 
@@ -81,7 +81,7 @@
 /datum/event2/event/mob_spawning/proc/spawn_one_mob(new_loc, mob_type)
 	var/mob/living/simple_mob/M = new mob_type(new_loc)
 	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_mob_destruction))
-	spawned_mobs += M
+	LAZYADD(spawned_mobs, M)
 	return M
 
 // Counts living simple_mobs spawned by this event.
@@ -94,5 +94,5 @@
 // If simple_mob is bomphed, remove it from the list.
 /datum/event2/event/mob_spawning/proc/on_mob_destruction(mob/M)
 	SIGNAL_HANDLER
-	spawned_mobs -= M
+	LAZYREMOVE(spawned_mobs, M)
 	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)

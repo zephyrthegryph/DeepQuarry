@@ -18,7 +18,7 @@
 	use_power = USE_POWER_OFF
 	flags = OPENCONTAINER | NOREACT
 
-	var/list/product_types = list()
+	var/list/product_types
 	var/dispense_flavour = ICECREAM_VANILLA
 	var/flavour_name = "vanilla"
 
@@ -55,8 +55,8 @@
 /obj/machinery/icecream_vat/Initialize(mapload)
 	. = ..()
 	create_reagents(100)
-	while(product_types.len < 6)
-		product_types.Add(5)
+	while(length(product_types) < 6)
+		LAZYADD(product_types, 5)
 	reagents.add_reagent(REAGENT_ID_MILK, 5)
 	reagents.add_reagent(REAGENT_ID_FLOUR, 5)
 	reagents.add_reagent(REAGENT_ID_SUGAR, 5)
@@ -77,7 +77,7 @@
 	if(!length(ice_types))
 		return ice_data
 	for(var/entry in ice_types)
-		UNTYPED_LIST_ADD(ice_data, list("index" = entry, "name" = get_flavour_name(entry), "amount_left" = product_types[entry], "ingredients" = get_ingredient_list(entry)))
+		UNTYPED_LIST_ADD(ice_data, list("index" = entry, "name" = get_flavour_name(entry), "amount_left" = LAZYACCESS(product_types, entry), "ingredients" = get_ingredient_list(entry)))
 	return ice_data
 
 /obj/machinery/icecream_vat/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -110,7 +110,7 @@
 				return TRUE
 			if(index_action < 7)
 				var/cone_name = get_flavour_name(index_action)
-				if(product_types[index_action] >= 1)
+				if(LAZYACCESS(product_types, index_action) >= 1)
 					product_types[index_action] -= 1
 					var/obj/item/reagent_containers/food/snacks/icecream/I = new(src.loc)
 					I.cone_type = cone_name
@@ -142,7 +142,7 @@
 	if(istype(O, /obj/item/reagent_containers/food/snacks/icecream))
 		var/obj/item/reagent_containers/food/snacks/icecream/I = O
 		if(!I.ice_creamed)
-			if(product_types[dispense_flavour] > 0)
+			if(LAZYACCESS(product_types, dispense_flavour) > 0)
 				src.visible_message("[icon2html(src,viewers(src))] " + span_info("[user] scoops delicious [flavour_name] icecream into [I]."))
 				product_types[dispense_flavour] -= 1
 				I.add_ice_cream(flavour_name)
@@ -169,7 +169,7 @@
 	if(amount)
 		for(var/R in get_ingredient_list(make_type))
 			reagents.remove_reagent(R, amount)
-		product_types[make_type] += amount
+		LAZYADDASSOC(product_types, make_type, amount)
 		var/flavour = get_flavour_name(make_type)
 		if(make_type > 4)
 			src.visible_message(span_info("[user] cooks up some [flavour] cones."))

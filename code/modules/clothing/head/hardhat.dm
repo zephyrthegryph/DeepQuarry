@@ -16,7 +16,7 @@
 	light_range = 4 //luminosity when on
 	light_cone_y_offset = 14
 	light_overlay = "hardhat_light"
-	armor = list(melee = 30, bullet = 5, laser = 20,energy = 10, bomb = 20, bio = 10, rad = 20)
+	armor_spec = "melee=30;bullet=5;laser=20;energy=10;bomb=20;bio=10;rad=20"
 	flags_inv = 0
 	siemens_coefficient = 0.9
 	actions_types = list(/datum/action/item_action/toggle_head_light)

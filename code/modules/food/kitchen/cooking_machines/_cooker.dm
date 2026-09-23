@@ -39,7 +39,7 @@
 			. += span_warning("It is switched off.")
 
 /obj/machinery/appliance/cooker/list_contents(mob/user)
-	if (cooking_objs.len)
+	if (length(cooking_objs))
 		var/string = "Contains...</br>"
 		var/num = 0
 		for (var/a in cooking_objs)
@@ -60,7 +60,7 @@
 	loss = (active_power_usage / resistance)*0.5
 	cooking_objs = list()
 	for (var/i = 0, i < max_contents, i++)
-		cooking_objs.Add(new /datum/cooking_item/(new container_type(src)))
+		LAZYADD(cooking_objs, new /datum/cooking_item/(new container_type(src)))
 	cooking = FALSE
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
@@ -83,7 +83,7 @@
 		heat_up()
 	else
 		var/turf/T = get_turf(src)
-		if (temperature > T.return_temperature())
+		if (temperature > T.get_temperature())
 			equalize_temperature()
 	..()
 	if(cooking)
@@ -93,7 +93,7 @@
 			return PROCESS_KILL
 		return
 	var/turf/ambient_turf = get_turf(src)
-	if(!ambient_turf || temperature <= ambient_turf.return_temperature())
+	if(!ambient_turf || temperature <= ambient_turf.get_temperature())
 		return PROCESS_KILL
 
 /obj/machinery/appliance/cooker/power_change()
@@ -142,7 +142,7 @@
 /obj/machinery/appliance/cooker/has_space(obj/item/I)
 	if(istype(I, /obj/item/reagent_containers/cooking_container))
 		//Containers can go into an empty slot
-		if(cooking_objs.len < max_contents)
+		if(length(cooking_objs) < max_contents)
 			return 1
 	else
 		//Any food items directly added need an empty container. A slot without a container cant hold food

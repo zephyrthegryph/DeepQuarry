@@ -6,8 +6,11 @@
 	blood_overlay_type = "coat"
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50"
+
+/obj/item/clothing/suit/storage/toggle/labcoat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/toggle/labcoat/red
 	name = "red labcoat"
@@ -86,7 +89,7 @@
 	desc = "A suit that protects against minor chemical spills. Offers slightly more protection against biohazards than the standard model. Has a green stripe on the shoulder."
 	icon_state = "labcoat_vir"
 	item_state_slots = list(slot_r_hand_str = "virologist_labcoat", slot_l_hand_str = "virologist_labcoat")
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 60, rad = 0)
+	armor_spec = "bio=60"
 
 /obj/item/clothing/suit/storage/toggle/labcoat/roboticist
 	name = JOB_ROBOTICIST + " labcoat"

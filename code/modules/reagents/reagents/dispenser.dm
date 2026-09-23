@@ -111,7 +111,7 @@
 
 	var/druggy = 0
 	var/adj_temp = 0
-	var/targ_temp = 310
+	var/targ_temp = BODYTEMP_NORMAL
 	var/halluci = 0
 
 	glass_name = REAGENT_ID_ETHANOL
@@ -174,7 +174,7 @@
 		if(druggy != 0)
 			M.druggy = max(M.druggy, druggy*3)
 
-		if(adj_temp > 0 && M.bodytemperature < targ_temp) // 310 is the normal bodytemp. 310.055
+		if(adj_temp > 0 && M.bodytemperature < targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
 		if(adj_temp < 0 && M.bodytemperature > targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -220,7 +220,7 @@
 		if(halluci)
 			M.hallucination = max(M.hallucination, halluci)
 
-		if(adj_temp > 0 && M.bodytemperature < targ_temp) // 310 is the normal bodytemp. 310.055
+		if(adj_temp > 0 && M.bodytemperature < targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
 		if(adj_temp < 0 && M.bodytemperature > targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -513,41 +513,41 @@
 		return
 	if(ishuman(M) && !isbelly(M.loc))
 		var/mob/living/carbon/human/H = M
-		if(H.head)
-			if(H.head.unacidable || is_type_in_list(H.head, GLOB.item_digestion_blacklist))
-				to_chat(H, span_danger("Your [H.head] protects you from the acid."))
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			if(H.get_equipped_item(SLOT_ID_HEAD).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_HEAD), GLOB.item_digestion_blacklist))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_HEAD)] protects you from the acid."))
 				remove_self(volume)
 				return
 			else if(removed > meltdose)
-				to_chat(H, span_danger("Your [H.head] melts away!"))
-				qdel(H.head)
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_HEAD)] melts away!"))
+				qdel(H.get_equipped_item(SLOT_ID_HEAD))
 				H.update_inv_head(1)
 				H.update_hair(1)
 				removed -= meltdose
 		if(removed <= 0)
 			return
 
-		if(H.wear_mask)
-			if(H.wear_mask.unacidable || is_type_in_list(H.wear_mask, GLOB.item_digestion_blacklist))
-				to_chat(H, span_danger("Your [H.wear_mask] protects you from the acid."))
+		if(H.get_equipped_item(SLOT_ID_MASK))
+			if(H.get_equipped_item(SLOT_ID_MASK).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_MASK), GLOB.item_digestion_blacklist))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_MASK)] protects you from the acid."))
 				remove_self(volume)
 				return
 			else if(removed > meltdose)
-				to_chat(H, span_danger("Your [H.wear_mask] melts away!"))
-				qdel(H.wear_mask)
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_MASK)] melts away!"))
+				qdel(H.get_equipped_item(SLOT_ID_MASK))
 				H.update_inv_wear_mask(1)
 				H.update_hair(1)
 				removed -= meltdose
 		if(removed <= 0)
 			return
 
-		if(H.glasses)
-			if(H.glasses.unacidable || is_type_in_list(H.glasses, GLOB.item_digestion_blacklist))
-				to_chat(H, span_danger("Your [H.glasses] partially protect you from the acid!"))
+		if(H.get_equipped_item(SLOT_ID_EYES))
+			if(H.get_equipped_item(SLOT_ID_EYES).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_EYES), GLOB.item_digestion_blacklist))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_EYES)] partially protect you from the acid!"))
 				removed /= 2
 			else if(removed > meltdose)
-				to_chat(H, span_danger("Your [H.glasses] melt away!"))
-				qdel(H.glasses)
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_EYES)] melt away!"))
+				qdel(H.get_equipped_item(SLOT_ID_EYES))
 				H.update_inv_glasses(1)
 				removed -= meltdose / 2
 		if(removed <= 0)

@@ -474,7 +474,7 @@
 	qdel(removed)
 
 	for(var/mob/living/carbon/human/l in view(src, min(7, round(sqrt(power/6))))) // If they can see it without mesons on.  Bad on them.
-		if(!istype(l.glasses, /obj/item/clothing/glasses/meson) || l.is_incorporeal()) //Only mesons can protect you! OR if they're not in the same plane of existence
+		if(!istype(l.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/meson) || l.is_incorporeal()) //Only mesons can protect you! OR if they're not in the same plane of existence
 			l.hallucination = max(0, min(200, l.hallucination + power * config_hallucination_power * sqrt( 1 / max(1,get_dist(l, src)) ) ) )
 
 	// At a power mult of 0.025 for range, this means a 1000power SM (about normal) will reach 25 tiles and be putting off rad pulses of 500. With 0 protection, you have a 10% chance of getting hit.
@@ -581,8 +581,8 @@
 		tgui_interact(user)
 	return
 
-/obj/machinery/power/supermatter/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/power/supermatter
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/power/supermatter/attack_hand(mob/user as mob)
 	user.visible_message(span_warning("\The [user] reaches out and touches \the [src], inducing a resonance... [user.p_Their()] body starts to glow and bursts into flames before flashing into ash."),\

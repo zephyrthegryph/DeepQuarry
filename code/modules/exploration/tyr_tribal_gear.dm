@@ -154,7 +154,7 @@
 	icon = 'icons/mob/tribal_gear.dmi'
 	icon_override = 'icons/mob/tribal_gear.dmi'
 	icon_state = "lilly_cloak"
-	armor = list(melee = 20, bullet = 20, laser = 20, energy = 20, bomb = 0, bio = 60, rad = 60) //Seemingly medicore, but tack on the 20% chance to completly negate something and you get something that is average.
+	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bio=60;rad=60" //Seemingly medicore, but tack on the 20% chance to completly negate something and you get something that is average.
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS //Head be vunerable but cloak covers the other bits.
 	var/block_chance = 20
 
@@ -282,7 +282,7 @@
 /obj/item/melee/energy/tyr_katar/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(active)
 		. = ..()
-		switch(user.a_intent)
+		switch(user.use_stance())
 			if(I_GRAB)
 				target.adjust_fire_stacks(7)
 				target.ignite_mob()
@@ -331,7 +331,7 @@
 /obj/item/melee/energy/tyr_hammer/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(active)
 		. = ..()
-		switch(user.a_intent)
+		switch(user.use_stance())
 			if(I_GRAB)
 				user.mend(TREAT_BURN_CARE, 5)
 				user.mend(TREAT_TISSUE_REPAIR, 5)

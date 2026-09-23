@@ -11,9 +11,6 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
-/obj/machinery/button/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/button/attackby(obj/item/W, mob/user as mob)
 	return attack_hand(user)
 

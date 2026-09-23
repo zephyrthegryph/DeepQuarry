@@ -27,7 +27,7 @@
 	return ..()
 
 /obj/item/plastique/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/multitool) || istype(I, /obj/item/assembly/signaler))
+	if(I.has_tool_quality(TOOL_MULTITOOL) || istype(I, /obj/item/assembly/signaler))
 		wires.Interact(user)
 	else
 		return ..()

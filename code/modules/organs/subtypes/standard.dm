@@ -188,7 +188,7 @@
 
 /obj/item/organ/external/foot/removed()
 	if(owner)
-		owner.drop_from_inventory(owner.shoes)
+		owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_SHOES))
 	..()
 
 /obj/item/organ/external/foot/handle_germ_effects()
@@ -238,7 +238,7 @@
 
 /obj/item/organ/external/hand/removed()
 	if(owner)
-		owner.drop_from_inventory(owner.gloves)
+		owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_GLOVES))
 	..()
 
 /obj/item/organ/external/hand/handle_germ_effects()
@@ -311,11 +311,11 @@
 	if(owner)
 		if(iscarbon(owner))
 			name = "[owner.real_name]'s head"
-			owner.drop_from_inventory(owner.glasses)
-			owner.drop_from_inventory(owner.head)
-			owner.drop_from_inventory(owner.l_ear)
-			owner.drop_from_inventory(owner.r_ear)
-			owner.drop_from_inventory(owner.wear_mask)
+			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_EYES))
+			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_HEAD))
+			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_EAR_L))
+			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_EAR_R))
+			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_MASK))
 			spawn(1)
 				owner.update_hair()
 	get_icon()

@@ -63,7 +63,7 @@ handles linking back and forth.
 	if (connect_to_silo)
 		silo = GLOB.ore_silo_default
 		if (silo)
-			silo.ore_connected_machines += src
+			LAZYADD(silo.ore_connected_machines, src)
 			mat_container = silo.materials
 
 	if(!mat_container && allow_standalone)
@@ -96,10 +96,10 @@ handles linking back and forth.
 	if(isnull(silo))
 		return
 
-	if(!silo.holds[src])
-		silo.holds[src] = TRUE
+	if(!LAZYACCESS(silo.holds, src))
+		LAZYSET(silo.holds, src, TRUE)
 	else
-		silo.holds -= src
+		LAZYREMOVE(silo.holds, src)
 
 /**
  * Sets the storage size for local materials when not linked with silo
@@ -117,7 +117,7 @@ handles linking back and forth.
 	if(isnull(silo))
 		return
 
-	silo.ore_connected_machines -= src
+	LAZYREMOVE(silo.ore_connected_machines, src)
 	silo = null
 	mat_container = null
 
@@ -139,8 +139,8 @@ handles linking back and forth.
 		var/obj/machinery/ore_silo/new_silo = M.buffer
 		var/datum/component/material_container/new_container = new_silo.GetComponent(/datum/component/material_container)
 		if (silo)
-			silo.ore_connected_machines -= src
-			silo.holds -= src
+			LAZYREMOVE(silo.ore_connected_machines, src)
+			LAZYREMOVE(silo.holds, src)
 		else if (mat_container)
 			//transfer all mats to silo. whatever cannot be transfered is dumped out as sheets
 			if(mat_container.total_amount())
@@ -152,15 +152,16 @@ handles linking back and forth.
 					mat_container.materials[mat] = 0
 			qdel(mat_container)
 		silo = new_silo
-		silo.ore_connected_machines += src
+		LAZYADD(silo.ore_connected_machines, src)
 		mat_container = new_container
 		to_chat(user, span_notice("You connect [parent] to [silo] from the multitool's buffer."))
 		return TRUE
 
 /datum/component/remote_materials/proc/on_item_insert(datum/source, obj/item/target, mob/living/user)
 	SIGNAL_HANDLER
-	if(istype(target, /obj/item/multitool))
-		return OnMultitool(source, user, target)
+	var/obj/item/multitool/multitool = target.get_multitool()
+	if(multitool)
+		return OnMultitool(source, user, multitool)
 
 	if(istype(target, /obj/item/forensics))
 		return FALSE
@@ -202,7 +203,7 @@ handles linking back and forth.
 
 /// returns TRUE if this connection put on hold by the silo
 /datum/component/remote_materials/proc/on_hold()
-	return check_z_level() ? silo.holds[src] : FALSE
+	return check_z_level() ? LAZYACCESS(silo.holds, src) : FALSE
 
 /**
  * Check if this connection can use any materials from the silo

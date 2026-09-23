@@ -13,7 +13,7 @@
 	var/tag_airlock_mech_sensor
 	var/tag_shuttle_mech_sensor
 	var/tag_secure = 0
-	var/list/dummy_terminals = list()
+	var/list/dummy_terminals
 	var/cycle_to_external_air = 0
 	valid_actions = list("cycle_ext", "cycle_int", "force_ext", "force_int", "abort", "purge", "secure")
 	layer = ABOVE_WINDOW_LAYER

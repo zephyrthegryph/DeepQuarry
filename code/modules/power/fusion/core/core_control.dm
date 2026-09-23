@@ -8,7 +8,7 @@
 
 	var/id_tag = ""
 	var/scan_range = 25
-	var/list/connected_devices = list()
+	var/list/connected_devices
 	var/obj/machinery/power/fusion_core/cur_viewed_device
 	var/datum/tgui_module/rustcore_monitor/monitor
 
@@ -23,14 +23,11 @@
 
 /obj/machinery/computer/fusion_core_control/attackby(obj/item/thing, mob/user)
 	..()
-	if(istype(thing, /obj/item/multitool))
+	if(thing.has_tool_quality(TOOL_MULTITOOL))
 		var/new_ident = sanitize_text(tgui_input_text(user, "Enter a new ident tag.", "Core Control", monitor.core_tag))
 		if(new_ident && user.Adjacent(src))
 			monitor.core_tag = new_ident
 		return
-
-/obj/machinery/computer/fusion_core_control/attack_ai(mob/user)
-	attack_hand(user)
 
 /obj/machinery/computer/fusion_core_control/attack_hand(mob/user as mob)
 	..()

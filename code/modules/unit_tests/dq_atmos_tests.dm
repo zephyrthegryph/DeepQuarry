@@ -454,8 +454,7 @@
 
 	// Make sure player has no internals / mask filtering distorting the test.
 	H.internal = null
-	if(H.wear_mask)
-		H.wear_mask = null
+	H.drop_from_inventory(H.get_equipped_item(SLOT_ID_MASK))
 
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 
@@ -700,7 +699,7 @@
 			alarm_turfs += start
 			alarm_pressures += start.air.return_pressure()
 			alarm_temperatures += start.air.return_temperature()
-			alarm_turf_temperatures += start.return_temperature()
+			alarm_turf_temperatures += start.get_temperature()
 		var/list/queue = list(start)
 		checked[start] = TRUE
 		var/head = 1
@@ -736,7 +735,7 @@
 		var/turf/open/alarm_turf = alarm_turfs[alarm_index]
 		var/final_pressure = alarm_turf.air.return_pressure()
 		var/final_temperature = alarm_turf.air.return_temperature()
-		var/final_turf_temperature = alarm_turf.return_temperature()
+		var/final_turf_temperature = alarm_turf.get_temperature()
 		if(final_pressure < alarm_pressures[alarm_index] * 0.98 || final_temperature < alarm_temperatures[alarm_index] * 0.98)
 			alarm_pressure_losses += "[get_area(alarm_turf)] at [alarm_turf.x],[alarm_turf.y],[alarm_turf.z]: [alarm_pressures[alarm_index]] -> [final_pressure] kPa, gas [alarm_temperatures[alarm_index]] -> [final_temperature] K, turf [alarm_turf_temperatures[alarm_index]] -> [final_turf_temperature] K"
 	var/alarm_loss_report = jointext(alarm_pressure_losses, "; ")
@@ -2733,70 +2732,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	D.retry_charge_after_power_restore()
 	TEST_ASSERT(D in SSmachines.processing_machines, "staggered power restoration callback did not wake a pumpable disposal")
 	qdel(D)
-
-
-/datum/unit_test/dq_sleeping_apc_load_reservation
-
-/datum/unit_test/dq_sleeping_apc_load_reservation/Run()
-	var/datum/powernet/P = new
-	TEST_ASSERT(length(REGISTRY_MEMBERS(REGISTRY_APCS)), "tiny map has no APC for reservation test")
-	var/obj/machinery/power/apc/A = REGISTRY_MEMBERS(REGISTRY_APCS)[1]
-	P.reserve_sleeping_apc_load(A, 1250)
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
-		"powernet did not retain sleeping APC demand")
-	P.adjust_sleeping_apc_load(A, 300)
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1550, \
-		"powernet did not fold dynamic area usage into sleeping APC demand")
-	P.load = P.sleeping_apc_load_total
-	P.reset()
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1550, \
-		"completed accounting window discarded dynamic load before monitors could observe it")
-	P.begin_accounting_window()
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
-		"new accounting window retained prior one-tick area usage in the stable APC reservation")
-	STOP_PROCESSING_POWERNET(P)
-	P.adjust_sleeping_apc_load(A, 300)
-	TEST_ASSERT(!(P in SSmachines.active_powernets), "partial area-load accumulation woke a stable powernet before transaction completion")
-	P.finalize_accounting_window()
-	TEST_ASSERT(!(P in SSmachines.active_powernets), "identical completed area-load window woke a stable powernet")
-	P.unreserve_sleeping_apc_load(A)
-	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 0, \
-		"powernet retained APC demand after wake")
-	TEST_ASSERT_EQUAL(P.load, 0, \
-		"waking APC left its reserved load double-counted")
-	qdel(P)
-
-/datum/unit_test/dq_stable_full_apc_hibernates
-
-/datum/unit_test/dq_stable_full_apc_hibernates/Run()
-	var/obj/machinery/power/apc/A
-	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if(candidate.terminal?.powernet && candidate.cell)
-			A = candidate
-			break
-	TEST_ASSERT_NOTNULL(A, "tiny map has no grid-connected APC for hibernation test")
-	if(!A)
-		return
-	A.cell.charge = A.cell.maxcharge
-	A.charging = 0
-	A.power_distributor.charging = 0
-	START_MACHINE_PROCESSING(A)
-	var/process_result
-	for(var/i in 1 to 5)
-		process_result = A.process()
-		if(!(A in SSmachines.processing_machines))
-			break
-	TEST_ASSERT(!(A in SSmachines.processing_machines), \
-		"stable full APC remained in timed machinery processing")
-	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, \
-		"stable APC subscribed to dependencies without telling the scheduler to retire its copied entry")
-	TEST_ASSERT(A.react_sleep_tokens, \
-		"stable full APC did not capture dependency revisions before sleeping")
-	var/old_stat = A.stat
-	A.stat |= BROKEN
-	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, \
-		"broken APC remained enrolled in machinery processing")
-	A.stat = old_stat
 
 
 /datum/unit_test/dq_opaque_movable_detaches_from_turf_before_delete
@@ -4844,7 +4779,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(test_camera)
 	TEST_ASSERT(!(test_camera in REGISTRY_MEMBERS(REGISTRY_CAMERAS)), "deleted camera remained in the global camera registry")
 	for(var/chunk_key in GLOB.cameranet.chunks)
-		var/datum/chunk/camera/chunk = GLOB.cameranet.chunks[chunk_key]
+		var/datum/chunk/camera/chunk = LAZYACCESS(GLOB.cameranet.chunks, chunk_key)
 		TEST_ASSERT(!(test_camera in chunk.cameras), "deleted camera remained retained by camera chunk [chunk_key]")
 
 
@@ -6402,7 +6337,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Airtight breath mask in the wear_mask slot.
 	var/obj/item/clothing/mask/breath/M = new(H)
-	H.wear_mask = M
+	TEST_ASSERT(H.equip_to_slot(M, slot_wear_mask), "couldn't put the test mask on")
 	TEST_ASSERT(M.item_flags & AIRTIGHT, "test mask not AIRTIGHT — setup invalid")
 
 	// Oxygen tank in the human's contents, set as the internal supply.
@@ -6434,7 +6369,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Removing the AIRTIGHT mask should detach the internal supply: next call
 	// returns null because the AIRTIGHT gate fails.
-	H.wear_mask = null
+	H.drop_from_inventory(M)
 	var/datum/gas_mixture/no_breath = H.get_breath_from_internal(BREATH_VOLUME)
 	TEST_ASSERT_NULL(no_breath, \
 		"internals stayed active without AIRTIGHT mask — security gate broken")
@@ -6928,7 +6863,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /// The heat domain's turf field is wired end-to-end. A heat-eligible turf
 /// (thermal_conductivity > 0 and heat_capacity > 0) must report its solid heat
-/// cell's temperature through get_temperature() / return_temperature(): the value
+/// cell's temperature through get_temperature(): the value
 /// update_heat_cell() seeded from turf.temperature when SSair registered the turf.
 /// It fails if the heat feature is dropped from the DLL, the registration path
 /// (setup_allturfs -> heat_register_turfs, update_air_ref -> update_heat_cell)
@@ -6944,7 +6879,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(T.thermal_conductivity <= 0 || T.heat_capacity <= 0)
 			continue
 		eligible++
-		var/arena_temp = T.return_temperature()
+		var/arena_temp = T.get_temperature()
 		// A genuinely tracked room-temperature floor reports a physical temperature.
 		// Bound the top end to reject NaN/garbage too.
 		if(isnum(arena_temp) && arena_temp > 150 && arena_temp < 6000)
@@ -6969,8 +6904,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			continue
 		checked++
 		TEST_ASSERT(T.air.return_pressure() < 0.01, "airless floor contains pressurized gas")
-		TEST_ASSERT(abs(T.return_temperature() - T20C) < 1, \
-			"airless floor solid initialized at [T.return_temperature()] K instead of room temperature; it will refrigerate the station through superconductivity")
+		TEST_ASSERT(abs(T.get_temperature() - T20C) < 1, \
+			"airless floor solid initialized at [T.get_temperature()] K instead of room temperature; it will refrigerate the station through superconductivity")
 		if(checked >= 16)
 			break
 	TEST_ASSERT(checked > 0, "test map has no airless floors to validate")

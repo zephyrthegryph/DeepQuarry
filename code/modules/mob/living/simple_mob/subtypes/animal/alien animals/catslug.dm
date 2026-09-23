@@ -75,10 +75,7 @@
 
 /datum/say_list/catslug	//Quiet quiet, no noise! We speak in sign so only people with sign will understand our questions.
 	speak = list("Have any porl?", "What is that?", "Where is this?", "What are you doing?", "How did you get here?", "Don't go into the rain.")
-	emote_hear = list()
 	emote_see = list("turns their head.", "looks at you.", "watches something unseen.", "sways its tail.", "flicks its ears.", "stares at you.", "gestures an unintelligible message.", "points into the distance!")
-	say_maybe_target = list()
-	say_got_target = list()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/load_default_bellies()
 	. = ..()
@@ -158,8 +155,8 @@
 
 	if(stat == DEAD)
 		return ..()
-	if(M.a_intent != I_HELP)
-		if(M.a_intent == I_GRAB && hat)
+	if(!IS_HELPING(M))
+		if(IS_GRABBING(M) && hat)
 			remove_hat(M)
 			return
 		return ..()
@@ -345,7 +342,7 @@
 
 	if(stat == DEAD)
 		return ..()
-	if(M.a_intent != I_HELP)
+	if(!IS_HELPING(M))
 		return ..()
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)
@@ -444,7 +441,7 @@
 
 	if(stat == DEAD)
 		return ..()
-	if(M.a_intent != I_HELP)
+	if(!IS_HELPING(M))
 		return ..()
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)
@@ -524,15 +521,7 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 10		//"Trained" security member, so they can hit that little bit harder
 	taser_kill = 0		//Shouldn't be weak to accidental friendly fire from other officers
-	armor = list(
-		"melee" = 15,
-		"bullet" = 0,
-		"laser" = 0,
-		"energy" = 0,
-		"bomb" = 0,
-		"bio" = 0,
-		"rad" = 0
-		)		//Similarly, \some\ armour values for a smidge more survivability compared to other catslugs.
+	armor_spec = "melee=15" //Similarly, \some\ armour values for a smidge more survivability compared to other catslugs.
 	myid_access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_FORENSICS_LOCKERS, ACCESS_MAINT_TUNNELS)
 
 /datum/say_list/catslug/custom/gatslug
@@ -719,15 +708,7 @@
 	taser_kill = 0
 	mob_size = MOB_MEDIUM		//As funny as picking up deathslugs & throwing them at people to be merked would be, I'm not willing to sprite their holders. Something something hardsuit heavy can be the "IC" reason for this.
 	siemens_coefficient = 0
-	armor = list(
-		"melee" = 60,
-		"bullet" = 50,
-		"laser" = 50,
-		"energy" = 40,
-		"bomb" = 40,
-		"bio" = 100,
-		"rad" = 100
-		)
+	armor_spec = "melee=60;bullet=50;laser=50;energy=40;bomb=40;bio=100;rad=100"
 
 	minbodytemp = 0
 	maxbodytemp = 5000
@@ -759,15 +740,7 @@
 	melee_damage_upper = 20
 	mob_size = MOB_MEDIUM		//Something something hardsuits are heavy.
 	siemens_coefficient = 0
-	armor = list(
-		"melee" = 80,
-		"bullet" = 65,
-		"laser" = 50,
-		"energy" = 15,
-		"bomb" = 80,
-		"bio" = 100,
-		"rad" = 60
-		)
+	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=60"
 
 	minbodytemp = 0
 	maxbodytemp = 5000
@@ -800,15 +773,7 @@
 	taser_kill = 0
 	mob_size = MOB_MEDIUM		//Something something hardsuits are heavy.
 	siemens_coefficient = 0
-	armor = list(
-		"melee" = 60,
-		"bullet" = 50,
-		"laser" = 30,
-		"energy" = 15,
-		"bomb" = 30,
-		"bio" = 100,
-		"rad" = 100
-		)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100"
 
 	minbodytemp = 0
 	maxbodytemp = 5000

@@ -3,7 +3,7 @@
 	name = "red space helmet"
 	icon_state = "syndicate"
 	desc = "A crimson helmet sporting clean lines and durable plating. Engineered to look menacing."
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 30, bio = 30, rad = 30)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 	siemens_coefficient = 0.6
 
 /obj/item/clothing/suit/space/syndicate
@@ -11,12 +11,15 @@
 	icon_state = "syndicate"
 	desc = "A crimson spacesuit sporting clean lines and durable plating. Robust, reliable, and slightly suspicious."
 	w_class = ITEMSIZE_NORMAL
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
 	slowdown = 0.5
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 30, bio = 30, rad = 30)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 	siemens_coefficient = 0.6
 
 //Green syndicate space suit
+
+/obj/item/clothing/suit/space/syndicate/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/head/helmet/space/syndicate/green
 	name = "green space helmet"
 	desc = "A green helmet sporting clean lines and durable plating. Engineered to look menacing."

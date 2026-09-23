@@ -20,7 +20,7 @@
 	var/list/allowed_projectile_typecache = list(/obj/item/projectile/beam)
 	var/rotation_angle = -1
 	var/can_decon = TRUE
-	var/list/has_projectiles = list()
+	var/list/has_projectiles
 	var/bullet_act_in_progress = FALSE
 
 /obj/structure/reflector/Initialize(mapload)
@@ -55,7 +55,7 @@
 	UNTIL(!bullet_act_in_progress)
 	var/list/angles = list()
 	for(var/obj/item/projectile/P in has_projectiles)
-		angles[num2text(has_projectiles[P])] += P.damage
+		angles[num2text(LAZYACCESS(has_projectiles, P))] += P.damage
 	for(var/angle in angles)
 		var/obj/item/projectile/P = new fires_projectile(src)
 		P.firer = src
@@ -74,7 +74,7 @@
 			add_overlay(deflector_overlay)
 
 /obj/structure/reflector/proc/redirect_projectile(obj/item/projectile/P,pangle)
-	has_projectiles[P] = pangle
+	LAZYSET(has_projectiles, P, pangle)
 	qdel(P)
 
 /obj/structure/reflector/set_dir(new_dir)
@@ -105,13 +105,13 @@
 	if(admin)
 		return
 
-	if(W.is_screwdriver())
+	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		can_rotate = !can_rotate
 		to_chat(user, span_notice("You [can_rotate ? "unlock" : "lock"] [src]'s rotation."))
 		playsound(W, W.usesound, 50, 1)
 		return
 
-	if(W.is_wrench() && can_decon)
+	if(W.has_tool_quality(TOOL_WRENCH) && can_decon)
 		if(anchored)
 			to_chat(user, span_warning("Unweld [src] from the floor first!"))
 			return
@@ -123,8 +123,8 @@
 			if(buildstackamount)
 				new buildstacktype(drop_location(), buildstackamount)
 			qdel(src)
-	else if(istype(W, /obj/item/weldingtool))
-		var/obj/item/weldingtool/I = W
+	else if(W.get_welder())
+		var/obj/item/weldingtool/I = W.get_welder()
 		if(!anchored)
 			if(!I.get_fuel())
 				to_chat(user, span_warning("You require fuel to weld the [src]!"))

@@ -97,7 +97,7 @@
 		holder.ai_brain.lose_target()
 		holder.ai_brain.set_hostile(FALSE)
 	rabid = FALSE
-	holder.a_intent = I_HELP
+	holder.set_use_stance(I_HELP)
 
 // ---------------------------------------------------------------------------
 // Command logic — returns SLIME_COMMAND_* code or FALSE.

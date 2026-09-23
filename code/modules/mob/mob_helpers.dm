@@ -59,21 +59,21 @@
 /proc/iscuffed(A)
 	if(istype(A, /mob/living/carbon))
 		var/mob/living/carbon/C = A
-		if(C.handcuffed)
+		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			return 1
 	return 0
 
 /proc/hassensorlevel(A, level)
 	var/mob/living/carbon/human/H = A
-	if(istype(H) && istype(H.w_uniform, /obj/item/clothing/under))
-		var/obj/item/clothing/under/U = H.w_uniform
+	if(istype(H) && istype(H.get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
+		var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
 		return U.sensor_mode >= level
 	return 0
 
 /proc/getsensorlevel(A)
 	var/mob/living/carbon/human/H = A
-	if(istype(H) && istype(H.w_uniform, /obj/item/clothing/under))
-		var/obj/item/clothing/under/U = H.w_uniform
+	if(istype(H) && istype(H.get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
+		var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
 		return U.sensor_mode
 	return SUIT_SENSOR_OFF
 
@@ -374,50 +374,6 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 /mob/proc/abiotic(full_body = 0)
 	return 0
 
-//converts intent-strings into numbers and back
-/proc/intent_numeric(argument)
-	if(istext(argument))
-		switch(argument)
-			if(I_HELP)		return 0
-			if(I_DISARM)	return 1
-			if(I_GRAB)		return 2
-			else			return 3
-	else
-		switch(argument)
-			if(0)			return I_HELP
-			if(1)			return I_DISARM
-			if(2)			return I_GRAB
-			else			return I_HURT
-
-//change a mob's act-intent. Input the intent as a string such as I_HELP or use "right"/"left
-/mob/verb/a_intent_change(input as text)
-	set name = "a-intent"
-	set hidden = 1
-
-	if(isliving(src) && !isrobot(src))
-		switch(input)
-			if(I_HELP,I_DISARM,I_GRAB,I_HURT)
-				a_intent = input
-			if("right")
-				a_intent = intent_numeric((intent_numeric(a_intent)+1) % 4)
-			if("left")
-				a_intent = intent_numeric((intent_numeric(a_intent)+3) % 4)
-		if(hud_used && hud_used.action_intent)
-			hud_used.action_intent.icon_state = "intent_[a_intent]"
-
-	else if(isrobot(src))
-		switch(input)
-			if(I_HELP)
-				a_intent = I_HELP
-			if(I_HURT)
-				a_intent = I_HURT
-			if("right","left")
-				a_intent = intent_numeric(intent_numeric(a_intent) - 3)
-		if(hud_used && hud_used.action_intent)
-			if(a_intent == I_HURT)
-				hud_used.action_intent.icon_state = I_HURT
-			else
-				hud_used.action_intent.icon_state = I_HELP
 
 /proc/is_blind(A)
 	if(istype(A, /mob/living/carbon))
@@ -570,7 +526,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	return 0
 
 /mob/living/carbon/assess_perp(obj/access_obj, check_access, auth_weapons, check_records, check_arrest)
-	if(handcuffed)
+	if(get_equipped_item(SLOT_ID_HANDCUFFED))
 		return SAFE_PERP
 
 	return ..()
@@ -592,13 +548,13 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		threatcount += 4
 
 	if(auth_weapons && !access_obj.allowed(src))
-		if(istype(l_hand, /obj/item/gun) || istype(l_hand, /obj/item/melee) && !istype(l_hand, /obj/item/gun/energy/floragun) && !istype(l_hand, /obj/item/gun/energy/sizegun) && !istype(l_hand, /obj/item/gun/launcher/confetti_cannon) && !istype(l_hand, /obj/item/gun/energy/lasertag)) //Specific guns to the exclusion list.
+		if(istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/melee) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/floragun) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/sizegun) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/launcher/confetti_cannon) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/lasertag)) //Specific guns to the exclusion list.
 			threatcount += 4
 
-		if(istype(r_hand, /obj/item/gun) || istype(r_hand, /obj/item/melee))
+		if(istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/melee))
 			threatcount += 4
 
-		if(istype(belt, /obj/item/gun) || istype(belt, /obj/item/melee))
+		if(istype(get_equipped_item(SLOT_ID_BELT), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_BELT), /obj/item/melee))
 			threatcount += 2
 
 		if(species.name != SPECIES_HUMAN)

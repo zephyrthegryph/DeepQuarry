@@ -1664,7 +1664,7 @@
 
 /obj/structure/sign/flag/attackby(obj/item/W, mob/user)
 	..()
-	if(istype(W, /obj/item/flame/lighter) || istype(W, /obj/item/weldingtool))
+	if(istype(W, /obj/item/flame/lighter) || W.has_tool_quality(TOOL_WELDER))
 		visible_message(span_warning("\The [user] starts to burn \the [src] down!"))
 		if(!do_after(user, 2 SECONDS, target = src))
 			return FALSE

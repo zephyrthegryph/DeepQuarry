@@ -22,7 +22,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 /datum/component/antag/changeling
 	var/list/datum/absorbed_dna/absorbed_dna = list()
-	var/list/absorbed_languages = list() // Necessary because of set_species stuff
+	var/list/absorbed_languages // Necessary because of set_species stuff
 	var/absorbedcount = 0
 	var/lingabsorbedcount = 1	//Starts at one, because that's us
 	var/chem_charges = 20
@@ -36,13 +36,13 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/max_geneticpoints = 7
 	var/readapts = 1
 	var/max_readapts = 2
-	var/list/purchased_powers = list()
+	var/list/purchased_powers
 	var/mimicing = ""
 	var/cloaked = FALSE
 	var/is_reviving = FALSE
 	var/armor_deployed = FALSE //This is only used for changeling_generic_equip_all_slots() at the moment.
 	var/recursive_enhancement = FALSE //Used to power up other abilities from the ling power with the same name.
-	var/list/purchased_powers_history = list() //Used for round-end report, includes respec uses too.
+	var/list/purchased_powers_history //Used for round-end report, includes respec uses too.
 	var/thermal_sight = FALSE	// Is our Vision Augmented? With thermals?
 	var/datum/changeling_panel/power_panel //Our changeling eveolution panel. Generated the first time we try to open the panel.
 	dupe_mode = COMPONENT_DUPE_UNIQUE //Only the first changeling application survives!
@@ -131,7 +131,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		return
 
 	for(var/language in newDNA.languages)
-		comp.absorbed_languages |= language
+		LAZYOR(comp.absorbed_languages, language)
 
 	changeling_update_languages(comp.absorbed_languages)
 
@@ -176,7 +176,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 					)
 
 	for(var/language in languages)
-		comp.absorbed_languages |= language
+		LAZYOR(comp.absorbed_languages, language)
 
 	var/mob/living/carbon/human/H = src
 	if(istype(H))
@@ -385,10 +385,10 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 	geneticpoints -= Thepower.genomecost
 
-	purchased_powers += Thepower
+	LAZYADD(purchased_powers, Thepower)
 
 	if(Thepower.genomecost > 0)
-		purchased_powers_history.Add("[Pname] ([Thepower.genomecost] points)")
+		LAZYADD(purchased_powers_history, "[Pname] ([Thepower.genomecost] points)")
 
 	if(Thepower.make_hud_button && Thepower.isVerb)
 		if(owner.ability_master)

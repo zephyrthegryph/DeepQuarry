@@ -5,7 +5,7 @@
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "clockwork_rig"
 	slot_flags = SLOT_BELT
-	armor = list(melee = 70, bullet = 55, laser = 65, energy = 65, bomb = 65, bio = 0, rad = 100)
+	armor_spec = "melee=70;bullet=55;laser=65;energy=65;bomb=65;rad=100"
 	slowdown = 2
 	offline_slowdown = 4
 	offline_vision_restriction = 1
@@ -20,9 +20,6 @@
 	boot_type = /obj/item/clothing/shoes/magboots/rig/ch/clockwork
 	cell_type =  /obj/item/cell/clockwork
 
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear
-		)
-
 	initial_modules = list(
 		/obj/item/rig_module/ai_container,
 		/obj/item/rig_module/maneuvering_jets,
@@ -31,6 +28,11 @@
 
 	req_access = list()
 	req_one_access = list()
+
+/obj/item/rig/ch/clockwork/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear
+		)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/rig/ch/clockwork
 	name = "cuirass"

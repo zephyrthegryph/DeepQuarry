@@ -80,7 +80,7 @@
 	if(!lit || operating)
 		return
 	if(user && user.get_active_hand() == src)
-		if(user.a_intent == I_HELP && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
+		if(IS_HELPING(user) && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
 			to_chat(user, span_warning("You refrain from firing \the [src] as your intent is set to help."))
 			return
 		if(check_fuel())

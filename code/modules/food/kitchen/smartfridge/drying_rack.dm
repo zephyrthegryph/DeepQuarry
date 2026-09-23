@@ -5,6 +5,8 @@
 	icon_state = "drying_rack"
 	icon_base = "drying_rack"
 	circuit = /obj/item/circuitboard/smartfridge/drying
+	// dry() works on each real item in turn.
+	collapse_stock = FALSE
 
 /obj/machinery/smartfridge/drying_rack/Initialize(mapload)
 	. = ..()

@@ -5,7 +5,7 @@
 	valid_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	restricted_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	flags = THICKMATERIAL
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 	flags_inv = HIDEEARS|BLOCKHEADHAIR
 	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
@@ -20,7 +20,7 @@
 	name = "\improper Solar Confederate Government helmet"
 	desc = "A helmet painted in Peacekeeper blue. Stands out like a sore thumb."
 	icon_state = "helmet_sol"
-	armor = list(melee = 50, bullet = 50, laser = 50,energy = 25, bomb = 30, bio = 0, rad = 0)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=25;bomb=30"
 	valid_accessory_slots = null
 
 /obj/item/clothing/head/helmet/solgov/command
@@ -47,14 +47,14 @@
 	name = "tactical helmet"
 	desc = "A tan helmet made from advanced ceramic. Comfortable and robust."
 	icon_state = "helmet_tac"
-	armor = list(melee = 50, bullet = 60, laser = 60, energy = 45, bomb = 30, bio = 0, rad = 0)
+	armor_spec = "melee=50;bullet=60;laser=60;energy=45;bomb=30"
 	siemens_coefficient = 0.6
 
 /obj/item/clothing/head/helmet/merc
 	name = "combat helmet"
 	desc = "A heavily reinforced helmet painted with red markings. Feels like it could take a lot of punishment."
 	icon_state = "helmet_merc"
-	armor = list(melee = 70, bullet = 70, laser = 70, energy = 35, bomb = 30, bio = 0, rad = 0)
+	armor_spec = "melee=70;bullet=70;laser=70;energy=35;bomb=30"
 	siemens_coefficient = 0.5
 
 /obj/item/clothing/head/helmet/riot
@@ -62,7 +62,7 @@
 	desc = "It's a helmet specifically designed to protect against close range attacks."
 	icon_state = "riot"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor = list(melee = 80, bullet = 10, laser = 10, energy = 10, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
 	siemens_coefficient = 0.7
 	valid_accessory_slots = null
 	actions_types = list(/datum/action/item_action/toggle_visor)
@@ -86,7 +86,7 @@
 	desc = "It's a helmet specifically designed to protect against energy projectiles."
 	icon_state = "helmet_reflec"
 	item_state_slots = list(slot_r_hand_str = "helmet", slot_l_hand_str = "helmet")
-	armor = list(melee = 10, bullet = 10, laser = 80 ,energy = 50, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
 	siemens_coefficient = 0.1
 	valid_accessory_slots = null
 
@@ -95,7 +95,7 @@
 	desc = "It's a helmet specifically designed to protect against ballistic projectiles."
 	icon_state = "helmet_bulletproof"
 	item_state_slots = list(slot_r_hand_str = "helmet", slot_l_hand_str = "helmet")
-	armor = list(melee = 10, bullet = 80, laser = 10 ,energy = 10, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
 	siemens_coefficient = 0.7
 	valid_accessory_slots = null
 
@@ -104,7 +104,7 @@
 	desc = "It's a general purpose combat helmet, designed to protect against typical dangers to your head."
 	icon_state = "helmet_combat"
 	item_state_slots = list(slot_r_hand_str = "helmet", slot_l_hand_str = "helmet")
-	armor = list(melee = 50, bullet = 50, laser = 50 ,energy = 30, bomb = 30, bio = 0, rad = 0)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"
 	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
 	siemens_coefficient = 0.6
 	valid_accessory_slots = null
@@ -113,7 +113,7 @@
 	name = "tactical light helmet"
 	desc = "A tan helmet made from advanced ceramic with an integrated tactical flashlight."
 	icon_state = "flexitac"
-	armor = list(melee = 40, bullet = 40, laser = 60, energy = 35, bomb = 30, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 	siemens_coefficient = 0.6
 	light_range = 6
 	light_overlay = "helmet_light_dual_green"
@@ -128,13 +128,13 @@
 	flags = THICKMATERIAL
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0.9
-	armor = list(melee = 30, bullet = 20, laser = 20, energy = 20, bomb = 35, bio = 75, rad = 35)
+	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
 
 /obj/item/clothing/head/helmet/swat
 	name = "\improper SWAT helmet"
 	desc = "They're often used by highly trained SWAT Officers."
 	icon_state = "swat"
-	armor = list(melee = 80, bullet = 60, laser = 50,energy = 25, bomb = 50, bio = 10, rad = 0)
+	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
 	cold_protection = HEAD
 	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
@@ -145,18 +145,18 @@
 	desc = "It's quite larger than your head, but it might still protect it."
 	icon_state = "alienhelmet"
 	siemens_coefficient = 0.4
-	armor = list(melee = 50, bullet = 50, laser = 50, energy = 50, bomb = 50, bio = 0, rad = 40)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;rad=40"
 	valid_accessory_slots = null
 
 /obj/item/clothing/head/helmet/alien/tank
 	name = "alien warhelm"
-	armor = list(melee = 70, bullet = 70, laser = 70, energy = 70, bomb = 70, bio = 0, rad = 40)
+	armor_spec = "melee=70;bullet=70;laser=70;energy=70;bomb=70;rad=40"
 
 /obj/item/clothing/head/helmet/thunderdome
 	name = "\improper Thunderdome helmet"
 	desc = span_italics("'Let the battle commence!'")
 	icon_state = "thunderdome"
-	armor = list(melee = 80, bullet = 60, laser = 50,energy = 10, bomb = 25, bio = 10, rad = 0)
+	armor_spec = "melee=80;bullet=60;laser=50;energy=10;bomb=25;bio=10"
 	cold_protection = HEAD
 	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
 	siemens_coefficient = 1
@@ -180,7 +180,7 @@
 		SPECIES_UNATHI = 'icons/inventory/head/mob_unathi.dmi',
 		)
 
-	armor = list(melee = 60, bullet = 60, laser = 60, energy = 40, bomb = 40, bio = 0, rad = 0)
+	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 	flags_inv = HIDEEARS|BLOCKHAIR
 	siemens_coefficient = 0.7
 	valid_accessory_slots = null
@@ -190,7 +190,7 @@
 	desc = "A helmet with optical and cranial augments coupled to it."
 	icon_state = "v62"
 	item_state_slots = list(slot_r_hand_str = "head_m", slot_l_hand_str = "head_m")
-	armor = list(melee = 80, bullet = 60, laser = 50,energy = 25, bomb = 50, bio = 10, rad = 0)
+	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
 	cold_protection = HEAD
 	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
@@ -203,7 +203,7 @@
 	desc = "An in-atmosphere helmet worn by members of the NanoTrasen Emergency Response Team. Protects the head from impacts."
 	icon_state = "erthelmet_cmd"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-green", slot_l_hand_str = "syndicate-helm-green")
-	armor = list(melee = 62, bullet = 50, laser = 50,energy = 35, bomb = 10, bio = 2, rad = 0)
+	armor_spec = "melee=62;bullet=50;laser=50;energy=35;bomb=10;bio=2"
 	valid_accessory_slots = null
 
 //Commander
@@ -259,14 +259,14 @@
 	name = "crusader helmet"
 	desc = "ye olde armored helmet"
 	icon_state = "crusader"
-	armor = list(melee = 80, bullet = 50, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=50;laser=10"
 	siemens_coefficient = 2
 
 /obj/item/clothing/head/helmet/combat/bedevere
 	name = "bedevere's helmet"
 	desc = "ye olde armored helmet"
 	icon_state = "bedevere_helmet"
-	armor = list(melee = 80, bullet = 50, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=50;laser=10"
 	tint = TINT_HEAVY
 	siemens_coefficient = 2
 
@@ -316,14 +316,14 @@
 	name = "crusader costume helmet"
 	desc = "ye olde armored helmet"
 	icon_state = "crusader"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 1
 
 /obj/item/clothing/head/helmet/combat/bedevere_costume
 	name = "bedevere's costume helmet"
 	desc = "ye olde armored helmet"
 	icon_state = "bedevere_helmet"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	tint = TINT_HEAVY
 	siemens_coefficient = 1
 

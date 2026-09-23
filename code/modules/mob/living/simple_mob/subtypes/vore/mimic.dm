@@ -219,14 +219,7 @@
 	melee_damage_upper = 8
 	attack_armor_pen = 0
 
-	armor = list(
-				"melee" = 10,
-				"bullet" = 10,
-				"laser" = 10,
-				"energy" = 10,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100) //Its an airlock.
+	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100" //Its an airlock.
 
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/will_show_tooltip()
 	return FALSE
@@ -313,14 +306,7 @@
 	melee_damage_upper = 8
 	attack_armor_pen =  25 // NOM NOM
 
-	armor = list(
-				"melee" = 10,
-				"bullet" = 20,
-				"laser" = 20,
-				"energy" = 20,
-				"bomb" = 20,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=10;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 
 /mob/living/simple_mob/vore/aggressive/mimic/closet/will_show_tooltip()
 	return FALSE

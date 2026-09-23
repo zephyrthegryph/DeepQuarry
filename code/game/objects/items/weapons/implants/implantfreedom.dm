@@ -21,30 +21,8 @@
 	if (emote == src.activation_emote)
 		src.uses--
 		to_chat(source, "You feel a faint click.")
-		if (source.handcuffed)
-			var/obj/item/W = source.handcuffed
-			source.handcuffed = null
-			if(source.buckled && source.buckled.buckle_require_restraints)
-				source.buckled.unbuckle_mob()
-			source.update_handcuffed()
-			if (source.client)
-				source.client.screen -= W
-			if (W)
-				W.loc = source.loc
-				dropped(source)
-				if (W)
-					W.layer = initial(W.layer)
-		if (source.legcuffed)
-			var/obj/item/W = source.legcuffed
-			source.legcuffed = null
-			source.update_inv_legcuffed()
-			if (source.client)
-				source.client.screen -= W
-			if (W)
-				W.loc = source.loc
-				dropped(source)
-				if (W)
-					W.layer = initial(W.layer)
+		source.drop_from_inventory(source.get_equipped_item(SLOT_ID_HANDCUFFED), source.loc)
+		source.drop_from_inventory(source.get_equipped_item(SLOT_ID_LEGCUFFED), source.loc)
 	return
 
 /obj/item/implant/freedom/post_implant(mob/source)

@@ -41,15 +41,7 @@
 	attacktext = list("nipped", "bit", "cut", "clawed")
 	meat_amount = 3
 
-	armor = list(
-		"melee" = 15,
-		"bullet" = 5,
-		"laser" = 5,
-		"energy" = 0,
-		"bomb" = 10,
-		"bio" = 100,
-		"rad" = 100
-		)
+	armor_spec = "melee=15;bullet=5;laser=5;bomb=10;bio=100;rad=100"
 
 	say_list_type = /datum/say_list/sakimm
 
@@ -114,7 +106,7 @@
 				var/obj/item/clothing/head/newhat = H.get_active_hand()
 				H.drop_from_inventory(newhat, get_turf(src))
 				if(!stat)
-					a_intent = I_HELP
+					set_use_stance(I_HELP)
 					newhat.attack_hand(src)
 			else if(src.get_active_hand())
 				to_chat(user, span_notice("\The [src] seems busy with \the [get_active_hand()] already!"))

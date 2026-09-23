@@ -145,7 +145,7 @@
 	var/chargename = "nsfw_mag" //as above
 	mag_type = MAGAZINE
 
-	var/list/modes = list()
+	var/list/modes
 
 /obj/item/ammo_magazine/cell_mag/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/ammo_casing/microbattery))
@@ -234,8 +234,10 @@
 	name = "hybrid cell-loaded gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)
+
+/obj/item/storage/secure/briefcase/nsfw_pack_hybrid/hold_constraint()
+	var/list/holds = list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid/Initialize(mapload)
 	. = ..()
@@ -256,8 +258,10 @@
 	name = "military cell-loaded gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)
+
+/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/hold_constraint()
+	var/list/holds = list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/Initialize(mapload)
 	. = ..()

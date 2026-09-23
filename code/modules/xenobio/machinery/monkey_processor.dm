@@ -32,7 +32,7 @@
 	if(istype(AM, /mob/living/carbon/human))
 		var/mob/living/carbon/human/M = AM
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		to_be_processed.Remove(M)
+		LAZYREMOVE(to_be_processed, M)
 		qdel(M)
 		monkeys_recycled++
 		sleep(1 SECOND)

@@ -220,10 +220,10 @@
 	M.extinguish_mob()
 	M.fire_stacks = 0
 	M.remove_a_modifier_of_type(/datum/modifier/poisoned)
-	if(M.bodytemperature > 310)
-		M.bodytemperature = max(310, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
+	if(M.bodytemperature > BODYTEMP_NORMAL)
+		M.bodytemperature = max(BODYTEMP_NORMAL, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
 	else if(M.bodytemperature < 311)
-		M.bodytemperature = min(310, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
+		M.bodytemperature = min(BODYTEMP_NORMAL, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = 5
@@ -570,28 +570,28 @@
 	T.apply_fire_protection() // Apply fire protection
 
 /datum/reagent/space_cleaner/affect_touch(mob/living/carbon/M, alien, removed)
-	if(M.r_hand)
-		M.r_hand.wash(CLEAN_SCRUB)
-	if(M.l_hand)
-		M.l_hand.wash(CLEAN_SCRUB)
-	if(M.wear_mask)
-		if(M.wear_mask.wash(CLEAN_SCRUB))
+	if(M.get_equipped_item(SLOT_ID_HAND_R))
+		M.get_equipped_item(SLOT_ID_HAND_R).wash(CLEAN_SCRUB)
+	if(M.get_equipped_item(SLOT_ID_HAND_L))
+		M.get_equipped_item(SLOT_ID_HAND_L).wash(CLEAN_SCRUB)
+	if(M.get_equipped_item(SLOT_ID_MASK))
+		if(M.get_equipped_item(SLOT_ID_MASK).wash(CLEAN_SCRUB))
 			M.update_inv_wear_mask(0)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(alien == IS_SLIME)
 			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)
-		if(H.head)
-			if(H.head.wash(CLEAN_SCRUB))
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			if(H.get_equipped_item(SLOT_ID_HEAD).wash(CLEAN_SCRUB))
 				H.update_inv_head(0)
-		if(H.wear_suit)
-			if(H.wear_suit.wash(CLEAN_SCRUB))
+		if(H.get_equipped_item(SLOT_ID_SUIT))
+			if(H.get_equipped_item(SLOT_ID_SUIT).wash(CLEAN_SCRUB))
 				H.update_inv_wear_suit(0)
-		else if(H.w_uniform)
-			if(H.w_uniform.wash(CLEAN_SCRUB))
+		else if(H.get_equipped_item(SLOT_ID_UNIFORM))
+			if(H.get_equipped_item(SLOT_ID_UNIFORM).wash(CLEAN_SCRUB))
 				H.update_inv_w_uniform(0)
-		if(H.shoes)
-			if(H.shoes.wash(CLEAN_SCRUB))
+		if(H.get_equipped_item(SLOT_ID_SHOES))
+			if(H.get_equipped_item(SLOT_ID_SHOES).wash(CLEAN_SCRUB))
 				H.update_inv_shoes(0)
 		else
 			H.wash(CLEAN_SCRUB)
@@ -618,9 +618,9 @@
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(H.wear_mask)
-			if(istype(H.wear_mask, /obj/item/clothing/mask/smokable))
-				var/obj/item/clothing/mask/smokable/S = H.wear_mask
+		if(H.get_equipped_item(SLOT_ID_MASK))
+			if(istype(H.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable))
+				var/obj/item/clothing/mask/smokable/S = H.get_equipped_item(SLOT_ID_MASK)
 				if(S.lit)
 					S.quench() // No smoking in my medbay!
 					H.visible_message(span_notice("[H]\'s [S.name] is put out."))

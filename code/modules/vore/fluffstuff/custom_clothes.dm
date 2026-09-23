@@ -3,7 +3,7 @@
 	desc = "It's made of a slightly sturdier material than standard jumpsuits, to allow for robust protection."
 	icon_state = "swatunder"
 	item_state_slots = list(slot_r_hand_str = "green", slot_l_hand_str = "green")
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 	rolled_down = 0
@@ -19,7 +19,7 @@
 	desc = "The uniform worn by operations officers of the mid 2260s. It comes with extra security padding, but you feel strangely vulnerable just seeing this..."
 	icon_state = "trek_engsec"
 	item_state = "trek_engsec"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 //TNG
@@ -57,7 +57,7 @@
 	icon_state = "nullsuit_civ" //Default
 	item_state = "nullsuit_civ"
 	worn_state = "nullsuit_civ"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/nullsuit/civ
 	name = "civilian nullsuit"
@@ -68,7 +68,7 @@
 	icon_state = "nullsuit_civ"
 	item_state = "nullsuit_civ"
 	worn_state = "nullsuit_civ"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/nullsuit/cmd //Command version
 	name = "command nullsuit"
@@ -83,7 +83,7 @@
 	icon_state = "nullsuit_sec"
 	item_state = "nullsuit_sec"
 	worn_state = "nullsuit_sec"
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 
 /obj/item/clothing/under/rank/nullsuit/sec/hos //HoS version
 	name = "head of security nullsuit"
@@ -98,7 +98,7 @@
 	icon_state = "nullsuit_med"
 	item_state = "nullsuit_med"
 	worn_state = "nullsuit_med"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/nullsuit/med/cmo //Chief Medical Officer version
 	name = "Chief Medical Officer nullsuit"
@@ -113,7 +113,7 @@
 	icon_state = "nullsuit_eng"
 	item_state = "nullsuit_eng"
 	worn_state = "nullsuit_eng"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/nullsuit/eng/ce //Chief Engineer version
 	name = "chief engineer nullsuit"
@@ -128,7 +128,7 @@
 	icon_state = "nullsuit_sci"
 	item_state = "nullsuit_sci"
 	worn_state = "nullsuit_sci"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10"
 
 /obj/item/clothing/under/rank/nullsuit/sci/rd //Research Director version
 	name = "research director nullsuit"
@@ -318,11 +318,14 @@
 
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY)
+	armor_spec = ""
 	flags_inv = HIDETIE|HIDEHOLSTER
 
 //For general use
+
+/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/suit/storage/fluff/fedcoat
 	name = "Federation Uniform Jacket (Red)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it. Set phasers to awesome."
@@ -333,9 +336,12 @@
 
 	blood_overlay_type = "coat"
 	body_parts_covered = CHEST|ARMS
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
-	armor = list(melee = 10, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0) //As much armor as the cyberpunk jacket. Also priced the same.
+	armor_spec = "melee=10;bullet=20;laser=10" //As much armor as the cyberpunk jacket. Also priced the same.
 	var/unbuttoned = FALSE
+
+/obj/item/clothing/suit/storage/fluff/fedcoat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/fluff/fedcoat/verb/toggle()
 	set name = "Toggle coat buttons"
@@ -362,19 +368,19 @@
 	name = "Federation Uniform Jacket (Blue)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it. Wearing this may make you feel all scientific."
 	icon_state = "fedblue"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0) //As much armor as a normal labcoat.
+	armor_spec = "bio=50" //As much armor as a normal labcoat.
 
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedeng
 	name = "Federation Uniform Jacket (Yellow)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it.Wearing it may make you feel like checking a warp core, whatever that is."
 	icon_state = "fedeng"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 20) //I was going to say 'as much as a hazard vest' but then I checked and found that hazard vests either never HAD rad resistance or had it removed... Whatever. I gave the hazard vest it's rad resistance back as well.
+	armor_spec = "rad=20" //I was going to say 'as much as a hazard vest' but then I checked and found that hazard vests either never HAD rad resistance or had it removed... Whatever. I gave the hazard vest it's rad resistance back as well.
 
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedcapt
 	name = "Federation Uniform Jacket (Command)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it. You feel like a commanding officer of Starfleet."
 	icon_state = "fedcapt"
-	armor = list(melee = 10, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=20;laser=10"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat
 	name = "Modern Federation Uniform Jacket (Command)"
@@ -387,27 +393,30 @@
 
 	blood_overlay_type = "coat"
 	body_parts_covered = CHEST|ARMS
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
-	armor = list(melee = 10, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=20;laser=10"
 
 	//Variants
+
+/obj/item/clothing/suit/storage/fluff/modernfedcoat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedblue
 	name = "Modern Federation Uniform Jacket (Blue)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. Wearing this makes you feel like a scientist or a pilot."
 	icon_state = "fedmodernblue"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedeng
 	name = "Modern Federation Uniform Jacket (Yellow)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. You feel like you can handle any type of technical engineering problems."
 	icon_state = "fedmoderneng"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedsec
 	name = "Modern Federation Uniform Jacket (Red)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. This uniform makes you want to protect and serve as an officer."
 	icon_state = "fedmodernsec"
-	armor = list(melee = 10, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=20;laser=10"
 
 /obj/item/clothing/head/caphat/formal/fedcover
 	name = "Federation Officer's Cap"
@@ -555,7 +564,7 @@
 	icon_state = "tasaldsuit"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 
 // bwoincognito:Tasald Corlethian
 /obj/item/clothing/suit/storage/det_suit/fluff/tasald
@@ -569,7 +578,7 @@
 
 	blood_overlay_type = "coat"
 	body_parts_covered = CHEST|LEGS|ARMS
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 //Event Costumes Below
 /obj/item/clothing/head/helmet/fluff/freddy
@@ -581,7 +590,7 @@
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	permeability_coefficient = 0.01
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	flags_inv = HIDEMASK|HIDEEARS
 	cold_protection = HEAD
 	siemens_coefficient = 0.9
@@ -618,13 +627,16 @@
 	gas_transfer_coefficient = 0.01
 	permeability_coefficient = 0.02
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS)
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT
 	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
 	siemens_coefficient = 0.9
 
 	//Bonnie Suit
+
+/obj/item/clothing/suit/fluff/freddy/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/suit/fluff/freddy/bonnie
 	desc = "Children's entertainer."
 	icon_state = "bonniesuit"
@@ -656,15 +668,15 @@
 
 	light_overlay = "helmet_light_dual"
 
-	species_restricted = null
+/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm/fit_constraint()
+	return null
 
-/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "scree")
-			to_chat(H, span_warning("Your face and whoever is meant for this helmet are too different."))
-			return 0
-		else
-			return 1
+
+/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm/proc/owner_fit, "your face and whoever is meant for this helmet are too different")))
+
+/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "scree"
 
 //scree:Scree
 /obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess
@@ -678,15 +690,15 @@
 
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
 
-	species_restricted = null
+/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess/fit_constraint()
+	return null
 
-/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "scree")
-			to_chat(H, span_warning("The gloves only have three fingers, not to mention the accommodation for extra limbs."))
-			return 0
-		else
-			return 1
+
+/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess/proc/owner_fit, "it only has three fingers, and room for extra limbs")))
+
+/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "scree"
 
 //scree:Avida
 /obj/item/clothing/under/skirt/outfit/fluff/avida
@@ -712,15 +724,17 @@
 		slot_head_str = 'icons/vore/custom_onmob_32x48_vr.dmi'
 		)
 
-/obj/item/clothing/head/fluff/avida/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		var/static/list/allowed_ear_names = list("Bnnuy Ears", "Bnnuy Ears 2")
-		//check if wearer's ear sprite is compatible with trimmed icon
-		if((H.ear_style?.name in allowed_ear_names) || (H.ear_secondary_style?.name in allowed_ear_names))
-			item_state = initial(src.item_state)
-		else //if not, just use a generic icon
-			item_state = "avidahatnoears"
-		return TRUE
+/obj/item/clothing/head/fluff/avida/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/fluff/avida/proc/match_ears, null)))
+
+/// Always fits; picks the trimmed sprite when the wearer's ears suit it.
+/obj/item/clothing/head/fluff/avida/proc/match_ears(mob/living/carbon/human/H)
+	var/static/list/allowed_ear_names = list("Bnnuy Ears", "Bnnuy Ears 2")
+	if(istype(H) && ((H.ear_style?.name in allowed_ear_names) || (H.ear_secondary_style?.name in allowed_ear_names)))
+		item_state = initial(src.item_state)
+	else //if not, just use a generic icon
+		item_state = "avidahatnoears"
+	return TRUE
 
 //natje:Pumila
 /obj/item/clothing/under/fluff/aluranevines
@@ -733,13 +747,11 @@
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state_slots = list(slot_r_hand_str = "alurane-vines_r", slot_l_hand_str = "alurane-vines_l")
 
-/obj/item/clothing/under/fluff/aluranevines/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "natje")
-			to_chat(H, span_warning("Wrapping vines around yourself is a quite an... Odd idea. You decide otherwise."))
-			return 0
-		else
-			return 1
+/obj/item/clothing/under/fluff/aluranevines/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/aluranevines/proc/owner_fit, "wrapping vines around yourself is an odd idea")))
+
+/obj/item/clothing/under/fluff/aluranevines/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "natje"
 
 //HOS Hardsuit
 /obj/item/clothing/suit/space/void/security/fluff/hos // ToDo: Rig version.
@@ -751,9 +763,10 @@
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
-	species_restricted = null
-
 //HOS Hardsuit Helmet
+
+/obj/item/clothing/suit/space/void/security/fluff/hos/fit_constraint()
+	return null
 /obj/item/clothing/head/helmet/space/void/security/fluff/hos // ToDo: Rig version.
 	name = "\improper prototype voidsuit helmet"
 	desc = "A customized security voidsuit helmet customized to include the " + JOB_HEAD_OF_SECURITY + "'s signature hat. Has additional composite armor."
@@ -763,13 +776,14 @@
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
-	species_restricted = null
-
 //adk09:Lethe
+
+/obj/item/clothing/head/helmet/space/void/security/fluff/hos/fit_constraint()
+	return null
 /obj/item/clothing/head/helmet/hos/fluff/lethe
 	name = "Lethe's Hat"
 	desc = " This is Lethe's Hat! A little tag attached inside reads: 'If found please return to Lethe! Or else!' It looks rather worn in. It also lacks armor."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 	icon = 'icons/inventory/head/item.dmi'
 	icon_state = "hoscap"
@@ -853,7 +867,7 @@
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.head == src)
+		if(H.get_equipped_item(SLOT_ID_HEAD) == src)
 			H.update_inv_head()
 //Viveret:Keturah
 /obj/item/clothing/under/dress/maid
@@ -874,13 +888,11 @@
 
 	light_overlay = "helmet_light"
 
-/obj/item/clothing/head/helmet/space/fluff/joan/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "joanrisu")
-			to_chat(H, span_warning("You try to fit on the helmet, but it doesn't fit."))
-			return 0
-		else
-			return 1
+/obj/item/clothing/head/helmet/space/fluff/joan/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/fluff/joan/proc/owner_fit, "it doesn't fit")))
+
+/obj/item/clothing/head/helmet/space/fluff/joan/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "joanrisu"
 
 //JoanRisu:Joan Risu
 /obj/item/clothing/suit/space/fluff/joan
@@ -891,22 +903,23 @@
 	where the suit is softer is a rectangular name-tag with the name 'Joan' on it. There are indications that the \
 	suit has seen combat."
 
-	armor = list(melee = 50, bullet = 40, laser = 45, energy = 25, bomb = 50, bio = 100, rad = 50) //These values were taken from the combat rigs and adjusted to be weaker than said rigs.
+	armor_spec = "melee=50;bullet=40;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60" //These values were taken from the combat rigs and adjusted to be weaker than said rigs.
 	slowdown = 0
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS)
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joansuit"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
-/obj/item/clothing/suit/space/fluff/joan/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "joanrisu")
-			to_chat(H, span_warning("You try to fit into the suit, to no avail."))
-			return 0
-		else
-			return 1
+/obj/item/clothing/suit/space/fluff/joan/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS)
+	return list(HOLD_ONLY(stores))
+
+/obj/item/clothing/suit/space/fluff/joan/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/fluff/joan/proc/owner_fit, "it doesn't fit")))
+
+/obj/item/clothing/suit/space/fluff/joan/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "joanrisu"
 
 
 /obj/item/clothing/under/rank/internalaffairs/fluff/joan
@@ -938,43 +951,43 @@
 	name = "GE command suit" // Change to GE
 	desc = "Gilthari Exports uniform. An extra-comfortable command one, at that."
 	icon_state = "khi_uniform_cmd"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/sec //Security version
 	name = "GE security suit" // Change to GE
 	desc = "Gilthari Exports uniform. This one has angry red security stripes. Keepin' the peace in style."
 	icon_state = "khi_uniform_sec"
-	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 
 /obj/item/clothing/under/rank/khi/med //Medical version
 	name = "GE medical suit" // Change to GE
 	desc = "Gilthari Exports uniform. The medical version. Why not just get a new body, anyway?"
 	icon_state = "khi_uniform_med"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/khi/eng //Engineering version
 	name = "GE engineering suit" // Change to GE
 	desc = "Gilthari Exports uniform. One fit for an engineer, by the looks of it. Building the future, one disaster at a time."
 	icon_state = "khi_uniform_eng"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 10)
+	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/khi/sci //Science version
 	name = "GE science suit" // Change to GE
 	desc = "Gilthari Exports uniform. For performing science in, based on the color! Only SCIENCE can save us now."
 	icon_state = "khi_uniform_sci"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "bomb=10"
 
 /obj/item/clothing/under/rank/khi/crg //Cargo version
 	name = "GE cargo suit" // Change to GE
 	desc = "A sleek cargo uniform from Gilthari Exports."
 	icon_state = "khi_uniform_crg"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/civ //Science version
 	name = "GE civilian suit" // Change to GE
 	desc = "A sleek civilian uniform from Gilthari Exports."
 	icon_state = "khi_uniform_civ"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/fluff
 	name = DEVELOPER_WARNING_NAME
@@ -983,7 +996,7 @@
 	name = "KHI meditech suit"
 	desc = "An outdated uniform of some sort. You get the sense that whoever wore this must've been very full of themselves"
 	icon_state = "khi_uniform_aro"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 //jacobdragon:Earthen Breath
 /obj/item/clothing/under/fluff/earthenbreath
@@ -1006,9 +1019,12 @@
 	icon_state = "octavgentlecoat"
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	blood_overlay_type = "coat"
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
 
 //bwoincognito:Octavious Ward
+
+/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/under/det/fluff/octavious
 	name = "Expensive Suit and vest"
 	desc = "A well made suit and tie, with a thin leather vest, while not as rugged as normal lab suits, it lets the wearer look dashing as he works. The letter's O.C.W. are embroidered on the left breast."
@@ -1037,7 +1053,7 @@
 	item_icons = list(
 		slot_wear_mask_str = 'icons/vore/custom_clothes_mob.dmi'
 		)
-	armor = list(melee = 0, bullet = 0, laser = 2,energy = 2, bomb = 0, bio = 90, rad = 0)
+	armor_spec = "laser=2;energy=2;bio=90"
 	body_parts_covered = HEAD|FACE|EYES
 
 //bwoincognito:Octavious Ward
@@ -1091,7 +1107,7 @@
 /obj/item/clothing/suit/storage/hazardvest/fluff/verin
 	name = "Green Haz-coat"
 	desc = "A well-worn green, long coat made with lightweight materials, it has a radioactive hazard icon on it's right sleeve. Smells faintly like sergal."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20"
 	body_parts_covered = UPPER_TORSO|ARMS
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
@@ -1101,7 +1117,7 @@
 /obj/item/clothing/head/welding/fluff/vinjj
 	name = "Vinjj's Stylish Bandana"
 	desc = "A lovely blue and purple bandanna with a refined topaz hanging from its tail end, a pair of goggles are hidden underneath its fabric. Although for some strange reason, wearing this seems to inspire lewd thoughts."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_icons = list(
@@ -1146,9 +1162,12 @@
 	item_state = "chococoat_on"
 	icon_state = "chococoat"
 	body_parts_covered = CHEST|ARMS
-	allowed = list (/obj/item/material/knife)
 
 //KiwiDaNinja: Chakat Taiga
+
+/obj/item/clothing/suit/chococoat/suit_storage_constraint()
+	var/list/stores = list (/obj/item/material/knife)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/under/fluff/taiga
 	name = "Taiga's F.D Uniform"
 	desc = "This uniform - consisting of only the uniform shirt, and built out of a soft fleece - dons the badge of Amistad Fire and Rescuse on both shoulders. The badges denote the wearer as a FF/" + JOB_PARAMEDIC + ", and their name is embroidered in a gold thread on their right breast; Chakat Taiga! An 'official' badge is pinned to their left breast." //A walking advertisement?
@@ -1204,20 +1223,20 @@ Departamental Swimsuits, for general use
 	name = "Command Uniform"
 	desc = "The uniform worn by command officers in the mid 2260s."
 	icon_state = "trek_command"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // Considering only staff heads get to pick it
+	armor_spec = "" // Considering only staff heads get to pick it
 
 /obj/item/clothing/under/rank/trek/eng // Engineering only
 	name = "Operations Uniform"
 	desc = "The uniform worn by operations officers of the mid 2260s. You feel strangely vulnerable just seeing this..."
 	icon_state = "trek_engsec"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // since they're shared between jobs and kinda moot. // I'll tell you what, the armor values are NOT shared. Removed melee bonus.
+	armor_spec = "" // since they're shared between jobs and kinda moot. // I'll tell you what, the armor values are NOT shared. Removed melee bonus.
 
 /obj/item/clothing/under/rank/trek/medsci
 	name = "MedSci Uniform"
 	desc = "The uniform worn by medsci officers in the mid 2260s."
 	icon_state = "trek_medsci"
 	permeability_coefficient = 0.50
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0) // basically a copy of vanilla sci/med
+	armor_spec = "bio=10" // basically a copy of vanilla sci/med
 
 //TNG
 /obj/item/clothing/under/rank/trek/command/next
@@ -1266,14 +1285,17 @@ Departamental Swimsuits, for general use
 	icon_state = "trek_ds9_coat"
 	body_parts_covered = CHEST|ARMS
 	permeability_coefficient = 0.50
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL)
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
+
+/obj/item/clothing/suit/storage/trek/ds9/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/trek/ds9/admiral // Only for adminuz
 	name = "Admiral Overcoat"
 	desc = "Admirality specialty coat to keep flag officers fashionable and protected."
 	icon_state = "trek_ds9_coat_adm"
-	armor = list(melee = 45, bullet = 35, laser = 35, energy = 20, bomb = 0, bio = 40, rad = 55)
+	armor_spec = "melee=45;bullet=35;laser=35;energy=20;bio=40;rad=55"
 
 /obj/item/clothing/under/rank/trek/command/ds9
 	desc = "The uniform worn by command officers of the 2380s."
@@ -1304,13 +1326,11 @@ Departamental Swimsuits, for general use
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "jessiecoat"
 
-/obj/item/clothing/suit/storage/hooded/wintercoat/jessie/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf))
-			return ..()
-		else
-			to_chat(H, span_warning("You need to have a wolf-taur half to wear this."))
-			return 0
+/obj/item/clothing/suit/storage/hooded/wintercoat/jessie/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/storage/hooded/wintercoat/jessie/proc/taur_fit, "you need a wolf-taur half to wear this")))
+
+/obj/item/clothing/suit/storage/hooded/wintercoat/jessie/proc/taur_fit(mob/living/carbon/human/H)
+	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf)
 
 //samanthafyre:Kateryna Petrovitch
 /obj/item/clothing/suit/armor/vest/wolftaur/kate
@@ -1321,13 +1341,6 @@ Departamental Swimsuits, for general use
 	icon_state = "katesuit"
 	item_state_slots = null
 
-/obj/item/clothing/suit/armor/vest/wolftaur/kate/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf))
-			return ..()
-		else
-			to_chat(H, span_warning("You need to have a wolf-taur half to wear this."))
-			return 0
 
 //samanthafyre:Kateryna Petrovitch
 /obj/item/clothing/suit/space/void/engineering/kate
@@ -1337,10 +1350,12 @@ Departamental Swimsuits, for general use
 	speed to compensate for custom padding and armor Kateryna made herself."
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "lilithsuit"
-	species_restricted = null
-	armor = list(melee = 40, bullet = 20, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 20)
+	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 
 //samanthafyre:Kateryna Petrovitch
+
+/obj/item/clothing/suit/space/void/engineering/kate/fit_constraint()
+	return null
 /obj/item/clothing/head/helmet/space/fluff/kate
 	name = "Kat's Navy Engineer Helmet"
 	desc = "A customized combat space helmet made for Kateryna. It uses a navy design as the base before it\
@@ -1349,15 +1364,15 @@ Departamental Swimsuits, for general use
 	icon_state = "lilithhelmet"
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	light_overlay = "helmet_light"
-	species_restricted = null
 
-/obj/item/clothing/head/helmet/space/fluff/kate/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "samanthafyre")
-			to_chat(H, span_warning("You try to fit on the helmet, but it doesn't fit."))
-			return 0
-		else
-			return 1
+/obj/item/clothing/head/helmet/space/fluff/kate/fit_constraint()
+	return null
+
+/obj/item/clothing/head/helmet/space/fluff/kate/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/fluff/kate/proc/owner_fit, "it doesn't fit")))
+
+/obj/item/clothing/head/helmet/space/fluff/kate/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "samanthafyre"
 
 //Seiga: Alfonso Oak Telanor
 /obj/item/clothing/glasses/sunglasses/fluff/alfonso
@@ -1507,7 +1522,7 @@ Departamental Swimsuits, for general use
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanocoat"
 	item_state_slots = list(slot_r_hand_str = "kilanocoat", slot_l_hand_str = "kilanocoat")
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10;cold=40"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	//hoodtype = ??? //Needs a hoodtype to be created for it.
@@ -1521,7 +1536,7 @@ Departamental Swimsuits, for general use
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "kilanosuit"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10"
 	siemens_coefficient = 0.9
 
 //BeyondMyLife: Ne'tra Ky'ram
@@ -1544,23 +1559,27 @@ Departamental Swimsuits, for general use
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanogloves" //TODO: White sprite.
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	species_restricted = null
 
 //BeyondMyLife: Ne'tra Ky'ram
+
+/obj/item/clothing/gloves/fluff/kilano/netra/fit_constraint()
+	return null
 /obj/item/clothing/shoes/boots/fluff/kilano
 	name = "black and gold winter boots"
 	desc = "Some Fur lined black and gold heavy duty winter bots."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanoboots"
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	species_restricted = null
 	cold_protection = FEET|LEGS
 	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
 	heat_protection = FEET|LEGS
 	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 //BeyondMyLife: Ne'tra Ky'ram
+
+/obj/item/clothing/shoes/boots/fluff/kilano/fit_constraint()
+	return null
 /obj/item/clothing/accessory/storage/black_vest/fluff/kilano
 	name = "black and gold webbing vest"
 	desc = "A black and gold webbing vest, it looks like a child spilled a box of crayons all over it."
@@ -1578,10 +1597,12 @@ Departamental Swimsuits, for general use
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
-	species_restricted = null
 	body_parts_covered = CHEST|ARMS
 
 //BeyondMyLife:Kilano Soryu
+
+/obj/item/clothing/under/dress/fluff/kilano/fit_constraint()
+	return null
 /obj/item/clothing/gloves/fluff/kilano
 	name = "Bleached Gloves"
 	desc = "Some old captain's gloves, bleached white, almost unrecognizable from the color change besides the gold trim."
@@ -1590,9 +1611,11 @@ Departamental Swimsuits, for general use
 	icon_state = "kilanogloves"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	species_restricted = null
 
 //BeyondMyLife: Cassandra Selones
+
+/obj/item/clothing/gloves/fluff/kilano/fit_constraint()
+	return null
 /obj/item/clothing/shoes/boots/fluff/kilano/purple
 	name = "purple and silver winter boots"
 	desc = "Some fur lined boots, purple and silver."
@@ -1673,31 +1696,32 @@ Departamental Swimsuits, for general use
 	icon_state = "hasd_helm"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	species_restricted = null
 
-/obj/item/clothing/head/helmet/space/void/security/hasd/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "silencedmp5a5")
-			to_chat(H, span_warning("...The faceplate is clearly not made for your anatomy, thus, does not fit."))
-			return 0
-		else
-			return 1
+/obj/item/clothing/head/helmet/space/void/security/hasd/fit_constraint()
+	return null
+
+/obj/item/clothing/head/helmet/space/void/security/hasd/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/void/security/hasd/proc/owner_fit, "the faceplate is not made for your anatomy")))
+
+/obj/item/clothing/head/helmet/space/void/security/hasd/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "silencedmp5a5"
 
 /obj/item/clothing/suit/space/void/security/hasd
 	name = "HASD EVA bodyplates"
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "cold=60"
 	desc = "A series of armor plates painted black, deployed from a back-mounted module. They fit smoothly over the unit's armor plates and projects a skintight bubble shield over the unit's uncovered parts. Faceplate and coolant unit not included."
-	species_restricted = null
 	icon = 'icons/mob/taursuits_lizard.dmi'
 	icon_state = "hasd_suit"
 	pixel_x = -16
 
-/obj/item/clothing/suit/space/void/security/hasd/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..() && istype(H) && H.ckey == "silencedmp5a5")
-		return 1
-	else
-		to_chat(H, span_warning("This suit is not designed for you."))
-		return 0
+/obj/item/clothing/suit/space/void/security/hasd/fit_constraint()
+	return null
+
+/obj/item/clothing/suit/space/void/security/hasd/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/void/security/hasd/proc/owner_fit, "this suit is not designed for you")))
+
+/obj/item/clothing/suit/space/void/security/hasd/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "silencedmp5a5"
 
 //Zigfe:Zaoozaoo Xrimxuqmqixzix
 /obj/item/clothing/head/fluff/zao
@@ -1801,17 +1825,17 @@ Departamental Swimsuits, for general use
 
 	body_parts_covered = 0
 
-	species_restricted = list("exclude", SPECIES_TESHARI)
+/obj/item/clothing/under/fluff/slime_skeleton/fit_constraint()
+	var/list/bodytypes = list("exclude", SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
-/obj/item/clothing/under/fluff/slime_skeleton/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(!..())
-		return 0
 
-	if(ishuman(H))
-		if(!(H.get_species() == SPECIES_PROMETHEAN))	//Only wearable by slimes, since species_restricted actually checks bodytype, not species
-			return 0
+/obj/item/clothing/under/fluff/slime_skeleton/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/slime_skeleton/proc/slime_fit, "only slimes can wear this")))
 
-	return 1
+/// Promethean species, not body type: other species share the slime body type.
+/obj/item/clothing/under/fluff/slime_skeleton/proc/slime_fit(mob/living/carbon/human/H)
+	return !ishuman(H) || H.get_species() == SPECIES_PROMETHEAN
 
 /obj/item/clothing/under/fluff/slime_skeleton/digest_act(atom/movable/item_storage = null)
 	return FALSE	//Indigestible
@@ -1853,7 +1877,7 @@ Departamental Swimsuits, for general use
 /obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip/equipped()
 	..()
 	var/mob/living/carbon/human/H = loc
-	if(istype(H) && H.wear_suit == src)
+	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
 		icon_override = 'icons/vore/custom_clothes_mob.dmi'
 	update_clothing_icon()
 
@@ -1895,7 +1919,9 @@ Departamental Swimsuits, for general use
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
-	species_restricted = null
+/obj/item/clothing/head/helmet/space/void/engineering/zena/fit_constraint()
+	return null
+
 
 
 /obj/item/clothing/suit/space/void/engineering/zena
@@ -1906,7 +1932,9 @@ Departamental Swimsuits, for general use
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
-	species_restricted = null
+/obj/item/clothing/suit/space/void/engineering/zena/fit_constraint()
+	return null
+
 
 /obj/item/clothing/suit/storage/flintlock
 	name = "green jacket"
@@ -1934,13 +1962,11 @@ Departamental Swimsuits, for general use
 	icon_state = "nikki_outfit"
 	sensor_mode = 3 // I'm a dumbass and forget these all the time please understand :(
 
-/obj/item/clothing/under/skirt/outfit/fluff/nikki/mob_can_equip(mob/living/carbon/human/M, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if (M.ckey == "ryumi")
-			return 1
-		else if (M.get_active_hand() == src)
-			to_chat(M, span_warning("What the heck? \The [src] doesn't fit!"))
-			return 0
+/obj/item/clothing/under/skirt/outfit/fluff/nikki/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/skirt/outfit/fluff/nikki/proc/owner_fit, "it doesn't fit")))
+
+/obj/item/clothing/under/skirt/outfit/fluff/nikki/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "ryumi"
 
 /obj/item/clothing/shoes/fluff/nikki
 	name = "non-magical boots"
@@ -1949,19 +1975,17 @@ Departamental Swimsuits, for general use
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "nikki_boots"
 
-/obj/item/clothing/shoes/fluff/nikki/mob_can_equip(mob/living/carbon/human/M, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if (M.ckey == "ryumi")
-			return 1
-		else if (M.get_active_hand() == src)
-			to_chat(M, span_warning("What the heck? \The [src] doesn't fit!"))
-			return 0
+/obj/item/clothing/shoes/fluff/nikki/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/fluff/nikki/proc/owner_fit, "they don't fit")))
+
+/obj/item/clothing/shoes/fluff/nikki/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "ryumi"
 
 /obj/item/clothing/suit/fluff/nikki //see /obj/item/rig/nikki
 	name = "cape"
 	desc = "Snazzy!"
 	flags = NONE
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0) // It's not armor, it's a dorky frickin cape
+	armor_spec = "" // It's not armor, it's a dorky frickin cape
 	body_parts_covered = null // Cape ain't gonna cover a THING
 	cold_protection = CHEST|ARMS // It will keep you toasty tho, it's more than big enough to help with that! Just wrap the thing around you when on the surface, idk
 	icon = 'icons/vore/custom_clothes_item.dmi'
@@ -2112,9 +2136,9 @@ Departamental Swimsuits, for general use
 			// YOU FOOL! YOU HAVE ACTIVATED MY STAND, 「ＶＯＲＥ　ＢＹ　ＨＡＴ」！
 			src.visible_message(span_danger("\The [src] falls over [user]'s head... and somehow falls over the rest of their body, causing them to vanish inside. Where did they go?!"), \
 			span_danger("The hat falls over your head as you put it on, enveloping you in a bright green light! <b>Uh oh.</b>"))
-			var/uh_oh = pick(translocator.beacons)
+			var/uh_oh = DEFAULTPICK(translocator.beacons, null)
 			user.remove_from_mob(src, get_turf(user))
-			translocator.destination = translocator.beacons[uh_oh]
+			translocator.destination = LAZYACCESS(translocator.beacons, uh_oh)
 			translocator.afterattack(user, user, proximity_flag = 1, ignore_fail_chance = 1)
 			add_attack_logs(user, user, "Tried to put on \the [src] and was involuntarily teleported by it (via \the [translocator] within)!")
 			return
@@ -2123,7 +2147,7 @@ Departamental Swimsuits, for general use
 	// If the hat is willing to cooperate with the holder...
 	if (hat_warp_checks(target, user, proximity_flag))
 		// Silly fluffed up styles of teleporting people based on user intent.
-		switch (user.a_intent)
+		switch(user.use_stance())
 			if (I_HELP)
 				user.visible_message(span_notice("[user] guides \the [target] to the bottomless hole within \the [src]. They begin to climb inside..."))
 				if (do_after(user, 5 SECONDS, target))
@@ -2430,7 +2454,7 @@ Departamental Swimsuits, for general use
 /obj/item/clothing/head/welding/fluff/zera
 	name = "White Welding Mask"
 	desc = "It's a white welding mask. Zera likes it because it matches her labcoat."
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "zera_weld"
@@ -2580,9 +2604,12 @@ End */
 	blood_overlay_type = "coat"
 	has_hood_sprite = FALSE //No need.
 	body_parts_covered = CHEST|ARMS|LEGS
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY)
 	var/toggled = FALSE
 	var/last_toggled = 0
+
+/obj/item/clothing/suit/storage/hooded/purple_robes/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/storage/hooded/purple_robes/verb/toggle()
 	set name = "Toggle Eyes"

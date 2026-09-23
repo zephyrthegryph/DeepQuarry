@@ -176,8 +176,8 @@
 	ejectpai(user)
 	return ITEM_INTERACT_SUCCESS
 
-/mob/living/bot/attack_ai(mob/user)
-	return attack_hand(user)
+/mob/living/bot
+	silicon_use = SILICON_USE_HAND
 
 /mob/living/bot/say_quote(message, datum/language/speaking = null)
 	return "beeps"
@@ -346,15 +346,15 @@
 
 	if(!targ)
 		for(var/obj/machinery/navbeacon/N in REGISTRY_MEMBERS(REGISTRY_NAVBEACONS))
-			if(!N.codes["patrol"])
+			if(!LAZYACCESS(N.codes, "patrol"))
 				continue
 			if(get_dist(src, N) < minDist)
 				minDist = get_dist(src, N)
 				targ = N
 
-	if(targ && targ.codes["next_patrol"])
+	if(targ && LAZYACCESS(targ.codes, "next_patrol"))
 		for(var/obj/machinery/navbeacon/N in REGISTRY_MEMBERS(REGISTRY_NAVBEACONS))
-			if(N.location == targ.codes["next_patrol"])
+			if(N.location == LAZYACCESS(targ.codes, "next_patrol"))
 				targ = N
 				break
 

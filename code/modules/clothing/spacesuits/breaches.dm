@@ -9,6 +9,7 @@
 	var/obj/item/clothing/suit/space/holder // Suit containing the list of breaches holding this instance.
 
 /obj/item/clothing/suit/space
+	armor_spec = "cold=60"
 
 	var/can_breach = 1                      // Set to 0 to disregard all breaching.
 	var/list/breaches                       // Breach datum container (lazylist; empty for an undamaged suit).
@@ -157,7 +158,7 @@
 
 //Handles repairs (and also upgrades).
 
-/obj/item/clothing/suit/space/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/item/clothing/suit/space/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/stack/material))
 		var/repair_power = 0
 		switch(W.get_material_name())
@@ -183,29 +184,24 @@
 			repair_breaches(BURN, use_amt * repair_power, user)
 		return
 
-	else if(tool_quality == TOOL_WELDER)
-
-		if(isliving(src.loc))
-			to_chat(user, span_red("How do you intend to patch a hardsuit while someone is wearing it?"))
-			return
-
-		if (!damage || ! brute_damage)
-			to_chat(user, "There is no structural damage on \the [src] to repair.")
-			return
-
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(!WT.remove_fuel(5))
-			to_chat(user, span_red("You need more welding fuel to repair this suit."))
-			return
-
-		repair_breaches(BRUTE, 3, user)
-		return
-
 	..()
 
 /obj/item/clothing/suit/space/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	if(isliving(src.loc))
+		to_chat(user, span_red("How do you intend to patch a hardsuit while someone is wearing it?"))
+		return ITEM_INTERACT_SUCCESS
+
+	if (!damage || ! brute_damage)
+		to_chat(user, "There is no structural damage on \the [src] to repair.")
+		return ITEM_INTERACT_SUCCESS
+
+	var/obj/item/weldingtool/WT = tool.get_welder()
+	if(!WT.remove_fuel(5))
+		to_chat(user, span_red("You need more welding fuel to repair this suit."))
+		return ITEM_INTERACT_SUCCESS
+
+	repair_breaches(BRUTE, 3, user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/clothing/suit/space/examine(mob/user)
 	. = ..()

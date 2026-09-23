@@ -37,7 +37,7 @@
 
 /atom/movable/screen/inventory
 	var/slot_id	//The indentifier for the slot. It has nothing to do with ID cards.
-	var/list/object_overlays = list() // Required for inventory/screen overlays.
+	var/list/object_overlays // Required for inventory/screen overlays.
 
 /atom/movable/screen/inventory/MouseEntered()
 	..()
@@ -45,8 +45,8 @@
 
 /atom/movable/screen/inventory/MouseExited()
 	..()
-	cut_overlay(object_overlays)
-	object_overlays.Cut()
+	if(object_overlays) cut_overlay(object_overlays)
+	LAZYCLEARLIST(object_overlays)
 
 
 /atom/movable/screen/close
@@ -277,8 +277,8 @@
 			if(isliving(usr))
 				if(iscarbon(usr))
 					var/mob/living/carbon/C = usr
-					if(C.legcuffed)
-						to_chat(C, span_notice("You are legcuffed! You cannot run until you get [C.legcuffed] removed!"))
+					if(C.get_equipped_item(SLOT_ID_LEGCUFFED))
+						to_chat(C, span_notice("You are legcuffed! You cannot run until you get [C.get_equipped_item(SLOT_ID_LEGCUFFED)] removed!"))
 						C.m_intent = I_WALK	//Just incase
 						C.hud_used.move_intent.icon_state = "walking"
 						return 1
@@ -324,9 +324,9 @@
 					else
 
 						var/no_mask
-						if(!(C.wear_mask && C.wear_mask.item_flags & AIRTIGHT))
+						if(!(C.get_equipped_item(SLOT_ID_MASK) && C.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
 							var/mob/living/carbon/human/H = C
-							if(!(H.head && H.head.item_flags & AIRTIGHT))
+							if(!(H.get_equipped_item(SLOT_ID_HEAD) && H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
 								no_mask = 1
 
 						if(no_mask)
@@ -343,10 +343,10 @@
 								var/mob/living/carbon/human/H = C
 								breathes = H.species.breath_type
 								nicename = list ("suit", "back", "belt", "right hand", "left hand", "left pocket", "right pocket")
-								tankcheck = list (H.s_store, C.back, H.belt, C.r_hand, C.l_hand, H.l_store, H.r_store)
+								tankcheck = list (H.get_equipped_item(SLOT_ID_SUIT_STORAGE), C.get_equipped_item(SLOT_ID_BACK), H.get_equipped_item(SLOT_ID_BELT), C.get_equipped_item(SLOT_ID_HAND_R), C.get_equipped_item(SLOT_ID_HAND_L), H.get_equipped_item(SLOT_ID_POCKET_L), H.get_equipped_item(SLOT_ID_POCKET_R))
 							else
 								nicename = list("right hand", "left hand", "back")
-								tankcheck = list(C.r_hand, C.l_hand, C.back)
+								tankcheck = list(C.get_equipped_item(SLOT_ID_HAND_R), C.get_equipped_item(SLOT_ID_HAND_L), C.get_equipped_item(SLOT_ID_BACK))
 
 							// Rigs are a fucking pain since they keep an air tank in nullspace.
 							var/obj/item/rig/Rig = C.get_rig()
@@ -432,32 +432,6 @@
 									C.internals.icon_state = "internal1"
 							else
 								to_chat(C, span_notice("You don't have a[breathes==GAS_O2 ? "n " + GAS_O2 : addtext(" ",breathes)] tank."))
-		if("act_intent")
-			usr.a_intent_change("right")
-		if(I_HELP)
-			usr.a_intent = I_HELP
-			if(ispAI(usr))
-				usr.a_intent_change(I_HELP)
-			else
-				usr.hud_used.action_intent.icon_state = "intent_help"
-		if(I_HURT)
-			usr.a_intent = I_HURT
-			if(ispAI(usr))
-				usr.a_intent_change(I_HURT)
-			else
-				usr.hud_used.action_intent.icon_state = "intent_harm"
-		if(I_GRAB)
-			usr.a_intent = I_GRAB
-			if(ispAI(usr))
-				usr.a_intent_change(I_GRAB)
-			else
-				usr.hud_used.action_intent.icon_state = "intent_grab"
-		if(I_DISARM)
-			usr.a_intent = I_DISARM
-			if(ispAI(usr))
-				usr.a_intent_change(I_DISARM)
-			else
-				usr.hud_used.action_intent.icon_state = "intent_disarm"
 
 		if("pull")
 			usr.stop_pulling()
@@ -737,7 +711,7 @@
 	cut_overlays()
 	if(hud.mymob && iscarbon(hud.mymob))
 		var/mob/living/carbon/C = hud.mymob
-		if(C.handcuffed)
+		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			add_overlay(handcuff_overlay)
 
 // PIP stuff
@@ -1121,10 +1095,10 @@
 		var/image/item_overlay = image(holding)
 		item_overlay.alpha = 92
 
-		if(!holding.mob_can_equip(user, slot_id, disable_warning = TRUE))
+		if(holding.equip_refusal(user, slot_id, disable_warning = TRUE))
 			item_overlay.color = "#ff0000"
 		else
 			item_overlay.color = "#00ff00"
 
-		object_overlays += item_overlay
+		LAZYADD(object_overlays, item_overlay)
 		add_overlay(object_overlays)

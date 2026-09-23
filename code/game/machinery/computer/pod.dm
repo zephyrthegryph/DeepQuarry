@@ -48,9 +48,6 @@
 			return
 	return
 
-/obj/machinery/computer/pod/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/computer/pod/attack_hand(mob/user as mob)
 	. = ..()
 	if(.)

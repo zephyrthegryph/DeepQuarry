@@ -293,7 +293,7 @@
 			/obj/item/ammo_magazine/ammo_box/b12g,
 			/obj/item/ammo_magazine/m9mmp90)
 	)
-	var/list/scanned = list()
+	var/list/scanned
 	var/static/image/radial_image_bridge = image(icon = 'icons/mob/radial_ch.dmi', icon_state = "bridge")
 	var/static/image/radial_image_engineering = image(icon= 'icons/mob/radial_ch.dmi', icon_state = "eng")
 	var/static/image/radial_image_medical = image(icon = 'icons/mob/radial_ch.dmi', icon_state = "medbay")
@@ -325,7 +325,7 @@
 
 	mode = choice
 	scancount = 0
-	scanned.Cut()
+	LAZYCLEARLIST(scanned)
 
 	scanreq = rand(3,9)
 	to_chat(user, span_notice("Changed mode to '[choice]'."))
@@ -342,7 +342,7 @@
 		return
 	if((target.type in scannables[mode]) && scancount < scanreq && !(target.type in scanned))
 		scancount = scancount + 1
-		scanned.Add(target.type)
+		LAZYADD(scanned, target.type)
 		var/scansleft = scanreq - scancount
 		playsound(src, 'sound/machines/beep.ogg', 50)
 		to_chat(user, span_notice("You must scan [scansleft] more department objects!"))

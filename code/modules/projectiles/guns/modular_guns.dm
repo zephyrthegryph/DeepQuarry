@@ -13,7 +13,7 @@
 	var/manipulator_rating = 0 //How good are the manipulators inside us?
 	var/assembled = 1 //Are we closed up?
 	var/max_burst_size = 5 //Don't let our maximum burst size get too high.
-	var/list/guncomponents = list() //Generate our list of components.
+	var/list/guncomponents //Generate our list of components.
 	var/accepted_components = list(
 		/obj/item/stock_parts/capacitor/,
 		/obj/item/stock_parts/capacitor,
@@ -31,9 +31,9 @@
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()
 	guncomponents = list()
-	guncomponents += new /obj/item/stock_parts/capacitor
-	guncomponents += new /obj/item/stock_parts/micro_laser
-	guncomponents += new /obj/item/stock_parts/manipulator
+	LAZYADD(guncomponents, new /obj/item/stock_parts/capacitor)
+	LAZYADD(guncomponents, new /obj/item/stock_parts/micro_laser)
+	LAZYADD(guncomponents, new /obj/item/stock_parts/manipulator)
 	CheckParts()
 	FireModeModify()
 
@@ -51,30 +51,24 @@
 	FireModeModify()
 
 /obj/item/gun/energy/modular/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
+	assembled = !assembled
+	playsound(src, tool.usesound, 50, 1)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/energy/modular/crowbar_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_CROWBAR)
-	return TRUE
+	if(assembled == 1)
+		to_chat(user, span_warning("Disassemble the [src] first!"))
+		return ITEM_INTERACT_SUCCESS
+	for(var/obj/item/I in guncomponents)
+		to_chat(user, span_notice("You remove the gun's components."))
+		playsound(src, tool.usesound, 50, 1)
+		I.forceMove(get_turf(src))
+		LAZYREMOVE(guncomponents, I)
+		CheckParts()
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/energy/modular/attackby(obj/item/O, mob/user, tool_quality)
-	if(tool_quality == TOOL_SCREWDRIVER)
-		to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
-		assembled = !assembled
-		playsound(src, O.usesound, 50, 1)
-		return
-	if(tool_quality == TOOL_CROWBAR)
-		if(assembled == 1)
-			to_chat(user, span_warning("Disassemble the [src] first!"))
-			return
-		for(var/obj/item/I in guncomponents)
-			to_chat(user, span_notice("You remove the gun's components."))
-			playsound(src, O.usesound, 50, 1)
-			I.forceMove(get_turf(src))
-			guncomponents.Remove(I)
-			CheckParts()
-		return
+/obj/item/gun/energy/modular/attackby(obj/item/O, mob/user)
 	//Someone's attacking us, and it's not anything we have a special case for (i.e. a tool)
 	..()
 	if(assembled) // can't put anything in
@@ -82,14 +76,14 @@
 	if(!(O.type in accepted_components))//check if we can accept it
 		to_chat(user, span_warning("You can't add this to [src]!"))
 		return
-	if(guncomponents.len >= max_components) //We have too many componenets and can't fit more.
+	if(length(guncomponents) >= max_components) //We have too many componenets and can't fit more.
 		to_chat(user, span_warning("You can't add any more components!"))
 		return
 	if(istype(O, /obj/item/stock_parts/capacitor) && capacitor_rating == 5)
 		to_chat(user, span_warning("You can't add any more capacitors!"))
 		return
 	user.drop_item()
-	guncomponents += O
+	LAZYADD(guncomponents, O)
 	O.forceMove(src)
 	to_chat(user, span_notice("You add a component to the [src]"))
 	CheckParts()

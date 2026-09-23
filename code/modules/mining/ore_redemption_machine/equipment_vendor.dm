@@ -191,9 +191,6 @@
 		return
 	tgui_interact(user)
 
-/obj/machinery/mineral/equipment_vendor/attack_ghost(mob/user)
-	tgui_interact(user)
-
 /obj/machinery/mineral/equipment_vendor/tgui_data(mob/user)
 	var/list/data = ..()
 

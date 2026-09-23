@@ -149,30 +149,35 @@
 	B.nonhuman_prey_swallow_time = swallowTime
 	B.vore_verb = "swallow"
 	// TODO - Customizable per mob
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The walls gently squeeze against you. The wet sounds of shifting flesh against your form fill the air.",
 		"The hot, humid air rushes around you for a moment as the creature urps. The walls clench in around you for a moment, before relaxing again.",
 		"Your body is soaked in the fluids that cling to the churning walls. They squeeze across your form gently, conforming to your shape.",
 		"You can feel the world around you shift and sway as the creature moves! The flesh is stretchy, doughy. You can sink into it a little ways before it bounces back, curling you into a small shape."
 		)
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The walls slop thick slime across your body! It tingles briefly before the sting and ache sets in!",
 		"The sound of your body slipping and sliding against the powerfully churning stomach fills the air!",
 		"The grip of that stomach is harsh. Eagerly mushing and rubbing that slime into your body in attempts to break you down!",
 		"The intense churning and grinding jostles your around within the thick slime as you're slowly broken down!"
 		)
+	B.own_emote_lists()
 	B.emote_lists[DM_ABSORB] = list(
 		"The walls cling to you awfully close... It's almost like you're sinking into them.",
 		"You can feel the walls press in tightly against you, clinging to you possessively!",
 		"It almost feels like you're sinking into the soft, doughy flesh!",
 		"You can feel the walls press in around you. Almost molten, so squishy!!"
 		)
+	B.own_emote_lists()
 	B.emote_lists[DM_DRAIN] = list(
 		"The walls churn down on you heavily!! It's hard to move!",
 		"You can feel yourself getting weaker with every moment! The doughy walls sap your strength!",
 		"You're practically smothered in the oppressive heat of the creature's stomach!",
 		"It's hot, wet and tight!"
 		)
+	B.own_emote_lists()
 	B.emote_lists[DM_HEAL] = list(
 		"The walls pulse against you almost rhythmically. It feels nice, almost like a massage.",
 		"You're gently squeezed in pleasant warmth, softly churned.",
@@ -434,7 +439,7 @@
 // When someone clicks us with an empty hand
 /mob/living/simple_mob/shadekin/attack_hand(mob/living/carbon/human/M as mob)
 	. = ..()
-	if(M.a_intent == I_HELP)
+	if(IS_HELPING(M))
 		shy_approach = FALSE //ACCLIMATED
 
 /datum/say_list/shadekin

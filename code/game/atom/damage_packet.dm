@@ -189,6 +189,8 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 			return injury_armor_key(ARMOR_BLAST)
 		if(DAMAGE_IONIC)
 			return ENERGY
+		if(DAMAGE_COLD)
+			return ARMOR_COLD
 	return injury_armor_key(injury_kind_for_damage(kind))
 
 /// The one EMP ladder (damage.md §7): the ionic amount of each severity,
@@ -237,9 +239,10 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	if(!uses_integrity || QDELETED(src))
 		return 0
 	var/list/amounts = packet.amounts
-	// §4 step 1 (shields): no object holds a shield yet. Steps 3 (innate
-	// armour: the per-item armour list) and 4 (material response, which does
-	// not exist yet) run in run_atom_armor().
+	// §4 step 1 (shields): holders with a shield block before the hit lands
+	// (/mob/living/proc/check_shields()); no object holds one. Steps 3 (innate
+	// armour, get_armor()) and 4 (material response, impact_factor()) run in
+	// run_atom_armor(), which reads the kind being delivered.
 	var/sound = !(packet.flags & DAMAGE_PACKET_SILENT)
 	. = 0
 	for(var/kind in 1 to DAMAGE_KIND_COUNT)
@@ -253,11 +256,17 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 			amount *= emp_integrity_factor
 			if(amount <= 0)
 				continue
+		GLOB.incoming_damage_kind = kind
 		. += take_damage(amount, damage_type, packet.armor_flag || damage_kind_armor_key(kind), sound, packet.direction, packet.penetration)
+		GLOB.incoming_damage_kind = 0
 		sound = FALSE
 		// A destroyed wall becomes a floor in place (same turf, no integrity).
 		if(QDELETED(src) || !uses_integrity)
 			return
+	// What the shell let through reaches the holder's contents (containment
+	// paths, C2). A holder destroyed above has already spilled them.
+	if(length(contents))
+		propagate_damage(packet)
 
 /atom
 	/// How much of an incoming ionic (EMP) amount becomes burn integrity damage.

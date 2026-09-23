@@ -339,7 +339,7 @@
 	can_configure = TRUE
 	var/accessset = 0
 	initial_sprite_stack = list()
-	var/list/title_strings = list()
+	var/list/title_strings
 	var/preset_rank = FALSE
 	///What type of polymorphic card we have. 0 = none. 1 = take our job state 2 = allow us to select an icon.
 	var/polymorphic_type = 0
@@ -417,8 +417,8 @@
 	user.set_id_info(src)
 	if(user.mind && user.mind.initial_account)
 		associated_account_number = user.mind.initial_account.account_number
-	if(title_strings.len)
-		var/tempname = pick(title_strings)
+	if(length(title_strings))
+		var/tempname = DEFAULTPICK(title_strings, null)
 		name = tempname + " ([assignment] Contractor)" // Suffix contractor IDs
 	else if(polymorphic_type == 2)
 		name = user.name + "'s ITG ID card" + " ([assignment])"

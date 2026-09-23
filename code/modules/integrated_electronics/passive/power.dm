@@ -135,7 +135,7 @@
 	activators = list()
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	var/volume = 60
-	var/list/fuel = list(REAGENT_ID_PHORON = 50000, REAGENT_ID_SLIMEJELLY = 25000, REAGENT_ID_FUEL = 15000, REAGENT_ID_CARBON = 10000, REAGENT_ID_ETHANOL= 10000, REAGENT_ID_NUTRIMENT = 8000, REAGENT_ID_BLOOD = 5000)
+	var/static/list/fuel = list(REAGENT_ID_PHORON = 50000, REAGENT_ID_SLIMEJELLY = 25000, REAGENT_ID_FUEL = 15000, REAGENT_ID_CARBON = 10000, REAGENT_ID_ETHANOL= 10000, REAGENT_ID_NUTRIMENT = 8000, REAGENT_ID_BLOOD = 5000)
 
 /obj/item/integrated_circuit/passive/power/chemical_cell/Initialize(mapload)
 	. = ..()
@@ -242,14 +242,5 @@
 /obj/machinery/power/circuit_io
 	name = "embedded electrical I/O"
 
-/obj/machinery/power/circuit_io/connect_to_network()
-	var/turf/T = get_turf(src)
-	if(!T || !istype(T))
-		return FALSE
-
-	var/obj/structure/cable/C = T.get_cable_node()
-	if(!C || !C.powernet)
-		return FALSE
-
-	C.powernet.add_machine(src)
-	return TRUE
+/obj/machinery/power/circuit_io/power_turf()
+	return get_turf(src)

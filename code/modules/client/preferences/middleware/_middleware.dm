@@ -10,7 +10,7 @@
 	/// Map of ui_act actions -> proc paths to call.
 	/// Signature is `(list/params, mob/user) -> TRUE/FALSE.
 	/// Return output is the same as ui_act--TRUE if it should update, FALSE if it should not
-	var/list/action_delegations = list()
+	var/list/action_delegations
 
 /datum/preference_middleware/New(datum/preferences)
 	src.preferences = preferences

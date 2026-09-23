@@ -8,7 +8,7 @@
 	var/new_icon_file
 	var/new_icon_override_file
 	var/uses = 1        // Uses before the kit deletes itself.
-	var/list/allowed_types = list()
+	var/list/allowed_types
 
 /obj/item/kit/examine()
 	. = ..()
@@ -32,7 +32,7 @@
 	new_icon_override_file = kit_icon_override_file
 
 	for(var/path in splittext(additional_data, ", "))
-		allowed_types |= text2path(path)
+		LAZYOR(allowed_types, text2path(path))
 
 /obj/item/kit/proc/customize(obj/item/I, mob/user)
 	if(can_customize(I))
@@ -90,7 +90,7 @@
 			to_chat(user, "You set about modifying the helmet into [helmet].")
 			var/mob/living/carbon/human/H = user
 			if(istype(H))
-				helmet.species_restricted = list(H.species.get_bodytype(H))
+				helmet.restrict_fit(list(H.species.get_bodytype(H)))
 		else if(istype(I, /obj/item/clothing/suit/storage/hooded))
 			var/obj/item/clothing/suit/storage/hooded/suit = I
 			suit.name = "[new_name] suit"
@@ -119,7 +119,7 @@
 			to_chat(user, "You set about modifying the suit into [suit].")
 			var/mob/living/carbon/human/H = user
 			if(istype(H))
-				suit.species_restricted = list(H.species.get_bodytype(H))
+				suit.restrict_fit(list(H.species.get_bodytype(H)))
 		use(1,user)
 
 /obj/item/clothing/head/helmet/space/void/attackby(obj/item/O, mob/user)

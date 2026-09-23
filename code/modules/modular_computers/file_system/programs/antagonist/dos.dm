@@ -28,13 +28,13 @@
 	if(target && executed)
 		target.dos_overload += dos_speed
 		if(!target.operable())
-			target.dos_sources.Remove(src)
+			LAZYREMOVE(target.dos_sources, src)
 			target = null
 			error = "Connection to destination relay lost."
 
 /datum/computer_file/program/ntnet_dos/kill_program(forced)
 	if(target)
-		target.dos_sources.Remove(src)
+		LAZYREMOVE(target.dos_sources, src)
 		target = null
 	executed = 0
 
@@ -74,7 +74,7 @@
 			return TRUE
 		if("PRG_reset")
 			if(target)
-				target.dos_sources.Remove(src)
+				LAZYREMOVE(target.dos_sources, src)
 				target = null
 			executed = FALSE
 			error = ""
@@ -82,7 +82,7 @@
 		if("PRG_execute")
 			if(target)
 				executed = TRUE
-				target.dos_sources.Add(src)
+				LAZYADD(target.dos_sources, src)
 				if(GLOB.ntnet_global.intrusion_detection_enabled)
 					var/obj/item/computer_hardware/network_card/network_card = computer.network_card
 					GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target.uid] detected from device: [network_card.get_network_tag()]")

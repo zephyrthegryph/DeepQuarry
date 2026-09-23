@@ -14,7 +14,6 @@
 	selection_color = "#515151"
 	economic_modifier = 1
 	access = list()			//See /datum/job/assistant/get_access()
-	minimal_access = list()	//See /datum/job/assistant/get_access()
 
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant
 	job_description = "An Assistant does whatever is requested of them. Though they are part of the crew, they have no real authority."
@@ -74,7 +73,6 @@
 	selection_color = "#555555"
 	economic_modifier = 2
 	access = list()			//See /datum/job/intern/get_access()
-	minimal_access = list()	//See /datum/job/intern/get_access()
 	outfit_type = /datum/decl/hierarchy/outfit/job/assistant/intern
 	alt_titles = list(JOB_ALT_APPRENTICE_ENGINEER = /datum/alt_title/intern_eng,
 						JOB_ALT_MEDICAL_INTERN = /datum/alt_title/intern_med,

@@ -74,7 +74,7 @@
 	var/list/rows = list()
 	var/start = max(1, length(account.transaction_log) - 49)
 	for(var/index = length(account.transaction_log), index >= start, index--)
-		var/datum/transaction/transaction = account.transaction_log[index]
+		var/datum/transaction/transaction = LAZYACCESS(account.transaction_log, index)
 		rows.Add(list(list(
 			"date" = transaction.date,
 			"time" = transaction.time,
@@ -203,9 +203,6 @@
 		tgui_interact(user)
 	else
 		..()
-
-/obj/machinery/computer/skills/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 /obj/machinery/computer/skills/attack_hand(mob/user as mob)

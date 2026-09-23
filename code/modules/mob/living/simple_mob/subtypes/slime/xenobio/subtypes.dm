@@ -88,15 +88,7 @@
 
 	// The sloped armor.
 	// It's resistant to most weapons (but a spraybottle still kills it rather fast).
-	armor = list(
-				"melee" = 25,
-				"bullet" = 25,
-				"laser" = 25,
-				"energy" = 50,
-				"bomb" = 80,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=25;bullet=25;laser=25;energy=50;bomb=80;bio=100;rad=100"
 
 	slime_mutation = list(
 			/mob/living/simple_mob/slime/xenobio/silver,
@@ -403,7 +395,7 @@
 /mob/living/simple_mob/slime/xenobio/ruby/apply_melee_effects(atom/A)
 	..()
 
-	if(isliving(A) && a_intent == I_HURT)
+	if(isliving(A) && IS_HARMING(src))
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))

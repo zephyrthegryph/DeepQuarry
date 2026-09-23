@@ -82,6 +82,7 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	B.desc = "Having been too slow to disentangle yourself from the gaslamp's tentacles, the alien creature eventually winds enough of them around your body to lift you up off of the ground. Struggle as you might now, it is too late to deny the jellyfish-esque scavenger its lucky catch; inch by inch, the gaslamp tugs you upwards into its equivalent of a stomach, the transition between the cool-to-frigid atmosphere on the outside to its surprising internal heat something you can feel through any outer wear you possess. Minutes pass, soon resulting in the gentle creature's body sporting a rounded, bulging swell, an indistinct shadow shifting and twitching inside it as you squirm about. Be it to escape or simply to get settled, you might want to take care, however. The gaslamp's internal chamber is slick and squishy instead of overly oppressive, yet, each wave of warmth that pulses over you leaves you feeling weaker than the last..."
 	B.escapechance = 40 //easy to squirm out of...
 	B.escapechance_absorbed = 5 //...but EXTREMELY clingy if you fail
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The gaslamp gently bobs up and down as it lazily drifts elsewhere, the movement hardly enough to disturb the shadowy, indistinct figure curled up within it: you.",
 		"The fungal creature’s inner walls tenderly ripple and squeeze about your form for a few moments, squelching softly... until another wave of warmth pulses through the chamber.",
@@ -90,6 +91,7 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 		"The surrounding slimy walls suddenly knead and squish you about more thoroughly than before, massaging a stronger heat into your body... before easing, leaving you feeling pleasantly loose.",
 		"Every undulation of the gaslamp’s insides leaves you feeling weaker than the last, more relaxed... and evermore tempted to oblige its passive possessiveness, letting it shelter you from the elements.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_ABSORB] = list(
 		"As the gaslamp slowly drifts off somewhere, its inner chamber grips and squeezes over its indistinct, shadowy filling with a lazily increasing fervor, that bump gradually shrinking!",
 		"The fungal creature’s pseudo-stomach slimily squelches about your form, every tight clench and the following burst of heat draining your energy... as the walls grow squishier, almost molten!",

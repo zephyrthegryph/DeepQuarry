@@ -70,7 +70,7 @@
 			else
 				occupant_message(span_warning("[target] is firmly secured."))
 			return
-		if(cargo_holder.cargo.len >= cargo_holder.cargo_capacity)
+		if(length(cargo_holder.cargo) >= cargo_holder.cargo_capacity)
 			occupant_message(span_warning("Not enough room in cargo compartment."))
 			return
 
@@ -82,11 +82,11 @@
 		var/T = chassis.loc
 		if(do_after_cooldown(target))
 			if(T == chassis.loc && src == chassis.selected)
-				cargo_holder.cargo += O
+				LAZYADD(cargo_holder.cargo, O)
 				O.loc = chassis
 				O.anchored = FALSE
 				occupant_message(span_notice("[target] succesfully loaded."))
-				src.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder.cargo_capacity - cargo_holder.cargo.len]")
+				src.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder.cargo_capacity - length(cargo_holder.cargo)]")
 			else
 				occupant_message(span_warning("You must hold still while handling objects."))
 				O.anchored = initial(O.anchored)
@@ -95,13 +95,13 @@
 	else if(isliving(target))
 		var/mob/living/M = target
 		if(M.stat>1) return
-		if(chassis.occupant.a_intent == I_HURT || istype(chassis.occupant,/mob/living/carbon/brain)) //No tactile feedback for brains
+		if(IS_HARMING(chassis.occupant) || istype(chassis.occupant,/mob/living/carbon/brain)) //No tactile feedback for brains
 			M.injure(INJURY_BLUNT, dam_force, null, chassis)
 			M.body?.add_restriction(chassis, BF_LUNG_MECHANICS, 0.2, 6 SECONDS) // the chest can't expand in the grip
 			occupant_message(span_warning("You squeeze [target] with [src.name]. Something cracks."))
 			playsound(src, "fracture", 5, 1, -2) //CRACK
 			chassis.visible_message(span_warning("[chassis] squeezes [target]."))
-		else if(chassis.occupant.a_intent == I_DISARM && enable_special)
+		else if(IS_DISARMING(chassis.occupant) && enable_special)
 			playsound(src, 'sound/mecha/hydraulic.ogg', 10, 1, -2)
 			M.injure(INJURY_BLUNT, dam_force/2, null, chassis)
 			M.body?.add_restriction(chassis, BF_LUNG_MECHANICS, 0.4, 4 SECONDS) // winded by the slam
@@ -132,7 +132,7 @@
 	if(istype(target,/obj))
 		var/obj/O = target
 		if(!O.anchored)
-			if(cargo_holder.cargo.len < cargo_holder.cargo_capacity)
+			if(length(cargo_holder.cargo) < cargo_holder.cargo_capacity)
 				chassis.occupant_message("You lift [target] and start to load it into cargo compartment.")
 				chassis.visible_message("[chassis] lifts [target] and starts to load it into cargo compartment.")
 				set_ready_state(FALSE)
@@ -141,11 +141,11 @@
 				var/T = chassis.loc
 				if(do_after_cooldown(target))
 					if(T == chassis.loc && src == chassis.selected)
-						cargo_holder.cargo += O
+						LAZYADD(cargo_holder.cargo, O)
 						O.loc = chassis
 						O.anchored = FALSE
 						chassis.occupant_message(span_notice("[target] succesfully loaded."))
-						chassis.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder.cargo_capacity - cargo_holder.cargo.len]")
+						chassis.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder.cargo_capacity - length(cargo_holder.cargo)]")
 					else
 						chassis.occupant_message(span_warning("You must hold still while handling objects."))
 						O.anchored = initial(O.anchored)
@@ -157,10 +157,10 @@
 	else if(isliving(target))
 		var/mob/living/M = target
 		if(M.stat>1) return
-		if(chassis.occupant.a_intent == I_HURT)
+		if(IS_HARMING(chassis.occupant))
 			chassis.occupant_message(span_danger("You obliterate [target] with [src.name], leaving blood and guts everywhere."))
 			chassis.visible_message(span_danger("[chassis] destroys [target] in an unholy fury."))
-		else if(chassis.occupant.a_intent == I_DISARM)
+		else if(IS_DISARMING(chassis.occupant))
 			chassis.occupant_message(span_danger("You tear [target]'s limbs off with [src.name]."))
 			chassis.visible_message(span_danger("[chassis] rips [target]'s arms off."))
 		else

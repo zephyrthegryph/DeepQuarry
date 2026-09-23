@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	if(!Adjacent(user))
 		return ITEM_INTERACT_BLOCKING
 	if(icon_state == "random")
-		stat &= ~BROKEN
+		atom_fix()
 		icon_forced = FALSE
 		if(!mytimer)
 			mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
@@ -97,12 +97,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	icon_forced = TRUE
 	if(mytimer)
 		deltimer(mytimer)
-	stat &= ~BROKEN
+	atom_fix()
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/holoposter/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 /obj/machinery/holoposter/power_change()
 	var/wasUnpowered = stat & NOPOWER
@@ -114,5 +111,4 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	. = ..()
 	if (. & EMP_PROTECT_SELF || stat & BROKEN)
 		return
-	stat |= BROKEN
-	update_icon()
+	atom_break()

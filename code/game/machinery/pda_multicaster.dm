@@ -11,7 +11,7 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/on = 1		// If we're currently active,
 	var/toggle = 1	// If we /should/ be active or not,
-	var/list/internal_PDAs = list() // Assoc list of PDAs inside of this, with the department name being the index,
+	var/list/internal_PDAs // Assoc list of PDAs inside of this, with the department name being the index,
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
@@ -56,9 +56,6 @@
 		icon_state = initial(icon_state)
 	else
 		icon_state = "[initial(icon_state)]_off"
-
-/obj/machinery/pda_multicaster/attack_ai(mob/user)
-	attack_hand(user)
 
 /obj/machinery/pda_multicaster/attack_hand(mob/user)
 	toggle_power(user)

@@ -30,9 +30,6 @@
 	attack_hand(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/telecomms/attack_ai(mob/user as mob)
-	attack_hand(user)
-
 /obj/machinery/telecomms/tgui_data(mob/user)
 	var/list/data = list()
 
@@ -88,7 +85,8 @@
 
 /obj/machinery/telecomms/tgui_status(mob/user)
 	if(!issilicon(user))
-		if(!istype(user.get_active_hand(), /obj/item/multitool))
+		var/obj/item/hand_item = user.get_active_hand()
+		if(!hand_item?.get_multitool())
 			return STATUS_CLOSE
 	. = ..()
 
@@ -125,14 +123,14 @@
 
 	var/obj/item/multitool/P = null
 	// Let's double check
-	if(!issilicon(user) && istype(user.get_active_hand(), /obj/item/multitool))
-		P = user.get_active_hand()
+	var/obj/item/held = user.get_active_hand()
+	if(!issilicon(user))
+		P = held?.get_multitool()
 	else if(isAI(user))
 		var/mob/living/silicon/ai/U = user
 		P = U.aiMulti
 	else if(isrobot(user) && in_range(user, src))
-		if(istype(user.get_active_hand(), /obj/item/multitool))
-			P = user.get_active_hand()
+		P = held?.get_multitool()
 	return P
 
 // Additional Options for certain machines. Use this when you want to add an option to a specific machine.
@@ -281,7 +279,7 @@
 
 				else
 					for(var/obj/machinery/telecomms/T in links)
-						T.links.Remove(src)
+						LAZYREMOVE(T.links, src)
 
 					network = newnet
 					links = list()
@@ -294,37 +292,37 @@
 				if(findtext(num2text(newfreq), "."))
 					newfreq *= 10 // shift the decimal one place
 				if(!(newfreq in freq_listening) && newfreq < 10000)
-					freq_listening.Add(newfreq)
+					LAZYADD(freq_listening, newfreq)
 					set_temp("-% New frequency filter assigned: \"[newfreq/10] GHz\" %-", "average")
 				. = TRUE
 
 		if("delete")
 			var/x = text2num(params["delete"])
 			set_temp("-% Removed frequency filter [x] %-", "average")
-			freq_listening.Remove(x)
+			LAZYREMOVE(freq_listening, x)
 			. = TRUE
 
 		if("unlink")
 			var/unlink_index = text2num(params["unlink"])
 			if(unlink_index >= 1 && unlink_index <= length(links))
-				var/obj/machinery/telecomms/T = links[unlink_index]
+				var/obj/machinery/telecomms/T = LAZYACCESS(links, unlink_index)
 				set_temp("-% Removed \ref[T] [T.name] from linked entities. %-", "average")
 
 				// Remove link entries from both T and src.
 
 				if(src in T.links)
-					T.links.Remove(src)
-				links.Remove(T)
+					LAZYREMOVE(T.links, src)
+				LAZYREMOVE(links, T)
 				. = TRUE
 
 		if("link")
 			if(P)
 				if(P.buffer && P.buffer != src)
 					if(!(src in P.buffer.links))
-						P.buffer.links.Add(src)
+						LAZYADD(P.buffer.links, src)
 
 					if(!(P.buffer in src.links))
-						src.links.Add(P.buffer)
+						LAZYADD(src.links, P.buffer)
 
 					set_temp("-% Successfully linked with \ref[P.buffer] [P.buffer.name] %-", "average")
 

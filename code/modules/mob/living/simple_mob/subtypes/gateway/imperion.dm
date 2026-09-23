@@ -27,19 +27,11 @@
 	wreckage = null
 	pilot_type = null
 
-	armor = list(
-				"melee"		= 35,
-				"bullet"	= 35,
-				"laser"		= 35,
-				"energy"	= 35,
-				"bomb"		= 35,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=35;bullet=35;laser=35;energy=35;bomb=35;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase1/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -49,7 +41,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase2/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -59,7 +51,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -69,7 +61,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -329,15 +321,7 @@
 	pilot_type = null
 	var/obj/item/shield_projector/shields = null
 
-	armor = list(
-				"melee"		= -500,
-				"bullet"	= 75,
-				"laser"		= 75,
-				"energy"	= 75,
-				"bomb"		= 75,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=-500;bullet=75;laser=75;energy=75;bomb=75;bio=100;rad=100"
 
 	loot_list = list(/obj/item/clothing/suit/armor/alien = 60,
 			/obj/item/clothing/suit/armor/alien/tank = 60,

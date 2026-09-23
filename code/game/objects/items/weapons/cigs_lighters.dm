@@ -116,7 +116,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	if(reagents && reagents.total_volume) // check if it has any reagents at all
 		if(ishuman(loc))
 			var/mob/living/carbon/human/C = loc
-			if (src == C.wear_mask && C.check_has_mouth()) // if it's in the human/monkey mouth, transfer reagents to the mob
+			if (src == C.get_equipped_item(SLOT_ID_MASK) && C.check_has_mouth()) // if it's in the human/monkey mouth, transfer reagents to the mob
 				reagents.trans_to_mob(C, amount, CHEM_INGEST, 1.5, can_dialysis = FALSE) // I don't predict significant balance issues by letting blunts actually WORK.
 		else // else just remove some of the reagents
 			reagents.remove_any(REM)
@@ -259,7 +259,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 			text = zippomes
 		else if(istype(W, /obj/item/flame/lighter))
 			text = lightermes
-		else if(istype(W, /obj/item/weldingtool))
+		else if(W.has_tool_quality(TOOL_WELDER))
 			text = weldermes
 		else if(istype(W, /obj/item/assembly/igniter))
 			text = ignitermes
@@ -327,7 +327,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	if(.)
 		return TRUE
 	if(lit == 1)
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			user.visible_message(span_notice("[user] drops and treads on the lit [src], putting it out instantly."))
 			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
 			die(1)
@@ -439,7 +439,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	if(.)
 		return TRUE
 	if(lit == 1)
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			user.visible_message(span_notice("[user] empties the lit [src] on the floor!."))
 			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
 			die(1)
@@ -668,8 +668,8 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.wear_mask, /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
-		var/obj/item/clothing/mask/smokable/cigarette/cig = M.wear_mask
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
 			return ITEM_INTERACT_SUCCESS
@@ -881,8 +881,8 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.wear_mask, /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
-		var/obj/item/clothing/mask/smokable/cigarette/cig = M.wear_mask
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
 		else
@@ -954,8 +954,8 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.wear_mask, /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
-		var/obj/item/clothing/mask/smokable/cigarette/cig = M.wear_mask
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
 			return ITEM_INTERACT_SUCCESS
@@ -1129,8 +1129,8 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		M.ignite_mob()
 		add_attack_logs(user, M, "Lit on fire with [src]")
 
-	if (istype(M.wear_mask, /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
-		var/obj/item/clothing/mask/smokable/cigarette/cig = M.wear_mask
+	if (istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if (M == user)
 			cig.attackby(src, user)
 		else

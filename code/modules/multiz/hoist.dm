@@ -155,8 +155,8 @@
 	if(prob(100 / severity))
 		source_hoist.break_hoist()
 
-/obj/structure/hoist/attack_robot(mob/living/user)
-	attack_hand(user)
+/obj/structure/hoist
+	silicon_use = ROBOT_USE_HAND
 
 /obj/structure/hoist/attack_hand(mob/living/user)
 	if (!(ishuman(user) || issilicon(user)))

@@ -180,6 +180,31 @@
 			node.quality = clause[2]
 			node.tier = clause[3]
 			return node
+		if(PRED_OP_TYPE)
+			if(!arity(clause, 3) || !valid_subject(clause[2]))
+				return null
+			if(!islist(clause[3]))
+				error("REQ_TYPE needs a list of types")
+				return null
+			for(var/path in clause[3])
+				if(!ispath(path))
+					error("REQ_TYPE lists [path], which is not a type")
+					return null
+			var/datum/pred_node/type/node = leaf(/datum/pred_node/type, negate)
+			node.subject = clause[2]
+			node.types = typecacheof(clause[3])
+			return node
+		if(PRED_OP_FITS)
+			if(!arity(clause, 2))
+				return null
+			if(!islist(clause[2]))
+				error("REQ_FITS_BODYTYPES needs a list of body types")
+				return null
+			var/list/bodytypes = clause[2]
+			var/datum/pred_node/fits/node = leaf(/datum/pred_node/fits, negate)
+			node.bodytypes = bodytypes.Copy()
+			node.exclusive = ("exclude" in bodytypes)
+			return node
 		if(PRED_OP_HAND_FREE)
 			return leaf(/datum/pred_node/hand_free, negate)
 		if(PRED_OP_HOLDING)
@@ -237,7 +262,7 @@
 
 /// The measure definition for `id`, or null after reporting why not.
 /datum/predicate_compiler/proc/measure(id)
-	var/datum/property_def/def = registry.defs[id]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, id)
 	if(!def)
 		error("unknown property [id]")
 		return null
@@ -258,7 +283,7 @@
 
 /// Channel-backed properties can become reactor watches (P4).
 /datum/predicate_compiler/proc/channel_backed(id)
-	for(var/datum/property_provider/provider as anything in registry.base_providers[id])
+	for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
 		if(provider.source == PROP_SOURCE_DOMAIN)
 			return TRUE
 	return FALSE
@@ -266,7 +291,7 @@
 /datum/predicate_compiler/proc/compile_tag(list/clause, negate)
 	if(!arity(clause, 3) || !valid_subject(clause[2]))
 		return null
-	var/datum/property_def/def = registry.defs[clause[3]]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, clause[3])
 	if(!def)
 		error("unknown tag [clause[3]]")
 		return null
@@ -634,6 +659,63 @@
 		return "needs something in hand"
 	return dq_pred_cmp_reason(def, subject, dq_property(a, property), op, dq_property(b, property_b))
 
+// ---- Types and fit (constraints, rules.md §3) ----
+
+/datum/pred_node/type
+	var/subject
+	/// typecacheof() the listed types.
+	var/list/types
+
+/datum/pred_node/type/test(mob/actor, atom/target, obj/item/held)
+	var/datum/thing = dq_pred_subject(subject, actor, target, held)
+	return thing ? (types[thing.type] ? TRUE : FALSE) : FALSE
+
+/datum/pred_node/type/generate_reason()
+	return negate ? "not that kind of thing" : "only takes certain things"
+
+/// The legacy species_restricted rules, as a clause: `bodytypes` lists the
+/// body types that fit, or starts with "exclude" and lists those that don't.
+/datum/pred_node/fits
+	var/list/bodytypes
+	var/exclusive = FALSE
+
+/datum/pred_node/fits/test(mob/actor, atom/target, obj/item/held)
+	if(!ishuman(actor) || !isitem(target))
+		return TRUE
+	var/mob/living/carbon/human/H = actor
+	if(!H.species)
+		return TRUE
+	var/obj/item/I = target
+	return dq_fits_bodytype(bodytypes, exclusive, H.species.get_bodytype(H), I.sprite_sheets)
+
+/datum/pred_node/fits/generate_reason(mob/actor, atom/target, obj/item/held)
+	if(negate)
+		return "it fits you"
+	var/bodytype = "your body"
+	if(ishuman(actor))
+		var/mob/living/carbon/human/H = actor
+		bodytype = H.species?.get_bodytype(H) || bodytype
+	if(exclusive)
+		return "it doesn't fit a [bodytype]"
+	var/list/names = bodytypes.Copy()
+	if(length(names) > 3)
+		return "it isn't made for a [bodytype]"
+	return "it only fits [english_list(names, and_text = " or ")]"
+
+/// Whether clothing restricted to `bodytypes` fits `bodytype`. Custom-fitted
+/// Vox, Werebeast and Teshari clothing fits only them, and Teshari and
+/// Werebeasts need their own sprites for anything restricted.
+/proc/dq_fits_bodytype(list/bodytypes, exclusive, bodytype, list/sprite_sheets)
+	if(exclusive)
+		return !(bodytype in bodytypes)
+	if(bodytype in bodytypes)
+		return TRUE
+	if(((SPECIES_VOX in bodytypes) && bodytype != SPECIES_VOX) || ((SPECIES_WEREBEAST in bodytypes) && bodytype != SPECIES_WEREBEAST) || ((SPECIES_TESHARI in bodytypes) && bodytype != SPECIES_TESHARI))
+		return FALSE
+	if((bodytype == SPECIES_TESHARI || bodytype == SPECIES_WEREBEAST) && !LAZYACCESS(sprite_sheets, bodytype))
+		return FALSE
+	return TRUE
+
 // ---- Relationships ----
 
 /datum/pred_node/tool
@@ -743,7 +825,7 @@
 	return FALSE
 
 /mob/living/carbon/human/dq_has_free_hand()
-	return !l_hand || !r_hand
+	return !get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R)
 
 /mob/living/simple_mob/dq_has_free_hand()
-	return has_hands && (!l_hand || !r_hand)
+	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))

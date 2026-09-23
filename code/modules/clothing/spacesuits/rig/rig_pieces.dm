@@ -23,27 +23,35 @@
 		SPECIES_TESHARI 		= 'icons/inventory/head/mob_teshari.dmi',
 		SPECIES_ALTEVIAN 		= 'icons/inventory/head/mob_altevian.dmi'
 		)
-	species_restricted = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
 	max_pressure_protection = null
 	min_pressure_protection = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+/obj/item/clothing/head/helmet/space/rig/fit_constraint()
+	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/gloves/gauntlets/rig
 	name = "gauntlets"
 	icon_state = "security_rig"
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
-	species_restricted = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
 	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+/obj/item/clothing/gloves/gauntlets/rig/fit_constraint()
+	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 /obj/item/clothing/shoes/magboots/rig
 	name = "boots"
-	species_restricted = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
 	icon_base = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+/obj/item/clothing/shoes/magboots/rig/fit_constraint()
+	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 /obj/item/clothing/suit/space/rig
 	name = "chestpiece"
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage) // allows all suits to carry a backpack on their back unless otherwise specified.
 	body_parts_covered = CHEST|LEGS|ARMS
 	heat_protection =	 CHEST|LEGS|ARMS
 	cold_protection =	 CHEST|LEGS|ARMS
@@ -71,11 +79,18 @@
 		SPECIES_ALTEVIAN 		= 'icons/inventory/suit/mob_altevian.dmi'
 		)
 	supporting_limbs = list()
-	species_restricted = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
 	var/obj/item/material/knife/tacknife
 	max_pressure_protection = null
 	min_pressure_protection = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+/obj/item/clothing/suit/space/rig/fit_constraint()
+	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/rig/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/rig/attack_hand(mob/living/M)
 	if(tacknife)
@@ -110,11 +125,11 @@
 		return 0
 
 	var/mob/living/carbon/human/H = loc
-	if(!istype(H) || (!H.back && !H.belt))
+	if(!istype(H) || (!H.get_equipped_item(SLOT_ID_BACK) && !H.get_equipped_item(SLOT_ID_BELT)))
 		return 0
 
-	var/obj/item/rig/suit = H.back
-	if(!suit || !istype(suit) || !suit.installed_modules.len)
+	var/obj/item/rig/suit = H.get_equipped_item(SLOT_ID_BACK)
+	if(!suit || !istype(suit) || !length(suit.installed_modules))
 		return 0
 
 	for(var/obj/item/rig_module/module in suit.installed_modules)
@@ -134,10 +149,13 @@
 
 /obj/item/clothing/suit/lightrig
 	name = DEVELOPER_WARNING_NAME // "suit"
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY)
 	flags_inv =          HIDEJUMPSUIT
 	flags =              THICKMATERIAL
 	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+/obj/item/clothing/suit/lightrig/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/shoes/lightrig
 	name = DEVELOPER_WARNING_NAME // "boots"

@@ -547,7 +547,6 @@
 	flags = NOBLUDGEON
 
 	//Has a list of items that it can hold.
-	var/list/can_hold = list(BASIC_GRIPPER)
 
 	var/datum/weakref/WR = null //We resolve this to get wrapped. Use get_wrapped_item when possible.
 
@@ -575,8 +574,10 @@
 	var/special_handling = FALSE
 
 /obj/item/storage/internal/gripper
-	max_w_class = ITEMSIZE_HUGE
 	max_storage_space = ITEMSIZE_COST_HUGE
+
+/obj/item/storage/internal/gripper/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_HUGE))
 
 /obj/item/gripper/Initialize(mapload)
 	. = ..()
@@ -637,20 +638,17 @@
 	name = "Engineering Gripper"
 	desc = "An integrated Engineering Gripper."
 	icon_state = "gripper-omni"
-	can_hold = list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER)
 
 /obj/item/gripper/drone
 	name = "Drone Gripper"
 	desc = "An integrated Drone Gripper."
 	icon_state = "gripper-old"
-	can_hold = list(BASIC_GRIPPER, SHEET_GRIPPER)
 
 /obj/item/gripper/omni
 	name = "omni gripper"
 	desc = "A strange grasping tool that can hold anything a human can, but still maintains the limitations of application its more limited cousins have."
 	icon_state = "gripper-omni"
 
-	can_hold = list(OMNI_GRIPPER) // Testing and Event gripper.
 
 // VEEEEERY limited version for mining borgs. Basically only for swapping cells and upgrading the drills.
 /obj/item/gripper/miner
@@ -658,68 +656,58 @@
 	desc = "A simple grasping tool for the maintenance of heavy drilling machines."
 	icon_state = "gripper-mining"
 
-	can_hold = list(MINER_GRIPPER)
 
 /obj/item/gripper/security
 	name = "security gripper"
 	desc = "A simple grasping tool for corporate security work."
 	icon_state = "gripper-sec"
 
-	can_hold = list(SECURITY_GRIPPER)
 
 /obj/item/gripper/paperwork
 	name = "paperwork gripper"
 	desc = "A simple grasping tool for clerical work."
 
-	can_hold = list(PAPERWORK_GRIPPER)
 
 /obj/item/gripper/medical
 	name = "medical gripper"
 	desc = "A simple grasping tool for medical work."
 	icon_state = "gripper-flesh"
 
-	can_hold = list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER)
 
 /obj/item/gripper/research //A general usage gripper, used for toxins/robotics/xenobio/etc
 	name = "scientific gripper"
 	icon_state = "gripper-sci"
 	desc = "A simple grasping tool suited to assist in a wide array of research applications."
 
-	can_hold = list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER)
 
 /obj/item/gripper/circuit
 	name = "circuit assembly gripper"
 	icon_state = "gripper-circ"
 	desc = "A complex grasping tool used for working with circuitry."
 
-	can_hold = list(CIRCUIT_GRIPPER)
 
 /obj/item/gripper/service //Used to handle food, drinks, seeds, and cards.
 	name = "service gripper"
 	icon_state = "gripper-sheet"
 	desc = "A simple grasping tool used to perform tasks in the service sector, such as handling food, drinks, and seeds. It can also hold cards and fake casino chips for hosting card games."
 
-	can_hold = list(SERVICE_GRIPPER)
 
 /obj/item/gripper/gravekeeper	//Used for handling grave things, flowers, etc.
 	name = "grave gripper"
 	icon_state = "gripper-old"
 	desc = "A specialized grasping tool used in the preparation and maintenance of graves."
 
-	can_hold = list(GRAVEYARD_GRIPPER)
 
 /obj/item/gripper/scene
 	name = "misc gripper"
 	desc = "A simple grasping tool that can hold a variety of 'general' objects..."
 
-	can_hold = list(SCENE_GRIPPER)
 
 /obj/item/gripper/no_use/organ
 	name = "organ gripper"
 	icon_state = "gripper-flesh"
 	desc = "A specialized grasping tool used to preserve and manipulate organic material."
 
-	can_hold = list(ORGAN_GRIPPER)
 
 /obj/item/gripper/no_use/organ/Entered(atom/movable/AM)
 	if(istype(AM, /obj/item/organ))
@@ -742,14 +730,12 @@
 	icon_state = "gripper-flesh"
 	desc = "A specialized grasping tool used in robotics work."
 
-	can_hold = list(ROBOTICS_ORGAN_GRIPPER)
 
 /obj/item/gripper/no_use/mech
 	name = "exosuit gripper"
 	icon_state = "gripper-mech"
 	desc = "A large, heavy-duty grasping tool used in construction of mechs."
 
-	can_hold = list(EXOSUIT_GRIPPER)
 
 	special_handling = TRUE
 
@@ -766,14 +752,12 @@
 	desc = "A specialized loading device, designed to pick up and insert sheets of materials inside machines."
 	icon_state = "gripper-sheet"
 
-	can_hold = list(SHEET_GRIPPER)
 
 /obj/item/gripper/syndicate
 	name = "syndicate gripper"
 	desc = "A simple grasping tool for off-the-books syndicate work."
 	icon_state = "gripper-sec"
 
-	can_hold = list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER)
 
 /*
  * Misc tools
@@ -805,3 +789,60 @@
 	R = null
 	last_robot_loc = null
 	..()
+
+// What each gripper can pick up: its hold constraint (P3), checked through
+// dq_constraint_refusal() like any other holder.
+
+/obj/item/gripper/hold_constraint()
+	return list(HOLD_ONLY(list(BASIC_GRIPPER)))
+
+/obj/item/gripper/engineering/hold_constraint()
+	return list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER)))
+
+/obj/item/gripper/drone/hold_constraint()
+	return list(HOLD_ONLY(list(BASIC_GRIPPER, SHEET_GRIPPER)))
+
+/obj/item/gripper/omni/hold_constraint()
+	return list(HOLD_ONLY(list(OMNI_GRIPPER)))
+
+/obj/item/gripper/miner/hold_constraint()
+	return list(HOLD_ONLY(list(MINER_GRIPPER)))
+
+/obj/item/gripper/security/hold_constraint()
+	return list(HOLD_ONLY(list(SECURITY_GRIPPER)))
+
+/obj/item/gripper/paperwork/hold_constraint()
+	return list(HOLD_ONLY(list(PAPERWORK_GRIPPER)))
+
+/obj/item/gripper/medical/hold_constraint()
+	return list(HOLD_ONLY(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER)))
+
+/obj/item/gripper/research/hold_constraint()
+	return list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER)))
+
+/obj/item/gripper/circuit/hold_constraint()
+	return list(HOLD_ONLY(list(CIRCUIT_GRIPPER)))
+
+/obj/item/gripper/service/hold_constraint()
+	return list(HOLD_ONLY(list(SERVICE_GRIPPER)))
+
+/obj/item/gripper/gravekeeper/hold_constraint()
+	return list(HOLD_ONLY(list(GRAVEYARD_GRIPPER)))
+
+/obj/item/gripper/scene/hold_constraint()
+	return list(HOLD_ONLY(list(SCENE_GRIPPER)))
+
+/obj/item/gripper/no_use/organ/hold_constraint()
+	return list(HOLD_ONLY(list(ORGAN_GRIPPER)))
+
+/obj/item/gripper/no_use/organ/robotics/hold_constraint()
+	return list(HOLD_ONLY(list(ROBOTICS_ORGAN_GRIPPER)))
+
+/obj/item/gripper/no_use/mech/hold_constraint()
+	return list(HOLD_ONLY(list(EXOSUIT_GRIPPER)))
+
+/obj/item/gripper/no_use/loader/hold_constraint()
+	return list(HOLD_ONLY(list(SHEET_GRIPPER)))
+
+/obj/item/gripper/syndicate/hold_constraint()
+	return list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER)))

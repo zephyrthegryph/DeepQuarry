@@ -158,9 +158,9 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	var/name
 	/// List of arguments to pass into queuedInsert
 	/// Exists so we can queue icon insertion, mostly for stuff like preferences
-	var/list/to_generate = list()
-	var/list/sizes = list()    // "32x32" -> list(10, icon/normal, icon/stripped)
-	var/list/sprites = list()  // "foo_bar" -> list("32x32", 5)
+	var/list/to_generate
+	var/list/sizes    // "32x32" -> list(10, icon/normal, icon/stripped)
+	var/list/sprites  // "foo_bar" -> list("32x32", 5)
 	var/list/cached_spritesheets_needed
 	var/generating_cache = FALSE
 	var/fully_generated = FALSE
@@ -244,7 +244,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	if(fully_generated)
 		return
 	while(length(to_generate))
-		var/list/stored_args = to_generate[to_generate.len]
+		var/list/stored_args = to_generate[length(to_generate)]
 		to_generate.len--
 		queuedInsert(arglist(stored_args))
 		if(yield && TICK_CHECK)
@@ -252,7 +252,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 
 	ensure_stripped()
 	for(var/size_id in sizes)
-		var/size = sizes[size_id]
+		var/size = LAZYACCESS(sizes, size_id)
 		var/file_path = size[SPRSZ_STRIPPED]
 		var/file_hash = rustg_hash_file("md5", file_path)
 		SSassets.transport.register_asset("[name]_[size_id].png", file_path, file_hash=file_hash)
@@ -341,16 +341,16 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	var/list/out = list()
 
 	for(var/size_id in sizes)
-		var/size = sizes[size_id]
+		var/size = LAZYACCESS(sizes, size_id)
 		var/icon/tiny = size[SPRSZ_ICON]
 		// Difference from Beestation: * resize on width and height
 		out += ".[name][size_id]{display:inline-block;width:[round(tiny.Width() * resize)]px;height:[round(tiny.Height() * resize)]px;background:url('[get_background_url("[name]_[size_id].png")]') no-repeat;}"
 
 	for(var/sprite_id in sprites)
-		var/sprite = sprites[sprite_id]
+		var/sprite = LAZYACCESS(sprites, sprite_id)
 		var/size_id = sprite[SPR_SIZE]
 		var/idx = sprite[SPR_IDX]
-		var/size = sizes[size_id]
+		var/size = LAZYACCESS(sizes, size_id)
 
 		var/icon/tiny = size[SPRSZ_ICON]
 		var/icon/big = size[SPRSZ_STRIPPED]
@@ -439,16 +439,16 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	if(should_load_immediately())
 		queuedInsert(sprite_name, I, icon_state, dir, frame, moving)
 	else
-		to_generate += list(args.Copy())
+		LAZYADD(to_generate, list(args.Copy()))
 
 /datum/asset/spritesheet/proc/queuedInsert(sprite_name, icon/I, icon_state="", dir=SOUTH, frame=1, moving=FALSE)
 	I = icon(I, icon_state=icon_state, dir=dir, frame=frame, moving=moving)
 	if(!I || !length(icon_states_fast(I)))  // that direction or state doesn't exist
 		return
 	var/size_id = "[I.Width()]x[I.Height()]"
-	var/size = sizes[size_id]
+	var/size = LAZYACCESS(sizes, size_id)
 
-	if(sprites[sprite_name])
+	if(LAZYACCESS(sprites, sprite_name))
 		if(duplicates_allowed)
 			return // No crash
 		CRASH("duplicate sprite \"[sprite_name]\" in sheet [name] ([type])")
@@ -467,10 +467,10 @@ GLOBAL_LIST_EMPTY(asset_datums)
 		sheet_copy.Insert(I, icon_state=sprite_name)
 		size[SPRSZ_ICON] = sheet_copy
 
-		sprites[sprite_name] = list(size_id, position)
+		LAZYSET(sprites, sprite_name, list(size_id, position))
 	else
-		sizes[size_id] = size = list(1, I, null)
-		sprites[sprite_name] = list(size_id, 0)
+		LAZYSET(sizes, size_id, size = list(1, I, null))
+		LAZYSET(sprites, sprite_name, list(size_id, 0))
 
 /datum/asset/spritesheet/proc/InsertAll(prefix, icon/I, list/directions)
 	if(length(prefix))
@@ -491,14 +491,14 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	return SSassets.transport.get_asset_url("spritesheet_[name].css")
 
 /datum/asset/spritesheet/proc/icon_tag(sprite_name)
-	var/sprite = sprites[sprite_name]
+	var/sprite = LAZYACCESS(sprites, sprite_name)
 	if(!sprite)
 		return null
 	var/size_id = sprite[SPR_SIZE]
 	return {"<span class="[name][size_id] [sprite_name]"></span>"}
 
 /datum/asset/spritesheet/proc/icon_class_name(sprite_name)
-	var/sprite = sprites[sprite_name]
+	var/sprite = LAZYACCESS(sprites, sprite_name)
 	if (!sprite)
 		return null
 	var/size_id = sprite[SPR_SIZE]
@@ -511,7 +511,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
  * * sprite_name - The sprite to get the size of
  */
 /datum/asset/spritesheet/proc/icon_size_id(sprite_name)
-	var/sprite = sprites[sprite_name]
+	var/sprite = LAZYACCESS(sprites, sprite_name)
 	if (!sprite)
 		return null
 	var/size_id = sprite[SPR_SIZE]
@@ -596,11 +596,11 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	_abstract = /datum/asset/simple/namespaced
 	/// parents - list of the parent asset or assets (in name = file assoicated format) for this namespace.
 	/// parent assets must be referenced by their generated url, but if an update changes a parent asset, it won't change the namespace's identity.
-	var/list/parents = list()
+	var/list/parents
 
 /datum/asset/simple/namespaced/register()
 	if(legacy)
-		assets |= parents
+		if(length(parents)) assets |= parents
 	var/list/hashlist = list()
 	var/list/created_items = list()
 
@@ -615,7 +615,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	var/namespace = md5(hashlist.Join())
 
 	for(var/asset_name in parents)
-		var/datum/asset_cache_item/ACI = new(asset_name, parents[asset_name])
+		var/datum/asset_cache_item/ACI = new(asset_name, LAZYACCESS(parents, asset_name))
 		if (!istype(ACI) || !ACI.hash)
 			log_asset("ERROR: Invalid asset: [type]:[asset_name]:[ACI]")
 			continue

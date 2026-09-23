@@ -4,12 +4,15 @@
 	icon_state = "punpun"
 	worn_state = "punpun"
 	has_sensor = 0
-	species_restricted = list("Monkey")
+
+/obj/item/clothing/under/punpun/fit_constraint()
+	var/list/bodytypes = list("Monkey")
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /mob/living/carbon/human/monkey/punpun/Initialize(mapload)
 	. = ..()
 	name = "Pun Pun"
 	real_name = name
-	w_uniform = new /obj/item/clothing/under/punpun(src)
+	equip_to_slot_or_del(new /obj/item/clothing/under/punpun(src), slot_w_uniform)
 	regenerate_icons()
 	can_be_drop_prey = TRUE

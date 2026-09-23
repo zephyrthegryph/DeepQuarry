@@ -94,6 +94,7 @@
 	B.vore_verb = "swallow"
 	B.name = "membrane" //THERE IS A RUNTIME HERE SOMEHOW
 	B.desc	= "The metroid positions itself above you and swoops down, lazily enveloping you through its tight mouth and sending you straight to its bulbous membrane for all to see."
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 	"The metroid's cortex tentacles wriggle over you, violating and teasing you as they sopped you in viscous slime.",
 	"The cortex you are forced against pulses with life, gently squeezing you between it and the stretchy membrane around you.",
@@ -101,6 +102,7 @@
 	"The air around you is so thick. You struggle to breathe occasionally, choking on the heat and moisture.",
 	"You struggle a bit, making the membrane swell out."
 	)
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 	"The cortex tentacles are pulsating like lines of power streaking away from you as it drains you. Waves of sleepiness wash over you as the areas most closest to the tentacles are drained of energy.",
 	"The air feels a tinge incendiary as the cortex you rest on heats up, fueled by your own body as the metroid draws your strenght away from you.",

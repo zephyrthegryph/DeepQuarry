@@ -822,7 +822,7 @@
 /datum/unit_test/dq_medical_metric_temperature_extremes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	// Drop body temperature way below normal.
-	H.bodytemperature = 310.15 - 25  // 25K below 37°C
+	H.bodytemperature = BODYTEMP_NORMAL - 25  // 25K below 37°C
 	H.dq_check_metric_conditions()
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/saw_hypo = FALSE
@@ -833,7 +833,7 @@
 	TEST_ASSERT(saw_hypo, "cold body temperature should spawn hypothermia")
 
 	// Now spike to overheated.
-	H.bodytemperature = 310.15 + 10
+	H.bodytemperature = BODYTEMP_NORMAL + 10
 	H.dq_check_metric_conditions()
 	var/saw_heat = FALSE
 	for(var/datum/affliction/c in torso.afflictions_here())

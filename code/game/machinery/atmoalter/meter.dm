@@ -4,7 +4,7 @@
 	icon = 'icons/obj/meter.dmi'
 	icon_state = "meterX"
 	var/obj/machinery/atmospherics/pipe/target = null
-	var/list/pipes_on_turf = list()
+	var/list/pipes_on_turf
 	anchored = TRUE
 	power_channel = ENVIRON
 	var/frequency = 0
@@ -22,7 +22,7 @@
 
 /obj/machinery/meter/Destroy()
 	unregister_gas_dependency(WEAKREF(src))
-	pipes_on_turf.Cut()
+	LAZYCLEARLIST(pipes_on_turf)
 	target = null
 	return ..()
 
@@ -148,9 +148,7 @@
 	return ..()
 
 /obj/machinery/meter/wrench_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
-	if(do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+	if(use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, message_self = "You begin to unfasten \the [src]..."))
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
 		new /obj/item/pipe_meter(get_turf(src))
 		qdel(src)
@@ -165,17 +163,17 @@
 /obj/machinery/meter/multitool_act(mob/user, obj/item/tool)
 	if(open)
 		id = tgui_input_text(user, "Please insert an ID tag for [src], example 'exhaust_pipe'.", "Set ID Tag", id, MAX_NAME_LEN)
-		if(istype(tool, /obj/item/multitool))
-			var/obj/item/multitool/multitool = tool
+		var/obj/item/multitool/multitool = tool.get_multitool()
+		if(multitool)
 			multitool.connectable = src
 		return ITEM_INTERACT_SUCCESS
 	for(var/obj/machinery/atmospherics/pipe/pipe in loc)
-		pipes_on_turf |= pipe
+		LAZYOR(pipes_on_turf, pipe)
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING
-	target = pipes_on_turf[1]
-	pipes_on_turf.Remove(target)
-	pipes_on_turf.Add(target)
+	target = LAZYACCESS(pipes_on_turf, 1)
+	LAZYREMOVE(pipes_on_turf, target)
+	LAZYADD(pipes_on_turf, target)
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target]."))
 	return ITEM_INTERACT_SUCCESS
 

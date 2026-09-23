@@ -220,7 +220,7 @@
 		to_chat(user, "Your gripper is full!")
 		return FALSE
 
-	if(!is_type_in_list(I, can_hold))
+	if(dq_constraint_refusal(src, CONSTRAINT_HOLD, I, user))
 		to_chat(user, span_danger("Your gripper cannot hold \the [I]."))
 		return FALSE
 
@@ -243,7 +243,7 @@
 		if(!A.opened)
 			return TRUE
 
-		if(!A.cell || !is_type_in_list(A.cell, can_hold))
+		if(!A.cell || dq_constraint_refusal(src, CONSTRAINT_HOLD, A.cell, user))
 			return TRUE
 
 		if(!grab_cell(A.cell, user))
@@ -265,7 +265,7 @@
 		if(!A.opened)
 			return TRUE
 
-		if(!A.cell || !is_type_in_list(A.cell, can_hold))
+		if(!A.cell || dq_constraint_refusal(src, CONSTRAINT_HOLD, A.cell, user))
 			return TRUE
 
 		if(!grab_cell(A.cell, user))

@@ -41,7 +41,7 @@
 	if(ismob(A))
 		if(ishuman(A))
 			var/mob/living/carbon/human/H = A
-			if(!H.legcuffed)
+			if(!H.get_equipped_item(SLOT_ID_LEGCUFFED))
 				return TRUE
 	return FALSE
 

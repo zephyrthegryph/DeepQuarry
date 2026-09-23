@@ -85,6 +85,8 @@
 #define REACT_KEY_SHUTTLE_SCHEDULE 22
 #define REACT_SHUTTLE_EVAC 1
 #define REACT_SHUTTLE_SUPPLY 2
+/// A machine broke or was fixed (base /obj/machinery/atom_break()/atom_fix()). Id: the machine's REACT_ID.
+#define REACT_KEY_MACHINE_BROKEN 23
 
 /// Key id for global keys (registry ids start at 1, so 0 is never a datum's id).
 #define REACT_ID_GLOBAL 0

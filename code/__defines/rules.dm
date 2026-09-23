@@ -37,6 +37,17 @@
 #define RULE_REPLACES_IGNITION (1<<0)
 /// take_damage()/repair_damage()'s integrity_failure crossing -> atom_break()/atom_fix().
 #define RULE_REPLACES_INTEGRITY_BREAK (1<<1)
+/// take_damage()'s zero-integrity crossing -> atom_destruction().
+#define RULE_REPLACES_INTEGRITY_DESTRUCTION (1<<2)
+
+// ---- Damage flavour bands (damage.md §6). Set by the damage-flavour rules. ----
+#define DAMAGE_BAND_NONE 0
+/// Below 3/4 integrity.
+#define DAMAGE_BAND_LIGHT 1
+/// Below 1/2 integrity.
+#define DAMAGE_BAND_MODERATE 2
+/// Below 1/4 integrity.
+#define DAMAGE_BAND_HEAVY 3
 
 // ---- DM-owned keys (reactor.md §4). Kinds past S1's own (1-3). ----
 /// An atom's integrity changed. Id: the atom's reactor id.

@@ -67,7 +67,7 @@
 	name = "hawaiian shirt"
 	desc = "You probably need some welder googles to look at this."
 	icon_state = "hawaiian_cyan"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
 	heat_protection = CHEST
@@ -118,7 +118,7 @@
 	name = "black tropical shirt"
 	desc = "A classic themed neosilk tropical shirt. This one makes you feel like an animal."
 	icon_state = "animalstyle"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
 	heat_protection = CHEST
@@ -178,8 +178,7 @@
 	item_state = "classicponcho"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	max_heat_protection_temperature = T0C+100
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST|ARMS|LEGS
 	heat_protection = CHEST|ARMS|LEGS
@@ -192,10 +191,14 @@
 	)
 
 //This is really scuffed and needs fixing sometime.
+
+/obj/item/clothing/accessory/poncho/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/accessory/poncho/equipped() //Solution for race-specific sprites for an accessory which is also a suit. Suit icons break if you don't use icon override which then also overrides race-specific sprites.
 	..()
 	var/mob/living/carbon/human/H = loc
-	if(istype(H) && H.wear_suit == src)
+	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
 		if(H.species.name == SPECIES_TESHARI)
 			icon_override = 'icons/inventory/suit/mob_teshari.dmi'
 		else
@@ -377,8 +380,7 @@
 	item_state = "vest"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	item_state_slots = list(slot_r_hand_str = "wcoat", slot_l_hand_str = "wcoat")
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
 	heat_protection = CHEST
@@ -386,6 +388,10 @@
 	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+/obj/item/clothing/accessory/wcoat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/accessory/wcoat/red
 	name = "red waistcoat"
@@ -567,12 +573,15 @@
 	icon_state = "klbr"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	item_state_slots = list(SLOT_ID_RIGHT_HAND = "armor", SLOT_ID_LEFT_HAND = "armor")
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO)
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = UPPER_TORSO|ARMS
 	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+/obj/item/clothing/accessory/replika/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO)
+	return list(HOLD_ONLY(stores))
 
 
 /obj/item/clothing/accessory/jacket/modwrap

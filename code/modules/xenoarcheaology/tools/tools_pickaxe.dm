@@ -115,7 +115,11 @@
 	item_state = "syringe_kit"
 	storage_slots = 7
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/pickaxe/brush,
+	max_storage_space = ITEMSIZE_COST_SMALL * 9
+	use_to_pickup = TRUE
+
+/obj/item/storage/excavation/hold_constraint()
+	var/list/holds = list(/obj/item/pickaxe/brush,
 	/obj/item/pickaxe/one_pick,
 	/obj/item/pickaxe/two_pick,
 	/obj/item/pickaxe/three_pick,
@@ -123,9 +127,7 @@
 	/obj/item/pickaxe/five_pick,
 	/obj/item/pickaxe/six_pick,
 	/obj/item/pickaxe/hand)
-	max_storage_space = ITEMSIZE_COST_SMALL * 9
-	max_w_class = ITEMSIZE_SMALL
-	use_to_pickup = TRUE
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/excavation/Initialize(mapload)
 	. = ..()
@@ -137,27 +139,16 @@
 	new /obj/item/pickaxe/five_pick(src)
 	new /obj/item/pickaxe/six_pick(src)
 
-/obj/item/storage/excavation/handle_item_insertion()
-	..()
-	sort_picks()
+/// Picks show smallest first; anything else after them.
+/obj/item/storage/excavation/hud_order(list/items)
+	var/list/picks = list()
+	for(var/obj/item/pickaxe/P in items)
+		picks += P
+	items -= picks
+	return sortTim(picks, GLOBAL_PROC_REF(cmp_excavation_amount)) + items
 
-/obj/item/storage/excavation/proc/sort_picks()
-	var/list/obj/item/pickaxe/picksToSort = list()
-	for(var/obj/item/pickaxe/P in src)
-		picksToSort += P
-		P.loc = null
-	while(picksToSort.len)
-		var/min = 200 // No pick is bigger than 200
-		var/selected = 0
-		for(var/i = 1 to picksToSort.len)
-			var/obj/item/pickaxe/current = picksToSort[i]
-			if(current.excavation_amount <= min)
-				selected = i
-				min = current.excavation_amount
-		var/obj/item/pickaxe/smallest = picksToSort[selected]
-		smallest.loc = src
-		picksToSort -= smallest
-	orient2hud()
+/proc/cmp_excavation_amount(obj/item/pickaxe/a, obj/item/pickaxe/b)
+	return a.excavation_amount - b.excavation_amount
 
 /obj/item/pickaxe/excavationdrill
 	name = "excavation drill"

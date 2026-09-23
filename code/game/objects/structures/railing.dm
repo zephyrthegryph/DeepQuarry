@@ -5,6 +5,7 @@
 // Based on railing.dmi from https://github.com/Endless-Horizon/CEV-Eris
 /obj/structure/railing
 	name = "railing"
+	debris_type = /obj/item/stack/rods
 	desc = "A standard steel railing, painted orange.  Play stupid games, win stupid prizes."
 	icon = 'icons/obj/railing.dmi'
 	density = TRUE
@@ -55,21 +56,9 @@
 		return !density
 	return TRUE
 
-/obj/structure/railing/examine(mob/user)
-	. = ..()
-	if(get_integrity() < max_integrity)
-		switch(get_integrity() / max_integrity)
-			if(0.0 to 0.5)
-				. += span_warning("It looks severely damaged!")
-			if(0.25 to 0.5)
-				. += span_warning("It looks damaged!")
-			if(0.5 to 1.0)
-				. += span_notice("It has a few scrapes and dents.")
-
 /obj/structure/railing/atom_destruction(damage_flag)
 	visible_message(span_warning("\The [src] breaks down!"))
 	playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
-	new /obj/item/stack/rods(get_turf(src))
 	return ..()
 
 /obj/structure/railing/proc/NeighborsCheck(UpdateNeighbors = 1)
@@ -178,7 +167,7 @@
 				to_chat(user, span_danger("There's \a [occupied] in the way."))
 				return
 			if (G.state < 2)
-				if(user.a_intent == I_HURT)
+				if(IS_HARMING(user))
 					if (prob(15))	M.Weaken(5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)

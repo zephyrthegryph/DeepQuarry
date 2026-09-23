@@ -105,6 +105,13 @@
 /mob/living/silicon/robot/RangedAttack(atom/A)
 	A.attack_robot(src)
 
+/// A cyborg's empty-gripper Use (the robot adapter, adapters.dm). With no override,
+/// `silicon_use` may make it a hand's Use; otherwise it interfaces like the AI.
 /atom/proc/attack_robot(mob/user as mob)
-	attack_ai(user)
-	return
+	if(silicon_use & ROBOT_USE_HAND)
+		return attack_hand(user)
+	if(silicon_use & ROBOT_USE_HAND_ADJACENT)
+		if(Adjacent(user))
+			return attack_hand(user)
+		return
+	return attack_ai(user)

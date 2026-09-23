@@ -40,8 +40,10 @@
 	name = "\improper Hephaestus 102b \'NSFW\' gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/gun/projectile/cell_loaded/combat,/obj/item/ammo_magazine/cell_mag/combat,/obj/item/ammo_casing/microbattery/combat)
+
+/obj/item/storage/secure/briefcase/nsfw_pack/hold_constraint()
+	var/list/holds = list(/obj/item/gun/projectile/cell_loaded/combat,/obj/item/ammo_magazine/cell_mag/combat,/obj/item/ammo_casing/microbattery/combat)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/secure/briefcase/nsfw_pack/Initialize(mapload)
 	. = ..()
@@ -54,8 +56,10 @@
 	name = "\improper Hephaestus 102b \'NSFW\' gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
-	max_w_class = ITEMSIZE_NORMAL
-	can_hold = list(/obj/item/gun/projectile/cell_loaded/combat,/obj/item/ammo_magazine/cell_mag/combat,/obj/item/ammo_casing/microbattery/combat)
+
+/obj/item/storage/secure/briefcase/nsfw_pack_hos/hold_constraint()
+	var/list/holds = list(/obj/item/gun/projectile/cell_loaded/combat,/obj/item/ammo_magazine/cell_mag/combat,/obj/item/ammo_casing/microbattery/combat)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hos/Initialize(mapload)
 	. = ..()

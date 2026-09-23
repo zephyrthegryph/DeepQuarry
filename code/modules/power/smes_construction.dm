@@ -188,6 +188,7 @@
 			input_level_max += C.IOCapacity
 			output_level_max += C.IOCapacity
 		charge = between(0, charge, capacity)
+		power_sync()
 		return 1
 	return 0
 
@@ -217,8 +218,8 @@
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	// Check if user has protected gloves.
 	var/user_protected = 0
-	if(h_user.gloves)
-		var/obj/item/clothing/gloves/G = h_user.gloves
+	if(h_user.get_equipped_item(SLOT_ID_GLOVES))
+		var/obj/item/clothing/gloves/G = h_user.get_equipped_item(SLOT_ID_GLOVES)
 		if(G.siemens_coefficient == 0)
 			user_protected = 1
 	log_game("SMES FAILURE: <b>[src.x]X [src.y]Y [src.z]Z</b> User: [h_user.ckey], Intensity: [intensity]/100")
@@ -315,7 +316,7 @@
 			if (prob(overload_chance))
 				A.overload_lighting()
 			if (prob(failure_chance))
-				A.set_broken()
+				A.atom_break()
 
 // Proc: update_icon()
 // Parameters: None
@@ -406,9 +407,7 @@
 	var/failure_probability = round(charge / capacity * 100)
 	if(failure_probability < 5)
 		failure_probability = 0
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_warning("You begin to disassemble [src]!"))
-	if(do_after(user, (10 SECONDS * cur_coils) * tool.toolspeed, target = src))
+	if(use_tool(user, tool, src, delay = 10 SECONDS * cur_coils, volume = 50, message_self = "You begin to disassemble [src]!"))
 		if(failure_probability && prob(failure_probability))
 			total_system_failure(failure_probability, user)
 			return ITEM_INTERACT_SUCCESS

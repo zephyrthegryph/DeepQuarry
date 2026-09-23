@@ -97,7 +97,7 @@
 			if(!user.Adjacent(M))
 				return
 			if (G.state < 2)
-				if(user.a_intent == I_HURT)
+				if(IS_HARMING(user))
 					if (prob(15))	M.Weaken(5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					visible_message(span_danger("[G.assailant] slams [G.affecting]'s face against \the [src]!"))

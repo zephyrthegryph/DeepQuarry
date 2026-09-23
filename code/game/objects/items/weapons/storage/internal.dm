@@ -20,8 +20,10 @@
 /obj/item/storage/internal/attack_hand()
 	return		//make sure this is never picked up
 
-/obj/item/storage/internal/mob_can_equip(mob/M, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	return 0	//make sure this is never picked up
+/// Internal storage is part of its owner and is never worn on its own.
+/obj/item/storage/internal/equip_constraint()
+	var/list/nothing = list()
+	return list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, nothing), "it can't be worn"))
 
 //Helper procs to cleanly implement internal storages - storage items that provide inventory slots for other items.
 //These procs are completely optional, it is up to the master item to decide when it's storage get's opened by calling open()
@@ -69,13 +71,11 @@
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.l_store == master_item && !H.get_active_hand())	//Prevents opening if it's in a pocket.
+		if(H.get_equipped_item(SLOT_ID_POCKET_L) == master_item && !H.get_active_hand())	//Prevents opening if it's in a pocket.
 			H.put_in_hands(master_item)
-			H.l_store = null
 			return 0
-		if(H.r_store == master_item && !H.get_active_hand())
+		if(H.get_equipped_item(SLOT_ID_POCKET_R) == master_item && !H.get_active_hand())
 			H.put_in_hands(master_item)
-			H.r_store = null
 			return 0
 
 	src.add_fingerprint(user)

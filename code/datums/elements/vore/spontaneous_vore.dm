@@ -132,7 +132,7 @@
 			source.visible_message(span_vwarning("[source] suddenly slips inside of [thrown_mob]'s [lowertext(destination_belly.name)] as [thrown_mob] flies into them!"))
 			destination_belly.nom_atom(source) //Eat them!!!
 			if(source.loc != thrown_mob.vore_selected)
-				source.forceMove(thrown_mob.vore_selected) //Double check. Should never happen but...Weirder things have happened!
+				thrown_mob.vore_selected.belly_insert(source) //Double check. Should never happen but...Weirder things have happened!
 			if(thrower)
 				add_attack_logs(thrower,source,"Was Devoured by [thrown_mob.name] via throw vore.")
 			else

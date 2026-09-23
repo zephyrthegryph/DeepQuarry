@@ -136,7 +136,7 @@
 	var/timeofdeath = 0.0//Living
 	var/cpr_time = 1.0//Carbon
 
-	var/bodytemperature = 310.055	//98.7 F
+	var/bodytemperature = BODYTEMP_NORMAL
 	var/drowsyness = 0.0//Carbon
 	var/charges = 0.0
 
@@ -144,7 +144,6 @@
 	var/stunned = 0.0
 	var/weakened = 0.0
 	var/losebreath = 0.0//Carbon
-	var/a_intent = I_HELP//Living
 	var/m_int = null//Living
 	var/m_intent = I_RUN//Living
 	var/lastKnownIP = null

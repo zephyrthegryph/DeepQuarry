@@ -97,7 +97,7 @@
 	busy = 0
 
 /obj/machinery/power/breakerbox/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/newtag = tgui_input_text(user, "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "SMES RCON system", "", MAX_NAME_LEN)
 		if(newtag)
 			RCon_tag = newtag
@@ -125,15 +125,7 @@
 			C.d2 = direction
 			C.icon_state = "[C.d1]-[C.d2]"
 			C.breaker_box = src
-
-			var/datum/powernet/PN = new()
-			PN.add_cable(C)
-
-			C.mergeConnectedNetworks(C.d2)
-			C.mergeConnectedNetworksOnTurf()
-
-			if(C.d2 & (C.d2 - 1))// if the cable is layed diagonally, check the others 2 possible directions
-				C.mergeDiagonalsNetworks(C.d2)
+			C.power_register()
 
 	else
 		icon_state = icon_state_off

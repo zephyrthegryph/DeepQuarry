@@ -137,7 +137,7 @@
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
 	var/damage_type = W.obj_damage_type()
-	if(damage_type == BURN && istype(W, /obj/item/weldingtool))
+	if(damage_type == BURN && W.has_tool_quality(TOOL_WELDER))
 		playsound(src, W.usesound, 100, 1)
 	if(damage_type == BRUTE || damage_type == BURN)
 		blob_damage(W.force, damage_type)

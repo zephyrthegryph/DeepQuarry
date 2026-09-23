@@ -80,6 +80,13 @@ Every interaction is a definition, not a proc override. So every interaction can
 - `hover.dm`: `/atom/MouseEntered` returns early unless the client has a category key bound. Category keys (`.input-category`) are unbound by default and do nothing until I2.
 - `keybind_editor.dm` with `KeybindingEditor.tsx`: the Keybindings verb.
 
+**As built (I3).**
+- The adapters produce the hands' actions, filtered by `allows_interaction()`: the AI gets tool-less `INTERACTION_TAG_REMOTE` interactions on what it can see (`has_camera_sight()`: its view, or the camera network when in a core; the rule of its tgui state); cyborgs get everything except observer-only (their modules are their held items, so tool interactions come through `resolve_attackby` as for hands); ghosts get only `INTERACTION_TAG_OBSERVER`; telekinesis gets tool-less ones (`interactions_for()`/`try_interaction()` take an `adapter` argument so telekinesis can act for a human). Every non-hand Use tries the resolver first (`use_interaction()`), then the legacy proc.
+- `/atom/var/silicon_use` (a type var; `code/__defines/interactions.dm`) replaces the forwarding overrides: `SILICON_USE_HAND` (the AI's Use is `attack_hand`; `/obj/machinery` sets it), `SILICON_USE_UI` (the AI's Use opens tgui), `ROBOT_USE_HAND` and `ROBOT_USE_HAND_ADJACENT` (a cyborg's empty-gripper Use is `attack_hand`, always or when adjacent). The base `attack_ai` and `attack_robot` read it, so a type's own override still wins. `/obj/machinery/attack_ai` keeps only its gate (a cyborg without a client, or looking through a camera, can't control machines remotely) and calls `..()`. Ghost UI openers are covered by `/obj/attack_ghost`, which opens tgui.
+- Deleted: 79 `attack_ai`, 9 `attack_robot` and 6 `attack_ghost` overrides that only forwarded. Behaviour changes, all small: machines whose own `attack_ai` forwarded now get the machinery gate for remote-viewing or clientless cyborgs; ghosts with inquisitive ghost on also get the examine on those six types, as on every other object; the privacy switch's `attack_hand()` gets its user.
+- Kept, with real behaviour or owned by another track: the digital and shutoff valves and `light/flamp` (an ancestor overrides `attack_ai` differently); the medical, cloning, cryo, resleeving and sleeper consoles and the medical stand (the body track's files). `tools/ci/actor_forwarding_lint.py` (CI: Check Actor Forwarding) forbids new forwarding-only overrides and allowlists these.
+- Tests: `code/modules/unit_tests/dq_actor_adapter_tests.dm` (the filter per actor, Use through the resolver per actor, and parity per actor type on converted types: button, fire alarm, privacy switch, airlock, turret control, ladder, closet).
+
 ## 5. Interaction definitions
 
 ```dm
@@ -157,6 +164,16 @@ Definitions are shared singletons: a type lists or inherits them, and it costs n
 - `tool_qualities` and `has_tool_quality()` stay as the identity model.
 - All 20 `TOOL_*` qualities route through interactions. Today `tool_act` routes only 6.
 
+**As built (I4).** Code: `code/datums/interactions/tools.dm`.
+- `use_tool(actor, tool, target, interaction, delay, quality, tier, amount, volume, message_self, message_others, extra_checks, silent)` returns TRUE when the tool was used. With an `interaction` it reads `tool`, `tool_tier`, `tool_amount`, `tool_volume` and `start_messages()` from it and times itself with `duration_for()`; I2's `pay_cost()` is now just `use_tool(actor, held, target, src)`. Hand-written sites pass `delay` (unscaled, exactly what they used to multiply by `toolspeed`), `quality`, `amount` and `volume` as named arguments.
+- The steps: `tool_quality_failure()` (quality and `dq_tool_tier()`); `tool_start_check()` (a welder must be lit and hold `amount`, and checks the user's eyes; a stack must hold `amount`); the tool's `usesound`; the start messages; `do_after` for `tool_delay()` = delay × `toolspeed` × `tool_skill_factor()` (a stub returning 1); a re-check of the tool; `tool_use_resources()` (a welder burns `amount` through `remove_fuel()`, so an electric welder still pays its `charge_cost`; a stack `use()`s it). Items that lend a welder (`get_welder()`) forward both hooks. `get_multitool()` is the multitool counterpart of `get_welder()`, for sites that read the buffer.
+- Timings are unchanged at every converted site. One deliberate difference: fuel is burned when the job completes, so an interrupted job no longer wastes it (it used to be paid up front at some sites).
+- `tool_act` now sends every quality with no focused hook (the 14 besides screwdriver, crowbar, wrench, wirecutter, multitool and welder) to `interaction_tool_act()`, so all 20 reach interactions.
+- The `*_act` procs that handed the tool back to `attackby(W, user, TOOL_X)` are gone: their branches moved into the hooks, on girders, door and windoor assemblies, machine frames, AI cores, the nuke, turrets and turret frames, and the item and gun cases (bodybags, tanks, traps, grave markers, armour inserts, voidsuits, crossbows, cannon and coilgun frames, modular, magnetic and kinetic guns). The deprecated `is_screwdriver()`-style helpers are deleted, and `istype` checks on tool types became quality checks.
+- Lint (`tools/ci/check_grep.sh`): no `*_act` that calls `attackby` (the `focused_tool_stage` vehicle and secbot assemblies are allowlisted for I5), no `istype` on `/obj/item/tool`, `weldingtool` or `multitool` outside an allowlist of type-specific and not-yet-owned files, and no `is_<tool>()` calls.
+- Tests: `code/modules/unit_tests/dq_tool_tests.dm`. `GLOB.dq_tool_last_use` (unit tests only) records each call's unscaled delay, quality, amount and volume, so parity tests assert the timings with a zero-speed tool.
+- Left for I5: the `focused_tool_stage` machines (walls, floors, mechs and wreckage, mech and fighter chassis, vehicle and secbot assemblies) still bounce through `run_focused_tool()`, and walls keep their hand-written waits. Left for I7: sites whose wait isn't a plain `delay × toolspeed` (the microwave divides by it, the SMES repair, the generator screwdriver, turret salvage, the girder plasma cutter), bot pAI removal (next to I3's `attack_ai` code), and anything in surgery, organs, nanopaste and resleeving implants, which belong to the body rewrite.
+
 ## 10. Construction graphs
 
 **The graph.** Machines, frames, walls, girders, windows, mechs and vehicles declare construction graphs:
@@ -186,6 +203,53 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 - With combat mode on, attack interactions take priority on Use.
 - The 211 `a_intent ==` gates become interaction requirements, or combat-mode checks in the melee swing (`melee_swing.dm`).
 
+**As built (I6).** Code: `code/modules/mob/combat_mode.dm`; defines in `code/__defines/combat_mode.dm`; tests in `code/modules/unit_tests/dq_combat_mode_tests.dm`.
+- A Use has one of four outcomes, from two pieces of state:
+  - `combat_mode`, the mob action. It is toggled by keys (`.combat-mode toggle|on|off`) and by the HUD button (`/atom/movable/screen/combat_mode`), which replaced the intent selector on the human, simple mob, pAI and borg HUDs. `set_combat_mode()` writes it.
+  - `attack_variant`, Disarm or Grab. The Disarm and Grab keys (2 and 3; `.attack-variant` on press, `.attack-variant-release` on release) are held like modifiers: while one is down, clicks, bumps (stepping on micros) and belly struggles are disarms or grabs. The `disarm` and `grab` interactions are listed on every living target, in the Menu, in examine and under the attack category key; `use_attack_variant()` runs one Use as that variant (the adapter's `use_variant()`) and puts the old value back. `Login()` clears a variant, so a player never inherits one.
+- Legacy handlers read the outcome with `IS_HELPING`, `IS_HARMING`, `IS_DISARMING` and `IS_GRABBING`, or switch on `use_stance()`, which returns `I_HELP`, `I_DISARM`, `I_GRAB` or `I_HURT`. AI brains, admin tools and mob transforms set it as data with `set_use_stance()`. A type that starts hostile sets `combat_mode = TRUE`.
+- Resolver: `interaction_priority_for()` moves `hostile`-tagged interactions up by `COMBAT_MODE_PRIORITY_SHIFT` with combat mode on, and down by the same with it off. The resolution keeps per-actor priorities, so sorting, `best_for_action()`, ties and category keys all respect it. `interactions_for()` still takes `modifiers`, but it needs none: the router has already turned them into the action.
+- Requirement clauses: `REQ_COMBAT_MODE` and `REQ_NO_COMBAT_MODE` (P2 proc clauses on the actor, with reasons).
+- Melee swing: the divert in `/mob/living/attackby` (`item_attack.dm`) starts a swing only when `IS_HARMING(user)`.
+- Lint: `combat mode: a_intent` in `tools/ci/check_grep.sh` forbids `a_intent` outside a fixed allowlist.
+
+**Mapping: every former intent outcome**
+
+| Before | Now | Code reads |
+|---|---|---|
+| Help intent, then click (key 1) | Combat mode off (key 1, or toggle with F, G or Insert, or the HUD button), then Use | `IS_HELPING(M)` / `I_HELP`; help and neutral interactions win Use |
+| Harm intent, then click (key 4) | Combat mode on (key 4, toggle, HUD button), then Use | `IS_HARMING(M)` / `I_HURT`; hostile interactions win Use; weapons start a melee swing |
+| Disarm intent, then click or step (key 2) | Hold the Disarm key (2) and click, with or without a held item, or step; the Disarm interaction (Menu, attack category key) on living targets | `IS_DISARMING(M)` / `I_DISARM` |
+| Grab intent, then click or step (key 3) | Hold the Grab key (3) and click (grab upgrades, holding doors, taking pets' hats) or step; the Grab interaction on living targets | `IS_GRABBING(M)` / `I_GRAB` |
+| Cycle intent keys (F, G, Insert) | Toggle combat mode (same keys) | |
+| Borg help/harm toggle (4, F, G, Insert, HUD) | Toggle combat mode (same keys, HUD button) | |
+| Grab item, then click the victim with an intent (upgrade, pin, headbutt) | Hold Grab (upgrade) or Disarm (pin) and click; combat mode on and Use (harm moves); Use (help) | `switch(assailant.use_stance())` in `mob_grab.dm` |
+| Struggling in a belly by intent | Resist with combat mode off (help) or on (harm), or hold Disarm or Grab and resist | `belly_obj_resist.dm` |
+| Bumping by intent: swapping places, stepping on micros | Combat mode off swaps; hold Disarm or Grab and step to stomp or pin a micro; combat mode on to crush | `living_movement.dm`, `resize.dm` |
+| NPC special attacks picked by setting `a_intent` | `set_use_stance()` in the combat AI ports; `do_special_attack()` switches on `use_stance()` | data |
+| Hostile types with `a_intent = I_HURT` | `combat_mode = TRUE` on the type | data |
+| Admin "AI intent", GM mob spawner intent | `set_use_stance()` | data |
+| Hook launcher intent, vore panel "current intent", attack logs | `use_stance()` at the time | |
+
+**Converted gates.** About 240 reads became `IS_*` checks or `use_stance()` switches in the legacy handlers (routing: attack_hand, attackby, UnarmedAttack, bump swapping, the melee swing divert). About 45 writes became data defaults (`set_use_stance()`, `combat_mode = TRUE`). Two gates compared against `"hurt"`, which never matched `I_HURT`: `floor_light.dm` now smashes in combat mode as intended, and the polymorph (`change.dm`) now turns combat mode on. `whip` read `if(user.a_intent)`, which was always true, and the check is gone. No legacy gate became an interaction requirement: each sits inside a legacy handler, and it moves to an interaction when I7 converts that handler's domain. The Disarm and Grab interactions and the requirement clauses are what those conversions build on.
+
+**Left for other work** (the lint allowlists them; `a_intent` stays as a read-only mirror of `use_stance()` until they convert, then it is deleted):
+- The body rewrite's files. Each gate converts one to one: `a_intent == I_HURT` → `IS_HARMING(user)`, `!= I_HELP` → `!IS_HELPING(user)`, `switch(M.a_intent)` → `switch(M.use_stance())`.
+  - `code/modules/medical/instruments/resuscitation.dm:23,55,89`
+  - `code/modules/surgery/surgery.dm:142`
+  - `code/modules/organs/organ.dm:563`
+  - `code/game/objects/items/weapons/surgery_tools.dm:26`
+  - `code/game/objects/items/devices/scanners/health.dm:36`
+  - `code/modules/reagents/reagent_containers/syringes.dm:103,354` (354 compares against `"hurt"`, which never matches: a latent bug)
+  - `code/modules/reagents/reagent_containers/hypospray.dm:60`
+  - `code/modules/reagents/reagent_containers/blood_pack.dm:126`
+  - `code/modules/mob/living/carbon/human/species/species.dm:624`
+  - `code/modules/mob/living/carbon/human/species/station/teshari.dm:13`
+  - `code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:98`
+  - `code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm:37,84`
+  - `has_a_intent` in `species_hud.dm` still says whether the species draws the combat mode button.
+- Tool `*_act` procs, which I4 is migrating: `airlock.dm:797,850`, `windowdoor.dm:238`, `mecha.dm:1459`, `spy_bug.dm:127`, `window.dm:288`, `maintenance_panel.dm:36`, `robot.dm:970,1043`.
+
 ## 13. Migration, one domain at a time (I7)
 
 **Order of conversion**
@@ -212,6 +276,7 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 - Every binding default has a test.
 
 **Lint**
+- No `a_intent` outside the allowlist (I6).
 - No forwarding `attack_ai`/`attack_robot`/`attack_ghost` overrides (I3).
 - No `*_act` that calls `attackby` (I4).
 - No new `attackby`, `attack_hand` or `attack_self` overrides in domains that have converted (I7).

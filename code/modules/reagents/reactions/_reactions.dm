@@ -14,9 +14,9 @@
 	var/name = null
 	var/id = null
 	var/result = null
-	var/list/required_reagents = list()
-	var/list/catalysts = list()
-	var/list/inhibitors = list()
+	var/list/required_reagents
+	var/list/catalysts
+	var/list/inhibitors
 	var/result_amount = 0
 
 	//how far the reaction proceeds each time it is processed. Used with either REACTION_RATE or HALF_LIFE macros.
@@ -75,8 +75,8 @@
 	//apply min reaction progress - wasn't sure if this should go before or after applying yield
 	//I guess people can just have their miniscule reactions go to completion regardless of yield.
 	for(var/reactant in required_reagents)
-		var/remainder = holder.get_reagent_amount(reactant) - progress*required_reagents[reactant]
-		if(remainder <= min_reaction*required_reagents[reactant])
+		var/remainder = holder.get_reagent_amount(reactant) - progress*LAZYACCESS(required_reagents, reactant)
+		if(remainder <= min_reaction*LAZYACCESS(required_reagents, reactant))
 			progress = reaction_limit
 			break
 
@@ -86,7 +86,7 @@
 	//determine how far the reaction can proceed
 	var/list/reaction_limits = list()
 	for(var/reactant in required_reagents)
-		reaction_limits += holder.get_reagent_amount(reactant) / required_reagents[reactant]
+		reaction_limits += holder.get_reagent_amount(reactant) / LAZYACCESS(required_reagents, reactant)
 
 	//determine how far the reaction proceeds
 	var/reaction_limit = min(reaction_limits)
@@ -99,7 +99,7 @@
 
 	//remove the reactants
 	for(var/reactant in required_reagents)
-		var/amt_used = required_reagents[reactant] * reaction_progress
+		var/amt_used = LAZYACCESS(required_reagents, reactant) * reaction_progress
 		holder.remove_reagent(reactant, amt_used, safety = 1)
 
 	//add the product

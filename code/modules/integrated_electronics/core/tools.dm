@@ -259,7 +259,12 @@
 	icon_state = "circuit_kit"
 	w_class = ITEMSIZE_NORMAL
 	display_contents_with_number = 0
-	can_hold = list(
+
+//Emp'ing this one bag causes a recursion loop of over 700 emp_act's,
+//Which is enough to trigger byond's recursion level protection
+
+/obj/item/storage/bag/circuits/hold_constraint()
+	var/list/holds = list(
 		/obj/item/integrated_circuit,
 		/obj/item/storage/bag/circuits/mini,
 		/obj/item/electronic_assembly,
@@ -271,9 +276,7 @@
 		/obj/item/integrated_electronics/debugger,
 		/obj/item/integrated_electronics/detailer,
 		)
-
-//Emp'ing this one bag causes a recursion loop of over 700 emp_act's,
-//Which is enough to trigger byond's recursion level protection
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/storage/bag/circuits/basic/Initialize(mapload)
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
 	new /obj/item/storage/bag/circuits/mini/arithmetic(src)
@@ -330,8 +333,11 @@
 	desc = "Used to partition categories of circuits, for a neater workspace."
 	w_class = ITEMSIZE_SMALL
 	display_contents_with_number = 1
-	can_hold = list(/obj/item/integrated_circuit)
 	var/spawn_flags_to_use = IC_SPAWN_DEFAULT
+
+/obj/item/storage/bag/circuits/mini/hold_constraint()
+	var/list/holds = list(/obj/item/integrated_circuit)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/bag/circuits/mini/arithmetic
 	name = "arithmetic circuit box"

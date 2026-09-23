@@ -49,11 +49,11 @@
 	for(var/obj/item/I in loc)
 		if(istype(I, /obj/item/clothing))
 			var/obj/item/clothing/C = I
-			C.species_restricted = null
+			C.restrict_fit(null)
 		equip_to_appropriate_slot(I)
 
-	if(istype(back, /obj/item/rig))
-		var/obj/item/rig/rig = back
+	if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/rig))
+		var/obj/item/rig/rig = get_equipped_item(SLOT_ID_BACK)
 		rig.toggle_seals(src)
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/proc/turntable()

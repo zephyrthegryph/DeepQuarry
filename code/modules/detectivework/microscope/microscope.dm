@@ -67,12 +67,12 @@
 		report.name = "Fingerprint report #[report_num]: [sample.name]"
 		report.info = span_bold("Fingerprint analysis report #[report_num]") + ": [sample.name]<br>"
 		var/obj/item/sample/print/card = sample
-		if(card.evidence && card.evidence.len)
+		if(card.evidence && length(card.evidence))
 			report.info += "Surface analysis has determined unique fingerprint strings:<br><br>"
 			for(var/prints in card.evidence)
 				report.info += span_notice("Fingerprint string: ")
-				if(!is_complete_print(card.evidence[prints]))
-					report.info += "INCOMPLETE PRINT:[card.evidence[prints]]"
+				if(!is_complete_print(LAZYACCESS(card.evidence, prints)))
+					report.info += "INCOMPLETE PRINT:[LAZYACCESS(card.evidence, prints)]"
 				else
 					report.info += "[prints]"
 				report.info += "<br>"

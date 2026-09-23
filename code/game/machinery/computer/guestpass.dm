@@ -48,7 +48,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		if(icon_state == "guest-invalid")
 			to_chat(user, span_warning("This guest pass is already deactivated!"))
 			return
@@ -105,12 +105,12 @@
 	flags = WALL_ITEM
 
 	var/obj/item/card/id/giver
-	var/list/accesses = list()
+	var/list/accesses
 	var/giv_name = "NOT SPECIFIED"
 	var/reason = "NOT SPECIFIED"
 	var/duration = 5
 
-	var/list/internal_log = list()
+	var/list/internal_log
 	var/mode = 0  // 0 - making pass, 1 - viewing logs
 
 /obj/machinery/computer/guestpass/Initialize(mapload)
@@ -135,9 +135,6 @@
 		return
 	..()
 
-/obj/machinery/computer/guestpass/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/computer/guestpass/verb/eject_id()
 	set category = "Object"
 	set name = "Eject ID Card"
@@ -153,7 +150,7 @@
 		else
 			giver.loc = src.loc
 		giver = null
-		accesses.Cut()
+		LAZYCLEARLIST(accesses)
 	else
 		to_chat(usr, span_warning("There is nothing to remove from the console."))
 	return
@@ -190,7 +187,7 @@
 	data["reason"] = reason
 	data["duration"] = duration
 	data["mode"] = mode
-	data["log"] = internal_log
+	data["log"] = (internal_log || list())
 	data["uid"] = uid
 
 	return data
@@ -221,10 +218,10 @@
 		if("access")
 			var/A = text2num(params["access"])
 			if(A in accesses)
-				accesses.Remove(A)
+				LAZYREMOVE(accesses, A)
 			else
 				if(A in giver.GetAccess())	//Let's make sure the ID card actually has the access.
-					accesses.Add(A)
+					LAZYADD(accesses, A)
 				else
 					to_chat(ui.user, span_warning("Invalid selection, please consult technical support if there are any issues."))
 					log_admin("[key_name_admin(ui.user)] tried selecting an invalid guest pass terminal option.")
@@ -238,7 +235,7 @@
 				else
 					giver.loc = src.loc
 					giver = null
-				accesses.Cut()
+				LAZYCLEARLIST(accesses)
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
@@ -258,16 +255,16 @@
 			if(giver)
 				var/number = add_zero("[rand(0,9999)]", 4)
 				var/entry = "\[[stationtime2text()]\] Pass #[number] issued by [giver.registered_name] ([giver.assignment]) to [giv_name]. Reason: [reason]. Grants access to following areas: "
-				for (var/i=1 to accesses.len)
-					var/A = accesses[i]
+				for (var/i=1 to length(accesses))
+					var/A = LAZYACCESS(accesses, i)
 					if(A)
 						var/area = SSaccess.get_access_desc(A)
 						entry += "[i > 1 ? ", [area]" : "[area]"]"
 				entry += ". Expires at [worldtime2stationtime(world.time + duration*10*60)]."
-				internal_log.Add(entry)
+				LAZYADD(internal_log, entry)
 
 				var/obj/item/card/id/guest/pass = new(src.loc)
-				pass.temp_access = accesses.Copy()
+				pass.temp_access = LAZYCOPY(accesses)
 				pass.registered_name = giv_name
 				pass.expiration_time = world.time + duration*10*60
 				pass.reason = reason

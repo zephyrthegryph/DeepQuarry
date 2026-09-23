@@ -321,14 +321,14 @@
 	if(!istype(M))
 		return 0 //not equipped
 
-	if((slot_flags & SLOT_BACK) && M.get_equipped_item(slot_back) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_back) == src)
 		return 1
-	if((slot_flags & SLOT_BELT) && M.get_equipped_item(slot_belt) == src)
+	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(slot_belt) == src)
 		return 1
 	//RIGSuit compatability. This shouldn't be possible, however, except for select RIGs.
-	if((slot_flags & SLOT_BACK) && M.get_equipped_item(slot_s_store) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_s_store) == src)
 		return 1
-	if((slot_flags & SLOT_BELT) && M.get_equipped_item(slot_s_store) == src)
+	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(slot_s_store) == src)
 		return 1
 
 	return 0

@@ -246,9 +246,7 @@
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, W.usesound, 50, 1)
-	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
-	if (do_after(user, 40 * W.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 40, quality = TOOL_WRENCH, volume = 50, message_self = "You begin to unfasten \the [src]..."))
 		user.visible_message( \
 			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
 			span_notice("You have unfastened \the [src]."), \

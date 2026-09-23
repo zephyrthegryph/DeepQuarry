@@ -12,7 +12,7 @@
 	var/open = FALSE		// true if cover is open
 	var/locked = TRUE		// true if controls are locked
 	var/location = ""	// location response text
-	var/list/codes = list()	// assoc. list of transponder codes
+	var/list/codes	// assoc. list of transponder codes
 	req_access = list(ACCESS_ENGINE)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
@@ -59,8 +59,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/navbeacon/attack_ai(mob/user)
-	tgui_interact(user)
+/obj/machinery/navbeacon
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/navbeacon/attack_hand(mob/user)
 
@@ -103,7 +103,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 		"locked" = locked,
 		"open" = open,
 		"location" = location,
-		"codes" = codes,
+		"codes" = (codes || list()),
 	)
 
 /obj/machinery/navbeacon/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -152,24 +152,24 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 			var/new_val = sanitize(params["new_val"], MAX_NAME_LEN)
 			if(!new_val)
 				return FALSE
-			codes[codekey] = new_val
+			LAZYSET(codes, codekey, new_val)
 			return TRUE
 		if("trans_add_code")
 			var/new_key = sanitize(params["new_key"], MAX_NAME_LEN)
 			if(!new_key)
 				return FALSE
-			if(codes[new_key])
+			if(LAZYACCESS(codes, new_key))
 				return FALSE
 			var/new_val = sanitize(params["new_val"], MAX_NAME_LEN)
 			if(!new_val)
 				return FALSE
-			codes[new_key] = new_val
+			LAZYSET(codes, new_key, new_val)
 			return TRUE
 		if("trans_del")
 			var/codekey = params["code"]
 			if(!codekey)
 				return FALSE
-			codes.Remove(codekey)
+			LAZYREMOVE(codes, codekey)
 			return TRUE
 
 /obj/machinery/navbeacon/Destroy()

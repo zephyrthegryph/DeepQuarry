@@ -100,13 +100,8 @@
 	if(stage != FRAME_UNFASTENED)
 		to_chat(user, stage == FRAME_FASTENED ? "You have to unscrew the case first." : "You have to remove the wires first.")
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/WT = W.get_welder()
-	if(!WT.remove_fuel(0, user))
-		to_chat(user, span_warning("\The [src] must be on to complete this task."))
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, WT.usesound, 50, 1)
-	user.visible_message(span_warning("\The [user] begins deconstructing \the [src]."), span_notice("You start deconstructing \the [src]."))
-	if(do_after(user, 2 SECONDS * WT.toolspeed, target = src) && WT.isOn())
+	if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, \
+			message_self = "You start deconstructing \the [src].", message_others = "\The [user] begins deconstructing \the [src]."))
 		new /obj/item/stack/material/steel(get_turf(src), 2)
 		user.visible_message(span_warning("\The [user] has deconstructed \the [src]."), span_notice("You deconstruct \the [src]."))
 		playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)

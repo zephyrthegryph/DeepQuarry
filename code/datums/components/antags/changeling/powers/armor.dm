@@ -39,9 +39,12 @@
 	flags = NONE	//Not THICKMATERIAL because it's organic tissue, so if somebody tries to inject something into it,
 				//it still ends up in your blood. (also balance but muh fluff)
 	item_flags = THICKMATERIAL | DROPDEL | NOSTRIP
-	allowed = list(POCKET_GENERIC, POCKET_ALL_TANKS)
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) //No armor at all.
+	armor_spec = "cold=60" //No armor at all.
 	canremove = FALSE
+
+/obj/item/clothing/suit/space/changeling/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/changeling/Initialize(mapload)
 	. = ..()
@@ -55,7 +58,7 @@
 	icon_state = "lingspacehelmet"
 	desc = "A covering of pressure and temperature-resistant organic tissue with a glass-like chitin front."
 	flags = BLOCKHAIR //Again, no THICKMATERIAL.
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "cold=60"
 	body_parts_covered = HEAD|FACE|EYES
 	canremove = FALSE
 	item_flags = THICKMATERIAL | AIRTIGHT | FLEXIBLEMATERIAL | DROPDEL | NOSTRIP
@@ -97,7 +100,7 @@
 	desc = "A tough, hard covering of black chitin."
 	icon_state = "lingarmor"
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	armor = list(melee = 75, bullet = 60, laser = 60, energy = 60, bomb = 60, bio = 0, rad = 0) //It costs 3 points, so it should be very protective.
+	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60" //It costs 3 points, so it should be very protective.
 	siemens_coefficient = 0.3
 	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	slowdown = 1.5
@@ -113,7 +116,7 @@
 	name = "chitinous mass"
 	desc = "A tough, hard covering of black chitin with transparent chitin in front."
 	icon_state = "lingarmorhelmet"
-	armor = list(melee = 75, bullet = 60, laser = 60,energy = 60, bomb = 60, bio = 0, rad = 0)
+	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60"
 	siemens_coefficient = 0.3
 	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 
@@ -127,7 +130,7 @@
 	name = "chitinous gauntlets"
 	desc = "Very resilient gauntlets made out of black chitin.  It looks very durable, and can probably resist electrical shock in addition to the elements."
 	icon_state = "ling"
-	armor = list(melee = 75, bullet = 60, laser = 60,energy = 60, bomb = 60, bio = 0, rad = 0) //No idea if glove armor gets checked
+	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60" //No idea if glove armor gets checked
 	siemens_coefficient = 0
 
 /obj/item/clothing/shoes/boots/combat/changeling //Noslips
@@ -135,7 +138,7 @@
 	desc = "Footwear made out of a hard, black chitinous material.  The bottoms of these appear to have spikes that can protrude or extract itself into and out \
 	of the floor at will, granting the wearer stability."
 	icon_state = "lingarmor"
-	armor = list(melee = 75, bullet = 60, laser = 70,energy = 60, bomb = 60, bio = 0, rad = 0)
+	armor_spec = "melee=75;bullet=60;laser=70;energy=60;bomb=60"
 	siemens_coefficient = 0.3
 	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE

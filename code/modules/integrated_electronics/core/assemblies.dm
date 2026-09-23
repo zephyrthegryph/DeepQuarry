@@ -18,7 +18,7 @@
 	var/locked = FALSE // If true, the assembly cannot be opened with a crowbar
 	var/obj/item/card/id/locked_by = null // The ID that locked this assembly
 	var/obj/item/card/id/access_card = null // ID card for door access
-	var/list/component_positions = list() // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
+	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 	/// Cached flag: TRUE when this assembly has at least one circuit that draws or
 	/// makes power (so handle_idle_power() actually has work to do). Invalidated to
 	/// null on circuit add/remove via Entered()/Exited() and recomputed lazily.
@@ -144,7 +144,7 @@
 	data["circuits"] = circuits
 
 	// Include component positions for UI restoration
-	data["component_positions"] = component_positions
+	data["component_positions"] = (component_positions || list())
 
 	return data
 

@@ -23,7 +23,7 @@
 							/obj/item/clothing/head/cowboy/small				= 2,
 							/obj/item/toy/stickhorse								= 2
 							)
-	var/list/special_prizes = list() // Holds instanced objects, intended for admins to shove surprises inside or something.
+	var/list/special_prizes // Holds instanced objects, intended for admins to shove surprises inside or something.
 
 /obj/machinery/computer/arcade/Initialize(mapload)
 	. = ..()
@@ -41,7 +41,7 @@
 	if(LAZYLEN(special_prizes)) // Downstream wanted the 'win things inside contents sans circuitboard' feature kept.
 		var/atom/movable/AM = pick_n_take(special_prizes)
 		AM.forceMove(get_turf(src))
-		special_prizes -= AM
+		LAZYREMOVE(special_prizes, AM)
 
 	else if(LAZYLEN(prizes))
 		var/prizeselect = pickweight(prizes)
@@ -51,9 +51,6 @@
 
 		if(istype(prizeselect, /obj/item/clothing/suit/syndicatefake)) //Helmet is part of the suit
 			new	/obj/item/clothing/head/syndicatefake(src.loc)
-
-/obj/machinery/computer/arcade/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 
 /obj/machinery/computer/arcade/emp_act(severity, recursive)
@@ -336,8 +333,8 @@
 						   ORION_TRAIL_COLLISION	= 1,
 						   ORION_TRAIL_SPACEPORT	= 2
 						   )
-	var/list/stops = list()
-	var/list/stopblurbs = list()
+	var/list/stops
+	var/list/stopblurbs
 	var/traitors_aboard = 0
 	var/spaceport_raided = 0
 	var/spaceport_freebie = 0
@@ -622,9 +619,7 @@
 							var/obj/item/handcuffs/C = new(src.loc)
 							var/mob/living/carbon/human/H = usr
 							if(istype(H))
-								C.forceMove(H)
-								H.handcuffed = C
-								H.update_handcuffed()
+								H.equip_to_slot(C, slot_handcuffed)
 							else
 								C.throw_at(usr,16,3,src)
 
@@ -1157,7 +1152,7 @@
 	T.source_terminal = name
 	T.date = GLOB.current_date_string
 	T.time = stationtime2text()
-	GLOB.vendor_account.transaction_log.Add(T)
+	LAZYADD(GLOB.vendor_account.transaction_log, T)
 
 /// End Payment
 /obj/machinery/computer/arcade/clawmachine/attack_hand(mob/living/user)

@@ -450,9 +450,6 @@
 	return ITEM_INTERACT_SUCCESS
 
 
-/obj/machinery/suit_storage_unit/attack_ai(mob/user)
-	return attack_hand(user)
-
 //////////////////////////////REMINDER: Make it lock once you place some fucker inside.
 
 //God this entire file is fucking awful //Yes
