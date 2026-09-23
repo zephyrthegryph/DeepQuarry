@@ -322,3 +322,29 @@ Each job has a generation tag, so a cancelled or superseded result is dropped, a
 - **Moves:** about 2,900 lines, roughly a third of the atmos code.
 - **Deleted:** about 1,500 dead lines (fixes.md DEAD1).
 - **What gas keeps:** about 2,000–2,500 lines once it sits on the field framework ([simulation.md](simulation.md)), down from about 9,000 today.
+
+## 15. Core consolidation: what domains may not build themselves
+
+Every domain (gas, power, heat, radiation, and later ones) builds only its
+physics, its component and grid declarations, and its topology rules (for
+example pipe layers or cable directions). These mechanisms live once, in
+`vg-core` (or the R10 binding layer), and a domain crate may not define its own:
+
+| Mechanism | Core home | Replaces |
+|---|---|---|
+| Identity | R10 entities, components and generation-checked handles | gas device ids and SSair's string map; power's DM-allocated keys and side HashMaps; heat's hand-rolled body and watch handles |
+| Activity and sleep | a core activity service: wake on input, setting or endpoint change, sleep when settled | gas's per-cell and per-device activity maps; power's missing one |
+| Change tracking | `core::watch` (revisions, bands, thresholds) | gas's three `revision()` implementations and band tracking; power's "shown" diff copies |
+| Rate models | a core rate-model library (flow toward a target with a rate limit and a stop condition; storage charge and discharge) | gas Flow internals, power APC/SMES constants and passes, the heat regulator |
+| Thermo | a core thermo module (the pair-exchange law, constants, unit types) | heat's two exchange laws, gas's constant copies, per-domain unit conversions |
+| FFI | the R10 generator (typed commands, reads, queries, outbox events) | positional `kind + p0..p3` formats, opcode lists, fixed-stride event records |
+| Presentation | none: DM reads values when it displays them | display smoothing and "shown" copies inside simulation steps |
+
+Enforcement is a CI check over `verdigris/domains/*` that fails on local
+handle types, activity maps, revision counters, raw `#[bind]` FFI marshalling
+or display smoothing in a domain crate. The domains migrate in this order:
+gas devices (M2), power (a rewrite onto one generic producer, consumer and
+storage rate model with R10 components; all DM mirrors and `power_sync()` are
+deleted), heat (binds move out of vg-gas; heat bodies become components; the
+regulator is wired to air conditioners, heaters and thermoregulators, or
+deleted), then turf gas and heat as grid kinds.
