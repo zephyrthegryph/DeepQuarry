@@ -345,10 +345,52 @@ function runDreamDaemonWithWatchdog(
   });
 }
 
+/**
+ * Records `dmbFile` in the user's BYOND world-approval list
+ * (`<userpath>/cfg/trusted.txt`) if it isn't there yet.
+ *
+ * Our worlds load DLLs (verdigris, rust_g) with call_ext. For a .dmb path
+ * BYOND has never approved, DreamDaemon shows a modal "Security Alert: This
+ * game uses one or more external libraries" dialog -- in -safe mode as well
+ * as -trusted -- and waits for a click. Headless test and bench runs never
+ * get one, so every run in a new worktree hung until the watchdog. The
+ * dialog's "Host Game" button does exactly what this does: it appends the
+ * absolute .dmb path to trusted.txt. Only that one path is added; the
+ * security level the world runs with (-safe for tests) and BYOND's default
+ * host-security setting are left alone. No-op off Windows (no dialog there).
+ */
+async function approveWorldDlls(dmbFile: string) {
+  if (process.platform !== 'win32') return;
+  const userPath = await regQuery('HKCU\\Software\\Dantom\\BYOND', 'userpath');
+  const candidates = [
+    userPath,
+    process.env.USERPROFILE && path.join(process.env.USERPROFILE, 'Documents', 'BYOND'),
+  ].filter(Boolean) as string[];
+  const cfgDir = candidates.map((d) => path.join(d, 'cfg')).find((d) => fs.existsSync(d));
+  if (!cfgDir) {
+    Juke.logger.warn('BYOND user cfg folder not found; DreamDaemon may stop on a DLL approval dialog.');
+    return;
+  }
+  const file = path.join(cfgDir, 'trusted.txt');
+  const want = path.resolve(dmbFile);
+  let text = '';
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    // no list yet
+  }
+  const listed = text.split(/\r?\n/).some((line) => line.trim().toLowerCase() === want.toLowerCase());
+  if (listed) return;
+  const sep = text.length && !text.endsWith('\n') ? '\r\n' : '';
+  fs.appendFileSync(file, `${sep}${want}\r\n`);
+  Juke.logger.info(`Approved ${want} for DLL use in ${file} (avoids BYOND's headless security dialog).`);
+}
+
 export async function DreamDaemon(
   options: DDOptions,
   ...args: any[]
 ): Promise<DDResult> {
+  await approveWorldDlls(options.dmbFile);
   const dmPath = await getDmPath(options.namedDmVersion);
   const baseDir = path.dirname(dmPath);
   const ddExeName =

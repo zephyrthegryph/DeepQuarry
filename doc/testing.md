@@ -220,6 +220,20 @@ world itself), which doesn't exist yet. `--incremental` is safe to use
 today -- it just doesn't save anything until `SWEEP_INCREMENTAL_SCOPE` gets
 real, verified entries.
 
+### DLL approval dialog (Windows)
+
+Our worlds load DLLs (verdigris, rust_g). The first time DreamDaemon runs a
+`.dmb` path it has not approved, it shows a modal "Security Alert: This game
+uses one or more external libraries" dialog, in `-safe` mode as well as
+`-trusted`, and waits for a click. Headless runs never get one, so a test or
+bench boot in a new worktree used to sit at "loading" until the watchdog killed
+it. `DreamDaemon()` in `tools/build/lib/byond.ts` now records the `.dmb` in the
+user's approval list (`<BYOND userpath>/cfg/trusted.txt`, the same thing the
+dialog's "Host Game" button does) before launching. Only that path is added;
+the world still runs with `-safe`, and BYOND's default security setting is left
+alone. If a boot still shows no `data/logs/ci/` after a minute, look for a
+dreamdaemon window titled "Security Alert".
+
 ### Watchdog timeout
 
 DreamDaemon sometimes fails to exit after `-close` finishes (a known Windows

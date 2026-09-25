@@ -14,9 +14,10 @@
 
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 
-#ifdef BENCHMARK
-/// FFI calls made through the vg_* procs. Benchmark builds only; the
-/// benchmarks report it per window (code/modules/benchmarks/_benchmark.dm).
+#if defined(BENCHMARK) || defined(UNIT_TESTS)
+/// FFI calls made through the vg_* procs. Benchmark and unit-test builds
+/// only: the benchmarks report it per window (code/modules/benchmarks/_benchmark.dm)
+/// and tests assert that DM-only paths make none.
 /* This comment bypasses grep checks */ /var/__verdigris_ffi_calls = 0
 #define VG_COUNT_FFI_CALL __verdigris_ffi_calls++
 #else
