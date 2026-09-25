@@ -32,6 +32,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/datum/om/scheduler/sched = new /datum/om/scheduler
 	sched.manual_time = 0
 	sched.deterministic = TRUE
+	sched.slot_ds = OM_SLOT_DS
+	sched.phase_seed = 0
 	sched.dl_cursor = 0
 	GLOB.om_sched = sched
 	return sched
@@ -49,7 +51,12 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	/// Null: world.time. A number: injected time (deciseconds).
 	var/manual_time
 	var/deterministic = FALSE
+	/// Next phase handed out. Phases are assigned round robin, so a batch of entities joining
+	/// together spreads evenly over a ring's slots instead of clumping by chance.
 	var/phase_seed = 0
+	/// Width of one cadence slot, deciseconds. Live: one world tick, so a ring's work is spread
+	/// over every tick of its interval rather than landing on every Nth tick. Tests: OM_SLOT_DS.
+	var/slot_ds = OM_SLOT_DS
 	var/gen = 0
 
 	/// behaviour id -> list of rings (one per interval in use).
@@ -111,14 +118,14 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	for(var/i in 1 to OM_DEADLINE_BUCKETS)
 		buckets[i] = list()
 	dl_cursor = round(now())
+	slot_ds = world.tick_lag > 0 ? world.tick_lag : OM_SLOT_DS
+	phase_seed = rand(0, 65535)
 
 /datum/om/scheduler/proc/now()
 	return isnull(manual_time) ? world.time : manual_time
 
 /datum/om/scheduler/proc/next_phase()
-	if(deterministic)
-		return phase_seed++
-	return rand(0, 65535)
+	return phase_seed++
 
 /datum/om/scheduler/proc/error(msg)
 	errors += msg
@@ -149,6 +156,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /datum/om/ring
 	var/datum/om/behaviour/B
 	var/interval
+	/// Slot width, deciseconds (the scheduler's slot_ds when the ring was made).
+	var/slot_ds = OM_SLOT_DS
 	var/size
 	var/list/slots
 	/// Per slot: time (ds) the slot last began running.
@@ -167,16 +176,17 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	/// so none runs twice in one slot (leave and rejoin mid-slot).
 	var/list/pending_adds
 
-/datum/om/ring/New(datum/om/behaviour/B, interval, now)
+/datum/om/ring/New(datum/om/behaviour/B, interval, now, slot_ds = OM_SLOT_DS)
 	src.B = B
 	src.interval = interval
-	size = max(1, round(interval / OM_SLOT_DS))
+	src.slot_ds = slot_ds
+	size = max(1, round(interval / slot_ds))
 	slots = new /list(size)
 	last_run = new /list(size)
 	for(var/i in 1 to size)
 		slots[i] = list()
 		last_run[i] = now
-	next_abs = round(now / OM_SLOT_DS) + 1
+	next_abs = round(now / slot_ds) + 1
 
 /datum/om/ring/proc/add(datum/E, phase)
 	var/s = (phase % size) + 1
@@ -229,7 +239,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	for(var/datum/om/ring/R as anything in mine)
 		if(R.interval == interval)
 			return R
-	var/datum/om/ring/R = new /datum/om/ring(B, interval, now())
+	var/datum/om/ring/R = new /datum/om/ring(B, interval, now(), slot_ds)
 	mine += R
 	var/list/lane = lane_rings[B.lane]
 	var/pos = length(lane) + 1
@@ -313,7 +323,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			return FALSE
 
 /datum/om/scheduler/proc/ring_urgent(datum/om/ring/R, t)
-	if(R.next_abs > round(t / OM_SLOT_DS))
+	if(R.next_abs > round(t / R.slot_ds))
 		return FALSE
 	var/s = (R.next_abs % R.size) + 1
 	if(!length(R.slots[s]))
@@ -323,7 +333,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /// Processes every due slot of `R` in order. Never skips a slot: a slot not
 /// reached this run is processed next run with its real elapsed dt.
 /datum/om/scheduler/proc/run_ring(datum/om/ring/R, t)
-	var/now_abs = round(t / OM_SLOT_DS)
+	var/now_abs = round(t / R.slot_ds)
 	var/datum/om/behaviour/B = R.B
 	// More than a full ring behind (skipped ticks, a long lag): every slot is
 	// due, so each runs once, with its real elapsed dt, instead of the same
@@ -344,7 +354,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			R.cur_dt = dt_ds / 10
 			R.last_run[s] = t
 			var/list/S = stat_for(B.id)
-			var/late = t - R.next_abs * OM_SLOT_DS
+			var/late = t - R.next_abs * R.slot_ds
 			if(late > S[OM_STAT_LATE_MAX])
 				S[OM_STAT_LATE_MAX] = late
 			if(dt_ds > B.compiled_max_interval)
