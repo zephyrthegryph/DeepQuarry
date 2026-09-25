@@ -108,7 +108,8 @@ export class ProcessSampler {
     if (process.platform === 'win32') {
       const child = spawn(
         'powershell',
-        ['-NoProfile', '-NonInteractive', '-Command', WINDOWS_SAMPLER, String(pid), String(this.intervalMs)],
+        // Arguments after -Command are not bound to $args; invoke a script block with them.
+        ['-NoProfile', '-NonInteractive', '-Command', `& {${WINDOWS_SAMPLER}} ${pid} ${this.intervalMs}`],
         { stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true },
       );
       let buffer = '';
