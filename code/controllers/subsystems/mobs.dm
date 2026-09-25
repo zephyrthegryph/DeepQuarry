@@ -8,10 +8,12 @@
 SUBSYSTEM_DEF(mobs)
 	name = "Mobs"
 	priority = FIRE_PRIORITY_MOBS
-	// Preserve one Life() call per mob per two seconds, but distribute the
-	// population across eight short slices instead of one large TiDi spike.
-	wait = 0.25 SECONDS
-	flags = SS_KEEP_TIMING|SS_NO_INIT
+	// BENCHMARK BASELINE (doc/rewrite/life_on_om_benchmark.md): fires every tick and
+	// spreads one Life() per mob over LIFE_NOMINAL_SECONDS with a fixed per-cycle quota.
+	// The shipped scheduler recomputed the quota from the *remaining* run list, so it
+	// shrank as the cycle drained and a cycle took 5-10 s instead of 2.
+	wait = 1
+	flags = SS_TICKER|SS_KEEP_TIMING|SS_NO_INIT
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
 	dependencies = list(
@@ -21,8 +23,14 @@ SUBSYSTEM_DEF(mobs)
 	)
 
 	var/list/currentrun = list()
-	var/life_slices = 8
+	/// Fires per Life cycle (one per tick over LIFE_NOMINAL_SECONDS); set at the first fire.
+	var/life_slices = 0
 	var/slice_budget_remaining = 0
+	/// This cycle's per-fire quota, fixed when the cycle's run list is taken.
+	var/cycle_quota = 1
+	/// Benchmarks (life_sweep): Life() calls on living mobs, and ms spent in fire().
+	var/bench_life_calls = 0
+	var/bench_ms = 0
 	/// Logical two-second Life cycle; unlike subsystem times_fired this does
 	/// not advance once per distribution slice.
 	var/life_cycle = 0
@@ -66,12 +74,16 @@ SUBSYSTEM_DEF(mobs)
 	return ..()
 
 /datum/controller/subsystem/mobs/fire(resumed = 0)
+	var/bench_start = TICK_USAGE
+	if(!life_slices)
+		life_slices = max(1, round((LIFE_NOMINAL_SECONDS SECONDS) / world.tick_lag))
 	if (!resumed)
 		if(!length(src.currentrun))
 			src.currentrun = GLOB.mob_list.Copy()
 			profile_run_index = 0
 			life_cycle++
-		slice_budget_remaining = max(1, CEILING(length(src.currentrun) / life_slices, 1))
+			cycle_quota = max(1, CEILING(length(src.currentrun) / life_slices, 1))
+		slice_budget_remaining = cycle_quota
 		if(world.time >= next_hibernation_audit && hibernation_audit_enabled())
 			next_hibernation_audit = world.time + MOB_HIBERNATION_AUDIT_INTERVAL
 			audit_hibernation()
@@ -112,6 +124,15 @@ SUBSYSTEM_DEF(mobs)
 		var/seconds = M.life_last_time ? (world.time - M.life_last_time) / (1 SECONDS) : LIFE_NOMINAL_SECONDS
 		M.life_last_time = world.time
 
+		if(isliving(M))
+			bench_life_calls++
+#ifdef LIFE_NO_PROFILE
+		M.Life(seconds)
+		if (MC_TICK_CHECK)
+			bench_ms += TICK_USAGE_TO_MS(bench_start)
+			return
+		continue
+#endif
 		profile_run_index++
 		if(!((profile_run_index + profile_sample_phase) % profile_sample_stride))
 			var/mob_type = "[M.type]"
@@ -125,7 +146,9 @@ SUBSYSTEM_DEF(mobs)
 			M.Life(seconds)
 
 		if (MC_TICK_CHECK)
+			bench_ms += TICK_USAGE_TO_MS(bench_start)
 			return
+	bench_ms += TICK_USAGE_TO_MS(bench_start)
 	if(!length(currentrun))
 		profile_sample_phase = (profile_sample_phase + 1) % profile_sample_stride
 	if(!profile_next_dump)

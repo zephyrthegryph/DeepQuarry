@@ -237,6 +237,8 @@
 #include "../benchmarks/_benchmark.dm"
 #include "../benchmarks/scenarios.dm"
 #include "../benchmarks/om_dispatch.dm"
+#include "../benchmarks/life_sweep.dm"
+#include "../benchmarks/life_sweep_adapter.dm"
 #endif
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"
