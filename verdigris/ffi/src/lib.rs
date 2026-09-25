@@ -15,7 +15,7 @@ mod layout;
 mod lifecycle;
 mod metrics;
 mod power;
-mod propagate;
+pub mod propagate;
 pub mod reactor;
 pub mod registry;
 pub mod world;

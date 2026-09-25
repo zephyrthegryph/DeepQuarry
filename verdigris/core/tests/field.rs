@@ -11,7 +11,7 @@ use vg_core::field::toy::{
     GasCell, GasCmd, GasToy, HEAT_CONDUCTANCE, HeatCell, HeatCmd, HeatToy, heat_ch,
 };
 use vg_core::field::{FieldConfig, FieldKind, FieldState, Geom, GeomCmd, add_field};
-use vg_core::grid::{DirMask, Face, GridDims};
+use vg_core::grid::{Dir, Face, GridDims};
 use vg_core::outbox::Lane;
 use vg_core::owner::apply_op;
 use vg_core::sim::{SimBuilder, SimConfig};
@@ -41,7 +41,7 @@ impl<K: FieldKind> World<K> {
     }
 
     fn step(&mut self, pool: &rayon::ThreadPool) {
-        pool.install(|| self.field.step(&mut self.cells, &self.geom));
+        pool.install(|| self.field.step(&mut self.cells, &self.geom, None));
     }
 
     fn cell(&self, i: u32) -> K::Value {
@@ -207,7 +207,7 @@ fn walled_regions_equilibrate_separately_then_together_when_opened() {
             let t = 100.0 + f32::from(u8::try_from((x * 13 + y * 29) % 17).unwrap()) * 40.0;
             let mut g = Geom::cell(cap);
             if x == wall_x {
-                g.blocked = DirMask::NONE.with(Face::East);
+                g.blocked = Dir::NONE.with(Face::East);
             }
             w.geom.set(i, g);
             w.cells.set(i, HeatCell::at(cap, t));
@@ -230,7 +230,7 @@ fn walled_regions_equilibrate_separately_then_together_when_opened() {
     let mut g = w.geom.get(door).unwrap();
     apply_op::<vg_core::field::Geometry<HeatToy>>(
         &mut g,
-        &vg_core::command::Op::Apply(GeomCmd::Blocked(DirMask::NONE)),
+        &vg_core::command::Op::Apply(GeomCmd::Blocked(Dir::NONE)),
     );
     w.geom.set(door, g);
     let before = w.totals()[0];
@@ -376,9 +376,9 @@ fn geom_of(kind: u8, cap: u8, mask: u8) -> Geom {
     Geom {
         capacity,
         blocked: if mask % 4 == 0 {
-            DirMask(mask >> 2)
+            Dir(mask >> 2)
         } else {
-            DirMask::NONE
+            Dir::NONE
         },
         reservoir: kind % 23 == 1,
     }
@@ -463,7 +463,7 @@ fn check_conservation<K: FieldKind>(
                             0.3 + f32::from(amount % 200) / 40.0
                         };
                     } else {
-                        g.blocked = DirMask(u8::try_from(amount % 64).unwrap());
+                        g.blocked = Dir(u8::try_from(amount % 64).unwrap());
                     }
                     w.geom.set(cell, g);
                 }
@@ -655,6 +655,7 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
             dt: 1.0,
             max_substeps: 16,
         },
+        None,
     );
     let watches = b.add_watches(key.cells);
     let mut sim = b.build().unwrap();

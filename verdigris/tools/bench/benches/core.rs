@@ -1,7 +1,7 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use vg_core::Arena;
 use vg_core::bitset::DenseBitSet;
-use vg_core::grid::{BlockKind, DirMask, Face, Grid, GridDims};
+use vg_core::grid::{BlockKind, Dir, Face, Grid, GridDims};
 use vg_core::intern::Interner;
 use vg_core::rng::{RngStreams, StreamId};
 use vg_core::thermo::{ThermalBody, exchange};
@@ -33,7 +33,7 @@ fn grid_open_neighbors(c: &mut Criterion) {
     let mut grid = Grid::new(dims);
     for y in 0..255 {
         for x in (0..255).step_by(8) {
-            grid.set_blocked(BlockKind::Air, dims.index(x, y, 0).unwrap(), DirMask::ALL);
+            grid.set_blocked(BlockKind::Air, dims.index(x, y, 0).unwrap(), Dir::ALL);
         }
     }
     c.bench_function("grid/open_neighbors_full_layer", |b| {

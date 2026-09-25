@@ -45,10 +45,11 @@ use std::collections::HashMap;
 
 use crate::conservation::Conserved;
 use crate::entity::EntityId;
+use crate::grid::CellId;
 use crate::slot::RawHandle;
 
 use super::graph::{
-    CellId, DeviceId, Endpoint, NetError, Network, NetworkKind, NodeId, RegionEvent, RegionId,
+    DeviceId, Endpoint, NetError, Network, NetworkKind, NodeId, RegionEvent, RegionId,
 };
 
 /// An entity handle, as [`NetworkHost`] identifies nodes and devices.

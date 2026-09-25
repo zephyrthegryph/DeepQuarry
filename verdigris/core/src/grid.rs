@@ -1,12 +1,22 @@
-//! Cell indexing for BYOND's turf grid.
+//! Cell addressing for BYOND's turf grid (`rust_architecture.md` §4.6).
 //!
-//! A turf index is BYOND's zero-based turf ref number:
-//! `(x - 1) + (y - 1) * max_x + (z - 1) * max_x * max_y`.
+//! A [`CellId`] is BYOND's zero-based turf ref number:
+//! `(x - 1) + (y - 1) * max_x + (z - 1) * max_x * max_y`. Grid cells are not
+//! entities; everything that lives on the grid (fields, network occupancy)
+//! is keyed by `CellId`.
 //!
-//! [`GridDims`] is the bounds-checked arithmetic. [`ChunkedLayer`] stores a
-//! per-cell value in 16x16 chunks that are only allocated once a cell in them
-//! holds a non-default value, and [`Grid`] carries one blocked-direction layer
-//! per [`BlockKind`] (`rust_core.md` §5).
+//! - [`GridDims`] is the bounds-checked arithmetic.
+//! - [`Dir`] is a BYOND direction value (`NORTH`..`DOWN` bits), which is also
+//!   a set of faces: a blocked-face mask is a `Dir`.
+//! - [`ChunkedLayer`] stores a per-cell value in 16x16 chunks that are only
+//!   allocated once a cell in them holds a non-default value. Chunks are
+//!   shared copy-on-write, so cloning a layer (the driver's per-frame
+//!   snapshot for worker readers) copies pointers, and every chunk carries a
+//!   revision so readers can wake exactly what changed.
+//! - [`Grid`] is the one owner of every block layer ([`BlockKind`]: air,
+//!   heat, movement, opacity, radiation) plus the z-level links multi-z
+//!   steps follow ([`Grid::step`]). Fields read their blocked faces from it
+//!   (`FieldKind::BLOCK`); nothing else keeps a mask copy.
 
 /// One of the six grid faces. The discriminant is the bit position of the same
 /// direction in BYOND's `NORTH`/`SOUTH`/`EAST`/`WEST`/`UP`/`DOWN` flags.
@@ -22,7 +32,7 @@ pub enum Face {
 }
 
 impl Face {
-    /// This face's bit in a BYOND direction flag / [`DirMask`].
+    /// This face's bit in a BYOND direction flag / [`Dir`].
     #[must_use]
     pub const fn bit(self) -> u8 {
         1 << self as u8
@@ -174,8 +184,11 @@ pub struct ChunkedLayer<T> {
     dims: GridDims,
     chunks_x: u32,
     chunks_per_z: usize,
-    /// `levels[z][chunk]`.
-    levels: Vec<Vec<Option<Box<[T; CHUNK_CELLS]>>>>,
+    /// `levels[z][chunk]`, shared copy-on-write between clones.
+    levels: Vec<Vec<Option<std::sync::Arc<[T; CHUNK_CELLS]>>>>,
+    /// `revisions[z][chunk]`: the layer revision of the chunk's last change.
+    revisions: Vec<Vec<u64>>,
+    revision: u64,
 }
 
 impl<T: Copy + Default + PartialEq> ChunkedLayer<T> {
@@ -188,7 +201,37 @@ impl<T: Copy + Default + PartialEq> ChunkedLayer<T> {
             chunks_x,
             chunks_per_z: (chunks_x * chunks_y) as usize,
             levels: Vec::new(),
+            revisions: Vec::new(),
+            revision: 0,
         }
+    }
+
+    /// Bumped by every write that changed a value.
+    #[must_use]
+    pub const fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    /// The layer revision at which the chunk holding `index` last changed
+    /// (0: never).
+    #[must_use]
+    pub fn chunk_revision(&self, index: u32) -> u64 {
+        let Some((z, chunk, _)) = self.locate(index) else {
+            return 0;
+        };
+        self.revisions.get(z).and_then(|l| l.get(chunk)).copied().unwrap_or(0)
+    }
+
+    fn touch(&mut self, z: usize, chunk: usize) {
+        self.revision += 1;
+        if self.revisions.len() <= z {
+            self.revisions.resize_with(z + 1, Vec::new);
+        }
+        let level = &mut self.revisions[z];
+        if level.len() < self.chunks_per_z {
+            level.resize(self.chunks_per_z, 0);
+        }
+        level[chunk] = self.revision;
     }
 
     #[must_use]
@@ -235,15 +278,28 @@ impl<T: Copy + Default + PartialEq> ChunkedLayer<T> {
             }
             level.resize_with(self.chunks_per_z, || None);
         }
-        match &mut level[chunk] {
-            Some(cells) => cells[cell] = value,
-            slot @ None => {
-                if value != T::default() {
-                    let mut cells = Box::new([T::default(); CHUNK_CELLS]);
-                    cells[cell] = value;
-                    *slot = Some(cells);
+        let changed = match &mut level[chunk] {
+            Some(cells) => {
+                if cells[cell] == value {
+                    false
+                } else {
+                    std::sync::Arc::make_mut(cells)[cell] = value;
+                    true
                 }
             }
+            slot @ None => {
+                if value == T::default() {
+                    false
+                } else {
+                    let mut cells = [T::default(); CHUNK_CELLS];
+                    cells[cell] = value;
+                    *slot = Some(std::sync::Arc::new(cells));
+                    true
+                }
+            }
+        };
+        if changed {
+            self.touch(z, chunk);
         }
         true
     }
@@ -273,18 +329,32 @@ impl<T: Copy + Default + PartialEq> ChunkedLayer<T> {
             + self
                 .levels
                 .iter()
-                .map(|l| l.capacity() * size_of::<Option<Box<[T; CHUNK_CELLS]>>>())
+                .map(|l| l.capacity() * size_of::<Option<std::sync::Arc<[T; CHUNK_CELLS]>>>())
                 .sum::<usize>()
     }
 }
 
-/// A set of blocked faces, using [`Face::bit`].
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct DirMask(pub u8);
+/// A BYOND direction value: `NORTH` 1, `SOUTH` 2, `EAST` 4, `WEST` 8, `UP`
+/// 16, `DOWN` 32 (the same bits as [`Face::bit`]). A diagonal is two planar
+/// bits; a set of blocked faces is also a `Dir`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Dir(pub u8);
 
-impl DirMask {
-    pub const NONE: DirMask = DirMask(0);
-    pub const ALL: DirMask = DirMask(0b11_1111);
+impl Dir {
+    pub const NONE: Dir = Dir(0);
+    pub const NORTH: Dir = Dir(1);
+    pub const SOUTH: Dir = Dir(2);
+    pub const EAST: Dir = Dir(4);
+    pub const WEST: Dir = Dir(8);
+    pub const UP: Dir = Dir(16);
+    pub const DOWN: Dir = Dir(32);
+    /// Every face.
+    pub const ALL: Dir = Dir(0b11_1111);
+
+    #[must_use]
+    pub const fn from_face(face: Face) -> Self {
+        Dir(face.bit())
+    }
 
     #[must_use]
     pub const fn contains(self, face: Face) -> bool {
@@ -293,12 +363,59 @@ impl DirMask {
 
     #[must_use]
     pub const fn with(self, face: Face) -> Self {
-        DirMask(self.0 | face.bit())
+        Dir(self.0 | face.bit())
     }
 
     #[must_use]
     pub const fn without(self, face: Face) -> Self {
-        DirMask(self.0 & !face.bit())
+        Dir(self.0 & !face.bit())
+    }
+
+    #[must_use]
+    pub const fn union(self, other: Dir) -> Self {
+        Dir(self.0 | other.0)
+    }
+
+    #[must_use]
+    pub const fn intersects(self, other: Dir) -> bool {
+        self.0 & other.0 != 0
+    }
+
+    #[must_use]
+    pub const fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+
+    /// `GLOB.reverse_dir`: every face flipped.
+    #[must_use]
+    pub const fn reverse(self) -> Self {
+        let mut r = 0;
+        let mut bit = 0;
+        while bit < 6 {
+            if self.0 & (1 << bit) != 0 {
+                r |= 1 << (bit ^ 1);
+            }
+            bit += 1;
+        }
+        Dir(r)
+    }
+
+    /// The planar part (`NORTH`/`SOUTH`/`EAST`/`WEST` bits).
+    #[must_use]
+    pub const fn planar(self) -> Self {
+        Dir(self.0 & 0b1111)
+    }
+
+    /// Two planar bits set (`NORTHEAST`, ...).
+    #[must_use]
+    pub const fn is_diagonal(self) -> bool {
+        let planar = self.0 & 0b1111;
+        planar != 0 && planar & (planar - 1) != 0
+    }
+
+    /// The faces this direction names, in [`Face::ALL`] order.
+    pub fn faces(self) -> impl Iterator<Item = Face> {
+        Face::ALL.into_iter().filter(move |f| self.contains(*f))
     }
 }
 
@@ -330,8 +447,15 @@ impl BlockKind {
 #[derive(Clone, Debug)]
 pub struct Grid {
     dims: GridDims,
-    blocks: [ChunkedLayer<DirMask>; BlockKind::COUNT],
+    blocks: [ChunkedLayer<Dir>; BlockKind::COUNT],
+    /// Per zero-based z: the level `UP`/`DOWN` lead to, if linked. Empty:
+    /// every level links to its numeric neighbours.
+    z_links: Vec<(Option<u32>, Option<u32>)>,
+    links_revision: u64,
 }
+
+/// A grid cell: BYOND's zero-based turf index ([`GridDims::index`]).
+pub type CellId = u32;
 
 impl Grid {
     #[must_use]
@@ -339,7 +463,49 @@ impl Grid {
         Self {
             dims,
             blocks: std::array::from_fn(|_| ChunkedLayer::new(dims)),
+            z_links: Vec::new(),
+            links_revision: 0,
         }
+    }
+
+    /// Links zero-based level `z` to the levels `UP` and `DOWN` reach (a
+    /// station deck above another need not be `z + 1`). Once any link is
+    /// set, an unlinked vertical step leads nowhere.
+    pub fn set_z_link(&mut self, z: u32, up: Option<u32>, down: Option<u32>) {
+        let z = z as usize;
+        if self.z_links.len() <= z {
+            self.z_links.resize(z + 1, (None, None));
+        }
+        if self.z_links[z] != (up, down) {
+            self.z_links[z] = (up, down);
+            self.links_revision += 1;
+        }
+    }
+
+    /// The cell one step from `cell` in `dir`: planar bits move within the
+    /// level (a diagonal moves on both axes), `UP`/`DOWN` follow the z links.
+    /// `None` off the grid or across an unlinked level.
+    #[must_use]
+    pub fn step(&self, cell: CellId, dir: Dir) -> Option<CellId> {
+        let mut at = cell;
+        for face in dir.planar().faces() {
+            at = self.dims.neighbor(at, face)?;
+        }
+        let vertical = [(Face::Up, true), (Face::Down, false)];
+        for (face, up) in vertical {
+            if !dir.contains(face) {
+                continue;
+            }
+            if self.z_links.is_empty() {
+                at = self.dims.neighbor(at, face)?;
+                continue;
+            }
+            let (x, y, z) = self.dims.coords(at)?;
+            let link = self.z_links.get(z as usize).copied().unwrap_or((None, None));
+            let target = if up { link.0 } else { link.1 }?;
+            at = self.dims.index(x, y, target)?;
+        }
+        Some(at)
     }
 
     #[must_use]
@@ -353,19 +519,32 @@ impl Grid {
     }
 
     #[must_use]
-    pub fn layer(&self, kind: BlockKind) -> &ChunkedLayer<DirMask> {
+    pub fn layer(&self, kind: BlockKind) -> &ChunkedLayer<Dir> {
         &self.blocks[kind as usize]
     }
 
     /// Faces of `index` blocked for `kind` (none outside the grid).
     #[must_use]
-    pub fn blocked(&self, kind: BlockKind, index: u32) -> DirMask {
+    pub fn blocked(&self, kind: BlockKind, index: u32) -> Dir {
         self.layer(kind).get(index).unwrap_or_default()
     }
 
+    /// The layer revision at which `index`'s chunk last changed for `kind`
+    /// (a field wakes the chunks whose revision moved).
+    #[must_use]
+    pub fn blocked_revision(&self, kind: BlockKind, index: u32) -> u64 {
+        self.layer(kind).chunk_revision(index)
+    }
+
+    /// Bumped by any change to any block layer.
+    #[must_use]
+    pub fn revision(&self) -> u64 {
+        self.blocks.iter().map(ChunkedLayer::revision).sum::<u64>() + self.links_revision
+    }
+
     /// Returns `false` outside the grid.
-    pub fn set_blocked(&mut self, kind: BlockKind, index: u32, mask: DirMask) -> bool {
-        self.blocks[kind as usize].set(index, DirMask(mask.0 & DirMask::ALL.0))
+    pub fn set_blocked(&mut self, kind: BlockKind, index: u32, mask: Dir) -> bool {
+        self.blocks[kind as usize].set(index, Dir(mask.0 & Dir::ALL.0))
     }
 
     /// The neighbour across `face` if it exists and neither side blocks the
@@ -402,6 +581,33 @@ mod tests {
 
     fn index(x: u32, y: u32, z: u32) -> u32 {
         x + y * 4 + z * 12
+    }
+
+    #[test]
+    fn dir_math_matches_byond() {
+        assert_eq!(Dir::NORTH.union(Dir::EAST).reverse(), Dir::SOUTH.union(Dir::WEST));
+        assert_eq!(Dir::UP.reverse(), Dir::DOWN);
+        assert!(Dir::NORTH.union(Dir::EAST).is_diagonal());
+        assert!(!Dir::NORTH.is_diagonal());
+        assert_eq!(Dir::from_face(Face::West), Dir::WEST);
+    }
+
+    #[test]
+    fn step_moves_diagonally_and_follows_z_links() {
+        let mut grid = Grid::new(GridDims::new(4, 4, 3).unwrap());
+        let dims = grid.dims();
+        let at = dims.index(1, 1, 0).unwrap();
+        assert_eq!(grid.step(at, Dir::NORTH.union(Dir::EAST)), dims.index(2, 2, 0));
+        assert_eq!(grid.step(at, Dir::UP), dims.index(1, 1, 1), "no links: numeric neighbour");
+        grid.set_z_link(0, Some(2), None);
+        assert_eq!(grid.step(at, Dir::UP), dims.index(1, 1, 2), "follows the link");
+        assert_eq!(grid.step(at, Dir::DOWN), None, "unlinked");
+        let before = grid.revision();
+        grid.set_blocked(BlockKind::Air, at, Dir::ALL);
+        assert!(grid.revision() > before);
+        assert!(grid.blocked_revision(BlockKind::Air, at) > 0);
+        let snapshot = grid.clone();
+        assert_eq!(snapshot.blocked(BlockKind::Air, at), Dir::ALL, "clones share chunks");
     }
 
     #[test]
@@ -504,7 +710,7 @@ mod tests {
             grid.open_neighbor(BlockKind::Air, a, Face::East),
             Some(east)
         );
-        grid.set_blocked(BlockKind::Air, east, DirMask::NONE.with(Face::West));
+        grid.set_blocked(BlockKind::Air, east, Dir::NONE.with(Face::West));
         assert_eq!(grid.open_neighbor(BlockKind::Air, a, Face::East), None);
         assert_eq!(grid.open_neighbor(BlockKind::Air, east, Face::West), None);
         assert_eq!(

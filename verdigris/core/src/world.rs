@@ -58,6 +58,8 @@ use crate::component::{Component, ComponentError, FieldId, FieldRole, Ownership,
 use crate::conservation::{Conserved, Ledger, Tolerance, Totals, Violation};
 use crate::entity::{EntityError, EntityId, EntityTable};
 use crate::event::EventSink;
+use crate::field::{FieldConfig, FieldKey, FieldKind};
+use crate::grid::{Grid, GridDims};
 use crate::frame::{FrameInfo, Ref, Res, ResourceId, Resources, Task, TaskCtx, run_sequential};
 use crate::law::{Effects, Law, LawCtx, OrderCycle, Pacer, Settle, order_laws};
 use crate::network::{NetworkHost, NetworkKind, RegionEvent, host::Transition};
@@ -729,6 +731,8 @@ pub struct WorldBuilder {
     worker_wakes: Res<FrameWakes>,
     main_out: Res<FrameOut>,
     worker_out: Res<FrameOut>,
+    /// `(main, worker snapshot)`.
+    grid: Option<(Res<Grid>, Res<Grid>)>,
 }
 
 /// A registered law, for declaring its order.
@@ -802,6 +806,7 @@ impl WorldBuilder {
             worker_wakes,
             main_out,
             worker_out,
+            grid: None,
         }
     }
 
@@ -935,8 +940,11 @@ impl WorldBuilder {
         });
     }
 
-    /// Registers a global resource for once-per-step laws ([`crate::query::Global`]).
-    pub fn add_global<T: Clone + PartialEq + Send + Sync + 'static>(&mut self, owner: Ownership, value: T) {
+    /// Registers a global resource in `owner`'s phase: state a once-per-step
+    /// law reads or writes through [`crate::query::Global`] (which needs
+    /// `Clone + PartialEq`), or host state the FFI layer keeps in the world
+    /// instead of a static ([`World::global_mut`]).
+    pub fn add_global<T: Any + Send + Sync>(&mut self, owner: Ownership, value: T) {
         let phase = Phase::of(owner);
         let name = format!("global:{}", std::any::type_name::<T>());
         let id = match phase {
@@ -944,6 +952,56 @@ impl WorldBuilder {
             Phase::Worker => self.sim.add_resource(name, value).id(),
         };
         self.globals.insert(TypeId::of::<T>(), (id, phase));
+    }
+
+    /// Gives the world its one [`Grid`] (block layers and z links,
+    /// `rust_architecture.md` §4.6). DM edits it on the main thread
+    /// ([`World::edit_grid`]); worker readers (fields) see a copy-on-write
+    /// snapshot taken at each dispatch that follows a change.
+    pub fn add_grid(&mut self, dims: GridDims) -> Res<Grid> {
+        let main = self.main.insert("grid:main", Grid::new(dims));
+        let worker = self.sim.add_resource("grid:worker", Grid::new(dims));
+        self.grid = Some((main, worker));
+        worker
+    }
+
+    /// Registers field kind `K` over the world's grid (its blocked faces
+    /// come from layer `K::BLOCK`), with its quantities in the conservation
+    /// check when `K::QUANTITY_NAMES` names them.
+    ///
+    /// # Panics
+    /// If no grid was added first ([`add_grid`](Self::add_grid)).
+    pub fn add_field<K: FieldKind>(&mut self, config: FieldConfig) -> FieldKey<K> {
+        let (_, grid) = self.grid.expect("add_grid before add_field");
+        let dims = self.main.get(self.grid.expect("checked").0).dims();
+        let key = crate::field::add_field::<K>(&mut self.sim, dims, config, Some(grid));
+        if !K::QUANTITY_NAMES.is_empty() {
+            // Crossings are keyed by source; fields use keys from the top so
+            // they never meet a component kind's index.
+            let crossing_key = usize::MAX - self.sources.len();
+            let (cells, geom, state) = (key.cells.state().id(), key.geometry.state().id(), key.state.id());
+            let mut access = Access::default();
+            access.read(cells);
+            access.read(geom);
+            access.read(state);
+            self.sources.push(ConserveSource {
+                phase: Phase::Worker,
+                access,
+                sum: Box::new(move |frame, totals, crossings| {
+                    let c = frame.get::<DomainState<K>>(cells);
+                    let g = frame.get::<DomainState<crate::field::Geometry<K>>>(geom);
+                    let st = frame.get::<crate::field::FieldState<K>>(state);
+                    let sums = crate::field::FieldState::<K>::totals(&c.store, &g.store);
+                    for ((name, sum), reservoir) in K::QUANTITY_NAMES.iter().zip(sums).zip(st.ledger()) {
+                        totals.add(name, sum + reservoir);
+                    }
+                    for &(n, v) in c.crossings() {
+                        crossings.push((crossing_key, n, v));
+                    }
+                }),
+            });
+        }
+        key
     }
 
     /// Adds any worker resource that holds conserved quantities (a field's
@@ -1150,6 +1208,8 @@ impl WorldBuilder {
             main_out: self.main_out,
             worker_out: self.worker_out,
             pending_worker_wakes: Vec::new(),
+            grid: self.grid,
+            grid_synced: 0,
             owed: 0,
             frame: 0,
             events: EventSink::new(),
@@ -1243,6 +1303,9 @@ pub struct World {
     worker_out: Res<FrameOut>,
     /// DM-originated wakes for the next worker frame.
     pending_worker_wakes: Vec<u32>,
+    grid: Option<(Res<Grid>, Res<Grid>)>,
+    /// The main grid's revision at the last worker snapshot.
+    grid_synced: u64,
     owed: u32,
     /// Steps completed by the main phase (== frames dispatched).
     frame: u64,
@@ -1327,7 +1390,17 @@ impl World {
         let (main, kinds, networks) = (&mut self.main, &mut self.kinds, &mut self.networks);
         let (pending, wakes_res, out) = (&mut self.pending_worker_wakes, self.worker_wakes, self.worker_out);
         let (events, violations) = (&mut self.events, &mut self.violations);
+        let (grid, grid_synced) = (self.grid, &mut self.grid_synced);
         let dispatched = self.sim.dispatch_frame_with(|res| {
+            if let Some((main_grid, worker_grid)) = grid {
+                let g = main.get(main_grid);
+                if g.revision() != *grid_synced {
+                    *grid_synced = g.revision();
+                    let snapshot = g.clone();
+                    drop(g);
+                    *res.get_mut(worker_grid) = snapshot;
+                }
+            }
             for k in kinds.iter_mut() {
                 k.sync(main, res);
             }
@@ -1775,6 +1848,25 @@ impl World {
     /// Raw region events since the last drain.
     pub fn drain_region_events<K: NetworkKind>(&mut self) -> Vec<RegionEvent<K>> {
         self.net_entry::<K>().map(|e| std::mem::take(&mut e.events)).unwrap_or_default()
+    }
+
+    /// The world's grid (main thread, authoritative).
+    ///
+    /// # Errors
+    /// `NoKind(0)` if the world has no grid.
+    pub fn grid(&self) -> Result<Ref<'_, Grid>, WorldError> {
+        let (main, _) = self.grid.ok_or(WorldError::NoKind(0))?;
+        Ok(self.main.get(main))
+    }
+
+    /// Edits the grid (a door closing, a wall built, z links at map load).
+    /// Worker readers see the change from the next dispatch.
+    ///
+    /// # Errors
+    /// `NoKind(0)` if the world has no grid.
+    pub fn edit_grid<R>(&mut self, edit: impl FnOnce(&mut Grid) -> R) -> Result<R, WorldError> {
+        let (main, _) = self.grid.ok_or(WorldError::NoKind(0))?;
+        Ok(edit(self.main.get_mut(main)))
     }
 
     /// A main-owned global.

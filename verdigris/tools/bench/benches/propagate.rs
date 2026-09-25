@@ -1,7 +1,7 @@
 //! R8 propagation benches: wavefront floods and rays on a 255x255 level.
 
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use vg_core::grid::{BlockKind, DirMask, Grid, GridDims};
+use vg_core::grid::{BlockKind, Dir, Grid, GridDims};
 use vg_core::propagate::{FloodLimits, Ray, Wavefront, line_of_sight};
 use vg_core::rng::{RngStreams, StreamId};
 
@@ -16,8 +16,8 @@ fn station() -> Grid {
                 continue;
             }
             for kind in [BlockKind::Air, BlockKind::Opacity] {
-                grid.set_blocked(kind, dims.index(a, b, 0).unwrap(), DirMask::ALL);
-                grid.set_blocked(kind, dims.index(b, a, 0).unwrap(), DirMask::ALL);
+                grid.set_blocked(kind, dims.index(a, b, 0).unwrap(), Dir::ALL);
+                grid.set_blocked(kind, dims.index(b, a, 0).unwrap(), Dir::ALL);
             }
         }
     }
@@ -89,7 +89,7 @@ fn rays(c: &mut Criterion) {
                 let ray = Ray::new(dims, a, t).unwrap();
                 total += ray
                     .attenuate(1.0, 0.0, |c| {
-                        if grid.blocked(BlockKind::Air, c) == DirMask::ALL {
+                        if grid.blocked(BlockKind::Air, c) == Dir::ALL {
                             0.5
                         } else {
                             0.99

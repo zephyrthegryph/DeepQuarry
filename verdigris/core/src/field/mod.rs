@@ -7,10 +7,15 @@
 //!   the sources and sinks DM submits. `Put`/`Take` move whole cells in and
 //!   out, and R5 made `Take` report exactly what it removed;
 //! - the **geometry**: [`Geometry<K>`], one [`Geom`] per cell with the
-//!   capacity (heat capacity, volume), the blocked-direction mask of the
-//!   layer the field uses, and the reservoir flag. DM changes it with
-//!   [`GeomCmd`]s (a door opening is one command), so geometry goes through
-//!   the same commands, overlay, views and replay as everything else;
+//!   capacity (heat capacity, volume) and the reservoir flag. DM changes it
+//!   with [`GeomCmd`]s, so geometry goes through the same commands,
+//!   overlay, views and replay as everything else;
+//! - the **blocked faces** come from the world's one [`Grid`], layer
+//!   [`FieldKind::BLOCK`] (a door closing is one grid write, seen by every
+//!   field on that layer). A field registered without a grid falls back to
+//!   the per-cell [`Geom::blocked`], which the hosts that predate the grid
+//!   still write; they move to the grid when they port
+//!   (`rust_architecture.md` §8);
 //! - [`FieldState<K>`]: active chunks, the reservoir ledger and statistics.
 //!
 //! [`add_field`] registers all three and a `field:<name>` frame task that
@@ -60,7 +65,7 @@ use rayon::prelude::*;
 
 use crate::cow::{ChunkLayout, CowStore};
 use crate::frame::{Res, Task};
-use crate::grid::{CHUNK_EDGE, DirMask, Face, GridDims};
+use crate::grid::{BlockKind, CHUNK_EDGE, Dir, Face, Grid, GridDims};
 use crate::owner::{Applied, Domain, DomainKey};
 use crate::sim::SimBuilder;
 
@@ -70,8 +75,10 @@ pub struct Geom {
     /// Heat capacity, volume, ...: intensive = amount / capacity. 0 means
     /// the cell is not part of the field.
     pub capacity: f32,
-    /// Faces this cell blocks (a face is open only if neither side blocks it).
-    pub blocked: DirMask,
+    /// Faces this cell blocks (a face is open only if neither side blocks
+    /// it), for a field without a [`Grid`]; with one, the grid's layer is
+    /// used as well.
+    pub blocked: Dir,
     /// Exchanges but never changes (space, a planet's atmosphere).
     pub reservoir: bool,
 }
@@ -81,7 +88,7 @@ impl Geom {
     pub const fn cell(capacity: f32) -> Self {
         Self {
             capacity,
-            blocked: DirMask::NONE,
+            blocked: Dir::NONE,
             reservoir: false,
         }
     }
@@ -90,7 +97,7 @@ impl Geom {
     pub const fn reservoir(capacity: f32) -> Self {
         Self {
             capacity,
-            blocked: DirMask::NONE,
+            blocked: Dir::NONE,
             reservoir: true,
         }
     }
@@ -116,7 +123,7 @@ impl Geom {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum GeomCmd {
     Capacity(f32),
-    Blocked(DirMask),
+    Blocked(Dir),
     Reservoir(bool),
 }
 
@@ -131,7 +138,7 @@ impl<K: FieldKind> Domain for Geometry<K> {
     fn apply(value: &mut Geom, cmd: &GeomCmd) -> Applied {
         match *cmd {
             GeomCmd::Capacity(c) => value.capacity = c,
-            GeomCmd::Blocked(m) => value.blocked = DirMask(m.0 & DirMask::ALL.0),
+            GeomCmd::Blocked(m) => value.blocked = Dir(m.0 & Dir::ALL.0),
             GeomCmd::Reservoir(r) => value.reservoir = r,
         }
         Applied::default()
@@ -166,6 +173,11 @@ pub trait FieldKind: Domain {
     const GEOMETRY_NAME: &'static str;
     /// How many conserved quantities [`totals`](Self::totals) reports.
     const QUANTITIES: usize;
+    /// The conserved quantities' names, in [`totals`](Self::totals) order,
+    /// for the driver's conservation check (empty: not checked).
+    const QUANTITY_NAMES: &'static [&'static str] = &[];
+    /// The [`Grid`] block layer this field's faces follow.
+    const BLOCK: BlockKind = BlockKind::Air;
     /// What crosses an edge. `-F` must undo `F`, and `+` must add
     /// componentwise: a cell's fluxes are summed first and applied once,
     /// so small fluxes are not each rounded against a large content.
@@ -260,6 +272,8 @@ pub struct FieldState<K: FieldKind> {
     last_geom: Option<CowStore<Geom>>,
     ledger: Vec<f64>,
     stats: FieldStats,
+    /// The grid layer revision as of the last step.
+    grid_seen: u64,
 }
 
 impl<K: FieldKind> fmt::Debug for FieldState<K> {
@@ -302,6 +316,7 @@ impl<K: FieldKind> FieldState<K> {
             last_geom: None,
             ledger: vec![0.0; K::QUANTITIES],
             stats: FieldStats::default(),
+            grid_seen: 0,
         }
     }
 
@@ -403,9 +418,24 @@ impl<K: FieldKind> FieldState<K> {
     ///
     /// # Panics
     /// If the stores' layouts do not match this field's.
-    pub fn step(&mut self, cells: &mut CowStore<K::Value>, geom: &CowStore<Geom>) {
+    pub fn step(&mut self, cells: &mut CowStore<K::Value>, geom: &CowStore<Geom>, grid: Option<&Grid>) {
         assert_eq!(cells.layout(), self.layout, "cells layout mismatch");
         assert_eq!(geom.layout(), self.layout, "geometry layout mismatch");
+        if let Some(g) = grid {
+            let revision = g.layer(K::BLOCK).revision();
+            if revision != self.grid_seen {
+                for chunk in 0..self.layout.chunk_count() {
+                    let changed = self
+                        .layout
+                        .index_of(chunk, 0)
+                        .is_some_and(|cell| g.blocked_revision(K::BLOCK, cell) > self.grid_seen);
+                    if changed {
+                        self.active[chunk] = true;
+                    }
+                }
+                self.grid_seen = revision;
+            }
+        }
         match &self.last_cells {
             Some(last) => {
                 for chunk in cells.chunks_differing_from(last) {
@@ -419,13 +449,18 @@ impl<K: FieldKind> FieldState<K> {
                 self.active[chunk] = true;
             }
         }
-        self.advance(cells, geom);
+        let geo = Geo {
+            store: geom,
+            grid,
+            kind: K::BLOCK,
+        };
+        self.advance(cells, &geo);
         self.last_cells = Some(cells.snapshot());
         self.last_geom = Some(geom.snapshot());
     }
 
     #[allow(clippy::too_many_lines)]
-    fn advance(&mut self, cells: &mut CowStore<K::Value>, geom: &CowStore<Geom>) {
+    fn advance(&mut self, cells: &mut CowStore<K::Value>, geom: &Geo<'_>) {
         self.stats.steps += 1;
         let count = self.active.iter().filter(|&&a| a).count();
         self.stats.active_chunks = u32::try_from(count).unwrap_or(u32::MAX);
@@ -515,7 +550,7 @@ impl<K: FieldKind> FieldState<K> {
                     let Some(index) = layout.index_of(chunk, i) else {
                         continue;
                     };
-                    let g = geom.get(index).unwrap_or_default();
+                    let g = geom.store.get(index).unwrap_or_default();
                     if !g.is_node() || g.reservoir {
                         continue;
                     }
@@ -567,7 +602,7 @@ impl<K: FieldKind> FieldState<K> {
                 let Some(index) = layout.index_of(chunk, i) else {
                     continue;
                 };
-                let g = geom.get(index).unwrap_or_default();
+                let g = geom.store.get(index).unwrap_or_default();
                 if !g.is_node() || g.reservoir {
                     continue;
                 }
@@ -604,14 +639,14 @@ impl<K: FieldKind> FieldState<K> {
     fn for_live_edges(
         &self,
         chunk: usize,
-        geom: &CowStore<Geom>,
+        geom: &Geo<'_>,
         mut f: impl FnMut(usize, usize, u32, Geom, u32, Geom),
     ) {
         for i in 0..self.layout.chunk_len() {
             let Some(index) = self.layout.index_of(chunk, i) else {
                 continue;
             };
-            let ga = geom.get(index).unwrap_or_default();
+            let ga = geom.store.get(index).unwrap_or_default();
             if !ga.is_node() {
                 continue;
             }
@@ -625,11 +660,11 @@ impl<K: FieldKind> FieldState<K> {
                 if !(self.active[chunk] || self.active[nc]) {
                     continue;
                 }
-                let gb = geom.get(nb).unwrap_or_default();
+                let gb = geom.store.get(nb).unwrap_or_default();
                 if !gb.is_node()
                     || (ga.reservoir && gb.reservoir)
-                    || ga.blocked.contains(*plus)
-                    || gb.blocked.contains(*minus)
+                    || geom.blocked(index, &ga).contains(*plus)
+                    || geom.blocked(nb, &gb).contains(*minus)
                 {
                     continue;
                 }
@@ -642,7 +677,7 @@ impl<K: FieldKind> FieldState<K> {
         &self,
         chunk: usize,
         cells: &CowStore<K::Value>,
-        geom: &CowStore<Geom>,
+        geom: &Geo<'_>,
     ) -> f32 {
         let mut max = 0.0f32;
         self.for_live_edges(chunk, geom, |_, _, a, ga, b, gb| {
@@ -665,7 +700,7 @@ impl<K: FieldKind> FieldState<K> {
         &self,
         chunk: usize,
         old: &CowStore<K::Value>,
-        geom: &CowStore<Geom>,
+        geom: &Geo<'_>,
         dt: f32,
         last: bool,
     ) -> ChunkFlux<K::Flux> {
@@ -717,6 +752,23 @@ impl<K: FieldKind> FieldState<K> {
     }
 }
 
+/// A step's view of the geometry: the per-cell store plus the grid's
+/// block layer.
+struct Geo<'a> {
+    store: &'a CowStore<Geom>,
+    grid: Option<&'a Grid>,
+    kind: BlockKind,
+}
+
+impl Geo<'_> {
+    fn blocked(&self, index: u32, g: &Geom) -> Dir {
+        match self.grid {
+            Some(grid) => g.blocked.union(grid.blocked(self.kind, index)),
+            None => g.blocked,
+        }
+    }
+}
+
 fn side<V>(cell: &V, g: Geom, faces: f32) -> Side<'_, V> {
     Side {
         cell,
@@ -751,12 +803,15 @@ impl<K: FieldKind> fmt::Debug for FieldKey<K> {
 }
 
 /// Registers field `K` over `dims`: the geometry and cells domains (spatial
-/// chunks), the field state, and its `field:<name>` frame task. Add the
-/// field before tasks that should run after it in the frame.
+/// chunks), the field state, and its `field:<name>` frame task, reading its
+/// blocked faces from `grid` (the world's grid resource; `None` for a field
+/// that still carries them in [`Geom::blocked`]). Add the field before
+/// tasks that should run after it in the frame.
 pub fn add_field<K: FieldKind>(
     builder: &mut SimBuilder,
     dims: GridDims,
     config: FieldConfig,
+    grid: Option<Res<Grid>>,
 ) -> FieldKey<K> {
     let layout = ChunkLayout::spatial(dims);
     let geometry = builder.add_domain::<Geometry<K>>(layout);
@@ -766,16 +821,19 @@ pub fn add_field<K: FieldKind>(
         FieldState::<K>::new(dims, config),
     );
     let (g, c) = (geometry.state(), cells.state());
-    builder.add_task(
-        Task::new(format!("field:{}", K::NAME), move |ctx| {
-            let geom = ctx.read(g);
-            let mut dom = ctx.write(c);
-            ctx.write(state).step(&mut dom.store, &geom.store);
-        })
-        .reads(g.id())
-        .writes(c.id())
-        .writes(state.id()),
-    );
+    let mut task = Task::new(format!("field:{}", K::NAME), move |ctx| {
+        let geom = ctx.read(g);
+        let mut dom = ctx.write(c);
+        let grid = grid.map(|r| ctx.read(r));
+        ctx.write(state).step(&mut dom.store, &geom.store, grid.as_deref());
+    })
+    .reads(g.id())
+    .writes(c.id())
+    .writes(state.id());
+    if let Some(r) = grid {
+        task = task.reads(r.id());
+    }
+    builder.add_task(task);
     FieldKey {
         cells,
         geometry,

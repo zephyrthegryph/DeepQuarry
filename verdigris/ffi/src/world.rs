@@ -50,6 +50,7 @@ thread_local! {
 
 /// Every domain's declarations (see the module docs).
 fn register(b: &mut WorldBuilder) {
+    b.add_global(vg_core::component::Ownership::Main, crate::propagate::RadiationLayer::default());
     b.add_component::<vg_gas::kind::pump::Pump>();
     b.add_component::<vg_gas::kind::gas_mix::GasMix>();
     b.conserve("gas_moles", Tolerance::default());

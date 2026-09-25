@@ -238,7 +238,7 @@ impl Wavefront {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::grid::{DirMask, GridDims};
+    use crate::grid::{Dir, GridDims};
     use proptest::prelude::*;
 
     /// Brute force: O(n^2) Dijkstra with a linear scan for the minimum.
@@ -298,7 +298,7 @@ mod tests {
                     for (i, (mask, c)) in cells.into_iter().enumerate() {
                         // Sparse random blocked faces; cost 7 is an impassable cell.
                         let mask = if mask < 40 { 0 } else { mask & 0b11_1111 };
-                        grid.set_blocked(BlockKind::Air, i as u32, DirMask(mask));
+                        grid.set_blocked(BlockKind::Air, i as u32, Dir(mask));
                         costs.set(i as u32, c);
                     }
                     Case {
@@ -376,7 +376,7 @@ mod tests {
             grid.set_blocked(
                 BlockKind::Air,
                 dims.index(x, 0, 0).unwrap(),
-                DirMask::NONE.with(Face::Up),
+                Dir::NONE.with(Face::Up),
             );
         }
         wf.run(

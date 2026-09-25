@@ -10,7 +10,7 @@
 //!
 //! Rays may change z-level; the path is the same formula on the z axis.
 
-use crate::grid::{BlockKind, DirMask, Face, Grid, GridDims};
+use crate::grid::{BlockKind, Dir, Face, Grid, GridDims};
 
 /// The cells from one grid cell to another, inclusive, as an iterator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -181,8 +181,8 @@ fn sub_step(
     skip_far: bool,
 ) -> Option<u32> {
     let next = grid.neighbor(cell, face)?;
-    let near: DirMask = grid.blocked(kind, cell);
-    let far: DirMask = grid.blocked(kind, next);
+    let near: Dir = grid.blocked(kind, cell);
+    let far: Dir = grid.blocked(kind, next);
     let blocked =
         (!skip_near && near.contains(face)) || (!skip_far && far.contains(face.opposite()));
     (!blocked).then_some(next)
@@ -336,7 +336,7 @@ mod tests {
             let mut grid = Grid::new(dims);
             let len = dims.layer_len() * dims.max_z();
             for (i, m) in walls {
-                grid.set_blocked(BlockKind::Opacity, i % len, DirMask(m));
+                grid.set_blocked(BlockKind::Opacity, i % len, Dir(m));
             }
             prop_assert_eq!(
                 line_of_sight(&grid, BlockKind::Opacity, a, b),
@@ -392,7 +392,7 @@ mod tests {
             i(0, 4, 0),
             i(8, 4, 0)
         ));
-        grid.set_blocked(BlockKind::Opacity, i(4, 4, 0), DirMask::ALL);
+        grid.set_blocked(BlockKind::Opacity, i(4, 4, 0), Dir::ALL);
         assert!(!line_of_sight(
             &grid,
             BlockKind::Opacity,
@@ -414,15 +414,15 @@ mod tests {
         ));
         // A diagonal slips past one corner wall but not between two.
         let mut g2 = Grid::new(dims);
-        g2.set_blocked(BlockKind::Opacity, i(1, 0, 0), DirMask::ALL);
-        g2.set_blocked(BlockKind::Opacity, i(0, 1, 0), DirMask::ALL);
+        g2.set_blocked(BlockKind::Opacity, i(1, 0, 0), Dir::ALL);
+        g2.set_blocked(BlockKind::Opacity, i(0, 1, 0), Dir::ALL);
         assert!(!line_of_sight(
             &g2,
             BlockKind::Opacity,
             i(0, 0, 0),
             i(2, 2, 0)
         ));
-        g2.set_blocked(BlockKind::Opacity, i(0, 1, 0), DirMask::NONE);
+        g2.set_blocked(BlockKind::Opacity, i(0, 1, 0), Dir::NONE);
         assert!(line_of_sight(
             &g2,
             BlockKind::Opacity,
@@ -437,15 +437,15 @@ mod tests {
             i(2, 2, 0),
             i(2, 2, 1)
         ));
-        g3.set_blocked(BlockKind::Opacity, i(2, 3, 0), DirMask::NONE.with(Face::Up));
+        g3.set_blocked(BlockKind::Opacity, i(2, 3, 0), Dir::NONE.with(Face::Up));
         assert!(line_of_sight(
             &g3,
             BlockKind::Opacity,
             i(2, 2, 0),
             i(2, 4, 1)
         ));
-        g3.set_blocked(BlockKind::Opacity, i(2, 2, 0), DirMask::NONE.with(Face::Up));
-        g3.set_blocked(BlockKind::Opacity, i(2, 3, 0), DirMask::ALL);
+        g3.set_blocked(BlockKind::Opacity, i(2, 2, 0), Dir::NONE.with(Face::Up));
+        g3.set_blocked(BlockKind::Opacity, i(2, 3, 0), Dir::ALL);
         assert!(!line_of_sight(
             &g3,
             BlockKind::Opacity,

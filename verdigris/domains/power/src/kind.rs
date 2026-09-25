@@ -2,7 +2,8 @@
 //! All region state lives in [`PowerLedger`], the payload -- there is no
 //! side ledger map (`rust_architecture.md` §4.5's rule).
 
-use vg_core::network::{Additive, CellId, NetworkKind};
+use vg_core::grid::{CellId, Dir};
+use vg_core::network::{Additive, NetworkKind};
 use vg_core::units::Watts;
 
 use crate::components::Cable;
@@ -185,12 +186,12 @@ impl Cable {
                 continue;
             }
             if let Some(t) = geom::step(p, dir, self.up, self.down) {
-                out.push((t, geom::reverse(dir)));
+                out.push((t, Dir(dir).reverse().0));
             }
-            if geom::is_diagonal(dir) {
-                for pair in [geom::NORTH | geom::SOUTH, geom::EAST | geom::WEST] {
-                    if let Some(t) = geom::step(p, dir & pair, 0, 0) {
-                        out.push((t, dir ^ pair));
+            if Dir(dir).is_diagonal() {
+                for pair in [Dir::NORTH.union(Dir::SOUTH), Dir::EAST.union(Dir::WEST)] {
+                    if let Some(t) = geom::step(p, dir & pair.0, 0, 0) {
+                        out.push((t, dir ^ pair.0));
                     }
                 }
             }
@@ -210,9 +211,9 @@ mod tests {
 
     #[test]
     fn a_straight_run_connects_end_to_end() {
-        let a = PowerNode::Cable(wire(0, geom::EAST));
-        let b = PowerNode::Cable(wire(geom::EAST, geom::WEST));
-        let c = PowerNode::Cable(wire(geom::WEST, 0));
+        let a = PowerNode::Cable(wire(0, Dir::EAST.0));
+        let b = PowerNode::Cable(wire(Dir::EAST.0, Dir::WEST.0));
+        let c = PowerNode::Cable(wire(Dir::WEST.0, 0));
         let (pa, pb, pc) = (pos(1, 1, 1), pos(2, 1, 1), pos(3, 1, 1));
         assert!(Cables::connects((&a, pa), (&b, pb)));
         assert!(Cables::connects((&b, pb), (&c, pc)));

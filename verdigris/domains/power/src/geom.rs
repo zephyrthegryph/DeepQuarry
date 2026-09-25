@@ -1,15 +1,16 @@
-//! Turf position packing and BYOND direction math: what the cable
-//! connection rule ([`crate::laws::connects`]/[`crate::laws::reach`])
-//! builds on, so Rust derives the graph from what DM already knows about
-//! each cable (turf, `d1`, `d2`) without DM sending topology.
+//! Power's packed turf positions (`z << 20 | y << 10 | x`), which the
+//! cable connection rule steps over until power addresses cells by
+//! `vg_core::grid::CellId` (step 3 of `rust_architecture.md` §8). Direction
+//! math is `vg_core::grid::Dir`'s.
 
-/// BYOND direction bits.
-pub const NORTH: u8 = 1;
-pub const SOUTH: u8 = 2;
-pub const EAST: u8 = 4;
-pub const WEST: u8 = 8;
-pub const UP: u8 = 16;
-pub const DOWN: u8 = 32;
+use vg_core::grid::Dir;
+
+const NORTH: u8 = Dir::NORTH.0;
+const SOUTH: u8 = Dir::SOUTH.0;
+const EAST: u8 = Dir::EAST.0;
+const WEST: u8 = Dir::WEST.0;
+const UP: u8 = Dir::UP.0;
+const DOWN: u8 = Dir::DOWN.0;
 
 const XY_BITS: u32 = 10;
 const XY_MASK: u32 = (1 << XY_BITS) - 1;
@@ -25,38 +26,6 @@ pub const fn pos(x: u32, y: u32, z: u32) -> u32 {
 #[must_use]
 pub const fn unpack(p: u32) -> (u32, u32, u32) {
     (p & XY_MASK, (p >> XY_BITS) & XY_MASK, p >> (2 * XY_BITS))
-}
-
-/// `GLOB.reverse_dir`.
-#[must_use]
-pub const fn reverse(dir: u8) -> u8 {
-    let mut r = 0;
-    if dir & NORTH != 0 {
-        r |= SOUTH;
-    }
-    if dir & SOUTH != 0 {
-        r |= NORTH;
-    }
-    if dir & EAST != 0 {
-        r |= WEST;
-    }
-    if dir & WEST != 0 {
-        r |= EAST;
-    }
-    if dir & UP != 0 {
-        r |= DOWN;
-    }
-    if dir & DOWN != 0 {
-        r |= UP;
-    }
-    r
-}
-
-/// A planar diagonal (two of N/S/E/W set).
-#[must_use]
-pub const fn is_diagonal(dir: u8) -> bool {
-    let planar = dir & 15;
-    planar != 0 && planar & (planar - 1) != 0
 }
 
 /// `get_zstep(p, dir)`. `up`/`down` are the z-levels above and below `p`'s
@@ -99,14 +68,6 @@ pub fn step(p: u32, dir: u8, up: u32, down: u32) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn reverse_undoes_every_direction() {
-        for dir in [NORTH, SOUTH, EAST, WEST, UP, DOWN] {
-            assert_eq!(reverse(reverse(dir)), dir);
-        }
-        assert_eq!(reverse(NORTH | EAST), SOUTH | WEST);
-    }
 
     #[test]
     fn step_respects_bounds_and_explicit_z_links() {

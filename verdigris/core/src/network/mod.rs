@@ -54,7 +54,7 @@ pub mod host;
 pub mod law;
 
 pub use graph::{
-    Additive, CellId, CommitStats, Device, DeviceId, Edge, EdgeId, Endpoint, NO_KEY, NetError,
+    Additive, CommitStats, Device, DeviceId, Edge, EdgeId, Endpoint, NO_KEY, NetError,
     Network, NetworkKind, Node, NodeId, Region, RegionEvent, RegionId, Side,
 };
 pub use host::{Entity, NetworkHost, Transition, decode_key};

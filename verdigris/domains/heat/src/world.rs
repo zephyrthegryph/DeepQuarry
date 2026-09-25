@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use vg_core::channel::{Quantity, Unit};
 use vg_core::field::{FieldConfig, FieldKey, Geom, add_field};
-use vg_core::grid::{DirMask, Face, GridDims};
+use vg_core::grid::{Dir, Face, GridDims};
 use vg_core::outbox::{Event, EventKind, Lane, Subscriber, Wake, WatchId};
 use vg_core::owner::DomainKey;
 use vg_core::sim::{BuildError, Sim, SimBuilder, SimConfig, WatchKey};
@@ -292,6 +292,7 @@ impl HeatWorld {
                 dt: config.dt,
                 max_substeps: config.max_substeps,
             },
+            None,
         );
         let ledger = couple::add_ledger(&mut b);
         couple::add_gas_coupling(&mut b, field, ledger, Arc::clone(&gas), config.dt);
@@ -389,7 +390,7 @@ impl HeatWorld {
             capacity,
             // A solid deck separates z-levels (as superconduct.rs did):
             // cross-z heat needs an explicit conductor.
-            blocked: DirMask::NONE.with(Face::Up).with(Face::Down),
+            blocked: Dir::NONE.with(Face::Up).with(Face::Down),
             reservoir,
         };
         let ports = &mut self.sim;

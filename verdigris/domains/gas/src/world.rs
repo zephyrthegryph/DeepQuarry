@@ -31,7 +31,7 @@ use vg_core::command::Seq;
 use vg_core::cow::{ChunkLayout, CowStore};
 use vg_core::field::{add_field, FieldConfig, FieldKey, FieldState, Geom, GeomCmd};
 use vg_core::frame::{Res, Task};
-use vg_core::grid::{DirMask, Face, GridDims};
+use vg_core::grid::{Dir, Face, GridDims};
 use vg_core::outbox::{Event, EventKind, Lane, Outbox, Wake, WatchId};
 use vg_core::owner::{DomainState, View};
 use vg_core::watch::revision::Counter;
@@ -834,6 +834,7 @@ impl Field {
 				dt: FRAME_DT,
 				max_substeps: MAX_SUBSTEPS,
 			},
+			None,
 		);
 		let planets: Planets = Arc::new(RwLock::new(vec![GasCell::default()]));
 		let ledger = Arc::new(Mutex::new(vec![0.0; Q]));
@@ -971,17 +972,17 @@ impl Field {
 		Some((c, g))
 	}
 
-	fn effective_mask(&self, cell: u32, mask: u8) -> DirMask {
+	fn effective_mask(&self, cell: u32, mask: u8) -> Dir {
 		let z = cell / self.dims.layer_len();
 		let link = self.z_links.get(z as usize).copied().unwrap_or(0);
-		let mut m = mask & DirMask::ALL.0;
+		let mut m = mask & Dir::ALL.0;
 		if link & Face::Up.bit() == 0 {
 			m |= Face::Up.bit();
 		}
 		if link & Face::Down.bit() == 0 {
 			m |= Face::Down.bit();
 		}
-		DirMask(m)
+		Dir(m)
 	}
 
 	fn geom(&mut self, cell: u32, cmd: GeomCmd) {
@@ -1129,7 +1130,7 @@ impl Field {
 		let mask = self.masks.get(&cell).copied();
 		[
 			f32::from(u8::from(mask.is_some())),
-			f32::from(mask.unwrap_or(DirMask::ALL.0)),
+			f32::from(mask.unwrap_or(Dir::ALL.0)),
 			f32::from(self.z_links.get(z as usize).copied().unwrap_or(0)),
 			z as f32,
 		]
