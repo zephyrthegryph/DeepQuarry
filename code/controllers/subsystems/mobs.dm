@@ -26,8 +26,10 @@ SUBSYSTEM_DEF(mobs)
 	/// Fires per Life cycle (one per tick over LIFE_NOMINAL_SECONDS); set at the first fire.
 	var/life_slices = 0
 	var/slice_budget_remaining = 0
-	/// This cycle's per-fire quota, fixed when the cycle's run list is taken.
+	/// This cycle's per-fire quota (fractional), fixed when the cycle's run list is taken, and the
+	/// carry that turns it into whole mobs per fire so a cycle is exactly life_slices fires.
 	var/cycle_quota = 1
+	var/quota_carry = 0
 	/// Benchmarks (life_sweep): Life() calls on living mobs, and ms spent in fire().
 	var/bench_life_calls = 0
 	var/bench_ms = 0
@@ -82,8 +84,10 @@ SUBSYSTEM_DEF(mobs)
 			src.currentrun = GLOB.mob_list.Copy()
 			profile_run_index = 0
 			life_cycle++
-			cycle_quota = max(1, CEILING(length(src.currentrun) / life_slices, 1))
-		slice_budget_remaining = cycle_quota
+			cycle_quota = length(src.currentrun) / life_slices
+		quota_carry += cycle_quota
+		slice_budget_remaining = round(quota_carry)
+		quota_carry -= slice_budget_remaining
 		if(world.time >= next_hibernation_audit && hibernation_audit_enabled())
 			next_hibernation_audit = world.time + MOB_HIBERNATION_AUDIT_INTERVAL
 			audit_hibernation()
