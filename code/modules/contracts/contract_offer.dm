@@ -117,7 +117,9 @@
 			count++
 	return count
 
-/datum/controller/subsystem/contracts/proc/candidate_has_capacity(datum/contract_offer_candidate/candidate, datum/contract_definition/definition)
+/// Whether `candidate` fits the board now; `ignoring` is left out of the count
+/// (the offer a priority displacement would withdraw).
+/datum/controller/subsystem/contracts/proc/candidate_has_capacity(datum/contract_offer_candidate/candidate, datum/contract_definition/definition, datum/contract/ignoring)
 	if(!candidate?.board_key || !definition)
 		return FALSE
 	if(definition_live_count(definition.id) >= definition.max_simultaneous)
@@ -127,7 +129,7 @@
 	var/same_term_count = 0
 	var/candidate_term = definition_term_class(definition)
 	for(var/datum/contract/contract in offered_contracts)
-		if(contract.board_key != candidate.board_key)
+		if(contract.board_key != candidate.board_key || contract == ignoring)
 			continue
 		board_count++
 		if(definition.issuer_faction && contract.issuer_faction == definition.issuer_faction)
@@ -155,6 +157,10 @@
 			continue
 		var/offer_priority = offer.offer_context?["offer_priority"] || 50
 		if(offer_priority >= candidate.priority || offer_priority >= displaced_priority)
+			continue
+		// Only an offer whose withdrawal makes room: the lowest-priority one
+		// may hold a slot the faction or term limit is not counting.
+		if(!candidate_has_capacity(candidate, definition, offer))
 			continue
 		displaced = offer
 		displaced_priority = offer_priority
