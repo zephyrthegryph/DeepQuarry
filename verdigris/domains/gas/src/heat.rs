@@ -253,11 +253,10 @@ fn target(kind: &ByondValue, target: &ByondValue) -> Result<Target> {
 		HEAT_TARGET_MIXTURE => Target::Gas(GasRef::Mixture(target.get_number()? as u32)),
 		// The full packed handle (slot | generation << 16), not masked to
 		// its low `MAX_BODIES - 1` bits (H1 audit finding): masking here
-		// used to silently strip the generation, so a stale or garbage
-		// handle whose low bits matched a live slot's index would target
-		// whatever body currently occupies that slot instead of being
-		// rejected. `HeatWorld::live_slot` already checks the generation
-		// against the slot's current one; let it reject a bad handle.
+		// used to silently strip the generation, so a stale handle could
+		// target whatever body now occupies the slot. The callers resolve
+		// it with `HeatWorld::resolve_target`, which checks the generation
+		// and turns it into the slot index the bodies store uses.
 		HEAT_TARGET_BODY => Target::Body(target.get_number()? as u32),
 		HEAT_TARGET_NONE => Target::None,
 		other => eyre::bail!("bad heat target kind {other}"),
@@ -280,17 +279,16 @@ fn heat_body_create(
 	conductance: ByondValue,
 	keep: ByondValue,
 ) -> Result<ByondValue> {
-	let mut body = Body::new(capacity.get_number()?, temperature.get_number()?).with_coupling(
-		0,
-		Coupling::new(
-			target(&target_kind, &target_ref)?,
-			conductance.get_number()?,
-		),
-	);
+	let target = target(&target_kind, &target_ref)?;
+	let conductance = conductance.get_number()?;
+	let mut body = Body::new(capacity.get_number()?, temperature.get_number()?);
 	if keep.is_true() {
 		body = body.kept();
 	}
-	Ok(with_heat(|w| w.create_body(body))
+	Ok(with_heat(|w| {
+		let coupling = Coupling::new(w.resolve_target(target), conductance);
+		w.create_body(body.with_coupling(0, coupling))
+	})
 		.flatten()
 		.map_or_else(ByondValue::null, |h| (h as f32).into()))
 }
@@ -331,14 +329,18 @@ fn heat_body_couple(
 	target_ref: ByondValue,
 	conductance: ByondValue,
 ) -> Result<ByondValue> {
-	let c = Coupling::new(
-		target(&target_kind, &target_ref)?,
-		conductance.get_number()?,
-	);
-	Ok(body_cmd(
-		&h,
-		BodyCmd::Couple(slot.get_number()?.clamp(0.0, 1.0) as u8, c),
-	))
+	let target = target(&target_kind, &target_ref)?;
+	let conductance = conductance.get_number()?;
+	let slot = slot.get_number()?.clamp(0.0, 1.0) as u8;
+	let Some(h) = handle(&h) else {
+		return Ok(false.into());
+	};
+	Ok(with_heat(|w| {
+		let c = Coupling::new(w.resolve_target(target), conductance);
+		w.body_command(h, BodyCmd::Couple(slot, c))
+	})
+	.unwrap_or(false)
+	.into())
 }
 
 /// Sets a body's sustained source (W; negative is a sink).

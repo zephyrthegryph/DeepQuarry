@@ -548,6 +548,17 @@ impl HeatWorld {
         (rec.live && rec.generation == generation).then_some(slot)
     }
 
+    /// A coupling target as DM names it, with a body's packed handle
+    /// (slot | generation << 16) resolved to the slot the bodies store
+    /// indexes. A dead or stale handle couples to nothing.
+    #[must_use]
+    pub fn resolve_target(&self, target: body::Target) -> body::Target {
+        match target {
+            body::Target::Body(h) => self.live_slot(h).map_or(body::Target::None, body::Target::Body),
+            other => other,
+        }
+    }
+
     /// Whether `h` names a live body.
     #[must_use]
     pub fn is_live(&self, h: BodyHandle) -> bool {
