@@ -246,12 +246,13 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	probe_ctx.ids = list()
 	var/datum/state_schema/schema = state_schema_for(probe)
 	for(var/name in schema.saved_vars)
-		// atom_colours can be seeded by a random pick at Initialize() (a
-		// flavour colour promoted into the priority list by the base
-		// /atom/Initialize()); a baseline sampled from one random instance
-		// would falsely swallow every other instance's real colour (C5).
-		// Skipping it here falls back to the plain "matches if empty" rule.
-		if(name == "atom_colours")
+		// These lists can be seeded by a random roll at Initialize():
+		// atom_colours by a flavour colour promoted by /atom/Initialize() (C5),
+		// material_mix by random scrap composition (/obj/item/trash/material).
+		// A baseline sampled from one random instance would swallow every
+		// other instance that rolled the same value, and a restored copy
+		// would then re-roll. Skipping them falls back to "matches if empty".
+		if(name == "atom_colours" || name == "material_mix")
 			continue
 		var/value = probe.vars[name]
 		if(!islist(value))
