@@ -12,7 +12,7 @@ const_format = "0.2.33"
 serde_json = "1.0"
 auxmacros = { path = "macros" }
 auxcallback = { path = "callback" }
-vg-layout = { path = "../domains/layout" }
+vg-layout = { path = "../gen/layout" }
 vg-core = { path = "../core" }
 vg-power = { path = "../domains/power" }
 # The mob heat-body component (H2): heat's FFI moving out of vg-gas starts

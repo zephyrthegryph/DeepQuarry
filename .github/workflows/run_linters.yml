@@ -89,7 +89,7 @@ jobs:
       # lint level (see domains/gas/UPSTREAM.md), and vg-gas/vg-ffi both need
       # byondapi (i686/32-bit only -- see verdigris/Cargo.toml), which this
       # runner has no cross toolchain for. `cargo test`'s default-members
-      # (core, domains/heat, domains/layout, domains/power, verdigris,
+      # (core, domains/heat, gen/layout, domains/power, verdigris,
       # tools/bench, tools/replay) already matches this clippy package list.
       - name: Verdigris cargo fmt
         working-directory: verdigris

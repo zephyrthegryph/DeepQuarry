@@ -357,7 +357,7 @@ duplication and lint cleanliness. Everything below is landed on
     called before init, and `update_gas_refs`'s `GasRef::update` — all now
     return/propagate `Result` or degrade gracefully instead of panicking on
     malformed or out-of-order DM state.
-  - `domains/layout/src/station_layout/structural.rs`: coordinate `i16`
+  - `gen/layout/src/station_layout/structural.rs`: coordinate `i16`
     conversions now fall back instead of panicking; two bipartite-matching
     `unwrap()`s guarded by `||` short-circuit and a boundary-search
     `unwrap()` guarded by a `len() >= 2` check are now `.expect("invariant: ...")`.
@@ -421,7 +421,7 @@ process-global) and `Latest<T>`'s mailbox (already sound/documented); no
   stats/metrics plumbing**: single implementations each (`core::arena`,
   `core/src/network/graph.rs`, `vg_heat::consts`, `core::metrics`); no
   second copy found in a domain crate.
-- **`domains/layout` dead code**: ~50 `dead_code` warnings, all confirmed
+- **`gen/layout` dead code**: ~50 `dead_code` warnings, all confirmed
   by rustc as genuinely unreachable private functions in
   `station_layout/{structural,content}.rs` (an earlier layout-generation
   approach superseded by the current seeded/content-aware pipeline, never

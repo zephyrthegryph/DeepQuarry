@@ -8,7 +8,7 @@ description = "Criterion benchmarks for the host-buildable verdigris crates. Run
 
 [dependencies]
 vg-core = { path = "../../core" }
-vg-layout = { path = "../../domains/layout" }
+vg-layout = { path = "../../gen/layout" }
 rayon = "1.10.0"
 
 [dev-dependencies]
