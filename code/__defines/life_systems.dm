@@ -124,5 +124,8 @@
 #define LIFE_CYCLE_SECONDS (LIFE_CYCLE_DS / 10)
 /// At most this many frames in one tick when the scheduler is late; the rest are dropped.
 #define LIFE_MAX_CATCHUP 2
+/// Frames in a row that must end with nothing awake before a mob hibernates (hysteresis: a mob
+/// woken every frame stays on the ring instead of leaving and rejoining it every frame).
+#define LIFE_HIBERNATE_IDLE_FRAMES 2
 /// Observer upkeep (ghosts, AI eyes, blob overmind) runs this often.
 #define OBSERVER_UPKEEP_INTERVAL (LIFE_CYCLE)

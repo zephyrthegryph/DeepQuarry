@@ -211,6 +211,11 @@
 #define OM_STAT_CALL_MAX 9
 #define OM_STAT_LEN 9
 
+// Cadence loops in /datum/om/scheduler/proc/run_slot().
+#define OM_SLOT_FAST 1
+#define OM_SLOT_STEP 2
+#define OM_SLOT_SLOW 3
+
 // Hook kinds for /datum/om/scheduler/proc/call_hook().
 #define OM_HOOK_TICK 1
 #define OM_HOOK_WAKE 2

@@ -24,6 +24,9 @@
 	var/list/att_pend = list()
 	var/list/att_ring = list()
 	var/list/att_state = list()
+	/// Bumped whenever att changes shape (attach, detach), so loops over att re-find their
+	/// position only when a hook actually reshaped it.
+	var/att_ver = 0
 	/// Lane bits this rec is queued in.
 	var/queued = 0
 	/// Union of att_pend: channels with an on_wake already queued. A change whose bits are all
@@ -59,7 +62,7 @@
 	var/list/clocks
 	var/list/rates
 	var/list/tasks
-	/// Stride 2: behaviour id, step accumulator (seconds).
+	/// Step accumulators (seconds), indexed by the behaviour's step_idx. Grown on first use.
 	var/list/steps
 	var/bulk_bits = 0
 	var/service_pend = 0
@@ -119,6 +122,7 @@
 		if(other.id > def.id)
 			pos = i
 			break
+	rec.att_ver++
 	rec.att.Insert(pos, def)
 	rec.att_pend.Insert(pos, 0)
 	rec.att_ring.Insert(pos, null)
@@ -141,6 +145,7 @@
 		return FALSE
 	om_stop_behaviour(rec, i)
 	om_cancel_after(E, def)
+	rec.att_ver++
 	rec.att.Cut(i, i + 1)
 	rec.att_pend.Cut(i, i + 1)
 	rec.att_ring.Cut(i, i + 1)
@@ -189,9 +194,11 @@
 	var/eligible = !rec.torn_down && (state & OM_ATT_REQ_OK) && !om_suspended(rec)
 	if(eligible && !(state & OM_ATT_STARTED))
 		rec.att_state[i] = state | OM_ATT_STARTED
+		var/ver = rec.att_ver
 		rec.sched.call_hook(rec, B, OM_HOOK_START)
 		// on_start may have detached or reordered.
-		i = rec.att.Find(B)
+		if(rec.att_ver != ver)
+			i = rec.att.Find(B)
 		if(!i)
 			return
 		state = rec.att_state[i]
@@ -219,8 +226,9 @@
 	if(current)
 		current.remove(rec.owner, rec.phase)
 		rec.att_ring[i] = null
+	// Conservative: bits another behaviour still pends take the full dispatch path next time.
+	rec.pend_union &= ~rec.att_pend[i]
 	rec.att_pend[i] = 0
-	om_recompute_pend(rec)
 	if(!(rec.att_state[i] & OM_ATT_STARTED))
 		return
 	rec.att_state[i] &= ~OM_ATT_STARTED
@@ -243,8 +251,12 @@
 	var/i = 1
 	while(i <= length(rec.att))
 		var/datum/om/behaviour/B = rec.att[i]
+		var/ver = rec.att_ver
 		om_sync(rec, i, recheck)
-		// A hook may have detached behaviours; continue from B's position.
+		if(rec.att_ver == ver)
+			i++
+			continue
+		// A hook detached or attached behaviours; continue from B's position.
 		var/at = rec.att.Find(B)
 		i = (at ? at : i - 1) + 1
 
@@ -270,13 +282,6 @@
 		slow |= T.def.interrupt_on
 	rec.slow_mask = slow
 	rec.owner.om_listen = mask | slow
-
-/// Recomputes rec.pend_union after pending wakes were delivered or dropped.
-/proc/om_recompute_pend(datum/om/rec/rec)
-	var/u = 0
-	for(var/bits in rec.att_pend)
-		u |= bits
-	rec.pend_union = u
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/om_observed_mask(datum/om/rec/rec)
@@ -315,11 +320,13 @@
 		var/datum/om/behaviour/B = rec.att[i]
 		if(B.interest & bits)
 			if(B.requires_mask & bits)
+				var/ver = rec.att_ver
 				om_sync(rec, i, TRUE)
-				i = rec.att.Find(B)
-				if(!i)
-					i = 1
-					continue
+				if(rec.att_ver != ver)
+					i = rec.att.Find(B)
+					if(!i)
+						i = 1
+						continue
 			if((B.wake_on & bits) && (rec.att_state[i] & OM_ATT_STARTED))
 				rec.att_pend[i] |= B.wake_on & bits
 				rec.pend_union |= B.wake_on & bits
@@ -331,7 +338,9 @@
 			if(W[j + 1] & bits)
 				om_wake_id(W[j], W[j + 2], CHANGE_RELATED)
 	if(rec.fwd_in)
-		var/list/F = rec.fwd_in.Copy()
+		// fwd_in is copy-on-write (relation.dm): a forward added or removed by a wake
+		// replaces the list, so this loop keeps walking the one it started with.
+		var/list/F = rec.fwd_in
 		for(var/j in 1 to length(F) step 4)
 			if(!(F[j + 1] & bits))
 				continue

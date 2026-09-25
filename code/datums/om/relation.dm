@@ -252,7 +252,9 @@
 	var/datum/om/rec/nrec = om_rec_of(N)
 	if(!nrec)
 		return
-	LAZYADD(nrec.fwd_in, list(rec.owner, mask, bid, structural ? 1 : 0))
+	// Copy-on-write: om_dispatch_change() walks fwd_in without copying it.
+	var/list/entry = list(rec.owner, mask, bid, structural ? 1 : 0)
+	nrec.fwd_in = nrec.fwd_in ? nrec.fwd_in + entry : entry
 	LAZYOR(rec.fwd_out, N)
 	if(mask)
 		N.om_listen |= mask
@@ -263,13 +265,14 @@
 		var/datum/om/rec/nrec = N.om_rec
 		if(!nrec?.fwd_in)
 			continue
+		// Copy-on-write (see om_fwd_add()).
+		var/list/F = nrec.fwd_in.Copy()
 		var/j = 1
-		while(j <= length(nrec.fwd_in))
-			if(nrec.fwd_in[j] == origin)
-				nrec.fwd_in.Cut(j, j + 4)
+		while(j <= length(F))
+			if(F[j] == origin)
+				F.Cut(j, j + 4)
 				continue
 			j += 4
-		if(!length(nrec.fwd_in))
-			nrec.fwd_in = null
+		nrec.fwd_in = length(F) ? F : null
 		om_recompute_listen(nrec)
 	rec.fwd_out = null

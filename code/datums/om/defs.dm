@@ -63,6 +63,8 @@
 
 	// ---- compiled by the registry ----
 	var/id = 0
+	/// Fixed-step behaviours: this behaviour's index in rec.steps (the step accumulators).
+	var/step_idx = 0
 	var/clock_idx = 0
 	var/datum/om/check/compiled_wake_if
 	var/list/compiled_requires

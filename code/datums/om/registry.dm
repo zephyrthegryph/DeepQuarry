@@ -412,9 +412,12 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	for(var/datum/om/behaviour/B as anything in pending)
 		compile_behaviour(B)
 	behaviours = om_topo_order(pending, src)
+	var/steps = 0
 	for(var/i in 1 to length(behaviours))
 		var/datum/om/behaviour/B = behaviours[i]
 		B.id = i
+		if(B.step_interval)
+			B.step_idx = ++steps
 
 /datum/om/registry/proc/compile_behaviour(datum/om/behaviour/B)
 	if(B.clock)

@@ -28,7 +28,15 @@
 /// Advance the biology counter by one frame. Returns TRUE if this frame is paused. The only
 /// reader of the biology clock in the life pipeline.
 /datum/body/proc/advance_stasis()
-	var/rate = owner ? om_clock_rate_of(owner, CLOCK_BIO) : 1
+	// No contributions on the mob: nothing can slow its biology clock (the common case).
+	var/datum/om/rec/rec = owner?.om_rec
+	var/rate = 1
+	if(rec?.contribs)
+		var/static/bio_idx
+		if(!bio_idx)
+			var/datum/om/clock_def/C = om_registry().clock_by_id[CLOCK_BIO]
+			bio_idx = C.idx
+		rate = om_clock_rate(rec, bio_idx)
 	if(rate >= 1)
 		stasis_clock = 0
 		stasis_paused = FALSE

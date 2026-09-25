@@ -65,6 +65,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/list/lane_rings
 	/// lane -> recs with pending wakes.
 	var/list/wake_q
+	/// lane -> an empty list swapped in for wake_q[lane] while it drains.
+	var/list/wake_spare
 	var/list/service_queue = list()
 	/// Recs with eager derived values to recompute.
 	var/list/derived_queue = list()
@@ -111,9 +113,11 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /datum/om/scheduler/New()
 	lane_rings = new /list(OM_LANE_COUNT)
 	wake_q = new /list(OM_LANE_COUNT)
+	wake_spare = new /list(OM_LANE_COUNT)
 	for(var/lane in 1 to OM_LANE_COUNT)
 		lane_rings[lane] = list()
 		wake_q[lane] = list()
+		wake_spare[lane] = list()
 	buckets = new /list(OM_DEADLINE_BUCKETS)
 	for(var/i in 1 to OM_DEADLINE_BUCKETS)
 		buckets[i] = list()
@@ -372,10 +376,19 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /// The index is a local: an entity leaving the slot mid-run leaves a null
 /// tombstone (ring.remove()), so positions never shift under the loop, and
 /// the per-entity cost is one list read, one proc call and one budget check.
+///
+/// Three loops: plain cadence (tick), fixed-step (the accumulator at the
+/// behaviour's step_idx, on_step called directly; hooks go through call_hook
+/// only when the behaviour holds), and everything else (tick_slow()).
 /datum/om/scheduler/proc/run_slot(datum/om/ring/R, list/L)
 	var/datum/om/behaviour/B = R.B
 	var/dt = R.cur_dt
-	var/fast = !(B.clock_idx || B.max_dt || B.step_interval || B.holds)
+	var/mode = OM_SLOT_SLOW
+	if(!(B.clock_idx || B.max_dt))
+		if(B.step_interval)
+			mode = OM_SLOT_STEP
+		else if(!B.holds)
+			mode = OM_SLOT_FAST
 	var/lim = limit
 	var/cp = cap
 	var/n_calls = calls
@@ -385,33 +398,70 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/i = R.cur_i
 	while(TRUE)
 		try
-			if(fast)
-				while(i <= length(L))
-					var/datum/E = L[i++]
-					if(!E)
-						continue
+			switch(mode)
+				if(OM_SLOT_FAST)
+					while(i <= length(L))
+						var/datum/E = L[i++]
+						if(!E)
+							continue
 #ifdef OM_PROFILE_CALLS
-					var/c0 = TICK_USAGE
+						var/c0 = TICK_USAGE
 #endif
-					B.tick(E, dt)
+						B.tick(E, dt)
 #ifdef OM_PROFILE_CALLS
-					var/list/PS = stat_for(B.id)
-					PS[OM_STAT_CALL_MAX] = max(PS[OM_STAT_CALL_MAX], TICK_USAGE_TO_MS(c0))
+						var/list/PS = stat_for(B.id)
+						PS[OM_STAT_CALL_MAX] = max(PS[OM_STAT_CALL_MAX], TICK_USAGE_TO_MS(c0))
 #endif
-					ran++
-					if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
-						out = TRUE
-						break
-			else
-				while(i <= length(L))
-					var/datum/E = L[i++]
-					if(!E)
-						continue
-					tick_slow(B, E, dt)
-					ran++
-					if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
-						out = TRUE
-						break
+						ran++
+						if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
+							out = TRUE
+							break
+				if(OM_SLOT_STEP)
+					var/si = B.step_idx
+					var/step = B.step_interval
+					var/catchup = B.max_catchup
+					var/holds = B.holds
+					while(i <= length(L))
+						var/datum/E = L[i++]
+						if(!E)
+							continue
+						var/datum/om/rec/rec = E.om_rec
+						if(!rec)
+							continue
+						var/list/A = rec.steps
+						if(length(A) < si)
+							if(!A)
+								A = list()
+								rec.steps = A
+							A.len = si
+						var/acc = A[si] + dt
+						var/n = round(acc / step)
+						if(n > catchup)
+							stat_inc(B.id, OM_STAT_BREACHES)
+							n = catchup
+							acc = n * step
+						A[si] = acc - n * step
+						while(n-- > 0)
+							if(holds)
+								call_hook(rec, B, OM_HOOK_STEP)
+							else
+								B.on_step(E)
+							if(rec.torn_down)
+								break
+						ran++
+						if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
+							out = TRUE
+							break
+				else
+					while(i <= length(L))
+						var/datum/E = L[i++]
+						if(!E)
+							continue
+						tick_slow(B, E, dt)
+						ran++
+						if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
+							out = TRUE
+							break
 			break
 		catch(var/exception/e)
 			// i is already past the entity that raised: the loop resumes at the next.
@@ -424,7 +474,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	S[OM_STAT_MS] += TICK_USAGE_TO_MS(t0)
 	return !(out && i <= length(L))
 
-/// Clocked, substepped, fixed-step or holding behaviours.
+/// Clocked, substepped, or holding behaviours (fixed-step ones only when clocked).
 /datum/om/scheduler/proc/tick_slow(datum/om/behaviour/B, datum/E, dt)
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec)
@@ -432,25 +482,24 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	if(B.clock_idx)
 		dt *= om_clock_rate(rec, B.clock_idx)
 	if(B.step_interval)
-		var/acc = dt
-		var/k = 0
-		for(var/i in 1 to length(rec.steps) step 2)
-			if(rec.steps[i] == B.id)
-				k = i
-				acc += rec.steps[i + 1]
-				break
+		var/si = B.step_idx
+		var/list/A = rec.steps
+		if(length(A) < si)
+			if(!A)
+				A = list()
+				rec.steps = A
+			A.len = si
+		var/acc = A[si] + dt
 		var/n = round(acc / B.step_interval)
 		if(n > B.max_catchup)
 			stat_inc(B.id, OM_STAT_BREACHES)
 			n = B.max_catchup
 			acc = n * B.step_interval
-		acc -= n * B.step_interval
-		if(k)
-			rec.steps[k + 1] = acc
-		else
-			LAZYADD(rec.steps, list(B.id, acc))
+		A[si] = acc - n * B.step_interval
 		for(var/i in 1 to n)
 			call_hook(rec, B, OM_HOOK_STEP)
+			if(rec.torn_down)
+				return
 		return
 	if(B.max_dt && dt > B.max_dt)
 		var/n = min(CEILING(dt / B.max_dt, 1), OM_MAX_SUBSTEPS)
@@ -527,11 +576,15 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /// One on_wake per behaviour per entity per run, with the union of bits.
 /// Changes raised while draining go to the next run, except to behaviours
 /// later in the same entity's run order, which see them this run.
+/// The queue is double-buffered: the drained list is emptied and becomes the
+/// spare, so a pass allocates nothing.
 /datum/om/scheduler/proc/run_wakes(lane)
 	var/list/Q = wake_q[lane]
 	if(!length(Q))
 		return TRUE
-	wake_q[lane] = list()
+	var/list/spare = wake_spare[lane]
+	wake_q[lane] = spare
+	wake_spare[lane] = Q
 	var/bit = 1 << lane
 	var/idx = 0
 	while(idx < length(Q))
@@ -548,24 +601,34 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 				i++
 				continue
 			rec.att_pend[i] = 0
-			om_recompute_pend(rec)
+			// Conservative: another behaviour pending the same bits just takes the full
+			// dispatch path on its next change (om_dispatch_change()).
+			rec.pend_union &= ~bits
 			if(B.compiled_wake_if && !isnull(B.compiled_wake_if.why_not(rec.owner, null)))
 				i++
 				continue
 			stat_inc(B.id, OM_STAT_WAKES)
+			var/ver = rec.att_ver
 			call_hook(rec, B, OM_HOOK_WAKE, bits)
 			if(rec.torn_down)
 				break
-			var/at = rec.att.Find(B)
-			i = (at ? at : i - 1) + 1
+			if(rec.att_ver != ver)
+				// The hook attached or detached behaviours: find B again.
+				var/at = rec.att.Find(B)
+				i = (at ? at : i - 1) + 1
+			else
+				i++
 		if(out_of_budget() && idx < length(Q))
-			var/list/carry = Q.Copy(idx + 1) + wake_q[lane]
-			wake_q[lane] = list()
-			for(var/datum/om/rec/left as anything in carry)
-				left.queued &= ~bit
-			for(var/datum/om/rec/left as anything in carry)
-				enqueue(left, lane)
+			// Unprocessed recs keep their queued bit, so none of them was queued again
+			// meanwhile: they go first, then whatever this pass queued.
+			Q.Cut(1, idx + 1)
+			var/list/fresh = wake_q[lane]
+			Q += fresh
+			fresh.Cut()
+			wake_q[lane] = Q
+			wake_spare[lane] = fresh
 			return FALSE
+	Q.Cut()
 	return TRUE
 
 /datum/om/scheduler/proc/run_services()

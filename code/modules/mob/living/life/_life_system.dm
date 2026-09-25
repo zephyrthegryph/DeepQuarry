@@ -77,7 +77,7 @@
 
 // --- Context ----------------------------------------------------------------------------------
 
-/// Per-frame facts shared by the systems of one mob's frame. Built once per frame.
+/// Per-frame facts shared by the systems of one mob's frame. One per mob, reset every frame.
 /datum/life_context
 	/// Seconds of real time this frame covers (LIFE_CYCLE_SECONDS).
 	var/seconds = LIFE_CYCLE_SECONDS
@@ -98,9 +98,16 @@
 	/// nullspace): nothing goes to sleep this cycle.
 	var/no_sleep = FALSE
 
-/datum/life_context/New(seconds, profile)
-	src.seconds = seconds
+/// Readies the context for a new frame (life_frame() keeps one per mob).
+/datum/life_context/proc/reset(profile)
+	seconds = LIFE_CYCLE_SECONDS
+	blocked = NONE
 	src.profile = profile
+	living_result = null
+	core_result = null
+	environment = null
+	stasis = FALSE
+	no_sleep = FALSE
 
 /// Did stasis pause this cycle?
 /datum/life_context/proc/in_stasis(mob/living/self)
@@ -193,11 +200,14 @@ GLOBAL_VAR_INIT(life_system_registry_built, FALSE)
 /datum/life_composition
 	var/key
 	/// Systems in run order. Never mutated after composition. Per-mob sleep state
-	/// (/mob/living/var/life_asleep) is a list parallel to it.
+	/// (/mob/living/var/life_asleep_bits) has one bit per position.
 	var/list/ordered
 	/// Positions in `ordered` of the systems the frame runs and that can sleep (not gates,
 	/// not wake-only): all of them asleep means the mob hibernates.
 	var/list/sleepers
+	/// Parallel to `ordered`: TRUE at the positions in `sleepers`.
+	var/list/sleeper_flags
+	var/sleeper_count = 0
 	/// Wake-only systems, in run order, by LIFE_WAKE_ONLY_* kind.
 	var/list/derive
 	var/list/present
@@ -206,10 +216,12 @@ GLOBAL_VAR_INIT(life_system_registry_built, FALSE)
 	src.key = key
 	src.ordered = ordered
 	sleepers = list()
+	sleeper_flags = new /list(length(ordered))
 	derive = list()
 	present = list()
 	for(var/i in 1 to length(ordered))
 		var/datum/life_system/S = ordered[i]
+		sleeper_flags[i] = FALSE
 		switch(S.wake_only)
 			if(LIFE_WAKE_ONLY_DERIVE)
 				derive += S
@@ -218,6 +230,8 @@ GLOBAL_VAR_INIT(life_system_registry_built, FALSE)
 			else
 				if(!S.gate)
 					sleepers += i
+					sleeper_flags[i] = TRUE
+	sleeper_count = length(sleepers)
 
 /// Sort key: phase, then order. Stable insertion sort; compositions are small and built once.
 /proc/sort_life_systems(list/systems)

@@ -133,7 +133,7 @@ SUBSYSTEM_DEF(mobs)
 		for(var/i in 1 to take)
 			hibernation_audit_awake_cursor = (hibernation_audit_awake_cursor % mob_count) + 1
 			var/mob/living/L = GLOB.mob_list[hibernation_audit_awake_cursor]
-			if(istype(L) && !L.life_hibernating && L.life_asleep)
+			if(istype(L) && !L.life_hibernating && L.life_asleep_total)
 				sample += L
 	for(var/mob/living/L as anything in sample)
 		if(QDELETED(L))
@@ -157,7 +157,7 @@ SUBSYSTEM_DEF(mobs)
 	if(!S)
 		return null
 	hibernation_audit_missed++
-	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [key_name(L)] ([L.type]) [L.life_hibernating ? "hibernating since [DisplayTimeText(world.time - GLOB.life_hibernating_mobs[L])] ago" : "awake, some systems asleep"]: system [S.type] ([S.name], wake_on [S.wake_on]) has work but was asleep. Woken by: [S.woken_by || "undeclared"]. A producer changed this mob without raising its channel (om_changed)."
+	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [key_name(L)] ([L.type]) [L.life_hibernating ? "hibernating since [DisplayTimeText(world.time - L.life_hibernated_at)] ago" : "awake, some systems asleep"]: system [S.type] ([S.name], wake_on [S.wake_on]) has work but was asleep. Woken by: [S.woken_by || "undeclared"]. A producer changed this mob without raising its channel (om_changed)."
 	log_runtime(message)
 	log_world(message)
 #if defined(UNIT_TESTS)

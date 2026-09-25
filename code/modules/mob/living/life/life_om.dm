@@ -11,8 +11,8 @@
 GLOBAL_VAR_INIT(mob_hibernation_enabled, MOB_HIBERNATION_ENABLED)
 /// Runtime switch for per-transition hibernate and wake logging (MOB_HIBERNATION_TRACE).
 GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
-/// Hibernating living mobs -> world.time they went to sleep. Written only by
-/// life_hibernate() and life_resume().
+/// Hibernating living mobs (each knows its index: removal swaps the last one in). Written only
+/// by life_hibernate(), life_resume() and clear_life_systems().
 GLOBAL_LIST_EMPTY(life_hibernating_mobs)
 /// Frames run since boot. Benchmarks count delivered frames with it; the per-system sampler
 /// samples every SSmobs.profile_sample_stride-th frame by it.
@@ -117,19 +117,35 @@ GLOBAL_VAR_INIT(life_frames, 0)
 
 // --- Per-mob state ----------------------------------------------------------------------------
 
+/// Word and bit of composition position `i` in /mob/living/var/life_asleep_bits (16 per word).
+#define LIFE_ASLEEP_WORD(i) ((((i) - 1) >> 4) + 1)
+#define LIFE_ASLEEP_BIT(i) (1 << (((i) - 1) & 15))
+
 /mob/living
 	/// Shared, ordered systems for this mob's composition key. Never mutated per mob.
 	var/datum/life_composition/life_composition
-	/// Lazy list parallel to life_composition.ordered: TRUE where the system is asleep. Null
-	/// while everything is awake.
-	var/list/life_asleep
+	/// Asleep state, one bit per position in life_composition.ordered (16 per word). Allocated
+	/// with the composition; all zero while everything is awake.
+	var/list/life_asleep_bits
+	/// Systems with their asleep bit set.
+	var/life_asleep_total = 0
+	/// Of those, the ones in life_composition.sleepers. Equal to its sleeper_count: nothing that
+	/// can keep the mob awake is awake.
+	var/life_asleep_n = 0
+	/// Consecutive frames that ended with nothing awake (hibernation hysteresis).
+	var/life_idle_frames = 0
 	/// TRUE while the life behaviour is off its ring because nothing is awake. Written only by
 	/// life_hibernate() and life_resume().
 	var/life_hibernating = FALSE
+	/// world.time this mob last hibernated, and its position in GLOB.life_hibernating_mobs.
+	var/life_hibernated_at = 0
+	var/life_hibernating_index = 0
 	/// Lazy: life system -> scheduler time its rewake_delay() timer is due.
 	var/list/life_timers
 	/// Frames this mob has run.
 	var/life_frame_count = 0
+	/// The frame's context, reused every frame (life_frame() resets it).
+	var/datum/life_context/life_ctx
 	/// Scheduler time the presentation systems last ran (life_present throttle).
 	var/life_present_last = -INFINITY
 	/// LIFE_SET_* of the Life sequence this mob type runs.
@@ -146,6 +162,43 @@ GLOBAL_VAR_INIT(life_frames, 0)
 		return TRUE
 	return !length(GLOB.living_players_by_zlevel[z])
 
+/// TRUE when the system at composition position `i` is asleep.
+/mob/living/proc/life_is_asleep(i)
+	return life_asleep_total && (life_asleep_bits[LIFE_ASLEEP_WORD(i)] & LIFE_ASLEEP_BIT(i))
+
+/// Puts the system at composition position `i` to sleep.
+/mob/living/proc/life_put_asleep(i)
+	var/w = LIFE_ASLEEP_WORD(i)
+	var/bit = LIFE_ASLEEP_BIT(i)
+	if(life_asleep_bits[w] & bit)
+		return
+	life_asleep_bits[w] |= bit
+	life_asleep_total++
+	if(life_composition.sleeper_flags[i])
+		life_asleep_n++
+
+/// Wakes the system at composition position `i`.
+/mob/living/proc/life_wake_at(i)
+	var/w = LIFE_ASLEEP_WORD(i)
+	var/bit = LIFE_ASLEEP_BIT(i)
+	if(!(life_asleep_bits[w] & bit))
+		return
+	life_asleep_bits[w] &= ~bit
+	life_asleep_total--
+	if(life_composition.sleeper_flags[i])
+		life_asleep_n--
+	life_idle_frames = 0
+
+/// Wakes every system.
+/mob/living/proc/life_wake_all()
+	if(life_asleep_total)
+		var/list/bits = life_asleep_bits
+		for(var/w in 1 to length(bits))
+			bits[w] = 0
+		life_asleep_total = 0
+		life_asleep_n = 0
+	life_idle_frames = 0
+
 // --- The frame --------------------------------------------------------------------------------
 
 /// Runs one Life frame now: every awake system of the composition, in order. The life behaviour
@@ -153,24 +206,39 @@ GLOBAL_VAR_INIT(life_frames, 0)
 /mob/living/proc/life_frame(profile = FALSE)
 	set waitfor = FALSE
 	var/datum/life_composition/comp = life_composition || recompose_life()
-	var/datum/life_context/ctx = new(LIFE_CYCLE_SECONDS, profile)
+	var/datum/life_context/ctx = life_ctx
+	if(!ctx)
+		ctx = new /datum/life_context
+		life_ctx = ctx
+	ctx.reset(profile)
 	ctx.stasis = body ? body.advance_stasis() : FALSE
 	GLOB.life_frames++
 	life_frame_count++
 	var/list/ordered = comp.ordered
+	var/list/bits = life_asleep_bits
 	var/has_client = !!client
 	var/halted = FALSE
+	// Positions to put to sleep once the frame completes, in a shared scratch list. Frames don't
+	// nest, but one that sleeps (set waitfor) must not lose another frame's entries.
+	var/static/list/scratch = list()
+	var/static/scratch_busy = FALSE
 	var/list/to_sleep
+	var/own_scratch = !scratch_busy
+	if(own_scratch)
+		scratch_busy = TRUE
+		to_sleep = scratch
+	else
+		to_sleep = list()
 	for(var/i in 1 to length(ordered))
 		var/datum/life_system/S = ordered[i]
 		if(S.wake_only && (S.wake_only == LIFE_WAKE_ONLY_DERIVE || has_client))
 			continue
-		if(life_asleep && life_asleep[i])
+		if(life_asleep_total && (bits[LIFE_ASLEEP_WORD(i)] & LIFE_ASLEEP_BIT(i)))
 			continue
 		if(ctx.blocked & S.segment)
 			// Skipped this frame: it may sleep if it has nothing to do (gates never do).
 			if(!S.gate && !life_system_wants_run(S))
-				LAZYADD(to_sleep, i)
+				to_sleep += i
 			continue
 		var/result
 		if(profile)
@@ -180,43 +248,38 @@ GLOBAL_VAR_INIT(life_frames, 0)
 		else
 			result = S.tick(src, ctx)
 		if(QDELETED(src))
-			return
+			break
 		if(result == LIFE_HALT)
 			halted = TRUE
 			break
 		if(S.gate)
 			continue
 		if(result == LIFE_SLEEP || !life_system_wants_run(S))
-			LAZYADD(to_sleep, i)
+			to_sleep += i
 			var/delay = S.rewake_delay(src)
 			if(delay > 0)
 				life_wake_later(S, delay)
-	// Nothing sleeps in a frame that halted or that a gate stopped for a reason no wake covers.
-	if(halted || ctx.no_sleep || !to_sleep)
-		return
-	if(!life_asleep)
-		life_asleep = new /list(length(ordered))
-	for(var/i in to_sleep)
-		life_asleep[i] = TRUE
-	if(GLOB.mob_hibernation_trace)
-		log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) systems asleep: [length(to_sleep)]")
-	if(life_all_asleep())
-		life_hibernate("no awake systems")
+	// Nothing sleeps in a frame that halted, that a gate stopped for a reason no wake covers, or
+	// that deleted or recomposed the mob.
+	if(!halted && !ctx.no_sleep && !QDELETED(src) && life_composition == comp)
+		for(var/i in to_sleep)
+			life_put_asleep(i)
+		if(GLOB.mob_hibernation_trace && length(to_sleep))
+			log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) systems asleep: [length(to_sleep)]")
+		// Hysteresis: hibernate only after LIFE_HIBERNATE_IDLE_FRAMES frames in a row end with
+		// nothing awake, so a mob woken every frame doesn't leave and rejoin the ring each time.
+		if(life_all_asleep())
+			if(++life_idle_frames >= LIFE_HIBERNATE_IDLE_FRAMES)
+				life_hibernate("no awake systems")
+		else
+			life_idle_frames = 0
+	if(own_scratch)
+		to_sleep.Cut()
+		scratch_busy = FALSE
 
 /// TRUE when every system the frame would run is asleep.
 /mob/living/proc/life_all_asleep()
-	if(!life_asleep)
-		return FALSE
-	var/datum/life_composition/comp = life_composition
-	var/has_client = !!client
-	for(var/i in comp.sleepers)
-		if(life_asleep[i])
-			continue
-		var/datum/life_system/S = comp.ordered[i]
-		if(S.wake_only == LIFE_WAKE_ONLY_PRESENT && has_client)
-			continue
-		return FALSE
-	return TRUE
+	return life_asleep_total && life_asleep_n >= life_composition.sleeper_count
 
 /// TRUE when system `S` has work to do for this mob now. A dead mob never runs the
 /// segments its gates block, so those systems never keep it awake.
@@ -261,20 +324,22 @@ GLOBAL_VAR_INIT(life_frames, 0)
 	if(life_hibernating)
 		life_resume(life_wake_reason(changes))
 		return
-	if(!life_asleep)
+	if(!life_asleep_total)
 		return
-	var/list/ordered = life_composition?.ordered
-	var/any_asleep = FALSE
-	for(var/i in 1 to length(life_asleep))
-		if(!life_asleep[i])
+	var/list/ordered = life_composition.ordered
+	var/list/bits = life_asleep_bits
+	for(var/w in 1 to length(bits))
+		var/word = bits[w]
+		if(!word)
 			continue
-		var/datum/life_system/S = ordered[i]
-		if(S.wake_on & changes)
-			life_asleep[i] = null
-		else
-			any_asleep = TRUE
-	if(!any_asleep)
-		life_asleep = null
+		var/base = (w - 1) << 4
+		for(var/b in 0 to 15)
+			if(!(word & (1 << b)))
+				continue
+			var/i = base + b + 1
+			var/datum/life_system/S = ordered[i]
+			if(S.wake_on & changes)
+				life_wake_at(i)
 
 /// A short name for the wake summary, from the channels that caused it.
 /proc/life_wake_reason(changes)
@@ -293,12 +358,31 @@ GLOBAL_VAR_INIT(life_frames, 0)
 	if(life_hibernating || !GLOB.mob_hibernation_enabled || QDELETED(src))
 		return FALSE
 	life_hibernating = TRUE
-	GLOB.life_hibernating_mobs[src] = world.time
+	life_idle_frames = 0
+	life_hibernated_at = world.time
+	var/list/hibernating = GLOB.life_hibernating_mobs
+	hibernating += src
+	life_hibernating_index = length(hibernating)
 	SSmobs.hibernations++
 	om_sleep(src, /datum/om/behaviour/life)
 	if(GLOB.mob_hibernation_trace)
-		log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) hibernating ([reason || "unspecified"]); [length(GLOB.life_hibernating_mobs)] hibernating")
+		log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) hibernating ([reason || "unspecified"]); [length(hibernating)] hibernating")
 	return TRUE
+
+/// Removes this mob from GLOB.life_hibernating_mobs in O(1): the last entry takes its place.
+/mob/living/proc/life_unlist_hibernating()
+	var/list/hibernating = GLOB.life_hibernating_mobs
+	var/i = life_hibernating_index
+	life_hibernating_index = 0
+	var/n = length(hibernating)
+	if(!i || i > n || hibernating[i] != src)
+		hibernating -= src
+		return
+	if(i != n)
+		var/mob/living/last = hibernating[n]
+		hibernating[i] = last
+		last.life_hibernating_index = i
+	hibernating.len = n - 1
 
 /// Puts a hibernating mob back on the life ring. The only proc that unparks a mob. A change
 /// wakes it whole, so every system re-checks its rule once; a timer passes `only` (the systems
@@ -308,20 +392,20 @@ GLOBAL_VAR_INIT(life_frames, 0)
 	if(!life_hibernating)
 		return FALSE
 	life_hibernating = FALSE
-	life_asleep = null
+	life_wake_all()
 	if(only && life_composition)
 		var/list/ordered = life_composition.ordered
-		life_asleep = new /list(length(ordered))
 		for(var/i in life_composition.sleepers)
 			if(!(ordered[i] in only))
-				life_asleep[i] = TRUE
-	var/slept_since = GLOB.life_hibernating_mobs[src]
-	GLOB.life_hibernating_mobs -= src
+				life_put_asleep(i)
+		// It was idle before the timer: once the due systems sleep again, it parks at once.
+		life_idle_frames = LIFE_HIBERNATE_IDLE_FRAMES - 1
+	life_unlist_hibernating()
 	SSmobs.note_wake(reason)
 	if(!QDELETED(src))
 		om_resume(src, /datum/om/behaviour/life)
 	if(GLOB.mob_hibernation_trace)
-		log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) woke ([reason || "unspecified"]) after [DisplayTimeText(world.time - slept_since)]; [length(GLOB.life_hibernating_mobs)] hibernating")
+		log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) woke ([reason || "unspecified"]) after [DisplayTimeText(world.time - life_hibernated_at)]; [length(GLOB.life_hibernating_mobs)] hibernating")
 	return TRUE
 
 /// Wakes system `S` after `delay` deciseconds (an idle system that still drifts slowly). One
@@ -360,12 +444,12 @@ GLOBAL_VAR_INIT(life_frames, 0)
 	if(due_systems)
 		if(life_hibernating)
 			life_resume("timer", due_systems)
-		else if(life_asleep)
+		else if(life_asleep_total)
 			var/list/ordered = life_composition?.ordered
 			for(var/datum/life_system/S as anything in due_systems)
 				var/i = ordered?.Find(S)
-				if(i && i <= length(life_asleep))
-					life_asleep[i] = null
+				if(i)
+					life_wake_at(i)
 	life_arm_timer()
 
 /// The hibernation audit's check: the first sleeping system whose sleep rule no longer holds,
@@ -376,7 +460,7 @@ GLOBAL_VAR_INIT(life_frames, 0)
 		return null
 	var/has_client = !!client
 	for(var/i in comp.sleepers)
-		if(!life_hibernating && !(life_asleep && life_asleep[i]))
+		if(!life_hibernating && !life_is_asleep(i))
 			continue
 		var/datum/life_system/S = comp.ordered[i]
 		if(S.wake_only == LIFE_WAKE_ONLY_PRESENT && has_client)
@@ -421,7 +505,12 @@ GLOBAL_VAR_INIT(life_frames, 0)
 		if(!old || !(S in old.ordered))
 			S.attach(src)
 	// Positions changed: nothing stays asleep.
-	life_asleep = null
+	life_asleep_bits = new /list(LIFE_ASLEEP_WORD(max(length(comp.ordered), 1)))
+	for(var/w in 1 to length(life_asleep_bits))
+		life_asleep_bits[w] = 0
+	life_asleep_total = 0
+	life_asleep_n = 0
+	life_idle_frames = 0
 	if(old)
 		if(life_hibernating)
 			life_resume("recomposed")
@@ -435,11 +524,14 @@ GLOBAL_VAR_INIT(life_frames, 0)
 			S.detach(src)
 	life_composition = null
 	life_extra_systems = null
-	life_asleep = null
+	life_asleep_bits = null
+	life_asleep_total = 0
+	life_asleep_n = 0
 	life_timers = null
+	life_ctx = null
 	if(life_hibernating)
 		life_hibernating = FALSE
-		GLOB.life_hibernating_mobs -= src
+		life_unlist_hibernating()
 
 /// Gives this mob an extra (component-provided) system.
 /mob/living/proc/add_life_system(path)

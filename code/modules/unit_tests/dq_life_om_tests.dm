@@ -348,7 +348,7 @@
 	H.life_frame()
 	TEST_ASSERT_EQUAL(H.life_tick, life_tick_before, "a transforming human must not tick")
 	TEST_ASSERT_EQUAL(H.breath_cycle, cycle_before, "a transforming human must not breathe")
-	TEST_ASSERT_NULL(H.life_asleep, "a halted frame puts nothing to sleep")
+	TEST_ASSERT(!H.life_asleep_total, "a halted frame puts nothing to sleep")
 	H.transforming = FALSE
 	H.life_frame()
 	TEST_ASSERT_EQUAL(H.life_tick, life_tick_before + 1, "the human should tick again once the transformation ends")
@@ -365,7 +365,7 @@
 	M.transforming = TRUE
 	M.life_frame()
 	TEST_ASSERT_EQUAL(counter.runs["[REF(M)]"], 1, "trait systems (before the living segment) run while transforming")
-	TEST_ASSERT_NULL(M.life_asleep, "nothing sleeps in a frame the transforming gate stopped")
+	TEST_ASSERT(!M.life_asleep_total, "nothing sleeps in a frame the transforming gate stopped")
 	TEST_ASSERT(!M.life_suspended(), "transforming is not a suspension")
 	M.transforming = FALSE
 
@@ -471,7 +471,7 @@
 	TEST_ASSERT(M.injure(INJURY_BLUNT, 1) > 0, "the injury should land")
 	scheduler_advance(0.1)
 	TEST_ASSERT(!M.life_hibernating, "injure() wakes a hibernating mob")
-	TEST_ASSERT_NULL(M.life_asleep, "a hibernating mob wakes whole")
+	TEST_ASSERT(!M.life_asleep_total, "a hibernating mob wakes whole")
 	before = M.life_frame_count
 	sched.run_pass(1e9)
 	scheduler_advance(LIFE_CYCLE_SECONDS)
@@ -492,16 +492,14 @@
 	om_sleep(H, /datum/om/behaviour/life)
 	scheduler_advance(0.1)
 	// The frame's own changes may have woken it: put it back to sleep for the channel checks.
-	if(!H.life_asleep)
-		H.life_asleep = new /list(length(H.life_composition.ordered))
-	H.life_asleep[index] = TRUE
-	TEST_ASSERT(H.life_asleep && H.life_asleep[index], "an idle system sleeps after its run")
+	H.life_put_asleep(index)
+	TEST_ASSERT(H.life_is_asleep(index), "an idle system sleeps after its run")
 	om_changed(H, CHANGE_MOB_EQUIPMENT)
 	scheduler_advance(0.1)
-	TEST_ASSERT(H.life_asleep && H.life_asleep[index], "a channel the system doesn't declare leaves it asleep")
+	TEST_ASSERT(H.life_is_asleep(index), "a channel the system doesn't declare leaves it asleep")
 	om_changed(H, CHANGE_MOB_HEALTH)
 	scheduler_advance(0.1)
-	TEST_ASSERT(!H.life_asleep || !H.life_asleep[index], "its declared channel wakes it")
+	TEST_ASSERT(!H.life_is_asleep(index), "its declared channel wakes it")
 	var/runs = S.runs["[REF(H)]"]
 	H.life_frame()
 	TEST_ASSERT_EQUAL(S.runs["[REF(H)]"], runs + 1, "a woken system runs in the next frame")
@@ -513,7 +511,7 @@
 	index = H.recompose_life().ordered.Find(S)
 	H.life_frame()
 	scheduler_advance(0.1)
-	TEST_ASSERT(!H.life_asleep || !H.life_asleep[index], "a change raised during the frame wakes the later system")
+	TEST_ASSERT(!H.life_is_asleep(index), "a change raised during the frame wakes the later system")
 
 /// A timer wakes a hibernating mob partially: only the systems whose timers are due.
 /datum/unit_test/life_om/timer_wakes_partially
@@ -533,7 +531,7 @@
 	var/datum/life_composition/comp = M.life_composition
 	var/awake = 0
 	for(var/i in comp.sleepers)
-		if(!M.life_asleep || !M.life_asleep[i])
+		if(!M.life_is_asleep(i))
 			awake++
 			TEST_ASSERT_EQUAL(comp.ordered[i], S, "only the timed system wakes, not [comp.ordered[i]]")
 	TEST_ASSERT_EQUAL(awake, 1, "exactly one system woke")
@@ -549,7 +547,7 @@
 	var/datum/life_system/trait/test_timer/S = get_life_system(/datum/life_system/trait/test_timer)
 	var/index = H.recompose_life().ordered.Find(S)
 	scheduler_advance(LIFE_CYCLE_SECONDS * 2)
-	TEST_ASSERT(H.life_asleep && H.life_asleep[index], "the idle system sleeps")
+	TEST_ASSERT(H.life_is_asleep(index), "the idle system sleeps")
 	TEST_ASSERT(LAZYACCESS(H.life_timers, S), "with a timer pending")
 	var/frames = H.life_frame_count
 	var/datum/om/rec/rec = H.om_rec
@@ -563,7 +561,7 @@
 		if(H.life_frame_count != slot_frames)
 			// A frame came from the ring in the meantime: that's allowed, but track it.
 			slot_frames = H.life_frame_count
-	TEST_ASSERT(!H.life_asleep || !H.life_asleep[index], "the timer woke the system")
+	TEST_ASSERT(!H.life_is_asleep(index), "the timer woke the system")
 	TEST_ASSERT(rec && !LAZYACCESS(H.life_timers, S), "the timer is consumed")
 	TEST_ASSERT(slot_frames - frames <= 1, "the timer ran no extra frame")
 
@@ -769,7 +767,7 @@
 	M.on_client_changed("login")
 	scheduler_advance(0.1)
 	TEST_ASSERT(!M.life_hibernating, "a login should wake a hibernating mob")
-	TEST_ASSERT_NULL(M.life_asleep, "a login wakes every system")
+	TEST_ASSERT(!M.life_asleep_total, "a login wakes every system")
 
 /// The hibernation audit finds a change made without raising its channel, logs it and wakes
 /// the mob.
