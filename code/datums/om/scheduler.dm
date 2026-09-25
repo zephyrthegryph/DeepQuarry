@@ -159,6 +159,13 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/cur_slot = 0
 	var/cur_i = 1
 	var/cur_dt = 0
+	/// TRUE when an entity left the slot in progress: its entry is null
+	/// (a tombstone) until the slot finishes, so positions never shift under
+	/// the running loop.
+	var/tombstones = FALSE
+	/// Entities that joined the slot in progress: appended when it finishes,
+	/// so none runs twice in one slot (leave and rejoin mid-slot).
+	var/list/pending_adds
 
 /datum/om/ring/New(datum/om/behaviour/B, interval, now)
 	src.B = B
@@ -172,7 +179,12 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	next_abs = round(now / OM_SLOT_DS) + 1
 
 /datum/om/ring/proc/add(datum/E, phase)
-	var/list/L = slots[(phase % size) + 1]
+	var/s = (phase % size) + 1
+	if(s == cur_slot)
+		LAZYADD(pending_adds, E)
+		tombstones = TRUE
+		return
+	var/list/L = slots[s]
 	L += E
 
 /datum/om/ring/proc/remove(datum/E, phase)
@@ -180,15 +192,32 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/list/L = slots[s]
 	var/idx = L.Find(E)
 	if(!idx)
+		if(s == cur_slot && pending_adds)
+			pending_adds -= E
+		return
+	if(s == cur_slot)
+		// The slot is running (or deferred mid-way): keep positions stable so
+		// the loop can walk it with a local index. Compacted when it finishes.
+		L[idx] = null
+		tombstones = TRUE
 		return
 	L.Cut(idx, idx + 1)
-	if(s == cur_slot && idx < cur_i)
-		cur_i--
+
+/// After a slot finishes: drop the tombstones left by removals during it.
+/datum/om/ring/proc/compact(list/L)
+	L.RemoveAll(null)
+	if(pending_adds)
+		L += pending_adds
+		pending_adds = null
+	tombstones = FALSE
 
 /datum/om/ring/proc/population()
 	. = 0
 	for(var/list/L as anything in slots)
-		. += length(L)
+		for(var/E in L)
+			if(E)
+				.++
+	. += length(pending_adds)
 
 /datum/om/scheduler/proc/ring_for(datum/om/behaviour/B, interval)
 	if(length(rings) < B.id)
@@ -324,10 +353,15 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			stat_inc(B.id, OM_STAT_DEFERRALS)
 			return FALSE
 		R.cur_slot = 0
+		if(R.tombstones)
+			R.compact(L)
 		R.next_abs++
 	return TRUE
 
 /// Runs one slot's entities from R.cur_i. FALSE when the budget ran out.
+/// The index is a local: an entity leaving the slot mid-run leaves a null
+/// tombstone (ring.remove()), so positions never shift under the loop, and
+/// the per-entity cost is one list read, one proc call and one budget check.
 /datum/om/scheduler/proc/run_slot(datum/om/ring/R, list/L)
 	var/datum/om/behaviour/B = R.B
 	var/dt = R.cur_dt
@@ -338,11 +372,14 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/ran = 0
 	var/t0 = TICK_USAGE
 	var/out = FALSE
+	var/i = R.cur_i
 	while(TRUE)
 		try
 			if(fast)
-				while(R.cur_i <= length(L))
-					var/datum/E = L[R.cur_i]
+				while(i <= length(L))
+					var/datum/E = L[i++]
+					if(!E)
+						continue
 #ifdef OM_PROFILE_CALLS
 					var/c0 = TICK_USAGE
 #endif
@@ -352,31 +389,30 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 					PS[OM_STAT_CALL_MAX] = max(PS[OM_STAT_CALL_MAX], TICK_USAGE_TO_MS(c0))
 #endif
 					ran++
-					if(R.cur_i <= length(L) && L[R.cur_i] == E)
-						R.cur_i++
 					if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
 						out = TRUE
 						break
 			else
-				while(R.cur_i <= length(L))
-					var/datum/E = L[R.cur_i]
+				while(i <= length(L))
+					var/datum/E = L[i++]
+					if(!E)
+						continue
 					tick_slow(B, E, dt)
 					ran++
-					if(R.cur_i <= length(L) && L[R.cur_i] == E)
-						R.cur_i++
 					if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
 						out = TRUE
 						break
 			break
 		catch(var/exception/e)
+			// i is already past the entity that raised: the loop resumes at the next.
 			error("[B.name] tick: [e] ([e.file]:[e.line])")
 			stat_inc(B.id, OM_STAT_ERRORS)
-			R.cur_i++
+	R.cur_i = i
 	calls = n_calls
 	var/list/S = stat_for(B.id)
 	S[OM_STAT_RUNS] += ran
 	S[OM_STAT_MS] += TICK_USAGE_TO_MS(t0)
-	return !(out && R.cur_i <= length(L))
+	return !(out && i <= length(L))
 
 /// Clocked, substepped, fixed-step or holding behaviours.
 /datum/om/scheduler/proc/tick_slow(datum/om/behaviour/B, datum/E, dt)

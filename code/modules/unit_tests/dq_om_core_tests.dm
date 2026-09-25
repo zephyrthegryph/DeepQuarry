@@ -367,6 +367,55 @@
 			total += dt
 		TEST_ASSERT(abs(total - 4) < 0.15, "dt must carry the real elapsed time: [total] s of 4 s")
 
+/// A behaviour whose tick takes its own entity off the ring and puts it back,
+/// and removes a partner sharing its slot: the slot loop must neither run the
+/// entity twice nor skip or repeat anyone else.
+/datum/om/behaviour/test/rejoiner
+	every = 1 SECONDS
+
+/datum/om/behaviour/test/rejoiner/tick(datum/om_test_entity/E, dt)
+	..()
+	if(E.value == 2)
+		om_sleep(E, type)
+		om_resume(E, type)
+	if(E.weight)
+		for(var/datum/om_test_entity/other as anything in E.log_targets)
+			om_sleep(other, type)
+
+/datum/om_test_entity/var/list/log_targets
+
+/// Regression: leaving and rejoining a ring mid-slot, and removing others mid-slot.
+/datum/unit_test/om/regression_slot_membership_changes
+
+/datum/unit_test/om/regression_slot_membership_changes/run_om(list/made)
+	// Force every entity into the same slot so the changes happen mid-slot.
+	var/list/entities = list()
+	for(var/i in 1 to 6)
+		var/datum/om_test_entity/E = entity(made)
+		var/datum/om/rec/rec = om_rec_of(E)
+		rec.phase = 0
+		entities += E
+	var/datum/om_test_entity/rejoin = entities[2]
+	rejoin.value = 2
+	var/datum/om_test_entity/remover = entities[3]
+	remover.weight = 1
+	remover.log_targets = list(entities[1], entities[5])
+	for(var/datum/om_test_entity/E as anything in entities)
+		om_attach(E, /datum/om/behaviour/test/rejoiner)
+	var/datum/om_test_entity/first = entities[1]
+	var/datum/om_test_entity/fourth = entities[4]
+	var/datum/om_test_entity/fifth = entities[5]
+	var/datum/om_test_entity/last = entities[6]
+	scheduler_advance(1)
+	TEST_ASSERT_EQUAL(rejoin.ticks, 1, "an entity that left and rejoined mid-slot ran once")
+	TEST_ASSERT_EQUAL(first.ticks, 1, "an entity removed after it ran kept its one run")
+	TEST_ASSERT_EQUAL(fifth.ticks, 0, "an entity removed before its turn did not run")
+	TEST_ASSERT_EQUAL(fourth.ticks, 1, "the entity after a removal ran exactly once")
+	TEST_ASSERT_EQUAL(last.ticks, 1, "the last entity ran exactly once")
+	scheduler_advance(1)
+	TEST_ASSERT_EQUAL(rejoin.ticks, 2, "the rejoined entity runs once per interval afterwards")
+	TEST_ASSERT_EQUAL(fourth.ticks, 2, "slot compacted: the others still run once per interval")
+
 /// Regression: one lane starving the others and the deadlines.
 /datum/unit_test/om/regression_lanes_do_not_starve
 
