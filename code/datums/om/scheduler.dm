@@ -548,6 +548,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 				i++
 				continue
 			rec.att_pend[i] = 0
+			om_recompute_pend(rec)
 			if(B.compiled_wake_if && !isnull(B.compiled_wake_if.why_not(rec.owner, null)))
 				i++
 				continue

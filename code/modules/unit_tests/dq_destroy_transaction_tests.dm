@@ -222,7 +222,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	if(istype(holder, /obj/item/dq_destroy_transaction_mind_level))
 		var/obj/item/dq_destroy_transaction_mind_level/level = holder
 		dq_destroy_transaction_log(level.level_name)
-	still_registered = !QDELETED(holder) && holder.loc
+	// QDELETED(holder) is already true here by design (phase 0 marks it); "valid" means it
+	// is still placed in the world, which phase 3 would undo.
+	still_registered = !!holder.loc
 
 /datum/unit_test/dq_destroy_transaction_mind_pre_order
 
