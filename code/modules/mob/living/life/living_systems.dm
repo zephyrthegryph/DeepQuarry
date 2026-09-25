@@ -617,7 +617,7 @@
 /datum/life_system/canmove
 	name = "canmove"
 	wake_only = LIFE_WAKE_ONLY_DERIVE
-	wake_on = LIFE_WAKE_ON_MOVEMENT
+	wake_on = LIFE_DERIVE_CHANNELS
 	phase = LIFE_PHASE_OUTPUT
 	order = 10
 	segment = LIFE_SEG_LIVING

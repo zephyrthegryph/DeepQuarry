@@ -204,13 +204,15 @@ run when that state changes, not on a 6 s cadence, and not at all for mobs
 nobody watches.
 
 - `wake_only = LIFE_WAKE_ONLY_DERIVE`: `canmove`. Run by `life_derive`
-  (`wake_on` = the movement channels, lane `LANE_DERIVED`) the pass the
-  status changes, never by the frame. While it still has work (asleep) it
+  (`wake_on` = status, stat and explicit changes, not movement, lane
+  `LANE_DERIVED`) the pass the status changes, never by the frame. While it still has work (asleep) it
   re-arms itself for the next cycle. Stun, weaken and paralysis changes also
   update `canmove` and lying immediately through their effect (§7).
 - `wake_only = LIFE_WAKE_ONLY_PRESENT`: `hud`, `vision`, `hud_refresh`
   (human). For a mob **with a client**, run by `life_present` (`requires` a
-  client, lane `LANE_PRESENTATION`) the pass a HUD channel changes, and by its
+  client, lane `LANE_PRESENTATION`) the pass a HUD channel changes (at most
+  every 0.5 s, `LIFE_PRESENT_MIN_INTERVAL`: a walking player raises a location
+  change most ticks, and the HUD needs only the latest state), and by its
   own deadline for their `rewake_delay()` (darksight 5 s, HUD refresh 1 min)
   or, while one still has work, every cycle; the frame skips them. Login
   raises `CHANGE_MOB_CLIENT`, which re-checks the requirement, starts the

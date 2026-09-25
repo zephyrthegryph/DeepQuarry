@@ -61,6 +61,8 @@
 #define LIFE_DERIVE_CHANNELS (CHANGE_MOB_STATUS | CHANGE_MOB_STAT | CHANGE_EXPLICIT)
 /// Channels the present behaviour reacts to.
 #define LIFE_PRESENT_CHANNELS (LIFE_WAKE_ON_HUD)
+/// The present behaviour runs at most this often; changes in between are coalesced.
+#define LIFE_PRESENT_MIN_INTERVAL (0.5 SECONDS)
 
 // --- Segments (/datum/life_context/var/blocked) ---------------------------------------------
 // A segment is the run of code that followed an early `return` in a legacy Life() or an

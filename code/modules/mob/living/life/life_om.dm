@@ -71,7 +71,7 @@ GLOBAL_VAR_INIT(life_frames, 0)
 /datum/om/behaviour/life_derive
 	name = "life: derive"
 	lane = LANE_DERIVED
-	wake_on = LIFE_WAKE_ON_MOVEMENT
+	wake_on = LIFE_DERIVE_CHANNELS
 
 /datum/om/behaviour/life_derive/on_wake(mob/living/L, changes)
 	L.life_run_wake_only(LIFE_WAKE_ONLY_DERIVE, changes, type)
@@ -90,7 +90,13 @@ GLOBAL_VAR_INIT(life_frames, 0)
 /datum/om/behaviour/life_present/on_start(mob/living/L)
 	L.life_run_wake_only(LIFE_WAKE_ONLY_PRESENT, ALL, type)
 
+/// At most once per LIFE_PRESENT_MIN_INTERVAL: a player walking raises a location change most
+/// ticks, and the HUD needs only the latest state.
 /datum/om/behaviour/life_present/on_wake(mob/living/L, changes)
+	var/wait = L.life_present_last + LIFE_PRESENT_MIN_INTERVAL - om_time_of(L)
+	if(wait > 0)
+		om_after(L, wait, type)
+		return
 	L.life_run_wake_only(LIFE_WAKE_ONLY_PRESENT, changes, type)
 
 /datum/om/behaviour/life_present/on_deadline(mob/living/L)
@@ -124,6 +130,8 @@ GLOBAL_VAR_INIT(life_frames, 0)
 	var/list/life_timers
 	/// Frames this mob has run.
 	var/life_frame_count = 0
+	/// Scheduler time the presentation systems last ran (life_present throttle).
+	var/life_present_last = -INFINITY
 	/// LIFE_SET_* of the Life sequence this mob type runs.
 	var/life_set = LIFE_SET_LIVING
 	/// Lazy list of extra system types (component-provided) this mob carries.
@@ -229,6 +237,8 @@ GLOBAL_VAR_INIT(life_frames, 0)
 	if(transforming || !loc)
 		return
 	var/soonest = 0
+	if(kind == LIFE_WAKE_ONLY_PRESENT)
+		life_present_last = om_time_of(src)
 	for(var/datum/life_system/S as anything in systems)
 		if(!(S.wake_on & changes))
 			continue
