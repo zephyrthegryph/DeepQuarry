@@ -28,8 +28,8 @@
 		. = null
 		try
 			. = om_deliver(rec, event, TRUE)
-		catch(var/exception/e)
-			sched.error("[event.type]: [e]")
+		catch(var/exception/e1)
+			sched.error("[event.type]: [e1]")
 		rec.in_veto = FALSE
 		return
 	if(sched.emit_depth)
@@ -45,8 +45,8 @@
 	sched.emit_depth = 1
 	try
 		om_deliver(rec, event, FALSE)
-	catch(var/exception/e)
-		sched.error("[event.type]: [e]")
+	catch(var/exception/e2)
+		sched.error("[event.type]: [e2]")
 	while(length(sched.event_queue))
 		var/datum/om/rec/next_rec = sched.event_queue[1]
 		var/datum/om/event/next = sched.event_queue[2]
@@ -55,14 +55,15 @@
 			continue
 		try
 			om_deliver(next_rec, next, FALSE)
-		catch(var/exception/e)
-			sched.error("[next.type]: [e]")
+		catch(var/exception/e3)
+			sched.error("[next.type]: [e3]")
 	sched.emit_depth = 0
 	return null
 
 /proc/om_deliver(datum/om/rec/rec, datum/om/event/event, veto)
 	var/datum/om/registry/reg = om_registry()
-	var/list/flags = reg.event_handlers[reg.event_idx[event.type]]
+	var/e = reg.event_idx[event.type]
+	var/list/flags = e ? reg.event_handlers[e] : null
 	var/datum/E = rec.owner
 	if(flags)
 		for(var/i in 1 to length(rec.att))

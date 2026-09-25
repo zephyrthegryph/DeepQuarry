@@ -6,6 +6,11 @@ It sits beside `rust_architecture.md`, which covers the Rust side. Nothing here
 migrates existing callers yet. This document defines the frameworks, and
 migration runs later behind ratchets (§21).
 
+The core API (§7 behaviours, §8 requirements, §9 events, §10 scheduler, §11
+watches, §12 rates, §13 tasks, §16 UI) is superseded by
+[object_model_core.md](object_model_core.md), which is what is implemented.
+This document still owns the concepts around it.
+
 ## 1. Goals
 
 The aim is DM code with the error surface of a well-typed, ownership-based

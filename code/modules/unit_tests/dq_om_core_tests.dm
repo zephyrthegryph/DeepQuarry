@@ -359,7 +359,7 @@
 		om_attach(E, /datum/om/behaviour/test/every_second)
 	scheduler_advance(1)
 	sched.jump(3)
-	sched.run(1e9)
+	sched.run_pass(1e9)
 	for(var/datum/om_test_entity/E as anything in entities)
 		TEST_ASSERT(E.ticks >= 1, "an entity was skipped after a 3 s gap")
 		var/total = 0
@@ -504,7 +504,7 @@
 	om_attach(E, /datum/om/behaviour/test/substeps)
 	scheduler_advance(1)
 	sched.jump(1.5)
-	sched.run(1e9)
+	sched.run_pass(1e9)
 	for(var/dt in E.dts)
 		TEST_ASSERT(dt <= 0.25 + 0.001, "max_dt splits large dt into substeps: [dt]")
 	var/datum/om_test_entity/S = entity(made)

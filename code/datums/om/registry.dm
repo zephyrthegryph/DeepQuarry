@@ -585,13 +585,13 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 					pos++
 				ready.Insert(pos, j)
 
-/proc/om_reaches(list/succ, from, to)
+/proc/om_reaches(list/succ, start, goal)
 	var/list/seen = list()
-	var/list/stack = list(from)
+	var/list/stack = list(start)
 	while(length(stack))
 		var/i = stack[length(stack)]
 		stack.len--
-		if(i == to)
+		if(i == goal)
 			return TRUE
 		if(seen["[i]"])
 			continue

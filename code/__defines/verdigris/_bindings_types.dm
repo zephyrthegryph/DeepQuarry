@@ -161,7 +161,7 @@
 	return vg_gas_mix_set_moles(vg_entity, index, value)
 
 /// K; clamped to VG_GASMIX_TEMPERATURE_MIN..MAX.
-/obj/item/gas_mix_holder/proc/get_temperature()
+/obj/item/gas_mix_holder/get_temperature()
 	return vg_gas_mix_get_temperature(vg_entity) // K
 
 /// Returns the stored value.

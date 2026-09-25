@@ -23,7 +23,7 @@ SUBSYSTEM_DEF(behaviours)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(!sched)
 		return
-	last_done = sched.run(Master.current_ticklimit)
+	last_done = sched.run_pass(Master.current_ticklimit)
 
 /datum/controller/subsystem/behaviours/stat_entry(msg)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched

@@ -216,7 +216,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 /// One scheduler pass. `tick_limit` is an absolute world.tick_usage (live:
 /// Master.current_ticklimit). Returns TRUE if all due work finished.
-/datum/om/scheduler/proc/run(tick_limit)
+/datum/om/scheduler/proc/run_pass(tick_limit)
 	var/start = TICK_USAGE
 	var/t = now()
 	runs++
@@ -640,7 +640,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/target = manual_time + seconds * 10
 	while(manual_time < target)
 		manual_time = min(manual_time + OM_SLOT_DS, target)
-		run(1e9)
+		run_pass(1e9)
 
 /// Test harness: jump time without running (simulates skipped ticks).
 /datum/om/scheduler/proc/jump(seconds)
