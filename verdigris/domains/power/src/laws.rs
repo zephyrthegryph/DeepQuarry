@@ -348,7 +348,7 @@ impl Law for ApcTick {
         ctx.ledger().source("power_apc_charge", charged.get());
         ctx.ledger().sink("power_apc_charge", discharged.get());
         if ctx.writes.apc.alarm {
-            ctx.emit(PowerEvent::ApcChannelChanged as u32);
+            ctx.emit(PowerEvent::ApcChannelChanged);
         }
         Settle::Active
     }
@@ -432,8 +432,8 @@ impl Law for PowerBalance {
         let now_brown = brownout(ctx.writes.ledger.avail, ctx.writes.ledger.load);
         ctx.writes.ledger.brown = now_brown;
         match (was_brown, now_brown) {
-            (false, true) => ctx.emit(PowerEvent::Brownout as u32),
-            (true, false) => ctx.emit(PowerEvent::Restored as u32),
+            (false, true) => ctx.emit(PowerEvent::Brownout),
+            (true, false) => ctx.emit(PowerEvent::Restored),
             _ => {}
         }
         Settle::Active
@@ -703,10 +703,9 @@ mod tests {
     fn apc_tick_law_matches_the_bare_function_and_reports_conservation() {
         let reads = ApcTickReads { demand: [Watts(1000.0); 3], grid_avail: Watts::ZERO };
         let mut writes = ApcTickWrites { apc: apc_with(1000.0, 1000.0), grid_load: Watts::ZERO };
-        let mut events = Vec::new();
-        let mut wakes = Vec::new();
-        let mut ledger = test_ledger();
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = test_ledger();
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         assert_eq!(ApcTick::step(&mut ctx, Seconds(1.0)), Settle::Active);
         // No grid at all: the cell alone must cover all 3000 W of demand.
         let expect = 1000.0 - 3000.0 * crate::components::CELLRATE;
@@ -714,7 +713,7 @@ mod tests {
         // check_conservation-style: the ledger's own source/sink calls
         // match what actually moved the charge.
         assert!(
-            ledger
+            fx.ledger
                 .check("power_apc_charge", writes.apc.cell.charge, 1e-6)
                 .is_ok()
         );
@@ -731,10 +730,9 @@ mod tests {
         let mut writes = SmesPlanningWrites {
             smes: Smes { charge: RateStore { charge: 1000.0, capacity: 1e6, rate: crate::components::SMESRATE }, ..Smes::default() },
         };
-        let mut events = Vec::new();
-        let mut wakes = Vec::new();
-        let mut ledger = test_ledger();
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = test_ledger();
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         assert_eq!(SmesPlanning::step(&mut ctx, Seconds(1.0)), Settle::Active);
         let expect = 1000.0 - 50.0 * crate::components::SMESRATE;
         assert!((writes.smes.charge.charge - expect).abs() < 1e-9);
@@ -751,10 +749,9 @@ mod tests {
             ],
         };
         let mut writes = PowerBalanceWrites { ledger: PowerLedger::default() };
-        let mut events = Vec::new();
-        let mut wakes = Vec::new();
-        let mut ledger = test_ledger();
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = test_ledger();
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         assert_eq!(PowerBalance::step(&mut ctx, Seconds(1.0)), Settle::Active);
         // The first (highest-priority) consumer is served in full (80 of
         // its 80 W); the second is starved by what's left (20 of its 50 W)
@@ -772,25 +769,24 @@ mod tests {
             consumers: vec![Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 }],
         };
         let mut writes = PowerBalanceWrites { ledger: PowerLedger::default() };
-        let mut events = Vec::new();
-        let mut wakes = Vec::new();
-        let mut ledger = test_ledger();
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = test_ledger();
         {
-            let mut ctx = LawCtx::new(&no_supply, &mut writes, &mut events, &mut wakes, &mut ledger);
+            let mut ctx = LawCtx::new(&no_supply, &mut writes, &mut fx);
             PowerBalance::step(&mut ctx, Seconds(1.0));
         }
         assert!(writes.ledger.brown, "no supply at all");
-        assert_eq!(events, vec![PowerEvent::Brownout as u32]);
+        assert_eq!(fx.events.decoded::<PowerEvent>().map(|(_, e)| e).collect::<Vec<_>>(), vec![PowerEvent::Brownout]);
 
         let restored = PowerBalanceReads {
             producer_supply: vec![Watts(1000.0)],
             storage_offers: vec![],
             consumers: vec![Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 }],
         };
-        events.clear();
-        let mut ctx = LawCtx::new(&restored, &mut writes, &mut events, &mut wakes, &mut ledger);
+        fx.events.clear();
+        let mut ctx = LawCtx::new(&restored, &mut writes, &mut fx);
         PowerBalance::step(&mut ctx, Seconds(1.0));
         assert!(!writes.ledger.brown);
-        assert_eq!(events, vec![PowerEvent::Restored as u32]);
+        assert_eq!(fx.events.decoded::<PowerEvent>().map(|(_, e)| e).collect::<Vec<_>>(), vec![PowerEvent::Restored]);
     }
 }

@@ -41,6 +41,29 @@ pub trait Domain: 'static {
     /// Applies `cmd` to `value`. Must be deterministic. A removal that finds
     /// less than it asked for clamps and reports the shortfall (§3.10).
     fn apply(value: &mut Self::Value, cmd: &Self::Command) -> Applied;
+
+    /// Whether [`conserved`](Self::conserved) reports anything (lets the
+    /// command path skip the before/after sums for everything else).
+    const CONSERVES: bool = false;
+
+    /// Visits `(quantity, amount)` for every conserved quantity one cell
+    /// holds (`rust_architecture.md` §4.9). Every command's effect on these
+    /// is recorded as a boundary crossing when it is applied
+    /// ([`DomainState::crossings`]), so DM taking gas or charge between
+    /// frames is a source/sink of the conservation check, not a violation.
+    fn conserved(value: &Self::Value, visit: &mut dyn FnMut(&'static str, f64)) {
+        let _ = (value, visit);
+    }
+}
+
+/// Adds `sign * (conserved quantities of value)` into `into`.
+pub(crate) fn add_conserved<D: Domain>(into: &mut Vec<(&'static str, f64)>, value: &D::Value, sign: f64) {
+    D::conserved(value, &mut |name, amount| {
+        match into.iter_mut().find(|(n, _)| *n == name) {
+            Some((_, v)) => *v += sign * amount,
+            None => into.push((name, sign * amount)),
+        }
+    });
 }
 
 /// The operation type queued for domain `D`.
@@ -181,6 +204,10 @@ pub struct DomainState<D: Domain> {
     /// the view.
     outbox: Outbox<D::Value>,
     outbox_slot: Arc<OutboxSlot<D::Value>>,
+    /// Cumulative change in each conserved quantity made by applied
+    /// commands (DM's writes, binds and takes): the boundary crossings the
+    /// conservation check credits (§4.9).
+    crossings: Vec<(&'static str, f64)>,
 }
 
 impl<D: Domain> DomainState<D> {
@@ -198,7 +225,15 @@ impl<D: Domain> DomainState<D> {
             views,
             outbox: Outbox::default(),
             outbox_slot,
+            crossings: Vec::new(),
         }
+    }
+
+    /// Cumulative `(quantity, change)` made by applied commands since the
+    /// domain was created (see [`Domain::conserved`]).
+    #[must_use]
+    pub fn crossings(&self) -> &[(&'static str, f64)] {
+        &self.crossings
     }
 
     /// This frame's outbox, for tasks that emit domain events (§8).
@@ -230,7 +265,13 @@ impl<D: Domain> DomainState<D> {
                     value: cell.clone(),
                 });
             }
+            if D::CONSERVES {
+                add_conserved::<D>(&mut self.crossings, cell, -1.0);
+            }
             let applied = apply_op::<D>(cell, &cmd.op);
+            if D::CONSERVES {
+                add_conserved::<D>(&mut self.crossings, cell, 1.0);
+            }
             self.shortfall_total += f64::from(applied.shortfall);
             self.applied_through = cmd.seq;
         }

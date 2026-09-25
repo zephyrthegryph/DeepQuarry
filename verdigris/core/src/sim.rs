@@ -636,6 +636,34 @@ impl Sim {
         true
     }
 
+    /// Like [`dispatch_frame`](Self::dispatch_frame), but first calls
+    /// `prepare` on the idle world's resources (on the main thread, with
+    /// exclusive access). The driver ([`crate::world::World`]) moves its
+    /// per-frame inputs in and outputs out here, exactly once per
+    /// dispatched frame; nothing is called when no frame is dispatched.
+    pub fn dispatch_frame_with(&mut self, prepare: impl FnOnce(&mut Resources)) -> bool {
+        self.reclaim();
+        if self.world.is_none() || !self.ports.iter().all(|p| p.ready()) {
+            self.metrics.dispatches_skipped += 1;
+            return false;
+        }
+        prepare(&mut self.world.as_mut().expect("checked above").resources);
+        self.dispatch_frame()
+    }
+
+    /// Runs `f` on the world's resources if no frame is running (after
+    /// reclaiming a finished one). `None` while a frame runs.
+    pub fn with_idle_world<R>(&mut self, f: impl FnOnce(&mut Resources) -> R) -> Option<R> {
+        self.reclaim();
+        self.world.as_mut().map(|w| f(&mut w.resources))
+    }
+
+    /// The number the next dispatched frame will carry.
+    #[must_use]
+    pub const fn next_frame(&self) -> u64 {
+        self.next_frame
+    }
+
     /// Takes back a finished world, if any.
     fn reclaim(&mut self) {
         if self.world.is_some() {

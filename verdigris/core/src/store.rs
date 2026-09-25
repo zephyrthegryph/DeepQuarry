@@ -1,221 +1,345 @@
-//! A component kind's whole store (`rust_architecture.md` §4.2): entity-row
-//! storage behind a [`MainPort`] (read-your-writes, R4), plus the row
-//! allocator and the row→entity back-map events need. Generic over any
-//! [`Domain`], so a component kind's generated FFI glue needs only one of
-//! these — not its own `Sim`, `CellAllocator` and event queue, which used to
-//! be hand-written per kind (`kind/pump.rs`'s old `World`).
+//! Component storage (`rust_architecture.md` §4.2): one store per component
+//! kind, rows indexed by **entity slot index**.
 //!
-//! **Owner.** The same store and the same generated API serve both owners
-//! (§4.2):
-//! - `owner = worker`: registered with the driver's `Sim` and ticked every
-//!   frame (physics laws read and write its rows there).
-//! - `owner = main`: never ticked. Nothing ever ages its overlay, so every
-//!   read reflects every earlier write with no staleness window at all —
-//!   which is exactly "DM reads and writes it immediately, with no frame."
+//! Indexing every kind by the entity's own slot index makes joins free: a
+//! law anchored on `Pump` rows reads the same entity's `Consumer` at the
+//! same index, with no row↔entity map. Stores are chunked copy-on-write
+//! ([`CowStore`], [`KIND_CHUNK`] rows per chunk, unallocated until a row in
+//! it is written), so an index space of 2^19 costs only the chunks that
+//! hold live rows.
 //!
-//! A kind chooses by calling [`KindStore::tick`] every frame (worker) or
-//! never (main); nothing else about the type differs.
+//! A kind's rows live where its [`Ownership`] says:
+//! - **worker**: in a `DomainState<C::Kind>` of the world's one
+//!   [`crate::sim::Sim`], stepped by frame tasks; DM writes are commands
+//!   through the overlay (read-your-writes);
+//! - **main**: in [`MainKind`]'s own store on the main thread, written
+//!   synchronously (tanks, lungs, anything DM needs back at once).
+//!
+//! Either way the main thread keeps the authoritative [`Rows`] (which
+//! entities have the component) and mirrors changes to the worker side
+//! ([`WorkerKind`]) at each frame dispatch, together with a snapshot of a
+//! main-owned store so worker laws can read it.
 
-use crate::cow::ChunkLayout;
-use crate::entity::CellAllocator;
-use crate::owner::{Applied, Domain, DomainKey, PortError};
-use crate::sim::{Sim, SimBuilder, SimConfig};
+use std::sync::Arc;
 
-/// Row capacity: matches [`crate::entity::MAX_SLOTS`], since a store never
-/// needs to outlive the entities that could reference it.
-const ROWS: u32 = crate::entity::MAX_SLOTS;
+use crate::bitset::DenseBitSet;
+use crate::component::Component;
+use crate::cow::{ChunkLayout, CowStore};
+use crate::entity::{EntityId, MAX_SLOTS};
+use crate::owner::{Applied, Domain, View, add_conserved};
 
-/// A component kind's store. See the module docs for `owner`.
-pub struct KindStore<D: Domain> {
-    sim: Sim,
-    key: DomainKey<D>,
-    rows: CellAllocator,
-    /// The `vg_entity` (raw-plus-one; see `vg-ffi::entity`) bound at each
-    /// row, so a law that only knows a row can still attribute an event to
-    /// the right atom (§4.8). `None` for a free or never-allocated row.
-    row_entity: Vec<Option<f32>>,
-    /// Raised events not yet drained, as `(entity, event_id)` (§4.8).
-    events: Vec<(f32, u8)>,
+/// Rows per copy-on-write chunk of a component store: small, so the first
+/// write to a shared chunk in a frame copies little.
+pub const KIND_CHUNK: u32 = 256;
+
+/// The layout of every component store: one row per entity slot.
+#[must_use]
+pub const fn kind_layout() -> ChunkLayout {
+    ChunkLayout::linear_with_chunk(MAX_SLOTS, KIND_CHUNK)
 }
 
-impl<D: Domain> Default for KindStore<D> {
-    fn default() -> Self {
-        Self::new()
-    }
+/// Which entity slots hold a component of one kind, and the full id bound
+/// at each (for event attribution and staleness checks).
+#[derive(Clone, Debug, Default)]
+pub struct Rows {
+    present: DenseBitSet,
+    ids: Vec<u32>,
+    count: usize,
 }
 
-impl<D: Domain> KindStore<D> {
-    /// A fresh, empty store. `threads` is the frame pool size for this
-    /// kind's `Sim`; worker-owned kinds pass what their laws need (at least
-    /// 1), main-owned kinds that never call [`tick`](Self::tick) can pass 1
-    /// (the pool sits idle).
+impl Rows {
     #[must_use]
     pub fn new() -> Self {
-        Self::with_threads(1)
+        Self::default()
+    }
+
+    /// Marks `entity` as holding the component. Returns `false` if it
+    /// already did.
+    pub fn insert(&mut self, entity: EntityId) -> bool {
+        let index = entity.index();
+        if index >= self.present.capacity() {
+            self.present.grow((index + 1).max(self.present.capacity() * 2).min(MAX_SLOTS));
+        }
+        if self.ids.len() <= index as usize {
+            self.ids.resize(index as usize + 1, 0);
+        }
+        self.ids[index as usize] = entity.bits();
+        let fresh = self.present.insert(index);
+        if fresh {
+            self.count += 1;
+        }
+        fresh
+    }
+
+    /// Clears the row at `index`, returning the entity that held it.
+    pub fn remove(&mut self, index: u32) -> Option<EntityId> {
+        if !self.present.remove(index) {
+            return None;
+        }
+        self.count -= 1;
+        EntityId::from_bits(self.ids[index as usize])
     }
 
     #[must_use]
-    pub fn with_threads(threads: usize) -> Self {
-        let mut builder = SimBuilder::new(SimConfig {
-            threads: threads.max(1),
-            ..SimConfig::default()
-        });
-        let key = builder.add_domain::<D>(ChunkLayout::linear(ROWS));
-        let sim = builder
-            .build()
-            .unwrap_or_else(|e| unreachable!("static kind store config always builds: {e}"));
+    pub fn contains(&self, index: u32) -> bool {
+        self.present.contains(index)
+    }
+
+    /// Whether exactly `entity` (index and generation) holds the row.
+    #[must_use]
+    pub fn holds(&self, entity: EntityId) -> bool {
+        self.entity(entity.index()) == Some(entity)
+    }
+
+    /// The entity holding the row at `index`.
+    #[must_use]
+    pub fn entity(&self, index: u32) -> Option<EntityId> {
+        if !self.contains(index) {
+            return None;
+        }
+        EntityId::from_bits(self.ids[index as usize])
+    }
+
+    /// The `vg_entity` value (raw id + 1) of the row at `index`, or `0.0`.
+    #[must_use]
+    pub fn entity_value(&self, index: u32) -> f32 {
+        self.entity(index).map_or(0.0, |e| e.to_f32() + 1.0)
+    }
+
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.count
+    }
+
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.count == 0
+    }
+
+    /// Every held index, ascending.
+    pub fn iter(&self) -> impl Iterator<Item = u32> + '_ {
+        self.present.iter()
+    }
+
+    fn apply(&mut self, change: RowChange) {
+        match change {
+            RowChange::Bound(e) => {
+                self.insert(e);
+            }
+            RowChange::Unbound(i) => {
+                self.remove(i);
+            }
+        }
+    }
+}
+
+/// One change to a kind's [`Rows`], journaled on the main thread and
+/// replayed on the worker side at dispatch.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RowChange {
+    Bound(EntityId),
+    Unbound(u32),
+}
+
+/// The main-thread side of one component kind: a resource of the driver's
+/// main phase.
+pub struct MainKind<C: Component> {
+    /// Authoritative: which entities hold the component.
+    pub rows: Rows,
+    journal: Vec<RowChange>,
+    /// Main-owned kinds: the live rows.
+    store: Option<CowStore<C>>,
+    /// Whether `store` changed since the last worker snapshot.
+    dirty: bool,
+    /// Worker-owned kinds: the view pinned at the start of this tick (what
+    /// main-phase laws read).
+    view: Option<Arc<View<C>>>,
+    /// Main-owned kinds: cumulative conserved change made by DM's direct
+    /// writes (boundary crossings for the conservation check).
+    crossings: Vec<(&'static str, f64)>,
+}
+
+impl<C: Component> MainKind<C> {
+    #[must_use]
+    pub fn new(main_owned: bool) -> Self {
         Self {
-            sim,
-            key,
-            rows: CellAllocator::new(),
-            row_entity: Vec::new(),
-            events: Vec::new(),
+            rows: Rows::new(),
+            journal: Vec::new(),
+            store: main_owned.then(|| CowStore::new(kind_layout())),
+            dirty: false,
+            view: None,
+            crossings: Vec::new(),
         }
-    }
-
-    /// Allocates a row, seeds it with `value`, and records `entity` as the
-    /// row's owner for event attribution. Returns the row.
-    pub fn bind(&mut self, entity: f32, value: D::Value) -> Result<u32, PortError> {
-        let row = self.rows.alloc();
-        self.sim.port(self.key).put(row, value)?;
-        self.set_row_entity(row, entity);
-        Ok(row)
-    }
-
-    fn set_row_entity(&mut self, row: u32, entity: f32) {
-        let index = row as usize;
-        if self.row_entity.len() <= index {
-            self.row_entity.resize(index + 1, None);
-        }
-        self.row_entity[index] = Some(entity);
-    }
-
-    /// What DM sees at `row` right now (this tick's writes over the pinned
-    /// frame, R4 §6).
-    #[must_use]
-    pub fn read(&self, row: u32) -> Option<D::Value> {
-        self.sim.port_ref(self.key).read(row)
-    }
-
-    /// Queues a command; applies to what DM sees immediately.
-    ///
-    /// # Errors
-    /// If `row` is out of range.
-    pub fn submit(&mut self, row: u32, cmd: D::Command) -> Result<Applied, PortError> {
-        self.sim.port(self.key).submit(row, cmd)
-    }
-
-    /// Frees `row`: resets its value and returns the row for reuse.
-    pub fn detach(&mut self, row: u32) {
-        let _ = self.sim.port(self.key).take(row);
-        self.rows.free_cell(row);
-        if let Some(slot) = self.row_entity.get_mut(row as usize) {
-            *slot = None;
-        }
-    }
-
-    /// Raises `event_id` for the component at `row` (§4.8), attributed to
-    /// whatever entity is currently bound there. A no-op if the row holds no
-    /// live component (already detached): nothing left to notify.
-    pub fn push_event(&mut self, row: u32, event_id: u8) {
-        if let Some(entity) = self.row_entity.get(row as usize).copied().flatten() {
-            self.events.push((entity, event_id));
-        }
-    }
-
-    /// Moves every raised-and-not-yet-drained event into `out`, as
-    /// `(entity, event_id)`.
-    pub fn drain_events(&mut self, out: &mut Vec<(f32, u8)>) {
-        out.append(&mut self.events);
-    }
-
-    /// Advances this store's `Sim` by one tick and dispatches a frame,
-    /// publishing a view and pruning the overlay. Worker-owned kinds call
-    /// this every frame; main-owned kinds never call it (module docs).
-    pub fn tick(&mut self) {
-        self.sim.begin_tick();
-        self.sim.dispatch_frame();
-    }
-
-    /// The kind's `Sim`, for a domain that needs to add its own frame tasks
-    /// (a worker-owned kind's laws) or watches beyond what this store alone
-    /// provides.
-    pub fn sim_mut(&mut self) -> &mut Sim {
-        &mut self.sim
     }
 
     #[must_use]
-    pub const fn key(&self) -> DomainKey<D> {
-        self.key
+    pub const fn is_main_owned(&self) -> bool {
+        self.store.is_some()
+    }
+
+    /// The row at `index`, if an entity holds it: the live value for a
+    /// main-owned kind, the pinned view's for a worker-owned one.
+    #[must_use]
+    pub fn get(&self, index: u32) -> Option<C> {
+        if !self.rows.contains(index) {
+            return None;
+        }
+        match (&self.store, &self.view) {
+            (Some(store), _) => store.get(index),
+            (None, Some(view)) => view.get(index),
+            (None, None) => None,
+        }
+    }
+
+    /// Shared access to a main-owned row.
+    #[must_use]
+    pub fn get_ref(&self, index: u32) -> Option<&C> {
+        if !self.rows.contains(index) {
+            return None;
+        }
+        let store = self.store.as_ref()?;
+        let (chunk, cell) = store.layout().locate(index)?;
+        store.chunk(chunk).map(|c| &c[cell])
+    }
+
+    /// Mutable access to a main-owned row (a main-phase law's write, or a
+    /// typed main-thread caller). `None` for a worker-owned kind.
+    pub fn get_mut(&mut self, index: u32) -> Option<&mut C> {
+        if !self.rows.contains(index) {
+            return None;
+        }
+        let store = self.store.as_mut()?;
+        self.dirty = true;
+        store.get_mut(index)
+    }
+
+    /// Applies a DM command to a main-owned row, recording its effect on
+    /// conserved quantities as a boundary crossing.
+    pub fn apply(&mut self, index: u32, cmd: &<C::Kind as Domain>::Command) -> Option<Applied> {
+        if !self.rows.contains(index) {
+            return None;
+        }
+        let store = self.store.as_mut()?;
+        let value = store.get_mut(index)?;
+        self.dirty = true;
+        if <C::Kind as Domain>::CONSERVES {
+            add_conserved::<C::Kind>(&mut self.crossings, value, -1.0);
+        }
+        let applied = <C::Kind as Domain>::apply(value, cmd);
+        if <C::Kind as Domain>::CONSERVES {
+            add_conserved::<C::Kind>(&mut self.crossings, value, 1.0);
+        }
+        Some(applied)
+    }
+
+    /// Binds `entity` with `value` (main-owned: stored now; worker-owned:
+    /// the caller also puts the value through the domain's port).
+    pub fn bind(&mut self, entity: EntityId, value: C) {
+        self.rows.insert(entity);
+        self.journal.push(RowChange::Bound(entity));
+        if let Some(store) = &mut self.store {
+            if <C::Kind as Domain>::CONSERVES {
+                add_conserved::<C::Kind>(&mut self.crossings, &value, 1.0);
+            }
+            store.set(entity.index(), value);
+            self.dirty = true;
+        }
+    }
+
+    /// Unbinds the row at `index`, returning its last value (main-owned).
+    pub fn unbind(&mut self, index: u32) -> Option<C> {
+        self.rows.remove(index)?;
+        self.journal.push(RowChange::Unbound(index));
+        let store = self.store.as_mut()?;
+        let old = store.get(index);
+        if let Some(v) = &old
+            && <C::Kind as Domain>::CONSERVES
+        {
+            add_conserved::<C::Kind>(&mut self.crossings, v, -1.0);
+        }
+        store.set(index, C::default());
+        self.dirty = true;
+        old
+    }
+
+    /// Records the view pinned this tick (worker-owned kinds).
+    pub fn set_view(&mut self, view: Arc<View<C>>) {
+        self.view = Some(view);
+    }
+
+    /// The live store of a main-owned kind.
+    #[must_use]
+    pub fn store(&self) -> Option<&CowStore<C>> {
+        self.store.as_ref()
+    }
+
+    /// Cumulative conserved change made by DM writes (main-owned kinds).
+    #[must_use]
+    pub fn crossings(&self) -> &[(&'static str, f64)] {
+        &self.crossings
+    }
+
+    /// Moves this tick's row changes (and a snapshot of a changed
+    /// main-owned store) into the worker side. The driver calls this at
+    /// each frame dispatch.
+    pub fn sync_worker(&mut self, worker: &mut WorkerKind<C>) {
+        for change in self.journal.drain(..) {
+            worker.rows.apply(change);
+        }
+        if self.dirty
+            && let Some(store) = &self.store
+        {
+            worker.snapshot = Some(store.snapshot());
+            self.dirty = false;
+        }
+    }
+}
+
+/// The worker side of one component kind: a resource of the frame world.
+pub struct WorkerKind<C: Component> {
+    /// Mirror of [`MainKind::rows`] as of the last dispatch.
+    pub rows: Rows,
+    /// Main-owned kinds: the store as of the last dispatch (worker laws
+    /// read it; they never write it).
+    snapshot: Option<CowStore<C>>,
+}
+
+impl<C: Component> Default for WorkerKind<C> {
+    fn default() -> Self {
+        Self {
+            rows: Rows::new(),
+            snapshot: None,
+        }
+    }
+}
+
+impl<C: Component> WorkerKind<C> {
+    /// A main-owned kind's row as of the last dispatch.
+    #[must_use]
+    pub fn snapshot_get(&self, index: u32) -> Option<C> {
+        if !self.rows.contains(index) {
+            return None;
+        }
+        self.snapshot.as_ref()?.get(index)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::owner::Applied;
-
-    #[derive(Clone, Copy, Debug, Default, PartialEq)]
-    struct Widget {
-        n: f32,
-    }
-
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-    struct WidgetKind;
-
-    #[derive(Clone, Debug, PartialEq)]
-    enum WidgetCmd {
-        Set(i32),
-    }
-
-    impl Domain for WidgetKind {
-        type Value = Widget;
-        type Command = WidgetCmd;
-        const NAME: &'static str = "widget";
-        fn apply(value: &mut Widget, cmd: &WidgetCmd) -> Applied {
-            let WidgetCmd::Set(v) = cmd;
-            #[allow(clippy::cast_precision_loss)]
-            {
-                value.n = *v as f32;
-            }
-            Applied::default()
-        }
-    }
 
     #[test]
-    fn bind_read_write_detach_and_events_round_trip() {
-        let mut store = KindStore::<WidgetKind>::new();
-        let row = store.bind(42.0, Widget { n: 1.0 }).unwrap();
-        assert_eq!(store.read(row), Some(Widget { n: 1.0 }));
-
-        store.submit(row, WidgetCmd::Set(9)).unwrap();
-        assert_eq!(store.read(row), Some(Widget { n: 9.0 }), "read-your-writes, no tick needed");
-
-        store.push_event(row, 3);
-        let mut out = Vec::new();
-        store.drain_events(&mut out);
-        assert_eq!(out, vec![(42.0, 3)]);
-
-        store.detach(row);
-        assert_eq!(store.read(row), Some(Widget::default()));
-        store.push_event(row, 1);
-        let mut out2 = Vec::new();
-        store.drain_events(&mut out2);
-        assert!(out2.is_empty(), "a detached row's event must not resurrect the old entity");
-
-        // A never-ticked (main-owned) store still has no staleness window.
-        let row2 = store.bind(7.0, Widget::default()).unwrap();
-        store.submit(row2, WidgetCmd::Set(5)).unwrap();
-        assert_eq!(store.read(row2).unwrap().n, 5.0);
-    }
-
-    #[test]
-    fn worker_owned_kind_ticks_and_publishes_a_view() {
-        let mut store = KindStore::<WidgetKind>::new();
-        let row = store.bind(1.0, Widget::default()).unwrap();
-        store.submit(row, WidgetCmd::Set(3)).unwrap();
-        store.tick();
-        store.tick();
-        assert_eq!(store.read(row).unwrap().n, 3.0);
+    fn rows_track_entities_by_slot() {
+        let mut rows = Rows::new();
+        let e = EntityId::from_bits(5 | (3 << crate::entity::INDEX_BITS)).unwrap();
+        assert!(rows.insert(e));
+        assert!(!rows.insert(e));
+        assert!(rows.holds(e));
+        assert_eq!(rows.entity(5), Some(e));
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows.iter().collect::<Vec<_>>(), vec![5]);
+        assert_eq!(rows.remove(5), Some(e));
+        assert!(rows.is_empty());
+        assert_eq!(rows.entity_value(5), 0.0);
     }
 }

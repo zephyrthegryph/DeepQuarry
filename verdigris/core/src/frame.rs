@@ -38,6 +38,17 @@ impl<T> Res<T> {
     pub const fn id(self) -> ResourceId {
         self.id
     }
+
+    /// Re-types a resource id. Only for registries that stored the id
+    /// erased next to the type it was inserted with: a wrong `T` panics on
+    /// first access (`resource type mismatch`), never reads garbage.
+    #[must_use]
+    pub const fn from_id(id: ResourceId) -> Self {
+        Self {
+            id,
+            _marker: PhantomData,
+        }
+    }
 }
 
 impl<T> Clone for Res<T> {
@@ -52,7 +63,8 @@ impl<T> fmt::Debug for Res<T> {
     }
 }
 
-type Erased = Box<dyn Any + Send + Sync>;
+/// A resource as stored: boxed and type-erased.
+pub type Erased = Box<dyn Any + Send + Sync>;
 
 /// The worker-side state of a world: domain states, exchange buffers and
 /// any other per-frame data, each one a resource.
@@ -105,6 +117,24 @@ impl Resources {
         self.erased_mut(res.id)
             .downcast_mut()
             .expect("resource type mismatch")
+    }
+
+    /// Shared access from the main thread while it holds the idle world
+    /// (no task can hold a conflicting guard then).
+    ///
+    /// # Panics
+    /// If `res` is from another world (wrong type), or is being written.
+    #[must_use]
+    pub fn get<T: Any>(&self, res: Res<T>) -> Ref<'_, T> {
+        let guard = match self.slots[usize::from(res.id.0)].try_read() {
+            Ok(g) => g,
+            Err(TryLockError::Poisoned(p)) => p.into_inner(),
+            Err(TryLockError::WouldBlock) => panic!("resource `{}` is held", self.name(res.id)),
+        };
+        Ref {
+            guard,
+            _marker: PhantomData,
+        }
     }
 
     pub(crate) fn erased_mut(&mut self, id: ResourceId) -> &mut (dyn Any + Send + Sync) {
@@ -261,6 +291,17 @@ pub fn run_frame(
     }
 }
 
+/// Runs every task in declaration order on the calling thread: the
+/// main-thread phase of the driver ([`crate::world`]) runs main-owned laws
+/// this way, with the same [`Task`]/[`TaskCtx`] contract as a frame.
+pub fn run_sequential(tasks: &[Task], res: &Resources, info: FrameInfo) {
+    for task in tasks {
+        if info.frame % u64::from(task.every) == 0 {
+            run_task(task, res, &[], info);
+        }
+    }
+}
+
 fn run_task(task: &Task, res: &Resources, prev: &PrevViews, info: FrameInfo) {
     let ctx = TaskCtx {
         task,
@@ -347,6 +388,52 @@ impl<'a> TaskCtx<'a> {
     #[must_use]
     pub fn prev_erased(&self, domain: usize) -> Option<&Arc<dyn Any + Send + Sync>> {
         self.prev.get(domain)?.as_ref()
+    }
+
+    /// Shared access to a declared resource by id, type-erased (the law
+    /// driver's [`crate::law::FrameData`] holds one guard per declared
+    /// resource and downcasts per query).
+    ///
+    /// # Panics
+    /// As [`read`](Self::read).
+    #[must_use]
+    pub fn read_erased(&self, id: ResourceId) -> RwLockReadGuard<'a, Erased> {
+        assert!(
+            self.task.may_read(id),
+            "task `{}` reads undeclared resource `{}`",
+            self.task.name,
+            self.res.name(id)
+        );
+        match self.res.slots[usize::from(id.0)].try_read() {
+            Ok(g) => g,
+            Err(TryLockError::Poisoned(p)) => p.into_inner(),
+            Err(TryLockError::WouldBlock) => self.contended(id),
+        }
+    }
+
+    /// Exclusive access to a declared written resource by id, type-erased.
+    ///
+    /// # Panics
+    /// As [`write`](Self::write).
+    #[must_use]
+    pub fn write_erased(&self, id: ResourceId) -> RwLockWriteGuard<'a, Erased> {
+        assert!(
+            self.task.writes.contains(&id),
+            "task `{}` writes undeclared resource `{}`",
+            self.task.name,
+            self.res.name(id)
+        );
+        match self.res.slots[usize::from(id.0)].try_write() {
+            Ok(g) => g,
+            Err(TryLockError::Poisoned(p)) => p.into_inner(),
+            Err(TryLockError::WouldBlock) => self.contended(id),
+        }
+    }
+
+    /// Whether this task declared a write of `id`.
+    #[must_use]
+    pub fn declares_write(&self, id: ResourceId) -> bool {
+        self.task.writes.contains(&id)
     }
 
     fn contended(&self, id: ResourceId) -> ! {

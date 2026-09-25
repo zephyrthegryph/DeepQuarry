@@ -27,10 +27,25 @@
 //!
 //! No region state lives here or in a side map: everything about a region
 //! is in [`NetworkKind::Payload`], carried by `Network<K>` itself.
+//!
+//! **Revisions** (for the driver's sleep, `rust_architecture.md` §4.4):
+//! every region and device carries a revision that moves whenever its
+//! payload, summary, membership or parameters change through this host
+//! (a law's write-back, a DM command, a commit). Region and device laws
+//! (see [`super::law`]) remember the revision they last stepped and sleep
+//! until it moves; a device also wakes when either side's region moves.
+//! This replaces gas `PipeNet`'s `seen`/`revisions` tables.
+//!
+//! **Transitions**: [`NetworkHost::transitions`] folds a commit's events
+//! into DM-facing [`Transition`]s ("this region's membership changed,
+//! rebuild its wrapper": members, prior regions, retired), keyed by the
+//! region handle itself (exact as an `f32`), so no DM slot table exists.
 
 use std::collections::HashMap;
 
+use crate::conservation::Conserved;
 use crate::entity::EntityId;
+use crate::slot::RawHandle;
 
 use super::graph::{
     CellId, DeviceId, Endpoint, NetError, Network, NetworkKind, NodeId, RegionEvent, RegionId,
@@ -64,6 +79,27 @@ pub struct NetworkHost<K: NetworkKind> {
     /// search's non-geometric side.
     groups: HashMap<u32, Vec<Entity>>,
     devices: HashMap<Entity, DeviceId<K>>,
+    /// Revision per region slot index (see the module docs).
+    region_rev: Vec<u64>,
+    /// Revision per device slot index.
+    device_rev: Vec<u64>,
+    clock: u64,
+    /// Payload a removed node released, not yet taken by DM, as `(entity,
+    /// cell, payload)`.
+    released: Vec<(Entity, u32, K::Payload)>,
+}
+
+/// A region as DM sees it after a commit: rebuild the wrapper keyed by
+/// `region` (a region handle, exact as an `f32`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Transition {
+    /// The region's raw handle bits.
+    pub region: u32,
+    /// Member entities (empty for a retired region).
+    pub members: Vec<Entity>,
+    /// Regions merged into or split from this one (raw handle bits).
+    pub prior: Vec<u32>,
+    pub retired: bool,
 }
 
 impl<K: NetworkKind> Default for NetworkHost<K> {
@@ -81,7 +117,50 @@ impl<K: NetworkKind> NetworkHost<K> {
             occupants: HashMap::new(),
             groups: HashMap::new(),
             devices: HashMap::new(),
+            region_rev: Vec::new(),
+            device_rev: Vec::new(),
+            clock: 0,
+            released: Vec::new(),
         }
+    }
+
+    fn bump_region(&mut self, r: RegionId<K>) {
+        self.clock += 1;
+        let i = r.index() as usize;
+        if self.region_rev.len() <= i {
+            self.region_rev.resize(i + 1, 0);
+        }
+        self.region_rev[i] = self.clock;
+    }
+
+    fn bump_device(&mut self, d: DeviceId<K>) {
+        self.clock += 1;
+        let i = d.index() as usize;
+        if self.device_rev.len() <= i {
+            self.device_rev.resize(i + 1, 0);
+        }
+        self.device_rev[i] = self.clock;
+    }
+
+    /// The revision of `region` (0: never changed through this host).
+    #[must_use]
+    pub fn region_revision(&self, region: RegionId<K>) -> u64 {
+        self.region_rev.get(region.index() as usize).copied().unwrap_or(0)
+    }
+
+    /// The revision of device `d`, including both sides' regions: a device
+    /// law sleeps while this stays what it last saw.
+    #[must_use]
+    pub fn device_revision(&self, d: DeviceId<K>) -> u64 {
+        let own = self.device_rev.get(d.index() as usize).copied().unwrap_or(0);
+        let Ok(dev) = self.net.device(d) else {
+            return own;
+        };
+        let side = |end| match self.net.resolve(end) {
+            super::graph::Side::Region(r) => self.region_revision(r),
+            _ => 0,
+        };
+        own.max(side(dev.a)).max(side(dev.b))
     }
 
     #[must_use]
@@ -181,7 +260,10 @@ impl<K: NetworkKind> NetworkHost<K> {
     /// [`NetError`] if `entity` has no node here.
     pub fn set_node_data(&mut self, entity: Entity, data: K::Node) -> Result<(), NetError> {
         let node = self.node_of(entity).ok_or(NetError::NoEdge)?;
-        self.net.set_node_data(node, data)
+        self.net.set_node_data(node, data)?;
+        let r = self.net.node(node)?.region();
+        self.bump_region(r);
+        Ok(())
     }
 
     /// Removes `entity`'s node. A no-op if it has none. Its share of the
@@ -220,8 +302,24 @@ impl<K: NetworkKind> NetworkHost<K> {
     pub fn bind_device(&mut self, entity: Entity, a: Entity, b: Entity, kind: u16, data: K::Device) -> Result<DeviceId<K>, NetError> {
         let ea = self.node_of(a).map_or(Endpoint::Detached, Endpoint::Node);
         let eb = self.node_of(b).map_or(Endpoint::Detached, Endpoint::Node);
-        let d = self.net.add_device(ea, eb, kind, encode_entity(entity), data)?;
+        self.add_device(entity, ea, eb, kind, data)
+    }
+
+    /// Adds a device edge between `a`'s node and a field cell (a vent
+    /// between a pipe region and its turf).
+    ///
+    /// # Errors
+    /// [`NetError`] for a full arena.
+    pub fn bind_cell_device(&mut self, entity: Entity, a: Entity, cell: u32, kind: u16, data: K::Device) -> Result<DeviceId<K>, NetError> {
+        let ea = self.node_of(a).map_or(Endpoint::Detached, Endpoint::Node);
+        self.add_device(entity, ea, Endpoint::Cell(cell), kind, data)
+    }
+
+    fn add_device(&mut self, entity: Entity, a: Endpoint<K>, b: Endpoint<K>, kind: u16, data: K::Device) -> Result<DeviceId<K>, NetError> {
+        self.unbind_device(entity);
+        let d = self.net.add_device(a, b, kind, encode_entity(entity), data)?;
         self.devices.insert(entity, d);
+        self.bump_device(d);
         Ok(d)
     }
 
@@ -231,18 +329,106 @@ impl<K: NetworkKind> NetworkHost<K> {
         }
     }
 
-    /// Every bound device, by its own entity -- dense iteration over the
-    /// device arena (`rust_architecture.md` §4.5's "device iteration is
-    /// dense"), not a hash lookup per device.
-    pub fn devices(&self) -> impl Iterator<Item = Entity> + '_ {
-        self.devices.keys().copied()
+    /// Every bound device as `(device, its entity)`: dense iteration over
+    /// the device arena (`rust_architecture.md` §4.5), not a hash lookup
+    /// per device.
+    pub fn devices(&self) -> impl Iterator<Item = (DeviceId<K>, Entity)> + '_ {
+        self.net
+            .devices()
+            .filter_map(|(d, dev)| decode_key(dev.key).map(|e| (d, e)))
+    }
+
+    /// Every region, densely.
+    pub fn regions(&self) -> impl Iterator<Item = RegionId<K>> + '_ {
+        self.net.regions().map(|(r, _)| r)
     }
 
     /// Resolves the split-then-merge batch and returns the events since the
     /// last commit (unchanged from [`Network::commit`]: an explosion's
-    /// thousand edits are one pass).
+    /// thousand edits are one pass). Every region the batch touched moves
+    /// its revision; released shares are kept for
+    /// [`take_released`](Self::take_released).
     pub fn commit(&mut self) -> Vec<RegionEvent<K>> {
-        self.net.commit()
+        let events = self.net.commit();
+        for ev in &events {
+            match ev {
+                RegionEvent::Created { region } | RegionEvent::Changed { region } | RegionEvent::Retired { region } => {
+                    self.bump_region(*region);
+                }
+                RegionEvent::Merged { into, from } => {
+                    self.bump_region(*into);
+                    self.bump_region(*from);
+                }
+                RegionEvent::Split { from, into } => {
+                    self.bump_region(*from);
+                    self.bump_region(*into);
+                }
+                RegionEvent::Released { key, pos, payload } => {
+                    if let Some(e) = decode_key(*key) {
+                        self.released.push((e, *pos, payload.clone()));
+                    }
+                }
+                RegionEvent::DeviceDetached { device } => self.bump_device(*device),
+            }
+        }
+        events
+    }
+
+    /// Folds a commit's events into DM-facing [`Transition`]s: every region
+    /// whose membership changed (with the regions it absorbed or split
+    /// from) and every region that is gone.
+    #[must_use]
+    pub fn transitions(&self, events: &[RegionEvent<K>]) -> Vec<Transition> {
+        let mut touched: Vec<RawHandle> = Vec::new();
+        let mut prior: HashMap<RawHandle, Vec<u32>> = HashMap::new();
+        let mut retired: Vec<RawHandle> = Vec::new();
+        for ev in events {
+            match ev {
+                RegionEvent::Created { region } | RegionEvent::Changed { region } => touched.push(region.raw()),
+                RegionEvent::Merged { into, from } => {
+                    touched.push(into.raw());
+                    prior.entry(into.raw()).or_default().push(from.raw().bits());
+                    retired.push(from.raw());
+                }
+                RegionEvent::Split { from, into } => {
+                    touched.extend([from.raw(), into.raw()]);
+                    prior.entry(into.raw()).or_default().push(from.raw().bits());
+                }
+                RegionEvent::Retired { region } => retired.push(region.raw()),
+                RegionEvent::Released { .. } | RegionEvent::DeviceDetached { .. } => {}
+            }
+        }
+        let mut out = Vec::new();
+        retired.sort_unstable();
+        retired.dedup();
+        for raw in retired {
+            if self.net.region(RegionId::<K>::from_raw(raw)).is_err() {
+                out.push(Transition {
+                    region: raw.bits(),
+                    members: Vec::new(),
+                    prior: Vec::new(),
+                    retired: true,
+                });
+            }
+        }
+        touched.sort_unstable();
+        touched.dedup();
+        for raw in touched {
+            let r = RegionId::<K>::from_raw(raw);
+            if self.net.region(r).is_err() {
+                continue;
+            }
+            let mut p = prior.remove(&raw).unwrap_or_default();
+            p.sort_unstable();
+            p.dedup();
+            out.push(Transition {
+                region: raw.bits(),
+                members: self.members(r),
+                prior: p,
+                retired: false,
+            });
+        }
+        out
     }
 
     #[must_use]
@@ -262,7 +448,74 @@ impl<K: NetworkKind> NetworkHost<K> {
     /// # Errors
     /// [`NetError`] for a stale or unknown region.
     pub fn payload_mut(&mut self, region: RegionId<K>) -> Result<&mut K::Payload, NetError> {
+        self.net.region(region)?;
+        self.bump_region(region);
         self.net.payload_mut(region)
+    }
+
+    /// Replaces a region's payload if it differs (a law's write-back),
+    /// moving its revision only on a real change. Returns whether it
+    /// changed.
+    ///
+    /// # Errors
+    /// [`NetError`] for a stale or unknown region.
+    pub fn set_payload(&mut self, region: RegionId<K>, payload: K::Payload) -> Result<bool, NetError> {
+        let slot = self.net.payload_mut(region)?;
+        if *slot == payload {
+            return Ok(false);
+        }
+        *slot = payload;
+        self.bump_region(region);
+        Ok(true)
+    }
+
+    /// Both sides of a device as `(region, summary, payload)`, if both are
+    /// distinct live regions (a device whose sides share a region, or with
+    /// a cell or detached side, has no pair).
+    #[must_use]
+    pub fn device_pair(&self, d: DeviceId<K>) -> Option<[(RegionId<K>, K::Summary, K::Payload); 2]> {
+        let dev = self.net.device(d).ok()?;
+        let (super::graph::Side::Region(a), super::graph::Side::Region(b)) =
+            (self.net.resolve(dev.a), self.net.resolve(dev.b))
+        else {
+            return None;
+        };
+        if a == b {
+            return None;
+        }
+        let ra = self.net.region(a).ok()?;
+        let rb = self.net.region(b).ok()?;
+        Some([
+            (a, ra.summary().clone(), ra.payload().clone()),
+            (b, rb.summary().clone(), rb.payload().clone()),
+        ])
+    }
+
+    /// Replaces a device's parameters (only a real change moves its
+    /// revision).
+    ///
+    /// # Errors
+    /// [`NetError`] if `entity` has no device here.
+    pub fn set_device_data(&mut self, entity: Entity, data: K::Device) -> Result<(), NetError> {
+        let d = *self.devices.get(&entity).ok_or(NetError::NoEdge)?;
+        if self.net.device(d)?.data == data {
+            return Ok(());
+        }
+        self.net.set_device_data(d, data)?;
+        self.bump_device(d);
+        Ok(())
+    }
+
+    /// The device `entity` bound, if any.
+    #[must_use]
+    pub fn device_of(&self, entity: Entity) -> Option<DeviceId<K>> {
+        self.devices.get(&entity).copied()
+    }
+
+    /// Payload removed nodes released since the last call, as `(entity,
+    /// cell, payload)`: the entity that was unbound and where it was.
+    pub fn take_released(&mut self) -> Vec<(Entity, u32, K::Payload)> {
+        std::mem::take(&mut self.released)
     }
 
     /// Every entity with a node on `region`.
@@ -283,7 +536,25 @@ impl<K: NetworkKind> NetworkHost<K> {
     /// [`NetError`] if `entity` has no node here.
     pub fn command(&mut self, entity: Entity, cmd: &K::Command) -> Result<RegionId<K>, NetError> {
         let node = self.node_of(entity).ok_or(NetError::NoEdge)?;
-        self.net.command(node, cmd)
+        let r = self.net.command(node, cmd)?;
+        self.bump_region(r);
+        Ok(r)
+    }
+}
+
+/// Every region's payload counts toward the conservation check
+/// (`rust_architecture.md` §4.9), plus released shares DM has not taken.
+impl<K: NetworkKind> Conserved for NetworkHost<K>
+where
+    K::Payload: Conserved,
+{
+    fn totals(&self, visit: &mut dyn FnMut(&'static str, f64)) {
+        for (_, region) in self.net.regions() {
+            region.payload().totals(visit);
+        }
+        for (_, _, p) in &self.released {
+            p.totals(visit);
+        }
     }
 }
 

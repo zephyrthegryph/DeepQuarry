@@ -41,6 +41,14 @@ impl Activity {
         self.awake.insert(index)
     }
 
+    /// Wakes `index`, growing the set first if it is past the capacity.
+    pub fn wake_grow(&mut self, index: u32) -> bool {
+        if index >= self.awake.capacity() {
+            self.awake.grow(index.saturating_add(1).max(self.awake.capacity().saturating_mul(2)));
+        }
+        self.awake.insert(index)
+    }
+
     /// Wakes every currently-valid index (a fresh boot, or a global event
     /// like a topology change that could affect anything).
     pub fn wake_all(&mut self) {

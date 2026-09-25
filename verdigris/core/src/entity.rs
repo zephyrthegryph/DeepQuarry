@@ -7,11 +7,14 @@
 //! Domains never reach into each other's storage through DM: a component's
 //! coupling step reads its entity's other components directly inside Rust.
 //!
-//! A component kind's own values live in that kind's store, at the plain
-//! `u32` row a [`ComponentRef`] names. That row needs no generation of its
-//! own: every path that reaches it first resolves the entity id through this
-//! table, and the entity id is the one thing that is generation-checked.
-//! [`CellAllocator`] hands out and reuses those plain rows.
+//! A component kind's own values live in that kind's store
+//! ([`crate::store`]), at the entity's slot index: the row needs no
+//! generation of its own, because every path that reaches it first resolves
+//! the entity id, the one thing that is generation-checked. The
+//! [`crate::world::World`] records its own kinds in [`crate::store::Rows`];
+//! the per-domain [`ComponentRef`] slots here remain for hosts that have not
+//! moved onto the world yet, plus [`WORLD_DOMAIN`], which marks an entity
+//! the world holds components for.
 //!
 //! Grid cells are not entities (`rust_architecture.md` §4.1): they are
 //! addressed by coordinate (`grid::Grid`/`CellId`), never bound here.
@@ -99,6 +102,10 @@ impl EntityId {
 /// unused slot costs 8 bytes (`Option<ComponentRef>`), and entities are far
 /// fewer than component fields.
 pub const MAX_DOMAINS: usize = 8;
+
+/// The domain slot `vg-ffi` sets on an entity that has components in the
+/// [`crate::world::World`], so the generic unbind reaches the world.
+pub const WORLD_DOMAIN: usize = MAX_DOMAINS - 1;
 
 /// Where one domain's component for an entity lives: which kind (a
 /// domain-scoped numeric id generated as a DM define, e.g. `VG_GAS_PUMP`)
@@ -394,53 +401,6 @@ impl EntityTable {
     }
 }
 
-/// A free-list index allocator for a component kind's own store
-/// (`rust_architecture.md` §4.2). Rows are plain `u32` indices into that
-/// kind's store; they carry no generation of their own — see the module
-/// docs for why that's safe.
-#[derive(Debug, Default, Clone)]
-pub struct CellAllocator {
-    next: u32,
-    free: Vec<u32>,
-}
-
-impl CellAllocator {
-    #[must_use]
-    pub const fn new() -> Self {
-        Self {
-            next: 0,
-            free: Vec::new(),
-        }
-    }
-
-    /// Allocates a cell, reusing a freed one if any.
-    pub fn alloc(&mut self) -> u32 {
-        self.free.pop().unwrap_or_else(|| {
-            let cell = self.next;
-            self.next += 1;
-            cell
-        })
-    }
-
-    /// Returns a cell for reuse. Callers must have already reset its value
-    /// (the owning store's take/unbind path).
-    pub fn free_cell(&mut self, cell: u32) {
-        self.free.push(cell);
-    }
-
-    /// Cells currently allocated.
-    #[must_use]
-    pub fn live(&self) -> usize {
-        (self.next as usize).saturating_sub(self.free.len())
-    }
-
-    /// One past the highest cell ever allocated (the store's high-water mark).
-    #[must_use]
-    pub const fn high_water(&self) -> u32 {
-        self.next
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -518,19 +478,5 @@ mod tests {
         assert_eq!(EntityId::from_f32(1.5), None);
         assert_eq!(EntityId::new(MAX_SLOTS, 0), None);
         assert_eq!(EntityId::new(0, MAX_GENERATION + 1), None);
-    }
-
-    #[test]
-    fn cell_allocator_reuses_freed_cells() {
-        let mut a = CellAllocator::new();
-        let c0 = a.alloc();
-        let c1 = a.alloc();
-        assert_ne!(c0, c1);
-        assert_eq!(a.live(), 2);
-        a.free_cell(c0);
-        assert_eq!(a.live(), 1);
-        let c2 = a.alloc();
-        assert_eq!(c2, c0, "freed cells are reused");
-        assert_eq!(a.high_water(), 2);
     }
 }

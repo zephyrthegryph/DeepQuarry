@@ -20,6 +20,7 @@
 
 use vg_core::law::{Law, LawCtx, Period, Settle};
 use vg_core::units::Seconds;
+use vg_core::vg;
 
 use crate::device::{self, DeviceParams, StepReport};
 use crate::gate;
@@ -94,6 +95,14 @@ pub struct GateReads {
 	pub temperature: f32,
 }
 
+/// Gas's domain events (`rust_architecture.md` §4.8).
+#[vg::events(domain = gas)]
+pub enum GasEvent {
+	/// A reaction's requirements hold: `reaction` is the gate's dense
+	/// registry index (DM resolves it against its own registration order).
+	ReactionReady { reaction: u32 },
+}
+
 /// Reaction gating as an event-emitting law: checks the installed
 /// [`gate::Gate`] and, if a reaction's requirements hold, emits the dense
 /// registry index of the highest-priority one that does (`E = u32`, the
@@ -114,7 +123,7 @@ impl Law for ReactionGateLaw {
 		let r = ctx.reads;
 		if let Some(index) = gate::current().and_then(|g| g.ready(&r.moles, r.energy, r.temperature)) {
 			#[allow(clippy::cast_possible_truncation)]
-			ctx.emit(index as u32);
+			ctx.emit(GasEvent::ReactionReady { reaction: index as u32 });
 		}
 		Settle::Active
 	}
@@ -135,10 +144,9 @@ mod tests {
 	}
 
 	fn run_flow(reads: DeviceReads, mut writes: DeviceSides, dt: f32) -> (DeviceSides, Settle) {
-		let mut events = Vec::new();
-		let mut wakes = Vec::new();
-		let mut ledger = vg_core::conservation::Ledger::new();
-		let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+		let mut fx = vg_core::law::Effects::default();
+        fx.ledger = vg_core::conservation::Ledger::new();
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		let settle = FlowLaw::step(&mut ctx, Seconds(f64::from(dt)));
 		(writes, settle)
 	}
@@ -195,15 +203,14 @@ mod tests {
 			temperature: 250.0,
 		};
 		let mut writes = ();
-		let mut events = Vec::new();
-		let mut wakes = Vec::new();
-		let mut ledger = vg_core::conservation::Ledger::new();
-		let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+		let mut fx = vg_core::law::Effects::default();
+        fx.ledger = vg_core::conservation::Ledger::new();
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		let settle = ReactionGateLaw::step(&mut ctx, Seconds(1.0));
 		assert_eq!(settle, Settle::Active);
 		// Only the second requirement (min_temp 100) holds at 250K: its
 		// dense index is 1.
-		assert_eq!(events, vec![1]);
+		assert_eq!(fx.events.decoded::<GasEvent>().map(|(_, e)| e).collect::<Vec<_>>(), vec![GasEvent::ReactionReady { reaction: 1 }]);
 	}
 
 	#[test]
@@ -221,11 +228,10 @@ mod tests {
 			temperature: 293.0,
 		};
 		let mut writes = ();
-		let mut events = Vec::new();
-		let mut wakes = Vec::new();
-		let mut ledger = vg_core::conservation::Ledger::new();
-		let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+		let mut fx = vg_core::law::Effects::default();
+        fx.ledger = vg_core::conservation::Ledger::new();
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		ReactionGateLaw::step(&mut ctx, Seconds(1.0));
-		assert!(events.is_empty());
+		assert!(fx.events.is_empty());
 	}
 }

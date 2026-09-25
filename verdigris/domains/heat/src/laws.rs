@@ -142,9 +142,9 @@ impl vg_core::conservation::Conserved for ThermalSide {
     /// live body/cell is a real row the scheduler drives, `out[0] +=` here
     /// for each one *is* the sum `Totals::cells`/`Totals::bodies` compute
     /// today, with the driver doing the summing instead of `HeatWorld`.
-    fn totals(&self, out: &mut [f64]) {
+    fn totals(&self, visit: &mut dyn FnMut(&'static str, f64)) {
         if !self.reservoir {
-            out[0] += f64::from(self.capacity) * f64::from(self.temperature);
+            visit("heat_energy", f64::from(self.capacity) * f64::from(self.temperature));
         }
     }
 }
@@ -315,21 +315,21 @@ impl Law for RegulatorHeatPump {
 mod tests {
     use super::*;
     use proptest::prelude::*;
-    use vg_core::conservation::{Conserved, Ledger};
+    use vg_core::conservation::Ledger;
     use vg_core::thermo::RegulatorMode;
 
     #[test]
     fn thermal_side_conserved_reports_capacity_times_temperature() {
-        let mut out = [0.0];
-        ThermalSide::mutable(310.0, 50.0).totals(&mut out);
-        assert!((out[0] - 310.0 * 50.0).abs() < 1e-6);
+        let mut totals = vg_core::conservation::Totals::new();
+        totals.add_source(&ThermalSide::mutable(310.0, 50.0));
+        assert!((totals.get("heat_energy") - 310.0 * 50.0).abs() < 1e-6);
     }
 
     #[test]
     fn thermal_side_conserved_ignores_a_reservoir() {
-        let mut out = [123.0]; // a nonzero starting value: totals() must only add
-        ThermalSide::reservoir(999.0).totals(&mut out);
-        assert_eq!(out[0], 123.0, "a reservoir's own energy is outside the tracked total");
+        let mut totals = vg_core::conservation::Totals::new();
+        totals.add_source(&ThermalSide::reservoir(999.0));
+        assert_eq!(totals.get("heat_energy"), 0.0, "a reservoir's own energy is outside the tracked total");
     }
 
     #[test]
@@ -396,9 +396,8 @@ mod tests {
     fn body_environment_exchange_law_warms_a_body_from_a_hot_solid() {
         let (body_t, solid_t) = (300.0_f32, 500.0_f32);
         let (cb, cs) = (100.0_f32, 1000.0_f32);
-        let mut events: Vec<u32> = Vec::new();
-        let mut wakes = Vec::new();
-        let mut ledger = ledger_for(
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = ledger_for(
             "heat_energy",
             f64::from(body_t) * f64::from(cb) + f64::from(solid_t) * f64::from(cs),
         );
@@ -408,7 +407,7 @@ mod tests {
             b: ThermalSide::mutable(solid_t, cs),
             quantity: "heat_energy",
         };
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         let settle = BodyEnvironmentExchange::step(&mut ctx, Seconds(1.0));
         assert_eq!(settle, Settle::Active);
         assert!(
@@ -426,7 +425,7 @@ mod tests {
         let total = f64::from(writes.a.temperature) * f64::from(cb)
             + f64::from(writes.b.temperature) * f64::from(cs);
         assert!(
-            ledger
+            fx.ledger
                 .check("heat_energy", total, total.abs() * 1e-5 + 1e-3)
                 .is_ok()
         );
@@ -446,11 +445,10 @@ mod tests {
         let conductance = 2.0_f32; // FIRE_CONDUCTANCE_PER_W_CLASS-scale coupling
         let dt = 1.0_f32; // one heat frame
 
-        let mut events: Vec<u32> = Vec::new();
-        let mut wakes = Vec::new();
         let total0 = f64::from(item_t0) * f64::from(item_capacity)
             + f64::from(gas_t0) * f64::from(gas_capacity);
-        let mut ledger = ledger_for("heat_energy", total0);
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = ledger_for("heat_energy", total0);
         let reads = PairCoupling { conductance };
         let mut writes = PairSides {
             a: ThermalSide::mutable(item_t0, item_capacity),
@@ -474,7 +472,7 @@ mod tests {
             "energy should flow from the hot gas to the item"
         );
 
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         let settle = BodyGasCoupling::step(&mut ctx, Seconds(f64::from(dt)));
         assert_eq!(settle, Settle::Active);
 
@@ -499,7 +497,7 @@ mod tests {
         let total1 = f64::from(writes.a.temperature) * f64::from(item_capacity)
             + f64::from(writes.b.temperature) * f64::from(gas_capacity);
         assert!(
-            ledger
+            fx.ledger
                 .check("heat_energy", total1, total1.abs() * 1e-5 + 1e-3)
                 .is_ok()
         );
@@ -509,9 +507,7 @@ mod tests {
         // warming the item every step until they equalize -- proving there
         // is no hidden dependency on an external refresh between calls.
         let before_second = writes.a.temperature;
-        let mut events2 = Vec::new();
-        let mut wakes2 = Vec::new();
-        let mut ctx2 = LawCtx::new(&reads, &mut writes, &mut events2, &mut wakes2, &mut ledger);
+        let mut ctx2 = LawCtx::new(&reads, &mut writes, &mut fx);
         BodyGasCoupling::step(&mut ctx2, Seconds(f64::from(dt)));
         assert!(
             writes.a.temperature > before_second,
@@ -522,33 +518,31 @@ mod tests {
 
     #[test]
     fn body_gas_coupling_law_sleeps_at_equilibrium() {
-        let mut events: Vec<u32> = Vec::new();
-        let mut wakes = Vec::new();
-        let mut ledger = ledger_for("heat_energy", 300.0 * 400.0 + 300.0 * 2000.0);
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = ledger_for("heat_energy", 300.0 * 400.0 + 300.0 * 2000.0);
         let reads = PairCoupling { conductance: 5.0 };
         let mut writes = PairSides {
             a: ThermalSide::mutable(300.0, 400.0),
             b: ThermalSide::mutable(300.0, 2000.0),
             quantity: "heat_energy",
         };
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         assert_eq!(BodyGasCoupling::step(&mut ctx, Seconds(1.0)), Settle::Sleep);
     }
 
     #[test]
     fn body_gas_coupling_law_against_a_reservoir_books_the_ledger_not_a_temperature() {
-        let mut events: Vec<u32> = Vec::new();
-        let mut wakes = Vec::new();
         // Only the item's side is part of the tracked total; the reservoir
         // is external, so the starting total is just the item's energy.
-        let mut ledger = ledger_for("heat_energy", 200.0 * 100.0);
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = ledger_for("heat_energy", 200.0 * 100.0);
         let reads = PairCoupling { conductance: 8.0 };
         let mut writes = PairSides {
             a: ThermalSide::mutable(200.0, 100.0),
             b: ThermalSide::reservoir(400.0), // a hot, immutable gas reservoir (e.g. a planet's atmosphere)
             quantity: "heat_energy",
         };
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         BodyGasCoupling::step(&mut ctx, Seconds(1.0));
         assert!(
             writes.a.temperature > 200.0,
@@ -559,14 +553,13 @@ mod tests {
         // the ledger reconciles even though nothing represents its own
         // temperature in this total.
         let total = f64::from(writes.a.temperature) * 100.0;
-        assert!(ledger.check("heat_energy", total, 1e-3).is_ok());
+        assert!(fx.ledger.check("heat_energy", total, 1e-3).is_ok());
     }
 
     #[test]
     fn solid_gas_coupling_law_matches_the_pure_function() {
-        let mut events: Vec<u32> = Vec::new();
-        let mut wakes = Vec::new();
-        let mut ledger = ledger_for("heat_energy", 400.0 * 1000.0 + 300.0 * 500.0);
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = ledger_for("heat_energy", 400.0 * 1000.0 + 300.0 * 500.0);
         let reads = PairCoupling { conductance: 0.5 }; // conductivity
         let mut writes = PairSides {
             a: ThermalSide::mutable(400.0, 1000.0),
@@ -574,7 +567,7 @@ mod tests {
             quantity: "heat_energy",
         };
         let expected = solid_gas_exchange(400.0, 1000.0, 0.5, 300.0, 500.0, 1.0);
-        let mut ctx = LawCtx::new(&reads, &mut writes, &mut events, &mut wakes, &mut ledger);
+        let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         SolidGasCoupling::step(&mut ctx, Seconds(1.0));
         assert!((writes.a.temperature - (400.0 - expected / 1000.0)).abs() < 1e-4);
     }
@@ -597,9 +590,8 @@ mod tests {
             1.0,
         );
 
-        let mut events: Vec<u32> = Vec::new();
-        let mut wakes = Vec::new();
-        let mut ledger = ledger_for(
+        let mut fx = vg_core::law::Effects::default();
+        fx.ledger = ledger_for(
             "heat_energy",
             f64::from(280.0_f32) * f64::from(cc) + f64::from(293.0_f32) * f64::from(co),
         );
@@ -608,13 +600,7 @@ mod tests {
             b: ThermalSide::mutable(293.0, co),
             quantity: "heat_energy",
         };
-        let mut ctx = LawCtx::new(
-            &regulator,
-            &mut writes,
-            &mut events,
-            &mut wakes,
-            &mut ledger,
-        );
+        let mut ctx = LawCtx::new(&regulator, &mut writes, &mut fx);
         let settle = RegulatorHeatPump::step(&mut ctx, Seconds(1.0));
         assert_eq!(settle, Settle::Active);
         assert!(
@@ -629,7 +615,7 @@ mod tests {
         let total = f64::from(writes.a.temperature) * f64::from(cc)
             + f64::from(writes.b.temperature) * f64::from(co);
         assert!(
-            ledger
+            fx.ledger
                 .check("heat_energy", total, total.abs() * 1e-5 + 1e-2)
                 .is_ok()
         );

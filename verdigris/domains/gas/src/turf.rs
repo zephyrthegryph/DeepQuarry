@@ -113,7 +113,6 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
 	let max_y = max_y.get_number()?.max(1.0) as u32;
 	let max_z = max_z.get_number()?.max(1.0) as u32;
 	with_world(|w| configure(w, max_x, max_y, max_z))?;
-	vg_ffi::registry::register_domain(vg_ffi::reactor::DOMAIN_GAS, Box::new(GasDomain));
 	#[cfg(feature = "heat")]
 	crate::heat::configure_heat(max_x, max_y, max_z)?;
 	Ok(ByondValue::null())
@@ -139,10 +138,11 @@ fn set_z_links(links: ByondValue) -> Result<ByondValue> {
 
 /// Gas as a reactor domain: `REACT_ON` / `REACT_WHEN` on gas handles (turf
 /// gas by its turf's air handle, or a main-owned mixture). One kind of
-/// handle per condition.
-struct GasDomain;
+/// handle per condition. `vg-ffi` registers it: gas does not depend on the
+/// FFI crate.
+pub struct GasDomain;
 
-impl vg_ffi::registry::DomainRegistry for GasDomain {
+impl vg_core::registry::DomainRegistry for GasDomain {
 	fn channels(&self) -> Vec<vg_core::channel::ChannelInfo> {
 		vg_core::channel::channel_infos::<TurfGas>()
 	}
@@ -152,8 +152,8 @@ impl vg_ffi::registry::DomainRegistry for GasDomain {
 		sub: u32,
 		lane: vg_core::outbox::Lane,
 		cond: &vg_core::watch::Cond,
-	) -> Result<(u8, vg_core::outbox::WatchId)> {
-		with_world(|w| w.watch(sub, lane, cond))
+	) -> std::result::Result<(u8, vg_core::outbox::WatchId), String> {
+		with_world(|w| w.watch(sub, lane, cond)).map_err(|e| e.to_string())
 	}
 
 	fn unwatch(&mut self, port: u8, id: vg_core::outbox::WatchId) {

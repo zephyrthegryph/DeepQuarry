@@ -574,7 +574,8 @@ fn watch(
     } else {
         Some(
             registry::with_domain(domain, |d| d.watch(sub, lane, cond))
-                .ok_or_else(|| eyre!("domain {domain} has no watch port"))??,
+                .ok_or_else(|| eyre!("domain {domain} has no watch port"))?
+                .map_err(|e| eyre!("{e}"))?,
         )
     };
     with(|h| {

@@ -19,6 +19,9 @@ vg-power = { path = "../domains/power" }
 # here, on the R10 entity table, rather than adding a 30th bind to
 # domains/gas/src/heat.rs's positional-kind style (rust_core.md §15).
 vg-heat = { path = "../domains/heat" }
+# Gas's components and its turf watch port are registered here
+# (`world.rs`): the FFI crate depends on domains, never the reverse.
+vg-gas = { path = "../domains/gas", default-features = false }
 
 [build-dependencies]
 bosion = "2.0.0"

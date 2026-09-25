@@ -62,6 +62,7 @@ fn verdigris_init(dm_abi: ByondValue) -> Result<ByondValue> {
             dm_abi
         );
     }
+    crate::entity::reset_all()?;
     Ok(ByondValue::new_str(crate::abi::ABI)?)
 }
 
@@ -71,7 +72,6 @@ fn verdigris_init(dm_abi: ByondValue) -> Result<ByondValue> {
 /// itself is rebuilt, so no `vg_entity` handle survives into a new round.
 #[auxmacros::bind("/proc/verdigris_cleanup")]
 fn verdigris_cleanup() -> Result<ByondValue> {
-    crate::entity::reset_all();
-    // future: arena.drain(); reaction_registry.clear(); etc.
+    crate::entity::reset_all()?;
     Ok(ByondValue::null())
 }

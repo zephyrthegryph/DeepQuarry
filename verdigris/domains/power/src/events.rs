@@ -1,10 +1,12 @@
-//! Power's events (`rust_architecture.md` §4.8, §6). A plain enum for now
-//! -- the `#[vg::events]` macro's generated DM decoder/dispatch (Core B)
-//! wires these up once the FFI glue is regenerated against the new
-//! components; declaring the enum here doesn't wait for that.
+//! Power's events (`rust_architecture.md` §4.8, §6): typed, through
+//! `#[vg::events]`. They are about a region, not a component, so they are
+//! domain events: the DM generator dispatches them to global handlers
+//! (`vg_on_power_brownout(...)`).
+
+use vg_core::vg;
 
 /// A region's power events.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[vg::events(domain = power)]
 pub enum PowerEvent {
     /// A region lost supply or was overdrawn.
     Brownout,

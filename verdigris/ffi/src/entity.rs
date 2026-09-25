@@ -1,16 +1,14 @@
-//! The shared entity table (`doc/rewrite/rust_architecture.md` §4.1): DM's
-//! `vg_entity` handle and, generically, the domain-agnostic half of bind and
-//! unbind. A component kind's own get/set/query/event binds live in its
-//! domain crate (see `verdigris/domains/gas/src/kind/pump.rs`); this module
-//! only knows that *some* domain has *a* component attached, through the
-//! [`registry::DomainRegistry`] each domain registers an implementation of.
-use std::cell::RefCell;
-
+//! DM's `vg_entity` handle (`doc/rewrite/rust_architecture.md` §4.1) and the
+//! domain-agnostic half of bind and unbind. The one entity table is the
+//! [`vg_core::world::World`]'s; this module only encodes handles and walks
+//! an entity's domain slots through the registry (the world's own
+//! components sit behind [`vg_core::entity::WORLD_DOMAIN`]).
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
-use vg_core::entity::{ComponentRef, EntityError, EntityId, EntityTable};
+use vg_core::entity::{ComponentRef, EntityError, EntityId};
 
 use crate::registry;
+use crate::world::with_world;
 
 /// The bits of a `vg_entity` value (after subtracting the raw-plus-one
 /// offset) that carry the slot index, matching `vg_core::entity::INDEX_BITS`
@@ -20,16 +18,15 @@ use crate::registry;
 /// @dm-define VG_ENTITY_INDEX_MASK
 pub const ENTITY_INDEX_MASK: u32 = 524_287;
 
-thread_local! {
-    static ENTITIES: RefCell<EntityTable> = const { RefCell::new(EntityTable::new()) };
-}
-
 // DM's `vg_entity == 0` means "unbound". A raw id's packed bits can
 // themselves be 0 (index 0, generation 0 is a perfectly ordinary id), so
 // crossing it as-is would make the first-ever bound entity indistinguishable
 // from "no entity" — a hand-rolled sentinel collision. Every `vg_entity`
 // value is the raw id plus one; callers never see the offset.
-fn decode(v: f32) -> Result<EntityId> {
+///
+/// # Errors
+/// For 0 (unbound) or a value that is not a packed id.
+pub fn decode(v: f32) -> Result<EntityId> {
     if v < 1.0 {
         bail!("entity handle {v} is not bound (0 means unbound; call sites must check that first)");
     }
@@ -45,14 +42,12 @@ fn decode(v: f32) -> Result<EntityId> {
 pub fn bind_or_reuse(existing: f32) -> Result<EntityId> {
     if existing != 0.0 {
         let id = decode(existing)?;
-        if ENTITIES.with_borrow(|t| t.contains(id)) {
+        if with_world(|w| Ok(w.entities().contains(id)))? {
             return Ok(id);
         }
         bail!("entity {existing} is not live");
     }
-    ENTITIES
-        .with_borrow_mut(EntityTable::bind)
-        .map_err(|e| eyre!("{e}"))
+    with_world(|w| w.entities_mut().bind().map_err(|e| eyre!("{e}")))
 }
 
 /// Attaches `comp` to `entity`'s `domain` slot.
@@ -60,7 +55,7 @@ pub fn bind_or_reuse(existing: f32) -> Result<EntityId> {
 /// # Errors
 /// As [`vg_core::entity::EntityTable::attach`].
 pub fn attach(entity: EntityId, domain: usize, comp: ComponentRef) -> Result<(), EntityError> {
-    ENTITIES.with_borrow_mut(|t| t.attach(entity, domain, comp))
+    with_world(|w| Ok(w.entities_mut().attach(entity, domain, comp))).unwrap_or(Err(EntityError::Stale))
 }
 
 /// Frees an entity a domain minted for itself (a node DM still names by a
@@ -68,14 +63,16 @@ pub fn attach(entity: EntityId, domain: usize, comp: ComponentRef) -> Result<(),
 /// domain's [`registry::DomainRegistry::detach`]: the caller is the domain,
 /// and has already dropped its own row.
 pub fn release(entity: EntityId) {
-    ENTITIES.with_borrow_mut(|t| {
+    let _ = with_world(|w| {
+        let t = w.entities_mut();
         let Ok(slots) = t.components(entity) else {
-            return;
+            return Ok(());
         };
         for (domain, _) in slots.iter() {
             let _ = t.detach(entity, domain);
         }
         let _ = t.unbind(entity);
+        Ok(())
     });
 }
 
@@ -83,7 +80,7 @@ pub fn release(entity: EntityId) {
 /// `kind`.
 #[must_use]
 pub fn component_of(entity: EntityId, domain: usize, kind: u16) -> Option<ComponentRef> {
-    ENTITIES.with_borrow(|t| t.component(entity, domain, kind).ok())
+    with_world(|w| Ok(w.entities().component(entity, domain, kind).ok())).ok().flatten()
 }
 
 /// The `f32` DM should store in `vg_entity` (the raw id plus one; see
@@ -101,9 +98,7 @@ pub fn entity_value(id: EntityId) -> f32 {
 /// message: bad handle, stale, no such component, or wrong kind.
 pub fn resolve(entity_v: f32, domain: usize, kind: u16) -> Result<ComponentRef> {
     let id = decode(entity_v)?;
-    ENTITIES
-        .with_borrow(|t| t.component(id, domain, kind))
-        .map_err(|e| eyre!("{e}"))
+    with_world(|w| w.entities().component(id, domain, kind).map_err(|e| eyre!("{e}")))
 }
 
 fn num(v: &ByondValue) -> Result<f32> {
@@ -122,13 +117,13 @@ fn entity_unbind(entity: ByondValue) -> Result<ByondValue> {
         return Ok(ByondValue::null());
     }
     let id = decode(v)?;
-    let slots = ENTITIES.with_borrow(|t| t.components(id)).map_err(|e| eyre!("{e}"))?;
+    let slots = with_world(|w| w.entities().components(id).map_err(|e| eyre!("{e}")))?;
     for (domain, comp) in slots.iter() {
         #[allow(clippy::cast_possible_truncation)]
         registry::with_domain(domain as u32, |handler| handler.detach(comp));
-        let _ = ENTITIES.with_borrow_mut(|t| t.detach(id, domain));
+        with_world(|w| w.entities_mut().detach(id, domain).map(|_| ()).map_err(|e| eyre!("{e}")))?;
     }
-    ENTITIES.with_borrow_mut(|t| t.unbind(id)).map_err(|e| eyre!("{e}"))?;
+    with_world(|w| w.entities_mut().unbind(id).map(|_| ()).map_err(|e| eyre!("{e}")))?;
     Ok(ByondValue::null())
 }
 
@@ -141,7 +136,7 @@ fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
         return Ok(ByondValue::new_str("(unbound)")?);
     }
     let id = decode(v)?;
-    let slots = ENTITIES.with_borrow(|t| t.components(id)).map_err(|e| eyre!("{e}"))?;
+    let slots = with_world(|w| w.entities().components(id).map_err(|e| eyre!("{e}")))?;
     let mut parts = Vec::new();
     for (domain, comp) in slots.iter() {
         #[allow(clippy::cast_possible_truncation)]
@@ -154,10 +149,8 @@ fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::new_str(parts.join("; "))?)
 }
 
-/// `SSvg`'s per-sweep maintenance: ticks every registered domain once
-/// (publishing a view, pruning the overlay for worker-owned kinds), so
-/// state is never more than one sweep old even though nothing sets it per
-/// idle tick.
+/// `SSvg`'s per-sweep maintenance for hosts not yet on the world's pacer
+/// (the world itself is paced by `vg_world_tick`).
 #[auxmacros::bind("/proc/entity_tick_all")]
 fn entity_tick_all() -> Result<ByondValue> {
     registry::for_each(|_, handler| handler.tick());
@@ -168,7 +161,7 @@ fn entity_tick_all() -> Result<ByondValue> {
 #[auxmacros::bind("/proc/entity_count")]
 fn entity_count() -> Result<ByondValue> {
     #[allow(clippy::cast_precision_loss)]
-    let n = ENTITIES.with_borrow(EntityTable::len) as f32;
+    let n = with_world(|w| Ok(w.entities().len()))? as f32;
     Ok(ByondValue::from(n))
 }
 
@@ -187,7 +180,12 @@ fn entity_is_valid(entity: ByondValue, domain: ByondValue, kind: ByondValue) -> 
     let domain = num(&domain)?.max(0.0) as usize;
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let kind = num(&kind)?.max(0.0) as u16;
-    let valid = decode(v).is_ok_and(|id| resolve(entity_value(id), domain, kind).is_ok());
+    let valid = decode(v).is_ok_and(|id| {
+        #[allow(clippy::cast_possible_truncation)]
+        let code = vg_core::world::kind_code(domain as u8, kind);
+        let world = with_world(|w| Ok(w.kind_by_code(code).map(|k| w.has(id, k)))).ok().flatten();
+        world.unwrap_or_else(|| resolve(entity_value(id), domain, kind).is_ok())
+    });
     Ok(yes(valid))
 }
 
@@ -202,34 +200,15 @@ fn list(values: &[f32]) -> Result<ByondValue> {
     Ok(list)
 }
 
-/// `SSvg`'s per-domain event drain (§4.8): every event raised by that
-/// domain's components since the last drain, as a flat
-/// `[kind, entity, event_id, ...]` list. SSreactor/SSvg calls this once per
-/// domain per tick (or sweep), then resolves each `entity` to its bound
-/// atom and calls the generated dispatcher, checking `atom.vg_entity ==
-/// entity` first (a component detached between the event firing and the
-/// drain is a stale record, silently dropped by that check).
-#[auxmacros::bind("/proc/entity_drain_domain_events")]
-fn entity_drain_domain_events(domain: ByondValue) -> Result<ByondValue> {
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let domain = num(&domain)?.max(0.0) as u32;
-    let mut events = Vec::new();
-    registry::with_domain(domain, |handler| handler.drain_events(&mut events));
-    let mut flat = Vec::with_capacity(events.len() * 3);
-    for (kind, entity, event_id) in events {
-        flat.push(f32::from(kind));
-        flat.push(entity);
-        flat.push(f32::from(event_id));
-    }
-    list(&flat)
-}
-
 /// World reset (`verdigris_init`/`verdigris_cleanup`): every registered
 /// domain drops its components, then the entity table itself is rebuilt, so
 /// no handle survives into a new round.
-pub fn reset_all() {
+///
+/// # Errors
+/// A world build failure (a code bug).
+pub fn reset_all() -> Result<()> {
     registry::for_each(|_, handler| handler.reset());
-    ENTITIES.with_borrow_mut(|t| *t = EntityTable::new());
+    crate::world::reset()
 }
 
 /// Test/reconciler hook: every live entity and the domains it has a
@@ -238,8 +217,8 @@ pub fn reset_all() {
 fn entity_debug_list() -> Result<ByondValue> {
     #[allow(clippy::cast_precision_loss)]
     let mut flat: Vec<f32> = Vec::new();
-    ENTITIES.with_borrow(|t| {
-        for (id, slots) in t.iter() {
+    with_world(|w| {
+        for (id, slots) in w.entities().iter() {
             for (domain, comp) in slots.iter() {
                 flat.extend_from_slice(&[
                     entity_value(id),
@@ -249,7 +228,8 @@ fn entity_debug_list() -> Result<ByondValue> {
                 ]);
             }
         }
-    });
+        Ok(())
+    })?;
     list(&flat)
 }
 

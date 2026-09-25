@@ -34,12 +34,14 @@ use vg_core::entity::ComponentRef;
 use vg_heat::mob::{MOB_EXTERNAL_SOURCES, MobHeatConfig, MobHeatWorld};
 
 use crate::entity;
-use crate::registry::{self, DomainRegistry};
+use crate::registry;
+use vg_core::registry::DomainRegistry;
 
-/// This component's domain index in the entity table. Gas's pump is domain
-/// 0; this is the first non-gas domain to register.
+/// This host's entity slot and registry id. It must differ from every
+/// other host's: power holds 1 and the gas turf watch port 2 (this used to
+/// be 1 as well, so whichever registered last replaced the other).
 /// @dm-define VG_DOMAIN_HEAT_MOB
-pub const DOMAIN: usize = 1;
+pub const DOMAIN: usize = 3;
 
 /// This component's kind id within its domain (only one kind lives in this
 /// domain so far).

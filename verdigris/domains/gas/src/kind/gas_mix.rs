@@ -4,28 +4,14 @@
 //! -- a tank or a lung is read and written synchronously, with no frame
 //! lag, unlike a pipe region or a turf cell.
 //!
-//! Modeled on [`super::pump`], the reference component: same `KindStore`
-//! (R4's `MainPort`, generalized off gas), same entity-table binding, same
-//! `Shared`/`DomainRegistry` wiring so `vg_entity_unbind`/
-//! `vg_entity_tick_all`/reset act on this store too. Where it differs from
-//! `Pump` is the two things this file exists to demonstrate:
-//! - an **array config field** (`moles`, one entry per gas), the
-//!   fixed-size enum-keyed shape `auxmacros::component` gained for this
-//!   (`rust_bindings.md` §2);
-//! - the **mixture law**: `refresh` is a pure function over the component's
-//!   own config, not a copy of the ideal-gas math - it builds a transient
-//!   [`PipeGas`] and reads `PipeGas::pressure`/`PipeGas::total`, the one
-//!   implementation `device::Flow` already uses, instead of a third copy.
-//!
-//! `owner = main` isn't yet a distinct code path from `Pump`'s (implicitly
-//! frame-driven) one: `KindStore::submit` already applies synchronously
-//! (read-your-writes, no frame boundary - see `pump.rs`'s own test), so
-//! today's store already behaves the way `owner = main` needs. The
-//! distinction becomes real once a `owner = worker` law (the device flow
-//! law, once it drives a real store) needs the overlay-over-pinned-frame
-//! behaviour `owner = worker` promises and `main` doesn't. Adapt this file
-//! when that lands, per the coordinator's note that the generated-store
-//! part of `#[vg::component]` may still change under Core B.
+//! Where it differs from [`super::pump`] is what this file demonstrates:
+//! - `owner = main`: rows live on the main thread, so DM's writes and reads
+//!   are synchronous with no frame lag;
+//! - an **array config field** (`moles`, one entry per gas);
+//! - **computed readouts** (`pressure`, `total`): read-only fields the
+//!   generic FFI read serves by calling the mixture law, [`refresh`], which
+//!   reuses `PipeGas`'s ideal-gas implementation instead of a third copy.
+//!   They are watchable channels like any stored field.
 //!
 //! `dm =` names `/obj/item/gas_mix_holder`, a DM type that exists only to
 //! carry this component: binding it to `/obj/item/tank` would make the
@@ -35,21 +21,13 @@
 //! comes later; nothing in this file's Rust declaration or its laws
 //! depends on which DM type ends up bound.
 
-use byondapi::prelude::*;
-use eyre::{Result, eyre};
 use vg_core::vg;
-
-use super::pump::DOMAIN;
 
 use crate::cell::N;
 use crate::gas::constants::T20C;
 use crate::pipes::PipeGas;
 
-/// This component's kind index within the gas domain (`super::pump::DOMAIN`
-/// - `Pump` is kind 1, so `GasMix` is 2).
-pub const KIND: u16 = GasMix::KIND;
-
-#[vg::component(domain = gas, kind = 2, dm = "/obj/item/gas_mix_holder")]
+#[vg::component(domain = gas, kind = 2, dm = "/obj/item/gas_mix_holder", owner = main, computed = [pressure, total])]
 pub struct GasMix {
 	/// Moles of each gas, by gas ID (`gas::ids`). A generous upper bound
 	/// (a ruptured supermatter-adjacent tank, not a realistic operating
@@ -68,16 +46,7 @@ pub struct GasMix {
 #[allow(dead_code)]
 struct GasMixQuery;
 
-/// `pressure`/`total` are deliberately *not* component fields: a `state`
-/// field has no command variant (only `config`/`input` fields do - see
-/// `auxmacros::component`), so nothing could ever write one, and there is
-/// no separate "internal law write" path onto a `KindStore` row yet
-/// (`Pump`'s own `flow_rate` is in the same position - declared, never
-/// actually written, until a real device-law driver exists). Rather than
-/// declare state this file can't produce, `refresh` is exposed as a live
-/// computed read instead: exactly as correct, and honest about what's
-/// wired today. Restore them as `state` fields once a driver can write
-/// them once per step instead of once per read.
+/// The mixture law's derived values.
 pub struct Derived {
 	pub pressure: f32,
 	pub total: f32,
@@ -111,37 +80,28 @@ pub fn refresh(moles: &[f32; N], temperature: f32, volume: f32) -> Derived {
 }
 
 impl GasMix {
-	/// [`refresh`] over this row's own fields, for a caller that already
-	/// has a `GasMix` value (a test, or a future law reading a `KindStore`
-	/// row) rather than the three loose fields.
+	/// [`refresh`] over this row's own fields.
 	#[must_use]
 	pub fn refreshed(&self) -> Derived {
 		refresh(&self.moles, self.temperature, self.volume)
 	}
-}
 
-// --- Derived: read-only, live-computed by the mixture law -------------------
+	/// Computed readout: pressure, kPa.
+	#[must_use]
+	pub fn pressure(&self) -> f32 {
+		self.refreshed().pressure
+	}
 
-/// This row's [`refresh`], through the generated store (`__gas_mix_with`).
-fn derived(entity: &ByondValue) -> Result<Derived> {
-	let cell = __gas_mix_cell_of(entity)?;
-	__gas_mix_with(|w| w.read(cell).map(|m| m.refreshed()).ok_or_else(|| eyre!("gas mix row {cell} out of range")))
-}
-
-#[auxmacros::bind("/obj/item/gas_mix_holder/proc/get_pressure")]
-fn gas_mix_get_pressure(entity: ByondValue) -> Result<ByondValue> {
-	Ok(ByondValue::from(derived(&entity)?.pressure))
-}
-
-#[auxmacros::bind("/obj/item/gas_mix_holder/proc/get_total")]
-fn gas_mix_get_total(entity: ByondValue) -> Result<ByondValue> {
-	Ok(ByondValue::from(derived(&entity)?.total))
+	/// Computed readout: total moles.
+	#[must_use]
+	pub fn total(&self) -> f32 {
+		self.refreshed().total
+	}
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use vg_core::store::KindStore;
 
 	use crate::gas::constants::TCMB;
 	use crate::gas::ids::{GAS_CARBON_DIOXIDE, GAS_OXYGEN};
@@ -175,28 +135,18 @@ mod tests {
 	}
 
 	#[test]
-	fn store_binds_writes_moles_and_the_law_derives_pressure_and_total() {
-		let mut store = KindStore::<GasMixKind>::new();
-		let seeded = GasMix {
-			moles: [0.0; N],
-			temperature: T20C,
-			volume: 70.0,
-		};
-		let cell = store.bind(1.0, seeded).unwrap();
-
-		let v = GasMix::validate_moles_at(21.8).unwrap();
-		store.submit(cell, GasMixCommand::MolesAt(GAS_OXYGEN, v)).unwrap();
-		let m = store.read(cell).unwrap();
+	fn generic_writes_set_one_gas_and_the_readouts_follow() {
+		use vg_core::component::Component;
+		use vg_core::owner::Domain;
+		let mut m = GasMix::default();
+		let moles = GasMix::field_id("moles").unwrap();
+		let cmd = GasMix::set_command(moles, Some(GAS_OXYGEN), 21.8).unwrap();
+		GasMixKind::apply(&mut m, &cmd);
 		assert_eq!(m.moles[GAS_OXYGEN], 21.8);
-		// Setting one gas leaves the others alone (the point of `*At`).
-		assert_eq!(m.moles[GAS_CARBON_DIOXIDE], 0.0);
-
-		let d = m.refreshed();
-		assert!((d.total - 21.8).abs() < 1e-3);
-		assert!(d.pressure > 0.0);
-
-		store.detach(cell);
-		assert_eq!(store.read(cell), Some(GasMix::default()), "detach resets the row to Value::default()");
+		assert_eq!(m.moles[GAS_CARBON_DIOXIDE], 0.0, "setting one gas leaves the others alone");
+		let total = GasMix::field_id("total").unwrap();
+		assert!((m.get_field(total, 0).unwrap() - 21.8).abs() < 1e-3);
+		assert!(GasMix::set_command(total, None, 1.0).is_err(), "computed readouts are read-only");
 	}
 
 	#[test]

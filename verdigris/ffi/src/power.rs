@@ -36,7 +36,8 @@ use vg_power::laws::{self, Grid, NoGrid};
 use vg_power::{Cables, PowerLedger, PowerNode};
 
 use crate::entity;
-use crate::registry::{self, DomainRegistry};
+use crate::registry;
+use vg_core::registry::DomainRegistry;
 
 /// Power's domain index in the entity table (gas is 0).
 /// @dm-define VG_DOMAIN_POWER

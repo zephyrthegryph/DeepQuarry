@@ -30,7 +30,6 @@ auxcallback = { path = "../../ffi/callback" }
 auxmacros = { path = "../../ffi/macros" }
 vg-core = { path = "../../core" }
 vg-heat = { path = "../heat" }
-vg-ffi = { path = "../../ffi" }
 itertools = "0.14.0"
 float-ord = "0.3.2"
 parking_lot = "0.12.3"

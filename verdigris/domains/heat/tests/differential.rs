@@ -112,11 +112,9 @@ fn step_law<L: Law<Reads = PairCoupling, Writes = PairSides>>(
     conductance: f32,
     dt: f32,
 ) -> Settle {
-    let mut events = Vec::new();
-    let mut wakes = Vec::new();
-    let mut ledger = vg_core::conservation::Ledger::new();
+    let mut fx = vg_core::law::Effects::default();
     let reads = PairCoupling { conductance };
-    let mut ctx = LawCtx::new(&reads, sides, &mut events, &mut wakes, &mut ledger);
+    let mut ctx = LawCtx::new(&reads, sides, &mut fx);
     L::step(&mut ctx, Seconds(f64::from(dt)))
 }
 
