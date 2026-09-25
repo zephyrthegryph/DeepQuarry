@@ -245,7 +245,9 @@ GLOBAL_VAR_INIT(life_frames, 0)
 		S.tick(src, null)
 		if(QDELETED(src))
 			return
-		var/delay = life_system_wants_run(S) ? LIFE_CYCLE : S.rewake_delay(src)
+		// A presentation system with work left (a component-driven HUD) runs again next cycle.
+		// A derivation doesn't: every change to what it reads raises its channels already.
+		var/delay = (kind == LIFE_WAKE_ONLY_PRESENT && life_system_wants_run(S)) ? LIFE_CYCLE : S.rewake_delay(src)
 		if(delay > 0 && (!soonest || delay < soonest))
 			soonest = delay
 	if(soonest)
