@@ -364,3 +364,98 @@ together once test isolation and speed have landed and master is green.
 - all law, property and scenario tests pass;
 - no domain depends on `byondapi`;
 - `pump.rs` is under 30 lines.
+
+## 8. Consolidation plan (2026-09)
+
+This section records the September 2026 audit of the branch after the first
+round of core work, and the ordered plan that finishes the consolidation. It
+refines §7: §7 says *who*, this says *what is left and in which order*.
+
+### 8.1 Audit: where the lines are
+
+Every domain is still **60–75% generic machinery**. Budgets are §2's; the
+"realistic" column is what the declarations and laws alone come to once the
+machinery below is gone.
+
+| Domain | Non-test lines today | Budget | Realistic after the plan |
+|---|---|---|---|
+| gas | ~7,850 | 1,600 | ~1,600–1,900 |
+| heat | ~3,900 | 600 | ~600–700 |
+| power | ~970 in `domains/power` + ~1,100 in `ffi/src/power.rs` | 400 | ~400–450 |
+
+Power's host did not disappear, it **moved** to `ffi/src/power.rs`:
+`PowerHost`, the `storage_offer`/`asks` maps, its own `step`, the
+`push_changed`/`reported` presentation diffing, a `Vec<f32>` encoding, a
+`thread_local!` and positional `apply`. The CI check
+(`tools/ci/check_rust_core_consolidation.py`) only scans `domains/*/src`, so
+none of that is caught.
+
+**Duplicated machinery** (each row is one generic facility implemented
+several times):
+
+| Concept | Copies |
+|---|---|
+| Handles | heat `BodyHandle`, `mob::pack`, heat watch slots, gas `Mains`, pipe `slot_of`, reactor `Tokens`, `EntityTable` (7) |
+| Sim / pacing | gas world, heat world, heat mob, `body::add_bodies`, `PowerHost::step`, reactor `Host::step`; `law::Pacer` exists and is unused (6) |
+| Networks | gas `PipeNet` vs `NetworkHost` |
+| Watches | gas `MixWatches`, heat `WatchCond`, reactor `ProbeDomain`, `core::watch` (4) |
+| Dirty / presentation | gas `Signature`/`Dirty`, power `reported` |
+| Events out | gas `Post`/tick encoding, heat `take_wakes` ×2, power `push`, reactor list vs outbox (5) |
+| Conservation | `HeatLedger`, `Totals`, `PipeNet` totals, `Mains` totals vs `conservation::Ledger` (5) |
+| Thermal exchange | `heat/couple.rs` `pair_exchange` vs `core/thermo.rs`; regulator stepping vs `laws::regulator_step`; `temperature_of`/`energy_at` vs `laws::phase_*` |
+| Probes | 3 |
+| Constants | `units.rs` defines `TCMB` twice |
+
+**Crate-map violations.** `vg-gas` depends on `vg-heat` and `vg-ffi`
+(forbidden by §3). The allow-list holds **21 entries**: 16 gas (the
+`byondapi` dependency, 5 `bind_attr`, 4 `thread_local`, 2 `key_map`, the pipes
+revision counter, `dirty_set`, `sim_construct`, `vec_f32_return`) and 5 heat
+(`key_map`, 2 `sim_construct`, 2 `vec_f32_return`), plus heat's handle
+constants and packing, which the check does not catch.
+
+**Core gaps** (why the domains could not port yet):
+- laws were not executed as `frame::Task`s over component-store columns: the
+  `Query` trait was an open marker;
+- no single driver owned the `Pacer`, activity, `Settle::Sleep`, periods and
+  ordering;
+- component stores had no declared owner (`main`/`worker`) and no take
+  reconciliation;
+- the typed event codec and DM generator were not the only event path;
+- conservation was not auto-wired;
+- `grid` had no block layers addressed by `CellId`/`Dir`;
+- `RateModel` and `RateStore` were not merged.
+
+**`layout` is not a sim domain.** It is the procedural station/cave generator
+(~11,500 lines). It moves to `verdigris/gen/layout`, is exempt from the domain
+rules and budgets, and its largest files are split.
+
+### 8.2 Steps
+
+| Step | Scope | Depends on |
+|---|---|---|
+| 0 | Differential harnesses per domain (old host vs new driver on recorded scenarios). **Deferred**: testing comes after the Rust implementation. | — |
+| 1a | Core driver: `Law`s run as `frame::Task`s over component columns through a finished `Query`; one `World` owning `Pacer`, activity bitsets, `Settle::Sleep`, periods and ordering; conservation auto-wired (ledgers checked after each frame); one `units::consts`; one rate module; `thermo` as the only exchange math (`phase_*`, `pair_exchange`, regulator stepping). | — |
+| 1b | Core bindings: component stores with a declared owner and take reconciliation; one `DomainRegistry`; `#[vg::component]` generating the whole binding with no `byondapi` in the domain crate (`pump.rs` < 30 lines); typed event codec + DM generator as the only event path; generic entity handles (reactor tokens, heat bodies and watches); one watch facility covering the `MixWatches`/`WatchCond`/`ProbeDomain` cases; a probe (field-read) facility; publishing without display-diff caches. | 1a |
+| 1c | `grid::Grid` block layers (masks) with `CellId`/`Dir` addressing; absorbs power `geom.rs`'s generic parts. | — |
+| 2 | Heat dedup onto core `thermo`. | 1a |
+| 3 | Power onto the driver: delete `PowerHost`, `reported`, the hand binds. | 1a, 1b, 1c |
+| 4 | Heat onto the driver; move heat's binds out of gas. | 1a, 1b, 2 |
+| 5 | Gas pipes onto `NetworkHost`. | 1a, 1b |
+| 6 | Gas: `GasMix` main-owned component + generated API; delete `lib.rs` binds, `turf.rs`, `Mains`, `Dirty`, `MixWatches`, `Post`; drop `byondapi`. | 4, 5 |
+| 7 | Reactor FFI: `Tokens` → entity handles, `Probe` → watches. | 1b |
+| 8 | Move `layout` to `gen/`, split its largest files. | — |
+| 9 | CI: line budgets, crate-dependency checks, `ffi/` scanning; the allow-list is empty. | 3–7 |
+
+About **120 agent-hours** in total. The critical path is **1b → 4 → 6 → 9**.
+
+### 8.3 Status
+
+- **Done on `rewrite/rust-core2`:** 1a, 1b, 1c (every core facility, §8.4),
+  2 and 8. The workspace builds (host and i686).
+- **Open:** 0, 3, 4, 5, 6, 7, 9. These are domain ports onto the facilities
+  below. No new core work is expected to be needed.
+
+### 8.4 Facilities
+
+This is filled in as each facility lands; each entry names its module, its
+API and what a domain does with it.
