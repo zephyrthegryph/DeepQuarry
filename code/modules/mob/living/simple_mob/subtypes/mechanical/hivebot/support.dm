@@ -19,10 +19,10 @@
 	player_msg = "You <b>increase the performance of other hivebots near you</b> passively.<br>\
 	You are otherwise very weak offensively."
 
-/datum/life_system/special/mechanical/hivebot/support/commander
-	mob_type = /mob/living/simple_mob/mechanical/hivebot/support/commander
+/datum/om/stage/life/special/mechanical/hivebot/support/commander
+	of = /mob/living/simple_mob/mechanical/hivebot/support/commander
 
-/datum/life_system/special/mechanical/hivebot/support/commander/tick(mob/living/simple_mob/mechanical/hivebot/support/commander/self, datum/life_context/ctx)
+/datum/om/stage/life/special/mechanical/hivebot/support/commander/perform(mob/living/simple_mob/mechanical/hivebot/support/commander/self, datum/om/frame/life/ctx)
 	for(var/mob/living/L in range(4, self))
 		if(L == self)
 			continue // Don't buff ourselves.
@@ -68,10 +68,10 @@
 	var/resupply_cooldown = 4 SECONDS
 	var/last_resupply = null
 
-/datum/life_system/special/mechanical/hivebot/support/logistics
-	mob_type = /mob/living/simple_mob/mechanical/hivebot/support/logistics
+/datum/om/stage/life/special/mechanical/hivebot/support/logistics
+	of = /mob/living/simple_mob/mechanical/hivebot/support/logistics
 
-/datum/life_system/special/mechanical/hivebot/support/logistics/tick(mob/living/simple_mob/mechanical/hivebot/support/logistics/self, datum/life_context/ctx)
+/datum/om/stage/life/special/mechanical/hivebot/support/logistics/perform(mob/living/simple_mob/mechanical/hivebot/support/logistics/self, datum/om/frame/life/ctx)
 	if(self.last_resupply + self.resupply_cooldown > world.time)
 		return // On cooldown.
 

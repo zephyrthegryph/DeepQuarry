@@ -670,15 +670,15 @@ I think I covered everything.
 ///		AI handling stuff
 ///
 
-/datum/life_system/special/vore/bigdragon
-	mob_type = /mob/living/simple_mob/vore/bigdragon
+/datum/om/stage/life/special/vore/bigdragon
+	of = /mob/living/simple_mob/vore/bigdragon
 
-/datum/life_system/special/vore/bigdragon/tick(mob/living/simple_mob/vore/bigdragon/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/bigdragon/perform(mob/living/simple_mob/vore/bigdragon/self, datum/om/frame/life/ctx)
 	if(!self.noenrage)
 		if(!self.enraged)
 			if(self.vitality() <= 0.5)
 				self.enraged = 1
-				self.say("No more games. COME HERE.")
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, say), "No more games. COME HERE.")
 		if(self.enraged)
 			if(self.vitality() >= 0.5)
 				self.enraged = 0

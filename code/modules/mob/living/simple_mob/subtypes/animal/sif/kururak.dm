@@ -117,10 +117,10 @@
 			if(S.melee_damage_upper > 1.5 * melee_damage_upper)
 				return TRUE
 
-/datum/life_system/special/animal/sif/kururak
-	mob_type = /mob/living/simple_mob/animal/sif/kururak
+/datum/om/stage/life/special/animal/sif/kururak
+	of = /mob/living/simple_mob/animal/sif/kururak
 
-/datum/life_system/special/animal/sif/kururak/tick(mob/living/simple_mob/animal/sif/kururak/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/sif/kururak/perform(mob/living/simple_mob/animal/sif/kururak/self, datum/om/frame/life/ctx)
 	..()
 	if(self.client)
 		self.pack_gauge()

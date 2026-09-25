@@ -43,10 +43,10 @@
 /mob/living/simple_mob/vore/fossiltank/emp_act
 	regenration_rate = 0
 
-/datum/life_system/special/vore/fossiltank
-	mob_type = /mob/living/simple_mob/vore/fossiltank
+/datum/om/stage/life/special/vore/fossiltank
+	of = /mob/living/simple_mob/vore/fossiltank
 
-/datum/life_system/special/vore/fossiltank/tick(mob/living/simple_mob/vore/fossiltank/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/fossiltank/perform(mob/living/simple_mob/vore/fossiltank/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.regenration()
 	..()

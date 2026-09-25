@@ -106,12 +106,12 @@
 	var/mob/living/carbon/human/food
 	var/hunger = 0
 /*
-/datum/life_system/type_post/simple_mob/vore/aggressive/rat/tame
-	mob_type = /mob/living/simple_mob/vore/aggressive/rat/tame
+/datum/om/stage/life/type_post/simple_mob/vore/aggressive/rat/tame
+	of = /mob/living/simple_mob/vore/aggressive/rat/tame
 
-/datum/life_system/type_post/simple_mob/vore/aggressive/rat/tame/tick(mob/living/simple_mob/vore/aggressive/rat/tame/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/aggressive/rat/tame/perform(mob/living/simple_mob/vore/aggressive/rat/tame/self, datum/om/frame/life/ctx)
 	..()
-	if(!ctx?.alive || ai_inactive)
+	if(!ctx.fact("alive") || ai_inactive)
 		return
 
 	if(hunger > 0 && life_since_foodscan++ > 5) //Only look for floor food when hungry.

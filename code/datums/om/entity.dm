@@ -64,6 +64,10 @@
 	var/list/tasks
 	/// Step accumulators (seconds), indexed by the behaviour's step_idx. Grown on first use.
 	var/list/steps
+	/// Pipeline state (/datum/om/pipe), indexed by the pipeline's pipe_idx. Grown on first use.
+	var/list/pipes
+	/// Stride 2: behaviour id, time of its last on_wake (min_interval behaviours only).
+	var/list/throttle
 	var/bulk_bits = 0
 	var/service_pend = 0
 	var/in_veto = FALSE
@@ -163,21 +167,21 @@
 		return FALSE
 	return !!rec.att.Find(om_registry().behaviour(B))
 
-/// Takes `B` off its cadence ring until om_resume(). Wakes and deadlines still arrive.
-/proc/om_sleep(datum/E, B)
+/// Parks `B` on `E`: off its cadence ring until om_unpark(). Wakes and deadlines still arrive.
+/proc/om_park(datum/E, B)
 	var/datum/om/rec/rec = E.om_rec
 	var/i = rec?.att.Find(om_registry().behaviour(B))
 	if(!i)
 		return
-	rec.att_state[i] |= OM_ATT_SLEEPING
+	rec.att_state[i] |= OM_ATT_PARKED
 	om_sync(rec, i, FALSE)
 
-/proc/om_resume(datum/E, B)
+/proc/om_unpark(datum/E, B)
 	var/datum/om/rec/rec = E.om_rec
 	var/i = rec?.att.Find(om_registry().behaviour(B))
 	if(!i)
 		return
-	rec.att_state[i] &= ~OM_ATT_SLEEPING
+	rec.att_state[i] &= ~OM_ATT_PARKED
 	om_sync(rec, i, FALSE)
 
 /// Roster membership for attachment `i`: started (on_start/on_stop) and which
@@ -206,7 +210,7 @@
 		om_stop_behaviour(rec, i)
 		return
 	var/datum/om/ring/desired = null
-	if(eligible && !(state & OM_ATT_SLEEPING))
+	if(eligible && !(state & OM_ATT_PARKED))
 		var/interval = B.compiled_intervals[rec.relevance + 1]
 		if(interval > 0 && (!B.clock_idx || om_clock_rate(rec, B.clock_idx) > 0))
 			desired = rec.sched.ring_for(B, interval)

@@ -59,7 +59,7 @@
 /// A dormant core is held alive but is not awake: dormancy's consciousness
 /// penalty applies even though the keep-alive answers the status signal.
 /datum/body/humanoid/nanoform/is_unconscious()
-	if(!is_dormant() || (owner.status_flags & GODMODE))
+	if(!is_dormant() || om_has(owner, EFFECT_GODMODE))
 		return ..()
 	ensure_vitals()
 	return consciousness <= CONSCIOUSNESS_THRESHOLD
@@ -68,7 +68,7 @@
 	return has_affliction(/datum/affliction/core_dormancy)
 
 /datum/body/humanoid/nanoform/proc/go_dormant_if_dying()
-	if(owner.stat == DEAD || (owner.status_flags & GODMODE) || is_dormant() || !is_dead())
+	if(owner.stat == DEAD || om_has(owner, EFFECT_GODMODE) || is_dormant() || !is_dead())
 		return
 	log_game("NANOFORM: [key_name(owner)] took lethal damage[istype(owner.loc, /obj/item/rig/protean) ? " while folded into their control cluster" : ""]; going dormant.")
 	afflict(/datum/affliction/core_dormancy)

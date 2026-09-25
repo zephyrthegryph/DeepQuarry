@@ -102,7 +102,7 @@
 	if(ishuman(owner))
 		RegisterSignal(owner, COMSIG_SHADEKIN_COMPONENT, PROC_REF(handle_comp)) //Happens every species tick.
 	else
-		add_trait_life_system(owner, /datum/life_system/trait/shadekin) //Happens every life tick (mobs)
+		om_stage_add(owner, /datum/om/stage/life/trait/shadekin) //Happens every life tick (mobs)
 
 	// Register voice/name signal handlers
 	RegisterSignal(owner, COMSIG_HUMAN_GET_VOICE, PROC_REF(on_get_voice))
@@ -131,7 +131,7 @@
 	if(ishuman(owner))
 		UnregisterSignal(owner, COMSIG_SHADEKIN_COMPONENT)
 	else
-		remove_trait_life_system(owner, /datum/life_system/trait/shadekin)
+		om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
 	UnregisterSignal(owner, list(COMSIG_HUMAN_GET_VOICE, COMSIG_HUMAN_GET_ALT_NAME, COMSIG_HUMAN_GET_VISIBLE_NAME))
 	remove_verb(owner, /mob/living/proc/shadekin_control_panel)
 	for(var/obj/effect/abstract/dark_maw/dm as anything in active_dark_maws) //if the component gets destroyed so does your precious maws
@@ -337,9 +337,9 @@
 	SK.tgui_interact(src)
 
 /// Trait system: shadekin energy for non-human mobs. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/shadekin
+/datum/om/stage/life/trait/shadekin
 	name = "shadekin"
 	component_type = /datum/component/shadekin
 
-/datum/life_system/trait/shadekin/tick_component(mob/living/self, datum/component/shadekin/component)
+/datum/om/stage/life/trait/shadekin/tick_component(mob/living/self, datum/component/shadekin/component)
 	component.handle_comp()

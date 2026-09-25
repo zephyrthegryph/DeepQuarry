@@ -294,13 +294,12 @@
 	nutrition = 150
 	var/build_type = /obj/random/ant_building
 
-/datum/life_system/special/animal/tyr/mineral_ants/builder
-	mob_type = /mob/living/simple_mob/animal/tyr/mineral_ants/builder
+/datum/om/stage/life/special/animal/tyr/mineral_ants/builder
+	of = /mob/living/simple_mob/animal/tyr/mineral_ants/builder
 
-/datum/life_system/special/animal/tyr/mineral_ants/builder/tick(mob/living/simple_mob/animal/tyr/mineral_ants/builder/self, datum/life_context/ctx)
-	set waitfor = FALSE
+/datum/om/stage/life/special/animal/tyr/mineral_ants/builder/perform(mob/living/simple_mob/animal/tyr/mineral_ants/builder/self, datum/om/frame/life/ctx)
 	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
-		self.build_tile(self.loc)
+		INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/animal/tyr/mineral_ants/builder, build_tile), self.loc)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
 	if(nutrition < 75)
@@ -383,13 +382,12 @@
 	var/build_type = /obj/effect/spider/spiderling/antling
 
 
-/datum/life_system/special/animal/tyr/mineral_ants/queen
-	mob_type = /mob/living/simple_mob/animal/tyr/mineral_ants/queen
+/datum/om/stage/life/special/animal/tyr/mineral_ants/queen
+	of = /mob/living/simple_mob/animal/tyr/mineral_ants/queen
 
-/datum/life_system/special/animal/tyr/mineral_ants/queen/tick(mob/living/simple_mob/animal/tyr/mineral_ants/queen/self, datum/life_context/ctx)
-	set waitfor = FALSE
+/datum/om/stage/life/special/animal/tyr/mineral_ants/queen/perform(mob/living/simple_mob/animal/tyr/mineral_ants/queen/self, datum/om/frame/life/ctx)
 	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
-		self.build_tile(self.loc)
+		INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/animal/tyr/mineral_ants/queen, build_tile), self.loc)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)
 	if(nutrition < 30)

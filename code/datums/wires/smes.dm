@@ -27,10 +27,13 @@
 			S.RCon = mend
 		if(WIRE_SMES_INPUT)
 			S.input_cut = !mend
+			om_changed(S, CHANGE_MACHINE_SETTINGS)
 		if(WIRE_SMES_OUTPUT)
 			S.output_cut = !mend
+			om_changed(S, CHANGE_MACHINE_SETTINGS)
 		if(WIRE_SMES_GROUNDING)
 			S.grounding = mend
+			om_changed(S, CHANGE_MACHINE_SETTINGS)
 		if(WIRE_SMES_FAILSAFES)
 			S.safeties_enabled = mend
 	..()
@@ -49,6 +52,7 @@
 			S.toggle_output()
 		if(WIRE_SMES_GROUNDING)
 			S.grounding = 0
+			om_changed(S, CHANGE_MACHINE_SETTINGS)
 		if(WIRE_SMES_FAILSAFES)
 			if(S.safeties_enabled)
 				S.safeties_enabled = 0

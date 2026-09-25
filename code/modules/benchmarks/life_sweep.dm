@@ -6,7 +6,7 @@
 //   life_bench_ms()      milliseconds spent so far in the subsystem that runs Life
 //   life_bench_scheduler() a label
 // One boot measures every configuration in turn: spawn, settle, measure a window, delete.
-//   tools/build/build.sh bench --scenario=life_sweep -DLIFE_NO_PROFILE [--arg=seconds=40]
+//   tools/build/build.sh bench --scenario=life_sweep -DOM_NO_STAGE_PROFILE [--arg=seconds=40]
 
 /datum/benchmark/life_sweep
 	id = "life_sweep"
@@ -43,13 +43,13 @@
 	for(var/i in 1 to humans)
 		var/mob/living/carbon/human/H = new(pick(turfs))
 		// Humans are low priority: without this they'd skip Life on a z-level with no players.
-		H.low_priority = FALSE
+		H.set_low_priority(FALSE)
 		mobs += H
 		CHECK_TICK
 	for(var/i in 1 to busy_mice + idle_mice)
 		var/mob/living/simple_mob/animal/passive/mouse/M = new(pick(turfs))
 		benchmark_quiet_simple_mob(M)
-		M.low_priority = FALSE
+		M.set_low_priority(FALSE)
 		if(i <= busy_mice)
 			// A long sleep kept the old scheduler's status systems (and so its Life) running; on the
 			// object model it is a timed contribution nothing ticks (life_on_om_benchmark.md).
@@ -76,7 +76,7 @@
 	metric("[name]_life_us_per_frame", frames ? ms * 1000 / frames : 0, "us")
 	var/hibernating = 0
 	for(var/mob/living/L as anything in mobs)
-		if(L.life_hibernating)
+		if(life_bench_parked(L))
 			hibernating++
 	metric("[name]_hibernating", hibernating, "mobs", "none")
 	detail("[name]_tick", tick)

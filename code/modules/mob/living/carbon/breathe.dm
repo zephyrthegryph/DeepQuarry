@@ -7,11 +7,11 @@
 /// A scheduled breath is taken every this many Life cycles.
 #define BREATH_CYCLE_PERIOD 4
 
-/datum/life_system/breathing/carbon
-	mob_type = /mob/living/carbon
+/datum/om/stage/life/breathing/carbon
+	of = /mob/living/carbon
 
 //Start of a breath chain, calls breathe()
-/datum/life_system/breathing/carbon/tick(mob/living/carbon/self, datum/life_context/ctx)
+/datum/om/stage/life/breathing/carbon/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
 	self.breath_cycle = (self.breath_cycle + 1) % BREATH_CYCLE_PERIOD
 	if(!self.breath_cycle || self.failed_last_breath || self.is_critical()) // First, resolve location and get a breath
 		breathe(self)
@@ -19,7 +19,7 @@
 #undef BREATH_CYCLE_PERIOD
 
 /// One breath: pick the breath source, exchange gas, exhale.
-/datum/life_system/breathing/carbon/proc/breathe(mob/living/carbon/self)
+/datum/om/stage/life/breathing/carbon/proc/breathe(mob/living/carbon/self)
 	//if(istype(loc, /obj/machinery/atmospherics/unary/cryo_cell)) return
 	if(!self.should_have_organ(O_LUNGS)) return
 
@@ -70,7 +70,7 @@
 				internals.icon_state = "internal0"
 	return null
 
-/datum/life_system/breathing/carbon/proc/breath_from_environment(mob/living/carbon/self, volume_needed=BREATH_VOLUME)
+/datum/om/stage/life/breathing/carbon/proc/breath_from_environment(mob/living/carbon/self, volume_needed=BREATH_VOLUME)
 	var/datum/gas_mixture/breath = null
 
 	var/datum/gas_mixture/environment
@@ -91,7 +91,7 @@
 	return null
 
 //Handle possble chem smoke effect
-/datum/life_system/breathing/carbon/proc/inhale_smoke(mob/living/carbon/self, datum/gas_mixture/environment)
+/datum/om/stage/life/breathing/carbon/proc/inhale_smoke(mob/living/carbon/self, datum/gas_mixture/environment)
 	if(self.get_equipped_item(SLOT_ID_MASK) && (self.get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
 
@@ -103,9 +103,9 @@
 			break // If they breathe in the nasty stuff once, no need to continue checking
 
 /// Gas exchange for one breath (species breath and poison gases, oxygenation).
-/datum/life_system/breathing/carbon/proc/exchange(mob/living/carbon/self, datum/gas_mixture/breath)
+/datum/om/stage/life/breathing/carbon/proc/exchange(mob/living/carbon/self, datum/gas_mixture/breath)
 	return
 
-/datum/life_system/breathing/carbon/proc/exhale(mob/living/carbon/self, datum/gas_mixture/breath)
+/datum/om/stage/life/breathing/carbon/proc/exhale(mob/living/carbon/self, datum/gas_mixture/breath)
 	if(breath)
 		self.loc.assume_air(breath) //by default, exhale

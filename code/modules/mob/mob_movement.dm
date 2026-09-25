@@ -12,7 +12,7 @@
 		. += 5
 
 	if(lying)
-		if(status_units(EFFECT_WEAKENED) >= 1)
+		if(has_status(EFFECT_WEAKENED))
 			. += 14			// Very slow when weakened.
 		else
 			. += 8
@@ -20,7 +20,7 @@
 	// Movespeed delay based on movement mode
 	switch(m_intent)
 		if(I_RUN)
-			if(status_units(EFFECT_DROWSY) > 0)
+			if(has_status(EFFECT_DROWSY))
 				. += 6
 			. += CONFIG_GET(number/run_speed)
 		if(I_WALK)

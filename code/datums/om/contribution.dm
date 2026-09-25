@@ -58,17 +58,63 @@
 /// already computed the new expiry (set or adjust a remaining duration). An
 /// expiry at or before now releases it.
 /proc/om_apply_until(datum/target, effect_id, datum/source, expires_at, value = TRUE, key)
-	var/datum/om/effect/eff = om_registry().effect(effect_id)
 	var/datum/om/rec/rec = om_rec_of(target)
 	if(!rec || !source)
 		return FALSE
+	return om_contrib_until(rec, om_registry().effect(effect_id), source, expires_at, value, key)
+
+/// om_apply_until() for callers holding the effect def (one id lookup per call).
+/proc/om_contrib_until(datum/om/rec/rec, datum/om/effect/eff, datum/source, expires_at, value = TRUE, key)
 	var/t = rec.sched.now()
 	if(expires_at <= t)
-		om_release(target, effect_id, source, key)
+		var/i = rec.contribs ? om_contrib_find(rec, eff.idx, source, key) : 0
+		if(i)
+			om_contrib_remove(rec, eff, i)
+			om_expiry_reschedule(rec)
 		return FALSE
 	om_contrib_set(rec, eff, source, value, expires_at, key, expires_at - t, TRUE)
 	om_expiry_reschedule(rec)
 	return TRUE
+
+/// Expiry of `source`'s contribution to effect idx `eidx`: 0 for a hold, null when none.
+/proc/om_contrib_expiry(datum/om/rec/rec, eidx, datum/source, key)
+	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
+	return i ? rec.contribs[i + OM_C_EXPIRES] : null
+
+/// Value of `source`'s contribution to effect idx `eidx`, or null when none.
+/proc/om_contrib_value(datum/om/rec/rec, eidx, datum/source, key)
+	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
+	return i ? rec.contribs[i + OM_C_VALUE] : null
+
+/// Latest expiry among the timed contributions to effect idx `eidx` (0 when none).
+/proc/om_contrib_latest_expiry(datum/om/rec/rec, eidx)
+	. = 0
+	var/list/C = rec.contribs
+	for(var/i in 1 to length(C) step OM_C_STRIDE)
+		if(C[i + OM_C_EFFECT] == eidx && C[i + OM_C_EXPIRES] > .)
+			. = C[i + OM_C_EXPIRES]
+
+/// Releases `source`'s contribution to `eff` on `rec`. TRUE when there was one.
+/proc/om_contrib_release(datum/om/rec/rec, datum/om/effect/eff, datum/source, key)
+	var/i = rec.contribs ? om_contrib_find(rec, eff.idx, source, key) : 0
+	if(!i)
+		return FALSE
+	om_contrib_remove(rec, eff, i)
+	om_expiry_reschedule(rec)
+	return TRUE
+
+/// Releases every timed contribution to `eff` on `rec` (holds stay).
+/proc/om_contrib_release_timed(datum/om/rec/rec, datum/om/effect/eff)
+	var/i = 1
+	var/removed = FALSE
+	while(i <= length(rec.contribs))
+		if(rec.contribs[i + OM_C_EFFECT] == eff.idx && rec.contribs[i + OM_C_EXPIRES])
+			om_contrib_remove(rec, eff, i)
+			removed = TRUE
+			continue
+		i += OM_C_STRIDE
+	if(removed)
+		om_expiry_reschedule(rec)
 
 /// When `source`'s contribution to `effect_id` on `target` expires (scheduler
 /// time, deciseconds): 0 for a hold, null when there is none.
@@ -76,11 +122,7 @@
 	var/datum/om/rec/rec = target?.om_rec
 	if(!rec?.contribs)
 		return null
-	var/datum/om/effect/eff = om_registry().effect(effect_id)
-	var/i = om_contrib_find(rec, eff.idx, source, key)
-	if(!i)
-		return null
-	return rec.contribs[i + OM_C_EXPIRES]
+	return om_contrib_expiry(rec, om_registry().effect(effect_id).idx, source, key)
 
 /// The time `E`'s scheduler runs on (world.time live, injected in tests). Use it
 /// with om_apply_until()/om_expires_at() so tests on a test scheduler agree.
@@ -256,6 +298,22 @@
 	if(!islist(new_value) && new_value == old)
 		return
 	var/datum/E = rec.owner
+	if(eff.implies_idx && !!old != !!new_value)
+		// Implied effects are held by the entity itself, keyed by the implying effect.
+		var/list/effects = om_registry().effects
+		var/key = "implied:[eff.id]"
+		for(var/idx in eff.implies_idx)
+			if(new_value)
+				om_contrib_set(rec, effects[idx], E, TRUE, 0, key, 0)
+			else
+				var/i = om_contrib_find(rec, idx, E, key)
+				if(i)
+					om_contrib_remove(rec, effects[idx], i)
+	if(eff.blocks && new_value && !old)
+		// An immunity gained ends the timed statuses it blocks.
+		var/list/effects = om_registry().effects
+		for(var/idx in eff.blocks)
+			om_contrib_release_timed(rec, effects[idx])
 	switch(eff.kind)
 		if(OM_EFFECT_CLOCK_MULT, OM_EFFECT_CLOCK_INHIBIT)
 			om_clock_changed(rec, eff.clock_idx)

@@ -102,6 +102,21 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	/// Borrow threshold: a ring whose oldest due slot is this fraction of max_interval late borrows.
 	var/borrow_fraction = 0.75
 
+	/// RUNLEVEL_* bit of the current runlevel (live: read from Master each pass). Rings of
+	/// behaviours whose `runlevels` exclude it go dormant.
+	var/runlevel = 0xFFFFFF
+
+	/// Pipelines (pipeline.dm), indexed by pipeline pipe_idx: free frames, parked entities
+	/// (each entity's pipe state knows its index) and the audit's round-robin cursor.
+	var/list/frame_pools = list()
+	var/list/parked = list()
+	var/list/audit_cursor = list()
+	/// Stage profile: "[stage type]" -> sampled ms and calls (pipeline profile_stride).
+	var/list/stage_cost = list()
+	var/list/stage_calls = list()
+	/// Frames run by every pipeline since this scheduler started (the profile sampler strides it).
+	var/pipe_frames = 0
+
 	/// behaviour id -> list(OM_STAT_LEN) counters.
 	var/list/stats = list()
 	var/list/errors = list()
@@ -176,6 +191,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/cur_slot = 0
 	var/cur_i = 1
 	var/cur_dt = 0
+	/// TRUE while the behaviour's runlevels exclude the current one (no slot runs).
+	var/dormant = FALSE
 	/// TRUE when an entity left the slot in progress: its entry is null
 	/// (a tombstone) until the slot finishes, so positions never shift under
 	/// the running loop.
@@ -267,6 +284,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/start = TICK_USAGE
 	var/t = now()
 	runs++
+	if(isnull(manual_time))
+		var/level = Master.current_runlevel
+		runlevel = level ? (1 << (level - 1)) : 0
 	var/avail = max(tick_limit - start, 0)
 	var/done = TRUE
 
@@ -331,7 +351,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			return FALSE
 
 /datum/om/scheduler/proc/ring_urgent(datum/om/ring/R, t)
-	if(R.next_abs > round(t / R.slot_ds))
+	if(R.dormant || R.next_abs > round(t / R.slot_ds))
 		return FALSE
 	var/s = (R.next_abs % R.size) + 1
 	if(!length(R.slots[s]))
@@ -343,6 +363,17 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /datum/om/scheduler/proc/run_ring(datum/om/ring/R, t)
 	var/now_abs = round(t / R.slot_ds)
 	var/datum/om/behaviour/B = R.B
+	if(B.runlevels)
+		if(!(runlevel & B.runlevels))
+			// Dormant: nothing runs and nothing accumulates, so resuming is no catch-up.
+			R.dormant = TRUE
+			R.cur_slot = 0
+			R.next_abs = now_abs + 1
+			return TRUE
+		if(R.dormant)
+			R.dormant = FALSE
+			for(var/s in 1 to R.size)
+				R.last_run[s] = t
 	// More than a full ring behind (skipped ticks, a long lag): every slot is
 	// due, so each runs once, with its real elapsed dt, instead of the same
 	// slot running several times in one pass with dt 0.
@@ -544,6 +575,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 				B.on_stop(E)
 			if(OM_HOOK_NATIVE)
 				B.on_native(E, arg)
+			if(OM_HOOK_KEYED)
+				B.on_keyed_deadline(E, arg)
 	catch(var/exception/e)
 		failed = TRUE
 		error("[B.name] hook [kind]: [e] ([e.file]:[e.line])")
@@ -609,6 +642,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			// dispatch path on its next change (om_dispatch_change()).
 			rec.pend_union &= ~bits
 			if(B.compiled_wake_if && !isnull(B.compiled_wake_if.why_not(rec.owner, null)))
+				i++
+				continue
+			if(B.min_interval && om_throttled(rec, B, i, bits))
 				i++
 				continue
 			stat_inc(B.id, OM_STAT_WAKES)
@@ -728,17 +764,19 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	buckets[b] = keep + added
 	return ok
 
-/datum/om/scheduler/proc/fire_deadline(datum/om/rec/rec, bid, gen_i, t, datum/om/registry/reg)
+/datum/om/scheduler/proc/fire_deadline(datum/om/rec/rec, key, gen_i, t, datum/om/registry/reg)
 	if(rec.torn_down || !rec.deadlines)
 		return
 	var/list/D = rec.deadlines
 	var/k = 0
 	for(var/j in 1 to length(D) step 3)
-		if(D[j] == bid)
+		if(D[j] == key)
 			k = j
 			break
 	if(!k || D[k + 1] != gen_i)
 		return
+	var/bid = key % OM_DL_SUB
+	var/sub = (key - bid) / OM_DL_SUB
 	var/datum/om/behaviour/B = reg.behaviours[bid]
 	var/local_target = D[k + 2]
 	if(!isnull(local_target))
@@ -746,11 +784,51 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		if(local_now < local_target - 0.001)
 			var/rate = om_clock_rate(rec, B.clock_idx)
 			if(rate > 0)
-				insert_deadline(rec, bid, gen_i, t + (local_target - local_now) / rate)
+				insert_deadline(rec, key, gen_i, t + (local_target - local_now) / rate)
 			return
 	D.Cut(k, k + 3)
+	if(!length(D))
+		rec.deadlines = null
 	stat_inc(bid, OM_STAT_DEADLINES)
-	call_hook(rec, B, OM_HOOK_DEADLINE)
+	switch(sub)
+		if(0)
+			call_hook(rec, B, OM_HOOK_DEADLINE)
+		if(OM_DL_THROTTLE)
+			om_throttle_release(rec, B)
+		else
+			call_hook(rec, B, OM_HOOK_KEYED, sub)
+
+// ---------------------------------------------------------------- min_interval throttle
+
+/// A min_interval behaviour's wake arriving too soon: its bits stay pending (later changes
+/// coalesce into them) and one deadline delivers them when the interval ends. Returns TRUE
+/// when the wake was deferred.
+/proc/om_throttled(datum/om/rec/rec, datum/om/behaviour/B, i, bits)
+	var/t = rec.sched.now()
+	var/list/T = rec.throttle
+	var/k = 0
+	for(var/j in 1 to length(T) step 2)
+		if(T[j] == B.id)
+			k = j
+			break
+	if(k)
+		var/wait = T[k + 1] + B.min_interval - t
+		if(wait > 0)
+			rec.att_pend[i] |= bits
+			rec.pend_union |= bits
+			if(!om_deadline_pending(rec.owner, B, OM_DL_THROTTLE))
+				om_after(rec.owner, wait, B, OM_DL_THROTTLE)
+			return TRUE
+		T[k + 1] = t
+	else
+		LAZYADD(rec.throttle, list(B.id, t))
+	return FALSE
+
+/// The throttle interval ended: queue the coalesced wake.
+/proc/om_throttle_release(datum/om/rec/rec, datum/om/behaviour/B)
+	var/i = rec.att.Find(B)
+	if(i && rec.att_pend[i] && (rec.att_state[i] & OM_ATT_STARTED))
+		rec.sched.enqueue(rec, B.lane)
 
 // ---------------------------------------------------------------- harness
 

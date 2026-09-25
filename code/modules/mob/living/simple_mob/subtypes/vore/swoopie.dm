@@ -185,10 +185,10 @@
 
 	size_factor_for_sprite = 5
 
-/datum/life_system/type_post/simple_mob/vore/aggressive/corrupthound/swoopie
-	mob_type = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
+/datum/om/stage/life/type_post/simple_mob/vore/aggressive/corrupthound/swoopie
+	of = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
 
-/datum/life_system/type_post/simple_mob/vore/aggressive/corrupthound/swoopie/tick(mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/aggressive/corrupthound/swoopie/perform(mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/self, datum/om/frame/life/ctx)
 	..()
 	var/turf/T = get_turf(self)
 	if(istype(self.Vac))

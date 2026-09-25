@@ -29,10 +29,10 @@
 	episode["next_episode_end"] = world.time + 9000
 
 /datum/component/schizophrenia/RegisterWithParent()
-	add_trait_life_system(parent, /datum/life_system/trait/schizophrenia)
+	om_stage_add(parent, /datum/om/stage/life/trait/schizophrenia)
 
 /datum/component/schizophrenia/UnregisterFromParent()
-	remove_trait_life_system(parent, /datum/life_system/trait/schizophrenia)
+	om_stage_remove(parent, /datum/om/stage/life/trait/schizophrenia)
 
 /datum/component/schizophrenia/proc/process_component()
 	SIGNAL_HANDLER
@@ -86,9 +86,9 @@
 	return total_vol
 
 /// Trait system: hallucination episodes. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/schizophrenia
+/datum/om/stage/life/trait/schizophrenia
 	name = "schizophrenia"
 	component_type = /datum/component/schizophrenia
 
-/datum/life_system/trait/schizophrenia/tick_component(mob/living/self, datum/component/schizophrenia/component)
+/datum/om/stage/life/trait/schizophrenia/tick_component(mob/living/self, datum/component/schizophrenia/component)
 	component.process_component()

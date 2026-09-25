@@ -243,10 +243,10 @@
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/is_cloaked()
 	return dq_get_cloaked(src)
 
-/datum/life_system/special/mechanical/cyber_horror/tajaran
-	mob_type = /mob/living/simple_mob/mechanical/cyber_horror/tajaran
+/datum/om/stage/life/special/mechanical/cyber_horror/tajaran
+	of = /mob/living/simple_mob/mechanical/cyber_horror/tajaran
 
-/datum/life_system/special/mechanical/cyber_horror/tajaran/tick(mob/living/simple_mob/mechanical/cyber_horror/tajaran/self, datum/life_context/ctx)
+/datum/om/stage/life/special/mechanical/cyber_horror/tajaran/perform(mob/living/simple_mob/mechanical/cyber_horror/tajaran/self, datum/om/frame/life/ctx)
 	if(!dq_get_cloaked(self) && self.can_cloak())
 		self.cloak()
 

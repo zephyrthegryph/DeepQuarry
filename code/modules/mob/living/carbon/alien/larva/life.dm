@@ -5,10 +5,10 @@
 
 
 //Larvae regenerate health and nutrition from plasma and alien weeds.
-/datum/life_system/environment/carbon/alien/larva
-	mob_type = /mob/living/carbon/alien/larva
+/datum/om/stage/life/environment/carbon/alien/larva
+	of = /mob/living/carbon/alien/larva
 
-/datum/life_system/environment/carbon/alien/larva/exchange(mob/living/carbon/alien/larva/self, datum/gas_mixture/environment)
+/datum/om/stage/life/environment/carbon/alien/larva/exchange(mob/living/carbon/alien/larva/self, datum/gas_mixture/environment)
 
 	if(!environment) return
 

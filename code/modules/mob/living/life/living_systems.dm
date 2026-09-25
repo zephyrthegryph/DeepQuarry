@@ -1,181 +1,120 @@
-// Living core systems: the old /mob/living/Life() sequence, one system per step
-// (doc/mob_life_architecture.md §4.5). Orders and segments reproduce the old control flow:
+// Living core stages: the old /mob/living/Life() sequence, one stage per step. Orders and run_if
+// facts reproduce the old control flow (doc/rewrite/life_on_om.md §4):
 //
-//	type_pre variants          (subtype code that ran before ..())
-//	trait systems              (the old COMSIG_LIVING_LIFE listeners)
-//	upkeep, instability
-//	gate: transforming         -> LIFE_SEG_LIVING
-//	modifiers
-//	gate: placed (!loc)        -> LIFE_SEG_LIVING, captures the environment
-//	light
-//	gate: alive                -> LIFE_SEG_LIVING_ALIVE
-//	breathing, mutations, radiation, blood, random events, AFK      (alive only)
-//	chemicals, diseases, environment, ambience, movement
-//	status (regular status updates) -> LIFE_SEG_LIVING_STATUS
-//	disabilities, addictions                                       (status only)
-//	canmove, HUD, vision, TF holder, VR derez
+//	type_pre variants          (subtype code that ran before ..(); may ctx.abort())
+//	trait stages               (the old COMSIG_LIVING_LIFE listeners)
+//	upkeep, instability, modifiers
+//	[placed]                   light
+//	[placed, alive]            breathing, mutations, radiation, blood, random events, AFK
+//	[placed]                   chemicals, diseases, environment, ambience, movement,
+//	                           status (the body tick; it re-reads "alive" afterwards)
+//	[placed, alive]            disabilities, addictions
+//	[placed]                   TF holder, VR derez
 //	subtype tails (carbon germs, human, alien, simple mob, bot), then type_post variants
 //
-// Sleep rules (doc/rewrite/life_on_om.md §5): each system's idle() says when it has
-// nothing to do, and `woken_by` names the producers that raise the channels in its `wake_on`. A
-// family root's rule covers only the root: a variant with its own tick code keeps its
-// mob awake until it declares a rule of its own.
+// canmove runs in the life_derive pipeline and HUD and vision in life_present (life_om.dm).
+//
+// Idle rules: each stage's idle() says when it has nothing to do, and `woken_by` names the
+// producers that raise the channels in its `wake_on`. A family root's rule covers only the root:
+// a variant with its own run() code keeps its mob awake until it declares a rule of its own.
 
 // --- Per-type pre and post chains ---------------------------------------------------------------
 
 /// Code a mob subtype ran before calling ..() in its old Life() override. A variant runs its own
-/// code, then `return ..()`. Returning LIFE_HALT without calling ..() ends the cycle, as the old
-/// early `return` before ..() did.
-/datum/life_system/type_pre
+/// code, then `return ..()`. `return ctx.abort()` without calling ..() ends the frame, as the
+/// old early `return` before ..() did.
+/datum/om/stage/life/type_pre
+	order = LIFE_PHASE_INPUT + 0
 	name = "type pre"
-	wake_on = LIFE_WAKE_ON_BEHAVIOUR
-	phase = LIFE_PHASE_INPUT
-	order = 0
+	wake_on = 0
 
-/datum/life_system/type_pre/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/type_pre/perform(mob/living/self, datum/om/frame/life/ctx)
 	return
 
 /// The root is a no-op; a variant's pre code runs every cycle.
-/datum/life_system/type_pre/idle(mob/living/self)
-	return type == /datum/life_system/type_pre
+/datum/om/stage/life/type_pre/idle(mob/living/self)
+	return type == /datum/om/stage/life/type_pre
 
 /// Code a mob subtype ran after ..() in its old Life() override. A variant starts with `..()`,
 /// which runs its parent's post code, then runs its own; code that only runs for a living mob
-/// checks `ctx?.alive` (null ctx: run outside the frame, where nothing is known).
-/datum/life_system/type_post
+/// checks `ctx.fact("alive")`.
+/datum/om/stage/life/type_post
+	order = LIFE_PHASE_TAIL + 1000
 	name = "type post"
-	wake_on = LIFE_WAKE_ON_BEHAVIOUR
-	phase = LIFE_PHASE_TAIL
-	order = 1000
+	wake_on = 0
 
-/datum/life_system/type_post/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/perform(mob/living/self, datum/om/frame/life/ctx)
 	return
 
 /// The root and the carbon and simple mob variants do nothing.
-/datum/life_system/type_post/idle(mob/living/self)
+/datum/om/stage/life/type_post/idle(mob/living/self)
 	var/static/list/value_only = list(
-		/datum/life_system/type_post,
-		/datum/life_system/type_post/carbon,
-		/datum/life_system/type_post/simple_mob,
+		/datum/om/stage/life/type_post,
+		/datum/om/stage/life/type_post/carbon,
+		/datum/om/stage/life/type_post/simple_mob,
 	)
 	return type in value_only
 
-/datum/life_system/type_post/carbon
-	mob_type = /mob/living/carbon
+/datum/om/stage/life/type_post/carbon
+	of = /mob/living/carbon
 
 /// Mobs whose Life() only takes them out of the mob lists (preview dummies, announcers).
-/datum/life_system/delist
+/datum/om/stage/life/delist
+	order = LIFE_PHASE_INPUT + 0
 	name = "delist"
-	wake_on = LIFE_WAKE_ON_UPKEEP
-	phase = LIFE_PHASE_INPUT
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_CONDITIONS
 	life_sets = LIFE_SET_DELIST
 
-/datum/life_system/delist/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/delist/perform(mob/living/self, datum/om/frame/life/ctx)
 	return
 
 // --- Trait systems ------------------------------------------------------------------------------
 
-/// Category for component-provided systems (the old COMSIG_LIVING_LIFE listeners). A component
-/// adds its system with add_life_system() when it attaches and removes it when it detaches.
-/datum/life_system/trait
-	category = TRUE
+/// Category for component-provided stages (the old COMSIG_LIVING_LIFE listeners). A component
+/// adds its stage with om_stage_add() when it attaches and removes it when it detaches.
+/datum/om/stage/life/trait
+	order = LIFE_PHASE_INPUT + 10
+	category = /datum/om/stage/life/trait
 	extra = TRUE
-	wake_on = LIFE_WAKE_ON_TRAITS
-	phase = LIFE_PHASE_INPUT
-	order = 10
+	wake_on = 0
 	/// The component type this system ticks.
 	var/component_type
 
-/datum/life_system/trait/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/trait/perform(mob/living/self, datum/om/frame/life/ctx)
 	for(var/datum/component/C as anything in self.GetComponents(component_type))
 		tick_component(self, C)
 
 /// Tick one instance of the component.
-/datum/life_system/trait/proc/tick_component(mob/living/self, datum/component/C)
+/datum/om/stage/life/trait/proc/tick_component(mob/living/self, datum/component/C)
 	return
 
 // --- Upkeep ---------------------------------------------------------------------------------------
 
 /// Every mob's base upkeep (the old /mob/Life() chain): followers and spell buttons.
-/datum/life_system/upkeep
+/datum/om/stage/life/upkeep
+	order = LIFE_PHASE_INPUT + 20
 	name = "upkeep"
-	phase = LIFE_PHASE_INPUT
-	order = 20
 	woken_by = "Moved; ghosts following; spells learned"
 
-/datum/life_system/upkeep/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/upkeep/perform(mob/living/self, datum/om/frame/life/ctx)
 	// to catch teleports etc which directly set loc
 	self.update_following()
 	self.update_spell_masters()
 
 /// Followers are dragged along on Moved; spell buttons only matter for casters.
-/datum/life_system/upkeep/idle(mob/living/self)
+/datum/om/stage/life/upkeep/idle(mob/living/self)
 	return !length(self.following_mobs) && !LAZYLEN(self.spell_masters)
-
-// --- Gates ------------------------------------------------------------------------------------------
-
-/// Category for gates. A gate evaluates one old `if(...) return` (or an `if` around a block of
-/// hooks) once per cycle and blocks the segment that code guarded.
-/datum/life_system/gate
-	category = TRUE
-	gate = TRUE
-
-/// Gates run whenever the mob runs and never keep it awake on their own.
-/datum/life_system/gate/idle(mob/living/self)
-	return TRUE
-
-/// `if(transforming) return` in /mob/living/Life().
-/datum/life_system/gate/transforming
-	name = "gate: transforming"
-	phase = LIFE_PHASE_INPUT
-	order = 40
-
-/datum/life_system/gate/transforming/tick(mob/living/self, datum/life_context/ctx)
-	if(self.transforming)
-		ctx.blocked |= LIFE_SEG_LIVING
-		ctx.no_sleep = TRUE
-
-/// `if(!loc) return` in /mob/living/Life(); captures the environment for the cycle.
-/datum/life_system/gate/placed
-	name = "gate: placed"
-	phase = LIFE_PHASE_INPUT
-	order = 60
-	segment = LIFE_SEG_LIVING
-
-/datum/life_system/gate/placed/tick(mob/living/self, datum/life_context/ctx)
-	if(!self.loc)
-		ctx.blocked |= LIFE_SEG_LIVING
-		ctx.no_sleep = TRUE
-		return
-	if(isbelly(self.loc))
-		ctx.environment = self.loc.return_air_for_internal_lifeform(self)
-	else
-		ctx.environment = self.loc.return_air()
-
-/// `if(stat != DEAD)` around breathing .. AFK in /mob/living/Life().
-/datum/life_system/gate/alive
-	name = "gate: alive"
-	phase = LIFE_PHASE_INPUT
-	order = 80
-	segment = LIFE_SEG_LIVING
-
-/datum/life_system/gate/alive/tick(mob/living/self, datum/life_context/ctx)
-	if(self.stat == DEAD)
-		ctx.blocked |= LIFE_SEG_LIVING_ALIVE
-	else
-		ctx.alive = TRUE
 
 // --- Light --------------------------------------------------------------------------------------
 
 /// Mob glow (glow_toggle, technomancer instability). Also run on demand by refresh_glow().
-/datum/life_system/light
+/datum/om/stage/life/light
+	order = LIFE_PHASE_INPUT + 70
 	name = "light"
-	phase = LIFE_PHASE_INPUT
-	order = 70
-	segment = LIFE_SEG_LIVING
+	run_if = LIFE_RUN_IF_PLACED
 	woken_by = "refresh_glow(); instability"
 
-/datum/life_system/light/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/light/perform(mob/living/self, datum/om/frame/life/ctx)
 	if(self.glow_override)
 		return FALSE
 
@@ -215,11 +154,11 @@
 
 /// Re-evaluates this mob's glow now (light system).
 /mob/living/proc/refresh_glow()
-	return run_life_system(/datum/life_system/light)
+	return om_stage_run_now(src, /datum/om/stage/life/light)
 
 /// Idle once the applied light matches what tick() would ask for.
-/datum/life_system/light/idle(mob/living/self)
-	if(type != /datum/life_system/light)
+/datum/om/stage/life/light/idle(mob/living/self)
+	if(type != /datum/om/stage/life/light)
 		return FALSE
 	if(self.glow_override)
 		return TRUE
@@ -232,93 +171,87 @@
 // --- Alive block -----------------------------------------------------------------------------------
 
 /// Breathing. The carbon variant takes a breath on its own cadence (breathe()).
-/datum/life_system/breathing
+/datum/om/stage/life/breathing
+	order = LIFE_PHASE_INPUT + 90
 	name = "breathing"
-	wake_on = LIFE_WAKE_ON_BREATHING
-	phase = LIFE_PHASE_INPUT
-	order = 90
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	run_if = LIFE_RUN_IF_PLACED_ALIVE
 
-/datum/life_system/breathing/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/breathing/perform(mob/living/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/breathing/idle(mob/living/self)
-	return type == /datum/life_system/breathing
+/datum/om/stage/life/breathing/idle(mob/living/self)
+	return type == /datum/om/stage/life/breathing
 
 /// Genetic mutation effects.
-/datum/life_system/mutations
+/datum/om/stage/life/mutations
+	order = LIFE_PHASE_INPUT + 100
 	name = "mutations"
-	wake_on = LIFE_WAKE_ON_GENETICS
-	phase = LIFE_PHASE_INPUT
-	order = 100
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	wake_on = CHANGE_MOB_STATUS
+	run_if = LIFE_RUN_IF_PLACED_ALIVE
 
-/datum/life_system/mutations/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/mutations/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
 	if(SEND_SIGNAL(self, COMSIG_HANDLE_MUTATIONS) & COMPONENT_BLOCK_LIVING_MUTATIONS)
 		return COMPONENT_BLOCK_LIVING_MUTATIONS
 
 /// The root only feeds its signal's listeners.
-/datum/life_system/mutations/idle(mob/living/self)
-	return type == /datum/life_system/mutations && !self._listen_lookup?[COMSIG_HANDLE_MUTATIONS]
+/datum/om/stage/life/mutations/idle(mob/living/self)
+	return type == /datum/om/stage/life/mutations && !self._listen_lookup?[COMSIG_HANDLE_MUTATIONS]
 
 /// Radiation dose decay and effects.
-/datum/life_system/radiation
+/datum/om/stage/life/radiation
+	order = LIFE_PHASE_INPUT + 110
 	name = "radiation"
-	wake_on = LIFE_WAKE_ON_RADIATION
-	phase = LIFE_PHASE_INPUT
-	order = 110
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	wake_on = 0
+	run_if = LIFE_RUN_IF_PLACED_ALIVE
 
-/datum/life_system/radiation/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/radiation/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
 	if(SEND_SIGNAL(self, COMSIG_HANDLE_RADIATION) & COMPONENT_BLOCK_LIVING_RADIATION)
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
 /// The root only feeds its signal's listeners (the radiation effects component).
-/datum/life_system/radiation/idle(mob/living/self)
-	return type == /datum/life_system/radiation && !self._listen_lookup?[COMSIG_HANDLE_RADIATION]
+/datum/om/stage/life/radiation/idle(mob/living/self)
+	return type == /datum/om/stage/life/radiation && !self._listen_lookup?[COMSIG_HANDLE_RADIATION]
 
 /// Blood volume and bleeding.
-/datum/life_system/blood
+/datum/om/stage/life/blood
+	order = LIFE_PHASE_BODY + 10
 	name = "blood"
-	wake_on = LIFE_WAKE_ON_BLOOD
-	phase = LIFE_PHASE_BODY
-	order = 10
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	wake_on = 0
+	run_if = LIFE_RUN_IF_PLACED_ALIVE
 
-/datum/life_system/blood/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/blood/perform(mob/living/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/blood/idle(mob/living/self)
-	return type == /datum/life_system/blood
+/datum/om/stage/life/blood/idle(mob/living/self)
+	return type == /datum/om/stage/life/blood
 
 /// Random episodes (vomiting, ...).
-/datum/life_system/random_events
+/datum/om/stage/life/random_events
+	order = LIFE_PHASE_BODY + 20
 	name = "random events"
-	wake_on = LIFE_WAKE_ON_GENETICS
-	phase = LIFE_PHASE_BODY
-	order = 20
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	wake_on = CHANGE_MOB_STATUS
+	run_if = LIFE_RUN_IF_PLACED_ALIVE
 
-/datum/life_system/random_events/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/random_events/perform(mob/living/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/random_events/idle(mob/living/self)
-	return type == /datum/life_system/random_events
+/datum/om/stage/life/random_events/idle(mob/living/self)
+	return type == /datum/om/stage/life/random_events
 
 /// Automatic AFK marking for idle clients.
-/datum/life_system/afk
+/datum/om/stage/life/afk
+	order = LIFE_PHASE_BODY + 30
 	name = "afk"
-	wake_on = LIFE_WAKE_ON_CLIENT
-	phase = LIFE_PHASE_BODY
-	order = 30
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	wake_on = 0
+	run_if = LIFE_RUN_IF_PLACED_ALIVE
 	woken_by = "Login, Logout; its own timer"
 
-/datum/life_system/afk/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/afk/perform(mob/living/self, datum/om/frame/life/ctx)
 	var/client/C = self.client
 	if(!C)
 		return
@@ -333,61 +266,58 @@
 		self.away_from_keyboard = FALSE
 
 /// Lazy: a client's idle time is checked on a timer, not every cycle.
-/datum/life_system/afk/idle(mob/living/self)
+/datum/om/stage/life/afk/idle(mob/living/self)
 	return TRUE
 
-/datum/life_system/afk/rewake_delay(mob/living/self)
+/datum/om/stage/life/afk/rewake_delay(mob/living/self)
 	return self.client ? 30 SECONDS : 0
 
 // --- Core -------------------------------------------------------------------------------------
 
 /// Chemicals in the body. Runs dead or alive, so blood can be added after death.
-/datum/life_system/chemicals
+/datum/om/stage/life/chemicals
+	order = LIFE_PHASE_BODY + 40
 	name = "chemicals"
-	wake_on = LIFE_WAKE_ON_METABOLISM
-	phase = LIFE_PHASE_BODY
-	order = 40
-	segment = LIFE_SEG_LIVING
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = LIFE_RUN_IF_PLACED
 
-/datum/life_system/chemicals/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/chemicals/perform(mob/living/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/chemicals/idle(mob/living/self)
-	return type == /datum/life_system/chemicals
+/datum/om/stage/life/chemicals/idle(mob/living/self)
+	return type == /datum/om/stage/life/chemicals
 
 /// Runs the chemicals system now (extra circulation from CPR, horror modifiers, ...).
 /mob/living/proc/process_chemicals()
-	return run_life_system(/datum/life_system/chemicals)
+	return om_stage_run_now(src, /datum/om/stage/life/chemicals)
 
 /// Environment: temperature and pressure differences between body and surroundings.
-/datum/life_system/environment
+/datum/om/stage/life/environment
+	order = LIFE_PHASE_BODY + 60
 	name = "environment"
-	wake_on = LIFE_WAKE_ON_THERMAL
-	phase = LIFE_PHASE_BODY
-	order = 60
-	segment = LIFE_SEG_LIVING
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	run_if = LIFE_RUN_IF_PLACED
 
-/datum/life_system/environment/tick(mob/living/self, datum/life_context/ctx)
-	if(ctx?.environment)
-		exchange(self, ctx.environment)
+/datum/om/stage/life/environment/perform(mob/living/self, datum/om/frame/life/ctx)
+	if(ctx.fact("environment"))
+		exchange(self, ctx.fact("environment"))
 
 /// Handle temperature/pressure differences between body and environment.
-/datum/life_system/environment/proc/exchange(mob/living/self, datum/gas_mixture/environment)
+/datum/om/stage/life/environment/proc/exchange(mob/living/self, datum/gas_mixture/environment)
 	return
 
-/datum/life_system/environment/idle(mob/living/self)
-	return type == /datum/life_system/environment
+/datum/om/stage/life/environment/idle(mob/living/self)
+	return type == /datum/om/stage/life/environment
 
 /// Re-plays area ambience to a client that has stayed in one area.
-/datum/life_system/ambience
+/datum/om/stage/life/ambience
+	order = LIFE_PHASE_BODY + 70
 	name = "ambience"
-	wake_on = LIFE_WAKE_ON_CLIENT
-	phase = LIFE_PHASE_BODY
-	order = 70
-	segment = LIFE_SEG_LIVING
+	wake_on = 0
+	run_if = LIFE_RUN_IF_PLACED
 	woken_by = "Login; its own timer"
 
-/datum/life_system/ambience/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/ambience/perform(mob/living/self, datum/om/frame/life/ctx)
 	if(!self.client)
 		return
 	// If you're in an ambient area and have not moved out of it for x time as configured per-client, and do not have it disabled, we're going to play ambience again to you, to help break up the silence.
@@ -402,10 +332,10 @@
 			A.play_ambience(self, initial = FALSE)
 
 /// Lazy: sleeps until the next replay is due.
-/datum/life_system/ambience/idle(mob/living/self)
+/datum/om/stage/life/ambience/idle(mob/living/self)
 	return TRUE
 
-/datum/life_system/ambience/rewake_delay(mob/living/self)
+/datum/om/stage/life/ambience/rewake_delay(mob/living/self)
 	if(!self.client)
 		return 0
 	var/pref = self.read_preference(/datum/preference/numeric/ambience_freq)
@@ -414,15 +344,14 @@
 	return max(1 SECONDS, self.lastareachange + pref MINUTES - world.time)
 
 /// Gravity, pulling and grabs.
-/datum/life_system/movement
+/datum/om/stage/life/movement
+	order = LIFE_PHASE_BODY + 80
 	name = "movement"
-	wake_on = LIFE_WAKE_ON_MOVEMENT
-	phase = LIFE_PHASE_BODY
-	order = 80
-	segment = LIFE_SEG_LIVING
+	wake_on = CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	run_if = LIFE_RUN_IF_PLACED
 	woken_by = "Moved; start_pulling; equipping a grab; status setters"
 
-/datum/life_system/movement/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/movement/perform(mob/living/self, datum/om/frame/life/ctx)
 	self.update_gravity(self.mob_get_gravity())
 
 	self.update_pulling()
@@ -431,36 +360,37 @@
 		G.process()
 
 /// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.
-/datum/life_system/movement/idle(mob/living/self)
+/datum/om/stage/life/movement/idle(mob/living/self)
 	return !self.pulling && !(locate(/obj/item/grab) in self)
 
-/datum/life_system/movement/rewake_delay(mob/living/self)
+/datum/om/stage/life/movement/rewake_delay(mob/living/self)
 	return self.client ? 30 SECONDS : 0
 
 /// Status & health update: are we dead or alive, conscious or not. When it returns false the
 /// disabilities and addictions systems skip this cycle.
-/datum/life_system/status
+/datum/om/stage/life/status
+	order = LIFE_PHASE_BODY + 90
 	name = "status"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_BODY
-	order = 90
-	segment = LIFE_SEG_LIVING
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = LIFE_RUN_IF_PLACED
 	woken_by = "injure, mend, afflictions, factors and reagents (body invalidate); set_stat"
 
-/datum/life_system/status/tick(mob/living/self, datum/life_context/ctx)
-	if(!update_status(self))
-		ctx?.blocked |= LIFE_SEG_LIVING_STATUS
+/// The body tick decides death: "alive" is read again for the stages after this one, and
+/// "status_ok" (what update_status() returned) gates disabilities and addictions.
+/datum/om/stage/life/status/perform(mob/living/self, datum/om/frame/life/ctx)
+	ctx.set_fact("status_ok", !!update_status(self))
+	ctx.forget("alive")
 
 /// This updates the health and status of the mob (conscious, unconscious, dead).
-/datum/life_system/status/proc/update_status(mob/living/self)
+/datum/om/stage/life/status/proc/update_status(mob/living/self)
 	self.body?.life_tick()
 	if(self.stat != DEAD)
 		self.set_stat(CONSCIOUS)
 		return TRUE
 
 /// The root sleeps while the mob is conscious (or dead) and its body has nothing to tick.
-/datum/life_system/status/idle(mob/living/self)
-	if(type != /datum/life_system/status)
+/datum/om/stage/life/status/idle(mob/living/self)
+	if(type != /datum/om/stage/life/status)
 		return FALSE
 	if(self.stat == UNCONSCIOUS)
 		return FALSE
@@ -478,17 +408,16 @@
 // --- Status block -----------------------------------------------------------------------------
 
 /// Eye and ear damage recovery.
-/datum/life_system/disabilities
+/datum/om/stage/life/disabilities
+	order = LIFE_PHASE_MIND + 10
 	name = "disabilities"
-	wake_on = LIFE_WAKE_ON_GENETICS
-	phase = LIFE_PHASE_MIND
-	order = 10
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
+	wake_on = CHANGE_MOB_STATUS
+	run_if = LIFE_RUN_IF_STATUS_OK
 	woken_by = "status changes (blindness starting or ending); set_stat; body invalidate"
 
 /// Temporary blindness, blur and deafness end on their own (timed statuses); this keeps the
 /// ones that don't (a disability, unconsciousness) topped up and heals ear damage.
-/datum/life_system/disabilities/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/disabilities/perform(mob/living/self, datum/om/frame/life/ctx)
 	SEND_SIGNAL(self, COMSIG_HANDLE_DISABILITIES)
 	//Eyes: blindness from disability or unconsciousness doesn't get better on its own
 	if(self.sdisabilities & BLIND || self.stat)
@@ -507,8 +436,8 @@
 
 /// Busy while a disability or unconsciousness keeps blindness or deafness up, ears are healing,
 /// a disability component listens, or the blind alert doesn't match the status yet.
-/datum/life_system/disabilities/idle(mob/living/self)
-	if(type != /datum/life_system/disabilities)
+/datum/om/stage/life/disabilities/idle(mob/living/self)
+	if(type != /datum/om/stage/life/disabilities)
 		return FALSE
 	if(self._listen_lookup?[COMSIG_HANDLE_DISABILITIES])
 		return FALSE
@@ -521,35 +450,33 @@
 // --- Output -----------------------------------------------------------------------------------
 
 /// Whether the mob can move (lying, stunned, buckled, ...).
-/datum/life_system/canmove
+/datum/om/stage/life/canmove
+	order = LIFE_PHASE_OUTPUT + 10
 	name = "canmove"
-	wake_only = LIFE_WAKE_ONLY_DERIVE
-	wake_on = LIFE_DERIVE_CHANNELS
-	phase = LIFE_PHASE_OUTPUT
-	order = 10
-	segment = LIFE_SEG_LIVING
+	pipeline = /datum/om/pipeline/life_derive
+	wake_on = CHANGE_MOB_STATUS
+	run_if = LIFE_RUN_IF_PLACED
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
-	woken_by = "status setters (LIFE_WAKE_STATUS); set_stat; Moved"
+	woken_by = "status setters; set_stat; Moved"
 
-/datum/life_system/canmove/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/canmove/perform(mob/living/self, datum/om/frame/life/ctx)
 	self.update_canmove()
 
 /// Resting and buckling update canmove themselves, and the statuses when they start or end.
-/datum/life_system/canmove/idle(mob/living/self)
-	return type == /datum/life_system/canmove
+/datum/om/stage/life/canmove/idle(mob/living/self)
+	return type == /datum/om/stage/life/canmove
 
 /// The player HUD. Returns FALSE when there is no HUD to update. Also run by refresh_hud().
-/datum/life_system/hud
+/datum/om/stage/life/hud
+	order = LIFE_PHASE_OUTPUT + 20
 	name = "hud"
-	wake_only = LIFE_WAKE_ONLY_PRESENT
-	wake_on = LIFE_WAKE_ON_HUD
-	phase = LIFE_PHASE_OUTPUT
-	order = 20
-	segment = LIFE_SEG_LIVING
+	pipeline = /datum/om/pipeline/life_present
+	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	run_if = LIFE_RUN_IF_PLACED
 	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
 	woken_by = "Login; body invalidate; equipment; Moved; its own timer (darksight)"
 
-/datum/life_system/hud/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/hud/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
 	if(!self.hud_available())
@@ -559,21 +486,21 @@
 	return TRUE
 
 /// The root's health icon is event-driven; darksight re-adapts on a timer for players.
-/datum/life_system/hud/idle(mob/living/self)
-	return type == /datum/life_system/hud && !self._listen_lookup?[COMSIG_MOB_HANDLE_HUD]
+/datum/om/stage/life/hud/idle(mob/living/self)
+	return type == /datum/om/stage/life/hud && !self._listen_lookup?[COMSIG_MOB_HANDLE_HUD]
 
-/datum/life_system/hud/rewake_delay(mob/living/self)
+/datum/om/stage/life/hud/rewake_delay(mob/living/self)
 	return self.client ? 5 SECONDS : 0
 
 /// Health doll / health icon. Returns FALSE when a component draws it instead.
-/datum/life_system/hud/proc/health_icons(mob/living/self)
+/datum/om/stage/life/hud/proc/health_icons(mob/living/self)
 	SHOULD_CALL_PARENT(TRUE)
 	if(SEND_SIGNAL(self,COMSIG_MOB_HANDLE_HUD_HEALTH_ICON) & COMSIG_COMPONENT_HANDLED_HEALTH_ICON)
 		return FALSE
 	return TRUE
 
 /// Adapts the darkness overlay to the light level and the mob's darksight.
-/datum/life_system/hud/proc/darksight(mob/living/self)
+/datum/om/stage/life/hud/proc/darksight(mob/living/self)
 	SEND_SIGNAL(self,COMSIG_MOB_HANDLE_HUD_DARKSIGHT)
 	if(!self.seedarkness) //Cheap 'always darksight' var
 		self.dsoverlay.alpha = 255
@@ -603,25 +530,24 @@
 	animate(self.dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
 
 /// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Also run by refresh_vision().
-/datum/life_system/vision
+/datum/om/stage/life/vision
+	order = LIFE_PHASE_OUTPUT + 30
 	name = "vision"
-	wake_only = LIFE_WAKE_ONLY_PRESENT
-	wake_on = LIFE_WAKE_ON_SENSES
-	phase = LIFE_PHASE_OUTPUT
-	order = 30
-	segment = LIFE_SEG_LIVING
+	pipeline = /datum/om/pipeline/life_present
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	run_if = LIFE_RUN_IF_PLACED
 	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
 	woken_by = "equipment; set_stat; Moved; Login; refresh_vision()"
 
 /// Variants set their sight, then call ..() last to send the vision signal.
-/datum/life_system/vision/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/vision/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
 	SEND_SIGNAL(self,COMSIG_MOB_HANDLE_VISION)
 
 /// The root only notifies listeners (remote view); sight inputs wake it.
-/datum/life_system/vision/idle(mob/living/self)
-	return type == /datum/life_system/vision && !self._listen_lookup?[COMSIG_MOB_HANDLE_VISION]
+/datum/om/stage/life/vision/idle(mob/living/self)
+	return type == /datum/om/stage/life/vision && !self._listen_lookup?[COMSIG_MOB_HANDLE_VISION]
 
-/datum/life_system/vision/rewake_delay(mob/living/self)
+/datum/om/stage/life/vision/rewake_delay(mob/living/self)
 	return self.client ? 5 SECONDS : 0

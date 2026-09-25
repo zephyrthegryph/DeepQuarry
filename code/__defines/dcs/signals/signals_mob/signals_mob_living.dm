@@ -12,7 +12,7 @@
 	#define COMPONENT_BODY_KEEP_ALIVE (1<<0)
 
 
-// Sent before a status increase (statuses.dm, /mob/proc/status_admit()) (amount). Only for
+// Sent before a status increase (a status row's "signal", code/datums/om/status.dm) (amount). Only for
 // increases, and only when the mob isn't immune.
 
 ///before a stun increase (amount)

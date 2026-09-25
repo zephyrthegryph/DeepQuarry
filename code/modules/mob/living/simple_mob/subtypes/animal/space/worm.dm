@@ -90,10 +90,10 @@
 /mob/living/simple_mob/animal/space/space_worm/head/long
 	segment_count = 10
 
-/datum/life_system/special/animal/space/space_worm/head
-	mob_type = /mob/living/simple_mob/animal/space/space_worm/head
+/datum/om/stage/life/special/animal/space/space_worm/head
+	of = /mob/living/simple_mob/animal/space/space_worm/head
 
-/datum/life_system/special/animal/space/space_worm/head/tick(mob/living/simple_mob/animal/space/space_worm/head/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/space/space_worm/head/perform(mob/living/simple_mob/animal/space/space_worm/head/self, datum/om/frame/life/ctx)
 	..()
 	self.update_body_faction()
 
@@ -154,10 +154,10 @@
 	if(previous)
 		previous.death()
 
-/datum/life_system/special/animal/space/space_worm
-	mob_type = /mob/living/simple_mob/animal/space/space_worm
+/datum/om/stage/life/special/animal/space/space_worm
+	of = /mob/living/simple_mob/animal/space/space_worm
 
-/datum/life_system/special/animal/space/space_worm/tick(mob/living/simple_mob/animal/space/space_worm/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/space/space_worm/perform(mob/living/simple_mob/animal/space/space_worm/self, datum/om/frame/life/ctx)
 	..()
 
 	if(world.time > self.time_maw_opened + self.maw_cooldown)	// Auto-stop eating.

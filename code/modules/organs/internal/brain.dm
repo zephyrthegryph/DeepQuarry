@@ -280,7 +280,7 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	var/obj/item/organ/internal/brain/tissue = host_tissue()
 	if(!tissue)
 		return ..()
-	if(amount <= 0 || kind < 1 || kind > INJURY_KIND_COUNT || (status_flags & GODMODE))
+	if(amount <= 0 || kind < 1 || kind > INJURY_KIND_COUNT || om_has(src, EFFECT_GODMODE))
 		return 0
 	var/lesion_type = ispath(affliction, /datum/affliction/lesion) ? affliction : organ_lesion_for_injury(kind)
 	if(!lesion_type)

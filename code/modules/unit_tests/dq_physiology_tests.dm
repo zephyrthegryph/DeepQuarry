@@ -87,7 +87,7 @@
 	var/perfusion_before = H.body.perfusion()
 	var/rate_before = H.body.heart_rate()
 	H.vessel.remove_reagent(REAGENT_ID_BLOOD, H.species.blood_volume * 0.6)
-	H.run_life_system(/datum/life_system/blood)
+	om_stage_run_now(H, /datum/om/stage/life/blood)
 	TEST_ASSERT(H.body.perfusion() < perfusion_before, "losing blood should lower perfusion ([perfusion_before] -> [H.body.perfusion()])")
 	TEST_ASSERT(H.body.heart_rate() > rate_before, "the heart should race to compensate ([rate_before] -> [H.body.heart_rate()])")
 	physiology_test_run(H, 5)

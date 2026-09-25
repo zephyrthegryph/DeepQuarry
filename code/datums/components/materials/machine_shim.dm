@@ -14,7 +14,7 @@
 /datum/component/using_machine_shim/Initialize(obj/machinery/machine)
 	// Mob
 	host_mob = parent
-	add_trait_life_system(host_mob, /datum/life_system/trait/using_machine_shim)
+	om_stage_add(host_mob, /datum/om/stage/life/trait/using_machine_shim)
 	RegisterSignal(host_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(on_mob_action))
 	RegisterSignal(host_mob, COMSIG_MOB_LOGOUT, PROC_REF(on_mob_logout))
 
@@ -35,7 +35,7 @@
 	linked_machine = null
 	// Mob
 	UnregisterSignal(host_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	remove_trait_life_system(host_mob, /datum/life_system/trait/using_machine_shim)
+	om_stage_remove(host_mob, /datum/om/stage/life/trait/using_machine_shim)
 	UnregisterSignal(host_mob, COMSIG_MOB_LOGOUT)
 	host_mob.reset_perspective() // Required, because our machine may have been operating a remote view
 	host_mob = null
@@ -133,9 +133,9 @@
 	user.unset_machine()
 
 /// Trait system: release the machine when the user leaves it. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/using_machine_shim
+/datum/om/stage/life/trait/using_machine_shim
 	name = "using machine shim"
 	component_type = /datum/component/using_machine_shim
 
-/datum/life_system/trait/using_machine_shim/tick_component(mob/living/self, datum/component/using_machine_shim/component)
+/datum/om/stage/life/trait/using_machine_shim/tick_component(mob/living/self, datum/component/using_machine_shim/component)
 	component.on_mob_life()

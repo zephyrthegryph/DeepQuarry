@@ -117,11 +117,10 @@
 		R.FindDevices()
 	return ..()
 
-// Proc: process()
-// Parameters: None
-// Description: Uses parent process, but if grounding wire is cut causes sparks to fly around.
-// This also causes the SMES to quickly discharge, and has small chance of breaking lights connected to APCs in the powernet.
-/obj/machinery/power/smes/buildable/process()
+/// With the grounding wire cut, sparks fly every frame and the unit discharges quickly, with a
+/// small chance of breaking lights on the APCs of its powernet. It stays awake until grounded or
+/// nearly empty.
+/obj/machinery/power/smes/buildable/power_step()
 	var/needs_grounding_tick = !grounding && (Percentage() > 5)
 	if(needs_grounding_tick)
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -130,11 +129,12 @@
 		charge -= (output_level_max * SMESRATE)
 		if(prob(1)) // Small chance of overload occuring since grounding is disabled.
 			apcs_overload(0,10)
-
-	var/parent_result = ..()
+	. = ..()
 	if(needs_grounding_tick)
-		return
-	return parent_result
+		return null
+
+/obj/machinery/power/smes/buildable/power_settled()
+	return grounding || Percentage() <= 5
 
 // Proc: attack_ai()
 // Parameters: None

@@ -144,16 +144,16 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Nar
 	feedback_add_details("admin_verb","DIRN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_godmode, R_HOLDER, "Toggle Godmode", "Toggle godmode on the target.", ADMIN_CATEGORY_GAME, mob/target_mob in GLOB.mob_list)
-	if(target_mob.status_flags & GODMODE)
+	if(om_has(target_mob, EFFECT_GODMODE))
 		target_mob.RemoveElement(/datum/element/godmode)
 
-	else if(!(target_mob.status_flags & GODMODE))
+	else if(!om_has(target_mob, EFFECT_GODMODE))
 		target_mob.AddElement(/datum/element/godmode)
 
-	to_chat(user, span_notice("Toggled [(target_mob.status_flags & GODMODE) ? "ON" : "OFF"]"))
+	to_chat(user, span_notice("Toggled [om_has(target_mob, EFFECT_GODMODE) ? "ON" : "OFF"]"))
 
-	log_admin("[key_name(user)] has toggled [key_name(target_mob)]'s godmode to [(target_mob.status_flags & GODMODE) ? "On" : "Off"]")
-	var/msg = "[key_name_admin(user)] has toggled [ADMIN_LOOKUPFLW(target_mob)]'s godmode to [(target_mob.status_flags & GODMODE) ? "On" : "Off"]"
+	log_admin("[key_name(user)] has toggled [key_name(target_mob)]'s godmode to [om_has(target_mob, EFFECT_GODMODE) ? "On" : "Off"]")
+	var/msg = "[key_name_admin(user)] has toggled [ADMIN_LOOKUPFLW(target_mob)]'s godmode to [om_has(target_mob, EFFECT_GODMODE) ? "On" : "Off"]"
 	message_admins(msg)
 	admin_ticket_log(target_mob, msg)
 	feedback_add_details("admin_verb","GOD_ENABLE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

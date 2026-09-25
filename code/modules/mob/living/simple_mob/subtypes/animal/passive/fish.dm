@@ -43,11 +43,11 @@
 	return MOVEMENT_FAILED // Don't leave the water!
 
 
-/datum/life_system/breathing/simple_mob/animal/passive/fish
-	mob_type = /mob/living/simple_mob/animal/passive/fish
+/datum/om/stage/life/breathing/simple_mob/animal/passive/fish
+	of = /mob/living/simple_mob/animal/passive/fish
 
 /// Take damage if we are not in water.
-/datum/life_system/breathing/simple_mob/animal/passive/fish/tick(mob/living/simple_mob/animal/passive/fish/self, datum/life_context/ctx)
+/datum/om/stage/life/breathing/simple_mob/animal/passive/fish/perform(mob/living/simple_mob/animal/passive/fish/self, datum/om/frame/life/ctx)
 	if(istype(self.loc, /obj/item/glass_jar/fish))
 		var/obj/item/glass_jar/fish/F = self.loc
 		if(F.filled)
@@ -56,7 +56,7 @@
 	var/turf/T = get_turf(self)
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
-			self.say(pick("Blub", "Glub", "Burble"))
+			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, say), pick("Blub", "Glub", "Burble"))
 		self.add_oxygen_debt(self.unsuitable_atoms_damage, T)
 
 // Subtypes.
@@ -328,10 +328,10 @@
 	reagents.add_reagent(REAGENT_ID_TOXIN, 45)
 	reagents.add_reagent(REAGENT_ID_IMPEDREZENE, 15)
 
-/datum/life_system/type_post/simple_mob/animal/passive/fish/koi/poisonous
-	mob_type = /mob/living/simple_mob/animal/passive/fish/koi/poisonous
+/datum/om/stage/life/type_post/simple_mob/animal/passive/fish/koi/poisonous
+	of = /mob/living/simple_mob/animal/passive/fish/koi/poisonous
 
-/datum/life_system/type_post/simple_mob/animal/passive/fish/koi/poisonous/tick(mob/living/simple_mob/animal/passive/fish/koi/poisonous/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/passive/fish/koi/poisonous/perform(mob/living/simple_mob/animal/passive/fish/koi/poisonous/self, datum/om/frame/life/ctx)
 	..()
 	if(isbelly(self.loc) && prob(10))
 		var/obj/belly/B = self.loc

@@ -11,109 +11,102 @@
 	life_set = LIFE_SET_ROBOT
 
 /// `if(transforming) return` and the per-cycle power counter reset.
-/datum/life_system/robot_cycle
+/datum/om/stage/life/robot_cycle
+	order = LIFE_PHASE_INPUT + 0
 	name = "robot cycle"
-	wake_on = LIFE_WAKE_ON_MACHINE
-	phase = LIFE_PHASE_INPUT
-	order = 0
+	wake_on = 0
 	life_sets = LIFE_SET_ROBOT
-	mob_type = /mob/living/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/robot_cycle/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/robot_cycle/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	if(self.transforming)
-		return LIFE_HALT
+		return ctx.abort()
 	self.used_power_this_tick = 0
 
-/datum/life_system/modifiers/silicon/robot
-	mob_type = /mob/living/silicon/robot
-	order = 10
-	segment = NONE
+/datum/om/stage/life/modifiers/silicon/robot
+	order = LIFE_PHASE_INPUT + 10
+	of = /mob/living/silicon/robot
+	run_if = null
 
-/datum/life_system/instability/silicon/robot
-	mob_type = /mob/living/silicon/robot
-	order = 40
+/datum/om/stage/life/instability/silicon/robot
+	order = LIFE_PHASE_INPUT + 40
+	of = /mob/living/silicon/robot
 
 /// One ledger draw of the cached demand; brownout on shortfall; heat debt.
-/datum/life_system/robot_power
+/datum/om/stage/life/robot_power
+	order = LIFE_PHASE_BODY + 10
 	name = "robot power"
-	wake_on = LIFE_WAKE_ON_MACHINE
-	phase = LIFE_PHASE_BODY
-	order = 10
+	wake_on = 0
 	life_sets = LIFE_SET_ROBOT
-	mob_type = /mob/living/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/robot_power/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/robot_power/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.process_power()
 
 /// Vitals, part breakage, consciousness and death: the machine plan decides.
-/datum/life_system/robot_body
+/datum/om/stage/life/robot_body
+	order = LIFE_PHASE_BODY + 20
 	name = "robot body"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_BODY
-	order = 20
+	wake_on = CHANGE_MOB_HEALTH
 	life_sets = LIFE_SET_ROBOT
-	mob_type = /mob/living/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/robot_body/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/robot_body/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	self.body?.life_tick()
 
 /// Client readouts: HUD, vision and module items. Camera, radio and lights change on events.
-/datum/life_system/robot_interface
+/datum/om/stage/life/robot_interface
+	order = LIFE_PHASE_OUTPUT + 10
 	name = "robot interface"
-	wake_on = LIFE_WAKE_ON_HUD
-	phase = LIFE_PHASE_OUTPUT
-	order = 10
+	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
 	life_sets = LIFE_SET_ROBOT
-	mob_type = /mob/living/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/robot_interface/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/robot_interface/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	if(self.client)
 		self.refresh_hud()
 		self.refresh_vision()
 		self.update_items()
 
 /// Queued alarms reach the robot.
-/datum/life_system/robot_alarms
+/datum/om/stage/life/robot_alarms
+	order = LIFE_PHASE_OUTPUT + 20
 	name = "robot alarms"
-	wake_on = LIFE_WAKE_ON_MACHINE
-	phase = LIFE_PHASE_OUTPUT
-	order = 20
+	wake_on = 0
 	life_sets = LIFE_SET_ROBOT
-	mob_type = /mob/living/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/robot_alarms/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/robot_alarms/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.process_queued_alarms()
 
-/datum/life_system/canmove/silicon/robot
-	mob_type = /mob/living/silicon/robot
-	order = 30
-	segment = NONE
+/datum/om/stage/life/canmove/silicon/robot
+	order = LIFE_PHASE_OUTPUT + 30
+	of = /mob/living/silicon/robot
+	run_if = null
 
 /// Ear damage heals; a deafness disability keeps deafness up. Temporary blindness, deafness and
 /// blur are timed statuses that end on their own (update_senses() follows blindness ending).
-/datum/life_system/robot_senses
+/datum/om/stage/life/robot_senses
+	order = LIFE_PHASE_INPUT + 30
 	name = "robot senses"
-	wake_on = LIFE_WAKE_ON_SENSES | LIFE_WAKE_ON_GENETICS
-	phase = LIFE_PHASE_INPUT
-	order = 30
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_STATUS
 	life_sets = LIFE_SET_ROBOT
-	mob_type = /mob/living/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/robot_senses/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/robot_senses/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	if(self.ear_damage < 25)
 		self.ear_damage = max(self.ear_damage - 0.05, 0)
 	if(self.sdisabilities & DEAF)
 		self.status_at_least(EFFECT_DEAFENED, 1)
 
-/datum/life_system/robot_senses/idle(mob/living/silicon/robot/self)
+/datum/om/stage/life/robot_senses/idle(mob/living/silicon/robot/self)
 	return !(self.sdisabilities & DEAF) && (self.ear_damage <= 0 || self.ear_damage >= 25)
 
-/mob/living/silicon/robot/on_status_changed(datum/om/effect/mob_status/def, active)
-	..()
-	if(!active && def.id == EFFECT_BLINDED)
-		update_senses()
+/// Blindness ending: the robot's sensors come back.
+/mob/living/silicon/robot/status_sight_returned()
+	update_senses()
 
 // --- Power system ------------------------------------------------------------------------------
 
@@ -146,10 +139,10 @@
 
 // --- Senses and HUD ------------------------------------------------------------------------------
 
-/datum/life_system/vision/silicon/robot
-	mob_type = /mob/living/silicon/robot
+/datum/om/stage/life/vision/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/vision/silicon/robot/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/vision/silicon/robot/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	var/fullbright = FALSE
 	var/seemeson = FALSE
 	var/seejanhud = self.sight_mode & BORGJAN
@@ -212,10 +205,10 @@
 	// Call parent to handle signals
 	..()
 
-/datum/life_system/hud/silicon/robot
-	mob_type = /mob/living/silicon/robot
+/datum/om/stage/life/hud/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/hud/silicon/robot/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/hud/silicon/robot/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(!.)
 		return
@@ -247,7 +240,7 @@
 	else
 		self.clear_alert("hacked")
 
-/datum/life_system/hud/silicon/robot/health_icons(mob/living/silicon/robot/self)
+/datum/om/stage/life/hud/silicon/robot/health_icons(mob/living/silicon/robot/self)
 	. = ..()
 	if(!. || !self.healths)
 		return

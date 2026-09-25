@@ -129,7 +129,7 @@
 /obj/item/organ/internal/proc/apply_lesion_damage(amount, lesion_type = null, silent = FALSE)
 	if(amount < 0)
 		CRASH("apply_lesion_damage() called with a negative amount ([amount]) on [src]; heal through mend().")
-	if(!amount || (owner?.status_flags & GODMODE))
+	if(!amount || om_has(owner, EFFECT_GODMODE))
 		return 0
 	if(robotic >= ORGAN_ROBOT)
 		amount *= PROSTHETIC_ORGAN_DAMAGE_MULT

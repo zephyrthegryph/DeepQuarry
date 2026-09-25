@@ -9,33 +9,49 @@
 		CLOCK_CHEM = list("min" = 0, "max" = 10),
 	)
 
+/// A mob status row (status.dm): timed, unit LIFE_CYCLE, raising CHANGE_MOB_STATUS on start and end,
+/// plus `fields`.
+/proc/om_mob_status_row(list/fields)
+	. = list("kind" = OM_EFFECT_STATUS, "combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "unit" = LIFE_CYCLE, "entity_type" = /mob)
+	for(var/key in fields)
+		.[key] = fields[key]
+
 /proc/om_library_effects()
 	return list(
-		// Mob statuses: any source makes them true; timed applies keep the longest. Mobs apply
-		// them through status_at_least()/status_set()/status_adjust() (doc/rewrite/life_on_om.md
-		// §7); each type (statuses.dm) declares its immunity, signal, alert and indicator.
-		EFFECT_STUNNED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/stunned),
-		EFFECT_WEAKENED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/weakened),
-		EFFECT_PARALYZED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/paralyzed),
-		EFFECT_SLEEPING = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/sleeping),
-		EFFECT_CONFUSED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/confused),
-		EFFECT_BLINDED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/blinded),
-		EFFECT_BLURRY = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/blurry),
-		EFFECT_DEAFENED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/deafened),
-		EFFECT_STUTTERING = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/stuttering),
-		EFFECT_MUTED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/muted),
-		EFFECT_DRUGGED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/drugged),
-		EFFECT_SLURRING = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/slurring),
-		EFFECT_DROWSY = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/drowsy),
-		EFFECT_HALLUCINATING = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/hallucinating),
-		EFFECT_DIZZY = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/dizzy),
-		EFFECT_JITTERY = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/jittery),
-		// Status immunities (statuses.dm): held by mob type declarations, mutations, godmode.
-		EFFECT_IMMUNE_STUN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
-		EFFECT_IMMUNE_WEAKEN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
-		EFFECT_IMMUNE_PARALYZE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
-		EFFECT_IMMUNE_DIZZY = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
-		EFFECT_IMMUNE_JITTER = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
+		// Mob statuses (status.dm; doc/rewrite/life_on_om.md §7): timed, in units of LIFE_CYCLE.
+		// Every field is declared here: immunity, veto signal, presentation and hooks.
+		EFFECT_STUNNED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_STUN, "scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_STUN, "alert" = "stunned", "alert_type" = /atom/movable/screen/alert/stunned, "indicator" = "stunned",
+			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed)),
+		EFFECT_WEAKENED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_WEAKEN, "scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_WEAKEN, "alert" = "weakened", "alert_type" = /atom/movable/screen/alert/weakened, "indicator" = "weakened",
+			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_knocked_down, "on_end" = /mob/proc/status_incapacitation_changed)),
+		EFFECT_PARALYZED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_PARALYZE, "scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_PARALYZE, "alert" = "paralyzed", "alert_type" = /atom/movable/screen/alert/paralyzed, "indicator" = "paralysis",
+			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_passed_out, "on_end" = /mob/proc/status_incapacitation_changed)),
+		EFFECT_SLEEPING = om_mob_status_row(list("scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_SLEEP, "alert" = "asleep", "alert_type" = /atom/movable/screen/alert/asleep, "indicator" = "sleeping",
+			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed)),
+		EFFECT_CONFUSED = om_mob_status_row(list("scaled" = TRUE, "alert" = "confused", "alert_type" = /atom/movable/screen/alert/confused, "indicator" = "confused")),
+		EFFECT_BLINDED = om_mob_status_row(list("scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_BLIND, "indicator" = "blinded", "on_end" = /mob/proc/status_sight_returned)),
+		EFFECT_BLURRY = om_mob_status_row(list("rate" = 1)),
+		EFFECT_DEAFENED = om_mob_status_row(list("on_start" = /mob/proc/status_deafness_started, "on_end" = /mob/proc/status_deafness_ended)),
+		EFFECT_STUTTERING = om_mob_status_row(list("rate" = 1)),
+		EFFECT_MUTED = om_mob_status_row(list("rate" = 1)),
+		EFFECT_DRUGGED = om_mob_status_row(list("alert" = "high", "alert_type" = /atom/movable/screen/alert/high)),
+		EFFECT_SLURRING = om_mob_status_row(list("rate" = 1)),
+		EFFECT_DROWSY = om_mob_status_row(list("rate" = 1)),
+		EFFECT_HALLUCINATING = om_mob_status_row(list("rate" = 2)),
+		// Dizziness and jitters are 0-1000 points: 3 wear off per cycle, 15 while resting.
+		EFFECT_DIZZY = om_mob_status_row(list("rate" = 3, "rate_resting" = 15, "max_units" = 1000, "immunity" = EFFECT_IMMUNE_DIZZY,
+			"on_start" = /mob/proc/status_dizzy_started, "on_end" = /mob/proc/status_dizzy_ended)),
+		EFFECT_JITTERY = om_mob_status_row(list("rate" = 3, "rate_resting" = 15, "max_units" = 1000, "immunity" = EFFECT_IMMUNE_JITTER,
+			"on_start" = /mob/proc/status_jittery_started, "on_end" = /mob/proc/status_jittery_ended)),
+		// Status immunities: gaining one ends the statuses that name it. Held by mob type decls,
+		// mutations and godmode.
+		EFFECT_IMMUNE_STUN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
+		EFFECT_IMMUNE_WEAKEN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
+		EFFECT_IMMUNE_PARALYZE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
+		EFFECT_IMMUNE_DIZZY = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
+		EFFECT_IMMUNE_JITTER = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
+		// Godmode: no harm reaches the entity; it holds the incapacitation immunities while on.
+		EFFECT_GODMODE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "implies" = list(EFFECT_IMMUNE_STUN, EFFECT_IMMUNE_WEAKEN, EFFECT_IMMUNE_PARALYZE)),
 		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
 		EFFECT_SLOWED = list("combine" = COMBINE_SUM, "channel" = CHANGE_MOB_MOVEMENT),
 		// Composites: defined from other effects, no contributions of their own.

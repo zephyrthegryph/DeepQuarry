@@ -117,7 +117,7 @@
 /// The calls are the same ones SSmobs and SSreactor make each cycle.
 /proc/_vore_test_run_cycles(mob/living/pred, mob/living/prey, cycles)
 	for(var/i in 1 to cycles)
-		pred.life_frame()
-		prey.life_frame()
+		om_run_frame_now(pred, /datum/om/pipeline/life)
+		om_run_frame_now(prey, /datum/om/pipeline/life)
 		for(var/obj/belly/B as anything in pred.vore_organs)
 			B.belly_cycle(BELLY_BASELINE_TICK / (1 SECONDS))

@@ -19,7 +19,7 @@
 		return
 	if(owner.transforming)
 		return
-	if((prob(1) && prob(1) && owner.status_units(EFFECT_PARALYZED) < 1))
+	if((prob(1) && prob(1) && !owner.has_status(EFFECT_PARALYZED)))
 		to_chat(owner, span_red("You have a seizure!"))
 		for(var/mob/O in viewers(owner, null))
 			if(O == owner)

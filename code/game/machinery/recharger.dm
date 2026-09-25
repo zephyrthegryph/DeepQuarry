@@ -47,6 +47,8 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	idle_power_usage = 4
 	active_power_usage = 40000	//40 kW
 	var/efficiency = 40000 //will provide the modified power rate when upgraded
+	/// Runs on the machine pipeline (machine_pipeline.dm): the power/recharger stage charges.
+	polls = FALSE
 	var/obj/item/charging = null
 	var/icon_state_charged = "recharger2"
 	var/icon_state_charging = "recharger1"
@@ -173,7 +175,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	user.drop_item()
 	G.forceMove(src)
 	charging = G
-	START_MACHINE_PROCESSING(src)
+	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	update_icon()
 	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 	return TRUE
@@ -183,7 +185,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		return TRUE
 	G.forceMove(src)
 	charging = G
-	START_MACHINE_PROCESSING(src)
+	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	update_icon()
 	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 	return TRUE
@@ -195,6 +197,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		to_chat(user, span_warning("Remove [charging] first!"))
 		return ITEM_INTERACT_BLOCKING
 	anchored = !anchored
+	om_changed(src, CHANGE_MACHINE_ANCHORED)
 	to_chat(user, "You [anchored ? "attached" : "detached"] [src].")
 	playsound(src, tool.usesound, 75, TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -206,6 +209,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		charging.update_icon()
 		user.put_in_hands(charging)
 		charging = null
+		om_changed(src, CHANGE_MACHINE_OCCUPANT)
 		update_icon()
 	return TRUE
 
@@ -216,52 +220,31 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 			charging.update_icon()
 			charging.forceMove(src.loc)
 			charging = null
+			om_changed(src, CHANGE_MACHINE_OCCUPANT)
 			update_icon()
 
-/obj/machinery/recharger/process()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
-		update_use_power(USE_POWER_OFF)
-		icon_state = icon_state_idle
-		return PROCESS_KILL
-
-	if(!charging)
-		update_use_power(USE_POWER_IDLE)
-		icon_state = icon_state_idle
-		return PROCESS_KILL
-
-	if(charging_complete())
-		update_use_power(USE_POWER_IDLE)
-		icon_state = icon_state_charged
-		return PROCESS_KILL
-
-	//PAI Cards
-	else if(istype(charging, /obj/item/paicard))
+/// One frame of charging (the machine pipeline's power/recharger stage decides whether to).
+/obj/machinery/recharger/proc/charge_step()
+	if(istype(charging, /obj/item/paicard))
 		charge_pai(charging)
 		return
-	//Charging cell-loaded guns.
-	else if(istype(charging, /obj/item/gun/projectile/cell_loaded))
+	if(istype(charging, /obj/item/gun/projectile/cell_loaded))
 		charge_cell_gun(charging)
 		return
-	//Charging cell magazines
-	else if(istype(charging, /obj/item/ammo_magazine/cell_mag))
+	if(istype(charging, /obj/item/ammo_magazine/cell_mag))
 		charge_cell_magazine(charging)
 		return
-	else
-		//Everything Else
-		var/obj/item/cell/C = charging.get_cell()
-		if(istype(C))
-			if(!C.fully_charged())
-				icon_state = icon_state_charging
-				C.give(CELLRATE*efficiency)
-				update_use_power(USE_POWER_ACTIVE)
-			else
-				icon_state = icon_state_charged
-				update_use_power(USE_POWER_IDLE)
-
-		//NSFW Batteries
-		else if(istype(charging, /obj/item/ammo_casing/microbattery))
-			charge_microbattery(charging)
-			return
+	var/obj/item/cell/C = charging.get_cell()
+	if(istype(C))
+		if(!C.fully_charged())
+			icon_state = icon_state_charging
+			C.give(CELLRATE*efficiency)
+			update_use_power(USE_POWER_ACTIVE)
+		else
+			icon_state = icon_state_charged
+			update_use_power(USE_POWER_IDLE)
+	else if(istype(charging, /obj/item/ammo_casing/microbattery))
+		charge_microbattery(charging)
 
 /obj/machinery/recharger/proc/charging_complete()
 	if(!charging || istype(charging, /obj/item/paicard))
@@ -286,12 +269,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		return TRUE
 	var/obj/item/cell/C = charging.get_cell()
 	return C?.fully_charged()
-
-/obj/machinery/recharger/power_change()
-	var/old_stat = stat
-	. = ..()
-	if(old_stat != stat)
-		START_MACHINE_PROCESSING(src)
 
 ///Charges PAIs.
 /obj/machinery/recharger/proc/charge_pai(obj/item/paicard/pcard)
@@ -362,7 +339,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	return
 
 
-/obj/machinery/recharger/update_icon()	//we have an update_icon() in addition to the stuff in process to make it feel a tiny bit snappier.
+/obj/machinery/recharger/update_icon()	// Immediate feedback; the power stage refines it (charged, charging) each frame.
 	if(charging)
 		icon_state = icon_state_charging
 	else

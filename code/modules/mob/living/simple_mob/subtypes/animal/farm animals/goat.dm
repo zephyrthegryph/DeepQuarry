@@ -30,12 +30,12 @@
 	udder = new(50)
 	udder.my_atom = src
 
-/datum/life_system/type_post/simple_mob/animal/goat
-	mob_type = /mob/living/simple_mob/animal/goat
+/datum/om/stage/life/type_post/simple_mob/animal/goat
+	of = /mob/living/simple_mob/animal/goat
 
-/datum/life_system/type_post/simple_mob/animal/goat/tick(mob/living/simple_mob/animal/goat/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/goat/perform(mob/living/simple_mob/animal/goat/self, datum/om/frame/life/ctx)
 	..()
-	if(ctx?.alive)
+	if(ctx.fact("alive"))
 		if(self.stat == CONSCIOUS)
 			if(self.udder && prob(5))
 				self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))

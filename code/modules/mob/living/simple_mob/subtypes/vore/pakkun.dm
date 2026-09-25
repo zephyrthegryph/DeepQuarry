@@ -58,10 +58,10 @@
 
 	allow_mind_transfer = TRUE
 
-/datum/life_system/type_post/simple_mob/vore/pakkun
-	mob_type = /mob/living/simple_mob/vore/pakkun
+/datum/om/stage/life/type_post/simple_mob/vore/pakkun
+	of = /mob/living/simple_mob/vore/pakkun
 
-/datum/life_system/type_post/simple_mob/vore/pakkun/tick(mob/living/simple_mob/vore/pakkun/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/pakkun/perform(mob/living/simple_mob/vore/pakkun/self, datum/om/frame/life/ctx)
 	..()
 	if(self.client)
 		return

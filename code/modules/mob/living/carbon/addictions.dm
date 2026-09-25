@@ -34,24 +34,23 @@
 			continue
 		addict_to_reagent(T.addiction, TRUE)
 
-/datum/life_system/addictions
+/datum/om/stage/life/addictions
+	order = LIFE_PHASE_MIND + 20
 	name = "addictions"
-	wake_on = LIFE_WAKE_ON_ADDICTION
-	phase = LIFE_PHASE_MIND
-	order = 20
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
+	wake_on = 0
+	run_if = LIFE_RUN_IF_STATUS_OK
 
 /// Cravings and withdrawal.
-/datum/life_system/addictions/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/addictions/perform(mob/living/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/addictions/idle(mob/living/self)
-	return type == /datum/life_system/addictions
+/datum/om/stage/life/addictions/idle(mob/living/self)
+	return type == /datum/om/stage/life/addictions
 
-/datum/life_system/addictions/carbon
-	mob_type = /mob/living/carbon
+/datum/om/stage/life/addictions/carbon
+	of = /mob/living/carbon
 
-/datum/life_system/addictions/carbon/tick(mob/living/carbon/self, datum/life_context/ctx)
+/datum/om/stage/life/addictions/carbon/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
 	self.process_addictions()
 
 /// Builds, feeds and withdraws addictions from the reagents in the blood and gut.

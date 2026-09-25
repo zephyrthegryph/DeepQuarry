@@ -3,34 +3,34 @@
 // tissue of its mind host (refresh_host_status()); what's left here is what a
 // client in a container needs: EMP interference on an MMI's I/O, vision and HUD.
 
-/datum/life_system/breathing/carbon/brain
-	mob_type = /mob/living/carbon/brain
+/datum/om/stage/life/breathing/carbon/brain
+	of = /mob/living/carbon/brain
 
-/datum/life_system/breathing/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
+/datum/om/stage/life/breathing/carbon/brain/perform(mob/living/carbon/brain/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/radiation/carbon/brain
-	mob_type = /mob/living/carbon/brain
+/datum/om/stage/life/radiation/carbon/brain
+	of = /mob/living/carbon/brain
 
-/datum/life_system/radiation/carbon/brain/applies(mob/living/carbon/brain/self)
+/datum/om/stage/life/radiation/carbon/brain/applies(mob/living/carbon/brain/self)
 	return FALSE
 
-/datum/life_system/environment/carbon/brain
-	mob_type = /mob/living/carbon/brain
+/datum/om/stage/life/environment/carbon/brain
+	of = /mob/living/carbon/brain
 
-/datum/life_system/environment/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
+/datum/om/stage/life/environment/carbon/brain/perform(mob/living/carbon/brain/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/chemicals/carbon/brain
-	mob_type = /mob/living/carbon/brain
+/datum/om/stage/life/chemicals/carbon/brain
+	of = /mob/living/carbon/brain
 
-/datum/life_system/chemicals/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
+/datum/om/stage/life/chemicals/carbon/brain/perform(mob/living/carbon/brain/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/status/carbon/brain
-	mob_type = /mob/living/carbon/brain
+/datum/om/stage/life/status/carbon/brain
+	of = /mob/living/carbon/brain
 
-/datum/life_system/status/carbon/brain/update_status(mob/living/carbon/brain/self)
+/datum/om/stage/life/status/carbon/brain/update_status(mob/living/carbon/brain/self)
 	if(self.host)
 		self.refresh_host_status()
 	else if(self.stat != DEAD)
@@ -101,10 +101,10 @@
 			to_chat(src, span_red("All systems restored."))
 			emp_damage -= 1
 
-/datum/life_system/vision/carbon/brain
-	mob_type = /mob/living/carbon/brain
+/datum/om/stage/life/vision/carbon/brain
+	of = /mob/living/carbon/brain
 
-/datum/life_system/vision/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
+/datum/om/stage/life/vision/carbon/brain/perform(mob/living/carbon/brain/self, datum/om/frame/life/ctx)
 	if (self.stat == DEAD || (self.has_mutation(XRAY)))
 		self.sight |= SEE_TURFS
 		self.sight |= SEE_MOBS
@@ -121,10 +121,10 @@
 	// Call parent to handle signals
 	..()
 
-/datum/life_system/hud/carbon/brain
-	mob_type = /mob/living/carbon/brain
+/datum/om/stage/life/hud/carbon/brain
+	of = /mob/living/carbon/brain
 
-/datum/life_system/hud/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
+/datum/om/stage/life/hud/carbon/brain/perform(mob/living/carbon/brain/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(!.)
 		return
@@ -140,7 +140,7 @@
 			self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
 			self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
-/datum/life_system/hud/carbon/brain/health_icons(mob/living/carbon/brain/self)
+/datum/om/stage/life/hud/carbon/brain/health_icons(mob/living/carbon/brain/self)
 	. = ..()
 	if(!. || !self.healths)
 		return

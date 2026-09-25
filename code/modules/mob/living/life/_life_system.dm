@@ -1,282 +1,70 @@
-// Life systems (doc/mob_life_architecture.md §4.2). One concern of a living mob's upkeep.
+// Life stages (doc/rewrite/life_on_om.md). One concern of a living mob's upkeep.
 //
-// A system is a singleton per type (flyweight): per-mob state lives on the mob, its body or a
-// component, never on the system. Every call receives the mob as `self`.
+// A stage is a flyweight per type: per-mob state lives on the mob, its body or a component, never
+// on the stage. Every call receives the mob as `self` and the frame as `ctx`.
 //
-// Families and variants. A family is one concern (breathing, environment, HUD, ...). Its root
-// is a direct child of /datum/life_system (or of a `category` type). A family may have
-// variants for particular mob types: the variant path mirrors the mob path under the family
-// root, and its `mob_type` names the mob type it serves, for example
-//	/datum/life_system/environment               mob_type = /mob/living
-//	/datum/life_system/environment/carbon/human  mob_type = /mob/living/carbon/human
-// A mob gets the variant with the most derived matching mob_type, and a variant's `..()`
-// reaches the variant of the nearest ancestor mob type, exactly as the old handle_* override
-// chains did.
+// Families and variants. A family is one concern (breathing, environment, HUD, ...). Its root is a
+// direct child of /datum/om/stage/life (or of the trait category). A family may have variants for
+// particular mob types: the variant path mirrors the mob path under the family root, and its `of`
+// names the mob type it serves, for example
+//	/datum/om/stage/life/environment               of = /mob/living
+//	/datum/om/stage/life/environment/carbon/human  of = /mob/living/carbon/human
+// A mob gets the variant whose `of` sits deepest in its inheritance (resolved once per mob type
+// by the pipeline), and a variant's `..()` reaches the variant of the nearest ancestor mob type,
+// as the old handle_* override chains did.
 
-/datum/life_system
-	/// Readable name for logs and the profiler.
-	var/name = "life system"
-	/// Mob change channels (CHANGE_MOB_*, LIFE_WAKE_ON_*) whose change can give this system work
-	/// once it sleeps. See doc/rewrite/life_on_om.md §5.
-	var/wake_on = LIFE_WAKE_ON_UPKEEP
-	/// LIFE_WAKE_ONLY_*: not run by the frame, but by the derive or present behaviour when its
-	/// channels change (doc/rewrite/life_on_om.md §6).
-	var/wake_only = LIFE_WAKE_ONLY_NONE
-	/// Gates run whenever the frame runs; they never sleep and never keep a mob awake.
-	var/gate = FALSE
-	/// LIFE_PHASE_*: coarse position in the cycle.
-	var/phase = LIFE_PHASE_BODY
-	/// Position within the phase; lower runs first.
-	var/order = 0
-	/// LIFE_SEG_* flags. If an earlier gate blocked any of them this cycle, the system is skipped.
-	var/segment = NONE
-	/// LIFE_SET_* flags of the Life sequences that include this family. Read from the family root.
+/datum/om/stage/life
+	category = /datum/om/stage/life
+	pipeline = /datum/om/pipeline/life
+	of = /mob/living
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_CONDITIONS
+	/// LIFE_SET_* flags of the Life sequences that include this family. Read from the variant.
 	var/life_sets = LIFE_SET_LIVING
-	/// The mob type this variant serves. The most derived match wins inside a family.
-	var/mob_type = /mob/living
-	/// TRUE on grouping types whose direct children are the family roots.
-	var/category = FALSE
-	/// TRUE for systems a mob gains only when something adds them (component systems).
-	var/extra = FALSE
-	/// Family root type. Filled by the registry.
-	var/family
-	/// What wakes this system once it sleeps (for logs and the audit): which producers raise
-	/// the channels in its `wake_on`.
-	var/woken_by
 
-/// Does this mob get this system at all? Evaluated only when composing, so it may depend
-/// only on what the composition key covers (the mob type and its extras).
-/datum/life_system/proc/applies(mob/living/self)
-	return TRUE
+/// Only the families of the mob's Life sequence (the silicons never ran the living core).
+/datum/om/stage/life/applies(mob/living/self)
+	return (life_sets & self.life_set)
 
-/// Register the signals, gas dependencies and timers that wake this system for this mob.
-/// Called when a mob gains the system through composition.
-/datum/life_system/proc/attach(mob/living/self)
-	return
+// --- The frame --------------------------------------------------------------------------------
 
-/// Undo attach(). Called when a mob loses the system (recomposition or deletion).
-/datum/life_system/proc/detach(mob/living/self)
-	return
-
-/// Sleep rule (doc/rewrite/life_on_om.md §5). TRUE when this system has nothing to do until
-/// one of its `wake_on` channels changes. Evaluated after every tick and by the hibernation
-/// audit, so it must be cheap, read-only and correct for a mob that is not ticking: the
-/// audit treats a FALSE on a sleeping system as a missed wake. The default never sleeps.
-/datum/life_system/proc/idle(mob/living/self)
-	return FALSE
-
-/// For an idle system that still drifts slowly (ambience, AFK, darksight): deciseconds
-/// until it should be woken anyway, or 0 to wait for an event.
-/datum/life_system/proc/rewake_delay(mob/living/self)
-	return 0
-
-/// Do the work. Return LIFE_SLEEP when nothing is left to do until woken, LIFE_HALT to end
-/// the cycle. `ctx` is null when the system runs outside the schedule (run_life_system()).
-/datum/life_system/proc/tick(mob/living/self, datum/life_context/ctx)
-	return
-
-// --- Context ----------------------------------------------------------------------------------
-
-/// Per-frame facts shared by the systems of one mob's frame. One per mob, reset every frame.
-/datum/life_context
-	/// Seconds of real time this frame covers (LIFE_CYCLE_SECONDS).
-	var/seconds = LIFE_CYCLE_SECONDS
-	/// LIFE_SEG_* flags blocked by gates this cycle.
-	var/blocked = NONE
-	/// TRUE when the per-system profiler sampled this frame.
-	var/profile = FALSE
-	/// TRUE once the frame found the mob alive: set by the living alive gate, revoked by a
-	/// subtype's vitals gate that finds it dead (simple mobs).
-	var/alive = FALSE
-	/// The air this mob sits in (turf air, belly air or null), captured at the placed gate.
-	var/datum/gas_mixture/environment
-	/// TRUE when the biology clock ran no step this frame (stasis). Set once by life_frame()
-	/// from /datum/body/proc/advance_stasis().
+/// A Life frame: dt is LIFE_CYCLE_SECONDS; facts are the old gates.
+/datum/om/frame/life
+	facts = list(
+		// Not transforming and somewhere: the old `if(transforming) return` / `if(!loc) return`.
+		// Transforming raises no channel, so a stage it skips stays awake.
+		"placed" = list(/datum/om/frame/life/proc/fact_placed, 0),
+		"alive" = list(/datum/om/frame/life/proc/fact_alive, CHANGE_MOB_STAT),
+		// Set by the status stage (its update_status() result); alive when read without it.
+		"status_ok" = list(/datum/om/frame/life/proc/fact_alive, CHANGE_MOB_STAT),
+		// No biology step this frame (stasis): begin() advances the stasis counter once.
+		"in_stasis" = list(/datum/om/frame/life/proc/fact_in_stasis, 0),
+		// The air the mob sits in: turf air, belly air or null.
+		"environment" = list(/datum/om/frame/life/proc/fact_environment, CHANGE_MOB_LOC),
+	)
 	var/stasis = FALSE
-	/// Set by a gate that stopped the cycle for a reason no wake covers (transforming,
-	/// nullspace): nothing goes to sleep this cycle.
-	var/no_sleep = FALSE
 
-/// Readies the context for a new frame (life_frame() keeps one per mob).
-/datum/life_context/proc/reset(profile)
-	seconds = LIFE_CYCLE_SECONDS
-	blocked = NONE
-	src.profile = profile
-	alive = FALSE
-	environment = null
+/datum/om/frame/life/begin()
+	var/mob/living/L = entity
+	stasis = L.body ? L.body.advance_stasis() : FALSE
+
+/datum/om/frame/life/reset()
 	stasis = FALSE
-	no_sleep = FALSE
 
-/// Did stasis pause this cycle?
-/datum/life_context/proc/in_stasis(mob/living/self)
+/datum/om/frame/life/proc/fact_placed()
+	var/mob/living/L = entity
+	return L.loc && !L.transforming
+
+/datum/om/frame/life/proc/fact_alive()
+	var/mob/living/L = entity
+	return L.stat != DEAD
+
+/datum/om/frame/life/proc/fact_in_stasis()
 	return stasis
 
-// --- Registry ---------------------------------------------------------------------------------
-
-/// type -> flyweight instance, for every /datum/life_system type.
-GLOBAL_LIST_EMPTY(life_system_instances)
-/// Family root types of the non-extra families, in type order.
-GLOBAL_LIST_EMPTY(life_system_family_roots)
-/// family root -> list of variant types in the family (root included).
-GLOBAL_LIST_EMPTY(life_system_family_members)
-/// family root -> (mob type -> resolved variant instance, or FALSE for none).
-GLOBAL_LIST_EMPTY(life_system_variant_cache)
-/// composition key -> /datum/life_composition shared by every mob with that key.
-GLOBAL_LIST_EMPTY(life_system_compositions)
-GLOBAL_VAR_INIT(life_system_registry_built, FALSE)
-
-/// Builds the flyweights and family tables once.
-/proc/build_life_system_registry()
-	if(GLOB.life_system_registry_built)
-		return
-	GLOB.life_system_registry_built = TRUE
-	var/list/instances = GLOB.life_system_instances
-	for(var/path in subtypesof(/datum/life_system))
-		instances[path] = new path
-	for(var/path in instances)
-		if(is_life_system_category(path))
-			continue
-		var/datum/life_system/S = instances[path]
-		var/root = path
-		while(TRUE)
-			var/parent = type2parent(root)
-			if(parent == /datum/life_system || is_life_system_category(parent))
-				break
-			root = parent
-		S.family = root
-		LAZYADD(GLOB.life_system_family_members[root], path)
-		if(root == path && !S.extra)
-			GLOB.life_system_family_roots += root
-	log_world("LIFE_SYSTEMS: registry built: [length(instances)] system types, [length(GLOB.life_system_family_roots)] families")
-
-/// TRUE for grouping types (`category = TRUE` directly under /datum/life_system). Their
-/// subtypes inherit the var but are family roots, not categories.
-/proc/is_life_system_category(path)
-	if(type2parent(path) != /datum/life_system)
-		return FALSE
-	var/datum/life_system/S = GLOB.life_system_instances[path]
-	return S.category
-
-/// The flyweight for a system type.
-/proc/get_life_system(path)
-	if(!GLOB.life_system_registry_built)
-		build_life_system_registry()
-	return GLOB.life_system_instances[path]
-
-/// The variant of `family` that serves mob type `mob_path`, or null.
-/proc/resolve_life_system(family, mob_path)
-	if(!GLOB.life_system_registry_built)
-		build_life_system_registry()
-	var/list/by_type = GLOB.life_system_variant_cache[family]
-	if(!by_type)
-		by_type = list()
-		GLOB.life_system_variant_cache[family] = by_type
-	var/datum/life_system/found = by_type[mob_path]
-	if(!isnull(found))
-		return found || null
-	found = null
-	var/best_depth = -1
-	for(var/path in GLOB.life_system_family_members[family])
-		var/datum/life_system/S = GLOB.life_system_instances[path]
-		if(!ispath(mob_path, S.mob_type))
-			continue
-		// Implicit intermediate types (a path segment with no declaration, such as
-		// breathing/silicon above breathing/silicon/robot) inherit their parent's mob_type;
-		// only the family root and variants that declare their own mob_type count.
-		if(path != family)
-			var/datum/life_system/parent = GLOB.life_system_instances[type2parent(path)]
-			if(parent.mob_type == S.mob_type)
-				continue
-		var/depth = length("[S.mob_type]")
-		if(depth > best_depth)
-			found = S
-			best_depth = depth
-	by_type[mob_path] = found || FALSE
-	return found
-
-/// One shared, ordered system list for every mob with the same composition key.
-/datum/life_composition
-	var/key
-	/// Systems in run order. Never mutated after composition. Per-mob sleep state
-	/// (/mob/living/var/life_asleep_bits) has one bit per position.
-	var/list/ordered
-	/// Positions in `ordered` of the systems the frame runs and that can sleep (not gates,
-	/// not wake-only): all of them asleep means the mob hibernates.
-	var/list/sleepers
-	/// Parallel to `ordered`: TRUE at the positions in `sleepers`.
-	var/list/sleeper_flags
-	var/sleeper_count = 0
-	/// Wake-only systems, in run order, by LIFE_WAKE_ONLY_* kind.
-	var/list/derive
-	var/list/present
-
-/datum/life_composition/New(key, list/ordered)
-	src.key = key
-	src.ordered = ordered
-	sleepers = list()
-	sleeper_flags = new /list(length(ordered))
-	derive = list()
-	present = list()
-	for(var/i in 1 to length(ordered))
-		var/datum/life_system/S = ordered[i]
-		sleeper_flags[i] = FALSE
-		switch(S.wake_only)
-			if(LIFE_WAKE_ONLY_DERIVE)
-				derive += S
-			if(LIFE_WAKE_ONLY_PRESENT)
-				present += S
-			else
-				if(!S.gate)
-					sleepers += i
-					sleeper_flags[i] = TRUE
-	sleeper_count = length(sleepers)
-
-/// Sort key: phase, then order. Stable insertion sort; compositions are small and built once.
-/proc/sort_life_systems(list/systems)
-	for(var/i in 2 to length(systems))
-		var/datum/life_system/S = systems[i]
-		var/key = S.phase * 100000 + S.order
-		var/j = i - 1
-		while(j >= 1)
-			var/datum/life_system/prev = systems[j]
-			if(prev.phase * 100000 + prev.order <= key)
-				break
-			systems[j + 1] = prev
-			j--
-		systems[j + 1] = S
-	return systems
-
-/// Composes (or reuses) the system list for a mob.
-/proc/compose_life_systems(mob/living/L)
-	if(!GLOB.life_system_registry_built)
-		build_life_system_registry()
-	var/key = "[L.type]"
-	if(LAZYLEN(L.life_extra_systems))
-		var/list/extras = list()
-		for(var/path in L.life_extra_systems)
-			extras += "[path]"
-		sortTim(extras, GLOBAL_PROC_REF(cmp_text_asc))
-		key += "|[jointext(extras, ",")]"
-	var/datum/life_composition/comp = GLOB.life_system_compositions[key]
-	if(comp)
-		return comp
-	var/list/systems = list()
-	for(var/family in GLOB.life_system_family_roots)
-		var/datum/life_system/root = GLOB.life_system_instances[family]
-		if(!(root.life_sets & L.life_set))
-			continue
-		var/datum/life_system/S = resolve_life_system(family, L.type)
-		if(S && S.applies(L))
-			systems += S
-	for(var/path in L.life_extra_systems)
-		var/datum/life_system/S = GLOB.life_system_instances[path]
-		if(S && (S.life_sets & L.life_set) && S.applies(L))
-			systems += S
-	sort_life_systems(systems)
-	comp = new(key, systems)
-	GLOB.life_system_compositions[key] = comp
-	var/list/names = list()
-	for(var/datum/life_system/S as anything in systems)
-		names += S.name
-	log_runtime("LIFE_SYSTEMS: composed [key] ([length(systems)] systems): [jointext(names, ", ")]")
-	return comp
+/datum/om/frame/life/proc/fact_environment()
+	var/mob/living/L = entity
+	if(!L.loc)
+		return null
+	if(isbelly(L.loc))
+		return L.loc.return_air_for_internal_lifeform(L)
+	return L.loc.return_air()

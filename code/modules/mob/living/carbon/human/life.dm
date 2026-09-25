@@ -19,21 +19,21 @@
 	/// world.time of the next periodic full HUD refresh (hud refresh system).
 	var/hud_full_refresh_at = 0
 
-// Human Life (doc/mob_life_architecture.md §4.5). The living core runs first; the human-only
-// steps that followed ..() in the old Life() are TAIL systems below, in their old order:
-//	hud refresh, voice, stasis sleep, fall, gate: human vitals,
+// Human Life (doc/rewrite/life_on_om.md). The living core runs first; the human-only steps that
+// followed ..() in the old Life() are TAIL stages below, in their old order:
+//	hud refresh (life_present), voice, stasis sleep, fall,
 //	[alive, not in stasis] changeling, organs, thermoregulation, weight, shock, pain, medical,
-//	                       heartbeat, NIF, phobias, NPC
-//	[dead, not in stasis]  defib timer
+//	                       heartbeat, NIF, phobias, NPC       (run_if LIFE_RUN_IF_LIVE_BIOLOGY)
+//	[dead, not in stasis]  defib timer                        (run_if LIFE_RUN_IF_DEAD_BIOLOGY)
 //	species components, visible name, pulse
 
 /// The code before ..() in the old human Life().
-/datum/life_system/type_pre/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/type_pre/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/type_pre/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/type_pre/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if (self.transforming)
-		return LIFE_HALT
+		return ctx.abort()
 
 	//Apparently, the person who wrote this code designed it so that
 	//blinded get reset each cycle and then get activated later in the
@@ -47,16 +47,15 @@
 	return ..()
 
 /// Periodic safety refresh of every HUD.
-/datum/life_system/hud_refresh
+/datum/om/stage/life/hud_refresh
+	order = LIFE_PHASE_TAIL + 100
 	name = "hud refresh"
-	wake_only = LIFE_WAKE_ONLY_PRESENT
-	wake_on = LIFE_WAKE_ON_HUD
-	phase = LIFE_PHASE_TAIL
-	order = 100
-	mob_type = /mob/living/carbon/human
+	pipeline = /datum/om/pipeline/life_present
+	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	of = /mob/living/carbon/human
 	woken_by = "its own timer"
 
-/datum/life_system/hud_refresh/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/hud_refresh/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
 	if(world.time >= self.hud_full_refresh_at)
@@ -64,82 +63,62 @@
 		self.hud_updateflag = (1 << TOTAL_HUDS) - 1
 
 /// Lazy: sleeps until the next refresh is due.
-/datum/life_system/hud_refresh/idle(mob/living/carbon/human/self)
+/datum/om/stage/life/hud_refresh/idle(mob/living/carbon/human/self)
 	return TRUE
 
-/datum/life_system/hud_refresh/rewake_delay(mob/living/carbon/human/self)
+/datum/om/stage/life/hud_refresh/rewake_delay(mob/living/carbon/human/self)
 	return max(1 SECONDS, self.hud_full_refresh_at - world.time)
 
 /// The voice others hear.
-/datum/life_system/voice
+/datum/om/stage/life/voice
+	order = LIFE_PHASE_TAIL + 110
 	name = "voice"
-	wake_on = LIFE_WAKE_ON_IDENTITY
-	phase = LIFE_PHASE_TAIL
-	order = 110
-	mob_type = /mob/living/carbon/human
-	woken_by = "equipment (LIFE_WAKE_EQUIPMENT); body invalidate; set_stat; Moved; its own timer"
+	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	of = /mob/living/carbon/human
+	woken_by = "equipment; body invalidate; set_stat; Moved; its own timer"
 
-/datum/life_system/voice/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/voice/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	self.voice = self.GetVoice()
 
 /// Event-driven: equipment (masks, voice changers, rigs), the body, stat and moving (belly
 /// absorb) wake it. Voice changers, changeling mimicry and disguises toggle from scattered
 /// sites, so a slow timer backs the events up.
-/datum/life_system/voice/idle(mob/living/carbon/human/self)
+/datum/om/stage/life/voice/idle(mob/living/carbon/human/self)
 	return TRUE
 
-/datum/life_system/voice/rewake_delay(mob/living/carbon/human/self)
+/datum/om/stage/life/voice/rewake_delay(mob/living/carbon/human/self)
 	return 10 SECONDS
 
 /// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
-/datum/life_system/stasis_sleep
+/datum/om/stage/life/stasis_sleep
+	order = LIFE_PHASE_TAIL + 120
 	name = "stasis sleep"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 120
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH
+	of = /mob/living/carbon/human
 
-/datum/life_system/stasis_sleep/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/stasis_sleep/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
 		self.status_at_least(EFFECT_SLEEPING, 20)
 
 /// Falling (prevents people from floating).
-/datum/life_system/fall
+/datum/om/stage/life/fall
+	order = LIFE_PHASE_TAIL + 130
 	name = "fall"
-	wake_on = LIFE_WAKE_ON_MOVEMENT
-	phase = LIFE_PHASE_TAIL
-	order = 130
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	of = /mob/living/carbon/human
 
-/datum/life_system/fall/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/fall/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	self.fall()
 
-/// `if(!stasis) if(stat != DEAD) ... else if(stat == DEAD) ...` in the old human Life().
-/// No need to update all of the living-only systems if the guy is dead.
-/datum/life_system/gate/human_vitals
-	name = "gate: human vitals"
-	phase = LIFE_PHASE_TAIL
-	order = 135
-	mob_type = /mob/living/carbon/human
-
-/datum/life_system/gate/human_vitals/tick(mob/living/carbon/human/self, datum/life_context/ctx)
-	if(ctx.in_stasis(self))
-		ctx.blocked |= LIFE_SEG_HUMAN_LIVE | LIFE_SEG_HUMAN_DEAD
-	else if(self.stat != DEAD)
-		ctx.blocked |= LIFE_SEG_HUMAN_DEAD
-	else
-		ctx.blocked |= LIFE_SEG_HUMAN_LIVE
-
 /// Allergens, medication side effects, ischemia and the dirty medical domains.
-/datum/life_system/medical
+/datum/om/stage/life/medical
+	order = LIFE_PHASE_TAIL + 200
 	name = "medical"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 200
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
-/datum/life_system/medical/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/medical/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	SEND_SIGNAL(self,COMSIG_HANDLE_ALLERGENS, self.factor(BF_ALLERGY))
 
 	side_effects(self)
@@ -147,42 +126,40 @@
 	self.dq_process_dirty_medical_conditions()
 
 /// Species NPC behaviour for client-less humans.
-/datum/life_system/npc
+/datum/om/stage/life/npc
+	order = LIFE_PHASE_TAIL + 270
 	name = "npc"
-	wake_on = LIFE_WAKE_ON_BEHAVIOUR
-	phase = LIFE_PHASE_TAIL
-	order = 270
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = 0
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
-/datum/life_system/npc/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/npc/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(!self.client)
 		self.species.npc_behaviour(self)
 
 /// The name others see: obscured or disfigured faces hide it.
-/datum/life_system/visible_name
+/datum/om/stage/life/visible_name
+	order = LIFE_PHASE_TAIL + 300
 	name = "visible name"
-	wake_on = LIFE_WAKE_ON_IDENTITY
-	phase = LIFE_PHASE_TAIL
-	order = 300
-	mob_type = /mob/living/carbon/human
-	woken_by = "equipment (LIFE_WAKE_EQUIPMENT); body invalidate (disfigurement); set_stat; its own timer"
+	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	of = /mob/living/carbon/human
+	woken_by = "equipment; body invalidate (disfigurement); set_stat; its own timer"
 
-/datum/life_system/visible_name/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/visible_name/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	//Update our name based on whether our face is obscured/disfigured
 	self.name = self.get_visible_name()
 
 /// Event-driven like the voice system, with the same slow timer behind it.
-/datum/life_system/visible_name/idle(mob/living/carbon/human/self)
+/datum/om/stage/life/visible_name/idle(mob/living/carbon/human/self)
 	return TRUE
 
-/datum/life_system/visible_name/rewake_delay(mob/living/carbon/human/self)
+/datum/om/stage/life/visible_name/rewake_delay(mob/living/carbon/human/self)
 	return 10 SECONDS
 
-/datum/life_system/breathing/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/breathing/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/breathing/carbon/human/breathe(mob/living/carbon/human/self)
+/datum/om/stage/life/breathing/carbon/human/breathe(mob/living/carbon/human/self)
 	if(!self.inStasisNow())
 		..()
 
@@ -263,10 +240,10 @@
 	else
 		return species.safe_pressure + pressure_difference
 
-/datum/life_system/disabilities/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/disabilities/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/disabilities/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/disabilities/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	..()
 
 	if(self.stat != CONSCIOUS) //Let's not worry about tourettes if you're not conscious.
@@ -281,7 +258,7 @@
 		if(0 <= rn && rn <= 3)
 			self.custom_pain("Your head feels numb and painful.", 10)
 	if(brain_damage >= 15)
-		if(4 <= rn && rn <= 6) if(self.status_units(EFFECT_BLURRY) <= 0)
+		if(4 <= rn && rn <= 6) if(!self.has_status(EFFECT_BLURRY))
 			to_chat(self, span_warning("It becomes hard to see for some reason."))
 			self.status_set(EFFECT_BLURRY, 10)
 	if(brain_damage >= 35)
@@ -298,10 +275,10 @@
 				to_chat(self, span_danger("Your legs won't respond properly, you fall down!"))
 				self.status_at_least(EFFECT_WEAKENED, 10)
 
-/datum/life_system/mutations/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/mutations/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/mutations/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/mutations/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(.)
 		return
@@ -358,10 +335,10 @@
 	var/obj/item/organ/external/E = pick(candidates)
 	return injure(INJURY_BURN, amount, E.organ_tag, null, 0, /datum/affliction/radiation_burns)
 
-/datum/life_system/radiation/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/radiation/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/radiation/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/radiation/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(.)
 		return
@@ -579,7 +556,7 @@
 
 	/** breathing **/
 
-/datum/life_system/breathing/carbon/human/inhale_smoke(mob/living/carbon/human/self, datum/gas_mixture/environment)
+/datum/om/stage/life/breathing/carbon/human/inhale_smoke(mob/living/carbon/human/self, datum/gas_mixture/environment)
 	if(self.get_equipped_item(SLOT_ID_MASK) && (self.get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
 	if(self.get_equipped_item(SLOT_ID_EYES) && (self.get_equipped_item(SLOT_ID_EYES).item_flags & BLOCK_GAS_SMOKE_EFFECT))
@@ -611,8 +588,8 @@
 	return null
 
 
-/datum/life_system/breathing/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/breath)
-	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+/datum/om/stage/life/breathing/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/breath)
+	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
 
 	if(self.has_mutation(mNobreath))
@@ -923,15 +900,14 @@
 
 	playsound_local(get_turf(src), suit_exhale_sound, 100, pressure_affected = FALSE, volume_channel = VOLUME_CHANNEL_AMBIENCE)
 
-/datum/life_system/species_components
+/datum/om/stage/life/species_components
+	order = LIFE_PHASE_TAIL + 290
 	name = "species components"
-	wake_on = LIFE_WAKE_ON_TRAITS
-	phase = LIFE_PHASE_TAIL
-	order = 290
-	mob_type = /mob/living/carbon/human
+	wake_on = 0
+	of = /mob/living/carbon/human
 
 /// Species components (xenochimera, shadekin). Not stat checked: those check in their own code.
-/datum/life_system/species_components/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/species_components/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	//Xenochimera Species Component
 	var/datum/component/xenochimera/xc = self.get_xenochimera_component()
 	if(xc)
@@ -945,10 +921,10 @@
 		if(!self.stat)
 			SEND_SIGNAL(self, COMSIG_SHADEKIN_COMPONENT)
 
-/datum/life_system/environment/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/environment/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/environment/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/environment)
+/datum/om/stage/life/environment/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/environment)
 	if(!environment)
 		return
 
@@ -1050,7 +1026,7 @@
 	// +/- 50 degrees from 310.15K is the 'safe' zone, where no damage is dealt.
 	else if(self.bodytemperature >= self.species.heat_discomfort_level)
 		//Body temperature is too hot.
-		if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+		if(om_has(self, EFFECT_GODMODE))
 			return 1	// Cancelled by a component
 
 		var/heat_dam = 0
@@ -1073,7 +1049,7 @@
 	else if(self.bodytemperature <= self.species.cold_discomfort_level)
 		//Body temperature is too cold.
 
-		if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+		if(om_has(self, EFFECT_GODMODE))
 			return 1	// Cancelled by a component
 
 
@@ -1094,7 +1070,7 @@
 
 	// Account for massive pressure differences.  Done by Polymorph
 	// Made it possible to actually have something that can protect against high pressure... Done by Errorage. Polymorph now has an axe sticking from his head for his previous hardcoded nonsense!
-	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+	if(om_has(self, EFFECT_GODMODE))
 		return 1	// Cancelled by a component
 
 	if(adjusted_pressure >= self.species.hazard_high_pressure)
@@ -1129,16 +1105,15 @@
 
 	return
 
-/datum/life_system/thermoregulation
+/datum/om/stage/life/thermoregulation
+	order = LIFE_PHASE_TAIL + 160
 	name = "thermoregulation"
-	wake_on = LIFE_WAKE_ON_THERMAL
-	phase = LIFE_PHASE_TAIL
-	order = 160
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
 /// Body temperature adjusts itself (self-regulation).
-/datum/life_system/thermoregulation/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/thermoregulation/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	// We produce heat naturally.
 	if (self.species.passive_temp_gain)
 		self.bodytemperature += self.species.passive_temp_gain
@@ -1243,10 +1218,10 @@
 			. += THERMAL_PROTECTION_HAND_RIGHT
 	return min(1,.)
 
-/datum/life_system/chemicals/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/chemicals/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/chemicals/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/chemicals/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 
 	if(self.inStasisNow())
 		return
@@ -1265,7 +1240,7 @@
 		// Whole branch was inert; restore properly if/when contamination
 		// machinery is rebuilt on the LINDA gas model.
 
-	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
 
 	// nutrition decrease
@@ -1307,12 +1282,12 @@
 	return
 
 //DO NOT run the statuses system from this proc: it runs after this one as long as this returns a true value.
-/datum/life_system/status/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/status/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/status/carbon/human/update_status(mob/living/carbon/human/self)
+/datum/om/stage/life/status/carbon/human/update_status(mob/living/carbon/human/self)
 
-	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
 
 	//SSD check, if a logged player is awake put them back to sleep!
@@ -1487,10 +1462,10 @@
 	if(. && stat)
 		update_skin(1)
 
-/datum/life_system/hud/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/hud/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/hud/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/hud/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.hud_updateflag) // update our mob's hud overlays, AKA what others see flaoting above our head
 		hud_list(self)
 
@@ -1679,7 +1654,7 @@
 		return 0
 	return current_pain() / max(1, HB.pain_tolerance() + 100)
 
-/datum/life_system/hud/carbon/human/health_icons(mob/living/carbon/human/self)
+/datum/om/stage/life/hud/carbon/human/health_icons(mob/living/carbon/human/self)
 	. = ..()
 	if(!. || !self.healths)
 		return
@@ -1732,10 +1707,10 @@
 	healths_ma.add_overlay(health_images)
 	self.healths.appearance = healths_ma
 
-/datum/life_system/vision/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/vision/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/vision/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/vision/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.stat == DEAD)
 		self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS|SEE_SELF
 		self.see_in_dark = 8
@@ -1845,10 +1820,10 @@
 			sight |= NS.vision_flags_mob
 			. = TRUE
 
-/datum/life_system/random_events/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/random_events/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/random_events/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/random_events/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.inStasisNow())
 		return
 
@@ -1876,16 +1851,15 @@
 			*/
 			self.playsound_local(self,pick(GLOB.scarySounds),50, 1, -1)
 
-/datum/life_system/changeling
+/datum/om/stage/life/changeling
+	order = LIFE_PHASE_TAIL + 140
 	name = "changeling"
-	wake_on = LIFE_WAKE_ON_TRAITS
-	phase = LIFE_PHASE_TAIL
-	order = 140
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = 0
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
 /// Updates the number of stored chemicals for powers.
-/datum/life_system/changeling/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/changeling/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	var/datum/component/antag/changeling/comp = is_changeling(self)
 	if(!comp)
 		if(self.mind && self.hud_used)
@@ -1932,18 +1906,17 @@
 						if(80)
 							self.ling_chem_display.icon_state = "ling_chems80e"
 
-/datum/life_system/shock
+/datum/om/stage/life/shock
+	order = LIFE_PHASE_TAIL + 180
 	name = "shock"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 180
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
 /// Traumatic shock stages from pain.
-/datum/life_system/shock/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/shock/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	self.updateshock()
-	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
 	if(self.traumatic_shock >= 80 && self.can_feel_pain())
 		self.shock_stage += 1
@@ -2006,18 +1979,17 @@
 	if(self.shock_stage >= 150)
 		self.status_at_least(EFFECT_WEAKENED, 20)
 
-/datum/life_system/pulse
+/datum/om/stage/life/pulse
+	order = LIFE_PHASE_TAIL + 310
 	name = "pulse"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 310
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH
+	of = /mob/living/carbon/human
 
-/datum/life_system/pulse/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/pulse/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	self.pulse = compute(self)
 
 /// The pulse this body should show now (updates every 5 life ticks).
-/datum/life_system/pulse/proc/compute(mob/living/carbon/human/self)
+/datum/om/stage/life/pulse/proc/compute(mob/living/carbon/human/self)
 	if(self.life_tick % 5) return self.pulse	//update pulse every 5 life ticks (~1 tick/sec, depending on server load)
 
 	var/temp = PULSE_NORM
@@ -2094,16 +2066,15 @@
 					current_medications += R.id
 	return max(0, round(temp * brain_modifier))
 
-/datum/life_system/heartbeat
+/datum/om/stage/life/heartbeat
+	order = LIFE_PHASE_TAIL + 240
 	name = "heartbeat"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 240
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
 /// Heartbeat sound for fast pulses, shock or space.
-/datum/life_system/heartbeat/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/heartbeat/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.pulse == PULSE_NONE)
 		return
 
@@ -2129,7 +2100,7 @@
 	we only set those statuses and icons upon changes.  Then those HUD items will simply add those pre-made images.
 	This proc below is only called when those HUD elements need to change as determined by the mobs hud_updateflag.
 */
-/datum/life_system/hud/carbon/human/proc/hud_list(mob/living/carbon/human/self)
+/datum/om/stage/life/hud/carbon/human/proc/hud_list(mob/living/carbon/human/self)
 	if (BITTEST(self.hud_updateflag, HEALTH_HUD))
 		var/image/holder = self.grab_hud(HEALTH_HUD)
 		var/image/health_us = self.grab_hud(HEALTH_VR_HUD)
@@ -2308,16 +2279,15 @@
 	traumatic_shock = 0
 	..()
 
-/datum/life_system/defib_timer
+/datum/om/stage/life/defib_timer
+	order = LIFE_PHASE_TAIL + 280
 	name = "defib timer"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 280
-	segment = LIFE_SEG_HUMAN_DEAD
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = LIFE_RUN_IF_DEAD_BIOLOGY
+	of = /mob/living/carbon/human
 
 /// Brain decay while dead, which closes the defibrillation window.
-/datum/life_system/defib_timer/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/defib_timer/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(!self.should_have_organ(O_BRAIN))
 		return // No brain.
 
@@ -2349,16 +2319,15 @@
 
 
 // === merged from life_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/datum/life_system/weight
+/datum/om/stage/life/weight
+	order = LIFE_PHASE_TAIL + 170
 	name = "weight"
-	wake_on = LIFE_WAKE_ON_NUTRITION
-	phase = LIFE_PHASE_TAIL
-	order = 170
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = 0
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
 /// Weight gain and loss from nutrition.
-/datum/life_system/weight/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/weight/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if (self.nutrition >= 0 && self.stat != 2)
 		if (self.nutrition > MIN_NUTRITION_TO_GAIN && self.weight < MAX_MOB_WEIGHT && self.weight_gain)
 			self.weight += self.species.metabolism*(0.01*self.weight_gain)
@@ -2367,20 +2336,19 @@
 			self.weight -= self.species.metabolism*(0.01*self.weight_loss) // starvation weight loss
 
 //Our call for the NIF to do whatever
-/datum/life_system/nif
+/datum/om/stage/life/nif
+	order = LIFE_PHASE_TAIL + 250
 	name = "nif"
-	wake_on = LIFE_WAKE_ON_TRAITS
-	phase = LIFE_PHASE_TAIL
-	order = 250
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = 0
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
 /// Our call for the NIF to do whatever.
-/datum/life_system/nif/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/nif/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(!self.nif) return
 
 	//Process regular life stuff
-	self.nif.life()
+	INVOKE_ASYNC(self.nif, TYPE_PROC_REF(/obj/item/nif, life))
 
 //Overriding carbon move proc that forces default hunger factor
 /mob/living/carbon/Moved(atom/old_loc, direction, forced = FALSE)

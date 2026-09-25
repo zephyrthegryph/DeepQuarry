@@ -35,10 +35,10 @@
 	say_maybe_target = list("Honk?")
 	say_got_target = list("HONK!!!")
 
-/datum/life_system/special/animal/space/goose
-	mob_type = /mob/living/simple_mob/animal/space/goose
+/datum/om/stage/life/special/animal/space/goose
+	of = /mob/living/simple_mob/animal/space/goose
 
-/datum/life_system/special/animal/space/goose/tick(mob/living/simple_mob/animal/space/goose/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/space/goose/perform(mob/living/simple_mob/animal/space/goose/self, datum/om/frame/life/ctx)
 	if(((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
 		if(self.vitality() <= 0.5) // At half health, and fighting someone currently.
 			self.berserk()

@@ -55,7 +55,7 @@
 	prey.ai_brain?.react_to_attack(user)
 
 	//Timer and progress bar
-	if(!user.client && prey.status_units(EFFECT_WEAKENED) > 0) // stop crwaling instantly break swallow attempt for mobvore
+	if(!user.client && prey.has_status(EFFECT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
 		prey.status_at_least(EFFECT_STUNNED, min(prey.status_units(EFFECT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
 	if(!do_after(user, swallow_time, target = prey, hidden = TRUE))
 		return FALSE // Prey escaped (or user disabled) before timer expired.

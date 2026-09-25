@@ -72,16 +72,16 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	QDEL_NULL(machine_effect)
 	return ..()
 
-/datum/life_system/type_post/simple_mob/animal/solargrub_larva
-	mob_type = /mob/living/simple_mob/animal/solargrub_larva
+/datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva
+	of = /mob/living/simple_mob/animal/solargrub_larva
 
-/datum/life_system/type_post/simple_mob/animal/solargrub_larva/tick(mob/living/simple_mob/animal/solargrub_larva/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva/perform(mob/living/simple_mob/animal/solargrub_larva/self, datum/om/frame/life/ctx)
 	..()
 
 	if(self.machine_effect && !istype(self.loc, /obj/machinery))
 		QDEL_NULL(self.machine_effect)
 
-	if(!ctx?.alive)	// || ai_inactive
+	if(!ctx.fact("alive"))	// || ai_inactive
 		return
 
 	if(self.power_drained >= 7 MEGAWATTS && prob(5))
@@ -183,10 +183,10 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 //	grub.power_drained = power_drained //TODO
 	qdel(src)
 
-/datum/life_system/light/simple_mob/animal/solargrub_larva
-	mob_type = /mob/living/simple_mob/animal/solargrub_larva
+/datum/om/stage/life/light/simple_mob/animal/solargrub_larva
+	of = /mob/living/simple_mob/animal/solargrub_larva
 
-/datum/life_system/light/simple_mob/animal/solargrub_larva/tick(mob/living/simple_mob/animal/solargrub_larva/self, datum/life_context/ctx)
+/datum/om/stage/life/light/simple_mob/animal/solargrub_larva/perform(mob/living/simple_mob/animal/solargrub_larva/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(. == 0 && !self.is_dead())
 		self.set_light(1.5, 1, COLOR_YELLOW)

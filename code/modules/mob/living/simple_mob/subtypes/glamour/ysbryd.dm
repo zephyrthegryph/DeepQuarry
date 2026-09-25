@@ -133,10 +133,10 @@
 		disconnect_target()
 	qdel(src)
 
-/datum/life_system/type_pre/simple_mob/ysbryd
-	mob_type = /mob/living/simple_mob/ysbryd
+/datum/om/stage/life/type_pre/simple_mob/ysbryd
+	of = /mob/living/simple_mob/ysbryd
 
-/datum/life_system/type_pre/simple_mob/ysbryd/tick(mob/living/simple_mob/ysbryd/self, datum/life_context/ctx)
+/datum/om/stage/life/type_pre/simple_mob/ysbryd/perform(mob/living/simple_mob/ysbryd/self, datum/om/frame/life/ctx)
 	if(self.chosen_target)
 		self.handle_target()
 	if(self.vitality() * self.get_endurance() <= self.boost_health)

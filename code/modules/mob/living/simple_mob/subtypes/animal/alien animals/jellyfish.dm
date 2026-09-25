@@ -77,7 +77,8 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	vore_default_item_mode = IM_DIGEST
 	can_be_drop_prey = FALSE
 
-	var/reproduction_cooldown = 0
+	/// world.time before which it can't reproduce again.
+	var/reproduce_after = 0
 
 // Allows this mob to swarm
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/CanPass(atom/movable/mover, turf/target)
@@ -129,18 +130,25 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	GLOB.jellyfish_count --
 	return ..()
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/space_jellyfish
-	mob_type = /mob/living/simple_mob/vore/alienanimals/space_jellyfish
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish
+	of = /mob/living/simple_mob/vore/alienanimals/space_jellyfish
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/space_jellyfish/tick(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/perform(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self, datum/om/frame/life/ctx)
 	..()
 	if(self.client)
 		return
 	self.reproduce()
 
+/// Idle with a client (Login and Logout wake it) and through the reproduction cooldown, which ends
+/// by rewake instead of being counted down every frame.
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/idle(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self)
+	return self.client || world.time < self.reproduce_after
+
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/rewake_delay(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self)
+	return max(self.reproduce_after - world.time, 0)
+
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/proc/reproduce()
-	if(reproduction_cooldown > 0)
-		reproduction_cooldown --
+	if(world.time < reproduce_after)
 		return
 	if(GLOB.jellyfish_count >= GLOB.max_jellyfish)
 		return
@@ -149,7 +157,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	if(prob(10))
 		new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc, src)
 		adjust_nutrition(-400)
-		reproduction_cooldown = 60
+		reproduce_after = world.time + 60 * LIFE_CYCLE
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Process_Spacemove(check_drift = 0)
 	return TRUE

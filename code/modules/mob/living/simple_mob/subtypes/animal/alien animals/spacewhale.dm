@@ -93,10 +93,10 @@
 			new held_hazard(loc)
 			held_hazard = null
 
-/datum/life_system/type_post/simple_mob/vore/overmap/spacewhale
-	mob_type = /mob/living/simple_mob/vore/overmap/spacewhale
+/datum/om/stage/life/type_post/simple_mob/vore/overmap/spacewhale
+	of = /mob/living/simple_mob/vore/overmap/spacewhale
 
-/datum/life_system/type_post/simple_mob/vore/overmap/spacewhale/tick(mob/living/simple_mob/vore/overmap/spacewhale/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/overmap/spacewhale/perform(mob/living/simple_mob/vore/overmap/spacewhale/self, datum/om/frame/life/ctx)
 	..()
 	if(self.post_restless_tired)
 		self.post_restless_tired--

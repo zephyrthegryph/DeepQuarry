@@ -85,19 +85,19 @@
 		return TRUE
 	. = ..()
 
-/datum/life_system/type_post/simple_mob/vore/demon
-	mob_type = /mob/living/simple_mob/vore/demon
+/datum/om/stage/life/type_post/simple_mob/vore/demon
+	of = /mob/living/simple_mob/vore/demon
 
-/datum/life_system/type_post/simple_mob/vore/demon/tick(mob/living/simple_mob/vore/demon/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/demon/perform(mob/living/simple_mob/vore/demon/self, datum/om/frame/life/ctx)
 	..()
 	if(self.shifted_out)
 		self.density = FALSE
 
-/datum/life_system/environment/simple_mob/vore/demon
-	mob_type = /mob/living/simple_mob/vore/demon
+/datum/om/stage/life/environment/simple_mob/vore/demon
+	of = /mob/living/simple_mob/vore/demon
 
 /// TODO - Refactor demons to use is_incorporeal()
-/datum/life_system/environment/simple_mob/vore/demon/exchange(mob/living/simple_mob/vore/demon/self, datum/gas_mixture/environment)
+/datum/om/stage/life/environment/simple_mob/vore/demon/exchange(mob/living/simple_mob/vore/demon/self, datum/gas_mixture/environment)
 	if(self.shifted_out)
 		return
 	. = ..()
@@ -152,7 +152,7 @@
 /mob/living/simple_mob/vore/demon/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	if(kind != INJURY_BURN)
 		return ..()
-	if(amount <= 0 || (status_flags & GODMODE))
+	if(amount <= 0 || om_has(src, EFFECT_GODMODE))
 		return 0
 	mend(TREAT_TISSUE_REPAIR, amount)
 	mend(TREAT_BURN_CARE, amount)

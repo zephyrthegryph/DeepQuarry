@@ -6,13 +6,16 @@
 // deadline per (entity, behaviour); setting it again replaces it (the old
 // wheel entry goes stale by generation and is skipped when it comes round).
 
-/// Calls B.on_deadline(E) after `delay` deciseconds (in B's clock, if it has one).
-/proc/om_after(datum/E, delay, B)
+/// Calls B.on_deadline(E) after `delay` deciseconds (in B's clock, if it has one). `sub`
+/// keys further deadlines of the same behaviour on the same entity: OM_DL_THROTTLE is the
+/// scheduler's deferred wake, OM_DL_STAGE + n a pipeline stage's rewake (on_keyed_deadline()).
+/proc/om_after(datum/E, delay, B, sub = 0)
 	var/datum/om/behaviour/def = om_registry().behaviour(B)
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec)
 		return FALSE
 	var/datum/om/scheduler/sched = rec.sched
+	var/key = def.id + sub * OM_DL_SUB
 	var/gen = ++sched.gen
 	var/t = sched.now()
 	var/local_target = null
@@ -24,39 +27,55 @@
 	var/list/D = rec.deadlines
 	var/k = 0
 	for(var/i in 1 to length(D) step 3)
-		if(D[i] == def.id)
+		if(D[i] == key)
 			k = i
 			break
 	if(k)
 		D[k + 1] = gen
 		D[k + 2] = local_target
 	else
-		LAZYADD(rec.deadlines, list(def.id, gen, local_target))
+		LAZYADD(rec.deadlines, list(key, gen, local_target))
 	if(!isnull(due))
-		sched.insert_deadline(rec, def.id, gen, due)
+		sched.insert_deadline(rec, key, gen, due)
 	return TRUE
 
-/proc/om_cancel_after(datum/E, B)
+/proc/om_cancel_after(datum/E, B, sub = 0)
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec?.deadlines)
 		return FALSE
-	var/datum/om/behaviour/def = om_registry().behaviour(B)
+	var/key = om_registry().behaviour(B).id + sub * OM_DL_SUB
 	var/list/D = rec.deadlines
 	for(var/i in 1 to length(D) step 3)
-		if(D[i] == def.id)
+		if(D[i] == key)
 			D.Cut(i, i + 3)
 			if(!length(D))
 				rec.deadlines = null
 			return TRUE
 	return FALSE
 
-/proc/om_deadline_pending(datum/E, B)
+/// Cancels every deadline of `B` on `E`, whatever its sub-key.
+/proc/om_cancel_all_after(datum/E, B)
+	var/datum/om/rec/rec = E?.om_rec
+	if(!rec?.deadlines)
+		return
+	var/bid = om_registry().behaviour(B).id
+	var/list/D = rec.deadlines
+	var/i = 1
+	while(i <= length(D))
+		if(D[i] % OM_DL_SUB == bid)
+			D.Cut(i, i + 3)
+			continue
+		i += 3
+	if(!length(D))
+		rec.deadlines = null
+
+/proc/om_deadline_pending(datum/E, B, sub = 0)
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec?.deadlines)
 		return FALSE
-	var/datum/om/behaviour/def = om_registry().behaviour(B)
+	var/key = om_registry().behaviour(B).id + sub * OM_DL_SUB
 	for(var/i in 1 to length(rec.deadlines) step 3)
-		if(rec.deadlines[i] == def.id)
+		if(rec.deadlines[i] == key)
 			return TRUE
 	return FALSE
 
@@ -73,7 +92,7 @@
 		var/local_target = D[i + 2]
 		if(isnull(local_target))
 			continue
-		var/datum/om/behaviour/B = reg.behaviours[D[i]]
+		var/datum/om/behaviour/B = reg.behaviours[D[i] % OM_DL_SUB]
 		if(B.clock_idx != cidx)
 			continue
 		var/gen = ++sched.gen

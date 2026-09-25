@@ -17,10 +17,10 @@
 	return ..()
 
 // Handling the automatic transcore backups in a set interval
-/datum/life_system/type_post/carbon/brain/caught_soul/vore
-	mob_type = /mob/living/carbon/brain/caught_soul/vore
+/datum/om/stage/life/type_post/carbon/brain/caught_soul/vore
+	of = /mob/living/carbon/brain/caught_soul/vore
 
-/datum/life_system/type_post/carbon/brain/caught_soul/vore/tick(mob/living/carbon/brain/caught_soul/vore/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/carbon/brain/caught_soul/vore/perform(mob/living/carbon/brain/caught_soul/vore/self, datum/om/frame/life/ctx)
 	..()
 	if(QDELETED(self))
 		return

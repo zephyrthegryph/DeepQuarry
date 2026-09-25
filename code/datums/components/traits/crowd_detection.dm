@@ -24,10 +24,10 @@
 	human_parent = parent
 
 /datum/component/crowd_detection/RegisterWithParent()
-	add_trait_life_system(parent, /datum/life_system/trait/crowd_detection)
+	om_stage_add(parent, /datum/om/stage/life/trait/crowd_detection)
 
 /datum/component/crowd_detection/UnregisterFromParent()
-	remove_trait_life_system(parent, /datum/life_system/trait/crowd_detection)
+	om_stage_remove(parent, /datum/om/stage/life/trait/crowd_detection)
 
 /datum/component/crowd_detection/Destroy(force = FALSE)
 	human_parent = null
@@ -304,9 +304,9 @@
 #undef MIN_DISCOMFORT_MESSAGE
 
 /// Trait system: crowd and loneliness effects. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/crowd_detection
+/datum/om/stage/life/trait/crowd_detection
 	name = "crowd detection"
 	component_type = /datum/component/crowd_detection
 
-/datum/life_system/trait/crowd_detection/tick_component(mob/living/self, datum/component/crowd_detection/component)
+/datum/om/stage/life/trait/crowd_detection/tick_component(mob/living/self, datum/component/crowd_detection/component)
 	component.life_tick()

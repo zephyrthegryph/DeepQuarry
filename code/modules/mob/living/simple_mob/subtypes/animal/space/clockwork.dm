@@ -41,10 +41,10 @@
 
 	can_be_drop_prey = FALSE
 
-/datum/life_system/special/clockwork
-	mob_type = /mob/living/simple_mob/clockwork
+/datum/om/stage/life/special/clockwork
+	of = /mob/living/simple_mob/clockwork
 
-/datum/life_system/special/clockwork/tick(mob/living/simple_mob/clockwork/self, datum/life_context/ctx)
+/datum/om/stage/life/special/clockwork/perform(mob/living/simple_mob/clockwork/self, datum/om/frame/life/ctx)
 	if(!self.stat && prob(2)) // spooky
 		var/mob/observer/dead/spook = locate() in range(self, 5)
 		if(spook)
@@ -55,7 +55,7 @@
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				self.visible_emote("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
 
 
 

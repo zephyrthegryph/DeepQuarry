@@ -8,7 +8,10 @@
 // M3: the distributor (channels, cell charging, load shedding) runs in Rust
 // (verdigris/domains/power/src/apc.rs) every power step. The APC never polls:
 // power_sync() sends its settings, and power_event() applies what Rust
-// reports (channels, charging, status, alarm, the cell charge).
+// reports (channels, charging, status, alarm, the cell charge). It runs on the
+// machine pipeline (machine_pipeline.dm): its power stage ends a power failure by
+// rewake, and its present stage updates the icon at most every
+// APC_UPDATE_ICON_COOLDOWN.
 
 /obj/machinery/power/apc/critical
 	is_critical = 1
@@ -46,7 +49,7 @@
 // Main APC type definition
 // ─────────────────────────────────────────────────────────────────────────────
 /obj/machinery/power/apc
-
+	polls = FALSE
 	name = "area power controller"
 	desc = "A control terminal for the area electrical systems."
 	icon = 'icons/obj/power.dmi'
@@ -94,9 +97,7 @@
 	/// decremented every machinery fire, forcing every disabled APC to poll and
 	/// rebuild its icon for minutes after a large explosion.
 	var/failure_until = 0
-	var/failure_wake_timer
 	var/force_update = 0
-	var/updating_icon = 0
 	var/alarms_hidden = FALSE       // if TRUE, power alarms from this APC are hidden on consoles
 	var/nightshift_lights = FALSE
 	var/nightshift_setting = NIGHTSHIFT_AUTO
@@ -203,9 +204,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	update()
 
 /obj/machinery/power/apc/Destroy()
-	if(failure_wake_timer)
-		deltimer(failure_wake_timer)
-		failure_wake_timer = null
 	if(power_key)
 		SSmachines.power_queue(list(POWER_OP_REMOVE_STORAGE, 1, power_key))
 	if(power_alarm_raised)
@@ -327,9 +325,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	var/failure_ticks = max(round(duration), 0)
 	failure_until = max(failure_until, world.time + failure_ticks * max(SSmachines.wait, 1))
 	failure_timer = CEILING(max(failure_until - world.time, 0) / max(SSmachines.wait, 1), 1)
-	if(failure_wake_timer)
-		deltimer(failure_wake_timer)
-	failure_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_after_failure)), max(failure_until - world.time, 1), TIMER_STOPPABLE)
+	// The power stage ends the failure by its rewake.
+	om_wake(src, /datum/om/pipeline/machine)
 	queue_icon_update()
 	update()
 
@@ -397,15 +394,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	if(icon_renderer)
 		icon_renderer.apply(src)
 
-// queue_icon_update() — deferred update used during process() to rate-limit
-// icon refreshes.
+/// The APC's look changed: its present stage updates the icon (at most every
+/// APC_UPDATE_ICON_COOLDOWN; the machine pipeline coalesces the requests in between).
 /obj/machinery/power/apc/proc/queue_icon_update()
-	if(!updating_icon)
-		updating_icon = 1
-		spawn(APC_UPDATE_ICON_COOLDOWN)
-			if(icon_renderer)
-				icon_renderer.apply(src)
-			updating_icon = 0
+	om_changed(src, CHANGE_MACHINE_OUTPUT)
 
 // Legacy check_updates() — retained because wires.dm or other systems may call
 // it directly.  Returns 0 if no change, 1 if icon_state changed, 2 if overlays
@@ -983,9 +975,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		if("reboot")
 			failure_timer = 0
 			failure_until = 0
-			if(failure_wake_timer)
-				deltimer(failure_wake_timer)
-				failure_wake_timer = null
 			update_icon()
 			update()
 		if("emergency_lighting")
@@ -1028,24 +1017,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	else
 		return 0
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main process() — the distributor runs in Rust
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// APCs do not poll: Rust runs the distributor. A wake only resends settings.
-/obj/machinery/power/apc/process()
-	power_sync()
-	return PROCESS_KILL
-
-/obj/machinery/power/apc/proc/wake_after_failure()
-	failure_wake_timer = null
-	if(failure_until > world.time)
-		failure_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_after_failure)), failure_until - world.time, TIMER_STOPPABLE)
-		return
-	failure_timer = 0
-	failure_until = 0
-	queue_icon_update()
-	update()
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Legacy passthrough procs — kept for external call-site compatibility
@@ -1167,9 +1138,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	chargemode  = 1
 	failure_timer = 0
 	failure_until = 0
-	if(failure_wake_timer)
-		deltimer(failure_wake_timer)
-		failure_wake_timer = null
 	GLOB.power_alarm.clearAlarm(loc, src)
 
 	// Clear malf AI ownership.

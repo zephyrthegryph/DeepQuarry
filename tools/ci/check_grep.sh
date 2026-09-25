@@ -168,31 +168,32 @@ if [ -n "$readers" ] && $grep -nE "^\s*(src\.)?[A-Za-z_][A-Za-z0-9_.]*\s*=\s*(vg
 fi;
 
 part "life: no Life() procs"
-# Mob Life runs on the object model (doc/rewrite/life_on_om.md): living mobs run the life
-# behaviour's frame (life_frame()) of /datum/life_system variants; observers run upkeep().
+# Mob Life runs on object-model pipelines (doc/rewrite/life_on_om.md): living mobs run the life
+# pipeline's /datum/om/stage/life stages; observers run upkeep().
 # There is no Life() proc on any mob any more.
 if $grep -n '^/mob[a-zA-Z0-9_/]*/(proc/)?Life\(' "${code_files[@]}"; then
 	echo
-	echo -e "${RED}ERROR: Life() proc on a mob. Living mobs: add a /datum/life_system (or a variant). Observers: override upkeep().${NC}"
+	echo -e "${RED}ERROR: Life() proc on a mob. Living mobs: add a /datum/om/stage/life stage (or a variant). Observers: override upkeep().${NC}"
 	FAILED=1
 fi;
 
 part "life scheduler: no handle_* life hooks"
-# The old Life() hooks became life systems. Their handle_* procs must not come back on mobs,
-# species or traits; put the work in a system's tick() (or a variant of the system).
+# The old Life() hooks became life stages. Their handle_* procs must not come back on mobs,
+# species or traits; put the work in a stage's perform() (or a variant of the stage).
 LIFE_HOOKS='addictions|ambience|blood|breath|breathing|changeling|chemical_smoke|chemicals_in_body|confused|darksight|defib_timer|diseases|disabilities|drugged|environment|environment_special|guts|heartbeat|hud_icons_health|hud_list|instability|light|medical_side_effects|modifiers|mutations|nif|npc|organs|pain|paralysed|phobias|post_breath|pulse|radiation|random_events|regular_hud_updates|regular_status_updates|sensory_recovery|shock|silent|sleeping|slurring|special|species_components|statuses|stomach|stunned|stuttering|supernatural|temperature_damage|tf_holder|vision|vr_derez|weakened'
 if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LIFE_HOOKS)\(" "${code_files[@]}"; then
 	echo
-	echo -e "${RED}ERROR: handle_* Life hook defined outside the life scheduler. Life() steps are /datum/life_system types (code/modules/mob/living/life/).${NC}"
+	echo -e "${RED}ERROR: handle_* Life hook defined outside Life. Life() steps are /datum/om/stage/life types (code/modules/mob/living/life/).${NC}"
 	FAILED=1
 fi;
 
-part "life: wake and hibernate in one place"
-# Only life_om.dm changes whether a mob runs (life_hibernate(), life_resume(), the asleep bits);
-# producers raise a mob change channel with om_changed() (doc/rewrite/life_on_om.md §5).
-if $grep -n '(life_hibernating|life_asleep_bits|life_asleep_total|life_asleep_n|life_idle_frames|life_hibernating_index)(\[[^]]*\])?\s*[|&+-]?=[^=]|life_hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/life_om\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+part "pipelines: idle and park state in one place"
+# Only the core pipeline runner (code/datums/om/pipeline.dm) changes whether a stage is idle or
+# an entity is parked; producers raise a change channel with om_changed()
+# (doc/rewrite/object_model_core.md §4.10).
+if $grep -n '\.(asleep|parked|parked_index|idle_frames)\s*[|&+-]?=[^=]|\.bits\[[^]]*\]\s*[|&]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
 	echo
-	echo -e "${RED}ERROR: direct write to a mob's wake state. Raise a channel with om_changed(), or use life_hibernate()/life_resume().${NC}"
+	echo -e "${RED}ERROR: direct write to a pipeline's idle or park state. Raise a channel with om_changed().${NC}"
 	FAILED=1
 fi;
 

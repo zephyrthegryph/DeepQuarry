@@ -298,10 +298,10 @@
 	water_resist = 10 //I heard putting this higher makes them heal.
 
 
-/datum/life_system/special/slime/xenobio/oceanic
-	mob_type = /mob/living/simple_mob/slime/xenobio/oceanic
+/datum/om/stage/life/special/slime/xenobio/oceanic
+	of = /mob/living/simple_mob/slime/xenobio/oceanic
 
-/datum/life_system/special/slime/xenobio/oceanic/tick(mob/living/simple_mob/slime/xenobio/oceanic/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/oceanic/perform(mob/living/simple_mob/slime/xenobio/oceanic/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.ocean_aura()
 	..()
@@ -396,10 +396,10 @@
 		/mob/living/simple_mob/slime/xenobio/nuclear
 		)
 
-/datum/life_system/special/slime/xenobio/nuclear
-	mob_type = /mob/living/simple_mob/slime/xenobio/nuclear
+/datum/om/stage/life/special/slime/xenobio/nuclear
+	of = /mob/living/simple_mob/slime/xenobio/nuclear
 
-/datum/life_system/special/slime/xenobio/nuclear/tick(mob/living/simple_mob/slime/xenobio/nuclear/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/nuclear/perform(mob/living/simple_mob/slime/xenobio/nuclear/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.nuclear_aura()
 	..()
@@ -542,10 +542,10 @@
 		)
 
 
-/datum/life_system/special/slime/xenobio/nightmare
-	mob_type = /mob/living/simple_mob/slime/xenobio/nightmare
+/datum/om/stage/life/special/slime/xenobio/nightmare
+	of = /mob/living/simple_mob/slime/xenobio/nightmare
 
-/datum/life_system/special/slime/xenobio/nightmare/tick(mob/living/simple_mob/slime/xenobio/nightmare/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/nightmare/perform(mob/living/simple_mob/slime/xenobio/nightmare/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.nightmare_aura()
 	..()
@@ -661,10 +661,10 @@
 			/mob/living/simple_mob/slime/xenobio/sound
 		)
 
-/datum/life_system/special/slime/xenobio/sound
-	mob_type = /mob/living/simple_mob/slime/xenobio/sound
+/datum/om/stage/life/special/slime/xenobio/sound
+	of = /mob/living/simple_mob/slime/xenobio/sound
 
-/datum/life_system/special/slime/xenobio/sound/tick(mob/living/simple_mob/slime/xenobio/sound/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/sound/perform(mob/living/simple_mob/slime/xenobio/sound/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.sound_aura()
 	..()

@@ -209,10 +209,10 @@
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/datum/life_system/special/vore/candy/bluecabold
-	mob_type = /mob/living/simple_mob/vore/candy/bluecabold
+/datum/om/stage/life/special/vore/candy/bluecabold
+	of = /mob/living/simple_mob/vore/candy/bluecabold
 
-/datum/life_system/special/vore/candy/bluecabold/tick(mob/living/simple_mob/vore/candy/bluecabold/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/candy/bluecabold/perform(mob/living/simple_mob/vore/candy/bluecabold/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.buff_aura()
 	..()
@@ -261,10 +261,10 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 
-/datum/life_system/special/vore/candy/yellowcabold
-	mob_type = /mob/living/simple_mob/vore/candy/yellowcabold
+/datum/om/stage/life/special/vore/candy/yellowcabold
+	of = /mob/living/simple_mob/vore/candy/yellowcabold
 
-/datum/life_system/special/vore/candy/yellowcabold/tick(mob/living/simple_mob/vore/candy/yellowcabold/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/candy/yellowcabold/perform(mob/living/simple_mob/vore/candy/yellowcabold/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.buff_aura()
 	..()
@@ -285,10 +285,10 @@
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/datum/life_system/special/vore/candy/orangecabold
-	mob_type = /mob/living/simple_mob/vore/candy/orangecabold
+/datum/om/stage/life/special/vore/candy/orangecabold
+	of = /mob/living/simple_mob/vore/candy/orangecabold
 
-/datum/life_system/special/vore/candy/orangecabold/tick(mob/living/simple_mob/vore/candy/orangecabold/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/candy/orangecabold/perform(mob/living/simple_mob/vore/candy/orangecabold/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.buff_aura()
 	..()
@@ -309,10 +309,10 @@
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/datum/life_system/special/vore/candy/purplecabold
-	mob_type = /mob/living/simple_mob/vore/candy/purplecabold
+/datum/om/stage/life/special/vore/candy/purplecabold
+	of = /mob/living/simple_mob/vore/candy/purplecabold
 
-/datum/life_system/special/vore/candy/purplecabold/tick(mob/living/simple_mob/vore/candy/purplecabold/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/candy/purplecabold/perform(mob/living/simple_mob/vore/candy/purplecabold/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.buff_aura()
 	..()

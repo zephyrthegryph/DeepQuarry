@@ -139,10 +139,10 @@
 		to_chat(src, span_danger("You shock \the [L]."))
 		to_chat(L, span_danger("You've been shocked by \the [src]!"))
 
-/datum/life_system/special/slime/xenobio/yellow
-	mob_type = /mob/living/simple_mob/slime/xenobio/yellow
+/datum/om/stage/life/special/slime/xenobio/yellow
+	of = /mob/living/simple_mob/slime/xenobio/yellow
 
-/datum/life_system/special/slime/xenobio/yellow/tick(mob/living/simple_mob/slime/xenobio/yellow/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/yellow/perform(mob/living/simple_mob/slime/xenobio/yellow/self, datum/om/frame/life/ctx)
 	if(self.stat == CONSCIOUS)
 		if(prob(25))
 			self.power_charge = between(0, self.power_charge + 1, 10)
@@ -228,10 +228,10 @@
 	minbodytemp = 0
 	cold_damage_per_tick = 0
 
-/datum/life_system/special/slime/xenobio/dark_blue
-	mob_type = /mob/living/simple_mob/slime/xenobio/dark_blue
+/datum/om/stage/life/special/slime/xenobio/dark_blue
+	of = /mob/living/simple_mob/slime/xenobio/dark_blue
 
-/datum/life_system/special/slime/xenobio/dark_blue/tick(mob/living/simple_mob/slime/xenobio/dark_blue/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/dark_blue/perform(mob/living/simple_mob/slime/xenobio/dark_blue/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.cold_aura()
 	..()
@@ -429,10 +429,10 @@
 		/mob/living/simple_mob/slime/xenobio/amber
 	)
 
-/datum/life_system/special/slime/xenobio/amber
-	mob_type = /mob/living/simple_mob/slime/xenobio/amber
+/datum/om/stage/life/special/slime/xenobio/amber
+	of = /mob/living/simple_mob/slime/xenobio/amber
 
-/datum/life_system/special/slime/xenobio/amber/tick(mob/living/simple_mob/slime/xenobio/amber/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/amber/perform(mob/living/simple_mob/slime/xenobio/amber/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.feed_aura()
 	..()
@@ -516,10 +516,10 @@
 			/mob/living/simple_mob/slime/xenobio/emerald
 		)
 
-/datum/life_system/special/slime/xenobio/green
-	mob_type = /mob/living/simple_mob/slime/xenobio/green
+/datum/om/stage/life/special/slime/xenobio/green
+	of = /mob/living/simple_mob/slime/xenobio/green
 
-/datum/life_system/special/slime/xenobio/green/tick(mob/living/simple_mob/slime/xenobio/green/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/green/perform(mob/living/simple_mob/slime/xenobio/green/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.irradiate()
 	..()
@@ -552,10 +552,10 @@
 			/mob/living/simple_mob/slime/xenobio/pink
 		)
 
-/datum/life_system/special/slime/xenobio/pink
-	mob_type = /mob/living/simple_mob/slime/xenobio/pink
+/datum/om/stage/life/special/slime/xenobio/pink
+	of = /mob/living/simple_mob/slime/xenobio/pink
 
-/datum/life_system/special/slime/xenobio/pink/tick(mob/living/simple_mob/slime/xenobio/pink/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/pink/perform(mob/living/simple_mob/slime/xenobio/pink/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.heal_aura()
 	..()
@@ -726,10 +726,10 @@
 		/mob/living/simple_mob/slime/xenobio/emerald
 	)
 
-/datum/life_system/special/slime/xenobio/emerald
-	mob_type = /mob/living/simple_mob/slime/xenobio/emerald
+/datum/om/stage/life/special/slime/xenobio/emerald
+	of = /mob/living/simple_mob/slime/xenobio/emerald
 
-/datum/life_system/special/slime/xenobio/emerald/tick(mob/living/simple_mob/slime/xenobio/emerald/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/emerald/perform(mob/living/simple_mob/slime/xenobio/emerald/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.zoom_aura()
 	..()

@@ -114,7 +114,7 @@
 
 /datum/om/behaviour/test/relevant
 	every = 1 SECONDS
-	relevance = list(OM_SLEEP, 5 SECONDS, 2 SECONDS, 1)
+	relevance = list(OM_PARK, 5 SECONDS, 2 SECONDS, 1)
 
 /datum/om/behaviour/test/gated
 	every = 1 SECONDS
@@ -376,11 +376,11 @@
 /datum/om/behaviour/test/rejoiner/tick(datum/om_test_entity/E, dt)
 	..()
 	if(E.value == 2)
-		om_sleep(E, type)
-		om_resume(E, type)
+		om_park(E, type)
+		om_unpark(E, type)
 	if(E.weight)
 		for(var/datum/om_test_entity/other as anything in E.log_targets)
-			om_sleep(other, type)
+			om_park(other, type)
 
 /datum/om_test_entity/var/list/log_targets
 

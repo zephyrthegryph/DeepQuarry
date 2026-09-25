@@ -814,7 +814,7 @@
 		if(M)
 			if(isnewplayer(M))
 				continue
-			if(M.stat == UNCONSCIOUS || M.status_units(EFFECT_SLEEPING) > 0)
+			if(M.stat == UNCONSCIOUS || M.has_status(EFFECT_SLEEPING))
 				continue
 			to_chat(M, span_filter_say("[isobserver(M) ? "[message] ([ghost_follow_link(src, M)])" : message]"))
 	log_message(message, LOG_EMOTE)

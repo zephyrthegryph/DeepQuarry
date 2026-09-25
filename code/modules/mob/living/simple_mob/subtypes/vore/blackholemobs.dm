@@ -658,12 +658,12 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	explosion_delay_lower	= 5 SECOND	// Lower bound for explosion delay.
 	explosion_delay_upper	= 8 SECONDS	// Upper bound.
 
-/datum/life_system/type_post/simple_mob/vore/blackhole_obelisk
-	mob_type = /mob/living/simple_mob/vore/blackhole_obelisk
+/datum/om/stage/life/type_post/simple_mob/vore/blackhole_obelisk
+	of = /mob/living/simple_mob/vore/blackhole_obelisk
 
-/datum/life_system/type_post/simple_mob/vore/blackhole_obelisk/tick(mob/living/simple_mob/vore/blackhole_obelisk/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/blackhole_obelisk/perform(mob/living/simple_mob/vore/blackhole_obelisk/self, datum/om/frame/life/ctx)
 	..()
-	if(!ctx?.alive)
+	if(!ctx.fact("alive"))
 		return
 	if(world.time > self.last_lifechecks + 15 SECONDS)
 		self.last_lifechecks = world.time

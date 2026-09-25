@@ -110,7 +110,7 @@
 		vore_selected = null
 		ourmob.mob_belly_transfer(src)
 
-	ourmob.life_frame()
+	om_run_frame_now(ourmob, /datum/om/pipeline/life)
 
 	if(ishuman(src))
 		for(var/obj/item/W in src)
@@ -127,18 +127,17 @@
 	else
 		qdel(src)
 
-/datum/life_system/tf_holder
+/datum/om/stage/life/tf_holder
+	order = LIFE_PHASE_OUTPUT + 40
 	name = "tf holder"
-	phase = LIFE_PHASE_OUTPUT
-	order = 40
-	segment = LIFE_SEG_LIVING
+	run_if = LIFE_RUN_IF_PLACED
 
 /// Continuous only for a transformed mob holding its original body.
-/datum/life_system/tf_holder/idle(mob/living/self)
+/datum/om/stage/life/tf_holder/idle(mob/living/self)
 	return !self.tf_mob_holder
 
 /// Links life and death between a transformed mob and the body it holds.
-/datum/life_system/tf_holder/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/tf_holder/perform(mob/living/self, datum/om/frame/life/ctx)
 	if(!self.tf_mob_holder)
 		return
 	if(self.tf_mob_holder.loc != self) return // Prevent bodyswapped creatures having their life linked

@@ -534,7 +534,7 @@
 /// §2) is running right now -- set from phase 0, for the life of the
 /// transaction. A hook reacting to a move can check this (or the `flags`
 /// arg it's already given, LEDGER_MOVE_DESTROYING) to skip re-derivation
-/// that a moment-later qdel would waste (body invalidate, life_wake, HUD,
+/// that a moment-later qdel would waste (body invalidate, stage wakes, HUD,
 /// factor recompute).
 /proc/holder_destroying(datum/holder)
 	return (holder && (holder.datum_flags & DF_DESTROYING)) ? TRUE : FALSE

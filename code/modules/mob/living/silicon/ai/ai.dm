@@ -1034,10 +1034,10 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 /mob/living/silicon/ai/announcer
 	life_set = LIFE_SET_DELIST
 
-/datum/life_system/delist/silicon/ai/announcer
-	mob_type = /mob/living/silicon/ai/announcer
+/datum/om/stage/life/delist/silicon/ai/announcer
+	of = /mob/living/silicon/ai/announcer
 
-/datum/life_system/delist/silicon/ai/announcer/tick(mob/living/silicon/ai/announcer/self, datum/life_context/ctx)
+/datum/om/stage/life/delist/silicon/ai/announcer/perform(mob/living/silicon/ai/announcer/self, datum/om/frame/life/ctx)
 	GLOB.mob_list -= self
 	GLOB.living_mob_list -= self
 	GLOB.dead_mob_list -= self

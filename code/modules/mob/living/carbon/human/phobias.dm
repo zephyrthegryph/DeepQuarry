@@ -1,12 +1,11 @@
-/datum/life_system/phobias
+/datum/om/stage/life/phobias
+	order = LIFE_PHASE_TAIL + 260
 	name = "phobias"
-	wake_on = LIFE_WAKE_ON_TRAITS
-	phase = LIFE_PHASE_TAIL
-	order = 260
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = 0
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
-/datum/life_system/phobias/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/phobias/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(!self.phobias)
 		return
 	if(self.phobias & NYCTOPHOBIA)

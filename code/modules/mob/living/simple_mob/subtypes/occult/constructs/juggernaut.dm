@@ -37,13 +37,6 @@
 
 	armor_spec = "melee=70;bullet=30;laser=30;energy=30;bomb=10;bio=100;rad=100"
 
-/datum/life_system/type_pre/simple_mob/construct/juggernaut
-	mob_type = /mob/living/simple_mob/construct/juggernaut
-
-/datum/life_system/type_pre/simple_mob/construct/juggernaut/tick(mob/living/simple_mob/construct/juggernaut/self, datum/life_context/ctx)
-	self.status_set(EFFECT_WEAKENED, 0)
-	..()
-
 /mob/living/simple_mob/construct/juggernaut/bullet_act(obj/item/projectile/P)
 	var/reflectchance = 100 - round(P.damage*2) // We have lower damage values now
 	if(prob(reflectchance))

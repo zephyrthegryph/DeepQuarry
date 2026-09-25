@@ -130,7 +130,7 @@
 
 		if(environment2)
 			breath = environment2.remove_volume(BREATH_VOLUME)
-			var/datum/life_system/breathing/carbon/breathing = H.life_system_for(/datum/life_system/breathing)
+			var/datum/om/stage/life/breathing/carbon/breathing = om_stage_for(H, /datum/om/stage/life/breathing)
 			breathing.inhale_smoke(H, environment2) //handle chemical smoke while we're at it
 
 	// NOW a crude copypasta of handle_breath. Leaving some things out that don't apply to plants.

@@ -161,10 +161,10 @@
 		if(L.status_units(EFFECT_HALLUCINATING) <= 100)
 			L.status_adjust(EFFECT_HALLUCINATING, rand(1,10))
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/spooky_ghost
-	mob_type = /mob/living/simple_mob/vore/alienanimals/spooky_ghost
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/spooky_ghost
+	of = /mob/living/simple_mob/vore/alienanimals/spooky_ghost
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/spooky_ghost/tick(mob/living/simple_mob/vore/alienanimals/spooky_ghost/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/spooky_ghost/perform(mob/living/simple_mob/vore/alienanimals/spooky_ghost/self, datum/om/frame/life/ctx)
 	..()
 	var/turf/T = get_turf(self)
 	if(!T)

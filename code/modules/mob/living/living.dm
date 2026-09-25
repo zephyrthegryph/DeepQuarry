@@ -12,7 +12,7 @@
 		return name
 
 /mob/living/Destroy()
-	clear_life_systems()
+	life_leave_z()
 	remove_all_modifiers(TRUE)
 	// The character's DNA outlives this body when the identity references it.
 	if(dna && identity?.dna == dna)
@@ -1094,6 +1094,7 @@
 
 /mob/living/Initialize(mapload)
 	. = ..()
+	life_update_relevance()
 	// Brain creation is handled by the combat AI integration's
 	// /mob/living/Initialize re-open (code/modules/combat_ai/integration/mob_living.dm),
 	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.

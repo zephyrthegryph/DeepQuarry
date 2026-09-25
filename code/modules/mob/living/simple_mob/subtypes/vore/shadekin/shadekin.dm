@@ -188,10 +188,10 @@
 		"The chaos of being digested fades as you're snuffed out by a harsh clench! You're steadily broken down into a thick paste, processed and absorbed by the predator!"
 		)
 
-/datum/life_system/type_post/simple_mob/shadekin
-	mob_type = /mob/living/simple_mob/shadekin
+/datum/om/stage/life/type_post/simple_mob/shadekin
+	of = /mob/living/simple_mob/shadekin
 
-/datum/life_system/type_post/simple_mob/shadekin/tick(mob/living/simple_mob/shadekin/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/shadekin/perform(mob/living/simple_mob/shadekin/self, datum/om/frame/life/ctx)
 	..()
 	if(self.comp.in_phase)
 		self.density = FALSE
@@ -208,12 +208,12 @@
 				non_kin_count ++
 		// Technically can be combined with ||, they call the same function, but readability is poor
 		if(!non_kin_count && (self.comp.in_phase))
-			dq_use_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
+			INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(dq_use_ability), self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
 		else if (non_kin_count && !(self.comp.in_phase))
-			dq_use_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
+			INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(dq_use_ability), self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
-	if(ctx?.alive)
+	if(ctx.fact("alive"))
 		self.comp.handle_comp()
 
 /mob/living/simple_mob/shadekin/update_icon()

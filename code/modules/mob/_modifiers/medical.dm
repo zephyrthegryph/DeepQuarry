@@ -36,7 +36,7 @@
 	holder.process_chemicals() // Circulates chemicals throughout the body.
 	if(human_being_pumped) //Specialty human procs.
 		human_being_pumped.process_organs() //Things like antibiotics will work. And since we're circulating, it makes infections get worse if we don't treat them!
-		human_being_pumped.run_life_system(/datum/life_system/heartbeat) //We can hear our own heart being pumped! This makes a pretty neat sound effect.
+		om_stage_run_now(human_being_pumped, /datum/om/stage/life/heartbeat) //We can hear our own heart being pumped! This makes a pretty neat sound effect.
 
 /datum/modifier/bloodpump_corpse/on_applied()
 	if(ishuman(holder))

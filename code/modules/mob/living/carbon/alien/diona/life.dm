@@ -1,8 +1,8 @@
 //Dionaea regenerate health and nutrition in light.
-/datum/life_system/environment/carbon/alien/diona
-	mob_type = /mob/living/carbon/alien/diona
+/datum/om/stage/life/environment/carbon/alien/diona
+	of = /mob/living/carbon/alien/diona
 
-/datum/life_system/environment/carbon/alien/diona/exchange(mob/living/carbon/alien/diona/self, datum/gas_mixture/environment)
+/datum/om/stage/life/environment/carbon/alien/diona/exchange(mob/living/carbon/alien/diona/self, datum/gas_mixture/environment)
 
 	var/light_amount = 0 //how much light there is in the place, affects receiving nutrition and healing
 	if(isturf(self.loc)) //else, there's considered to be no light

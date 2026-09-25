@@ -11,10 +11,10 @@
 		return COMPONENT_INCOMPATIBLE
 
 /datum/component/diabetic/RegisterWithParent()
-	add_trait_life_system(parent, /datum/life_system/trait/diabetic)
+	om_stage_add(parent, /datum/om/stage/life/trait/diabetic)
 
 /datum/component/diabetic/UnregisterFromParent()
-	remove_trait_life_system(parent, /datum/life_system/trait/diabetic)
+	om_stage_remove(parent, /datum/om/stage/life/trait/diabetic)
 
 /datum/component/diabetic/proc/process_component()
 	SIGNAL_HANDLER
@@ -38,9 +38,9 @@
 		living_guy.status_set(EFFECT_DROWSY, min(100,living_guy.status_units(EFFECT_DROWSY)+30))
 
 /// Trait system: low blood sugar. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/diabetic
+/datum/om/stage/life/trait/diabetic
 	name = "diabetic"
 	component_type = /datum/component/diabetic
 
-/datum/life_system/trait/diabetic/tick_component(mob/living/self, datum/component/diabetic/component)
+/datum/om/stage/life/trait/diabetic/tick_component(mob/living/self, datum/component/diabetic/component)
 	component.process_component()

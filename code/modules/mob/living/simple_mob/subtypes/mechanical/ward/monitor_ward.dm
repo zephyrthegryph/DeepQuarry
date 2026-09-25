@@ -62,10 +62,10 @@
 		to_chat(owner, span_warning("Your [src.name] inside [get_area(src)] was destroyed!"))
 	..()
 
-/datum/life_system/special/mechanical/ward/monitor
-	mob_type = /mob/living/simple_mob/mechanical/ward/monitor
+/datum/om/stage/life/special/mechanical/ward/monitor
+	of = /mob/living/simple_mob/mechanical/ward/monitor
 
-/datum/life_system/special/mechanical/ward/monitor/tick(mob/living/simple_mob/mechanical/ward/monitor/self, datum/life_context/ctx)
+/datum/om/stage/life/special/mechanical/ward/monitor/perform(mob/living/simple_mob/mechanical/ward/monitor/self, datum/om/frame/life/ctx)
 	self.detect_mobs()
 
 /mob/living/simple_mob/mechanical/ward/monitor/update_icon()

@@ -36,10 +36,10 @@
 	. = ..()
 
 /datum/component/weaver/RegisterWithParent()
-	add_trait_life_system(parent, /datum/life_system/trait/weaver)
+	om_stage_add(parent, /datum/om/stage/life/trait/weaver)
 
 /datum/component/weaver/UnregisterFromParent()
-	remove_trait_life_system(parent, /datum/life_system/trait/weaver)
+	om_stage_remove(parent, /datum/om/stage/life/trait/weaver)
 
 /datum/component/weaver/proc/process_weaver_silk()
 	if(silk_reserve < silk_max_reserve && silk_production == TRUE && owner.nutrition > 100)
@@ -178,9 +178,9 @@
 		return
 
 /// Trait system: silk production. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/weaver
+/datum/om/stage/life/trait/weaver
 	name = "weaver"
 	component_type = /datum/component/weaver
 
-/datum/life_system/trait/weaver/tick_component(mob/living/self, datum/component/weaver/component)
+/datum/om/stage/life/trait/weaver/tick_component(mob/living/self, datum/component/weaver/component)
 	component.process_component()

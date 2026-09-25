@@ -3,18 +3,17 @@
 	name = "Virtual Reality"
 
 // Gross system which runs every Life() to check for escaped VR mobs. Tried to do this with Exited() on area/vr but ended up being too heavy.
-/datum/life_system/vr_derez
+/datum/om/stage/life/vr_derez
+	order = LIFE_PHASE_OUTPUT + 50
 	name = "vr derez"
-	phase = LIFE_PHASE_OUTPUT
-	order = 50
-	segment = LIFE_SEG_LIVING
+	run_if = LIFE_RUN_IF_PLACED
 	woken_by = "Moved (a VR mob can only leave the VR area by moving)"
 
 /// Only virtual reality mobs have anything to check, and only after moving.
-/datum/life_system/vr_derez/idle(mob/living/self)
+/datum/om/stage/life/vr_derez/idle(mob/living/self)
 	return !self.virtual_reality_mob || istype(get_area(self), /area/vr)
 
-/datum/life_system/vr_derez/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/vr_derez/perform(mob/living/self, datum/om/frame/life/ctx)
 	if(self.virtual_reality_mob && !istype(get_area(self), /area/vr))
 		log_admin("[self] escaped virtual reality")
 		self.visible_message("[self] blinks out of existence.")
@@ -22,7 +21,7 @@
 		for(var/obj/belly/B in self.vore_organs) // Assume anybody inside an escaped VR mob is also an escaped VR mob.
 			for(var/mob/living/L in B)
 				log_vore("[L] was inside an escaped VR mob ([self]) and has been deleted.")
-				L.run_life_system(/datum/life_system/vr_derez) //Recursive! Let's get EVERYONE properly out of here!
+				om_stage_run_now(L, /datum/om/stage/life/vr_derez) //Recursive! Let's get EVERYONE properly out of here!
 				if(!QDELETED(L)) //This is so we don't double qdel() things when we're doing recursive removal.
 					qdel(L)
 		qdel(self) // Would like to convert escaped players into AR holograms in the future to encourage exploit finding.

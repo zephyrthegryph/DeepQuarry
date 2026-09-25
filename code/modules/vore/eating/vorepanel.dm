@@ -1245,7 +1245,7 @@
 					else
 						body_backup.revive()
 					body_backup.forceMove(T.loc)
-					body_backup.resume_life()
+					om_unsuspend(body_backup, body_backup)
 					body_backup.ajourn = 0
 					transfer_mind(T.mind, body_backup, "reformed in [host]", force = TRUE)
 					body_backup.teleop = null
@@ -1273,7 +1273,7 @@
 
 				if(isliving(MMI.body_backup))
 					var/mob/living/body_backup = MMI.body_backup
-					body_backup.resume_life()
+					om_unsuspend(body_backup, body_backup)
 					body_backup.forceMove(MMI.loc)
 					body_backup.ajourn = 0
 					body_backup.teleop = null

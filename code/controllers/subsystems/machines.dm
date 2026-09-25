@@ -220,7 +220,7 @@ SUBSYSTEM_DEF(machines)
 
 /// Adds a machine to the polling roster. It is not polled until the next pass.
 /datum/controller/subsystem/machines/proc/start_machine_processing(obj/machinery/M)
-	if(M.datum_flags & DF_ISPROCESSING)
+	if((M.datum_flags & DF_ISPROCESSING) || !M.polls)
 		return
 	M.datum_flags |= DF_ISPROCESSING
 	processing_machines += M

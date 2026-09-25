@@ -30,7 +30,7 @@
 	if(corpse)
 		var/mob/new_corpse = new corpse(src.loc)
 		if(istype(new_corpse))
-			new_corpse.low_priority = TRUE
+			new_corpse.set_low_priority(TRUE)
 	qdel(src)
 	return
 

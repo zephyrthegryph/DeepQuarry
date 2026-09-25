@@ -254,12 +254,12 @@
 /mob/living/simple_mob/animal/space/mouse_army/stealth/is_cloaked()
 	return dq_get_cloaked(src)
 
-/datum/life_system/special/animal/space/mouse_army/stealth
-	mob_type = /mob/living/simple_mob/animal/space/mouse_army/stealth
+/datum/om/stage/life/special/animal/space/mouse_army/stealth
+	of = /mob/living/simple_mob/animal/space/mouse_army/stealth
 
-/datum/life_system/special/animal/space/mouse_army/stealth/tick(mob/living/simple_mob/animal/space/mouse_army/stealth/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/space/mouse_army/stealth/perform(mob/living/simple_mob/animal/space/mouse_army/stealth/self, datum/om/frame/life/ctx)
 	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.cloak()
+		INVOKE_ASYNC(self, TYPE_PROC_REF(/atom/movable, cloak))
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(dq_get_cloaked(src))

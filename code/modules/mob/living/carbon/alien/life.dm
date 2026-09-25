@@ -1,21 +1,20 @@
 // Alien larva are quite simple.
-/datum/life_system/type_pre/carbon/alien
-	mob_type = /mob/living/carbon/alien
+/datum/om/stage/life/type_pre/carbon/alien
+	of = /mob/living/carbon/alien
 
-/datum/life_system/type_pre/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
-	if (self.transforming)	return LIFE_HALT
-	if(!self.loc)			return LIFE_HALT
+/datum/om/stage/life/type_pre/carbon/alien/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
+	if (self.transforming)	return ctx.abort()
+	if(!self.loc)			return ctx.abort()
 	return ..()
 
 /// Growth, blindness reset and icons after the living core (the old alien Life() tail).
-/datum/life_system/alien_growth
+/datum/om/stage/life/alien_growth
+	order = LIFE_PHASE_TAIL + 100
 	name = "alien growth"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 100
-	mob_type = /mob/living/carbon/alien
+	wake_on = CHANGE_MOB_HEALTH
+	of = /mob/living/carbon/alien
 
-/datum/life_system/alien_growth/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
+/datum/om/stage/life/alien_growth/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
 	if (self.stat != DEAD) //still breathing
 		// GROW!
 		self.update_progression()
@@ -25,10 +24,10 @@
 	//Status updates, death etc.
 	self.update_icons()
 
-/datum/life_system/radiation/carbon/alien
-	mob_type = /mob/living/carbon/alien
+/datum/om/stage/life/radiation/carbon/alien
+	of = /mob/living/carbon/alien
 
-/datum/life_system/radiation/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
+/datum/om/stage/life/radiation/carbon/alien/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(.)
 		return
@@ -48,12 +47,12 @@
 	self.mend(TREAT_ANTITOXIN, rads)
 	return
 
-/datum/life_system/status/carbon/alien
-	mob_type = /mob/living/carbon/alien
+/datum/om/stage/life/status/carbon/alien
+	of = /mob/living/carbon/alien
 
-/datum/life_system/status/carbon/alien/update_status(mob/living/carbon/alien/self)
+/datum/om/stage/life/status/carbon/alien/update_status(mob/living/carbon/alien/self)
 
-	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL) //I don't want to go in and do HUD stuff imediately, so... no.
+	if(om_has(self, EFFECT_GODMODE)) //I don't want to go in and do HUD stuff imediately, so... no.
 		return 0	// Cancelled by a component
 
 	// Death from injury is decided by the (simple) body.
@@ -65,7 +64,7 @@
 		self.status_set(EFFECT_MUTED, 0)
 		self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
-		if(self.has_status(EFFECT_PARALYZED) && self.status_units(EFFECT_PARALYZED) > 0)
+		if(self.has_status(EFFECT_PARALYZED))
 			self.blinded = 1
 			self.set_stat(UNCONSCIOUS)
 
@@ -90,10 +89,10 @@
 
 	return 1
 
-/datum/life_system/vision/carbon/alien
-	mob_type = /mob/living/carbon/alien
+/datum/om/stage/life/vision/carbon/alien
+	of = /mob/living/carbon/alien
 
-/datum/life_system/vision/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
+/datum/om/stage/life/vision/carbon/alien/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
 	if (self.stat == 2 || (self.has_mutation(XRAY)))
 		self.sight |= SEE_TURFS
 		self.sight |= SEE_MOBS
@@ -110,10 +109,10 @@
 	// Call parent to handle signals
 	..()
 
-/datum/life_system/hud/carbon/alien
-	mob_type = /mob/living/carbon/alien
+/datum/om/stage/life/hud/carbon/alien
+	of = /mob/living/carbon/alien
 
-/datum/life_system/hud/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
+/datum/om/stage/life/hud/carbon/alien/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(!.)
 		return
@@ -129,7 +128,7 @@
 			self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
 			self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
-/datum/life_system/hud/carbon/alien/health_icons(mob/living/carbon/alien/self)
+/datum/om/stage/life/hud/carbon/alien/health_icons(mob/living/carbon/alien/self)
 	. = ..()
 	if(!. || !self.healths)
 		return
@@ -154,10 +153,10 @@
 		else
 			self.healths.icon_state = "health6"
 
-/datum/life_system/environment/carbon/alien
-	mob_type = /mob/living/carbon/alien
+/datum/om/stage/life/environment/carbon/alien
+	of = /mob/living/carbon/alien
 
-/datum/life_system/environment/carbon/alien/exchange(mob/living/carbon/alien/self, datum/gas_mixture/environment)
+/datum/om/stage/life/environment/carbon/alien/exchange(mob/living/carbon/alien/self, datum/gas_mixture/environment)
 	// Both alien subtypes survive in vaccum and suffer in high temperatures,
 	// so I'll just define this once, for both (see radiation comment above)
 	if(!environment) return

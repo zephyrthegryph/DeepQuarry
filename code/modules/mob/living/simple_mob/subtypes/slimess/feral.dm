@@ -235,10 +235,10 @@
 	reagent_injected = REAGENT_ID_RADIUM
 	var/rads = 25
 
-/datum/life_system/special/slime/feral/green
-	mob_type = /mob/living/simple_mob/slime/feral/green
+/datum/om/stage/life/special/slime/feral/green
+	of = /mob/living/simple_mob/slime/feral/green
 
-/datum/life_system/special/slime/feral/green/tick(mob/living/simple_mob/slime/feral/green/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/feral/green/perform(mob/living/simple_mob/slime/feral/green/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.irradiate()
 	..()
@@ -259,10 +259,10 @@
 	coretype = /obj/item/slime_extract/pink
 	glow_toggle = TRUE
 
-/datum/life_system/special/slime/feral/pink
-	mob_type = /mob/living/simple_mob/slime/feral/pink
+/datum/om/stage/life/special/slime/feral/pink
+	of = /mob/living/simple_mob/slime/feral/pink
 
-/datum/life_system/special/slime/feral/pink/tick(mob/living/simple_mob/slime/feral/pink/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/feral/pink/perform(mob/living/simple_mob/slime/feral/pink/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.heal_aura()
 	..()
@@ -281,10 +281,10 @@
 	slime_color = "emerald"
 	coretype = /obj/item/slime_extract/emerald
 
-/datum/life_system/special/slime/feral/emerald
-	mob_type = /mob/living/simple_mob/slime/feral/emerald
+/datum/om/stage/life/special/slime/feral/emerald
+	of = /mob/living/simple_mob/slime/feral/emerald
 
-/datum/life_system/special/slime/feral/emerald/tick(mob/living/simple_mob/slime/feral/emerald/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/feral/emerald/perform(mob/living/simple_mob/slime/feral/emerald/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.zoom_aura()
 	..()

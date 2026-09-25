@@ -139,10 +139,10 @@
 
 /mob/living/simple_mob/mechanical/mining_drone/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
 	return ..()
-/datum/life_system/special/mechanical/mining_drone
-	mob_type = /mob/living/simple_mob/mechanical/mining_drone
+/datum/om/stage/life/special/mechanical/mining_drone
+	of = /mob/living/simple_mob/mechanical/mining_drone
 
-/datum/life_system/special/mechanical/mining_drone/tick(mob/living/simple_mob/mechanical/mining_drone/self, datum/life_context/ctx)
+/datum/om/stage/life/special/mechanical/mining_drone/perform(mob/living/simple_mob/mechanical/mining_drone/self, datum/om/frame/life/ctx)
 	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc) && (world.time > self.last_search + self.search_cooldown) && (self.my_storage.contents.len < self.my_storage.max_storage_space))
 		self.last_search = world.time
 

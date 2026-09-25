@@ -88,7 +88,7 @@
 			add_side_effect(effect_name)
 
 /// Medication side effects, every 15 life ticks.
-/datum/life_system/medical/proc/side_effects(mob/living/carbon/human/self)
+/datum/om/stage/life/medical/proc/side_effects(mob/living/carbon/human/self)
 	if(!LAZYLEN(self.side_effects) || self.life_tick % 15 != 0)
 		return 0
 

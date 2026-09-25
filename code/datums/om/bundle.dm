@@ -34,6 +34,9 @@
 	var/list/events
 	/// Full behaviour types attached to the entity.
 	var/list/behaviours
+	/// Pipeline stages this entity type runs besides its pipelines' own (each stage names its
+	/// pipeline; a family root listed here resolves to the entity's variant).
+	var/list/stages
 	/// name -> task row (see task.dm).
 	var/list/tasks
 	/// UI binding rows: list(list(target = /type/proc/x, watch = mask, stream_rates = list(names))).
@@ -58,13 +61,15 @@
 /datum/om/decl
 	parent_type = /datum/om/bundle
 	abstract_type = /datum/om/decl
-	/// Entity type (and subtypes) these rows apply to.
+	/// Entity type (and subtypes) these rows apply to, or a list of types.
 	var/of
 
 /// The compiled table for one concrete entity type: what om_start() attaches.
 /datum/om/type_table
 	/// Behaviour defs, sorted by id (run order).
 	var/list/behaviours = list()
+	/// Stage types from `stages` rows (pipeline.dm).
+	var/list/stages = list()
 	/// name -> /datum/om/task
 	var/list/tasks = list()
 	/// UI rows.

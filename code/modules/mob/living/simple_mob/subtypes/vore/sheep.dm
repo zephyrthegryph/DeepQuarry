@@ -103,10 +103,10 @@
 	return ..()
 
 
-/datum/life_system/type_post/simple_mob/vore/sheep
-	mob_type = /mob/living/simple_mob/vore/sheep
+/datum/om/stage/life/type_post/simple_mob/vore/sheep
+	of = /mob/living/simple_mob/vore/sheep
 
-/datum/life_system/type_post/simple_mob/vore/sheep/tick(mob/living/simple_mob/vore/sheep/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/sheep/perform(mob/living/simple_mob/vore/sheep/self, datum/om/frame/life/ctx)
 	..()
 	if(!harvestable_wool)
 		wool_growth ++

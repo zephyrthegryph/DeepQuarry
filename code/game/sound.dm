@@ -75,7 +75,7 @@
 	return TRUE
 
 /mob/proc/playsound_local(turf/turf_source, soundin, vol as num, vary, frequency, falloff, is_global, channel = 0, pressure_affected = TRUE, sound/S, preference, volume_channel = null)
-	if(!client || status_units(EFFECT_DEAFENED) > 0)
+	if(!client || has_status(EFFECT_DEAFENED))
 		return
 
 	if(!check_sound_preference(preference))

@@ -1,5 +1,6 @@
 /**
- * Attached to mobs. Gives them godmode by stopping damage, effects, embeds, among all other negative effects.
+ * Attached to mobs. Holds EFFECT_GODMODE (which implies the incapacitation immunities) and
+ * cancels damage, effects, embeds and EMPs. Code asks om_has(mob, EFFECT_GODMODE).
  */
 /datum/element/godmode
 	element_flags = ELEMENT_DETACH_ON_HOST_DESTROY|ELEMENT_BESPOKE
@@ -11,23 +12,20 @@
 	if(!ismob(target))
 		return ELEMENT_INCOMPATIBLE
 	var/mob/our_target = target
-	if(our_target.status_flags & GODMODE) //Already have it.
+	if(om_has(our_target, EFFECT_GODMODE)) //Already have it.
 		return ELEMENT_INCOMPATIBLE
-	our_target.status_flags |= GODMODE
-	hold_incapacitation_immunity(our_target, src)
+	om_hold(our_target, EFFECT_GODMODE, src)
 	if(issilicon(target))
 		RegisterSignal(target, COMSIG_SILICON_EMP_ACT, PROC_REF(on_emp))
 
 	if(isrobot(target))
 		RegisterSignal(target, COMSIG_ROBOT_EMP_ACT, PROC_REF(on_emp))
 
-	//Every injury of every kind (injure() also checks the GODMODE flag itself).
+	//Every injury of every kind (injure() also checks EFFECT_GODMODE itself).
 	RegisterSignal(target, COMSIG_LIVING_INJURE, PROC_REF(on_injure))
 
 	RegisterSignal(target, COMSIG_TAKING_APPLY_EFFECT, PROC_REF(on_apply_effect))
 
-	//For things that don't fall into a single bucket
-	RegisterSignal(target, COMSIG_CHECK_FOR_GODMODE, PROC_REF(godmode_check))
 	RegisterSignal(target, COMSIG_BEING_ELECTROCUTED, PROC_REF(on_electrocute))
 	RegisterSignal(target, COMSIG_EMBED_OBJECT, PROC_REF(embed_check))
 
@@ -40,12 +38,11 @@
 		UnregisterSignal(target, list(COMSIG_ROBOT_EMP_ACT))
 
 	//All the general comsigs.
-	UnregisterSignal(target, list(COMSIG_LIVING_INJURE, COMSIG_TAKING_APPLY_EFFECT, COMSIG_CHECK_FOR_GODMODE, COMSIG_BEING_ELECTROCUTED, COMSIG_EMBED_OBJECT))
+	UnregisterSignal(target, list(COMSIG_LIVING_INJURE, COMSIG_TAKING_APPLY_EFFECT, COMSIG_BEING_ELECTROCUTED, COMSIG_EMBED_OBJECT))
 	var/mob/our_target = target
 
 	//And finally, remove the fact we're in godmode.
-	our_target.status_flags &= ~GODMODE
-	release_incapacitation_immunity(our_target, src)
+	om_release(our_target, EFFECT_GODMODE, src)
 	return ..()
 
 /datum/element/godmode/proc/on_injure()
@@ -67,10 +64,6 @@
 /datum/element/godmode/proc/on_emp()
 	SIGNAL_HANDLER
 	return COMPONENT_BLOCK_EMP
-
-/datum/element/godmode/proc/godmode_check()
-	SIGNAL_HANDLER
-	return COMSIG_GODMODE_CANCEL
 
 
 ///The 'lite' version of godmode

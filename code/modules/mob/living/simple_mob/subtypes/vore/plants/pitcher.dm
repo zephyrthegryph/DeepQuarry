@@ -118,12 +118,12 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		"%pred's stomach shifts and slushes as someone inside of it tries in vain to escape. It doesn't look like they can, though.",
 		"%pred seems unpertubed by the stubborn movement of its prey. They clearly aren't getting out on their own.")
 
-/datum/life_system/type_post/simple_mob/vore/pitcher_plant
-	mob_type = /mob/living/simple_mob/vore/pitcher_plant
+/datum/om/stage/life/type_post/simple_mob/vore/pitcher_plant
+	of = /mob/living/simple_mob/vore/pitcher_plant
 
-/datum/life_system/type_post/simple_mob/vore/pitcher_plant/tick(mob/living/simple_mob/vore/pitcher_plant/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/pitcher_plant/perform(mob/living/simple_mob/vore/pitcher_plant/self, datum/om/frame/life/ctx)
 	..()
-	if(!ctx?.alive)
+	if(!ctx.fact("alive"))
 		return
 
 	var/lastmeat = self.meat //If Life procs every 2 seconds that means it takes 20 seconds to digest a steak

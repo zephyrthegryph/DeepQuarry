@@ -658,7 +658,7 @@
 	// Reverts TF on death. This fixes a bug with posibrains or similar, and also makes reforming easier.
 	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
 		M.return_player_to_tf_holder("digested in [src]")
-		M.tf_mob_holder.resume_life()
+		om_unsuspend(M.tf_mob_holder, M.tf_mob_holder)
 		M.tf_mob_holder.loc = M.loc
 		M.tf_mob_holder.forceMove(M.loc)
 		QDEL_LIST_NULL(M.tf_mob_holder.vore_organs)
@@ -753,14 +753,14 @@
 
 	if(istype(hasMMI))
 		hasMMI.body_backup = M
-		M.suspend_life()
+		om_suspend(M, M)
 		slot_remove(M, hasMMI)
 	else
 		var/mob/observer/G = M.ghostize(FALSE) // Make sure they're out, so we can copy attack logs and such.
 		if(G)
 			belly_insert(G)
 			G.body_backup = M
-			M.suspend_life()
+			om_suspend(M, M)
 			slot_remove(M, G)
 		else
 			qdel(M)

@@ -234,7 +234,7 @@
 		else if(isliving(A))
 			var/dist = get_dist(source, A)
 			var/mob/living/L = A
-			if(SEND_SIGNAL(L, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+			if(om_has(L, EFFECT_GODMODE))
 				continue
 			if(dist <= zap_range && (dist < closest_dist || !closest_mob) && L.stat != DEAD && !HAS_TRAIT(L, TRAIT_TESLA_SHOCKIMMUNE))
 				closest_mob = L

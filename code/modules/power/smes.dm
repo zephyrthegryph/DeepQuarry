@@ -3,15 +3,17 @@
 //
 // M3: charge, input and output run in Rust (verdigris/domains/power/src/smes.rs)
 // every power step: the output is a supply on the SMES node's network, the input
-// a demand on each terminal's. The SMES never polls; power_sync() sends its
-// settings (settings changes wake it for one process() that does that), and
-// power_event() applies the charge and the shown state.
+// a demand on each terminal's. The SMES never polls: it runs on the machine
+// pipeline (machine_pipeline.dm), whose power stage calls power_step() once
+// when a setting changes (CHANGE_MACHINE_SETTINGS) and then idles; power_event()
+// applies the charge and the shown state.
 
 
 //# define SMESMAXCHARGELEVEL 250000 Unused
 //# define SMESMAXOUTPUT 250000 Unused
 
 /obj/machinery/power/smes
+	polls = FALSE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "power storage unit"
 	desc = "A high-capacity superconducting magnetic energy storage (SMES) unit."
@@ -259,14 +261,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	charge -= amount*SMESRATE
 	power_sync()
 
-/// SMES units do not poll: Rust charges and discharges them. A wake (a
-/// settings change, damage, a new terminal) resends the settings once.
-/obj/machinery/power/smes/process()
+/// One machine pipeline frame (the power/smes stage). Rust charges and discharges the unit;
+/// a wake (a settings change, damage, a new terminal) resends the settings once. Returns
+/// STAGE_IDLE when the unit has nothing more to do until the next wake.
+/obj/machinery/power/smes/proc/power_step()
 	if(stat & BROKEN)
 		soundloop.stop()
 		noisy = FALSE
 	power_sync()
-	return PROCESS_KILL
+	return STAGE_IDLE
+
+/// TRUE when power_step() has nothing to do until the next wake.
+/obj/machinery/power/smes/proc/power_settled()
+	return TRUE
 
 // Compatibility hook for callers outside the persistent ledger.
 /obj/machinery/power/smes/proc/restore(percent_load)
@@ -537,13 +544,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	input_attempt = do_input
 	if(!input_attempt)
 		inputting = 0
-	START_MACHINE_PROCESSING(src)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/smes/proc/outputting(do_output)
 	output_attempt = do_output
 	if(!output_attempt)
 		outputting = 0
-	START_MACHINE_PROCESSING(src)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/smes/atom_destruction(damage_flag)
 	visible_message(span_filter_notice(span_danger("\The [src] explodes in large shower of sparks and smoke!")))
@@ -607,7 +614,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 // Description: Sets input setting on this SMES. Trims it if limits are exceeded.
 /obj/machinery/power/smes/proc/set_input(new_input = 0)
 	input_level = between(0, new_input, input_level_max)
-	START_MACHINE_PROCESSING(src)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 // Proc: set_output()
@@ -615,7 +622,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 // Description: Sets output setting on this SMES. Trims it if limits are exceeded.
 /obj/machinery/power/smes/proc/set_output(new_output = 0)
 	output_level = between(0, new_output, output_level_max)
-	START_MACHINE_PROCESSING(src)
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 /obj/machinery/power/smes/buildable/hybrid
@@ -652,7 +659,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		add_overlay("smes-og[clevel]")
 	return
 
-/// Hybrid units make their own charge every tick, so they stay awake.
-/obj/machinery/power/smes/buildable/hybrid/process()
+/// Hybrid units make their own charge every frame, so they never idle.
+/obj/machinery/power/smes/buildable/hybrid/power_step()
 	charge += min(recharge_rate, capacity - charge)
 	power_sync()
+
+/obj/machinery/power/smes/buildable/hybrid/power_settled()
+	return FALSE

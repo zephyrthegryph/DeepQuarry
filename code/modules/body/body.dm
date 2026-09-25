@@ -385,7 +385,7 @@
 
 /// Apply death / consciousness from the cached vitals.
 /datum/body/proc/evaluate_status()
-	if(owner.stat == DEAD || (owner.status_flags & GODMODE))
+	if(owner.stat == DEAD || om_has(owner, EFFECT_GODMODE))
 		return
 	if(SEND_SIGNAL(owner, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE)
 		if(HAS_TRAIT(owner, TRAIT_CRITICAL_CONDITION))
@@ -398,7 +398,7 @@
 
 /// Death only; no consciousness. Returns TRUE if the mob died.
 /datum/body/proc/check_death()
-	if(owner.stat == DEAD || (owner.status_flags & GODMODE))
+	if(owner.stat == DEAD || om_has(owner, EFFECT_GODMODE))
 		return FALSE
 	if(!is_dead())
 		return FALSE

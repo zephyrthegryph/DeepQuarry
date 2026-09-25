@@ -141,6 +141,9 @@ Class Procs:
 	var/tmp/machine_processing_pass = 0
 
 	var/speed_process = FALSE			//If false, SSmachines. If true, SSfastprocess.
+	/// FALSE for machines that run on an object-model pipeline (machine_pipeline.dm) and never
+	/// join SSmachines' polling roster.
+	var/polls = TRUE
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
@@ -174,10 +177,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	// into a real /obj/item/circuitboard when something needs the physical
 	// item (deconstruction, admin var edit, a frame move). See
 	// materialize_circuit().
-	if(!speed_process)
-		START_MACHINE_PROCESSING(src)
-	else
+	if(speed_process)
 		START_PROCESSING(SSfastprocess, src)
+	else if(polls)
+		START_MACHINE_PROCESSING(src)
 	if(!mapload)
 		power_change()
 
@@ -632,6 +635,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(stat & BROKEN)
 		return FALSE
 	stat |= BROKEN
+	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
 	SEND_SIGNAL(src, COMSIG_MACHINERY_BROKEN, damage_flag)
 	REACT_PUBLISH_OWN(src, REACT_KEY_MACHINE_BROKEN, REACT_KEY_CHANGED)
 	update_icon()
@@ -643,6 +647,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!(stat & BROKEN))
 		return FALSE
 	stat &= ~BROKEN
+	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
 	REACT_PUBLISH_OWN(src, REACT_KEY_MACHINE_BROKEN, REACT_KEY_CHANGED)
 	update_icon()
 	return TRUE

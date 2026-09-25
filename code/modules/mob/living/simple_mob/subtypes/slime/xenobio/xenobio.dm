@@ -52,12 +52,12 @@
 	..() // This will apply the correct icon_state and do the other overlay-related things.
 
 
-/datum/life_system/special/slime/xenobio
-	mob_type = /mob/living/simple_mob/slime/xenobio
+/datum/om/stage/life/special/slime/xenobio
+	of = /mob/living/simple_mob/slime/xenobio
 
-/datum/life_system/special/slime/xenobio/tick(mob/living/simple_mob/slime/xenobio/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/xenobio/perform(mob/living/simple_mob/slime/xenobio/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
-		self.handle_nutrition()
+		INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))
 
 		if(self.victim)
 			self.handle_consumption()

@@ -14,14 +14,13 @@
 
 /// Skin germs creep up to the ambient level. Runs every cycle, even while transforming or in
 /// nullspace (it followed ..() in the old carbon Life()).
-/datum/life_system/germs
+/datum/om/stage/life/germs
+	order = LIFE_PHASE_TAIL + 10
 	name = "germs"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 10
-	mob_type = /mob/living/carbon
+	wake_on = CHANGE_MOB_HEALTH
+	of = /mob/living/carbon
 
-/datum/life_system/germs/tick(mob/living/carbon/self, datum/life_context/ctx)
+/datum/om/stage/life/germs/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
 	// Increase germ_level regularly
 	if(self.germ_level < GERM_LEVEL_AMBIENT && prob(30))	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		self.germ_level++
@@ -282,7 +281,7 @@
 				span_notice("You shake [src], but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?"))
 			else if(lying || src.has_status(EFFECT_SLEEPING))
 				status_adjust(EFFECT_SLEEPING, -5)
-				if(src.status_units(EFFECT_SLEEPING) == 0)
+				if(!src.has_status(EFFECT_SLEEPING))
 					src.resting = 0
 				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
 									span_notice("You shake [src] trying to wake [H.p_them()] up!"))
@@ -538,10 +537,10 @@
 		return species.food_preference_bonus
 	return FALSE
 
-/datum/life_system/diseases/carbon
-	mob_type = /mob/living/carbon
+/datum/om/stage/life/diseases/carbon
+	of = /mob/living/carbon
 
-/datum/life_system/diseases/carbon/progress(mob/living/carbon/self)
+/datum/om/stage/life/diseases/carbon/progress(mob/living/carbon/self)
 	for(var/thing in self.GetViruses())
 		var/datum/disease/D = thing
 		if(prob(D.infectivity))

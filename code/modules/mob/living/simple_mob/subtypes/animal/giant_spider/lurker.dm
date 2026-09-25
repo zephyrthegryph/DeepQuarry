@@ -84,10 +84,10 @@
 
 
 // Cloaks the spider automatically, if possible.
-/datum/life_system/special/animal/giant_spider/lurker
-	mob_type = /mob/living/simple_mob/animal/giant_spider/lurker
+/datum/om/stage/life/special/animal/giant_spider/lurker
+	of = /mob/living/simple_mob/animal/giant_spider/lurker
 
-/datum/life_system/special/animal/giant_spider/lurker/tick(mob/living/simple_mob/animal/giant_spider/lurker/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/giant_spider/lurker/perform(mob/living/simple_mob/animal/giant_spider/lurker/self, datum/om/frame/life/ctx)
 	if(!dq_get_cloaked(self) && self.can_cloak())
 		self.cloak()
 

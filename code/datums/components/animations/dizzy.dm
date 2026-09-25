@@ -3,7 +3,7 @@ dizzy shake - wiggles the client's pixel offset while the mob is dizzy.
 
 Dizziness itself is the EFFECT_DIZZY status (0-1000 points, below 100 is not dizzy), which wears
 off on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob adds this component when the
-status starts and deletes it when it ends (on_status_changed()).
+status starts and deletes it when it ends (the status row's on_start/on_end hooks).
 */
 
 /datum/component/dizzy_shake

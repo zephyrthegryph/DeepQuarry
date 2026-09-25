@@ -9,6 +9,8 @@
 	active_power_usage = 60000	//60 kW. (this the power drawn when charging)
 	var/efficiency = 60000 //will provide the modified power rate when upgraded
 	power_channel = EQUIP
+	/// Runs on the machine pipeline (machine_pipeline.dm): the power/cell_charger stage charges.
+	polls = FALSE
 	var/obj/item/cell/charging = null
 	var/chargelevel = -1
 	circuit = /obj/item/circuitboard/cell_charger
@@ -96,7 +98,7 @@
 	user.drop_item()
 	W.loc = src
 	charging = W
-	START_MACHINE_PROCESSING(src)
+	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 	chargelevel = -1
 	update_icon()
@@ -107,6 +109,7 @@
 		to_chat(user, span_warning("Remove [charging] first!"))
 		return ITEM_INTERACT_BLOCKING
 	anchored = !anchored
+	om_changed(src, CHANGE_MACHINE_ANCHORED)
 	to_chat(user, "You [anchored ? "attach" : "detach"] [src] [anchored ? "to" : "from"] the ground")
 	playsound(src, tool.usesound, 75, TRUE)
 	update_icon()
@@ -129,6 +132,7 @@
 
 		charging = null
 		chargelevel = -1
+		om_changed(src, CHANGE_MACHINE_OCCUPANT)
 		update_icon()
 	return TRUE
 
@@ -139,28 +143,8 @@
 			charging.loc = src.loc
 			charging.update_icon()
 			charging = null
+			om_changed(src, CHANGE_MACHINE_OCCUPANT)
 			update_icon()
-
-/obj/machinery/cell_charger/process()
-	//to_world("ccpt [charging] [stat]")
-	if((stat & (BROKEN|NOPOWER)) || !anchored)
-		update_use_power(USE_POWER_OFF)
-		return PROCESS_KILL
-
-	if(charging && !charging.fully_charged())
-		var/newlevel = 	round(charging.percent() * 4.0 / 99)
-		charging.give(efficiency*CELLRATE)
-		update_use_power(USE_POWER_ACTIVE)
-		if(chargelevel != newlevel)
-			update_icon()
-	else
-		update_use_power(USE_POWER_IDLE)
-		return PROCESS_KILL
-
-/obj/machinery/cell_charger/power_change()
-	. = ..()
-	if(. && charging)
-		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/cell_charger/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)

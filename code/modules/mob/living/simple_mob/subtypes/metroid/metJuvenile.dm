@@ -18,10 +18,10 @@
 		stop_consumption() // Unbuckle us from our victim.
 	return ..()
 
-/datum/life_system/special/metroid/juvenile
-	mob_type = /mob/living/simple_mob/metroid/juvenile
+/datum/om/stage/life/special/metroid/juvenile
+	of = /mob/living/simple_mob/metroid/juvenile
 
-/datum/life_system/special/metroid/juvenile/tick(mob/living/simple_mob/metroid/juvenile/self, datum/life_context/ctx)
+/datum/om/stage/life/special/metroid/juvenile/perform(mob/living/simple_mob/metroid/juvenile/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		if(self.victim)
 			self.handle_consumption()

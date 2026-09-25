@@ -182,10 +182,10 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	// The other stuff was already checked in parent proc, and the . variable will implicitly return the correct value.
 
 // Slimes regenerate passively.
-/datum/life_system/special/slime
-	mob_type = /mob/living/simple_mob/slime
+/datum/om/stage/life/special/slime
+	of = /mob/living/simple_mob/slime
 
-/datum/life_system/special/slime/tick(mob/living/simple_mob/slime/self, datum/life_context/ctx)
+/datum/om/stage/life/special/slime/perform(mob/living/simple_mob/slime/self, datum/om/frame/life/ctx)
 	self.mend(TREAT_OXYGENATION, 1)
 	self.mend(TREAT_ANTITOXIN, 1)
 	self.mend(TREAT_BURN_CARE, 1)

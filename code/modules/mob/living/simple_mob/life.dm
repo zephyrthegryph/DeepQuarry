@@ -3,50 +3,43 @@
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
 
-// Simple mob Life: the living core, then these TAIL systems in the old order:
-//	vitals (health display; `if(stat >= DEAD) return FALSE` -> LIFE_SEG_SIMPLE),
-//	statuses, supernatural, special, guts, healing, then the type_post variants.
+// Simple mob Life: the living core, then these TAIL stages in the old order:
+//	vitals (health display), then [alive] (the old `if(stat >= DEAD) return FALSE`) statuses,
+//	supernatural, special, guts, healing, then the type_post variants.
 
-/// Health display, then the dead check that ended the old simple mob Life().
-/datum/life_system/simple_vitals
+/// Health display. Death is decided by the body (evaluate_status -> death()).
+/datum/om/stage/life/simple_vitals
+	order = LIFE_PHASE_TAIL + 100
 	name = "simple vitals"
-	// A gate: it blocks LIFE_SEG_SIMPLE for the dead, so it runs whenever the mob runs.
-	gate = TRUE
-	phase = LIFE_PHASE_TAIL
-	order = 100
-	mob_type = /mob/living/simple_mob
+	wake_on = CHANGE_MOB_HEALTH
+	of = /mob/living/simple_mob
+	woken_by = "injure, mend, body invalidate (health); set_stat"
 
-/datum/life_system/simple_vitals/tick(mob/living/simple_mob/self, datum/life_context/ctx)
-	// Death is decided by the body (evaluate_status -> death()); we only refresh displays here.
+/datum/om/stage/life/simple_vitals/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
 	self.update_health_display()
-	if(self.stat >= DEAD)
-		ctx.alive = FALSE
-		ctx.blocked |= LIFE_SEG_SIMPLE
-		return
-	ctx.alive = TRUE
 
-/datum/life_system/simple_vitals/idle(mob/living/simple_mob/self)
+/// Event-driven: health and stat changes wake it.
+/datum/om/stage/life/simple_vitals/idle(mob/living/simple_mob/self)
 	return TRUE
 
 /// Passive healing while fed.
-/datum/life_system/simple_healing
+/datum/om/stage/life/simple_healing
+	order = LIFE_PHASE_TAIL + 150
 	name = "simple healing"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 150
-	segment = LIFE_SEG_SIMPLE
-	mob_type = /mob/living/simple_mob
-	woken_by = "injure (LIFE_WAKE_BODY); feeding"
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = FACT("alive")
+	of = /mob/living/simple_mob
+	woken_by = "injure; feeding"
 
-/datum/life_system/simple_healing/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+/datum/om/stage/life/simple_healing/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
 	self.do_healing()
 
 /// Heals only while hurt and fed.
-/datum/life_system/simple_healing/idle(mob/living/simple_mob/self)
+/datum/om/stage/life/simple_healing/idle(mob/living/simple_mob/self)
 	return self.nutrition < 150 || !self.is_injured()
 
-/datum/life_system/type_post/simple_mob
-	mob_type = /mob/living/simple_mob
+/datum/om/stage/life/type_post/simple_mob
+	of = /mob/living/simple_mob
 
 
 /// Refreshes the health HUD, nutrition alert and injury slowdown. Death itself
@@ -116,29 +109,28 @@
 			mend(TREAT_WIRING_REPAIR, amount)
 // ADD END
 
-/datum/life_system/special
+/datum/om/stage/life/special
+	order = LIFE_PHASE_TAIL + 130
 	name = "special"
-	wake_on = LIFE_WAKE_ON_BEHAVIOUR
-	phase = LIFE_PHASE_TAIL
-	order = 130
-	segment = LIFE_SEG_SIMPLE
-	mob_type = /mob/living/simple_mob
+	wake_on = 0
+	run_if = FACT("alive")
+	of = /mob/living/simple_mob
 
 /// Per-type behaviour (the old handle_special() overrides). Variants mirror the mob path.
-/datum/life_system/special/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+/datum/om/stage/life/special/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
 	return
 
-/datum/life_system/special/idle(mob/living/simple_mob/self)
-	return type == /datum/life_system/special
+/datum/om/stage/life/special/idle(mob/living/simple_mob/self)
+	return type == /datum/om/stage/life/special
 
-/datum/life_system/environment/simple_mob
-	mob_type = /mob/living/simple_mob
-	woken_by = "Moved (LIFE_WAKE_MOVED); injure; its own timer for air changing in place"
+/datum/om/stage/life/environment/simple_mob
+	of = /mob/living/simple_mob
+	woken_by = "Moved; injure; its own timer for air changing in place"
 
 /// Idle while the air is survivable and the body has nothing for it to treat. Air that
 /// changes in place (a breach) is caught by a slow timer: atmos has no per-mob signal yet.
-/datum/life_system/environment/simple_mob/idle(mob/living/simple_mob/self)
-	if(type != /datum/life_system/environment/simple_mob)
+/datum/om/stage/life/environment/simple_mob/idle(mob/living/simple_mob/self)
+	if(type != /datum/om/stage/life/environment/simple_mob)
 		return FALSE
 	if(self.is_incorporeal() || !self.loc)
 		return TRUE
@@ -149,7 +141,7 @@
 	var/datum/gas_mixture/environment = isbelly(self.loc) ? self.loc.return_air_for_internal_lifeform(self) : self.loc.return_air()
 	return !environment || self.environment_is_safe(environment)
 
-/datum/life_system/environment/simple_mob/rewake_delay(mob/living/simple_mob/self)
+/datum/om/stage/life/environment/simple_mob/rewake_delay(mob/living/simple_mob/self)
 	return 15 SECONDS
 
 /// TRUE when exchange() would change nothing: temperature within the mob's range and every
@@ -175,7 +167,7 @@
 	return TRUE
 
 /// Handle interacting with and taking damage from atmos.
-/datum/life_system/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment)
+/datum/om/stage/life/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment)
 
 	if(self.inStasisNow())
 		return 1 // return early to skip atmos checks
@@ -249,16 +241,15 @@
 	else
 		self.mend(TREAT_OXYGENATION, self.unsuitable_atoms_damage)
 
-/datum/life_system/guts
+/datum/om/stage/life/guts
+	order = LIFE_PHASE_TAIL + 140
 	name = "guts"
-	wake_on = LIFE_WAKE_ON_ORGANS
-	phase = LIFE_PHASE_TAIL
-	order = 140
-	segment = LIFE_SEG_SIMPLE
-	mob_type = /mob/living/simple_mob
+	wake_on = 0
+	run_if = FACT("alive")
+	of = /mob/living/simple_mob
 
 /// Organ processing.
-/datum/life_system/guts/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+/datum/om/stage/life/guts/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
 	for(var/obj/item/organ/OR in self.internal_organs)
 		OR.process()
 
@@ -266,23 +257,22 @@
 		OR.process()
 
 /// Only mobs carrying real organ objects process them (most list organ paths for butchery).
-/datum/life_system/guts/idle(mob/living/simple_mob/self)
+/datum/om/stage/life/guts/idle(mob/living/simple_mob/self)
 	return !(LAZYLEN(self.internal_organs) && (locate(/obj/item/organ) in self.internal_organs)) && !(LAZYLEN(self.organs) && (locate(/obj/item/organ) in self.organs))
 
-/datum/life_system/supernatural
+/datum/om/stage/life/supernatural
+	order = LIFE_PHASE_TAIL + 120
 	name = "supernatural"
-	wake_on = LIFE_WAKE_ON_STATUS
-	phase = LIFE_PHASE_TAIL
-	order = 120
-	segment = LIFE_SEG_SIMPLE
-	mob_type = /mob/living/simple_mob
+	wake_on = CHANGE_MOB_STATUS
+	run_if = FACT("alive")
+	of = /mob/living/simple_mob
 
 /// Holy purge wears off.
-/datum/life_system/supernatural/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+/datum/om/stage/life/supernatural/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
 	if(self.purge)
 		self.purge -= 1
 
-/datum/life_system/supernatural/idle(mob/living/simple_mob/self)
+/datum/om/stage/life/supernatural/idle(mob/living/simple_mob/self)
 	return !self.purge
 
 /mob/living/simple_mob/

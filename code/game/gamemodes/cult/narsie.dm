@@ -76,7 +76,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 /obj/singularity/narsie/mezzer()
 	for(var/mob/living/carbon/M in oviewers(8, src))
 		if(M.stat == CONSCIOUS)
-			if(SEND_SIGNAL(M, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+			if(om_has(M, EFFECT_GODMODE))
 				return 0	// Cancelled by a component
 			if(!iscultist(M))
 				to_chat(M, span_danger("You feel your sanity crumble away in an instant as you gaze upon [src.name]..."))
@@ -170,7 +170,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if (istype(A, /mob/) && (get_dist(A, src) <= 7))
 		var/mob/M = A
 
-		if(SEND_SIGNAL(M, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+		if(om_has(M, EFFECT_GODMODE))
 			return 0	// Cancelled by a component
 
 		M.cultify()
@@ -202,7 +202,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if (istype(A, /mob/living/))
 		var/mob/living/C2 = A
 
-		if(SEND_SIGNAL(C2, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+		if(om_has(C2, EFFECT_GODMODE))
 			return 0	// Cancelled by a component
 
 		C2.dust() // Changed from gib(), just for less lag.
@@ -234,7 +234,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if (istype(A, /mob/living/))
 		var/mob/living/C2 = A
 
-		if(SEND_SIGNAL(C2, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+		if(om_has(C2, EFFECT_GODMODE))
 			return 0	// Cancelled by a component
 
 		C2.dust() // Changed from gib(), just for less lag.

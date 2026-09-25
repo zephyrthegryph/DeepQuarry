@@ -96,7 +96,7 @@
 	if(!H.ckey)
 		H.can_be_drop_prey = TRUE
 		H.digest_leave_remains = TRUE
-		H.low_priority = TRUE
+		H.set_low_priority(TRUE)
 	return ..()
 
 /datum/species/monkey/tajaran

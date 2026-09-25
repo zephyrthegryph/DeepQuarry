@@ -7,15 +7,15 @@
 // Stasis is the biology clock (doc/rewrite/life_on_om.md §8). While applied, each stasis
 // modifier holds EFFECT_CLOCK_BIO_INHIBIT = its depth on the mob (the deepest wins), so the
 // mob's CLOCK_BIO rate is 1 - stasis. The body reads that rate in ONE place,
-// advance_stasis(), which life_frame() calls once per frame before any life system runs. It
-// runs a fractional counter: each frame adds the rate, and the frame runs biology only when
+// advance_stasis(), which the Life frame calls once at its start (/datum/om/frame/life/begin()).
+// It runs a fractional counter: each frame adds the rate, and the frame runs biology only when
 // the counter fills. Every other frame is "paused". A paused frame skips:
 //   - affliction ticks (progression, treatment, symptoms)     body.life_tick()
-//   - metabolism and hunger                                    the chemicals system
-//   - breathing (so oxygen debt stops accumulating)            the breathing system
-//   - blood loss and regeneration                              the blood system
-//   - the human live/dead segments (organs, defib timer, ...)  gate: human vitals
-// Those read the paused flag through inStasisNow() / ctx.in_stasis(), never the clock.
+//   - metabolism and hunger                                    the chemicals stage
+//   - breathing (so oxygen debt stops accumulating)            the breathing stage
+//   - blood loss and regeneration                              the blood stage
+//   - the human live/dead stages (organs, defib timer, ...)    run_if NOT_OF(FACT("in_stasis"))
+// Those read the paused flag through inStasisNow() / ctx.fact("in_stasis"), never the clock.
 // So at stasis 0.9 everything runs at 10% speed; at 1 it stops. BF_STASIS stays a factor
 // for diagnosis readouts; nothing in the life pipeline reads it.
 

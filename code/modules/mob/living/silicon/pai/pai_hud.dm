@@ -350,10 +350,10 @@
 	HUD.inventory_shown = 0
 
 
-/datum/life_system/hud/silicon/pai
-	mob_type = /mob/living/silicon/pai
+/datum/om/stage/life/hud/silicon/pai
+	of = /mob/living/silicon/pai
 
-/datum/life_system/hud/silicon/pai/tick(mob/living/silicon/pai/self, datum/life_context/ctx)
+/datum/om/stage/life/hud/silicon/pai/perform(mob/living/silicon/pai/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(!.)
 		return
@@ -364,7 +364,7 @@
 		else
 			self.pai_fold_display.icon_state = "unfolded"
 
-/datum/life_system/hud/silicon/pai/health_icons(mob/living/silicon/pai/self)
+/datum/om/stage/life/hud/silicon/pai/health_icons(mob/living/silicon/pai/self)
 	. = ..()
 	if(!. || !self.healths)
 		return

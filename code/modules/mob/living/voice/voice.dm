@@ -96,10 +96,10 @@
 // Proc: Life()
 // Parameters: None
 // Description: Checks the active variable on the Exonet node, and kills the mob if it goes down or stops existing.
-/datum/life_system/type_pre/voice
-	mob_type = /mob/living/voice
+/datum/om/stage/life/type_pre/voice
+	of = /mob/living/voice
 
-/datum/life_system/type_pre/voice/tick(mob/living/voice/self, datum/life_context/ctx)
+/datum/om/stage/life/type_pre/voice/perform(mob/living/voice/self, datum/om/frame/life/ctx)
 	if(self.comm)
 		if(!self.comm.node || !self.comm.node.on || !self.comm.node.allow_external_communicators)
 			self.comm.close_connection(user = self, target = self, reason = "Connection to telecommunications array timed out")

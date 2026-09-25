@@ -26,13 +26,13 @@
 	RegisterSignal(parent, COMSIG_GARGOYLE_PAUSE, PROC_REF(gargoyle_pause))
 	RegisterSignal(parent, COMSIG_GARGOYLE_CHECK_ENERGY, PROC_REF(gargoyle_checkenergy))
 
-	add_trait_life_system(parent, /datum/life_system/trait/gargoyle)
+	om_stage_add(parent, /datum/om/stage/life/trait/gargoyle)
 
 /datum/component/gargoyle/UnregisterFromParent()
 	UnregisterSignal(parent, COMSIG_GARGOYLE_TRANSFORMATION)
 	UnregisterSignal(parent, COMSIG_GARGOYLE_PAUSE)
 	UnregisterSignal(parent, COMSIG_GARGOYLE_CHECK_ENERGY)
-	remove_trait_life_system(parent, /datum/life_system/trait/gargoyle)
+	om_stage_remove(parent, /datum/om/stage/life/trait/gargoyle)
 	if(paused)
 		UnregisterSignal(parent, COMSIG_MOVABLE_MOVED) //happens if gargoyle_pause is used
 
@@ -126,9 +126,9 @@
 	to_chat(parent, span_notice("You have [round(energy,0.01)] energy remaining. It is currently [paused ? "stable" : (transformed ? "increasing" : "decreasing")]."))
 
 /// Trait system: gargoyle energy. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/gargoyle
+/datum/om/stage/life/trait/gargoyle
 	name = "gargoyle"
 	component_type = /datum/component/gargoyle
 
-/datum/life_system/trait/gargoyle/tick_component(mob/living/self, datum/component/gargoyle/component)
+/datum/om/stage/life/trait/gargoyle/tick_component(mob/living/self, datum/component/gargoyle/component)
 	component.process_component()

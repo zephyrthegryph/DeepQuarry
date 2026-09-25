@@ -138,10 +138,10 @@
 
 	var/turns_since_scan = 0
 
-/datum/life_system/type_post/simple_mob/animal/passive/snake/python/noodle
-	mob_type = /mob/living/simple_mob/animal/passive/snake/python/noodle
+/datum/om/stage/life/type_post/simple_mob/animal/passive/snake/python/noodle
+	of = /mob/living/simple_mob/animal/passive/snake/python/noodle
 
-/datum/life_system/type_post/simple_mob/animal/passive/snake/python/noodle/tick(mob/living/simple_mob/animal/passive/snake/python/noodle/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/passive/snake/python/noodle/perform(mob/living/simple_mob/animal/passive/snake/python/noodle/self, datum/om/frame/life/ctx)
 	..()
 
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
@@ -158,10 +158,10 @@
 				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(self,7))
 					if(isturf(S.loc) || ishuman(S.loc))
 						self.movement_target = S
-						self.visible_emote("turns towards \the [self.movement_target] and slithers towards it.")
+						INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), "turns towards \the [self.movement_target] and slithers towards it.")
 						break
 			if(self.movement_target)
-				self.chase_target()
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 /mob/living/simple_mob/animal/passive/snake/python/noodle/apply_melee_effects(atom/A)
 	if(ismouse(A))

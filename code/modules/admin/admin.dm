@@ -742,7 +742,7 @@ ADMIN_VERB(force_mode_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Mode Spawn", "For
 
 ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in GLOB.mob_list)
 	var/msg
-	if (living_target.status_units(EFFECT_PARALYZED) == 0)
+	if (!living_target.has_status(EFFECT_PARALYZED))
 		living_target.status_set(EFFECT_PARALYZED, 8000)
 		msg = "has paralyzed [key_name(living_target)]."
 		log_and_message_admins(msg)

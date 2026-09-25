@@ -1263,8 +1263,10 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	if(precall_reg_z != registered_z) // parent did work, let's do work too
 		if(precall_reg_z)
 			GLOB.living_players_by_zlevel[precall_reg_z] -= src
+			life_z_occupancy_changed(precall_reg_z)
 		if(registered_z)
 			GLOB.living_players_by_zlevel[registered_z] += src
+			life_z_occupancy_changed(registered_z)
 
 /mob/onTransitZ(old_z, new_z)
 	..()

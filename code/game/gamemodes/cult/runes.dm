@@ -1055,7 +1055,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
 				C.flash_eyes()
-				if(C.status_units(EFFECT_STUTTERING) < 1 && (!(C.has_mutation(HULK))))
+				if(!C.has_status(EFFECT_STUTTERING) && (!(C.has_mutation(HULK))))
 					C.status_set(EFFECT_STUTTERING, 1)
 				C.status_at_least(EFFECT_WEAKENED, 1)
 				C.status_at_least(EFFECT_STUNNED, 1)

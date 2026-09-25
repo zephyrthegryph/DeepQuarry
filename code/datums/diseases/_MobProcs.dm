@@ -174,24 +174,23 @@
 /mob/living/proc/CanSpreadAirborneDisease()
 	return !is_mouth_covered()
 
-/datum/life_system/diseases
+/datum/om/stage/life/diseases
+	order = LIFE_PHASE_BODY + 50
 	name = "diseases"
-	phase = LIFE_PHASE_BODY
-	order = 50
-	segment = LIFE_SEG_LIVING
+	run_if = LIFE_RUN_IF_PLACED
 	woken_by = "addDisease()"
 
 /// Continuous only while the mob carries a virus.
-/datum/life_system/diseases/idle(mob/living/self)
+/datum/om/stage/life/diseases/idle(mob/living/self)
 	return !self.has_viruses()
 
 /// Virus spread and stages. Runs dead or alive, only while the mob carries a virus.
-/datum/life_system/diseases/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/diseases/perform(mob/living/self, datum/om/frame/life/ctx)
 	if(self.has_viruses())
 		progress(self)
 
 /// Spread and stage every virus this mob carries.
-/datum/life_system/diseases/proc/progress(mob/living/self)
+/datum/om/stage/life/diseases/proc/progress(mob/living/self)
 	return
 
 /// How many viruses this mob carries, without creating the list.

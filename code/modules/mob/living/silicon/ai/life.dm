@@ -11,17 +11,16 @@
 	life_set = LIFE_SET_AI
 
 /// `if(stat == DEAD) return`, local failure cleanup and power.
-/datum/life_system/ai_power
+/datum/om/stage/life/ai_power
+	order = LIFE_PHASE_INPUT + 0
 	name = "ai power"
-	wake_on = LIFE_WAKE_ON_MACHINE
-	phase = LIFE_PHASE_INPUT
-	order = 0
+	wake_on = 0
 	life_sets = LIFE_SET_AI
-	mob_type = /mob/living/silicon/ai
+	of = /mob/living/silicon/ai
 
-/datum/life_system/ai_power/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
+/datum/om/stage/life/ai_power/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
 	if(self.stat == DEAD)
-		return LIFE_HALT
+		return ctx.abort()
 
 	if(self.stat != CONSCIOUS)
 		self.cameraFollow = null
@@ -35,29 +34,27 @@
 	self.process_ai_power()
 
 /// Hardware integrity, capacitor and death are decided by the machine body.
-/datum/life_system/ai_body
+/datum/om/stage/life/ai_body
+	order = LIFE_PHASE_INPUT + 10
 	name = "ai body"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_INPUT
-	order = 10
+	wake_on = CHANGE_MOB_HEALTH
 	life_sets = LIFE_SET_AI
-	mob_type = /mob/living/silicon/ai
+	of = /mob/living/silicon/ai
 
-/datum/life_system/ai_body/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
+/datum/om/stage/life/ai_body/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
 	self.body?.life_tick()
 	if(self.stat == DEAD)
-		return LIFE_HALT
+		return ctx.abort()
 
 /// Lying down, malfunction, APU and queued alarms.
-/datum/life_system/ai_upkeep
+/datum/om/stage/life/ai_upkeep
+	order = LIFE_PHASE_BODY + 10
 	name = "ai upkeep"
-	wake_on = LIFE_WAKE_ON_MACHINE
-	phase = LIFE_PHASE_BODY
-	order = 10
+	wake_on = 0
 	life_sets = LIFE_SET_AI
-	mob_type = /mob/living/silicon/ai
+	of = /mob/living/silicon/ai
 
-/datum/life_system/ai_upkeep/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
+/datum/om/stage/life/ai_upkeep/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
 	self.lying = 0			// Handle lying down
 
 	self.malf_process()
@@ -102,7 +99,7 @@
 	return ((!A.power_equip) && A.requires_power == 1 || istype(T, /turf/space)) && !istype(src.loc,/obj/item)
 
 /mob/living/silicon/ai/proc/adjust_backup_charge(amount)
-	if(status_flags & GODMODE)
+	if(om_has(src, EFFECT_GODMODE))
 		backup_charge = AI_BACKUP_CAPACITY
 		return
 	var/old_charge = backup_charge

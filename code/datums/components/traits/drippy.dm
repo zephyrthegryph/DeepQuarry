@@ -7,12 +7,12 @@
 		return COMPONENT_INCOMPATIBLE
 
 /datum/component/drippy/RegisterWithParent()
-	add_trait_life_system(parent, /datum/life_system/trait/drippy)
+	om_stage_add(parent, /datum/om/stage/life/trait/drippy)
 	RegisterSignal(parent, COMSIG_HUMAN_DNA_FINALIZED, PROC_REF(create_color))
 
 /datum/component/drippy/UnregisterFromParent()
 	UnregisterSignal(parent, COMSIG_HUMAN_DNA_FINALIZED)
-	remove_trait_life_system(parent, /datum/life_system/trait/drippy)
+	om_stage_remove(parent, /datum/om/stage/life/trait/drippy)
 
 /datum/component/drippy/proc/process_component()
 	SIGNAL_HANDLER
@@ -71,9 +71,9 @@
 		blood_color = rgb(temp_human.r_skin,temp_human.g_skin,temp_human.b_skin)
 
 /// Trait system: dripping. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/drippy
+/datum/om/stage/life/trait/drippy
 	name = "drippy"
 	component_type = /datum/component/drippy
 
-/datum/life_system/trait/drippy/tick_component(mob/living/self, datum/component/drippy/component)
+/datum/om/stage/life/trait/drippy/tick_component(mob/living/self, datum/component/drippy/component)
 	component.process_component()

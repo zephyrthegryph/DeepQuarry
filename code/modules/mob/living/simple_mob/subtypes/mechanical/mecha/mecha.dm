@@ -70,10 +70,10 @@
 
 	qdel(src) // Then delete us since we don't actually have a body.
 
-/datum/life_system/special/mechanical/mecha
-	mob_type = /mob/living/simple_mob/mechanical/mecha
+/datum/om/stage/life/special/mechanical/mecha
+	of = /mob/living/simple_mob/mechanical/mecha
 
-/datum/life_system/special/mechanical/mecha/tick(mob/living/simple_mob/mechanical/mecha/self, datum/life_context/ctx)
+/datum/om/stage/life/special/mechanical/mecha/perform(mob/living/simple_mob/mechanical/mecha/self, datum/om/frame/life/ctx)
 	if(self.has_repair_droid)
 		self.mend(TREAT_PLATING_REPAIR, 2)
 		self.mend(TREAT_WIRING_REPAIR, 2)

@@ -43,10 +43,10 @@
 	else
 		..()
 
-/datum/life_system/type_post/simple_mob/animal/passive/cow
-	mob_type = /mob/living/simple_mob/animal/passive/cow
+/datum/om/stage/life/type_post/simple_mob/animal/passive/cow
+	of = /mob/living/simple_mob/animal/passive/cow
 
-/datum/life_system/type_post/simple_mob/animal/passive/cow/tick(mob/living/simple_mob/animal/passive/cow/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/passive/cow/perform(mob/living/simple_mob/animal/passive/cow/self, datum/om/frame/life/ctx)
 	..()
 	if(self.stat == CONSCIOUS)
 		if(self.udder && prob(5))

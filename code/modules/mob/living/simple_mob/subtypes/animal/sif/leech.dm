@@ -119,10 +119,10 @@
 				if(ai_brain) ai_brain.busy = TRUE
 				do_infest(src, A)
 				if(ai_brain) ai_brain.busy = FALSE
-/datum/life_system/special/animal/sif/leech
-	mob_type = /mob/living/simple_mob/animal/sif/leech
+/datum/om/stage/life/special/animal/sif/leech
+	of = /mob/living/simple_mob/animal/sif/leech
 
-/datum/life_system/special/animal/sif/leech/tick(mob/living/simple_mob/animal/sif/leech/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/sif/leech/perform(mob/living/simple_mob/animal/sif/leech/self, datum/om/frame/life/ctx)
 	if(prob(5))
 		self.randomized_reagent = pick(self.produceable_chemicals)
 
@@ -199,7 +199,7 @@
 					heartless_mod = 1
 
 			if(prob(15 + (20 * heartless_mod)))
-				self.feed_on_organ()
+				INVOKE_ASYNC(self, TYPE_VERB_REF(/mob/living/simple_mob/animal/sif/leech, feed_on_organ))
 	//legacy else-clause emptied (was ai_holder reset).
 	if(self.host && self.host.stat == DEAD && istype(get_turf(self.host), /turf/simulated/floor/water))
 		self.leave_host()

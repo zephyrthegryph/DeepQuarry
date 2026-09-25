@@ -169,15 +169,19 @@
 	return 1
 
 
-/obj/machinery/power/smes/batteryrack/process()
+/obj/machinery/power/smes/batteryrack/power_settled()
+	return FALSE
+
+/// A rack re-reads its cells and balances them every frame, so it never idles.
+/obj/machinery/power/smes/batteryrack/power_step()
 	charge = 0
 	for(var/obj/item/cell/C in internal_cells)
 		charge += C.charge
 	charge /= CELLRATE		// Convert to Joules
 	charge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
 
-
 	..()
+	. = null
 	ui_tick = !ui_tick
 	icon_update++
 

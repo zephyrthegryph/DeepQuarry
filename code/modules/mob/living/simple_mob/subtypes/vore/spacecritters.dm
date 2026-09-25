@@ -86,10 +86,10 @@
 	copy = "/mob/living/simple_mob/vore/spacecritter/solarray"
 
 
-/datum/life_system/type_post/simple_mob/vore/spacecritter/solarray
-	mob_type = /mob/living/simple_mob/vore/spacecritter/solarray
+/datum/om/stage/life/type_post/simple_mob/vore/spacecritter/solarray
+	of = /mob/living/simple_mob/vore/spacecritter/solarray
 
-/datum/life_system/type_post/simple_mob/vore/spacecritter/solarray/tick(mob/living/simple_mob/vore/spacecritter/solarray/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/spacecritter/solarray/perform(mob/living/simple_mob/vore/spacecritter/solarray/self, datum/om/frame/life/ctx)
 	..()
 	if(self.icon_state != self.icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
 		var/turf/moth_loc = get_turf(self)
@@ -148,10 +148,10 @@
 
 	var/chilltemp = -20
 
-/datum/life_system/special/vore/spacecritter/livingice
-	mob_type = /mob/living/simple_mob/vore/spacecritter/livingice
+/datum/om/stage/life/special/vore/spacecritter/livingice
+	of = /mob/living/simple_mob/vore/spacecritter/livingice
 
-/datum/life_system/special/vore/spacecritter/livingice/tick(mob/living/simple_mob/vore/spacecritter/livingice/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/spacecritter/livingice/perform(mob/living/simple_mob/vore/spacecritter/livingice/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.cold_aura()
 	..()
@@ -190,10 +190,10 @@
 	evolvekey = "/obj/item/stack/material/uranium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/radcrab"
 
-/datum/life_system/special/vore/spacecritter/radcrab
-	mob_type = /mob/living/simple_mob/vore/spacecritter/radcrab
+/datum/om/stage/life/special/vore/spacecritter/radcrab
+	of = /mob/living/simple_mob/vore/spacecritter/radcrab
 
-/datum/life_system/special/vore/spacecritter/radcrab/tick(mob/living/simple_mob/vore/spacecritter/radcrab/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/spacecritter/radcrab/perform(mob/living/simple_mob/vore/spacecritter/radcrab/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
 		self.irradiate()
 	..()

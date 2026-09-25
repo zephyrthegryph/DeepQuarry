@@ -16,20 +16,19 @@
 		. = TRUE
 	last_dam = damage_this_tick
 
-/datum/life_system/organs
+/datum/om/stage/life/organs
+	order = LIFE_PHASE_TAIL + 150
 	name = "organs"
-	wake_on = LIFE_WAKE_ON_ORGANS
-	phase = LIFE_PHASE_TAIL
-	order = 150
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = 0
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
-/datum/life_system/organs/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/organs/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	process_organs(self)
 
 /// Takes care of organ related updates, such as broken and missing limbs. `force` rebuilds the
 /// list of external organs that need processing.
-/datum/life_system/organs/proc/process_organs(mob/living/carbon/human/self, force = FALSE)
+/datum/om/stage/life/organs/proc/process_organs(mob/living/carbon/human/self, force = FALSE)
 
 	var/force_process = self.recheck_bad_external_organs()
 
@@ -247,5 +246,5 @@
 
 /// Runs the organs system now. `force` rebuilds the list of external organs needing processing.
 /mob/living/carbon/human/proc/process_organs(force = FALSE)
-	var/datum/life_system/organs/S = life_system_for(/datum/life_system/organs)
+	var/datum/om/stage/life/organs/S = om_stage_for(src, /datum/om/stage/life/organs)
 	S?.process_organs(src, force)

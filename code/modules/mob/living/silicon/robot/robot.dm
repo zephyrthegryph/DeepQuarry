@@ -551,10 +551,10 @@
 	recompute_power_demand()
 	update_icon()
 
-/datum/life_system/light/silicon/robot
-	mob_type = /mob/living/silicon/robot
+/datum/om/stage/life/light/silicon/robot
+	of = /mob/living/silicon/robot
 
-/datum/life_system/light/silicon/robot/tick(mob/living/silicon/robot/self, datum/life_context/ctx)
+/datum/om/stage/life/light/silicon/robot/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	if(self.lights_on)
 		self.set_light(self.integrated_light_power, 1, self.robot_light_col)
 		return TRUE

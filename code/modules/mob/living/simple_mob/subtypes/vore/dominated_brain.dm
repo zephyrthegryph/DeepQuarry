@@ -28,10 +28,10 @@
 	lets_register_our_signals()
 	add_verb(src, /mob/living/dominated_brain/proc/resist_control)
 
-/datum/life_system/type_post/dominated_brain
-	mob_type = /mob/living/dominated_brain
+/datum/om/stage/life/type_post/dominated_brain
+	of = /mob/living/dominated_brain
 
-/datum/life_system/type_post/dominated_brain/tick(mob/living/dominated_brain/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/dominated_brain/perform(mob/living/dominated_brain/self, datum/om/frame/life/ctx)
 	..()
 	if(!isliving(self.loc))
 		qdel(self)

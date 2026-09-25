@@ -124,10 +124,10 @@
 	QDEL_NULL(smoke_spore)
 	return ..()
 
-/datum/life_system/special/animal/sif/tymisian
-	mob_type = /mob/living/simple_mob/animal/sif/tymisian
+/datum/om/stage/life/special/animal/sif/tymisian
+	of = /mob/living/simple_mob/animal/sif/tymisian
 
-/datum/life_system/special/animal/sif/tymisian/tick(mob/living/simple_mob/animal/sif/tymisian/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/sif/tymisian/perform(mob/living/simple_mob/animal/sif/tymisian/self, datum/om/frame/life/ctx)
 	..()
 
 	if(self.energy < self.max_energy)

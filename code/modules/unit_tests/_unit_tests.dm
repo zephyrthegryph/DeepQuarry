@@ -232,6 +232,7 @@
 #include "xgm_total_moles_test.dm"
 #include "dq_w6_critical_tests.dm"
 #include "dq_om_core_tests.dm"
+#include "dq_om_pipeline_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

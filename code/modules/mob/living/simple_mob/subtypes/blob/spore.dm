@@ -94,10 +94,10 @@
 		color = initial(color)//looks better.
 		add_overlay(blob_head_overlay)
 
-/datum/life_system/special/blob/spore
-	mob_type = /mob/living/simple_mob/blob/spore
+/datum/om/stage/life/special/blob/spore
+	of = /mob/living/simple_mob/blob/spore
 
-/datum/life_system/special/blob/spore/tick(mob/living/simple_mob/blob/spore/self, datum/life_context/ctx)
+/datum/om/stage/life/special/blob/spore/perform(mob/living/simple_mob/blob/spore/self, datum/om/frame/life/ctx)
 	..()
 	if(self.can_infest && !self.is_infesting && isturf(self.loc))
 		for(var/mob/living/carbon/human/H in view(self,1))

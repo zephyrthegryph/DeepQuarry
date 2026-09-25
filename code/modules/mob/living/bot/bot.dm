@@ -74,14 +74,13 @@
 	return ..()
 
 /// Bots shrug off stuns and run their AI (the old bot Life() tail after ..()).
-/datum/life_system/bot_core
+/datum/om/stage/life/bot_core
+	order = LIFE_PHASE_TAIL + 100
 	name = "bot core"
-	wake_on = LIFE_WAKE_ON_BEHAVIOUR
-	phase = LIFE_PHASE_TAIL
-	order = 100
-	mob_type = /mob/living/bot
+	wake_on = 0
+	of = /mob/living/bot
 
-/datum/life_system/bot_core/tick(mob/living/bot/self, datum/life_context/ctx)
+/datum/om/stage/life/bot_core/perform(mob/living/bot/self, datum/om/frame/life/ctx)
 	if(self.stat == DEAD)
 		return
 	self.status_set(EFFECT_WEAKENED, 0)
@@ -92,8 +91,8 @@
 		spawn(0)
 			self.handleAI()
 
-/datum/life_system/type_post/bot
-	mob_type = /mob/living/bot
+/datum/om/stage/life/type_post/bot
+	of = /mob/living/bot
 /*
 /mob/living/bot/examine(mob/user)
 	. = ..()

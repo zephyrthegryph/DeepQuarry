@@ -54,10 +54,10 @@ BLOOD_VOLUME_SURVIVE = 40
 			B.name = B.data["blood_name"]
 
 // Takes care blood loss and regeneration
-/datum/life_system/blood/carbon/human
-	mob_type = /mob/living/carbon/human
+/datum/om/stage/life/blood/carbon/human
+	of = /mob/living/carbon/human
 
-/datum/life_system/blood/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/blood/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.inStasisNow())
 		return
 

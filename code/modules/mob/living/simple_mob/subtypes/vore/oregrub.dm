@@ -110,10 +110,10 @@
 		i--
 	..()
 
-/datum/life_system/light/simple_mob/vore/oregrub/lava
-	mob_type = /mob/living/simple_mob/vore/oregrub/lava
+/datum/om/stage/life/light/simple_mob/vore/oregrub/lava
+	of = /mob/living/simple_mob/vore/oregrub/lava
 
-/datum/life_system/light/simple_mob/vore/oregrub/lava/tick(mob/living/simple_mob/vore/oregrub/lava/self, datum/life_context/ctx)
+/datum/om/stage/life/light/simple_mob/vore/oregrub/lava/perform(mob/living/simple_mob/vore/oregrub/lava/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(. == 0 && !self.is_dead())
 		self.set_light(2.5, 1, COLOR_ORANGE)

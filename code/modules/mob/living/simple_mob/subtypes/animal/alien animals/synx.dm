@@ -400,10 +400,10 @@
 	if(message=="Honk!")
 		bikehorn()
 
-/datum/life_system/type_post/simple_mob/animal/synx/ai/pet/clown
-	mob_type = /mob/living/simple_mob/animal/synx/ai/pet/clown
+/datum/om/stage/life/type_post/simple_mob/animal/synx/ai/pet/clown
+	of = /mob/living/simple_mob/animal/synx/ai/pet/clown
 
-/datum/life_system/type_post/simple_mob/animal/synx/ai/pet/clown/tick(mob/living/simple_mob/animal/synx/ai/pet/clown/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/synx/ai/pet/clown/perform(mob/living/simple_mob/animal/synx/ai/pet/clown/self, datum/om/frame/life/ctx)
 	..()
 	if(self.vore_fullness)
 		self.size_multiplier = 1+(0.5*self.vore_fullness)
@@ -411,10 +411,10 @@
 	if(!self.vore_fullness && self.size_multiplier != 1)
 		self.size_multiplier = 1
 		self.update_icons()
-/datum/life_system/type_post/simple_mob/animal/synx
-	mob_type = /mob/living/simple_mob/animal/synx
+/datum/om/stage/life/type_post/simple_mob/animal/synx
+	of = /mob/living/simple_mob/animal/synx
 
-/datum/life_system/type_post/simple_mob/animal/synx/tick(mob/living/simple_mob/animal/synx/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/synx/perform(mob/living/simple_mob/animal/synx/self, datum/om/frame/life/ctx)
 	..()
 //mob/living/simple_mob/animal/synx/ai/handle_idle_speaking() //Only ai-controlled synx will randomly speak
 	if(self.voices && prob(self.speak_chance/2))

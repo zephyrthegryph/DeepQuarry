@@ -14,8 +14,8 @@
 #define RELEVANCE_NEAR 1
 #define RELEVANCE_VISIBLE 2
 #define RELEVANCE_WATCHED 3
-/// In a behaviour's `relevance` list: do not run at this level (sleep).
-#define OM_SLEEP 0
+/// In a behaviour's `relevance` list: park at this level (off the ring; wakes and deadlines still arrive).
+#define OM_PARK 0
 
 // ---- Change channels (section B). 24 bits per family. The low 8 bits are
 // generic and mean the same thing on every entity; bits 8-23 belong to the
@@ -64,6 +64,8 @@
 #define CHANGE_MACHINE_OUTPUT (1<<13)
 #define CHANGE_MACHINE_POWERED_OK (1<<14)
 #define CHANGE_MACHINE_CHARGE (1<<15)
+/// Settings a player or program changed (input/output levels, breakers, modes).
+#define CHANGE_MACHINE_SETTINGS (1<<16)
 
 // Generic datum family (framework-owned datums: sessions, edges, tasks).
 #define CHANGE_DATUM_A (1<<8)
@@ -93,6 +95,8 @@
 #define OM_EFFECT_CLOCK_INHIBIT 2
 #define OM_EFFECT_RELEVANCE 3
 #define OM_EFFECT_SUSPEND 4
+/// A timed status (units, wear rate, immunity, hooks): status.dm.
+#define OM_EFFECT_STATUS 5
 
 // Built-in effect ids (library.dm defines the rest).
 #define EFFECT_RELEVANCE "om_relevance"
@@ -137,6 +141,8 @@
 #define EFFECT_IMMUNE_PARALYZE "immune_paralyze"
 #define EFFECT_IMMUNE_DIZZY "immune_dizzy"
 #define EFFECT_IMMUNE_JITTER "immune_jitter"
+/// Godmode (admins, soulstones, AI eyes, preview dummies): harm is cancelled; implies the incapacitation immunities.
+#define EFFECT_GODMODE "godmode"
 #define EFFECT_BUCKLED "buckled"
 #define EFFECT_SLOWED "slowed"
 #define EFFECT_CAN_MOVE "can_move"
@@ -212,7 +218,33 @@
 // Attachment state bits (rec.att_state).
 #define OM_ATT_STARTED (1<<0)
 #define OM_ATT_REQ_OK (1<<1)
-#define OM_ATT_SLEEPING (1<<2)
+#define OM_ATT_PARKED (1<<2)
+
+// ---- Deadline keys (section A.5). One deadline per (entity, behaviour, sub-key). ----
+/// key = behaviour id + sub * OM_DL_SUB. Sub 0 is the behaviour's own on_deadline().
+#define OM_DL_SUB 4096
+/// Sub-key of the deferred wake of a min_interval behaviour (scheduler-owned).
+#define OM_DL_THROTTLE 1
+/// First sub-key of pipeline stage rewakes: OM_DL_STAGE + the stage's position in its pipeline.
+#define OM_DL_STAGE 2
+
+// ---- Pipelines (section A.10). ----
+/// Stage run() result: nothing left to do until a wake_on channel changes (or its rewake).
+#define STAGE_IDLE "stage_idle"
+/// F.abort() scopes. FRAME: stop now, nothing idles this frame. REST: stop now, keep the
+/// idles already decided.
+#define OM_ABORT_FRAME 1
+#define OM_ABORT_REST 2
+/// A frame fact in a run_if spec: FACT("alive"), NOT_OF(FACT("in_stasis")).
+#define FACT(name) list(/datum/om/check/fact = name)
+/// Asleep bits: 16 stages per word.
+#define OM_PIPE_WORD(i) ((((i) - 1) >> 4) + 1)
+#define OM_PIPE_BIT(i) (1 << (((i) - 1) & 15))
+
+/// The pipeline missed-wake audit: how often, and how many parked and awake entities per pipeline.
+#define OM_AUDIT_INTERVAL (30 SECONDS)
+#define OM_AUDIT_PARKED_SAMPLE 400
+#define OM_AUDIT_AWAKE_SAMPLE 100
 
 // ---- Scheduler tuning. ----
 /// Width of one cadence slot and one deadline bucket, deciseconds.
@@ -235,7 +267,13 @@
 #define OM_STAT_DEADLINES 7
 #define OM_STAT_ERRORS 8
 #define OM_STAT_CALL_MAX 9
-#define OM_STAT_LEN 9
+/// Pipelines: entities parked, unparked, and missed wakes found by the audit.
+#define OM_STAT_PARKS 10
+#define OM_STAT_UNPARKS 11
+#define OM_STAT_MISSED 12
+/// Pipelines: frames run.
+#define OM_STAT_FRAMES 13
+#define OM_STAT_LEN 13
 
 // Cadence loops in /datum/om/scheduler/proc/run_slot().
 #define OM_SLOT_FAST 1
@@ -250,6 +288,7 @@
 #define OM_HOOK_START 5
 #define OM_HOOK_STOP 6
 #define OM_HOOK_NATIVE 7
+#define OM_HOOK_KEYED 8
 
 // Uncomment (or pass -DOM_PROFILE_CALLS) for per-call timing in the cadence loop.
 // #define OM_PROFILE_CALLS

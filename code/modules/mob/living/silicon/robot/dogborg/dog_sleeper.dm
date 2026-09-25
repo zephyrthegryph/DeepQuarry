@@ -502,7 +502,7 @@
 		var/volume = 0
 		for(var/mob/living/T in (touchable_items))
 			touchable_items -= T //Exclude mobs from loose item picking.
-			if(SEND_SIGNAL(T, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+			if(om_has(T, EFFECT_GODMODE))
 				items_preserved |= T
 			else if(!T.digestable)
 				items_preserved |= T

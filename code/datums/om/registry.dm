@@ -45,6 +45,9 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/list/task_by_name = list()
 	var/list/task_by_type = list()
 	var/list/services = list()
+	/// Every stage type -> its def (categories included), and the pipelines in id order.
+	var/list/stage_by_type = list()
+	var/list/pipelines = list()
 	var/list/bundles = list()
 	var/list/bundle_by_type = list()
 	var/list/decls = list()
@@ -79,6 +82,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	build_named_checks()
 	build_relations()
 	build_events()
+	build_stages()
 	build_behaviours()
 	build_derived()
 	build_event_tables()
@@ -100,8 +104,13 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	if(istype(B, /datum/om/decl))
 		var/datum/om/decl/D = B
 		if(!om_is_abstract(D))
-			if(!ispath(D.of))
-				error("[D.type]: `of` must be a type path")
+			var/list/of_list = islist(D.of) ? D.of : list(D.of)
+			var/ok = length(of_list) > 0
+			for(var/of_path in of_list)
+				if(!ispath(of_path))
+					ok = FALSE
+			if(!ok)
+				error("[D.type]: `of` must be a type path or a list of them")
 			else
 				decls += D
 	return B
@@ -122,8 +131,9 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	for(var/datum/om/bundle/B as anything in bundles.Copy())
 		expand(B.type, list())
 	for(var/datum/om/decl/D as anything in decls)
-		for(var/path in typesof(D.of))
-			decl_typecache[path] = TRUE
+		for(var/of_path in (islist(D.of) ? D.of : list(D.of)))
+			for(var/path in typesof(of_path))
+				decl_typecache[path] = TRUE
 
 /// Flattened include list of `path`: every included bundle (depth first, each
 /// once), then `path` itself.
@@ -181,21 +191,33 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			if(rows[id])
 				error("effect [id] defined twice (second in [B.type])")
 			rows[id] = B.effects[id]
-	var/static/list/allowed = list("combine", "stacking", "channel", "default", "expr", "type", "kind", "clock")
+	var/static/list/allowed = list("combine", "stacking", "channel", "default", "expr", "type", "kind", "clock", "implies",
+		"unit", "rate", "rate_resting", "max_units", "immunity", "scaled", "signal", "alert", "alert_type", "indicator", "on_start", "on_end", "on_increase", "entity_type")
+	var/static/list/status_keys = list("unit", "rate", "rate_resting", "max_units", "immunity", "scaled", "signal", "alert", "alert_type", "indicator", "on_start", "on_end", "on_increase", "entity_type")
 	for(var/id in rows)
 		var/list/row = rows[id]
 		if(!islist(row))
 			error("effect [id]: row must be a list")
 			continue
-		var/path = row["type"] || /datum/om/effect
+		var/is_status = row["kind"] == OM_EFFECT_STATUS
+		var/path = row["type"] || (is_status ? /datum/om/effect/status : /datum/om/effect)
 		if(!ispath(path, /datum/om/effect))
 			error("effect [id]: type [path] is not a /datum/om/effect")
 			path = /datum/om/effect
+		if(is_status && !ispath(path, /datum/om/effect/status))
+			error("effect [id]: a status must be a /datum/om/effect/status")
+			path = /datum/om/effect/status
 		var/datum/om/effect/E = new path
 		E.id = id
 		for(var/key in row)
 			if(!(key in allowed))
 				error("effect [id]: unknown key [key]")
+			else if(!is_status && (key in status_keys))
+				error("effect [id]: [key] is only for statuses (kind OM_EFFECT_STATUS)")
+		E.implies = row["implies"]
+		if(is_status)
+			var/datum/om/effect/status/ST = E
+			ST.parse_row(row, src)
 		if(!isnull(row["combine"]))
 			E.combine = row["combine"]
 		if(!(E.combine in list(COMBINE_ANY, COMBINE_SUM, COMBINE_MAX, COMBINE_MIN, COMBINE_MULTIPLY, COMBINE_SUM_PER_KEY)))
@@ -231,6 +253,23 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		effects += E
 		E.idx = length(effects)
 		effect_by_id[id] = E
+	// Implied effects and immunities.
+	for(var/datum/om/effect/E as anything in effects)
+		for(var/implied in E.implies)
+			var/datum/om/effect/other = effect_by_id[implied]
+			if(!other || other.expr || other == E)
+				error("effect [E.id]: implies unknown or composite effect [implied]")
+				continue
+			LAZYADD(E.implies_idx, other.idx)
+		var/datum/om/effect/status/ST = E
+		if(istype(ST) && ST.immunity)
+			var/datum/om/effect/immunity = effect_by_id[ST.immunity]
+			if(!immunity || immunity.expr)
+				error("status [E.id]: unknown immunity [ST.immunity]")
+				ST.immunity = null
+			else
+				ST.immunity_idx = immunity.idx
+				LAZYADD(immunity.blocks, E.idx)
 	// Composite dependencies.
 	for(var/datum/om/effect/E as anything in effects)
 		if(!E.expr)
@@ -410,6 +449,10 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			if(!behaviour_by_type[path])
 				error("[bundle.type] behaviours: unknown behaviour [path]")
 	for(var/datum/om/behaviour/B as anything in pending)
+		var/datum/om/pipeline/P = B
+		if(istype(P))
+			compile_pipeline(P)
+	for(var/datum/om/behaviour/B as anything in pending)
 		compile_behaviour(B)
 	behaviours = om_topo_order(pending, src)
 	var/steps = 0
@@ -418,6 +461,260 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		B.id = i
 		if(B.step_interval)
 			B.step_idx = ++steps
+		var/datum/om/pipeline/P = B
+		if(istype(P))
+			pipelines += P
+			P.pipe_idx = length(pipelines)
+
+// ---------------------------------------------------------------- stages and pipelines
+
+/// Instantiates every stage type (flyweights) and finds each one's family root.
+/datum/om/registry/proc/build_stages()
+	for(var/path in subtypesof(/datum/om/stage))
+		var/datum/om/stage/T = new path
+		if(T.registry_skip && !include_skipped)
+			continue
+		stage_by_type[path] = T
+		if(!T.name)
+			T.name = "[path]"
+	for(var/path in stage_by_type)
+		var/datum/om/stage/T = stage_by_type[path]
+		if(om_stage_is_category(path, src))
+			continue
+		var/root = path
+		while(TRUE)
+			var/parent = type2parent(root)
+			if(parent == /datum/om/stage || om_stage_is_category(parent, src))
+				break
+			root = parent
+		T.family = root
+		T.depth = om_type_depth(T.of)
+	for(var/datum/om/bundle/B as anything in bundles)
+		for(var/path in B.stages)
+			var/datum/om/stage/T = stage_by_type[path]
+			if(!T || !T.family)
+				error("[B.type] stages: [path] is not a stage")
+			else if(!T.pipeline)
+				error("[B.type] stages: [path] names no pipeline")
+
+/// A grouping type sets `category` to its own path. Subtypes inherit a path that isn't theirs
+/// (the abstract_type idiom), so only the declaring type is a category.
+/proc/om_stage_is_category(path, datum/om/registry/reg)
+	if(path == /datum/om/stage)
+		return TRUE
+	var/datum/om/stage/T = reg.stage_by_type[path]
+	return T?.category == path
+
+/// Number of parent_type hops from `path` up to /datum.
+/proc/om_type_depth(path)
+	. = 0
+	while(path && path != /datum)
+		path = type2parent(path)
+		.++
+
+/// Orders a pipeline's stages, compiles run_if, facts and wake masks, and lists its variants.
+/datum/om/registry/proc/compile_pipeline(datum/om/pipeline/P)
+	P.reactive = !P.every && !P.step_interval
+	P.variants = list()
+	P.roots = list()
+	P.plans = list()
+	if(P.reactive)
+		P.park_after = 0
+	// Facts, from a prototype frame.
+	if(!ispath(P.frame_type, /datum/om/frame))
+		error("[P.name]: frame_type [P.frame_type] is not a /datum/om/frame")
+		P.frame_type = /datum/om/frame
+	var/datum/om/frame/proto = new P.frame_type
+	P.fact_index = list()
+	P.fact_procs = list()
+	P.fact_deps = list()
+	for(var/fact_name in proto.facts)
+		var/list/row = proto.facts[fact_name]
+		if(!islist(row) || !length(row) || isnull(row[1]))
+			error("[P.name]: fact [fact_name] needs list(compute proc, depends_on)")
+			continue
+		if(length(P.fact_procs) >= 24)
+			error("[P.name]: more than 24 facts")
+			break
+		P.fact_procs += row[1]
+		P.fact_deps += (length(row) > 1 ? row[2] : 0)
+		P.fact_index[fact_name] = length(P.fact_procs)
+	// Family roots: listed types, or every family under a listed category that belongs here.
+	for(var/listed in P.stages)
+		if(!stage_by_type[listed] && listed != /datum/om/stage)
+			error("[P.name]: stages names unknown stage [listed]")
+			continue
+		if(om_stage_is_category(listed, src))
+			for(var/path in stage_by_type)
+				var/datum/om/stage/T = stage_by_type[path]
+				if(T.family == path && !T.extra && T.pipeline == P.type && ispath(path, listed))
+					P.roots |= path
+		else
+			var/datum/om/stage/T = stage_by_type[listed]
+			P.roots |= T.family
+	// Every family this pipeline can run: its roots, plus extras and decl-listed stages naming it.
+	var/list/listed_by_decls = list()
+	for(var/datum/om/bundle/B as anything in bundles)
+		for(var/path in B.stages)
+			listed_by_decls[path] = TRUE
+	var/list/families = P.roots.Copy()
+	for(var/path in stage_by_type)
+		var/datum/om/stage/T = stage_by_type[path]
+		if(T.family == path && T.pipeline == P.type && (T.extra || listed_by_decls[path]))
+			families |= path
+	var/list/nodes = list()
+	for(var/path in stage_by_type)
+		var/datum/om/stage/T = stage_by_type[path]
+		if(!T.family || !(T.family in families))
+			continue
+		// A path segment that only inherits its parent's `of` is not a variant of its own.
+		if(path != T.family)
+			var/datum/om/stage/parent = stage_by_type[type2parent(path)]
+			if(parent && parent.of == T.of)
+				continue
+		nodes += T
+		if(!P.variants[T.family])
+			P.variants[T.family] = list()
+		P.variants[T.family] += T
+	for(var/root in P.variants)
+		P.variants[root] = sortTim(P.variants[root], GLOBAL_PROC_REF(cmp_om_stage_variant))
+	// Order: after/before between families, then `order`, then path; deterministic.
+	var/n = length(nodes)
+	nodes = sortTim(nodes, GLOBAL_PROC_REF(cmp_om_stage_order))
+	var/list/index_of = list()
+	for(var/i in 1 to n)
+		index_of[nodes[i]] = i
+	var/list/succ = new /list(n)
+	for(var/i in 1 to n)
+		succ[i] = list()
+	for(var/i in 1 to n)
+		var/datum/om/stage/T = nodes[i]
+		for(var/other in T.after)
+			var/datum/om/stage/O = stage_by_type[other]
+			if(!O)
+				error("[T.type]: after names unknown stage [other]")
+				continue
+			for(var/datum/om/stage/V as anything in P.variants[O.family])
+				if(index_of[V])
+					succ[index_of[V]] |= i
+		for(var/other in T.before)
+			var/datum/om/stage/O = stage_by_type[other]
+			if(!O)
+				error("[T.type]: before names unknown stage [other]")
+				continue
+			for(var/datum/om/stage/V as anything in P.variants[O.family])
+				if(index_of[V])
+					succ[i] |= index_of[V]
+	var/list/order = om_kahn(succ, n)
+	if(length(order) < n)
+		var/list/stuck = list()
+		for(var/i in 1 to n)
+			if(!(i in order))
+				var/datum/om/stage/T = nodes[i]
+				stuck += "[T.type]"
+				order += i
+		error("[P.name]: stage after/before cycle among: [jointext(stuck, ", ")]")
+	P.stage_defs = list()
+	for(var/i in order)
+		var/datum/om/stage/T = nodes[i]
+		P.stage_defs += T
+		T.pos = length(P.stage_defs)
+	var/wake = P.wake_all
+	for(var/datum/om/stage/T as anything in P.stage_defs)
+		T.wake_mask = T.wake_on | P.wake_all
+		wake |= T.wake_mask
+		T.fact_covered = 0
+		for(var/i in 1 to length(P.fact_deps))
+			var/deps = P.fact_deps[i]
+			if(deps && !(deps & ~T.wake_mask))
+				T.fact_covered |= 1 << (i - 1)
+		compile_run_if(P, T)
+	P.wake_on |= wake
+
+/// Deepest `of` first; between equal depths, the least derived stage type.
+/proc/cmp_om_stage_variant(datum/om/stage/a, datum/om/stage/b)
+	if(a.depth != b.depth)
+		return b.depth - a.depth
+	return om_type_depth(a.type) - om_type_depth(b.type)
+
+/proc/cmp_om_stage_order(datum/om/stage/a, datum/om/stage/b)
+	if(a.order != b.order)
+		return a.order - b.order
+	return sorttext(b.type, a.type)
+
+/// run_if: a conjunction of facts compiles to two bit masks; anything else to a check whose
+/// target is the frame.
+/datum/om/registry/proc/compile_run_if(datum/om/pipeline/P, datum/om/stage/T)
+	T.fact_req = 0
+	T.fact_forbid = 0
+	T.run_if_general = FALSE
+	T.run_if_deps = 0
+	T.skip_idles = FALSE
+	if(isnull(T.run_if))
+		return
+	var/list/names = list()
+	om_run_if_fact_names(T.run_if, names)
+	var/every_fact_raises = TRUE
+	var/fact_deps = 0
+	for(var/fact_name in names)
+		var/i = P.fact_index[fact_name]
+		if(!i)
+			error("[T.type]: run_if names unknown fact [fact_name] ([P.name])")
+			return
+		if(!P.fact_deps[i])
+			every_fact_raises = FALSE
+		fact_deps |= P.fact_deps[i]
+	var/list/masks = list(0, 0)
+	if(om_run_if_masks(T.run_if, P, masks, FALSE))
+		T.fact_req = masks[1]
+		T.fact_forbid = masks[2]
+		T.run_if_deps = fact_deps
+	else
+		T.compiled_run_if = om_check_get(T.run_if, src)
+		if(!T.compiled_run_if)
+			error("[T.type]: malformed run_if")
+			return
+		T.run_if_general = TRUE
+		T.run_if_deps = T.compiled_run_if.depends_on | fact_deps
+	// A skipped stage idles when everything that can unblock it raises a channel it wakes on.
+	T.skip_idles = every_fact_raises && T.run_if_deps && !(T.run_if_deps & ~T.wake_mask)
+
+/// Fills masks (req, forbid) from FACT, NOT_OF(FACT) and ALL_OF of those. FALSE otherwise.
+/proc/om_run_if_masks(spec, datum/om/pipeline/P, list/masks, negated)
+	if(!islist(spec))
+		return FALSE
+	var/list/L = spec
+	if(length(L) == 1 && L[1] == /datum/om/check/fact)
+		var/i = P.fact_index[L[L[1]]]
+		if(!i)
+			return FALSE
+		masks[negated ? 2 : 1] |= 1 << (i - 1)
+		return TRUE
+	if(!length(L) || !istext(L[1]))
+		return FALSE
+	switch(L[1])
+		if("not")
+			return !negated && length(L) == 2 && om_run_if_masks(L[2], P, masks, TRUE)
+		if("all")
+			if(negated)
+				return FALSE
+			for(var/i in 2 to length(L))
+				if(!om_run_if_masks(L[i], P, masks, FALSE))
+					return FALSE
+			return TRUE
+	return FALSE
+
+/// Fact names anywhere in a spec.
+/proc/om_run_if_fact_names(spec, list/out)
+	if(!islist(spec))
+		return
+	var/list/L = spec
+	if(length(L) == 1 && L[1] == /datum/om/check/fact)
+		out |= L[L[1]]
+		return
+	for(var/part in L)
+		if(islist(part))
+			om_run_if_fact_names(part, out)
 
 /datum/om/registry/proc/compile_behaviour(datum/om/behaviour/B)
 	if(B.clock)
@@ -856,11 +1153,16 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		return T
 	T = new
 	type_tables[path] = T
+	// General first: by the inheritance depth of the `of` entry that matched.
 	var/list/applicable = list()
 	for(var/datum/om/decl/D as anything in decls)
-		if(ispath(path, D.of))
-			applicable += D
-	applicable = sortTim(applicable, GLOBAL_PROC_REF(cmp_om_decl_depth))
+		var/best = -1
+		for(var/of_path in (islist(D.of) ? D.of : list(D.of)))
+			if(ispath(path, of_path))
+				best = max(best, om_type_depth(of_path))
+		if(best >= 0)
+			applicable[D] = best
+	applicable = sortTim(applicable, GLOBAL_PROC_REF(cmp_numeric_asc), TRUE)
 	var/list/seen = list()
 	var/list/behaviour_set = list()
 	for(var/datum/om/decl/D as anything in applicable)
@@ -876,6 +1178,8 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 					behaviour_set |= full
 			for(var/name in B.tasks)
 				T.tasks[name] = task_by_name[name]
+			for(var/stage_path in B.stages)
+				T.stages |= stage_path
 			for(var/row in B.ui)
 				T.ui += list(row)
 			for(var/id in B.self_effects)
@@ -891,9 +1195,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				T.service_mask |= S.wake_on_any[observed]
 				LAZYOR(T.services, S)
 	return T
-
-/proc/cmp_om_decl_depth(datum/om/decl/a, datum/om/decl/b)
-	return length("[a.of]") - length("[b.of]")
 
 /proc/cmp_om_behaviour_id(datum/om/behaviour/a, datum/om/behaviour/b)
 	return a.id - b.id

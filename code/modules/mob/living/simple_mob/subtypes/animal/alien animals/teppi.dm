@@ -649,12 +649,12 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		ghostjoin_icon()
 
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/teppi
-	mob_type = /mob/living/simple_mob/vore/alienanimals/teppi
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/teppi
+	of = /mob/living/simple_mob/vore/alienanimals/teppi
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/teppi/tick(mob/living/simple_mob/vore/alienanimals/teppi/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/teppi/perform(mob/living/simple_mob/vore/alienanimals/teppi/self, datum/om/frame/life/ctx)
 	..()
-	if(!ctx?.alive || QDELETED(self))
+	if(!ctx.fact("alive") || QDELETED(self))
 		return
 	self.wantpet += rand(0,2) * self.affection_factor
 	self.amount_grown += rand(1,5)

@@ -401,7 +401,7 @@
 /// multiplier in body.injury_multiplier(). Code outside code/modules/body and
 /// code/modules/organs calls injure(), never this.
 /obj/item/organ/external/proc/apply_wound_damage(brute, burn, sharp, edge, used_weapon = null, list/forbidden_limbs = null, permutation = FALSE, projectile)
-	if(owner?.status_flags & GODMODE)
+	if(om_has(owner, EFFECT_GODMODE))
 		return 0
 	owner?.body?.invalidate(BODY_DIRTY_ORGANS)
 	brute = round(brute, 0.1)

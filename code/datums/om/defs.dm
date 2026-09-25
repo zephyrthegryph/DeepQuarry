@@ -39,7 +39,7 @@
 	/// Behaviour types this one runs after (topological, compiled at boot).
 	var/list/order_after
 	/// Interval per relevance level: list(NONE, NEAR, VISIBLE, WATCHED), each
-	/// deciseconds, OM_SLEEP, or null for `every`. Null list: `every` always.
+	/// deciseconds, OM_PARK, or null for `every`. Null list: `every` always.
 	var/list/relevance
 	/// Channels on the entity that wake this behaviour (on_wake).
 	var/wake_on = 0
@@ -60,6 +60,12 @@
 	var/produces = 0
 	/// Set if hooks call om_hold(): holds not repeated on the next call are released.
 	var/holds = FALSE
+	/// Deciseconds. on_wake runs at most this often per entity: wakes in between are
+	/// coalesced (their bits unioned) and delivered by a deadline when the interval ends.
+	var/min_interval = 0
+	/// RUNLEVEL_* mask. Outside these runlevels the behaviour's rings don't run (one test per
+	/// ring per pass, none per entity) and resume without catch-up. 0: every runlevel.
+	var/runlevels = 0
 
 	// ---- compiled by the registry ----
 	var/id = 0
@@ -91,6 +97,11 @@
 	return
 
 /datum/om/behaviour/proc/on_step(datum/E)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// A deadline set with a sub-key (om_after(E, delay, B, sub)), sub >= OM_DL_STAGE.
+/datum/om/behaviour/proc/on_keyed_deadline(datum/E, sub)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
@@ -294,6 +305,12 @@
 	var/clock_idx = 0
 	/// Composite effects that read this one (idx list).
 	var/list/dependents
+	/// Effect ids the entity holds on itself while this effect is in effect (godmode holds the
+	/// incapacitation immunities). Compiled to `implies_idx`.
+	var/list/implies
+	var/list/implies_idx
+	/// Status effects (idx) naming this effect as their immunity: gaining it ends them.
+	var/list/blocks
 
 /// Called after the value on `E` changed. Subclasses add custom logic.
 /datum/om/effect/proc/on_changed(datum/E, old_value, new_value)

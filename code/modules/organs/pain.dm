@@ -51,16 +51,15 @@
 		if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 			emote("pain")
 
-/datum/life_system/pain
+/datum/om/stage/life/pain
+	order = LIFE_PHASE_TAIL + 190
 	name = "pain"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_TAIL
-	order = 190
-	segment = LIFE_SEG_HUMAN_LIVE
-	mob_type = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+	of = /mob/living/carbon/human
 
 /// Pain messages from limbs and organs.
-/datum/life_system/pain/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+/datum/om/stage/life/pain/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.stat)
 		return
 

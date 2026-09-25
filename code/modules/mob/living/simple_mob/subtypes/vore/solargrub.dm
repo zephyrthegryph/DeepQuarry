@@ -70,12 +70,12 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	. = ..()
 	GLOB.existing_solargrubs += src
 
-/datum/life_system/type_post/simple_mob/vore/solargrub
-	mob_type = /mob/living/simple_mob/vore/solargrub
+/datum/om/stage/life/type_post/simple_mob/vore/solargrub
+	of = /mob/living/simple_mob/vore/solargrub
 
-/datum/life_system/type_post/simple_mob/vore/solargrub/tick(mob/living/simple_mob/vore/solargrub/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/solargrub/perform(mob/living/simple_mob/vore/solargrub/self, datum/om/frame/life/ctx)
 	..()
-	if(!ctx?.alive) return
+	if(!ctx.fact("alive")) return
 
 	if(!self.ai_brain.primary_threat)
 			//first, check for potential cables nearby to powersink
@@ -166,10 +166,10 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	GLOB.existing_solargrubs -= src
 	. = ..()
 
-/datum/life_system/light/simple_mob/vore/solargrub
-	mob_type = /mob/living/simple_mob/vore/solargrub
+/datum/om/stage/life/light/simple_mob/vore/solargrub
+	of = /mob/living/simple_mob/vore/solargrub
 
-/datum/life_system/light/simple_mob/vore/solargrub/tick(mob/living/simple_mob/vore/solargrub/self, datum/life_context/ctx)
+/datum/om/stage/life/light/simple_mob/vore/solargrub/perform(mob/living/simple_mob/vore/solargrub/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(. == 0 && !self.is_dead())
 		self.set_light(2.5, 1, COLOR_YELLOW)

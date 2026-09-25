@@ -62,7 +62,7 @@
 /mob/living/proc/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	if(amount <= 0 || !body || kind < 1 || kind > INJURY_KIND_COUNT)
 		return 0
-	if(status_flags & GODMODE)
+	if(om_has(src, EFFECT_GODMODE))
 		return 0
 	if(_listen_lookup?[COMSIG_LIVING_INJURE])
 		var/list/amount_ref = list(amount)

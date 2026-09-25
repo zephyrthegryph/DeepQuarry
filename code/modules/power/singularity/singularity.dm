@@ -414,7 +414,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 	for(var/mob/living/carbon/M in oviewers(8, src))
 		if(istype(M, /mob/living/carbon/brain)) //Ignore brains
 			continue
-		if(SEND_SIGNAL(M, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+		if(om_has(M, EFFECT_GODMODE))
 			return 0	// Cancelled by a component
 		if(M.stat == CONSCIOUS)
 			if (ishuman(M))

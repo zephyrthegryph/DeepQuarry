@@ -447,7 +447,7 @@
 											BITSET(hud_updateflag, WANTED_HUD)
 											if(ishuman(usr))
 												var/mob/living/carbon/human/U = usr
-												var/datum/life_system/hud/carbon/human/hud_system = U.life_system_for(/datum/life_system/hud)
+												var/datum/om/stage/life/hud/carbon/human/hud_system = om_stage_for(U, /datum/om/stage/life/hud)
 												hud_system.hud_list(U)
 											if(istype(usr,/mob/living/silicon/robot))
 												var/mob/living/silicon/robot/U = usr

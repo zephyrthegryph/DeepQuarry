@@ -60,10 +60,10 @@
 	icon_dead = "rabbit_[body_color]_dead"
 	icon_rest = "rabbit_[body_color]_rest"
 
-/datum/life_system/type_post/simple_mob/vore/rabbit
-	mob_type = /mob/living/simple_mob/vore/rabbit
+/datum/om/stage/life/type_post/simple_mob/vore/rabbit
+	of = /mob/living/simple_mob/vore/rabbit
 
-/datum/life_system/type_post/simple_mob/vore/rabbit/tick(mob/living/simple_mob/vore/rabbit/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/rabbit/perform(mob/living/simple_mob/vore/rabbit/self, datum/om/frame/life/ctx)
 	..()
 
 	if(self.grumpiness > 0 && self.last_pet > (world.time + self.grump_decay))

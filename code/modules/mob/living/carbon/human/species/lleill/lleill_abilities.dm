@@ -524,7 +524,7 @@
 	vore_selected = null
 	ourmob.mob_belly_transfer(src)
 
-	ourmob.life_frame()
+	om_run_frame_now(ourmob, /datum/om/pipeline/life)
 
 	if(ishuman(src))
 		for(var/obj/item/W in src)

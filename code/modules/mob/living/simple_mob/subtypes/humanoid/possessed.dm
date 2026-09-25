@@ -81,10 +81,10 @@
 		playsound(src, pick('sound/h_sounds/headcrab.ogg', 'sound/h_sounds/holla.ogg', 'sound/h_sounds/lynx.ogg', 'sound/h_sounds/mumble.ogg', 'sound/h_sounds/yell.ogg'), 50, 1)
 
 //Plays the sound every ~4 seconds.
-/datum/life_system/type_post/simple_mob/humanoid/possessed
-	mob_type = /mob/living/simple_mob/humanoid/possessed
+/datum/om/stage/life/type_post/simple_mob/humanoid/possessed
+	of = /mob/living/simple_mob/humanoid/possessed
 
-/datum/life_system/type_post/simple_mob/humanoid/possessed/tick(mob/living/simple_mob/humanoid/possessed/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/humanoid/possessed/perform(mob/living/simple_mob/humanoid/possessed/self, datum/om/frame/life/ctx)
 	..()
 	if(self.idle <= 0 && self.silenced == 0)
 		playsound(self, 'sound/h_sounds/breathing.ogg', 60, 1)

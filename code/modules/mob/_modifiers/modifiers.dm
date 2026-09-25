@@ -86,20 +86,19 @@
 	var/list/modifiers // A list of modifier datums, which can adjust certain mob numbers. Lazy: LAZYADD/LAZYREMOVE/LAZYLEN.
 
 // Called by Life().
-/datum/life_system/modifiers
+/datum/om/stage/life/modifiers
+	order = LIFE_PHASE_INPUT + 50
 	name = "modifiers"
-	phase = LIFE_PHASE_INPUT
-	order = 50
-	segment = LIFE_SEG_LIVING
+	run_if = LIFE_RUN_IF_PLACED
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
 	woken_by = "add_modifier()"
 
 /// Continuous while the mob has any modifier (they expire and tick); asleep otherwise.
-/datum/life_system/modifiers/idle(mob/living/self)
+/datum/om/stage/life/modifiers/idle(mob/living/self)
 	return !length(self.modifiers)
 
 /// Modifier expiry and ticks. Runs even in nullspace.
-/datum/life_system/modifiers/tick(mob/living/self, datum/life_context/ctx)
+/datum/om/stage/life/modifiers/perform(mob/living/self, datum/om/frame/life/ctx)
 	if(!LAZYLEN(self.modifiers)) // No work to do.
 		return
 	// Get rid of anything we shouldn't have.

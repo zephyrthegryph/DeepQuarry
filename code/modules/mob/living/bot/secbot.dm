@@ -38,10 +38,10 @@
 	var/list/preparing_arrest_sounds = list('sound/voice/bgod.ogg', 'sound/voice/biamthelaw.ogg', 'sound/voice/bsecureday.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bcreep.ogg')
 	var/static/list/fighting_sounds = list('sound/voice/biamthelaw.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bjustice.ogg')
 // They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
-/datum/life_system/type_post/bot/secbot
-	mob_type = /mob/living/bot/secbot
+/datum/om/stage/life/type_post/bot/secbot
+	of = /mob/living/bot/secbot
 
-/datum/life_system/type_post/bot/secbot/tick(mob/living/bot/secbot/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/bot/secbot/perform(mob/living/bot/secbot/self, datum/om/frame/life/ctx)
 	..()
 	if(self.stat != DEAD && self.on && self.pulledby)
 		if(isliving(self.pulledby))
@@ -51,8 +51,8 @@
 					pull_allowed = TRUE
 			if(!pull_allowed)
 				var/mob/living/L = self.pulledby
-				self.UnarmedAttack(L)
-				self.say("Do not interfere with active law enforcement routines!")
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, UnarmedAttack), L)
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, say), "Do not interfere with active law enforcement routines!")
 				GLOB.global_announcer.autosay("[self] was interfered with in <b>[get_area(self)]</b>, activating defense routines.", "[self]", "Security")
 /mob/living/bot/secbot/beepsky
 	name = "Officer Beepsky"

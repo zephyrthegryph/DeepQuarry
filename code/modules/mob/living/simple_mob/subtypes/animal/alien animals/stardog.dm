@@ -91,10 +91,10 @@
 		that_one.resize(prev_size, ignore_prefs = TRUE)
 		return ..()
 
-/datum/life_system/type_post/simple_mob/vore/overmap/stardog
-	mob_type = /mob/living/simple_mob/vore/overmap/stardog
+/datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog
+	of = /mob/living/simple_mob/vore/overmap/stardog
 
-/datum/life_system/type_post/simple_mob/vore/overmap/stardog/tick(mob/living/simple_mob/vore/overmap/stardog/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog/perform(mob/living/simple_mob/vore/overmap/stardog/self, datum/om/frame/life/ctx)
 	..()
 	if(self.admin_override)
 		self.affinity = 9999

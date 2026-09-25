@@ -102,13 +102,13 @@
 		leave_host()
 	. = ..()
 
-/datum/life_system/special/animal/borer
-	mob_type = /mob/living/simple_mob/animal/borer
+/datum/om/stage/life/special/animal/borer
+	of = /mob/living/simple_mob/animal/borer
 
-/datum/life_system/special/animal/borer/tick(mob/living/simple_mob/animal/borer/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/borer/perform(mob/living/simple_mob/animal/borer/self, datum/om/frame/life/ctx)
 	self.handle_chemicals()
 	self.handle_docile()
-	self.handle_braindamage()
+	INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/animal/borer, handle_braindamage))
 
 /mob/living/simple_mob/animal/borer/get_status_tab_items()
 	. = ..()
@@ -203,10 +203,10 @@
 	to_chat(controlling ? host : src, span_info("You use [amount] chemicals, [FLOOR(chemicals,1)] remain."))
 	return TRUE
 
-/datum/life_system/hud/simple_mob/animal/borer
-	mob_type = /mob/living/simple_mob/animal/borer
+/datum/om/stage/life/hud/simple_mob/animal/borer
+	of = /mob/living/simple_mob/animal/borer
 
-/datum/life_system/hud/simple_mob/animal/borer/tick(mob/living/simple_mob/animal/borer/self, datum/life_context/ctx)
+/datum/om/stage/life/hud/simple_mob/animal/borer/perform(mob/living/simple_mob/animal/borer/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(!.)
 		return

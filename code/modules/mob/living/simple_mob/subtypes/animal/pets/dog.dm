@@ -127,10 +127,10 @@
 	makes_dirt = FALSE // no more dirt
 	holder_type = /obj/item/holder/corgi
 
-/datum/life_system/type_post/simple_mob/animal/passive/dog/corgi/Ian
-	mob_type = /mob/living/simple_mob/animal/passive/dog/corgi/Ian
+/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Ian
+	of = /mob/living/simple_mob/animal/passive/dog/corgi/Ian
 
-/datum/life_system/type_post/simple_mob/animal/passive/dog/corgi/Ian/tick(mob/living/simple_mob/animal/passive/dog/corgi/Ian/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Ian/perform(mob/living/simple_mob/animal/passive/dog/corgi/Ian/self, datum/om/frame/life/ctx)
 	..()
 
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
@@ -149,10 +149,10 @@
 						self.movement_target = S
 						break
 			if(self.movement_target)
-				self.chase_target()
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 		if(prob(1))
-			self.visible_emote(pick("dances around","chases their tail"))
+			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases their tail"))
 			spawn(0)
 				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 					self.set_dir(i)
@@ -181,10 +181,10 @@
 		return
 	..()
 
-/datum/life_system/type_post/simple_mob/animal/passive/dog/corgi/Lisa
-	mob_type = /mob/living/simple_mob/animal/passive/dog/corgi/Lisa
+/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Lisa
+	of = /mob/living/simple_mob/animal/passive/dog/corgi/Lisa
 
-/datum/life_system/type_post/simple_mob/animal/passive/dog/corgi/Lisa/tick(mob/living/simple_mob/animal/passive/dog/corgi/Lisa/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Lisa/perform(mob/living/simple_mob/animal/passive/dog/corgi/Lisa/self, datum/om/frame/life/ctx)
 	..()
 
 	if(!self.stat && !self.resting && !self.buckled)
@@ -209,7 +209,7 @@
 				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(self.loc)
 
 		if(prob(1))
-			self.visible_emote(pick("dances around","chases her tail"))
+			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases her tail"))
 			spawn(0)
 				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 					self.set_dir(i)

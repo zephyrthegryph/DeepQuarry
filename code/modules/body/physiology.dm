@@ -489,18 +489,17 @@
 
 /// Oxygen debt and its consequences, before the Body's status pass. Cheap while
 /// the body is settled; bodies without a physiology never get it.
-/datum/life_system/physiology
+/datum/om/stage/life/physiology
+	order = LIFE_PHASE_BODY + 85
 	name = "physiology"
-	wake_on = LIFE_WAKE_ON_BODY
-	phase = LIFE_PHASE_BODY
-	order = 85
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
+	wake_on = CHANGE_MOB_HEALTH
+	run_if = LIFE_RUN_IF_PLACED_ALIVE
 
-/datum/life_system/physiology/applies(mob/living/self)
+/datum/om/stage/life/physiology/applies(mob/living/self)
 	var/datum/body/proto = self.body_type
 	return !!initial(proto.physiology_type)
 
-/datum/life_system/physiology/tick(mob/living/self, datum/life_context/ctx)
-	if(ctx?.in_stasis(self))
+/datum/om/stage/life/physiology/perform(mob/living/self, datum/om/frame/life/ctx)
+	if(ctx.fact("in_stasis"))
 		return
-	self.body?.physiology_tick(ctx ? ctx.seconds : LIFE_CYCLE_SECONDS)
+	self.body?.physiology_tick(ctx.dt)

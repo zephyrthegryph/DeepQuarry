@@ -94,10 +94,10 @@
 		visible_message(span_danger("\The [src] trips \the [L]!"))
 		L.status_adjust(EFFECT_WEAKENED, rand(1,10))
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/startreader
-	mob_type = /mob/living/simple_mob/vore/alienanimals/startreader
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/startreader
+	of = /mob/living/simple_mob/vore/alienanimals/startreader
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/startreader/tick(mob/living/simple_mob/vore/alienanimals/startreader/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/startreader/perform(mob/living/simple_mob/vore/alienanimals/startreader/self, datum/om/frame/life/ctx)
 	..()
 	if(self.flip_cooldown == 1)
 		self.flip_cooldown = 0

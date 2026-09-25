@@ -836,9 +836,9 @@
 /datum/config_entry/flag/allow_tracy_queue
 	protection = CONFIG_ENTRY_LOCKED
 
-/// Run the mob hibernation missed-wake audit (SSmobs) every 30 s. Debugging aid; always on in
-/// unit test builds. Admins can also turn it on for a round with "Toggle Hibernation Audit".
-/datum/config_entry/flag/mob_hibernation_audit
+/// Run the object-model pipeline missed-wake audit (SSbehaviours) every 30 s. Debugging aid; always
+/// on in unit test builds. Admins can also turn it on for a round with "Toggle Pipeline Audit".
+/datum/config_entry/flag/om_pipeline_audit
 
 /// log vore interactions
 /datum/config_entry/flag/log_vore

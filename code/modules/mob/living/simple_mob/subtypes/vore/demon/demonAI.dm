@@ -87,19 +87,19 @@
 		return TRUE
 	. = ..()
 
-/datum/life_system/type_post/simple_mob/vore/demonAI
-	mob_type = /mob/living/simple_mob/vore/demonAI
+/datum/om/stage/life/type_post/simple_mob/vore/demonAI
+	of = /mob/living/simple_mob/vore/demonAI
 
-/datum/life_system/type_post/simple_mob/vore/demonAI/tick(mob/living/simple_mob/vore/demonAI/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/demonAI/perform(mob/living/simple_mob/vore/demonAI/self, datum/om/frame/life/ctx)
 	..()
 	if(self.shifted_out)
 		self.density = FALSE
 
-/datum/life_system/environment/simple_mob/vore/demonAI
-	mob_type = /mob/living/simple_mob/vore/demonAI
+/datum/om/stage/life/environment/simple_mob/vore/demonAI
+	of = /mob/living/simple_mob/vore/demonAI
 
 /// TODO - Refactor demons to use is_incorporeal()
-/datum/life_system/environment/simple_mob/vore/demonAI/exchange(mob/living/simple_mob/vore/demonAI/self, datum/gas_mixture/environment)
+/datum/om/stage/life/environment/simple_mob/vore/demonAI/exchange(mob/living/simple_mob/vore/demonAI/self, datum/gas_mixture/environment)
 	if(self.shifted_out)
 		return
 	. = ..()
@@ -142,10 +142,10 @@
 	return dq_get_cloaked(src)
 
 // Cloaks the spider automatically, if possible.
-/datum/life_system/special/vore/demonAI
-	mob_type = /mob/living/simple_mob/vore/demonAI
+/datum/om/stage/life/special/vore/demonAI
+	of = /mob/living/simple_mob/vore/demonAI
 
-/datum/life_system/special/vore/demonAI/tick(mob/living/simple_mob/vore/demonAI/self, datum/life_context/ctx)
+/datum/om/stage/life/special/vore/demonAI/perform(mob/living/simple_mob/vore/demonAI/self, datum/om/frame/life/ctx)
 	if(!dq_get_cloaked(self) && self.can_cloak())
 		self.cloak()
 

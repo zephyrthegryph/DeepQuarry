@@ -62,10 +62,10 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 /mob/living/simple_mob/animal/passive/cat/get_available_emotes()
 	return GLOB.cat_default_emotes.Copy()
 
-/datum/life_system/special/animal/passive/cat
-	mob_type = /mob/living/simple_mob/animal/passive/cat
+/datum/om/stage/life/special/animal/passive/cat
+	of = /mob/living/simple_mob/animal/passive/cat
 
-/datum/life_system/special/animal/passive/cat/tick(mob/living/simple_mob/animal/passive/cat/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/passive/cat/perform(mob/living/simple_mob/animal/passive/cat/self, datum/om/frame/life/ctx)
 	if(!self.stat && prob(2)) // spooky
 		var/mob/observer/dead/spook = locate() in range(self, 5)
 		if(spook)
@@ -76,7 +76,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				self.visible_emote("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
 
 // Instakills mice.
 /mob/living/simple_mob/animal/passive/cat/apply_melee_effects(atom/A)
@@ -344,10 +344,10 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	meat_amount = 0
 	endurance = 50
 
-/datum/life_system/special/animal/passive/cat/tabiranth
-	mob_type = /mob/living/simple_mob/animal/passive/cat/tabiranth
+/datum/om/stage/life/special/animal/passive/cat/tabiranth
+	of = /mob/living/simple_mob/animal/passive/cat/tabiranth
 
-/datum/life_system/special/animal/passive/cat/tabiranth/tick(mob/living/simple_mob/animal/passive/cat/tabiranth/self, datum/life_context/ctx)
+/datum/om/stage/life/special/animal/passive/cat/tabiranth/perform(mob/living/simple_mob/animal/passive/cat/tabiranth/self, datum/om/frame/life/ctx)
 	. = ..()
 	if ((self.ai_brain != null) && self.friend)
 		var/friend_dist = get_dist(self,self.friend)
@@ -355,10 +355,10 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 			if (self.friend.stat >= DEAD || self.friend.is_critical())
 				if (prob((self.friend.stat < DEAD)? 50 : 15))
 					var/verb = pick("meows", "mews", "mrowls")
-					self.audible_emote(pick("[verb] in distress.", "[verb] anxiously."))
+					INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, audible_emote), pick("[verb] in distress.", "[verb] anxiously."))
 			else
 				if (prob(5))
-					self.visible_emote(pick("nuzzles [self.friend].",
+					INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), pick("nuzzles [self.friend].",
 									"brushes against [self.friend].",
 									"rubs against [self.friend].",
 									"purrs."))

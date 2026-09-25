@@ -16,10 +16,10 @@
 		return COMPONENT_INCOMPATIBLE
 
 /datum/component/burninlight/RegisterWithParent()
-	add_trait_life_system(parent, /datum/life_system/trait/burninlight)
+	om_stage_add(parent, /datum/om/stage/life/trait/burninlight)
 
 /datum/component/burninlight/UnregisterFromParent()
-	remove_trait_life_system(parent, /datum/life_system/trait/burninlight)
+	om_stage_remove(parent, /datum/om/stage/life/trait/burninlight)
 
 /datum/component/burninlight/proc/process_component()
 	SIGNAL_HANDLER
@@ -60,9 +60,9 @@
 		owner.mend(TREAT_BURN_CARE, heal_rate)
 
 /// Trait system: light burns. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/burninlight
+/datum/om/stage/life/trait/burninlight
 	name = "burninlight"
 	component_type = /datum/component/burninlight
 
-/datum/life_system/trait/burninlight/tick_component(mob/living/self, datum/component/burninlight/component)
+/datum/om/stage/life/trait/burninlight/tick_component(mob/living/self, datum/component/burninlight/component)
 	component.process_component()

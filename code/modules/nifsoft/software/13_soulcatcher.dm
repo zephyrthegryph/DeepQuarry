@@ -311,19 +311,19 @@
 	nif = null
 	return ..()
 
-/datum/life_system/type_pre/carbon/brain/caught_soul
-	mob_type = /mob/living/carbon/brain/caught_soul
+/datum/om/stage/life/type_pre/carbon/brain/caught_soul
+	of = /mob/living/carbon/brain/caught_soul
 
-/datum/life_system/type_pre/carbon/brain/caught_soul/tick(mob/living/carbon/brain/caught_soul/self, datum/life_context/ctx)
+/datum/om/stage/life/type_pre/carbon/brain/caught_soul/perform(mob/living/carbon/brain/caught_soul/self, datum/om/frame/life/ctx)
 	if(!self.mind || !self.key)
 		qdel(self)
-		return LIFE_HALT
+		return ctx.abort()
 	return ..()
 
-/datum/life_system/type_post/carbon/brain/caught_soul
-	mob_type = /mob/living/carbon/brain/caught_soul
+/datum/om/stage/life/type_post/carbon/brain/caught_soul
+	of = /mob/living/carbon/brain/caught_soul
 
-/datum/life_system/type_post/carbon/brain/caught_soul/tick(mob/living/carbon/brain/caught_soul/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/carbon/brain/caught_soul/perform(mob/living/carbon/brain/caught_soul/self, datum/om/frame/life/ctx)
 	..()
 
 	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.soulcatcher?.setting_flags & NIF_SC_BACKUPS)

@@ -93,10 +93,10 @@
 	else
 		. = ..()
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/succlet
-	mob_type = /mob/living/simple_mob/vore/alienanimals/succlet
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/succlet
+	of = /mob/living/simple_mob/vore/alienanimals/succlet
 
-/datum/life_system/type_post/simple_mob/vore/alienanimals/succlet/tick(mob/living/simple_mob/vore/alienanimals/succlet/self, datum/life_context/ctx)
+/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/succlet/perform(mob/living/simple_mob/vore/alienanimals/succlet/self, datum/om/frame/life/ctx)
 	..()
 	if(self.stat)
 		return
@@ -116,13 +116,13 @@
 			if(ismob(M))
 				mylist |= M
 		if(mylist.len > 0)
-			self.succlet_move(pick(mylist))
+			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/vore/alienanimals/succlet, succlet_move), pick(mylist))
 		else
 			for(var/turf/T in view(world.view, get_turf(self)))	//No, so let's pick a turf to travel to
 				if(isturf(T))
 					mylist |= T
 			if(mylist.len)
-				self.succlet_move(pick(mylist))
+				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/vore/alienanimals/succlet, succlet_move), pick(mylist))
 	self.succlet_last_health = self.vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet/death(gibbed, deathmessage = "shrieks in agony as it is eradicated from reality.")

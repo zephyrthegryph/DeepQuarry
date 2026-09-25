@@ -71,7 +71,7 @@
 	for(var/mob/living/carbon/target in GLOB.player_list)
 		if(target.z != z)
 			continue
-		if(SEND_SIGNAL(target, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
+		if(om_has(target, EFFECT_GODMODE))
 			continue
 		if(target.stat >= UNCONSCIOUS)
 			continue
