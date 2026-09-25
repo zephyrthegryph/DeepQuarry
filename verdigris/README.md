@@ -20,7 +20,8 @@ verdigris/                  <- workspace root (this dir)
 ├── Cargo.lock              <- committed (we produce a final cdylib)
 ├── rust-toolchain.toml     <- stable + i686 targets
 ├── build-linux.sh / build-windows.sh
-├── core/                   <- vg-core: domain-agnostic primitives (grid, ...).
+├── core/                   <- vg-core: the driver (World) and every generic
+│                              facility (doc/rewrite/rust_architecture.md §8.4).
 │                              Host-buildable, no byondapi, no global statics.
 ├── domains/
 │   ├── gas/                <- vg-gas: the gas domain (M1b): turf gas field,
@@ -30,12 +31,17 @@ verdigris/                  <- workspace root (this dir)
 │   │                          auxmos (domains/gas/UPSTREAM.md).
 │   ├── heat/               <- vg-heat: the heat domain (M4): turf solid field,
 │   │                          heat bodies, couplings, regulator. Host-buildable.
-│   ├── power/              <- vg-power: the power domain (M3): cables as an R7
-│   │                          network kind, the ledger, APC and SMES models.
-│   └── layout/             <- vg-layout: station layout planner, cave generator,
-│                              and the offline station-layout tools (src/bin/)
-├── ffi/                    <- vg-ffi: BYOND binds (lifecycle, layout, cave gen)
-│   │                          and the tracking allocator; i686 only
+│   └── power/              <- vg-power: the power domain (M3): cables as an R7
+│                              network kind, the ledger, APC and SMES models.
+├── gen/
+│   └── layout/             <- vg-layout: the procedural generator (station
+│                              layout planner, cave generator, offline tools in
+│                              src/bin/). Not a sim domain: exempt from the
+│                              domain rules and budgets.
+├── ffi/                    <- vg-ffi: BYOND binds (the World and the generic
+│   │                          component binds, lifecycle, layout, cave gen)
+│   │                          and the tracking allocator; i686 only. Depends on
+│   │                          the domains, never the reverse.
 │   ├── macros/             <- auxmacros: #[bind] / #[bind_raw_args], the one bind macro
 │   └── callback/           <- auxcallback: deferred callbacks to the main thread
 ├── verdigris/              <- the DLL: links vg-ffi + vg-gas, sets the global
@@ -48,6 +54,11 @@ verdigris/                  <- workspace root (this dir)
 
 | Crate / module | Purpose |
 |---|---|
+| `vg-ffi` `world` | The DLL's one `World`, the registration list (every domain's components, laws, networks), and the generic binds `vg_component_*` / `vg_world_*` (`doc/rewrite/rust_bindings.md` §17). |
+| `vg-core` `world` | The driver: one `World` owning identity, component stores, networks, globals, the grid, fields, pacing, laws (as frame tasks, main or worker phase), typed events, watches and the conservation check. |
+| `vg-core` `law` / `query` | `Law`/`LawCtx`/`Effects`/`Settle`/`Period`, `order_laws`, `Pacer`; `Query`/`WriteQuery` over components, `Option`, `Global`, network payloads/sides/members, field cells. |
+| `vg-core` `component` / `store` | The `Component` trait `#[vg::component]` implements (field ids, generic get/set/adjust, conserved fields), the domain id table; stores indexed by entity slot (`Rows`, `MainKind`, `WorkerKind`). |
+| `vg-core` `event` / `registry` | The typed event codec (`Event`, `EventSink`, the one wire format); the `DomainRegistry` trait and table. |
 | `vg-ffi` `lifecycle` | `verdigris_init`, `cleanup`, version/feature metadata, allocator diagnostics. |
 | `vg-layout` `random_map` | Cellular-automata cave generator used by expedition sites. |
 | `vg-layout` `station_layout` | Generated-station layout planner; planning runs as a `vg-core` job (`plan_catalog_job`). |
@@ -58,11 +69,11 @@ verdigris/                  <- workspace root (this dir)
 | `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
 | `vg-gas` | The gas domain (M1b, `simulation.md` §4): `cell` (turf gas as an R6 `FieldKind`: exponential bulk-flow and diffusion kernels, reservoirs, reaction check in `local`, channels), `pipes` (pipes as an R7 `NetworkKind`, main-owned until M2), `world` (the gas world: main-owned mixtures, the field's `Sim`, the pipe network, gas handles, the heat exchange buffer, dirty observations, gas watches), `turf` (turf and SSair binds), `gate` (reaction and visibility data for frame threads). Numeric gas registry in `gas/ids.rs`. Reactions run in DM; see `code/ATMOSPHERICS/README.md`. `heat.rs` holds the heat domain's binds. |
 | `vg-power` | The power domain (M3, `simulation.md` §6): `kind` (`Cables`, the R7 network kind: summary = supply, demand per APC channel, storage capacity; payload = pooled storage split by capacity), `geom` (the `get_connections()` rule, so Rust derives the graph from each piece's turf and directions), `apc` (the APC distributor), `smes` (SMES units) and `world` (`PowerWorld`: keys, batched edits, the ledger, one `step()` per machinery tick returning DM's events). Binds in `vg-ffi` (`ffi/src/power.rs`). |
-| `vg-heat` | The heat domain (M4, `simulation.md` §7, `temperature.md`): `solid` (the turf solid heat field on R6's framework, with conduction, Stefan–Boltzmann radiation to space reservoirs and planet reservoirs), `body` (heat bodies created on first divergence, analytic relaxation on reservoirs, exact two-body steps otherwise, phase plateau, power, two couplings), `couple` (the `GasExchange` trait, exact pair exchange, the energy ledger, the solid ↔ turf gas task), `regulator` (the thermal regulator primitive) and `world` (`HeatWorld`, the main-thread host with watches). Replaces `superconduct.rs`. |
-| `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic, 16x16 chunked layers, per-kind blocked-direction layers (`Grid`). |
+| `vg-heat` | The heat domain (M4, `simulation.md` §7, `temperature.md`): `solid` (the turf solid heat field on R6's framework, with conduction, Stefan–Boltzmann radiation to space reservoirs and planet reservoirs), `body` (heat bodies created on first divergence, analytic relaxation on reservoirs, exact two-body steps otherwise, phase plateau, power, two couplings), `couple` (the `GasExchange` trait, the energy ledger, the solid ↔ turf gas task), `laws` and `world` (`HeatWorld`, the main-thread host with watches). The exchange math (pair exchange, phase plateau, relaxation, the regulator) is `vg_core::thermo`'s. Replaces `superconduct.rs`. |
+| `vg-core` `grid` | `CellId` turf indices, `Dir` (BYOND directions and face sets), 16x16 copy-on-write chunked layers with per-chunk revisions, and the one `Grid` (block layers per `BlockKind`, z links, `step`). |
 | `vg-core` `handle` / `arena` | 20-bit index + 4-bit generation handles (exact as f32); `Arena<T>` with 4096-slot chunks, stale-handle rejection, rayon iteration. |
 | `vg-core` `bitset` / `intern` | Dense bitsets for dirty/active flags; string-to-numeric-ID interner. |
-| `vg-core` `units` / `thermo` | SI newtypes (K, J, Pa, mol, W, J/K); heat capacity, energy/temperature, energy-conserving pairwise exchange. |
+| `vg-core` `units` / `thermo` | SI newtypes (K, J, Pa, mol, W, J/K) and the one home of `TCMB`/`T0C`/`T20C`; the only exchange math: heat capacity, pairwise exchange (exact over a conductance and `dt`), the phase plateau, analytic relaxation and the regulator (`thermo::regulator`). |
 | `vg-core` `rng` | Deterministic xoshiro256** streams per domain (`RngStreams` + `StreamId`), splittable. |
 | `vg-core` `alloc` | `AllocTag`, the `AllocCounter` trait and lock-free `TagCounters` for the DLL's tracking allocator. |
 | `vg-core` `cow` | `CowStore<T>`: chunked copy-on-write per-cell store (4096-slot linear or 16x16 spatial chunks); snapshots share unchanged chunks. |

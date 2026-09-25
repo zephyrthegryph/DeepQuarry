@@ -460,3 +460,38 @@ beyond what earlier sections specify exactly:
   no latent-collapse integration yet, for the same reason (C10 not landed);
   the state codec hook for save/load is not built yet either — deferred to
   when a latent-safe atom actually needs one, since none does today.
+
+## 17. Generic component binds (2026-09, `rewrite/rust-core2`)
+
+Supersedes §16's per-component glue. `#[vg::component]` no longer
+generates any bind, so a domain crate needs no `byondapi`
+(`rust_architecture.md` §8.4):
+
+- **Rust side.** The macro implements `vg_core::component::Component`:
+  every field (stored, then `computed = [...]` readouts) has a numeric id in
+  declaration order, and `get_field`/`set_command`/`adjust_command` work by
+  id. The rows live in the one `vg_core::world::World`.
+- **The binds** are a handful of generic procs in `verdigris/ffi/src/world.rs`,
+  taking the kind **code** (`domain << 8 | kind`, the generated
+  `VG_KIND_<NAME>`) and field ids (`VG_<NAME>_FIELD_<FIELD>`):
+  `vg_component_bind(entity, code, init)` (`init` = `list(field, value,
+  ...)`), `vg_component_detach`, `vg_component_has`, `vg_component_get(entity,
+  code, field, index)`, `vg_component_get_many(entity, code, fields)`,
+  `vg_component_set(entity, code, field, index, value)` (`index` -1: the whole
+  field; returns the stored value) and `vg_component_adjust(entity, code,
+  field, index, delta)` (take reconciliation on a `conserve`d field; returns
+  the shortfall).
+- **The DM surface** is unchanged in shape: the generator still writes
+  `get_*`/`set_*`/`push_*`/`<kind>_query_*`/`vg_bind_<domain>`/the
+  reconciler, now as one-line wrappers over the generic binds, plus
+  `adjust_<field>` for conserved fields and `REACT_DOMAIN_<NAME>` for
+  watching a kind's rows through the reactor (cells are entity handles).
+- **Events are wired end to end.** Laws emit typed events;
+  `vg_world_events()` returns every event of the step as one list
+  (`header, entity, len, payload...`), and the generated
+  `vg_drain_events()` decodes it: component events call the bound atom's
+  `on_<kind>_<event>(fields...)` after checking `vg_entity`, domain events
+  (`#[vg::events(domain = power)]`) call `SSvg.on_<domain>_<event>(...)`.
+  `SSvg.fire()` paces the world first (`vg_world_tick`).
+- `vg_entity_is_valid(entity, domain, kind)` answers for world kinds by the
+  same code, and for hosts not yet on the world through their entity slot.
