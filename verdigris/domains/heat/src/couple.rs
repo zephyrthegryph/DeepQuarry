@@ -76,35 +76,6 @@ impl GasExchange for NoGas {
     }
 }
 
-/// Exact energy moved from `a` to `b` over `dt` by conductance `g` (W/K):
-/// `ΔT · h · (1 − e^(−g (1/Ca + 1/Cb) dt))` with `h = 1 / (1/Ca + 1/Cb)`.
-/// A reservoir side passes `f32::INFINITY`. Never overshoots, for any `dt`.
-///
-/// A thin wrapper over `vg_core::thermo::pair_exchange` (the one
-/// pair-exchange law every domain shares, `rust_core.md` §15): kept as a
-/// raw-`f32` function here so existing callers in this crate don't need to
-/// wrap their temperatures/capacities in `ThermalBody`.
-#[must_use]
-pub fn pair_exchange(ta: f32, ca: f32, tb: f32, cb: f32, g: f32, dt: f32) -> f32 {
-    use vg_core::thermo::{self, ThermalBody};
-    use vg_core::units::{HeatCapacity, Kelvin, Seconds};
-    let a = ThermalBody::new(HeatCapacity::from(ca), Kelvin::from(ta));
-    let b = ThermalBody::new(HeatCapacity::from(cb), Kelvin::from(tb));
-    thermo::pair_exchange(a, b, f64::from(g), Seconds::from(dt)).into()
-}
-
-/// As [`pair_exchange`], with the pair's relaxation rate (1/s) given
-/// directly: `ΔT · h · (1 − e^(−rate dt))`. See [`pair_exchange`]'s note:
-/// wraps `vg_core::thermo::pair_exchange_at_rate`.
-#[must_use]
-pub fn pair_exchange_at_rate(ta: f32, ca: f32, tb: f32, cb: f32, rate: f32, dt: f32) -> f32 {
-    use vg_core::thermo::{self, ThermalBody};
-    use vg_core::units::{HeatCapacity, Kelvin, Seconds};
-    let a = ThermalBody::new(HeatCapacity::from(ca), Kelvin::from(ta));
-    let b = ThermalBody::new(HeatCapacity::from(cb), Kelvin::from(tb));
-    thermo::pair_exchange_at_rate(a, b, f64::from(rate), Seconds::from(dt)).into()
-}
-
 /// Where energy went that no store kept. Cells of the [`HeatLedger`]
 /// domain, in J, cumulative.
 pub mod ledger {
@@ -237,7 +208,7 @@ pub fn add_gas_coupling(
                     } else {
                         p.capacity
                     };
-                    let moved = pair_exchange_at_rate(ts, g.capacity, p.temperature, cg, rate, dt);
+                    let moved = vg_core::thermo::pair_exchange_at_rate_f32(ts, g.capacity, p.temperature, cg, rate, dt);
                     if !p.reservoir {
                         gas_after = p.temperature + moved / p.capacity;
                     }
@@ -303,36 +274,4 @@ pub fn add_field_ledger_mirror(
         .reads(field_res.id())
         .writes(ledger_res.id()),
     );
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // The exhaustive closed-form and never-overshoots properties now live
-    // with the law itself in `vg_core::thermo` (`rust_core.md` §15); this is
-    // just a smoke test that the wrapper actually delegates (right sign,
-    // right ballpark) rather than re-deriving its own copy.
-    #[test]
-    fn wraps_core_thermo_pair_exchange() {
-        let moved = pair_exchange(400.0, 100.0, 200.0, 100.0, 10.0, 3.0);
-        let expect = 200.0 * 50.0 * (1.0 - (-0.6f64).exp());
-        assert!(
-            (f64::from(moved) - expect).abs() < 1e-3,
-            "{moved} vs {expect}"
-        );
-        // A reservoir: harmonic -> the body's capacity.
-        let moved = pair_exchange(400.0, 100.0, 300.0, f32::INFINITY, 10.0, 1e6);
-        assert!((moved - 10_000.0).abs() < 1e-2);
-    }
-
-    #[test]
-    fn wraps_core_thermo_pair_exchange_at_rate() {
-        let moved = pair_exchange_at_rate(400.0, 100.0, 200.0, 100.0, 0.2, 3.0);
-        let expect = 200.0 * 50.0 * (1.0 - (-0.6f64).exp());
-        assert!(
-            (f64::from(moved) - expect).abs() < 1e-3,
-            "{moved} vs {expect}"
-        );
-    }
 }

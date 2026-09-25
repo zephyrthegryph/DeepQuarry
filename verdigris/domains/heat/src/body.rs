@@ -43,7 +43,8 @@ use crate::consts::{
     BODY_LEVELS, BODY_SETTLED_K, MAX_BODIES, RELAX_CAPACITY_RATIO, RELAX_HYSTERESIS_K,
     RELAX_MAX_INTERVAL, TCMB,
 };
-use crate::couple::{GasExchange, GasRef, HeatLedger, ledger, pair_exchange};
+use crate::couple::{GasExchange, GasRef, HeatLedger, ledger};
+use vg_core::thermo::{Phase, pair_exchange_f32, phase_energy, phase_temperature};
 use crate::solid::SolidHeat;
 
 /// What a coupling reaches.
@@ -79,21 +80,6 @@ impl Coupling {
     #[must_use]
     pub fn is_live(&self) -> bool {
         !matches!(self.target, Target::None) && self.conductance > 0.0
-    }
-}
-
-/// A phase plateau: heating through `temperature` first fills `latent`
-/// joules at constant temperature (and cooling empties it).
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Phase {
-    pub temperature: f32,
-    pub latent: f32,
-}
-
-impl Phase {
-    #[must_use]
-    pub fn is_active(&self) -> bool {
-        self.latent > 0.0 && self.temperature > 0.0
     }
 }
 
@@ -145,37 +131,6 @@ pub struct Body {
     pub levels_len: u8,
 }
 
-/// Temperature of `energy` in a body of `capacity` with `phase`.
-#[must_use]
-pub fn temperature_of(energy: f32, capacity: f32, phase: Phase) -> f32 {
-    if capacity <= 0.0 {
-        return 0.0;
-    }
-    if !phase.is_active() {
-        return energy / capacity;
-    }
-    let at_phase = capacity * phase.temperature;
-    if energy <= at_phase {
-        energy / capacity
-    } else if energy <= at_phase + phase.latent {
-        phase.temperature
-    } else {
-        (energy - phase.latent) / capacity
-    }
-}
-
-/// Energy of a body at `temperature` (the plateau empty at exactly the phase
-/// temperature, full above it).
-#[must_use]
-pub fn energy_at(temperature: f32, capacity: f32, phase: Phase) -> f32 {
-    let sensible = capacity * temperature;
-    if phase.is_active() && temperature > phase.temperature {
-        sensible + phase.latent
-    } else {
-        sensible
-    }
-}
-
 impl Body {
     /// A new body at `temperature`.
     #[must_use]
@@ -207,7 +162,7 @@ impl Body {
     #[must_use]
     pub fn with_phase(mut self, phase: Phase) -> Self {
         self.phase = phase;
-        self.energy = energy_at(self.temperature, self.capacity, phase);
+        self.energy = phase_energy(self.temperature, self.capacity, phase);
         self
     }
 
@@ -289,14 +244,14 @@ impl Body {
     #[must_use]
     pub fn energy_at(&self, now: f64) -> f32 {
         if self.has(state::RELAX) {
-            energy_at(self.temperature_at(now), self.capacity, self.phase)
+            phase_energy(self.temperature_at(now), self.capacity, self.phase)
         } else {
             self.energy
         }
     }
 
     fn refresh(&mut self) {
-        self.temperature = temperature_of(self.energy, self.capacity, self.phase);
+        self.temperature = phase_temperature(self.energy, self.capacity, self.phase);
     }
 
     /// Adds `e` to the stored energy, clamped at the TCMB floor. Returns
@@ -389,23 +344,23 @@ impl Domain for Bodies {
             }
             BodyCmd::Capacity(c) if c > 0.0 => {
                 if !b.has(state::RELAX) {
-                    b.energy = energy_at(b.temperature, c, b.phase);
+                    b.energy = phase_energy(b.temperature, c, b.phase);
                 }
                 b.capacity = c;
                 if b.has(state::RELAX) {
                     // Keep the anchor's temperature; the model restarts.
-                    b.energy = energy_at(b.temperature, c, b.phase);
+                    b.energy = phase_energy(b.temperature, c, b.phase);
                 }
             }
             BodyCmd::Capacity(_) => {}
             BodyCmd::Phase(p) => {
                 b.phase = p;
-                b.energy = energy_at(b.temperature, b.capacity, p);
+                b.energy = phase_energy(b.temperature, b.capacity, p);
             }
             BodyCmd::SetTemperature(t) => {
                 let t = t.max(TCMB);
                 b.temperature = t;
-                b.energy = energy_at(t, b.capacity, b.phase);
+                b.energy = phase_energy(t, b.capacity, b.phase);
                 b.pending = 0.0;
                 b.state &= !state::RELAX;
             }
@@ -579,7 +534,7 @@ impl Stores<'_> {
                 } else {
                     p.capacity
                 };
-                let m = pair_exchange(tb, cb, p.temperature, ce, c.conductance, dt);
+                let m = pair_exchange_f32(tb, cb, p.temperature, ce, c.conductance, dt);
                 // The body cannot go below its floor.
                 m.min(b.energy - b.floor())
             })?;
@@ -587,7 +542,7 @@ impl Stores<'_> {
             applied
         } else {
             let env = self.probe(c.target, i)?;
-            let m = pair_exchange(tb, cb, env.temperature, env.capacity, c.conductance, dt)
+            let m = pair_exchange_f32(tb, cb, env.temperature, env.capacity, c.conductance, dt)
                 .min(b.energy - b.floor());
             self.deposit(c.target, m)?
         };
@@ -763,7 +718,7 @@ fn release(s: &mut Stores<'_>, i: u32, b: &mut Body, now: f64) -> Option<Event> 
     let target = b.couplings[0].target;
     let env = s.probe(target, i);
     let baseline_t = env.map_or(b.temperature, |e| e.temperature);
-    let baseline = energy_at(baseline_t, b.capacity, b.phase).max(0.0);
+    let baseline = phase_energy(baseline_t, b.capacity, b.phase).max(0.0);
     let excess = b.energy + b.pending - baseline;
     let applied = if env.is_some() {
         s.deposit(target, excess)?
@@ -878,18 +833,6 @@ fn at_equilibrium(s: &Stores<'_>, i: u32, b: &Body) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn phase_plateau_maps_energy_both_ways() {
-        let p = Phase {
-            temperature: 300.0,
-            latent: 1_000.0,
-        };
-        assert_eq!(temperature_of(100.0 * 299.0, 100.0, p), 299.0);
-        assert_eq!(temperature_of(100.0 * 300.0 + 500.0, 100.0, p), 300.0);
-        assert_eq!(temperature_of(100.0 * 301.0 + 1_000.0, 100.0, p), 301.0);
-        assert_eq!(energy_at(301.0, 100.0, p), 100.0 * 301.0 + 1_000.0);
-    }
 
     #[test]
     fn commands_clamp_at_the_floor_and_keep_temperature() {

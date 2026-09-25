@@ -1,5 +1,22 @@
-//! Thermodynamics kernel (`rust_core.md` §13: heat share formulas become
-//! `core::thermo`). Pure functions over unit newtypes; no domain state.
+//! Thermodynamics kernel (`rust_core.md` §13, `rust_architecture.md` §4.11
+//! and §8): the **only** exchange math in the workspace. Pure functions over
+//! unit newtypes (plus `f32` entry points for laws that read `f32` hot
+//! columns); no domain state.
+//!
+//! - pairwise exchange: [`exchange`] (a fraction of the way to equilibrium),
+//!   [`pair_exchange`]/[`pair_exchange_at_rate`] (the exact integral of
+//!   Newton cooling over a conductance or rate and a `dt`), and their `f32`
+//!   forms [`pair_exchange_f32`]/[`pair_exchange_at_rate_f32`];
+//! - the phase buffer: [`Phase`], [`phase_temperature`], [`phase_energy`];
+//! - analytic relaxation against a reservoir: [`relax_toward`];
+//! - heat pumps and heaters: [`regulator`] (`Regulator::step`, COPs).
+//!
+//! A domain that writes `ΔT * g * dt`, a latent-heat plateau or a COP by
+//! hand is re-implementing this module (`rust_architecture.md` §2).
+
+pub mod regulator;
+
+pub use regulator::{Regulator, RegulatorMode, RegulatorStep, cooling_cop, heating_cop, reservoir};
 
 use crate::units::{HeatCapacity, Joules, Kelvin, Moles, Seconds};
 
@@ -155,8 +172,123 @@ pub fn pair_exchange_at_rate(a: ThermalBody, b: ThermalBody, rate: f64, dt: Seco
     Joules(if moved.is_finite() { moved } else { 0.0 })
 }
 
+/// [`pair_exchange`] for laws working on `f32` columns: energy (J) moved
+/// from side `a` (`ta` K, `ca` J/K) to side `b` over `dt` s by conductance
+/// `g` W/K. A reservoir side passes `f32::INFINITY` as its capacity.
+#[must_use]
+#[allow(clippy::cast_possible_truncation)]
+pub fn pair_exchange_f32(ta: f32, ca: f32, tb: f32, cb: f32, g: f32, dt: f32) -> f32 {
+    let a = ThermalBody::new(HeatCapacity::from(ca), Kelvin::from(ta));
+    let b = ThermalBody::new(HeatCapacity::from(cb), Kelvin::from(tb));
+    pair_exchange(a, b, f64::from(g), Seconds::from(dt)).0 as f32
+}
+
+/// [`pair_exchange_at_rate`] for laws working on `f32` columns.
+#[must_use]
+#[allow(clippy::cast_possible_truncation)]
+pub fn pair_exchange_at_rate_f32(ta: f32, ca: f32, tb: f32, cb: f32, rate: f32, dt: f32) -> f32 {
+    let a = ThermalBody::new(HeatCapacity::from(ca), Kelvin::from(ta));
+    let b = ThermalBody::new(HeatCapacity::from(cb), Kelvin::from(tb));
+    pair_exchange_at_rate(a, b, f64::from(rate), Seconds::from(dt)).0 as f32
+}
+
+/// A phase plateau: heating through `temperature` first fills `latent`
+/// joules at constant temperature (and cooling empties it). The default
+/// (`latent == 0`) is no plateau.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Phase {
+    /// K.
+    pub temperature: f32,
+    /// J.
+    pub latent: f32,
+}
+
+impl Phase {
+    #[must_use]
+    pub fn is_active(&self) -> bool {
+        self.latent > 0.0 && self.temperature > 0.0
+    }
+}
+
+/// Temperature (K) of `energy` J in a body of `capacity` J/K with `phase`:
+/// sensible heat below the plateau, the plateau temperature while it
+/// fills, sensible heat above it. `0` for a non-positive capacity.
+#[must_use]
+pub fn phase_temperature(energy: f32, capacity: f32, phase: Phase) -> f32 {
+    if capacity <= 0.0 {
+        return 0.0;
+    }
+    if !phase.is_active() {
+        return energy / capacity;
+    }
+    let at_phase = capacity * phase.temperature;
+    if energy <= at_phase {
+        energy / capacity
+    } else if energy <= at_phase + phase.latent {
+        phase.temperature
+    } else {
+        (energy - phase.latent) / capacity
+    }
+}
+
+/// Energy (J) of a body at `temperature`: the plateau is empty at exactly
+/// the phase temperature and full above it, so
+/// `phase_temperature(phase_energy(t)) == t`.
+#[must_use]
+pub fn phase_energy(temperature: f32, capacity: f32, phase: Phase) -> f32 {
+    let sensible = capacity * temperature;
+    if phase.is_active() && temperature > phase.temperature {
+        sensible + phase.latent
+    } else {
+        sensible
+    }
+}
+
+/// The exact relaxation of a body toward a reservoir-like environment:
+/// `T(t) = T_inf + (T0 - T_inf)·e^(-(g/c)·elapsed)` with
+/// `T_inf = ambient + power/g` (a power source shifts the asymptote). The
+/// closed form [`pair_exchange`] integrates against a reservoir, so using it
+/// instead of stepping is a performance choice, not different physics.
+/// `g <= 0` or `c <= 0` returns `t0` unchanged. The same curve as
+/// [`crate::rate::RateModel::Relax`] with `k = g/c`.
+#[must_use]
+#[allow(clippy::cast_possible_truncation)]
+pub fn relax_toward(t0: f32, ambient: f32, power: f32, conductance: f32, capacity: f32, elapsed: f32) -> f32 {
+    if conductance <= 0.0 || capacity <= 0.0 {
+        return t0;
+    }
+    let target = f64::from(ambient) + f64::from(power) / f64::from(conductance);
+    let rate = f64::from(conductance) / f64::from(capacity);
+    (target + (f64::from(t0) - target) * (-rate * f64::from(elapsed.max(0.0))).exp()) as f32
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn phase_plateau_maps_energy_both_ways() {
+        let p = Phase { temperature: 300.0, latent: 1_000.0 };
+        assert_eq!(phase_temperature(100.0 * 299.0, 100.0, p), 299.0);
+        assert_eq!(phase_temperature(100.0 * 300.0 + 500.0, 100.0, p), 300.0);
+        assert_eq!(phase_temperature(100.0 * 301.0 + 1_000.0, 100.0, p), 301.0);
+        assert_eq!(phase_energy(301.0, 100.0, p), 100.0 * 301.0 + 1_000.0);
+    }
+
+    #[test]
+    fn relax_toward_approaches_the_shifted_asymptote() {
+        let t = relax_toward(400.0, 300.0, 100.0, 10.0, 1_000.0, 1e6);
+        assert!((t - 310.0).abs() < 1e-3, "{t}");
+        assert_eq!(relax_toward(400.0, 300.0, 0.0, 0.0, 1.0, 10.0), 400.0);
+    }
+
+    #[test]
+    fn f32_forms_match_the_unit_forms() {
+        let moved = pair_exchange_f32(400.0, 100.0, 200.0, 100.0, 10.0, 3.0);
+        let expect = 200.0 * 50.0 * (1.0 - (-0.6f64).exp());
+        assert!((f64::from(moved) - expect).abs() < 1e-2);
+        let moved = pair_exchange_at_rate_f32(400.0, 100.0, 200.0, 100.0, 0.2, 3.0);
+        assert!((f64::from(moved) - expect).abs() < 1e-2);
+    }
+
     use super::*;
     use proptest::prelude::*;
 

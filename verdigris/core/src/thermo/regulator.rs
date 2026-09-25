@@ -15,11 +15,12 @@
 //! rounding. The step never overshoots the target: the heat moved is capped
 //! at what brings the controlled body exactly to it.
 //!
-//! H4 migrates the thermomachines, space heaters, cryo, suit coolers and
-//! rigs onto this; M4 only builds and tests it.
+//! Lives in core (`rust_architecture.md` §8 step 2): heat's regulator law,
+//! the FFI regulator binds and any future machine that pumps heat all step
+//! through this one function.
 
-use vg_core::thermo::ThermalBody;
-use vg_core::units::{HeatCapacity, Kelvin};
+use super::ThermalBody;
+use crate::units::{HeatCapacity, Kelvin};
 
 /// Which directions a regulator may drive.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

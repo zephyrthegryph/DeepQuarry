@@ -11,10 +11,11 @@ use vg_core::outbox::Lane;
 use vg_core::watch::Cmp;
 use vg_heat::body::state;
 use vg_heat::consts::{RADIATING_AREA, SPACE_SKY_TEMPERATURE, STEFAN_BOLTZMANN, TCMB};
+use vg_core::thermo::Phase;
 use vg_heat::couple::ledger;
 use vg_heat::world::WatchCond;
 use vg_heat::{
-    Body, BodyCmd, CellSpec, Coupling, GasExchange, GasProbe, GasRef, HeatConfig, HeatWorld, Phase,
+    Body, BodyCmd, CellSpec, Coupling, GasExchange, GasProbe, GasRef, HeatConfig, HeatWorld,
     Target, WatchTarget,
 };
 

@@ -10,84 +10,36 @@
 //! every one of those call sites already reduces to exactly the function or
 //! law next to it here.
 //!
-//! - **Body↔environment exchange**: [`pair_exchange`]/[`pair_exchange_at_rate`]
-//!   (conductance, or a precomputed rate, over `dt`; a reservoir passes
-//!   `f32::INFINITY`), and [`relax_toward`] for the analytic path against a
-//!   reservoir-like environment. As a law: [`BodyEnvironmentExchange`].
-//! - **The phase buffer**: [`phase_temperature`]/[`phase_energy`] (a phase
-//!   plateau's latent-heat step).
-//! - **The Regulator as a heat pump**: [`regulator_step`] (wraps the
-//!   already-pure [`Regulator::step`]). As a law: [`RegulatorHeatPump`].
+//! The exchange math itself (pair exchange, the phase plateau, analytic
+//! relaxation, the regulator's COP-limited heat pump) is `vg_core::thermo`;
+//! this module only holds heat's own laws over it.
+//!
+//! - **Body↔environment exchange**: `thermo::pair_exchange_f32` over a
+//!   pair's conductance and `dt` (a reservoir passes `f32::INFINITY`), and
+//!   `thermo::relax_toward` for the analytic path. As a law:
+//!   [`BodyEnvironmentExchange`].
+//! - **The Regulator as a heat pump**: `thermo::Regulator::step`. As a law:
+//!   [`RegulatorHeatPump`].
 //! - **Coupling laws**: [`solid_gas_exchange`] (solid↔gas, conductance
 //!   scaled by [`crate::consts::GAS_COUPLING`] and deadbanded by
 //!   [`crate::consts::GAS_COUPLING_MIN_K`]; as a law, [`SolidGasCoupling`])
-//!   and [`pair_exchange`] again (body↔gas: a body's gas-target coupling is
+//!   and `pair_exchange` again (body↔gas: a body's gas-target coupling is
 //!   exactly a two-body exchange against the gas's temperature/capacity, so
 //!   it needs no separate function -- this *is* the law, replacing
 //!   `GasExchange`/`GasRef`/`GasProbe`'s job of fetching those two numbers;
 //!   as a law, [`BodyGasCoupling`]).
 
 use vg_core::law::{Law, LawCtx, Settle};
-use vg_core::units::Seconds;
+use vg_core::thermo::{Regulator, ThermalBody, pair_exchange_at_rate_f32, pair_exchange_f32};
+use vg_core::units::{HeatCapacity, Kelvin, Seconds};
 
-use crate::body::{Phase, energy_at, temperature_of};
 use crate::consts::{GAS_COUPLING, GAS_COUPLING_MIN_K};
-pub use crate::couple::{pair_exchange, pair_exchange_at_rate};
-pub use crate::regulator::{Regulator, RegulatorMode, RegulatorStep};
-
-/// The phase buffer's temperature law: `energy_at(temperature_of(...))`
-/// round-trips. Re-exported under the law's name; [`crate::body`]'s own
-/// name (`temperature_of`) stays for its existing call sites.
-#[must_use]
-pub fn phase_temperature(energy: f32, capacity: f32, phase: Phase) -> f32 {
-    temperature_of(energy, capacity, phase)
-}
-
-/// The phase buffer's energy law. See [`phase_temperature`].
-#[must_use]
-pub fn phase_energy(temperature: f32, capacity: f32, phase: Phase) -> f32 {
-    energy_at(temperature, capacity, phase)
-}
-
-/// The exact exponential relaxation of a body toward a reservoir-like
-/// environment: `T(t) = T_inf + (T0 - T_inf)*e^(-(g/c)*(t - t0))`, with
-/// `T_inf = ambient + power/g` (a power source shifts the asymptote away
-/// from the environment). `g <= 0.0` or `c <= 0.0` returns `t0_temperature`
-/// unchanged (nothing to relax with).
-///
-/// This is the closed-form solution `pair_exchange`'s own conductance law
-/// integrates exactly, so using this instead of stepping is a performance
-/// choice (no work between crossings the caller cares about), not a
-/// different physics -- see `body.rs`'s module docs for when each applies.
-#[must_use]
-pub fn relax_toward(
-    t0_temperature: f32,
-    ambient: f32,
-    power: f32,
-    conductance: f32,
-    capacity: f32,
-    elapsed: f32,
-) -> f32 {
-    if conductance <= 0.0 || capacity <= 0.0 {
-        return t0_temperature;
-    }
-    let target = ambient + power / conductance;
-    let rate = f64::from(conductance) / f64::from(capacity);
-    #[allow(clippy::cast_possible_truncation)]
-    let value = target as f64
-        + (f64::from(t0_temperature) - f64::from(target))
-            * (-rate * f64::from(elapsed.max(0.0))).exp();
-    #[allow(clippy::cast_possible_truncation)]
-    {
-        value as f32
-    }
-}
 
 /// The solid↔gas coupling law: exact exchange at
 /// `rate = GAS_COUPLING * conductivity`, deadbanded so pairs already within
 /// [`GAS_COUPLING_MIN_K`] of each other don't churn every frame for no
 /// visible effect. Returns the energy moved from the solid to the gas (as
-/// [`pair_exchange_at_rate`]'s sign convention: positive leaves the solid).
+/// `pair_exchange_at_rate`'s sign convention: positive leaves the solid).
 /// `gas_capacity` is `f32::INFINITY` for a reservoir gas (space, a planet's
 /// atmosphere).
 #[must_use]
@@ -103,7 +55,7 @@ pub fn solid_gas_exchange(
         return 0.0;
     }
     let rate = GAS_COUPLING * conductivity;
-    pair_exchange_at_rate(
+    pair_exchange_at_rate_f32(
         solid_temperature,
         solid_capacity,
         gas_temperature,
@@ -111,35 +63,6 @@ pub fn solid_gas_exchange(
         rate,
         dt,
     )
-}
-
-/// The Regulator as a heat pump: `work` electrical W drawn moves
-/// `step.moved` J into the controlled body and `step.other` J into (or out
-/// of, for pumped heating) the other side, `work == moved + (-other)` up to
-/// rounding (heating) or `work + moved.abs() == other` (cooling, rejecting
-/// `Q + W`). See [`Regulator::step`]'s own docs for the exact per-mode
-/// formulas; this function exists so the law has one name alongside the
-/// others in this module.
-#[must_use]
-pub fn regulator_step(
-    regulator: &Regulator,
-    controlled_temperature: f32,
-    controlled_capacity: f32,
-    other_temperature: f32,
-    other_capacity: f32,
-    dt: f32,
-) -> RegulatorStep {
-    use vg_core::thermo::ThermalBody;
-    use vg_core::units::{HeatCapacity, Kelvin};
-    let controlled = ThermalBody::new(
-        HeatCapacity::from(controlled_capacity),
-        Kelvin::from(controlled_temperature),
-    );
-    let other = ThermalBody::new(
-        HeatCapacity::from(other_capacity),
-        Kelvin::from(other_temperature),
-    );
-    regulator.step(controlled, other, dt)
 }
 
 // -------------------------------------------------------- Law/LawCtx (Core A)
@@ -283,7 +206,7 @@ fn pair_law_step(ctx: &mut LawCtx<'_, PairCoupling, PairSides>, dt: Seconds) -> 
     let (ta, ca) = (ctx.writes.a.temperature, ctx.writes.a.effective_capacity());
     let (tb, cb) = (ctx.writes.b.temperature, ctx.writes.b.effective_capacity());
     #[allow(clippy::cast_possible_truncation)]
-    let moved = pair_exchange(ta, ca, tb, cb, ctx.reads.conductance, dt.0 as f32);
+    let moved = pair_exchange_f32(ta, ca, tb, cb, ctx.reads.conductance, dt.0 as f32);
     if moved == 0.0 {
         return Settle::Sleep;
     }
@@ -292,7 +215,7 @@ fn pair_law_step(ctx: &mut LawCtx<'_, PairCoupling, PairSides>, dt: Seconds) -> 
 }
 
 /// Body<->environment exchange as a [`Law`]: the stepped path (an exact
-/// two-body [`pair_exchange`] every frame). The analytic [`relax_toward`]
+/// two-body `pair_exchange` every frame). The analytic `relax_toward`
 /// path is a scheduling optimisation over the same law, not a different
 /// one -- see this module's docs.
 pub struct BodyEnvironmentExchange;
@@ -359,7 +282,7 @@ impl Law for BodyGasCoupling {
     }
 }
 
-/// The Regulator as a heat pump, as a [`Law`]: [`regulator_step`] applied to
+/// The Regulator as a heat pump, as a [`Law`]: [`Regulator::step`] applied to
 /// both sides directly (the controlled body and whatever the rejected/drawn
 /// heat's other side is), so a regulator's own settings are `Reads` and
 /// both bodies it moves energy between are `Writes` -- matching every other
@@ -372,12 +295,9 @@ impl Law for RegulatorHeatPump {
     const NAME: &'static str = "heat_regulator_pump";
     fn step(ctx: &mut LawCtx<'_, Regulator, PairSides>, dt: Seconds) -> Settle {
         #[allow(clippy::cast_possible_truncation)]
-        let step = regulator_step(
-            ctx.reads,
-            ctx.writes.a.temperature,
-            ctx.writes.a.effective_capacity(),
-            ctx.writes.b.temperature,
-            ctx.writes.b.effective_capacity(),
+        let step = ctx.reads.step(
+            ThermalBody::new(HeatCapacity::from(ctx.writes.a.effective_capacity()), Kelvin::from(ctx.writes.a.temperature)),
+            ThermalBody::new(HeatCapacity::from(ctx.writes.b.effective_capacity()), Kelvin::from(ctx.writes.b.temperature)),
             dt.0 as f32,
         );
         if step.moved == 0.0 && step.other == 0.0 {
@@ -396,6 +316,7 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
     use vg_core::conservation::{Conserved, Ledger};
+    use vg_core::thermo::RegulatorMode;
 
     #[test]
     fn thermal_side_conserved_reports_capacity_times_temperature() {
@@ -409,65 +330,6 @@ mod tests {
         let mut out = [123.0]; // a nonzero starting value: totals() must only add
         ThermalSide::reservoir(999.0).totals(&mut out);
         assert_eq!(out[0], 123.0, "a reservoir's own energy is outside the tracked total");
-    }
-
-    #[test]
-    fn phase_law_round_trips_through_the_plateau() {
-        let phase = Phase {
-            temperature: 273.15,
-            latent: 500.0,
-        };
-        // Below the plateau: sensible heat only.
-        assert!(
-            (phase_temperature(phase_energy(260.0, 10.0, phase), 10.0, phase) - 260.0).abs() < 1e-3
-        );
-        // On the plateau: energy absorbed without a temperature change.
-        assert_eq!(
-            phase_temperature(phase_energy(273.15, 10.0, phase) + 250.0, 10.0, phase),
-            273.15
-        );
-        // Above the plateau: sensible heat resumes.
-        assert!(
-            (phase_temperature(phase_energy(300.0, 10.0, phase), 10.0, phase) - 300.0).abs() < 1e-3
-        );
-    }
-
-    #[test]
-    fn relax_toward_a_reservoir_matches_the_stepped_exchange_in_the_limit() {
-        // Many small steps of the exact stepped law should approach the
-        // same value the closed-form relaxation gives directly, for a
-        // reservoir environment (a body's own capacity, a huge other side).
-        let (t0, ambient, g, c) = (400.0_f32, 200.0_f32, 5.0_f32, 50.0_f32);
-        let mut stepped = t0;
-        let steps = 20_000;
-        let dt = 5.0 / steps as f32;
-        for _ in 0..steps {
-            let moved = pair_exchange(stepped, c, ambient, f32::INFINITY, g, dt);
-            stepped -= moved / c;
-        }
-        let closed = relax_toward(t0, ambient, 0.0, g, c, 5.0);
-        assert!(
-            (stepped - closed).abs() < 0.05,
-            "stepped={stepped} closed={closed}"
-        );
-    }
-
-    #[test]
-    fn relax_toward_shifts_the_asymptote_by_power_over_conductance() {
-        let (ambient, g, power) = (300.0_f32, 10.0_f32, 50.0_f32);
-        // At equilibrium (t -> infinity, approximated by a long elapsed
-        // time), the body settles at ambient + power/g, not at ambient.
-        let settled = relax_toward(ambient, ambient, power, g, 1.0, 1e6);
-        assert!(
-            (settled - (ambient + power / g)).abs() < 1e-2,
-            "settled={settled}"
-        );
-    }
-
-    #[test]
-    fn relax_toward_is_a_no_op_with_no_conductance_or_capacity() {
-        assert_eq!(relax_toward(310.0, 200.0, 0.0, 0.0, 10.0, 5.0), 310.0);
-        assert_eq!(relax_toward(310.0, 200.0, 0.0, 5.0, 0.0, 5.0), 310.0);
     }
 
     #[test]
@@ -599,7 +461,7 @@ mod tests {
         // The exact energy the underlying law predicts, computed
         // independently so this test would catch a law/wiring mismatch,
         // not just "the body warmed at all".
-        let expected_moved = pair_exchange(
+        let expected_moved = pair_exchange_f32(
             item_t0,
             item_capacity,
             gas_t0,
@@ -718,7 +580,7 @@ mod tests {
     }
 
     #[test]
-    fn regulator_heat_pump_law_conserves_and_matches_regulator_step() {
+    fn regulator_heat_pump_law_conserves_and_matches_the_core_regulator() {
         let regulator = Regulator {
             target: 310.0,
             max_power: 500.0,
@@ -729,7 +591,11 @@ mod tests {
             deadband: 0.05,
         };
         let (cc, co) = (50.0_f32, 1_000_000.0_f32); // other is effectively a huge sink
-        let expected = regulator_step(&regulator, 280.0, cc, 293.0, co, 1.0);
+        let expected = regulator.step(
+            ThermalBody::new(HeatCapacity::from(cc), Kelvin::from(280.0_f32)),
+            ThermalBody::new(HeatCapacity::from(co), Kelvin::from(293.0_f32)),
+            1.0,
+        );
 
         let mut events: Vec<u32> = Vec::new();
         let mut wakes = Vec::new();
@@ -758,7 +624,7 @@ mod tests {
         );
         assert!(
             (writes.a.temperature - (280.0 + expected.moved / cc)).abs() < 1e-3,
-            "law's result should match regulator_step exactly"
+            "law's result should match Regulator::step exactly"
         );
         let total = f64::from(writes.a.temperature) * f64::from(cc)
             + f64::from(writes.b.temperature) * f64::from(co);

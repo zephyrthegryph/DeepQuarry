@@ -15,8 +15,8 @@
 //!   tasks that move energy between the stores (solid ↔ gas in the same
 //!   cell, body ↔ cell / gas / body), each writing both sides with one
 //!   number so energy is conserved exactly.
-//! - [`regulator`]: the thermal regulator primitive (target temperature,
-//!   maximum power, COP-limited heat pump with rejected heat).
+//! - the thermal regulator, phase plateau and exchange math live in
+//!   `vg_core::thermo` (the only exchange math in the workspace).
 //! - [`world`]: [`world::HeatWorld`], the main-thread host that owns the
 //!   [`Sim`](vg_core::sim::Sim), its ports and watches, and the API the DM
 //!   binds call.
@@ -26,13 +26,11 @@ pub mod consts;
 pub mod couple;
 pub mod laws;
 pub mod mob;
-pub mod regulator;
 pub mod solid;
 pub mod world;
 
-pub use body::{Bodies, Body, BodyCmd, Coupling, Phase, Target};
+pub use body::{Bodies, Body, BodyCmd, Coupling, Target};
 pub use couple::{GasExchange, GasProbe, GasRef};
 pub use mob::{MobHandle, MobHeatBody, MobHeatCmd, MobHeatConfig, MobHeatFlux, MobHeatWorld, slot_of};
-pub use regulator::{Regulator, RegulatorMode, RegulatorStep};
 pub use solid::{SolidCell, SolidCmd, SolidHeat};
 pub use world::{BodyHandle, CellKind, CellSpec, HeatConfig, HeatWorld, WatchTarget};

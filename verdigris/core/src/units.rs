@@ -113,18 +113,6 @@ unit!(
     Kelvin, "K"
 );
 
-/// Cosmic microwave background, K. The floor of every body and gas. Single
-/// source for gas and heat (`rust_core.md` §15 core consolidation; H1 dedup
-/// audit finding); both `vg_heat::consts::TCMB` and `vg_gas`'s copy
-/// re-export this.
-/// @dm-define TCMB
-pub const TCMB: f32 = 2.7;
-/// 0 °C, K. Single source for gas and heat.
-/// @dm-define T0C
-pub const T0C: f32 = 273.15;
-/// 20 °C, K. Single source for gas and heat.
-/// @dm-define T20C
-pub const T20C: f32 = 293.15;
 unit!(
     /// Energy.
     Joules, "J"
