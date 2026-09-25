@@ -21,16 +21,13 @@
 /atom/var/tmp/datum/ledger/ledger
 
 /// The ledger for `holder`, made on first use, synced. Null if it has no slots.
-/// `destroying`: the destroy transaction's contents phase, which runs after
-/// phase 0 has marked the holder QDELETED and must still resolve a holder whose
-/// latent contents were never built (an unmaterialized probe, a sealed kit).
-/proc/dq_ledger(atom/holder, destroying = FALSE)
+/proc/dq_ledger(atom/holder)
 	if(!holder)
 		return null
 	var/datum/ledger/L = holder.ledger
 	if(!L)
 		var/list/defs = dq_slot_defs_for(holder)
-		if(!defs || (QDELETED(holder) && !(destroying && holder.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)))
+		if(!defs || QDELETED(holder))
 			return null
 		L = new /datum/ledger(holder, defs)
 		holder.ledger = L
@@ -534,7 +531,7 @@
 /// §2) is running right now -- set from phase 0, for the life of the
 /// transaction. A hook reacting to a move can check this (or the `flags`
 /// arg it's already given, LEDGER_MOVE_DESTROYING) to skip re-derivation
-/// that a moment-later qdel would waste (body invalidate, life_wake, HUD,
+/// that a moment-later qdel would waste (body invalidate, om_changed, HUD,
 /// factor recompute).
 /proc/holder_destroying(datum/holder)
 	return (holder && (holder.datum_flags & DF_DESTROYING)) ? TRUE : FALSE

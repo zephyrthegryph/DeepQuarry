@@ -469,10 +469,9 @@
 	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
 
-/// Idle mob Life cost with mob hibernation off, then on (doc/mob_life_architecture.md §4.9).
-/// Spawns idle mice (every system has a sleep rule, so they hibernate) and humans (partly
-/// asleep until the physiology systems gain sleep rules) on a fixture, then measures SSmobs
-/// with GLOB.mob_hibernation_enabled FALSE and TRUE.
+/// Idle mob Life cost with mob hibernation off, then on (doc/rewrite/life_on_om.md §5).
+/// Spawns idle mice (every system has a sleep rule, so they hibernate) and humans on a fixture,
+/// then measures the life behaviour with GLOB.mob_hibernation_enabled FALSE and TRUE.
 /datum/benchmark/idle_mobs
 	id = "idle_mobs"
 	description = "Idle mob Life cost with mob hibernation off and on"
@@ -483,7 +482,7 @@
 	var/list/mob/living/mobs = list()
 	var/mice = param("mice", 300)
 	var/humans = param("humans", 40)
-	var/cycles = param("cycles", 30)
+	var/cycles = param("cycles", 10)
 	for(var/i in 1 to mice)
 		var/mob/living/simple_mob/animal/passive/mouse/M = new(pick(turfs))
 		benchmark_quiet_simple_mob(M)
@@ -497,31 +496,49 @@
 
 	GLOB.mob_hibernation_enabled = FALSE
 	for(var/mob/living/L as anything in mobs)
-		L.life_wake(LIFE_SYS_ALL, "benchmark")
-	wait_fires(SSmobs, SSmobs.life_slices * 2)
+		L.life_resume("benchmark")
+		L.life_changed(CHANGE_EXPLICIT)
+	wait_seconds(LIFE_CYCLE_SECONDS * 2)
+	var/list/before = benchmark_life_totals()
 	begin_window()
-	wait_fires(SSmobs, SSmobs.life_slices * cycles)
+	wait_seconds(LIFE_CYCLE_SECONDS * cycles)
 	end_window("hibernation_off")
-	metric("hibernation_off_ssmobs_cost_ms", SSmobs.cost, "ms")
+	benchmark_life_metrics("hibernation_off", before)
 	metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
 
 	GLOB.mob_hibernation_enabled = TRUE
-	wait_fires(SSmobs, SSmobs.life_slices * 4)
+	wait_seconds(LIFE_CYCLE_SECONDS * 4)
+	before = benchmark_life_totals()
 	begin_window()
-	wait_fires(SSmobs, SSmobs.life_slices * cycles)
+	wait_seconds(LIFE_CYCLE_SECONDS * cycles)
 	end_window("hibernation_on")
-	metric("hibernation_on_ssmobs_cost_ms", SSmobs.cost, "ms")
+	benchmark_life_metrics("hibernation_on", before)
 	metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
-	var/list/awake_bits = list()
+	var/list/awake = list()
 	for(var/mob/living/L as anything in mobs)
 		if(!L.life_hibernating)
-			awake_bits["[L.type]"] |= L.life_awake
-	detail("hibernation_on_awake_bits_by_type", awake_bits)
+			awake["[L.type]"]++
+	detail("hibernation_on_awake_by_type", awake)
 
 	GLOB.mob_hibernation_enabled = was_enabled
 	for(var/mob/living/L as anything in mobs)
 		qdel(L)
 		CHECK_TICK
+
+/// The life behaviour's cumulative totals on the live scheduler: ms, frames.
+/proc/benchmark_life_totals()
+	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/behaviour/life)
+	var/list/S = GLOB.om_live_sched.stat_for(life.id)
+	return list(S[OM_STAT_MS], GLOB.life_frames)
+
+/// Life cost and delivered frames since `before` (benchmark_life_totals()).
+/datum/benchmark/proc/benchmark_life_metrics(prefix, list/before)
+	var/list/after = benchmark_life_totals()
+	var/ms = after[1] - before[1]
+	var/frames = after[2] - before[2]
+	metric("[prefix]_life_ms", ms, "ms")
+	metric("[prefix]_life_frames", frames, "frames", "none")
+	metric("[prefix]_life_us_per_frame", frames ? ms * 1000 / frames : 0, "us")
 
 /// Puts a simple mob's AI to sleep and opens its environment limits, so it idles without
 /// reacting to the fixture's air.

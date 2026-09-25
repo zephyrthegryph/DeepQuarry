@@ -207,12 +207,12 @@
 /mob/living/Stun(amount, ignore_canstun = FALSE)
 	amount = scale_disable_duration(amount)
 	..(amount)
-	if(stunned > 0)
+	if(get_stunned() > 0)
 		add_status_indicator("stunned")
 
 /mob/living/SetStunned(amount, ignore_canstun = FALSE)
 	..()
-	if(stunned <= 0)
+	if(get_stunned() <= 0)
 		remove_status_indicator("stunned")
 	else
 		add_status_indicator("stunned")
@@ -221,7 +221,7 @@
 	if(amount > 0)
 		amount = scale_disable_duration(amount)
 	..(amount)
-	if(stunned <= 0)
+	if(get_stunned() <= 0)
 		remove_status_indicator("stunned")
 	else
 		add_status_indicator("stunned")
@@ -229,12 +229,12 @@
 /mob/living/Weaken(amount, ignore_canstun = FALSE)
 	amount = scale_disable_duration(amount)
 	..(amount)
-	if(weakened > 0)
+	if(get_weakened() > 0)
 		add_status_indicator("weakened")
 
 /mob/living/SetWeakened(amount, ignore_canstun = FALSE)
 	..()
-	if(weakened <= 0)
+	if(get_weakened() <= 0)
 		remove_status_indicator("weakened")
 	else
 		add_status_indicator("weakened")
@@ -243,7 +243,7 @@
 	if(amount > 0)
 		amount = scale_disable_duration(amount)
 	..(amount)
-	if(weakened <= 0)
+	if(get_weakened() <= 0)
 		remove_status_indicator("weakened")
 	else
 		add_status_indicator("weakened")
@@ -251,12 +251,12 @@
 /mob/living/Paralyse(amount, ignore_canstun = FALSE)
 	amount = scale_disable_duration(amount)
 	..(amount)
-	if(paralysis > 0)
+	if(get_paralysis() > 0)
 		add_status_indicator("paralysis")
 
 /mob/living/SetParalysis(amount, ignore_canstun = FALSE)
 	..()
-	if(paralysis <= 0)
+	if(get_paralysis() <= 0)
 		remove_status_indicator("paralysis")
 	else
 		add_status_indicator("paralysis")
@@ -265,7 +265,7 @@
 	if(amount > 0)
 		amount = scale_disable_duration(amount)
 	..(amount)
-	if(paralysis <= 0)
+	if(get_paralysis() <= 0)
 		remove_status_indicator("paralysis")
 	else
 		add_status_indicator("paralysis")
@@ -507,7 +507,7 @@
 	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (last_resist_time + RESIST_COOLDOWN < world.time))
 		last_resist_time = world.time
 		resist_grab()
-		if(!weakened)
+		if(!get_weakened())
 			process_resist()
 		else if(absorbed && isbelly(loc))			// Allow absorbed resistance
 			var/obj/belly/B = loc

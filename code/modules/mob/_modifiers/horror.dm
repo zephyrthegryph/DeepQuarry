@@ -433,7 +433,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		handle_death()
 		return
 
-	if(!armor_deployed && (unfortunate_soul.stunned || unfortunate_soul.weakened || unfortunate_soul.paralysis || unfortunate_soul.vitality() < 0.75))
+	if(!armor_deployed && (unfortunate_soul.get_stunned() || unfortunate_soul.get_weakened() || unfortunate_soul.get_paralysis() || unfortunate_soul.vitality() < 0.75))
 		if(assume_battle_stance())
 			unfortunate_soul.mend(TREAT_ANALGESIC, 200) //WAKE UP SAMURI
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 5)
@@ -451,7 +451,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(armor_deployed && ((armor_deployed_time + armor_duration) < world.time)) //Time ran out.
 
 		//Are we still in panic mode?
-		if(unfortunate_soul.stunned || unfortunate_soul.weakened || unfortunate_soul.paralysis || (unfortunate_soul.vitality() < 0.75))
+		if(unfortunate_soul.get_stunned() || unfortunate_soul.get_weakened() || unfortunate_soul.get_paralysis() || (unfortunate_soul.vitality() < 0.75))
 			return
 		else
 			equip_flesh_armor(/obj/item/clothing/suit/space/changeling/armored, /obj/item/clothing/head/helmet/space/changeling/armored, /obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling)

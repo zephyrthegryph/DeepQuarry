@@ -196,7 +196,7 @@
 #include "dq_explosion_batch_tests.dm"
 #include "dq_integrity_pool_tests.dm"
 #include "dq_robot_machine_tests.dm"
-#include "dq_life_scheduler_tests.dm"
+#include "dq_life_om_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_mutation_tests.dm"
 #include "dq_dna_storage_tests.dm"
@@ -237,6 +237,8 @@
 #include "../benchmarks/_benchmark.dm"
 #include "../benchmarks/scenarios.dm"
 #include "../benchmarks/om_dispatch.dm"
+#include "../benchmarks/life_sweep.dm"
+#include "../benchmarks/life_sweep_adapter.dm"
 #endif
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"

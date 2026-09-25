@@ -105,7 +105,7 @@
 	if (user.restrained() || user.buckled)
 		to_chat(user, span_notice("You need your hands and legs free for this."))
 		return 0
-	if (user.stat || user.paralysis || user.sleeping || user.lying || user.weakened)
+	if (user.stat || user.get_paralysis() || user.sleeping || user.lying || user.get_weakened())
 		return 0
 	if (isAI(user))
 		to_chat(user, span_notice("You need hands for this."))

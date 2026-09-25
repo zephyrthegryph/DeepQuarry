@@ -510,13 +510,3 @@ SUBSYSTEM_DEF(reactor)
 /datum/proc/react_sleep_violation()
 	SHOULD_NOT_SLEEP(TRUE)
 	return null
-
-// --- Mob life hook (reactor.md §6) -------------------------------------------------------------
-
-/**
- * The one place a reactor wake reaches mob Life. A mob's on_react() (or a life system's watch)
- * calls this with the LIFE_SYS_* bits to wake and a short `what` ("gas", "timer", ...).
- */
-/mob/living/proc/reactor_wake(bits, what)
-	SHOULD_NOT_SLEEP(TRUE)
-	life_wake(bits, "reactor:[what]")

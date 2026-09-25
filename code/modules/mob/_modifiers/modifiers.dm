@@ -138,7 +138,7 @@
 	if(mod.on_created_text)
 		to_chat(src, mod.on_created_text)
 	LAZYADD(modifiers, mod)
-	life_wake(LIFE_SYS_UPKEEP, "modifier")
+	om_changed(src, CHANGE_MOB_CONDITIONS)
 	if(mod.flags & MODIFIER_GENETIC)
 		record_genetic_modifier(mod.type, TRUE)
 	if(mod.factors)

@@ -58,7 +58,7 @@
 	for(var/mob/living/L as anything in victims)
 		victims[L] = get_turf(L)
 		L.Sleeping(rand(10,20))
-		L.Life()
+		L.life_frame()
 		L.loc = null
 
 	// Blow up the shuttle

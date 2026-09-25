@@ -410,7 +410,7 @@
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
 	M.silent = max(M.silent, 10)
-	M.paralysis = max(M.paralysis, 10)
+	M.SetParalysis(max(M.get_paralysis(), 10))
 
 /datum/reagent/toxin/zombiepowder/Destroy()
 	if(holder && holder.my_atom && ismob(holder.my_atom))
@@ -440,7 +440,7 @@
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
 	M.silent = max(M.silent, 10)
-	M.paralysis = max(M.paralysis, 10)
+	M.SetParalysis(max(M.get_paralysis(), 10))
 
 	if(prob(0.1))
 		M.visible_message("[M] wheezes.", "You wheeze sharply... it's cold.")

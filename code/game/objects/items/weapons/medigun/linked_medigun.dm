@@ -164,10 +164,10 @@
 				H.add_modifier(/datum/modifier/medbeameffect, 2 SECONDS)
 			if(H.current_pain() && checked_use(5))
 				H.mend(TREAT_ANALGESIC, 20)
-			if(H.weakened && checked_use(5))
+			if(H.get_weakened() && checked_use(5))
 				H.AdjustWeakened(-1)
 			if(lastier >= 3)
-				if(H.paralysis && (checked_use(15)))
+				if(H.get_paralysis() && (checked_use(15)))
 					H.AdjustParalysis(-1)
 
 		var/healmod = lastier

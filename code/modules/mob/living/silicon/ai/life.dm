@@ -13,7 +13,7 @@
 /// `if(stat == DEAD) return`, local failure cleanup and power.
 /datum/life_system/ai_power
 	name = "ai power"
-	bit = LIFE_SYS_MACHINE
+	wake_on = LIFE_WAKE_ON_MACHINE
 	phase = LIFE_PHASE_INPUT
 	order = 0
 	life_sets = LIFE_SET_AI
@@ -37,7 +37,7 @@
 /// Hardware integrity, capacitor and death are decided by the machine body.
 /datum/life_system/ai_body
 	name = "ai body"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_INPUT
 	order = 10
 	life_sets = LIFE_SET_AI
@@ -48,7 +48,9 @@
 	if(self.stat == DEAD)
 		return LIFE_HALT
 
-/// EMP stun wears off.
+/// The AI's only status was its EMP stun, which is now a timed contribution that ends on its
+/// own (doc/rewrite/life_on_om.md §7). This variant keeps the AI out of the living statuses
+/// (speech and confusion counters), as its old Life() did.
 /datum/life_system/statuses/silicon/ai
 	mob_type = /mob/living/silicon/ai
 	phase = LIFE_PHASE_BODY
@@ -56,12 +58,15 @@
 	segment = NONE
 
 /datum/life_system/statuses/silicon/ai/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
-	stunned(self)	// Handle EMP-stun
+	return
+
+/datum/life_system/statuses/silicon/ai/idle(mob/living/silicon/ai/self)
+	return TRUE
 
 /// Lying down, malfunction, APU and queued alarms.
 /datum/life_system/ai_upkeep
 	name = "ai upkeep"
-	bit = LIFE_SYS_MACHINE
+	wake_on = LIFE_WAKE_ON_MACHINE
 	phase = LIFE_PHASE_BODY
 	order = 10
 	life_sets = LIFE_SET_AI

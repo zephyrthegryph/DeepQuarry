@@ -72,7 +72,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 		return
 	if(!isobserver(ghost))
 		return
-	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && ghost.mind.current.enabled == TRUE) // Disabled body shouldn't block this.
+	var/mob/living/body = ghost.mind?.current
+	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && !(istype(body) && body.life_suspended())) // A suspended body (kept for reforming) shouldn't block this.
 		if(istype(ghost.mind.current.loc, /obj/item/mmi))
 			if(tgui_alert(ghost, "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", "Delete Brain", list("No","Yes")) != "Yes")
 				return

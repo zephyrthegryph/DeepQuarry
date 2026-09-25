@@ -21,7 +21,7 @@
 		return
 	if(owner.client && (owner.client.prefs.muted & MUTE_IC))
 		return
-	if((prob(1) && prob(2) && owner.paralysis <= 1))
+	if((prob(1) && prob(2) && owner.get_paralysis() <= 1))
 		owner.Stun(10)
 		owner.make_jittery(100)
 		switch(rand(1, 3))

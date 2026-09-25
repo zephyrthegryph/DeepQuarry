@@ -5,6 +5,12 @@ living mob is processed each cycle (`Life()`), whether that processing is event-
 how the big case-based procedures should be broken up, and the redesign of cyborgs,
 drones, the AI, proteans and prometheans.
 
+> **Scheduling superseded (2026-09-25).** Life no longer runs from SSmobs or a `Life()` proc:
+> it runs on the object-model core, and wake bits became change channels. Sections 4.3,
+> 4.8 and 4.9 describe the old scheduler; [rewrite/life_on_om.md](rewrite/life_on_om.md)
+> is authoritative for when systems run, sleep and wake. The content model (systems,
+> families, variants, gates, segments) described here still holds.
+
 Method: three read-only review passes (life processing, cyborgs,
 proteans/prometheans), then the serious claims re-checked by hand. Section 8 is a
 single roadmap that replaces section 7 of the health review.

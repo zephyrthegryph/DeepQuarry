@@ -105,7 +105,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.ai_brain?.set_hostile(FALSE)
 			if(shadekin.ai_brain)
 				shadekin.ai_brain.mauling = TRUE
-			shadekin.Life()
+			shadekin.life_frame()
 			//Remove when done
 			spawn(10 SECONDS)
 				if(shadekin)

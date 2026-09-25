@@ -83,7 +83,7 @@
 	if(!usr.checkClickCooldown())
 		return
 
-	if(usr.stat || usr.restrained() || usr.stunned || usr.lying)
+	if(usr.stat || usr.restrained() || usr.get_stunned() || usr.lying)
 		return 1
 
 	if(!(owner in usr))
@@ -114,7 +114,7 @@
 /atom/movable/screen/storage/Click()
 	if(!usr.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+	if(usr.stat || usr.get_paralysis() || usr.get_stunned() || usr.get_weakened())
 		return 1
 	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
@@ -324,7 +324,7 @@
 		if("internal") //dear god this entire thing needs to be rewritten this is literally assaulting my eyes with how awful it is. FUCK.
 			if(iscarbon(usr))
 				var/mob/living/carbon/C = usr
-				if(!C.stat && !C.stunned && !C.paralysis && !C.restrained())
+				if(!C.stat && !C.get_stunned() && !C.get_paralysis() && !C.restrained())
 					if(C.internal)
 						C.internal = null
 						to_chat(C, span_notice("No longer running on internals."))
@@ -683,7 +683,7 @@
 	// We don't even know if it's a middle click
 	if(!usr.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+	if(usr.stat || usr.get_paralysis() || usr.get_stunned() || usr.get_weakened())
 		return 1
 	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
@@ -938,7 +938,7 @@
 /atom/movable/screen/mapper/powbutton/Click()
 	if(!usr.checkClickCooldown())
 		return TRUE
-	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+	if(usr.stat || usr.get_paralysis() || usr.get_stunned() || usr.get_weakened())
 		return TRUE
 	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
@@ -956,7 +956,7 @@
 /atom/movable/screen/mapper/mapbutton/Click()
 	if(!usr.checkClickCooldown())
 		return TRUE
-	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+	if(usr.stat || usr.get_paralysis() || usr.get_stunned() || usr.get_weakened())
 		return TRUE
 	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
@@ -998,7 +998,7 @@
 	var/mob/user = usr
 	if(!user.checkClickCooldown())
 		return TRUE
-	if(user.stat || user.paralysis || user.stunned || user.weakened)
+	if(user.stat || user.get_paralysis() || user.get_stunned() || user.get_weakened())
 		return TRUE
 	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE

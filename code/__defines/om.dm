@@ -43,6 +43,8 @@
 #define CHANGE_MOB_STATUS (1<<15)
 #define CHANGE_MOB_VITALS (1<<16)
 #define CHANGE_MOB_CAN_MOVE (1<<17)
+/// Modifiers, instability, diseases: the long-running conditions the upkeep systems follow.
+#define CHANGE_MOB_CONDITIONS (1<<18)
 
 // Item family.
 #define CHANGE_ITEM_LOC (1<<8)
@@ -106,6 +108,7 @@
 // Status and stat presets.
 #define EFFECT_STUNNED "stunned"
 #define EFFECT_PARALYZED "paralyzed"
+#define EFFECT_WEAKENED "weakened"
 #define EFFECT_BUCKLED "buckled"
 #define EFFECT_SLOWED "slowed"
 #define EFFECT_BLINDED "blinded"

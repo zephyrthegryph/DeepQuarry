@@ -298,7 +298,7 @@
 			"health" = round((2 * patient.vitality() - 1) * 100),
 			"max_health" = 100,
 			"findings" = findings,
-			"paralysis" = patient.paralysis,
+			"paralysis" = patient.get_paralysis(),
 			"braindamage" = !!patient.injury_load(INJURY_CATEGORY_NEURAL),
 			"clonedamage" = !!patient.injury_load(INJURY_CATEGORY_GENETIC),
 			"ingested_reagents" = ingested_reagents

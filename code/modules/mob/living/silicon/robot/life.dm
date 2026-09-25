@@ -13,7 +13,7 @@
 /// `if(transforming) return` and the per-cycle power counter reset.
 /datum/life_system/robot_cycle
 	name = "robot cycle"
-	bit = LIFE_SYS_MACHINE
+	wake_on = LIFE_WAKE_ON_MACHINE
 	phase = LIFE_PHASE_INPUT
 	order = 0
 	life_sets = LIFE_SET_ROBOT
@@ -42,7 +42,7 @@
 /// One ledger draw of the cached demand; brownout on shortfall; heat debt.
 /datum/life_system/robot_power
 	name = "robot power"
-	bit = LIFE_SYS_MACHINE
+	wake_on = LIFE_WAKE_ON_MACHINE
 	phase = LIFE_PHASE_BODY
 	order = 10
 	life_sets = LIFE_SET_ROBOT
@@ -55,7 +55,7 @@
 /// Vitals, part breakage, consciousness and death: the machine plan decides.
 /datum/life_system/robot_body
 	name = "robot body"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_BODY
 	order = 20
 	life_sets = LIFE_SET_ROBOT
@@ -67,7 +67,7 @@
 /// Client readouts: HUD, vision and module items. Camera, radio and lights change on events.
 /datum/life_system/robot_interface
 	name = "robot interface"
-	bit = LIFE_SYS_HUD
+	wake_on = LIFE_WAKE_ON_HUD
 	phase = LIFE_PHASE_OUTPUT
 	order = 10
 	life_sets = LIFE_SET_ROBOT
@@ -82,7 +82,7 @@
 /// Queued alarms reach the robot.
 /datum/life_system/robot_alarms
 	name = "robot alarms"
-	bit = LIFE_SYS_MACHINE
+	wake_on = LIFE_WAKE_ON_MACHINE
 	phase = LIFE_PHASE_OUTPUT
 	order = 20
 	life_sets = LIFE_SET_ROBOT
@@ -100,7 +100,7 @@
 /// Temporary blindness, deafness and blur wear off.
 /datum/life_system/robot_senses
 	name = "robot senses"
-	bit = LIFE_SYS_SENSES
+	wake_on = LIFE_WAKE_ON_SENSES
 	phase = LIFE_PHASE_INPUT
 	order = 30
 	life_sets = LIFE_SET_ROBOT

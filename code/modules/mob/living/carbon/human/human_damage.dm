@@ -9,7 +9,7 @@
 /mob/living/carbon/human/Paralyse(amount, ignore_canstun = FALSE)
 	if(has_mutation(HULK))	return
 	// Notify our AI if they can now control the suit.
-	if(wearing_rig && !stat && paralysis < amount) //We are passing out right this second.
+	if(wearing_rig && !stat && get_paralysis() < amount) //We are passing out right this second.
 		wearing_rig.notify_ai(span_danger("Warning: user consciousness failure. Mobility control passed to integrated intelligence system."))
 	..()
 

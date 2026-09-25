@@ -491,7 +491,7 @@
 /// the body is settled; bodies without a physiology never get it.
 /datum/life_system/physiology
 	name = "physiology"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_BODY
 	order = 85
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
@@ -503,4 +503,4 @@
 /datum/life_system/physiology/tick(mob/living/self, datum/life_context/ctx)
 	if(ctx?.in_stasis(self))
 		return
-	self.body?.physiology_tick(ctx ? ctx.seconds : LIFE_NOMINAL_SECONDS)
+	self.body?.physiology_tick(ctx ? ctx.seconds : LIFE_CYCLE_SECONDS)

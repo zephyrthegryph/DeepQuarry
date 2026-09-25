@@ -19,7 +19,7 @@
 /mob/living/proc/adjust_instability(amount)
 	instability = between(0, round(instability + amount, TECHNOMANCER_INSTABILITY_PRECISION), 200)
 	if(instability)
-		life_wake(LIFE_SYS_UPKEEP, "instability")
+		om_changed(src, CHANGE_MOB_CONDITIONS)
 
 // Proc: adjust_instability()
 // Parameters: 1 (amount - how much instability to give)

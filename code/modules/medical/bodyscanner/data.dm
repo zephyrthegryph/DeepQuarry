@@ -68,7 +68,7 @@
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_vitals(mob/living/carbon/human/H, list/out)
-	out["paralysisSeconds"] = round(H.paralysis / 4)
+	out["paralysisSeconds"] = round(H.status_seconds(EFFECT_PARALYZED))
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_abnormalities(mob/living/carbon/human/H, list/out)

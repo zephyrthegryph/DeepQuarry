@@ -167,13 +167,13 @@ if [ -n "$readers" ] && $grep -nE "^\s*(src\.)?[A-Za-z_][A-Za-z0-9_.]*\s*=\s*(vg
 	FAILED=1
 fi;
 
-part "life scheduler: no Life() overrides"
-# /mob/living/Life() is the life scheduler (code/modules/mob/living/life/scheduler.dm). Living
-# mobs change their upkeep by adding or overriding /datum/life_system variants, never by
-# overriding Life() (doc/mob_life_architecture.md §4).
-if $grep -n '^/mob/living[a-zA-Z0-9_/]*/(proc/)?Life\(' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/scheduler\.dm:'; then
+part "life: no Life() procs"
+# Mob Life runs on the object model (doc/rewrite/life_on_om.md): living mobs run the life
+# behaviour's frame (life_frame()) of /datum/life_system variants; observers run upkeep().
+# There is no Life() proc on any mob any more.
+if $grep -n '^/mob[a-zA-Z0-9_/]*/(proc/)?Life\(' "${code_files[@]}"; then
 	echo
-	echo -e "${RED}ERROR: Life() override on a living mob. Add a /datum/life_system (or a variant of one) instead.${NC}"
+	echo -e "${RED}ERROR: Life() proc on a mob. Living mobs: add a /datum/life_system (or a variant). Observers: override upkeep().${NC}"
 	FAILED=1
 fi;
 
@@ -187,12 +187,12 @@ if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LI
 	FAILED=1
 fi;
 
-part "life scheduler: wake and hibernate in one place"
-# Only /mob/living/proc/life_wake() and life_hibernate() (scheduler.dm) change whether a mob
-# runs; producers call life_wake() (doc/mob_life_architecture.md §4.9).
-if $grep -n '(life_hibernating|life_awake)\s*[|&]?=[^=]|hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/scheduler\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+part "life: wake and hibernate in one place"
+# Only life_om.dm changes whether a mob runs (life_hibernate(), life_resume(), the asleep list);
+# producers raise a mob change channel with om_changed() (doc/rewrite/life_on_om.md §5).
+if $grep -n '(life_hibernating|life_asleep)(\[[^]]*\])?\s*[|&]?=[^=]|life_hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/life_om\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
 	echo
-	echo -e "${RED}ERROR: direct write to a mob's wake state. Call life_wake(bits, reason) or life_hibernate(reason).${NC}"
+	echo -e "${RED}ERROR: direct write to a mob's wake state. Raise a channel with om_changed(), or use life_hibernate()/life_resume().${NC}"
 	FAILED=1
 fi;
 

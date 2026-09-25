@@ -4,33 +4,36 @@
 // emergency stasis, stasis cages, admin) is a /datum/modifier/stasis subtype that
 // contributes BF_STASIS, a 0..1 share of life processes suspended (max rule).
 //
-// The body reads BF_STASIS in ONE place, advance_stasis(), which Life() calls once
-// per cycle before any life system runs. It runs a fractional clock: each cycle adds
-// (1 - stasis), and the cycle runs normally only when the clock fills. Every other
-// cycle is "paused". A paused cycle skips:
+// Stasis is the biology clock (doc/rewrite/life_on_om.md §8). While applied, each stasis
+// modifier holds EFFECT_CLOCK_BIO_INHIBIT = its depth on the mob (the deepest wins), so the
+// mob's CLOCK_BIO rate is 1 - stasis. The body reads that rate in ONE place,
+// advance_stasis(), which life_frame() calls once per frame before any life system runs. It
+// runs a fractional counter: each frame adds the rate, and the frame runs biology only when
+// the counter fills. Every other frame is "paused". A paused frame skips:
 //   - affliction ticks (progression, treatment, symptoms)     body.life_tick()
 //   - metabolism and hunger                                    the chemicals system
 //   - breathing (so oxygen debt stops accumulating)            the breathing system
 //   - blood loss and regeneration                              the blood system
 //   - the human live/dead segments (organs, defib timer, ...)  gate: human vitals
-// Those read the paused flag through inStasisNow() / ctx.in_stasis(), never BF_STASIS.
-// So at stasis 0.9 everything runs at 10% speed; at 1 it stops.
+// Those read the paused flag through inStasisNow() / ctx.in_stasis(), never the clock.
+// So at stasis 0.9 everything runs at 10% speed; at 1 it stops. BF_STASIS stays a factor
+// for diagnosis readouts; nothing in the life pipeline reads it.
 
 /datum/body
-	/// Fractional stasis clock: +(1 - BF_STASIS) per Life() cycle.
+	/// Fractional biology counter: + the CLOCK_BIO rate per frame.
 	var/tmp/stasis_clock = 0
-	/// TRUE when stasis paused the current Life() cycle.
+	/// TRUE when stasis paused the current frame.
 	var/tmp/stasis_paused = FALSE
 
-/// Advance the stasis clock by one Life() cycle. Returns TRUE if this cycle is
-/// paused. The only reader of BF_STASIS in the life pipeline.
+/// Advance the biology counter by one frame. Returns TRUE if this frame is paused. The only
+/// reader of the biology clock in the life pipeline.
 /datum/body/proc/advance_stasis()
-	var/level = get_factor(BF_STASIS)
-	if(level <= 0)
+	var/rate = owner ? om_clock_rate_of(owner, CLOCK_BIO) : 1
+	if(rate >= 1)
 		stasis_clock = 0
 		stasis_paused = FALSE
 		return FALSE
-	stasis_clock += 1 - level
+	stasis_clock += rate
 	if(stasis_clock >= 1)
 		stasis_clock -= 1
 		stasis_paused = FALSE
@@ -61,6 +64,20 @@
 /datum/modifier/stasis/Destroy(force)
 	stasis_source = null
 	return ..()
+
+/// Holds the biology clock back by this modifier's depth while it is applied. The hold's
+/// source is the modifier, so it also ends when the modifier is deleted.
+/datum/modifier/stasis/on_applied()
+	. = ..()
+	om_hold(holder, EFFECT_CLOCK_BIO_INHIBIT, src, stasis_depth())
+
+/datum/modifier/stasis/on_expire()
+	om_release(holder, EFFECT_CLOCK_BIO_INHIBIT, src)
+	return ..()
+
+/// This modifier's stasis depth (its BF_STASIS factor), 0..1.
+/datum/modifier/stasis/proc/stasis_depth()
+	return clamp(factors?[BF_STASIS] || 0, 0, 1)
 
 /// Life at half speed.
 /datum/modifier/stasis/light

@@ -16,8 +16,8 @@
 //	canmove, HUD, vision, TF holder, VR derez
 //	subtype tails (carbon germs, human, alien, simple mob, bot), then type_post variants
 //
-// Sleep rules (doc/mob_life_architecture.md §4.9): each system's idle() says when it has
-// nothing to do, and `woken_by` names the producers that call life_wake() with its bit. A
+// Sleep rules (doc/rewrite/life_on_om.md §5): each system's idle() says when it has
+// nothing to do, and `woken_by` names the producers that raise the channels in its `wake_on`. A
 // family root's rule covers only the root: a variant with its own tick code keeps its
 // mob awake until it declares a rule of its own.
 
@@ -28,7 +28,7 @@
 /// early `return` before ..() did.
 /datum/life_system/type_pre
 	name = "type pre"
-	bit = LIFE_SYS_BEHAVIOUR
+	wake_on = LIFE_WAKE_ON_BEHAVIOUR
 	phase = LIFE_PHASE_INPUT
 	order = 0
 
@@ -44,7 +44,7 @@
 /// returned, then runs its own code. The roots yield the core's legacy return value.
 /datum/life_system/type_post
 	name = "type post"
-	bit = LIFE_SYS_BEHAVIOUR
+	wake_on = LIFE_WAKE_ON_BEHAVIOUR
 	phase = LIFE_PHASE_TAIL
 	order = 1000
 
@@ -70,7 +70,7 @@
 /// Mobs whose Life() only takes them out of the mob lists (preview dummies, announcers).
 /datum/life_system/delist
 	name = "delist"
-	bit = LIFE_SYS_UPKEEP
+	wake_on = LIFE_WAKE_ON_UPKEEP
 	phase = LIFE_PHASE_INPUT
 	life_sets = LIFE_SET_DELIST
 
@@ -84,7 +84,7 @@
 /datum/life_system/trait
 	category = TRUE
 	extra = TRUE
-	bit = LIFE_SYS_TRAITS
+	wake_on = LIFE_WAKE_ON_TRAITS
 	phase = LIFE_PHASE_INPUT
 	order = 10
 	/// The component type this system ticks.
@@ -122,7 +122,7 @@
 /// hooks) once per cycle and blocks the segment that code guarded.
 /datum/life_system/gate
 	category = TRUE
-	bit = LIFE_SYS_GATE
+	gate = TRUE
 
 /// Gates run whenever the mob runs and never keep it awake on their own.
 /datum/life_system/gate/idle(mob/living/self)
@@ -238,7 +238,7 @@
 /// Breathing. The carbon variant takes a breath on its own cadence (breathe()).
 /datum/life_system/breathing
 	name = "breathing"
-	bit = LIFE_SYS_BREATHING
+	wake_on = LIFE_WAKE_ON_BREATHING
 	phase = LIFE_PHASE_INPUT
 	order = 90
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
@@ -252,7 +252,7 @@
 /// Genetic mutation effects.
 /datum/life_system/mutations
 	name = "mutations"
-	bit = LIFE_SYS_GENETICS
+	wake_on = LIFE_WAKE_ON_GENETICS
 	phase = LIFE_PHASE_INPUT
 	order = 100
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
@@ -270,7 +270,7 @@
 /// Radiation dose decay and effects.
 /datum/life_system/radiation
 	name = "radiation"
-	bit = LIFE_SYS_RADIATION
+	wake_on = LIFE_WAKE_ON_RADIATION
 	phase = LIFE_PHASE_INPUT
 	order = 110
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
@@ -288,7 +288,7 @@
 /// Blood volume and bleeding.
 /datum/life_system/blood
 	name = "blood"
-	bit = LIFE_SYS_BLOOD
+	wake_on = LIFE_WAKE_ON_BLOOD
 	phase = LIFE_PHASE_BODY
 	order = 10
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
@@ -302,7 +302,7 @@
 /// Random episodes (vomiting, ...).
 /datum/life_system/random_events
 	name = "random events"
-	bit = LIFE_SYS_GENETICS
+	wake_on = LIFE_WAKE_ON_GENETICS
 	phase = LIFE_PHASE_BODY
 	order = 20
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
@@ -316,7 +316,7 @@
 /// Automatic AFK marking for idle clients.
 /datum/life_system/afk
 	name = "afk"
-	bit = LIFE_SYS_CLIENT
+	wake_on = LIFE_WAKE_ON_CLIENT
 	phase = LIFE_PHASE_BODY
 	order = 30
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_ALIVE
@@ -348,7 +348,7 @@
 /// Chemicals in the body. Runs dead or alive, so blood can be added after death.
 /datum/life_system/chemicals
 	name = "chemicals"
-	bit = LIFE_SYS_METABOLISM
+	wake_on = LIFE_WAKE_ON_METABOLISM
 	phase = LIFE_PHASE_BODY
 	order = 40
 	segment = LIFE_SEG_LIVING
@@ -366,7 +366,7 @@
 /// Environment: temperature and pressure differences between body and surroundings.
 /datum/life_system/environment
 	name = "environment"
-	bit = LIFE_SYS_THERMAL
+	wake_on = LIFE_WAKE_ON_THERMAL
 	phase = LIFE_PHASE_BODY
 	order = 60
 	segment = LIFE_SEG_LIVING
@@ -385,7 +385,7 @@
 /// Re-plays area ambience to a client that has stayed in one area.
 /datum/life_system/ambience
 	name = "ambience"
-	bit = LIFE_SYS_CLIENT
+	wake_on = LIFE_WAKE_ON_CLIENT
 	phase = LIFE_PHASE_BODY
 	order = 70
 	segment = LIFE_SEG_LIVING
@@ -420,7 +420,7 @@
 /// Gravity, pulling and grabs.
 /datum/life_system/movement
 	name = "movement"
-	bit = LIFE_SYS_MOVEMENT
+	wake_on = LIFE_WAKE_ON_MOVEMENT
 	phase = LIFE_PHASE_BODY
 	order = 80
 	segment = LIFE_SEG_LIVING
@@ -445,7 +445,7 @@
 /// disabilities, addictions and statuses systems skip this cycle.
 /datum/life_system/status
 	name = "status"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_BODY
 	order = 90
 	segment = LIFE_SEG_LIVING
@@ -484,7 +484,7 @@
 /// Eye and ear damage recovery.
 /datum/life_system/disabilities
 	name = "disabilities"
-	bit = LIFE_SYS_GENETICS
+	wake_on = LIFE_WAKE_ON_GENETICS
 	phase = LIFE_PHASE_MIND
 	order = 10
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
@@ -528,17 +528,16 @@
 /// called on their own by mobs that run only some of them (simple mobs, the AI, pAIs).
 /datum/life_system/statuses
 	name = "statuses"
-	bit = LIFE_SYS_STATUS
+	wake_on = LIFE_WAKE_ON_STATUS
 	phase = LIFE_PHASE_MIND
 	order = 30
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI
-	woken_by = "Stun/Weaken/Paralyse/Confuse setters (LIFE_WAKE_STATUS)"
+	woken_by = "Confuse and the other counter setters (CHANGE_MOB_STATUS)"
 
+/// Counts down the per-frame status counters. Stun, weaken and paralysis are timed
+/// contributions and need no ticking (doc/rewrite/life_on_om.md §7).
 /datum/life_system/statuses/tick(mob/living/self, datum/life_context/ctx)
-	stunned(self)
-	weakened(self)
-	paralysed(self)
 	stuttering(self)
 	silent(self)
 	drugged(self)
@@ -549,33 +548,9 @@
 /datum/life_system/statuses/idle(mob/living/self)
 	if(type != /datum/life_system/statuses)
 		return FALSE
-	if(self.stunned || self.weakened || self.paralysis || self.confused)
+	if(self.confused || self.stuttering || self.silent || self.druggy || self.slurring)
 		return FALSE
-	if(self.stuttering || self.silent || self.druggy || self.slurring)
-		return FALSE
-	return !self.alert_state_stunned && !self.alert_state_weakened && !self.alert_state_paralysed && !self.alert_state_drugged && !self.alert_state_confused
-
-/datum/life_system/statuses/proc/stunned(mob/living/self)
-	if(self.stunned)
-		self.AdjustStunned(-1)
-		if(!self.alert_state_stunned)
-			self.alert_state_stunned = TRUE
-			self.throw_alert("stunned", /atom/movable/screen/alert/stunned)
-	else if(self.alert_state_stunned)
-		self.alert_state_stunned = FALSE
-		self.clear_alert("stunned")
-	return self.stunned
-
-/datum/life_system/statuses/proc/weakened(mob/living/self)
-	if(self.weakened)
-		self.AdjustWeakened(-1)
-		if(!self.alert_state_weakened)
-			self.alert_state_weakened = TRUE
-			self.throw_alert("weakened", /atom/movable/screen/alert/weakened)
-	else if(self.alert_state_weakened)
-		self.alert_state_weakened = FALSE
-		self.clear_alert("weakened")
-	return self.weakened
+	return !self.alert_state_drugged && !self.alert_state_confused
 
 /datum/life_system/statuses/proc/stuttering(mob/living/self)
 	if(self.stuttering)
@@ -602,17 +577,6 @@
 	if(self.slurring)
 		self.slurring = max(self.slurring-1, 0)
 	return self.slurring
-
-/datum/life_system/statuses/proc/paralysed(mob/living/self)
-	if(self.paralysis)
-		self.AdjustParalysis(-1)
-		if(!self.alert_state_paralysed)
-			self.alert_state_paralysed = TRUE
-			self.throw_alert("paralyzed", /atom/movable/screen/alert/paralyzed)
-	else if(self.alert_state_paralysed)
-		self.alert_state_paralysed = FALSE
-		self.clear_alert("paralyzed")
-	return self.paralysis
 
 /datum/life_system/statuses/proc/confused(mob/living/self)
 	if(self.confused)
@@ -652,7 +616,8 @@
 /// Whether the mob can move (lying, stunned, buckled, ...).
 /datum/life_system/canmove
 	name = "canmove"
-	bit = LIFE_SYS_MOVEMENT
+	wake_only = LIFE_WAKE_ONLY_DERIVE
+	wake_on = LIFE_WAKE_ON_MOVEMENT
 	phase = LIFE_PHASE_OUTPUT
 	order = 10
 	segment = LIFE_SEG_LIVING
@@ -664,12 +629,13 @@
 
 /// Resting and buckling update canmove themselves; the tick only follows the counters.
 /datum/life_system/canmove/idle(mob/living/self)
-	return type == /datum/life_system/canmove && !self.stunned && !self.weakened && !self.paralysis && !self.sleeping
+	return type == /datum/life_system/canmove && !self.sleeping
 
 /// The player HUD. Returns FALSE when there is no HUD to update. Also run by refresh_hud().
 /datum/life_system/hud
 	name = "hud"
-	bit = LIFE_SYS_HUD
+	wake_only = LIFE_WAKE_ONLY_PRESENT
+	wake_on = LIFE_WAKE_ON_HUD
 	phase = LIFE_PHASE_OUTPUT
 	order = 20
 	segment = LIFE_SEG_LIVING
@@ -732,7 +698,8 @@
 /// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Also run by refresh_vision().
 /datum/life_system/vision
 	name = "vision"
-	bit = LIFE_SYS_SENSES
+	wake_only = LIFE_WAKE_ONLY_PRESENT
+	wake_on = LIFE_WAKE_ON_SENSES
 	phase = LIFE_PHASE_OUTPUT
 	order = 30
 	segment = LIFE_SEG_LIVING

@@ -1743,7 +1743,7 @@
 
 /mob/living/carbon/human/proc/update_icon_special() //For things such as teshari hiding and whatnot.
 	if(status_flags & HIDING) // Hiding? Carry on.
-		if(stat == DEAD || paralysis || weakened || stunned || restrained() || buckled || LAZYLEN(grabbed_by) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
+		if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned() || restrained() || buckled || LAZYLEN(grabbed_by) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
 			reveal(null)
 		else
 			layer = HIDING_LAYER
@@ -1877,7 +1877,7 @@
 	set category = "Abilities.General"
 	set desc = "Switch your horizontal direction while prone."
 
-	if(stat || paralysis || weakened || stunned || world.time < last_special)
+	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special)
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 

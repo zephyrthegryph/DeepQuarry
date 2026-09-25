@@ -1219,11 +1219,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	else
 		GLOB.living_mob_list -= src
 
-/mob/dview/Life()
-	GLOB.mob_list -= src
-	GLOB.dead_mob_list -= src
-	GLOB.living_mob_list -= src
-
 /mob/dview/Destroy(force)
 	stack_trace("Attempt to delete the dview_mob: [log_info_line(src)]")
 	if (!force)

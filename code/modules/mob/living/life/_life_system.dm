@@ -16,14 +16,18 @@
 /datum/life_system
 	/// Readable name for logs and the profiler.
 	var/name = "life system"
-	/// Wake category (LIFE_SYS_*): the /mob/living/var/life_awake bit this system runs under.
-	var/bit = LIFE_SYS_UPKEEP
+	/// Mob change channels (CHANGE_MOB_*, LIFE_WAKE_ON_*) whose change can give this system work
+	/// once it sleeps. See doc/rewrite/life_on_om.md §5.
+	var/wake_on = LIFE_WAKE_ON_UPKEEP
+	/// LIFE_WAKE_ONLY_*: not run by the frame, but by the derive or present behaviour when its
+	/// channels change (doc/rewrite/life_on_om.md §6).
+	var/wake_only = LIFE_WAKE_ONLY_NONE
+	/// Gates run whenever the frame runs; they never sleep and never keep a mob awake.
+	var/gate = FALSE
 	/// LIFE_PHASE_*: coarse position in the cycle.
 	var/phase = LIFE_PHASE_BODY
 	/// Position within the phase; lower runs first.
 	var/order = 0
-	/// Run every Nth cycle while awake.
-	var/period = 1
 	/// LIFE_SEG_* flags. If an earlier gate blocked any of them this cycle, the system is skipped.
 	var/segment = NONE
 	/// LIFE_SET_* flags of the Life sequences that include this family. Read from the family root.
@@ -36,8 +40,8 @@
 	var/extra = FALSE
 	/// Family root type. Filled by the registry.
 	var/family
-	/// What wakes this system once it sleeps (for logs and the audit). A system that can
-	/// sleep says here which producers call life_wake() with its `bit`.
+	/// What wakes this system once it sleeps (for logs and the audit): which producers raise
+	/// the channels in its `wake_on`.
 	var/woken_by
 
 /// Does this mob get this system at all? Evaluated only when composing, so it may depend
@@ -54,8 +58,8 @@
 /datum/life_system/proc/detach(mob/living/self)
 	return
 
-/// Sleep rule (doc/mob_life_architecture.md §4.9). TRUE when this system has nothing to do
-/// until something wakes its `bit`. Evaluated after every tick and by the hibernation
+/// Sleep rule (doc/rewrite/life_on_om.md §5). TRUE when this system has nothing to do until
+/// one of its `wake_on` channels changes. Evaluated after every tick and by the hibernation
 /// audit, so it must be cheap, read-only and correct for a mob that is not ticking: the
 /// audit treats a FALSE on a sleeping system as a missed wake. The default never sleeps.
 /datum/life_system/proc/idle(mob/living/self)
@@ -73,13 +77,13 @@
 
 // --- Context ----------------------------------------------------------------------------------
 
-/// Per-cycle facts shared by the systems of one mob's Life() call. Built once per cycle.
+/// Per-frame facts shared by the systems of one mob's frame. Built once per frame.
 /datum/life_context
-	/// Seconds since this mob's previous Life() (SSmobs passes it; nominal 2).
-	var/seconds = LIFE_NOMINAL_SECONDS
+	/// Seconds of real time this frame covers (LIFE_CYCLE_SECONDS).
+	var/seconds = LIFE_CYCLE_SECONDS
 	/// LIFE_SEG_* flags blocked by gates this cycle.
 	var/blocked = NONE
-	/// TRUE when SSmobs sampled this call for the per-system profiler.
+	/// TRUE when the per-system profiler sampled this frame.
 	var/profile = FALSE
 	/// The /mob/living core's legacy return value: 1 once the living-alive gate passed.
 	var/living_result
@@ -87,7 +91,7 @@
 	var/core_result
 	/// The air this mob sits in (turf air, belly air or null), captured at the placed gate.
 	var/datum/gas_mixture/environment
-	/// TRUE when the body's stasis clock paused this cycle. Set once by Life()
+	/// TRUE when the biology clock ran no step this frame (stasis). Set once by life_frame()
 	/// from /datum/body/proc/advance_stasis().
 	var/stasis = FALSE
 	/// Set by a gate that stopped the cycle for a reason no wake covers (transforming,
@@ -188,16 +192,32 @@ GLOBAL_VAR_INIT(life_system_registry_built, FALSE)
 /// One shared, ordered system list for every mob with the same composition key.
 /datum/life_composition
 	var/key
-	/// Systems in run order. Never mutated after composition.
+	/// Systems in run order. Never mutated after composition. Per-mob sleep state
+	/// (/mob/living/var/life_asleep) is a list parallel to it.
 	var/list/ordered
-	/// Union of the systems' bits. A bit no system has can never go to sleep.
-	var/bits = NONE
+	/// Positions in `ordered` of the systems the frame runs and that can sleep (not gates,
+	/// not wake-only): all of them asleep means the mob hibernates.
+	var/list/sleepers
+	/// Wake-only systems, in run order, by LIFE_WAKE_ONLY_* kind.
+	var/list/derive
+	var/list/present
 
 /datum/life_composition/New(key, list/ordered)
 	src.key = key
 	src.ordered = ordered
-	for(var/datum/life_system/S as anything in ordered)
-		bits |= S.bit
+	sleepers = list()
+	derive = list()
+	present = list()
+	for(var/i in 1 to length(ordered))
+		var/datum/life_system/S = ordered[i]
+		switch(S.wake_only)
+			if(LIFE_WAKE_ONLY_DERIVE)
+				derive += S
+			if(LIFE_WAKE_ONLY_PRESENT)
+				present += S
+			else
+				if(!S.gate)
+					sleepers += i
 
 /// Sort key: phase, then order. Stable insertion sort; compositions are small and built once.
 /proc/sort_life_systems(list/systems)

@@ -649,7 +649,7 @@
 	if(alien == IS_SLIME)
 		if(M.injury_load(INJURY_CATEGORY_NEURAL) >= 10)
 			M.Weaken(5)
-		if(dose >= 10 && M.paralysis < 40)
+		if(dose >= 10 && M.get_paralysis() < 40)
 			M.AdjustParalysis(1) //Messing with the core with a simple chemical probably isn't the best idea.
 	// Brain repair is alkysine's TREAT_NEURAL_REPAIR tag (body/treatment.dm);
 	// past the salvage band a swollen brain outpaces it (lesions.dm).

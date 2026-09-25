@@ -189,7 +189,7 @@
 	if(user != load)
 		return 0
 	// Start
-	if(user.paralysis || user.sleeping)
+	if(user.get_paralysis() || user.sleeping)
 		return 0
 	// End
 	if(is_train_head())

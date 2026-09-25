@@ -140,9 +140,6 @@
 	var/drowsyness = 0.0//Carbon
 	var/charges = 0.0
 
-	var/paralysis = 0.0
-	var/stunned = 0.0
-	var/weakened = 0.0
 	var/losebreath = 0.0//Carbon
 	var/m_int = null//Living
 	var/m_intent = I_RUN//Living

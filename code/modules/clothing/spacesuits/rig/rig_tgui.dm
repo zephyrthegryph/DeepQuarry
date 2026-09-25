@@ -165,7 +165,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 			locked = !locked
 			. = TRUE
 		if("toggle_piece")
-			if(ishuman(ui.user) && (ui.user.stat || ui.user.stunned || ui.user.lying))
+			if(ishuman(ui.user) && (ui.user.stat || ui.user.get_stunned() || ui.user.lying))
 				return FALSE
 			toggle_piece(params["piece"], ui.user)
 			. = TRUE

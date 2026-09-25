@@ -1245,7 +1245,7 @@
 					else
 						body_backup.revive()
 					body_backup.forceMove(T.loc)
-					body_backup.enabled = TRUE
+					body_backup.resume_life()
 					body_backup.ajourn = 0
 					transfer_mind(T.mind, body_backup, "reformed in [host]", force = TRUE)
 					body_backup.teleop = null
@@ -1273,7 +1273,7 @@
 
 				if(isliving(MMI.body_backup))
 					var/mob/living/body_backup = MMI.body_backup
-					body_backup.enabled = TRUE
+					body_backup.resume_life()
 					body_backup.forceMove(MMI.loc)
 					body_backup.ajourn = 0
 					body_backup.teleop = null
@@ -1388,7 +1388,7 @@
 			if(H.blinded)
 				condition += "blinded"
 				condition_consequences += "hear emotes"
-			if(H.paralysis)
+			if(H.get_paralysis())
 				if(condition)
 					condition += " and "
 					condition_consequences += " or "

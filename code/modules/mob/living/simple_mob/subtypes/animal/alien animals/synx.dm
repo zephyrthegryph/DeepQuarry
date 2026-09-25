@@ -436,7 +436,7 @@
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
 	set category = "Abilities.Synx"
 
-	if(stat == DEAD || paralysis || weakened || stunned || restrained())
+	if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned() || restrained())
 		return
 
 	if(status_flags & HIDING)
@@ -457,7 +457,7 @@
 	set desc = "Switch between amorphous and humanoid forms."
 	set category = "Abilities.Synx"
 
-	if(stat == DEAD || paralysis || weakened || stunned || restrained())
+	if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned() || restrained())
 		return
 
 	// If transform isn't true

@@ -627,7 +627,7 @@
 		/*
 		to_chat(M, span_warning("You stab yourself in the eye."))
 		M.sdisabilities |= BLIND
-		M.weakened += 4
+		M.AdjustWeakened(4)
 		*/
 
 	if(istype(H))

@@ -185,8 +185,10 @@ nap is never passed as elapsed time.**
 **Timers.** `rewake_delay()` returns deciseconds after which an idle system
 wakes anyway (darksight, AFK, ambience, air drifting in place). The mob keeps
 `life_timers` (system -> due); the `life` behaviour holds one deadline
-(`om_after()`) at the earliest due. `on_deadline` wakes the due systems,
-resuming the mob if it hibernates, and re-arms for the next due. **It never
+(`om_after()`) at the earliest due. `on_deadline` wakes the due systems and
+re-arms for the next due. A hibernating mob is resumed **partially**: only
+the systems whose timers are due wake, as the old partial timer wake did, so
+a timer costs one frame of those systems and the mob parks again. **It never
 runs a frame on an awake mob**: the woken system waits for the next frame.
 
 **Audit.** Unchanged in purpose: in test and TESTING builds every 30 s,
@@ -202,17 +204,20 @@ run when that state changes, not on a 6 s cadence, and not at all for mobs
 nobody watches.
 
 - `wake_only = LIFE_WAKE_ONLY_DERIVE`: `canmove`. Run by `life_derive`
-  (`wake_on = CHANGE_MOB_STATUS | CHANGE_MOB_STAT`, lane `LANE_DERIVED`) the
-  pass the status changes. Stun, weaken and paralysis changes now update
-  `canmove` and lying immediately (they used to wait for the next cycle for
-  paralysis).
+  (`wake_on` = the movement channels, lane `LANE_DERIVED`) the pass the
+  status changes, never by the frame. While it still has work (asleep) it
+  re-arms itself for the next cycle. Stun, weaken and paralysis changes also
+  update `canmove` and lying immediately through their effect (§7).
 - `wake_only = LIFE_WAKE_ONLY_PRESENT`: `hud`, `vision`, `hud_refresh`
-  (human). Run by `life_present` (`requires` a client, lane
-  `LANE_PRESENTATION`) on HUD channels, and by its own deadline for their
-  `rewake_delay()` (darksight 5 s, HUD refresh 1 min). **Clientless mobs do
-  not attach it at all**: no HUD or vision work for NPCs, which is the
-  relevance saving. Login raises `CHANGE_MOB_CLIENT`, which re-checks the
-  requirement, starts the behaviour and runs them once.
+  (human). For a mob **with a client**, run by `life_present` (`requires` a
+  client, lane `LANE_PRESENTATION`) the pass a HUD channel changes, and by its
+  own deadline for their `rewake_delay()` (darksight 5 s, HUD refresh 1 min)
+  or, while one still has work, every cycle; the frame skips them. Login
+  raises `CHANGE_MOB_CLIENT`, which re-checks the requirement, starts the
+  behaviour and runs them once. A **clientless** mob never starts
+  `life_present`, and its frame runs these systems as before (they sleep at
+  once for NPCs; running them per step of a wandering NPC would cost more than
+  the old cadence did, and NPC sight flags still get set).
 
 `refresh_hud()`, `refresh_vision()` and `run_life_system()` still run a
 system on demand.
@@ -233,8 +238,7 @@ contribution store:
 | statuses system decrementing | the deadline wheel expires it; nothing ticks |
 
 Same for weaken (`EFFECT_WEAKENED`, new) and paralysis (`EFFECT_PARALYZED`).
-The mob itself is the source (`key = "status"`), so the setters keep their
-exact old semantics. The three effects use a custom effect type whose
+The mob itself is the source, so the setters keep their exact old semantics. The three effects use a custom effect type whose
 `on_changed` updates `canmove`, lying and the alert, and raises
 `CHANGE_MOB_STATUS`. `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT` (library
 composites) now have real inputs.
@@ -261,10 +265,11 @@ fractional counter and paused a cycle unless the counter filled.
 Now each stasis modifier, while applied, **holds `EFFECT_CLOCK_BIO_INHIBIT`
 = its depth on the mob, with the modifier as source**. The hold dies with the
 modifier. The biology clock's rate is `1 - deepest stasis`.
-`body.advance_stasis()` reads the mob's `CLOCK_BIO` local time: a frame runs
-biology only if a full `LIFE_CYCLE` of biological time has accumulated since
-the last biology step. That is the old fractional counter, expressed as a
-clock, so stasis 0.9 still runs biology on one frame in ten. Total stasis
+`body.advance_stasis()` reads the mob's `CLOCK_BIO` rate once per frame and
+adds it to a fractional counter; a frame runs biology only when the counter
+fills. That is the old counter with its input now coming from the clock, so
+stasis 0.9 still runs biology on one frame in ten, and a frame run by hand
+(tests, admin effects) behaves like a scheduled one. Total stasis
 (cryopods, cages) is rate 0: no biology step ever. `BF_STASIS` stays as a
 factor for diagnosis readouts.
 

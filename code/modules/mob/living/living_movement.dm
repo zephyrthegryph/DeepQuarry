@@ -267,7 +267,7 @@ default behaviour is:
 
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)
 	. = ..()
-	life_wake(LIFE_WAKE_MOVED, "moved")
+	om_changed(src, CHANGE_MOB_LOC)
 	handle_footstep(loc)
 	if(!forced && movetime /* && !is_incorporeal()*/)
 		SSmotiontracker?.ping(src) // Incase of before init "turf enter gravity" this is ?, unfortunately.

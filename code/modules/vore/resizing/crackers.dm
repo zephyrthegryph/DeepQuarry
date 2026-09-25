@@ -114,7 +114,7 @@
 					winner.visible_message(span_bold("\The [winner]") + " appears as if from thin air.")
 		if(FALLING_CRACKER)
 			winner.visible_message(span_bold("\The [winner]") + " is suddenly knocked to the ground.")
-			winner.SetWeakened(max(winner.weakened,50))
+			winner.SetWeakened(max(winner.get_weakened(),50))
 		if(TELEPORTING_CRACKER)
 			if(can_spontaneous_vore(loser, winner))
 				winner.visible_message(span_bold("\The [winner]") + " is teleported to somewhere nearby...")

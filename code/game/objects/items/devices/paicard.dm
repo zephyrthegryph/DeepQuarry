@@ -43,7 +43,7 @@
 	var/selected_system = "pAI"
 
 /obj/item/paicard/relaymove(mob/user, direction)
-	if(user.stat || user.stunned)
+	if(user.stat || user.get_stunned())
 		return
 	var/obj/item/rig/rig = src.get_rig()
 	if(istype(rig))

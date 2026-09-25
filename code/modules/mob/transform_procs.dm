@@ -8,7 +8,7 @@
 	regenerate_icons()
 	transforming = 1
 	canmove = 0
-	stunned = 1
+	status_set(EFFECT_STUNNED, 1)
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)
@@ -22,7 +22,7 @@
 	//animation = null
 
 	transforming = 0
-	stunned = 0
+	status_set(EFFECT_STUNNED, 0)
 	update_canmove()
 	invisibility = initial(invisibility)
 

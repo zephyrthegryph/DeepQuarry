@@ -1005,7 +1005,7 @@
 /// Find an adjacent floor pair whose adjacency was built by the real init
 /// path (init_immediate_calculate_adjacent_turfs). Preference order:
 ///   1. Adjacent floor pair INSIDE the unit_tests.dmm sealed room (walls of
-///      /turf/unsimulated/wall block atmos via real type — no white-box
+///      /turf/simulated/wall block atmos via real type — no white-box
 ///      adjacency rewriting needed).
 ///   2. Any floor pair with built adjacency anywhere on the map.
 /// Sealed-room pairs let mass-conservation tests check totals — the gas
@@ -1249,7 +1249,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			open_turf.air_update_turf(TRUE, FALSE)
 
 /// Open a sealed test-room floor up to space by ChangeTurf-ing one of its
-/// cardinal neighbors (a /turf/unsimulated/wall test-room wall) into a
+/// cardinal neighbors (a /turf/simulated/wall test-room wall) into a
 /// real /turf/space. ChangeTurf marks the new turf for update, whose
 /// immediate_calculate_adjacent_turfs wires the floor↔space adjacency
 /// bidirectionally — the same production path a hull breach would take.
@@ -1275,7 +1275,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(!fallback_neighbor)
 			fallback_neighbor = neighbor
 		// If a neighbor is already space, just use it (and record so we can put
-		// it back). The test-room walls are /turf/unsimulated/wall; isolate
+		// it back). The test-room walls are /turf/simulated/wall; isolate
 		// helpers leave /turf/simulated/wall. Either way they block air, so pick
 		// a solid neighbor and breach it.
 		if(istype(neighbor, /turf/space))

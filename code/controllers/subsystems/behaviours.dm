@@ -13,6 +13,8 @@ SUBSYSTEM_DEF(behaviours)
 	flags = SS_TICKER|SS_KEEP_TIMING
 	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
 	var/last_done = TRUE
+	/// Milliseconds spent in fire() since boot (benchmarks: life_sweep).
+	var/bench_ms = 0
 
 /datum/controller/subsystem/behaviours/Initialize()
 	om_registry()
@@ -23,7 +25,9 @@ SUBSYSTEM_DEF(behaviours)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(!sched)
 		return
+	var/start = TICK_USAGE
 	last_done = sched.run_pass(Master.current_ticklimit)
+	bench_ms += TICK_USAGE_TO_MS(start)
 
 /datum/controller/subsystem/behaviours/stat_entry(msg)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched

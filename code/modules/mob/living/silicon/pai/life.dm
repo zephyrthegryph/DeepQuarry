@@ -4,7 +4,7 @@
 /// Cable retraction and `if(stat == DEAD) return`.
 /datum/life_system/pai_cable
 	name = "pai cable"
-	bit = LIFE_SYS_MACHINE
+	wake_on = LIFE_WAKE_ON_MACHINE
 	phase = LIFE_PHASE_INPUT
 	order = 0
 	life_sets = LIFE_SET_PAI
@@ -19,7 +19,7 @@
 /// Death from injury is decided by the body (see death.dm for card damage); card faults.
 /datum/life_system/pai_body
 	name = "pai body"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_INPUT
 	order = 10
 	life_sets = LIFE_SET_PAI
@@ -46,7 +46,7 @@
 /// The communication circuit comes back after a silence.
 /datum/life_system/pai_silence
 	name = "pai silence"
-	bit = LIFE_SYS_MACHINE
+	wake_on = LIFE_WAKE_ON_MACHINE
 	phase = LIFE_PHASE_OUTPUT
 	order = 40
 	life_sets = LIFE_SET_PAI
@@ -71,7 +71,7 @@
 /// Folded into the card, the pAI slowly self-repairs.
 /datum/life_system/pai_repair
 	name = "pai repair"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_OUTPUT
 	order = 60
 	life_sets = LIFE_SET_PAI

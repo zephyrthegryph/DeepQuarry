@@ -18,7 +18,7 @@
 
 /datum/life_system/organs
 	name = "organs"
-	bit = LIFE_SYS_ORGANS
+	wake_on = LIFE_WAKE_ON_ORGANS
 	phase = LIFE_PHASE_TAIL
 	order = 150
 	segment = LIFE_SEG_HUMAN_LIVE

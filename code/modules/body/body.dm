@@ -101,7 +101,8 @@
 	// The physiology reads factors and organs.
 	if(domains & (BODY_DIRTY_FACTORS | BODY_DIRTY_ORGANS))
 		dirty |= BODY_DIRTY_PHYSIOLOGY
-	owner?.life_wake(LIFE_WAKE_BODY, "body invalidate")
+	if(owner)
+		om_changed(owner, CHANGE_MOB_HEALTH)
 
 
 // --- Affliction bookkeeping -------------------------------------------------

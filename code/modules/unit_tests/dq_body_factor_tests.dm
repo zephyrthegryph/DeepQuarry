@@ -229,7 +229,7 @@
 
 	H.SetStunned(0)
 	H.Stun(10)
-	TEST_ASSERT_EQUAL(H.stunned, 5, "stuns should read BF_DISABLE_DURATION")
+	TEST_ASSERT_EQUAL(H.get_stunned(), 5, "stuns should read BF_DISABLE_DURATION")
 
 	// Simple mobs read the same factors for ranged combat.
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/animal/passive/mouse)

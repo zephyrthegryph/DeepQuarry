@@ -1,6 +1,6 @@
 /datum/life_system/phobias
 	name = "phobias"
-	bit = LIFE_SYS_TRAITS
+	wake_on = LIFE_WAKE_ON_TRAITS
 	phase = LIFE_PHASE_TAIL
 	order = 260
 	segment = LIFE_SEG_HUMAN_LIVE

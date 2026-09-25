@@ -31,7 +31,7 @@
 	set category = "Abilities.General"
 
 
-	if(stat || paralysis || stunned || weakened || lying || restrained() || buckled)
+	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
 		to_chat(src, "You cannot bite anyone in your current state!")
 		return
 
@@ -67,7 +67,7 @@
 
 	if(last_special > world.time) return
 
-	if(stat || paralysis || stunned || weakened || lying || restrained() || buckled)
+	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
 		to_chat(src, "You cannot bite in your current state.")
 		return
 	if(B.vessel.total_volume <= 0 || B.isSynthetic()) //Do they have any blood in the first place, and are they synthetic?
@@ -387,7 +387,7 @@
 		to_chat(src,span_warning("You can't shred that type of creature."))
 		return FALSE
 	//Needs to be capable (replace with incapacitated call?)
-	if(stat || paralysis || stunned || weakened || lying || restrained() || buckled)
+	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
 		to_chat(src,span_warning("You cannot do that in your current state!"))
 		return FALSE
 	//Needs to be adjacent, at the very least.
@@ -632,7 +632,7 @@
 		to_chat(src, "You don't have enough space to spin a cocoon!")
 		return
 
-	if(buckled ||stat || paralysis || weakened || stunned || world.time < last_special) //No tongue flicking while stunned.
+	if(buckled ||stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special) //No tongue flicking while get_stunned().
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -693,7 +693,7 @@
 		return
 	last_special = world.time + 50 //No spamming!
 
-	if(stat == DEAD || paralysis || weakened || stunned)
+	if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned())
 		to_chat(src, span_notice("You cannot do that while in your current state."))
 		return
 
@@ -761,7 +761,7 @@
 	set category = "Abilities.Vore"
 	set desc = "Grab a target with any of your appendages!"
 
-	if(stat || paralysis || weakened || stunned || world.time < last_special || is_incorporeal()) //No tongue flicking while stunned.
+	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special || is_incorporeal()) //No tongue flicking while get_stunned().
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -976,7 +976,7 @@
 	var/leap_warmup = 1 SECOND //Easy to modify
 	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
 
-	if(stat || paralysis || weakened || stunned || world.time < last_special) //No tongue flicking while stunned.
+	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special) //No tongue flicking while get_stunned().
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1043,7 +1043,7 @@
 	set category = "Abilities.General"
 	set desc = "Inject another being with something!"
 
-	if(stat || paralysis || weakened || stunned || world.time < last_special) //Epic copypasta from tongue grabbing.
+	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special) //Epic copypasta from tongue grabbing.
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 

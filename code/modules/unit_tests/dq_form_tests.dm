@@ -4,7 +4,7 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /// Switching form keeps the character's afflictions, reagents and statuses
-/// ticking: the mob stays in the world and Life() keeps running (bug 10).
+/// ticking: the mob stays in the world and its Life frames keep running (bug 10).
 /datum/unit_test/dq_form_switch_keeps_body_ticking
 
 /datum/unit_test/dq_form_switch_keeps_body_ticking/Run()
@@ -27,11 +27,11 @@
 
 	var/severity_before = pain.severity
 	var/volume_before = H.bloodstr.get_reagent_amount(REAGENT_ID_TRICORDRAZINE)
-	var/weakened_before = H.weakened
-	H.Life()
+	H.life_frame()
 	TEST_ASSERT(QDELETED(pain) || pain.severity < severity_before, "afflictions should keep progressing in blob form ([severity_before] -> [QDELETED(pain) ? 0 : pain.severity])")
 	TEST_ASSERT(H.bloodstr.get_reagent_amount(REAGENT_ID_TRICORDRAZINE) < volume_before, "reagents should keep metabolising in blob form")
-	TEST_ASSERT(H.weakened < weakened_before, "statuses should keep wearing off in blob form")
+	TEST_ASSERT(H.is_weakened(), "statuses survive a form switch (they wear off in real time, doc/rewrite/life_on_om.md §7)")
+	TEST_ASSERT(life_test_started(H, /datum/om/behaviour/life), "the blobbed character stays on the life ring")
 
 	TEST_ASSERT(F.set_form(/datum/form/human), "switching back should succeed")
 	TEST_ASSERT(!HAS_TRAIT(H, TRAIT_FORM_HIDES_BODY), "the human form draws the body again")

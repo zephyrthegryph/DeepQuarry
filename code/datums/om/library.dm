@@ -1,6 +1,6 @@
 // Object-model core: the standard library of table rows
-// (doc/rewrite/object_model_core.md, "Library"). Presets only; no content
-// uses them yet.
+// (doc/rewrite/object_model_core.md, "Library"). Mob Life uses the clocks,
+// the incapacitation statuses and suspension (doc/rewrite/life_on_om.md).
 
 /proc/om_library_clocks()
 	return list(
@@ -12,15 +12,18 @@
 /proc/om_library_effects()
 	return list(
 		// Statuses: any source makes them true; timed applies keep the longest.
-		EFFECT_STUNNED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS),
-		EFFECT_PARALYZED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS),
+		// Incapacitation. Mobs apply these through Stun()/Weaken()/Paralyse() and friends
+		// (doc/rewrite/life_on_om.md §7); the effect type keeps canmove, lying and alerts in step.
+		EFFECT_STUNNED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_incapacitation),
+		EFFECT_WEAKENED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_incapacitation),
+		EFFECT_PARALYZED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_incapacitation),
 		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
 		EFFECT_BLINDED = list("combine" = COMBINE_ANY, "stacking" = STACKING_EXTEND, "channel" = CHANGE_MOB_STATUS),
 		EFFECT_MUTED = list("combine" = COMBINE_ANY, "stacking" = STACKING_EXTEND, "channel" = CHANGE_MOB_STATUS),
 		EFFECT_SLOWED = list("combine" = COMBINE_SUM, "channel" = CHANGE_MOB_MOVEMENT),
 		// Composites: defined from other effects, no contributions of their own.
-		EFFECT_CAN_MOVE = list("expr" = NOT_OF(ANY_OF(EFFECT_STUNNED, EFFECT_PARALYZED, EFFECT_BUCKLED)), "channel" = CHANGE_MOB_CAN_MOVE),
-		EFFECT_CAN_ACT = list("expr" = NOT_OF(ANY_OF(EFFECT_STUNNED, EFFECT_PARALYZED))),
+		EFFECT_CAN_MOVE = list("expr" = NOT_OF(ANY_OF(EFFECT_STUNNED, EFFECT_WEAKENED, EFFECT_PARALYZED, EFFECT_BUCKLED)), "channel" = CHANGE_MOB_CAN_MOVE),
+		EFFECT_CAN_ACT = list("expr" = NOT_OF(ANY_OF(EFFECT_STUNNED, EFFECT_WEAKENED, EFFECT_PARALYZED))),
 		// Stat sums and factors.
 		EFFECT_ARMOR_MELEE = list("combine" = COMBINE_SUM),
 		EFFECT_ARMOR_BULLET = list("combine" = COMBINE_SUM),

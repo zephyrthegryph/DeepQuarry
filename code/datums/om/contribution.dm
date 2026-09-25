@@ -53,6 +53,41 @@
 			LAZYOR(rec.hook_holders, ctx.owner)
 	return TRUE
 
+/// Timed contribution ending exactly at `expires_at` (the target's scheduler
+/// time, deciseconds), whatever the effect's stacking rule: for callers that
+/// already computed the new expiry (set or adjust a remaining duration). An
+/// expiry at or before now releases it.
+/proc/om_apply_until(datum/target, effect_id, datum/source, expires_at, value = TRUE, key)
+	var/datum/om/effect/eff = om_registry().effect(effect_id)
+	var/datum/om/rec/rec = om_rec_of(target)
+	if(!rec || !source)
+		return FALSE
+	var/t = rec.sched.now()
+	if(expires_at <= t)
+		om_release(target, effect_id, source, key)
+		return FALSE
+	om_contrib_set(rec, eff, source, value, expires_at, key, expires_at - t, TRUE)
+	om_expiry_reschedule(rec)
+	return TRUE
+
+/// When `source`'s contribution to `effect_id` on `target` expires (scheduler
+/// time, deciseconds): 0 for a hold, null when there is none.
+/proc/om_expires_at(datum/target, effect_id, datum/source, key)
+	var/datum/om/rec/rec = target?.om_rec
+	if(!rec?.contribs)
+		return null
+	var/datum/om/effect/eff = om_registry().effect(effect_id)
+	var/i = om_contrib_find(rec, eff.idx, source, key)
+	if(!i)
+		return null
+	return rec.contribs[i + OM_C_EXPIRES]
+
+/// The time `E`'s scheduler runs on (world.time live, injected in tests). Use it
+/// with om_apply_until()/om_expires_at() so tests on a test scheduler agree.
+/proc/om_time_of(datum/E)
+	var/datum/om/rec/rec = E?.om_rec
+	return rec ? rec.sched.now() : om_scheduler().now()
+
 /proc/om_release(datum/target, effect_id, datum/source, key)
 	var/datum/om/rec/rec = target?.om_rec
 	if(!rec?.contribs)
@@ -92,7 +127,7 @@
 			return i
 	return 0
 
-/proc/om_contrib_set(datum/om/rec/rec, datum/om/effect/eff, datum/source, value, expires, key, duration)
+/proc/om_contrib_set(datum/om/rec/rec, datum/om/effect/eff, datum/source, value, expires, key, duration, exact = FALSE)
 	if(eff.expr)
 		CRASH("om: [eff.id] is a composite effect; contribute to its parts")
 	if(eff.combine == COMBINE_SUM_PER_KEY && (isnull(key) || isnum(key)))
@@ -104,7 +139,10 @@
 	var/i = om_contrib_find(rec, eff.idx, source, key)
 	if(i)
 		var/list/C = rec.contribs
-		if(expires)
+		if(exact)
+			C[i + OM_C_VALUE] = value
+			C[i + OM_C_EXPIRES] = expires
+		else if(expires)
 			var/old_expires = C[i + OM_C_EXPIRES]
 			switch(eff.stacking)
 				if(STACKING_REPLACE)

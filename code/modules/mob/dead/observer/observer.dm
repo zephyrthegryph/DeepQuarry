@@ -154,10 +154,10 @@ Transfer_mind is there to check if mob is being deleted/not going to have a body
 Works together with spawning an observer, noted above.
 */
 
-/mob/observer/dead/Life()
+/mob/observer/dead/upkeep()
 	..()
-	if(!loc) return
-	if(!client) return 0
+	if(!loc || !client)
+		return
 
 	refresh_hud()
 	refresh_vision()
@@ -569,10 +569,12 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	. = ..()
 	update_following()
 
-/mob/Life()
+/// Observer upkeep, run by the observer_upkeep behaviour every OBSERVER_UPKEEP_INTERVAL
+/// (code/modules/mob/living/life/life_om.dm). Living mobs do the same in their upkeep system.
+/mob/observer/proc/upkeep()
 	// to catch teleports etc which directly set loc
 	update_following()
-	return ..()
+	update_spell_masters()
 
 /mob/proc/check_holy(turf/T)
 	return FALSE

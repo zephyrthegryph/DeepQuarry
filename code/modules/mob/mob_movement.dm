@@ -12,7 +12,7 @@
 		. += 5
 
 	if(lying)
-		if(weakened >= 1)
+		if(get_weakened() >= 1)
 			. += 14			// Very slow when weakened.
 		else
 			. += 8
@@ -163,7 +163,7 @@
 			next_move_dir_sub = 0 	// I'm not really sure why next_move_dir_sub even exists.
 			return
 		else //We are anything BUT an observer.
-			if(!my_mob.canmove || my_mob.paralysis || my_mob.stunned)//If you want to be very restrictive, add my_mob.restrained() and it'll stop people cuffed/straight jacketed. For now, that's too restrictive for a bugfix PR.
+			if(!my_mob.canmove || my_mob.get_paralysis() || my_mob.get_stunned())//If you want to be very restrictive, add my_mob.restrained() and it'll stop people cuffed/straight jacketed. For now, that's too restrictive for a bugfix PR.
 				return
 			else //Proceed like normal.
 				Process_Incorpmove(direct)

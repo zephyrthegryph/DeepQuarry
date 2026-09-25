@@ -49,7 +49,8 @@
 /// Periodic safety refresh of every HUD.
 /datum/life_system/hud_refresh
 	name = "hud refresh"
-	bit = LIFE_SYS_HUD
+	wake_only = LIFE_WAKE_ONLY_PRESENT
+	wake_on = LIFE_WAKE_ON_HUD
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/carbon/human
@@ -72,7 +73,7 @@
 /// The voice others hear.
 /datum/life_system/voice
 	name = "voice"
-	bit = LIFE_SYS_IDENTITY
+	wake_on = LIFE_WAKE_ON_IDENTITY
 	phase = LIFE_PHASE_TAIL
 	order = 110
 	mob_type = /mob/living/carbon/human
@@ -93,7 +94,7 @@
 /// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /datum/life_system/stasis_sleep
 	name = "stasis sleep"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 120
 	mob_type = /mob/living/carbon/human
@@ -105,7 +106,7 @@
 /// Falling (prevents people from floating).
 /datum/life_system/fall
 	name = "fall"
-	bit = LIFE_SYS_MOVEMENT
+	wake_on = LIFE_WAKE_ON_MOVEMENT
 	phase = LIFE_PHASE_TAIL
 	order = 130
 	mob_type = /mob/living/carbon/human
@@ -132,7 +133,7 @@
 /// Allergens, medication side effects, ischemia and the dirty medical domains.
 /datum/life_system/medical
 	name = "medical"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 200
 	segment = LIFE_SEG_HUMAN_LIVE
@@ -148,7 +149,7 @@
 /// Species NPC behaviour for client-less humans.
 /datum/life_system/npc
 	name = "npc"
-	bit = LIFE_SYS_BEHAVIOUR
+	wake_on = LIFE_WAKE_ON_BEHAVIOUR
 	phase = LIFE_PHASE_TAIL
 	order = 270
 	segment = LIFE_SEG_HUMAN_LIVE
@@ -161,7 +162,7 @@
 /// The name others see: obscured or disfigured faces hide it.
 /datum/life_system/visible_name
 	name = "visible name"
-	bit = LIFE_SYS_IDENTITY
+	wake_on = LIFE_WAKE_ON_IDENTITY
 	phase = LIFE_PHASE_TAIL
 	order = 300
 	mob_type = /mob/living/carbon/human
@@ -395,7 +396,7 @@
 			self.radiation -= 10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
 			self.accumulated_rads += 10 * RADIATION_SPEED_COEFFICIENT
 			if(!self.isSynthetic())
-				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.weakened)
+				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.get_weakened())
 					to_chat(self, span_warning("You feel exhausted."))
 					self.AdjustWeakened(3)
 				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && self.species.get_bodytype() == SPECIES_HUMAN) //apes go bald
@@ -419,7 +420,7 @@
 					self.emote("gasp")
 				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
-				if(prob(10) && !self.weakened)
+				if(prob(10) && !self.get_weakened())
 					to_chat(self, span_warning("You feel sick."))
 					self.AdjustWeakened(3)
 
@@ -435,7 +436,7 @@
 					self.emote("gasp")
 				if(prob(10) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
-				if(prob(15) && !self.weakened)
+				if(prob(15) && !self.get_weakened())
 					to_chat(self, span_warning("You feel horribly ill."))
 					self.AdjustWeakened(3)
 				if(prob(5) && self.internal_organs.len)
@@ -470,7 +471,7 @@
 					self.emote("gasp")
 				if(prob(25) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
-				if(prob(20) && !self.weakened)
+				if(prob(20) && !self.get_weakened())
 					to_chat(self, span_critical("You feel like your insides are burning!"))
 					self.AdjustWeakened(5)
 				if(prob(5))
@@ -503,7 +504,7 @@
 
 				if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn self.vomit()
-				if(!self.paralysis && prob(30) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
+				if(!self.get_paralysis() && prob(30) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
 					to_chat(self, span_critical("You have a seizure!"))
 					self.Paralyse(10)
 					self.Sleeping(10)
@@ -555,7 +556,7 @@
 				if(prob(5) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
 					to_chat(self, span_warning("Your feel nauseated."))
 					spawn self.vomit()
-				if(!self.weakened && prob(2) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
+				if(!self.get_weakened() && prob(2) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
 					to_chat(self, span_warning("Your feel exhausted."))
 					self.AdjustWeakened(3)
 			if(self.accumulated_rads > 300) // (6Gy)
@@ -563,7 +564,7 @@
 					to_chat(self, span_danger("Your hand won't respond properly, you drop what you're holding!"))
 					self.drop_item()
 			if(self.accumulated_rads > 700) // (12Gy)
-				if(!self.paralysis && prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //1 in 1000 chance per tick.
+				if(!self.get_paralysis() && prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //1 in 1000 chance per tick.
 					to_chat(self, span_critical("You have a seizure!"))
 					self.Paralyse(10)
 					self.Sleeping(10)
@@ -924,7 +925,7 @@
 
 /datum/life_system/species_components
 	name = "species components"
-	bit = LIFE_SYS_TRAITS
+	wake_on = LIFE_WAKE_ON_TRAITS
 	phase = LIFE_PHASE_TAIL
 	order = 290
 	mob_type = /mob/living/carbon/human
@@ -1130,7 +1131,7 @@
 
 /datum/life_system/thermoregulation
 	name = "thermoregulation"
-	bit = LIFE_SYS_THERMAL
+	wake_on = LIFE_WAKE_ON_THERMAL
 	phase = LIFE_PHASE_TAIL
 	order = 160
 	segment = LIFE_SEG_HUMAN_LIVE
@@ -1894,7 +1895,7 @@
 
 /datum/life_system/changeling
 	name = "changeling"
-	bit = LIFE_SYS_TRAITS
+	wake_on = LIFE_WAKE_ON_TRAITS
 	phase = LIFE_PHASE_TAIL
 	order = 140
 	segment = LIFE_SEG_HUMAN_LIVE
@@ -1950,7 +1951,7 @@
 
 /datum/life_system/shock
 	name = "shock"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 180
 	segment = LIFE_SEG_HUMAN_LIVE
@@ -2024,7 +2025,7 @@
 
 /datum/life_system/pulse
 	name = "pulse"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 310
 	mob_type = /mob/living/carbon/human
@@ -2112,7 +2113,7 @@
 
 /datum/life_system/heartbeat
 	name = "heartbeat"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 240
 	segment = LIFE_SEG_HUMAN_LIVE
@@ -2326,7 +2327,7 @@
 
 /datum/life_system/defib_timer
 	name = "defib timer"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 280
 	segment = LIFE_SEG_HUMAN_DEAD
@@ -2367,7 +2368,7 @@
 // === merged from life_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/life_system/weight
 	name = "weight"
-	bit = LIFE_SYS_NUTRITION
+	wake_on = LIFE_WAKE_ON_NUTRITION
 	phase = LIFE_PHASE_TAIL
 	order = 170
 	segment = LIFE_SEG_HUMAN_LIVE
@@ -2385,7 +2386,7 @@
 //Our call for the NIF to do whatever
 /datum/life_system/nif
 	name = "nif"
-	bit = LIFE_SYS_TRAITS
+	wake_on = LIFE_WAKE_ON_TRAITS
 	phase = LIFE_PHASE_TAIL
 	order = 250
 	segment = LIFE_SEG_HUMAN_LIVE

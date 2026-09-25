@@ -48,13 +48,13 @@
 		return
 
 	if(is_queen)
-		paralysis = 7998
+		status_set(EFFECT_PARALYZED, 7998)
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
 		src.visible_message(span_notice("\The [src] begins to lay an egg."))
 		spawn(50)
 			new /obj/effect/metroid/egg(loc, src)
 			adjust_nutrition(-500)
-			paralysis = 0
+			status_set(EFFECT_PARALYZED, 0)
 		return
 
 	if(nutrition >= evo_point && !buckled && vore_fullness == 0 && !victim)
@@ -62,7 +62,7 @@
 			to_chat(src, span_warning("There is already a queen."))
 			return
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
-		paralysis = 7998
+		status_set(EFFECT_PARALYZED, 7998)
 		sleep(50)
 		expand_troid()
 

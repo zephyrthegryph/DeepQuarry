@@ -25,7 +25,7 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
 	var/datum/affliction/dq_test_tick_counter/counter = R.body.afflict(/datum/affliction/dq_test_tick_counter)
 	TEST_ASSERT_NOTNULL(counter, "the test affliction should attach to a robot body")
-	R.Life()
+	R.life_frame()
 	TEST_ASSERT_EQUAL(counter.ticks, 1, "one robot Life should tick its body once")
 
 /// Bug 8: incapacitation keeps a robot down until it wears off; only the plan sets stat.
@@ -34,12 +34,12 @@
 /datum/unit_test/dq_robot_stun_stays_down/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
 	R.Stun(5)
-	R.Life()
+	R.life_frame()
 	TEST_ASSERT_EQUAL(R.stat, UNCONSCIOUS, "a stunned cyborg should stay unconscious through its Life tick")
-	R.Life()
+	R.life_frame()
 	TEST_ASSERT_EQUAL(R.stat, UNCONSCIOUS, "a stunned cyborg should not flicker awake on the next tick")
 	R.SetStunned(0)
-	R.Life()
+	R.life_frame()
 	TEST_ASSERT_EQUAL(R.stat, CONSCIOUS, "a cyborg should wake once the stun ends")
 
 /// Bug 9: one EMP drains the cell once and injures once.
@@ -107,10 +107,10 @@
 /datum/unit_test/dq_robot_brownout/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
 	var/obj/item/cell/C = R.remove_cell()
-	R.Life()
+	R.life_frame()
 	TEST_ASSERT_EQUAL(R.stat, UNCONSCIOUS, "a cyborg without power should brown out")
 	R.set_cell(C)
-	R.Life()
+	R.life_frame()
 	TEST_ASSERT_EQUAL(R.stat, CONSCIOUS, "a cyborg should come back when power returns")
 
 /// The plan's second death rule: a destroyed processor core.

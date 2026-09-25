@@ -36,7 +36,7 @@
 
 /datum/life_system/addictions
 	name = "addictions"
-	bit = LIFE_SYS_ADDICTION
+	wake_on = LIFE_WAKE_ON_ADDICTION
 	phase = LIFE_PHASE_MIND
 	order = 20
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS

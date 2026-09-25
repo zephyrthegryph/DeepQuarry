@@ -16,7 +16,7 @@
 /// nullspace (it followed ..() in the old carbon Life()).
 /datum/life_system/germs
 	name = "germs"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 10
 	mob_type = /mob/living/carbon

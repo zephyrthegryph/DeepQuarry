@@ -11,7 +11,7 @@
 /datum/life_system/simple_vitals
 	name = "simple vitals"
 	// A gate: it blocks LIFE_SEG_SIMPLE for the dead, so it runs whenever the mob runs.
-	bit = LIFE_SYS_GATE
+	gate = TRUE
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/simple_mob
@@ -28,33 +28,30 @@
 /datum/life_system/simple_vitals/idle(mob/living/simple_mob/self)
 	return TRUE
 
-/// Sleep, stun, weakness and paralysis wear off.
+/// Sleep wears off. Stun, weakness and paralysis are timed contributions that end on their own.
 /datum/life_system/simple_statuses
 	name = "simple statuses"
-	bit = LIFE_SYS_STATUS
+	wake_on = LIFE_WAKE_ON_STATUS
 	phase = LIFE_PHASE_TAIL
 	order = 110
 	segment = LIFE_SEG_SIMPLE
 	mob_type = /mob/living/simple_mob
-	woken_by = "Stun/Weaken/Paralyse/Sleeping setters (LIFE_WAKE_STATUS)"
+	woken_by = "Sleeping setters (CHANGE_MOB_STATUS)"
 
 /datum/life_system/simple_statuses/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	var/datum/life_system/statuses/statuses = life_statuses()
 	statuses.sleeping(self)
-	statuses.stunned(self)
-	statuses.weakened(self)
-	statuses.paralysed(self)
 
-/// Continuous while a counter runs or its alert is up.
+/// Continuous while asleep or its alert is up.
 /datum/life_system/simple_statuses/idle(mob/living/simple_mob/self)
-	if(self.sleeping || self.toggled_sleeping || self.stunned || self.weakened || self.paralysis)
+	if(self.sleeping || self.toggled_sleeping)
 		return FALSE
-	return !self.alert_state_stunned && !self.alert_state_weakened && !self.alert_state_paralysed && !self.alerts?["asleep"]
+	return !self.alerts?["asleep"]
 
 /// Passive healing while fed.
 /datum/life_system/simple_healing
 	name = "simple healing"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 150
 	segment = LIFE_SEG_SIMPLE
@@ -145,7 +142,7 @@
 
 /datum/life_system/special
 	name = "special"
-	bit = LIFE_SYS_BEHAVIOUR
+	wake_on = LIFE_WAKE_ON_BEHAVIOUR
 	phase = LIFE_PHASE_TAIL
 	order = 130
 	segment = LIFE_SEG_SIMPLE
@@ -278,7 +275,7 @@
 
 /datum/life_system/guts
 	name = "guts"
-	bit = LIFE_SYS_ORGANS
+	wake_on = LIFE_WAKE_ON_ORGANS
 	phase = LIFE_PHASE_TAIL
 	order = 140
 	segment = LIFE_SEG_SIMPLE
@@ -298,7 +295,7 @@
 
 /datum/life_system/supernatural
 	name = "supernatural"
-	bit = LIFE_SYS_STATUS
+	wake_on = LIFE_WAKE_ON_STATUS
 	phase = LIFE_PHASE_TAIL
 	order = 120
 	segment = LIFE_SEG_SIMPLE

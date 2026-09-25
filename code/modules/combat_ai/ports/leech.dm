@@ -130,7 +130,7 @@
 	if(!SL.can_special_attack(H))
 		return null
 	// Legacy infest condition: target is incapacitated / stat'd / resting / para'd.
-	if(!(H.incapacitated() || (H.stat && H.stat != DEAD) || H.resting || H.paralysis))
+	if(!(H.incapacitated() || (H.stat && H.stat != DEAD) || H.resting || H.get_paralysis()))
 		return null
 	// Highest-value special — getting a host is the leech's whole goal.
 	return DQAI_RESULT(95, H)
@@ -173,7 +173,7 @@
 	if(!SL.can_special_attack(H))
 		return null
 	// Legacy poison condition: target still on its feet (not yet infest-ready).
-	if(H.incapacitated() || (H.stat && H.stat != DEAD) || H.resting || H.paralysis)
+	if(H.incapacitated() || (H.stat && H.stat != DEAD) || H.resting || H.get_paralysis())
 		return null
 	return DQAI_RESULT(80, H)
 

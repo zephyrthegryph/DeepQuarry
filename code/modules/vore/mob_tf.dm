@@ -110,7 +110,7 @@
 		vore_selected = null
 		ourmob.mob_belly_transfer(src)
 
-	ourmob.Life(1)
+	ourmob.life_frame()
 
 	if(ishuman(src))
 		for(var/obj/item/W in src)

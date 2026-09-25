@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Mob Life runs on the object-model scheduler instead of the Mobs subsystem. Every mob now gets one Life update every 6 seconds regardless of how many mobs exist (before, it varied from 0.25 s to 10 s with the population)."
+  - bugfix: "Stuns, weakness and paralysis end at their exact time, and movement and alerts update the moment they start or end."
+  - bugfix: "Players' HUD and vision update as soon as something changes instead of on the next Life tick."

@@ -1,10 +1,6 @@
 /datum/mind
 	var/list/learned_spells
 
-/mob/Life()
-	..()
-	update_spell_masters()
-
 /// Refreshes the spell HUD buttons. Part of every mob's upkeep (living mobs: the upkeep system).
 /mob/proc/update_spell_masters()
 	if(spell_masters && spell_masters.len)

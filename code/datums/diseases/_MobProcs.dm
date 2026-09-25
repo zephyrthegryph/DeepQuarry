@@ -9,7 +9,7 @@
 	LAZYADD(viruses, D)
 	var/mob/living/L = src
 	if(istype(L))
-		L.life_wake(LIFE_SYS_UPKEEP, "disease")
+		om_changed(L, CHANGE_MOB_CONDITIONS)
 	return TRUE
 
 /mob/proc/RemoveDisease(datum/disease/D)

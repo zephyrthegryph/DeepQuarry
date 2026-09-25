@@ -2,7 +2,7 @@
 	set category = "Abilities.pAI Commands"
 	set name = "Unfold Chassis"
 
-	if(stat || sleeping || paralysis || weakened)
+	if(stat || sleeping || get_paralysis() || get_weakened())
 		return
 
 	if(loc != card)
@@ -77,7 +77,7 @@
 	set category = "Abilities.pAI Commands"
 	set name = "Collapse Chassis"
 
-	if(stat || sleeping || paralysis || weakened)
+	if(stat || sleeping || get_paralysis() || get_weakened())
 		return
 
 	if(src.loc == card)

@@ -465,7 +465,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 			if(temp_apc && temp_apc.terminal && temp_apc.terminal.powernet)
 				temp_apc.terminal.powernet.trigger_warning()
-		if(user.stunned)
+		if(user.get_stunned())
 			return 1
 	return 0
 

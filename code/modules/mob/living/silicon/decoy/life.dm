@@ -4,7 +4,7 @@
 /// Destroyed at DQ_MACHINE_LETHAL_MULT x endurance, decided by the machine body.
 /datum/life_system/decoy_body
 	name = "decoy body"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_BODY
 	life_sets = LIFE_SET_DECOY
 	mob_type = /mob/living/silicon/decoy

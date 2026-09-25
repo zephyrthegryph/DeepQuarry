@@ -16,7 +16,7 @@
 	var/old_stat = stat
 	. = ..()
 	if(stat != old_stat)
-		life_wake(LIFE_SYS_ALL, "stat change")
+		om_changed(src, CHANGE_MOB_STAT)
 		SEND_SIGNAL(src, COMSIG_MOB_STATCHANGE, old_stat, new_stat)
 
 		if(isbelly(src.loc))

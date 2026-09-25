@@ -10,7 +10,7 @@
 /// Growth, blindness reset and icons after the living core (the old alien Life() tail).
 /datum/life_system/alien_growth
 	name = "alien growth"
-	bit = LIFE_SYS_BODY
+	wake_on = LIFE_WAKE_ON_BODY
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/carbon/alien
@@ -65,7 +65,7 @@
 		self.silent = 0
 		self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
-		if(self.paralysis && self.paralysis > 0)
+		if(self.get_paralysis() && self.get_paralysis() > 0)
 			self.blinded = 1
 			self.set_stat(UNCONSCIOUS)
 

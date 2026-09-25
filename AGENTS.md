@@ -367,8 +367,9 @@ accident or assume they work:
     oxygenation, perfusion and an oxygen debt; there is no `INJURY_ASPHYXIA` — express a
     cause as a factor, support/restriction or breath quality, else `add_oxygen_debt()`.
   - **Stabilisation** (`code/modules/medical/stabilisation/`): tourniquets
-    (`flow_occluded()`), field items, and stasis via `BF_STASIS`, read once per cycle by
-    `body.advance_stasis()`; systems check `ctx.in_stasis()` / `inStasisNow()`.
+    (`flow_occluded()`), field items, and stasis on the biology clock (stasis modifiers hold
+    `EFFECT_CLOCK_BIO_INHIBIT`), read once per frame by `body.advance_stasis()`; systems check
+    `ctx.in_stasis()` / `inStasisNow()`.
   - **Surgery as treatments** (`code/modules/surgery/`): steps deliver `TREAT_*` through
     `mend()`; access state is the `surgical_incision` affliction (no `op_stage`); organs
     past saving answer `is_beyond_repair()`.
@@ -387,23 +388,32 @@ accident or assume they work:
   no `chem_effects`/`add_chemical_effect`, no `mechanical_effects`/`vital_effects`/`od_boost`
   and no numeric modifier fields; `tools/ci/check_grep.sh` rejects them. Brief non-reagent
   effects are short modifiers (`/datum/modifier/numbness`, `withdrawal_strain`, …).
-- **Mob Life is a scheduler.** `/mob/living/Life()` (`code/modules/mob/living/life/scheduler.dm`)
-  runs an ordered list of `/datum/life_system` flyweights composed per mob type; see
-  `doc/mob_life_architecture.md` §4.8. Don't override `Life()` or add `handle_*` hooks on mobs:
-  add a system, or a variant whose path mirrors the mob path (`breathing/carbon/human`). Code
-  outside Life uses `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or
-  `run_life_system()`. Components tick via `add_trait_life_system()` (there is no
-  `COMSIG_LIVING_LIFE`).
-  **Mobs are event-driven and hibernate, players included** (§4.9):
-  - A system sleeps when its `idle(self)` holds after it ticks. `rewake_delay()` sets a slow
-    timer for work that still drifts, and `woken_by` documents what wakes it. The default
-    `idle()` is FALSE, so a new system stays awake until you give it a rule.
-  - A mob with nothing awake leaves `SSmobs`.
-  - Anything that changes what a system reads must call `L.life_wake(bits, reason)`, or go
-    through a producer that does: `injure`/`mend`, `body.invalidate()`, the status setters,
-    `Moved`, equip/unequip, `set_stat`, Login.
-  - `life_wake()` and `life_hibernate()` are the only procs that change a mob's run state.
-    `check_grep.sh` rejects direct writes.
+- **Mob Life runs on the object model.** Read `doc/rewrite/life_on_om.md`. Every `/mob/living`
+  carries the `life` behaviour (`code/modules/mob/living/life/life_om.dm`): one frame per
+  `LIFE_CYCLE` (6 s, fixed steps, catch-up capped at 2) runs an ordered list of
+  `/datum/life_system` flyweights composed per mob type (`life_frame()`). There is no `Life()`
+  proc and no SSmobs Life loop. Don't add `handle_*` hooks on mobs: add a system, or a variant
+  whose path mirrors the mob path (`breathing/carbon/human`). Code outside Life uses
+  `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or `run_life_system()`; components tick
+  via `add_trait_life_system()`. Observers (ghosts, AI eyes, blob) run `upkeep()` on their own
+  behaviour. Life content is written per frame, so `LIFE_CYCLE` sets its per-second balance.
+  **Mobs are event-driven and hibernate, players included** (doc §5):
+  - A system sleeps when its `idle(self)` holds after it ticks, and wakes when a mob change
+    channel in its `wake_on` (`LIFE_WAKE_ON_*`) is raised. `rewake_delay()` sets a slow timer
+    for work that still drifts; `woken_by` documents the producers. The default `idle()` is
+    FALSE, so a new system stays awake until you give it a rule.
+  - A mob with nothing awake leaves the ring (`om_sleep`) until a change or a timer.
+  - Anything that changes what a system reads must raise the channel:
+    `om_changed(L, CHANGE_MOB_HEALTH|STATUS|LOC|EQUIPMENT|CONDITIONS|STAT|CLIENT)`, or go through
+    a producer that does: `injure`/`mend`, `body.invalidate()`, the status setters, `Moved`,
+    equip/unequip, `set_stat`, Login, modifiers.
+  - `life_hibernate()` and `life_resume()` are the only procs that park and unpark a mob;
+    `check_grep.sh` rejects direct writes to `life_hibernating`/`life_asleep`.
+  - Stun, weaken and paralysis are timed contributions (`EFFECT_STUNNED`/`WEAKENED`/
+    `PARALYZED`): set them with `Stun()`/`SetStunned()`/`AdjustStunned()` etc. (units of
+    `LIFE_CYCLE`), read them with `is_stunned()`/`get_stunned()`. There are no counters.
+  - Stasis holds `EFFECT_CLOCK_BIO_INHIBIT` (the biology clock); absorbed prey and bodies kept
+    for reforming are suspended (`suspend_life()`/`resume_life()`).
   - A 30 s audit logs `MOB_HIBERNATE_AUDIT: MISSED WAKE` and wakes the mob when a producer
     was forgotten. It always runs in test builds and fails the run on a miss. On servers it's off
     unless the `MOB_HIBERNATION_AUDIT` config flag or the "Toggle Hibernation Audit" verb turns it on.

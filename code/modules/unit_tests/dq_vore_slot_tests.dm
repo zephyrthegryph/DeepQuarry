@@ -194,7 +194,7 @@
 		if(B.digested_prey_count)
 			break
 		if(!QDELETED(prey) && prey.loc == B)
-			prey.Life()
+			prey.life_frame()
 		B.belly_cycle(BELLY_BASELINE_TICK / (1 SECONDS))
 	TEST_ASSERT_EQUAL(B.digested_prey_count, 1, "a digest belly should finish its prey (stat [prey?.stat])")
 

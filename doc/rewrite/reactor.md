@@ -127,21 +127,12 @@ Quantities that change at a known rate use the main-side rate models ([rust_core
 
 Agree this interface with the body rewrite before S2 migrates any caller.
 
-**The hook (agreed with the body rewrite).** The body rewrite's only wake is
-`/mob/living/proc/life_wake(bits = LIFE_SYS_ALL, reason, partial = FALSE)` and its only hibernate
-is `life_hibernate(reason)`; its lint forbids writing `life_hibernating`, `life_awake` or
-`hibernating_mobs` outside `scheduler.dm`. The reactor reaches mob Life through exactly one
-proc, `/mob/living/proc/reactor_wake(bits, what)` (in `code/controllers/subsystems/reactor.dm`),
-which becomes `life_wake(bits, "reactor:[what]")` after the body rewrite's wave-4 merge (until
-then it calls the scheduler's current `wake(bits)`). The flow:
-1. A life system's `attach()` subscribes the mob:
-   `REACT_WHEN(mob, COND_BAND(turf_gas, CH_GAS_PRESSURE, comfort_levels))`, the same for
-   temperature, and `REACT_AT` for its timers.
-2. The mob's `on_react(reason, source)` maps the reason to its systems' wake bits (gas channels
-   to the `LIFE_WAKE_BODY` systems, timers to the system that set them) and calls
-   `reactor_wake(bits, "gas")` once, with the bits merged.
-3. `life_hibernate()` never talks to the reactor: the subscriptions stay while the mob sleeps,
-   which is the point.
+**The hook.** Mob Life runs on the object model (doc/rewrite/life_on_om.md). A reactor
+wake reaches it the way every producer does: by raising a mob change channel,
+`om_changed(mob, CHANGE_MOB_LOC)` for gas and comfort changes around the mob. The life
+behaviour's `on_wake` wakes the systems whose `wake_on` includes that channel; there is no
+separate reactor entry point and no wake bits. Hibernation (`om_sleep` on the life behaviour)
+never talks to the reactor: subscriptions stay while the mob sleeps, which is the point.
 
 The first user is the body rewrite's known gap: atmos changes around a standing mob are not an
 event yet (a 15 s timer covers it). A pressure/temperature `Band` watch on the mob's turf

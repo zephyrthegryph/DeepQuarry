@@ -76,7 +76,7 @@
 /// Bots shrug off stuns and run their AI (the old bot Life() tail after ..()).
 /datum/life_system/bot_core
 	name = "bot core"
-	bit = LIFE_SYS_BEHAVIOUR
+	wake_on = LIFE_WAKE_ON_BEHAVIOUR
 	phase = LIFE_PHASE_TAIL
 	order = 100
 	mob_type = /mob/living/bot
