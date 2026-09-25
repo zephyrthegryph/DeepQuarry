@@ -40,6 +40,11 @@
 		return
 	var/atom/drop = drop_location()
 	var/atom/movable/successor = lifecycle_successor
+	// Slot types that keep latent contents of their own (stock records) apply their policy to
+	// them first; the ledger then handles the real things. The L1 move lost this call.
+	for(var/datum/slot_def/def as anything in L.defs)
+		if(!def.is_mind_slot)
+			def.drop_latent(src, drop)
 	for(var/datum/slot_def/def as anything in L.defs)
 		if(def.drop_policy == SLOT_DROP_HOLDER || def.is_mind_slot)
 			continue
@@ -48,6 +53,26 @@
 			if(!QDELETED(thing))
 				dq_lifecycle_resolve_slot_entry(src, def, thing, drop, successor)
 	dq_lifecycle_resolve_latent(L, drop, successor)
+
+/// Destroy()'s check that the contents phase did its job: TRUE when something still sits in a
+/// slot whose policy the transaction must carry out. SLOT_DROP_HOLDER slots (a mob's worn and
+/// held items) and mind slots keep their contents on purpose: the base Destroy() deletes them.
+/atom/movable/proc/dq_holds_unreleased()
+	if(!length(contents) && !has_latent())
+		return FALSE
+	var/datum/ledger/L = ledger
+	if(!L)
+		// No ledger: phase 3 had nothing to go on, so only holder-kept slot sets are fine.
+		for(var/datum/slot_def/def as anything in dq_slot_defs_for(src))
+			if(def.drop_policy != SLOT_DROP_HOLDER && !def.is_mind_slot)
+				return TRUE
+		return FALSE
+	for(var/datum/slot_def/def as anything in L.defs)
+		if(def.drop_policy == SLOT_DROP_HOLDER || def.is_mind_slot)
+			continue
+		if(length(L.slots[def.id]) || length(L.latent_list(def.id)))
+			return TRUE
+	return FALSE
 
 /// Applies `def`'s policy to the one `thing` already in its slot on `holder`.
 /proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/slot_def/def, atom/movable/thing, atom/drop, atom/movable/successor)

@@ -14,10 +14,36 @@
 	siemens_coefficient = 0.9
 	body_parts_covered = 0
 	var/slogan = ""
-	var/hatsize = 0
+	/// -1 until rolled, so a rolled size always differs from the initial value and is saved.
+	var/hatsize = -1
+	/// The hue rolled with the slogan. The look is derived from these three (apply_look()), so a
+	/// hat restored from saved state looks like the one that was saved instead of re-rolling.
+	var/colourtype
 
 /obj/item/clothing/head/fishing/Initialize(mapload)
 	. = ..()
+	roll_slogan()
+	apply_look()
+
+/// Restored state brings the text (name, desc) itself; only the worn and in-hand icons, a list
+/// Initialize() rebuilt from its own roll, have to follow the restored size and hue.
+/obj/item/clothing/head/fishing/state_post_apply(list/blob, flags)
+	..()
+	apply_icons()
+
+/// Name, description and icons from the slogan, size and hue.
+/obj/item/clothing/head/fishing/proc/apply_look()
+	desc = "A peaked cap with text reading '[slogan]'."
+	name = "\improper '[slogan]' hat"
+	apply_icons()
+
+/// Worn and in-hand icons from the size and hue.
+/obj/item/clothing/head/fishing/proc/apply_icons()
+	icon_state = "[colourtype]soft[hatsize]"
+	item_state_slots = list(slot_r_hand_str = "[colourtype]soft", slot_l_hand_str = "[colourtype]soft", slot_head_str = "[colourtype]soft[hatsize]")
+
+/obj/item/clothing/head/fishing/proc/roll_slogan()
+	hatsize = 0
 	//short phrases that women and fish may have about you
 	var/feelings = list("love me",
 						"fear me",
@@ -141,13 +167,5 @@
 					hatsize += 3
 
 
-	//now we have the slogan, apply this to the description and name
-	desc = "A peaked cap with text reading '[slogan]'."
-	name = "\improper '[slogan]' hat"
-
 	//pick a hue
-	var/colourtype = pick("green", "red", "blue", "yellow", "purple", "orange", "grey")
-
-	//finally, take our hat size and pick the icon accordingly
-	icon_state = "[colourtype]soft[hatsize]"
-	item_state_slots = list(slot_r_hand_str = "[colourtype]soft", slot_l_hand_str = "[colourtype]soft", slot_head_str = "[colourtype]soft[hatsize]")
+	colourtype = pick("green", "red", "blue", "yellow", "purple", "orange", "grey")

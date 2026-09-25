@@ -73,6 +73,10 @@
 	capacity_model = SLOT_CAPACITY_NONE
 	capacity = 0
 	is_default = TRUE
+	// Organs, implants and whatever else sits inside the body go with it when the mob is
+	// deleted, as they always have (gibbing and surgery move them out first). SPILL here
+	// dropped every deleted mob's organs on its turf.
+	drop_policy = SLOT_DROP_HOLDER
 	// The body model handles what reaches organs; nothing passes this way.
 	heat_transmission = 0
 	radiation_transmission = 0
