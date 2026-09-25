@@ -64,6 +64,7 @@ Rust  vg-ffi ──────────────────────�
 | [temperature.md](temperature.md) | One thermal model covering Rust, mobs, items, reagents and machines |
 | [object_model.md](object_model.md) | Object kinds, ownership, relations, archetypes, behaviours, requirements, events, scheduling, tasks, UI and dm-health (authoritative) |
 | [object_model_core.md](object_model_core.md) | The object-model core API: scheduler, change tracking, derived values, relations, contributions, rates, events, checks, tasks, UI and the table-first declarations (authoritative; supersedes the API parts of object_model.md) |
+| [life_on_om.md](life_on_om.md) | Mob Life on the object-model core: one frame behaviour, channel wakes, hibernation as roster removal, the 6 s cycle decision, statuses as contributions, stasis on the biology clock |
 | [lifecycle.md](lifecycle.md) | Destruction as a framework transaction: phases, slot policies and verbs |
 | [rust_architecture.md](rust_architecture.md) | Verdigris: domains as declarations plus laws, the generic core, crate map and plan (authoritative) |
 
