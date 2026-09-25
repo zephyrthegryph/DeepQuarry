@@ -168,7 +168,10 @@
 /// by the grant's holder rather than the source cleaning up after itself. A
 /// no-op until that track lands.
 /proc/dq_lifecycle_revoke_grants(datum/D)
-	return
+	// Object model (code/datums/om/entity.dm): contributions and grants this
+	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
+	if(D.om_rec)
+		om_teardown_rest(D)
 
 // ---- Phase 6: effects ----
 

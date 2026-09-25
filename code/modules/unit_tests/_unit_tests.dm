@@ -231,10 +231,12 @@
 #include "dq_construction_assembly_tests.dm"
 #include "xgm_total_moles_test.dm"
 #include "dq_w6_critical_tests.dm"
+#include "dq_om_core_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
 #include "../benchmarks/scenarios.dm"
+#include "../benchmarks/om_dispatch.dm"
 #endif
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"

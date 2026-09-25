@@ -38,6 +38,10 @@
 	/// registered and has a loc. Body plans declare this on the mind slot
 	/// (DQ Medical, O2). Nothing else may set it.
 	var/is_mind_slot = FALSE
+	/// Object-model relation (/datum/om/relation) linking a thing in this
+	/// slot to the holder while it is here (thing = source, holder = target).
+	/// Its contributes/grants rows are how a slot declares what occupying it gives.
+	var/om_relation
 
 	// ---- Propagation (containment.md §3.2, C2; paths.dm walks these) ----
 	/// SLOT_LAYER_*: order among this holder's layered slots, higher is further

@@ -72,6 +72,9 @@
 /// on `D` -- owned children deleted, pair partners nulled on both sides,
 /// back-list memberships removed.
 /proc/dq_lifecycle_clear_links(datum/D)
+	// Object-model relations, watches and forwards (code/datums/om/entity.dm).
+	if(D.om_rec)
+		om_teardown_links(D)
 	var/list/table = dq_lifecycle_link_table(D)
 	if(!table)
 		return

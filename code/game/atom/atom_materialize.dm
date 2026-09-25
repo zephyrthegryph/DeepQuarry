@@ -61,6 +61,9 @@
 	// Rules (code/datums/rules/): subscribe the type's rules, if it has any.
 	if(dq_rules_for_type(type))
 		dq_rules_on_materialize(src)
+	// Object model: attach the type's declared behaviours (code/datums/om/entity.dm).
+	if(om_type_has_decl(type))
+		om_start(src)
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()
@@ -68,6 +71,8 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	leave_registries() // L3: code/__defines/registries.dm
 	dq_rules_on_dematerialize(src)
+	if(om_rec)
+		om_teardown_rest(src)
 
 /// Creates `path` at `loc` and runs its Initialize() without materializing it.
 /// Extra arguments go to Initialize(). The result is a sandboxed object: it has
