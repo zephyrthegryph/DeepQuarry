@@ -170,3 +170,99 @@ tools/build/build.sh bench --scenario=life_sweep -DLIFE_NO_PROFILE -DLIFE_CYCLE_
 
 Alternate the two, one boot at a time, and never run anything else on the
 machine meanwhile (two overlapping runners contaminated an earlier attempt).
+
+
+## Rerun after the Life perf fixes and the status/immunity rewrite (commit 612d0d463e)
+
+Same scenario and build flags; cut down on request: **3 boots per side**, interleaved
+(old, new, old, ...), no warm-up dropped, and only the 128-human and mix configurations
+reported (the scenario still measures all four). Old side: `rewrite/life-bench-base`
+(67664975d5). Plus **one** boot each of master's scheduler *as it ran* (new branch
+`rewrite/life-bench-master`, 001660e596: 0.25 s wait, `ceil(remaining / 8)` quota) and of
+the new side at the production 6 s cycle.
+
+Caveat: the machine was much noisier than in the first run (the old side's h128 Life cost
+was 88.5 ms/s here vs 70.7 before, with one new-side boot an outlier), and n = 3, so the
+CIs are wide; only large differences are meaningful.
+
+Mix note: the new side now has **384** hibernating mobs, not 288. The 96 "busy" mice kept
+Life running only because their sleep counter was decremented every frame; sleep is now a
+timed status, so they hibernate. Frames per mob per second drop accordingly (0.139 vs
+0.224) and µs per frame rises because only the 64 humans still run frames.
+
+### New (2 s) vs old (2 s)
+
+#### h128
+
+| metric | old (2 s) | new (2 s) | new/old | new (6 s) |
+|---|---|---|---|---|
+| tick avg (%) | 12.47 ± 0.30 | 13.14 ± 4.99 | 1.05 ± 0.40 | 17.02 |
+| tick p95 (%) | 18.0 | 18.7 ± 7.6 | 1.04 ± 0.42 | 57.0 |
+| tick p99 (%) | 20.3 ± 1.4 | 21.7 ± 10.0 | 1.07 ± 0.50 | 86.0 |
+| frames per mob per s | 0.500 ± 0.000 | 0.512 ± 0.001 | 1.02 ± 0.00 | 0.164 |
+| Life ms per s | 88.5 ± 2.9 | 99.8 ± 38.8 | 1.13 ± 0.44 | 51.5 |
+| us per frame | 1382 ± 46 | 1522 ± 592 | 1.10 ± 0.43 | 2453 |
+| memory after spawn (MB) | 0.3 ± 0.4 | 0.3 ± 0.5 | 1.00 ± 2.41 | 0.2 |
+| hibernating mobs | 0 | 0 | - | 0 |
+| life ring: dropped frames (breaches) | - | 0 | - | 0 |
+
+
+| metric | old (2 s) | new (2 s) | new/old | new (6 s) |
+|---|---|---|---|---|
+| tick avg (%) | 33.95 ± 3.86 | 28.70 ± 0.24 | 0.85 ± 0.10 | 27.13 |
+| tick p95 (%) | 45.0 ± 17.4 | 38.3 ± 1.4 | 0.85 ± 0.33 | 56.0 |
+| tick p99 (%) | 54.3 ± 31.6 | 43.0 ± 6.6 | 0.79 ± 0.48 | 83.0 |
+| frames per mob per s | 0.499 ± 0.004 | 0.318 ± 0.106 | 0.64 ± 0.21 | 0.172 |
+| Life ms per s | 296.7 ± 32.5 | 252.1 ± 9.1 | 0.85 ± 0.10 | 183.1 |
+| us per frame | 1161 ± 136 | 1568 ± 502 | 1.35 ± 0.46 | 2079 |
+| memory after spawn (MB) | 15.9 ± 3.4 | 14.0 ± 8.3 | 0.88 ± 0.56 | 13.5 |
+| hibernating mobs | 0 | 0 | - | 0 |
+| life ring: dropped frames (breaches) | - | 2842 ± 1583 | - | 0 |
+#### mix
+
+| metric | old (2 s) | new (2 s) | new/old | new (6 s) |
+|---|---|---|---|---|
+| tick avg (%) | 12.96 ± 19.02 | 9.97 ± 3.64 | 0.77 ± 1.16 | 6.76 |
+| tick p95 (%) | 45.3 ± 61.9 | 15.0 ± 6.6 | 0.33 ± 0.47 | 13.0 |
+| tick p99 (%) | 58.3 ± 89.9 | 18.7 ± 7.6 | 0.32 ± 0.51 | 18.0 |
+| frames per mob per s | 0.224 ± 0.011 | 0.139 ± 0.000 | 0.62 ± 0.03 | 0.089 |
+| Life ms per s | 57.1 ± 34.8 | 65.4 ± 24.8 | 1.15 ± 0.82 | 31.1 |
+| us per frame | 572 ± 380 | 1050 ± 398 | 1.84 ± 1.41 | 781 |
+| memory after spawn (MB) | 0.0 | 0.0 | - | 1.5 |
+| hibernating mobs | 288 | 384 | 1.33 | 329 |
+| life ring: dropped frames (breaches) | - | 3066 ± 1733 | - | 0 |
+
+### Master as it ran vs new at 6 s (one boot each)
+
+#### h128
+
+| metric | master (as it ran) | new (6 s) | new/master |
+|---|---|---|---|
+| tick avg (%) | 12.62 | 17.02 | 1.35 |
+| tick p95 (%) | 62.0 | 57.0 | 0.92 |
+| tick p99 (%) | 84.0 | 86.0 | 1.02 |
+| frames per mob per s | 0.150 | 0.164 | 1.09 |
+| Life ms per s | 32.7 | 51.5 | 1.57 |
+| us per frame | 1704 | 2453 | 1.44 |
+| memory after spawn (MB) | 0.4 | 0.2 | 0.50 |
+| hibernating mobs | 0 | 0 | - |
+| life ring: dropped frames (breaches) | - | 0 | - |
+#### mix
+
+| metric | master (as it ran) | new (6 s) | new/master |
+|---|---|---|---|
+| tick avg (%) | 7.78 | 6.76 | 0.87 |
+| tick p95 (%) | 33.0 | 13.0 | 0.39 |
+| tick p99 (%) | 71.0 | 18.0 | 0.25 |
+| frames per mob per s | 0.092 | 0.089 | 0.97 |
+| Life ms per s | 18.3 | 31.1 | 1.70 |
+| us per frame | 443 | 781 | 1.76 |
+| memory after spawn (MB) | 0.0 | 1.5 | - |
+| hibernating mobs | 288 | 329 | 1.14 |
+| life ring: dropped frames (breaches) | - | 0 | - |
+
+Reading it: at 128 humans the two schedulers cost the same within noise. In the mix the
+tails stay far lower on the object model (p95 15 vs 45 %, p99 19 vs 58 %), as before.
+Against master as it actually shipped, the 6 s cycle delivers about the same frames per
+mob (master's shrinking quota gave ~6.7 s at 128 humans) with a much lower mix tail
+(p99 18 vs 71 %); the single-boot human rows are within this session's noise.
