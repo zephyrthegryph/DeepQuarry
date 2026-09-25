@@ -115,7 +115,7 @@
 	// slot's declared policy said, in the destroy transaction's phase 3
 	// (destroy_transaction() -> dq_lifecycle_resolve_contents()), before
 	// Destroy() ever runs. Nothing decides that here any more.
-	if((ledger || dq_slot_defs_for(src)) && (length(contents) || has_latent()))
+	if((ledger || dq_slot_defs_for(src)) && dq_holds_unreleased())
 		stack_trace("[type] still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them")
 	if(em_block)
 		cut_overlay(em_block)

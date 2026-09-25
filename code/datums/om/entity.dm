@@ -26,6 +26,12 @@
 	var/list/att_state = list()
 	/// Lane bits this rec is queued in.
 	var/queued = 0
+	/// Union of att_pend: channels with an on_wake already queued. A change whose bits are all
+	/// pending, and that nothing else watches (slow_mask), has nothing new to do.
+	var/pend_union = 0
+	/// Channels that need the full dispatch every time: requires re-checks, watches, forwards,
+	/// derived inputs, services and tasks. Recomputed with the listen mask.
+	var/slow_mask = 0
 	/// Stride 3: behaviour id, generation, local target (clocked) or null.
 	var/list/deadlines
 	var/list/edges
@@ -214,6 +220,7 @@
 		current.remove(rec.owner, rec.phase)
 		rec.att_ring[i] = null
 	rec.att_pend[i] = 0
+	om_recompute_pend(rec)
 	if(!(rec.att_state[i] & OM_ATT_STARTED))
 		return
 	rec.att_state[i] &= ~OM_ATT_STARTED
@@ -245,21 +252,31 @@
 
 /// Recomputed only when attachments, watches, forwards or derived storage change.
 /proc/om_recompute_listen(datum/om/rec/rec)
-	var/mask = rec.table?.service_mask
+	var/slow = rec.table?.service_mask
+	var/mask = slow
 	for(var/datum/om/behaviour/B as anything in rec.att)
 		mask |= B.interest
+		slow |= B.requires_mask | B.related_added_mask
 	for(var/i in 1 to length(rec.watches_in) step 3)
-		mask |= rec.watches_in[i + 1]
+		slow |= rec.watches_in[i + 1]
 	for(var/i in 1 to length(rec.fwd_in) step 4)
-		mask |= rec.fwd_in[i + 1]
+		slow |= rec.fwd_in[i + 1]
 	if(rec.dv)
 		var/list/defs = om_registry().derived
 		for(var/i in 1 to length(rec.dv) step 5)
 			var/datum/om/derived/D = defs[rec.dv[i]]
-			mask |= D.inputs
+			slow |= D.inputs
 	for(var/datum/om/task/T as anything in rec.tasks)
-		mask |= T.def.interrupt_on
-	rec.owner.om_listen = mask
+		slow |= T.def.interrupt_on
+	rec.slow_mask = slow
+	rec.owner.om_listen = mask | slow
+
+/// Recomputes rec.pend_union after pending wakes were delivered or dropped.
+/proc/om_recompute_pend(datum/om/rec/rec)
+	var/u = 0
+	for(var/bits in rec.att_pend)
+		u |= bits
+	rec.pend_union = u
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/om_observed_mask(datum/om/rec/rec)
@@ -289,6 +306,10 @@
 			sched.bulk_list += rec
 		rec.bulk_bits |= bits
 		return
+	// Repeats of a change whose wake is already queued (a body raising health changes several
+	// times in one frame) cost one test.
+	if(!(bits & rec.slow_mask) && !(bits & ~rec.pend_union))
+		return
 	var/i = 1
 	while(i <= length(rec.att))
 		var/datum/om/behaviour/B = rec.att[i]
@@ -301,6 +322,7 @@
 					continue
 			if((B.wake_on & bits) && (rec.att_state[i] & OM_ATT_STARTED))
 				rec.att_pend[i] |= B.wake_on & bits
+				rec.pend_union |= B.wake_on & bits
 				sched.enqueue(rec, B.lane)
 		i++
 	if(rec.watches_in)
@@ -335,6 +357,7 @@
 		if(B.id == bid)
 			if(rec.att_state[i] & OM_ATT_STARTED)
 				rec.att_pend[i] |= bits
+				rec.pend_union |= bits
 				rec.sched.enqueue(rec, B.lane)
 			return
 

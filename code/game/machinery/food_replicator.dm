@@ -213,8 +213,9 @@
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	var/man_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 
-	efficiency = 3 / man_rating
-	speed = cap_rating / 2
+	// A replicator built without a board has no parts: rate it as stock (rating 1).
+	efficiency = 3 / max(man_rating, 1)
+	speed = max(cap_rating, 1) / 2
 
 
 /// Old verb/eject_beaker().

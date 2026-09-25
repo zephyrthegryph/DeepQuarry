@@ -130,6 +130,10 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			continue
 
 		GLOB.unit_test_block_pool += block
+		// A block stands in for station floor: range-to-station checks (contact levels) pass on it
+		// as they did when tests ran on the map itself.
+		if(using_map)
+			using_map.contact_levels |= block.z
 
 	if(!length(GLOB.unit_test_block_pool))
 		CRASH("ensure_unit_test_block_pool: failed to load any isolated test blocks.")
