@@ -206,6 +206,15 @@ impl<'a, R, W> LawCtx<'a, R, W> {
         Some(at)
     }
 
+    /// Schedules the current item for when `store` would fill or empty at
+    /// `external_rate` watts ([`crate::rate::RateStore::next_bound`]): how
+    /// an APC or SMES sleeps between rate changes. Returns the time.
+    pub fn schedule_store(&mut self, store: &crate::rate::RateStore, external_rate: f64) -> Option<f64> {
+        let at = store.next_bound(external_rate, self.fx.now)?;
+        self.schedule(at);
+        Some(at)
+    }
+
     /// Explicit external sources/sinks for conserved quantities this step
     /// (§4.9): see [`Ledger::source`]/[`Ledger::sink`].
     pub fn ledger(&mut self) -> &mut Ledger {
