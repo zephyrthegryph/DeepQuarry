@@ -35,13 +35,8 @@
 /// SLOT_DROP_DELETE -- see file header). Skips is_mind_slot entries: phase
 /// 0.5 already resolved those, tree-wide, before this ever runs.
 /atom/movable/proc/dq_lifecycle_resolve_contents()
-	var/datum/ledger/L = dq_ledger(src) // builds it (and resolves a latent generator) if this is its first use
+	var/datum/ledger/L = dq_ledger(src, destroying = TRUE) // builds it (and resolves a latent generator) if this is its first use
 	if(!L)
-		// A holder deleted before it ever became live (an unmaterialized probe, such as the
-		// storage cost probe) never resolved its declared latent contents: they are only a
-		// declaration, and nothing of them exists to release.
-		if(!(flags & ATOM_MATERIALIZED))
-			latent_contents = FALSE
 		return
 	var/atom/drop = drop_location()
 	var/atom/movable/successor = lifecycle_successor
