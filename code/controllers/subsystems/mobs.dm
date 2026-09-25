@@ -8,12 +8,12 @@
 SUBSYSTEM_DEF(mobs)
 	name = "Mobs"
 	priority = FIRE_PRIORITY_MOBS
-	// BENCHMARK BASELINE (doc/rewrite/life_on_om_benchmark.md): fires every tick and
-	// spreads one Life() per mob over LIFE_NOMINAL_SECONDS with a fixed per-cycle quota.
-	// The shipped scheduler recomputed the quota from the *remaining* run list, so it
-	// shrank as the cycle drained and a cycle took 5-10 s instead of 2.
-	wait = 1
-	flags = SS_TICKER|SS_KEEP_TIMING|SS_NO_INIT
+	// BENCHMARK BASELINE, master as it ran (doc/rewrite/life_on_om_benchmark.md): fires every
+	// 0.25 s and takes ceil(remaining / 8) mobs per fire, so the quota shrinks as the cycle
+	// drains and a cycle takes 5-10 s at a normal population. Only the bench counters differ
+	// from master.
+	wait = 0.25 SECONDS
+	flags = SS_KEEP_TIMING|SS_NO_INIT
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
 	dependencies = list(
@@ -23,13 +23,8 @@ SUBSYSTEM_DEF(mobs)
 	)
 
 	var/list/currentrun = list()
-	/// Fires per Life cycle (one per tick over LIFE_NOMINAL_SECONDS); set at the first fire.
-	var/life_slices = 0
+	var/life_slices = 8
 	var/slice_budget_remaining = 0
-	/// This cycle's per-fire quota (fractional), fixed when the cycle's run list is taken, and the
-	/// carry that turns it into whole mobs per fire so a cycle is exactly life_slices fires.
-	var/cycle_quota = 1
-	var/quota_carry = 0
 	/// Benchmarks (life_sweep): Life() calls on living mobs, and ms spent in fire().
 	var/bench_life_calls = 0
 	var/bench_ms = 0
@@ -77,17 +72,12 @@ SUBSYSTEM_DEF(mobs)
 
 /datum/controller/subsystem/mobs/fire(resumed = 0)
 	var/bench_start = TICK_USAGE
-	if(!life_slices)
-		life_slices = max(1, round((LIFE_NOMINAL_SECONDS SECONDS) / world.tick_lag))
 	if (!resumed)
 		if(!length(src.currentrun))
 			src.currentrun = GLOB.mob_list.Copy()
 			profile_run_index = 0
 			life_cycle++
-			cycle_quota = length(src.currentrun) / life_slices
-		quota_carry += cycle_quota
-		slice_budget_remaining = round(quota_carry)
-		quota_carry -= slice_budget_remaining
+		slice_budget_remaining = max(1, CEILING(length(src.currentrun) / life_slices, 1))
 		if(world.time >= next_hibernation_audit && hibernation_audit_enabled())
 			next_hibernation_audit = world.time + MOB_HIBERNATION_AUDIT_INTERVAL
 			audit_hibernation()
