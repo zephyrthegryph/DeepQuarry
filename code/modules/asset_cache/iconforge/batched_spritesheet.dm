@@ -256,6 +256,10 @@
 	SSasset_loading.assets_generating = max(SSasset_loading.assets_generating - 1, 0)
 
 /datum/asset/spritesheet_batched/ensure_ready()
+	// A queued async generation may be in flight: wait for that job instead of
+	// re-entering realize_spritesheets() and polling the same job twice.
+	if(getting_genned)
+		UNTIL(!getting_genned)
 	if(!fully_generated)
 		realize_spritesheets(yield = FALSE)
 	return ..()
