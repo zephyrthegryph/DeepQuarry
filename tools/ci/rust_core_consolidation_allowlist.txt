@@ -10,7 +10,6 @@
 verdigris/domains/gas/Cargo.toml:byondapi_dep  # M2/gas rewrite: the legacy ~60-bind gas mixture API DM calls directly still needs byondapi; becomes a GasMix component + queries, then the dependency moves to vg-ffi only.
 verdigris/domains/gas/src/gas/types.rs:bind_attr  # M2/gas rewrite: gas registry/reaction-info binds; move to vg-ffi (+vg-macros generated glue) with the rest of gas's FFI surface.
 verdigris/domains/gas/src/gate.rs:thread_local  # M2/gas rewrite: main-thread gate cache; folds into the unified entity/component store's main-thread ownership model.
-verdigris/domains/gas/src/kind/gas_mix.rs:bind_attr  # M2/gas rewrite: GasMix's live-computed pressure/total reads; become `state` fields the mixture law writes once a driver writes KindStore rows, and the generated get_* replaces them.
 verdigris/domains/gas/src/heat.rs:bind_attr  # M2/gas rewrite (also heat): the M4 heat domain's binds currently live in vg-gas ("heat's bind move" in §7's migration order); move to vg-ffi once heat's Solid field kind and HeatBody component land.
 verdigris/domains/gas/src/heat.rs:thread_local  # M2/gas rewrite: the thread-local HeatWorld owner; folds into the one per-DLL Sim/driver.
 verdigris/domains/gas/src/lib.rs:bind_attr  # M2/gas rewrite: the legacy ~60-bind gas mixture API; becomes a GasMix component + queries (§5), and lib.rs shrinks to the generated surface.

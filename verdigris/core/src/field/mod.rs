@@ -55,6 +55,7 @@
 //! from commands.
 
 pub mod kernel;
+pub mod law;
 pub mod toy;
 
 use std::fmt;

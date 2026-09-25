@@ -58,6 +58,7 @@ use crate::component::{Component, ComponentError, FieldId, FieldRole, Ownership,
 use crate::conservation::{Conserved, Ledger, Tolerance, Totals, Violation};
 use crate::entity::{EntityError, EntityId, EntityTable};
 use crate::event::EventSink;
+use crate::field::law::FieldIds;
 use crate::field::{FieldConfig, FieldKey, FieldKind};
 use crate::grid::{Grid, GridDims};
 use crate::frame::{FrameInfo, Ref, Res, ResourceId, Resources, Task, TaskCtx, run_sequential};
@@ -265,6 +266,7 @@ const fn slot_of(index: u32) -> u32 {
 enum PlanAnchor {
     Rows { rows: ResourceId, get: RowsFn },
     Network { host: ResourceId, list: crate::query::ListFn, revision: crate::query::RevFn },
+    Cells { state: ResourceId, list: crate::query::ListFn },
     Global,
 }
 
@@ -376,6 +378,15 @@ where
                             ls.activity.sleep(slot as u32);
                         }
                     }
+                }
+                ls.items = items;
+            }
+            PlanAnchor::Cells { state, list } => {
+                ls.items.clear();
+                list(&frame, state, &mut ls.items);
+                let items = std::mem::take(&mut ls.items);
+                for item in &items {
+                    let _ = step_one(ls, &mut frame, item.at, 0.0);
                 }
                 ls.items = items;
             }
@@ -673,6 +684,38 @@ impl<K: NetworkKind> NetDyn for NetEntry<K> {
     }
 }
 
+// --- Field watches -------------------------------------------------------------
+
+trait FieldWatchDyn: Any {
+    fn field(&self) -> TypeId;
+    fn drain(&self, sim: &mut Sim, out: &mut Vec<Wake>);
+    fn watch(&self, sim: &mut Sim, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WatchError>;
+    fn unwatch(&self, sim: &mut Sim, id: WatchId) -> Result<(), WatchError>;
+    fn channels(&self) -> Vec<ChannelInfo>;
+}
+
+struct FieldWatches<K: FieldKind + Channels> {
+    key: WatchKey<K>,
+}
+
+impl<K: FieldKind + Channels> FieldWatchDyn for FieldWatches<K> {
+    fn field(&self) -> TypeId {
+        TypeId::of::<K>()
+    }
+    fn drain(&self, sim: &mut Sim, out: &mut Vec<Wake>) {
+        out.extend_from_slice(sim.drain(self.key.domain()).wakes());
+    }
+    fn watch(&self, sim: &mut Sim, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WatchError> {
+        sim.watches(self.key).watch(sub, lane, cond)
+    }
+    fn unwatch(&self, sim: &mut Sim, id: WatchId) -> Result<(), WatchError> {
+        sim.watches(self.key).unwatch(id)
+    }
+    fn channels(&self) -> Vec<ChannelInfo> {
+        channel_infos::<K>()
+    }
+}
+
 // --- Builder ---------------------------------------------------------------------
 
 type ConserveFn = Box<dyn Fn(&FrameData<'_>, &mut Totals, &mut Vec<(usize, &'static str, f64)>) + Send + Sync>;
@@ -723,6 +766,8 @@ pub struct WorldBuilder {
     networks: Vec<Box<dyn NetDyn>>,
     net_types: HashMap<TypeId, usize>,
     globals: HashMap<TypeId, (ResourceId, Phase)>,
+    fields: HashMap<TypeId, FieldIds>,
+    field_watches: Vec<Box<dyn FieldWatchDyn>>,
     laws: Vec<LawDecl>,
     after: Vec<(&'static str, &'static str)>,
     sources: Vec<ConserveSource>,
@@ -764,6 +809,7 @@ struct CatalogView<'a> {
     networks: &'a [Box<dyn NetDyn>],
     net_types: &'a HashMap<TypeId, usize>,
     globals: &'a HashMap<TypeId, (ResourceId, Phase)>,
+    fields: &'a HashMap<TypeId, FieldIds>,
 }
 
 impl Catalog for CatalogView<'_> {
@@ -777,6 +823,9 @@ impl Catalog for CatalogView<'_> {
     }
     fn global(&self, ty: TypeId) -> Option<(ResourceId, Phase)> {
         self.globals.get(&ty).copied()
+    }
+    fn field(&self, field: TypeId) -> Option<FieldIds> {
+        self.fields.get(&field).copied()
     }
 }
 
@@ -798,6 +847,8 @@ impl WorldBuilder {
             networks: Vec::new(),
             net_types: HashMap::new(),
             globals: HashMap::new(),
+            fields: HashMap::new(),
+            field_watches: Vec::new(),
             laws: Vec::new(),
             after: Vec::new(),
             sources: Vec::new(),
@@ -975,6 +1026,14 @@ impl WorldBuilder {
         let (_, grid) = self.grid.expect("add_grid before add_field");
         let dims = self.main.get(self.grid.expect("checked").0).dims();
         let key = crate::field::add_field::<K>(&mut self.sim, dims, config, Some(grid));
+        self.fields.insert(
+            TypeId::of::<K>(),
+            FieldIds {
+                cells: key.cells.state().id(),
+                geometry: key.geometry.state().id(),
+                state: key.state.id(),
+            },
+        );
         if !K::QUANTITY_NAMES.is_empty() {
             // Crossings are keyed by source; fields use keys from the top so
             // they never meet a component kind's index.
@@ -1002,6 +1061,15 @@ impl WorldBuilder {
             });
         }
         key
+    }
+
+    /// Makes field `K`'s cells watchable (conditions over its channels;
+    /// cells are `CellId`s): heat's turf temperature watches, gas's turf
+    /// thresholds. Fired wakes arrive through [`World::drain_wakes`] with
+    /// every other watch's.
+    pub fn watch_field<K: FieldKind + Channels>(&mut self, key: FieldKey<K>) {
+        let wk = self.sim.add_watches(key.cells);
+        self.field_watches.push(Box::new(FieldWatches::<K> { key: wk }));
     }
 
     /// Adds any worker resource that holds conserved quantities (a field's
@@ -1048,6 +1116,9 @@ impl WorldBuilder {
                     let n = b.net_types.get(&kind).ok_or_else(|| unregistered(name))?;
                     Ok(b.networks[*n].phase())
                 }
+                Some(Anchor::Cells { field, name, .. }) => {
+                    b.fields.get(&field).map(|_| Phase::Worker).ok_or_else(|| unregistered(name))
+                }
                 Some(Anchor::Global { ty, name }) => b.globals.get(&ty).map(|g| g.1).ok_or_else(|| unregistered(name)),
             }
         });
@@ -1071,6 +1142,11 @@ impl WorldBuilder {
                     let (host, _) = catalog.network(kind).ok_or(LawError::Unregistered { law: L::NAME, what: name })?;
                     access.read(host);
                     PlanAnchor::Network { host, list, revision }
+                }
+                Anchor::Cells { field, name, list } => {
+                    let ids = catalog.field(field).ok_or(LawError::Unregistered { law: L::NAME, what: name })?;
+                    access.read(ids.state);
+                    PlanAnchor::Cells { state: ids.state, list }
                 }
                 Anchor::Global { .. } => PlanAnchor::Global,
             };
@@ -1124,6 +1200,7 @@ impl WorldBuilder {
                 networks: &self.networks,
                 net_types: &self.net_types,
                 globals: &self.globals,
+                fields: &self.fields,
             };
             for name in order {
                 let i = names.iter().position(|n| *n == name).expect("ordered from names");
@@ -1203,6 +1280,7 @@ impl WorldBuilder {
             net_types: self.net_types,
             globals: self.globals,
             laws: law_meta,
+            field_watches: self.field_watches,
             main_wakes: self.main_wakes,
             worker_wakes: self.worker_wakes,
             main_out: self.main_out,
@@ -1297,6 +1375,7 @@ pub struct World {
     net_types: HashMap<TypeId, usize>,
     globals: HashMap<TypeId, (ResourceId, Phase)>,
     laws: Vec<(&'static str, Phase, Res<LawState>)>,
+    field_watches: Vec<Box<dyn FieldWatchDyn>>,
     main_wakes: Res<FrameWakes>,
     worker_wakes: Res<FrameWakes>,
     main_out: Res<FrameOut>,
@@ -1347,6 +1426,9 @@ impl World {
         let (sim, main, kinds, wakes) = (&mut self.sim, &mut self.main, &mut self.kinds, &mut self.wakes);
         for k in kinds.iter_mut() {
             k.begin_tick(sim, main, wakes);
+        }
+        for f in &self.field_watches {
+            f.drain(sim, wakes);
         }
         let out = self.worker_out;
         let (events, violations) = (&mut self.events, &mut self.violations);
@@ -1740,6 +1822,45 @@ impl World {
         self.kinds[usize::from(kind)].unwatch(&mut self.sim, id)
     }
 
+    /// Registers a watch on field `K`'s cells (see
+    /// [`WorldBuilder::watch_field`]).
+    ///
+    /// # Errors
+    /// The field is not watched, or the condition is invalid.
+    pub fn watch_cells<K: FieldKind>(&mut self, subscriber: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WorldError> {
+        let w = self
+            .field_watches
+            .iter()
+            .find(|w| w.field() == TypeId::of::<K>())
+            .ok_or(WorldError::NoKind(0))?;
+        Ok(w.watch(&mut self.sim, subscriber, lane, cond)?)
+    }
+
+    /// Field `K`'s watch channels (for validating DM conditions).
+    ///
+    /// # Errors
+    /// The field is not watched.
+    pub fn cell_channels<K: FieldKind>(&self) -> Result<Vec<ChannelInfo>, WorldError> {
+        self.field_watches
+            .iter()
+            .find(|w| w.field() == TypeId::of::<K>())
+            .map(|w| w.channels())
+            .ok_or(WorldError::NoKind(0))
+    }
+
+    /// Removes a field watch.
+    ///
+    /// # Errors
+    /// The field is not watched, or the watch is stale.
+    pub fn unwatch_cells<K: FieldKind>(&mut self, id: WatchId) -> Result<(), WorldError> {
+        let w = self
+            .field_watches
+            .iter()
+            .find(|w| w.field() == TypeId::of::<K>())
+            .ok_or(WorldError::NoKind(0))?;
+        Ok(w.unwatch(&mut self.sim, id)?)
+    }
+
     /// `kind`'s watch channels (one per numeric field).
     ///
     /// # Errors
@@ -1848,6 +1969,24 @@ impl World {
     /// Raw region events since the last drain.
     pub fn drain_region_events<K: NetworkKind>(&mut self) -> Vec<RegionEvent<K>> {
         self.net_entry::<K>().map(|e| std::mem::take(&mut e.events)).unwrap_or_default()
+    }
+
+    /// What DM sees in cell `cell` of field `K` now: its own writes this
+    /// tick over the pinned frame (the field-read half of the probe
+    /// facility; component fields are read with [`get`](Self::get)).
+    #[must_use]
+    pub fn read_cell<K: FieldKind>(&self, key: FieldKey<K>, cell: u32) -> Option<K::Value> {
+        self.sim.port_ref(key.cells).read(cell)
+    }
+
+    /// Submits a source/sink command to one field cell (DM adding heat,
+    /// gas...). It applies to what DM reads at once and to the worker in
+    /// the next frame.
+    ///
+    /// # Errors
+    /// A cell outside the field.
+    pub fn submit_cell<K: FieldKind>(&mut self, key: FieldKey<K>, cell: u32, cmd: K::Command) -> Result<Applied, WorldError> {
+        Ok(self.sim.port(key.cells).submit(cell, cmd)?)
     }
 
     /// The world's grid (main thread, authoritative).

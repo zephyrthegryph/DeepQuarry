@@ -159,7 +159,7 @@ impl<K: NetworkKind> Query for Summary<K> {
 /// One side of a device: the region it acts on, that region's summary and
 /// payload.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Side<K: NetworkKind> {
+pub struct RegionSide<K: NetworkKind> {
     pub region: RegionId<K>,
     pub summary: K::Summary,
     pub payload: K::Payload,
@@ -169,8 +169,8 @@ pub struct Side<K: NetworkKind> {
 /// sides are the same region, a field cell or detached is skipped.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sides<K: NetworkKind> {
-    pub a: Side<K>,
-    pub b: Side<K>,
+    pub a: RegionSide<K>,
+    pub b: RegionSide<K>,
 }
 
 impl<K: NetworkKind> Query for Sides<K> {
@@ -188,12 +188,12 @@ impl<K: NetworkKind> Query for Sides<K> {
         let host = frame.get::<NetworkHost<K>>(*state);
         let [(ra, sa, pa), (rb, sb, pb)] = host.device_pair(device::<K>(at)?)?;
         Some(Self {
-            a: Side {
+            a: RegionSide {
                 region: ra,
                 summary: sa,
                 payload: pa,
             },
-            b: Side {
+            b: RegionSide {
                 region: rb,
                 summary: sb,
                 payload: pb,

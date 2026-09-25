@@ -141,6 +141,8 @@ pub trait Catalog {
     fn network(&self, kind: TypeId) -> Option<(ResourceId, Phase)>;
     /// The resource holding global `T`, and its phase.
     fn global(&self, ty: TypeId) -> Option<(ResourceId, Phase)>;
+    /// The resources of field kind `field` (always worker-owned).
+    fn field(&self, field: TypeId) -> Option<crate::field::law::FieldIds>;
 }
 
 /// Build-time context for [`Query::init`].
@@ -201,6 +203,13 @@ pub enum Anchor {
         list: ListFn,
         revision: RevFn,
     },
+    /// Cells of a field's active chunks, every due frame (after the field's
+    /// own step): coupling laws over cells.
+    Cells {
+        field: TypeId,
+        name: &'static str,
+        list: ListFn,
+    },
     /// A single item (index 0), every due frame: a law over a [`Global`].
     Global { ty: TypeId, name: &'static str },
 }
@@ -210,6 +219,7 @@ impl fmt::Debug for Anchor {
         match self {
             Self::Rows { name, .. } => write!(f, "Rows({name})"),
             Self::Network { name, .. } => write!(f, "Network({name})"),
+            Self::Cells { name, .. } => write!(f, "Cells({name})"),
             Self::Global { name, .. } => write!(f, "Global({name})"),
         }
     }
