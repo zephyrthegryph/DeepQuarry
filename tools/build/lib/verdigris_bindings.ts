@@ -215,7 +215,7 @@ export function scan(root: string): { binds: Bind[]; defines: Define[] } {
 // (kind defines, init_* vars, get_*/set_*/push_* wrappers, query and event
 // dispatch, and the class-3 integrity hook) goes into TYPES_DM. ------------
 
-type FieldRole = 'config' | 'state' | 'input';
+type FieldRole = 'config' | 'state' | 'input' | 'computed';
 
 type ComponentField = {
   name: string;
@@ -230,22 +230,121 @@ type ComponentField = {
    * time (`get_<f>(index)`/`set_<f>(index, value)`) and is never a bind
    * argument (it starts at its default). */
   array: boolean;
+  /** The field id `#[vg::component]` assigns: declaration order, computed
+   * readouts after the stored fields. */
+  id: number;
+  /** `conserve = "..."`: the field takes `adjust_<f>()` (take reconciliation). */
+  conserve: string | null;
 };
 
 type QueryGroup = { name: string; fields: string[] };
 
-type EventDecl = { name: string; variants: string[] };
+type EventVariant = { name: string; fields: string[] };
+
+type EventDecl = { name: string; variants: EventVariant[] };
 
 type Component = {
   domain: string;
   kind: number;
   dmType: string;
   structName: string;
+  owner: 'main' | 'worker';
   fields: ComponentField[];
   queries: QueryGroup[];
   events: EventDecl[];
   file: string;
 };
+
+/** `#[vg::events(domain = power)]`: events about a region or the domain,
+ * dispatched to `SSvg` handlers instead of an atom. */
+type DomainEvents = { domain: string; decl: EventDecl; file: string };
+
+/** Numeric domain ids, from `vg_core::component::domains`. */
+const DOMAINS_RS = 'verdigris/core/src/component.rs';
+
+function domainIds(root: string): Map<string, number> {
+  const src = fs.readFileSync(path.join(root, DOMAINS_RS), 'utf8');
+  const consts = new Map<string, number>();
+  for (const m of src.matchAll(/pub const ([A-Z_]+): u8 = (\d+);/g)) consts.set(m[1], Number(m[2]));
+  const out = new Map<string, number>();
+  for (const m of src.matchAll(/\("([a-z_]+)",\s*([A-Z_]+)\)/g)) {
+    const id = consts.get(m[2]);
+    if (id === undefined) throw new Error(`${DOMAINS_RS}: domain ${m[1]} names unknown const ${m[2]}`);
+    out.set(m[1], id);
+  }
+  if (!out.size) throw new Error(`${DOMAINS_RS}: no domains table found`);
+  return out;
+}
+
+/** `domain << 8 | kind`: the code the generic `vg_component_*` binds take. */
+function kindCode(ids: Map<string, number>, domain: string, kind: number): number {
+  const d = ids.get(domain);
+  if (d === undefined) throw new Error(`unknown domain \`${domain}\` (add it to ${DOMAINS_RS})`);
+  return (d << 8) | (kind & 0xff);
+}
+
+/** An event record's header: `domain << 16 | kind << 8 | variant`. */
+function eventHeader(ids: Map<string, number>, domain: string, kind: number, variant: number): number {
+  const d = ids.get(domain);
+  if (d === undefined) throw new Error(`unknown domain \`${domain}\``);
+  return (d << 16) | ((kind & 0xff) << 8) | variant;
+}
+
+/** Parses an event enum body (`{ A, B { x: f32, y: f32 }, }`) into variants. */
+function parseEventBody(body: string): EventVariant[] {
+  const clean = body.replace(/\/\/[^\n]*/g, '').replace(/#\[[^\]]*\]/g, '');
+  const out: EventVariant[] = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of clean) {
+    if (ch === '{') depth++;
+    if (ch === '}') depth--;
+    if (ch === ',' && depth === 0) {
+      if (cur.trim()) out.push(parseVariant(cur));
+      cur = '';
+    } else cur += ch;
+  }
+  if (cur.trim()) out.push(parseVariant(cur));
+  return out;
+}
+
+function parseVariant(text: string): EventVariant {
+  const m = /^\s*(\w+)\s*(?:\{([^}]*)\})?\s*$/.exec(text);
+  if (!m) throw new Error(`cannot parse event variant \`${text.trim()}\``);
+  const fields = (m[2] ?? '')
+    .split(',')
+    .map((f) => f.trim())
+    .filter(Boolean)
+    .map((f) => f.split(':')[0].trim());
+  return { name: m[1], fields };
+}
+
+/** The body of the `{ ... }` block that starts at or after `lines[from]`
+ * (brace matched), without the outer braces. */
+function braceBody(lines: string[], from: number): string {
+  let text = '';
+  let depth = 0;
+  let started = false;
+  for (let k = from; k < lines.length; k++) {
+    const code = lines[k].replace(/\/\/.*$/, '');
+    for (const ch of code) {
+      if (ch === '{') {
+        depth++;
+        if (!started) {
+          started = true;
+          continue;
+        }
+      }
+      if (ch === '}') {
+        depth--;
+        if (started && depth === 0) return text;
+      }
+      if (started) text += ch;
+    }
+    if (started) text += '\n';
+  }
+  throw new Error('unterminated brace block');
+}
 
 /** `key = value, key2 = value2, ...` (top-level commas only) -> map of raw value text. */
 function parseKeyValueArgs(text: string): Record<string, string> {
@@ -295,14 +394,17 @@ function parseFieldAttr(argsText: string, name: string, array: boolean, at: stri
     onInvalid: (kv.on_invalid as 'clamp' | 'reject' | undefined) ?? 'clamp',
     from: kv.from ? stripBrackets(kv.from) : [],
     array,
+    id: -1,
+    conserve: kv.conserve ? stripQuotes(kv.conserve) : null,
   };
 }
 
-export function scanComponents(root: string): Component[] {
+export function scanComponents(root: string): { components: Component[]; domainEvents: DomainEvents[] } {
   const files: string[] = [];
   for (const dir of SCAN_ROOTS) listRs(path.join(root, dir), files);
   files.sort();
   const components: Component[] = [];
+  const domainEvents: DomainEvents[] = [];
   const byName = new Map<string, Component>();
 
   for (const file of files) {
@@ -332,11 +434,30 @@ export function scanComponents(root: string): Component[] {
             throw new Error(`${rel}: component ${structName} field \`${f.name}\`: config needs a default`);
           }
         }
+        for (const c of args.computed ? stripBrackets(args.computed) : []) {
+          fields.push({
+            name: c,
+            role: 'computed',
+            unit: null,
+            min: null,
+            max: null,
+            default: null,
+            onInvalid: 'clamp',
+            from: [],
+            array: false,
+            id: -1,
+            conserve: null,
+          });
+        }
+        fields.forEach((f, id) => {
+          f.id = id;
+        });
         const comp: Component = {
           domain: args.domain,
           kind: Number(args.kind),
           dmType: stripQuotes(args.dm),
           structName,
+          owner: args.owner === 'main' ? 'main' : 'worker',
           fields,
           queries: [],
           events: [],
@@ -365,28 +486,20 @@ export function scanComponents(root: string): Component[] {
         continue;
       }
 
-      const em = /^#\[vg::events\((\w+)\)\]\s*$/.exec(lines[i].trim());
+      const em = /^#\[vg::events\((?:domain\s*=\s*(\w+)|(\w+))\)\]\s*$/.exec(lines[i].trim());
       if (em) {
-        const comp = byName.get(em[1]);
-        if (!comp) throw new Error(`${rel}:${i + 1}: #[vg::events] on unknown component \`${em[1]}\``);
         let j = i + 1;
         while (j < lines.length && !/\benum\s+\w+/.test(lines[j])) j++;
         const enumMatch = /\benum\s+(\w+)/.exec(lines[j] ?? '');
         if (!enumMatch) throw new Error(`${rel}:${i + 1}: #[vg::events] is not followed by an enum`);
-        let body = '';
-        for (let k = j; k < lines.length; k++) {
-          // Doc and line comments on variants are not part of the body.
-          const code = lines[k].replace(/\/\/.*$/, '');
-          body += code;
-          if (code.includes('}')) break;
+        const decl = { name: enumMatch[1], variants: parseEventBody(braceBody(lines, j)) };
+        if (em[1]) {
+          domainEvents.push({ domain: em[1], decl, file: rel });
+        } else {
+          const comp = byName.get(em[2]);
+          if (!comp) throw new Error(`${rel}:${i + 1}: #[vg::events] on unknown component \`${em[2]}\``);
+          comp.events.push(decl);
         }
-        const inner = /\{([^}]*)\}/.exec(body);
-        if (!inner) throw new Error(`${rel}:${i + 1}: could not find the event enum's body`);
-        const variants = inner[1]
-          .split(',')
-          .map((v) => v.trim())
-          .filter(Boolean);
-        comp.events.push({ name: enumMatch[1], variants });
         continue;
       }
     }
@@ -399,81 +512,14 @@ export function scanComponents(root: string): Component[] {
     if (seenKinds.has(key)) throw new Error(`duplicate kind ${c.kind} in domain ${c.domain} (${c.structName})`);
     seenKinds.add(key);
   }
-  return components;
+  domainEvents.sort((a, b) => `${a.domain}:${a.decl.name}`.localeCompare(`${b.domain}:${b.decl.name}`));
+  return { components, domainEvents };
 }
 
-// `#[vg::component]`/`#[vg::query]` generate their own FFI procs at macro
-// expansion time (`component.rs`'s `component_glue()`, `query.rs`'s
-// `expand()`) — text that exists only inside those macros' `quote!{}`
-// templates in `verdigris/ffi/macros/src/`, a directory `scan()` above never
-// reads (nor could it usefully: that source is a *template*, not the
-// expanded proc DM will actually call). So unlike a hand-written
-// `#[auxmacros::bind]` function, a generated one is invisible to `scan()`
-// and would silently get no `_bindings.dm` entry at all — a real gap once
-// `#[vg::component]` started generating that glue instead of `kind/*.rs`
-// writing it by hand (`rust_architecture.md` §5). This synthesizes the
-// `Bind` entries `scan()` would have found had that glue been hand-written,
-// from the same component scan `renderComponentsDm` already uses to emit
-// the DM-side callers — so every name below MUST match those two macros'
-// `format_ident!` calls exactly (component.rs's module docs: the
-// naming-convention contract), and a change to one side without the other
-// either leaves a DM proc calling nothing (a runtime) or a Rust bind no DM
-// proc ever calls (dead code) rather than a compile-time mismatch.
-function componentBinds(components: Component[]): Bind[] {
-  const binds: Bind[] = [];
-  for (const c of components) {
-    const lower = snake(c.structName);
-    const push = (name: string, args: string[], path: string) => {
-      binds.push({ name, path, args, docs: [], file: c.file });
-    };
-    const config = c.fields.filter((f) => f.role === 'config');
-    const state = c.fields.filter((f) => f.role === 'state');
-    const input = c.fields.filter((f) => f.role === 'input');
-    for (const f of config) {
-      const at = f.array ? ['index'] : [];
-      push(`${lower}_get_${f.name}`, ['entity', ...at], `${c.dmType}/proc/get_${f.name}`);
-      push(`${lower}_set_${f.name}`, ['entity', ...at, 'value'], `${c.dmType}/proc/set_${f.name}`);
-    }
-    for (const f of state) {
-      push(`${lower}_get_${f.name}`, ['entity'], `${c.dmType}/proc/get_${f.name}`);
-    }
-    for (const f of input) {
-      push(`${lower}_get_${f.name}`, ['entity'], `${c.dmType}/proc/get_${f.name}`);
-      push(`${lower}_push_${f.name}`, ['entity', 'value'], `${c.dmType}/proc/push_${f.name}`);
-    }
-    // `entity, init_<config>..., <input>...`: the exact order
-    // `component_glue()`'s `bind_params` builds (config fields first, then
-    // input fields, both in declaration order).
-    const bindArgs = [
-      'entity',
-      ...config.filter((f) => !f.array).map((f) => `init_${f.name}`),
-      ...input.map((f) => f.name),
-    ];
-    push(`${lower}_bind`, bindArgs, `/proc/${lower}_bind`);
-    for (const g of c.queries) {
-      push(`${lower}_query_${g.name}`, ['entity'], `/proc/${lower}_query_${g.name}`);
-    }
-  }
-  return binds;
-}
-
-/** Hand-written binds (`scan()`) plus generated ones (`componentBinds()`),
- * sorted and checked for name collisions across BOTH sources (`scan()`
- * only ever checked hand-written binds against each other). */
-function mergeBinds(written: Bind[], generated: Bind[]): Bind[] {
-  const binds = [...written, ...generated].sort((a, b) => a.name.localeCompare(b.name));
-  const seen = new Set<string>();
-  for (const b of binds) {
-    if (seen.has(b.name)) {
-      throw new Error(
-        `duplicate bind name ${b.name} (${b.file}): a hand-written #[auxmacros::bind] collides `
-          + 'with a #[vg::component]-generated one, or two components generate the same name',
-      );
-    }
-    seen.add(b.name);
-  }
-  return binds;
-}
+// Components have no binds of their own: every generated DM accessor below
+// calls the generic `vg_component_*` binds (verdigris/ffi/src/world.rs, found
+// by scan() like any hand-written bind) with the kind code and field ids
+// `#[vg::component]` assigns (declaration order, computed readouts last).
 
 let dmSourceCache: string | null = null;
 function dmSource(root: string): string {
@@ -551,7 +597,8 @@ const HOOKED_SOURCES: Record<string, { proc: string; body: string[] }> = {
   },
 };
 
-function renderComponentsDm(root: string, components: Component[]): string {
+function renderComponentsDm(root: string, components: Component[], domainEvents: DomainEvents[]): string {
+  const ids = domainIds(root);
   let dm = `// THIS FILE IS GENERATED by tools/build/lib/verdigris_bindings.ts from the
 // #[vg::component]/#[vg::query]/#[vg::events] declarations in verdigris/.
 // Do not edit it by hand: run \`tools/build/build.sh verdigris-bindings\`.
@@ -566,17 +613,13 @@ function renderComponentsDm(root: string, components: Component[]): string {
 
   // Base vars every bound atom needs (rust_bindings.md §1, §13): one
   // `vg_entity` (the entity handle) and one `vg_<domain>` per domain that
-  // has landed a component (which kind, or 0/unset). Type-level constants
-  // cost no per-instance memory unless a subtype overrides them.
+  // has landed a component (which kind, or 0/unset).
   dm += `/atom/movable\n\t/// The entity handle (rust_bindings.md §1). 0: unbound.\n\tvar/tmp/vg_entity = 0\n`;
   for (const domain of [...byDomain.keys()].sort()) {
     dm += `\t/// Which ${domain} component kind (a VG_${domain.toUpperCase()}_* define), or 0.\n\tvar/tmp/vg_${domain} = 0\n`;
   }
   dm += '\n';
 
-  // One bind and one reconcile dispatch proc per domain, overridden per
-  // bound type (like vg_bind_gas() below), so there is no switch to keep in
-  // sync by hand as kinds are added.
   for (const domain of byDomain.keys()) {
     dm += `/// Binds this atom's ${domain} component (if the type declares one) and\n`;
     dm += `/// returns the (possibly newly created) entity handle. Overridden per\n`;
@@ -586,24 +629,34 @@ function renderComponentsDm(root: string, components: Component[]): string {
     dm += `/// what Rust has stored for its ${domain} component, repairing as it goes.\n`;
     dm += `/// Overridden per bound type below.\n`;
     dm += `/atom/movable/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
-    dm += `/// Dispatches one drained ${domain} event (§8) to its named handler.\n`;
-    dm += `/// Overridden per bound type below (only on types that declare events).\n`;
-    dm += `/atom/movable/proc/vg_dispatch_${domain}_event(event_id)\n\treturn\n\n`;
   }
 
   for (const comp of components) {
     const { domain, structName, dmType } = comp;
     const lower = snake(structName);
-    const kindDefine = `VG_${domain.toUpperCase()}_${structName.toUpperCase()}`;
+    const upper = structName.toUpperCase();
+    const kindDefine = `VG_${domain.toUpperCase()}_${upper}`;
+    const codeDefine = `VG_KIND_${upper}`;
+    const code = kindCode(ids, domain, comp.kind);
     const domainVar = `vg_${domain}`;
 
-    dm += `// ---- ${structName} (${domain} kind ${comp.kind}; ${comp.file}) ----\n\n`;
-    dm += `#define ${kindDefine} ${comp.kind}\n\n`;
+    dm += `// ---- ${structName} (${domain} kind ${comp.kind}, owner ${comp.owner}; ${comp.file}) ----\n\n`;
+    dm += `#define ${kindDefine} ${comp.kind}\n`;
+    dm += `/// The code the generic vg_component_* binds take for ${structName}.\n`;
+    dm += `#define ${codeDefine} ${code}\n`;
+    dm += `/// ${structName}'s watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).\n`;
+    dm += `#define REACT_DOMAIN_${upper} (VG_WORLD_KIND_BASE | ${codeDefine})\n`;
+    for (const f of comp.fields) {
+      dm += `#define VG_${upper}_FIELD_${f.name.toUpperCase()} ${f.id}\n`;
+    }
+    dm += '\n';
     dm += `${dmType}\n\t${domainVar} = ${kindDefine}\n\n`;
 
     const configFields = comp.fields.filter((f) => f.role === 'config');
     const stateFields = comp.fields.filter((f) => f.role === 'state');
     const inputFields = comp.fields.filter((f) => f.role === 'input');
+    const computedFields = comp.fields.filter((f) => f.role === 'computed');
+    const fid = (f: ComponentField) => `VG_${upper}_FIELD_${f.name.toUpperCase()}`;
 
     for (const f of configFields) {
       if (f.array) continue;
@@ -614,31 +667,45 @@ function renderComponentsDm(root: string, components: Component[]): string {
 
     for (const f of configFields) {
       if (f.min === null || f.max === null) continue;
-      dm += `#define VG_${structName.toUpperCase()}_${f.name.toUpperCase()}_MIN ${f.min}\n`;
-      dm += `#define VG_${structName.toUpperCase()}_${f.name.toUpperCase()}_MAX ${f.max}\n`;
+      dm += `#define VG_${upper}_${f.name.toUpperCase()}_MIN ${f.min}\n`;
+      dm += `#define VG_${upper}_${f.name.toUpperCase()}_MAX ${f.max}\n`;
     }
     dm += '\n';
 
     const unitComment = (f: ComponentField) => (f.unit ? ` // ${f.unit}` : '');
+    const getter = (f: ComponentField, index: string) =>
+      `vg_component_get(vg_entity, ${codeDefine}, ${fid(f)}, ${index})${unitComment(f)}`;
     for (const f of configFields) {
       const range =
         f.min !== null && f.max !== null
-          ? ` ${f.onInvalid === 'clamp' ? 'clamped' : 'rejected'} to VG_${structName.toUpperCase()}_${f.name.toUpperCase()}_MIN..MAX.`
+          ? ` ${f.onInvalid === 'clamp' ? 'clamped' : 'rejected'} to VG_${upper}_${f.name.toUpperCase()}_MIN..MAX.`
           : '.';
       dm += `/// ${f.unit ?? 'unitless'};${range}\n`;
       if (f.array) {
-        dm += `${procHeader(root, dmType, `get_${f.name}`, 'index')}\n\treturn vg_${lower}_get_${f.name}(vg_entity, index)${unitComment(f)}\n\n`;
+        dm += `${procHeader(root, dmType, `get_${f.name}`, 'index')}\n\treturn ${getter(f, 'index')}\n\n`;
         dm += `/// Returns the stored value.\n`;
-        dm += `${procHeader(root, dmType, `set_${f.name}`, 'index, value')}\n\treturn vg_${lower}_set_${f.name}(vg_entity, index, value)\n\n`;
+        dm += `${procHeader(root, dmType, `set_${f.name}`, 'index, value')}\n\treturn vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, index, value)\n\n`;
         continue;
       }
-      dm += `${procHeader(root, dmType, `get_${f.name}`, '')}\n\treturn vg_${lower}_get_${f.name}(vg_entity)${unitComment(f)}\n\n`;
+      dm += `${procHeader(root, dmType, `get_${f.name}`, '')}\n\treturn ${getter(f, '0')}\n\n`;
       dm += `/// Returns the stored value.\n`;
-      dm += `${procHeader(root, dmType, `set_${f.name}`, 'value')}\n\treturn vg_${lower}_set_${f.name}(vg_entity, value)\n\n`;
+      dm += `${procHeader(root, dmType, `set_${f.name}`, 'value')}\n\treturn vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, -1, value)\n\n`;
     }
-    for (const f of stateFields) {
-      dm += `/// ${f.unit ?? 'unitless'}, read-only (state).\n`;
-      dm += `${procHeader(root, dmType, `get_${f.name}`, '')}\n\treturn vg_${lower}_get_${f.name}(vg_entity)${unitComment(f)}\n\n`;
+    for (const f of [...stateFields, ...computedFields]) {
+      const what = f.role === 'computed' ? 'computed readout' : 'state';
+      dm += `/// ${f.unit ?? 'unitless'}, read-only (${what}).\n`;
+      if (f.array) {
+        dm += `${procHeader(root, dmType, `get_${f.name}`, 'index')}\n\treturn ${getter(f, 'index')}\n\n`;
+      } else {
+        dm += `${procHeader(root, dmType, `get_${f.name}`, '')}\n\treturn ${getter(f, '0')}\n\n`;
+      }
+    }
+    for (const f of comp.fields.filter((x) => x.conserve)) {
+      dm += `/// Take reconciliation (${f.conserve}): adds \`delta\` to what Rust holds now;\n`;
+      dm += `/// returns the part of a removal that was not there.\n`;
+      const args = f.array ? 'index, delta' : 'delta';
+      const index = f.array ? 'index' : '0';
+      dm += `${procHeader(root, dmType, `adjust_${f.name}`, args)}\n\treturn vg_component_adjust(vg_entity, ${codeDefine}, ${fid(f)}, ${index}, delta)\n\n`;
     }
 
     for (const f of inputFields) {
@@ -647,17 +714,28 @@ function renderComponentsDm(root: string, components: Component[]): string {
       dm += `${dmType}/proc/${lower}_input_${f.name}()\n\treturn FALSE\n\n`;
       dm += `/// What Rust currently has stored, for the reconciler (§7). Compare\n`;
       dm += `/// against ${lower}_input_${f.name}(); never used for game logic.\n`;
-      dm += `${procHeader(root, dmType, `get_${f.name}`, '')}\n\treturn vg_${lower}_get_${f.name}(vg_entity)\n\n`;
+      dm += `${procHeader(root, dmType, `get_${f.name}`, '')}\n\treturn ${getter(f, '0')}\n\n`;
+      dm += `/// Pushes the input's current value to Rust.\n`;
+      dm += `${dmType}/proc/push_${f.name}(value)\n\treturn vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, -1, value)\n\n`;
     }
 
     for (const g of comp.queries) {
+      const idsList = g.fields
+        .map((name) => {
+          const f = comp.fields.find((x) => x.name === name);
+          if (!f) throw new Error(`${comp.file}: query ${g.name} names unknown field ${name}`);
+          return fid(f);
+        })
+        .join(', ');
       dm += `/// ${g.fields.join(', ')} in one call.\n`;
-      dm += `${dmType}/proc/${lower}_query_${g.name}()\n\treturn vg_${lower}_query_${g.name}(vg_entity)\n\n`;
+      dm += `${dmType}/proc/${lower}_query_${g.name}()\n\treturn vg_component_get_many(vg_entity, ${codeDefine}, list(${idsList}))\n\n`;
     }
 
-    const inputArgs = inputFields.map((f) => `${lower}_input_${f.name}()`);
-    const initArgs = configFields.filter((f) => !f.array).map((f) => `init_${f.name}`);
-    dm += `${dmType}/vg_bind_${domain}(entity)\n\treturn vg_${lower}_bind(entity, ${[...initArgs, ...inputArgs].join(', ')})\n\n`;
+    const init = [
+      ...configFields.filter((f) => !f.array).map((f) => `${fid(f)}, init_${f.name}`),
+      ...inputFields.map((f) => `${fid(f)}, ${lower}_input_${f.name}()`),
+    ];
+    dm += `${dmType}/vg_bind_${domain}(entity)\n\treturn vg_component_bind(entity, ${codeDefine}, list(${init.join(', ')}))\n\n`;
 
     if (inputFields.length) {
       dm += `/// Compares every declared input against what Rust has stored (§7);\n`;
@@ -669,7 +747,7 @@ function renderComponentsDm(root: string, components: Component[]): string {
         dm += `\tvar/actual_${f.name} = get_${f.name}()\n`;
         dm += `\tif(!expected_${f.name} != !actual_${f.name})\n`;
         dm += `\t\tmismatches += "${f.name}: expected=[expected_${f.name}] actual=[actual_${f.name}]"\n`;
-        dm += `\t\tvg_${lower}_push_${f.name}(vg_entity, expected_${f.name})\n`;
+        dm += `\t\tpush_${f.name}(expected_${f.name})\n`;
       }
       dm += `\treturn mismatches\n\n`;
       dm += `${dmType}/vg_reconcile_${domain}()\n\treturn ${lower}_reconcile()\n\n`;
@@ -681,36 +759,28 @@ function renderComponentsDm(root: string, components: Component[]): string {
         if (!hook) continue;
         const fix = hook.proc === 'atom_break' ? 'atom_fix' : null;
         dm += `// ${source} (class 3): pushes ${structName}'s ${f.name} when it changes.\n`;
-        dm += `${dmType}/${hook.proc}(damage_flag)\n\t${hook.body.join('\n\t')}\n\tif(vg_entity)\n\t\tvg_${lower}_push_${f.name}(vg_entity, ${lower}_input_${f.name}())\n\n`;
+        dm += `${dmType}/${hook.proc}(damage_flag)\n\t${hook.body.join('\n\t')}\n\tif(vg_entity)\n\t\tpush_${f.name}(${lower}_input_${f.name}())\n\n`;
         if (fix) {
-          dm += `${dmType}/${fix}()\n\t. = ..()\n\tif(vg_entity)\n\t\tvg_${lower}_push_${f.name}(vg_entity, ${lower}_input_${f.name}())\n\n`;
+          dm += `${dmType}/${fix}()\n\t. = ..()\n\tif(vg_entity)\n\t\tpush_${f.name}(${lower}_input_${f.name}())\n\n`;
         }
       }
     }
 
-    for (const e of comp.events) {
-      e.variants.forEach((v, id) => {
-        const evName = snake(v);
-        dm += `#define VG_${structName.toUpperCase()}_EVENT_${evName.toUpperCase()} ${id}\n`;
-      });
+    const variants = comp.events.flatMap((e) => e.variants);
+    variants.forEach((v, id) => {
+      dm += `#define VG_${upper}_EVENT_${snake(v.name).toUpperCase()} ${id}\n`;
+    });
+    if (variants.length) dm += '\n';
+    for (const v of variants) {
+      dm += `/// Generated no-op default. Override to react to the event.\n`;
+      dm += `${dmType}/proc/on_${lower}_${snake(v.name)}(${v.fields.join(', ')})\n\treturn\n\n`;
     }
-    if (comp.events.length) dm += '\n';
-    for (const e of comp.events) {
-      for (const v of e.variants) {
-        dm += `/// Generated no-op default. Override to react to the event.\n`;
-        dm += `${dmType}/proc/on_${lower}_${snake(v)}()\n\treturn\n\n`;
-      }
-    }
+  }
 
-    const allVariants = comp.events.flatMap((e) => e.variants);
-    if (allVariants.length) {
-      dm += `/// Dispatches one drained event (§8) to its named handler.\n`;
-      dm += `${dmType}/proc/${lower}_dispatch_event(event_id)\n\tswitch(event_id)\n`;
-      allVariants.forEach((v, id) => {
-        dm += `\t\tif(${id})\n\t\t\ton_${lower}_${snake(v)}()\n`;
-      });
-      dm += '\n';
-      dm += `${dmType}/vg_dispatch_${domain}_event(event_id)\n\t${lower}_dispatch_event(event_id)\n\n`;
+  for (const de of domainEvents) {
+    for (const v of de.decl.variants) {
+      dm += `/// ${de.domain} event (${de.file}). Generated no-op default; override on SSvg.\n`;
+      dm += `/datum/controller/subsystem/vg/proc/on_${de.domain}_${snake(v.name)}(${v.fields.join(', ')})\n\treturn\n\n`;
     }
   }
 
@@ -732,39 +802,69 @@ function renderComponentsDm(root: string, components: Component[]): string {
   }
   dm += `\treturn mismatches\n\n`;
 
-  dm += `/// Drains and dispatches every domain's events (§8). SSvg calls this once\n`;
-  dm += `/// per tick; one \`entity_drain_domain_events()\` FFI call per domain.\n`;
+  // The one event path (rust_architecture.md §4.8): one FFI call returns
+  // every typed event of the step as `header, entity, len, payload...`.
+  dm += `/// Drains and dispatches every typed event since the last call (§4.8).\n`;
+  dm += `/// SSvg calls this once per tick after vg_world_tick(). Component events\n`;
+  dm += `/// go to the bound atom (checked against vg_entity: a detached component's\n`;
+  dm += `/// late event is dropped); domain events go to SSvg's handlers.\n`;
   dm += `/proc/vg_drain_events()\n`;
-  for (const domain of byDomain.keys()) {
-    dm += `\tvg_drain_${domain}_events()\n`;
+  dm += `\tvar/list/flat = vg_world_events()\n`;
+  dm += `\tvar/i = 1\n`;
+  dm += `\twhile(i + 2 <= length(flat))\n`;
+  dm += `\t\tvar/header = flat[i]\n`;
+  dm += `\t\tvar/entity = flat[i + 1]\n`;
+  dm += `\t\tvar/len = flat[i + 2]\n`;
+  dm += `\t\tvar/p = i + 3\n`;
+  dm += `\t\ti = p + len\n`;
+  const arms: string[] = [];
+  for (const comp of components) {
+    const lower = snake(comp.structName);
+    comp.events
+      .flatMap((e) => e.variants)
+      .forEach((v, id) => {
+        const header = eventHeader(ids, comp.domain, comp.kind, id);
+        const args = v.fields.map((_, k) => `flat[p + ${k}]`).join(', ');
+        arms.push(
+          `\t\t\tif(${header})\n\t\t\t\tvar/atom/movable/mover = SSvg.entity_lookup(entity)\n\t\t\t\tif(mover && mover.vg_entity == entity)\n\t\t\t\t\tvar${comp.dmType}/target = mover\n\t\t\t\t\ttarget.on_${lower}_${snake(v.name)}(${args})\n`,
+        );
+      });
+  }
+  for (const de of domainEvents) {
+    de.decl.variants.forEach((v, id) => {
+      const header = eventHeader(ids, de.domain, 0, id);
+      const args = v.fields.map((_, k) => `flat[p + ${k}]`).join(', ');
+      arms.push(`\t\t\tif(${header})\n\t\t\t\tSSvg.on_${de.domain}_${snake(v.name)}(${args})\n`);
+    });
+  }
+  if (arms.length) {
+    dm += `\t\tswitch(header)\n${arms.join('')}`;
   }
   dm += '\n';
-  for (const domain of byDomain.keys()) {
-    dm += `/proc/vg_drain_${domain}_events()\n`;
-    dm += `\tvar/list/flat = vg_entity_drain_domain_events(VG_DOMAIN_${domain.toUpperCase()})\n`;
-    dm += `\tfor(var/i = 1; i <= length(flat); i += 3)\n`;
-    dm += `\t\tvar/entity = flat[i + 1]\n`;
-    dm += `\t\tvar/event_id = flat[i + 2]\n`;
-    dm += `\t\tvar/atom/movable/mover = SSvg.entity_lookup(entity)\n`;
-    dm += `\t\tif(mover && mover.vg_entity == entity)\n`;
-    dm += `\t\t\tmover.vg_dispatch_${domain}_event(event_id)\n\n`;
-  }
   return dm;
 }
 
 function componentCanonical(c: Component): string {
   const fields = c.fields
-    .map((f) => `${f.name}:${f.role}:${f.unit ?? ''}:${f.min ?? ''}:${f.max ?? ''}:${f.onInvalid}`)
+    .map((f) => `${f.id}:${f.name}:${f.role}:${f.unit ?? ''}:${f.min ?? ''}:${f.max ?? ''}:${f.onInvalid}:${f.conserve ?? ''}`)
     .join(',');
-  const events = c.events.flatMap((e) => e.variants).join(',');
-  return `${c.domain}/${c.structName}#${c.kind}=${c.dmType}[${fields}]{${events}}`;
+  const events = c.events
+    .flatMap((e) => e.variants)
+    .map((v) => `${v.name}(${v.fields.join(' ')})`)
+    .join(',');
+  return `${c.domain}/${c.structName}#${c.kind}:${c.owner}=${c.dmType}[${fields}]{${events}}`;
 }
 
-function abiOf(binds: Bind[], defines: Define[], components: Component[]): string {
+function domainEventsCanonical(d: DomainEvents): string {
+  return `${d.domain}!${d.decl.name}{${d.decl.variants.map((v) => `${v.name}(${v.fields.join(' ')})`).join(',')}}`;
+}
+
+function abiOf(binds: Bind[], defines: Define[], components: Component[], domainEvents: DomainEvents[]): string {
   const canonical = [
     ...binds.map((b) => `${b.name}(${b.args === null ? '...' : b.args.length})`),
     ...defines.map((d) => `${d.name}=${d.value}`),
     ...components.map(componentCanonical),
+    ...domainEvents.map(domainEventsCanonical),
   ].join('\n');
   return createHash('sha256').update(canonical).digest('hex').slice(0, 16);
 }
@@ -774,15 +874,10 @@ function docBlock(docs: string[], indent = ''): string {
 }
 
 export function render(root: string): { dm: string; typesDm: string; rs: string; binds: number } {
-  const { binds: writtenBinds, defines } = scan(root);
-  const components = scanComponents(root);
+  const { binds, defines } = scan(root);
+  const { components, domainEvents } = scanComponents(root);
   for (const c of components) checkDmTypeExists(root, c);
-  // Every #[auxmacros::bind] proc gets a _bindings.dm entry, whether it was
-  // scanned from hand-written source or synthesized from a #[vg::component]
-  // declaration (componentBinds() above) — from here on there is no
-  // distinction between the two.
-  const binds = mergeBinds(writtenBinds, componentBinds(components));
-  const abi = abiOf(binds, defines, components);
+  const abi = abiOf(binds, defines, components, domainEvents);
   let dm = `// THIS FILE IS GENERATED by tools/build/lib/verdigris_bindings.ts from the
 // #[auxmacros::bind] functions in verdigris/. Do not edit it by hand: run
 // \`tools/build/build.sh verdigris-bindings\`. CI fails when it is stale.
@@ -840,7 +935,7 @@ export function render(root: string): { dm: string; typesDm: string; rs: string;
 
 pub const ABI: &str = "${abi}";
 `;
-  const typesDm = renderComponentsDm(root, components);
+  const typesDm = renderComponentsDm(root, components, domainEvents);
   return { dm, typesDm, rs, binds: binds.length };
 }
 

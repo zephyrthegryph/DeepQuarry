@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "034eab3a3bbb7263"
+#define VERDIGRIS_ABI "b7df0bda57674e9b"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -385,28 +385,13 @@
 // verdigris/core/src/units.rs
 #define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
 
-/// 0 °C, K. Single source for gas and heat.
-// verdigris/core/src/units.rs
-#define T0C 273.15
-
 /// 0 degrees Celsius, K.
 // verdigris/core/src/units.rs
 #define T0C 273.15
 
-/// 20 °C, K. Single source for gas and heat.
-// verdigris/core/src/units.rs
-#define T20C 293.15
-
 /// 20 degrees Celsius, K ("room temperature").
 // verdigris/core/src/units.rs
 #define T20C 293.15
-
-/// Cosmic microwave background, K. The floor of every body and gas. Single
-/// source for gas and heat (`rust_core.md` §15 core consolidation; H1 dedup
-/// audit finding); both `vg_heat::consts::TCMB` and `vg_gas`'s copy
-/// re-export this.
-// verdigris/core/src/units.rs
-#define TCMB 2.7
 
 /// Cosmic microwave background temperature, K. The floor every body and
 /// gas cools toward.
@@ -433,17 +418,14 @@
 // verdigris/domains/heat/src/consts.rs
 #define THERMAL_EMISSIVITY_DEFAULT 0.9
 
-/// This component's domain index in the entity table (§4.1). Gas is domain
-/// 0; later domains (power, heat, ...) take 1, 2, ... as they land. Expected
-/// in scope by the generated glue (`DOMAIN` is a fixed name, not passed
-/// through the macro, since several kinds share one domain's number).
-// verdigris/domains/gas/src/kind/pump.rs
+// verdigris/core/src/component.rs
 #define VG_DOMAIN_GAS 0
 
-/// This component's domain index in the entity table. Gas's pump is domain
-/// 0; this is the first non-gas domain to register.
+/// This host's entity slot and registry id. It must differ from every
+/// other host's: power holds 1 and the gas turf watch port 2 (this used to
+/// be 1 as well, so whichever registered last replaced the other).
 // verdigris/ffi/src/heat_mob.rs
-#define VG_DOMAIN_HEAT_MOB 1
+#define VG_DOMAIN_HEAT_MOB 3
 
 /// Power's domain index in the entity table (gas is 0).
 // verdigris/ffi/src/power.rs
@@ -466,6 +448,11 @@
 /// node are both rows of the same store, keyed by DM's power key.
 // verdigris/ffi/src/power.rs
 #define VG_POWER_NODE 1
+
+/// Registry ids at and above this are world component kinds:
+/// `WORLD_KIND_BASE | kind_code` ([`crate::world::kind_code`]).
+// verdigris/core/src/registry.rs
+#define VG_WORLD_KIND_BASE 0x10000
 
 // Binds.
 
@@ -593,6 +580,59 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, other)
 
+/// Take reconciliation on a conserved field: adds `delta` to the owner's
+/// current value. Returns the shortfall of a removal.
+// /proc/vg_component_adjust (verdigris/ffi/src/world.rs)
+/proc/vg_component_adjust(entity, code, field_id, index, delta)
+	var/static/__f = load_ext(VERDIGRIS, "byond:component_adjust_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, code, field_id, index, delta)
+
+/// Attaches component `code` to `entity` (0: a new entity), seeded from its
+/// defaults with `init` (`[field, value, ...]`) applied as validated
+/// writes. Returns the entity handle.
+// /proc/vg_component_bind (verdigris/ffi/src/world.rs)
+/proc/vg_component_bind(entity, code, init)
+	var/static/__f = load_ext(VERDIGRIS, "byond:component_bind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, code, init)
+
+/// Detaches one component.
+// /proc/vg_component_detach (verdigris/ffi/src/world.rs)
+/proc/vg_component_detach(entity, code)
+	var/static/__f = load_ext(VERDIGRIS, "byond:component_detach_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, code)
+
+/// One field (element `index` of an array field; 0 otherwise).
+// /proc/vg_component_get (verdigris/ffi/src/world.rs)
+/proc/vg_component_get(entity, code, field_id, index)
+	var/static/__f = load_ext(VERDIGRIS, "byond:component_get_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, code, field_id, index)
+
+/// Several fields in one call (a query group): one number per field id.
+// /proc/vg_component_get_many (verdigris/ffi/src/world.rs)
+/proc/vg_component_get_many(entity, code, fields)
+	var/static/__f = load_ext(VERDIGRIS, "byond:component_get_many_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, code, fields)
+
+/// Whether `entity` has component `code` (never a runtime).
+// /proc/vg_component_has (verdigris/ffi/src/world.rs)
+/proc/vg_component_has(entity, code)
+	var/static/__f = load_ext(VERDIGRIS, "byond:component_has_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, code)
+
+/// A validated write (`index` < 0 or null: the whole field). Returns the
+/// value DM now reads back.
+// /proc/vg_component_set (verdigris/ffi/src/world.rs)
+/proc/vg_component_set(entity, code, field_id, index, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:component_set_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, code, field_id, index, value)
+
 /// Args: (maxx, maxy, maxz). Sizes the gas field (and the heat field) for
 /// the map. Called at world start and when the map grows.
 // /proc/auxmos_configure_world (verdigris/domains/gas/src/turf.rs)
@@ -671,19 +711,6 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
 
-/// `SSvg`'s per-domain event drain (§4.8): every event raised by that
-/// domain's components since the last drain, as a flat
-/// `[kind, entity, event_id, ...]` list. SSreactor/SSvg calls this once per
-/// domain per tick (or sweep), then resolves each `entity` to its bound
-/// atom and calls the generated dispatcher, checking `atom.vg_entity ==
-/// entity` first (a component detached between the event firing and the
-/// drain is a stale record, silently dropped by that check).
-// /proc/entity_drain_domain_events (verdigris/ffi/src/entity.rs)
-/proc/vg_entity_drain_domain_events(domain)
-	var/static/__f = load_ext(VERDIGRIS, "byond:entity_drain_domain_events_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(domain)
-
 /// A safe probe for whether `entity_v` currently resolves to a live
 /// component of `domain`/`kind`: `FALSE` for stale, out-of-range, unbound
 /// (0), wrong-component or wrong-kind, never a runtime. `resolve()` (used
@@ -698,10 +725,8 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity, domain, kind)
 
-/// `SSvg`'s per-sweep maintenance: ticks every registered domain once
-/// (publishing a view, pruning the overlay for worker-owned kinds), so
-/// state is never more than one sweep old even though nothing sets it per
-/// idle tick.
+/// `SSvg`'s per-sweep maintenance for hosts not yet on the world's pacer
+/// (the world itself is paced by `vg_world_tick`).
 // /proc/entity_tick_all (verdigris/ffi/src/entity.rs)
 /proc/vg_entity_tick_all()
 	var/static/__f = load_ext(VERDIGRIS, "byond:entity_tick_all_ffi")
@@ -746,66 +771,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:fuel_amount_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
-
-// /proc/gas_mix_bind (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_bind(entity, init_temperature, init_volume)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_bind_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, init_temperature, init_volume)
-
-// /obj/item/gas_mix_holder/proc/get_moles (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_get_moles(entity, index)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_moles_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, index)
-
-// /obj/item/gas_mix_holder/proc/get_pressure (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_get_pressure(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_pressure_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/item/gas_mix_holder/proc/get_temperature (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_get_temperature(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_temperature_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/item/gas_mix_holder/proc/get_total (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_get_total(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_total_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/item/gas_mix_holder/proc/get_volume (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_get_volume(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_volume_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /proc/gas_mix_query_ui (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_query_ui(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_query_ui_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/item/gas_mix_holder/proc/set_moles (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_set_moles(entity, index, value)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_set_moles_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, index, value)
-
-// /obj/item/gas_mix_holder/proc/set_temperature (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_set_temperature(entity, value)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_set_temperature_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, value)
-
-// /obj/item/gas_mix_holder/proc/set_volume (verdigris/domains/gas/src/kind/gas_mix.rs)
-/proc/vg_gas_mix_set_volume(entity, value)
-	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_set_volume_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, value)
 
 /// Test hook: runs `frames` gas frames to completion, one after another,
 /// deterministically (no wall clock), and returns their events like
@@ -1395,72 +1360,6 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-// /proc/pump_bind (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_bind(entity, init_target_pressure, init_power_rating, init_on, operable)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_bind_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, init_target_pressure, init_power_rating, init_on, operable)
-
-// /obj/machinery/atmospherics/binary/pump/proc/get_flow_rate (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_get_flow_rate(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_flow_rate_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/machinery/atmospherics/binary/pump/proc/get_on (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_get_on(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_on_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/machinery/atmospherics/binary/pump/proc/get_operable (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_get_operable(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_operable_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/machinery/atmospherics/binary/pump/proc/get_power_rating (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_get_power_rating(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_power_rating_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/machinery/atmospherics/binary/pump/proc/get_target_pressure (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_get_target_pressure(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_get_target_pressure_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/machinery/atmospherics/binary/pump/proc/push_operable (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_push_operable(entity, value)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_push_operable_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, value)
-
-// /proc/pump_query_ui (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_query_ui(entity)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_query_ui_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity)
-
-// /obj/machinery/atmospherics/binary/pump/proc/set_on (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_set_on(entity, value)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_set_on_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, value)
-
-// /obj/machinery/atmospherics/binary/pump/proc/set_power_rating (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_set_power_rating(entity, value)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_set_power_rating_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, value)
-
-// /obj/machinery/atmospherics/binary/pump/proc/set_target_pressure (verdigris/domains/gas/src/kind/pump.rs)
-/proc/vg_pump_set_target_pressure(entity, value)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pump_set_target_pressure_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(entity, value)
-
 /// One radiation pulse from (`x`, `y`, `z`): returns the path transmission
 /// to each target in `targets` (a flat list of `x, y, z`), or -1 for targets
 /// out of `range`, on another z-level or off the grid. Rays stop early once
@@ -1959,3 +1858,34 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:watch_dirty_gas_mixture_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(id, interest_mask)
+
+/// Every typed event since the last call, as `vg_core::event`'s wire form
+/// (`header, entity, len, payload...` per record). The generated DM
+/// `vg_drain_events()` decodes it and dispatches each record.
+// /proc/vg_world_events (verdigris/ffi/src/world.rs)
+/proc/vg_world_events()
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_events_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Per-law statistics, as `name phase stepped awake` lines.
+// /proc/vg_world_laws (verdigris/ffi/src/world.rs)
+/proc/vg_world_laws()
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_laws_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Pacing: feeds `seconds` of game time to the world's pacer and runs a
+/// step when one is owed. Returns whether a step ran.
+// /proc/vg_world_tick (verdigris/ffi/src/world.rs)
+/proc/vg_world_tick(seconds)
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_tick_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(seconds)
+
+/// Conservation violations since the last call, as text (empty: none).
+// /proc/vg_world_violations (verdigris/ffi/src/world.rs)
+/proc/vg_world_violations()
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_violations_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()

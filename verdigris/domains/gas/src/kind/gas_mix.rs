@@ -33,7 +33,7 @@ pub struct GasMix {
 	/// (a ruptured supermatter-adjacent tank, not a realistic operating
 	/// range) - the point is rejecting NaN/negative from a bad DM call,
 	/// not modelling a physical tank limit here.
-	#[vg(config, unit = "mol", range = 0.0..=1000000.0, default = [0.0; N], on_invalid = clamp)]
+	#[vg(config, unit = "mol", range = 0.0..=1000000.0, default = [0.0; N], on_invalid = clamp, conserve = "gas_moles")]
 	moles: [f32; N],
 	// 2.7 is `TCMB`: the binding generator reads ranges as literal numbers.
 	#[vg(config, unit = "K", range = 2.7..=10000.0, default = T20C, on_invalid = clamp)]

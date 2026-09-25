@@ -4,22 +4,22 @@
  * The reconciler and per-sweep maintenance for the Rust binding layer
  * (doc/rewrite/rust_bindings.md §7). Every `wait`, this subsystem:
  *
- * 1. Ticks every registered Rust domain once (`vg_entity_tick_all()`), so a
- *    component's state is never more than one sweep old even though nothing
- *    writes it per idle tick.
+ * 1. Feeds the elapsed time to the Rust world's pacer (`vg_world_tick()`),
+ *    which steps every law when a step is owed, and ticks the Rust hosts
+ *    that are not on the world yet (`vg_entity_tick_all()`).
  * 2. Recomputes a budget's worth of bound atoms' declared inputs and
  *    compares them with what Rust has stored, through `vg_reconcile()`
  *    (generated per bound type). A mismatch is repaired (the generated
  *    reconcile proc pushes the recomputed value before returning it as a
  *    finding) and logged.
  *
- * 3. Drains and dispatches every domain's events (§8), through the
- *    generated `vg_drain_events()`: one `entity_drain_domain_events()` FFI
- *    call per domain, each event resolved to its bound atom by
- *    `entity_lookup()` and checked against `atom.vg_entity` before the
- *    generated dispatcher is called, so a component detached between the
- *    event firing and this drain is silently dropped rather than
- *    misdelivered.
+ * 3. Drains and dispatches every typed event (§8), through the generated
+ *    `vg_drain_events()`: one `vg_world_events()` FFI call returns them
+ *    all; a component event is resolved to its bound atom by
+ *    `entity_lookup()` and checked against `atom.vg_entity` before its
+ *    handler is called, so a component detached between the event firing
+ *    and this drain is silently dropped rather than misdelivered. Domain
+ *    events call the generated `SSvg.on_<domain>_<event>()` handlers.
  *
  * `bound` (which atoms to sweep) and `entities_by_index` (which atom a
  * `vg_entity` belongs to) are maintained by `on_materialize()`/
@@ -70,6 +70,7 @@ SUBSYSTEM_DEF(vg)
 	return ..()
 
 /datum/controller/subsystem/vg/fire(resumed)
+	vg_world_tick(wait / (1 SECONDS))
 	vg_entity_tick_all()
 	vg_drain_events()
 	if(!length(bound))

@@ -21,14 +21,18 @@
 /atom/movable/proc/vg_reconcile_gas()
 	return list()
 
-/// Dispatches one drained gas event (§8) to its named handler.
-/// Overridden per bound type below (only on types that declare events).
-/atom/movable/proc/vg_dispatch_gas_event(event_id)
-	return
-
-// ---- Pump (gas kind 1; verdigris/domains/gas/src/kind/pump.rs) ----
+// ---- Pump (gas kind 1, owner worker; verdigris/domains/gas/src/kind/pump.rs) ----
 
 #define VG_GAS_PUMP 1
+/// The code the generic vg_component_* binds take for Pump.
+#define VG_KIND_PUMP 1
+/// Pump's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
+#define REACT_DOMAIN_PUMP (VG_WORLD_KIND_BASE | VG_KIND_PUMP)
+#define VG_PUMP_FIELD_TARGET_PRESSURE 0
+#define VG_PUMP_FIELD_POWER_RATING 1
+#define VG_PUMP_FIELD_ON 2
+#define VG_PUMP_FIELD_OPERABLE 3
+#define VG_PUMP_FIELD_FLOW_RATE 4
 
 /obj/machinery/atmospherics/binary/pump
 	vg_gas = VG_GAS_PUMP
@@ -44,31 +48,31 @@
 
 /// kPa; clamped to VG_PUMP_TARGET_PRESSURE_MIN..MAX.
 /obj/machinery/atmospherics/binary/pump/proc/get_target_pressure()
-	return vg_pump_get_target_pressure(vg_entity) // kPa
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_TARGET_PRESSURE, 0) // kPa
 
 /// Returns the stored value.
 /obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)
-	return vg_pump_set_target_pressure(vg_entity, value)
+	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_TARGET_PRESSURE, -1, value)
 
 /// W; clamped to VG_PUMP_POWER_RATING_MIN..MAX.
 /obj/machinery/atmospherics/binary/pump/proc/get_power_rating()
-	return vg_pump_get_power_rating(vg_entity) // W
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_POWER_RATING, 0) // W
 
 /// Returns the stored value.
 /obj/machinery/atmospherics/binary/pump/proc/set_power_rating(value)
-	return vg_pump_set_power_rating(vg_entity, value)
+	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_POWER_RATING, -1, value)
 
 /// unitless;.
 /obj/machinery/atmospherics/binary/pump/proc/get_on()
-	return vg_pump_get_on(vg_entity)
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, 0)
 
 /// Returns the stored value.
 /obj/machinery/atmospherics/binary/pump/proc/set_on(value)
-	return vg_pump_set_on(vg_entity, value)
+	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, -1, value)
 
 /// mol/s, read-only (state).
 /obj/machinery/atmospherics/binary/pump/proc/get_flow_rate()
-	return vg_pump_get_flow_rate(vg_entity) // mol/s
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_FLOW_RATE, 0) // mol/s
 
 /// Pure proc over Pump's declared input sources (construction, integrity).
 /// Override per subtype if the default doesn't apply.
@@ -78,14 +82,18 @@
 /// What Rust currently has stored, for the reconciler (§7). Compare
 /// against pump_input_operable(); never used for game logic.
 /obj/machinery/atmospherics/binary/pump/proc/get_operable()
-	return vg_pump_get_operable(vg_entity)
+	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_OPERABLE, 0)
+
+/// Pushes the input's current value to Rust.
+/obj/machinery/atmospherics/binary/pump/proc/push_operable(value)
+	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_OPERABLE, -1, value)
 
 /// target_pressure, power_rating, on, flow_rate in one call.
 /obj/machinery/atmospherics/binary/pump/proc/pump_query_ui()
-	return vg_pump_query_ui(vg_entity)
+	return vg_component_get_many(vg_entity, VG_KIND_PUMP, list(VG_PUMP_FIELD_TARGET_PRESSURE, VG_PUMP_FIELD_POWER_RATING, VG_PUMP_FIELD_ON, VG_PUMP_FIELD_FLOW_RATE))
 
 /obj/machinery/atmospherics/binary/pump/vg_bind_gas(entity)
-	return vg_pump_bind(entity, init_target_pressure, init_power_rating, init_on, pump_input_operable())
+	return vg_component_bind(entity, VG_KIND_PUMP, list(VG_PUMP_FIELD_TARGET_PRESSURE, init_target_pressure, VG_PUMP_FIELD_POWER_RATING, init_power_rating, VG_PUMP_FIELD_ON, init_on, VG_PUMP_FIELD_OPERABLE, pump_input_operable()))
 
 /// Compares every declared input against what Rust has stored (§7);
 /// repairs any mismatch and returns "field: expected=.. actual=.." for
@@ -96,7 +104,7 @@
 	var/actual_operable = get_operable()
 	if(!expected_operable != !actual_operable)
 		mismatches += "operable: expected=[expected_operable] actual=[actual_operable]"
-		vg_pump_push_operable(vg_entity, expected_operable)
+		push_operable(expected_operable)
 	return mismatches
 
 /obj/machinery/atmospherics/binary/pump/vg_reconcile_gas()
@@ -106,12 +114,12 @@
 /obj/machinery/atmospherics/binary/pump/atom_break(damage_flag)
 	. = ..()
 	if(vg_entity)
-		vg_pump_push_operable(vg_entity, pump_input_operable())
+		push_operable(pump_input_operable())
 
 /obj/machinery/atmospherics/binary/pump/atom_fix()
 	. = ..()
 	if(vg_entity)
-		vg_pump_push_operable(vg_entity, pump_input_operable())
+		push_operable(pump_input_operable())
 
 #define VG_PUMP_EVENT_TARGET_REACHED 0
 #define VG_PUMP_EVENT_STARVED 1
@@ -124,20 +132,18 @@
 /obj/machinery/atmospherics/binary/pump/proc/on_pump_starved()
 	return
 
-/// Dispatches one drained event (§8) to its named handler.
-/obj/machinery/atmospherics/binary/pump/proc/pump_dispatch_event(event_id)
-	switch(event_id)
-		if(0)
-			on_pump_target_reached()
-		if(1)
-			on_pump_starved()
-
-/obj/machinery/atmospherics/binary/pump/vg_dispatch_gas_event(event_id)
-	pump_dispatch_event(event_id)
-
-// ---- GasMix (gas kind 2; verdigris/domains/gas/src/kind/gas_mix.rs) ----
+// ---- GasMix (gas kind 2, owner main; verdigris/domains/gas/src/kind/gas_mix.rs) ----
 
 #define VG_GAS_GASMIX 2
+/// The code the generic vg_component_* binds take for GasMix.
+#define VG_KIND_GASMIX 2
+/// GasMix's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
+#define REACT_DOMAIN_GASMIX (VG_WORLD_KIND_BASE | VG_KIND_GASMIX)
+#define VG_GASMIX_FIELD_MOLES 0
+#define VG_GASMIX_FIELD_TEMPERATURE 1
+#define VG_GASMIX_FIELD_VOLUME 2
+#define VG_GASMIX_FIELD_PRESSURE 3
+#define VG_GASMIX_FIELD_TOTAL 4
 
 /obj/item/gas_mix_holder
 	vg_gas = VG_GAS_GASMIX
@@ -154,34 +160,47 @@
 
 /// mol; clamped to VG_GASMIX_MOLES_MIN..MAX.
 /obj/item/gas_mix_holder/proc/get_moles(index)
-	return vg_gas_mix_get_moles(vg_entity, index) // mol
+	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_MOLES, index) // mol
 
 /// Returns the stored value.
 /obj/item/gas_mix_holder/proc/set_moles(index, value)
-	return vg_gas_mix_set_moles(vg_entity, index, value)
+	return vg_component_set(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_MOLES, index, value)
 
 /// K; clamped to VG_GASMIX_TEMPERATURE_MIN..MAX.
 /obj/item/gas_mix_holder/get_temperature()
-	return vg_gas_mix_get_temperature(vg_entity) // K
+	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_TEMPERATURE, 0) // K
 
 /// Returns the stored value.
 /obj/item/gas_mix_holder/proc/set_temperature(value)
-	return vg_gas_mix_set_temperature(vg_entity, value)
+	return vg_component_set(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_TEMPERATURE, -1, value)
 
 /// L; clamped to VG_GASMIX_VOLUME_MIN..MAX.
 /obj/item/gas_mix_holder/proc/get_volume()
-	return vg_gas_mix_get_volume(vg_entity) // L
+	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_VOLUME, 0) // L
 
 /// Returns the stored value.
 /obj/item/gas_mix_holder/proc/set_volume(value)
-	return vg_gas_mix_set_volume(vg_entity, value)
+	return vg_component_set(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_VOLUME, -1, value)
+
+/// unitless, read-only (computed readout).
+/obj/item/gas_mix_holder/proc/get_pressure()
+	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_PRESSURE, 0)
+
+/// unitless, read-only (computed readout).
+/obj/item/gas_mix_holder/proc/get_total()
+	return vg_component_get(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_TOTAL, 0)
+
+/// Take reconciliation (gas_moles): adds `delta` to what Rust holds now;
+/// returns the part of a removal that was not there.
+/obj/item/gas_mix_holder/proc/adjust_moles(index, delta)
+	return vg_component_adjust(vg_entity, VG_KIND_GASMIX, VG_GASMIX_FIELD_MOLES, index, delta)
 
 /// temperature, volume in one call.
 /obj/item/gas_mix_holder/proc/gas_mix_query_ui()
-	return vg_gas_mix_query_ui(vg_entity)
+	return vg_component_get_many(vg_entity, VG_KIND_GASMIX, list(VG_GASMIX_FIELD_TEMPERATURE, VG_GASMIX_FIELD_VOLUME))
 
 /obj/item/gas_mix_holder/vg_bind_gas(entity)
-	return vg_gas_mix_bind(entity, init_temperature, init_volume)
+	return vg_component_bind(entity, VG_KIND_GASMIX, list(VG_GASMIX_FIELD_TEMPERATURE, init_temperature, VG_GASMIX_FIELD_VOLUME, init_volume))
 
 #define VG_GASMIX_EVENT_OVERPRESSURE 0
 #define VG_GASMIX_EVENT_DEPLETED 1
@@ -194,16 +213,21 @@
 /obj/item/gas_mix_holder/proc/on_gas_mix_depleted()
 	return
 
-/// Dispatches one drained event (§8) to its named handler.
-/obj/item/gas_mix_holder/proc/gas_mix_dispatch_event(event_id)
-	switch(event_id)
-		if(0)
-			on_gas_mix_overpressure()
-		if(1)
-			on_gas_mix_depleted()
+/// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_gas_reaction_ready(reaction)
+	return
 
-/obj/item/gas_mix_holder/vg_dispatch_gas_event(event_id)
-	gas_mix_dispatch_event(event_id)
+/// power event (verdigris/domains/power/src/events.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_power_brownout()
+	return
+
+/// power event (verdigris/domains/power/src/events.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_power_restored()
+	return
+
+/// power event (verdigris/domains/power/src/events.rs). Generated no-op default; override on SSvg.
+/datum/controller/subsystem/vg/proc/on_power_apc_channel_changed()
+	return
 
 // ---- One entry point per bound atom -------------------------------------
 
@@ -224,17 +248,46 @@
 		mismatches += vg_reconcile_gas()
 	return mismatches
 
-/// Drains and dispatches every domain's events (§8). SSvg calls this once
-/// per tick; one `entity_drain_domain_events()` FFI call per domain.
+/// Drains and dispatches every typed event since the last call (§4.8).
+/// SSvg calls this once per tick after vg_world_tick(). Component events
+/// go to the bound atom (checked against vg_entity: a detached component's
+/// late event is dropped); domain events go to SSvg's handlers.
 /proc/vg_drain_events()
-	vg_drain_gas_events()
-
-/proc/vg_drain_gas_events()
-	var/list/flat = vg_entity_drain_domain_events(VG_DOMAIN_GAS)
-	for(var/i = 1; i <= length(flat); i += 3)
+	var/list/flat = vg_world_events()
+	var/i = 1
+	while(i + 2 <= length(flat))
+		var/header = flat[i]
 		var/entity = flat[i + 1]
-		var/event_id = flat[i + 2]
-		var/atom/movable/mover = SSvg.entity_lookup(entity)
-		if(mover && mover.vg_entity == entity)
-			mover.vg_dispatch_gas_event(event_id)
+		var/len = flat[i + 2]
+		var/p = i + 3
+		i = p + len
+		switch(header)
+			if(256)
+				var/atom/movable/mover = SSvg.entity_lookup(entity)
+				if(mover && mover.vg_entity == entity)
+					var/obj/machinery/atmospherics/binary/pump/target = mover
+					target.on_pump_target_reached()
+			if(257)
+				var/atom/movable/mover = SSvg.entity_lookup(entity)
+				if(mover && mover.vg_entity == entity)
+					var/obj/machinery/atmospherics/binary/pump/target = mover
+					target.on_pump_starved()
+			if(512)
+				var/atom/movable/mover = SSvg.entity_lookup(entity)
+				if(mover && mover.vg_entity == entity)
+					var/obj/item/gas_mix_holder/target = mover
+					target.on_gas_mix_overpressure()
+			if(513)
+				var/atom/movable/mover = SSvg.entity_lookup(entity)
+				if(mover && mover.vg_entity == entity)
+					var/obj/item/gas_mix_holder/target = mover
+					target.on_gas_mix_depleted()
+			if(0)
+				SSvg.on_gas_reaction_ready(flat[p + 0])
+			if(65536)
+				SSvg.on_power_brownout()
+			if(65537)
+				SSvg.on_power_restored()
+			if(65538)
+				SSvg.on_power_apc_channel_changed()
 
