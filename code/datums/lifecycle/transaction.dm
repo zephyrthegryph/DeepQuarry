@@ -15,7 +15,10 @@
 /// (or, for a plain /datum with no override, the base no-op) returned.
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	LAZYINITLIST(trash.phase_ms)
+	// Indexed by LIFECYCLE_PHASE_* id, so it must have a slot per phase
+	// (an empty lazy list made every phase write an out-of-bounds runtime).
+	if(length(trash.phase_ms) < LIFECYCLE_PHASE_COUNT)
+		trash.phase_ms = new /list(LIFECYCLE_PHASE_COUNT)
 
 	// Phase 0: guard. From here QDELETED(D) is true (gc_destroyed is set),
 	// which is what stops re-entrant qdel(D) (qdel()'s own check, above this
@@ -98,7 +101,7 @@
 /// one TICK_USAGE_TO_MS and one list write, mirroring how destroy_time
 /// itself is already measured in qdel().
 /proc/dq_lifecycle_time(datum/qdel_item/trash, id, start_tick)
-	trash.phase_ms[id] = (trash.phase_ms[id] || 0) + TICK_USAGE_TO_MS(start_tick)
+	trash.phase_ms[id] += TICK_USAGE_TO_MS(start_tick)
 
 // ---- Phase 1: unbind (hook point) ----
 

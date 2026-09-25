@@ -31,6 +31,14 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 /// every test to block on the previous test's straggling cleanup.
 #define UNIT_TEST_BLOCK_POOL_SIZE 8
 
+/// Area of maps/templates/unit_tests.dmm. The template must only use types
+/// that exist: the map parser silently drops unknown paths, which left every
+/// cell with an empty model (build_coordinate() runtimes, no landmarks, an
+/// empty block pool, and every test waiting 60 s for a block).
+/area/unit_test
+	name = "Unit Test Room"
+	requires_power = FALSE
+
 /// One isolated, walled-off copy of maps/templates/unit_tests.dmm on its own
 /// z-level. Checked out to exactly one running unit test at a time so tests no
 /// longer share a single global floor turf (the historic source of most

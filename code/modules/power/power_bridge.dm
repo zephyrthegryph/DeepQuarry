@@ -43,8 +43,9 @@ GLOBAL_VAR_INIT(power_next_key, 1)
 /datum/controller/subsystem/machines
 	/// Queued power edits and commands: `op, n, n values` each (POWER_OP_*).
 	var/list/power_ops = list()
-	/// Region id (Rust's raw handle bits + 1) -> its /datum/powernet.
-	var/list/power_regions = list()
+	/// Region id (Rust's raw handle bits + 1) -> its /datum/powernet. An alist:
+	/// the ids are numbers, and a plain list would treat them as positions.
+	var/alist/power_regions = alist()
 	/// While above zero, queued power edits are held (an explosion epoch).
 	var/power_batch_depth = 0
 	/// Areas whose static or one-off loads changed since the last step.
@@ -181,7 +182,7 @@ GLOBAL_VAR_INIT(power_next_key, 1)
 		var/datum/powernet/network = power_regions[id]
 		network.region_id = 0
 		qdel(network)
-	power_regions = list()
+	power_regions = alist()
 	for(var/obj/structure/cable/cable as anything in REGISTRY_MEMBERS(REGISTRY_CABLES))
 		cable.power_register()
 	for(var/obj/machinery/power/machine in world)

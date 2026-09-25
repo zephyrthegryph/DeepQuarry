@@ -35,7 +35,7 @@
 /// SLOT_DROP_DELETE -- see file header). Skips is_mind_slot entries: phase
 /// 0.5 already resolved those, tree-wide, before this ever runs.
 /atom/movable/proc/dq_lifecycle_resolve_contents()
-	var/datum/ledger/L = dq_ledger(src) // builds it (and resolves a latent generator) if this is its first use
+	var/datum/ledger/L = dq_ledger(src, destroying = TRUE) // builds it (and resolves a latent generator) if this is its first use
 	if(!L)
 		return
 	var/atom/drop = drop_location()

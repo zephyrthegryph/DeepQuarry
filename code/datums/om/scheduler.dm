@@ -269,9 +269,12 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 /datum/om/scheduler/proc/run_lane(lane, t)
 	. = TRUE
+	// Eager derived values are inputs to wakes in every lane: a behaviour in
+	// an earlier lane observing a derived channel must see the change this
+	// pass, not the next. The queue is empty (one length check) almost always.
+	if(!run_derived_queue())
+		return FALSE
 	if(lane == LANE_DERIVED)
-		if(!run_derived_queue())
-			return FALSE
 		if(!run_services())
 			return FALSE
 	if(!run_wakes(lane))
@@ -548,7 +551,11 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 // ---------------------------------------------------------------- deadlines
 
 /datum/om/scheduler/proc/insert_deadline(datum/om/rec/rec, bid, gen, due)
-	var/ds = round(due)
+	// The first bucket whose turn comes at or after `due`. round() is floor
+	// in DM: a fractional due (clock rescheduling, sub-decisecond world.time)
+	// landed in a bucket that ran while the entry was not yet due, was kept
+	// there, and waited a whole wheel turn.
+	var/ds = CEILING(due, 1)
 	var/floor_ds = dl_processing ? dl_cursor + 1 : dl_cursor
 	if(ds < floor_ds)
 		ds = floor_ds

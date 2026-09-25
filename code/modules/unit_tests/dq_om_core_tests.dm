@@ -178,7 +178,7 @@
 	name = "test hooked"
 
 /datum/om/relation/test_hooked/on_unlink(datum/om_test_entity/source, datum/om_test_entity/target, datum/om/edge/edge)
-	source.log += "unlink:[!isnull(source)]:[!isnull(target)]:[QDELETED(source)]"
+	source.log += "unlink:[!isnull(source)]:[!isnull(target)]:[!!QDELETED(source)]"
 	target.log += "unlink:[!isnull(source)]:[!isnull(target)]"
 
 /datum/om/event/test
@@ -580,11 +580,11 @@
 	var/list/entities = list()
 	for(var/i in 1 to 50)
 		entities += entity(made)
-	var/ffi_before = global.vars["__verdigris_ffi_calls"]
+	var/ffi_before = __verdigris_ffi_calls
 	for(var/datum/om_test_entity/E as anything in entities)
 		om_after(E, 3, /datum/om/behaviour/test/deadline_only)
 	scheduler_advance(0.5)
-	TEST_ASSERT_EQUAL(global.vars["__verdigris_ffi_calls"], ffi_before, "deadlines crossed into Rust")
+	TEST_ASSERT_EQUAL(__verdigris_ffi_calls, ffi_before, "deadlines crossed into Rust")
 	for(var/datum/om_test_entity/E as anything in entities)
 		TEST_ASSERT_EQUAL(E.deadlines, 1, "every deadline fired")
 
