@@ -19,7 +19,10 @@ pub fn register_domain(id: u32, domain: Box<dyn DomainRegistry>) {
 }
 
 /// Runs `f` against the registered host `id`, if any.
-pub fn with_domain<T>(id: u32, f: impl FnOnce(&mut (dyn DomainRegistry + 'static)) -> T) -> Option<T> {
+pub fn with_domain<T>(
+    id: u32,
+    f: impl FnOnce(&mut (dyn DomainRegistry + 'static)) -> T,
+) -> Option<T> {
     DOMAINS.with_borrow_mut(|d| d.get_mut(id).map(f))
 }
 

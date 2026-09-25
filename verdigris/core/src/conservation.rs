@@ -85,7 +85,12 @@ impl Ledger {
     /// `name` only records the starting baseline (nothing to compare
     /// against yet), so callers can check from the first step without a
     /// separate "prime the ledger" call.
-    pub fn check(&mut self, name: &'static str, total: f64, tolerance: f64) -> Result<(), Violation> {
+    pub fn check(
+        &mut self,
+        name: &'static str,
+        total: f64,
+        tolerance: f64,
+    ) -> Result<(), Violation> {
         let entry = self.entries.entry(name).or_default();
         if !entry.initialized {
             entry.initialized = true;
@@ -173,7 +178,10 @@ impl Totals {
 
     #[must_use]
     pub fn get(&self, name: &str) -> f64 {
-        self.sums.iter().find(|(n, _)| *n == name).map_or(0.0, |(_, v)| *v)
+        self.sums
+            .iter()
+            .find(|(n, _)| *n == name)
+            .map_or(0.0, |(_, v)| *v)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&'static str, f64)> + '_ {
@@ -198,7 +206,10 @@ impl Tolerance {
 
 impl Default for Tolerance {
     fn default() -> Self {
-        Self { abs: 1e-6, rel: 1e-6 }
+        Self {
+            abs: 1e-6,
+            rel: 1e-6,
+        }
     }
 }
 
@@ -217,7 +228,11 @@ impl Ledger {
 
     /// Checks every `(quantity, tolerance)` in `declared` against `totals`,
     /// returning each violation.
-    pub fn check_all(&mut self, totals: &Totals, declared: &[(&'static str, Tolerance)]) -> Vec<Violation> {
+    pub fn check_all(
+        &mut self,
+        totals: &Totals,
+        declared: &[(&'static str, Tolerance)],
+    ) -> Vec<Violation> {
         declared
             .iter()
             .filter_map(|&(name, tol)| {
@@ -318,7 +333,10 @@ mod tests {
 
         let declared = [("moles", Tolerance::default())];
         let mut ledger = Ledger::new();
-        assert!(ledger.check_all(&totals, &declared).is_empty(), "priming never fails");
+        assert!(
+            ledger.check_all(&totals, &declared).is_empty(),
+            "priming never fails"
+        );
         totals.clear();
         totals.add_source(&FixedSource("moles", 20.0));
         let v = ledger.check_all(&totals, &declared);

@@ -50,7 +50,10 @@ thread_local! {
 
 /// Every domain's declarations (see the module docs).
 fn register(b: &mut WorldBuilder) {
-    b.add_global(vg_core::component::Ownership::Main, crate::propagate::RadiationLayer::default());
+    b.add_global(
+        vg_core::component::Ownership::Main,
+        crate::propagate::RadiationLayer::default(),
+    );
     b.add_component::<vg_gas::kind::pump::Pump>();
     b.add_component::<vg_gas::kind::gas_mix::GasMix>();
     b.conserve("gas_moles", Tolerance::default());
@@ -60,13 +63,20 @@ fn build() -> Result<World> {
     let mut b = WorldBuilder::new(WorldConfig::default());
     register(&mut b);
     let world = b.build().map_err(|e| eyre!("world build: {e}"))?;
-    registry::register_domain(u32::try_from(WORLD_DOMAIN).unwrap_or(7), Box::new(WorldEntities));
+    registry::register_domain(
+        u32::try_from(WORLD_DOMAIN).unwrap_or(7),
+        Box::new(WorldEntities),
+    );
     for (kind, schema) in world.schemas() {
-        let code = vg_core::world::kind_code(vg_core::component::domain_id(schema.domain), schema.kind);
+        let code =
+            vg_core::world::kind_code(vg_core::component::domain_id(schema.domain), schema.kind);
         registry::register_domain(world_kind_domain(code), Box::new(WorldKind { kind }));
     }
     // Gas's turf watch port: a host that is not on the world yet.
-    registry::register_domain(crate::reactor::DOMAIN_GAS, Box::new(vg_gas::turf::GasDomain));
+    registry::register_domain(
+        crate::reactor::DOMAIN_GAS,
+        Box::new(vg_gas::turf::GasDomain),
+    );
     Ok(world)
 }
 
@@ -115,7 +125,11 @@ impl DomainRegistry for WorldEntities {
         with_world(|w| {
             Ok(w.describe(e)
                 .into_iter()
-                .flat_map(|(kind, fields)| fields.into_iter().map(move |(f, v)| (format!("{kind}.{f}"), v)))
+                .flat_map(|(kind, fields)| {
+                    fields
+                        .into_iter()
+                        .map(move |(f, v)| (format!("{kind}.{f}"), v))
+                })
                 .collect())
         })
         .unwrap_or_default()
@@ -140,7 +154,9 @@ struct WorldKind {
 fn cells_to_rows(cond: &Cond) -> Result<Cond, String> {
     let row = |cell: u32| -> Result<u32, String> {
         #[allow(clippy::cast_precision_loss)]
-        entity::decode(cell as f32).map(EntityId::index).map_err(|e| e.to_string())
+        entity::decode(cell as f32)
+            .map(EntityId::index)
+            .map_err(|e| e.to_string())
     };
     Ok(match cond {
         Cond::Changed { cell, mask } => Cond::Changed {
@@ -174,8 +190,18 @@ fn cells_to_rows(cond: &Cond) -> Result<Cond, String> {
             cell: row(*cell)?,
             ch: *ch,
         },
-        Cond::Any(children) => Cond::Any(children.iter().map(cells_to_rows).collect::<Result<_, _>>()?),
-        Cond::All(children) => Cond::All(children.iter().map(cells_to_rows).collect::<Result<_, _>>()?),
+        Cond::Any(children) => Cond::Any(
+            children
+                .iter()
+                .map(cells_to_rows)
+                .collect::<Result<_, _>>()?,
+        ),
+        Cond::All(children) => Cond::All(
+            children
+                .iter()
+                .map(cells_to_rows)
+                .collect::<Result<_, _>>()?,
+        ),
     })
 }
 
@@ -186,9 +212,12 @@ impl DomainRegistry for WorldKind {
 
     fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId), String> {
         let rows = cells_to_rows(cond)?;
-        with_world(|w| w.watch(self.kind, sub, lane, &rows).map_err(|e| eyre!("{e}")))
-            .map(|id| (0, id))
-            .map_err(|e| e.to_string())
+        with_world(|w| {
+            w.watch(self.kind, sub, lane, &rows)
+                .map_err(|e| eyre!("{e}"))
+        })
+        .map(|id| (0, id))
+        .map_err(|e| e.to_string())
     }
 
     fn unwatch(&mut self, _port: u8, id: WatchId) {
@@ -217,7 +246,8 @@ fn field(v: &ByondValue) -> Result<FieldId> {
 
 fn kind(w: &World, code: &ByondValue) -> Result<KindId> {
     let code = whole(code, "kind code")?;
-    w.kind_by_code(code).ok_or_else(|| eyre!("no component kind with code {code}"))
+    w.kind_by_code(code)
+        .ok_or_else(|| eyre!("no component kind with code {code}"))
 }
 
 fn list(values: impl IntoIterator<Item = f32>) -> Result<ByondValue> {
@@ -243,7 +273,11 @@ fn text_list(values: impl IntoIterator<Item = String>) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/vg_component_bind")]
 fn component_bind(entity: ByondValue, code: ByondValue, init: ByondValue) -> Result<ByondValue> {
     let e = entity::bind_or_reuse(num(&entity)?)?;
-    let pairs = if init.is_list() { init.get_list_values()? } else { Vec::new() };
+    let pairs = if init.is_list() {
+        init.get_list_values()?
+    } else {
+        Vec::new()
+    };
     let mut values = Vec::with_capacity(pairs.len() / 2);
     for pair in pairs.chunks(2) {
         let [f, v] = pair else {
@@ -285,10 +319,19 @@ fn component_has(entity: ByondValue, code: ByondValue) -> Result<ByondValue> {
 
 /// One field (element `index` of an array field; 0 otherwise).
 #[auxmacros::bind("/proc/vg_component_get")]
-fn component_get(entity: ByondValue, code: ByondValue, field_id: ByondValue, index: ByondValue) -> Result<ByondValue> {
+fn component_get(
+    entity: ByondValue,
+    code: ByondValue,
+    field_id: ByondValue,
+    index: ByondValue,
+) -> Result<ByondValue> {
     let e = entity::decode(num(&entity)?)?;
     let f = field(&field_id)?;
-    let i = if index.is_null() { 0 } else { whole(&index, "index")? as usize };
+    let i = if index.is_null() {
+        0
+    } else {
+        whole(&index, "index")? as usize
+    };
     #[allow(clippy::cast_possible_truncation)]
     let v = with_world(|w| {
         let k = kind(w, &code)?;
@@ -299,15 +342,25 @@ fn component_get(entity: ByondValue, code: ByondValue, field_id: ByondValue, ind
 
 /// Several fields in one call (a query group): one number per field id.
 #[auxmacros::bind("/proc/vg_component_get_many")]
-fn component_get_many(entity: ByondValue, code: ByondValue, fields: ByondValue) -> Result<ByondValue> {
+fn component_get_many(
+    entity: ByondValue,
+    code: ByondValue,
+    fields: ByondValue,
+) -> Result<ByondValue> {
     let e = entity::decode(num(&entity)?)?;
-    let ids = fields.get_list_values()?.iter().map(field).collect::<Result<Vec<_>>>()?;
+    let ids = fields
+        .get_list_values()?
+        .iter()
+        .map(field)
+        .collect::<Result<Vec<_>>>()?;
     let values = with_world(|w| {
         let k = kind(w, &code)?;
         ids.iter()
             .map(|&f| {
                 #[allow(clippy::cast_possible_truncation)]
-                w.get(e, k, f, 0).map(|v| v as f32).map_err(|err| eyre!("{err}"))
+                w.get(e, k, f, 0)
+                    .map(|v| v as f32)
+                    .map_err(|err| eyre!("{err}"))
             })
             .collect::<Result<Vec<f32>>>()
     })?;
@@ -317,7 +370,13 @@ fn component_get_many(entity: ByondValue, code: ByondValue, fields: ByondValue) 
 /// A validated write (`index` < 0 or null: the whole field). Returns the
 /// value DM now reads back.
 #[auxmacros::bind("/proc/vg_component_set")]
-fn component_set(entity: ByondValue, code: ByondValue, field_id: ByondValue, index: ByondValue, value: ByondValue) -> Result<ByondValue> {
+fn component_set(
+    entity: ByondValue,
+    code: ByondValue,
+    field_id: ByondValue,
+    index: ByondValue,
+    value: ByondValue,
+) -> Result<ByondValue> {
     let e = entity::decode(num(&entity)?)?;
     let f = field(&field_id)?;
     let i = if index.is_null() || num(&index)? < 0.0 {
@@ -338,10 +397,20 @@ fn component_set(entity: ByondValue, code: ByondValue, field_id: ByondValue, ind
 /// Take reconciliation on a conserved field: adds `delta` to the owner's
 /// current value. Returns the shortfall of a removal.
 #[auxmacros::bind("/proc/vg_component_adjust")]
-fn component_adjust(entity: ByondValue, code: ByondValue, field_id: ByondValue, index: ByondValue, delta: ByondValue) -> Result<ByondValue> {
+fn component_adjust(
+    entity: ByondValue,
+    code: ByondValue,
+    field_id: ByondValue,
+    index: ByondValue,
+    delta: ByondValue,
+) -> Result<ByondValue> {
     let e = entity::decode(num(&entity)?)?;
     let f = field(&field_id)?;
-    let i = if index.is_null() { 0 } else { whole(&index, "index")? as usize };
+    let i = if index.is_null() {
+        0
+    } else {
+        whole(&index, "index")? as usize
+    };
     let d = f64::from(num(&delta)?);
     let shortfall = with_world(|w| {
         let k = kind(w, &code)?;
@@ -379,9 +448,10 @@ fn world_violations() -> Result<ByondValue> {
 #[auxmacros::bind("/proc/vg_world_laws")]
 fn world_laws() -> Result<ByondValue> {
     let stats = with_world(|w| Ok(w.law_stats()))?;
-    text_list(
-        stats
-            .into_iter()
-            .map(|s| format!("{} {:?} stepped={} awake={}", s.name, s.phase, s.stepped, s.awake)),
-    )
+    text_list(stats.into_iter().map(|s| {
+        format!(
+            "{} {:?} stepped={} awake={}",
+            s.name, s.phase, s.stepped, s.awake
+        )
+    }))
 }

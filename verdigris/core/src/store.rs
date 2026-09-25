@@ -58,7 +58,8 @@ impl Rows {
     pub fn insert(&mut self, entity: EntityId) -> bool {
         let index = entity.index();
         if index >= self.present.capacity() {
-            self.present.grow((index + 1).max(self.present.capacity() * 2).min(MAX_SLOTS));
+            self.present
+                .grow((index + 1).max(self.present.capacity() * 2).min(MAX_SLOTS));
         }
         if self.ids.len() <= index as usize {
             self.ids.resize(index as usize + 1, 0);
@@ -244,6 +245,27 @@ impl<C: Component> MainKind<C> {
             store.set(entity.index(), value);
             self.dirty = true;
         }
+    }
+
+    /// Replaces a main-owned row from outside the laws (a DM or bridge
+    /// transfer in), recording the conserved difference as a crossing.
+    /// Returns `false` if the row is not held or the kind is worker-owned.
+    pub fn replace(&mut self, index: u32, value: C) -> bool {
+        if !self.rows.contains(index) {
+            return false;
+        }
+        let Some(store) = self.store.as_mut() else {
+            return false;
+        };
+        if <C::Kind as Domain>::CONSERVES {
+            if let Some(old) = store.get(index) {
+                add_conserved::<C::Kind>(&mut self.crossings, &old, -1.0);
+            }
+            add_conserved::<C::Kind>(&mut self.crossings, &value, 1.0);
+        }
+        store.set(index, value);
+        self.dirty = true;
+        true
     }
 
     /// Unbinds the row at `index`, returning its last value (main-owned).

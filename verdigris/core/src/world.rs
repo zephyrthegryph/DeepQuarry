@@ -60,13 +60,16 @@ use crate::entity::{EntityError, EntityId, EntityTable};
 use crate::event::EventSink;
 use crate::field::law::FieldIds;
 use crate::field::{FieldConfig, FieldKey, FieldKind};
-use crate::grid::{Grid, GridDims};
 use crate::frame::{FrameInfo, Ref, Res, ResourceId, Resources, Task, TaskCtx, run_sequential};
+use crate::grid::{Grid, GridDims};
 use crate::law::{Effects, Law, LawCtx, OrderCycle, Pacer, Settle, order_laws};
 use crate::network::{NetworkHost, NetworkKind, RegionEvent, host::Transition};
 use crate::outbox::{Lane, Outbox, Subscriber, Wake, WatchId};
 use crate::owner::{Applied, Domain, DomainKey, DomainState, PortError};
-use crate::query::{Access, Anchor, At, Catalog, ColumnSource, FrameData, Item, LawError, Phase, Query, QueryInit, RowsFn, WriteQuery};
+use crate::query::{
+    Access, Anchor, At, Catalog, ColumnSource, FrameData, Item, LawError, Phase, Query, QueryInit,
+    RowsFn, WriteQuery,
+};
 use crate::sim::{BuildError, Sim, SimBuilder, SimConfig, WatchKey};
 use crate::store::{MainKind, WorkerKind, kind_layout};
 use crate::units::Seconds;
@@ -127,7 +130,9 @@ impl fmt::Display for WorldError {
             Self::NoKind(k) => write!(f, "no component kind {k}"),
             Self::Watch(e) => write!(f, "{e}"),
             Self::Port(e) => write!(f, "{e}"),
-            Self::WorkerOwned(what) => write!(f, "{what} is worker-owned; edit it through the queued path"),
+            Self::WorkerOwned(what) => {
+                write!(f, "{what} is worker-owned; edit it through the queued path")
+            }
         }
     }
 }
@@ -264,9 +269,19 @@ const fn slot_of(index: u32) -> u32 {
 
 #[derive(Clone, Copy)]
 enum PlanAnchor {
-    Rows { rows: ResourceId, get: RowsFn },
-    Network { host: ResourceId, list: crate::query::ListFn, revision: crate::query::RevFn },
-    Cells { state: ResourceId, list: crate::query::ListFn },
+    Rows {
+        rows: ResourceId,
+        get: RowsFn,
+    },
+    Network {
+        host: ResourceId,
+        list: crate::query::ListFn,
+        revision: crate::query::RevFn,
+    },
+    Cells {
+        state: ResourceId,
+        list: crate::query::ListFn,
+    },
     Global,
 }
 
@@ -305,7 +320,11 @@ where
             ls.activity.wake_grow(slot_of(item));
         }
         ls.stepped = 0;
-        let step_one = |ls: &mut LawState, frame: &mut FrameData<'_>, at: At, entity_value: f32| -> Option<Settle> {
+        let step_one = |ls: &mut LawState,
+                        frame: &mut FrameData<'_>,
+                        at: At,
+                        entity_value: f32|
+         -> Option<Settle> {
             let reads = <L::Reads as Query>::fetch(&r_state, frame, at)?;
             let mut writes = <L::Writes as Query>::fetch(&w_state, frame, at)?;
             ls.fx.begin(at.index, entity_value, now);
@@ -331,7 +350,10 @@ where
                     ls.items.clear();
                     for &i in &ls.scratch {
                         ls.items.push(Item {
-                            at: At { index: i, entity: Some(i) },
+                            at: At {
+                                index: i,
+                                entity: Some(i),
+                            },
                             revision: u64::from(held.contains(i)),
                             entity_value: held.entity_value(i),
                         });
@@ -353,7 +375,11 @@ where
                 }
                 ls.items = items;
             }
-            PlanAnchor::Network { host, list, revision } => {
+            PlanAnchor::Network {
+                host,
+                list,
+                revision,
+            } => {
                 ls.items.clear();
                 list(&frame, host, &mut ls.items);
                 let items = std::mem::take(&mut ls.items);
@@ -391,7 +417,15 @@ where
                 ls.items = items;
             }
             PlanAnchor::Global => {
-                let _ = step_one(ls, &mut frame, At { index: 0, entity: None }, 0.0);
+                let _ = step_one(
+                    ls,
+                    &mut frame,
+                    At {
+                        index: 0,
+                        entity: None,
+                    },
+                    0.0,
+                );
             }
         }
         for i in std::mem::take(&mut ls.fx.wakes) {
@@ -399,7 +433,11 @@ where
         }
         for (at, i) in std::mem::take(&mut ls.fx.timers) {
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            let due = if base_dt > 0.0 { (at / base_dt).ceil().max(0.0) as u64 } else { frame_no + 1 };
+            let due = if base_dt > 0.0 {
+                (at / base_dt).ceil().max(0.0) as u64
+            } else {
+                frame_no + 1
+            };
             ls.timers.push(Reverse((due.max(frame_no + 1), i)));
         }
     };
@@ -423,11 +461,40 @@ trait KindDyn: Any {
     fn owner(&self) -> Ownership;
     fn column(&self, phase: Phase) -> ColumnSource;
     fn holds(&self, main: &Resources, e: EntityId) -> bool;
-    fn bind(&mut self, sim: &mut Sim, main: &mut Resources, e: EntityId, init: &[(FieldId, Option<usize>, f64)]) -> Result<(), WorldError>;
+    fn bind(
+        &mut self,
+        sim: &mut Sim,
+        main: &mut Resources,
+        e: EntityId,
+        init: &[(FieldId, Option<usize>, f64)],
+    ) -> Result<(), WorldError>;
     fn unbind(&mut self, sim: &mut Sim, main: &mut Resources, e: EntityId);
-    fn get(&self, sim: &Sim, main: &Resources, e: EntityId, field: FieldId, index: usize) -> Result<f64, WorldError>;
-    fn set(&mut self, sim: &mut Sim, main: &mut Resources, e: EntityId, field: FieldId, index: Option<usize>, value: f64) -> Result<(), WorldError>;
-    fn adjust(&mut self, sim: &mut Sim, main: &mut Resources, e: EntityId, field: FieldId, index: usize, delta: f64) -> Result<f32, WorldError>;
+    fn get(
+        &self,
+        sim: &Sim,
+        main: &Resources,
+        e: EntityId,
+        field: FieldId,
+        index: usize,
+    ) -> Result<f64, WorldError>;
+    fn set(
+        &mut self,
+        sim: &mut Sim,
+        main: &mut Resources,
+        e: EntityId,
+        field: FieldId,
+        index: Option<usize>,
+        value: f64,
+    ) -> Result<(), WorldError>;
+    fn adjust(
+        &mut self,
+        sim: &mut Sim,
+        main: &mut Resources,
+        e: EntityId,
+        field: FieldId,
+        index: usize,
+        delta: f64,
+    ) -> Result<f32, WorldError>;
     fn describe(&self, sim: &Sim, main: &Resources, e: EntityId) -> Vec<(String, String)>;
     /// At dispatch: mirror rows (and a main-owned store's snapshot) into
     /// the worker side.
@@ -438,7 +505,13 @@ trait KindDyn: Any {
     /// After the main phase: evaluate main-owned watches.
     fn after_main(&mut self, main: &Resources, wakes: &mut Vec<Wake>);
     fn channels(&self) -> Vec<ChannelInfo>;
-    fn watch(&mut self, sim: &mut Sim, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WorldError>;
+    fn watch(
+        &mut self,
+        sim: &mut Sim,
+        sub: Subscriber,
+        lane: Lane,
+        cond: &Cond,
+    ) -> Result<WatchId, WorldError>;
     fn unwatch(&mut self, sim: &mut Sim, id: WatchId) -> Result<(), WorldError>;
     fn as_any(&self) -> &dyn Any;
 }
@@ -456,8 +529,6 @@ struct KindEntry<C: Component> {
     domain: Option<DomainKey<C::Kind>>,
     worker_watches: Option<WatchKey<C::Kind>>,
     main_watches: Option<MainWatches<C>>,
-    /// Worker-owned kinds: the view pinned this tick.
-    has_view: bool,
 }
 
 /// Applies a DM command to one row of kind `C` (either owner).
@@ -492,7 +563,9 @@ impl<C: Component> KindEntry<C> {
                 .port_ref(key)
                 .read(e.index())
                 .ok_or(WorldError::Port(PortError::OutOfRange(e.index()))),
-            None => mk.get(e.index()).ok_or(ComponentError::Missing { kind: C::NAME }.into()),
+            None => mk
+                .get(e.index())
+                .ok_or(ComponentError::Missing { kind: C::NAME }.into()),
         }
     }
 }
@@ -516,15 +589,27 @@ impl<C: Component> KindDyn for KindEntry<C> {
                 store: key.state().id(),
                 rows: self.worker.id(),
             },
-            (Ownership::Worker, _, _) => ColumnSource::View { kind: self.main.id() },
-            (Ownership::Main, Phase::Main, _) => ColumnSource::MainStore { kind: self.main.id() },
-            (Ownership::Main, Phase::Worker, _) => ColumnSource::Snapshot { rows: self.worker.id() },
+            (Ownership::Worker, _, _) => ColumnSource::View {
+                kind: self.main.id(),
+            },
+            (Ownership::Main, Phase::Main, _) => ColumnSource::MainStore {
+                kind: self.main.id(),
+            },
+            (Ownership::Main, Phase::Worker, _) => ColumnSource::Snapshot {
+                rows: self.worker.id(),
+            },
         }
     }
     fn holds(&self, main: &Resources, e: EntityId) -> bool {
         main.get(self.main).rows.holds(e)
     }
-    fn bind(&mut self, sim: &mut Sim, main: &mut Resources, e: EntityId, init: &[(FieldId, Option<usize>, f64)]) -> Result<(), WorldError> {
+    fn bind(
+        &mut self,
+        sim: &mut Sim,
+        main: &mut Resources,
+        e: EntityId,
+        init: &[(FieldId, Option<usize>, f64)],
+    ) -> Result<(), WorldError> {
         let mut value = C::default();
         for &(field, index, v) in init {
             let cmd = C::set_command(field, index, v)?;
@@ -546,16 +631,39 @@ impl<C: Component> KindDyn for KindEntry<C> {
             let _ = sim.port(key).take(e.index());
         }
     }
-    fn get(&self, sim: &Sim, main: &Resources, e: EntityId, field: FieldId, index: usize) -> Result<f64, WorldError> {
+    fn get(
+        &self,
+        sim: &Sim,
+        main: &Resources,
+        e: EntityId,
+        field: FieldId,
+        index: usize,
+    ) -> Result<f64, WorldError> {
         self.value(sim, main, e)?
             .get_field(field, index)
             .ok_or(ComponentError::NoField { field }.into())
     }
-    fn set(&mut self, sim: &mut Sim, main: &mut Resources, e: EntityId, field: FieldId, index: Option<usize>, value: f64) -> Result<(), WorldError> {
+    fn set(
+        &mut self,
+        sim: &mut Sim,
+        main: &mut Resources,
+        e: EntityId,
+        field: FieldId,
+        index: Option<usize>,
+        value: f64,
+    ) -> Result<(), WorldError> {
         let cmd = C::set_command(field, index, value)?;
         submit_row::<C>(self.main, self.domain, sim, main, e, &cmd).map(|_| ())
     }
-    fn adjust(&mut self, sim: &mut Sim, main: &mut Resources, e: EntityId, field: FieldId, index: usize, delta: f64) -> Result<f32, WorldError> {
+    fn adjust(
+        &mut self,
+        sim: &mut Sim,
+        main: &mut Resources,
+        e: EntityId,
+        field: FieldId,
+        index: usize,
+        delta: f64,
+    ) -> Result<f32, WorldError> {
         let cmd = C::adjust_command(field, index, delta)?;
         submit_row::<C>(self.main, self.domain, sim, main, e, &cmd).map(|a| a.shortfall)
     }
@@ -579,9 +687,14 @@ impl<C: Component> KindDyn for KindEntry<C> {
                         .collect();
                     format!("[{}]{unit}", parts.join(", "))
                 } else {
-                    v.get_field(id, 0).map_or_else(|| "?".to_owned(), |x| format!("{x}{unit}"))
+                    v.get_field(id, 0)
+                        .map_or_else(|| "?".to_owned(), |x| format!("{x}{unit}"))
                 };
-                let marker = if f.role == FieldRole::Computed { "=" } else { "" };
+                let marker = if f.role == FieldRole::Computed {
+                    "="
+                } else {
+                    ""
+                };
                 (format!("{}{marker}", f.name), text)
             })
             .collect()
@@ -594,7 +707,6 @@ impl<C: Component> KindDyn for KindEntry<C> {
         if let Some(key) = self.domain {
             let view = std::sync::Arc::clone(sim.port_ref(key).pinned());
             main.get_mut(self.main).set_view(view);
-            self.has_view = true;
             let out = sim.drain(key);
             wakes.extend_from_slice(out.wakes());
         }
@@ -616,7 +728,13 @@ impl<C: Component> KindDyn for KindEntry<C> {
     fn channels(&self) -> Vec<ChannelInfo> {
         channel_infos::<C::Kind>()
     }
-    fn watch(&mut self, sim: &mut Sim, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WorldError> {
+    fn watch(
+        &mut self,
+        sim: &mut Sim,
+        sub: Subscriber,
+        lane: Lane,
+        cond: &Cond,
+    ) -> Result<WatchId, WorldError> {
         if let Some(wk) = self.worker_watches {
             return Ok(sim.watches(wk).watch(sub, lane, cond)?);
         }
@@ -689,7 +807,13 @@ impl<K: NetworkKind> NetDyn for NetEntry<K> {
 trait FieldWatchDyn: Any {
     fn field(&self) -> TypeId;
     fn drain(&self, sim: &mut Sim, out: &mut Vec<Wake>);
-    fn watch(&self, sim: &mut Sim, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WatchError>;
+    fn watch(
+        &self,
+        sim: &mut Sim,
+        sub: Subscriber,
+        lane: Lane,
+        cond: &Cond,
+    ) -> Result<WatchId, WatchError>;
     fn unwatch(&self, sim: &mut Sim, id: WatchId) -> Result<(), WatchError>;
     fn channels(&self) -> Vec<ChannelInfo>;
 }
@@ -705,7 +829,13 @@ impl<K: FieldKind + Channels> FieldWatchDyn for FieldWatches<K> {
     fn drain(&self, sim: &mut Sim, out: &mut Vec<Wake>) {
         out.extend_from_slice(sim.drain(self.key.domain()).wakes());
     }
-    fn watch(&self, sim: &mut Sim, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WatchError> {
+    fn watch(
+        &self,
+        sim: &mut Sim,
+        sub: Subscriber,
+        lane: Lane,
+        cond: &Cond,
+    ) -> Result<WatchId, WatchError> {
         sim.watches(self.key).watch(sub, lane, cond)
     }
     fn unwatch(&self, sim: &mut Sim, id: WatchId) -> Result<(), WatchError> {
@@ -718,7 +848,8 @@ impl<K: FieldKind + Channels> FieldWatchDyn for FieldWatches<K> {
 
 // --- Builder ---------------------------------------------------------------------
 
-type ConserveFn = Box<dyn Fn(&FrameData<'_>, &mut Totals, &mut Vec<(usize, &'static str, f64)>) + Send + Sync>;
+type ConserveFn =
+    Box<dyn Fn(&FrameData<'_>, &mut Totals, &mut Vec<(usize, &'static str, f64)>) + Send + Sync>;
 
 struct ConserveSource {
     phase: Phase,
@@ -726,11 +857,19 @@ struct ConserveSource {
     sum: ConserveFn,
 }
 
-type LawBuildFn = Box<dyn for<'a> FnOnce(&dyn Catalog, &mut PhaseBuild<'a>, f64) -> Result<(Task, Res<LawState>), LawError>>;
+type LawBuildFn = Box<
+    dyn for<'a> FnOnce(
+        &dyn Catalog,
+        &mut PhaseBuild<'a>,
+        f64,
+    ) -> Result<(Task, Res<LawState>), LawError>,
+>;
+
+type PhaseOfFn = Box<dyn Fn(&WorldBuilder) -> Result<Phase, LawError>>;
 
 struct LawDecl {
     name: &'static str,
-    phase_of: Box<dyn Fn(&WorldBuilder) -> Result<Phase, LawError>>,
+    phase_of: PhaseOfFn,
     build: LawBuildFn,
 }
 
@@ -869,11 +1008,15 @@ impl WorldBuilder {
         if let Some(&k) = self.kind_types.get(&TypeId::of::<C>()) {
             return k;
         }
-        let main = self
-            .main
-            .insert(format!("kind:{}", C::NAME), MainKind::<C>::new(C::OWNER == Ownership::Main));
-        let worker = self.sim.add_resource(format!("kind:{}", C::NAME), WorkerKind::<C>::default());
-        let watchable = validate_channels::<C::Kind>().is_ok() && !<C::Kind as Channels>::CHANNELS.is_empty();
+        let main = self.main.insert(
+            format!("kind:{}", C::NAME),
+            MainKind::<C>::new(C::OWNER == Ownership::Main),
+        );
+        let worker = self
+            .sim
+            .add_resource(format!("kind:{}", C::NAME), WorkerKind::<C>::default());
+        let watchable =
+            validate_channels::<C::Kind>().is_ok() && !<C::Kind as Channels>::CHANNELS.is_empty();
         let (domain, worker_watches, main_watches) = match C::OWNER {
             Ownership::Worker => {
                 let key = self.sim.add_domain::<C::Kind>(kind_layout());
@@ -924,7 +1067,8 @@ impl WorldBuilder {
                     let st = frame.get::<DomainState<C::Kind>>(store_id);
                     let rows = &frame.get::<WorkerKind<C>>(rows_id).rows;
                     for i in rows.iter() {
-                        st.store.with(i, |v| v.conserved(&mut |n, a| totals.add(n, a)));
+                        st.store
+                            .with(i, |v| v.conserved(&mut |n, a| totals.add(n, a)));
                     }
                     for &(n, v) in st.crossings() {
                         crossings.push((kind_index, n, v));
@@ -940,7 +1084,6 @@ impl WorldBuilder {
             domain,
             worker_watches,
             main_watches,
-            has_view: false,
         }));
         self.kind_types.insert(TypeId::of::<C>(), id);
         id
@@ -960,7 +1103,8 @@ impl WorldBuilder {
             Phase::Main => self.main.insert(name, NetworkHost::<K>::new()),
             Phase::Worker => self.sim.add_resource(name, NetworkHost::<K>::new()),
         };
-        self.net_types.insert(TypeId::of::<K>(), self.networks.len());
+        self.net_types
+            .insert(TypeId::of::<K>(), self.networks.len());
         self.networks.push(Box::new(NetEntry::<K> {
             phase,
             host,
@@ -1038,7 +1182,11 @@ impl WorldBuilder {
             // Crossings are keyed by source; fields use keys from the top so
             // they never meet a component kind's index.
             let crossing_key = usize::MAX - self.sources.len();
-            let (cells, geom, state) = (key.cells.state().id(), key.geometry.state().id(), key.state.id());
+            let (cells, geom, state) = (
+                key.cells.state().id(),
+                key.geometry.state().id(),
+                key.state.id(),
+            );
             let mut access = Access::default();
             access.read(cells);
             access.read(geom);
@@ -1051,7 +1199,9 @@ impl WorldBuilder {
                     let g = frame.get::<DomainState<crate::field::Geometry<K>>>(geom);
                     let st = frame.get::<crate::field::FieldState<K>>(state);
                     let sums = crate::field::FieldState::<K>::totals(&c.store, &g.store);
-                    for ((name, sum), reservoir) in K::QUANTITY_NAMES.iter().zip(sums).zip(st.ledger()) {
+                    for ((name, sum), reservoir) in
+                        K::QUANTITY_NAMES.iter().zip(sums).zip(st.ledger())
+                    {
                         totals.add(name, sum + reservoir);
                     }
                     for &(n, v) in c.crossings() {
@@ -1069,12 +1219,17 @@ impl WorldBuilder {
     /// every other watch's.
     pub fn watch_field<K: FieldKind + Channels>(&mut self, key: FieldKey<K>) {
         let wk = self.sim.add_watches(key.cells);
-        self.field_watches.push(Box::new(FieldWatches::<K> { key: wk }));
+        self.field_watches
+            .push(Box::new(FieldWatches::<K> { key: wk }));
     }
 
     /// Adds any worker resource that holds conserved quantities (a field's
     /// state, say) to the conservation check.
-    pub fn conserve_resource<T: Conserved + Any + Send + Sync>(&mut self, phase: Phase, res: Res<T>) {
+    pub fn conserve_resource<T: Conserved + Any + Send + Sync>(
+        &mut self,
+        phase: Phase,
+        res: Res<T>,
+    ) {
         let mut access = Access::default();
         access.read(res.id());
         let id = res.id();
@@ -1108,18 +1263,29 @@ impl WorldBuilder {
             let unregistered = |what| LawError::Unregistered { law: L::NAME, what };
             match anchor {
                 None => Err(LawError::NoAnchor { law: L::NAME }),
-                Some(Anchor::Rows { component, name, .. }) => {
-                    let k = b.kind_types.get(&component).ok_or_else(|| unregistered(name))?;
+                Some(Anchor::Rows {
+                    component, name, ..
+                }) => {
+                    let k = b
+                        .kind_types
+                        .get(&component)
+                        .ok_or_else(|| unregistered(name))?;
                     Ok(Phase::of(b.kinds[usize::from(*k)].owner()))
                 }
                 Some(Anchor::Network { kind, name, .. }) => {
                     let n = b.net_types.get(&kind).ok_or_else(|| unregistered(name))?;
                     Ok(b.networks[*n].phase())
                 }
-                Some(Anchor::Cells { field, name, .. }) => {
-                    b.fields.get(&field).map(|_| Phase::Worker).ok_or_else(|| unregistered(name))
-                }
-                Some(Anchor::Global { ty, name }) => b.globals.get(&ty).map(|g| g.1).ok_or_else(|| unregistered(name)),
+                Some(Anchor::Cells { field, name, .. }) => b
+                    .fields
+                    .get(&field)
+                    .map(|_| Phase::Worker)
+                    .ok_or_else(|| unregistered(name)),
+                Some(Anchor::Global { ty, name }) => b
+                    .globals
+                    .get(&ty)
+                    .map(|g| g.1)
+                    .ok_or_else(|| unregistered(name)),
             }
         });
         let build: LawBuildFn = Box::new(move |catalog, pb, dt| {
@@ -1134,19 +1300,40 @@ impl WorldBuilder {
             let w_state = <L::Writes as Query>::init(&mut init, true)?;
             let plan = match anchor.ok_or(LawError::NoAnchor { law: L::NAME })? {
                 Anchor::Rows { resolve, name, .. } => {
-                    let (rows, get) = resolve(catalog, pb.phase).ok_or(LawError::Unregistered { law: L::NAME, what: name })?;
+                    let (rows, get) = resolve(catalog, pb.phase).ok_or(LawError::Unregistered {
+                        law: L::NAME,
+                        what: name,
+                    })?;
                     access.read(rows);
                     PlanAnchor::Rows { rows, get }
                 }
-                Anchor::Network { kind, name, list, revision } => {
-                    let (host, _) = catalog.network(kind).ok_or(LawError::Unregistered { law: L::NAME, what: name })?;
+                Anchor::Network {
+                    kind,
+                    name,
+                    list,
+                    revision,
+                } => {
+                    let (host, _) = catalog.network(kind).ok_or(LawError::Unregistered {
+                        law: L::NAME,
+                        what: name,
+                    })?;
                     access.read(host);
-                    PlanAnchor::Network { host, list, revision }
+                    PlanAnchor::Network {
+                        host,
+                        list,
+                        revision,
+                    }
                 }
                 Anchor::Cells { field, name, list } => {
-                    let ids = catalog.field(field).ok_or(LawError::Unregistered { law: L::NAME, what: name })?;
+                    let ids = catalog.field(field).ok_or(LawError::Unregistered {
+                        law: L::NAME,
+                        what: name,
+                    })?;
                     access.read(ids.state);
-                    PlanAnchor::Cells { state: ids.state, list }
+                    PlanAnchor::Cells {
+                        state: ids.state,
+                        list,
+                    }
                 }
                 Anchor::Global { .. } => PlanAnchor::Global,
             };
@@ -1182,12 +1369,14 @@ impl WorldBuilder {
     pub fn build(mut self) -> Result<World, WorldBuildError> {
         // Order laws.
         let names: Vec<&'static str> = self.laws.iter().map(|l| l.name).collect();
-        let order = order_laws(&names, &self.after).map_err(|c: OrderCycle| LawError::Ordering(c))?;
+        let order =
+            order_laws(&names, &self.after).map_err(|c: OrderCycle| LawError::Ordering(c))?;
         let mut phases = Vec::with_capacity(self.laws.len());
         for l in &self.laws {
             phases.push((l.phase_of)(&self)?);
         }
-        let mut decls: Vec<Option<(LawDecl, Phase)>> = self.laws.drain(..).zip(phases).map(Some).collect();
+        let mut decls: Vec<Option<(LawDecl, Phase)>> =
+            self.laws.drain(..).zip(phases).map(Some).collect();
         let dt = self.config.dt.0;
         let mut main_tasks = Vec::new();
         let mut main_laws = Vec::new();
@@ -1203,7 +1392,10 @@ impl WorldBuilder {
                 fields: &self.fields,
             };
             for name in order {
-                let i = names.iter().position(|n| *n == name).expect("ordered from names");
+                let i = names
+                    .iter()
+                    .position(|n| *n == name)
+                    .expect("ordered from names");
                 let (decl, phase) = decls[i].take().expect("each law once");
                 let mut pb = PhaseBuild {
                     phase,
@@ -1256,13 +1448,29 @@ impl WorldBuilder {
                 Phase::Worker => worker_sources.push(s),
             }
         }
-        main_tasks.push(collect_task("collect:main", &main_laws, self.main_wakes, self.main_out, main_cons));
-        let main_check = check.then(|| conserve_task("conserve:main", main_sources, main_cons, self.main_out));
-        self.sim
-            .add_task(collect_task("collect:worker", &worker_laws, self.worker_wakes, self.worker_out, worker_cons));
+        main_tasks.push(collect_task(
+            "collect:main",
+            &main_laws,
+            self.main_wakes,
+            self.main_out,
+            main_cons,
+        ));
+        let main_check =
+            check.then(|| conserve_task("conserve:main", main_sources, main_cons, self.main_out));
+        self.sim.add_task(collect_task(
+            "collect:worker",
+            &worker_laws,
+            self.worker_wakes,
+            self.worker_out,
+            worker_cons,
+        ));
         if check {
-            self.sim
-                .add_task(conserve_task("conserve:worker", worker_sources, worker_cons, self.worker_out));
+            self.sim.add_task(conserve_task(
+                "conserve:worker",
+                worker_sources,
+                worker_cons,
+                self.worker_out,
+            ));
         }
 
         let sim = self.sim.build()?;
@@ -1297,7 +1505,13 @@ impl WorldBuilder {
     }
 }
 
-fn collect_task(name: &str, laws: &[Res<LawState>], wakes: Res<FrameWakes>, out: Res<FrameOut>, cons: Res<Conservation>) -> Task {
+fn collect_task(
+    name: &str,
+    laws: &[Res<LawState>],
+    wakes: Res<FrameWakes>,
+    out: Res<FrameOut>,
+    cons: Res<Conservation>,
+) -> Task {
     let laws: Vec<Res<LawState>> = laws.to_vec();
     let ids: Vec<ResourceId> = laws.iter().map(|l| l.id()).collect();
     let mut task = Task::new(name, move |ctx| {
@@ -1323,7 +1537,12 @@ fn collect_task(name: &str, laws: &[Res<LawState>], wakes: Res<FrameWakes>, out:
     task
 }
 
-fn conserve_task(name: &str, sources: Vec<ConserveSource>, cons: Res<Conservation>, out: Res<FrameOut>) -> Task {
+fn conserve_task(
+    name: &str,
+    sources: Vec<ConserveSource>,
+    cons: Res<Conservation>,
+    out: Res<FrameOut>,
+) -> Task {
     let mut access = Access::default();
     for s in &sources {
         for &r in &s.access.reads {
@@ -1423,7 +1642,12 @@ impl World {
 
     fn begin_tick(&mut self) {
         self.sim.begin_tick();
-        let (sim, main, kinds, wakes) = (&mut self.sim, &mut self.main, &mut self.kinds, &mut self.wakes);
+        let (sim, main, kinds, wakes) = (
+            &mut self.sim,
+            &mut self.main,
+            &mut self.kinds,
+            &mut self.wakes,
+        );
         for k in kinds.iter_mut() {
             k.begin_tick(sim, main, wakes);
         }
@@ -1470,7 +1694,11 @@ impl World {
         }
         // Worker phase.
         let (main, kinds, networks) = (&mut self.main, &mut self.kinds, &mut self.networks);
-        let (pending, wakes_res, out) = (&mut self.pending_worker_wakes, self.worker_wakes, self.worker_out);
+        let (pending, wakes_res, out) = (
+            &mut self.pending_worker_wakes,
+            self.worker_wakes,
+            self.worker_out,
+        );
         let (events, violations) = (&mut self.events, &mut self.violations);
         let (grid, grid_synced) = (self.grid, &mut self.grid_synced);
         let dispatched = self.sim.dispatch_frame_with(|res| {
@@ -1601,13 +1829,19 @@ impl World {
     #[must_use]
     pub fn kind_by_code(&self, code: u32) -> Option<KindId> {
         #[allow(clippy::cast_possible_truncation)]
-        self.kinds.iter().position(|k| k.code() == code).map(|i| i as KindId)
+        self.kinds
+            .iter()
+            .position(|k| k.code() == code)
+            .map(|i| i as KindId)
     }
 
     /// Every registered kind's schema.
     pub fn schemas(&self) -> impl Iterator<Item = (KindId, Schema)> + '_ {
         #[allow(clippy::cast_possible_truncation)]
-        self.kinds.iter().enumerate().map(|(i, k)| (i as KindId, k.schema()))
+        self.kinds
+            .iter()
+            .enumerate()
+            .map(|(i, k)| (i as KindId, k.schema()))
     }
 
     fn kind(&self, kind: KindId) -> Result<&dyn KindDyn, WorldError> {
@@ -1629,7 +1863,11 @@ impl World {
         let phase = Phase::of(self.kinds[usize::from(kind)].owner());
         match phase {
             Phase::Worker => self.pending_worker_wakes.push(entity.index()),
-            Phase::Main => self.main.get_mut(self.main_wakes).entities.push(entity.index()),
+            Phase::Main => self
+                .main
+                .get_mut(self.main_wakes)
+                .entities
+                .push(entity.index()),
         }
     }
 
@@ -1639,7 +1877,12 @@ impl World {
     ///
     /// # Errors
     /// A stale entity, an unknown kind or a rejected init value.
-    pub fn bind(&mut self, entity: Option<EntityId>, kind: KindId, init: &[(FieldId, Option<usize>, f64)]) -> Result<EntityId, WorldError> {
+    pub fn bind(
+        &mut self,
+        entity: Option<EntityId>,
+        kind: KindId,
+        init: &[(FieldId, Option<usize>, f64)],
+    ) -> Result<EntityId, WorldError> {
         self.kind(kind)?;
         let e = match entity {
             Some(e) => {
@@ -1663,8 +1906,14 @@ impl World {
     ///
     /// # Errors
     /// As [`bind`](Self::bind).
-    pub fn bind_value<C: Component>(&mut self, entity: Option<EntityId>, value: C) -> Result<EntityId, WorldError> {
-        let kind = self.kind_of::<C>().ok_or(WorldError::NoKind(kind_code(C::DOMAIN_ID, C::KIND)))?;
+    pub fn bind_value<C: Component>(
+        &mut self,
+        entity: Option<EntityId>,
+        value: C,
+    ) -> Result<EntityId, WorldError> {
+        let kind = self
+            .kind_of::<C>()
+            .ok_or(WorldError::NoKind(kind_code(C::DOMAIN_ID, C::KIND)))?;
         let e = self.bind(entity, kind, &[])?;
         self.put(e, value)?;
         Ok(e)
@@ -1703,9 +1952,16 @@ impl World {
     ///
     /// # Errors
     /// A stale entity, missing component or unknown field.
-    pub fn get(&self, entity: EntityId, kind: KindId, field: FieldId, index: usize) -> Result<f64, WorldError> {
+    pub fn get(
+        &self,
+        entity: EntityId,
+        kind: KindId,
+        field: FieldId,
+        index: usize,
+    ) -> Result<f64, WorldError> {
         self.live(entity)?;
-        self.kind(kind)?.get(&self.sim, &self.main, entity, field, index)
+        self.kind(kind)?
+            .get(&self.sim, &self.main, entity, field, index)
     }
 
     /// DM's write of one field (validated; wakes the entity's laws).
@@ -1713,7 +1969,14 @@ impl World {
     /// # Errors
     /// A stale entity, missing component, read-only field or rejected
     /// value.
-    pub fn set(&mut self, entity: EntityId, kind: KindId, field: FieldId, index: Option<usize>, value: f64) -> Result<(), WorldError> {
+    pub fn set(
+        &mut self,
+        entity: EntityId,
+        kind: KindId,
+        field: FieldId,
+        index: Option<usize>,
+        value: f64,
+    ) -> Result<(), WorldError> {
         self.live(entity)?;
         self.kind(kind)?;
         let (sim, main) = (&mut self.sim, &mut self.main);
@@ -1728,11 +1991,19 @@ impl World {
     ///
     /// # Errors
     /// As [`set`](Self::set), or a field that is not conserved.
-    pub fn adjust(&mut self, entity: EntityId, kind: KindId, field: FieldId, index: usize, delta: f64) -> Result<f32, WorldError> {
+    pub fn adjust(
+        &mut self,
+        entity: EntityId,
+        kind: KindId,
+        field: FieldId,
+        index: usize,
+        delta: f64,
+    ) -> Result<f32, WorldError> {
         self.live(entity)?;
         self.kind(kind)?;
         let (sim, main) = (&mut self.sim, &mut self.main);
-        let shortfall = self.kinds[usize::from(kind)].adjust(sim, main, entity, field, index, delta)?;
+        let shortfall =
+            self.kinds[usize::from(kind)].adjust(sim, main, entity, field, index, delta)?;
         self.wake(kind, entity);
         Ok(shortfall)
     }
@@ -1741,7 +2012,9 @@ impl World {
     #[must_use]
     pub fn read<C: Component>(&self, entity: EntityId) -> Option<C> {
         let k = self.kind_of::<C>()?;
-        let entry = self.kinds[usize::from(k)].as_any().downcast_ref::<KindEntry<C>>()?;
+        let entry = self.kinds[usize::from(k)]
+            .as_any()
+            .downcast_ref::<KindEntry<C>>()?;
         entry.value(&self.sim, &self.main, entity).ok()
     }
 
@@ -1749,15 +2022,22 @@ impl World {
     ///
     /// # Errors
     /// A stale entity or missing component.
-    pub fn submit<C: Component>(&mut self, entity: EntityId, cmd: &<C::Kind as Domain>::Command) -> Result<Applied, WorldError> {
+    pub fn submit<C: Component>(
+        &mut self,
+        entity: EntityId,
+        cmd: &<C::Kind as Domain>::Command,
+    ) -> Result<Applied, WorldError> {
         self.live(entity)?;
-        let k = self.kind_of::<C>().ok_or(WorldError::NoKind(kind_code(C::DOMAIN_ID, C::KIND)))?;
+        let k = self
+            .kind_of::<C>()
+            .ok_or(WorldError::NoKind(kind_code(C::DOMAIN_ID, C::KIND)))?;
         let entry = self.kinds[usize::from(k)]
             .as_any()
             .downcast_ref::<KindEntry<C>>()
             .expect("kind type");
         let (main_res, domain) = (entry.main, entry.domain);
-        let applied = submit_row::<C>(main_res, domain, &mut self.sim, &mut self.main, entity, cmd)?;
+        let applied =
+            submit_row::<C>(main_res, domain, &mut self.sim, &mut self.main, entity, cmd)?;
         self.wake(k, entity);
         Ok(applied)
     }
@@ -1768,7 +2048,9 @@ impl World {
     /// A stale entity or missing component.
     pub fn put<C: Component>(&mut self, entity: EntityId, value: C) -> Result<(), WorldError> {
         self.live(entity)?;
-        let k = self.kind_of::<C>().ok_or(WorldError::NoKind(kind_code(C::DOMAIN_ID, C::KIND)))?;
+        let k = self
+            .kind_of::<C>()
+            .ok_or(WorldError::NoKind(kind_code(C::DOMAIN_ID, C::KIND)))?;
         let entry = self.kinds[usize::from(k)]
             .as_any()
             .downcast_ref::<KindEntry<C>>()
@@ -1781,9 +2063,7 @@ impl World {
         match domain {
             Some(key) => self.sim.port(key).put(entity.index(), value)?,
             None => {
-                if let Some(slot) = mk.get_mut(entity.index()) {
-                    *slot = value;
-                }
+                mk.replace(entity.index(), value);
             }
         }
         self.wake(k, entity);
@@ -1808,7 +2088,13 @@ impl World {
     ///
     /// # Errors
     /// An unknown kind, a kind without channels, or an invalid condition.
-    pub fn watch(&mut self, kind: KindId, subscriber: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WorldError> {
+    pub fn watch(
+        &mut self,
+        kind: KindId,
+        subscriber: Subscriber,
+        lane: Lane,
+        cond: &Cond,
+    ) -> Result<WatchId, WorldError> {
         self.kind(kind)?;
         self.kinds[usize::from(kind)].watch(&mut self.sim, subscriber, lane, cond)
     }
@@ -1827,7 +2113,12 @@ impl World {
     ///
     /// # Errors
     /// The field is not watched, or the condition is invalid.
-    pub fn watch_cells<K: FieldKind>(&mut self, subscriber: Subscriber, lane: Lane, cond: &Cond) -> Result<WatchId, WorldError> {
+    pub fn watch_cells<K: FieldKind>(
+        &mut self,
+        subscriber: Subscriber,
+        lane: Lane,
+        cond: &Cond,
+    ) -> Result<WatchId, WorldError> {
         let w = self
             .field_watches
             .iter()
@@ -1923,12 +2214,17 @@ impl World {
     /// [`WorldError::WorkerOwned`] for a worker network, `NoKind` if
     /// unregistered.
     pub fn network<K: NetworkKind>(&self) -> Result<Ref<'_, NetworkHost<K>>, WorldError> {
-        let n = *self.net_types.get(&TypeId::of::<K>()).ok_or(WorldError::NoKind(0))?;
+        let n = *self
+            .net_types
+            .get(&TypeId::of::<K>())
+            .ok_or(WorldError::NoKind(0))?;
         let entry = &self.networks[n];
         if entry.phase() != Phase::Main {
             return Err(WorldError::WorkerOwned(K::NAME));
         }
-        Ok(self.main.get(Res::<NetworkHost<K>>::from_id(entry.resource())))
+        Ok(self
+            .main
+            .get(Res::<NetworkHost<K>>::from_id(entry.resource())))
     }
 
     /// Edits a network: at once for a main-owned network (DM binds nodes,
@@ -1938,7 +2234,10 @@ impl World {
     ///
     /// # Errors
     /// `NoKind` if unregistered.
-    pub fn edit_network<K: NetworkKind>(&mut self, edit: impl FnOnce(&mut NetworkHost<K>) + Send + 'static) -> Result<(), WorldError> {
+    pub fn edit_network<K: NetworkKind>(
+        &mut self,
+        edit: impl FnOnce(&mut NetworkHost<K>) + Send + 'static,
+    ) -> Result<(), WorldError> {
         let entry = self.net_entry::<K>().ok_or(WorldError::NoKind(0))?;
         match entry.phase {
             Phase::Main => {
@@ -1963,12 +2262,16 @@ impl World {
 
     /// Region transitions since the last drain (DM rebuilds wrappers).
     pub fn drain_transitions<K: NetworkKind>(&mut self) -> Vec<Transition> {
-        self.net_entry::<K>().map(|e| std::mem::take(&mut e.transitions)).unwrap_or_default()
+        self.net_entry::<K>()
+            .map(|e| std::mem::take(&mut e.transitions))
+            .unwrap_or_default()
     }
 
     /// Raw region events since the last drain.
     pub fn drain_region_events<K: NetworkKind>(&mut self) -> Vec<RegionEvent<K>> {
-        self.net_entry::<K>().map(|e| std::mem::take(&mut e.events)).unwrap_or_default()
+        self.net_entry::<K>()
+            .map(|e| std::mem::take(&mut e.events))
+            .unwrap_or_default()
     }
 
     /// What DM sees in cell `cell` of field `K` now: its own writes this
@@ -1985,7 +2288,12 @@ impl World {
     ///
     /// # Errors
     /// A cell outside the field.
-    pub fn submit_cell<K: FieldKind>(&mut self, key: FieldKey<K>, cell: u32, cmd: K::Command) -> Result<Applied, WorldError> {
+    pub fn submit_cell<K: FieldKind>(
+        &mut self,
+        key: FieldKey<K>,
+        cell: u32,
+        cmd: K::Command,
+    ) -> Result<Applied, WorldError> {
         Ok(self.sim.port(key.cells).submit(cell, cmd)?)
     }
 
@@ -2013,7 +2321,10 @@ impl World {
     /// # Errors
     /// Unregistered or worker-owned.
     pub fn global<T: Any + Send + Sync>(&self) -> Result<Ref<'_, T>, WorldError> {
-        let &(id, phase) = self.globals.get(&TypeId::of::<T>()).ok_or(WorldError::NoKind(0))?;
+        let &(id, phase) = self
+            .globals
+            .get(&TypeId::of::<T>())
+            .ok_or(WorldError::NoKind(0))?;
         if phase != Phase::Main {
             return Err(WorldError::WorkerOwned(std::any::type_name::<T>()));
         }
@@ -2025,7 +2336,10 @@ impl World {
     /// # Errors
     /// Unregistered or worker-owned.
     pub fn global_mut<T: Any + Send + Sync>(&mut self) -> Result<&mut T, WorldError> {
-        let &(id, phase) = self.globals.get(&TypeId::of::<T>()).ok_or(WorldError::NoKind(0))?;
+        let &(id, phase) = self
+            .globals
+            .get(&TypeId::of::<T>())
+            .ok_or(WorldError::NoKind(0))?;
         if phase != Phase::Main {
             return Err(WorldError::WorkerOwned(std::any::type_name::<T>()));
         }

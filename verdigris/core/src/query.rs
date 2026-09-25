@@ -57,10 +57,16 @@ impl Phase {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LawError {
     /// A query names a component or network the world has not registered.
-    Unregistered { law: &'static str, what: &'static str },
+    Unregistered {
+        law: &'static str,
+        what: &'static str,
+    },
     /// A law writes data owned by the other phase (a worker law writing a
     /// main-owned component, or the reverse).
-    WrongOwner { law: &'static str, what: &'static str },
+    WrongOwner {
+        law: &'static str,
+        what: &'static str,
+    },
     /// Neither `Reads` nor `Writes` says what to iterate.
     NoAnchor { law: &'static str },
     /// The law's anchor and its declared phase disagree (a law anchored on
@@ -71,7 +77,9 @@ pub enum LawError {
 impl fmt::Display for LawError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Unregistered { law, what } => write!(f, "law `{law}` uses `{what}`, which is not registered"),
+            Self::Unregistered { law, what } => {
+                write!(f, "law `{law}` uses `{what}`, which is not registered")
+            }
             Self::WrongOwner { law, what } => {
                 write!(f, "law `{law}` writes `{what}`, which the other phase owns")
             }
@@ -297,7 +305,9 @@ impl<'a> FrameData<'a> {
     /// If `id` was not declared, or is not a `T`.
     #[must_use]
     pub fn get<T: Any>(&self, id: ResourceId) -> &T {
-        self.slot(id).downcast_ref().expect("query resource type mismatch")
+        self.slot(id)
+            .downcast_ref()
+            .expect("query resource type mismatch")
     }
 
     /// Exclusive access to written resource `id` as `T`.
@@ -343,10 +353,17 @@ impl Column {
 /// Resolves the anchor rows of component `C` for `phase`: the resource and
 /// the accessor. Used by the driver for row-anchored laws.
 #[must_use]
-pub fn anchor_rows<C: Component>(catalog: &dyn Catalog, phase: Phase) -> Option<(ResourceId, RowsFn)> {
+pub fn anchor_rows<C: Component>(
+    catalog: &dyn Catalog,
+    phase: Phase,
+) -> Option<(ResourceId, RowsFn)> {
     match catalog.column(TypeId::of::<C>(), phase)? {
-        ColumnSource::WorkerStore { rows, .. } | ColumnSource::Snapshot { rows } => Some((rows, rows_of_worker::<C>)),
-        ColumnSource::MainStore { kind } | ColumnSource::View { kind } => Some((kind, rows_of_main::<C>)),
+        ColumnSource::WorkerStore { rows, .. } | ColumnSource::Snapshot { rows } => {
+            Some((rows, rows_of_worker::<C>))
+        }
+        ColumnSource::MainStore { kind } | ColumnSource::View { kind } => {
+            Some((kind, rows_of_main::<C>))
+        }
     }
 }
 
@@ -362,10 +379,13 @@ impl<C: Component> Query for C {
     }
 
     fn init(init: &mut QueryInit<'_>, write: bool) -> Result<Column, LawError> {
-        let source = init.catalog.column(TypeId::of::<C>(), init.phase).ok_or(LawError::Unregistered {
-            law: init.law,
-            what: C::NAME,
-        })?;
+        let source =
+            init.catalog
+                .column(TypeId::of::<C>(), init.phase)
+                .ok_or(LawError::Unregistered {
+                    law: init.law,
+                    what: C::NAME,
+                })?;
         if write && !source.writable() {
             return Err(LawError::WrongOwner {
                 law: init.law,
@@ -403,7 +423,9 @@ impl<C: Component> Query for C {
                 }
                 frame.get::<DomainState<C::Kind>>(store).store.get(e)
             }
-            ColumnSource::MainStore { kind } | ColumnSource::View { kind } => frame.get::<MainKind<C>>(kind).get(e),
+            ColumnSource::MainStore { kind } | ColumnSource::View { kind } => {
+                frame.get::<MainKind<C>>(kind).get(e)
+            }
             ColumnSource::Snapshot { rows } => frame.get::<WorkerKind<C>>(rows).snapshot_get(e),
         }
     }
@@ -476,10 +498,13 @@ impl<T: Clone + PartialEq + Send + Sync + 'static> Query for Global<T> {
     }
 
     fn init(init: &mut QueryInit<'_>, write: bool) -> Result<ResourceId, LawError> {
-        let (id, phase) = init.catalog.global(TypeId::of::<T>()).ok_or(LawError::Unregistered {
-            law: init.law,
-            what: std::any::type_name::<T>(),
-        })?;
+        let (id, phase) = init
+            .catalog
+            .global(TypeId::of::<T>())
+            .ok_or(LawError::Unregistered {
+                law: init.law,
+                what: std::any::type_name::<T>(),
+            })?;
         if phase != init.phase {
             return Err(LawError::WrongOwner {
                 law: init.law,

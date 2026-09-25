@@ -396,11 +396,13 @@ mod tests {
     fn body_environment_exchange_law_warms_a_body_from_a_hot_solid() {
         let (body_t, solid_t) = (300.0_f32, 500.0_f32);
         let (cb, cs) = (100.0_f32, 1000.0_f32);
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = ledger_for(
+        let mut fx = vg_core::law::Effects {
+            ledger: ledger_for(
             "heat_energy",
             f64::from(body_t) * f64::from(cb) + f64::from(solid_t) * f64::from(cs),
-        );
+        ),
+            ..Default::default()
+        };
         let reads = PairCoupling { conductance: 10.0 };
         let mut writes = PairSides {
             a: ThermalSide::mutable(body_t, cb),
@@ -447,8 +449,10 @@ mod tests {
 
         let total0 = f64::from(item_t0) * f64::from(item_capacity)
             + f64::from(gas_t0) * f64::from(gas_capacity);
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = ledger_for("heat_energy", total0);
+        let mut fx = vg_core::law::Effects {
+            ledger: ledger_for("heat_energy", total0),
+            ..Default::default()
+        };
         let reads = PairCoupling { conductance };
         let mut writes = PairSides {
             a: ThermalSide::mutable(item_t0, item_capacity),
@@ -518,8 +522,10 @@ mod tests {
 
     #[test]
     fn body_gas_coupling_law_sleeps_at_equilibrium() {
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = ledger_for("heat_energy", 300.0 * 400.0 + 300.0 * 2000.0);
+        let mut fx = vg_core::law::Effects {
+            ledger: ledger_for("heat_energy", 300.0 * 400.0 + 300.0 * 2000.0),
+            ..Default::default()
+        };
         let reads = PairCoupling { conductance: 5.0 };
         let mut writes = PairSides {
             a: ThermalSide::mutable(300.0, 400.0),
@@ -534,8 +540,10 @@ mod tests {
     fn body_gas_coupling_law_against_a_reservoir_books_the_ledger_not_a_temperature() {
         // Only the item's side is part of the tracked total; the reservoir
         // is external, so the starting total is just the item's energy.
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = ledger_for("heat_energy", 200.0 * 100.0);
+        let mut fx = vg_core::law::Effects {
+            ledger: ledger_for("heat_energy", 200.0 * 100.0),
+            ..Default::default()
+        };
         let reads = PairCoupling { conductance: 8.0 };
         let mut writes = PairSides {
             a: ThermalSide::mutable(200.0, 100.0),
@@ -558,8 +566,10 @@ mod tests {
 
     #[test]
     fn solid_gas_coupling_law_matches_the_pure_function() {
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = ledger_for("heat_energy", 400.0 * 1000.0 + 300.0 * 500.0);
+        let mut fx = vg_core::law::Effects {
+            ledger: ledger_for("heat_energy", 400.0 * 1000.0 + 300.0 * 500.0),
+            ..Default::default()
+        };
         let reads = PairCoupling { conductance: 0.5 }; // conductivity
         let mut writes = PairSides {
             a: ThermalSide::mutable(400.0, 1000.0),
@@ -590,11 +600,13 @@ mod tests {
             1.0,
         );
 
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = ledger_for(
+        let mut fx = vg_core::law::Effects {
+            ledger: ledger_for(
             "heat_energy",
             f64::from(280.0_f32) * f64::from(cc) + f64::from(293.0_f32) * f64::from(co),
-        );
+        ),
+            ..Default::default()
+        };
         let mut writes = PairSides {
             a: ThermalSide::mutable(280.0, cc),
             b: ThermalSide::mutable(293.0, co),

@@ -59,14 +59,27 @@ fn defaults_validation_and_schema() {
     assert_eq!(w.target_pressure, 20.0);
     assert_eq!(w.power_rating, 30.0);
     assert_eq!(Widget::validate_target_pressure(150.0), Ok(100.0), "clamp");
-    assert!(Widget::validate_power_rating(600.0).is_err(), "reject out of range");
+    assert!(
+        Widget::validate_power_rating(600.0).is_err(),
+        "reject out of range"
+    );
 
     assert_eq!(Widget::DOMAIN, "test_domain");
     assert_eq!(Widget::KIND, 1);
     assert_eq!(<Widget as Component>::OWNER, Ownership::Worker);
     assert_eq!(<Tank as Component>::OWNER, Ownership::Main);
     let names: Vec<&str> = Widget::FIELDS.iter().map(|f| f.name).collect();
-    assert_eq!(names, ["target_pressure", "power_rating", "on", "operable", "flow_rate", "channels"]);
+    assert_eq!(
+        names,
+        [
+            "target_pressure",
+            "power_rating",
+            "on",
+            "operable",
+            "flow_rate",
+            "channels"
+        ]
+    );
     assert_eq!(Widget::FIELDS[5].len, 3);
     assert_eq!(Tank::FIELDS[2].role, FieldRole::Computed);
     assert_eq!(Tank::FIELDS[0].conserve, Some("moles"));
@@ -81,18 +94,27 @@ fn generic_field_access_by_id() {
     WidgetKind::apply(&mut w, &cmd);
     assert_eq!(w.target_pressure, 100.0, "clamped through the generic path");
     let flow = Widget::field_id("flow_rate").unwrap();
-    assert!(matches!(Widget::set_command(flow, None, 1.0), Err(ComponentError::ReadOnly { .. })));
+    assert!(matches!(
+        Widget::set_command(flow, None, 1.0),
+        Err(ComponentError::ReadOnly { .. })
+    ));
     let ch = Widget::field_id("channels").unwrap();
     WidgetKind::apply(&mut w, &Widget::set_command(ch, Some(1), 5000.0).unwrap());
     assert_eq!(w.channels, [0.0, 1000.0, 0.0]);
 
-    let mut t = Tank { moles: 10.0, temperature: 300.0 };
+    let mut t = Tank {
+        moles: 10.0,
+        temperature: 300.0,
+    };
     assert_eq!(t.get_field(2, 0), Some(20.0), "computed readout");
     let adj = Tank::adjust_command(0, 0, -15.0).unwrap();
     let applied = TankKind::apply(&mut t, &adj);
     assert_eq!(t.moles, 0.0);
     assert_eq!(applied.shortfall, 5.0);
-    assert!(Tank::adjust_command(1, 0, 1.0).is_err(), "temperature is not conserved");
+    assert!(
+        Tank::adjust_command(1, 0, 1.0).is_err(),
+        "temperature is not conserved"
+    );
 }
 
 #[test]
@@ -107,7 +129,10 @@ fn queries_and_events() {
     assert_eq!(Widget::query_ui_ids(), [0, 1, 2, 4]);
     assert_eq!(WidgetEvent::TargetReached.id(), 0);
     assert_eq!(WidgetEvent::Starved { deficit: 1.0 }.name(), "starved");
-    assert_eq!(<WidgetEvent as Event>::VARIANTS[1].fields[0].name, "deficit");
+    assert_eq!(
+        <WidgetEvent as Event>::VARIANTS[1].fields[0].name,
+        "deficit"
+    );
 }
 
 /// Runs a worker law over `Widget` rows that reads an optional `Tank` on
@@ -125,7 +150,9 @@ impl Law for Regulate {
         let flow = supply.min(f64::from(ctx.writes.power_rating)) as f32;
         ctx.writes.flow_rate = flow;
         if flow <= 0.0 {
-            ctx.emit(WidgetEvent::Starved { deficit: ctx.writes.power_rating });
+            ctx.emit(WidgetEvent::Starved {
+                deficit: ctx.writes.power_rating,
+            });
         }
         Settle::Sleep
     }
@@ -156,7 +183,10 @@ fn a_world_runs_laws_over_component_rows() {
     let starved_events: Vec<_> = events.decoded::<WidgetEvent>().collect();
     assert_eq!(starved_events.len(), 1);
     assert_eq!(starved_events[0].0, starved.to_f32() + 1.0);
-    assert!(world.violations().is_empty(), "DM's adjust is a crossing, not a leak");
+    assert!(
+        world.violations().is_empty(),
+        "DM's adjust is a crossing, not a leak"
+    );
 
     world.despawn(e).unwrap();
     assert!(!world.has(e, widget));

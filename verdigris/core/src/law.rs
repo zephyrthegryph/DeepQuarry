@@ -209,7 +209,11 @@ impl<'a, R, W> LawCtx<'a, R, W> {
     /// Schedules the current item for when `store` would fill or empty at
     /// `external_rate` watts ([`crate::rate::RateStore::next_bound`]): how
     /// an APC or SMES sleeps between rate changes. Returns the time.
-    pub fn schedule_store(&mut self, store: &crate::rate::RateStore, external_rate: f64) -> Option<f64> {
+    pub fn schedule_store(
+        &mut self,
+        store: &crate::rate::RateStore,
+        external_rate: f64,
+    ) -> Option<f64> {
         let at = store.next_bound(external_rate, self.fx.now)?;
         self.schedule(at);
         Some(at)
@@ -262,7 +266,8 @@ pub fn order_laws(
     after: &[(&'static str, &'static str)],
 ) -> Result<Vec<&'static str>, OrderCycle> {
     use std::collections::BTreeMap;
-    let index: BTreeMap<&'static str, usize> = names.iter().enumerate().map(|(i, &n)| (n, i)).collect();
+    let index: BTreeMap<&'static str, usize> =
+        names.iter().enumerate().map(|(i, &n)| (n, i)).collect();
     // deps[i] = the set of positions that must come before i.
     let mut deps: Vec<Vec<usize>> = vec![Vec::new(); names.len()];
     for &(a, b) in after {
@@ -295,7 +300,11 @@ fn visit(
         2 => return Ok(()),
         1 => {
             let start = stack.iter().position(|&n| n == node).unwrap_or(0);
-            let cycle = stack[start..].iter().chain([&node]).map(|&i| names[i]).collect();
+            let cycle = stack[start..]
+                .iter()
+                .chain([&node])
+                .map(|&i| names[i])
+                .collect();
             return Err(OrderCycle(cycle));
         }
         _ => {}
@@ -386,7 +395,10 @@ mod tests {
     fn period_ticks_is_due_every_n_frames() {
         let p = Period::Ticks(4);
         let due: Vec<bool> = (0..9).map(|f| p.due(f)).collect();
-        assert_eq!(due, vec![true, false, false, false, true, false, false, false, true]);
+        assert_eq!(
+            due,
+            vec![true, false, false, false, true, false, false, false, true]
+        );
         assert!(Period::Ticks(0).due(1), "0 behaves as 1");
     }
 
@@ -428,10 +440,20 @@ mod tests {
 
     #[test]
     fn order_laws_respects_after_and_detects_cycles() {
-        assert_eq!(order_laws(&["a", "b", "c"], &[]).unwrap(), vec!["a", "b", "c"]);
-        let order = order_laws(&["power_balance", "apc_tick"], &[("power_balance", "apc_tick")]).unwrap();
+        assert_eq!(
+            order_laws(&["a", "b", "c"], &[]).unwrap(),
+            vec!["a", "b", "c"]
+        );
+        let order = order_laws(
+            &["power_balance", "apc_tick"],
+            &[("power_balance", "apc_tick")],
+        )
+        .unwrap();
         assert_eq!(order, vec!["apc_tick", "power_balance"]);
-        assert_eq!(order_laws(&["c", "a", "b"], &[("b", "a"), ("c", "b")]).unwrap(), vec!["a", "b", "c"]);
+        assert_eq!(
+            order_laws(&["c", "a", "b"], &[("b", "a"), ("c", "b")]).unwrap(),
+            vec!["a", "b", "c"]
+        );
         assert!(order_laws(&["a", "b"], &[("a", "b"), ("b", "a")]).is_err());
         assert_eq!(order_laws(&["a"], &[("a", "ghost")]).unwrap(), vec!["a"]);
     }

@@ -44,7 +44,11 @@ impl Activity {
     /// Wakes `index`, growing the set first if it is past the capacity.
     pub fn wake_grow(&mut self, index: u32) -> bool {
         if index >= self.awake.capacity() {
-            self.awake.grow(index.saturating_add(1).max(self.awake.capacity().saturating_mul(2)));
+            self.awake.grow(
+                index
+                    .saturating_add(1)
+                    .max(self.awake.capacity().saturating_mul(2)),
+            );
         }
         self.awake.insert(index)
     }
@@ -147,7 +151,13 @@ mod tests {
     fn settle_drives_the_activity_set_like_a_driver_would() {
         let mut a = Activity::new(4);
         a.wake_all();
-        let settle_for = |i: u32| if i == 2 { Settle::Sleep } else { Settle::Active };
+        let settle_for = |i: u32| {
+            if i == 2 {
+                Settle::Sleep
+            } else {
+                Settle::Active
+            }
+        };
         let due: Vec<u32> = a.iter().collect();
         for i in due {
             match settle_for(i) {

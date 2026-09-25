@@ -682,8 +682,10 @@ mod tests {
 
         for _ in 0..25 {
             w.run_frames(1);
-            let mut fx = vg_core::law::Effects::default();
-        fx.ledger = vg_core::conservation::Ledger::new();
+            let mut fx = vg_core::law::Effects {
+            ledger: vg_core::conservation::Ledger::new(),
+            ..Default::default()
+        };
             let mut ctx = LawCtx::new(&(), &mut law_body, &mut fx);
             MobHeatFlux::step(&mut ctx, Seconds(1.0));
         }

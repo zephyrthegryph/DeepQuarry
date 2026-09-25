@@ -36,10 +36,13 @@ pub struct FieldIds {
 
 /// Finds a field in the catalog (fields are worker-owned).
 fn field_ids<K: FieldKind>(init: &mut QueryInit<'_>, write: bool) -> Result<FieldIds, LawError> {
-    let ids = init.catalog.field(TypeId::of::<K>()).ok_or(LawError::Unregistered {
-        law: init.law,
-        what: K::NAME,
-    })?;
+    let ids = init
+        .catalog
+        .field(TypeId::of::<K>())
+        .ok_or(LawError::Unregistered {
+            law: init.law,
+            what: K::NAME,
+        })?;
     if init.phase != crate::query::Phase::Worker {
         return Err(LawError::WrongOwner {
             law: init.law,
@@ -62,7 +65,10 @@ fn list_cells<K: FieldKind>(frame: &FrameData<'_>, state: ResourceId, out: &mut 
         for i in 0..layout.chunk_len() {
             if let Some(index) = layout.index_of(chunk, i) {
                 out.push(Item {
-                    at: At { index, entity: None },
+                    at: At {
+                        index,
+                        entity: None,
+                    },
                     revision: 0,
                     entity_value: 0.0,
                 });
@@ -82,7 +88,10 @@ pub fn cell_anchor<K: FieldKind>() -> Anchor {
 }
 
 fn geom_at<K: FieldKind>(frame: &FrameData<'_>, ids: &FieldIds, cell: u32) -> Option<Geom> {
-    let g = frame.get::<DomainState<Geometry<K>>>(ids.geometry).store.get(cell)?;
+    let g = frame
+        .get::<DomainState<Geometry<K>>>(ids.geometry)
+        .store
+        .get(cell)?;
     g.is_node().then_some(g)
 }
 
@@ -110,7 +119,10 @@ impl<K: FieldKind> Query for Cell<K> {
 
     fn fetch(state: &FieldIds, frame: &FrameData<'_>, at: At) -> Option<Self> {
         let g = geom_at::<K>(frame, state, at.index)?;
-        let value = frame.get::<DomainState<K>>(state.cells).store.get(at.index)?;
+        let value = frame
+            .get::<DomainState<K>>(state.cells)
+            .store
+            .get(at.index)?;
         Some(Self {
             value,
             capacity: g.capacity,
@@ -156,10 +168,13 @@ impl<K: NetworkKind, F: FieldKind> Query for RegionCell<K, F> {
     }
 
     fn init(init: &mut QueryInit<'_>, write: bool) -> Result<RegionCellIds, LawError> {
-        let (host, phase) = init.catalog.network(TypeId::of::<K>()).ok_or(LawError::Unregistered {
-            law: init.law,
-            what: K::NAME,
-        })?;
+        let (host, phase) =
+            init.catalog
+                .network(TypeId::of::<K>())
+                .ok_or(LawError::Unregistered {
+                    law: init.law,
+                    what: K::NAME,
+                })?;
         if phase != init.phase {
             return Err(LawError::WrongOwner {
                 law: init.law,
@@ -180,7 +195,8 @@ impl<K: NetworkKind, F: FieldKind> Query for RegionCell<K, F> {
         let d = DeviceId::<K>::from_raw(RawHandle::from_bits(at.index)?);
         let dev = host.network().device(d).ok()?;
         let (node_end, cell) = match (dev.a, dev.b) {
-            (n @ Endpoint::Node(_), Endpoint::Cell(c)) | (Endpoint::Cell(c), n @ Endpoint::Node(_)) => (n, c),
+            (n @ Endpoint::Node(_), Endpoint::Cell(c))
+            | (Endpoint::Cell(c), n @ Endpoint::Node(_)) => (n, c),
             _ => return None,
         };
         let Side::Region(region) = host.network().resolve(node_end) else {
@@ -193,7 +209,10 @@ impl<K: NetworkKind, F: FieldKind> Query for RegionCell<K, F> {
             payload: r.payload().clone(),
         };
         let g = geom_at::<F>(frame, &state.field, cell)?;
-        let value = frame.get::<DomainState<F>>(state.field.cells).store.get(cell)?;
+        let value = frame
+            .get::<DomainState<F>>(state.field.cells)
+            .store
+            .get(cell)?;
         Some(Self {
             region: side,
             cell,

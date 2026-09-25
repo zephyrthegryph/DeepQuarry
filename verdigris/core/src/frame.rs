@@ -396,7 +396,6 @@ impl<'a> TaskCtx<'a> {
     ///
     /// # Panics
     /// As [`read`](Self::read).
-    #[must_use]
     pub fn read_erased(&self, id: ResourceId) -> RwLockReadGuard<'a, Erased> {
         assert!(
             self.task.may_read(id),
@@ -415,7 +414,6 @@ impl<'a> TaskCtx<'a> {
     ///
     /// # Panics
     /// As [`write`](Self::write).
-    #[must_use]
     pub fn write_erased(&self, id: ResourceId) -> RwLockWriteGuard<'a, Erased> {
         assert!(
             self.task.writes.contains(&id),

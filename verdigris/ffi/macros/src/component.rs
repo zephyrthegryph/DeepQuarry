@@ -74,7 +74,10 @@ impl Parse for ComponentArgs {
                         "main" => true,
                         "worker" => false,
                         other => {
-                            return Err(syn::Error::new(o.span(), format!("owner must be `main` or `worker`, got `{other}`")));
+                            return Err(syn::Error::new(
+                                o.span(),
+                                format!("owner must be `main` or `worker`, got `{other}`"),
+                            ));
                         }
                     };
                 }
@@ -95,7 +98,10 @@ impl Parse for ComponentArgs {
                         content.parse_terminated(Ident::parse, Token![,])?;
                 }
                 other => {
-                    return Err(syn::Error::new(key.span(), format!("unknown #[component] argument `{other}`")));
+                    return Err(syn::Error::new(
+                        key.span(),
+                        format!("unknown #[component] argument `{other}`"),
+                    ));
                 }
             }
             if input.peek(Token![,]) {
@@ -104,7 +110,11 @@ impl Parse for ComponentArgs {
         }
         Ok(Self {
             domain: domain.ok_or_else(|| input.error("#[component] needs `domain = ...`"))?,
-            kind: kind.ok_or_else(|| input.error("#[component] needs `kind = <n>` (a small integer unique within the domain)"))?,
+            kind: kind.ok_or_else(|| {
+                input.error(
+                    "#[component] needs `kind = <n>` (a small integer unique within the domain)",
+                )
+            })?,
             dm: dm.ok_or_else(|| input.error("#[component] needs `dm = \"/path/to/type\"`"))?,
             owner_main,
             computed,
@@ -163,14 +173,12 @@ impl Parse for FieldAttr {
                 "unit" => attr.unit = Some(input.parse()?),
                 "range" => {
                     let r: syn::ExprRange = input.parse()?;
-                    let start = r
-                        .start
-                        .clone()
-                        .ok_or_else(|| syn::Error::new(r.span(), "range needs a start, e.g. `0.0..=10.0`"))?;
-                    let end = r
-                        .end
-                        .clone()
-                        .ok_or_else(|| syn::Error::new(r.span(), "range needs an end, e.g. `0.0..=10.0`"))?;
+                    let start = r.start.clone().ok_or_else(|| {
+                        syn::Error::new(r.span(), "range needs a start, e.g. `0.0..=10.0`")
+                    })?;
+                    let end = r.end.clone().ok_or_else(|| {
+                        syn::Error::new(r.span(), "range needs an end, e.g. `0.0..=10.0`")
+                    })?;
                     attr.range = Some((*start, *end));
                 }
                 "default" => attr.default = Some(input.parse()?),
@@ -187,7 +195,10 @@ impl Parse for FieldAttr {
                         content.parse_terminated(Ident::parse, Token![,])?;
                 }
                 other => {
-                    return Err(syn::Error::new(key.span(), format!("unknown field attribute `{other}`")));
+                    return Err(syn::Error::new(
+                        key.span(),
+                        format!("unknown field attribute `{other}`"),
+                    ));
                 }
             }
         }
@@ -201,7 +212,9 @@ struct ParsedField {
     attr: FieldAttr,
 }
 
-const NUMERIC: [&str; 12] = ["f32", "f64", "u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "usize", "bool"];
+const NUMERIC: [&str; 12] = [
+    "f32", "f64", "u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "usize", "bool",
+];
 
 fn type_name(ty: &syn::Type) -> String {
     quote!(#ty).to_string().replace(' ', "")
@@ -273,7 +286,10 @@ pub(crate) fn snake_case(ident: &Ident) -> String {
 }
 
 /// Expands `#[component(...)] struct Foo { ... }`.
-pub fn expand(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn expand(
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
     let args = syn::parse_macro_input!(attr as ComponentArgs);
     let input = syn::parse_macro_input!(item as syn::ItemStruct);
     match expand_inner(&args, input) {
@@ -285,7 +301,10 @@ pub fn expand(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
 #[allow(clippy::too_many_lines)]
 fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result<TokenStream> {
     let syn::Fields::Named(fields) = &mut input.fields else {
-        return Err(syn::Error::new(input.span(), "#[component] needs a struct with named fields"));
+        return Err(syn::Error::new(
+            input.span(),
+            "#[component] needs a struct with named fields",
+        ));
     };
 
     let mut parsed = Vec::new();
@@ -298,7 +317,10 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
         for a in field.attrs.drain(..) {
             if a.path().is_ident("vg") {
                 if vg_attr.is_some() {
-                    return Err(syn::Error::new(a.span(), "a field may have only one #[vg(...)]"));
+                    return Err(syn::Error::new(
+                        a.span(),
+                        "a field may have only one #[vg(...)]",
+                    ));
                 }
                 let tokens = match &a.meta {
                     syn::Meta::List(list) => list.tokens.clone(),
@@ -317,7 +339,10 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
             ));
         };
         if attr.role == Role::Config && attr.default.is_none() {
-            return Err(syn::Error::new(ident.span(), "a config field needs `default = ...`"));
+            return Err(syn::Error::new(
+                ident.span(),
+                "a config field needs `default = ...`",
+            ));
         }
         let pf = ParsedField {
             ident,
@@ -325,7 +350,10 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
             attr,
         };
         if pf.attr.conserve.is_some() && (!pf.numeric() || is_bool(pf.scalar_ty())) {
-            return Err(syn::Error::new(pf.ident.span(), "`conserve` needs a numeric (non-bool) field"));
+            return Err(syn::Error::new(
+                pf.ident.span(),
+                "`conserve` needs a numeric (non-bool) field",
+            ));
         }
         parsed.push(pf);
     }
@@ -378,7 +406,8 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
     let apply_arms = command_fields.iter().flat_map(|f| {
         let variant = pascal_case(&f.ident);
         let ident = &f.ident;
-        let whole = quote! { #command_ident::#variant(v) => value.#ident = ::std::clone::Clone::clone(v) };
+        let whole =
+            quote! { #command_ident::#variant(v) => value.#ident = ::std::clone::Clone::clone(v) };
         match f.array() {
             Some(_) => {
                 let at_variant = format_ident!("{variant}At");

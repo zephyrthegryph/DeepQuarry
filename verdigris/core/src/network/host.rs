@@ -92,6 +92,10 @@ pub struct NetworkHost<K: NetworkKind> {
     released: Vec<(Entity, u32, K::Payload)>,
 }
 
+/// One side of a device as [`NetworkHost::device_pair`] returns it: the
+/// region, its summary and its payload.
+pub type DeviceEnd<K> = (RegionId<K>, <K as NetworkKind>::Summary, <K as NetworkKind>::Payload);
+
 /// A region as DM sees it after a commit: rebuild the wrapper keyed by
 /// `region` (a region handle, exact as an `f32`).
 #[derive(Clone, Debug, PartialEq)]
@@ -487,7 +491,7 @@ impl<K: NetworkKind> NetworkHost<K> {
     /// distinct live regions (a device whose sides share a region, or with
     /// a cell or detached side, has no pair).
     #[must_use]
-    pub fn device_pair(&self, d: DeviceId<K>) -> Option<[(RegionId<K>, K::Summary, K::Payload); 2]> {
+    pub fn device_pair(&self, d: DeviceId<K>) -> Option<[DeviceEnd<K>; 2]> {
         let dev = self.net.device(d).ok()?;
         let (super::graph::Side::Region(a), super::graph::Side::Region(b)) =
             (self.net.resolve(dev.a), self.net.resolve(dev.b))

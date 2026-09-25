@@ -130,7 +130,11 @@ pub trait Component: Clone + Default + PartialEq + fmt::Debug + Send + Sync + 's
     /// # Errors
     /// [`ComponentError::Field`] for a rejected value,
     /// [`ComponentError::ReadOnly`]/[`ComponentError::NoField`] otherwise.
-    fn set_command(field: FieldId, index: Option<usize>, value: f64) -> Result<<Self::Kind as Domain>::Command, ComponentError>;
+    fn set_command(
+        field: FieldId,
+        index: Option<usize>,
+        value: f64,
+    ) -> Result<<Self::Kind as Domain>::Command, ComponentError>;
 
     /// The take-reconciliation command (§4.2): adds `delta` (negative:
     /// removes) to a `conserve`d field. It is applied to the owner's
@@ -140,7 +144,11 @@ pub trait Component: Clone + Default + PartialEq + fmt::Debug + Send + Sync + 's
     ///
     /// # Errors
     /// [`ComponentError::NotConserved`] for a field without `conserve`.
-    fn adjust_command(field: FieldId, index: usize, delta: f64) -> Result<<Self::Kind as Domain>::Command, ComponentError>;
+    fn adjust_command(
+        field: FieldId,
+        index: usize,
+        delta: f64,
+    ) -> Result<<Self::Kind as Domain>::Command, ComponentError>;
 
     /// Visits `(quantity, amount)` for every `conserve`d field of this row
     /// (conservation auto-wiring, §4.9).
@@ -261,7 +269,10 @@ pub enum ComponentError {
     /// The `vg_entity` handle didn't resolve to this component.
     Entity(EntityError),
     /// A config value failed validation.
-    Field { field: &'static str, reason: FieldError },
+    Field {
+        field: &'static str,
+        reason: FieldError,
+    },
     /// No field with that id (or an index past an array field's length).
     NoField { field: FieldId },
     /// A `state` or computed field: laws write it, DM does not.
@@ -281,7 +292,10 @@ impl fmt::Display for ComponentError {
             Self::NoField { field } => write!(f, "no field {field}"),
             Self::ReadOnly { field } => write!(f, "field `{field}` is read-only (state)"),
             Self::NotConserved { field } => {
-                write!(f, "field `{field}` is not conserved; only conserved fields take adjustments")
+                write!(
+                    f,
+                    "field `{field}` is not conserved; only conserved fields take adjustments"
+                )
             }
             Self::Missing { kind } => write!(f, "entity has no {kind} component"),
         }
@@ -474,9 +488,15 @@ mod tests {
         assert_eq!(reject_range(5.0, 0.0, 10.0), Ok(5.0));
         assert_eq!(
             reject_range(15.0, 0.0, 10.0),
-            Err(FieldError::OutOfRange { min: 0.0, max: 10.0 })
+            Err(FieldError::OutOfRange {
+                min: 0.0,
+                max: 10.0
+            })
         );
-        assert_eq!(reject_range(f32::NAN, 0.0, 10.0), Err(FieldError::NotFinite));
+        assert_eq!(
+            reject_range(f32::NAN, 0.0, 10.0),
+            Err(FieldError::NotFinite)
+        );
     }
 
     /// `f64` fields (`rust_bindings.md` §16 "units everywhere": several
@@ -489,7 +509,10 @@ mod tests {
         assert_eq!(clamp(f64::NAN, 0.0, 10.0), Err(FieldError::NotFinite));
         assert_eq!(
             reject_range(v, 0.0, 10.0),
-            Err(FieldError::OutOfRange { min: 0.0, max: 10.0 })
+            Err(FieldError::OutOfRange {
+                min: 0.0,
+                max: 10.0
+            })
         );
         assert_eq!(reject_range(5.0f64, 0.0, 10.0), Ok(5.0));
     }

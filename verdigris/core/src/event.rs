@@ -81,7 +81,11 @@ pub const fn header(domain: u8, kind: u16, variant: u8) -> u32 {
 #[must_use]
 #[allow(clippy::cast_possible_truncation)]
 pub const fn split_header(header: u32) -> (u8, u16, u8) {
-    ((header >> 16) as u8, ((header >> 8) & 0xff) as u16, header as u8)
+    (
+        (header >> 16) as u8,
+        ((header >> 8) & 0xff) as u16,
+        header as u8,
+    )
 }
 
 /// One decoded record, borrowed from an [`EventSink`].
@@ -210,7 +214,8 @@ impl EventSink {
 
     /// Every record that decodes as `E`, with its entity.
     pub fn decoded<E: Event>(&self) -> impl Iterator<Item = (f32, E)> + '_ {
-        self.iter().filter_map(|r| r.decode::<E>().map(|e| (r.entity, e)))
+        self.iter()
+            .filter_map(|r| r.decode::<E>().map(|e| (r.entity, e)))
     }
 }
 
@@ -228,12 +233,21 @@ mod tests {
         const DOMAIN_ID: u8 = 2;
         const KIND: u16 = 7;
         const VARIANTS: &'static [EventSchema] = &[
-            EventSchema { name: "tripped", fields: &[] },
+            EventSchema {
+                name: "tripped",
+                fields: &[],
+            },
             EventSchema {
                 name: "reading",
                 fields: &[
-                    EventField { name: "kelvin", unit: Some("K") },
-                    EventField { name: "kpa", unit: Some("kPa") },
+                    EventField {
+                        name: "kelvin",
+                        unit: Some("K"),
+                    },
+                    EventField {
+                        name: "kpa",
+                        unit: Some("kPa"),
+                    },
                 ],
             },
         ];
@@ -251,7 +265,10 @@ mod tests {
         fn decode(id: u8, p: &[f32]) -> Option<Self> {
             match (id, p) {
                 (0, []) => Some(Self::Tripped),
-                (1, [k, p]) => Some(Self::Reading { kelvin: *k, kpa: *p }),
+                (1, [k, p]) => Some(Self::Reading {
+                    kelvin: *k,
+                    kpa: *p,
+                }),
                 _ => None,
             }
         }
@@ -261,12 +278,27 @@ mod tests {
     fn records_round_trip_through_the_wire_form() {
         let mut sink = EventSink::new();
         sink.push(5.0, &Probe::Tripped);
-        sink.push(9.0, &Probe::Reading { kelvin: 300.0, kpa: 101.0 });
+        sink.push(
+            9.0,
+            &Probe::Reading {
+                kelvin: 300.0,
+                kpa: 101.0,
+            },
+        );
         assert_eq!(sink.len(), 2);
         let decoded: Vec<_> = sink.decoded::<Probe>().collect();
         assert_eq!(
             decoded,
-            vec![(5.0, Probe::Tripped), (9.0, Probe::Reading { kelvin: 300.0, kpa: 101.0 })]
+            vec![
+                (5.0, Probe::Tripped),
+                (
+                    9.0,
+                    Probe::Reading {
+                        kelvin: 300.0,
+                        kpa: 101.0
+                    }
+                )
+            ]
         );
         let r = sink.iter().nth(1).unwrap();
         assert_eq!((r.domain(), r.kind(), r.variant()), (2, 7, 1));

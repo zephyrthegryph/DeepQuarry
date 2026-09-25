@@ -703,8 +703,10 @@ mod tests {
     fn apc_tick_law_matches_the_bare_function_and_reports_conservation() {
         let reads = ApcTickReads { demand: [Watts(1000.0); 3], grid_avail: Watts::ZERO };
         let mut writes = ApcTickWrites { apc: apc_with(1000.0, 1000.0), grid_load: Watts::ZERO };
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = test_ledger();
+        let mut fx = vg_core::law::Effects {
+            ledger: test_ledger(),
+            ..Default::default()
+        };
         let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         assert_eq!(ApcTick::step(&mut ctx, Seconds(1.0)), Settle::Active);
         // No grid at all: the cell alone must cover all 3000 W of demand.
@@ -730,8 +732,10 @@ mod tests {
         let mut writes = SmesPlanningWrites {
             smes: Smes { charge: RateStore { charge: 1000.0, capacity: 1e6, rate: crate::components::SMESRATE }, ..Smes::default() },
         };
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = test_ledger();
+        let mut fx = vg_core::law::Effects {
+            ledger: test_ledger(),
+            ..Default::default()
+        };
         let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         assert_eq!(SmesPlanning::step(&mut ctx, Seconds(1.0)), Settle::Active);
         let expect = 1000.0 - 50.0 * crate::components::SMESRATE;
@@ -749,8 +753,10 @@ mod tests {
             ],
         };
         let mut writes = PowerBalanceWrites { ledger: PowerLedger::default() };
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = test_ledger();
+        let mut fx = vg_core::law::Effects {
+            ledger: test_ledger(),
+            ..Default::default()
+        };
         let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
         assert_eq!(PowerBalance::step(&mut ctx, Seconds(1.0)), Settle::Active);
         // The first (highest-priority) consumer is served in full (80 of
@@ -769,8 +775,10 @@ mod tests {
             consumers: vec![Consumer { demand: [Watts(80.0), Watts::ZERO, Watts::ZERO], priority: 0 }],
         };
         let mut writes = PowerBalanceWrites { ledger: PowerLedger::default() };
-        let mut fx = vg_core::law::Effects::default();
-        fx.ledger = test_ledger();
+        let mut fx = vg_core::law::Effects {
+            ledger: test_ledger(),
+            ..Default::default()
+        };
         {
             let mut ctx = LawCtx::new(&no_supply, &mut writes, &mut fx);
             PowerBalance::step(&mut ctx, Seconds(1.0));

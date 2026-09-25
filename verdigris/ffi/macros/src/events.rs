@@ -38,7 +38,10 @@ fn snake_case(ident: &Ident) -> String {
     crate::component::snake_case(ident)
 }
 
-pub fn expand(attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn expand(
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
     let owner = syn::parse_macro_input!(attr as Owner);
     let mut input = syn::parse_macro_input!(item as syn::ItemEnum);
     match expand_inner(&owner, &mut input) {
@@ -71,7 +74,8 @@ fn expand_inner(owner: &Owner, input: &mut syn::ItemEnum) -> syn::Result<TokenSt
                 schemas.push(quote! { ::vg_core::event::EventSchema { name: #name, fields: &[] } });
                 id_arms.push(quote! { Self::#vident => #id });
                 encode_arms.push(quote! { Self::#vident => {} });
-                decode_arms.push(quote! { (#id, []) => ::std::option::Option::Some(Self::#vident) });
+                decode_arms
+                    .push(quote! { (#id, []) => ::std::option::Option::Some(Self::#vident) });
                 from_id_arms.push(quote! { #id => ::std::option::Option::Some(Self::#vident) });
             }
             syn::Fields::Named(named) => {
@@ -87,7 +91,10 @@ fn expand_inner(owner: &Owner, input: &mut syn::ItemEnum) -> syn::Result<TokenSt
                         if a.path().is_ident("vg") {
                             let kv: syn::MetaNameValue = a.parse_args()?;
                             if !kv.path.is_ident("unit") {
-                                return Err(syn::Error::new_spanned(kv.path, "expected `unit = \"...\"`"));
+                                return Err(syn::Error::new_spanned(
+                                    kv.path,
+                                    "expected `unit = \"...\"`",
+                                ));
                             }
                             let value = kv.value;
                             unit = quote! { ::std::option::Option::Some(#value) };
@@ -97,7 +104,9 @@ fn expand_inner(owner: &Owner, input: &mut syn::ItemEnum) -> syn::Result<TokenSt
                     }
                     f.attrs = kept;
                     let fname = fid.to_string();
-                    field_schemas.push(quote! { ::vg_core::event::EventField { name: #fname, unit: #unit } });
+                    field_schemas.push(
+                        quote! { ::vg_core::event::EventField { name: #fname, unit: #unit } },
+                    );
                     idents.push(fid);
                     tys.push(f.ty.clone());
                 }
@@ -120,7 +129,10 @@ fn expand_inner(owner: &Owner, input: &mut syn::ItemEnum) -> syn::Result<TokenSt
                 });
             }
             syn::Fields::Unnamed(_) => {
-                return Err(syn::Error::new_spanned(&*v, "#[vg::events] variants are unit or have named fields"));
+                return Err(syn::Error::new_spanned(
+                    &*v,
+                    "#[vg::events] variants are unit or have named fields",
+                ));
             }
         }
     }

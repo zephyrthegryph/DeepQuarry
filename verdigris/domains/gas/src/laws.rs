@@ -144,8 +144,10 @@ mod tests {
 	}
 
 	fn run_flow(reads: DeviceReads, mut writes: DeviceSides, dt: f32) -> (DeviceSides, Settle) {
-		let mut fx = vg_core::law::Effects::default();
-        fx.ledger = vg_core::conservation::Ledger::new();
+		let mut fx = vg_core::law::Effects {
+            ledger: vg_core::conservation::Ledger::new(),
+            ..Default::default()
+        };
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		let settle = FlowLaw::step(&mut ctx, Seconds(f64::from(dt)));
 		(writes, settle)
@@ -203,8 +205,10 @@ mod tests {
 			temperature: 250.0,
 		};
 		let mut writes = ();
-		let mut fx = vg_core::law::Effects::default();
-        fx.ledger = vg_core::conservation::Ledger::new();
+		let mut fx = vg_core::law::Effects {
+            ledger: vg_core::conservation::Ledger::new(),
+            ..Default::default()
+        };
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		let settle = ReactionGateLaw::step(&mut ctx, Seconds(1.0));
 		assert_eq!(settle, Settle::Active);
@@ -228,8 +232,10 @@ mod tests {
 			temperature: 293.0,
 		};
 		let mut writes = ();
-		let mut fx = vg_core::law::Effects::default();
-        fx.ledger = vg_core::conservation::Ledger::new();
+		let mut fx = vg_core::law::Effects {
+            ledger: vg_core::conservation::Ledger::new(),
+            ..Default::default()
+        };
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		ReactionGateLaw::step(&mut ctx, Seconds(1.0));
 		assert!(fx.events.is_empty());

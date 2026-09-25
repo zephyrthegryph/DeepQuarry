@@ -30,10 +30,13 @@ use crate::query::{Anchor, At, Column, FrameData, Item, LawError, Query, QueryIn
 use crate::slot::RawHandle;
 
 fn host_id<K: NetworkKind>(init: &mut QueryInit<'_>, write: bool) -> Result<ResourceId, LawError> {
-    let (id, phase) = init.catalog.network(TypeId::of::<K>()).ok_or(LawError::Unregistered {
-        law: init.law,
-        what: K::NAME,
-    })?;
+    let (id, phase) = init
+        .catalog
+        .network(TypeId::of::<K>())
+        .ok_or(LawError::Unregistered {
+            law: init.law,
+            what: K::NAME,
+        })?;
     if phase != init.phase {
         return Err(LawError::WrongOwner {
             law: init.law,
@@ -82,12 +85,20 @@ fn list_devices<K: NetworkKind>(frame: &FrameData<'_>, host: ResourceId, out: &m
 
 fn region_revision<K: NetworkKind>(frame: &FrameData<'_>, host: ResourceId, index: u32) -> u64 {
     let host = frame.get::<NetworkHost<K>>(host);
-    region::<K>(At { index, entity: None }).map_or(0, |r| host.region_revision(r))
+    region::<K>(At {
+        index,
+        entity: None,
+    })
+    .map_or(0, |r| host.region_revision(r))
 }
 
 fn device_revision<K: NetworkKind>(frame: &FrameData<'_>, host: ResourceId, index: u32) -> u64 {
     let host = frame.get::<NetworkHost<K>>(host);
-    device::<K>(At { index, entity: None }).map_or(0, |d| host.device_revision(d))
+    device::<K>(At {
+        index,
+        entity: None,
+    })
+    .map_or(0, |d| host.device_revision(d))
 }
 
 /// The anchor of a region law over network `K`.
@@ -136,7 +147,9 @@ impl<K: NetworkKind> Query for Payload<K> {
 impl<K: NetworkKind> WriteQuery for Payload<K> {
     fn write(self, state: &ResourceId, frame: &mut FrameData<'_>, at: At) {
         if let Some(r) = region::<K>(at) {
-            let _ = frame.get_mut::<NetworkHost<K>>(*state).set_payload(r, self.0);
+            let _ = frame
+                .get_mut::<NetworkHost<K>>(*state)
+                .set_payload(r, self.0);
         }
     }
 }
@@ -234,7 +247,10 @@ impl<K: NetworkKind> Query for DeviceData<K> {
 
     fn fetch(state: &ResourceId, frame: &FrameData<'_>, at: At) -> Option<Self> {
         let host = frame.get::<NetworkHost<K>>(*state);
-        host.network().device(device::<K>(at)?).ok().map(|d| Self(d.data.clone()))
+        host.network()
+            .device(device::<K>(at)?)
+            .ok()
+            .map(|d| Self(d.data.clone()))
     }
 }
 
@@ -244,7 +260,12 @@ impl<K: NetworkKind> WriteQuery for DeviceData<K> {
         let Some(d) = device::<K>(at) else {
             return;
         };
-        let Some(entity) = host.network().device(d).ok().and_then(|dev| super::host::decode_key(dev.key)) else {
+        let Some(entity) = host
+            .network()
+            .device(d)
+            .ok()
+            .and_then(|dev| super::host::decode_key(dev.key))
+        else {
             return;
         };
         let _ = host.set_device_data(entity, self.0);
@@ -254,7 +275,10 @@ impl<K: NetworkKind> WriteQuery for DeviceData<K> {
 /// The rows of component `C` held by the entities with a node on the item's
 /// region (read-only; a region law aggregates them).
 #[derive(Clone, Debug, PartialEq)]
-pub struct Members<K: NetworkKind, C: Component>(pub Vec<(EntityId, C)>, std::marker::PhantomData<fn() -> K>);
+pub struct Members<K: NetworkKind, C: Component>(
+    pub Vec<(EntityId, C)>,
+    std::marker::PhantomData<fn() -> K>,
+);
 
 impl<K: NetworkKind, C: Component> Members<K, C> {
     /// Wraps a member list (for a law's own tests).
@@ -336,6 +360,8 @@ impl<K: NetworkKind> Query for InRegion<K> {
 
 impl<K: NetworkKind> WriteQuery for InRegion<K> {
     fn write(self, state: &ResourceId, frame: &mut FrameData<'_>, _at: At) {
-        let _ = frame.get_mut::<NetworkHost<K>>(*state).set_payload(self.region, self.payload);
+        let _ = frame
+            .get_mut::<NetworkHost<K>>(*state)
+            .set_payload(self.region, self.payload);
     }
 }
