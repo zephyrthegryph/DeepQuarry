@@ -175,7 +175,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	if(INCAPACITATED_IGNORING(user, INCAPABLE_RESTRAINTS|INCAPABLE_STASIS))
 		return
 
-	if(user.stat || user.get_paralysis() || user.get_stunned())
+	if(user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_STUNNED))
 		return
 
 	user.face_atom(A) // change direction to face what you clicked on

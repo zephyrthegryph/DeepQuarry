@@ -1,6 +1,6 @@
 /mob/living/carbon/resist_fire()
 	adjust_fire_stacks(-1.2)
-	Weaken(3)
+	status_at_least(EFFECT_WEAKENED, 3)
 	spin(32,2)
 	visible_message(
 		span_danger("[src] rolls on the floor, trying to put themselves out!"),

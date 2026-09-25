@@ -38,7 +38,7 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		if(prob(15))
-			L.Weaken(3)
+			L.status_at_least(EFFECT_WEAKENED, 3)
 			L.visible_message(span_danger("\The [src] knocks down \the [L]!"))
 
 /mob/living/simple_mob/animal/space/tree/death()

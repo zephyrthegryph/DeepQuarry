@@ -98,7 +98,7 @@
 				return
 			if (G.state < 2)
 				if(IS_HARMING(user))
-					if (prob(15))	M.Weaken(5)
+					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					visible_message(span_danger("[G.assailant] slams [G.affecting]'s face against \the [src]!"))
 					if(material)
@@ -122,7 +122,7 @@
 					return
 			else if(G.state > GRAB_AGGRESSIVE || world.time >= (G.last_action + UPGRADE_COOLDOWN))
 				M.forceMove(get_turf(src))
-				M.Weaken(5)
+				M.status_at_least(EFFECT_WEAKENED, 5)
 				visible_message(span_danger("[G.assailant] puts [G.affecting] on \the [src]."))
 			qdel(W)
 			return

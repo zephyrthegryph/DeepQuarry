@@ -90,7 +90,7 @@
 	mob_type = /mob/living/simple_mob/vore/spacecritter/solarray
 
 /datum/life_system/type_post/simple_mob/vore/spacecritter/solarray/tick(mob/living/simple_mob/vore/spacecritter/solarray/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.icon_state != self.icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
 		var/turf/moth_loc = get_turf(self)
 		if(isturf(moth_loc) && moth_loc.return_air()) // XGM turf.air → LINDA return_air()

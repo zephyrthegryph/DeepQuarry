@@ -185,7 +185,7 @@
 	playsound(src, 'sound/effects/ghost2.ogg', 20, 1)
 	for(var/mob/living/M in orange(src, 2))
 		if(M.get_ear_protection() == 0)
-			M.Confuse(10)
+			M.status_at_least(EFFECT_CONFUSED, 10)
 
 
 //the basic ranged mobs
@@ -380,7 +380,7 @@
 	playsound(src, 'sound/effects/ghost2.ogg', 20, 1)
 	for(var/mob/living/M in orange(src, 3))
 		if(M.get_ear_protection() == 0)
-			M.Stun(0.5)
+			M.status_at_least(EFFECT_STUNNED, 0.5)
 
 //The mind is the science branch. Their goal is to limit or disable your options
 /mob/living/simple_mob/humanoid/astral_collective/mind

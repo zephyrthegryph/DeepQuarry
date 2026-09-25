@@ -35,7 +35,7 @@
 	if(inflamed > 3)
 		if(prob(1))
 			to_chat(owner, span_danger("Your abdomen is a world of pain!"))
-			owner.Weaken(10)
+			owner.status_at_least(EFFECT_WEAKENED, 10)
 
 			var/obj/item/organ/external/groin = owner.get_organ(BP_GROIN)
 			owner.injure(INJURY_TOXIN, 25, flags = INJURE_SILENT)

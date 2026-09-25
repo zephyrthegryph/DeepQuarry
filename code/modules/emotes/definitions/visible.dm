@@ -56,8 +56,8 @@
 /datum/decl/emote/visible/collapse/do_extra(mob/user)
 	..()
 	if(istype(user))
-		user.Paralyse(2)
-		user.Sleeping(2)
+		user.status_at_least(EFFECT_PARALYZED, 2)
+		user.status_at_least(EFFECT_SLEEPING, 2)
 
 /datum/decl/emote/visible/flash
 	key = "flash"
@@ -117,8 +117,8 @@
 
 /datum/decl/emote/visible/faint/do_extra(mob/user)
 	. = ..()
-	if(iscarbon(user) && !user.sleeping)
-		user.Sleeping(10)
+	if(iscarbon(user) && !user.has_status(EFFECT_SLEEPING))
+		user.status_at_least(EFFECT_SLEEPING, 10)
 
 /datum/decl/emote/visible/frown
 	key = "frown"

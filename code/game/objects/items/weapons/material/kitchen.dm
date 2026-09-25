@@ -219,6 +219,6 @@
 	if(CLUMSY_HARM_CHANCE(user))
 		to_chat(user, span_warning("\The [src] slips out of your hand and hits your head."))
 		user.injure(INJURY_BLUNT, 10, BP_HEAD, src)
-		user.Paralyse(2)
+		user.status_at_least(EFFECT_PARALYZED, 2)
 		return ITEM_INTERACT_SUCCESS
 	return ..()

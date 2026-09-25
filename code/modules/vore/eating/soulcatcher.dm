@@ -135,7 +135,7 @@
 	brainmob.gem = src
 	brainmob.container = src
 	brainmob.stat = 0
-	brainmob.silent = FALSE
+	brainmob.status_set(EFFECT_MUTED, 0)
 	GLOB.dead_mob_list -= brainmob
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
 	brainmob.ext_blind = !flag_check(NIF_SC_ALLOW_EYES)

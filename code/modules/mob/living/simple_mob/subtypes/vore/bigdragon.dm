@@ -730,14 +730,14 @@ I think I covered everything.
 	if(distfromcaster == 0)
 		if(isliving(AM))
 			var/mob/living/M = AM
-			M.Weaken(5)
+			M.status_at_least(EFFECT_WEAKENED, 5)
 			if(!gentle)
 				M.injure(INJURY_BLUNT, 50, source = src)	//A dragon just slammed ontop of you
 			to_chat(M, span_userdanger("You're slammed into the floor by [src]!"))
 	else
 		if(isliving(AM))
 			var/mob/living/M = AM
-			M.Weaken(1.5)
+			M.status_at_least(EFFECT_WEAKENED, 1.5)
 			if(!gentle)
 				M.injure(INJURY_BLUNT, 20, source = src)
 			to_chat(M, span_userdanger("You're thrown back by [src]!"))

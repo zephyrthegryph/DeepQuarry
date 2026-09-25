@@ -162,7 +162,7 @@
 							L.faction = faction
 							L.set_use_stance(intent)
 							L.initialize_ai_brain()
-							L.AdjustSleeping(-100)
+							L.status_adjust(EFFECT_SLEEPING, -100)
 						else
 							to_chat(ui.user, span_notice("You can only set AI for subtypes of mob/living!"))
 

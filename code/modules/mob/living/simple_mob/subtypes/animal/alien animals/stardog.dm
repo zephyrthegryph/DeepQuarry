@@ -95,7 +95,7 @@
 	mob_type = /mob/living/simple_mob/vore/overmap/stardog
 
 /datum/life_system/type_post/simple_mob/vore/overmap/stardog/tick(mob/living/simple_mob/vore/overmap/stardog/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.admin_override)
 		self.affinity = 9999
 		self.nutrition = 9999
@@ -1073,7 +1073,7 @@
 		if(check_keys && !L.ckey)
 			return
 		L.stop_pulling()
-		L.Weaken(3)
+		L.status_at_least(EFFECT_WEAKENED, 3)
 		L.reset_perspective() // Needed for food items that get gobbled with micros in them
 		GLOB.prey_eaten_roundstat++
 	if(target.reciever)		//We don't have to worry
@@ -1369,7 +1369,7 @@
 	if(!state)
 		for(var/mob/living/L in src.loc.contents)
 			if(isliving(L))
-				L.Weaken(3)
+				L.status_at_least(EFFECT_WEAKENED, 3)
 				if(prob(5))
 					to_chat(L, span_warning("\The [src] throbs heavily around you..."))
 
@@ -1447,7 +1447,7 @@
 	plane = ABOVE_MOB_PLANE
 	for(var/mob/living/L in src.loc.contents)
 		if(isliving(L))
-			L.Weaken(3)
+			L.status_at_least(EFFECT_WEAKENED, 3)
 			L.visible_message(span_danger("\The [src] closes up on \the [L]!"),span_danger("The weight of \the [src] closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!"))
 
 /obj/structure/auto_flesh_door/update_icon()

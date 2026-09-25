@@ -297,7 +297,7 @@
 
 /obj/effect/shield/proc/overcharge_shock(mob/living/M)
 	M.injure(INJURY_ELECTRIC, rand(20, 40), null, src)
-	M.Weaken(5)
+	M.status_at_least(EFFECT_WEAKENED, 5)
 	to_chat(M, span_danger("As you come into contact with \the [src] a surge of energy paralyses you!"))
 	take_damage(10, SHIELD_DAMTYPE_EM)
 

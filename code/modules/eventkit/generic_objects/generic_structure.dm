@@ -72,7 +72,7 @@
 						if(!O.blinded && isliving(O))
 							var/mob/living/L = O
 							L.flash_eyes()
-					O.Weaken(flash_time)
+					O.status_at_least(EFFECT_WEAKENED, flash_time)
 			if(effect == 4)
 				var/atom/o = new object(get_turf(src))
 				src.visible_message(span_notice("[src] has produced [o]!"))

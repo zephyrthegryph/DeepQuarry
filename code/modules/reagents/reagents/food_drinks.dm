@@ -384,14 +384,14 @@
 			if(effective_dose == metabolism * 2 || prob(5))
 				M.emote("yawn")
 		else if(effective_dose < 5)
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.status_at_least(EFFECT_BLURRY, 10)
 		else if(effective_dose < 20)
 			if(prob(50))
-				M.Weaken(2)
-			M.drowsyness = max(M.drowsyness, 20)
+				M.status_at_least(EFFECT_WEAKENED, 2)
+			M.status_at_least(EFFECT_DROWSY, 20)
 		else
-			M.Weaken(10)
-			M.drowsyness = max(M.drowsyness, 60)
+			M.status_at_least(EFFECT_WEAKENED, 10)
+			M.status_at_least(EFFECT_DROWSY, 60)
 
 /datum/reagent/nutriment/mayo
 	name = REAGENT_MAYO
@@ -969,23 +969,23 @@
 			return
 	else if(eyes_covered)
 		to_chat(M, span_warning("Your [safe_thing] protects you from most of the pepperspray!"))
-		M.eye_blurry = max(M.eye_blurry, effective_strength * 3)
-		M.Blind(effective_strength)
-		M.Stun(5)
-		M.Weaken(5)
+		M.status_at_least(EFFECT_BLURRY, effective_strength * 3)
+		M.status_at_least(EFFECT_BLINDED, effective_strength)
+		M.status_at_least(EFFECT_STUNNED, 5)
+		M.status_at_least(EFFECT_WEAKENED, 5)
 		if(alien != IS_SLIME)
 			return
 	else if(mouth_covered) // Mouth cover is better than eye cover
 		to_chat(M, span_warning("Your [safe_thing] protects your face from the pepperspray!"))
-		M.eye_blurry = max(M.eye_blurry, effective_strength)
+		M.status_at_least(EFFECT_BLURRY, effective_strength)
 		if(alien != IS_SLIME)
 			return
 	else// Oh dear :D
 		to_chat(M, span_warning("You're sprayed directly in the eyes with pepperspray!"))
-		M.eye_blurry = max(M.eye_blurry, effective_strength * 5)
-		M.Blind(effective_strength * 2)
-		M.Stun(5)
-		M.Weaken(5)
+		M.status_at_least(EFFECT_BLURRY, effective_strength * 5)
+		M.status_at_least(EFFECT_BLINDED, effective_strength * 2)
+		M.status_at_least(EFFECT_STUNNED, 5)
+		M.status_at_least(EFFECT_WEAKENED, 5)
 		if(alien != IS_SLIME)
 			return
 	if(alien == IS_SLIME)
@@ -1063,9 +1063,9 @@
 	if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type))
 		var/bonus = M.food_preference(allergen_type)
 		M.adjust_nutrition((nutrition + bonus) * removed)
-	M.make_dizzy(adj_dizzy)
-	M.drowsyness = max(0, M.drowsyness + adj_drowsy)
-	M.AdjustSleeping(adj_sleepy)
+	M.status_adjust(EFFECT_DIZZY, adj_dizzy)
+	M.status_adjust(EFFECT_DROWSY, adj_drowsy)
+	M.status_adjust(EFFECT_SLEEPING, adj_sleepy)
 	if(adj_temp > 0 && M.bodytemperature < BODYTEMP_NORMAL)
 		M.bodytemperature = min(BODYTEMP_NORMAL, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
 	if(adj_temp < 0 && M.bodytemperature > BODYTEMP_NORMAL)
@@ -1168,14 +1168,14 @@
 				if(effective_dose == metabolism * 2 || prob(5))
 					M.emote("yawn")
 			else if(effective_dose < 5)
-				M.eye_blurry = max(M.eye_blurry, 10)
+				M.status_at_least(EFFECT_BLURRY, 10)
 			else if(effective_dose < 20)
 				if(prob(50))
-					M.Weaken(2)
-				M.drowsyness = max(M.drowsyness, 20)
+					M.status_at_least(EFFECT_WEAKENED, 2)
+				M.status_at_least(EFFECT_DROWSY, 20)
 			else
-				M.Weaken(10)
-				M.drowsyness = max(M.drowsyness, 60)
+				M.status_at_least(EFFECT_WEAKENED, 10)
+				M.status_at_least(EFFECT_DROWSY, 60)
 
 /datum/reagent/drink/juice/lemon
 	name = REAGENT_LEMONJUICE
@@ -1347,7 +1347,7 @@
 				O.mend_fracture()
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
 				H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)
-				H.AdjustStunned(1) // Crawling again, weakened to stunned
+				H.status_adjust(EFFECT_STUNNED, 1) // Crawling again, weakened to stunned
 				break // Only mend one bone, whichever comes first in the list
 
 /datum/reagent/drink/milk/cream
@@ -1675,7 +1675,7 @@
 		return
 	//if(alien == IS_TAJARA)
 		// M.apply_effect(3, STUTTER) // end
-	M.make_jittery(5)
+	M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/drink/coffee/handle_addiction(mob/living/carbon/M, alien)
 	// A copy of the base with withdrawl, but with much less effects, no vomiting and sometimes pain
@@ -2130,14 +2130,14 @@
 			if(effective_dose == metabolism * 2 || prob(5))
 				M.emote("yawn")
 		else if(effective_dose < 5)
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.status_at_least(EFFECT_BLURRY, 10)
 		else if(effective_dose < 20)
 			if(prob(50))
-				M.Weaken(2)
-			M.drowsyness = max(M.drowsyness, 20)
+				M.status_at_least(EFFECT_WEAKENED, 2)
+			M.status_at_least(EFFECT_DROWSY, 20)
 		else
-			M.Weaken(10)
-			M.drowsyness = max(M.drowsyness, 60)
+			M.status_at_least(EFFECT_WEAKENED, 10)
+			M.status_at_least(EFFECT_DROWSY, 60)
 
 /datum/reagent/drink/milkshake/chocoshake
 	name = REAGENT_CHOCOSHAKE
@@ -2179,7 +2179,7 @@
 	allergen_type = ALLERGEN_DAIRY|ALLERGEN_COFFEE //Made with coffee and dairy products
 
 /datum/reagent/drink/milkshake/coffeeshake/overdose(mob/living/carbon/M, alien)
-	M.make_jittery(5)
+	M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/drink/milkshake/peanutshake
 	name = REAGENT_PEANUTMILKSHAKE
@@ -2207,7 +2207,7 @@
 
 /datum/reagent/drink/rewriter/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	M.make_jittery(5)
+	M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/drink/soda/nuka_cola
 	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
@@ -2227,10 +2227,10 @@
 
 /datum/reagent/drink/soda/nuka_cola/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	M.make_jittery(20)
-	M.druggy = max(M.druggy, 30)
-	M.make_dizzy(5)
-	M.drowsyness = 0
+	M.status_adjust(EFFECT_JITTERY, 20)
+	M.status_at_least(EFFECT_DRUGGED, 30)
+	M.status_adjust(EFFECT_DIZZY, 5)
+	M.status_set(EFFECT_DROWSY, 0)
 
 /datum/reagent/drink/grenadine 	//Description implies that the grenadine we would be working with does not contain fruit, so no allergens.
 	name = REAGENT_GRENADINE
@@ -2540,9 +2540,9 @@
 	if(alien == IS_DIONA)
 		return
 	// Its healing is the treatment_tags profile.
-	M.make_dizzy(-15)
-	if(M.confused)
-		M.Confuse(-5)
+	M.status_adjust(EFFECT_DIZZY, -15)
+	if(M.has_status(EFFECT_CONFUSED))
+		M.status_at_least(EFFECT_CONFUSED, -5)
 
 /datum/reagent/drink/dry_ramen
 	name = REAGENT_DRYRAMEN
@@ -2878,7 +2878,7 @@
 /datum/reagent/drink/syrup/overdose(mob/living/carbon/M, alien)
 	if(alien == IS_DIONA)
 		return
-	M.make_dizzy(1)
+	M.status_adjust(EFFECT_DIZZY, 1)
 
 /datum/reagent/drink/syrup/pumpkin
 	name = REAGENT_SYRUPPUMPKIN
@@ -3097,7 +3097,7 @@
 		if(alien == IS_DIONA)
 			return
 		M.adjust_nutrition((M.food_preference(allergen_type) / 2) * removed) //RS edit
-		M.make_jittery(-3)
+		M.status_adjust(EFFECT_JITTERY, -3)
 
 /datum/reagent/ethanol/beer/lite
 	name = REAGENT_LITEBEER
@@ -3158,7 +3158,7 @@
 	if(alien == IS_DIONA)
 		return
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
-		M.make_dizzy(5)
+		M.status_adjust(EFFECT_DIZZY, 5)
 
 /datum/reagent/ethanol/firepunch
 	name = REAGENT_FIREPUNCH
@@ -3196,9 +3196,9 @@
 		if(alien == IS_DIONA)
 			return
 		..()
-		M.make_dizzy(-5)
-		M.drowsyness = max(0, M.drowsyness - 3)
-		M.AdjustSleeping(-2)
+		M.status_adjust(EFFECT_DIZZY, -5)
+		M.status_adjust(EFFECT_DROWSY, -3)
+		M.status_adjust(EFFECT_SLEEPING, -2)
 		if(M.bodytemperature > BODYTEMP_NORMAL)
 			M.bodytemperature = max(BODYTEMP_NORMAL, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
 
@@ -3216,7 +3216,7 @@
 	//if(alien == IS_TAJARA)
 		// M.apply_effect(3, STUTTER) // end
 	if(!(M.isSynthetic()))
-		M.make_jittery(5)
+		M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/ethanol/coffee/kahlua
 	name = REAGENT_KAHLUA
@@ -3324,10 +3324,10 @@
 	if(!(M.isSynthetic()))
 		if(alien == IS_DIONA)
 			return
-		M.drowsyness = max(0, M.drowsyness - 7)
+		M.status_adjust(EFFECT_DROWSY, -7)
 		if (M.bodytemperature > BODYTEMP_NORMAL)
 			M.bodytemperature = max(BODYTEMP_NORMAL, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
-		M.make_jittery(5)
+		M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/ethanol/vermouth
 	name = REAGENT_VERMOUTH
@@ -3633,7 +3633,7 @@
 	..()
 
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
-		M.Stun(2)
+		M.status_at_least(EFFECT_STUNNED, 2)
 
 /datum/reagent/ethanol/bilk
 	name = REAGENT_BILK
@@ -4052,7 +4052,7 @@
 	..()
 
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
-		M.Weaken(3)
+		M.status_at_least(EFFECT_WEAKENED, 3)
 
 /datum/reagent/ethanol/patron
 	name = REAGENT_PATRON
@@ -4332,7 +4332,7 @@
 		if(alien == IS_SLIME)
 			drug_strength *= 0.15 //~ 1/6
 
-		M.druggy = max(M.druggy, drug_strength)
+		M.status_at_least(EFFECT_DRUGGED, drug_strength)
 		if(prob(10) && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained())
 			step(M, pick(GLOB.cardinal))
 
@@ -5041,9 +5041,9 @@
 
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
 		if(dose * strength >= strength) // Early warning
-			M.make_dizzy(24) // Intentionally higher than normal to compensate for it's previous effects.
+			M.status_adjust(EFFECT_DIZZY, 24) // Intentionally higher than normal to compensate for it's previous effects.
 		if(dose * strength >= strength * 2.5) // Slurring takes longer. Again, intentional.
-			M.slurring = max(M.slurring, 30)
+			M.status_at_least(EFFECT_SLURRING, 30)
 
 /datum/reagent/nutriment/magicdust
 	name = REAGENT_MAGICDUST
@@ -5170,9 +5170,9 @@
 	// Deathbell effects.
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
 		if(dose * strength >= strength)
-			M.make_dizzy(24)
+			M.status_adjust(EFFECT_DIZZY, 24)
 		if(dose * strength >= strength * 2.5)
-			M.slurring = max(M.slurring, 30)
+			M.status_at_least(EFFECT_SLURRING, 30)
 		// Simulating heat effects of spice. Without spice.
 		if(alien == IS_DIONA || alien == IS_ALRAUNE)
 			return
@@ -5221,7 +5221,7 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			var/datum/component/xenochimera/xc = M.get_xenochimera_component()
-			if(xc && xc.feral > 0 && H.nutrition > 150 && H.traumatic_shock < 20 && H.get_jittery() < 100) //Same check as feral triggers to stop them immediately re-feralling
+			if(xc && xc.feral > 0 && H.nutrition > 150 && H.traumatic_shock < 20 && H.status_units(EFFECT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
 				xc.feral -= removed * 3 // should calm them down quick, provided they're actually in a state to STAY calm.
 				if (xc.feral <=0) //check if they're unferalled
 					xc.feral = 0
@@ -5304,13 +5304,13 @@
 
 /datum/reagent/ethanol/galacticpanic/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	M.Stun(2)
+	M.status_at_least(EFFECT_STUNNED, 2)
 
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
 		if(dose * strength >= strength) // Early warning
-			M.make_dizzy(24) // Intentionally higher than normal to compensate for it's previous effects.
+			M.status_adjust(EFFECT_DIZZY, 24) // Intentionally higher than normal to compensate for it's previous effects.
 		if(dose * strength >= strength * 2.5) // Slurring takes longer. Again, intentional.
-			M.slurring = max(M.slurring, 30)
+			M.status_at_least(EFFECT_SLURRING, 30)
 
 /datum/reagent/ethanol/bulldog
 	name = REAGENT_BULLDOG
@@ -5397,7 +5397,7 @@
 	..()
 
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
-		M.Stun(2)
+		M.status_at_least(EFFECT_STUNNED, 2)
 
 /datum/reagent/ethanol/lovemaker
 	name = REAGENT_LOVEMAKER
@@ -5572,7 +5572,7 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			var/datum/component/xenochimera/xc = M.get_xenochimera_component()
-			if(xc && xc.feral > 0 && H.nutrition > 100 && H.traumatic_shock < min(60, H.nutrition/10) && H.get_jittery() < 100) // same check as feral triggers to stop them immediately re-feralling
+			if(xc && xc.feral > 0 && H.nutrition > 100 && H.traumatic_shock < min(60, H.nutrition/10) && H.status_units(EFFECT_JITTERY) < 100) // same check as feral triggers to stop them immediately re-feralling
 				xc.feral -= removed * 3 // should calm them down quick, provided they're actually in a state to STAY calm.
 				if (xc.feral <=0) //check if they're unferalled
 					xc.feral = 0
@@ -5656,13 +5656,13 @@
 	..()
 	if(prob(5) && !(alien == IS_CHIMERA || alien == IS_SLIME || alien == IS_PLANT || alien == IS_DIONA || alien == IS_SHADEKIN && !M.isSynthetic()))
 		M.injure(INJURY_NEURAL, removed, source = src) //Any other species risks prion disease.
-		M.Confuse(5)
-		M.hallucination = max(M.hallucination, 25)
+		M.status_at_least(EFFECT_CONFUSED, 5)
+		M.status_at_least(EFFECT_HALLUCINATING, 25)
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/datum/component/xenochimera/xc = M.get_xenochimera_component()
-		if(xc && xc.feral > 0 && H.nutrition > 150 && H.traumatic_shock < 20 && H.get_jittery() < 100) //Same check as feral triggers to stop them immediately re-feralling
+		if(xc && xc.feral > 0 && H.nutrition > 150 && H.traumatic_shock < 20 && H.status_units(EFFECT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
 			xc.feral -= removed * 3 //Should calm them down quick, provided they're actually in a state to STAY calm.
 			if(xc.feral <=0) //Check if they're unferalled
 				xc.feral = 0
@@ -5977,7 +5977,7 @@
 				nif.stat = NIF_INSTALLING
 			nif.repair(removed)
 		else if(prob(5))
-			M.SetConfused(max(M.confused, 20))
+			M.status_set(EFFECT_CONFUSED, max(M.status_units(EFFECT_CONFUSED), 20))
 			M.emote(pick("shudder", "seem lost", "blank for a moment"))
 	M.adjust_nutrition(4 * removed)
 
@@ -6010,7 +6010,7 @@
 	if(alien == IS_SLIME)
 		threshold *= 0.15 //~1/6
 
-	M.druggy = max(M.druggy, 30)
+	M.status_at_least(EFFECT_DRUGGED, 30)
 	M.adjust_nutrition(-10 * removed)
 
 	var/drug_strength = 20
@@ -6018,23 +6018,23 @@
 	if(issmall(M)) effective_dose *= 2
 	if(effective_dose < 1 * threshold)
 		M.apply_effect(3, STUTTER)
-		M.make_dizzy(5)
+		M.status_adjust(EFFECT_DIZZY, 5)
 		if(prob(3))
 			M.emote(pick("twitch", "giggle"))
 	else if(effective_dose < 2 * threshold)
 		M.apply_effect(3, STUTTER)
-		M.make_jittery(5)
-		M.make_dizzy(5)
-		M.druggy = max(M.druggy, 35)
-		M.hallucination = max(M.hallucination, drug_strength * threshold)
+		M.status_adjust(EFFECT_JITTERY, 5)
+		M.status_adjust(EFFECT_DIZZY, 5)
+		M.status_at_least(EFFECT_DRUGGED, 35)
+		M.status_at_least(EFFECT_HALLUCINATING, drug_strength * threshold)
 		if(prob(5))
 			M.emote(pick("twitch", "giggle"))
 	else
 		M.apply_effect(3, STUTTER)
-		M.make_jittery(10)
-		M.make_dizzy(10)
-		M.druggy = max(M.druggy, 40)
-		M.hallucination = max(M.hallucination, drug_strength * threshold)
+		M.status_adjust(EFFECT_JITTERY, 10)
+		M.status_adjust(EFFECT_DIZZY, 10)
+		M.status_at_least(EFFECT_DRUGGED, 40)
+		M.status_at_least(EFFECT_HALLUCINATING, drug_strength * threshold)
 		if(prob(10))
 			M.emote(pick("twitch", "giggle"))
 
@@ -6079,7 +6079,7 @@
 /datum/reagent/drink/coffee/nukie/mega/one/overdose(mob/living/carbon/M, alien, removed)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		H.eye_blurry += 20
+		H.status_adjust(EFFECT_BLURRY, 20)
 		var/od_harm = min(removed * overdose_mod * round(3 + 3 * volume / overdose), 1)
 		H.injure_many(alist(INJURY_TOXIN = od_harm, INJURY_BURN = od_harm, INJURY_BLUNT = od_harm), source = src)
 		H.add_modifier(/datum/modifier/berserk, 2 SECONDS, suppress_failure = TRUE)
@@ -6155,8 +6155,8 @@
 /datum/reagent/drink/tea/dyloteane/affect_ingest(mob/living/carbon/M, alien, removed)
 	var/chem_effective = 1
 	if(alien != IS_DIONA)
-		M.drowsyness = max(0, M.drowsyness - 6 * removed * chem_effective)
-		M.hallucination = max(0, M.hallucination - 9 * removed * chem_effective)
+		M.status_adjust(EFFECT_DROWSY, -(6 * removed * chem_effective))
+		M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed * chem_effective))
 
 /datum/reagent/slimedrink
 	name = REAGENT_SLIMEDRINK
@@ -6240,8 +6240,8 @@
 	if(prob(5))
 		M.say("!skin's crackles with energy and seems to be in pain.")
 		M.custom_pain("You feel painful electricity running through your body, like adrenaline, and like your blood's boiling!",30)
-		M.AdjustWeakened(3)		//Getting sapped makes the victim fall
-		M.Stun(3)
+		M.status_adjust(EFFECT_WEAKENED, 3)		//Getting sapped makes the victim fall
+		M.status_at_least(EFFECT_STUNNED, 3)
 
 /datum/reagent/ethanol/coffee/jackbrew
 	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
@@ -6259,7 +6259,7 @@
 	if(alien == IS_TAJARA)
 		removed *= 1.25
 	if(alien == IS_SLIME)
-		M.make_jittery(4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
+		M.status_adjust(EFFECT_JITTERY, 4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
 		if(dose >= 5)
 			M.nutrition = (M.nutrition - (removed * 2)) //Sadly this movement starts burning food in higher doses.
 	..()
@@ -6298,23 +6298,23 @@
 		if(effective_dose == metabolism * 2 || prob(5))
 			M.emote("yawn")
 	else if(effective_dose < 1.5 * threshold)
-		M.eye_blurry = max(M.eye_blurry, 10)
+		M.status_at_least(EFFECT_BLURRY, 10)
 	else if(effective_dose < 5 * threshold)
 		if(prob(50))
-			M.Weaken(2)
-		M.drowsyness = max(M.drowsyness, 20)
+			M.status_at_least(EFFECT_WEAKENED, 2)
+		M.status_at_least(EFFECT_DROWSY, 20)
 	else
 		if(alien == IS_SLIME) //They don't have eyes, and they don't really 'sleep'. Fumble their general senses.
-			M.eye_blurry = max(M.eye_blurry, 30)
+			M.status_at_least(EFFECT_BLURRY, 30)
 			if(prob(20))
-				M.ear_deaf = max(M.ear_deaf, 4)
+				M.status_at_least(EFFECT_DEAFENED, 4)
 				M.deaf_loop.start() // Ear Ringing/Deafness
-				M.Confuse(2)
+				M.status_at_least(EFFECT_CONFUSED, 2)
 			else
-				M.Weaken(2)
+				M.status_at_least(EFFECT_WEAKENED, 2)
 		else
-			M.sleeping = max(M.sleeping, 20)
-		M.drowsyness = max(M.drowsyness, 60)
+			M.status_at_least(EFFECT_SLEEPING, 20)
+		M.status_at_least(EFFECT_DROWSY, 60)
 
 /datum/reagent/ethanol/flapper
 	name = REAGENT_FLAPPER

@@ -201,21 +201,21 @@
 /datum/reagent/adminordrazine/affect_blood(mob/living/carbon/M, alien, removed)
 	// Admin chem: heals everything.
 	M.fully_heal()
-	M.hallucination = 0
+	M.status_set(EFFECT_HALLUCINATING, 0)
 	M.disabilities = 0
 	M.sdisabilities = 0
-	M.eye_blurry = 0
-	M.SetBlinded(0)
-	M.SetWeakened(0)
-	M.SetStunned(0)
-	M.SetParalysis(0)
-	M.silent = 0
-	M.clear_dizzy()
-	M.clear_jittery()
-	M.drowsyness = 0
-	M.stuttering = 0
-	M.SetConfused(0)
-	M.SetSleeping(0)
+	M.status_set(EFFECT_BLURRY, 0)
+	M.status_set(EFFECT_BLINDED, 0)
+	M.status_set(EFFECT_WEAKENED, 0)
+	M.status_set(EFFECT_STUNNED, 0)
+	M.status_set(EFFECT_PARALYZED, 0)
+	M.status_set(EFFECT_MUTED, 0)
+	M.status_end(EFFECT_DIZZY)
+	M.status_end(EFFECT_JITTERY)
+	M.status_set(EFFECT_DROWSY, 0)
+	M.status_set(EFFECT_STUTTERING, 0)
+	M.status_set(EFFECT_CONFUSED, 0)
+	M.status_set(EFFECT_SLEEPING, 0)
 	M.radiation = 0
 	M.extinguish_mob()
 	M.fire_stacks = 0
@@ -375,8 +375,8 @@
 /datum/reagent/adrenaline/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.SetParalysis(0)
-	M.SetWeakened(0)
+	M.status_set(EFFECT_PARALYZED, 0)
+	M.status_set(EFFECT_WEAKENED, 0)
 	M.injure(INJURY_TOXIN, rand(3), source = src)
 
 /datum/reagent/water/holywater
@@ -1036,8 +1036,8 @@
 	var/drug_strength = 12
 	if(alien == IS_SKRELL)
 		drug_strength = drug_strength * 0.6
-	M.make_dizzy(drug_strength)
-	M.Confuse(drug_strength * 14)
+	M.status_adjust(EFFECT_DIZZY, drug_strength)
+	M.status_at_least(EFFECT_CONFUSED, drug_strength * 14)
 
 /obj/item/reagent_containers/pill/benzilate
 	name = "Benzilate pill"

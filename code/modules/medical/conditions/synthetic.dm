@@ -200,7 +200,7 @@
 /datum/affliction_symptom/synthetic/speech_glitch/tick(mob/living/M, datum/affliction/source)
 	..()
 	if(M && prob(5))
-		M.stuttering = max(M.stuttering, 3)
+		M.status_at_least(EFFECT_STUTTERING, 3)
 
 /datum/affliction_symptom/synthetic/checksum_errors
 	name = "checksum errors"

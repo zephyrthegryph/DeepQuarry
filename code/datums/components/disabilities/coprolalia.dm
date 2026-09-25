@@ -21,9 +21,9 @@
 		return
 	if(owner.client && (owner.client.prefs.muted & MUTE_IC))
 		return
-	if((prob(1) && prob(2) && owner.get_paralysis() <= 1))
-		owner.Stun(10)
-		owner.make_jittery(100)
+	if((prob(1) && prob(2) && owner.status_units(EFFECT_PARALYZED) <= 1))
+		owner.status_at_least(EFFECT_STUNNED, 10)
+		owner.status_adjust(EFFECT_JITTERY, 100)
 		switch(rand(1, 3))
 			if(1)
 				owner.emote("twitch")

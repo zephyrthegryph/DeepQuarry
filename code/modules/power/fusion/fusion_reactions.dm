@@ -129,7 +129,7 @@ GLOBAL_LIST(fusion_reactions)
 		if(T && (holder.z == T.z))
 			if(ishuman(mob))
 				var/mob/living/carbon/human/H = mob
-				H.hallucination += rand(100,150)
+				H.status_adjust(EFFECT_HALLUCINATING, rand(100,150))
 
 	for(var/obj/machinery/fusion_fuel_injector/I in range(world.view, origin))
 		if(I.cur_assembly && I.cur_assembly.fuel_type == REAGENT_ID_SUPERMATTER)

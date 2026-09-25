@@ -443,7 +443,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 				sparks.set_up(5, 1, src)
 				sparks.start()
 				building_terminal = FALSE
-				if(user.get_stunned())
+				if(user.has_status(EFFECT_STUNNED))
 					return ITEM_INTERACT_SUCCESS
 			new /obj/item/stack/cable_coil(loc, 10)
 			user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))

@@ -17,7 +17,7 @@
 	var/datum/affliction/pain = H.body.afflict(/datum/affliction/acute_pain, null, 60)
 	TEST_ASSERT_NOTNULL(pain, "acute pain could not be afflicted")
 	H.bloodstr.add_reagent(REAGENT_ID_TRICORDRAZINE, 10)
-	H.Weaken(10)
+	H.status_at_least(EFFECT_WEAKENED, 10)
 
 	TEST_ASSERT(F.set_form(/datum/form/promethean_blob), "switching to the blob form should succeed")
 	TEST_ASSERT(istype(F.current, /datum/form/promethean_blob), "the blob form should be current")
@@ -30,7 +30,7 @@
 	H.life_frame()
 	TEST_ASSERT(QDELETED(pain) || pain.severity < severity_before, "afflictions should keep progressing in blob form ([severity_before] -> [QDELETED(pain) ? 0 : pain.severity])")
 	TEST_ASSERT(H.bloodstr.get_reagent_amount(REAGENT_ID_TRICORDRAZINE) < volume_before, "reagents should keep metabolising in blob form")
-	TEST_ASSERT(H.is_weakened(), "statuses survive a form switch (they wear off in real time, doc/rewrite/life_on_om.md §7)")
+	TEST_ASSERT(H.has_status(EFFECT_WEAKENED), "statuses survive a form switch (they wear off in real time, doc/rewrite/life_on_om.md §7)")
 	TEST_ASSERT(life_test_started(H, /datum/om/behaviour/life), "the blobbed character stays on the life ring")
 
 	TEST_ASSERT(F.set_form(/datum/form/human), "switching back should succeed")

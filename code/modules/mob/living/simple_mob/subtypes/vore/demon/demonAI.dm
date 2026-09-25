@@ -91,7 +91,7 @@
 	mob_type = /mob/living/simple_mob/vore/demonAI
 
 /datum/life_system/type_post/simple_mob/vore/demonAI/tick(mob/living/simple_mob/vore/demonAI/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.shifted_out)
 		self.density = FALSE
 

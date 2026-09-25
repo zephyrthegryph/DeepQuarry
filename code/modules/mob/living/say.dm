@@ -107,11 +107,11 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			verb = pick("yells","roars","hollers")
 			whispering = 0
 			. = 1
-		if(slurring)
+		if(has_status(EFFECT_SLURRING))
 			S.message = slur(S.message)
 			verb = pick("slobbers","slurs")
 			. = 1
-		if(stuttering)
+		if(has_status(EFFECT_STUTTERING))
 			S.message = stutter(S.message)
 			verb = pick("stammers","stutters")
 			. = 1

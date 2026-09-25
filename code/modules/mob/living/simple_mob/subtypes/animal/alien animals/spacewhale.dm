@@ -97,7 +97,7 @@
 	mob_type = /mob/living/simple_mob/vore/overmap/spacewhale
 
 /datum/life_system/type_post/simple_mob/vore/overmap/spacewhale/tick(mob/living/simple_mob/vore/overmap/spacewhale/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.post_restless_tired)
 		self.post_restless_tired--
 		return

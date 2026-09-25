@@ -67,7 +67,7 @@
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
-		occupantData["paralysis"] = occupant.get_paralysis()
+		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/operating_computer)
 		occupantData["diagnosis"] = D.report_data()
 		qdel(D)

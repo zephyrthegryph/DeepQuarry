@@ -29,7 +29,7 @@
 			if(O.status & ORGAN_BROKEN)
 				O.mend_fracture()
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
-				H.AdjustWeakened(1)
+				H.status_adjust(EFFECT_WEAKENED, 1)
 				break // Only mend one bone, whichever comes first in the list
 
 /datum/reagent/carbon
@@ -158,21 +158,21 @@
 		var/effective_dose = dose * strength_mod * (1 + volume/60) //drinking a LOT will make you go down faster
 
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
-			M.make_dizzy(18) // It is decreased at the speed of 3 per tick
+			M.status_adjust(EFFECT_DIZZY, 18) // It is decreased at the speed of 3 per tick
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 2) // Slurring
-			M.slurring = max(M.slurring, 90)
+			M.status_at_least(EFFECT_SLURRING, 90)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 3) // Confusion - walking in random directions
-			M.Confuse(60)
+			M.status_at_least(EFFECT_CONFUSED, 60)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 4) // Blurry vision
-			M.eye_blurry = max(M.eye_blurry, 30)
+			M.status_at_least(EFFECT_BLURRY, 30)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 5) // Drowsyness - periodically falling asleep
-			M.drowsyness = max(M.drowsyness, 60)
+			M.status_at_least(EFFECT_DROWSY, 60)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 7) // Pass out
-			M.Paralyse(60)
-			M.Sleeping(90)
+			M.status_at_least(EFFECT_PARALYZED, 60)
+			M.status_at_least(EFFECT_SLEEPING, 90)
 
 		if(druggy != 0)
-			M.druggy = max(M.druggy, druggy*3)
+			M.status_at_least(EFFECT_DRUGGED, druggy*3)
 
 		if(adj_temp > 0 && M.bodytemperature < targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -180,7 +180,7 @@
 			M.bodytemperature = min(targ_temp, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
 
 		if(halluci)
-			M.hallucination = max(M.hallucination, halluci*3)
+			M.status_at_least(EFFECT_HALLUCINATING, halluci*3)
 
 /datum/reagent/ethanol/affect_ingest(mob/living/carbon/M, alien, removed)
 	var/ep_base_power = 60	//base nutrition gain for ethanol-processing synthetics, reduced by alcohol strength
@@ -201,24 +201,24 @@
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
 
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
-			M.make_dizzy(6) // It is decreased at the speed of 3 per tick
+			M.status_adjust(EFFECT_DIZZY, 6) // It is decreased at the speed of 3 per tick
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 2) // Slurring
-			M.slurring = max(M.slurring, 30)
+			M.status_at_least(EFFECT_SLURRING, 30)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 3) // Confusion - walking in random directions
-			M.Confuse(20)
+			M.status_at_least(EFFECT_CONFUSED, 20)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 4) // Blurry vision
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.status_at_least(EFFECT_BLURRY, 10)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 5) // Drowsyness - periodically falling asleep
-			M.drowsyness = max(M.drowsyness, 20)
+			M.status_at_least(EFFECT_DROWSY, 20)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 7) // Pass out
-			M.Paralyse(20)
-			M.Sleeping(30)
+			M.status_at_least(EFFECT_PARALYZED, 20)
+			M.status_at_least(EFFECT_SLEEPING, 30)
 
 		if(druggy != 0)
-			M.druggy = max(M.druggy, druggy)
+			M.status_at_least(EFFECT_DRUGGED, druggy)
 
 		if(halluci)
-			M.hallucination = max(M.hallucination, halluci)
+			M.status_at_least(EFFECT_HALLUCINATING, halluci)
 
 		if(adj_temp > 0 && M.bodytemperature < targ_temp)
 			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -258,7 +258,7 @@
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel miserable.","You feel nauseous.","You get a raging headache.")]"))
 				M.injure(INJURY_PAIN, 7, source = src)
-				M.make_jittery(25) //Restlessness.
+				M.status_adjust(EFFECT_JITTERY, 25) //Restlessness.
 			else if(current_addiction <= 20)
 				to_chat(M, span_danger("You feel absolutely awful. You need some some liquor. Now."))
 				if(realistic_addiction && prob(20)) //1 in 5 on a 1 in 50, so 1 in 250 chance. DTs
@@ -267,14 +267,14 @@
 						if(O == src)
 							continue
 						O.show_message(span_danger("[M] starts having a seizure!"), 1)
-					M.Paralyse(10)
-					M.Sleeping(10)
-					M.make_jittery(1000)
+					M.status_at_least(EFFECT_PARALYZED, 10)
+					M.status_at_least(EFFECT_SLEEPING, 10)
+					M.status_adjust(EFFECT_JITTERY, 1000)
 			else if(current_addiction <= 50)
 				to_chat(M, span_warning("You're really craving some alcohol. You feel nauseated."))
 				if(realistic_addiction)
 					M.emote("vomit")
-					M.AdjustConfused(10) // Disorientation.
+					M.status_adjust(EFFECT_CONFUSED, 10) // Disorientation.
 			else if(current_addiction <= 100)
 				to_chat(M, span_notice("You're feeling the need for some booze."))
 			// effects
@@ -290,16 +290,16 @@
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel a light throbbing in your head.","Your stomach feels upset.","Your .")]"))
 				M.injure(INJURY_PAIN, 3, source = src)
-				M.make_jittery(10) //Restlessness.
+				M.status_adjust(EFFECT_JITTERY, 10) //Restlessness.
 			else if(current_addiction <= 20)
 				to_chat(M, span_warning("You feel nauseated."))
 				if(realistic_addiction)
 					M.emote("vomit")
-					M.AdjustConfused(10) // Disorientation.
+					M.status_adjust(EFFECT_CONFUSED, 10) // Disorientation.
 			else if(current_addiction <= 50)
 				to_chat(M, span_warning("Your head throbs and the room spins."))
 				if(realistic_addiction)
-					M.AdjustConfused(3) // Disorientation.
+					M.status_adjust(EFFECT_CONFUSED, 3) // Disorientation.
 			else if(current_addiction <= 100)
 				to_chat(M, span_notice("A drink would be nice."))
 			// effects
@@ -677,14 +677,14 @@
 			if(effective_dose == metabolism * 2 || prob(5))
 				M.emote("yawn")
 		else if(effective_dose < 5)
-			M.eye_blurry = max(M.eye_blurry, 10)
+			M.status_at_least(EFFECT_BLURRY, 10)
 		else if(effective_dose < 20)
 			if(prob(50))
-				M.Weaken(2)
-			M.drowsyness = max(M.drowsyness, 20)
+				M.status_at_least(EFFECT_WEAKENED, 2)
+			M.status_at_least(EFFECT_DROWSY, 20)
 		else
-			M.Sleeping(20)
-			M.drowsyness = max(M.drowsyness, 60)
+			M.status_at_least(EFFECT_SLEEPING, 20)
+			M.status_at_least(EFFECT_DROWSY, 60)
 
 /datum/reagent/sulfur
 	name = REAGENT_SULFUR

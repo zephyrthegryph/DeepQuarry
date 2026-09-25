@@ -76,7 +76,7 @@
 	//result: drop_mob is eaten by source
 	if(can_drop_vore(prey = drop_mob, pred = source))
 		source.feed_grabbed_to_self_falling_nom(source, prey = drop_mob)
-		source.Weaken(4)
+		source.status_at_least(EFFECT_WEAKENED, 4)
 		source.visible_message(span_vdanger("\The [drop_mob] falls right into \the [source]!"))
 		return COMSIG_CANCEL_FALL
 

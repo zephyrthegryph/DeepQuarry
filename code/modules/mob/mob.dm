@@ -104,7 +104,7 @@
 	if(!client && !teleop)	return
 
 	if (type)
-		if((type & VISIBLE_MESSAGE) && (is_blind() || get_paralysis()) )//Vision related
+		if((type & VISIBLE_MESSAGE) && (is_blind() || has_status(EFFECT_PARALYZED)) )//Vision related
 			if (!( alt ))
 				return
 			else
@@ -119,7 +119,7 @@
 				if ((type & VISIBLE_MESSAGE) && (sdisabilities & BLIND))
 					return
 	// Added voice muffling for Issue 41.
-	if(stat == UNCONSCIOUS || sleeping > 0)
+	if(stat == UNCONSCIOUS || has_status(EFFECT_SLEEPING))
 		to_chat(src, span_filter_notice(span_italics("... You can almost hear someone talking ...")))
 	else
 		if(teleop)
@@ -215,10 +215,10 @@
 	return ((sdisabilities & BLIND) || blinded || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_deaf()
-	return ((sdisabilities & DEAF) || ear_deaf || incapacitated(INCAPACITATION_KNOCKOUT))
+	return ((sdisabilities & DEAF) || has_status(EFFECT_DEAFENED) || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_paralyzed()
-	return get_paralysis()
+	return status_units(EFFECT_PARALYZED)
 
 /mob/proc/is_physically_disabled()
 	return incapacitated(INCAPACITATION_DISABLED)
@@ -227,13 +227,13 @@
 	return incapacitated(INCAPACITATION_KNOCKDOWN)
 
 /mob/proc/incapacitated(incapacitation_flags = INCAPACITATION_DEFAULT)
-	if((incapacitation_flags & INCAPACITATION_STUNNED) && get_stunned())
+	if((incapacitation_flags & INCAPACITATION_STUNNED) && has_status(EFFECT_STUNNED))
 		return 1
 
-	if((incapacitation_flags & INCAPACITATION_FORCELYING) && (get_weakened() || resting))
+	if((incapacitation_flags & INCAPACITATION_FORCELYING) && (has_status(EFFECT_WEAKENED) || resting))
 		return 1
 
-	if((incapacitation_flags & INCAPACITATION_KNOCKOUT) && (stat || sleeping))
+	if((incapacitation_flags & INCAPACITATION_KNOCKOUT) && (stat || has_status(EFFECT_SLEEPING)))
 		return 1
 
 	if((incapacitation_flags & INCAPACITATION_RESTRAINED) && restrained())
@@ -682,7 +682,7 @@
 
 	pulling = AM
 	AM.pulledby = src
-	on_status_counter_changed("pulling")
+	om_changed(src, CHANGE_MOB_STATUS) // pulling
 
 	if(pullin)
 		pullin.icon_state = "pull1"
@@ -718,7 +718,7 @@
 
 	pulling = AM
 	AM.pulledby = src
-	on_status_counter_changed("pulling")
+	om_changed(src, CHANGE_MOB_STATUS) // pulling
 
 	if(pullin)
 		pullin.icon_state = "pull1"
@@ -826,217 +826,6 @@
 //This might need a rename but it should replace the can this mob use things check
 /mob/proc/IsAdvancedToolUser()
 	return 0
-
-// --- Incapacitation (doc/rewrite/life_on_om.md §7) --------------------------------------------
-// Stun, weaken and paralysis are timed contributions (EFFECT_STUNNED, EFFECT_WEAKENED,
-// EFFECT_PARALYZED) the mob holds on itself; the deadline wheel ends them. Amounts are in the old
-// status units, one LIFE_CYCLE each. The effect type (mob_incapacitation) keeps canmove, lying and
-// the alerts in step whenever one starts or ends.
-
-/// Sets this mob's own contribution to `effect_id` to end at `expires` (scheduler time).
-/mob/proc/set_status_until(effect_id, expires)
-	om_apply_until(src, effect_id, src, expires)
-
-/// When this mob's own `effect_id` contribution ends (scheduler time), or now if it has none.
-/mob/proc/status_expiry(effect_id)
-	var/now = om_time_of(src)
-	var/expires = om_expires_at(src, effect_id, src)
-	return expires ? max(expires, now) : now
-
-/// "Can't go below remaining duration": extend to at least `amount` units from now.
-/mob/proc/status_at_least(effect_id, amount)
-	var/now = om_time_of(src)
-	var/until = now + max(amount, 0) * LIFE_CYCLE
-	if(until > status_expiry(effect_id))
-		set_status_until(effect_id, until)
-
-/// "Sets remaining duration": exactly `amount` units from now (0 ends it).
-/mob/proc/status_set(effect_id, amount)
-	set_status_until(effect_id, om_time_of(src) + max(amount, 0) * LIFE_CYCLE)
-
-/// "Adds to remaining duration" (negative shortens; it never goes below now).
-/mob/proc/status_adjust(effect_id, amount)
-	set_status_until(effect_id, status_expiry(effect_id) + amount * LIFE_CYCLE)
-
-/// Remaining duration of `effect_id` in status units, rounded up (0 when not in effect).
-/mob/proc/status_units(effect_id)
-	var/left = status_expiry(effect_id) - om_time_of(src)
-	return left > 0 ? CEILING(left / LIFE_CYCLE, 1) : 0
-
-/// Remaining real seconds of `effect_id` (0 when not in effect), for readouts.
-/mob/proc/status_seconds(effect_id)
-	return max(status_expiry(effect_id) - om_time_of(src), 0) / (1 SECONDS)
-
-/mob/proc/is_stunned()
-	return om_has(src, EFFECT_STUNNED)
-
-/mob/proc/is_weakened()
-	return om_has(src, EFFECT_WEAKENED)
-
-/mob/proc/is_paralysed()
-	return om_has(src, EFFECT_PARALYZED)
-
-/// Remaining stun, in status units.
-/mob/proc/get_stunned()
-	return status_units(EFFECT_STUNNED)
-
-/// Remaining weaken, in status units.
-/mob/proc/get_weakened()
-	return status_units(EFFECT_WEAKENED)
-
-/// Remaining paralysis, in status units.
-/mob/proc/get_paralysis()
-	return status_units(EFFECT_PARALYZED)
-
-/mob/proc/Stun(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_STUN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANSTUN)
-		facing_dir = null
-		status_at_least(EFFECT_STUNNED, amount)
-	on_status_counter_changed("stun")
-
-/mob/proc/SetStunned(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_STUN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANSTUN)
-		status_set(EFFECT_STUNNED, amount)
-	on_status_counter_changed("setstunned")
-
-/mob/proc/AdjustStunned(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_STUN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANSTUN)
-		status_adjust(EFFECT_STUNNED, amount)
-	on_status_counter_changed("adjuststunned")
-
-/mob/proc/Weaken(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_WEAKEN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANWEAKEN)
-		facing_dir = null
-		status_at_least(EFFECT_WEAKENED, amount)
-	on_status_counter_changed("weaken")
-
-/mob/proc/SetWeakened(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_WEAKEN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANWEAKEN)
-		status_set(EFFECT_WEAKENED, amount)
-	on_status_counter_changed("setweakened")
-
-/mob/proc/AdjustWeakened(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_WEAKEN, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANWEAKEN)
-		status_adjust(EFFECT_WEAKENED, amount)
-	on_status_counter_changed("adjustweakened")
-
-/mob/proc/Paralyse(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_PARALYZE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANPARALYSE)
-		facing_dir = null
-		status_at_least(EFFECT_PARALYZED, amount)
-	on_status_counter_changed("paralyse")
-
-/mob/proc/SetParalysis(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_PARALYZE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANPARALYSE)
-		status_set(EFFECT_PARALYZED, amount)
-	on_status_counter_changed("setparalysis")
-
-/mob/proc/AdjustParalysis(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_PARALYZE, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	if(status_flags & CANPARALYSE)
-		status_adjust(EFFECT_PARALYZED, amount)
-	on_status_counter_changed("adjustparalysis")
-
-/// Called by the incapacitation effects whenever one starts or ends (from a setter or from the
-/// deadline wheel): canmove, lying and the alert follow at once.
-/mob/proc/on_incapacitation_changed(effect_id, active)
-	update_canmove()
-
-/mob/living/on_incapacitation_changed(effect_id, active)
-	..()
-	var/static/list/alerts = list(
-		EFFECT_STUNNED = list("stunned", /atom/movable/screen/alert/stunned),
-		EFFECT_WEAKENED = list("weakened", /atom/movable/screen/alert/weakened),
-		EFFECT_PARALYZED = list("paralyzed", /atom/movable/screen/alert/paralyzed),
-	)
-	var/list/alert = alerts[effect_id]
-	if(!alert)
-		return
-	if(active)
-		throw_alert(alert[1], alert[2])
-	else
-		clear_alert(alert[1])
-
-/// The incapacitation effects: a change of value reaches the mob.
-/datum/om/effect/mob_incapacitation/on_changed(datum/E, old_value, new_value)
-	var/mob/M = E
-	if(istype(M) && !QDELETED(M))
-		M.on_incapacitation_changed(id, new_value)
-
-/mob/proc/Sleeping(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_SLEEP, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	facing_dir = null
-	sleeping = max(max(sleeping,amount),0)
-	on_status_counter_changed("sleeping")
-	return
-
-/mob/proc/SetSleeping(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_SLEEP, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	sleeping = max(amount,0)
-	on_status_counter_changed("setsleeping")
-	return
-
-/mob/proc/AdjustSleeping(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_SLEEP, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	sleeping = max(sleeping + amount,0)
-	on_status_counter_changed("adjustsleeping")
-	return
-
-/mob/proc/Confuse(amount, ignore_canstun = FALSE) //Can't go below remaining duration
-	confused = max(max(confused,amount),0)
-	on_status_counter_changed("confuse")
-	return
-
-/mob/proc/SetConfused(amount, ignore_canstun = FALSE) //Sets remaining duration
-	confused = max(amount,0)
-	on_status_counter_changed("setconfused")
-	return
-
-/mob/proc/AdjustConfused(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	confused = max(confused + amount,0)
-	on_status_counter_changed("adjustconfused")
-	return
-
-/mob/proc/Blind(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(max(eye_blind,amount),0)
-	on_status_counter_changed("blind")
-	return
-
-/mob/proc/SetBlinded(amount, ignore_canstun = FALSE) //Sets remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(amount,0)
-	on_status_counter_changed("setblinded")
-	return
-
-/mob/proc/AdjustBlinded(amount, ignore_canstun = FALSE) //Adds to remaining duration
-	if(SEND_SIGNAL(src, COMSIG_LIVING_STATUS_BLIND, amount, ignore_canstun) & COMPONENT_NO_STUN)
-		return
-	eye_blind = max(eye_blind + amount,0)
-	on_status_counter_changed("adjustblinded")
-	return
 
 /mob/proc/Resting(amount)
 	facing_dir = null
@@ -1755,7 +1544,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 		if(stance)
 			L.set_use_stance(stance)
 		if(tgui_alert(usr, "Make mob wake up? This is needed for carbon mobs.", "Wake mob?", list("Yes", "No")) == "Yes")
-			L.AdjustSleeping(-100)
+			L.status_adjust(EFFECT_SLEEPING, -100)
 
 	//if(href_list[VV_HK_GIVE_AI_SPEECH])
 	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/give_ai_speech, src)

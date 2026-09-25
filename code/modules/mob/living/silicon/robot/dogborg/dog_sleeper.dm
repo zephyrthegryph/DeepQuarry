@@ -298,7 +298,7 @@
 			"health" = round((2 * patient.vitality() - 1) * 100),
 			"max_health" = 100,
 			"findings" = findings,
-			"paralysis" = patient.get_paralysis(),
+			"paralysis" = patient.status_units(EFFECT_PARALYZED),
 			"braindamage" = !!patient.injury_load(INJURY_CATEGORY_NEURAL),
 			"clonedamage" = !!patient.injury_load(INJURY_CATEGORY_GENETIC),
 			"ingested_reagents" = ingested_reagents
@@ -623,8 +623,8 @@
 		if(patient.is_critical())
 			patient.mend(TREAT_OXYGENATION, 1) //Heal some oxygen damage if they're in critical condition
 			drain()
-		patient.AdjustStunned(-4)
-		patient.AdjustWeakened(-4)
+		patient.status_adjust(EFFECT_STUNNED, -4)
+		patient.status_adjust(EFFECT_WEAKENED, -4)
 		drain(1)
 		return
 

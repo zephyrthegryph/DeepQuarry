@@ -189,7 +189,7 @@
 	mob_type = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
 
 /datum/life_system/type_post/simple_mob/vore/aggressive/corrupthound/swoopie/tick(mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/self, datum/life_context/ctx)
-	. =..()
+	..()
 	var/turf/T = get_turf(self)
 	if(istype(self.Vac))
 		if(self.Vac.loc != self)

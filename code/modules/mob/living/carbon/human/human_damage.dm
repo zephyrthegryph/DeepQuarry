@@ -1,46 +1,5 @@
-/mob/living/carbon/human/Stun(amount, ignore_canstun = FALSE)
-	if(has_mutation(HULK))	return
-	..()
-
-/mob/living/carbon/human/Weaken(amount, ignore_canstun = FALSE)
-	if(has_mutation(HULK))	return
-	..()
-
-/mob/living/carbon/human/Paralyse(amount, ignore_canstun = FALSE)
-	if(has_mutation(HULK))	return
-	// Notify our AI if they can now control the suit.
-	if(wearing_rig && !stat && get_paralysis() < amount) //We are passing out right this second.
-		wearing_rig.notify_ai(span_danger("Warning: user consciousness failure. Mobility control passed to integrated intelligence system."))
-	..()
-
 // Oxy / tox / clone "damage" for humans is condition severity — see
 // code/modules/medical/damage_pools.dm for the adapters.
-
-/mob/living/carbon/human/Stun(amount, ignore_canstun = FALSE)
-	if(amount > 0)	//only multiply it by the mod if it's positive, or else it takes longer to fade too!
-		amount = amount*species.stun_mod
-	..(amount)
-
-/mob/living/carbon/human/SetStunned(amount, ignore_canstun = FALSE)
-	..()
-
-/mob/living/carbon/human/AdjustStunned(amount, ignore_canstun = FALSE)
-	if(amount > 0) // Only multiply it if positive.
-		amount = amount*species.stun_mod
-	..(amount)
-
-/mob/living/carbon/human/Weaken(amount, ignore_canstun = FALSE)
-	if(amount > 0)	//only multiply it by the mod if it's positive, or else it takes longer to fade too!
-		amount = amount*species.weaken_mod
-	..(amount)
-
-/mob/living/carbon/human/SetWeakened(amount, ignore_canstun = FALSE)
-	..()
-
-/mob/living/carbon/human/AdjustWeakened(amount, ignore_canstun = FALSE)
-	if(amount > 0) // Only multiply it if positive.
-		amount = amount*species.weaken_mod
-	..(amount)
 
 ////////////////////////////////////////////
 

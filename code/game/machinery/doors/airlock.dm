@@ -224,11 +224,11 @@ About the new airlock wires panel:
 					return
 			else /*if(justzap)*/
 				return
-		else if(user.hallucination > 50 && prob(10) && operating == 0)
+		else if(user.status_units(EFFECT_HALLUCINATING) > 50 && prob(10) && operating == 0)
 			to_chat(user, span_danger("You feel a powerful shock course through your body!"))
 			user.playsound_local(get_turf(user), get_sfx("sparks"), vol = 75)
 			user.injure(INJURY_PAIN, 10, null, src)
-			user.AdjustStunned(10)
+			user.status_adjust(EFFECT_STUNNED, 10)
 			return
 	..(user)
 
@@ -1071,8 +1071,8 @@ About the new airlock wires panel:
 	. = ..()
 	var/turf/T = get_turf(src)
 	injure(INJURY_BLUNT, crush_damage)
-	SetStunned(5)
-	SetWeakened(5)
+	status_set(EFFECT_STUNNED, 5)
+	status_set(EFFECT_WEAKENED, 5)
 	if(T)
 		T.add_blood(src)
 	return TRUE

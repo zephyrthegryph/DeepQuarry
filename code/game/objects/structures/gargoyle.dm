@@ -105,8 +105,8 @@
 			if(!isnull(H.overlays_standing[i]))
 				add_overlay(H.overlays_standing[i])
 
-	initial_sleep = H.sleeping
-	initial_blind = H.eye_blind
+	initial_sleep = H.status_units(EFFECT_SLEEPING)
+	initial_blind = H.status_units(EFFECT_BLINDED)
 	initial_is_shifted = H.is_shifted
 	transform = H.transform
 	layer = H.layer
@@ -124,8 +124,8 @@
 	H.toggle_wing(FALSE, FALSE)
 	H.visible_message(span_warning("[H]'s skin rapidly [adjective] as they turn to [material]!"), span_warning("Your skin abruptly [adjective] as you turn to [material]!"))
 	H.forceMove(src)
-	H.SetBlinded(0)
-	H.SetSleeping(0)
+	H.status_set(EFFECT_BLINDED, 0)
+	H.status_set(EFFECT_SLEEPING, 0)
 	H.canmove = 0
 
 	can_revert = revert
@@ -204,8 +204,8 @@
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)
 	gargoyle.sdisabilities &= ~MUTE //why is there no ADD_TRAIT etc here that's actually ussssed
-	gargoyle.SetBlinded(initial_blind)
-	gargoyle.SetSleeping(initial_sleep)
+	gargoyle.status_set(EFFECT_BLINDED, initial_blind)
+	gargoyle.status_set(EFFECT_SLEEPING, initial_sleep)
 	gargoyle.canmove = 1
 	gargoyle.update_canmove()
 	var/hurtmessage = ""

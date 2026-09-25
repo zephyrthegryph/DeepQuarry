@@ -39,8 +39,8 @@
 								"IT HURTS.",
 								"Your body feels as if it's trying to rip itself open..."
 								)
-	if(prob(20) && our_human.get_jittery() < 50)
-		our_human.make_jittery(120)
+	if(prob(20) && our_human.status_units(EFFECT_JITTERY) < 50)
+		our_human.status_adjust(EFFECT_JITTERY, 120)
 	to_chat(our_human, span_danger(pick(pain_message)))
 
 /datum/component/hallucinations/proc/event_fake_item()
@@ -230,7 +230,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Fake death
 	//to_chat(our_human, "fake death")
-	our_human.SetSleeping(20)
+	our_human.status_set(EFFECT_SLEEPING, 20)
 	hal_crit = TRUE
 	hal_screwyhud = HUD_HALLUCINATION_CRIT
 	addtimer(CALLBACK(src, PROC_REF(reset_hallucination_sleeping)), rand(5,10) SECONDS, TIMER_DELETE_ME)
@@ -238,7 +238,7 @@
 /datum/component/hallucinations/proc/reset_hallucination_sleeping()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	our_human.SetSleeping(0)
+	our_human.status_set(EFFECT_SLEEPING, 0)
 	hal_crit = FALSE
 	hal_screwyhud = HUD_HALLUCINATION_NONE
 

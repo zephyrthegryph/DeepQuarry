@@ -159,8 +159,8 @@
 			M.stop_pulling()
 			to_chat(M, span_notice("You slipped on the [name]!"))
 			playsound(src, 'sound/misc/slip.ogg', 50, 1, -3)
-			M.Stun(8)
-			M.Weaken(5)
+			M.status_at_least(EFFECT_STUNNED, 8)
+			M.status_at_least(EFFECT_WEAKENED, 5)
 			seed.thrown_at(src,M)
 			qdel(src)
 			return

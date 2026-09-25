@@ -466,7 +466,7 @@
 /obj/item/projectile/beam/sparkledog/on_hit(atom/target, blocked = 0)
 	if(ishuman(target))
 		var/mob/living/carbon/human/M = target
-		M.druggy = max(M.druggy, 20)
+		M.status_at_least(EFFECT_DRUGGED, 20)
 		if(M.is_injured())
 			to_chat(target, span_notice("As the beam strikes you, you feel a little healthier!"))
 			M.mend(TREAT_TISSUE_REPAIR, 5)

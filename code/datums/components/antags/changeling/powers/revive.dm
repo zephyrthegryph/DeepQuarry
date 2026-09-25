@@ -38,9 +38,9 @@
 
 	C.tod = null
 	C.fully_heal()
-	C.SetParalysis(0)
-	C.SetStunned(0)
-	C.SetWeakened(0)
+	C.status_set(EFFECT_PARALYZED, 0)
+	C.status_set(EFFECT_STUNNED, 0)
+	C.status_set(EFFECT_WEAKENED, 0)
 	C.radiation = 0
 	C.reagents.clear_reagents()
 	if(ishuman(C))

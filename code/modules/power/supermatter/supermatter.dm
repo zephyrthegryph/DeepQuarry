@@ -25,7 +25,7 @@
 // Base variants are applied to everyone on the same Z level
 // Range variants are applied on per-range basis: numbers here are on point blank, it scales with the map size (assumes square shaped Z levels)
 #define DETONATION_RADS 40
-#define DETONATION_MOB_CONCUSSION 4			// Value that will be used for Weaken() for mobs.
+#define DETONATION_MOB_CONCUSSION 4			// Weaken amount (status units) for mobs.
 
 // Base amount of ticks for which a specific type of machine will be offline for. +- 20% added by RNG.
 // This does pretty much the same thing as an electrical storm, it just affects the whole Z level instantly.
@@ -235,7 +235,7 @@
 		if(!(TM.z in affected_z))
 			continue
 
-		mob.Weaken(DETONATION_MOB_CONCUSSION)
+		mob.status_at_least(EFFECT_WEAKENED, DETONATION_MOB_CONCUSSION)
 		to_chat(mob, span_danger("An invisible force slams you against the ground!"))
 
 	// Effect 2: Z-level wide electrical pulse
@@ -475,7 +475,7 @@
 
 	for(var/mob/living/carbon/human/l in view(src, min(7, round(sqrt(power/6))))) // If they can see it without mesons on.  Bad on them.
 		if(!istype(l.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/meson) || l.is_incorporeal()) //Only mesons can protect you! OR if they're not in the same plane of existence
-			l.hallucination = max(0, min(200, l.hallucination + power * config_hallucination_power * sqrt( 1 / max(1,get_dist(l, src)) ) ) )
+			l.status_set(EFFECT_HALLUCINATING, max(0, min(200, l.status_units(EFFECT_HALLUCINATING) + power * config_hallucination_power * sqrt( 1 / max(1,get_dist(l, src)) ) ) ))
 
 	// At a power mult of 0.025 for range, this means a 1000power SM (about normal) will reach 25 tiles and be putting off rad pulses of 500. With 0 protection, you have a 10% chance of getting hit.
 	radiation_pulse(

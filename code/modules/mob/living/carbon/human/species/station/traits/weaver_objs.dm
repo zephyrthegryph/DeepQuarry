@@ -109,7 +109,7 @@
 				)
 			set_dir(L.dir)
 			buckle_mob(L)
-			L.Stun(1)
+			L.status_at_least(EFFECT_STUNNED, 1)
 			to_chat(L, span_danger("The sticky fibers of \the [src] ensnare, trapping you in place!"))
 			trap_active = FALSE
 			desc += " Actually, it looks like it's been all spent."

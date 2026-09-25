@@ -171,7 +171,7 @@
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
 			playsound(src, "punch", 75, 1)
-			Weaken(5)
+			status_at_least(EFFECT_WEAKENED, 5)
 			add_modifier(/datum/modifier/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
 

@@ -83,9 +83,9 @@
 	if(!owner) return
 
 	if(is_bruised())
-		owner.eye_blurry = 20
+		owner.status_set(EFFECT_BLURRY, 20)
 	if(is_broken())
-		owner.Blind(20)
+		owner.status_at_least(EFFECT_BLINDED, 20)
 
 /obj/item/organ/internal/eyes/handle_germ_effects()
 	. = ..() //Up should return an infection level as an integer
@@ -98,7 +98,7 @@
 	if (. >= 2)
 		if(prob(1))
 			owner.custom_pain("Your eyes are watering, making it harder to see clearly for a moment.",1)
-			owner.eye_blurry += 10
+			owner.status_adjust(EFFECT_BLURRY, 10)
 
 /obj/item/organ/internal/eyes/proc/get_total_protection(flash_protection = FLASH_PROTECTION_NONE)
 	return (flash_protection + innate_flash_protection)
@@ -110,4 +110,4 @@
 	. = ..()
 	if (. & EMP_PROTECT_SELF || !robotic || !owner)
 		return
-	owner.eye_blurry += (4/severity)
+	owner.status_adjust(EFFECT_BLURRY, (4/severity))

@@ -123,7 +123,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		if(target.loc != src.loc || target.stat == DEAD)
 			LAZYREMOVE(converting, target)
 			if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
-				target.hallucination = min(target.hallucination, 500)
+				target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING), 500))
 			return 0
 
 		var/corruption_burn = rand(5, 20)
@@ -146,13 +146,13 @@ GLOBAL_LIST_EMPTY(sacrificed)
 					//hallucination is reduced when the step off as well, provided they haven't hit the last stage...
 
 					//5000 is waaaay too much, in practice.
-					target.hallucination = min(target.hallucination + 100, 500)
+					target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING) + 100, 500))
 					target.apply_effect(10, STUTTER)
 					target.injure(INJURY_NEURAL, 1)
 				if(100 to INFINITY)
 					to_chat(target, span_cult("Your entire broken soul and being is engulfed in corruption and flames as your mind shatters away into nothing."))
 					//5000 is waaaay too much, in practice.
-					target.hallucination = min(target.hallucination + 100, 500)
+					target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING) + 100, 500))
 					target.apply_effect(15, STUTTER)
 					target.injure(INJURY_NEURAL, 1)
 
@@ -176,7 +176,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				if(choice == "Submit") //choosing 'Resist' does nothing of course.
 					GLOB.cult.add_antagonist(target.mind)
 					LAZYREMOVE(converting, target)
-					target.hallucination = 0 //sudden clarity
+					target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
 
 		sleep(100) //proc once every 10 seconds
 	return 1
@@ -899,7 +899,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in C
 			if(N)
 				continue
-			C.ear_deaf += 50
+			C.status_adjust(EFFECT_DEAFENED, 50)
 			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
 			affected += C
@@ -920,7 +920,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in C
 			if(N)
 				continue
-			C.ear_deaf += 30
+			C.status_adjust(EFFECT_DEAFENED, 30)
 			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
 			//talismans is weaker.
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
@@ -943,8 +943,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in C
 			if(N)
 				continue
-			C.eye_blurry += 50
-			C.Blind(20)
+			C.status_adjust(EFFECT_BLURRY, 50)
+			C.status_at_least(EFFECT_BLINDED, 20)
 			if(prob(5))
 				C.disabilities |= NEARSIGHTED
 				if(prob(10))
@@ -966,8 +966,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in C
 			if(N)
 				continue
-			C.eye_blurry += 30
-			C.Blind(10)
+			C.status_adjust(EFFECT_BLURRY, 30)
+			C.status_at_least(EFFECT_BLINDED, 10)
 			//talismans is weaker.
 			affected += C
 			C.show_message(span_warning("You feel a sharp pain in your eyes, and the world disappears into darkness.."), 3)
@@ -1055,16 +1055,16 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
 				C.flash_eyes()
-				if(C.stuttering < 1 && (!(C.has_mutation(HULK))))
-					C.stuttering = 1
-				C.Weaken(1)
-				C.Stun(1)
+				if(C.status_units(EFFECT_STUTTERING) < 1 && (!(C.has_mutation(HULK))))
+					C.status_set(EFFECT_STUTTERING, 1)
+				C.status_at_least(EFFECT_WEAKENED, 1)
+				C.status_at_least(EFFECT_STUNNED, 1)
 				C.show_message(span_danger("The rune explodes in a bright flash."), 3)
 				add_attack_logs(user,C,"Stun rune")
 
 			else if(issilicon(L))
 				var/mob/living/silicon/S = L
-				S.Weaken(5)
+				S.status_at_least(EFFECT_WEAKENED, 5)
 				S.show_message(span_danger("BZZZT... The rune has exploded in a bright flash."), 3)
 				add_attack_logs(user,S,"Stun rune")
 		qdel(src)
@@ -1079,15 +1079,15 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				O.show_message(span_boldwarning("[user] invokes a talisman at [T]"), 1)
 
 			if(issilicon(T))
-				T.Weaken(15)
+				T.status_at_least(EFFECT_WEAKENED, 15)
 				add_attack_logs(user,T,"Stun rune")
 			else if(iscarbon(T))
 				var/mob/living/carbon/C = T
 				C.flash_eyes()
 				if (!(C.has_mutation(HULK)))
-					C.silent += 15
-				C.Weaken(25)
-				C.Stun(25)
+					C.status_adjust(EFFECT_MUTED, 15)
+				C.status_at_least(EFFECT_WEAKENED, 25)
+				C.status_at_least(EFFECT_STUNNED, 25)
 				add_attack_logs(user,C,"Stun rune")
 		return
 

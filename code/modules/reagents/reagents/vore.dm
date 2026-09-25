@@ -11,7 +11,7 @@
 	industrial_use = REFINERYEXPORT_REASON_ILLDRUG
 
 /datum/reagent/sorbitol/affect_blood(mob/living/carbon/M, alien, removed)
-	M.make_dizzy(1)
+	M.status_adjust(EFFECT_DIZZY, 1)
 
 	for(var/obj/belly/B as anything in M.vore_organs)
 
@@ -105,9 +105,8 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/sizeoxadone/affect_blood(mob/living/carbon/M, alien, removed)
-	M.make_dizzy(1)
-	if(!M.confused) M.confused = 1
-	M.confused = max(M.confused, 20)
+	M.status_adjust(EFFECT_DIZZY, 1)
+	M.status_at_least(EFFECT_CONFUSED, 20)
 	return
 
 
@@ -125,7 +124,7 @@
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
 /datum/reagent/ickypak/affect_blood(mob/living/carbon/M, alien, removed)
-	M.make_dizzy(1)
+	M.status_adjust(EFFECT_DIZZY, 1)
 	M.injure(INJURY_PAIN, 2, source = src)
 
 	for(var/obj/belly/B as anything in M.vore_organs)
@@ -150,10 +149,10 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/unsorbitol/affect_blood(mob/living/carbon/M, alien, removed)
-	M.make_dizzy(1)
+	M.status_adjust(EFFECT_DIZZY, 1)
 	M.injure(INJURY_PAIN, 1, source = src)
-	M.SetConfused(max(M.confused, 20))
-	M.hallucination = max(M.hallucination, 20) //This used to be += 15 resulting in INFINITE HALLUCINATION
+	M.status_set(EFFECT_CONFUSED, max(M.status_units(EFFECT_CONFUSED), 20))
+	M.status_at_least(EFFECT_HALLUCINATING, 20) //This used to be += 15 resulting in INFINITE HALLUCINATION
 
 	for(var/obj/belly/B as anything in M.vore_organs)
 
@@ -198,7 +197,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(M.reagents.has_reagent(REAGENT_ID_GYNOROVIR) || M.reagents.has_reagent(REAGENT_ID_ANDROGYNOROVIR))
-			H.Confuse(1)
+			H.status_at_least(EFFECT_CONFUSED, 1)
 		else
 			if(!(H.gender == MALE))
 				H.set_gender(MALE)
@@ -222,7 +221,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(M.reagents.has_reagent(REAGENT_ID_ANDROROVIR) || M.reagents.has_reagent(REAGENT_ID_ANDROGYNOROVIR))
-			H.Confuse(1)
+			H.status_at_least(EFFECT_CONFUSED, 1)
 		else
 			if(!(H.gender == FEMALE))
 				H.set_gender(FEMALE)
@@ -246,7 +245,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(M.reagents.has_reagent(REAGENT_ID_GYNOROVIR) || M.reagents.has_reagent(REAGENT_ID_ANDROROVIR))
-			H.Confuse(1)
+			H.status_at_least(EFFECT_CONFUSED, 1)
 		else
 			if(!(H.gender == PLURAL))
 				H.set_gender(PLURAL)
@@ -272,11 +271,11 @@
 		drug_strength *= M.species.chem_strength_tox
 	if(alien == IS_SLIME)
 		drug_strength *= 0.15 //~ 1/6
-	M.druggy = max(M.druggy, drug_strength)
+	M.status_at_least(EFFECT_DRUGGED, drug_strength)
 
 /datum/reagent/drugs/rainbow_toxin/overdose(mob/living/M as mob)
 	if(prob_proc == TRUE && prob(20))
-		M.hallucination = max(M.hallucination, 5)
+		M.status_at_least(EFFECT_HALLUCINATING, 5)
 		prob_proc = FALSE
 	M.injure(INJURY_NEURAL, 0.25*REM, source = src) //Too much isn't good for your long term health...
 	M.injure(INJURY_TOXIN, 0.01*REM, source = src)	//Enough that it'll make your HUD dummy update, but not enough that you'll vomit mid scene. (Sorry emetophiliacs!)
@@ -298,9 +297,9 @@
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
 /datum/reagent/paralysis_toxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.get_weakened() < 50 || M.get_stunned() <50 ) // Let's not leave them PERMA stuck, after all. // stun accounting for crawl
-		M.AdjustWeakened(5) //Stand in for paralyze so you can still talk/emote/see
-		M.AdjustStunned(5) // stun accounting for crawl
+	if(M.status_units(EFFECT_WEAKENED) < 50 || M.status_units(EFFECT_STUNNED) <50 ) // Let's not leave them PERMA stuck, after all. // stun accounting for crawl
+		M.status_adjust(EFFECT_WEAKENED, 5) //Stand in for paralyze so you can still talk/emote/see
+		M.status_adjust(EFFECT_STUNNED, 5) // stun accounting for crawl
 
 /datum/reagent/pain_enzyme
 	factors = alist(BF_ANALGESIA = -200)

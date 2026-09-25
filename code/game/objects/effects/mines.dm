@@ -162,7 +162,7 @@
 	s.set_up(3, 1, src)
 	s.start()
 	if(istype(M))
-		M.Stun(30)
+		M.status_at_least(EFFECT_STUNNED, 30)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
 	SSmotiontracker.ping(src,100)
 	qdel(src)

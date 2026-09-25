@@ -87,7 +87,7 @@
 
 /datum/trait/negative/disability_deaf/apply(datum/species/S,mob/living/carbon/human/H)
 	. = ..()
-	H.ear_deaf = 1
+	H.status_set(EFFECT_DEAFENED, 1)
 	/* //Not used here, used downstream.
 	if(H.stat != DEAD)
 		H.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
@@ -95,7 +95,7 @@
 
 /datum/trait/negative/disability_deaf/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	H.ear_deaf = 0
+	H.status_set(EFFECT_DEAFENED, 0)
 	/* //Not used here, used downstream.
 	H.deaf_loop.stop()
 	*/

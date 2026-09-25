@@ -77,8 +77,8 @@
 	mob_type = /mob/living/simple_mob/vore/alienanimals/dustjumper
 
 /datum/life_system/type_post/simple_mob/vore/alienanimals/dustjumper/tick(mob/living/simple_mob/vore/alienanimals/dustjumper/self, datum/life_context/ctx)
-	. = ..()
-	if(!.)
+	..()
+	if(!ctx?.alive)
 		return
 	if(self.vore_fullness == 0 && self.movement_cooldown == 10)
 		self.movement_cooldown = initial(self.movement_cooldown)

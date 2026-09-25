@@ -599,13 +599,6 @@ GLOBAL_VAR_INIT(life_frames, 0)
 // --- Producers ----------------------------------------------------------------------------
 // Hooks on /mob that the generic mob code calls; living mobs raise the matching channel.
 
-/// Stun, weaken, paralysis, sleep, confusion and blindness setters call this.
-/mob/proc/on_status_counter_changed(reason)
-	return
-
-/mob/living/on_status_counter_changed(reason)
-	om_changed(src, CHANGE_MOB_STATUS)
-
 /// A client logged into or out of this mob: the HUD, senses and client systems restart.
 /mob/living/proc/on_client_changed(reason)
 	om_changed(src, CHANGE_MOB_CLIENT)

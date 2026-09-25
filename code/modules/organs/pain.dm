@@ -83,8 +83,8 @@
 				var/mob/living/carbon/human/H = self
 				maxdam *= H.species.trauma_mod // end
 	if(damaged_organ && self.factor(BF_ANALGESIA) < maxdam)
-		if(maxdam > 10 && self.get_paralysis())
-			self.AdjustParalysis(-round(maxdam/10))
+		if(maxdam > 10 && self.has_status(EFFECT_PARALYZED))
+			self.status_adjust(EFFECT_PARALYZED, -round(maxdam/10))
 		if(maxdam > 50 && prob(maxdam / 5))
 			self.drop_item()
 		var/burning = damaged_organ.get_burn() > damaged_organ.get_trauma()

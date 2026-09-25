@@ -1656,7 +1656,7 @@
 
 /datum/decl/chemical_reaction/instant/slime/rainbow_colors/on_reaction(datum/reagents/holder)
 	for(var/mob/living/carbon/human/H in range(3, holder.my_atom))
-		H.druggy = max(H.druggy, 30)
+		H.status_at_least(EFFECT_DRUGGED, 30)
 	..()
 
 

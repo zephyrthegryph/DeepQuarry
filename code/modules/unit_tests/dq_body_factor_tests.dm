@@ -227,9 +227,9 @@
 	var/blunt = H.injure(INJURY_BLUNT, 4, BP_TORSO, flags = INJURE_SILENT)
 	TEST_ASSERT(dq_near(blunt, base_blunt * 0.5), "physical injury should read BF_INCOMING_PHYSICAL ([base_blunt] -> [blunt])")
 
-	H.SetStunned(0)
-	H.Stun(10)
-	TEST_ASSERT_EQUAL(H.get_stunned(), 5, "stuns should read BF_DISABLE_DURATION")
+	H.status_set(EFFECT_STUNNED, 0)
+	H.status_at_least(EFFECT_STUNNED, 10)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_STUNNED), 5, "stuns should read BF_DISABLE_DURATION")
 
 	// Simple mobs read the same factors for ranged combat.
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/animal/passive/mouse)

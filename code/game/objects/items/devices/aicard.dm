@@ -167,7 +167,7 @@
 	..()
 
 /obj/item/aicard/relaymove(mob/user, direction)
-	if(user.stat || user.get_stunned())
+	if(user.stat || user.has_status(EFFECT_STUNNED))
 		return
 	var/obj/item/rig/rig = src.get_rig()
 	if(istype(rig))

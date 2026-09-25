@@ -188,9 +188,9 @@ if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LI
 fi;
 
 part "life: wake and hibernate in one place"
-# Only life_om.dm changes whether a mob runs (life_hibernate(), life_resume(), the asleep list);
+# Only life_om.dm changes whether a mob runs (life_hibernate(), life_resume(), the asleep bits);
 # producers raise a mob change channel with om_changed() (doc/rewrite/life_on_om.md §5).
-if $grep -n '(life_hibernating|life_asleep)(\[[^]]*\])?\s*[|&]?=[^=]|life_hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/life_om\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+if $grep -n '(life_hibernating|life_asleep_bits|life_asleep_total|life_asleep_n|life_idle_frames|life_hibernating_index)(\[[^]]*\])?\s*[|&+-]?=[^=]|life_hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/life_om\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
 	echo
 	echo -e "${RED}ERROR: direct write to a mob's wake state. Raise a channel with om_changed(), or use life_hibernate()/life_resume().${NC}"
 	FAILED=1

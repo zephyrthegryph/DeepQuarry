@@ -60,7 +60,7 @@
 		if(src.Adjacent(usr))
 			var/egg = rimplant.eggtype
 			new egg(get_turf(src))
-			src.SetStunned(3)
+			src.status_set(EFFECT_STUNNED, 3)
 			playsound(src,'sound/vore/insert.ogg',50,1)
 			var/index = rand(1,3)
 
@@ -82,7 +82,7 @@
 				to_chat(src, span_notice("You feel your legs quake as your muscles fail to stand strong!"))
 				while(rimplant.reagents.total_volume >= rimplant.transfer_amount)
 					if(do_after(src,30,src))
-						src.SetStunned(3)
+						src.status_set(EFFECT_STUNNED, 3)
 						playsound(src,'sound/vore/insert.ogg',50,1)
 						src.apply_effect(10,STUTTER,0)
 						new egg(get_turf(src))

@@ -174,7 +174,7 @@
 			qdel(src)
 			return null
 		var/mob/living/carbon/human/H = M
-		if(!H.hallucination)
+		if(!H.has_status(EFFECT_HALLUCINATING))
 			qdel(src)
 			return null
 

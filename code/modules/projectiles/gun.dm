@@ -456,7 +456,7 @@
 				var/mysize = micro.size_multiplier
 				if(recoil_mode > 0)
 					if(mysize <= 0.60)
-						micro.Weaken(1*recoil_mode)
+						micro.status_at_least(EFFECT_WEAKENED, 1*recoil_mode)
 						if(!istype(src,/obj/item/gun/energy))
 							micro.injure(INJURY_BLUNT, (5-mysize*4)*recoil_mode, null, src)
 							to_chat(micro, span_danger("You're so tiny that you drop the gun and hurt yourself from the recoil!"))

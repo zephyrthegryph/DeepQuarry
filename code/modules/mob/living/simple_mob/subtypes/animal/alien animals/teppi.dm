@@ -653,8 +653,8 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	mob_type = /mob/living/simple_mob/vore/alienanimals/teppi
 
 /datum/life_system/type_post/simple_mob/vore/alienanimals/teppi/tick(mob/living/simple_mob/vore/alienanimals/teppi/self, datum/life_context/ctx)
-	. =..()
-	if(!. || QDELETED(self))
+	..()
+	if(!ctx?.alive || QDELETED(self))
 		return
 	self.wantpet += rand(0,2) * self.affection_factor
 	self.amount_grown += rand(1,5)
@@ -855,7 +855,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		return 0
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_pounce(mob/living/carbon/human/M as mob)
-	M.Weaken(5)
+	M.status_at_least(EFFECT_WEAKENED, 5)
 	animal_nom(M)
 	M.stop_pulling()
 

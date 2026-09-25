@@ -20,9 +20,9 @@
 	if(owner.transforming)
 		return
 	if(prob(5) && prob(7))
-		owner.stuttering = max(15, owner.stuttering)
-		if(owner.get_jittery() < 50)
-			owner.make_jittery(65)
+		owner.status_at_least(EFFECT_STUTTERING, 15)
+		if(owner.status_units(EFFECT_JITTERY) < 50)
+			owner.status_adjust(EFFECT_JITTERY, 65)
 
 /datum/component/nervousness_disability/Destroy(force = FALSE)
 	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)

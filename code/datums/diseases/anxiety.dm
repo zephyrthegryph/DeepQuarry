@@ -25,7 +25,7 @@
 				to_chat(affected_mob, span_notice("You feel panicky."))
 			if(prob(2))
 				to_chat(affected_mob, span_danger("You're overtaken with panic!"))
-				affected_mob.AdjustConfused(rand(4, 6))
+				affected_mob.status_adjust(EFFECT_CONFUSED, rand(4, 6))
 		if(4)
 			if(prob(10))
 				to_chat(affected_mob, span_danger("You feel butterflies in your stomach."))
@@ -34,8 +34,8 @@
 					span_danger("[affected_mob] stumbles around in a panic"),
 					span_userdanger("You have a panic attack!")
 				)
-				affected_mob.AdjustConfused(rand(12, 16))
-				affected_mob.make_jittery(100 + rand(12, 16))
+				affected_mob.status_adjust(EFFECT_CONFUSED, rand(12, 16))
+				affected_mob.status_adjust(EFFECT_JITTERY, 100 + rand(12, 16))
 			if(prob(2))
 				affected_mob.visible_message(
 					span_danger("[affected_mob] coughs up butterflies!"),

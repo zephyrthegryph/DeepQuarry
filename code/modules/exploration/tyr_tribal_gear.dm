@@ -336,7 +336,7 @@
 				user.mend(TREAT_BURN_CARE, 5)
 				user.mend(TREAT_TISSUE_REPAIR, 5)
 			if(I_DISARM)
-				target.Weaken(30)
+				target.status_at_least(EFFECT_WEAKENED, 30)
 			if(I_HURT)
 				var/atom/target_zone = get_edge_target_turf(user,get_dir(user, target))
 				if(!target.anchored)

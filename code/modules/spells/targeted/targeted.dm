@@ -132,14 +132,14 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 	spell_injure(target, INJURY_TOXIN, amt_dam_tox, list(TREAT_ANTITOXIN))
 	spell_oxygen_debt(target, amt_dam_oxy)
 	//disabling
-	target.Weaken(amt_weakened)
-	target.Paralyse(amt_paralysis)
-	target.Stun(amt_stunned)
+	target.status_at_least(EFFECT_WEAKENED, amt_weakened)
+	target.status_at_least(EFFECT_PARALYZED, amt_paralysis)
+	target.status_at_least(EFFECT_STUNNED, amt_stunned)
 	if(amt_weakened || amt_paralysis || amt_stunned)
 		if(target && target.buckled)
 			target.buckled.unbuckle_mob( target, TRUE)
-	target.Blind(amt_eye_blind)
-	target.eye_blurry += amt_eye_blurry
-	target.make_dizzy(amt_dizziness)
-	target.Confuse(amt_confused)
-	target.stuttering += amt_stuttering
+	target.status_at_least(EFFECT_BLINDED, amt_eye_blind)
+	target.status_adjust(EFFECT_BLURRY, amt_eye_blurry)
+	target.status_adjust(EFFECT_DIZZY, amt_dizziness)
+	target.status_at_least(EFFECT_CONFUSED, amt_confused)
+	target.status_adjust(EFFECT_STUTTERING, amt_stuttering)

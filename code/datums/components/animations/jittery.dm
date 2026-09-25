@@ -1,46 +1,35 @@
 /*
-jittery process - wiggles the mob's pixel offset over time
+jittery shake - wiggles the mob's pixel offset while the mob is jittery.
+
+Jitters are the EFFECT_JITTERY status (0-1000 points, below 100 is not jittery), which wears off
+on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob adds this component when the
+status starts and deletes it when it ends (on_status_changed()).
 */
 
 /datum/component/jittery_shake
 	var/mob/owner
-	var/jitteriness
+	/// Whether the owner was resting when the status's rate was last checked.
+	var/was_resting
 
 /datum/component/jittery_shake/Initialize()
 	if (!ismob(parent))
 		return COMPONENT_INCOMPATIBLE
 	owner = parent
-	add_trait_life_system(owner, /datum/life_system/trait/jittery_shake)
+	was_resting = owner.resting
 	RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(mob_death))
 	addtimer(CALLBACK(src, PROC_REF(handle_tick)), 1, TIMER_DELETE_ME) // Needs to be a LOT faster than life ticks
-
-/datum/component/jittery_shake/proc/process_life()
-	SIGNAL_HANDLER
-
-	if(QDELETED(parent))
-		return
-
-	//Resting
-	if(owner.resting)
-		jitteriness -= 15
-	else
-		jitteriness -= 3
-
-	// Handle jitters
-	if(jitteriness <= 0)
-		qdel(src)
-		return
 
 /datum/component/jittery_shake/proc/handle_tick()
 	if(QDELETED(parent))
 		return
 
-	// Handle jitters
-	if(jitteriness <= 0)
-		qdel(src)
-		return
+	// Resting wears jitters off faster.
+	if(owner.resting != was_resting)
+		was_resting = owner.resting
+		owner.status_rate_check(EFFECT_JITTERY)
 
 	// Shakey shakey
+	var/jitteriness = owner.status_units(EFFECT_JITTERY)
 	if(jitteriness > 100)
 		var/amplitude = min(4, jitteriness / 100)
 		owner.pixel_x = owner.old_x + rand(-amplitude, amplitude)
@@ -50,52 +39,12 @@ jittery process - wiggles the mob's pixel offset over time
 
 /datum/component/jittery_shake/proc/mob_death()
 	SIGNAL_HANDLER
-	jitteriness = 0
-	qdel(src)
+	owner.status_end(EFFECT_JITTERY)
 
 /datum/component/jittery_shake/Destroy(force = FALSE)
-	remove_trait_life_system(owner, /datum/life_system/trait/jittery_shake)
 	UnregisterSignal(owner, COMSIG_MOB_DEATH)
 	// Reset the pixel offsets to zero
 	owner.pixel_x = owner.old_x
 	owner.pixel_y = owner.old_y
 	owner = null
 	. = ..()
-
-
-
-
-/* jitteriness
-value of jittery ranges from 0 to 1000
-below 100 is not jittery
-*/
-/mob/proc/make_jittery(amount)
-	if(amount < 0 && get_jittery() == 0) // If removing, check if we're already empty!
-		return
-	var/datum/component/jittery_shake/JC = LoadComponent(/datum/component/jittery_shake);
-	JC.jitteriness = max(min(1000, JC.jitteriness + amount),0)	// store what will be new value
-																// clamped to max 1000
-
-/mob/proc/clear_jittery()
-	qdel(GetComponent(/datum/component/jittery_shake))
-
-/mob/proc/get_jittery()
-	var/datum/component/jittery_shake/JC = GetComponent(/datum/component/jittery_shake);
-	if(!JC)
-		return 0
-	return max(JC.jitteriness,0)
-
-// Disabled on borgs
-/mob/living/silicon/make_jittery(amount)
-	return
-
-/mob/living/silicon/get_jittery()
-	return 0
-
-/// Trait system: jitters wear off. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/jittery_shake
-	name = "jittery shake"
-	component_type = /datum/component/jittery_shake
-
-/datum/life_system/trait/jittery_shake/tick_component(mob/living/self, datum/component/jittery_shake/component)
-	component.process_life()

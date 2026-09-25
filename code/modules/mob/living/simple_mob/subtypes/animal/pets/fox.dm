@@ -133,8 +133,8 @@
 	mob_type = /mob/living/simple_mob/animal/passive/fox/fluff
 
 /datum/life_system/type_post/simple_mob/animal/passive/fox/fluff/tick(mob/living/simple_mob/animal/passive/fox/fluff/self, datum/life_context/ctx)
-	. = ..()
-	if(!. || !friend) return
+	..()
+	if(!ctx?.alive || !friend) return
 
 	var/friend_dist = get_dist(self,friend)
 

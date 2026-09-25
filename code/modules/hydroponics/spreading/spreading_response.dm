@@ -115,5 +115,5 @@
 			buckle_mob(victim)
 			victim.set_dir(pick(GLOB.cardinal))
 			to_chat(victim, span_danger("Tendrils [pick("wind", "tangle", "tighten")] around you!"))
-			victim.Weaken(0.5)
+			victim.status_at_least(EFFECT_WEAKENED, 0.5)
 			seed.do_thorns(victim,src)

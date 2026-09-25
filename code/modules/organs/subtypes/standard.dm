@@ -149,7 +149,7 @@
 	if (. >= 2)
 		if(prob(.))
 			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			owner.Weaken(5)
+			owner.status_at_least(EFFECT_WEAKENED, 5)
 
 /obj/item/organ/external/leg/is_usable() // We only do legs, otherwise the stance_damage will be 8 instead of 4, meaning crutches do nothing as they only negate 4
 	if(robotic == ORGAN_FLESH && owner.sdisabilities & SPINE)
@@ -202,7 +202,7 @@
 	if (. >= 2)
 		if(prob(.))
 			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			owner.Weaken(5)
+			owner.status_at_least(EFFECT_WEAKENED, 5)
 
 /obj/item/organ/external/foot/organ_can_feel_pain()
 	if(robotic < ORGAN_ROBOT && owner.sdisabilities & SPINE)
@@ -341,7 +341,7 @@
 	if (. >= 2)
 		if(prob(.))
 			owner.custom_pain("Your [name] burns like it's on fire!",15)
-			owner.eye_blurry += 20 //Specific level 2 'feature
+			owner.status_adjust(EFFECT_BLURRY, 20) //Specific level 2 'feature
 
 /obj/item/organ/external/head/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/toy/plushie) || istype(I, /obj/item/organ/external/head))

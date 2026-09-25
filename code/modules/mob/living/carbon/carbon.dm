@@ -119,19 +119,19 @@
 		if(species.emp_sensitivity & EMP_BLIND)
 			if(blind_dur >= 1) //don't flash them unless they actually roll a positive blind duration
 				src.flash_eyes(3)	//3 allows it to bypass any tier of eye protection, necessary or else sec sunglasses/etc. protect you from this
-			Blind(max(0,blind_dur))
+			status_at_least(EFFECT_BLINDED, max(0,blind_dur))
 		if(species.emp_sensitivity & EMP_DEAFEN)
 			src.ear_damage += rand(0,deafen_dur) //this will heal pretty quickly, but spamming them at someone could cause serious damage
-			src.ear_deaf = max(src.ear_deaf,deafen_dur)
+			src.status_at_least(EFFECT_DEAFENED, deafen_dur)
 			src.deaf_loop.start() // Ear Ringing/Deafness
 		if(species.emp_sensitivity & EMP_CONFUSE)
 			if(confuse_dur >= 1)
 				to_chat(src, span_danger("Oh god, everything's spinning!"))
-			Confuse(max(0,confuse_dur))
+			status_at_least(EFFECT_CONFUSED, max(0,confuse_dur))
 		if(species.emp_sensitivity & EMP_WEAKEN)
 			if(weaken_dur >= 1)
 				to_chat(src, span_danger("Your limbs go slack!"))
-			Weaken(max(0,weaken_dur))
+			status_at_least(EFFECT_WEAKENED, max(0,weaken_dur))
 		//physical damage block, deals (minor-4) 5-15, 10-20, 15-25, 20-30 (extreme-1) of *each* type
 		if(species.emp_sensitivity & EMP_BRUTE_DMG)
 			injure(INJURY_BLUNT, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
@@ -174,13 +174,13 @@
 	if(stun)
 		switch(shock_damage)
 			if(16 to 20)
-				Stun(2)
+				status_at_least(EFFECT_STUNNED, 2)
 			if(21 to 25)
-				Weaken(2)
+				status_at_least(EFFECT_WEAKENED, 2)
 			if(26 to 30)
-				Weaken(5)
+				status_at_least(EFFECT_WEAKENED, 5)
 			if(31 to INFINITY)
-				Weaken(10) //This should work for now, more is really silly and makes you lay there forever
+				status_at_least(EFFECT_WEAKENED, 10) //This should work for now, more is really silly and makes you lay there forever
 
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(5, 1, loc)
@@ -280,9 +280,9 @@
 			if(show_ssd && !client && !teleop)
 				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
 				span_notice("You shake [src], but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?"))
-			else if(lying || src.sleeping)
-				AdjustSleeping(-5)
-				if(src.sleeping == 0)
+			else if(lying || src.has_status(EFFECT_SLEEPING))
+				status_adjust(EFFECT_SLEEPING, -5)
+				if(src.status_units(EFFECT_SLEEPING) == 0)
 					src.resting = 0
 				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
 									span_notice("You shake [src] trying to wake [H.p_them()] up!"))
@@ -308,9 +308,9 @@
 					M.adjust_fire_stacks(-1)
 				if(M.on_fire)
 					src.ignite_mob()
-			AdjustParalysis(-3)
-			AdjustStunned(-3)
-			AdjustWeakened(-3)
+			status_adjust(EFFECT_PARALYZED, -3)
+			status_adjust(EFFECT_STUNNED, -3)
+			status_adjust(EFFECT_WEAKENED, -3)
 
 			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 
@@ -410,7 +410,7 @@
 		if(world.time >= next_emote)
 			src.emote("sflip")
 			return TRUE
-	Weaken(FLOOR(stun_duration/2, 1))
+	status_at_least(EFFECT_WEAKENED, FLOOR(stun_duration/2, 1))
 	return TRUE
 
 /mob/living/carbon/get_default_language()

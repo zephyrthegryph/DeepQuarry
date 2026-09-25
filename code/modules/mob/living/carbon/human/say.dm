@@ -145,9 +145,9 @@
 	return special_voice
 
 /mob/living/carbon/human/handle_speech_problems(list/message_data)
-	if(silent || (sdisabilities & MUTE) || is_paralyzed())
+	if(has_status(EFFECT_MUTED) || (sdisabilities & MUTE) || is_paralyzed())
 		// MUTE shouldn't suppress noise language (audible say emotes), consistent with * emotes bypassing mute in say().
-		if((sdisabilities & MUTE) && !silent && !is_paralyzed())
+		if((sdisabilities & MUTE) && !has_status(EFFECT_MUTED) && !is_paralyzed())
 			var/list/pieces = message_data[1]
 			if(islist(pieces) && LAZYLEN(pieces))
 				var/datum/multilingual_say_piece/first = pieces[1]
@@ -165,7 +165,7 @@
 				message_data[2] = "HIIII EVERYPONY"
 			return 1
 
-	if(factor(BF_PENALTY_SCALE) < 1 || (get_jittery() >= 100 && !stuttering)) // motor mouth, check for stuttering so anxiety doesn't do hyperzine text
+	if(factor(BF_PENALTY_SCALE) < 1 || (status_units(EFFECT_JITTERY) >= 100 && !has_status(EFFECT_STUTTERING))) // motor mouth, check for stuttering so anxiety doesn't do hyperzine text
 		// Despite trying to url/html decode these, byond is just being bad and I dunno.
 		var/static/regex/speedboost_initial = new (@"&[a-z]{2,5};|&#\d{2};","g")
 		// Not herestring because bad vs code syntax highlight panics at apostrophe

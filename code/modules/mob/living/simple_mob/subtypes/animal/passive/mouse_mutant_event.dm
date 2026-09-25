@@ -6,7 +6,7 @@
 	mob_type = /mob/living/simple_mob/animal/passive/mouse/event
 
 /datum/life_system/type_post/simple_mob/animal/passive/mouse/event/tick(mob/living/simple_mob/animal/passive/mouse/event/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.amount_grown >= 0)
 		self.amount_grown += rand(0,4)
 	if(self.amount_grown >= 100 && self.icon_state != self.icon_dead)

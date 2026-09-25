@@ -36,7 +36,7 @@
 					to_chat(affected_mob, span_danger("Strange buzzing fills your head, removing all thoughts."))
 			if(prob(3))
 				to_chat(affected_mob, span_danger("You lose consciousness..."))
-				affected_mob.Sleeping(rand(5, 10))
+				affected_mob.status_at_least(EFFECT_SLEEPING, rand(5, 10))
 				if(prob(1))
 					affected_mob.emote("snore")
 			if(prob(15))

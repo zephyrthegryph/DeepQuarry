@@ -186,7 +186,7 @@
 
 	if(ai_brain) ai_brain.busy = FALSE
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.Weaken(2)	//get knocked down, idiot
+		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
 
 /mob/living/simple_mob/vore/scel/proc/tongue(atom/A)
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/appendage(get_turf(src))

@@ -95,7 +95,7 @@
 			if(!O.blinded && isliving(O))
 				var/mob/living/L = O
 				L.flash_eyes()
-		O.Weaken(flash_time)
+		O.status_at_least(EFFECT_WEAKENED, flash_time)
 
 /obj/machinery/flasher/emp_act(severity, recursive)
 	. = ..()

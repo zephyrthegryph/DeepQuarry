@@ -92,12 +92,7 @@
 	var/atom/movable/pulling = null
 	var/transforming = null	//Carbon
 	var/other = 0.0
-	var/eye_blind = null	//Carbon
-	var/eye_blurry = null	//Carbon
-	var/ear_deaf = null		//Carbon
 	var/ear_damage = null	//Carbon
-	var/stuttering = null	//Carbon
-	var/slurring = null		//Carbon
 	var/real_name = null
 	var/nickname = null
 	var/flavor_text = ""
@@ -109,11 +104,8 @@
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
-	var/druggy = 0			//Carbon
-	var/confused = 0		//Carbon
 	var/antitoxs = null
 	var/phoron = null
-	var/sleeping = 0		//Carbon
 	var/resting = 0			//Carbon
 	var/lying = 0
 	var/lying_prev = 0
@@ -137,7 +129,6 @@
 	var/cpr_time = 1.0//Carbon
 
 	var/bodytemperature = BODYTEMP_NORMAL
-	var/drowsyness = 0.0//Carbon
 	var/charges = 0.0
 
 	var/losebreath = 0.0//Carbon
@@ -215,7 +206,7 @@
 
 	var/update_icon = 1 //Set to 1 to trigger update_icons() at the next life() call
 
-	var/status_flags = CANSTUN|CANWEAKEN|CANPARALYSE|CANPUSH	//bitflags defining which status effects can be inflicted (replaces canweaken, canstun, etc)
+	var/status_flags = CANPUSH	//bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH, GODMODE. Status immunities are EFFECT_IMMUNE_* effects.
 
 	var/tmp/area/lastarea = null
 	var/tmp/lastareachange = null

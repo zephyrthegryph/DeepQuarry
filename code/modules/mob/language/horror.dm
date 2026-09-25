@@ -17,7 +17,7 @@
 //Special, spooky effects when you speak.
 /datum/language/redspace/broadcast(mob/living/speaker,message,speaker_mask)
 	if(prob(10))
-		speaker.hallucination += 5
+		speaker.status_adjust(EFFECT_HALLUCINATING, 5)
 
 	if(prob(5))
 		speaker.visible_message(span_danger("[speaker] suddenly " + pick("writhes", "twitches", "shudders", "quivers", "contorts unnaturally")))

@@ -189,15 +189,15 @@
 
 	if(!problems) //Minor stuff that we really don't care much about, but can be annoying! So let's tell people how to fix it. But only if they don't  have a health crisis going on!
 		var/minor_problems = ""
-		if(user.hallucination)
+		if(user.has_status(EFFECT_HALLUCINATING))
 			minor_problems += "<br>" + span_warning("Brain activity suggesting severe mental inhibitions detected - medical assistance recommended.")
-		if(user.drowsyness || user.sleeping)
+		if(user.has_status(EFFECT_DROWSY) || user.has_status(EFFECT_SLEEPING))
 			minor_problems += "<br>" + span_warning("Mild mental inhibitions detected - drinking coffee can improve symptoms and stimulate nervous system.")
 		if(is_drunk)
 			minor_problems += "<br>" + span_warning("Ethanol intoxication detected - suggest close observation to alleviate risk of injury.")
 		if(user.current_pain())
 			minor_problems += "<br>" + span_warning("Mild concussion detected - advising bed rest until feeling better.")
-		if(user.get_jittery() || user.get_dizzy())
+		if(user.has_status(EFFECT_JITTERY) || user.has_status(EFFECT_DIZZY))
 			minor_problems += "<br>" + span_warning("Neurological symptoms detected - advising bed rest until feeling better.") //Resting fixes dizziness and jitteryness!
 		else
 			minor_problems += "<br>" + span_notice("No anatomical issues detected.")

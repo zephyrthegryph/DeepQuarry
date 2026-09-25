@@ -51,9 +51,9 @@
 		benchmark_quiet_simple_mob(M)
 		M.low_priority = FALSE
 		if(i <= busy_mice)
-			// A long sleep keeps its status systems (and so its Life) running on both schedulers.
-			M.status_flags |= CANSTUN
-			M.SetSleeping(100000)
+			// A long sleep kept the old scheduler's status systems (and so its Life) running; on the
+			// object model it is a timed contribution nothing ticks (life_on_om_benchmark.md).
+			M.status_set(EFFECT_SLEEPING, 100000)
 		mobs += M
 		CHECK_TICK
 	living_count = length(mobs)

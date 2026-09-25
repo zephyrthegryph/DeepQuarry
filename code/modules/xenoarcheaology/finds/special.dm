@@ -218,7 +218,7 @@
 			), 50, 1, -3)
 			to_chat(M, span_cult("The [src] phases right into your body, your entire form feeling cold and numb!")) //You just had a ghost possess / take residence you...YEAH, it's going to be alarming!
 			M.visible_message(span_cult("[M]'s body glows bright red for a moment as glyphs spread across their form!")) //Let's try something fancy.
-			M.Sleeping(rand(5, 10))
+			M.status_at_least(EFFECT_SLEEPING, rand(5, 10))
 
 			src.loc = null
 	else

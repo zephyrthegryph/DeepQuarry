@@ -485,9 +485,9 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	if (emote == "pale")
 		src.uses--
 		to_chat(source, span_notice("You feel a sudden surge of energy!"))
-		source.SetStunned(0)
-		source.SetWeakened(0)
-		source.SetParalysis(0)
+		source.status_set(EFFECT_STUNNED, 0)
+		source.status_set(EFFECT_WEAKENED, 0)
+		source.status_set(EFFECT_PARALYZED, 0)
 
 	return
 

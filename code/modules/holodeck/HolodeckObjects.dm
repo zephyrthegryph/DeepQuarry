@@ -192,12 +192,12 @@
 				if(2)
 					M.visible_message(span_danger("[user] bashes [M] against \the [src]!"))
 					if (prob(50))
-						M.Weaken(1)
+						M.status_at_least(EFFECT_WEAKENED, 1)
 					M.injure(INJURY_PAIN, 10, null, src)
 					hit(25)
 				if(3)
 					M.visible_message(span_danger("<big>[user] crushes [M] against \the [src]!</big>"))
-					M.Weaken(5)
+					M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_PAIN, 20, null, src)
 					hit(50)
 			return
@@ -418,7 +418,7 @@
 			to_chat(user, span_warning("You need a better grip to do that!"))
 			return
 		G.affecting.loc = src.loc
-		G.affecting.Weaken(5)
+		G.affecting.status_at_least(EFFECT_WEAKENED, 5)
 		visible_message(span_warning("[G.assailant] dunks [G.affecting] into the [src]!"), 3)
 		qdel(W)
 		return

@@ -143,10 +143,10 @@
 	holder.mend(TREAT_OXYGENATION, 5)
 	holder.mend(TREAT_ANTITOXIN, 5)
 	holder.mend(TREAT_ANALGESIC, 5)
-	holder.AdjustWeakened(-5)
-	holder.AdjustSleeping(-5)
-	holder.AdjustStunned(-5)
-	holder.eye_blurry = 0
+	holder.status_adjust(EFFECT_WEAKENED, -5)
+	holder.status_adjust(EFFECT_SLEEPING, -5)
+	holder.status_adjust(EFFECT_STUNNED, -5)
+	holder.status_set(EFFECT_BLURRY, 0)
 
 /datum/modifier/voltaic_overdrive/on_applied()
 	. = ..()

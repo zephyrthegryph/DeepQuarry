@@ -624,7 +624,7 @@
 	if(!H)
 		return
 
-	if((H == wearer && (H.stat||H.get_paralysis()||H.get_stunned())) && !forced) // If the user isn't wearing the suit it's probably an AI.
+	if((H == wearer && (H.stat||H.has_status(EFFECT_PARALYZED)||H.has_status(EFFECT_STUNNED))) && !forced) // If the user isn't wearing the suit it's probably an AI.
 		return
 
 	var/obj/item/check_slot
@@ -751,7 +751,7 @@
 /obj/item/rig/proc/shock(mob/user)
 	if (electrocute_mob(user, cell, src)) //electrocute_mob() handles removing charge from the cell, no need to do that here.
 		spark_system.start()
-		if(user.get_stunned())
+		if(user.has_status(EFFECT_STUNNED))
 			return 1
 	return 0
 

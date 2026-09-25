@@ -167,7 +167,7 @@
 	end_view()
 	qdel(src)
 
-/datum/component/remote_view/proc/handle_status_effects(datum/source, amount, ignore_canstun)
+/datum/component/remote_view/proc/handle_status_effects(datum/source, amount)
 	SIGNAL_HANDLER
 	PROTECTED_PROC(TRUE)
 	RETURN_TYPE(null)
@@ -429,7 +429,7 @@
 	UnregisterSignal(host_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 	. = ..()
 
-/datum/component/remote_view/mob_holding_item/handle_status_effects(datum/source, amount, ignore_canstun)
+/datum/component/remote_view/mob_holding_item/handle_status_effects(datum/source, amount)
 	if(host_mob.loc == remote_view_target) // If we are still inside our holder or belly than don't bother spamming this
 		return
 	. = ..()

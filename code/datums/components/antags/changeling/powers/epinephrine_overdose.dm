@@ -31,9 +31,9 @@
 	var/mob/living/carbon/human/C = src
 	to_chat(C, span_notice("Energy rushes through us.  [C.lying ? "We arise." : ""]"))
 	C.set_stat(CONSCIOUS)
-	C.SetParalysis(0)
-	C.SetStunned(0)
-	C.SetWeakened(0)
+	C.status_set(EFFECT_PARALYZED, 0)
+	C.status_set(EFFECT_STUNNED, 0)
+	C.status_set(EFFECT_WEAKENED, 0)
 	C.lying = 0
 	C.update_canmove()
 	C.reagents.add_reagent("epinephrine", 20)
@@ -63,9 +63,9 @@
 /datum/reagent/epinephrine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.AdjustParalysis(-2)
-	M.AdjustStunned(-2)
-	M.AdjustWeakened(-2)
+	M.status_adjust(EFFECT_PARALYZED, -2)
+	M.status_adjust(EFFECT_STUNNED, -2)
+	M.status_adjust(EFFECT_WEAKENED, -2)
 	M.injure(INJURY_TOXIN, removed * 2.5, source = src) //It gives you 20units of epinephrine. 50 toxins damage. 1 Toxin per tick.
 	..()
 	return

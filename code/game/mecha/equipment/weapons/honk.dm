@@ -25,12 +25,12 @@
 				continue
 		to_chat(M, span_warning("Your ears feel like they're bleeding!"))
 		playsound(M, 'sound/effects/bang.ogg', 70, 1, 30)
-		M.SetSleeping(0)
-		M.ear_deaf += 30
+		M.status_set(EFFECT_SLEEPING, 0)
+		M.status_adjust(EFFECT_DEAFENED, 30)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 		M.ear_damage += rand(5, 20)
-		M.Weaken(3)
-		M.Stun(5)
+		M.status_at_least(EFFECT_WEAKENED, 3)
+		M.status_at_least(EFFECT_STUNNED, 5)
 	chassis.use_power(energy_drain)
 	src.mecha_log_message("Used a sound emission device.")
 	do_after_cooldown()

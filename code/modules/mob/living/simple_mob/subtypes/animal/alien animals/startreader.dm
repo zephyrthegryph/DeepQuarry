@@ -88,17 +88,17 @@
 /mob/living/simple_mob/vore/alienanimals/startreader/apply_melee_effects(mob/living/L)
 	if(!isliving(L))
 		return
-	if(L.get_weakened()) //Don't stun people while they're already stunned! That's SILLY!
+	if(L.has_status(EFFECT_WEAKENED)) //Don't stun people while they're already stunned! That's SILLY!
 		return
 	if(prob(15))
 		visible_message(span_danger("\The [src] trips \the [L]!"))
-		L.AdjustWeakened(rand(1,10))
+		L.status_adjust(EFFECT_WEAKENED, rand(1,10))
 
 /datum/life_system/type_post/simple_mob/vore/alienanimals/startreader
 	mob_type = /mob/living/simple_mob/vore/alienanimals/startreader
 
 /datum/life_system/type_post/simple_mob/vore/alienanimals/startreader/tick(mob/living/simple_mob/vore/alienanimals/startreader/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.flip_cooldown == 1)
 		self.flip_cooldown = 0
 		self.flipped = FALSE
@@ -107,16 +107,16 @@
 		return
 	if(self.flip_cooldown)
 		self.flip_cooldown --
-		self.SetStunned(2)
+		self.status_set(EFFECT_STUNNED, 2)
 
 /mob/living/simple_mob/vore/alienanimals/startreader/proc/handle_flip()
 	if(flipped)
 		set_armor(dq_armor_none())
 		icon_living = "startreader_flipped"
-		AdjustStunned(flip_cooldown)
+		status_adjust(EFFECT_STUNNED, flip_cooldown)
 	else
 		set_armor(dq_armor(list(MELEE = 100, BULLET = 100, LASER = 100, ENERGY = 100, BIO = 100, ARMOR_RAD = 100)))
 		icon_living = "startreader"
-		SetStunned(0)
+		status_set(EFFECT_STUNNED, 0)
 
 	update_icon()

@@ -148,7 +148,7 @@
 	if(INCAPACITATED_IGNORING(src, INCAPABLE_GRAB))
 		return
 
-	if(stat || get_paralysis() || get_stunned())
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED))
 		return
 
 	if(restrained())

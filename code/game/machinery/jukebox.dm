@@ -235,16 +235,16 @@
 				for(var/mob/living/carbon/M in ohearers(6, src))
 					if(M.get_ear_protection() >= 2)
 						continue
-					M.SetSleeping(0)
-					M.stuttering += 20
-					M.ear_deaf += 30
+					M.status_set(EFFECT_SLEEPING, 0)
+					M.status_adjust(EFFECT_STUTTERING, 20)
+					M.status_adjust(EFFECT_DEAFENED, 30)
 					M.deaf_loop.start() // Ear Ringing/Deafness
-					M.Weaken(3)
+					M.status_at_least(EFFECT_WEAKENED, 3)
 					if(prob(30))
-						M.Stun(10)
-						M.Paralyse(4)
+						M.status_at_least(EFFECT_STUNNED, 10)
+						M.status_at_least(EFFECT_PARALYZED, 4)
 					else
-						M.make_jittery(500)
+						M.status_adjust(EFFECT_JITTERY, 500)
 				addtimer(CALLBACK(src, PROC_REF(explode)), 1.5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
 			else if(current_track == null)
 				to_chat(ui.user, "No track selected.")

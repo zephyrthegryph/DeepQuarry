@@ -376,7 +376,7 @@
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.Stun(stun_duration)
+	M.status_at_least(EFFECT_STUNNED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pen/autostun/paralyse
@@ -386,7 +386,7 @@
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.Paralyse(stun_duration)
+	M.status_at_least(EFFECT_PARALYZED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pen/autostun/weaken
@@ -396,5 +396,5 @@
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.Weaken(stun_duration)
+	M.status_at_least(EFFECT_WEAKENED, stun_duration)
 	return ITEM_INTERACT_SUCCESS

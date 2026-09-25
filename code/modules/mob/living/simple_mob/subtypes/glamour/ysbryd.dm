@@ -149,7 +149,7 @@
 	chosen_target.fear = min((chosen_target.fear + 3),102)
 	if(world.time >= (last_effect + 30 SECONDS))
 		if(prob(5))
-			chosen_target.hallucination = max(chosen_target.hallucination,10)
+			chosen_target.status_at_least(EFFECT_HALLUCINATING, 10)
 			last_effect = world.time
 		if(prob(5))
 			var/chosen_threat = pick(emote_threats)

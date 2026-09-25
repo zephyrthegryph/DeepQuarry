@@ -104,7 +104,7 @@
 	// the patient as the pain peaks. Doesn't damage; just incapacitates
 	// briefly.
 	if(prob(3 * scale))
-		M.Weaken(2)
+		M.status_at_least(EFFECT_WEAKENED, 2)
 
 
 /datum/affliction_symptom/jaundice/tick(mob/living/M, datum/affliction/source)

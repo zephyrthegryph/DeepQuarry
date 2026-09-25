@@ -214,11 +214,11 @@
 
 			if (get_ear_protection() < 2)
 				ear_damage += 30
-				ear_deaf += 120
+				status_adjust(EFFECT_DEAFENED, 120)
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
 			if (prob(70) && !shielded)
-				Paralyse(10)
-				Sleeping(10)
+				status_at_least(EFFECT_PARALYZED, 10)
+				status_at_least(EFFECT_SLEEPING, 10)
 
 		if(3.0)
 			b_loss += 30
@@ -226,11 +226,11 @@
 				b_loss = b_loss/2
 			if (get_ear_protection() < 2)
 				ear_damage += 15
-				ear_deaf += 60
+				status_adjust(EFFECT_DEAFENED, 60)
 				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
 			if (prob(50) && !shielded)
-				Paralyse(10)
-				Sleeping(10)
+				status_at_least(EFFECT_PARALYZED, 10)
+				status_at_least(EFFECT_SLEEPING, 10)
 
 	// focus most of the blast on one organ
 	var/obj/item/organ/external/take_blast = pick(organs)
@@ -1743,7 +1743,7 @@
 
 /mob/living/carbon/human/proc/update_icon_special() //For things such as teshari hiding and whatnot.
 	if(status_flags & HIDING) // Hiding? Carry on.
-		if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned() || restrained() || buckled || LAZYLEN(grabbed_by) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
+		if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained() || buckled || LAZYLEN(grabbed_by) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
 			reveal(null)
 		else
 			layer = HIDING_LAYER
@@ -1877,7 +1877,7 @@
 	set category = "Abilities.General"
 	set desc = "Switch your horizontal direction while prone."
 
-	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special)
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 

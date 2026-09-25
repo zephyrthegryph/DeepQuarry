@@ -11,15 +11,32 @@
 
 /proc/om_library_effects()
 	return list(
-		// Statuses: any source makes them true; timed applies keep the longest.
-		// Incapacitation. Mobs apply these through Stun()/Weaken()/Paralyse() and friends
-		// (doc/rewrite/life_on_om.md §7); the effect type keeps canmove, lying and alerts in step.
-		EFFECT_STUNNED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_incapacitation),
-		EFFECT_WEAKENED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_incapacitation),
-		EFFECT_PARALYZED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_incapacitation),
+		// Mob statuses: any source makes them true; timed applies keep the longest. Mobs apply
+		// them through status_at_least()/status_set()/status_adjust() (doc/rewrite/life_on_om.md
+		// §7); each type (statuses.dm) declares its immunity, signal, alert and indicator.
+		EFFECT_STUNNED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/stunned),
+		EFFECT_WEAKENED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/weakened),
+		EFFECT_PARALYZED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/paralyzed),
+		EFFECT_SLEEPING = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/sleeping),
+		EFFECT_CONFUSED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/confused),
+		EFFECT_BLINDED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/blinded),
+		EFFECT_BLURRY = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/blurry),
+		EFFECT_DEAFENED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/deafened),
+		EFFECT_STUTTERING = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/stuttering),
+		EFFECT_MUTED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/muted),
+		EFFECT_DRUGGED = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/drugged),
+		EFFECT_SLURRING = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/slurring),
+		EFFECT_DROWSY = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/drowsy),
+		EFFECT_HALLUCINATING = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/hallucinating),
+		EFFECT_DIZZY = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/dizzy),
+		EFFECT_JITTERY = list("combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_status/jittery),
+		// Status immunities (statuses.dm): held by mob type declarations, mutations, godmode.
+		EFFECT_IMMUNE_STUN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
+		EFFECT_IMMUNE_WEAKEN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
+		EFFECT_IMMUNE_PARALYZE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
+		EFFECT_IMMUNE_DIZZY = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
+		EFFECT_IMMUNE_JITTER = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "type" = /datum/om/effect/mob_immunity),
 		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
-		EFFECT_BLINDED = list("combine" = COMBINE_ANY, "stacking" = STACKING_EXTEND, "channel" = CHANGE_MOB_STATUS),
-		EFFECT_MUTED = list("combine" = COMBINE_ANY, "stacking" = STACKING_EXTEND, "channel" = CHANGE_MOB_STATUS),
 		EFFECT_SLOWED = list("combine" = COMBINE_SUM, "channel" = CHANGE_MOB_MOVEMENT),
 		// Composites: defined from other effects, no contributions of their own.
 		EFFECT_CAN_MOVE = list("expr" = NOT_OF(ANY_OF(EFFECT_STUNNED, EFFECT_WEAKENED, EFFECT_PARALYZED, EFFECT_BUCKLED)), "channel" = CHANGE_MOB_CAN_MOVE),

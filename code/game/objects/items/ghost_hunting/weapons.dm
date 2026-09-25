@@ -119,8 +119,8 @@
 	grabbed_entity = WEAKREF(target)
 	if(isliving(target))
 		var/mob/living/target_mob = target
-		target_mob.Weaken(3)
-		target_mob.Stun(3)
+		target_mob.status_at_least(EFFECT_WEAKENED, 3)
+		target_mob.status_at_least(EFFECT_STUNNED, 3)
 		to_chat(target, span_danger("You feel yourself weakened from the [src]'s beam!"))
 
 	// The delay, and test for if the scan succeeds or not.

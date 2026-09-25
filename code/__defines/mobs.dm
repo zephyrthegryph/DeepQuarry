@@ -12,9 +12,7 @@
 #define DEAD        2
 
 // Bitflags defining which status effects could be or are inflicted on a mob.
-#define CANSTUN		0x1
-#define CANWEAKEN	0x2
-#define CANPARALYSE	0x4
+// Status immunities are effects (EFFECT_IMMUNE_*, statuses.dm), not flags.
 #define CANPUSH		0x8
 #define LEAPING		0x10
 #define HIDING		0x20

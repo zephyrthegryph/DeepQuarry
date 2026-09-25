@@ -31,7 +31,7 @@
 	set category = "Abilities.General"
 
 
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
 		to_chat(src, "You cannot bite anyone in your current state!")
 		return
 
@@ -67,7 +67,7 @@
 
 	if(last_special > world.time) return
 
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
 		to_chat(src, "You cannot bite in your current state.")
 		return
 	if(B.vessel.total_volume <= 0 || B.isSynthetic()) //Do they have any blood in the first place, and are they synthetic?
@@ -189,7 +189,7 @@
 			if(3 to 99)
 				C.nutrition = (C.nutrition + (T.nutrition*0.1)) //Just keep draining them.
 				T.nutrition = T.nutrition*0.9
-				T.eye_blurry += 5 //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+				T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
 				if(T.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
 					stage = 99
 				if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
@@ -255,7 +255,7 @@
 			if(3 to 48) //Should be more than enough to get under 100.
 				nutrition = (nutrition + (T.nutrition*0.1)) //Just keep draining them.
 				T.nutrition = T.nutrition*0.9
-				T.eye_blurry += 5 //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+				T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
 				if(T.nutrition < 100)//Did they drop below 100 nutrition? If so, do one last check then jump to stage 50 (Lethal!)
 					stage = 49
 			if(49)
@@ -285,7 +285,7 @@
 					return
 				if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 					T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
-				T.eye_blurry += 20 //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
+				T.status_adjust(EFFECT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
 				nutrition = (nutrition + 25) //Assuming brain damage kills at 60, this gives 300 nutrition.
 			if(99)
 				if(drain_finalized != 1)
@@ -349,7 +349,7 @@
 			if(3 to 99)
 				T.nutrition = (T.nutrition + (C.nutrition*0.1)) //Just keep draining them.
 				C.nutrition = C.nutrition*0.9
-				T.eye_blurry += 1 //Eating a slime's body is odd and will make your vision a bit blurry!
+				T.status_adjust(EFFECT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
 				if(C.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
 					stage = 99
 				if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
@@ -387,7 +387,7 @@
 		to_chat(src,span_warning("You can't shred that type of creature."))
 		return FALSE
 	//Needs to be capable (replace with incapacitated call?)
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
 		to_chat(src,span_warning("You cannot do that in your current state!"))
 		return FALSE
 	//Needs to be adjacent, at the very least.
@@ -632,7 +632,7 @@
 		to_chat(src, "You don't have enough space to spin a cocoon!")
 		return
 
-	if(buckled ||stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special) //No tongue flicking while get_stunned().
+	if(buckled ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -693,7 +693,7 @@
 		return
 	last_special = world.time + 50 //No spamming!
 
-	if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned())
+	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
 		to_chat(src, span_notice("You cannot do that while in your current state."))
 		return
 
@@ -761,7 +761,7 @@
 	set category = "Abilities.Vore"
 	set desc = "Grab a target with any of your appendages!"
 
-	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special || is_incorporeal()) //No tongue flicking while get_stunned().
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special || is_incorporeal()) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -885,7 +885,7 @@
 		if(hit_object.density || hit_object.anchored)
 			if(isliving(firer))
 				var/mob/living/originator = firer
-				originator.Weaken(2) //If you hit something dense or anchored, fall flat on your face.
+				originator.status_at_least(EFFECT_WEAKENED, 2) //If you hit something dense or anchored, fall flat on your face.
 				originator.visible_message(span_warning("\The [originator] trips over their self and falls flat on their face!"), \
 								span_warning("You trip over yourself and fall flat on your face!") )
 				playsound(originator, "punch", 25, 1, -1)
@@ -895,7 +895,7 @@
 	if(istype(target, /turf/simulated/wall) || istype(target, /obj/machinery/door) || istype(target, /obj/structure/window)) //This can happen normally due to odd terrain. For some reason, it seems to not actually interact with walls.
 		if(isliving(firer))
 			var/mob/living/originator = firer
-			originator.Weaken(2) //Hit a wall? Whoops!
+			originator.status_at_least(EFFECT_WEAKENED, 2) //Hit a wall? Whoops!
 			originator.visible_message(span_warning("\The [originator] trips over their self and falls flat on their face!"), \
 							span_warning("You trip over yourself and fall flat on your face!") )
 			playsound(originator, "punch", 25, 1, -1)
@@ -976,7 +976,7 @@
 	var/leap_warmup = 1 SECOND //Easy to modify
 	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
 
-	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special) //No tongue flicking while get_stunned().
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1035,7 +1035,7 @@
 			status_flags &= ~LEAPING // Revert special passage ability.
 
 		if(Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-			target.Weaken(2)	//get knocked down, idiot
+			target.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
 
 
 /mob/living/proc/injection() // Allows the user to inject reagents into others somehow, like stinging, or biting.
@@ -1043,7 +1043,7 @@
 	set category = "Abilities.General"
 	set desc = "Inject another being with something!"
 
-	if(stat || get_paralysis() || get_weakened() || get_stunned() || world.time < last_special) //Epic copypasta from tongue grabbing.
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special) //Epic copypasta from tongue grabbing.
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1272,9 +1272,9 @@
 /datum/reagent/succubi_numbing/affect_blood(mob/living/carbon/M, alien, removed)
 
 
-	M.eye_blurry = max(M.eye_blurry, 10)
-	M.Weaken(2)
-	M.drowsyness = max(M.drowsyness, 20)
+	M.status_at_least(EFFECT_BLURRY, 10)
+	M.status_at_least(EFFECT_WEAKENED, 2)
+	M.status_at_least(EFFECT_DROWSY, 20)
 	if(prob(7))
 		M.show_message(span_warning("You start to feel weakened, your body seems heavy."))
 	return
@@ -1291,8 +1291,8 @@
 
 /datum/reagent/succubi_paralize/affect_blood(mob/living/carbon/M, alien, removed) //will first keep it like that.  lets see what it changes. if nothing, than I will rework the effect again
 
-	M.Weaken(20)
-	M.eye_blurry = max(M.eye_blurry, 10)
+	M.status_at_least(EFFECT_WEAKENED, 20)
+	M.status_at_least(EFFECT_BLURRY, 10)
 	if(prob(10))
 		M.show_message(span_warning("You lose sensation of your body."))
 	return

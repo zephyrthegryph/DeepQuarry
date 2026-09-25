@@ -9,7 +9,7 @@
 	// withdrawl mechanics
 	if(current_addiction < 10)
 		if(prob(2))
-			M.Weaken(1)
+			M.status_at_least(EFFECT_WEAKENED, 1)
 	else if(current_addiction > 10)
 		if(M.factor(BF_STABILIZATION)) // Inaprovaline can be used to treat addiction
 			if(prob(1))
@@ -25,7 +25,7 @@
 					M.emote(pick("pale","shiver","twitch"))
 				if(current_addiction <= 60)
 					if(prob(1))
-						M.Weaken(2)
+						M.status_at_least(EFFECT_WEAKENED, 2)
 					if(prob(5) && prob(1))
 						M.emote("vomit")
 		else
@@ -43,7 +43,7 @@
 			// proc side effect
 			if(current_addiction <= 30)
 				if(prob(3))
-					M.Weaken(2)
+					M.status_at_least(EFFECT_WEAKENED, 2)
 					M.emote("vomit")
 					M.add_modifier(/datum/modifier/withdrawal_strain/mild, 3 SECONDS)
 			else if(current_addiction <= 50)

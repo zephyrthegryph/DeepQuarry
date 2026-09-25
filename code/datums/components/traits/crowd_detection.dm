@@ -46,7 +46,7 @@
 		discomfort = 0
 		return TRUE
 	// No point processing if we're already stressing the hell out.
-	if(human_parent.hallucination >= hallucination_cap && discomfort >= warning_cap)
+	if(human_parent.status_units(EFFECT_HALLUCINATING) >= hallucination_cap && discomfort >= warning_cap)
 		discomfort = warning_cap
 		return TRUE
 	// I don't need to be told every 2 seconds I'm freaking out when I'm in a belly trying to WRITE!!! We can't be reasonably crowded in a belly, and won't be alone in one, so lets just handle it here.
@@ -75,8 +75,8 @@
 		human_parent.fear = min((human_parent.fear + 3), 102)
 		is_calm = FALSE // We'll only get one message early
 	// Hallucinations
-	if(discomfort >= warning_cap && human_parent.hallucination < hallucination_cap)
-		human_parent.hallucination = min(hallucination_cap,human_parent.hallucination+2.5*escalation_speed)
+	if(discomfort >= warning_cap && human_parent.status_units(EFFECT_HALLUCINATING) < hallucination_cap)
+		human_parent.status_set(EFFECT_HALLUCINATING, min(hallucination_cap,human_parent.status_units(EFFECT_HALLUCINATING)+2.5*escalation_speed))
 
 /datum/component/crowd_detection/proc/check_contents(atom/item, max_layer = 3, current_layer = 1)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -212,11 +212,11 @@
 
 /datum/component/crowd_detection/lonely/get_discomfort_message(current_discomfort)
 	if(current_discomfort >= warning_cap)
-		human_parent.stuttering += 25
+		human_parent.status_adjust(EFFECT_STUTTERING, 25)
 		return span_danger(span_bold(pick("Where are the others?", "Please, there has to be someone nearby!", "I don't want to be alone!","Please, anyone! I don't want to be alone!")))
 	if(current_discomfort >= 250)
-		if(human_parent.stuttering < hallucination_cap)
-			human_parent.stuttering += 5
+		if(human_parent.status_units(EFFECT_STUTTERING) < hallucination_cap)
+			human_parent.status_adjust(EFFECT_STUTTERING, 5)
 		return pick("You don't think you can last much longer without some visible company!", "You should go find someone to be with!","You need to find company!","Find someone to be with!")
 	if(current_discomfort >= MIN_DISCOMFORT_MESSAGE)
 		return pick("You begin to feel alone...","You feel isolated...","You need company...","Where is everyone?...","You need to find someone...")
@@ -259,13 +259,13 @@
 
 /datum/component/crowd_detection/agoraphobia/get_discomfort_message( current_discomfort)
 	if(current_discomfort >= warning_cap)
-		human_parent.stuttering += 25
+		human_parent.status_adjust(EFFECT_STUTTERING, 25)
 		return span_bolddanger(pick("Why am I still here? I have to leave and get some space!",
 									"Please, just let me be alone!",
 									"I need to be alone!"))
 	if(current_discomfort >= 250)
-		if(human_parent.stuttering < hallucination_cap)
-			human_parent.stuttering += 5
+		if(human_parent.status_units(EFFECT_STUTTERING) < hallucination_cap)
+			human_parent.status_adjust(EFFECT_STUTTERING, 5)
 		return pick("You don't think you can last much longer with this much company!", "You should go find some space!")
 	if(current_discomfort >= MIN_DISCOMFORT_MESSAGE)
 		return "You start to feel anxious from the number of people around you."

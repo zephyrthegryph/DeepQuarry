@@ -67,7 +67,7 @@
 	if(target.get_equipped_item(SLOT_ID_BACK))
 		target.drop_from_inventory(target.get_equipped_item(SLOT_ID_BACK))
 	H.visible_message(span_danger("[H] latched onto [target]!"), span_danger("You latch yourself onto [target]!"))
-	target.Weaken(3)
+	target.status_at_least(EFFECT_WEAKENED, 3)
 	if(!F.enter_rig())
 		return
 	target.equip_to_slot(F.rig, slot_back)

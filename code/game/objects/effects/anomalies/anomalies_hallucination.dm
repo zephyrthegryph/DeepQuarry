@@ -36,10 +36,10 @@
 	for(var/mob/living/carbon/human/hallucinator in viewers(5, src))
 		var/susceptibility = GetAnomalySusceptibility(hallucinator)
 		if(prob(susceptibility * 100))
-			hallucinator.hallucination += 10
+			hallucinator.status_adjust(EFFECT_HALLUCINATING, 10)
 			if(prob(20))
 				to_chat(hallucinator, pick(messages))
-				hallucinator.Confuse(10)
+				hallucinator.status_at_least(EFFECT_CONFUSED, 10)
 			if(prob(10))
 				to_chat(hallucinator, span_danger("Your nose bleeds!"))
 				hallucinator.drip(1)
@@ -50,10 +50,10 @@
 
 	for(var/mob/living/carbon/human/hallucinator in viewers(10, src))
 		to_chat(hallucinator, pick(messages))
-		hallucinator.hallucination += 25
+		hallucinator.status_adjust(EFFECT_HALLUCINATING, 25)
 		to_chat(hallucinator, span_danger("Your nose bleeds!"))
 		hallucinator.drip(1)
-		hallucinator.Confuse(15)
+		hallucinator.status_at_least(EFFECT_CONFUSED, 15)
 
 /obj/effect/anomaly/hallucination/proc/generate_decoys()
 	if(!spawn_decoys)

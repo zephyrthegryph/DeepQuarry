@@ -44,23 +44,23 @@
 		H.injure(INJURY_PAIN, disable_severity)
 
 	if(species.allergen_reaction & AG_WEAKEN)
-		H.Weaken(disable_severity)
+		H.status_at_least(EFFECT_WEAKENED, disable_severity)
 
 	if(species.allergen_reaction & AG_BLURRY)
-		H.eye_blurry = max(H.eye_blurry, disable_severity)
+		H.status_at_least(EFFECT_BLURRY, disable_severity)
 
 	if(species.allergen_reaction & AG_SLEEPY)
-		H.drowsyness = max(H.drowsyness, disable_severity)
+		H.status_at_least(EFFECT_DROWSY, disable_severity)
 
 	if(species.allergen_reaction & AG_CONFUSE)
-		H.Confuse(disable_severity/4)
+		H.status_at_least(EFFECT_CONFUSED, disable_severity/4)
 
 	if(species.allergen_reaction & AG_GIBBING)
 		if(prob(disable_severity / 6))
 			addtimer(CALLBACK(src, PROC_REF(allergy_gib), H), rand(3,6), TIMER_DELETE_ME)
 		else if(prob(disable_severity))
 			H.emote(pick(list("whimper","belch","belch","belch","choke","shiver")))
-			H.Weaken(disable_severity / 3)
+			H.status_at_least(EFFECT_WEAKENED, disable_severity / 3)
 
 	if(species.allergen_reaction & AG_SNEEZE)
 		if(prob(disable_severity/3))

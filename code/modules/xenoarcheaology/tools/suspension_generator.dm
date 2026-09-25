@@ -23,7 +23,7 @@
 
 		var/turf/T = get_turf(suspension_field)
 		for(var/mob/living/M in T)
-			M.Weaken(3)
+			M.status_at_least(EFFECT_WEAKENED, 3)
 			cell.charge -= power_use
 			if(prob(5))
 				to_chat(M, span_warning("[pick("You feel tingly","You feel like floating","It is hard to speak","You can barely move")]."))
@@ -179,7 +179,7 @@
 	var/collected = 0
 
 	for(var/mob/living/M in T)
-		M.Weaken(5)
+		M.status_at_least(EFFECT_WEAKENED, 5)
 		M.visible_message(span_blue("[icon2html(M,viewers(M))] [M] begins to float in the air!"),"You feel tingly and light, but it is difficult to move.")
 
 	for(var/obj/effect/anomaly/anom in T)
@@ -214,7 +214,7 @@
 
 	for(var/mob/living/M in T)
 		to_chat(M, span_info("You no longer feel like floating."))
-		M.Weaken(3)
+		M.status_at_least(EFFECT_WEAKENED, 3)
 
 	for(var/obj/effect/anomaly/anom in T)
 		if(anom.stats)

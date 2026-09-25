@@ -235,11 +235,11 @@
 		if(SA_pp > SA_para_min)
 
 			// 3 gives them one second to wake up and run away a bit!
-			H.Paralyse(3)
+			H.status_at_least(EFFECT_PARALYZED, 3)
 
 			// Enough to make us sleep as well
 			if(SA_pp > SA_sleep_min)
-				H.Sleeping(5)
+				H.status_at_least(EFFECT_SLEEPING, 5)
 
 		// There is sleeping gas in their lungs, but only a little, so give them a bit of a warning
 		else if(SA_pp > 0.15)

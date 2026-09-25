@@ -176,7 +176,7 @@
 		break
 
 	if(victim)
-		victim.Weaken(2)
+		victim.status_at_least(EFFECT_WEAKENED, 2)
 		victim.visible_message(span_danger("\The [src] knocks down \the [victim]!"))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
@@ -259,7 +259,7 @@
 	if(dq_get_cloaked(src))
 		if(isliving(A))
 			var/mob/living/L = A
-			L.Weaken(cloaked_weaken_amount)
+			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] tears into you!"))
 			playsound(L, 'sound/weapons/spiderlunge.ogg', 75, 1)
 	uncloak()

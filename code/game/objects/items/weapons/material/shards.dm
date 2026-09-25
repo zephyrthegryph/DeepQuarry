@@ -136,7 +136,7 @@
 						return
 					H.injure(INJURY_BLUNT, force, affecting, src)
 					if(affecting.organ_can_feel_pain())
-						H.Weaken(3)
+						H.status_at_least(EFFECT_WEAKENED, 3)
 					return
 				check -= picked
 			return

@@ -72,7 +72,7 @@
 		else
 			if(!episode["meds_at_beginning"] && med_vol)
 				episode["next_episode_end"] = world.time + (episode["next_episode_end"] - world.time)/8
-			human_guy.hallucination = min(hallucination_max,human_guy.hallucination + hallucination_increase)
+			human_guy.status_set(EFFECT_HALLUCINATING, min(hallucination_max,human_guy.status_units(EFFECT_HALLUCINATING) + hallucination_increase))
 
 ///Checks to see if we have tercozolam in our systeem and returns how much if so.
 /datum/component/schizophrenia/proc/get_med_volume(mob/living/carbon/human/human_guy)

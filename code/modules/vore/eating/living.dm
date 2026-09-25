@@ -577,7 +577,7 @@
 		absorbed = FALSE	//Make sure we're not absorbed
 		muffled = FALSE		//Removes Muffling
 		forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
-		SetSleeping(0) //Wake up instantly if asleep
+		status_set(EFFECT_SLEEPING, 0) //Wake up instantly if asleep
 		for(var/mob/living/simple_mob/SA in range(10))
 			LAZYSET(SA.prey_excludes, src, world.time)
 		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
@@ -820,7 +820,7 @@
 	set category = "Abilities.General"
 	set desc = "Toggle your glowing on/off!"
 
-	if(stat || is_paralyzed() || get_weakened() || get_stunned() || world.time < last_special)
+	if(stat || is_paralyzed() || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special)
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -852,7 +852,7 @@
 	set category = "Abilities.Vore"
 	set desc = "Consume held garbage."
 
-	if(stat || is_paralyzed() || get_weakened() || get_stunned() || world.time < last_special)
+	if(stat || is_paralyzed() || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special)
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1000,12 +1000,12 @@
 			qdel(I)
 
 			if(nom["WTF"] && istype(H)) //Bites back.
-				H.Weaken(2)
-				H.Confuse(nom["WTF"])
+				H.status_at_least(EFFECT_WEAKENED, 2)
+				H.status_at_least(EFFECT_CONFUSED, nom["WTF"])
 				H.apply_effect(nom["WTF"], STUTTER)
-				H.make_jittery(nom["WTF"])
-				H.make_dizzy(nom["WTF"])
-				H.druggy = max(H.druggy, nom["WTF"])
+				H.status_adjust(EFFECT_JITTERY, nom["WTF"])
+				H.status_adjust(EFFECT_DIZZY, nom["WTF"])
+				H.status_at_least(EFFECT_DRUGGED, nom["WTF"])
 
 			return TRUE
 		else

@@ -3,7 +3,7 @@
 	set category = "Abilities.General"
 	set desc = "Disinfect and heal small wounds with your saliva."
 
-	if(stat || get_paralysis() || get_weakened() || get_stunned())
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 

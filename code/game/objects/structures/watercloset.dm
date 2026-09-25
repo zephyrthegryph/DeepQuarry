@@ -149,7 +149,7 @@
 						if(GM.size_multiplier <= 0.75)
 							GM.visible_message(span_danger("[GM] gets sucked into \the [src] due to their small size!"), span_userdanger("You get sucked into \the [src]!"))
 							GM.forceMove(get_turf(src))
-							GM.Weaken(5)
+							GM.status_at_least(EFFECT_WEAKENED, 5)
 						flush()
 					else
 						user.visible_message(span_warning("[user] tries to give [GM.name] a swirlie, but the toilet was still refilling!"), span_warning("You cant give [GM] swirlie while \the [src] is still refilling!"))
@@ -1033,9 +1033,9 @@
 		if(B.bcell)
 			if(B.bcell.charge > 0 && B.status == 1)
 				flick("baton_active", src)
-				user.Stun(10)
-				user.stuttering = 10
-				user.Weaken(10)
+				user.status_at_least(EFFECT_STUNNED, 10)
+				user.status_set(EFFECT_STUTTERING, 10)
+				user.status_at_least(EFFECT_WEAKENED, 10)
 				if(isrobot(user))
 					var/mob/living/silicon/robot/R = user
 					R.draw_power(ROBOT_CELL_JOULES(20), src, 0, TRUE)

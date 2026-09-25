@@ -258,7 +258,7 @@
 		var/atom/target_zone = get_edge_target_turf(user,get_dir(user, target))
 		if(!target.anchored)	//unless they're secured in place, natch
 			target.throw_at(target_zone, launch_force, 2, user, FALSE)
-		target.Weaken(weaken_force)
+		target.status_at_least(EFFECT_WEAKENED, weaken_force)
 
 		deductcharge()
 		status = 0

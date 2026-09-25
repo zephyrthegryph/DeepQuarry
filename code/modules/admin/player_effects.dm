@@ -246,21 +246,21 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 		if("pie_splat")
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target))
 			playsound(target, 'sound/effects/slime_squish.ogg', 100, 1, get_rand_frequency(), falloff = 5)
-			target.Weaken(1)
+			target.status_at_least(EFFECT_WEAKENED, 1)
 			target.visible_message(span_danger("[target] is struck by pie!"))
 
 		if("spicy_air")
 			to_chat(target, span_warning("Spice spice baby!"))
-			target.eye_blurry = max(target.eye_blurry, 25)
-			target.Blind(10)
-			target.Stun(5)
-			target.Weaken(5)
+			target.status_at_least(EFFECT_BLURRY, 25)
+			target.status_at_least(EFFECT_BLINDED, 10)
+			target.status_at_least(EFFECT_STUNNED, 5)
+			target.status_at_least(EFFECT_WEAKENED, 5)
 			playsound(target, 'sound/effects/spray2.ogg', 100, 1, get_rand_frequency(), falloff = 5)
 
 		if("hot_dog")
 			playsound(target, 'sound/effects/whistle.ogg', 50, 1, get_rand_frequency(), falloff = 5)
 			sleep(2 SECONDS)
-			target.Stun(10)
+			target.status_at_least(EFFECT_STUNNED, 10)
 			if(!ishuman(target))
 				return
 			var/mob/living/carbon/human/H = target
@@ -823,7 +823,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(stance)
 				L.set_use_stance(stance)
 			if(tgui_alert(ui.user, "Make mob wake up? This is needed for carbon mobs.", "Wake mob?", list("Yes", "No")) == "Yes")
-				L.AdjustSleeping(-100)
+				L.status_adjust(EFFECT_SLEEPING, -100)
 
 		if("cloaking")
 			if(dq_get_cloaked(target))

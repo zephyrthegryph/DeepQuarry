@@ -307,7 +307,7 @@
 	if(isliving(target))
 		var/mob/living/L = target
 		if(prob(10))
-			L.Stun(2)
+			L.status_at_least(EFFECT_STUNNED, 2)
 
 /obj/item/holder/attackby(obj/item/W as obj, mob/user as mob)
 	// ITION: MicroHandCrush

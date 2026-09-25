@@ -20,7 +20,7 @@
 		return
 	if(owner.transforming)
 		return
-	if((prob(cough_chance) && owner.get_paralysis() <= 1))
+	if((prob(cough_chance) && owner.status_units(EFFECT_PARALYZED) <= 1))
 		owner.drop_item()
 		owner.emote("cough")
 

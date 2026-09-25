@@ -49,7 +49,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	icon_state = "ai"
 	anchored = TRUE // -- TLE
 	density = TRUE
-	status_flags = CANSTUN|CANPARALYSE|CANPUSH
+	status_flags = CANPUSH
 	shouldnt_see = list(/mob/observer/eye, /obj/effect/rune)
 	var/list/network = list(NETWORK_DEFAULT)
 	var/obj/machinery/camera/camera = null

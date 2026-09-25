@@ -46,7 +46,7 @@
 	ensure_vitals()
 	if(consciousness <= CONSCIOUSNESS_THRESHOLD)
 		return TRUE
-	return owner.get_paralysis() || owner.get_stunned() || owner.get_weakened()
+	return owner.status_units(EFFECT_PARALYZED) || owner.has_status(EFFECT_STUNNED) || owner.has_status(EFFECT_WEAKENED)
 
 /// The one writer of a machine's conscious/unconscious stat.
 /datum/body/simple/machine/update_consciousness()

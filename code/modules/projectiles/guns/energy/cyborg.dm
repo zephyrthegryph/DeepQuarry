@@ -558,7 +558,7 @@
 			var/mob/living/simple_mob/slime/S = L
 			S.slimebatoned(user, 5) // Feral and xenobio slimes will react differently to this.
 		else
-			L.Weaken(5)
+			L.status_at_least(EFFECT_WEAKENED, 5)
 
 	// Now for prommies.
 	if(ishuman(L))

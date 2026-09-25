@@ -203,7 +203,7 @@
 
 	if(victim?.reagents)
 		victim.reagents.add_reagent(REAGENT_ID_WARNINGTOXIN, poison_per_bite)
-		victim.AdjustWeakened(2)
+		victim.status_adjust(EFFECT_WEAKENED, 2)
 		victim.visible_message(span_danger("\The [src] has bitten \the [victim]!"))
 		to_chat(victim, span_critical("\The [src] bites you and retreats!"))
 		. = TRUE

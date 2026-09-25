@@ -344,7 +344,7 @@
 				new_form.virtual_reality_mob = TRUE
 
 		add_verb(avatar, /mob/living/carbon/human/proc/perform_exit_vr) //ahealing removes the prommie verbs and the VR verbs, giving it back
-		avatar.Sleeping(1)
+		avatar.status_at_least(EFFECT_SLEEPING, 1)
 
 		// Prompt for username after they've enterred the body.
 		var/newname = tgui_input_text(avatar, "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "Name change", null, MAX_NAME_LEN)

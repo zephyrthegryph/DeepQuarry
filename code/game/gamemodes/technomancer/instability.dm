@@ -248,8 +248,8 @@
 					if(1)
 						visible_message(span_warning("\The [src] suddenly collapses!"),
 						span_danger("You suddenly feel very light-headed, and faint!"))
-						Paralyse(instability * 0.1)
-						Sleeping(instability * 0.1)
+						status_at_least(EFFECT_PARALYZED, instability * 0.1)
+						status_at_least(EFFECT_SLEEPING, instability * 0.1)
 					if(2)
 						if(can_feel_pain())
 							apply_effect(instability, AGONY)

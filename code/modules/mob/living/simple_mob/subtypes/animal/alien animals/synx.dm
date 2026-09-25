@@ -271,7 +271,7 @@
 			M.custom_pain("You [pick("feel numb!","feel dizzy and heavy.","feel strange!")]",60)
 		if(prob(2))
 			M.custom_pain("You [pick("suddenly lose control over your body!", "can't move!", "are frozen in place.", "can't struggle!")]",60)
-			M.AdjustParalysis(1)
+			M.status_adjust(EFFECT_PARALYZED, 1)
 		M.add_modifier(/datum/modifier/numbness, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/holo
@@ -290,7 +290,7 @@
 			M.custom_pain("You feel no pain!",60)
 		if(prob(2))
 			M.custom_pain("You suddenly lose control over your body!",60)
-			M.AdjustParalysis(1)
+			M.status_adjust(EFFECT_PARALYZED, 1)
 		M.add_modifier(/datum/modifier/numbness/synx, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/clown
@@ -319,7 +319,7 @@
 			M.custom_pain("You feel no pain despite the clear signs of damage to your body!",0)
 		if(prob(2))
 			M.custom_pain("You suddenly lose control over your body!",0)
-			M.AdjustParalysis(1)
+			M.status_adjust(EFFECT_PARALYZED, 1)
 		M.add_modifier(/datum/modifier/numbness/synx, 3 SECONDS)
 		(legacy duplicate removed)
 		// ^ I have no idea what this might cause, my ideal plan is that once the pain killer wears off you suddenly collapse;
@@ -329,11 +329,11 @@
 /datum/reagent/inaprovaline/synxchem/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien != IS_DIONA)
-		M.make_dizzy(10)
+		M.status_adjust(EFFECT_DIZZY, 10)
 		if(prob(5))
-			M.AdjustStunned(1)
+			M.status_adjust(EFFECT_STUNNED, 1)
 		if(prob(2))
-			M.AdjustParalysis(1)
+			M.status_adjust(EFFECT_PARALYZED, 1)
 
 
 /datum/reagent/inaprovaline/synxchem/holo/overdose(mob/living/carbon/M, alien, removed)
@@ -368,7 +368,7 @@
 		var/mob/living/L = A
 
 /*		if(prob(forcefeedchance) && !ckey)//Forcefeeding code //Only triggers if not player-controlled //This does not currently work
-			L.Weaken(2)
+			L.status_at_least(EFFECT_WEAKENED, 2)
 			update_icon()
 			if(ai_brain) ai_brain.busy = TRUE
 			src.feed_self_to_grabbed(src,L)
@@ -436,7 +436,7 @@
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
 	set category = "Abilities.Synx"
 
-	if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned() || restrained())
+	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
 		return
 
 	if(status_flags & HIDING)
@@ -457,7 +457,7 @@
 	set desc = "Switch between amorphous and humanoid forms."
 	set category = "Abilities.Synx"
 
-	if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned() || restrained())
+	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
 		return
 
 	// If transform isn't true

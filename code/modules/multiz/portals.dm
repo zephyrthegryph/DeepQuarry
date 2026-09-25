@@ -208,8 +208,8 @@
 					var/obj/effect/landmark/finaldest = pick(GLOB.awayabductors)
 					MI.forceMove(finaldest.loc)
 					sleep(1)
-					MI.Paralyse(10)
-					MI.Sleeping(10)
+					MI.status_at_least(EFFECT_PARALYZED, 10)
+					MI.status_at_least(EFFECT_SLEEPING, 10)
 					MI << 'sound/effects/bamf.ogg'
 					to_chat(MI,span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))
 				for(var/obj/item/I in L)
@@ -219,8 +219,8 @@
 			var/obj/effect/landmark/finaldest = pick(GLOB.awayabductors)
 			L.forceMove(finaldest.loc)
 			sleep(1)
-			L.Paralyse(10)
-			L.Sleeping(10)
+			L.status_at_least(EFFECT_PARALYZED, 10)
+			L.status_at_least(EFFECT_SLEEPING, 10)
 			L << 'sound/effects/bamf.ogg'
 			to_chat(L,span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))
 	return

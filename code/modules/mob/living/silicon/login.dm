@@ -1,3 +1,3 @@
 /mob/living/silicon/Login()
-	SetSleeping(0)
+	status_set(EFFECT_SLEEPING, 0)
 	..()

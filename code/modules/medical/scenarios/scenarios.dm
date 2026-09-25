@@ -211,7 +211,7 @@
 	var/mob/living/carbon/human/dummy = new /mob/living/carbon/human(T)
 	dummy.real_name = "Scenario Patient #[rand(1000, 9999)]"
 	dummy.name = dummy.real_name
-	dummy.Sleeping(60 SECONDS)
+	dummy.status_at_least(EFFECT_SLEEPING, 60 SECONDS)
 	var/datum/dq_medical_scenario/S = new scenario_path()
 	S.apply(dummy)
 	if(silent)

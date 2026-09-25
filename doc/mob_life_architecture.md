@@ -420,7 +420,7 @@ bit is left, `life_hibernate()` parks the mob.
 |---|---|---|
 | injury, treatment, full heal | `injure()`, `mend()`, `fully_heal()` | `LIFE_WAKE_BODY` |
 | any body change: afflictions added or removed, severity bands, factors, reagents (`on_reagent_change`) | `/datum/body/proc/invalidate()` | `LIFE_WAKE_BODY` |
-| stun, weaken, paralysis, sleep, confusion, blindness setters; start pulling | `mob.dm` setters → `on_status_counter_changed()` | `LIFE_WAKE_STATUS` |
+| a status starting or ending; start pulling | the status effects (`statuses.dm`, rewrite/life_on_om.md §7); `start_pulling()` | `LIFE_WAKE_STATUS` |
 | moving (air, area, light, gravity, hazards, belly) | `/mob/living/Moved()` | `LIFE_WAKE_MOVED` |
 | equipping or unequipping | `/obj/item/equipped()`, `/mob/proc/remove_from_mob()` → `on_equipment_changed()` | `LIFE_WAKE_EQUIPMENT` |
 | stat change | `/mob/living/set_stat()` | all |

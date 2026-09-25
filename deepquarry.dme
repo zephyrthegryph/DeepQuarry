@@ -3231,6 +3231,7 @@
 #include "code\modules\mob\living\life.dm"
 #include "code\modules\mob\living\life\_life_system.dm"
 #include "code\modules\mob\living\life\living_systems.dm"
+#include "code\modules\mob\living\life\statuses.dm"
 #include "code\modules\mob\living\life\life_om.dm"
 #include "code\modules\mob\living\living.dm"
 #include "code\modules\mob\living\melee_swing.dm"

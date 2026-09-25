@@ -458,9 +458,9 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/awake = H.body.regeneration_level()
 	TEST_ASSERT(awake > 0, "a fed, living human should regenerate")
-	H.sleeping = 5
+	H.status_set(EFFECT_SLEEPING, 5)
 	TEST_ASSERT_EQUAL(H.body.regeneration_level(), awake * REGENERATION_SLEEP_MULT, "sleep should speed natural regeneration")
-	H.sleeping = 0
+	H.status_set(EFFECT_SLEEPING, 0)
 	H.nutrition = REGENERATION_STARVING_NUTRITION - 1
 	TEST_ASSERT_EQUAL(H.body.regeneration_level(), 0, "a starving body should not regenerate")
 

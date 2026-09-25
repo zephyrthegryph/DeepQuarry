@@ -12,15 +12,16 @@
 	#define COMPONENT_BODY_KEEP_ALIVE (1<<0)
 
 
-//ALL OF THESE DO NOT TAKE INTO ACCOUNT WHETHER AMOUNT IS 0 OR LOWER AND ARE SENT REGARDLESS!
+// Sent before a status increase (statuses.dm, /mob/proc/status_admit()) (amount). Only for
+// increases, and only when the mob isn't immune.
 
-///from base of mob/living/Stun() (amount, ignore_canstun)
+///before a stun increase (amount)
 #define COMSIG_LIVING_STATUS_STUN "living_stun"
-///from base of mob/living/Paralyze() (amount, ignore_canstun)
+///before a paralysis increase (amount)
 #define COMSIG_LIVING_STATUS_PARALYZE "living_paralyze"
-///from base of mob/living/Sleeping() (amount, ignore_canstun)
+///before a sleep increase (amount)
 #define COMSIG_LIVING_STATUS_SLEEP "living_sleeping"
-	#define COMPONENT_NO_STUN (1<<0) //For all of them
+	#define COMPONENT_NO_STUN (1<<0) //For all of them: cancels the increase
 
 
 	// Return COMPONENT_CANCEL_ATTACK_CHAIN / COMPONENT_SKIP_ATTACK_CHAIN to stop the grab
@@ -32,11 +33,9 @@
 ///From /living/handle_allergens().
 #define COMSIG_HANDLE_ALLERGENS "handle_allergens"
 
-//ALL OF THESE DO NOT TAKE INTO ACCOUNT WHETHER AMOUNT IS 0 OR LOWER AND ARE SENT REGARDLESS!
-
-///from base of mob/Weaken() (amount, ignore_canstun)
+///before a weakness increase (amount)
 #define COMSIG_LIVING_STATUS_WEAKEN "living_weaken"
-///from base of mob/Blind() (amount, ignore_canstun)
+///before a blindness increase (amount)
 #define COMSIG_LIVING_STATUS_BLIND "living_blind"
 ///from /mob/living/proc/stun_effect_act(var/stun_amount, var/agony_amount, var/def_zone, var/used_weapon=null, var/electric = FALSE)
 #define COMSIG_STUN_EFFECT_ACT "stun_effect_act"

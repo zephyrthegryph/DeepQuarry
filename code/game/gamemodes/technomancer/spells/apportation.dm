@@ -67,7 +67,7 @@
 		qdel(src)
 		return
 
-	L.Weaken(3)
+	L.status_at_least(EFFECT_WEAKENED, 3)
 	user.visible_message(span_warning(span_bold("\The [user]") + " seizes [L]!"))
 
 	var/obj/item/grab/G = new(user, L)

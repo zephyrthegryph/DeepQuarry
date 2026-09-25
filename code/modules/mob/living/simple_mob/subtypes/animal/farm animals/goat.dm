@@ -34,8 +34,8 @@
 	mob_type = /mob/living/simple_mob/animal/goat
 
 /datum/life_system/type_post/simple_mob/animal/goat/tick(mob/living/simple_mob/animal/goat/self, datum/life_context/ctx)
-	. = ..()
-	if(.)
+	..()
+	if(ctx?.alive)
 		if(self.stat == CONSCIOUS)
 			if(self.udder && prob(5))
 				self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))

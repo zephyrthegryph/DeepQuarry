@@ -325,7 +325,7 @@
 		chosen_target.tiredness += 70
 		chosen_target.nutrition = max((chosen_target.nutrition / 2),75)
 		chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
-		chosen_target.eye_blurry += 20
+		chosen_target.status_adjust(EFFECT_BLURRY, 20)
 		to_chat(chosen_target, span_warning("You feel considerably weakened for the moment."))
 	species.update_lleill_hud(src)
 

@@ -27,7 +27,7 @@
 		to_chat(user, span_danger("An inexplicable force rips through your [affecting.name], tearing the sword from your grasp!"))
 		//random amount of damage between half of the blade's force and the full force of the blade.
 		user.injure(INJURY_CUT, rand(force/2, force), zone, src)
-		user.Weaken(5)
+		user.status_at_least(EFFECT_WEAKENED, 5)
 	else if(!istype(user, /mob/living/simple_mob/construct))
 		to_chat(user, span_danger("An inexplicable force rips through you, tearing the sword from your grasp!"))
 	else
@@ -44,7 +44,7 @@
 /obj/item/melee/cultblade/pickup(mob/living/user as mob)
 	if(!iscultist(user) && !istype(user, /mob/living/simple_mob/construct))
 		to_chat(user, span_warning("An overwhelming feeling of dread comes over you as you pick up the cultist's sword. It would be wise to be rid of this blade quickly."))
-		user.make_dizzy(120)
+		user.status_adjust(EFFECT_DIZZY, 120)
 	if(istype(user, /mob/living/simple_mob/construct))
 		to_chat(user, span_warning("\The [src] hisses, as it is discontent with your acquisition of it. It would be wise to return it to a worthy mortal quickly."))
 

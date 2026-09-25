@@ -38,8 +38,8 @@
 		var/mob/living/L = target
 		var/throwdir = get_dir(firer,L)
 		if(prob(40) && !blocked)
-			L.Stun(1)
-			L.Confuse(1)
+			L.status_at_least(EFFECT_STUNNED, 1)
+			L.status_at_least(EFFECT_CONFUSED, 1)
 		L.throw_at(get_edge_target_turf(L, throwdir), rand(3,6), 10)
 
 		if(istype(L, /mob/living/simple_mob/vore/alienanimals/startreader))

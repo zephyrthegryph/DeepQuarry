@@ -37,7 +37,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 
 /datum/component/hallucinations/proc/make_timer()
 	PROTECTED_PROC(TRUE)
-	addtimer(CALLBACK(src, PROC_REF(trigger)), ((rand(20,50) SECONDS) / (min(our_human.hallucination,100)/25)), TIMER_DELETE_ME)
+	addtimer(CALLBACK(src, PROC_REF(trigger)), ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), TIMER_DELETE_ME)
 
 /datum/component/hallucinations/proc/get_fakecrit()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -67,7 +67,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	if(!our_human.client)
 		qdel(src)
 		return
-	if(our_human.hallucination < HALLUCINATION_THRESHOLD)
+	if(our_human.status_units(EFFECT_HALLUCINATING) < HALLUCINATION_THRESHOLD)
 		qdel(src)
 		return
 	handle_hallucinating()

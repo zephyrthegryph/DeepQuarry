@@ -243,15 +243,15 @@
 					if(shield.active)
 						shield.adjust_flash_count(R, 1)
 						return FALSE
-		target.Weaken(rand(5,10))
+		target.status_at_least(EFFECT_WEAKENED, rand(5,10))
 		return TRUE
 	else
 		return FALSE
 
 	//Now do all the actual effects.
-	target.Confuse(flash_strength + 5)
-	target.Blind(flash_strength)
-	target.eye_blurry = max(target.eye_blurry, flash_strength + 5)
+	target.status_at_least(EFFECT_CONFUSED, flash_strength + 5)
+	target.status_at_least(EFFECT_BLINDED, flash_strength)
+	target.status_at_least(EFFECT_BLURRY, flash_strength + 5)
 	target.flash_eyes()
 	target.injure(INJURY_PAIN, halloss_per_flash * (flash_strength / 5), BP_HEAD, src) // Should take two flashes to stun.
 	if(flash_burn)

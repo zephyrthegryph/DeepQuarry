@@ -42,8 +42,8 @@
 			continue
 		to_chat(S, span_warning("Your integrated sensors detect an ionospheric anomaly. Your systems will be impacted as you begin a partial restart."))
 		var/ionbug = rand(3, 9)
-		S.AdjustConfused(ionbug)
-		S.eye_blurry += (ionbug - 1)
+		S.status_adjust(EFFECT_CONFUSED, ionbug)
+		S.status_adjust(EFFECT_BLURRY, (ionbug - 1))
 
 	// Ionize silicon mobs
 	for (var/mob/living/silicon/ai/target in GLOB.silicon_mob_list)

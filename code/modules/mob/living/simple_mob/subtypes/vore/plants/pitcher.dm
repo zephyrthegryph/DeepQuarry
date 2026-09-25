@@ -122,8 +122,8 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	mob_type = /mob/living/simple_mob/vore/pitcher_plant
 
 /datum/life_system/type_post/simple_mob/vore/pitcher_plant/tick(mob/living/simple_mob/vore/pitcher_plant/self, datum/life_context/ctx)
-	. = ..()
-	if(!.)
+	..()
+	if(!ctx?.alive)
 		return
 
 	var/lastmeat = self.meat //If Life procs every 2 seconds that means it takes 20 seconds to digest a steak
@@ -268,7 +268,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				continue
 			if(src.Adjacent(H)) //If they can breathe and are next to the pitcher, confuse them.
 				to_chat(H,span_red("The sweet, overwhelming scent from \the [src] makes your senses reel!"))
-				H.Confuse(scent_strength)
+				H.status_at_least(EFFECT_CONFUSED, scent_strength)
 				continue
 			else
 				to_chat(H, span_red("[pick(pitcher_plant_lure_messages)]"))

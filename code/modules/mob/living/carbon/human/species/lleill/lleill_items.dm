@@ -199,9 +199,9 @@
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.eye_blind))
+	if(visual && ((L.sdisabilities & BLIND) || L.has_status(EFFECT_BLINDED)))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.ear_deaf))
+	if(audio && ((L.sdisabilities & DEAF) || L.has_status(EFFECT_DEAFENED)))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient
@@ -377,7 +377,7 @@
 			blink_mob(M)
 		if(2) //mob_tf, uses polymorph potion code
 			if(!M.allow_spontaneous_tf)
-				M.AdjustWeakened(50)
+				M.status_adjust(EFFECT_WEAKENED, 50)
 			else
 				mob_tf(M)
 		if(3)

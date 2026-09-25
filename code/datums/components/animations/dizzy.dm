@@ -1,45 +1,35 @@
 /*
-dizzy process - wiggles the client's pixel offset over time
+dizzy shake - wiggles the client's pixel offset while the mob is dizzy.
+
+Dizziness itself is the EFFECT_DIZZY status (0-1000 points, below 100 is not dizzy), which wears
+off on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob adds this component when the
+status starts and deletes it when it ends (on_status_changed()).
 */
 
 /datum/component/dizzy_shake
 	var/mob/owner
-	var/dizziness
+	/// Whether the owner was resting when the status's rate was last checked.
+	var/was_resting
 
 /datum/component/dizzy_shake/Initialize()
 	if (!ismob(parent))
 		return COMPONENT_INCOMPATIBLE
 	owner = parent
-	add_trait_life_system(owner, /datum/life_system/trait/dizzy_shake)
+	was_resting = owner.resting
 	RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(mob_death))
 	addtimer(CALLBACK(src, PROC_REF(handle_tick)), 1, TIMER_DELETE_ME) // Needs to be a LOT faster than life ticks
-
-/datum/component/dizzy_shake/proc/process_life()
-	SIGNAL_HANDLER
-
-	if(QDELETED(parent))
-		return
-
-	//Resting
-	if(owner.resting)
-		dizziness -= 15
-	else
-		dizziness -= 3
-
-	// Handle jitters
-	if(dizziness <= 0)
-		qdel(src)
-		return
 
 /datum/component/dizzy_shake/proc/handle_tick()
 	if(QDELETED(parent))
 		return
 
-	// Handle wobbles
-	if(dizziness <= 0)
-		qdel(src)
-		return
+	// Resting wears dizziness off faster.
+	if(owner.resting != was_resting)
+		was_resting = owner.resting
+		owner.status_rate_check(EFFECT_DIZZY)
 
+	// Handle wobbles
+	var/dizziness = owner.status_units(EFFECT_DIZZY)
 	if(dizziness > 100 && owner.client)
 		var/amplitude = dizziness*(sin(dizziness * 0.044 * world.time) + 1) / 70
 		owner.client.pixel_x = amplitude * sin(0.008 * dizziness * world.time)
@@ -49,11 +39,9 @@ dizzy process - wiggles the client's pixel offset over time
 
 /datum/component/dizzy_shake/proc/mob_death()
 	SIGNAL_HANDLER
-	dizziness = 0
-	qdel(src)
+	owner.status_end(EFFECT_DIZZY)
 
 /datum/component/dizzy_shake/Destroy(force = FALSE)
-	remove_trait_life_system(owner, /datum/life_system/trait/dizzy_shake)
 	UnregisterSignal(owner, COMSIG_MOB_DEATH)
 	// Reset the pixel offsets to zero
 	if(owner.client)
@@ -61,40 +49,3 @@ dizzy process - wiggles the client's pixel offset over time
 		owner.client.pixel_y = 0
 	owner = null
 	. = ..()
-
-
-
-/* Dizzy
-value of dizziness ranges from 0 to 1000
-below 100 is not dizzy
-*/
-/mob/proc/make_dizzy(amount)
-	if(amount < 0 && get_dizzy() == 0) // If removing, check if we're already empty!
-		return
-	var/datum/component/dizzy_shake/DC = LoadComponent(/datum/component/dizzy_shake);
-	DC.dizziness = max(min(1000, DC.dizziness + amount),0)	// store what will be new value
-															// clamped to max 1000
-
-/mob/proc/clear_dizzy()
-	qdel(GetComponent(/datum/component/dizzy_shake))
-
-/mob/proc/get_dizzy()
-	var/datum/component/dizzy_shake/DC = GetComponent(/datum/component/dizzy_shake);
-	if(!DC)
-		return 0
-	return max(DC.dizziness,0)
-
-// Disabled on borgs
-/mob/living/silicon/make_dizzy(amount)
-	return
-
-/mob/living/silicon/get_dizzy()
-	return 0
-
-/// Trait system: dizziness wears off. Was a COMSIG_LIVING_LIFE listener.
-/datum/life_system/trait/dizzy_shake
-	name = "dizzy shake"
-	component_type = /datum/component/dizzy_shake
-
-/datum/life_system/trait/dizzy_shake/tick_component(mob/living/self, datum/component/dizzy_shake/component)
-	component.process_life()

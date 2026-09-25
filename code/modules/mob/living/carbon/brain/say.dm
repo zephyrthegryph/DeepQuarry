@@ -1,6 +1,6 @@
 //TODO: Convert this over for languages.
 /mob/living/carbon/brain/say(message, datum/language/speaking = null, whispering = 0)
-	if(silent)
+	if(has_status(EFFECT_MUTED))
 		return
 
 	// message = sanitize(message) // This causes.... so many more problems then it fixes. Also should just be handled in the super function

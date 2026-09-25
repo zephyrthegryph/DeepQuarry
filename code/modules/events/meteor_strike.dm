@@ -67,7 +67,7 @@
 			if(L.client)
 				to_chat(L, span_danger("The ground lurches beneath you!"))
 				shake_camera(L, 6, 1)
-				if(!L.ear_deaf)
+				if(!L.has_status(EFFECT_DEAFENED))
 					L << 'sound/effects/explosionfar.ogg'
 	qdel(src)
 

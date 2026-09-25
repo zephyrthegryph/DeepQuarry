@@ -55,9 +55,9 @@ effective or pretty fucking useless.
 
 /obj/item/batterer/proc/mind_batter_effect(mob/living/carbon/human/M)
 	if(prob(50))
-		M.Weaken(rand(10,20))
+		M.status_at_least(EFFECT_WEAKENED, rand(10,20))
 		if(prob(25))
-			M.Stun(rand(5,10))
+			M.status_at_least(EFFECT_STUNNED, rand(5,10))
 		to_chat(M, span_danger("You feel a tremendous, paralyzing wave flood your mind."))
 	else
 		to_chat(M, span_danger("You feel a sudden, electric jolt travel through your head."))

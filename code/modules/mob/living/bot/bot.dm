@@ -84,20 +84,16 @@
 /datum/life_system/bot_core/tick(mob/living/bot/self, datum/life_context/ctx)
 	if(self.stat == DEAD)
 		return
-	self.SetWeakened(0)
-	self.SetStunned(0)
-	self.SetParalysis(0)
+	self.status_set(EFFECT_WEAKENED, 0)
+	self.status_set(EFFECT_STUNNED, 0)
+	self.status_set(EFFECT_PARALYZED, 0)
 
 	if(self.on && !self.client && !self.busy && !self.paicard)
 		spawn(0)
 			self.handleAI()
 
-/// Bot Life() returned nothing.
 /datum/life_system/type_post/bot
 	mob_type = /mob/living/bot
-
-/datum/life_system/type_post/bot/tick(mob/living/bot/self, datum/life_context/ctx)
-	return
 /*
 /mob/living/bot/examine(mob/user)
 	. = ..()

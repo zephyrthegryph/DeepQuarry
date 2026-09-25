@@ -31,10 +31,6 @@
 	if(lying)
 		stop_aiming(no_message=1)
 
-/mob/living/Weaken(amount)
-	stop_aiming(no_message=1)
-	..()
-
 /turf/Enter(mob/living/mover)
 	. = ..()
 	if(istype(mover))

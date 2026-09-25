@@ -83,7 +83,7 @@
 	if(!usr.checkClickCooldown())
 		return
 
-	if(usr.stat || usr.restrained() || usr.get_stunned() || usr.lying)
+	if(usr.stat || usr.restrained() || usr.has_status(EFFECT_STUNNED) || usr.lying)
 		return 1
 
 	if(!(owner in usr))
@@ -114,7 +114,7 @@
 /atom/movable/screen/storage/Click()
 	if(!usr.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.get_paralysis() || usr.get_stunned() || usr.get_weakened())
+	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
 		return 1
 	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
@@ -324,7 +324,7 @@
 		if("internal") //dear god this entire thing needs to be rewritten this is literally assaulting my eyes with how awful it is. FUCK.
 			if(iscarbon(usr))
 				var/mob/living/carbon/C = usr
-				if(!C.stat && !C.get_stunned() && !C.get_paralysis() && !C.restrained())
+				if(!C.stat && !C.has_status(EFFECT_STUNNED) && !C.has_status(EFFECT_PARALYZED) && !C.restrained())
 					if(C.internal)
 						C.internal = null
 						to_chat(C, span_notice("No longer running on internals."))
@@ -646,7 +646,7 @@
 					if(xc.feral + H.nutrition < 150)
 						to_chat(usr, span_warning("Your hunger prevents you from regaining focus."))
 						feral_passing = FALSE
-					if(H.get_jittery() >= 100)
+					if(H.status_units(EFFECT_JITTERY) >= 100)
 						to_chat(usr, span_warning("Your jitterness prevents you from regaining focus."))
 						feral_passing = FALSE
 					if(feral_passing)
@@ -683,7 +683,7 @@
 	// We don't even know if it's a middle click
 	if(!usr.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.get_paralysis() || usr.get_stunned() || usr.get_weakened())
+	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
 		return 1
 	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
@@ -938,7 +938,7 @@
 /atom/movable/screen/mapper/powbutton/Click()
 	if(!usr.checkClickCooldown())
 		return TRUE
-	if(usr.stat || usr.get_paralysis() || usr.get_stunned() || usr.get_weakened())
+	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
 		return TRUE
 	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
@@ -956,7 +956,7 @@
 /atom/movable/screen/mapper/mapbutton/Click()
 	if(!usr.checkClickCooldown())
 		return TRUE
-	if(usr.stat || usr.get_paralysis() || usr.get_stunned() || usr.get_weakened())
+	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
 		return TRUE
 	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
@@ -998,7 +998,7 @@
 	var/mob/user = usr
 	if(!user.checkClickCooldown())
 		return TRUE
-	if(user.stat || user.get_paralysis() || user.get_stunned() || user.get_weakened())
+	if(user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED))
 		return TRUE
 	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE

@@ -204,7 +204,7 @@
 			if(pre_shot_delay)
 				var/image/target_image = image(icon = 'icons/obj/spells.dmi', loc = get_turf(hit_atom), icon_state = "target")
 				user << target_image
-				user.Stun(pre_shot_delay / 10)
+				user.status_at_least(EFFECT_STUNNED, pre_shot_delay / 10)
 				sleep(pre_shot_delay)
 				qdel(target_image)
 				if(owner)

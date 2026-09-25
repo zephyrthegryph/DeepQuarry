@@ -222,8 +222,8 @@
 		occupant.set_stat(UNCONSCIOUS)
 		occupant.dir = SOUTH
 		if(occupant.bodytemperature < T0C)
-			occupant.Sleeping(max(5, (1/occupant.bodytemperature)*2000))
-			occupant.Paralyse(max(5, (1/occupant.bodytemperature)*3000))
+			occupant.status_at_least(EFFECT_SLEEPING, max(5, (1/occupant.bodytemperature)*2000))
+			occupant.status_at_least(EFFECT_PARALYZED, max(5, (1/occupant.bodytemperature)*3000))
 			occupant.mend(TREAT_OXYGENATION, 1)
 			//severe damage should heal waaay slower without proper chemicals
 			if(occupant.bodytemperature < 225)
@@ -291,7 +291,7 @@
 	M.stop_pulling()
 	M.forceMove(src)
 	M.extinguish_mob()
-	if(M.stat != DEAD && (M.is_critical() || M.sleeping))
+	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
 	occupant = M
 	if(on)

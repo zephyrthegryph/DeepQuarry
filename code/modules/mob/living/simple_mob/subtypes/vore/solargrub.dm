@@ -74,8 +74,8 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	mob_type = /mob/living/simple_mob/vore/solargrub
 
 /datum/life_system/type_post/simple_mob/vore/solargrub/tick(mob/living/simple_mob/vore/solargrub/self, datum/life_context/ctx)
-	. = ..()
-	if(!.) return
+	..()
+	if(!ctx?.alive) return
 
 	if(!self.ai_brain.primary_threat)
 			//first, check for potential cables nearby to powersink
@@ -138,9 +138,9 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		if(prob(shock_chance))
 			A.emp_act(4) //The weakest strength of EMP
 			playsound(src, 'sound/weapons/egloves.ogg', 75, 1)
-			L.Weaken(4)
-			L.Stun(4)
-			L.stuttering = max(L.stuttering, 4)
+			L.status_at_least(EFFECT_WEAKENED, 4)
+			L.status_at_least(EFFECT_STUNNED, 4)
+			L.status_at_least(EFFECT_STUTTERING, 4)
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 			s.set_up(5, 1, L)
 			s.start()

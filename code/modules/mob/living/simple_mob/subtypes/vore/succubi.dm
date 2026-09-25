@@ -153,7 +153,7 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 	if(findtext(lowertext(string), safeword))
 		vore_selected?.digest_mode = DM_DRAIN
 		release_vore_contents()
-		SetStunned(10)
+		status_set(EFFECT_STUNNED, 10)
 		say("I'm sorry sweetie, are you okay?")
 
 /mob/living/simple_mob/vore/succubus/animal_nom()

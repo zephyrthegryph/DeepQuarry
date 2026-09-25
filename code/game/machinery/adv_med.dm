@@ -223,7 +223,7 @@
 	dat += D.render_chat()
 	qdel(D)
 	dat += "<hr>"
-	if(occupant.get_paralysis() && !(occupant.status_flags & FAKEDEATH))
+	if(occupant.has_status(EFFECT_PARALYZED) && !(occupant.status_flags & FAKEDEATH))
 		dat += "Paralysis: [round(occupant.status_seconds(EFFECT_PARALYZED))] seconds left."
 	var/list/allergen_list = assembly_allergy_list(occupant.species.allergens, occupant.species.medallergens)
 	if(length(allergen_list))

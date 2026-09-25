@@ -34,7 +34,7 @@
 
 	if(!lying && (!get_equipped_item(SLOT_ID_SHOES) || !(get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP)) && (!species || !(species.flags & NOSLIP)) && prob(current_size*5))
 		to_chat(src, span_danger("A strong gravitational force slams you to the ground!"))
-		Weaken(current_size)
+		status_at_least(EFFECT_WEAKENED, current_size)
 	..()
 
 /obj/singularity_act()

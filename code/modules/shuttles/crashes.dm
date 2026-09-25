@@ -57,7 +57,7 @@
 	// Hide people
 	for(var/mob/living/L as anything in victims)
 		victims[L] = get_turf(L)
-		L.Sleeping(rand(10,20))
+		L.status_at_least(EFFECT_SLEEPING, rand(10,20))
 		L.life_frame()
 		L.loc = null
 

@@ -133,8 +133,8 @@
 
 			wearer.visible_message(span_boldwarning("[src] beeps as its health is fully depleted! [wearer] is down!"))
 			to_chat(wearer, span_large(span_danger("You're out!"))) //People KEEP MISSING THAT THEY'RE OUT, SO NOW THEY WON'T.
-			wearer.Stun(5)
-			wearer.Weaken(5)
+			wearer.status_at_least(EFFECT_STUNNED, 5)
+			wearer.status_at_least(EFFECT_WEAKENED, 5)
 			// The thing just to drop the ball if hit
 			if(emagged)
 				to_chat(wearer, span_bolddanger(span_massive("OH GOD! YOUR HEART!"))) //this is the last thing you see before you (presumably) die.

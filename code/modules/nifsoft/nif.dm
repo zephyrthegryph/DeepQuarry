@@ -304,7 +304,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	switch(percent_done) //This is 0.0 to 1.0 kinda percent.
 		//Connecting to optical nerves
 		if(0.0 to 0.1)
-			human.eye_blind = 5
+			human.status_set(EFFECT_BLINDED, 5)
 
 		//Mapping brain
 		if(0.2 to 0.9)
@@ -323,10 +323,10 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 					human.injure(INJURY_PAIN, 35)
 					human.custom_pain(message,35)
 				if(2)
-					human.Weaken(5)
+					human.status_at_least(EFFECT_WEAKENED, 5)
 					to_chat(human,span_danger("A wave of weakness rolls over you."))
 				/*if(3)
-					human.Sleeping(5) //Disabled for being boring
+					human.status_at_least(EFFECT_SLEEPING, 5) //Disabled for being boring
 					to_chat(human,span_danger("You suddenly black out!"))*/
 
 		//Finishing up

@@ -40,4 +40,4 @@
 
 /mob/living/simple_mob/animal/tyr/rainbow_fly/proc/painbow_aura()
 	for(var/mob/living/L in view(src, 7))
-		L.druggy = max(L.druggy, 10)
+		L.status_at_least(EFFECT_DRUGGED, 10)

@@ -15,6 +15,6 @@
 		return FALSE
 	add_attack_logs(src,T,"Paralysis sting (changeling)")
 	to_chat(T, span_danger("Your muscles begin to painfully tighten."))
-	T.Weaken(20)
+	T.status_at_least(EFFECT_WEAKENED, 20)
 	feedback_add_details("changeling_powers","PS")
 	return TRUE

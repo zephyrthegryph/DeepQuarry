@@ -216,8 +216,8 @@
 			if(!R.draw_power(ROBOT_CELL_JOULES(666), src, ROBOT_CELL_JOULES(100)))
 				to_chat(user, span_warning("Warning, low power detected. Aborting action."))
 				return
-			L.Stun(1)
-			L.Weaken(1)
+			L.status_at_least(EFFECT_STUNNED, 1)
+			L.status_at_least(EFFECT_WEAKENED, 1)
 			L.apply_effect(STUTTER, 1)
 			L.visible_message(span_danger("[user] has shocked [L] with its tongue!"), \
 								span_userdanger("[user] has shocked you with its tongue! You can feel the betrayal."))
@@ -228,7 +228,7 @@
 			water.use_charge(5)
 			var/mob/living/carbon/human/H = target
 			if(H.species.lightweight == 1)
-				H.Weaken(3)
+				H.status_at_least(EFFECT_WEAKENED, 3)
 	else
 		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
 		busy = 1
@@ -424,7 +424,7 @@
 	if(ishuman(T))
 		var/mob/living/carbon/human/H = T
 		if(H.species.lightweight == 1)
-			H.Stun(3) // Crawling made this useless. Changing to stun instead.
+			H.status_at_least(EFFECT_STUNNED, 3) // Crawling made this useless. Changing to stun instead.
 			H.drop_both_hands() //Stuns no longer drop items, so were forcing it >:3
 			return
 

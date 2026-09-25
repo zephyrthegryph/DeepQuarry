@@ -28,8 +28,8 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 		for(var/obj/item/content_item in target_mob)
 			target_mob.drop_from_inventory(content_item)
 		//teleport person to cell
-		target_mob.Paralyse(5)
-		target_mob.Sleeping(5)
+		target_mob.status_at_least(EFFECT_PARALYZED, 5)
+		target_mob.status_at_least(EFFECT_SLEEPING, 5)
 		sleep(5)	//so they black out before warping
 		target_mob.forceMove(pick(GLOB.prisonwarp))
 		if(ishuman(target_mob))

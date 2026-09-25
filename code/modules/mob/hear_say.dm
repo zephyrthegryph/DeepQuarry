@@ -94,7 +94,7 @@
 	if(message == "")
 		return FALSE
 
-	if(sleeping || stat == UNCONSCIOUS)
+	if(has_status(EFFECT_SLEEPING) || stat == UNCONSCIOUS)
 		hear_sleep(multilingual_to_message(message_pieces))
 		return FALSE
 
@@ -198,7 +198,7 @@
 
 	var/list/combined = combine_message(message_pieces, verb, speaker, always_stars = hard_to_hear, radio = TRUE)
 	var/message = combined["formatted"]
-	if(sleeping || stat == UNCONSCIOUS) //If unconscious or sleeping
+	if(has_status(EFFECT_SLEEPING) || stat == UNCONSCIOUS) //If unconscious or sleeping
 		hear_sleep(multilingual_to_message(message_pieces))
 		return
 
@@ -207,7 +207,7 @@
 
 	message = "[encode_html_emphasis(message)][part_d]"
 
-	if((sdisabilities & DEAF) || ear_deaf)
+	if((sdisabilities & DEAF) || has_status(EFFECT_DEAFENED))
 		if(prob(20))
 			to_chat(src, span_warning("You feel your headset vibrate but can hear nothing from it!"))
 	else

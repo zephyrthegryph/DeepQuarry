@@ -195,7 +195,7 @@
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
 		qdel(D)
-		occupantData["paralysis"] = occupant.get_paralysis()
+		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
 		occupantData["hasBlood"] = 0
 		occupantData["bodyTemperature"] = occupant.bodytemperature
 		occupantData["maxTemp"] = 1000 // If you get a burning vox armalis into the sleeper, congratulations

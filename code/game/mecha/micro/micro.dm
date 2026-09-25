@@ -36,7 +36,7 @@
 			switch(melee_injury_kind)
 				if(INJURY_BLUNT)
 					if(!ishuman(M))
-						M.Paralyse(1)
+						M.status_at_least(EFFECT_PARALYZED, 1)
 					M.injure(INJURY_BLUNT, rand(force/2, force), hit_zone, src)
 				if(INJURY_BURN)
 					M.injure(INJURY_BURN, rand(force/2, force), hit_zone, src)

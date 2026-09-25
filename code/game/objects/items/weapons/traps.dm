@@ -111,7 +111,7 @@
 		var/obj/item/organ/external/affected = H.get_organ(check_zone(target_zone))
 		if(!affected) // took it clean off!
 			to_chat(H, span_danger("The steel jaws of \the [src] take your limb clean off!"))
-			L.Stun(stun_length*2)
+			L.status_at_least(EFFECT_STUNNED, stun_length*2)
 			deployed = 0
 			anchored = FALSE
 			return
@@ -120,7 +120,7 @@
 	set_dir(L.dir)
 	can_buckle = TRUE
 	buckle_mob(L)
-	L.Stun(stun_length)
+	L.status_at_least(EFFECT_STUNNED, stun_length)
 	to_chat(L, span_danger("The steel jaws of \the [src] bite into you, trapping you in place!"))
 	deployed = 0
 	anchored = FALSE
@@ -346,7 +346,7 @@
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 			s.set_up(3, 1, src)
 			s.start()
-			if(user.get_stunned())
+			if(user.has_status(EFFECT_STUNNED))
 				return 1
 		else
 			return 0
@@ -399,7 +399,7 @@
 					return
 				H.injure(INJURY_BLUNT, force, affecting, src)
 				if(affecting.organ_can_feel_pain())
-					H.Weaken(3)
+					H.status_at_least(EFFECT_WEAKENED, 3)
 				return
 			check -= picked
 

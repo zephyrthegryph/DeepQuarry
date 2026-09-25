@@ -85,7 +85,7 @@
 	mob_type = /mob/living/simple_mob/humanoid/possessed
 
 /datum/life_system/type_post/simple_mob/humanoid/possessed/tick(mob/living/simple_mob/humanoid/possessed/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.idle <= 0 && self.silenced == 0)
 		playsound(self, 'sound/h_sounds/breathing.ogg', 60, 1)
 		self.idle = 4

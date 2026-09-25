@@ -14,9 +14,7 @@
 	if(our_target.status_flags & GODMODE) //Already have it.
 		return ELEMENT_INCOMPATIBLE
 	our_target.status_flags |= GODMODE
-	our_target.status_flags &= ~CANSTUN
-	our_target.status_flags &= ~CANWEAKEN
-	our_target.status_flags &= ~CANPARALYSE
+	hold_incapacitation_immunity(our_target, src)
 	if(issilicon(target))
 		RegisterSignal(target, COMSIG_SILICON_EMP_ACT, PROC_REF(on_emp))
 
@@ -47,7 +45,7 @@
 
 	//And finally, remove the fact we're in godmode.
 	our_target.status_flags &= ~GODMODE
-	our_target.status_flags |= CANSTUN|CANWEAKEN|CANPARALYSE
+	release_incapacitation_immunity(our_target, src)
 	return ..()
 
 /datum/element/godmode/proc/on_injure()
@@ -85,9 +83,7 @@
 	if(!ismob(target))
 		return ELEMENT_INCOMPATIBLE
 	var/mob/our_target = target
-	our_target.status_flags &= ~CANSTUN
-	our_target.status_flags &= ~CANWEAKEN
-	our_target.status_flags &= ~CANPARALYSE
+	hold_incapacitation_immunity(our_target, src)
 	RegisterSignal(target, COMSIG_LIVING_INJURE, PROC_REF(on_injure))
 	RegisterSignal(target, COMSIG_LIVING_BODY_STATUS, PROC_REF(on_body_status))
 	RegisterSignal(target, COMSIG_TAKING_APPLY_EFFECT, PROC_REF(on_apply_effect))
@@ -105,7 +101,7 @@
 	UnregisterSignal(target, COMSIG_LIVING_INJURE)
 	UnregisterSignal(target, COMSIG_LIVING_BODY_STATUS)
 	UnregisterSignal(target, COMSIG_TAKING_APPLY_EFFECT)
-	our_target.status_flags |= CANSTUN|CANWEAKEN|CANPARALYSE
+	release_incapacitation_immunity(our_target, src)
 	if(ishuman(target))
 		var/mob/living/carbon/human/the_target = target
 		for(var/obj/item/organ/external/external_organs in the_target.organs)

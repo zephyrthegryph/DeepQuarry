@@ -283,7 +283,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
@@ -302,7 +302,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
@@ -321,7 +321,7 @@
 		to_chat(src, span_warning("You miss!"))
 		return
 
-	T.Weaken(3)
+	T.status_at_least(EFFECT_WEAKENED, 3)
 
 	var/use_hand = "left"
 	if(get_equipped_item(SLOT_ID_HAND_L))
@@ -350,7 +350,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying)
 		to_chat(src, span_danger("You cannot do that in your current state."))
 		return
 

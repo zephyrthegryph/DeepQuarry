@@ -94,8 +94,8 @@
 	switch(luckynumber7)
 		if(1)	capsuleowner.resize(RESIZE_TINY) //Loss Shrinking!
 		if(2)	capsuleowner.injure(INJURY_BLUNT, 5, source = src) //Loss Damaging!
-		if(3)	capsuleowner.Weaken(5) //Loss Knee spaghetti!
-		if(4)	capsuleowner.hallucination += 66 //loss woah, dude.
+		if(3)	capsuleowner.status_at_least(EFFECT_WEAKENED, 5) //Loss Knee spaghetti!
+		if(4)	capsuleowner.status_adjust(EFFECT_HALLUCINATING, 66) //loss woah, dude.
 		if(5)	new	item(capsuleowner.loc) //Win!
 		if(7)
 			new	/obj/item/material/butterfly/switchblade(capsuleowner.loc)

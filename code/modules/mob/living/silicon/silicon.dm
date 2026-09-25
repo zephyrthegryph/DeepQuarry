@@ -86,7 +86,7 @@
 	var/band = round(severity)
 	if(band >= 1 && band <= length(surge_by_severity))
 		injure(INJURY_ELECTRIC, surge_by_severity[band], emp_injury_zone(), null, 0, /datum/affliction/synthetic/power_fault)
-		Confuse(confusion_by_severity[band])
+		status_at_least(EFFECT_CONFUSED, confusion_by_severity[band])
 	flash_eyes(affect_silicon = 1)
 	to_chat(src, span_bolddanger("*BZZZT*"))
 	to_chat(src, span_danger("Warning: Electromagnetic pulse detected."))
@@ -110,7 +110,7 @@
 			span_danger("Energy pulse detected, system damaged!"), \
 			span_warning("You hear an electrical crack."))
 		if(prob(20))
-			Stun(2)
+			status_at_least(EFFECT_STUNNED, 2)
 		return
 
 /mob/living/silicon/IsAdvancedToolUser()

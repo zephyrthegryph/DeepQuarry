@@ -21,7 +21,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		var/datum/component/shadekin/SK = to_check.GetComponent(/datum/component/shadekin)
 		if(SK && SK.in_dark_respite)
 			to_chat(M, span_warning("You can't go through this portal so soon after an emergency warp!"))
-			to_check.Stun(10)
+			to_check.status_at_least(EFFECT_STUNNED, 10)
 			return
 
 	do_teleport(M, locked, precision, channel = TELEPORT_CHANNEL_QUANTUM)

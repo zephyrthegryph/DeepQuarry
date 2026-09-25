@@ -41,7 +41,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
 		to_chat(src, span_notice("You cannot tackle someone in your current state."))
 		return
 
@@ -60,7 +60,7 @@
 	if(last_special > world.time)
 		return
 
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || lying || restrained() || buckled)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || buckled)
 		to_chat(src, span_notice("You cannot tackle in your current state."))
 		return
 
@@ -68,13 +68,13 @@
 
 	var/failed
 	if(prob(75))
-		T.Weaken(rand(0.5,3))
+		T.status_at_least(EFFECT_WEAKENED, rand(0.5,3))
 	else
 		failed = 1
 
 	playsound(src, 'sound/weapons/pierce.ogg', 25, 1, -1)
 	if(failed)
-		src.Weaken(rand(2,4))
+		src.status_at_least(EFFECT_WEAKENED, rand(2,4))
 
 	for(var/mob/O in viewers(src, null))
 		if ((O.client && !( O.blinded )))

@@ -67,8 +67,8 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	mob_type = /mob/living/simple_mob/animal/passive/chicken
 
 /datum/life_system/type_post/simple_mob/animal/passive/chicken/tick(mob/living/simple_mob/animal/passive/chicken/self, datum/life_context/ctx)
-	. =..()
-	if(!.)
+	..()
+	if(!ctx?.alive)
 		return
 	if(!self.stat && prob(3) && self.eggsleft > 0)
 		self.visible_message("[self] [pick("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")]")
@@ -142,8 +142,8 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	mob_type = /mob/living/simple_mob/animal/passive/chick
 
 /datum/life_system/type_post/simple_mob/animal/passive/chick/tick(mob/living/simple_mob/animal/passive/chick/self, datum/life_context/ctx)
-	. =..()
-	if(!.)
+	..()
+	if(!ctx?.alive)
 		return
 	if(!self.stat)
 		self.amount_grown += rand(1,2)

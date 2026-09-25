@@ -33,12 +33,12 @@
 
 /datum/unit_test/dq_robot_stun_stays_down/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
-	R.Stun(5)
+	R.status_at_least(EFFECT_STUNNED, 5)
 	R.life_frame()
 	TEST_ASSERT_EQUAL(R.stat, UNCONSCIOUS, "a stunned cyborg should stay unconscious through its Life tick")
 	R.life_frame()
 	TEST_ASSERT_EQUAL(R.stat, UNCONSCIOUS, "a stunned cyborg should not flicker awake on the next tick")
-	R.SetStunned(0)
+	R.status_set(EFFECT_STUNNED, 0)
 	R.life_frame()
 	TEST_ASSERT_EQUAL(R.stat, CONSCIOUS, "a cyborg should wake once the stun ends")
 

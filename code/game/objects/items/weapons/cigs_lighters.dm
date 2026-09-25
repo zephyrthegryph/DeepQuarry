@@ -1083,7 +1083,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 					user.apply_effect(100, EYE_BLUR)
 					user.apply_effect(50, AGONY)
 					user.add_oxygen_debt(5, src)
-					user.eye_blurry = 10
+					user.status_set(EFFECT_BLURRY, 10)
 				else			// This one just blinds and blurs your screen, but otherwise doesn't actually risk harming you. Even the oxy damage heals on its own.
 					user.injure(INJURY_PAIN, 15, BP_R_HAND, src)
 					user.apply_effect(5, WEAKEN)
@@ -1091,7 +1091,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 					user.apply_effect(100, EYE_BLUR)
 					user.apply_effect(50, AGONY)
 					user.add_oxygen_debt(15, src)
-					user.eye_blurry = 10
+					user.status_set(EFFECT_BLURRY, 10)
 			if(100)				// This is the part that makes it admin only for the moment, it spawns 500 rads from the carbon's position, and dusts the carbon instantly. It does also drop everything unlike the supermatter crystal though, so hopefully you won't lose any items if you fumble this badly!
 				to_chat(user, span_warning("OH NO! [user] almost dropped their live [src]! Thank goodness they caught it... by the glowing yellow crystal... oh."))
 				user.visible_message(span_danger("You almost dropped your [src], thank goodness you caught it! By the glowing crystal within. You find your ears filled with unearthly ringing and your last thought is \"Oh, fuck.\""))

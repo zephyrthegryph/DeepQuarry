@@ -20,33 +20,13 @@
 	// Death is decided by the body (evaluate_status -> death()); we only refresh displays here.
 	self.update_health_display()
 	if(self.stat >= DEAD)
-		ctx.core_result = FALSE
+		ctx.alive = FALSE
 		ctx.blocked |= LIFE_SEG_SIMPLE
 		return
-	ctx.core_result = TRUE
+	ctx.alive = TRUE
 
 /datum/life_system/simple_vitals/idle(mob/living/simple_mob/self)
 	return TRUE
-
-/// Sleep wears off. Stun, weakness and paralysis are timed contributions that end on their own.
-/datum/life_system/simple_statuses
-	name = "simple statuses"
-	wake_on = LIFE_WAKE_ON_STATUS
-	phase = LIFE_PHASE_TAIL
-	order = 110
-	segment = LIFE_SEG_SIMPLE
-	mob_type = /mob/living/simple_mob
-	woken_by = "Sleeping setters (CHANGE_MOB_STATUS)"
-
-/datum/life_system/simple_statuses/tick(mob/living/simple_mob/self, datum/life_context/ctx)
-	var/datum/life_system/statuses/statuses = life_statuses()
-	statuses.sleeping(self)
-
-/// Continuous while asleep or its alert is up.
-/datum/life_system/simple_statuses/idle(mob/living/simple_mob/self)
-	if(self.sleeping || self.toggled_sleeping)
-		return FALSE
-	return !self.alerts?["asleep"]
 
 /// Passive healing while fed.
 /datum/life_system/simple_healing
@@ -65,12 +45,8 @@
 /datum/life_system/simple_healing/idle(mob/living/simple_mob/self)
 	return self.nutrition < 150 || !self.is_injured()
 
-/// Simple mob Life() returned TRUE alive, FALSE dead.
 /datum/life_system/type_post/simple_mob
 	mob_type = /mob/living/simple_mob
-
-/datum/life_system/type_post/simple_mob/tick(mob/living/simple_mob/self, datum/life_context/ctx)
-	return ctx?.core_result
 
 
 /// Refreshes the health HUD, nutrition alert and injury slowdown. Death itself

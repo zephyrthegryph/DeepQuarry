@@ -85,10 +85,9 @@
 	var/blocked = NONE
 	/// TRUE when the per-system profiler sampled this frame.
 	var/profile = FALSE
-	/// The /mob/living core's legacy return value: 1 once the living-alive gate passed.
-	var/living_result
-	/// A subtype core's legacy return value (simple mobs: TRUE alive / FALSE dead).
-	var/core_result
+	/// TRUE once the frame found the mob alive: set by the living alive gate, revoked by a
+	/// subtype's vitals gate that finds it dead (simple mobs).
+	var/alive = FALSE
 	/// The air this mob sits in (turf air, belly air or null), captured at the placed gate.
 	var/datum/gas_mixture/environment
 	/// TRUE when the biology clock ran no step this frame (stasis). Set once by life_frame()
@@ -103,8 +102,7 @@
 	seconds = LIFE_CYCLE_SECONDS
 	blocked = NONE
 	src.profile = profile
-	living_result = null
-	core_result = null
+	alive = FALSE
 	environment = null
 	stasis = FALSE
 	no_sleep = FALSE

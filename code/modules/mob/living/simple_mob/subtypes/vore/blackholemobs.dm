@@ -102,7 +102,7 @@
 	if(!L)
 		return FALSE
 	if(Adjacent(L))
-		L.Weaken(1)
+		L.status_at_least(EFFECT_WEAKENED, 1)
 	return TRUE
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
@@ -662,8 +662,8 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	mob_type = /mob/living/simple_mob/vore/blackhole_obelisk
 
 /datum/life_system/type_post/simple_mob/vore/blackhole_obelisk/tick(mob/living/simple_mob/vore/blackhole_obelisk/self, datum/life_context/ctx)
-	. = ..()
-	if(!.)
+	..()
+	if(!ctx?.alive)
 		return
 	if(world.time > self.last_lifechecks + 15 SECONDS)
 		self.last_lifechecks = world.time
@@ -686,7 +686,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 				continue
 			if(src.Adjacent(H))
 				to_chat(H,span_danger("The overwhelming psychic influence from \the [src] makes your senses reel!"))
-				H.Confuse(scent_strength)
+				H.status_at_least(EFFECT_CONFUSED, scent_strength)
 				continue
 			else
 				to_chat(H,span_danger("[pick(obelisk_lure_messages)]"))

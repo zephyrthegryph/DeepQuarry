@@ -21,12 +21,12 @@
 						span_danger("\The [src] has shocked you!")
 						)
 					playsound(src, 'sound/weapons/egloves.ogg', 75, 1)
-					L.Weaken(4)
-					L.Stun(4)
+					L.status_at_least(EFFECT_WEAKENED, 4)
+					L.status_at_least(EFFECT_STUNNED, 4)
 					do_attack_animation(L)
 					if(L.buckled)
 						L.buckled.unbuckle_mob() // To prevent an exploit where being buckled prevents slimes from jumping on you.
-					L.stuttering = max(L.stuttering, stun_power)
+					L.status_at_least(EFFECT_STUTTERING, stun_power)
 
 					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 					s.set_up(5, 1, L)
@@ -42,7 +42,7 @@
 						span_danger("\The [src] has pounced at you!")
 						)
 					playsound(src, 'sound/weapons/thudswoosh.ogg', 75, 1)
-					L.Weaken(2)
+					L.status_at_least(EFFECT_WEAKENED, 2)
 					do_attack_animation(L)
 					if(L.buckled)
 						L.buckled.unbuckle_mob() // To prevent an exploit where being buckled prevents slimes from jumping on you.

@@ -133,7 +133,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	mob_type = /mob/living/simple_mob/vore/alienanimals/space_jellyfish
 
 /datum/life_system/type_post/simple_mob/vore/alienanimals/space_jellyfish/tick(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.client)
 		return
 	self.reproduce()

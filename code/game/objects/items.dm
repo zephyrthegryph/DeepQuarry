@@ -627,7 +627,7 @@
 		/*
 		to_chat(M, span_warning("You stab yourself in the eye."))
 		M.sdisabilities |= BLIND
-		M.AdjustWeakened(4)
+		M.status_adjust(EFFECT_WEAKENED, 4)
 		*/
 
 	if(istype(H))
@@ -654,16 +654,16 @@
 				if(M.stat != 2)
 					to_chat(M, span_warning("You drop what you're holding and clutch at your eyes!"))
 					M.drop_item()
-				M.eye_blurry += 10
-				M.Paralyse(1)
-				M.Weaken(4)
+				M.status_adjust(EFFECT_BLURRY, 10)
+				M.status_at_least(EFFECT_PARALYZED, 1)
+				M.status_at_least(EFFECT_WEAKENED, 4)
 			if (eyes.damage >= eyes.min_broken_damage)
 				if(M.stat != 2)
 					to_chat(M, span_warning("You go blind!"))
 		H.injure(INJURY_BLUNT, 7, BP_HEAD, src)
 	else
 		M.injure(INJURY_PIERCE, 7, BP_HEAD, src)
-	M.eye_blurry += rand(3,4)
+	M.status_adjust(EFFECT_BLURRY, rand(3,4))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/reveal_blood()

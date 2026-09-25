@@ -112,7 +112,7 @@
 
 		visible_message(span_danger("\The [src] erupts from underneath, and hits \the [L]!"))
 		playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
-		L.add_modifier(/datum/modifier/entangled, 3 SECONDS) //L.Weaken(3)
+		L.add_modifier(/datum/modifier/entangled, 3 SECONDS) //L.status_at_least(EFFECT_WEAKENED, 3)
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
@@ -158,14 +158,14 @@
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
 			playsound(src, "punch", 75, 1)
-			Weaken(5)
+			status_at_least(EFFECT_WEAKENED, 5)
 			add_modifier(/datum/modifier/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
 
 		// Stun anyone in our way.
 		for(var/mob/living/L in T)
 			playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
-			L.Weaken(2)
+			L.status_at_least(EFFECT_WEAKENED, 2)
 
 		// Get into the tile.
 		forceMove(T)

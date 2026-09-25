@@ -62,32 +62,29 @@
 
 	if(self.stat == DEAD)
 		self.blinded = 1
-		self.silent = 0
+		self.status_set(EFFECT_MUTED, 0)
 		self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
-		if(self.get_paralysis() && self.get_paralysis() > 0)
+		if(self.has_status(EFFECT_PARALYZED) && self.status_units(EFFECT_PARALYZED) > 0)
 			self.blinded = 1
 			self.set_stat(UNCONSCIOUS)
 
-		if(self.sleeping)
-			if (self.mind)
-				if(self.mind.active && self.client != null)
-					self.AdjustSleeping(-1)
+		if(self.has_status(EFFECT_SLEEPING))
+			// Sleep wears off only while a player is home; an empty body stays asleep.
+			if(!self.mind?.active || !self.client)
+				self.status_at_least(EFFECT_SLEEPING, 1)
 			self.blinded = 1
 			self.set_stat(UNCONSCIOUS)
 		else if(!self.resting)
 			self.set_stat(CONSCIOUS)
 
-		// Eyes and blindness.
+		// Eyes and blindness. Temporary blindness and blur wear off on their own.
 		if(!self.has_eyes())
-			self.SetBlinded(1)
+			self.status_set(EFFECT_BLINDED, 1)
 			self.blinded =    1
-			self.eye_blurry = 1
-		else if(self.eye_blind)
-			self.AdjustBlinded(-1)
+			self.status_set(EFFECT_BLURRY, 1)
+		else if(self.has_status(EFFECT_BLINDED))
 			self.blinded =    1
-		else if(self.eye_blurry)
-			self.eye_blurry = max(self.eye_blurry-1, 0)
 
 		self.update_icons()
 
@@ -129,8 +126,8 @@
 		else
 			self.clear_fullscreen("blind")
 			self.set_fullscreen(self.disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			self.set_fullscreen(self.eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-			self.set_fullscreen(self.druggy, "high", /atom/movable/screen/fullscreen/high)
+			self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+			self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
 /datum/life_system/hud/carbon/alien/health_icons(mob/living/carbon/alien/self)
 	. = ..()

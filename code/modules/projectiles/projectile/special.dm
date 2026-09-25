@@ -152,7 +152,7 @@
 		if((H.species.flags & IS_PLANT) && (M.nutrition < 500))
 			if(prob(15))
 				M.apply_effect((rand(30,80)),IRRADIATE)
-				M.Weaken(5)
+				M.status_at_least(EFFECT_WEAKENED, 5)
 				for (var/mob/V in viewers(src))
 					V.show_message(span_red("[M] writhes in pain as [M.p_their()] vacuoles boil."), 3, span_red("You hear the crunching of leaves."), 2)
 			if(prob(35))
@@ -247,7 +247,7 @@
 /obj/item/projectile/beam/mindflayer/on_hit(atom/target, blocked = 0)
 	if(ishuman(target))
 		var/mob/living/carbon/human/M = target
-		M.Confuse(rand(5,8))
+		M.status_at_least(EFFECT_CONFUSED, rand(5,8))
 	..()
 
 /obj/item/projectile/chameleon

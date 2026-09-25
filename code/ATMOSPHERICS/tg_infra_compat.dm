@@ -329,7 +329,7 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 	for(var/mob/living/carbon/human/H in range(range, center))
 		if(H.species && (H.species.flags & (NO_POISON | IS_PLANT | NO_HALLUCINATION)))
 			continue
-		H.hallucination = max(H.hallucination, (hallucination_amount || 10))
+		H.status_at_least(EFFECT_HALLUCINATING, (hallucination_amount || 10))
 	return
 
 // /tg/'s vendored reactions reference foam types in this tree

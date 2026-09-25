@@ -20,7 +20,7 @@
 	if(!(ishuman(user) || user.isSynthetic()))
 		to_chat(user, span_warning("You don't know how to use this!"))
 		return FALSE
-	if(user.silent)
+	if(user.has_status(EFFECT_MUTED))
 		return FALSE
 	if(spamcheck > world.time)
 		to_chat(user, span_warning("[src] needs to recharge!"))
@@ -146,16 +146,16 @@
 				for(var/mob/living/carbon/M in oviewers(4, T))
 					if(M.get_ear_protection() >= 2)
 						continue
-					M.SetSleeping(0)
-					M.stuttering += 20
-					M.ear_deaf += 30
+					M.status_set(EFFECT_SLEEPING, 0)
+					M.status_adjust(EFFECT_STUTTERING, 20)
+					M.status_adjust(EFFECT_DEAFENED, 30)
 					M.deaf_loop.start() // Ear Ringing/Deafness
-					M.Weaken(3)
+					M.status_at_least(EFFECT_WEAKENED, 3)
 					if(prob(30))
-						M.Stun(10)
-						M.Paralyse(4)
+						M.status_at_least(EFFECT_STUNNED, 10)
+						M.status_at_least(EFFECT_PARALYZED, 4)
 					else
-						M.make_jittery(50)
+						M.status_adjust(EFFECT_JITTERY, 50)
 			insults--
 		else
 			user.audible_message(span_critical("*BZZZZzzzzzt*"))

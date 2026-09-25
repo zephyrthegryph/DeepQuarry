@@ -76,7 +76,7 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	if (. >= 2)
 		if(prob(1))
 			owner.custom_pain("Your feel very dizzy for a moment!",0)
-			owner.Confuse(2)
+			owner.status_at_least(EFFECT_CONFUSED, 2)
 
 /obj/item/organ/internal/brain/proc/replace_self_with(replace_path)
 	var/mob/living/carbon/human/tmp_owner = owner
@@ -212,8 +212,8 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	H.nutrition = 260 //Enough to try to regenerate ONCE.
 	H.injure(INJURY_BLUNT, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.injure(INJURY_BURN, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	H.Paralyse(4)
-	H.Sleeping(4)
+	H.status_at_least(EFFECT_PARALYZED, 4)
+	H.status_at_least(EFFECT_SLEEPING, 4)
 	for(var/obj/item/organ/external/E in H.organs) //They've still gotta congeal, but it's faster than the clone sickness they'd normally get.
 		if(E && E.organ_tag == BP_L_ARM || E.organ_tag == BP_R_ARM || E.organ_tag == BP_L_LEG || E.organ_tag == BP_R_LEG)
 			E.removed()

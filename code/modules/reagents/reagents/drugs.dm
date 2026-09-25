@@ -79,7 +79,7 @@
 	if(alien == IS_SLIME)
 		drug_strength *= 0.15 //~ 1/6
 
-	M.druggy = max(M.druggy, drug_strength)
+	M.status_at_least(EFFECT_DRUGGED, drug_strength)
 	if(prob_proc == TRUE && prob(10) && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained() && !M.resting) // CHOMPstation edit - Stop drug movement from forcing crawling
 		step(M, pick(GLOB.cardinal))
 		prob_proc = FALSE
@@ -89,7 +89,7 @@
 
 /datum/reagent/drugs/bliss/overdose(mob/living/M as mob)
 	if(prob_proc == TRUE && prob(20))
-		M.hallucination = max(M.hallucination, 5)
+		M.status_at_least(EFFECT_HALLUCINATING, 5)
 		prob_proc = FALSE
 	M.injure(INJURY_NEURAL, 0.25*REM, source = src)
 	M.injure(INJURY_TOXIN, 0.25*REM, source = src)
@@ -126,8 +126,8 @@
 		drug_strength *= 0.15 //~ 1/6
 
 	// Its restorative action is the treatment_tags profile.
-	M.druggy = max(M.druggy, drug_strength)
-	M.AdjustStunned(-1)
+	M.status_at_least(EFFECT_DRUGGED, drug_strength)
+	M.status_adjust(EFFECT_STUNNED, -1)
 	if(prob(5) && prob_proc == TRUE)
 		M.emote("giggle")
 		prob_proc = FALSE
@@ -159,32 +159,32 @@
 	if(alien == IS_SLIME)
 		threshold *= 0.15 //~1/6
 
-	M.druggy = max(M.druggy, 30)
+	M.status_at_least(EFFECT_DRUGGED, 30)
 
 	var/drug_strength = 20
 	var/effective_dose = dose
 	if(issmall(M)) effective_dose *= 2
 	if(effective_dose < 1 * threshold)
 		M.apply_effect(3, STUTTER)
-		M.make_dizzy(5)
+		M.status_adjust(EFFECT_DIZZY, 5)
 		if(prob(3) && prob_proc == TRUE)
 			M.emote(pick("twitch", "giggle"))
 			prob_proc = FALSE
 	else if(effective_dose < 2 * threshold)
 		M.apply_effect(3, STUTTER)
-		M.make_jittery(5)
-		M.make_dizzy(5)
-		M.druggy = max(M.druggy, 35)
-		M.hallucination = max(M.hallucination, drug_strength * threshold)
+		M.status_adjust(EFFECT_JITTERY, 5)
+		M.status_adjust(EFFECT_DIZZY, 5)
+		M.status_at_least(EFFECT_DRUGGED, 35)
+		M.status_at_least(EFFECT_HALLUCINATING, drug_strength * threshold)
 		if(prob(5) && prob_proc == TRUE)
 			M.emote(pick("twitch", "giggle"))
 			prob_proc = FALSE
 	else
 		M.apply_effect(3, STUTTER)
-		M.make_jittery(10)
-		M.make_dizzy(10)
-		M.druggy = max(M.druggy, 40)
-		M.hallucination = max(M.hallucination, drug_strength * threshold)
+		M.status_adjust(EFFECT_JITTERY, 10)
+		M.status_adjust(EFFECT_DIZZY, 10)
+		M.status_at_least(EFFECT_DRUGGED, 40)
+		M.status_at_least(EFFECT_HALLUCINATING, drug_strength * threshold)
 		if(prob(10) && prob_proc == TRUE)
 			M.emote(pick("twitch", "giggle"))
 			prob_proc = FALSE
@@ -213,7 +213,7 @@
 	else
 		M.injure(INJURY_TOXIN, 10 * removed, source = src) //Given incorporations of other toxins with similiar damage, this seems right.
 
-	M.druggy = max(M.druggy, drug_strength)
+	M.status_at_least(EFFECT_DRUGGED, drug_strength)
 	if(prob(10) && prob_proc == TRUE && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained())
 		step(M, pick(GLOB.cardinal))
 		prob_proc = FALSE
@@ -315,7 +315,7 @@
 	M.fear = max((M.fear - 6),0)
 	if(prob(5) && prob_proc == TRUE)
 		to_chat(M, span_warning("Everything feels out of control..."))
-		M.hallucination += 200
+		M.status_adjust(EFFECT_HALLUCINATING, 200)
 		prob_proc = FALSE
 
 /datum/reagent/drugs/qerr_quem

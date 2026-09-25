@@ -41,7 +41,7 @@
 			return FALSE
 		if(SPT_PROB(1.5 * stage, seconds_per_tick))
 			to_chat(affected_mob, span_danger("You suddenly feel [pick("sick and tired", "disoriented", "tired and confused", "nauseated", "faint", "dizzy")]..."))
-			affected_mob.Confuse(10)
+			affected_mob.status_at_least(EFFECT_CONFUSED, 10)
 			new /obj/effect/temp_visual/revenant(affected_mob.loc)
 		if(stagedamage < stage)
 			stagedamage++

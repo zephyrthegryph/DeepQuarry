@@ -12,7 +12,7 @@
 //	breathing, mutations, radiation, blood, random events, AFK      (alive only)
 //	chemicals, diseases, environment, ambience, movement
 //	status (regular status updates) -> LIFE_SEG_LIVING_STATUS
-//	disabilities, addictions, statuses                             (status only)
+//	disabilities, addictions                                       (status only)
 //	canmove, HUD, vision, TF holder, VR derez
 //	subtype tails (carbon germs, human, alien, simple mob, bot), then type_post variants
 //
@@ -39,9 +39,9 @@
 /datum/life_system/type_pre/idle(mob/living/self)
 	return type == /datum/life_system/type_pre
 
-/// Code a mob subtype ran after ..() in its old Life() override. A variant starts with
-/// `. = ..()`, which runs its parent's post code and yields what the parent's old Life()
-/// returned, then runs its own code. The roots yield the core's legacy return value.
+/// Code a mob subtype ran after ..() in its old Life() override. A variant starts with `..()`,
+/// which runs its parent's post code, then runs its own; code that only runs for a living mob
+/// checks `ctx?.alive` (null ctx: run outside the frame, where nothing is known).
 /datum/life_system/type_post
 	name = "type post"
 	wake_on = LIFE_WAKE_ON_BEHAVIOUR
@@ -49,9 +49,9 @@
 	order = 1000
 
 /datum/life_system/type_post/tick(mob/living/self, datum/life_context/ctx)
-	return ctx?.living_result
+	return
 
-/// The root and the carbon and simple mob variants only yield a return value.
+/// The root and the carbon and simple mob variants do nothing.
 /datum/life_system/type_post/idle(mob/living/self)
 	var/static/list/value_only = list(
 		/datum/life_system/type_post,
@@ -60,12 +60,8 @@
 	)
 	return type in value_only
 
-/// Carbon Life() returned nothing.
 /datum/life_system/type_post/carbon
 	mob_type = /mob/living/carbon
-
-/datum/life_system/type_post/carbon/tick(mob/living/carbon/self, datum/life_context/ctx)
-	return
 
 /// Mobs whose Life() only takes them out of the mob lists (preview dummies, announcers).
 /datum/life_system/delist
@@ -167,7 +163,7 @@
 	if(self.stat == DEAD)
 		ctx.blocked |= LIFE_SEG_LIVING_ALIVE
 	else
-		ctx.living_result = 1
+		ctx.alive = TRUE
 
 // --- Light --------------------------------------------------------------------------------------
 
@@ -442,7 +438,7 @@
 	return self.client ? 30 SECONDS : 0
 
 /// Status & health update: are we dead or alive, conscious or not. When it returns false the
-/// disabilities, addictions and statuses systems skip this cycle.
+/// disabilities and addictions systems skip this cycle.
 /datum/life_system/status
 	name = "status"
 	wake_on = LIFE_WAKE_ON_BODY
@@ -488,33 +484,29 @@
 	phase = LIFE_PHASE_MIND
 	order = 10
 	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
-	woken_by = "Blind/SetBlinded/AdjustBlinded; set_stat; body invalidate"
+	woken_by = "status changes (blindness starting or ending); set_stat; body invalidate"
 
+/// Temporary blindness, blur and deafness end on their own (timed statuses); this keeps the
+/// ones that don't (a disability, unconsciousness) topped up and heals ear damage.
 /datum/life_system/disabilities/tick(mob/living/self, datum/life_context/ctx)
 	SEND_SIGNAL(self, COMSIG_HANDLE_DISABILITIES)
-	//Eyes
-	if(self.sdisabilities & BLIND || self.stat)	//blindness from disability or unconsciousness doesn't get better on its own
-		self.SetBlinded(1)
-		self.throw_alert("blind", /atom/movable/screen/alert/blind)
-	else if(self.eye_blind)			//blindness, heals slowly over time
-		self.AdjustBlinded(-1)
+	//Eyes: blindness from disability or unconsciousness doesn't get better on its own
+	if(self.sdisabilities & BLIND || self.stat)
+		self.status_at_least(EFFECT_BLINDED, 1)
+	if(self.has_status(EFFECT_BLINDED))
 		self.throw_alert("blind", /atom/movable/screen/alert/blind)
 	else
 		self.clear_alert("blind")
 
-	if(self.eye_blurry)			//blurry eyes heal slowly
-		self.eye_blurry = max(self.eye_blurry-1, 0)
-
 	//Ears
 	if(self.sdisabilities & DEAF)		//disabled-deaf, doesn't get better on its own
-		self.setEarDamage(-1, max(self.ear_deaf, 1))
-	else
-		// deafness heals slowly over time, unless ear_damage is over 100
-		if(self.ear_damage < 100)
-			self.adjustEarDamage(-0.05,-1)
+		self.status_at_least(EFFECT_DEAFENED, 1)
+	else if(self.ear_damage < 100)
+		// ear damage heals slowly over time, unless it is over 100
+		self.adjustEarDamage(-0.05, 0)
 
-/// Busy while eyes or ears are recovering, a disability component listens, or the blind
-/// alert is still up.
+/// Busy while a disability or unconsciousness keeps blindness or deafness up, ears are healing,
+/// a disability component listens, or the blind alert doesn't match the status yet.
 /datum/life_system/disabilities/idle(mob/living/self)
 	if(type != /datum/life_system/disabilities)
 		return FALSE
@@ -522,94 +514,9 @@
 		return FALSE
 	if(self.stat || (self.sdisabilities & (BLIND | DEAF)))
 		return FALSE
-	return !self.eye_blind && !self.eye_blurry && !self.ear_deaf && self.ear_damage <= 0 && !self.alerts?["blind"]
-
-/// Stun, weaken, paralysis, confusion and speech impairments wear off. Its helpers are also
-/// called on their own by mobs that run only some of them (simple mobs, the AI, pAIs).
-/datum/life_system/statuses
-	name = "statuses"
-	wake_on = LIFE_WAKE_ON_STATUS
-	phase = LIFE_PHASE_MIND
-	order = 30
-	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
-	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI
-	woken_by = "Confuse and the other counter setters (CHANGE_MOB_STATUS)"
-
-/// Counts down the per-frame status counters. Stun, weaken and paralysis are timed
-/// contributions and need no ticking (doc/rewrite/life_on_om.md §7).
-/datum/life_system/statuses/tick(mob/living/self, datum/life_context/ctx)
-	stuttering(self)
-	silent(self)
-	drugged(self)
-	slurring(self)
-	confused(self)
-
-/// Continuous while any counter runs or an alert is still up; asleep otherwise.
-/datum/life_system/statuses/idle(mob/living/self)
-	if(type != /datum/life_system/statuses)
+	if(self.ear_damage > 0 && self.ear_damage < 100)
 		return FALSE
-	if(self.confused || self.stuttering || self.silent || self.druggy || self.slurring)
-		return FALSE
-	return !self.alert_state_drugged && !self.alert_state_confused
-
-/datum/life_system/statuses/proc/stuttering(mob/living/self)
-	if(self.stuttering)
-		self.stuttering = max(self.stuttering-1, 0)
-	return self.stuttering
-
-/datum/life_system/statuses/proc/silent(mob/living/self)
-	if(self.silent)
-		self.silent = max(self.silent-1, 0)
-	return self.silent
-
-/datum/life_system/statuses/proc/drugged(mob/living/self)
-	if(self.druggy)
-		self.druggy = max(self.druggy-1, 0)
-		if(!self.alert_state_drugged)
-			self.alert_state_drugged = TRUE
-			self.throw_alert("high", /atom/movable/screen/alert/high)
-	else if(self.alert_state_drugged)
-		self.alert_state_drugged = FALSE
-		self.clear_alert("high")
-	return self.druggy
-
-/datum/life_system/statuses/proc/slurring(mob/living/self)
-	if(self.slurring)
-		self.slurring = max(self.slurring-1, 0)
-	return self.slurring
-
-/datum/life_system/statuses/proc/confused(mob/living/self)
-	if(self.confused)
-		self.AdjustConfused(-1)
-		if(!self.alert_state_confused)
-			self.alert_state_confused = TRUE
-			self.throw_alert("confused", /atom/movable/screen/alert/confused)
-	else if(self.alert_state_confused)
-		self.alert_state_confused = FALSE
-		self.clear_alert("confused")
-	return self.confused
-
-/datum/life_system/statuses/proc/sleeping(mob/living/self)
-	if(self.stat != DEAD && self.toggled_sleeping)
-		self.Sleeping(2)
-	if(self.sleeping)
-		if(iscarbon(self))
-			var/mob/living/carbon/C = self
-			self.AdjustSleeping(-1 * C.species.waking_speed)
-		else
-			self.AdjustSleeping(-1)
-		self.throw_alert("asleep", /atom/movable/screen/alert/asleep)
-	else
-		self.clear_alert("asleep")
-	return self.sleeping
-
-/// The shared statuses helpers (stunned(), sleeping(), ...) for code outside the statuses tick.
-/proc/life_statuses()
-	RETURN_TYPE(/datum/life_system/statuses)
-	var/static/datum/life_system/statuses/statuses
-	if(!statuses)
-		statuses = get_life_system(/datum/life_system/statuses)
-	return statuses
+	return !!self.alerts?["blind"] == self.has_status(EFFECT_BLINDED)
 
 // --- Output -----------------------------------------------------------------------------------
 
@@ -627,9 +534,9 @@
 /datum/life_system/canmove/tick(mob/living/self, datum/life_context/ctx)
 	self.update_canmove()
 
-/// Resting and buckling update canmove themselves; the tick only follows the counters.
+/// Resting and buckling update canmove themselves, and the statuses when they start or end.
 /datum/life_system/canmove/idle(mob/living/self)
-	return type == /datum/life_system/canmove && !self.sleeping
+	return type == /datum/life_system/canmove
 
 /// The player HUD. Returns FALSE when there is no HUD to update. Also run by refresh_hud().
 /datum/life_system/hud

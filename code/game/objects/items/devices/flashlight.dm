@@ -155,7 +155,7 @@
 					to_chat(user, span_notice("\The [M] pupils give an eerie glow!"))
 				if(vision.is_bruised())
 					to_chat(user, span_warning("There's visible damage to [M]'s [vision.name]!"))
-				else if(M.eye_blurry)
+				else if(M.has_status(EFFECT_BLURRY))
 					to_chat(user, span_notice("\The [M]'s pupils react slower than normally."))
 				if(M.injury_load(INJURY_CATEGORY_NEURAL) > 15)
 					to_chat(user, span_notice("There's visible lag between left and right pupils' reactions."))

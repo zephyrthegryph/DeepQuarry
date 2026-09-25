@@ -212,7 +212,7 @@
 	for(var/mob/living/carbon/human/hallucinator in viewers(5, get_turf(src)))
 		if(hallucinator == owner)
 			continue
-		hallucinator.hallucination += 50
+		hallucinator.status_adjust(EFFECT_HALLUCINATING, 50)
 		if(prob(10))
 			to_chat(hallucinator, span_danger("Your nose bleeds!"))
 			hallucinator.drip(1)
@@ -221,7 +221,7 @@
 
 /obj/item/clothing/suit/armor/reactive/hallucinating/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("[src] blocks [attack_text], but pulls a massive charge of mental energy into [owner] from the surrounding environment!"))
-	owner.hallucination += 75
+	owner.status_adjust(EFFECT_HALLUCINATING, 75)
 	to_chat(owner, span_danger("Your nose bleeds!"))
 	owner.drip(1)
 	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration

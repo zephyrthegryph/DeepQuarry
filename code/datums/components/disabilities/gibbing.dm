@@ -32,7 +32,7 @@
 	gutdeathpressure += 0.01
 	if(gutdeathpressure > 0 && prob(gutdeathpressure))
 		owner.emote(pick("whimper","belch","belch","belch","choke","shiver"))
-		owner.Weaken(gutdeathpressure / 3)
+		owner.status_at_least(EFFECT_WEAKENED, gutdeathpressure / 3)
 	if((gutdeathpressure/3) >= 1 && prob(gutdeathpressure/3))
 		death_time = TRUE
 

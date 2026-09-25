@@ -178,21 +178,21 @@
 		if(SMITE_PIE)
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target))
 			playsound(target, 'sound/effects/slime_squish.ogg', 100, 1, get_rand_frequency(), falloff = 5)
-			target.Weaken(1)
+			target.status_at_least(EFFECT_WEAKENED, 1)
 			target.visible_message(span_danger("[target] is struck by pie!"))
 
 		if(SMITE_SPICE)
 			to_chat(target, span_warning("Spice spice baby!"))
-			target.eye_blurry = max(target.eye_blurry, 25)
-			target.Blind(10)
-			target.Stun(5)
-			target.Weaken(5)
+			target.status_at_least(EFFECT_BLURRY, 25)
+			target.status_at_least(EFFECT_BLINDED, 10)
+			target.status_at_least(EFFECT_STUNNED, 5)
+			target.status_at_least(EFFECT_WEAKENED, 5)
 			playsound(target, 'sound/effects/spray2.ogg', 100, 1, get_rand_frequency(), falloff = 5)
 
 		if(SMITE_HOTDOG)
 			playsound(target, 'sound/effects/whistle.ogg', 50, 1, get_rand_frequency(), falloff = 5)
 			sleep(2 SECONDS)
-			target.Stun(10)
+			target.status_at_least(EFFECT_STUNNED, 10)
 			if(ishuman(target))
 				if(target.get_equipped_item(SLOT_ID_HEAD))
 					target.unEquip(target.get_equipped_item(SLOT_ID_HEAD))
@@ -231,9 +231,9 @@
 		target.gib()
 	else
 		target.injure(INJURY_BLUNT, max(99, target.get_endurance() * target.vitality() - 1), flags = INJURE_IGNORE_RESISTANCE)
-		target.Stun(20)
-		target.Weaken(20)
-		target.stuttering = 20
+		target.status_at_least(EFFECT_STUNNED, 20)
+		target.status_at_least(EFFECT_WEAKENED, 20)
+		target.status_set(EFFECT_STUTTERING, 20)
 
 GLOBAL_VAR(redspace_abduction_z)
 

@@ -132,7 +132,7 @@
 					//Handle the weakness effect afterwards
 					if(severity >= 3)
 						if(prob(severity * diode.rating))
-							H.Weaken(max(H.get_weakened(), severity - 2))
+							H.status_at_least(EFFECT_WEAKENED, max(H.status_units(EFFECT_WEAKENED), severity - 2))
 						H.injure(INJURY_BURN, severity - 2, E, src, flags = INJURE_SILENT)
 
 					var/eye_message = span_info("A small, bright dot appears in your vision.")
@@ -158,7 +158,7 @@
 		if(prob(effectchance * diode.rating))
 			flick("flash", S.flash_eyes(affect_silicon = TRUE))
 			if (prob(3 * diode.rating))
-				S.Weaken(1)
+				S.status_at_least(EFFECT_WEAKENED, 1)
 			to_chat(S, span_warning("Your sensors were blinded by a laser!"))
 			outmsg = span_notice("You blind [S] by shining [src] at their sensors.")
 			add_attack_logs(user,S,"Tried disabling using [src]")

@@ -41,6 +41,6 @@
 		if(ishuman(target))
 			var/mob/living/carbon/human/H = target
 			H.vomit()
-			H.Confuse(2)
+			H.status_at_least(EFFECT_CONFUSED, 2)
 
 		return 1

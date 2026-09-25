@@ -66,7 +66,7 @@
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
 			playsound(src, "punch", 50, 1)
-			L.Weaken(1)
+			L.status_at_least(EFFECT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
@@ -534,7 +534,7 @@ ANT STRUCTURES
 /obj/effect/ant_structure/trap/confusion/attack_mob(mob/living/L)
 	playsound(src, 'sound/effects/ghost2.ogg', 20, 1)
 	if(L.get_ear_protection() == 0)
-		L.Confuse(10)
+		L.status_at_least(EFFECT_CONFUSED, 10)
 
 /obj/effect/ant_structure/trap/poison
 	icon_state = "knock_trap"
@@ -548,7 +548,7 @@ ANT STRUCTURES
 	icon_state = "trip_trap"
 
 /obj/effect/ant_structure/trap/trip/attack_mob(mob/living/L)
-	L.Weaken(3)
+	L.status_at_least(EFFECT_WEAKENED, 3)
 
 /obj/effect/ant_structure/wall
 	name = "Metant wall"

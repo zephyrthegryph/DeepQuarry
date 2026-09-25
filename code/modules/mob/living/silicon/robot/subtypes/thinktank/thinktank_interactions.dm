@@ -71,7 +71,7 @@
 /mob/living/silicon/robot/platform/proc/welcome_client()
 	if(client)
 		to_chat(src, span_notice(span_bold("You are a think-tank") + ", a kind of flexible and adaptive drone intelligence installed into an armoured platform. Your programming compels you to be friendly and helpful wherever possible."))
-	SetSleeping(0)
-	SetWeakened(0)
-	SetParalysis(0)
+	status_set(EFFECT_SLEEPING, 0)
+	status_set(EFFECT_WEAKENED, 0)
+	status_set(EFFECT_PARALYZED, 0)
 	resting = FALSE

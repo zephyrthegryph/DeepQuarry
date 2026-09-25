@@ -36,7 +36,7 @@
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		if(H.silent)
+		if(H.has_status(EFFECT_MUTED))
 			to_chat(src, span_danger("You can't speak!"))
 			return FALSE
 
@@ -64,7 +64,7 @@
 				to_chat(M, span_danger("You hear an extremely loud screeching sound!  It \
 				[pick("confuses","confounds","perturbs","befuddles","dazes","unsettles","disorients")] you."))
 				M.adjustEarDamage(0,30)
-				M.Confuse(20)
+				M.status_at_least(EFFECT_CONFUSED, 20)
 				M << sound('sound/effects/screech.ogg')
 				affected += M
 			else
@@ -75,7 +75,7 @@
 		if(issilicon(M))
 			M << sound('sound/weapons/flash.ogg')
 			to_chat(M, span_notice("Auditory input overloaded.  Reinitializing..."))
-			M.Weaken(rand(5,10))
+			M.status_at_least(EFFECT_WEAKENED, rand(5,10))
 			affected += M
 
 	for(var/obj/machinery/light/L in range(range, src))
@@ -105,7 +105,7 @@
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		if(H.silent)
+		if(H.has_status(EFFECT_MUTED))
 			to_chat(src, span_danger("You can't speak!"))
 			return FALSE
 

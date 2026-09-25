@@ -9,7 +9,7 @@
 	var/datum/genetics/side_effect/S = new tp
 
 	S.start(H)
-	addtimer(CALLBACK(H, TYPE_PROC_REF(/mob/living/carbon/human, Weaken), 4), 2 SECONDS, TIMER_DELETE_ME)
+	addtimer(CALLBACK(H, TYPE_PROC_REF(/mob, status_at_least), EFFECT_WEAKENED, 4), 2 SECONDS, TIMER_DELETE_ME)
 	addtimer(CALLBACK(S, TYPE_PROC_REF(/datum/genetics/side_effect, finish), WEAKREF(H)), S.duration, TIMER_DELETE_ME)
 	//above is doing: Call S.finish(H) in S.duration
 
@@ -79,4 +79,4 @@
 /datum/genetics/side_effect/confuse/finish(datum/weakref/WR)
 	if(..()) return
 	var/mob/living/carbon/human/H = WR.resolve()
-	H.Confuse(100)
+	H.status_at_least(EFFECT_CONFUSED, 100)

@@ -43,7 +43,7 @@
 	playsound(T, "explosion", 75, 1) // Local sound.
 
 	for(var/mob/M in GLOB.player_list) // For everyone else.
-		if(M.z == T.z && get_dist(M, T) > world.view && !M.ear_deaf && !istype(M.loc,/turf/space))
+		if(M.z == T.z && get_dist(M, T) > world.view && !M.has_status(EFFECT_DEAFENED) && !istype(M.loc,/turf/space))
 			M << 'sound/effects/explosionfar.ogg'
 
 	exploding = FALSE

@@ -42,4 +42,4 @@
 
 	if(ishuman(holder))
 		var/mob/living/carbon/human/H = holder
-		H.druggy = min(15, H.druggy + 4)
+		H.status_set(EFFECT_DRUGGED, min(15, H.status_units(EFFECT_DRUGGED) + 4))

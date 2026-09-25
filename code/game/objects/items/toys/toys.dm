@@ -2314,7 +2314,7 @@
 		playsound(src, 'sound/effects/snap.ogg', 50, 1)
 		user.visible_message(span_danger("[src] goes off!"))
 		shake_camera(user, 2, 1)
-		user.Stun(1)
+		user.status_at_least(EFFECT_STUNNED, 1)
 		post_shot(user)
 		return TRUE
 	else
@@ -2427,7 +2427,7 @@
 		playsound(src, 'sound/items/confetti.ogg', 50, 0)
 		icon_state = "tastybread_popped"
 		popped = 1
-		user.Stun(1)
+		user.status_at_least(EFFECT_STUNNED, 1)
 
 		var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 		s.set_up(5, 1, src)
@@ -2459,7 +2459,7 @@
 			playsound(src, 'sound/items/confetti.ogg', 50, 0)
 			icon_state = "tastybread_popped"
 			popped = 1
-			user.Stun(1)
+			user.status_at_least(EFFECT_STUNNED, 1)
 
 			var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 			s.set_up(5, 1, src)

@@ -145,7 +145,7 @@
 			domutcheck(H,null,MUTCHK_FORCED)
 			H.UpdateAppearance()
 		H.remove_mutation(HULK)
-		H.Weaken(3)
+		H.status_at_least(EFFECT_WEAKENED, 3)
 		H.emote("collapse")
 
 /datum/trait/positive/superpower_flashproof

@@ -125,7 +125,7 @@
 		if(owner.restrained())
 			return FALSE
 	if(check_flags & AB_CHECK_STUNNED)
-		if(owner.get_stunned())
+		if(owner.has_status(EFFECT_STUNNED))
 			return FALSE
 	if(check_flags & AB_CHECK_LYING)
 		if(owner.lying)

@@ -162,7 +162,7 @@
 	return brain
 
 /obj/item/mmi/relaymove(mob/user, direction)
-	if(user.stat || user.get_stunned())
+	if(user.stat || user.has_status(EFFECT_STUNNED))
 		return
 	var/obj/item/rig/rig = src.get_rig()
 	if(rig)
@@ -223,7 +223,7 @@
 	view.add_language(LANGUAGE_GALCOM)
 	view.add_language(LANGUAGE_EAL)
 	view.set_stat(CONSCIOUS)
-	view.silent = 0
+	view.status_set(EFFECT_MUTED, 0)
 	GLOB.dead_mob_list -= view
 
 /obj/item/mmi/digital/update_occupied_state()

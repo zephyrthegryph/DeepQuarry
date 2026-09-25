@@ -76,12 +76,12 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	mob_type = /mob/living/simple_mob/animal/solargrub_larva
 
 /datum/life_system/type_post/simple_mob/animal/solargrub_larva/tick(mob/living/simple_mob/animal/solargrub_larva/self, datum/life_context/ctx)
-	. = ..()
+	..()
 
 	if(self.machine_effect && !istype(self.loc, /obj/machinery))
 		QDEL_NULL(self.machine_effect)
 
-	if(!.)	// || ai_inactive
+	if(!ctx?.alive)	// || ai_inactive
 		return
 
 	if(self.power_drained >= 7 MEGAWATTS && prob(5))

@@ -185,8 +185,8 @@
 	var/poison_strength = strength * M.species.chem_strength_tox
 	if(strength && alien != IS_DIONA)
 		M.injure(INJURY_TOXIN, poison_strength * removed, source = src, affliction = poison_affliction)
-		M.druggy = max(M.druggy, 10)
-		M.make_jittery(5)
+		M.status_at_least(EFFECT_DRUGGED, 10)
+		M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/toxin/phoron
 	name = REAGENT_PHORON
@@ -253,7 +253,7 @@
 /datum/reagent/toxin/cyanide/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(dose > 5) //Puts you to sleep if its in your system for too long. This is equivalent to 100 seconds (50 ticks).
-		M.Sleeping(1)
+		M.status_at_least(EFFECT_SLEEPING, 1)
 
 /datum/reagent/toxin/mold
 	name = REAGENT_MOLD
@@ -355,7 +355,7 @@
 		if(H.stat != 1)
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, H.losebreath - 10)
-			H.Weaken(10)
+			H.status_at_least(EFFECT_WEAKENED, 10)
 
 /datum/reagent/toxin/potassium_chlorophoride
 	name = REAGENT_POTASSIUMCHLOROPHORIDE
@@ -379,7 +379,7 @@
 		if(H.stat != 1)
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, M.losebreath-10)
-			H.Weaken(10)
+			H.status_at_least(EFFECT_WEAKENED, 10)
 	if(alien == IS_SLIME)
 		M.injure(INJURY_BURN, removed * 3, source = src)
 
@@ -409,8 +409,8 @@
 		M.tod = stationtime2text()
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
-	M.silent = max(M.silent, 10)
-	M.SetParalysis(max(M.get_paralysis(), 10))
+	M.status_at_least(EFFECT_MUTED, 10)
+	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
 /datum/reagent/toxin/zombiepowder/Destroy()
 	if(holder && holder.my_atom && ismob(holder.my_atom))
@@ -439,8 +439,8 @@
 		M.tod = stationtime2text()
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
-	M.silent = max(M.silent, 10)
-	M.SetParalysis(max(M.get_paralysis(), 10))
+	M.status_at_least(EFFECT_MUTED, 10)
+	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
 	if(prob(0.1))
 		M.visible_message("[M] wheezes.", "You wheeze sharply... it's cold.")
@@ -653,7 +653,7 @@
 		else if(prob(20))
 			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!","rubs at their eyes!")]"))
 	else
-		M.eye_blurry = max(M.eye_blurry, 10)
+		M.status_at_least(EFFECT_BLURRY, 10)
 
 /datum/reagent/lexorin
 	name = REAGENT_LEXORIN
@@ -676,7 +676,7 @@
 		M.injure(INJURY_TOXIN, 3 * removed, source = src)
 		if(prob(10))
 			to_chat(M, span_warning("Your cellular mass hardens for a moment."))
-			M.Stun(6)
+			M.status_at_least(EFFECT_STUNNED, 6)
 		return
 	M.injure(INJURY_CORROSIVE, 3 * removed, source = src)
 	if(M.losebreath < 15)
@@ -773,7 +773,7 @@
 			M.mend(TREAT_TISSUE_REPAIR, 25 * removed)
 			M.mend(TREAT_BURN_CARE, 25 * removed)
 			M.mend(TREAT_ANTITOXIN, rand(10, 30) * removed)
-			M.druggy = max(M.druggy, 10)
+			M.status_at_least(EFFECT_DRUGGED, 10)
 	else
 		if(prob(10))
 			to_chat(M, span_danger("Your insides are burning!"))
@@ -815,23 +815,23 @@
 		if(effective_dose == metabolism * 2 || prob(5))
 			M.emote("yawn")
 	else if(effective_dose < 1.5 * threshold)
-		M.eye_blurry = max(M.eye_blurry, 10)
+		M.status_at_least(EFFECT_BLURRY, 10)
 	else if(effective_dose < 5 * threshold)
 		if(prob(50))
-			M.Weaken(2)
-		M.drowsyness = max(M.drowsyness, 20)
+			M.status_at_least(EFFECT_WEAKENED, 2)
+		M.status_at_least(EFFECT_DROWSY, 20)
 	else
 		if(alien == IS_SLIME) //They don't have eyes, and they don't really 'sleep'. Fumble their general senses.
-			M.eye_blurry = max(M.eye_blurry, 30)
+			M.status_at_least(EFFECT_BLURRY, 30)
 			if(prob(20))
-				M.ear_deaf = max(M.ear_deaf, 4)
+				M.status_at_least(EFFECT_DEAFENED, 4)
 				M.deaf_loop.start() // Ear Ringing/Deafness
-				M.Confuse(2)
+				M.status_at_least(EFFECT_CONFUSED, 2)
 			else
-				M.Weaken(2)
+				M.status_at_least(EFFECT_WEAKENED, 2)
 		else
-			M.Sleeping(20)
-		M.drowsyness = max(M.drowsyness, 60)
+			M.status_at_least(EFFECT_SLEEPING, 20)
+		M.status_at_least(EFFECT_DROWSY, 60)
 
 /datum/reagent/chloralhydrate
 	name = REAGENT_CHLORALHYDRATE
@@ -864,21 +864,21 @@
 		effective_dose *= 2
 
 	if(effective_dose == metabolism)
-		M.Confuse(2)
-		M.drowsyness += 2
+		M.status_at_least(EFFECT_CONFUSED, 2)
+		M.status_adjust(EFFECT_DROWSY, 2)
 	else if(effective_dose < 2 * threshold)
-		M.Weaken(30)
-		M.eye_blurry = max(M.eye_blurry, 10)
+		M.status_at_least(EFFECT_WEAKENED, 30)
+		M.status_at_least(EFFECT_BLURRY, 10)
 	else
 		if(alien == IS_SLIME)
 			if(prob(30))
-				M.ear_deaf = max(M.ear_deaf, 4)
+				M.status_at_least(EFFECT_DEAFENED, 4)
 				M.deaf_loop.start() // Ear Ringing/Deafness
-			M.eye_blurry = max(M.eye_blurry, 60)
-			M.Weaken(30)
-			M.Confuse(40)
+			M.status_at_least(EFFECT_BLURRY, 60)
+			M.status_at_least(EFFECT_WEAKENED, 30)
+			M.status_at_least(EFFECT_CONFUSED, 40)
 		else
-			M.Sleeping(30)
+			M.status_at_least(EFFECT_SLEEPING, 30)
 
 	if(effective_dose > 1 * threshold)
 		M.injure(INJURY_TOXIN, removed, source = src)
@@ -964,8 +964,8 @@
 	if(alien == IS_SLIME)
 		drug_strength *= 0.15 //~ 1/6
 
-	M.make_dizzy(drug_strength)
-	M.Confuse(drug_strength * 5)
+	M.status_adjust(EFFECT_DIZZY, drug_strength)
+	M.status_at_least(EFFECT_CONFUSED, drug_strength * 5)
 
 /datum/reagent/impedrezene
 	name = REAGENT_IMPEDREZENE
@@ -983,11 +983,11 @@
 /datum/reagent/impedrezene/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.make_jittery(-5)
+	M.status_adjust(EFFECT_JITTERY, -5)
 	if(prob(80))
 		M.injure(INJURY_NEURAL, 0.1 * removed, source = src)
 	if(prob(50))
-		M.drowsyness = max(M.drowsyness, 3)
+		M.status_at_least(EFFECT_DROWSY, 3)
 	if(prob(10))
 		M.emote("drool")
 
@@ -1017,7 +1017,7 @@
 
 	drug_strength = CLAMP(drug_strength, 0, 150) //Let's not have users be hallucinating more than 5 minutes.
 
-	M.hallucination = max(M.hallucination, drug_strength)
+	M.status_at_least(EFFECT_HALLUCINATING, drug_strength)
 
 /* Transformations */
 

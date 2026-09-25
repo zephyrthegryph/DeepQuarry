@@ -199,7 +199,7 @@
 			touchable_mobs += L
 
 			if(L.absorbed && !issilicon(L))
-				L.Weaken(5)
+				L.status_at_least(EFFECT_WEAKENED, 5)
 
 			//Thickbelly flag
 			if((mode_flags & DM_FLAG_THICKBELLY) && !L.muffled)

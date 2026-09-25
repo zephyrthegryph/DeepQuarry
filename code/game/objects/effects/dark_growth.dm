@@ -53,7 +53,7 @@
 				to_chat(L, span_notice("You can feel the energy flowing into you!"))
 		else if(prob(0.25))
 			to_chat(L, span_danger("The darkness seethes under your feet..."))
-			L.hallucination += 50
+			L.status_adjust(EFFECT_HALLUCINATING, 50)
 
 /obj/effect/dark/proc/light_check()
 	var/turf/T = get_turf(src)

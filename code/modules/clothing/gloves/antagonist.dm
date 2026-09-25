@@ -140,6 +140,6 @@
 	H.reload_fullscreen()
 
 	H.emote("gasp")
-	H.Weaken(rand(10,25))
+	H.status_at_least(EFFECT_WEAKENED, rand(10,25))
 
 	battery.emp_act(1)

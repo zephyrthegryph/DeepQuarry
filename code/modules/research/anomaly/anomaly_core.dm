@@ -168,7 +168,7 @@
 		if(nearby_living.is_blind())
 			continue
 
-		nearby_living.hallucination += 25
+		nearby_living.status_adjust(EFFECT_HALLUCINATING, 25)
 
 /obj/item/assembly/signaler/anomaly/pyro
 	name = "\improper pyroclastic anomaly core"
@@ -226,10 +226,10 @@
 		if(!person.has_lungs())
 			continue
 		person.emote(prob(50) ? "cough" : "sneeze")
-		person.Weaken(2)
+		person.status_at_least(EFFECT_WEAKENED, 2)
 		person.body?.add_restriction(src, BF_GAS_EXCHANGE, 0.3, 15 SECONDS) // dust coats the lungs
 		if(prob(15))
-			person.Stun(2)
+			person.status_at_least(EFFECT_STUNNED, 2)
 			to_chat(person, span_danger(pick("You have a coughing fit!", "You can't stop coughing!")))
 			addtimer(CALLBACK(src, PROC_REF(extraCough), person), 3 SECONDS)
 

@@ -69,7 +69,7 @@
 /mob/living/simple_mob/vore/devil/PounceTarget(mob/living/M, successrate = 100)
 	vore_pounce_cooldown = world.time + 1 SECONDS // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
-		M.Weaken(5)
+		M.status_at_least(EFFECT_WEAKENED, 5)
 		M.visible_message(span_danger("\The [src] pounces on \the [M]!"))
 	else // pounce misses!
 		M.visible_message(span_danger("\The [src] attempts to pounce \the [M] but misses!"))

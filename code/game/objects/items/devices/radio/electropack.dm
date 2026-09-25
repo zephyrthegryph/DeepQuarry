@@ -74,7 +74,7 @@
 		s.set_up(3, 1, M)
 		s.start()
 
-		M.Weaken(10)
+		M.status_at_least(EFFECT_WEAKENED, 10)
 
 	if(master && wires & 1)
 		master.receive_signal()

@@ -207,7 +207,7 @@
 		new /obj/effect/temp_visual/pre_confuse(get_turf(target))
 		spawn(5 SECONDS)
 			if(target)
-				target.Confuse(3)
+				target.status_at_least(EFFECT_CONFUSED, 3)
 				if(target.client)
 					to_chat(target, span_critical("You feel confused!"))
 				new /obj/effect/temp_visual/confuse(get_turf(target))

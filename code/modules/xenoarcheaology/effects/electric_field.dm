@@ -36,7 +36,7 @@
 			continue
 		if(L.isSynthetic())
 			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
-			L.stuttering += 3
+			L.status_adjust(EFFECT_STUTTERING, 3)
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -81,7 +81,7 @@
 			continue
 		if(L.isSynthetic())
 			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
-			L.stuttering += 3
+			L.status_adjust(EFFECT_STUTTERING, 3)
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -126,7 +126,7 @@
 			continue
 		if(L.isSynthetic())
 			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
-			L.stuttering += 3
+			L.status_adjust(EFFECT_STUTTERING, 3)
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L

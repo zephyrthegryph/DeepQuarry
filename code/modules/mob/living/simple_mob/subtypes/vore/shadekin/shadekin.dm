@@ -192,7 +192,7 @@
 	mob_type = /mob/living/simple_mob/shadekin
 
 /datum/life_system/type_post/simple_mob/shadekin/tick(mob/living/simple_mob/shadekin/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.comp.in_phase)
 		self.density = FALSE
 
@@ -213,7 +213,7 @@
 			dq_use_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
-	if(.)
+	if(ctx?.alive)
 		self.comp.handle_comp()
 
 /mob/living/simple_mob/shadekin/update_icon()
@@ -271,7 +271,7 @@
 		mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
 		mend(TREAT_TISSUE_REPAIR, injury_load(INJURY_CATEGORY_PHYSICAL) / 2)
 		mend(TREAT_ANTITOXIN, injury_load(INJURY_CATEGORY_TOXIC) / 2)
-		Stun(10)
+		status_at_least(EFFECT_STUNNED, 10)
 		movement_cooldown = 5
 		nutrition = 0
 

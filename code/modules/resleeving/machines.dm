@@ -50,8 +50,8 @@
 	//Apply damage: the sleeve is grown out of genetic damage in the pod.
 	set_occupant(H)
 	H.body.afflict(/datum/affliction/genetic_damage, null, DQ_SLEEVE_GROWTH_LOAD)
-	H.Paralyse(4)
-	H.Sleeping(4)
+	H.status_at_least(EFFECT_PARALYZED, 4)
+	H.status_at_least(EFFECT_SLEEPING, 4)
 
 	//Machine specific stuff at the end
 	update_icon()
@@ -506,8 +506,8 @@
 	else
 		to_chat(occupant, span_warning("You feel a small pain in your head as you're given a new backup implant. Oh, and a new body. It's disorienting, to say the least."))
 
-	occupant.SetConfused(max(occupant.confused, confuse_amount))								// Apply immedeate effects
-	occupant.eye_blurry = max(occupant.eye_blurry, blur_amount)
+	occupant.status_set(EFFECT_CONFUSED, max(occupant.status_units(EFFECT_CONFUSED), confuse_amount))								// Apply immedeate effects
+	occupant.status_at_least(EFFECT_BLURRY, blur_amount)
 
 	// Vore deaths get a fake modifier labeled as such
 	if(!occupant.mind)

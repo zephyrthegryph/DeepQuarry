@@ -62,7 +62,7 @@
 	mob_type = /mob/living/simple_mob/vore/pakkun
 
 /datum/life_system/type_post/simple_mob/vore/pakkun/tick(mob/living/simple_mob/vore/pakkun/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.client)
 		return
 	if(!self.ai_brain)

@@ -107,7 +107,7 @@
 	mob_type = /mob/living/simple_mob/vore/sheep
 
 /datum/life_system/type_post/simple_mob/vore/sheep/tick(mob/living/simple_mob/vore/sheep/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(!harvestable_wool)
 		wool_growth ++
 		return

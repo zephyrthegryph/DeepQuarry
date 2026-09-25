@@ -17,12 +17,14 @@
 	if(!mut)
 		return
 	LAZYADD(mutations, mut)
+	update_mutation_immunities(mut)
 
 /// Removes every occurrence of the given mutation from this mob.
 /mob/proc/remove_mutation(mut)
 	if(!mut)
 		return
 	LAZYREMOVE(mutations, mut)
+	update_mutation_immunities(mut)
 
 /// Returns the number of mutations currently active on this mob.
 /mob/proc/mutation_count()

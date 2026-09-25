@@ -642,8 +642,8 @@
 /mob/living/simple_mob/proc/PounceTarget(mob/living/M, successrate = 100)
 	vore_pounce_cooldown = world.time + 20 SECONDS // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
-		M.Weaken(5)
-		M.AdjustStunned(2)
+		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_adjust(EFFECT_STUNNED, 2)
 		M.visible_message(span_danger("\The [src] pounces on \the [M]!"))
 	else // pounce misses!
 		M.visible_message(span_danger("\The [src] attempts to pounce \the [M] but misses!"))
@@ -765,7 +765,7 @@
 		if(!faction_bump_vore && faction == tmob.faction)
 			return FALSE
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
-			tmob.Weaken(5)
+			tmob.status_at_least(EFFECT_WEAKENED, 5)
 		tmob.visible_message(span_danger("\The [src] [vore_bump_emote] \the [tmob]!"))
 		if(ai_brain) ai_brain.busy = TRUE
 		spawn()
@@ -938,7 +938,7 @@
 	if(ishuman(T))
 		var/mob/living/carbon/human/H = T
 		if(H.species.lightweight == 1)
-			H.Weaken(3)
+			H.status_at_least(EFFECT_WEAKENED, 3)
 			return
 	var/armor_block = T.armor_against(INJURY_PAIN)
 	T.injure(INJURY_PAIN, 20, null, src, flags = INJURE_ARMORED)

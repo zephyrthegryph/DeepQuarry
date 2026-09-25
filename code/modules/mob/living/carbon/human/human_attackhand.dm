@@ -622,7 +622,7 @@
 		var/obj/item/organ/internal/lungs/lungs = internal_organs_by_name[O_LUNGS]
 		if(lungs)
 			emote("gasp")
-		Weaken(rand(10,25))
+		status_at_least(EFFECT_WEAKENED, rand(10,25))
 		//SShaunting.influence(HAUNTING_RESLEEVE) // Used for the Haunting module downstream. Not implemented upstream.
 
 		// This is measures in `Life()` ticks. E.g. 10 minute defib timer = 300 `Life()` ticks.				// Original math was VERY off. Life() tick occurs every ~2 seconds, not every 2 world.time ticks.

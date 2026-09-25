@@ -23,6 +23,6 @@
 	if(comp.recursive_enhancement)
 		duration = duration + 10
 		to_chat(src, span_notice("They will be unable to cry out in fear for a little longer."))
-	T.silent += duration
+	T.status_adjust(EFFECT_MUTED, duration)
 	feedback_add_details("changeling_powers","SS")
 	return TRUE

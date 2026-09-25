@@ -249,7 +249,7 @@
 		msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_ID),user.client)]<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_ID)]'>\a [get_equipped_item(SLOT_ID_ID)]</a>."
 
 	//Jitters
-	var/jitter = get_jittery()
+	var/jitter = status_units(EFFECT_JITTERY)
 	if(jitter)
 		if(jitter >= 300)
 			msg += span_boldwarning("[p_Theyre()] convulsing violently!")

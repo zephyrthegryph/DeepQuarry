@@ -249,7 +249,6 @@
 		/datum/life_system/status/carbon/human,
 		/datum/life_system/disabilities/carbon/human,
 		/datum/life_system/addictions/carbon,
-		/datum/life_system/statuses,
 		/datum/life_system/canmove,
 		/datum/life_system/hud/carbon/human,
 		/datum/life_system/vision/carbon/human,
@@ -296,7 +295,6 @@
 	var/list/expected = list(
 		/datum/life_system/robot_cycle,
 		/datum/life_system/modifiers/silicon/robot,
-		/datum/life_system/statuses/silicon/robot,
 		/datum/life_system/robot_senses,
 		/datum/life_system/instability/silicon/robot,
 		/datum/life_system/robot_power,
@@ -656,30 +654,30 @@
 	// Statuses end in real time on their own: no frame is needed (or wanted: a test human's
 	// own frames can knock it out and hide canmove).
 	H.suspend_life()
-	H.Stun(2)
-	TEST_ASSERT(H.is_stunned(), "Stun() applies EFFECT_STUNNED")
+	H.status_at_least(EFFECT_STUNNED, 2)
+	TEST_ASSERT(H.has_status(EFFECT_STUNNED), "status_at_least() applies EFFECT_STUNNED")
 	TEST_ASSERT(om_has(H, EFFECT_STUNNED), "as a contribution")
-	TEST_ASSERT_EQUAL(H.get_stunned(), 2, "two units left")
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_STUNNED), 2, "two units left")
 	TEST_ASSERT(!H.canmove, "canmove follows the stun at once, without a frame")
 	TEST_ASSERT(!om_value_of(H, EFFECT_CAN_MOVE), "EFFECT_CAN_MOVE reads it")
-	H.Stun(1)
-	TEST_ASSERT_EQUAL(H.get_stunned(), 2, "Stun() never shortens")
+	H.status_at_least(EFFECT_STUNNED, 1)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_STUNNED), 2, "status_at_least() never shortens")
 	scheduler_advance(LIFE_CYCLE_SECONDS + 0.1)
-	TEST_ASSERT_EQUAL(H.get_stunned(), 1, "one unit per LIFE_CYCLE of real time")
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_STUNNED), 1, "one unit per LIFE_CYCLE of real time")
 	scheduler_advance(LIFE_CYCLE_SECONDS)
-	TEST_ASSERT(!H.is_stunned(), "the stun ends on its own")
-	TEST_ASSERT(H.canmove, "canmove comes back when it ends (stat [H.stat], sleeping [H.sleeping], lying [H.lying], resting [H.resting], paralysed [H.is_paralysed()], weakened [H.is_weakened()], buckled [H.buckled])")
+	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "the stun ends on its own")
+	TEST_ASSERT(H.canmove, "canmove comes back when it ends (stat [H.stat], sleeping [H.has_status(EFFECT_SLEEPING)], lying [H.lying], resting [H.resting], paralysed [H.has_status(EFFECT_PARALYZED)], weakened [H.has_status(EFFECT_WEAKENED)], buckled [H.buckled])")
 
-	H.Weaken(5)
-	H.SetWeakened(1)
-	TEST_ASSERT_EQUAL(H.get_weakened(), 1, "SetWeakened() sets the remaining duration")
-	H.AdjustWeakened(2)
-	TEST_ASSERT_EQUAL(H.get_weakened(), 3, "AdjustWeakened() adds to it")
-	H.AdjustWeakened(-10)
-	TEST_ASSERT(!H.is_weakened(), "adjusting below zero ends it")
-	H.Paralyse(3)
-	H.SetParalysis(0)
-	TEST_ASSERT(!H.is_paralysed(), "SetParalysis(0) ends it")
+	H.status_at_least(EFFECT_WEAKENED, 5)
+	H.status_set(EFFECT_WEAKENED, 1)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_WEAKENED), 1, "status_set() sets the remaining duration")
+	H.status_adjust(EFFECT_WEAKENED, 2)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_WEAKENED), 3, "status_adjust() adds to it")
+	H.status_adjust(EFFECT_WEAKENED, -10)
+	TEST_ASSERT(!H.has_status(EFFECT_WEAKENED), "adjusting below zero ends it")
+	H.status_at_least(EFFECT_PARALYZED, 3)
+	H.status_set(EFFECT_PARALYZED, 0)
+	TEST_ASSERT(!H.has_status(EFFECT_PARALYZED), "status_set(0) ends it")
 
 /// Wake-only presentation is not started for clientless mobs; a status change runs the canmove
 /// derivation in the same pass.
@@ -691,12 +689,12 @@
 	TEST_ASSERT(om_attached(H, /datum/om/behaviour/life_present), "every living mob carries the present behaviour")
 	TEST_ASSERT(!life_test_started(H, /datum/om/behaviour/life_present), "a clientless mob does not start it")
 	TEST_ASSERT(life_test_started(H, /datum/om/behaviour/life_derive), "the derive behaviour runs for every mob")
-	H.sleeping = 2
+	H.status_set(EFFECT_SLEEPING, 2)
 	H.canmove = TRUE
 	om_changed(H, CHANGE_MOB_STATUS)
 	scheduler_advance(0.1)
 	TEST_ASSERT(!H.canmove, "a status change ran the canmove derivation without a frame")
-	H.sleeping = 0
+	H.status_set(EFFECT_SLEEPING, 0)
 
 /// Ghosts, AI eyes and the blob overmind run their upkeep on their own behaviour.
 /datum/unit_test/life_om/observer_upkeep
@@ -745,14 +743,13 @@
 /datum/unit_test/life_om/stun_wakes_then_rehibernates/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
-	M.status_flags |= CANSTUN
 	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
-	M.Stun(3)
-	TEST_ASSERT_EQUAL(M.get_stunned(), 3, "the stun should land")
+	M.status_at_least(EFFECT_STUNNED, 3)
+	TEST_ASSERT_EQUAL(M.status_units(EFFECT_STUNNED), 3, "the stun should land")
 	scheduler_advance(0.1)
-	TEST_ASSERT(!M.life_hibernating, "Stun() should wake a hibernating mob")
+	TEST_ASSERT(!M.life_hibernating, "a stun should wake a hibernating mob")
 	scheduler_advance(LIFE_CYCLE_SECONDS * 3 + 1)
-	TEST_ASSERT_EQUAL(M.get_stunned(), 0, "the stun should have worn off")
+	TEST_ASSERT_EQUAL(M.status_units(EFFECT_STUNNED), 0, "the stun should have worn off")
 	scheduler_advance(LIFE_CYCLE_SECONDS * 4)
 	TEST_ASSERT(M.life_hibernating, "the mouse should hibernate again once the stun wears off; still busy: [life_test_busy(M)]")
 
@@ -778,14 +775,215 @@
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
 	TEST_ASSERT_NULL(SSmobs.audit_mob(M), "the audit must not flag a mob that is correctly asleep")
-	// A deliberately missed wake: write a counter directly instead of calling its setter.
-	M.sleeping = 3
+	// A deliberately missed wake: write state a sleeping system reads (healing ears) without
+	// raising a channel.
+	M.ear_damage = 50
 	TEST_ASSERT(M.life_hibernating, "a direct write must not wake the mob (that is the bug the audit catches)")
 	var/missed_before = SSmobs.hibernation_audit_missed
 	var/datum/life_system/S = SSmobs.audit_mob(M, expected = TRUE)
 	TEST_ASSERT_NOTNULL(S, "the audit should find the system with pending work")
 	TEST_ASSERT_EQUAL(SSmobs.hibernation_audit_missed, missed_before + 1, "the audit should count the missed wake")
 	TEST_ASSERT(!M.life_hibernating, "the audit should wake the mob")
-	M.sleeping = 0
+	M.ear_damage = 0
+
+// --- Statuses, immunity and the frame's own changes (doc/rewrite/life_on_om.md §7) --------------
+
+/// Every former counter is a timed status: it ends by deadline, in its own units per cycle, with
+/// no frame running; the magnitude statuses read back in points.
+/datum/unit_test/life_om/statuses_expire_by_deadline
+
+/datum/unit_test/life_om/statuses_expire_by_deadline/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	H.suspend_life()
+	var/frames_before = H.life_frame_count
+	var/list/one_per_cycle = list(EFFECT_CONFUSED, EFFECT_BLINDED, EFFECT_BLURRY, EFFECT_DEAFENED, EFFECT_STUTTERING, EFFECT_MUTED, EFFECT_DRUGGED, EFFECT_SLURRING, EFFECT_DROWSY)
+	for(var/id in one_per_cycle)
+		H.status_at_least(id, 2)
+		TEST_ASSERT_EQUAL(H.status_units(id), 2, "[id]: two units after status_at_least(2)")
+	scheduler_advance(LIFE_CYCLE_SECONDS + 0.1)
+	for(var/id in one_per_cycle)
+		TEST_ASSERT_EQUAL(H.status_units(id), 1, "[id]: one unit wears off per cycle")
+	scheduler_advance(LIFE_CYCLE_SECONDS)
+	for(var/id in one_per_cycle)
+		TEST_ASSERT(!H.has_status(id), "[id]: ends on its own after two cycles")
+	TEST_ASSERT_EQUAL(H.life_frame_count, frames_before, "no frame ran: nothing counts statuses down")
+
+	// Hallucination wore off two points per cycle.
+	H.status_at_least(EFFECT_HALLUCINATING, 10)
+	scheduler_advance(LIFE_CYCLE_SECONDS * 2 + 0.1)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_HALLUCINATING), 6, "hallucination: 2 points per cycle")
+
+	// Dizziness: 3 points per cycle, 15 while resting, capped at 1000.
+	H.status_adjust(EFFECT_DIZZY, 5000)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 1000, "dizziness is capped at 1000 points")
+	TEST_ASSERT_NOTNULL(H.GetComponent(/datum/component/dizzy_shake), "the shake follows the status")
+	H.status_set(EFFECT_DIZZY, 30)
+	scheduler_advance(LIFE_CYCLE_SECONDS + 0.1)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 27, "dizziness: 3 points per cycle")
+	H.resting = TRUE
+	H.status_rate_check(EFFECT_DIZZY)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 27, "a rate change keeps the points left")
+	scheduler_advance(LIFE_CYCLE_SECONDS)
+	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 12, "dizziness: 15 points per cycle while resting")
+	H.resting = FALSE
+	H.status_end(EFFECT_DIZZY)
+	TEST_ASSERT_NULL(H.GetComponent(/datum/component/dizzy_shake), "the shake ends with the status")
+
+	// Alerts follow the status, with no system maintaining them.
+	H.status_at_least(EFFECT_CONFUSED, 1)
+	TEST_ASSERT(H.alerts?["confused"], "the confused alert starts with the status")
+	scheduler_advance(LIFE_CYCLE_SECONDS + 0.1)
+	TEST_ASSERT(!H.alerts?["confused"], "and ends with it")
+
+/// Immunity is an effect: it blocks the statuses that name it, gaining it ends them, and every
+/// source holds its own (mob type declarations, mutations, godmode).
+/datum/unit_test/life_om/status_immunity
+
+/datum/unit_test/life_om/status_immunity/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	H.suspend_life()
+	var/datum/source = new /datum
+	om_hold(H, EFFECT_IMMUNE_STUN, source)
+	TEST_ASSERT(H.status_immune(EFFECT_STUNNED), "the immunity is held")
+	H.status_at_least(EFFECT_STUNNED, 3)
+	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "an immune mob can't be stunned")
+	H.status_at_least(EFFECT_WEAKENED, 3)
+	TEST_ASSERT(H.has_status(EFFECT_WEAKENED), "stun immunity doesn't block weakness")
+	om_release(H, EFFECT_IMMUNE_STUN, source)
+	H.status_at_least(EFFECT_STUNNED, 3)
+	TEST_ASSERT(H.has_status(EFFECT_STUNNED), "without the immunity the stun lands")
+	om_hold(H, EFFECT_IMMUNE_STUN, source)
+	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "gaining the immunity ends an active stun")
+	qdel(source)
+	TEST_ASSERT(!H.status_immune(EFFECT_STUNNED), "the immunity dies with its source")
+
+	// Mutations: the hulk can't be stunned, weakened or paralysed.
+	H.add_mutation(HULK)
+	TEST_ASSERT(!H.has_status(EFFECT_WEAKENED), "becoming a hulk ends weakness")
+	H.status_at_least(EFFECT_PARALYZED, 2)
+	TEST_ASSERT(!H.has_status(EFFECT_PARALYZED), "a hulk can't be paralysed")
+	H.remove_mutation(HULK)
+	H.status_at_least(EFFECT_PARALYZED, 2)
+	TEST_ASSERT(H.has_status(EFFECT_PARALYZED), "losing the mutation loses the immunity")
+	H.status_end(EFFECT_PARALYZED)
+
+	// Godmode holds all three; removing it releases only its own holds.
+	var/datum/other = new /datum
+	om_hold(H, EFFECT_IMMUNE_WEAKEN, other)
+	H.AddElement(/datum/element/godmode)
+	H.status_at_least(EFFECT_STUNNED, 2)
+	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "godmode blocks stuns")
+	H.RemoveElement(/datum/element/godmode)
+	TEST_ASSERT(!H.status_immune(EFFECT_STUNNED), "ending godmode ends its stun immunity")
+	TEST_ASSERT(H.status_immune(EFFECT_WEAKENED), "but not another source's immunity (the old flags were cleared wholesale)")
+	qdel(other)
+
+	// Mob types declare theirs (an unbrained test AI deletes itself, so its table is checked).
+	var/mob/living/simple_mob/animal/sif/leech/leech = allocate(/mob/living/simple_mob/animal/sif/leech)
+	TEST_ASSERT(leech.status_immune(EFFECT_STUNNED) && leech.status_immune(EFFECT_WEAKENED) && leech.status_immune(EFFECT_PARALYZED), "leeches are immune to incapacitation by declaration")
+	leech.status_at_least(EFFECT_STUNNED, 2)
+	TEST_ASSERT(!leech.has_status(EFFECT_STUNNED), "so a stun doesn't land")
+	var/list/ai_table = om_registry().type_table(/mob/living/silicon/ai).self_effects
+	TEST_ASSERT((EFFECT_IMMUNE_WEAKEN in ai_table) && !(EFFECT_IMMUNE_STUN in ai_table), "the AI can be stunned but not knocked down")
+	TEST_ASSERT(EFFECT_IMMUNE_DIZZY in om_registry().type_table(/mob/living/silicon/robot).self_effects, "silicons don't get dizzy")
+
+/// Voluntary sleep is a hold: no dose wearing off or ending wakes the mob; choosing to wake does.
+/datum/unit_test/life_om/voluntary_sleep
+
+/datum/unit_test/life_om/voluntary_sleep/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	H.suspend_life()
+	H.set_voluntary_sleep(TRUE)
+	TEST_ASSERT(H.sleeping_voluntarily(), "sleeping by choice")
+	TEST_ASSERT(H.has_status(EFFECT_SLEEPING), "the hold is the sleep status")
+	TEST_ASSERT(H.status_units(EFFECT_SLEEPING) >= 1, "a held status reads at least one unit")
+	H.status_at_least(EFFECT_SLEEPING, 1)
+	scheduler_advance(LIFE_CYCLE_SECONDS * 3)
+	TEST_ASSERT(H.has_status(EFFECT_SLEEPING), "a dose wearing off doesn't wake a voluntary sleeper")
+	H.status_set(EFFECT_SLEEPING, 0)
+	TEST_ASSERT(H.has_status(EFFECT_SLEEPING), "nor does ending the dose")
+	H.set_voluntary_sleep(FALSE)
+	TEST_ASSERT(!H.has_status(EFFECT_SLEEPING), "choosing to wake ends it")
+	TEST_ASSERT(!H.alerts?["asleep"], "and its alert")
+
+/// A status change raises CHANGE_MOB_STATUS once (the effect's own channel; the old setters raised
+/// it a second time), and a change that doesn't change the value raises nothing.
+/datum/unit_test/life_om/status_raises_once
+
+/datum/unit_test/life_om/status_raises_once/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	H.suspend_life()
+	sched.test_raises = list()
+	H.status_at_least(EFFECT_STUNNED, 2)
+	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 1, "starting a stun raises the status channel once")
+	H.status_at_least(EFFECT_SLURRING, 3)
+	sched.test_raises = list()
+	H.status_at_least(EFFECT_STUNNED, 4)
+	H.status_adjust(EFFECT_STUNNED, -1)
+	H.status_at_least(EFFECT_SLURRING, 5)
+	H.status_at_least(EFFECT_STUNNED, 1)
+	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 0, "extending or shortening an active status raises nothing")
+	H.status_set(EFFECT_STUNNED, 0)
+	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 1, "ending it raises once")
+	sched.test_raises = null
+
+/// Life never wakes itself: a frame on a mob with running statuses raises no status change (the
+/// old statuses system decremented counters and woke the mob every frame), so a sleeping mouse
+/// hibernates like an idle one.
+/datum/unit_test/life_om/no_self_wake
+
+/datum/unit_test/life_om/no_self_wake/run_life()
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
+	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
+	M.status_set(EFFECT_SLEEPING, 100)
+	M.status_at_least(EFFECT_CONFUSED, 100)
+	sched.run_pass(1e9)
+	sched.test_raises = list()
+	M.life_frame()
+	TEST_ASSERT_EQUAL(life_test_status_raises(sched, M), 0, "a frame raises no status change on its own mob")
+	sched.test_raises = null
+	TEST_ASSERT(life_test_settle(M), "a sleeping, confused mouse hibernates; still busy: [life_test_busy(M)]")
+	TEST_ASSERT(M.has_status(EFFECT_SLEEPING), "and stays asleep while hibernating")
+
+/// Hibernation hysteresis: a mob hibernates only after LIFE_HIBERNATE_IDLE_FRAMES frames in a row
+/// end with nothing awake; a wake in between starts the count again.
+/datum/unit_test/life_om/hibernate_hysteresis
+
+/datum/unit_test/life_om/hibernate_hysteresis/run_life()
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
+	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
+	TEST_ASSERT(life_test_settle(M), "the mouse should hibernate first; still busy: [life_test_busy(M)]")
+	om_changed(M, CHANGE_EXPLICIT)
+	sched.run_pass(1e9)
+	TEST_ASSERT(!M.life_hibernating, "a change wakes it")
+	var/frames = 0
+	while(!M.life_all_asleep() && frames < 6)
+		M.life_frame()
+		sched.run_pass(1e9)
+		frames++
+	TEST_ASSERT(M.life_all_asleep(), "its systems go back to sleep; still busy: [life_test_busy(M)]")
+	TEST_ASSERT(!M.life_hibernating, "one idle frame doesn't hibernate it")
+	TEST_ASSERT_EQUAL(M.life_idle_frames, 1, "one idle frame counted")
+	om_changed(M, CHANGE_MOB_HEALTH)
+	sched.run_pass(1e9)
+	TEST_ASSERT_EQUAL(M.life_idle_frames, 0, "a wake between idle frames starts the count again")
+	frames = 0
+	while(!M.life_hibernating && frames < 6)
+		M.life_frame()
+		sched.run_pass(1e9)
+		frames++
+	TEST_ASSERT(M.life_hibernating, "it hibernates after idle frames in a row")
+	TEST_ASSERT(frames >= LIFE_HIBERNATE_IDLE_FRAMES, "and not before [LIFE_HIBERNATE_IDLE_FRAMES] of them, took [frames]")
+
+/// Changes to `E` logged on `sched.test_raises` that carry CHANGE_MOB_STATUS.
+/proc/life_test_status_raises(datum/om/scheduler/sched, datum/E)
+	. = 0
+	for(var/list/entry as anything in sched.test_raises)
+		if(entry[1] == E && (entry[2] & CHANGE_MOB_STATUS))
+			.++
 
 #endif

@@ -3,7 +3,7 @@
 	set desc = "Allows you to eat people who are below your tile or adjacent one. Requires passability."
 	set category = "Abilities.Vore"
 
-	if(stat == DEAD || get_paralysis() || get_weakened() || get_stunned() || is_incorporeal())
+	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || is_incorporeal())
 		to_chat(src, span_notice("You cannot do that while in your current state."))
 		return
 

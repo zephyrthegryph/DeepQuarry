@@ -405,13 +405,18 @@ accident or assume they work:
   - A mob with nothing awake leaves the ring (`om_sleep`) until a change or a timer.
   - Anything that changes what a system reads must raise the channel:
     `om_changed(L, CHANGE_MOB_HEALTH|STATUS|LOC|EQUIPMENT|CONDITIONS|STAT|CLIENT)`, or go through
-    a producer that does: `injure`/`mend`, `body.invalidate()`, the status setters, `Moved`,
+    a producer that does: `injure`/`mend`, `body.invalidate()`, the status API, `Moved`,
     equip/unequip, `set_stat`, Login, modifiers.
   - `life_hibernate()` and `life_resume()` are the only procs that park and unpark a mob;
-    `check_grep.sh` rejects direct writes to `life_hibernating`/`life_asleep`.
-  - Stun, weaken and paralysis are timed contributions (`EFFECT_STUNNED`/`WEAKENED`/
-    `PARALYZED`): set them with `Stun()`/`SetStunned()`/`AdjustStunned()` etc. (units of
-    `LIFE_CYCLE`), read them with `is_stunned()`/`get_stunned()`. There are no counters.
+    `check_grep.sh` rejects direct writes to `life_hibernating` and the asleep bits.
+  - Every status (stun, weaken, paralysis, sleep, confusion, blindness, blur, deafness, stutter,
+    mute, drugged, slurring, drowsy, hallucination, dizziness, jitters) is a timed contribution
+    (`EFFECT_*`, `code/modules/mob/living/life/statuses.dm`): set it with
+    `status_at_least()`/`status_set()`/`status_adjust()`/`status_end()` (units of `LIFE_CYCLE`),
+    read it with `has_status()`/`status_units()`. There are no counters and nothing counts them
+    down. Immunity is `EFFECT_IMMUNE_*` held by a source (type decls, mutations, godmode), not
+    `status_flags`. Something that keeps a status on while a condition lasts holds it with its
+    own key (voluntary sleep).
   - Stasis holds `EFFECT_CLOCK_BIO_INHIBIT` (the biology clock); absorbed prey and bodies kept
     for reforming are suspended (`suspend_life()`/`resume_life()`).
   - A 30 s audit logs `MOB_HIBERNATE_AUDIT: MISSED WAKE` and wakes the mob when a producer

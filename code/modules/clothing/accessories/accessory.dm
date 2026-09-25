@@ -816,7 +816,7 @@
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(3, 1, M)
 		s.start()
-		M.Weaken(10)
+		M.status_at_least(EFFECT_WEAKENED, 10)
 
 /obj/item/clothing/accessory/collar/spike
 	name = "Spiked collar"

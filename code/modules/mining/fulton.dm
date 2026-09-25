@@ -69,7 +69,7 @@
 			var/mutable_appearance/balloon3
 			if(isliving(A))
 				var/mob/living/M = A
-				M.AdjustStunned(20) // Keep them from moving during the duration of the extraction
+				M.status_adjust(EFFECT_STUNNED, 20) // Keep them from moving during the duration of the extraction
 				if(M.buckled)
 					M.buckled.unbuckle_mob(M)
 			else
@@ -103,8 +103,8 @@
 			animate(holder_obj, pixel_z = 1000, time = 30)
 			if(ishuman(A))
 				var/mob/living/carbon/human/L = A
-				L.AdjustStunned(20)
-				L.drowsyness = 0
+				L.status_adjust(EFFECT_STUNNED, 20)
+				L.status_set(EFFECT_DROWSY, 0)
 			sleep(30)
 			var/list/flooring_near_beacon = list()
 			var/had_option = FALSE

@@ -109,6 +109,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/expect_errors = FALSE
 	var/last_run_ms = 0
 	var/runs = 0
+#ifdef UNIT_TESTS
+	/// Tests: when a list, every dispatched change is logged here as list(entity, bits).
+	var/list/test_raises
+#endif
 
 /datum/om/scheduler/New()
 	lane_rings = new /list(OM_LANE_COUNT)

@@ -110,8 +110,8 @@
 	mob_type = /mob/living/simple_mob/vore/aggressive/rat/tame
 
 /datum/life_system/type_post/simple_mob/vore/aggressive/rat/tame/tick(mob/living/simple_mob/vore/aggressive/rat/tame/self, datum/life_context/ctx)
-	. = ..()
-	if(!. || ai_inactive)
+	..()
+	if(!ctx?.alive || ai_inactive)
 		return
 
 	if(hunger > 0 && life_since_foodscan++ > 5) //Only look for floor food when hungry.
@@ -173,7 +173,7 @@
 				visible_emote("appears to have had enough and prepares to strike!")
 				hunger += 5
 		else
-			food.Weaken(5)
+			food.status_at_least(EFFECT_WEAKENED, 5)
 			food.visible_message(span_danger("\The [self] pounces on \the [food]!"))
 			target_mob = food
 			EatTarget()

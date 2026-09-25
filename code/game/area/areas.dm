@@ -470,10 +470,10 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 			return
 
 		if(H.m_intent == I_RUN)
-			H.AdjustStunned(1) // No longer a supermassive long stun.
+			H.status_adjust(EFFECT_STUNNED, 1) // No longer a supermassive long stun.
 // H.AdjustWeakened(6) // No longer weakens.
 		else
-			H.AdjustStunned(1) // No longer a supermassive long stun.
+			H.status_adjust(EFFECT_STUNNED, 1) // No longer a supermassive long stun.
 // H.AdjustWeakened(3) // No longer weakens.
 		to_chat(mob, span_notice("The sudden appearance of gravity makes you fall to the floor!"))
 		if(HAS_TRAIT(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))

@@ -293,7 +293,7 @@
 		else
 			target.stun_effect_act(10 , 50, BP_TORSO, src)
 			target.injure(INJURY_ELECTRIC, 10, BP_TORSO, src)
-			target.Paralyse(20)
+			target.status_at_least(EFFECT_PARALYZED, 20)
 			playsound(src.loc, "sparks", 50, 1)
 			return
 
@@ -383,5 +383,5 @@
 /obj/item/material/twohanded/staff/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
 	if(src.wielded == 1 && IS_DISARMING(user) && prob(stun_chance))
-		target.Weaken(stun_duration)
+		target.status_at_least(EFFECT_WEAKENED, stun_duration)
 		user.visible_message(span_danger("\The [user] trips [target] with \the [src]!"))

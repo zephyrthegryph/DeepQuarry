@@ -99,8 +99,8 @@ BLOOD_VOLUME_SURVIVE = 40
 			if(!self.pale)
 				self.pale = 1
 				self.update_icons_body()
-			self.Paralyse(3)
-			self.Sleeping(3)
+			self.status_at_least(EFFECT_PARALYZED, 3)
+			self.status_at_least(EFFECT_SLEEPING, 3)
 			self.injure(INJURY_TOXIN, (self.factor(BF_STABILIZATION) ? 1.5 : 3), flags = INJURE_SILENT)
 
 		// Without enough blood you slowly go hungry.

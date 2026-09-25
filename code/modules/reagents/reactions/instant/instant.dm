@@ -796,7 +796,7 @@
 						continue
 
 				M.flash_eyes()
-				M.Weaken(15)
+				M.status_at_least(EFFECT_WEAKENED, 15)
 
 			if(4 to 5)
 				if(ishuman(M))
@@ -805,7 +805,7 @@
 						continue
 
 				M.flash_eyes()
-				M.Stun(5)
+				M.status_at_least(EFFECT_STUNNED, 5)
 
 /datum/decl/chemical_reaction/instant/emp_pulse
 	name = "EMP Pulse"

@@ -38,7 +38,7 @@
 
 	if(self.stat == DEAD)
 		self.blinded = 1
-		self.silent = 0
+		self.status_set(EFFECT_MUTED, 0)
 		self.deaf_loop.stop()
 		return 1
 
@@ -58,11 +58,10 @@
 		if(31 to INFINITY)
 			emp_damage = 30//Let's not overdo it
 		if(21 to 30)//High level of EMP damage, unable to see, hear, or speak
-			SetBlinded(1)
+			status_set(EFFECT_BLINDED, 1)
 			blinded = 1
-			ear_deaf = 1
-			deaf_loop.start()
-			silent = 1
+			status_set(EFFECT_DEAFENED, 1)
+			status_set(EFFECT_MUTED, 1)
 			if(!alert)//Sounds an alarm, but only once per 'level'
 				emote("alarm")
 				to_chat(src, span_red("Major electrical distruption detected: System rebooting."))
@@ -72,13 +71,12 @@
 		if(20)
 			alert = 0
 			blinded = 0
-			SetBlinded(0)
-			ear_deaf = 0
-			deaf_loop.stop()
-			silent = 0
+			status_set(EFFECT_BLINDED, 0)
+			status_set(EFFECT_DEAFENED, 0)
+			status_set(EFFECT_MUTED, 0)
 			emp_damage -= 1
 		if(11 to 19)//Moderate level of EMP damage, resulting in nearsightedness and ear damage
-			eye_blurry = 1
+			status_set(EFFECT_BLURRY, 1)
 			ear_damage = 1
 			if(!alert)
 				emote("alert")
@@ -88,7 +86,7 @@
 				emp_damage -= 1
 		if(10)
 			alert = 0
-			eye_blurry = 0
+			status_set(EFFECT_BLURRY, 0)
 			ear_damage = 0
 			emp_damage -= 1
 		if(2 to 9)//Low level of EMP damage, has few effects(handled elsewhere)
@@ -139,8 +137,8 @@
 		else
 			self.clear_fullscreen("blind")
 			self.set_fullscreen(self.disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			self.set_fullscreen(self.eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-			self.set_fullscreen(self.druggy, "high", /atom/movable/screen/fullscreen/high)
+			self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+			self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
 /datum/life_system/hud/carbon/brain/health_icons(mob/living/carbon/brain/self)
 	. = ..()

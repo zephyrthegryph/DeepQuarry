@@ -160,7 +160,7 @@
 	attacker.attack_variant_key(ATTACK_VARIANT_DISARM)
 	GLOB.input_router.route_click(attacker, cow, "left=1")
 	TEST_ASSERT_EQUAL(attacker.attack_variant, ATTACK_VARIANT_DISARM, "the variant holds while the key is down")
-	TEST_ASSERT(cow.get_weakened() > 0, "the click arrived as a disarm (the cow is tipped)")
+	TEST_ASSERT(cow.status_units(EFFECT_WEAKENED) > 0, "the click arrived as a disarm (the cow is tipped)")
 	attacker.attack_variant_key_release(ATTACK_VARIANT_GRAB)
 	TEST_ASSERT_EQUAL(attacker.attack_variant, ATTACK_VARIANT_DISARM, "releasing the other key changes nothing")
 	attacker.attack_variant_key_release(ATTACK_VARIANT_DISARM)
@@ -260,14 +260,14 @@
 	attacker.attack_variant_key(ATTACK_VARIANT_DISARM)
 	GLOB.input_router.route_click(attacker, cow, "left=1")
 	attacker.attack_variant_key_release(ATTACK_VARIANT_DISARM)
-	TEST_ASSERT(cow.get_weakened() > 0, "the Disarm key tips a cow over")
+	TEST_ASSERT(cow.status_units(EFFECT_WEAKENED) > 0, "the Disarm key tips a cow over")
 
 	// The Disarm interaction from the Menu does the same.
 	pair = dq_combat_pair(/mob/living/simple_mob/animal/passive/cow)
 	attacker = pair[1]
 	cow = pair[2]
 	TEST_ASSERT(run_chosen_interaction(attacker, cow, "disarm"), "the Disarm interaction runs from the Menu")
-	TEST_ASSERT(cow.get_weakened() > 0, "and tips the cow over")
+	TEST_ASSERT(cow.status_units(EFFECT_WEAKENED) > 0, "and tips the cow over")
 
 /// Simple mobs use the same controls: combat mode on is the harm outcome for their own attacks.
 /datum/unit_test/dq_combat_parity_simple_mob_attacker

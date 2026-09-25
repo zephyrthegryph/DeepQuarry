@@ -161,7 +161,7 @@
 	if(!leash_master || !leash_pet || leash_pet.absorbed) //Just to stop error messages. Break the loop early if something removed the master
 		clear_leash()
 		return
-	if(get_dist(leash_pet, leash_master) > 3 && !leash_pet.get_stunned())
+	if(get_dist(leash_pet, leash_master) > 3 && !leash_pet.has_status(EFFECT_STUNNED))
 		leash_pet.visible_message(
 			span_warning("[leash_pet] is pulled to the ground by [leash_pet.p_their()] leash!"),
 			span_warning("You are pulled to the ground by your leash!")

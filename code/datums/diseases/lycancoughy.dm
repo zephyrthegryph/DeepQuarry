@@ -50,7 +50,7 @@
 				H.injure(INJURY_BLUNT, rand(0, 5), stomach)
 			if(prob(5))
 				H.emote("awoo2")
-				H.Confuse(rand(12, 16))
+				H.status_at_least(EFFECT_CONFUSED, rand(12, 16))
 				H.injure(INJURY_BLUNT, rand(0, 5), stomach)
 			if(prob(5))
 				if(!barklimit)

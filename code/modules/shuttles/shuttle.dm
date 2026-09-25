@@ -362,7 +362,7 @@
 					//M.visible_message(span_warning("[M.name] is tossed around by the sudden acceleration!"))
 					//M.throw_at_random(FALSE, 4, 1)
 					if(istype(M, /mob/living/carbon))
-						M.Weaken(3)
+						M.status_at_least(EFFECT_WEAKENED, 3)
 						if(move_direction)
 							throw_a_mob(M,move_direction)
 		for(var/obj/item/radio/intercom/I in A)

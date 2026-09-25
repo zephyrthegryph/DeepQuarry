@@ -124,7 +124,7 @@
 	//trying/permitted to pounce
 	if(pouncing)
 		//able to pounce (not dead or stunned or on CD)
-		if(isliving(src) && !src.get_weakened() && (world.time > pounce_last) && !(status_flags & LEAPING))
+		if(isliving(src) && !src.has_status(EFFECT_WEAKENED) && (world.time > pounce_last) && !(status_flags & LEAPING))
 			//can see pounce target
 			if((A in view(src, world.view)))
 				//make sure we're targetting a turf!
@@ -198,7 +198,7 @@
 					if(M.buckled) // make sure they fall when weakened
 						M.buckled.unbuckle_mob()
 
-					LM.Weaken(5)
+					LM.status_at_least(EFFECT_WEAKENED, 5)
 					playsound(src, get_sfx("punch"), 50, 1)
 					pouncing = 0
 			src.Move(T)
@@ -207,7 +207,7 @@
 		if(get_dist(src, T))
 			pouncing = 0
 			update_icon()
-			src.Weaken(5)
+			src.status_at_least(EFFECT_WEAKENED, 5)
 			playsound(src, get_sfx("punch"), 50, 1)
 		else
 			//if we arrived, and weren't blocked, and are STILL pouncing, see if we landed on any living things that didn't block us that ISN't ourselves lmfao.
@@ -215,7 +215,7 @@
 				for(var/mob/living/M in T)
 					if(isliving(M) && M != src)
 						var/mob/living/LM = M
-						LM.Weaken(5)
+						LM.status_at_least(EFFECT_WEAKENED, 5)
 						playsound(src, get_sfx("punch"), 50, 1)
 						pouncing = 0
 			update_icon()
@@ -341,7 +341,7 @@
 
 	if(isliving(AM))
 		var/mob/living/M = AM
-		M.Weaken(1.5)
+		M.status_at_least(EFFECT_WEAKENED, 1.5)
 		if(!gentle)
 			M.injure(INJURY_BLUNT, damage, source = src)
 		to_chat(M, span_userdanger("You're thrown back by [src]!"))

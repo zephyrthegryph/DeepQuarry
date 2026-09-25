@@ -47,7 +47,7 @@
 	mob_type = /mob/living/simple_mob/animal/passive/cow
 
 /datum/life_system/type_post/simple_mob/animal/passive/cow/tick(mob/living/simple_mob/animal/passive/cow/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(self.stat == CONSCIOUS)
 		if(self.udder && prob(5))
 			self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
@@ -55,7 +55,7 @@
 /mob/living/simple_mob/animal/passive/cow/attack_hand(mob/living/carbon/M as mob)
 	if(!stat && IS_DISARMING(M) && icon_state != icon_dead)
 		M.visible_message(span_warning("[M] tips over [src]."),span_notice("You tip over [src]."))
-		Weaken(30)
+		status_at_least(EFFECT_WEAKENED, 30)
 		icon_state = icon_dead
 		spawn(rand(20,50))
 			if(!stat && M)

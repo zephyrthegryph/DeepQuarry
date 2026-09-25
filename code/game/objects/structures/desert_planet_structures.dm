@@ -31,7 +31,7 @@
 	if(istype(source, /mob/living))
 		var/mob/living/M = source
 		if(M.m_intent == I_RUN && prob(5))
-			M.Weaken(2)
+			M.status_at_least(EFFECT_WEAKENED, 2)
 			to_chat(M, "You trip over the [src]!")
 
 /obj/structure/prop/desert_rock/pebble/Initialize(mapload)

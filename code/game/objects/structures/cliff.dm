@@ -216,7 +216,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 				harm /= 2
 
 			playsound(L, 'sound/effects/break_stone.ogg', 70, 1)
-			L.Weaken(5 * harm)
+			L.status_at_least(EFFECT_WEAKENED, 5 * harm)
 
 		var/fall_time = 3
 		if(displaced) // Make the fall look more natural when falling sideways.

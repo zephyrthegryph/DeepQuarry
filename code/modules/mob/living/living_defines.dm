@@ -11,7 +11,6 @@
 	var/nutrition = 400
 	var/max_nutrition = MAX_NUTRITION
 
-	var/hallucination = 0 //Directly affects how long a mob will hallucinate for
 
 	var/last_special = 0 //Used by the resist verb, likely used to prevent players from bypassing next_move by logging in/out.
 	var/base_attack_cooldown = DEFAULT_ATTACK_COOLDOWN
@@ -31,7 +30,6 @@
 
 	var/tod = null // Time of death
 	var/update_slimes = 1
-	var/silent = null 		// Can't talk. Value goes down every life proc.
 
 	/// Helper vars for quick access to firestacks, these should be updated every time firestacks are adjusted
 	var/on_fire = 0

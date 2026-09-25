@@ -32,7 +32,7 @@
 /obj/item/melee/classic_baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You club yourself over the head."))
-		user.Weaken(3 * force)
+		user.status_at_least(EFFECT_WEAKENED, 3 * force)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
 			H.injure(injury_kind, 2*force, BP_HEAD, src)
@@ -103,7 +103,7 @@
 	if(on)
 		if(CLUMSY_FAIL_CHANCE(user))
 			to_chat(user, span_warning("You club yourself over the head."))
-			user.Weaken(3 * force)
+			user.status_at_least(EFFECT_WEAKENED, 3 * force)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
 				H.injure(injury_kind, 2*force, BP_HEAD, src)

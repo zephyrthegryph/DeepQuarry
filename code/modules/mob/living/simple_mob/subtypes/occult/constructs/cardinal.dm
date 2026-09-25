@@ -37,7 +37,7 @@
 	mob_type = /mob/living/simple_mob/construct/cardinal
 
 /datum/life_system/type_pre/simple_mob/construct/cardinal/tick(mob/living/simple_mob/construct/cardinal/self, datum/life_context/ctx)
-	self.SetWeakened(0)
+	self.status_set(EFFECT_WEAKENED, 0)
 	..()
 
 /mob/living/simple_mob/construct/cardinal/bullet_act(obj/item/projectile/P)

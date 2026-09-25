@@ -63,5 +63,5 @@
 				else
 					to_chat(affected_mob, span_danger("Your stomach lurches painfully"))
 					affected_mob.visible_message(span_danger("[affected_mob] gags and retches!"))
-					affected_mob.Stun(rand(4, 8))
-					affected_mob.Weaken(rand(4, 8))
+					affected_mob.status_at_least(EFFECT_STUNNED, rand(4, 8))
+					affected_mob.status_at_least(EFFECT_WEAKENED, rand(4, 8))

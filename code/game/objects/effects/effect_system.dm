@@ -573,7 +573,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		for(var/mob/M in viewers(1, location))
 			if (prob (50 * amount))
 				to_chat(M, span_warning("The explosion knocks you down."))
-				M.Weaken(rand(1,5))
+				M.status_at_least(EFFECT_WEAKENED, rand(1,5))
 		return
 	else
 		var/devst = -1

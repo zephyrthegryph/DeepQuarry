@@ -10,11 +10,11 @@
 
 	switch(effecttype)
 		if(STUN)
-			Stun(effect * blocked)
+			status_at_least(EFFECT_STUNNED, effect * blocked)
 		if(WEAKEN)
-			Weaken(effect * blocked)
+			status_at_least(EFFECT_WEAKENED, effect * blocked)
 		if(PARALYZE)
-			Paralyse(effect * blocked)
+			status_at_least(EFFECT_PARALYZED, effect * blocked)
 		if(AGONY)
 			injure(INJURY_PAIN, effect * blocked) // Useful for objects that cause "subdual" damage. PAIN!
 		if(IRRADIATE)
@@ -23,12 +23,12 @@
 			if(!(SEND_SIGNAL(src, COMSIG_LIVING_IRRADIATE_EFFECT, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
 				radiation += max((effect * rad_protection), 0)
 		if(STUTTER)
-			if(status_flags & CANSTUN) // stun is usually associated with stutter
-				stuttering = max(stuttering,(effect * blocked))
+			if(!status_immune(EFFECT_STUNNED)) // stun is usually associated with stutter
+				status_at_least(EFFECT_STUTTERING, (effect * blocked))
 		if(EYE_BLUR)
-			eye_blurry = max(eye_blurry,(effect * blocked))
+			status_at_least(EFFECT_BLURRY, (effect * blocked))
 		if(DROWSY)
-			drowsyness = max(drowsyness,(effect * blocked))
+			status_at_least(EFFECT_DROWSY, (effect * blocked))
 	return 1
 
 

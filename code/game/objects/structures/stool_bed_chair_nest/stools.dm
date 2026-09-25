@@ -83,7 +83,7 @@
 		dismantle()
 		qdel(src)
 		var/mob/living/T = M
-		T.Weaken(10)
+		T.status_at_least(EFFECT_WEAKENED, 10)
 		T.injure(INJURY_BLUNT, 20, null, src)
 		return ITEM_INTERACT_SUCCESS
 	..()

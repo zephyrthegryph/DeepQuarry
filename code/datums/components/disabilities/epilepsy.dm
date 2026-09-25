@@ -19,15 +19,15 @@
 		return
 	if(owner.transforming)
 		return
-	if((prob(1) && prob(1) && owner.get_paralysis() < 1))
+	if((prob(1) && prob(1) && owner.status_units(EFFECT_PARALYZED) < 1))
 		to_chat(owner, span_red("You have a seizure!"))
 		for(var/mob/O in viewers(owner, null))
 			if(O == owner)
 				continue
 			O.show_message(span_danger("[owner] starts having a seizure!"), 1)
-		owner.Paralyse(10)
-		owner.Sleeping(10)
-		owner.make_jittery(1000)
+		owner.status_at_least(EFFECT_PARALYZED, 10)
+		owner.status_at_least(EFFECT_SLEEPING, 10)
+		owner.status_adjust(EFFECT_JITTERY, 1000)
 
 /datum/component/epilepsy_disability/Destroy(force = FALSE)
 	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)

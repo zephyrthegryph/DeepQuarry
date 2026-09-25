@@ -86,7 +86,7 @@
 		//legacy `.retaliate` is dead — every brain mob fights back on
 		// provocation. Gate stays on brain presence + the existing coin flip.
 		if(ai_brain && prob(vore_pounce_chance/2)) // This is a gamble!
-			user.Weaken(5) //They get tackled anyway whether they're edible or not.
+			user.status_at_least(EFFECT_WEAKENED, 5) //They get tackled anyway whether they're edible or not.
 			user.visible_message(span_danger("[user] swats [src] with [O] and promptly gets tackled!"))
 			if(will_eat(user))
 				if(ai_brain) ai_brain.busy = TRUE

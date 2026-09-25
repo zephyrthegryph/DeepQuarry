@@ -93,7 +93,7 @@
 	effect = /obj/machinery/papershredder/proc/interaction_empty
 
 /obj/machinery/papershredder/proc/actor_can_empty(mob/actor, atom/target, obj/item/held)
-	return !(actor.stat || actor.restrained() || actor.get_weakened() || actor.get_paralysis() || actor.lying || actor.get_stunned())
+	return !(actor.stat || actor.restrained() || actor.has_status(EFFECT_WEAKENED) || actor.has_status(EFFECT_PARALYZED) || actor.lying || actor.has_status(EFFECT_STUNNED))
 
 /obj/machinery/papershredder/proc/has_paper(mob/actor, atom/target, obj/item/held)
 	return paperamount > 0

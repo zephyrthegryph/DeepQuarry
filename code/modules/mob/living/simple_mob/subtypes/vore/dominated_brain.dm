@@ -32,7 +32,7 @@
 	mob_type = /mob/living/dominated_brain
 
 /datum/life_system/type_post/dominated_brain/tick(mob/living/dominated_brain/self, datum/life_context/ctx)
-	. = ..()
+	..()
 	if(!isliving(self.loc))
 		qdel(self)
 		return

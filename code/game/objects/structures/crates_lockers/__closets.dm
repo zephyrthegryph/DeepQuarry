@@ -366,7 +366,7 @@
 		return
 	if(O.loc == user)
 		return
-	if(user.restrained() || user.stat || user.get_weakened() || user.get_stunned() || user.get_paralysis())
+	if(user.restrained() || user.stat || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED))
 		return
 	if((!( istype(O, /atom/movable) ) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O) || user.contents.Find(src)))
 		return

@@ -85,7 +85,7 @@
 	if(!isturf(loc))
 		to_chat(src, span_warning("You need more space to perform this action!"))
 		return
-	if(stat || get_paralysis() || get_stunned() || get_weakened() || restrained())
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || restrained())
 		to_chat(src, span_warning("You can only do this while not stunned."))
 		return
 	if(F.is_form(/datum/form/promethean_blob))

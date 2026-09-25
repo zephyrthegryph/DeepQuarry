@@ -48,21 +48,6 @@
 	if(self.stat == DEAD)
 		return LIFE_HALT
 
-/// The AI's only status was its EMP stun, which is now a timed contribution that ends on its
-/// own (doc/rewrite/life_on_om.md §7). This variant keeps the AI out of the living statuses
-/// (speech and confusion counters), as its old Life() did.
-/datum/life_system/statuses/silicon/ai
-	mob_type = /mob/living/silicon/ai
-	phase = LIFE_PHASE_BODY
-	order = 0
-	segment = NONE
-
-/datum/life_system/statuses/silicon/ai/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
-	return
-
-/datum/life_system/statuses/silicon/ai/idle(mob/living/silicon/ai/self)
-	return TRUE
-
 /// Lying down, malfunction, APU and queued alarms.
 /datum/life_system/ai_upkeep
 	name = "ai upkeep"

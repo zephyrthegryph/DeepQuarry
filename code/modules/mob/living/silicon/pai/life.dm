@@ -58,16 +58,6 @@
 			self.silence_time = null
 			to_chat(self, span_green("Communication circuit reinitialized. Speech and messaging functionality restored."))
 
-/datum/life_system/statuses/silicon/pai
-	mob_type = /mob/living/silicon/pai
-	phase = LIFE_PHASE_OUTPUT
-	order = 50
-	segment = NONE
-
-/datum/life_system/statuses/silicon/pai/tick(mob/living/silicon/pai/self, datum/life_context/ctx)
-	..()
-	sleeping(self)
-
 /// Folded into the card, the pAI slowly self-repairs.
 /datum/life_system/pai_repair
 	name = "pai repair"

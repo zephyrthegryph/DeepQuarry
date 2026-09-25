@@ -306,6 +306,11 @@
 	if(!rec || rec.torn_down)
 		return
 	var/datum/om/scheduler/sched = rec.sched
+#ifdef UNIT_TESTS
+	// Tests count raises (a status change must raise its channel once, not twice).
+	if(sched.test_raises)
+		sched.test_raises += list(list(E, bits))
+#endif
 	if(sched.bulk_depth)
 		if(!rec.bulk_bits)
 			sched.bulk_list += rec

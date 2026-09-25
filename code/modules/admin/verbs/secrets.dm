@@ -101,8 +101,8 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				if((T in using_map.admin_levels) || GLOB.prisonwarped.Find(H))
 				//don't warp them if they aren't ready or are already there
 					continue
-				H.Paralyse(5)
-				H.Sleeping(5)
+				H.status_at_least(EFFECT_PARALYZED, 5)
+				H.status_at_least(EFFECT_SLEEPING, 5)
 				if(H.get_equipped_item(SLOT_ID_ID))
 					var/obj/item/card/id/id = H.get_idcard()
 					for(var/A in id.GetAccess())

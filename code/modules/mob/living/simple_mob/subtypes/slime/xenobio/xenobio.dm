@@ -62,8 +62,6 @@
 		if(self.victim)
 			self.handle_consumption()
 
-		life_statuses().stuttering(self) // ??
-
 	..()
 
 /mob/living/simple_mob/slime/xenobio/examine(mob/user)

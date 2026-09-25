@@ -8,7 +8,7 @@
 
 /// Can this cyborg act on a click at all right now?
 /mob/living/silicon/robot/proc/can_click_act()
-	return !(stat || lockdown || get_weakened() || get_stunned() || get_paralysis())
+	return !(stat || lockdown || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_PARALYZED))
 
 /// A working restraining bolt blocks remote (AI-style) interfacing. The one
 /// place the bolt is checked for clicks.

@@ -68,7 +68,7 @@
 					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
 					self.emote("scream")
 					self.drop_item(self.loc)
-					self.Stun(2)
+					self.status_at_least(EFFECT_STUNNED, 2)
 
 				//Moving makes open wounds get infected much faster
 				for(var/datum/affliction/wound/W as anything in E.get_wounds())
@@ -130,7 +130,7 @@
 				emote("scream")
 			automatic_custom_emote(VISIBLE_MESSAGE, "collapses!", check_stat = TRUE)
 		if(!(lying || resting)) // stops permastun with SPINE sdisability
-			Weaken(5)
+			status_at_least(EFFECT_WEAKENED, 5)
 
 /mob/living/carbon/human/proc/handle_grasp()
 	if(!get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_R))

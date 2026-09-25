@@ -24,8 +24,8 @@
 		duration = duration + 15 SECONDS
 		to_chat(src, span_notice("They will be deprived of sight for longer."))
 	addtimer(CALLBACK(T, PROC_REF(nearsighted_sting_complete),T), duration, TIMER_DELETE_ME)
-	T.Blind(10)
-	T.eye_blurry = 20
+	T.status_at_least(EFFECT_BLINDED, 10)
+	T.status_set(EFFECT_BLURRY, 20)
 	feedback_add_details("changeling_powers","BS")
 	return TRUE
 

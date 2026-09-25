@@ -174,7 +174,7 @@
 	M.stop_pulling()
 	M.loc = src
 	M.ExtinguishMob()
-	if(M.stat != DEAD && (M.is_critical() || M.sleeping))
+	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_notice("<b>You feel a warm liquid surround you.</b>"))
 	occupant = M
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)

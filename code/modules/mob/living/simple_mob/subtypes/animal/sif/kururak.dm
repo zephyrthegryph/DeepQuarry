@@ -193,7 +193,7 @@
 						flash_strength *= H.species.flash_mod
 						if(flash_strength > 0)
 							to_chat(H, span_alien("You are disoriented by \the [src]!"))
-							H.eye_blurry = max(H.eye_blurry, flash_strength + 5)
+							H.status_at_least(EFFECT_BLURRY, flash_strength + 5)
 							H.flash_eyes()
 							H.injure(INJURY_BURN, flash_strength * H.species.flash_burn/5, BP_HEAD, src)
 
@@ -209,11 +209,11 @@
 							flashfail = TRUE
 				if(!flashfail)
 					to_chat(R, span_alien("Your optics are scrambled by \the [src]!"))
-					R.Confuse(10)
+					R.status_at_least(EFFECT_CONFUSED, 10)
 					R.flash_eyes()
 
 		else
-			L.Confuse(10)
+			L.status_at_least(EFFECT_CONFUSED, 10)
 			L.flash_eyes()
 
 	else

@@ -3,14 +3,14 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 		if(!L.is_incorporeal())
-			if(buckled != AM && (((confused || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying && flight_vore))
+			if(buckled != AM && (((has_status(EFFECT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying && flight_vore))
 				AM.stumble_into(src)
 	return ..()
 // Because flips toggle density
 /mob/living/Crossed(atom/movable/AM)
 	if(isliving(AM) && isturf(loc) && AM != src)
 		var/mob/living/AMV = AM
-		if(AMV.buckled != src && (((AMV.confused || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || AMV.flying && AMV.flight_vore))
+		if(AMV.buckled != src && (((AMV.has_status(EFFECT_CONFUSED) || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || AMV.flying && AMV.flight_vore))
 			INVOKE_ASYNC(src,TYPE_PROC_REF(/atom/movable, stumble_into), AMV)
 	..()
 
@@ -23,7 +23,7 @@
 		return
 
 	playsound(src, "punch", 25, 1, -1)
-	M.Weaken(4)
+	M.status_at_least(EFFECT_WEAKENED, 4)
 	M.stop_flying()
 
 	if(ishuman(src))
@@ -32,7 +32,7 @@
 			visible_message(span_vwarning("[M] carelessly bowls [src] over!"))
 			M.forceMove(get_turf(src))
 			M.injure(INJURY_BLUNT, 0.5, source = src)
-			Weaken(4)
+			status_at_least(EFFECT_WEAKENED, 4)
 			stop_flying()
 			injure(INJURY_BLUNT, 0.5, source = M)
 			return
