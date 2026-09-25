@@ -9,3 +9,7 @@
 
 /proc/life_bench_ms()
 	return SSmobs.bench_ms
+
+/// No scheduler counters on this side.
+/proc/life_bench_diag()
+	return null

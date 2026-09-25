@@ -80,6 +80,12 @@
 			hibernating++
 	metric("[name]_hibernating", hibernating, "mobs", "none")
 	detail("[name]_tick", tick)
+	var/list/diag = life_bench_diag()
+	if(diag)
+		detail("[name]_scheduler", diag)
+		metric("[name]_scheduler_breaches", diag["breaches"], "count", "none")
+		metric("[name]_scheduler_deferrals", diag["deferrals"], "count", "none")
+		metric("[name]_scheduler_late_max_ds", diag["late_max_ds"], "ds", "none")
 	for(var/mob/living/L as anything in mobs)
 		qdel(L)
 		CHECK_TICK
