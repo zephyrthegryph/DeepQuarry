@@ -58,7 +58,7 @@ pub use graph::{
     Network, NetworkKind, Node, NodeId, Region, RegionEvent, RegionId, Side,
 };
 pub use host::{Entity, NetworkHost, Transition, decode_key};
-pub use law::{DeviceData, Payload, RegionSide, Sides, Summary};
+pub use law::{DeviceData, InRegion, Members, Payload, RegionSide, Sides, Summary};
 
 #[cfg(test)]
 mod tests;

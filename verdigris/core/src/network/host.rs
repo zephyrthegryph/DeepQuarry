@@ -80,6 +80,8 @@ pub struct NetworkHost<K: NetworkKind> {
     /// search's non-geometric side.
     groups: HashMap<u32, Vec<Entity>>,
     devices: HashMap<Entity, DeviceId<K>>,
+    /// Entity slot index -> node, for row laws joining their entity's node.
+    by_index: HashMap<u32, NodeId<K>>,
     /// Revision per region slot index (see the module docs).
     region_rev: Vec<u64>,
     /// Revision per device slot index.
@@ -118,6 +120,7 @@ impl<K: NetworkKind> NetworkHost<K> {
             occupants: HashMap::new(),
             groups: HashMap::new(),
             devices: HashMap::new(),
+            by_index: HashMap::new(),
             region_rev: Vec::new(),
             device_rev: Vec::new(),
             clock: 0,
@@ -179,6 +182,14 @@ impl<K: NetworkKind> NetworkHost<K> {
         self.nodes.contains_key(&entity)
     }
 
+    /// The entity with a node here whose slot index is `index` (a row
+    /// law's item), if any.
+    #[must_use]
+    pub fn entity_at(&self, index: u32) -> Option<Entity> {
+        let node = *self.by_index.get(&index)?;
+        self.net.node(node).ok().and_then(|n| decode_key(n.key))
+    }
+
     /// Binds `entity`'s node at `cell` in its own singleton region, and
     /// connects it to every occupant of `cell` or one of
     /// [`NetworkKind::reach`]'s target cells that [`NetworkKind::connects`]
@@ -196,6 +207,7 @@ impl<K: NetworkKind> NetworkHost<K> {
             .net
             .add_node(cell, kind, encode_entity(entity), data, K::Payload::default())?;
         self.nodes.insert(entity, node);
+        self.by_index.insert(entity.index(), node);
         self.occupants.entry(cell).or_default().push(entity);
         if let Some(g) = group {
             self.groups.entry(g).or_default().push(entity);
@@ -275,6 +287,7 @@ impl<K: NetworkKind> NetworkHost<K> {
         let Some(node) = self.nodes.remove(&entity) else {
             return;
         };
+        self.by_index.remove(&entity.index());
         if let Ok(n) = self.net.node(node) {
             let cell = n.pos;
             if let Some(occupants) = self.occupants.get_mut(&cell) {
