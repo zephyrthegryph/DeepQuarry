@@ -20,6 +20,13 @@
 		output = locate(/obj/machinery/mineral/output, get_step(src, dir))
 		if(output)
 			break
+	watch_input(input)
+
+/obj/machinery/mineral/unloading_machine/Destroy()
+	unwatch_input(input)
+	input = null
+	output = null
+	return ..()
 
 /obj/machinery/mineral/unloading_machine/proc/toggle_speed(forced)
 	if(forced)
@@ -33,7 +40,11 @@
 		PERIODIC_STOP(src)
 		MACHINE_WAKE(src)
 
+/// Empties ore boxes and moves items from its input plate while there are any; then it sleeps
+/// until something arrives (on_input_entered()).
 /obj/machinery/mineral/unloading_machine/machine_step()
+	if(!output || !input || !(locate(/obj/structure/ore_box) in input.loc) && !(locate(/obj/item) in input.loc))
+		return PROCESS_KILL
 	if (src.output && src.input)
 		if (locate(/obj/structure/ore_box, input.loc))
 			var/obj/structure/ore_box/BOX = locate(/obj/structure/ore_box, input.loc)

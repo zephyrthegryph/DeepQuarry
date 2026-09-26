@@ -136,14 +136,17 @@
 /obj/machinery/mining/drill/loaded
 	cell = /obj/item/cell/high
 
+/// Drills every machine frame while active; stopped (or waiting for a player), it sleeps until a
+/// player switches it on (interaction_ran() wakes it).
 /obj/machinery/mining/drill/machine_step()
 
 	if(need_player_check)
-		return
+		return PROCESS_KILL
 
 	check_supports()
 
-	if(!active) return
+	if(!active)
+		return PROCESS_KILL
 
 	if(!anchored || !use_cell_power())
 		system_error("System configuration or charge error.")

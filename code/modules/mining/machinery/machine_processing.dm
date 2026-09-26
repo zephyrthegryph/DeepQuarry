@@ -17,6 +17,11 @@
 	var/obj/machinery/mineral/processing_unit/machine = null
 	var/show_all_ores = FALSE
 
+/// Settings changed from the console (ore modes, power): the processing unit re-evaluates.
+/obj/machinery/mineral/processing_unit_console/interaction_ran(mob/actor, datum/interaction/interaction)
+	. = ..()
+	machine?.wake_mining()
+
 /obj/machinery/mineral/processing_unit_console/Initialize(mapload)
 	. = ..()
 	src.machine = locate(/obj/machinery/mineral/processing_unit) in range(5, src)
@@ -131,6 +136,7 @@
 			. = TRUE
 		if("power")
 			machine.active = !machine.active
+			machine.wake_mining()
 			. = TRUE
 		if("showAllOres")
 			show_all_ores = !show_all_ores
@@ -222,7 +228,13 @@
 	for (var/dir in GLOB.cardinal)
 		src.output = locate(/obj/machinery/mineral/output, get_step(src, dir))
 		if(src.output) break
-	return
+	watch_input(input)
+
+/obj/machinery/mineral/processing_unit/Destroy()
+	unwatch_input(input)
+	input = null
+	output = null
+	return ..()
 
 /obj/machinery/mineral/processing_unit/proc/toggle_speed(forced)
 	var/area/refinery_area = get_area(src)
@@ -244,13 +256,17 @@
 		stacker.toggle_speed()
 
 
+/// Takes in what is on its input plate and smelts while active; with nothing to take in and nothing
+/// to make it sleeps until something arrives (on_input_entered()) or it is switched on.
 /obj/machinery/mineral/processing_unit/machine_step()
 
 	if (!src.output || !src.input)
-		return
+		return PROCESS_KILL
 
-	if(panel_open || !powered())
-		return
+	if(panel_open)
+		return PROCESS_KILL
+	if(!powered())
+		return sleep_until_powered()
 
 	var/list/tick_alloys = list()
 
@@ -280,7 +296,7 @@
 		qdel(O)
 
 	if(!active)
-		return
+		return PROCESS_KILL
 
 	//Process our stored ores and spit out sheets.
 	var/sheets = 0
@@ -360,6 +376,8 @@
 				new /obj/item/ore/slag(output.loc)
 		else
 			continue
+	if(!sheets)
+		return PROCESS_KILL
 
 #undef PROCESS_NONE
 #undef PROCESS_SMELT
