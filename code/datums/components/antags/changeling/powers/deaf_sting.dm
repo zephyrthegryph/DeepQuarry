@@ -23,6 +23,6 @@
 		to_chat(src, span_notice("They will be unable to hear for a little longer."))
 	to_chat(T, span_danger("Your ears pop and begin ringing loudly!"))
 	T.sdisabilities |= DEAF
-	spawn(duration)	T.sdisabilities &= ~DEAF
+	om_after(T, duration, TYPE_PROC_REF(/mob, cure_temporary_sdisability), DEAF)
 	feedback_add_details("changeling_powers","DS")
 	return 1

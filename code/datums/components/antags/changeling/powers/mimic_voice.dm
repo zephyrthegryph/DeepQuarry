@@ -33,9 +33,14 @@
 
 	feedback_add_details("changeling_powers","MV")
 
-	spawn(0)
-		while(src && src.mind && changeling && changeling.mimicing)
-			changeling.chem_charges = max(changeling.chem_charges - 1, 0)
-			sleep(40)
-		if(src && src.mind && changeling)
-			changeling.mimicing = ""
+	changeling.mimic_drain(src)
+
+/// A mimicked voice costs a chemical every four seconds while it lasts.
+/datum/component/antag/changeling/proc/mimic_drain(mob/M)
+	if(!mimicing)
+		return
+	if(!M.mind)
+		mimicing = ""
+		return
+	chem_charges = max(chem_charges - 1, 0)
+	om_after(src, 4 SECONDS, PROC_REF(mimic_drain), M)

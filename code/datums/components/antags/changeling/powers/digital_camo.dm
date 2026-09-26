@@ -24,10 +24,15 @@
 		to_chat(C, span_notice("We distort our form to prevent AI-tracking."))
 	C.digitalcamo = !C.digitalcamo
 
-	spawn(0)
-		while(C && C.digitalcamo && C.mind && changeling)
-			changeling.chem_charges = max(changeling.chem_charges - 1, 0)
-			sleep(40)
+	if(C.digitalcamo)
+		changeling.digitalcamo_drain(C)
 
 	feedback_add_details("changeling_powers","CAM")
 	return 1
+
+/// Digital camouflage costs a chemical every four seconds while it lasts.
+/datum/component/antag/changeling/proc/digitalcamo_drain(mob/living/carbon/human/C)
+	if(!C.digitalcamo || !C.mind)
+		return
+	chem_charges = max(chem_charges - 1, 0)
+	om_after(src, 4 SECONDS, PROC_REF(digitalcamo_drain), C)

@@ -123,8 +123,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	return
 
 /obj/structure/dark_portal/hub/Bumped(M as mob|obj)
-	spawn()
-		teleport(M)
+	teleport(M)
 	return
 
 // These things have an off state. A shadekin has to boop them to turn it on
@@ -196,7 +195,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		close_portal()
 
 /obj/structure/dark_portal/minion/Bumped(M as mob|obj)
-	spawn()
-		if(icon_state == "minion1")
-			teleport(M)
+	if(icon_state == "minion1")
+		teleport(M)
 	return
