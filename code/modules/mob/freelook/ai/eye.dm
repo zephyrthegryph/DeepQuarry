@@ -12,10 +12,9 @@
 	visualnet = GLOB.cameranet
 
 /mob/observer/eye/aiEye/Destroy()
-	if(owner)
-		var/mob/living/silicon/ai/ai = owner
-		ai.all_eyes -= src
-		owner = null
+	// The ai_eye_of relation's teardown (destroy transaction phase 5, before
+	// Destroy()) already cleared owner/all_eyes (and the AI's eyeobj, if it
+	// was this eye).
 	visualnet.clear_references(src, src.client)
 	visualnet = null
 	. = ..()
@@ -65,8 +64,7 @@
 	if(!newloc)
 		newloc = src.loc
 	eyeobj = new /mob/observer/eye/aiEye(newloc)
-	all_eyes += eyeobj
-	eyeobj.owner = src
+	om_link(eyeobj, src, /datum/om/relation/ai_eye_of)
 	eyeobj.name = "[src.name] (AI Eye)" // Give it a name
 	reset_perspective(eyeobj)
 	SetName(src.name)

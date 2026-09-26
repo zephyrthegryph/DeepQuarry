@@ -292,3 +292,44 @@
 	qdel(I)
 	TEST_ASSERT(QDELETED(I), "setup: the implant should be deleted")
 	TEST_ASSERT(!(I in torso.implants), "the deleted implant should not still be listed")
+
+// ---------------------------------------------------------------- ai_eye_of
+
+/// Creating an AI's eye establishes ai_eye_of: the eye's `owner` and the AI's
+/// `all_eyes`/`eyeobj` agree with the direct relation lookup.
+/datum/unit_test/dq_om_relation_ai_eye_of_establishes
+
+/datum/unit_test/dq_om_relation_ai_eye_of_establishes/Run()
+	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai)
+	A.create_eyeobj()
+	TEST_ASSERT_NOTNULL(A.eyeobj, "setup: create_eyeobj should make an eye")
+	TEST_ASSERT_EQUAL(A.eyeobj.owner, A, "eyeobj.owner should be the AI")
+	TEST_ASSERT(A.eyeobj in A.all_eyes, "eyeobj should be in the AI's all_eyes")
+	TEST_ASSERT_EQUAL(om_relation_of(A.eyeobj, /datum/om/relation/ai_eye_of), A, "om_relation_of should agree with the owner var")
+
+/// Hard-deleting the AI clears the eye's `owner`, with no dangling reference
+/// left behind.
+/datum/unit_test/dq_om_relation_ai_eye_of_breaks_on_target_delete
+
+/datum/unit_test/dq_om_relation_ai_eye_of_breaks_on_target_delete/Run()
+	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai)
+	A.create_eyeobj()
+	var/mob/observer/eye/aiEye/E = A.eyeobj
+	TEST_ASSERT_NOTNULL(E, "setup: create_eyeobj should make an eye")
+	qdel(A)
+	TEST_ASSERT(QDELETED(A), "setup: the AI should be deleted")
+	TEST_ASSERT_NULL(E.owner, "E.owner should be cleared once the AI is deleted")
+
+/// Hard-deleting the eye clears the AI's `all_eyes` entry and `eyeobj`, with
+/// no dangling reference left behind.
+/datum/unit_test/dq_om_relation_ai_eye_of_breaks_on_source_delete
+
+/datum/unit_test/dq_om_relation_ai_eye_of_breaks_on_source_delete/Run()
+	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai)
+	A.create_eyeobj()
+	var/mob/observer/eye/aiEye/E = A.eyeobj
+	TEST_ASSERT(E in A.all_eyes, "setup: create_eyeobj should make an eye")
+	qdel(E)
+	TEST_ASSERT(QDELETED(E), "setup: the eye should be deleted")
+	TEST_ASSERT_EQUAL(LAZYLEN(A.all_eyes), 0, "the AI should have no eyes left")
+	TEST_ASSERT_NULL(A.eyeobj, "A.eyeobj should be cleared once the eye is deleted")

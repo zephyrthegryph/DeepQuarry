@@ -262,6 +262,24 @@
 	if(istype(source) && !QDELETED(source))
 		source.imp_in = null
 
+/// an AI eye -> the silicon AI controlling it. source_ref_field/
+/// target_list_field make the core the sole writer of the eye's `owner` and
+/// the AI's `all_eyes` list; on_unlink() also clears the AI's `eyeobj` (its
+/// single "currently active" eye cache) when it was this one. Previously
+/// both sides were hand-maintained by create_eyeobj()/destroy_eyeobj()
+/// (code/modules/mob/freelook/ai/eye.dm) and the eye's own Destroy(); now
+/// hard-deleting either one automatically clears the other's reference.
+/datum/om/relation/ai_eye_of
+	name = "ai eye"
+	source_single = TRUE
+	source_ref_field = "owner"
+	target_list_field = "all_eyes"
+
+/datum/om/relation/ai_eye_of/on_unlink(mob/observer/eye/aiEye/source, mob/living/silicon/ai/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && !QDELETED(target) && target.eyeobj == source)
+		target.eyeobj = null
+
 /// consumer -> power source.
 /datum/om/relation/powered_by
 	name = "power source"
