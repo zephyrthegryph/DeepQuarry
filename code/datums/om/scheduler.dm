@@ -824,7 +824,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			rec.att_pend[i] |= bits
 			rec.pend_union |= bits
 			if(!om_deadline_pending(rec.owner, B, OM_DL_THROTTLE))
-				om_after(rec.owner, wait, B, OM_DL_THROTTLE)
+				om_deadline(rec.owner, wait, B, OM_DL_THROTTLE)
 			return TRUE
 		T[k + 1] = t
 	else

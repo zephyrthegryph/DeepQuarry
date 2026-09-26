@@ -45,3 +45,6 @@ running_demand_events # /datum/event
 ship_engines # /datum/ship_engine
 visual_nets # /datum/visualnet
 clients # clients
+
+# baseline when CI was wired (2026-09-26).
+heat_subscribers # heat.dm handle slots; becomes an OM registry (LC-refs)

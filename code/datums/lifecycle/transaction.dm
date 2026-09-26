@@ -164,6 +164,9 @@
 	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
 	if(D.om_rec)
 		om_teardown_rest(D)
+	// OM handles to D stop resolving (object_model_core.md §4.11).
+	if(D.om_hid)
+		om_handle_release(D)
 
 // ---- Phase 6: effects ----
 

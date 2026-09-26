@@ -237,13 +237,13 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		return
 	var/due = world.time + delay
 	if(!timer)
-		om_after(src, delay, /datum/om/behaviour/material_service)
+		om_deadline(src, delay, /datum/om/behaviour/material_service)
 		next_update = due
 		timer = TRUE
 	else
 		if(due < next_update)
 			next_update = due
-			om_after(src, delay, /datum/om/behaviour/material_service)
+			om_deadline(src, delay, /datum/om/behaviour/material_service)
 
 /datum/material_service/proc/clear_watches()
 	if(watched_turf)

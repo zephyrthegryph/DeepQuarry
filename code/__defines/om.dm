@@ -460,3 +460,12 @@
 	#define KEY_SHUTTLE_SUPPLY 2
 /// A machine broke or was fixed (base /obj/machinery/atom_break()/atom_fix()). Id: its OM_KEY_ID.
 #define KEY_MACHINE_BROKEN 23
+// ---- Task steps (object_model_core.md §4.11): what a step proc returns. ----
+#define STEP_NEXT 1
+#define STEP_DONE 2
+#define OM_STEP_REPEAT 3
+#define OM_STEP_FAIL 4
+/// Run this step again after `d` deciseconds.
+#define STEP_REPEAT(d) list(OM_STEP_REPEAT, d)
+/// Cancel the task with `reason` (its on_cancel runs).
+#define STEP_FAIL(reason) list(OM_STEP_FAIL, reason)

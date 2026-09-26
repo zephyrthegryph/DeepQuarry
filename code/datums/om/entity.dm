@@ -494,6 +494,7 @@
 		om_stop_behaviour(rec, i)
 	rec.torn_down = TRUE
 	rec.deadlines = null
+	rec.timers = null
 	rec.dv = null
 	rec.rates = null
 	E.om_listen = 0

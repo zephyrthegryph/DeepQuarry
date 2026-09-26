@@ -235,6 +235,7 @@
 #include "dq_om_core_tests.dm"
 #include "dq_om_pipeline_tests.dm"
 #include "dq_om_relations_tests.dm"
+#include "dq_om_scheduler_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

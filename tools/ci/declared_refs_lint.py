@@ -27,9 +27,9 @@ NOTE: this can't see slot content (a slot holds a *thing*, not a *var* --
 membership lives in the ledger, code/datums/containment/ledger.dm), so a
 holder's contents never need a declared_*_vars() entry and are never flagged.
 
-DQ Medical's areas (body, organs, surgery, medical, protean, mind_body) are
-excluded outright, not ratcheted (doc sec 4, sec 7): they plug into the same
-phases on their own schedule (O2 etc.), and this lint isn't theirs to pass yet.
+Medical, body, organs, surgery, protean and mind_body are included like
+everything else (doc sec 7). tools/ci/scheduler_lints.py's LC-refs count is
+the stricter successor (tmp and weakref vars count there too).
 
 Legacy undeclared vars everywhere else are listed per file with a count in
 tools/ci/declared_refs_allowlist.txt, the same ratchet C11/campaign lints
@@ -51,16 +51,9 @@ from state_schema_lint import REF_ROOTS, code_only, under  # noqa: E402
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 ALLOWLIST = os.path.join(ROOT, "tools", "ci", "declared_refs_allowlist.txt")
 
-# DQ Medical's own tracks (doc/rewrite/lifecycle.md sec 4, sec 7): excluded
-# outright, not ratcheted. Path prefixes, relative to the repo root.
-EXCLUDED_DIRS = (
-    "code/modules/body/",
-    "code/modules/organs/",
-    "code/modules/surgery/",
-    "code/modules/medical/",
-    "code/modules/mind_body/",
-    "code/modules/mob/living/carbon/human/species/station/protean/",
-)
+# Medical, body, organs, surgery and Life are no longer excluded
+# (doc/rewrite/lifecycle.md sec 7): the sweeps include them.
+EXCLUDED_DIRS = ()
 
 UNSAVED_MODS = {"tmp", "static", "global", "const", "final"}
 DECLARED_PROCS = (
@@ -204,7 +197,6 @@ def write_allowlist(counts):
         "# count, and files not listed may have none. Declare the var as REF_OWNED/",
         "# REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or a weakref) and",
         "# lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.",
-        "# DQ Medical's areas are excluded outright, not listed here.",
         "# Total: %d vars in %d files." % (sum(counts.values()), len(counts)),
     ]
     for path in sorted(counts):

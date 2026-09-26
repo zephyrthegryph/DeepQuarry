@@ -260,13 +260,15 @@ the entity's run order sees changes raised earlier in the same run.
 A bucketed wheel of `(rec, behaviour id, generation, due)` entries, one
 decisecond per bucket, 1024 buckets. No datum per timer, no signal, no FFI.
 
-- `om_after(E, delay, B, sub = 0)` calls `B.on_deadline(E)` after `delay`
+- `om_deadline(E, delay, B, sub = 0)` calls `B.on_deadline(E)` after `delay`
   deciseconds. One deadline per (entity, behaviour, sub-key); calling again
   replaces it. `om_cancel_after(E, B, sub)`, `om_cancel_all_after(E, B)`,
   `om_deadline_pending(E, B, sub)`. The key is `bid + sub * OM_DL_SUB`, so firing
   one decodes it with no search: sub 0 is `on_deadline`, `OM_DL_THROTTLE` a
   `min_interval` wake, `OM_DL_STAGE + n` a pipeline stage's rewake
   (`on_keyed_deadline`).
+- `om_after(E, delay, proc, args...)` is the one-shot call of §4.11, built on
+  `om_deadline` (`timer.dm`).
 - A stale generation or a torn-down entity is skipped when its bucket comes
   round. An entry further out than one wheel turn stays in its bucket until due.
 - Clocked behaviours store the target in local time and re-check at fire. A
@@ -300,6 +302,18 @@ calls `om_native_deliver(E, bits)`, which runs `on_native(E, bits)` on each
 started behaviour declaring those bits. The two `om_native_bridge_*` procs
 are stubs today; the reactor track replaces their bodies with generated
 bindings. Nothing else in this API crosses the FFI.
+
+### 4.9 Diagnostics and tests
+
+- Per behaviour type (bounded at 512 types): runs, batch ms, worst lateness
+  per slot, deferrals, breaches, wakes, deadlines, errors, and (under
+  `OM_PROFILE_CALLS`) worst single call. `om_diagnostics()` returns an
+  admin-readable snapshot. Runtimes in hooks are caught and recorded.
+- `om_test_begin()` makes a scheduler with injected time and fixed phases;
+  entities that join while it is current belong to it. `scheduler_advance(seconds)`
+  runs it slot by slot; `sched.jump(seconds)` moves time without running
+  (skipped ticks); `harness_caps` limits calls per lane per run.
+  `om_test_end()` restores the live scheduler.
 
 ### 4.10 Pipelines
 
@@ -424,19 +438,23 @@ A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` o
 - Timers with no entity owner (round events, client real-time) use a global owner entity on the same wheel.
 - `AWAIT(task, timeout)` stays only while legacy procs are converted.
 
-**Lints, ratcheted to zero outside the allowlist:** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, and `set waitfor`.
+**Weak capture.** Object arguments to `om_after` and to tasks are held as OM handles, never as references. When the timer fires, or a task step runs, each handle is resolved first: if any argument has been deleted, the call is dropped (a timer) or fails with the reason `"gone"` (a task). A deferred call can't keep a deleted object alive or run against one.
 
-### 4.9 Diagnostics and tests
+**OM handles.** `om_handle(E)` returns an entity id plus a generation (`"id:gen"`); `om_resolve(h)` returns the object, or null once it has been deleted. The same model as the Rust core's handles: a slot table with a generation per slot and no per-target datum. Deleting an object frees its slot and bumps the generation, so a stale handle never resolves to whatever reuses the id.
 
-- Per behaviour type (bounded at 512 types): runs, batch ms, worst lateness
-  per slot, deferrals, breaches, wakes, deadlines, errors, and (under
-  `OM_PROFILE_CALLS`) worst single call. `om_diagnostics()` returns an
-  admin-readable snapshot. Runtimes in hooks are caught and recorded.
-- `om_test_begin()` makes a scheduler with injected time and fixed phases;
-  entities that join while it is current belong to it. `scheduler_advance(seconds)`
-  runs it slot by slot; `sched.jump(seconds)` moves time without running
-  (skipped ticks); `harness_caps` limits calls per lane per run.
-  `om_test_end()` restores the live scheduler.
+**Weakrefs are replaced.** `/datum/weakref` (386 references) goes away. What it holds today splits two ways:
+- *live links* (this object is attached to, controls or watches that one) become relations or slots (§7);
+- *"remember who it was"* references (last attacker, forensics, logs, UI selections, refs held by tgui or clients, saved IDs) become OM handles, stored as the handle and resolved with `om_resolve(h)` when read.
+
+**LC-refs: every object-typed var is declared.** Every datum-typed instance var or list is exactly one of:
+1. a **relation or slot** (no view field: the relation's accessor is the reader);
+2. an **owned child** (`REF_OWNED`/`REF_OWNED_LIST`), deleted with its owner;
+3. an **OM handle** (a text var, not an object reference);
+4. a **declared cache** with an invalidation rule (`declared_cache_vars()`, naming the channel or event that clears it).
+
+A lint (`tools/ci/scheduler_lints.py`, LC-refs) counts the undeclared ones and is ratcheted to 0. Global lists of objects (`GLOB.*` holding instances) become OM registries, which drop deleted members themselves.
+
+**Lints, ratcheted to zero outside the allowlist:** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, `set waitfor`, `weakref`, raw `del(`, and undeclared object-typed vars (LC-refs). `tools/ci/scheduler_lints.py` checks each count against `tools/ci/scheduler_lints_baseline.txt`: today's counts are the ceiling, and a sweep lowers them.
 
 ## 5. Change tracking (section B)
 

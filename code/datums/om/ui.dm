@@ -63,7 +63,7 @@
 	var/wait = rec.ui_last_push + OM_UI_THROTTLE - t
 	if(rec.ui_last_push && wait > 0)
 		if(!om_deadline_pending(session, src))
-			om_after(session, wait, src)
+			om_deadline(session, wait, src)
 		return
 	rec.ui_last_push = t
 	session.om_ui_push()

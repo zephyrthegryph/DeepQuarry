@@ -61,7 +61,7 @@ place the ordering hazards now scattered through code comments are encoded:
 | 2 | **Dematerialize.** Leave registries (L3) and drop rule bindings, as today. Every remaining `GLOB.x += src` moves into a registry declaration. | registries | ~72 list removals |
 | 3 | **Contents.** Resolve every slot's **declared destroy policy** (§3). This is depth-first post-order through nested holders: children before parents. No holder-managed or leftover `contents` loops remain. | containment ledger | hand spills, `QDEL_LIST` of parts, machinery `component_parts` loops, the movable `contents` sweep |
 | 4 | **Links.** Clear every declared relationship (§4): owned children deleted, pairs' other sides nulled, back-list memberships removed. | links framework | ~400 null/QDEL_NULL/pair bodies |
-| 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; clock callbacks (DQ Medical `w6/k1`: `clock_teardown(datum)` cancels callbacks owned by and targeting the datum); grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
+| 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; OM timers and task steps owned by the datum (`om_teardown_rest`); arguments naming it are handles and stop resolving; grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
 | 6 | **Effects.** Declared `destroy_effects` data: message, sound, debris type, neighbour update. | effects | ~60 effect bodies |
 | 7 | **Leftover `Destroy()`.** Only domain consequences remain. Linted: an override must justify itself with a `// LIFECYCLE:` reason, and the count is ratcheted. | type | — |
 | 8 | **Scrub.** Null outbound declared owned and pair vars to break reference cycles, then hand the datum to GC. Nothing is parked in nullspace pending deletion. | links | cycle-breaking null-only bodies |
@@ -118,11 +118,18 @@ enforces it.
 | `REF_OWNED(var)` / `REF_OWNED_LIST(var)` | a child that is not contained (actions, loops, helpers, DB/tgui contexts), deleted in phase 4 | `QDEL_NULL`/`QDEL_LIST` bodies |
 | `REF_PAIR(var, other_var)` | two-sided. Set and cleared only through `link_set()`/`link_clear()`, and destroying either side nulls the other | sleeper↔console, portals, teleporter, turbolift doors, card_slot holder |
 | `REF_BACKLIST(var, list_var)` | membership in another object's list (assoc or plain), removed automatically | `projector.signs`, aim lists, implant DB |
-| weak (`datum/weakref` typed var) | the default for everything else. Resolved on read and never cleaned | all incidental refs |
-| `tmp` cache | recomputable, and scrubbed in phase 8 | caches |
+| OM handle | a text var holding `om_handle(x)`, resolved with `om_resolve(h)` (null once `x` is deleted). Replaces `/datum/weakref` ([object_model_core.md §4.11](object_model_core.md#411-one-scheduler-time-sequences-and-asynchrony)) | "remember who it was": last attacker, forensics, logs, UI selections, tgui and client refs, saved IDs |
+| declared cache | `declared_cache_vars()` names the var and its invalidation rule (the channel or event that clears it); scrubbed in phase 8 | caches |
 
-- The lint allow-lists DQ Medical areas (body, organs, afflictions, surgery,
-  protean) until they convert. Their planned mapping: body `REF_OWNED` from the
+- **LC-refs.** Every datum-typed instance var or list is exactly one of: a
+  relation or slot, an owned child, an OM handle, or a declared cache with an
+  invalidation rule. There is no "weak" kind any more: `/datum/weakref` goes
+  away, live links become relations and everything else becomes a handle.
+  The LC-refs lint (`tools/ci/scheduler_lints.py`) counts undeclared vars and is
+  ratcheted to 0. `GLOB` lists of objects become OM registries, which drop
+  deleted members.
+- Medical, body, organs, afflictions, surgery, protean and Life are in the
+  sweep like everything else (§7). Their mapping: body `REF_OWNED` from the
   mob; afflictions and the clock schedule `REF_OWNED_LIST`; organs as slot
   content (O2); mind via `mind_host` `TRANSFER`.
 - Per-type relationship tables are **precomputed at boot**, following the
@@ -157,17 +164,16 @@ other party**, the pattern grants already uses (the relationship's owner watches
 the lifetime; the dying object doesn't clean up after itself). Otherwise they
 are a justified `Destroy()`.
 
-## 7. DQ Medical areas
+## 7. Medical, body, organs, surgery and Life
 
-Medical, body, organs, surgery, protean, species and mob Life are **not**
-converted under this plan. DQ Medical plugs into the same phases:
+These areas are **not** excluded: the session that owns the lifecycle work also
+owns medical, body, organs, surgery and Life, so every sweep (LC-refs, the
+qdel and Destroy() ratchets, weakrefs) includes them. They use the same phases:
 - body part slots (w6/o2) use per-slot policies with children-first order;
 - the mind/brain `TRANSFER` resolver is declared by body plans;
-- clock-scheduled callbacks (w6/k1) expose one teardown entry point, called in
-  phase 5;
+- clock-scheduled callbacks (w6/k1) are OM timers (`om_after`), cancelled in
+  phase 5 with the rest of the record;
 - O4 (body destroy ordering) builds on §3.
-
-This design is sent to DQ Medical for review before code lands.
 
 ## 8. Plan
 

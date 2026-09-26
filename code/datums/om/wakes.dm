@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY(om_woken_entities)
 	if(!E || QDELETED(E))
 		return FALSE
 	om_woken_attach(E)
-	return om_after(E, max(time - world.time, 0), /datum/om/behaviour/woken)
+	return om_deadline(E, max(time - world.time, 0), /datum/om/behaviour/woken)
 
 /proc/om_wake_cancel(datum/E)
 	om_cancel_after(E, /datum/om/behaviour/woken)

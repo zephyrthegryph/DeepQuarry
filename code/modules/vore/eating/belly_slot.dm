@@ -78,7 +78,7 @@
 				cycle_last = world.time
 			cycle_token = TRUE
 			cycle_period = period
-			om_after(src, max(period - (world.time - cycle_last), 0), /datum/om/behaviour/belly_cycle)
+			om_deadline(src, max(period - (world.time - cycle_last), 0), /datum/om/behaviour/belly_cycle)
 		return
 	if(cycle_token)
 		om_cancel_after(src, /datum/om/behaviour/belly_cycle)
@@ -99,7 +99,7 @@
 		return
 	var/seconds = (world.time - cycle_last) / (1 SECONDS)
 	cycle_last = world.time
-	om_after(src, cycle_period, /datum/om/behaviour/belly_cycle)
+	om_deadline(src, cycle_period, /datum/om/behaviour/belly_cycle)
 	belly_cycle(seconds)
 	if(!QDELETED(src) && !belly_occupied())
 		belly_reschedule()

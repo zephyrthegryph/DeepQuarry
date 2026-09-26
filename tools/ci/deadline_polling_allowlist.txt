@@ -2,7 +2,6 @@
 # Each should become REACT_AT (doc/rewrite/reactor.md §3). Remove an entry when its poll is converted;
 # a stale entry fails the check. Format: <file>:<type>/process  # reason
 
-code/ATMOSPHERICS/components/binary_devices/circulator.dm:/obj/machinery/atmospherics/binary/circulator/process  # S5: machine poll; converts when machines start asleep
 code/datums/status_effects/_status_effect.dm:/datum/status_effect/process  # S4: SSprocessing/controller poll; retired with its subsystem
 code/game/gamemodes/cult/cult_structures.dm:/obj/structure/cult/pylon/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/game/gamemodes/meteor/meteor.dm:/datum/game_mode/meteor/process  # S4: SSprocessing/controller poll; retired with its subsystem
@@ -33,11 +32,9 @@ code/modules/events/event_container.dm:/datum/event_container/process  # S4: SSp
 code/modules/hydroponics/seed_machines.dm:/obj/machinery/botany/process  # S5: machine poll; converts when machines start asleep
 code/modules/hydroponics/spreading/spreading_growth.dm:/obj/effect/plant/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/modules/media/walkpod.dm:/obj/item/walkpod/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
-code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm:/obj/item/cell/protean/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/modules/mob/living/silicon/robot/robot_items.dm:/obj/item/borg/combat/shield/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/modules/planet/planet.dm:/datum/planet/process  # S4: SSprocessing/controller poll; retired with its subsystem
 code/modules/planet/weather.dm:/datum/weather_holder/process  # S4: SSprocessing/controller poll; retired with its subsystem
-code/modules/power/apc.dm:/obj/machinery/power/apc/process  # S5: machine poll; converts when machines start asleep
 code/modules/power/cell.dm:/obj/item/cell/process  # S4: SSobj/SSfastprocess poll; retired with SSobj
 code/modules/power/solar.dm:/obj/machinery/power/solar_control/process  # S5: machine poll; converts when machines start asleep
 code/modules/power/supermatter/supermatter.dm:/obj/machinery/power/supermatter/process  # S5: machine poll; converts when machines start asleep
