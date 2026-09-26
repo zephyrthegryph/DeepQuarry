@@ -37,7 +37,7 @@
 			return FALSE
 	return TRUE
 
-/datum/shuttle/autodock/ferry/arrivals/process()
+/datum/shuttle/autodock/ferry/arrivals/shuttle_step()
 	if(process_state == IDLE_STATE)
 
 		if(location) // If we're off-station (space).

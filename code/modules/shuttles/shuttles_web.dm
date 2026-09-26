@@ -73,7 +73,7 @@
 /datum/shuttle/autodock/web_shuttle/proc/build_destinations()
 	return
 
-/datum/shuttle/autodock/web_shuttle/process()
+/datum/shuttle/autodock/web_shuttle/shuttle_step()
 	update_helmets()
 
 	if(moving_status == SHUTTLE_IDLE)
