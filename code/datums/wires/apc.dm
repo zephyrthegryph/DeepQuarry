@@ -27,25 +27,19 @@
 		if(WIRE_IDSCAN)
 			A.locked = FALSE
 
-			spawn(300)
-				if(A)
-					A.locked = TRUE
+			om_after(A, 30 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "locked", TRUE)
 
 		if(WIRE_MAIN_POWER1, WIRE_MAIN_POWER2)
 			if(!A.shorted)
 				A.shorted = TRUE
 
-				spawn(1200)
-					if(A && !is_cut(WIRE_MAIN_POWER1) && !is_cut(WIRE_MAIN_POWER2))
-						A.shorted = FALSE
+				om_after(src, 2 MINUTES, PROC_REF(main_power_pulse_ends))
 
 		if(WIRE_AI_CONTROL)
 			if(!A.aidisabled)
 				A.aidisabled = TRUE
 
-				spawn(10)
-					if(A && !is_cut(WIRE_AI_CONTROL))
-						A.aidisabled = FALSE
+				om_after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
 
 /datum/wires/apc/on_cut(wire, mend)
 	var/obj/machinery/power/apc/A = holder
@@ -64,3 +58,13 @@
 
 		if(WIRE_AI_CONTROL)
 			A.aidisabled = !mend
+
+/datum/wires/apc/proc/main_power_pulse_ends()
+	var/obj/machinery/power/apc/A = holder
+	if(!is_cut(WIRE_MAIN_POWER1) && !is_cut(WIRE_MAIN_POWER2))
+		A.shorted = FALSE
+
+/datum/wires/apc/proc/ai_control_pulse_ends()
+	var/obj/machinery/power/apc/A = holder
+	if(!is_cut(WIRE_AI_CONTROL))
+		A.aidisabled = FALSE

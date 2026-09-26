@@ -170,12 +170,7 @@
 			else if(A.aiControlDisabled == -1)
 				A.aiControlDisabled = 2
 
-			spawn(10)
-				if(A)
-					if(A.aiControlDisabled == 1)
-						A.aiControlDisabled = 0
-					else if(A.aiControlDisabled == 2)
-						A.aiControlDisabled = -1
+			om_after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
 
 		if(WIRE_ELECTRIFY)
 			//one wire for electrifying the door. Sending a pulse through this electrifies the door for 30 seconds.
@@ -200,3 +195,10 @@
 		if(WIRE_BOLT_LIGHT)
 			A.lights = !A.lights
 			A.update_icon()
+
+/datum/wires/airlock/proc/ai_control_pulse_ends()
+	var/obj/machinery/door/airlock/A = holder
+	if(A.aiControlDisabled == 1)
+		A.aiControlDisabled = 0
+	else if(A.aiControlDisabled == 2)
+		A.aiControlDisabled = -1
