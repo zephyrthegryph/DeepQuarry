@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "5387eec2b71978f2"
+#define VERDIGRIS_ABI "f305d5b97715afcb"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -60,22 +60,6 @@
 
 // verdigris/domains/gas/src/gas.rs
 #define GAS_DEPENDENCY_TEMPERATURE 2
-
-/// Spacewind: `turf.consider_pressure_difference(other, value)`.
-// verdigris/domains/gas/src/turf.rs
-#define GAS_EVENT_PRESSURE 1
-
-/// A turf's gas may react (`air.react(turf)`).
-// verdigris/domains/gas/src/turf.rs
-#define GAS_EVENT_REACT 2
-
-/// Numbers per event returned by `gas_tick`: kind, turf, value, other turf.
-// verdigris/domains/gas/src/turf.rs
-#define GAS_EVENT_STRIDE 4
-
-/// A turf's visible gas changed (`set_visuals()`).
-// verdigris/domains/gas/src/turf.rs
-#define GAS_EVENT_VISUAL 3
 
 /// Main-owned mixtures use handles `0..PIPE_BASE`.
 // verdigris/domains/gas/src/world.rs
@@ -696,9 +680,9 @@
 	return call_ext(__f)(src_ref, temp)
 
 /// Test hook: runs `frames` gas frames to completion, one after another,
-/// deterministically (no wall clock), and returns their events like
+/// deterministically (no wall clock), and pushes their events like
 /// `gas_tick`.
-// /proc/gas_run_frames (verdigris/domains/gas/src/turf.rs)
+// /proc/gas_run_frames (verdigris/ffi/src/gas.rs)
 /proc/vg_gas_run_frames(frames)
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_run_frames_ffi")
 	VG_COUNT_FFI_CALL
@@ -716,9 +700,10 @@
 	return call_ext(__f)()
 
 /// One SSair tick: pin the newest turf gas, collect its events and watch
-/// wakes, apply heat, start the next frame. Never waits. Returns the events
-/// as `GAS_EVENT_STRIDE` values each: `GAS_EVENT_*`, turf, value, other turf.
-// /proc/gas_tick (verdigris/domains/gas/src/turf.rs)
+/// wakes, apply heat, start the next frame. Never waits. Its reaction/
+/// visual/pressure notifications reach DM through `vg_drain_events()`
+/// (`SSvg.fire()` already calls it every tick), not a return value.
+// /proc/gas_tick (verdigris/ffi/src/gas.rs)
 /proc/vg_gas_tick()
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_tick_ffi")
 	VG_COUNT_FFI_CALL
@@ -1678,6 +1663,17 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:turf_active_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
+
+/// The turf a gas field cell index names. `gas_tick`'s events hand DM a
+/// bare cell index now (the generic typed-event wire is plain numbers
+/// only, `rust_architecture.md` §4.8), not a turf reference the way the
+/// old flat encoding did -- `on_gas_cell_*` handlers call this once to
+/// resolve it.
+// /proc/vg_turf_of (verdigris/ffi/src/gas.rs)
+/proc/vg_turf_of(cell)
+	var/static/__f = load_ext(VERDIGRIS, "byond:turf_of_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(cell)
 
 /// Frees a mixture's main-owned slot. Turf and pipe gas outlive their datums
 /// (the cell and the region own it).

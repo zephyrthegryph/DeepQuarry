@@ -2307,6 +2307,18 @@ impl World {
         std::mem::take(&mut self.events)
     }
 
+    /// Appends a typed event as though a [`Law`] on this `World` had
+    /// [`emit`](crate::law::LawCtx::emit)ted it -- for a domain whose
+    /// engine isn't on this `World` yet (still its own driver, `gas`'s
+    /// `GasWorld`/turf field) but whose events are, so `vg_drain_events()`
+    /// is the one path DM ever sees a typed event through
+    /// (`rust_architecture.md` §4.8, §2: "no other `Vec<f32>` encoding
+    /// anywhere"). `entity`: the `vg_entity` value the event is about, or
+    /// `0.0` for one that isn't (a region, a field cell).
+    pub fn push_event<E: crate::event::Event>(&mut self, entity: f32, event: &E) {
+        self.events.push(entity, event);
+    }
+
     /// Every watch wake fired since the last drain (feed them to the
     /// reactor's lanes).
     pub fn drain_wakes(&mut self, out: &mut Vec<Wake>) {

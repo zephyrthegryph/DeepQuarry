@@ -29,35 +29,19 @@ pub const AIR_BLOCK_KEEP: i32 = -1;
 /// @dm-define SIMULATION_ANY
 pub const DM_SIMULATION_ANY: u8 = 3;
 
-/// Numbers per event returned by `gas_tick`: kind, turf, value, other turf.
-/// @dm-define GAS_EVENT_STRIDE
-pub const GAS_EVENT_STRIDE: u32 = 4;
-/// A turf's gas may react (`air.react(turf)`).
-/// @dm-define GAS_EVENT_REACT
-pub const GAS_EVENT_REACT: u32 = 2;
-/// A turf's visible gas changed (`set_visuals()`).
-/// @dm-define GAS_EVENT_VISUAL
-pub const GAS_EVENT_VISUAL: u32 = 3;
-/// Spacewind: `turf.consider_pressure_difference(other, value)`.
-/// @dm-define GAS_EVENT_PRESSURE
-pub const GAS_EVENT_PRESSURE: u32 = 1;
-
 const _: () = {
-	assert!(GAS_EVENT_REACT == vg_core::outbox::EventKind::ReactionReady as u32);
-	assert!(GAS_EVENT_VISUAL == vg_core::outbox::EventKind::VisualChange as u32);
-	assert!(GAS_EVENT_PRESSURE == vg_core::outbox::EventKind::PressureJump as u32);
 	assert!(OBSERVATION_STRIDE == crate::GAS_OBSERVATION_STRIDE);
 };
+
+fn turf_value(cell: u32) -> ByondValue {
+	ByondValue::new_ref(ValueType::Turf, cell)
+}
 
 fn mask_from_value(mask: &ByondValue) -> Option<u8> {
 	mask.get_number()
 		.ok()
 		.filter(|&m| m >= 0.0)
 		.map(|m| (m as u8) & AIR_BLOCK_ALL)
-}
-
-fn turf_value(cell: u32) -> ByondValue {
-	ByondValue::new_ref(ValueType::Turf, cell)
 }
 
 fn list_of(values: Vec<ByondValue>) -> Result<ByondValue> {
@@ -403,40 +387,6 @@ fn side(cell: &GasCell, g: vg_core::field::Geom) -> Side<'_, GasCell> {
 		reservoir: g.reservoir,
 		share: 1.0 / 6.0,
 	}
-}
-
-fn events_list(flat: &[f32]) -> Result<ByondValue> {
-	let mut out = Vec::with_capacity(flat.len());
-	for e in flat.chunks_exact(4) {
-		out.push(ByondValue::from(e[0]));
-		out.push(turf_value(e[1] as u32));
-		out.push(ByondValue::from(e[2]));
-		out.push(if e[0] as u32 == GAS_EVENT_PRESSURE {
-			turf_value(e[3] as u32)
-		} else {
-			ByondValue::null()
-		});
-	}
-	list_of(out)
-}
-
-/// One SSair tick: pin the newest turf gas, collect its events and watch
-/// wakes, apply heat, start the next frame. Never waits. Returns the events
-/// as `GAS_EVENT_STRIDE` values each: `GAS_EVENT_*`, turf, value, other turf.
-#[auxmacros::bind("/proc/gas_tick")]
-fn gas_tick() -> Result<ByondValue> {
-	let flat = with_world(|w| w.tick(true));
-	events_list(&flat)
-}
-
-/// Test hook: runs `frames` gas frames to completion, one after another,
-/// deterministically (no wall clock), and returns their events like
-/// `gas_tick`.
-#[auxmacros::bind("/proc/gas_run_frames")]
-fn gas_run_frames(frames: ByondValue) -> Result<ByondValue> {
-	let n = frames.get_number()?.clamp(0.0, 100_000.0) as u32;
-	let flat = with_world(|w| w.run_frames(n));
-	events_list(&flat)
 }
 
 /// `list(frames, commands, events, reactions, visuals, pressure, takes

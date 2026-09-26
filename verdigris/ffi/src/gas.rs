@@ -11,13 +11,16 @@
 use byondapi::prelude::*;
 use eyre::{eyre, Context, Result};
 use vg_core::network::RegionId;
+use vg_core::outbox::EventKind;
 use vg_core::slot::RawHandle;
 use vg_core::watch::revision::Counter;
 use vg_gas::cell::{N, Q};
 use vg_gas::gas::constants::ReactionReturn;
 use vg_gas::gas::{self, with_mix, Mixture};
+use vg_gas::laws::GasEvent;
 use vg_gas::pipes::Pipes;
 use vg_gas::reaction::{Reaction, ReactionIdentifier, ReactionPriority};
+use vg_gas::world::with_world as with_gas_world;
 use vg_gas::world::{MainsAccess, PIPE_BASE};
 
 // --- Main-owned mixtures -------------------------------------------------
@@ -371,4 +374,77 @@ fn react_hook(src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
         }
     }
     Ok((ret.bits() as f32).into())
+}
+
+// --- Turf gas tick events --------------------------------------------------
+//
+// `GasWorld::tick`/`run_frames` (still its own driver -- `domains/gas/src/
+// world.rs`'s docs, gas's "first slice" not being the field/law migration
+// yet) return every frame's reaction/visual/pressure notifications as flat
+// `kind, cell, value, extra` quadruples (`vg_core::outbox::EventKind`).
+// Converting them to `GasEvent` and pushing them onto the shared `World`
+// here -- instead of handing DM the flat list to parse itself, the way
+// `code/ATMOSPHERICS/SSair.dm`'s `process_gas_events()` used to -- is the
+// one typed-event path every other domain's events already take
+// (`rust_architecture.md` §4.8): `SSvg.fire()` already calls
+// `vg_drain_events()` unconditionally every tick, so DM needs nothing new
+// to receive them, only real bodies for the generated `on_gas_cell_*`
+// handlers (`code/ATMOSPHERICS/SSair.dm`).
+fn push_turf_events(flat: &[f32]) {
+    crate::world::with_world(|w| {
+        for e in flat.chunks_exact(4) {
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let (cell, value, extra) = (e[1] as u32, e[2], e[3] as u32);
+            match e[0] as u8 {
+                k if k == EventKind::ReactionReady as u8 => {
+                    w.push_event(0.0, &GasEvent::CellReactionReady { cell, reaction: extra });
+                }
+                k if k == EventKind::VisualChange as u8 => {
+                    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                    let vis = value as u16;
+                    w.push_event(0.0, &GasEvent::CellVisualChange { cell, vis });
+                }
+                k if k == EventKind::PressureJump as u8 => {
+                    w.push_event(0.0, &GasEvent::PressureJump { cell, neighbor: extra, delta: value });
+                }
+                _ => {}
+            }
+        }
+        Ok(())
+    })
+    .ok();
+}
+
+/// One SSair tick: pin the newest turf gas, collect its events and watch
+/// wakes, apply heat, start the next frame. Never waits. Its reaction/
+/// visual/pressure notifications reach DM through `vg_drain_events()`
+/// (`SSvg.fire()` already calls it every tick), not a return value.
+#[auxmacros::bind("/proc/gas_tick")]
+fn gas_tick() -> Result<ByondValue> {
+    let flat = with_gas_world(|w| w.tick(true));
+    push_turf_events(&flat);
+    Ok(ByondValue::null())
+}
+
+/// Test hook: runs `frames` gas frames to completion, one after another,
+/// deterministically (no wall clock), and pushes their events like
+/// `gas_tick`.
+#[auxmacros::bind("/proc/gas_run_frames")]
+fn gas_run_frames(frames: ByondValue) -> Result<ByondValue> {
+    let n = frames.get_number()?.clamp(0.0, 100_000.0) as u32;
+    let flat = with_gas_world(|w| w.run_frames(n));
+    push_turf_events(&flat);
+    Ok(ByondValue::null())
+}
+
+/// The turf a gas field cell index names. `gas_tick`'s events hand DM a
+/// bare cell index now (the generic typed-event wire is plain numbers
+/// only, `rust_architecture.md` §4.8), not a turf reference the way the
+/// old flat encoding did -- `on_gas_cell_*` handlers call this once to
+/// resolve it.
+#[auxmacros::bind("/proc/vg_turf_of")]
+fn turf_of(cell: ByondValue) -> Result<ByondValue> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let c = cell.get_number()? as u32;
+    Ok(ByondValue::new_ref(ValueType::Turf, c))
 }
