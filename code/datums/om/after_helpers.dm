@@ -69,3 +69,12 @@
 /// global owner, since no entity owns a round event).
 /proc/delayed_command_announcement(message, new_title, new_sound)
 	GLOB.command_announcement.Announce(message, new_title, new_sound = new_sound)
+
+/// om_after() target: one step away from `from`.
+/atom/movable/proc/om_step_away(atom/from)
+	step_away(src, from)
+
+/// Starts the effect `times` times, `interval` deciseconds apart, on the effect's own clock.
+/datum/effect/effect/system/proc/start_repeatedly(times, interval)
+	for(var/i in 0 to times - 1)
+		om_after(src, i * interval, PROC_REF(start))

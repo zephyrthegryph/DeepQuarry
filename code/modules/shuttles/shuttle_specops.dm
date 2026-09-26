@@ -63,19 +63,7 @@
 /datum/shuttle/autodock/ferry/specops/perform_shuttle_move()
 	..()
 
-	spawn(2 SECONDS)
-		if (!location)	//just arrived home
-			for(var/turf/T in get_area_turfs(shuttle_area))
-				var/mob/M = locate(/mob) in T
-				to_chat(M, span_danger("You have arrived at [using_map.boss_name]. Operation has ended!"))
-		else	//just left for the station
-			launch_mauraders()
-			for(var/turf/T in get_area_turfs(shuttle_area))
-				var/mob/M = locate(/mob) in T
-				to_chat(M, span_danger("You have arrived at [station_name()]. Commence operation!"))
-
-				var/obj/machinery/light/small/readylight/light = locate() in T
-				if(light) light.set_state(1)
+	om_after(src, 2 SECONDS, PROC_REF(announce_arrival))
 
 /datum/shuttle/autodock/ferry/specops/cancel_launch()
 	if (!can_cancel())
@@ -133,71 +121,7 @@
 
 /proc/launch_mauraders()
 	var/area/centcom/specops/special_ops = locate()//Where is the specops area located?
-	//Begin Marauder launchpad.
-	spawn(0)//So it parallel processes it.
-		for(var/obj/machinery/door/blast/M in special_ops)
-			switch(M.id)
-				if("ASSAULT0")
-					spawn(10)//1 second delay between each.
-						M.open()
-				if("ASSAULT1")
-					spawn(20)
-						M.open()
-				if("ASSAULT2")
-					spawn(30)
-						M.open()
-				if("ASSAULT3")
-					spawn(40)
-						M.open()
-
-		sleep(10)
-
-		var/spawn_marauder[] = new()
-		for(var/obj/effect/landmark/L in GLOB.landmarks_list)
-			if(L.name == "Marauder Entry")
-				spawn_marauder.Add(L)
-		for(var/obj/effect/landmark/L in GLOB.landmarks_list)
-			if(L.name == "Marauder Exit")
-				var/obj/effect/portal/P = new(L.loc)
-				P.invisibility = INVISIBILITY_ABSTRACT //So it is not seen by anyone.
-				P.failchance = 0//So it has no fail chance when teleporting.
-				P.target = pick(spawn_marauder)//Where the marauder will arrive.
-				spawn_marauder.Remove(P.target)
-
-		sleep(10)
-
-		for(var/obj/machinery/mass_driver/M in special_ops)
-			switch(M.id)
-				if("ASSAULT0")
-					spawn(10)
-						M.drive()
-				if("ASSAULT1")
-					spawn(20)
-						M.drive()
-				if("ASSAULT2")
-					spawn(30)
-						M.drive()
-				if("ASSAULT3")
-					spawn(40)
-						M.drive()
-
-		sleep(50)//Doors remain open for 5 seconds.
-
-		for(var/obj/machinery/door/blast/M in special_ops)
-			switch(M.id)//Doors close at the same time.
-				if("ASSAULT0")
-					spawn(0)
-						M.close()
-				if("ASSAULT1")
-					spawn(0)
-						M.close()
-				if("ASSAULT2")
-					spawn(0)
-						M.close()
-				if("ASSAULT3")
-					spawn(0)
-						M.close()
-		special_ops.readyreset()//Reset firealarm after the team launched.
+	specops_marauder_launchpad(special_ops)
 	//End Marauder launchpad.
 
 /obj/machinery/light/small/readylight
@@ -213,3 +137,17 @@
 	else
 		brightness_color = initial(brightness_color)
 	update()
+
+/datum/shuttle/autodock/ferry/specops/proc/announce_arrival()
+	if (!location)	//just arrived home
+		for(var/turf/T in get_area_turfs(shuttle_area))
+			var/mob/M = locate(/mob) in T
+			to_chat(M, span_danger("You have arrived at [using_map.boss_name]. Operation has ended!"))
+	else	//just left for the station
+		launch_mauraders()
+		for(var/turf/T in get_area_turfs(shuttle_area))
+			var/mob/M = locate(/mob) in T
+			to_chat(M, span_danger("You have arrived at [station_name()]. Commence operation!"))
+
+			var/obj/machinery/light/small/readylight/light = locate() in T
+			if(light) light.set_state(1)
