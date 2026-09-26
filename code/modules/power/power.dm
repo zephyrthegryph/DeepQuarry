@@ -125,9 +125,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	return !!powernet
 
 /// Sends this machine's node (its turf) to Rust; it joins the knots there.
+/// A no-op (not an error) before `vg_entity` exists: several subtypes call
+/// `connect_to_network()` straight from their own `Initialize()`, which
+/// runs before `on_materialize()`'s `vg_bind()` mints it (`rust_
+/// architecture.md`'s Initialize/on_materialize split, this proc's own
+/// base-class docs). The base class's `on_materialize()` calls
+/// `power_autoconnect()` after `vg_bind()` regardless, so every anchored
+/// machine still gets its node sent once `vg_entity` is real -- an early
+/// call here just has nothing to do yet.
 /obj/machinery/power/proc/power_send_node()
 	var/turf/T = power_turf()
 	if(!istype(T))
+		return FALSE
+	if(!vg_entity)
 		return FALSE
 	vg_power_bind_machine(vg_entity, T.x, T.y, T.z)
 	if(power_supply_rate)
