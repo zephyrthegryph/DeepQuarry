@@ -56,3 +56,7 @@
 /// om_after() target: a temporary disability (`flag` of `disabilities`) wears off.
 /mob/proc/cure_temporary_disability(flag)
 	disabilities &= ~flag
+
+/// om_after() target: flips boolean var `name` on the owner (a temporary toggle undoing itself).
+/datum/proc/om_toggle_var(name)
+	vars[name] = !vars[name]

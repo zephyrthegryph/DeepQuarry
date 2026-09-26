@@ -384,12 +384,12 @@ GLOBAL_VAR(bomb_set)
 				return TRUE
 			if(light_wire == wire)
 				lighthack = !lighthack
-				spawn(100) lighthack = !lighthack
+				om_after(src, 10 SECONDS, TYPE_PROC_REF(/datum, om_toggle_var), "lighthack")
 			if(timing_wire == wire && timing)
 				explode()
 			if(safety_wire == wire)
 				safety = !safety
-				spawn(100) safety = !safety
+				om_after(src, 10 SECONDS, TYPE_PROC_REF(/datum, om_toggle_var), "safety")
 				if(safety == 1)
 					visible_message(span_notice("The [src] quiets down."))
 					if(!lighthack && icon_state == "nuclearbomb2")

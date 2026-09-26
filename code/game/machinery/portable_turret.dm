@@ -1381,8 +1381,7 @@
 		if(!tryToShootAt(secondarytargets)) // if no valid targets, go for secondary targets
 			timeout--
 			if(timeout <= 0)
-				spawn()
-					popDown() // no valid targets, close the cover
+				popDown() // no valid targets, close the cover
 
 /obj/machinery/porta_turret/rcd/update_icon()
 	if(stat & BROKEN) // Turret is dead.
@@ -1408,4 +1407,3 @@
 /obj/machinery/porta_turret/rcd/die()
 	spark_system.start()
 	qdel(src)
-

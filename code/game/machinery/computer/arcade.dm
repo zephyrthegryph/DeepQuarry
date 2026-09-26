@@ -459,10 +459,8 @@
 							M.status_at_least(EFFECT_STUNNED, 3)
 						if(severity >= 3) //you didn't pray hard enough
 							to_chat(M, span_warning("An overpowering wave of nausea consumes over you. You hunch over, your stomach's contents preparing for a spectacular exit."))
-							spawn(30)
 							if(ishuman(M))
-								var/mob/living/carbon/human/H = M
-								H.vomit()
+								om_after(M, 3 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, vomit))
 					if(ORION_TRAIL_FLUX)
 						if(prob(75))
 							M.status_at_least(EFFECT_WEAKENED, 3)

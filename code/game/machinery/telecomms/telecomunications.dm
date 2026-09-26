@@ -256,9 +256,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 			START_MACHINE_PROCESSING(src)
 			playsound(src, 'sound/machines/tcomms/tcomms_pulse.ogg', 70, 1, 30)
 			var/duration = (300 * 10)/severity
-			spawn(rand(duration - 20, duration + 20)) // Takes a long time for the machines to reboot.
-				stat &= ~EMPED
-				START_MACHINE_PROCESSING(src)
+			om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover)) // Takes a long time for the machines to reboot.
 
 /obj/machinery/telecomms/proc/checkheat(elapsed_cycles = 1)
 	if(QDELETED(src))
@@ -759,3 +757,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		return TRUE
 
 	return src_z in using_map.get_map_levels(dst_z, TRUE, om_range = DEFAULT_OVERMAP_RANGE)
+
+/obj/machinery/telecomms/proc/emp_recover()
+	stat &= ~EMPED
+	START_MACHINE_PROCESSING(src)

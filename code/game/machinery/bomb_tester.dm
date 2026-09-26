@@ -229,16 +229,13 @@
 	update_icon()
 	switch(sim_mode)
 		if(MODE_SINGLE)
-			spawn()
-				single_tank_sim()
+			single_tank_sim()
 
 		if(MODE_DOUBLE)
-			spawn()
-				ttv_sim()
+			ttv_sim()
 
 		if(MODE_CANISTER)
-			spawn()
-				canister_sim()
+			canister_sim()
 
 /obj/machinery/bomb_tester/proc/simulate_tank() //This is a heavily cut down version of check_status() from tanks.dm
 	faketank.react()
@@ -292,7 +289,6 @@
 		if(simulate_tank())
 			break
 		simulation_results += "<br>Gas tank status:<br>[format_gas_for_results(faketank)]"
-		sleep(2)
 
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."
@@ -317,7 +313,6 @@
 		if(simulate_tank())
 			break
 		simulation_results += "<br>Gas mixture status:<br>[format_gas_for_results(faketank)]"
-		sleep(2)
 
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."
@@ -350,7 +345,6 @@
 		if(simulate_tank())
 			break
 		simulation_results += "<br>Gas tank status:<br>[format_gas_for_results(faketank)]"
-		sleep(2)
 
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."

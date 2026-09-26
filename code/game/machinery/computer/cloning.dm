@@ -234,13 +234,7 @@
 			set_scan_temp("Scanner ready.", "good")
 			loading = TRUE
 
-			spawn(20)
-				if(can_brainscan() && scan_mode)
-					scan_mob(scanner_occupant, scan_brain = TRUE)
-				else
-					scan_mob(scanner_occupant)
-				loading = FALSE
-				SStgui.update_uis(src)
+			om_after(src, 2 SECONDS, PROC_REF(delayed_scan), scanner_occupant)
 		if("autoprocess")
 			autoprocess = text2num(params["on"]) > 0
 			if(autoprocess)
@@ -483,3 +477,11 @@
 
 #undef MENU_MAIN
 #undef MENU_RECORDS
+
+/obj/machinery/computer/cloning/proc/delayed_scan(mob/living/carbon/human/scanner_occupant)
+	if(can_brainscan() && scan_mode)
+		scan_mob(scanner_occupant, scan_brain = TRUE)
+	else
+		scan_mob(scanner_occupant)
+	loading = FALSE
+	SStgui.update_uis(src)

@@ -198,21 +198,12 @@
 			// Accountability!
 			LAZYOR(users_to_open, user.name)
 			needs_to_close = !issilicon(user)
-		spawn()
-			open()
+		open()
 	else
-		spawn()
-			close()
+		close()
 
 	if(needs_to_close)
-		spawn(50)
-			alarmed = 0
-			for(var/area/A in areas_added)		//Just in case a fire alarm is turned off while the firedoor is going through an autoclose cycle
-				if(A.firedoors_closed)
-					alarmed = 1
-			if(alarmed)
-				nextstate = FIREDOOR_CLOSED
-				close()
+		om_after(src, 5 SECONDS, PROC_REF(autoclose_check))
 	return TRUE
 
 /obj/machinery/door/firedoor/attack_alien(mob/user) //Familiar, right? Doors.
@@ -310,11 +301,9 @@
 					"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
 					"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
 			if(density)
-				spawn(0)
-					open(1)
+				open(1)
 			else
-				spawn(0)
-					close()
+				close()
 		prying = 0
 		update_icon()
 		return TRUE
@@ -645,3 +634,13 @@
 	name = "\improper Emergency Shutter System"
 	desc = "Emergency air-tight shutter, capable of sealing off breached areas. This model fits flush with the walls, and has a panel in the floor for maintenance."
 	icon = 'icons/obj/doors/DoorHazardHidden_steel.dmi'
+
+/// Closes again after a manual open, if the fire alarm is still on.
+/obj/machinery/door/firedoor/proc/autoclose_check()
+	var/alarmed = 0
+	for(var/area/A in areas_added)		//Just in case a fire alarm is turned off while the firedoor is going through an autoclose cycle
+		if(A.firedoors_closed)
+			alarmed = 1
+	if(alarmed)
+		nextstate = FIREDOOR_CLOSED
+		close()

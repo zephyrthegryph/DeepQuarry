@@ -332,17 +332,7 @@
 	update_icon()
 
 /obj/machinery/body_scanconsole/proc/findscanner()
-	spawn(5)
-		var/obj/machinery/bodyscanner/bodyscannernew = null
-		// Loop through every direction
-		for(dir in list(NORTH, EAST, SOUTH, WEST)) // Loop through every direction
-			bodyscannernew = locate(/obj/machinery/bodyscanner, get_step(src, dir)) // Try to find a scanner in that direction
-			if(bodyscannernew)
-				scanner = bodyscannernew
-				bodyscannernew.console = src
-				set_dir(get_dir(src, bodyscannernew))
-				return
-		return
+	om_after(src, 5, PROC_REF(findscanner_now))
 
 /obj/machinery/body_scanconsole/attack_ai(user as mob)
 	return attack_hand(user)
@@ -490,3 +480,15 @@
 		else
 			icon_state = "scanner_terminal_off"
 			set_light(0)
+
+/obj/machinery/body_scanconsole/proc/findscanner_now()
+	var/obj/machinery/bodyscanner/bodyscannernew = null
+	// Loop through every direction
+	for(dir in list(NORTH, EAST, SOUTH, WEST)) // Loop through every direction
+		bodyscannernew = locate(/obj/machinery/bodyscanner, get_step(src, dir)) // Try to find a scanner in that direction
+		if(bodyscannernew)
+			scanner = bodyscannernew
+			bodyscannernew.console = src
+			set_dir(get_dir(src, bodyscannernew))
+			return
+	return

@@ -115,8 +115,7 @@
 				on = !on
 
 				if(on)
-					spawn()
-						magnetic_process()
+					magnetic_process()
 
 /obj/machinery/magnetic_module/process()
 	if(stat & NOPOWER)
@@ -297,53 +296,47 @@
 			if("togglemoving")
 				moving = !moving
 				if(moving)
-					spawn() MagnetMove()
+					MagnetMove()
 
 	updateUsrDialog(usr)
 
 /obj/machinery/magnetic_controller/proc/MagnetMove()
 	if(looping) return
+	looping = 1
+	magnet_move_step()
 
-	while(moving && length(rpath) >= 1)
+/// One step of the magnet path: signal the next move, then wait by `speed`.
+/obj/machinery/magnetic_controller/proc/magnet_move_step()
+	if(!moving || length(rpath) < 1 || (stat & (BROKEN|NOPOWER)))
+		looping = 0
+		return
 
-		if(stat & (BROKEN|NOPOWER))
-			break
+	if(pathpos > length(rpath)) // if the position is greater than the length, we just loop through the list!
+		pathpos = 1
 
-		looping = 1
+	var/nextmove = uppertext(LAZYACCESS(rpath, pathpos)) // makes it un-case-sensitive
 
-		// Prepare the radio signal
-		var/datum/signal/signal = new
-		signal.transmission_method = TRANSMISSION_RADIO // radio transmission
-		signal.source = src
-		signal.frequency = frequency
-		signal.data["code"] = code
+	if(!(nextmove in list("N","S","E","W","C","R")))
+		// N, S, E, W are directional
+		// C is center
+		// R is random (in magnetic field's bounds)
+		looping = 0
+		return // stop if the character located is invalid
 
-		if(pathpos > length(rpath)) // if the position is greater than the length, we just loop through the list!
-			pathpos = 1
+	// Prepare the radio signal
+	var/datum/signal/signal = new
+	signal.transmission_method = TRANSMISSION_RADIO // radio transmission
+	signal.source = src
+	signal.frequency = frequency
+	signal.data["code"] = code
+	signal.data["command"] = nextmove
 
-		var/nextmove = uppertext(LAZYACCESS(rpath, pathpos)) // makes it un-case-sensitive
+	pathpos++ // increase iterator
 
-		if(!(nextmove in list("N","S","E","W","C","R")))
-			// N, S, E, W are directional
-			// C is center
-			// R is random (in magnetic field's bounds)
-			qdel(signal)
-			break // break the loop if the character located is invalid
+	// Broadcast the signal
+	radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
 
-		signal.data["command"] = nextmove
-
-		pathpos++ // increase iterator
-
-		// Broadcast the signal
-		spawn()
-			radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
-
-		if(speed == 10)
-			sleep(1)
-		else
-			sleep(12-speed)
-
-	looping = 0
+	om_after(src, speed == 10 ? 1 : 12 - speed, PROC_REF(magnet_move_step))
 
 /obj/machinery/magnetic_controller/proc/filter_path()
 	// Generates the rpath variable using the path string, think of this as "string2list"

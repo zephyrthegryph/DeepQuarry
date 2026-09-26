@@ -167,29 +167,30 @@
 	to_chat(U, "Now tracking [target.name] on camera.")
 	target.tracking_initiated()
 
-	spawn (0)
-		while (U.cameraFollow == target)
-			if (U.cameraFollow == null)
-				return
-
-			switch(target.tracking_status())
-				if(TRACKING_NO_COVERAGE)
-					to_chat(U, "Target is not near any active cameras.")
-					sleep(100)
-					continue
-				if(TRACKING_TERMINATE)
-					U.ai_cancel_tracking(1)
-					return
-
-			var/mob/observer/eye/eyeobj = ACTIVE_EYE(U)
-			if(eyeobj)
-				eyeobj.setLoc(get_turf(target), 0)
-			else
-				view_core()
-				return
-			sleep(10)
+	ai_track_step(target)
 
 	return TRUE
+
+/// Follow camera mode: keeps the eye on `target` every second (every ten while it is out of
+/// camera coverage) until tracking stops.
+/mob/living/silicon/ai/proc/ai_track_step(mob/living/target)
+	if(cameraFollow != target)
+		return
+	switch(target.tracking_status())
+		if(TRACKING_NO_COVERAGE)
+			to_chat(src, "Target is not near any active cameras.")
+			om_after(src, 10 SECONDS, PROC_REF(ai_track_step), target)
+			return
+		if(TRACKING_TERMINATE)
+			ai_cancel_tracking(1)
+			return
+
+	var/mob/observer/eye/eyeobj = ACTIVE_EYE(src)
+	if(!eyeobj)
+		view_core()
+		return
+	eyeobj.setLoc(get_turf(target), 0)
+	om_after(src, 1 SECOND, PROC_REF(ai_track_step), target)
 
 /obj/machinery/camera/attack_ai(mob/living/silicon/ai/user as mob)
 	if (!istype(user))

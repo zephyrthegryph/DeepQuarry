@@ -226,9 +226,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		ispowered = 1
 		update_icon()
 	else
-		spawn(rand(0, 15))
-			ispowered = 0
-			update_icon()
+		om_after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/newscaster/atom_break(damage_flag)
 	. = ..()
@@ -708,12 +706,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"[news_call]\""),2)
 		alert = 1
 		update_icon()
-		spawn(300)
-			alert = 0
-			update_icon()
+		om_after(src, 30 SECONDS, TYPE_PROC_REF(/datum, om_set_var_then), "alert", 0, TYPE_PROC_REF(/atom, update_icon))
 // playsound(src.loc, 'sound/machines/twobeep.ogg', 75, 1) // less peeps pls
 	else
 		for(var/mob/O in hearers(world.view-1, T))
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"Attention! Wanted issue distributed!\""),2)
 		playsound(src, 'sound/machines/warning-buzzer.ogg', 75, 1)
 	return
+
+/obj/machinery/newscaster/proc/lose_power()
+	ispowered = 0
+	update_icon()

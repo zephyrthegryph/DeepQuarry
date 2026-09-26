@@ -189,25 +189,7 @@ FIRE ALARM
 
 /obj/machinery/firealarm/power_change()
 	..()
-	spawn(rand(0,15))
-		update_icon()
-		// Looping Red/Violet/Orange Alarms
-		if(!soundloop)
-			return
-		if(stat & (NOPOWER | BROKEN)) // Are we broken or out of power?
-			soundloop.stop() // Stop the loop once we're out of power
-			engalarm.stop() // Stop these bc we're out of power
-			critalarm.stop() // Stop these, out of power
-			causality.stop() // etc etc
-		else
-			if(firewarn)
-				soundloop.start()
-			if(engwarn)
-				engalarm.start()
-			if(critwarn)
-				critalarm.start()
-			if(causalitywarn)
-				causality.start()
+	om_after(src, rand(0,15), PROC_REF(power_change_settle))
 
 /datum/interaction/machine_hand/ungated/firealarm_use
 	id = "firealarm_use"
@@ -348,3 +330,23 @@ FIRE ALARM
 			time += tp
 			time = min(max(round(time), 0), 120)
 			return TRUE
+
+/obj/machinery/firealarm/proc/power_change_settle()
+	update_icon()
+	// Looping Red/Violet/Orange Alarms
+	if(!soundloop)
+		return
+	if(stat & (NOPOWER | BROKEN)) // Are we broken or out of power?
+		soundloop.stop() // Stop the loop once we're out of power
+		engalarm.stop() // Stop these bc we're out of power
+		critalarm.stop() // Stop these, out of power
+		causality.stop() // etc etc
+	else
+		if(firewarn)
+			soundloop.start()
+		if(engwarn)
+			engalarm.start()
+		if(critwarn)
+			critalarm.start()
+		if(causalitywarn)
+			causality.start()

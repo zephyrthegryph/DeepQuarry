@@ -110,9 +110,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 	if(!GLOB.message_delay)
 		GLOB.message_delay = 1
-		spawn(10)
-			GLOB.message_delay = 0
-			GLOB.recentmessages = list()
+		om_after(src, 1 SECOND, PROC_REF(clear_recent_messages))
 
 	/* --- Do a snazzy animation! --- */
 	flick("broadcaster_send", src)
@@ -814,3 +812,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 		if(signal.data["slow"] > 0)
 			addtimer(CALLBACK(src, PROC_REF(broadcast_signal), signal), signal.data["slow"], TIMER_DELETE_ME)
+
+/obj/machinery/telecomms/broadcaster/proc/clear_recent_messages()
+	GLOB.message_delay = 0
+	GLOB.recentmessages = list()

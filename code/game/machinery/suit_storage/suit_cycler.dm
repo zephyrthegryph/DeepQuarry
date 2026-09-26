@@ -439,18 +439,14 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 			if(!suit || !can_repair)
 				return
 			active = 1
-			spawn(100)
-				repair_suit()
-				finished_job(ui.user)
+			om_after(src, 10 SECONDS, PROC_REF(finish_repair), ui.user)
 			. = TRUE
 
 		if("apply_paintjob")
 			if(!suit && !helmet)
 				return
 			active = 1
-			spawn(100)
-				apply_paintjob()
-				finished_job(ui.user)
+			om_after(src, 10 SECONDS, PROC_REF(finish_paintjob), ui.user)
 			. = TRUE
 
 		if("lock")
@@ -594,3 +590,11 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	else
 		visible_message("[icon2html(src,viewers(src))]" + span_warning("Unable to apply specified cosmetics with specified species. Please try again with a different species or cosmetic option selected."))
 		return
+
+/obj/machinery/suit_cycler/proc/finish_repair(mob/user)
+	repair_suit()
+	finished_job(user)
+
+/obj/machinery/suit_cycler/proc/finish_paintjob(mob/user)
+	apply_paintjob()
+	finished_job(user)

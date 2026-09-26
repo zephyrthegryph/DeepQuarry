@@ -194,8 +194,7 @@
 	icon_state = "stuffedbear"
 	desiredstate = !desiredstate
 	trigger(user)
-	spawn(15)
-		update_icon()
+	om_after(src, 15, TYPE_PROC_REF(/atom, update_icon))
 
 /obj/machinery/button/remote/blast_door/bear/update_icon()
 	if(stat & NOPOWER)

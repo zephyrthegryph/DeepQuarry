@@ -223,8 +223,7 @@
 			windoor.density = FALSE
 			if(created_name)
 				windoor.name = created_name
-			spawn(0) // S7 keeps: door close() sleeps (doors, track 1d)
-				windoor.close()
+			om_after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close))
 
 			if(src.electronics.one_access)
 				windoor.req_access = null
@@ -245,8 +244,7 @@
 			windoor.density = FALSE
 			if(created_name)
 				windoor.name = created_name
-			spawn(0) // S7 keeps: door close() sleeps (doors, track 1d)
-				windoor.close()
+			om_after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close))
 
 			if(src.electronics.one_access)
 				windoor.req_access = null

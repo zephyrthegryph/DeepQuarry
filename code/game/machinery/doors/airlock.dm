@@ -219,8 +219,7 @@ About the new airlock wires panel:
 			if(!justzap)
 				if(shock(user, 100))
 					justzap = 1
-					spawn (10)
-						justzap = 0
+					om_after(src, 1 SECOND, TYPE_PROC_REF(/datum, om_set_var), "justzap", 0)
 					return
 			else /*if(justzap)*/
 				return
@@ -494,50 +493,79 @@ About the new airlock wires panel:
 	if(aiHacking)
 		return
 	aiHacking = TRUE
-	spawn(20)
-		//TODO: Make this take a minute
-		to_chat(user, "Airlock AI control has been blocked. Beginning fault-detection.")
-		sleep(50)
-		if(canAIControl())
-			to_chat(user, "Alert cancelled. Airlock control has been restored without our assistance.")
-			aiHacking = FALSE
-			return
-		else if(!canAIHack(user))
-			to_chat(user, "We've lost our connection! Unable to hack airlock.")
-			aiHacking = FALSE
-			return
-		to_chat(user, "Fault confirmed: airlock control wire disabled or cut.")
-		sleep(20)
-		to_chat(user, "Attempting to hack into airlock. This may take some time.")
-		sleep(200)
-		if(canAIControl())
-			to_chat(user, "Alert cancelled. Airlock control has been restored without our assistance.")
-			aiHacking = FALSE
-			return
-		else if(!canAIHack(user))
-			to_chat(user, "We've lost our connection! Unable to hack airlock.")
-			aiHacking = FALSE
-			return
-		to_chat(user, "Upload access confirmed. Loading control program into airlock software.")
-		sleep(170)
-		if(canAIControl())
-			to_chat(user, "Alert cancelled. Airlock control has been restored without our assistance.")
-			aiHacking = FALSE
-			return
-		else if(!canAIHack(user))
-			to_chat(user, "We've lost our connection! Unable to hack airlock.")
-			aiHacking = FALSE
-			return
-		to_chat(user, "Transfer complete. Forcing airlock to execute program.")
-		sleep(50)
-		//disable blocked control
-		aiControlDisabled = 2
-		to_chat(user, "Receiving control information from airlock.")
-		sleep(10)
-		//bring up airlock dialog
-		aiHacking = 0
-		if (user)
-			attack_ai(user)
+	om_task_start(src, /datum/om/task_def/airlock_ai_hack, null, list("user" = user))
+
+/// An AI hacking an airlock whose AI control is blocked: fault detection, the hack, the
+/// upload and the transfer, each re-checking that the hack is still needed and possible.
+/datum/om/task_def/airlock_ai_hack
+	name = "airlock ai hack"
+	steps = list(
+		/obj/machinery/door/airlock/proc/hack_detect = 2 SECONDS,
+		/obj/machinery/door/airlock/proc/hack_fault_confirmed = 5 SECONDS,
+		/obj/machinery/door/airlock/proc/hack_attempt = 2 SECONDS,
+		/obj/machinery/door/airlock/proc/hack_upload = 20 SECONDS,
+		/obj/machinery/door/airlock/proc/hack_transfer = 17 SECONDS,
+		/obj/machinery/door/airlock/proc/hack_receive = 5 SECONDS,
+		/obj/machinery/door/airlock/proc/hack_finish = 1 SECOND)
+	cancel_proc = /obj/machinery/door/airlock/proc/hack_stopped
+
+/obj/machinery/door/airlock/proc/hack_stopped(datum/om/task/T, reason)
+	aiHacking = FALSE
+
+/// Stops the hack if control came back on its own or the AI lost its link. Null if it goes on.
+/obj/machinery/door/airlock/proc/hack_check(mob/user)
+	if(canAIControl())
+		to_chat(user, "Alert cancelled. Airlock control has been restored without our assistance.")
+		return STEP_FAIL("restored")
+	if(!canAIHack(user))
+		to_chat(user, "We've lost our connection! Unable to hack airlock.")
+		return STEP_FAIL("lost connection")
+	return null
+
+/obj/machinery/door/airlock/proc/hack_detect(datum/om/task/T)
+	//TODO: Make this take a minute
+	to_chat(T.param("user"), "Airlock AI control has been blocked. Beginning fault-detection.")
+	return STEP_NEXT
+
+/obj/machinery/door/airlock/proc/hack_fault_confirmed(datum/om/task/T)
+	var/mob/user = T.param("user")
+	. = hack_check(user)
+	if(.)
+		return
+	to_chat(user, "Fault confirmed: airlock control wire disabled or cut.")
+	return STEP_NEXT
+
+/obj/machinery/door/airlock/proc/hack_attempt(datum/om/task/T)
+	to_chat(T.param("user"), "Attempting to hack into airlock. This may take some time.")
+	return STEP_NEXT
+
+/obj/machinery/door/airlock/proc/hack_upload(datum/om/task/T)
+	var/mob/user = T.param("user")
+	. = hack_check(user)
+	if(.)
+		return
+	to_chat(user, "Upload access confirmed. Loading control program into airlock software.")
+	return STEP_NEXT
+
+/obj/machinery/door/airlock/proc/hack_transfer(datum/om/task/T)
+	var/mob/user = T.param("user")
+	. = hack_check(user)
+	if(.)
+		return
+	to_chat(user, "Transfer complete. Forcing airlock to execute program.")
+	return STEP_NEXT
+
+/obj/machinery/door/airlock/proc/hack_receive(datum/om/task/T)
+	//disable blocked control
+	aiControlDisabled = 2
+	to_chat(T.param("user"), "Receiving control information from airlock.")
+	return STEP_NEXT
+
+/obj/machinery/door/airlock/proc/hack_finish(datum/om/task/T)
+	//bring up airlock dialog
+	aiHacking = 0
+	attack_ai(T.param("user"))
+	return STEP_DONE
 
 /obj/machinery/door/airlock/CanPass(atom/movable/mover, turf/target)
 	if (isElectrified())

@@ -61,12 +61,7 @@
 		ispowered = 1
 		update_icon()
 	else
-		spawn(rand(0, 15))
-			ispowered = 0
-			islocked = 0
-			isopen = 1
-			dump_everything()
-			update_icon()
+		om_after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/suit_storage_unit/ex_act(severity)
 	if(severity <= 2 && prob(50))
@@ -493,3 +488,10 @@
 //////////////////////////////REMINDER: Make it lock once you place some fucker inside.
 
 //God this entire file is fucking awful //Yes
+
+/obj/machinery/suit_storage_unit/proc/lose_power()
+	ispowered = 0
+	islocked = 0
+	isopen = 1
+	dump_everything()
+	update_icon()

@@ -132,7 +132,7 @@
 					var/showcode = replacetext(storedcode, "\\\"", "\\\\\"")
 					showcode = replacetext(storedcode, "\"", "\\\"")
 					winset(editingcode, "tcscode", "text=\"[showcode]\"")
-					spawn()
+					spawn() // S7 keeps: update_ide() polls winget(), a blocking client round trip (client procs)
 						update_ide()
 
 				else

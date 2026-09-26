@@ -51,7 +51,7 @@
 			MK.loc = loc
 			// Will help make emagging the console not so easy to get away with.
 			MK.info += "<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")
-			spawn(100*length(linkedServer.decryptkey)) UnmagConsole()
+			om_after(src, 100*length(linkedServer.decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
 			update_icon()
 			return 1
@@ -223,9 +223,7 @@
 				hacking = 1
 				update_icon()
 				//Time it takes to bruteforce is dependant on the password length.
-				spawn(100*length(linkedServer.decryptkey))
-					if(src && linkedServer && ui.user)
-						BruteForce(ui.user)
+				om_after(src, 100*length(linkedServer.decryptkey), PROC_REF(brute_force_done), ui.user)
 
 	if(!auth)
 		return
@@ -360,3 +358,7 @@
 			info_links = info
 			icon_state = "paper_words"
 			break
+
+/obj/machinery/computer/message_monitor/proc/brute_force_done(mob/user)
+	if(linkedServer && user)
+		BruteForce(user)
