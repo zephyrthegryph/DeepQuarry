@@ -329,8 +329,15 @@ depends_on))`. A fact is computed on first use and cached for the frame (`F.fact
 **idles** when every such channel is in its wake mask (a dead mob's alive-only stages wake on
 `CHANGE_MOB_STAT`), otherwise it stays awake unless its `idle()` holds. `begin()` runs once at
 the start of every scheduled frame (Life advances the stasis counter there) and `reset()` when
-the frame returns to the pool. Frames are pooled per pipeline on the scheduler; a nested run
-(`om_stage_run_now()` inside a stage) takes a second frame, so no scratch state exists.
+the frame returns to the pool. Each entity's frame **is** its pipeline state (plan, idle bits,
+idle count, parking, extras, per-stage last run), stored in `rec.pipes[pipe_idx]`, so a frame
+reads nothing through another datum. A nested run (`om_stage_run_now()` inside a stage) takes
+a scratch frame from `sched.free_frames` (one kept per pipeline), so no shared scratch exists.
+
+**Stages never wait.** `perform()` is `SHOULD_NOT_SLEEP`. Work that takes time (spinning a web,
+laying eggs, building, cloaking) starts an om task (§11) with a claim and returns; the task's
+checks cancel it on death, deletion or leaving the tile. Only speech, emotes, AI movement and
+NIF upkeep, whose return values nobody reads, still go through `INVOKE_ASYNC`.
 
 **Idle, park, wake.** A stage idles when it returns `STAGE_IDLE` or its `idle()` holds; its
 bit is then skipped. An entity whose stages have all been idle for `park_after` frames in a

@@ -54,7 +54,8 @@ two-minute profile and parking summaries. It runs no Life.
 |---|---|---|---|
 | `life` | one frame per `LIFE_CYCLE`, fixed steps, catch-up 2 | the frame: every family under `/datum/om/stage/life` whose `pipeline` is `life` | parks when every stage is idle; `runlevels` game and postgame; relevance NONE parks |
 | `life_derive` | none (reactive), `LANE_DERIVED` | `canmove` | runs the pass a status or the stat changes |
-| `life_present` | none (reactive), `LANE_PRESENTATION`, `min_interval` 0.5 s | `hud`, `vision`, `hud_refresh` | `requires` a client; starts by running its stages once |
+| `life_present` | none (reactive), `LANE_PRESENTATION`, `min_interval` 0.5 s | `hud`, `hud_refresh` | `requires` a client; starts by running its stages once |
+| `life_vision` | none (reactive), `min_interval` 0.5 s | `vision` | every living mob, client or not: sight flags follow status, equipment, conditions (mutations, species) and health; idles when nothing listens to `COMSIG_MOB_HANDLE_VISION` |
 
 Plus `observer_upkeep` (a behaviour, `runlevels` game and postgame) for ghosts, AI eyes and the
 blob overmind.
@@ -204,7 +205,9 @@ passes whether its rule still holds. A rule that doesn't is a missed `om_changed
 - `life_derive` runs `canmove` the pass a status or the stat changes, never on a cadence. Stun,
   weaken, paralysis and sleep also update `canmove` and lying at once through their status
   hooks (§7).
-- `life_present` runs `hud`, `vision` and `hud_refresh` for a mob with a client: on their
+- `life_vision` keeps `sight`, `see_in_dark` and `see_invisible` right for NPCs too (a clientless
+  mob's sight gates what it can see for AI), woken by the channels above, never per frame.
+- `life_present` runs `hud` and `hud_refresh` for a mob with a client: on their
   channels, at most every `LIFE_PRESENT_MIN_INTERVAL` (0.5 s; a walking player raises a location
   change most ticks and the HUD needs only the latest state: wakes in between coalesce and
   arrive by one deadline), by their rewakes (darksight 5 s, HUD refresh 1 min) and, while one
@@ -441,3 +444,9 @@ machines):
   content, as the old scheduler did implicitly.
 - Profiling: every 16th pipeline frame is timed per stage and mob type; `-DOM_NO_STAGE_PROFILE`
   compiles it out (benchmarks do).
+
+## Moving mobs
+
+Every write of a mob's `loc` goes through `forceMove()` or `moveToNullspace()` (44 sites
+converted), so `Moved()` updates z relevance and the life pipeline parks or wakes with it. The
+three remaining direct writes (turf transit, two map helpers) call `onTransitZ()` themselves.

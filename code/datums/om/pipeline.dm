@@ -375,13 +375,12 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		for(var/w in 1 to length(bits)) { \
 			var/base = (w - 1) << 4; \
 			var/awake = ~bits[w] & ((1 << min(16, n - base)) - 1); \
-			var/b = 0; \
+			var/b = -1; \
 			while(awake) { \
-				if(awake & 1) { \
-					OM_RUN_STAGE(base + b + 1, w, (1 << b), _PERFORM) \
-				} \
-				awake >>= 1; \
 				b++; \
+				if(!(awake & 1)) { awake >>= 1; continue; } \
+				awake >>= 1; \
+				OM_RUN_STAGE(base + b + 1, w, (1 << b), _PERFORM) \
 			} \
 			if(stop) { break; } \
 		} \
