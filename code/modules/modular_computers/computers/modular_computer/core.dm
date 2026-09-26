@@ -27,10 +27,11 @@
 			for(var/datum/computer_file/program/P in idle_threads)
 				P.event_idremoved(1)
 
+/// Runs its programs while on; off, it sleeps until enable_computer().
 /obj/item/modular_computer/periodic_step()
 	if(!enabled) // The computer is turned off
 		last_power_usage = 0
-		return 0
+		return PROCESS_KILL
 
 	if(computer_broken())
 		shutdown_computer()
@@ -196,6 +197,7 @@
 
 /obj/item/modular_computer/proc/enable_computer(mob/user = null)
 	enabled = 1
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
 	// Autorun feature

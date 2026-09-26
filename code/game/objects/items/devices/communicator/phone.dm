@@ -5,6 +5,7 @@
 	if(!comm || !istype(comm)) return
 
 	LAZYOR(communicating, comm)
+	PERIODIC_START(src, PERIODIC_SLOW) // the connection watchdog
 	GLOB.listening_objects |= src
 	update_icon()
 
@@ -73,6 +74,7 @@
 	new_voice.mind = candidate.mind			//Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
 	LAZYADD(voice_mobs, new_voice)
+	PERIODIC_START(src, PERIODIC_SLOW) // the connection watchdog
 	GLOB.listening_objects |= src
 
 	var/atom/movable/screen/blackness = new() 	//Makes a black screen, so the candidate can't see what's going on before actually 'connecting' to the communicator.

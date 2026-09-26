@@ -282,6 +282,9 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Parameters: None
 // Description: Ticks the update_ticks variable, and checks to see if it needs to disconnect communicators every five ticks..
 /obj/item/communicator/periodic_step()
+	// The watchdog only guards open connections; with none it sleeps until one opens.
+	if(!length(voice_mobs) && !length(communicating))
+		return PROCESS_KILL
 	update_ticks++
 	// Connection maintenance is the five-tick watchdog, not four of every five
 	// ticks. State-changing exonet paths update immediately.
