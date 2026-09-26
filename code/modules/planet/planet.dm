@@ -21,6 +21,7 @@
 	var/list/turf/simulated/floor/planet_floors
 	var/list/turf/unsimulated/wall/planetary/planet_walls
 
+	var/tmp/last_step = 0
 	var/needs_work = 0 // Bitflags to signal to the planet controller these need (properly deferrable) work. Flags defined in controller.
 
 	var/sun_name = "the sun" // For flavor.
@@ -46,13 +47,22 @@
 			))
 	update_sun()
 
-/datum/planet/process(last_fire)
+/// Every 2 s on the slow lane (SSplanets starts every planet): the planet's clock, weather and
+/// sun. Lighting and wall temperature changes queue on SSplanets, which applies them in batches.
+/datum/planet/periodic_step(delta)
 	if(current_time)
-		var/difference = world.time - last_fire
+		var/difference = last_step ? world.time - last_step : delta
 		current_time = current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER)
+	last_step = world.time
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
 	if(sun_last_process <= world.time - sun_process_interval)
 		update_sun()
+	if(needs_work & PLANET_PROCESS_SUN)
+		needs_work &= ~PLANET_PROCESS_SUN
+		SSplanets.needs_sun_update |= src
+	if(needs_work & PLANET_PROCESS_TEMP)
+		needs_work &= ~PLANET_PROCESS_TEMP
+		SSplanets.needs_temp_update |= src
 
 // This changes the position of the sun on the planet.
 /datum/planet/proc/update_sun()
@@ -60,7 +70,7 @@
 
 /datum/planet/proc/update_weather()
 	if(weather_holder)
-		weather_holder.process()
+		weather_holder.weather_tick()
 
 /datum/planet/proc/update_sun_deferred(new_brightness, new_color)
 	sun["brightness"] = CLAMP01(new_brightness)

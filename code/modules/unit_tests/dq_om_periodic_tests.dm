@@ -340,3 +340,14 @@
 		TEST_ASSERT_EQUAL(!!S.periodic_pipe, working, "shuttle [name]: lane [S.periodic_pipe] but working [working]")
 
 #endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// Planets (was SSplanets' per-planet loop): each planet keeps its clock and weather on the slow lane.
+/datum/unit_test/dq_om_planets_on_lanes
+
+/datum/unit_test/dq_om_planets_on_lanes/Run()
+	for(var/datum/planet/P as anything in SSplanets.planets)
+		TEST_ASSERT(P.periodic_pipe == PERIODIC_SLOW, "planet [P.name] is not on the slow lane")
+
+#endif
