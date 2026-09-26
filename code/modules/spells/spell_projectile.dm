@@ -29,9 +29,11 @@
 		trail.icon = proj_trail_icon
 		trail.icon_state = proj_trail_icon_state
 		trail.density = FALSE
-		spawn(proj_trail_lifespan)
-			LAZYREMOVE(trails, trail)
-			qdel(trail)
+		om_after(src, proj_trail_lifespan, PROC_REF(expire_trail), trail) // our Destroy() takes the trails with us
+
+/obj/item/projectile/spell_projectile/proc/expire_trail(obj/effect/trail)
+	LAZYREMOVE(trails, trail)
+	qdel(trail)
 
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)

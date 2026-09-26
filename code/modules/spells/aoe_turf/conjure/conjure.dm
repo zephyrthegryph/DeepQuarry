@@ -65,9 +65,8 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 				summoned_object.vars[varName] = LAZYACCESS(newVars, varName)
 
 		if(duration)
-			spawn(duration)
-				if(summoned_object && !istype(summoned_object, /turf))
-					qdel(summoned_object)
+			if(!istype(summoned_object, /turf))
+				om_qdel_after(summoned_object, duration)
 		conjure_animation(animation, spawn_place)
 	return
 

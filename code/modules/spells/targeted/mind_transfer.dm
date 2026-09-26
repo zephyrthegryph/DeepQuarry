@@ -77,5 +77,4 @@
 		caster.status_at_least(EFFECT_SLEEPING, amt_paralysis)
 
 		//After a certain amount of time the victim gets a message about being in a different body.
-		spawn(msg_wait)
-			to_chat(caster, span_danger("You feel woozy and lightheaded. Your body doesn't seem like your own."))
+		om_after(caster, msg_wait, TYPE_PROC_REF(/datum, om_chat), span_danger("You feel woozy and lightheaded. Your body doesn't seem like your own."))

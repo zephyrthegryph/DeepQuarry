@@ -161,8 +161,7 @@
 			spell.icon_state = overlay_icon_state
 			spell.anchored = TRUE
 			spell.density = FALSE
-			spawn(overlay_lifespan)
-				qdel(spell)
+			om_qdel_after(spell, overlay_lifespan)
 	return valid_targets
 
 /datum/spell/proc/after_cast(list/targets)

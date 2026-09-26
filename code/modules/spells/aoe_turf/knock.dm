@@ -15,10 +15,13 @@
 /datum/spell/aoe_turf/knock/cast(list/targets)
 	for(var/turf/T in targets)
 		for(var/obj/machinery/door/door in T.contents)
-			spawn(1)
-				if(istype(door,/obj/machinery/door/airlock))
-					var/obj/machinery/door/airlock/AL = door //casting is important
-					AL.locked = 0
-				door.open()
+			om_after(door, 1, TYPE_PROC_REF(/obj/machinery/door, knocked_open))
 	return
 
+
+/// The knock spell unbolts and opens the door.
+/obj/machinery/door/proc/knocked_open()
+	if(istype(src, /obj/machinery/door/airlock))
+		var/obj/machinery/door/airlock/AL = src //casting is important
+		AL.locked = 0
+	open()
