@@ -112,7 +112,7 @@
 			// src is the mob clicked on and attempted predator
 
 			///// If user clicked on themselves
-			if(src == G.assailant && is_vore_predator(src))
+			if(src == GRAB_ASSAILANT(G) && is_vore_predator(src))
 				if(istype(victim) && !victim.client && !victim.ai_brain)
 					log_and_message_admins("attempted to eat [key_name_admin(GRAB_TARGET(G))] whilst they were AFK ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", src)
 				if(feed_grabbed_to_self(src, GRAB_TARGET(G)))
@@ -137,7 +137,7 @@
 					log_vore("[attacker] attempted to feed [user] to [victim] ([victim ? victim.type : "null"]) but it failed.")
 
 			///// If user clicked on anyone else but their grabbed target
-			else if((src != GRAB_TARGET(G)) && (src != G.assailant) && (is_vore_predator(src)))
+			else if((src != GRAB_TARGET(G)) && (src != GRAB_ASSAILANT(G)) && (is_vore_predator(src)))
 				if(istype(victim) && !victim.client && !victim.ai_brain)
 					log_and_message_admins("attempted to feed [key_name_admin(GRAB_TARGET(G))] to [key_name_admin(src)] whilst [key_name_admin(GRAB_TARGET(G))] was AFK ([GRAB_TARGET(G) ? ADMIN_JMP(victim) : "null"])", attacker)
 				var/mob/living/carbon/victim_fed = src

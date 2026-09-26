@@ -171,7 +171,7 @@
 					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)
-					visible_message(span_danger("[G.assailant] slams [M]'s face against \the [src]!"))
+					visible_message(span_danger("[GRAB_ASSAILANT(G)] slams [M]'s face against \the [src]!"))
 					playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
 				else
 					to_chat(user, span_danger("You need a better grip to do that!"))
@@ -182,7 +182,7 @@
 				else
 					M.forceMove(get_turf(src))
 				M.status_at_least(EFFECT_WEAKENED, 5)
-				visible_message(span_danger("[G.assailant] throws [M] over \the [src]!"))
+				visible_message(span_danger("[GRAB_ASSAILANT(G)] throws [M] over \the [src]!"))
 			qdel(W)
 			return
 

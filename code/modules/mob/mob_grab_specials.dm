@@ -198,6 +198,7 @@
 		return
 
 /obj/item/grab/proc/pin_down(mob/target, mob/attacker)
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	if(state < GRAB_AGGRESSIVE)
 		to_chat(attacker, span_warning("You require a better grab to do this."))
 		return

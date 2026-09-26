@@ -35,7 +35,7 @@
 /mob/living/carbon/proc/check_neckgrab_attack(obj/item/W, mob/user, hit_zone)
 	if(IS_HARMING(user))
 		for(var/obj/item/grab/G in GRABBED_BY(src))
-			if(G.assailant == user)
+			if(GRAB_ASSAILANT(G) == user)
 				if(G.state >= GRAB_AGGRESSIVE)
 					if(hit_zone == BP_TORSO && shank_attack(W, G, user))
 						return 1
@@ -56,7 +56,7 @@
 	user.next_move = world.time + 20 //also should prevent user from triggering this repeatedly
 	if(!do_after(user, 2 SECONDS, target = src))
 		return 0
-	if(!(G && G.assailant == user && GRAB_TARGET(G) == src)) //check that we still have a grab
+	if(!(G && GRAB_ASSAILANT(G) == user && GRAB_TARGET(G) == src)) //check that we still have a grab
 		return 0
 
 	var/damage_mod = 1

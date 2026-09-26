@@ -110,7 +110,6 @@
 	buckle_lying = FALSE
 	buckle_dir = SOUTH
 
-	var/mob/living/carbon/occupant = null
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/tyr_prop
@@ -118,33 +117,25 @@
 	slot_id = OCCUPANT_SLOT_TYR_PROP
 	name = "restoration cell"
 
-/datum/om/relation/slot/occupant/tyr_prop/on_link(mob/living/source, obj/machinery/restoration_cell/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target))
-		target.occupant = source
-
-/datum/om/relation/slot/occupant/tyr_prop/on_unlink(mob/living/source, obj/machinery/restoration_cell/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(istype(target) && target.occupant == source)
-		target.occupant = null
-
 /obj/machinery/restoration_cell/attackby(obj/item/G as obj, mob/user as mob)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP)
 	if(istype(G, /obj/item/grab))
 		var/obj/item/grab/grab = G
-		if(!ismob(grab.affecting))
+		if(!ismob(GRAB_TARGET(grab)))
 			return
 		if(occupant)
 			to_chat(user,span_warning("\The [src] is already occupied by [occupant]."))
-		if(grab.affecting.has_buckled_mobs())
-			to_chat(user, span_warning("\The [grab.affecting] has other entities attached to it. Remove them first."))
+		if(GRAB_TARGET(grab).has_buckled_mobs())
+			to_chat(user, span_warning("\The [GRAB_TARGET(grab)] has other entities attached to it. Remove them first."))
 			return
-		var/mob/M = grab.affecting
+		var/mob/M = GRAB_TARGET(grab)
 		qdel(grab)
 		put_mob(M)
 
 	return
 
 /obj/machinery/restoration_cell/proc/process_occupant()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP)
 	if(occupant)
 		if(occupant.radiation || occupant.accumulated_rads)
 			occupant.radiation -= 40
@@ -155,6 +146,7 @@
 		occupant.mend(TREAT_WIRING_REPAIR, 8)
 
 /obj/machinery/restoration_cell/proc/go_out()
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP)
 	if(!(occupant))
 		return
 	//for(var/obj/O in src)
@@ -171,6 +163,7 @@
 	return
 
 /obj/machinery/restoration_cell/proc/put_mob(mob/living/carbon/M as mob)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP)
 	if(stat & (NOPOWER|BROKEN))
 		to_chat(usr, span_warning("The cryo cell is not functioning."))
 		return
@@ -189,6 +182,7 @@
 	M.stop_pulling()
 	if(!M.move_into(src, OCCUPANT_SLOT_TYR_PROP))
 		return
+	occupant = M
 	M.ExtinguishMob()
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_notice("<b>You feel a warm liquid surround you.</b>"))
@@ -204,12 +198,12 @@
 	set name = "Eject occupant"
 	set category = "Object"
 	set src in oview(1)
-	if(usr == occupant)//If the user is inside the tube...
+	if(usr == SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP))//If the user is inside the tube...
 		if(usr.stat == 2)//and he's not dead....
 			return
 		to_chat(usr, span_notice("Release sequence activated. This will take one minute."))
 		sleep(600)
-		if(!src || !usr || !occupant || (occupant != usr)) //Check if someone's released/replaced/bombed him already
+		if(!src || !usr || !SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP) || (SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP) != usr)) //Check if someone's released/replaced/bombed him already
 			return
 		go_out()//and release him from the eternal prison.
 	else

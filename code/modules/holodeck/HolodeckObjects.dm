@@ -420,7 +420,7 @@
 		var/mob/grabbed = GRAB_TARGET(G)
 		grabbed.loc = src.loc
 		grabbed.status_at_least(EFFECT_WEAKENED, 5)
-		visible_message(span_warning("[G.assailant] dunks [grabbed] into the [src]!"), 3)
+		visible_message(span_warning("[GRAB_ASSAILANT(G)] dunks [grabbed] into the [src]!"), 3)
 		qdel(W)
 		return
 	else if (istype(W, /obj/item) && get_dist(src,user)<2)

@@ -20,7 +20,7 @@
 	var/code = 0 // frequency code, they should be different unless you have a group of magnets working together or something
 	var/turf/center // the center of magnetic attraction
 	var/on = 0
-	var/pulling = 0
+	var/magnet_active = 0
 
 	// x, y modifiers to the center turf; (0, 0) is centered on the magnet, whereas (1, -1) is one tile right, one tile down
 	var/center_x = 0
@@ -151,13 +151,13 @@
 
 /obj/machinery/magnetic_module/proc/magnetic_process(called_back) // proc that actually does the pulling
 	if(called_back)
-		pulling = 0
+		magnet_active = 0
 
-	if(pulling)
+	if(magnet_active)
 		return
 
 	if(on)
-		pulling = 1
+		magnet_active = 1
 		center = locate(x+center_x, y+center_y, z)
 		if(center)
 			for(var/obj/M in orange(magnetic_field, center))
@@ -171,7 +171,7 @@
 		use_power(electricity_level * 5)
 		addtimer(CALLBACK(src, PROC_REF(magnetic_process), TRUE), 13 - electricity_level, TIMER_DELETE_ME)
 
-	pulling = 0
+	magnet_active = 0
 
 /obj/machinery/magnetic_module/Destroy()
 	if(SSradio)

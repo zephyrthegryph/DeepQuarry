@@ -651,7 +651,7 @@
 			// Only start pulling when nobody else has a grab on them
 			. = 1
 			for(var/obj/item/grab/G in GRABBED_BY(M))
-				if(G.assailant != usr)
+				if(GRAB_ASSAILANT(G) != usr)
 					. = 0
 				else
 					qdel(G)

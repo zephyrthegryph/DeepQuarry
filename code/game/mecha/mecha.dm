@@ -273,12 +273,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	slot_id = MECHA_SLOT_PILOT
 	name = "pilot"
 	drop_policy = SLOT_DROP_HOLDER
-	// C8 step 2: replaces the separate occupant_of relation this mech used to
-	// hand-link -- a human pilot and an MMI/brain pilot both enter and leave
-	// through this slot now (mmi_moved_inside()/go_out()), so both get the
-	// automatic link/unlink for free.
-	// `occupant` is gone entirely now (OM relations step 6): SLOT_ITEM()
-	// (om.dm) is a pure graph read, so there is no field left to write.
+	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
 
 /// External: equipment is bolted to the hull's hardpoints, not inside it.

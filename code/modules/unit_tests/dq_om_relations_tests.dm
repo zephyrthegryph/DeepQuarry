@@ -203,10 +203,10 @@
 	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
 	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
 
-// ---------------------------------------------------------------- occupant slots (no bare occupant_of)
+// ---------------------------------------------------------------- occupant slots
 
 /// Entering a machine's occupant slot links it, the slot itself being the
-/// relation (OM relations step 3: there is no separate occupant_of any more).
+/// relation.
 /// Exercised through the sleeper, one of several machines (also cryo,
 /// cryopod, mecha, rechargestation, the implant chair and the gibber, adv_med
 /// and the clone pod) built on /datum/om/relation/slot/occupant.

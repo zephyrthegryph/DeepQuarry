@@ -28,10 +28,7 @@
 	holder = /obj/machinery/implantchair
 	slot_id = OCCUPANT_SLOT_IMPLANT_CHAIR
 	name = "implant chair"
-	// C8 step 2: replaces the separate occupant_of relation this machine used
-	// to hand-link in put_mob()/go_out().
-	// `occupant` is gone entirely now (OM relations step 6): SLOT_ITEM()
-	// (om.dm) is a pure graph read, so there is no field left to write.
+	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
 
 

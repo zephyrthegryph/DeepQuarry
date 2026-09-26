@@ -35,10 +35,7 @@
 	holder = /obj/machinery/recharge_station
 	slot_id = OCCUPANT_SLOT_RECHARGE_STATION
 	name = "recharge station"
-	// C8 step 2: replaces the separate occupant_of relation this machine used
-	// to hand-link at each of its three entry points.
-	// `occupant` is gone entirely now (OM relations step 6): SLOT_ITEM()
-	// (om.dm) is a pure graph read, so there is no field left to write.
+	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
 
 /obj/machinery/recharge_station/proc/has_cell_power()

@@ -85,11 +85,8 @@
 	name = "wearer"
 	source_single = TRUE
 
-// A machine's occupant (Sleeper.dm, cryo.dm, cryopod.dm, mecha.dm and the
-// rest) used to be a bare relation here (occupant_of); it's gone (OM
-// relations step 3) -- every occupant is a slot now
-// (/datum/om/relation/slot/occupant, containment.md §10), which IS the
-// relation, so there is no separate one left to declare.
+// A machine's occupant is a slot (/datum/om/relation/slot/occupant,
+// containment.md §10), not a relation declared here: read it with SLOT_ITEM().
 
 /// mob -> what it is buckled to. `buckled`/`buckled_mobs` are gone (OM
 /// relations step 6): there is no stored field on either side any more --
@@ -143,9 +140,8 @@
 		target.post_buckle_mob(istype(source) ? source : null)
 
 /// grab item -> the mob it grabs. No view fields (OM relations step 3):
-/// /obj/item/grab's `affecting` and the grabbed mob's `grabbed_by` are still
-/// the vars every caller reads, but this relation's own on_link()/on_unlink()
-/// are their only writer now. on_target_delete = OM_END_DELETE_OTHER fixes a
+/// the edge IS the state: GRAB_TARGET(G) and GRABBED_BY(M) read it, and the
+/// assailant is simply the grab item's holder (GRAB_ASSAILANT(G)). on_target_delete = OM_END_DELETE_OTHER fixes a
 /// real dangling-reference bug the hand-rolled version had: /obj/item/grab's
 /// own Destroy() only ever cleaned up the affecting-mob side, so hard-deleting
 /// the grabbed mob (it isn't in the grab item's contents -- the item lives in
@@ -162,18 +158,20 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
-	target.reveal(span_warning("You are revealed as [source.assailant] grabs you."))
-	source.assailant?.reveal(span_warning("You reveal yourself as you grab [target]."))
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(source)
+	target.reveal(span_warning("You are revealed as [assailant] grabs you."))
+	if(!assailant)
+		return
+	assailant.reveal(span_warning("You reveal yourself as you grab [target]."))
 	// If the assailant is also currently grabbed by their new victim, both
 	// grabs enter "dancing" (facing each other, e.g. a wrestling clinch).
-	if(source.assailant)
-		for(var/obj/item/grab/G in GRABBED_BY(source.assailant))
-			if(G.assailant == target && OM_REL_TARGET(G, /datum/om/relation/grabbing) == source.assailant)
-				G.dancing = TRUE
-				G.adjust_position()
-				source.dancing = TRUE
-	if(PULLING(source.assailant) == target)
-		source.assailant.stop_pulling()
+	for(var/obj/item/grab/G in GRABBED_BY(assailant))
+		if(GRAB_ASSAILANT(G) == target && GRAB_TARGET(G) == assailant)
+			G.dancing = TRUE
+			G.adjust_position()
+			source.dancing = TRUE
+	if(PULLING(assailant) == target)
+		assailant.stop_pulling()
 
 /datum/om/relation/grabbing/on_unlink(obj/item/grab/source, mob/living/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)

@@ -31,7 +31,6 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	var/mob/affecting = null
 	var/deity_name = "Christ"
 	use_sound = 'sound/bureaucracy/bookopen.ogg'
 	drop_sound = 'sound/bureaucracy/bookclose.ogg'

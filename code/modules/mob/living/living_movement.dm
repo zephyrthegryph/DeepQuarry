@@ -206,7 +206,7 @@ default behaviour is:
 
 		if(ishuman(AM) && GRABBED_BY(AM))
 			for(var/obj/item/grab/G in GRABBED_BY(AM))
-				step(G.assailant, get_dir(G.assailant, AM))
+				step(GRAB_ASSAILANT(G), get_dir(GRAB_ASSAILANT(G), AM))
 				G.adjust_position()
 		now_pushing = FALSE
 

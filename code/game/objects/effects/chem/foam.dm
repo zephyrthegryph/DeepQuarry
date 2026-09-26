@@ -178,7 +178,7 @@
 		var/obj/item/grab/G = I
 		var/mob/grabbed = GRAB_TARGET(G)
 		grabbed.loc = src.loc
-		visible_message(span_warning("[G.assailant] smashes [grabbed] through the foamed metal wall."))
+		visible_message(span_warning("[GRAB_ASSAILANT(G)] smashes [grabbed] through the foamed metal wall."))
 		qdel(I)
 		qdel(src)
 		return

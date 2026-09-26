@@ -186,7 +186,7 @@
 	else if(istype(W,/obj/item/grab))
 		if((state == EMPTY_OPEN) && hacked)
 			var/obj/item/grab/G = W
-			if(ishuman(G.assailant) && (iscorgi(GRAB_TARGET(G)) || ishuman(GRAB_TARGET(G))))
+			if(ishuman(GRAB_ASSAILANT(G)) && (iscorgi(GRAB_TARGET(G)) || ishuman(GRAB_TARGET(G))))
 				user.visible_message("[user] begins stuffing [GRAB_TARGET(G)] into the [src]!", "You begin stuffing [GRAB_TARGET(G)] into the [src]!")
 				if(do_after(user, 5 SECONDS, target = src))
 					if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.

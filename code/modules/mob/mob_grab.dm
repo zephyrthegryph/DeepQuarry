@@ -20,7 +20,6 @@
 	icon_state = "reinforce"
 	item_flags = DROPDEL | NOSTRIP
 	var/atom/movable/screen/grab/hud = null
-	var/mob/living/carbon/human/assailant = null
 	var/state = GRAB_PASSIVE
 
 	var/allow_upgrade = 1
@@ -36,7 +35,7 @@
 
 /obj/item/grab/Initialize(mapload, mob/victim)
 	. = ..()
-	assailant = loc
+	var/mob/living/carbon/human/assailant = loc
 
 	if(!istype(assailant) || !istype(victim) || victim.anchored || !assailant.Adjacent(victim))
 		return INITIALIZE_HINT_QDEL
@@ -72,6 +71,7 @@
 
 //This makes sure that the grab screen object is displayed in the correct hand.
 /obj/item/grab/proc/synch() //why is this needed?
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	if(QDELETED(src))
 		return
 	var/mob/living/affecting = GRAB_TARGET(src)
@@ -82,6 +82,7 @@
 			hud.screen_loc = ui_lhand
 
 /obj/item/grab/process()
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	if(QDELETED(src)) // GC is trying to delete us, we'll kill our processing so we can cleanly GC
 		return PROCESS_KILL
 
@@ -150,6 +151,7 @@
 	adjust_position()
 
 /obj/item/grab/proc/handle_eye_mouth_covering(mob/living/carbon/target, mob/user, target_zone)
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	var/mob/living/affecting = GRAB_TARGET(src)
 	var/announce = (target_zone != last_hit_zone) //only display messages when switching between different target zones
 	last_hit_zone = target_zone
@@ -181,6 +183,7 @@
 //Updating pixelshift, position and direction
 //Gets called on process, when the grab gets upgraded or the assailant moves
 /obj/item/grab/proc/adjust_position()
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	var/mob/living/affecting = GRAB_TARGET(src)
 	if(!affecting)
 		qdel(src)
@@ -227,6 +230,7 @@
 			animate(affecting, pixel_x =-shift, pixel_y = initial(affecting.pixel_y), 5, 1, LINEAR_EASING)
 
 /obj/item/grab/proc/s_click(atom/movable/screen/S)
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	if(QDELETED(src))
 		return
 	var/mob/living/affecting = GRAB_TARGET(src)
@@ -282,6 +286,7 @@
 
 //This is used to make sure the victim hasn't managed to yackety sax away before using the grab.
 /obj/item/grab/proc/confirm()
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	var/mob/living/affecting = GRAB_TARGET(src)
 	if(!assailant || !affecting)
 		qdel(src)
@@ -295,6 +300,7 @@
 	return 1
 
 /obj/item/grab/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	if(QDELETED(src))
 		return ITEM_INTERACT_FAILURE
 	var/mob/living/affecting = GRAB_TARGET(src)
@@ -339,6 +345,7 @@
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/grab/proc/reset_kill_state()
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	var/mob/living/affecting = GRAB_TARGET(src)
 	if(state == GRAB_KILL)
 		assailant.visible_message(span_warning("[assailant] lost [assailant.p_their()] tight grip on [affecting]'s neck!"))
@@ -346,6 +353,7 @@
 		state = GRAB_NECK
 
 /obj/item/grab/proc/handle_resist()
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	var/mob/living/affecting = GRAB_TARGET(src)
 	var/grab_name
 	var/break_strength = 1
@@ -398,6 +406,7 @@
 	return mob_size_difference(A.mob_size, B.mob_size)
 
 /obj/item/grab/Destroy()
+	var/mob/living/carbon/human/assailant = GRAB_ASSAILANT(src)
 	// The grabbing relation (code/datums/om/library.dm) unlinks -- clearing
 	// `affecting` and this grab's entry in the victim's `grabbed_by`, and
 	// running the pixel/plane reset -- in the destroy transaction's phase 5
@@ -405,7 +414,6 @@
 	if(assailant)
 		if(assailant.client)
 			assailant.client.screen -= hud
-		assailant = null
 	qdel(hud)
 	hud = null
 	return ..()

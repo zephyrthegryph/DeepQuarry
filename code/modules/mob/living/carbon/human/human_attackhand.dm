@@ -251,7 +251,7 @@
 	if(M == src || anchored)
 		return
 	for(var/obj/item/grab/G in GRABBED_BY(src))
-		if(G.assailant == M)
+		if(GRAB_ASSAILANT(G) == M)
 			to_chat(M, span_notice("You already grabbed [src]."))
 			return
 	if(get_equipped_item(SLOT_ID_UNIFORM))

@@ -342,3 +342,5 @@
 #define EYE_OF(AI) OM_REL_SOURCE(AI, /datum/om/relation/ai_eye_of)
 /// The mob `G` (a grab item) is grabbing, or null.
 #define GRAB_TARGET(G) OM_REL_TARGET(G, /datum/om/relation/grabbing)
+/// The mob holding grab item `G` (the grab lives in the assailant's hand), or null.
+#define GRAB_ASSAILANT(G) ((G) && ishuman((G).loc) ? (G).loc : null)
