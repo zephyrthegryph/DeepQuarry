@@ -150,18 +150,14 @@ GLOBAL_LIST_EMPTY(overminds)
 			custom_emote(VISIBLE_MESSAGE, "[pick(S.speaking.signlang_verb)].")
 
 	for(var/mob/M in listening)
-		spawn()
-			if(M && src)
-				if(get_dist(M, src) <= world.view || (M.stat == DEAD && !forbid_seeing_deadchat))
-					M.hear_say(message_pieces, "conveys", (M.faction == blob_type.faction), src)
+		if(get_dist(M, src) <= world.view || (M.stat == DEAD && !forbid_seeing_deadchat))
+			M.hear_say(message_pieces, "conveys", (M.faction == blob_type.faction), src)
 
 	//Object message delivery
 	for(var/obj/O in listening_obj)
-		spawn(0)
-			if(O && src) //If we still exist, when the spawn processes
-				var/dst = get_dist(get_turf(O),get_turf(src))
-				if(dst <= world.view)
-					O.hear_talk(src, message_pieces, "conveys")
+		var/dst = get_dist(get_turf(O),get_turf(src))
+		if(dst <= world.view)
+			O.hear_talk(src, message_pieces, "conveys")
 
 	log_talk(message, LOG_SAY)
 	return 1

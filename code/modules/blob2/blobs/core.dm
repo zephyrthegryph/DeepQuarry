@@ -139,8 +139,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(QDELETED(src))
 		return
 	if(!overmind)
-		spawn(0)
-			create_overmind()
+		create_overmind()
 	else
 		if(resource_delay <= world.time)
 			resource_delay = world.time + 1 SECOND

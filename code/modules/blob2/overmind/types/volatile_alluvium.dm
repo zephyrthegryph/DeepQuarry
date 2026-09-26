@@ -44,12 +44,13 @@
 	return ..()
 
 /datum/blob_type/volatile_alluvium/on_water(obj/structure/blob/B, amount)
-	spawn(1)
-		var/damage = amount * 4
-		B.adjust_integrity(-(damage))
-		if(B && prob(damage))
-			B.visible_message(span_danger("The [name] begins to crumble!"))
+	om_after(B, 1, TYPE_PROC_REF(/obj/structure/blob, alluvium_crumble), amount * 4, name)
 
 /datum/blob_type/volatile_alluvium/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
 	if(user)
 		user.add_modifier(/datum/modifier/fortify, 60 SECONDS)
+
+/obj/structure/blob/proc/alluvium_crumble(damage, blob_name)
+	adjust_integrity(-(damage))
+	if(!QDELETED(src) && prob(damage))
+		visible_message(span_danger("The [blob_name] begins to crumble!"))
