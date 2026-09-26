@@ -236,9 +236,6 @@
 	if(!host || !controlling)
 		return
 
-	var/obj/item/organ/external/head = host.get_organ(BP_HEAD)
-	if(head)
-		head.implants -= src
 	controlling = FALSE
 
 	host.remove_language("Cortical Link")
@@ -295,11 +292,9 @@
 		forceMove(get_turf(host.loc))
 	unset_machine()
 
-	var/obj/item/organ/external/head = host.get_organ(BP_HEAD)
-	if(head)
-		head.implants -= src
 	host.unset_machine()
-	host = null
+	// om_unlink's on_unlink (library.dm) clears host and the head organ's implants list.
+	om_unlink(src, host, /datum/om/relation/host_of)
 
 /mob/living/simple_mob/animal/borer/proc/transfer_personality(mob/candidate)
 	if(!candidate)

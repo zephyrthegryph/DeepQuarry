@@ -506,6 +506,9 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			rot_seg = 36 //360/10 bby, smooth enough aproximation of a circle
 	*/
 
+	if(following && following != target)
+		om_unlink(src, following, /datum/om/relation/following)
+	om_link(src, target, /datum/om/relation/following)
 	orbit(target, orbitsize, FALSE, 20, rot_seg)
 
 /mob/observer/dead/orbit()
@@ -522,7 +525,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
 
 /mob/observer/dead/proc/stop_following()
-	following = null
+	if(following)
+		om_unlink(src, following, /datum/om/relation/following)
 	stop_orbit()
 
 /mob/proc/update_following()
@@ -532,7 +536,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			M.stop_following()
 
 		if(M.following != src)
-			following_mobs -= M
+			LAZYREMOVE(following_mobs, M)
 		else
 			if(M.loc != .)
 				M.forceMove(., movetime = MOVE_GLIDE_CALC(glide_size, moving_diagonally)) // pass movespeed
@@ -551,9 +555,6 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		body_backup = null
 	visualnet.addVisibility(src, src.client)
 	visualnet = null
-	if(ismob(following))
-		var/mob/M = following
-		M.following_mobs -= src
 	stop_following()
 	GLOB.observer_mob_list -= src
 	for(var/datum/chunk/ghost/ghost_chunks in visibleChunks)

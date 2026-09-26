@@ -128,7 +128,8 @@
 	to_chat(src, span_alien("You wiggle into [infest_target]'s ear."))
 	if(!infest_target.stat)
 		to_chat(infest_target, span_vdanger("Something disgusting and slimy wiggles into your ear!"))
-	host = infest_target
+	// om_link's on_link (library.dm) sets host and the head organ's implants list.
+	om_link(src, infest_target, /datum/om/relation/host_of)
 	forceMove(host)
 
 	//Update their traitor status.
@@ -143,9 +144,6 @@
 		return
 	*/
 
-	// If they're in normally, implant removal can get them out.
-	var/obj/item/organ/external/head = host.get_organ(BP_HEAD)
-	head.implants += src
 	add_attack_logs(src, host, "infested target (borer)")
 
 /**

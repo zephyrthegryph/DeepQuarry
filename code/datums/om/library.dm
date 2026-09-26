@@ -271,6 +271,69 @@
 	name = "power source"
 	source_single = TRUE
 
+/// A ghost -> the movable it is following. No view fields (OM relations step
+/// 4): the ghost's `following` var and the target's `following_mobs` list are
+/// still the vars every reader here uses, but this relation's own
+/// on_link()/on_unlink() are their only writer now. Previously `following`
+/// had two independent writers -- stop_following() (observer.dm) and a raw
+/// `following = null` in an admin jump verb (adminjump.dm) that skipped
+/// stop_orbit() and never touched the target's `following_mobs` -- the same
+/// desync shape buckled_to/pulling/grabbing had before those were fixed.
+/datum/om/relation/following
+	name = "following"
+	source_single = TRUE
+
+/datum/om/relation/following/on_link(mob/observer/dead/source, atom/movable/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(!istype(source))
+		return
+	source.following = target
+	if(ismob(target))
+		var/mob/M = target
+		LAZYADD(M.following_mobs, source)
+
+/datum/om/relation/following/on_unlink(mob/observer/dead/source, atom/movable/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && source.following == target)
+		source.following = null
+	if(ismob(target))
+		var/mob/M = target
+		LAZYREMOVE(M.following_mobs, source)
+
+/// A cortical borer -> the human host it has infested. No view fields (OM
+/// relations step 4): the borer's `host` var and the host's head organ's
+/// `implants` list are still the vars every reader here uses, but this
+/// relation's own on_link()/on_unlink() are their only writer now -- unifying
+/// what used to be two independent teardown procs (detatch() and
+/// leave_host(), borer.dm) each clearing `head.implants -= src` on their own.
+/// A borer's Destroy() and release_host() called both in sequence; the organ
+/// removal path (/obj/item/organ/internal/borer/removed(), misc.dm) called
+/// only leave_host() and so skipped detatch()'s half of the teardown --
+/// since detatch() no longer owns any of the host-link state, that path no
+/// longer desyncs.
+/datum/om/relation/host_of
+	name = "borer host"
+	source_single = TRUE
+	target_single = TRUE
+
+/datum/om/relation/host_of/on_link(mob/living/simple_mob/animal/borer/source, mob/living/carbon/human/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(!istype(source) || !istype(target))
+		return
+	source.host = target
+	var/obj/item/organ/external/head = target.get_organ(BP_HEAD)
+	if(head)
+		LAZYADD(head.implants, source)
+
+/datum/om/relation/host_of/on_unlink(mob/living/simple_mob/animal/borer/source, mob/living/carbon/human/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && source.host == target)
+		source.host = null
+	if(istype(target))
+		var/obj/item/organ/external/head = target.get_organ(BP_HEAD)
+		if(head)
+			LAZYREMOVE(head.implants, source)
+
 // ---------------------------------------------------------------- bundles
 
 /datum/om/bundle/powered_machine

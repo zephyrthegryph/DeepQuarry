@@ -371,3 +371,68 @@
 	// A legitimately has one left -- just not this one.
 	TEST_ASSERT(!(E in A.all_eyes), "the deleted eye should not still be listed")
 	TEST_ASSERT_NULL(A.eyeobj, "A.eyeobj should be cleared once the eye is deleted")
+
+// ---------------------------------------------------------------- host_of (borer)
+
+/// Infesting a host establishes host_of: the borer's `host` var and the
+/// host's head organ's `implants` list agree with the direct relation lookup.
+/datum/unit_test/dq_om_relation_host_of_establishes
+
+/datum/unit_test/dq_om_relation_host_of_establishes/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/simple_mob/animal/borer/B = allocate(/mob/living/simple_mob/animal/borer)
+	var/obj/item/organ/external/head = H.get_organ(BP_HEAD)
+	TEST_ASSERT_NOTNULL(head, "setup: H should have a head organ")
+	var/link_result = om_link(B, H, /datum/om/relation/host_of)
+	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
+	TEST_ASSERT_EQUAL(B.host, H, "B.host should be H")
+	TEST_ASSERT(B in head.implants, "B should be listed in the host's head implants")
+	TEST_ASSERT_EQUAL(om_relation_of(B, /datum/om/relation/host_of), H, "om_relation_of should agree with the host var")
+	om_unlink(B, H, /datum/om/relation/host_of)
+	TEST_ASSERT_NULL(B.host, "B.host should be cleared after unlink")
+	TEST_ASSERT(!(B in head.implants), "B should no longer be listed in the host's head implants")
+
+/// Hard-deleting the host clears the borer's `host`, with no dangling
+/// reference left behind -- this is the desync detatch()/leave_host() used to
+/// risk when only one of the two was called (the organ-removal path,
+/// misc.dm, only ever called leave_host()).
+/datum/unit_test/dq_om_relation_host_of_breaks_on_target_delete
+
+/datum/unit_test/dq_om_relation_host_of_breaks_on_target_delete/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/simple_mob/animal/borer/B = allocate(/mob/living/simple_mob/animal/borer)
+	om_link(B, H, /datum/om/relation/host_of)
+	qdel(H)
+	TEST_ASSERT(QDELETED(H), "setup: the host should be deleted")
+	TEST_ASSERT_NULL(B.host, "B.host should be cleared once the host is deleted")
+
+// ---------------------------------------------------------------- following (ghost)
+
+/// Following a target establishes the following relation: the ghost's
+/// `following` var and the target's `following_mobs` list agree with the
+/// direct relation lookup.
+/datum/unit_test/dq_om_relation_following_establishes
+
+/datum/unit_test/dq_om_relation_following_establishes/Run()
+	var/mob/observer/dead/G = allocate(/mob/observer/dead)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/link_result = om_link(G, H, /datum/om/relation/following)
+	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
+	TEST_ASSERT_EQUAL(G.following, H, "G.following should be H")
+	TEST_ASSERT(G in H.following_mobs, "G should be listed in H's following_mobs")
+	TEST_ASSERT_EQUAL(om_relation_of(G, /datum/om/relation/following), H, "om_relation_of should agree with the following var")
+	G.stop_following()
+	TEST_ASSERT_NULL(G.following, "G.following should be cleared after stop_following()")
+	TEST_ASSERT(!(G in H.following_mobs), "G should no longer be listed in H's following_mobs")
+
+/// Hard-deleting the followed target clears the ghost's `following`, with no
+/// dangling reference left behind.
+/datum/unit_test/dq_om_relation_following_breaks_on_target_delete
+
+/datum/unit_test/dq_om_relation_following_breaks_on_target_delete/Run()
+	var/mob/observer/dead/G = allocate(/mob/observer/dead)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	om_link(G, H, /datum/om/relation/following)
+	qdel(H)
+	TEST_ASSERT(QDELETED(H), "setup: the target should be deleted")
+	TEST_ASSERT_NULL(G.following, "G.following should be cleared once the target is deleted")

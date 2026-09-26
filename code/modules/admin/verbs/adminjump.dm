@@ -2,7 +2,7 @@
 	return
 
 /mob/observer/dead/on_mob_jump()
-	following = null
+	stop_following()
 
 ADMIN_VERB(Jump, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Area", "Area to jump to.", ADMIN_CATEGORY_GAME, areaname as null|anything in return_sorted_areas())
 	if(!CONFIG_GET(flag/allow_admin_jump))
