@@ -93,14 +93,14 @@
 
 /obj/machinery/disposal/proc/wake_for_state_change()
 	clear_gas_dependency()
-	REACT_PUBLISH_OWN(src, REACT_KEY_DISPOSAL, REACT_KEY_CHANGED)
-	START_MACHINE_PROCESSING(src)
+	OM_KEY_PUBLISH_OWN(src, KEY_DISPOSAL, KEY_CHANGED)
+	MACHINE_WAKE(src)
 
 /// Wakes only once a charging disposal can actually draw air from its turf.
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
 	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/disposal/proc/gas_wake_condition()
 	if(mode != DISPOSALMODE_CHARGING || (stat & (NOPOWER|BROKEN)))
@@ -113,7 +113,7 @@
 
 /obj/machinery/disposal/proc/wake_from_gas()
 	clear_gas_dependency()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/disposal/proc/can_pressurize_from(datum/gas_mixture/environment)
 	if(!air_contents || !environment || environment.return_temperature() <= 0 || environment.total_moles() < MINIMUM_MOLES_TO_PUMP)
@@ -553,7 +553,7 @@
 
 // timed process
 // charge the gas reservoir and perform flush if ready
-/obj/machinery/disposal/process()
+/obj/machinery/disposal/machine_step()
 	if(!air_contents || (stat & BROKEN))			// nothing can happen if broken
 		update_use_power(USE_POWER_OFF)
 		return PROCESS_KILL
@@ -561,7 +561,7 @@
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(contents))
 		update_use_power(USE_POWER_IDLE)
 		flush_count = 0
-		sleep_until_keys(list(REACT_KEY_DISPOSAL, REACT_ID(src), REACT_KEY_CHANGED))
+		sleep_until_keys(list(KEY_DISPOSAL, OM_KEY_ID(src), KEY_CHANGED))
 		return
 
 	flush_count++
@@ -582,7 +582,7 @@
 		mode = DISPOSALMODE_CHARGED //if full enough, switch to ready mode
 		update_icon()
 		if(!flush && !length(contents))
-			sleep_until_keys(list(REACT_KEY_DISPOSAL, REACT_ID(src), REACT_KEY_CHANGED))
+			sleep_until_keys(list(KEY_DISPOSAL, OM_KEY_ID(src), KEY_CHANGED))
 			return
 	else
 		if(!pressurize()) //otherwise charge
@@ -794,7 +794,7 @@
 	return FALSE
 
 /// Audit: a unit sleeping on its own key must be idle and empty.
-/obj/machinery/disposal/react_sleep_violation()
+/obj/machinery/disposal/om_sleep_violation()
 	if(!asleep_on_keys() || (stat & BROKEN))
 		return null
 	if(flush || length(contents))

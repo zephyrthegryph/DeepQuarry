@@ -30,7 +30,7 @@
 	setup_blobtype(parentblob)
 
 /obj/item/blobcore_chunk/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 
 	blob_type = null
 
@@ -57,7 +57,7 @@
 
 		blob_type.chunk_setup(src)
 
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/blobcore_chunk/proc/call_chunk_unique()
 	SIGNAL_HANDLER
@@ -93,7 +93,7 @@
 	else
 		to_chat(user, span_notice("\The [src] doesn't seem to respond."))
 
-/obj/item/blobcore_chunk/process()
+/obj/item/blobcore_chunk/periodic_step()
 	if(blob_type && should_tick && world.time > passive_ability_cooldown + last_passive_use)
 		last_passive_use = world.time
 		blob_type.on_chunk_tick(src)

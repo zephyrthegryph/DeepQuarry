@@ -45,10 +45,7 @@
 	var/obj/machinery/alarm/new_main = main_air_alarm.resolve()
 	for(var/obj/machinery/alarm/AA in checks)
 		if(AA == new_main)
-			if(AA.polls)
-				START_MACHINE_PROCESSING(AA)
-			else
-				om_changed(AA, CHANGE_MACHINE_SETTINGS)
+			om_changed(AA, CHANGE_MACHINE_SETTINGS)
 		else
 			AA.invalidate_gas_dependencies()
 		AA.update_icon()
@@ -91,7 +88,6 @@
 	panel_open = FALSE // If it's been screwdrivered open.
 	var/aidisabled = 0
 	var/shorted = 0
-	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 	circuit = /obj/item/circuitboard/airalarm
 
 	var/mode = AALARM_MODE_SCRUBBING

@@ -184,7 +184,7 @@
 			radiation = CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX)
 			return TRUE
 
-/obj/machinery/radiocarbon_spectrometer/process()
+/obj/machinery/radiocarbon_spectrometer/machine_step()
 	if(!scanning)
 		return
 

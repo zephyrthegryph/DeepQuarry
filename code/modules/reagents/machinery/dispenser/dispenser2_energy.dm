@@ -4,7 +4,7 @@
 	var/list/dispense_reagents
 	var/process_tick = 0
 
-/obj/machinery/chemical_dispenser/process()
+/obj/machinery/chemical_dispenser/machine_step()
 	if(!_recharge_reagents)
 		return PROCESS_KILL
 	if(stat & (BROKEN|NOPOWER))
@@ -42,7 +42,7 @@
 /obj/machinery/chemical_dispenser/power_change()
 	. = ..()
 	if(. && !(stat & (BROKEN|NOPOWER)) && needs_recharge())
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/chemical_dispenser
 	dispense_reagents = list(

@@ -58,7 +58,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 				SSemergency_shuttle.call_evac()
 				SSemergency_shuttle.launch_time = 0	// Cannot recall
 
-/obj/singularity/narsie/process()
+/obj/singularity/narsie/periodic_step()
 	eat()
 
 	if (!target || prob(5))

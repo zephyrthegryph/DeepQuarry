@@ -472,7 +472,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 			active = 1
 			irradiating = 10
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 
 			sleep(10)
 
@@ -490,7 +490,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 			. = TRUE
 
-/obj/machinery/suit_cycler/process()
+/obj/machinery/suit_cycler/machine_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SUIT_CYCLER)
 
 	if(electrified > 0)

@@ -464,7 +464,7 @@
 	icon_state = "airlock_sensor_standby"
 	var/id_tag
 
-/obj/machinery/shuttle_sensor/process()
+/obj/machinery/shuttle_sensor/machine_step()
 	return PROCESS_KILL //nty
 
 /obj/machinery/shuttle_sensor/proc/air_list()

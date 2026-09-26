@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/Initialize(mapload)
 	. = ..()
 	node = get_exonet_node()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	camera = new(src)
 	camera.name = "[src] #[rand(100,999)]"
 	camera.c_tag = camera.name
@@ -281,7 +281,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Proc: process()
 // Parameters: None
 // Description: Ticks the update_ticks variable, and checks to see if it needs to disconnect communicators every five ticks..
-/obj/item/communicator/process()
+/obj/item/communicator/periodic_step()
 	update_ticks++
 	// Connection maintenance is the five-tick watchdog, not four of every five
 	// ticks. State-changing exonet paths update immediately.
@@ -399,7 +399,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	node = null
 
 	//Clean up references that might point at us
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	GLOB.listening_objects.Remove(src)
 	QDEL_NULL(camera)
 	QDEL_NULL(exonet)

@@ -7,7 +7,7 @@
 	VAR_PRIVATE/list/clients = list()
 	VAR_PRIVATE/list/image/dir_images = list()
 
-/obj/effect/fake_attacker/process()
+/obj/effect/fake_attacker/periodic_step()
 	. = ..()
 	// Passive cleanup
 	for(var/datum/weakref/C in clients)
@@ -151,7 +151,7 @@
 
 /obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	set_target(targeting_mob)
 	create_images_from(clone_appearance_from)
 	append_client(targeting_mob.client)
@@ -160,10 +160,10 @@
 	set_dir(get_dir(src,targeting_mob))
 
 /obj/effect/fake_attacker/human/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/effect/fake_attacker/human/process()
+/obj/effect/fake_attacker/human/periodic_step()
 	// check if valid
 	var/mob/living/M = target?.resolve()
 	if(!M)
@@ -187,7 +187,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Attacker: Performs hostile shoves and attacks
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/obj/effect/fake_attacker/human/attacker/process()
+/obj/effect/fake_attacker/human/attacker/periodic_step()
 	var/mob/living/M = ..()
 
 	if(get_dist(src,M) > 1)
@@ -208,7 +208,7 @@
 /obj/effect/fake_attacker/human/fleeing
 	VAR_PRIVATE/flee = FALSE
 
-/obj/effect/fake_attacker/human/fleeing/process()
+/obj/effect/fake_attacker/human/fleeing/periodic_step()
 	var/mob/living/M = ..()
 	set_dir(get_dir(src,M))
 

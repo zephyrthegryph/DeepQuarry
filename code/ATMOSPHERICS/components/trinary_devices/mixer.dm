@@ -139,7 +139,7 @@
 			mixing_inputs[air1] = 1.0 - mixing_inputs[air2]
 			. = TRUE
 	update_icon()
-	START_MACHINE_PROCESSING(src) // settings: re-evaluate the mix now
+	MACHINE_WAKE(src) // settings: re-evaluate the mix now
 
 //
 // "T" Orientation - Inputs are on oposite sides instead of adjacent
@@ -174,7 +174,7 @@
 
 /obj/machinery/atmospherics/trinary/mixer/proc/wake_from_gas()
 	om_watch_disarm(src, "gas")
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/trinary/mixer/step_has_work()
 	return gas_wake_condition()

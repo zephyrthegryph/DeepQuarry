@@ -28,7 +28,7 @@
 		addtimer(CALLBACK(src, PROC_REF(harden)), 15 SECONDS)
 
 /obj/effect/effect/foam/proc/post_spread()
-	process()
+	periodic_step()
 	checkReagents()
 
 /obj/effect/effect/foam/proc/pre_harden()
@@ -49,7 +49,7 @@
 		for(var/obj/O in T)
 			reagents.touch_obj(O)
 
-/obj/effect/effect/foam/process()
+/obj/effect/effect/foam/periodic_step()
 	if(--amount < 0)
 		return
 
@@ -200,13 +200,13 @@
 
 /obj/effect/effect/foam/firefighting/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/effect/foam/firefighting/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/effect/effect/foam/firefighting/process()
+/obj/effect/effect/foam/firefighting/periodic_step()
 	if(lifetime-- <= 0)
 		flick("[icon_state]-disolve", src)
 		QDEL_IN(src, 5)

@@ -26,7 +26,7 @@
 	create_reagents(max_volume)
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/detach()
-	STOP_PROCESSING(SSfastprocess, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/critfail()
@@ -121,7 +121,7 @@
 				m++
 		if(processed_reagents.len)
 			message += " added to production"
-			START_PROCESSING(SSfastprocess, src)
+			PERIODIC_START(src, PERIODIC_FAST)
 			occupant_message(message)
 			occupant_message("Reagent processing started.")
 			src.mecha_log_message("Reagent processing started.")
@@ -188,7 +188,7 @@
 					processed_reagents += reagent_id
 					m++
 			if(processed_reagents.len)
-				START_PROCESSING(SSfastprocess, src)
+				PERIODIC_START(src, PERIODIC_FAST)
 				occupant_message("Reagent processing started.")
 				src.mecha_log_message("Reagent processing started.")
 			return TRUE
@@ -324,7 +324,7 @@
 	update_equip_info()
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/process()
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/periodic_step()
 	if(!chassis)
 		return PROCESS_KILL
 	if(!processed_reagents.len || reagents.total_volume >= reagents.maximum_volume || !chassis.has_charge(energy_drain))
@@ -378,22 +378,22 @@
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/attach(obj/mecha/M as obj)
 	. = ..(M)
 	if(chassis)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/detach(atom/moveto=null)
 	shut_down()
 	. = ..(moveto)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/critfail()
 	. = ..()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	shut_down()
 	if(chassis && SLOT_ITEM(chassis, MECHA_SLOT_PILOT))
 		to_chat(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), span_notice("\The [chassis] shudders as something jams!"))
 		src.mecha_log_message("[src.name] has malfunctioned. Maintenance required.")
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/process()	// Will continually try to find the nearest person above the threshold that is a valid target, and try to heal them.
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/periodic_step()	// Will continually try to find the nearest person above the threshold that is a valid target, and try to heal them.
 	if(chassis && enabled && chassis.has_charge(energy_drain) && (SLOT_ITEM(chassis, MECHA_SLOT_PILOT) || enable_special))
 		var/mob/living/Targ = Target
 		var/TargDamage = 0

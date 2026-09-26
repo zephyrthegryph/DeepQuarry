@@ -21,7 +21,6 @@ FIRE ALARM
 	idle_power_usage = 2
 	active_power_usage = 6
 	power_channel = ENVIRON
-	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 	panel_open = FALSE
 	var/seclevel
 	circuit = /obj/item/circuitboard/firealarm

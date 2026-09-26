@@ -27,7 +27,7 @@
 			for(var/datum/computer_file/program/P in idle_threads)
 				P.event_idremoved(1)
 
-/obj/item/modular_computer/process()
+/obj/item/modular_computer/periodic_step()
 	if(!enabled) // The computer is turned off
 		last_power_usage = 0
 		return 0
@@ -69,7 +69,7 @@
 /obj/item/modular_computer/Initialize(mapload)
 	if(!overlay_icon)
 		overlay_icon = icon
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	install_default_hardware()
 	if(hard_drive)
 		install_default_programs()
@@ -79,7 +79,7 @@
 
 /obj/item/modular_computer/Destroy()
 	kill_program(1)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		qdel(CH)

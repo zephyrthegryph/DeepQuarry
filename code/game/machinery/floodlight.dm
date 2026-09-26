@@ -23,7 +23,7 @@
 	cut_overlays()
 	icon_state = "flood[open ? "o" : ""][open && cell ? "b" : ""]0[on]"
 
-/obj/machinery/floodlight/process()
+/obj/machinery/floodlight/machine_step()
 	if(!on)
 		return PROCESS_KILL
 
@@ -53,7 +53,7 @@
 		return 0
 
 	on = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	set_light_range(brightness_on)
 	set_light_power(brightness_on/2)
 	set_light_on(TRUE)

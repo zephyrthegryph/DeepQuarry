@@ -22,7 +22,7 @@
 
 // The shuttle subsystem owns arrivals automation through always_process. The
 // mapped console is only a debugging/control surface and has no idle work.
-/obj/machinery/computer/shuttle_control/arrivals/process()
+/obj/machinery/computer/shuttle_control/arrivals/machine_step()
 	return PROCESS_KILL
 
 // This proc checks if anyone is on the shuttle.

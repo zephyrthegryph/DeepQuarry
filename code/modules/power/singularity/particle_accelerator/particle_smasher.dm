@@ -206,7 +206,7 @@
 		return 0
 	return ..()
 
-/obj/machinery/particle_smasher/process()
+/obj/machinery/particle_smasher/machine_step()
 	if(!src.anchored)	// Rapidly loses focus.
 		if(energy)
 			radiation_pulse(

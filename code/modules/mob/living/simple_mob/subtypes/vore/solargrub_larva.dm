@@ -217,7 +217,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	grub = null
 	return ..()
 
-/obj/machinery/abstract_grub_machine/process()
+/obj/machinery/abstract_grub_machine/machine_step()
 	if(!draining)
 		return
 	var/area/A = get_area(src)

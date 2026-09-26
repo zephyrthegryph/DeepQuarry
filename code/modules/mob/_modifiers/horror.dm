@@ -541,7 +541,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//Handle our organs. We might not heal entirely before we come back, but that's fine. If we die again, we come back again.
 	for(var/obj/item/organ/internal/I in unfortunate_soul.internal_organs)
-		I.process()
+		I.periodic_step()
 		I.germ_level = max(0, I.germ_level - 25)
 		unfortunate_soul.mend(TREAT_RESTORATION, 2.5, I)
 		if(I.status & ORGAN_DEAD && (I.damage < I.is_broken()) && (I.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.

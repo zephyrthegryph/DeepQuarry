@@ -901,7 +901,7 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/slime_extract/green/process()
+/obj/item/slime_extract/green/periodic_step()
 	radiate()
 	..()
 
@@ -924,7 +924,7 @@
 	active = FALSE
 
 /obj/item/slime_extract/green/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /datum/decl/chemical_reaction/instant/slime/green_radpulse
@@ -940,7 +940,7 @@
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	spawn(5 SECONDS)
 		if(!QDELETED(holder.my_atom) && istype(holder.my_atom, /obj/item/slime_extract/green))
-			START_PROCESSING(SSobj, holder.my_atom)
+			PERIODIC_START(holder.my_atom, PERIODIC_SLOW)
 
 
 

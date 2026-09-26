@@ -15,11 +15,11 @@
 
 /obj/item/deadringer/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/deadringer/Destroy() //just in case some smartass tries to stay invisible by destroying the watch
 	reveal()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/deadringer/dropped(mob/user, equipping, slot)
@@ -154,7 +154,7 @@
 
 
 // === merged from deadringer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/item/deadringer/process()
+/obj/item/deadringer/periodic_step()
 	if(activated)
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc

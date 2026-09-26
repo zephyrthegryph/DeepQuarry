@@ -13,7 +13,7 @@
 
 /obj/effect/bspawner/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj,src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	init_time = world.time
 
 /obj/effect/bspawner/proc/spawn_item()
@@ -22,7 +22,7 @@
 	else
 		new item_to_spawn(loc)
 
-/obj/effect/bspawner/process()
+/obj/effect/bspawner/periodic_step()
 	if(world.time > init_time + time_between_spawn * (spawned_num + 1))
 		spawn_item()
 		spawned_num++
@@ -30,7 +30,7 @@
 		qdel(src)
 
 /obj/effect/bspawner/Destroy()
-	STOP_PROCESSING(SSobj,src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/effect/bspawner/min30

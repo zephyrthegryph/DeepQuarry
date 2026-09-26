@@ -61,7 +61,7 @@
 		return TRUE
 	user.visible_message(span_notice("[user] smokes the bees in \the [src]."), span_notice("You smoke the bees in \the [src]."))
 	smoked = 30
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_icon()
 	return TRUE
 
@@ -110,7 +110,7 @@
 	if(held.full)
 		user.visible_message(span_notice("[user] puts the queen and the bees from \the [held] into \the [src]."), span_notice("You put the queen and the bees from \the [held] into \the [src]."))
 		bee_count = 20
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		held.empty()
 	else
 		user.visible_message(span_notice("[user] puts bees and larvae from \the [src] into \the [held]."), span_notice("You put bees and larvae from \the [src] into \the [held]."))
@@ -191,7 +191,7 @@
 			to_chat(user, span_notice("You take all filled honeycombs out."))
 		return TRUE
 
-/obj/machinery/beehive/process()
+/obj/machinery/beehive/machine_step()
 	if(!bee_count && !smoked)
 		return PROCESS_KILL
 	if(closed && !smoked && bee_count)

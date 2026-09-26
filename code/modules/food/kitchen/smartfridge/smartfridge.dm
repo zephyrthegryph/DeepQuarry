@@ -75,7 +75,7 @@
 /obj/machinery/smartfridge/proc/accept_check(obj/item/O)
 	return FALSE
 
-/obj/machinery/smartfridge/process()
+/obj/machinery/smartfridge/machine_step()
 	if(stat & (BROKEN|NOPOWER))
 		soundloop.stop()
 		playing_sound = FALSE
@@ -226,7 +226,7 @@
 	return null
 
 /obj/machinery/smartfridge/proc/stock(obj/item/O)
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	var/datum/stored_item/I = find_record(O)
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)

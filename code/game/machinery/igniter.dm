@@ -27,14 +27,20 @@
 	use_power(50)
 	on = !(on)
 	icon_state = text("igniter[]", on)
+	if(on)
+		MACHINE_WAKE(src)
 	return TRUE
 
-/obj/machinery/igniter/process()	//ugh why is this even in process()?
-	if(on && !(stat & NOPOWER))
-		var/turf/location = src.loc
-		if(isturf(location))
-			location.hotspot_expose(1000,500,1)
-	return 1
+/// Keeps its tile ignited every machine frame while on; off, it sleeps until toggled on, and
+/// unpowered until power returns.
+/obj/machinery/igniter/machine_step()
+	if(!on)
+		return PROCESS_KILL
+	if(stat & NOPOWER)
+		return sleep_until_powered()
+	var/turf/location = src.loc
+	if(isturf(location))
+		location.hotspot_expose(1000,500,1)
 
 /obj/machinery/igniter/Initialize(mapload)
 	icon_state = "igniter[on]"

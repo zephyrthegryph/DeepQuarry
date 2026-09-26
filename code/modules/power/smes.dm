@@ -13,7 +13,6 @@
 //# define SMESMAXOUTPUT 250000 Unused
 
 /obj/machinery/power/smes
-	polls = FALSE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "power storage unit"
 	desc = "A high-capacity superconducting magnetic energy storage (SMES) unit."

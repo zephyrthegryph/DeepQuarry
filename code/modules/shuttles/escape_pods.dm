@@ -151,7 +151,7 @@
 		return TRUE // Eat all commands.
 	return ..(command)
 
-/datum/embedded_program/docking/simple/escape_pod_berth/process()
+/datum/embedded_program/docking/simple/escape_pod_berth/periodic_step()
 	..()
 	if (eject_time && world.time >= eject_time && !closing)
 		close_door()

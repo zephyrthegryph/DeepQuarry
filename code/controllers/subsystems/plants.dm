@@ -136,7 +136,7 @@ SUBSYSTEM_DEF(plants)
 		--currentrun.len
 		if(!P || QDELETED(P))
 			continue
-		P.process()
+		P.periodic_step()
 
 		if(MC_TICK_CHECK)
 			return

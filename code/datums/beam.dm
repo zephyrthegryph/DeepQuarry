@@ -157,11 +157,11 @@
 /obj/effect/ebeam/reactive
 
 /obj/effect/ebeam/reactive/Initialize(mapload)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/effect/ebeam/reactive/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/ebeam/reactive/on_drawn()
@@ -174,7 +174,7 @@
 	..()
 	on_contact(A)
 
-/obj/effect/ebeam/reactive/process()
+/obj/effect/ebeam/reactive/periodic_step()
 	for(var/A in loc)
 		on_contact(A)
 

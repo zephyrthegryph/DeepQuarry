@@ -1,11 +1,11 @@
 
 /// Tells the automatic shutoff valves that border `network` about a leak or split there
-/// (Q14, reactor.md §9): it publishes the network's REACT_KEY_PIPE_NETWORK key, which only
+/// (Q14): it publishes the network's KEY_PIPE_NETWORK key, which only
 /// that network's valves subscribe to. With no network (a change whose network is not
 /// known yet, such as new construction) the global key wakes every valve. Publications
 /// merge per tick, so a bulk blast needs no batching of its own.
 /proc/wake_automatic_shutoff_valves(datum/pipe_network/network)
-	REACT_PUBLISH(REACT_KEY_PIPE_NETWORK, network ? REACT_ID(network) : REACT_ID_GLOBAL, REACT_PIPE_LEAKS)
+	OM_KEY_PUBLISH(KEY_PIPE_NETWORK, network ? OM_KEY_ID(network) : KEY_ID_GLOBAL, KEY_PIPE_LEAKS)
 
 /obj/machinery/atmospherics/valve/shutoff
 	icon = 'icons/atmos/clamp.dmi'
@@ -16,7 +16,7 @@
 	desc = "An automatic valve with control circuitry and pipe integrity sensor, capable of automatically isolating damaged segments of the pipe network."
 	var/close_on_leaks = TRUE	// If false it will be always open
 	level = 1
-	/// REACT_KEY_PIPE_NETWORK subscriptions: the global key, and one per bordering network
+	/// KEY_PIPE_NETWORK subscriptions: the global key, and one per bordering network
 	/// with the network ids they were made for.
 	var/tmp/global_leak_token
 	var/tmp/network1_token
@@ -37,7 +37,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	. = ..()
 	open()
 	hide(1)
-	global_leak_token = REACT_ON_KEY(src, REACT_KEY_PIPE_NETWORK, REACT_ID_GLOBAL, REACT_PIPE_LEAKS)
+	global_leak_token = OM_KEY_ON(src, KEY_PIPE_NETWORK, KEY_ID_GLOBAL, KEY_PIPE_LEAKS)
 	subscribe_network_keys()
 
 /obj/machinery/atmospherics/valve/shutoff/Destroy()
@@ -87,18 +87,18 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 
 /// Subscribes to the keys of the networks on each side (again, if they changed).
 /obj/machinery/atmospherics/valve/shutoff/proc/subscribe_network_keys()
-	var/id1 = network_node1 ? REACT_ID(network_node1) : 0
-	var/id2 = network_node2 ? REACT_ID(network_node2) : 0
+	var/id1 = network_node1 ? OM_KEY_ID(network_node1) : 0
+	var/id2 = network_node2 ? OM_KEY_ID(network_node2) : 0
 	if(id1 != network1_id)
 		if(!isnull(network1_token))
-			REACT_CANCEL(src, network1_token)
+			OM_KEY_OFF(src, network1_token)
 		network1_id = id1
-		network1_token = id1 ? REACT_ON_KEY(src, REACT_KEY_PIPE_NETWORK, id1, REACT_PIPE_LEAKS) : null
+		network1_token = id1 ? OM_KEY_ON(src, KEY_PIPE_NETWORK, id1, KEY_PIPE_LEAKS) : null
 	if(id2 != network2_id)
 		if(!isnull(network2_token))
-			REACT_CANCEL(src, network2_token)
+			OM_KEY_OFF(src, network2_token)
 		network2_id = id2
-		network2_token = id2 ? REACT_ON_KEY(src, REACT_KEY_PIPE_NETWORK, id2, REACT_PIPE_LEAKS) : null
+		network2_token = id2 ? OM_KEY_ON(src, KEY_PIPE_NETWORK, id2, KEY_PIPE_LEAKS) : null
 
 // A network change re-subscribes and re-checks: the new network may already leak.
 /obj/machinery/atmospherics/valve/shutoff/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
@@ -114,20 +114,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	network_keys_changed()
 
 /obj/machinery/atmospherics/valve/shutoff/proc/network_keys_changed()
-	if(QDELETED(src) || !reactor_id)
+	if(QDELETED(src) || isnull(global_leak_token))
 		return // Not initialized yet: Initialize() subscribes.
 	subscribe_network_keys()
 	// Check on the next dispatch, once the rebuild that moved us has finished.
-	REACT_AT(src, world.time)
+	OM_WAKE_AT(src, world.time)
 
-/obj/machinery/atmospherics/valve/shutoff/on_react(reason, source, source_kind)
+/obj/machinery/atmospherics/valve/shutoff/om_woken(reason)
 	. = ..()
 	subscribe_network_keys()
 	check_leaks()
 
-/obj/machinery/atmospherics/valve/shutoff/react_sleep_violation()
-	var/id1 = network_node1?.reactor_id || 0
-	var/id2 = network_node2?.reactor_id || 0
+/obj/machinery/atmospherics/valve/shutoff/om_sleep_violation()
+	var/id1 = network_node1?.om_key_id || 0
+	var/id2 = network_node2?.om_key_id || 0
 	if((network_node1 && (isnull(network1_token) || id1 != network1_id)) || (network_node2 && (isnull(network2_token) || id2 != network2_id)))
 		return "not subscribed to its networks' keys"
 	if(isnull(global_leak_token))

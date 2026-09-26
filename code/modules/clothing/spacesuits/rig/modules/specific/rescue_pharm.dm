@@ -27,7 +27,7 @@
 		list(REAGENT_ID_DEXALIN,  REAGENT_ID_DEXALIN,      0, 20)
 		)
 
-/obj/item/rig_module/rescue_pharm/process()
+/obj/item/rig_module/rescue_pharm/periodic_step()
 	. = ..()
 	if(active)
 		var/did_work = 0

@@ -17,7 +17,7 @@
 	aspect = ASPECT_FROST
 	glow_color = "#00B3FF"
 
-/obj/item/spell/aura/frost/process()
+/obj/item/spell/aura/frost/periodic_step()
 	if(!pay_energy(100))
 		qdel(src)
 		return

@@ -116,7 +116,7 @@
 			singulo.target = src
 	icon_state = "[icontype]1"
 	active = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	if(user)
 		to_chat(user, span_notice("You activate the beacon."))
 
@@ -179,7 +179,7 @@
 	. = ..()
 
 //stealth direct power usage
-/obj/machinery/power/singularity_beacon/process()
+/obj/machinery/power/singularity_beacon/machine_step()
 	if(!active)
 		return PROCESS_KILL
 	else

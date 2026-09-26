@@ -447,9 +447,9 @@
 		return "In transit"
 	return current_location.name
 
-/// Wakes the status displays that show this shuttle's schedule (REACT_KEY_SHUTTLE_SCHEDULE).
+/// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
 	if(src == SSemergency_shuttle?.shuttle)
-		REACT_PUBLISH(REACT_KEY_SHUTTLE_SCHEDULE, REACT_SHUTTLE_EVAC, 1)
+		OM_KEY_PUBLISH(KEY_SHUTTLE_SCHEDULE, KEY_SHUTTLE_EVAC, 1)
 	else if(src == SSsupply?.shuttle)
-		REACT_PUBLISH(REACT_KEY_SHUTTLE_SCHEDULE, REACT_SHUTTLE_SUPPLY, 1)
+		OM_KEY_PUBLISH(KEY_SHUTTLE_SCHEDULE, KEY_SHUTTLE_SUPPLY, 1)

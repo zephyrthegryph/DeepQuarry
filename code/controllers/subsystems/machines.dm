@@ -1,10 +1,11 @@
 #define SSMACHINES_MACHINERY     2
 #define SSMACHINES_POWERNETS     3
-#define SSMACHINES_POWER_OBJECTS 4
 
 //
-// SSmachines subsystem - Processing machines and the power step (M3: the
-// power network itself runs in Rust, see code/modules/power/power_bridge.dm).
+// SSmachines subsystem - gas wakes, the batched pump commit and the power step (M3: the power
+// network itself runs in Rust, see code/modules/power/power_bridge.dm). It no longer polls
+// machines: their DM work runs on the machine pipeline (code/game/machinery/machine_pipeline.dm),
+// woken by MACHINE_WAKE(), their channels and their watches (roadmap S5).
 // (Pipenets moved to SSair under the LINDA migration.)
 //
 
@@ -21,23 +22,17 @@ SUBSYSTEM_DEF(machines)
 
 	var/cost_machinery     = 0
 	var/cost_powernets     = 0
-	var/cost_power_objects = 0
 	/// Most recently completed logical stage costs (all resumed slices combined).
 	var/last_cost_machinery = 0
 	var/last_cost_powernets = 0
-	var/last_cost_power_objects = 0
 	/// In-flight logical stage accumulators. These deliberately survive yields.
 	var/current_cost_machinery = 0
 	var/current_cost_powernets = 0
-	var/current_cost_power_objects = 0
 
-	var/list/current_run = list()
-	/// Machine gas transfers accumulated during one logical machinery generation.
-	/// Rust commits this flat set under one publication lock after all devices have
-	/// calculated their requested flow.
+	/// Machine gas transfers accumulated since the last commit. Rust commits this flat set under
+	/// one publication lock after the pipeline devices have calculated their requested flow.
 	var/list/pending_pump_transfers = list()
-	/// Cost and cardinality of the last atomic pump commit. Kept separate from
-	/// per-machine process timing because the commit happens after the roster.
+	/// Cost and cardinality of the last atomic pump commit.
 	var/last_pump_commit_ms = 0
 	/// Independent monotonic wall time and its excess over BYOND active time.
 	/// This prevents an OS pause from being diagnosed as gas-transfer work.
@@ -57,40 +52,6 @@ SUBSYSTEM_DEF(machines)
 	var/gas_wake_subscribers_last = 0
 	var/current_gas_wake_scan_ms = 0
 	var/current_gas_wake_subscribers = 0
-	var/list/machine_noop_counts = list()
-	var/next_machine_profile_dump = 0
-
-	/// Machines polled every pass. Order is not stable: removal swaps the last
-	/// entry into the vacated slot (see stop_machine_processing()).
-	var/list/processing_machines = list()
-	/// Next processing_machines slot to visit in the current pass (walks down to 1).
-	var/machine_run_cursor = 0
-	/// Increments once per machinery pass; see /obj/machinery/var/machine_processing_pass.
-	var/machine_run_pass = 1
-	var/list/powerobjs = list()
-	/// Enables low-overhead concrete-type timing for machine polling audits.
-	// Concrete-type timing performs extra high-resolution clock reads inside the
-	// hot machine loop. Enable it explicitly for benchmark runs; production keeps
-	// the compact subsystem totals without paying continuous sampling overhead.
-	var/profile_machine_types = FALSE
-	/// Benchmark marker profiles capture one bounded window; leaving per-object
-	/// high-resolution timing enabled permanently materially changes the workload.
-	var/machine_profile_one_shot = FALSE
-	/// Sampling phase advances once per completed processing-list generation. This
-	/// prevents a stable machine list from aliasing against a fixed Nth-item sampler.
-	var/machine_profile_sample_phase = 0
-	var/machine_profile_run_index = 0
-	var/machine_profile_sample_stride = 16
-	var/list/machine_profile_cost = list()
-	var/list/machine_profile_calls = list()
-	var/list/machine_profile_kills = list()
-	var/list/machine_profile_productive = list()
-	/// log_runtime() may yield under heavy output. Prevent a resumed machinery
-	/// fire from recursively starting another full dump before this one finishes.
-	var/machine_profile_dumping = FALSE
-	/// Diagnostic detail is bounded so profiling cannot itself create subsystem overruns.
-	var/machine_profile_detail_limit = 8
-	var/adaptive_profile_threshold_ms = 25
 
 /datum/controller/subsystem/machines/Initialize()
 	process_power()
@@ -100,128 +61,33 @@ SUBSYSTEM_DEF(machines)
 /datum/controller/subsystem/machines/fire(resumed = 0)
 	var/timer = TICK_USAGE
 	// SSMACHINES_PIPENETS step removed; pipenets dispatch via SSair.
-	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_POWER_OBJECTS,FALSE,process_power_objects,cost_power_objects,last_cost_power_objects,current_cost_power_objects,SSMACHINES_MACHINERY) // Higher priority, damnit
-	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_MACHINERY,FALSE,process_machinery,cost_machinery,last_cost_machinery,current_cost_machinery,SSMACHINES_POWERNETS)
-	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_POWERNETS,FALSE,process_powernets,cost_powernets,last_cost_powernets,current_cost_powernets,SSMACHINES_POWER_OBJECTS)
+	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_MACHINERY,TRUE,process_machinery,cost_machinery,last_cost_machinery,current_cost_machinery,SSMACHINES_POWERNETS)
+	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_POWERNETS,FALSE,process_powernets,cost_powernets,last_cost_powernets,current_cost_powernets,SSMACHINES_MACHINERY)
 
 // (Submap loads call /obj/machinery/atmospherics/atmos_init() directly,
-//  main-map load runs through SSair.Initialize → setup_atmos_machinery.)
+//  main-map load runs through SSair.Initialize -> setup_atmos_machinery.)
 
 /datum/controller/subsystem/machines/stat_entry(msg)
 	msg = "C:{"
 	msg += "MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
-	msg += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]|"
-	msg += "PO:[round(last_cost_power_objects,1)]/[round(cost_power_objects,1)]"
+	msg += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]"
 	msg += "} "
-	msg += "MC:[length(SSmachines.processing_machines)]|"
+	msg += "MP:[om_pipeline_parked_count(/datum/om/pipeline/machine)] parked|"
 	msg += "PN:[length(power_regions)] ev:[power_last_events][power_batch_depth ? " - BATCH" : ""]|"
-	msg += "PO:[length(SSmachines.powerobjs)]|"
-	msg += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]|"
-	msg += "MC/MS:[round((cost_machinery ? length(SSmachines.processing_machines)/cost_machinery : 0),0.1)]"
+	msg += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
 	return ..()
 
+/// Gas watches, then the pump transfers the pipeline devices queued since the last commit.
 /datum/controller/subsystem/machines/proc/process_machinery(resumed = 0)
 	if (!resumed)
-		machine_run_pass++
-		machine_run_cursor = length(processing_machines)
-		machine_profile_run_index = 0
 		gas_wake_complete = FALSE
 		current_gas_wake_scan_ms = 0
 		current_gas_wake_subscribers = 0
-		if(profile_machine_types && !next_machine_profile_dump)
-			next_machine_profile_dump = world.time + 2 MINUTES
 	if(!gas_wake_complete)
 		gas_wake_complete = wake_dirty_gas_subscribers()
 		if(!gas_wake_complete)
 			return
-
-	var/wait = src.wait
-	var/list/roster = processing_machines
-	var/pass = machine_run_pass
-	while(machine_run_cursor > 0)
-		// Removals while we yielded can shrink the list below the cursor.
-		if(machine_run_cursor > length(roster))
-			machine_run_cursor = length(roster)
-			continue
-		var/obj/machinery/M = roster[machine_run_cursor]
-		if(!istype(M))
-			// Hard-deleted entry: swap the last slot in and look at this slot again.
-			roster[machine_run_cursor] = roster[length(roster)]
-			var/obj/machinery/moved = roster[machine_run_cursor]
-			if(istype(moved))
-				moved.machine_processing_index = machine_run_cursor
-			roster.len--
-			continue
-		machine_run_cursor--
-		if(M.machine_processing_pass == pass)
-			continue
-		M.machine_processing_pass = pass
-		var/process_result
-		if(!QDELETED(M))
-			machine_profile_run_index++
-			if(profile_machine_types && !((machine_profile_run_index + machine_profile_sample_phase) % machine_profile_sample_stride))
-				var/machine_type = "[M.type]"
-				var/profile_start = TICK_USAGE
-				process_result = M.process(wait)
-				machine_profile_cost[machine_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start) * machine_profile_sample_stride
-				machine_profile_calls[machine_type] += machine_profile_sample_stride
-				if(istype(M, /obj/machinery/atmospherics))
-					var/obj/machinery/atmospherics/atmos_machine = M
-					if(abs(atmos_machine.last_flow_rate) > 0.001 || atmos_machine.last_power_draw > 0)
-						machine_profile_productive[machine_type] += machine_profile_sample_stride
-				if(process_result == PROCESS_KILL)
-					machine_profile_kills[machine_type] += machine_profile_sample_stride
-			else
-				process_result = M.process(wait)
-		if(QDELETED(M) || process_result == PROCESS_KILL)
-			if(process_result == PROCESS_KILL)
-				machine_noop_counts["[M.type]"]++
-			stop_machine_processing(M)
-		if(MC_TICK_CHECK)
-			flush_pump_transfers()
-			return
 	flush_pump_transfers()
-	if(profile_machine_types && world.time >= next_machine_profile_dump)
-		dump_machine_profile()
-	// Rotate the stratum only after the generation was actually exhausted; a
-	// yielded/resumed fire keeps the same phase and never double-samples a slot.
-	machine_profile_sample_phase = (machine_profile_sample_phase + 1) % machine_profile_sample_stride
-
-/// Adds a machine to the polling roster. It is not polled until the next pass.
-/datum/controller/subsystem/machines/proc/start_machine_processing(obj/machinery/M)
-	// A machine on the machine pipeline (polls = FALSE, machine_pipeline.dm) is woken, not
-	// enrolled: every START_MACHINE_PROCESSING() producer becomes a CHANGE_EXPLICIT raise that
-	// wakes all of its stages.
-	if(!M.polls)
-		M.machine_wake_count++
-		om_changed(M, CHANGE_EXPLICIT)
-		return
-	if(M.datum_flags & DF_ISPROCESSING)
-		return
-	M.datum_flags |= DF_ISPROCESSING
-	processing_machines += M
-	M.machine_processing_index = length(processing_machines)
-	M.machine_processing_pass = machine_run_pass
-
-/// Removes a machine from the polling roster in O(1) by moving the last entry
-/// into its slot. The pass walks down from the end, so the entry that moves is
-/// either already polled or started mid-pass; its pass stamp stops a second poll.
-/datum/controller/subsystem/machines/proc/stop_machine_processing(obj/machinery/M)
-	if(!(M.datum_flags & DF_ISPROCESSING))
-		return
-	M.datum_flags &= ~DF_ISPROCESSING
-	var/index = M.machine_processing_index
-	M.machine_processing_index = 0
-	var/last = length(processing_machines)
-	// DF_ISPROCESSING is shared with other processing lists (SSfastprocess), so a
-	// flagged machine is not necessarily on this roster.
-	if(index < 1 || index > last || processing_machines[index] != M)
-		return
-	if(index != last)
-		var/obj/machinery/moved = processing_machines[last]
-		processing_machines[index] = moved
-		moved.machine_processing_index = index
-	processing_machines.len--
 
 /datum/controller/subsystem/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)
 	if(!M || !source || !sink || requested_moles <= 0)
@@ -292,156 +158,15 @@ SUBSYSTEM_DEF(machines)
 	last_pump_commit_suspended_ms = max(last_pump_commit_wall_ms - last_pump_commit_ms, 0)
 	pending_pump_transfers.Cut()
 
-/datum/controller/subsystem/machines/proc/dump_machine_profile()
-	if(machine_profile_dumping)
-		return
-	machine_profile_dumping = TRUE
-	// Advance the deadline before producing output. Some logger backends yield;
-	// setting this at the end allowed every resumed machinery fire to enter again.
-	next_machine_profile_dump = world.time + 2 MINUTES
-	var/list/current_counts = list()
-	var/airlocks_processing = 0
-	var/airlocks_autoclose = 0
-	var/airlocks_commanded = 0
-	var/airlocks_power_wait = 0
-	var/airlocks_electrified = 0
-	var/airlocks_other = 0
-	var/list/leaking_pipes = list()
-	var/list/active_vents = list()
-	var/list/active_lights = list()
-	for(var/obj/machinery/M as anything in processing_machines)
-		if(M && !QDELETED(M))
-			current_counts["[M.type]"]++
-			if(istype(M, /obj/machinery/door/airlock))
-				var/obj/machinery/door/airlock/A = M
-				airlocks_processing++
-				if(A.close_door_at)
-					airlocks_autoclose++
-				else if(A.cur_command)
-					airlocks_commanded++
-				else if(A.main_power_lost_until > 0 || A.backup_power_lost_until > 0)
-					airlocks_power_wait++
-				else if(A.electrified_until > 0)
-					airlocks_electrified++
-				else
-					airlocks_other++
-			if(istype(M, /obj/machinery/atmospherics/pipe))
-				var/obj/machinery/atmospherics/pipe/P = M
-				if(P.leaking)
-					leaking_pipes += P
-			if(istype(M, /obj/machinery/atmospherics/unary/vent_pump))
-				active_vents += M
-			if(istype(M, /obj/machinery/light))
-				active_lights += M
-	var/list/sorted_cost = machine_profile_cost.Copy()
-	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
-	var/rank = 0
-	for(var/machine_type in sorted_cost)
-		log_runtime("MACHINE_PROFILE type=[machine_type] cost_ms=[round(machine_profile_cost[machine_type], 0.01)] calls=[machine_profile_calls[machine_type]] productive=[machine_profile_productive[machine_type] || 0] active=[current_counts[machine_type] || 0] killed=[machine_profile_kills[machine_type] || 0]")
-		if(++rank >= 25)
-			break
-	var/list/sorted_counts = current_counts.Copy()
-	sortTim(sorted_counts, /proc/cmp_numeric_desc, TRUE)
-	rank = 0
-	for(var/machine_type in sorted_counts)
-		log_runtime("MACHINE_PROFILE_ACTIVE type=[machine_type] active=[current_counts[machine_type]]")
-		if(++rank >= 50)
-			break
-	log_runtime("MACHINE_PROFILE_SUMMARY active=[length(processing_machines)] concrete_types=[length(current_counts)]")
-	log_runtime("MACHINE_PROFILE_POWER regions=[length(power_regions)] events=[power_last_events] edits_sent=[power_edits_sent]")
-	log_runtime("MACHINE_PROFILE_DETAIL airlocks processing=[airlocks_processing] autoclose=[airlocks_autoclose] commanded=[airlocks_commanded] power_wait=[airlocks_power_wait] electrified=[airlocks_electrified] other=[airlocks_other]")
-	var/leaks_logged = 0
-	for(var/obj/machinery/atmospherics/pipe/P as anything in leaking_pipes)
-		if(leaks_logged++ >= machine_profile_detail_limit)
-			break
-		var/connected_nodes = 0
-		for(var/obj/machinery/atmospherics/node as anything in P.get_neighbor_nodes_for_init())
-			if(node)
-				connected_nodes++
-		log_runtime("MACHINE_PROFILE_LEAK type=[P.type] x=[P.x] y=[P.y] z=[P.z] area=[get_area(P)] nodes=[connected_nodes] damaged=[P.damaged_leak]")
-	if(length(leaking_pipes) > machine_profile_detail_limit)
-		log_runtime("MACHINE_PROFILE_LEAK_SUMMARY total=[length(leaking_pipes)] detailed=[machine_profile_detail_limit]")
-	var/vents_logged = 0
-	for(var/obj/machinery/atmospherics/unary/vent_pump/V as anything in active_vents)
-		if(vents_logged++ >= machine_profile_detail_limit)
-			break
-		var/datum/gas_mixture/environment = V.return_air()
-		var/datum/gas_mixture/source = V.pump_direction ? V.air_contents : environment
-		log_runtime("MACHINE_PROFILE_VENT type=[V.type] x=[V.x] y=[V.y] z=[V.z] area=[get_area(V)] direction=[V.pump_direction] environment_kpa=[round(environment ? environment.return_pressure() : 0, 0.01)] pipe_kpa=[round(V.air_contents.return_pressure(), 0.01)] delta_kpa=[round(environment ? V.get_pressure_delta(environment) : 0, 0.01)] source_moles=[round(source ? source.total_moles() : 0, 0.01)]")
-	var/lights_logged = 0
-	for(var/obj/machinery/light/L as anything in active_lights)
-		if(lights_logged++ >= machine_profile_detail_limit)
-			break
-		log_runtime("MACHINE_PROFILE_LIGHT type=[L.type] x=[L.x] y=[L.y] z=[L.z] area=[get_area(L)] powered=[L.has_power()] emergency=[L.emergency_mode] auto_flicker=[L.auto_flicker] flickering=[L.flickering] cell=[L.cell ? round(L.cell.charge, 0.01) : -1]/[L.cell ? L.cell.maxcharge : -1]")
-	var/apcs_logged = 0
-	for(var/obj/machinery/power/apc/A in processing_machines)
-		if(apcs_logged++ >= machine_profile_detail_limit)
-			break
-		log_runtime("MACHINE_PROFILE_APC x=[A.x] y=[A.y] z=[A.z] area=[get_area(A)] status=[A.stat] failure_remaining=[max(A.failure_until - world.time, 0)] cell=[A.cell ? round(A.cell.charge, 0.01) : -1]/[A.cell ? A.cell.maxcharge : -1] operating=[A.operating] shorted=[A.shorted] chargemode=[A.chargemode]")
-	// These are associative-only tables. Cut() is unreliable for clearing tables
-	// without a numeric sequence, which made every supposedly bounded profile
-	// window retain costs from round start. Replace the tables so checkpoints are
-	// genuinely independent samples.
-	machine_profile_cost = list()
-	machine_profile_calls = list()
-	machine_profile_kills = list()
-	machine_profile_productive = list()
-	machine_noop_counts = list()
-	machine_profile_dumping = FALSE
-	if(machine_profile_one_shot)
-		profile_machine_types = FALSE
-		machine_profile_one_shot = FALSE
-
-/datum/controller/subsystem/machines/proc/request_adaptive_profile()
-	if(profile_machine_types || last_cost_machinery < adaptive_profile_threshold_ms)
-		return
-	profile_machine_types = TRUE
-	machine_profile_one_shot = TRUE
-	next_machine_profile_dump = world.time + 10 SECONDS
-
 /// The power step: one Rust call for every network, APC and SMES.
 /datum/controller/subsystem/machines/proc/process_powernets(resumed = 0)
 	process_power()
 
-// Actually only processes power DRAIN objects.
-// Currently only used by powersinks. These items get priority processed before machinery
-/datum/controller/subsystem/machines/proc/process_power_objects(resumed = 0)
-	if (!resumed)
-		src.current_run = powerobjs.Copy()
-
-	var/wait = src.wait
-	var/list/current_run = src.current_run
-	while(length(current_run))
-		var/obj/item/I = current_run[length(current_run)]
-		current_run.len--
-		if(!I || (I.pwr_drain(wait) == PROCESS_KILL))
-			powerobjs.Remove(I)
-			DISABLE_BITFIELD(I?.datum_flags, DF_ISPROCESSING)
-		if(MC_TICK_CHECK)
-			return
-
 /datum/controller/subsystem/machines/Recover()
-	var/list/recovered_machines = list()
-	for(var/datum/D as anything in SSmachines.processing_machines)
-		if(!istype(D, /obj/machinery))
-			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.machines, item=[D], type=[D?.type]")
-			continue
-		var/obj/machinery/M = D
-		recovered_machines += M
-		M.machine_processing_index = length(recovered_machines)
-	SSmachines.processing_machines = recovered_machines
-	for(var/datum/D as anything in SSmachines.powerobjs)
-		if(!istype(D, /obj/item))
-			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.powerobjs, item=[D], type=[D?.type]")
-			SSmachines.powerobjs -= D
-
-	processing_machines = SSmachines.processing_machines
 	power_ops = SSmachines.power_ops
 	power_regions = SSmachines.power_regions
 	power_dirty_areas = SSmachines.power_dirty_areas
 	power_material_cables = SSmachines.power_material_cables
-	powerobjs = SSmachines.powerobjs
-	current_run = SSmachines.current_run
 	pending_pump_transfers = SSmachines.pending_pump_transfers
 	pending_dirty_gas_mixtures = SSmachines.pending_dirty_gas_mixtures
 	pending_dirty_gas_index = SSmachines.pending_dirty_gas_index
@@ -452,7 +177,7 @@ SUBSYSTEM_DEF(machines)
 /// watch's own wake_callback (set when it was armed) does whatever per-type wake work used to
 /// live in wake_gas_subscriber()'s istype dispatch (a leaking pipe re-marks its network dirty
 /// instead of re-entering process(), material_service recomputes its corrosion cache and calls
-/// environment_changed(), everything else START_MACHINE_PROCESSING()s or om_changed()s itself).
+/// environment_changed(), everything else MACHINE_WAKE()s or om_changed()s itself).
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
@@ -487,14 +212,13 @@ SUBSYSTEM_DEF(machines)
 	if(!S)
 		return
 	S.register_gas_dependencies()
-	STOP_MACHINE_PROCESSING(S)
+	MACHINE_SLEEP(S)
 
 /datum/controller/subsystem/machines/proc/hibernate_generator(obj/machinery/power/generator/G)
 	if(!G)
 		return
 	G.register_gas_dependencies()
-	STOP_MACHINE_PROCESSING(G)
+	MACHINE_SLEEP(G)
 
 #undef SSMACHINES_MACHINERY
 #undef SSMACHINES_POWERNETS
-#undef SSMACHINES_POWER_OBJECTS

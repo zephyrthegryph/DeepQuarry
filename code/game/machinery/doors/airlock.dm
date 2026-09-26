@@ -157,9 +157,9 @@
 		electrify(0)
 	return ..()
 
-/// Tells REACT_KEY_DOOR_MODE subscribers (door controllers, S2's machine keys) what changed.
+/// Tells KEY_DOOR_MODE subscribers (door controllers, S2's machine keys) what changed.
 /obj/machinery/door/airlock/proc/publish_door_mode(mask)
-	REACT_PUBLISH(REACT_KEY_DOOR_MODE, REACT_ID(src), mask)
+	OM_KEY_PUBLISH(KEY_DOOR_MODE, OM_KEY_ID(src), mask)
 
 /obj/machinery/door/airlock/proc/check_for_freeze()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -278,7 +278,7 @@ About the new airlock wires panel:
 		electrify(0)
 
 	update_icon()
-	publish_door_mode(REACT_DOOR_POWER)
+	publish_door_mode(KEY_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/loseBackupPower()
 	backup_power_lost_until = backupPowerCablesCut() ? -1 : world.time + (1 MINUTE)
@@ -290,7 +290,7 @@ About the new airlock wires panel:
 		electrify(0)
 
 	update_icon()
-	publish_door_mode(REACT_DOOR_POWER)
+	publish_door_mode(KEY_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/regainMainPower()
 	if(!mainPowerCablesCut())
@@ -302,7 +302,7 @@ About the new airlock wires panel:
 	update_icon()
 	schedule_door_timer()
 	resume_autoclose_if_possible()
-	publish_door_mode(REACT_DOOR_POWER)
+	publish_door_mode(KEY_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/regainBackupPower()
 	if(!backupPowerCablesCut())
@@ -312,7 +312,7 @@ About the new airlock wires panel:
 	update_icon()
 	schedule_door_timer()
 	resume_autoclose_if_possible()
-	publish_door_mode(REACT_DOOR_POWER)
+	publish_door_mode(KEY_DOOR_POWER)
 
 /obj/machinery/door/airlock/proc/resume_autoclose_if_possible()
 	// Unit-created and partially constructed doors may not have a wire datum yet.
@@ -341,7 +341,7 @@ About the new airlock wires panel:
 		electrified_until = duration == -1 ? -1 : world.time + (duration SECONDS)
 
 	schedule_door_timer()
-	publish_door_mode(REACT_DOOR_ELECTRIFIED)
+	publish_door_mode(KEY_DOOR_ELECTRIFIED)
 
 	if(feedback && message)
 		to_chat(usr,message)
@@ -1177,7 +1177,7 @@ About the new airlock wires panel:
 	if(close_door_at && !density)
 		close_door_at = 0
 		schedule_door_timer()
-	publish_door_mode(REACT_DOOR_BOLTS)
+	publish_door_mode(KEY_DOOR_BOLTS)
 	return TRUE
 
 /obj/machinery/door/airlock/proc/unlock(forced=0)
@@ -1193,7 +1193,7 @@ About the new airlock wires panel:
 		M.show_message("You hear a click from the bottom of the door.", 2)
 	update_icon()
 	resume_autoclose_if_possible()
-	publish_door_mode(REACT_DOOR_BOLTS)
+	publish_door_mode(KEY_DOOR_BOLTS)
 	return TRUE
 
 /obj/machinery/door/airlock/allowed(mob/M)

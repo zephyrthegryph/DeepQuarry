@@ -99,13 +99,13 @@
 
 /obj/item/clothing/gloves/stamina/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/gloves/stamina/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/clothing/gloves/stamina/process()
+/obj/item/clothing/gloves/stamina/periodic_step()
 	var/mob/living/carbon/human/H = wearer?.resolve()
 	if(!H || H.isSynthetic() || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.
@@ -136,13 +136,13 @@
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src && H.is_sentient())
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		if(flavor_equip)
 			to_chat(H, span_info(flavor_equip))
 
 /obj/item/clothing/suit/armor/buffvest/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	if(H.is_sentient())
 		if(loc == H) // Still inhand.
 			if(flavor_unequip)
@@ -152,10 +152,10 @@
 				to_chat(H, span_info(flavor_drop))
 
 /obj/item/clothing/suit/armor/buffvest/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/clothing/suit/armor/buffvest/process()
+/obj/item/clothing/suit/armor/buffvest/periodic_step()
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(world.time >= cooldown && L.is_sentient() && L.get_tension() >= tension_threshold)

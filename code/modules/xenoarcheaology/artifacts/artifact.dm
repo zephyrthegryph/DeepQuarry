@@ -18,7 +18,7 @@
 	var/datum/component/artifact_master/artifact_master = /datum/component/artifact_master
 
 
-/obj/machinery/artifact/process() //Air too hot! We break!
+/obj/machinery/artifact/machine_step() //Air too hot! We break!
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/env = T.return_air()
 	if(env && env.return_temperature() > ARTIFACT_HEAT_BREAK)

@@ -118,7 +118,7 @@
 
 /obj/effect/energy_net/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/energy_net/Destroy()
 	if(has_buckled_mobs())
@@ -126,10 +126,10 @@
 			to_chat(A, span_notice("You are free of the net!"))
 			unbuckle_mob(A)
 
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/effect/energy_net/process()
+/obj/effect/energy_net/periodic_step()
 	if(!has_buckled_mobs())
 		qdel(src)
 
@@ -164,7 +164,7 @@
 
 	var/size_increment = 0.01
 
-/obj/effect/energy_net/shrink/process()
+/obj/effect/energy_net/shrink/periodic_step()
 	..()
 	for(var/A in BUCKLED_MOBS(src))
 		if(istype(A, /mob/living))

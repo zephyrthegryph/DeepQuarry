@@ -18,7 +18,7 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/reagent_refinery/mixer/process()
+/obj/machinery/reagent_refinery/mixer/machine_step()
 	if(!anchored)
 		return
 

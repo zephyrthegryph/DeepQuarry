@@ -121,7 +121,7 @@
 		else
 			return FALSE
 
-/obj/machinery/computer/operating/process()
+/obj/machinery/computer/operating/machine_step()
 	if(!table || !table.check_victim())
 		victim = null
 		patientName = null

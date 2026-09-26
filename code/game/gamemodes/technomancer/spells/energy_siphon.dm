@@ -22,14 +22,14 @@
 
 /obj/item/spell/energy_siphon/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/spell/energy_siphon/Destroy()
 	stop_siphoning()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/spell/energy_siphon/process()
+/obj/item/spell/energy_siphon/periodic_step()
 	if(!siphoning)
 		return
 	if(!pay_energy(100))

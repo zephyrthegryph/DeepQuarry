@@ -30,7 +30,7 @@
 /obj/machinery/shield_diffuser/hides_under_flooring()
 	return 1
 
-/obj/machinery/shield_diffuser/process()
+/obj/machinery/shield_diffuser/machine_step()
 	if(alarm)
 		alarm--
 		if(!alarm)
@@ -79,7 +79,7 @@
 		update_icon()
 		return TRUE
 	enabled = !enabled
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_use_power(enabled ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 	update_icon()
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
@@ -89,7 +89,7 @@
 	if(!duration)
 		return
 	alarm = round(max(alarm, duration))
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_icon()
 
 /// Shield segments call this when they regenerate or appear, so stable

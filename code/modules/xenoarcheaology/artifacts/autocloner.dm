@@ -41,7 +41,7 @@
 		/mob/living/simple_mob/animal/goat)
 
 //todo: how the hell is the asteroid permanently powered?
-/obj/machinery/auto_cloner/process()
+/obj/machinery/auto_cloner/machine_step()
 	if(powered(power_channel))
 		if(!previous_power_state)
 			previous_power_state = 1

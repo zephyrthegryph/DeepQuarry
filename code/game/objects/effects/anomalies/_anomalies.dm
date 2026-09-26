@@ -26,7 +26,7 @@
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	impact_area = get_area(src)
 
 	if(!impact_area)
@@ -53,7 +53,7 @@
 		return
 	countdown.start()
 
-/obj/effect/anomaly/process(seconds_per_tick)
+/obj/effect/anomaly/periodic_step(seconds_per_tick)
 	anomalyEffect(seconds_per_tick)
 	anomalyPulse()
 	if(death_time < world.time && !immortal)
@@ -62,7 +62,7 @@
 		qdel(src)
 
 /obj/effect/anomaly/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	QDEL_NULL(countdown)
 	QDEL_NULL(anomaly_core)
 	if(stats)

@@ -17,7 +17,7 @@
 	cell = new /obj/item/cell/high(src)
 	AddElement(/datum/element/rotatable)
 
-/obj/machinery/suspension_gen/process()
+/obj/machinery/suspension_gen/machine_step()
 	if(suspension_field)
 		cell.charge -= power_use
 

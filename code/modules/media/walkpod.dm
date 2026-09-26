@@ -51,7 +51,7 @@
 /obj/item/walkpod/proc/remove_listener()
 	if(playing)
 		StopPlaying()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	if(deployed_headpods)
 		restore_headpods()
 	to_chat(listener, span_notice("You are no longer wearing the [src]'s headphones."))
@@ -62,7 +62,7 @@
 	if(listener)
 		remove_listener()
 	listener = L
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	to_chat(L, span_notice("You put the [src]'s headphones on and power it up, preparing to listen to some <b>sick tunes</b>."))
 	update_icon()
 
@@ -86,7 +86,7 @@
 	tgui_interact(user)
 
 // Process ticks to ensure our listener remains valid and we do music-ing
-/obj/item/walkpod/process()
+/obj/item/walkpod/periodic_step()
 	if(!check_headpods())
 		restore_headpods()
 	if(!check_listener())

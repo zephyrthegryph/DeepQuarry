@@ -33,9 +33,9 @@
 
 /obj/item/poi/pascalb/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/poi/pascalb/process()
+/obj/item/poi/pascalb/periodic_step()
 	radiate()
 	..()
 
@@ -58,7 +58,7 @@
 	active = FALSE
 
 /obj/item/poi/pascalb/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/poi/pascalb/deadly //For testing purposes, mainly.
@@ -124,9 +124,9 @@
 
 /obj/item/poi/brokenoldreactor/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/poi/brokenoldreactor/process()
+/obj/item/poi/brokenoldreactor/periodic_step()
 	radiate()
 	..()
 
@@ -150,7 +150,7 @@
 
 /obj/item/poi/brokenoldreactor/Destroy()
 	UnregisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /datum/category_item/catalogue/information/objects/growthcanister

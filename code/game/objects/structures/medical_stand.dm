@@ -72,7 +72,7 @@
 				add_overlay(filling)
 
 /obj/structure/medical_stand/Destroy()
-	STOP_PROCESSING(SSobj,src)
+	PERIODIC_STOP(src)
 	if(breather)
 		breather.internal = null
 		breather.internals?.icon_state = "internal0"
@@ -143,7 +143,7 @@
 				if(attach_mask(target))
 					src.add_fingerprint(user)
 					update_icon()
-					START_PROCESSING(SSobj,src)
+					PERIODIC_START(src, PERIODIC_SLOW)
 				return
 			if("Drip needle")
 				if(attached)
@@ -162,7 +162,7 @@
 					user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
 									span_notice("You hook \the [target] up to \the [src]."))
 					attached = target
-					START_PROCESSING(SSobj,src)
+					PERIODIC_START(src, PERIODIC_SLOW)
 				update_icon()
 
 
@@ -189,7 +189,7 @@
 				user.put_in_hands(tank)
 				tank = null
 				valve_opened = FALSE
-				STOP_PROCESSING(SSobj, src)
+				PERIODIC_STOP(src)
 				update_icon()
 				return
 			else if (!is_loosen)
@@ -217,7 +217,7 @@
 					valve_opened = TRUE
 					//playsound(src, 'sound/effects/internals.ogg', 100, 1)
 					update_icon()
-					START_PROCESSING(SSobj,src)
+					PERIODIC_START(src, PERIODIC_SLOW)
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)
@@ -357,7 +357,7 @@
 	else
 		. += span_notice("There is no tank.")
 
-/obj/structure/medical_stand/process()
+/obj/structure/medical_stand/periodic_step()
 	//Gas Stuff
 	if(breather)
 		if(!can_apply_to_target(breather))

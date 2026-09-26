@@ -255,7 +255,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 // More stolen chemical_dispenser code.
-/obj/machinery/chemical_synthesizer/process()
+/obj/machinery/chemical_synthesizer/machine_step()
 	if(!_recharge_reagents)
 		return
 	if(stat & (BROKEN|NOPOWER))

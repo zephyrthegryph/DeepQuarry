@@ -17,7 +17,7 @@
 	else
 		. += span_warning("It is not secured!")
 
-/obj/machinery/the_singularitygen/process()
+/obj/machinery/the_singularitygen/machine_step()
 	var/turf/T = get_turf(src)
 	if(src.energy >= 200)
 		new creation_type(T, 50)

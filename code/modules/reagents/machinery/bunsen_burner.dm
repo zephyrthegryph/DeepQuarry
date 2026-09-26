@@ -119,7 +119,7 @@
 	held_container.forceMove(get_turf(src))
 	held_container = null
 
-/obj/machinery/bunsen_burner/process()
+/obj/machinery/bunsen_burner/machine_step()
 	if(!heating)
 		return
 

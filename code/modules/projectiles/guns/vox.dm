@@ -20,14 +20,14 @@
 
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	last_regen = world.time
 
 /obj/item/gun/launcher/spikethrower/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/gun/launcher/spikethrower/process()
+/obj/item/gun/launcher/spikethrower/periodic_step()
 	if(spikes < max_spikes && world.time > last_regen + spike_gen_time)
 		spikes++
 		last_regen = world.time

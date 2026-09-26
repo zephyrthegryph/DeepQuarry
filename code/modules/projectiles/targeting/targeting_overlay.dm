@@ -78,7 +78,7 @@
 	if(aiming_at)
 		to_chat(aiming_at, "<span class='[use_span]'>You are [message].</span>")
 
-/obj/aiming_overlay/process()
+/obj/aiming_overlay/periodic_step()
 	if(!owner)
 		qdel(src)
 		return
@@ -91,7 +91,7 @@
 		aiming_at = null
 	owner = null
 	aiming_with = null
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
@@ -179,7 +179,7 @@
 	if(istype(aiming_with, /obj/item/gun))
 		playsound(owner, 'sound/weapons/targeton.ogg', 50,1)
 	forceMove(get_turf(target))
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 	aiming_at.aimed |= src
 	toggle_active(1)
@@ -225,4 +225,4 @@
 	aiming_at.aimed -= src
 	aiming_at = null
 	loc = null
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)

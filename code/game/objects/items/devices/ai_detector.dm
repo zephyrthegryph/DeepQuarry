@@ -24,13 +24,13 @@
 	// It's really really unlikely for the view range to change.  But why not be futureproof anyways?
 	range_alert = world.view
 	range_warning = world.view * 2
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/multitool/ai_detector/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/multitool/ai_detector/process()
+/obj/item/multitool/ai_detector/periodic_step()
 	var/old_detect_state = detect_state
 	var/new_detect_state = detect_ai()
 	detect_state = new_detect_state

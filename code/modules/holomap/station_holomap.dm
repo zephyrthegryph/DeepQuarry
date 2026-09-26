@@ -127,7 +127,7 @@
 			user.client.images |= holomap_datum.station_map
 
 			watching_mob = user
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			watching_mob.AddComponent(/datum/component/recursive_move)
 			RegisterSignal(watching_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/machinery/station_map/proc/checkPosition)
 			//GLOB.dir_set_event.register(watching_mob, src, /obj/machinery/station_map/proc/checkPosition)
@@ -143,7 +143,7 @@
 	return // TODO - Implement for AI ~Leshana
 	// user.station_holomap.toggleHolomap(user, isAI(user))
 
-/obj/machinery/station_map/process()
+/obj/machinery/station_map/machine_step()
 	if((stat & (NOPOWER|BROKEN)) || !anchored)
 		stopWatching()
 	if(!watching_mob)

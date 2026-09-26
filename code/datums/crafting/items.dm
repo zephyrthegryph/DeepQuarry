@@ -277,14 +277,14 @@
 
 /obj/item/clothing/gloves/toxinregen/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/gloves/toxinregen/Destroy()
 	wearer = null
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/clothing/gloves/toxinregen/process()
+/obj/item/clothing/gloves/toxinregen/periodic_step()
 	var/mob/living/carbon/human/H = wearer?.resolve()
 	if(!H || H.stat == DEAD || H.nutrition <= 10)
 		return

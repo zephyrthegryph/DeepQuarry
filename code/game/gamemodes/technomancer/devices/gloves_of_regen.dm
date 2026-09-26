@@ -45,14 +45,14 @@
 
 /obj/item/clothing/gloves/regen/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/gloves/regen/Destroy()
 	wearer = null
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/clothing/gloves/regen/process()
+/obj/item/clothing/gloves/regen/periodic_step()
 	var/mob/living/carbon/human/H = wearer?.resolve()
 	if(!ishuman(H) || H.stat == DEAD || H.nutrition <= 10)
 		return // Dead people don't have a metabolism.

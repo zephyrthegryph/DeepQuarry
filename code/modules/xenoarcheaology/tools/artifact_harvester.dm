@@ -275,7 +275,7 @@
 				inserted_battery.stored_charge = 0
 
 
-/obj/machinery/artifact_harvester/process()
+/obj/machinery/artifact_harvester/machine_step()
 	if(harvesting == 0)
 		return
 	if(stat & (NOPOWER|BROKEN))
@@ -301,7 +301,7 @@
 
 		//do the effect
 		if(inserted_battery.battery_effect)
-			inserted_battery.battery_effect.process()
+			inserted_battery.battery_effect.periodic_step()
 
 			//if the effect works by touch, activate it on anyone viewing the console
 			if(inserted_battery.battery_effect.effect == EFFECT_TOUCH)

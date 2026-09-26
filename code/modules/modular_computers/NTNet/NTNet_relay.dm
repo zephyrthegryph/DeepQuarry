@@ -44,7 +44,7 @@
 		soundloop.stop()
 		noisy = FALSE
 
-/obj/machinery/ntnet_relay/process()
+/obj/machinery/ntnet_relay/machine_step()
 	if(operable())
 		update_use_power(USE_POWER_ACTIVE)
 	else

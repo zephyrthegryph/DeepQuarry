@@ -137,7 +137,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/Initialize(mapload)
 	. = ..()
 	z_original = z
-	REACT_PUBLISH(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED)
+	OM_KEY_PUBLISH(KEY_METEORS, 1, KEY_CHANGED)
 	SpinAnimation()
 
 /obj/effect/meteor/Move()
@@ -157,7 +157,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 
 /obj/effect/meteor/Destroy()
 	walk(src,FALSE) //this cancels the walk_towards() proc
-	REACT_PUBLISH(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED)
+	OM_KEY_PUBLISH(KEY_METEORS, 1, KEY_CHANGED)
 	return ..()
 
 /obj/effect/meteor/Bump(atom/A)

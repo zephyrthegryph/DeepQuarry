@@ -16,7 +16,7 @@
 	AddElement(/datum/element/climbable)
 	flags |= NOREACT
 
-/obj/machinery/reagent_refinery/waste_processor/process()
+/obj/machinery/reagent_refinery/waste_processor/machine_step()
 	if(!anchored)
 		return
 

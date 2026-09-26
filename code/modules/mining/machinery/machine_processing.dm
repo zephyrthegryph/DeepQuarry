@@ -231,11 +231,11 @@
 	else
 		speed_process = !speed_process // switching gears
 	if(speed_process) // high gear
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
-		START_MACHINE_PROCESSING(src)
+		PERIODIC_STOP(src)
+		MACHINE_WAKE(src)
 	for(var/obj/machinery/mineral/unloading_machine/unloader in refinery_area.contents)
 		unloader.toggle_speed()
 	for(var/obj/machinery/conveyor_switch/cswitch in refinery_area.contents)
@@ -244,7 +244,7 @@
 		stacker.toggle_speed()
 
 
-/obj/machinery/mineral/processing_unit/process()
+/obj/machinery/mineral/processing_unit/machine_step()
 
 	if (!src.output || !src.input)
 		return

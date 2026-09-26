@@ -80,14 +80,14 @@
 	icon_empty = "pcigoff2"
 	icon_on = "pcigon"
 
-/obj/item/clothing/mask/smokable/ecig/process()
+/obj/item/clothing/mask/smokable/ecig/periodic_step()
 	if(ishuman(loc))
 		var/mob/living/carbon/human/C = loc
 		if (src == C.get_equipped_item(SLOT_ID_MASK) && C.check_has_mouth()) // if it's in the human/monkey mouth, transfer reagents to the mob
 			if (!active || !ec_cartridge || !ec_cartridge.reagents.total_volume)//no cartridge
 				to_chat(C, span_notice("[src] turns off."))
 				active=0//autodisable the cigarette
-				STOP_PROCESSING(SSobj, src)
+				PERIODIC_STOP(src)
 				update_icon()
 				return
 			ec_cartridge.reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.4) // Most of it is not inhaled... balance reasons.
@@ -128,7 +128,7 @@
 		return TRUE
 	if(active)
 		active = FALSE
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		to_chat(user, span_notice("You turn off \the [src]. "))
 		update_icon()
 	else
@@ -136,7 +136,7 @@
 			to_chat(user, span_notice("You can't use it with no cartridge installed!."))
 			return
 		active = TRUE
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		to_chat(user, span_notice("You turn on \the [src]. "))
 		update_icon()
 

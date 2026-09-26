@@ -99,7 +99,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 /obj/machinery/power/generator/proc/wake_from_gas()
 	clear_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/power/generator/update_icon()
 	icon_state = anchored ? "teg-assembled" : "teg-unassembled"
@@ -123,7 +123,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 					circ2.temperature_overlay = "circ-[extreme]cold"
 		return 1
 
-/obj/machinery/power/generator/process()
+/obj/machinery/power/generator/machine_step()
 	if(!anchored)
 		stored_energy = 0
 		set_power_supply(0)
@@ -215,7 +215,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 					"You hear a ratchet.")
 	update_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
 	if(anchored)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	if(anchored)
 		connect_to_network()
 	else
@@ -294,7 +294,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	..()
 	if(anchored)
 		clear_gas_dependencies()
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	update_icon()
 
 

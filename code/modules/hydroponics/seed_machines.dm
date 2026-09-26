@@ -70,7 +70,7 @@
 		loaded_disk.forceMove(get_turf(src))
 	. = ..()
 
-/obj/machinery/botany/process()
+/obj/machinery/botany/machine_step()
 
 	..()
 	if(!active) return

@@ -15,13 +15,13 @@
 /obj/item/shield_diffuser/Destroy()
 	QDEL_NULL(cell)
 	if(enabled)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/shield_diffuser/get_cell()
 	return cell
 
-/obj/item/shield_diffuser/process()
+/obj/item/shield_diffuser/periodic_step()
 	if(!enabled)
 		return PROCESS_KILL
 
@@ -49,9 +49,9 @@
 	enabled = !enabled
 	update_icon()
 	if(enabled)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
 
 /obj/item/shield_diffuser/examine(mob/user)

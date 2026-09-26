@@ -24,18 +24,18 @@
 /obj/item/assembly/timer/toggle_secure()
 	secured = !secured
 	if(secured)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
 		timing = 0
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	update_icon()
 	return secured
 
 /obj/item/assembly/timer/proc/set_state(state)
 	if(state && !timing) //Not running, starting though
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else if(timing && !state) //Running, stopping though
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	timing = state
 
 /obj/item/assembly/timer/proc/timer_end()
@@ -45,7 +45,7 @@
 	if(!holder)
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*", "*beep* *beep*")
 
-/obj/item/assembly/timer/process()
+/obj/item/assembly/timer/periodic_step()
 	if(timing && time-- <= 0)
 		set_state(0)
 		timer_end()

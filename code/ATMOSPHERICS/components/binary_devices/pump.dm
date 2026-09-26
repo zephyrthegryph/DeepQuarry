@@ -55,7 +55,7 @@ Thus, the two variables affect pump operation are set in New():
 		set_frequency(frequency)
 	// M2/R10: the flow law is a Rust device edge, stepped from SSair every gas
 	// tick; this has no process() at all any more.
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/binary/pump/Destroy()
 	unregister_radio(src, frequency)

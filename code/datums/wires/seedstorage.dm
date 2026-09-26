@@ -31,7 +31,7 @@
 			V.hacked = !V.hacked
 		if(WIRE_ELECTRIFY)
 			V.seconds_electrified = 30
-			START_MACHINE_PROCESSING(V)
+			MACHINE_WAKE(V)
 		if(WIRE_SEED_LOCKDOWN)
 			V.lockdown = !V.lockdown
 	..()
@@ -48,7 +48,7 @@
 				V.seconds_electrified = 0
 			else
 				V.seconds_electrified = -1
-			STOP_MACHINE_PROCESSING(V)
+			MACHINE_SLEEP(V)
 		if(WIRE_SEED_LOCKDOWN)
 			if(mend)
 				V.lockdown = TRUE

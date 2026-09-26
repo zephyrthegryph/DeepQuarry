@@ -10,10 +10,10 @@
 	equip_type = EQUIP_UTILITY
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/Destroy()
-	STOP_PROCESSING(SSfastprocess, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/process()
+/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/periodic_step()
 	if(!chassis || chassis.hasInternalDamage(MECHA_INT_SHORT_CIRCUIT))
 		set_ready_state(TRUE)
 		return PROCESS_KILL
@@ -37,7 +37,7 @@
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/detach()
-	STOP_PROCESSING(SSfastprocess, src)
+	PERIODIC_STOP(src)
 //	chassis.proc_res["dynusepower"] = null
 	LAZYSET(chassis.proc_res, "dyngetcharge", null)
 	..()
@@ -80,11 +80,11 @@
 	..()
 	if(href_list["toggle_relay"])
 		if(datum_flags & DF_ISPROCESSING)
-			STOP_PROCESSING(SSfastprocess, src)
+			PERIODIC_STOP(src)
 			set_ready_state(TRUE)
 			src.mecha_log_message("Deactivated.")
 		else
-			START_PROCESSING(SSfastprocess, src)
+			PERIODIC_START(src, PERIODIC_FAST)
 			set_ready_state(FALSE)
 			src.mecha_log_message("Activated.")
 	return

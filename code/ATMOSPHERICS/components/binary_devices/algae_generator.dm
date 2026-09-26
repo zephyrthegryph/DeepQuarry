@@ -155,7 +155,7 @@
 /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_load_materials(mob/user, obj/item/stack/material/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	try_load_materials(user, held)
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	return TRUE
 
 /// Old attackby: the final "anything else" branch.
@@ -237,7 +237,7 @@
 		if("toggle")
 			if(use_power == USE_POWER_IDLE)
 				update_use_power(USE_POWER_ACTIVE)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			else
 				update_use_power(USE_POWER_IDLE)
 			update_icon()
@@ -248,7 +248,7 @@
 			if(!(matName in stored_material))
 				return
 			eject_materials(matName, 0)
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			. = TRUE
 
 // TODO - These should be replaced with materials datum.
@@ -335,7 +335,7 @@
 
 /obj/machinery/atmospherics/binary/algae_farm/proc/wake_from_gas()
 	om_watch_disarm(src, "gas")
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/binary/algae_farm/step_has_work()
 	return gas_wake_condition()

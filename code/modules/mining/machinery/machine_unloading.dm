@@ -27,13 +27,13 @@
 	else
 		speed_process = !speed_process // switching gears
 	if(speed_process) // high gear
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
-		START_MACHINE_PROCESSING(src)
+		PERIODIC_STOP(src)
+		MACHINE_WAKE(src)
 
-/obj/machinery/mineral/unloading_machine/process()
+/obj/machinery/mineral/unloading_machine/machine_step()
 	if (src.output && src.input)
 		if (locate(/obj/structure/ore_box, input.loc))
 			var/obj/structure/ore_box/BOX = locate(/obj/structure/ore_box, input.loc)

@@ -25,7 +25,7 @@
 	update_icon()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/computer/process()
+/obj/machinery/computer/machine_step()
 	return PROCESS_KILL
 
 /obj/machinery/computer/emp_act(severity, recursive)

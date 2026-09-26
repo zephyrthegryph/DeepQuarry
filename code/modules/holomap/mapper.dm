@@ -180,14 +180,14 @@
 /obj/item/mapping_unit/proc/start_updates()
 	GLOB.mapping_units += src
 	updating = TRUE
-	START_PROCESSING(SSobj, src)
-	process()
+	PERIODIC_START(src, PERIODIC_SLOW)
+	periodic_step()
 
 
 
 /obj/item/mapping_unit/proc/stop_updates()
 	GLOB.mapping_units -= src
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	updating = FALSE
 	if(hud_item)
 		hud_item.off(FALSE)
@@ -203,7 +203,7 @@
 	hud_item = null
 
 
-/obj/item/mapping_unit/process()
+/obj/item/mapping_unit/periodic_step()
 	if(!updating || (uses_power && !cell))
 		stop_updates()
 		return

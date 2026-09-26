@@ -37,7 +37,6 @@ SUBSYSTEM_DEF(profiler)
 	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
 	// Periodic collection therefore records only the inexpensive native diagnostics;
 	// profile dumps are requested explicitly or by the MC drift outlier detector.
-	SSmachines.request_adaptive_profile()
 	var/list/atmos_arena = vg_auxmos_diagnostics()
 	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
 	// Every Rust metric (allocator tags, jobs, ...) in one call.
@@ -45,16 +44,13 @@ SUBSYSTEM_DEF(profiler)
 	var/list/subsystems = list(
 		"atmos" = subsystem_diagnostics(SSair),
 		"machines" = subsystem_diagnostics(SSmachines),
-		"material_exposure" = subsystem_diagnostics(SSmaterial_services),
 		"mobs" = subsystem_diagnostics(SSmobs),
-		"objects" = subsystem_diagnostics(SSobj),
 		"garbage" = subsystem_diagnostics(SSgarbage),
 		"shuttles" = subsystem_diagnostics(SSshuttles),
 		"radiation" = subsystem_diagnostics(SSradiation),
 		"explosions" = subsystem_diagnostics(SSexplosions),
 		"reactor" = subsystem_diagnostics(SSreactor),
 	)
-	subsystems["material_exposure"] += SSmaterial_services.performance_diagnostics()
 	var/list/material_graphs = list()
 	for(var/id in SSmachines.power_regions)
 		var/datum/powernet/network = SSmachines.power_regions[id]
@@ -87,15 +83,15 @@ SUBSYSTEM_DEF(profiler)
 		),
 	)
 	subsystems["machines"] += list(
-		"stage_average_ms" = list("machinery" = SSmachines.cost_machinery, "powernets" = SSmachines.cost_powernets, "power_objects" = SSmachines.cost_power_objects),
-		"stage_last_logical_run_ms" = list("machinery" = SSmachines.last_cost_machinery, "powernets" = SSmachines.last_cost_powernets, "power_objects" = SSmachines.last_cost_power_objects),
+		"stage_average_ms" = list("machinery" = SSmachines.cost_machinery, "powernets" = SSmachines.cost_powernets),
+		"stage_last_logical_run_ms" = list("machinery" = SSmachines.last_cost_machinery, "powernets" = SSmachines.last_cost_powernets),
 		"pump_commit" = list("active_ms" = SSmachines.last_pump_commit_ms, "wall_ms" = SSmachines.last_pump_commit_wall_ms, "suspended_ms" = SSmachines.last_pump_commit_suspended_ms, "operations" = SSmachines.last_pump_commit_operations, "turfs" = SSmachines.last_pump_commit_turfs),
 		"power" = list("events" = SSmachines.power_last_events, "edits_sent" = SSmachines.power_edits_sent),
-		"counts" = list("processing" = length(SSmachines.processing_machines), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.power_regions), "power_objects" = length(SSmachines.powerobjs)),
+		"counts" = list("parked" = om_pipeline_parked_count(/datum/om/pipeline/machine), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.power_regions)),
 		"gas_wakes" = list("dirty" = SSmachines.gas_dirty_last, "subscribers_checked" = SSmachines.gas_wake_subscribers_last, "scan_ms" = SSmachines.gas_wake_scan_last_ms, "woken" = SSmachines.gas_woken_last, "dead" = SSmachines.gas_dead_last, "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = length(GLOB.mob_list), "parked" = om_pipeline_parked_count(/datum/om/pipeline/life), "deaths_pending" = length(SSmobs.death_list)))
-	subsystems["objects"] += list("counts" = list("processing" = length(SSobj.processing), "current" = length(SSobj.currentrun)))
+	subsystems["periodic"] = periodic_diagnostics()
 	subsystems["garbage"] += SSgarbage.performance_diagnostics()
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()
 	subsystems["radiation"] += SSradiation.performance_diagnostics()

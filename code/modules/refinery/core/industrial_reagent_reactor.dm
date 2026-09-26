@@ -36,7 +36,7 @@
 	. = ..()
 	QDEL_NULL(internal_tank)
 
-/obj/machinery/reagent_refinery/reactor/process()
+/obj/machinery/reagent_refinery/reactor/machine_step()
 	if(!anchored)
 		return
 

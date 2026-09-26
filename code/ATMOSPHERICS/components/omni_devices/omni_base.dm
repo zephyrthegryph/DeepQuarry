@@ -91,7 +91,7 @@
 		if(!isnull(id))
 			mixture_ids |= id
 	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -105,7 +105,7 @@
 /obj/machinery/atmospherics/omni/proc/wake_for_state_change()
 	clear_gas_dependencies()
 	if(use_power && !(stat & (NOPOWER|BROKEN)))
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())

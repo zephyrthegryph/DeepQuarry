@@ -25,13 +25,13 @@
 	. = ..()
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/metroid/egg/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/effect/metroid/egg/process()
+/obj/effect/metroid/egg/periodic_step()
 	amount_grown += rand(0,2)
 	if(amount_grown >= 100)
 		new metroid_type(src.loc, src)

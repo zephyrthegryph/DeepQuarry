@@ -73,13 +73,18 @@
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.
 // if it's less than 0, open door, reset timer
 // update the door_timer window and the icon
-/obj/machinery/door_timer/process()
+/// Counts down (and redraws its display) while timing; otherwise it sleeps until timer_start(), or
+/// until power returns to a timing unit.
+/obj/machinery/door_timer/machine_step()
+	if(!timing)
+		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
-		return
-	if(timing)
-		if(world.time - activation_time >= timer_duration)
-			timer_end() // open doors, reset timer, clear status screen
-		update_icon()
+		return sleep_until_powered()
+	if(world.time - activation_time >= timer_duration)
+		timer_end() // open doors, reset timer, clear status screen
+	update_icon()
+	if(!timing)
+		return PROCESS_KILL
 
 
 // has the door power situation changed, if so update icon.
@@ -97,6 +102,7 @@
 
 	activation_time = world.time
 	timing = TRUE
+	MACHINE_WAKE(src)
 
 	for(var/obj/machinery/door/window/brigdoor/door in targets)
 		if(door.density)

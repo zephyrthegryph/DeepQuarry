@@ -30,11 +30,11 @@
 	return ..()
 
 /obj/item/electronic_assembly/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	battery = null // It will be qdel'd by ..() if still in our contents
 	return ..()
 
-/obj/item/electronic_assembly/process(seconds_per_tick)
+/obj/item/electronic_assembly/periodic_step(seconds_per_tick)
 	if(isnull(power_relevant))
 		recompute_power_relevant()
 	if(!power_relevant)
@@ -47,13 +47,13 @@
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/electronic_assembly/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 // (Re)computes whether handle_idle_power() has anything to do: a battery to draw
 // from plus at least one circuit that makes or draws idle power.

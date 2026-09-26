@@ -86,7 +86,7 @@
 	light.pixel_y = light_y
 	add_overlay(light)
 
-/obj/machinery/appliance/cooker/process()
+/obj/machinery/appliance/cooker/machine_step()
 	if (!stat)
 		heat_up()
 	else
@@ -107,7 +107,7 @@
 /obj/machinery/appliance/cooker/power_change()
 	. = ..()
 	if(.)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 
 /obj/machinery/appliance/cooker/proc/update_cooking_power()
@@ -180,7 +180,7 @@
 		return
 	heat_unwatch(thermostat_watch)
 	thermostat_watch = null
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/appliance/cooker/Destroy()
 	if(!isnull(thermostat_watch))

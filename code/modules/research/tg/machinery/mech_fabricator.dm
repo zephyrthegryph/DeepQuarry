@@ -258,7 +258,7 @@
 
 	return TRUE
 
-/obj/machinery/mecha_part_fabricator_tg/process()
+/obj/machinery/mecha_part_fabricator_tg/machine_step()
 	var/turf/exit = get_step(src, drop_direction)
 	if(!exit)
 		return
@@ -492,7 +492,7 @@
 					return
 
 				process_queue = TRUE
-				START_PROCESSING(SSfastprocess, src)
+				PERIODIC_START(src, PERIODIC_FAST)
 			return
 
 		if("del_queue_part")
@@ -515,7 +515,7 @@
 				return
 
 			process_queue = TRUE
-			START_PROCESSING(SSfastprocess, src)
+			PERIODIC_START(src, PERIODIC_FAST)
 			return
 
 		if("stop_queue")

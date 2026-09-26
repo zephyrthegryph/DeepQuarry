@@ -82,7 +82,7 @@
 
 	return progress
 
-/datum/decl/chemical_reaction/process(datum/reagents/holder, belly_reagent)
+/datum/decl/chemical_reaction/proc/react_step(datum/reagents/holder, belly_reagent)
 	//determine how far the reaction can proceed
 	var/list/reaction_limits = list()
 	for(var/reactant in required_reagents)

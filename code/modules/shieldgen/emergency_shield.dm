@@ -22,7 +22,7 @@
 	. = ..()
 	update_integrity(max_integrity/2) // Half health, it's not suposed to resist much.
 
-/obj/machinery/shield/malfai/process()
+/obj/machinery/shield/malfai/machine_step()
 	take_damage(0.5, sound_effect = FALSE) // Slowly lose integrity over time
 
 // A depleted shield dissipates.
@@ -144,7 +144,7 @@
 	if(active) return 0 //If it's already turned on, how did this get called?
 
 	active = TRUE
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_icon()
 
 	create_shields()
@@ -157,7 +157,7 @@
 	if(!active) return 0 //If it's already off, how did this get called?
 
 	active = FALSE
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 	update_icon()
 
 	collapse_shields()
@@ -175,7 +175,7 @@
 	for(var/obj/machinery/shield/shield_tile in deployed_shields)
 		qdel(shield_tile)
 
-/obj/machinery/shieldgen/process()
+/obj/machinery/shieldgen/machine_step()
 	if(!active)
 		return PROCESS_KILL
 

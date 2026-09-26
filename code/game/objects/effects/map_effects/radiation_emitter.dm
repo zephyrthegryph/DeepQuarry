@@ -9,7 +9,7 @@
 	var/active = null
 	var/strength = 50
 
-/obj/effect/map_effect/radiation_emitter/process()
+/obj/effect/map_effect/radiation_emitter/periodic_step()
 	radiate()
 	..()
 
@@ -33,11 +33,11 @@
 
 
 /obj/effect/map_effect/radiation_emitter/Initialize(mapload)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/effect/map_effect/radiation_emitter/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/map_effect/radiation_emitter/strong

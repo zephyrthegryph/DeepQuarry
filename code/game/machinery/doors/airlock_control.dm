@@ -8,7 +8,7 @@
 	var/last_reported_density = -1
 	var/last_reported_locked = -1
 
-/obj/machinery/door/airlock/process()
+/obj/machinery/door/airlock/machine_step()
 	if (..() == PROCESS_KILL && !cur_command)
 		. = PROCESS_KILL
 	if (arePowerSystemsOn())
@@ -24,7 +24,7 @@
 	cur_command = signal.data["command"]
 	execute_current_command()
 	if(cur_command)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 
 /obj/machinery/door/airlock/proc/execute_current_command()
@@ -204,7 +204,7 @@
 
 /obj/machinery/airlock_sensor/proc/wake_from_gas()
 	unregister_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/airlock_sensor/update_icon()
 	if(panel_open)
@@ -240,7 +240,7 @@
 	flick("airlock_sensor_cycle", src)
 	return TRUE
 
-/obj/machinery/airlock_sensor/process()
+/obj/machinery/airlock_sensor/machine_step()
 	if(on)
 		// return_air() is now guaranteed non-null (empty vacuum mix on airless
 		// tiles) — see /turf/open/return_air. A sensor on a vacuum dock tile

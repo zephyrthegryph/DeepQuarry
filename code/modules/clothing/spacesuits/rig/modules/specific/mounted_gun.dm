@@ -80,7 +80,7 @@
 
 	gun_type = /obj/item/gun/energy/crossbow/ninja
 
-/obj/item/rig_module/mounted/energy_blade/process()
+/obj/item/rig_module/mounted/energy_blade/periodic_step()
 
 	if(holder && holder.wearer)
 		if(!(locate(/obj/item/melee/energy/blade) in holder.wearer))
@@ -138,7 +138,7 @@
 
 	gun_type = /obj/item/gun/energy/temperature/mounted
 
-/obj/item/rig_module/mounted/mop/process()
+/obj/item/rig_module/mounted/mop/periodic_step()
 
 	if(holder && holder.wearer)
 		if(!(locate(/obj/item/mop_deploy) in holder.wearer))

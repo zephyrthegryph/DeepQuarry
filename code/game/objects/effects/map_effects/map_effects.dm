@@ -27,10 +27,10 @@
 
 /obj/effect/map_effect/interval/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/map_effect/interval/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 // Override this for the specific thing to do.
@@ -38,7 +38,7 @@
 	return
 
 // Handles the delay and making sure it doesn't run when it would be bad.
-/obj/effect/map_effect/interval/process()
+/obj/effect/map_effect/interval/periodic_step()
 	//Not yet!
 	if(world.time < next_attempt)
 		return

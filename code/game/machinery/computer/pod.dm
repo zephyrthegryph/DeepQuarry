@@ -99,7 +99,7 @@
 		if("start_stop")
 			timing = !timing
 			if(timing)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			return TRUE
 		if("test_alarm")
 			alarm()
@@ -119,7 +119,7 @@
 			time = CLAMP(round(text2num(params["value"])), 0, 120)
 			return TRUE
 
-/obj/machinery/computer/pod/process()
+/obj/machinery/computer/pod/machine_step()
 	if(stat & (NOPOWER|BROKEN))
 		return PROCESS_KILL
 	if(!timing)

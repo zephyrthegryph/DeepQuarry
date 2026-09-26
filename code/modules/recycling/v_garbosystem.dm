@@ -75,10 +75,10 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 		update_use_power(USE_POWER_OFF)
 		return
 	icon_state = "cronchy_active"
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_use_power(USE_POWER_ACTIVE)
 
-/obj/machinery/v_garbosystem/process()
+/obj/machinery/v_garbosystem/machine_step()
 	if(!operating || !crusher || crusher.stat & (NOPOWER|BROKEN))
 		icon_state = "cronchy_off"
 		return PROCESS_KILL

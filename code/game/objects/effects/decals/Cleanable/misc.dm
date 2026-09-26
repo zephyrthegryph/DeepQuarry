@@ -30,13 +30,13 @@
 /obj/effect/decal/cleanable/greenglow/Initialize(mapload, _age)
 	. = ..()
 	QDEL_IN(src, 2 MINUTES)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/decal/cleanable/greenglow/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/effect/decal/cleanable/greenglow/process()
+/obj/effect/decal/cleanable/greenglow/periodic_step()
 	radiate()
 	..()
 

@@ -352,7 +352,7 @@
 			return FALSE
 	add_fingerprint(ui.user)
 
-/obj/machinery/sleeper/process()
+/obj/machinery/sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
 	if(stat & (NOPOWER|BROKEN))
 		return PROCESS_KILL
@@ -512,7 +512,7 @@
 		if(!M.move_into(src, OCCUPANT_SLOT_SLEEPER))
 			return
 		update_use_power(USE_POWER_ACTIVE)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		occupant.cozyloop.start() // Cozy Music
 		update_icon()
 
@@ -533,13 +533,13 @@
 	update_icon()
 	toggle_filter()
 	toggle_pump()
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/sleeper/power_change()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
 	. = ..()
 	if(. && occupant)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/sleeper/proc/remove_beaker()
 	if(beaker)

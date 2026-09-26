@@ -35,7 +35,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	deltimer(mytimer)
 	return ..()
 
-/obj/machinery/holoposter/process()
+/obj/machinery/holoposter/machine_step()
 	return PROCESS_KILL
 
 /obj/machinery/holoposter/examine(mob/user, infix, suffix)

@@ -106,7 +106,7 @@
 				scanning = FALSE
 				update_icon()
 
-/obj/machinery/dnaforensics/process()
+/obj/machinery/dnaforensics/machine_step()
 	if(scanning)
 		if(!bloodsamp || bloodsamp.loc != src)
 			bloodsamp = null

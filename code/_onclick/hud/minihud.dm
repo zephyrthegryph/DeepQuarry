@@ -6,12 +6,12 @@
 /datum/mini_hud/New(datum/hud/other)
 	apply_to_hud(other)
 	if(needs_processing)
-		START_PROCESSING(SSprocessing, src)
+		PERIODIC_START(src, PERIODIC_SECOND)
 
 /datum/mini_hud/Destroy()
 	unapply_to_hud()
 	if(needs_processing)
-		STOP_PROCESSING(SSprocessing, src)
+		PERIODIC_STOP(src)
 	QDEL_LIST_NULL(screenobjs)
 	return ..()
 
@@ -28,7 +28,7 @@
 	main_hud = null
 
 // Update the hud
-/datum/mini_hud/process()
+/datum/mini_hud/periodic_step()
 	return PROCESS_KILL // You shouldn't be here!
 
 // Return a list of screen objects we use

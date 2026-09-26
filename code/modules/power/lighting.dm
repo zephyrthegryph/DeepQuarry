@@ -261,7 +261,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/tmp/emergency_recharge_at = 0
 	var/tmp/emergency_discharge_at = 0
 	var/emergency_discharge_started
-	/// Reactor state: the area power key, the one REACT_AT on next_light_deadline(), and the
+	/// Wake state: the area power key, the one OM_WAKE_AT on next_light_deadline(), and the
 	/// auto-flicker chunk keys and recheck.
 	var/tmp/area_power_token
 	var/tmp/area_power_area_id = 0
@@ -1010,22 +1010,22 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 //blob effect
 
-// A light sleeps on its area's power key (REACT_KEY_AREA_POWER), one REACT_AT for its
+// A light sleeps on its area's power key (KEY_AREA_POWER), one OM_WAKE_AT for its
 // earliest deadline (emergency discharge and recharge, the auto-flicker recheck) and, for an
-// auto-flicker light running on its cell, the player chunk keys around it (reactor.md §9).
+// auto-flicker light running on its cell, the player chunk keys around it.
 
 /// Subscribes to the current area's power key (again, if the area changed).
 /obj/machinery/light/proc/subscribe_area_power()
 	var/area/A = get_area(src)
-	var/id = A ? REACT_ID(A) : 0
+	var/id = A ? OM_KEY_ID(A) : 0
 	if(id == area_power_area_id && (!isnull(area_power_token) || !id))
 		return
 	if(!isnull(area_power_token))
-		REACT_CANCEL(src, area_power_token)
+		OM_KEY_OFF(src, area_power_token)
 		area_power_token = null
 	area_power_area_id = id
 	if(id)
-		area_power_token = REACT_ON_KEY(src, REACT_KEY_AREA_POWER, id, REACT_AREA_POWER_CHANGED)
+		area_power_token = OM_KEY_ON(src, KEY_AREA_POWER, id, KEY_AREA_POWER_CHANGED)
 
 /obj/machinery/light/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
@@ -1043,22 +1043,22 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(deadline == light_timer_at && (!isnull(light_timer_token) || !deadline))
 		return
 	if(!isnull(light_timer_token))
-		REACT_CANCEL(src, light_timer_token)
+		OM_WAKE_CANCEL(src)
 		light_timer_token = null
 	light_timer_at = deadline
 	if(deadline)
-		light_timer_token = REACT_AT(src, deadline)
+		light_timer_token = OM_WAKE_AT(src, deadline)
 
-/obj/machinery/light/on_react(reason, source, source_kind)
+/obj/machinery/light/om_woken(reason)
 	. = ..()
 	if(QDELETED(src))
 		return
-	if(reason & REACT_REASON_KEY)
+	if(reason & OM_WOKEN_KEY)
 		area_power_changed()
 		// A player moved near an auto-flicker light that is waiting in the dark.
 		if(flicker_chunk_tokens && !flicker_check_at)
 			auto_flicker_check()
-	if(reason & REACT_REASON_TIMER)
+	if(reason & OM_WOKEN_TIMER)
 		light_timer_token = null
 		light_timer_at = 0
 		if(emergency_discharge_at && world.time >= emergency_discharge_at)
@@ -1070,7 +1070,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			auto_flicker_check()
 	schedule_light_timer()
 
-/obj/machinery/light/react_sleep_violation()
+/obj/machinery/light/om_sleep_violation()
 	var/deadline = next_light_deadline()
 	if(deadline && (isnull(light_timer_token) || light_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
@@ -1151,12 +1151,12 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/proc/start_flicker_watch()
 	if(!auto_flicker || flicker_chunk_tokens)
 		return
-	flicker_chunk_tokens = SSreactor.subscribe_player_chunks(src, get_turf(src), 12)
+	flicker_chunk_tokens = om_subscribe_player_chunks(src, get_turf(src), 12)
 	auto_flicker_check()
 
 /obj/machinery/light/proc/stop_flicker_watch()
 	if(flicker_chunk_tokens)
-		flicker_chunk_tokens = SSreactor.unsubscribe_player_chunks(src, flicker_chunk_tokens)
+		flicker_chunk_tokens = om_unsubscribe_player_chunks(src, flicker_chunk_tokens)
 	flicker_check_at = 0
 
 /obj/machinery/light/proc/auto_flicker_check()
@@ -1175,7 +1175,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		flicker_check_at = 0
 	schedule_light_timer()
 
-// Area power reaches lights through REACT_KEY_AREA_POWER (on_react), not the area's scan of
+// Area power reaches lights through KEY_AREA_POWER (om_woken), not the area's scan of
 // its machines, so this does nothing.
 /obj/machinery/light/power_change()
 	return

@@ -45,16 +45,16 @@
 	if(!isnull(rmaterialtype))
 		reinf_material = get_material_by_name(rmaterialtype)
 	update_material()
-	START_PROCESSING(SSturfs, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /turf/simulated/wall/Destroy()
-	STOP_PROCESSING(SSturfs, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /turf/simulated/wall/examine_icon()
 	return icon(icon=initial(icon), icon_state=initial(icon_state))
 
-/turf/simulated/wall/process()
+/turf/simulated/wall/periodic_step()
 	// Calling parent will kill processing
 	if(!radiate())
 		return PROCESS_KILL

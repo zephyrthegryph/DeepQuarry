@@ -19,7 +19,7 @@
 /obj/item/mop_deploy/Initialize(mapload)
 	. = ..()
 	create_reagents(5)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /turf/proc/clean_deploy(atom/source)
 	if(source.reagents.has_reagent(REAGENT_ID_WATER, 1))
@@ -51,7 +51,7 @@
 	..()
 
 /obj/item/mop_deploy/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/mop_deploy/attack_self(mob/user)
@@ -61,7 +61,7 @@
 	user.drop_from_inventory(src)
 	spawn(1) if(!QDELETED(src)) qdel(src)
 
-/obj/item/mop_deploy/process()
+/obj/item/mop_deploy/periodic_step()
 	if(!creator || loc != creator || !creator.item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))

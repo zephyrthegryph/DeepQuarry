@@ -35,7 +35,7 @@
 		if(WIRE_IDSCAN)
 			V.scan_id = !V.scan_id
 	if(V.shoot_inventory || V.seconds_electrified)
-		START_MACHINE_PROCESSING(V)
+		MACHINE_WAKE(V)
 	..()
 
 /datum/wires/vending/on_cut(wire, mend)
@@ -53,5 +53,5 @@
 		if(WIRE_IDSCAN)
 			V.scan_id = 1
 	if(V.shoot_inventory || V.seconds_electrified)
-		START_MACHINE_PROCESSING(V)
+		MACHINE_WAKE(V)
 	..()

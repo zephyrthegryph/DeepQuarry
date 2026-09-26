@@ -5,6 +5,7 @@
 // This was created for firing ranges, but I suppose this could have other applications - Doohl
 
 /obj/machinery/magnetic_module
+	step_on_power_change = TRUE
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "floor_magnet-f"
 	name = "Electromagnetic Generator"
@@ -117,8 +118,11 @@
 				if(on)
 					spawn()
 						magnetic_process()
+	MACHINE_WAKE(src)
 
-/obj/machinery/magnetic_module/process()
+/// Clamps its settings and reconciles its power draw and icon: after every command, and on
+/// every power or break change.
+/obj/machinery/magnetic_module/machine_step()
 	if(stat & NOPOWER)
 		on = 0
 
@@ -145,9 +149,8 @@
 	else
 		update_use_power(USE_POWER_OFF)
 
-	// Overload conditions:
-
 	update_icon()
+	return PROCESS_KILL
 
 /obj/machinery/magnetic_module/proc/magnetic_process(called_back) // proc that actually does the pulling
 	if(called_back)
@@ -216,11 +219,13 @@
 	if(path) // check for default path
 		filter_path() // renders rpath
 
-/obj/machinery/magnetic_controller/process()
+/// Autolinks once at Initialize (its one frame) if Initialize found no magnets yet.
+/obj/machinery/magnetic_controller/machine_step()
 	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
 				LAZYADD(magnets, M)
+	return PROCESS_KILL
 
 /obj/machinery/magnetic_controller/declare_interactions(list/into)
 	into += list(

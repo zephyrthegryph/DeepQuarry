@@ -165,7 +165,7 @@
 	switch(action)
 		if("switchOn")
 			on = 1
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			update_icon()
 		if("switchOff")
 			on = 0
@@ -316,7 +316,7 @@
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
 	if(on)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	occupant.cozyloop.start() // Cozy Music
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant

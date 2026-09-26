@@ -131,10 +131,10 @@
 
 	can_revert = revert
 
-	START_PROCESSING(SSprocessing, src)
+	PERIODIC_START(src, PERIODIC_SECOND)
 
 /obj/structure/gargoyle/Destroy()
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle?.resolve()
 	if(!gargoyle)
 		return ..()
@@ -145,7 +145,7 @@
 	WR_gargoyle = null
 	. = ..()
 
-/obj/structure/gargoyle/process()
+/obj/structure/gargoyle/periodic_step()
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
 	if(!gargoyle)
 		qdel(src)

@@ -45,13 +45,13 @@
 	if(!found_target) //meaning if the statue didn't find a valid target
 		return INITIALIZE_HINT_QDEL
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/structure/closet/statue/process()
+/obj/structure/closet/statue/periodic_step()
 	timer--
 	if (timer <= 0)
 		dump_contents()
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		qdel(src)
 
 /obj/structure/closet/statue/dump_contents()

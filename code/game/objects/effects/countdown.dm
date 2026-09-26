@@ -41,20 +41,20 @@
 
 /obj/effect/countdown/proc/start()
 	if(!started)
-		START_PROCESSING(SSfastprocess, src)
+		PERIODIC_START(src, PERIODIC_FAST)
 		started = TRUE
 
 /obj/effect/countdown/proc/stop()
 	if(started)
 		maptext = null
-		STOP_PROCESSING(SSfastprocess, src)
+		PERIODIC_STOP(src)
 		started = FALSE
 
 /obj/effect/countdown/proc/get_value()
 	// Get the value from our atom
 	return
 
-/obj/effect/countdown/process()
+/obj/effect/countdown/periodic_step()
 	if(!attached_to || QDELETED(attached_to))
 		qdel(src)
 		return
@@ -71,7 +71,7 @@
 
 /obj/effect/countdown/Destroy()
 	attached_to = null
-	STOP_PROCESSING(SSfastprocess, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/effect/countdown/singularity_pull(atom/singularity, current_size)

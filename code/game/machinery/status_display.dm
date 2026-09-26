@@ -53,8 +53,8 @@
 
 	var/seclevel = "green"
 
-	/// The REACT_AT for the next redraw (a countdown, the clock or a scrolling message) and
-	/// when it is due; the shuttle key watched in shuttle modes (REACT_SHUTTLE_*, 0 for none).
+	/// The OM_WAKE_AT for the next redraw (a countdown, the clock or a scrolling message) and
+	/// when it is due; the shuttle key watched in shuttle modes (KEY_SHUTTLE_*, 0 for none).
 	var/tmp/refresh_token
 	var/tmp/refresh_at = 0
 	var/tmp/shuttle_key_token
@@ -92,8 +92,8 @@
 	refresh()
 
 // A status display redraws only when its input changes: a signal, an alert, power, the
-// shuttle key, or a REACT_AT for content that moves on its own (a countdown, the clock,
-// a scrolling message). It never polls (reactor.md §9).
+// shuttle key, or an OM_WAKE_AT for content that moves on its own (a countdown, the clock,
+// a scrolling message). It never polls.
 
 /// Deciseconds until the display must redraw with no new input, or 0 while it is static.
 /obj/machinery/status_display/proc/next_refresh_delay()
@@ -112,9 +112,9 @@
 			return max(1, 1 MINUTE - (now - FLOOR(now, 1 MINUTE)))
 	return 0
 
-/// The REACT_SHUTTLE_* schedule this display shows, or 0.
+/// The KEY_SHUTTLE_* schedule this display shows, or 0.
 /obj/machinery/status_display/proc/watched_shuttle()
-	return mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME ? REACT_SHUTTLE_EVAC : 0
+	return mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME ? KEY_SHUTTLE_EVAC : 0
 
 /// Redraws now and schedules the next redraw.
 /obj/machinery/status_display/proc/refresh()
@@ -129,30 +129,30 @@
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
 		if(!isnull(shuttle_key_token))
-			REACT_CANCEL(src, shuttle_key_token)
+			OM_KEY_OFF(src, shuttle_key_token)
 			shuttle_key_token = null
 		shuttle_key_id = want_shuttle
 		if(want_shuttle)
-			shuttle_key_token = REACT_ON_KEY(src, REACT_KEY_SHUTTLE_SCHEDULE, want_shuttle, 1)
+			shuttle_key_token = OM_KEY_ON(src, KEY_SHUTTLE_SCHEDULE, want_shuttle, 1)
 	var/delay = powered ? next_refresh_delay() : 0
 	var/at = delay ? world.time + delay : 0
 	if(!isnull(refresh_token))
 		if(at && at == refresh_at)
 			return
-		REACT_CANCEL(src, refresh_token)
+		OM_WAKE_CANCEL(src)
 		refresh_token = null
 	refresh_at = at
 	if(at)
-		refresh_token = REACT_AT(src, at)
+		refresh_token = OM_WAKE_AT(src, at)
 
-/obj/machinery/status_display/on_react(reason, source, source_kind)
+/obj/machinery/status_display/om_woken(reason)
 	. = ..()
-	if(reason & REACT_REASON_TIMER)
+	if(reason & OM_WOKEN_TIMER)
 		refresh_token = null
 		refresh_at = 0
 	refresh()
 
-/obj/machinery/status_display/react_sleep_violation()
+/obj/machinery/status_display/om_sleep_violation()
 	if(stat & NOPOWER)
 		return null
 	if(next_refresh_delay() && isnull(refresh_token))

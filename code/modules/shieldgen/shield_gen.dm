@@ -159,7 +159,7 @@
 
 	return list("locked" = locked, "lockedData" = lockedData)
 
-/obj/machinery/shield_gen/process()
+/obj/machinery/shield_gen/machine_step()
 	if (!anchored && active)
 		toggle()
 	if(!active && !length(field))
@@ -194,7 +194,7 @@
 
 			for(var/obj/machinery/shield_capacitor/capacitor in active_capacitors)
 				capacitor.stored_charge -= max(assumed_charge / active_capacitors.len, 0) // Drain from all active capacitors evenly.
-				START_MACHINE_PROCESSING(capacitor)
+				MACHINE_WAKE(capacitor)
 
 		else
 			renwick_upkeep_per_field = max(renwick_upkeep_per_field, 0.5)
@@ -253,7 +253,7 @@
 	set background = 1
 	active = !active
 	if(active)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	update_icon()
 	if(active)
 		var/list/covered_turfs = get_shielded_turfs()

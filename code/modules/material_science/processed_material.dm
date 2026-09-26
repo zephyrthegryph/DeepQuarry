@@ -265,7 +265,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		batch_state = processed.batch_template.copy_for_amount(amount)
 
 /obj/item/stack/material/processed_alloy/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	QDEL_NULL(batch_state)
 	return ..()
 
@@ -280,12 +280,12 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/datum/material_batch/batch = physical_batch()
 	if(batch?.temperature > T20C + 40)
 		set_light(2, 1, "#ff7b22")
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
 		set_light(0)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
-/obj/item/stack/material/processed_alloy/process()
+/obj/item/stack/material/processed_alloy/periodic_step()
 	var/datum/material_batch/batch = physical_batch()
 	if(!batch)
 		return PROCESS_KILL

@@ -465,7 +465,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 			qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/solar_control/process()
+/obj/machinery/power/solar_control/machine_step()
 	if(stat & (NOPOWER | BROKEN))
 		return
 

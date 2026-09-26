@@ -1203,22 +1203,22 @@
 
 /turf/simulated/floor/water/digestive_enzymes/Entered(atom/movable/source)
 	if(digest_stuff(source) && !we_process)
-		START_PROCESSING(SSturfs, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		we_process = TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(digest_stuff(source) && !we_process)
-		START_PROCESSING(SSturfs, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		we_process = TRUE
 
-/turf/simulated/floor/water/digestive_enzymes/process()
+/turf/simulated/floor/water/digestive_enzymes/periodic_step()
 	if(!digest_stuff())
 		we_process = FALSE
 		return PROCESS_KILL
 
 /turf/simulated/floor/water/digestive_enzymes/Destroy()
 	if(we_process)
-		STOP_PROCESSING(SSturfs, src)
+		PERIODIC_STOP(src)
 	. = ..()
 
 /turf/simulated/floor/water/digestive_enzymes/proc/can_digest(atom/movable/digest_target)
@@ -1353,15 +1353,15 @@
 /obj/structure/auto_flesh_door/Initialize(mapload)
 	. = ..()
 	countdown = rand(50,250)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/structure/auto_flesh_door/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	update_nearby_tiles()
 	return ..()
 
-/obj/structure/auto_flesh_door/process()
+/obj/structure/auto_flesh_door/periodic_step()
 	if(countdown <= 0)
 		SwitchState()
 	else

@@ -106,7 +106,7 @@
 	// Idle traps do not scan their surroundings. Field creation is the dependency
 	// that wakes only traps close enough to use it.
 	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
-		START_MACHINE_PROCESSING(trap)
+		MACHINE_WAKE(trap)
 	catcher = new (locate(src.x+3,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(7)
@@ -120,7 +120,7 @@
 	catcher.SetSize(7)
 	LAZYADD(particle_catchers, catcher)
 
-/obj/effect/fusion_em_field/process()
+/obj/effect/fusion_em_field/periodic_step()
 	//make sure the field generator is still intact
 	if(!owned_core || QDELETED(owned_core))
 		qdel(src)

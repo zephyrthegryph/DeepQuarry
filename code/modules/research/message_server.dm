@@ -107,7 +107,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	newKey += pick("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
 	return newKey
 
-/obj/machinery/message_server/process()
+/obj/machinery/message_server/machine_step()
 	//if(decryptkey == "password")
 	//	decryptkey = generateKey()
 	if(active && (stat & (BROKEN|NOPOWER)))

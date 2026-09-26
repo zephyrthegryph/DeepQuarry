@@ -22,7 +22,7 @@
 			var/obj/effect/plant/vine = new(T,seed)
 			vine.health = vine.max_health
 			vine.mature_time = 0
-			vine.process()
+			vine.periodic_step()
 
 			message_admins(span_notice("Event: Spacevines spawned at [T.loc] ([T.x],[T.y],[T.z])"))
 			return

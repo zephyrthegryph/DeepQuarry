@@ -108,7 +108,7 @@
 			break
 	TEST_ASSERT(hot, "above it the window overheats")
 	var/before = window.get_integrity()
-	hot.process(1)
+	hot.periodic_step(1)
 	TEST_ASSERT(window.get_integrity() < before, "and takes thermal damage through the pipeline")
 	dq_rule_test_write(window, PROP_TEMPERATURE, limit - 50)
 	TEST_ASSERT_NULL(window.GetComponent(/datum/component/overheating), "cooled below it, the stream stops")
@@ -144,7 +144,7 @@
 /datum/unit_test/dq_h3_appliance_energy/Run()
 	dq_h3_cool_floor(test_floor())
 	var/obj/machinery/appliance/cooker/oven/oven = allocate(/obj/machinery/appliance/cooker/oven, test_floor())
-	STOP_MACHINE_PROCESSING(oven)
+	MACHINE_SLEEP(oven)
 	oven.set_heating(TRUE)
 	TEST_ASSERT(!isnull(oven.heat_body), "a heating cooker is a heat body")
 	// Isolate it from the room so every joule stays in the oven and its contents.
@@ -190,11 +190,11 @@
 	TEST_ASSERT(!isnull(fuelled.heat_body), "burning is a heat source on the object's body")
 	var/integrity = fuelled.get_integrity()
 	var/oxygen = air.get_moles(GAS_O2)
-	burn.process(1)
+	burn.periodic_step(1)
 	TEST_ASSERT(fuelled.get_integrity() < integrity, "a second of burning is an integrity damage stream")
 	TEST_ASSERT(air.get_moles(GAS_O2) < oxygen, "and uses the tile's oxygen")
 	burn.fuel = 1
-	burn.process(1)
+	burn.periodic_step(1)
 	TEST_ASSERT_EQUAL(burn.ended_by, BURN_ENDED_FUEL, "it goes out when the fuel runs out")
 	TEST_ASSERT(!(fuelled.resistance_flags & ON_FIRE), "and is no longer on fire")
 
@@ -203,7 +203,7 @@
 	smothered.rule_ignite()
 	burn = smothered.GetComponent(/datum/component/burning)
 	air.set_moles(GAS_O2, 0)
-	burn.process(1)
+	burn.periodic_step(1)
 	air.set_moles(GAS_O2, 20)
 	TEST_ASSERT_EQUAL(burn.ended_by, BURN_ENDED_OXYGEN, "it goes out without oxygen")
 

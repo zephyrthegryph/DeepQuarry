@@ -41,7 +41,7 @@
 	// M2: the base /obj/machinery/Initialize() always schedules new machines
 	// onto SSmachines; this one has no process() at all (its flow law is a
 	// Rust device edge, stepped from SSair, not DM's process() scheduler).
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/binary/passive_gate/Destroy()
 	unregister_radio(src, frequency)

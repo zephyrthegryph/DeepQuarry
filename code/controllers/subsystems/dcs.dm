@@ -1,7 +1,6 @@
-PROCESSING_SUBSYSTEM_DEF(dcs)
+SUBSYSTEM_DEF(dcs)
 	name = "Datum Component System"
-	flags = SS_NO_INIT
-	wait = 1 SECONDS
+	flags = SS_NO_INIT | SS_NO_FIRE
 
 	var/list/elements_by_type = list()
 
@@ -29,10 +28,10 @@ PROCESSING_SUBSYSTEM_DEF(dcs)
 	 */
 	var/list/sorted_arguments_that_are_lists = list()
 
-/datum/controller/subsystem/processing/dcs/Recover()
+/datum/controller/subsystem/dcs/Recover()
 	_listen_lookup = SSdcs._listen_lookup
 
-/datum/controller/subsystem/processing/dcs/proc/GetElement(list/arguments, init_element = TRUE)
+/datum/controller/subsystem/dcs/proc/GetElement(list/arguments, init_element = TRUE)
 	var/datum/element/eletype = arguments[1]
 	var/element_id = eletype
 
@@ -53,7 +52,7 @@ PROCESSING_SUBSYSTEM_DEF(dcs)
 	* Named arguments can appear in any order and we need them to appear after ordered arguments
 	* We assume that no one will pass in a named argument with a value of null
 	**/
-/datum/controller/subsystem/processing/dcs/proc/GetIdFromArguments(list/arguments)
+/datum/controller/subsystem/dcs/proc/GetIdFromArguments(list/arguments)
 	var/datum/element/eletype = arguments[1]
 	var/list/fullid = list(eletype)
 	var/list/named_arguments
@@ -93,7 +92,7 @@ PROCESSING_SUBSYSTEM_DEF(dcs)
  * Offloading the first half of the dcs_check_list_arguments here, which is populating the superlist
  * with sublists that will be later compared with each other by the dcs_check_list_arguments unit test.
  */
-/datum/controller/subsystem/processing/dcs/proc/add_to_arguments_that_are_lists(list/argument, datum/element/element_type)
+/datum/controller/subsystem/dcs/proc/add_to_arguments_that_are_lists(list/argument, datum/element/element_type)
 	if(initial(element_type.element_flags) & ELEMENT_NO_LIST_UNIT_TEST)
 		return
 	var/list/element_type_superlist = arguments_that_are_lists_by_element[element_type]

@@ -455,7 +455,7 @@
 		return TRUE
 	if(isLocked(ui.user))
 		return TRUE
-	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
+	OM_KEY_PUBLISH_OWN(src, KEY_TURRET, KEY_CHANGED)
 	. = TRUE
 
 	switch(action)
@@ -484,7 +484,7 @@
 				check_down = !check_down
 
 /obj/machinery/porta_turret/power_change()
-	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
+	OM_KEY_PUBLISH_OWN(src, KEY_TURRET, KEY_CHANGED)
 	if(powered())
 		stat &= ~NOPOWER
 		update_icon()
@@ -674,7 +674,7 @@
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
 		enabled = TRUE
-	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
+	OM_KEY_PUBLISH_OWN(src, KEY_TURRET, KEY_CHANGED)
 
 /obj/machinery/porta_turret/ai_defense/emp_act(severity, recursive)
 	. = ..()
@@ -694,18 +694,18 @@
 	update_icon()
 	set_processing_speed(FALSE) // Drop back to slow machine processing
 
-/obj/machinery/porta_turret/process()
+/obj/machinery/porta_turret/machine_step()
 	//the main machinery process
 	if(stat & (NOPOWER|BROKEN))
 		//if the turret has no power or is broken, make the turret pop down if it hasn't already
 		popDown()
-		sleep_until_keys(list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED))
+		sleep_until_keys(list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED))
 		return PROCESS_KILL
 
 	if(!enabled)
 		//if the turret is off, make it pop down
 		popDown()
-		sleep_until_keys(list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED))
+		sleep_until_keys(list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED))
 		return PROCESS_KILL
 
 	var/shot_targets = FALSE
@@ -730,7 +730,7 @@
 	slow_process(shot_targets)
 
 /obj/machinery/porta_turret/proc/reactive_mob_chunk_keys()
-	var/list/keys = list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED)
+	var/list/keys = list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED)
 	var/range = isnum(world.view) ? world.view : 7
 	var/min_x = max(1, x - range)
 	var/max_x = min(world.maxx, x + range)
@@ -738,7 +738,7 @@
 	var/max_y = min(world.maxy, y + range)
 	for(var/chunk_x in MOB_CHUNK_COORD(min_x) to MOB_CHUNK_COORD(max_x))
 		for(var/chunk_y in MOB_CHUNK_COORD(min_y) to MOB_CHUNK_COORD(max_y))
-			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(z, chunk_x, chunk_y), REACT_CHUNK_ANY_MOB)
+			keys += list(KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(z, chunk_x, chunk_y), KEY_CHUNK_ANY_MOB)
 	return keys
 
 /obj/machinery/porta_turret/proc/slow_process(shot_targets)
@@ -764,13 +764,13 @@
 
 	// high gear
 	if(speed_process)
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 		return
 
 	// low gear
-	STOP_PROCESSING(SSfastprocess, src)
-	START_MACHINE_PROCESSING(src)
+	PERIODIC_STOP(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/porta_turret/proc/assess_and_assign(mob/living/L, list/targets, list/secondarytargets)
 	switch(assess_living(L))
@@ -1285,7 +1285,7 @@
 	icon = 'icons/obj/turrets.dmi'
 
 /// Audit: an enabled, powered turret must not sleep with a target in view.
-/obj/machinery/porta_turret/react_sleep_violation()
+/obj/machinery/porta_turret/om_sleep_violation()
 	if(!asleep_on_keys() || (stat & (NOPOWER|BROKEN)) || !enabled || speed_process)
 		return null
 	for(var/mob/living/L in mobs_in_view(world.view, src))
@@ -1361,20 +1361,29 @@
 /obj/machinery/porta_turret/rcd/inoperable()
 	return (stat & (BROKEN|EMPED))
 
-/obj/machinery/porta_turret/rcd/process()
+/// Like the base turret, it sleeps on its settings key while broken or off and on the mob chunks
+/// around it while nothing is in view.
+/obj/machinery/porta_turret/rcd/machine_step()
 	if(stat & BROKEN)
 		popDown()
-		return
+		sleep_until_keys(list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED))
+		return PROCESS_KILL
 
 	if(!enabled)
 		popDown()
-		return
+		sleep_until_keys(list(KEY_TURRET, OM_KEY_ID(src), KEY_CHANGED))
+		return PROCESS_KILL
 
 	var/list/targets = list()			//list of primary targets
 	var/list/secondarytargets = list()	//targets that are least important
 
+	var/list/nearby_mobs = mobs_in_xray_view(world.view, src)
+	if(!length(nearby_mobs))
+		popDown()
+		sleep_until_keys(reactive_mob_chunk_keys())
+		return PROCESS_KILL
 
-	for(var/mob/M in mobs_in_xray_view(world.view, src))
+	for(var/mob/M in nearby_mobs)
 		assess_and_assign(M, targets, secondarytargets)
 
 	if(!tryToShootAt(targets))

@@ -147,7 +147,7 @@
 	QDEL_NULL(power_system)
 
 	installed_modules = null
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	qdel(wires)
 	wires = null
 	qdel(spark_system)
@@ -179,9 +179,9 @@
 // We only care about processing when we're on a mob
 /obj/item/rig/Moved(old_loc, direction, forced)
 	if(ismob(loc))
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		QDEL_NULL(minihud) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on
@@ -457,7 +457,7 @@
 	var/mob/living/carbon/human/H = loc
 	power_system.run_cooling(H)
 
-/obj/item/rig/process()
+/obj/item/rig/periodic_step()
 	// Not on a mob...?
 	if(!ismob(loc))
 		if(wearer?.wearing_rig == src)
@@ -493,7 +493,7 @@
 		malfunction()
 
 	for(var/obj/item/rig_module/module in installed_modules)
-		cell.use(module.process()*10)
+		cell.use(module.periodic_step()*10)
 
 /obj/item/rig/proc/check_power_cost(mob/living/user, cost, use_unconcious, obj/item/rig_module/mod, user_is_ai)
 

@@ -49,10 +49,10 @@
 	LAZYCLEARLIST(targets)
 	return ..()
 
-/obj/item/reagent_containers/syringe/process()
+/obj/item/reagent_containers/syringe/periodic_step()
 	dirtiness = min(dirtiness + targets.len,75)
 	if(dirtiness >= 75)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	return 1
 
 /obj/item/reagent_containers/syringe/on_reagent_change()
@@ -451,7 +451,7 @@
 			target.ContractDisease(virus)
 
 	if(!used)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/reagent_containers/syringe/proc/infect_limb(obj/item/organ/external/eo)
 	src = null

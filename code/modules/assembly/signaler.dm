@@ -143,15 +143,15 @@
 	frequency = new_frequency
 	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT)
 // BEGIN re-adds stealth removal
-/obj/item/assembly/signaler/process()
+/obj/item/assembly/signaler/periodic_step()
 	if(!deadman)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	var/mob/M = src.loc
 	if(!M || !ismob(M))
 		if(prob(5))
 			signal()
 		deadman = FALSE
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	else if(prob(5))
 		M.visible_message("[M]'s finger twitches a bit over [src]'s signal button!")
 
@@ -160,7 +160,7 @@
 	set name = "Threaten to push the button!"
 	set desc = "BOOOOM!"
 	deadman = TRUE
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	log_and_message_admins("is threatening to trigger a signaler deadman's switch")
 	usr.visible_message("<font color='red'>[usr] moves their finger over [src]'s signal button...</font>")
 // end

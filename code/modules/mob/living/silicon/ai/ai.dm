@@ -353,7 +353,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	. = ..()
 	powered_ai = null
 
-/obj/machinery/ai_powersupply/process()
+/obj/machinery/ai_powersupply/machine_step()
 	if(!powered_ai || powered_ai.stat == DEAD)
 		qdel(src)
 		return

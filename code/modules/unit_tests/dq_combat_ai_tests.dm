@@ -67,7 +67,7 @@
 	B.active_behavior_type = null
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
 	TEST_ASSERT(!(B in SSai.processing), "hibernating brain remained in strategic processing")
-	SSreactor.publish_mob_chunk(M)
+	om_publish_mob_chunk(M)
 	react_test_ticks(4)
 	TEST_ASSERT(B in SSai.processing, "movement publication did not wake nearby brain")
 // dq_get_behavior(T) must return the same singleton across calls — the

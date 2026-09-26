@@ -16,12 +16,12 @@
 
 /obj/singularity/narsie/large/exit/Initialize(mapload, ...)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/singularity/narsie/large/exit/update_icon()
 	overlays = 0
 
-/obj/singularity/narsie/large/exit/process()
+/obj/singularity/narsie/large/exit/periodic_step()
 	for(var/mob/M in GLOB.player_list)
 		if(M.client)
 			M.see_rift(src)

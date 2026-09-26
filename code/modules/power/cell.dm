@@ -57,11 +57,11 @@
 	c_uid = cell_uid++
 	update_icon()
 	if(self_recharge)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/cell/Destroy()
 	if(self_recharge)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	// Cells are normally owned through loc, but APCs also keep an explicit typed
 	// reference.  A blast may delete the cell without deleting its APC first.
 	if(istype(loc, /obj/machinery/power/apc))
@@ -73,7 +73,7 @@
 /obj/item/cell/get_cell()
 	return src
 
-/obj/item/cell/process()
+/obj/item/cell/periodic_step()
 	if(self_recharge)
 		if(charge >= maxcharge)
 			return PROCESS_KILL
@@ -288,11 +288,10 @@
 	update_superconducting_state(amount)
 	last_use = world.time
 	if(used && self_recharge)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	if(used && istype(loc, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = loc
-		if(!(A in SSmachines.processing_machines))
-			A.wake_for_power_dependency()
+		A.wake_for_power_dependency()
 	if(update_appearance)
 		update_icon()
 	return used
@@ -314,8 +313,7 @@
 	charge += amount_used
 	if(amount_used && istype(loc, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = loc
-		if(!(A in SSmachines.processing_machines))
-			A.wake_for_power_dependency()
+		A.wake_for_power_dependency()
 	if(update_appearance)
 		update_icon()
 		if(loc)

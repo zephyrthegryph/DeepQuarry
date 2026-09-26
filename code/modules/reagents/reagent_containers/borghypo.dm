@@ -104,13 +104,13 @@
 		var/datum/reagent/hypo_reagent = SSchemistry.chemical_reagents[T]
 		LAZYADD(reagent_names, hypo_reagent.name)
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/reagent_containers/borghypo/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/obj/item/reagent_containers/borghypo/process() //Every [recharge_time] seconds, recharge some reagents for the cyborg+
+/obj/item/reagent_containers/borghypo/periodic_step() //Every [recharge_time] seconds, recharge some reagents for the cyborg+
 	if(++charge_tick < recharge_time)
 		return 0
 	charge_tick = 0

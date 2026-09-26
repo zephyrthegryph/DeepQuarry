@@ -101,13 +101,13 @@
 
 /obj/item/coin/uranium/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/coin/uranium/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/coin/uranium/process()
+/obj/item/coin/uranium/periodic_step()
 	radiate()
 	..()
 

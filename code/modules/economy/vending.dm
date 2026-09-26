@@ -606,7 +606,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 				return FALSE
 			shut_up = !shut_up
 			if(!shut_up)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 
 /obj/machinery/vending/proc/can_buy(datum/stored_item/vending_product/R, mob/user)
 	if(!allowed(user) && !emagged && scan_id)
@@ -732,7 +732,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 	SStgui.update_uis(src)
 
-/obj/machinery/vending/process()
+/obj/machinery/vending/machine_step()
 	if(stat & (BROKEN|NOPOWER))
 		return PROCESS_KILL
 

@@ -38,7 +38,7 @@
 		qdel(BR)
 	return ..()
 
-/obj/machinery/computer/cloning/process()
+/obj/machinery/computer/cloning/machine_step()
 	if(!autoprocess)
 		return PROCESS_KILL
 	if(!scanner || !pods.len || stat & NOPOWER)
@@ -244,9 +244,9 @@
 		if("autoprocess")
 			autoprocess = text2num(params["on"]) > 0
 			if(autoprocess)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			else
-				STOP_MACHINE_PROCESSING(src)
+				MACHINE_SLEEP(src)
 		if("lock")
 			if(isnull(scanner) || !scanner_occupant) //No locking an open scanner.
 				return

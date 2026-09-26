@@ -141,13 +141,13 @@
 		return COMPONENT_INCOMPATIBLE
 	var/obj/O = parent
 	O.on_overheat()
-	START_PROCESSING(SSburning, src)
+	PERIODIC_START(src, PERIODIC_SECOND)
 
 /datum/component/overheating/Destroy(force)
-	STOP_PROCESSING(SSburning, src)
+	PERIODIC_STOP(src)
 	return ..()
 
-/datum/component/overheating/process(seconds_per_tick)
+/datum/component/overheating/periodic_step(seconds_per_tick)
 	var/obj/O = parent
 	if(QDELETED(O))
 		return PROCESS_KILL

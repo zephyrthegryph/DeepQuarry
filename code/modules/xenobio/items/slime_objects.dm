@@ -172,10 +172,10 @@
 
 /obj/item/slime_irradiator/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	set_light(light_range, light_power, light_color)
 
-/obj/item/slime_irradiator/process()
+/obj/item/slime_irradiator/periodic_step()
 	radiate()
 
 /obj/item/slime_irradiator/proc/radiate()
@@ -197,7 +197,7 @@
 	active = FALSE
 
 /obj/item/slime_irradiator/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 

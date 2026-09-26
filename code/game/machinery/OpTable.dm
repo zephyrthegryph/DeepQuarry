@@ -59,11 +59,11 @@
 	icon_state = "table2-idle"
 	return 0
 
-/obj/machinery/optable/process()
+/obj/machinery/optable/machine_step()
 	if(!check_victim())
 		return PROCESS_KILL
 	if(computer)
-		START_MACHINE_PROCESSING(computer)
+		MACHINE_WAKE(computer)
 
 /obj/machinery/optable/proc/take_victim(mob/living/carbon/C, mob/living/carbon/user as mob)
 	if(C == user)
@@ -81,9 +81,9 @@
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = C
 		victim = H
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		if(computer)
-			START_MACHINE_PROCESSING(computer)
+			MACHINE_WAKE(computer)
 		icon_state = H.pulse ? "table2-active" : "table2-idle"
 	else
 		icon_state = "table2-idle"

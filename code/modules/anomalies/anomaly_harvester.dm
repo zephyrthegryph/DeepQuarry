@@ -32,7 +32,7 @@
 	efficiency = max(1, (efficient/10+1))
 	points_to_create = min(100, (100 - (rating * 5)))
 
-/obj/machinery/anomaly_harvester/process()
+/obj/machinery/anomaly_harvester/machine_step()
 	..()
 	if(stat & (NOPOWER|BROKEN) || !anchored)
 		update_use_power(USE_POWER_OFF)

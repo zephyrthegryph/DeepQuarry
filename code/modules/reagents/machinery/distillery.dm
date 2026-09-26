@@ -4,7 +4,6 @@
  */
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery
-	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "chemical distillery"
 	desc = "A complex machine utilizing state-of-the-art components to mix chemicals at different temperatures. Can be attached to a connector port to utilize gasses."
 	use_power = USE_POWER_IDLE
@@ -128,7 +127,7 @@
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_power(mob/user = usr)
 	if(powered())
 		on = !on
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		to_chat(user, span_notice("You turn \the [src] [on ? "on" : "off"]."))
 	else
 		to_chat(user, span_notice(" Nothing happens."))

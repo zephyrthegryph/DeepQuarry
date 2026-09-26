@@ -65,7 +65,10 @@
 		. += span_notice("Brain activity: [brain_activity]")
 		. += span_notice("Breathing: [breathing]")
 
-/obj/machinery/vitals_monitor/process()
+/// Tracks its patient while it has one; otherwise it sleeps until connected to someone.
+/obj/machinery/vitals_monitor/machine_step()
+	if(!victim)
+		return PROCESS_KILL
 	if(QDELETED(victim))
 		victim = null
 		update_icon()
@@ -88,6 +91,7 @@
 	else if(ishuman(over_object))
 		victim = over_object
 		update_use_power(USE_POWER_ACTIVE)
+		MACHINE_WAKE(src)
 		visible_message(span_notice("\The [src] is now showing data for [victim]."))
 
 /obj/machinery/vitals_monitor/update_icon()

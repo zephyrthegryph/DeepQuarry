@@ -7,12 +7,12 @@
 
 /obj/item/grenade/supermatter/Destroy()
 	if(implode_at)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/grenade/supermatter/detonate()
 	..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	implode_at = world.time + 10 SECONDS
 	update_icon()
 	playsound(src, 'sound/weapons/wave.ogg', 100)
@@ -22,7 +22,7 @@
 	if(implode_at)
 		add_overlay(image(icon = 'icons/rust.dmi', icon_state = "emfield_s1"))
 
-/obj/item/grenade/supermatter/process()
+/obj/item/grenade/supermatter/periodic_step()
 	if(!isturf(loc))
 		if(ismob(loc))
 			var/mob/M = loc

@@ -175,7 +175,7 @@
 		if(!isnull(id))
 			mixture_ids |= id
 	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/gas_wake_condition()
 	if(!use_power || (stat & (NOPOWER|BROKEN)))
@@ -191,7 +191,7 @@
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/wake_for_state_change()
 	clear_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/update_use_power(new_use_power)
 	if(use_power == new_use_power)

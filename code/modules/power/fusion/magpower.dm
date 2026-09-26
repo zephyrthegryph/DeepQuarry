@@ -15,7 +15,7 @@
 	var/id_tag //needed for !!rasins!!
 	circuit = /obj/item/circuitboard/hydromagnetic_trap
 
-/obj/machinery/power/hydromagnetic_trap/process()
+/obj/machinery/power/hydromagnetic_trap/machine_step()
 	if(anchored)
 		if(!powernet)
 			src.active = 0

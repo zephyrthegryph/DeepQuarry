@@ -50,7 +50,7 @@
 /// gas_dependency_changed()/wake_gas_subscriber() pair used to.
 /obj/machinery/atmospherics/unary/proc/wake_from_gas()
 	unregister_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/unary/proc/invalidate_gas_dependencies()
 	om_watch_invalidate(src)
@@ -103,7 +103,7 @@
 			node = target
 			break
 	if(node)
-		START_MACHINE_PROCESSING(src) // connected: a device with DM work re-evaluates (others don't listen)
+		MACHINE_WAKE(src) // connected: a device with DM work re-evaluates (others don't listen)
 
 	update_icon()
 	update_underlays()

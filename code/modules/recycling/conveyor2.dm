@@ -60,7 +60,7 @@
 /obj/machinery/conveyor/proc/on_turf_entered(datum/source, atom/movable/arrived)
 	SIGNAL_HANDLER
 	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/conveyor/proc/toggle_speed(forced)
 	if(forced)
@@ -113,17 +113,17 @@
 		update_use_power(USE_POWER_OFF)
 		return
 	if(speed_process) // high gear
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 		update_use_power(USE_POWER_ACTIVE)
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
-		START_MACHINE_PROCESSING(src)
+		PERIODIC_STOP(src)
+		MACHINE_WAKE(src)
 		update_use_power(USE_POWER_ACTIVE)
 
 	// machine process
 	// move items to the target location
-/obj/machinery/conveyor/process()
+/obj/machinery/conveyor/machine_step()
 	if(stat & (BROKEN | NOPOWER))
 		return PROCESS_KILL
 	if(!operating)
@@ -308,7 +308,7 @@
 // timed process
 // if the switch changed, update the linked conveyors
 
-/obj/machinery/conveyor_switch/process()
+/obj/machinery/conveyor_switch/machine_step()
 	if(!operated)
 		return PROCESS_KILL
 	operated = 0
@@ -346,7 +346,7 @@
 		position = 0
 
 	operated = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update()
 
 	// find any switches with same id as this one, and set their positions to match us

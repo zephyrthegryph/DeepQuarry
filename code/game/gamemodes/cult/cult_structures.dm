@@ -34,7 +34,7 @@
 
 /obj/structure/cult/pylon/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/structure/cult/pylon/attack_hand(mob/M as mob)
 	attackpylon(M, 5)
@@ -55,7 +55,7 @@
 	if(!isbroken)
 		if(prob(1+ damage * 5))
 			visible_message(span_danger("[shatter_message]"))
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
 			density = FALSE
@@ -70,7 +70,7 @@
 				span_warning("You hit \the [src], and its crystal breaks apart!"),
 				"You hear a tinkle of crystal shards."
 				)
-			STOP_PROCESSING(SSobj, src)
+			PERIODIC_STOP(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
@@ -90,7 +90,7 @@
 
 /obj/structure/cult/pylon/proc/repair(mob/user as mob)
 	if(isbroken)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		to_chat(user, "You repair \the [src].")
 		isbroken = 0
 		density = TRUE
@@ -102,7 +102,7 @@
 	last_activation = world.time
 	return 0
 
-/obj/structure/cult/pylon/process()
+/obj/structure/cult/pylon/periodic_step()
 	if(!isbroken && (last_activation + activation_cooldown < world.time) && pylon_unique())
 		flick("[initial(icon_state)]-surge",src)
 

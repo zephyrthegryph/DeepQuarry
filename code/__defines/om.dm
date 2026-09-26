@@ -372,3 +372,90 @@
 #define BORER_HOST(B) OM_REL_TARGET(B, /datum/om/relation/host_of)
 /// The borer infesting `H`, or null.
 #define BORER_OF(H) OM_REL_SOURCE(H, /datum/om/relation/host_of)
+
+// ---------------------------------------------------------------- periodic work (code/datums/om/periodic.dm)
+
+/// Starts `E`'s periodic work on pipeline type `P` (idempotent). Wakes it if parked.
+#define PERIODIC_START(E, P) periodic_start(E, P)
+/// Ends `E`'s periodic work: its stage idles and it parks. Does nothing when it isn't running.
+#define PERIODIC_STOP(E) periodic_stop(E)
+/// TRUE while `E` has periodic work on any pipeline.
+#define PERIODIC_RUNNING(E) (!isnull((E).periodic_pipe))
+
+#define PERIODIC_SLOW /datum/om/pipeline/periodic/slow
+#define PERIODIC_SECOND /datum/om/pipeline/periodic/second
+#define PERIODIC_FAST /datum/om/pipeline/periodic/fast
+#define PERIODIC_PROJECTILES /datum/om/pipeline/periodic/continuous/projectiles
+#define PERIODIC_INSTRUMENTS /datum/om/pipeline/periodic/continuous/instruments
+#define PERIODIC_STATUS_EFFECTS /datum/om/pipeline/periodic/continuous/status_effects
+#define PERIODIC_TAB_ITEMS /datum/om/pipeline/periodic/continuous/tab_items
+
+// ---------------------------------------------------------------- timed and keyed wakes (code/datums/om/wakes.dm)
+
+/// om_woken() reasons.
+#define OM_WOKEN_TIMER (1<<0)
+#define OM_WOKEN_KEY (1<<1)
+/// Wake `E` (om_woken(OM_WOKEN_TIMER)) at world.time `time`; replaces its earlier timer.
+#define OM_WAKE_AT(E, time) om_wake_at(E, time)
+#define OM_WAKE_CANCEL(E) om_wake_cancel(E)
+/// Subscribe `E` to key (kind, id) for `mask`; returns the token for OM_KEY_OFF.
+#define OM_KEY_ON(E, kind, id, mask) om_key_on(E, kind, id, mask)
+#define OM_KEY_OFF(E, token) om_key_off(E, token)
+/// Key (kind, id) changed in the parts `mask` names.
+#define OM_KEY_PUBLISH(kind, id, mask) om_key_publish(kind, id, mask)
+/// Publish key (kind, D's id) only if something ever subscribed to D's key.
+#define OM_KEY_PUBLISH_OWN(D, kind, mask) if((D).om_key_id) { om_key_publish(kind, (D).om_key_id, mask) }
+/// The id of `D`'s own key (assigned on first use).
+#define OM_KEY_ID(D) om_key_id_of(D)
+
+// Key kinds. A key is (kind, id): the id is OM_KEY_ID(some datum), a chunk number or a constant.
+/// Key id for global keys (datum key ids start at 1).
+#define KEY_ID_GLOBAL 0
+/// The mask for keys with a single meaning.
+#define KEY_CHANGED 1
+/// An area's power channels changed. Id: the area's OM_KEY_ID.
+#define KEY_AREA_POWER 2
+	/// The area's power_change() ran (channels or light switch).
+	#define KEY_AREA_POWER_CHANGED (1<<0)
+/// A door's mode changed. Id: the door's OM_KEY_ID.
+#define KEY_DOOR_MODE 3
+	#define KEY_DOOR_BOLTS (1<<0)
+	#define KEY_DOOR_POWER (1<<1)
+	#define KEY_DOOR_ELECTRIFIED (1<<2)
+	#define KEY_DOOR_OPEN (1<<3)
+/// An APC's own state or its grid supply class changed. Id: the APC's OM_KEY_ID.
+#define KEY_APC 4
+	#define KEY_APC_STATE 1
+	#define KEY_APC_SUPPLY 2
+/// A powernet changed. Id: the powernet's OM_KEY_ID.
+#define KEY_POWERNET 5
+	/// Supply or load moved (exact-rate consumers).
+	#define KEY_POWERNET_RATE 1
+	/// Cables, warnings or monitor-visible state.
+	#define KEY_POWERNET_STATE 2
+	/// Machine membership (sleeping APCs).
+	#define KEY_POWERNET_TOPOLOGY 4
+/// A turret's settings or power changed. Id: the turret's OM_KEY_ID.
+#define KEY_TURRET 6
+/// A disposal unit's state changed. Id: the unit's OM_KEY_ID.
+#define KEY_DISPOSAL 7
+/// A meteor appeared or went away. Id: always 1.
+#define KEY_METEORS 8
+/// A mob entered, left or moved in a 16x16 chunk. Id: MOB_CHUNK_NUMERIC_KEY (z < 256).
+/// The mask says whether the mover was a player.
+#define KEY_MOB_CHUNK 9
+	/// Any mob (sleeping turrets, calm AI brains). Subscribe with om_sleep_on_keys().
+	#define KEY_CHUNK_ANY_MOB (1<<0)
+	/// A mob with a client (looping sounds, auto-flicker lights). Subscribe with
+	/// om_subscribe_player_chunks().
+	#define KEY_CHUNK_PLAYER (1<<1)
+/// A pipe network's leaks or topology changed. Id: the network's OM_KEY_ID, or KEY_ID_GLOBAL
+/// for a change whose network is not known yet (new construction).
+#define KEY_PIPE_NETWORK 21
+	#define KEY_PIPE_LEAKS (1<<0)
+/// A shuttle's schedule changed (called, recalled, launching). Id: KEY_SHUTTLE_*.
+#define KEY_SHUTTLE_SCHEDULE 22
+	#define KEY_SHUTTLE_EVAC 1
+	#define KEY_SHUTTLE_SUPPLY 2
+/// A machine broke or was fixed (base /obj/machinery/atom_break()/atom_fix()). Id: its OM_KEY_ID.
+#define KEY_MACHINE_BROKEN 23

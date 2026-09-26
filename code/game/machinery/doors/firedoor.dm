@@ -388,7 +388,7 @@
 	return TRUE
 
 // CHECK PRESSURE
-/obj/machinery/door/firedoor/process()
+/obj/machinery/door/firedoor/machine_step()
 	..()
 
 	if(!density)
@@ -439,7 +439,7 @@
 			continue
 		LAZYSET(sleeping_mixture_ids, "turf[index]", mixture_id)
 		om_watch_arm_value(src, "turf[index]", mixture_id, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE, getter, wake_callback = wake)
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
 	for(var/key in sleeping_mixture_ids)
@@ -448,7 +448,7 @@
 
 /obj/machinery/door/firedoor/proc/wake_from_air()
 	clear_gas_dependencies()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/door/firedoor/proc/firedoor_atmos_signature()
 	var/signature = getOPressureDifferential(src.loc) >= FIREDOOR_MAX_PRESSURE_DIFF
@@ -492,7 +492,7 @@
 	..()
 	if(density)
 		clear_gas_dependencies()
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/door/firedoor/open(forced = 0)
 	clear_gas_dependencies()

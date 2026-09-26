@@ -349,7 +349,7 @@
 	return 1
 
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
-/obj/machinery/cryopod/process()
+/obj/machinery/cryopod/machine_step()
 	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(!occupant)
 		return PROCESS_KILL
@@ -732,7 +732,7 @@
 /obj/machinery/cryopod/proc/set_occupant(mob/new_occupant)
 	var/mob/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYOPOD)
 	if(new_occupant)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	name = initial(name)
 	if(occupant)
 		name = "[name] ([occupant])"

@@ -102,7 +102,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 				return ITEM_INTERACT_BLOCKING
 		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
 		id_tag = new_ident
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
@@ -220,19 +220,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 /obj/machinery/pointdefense/proc/fire_sound_delayed()
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 
-/obj/machinery/pointdefense/process()
+/obj/machinery/pointdefense/machine_step()
 	..()
 	if(stat & (BROKEN))
 		return PROCESS_KILL
 	if(!active)
-		sleep_until_keys(list(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED))
+		sleep_until_keys(list(KEY_METEORS, 1, KEY_CHANGED))
 		return PROCESS_KILL
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH
 	if(dir != desiredir)
 		set_dir(desiredir)
 
 	if(!LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
-		sleep_until_keys(list(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED))
+		sleep_until_keys(list(KEY_METEORS, 1, KEY_CHANGED))
 		return PROCESS_KILL
 	find_and_shoot()
 
@@ -307,7 +307,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 
 	playsound(src, 'sound/weapons/flash.ogg', 100, 0)
 	active = TRUE
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_icon()
 	return TRUE
 
@@ -316,12 +316,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		return FALSE
 	playsound(src, 'sound/machines/apc_nopower.ogg', 50, 0)
 	active = FALSE
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 	update_icon()
 	return TRUE
 
 /// Audit: an active point defense must not sleep through meteors.
-/obj/machinery/pointdefense/react_sleep_violation()
+/obj/machinery/pointdefense/om_sleep_violation()
 	if(!asleep_on_keys() || (stat & BROKEN) || !active)
 		return null
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))

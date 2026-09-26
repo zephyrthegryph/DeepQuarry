@@ -133,21 +133,21 @@ Class Procs:
 	var/material_emp_resistance = 0
 	/// Monotonic diagnostic counter for exact dependency-wake assertions.
 	var/tmp/gas_dependency_wake_count = 0
-	/// Monotonic diagnostic counter: START_MACHINE_PROCESSING() wakes of a pipeline (polls = FALSE) machine.
+	/// Monotonic diagnostic counter: MACHINE_WAKE() calls on this machine.
 	var/tmp/machine_wake_count = 0
-	/// FALSE once machine_step() returned PROCESS_KILL; the step stage parks it (machine_pipeline.dm).
+	/// TRUE while machine_step() has work: set by MACHINE_WAKE(), cleared when machine_step()
+	/// returns PROCESS_KILL or by MACHINE_SLEEP(). The step stage idles while it is FALSE
+	/// (machine_pipeline.dm).
 	var/tmp/step_active = TRUE
-	/// Slot in SSmachines.processing_machines while DF_ISPROCESSING is set; lets
-	/// hibernation swap-remove in O(1).
-	var/tmp/machine_processing_index = 0
-	/// SSmachines pass that last handled this machine. A machine started during a
-	/// pass is stamped with that pass so it waits for the next one.
-	var/tmp/machine_processing_pass = 0
+	/// Set by sleep_until_powered(): power_change()/atom_fix() restart the step work.
+	var/tmp/step_waiting_power = FALSE
+	/// TRUE for a type whose machine_step() reconciles its state with its power: every power or
+	/// break change (power_change(), atom_break(), atom_fix()) runs one step.
+	var/step_on_power_change = FALSE
 
-	var/speed_process = FALSE			//If false, SSmachines. If true, SSfastprocess.
-	/// FALSE for machines that run on an object-model pipeline (machine_pipeline.dm) and never
-	/// join SSmachines' polling roster.
-	var/polls = TRUE
+	/// TRUE: machine_step() runs every 0.2 s on the fast periodic pipeline instead of the machine
+	/// pipeline (PERIODIC_FAST, code/datums/om/periodic.dm).
+	var/speed_process = FALSE
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
@@ -177,20 +177,18 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	// into a real /obj/item/circuitboard when something needs the physical
 	// item (deconstruction, admin var edit, a frame move). See
 	// materialize_circuit().
+	// Machines start asleep (roadmap S5): a type with machine_step() work joins the machine
+	// pipeline through /datum/om/decl/pipeline_machines, gets one frame to find out whether it
+	// has anything to do, and parks until a wake (MACHINE_WAKE(), its channels or watches).
 	if(speed_process)
-		START_PROCESSING(SSfastprocess, src)
-	else if(polls)
-		START_MACHINE_PROCESSING(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 	if(!mapload)
 		power_change()
 
 /obj/machinery/Destroy()
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
-	if(!speed_process)
-		STOP_MACHINE_PROCESSING(src)
-	else
-		STOP_PROCESSING(SSfastprocess, src)
+	PERIODIC_STOP(src)
 	// Constructed machinery owns its installed board. Clear the typed reference
 	// immediately when destruction starts; otherwise the board spends an extra GC
 	// generation retained by an already-deleting machine (and reference tracking
@@ -219,16 +217,48 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 				qdel(A)
 	return ..()
 
-/obj/machinery/process() // Steady power usage is handled separately. If you dont use process why are you here?
-	return PROCESS_KILL
-
 /// One frame of DM-side work for a machine on the machine pipeline (machine_pipeline.dm,
 /// /datum/om/stage/machine/power/step): the same contract process() had on SSmachines' roster.
 /// Return PROCESS_KILL when there is nothing left to do -- the stage idles and the machine parks
-/// until a channel (power_change(), settings, START_MACHINE_PROCESSING()) or a gas watch wakes it.
+/// until a channel (power_change(), settings, MACHINE_WAKE()) or a gas watch wakes it.
 /// Anything else keeps it running every MACHINE_PIPELINE_INTERVAL.
 /obj/machinery/proc/machine_step()
+	set waitfor = FALSE
 	return PROCESS_KILL
+
+/// A machine in fast mode (speed_process) runs its machine_step() on the fast periodic pipeline.
+/obj/machinery/periodic_step(delta)
+	return machine_step()
+
+/// Gives `M` step work: the machine pipeline runs its machine_step() from the next frame until
+/// it returns PROCESS_KILL. Joins the pipeline if `M` isn't on it yet (machines start asleep).
+/proc/machine_wake(obj/machinery/M)
+	if(!M || QDELETED(M))
+		return
+	M.machine_wake_count++
+	M.step_active = TRUE
+	M.step_waiting_power = FALSE
+	if(om_attached(M, /datum/om/pipeline/machine))
+		om_wake(M, /datum/om/pipeline/machine)
+	else
+		om_attach(M, /datum/om/pipeline/machine)
+
+/// Ends `M`'s step work until the next MACHINE_WAKE(): its step stage idles and it parks.
+/proc/machine_sleep(obj/machinery/M)
+	if(M)
+		M.step_active = FALSE
+		M.step_waiting_power = FALSE
+
+/// For machine_step(): the machine can't act without power (or while broken). Ends its step work
+/// until power returns and it is whole (power_change(), atom_fix()), then it runs again. Returns
+/// PROCESS_KILL: `return sleep_until_powered()`.
+/obj/machinery/proc/sleep_until_powered()
+	step_waiting_power = TRUE
+	return PROCESS_KILL
+
+/// TRUE while `M` has step work on the machine pipeline (it was: on SSmachines' roster).
+/proc/machine_stepping(obj/machinery/M)
+	return M.step_active && om_attached(M, /datum/om/pipeline/machine)
 
 /// TRUE when machine_step() would have work to do right now: the device's own eligibility rule,
 /// the same test its gas watch arms. The machine pipeline's step stage reads it as its idle rule.
@@ -630,7 +660,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /**
  * The one machinery break (damage.md §6). Sets BROKEN, sends COMSIG_MACHINERY_BROKEN
- * and publishes REACT_KEY_MACHINE_BROKEN. Returns TRUE if the machine was not
+ * and publishes KEY_MACHINE_BROKEN. Returns TRUE if the machine was not
  * already broken. Subtypes with real behaviour call this first and act on the
  * result; an override that only sets flags is forbidden (tools/ci/check_breakpoints.sh).
  */
@@ -641,7 +671,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	stat |= BROKEN
 	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
 	SEND_SIGNAL(src, COMSIG_MACHINERY_BROKEN, damage_flag)
-	REACT_PUBLISH_OWN(src, REACT_KEY_MACHINE_BROKEN, REACT_KEY_CHANGED)
+	OM_KEY_PUBLISH_OWN(src, KEY_MACHINE_BROKEN, KEY_CHANGED)
 	update_icon()
 	return TRUE
 
@@ -652,39 +682,39 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		return FALSE
 	stat &= ~BROKEN
 	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
-	REACT_PUBLISH_OWN(src, REACT_KEY_MACHINE_BROKEN, REACT_KEY_CHANGED)
+	OM_KEY_PUBLISH_OWN(src, KEY_MACHINE_BROKEN, KEY_CHANGED)
 	update_icon()
 	return TRUE
 
-// --- Sleeping on DM-owned keys (reactor.md §4, S2) ----------------------------------------------
+// --- Sleeping on keys (object-model keys, code/datums/om/wakes.dm) ------------------------------
 
 /obj/machinery
-	/// While asleep on keys: the (token, kind) pairs from SSreactor.sleep_on_keys().
+	/// While asleep on keys: the (token, kind) pairs from om_sleep_on_keys().
 	var/tmp/list/react_sleep_tokens
 
 /**
  * Stops polling until any key in `keys` (a flat list of (kind, id, mask) triples) is published.
- * Replaces any keys the machine already slept on. The wake arrives through on_react() at the
- * next reactor step, so a publication after this call (even in the same tick) is never missed.
+ * Replaces any keys the machine already slept on. The wake arrives through om_woken() at the
+ * next wake drain, so a publication after this call (even in the same tick) is never missed.
  */
 /obj/machinery/proc/sleep_until_keys(list/keys)
 	cancel_sleep_keys()
 	if(QDELETED(src) || !length(keys))
 		return FALSE
-	react_sleep_tokens = SSreactor.sleep_on_keys(src, keys)
-	STOP_MACHINE_PROCESSING(src)
+	react_sleep_tokens = om_sleep_on_keys(src, keys)
+	MACHINE_SLEEP(src)
 	return TRUE
 
 /obj/machinery/proc/cancel_sleep_keys()
 	if(react_sleep_tokens)
-		SSreactor.cancel_keys(src, react_sleep_tokens)
+		om_cancel_keys(src, react_sleep_tokens)
 		react_sleep_tokens = null
 
-/// TRUE while the machine sleeps on keys and is not polled.
+/// TRUE while the machine sleeps on keys and has no step work.
 /obj/machinery/proc/asleep_on_keys()
-	return react_sleep_tokens && !(datum_flags & DF_ISPROCESSING)
+	return react_sleep_tokens && !step_active
 
-/obj/machinery/on_react(reason, source, source_kind)
-	if((reason & REACT_REASON_KEY) && react_sleep_tokens)
+/obj/machinery/om_woken(reason)
+	if((reason & OM_WOKEN_KEY) && react_sleep_tokens)
 		cancel_sleep_keys()
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)

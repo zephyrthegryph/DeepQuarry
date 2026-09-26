@@ -54,7 +54,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	else
 		return 0
 
-/obj/item/rig_module/protean/syphon/process()
+/obj/item/rig_module/protean/syphon/periodic_step()
 	if(active)
 		var/mob/living/carbon/human/H = holder.wearer
 		if(!H)
@@ -141,7 +141,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	else
 		return 0
 
-/obj/item/rig_module/protean/armor/process()
+/obj/item/rig_module/protean/armor/periodic_step()
 	if(active)
 		var/mob/living/carbon/human/H = holder.wearer
 		if(!H)
@@ -195,7 +195,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 
 /// Wound repair on the host, whatever it is made of, paid for in steel by what
 /// mend() actually repaired. Never touches lesions or dead organs (bug 11).
-/obj/item/rig_module/protean/healing/process()
+/obj/item/rig_module/protean/healing/periodic_step()
 	if(!active)
 		return
 	var/mob/living/carbon/human/H = holder.wearer

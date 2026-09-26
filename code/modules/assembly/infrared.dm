@@ -39,9 +39,9 @@
 		on = !on
 
 	if(secured && on)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		QDEL_LIST_NULL(i_beams)
 	return on
 
@@ -55,7 +55,7 @@
 	if(holder)
 		holder.update_icon(2)
 
-/obj/item/assembly/infra/process()
+/obj/item/assembly/infra/periodic_step()
 	if(!on && i_beams)
 		QDEL_LIST_NULL(i_beams)
 		return
@@ -148,10 +148,10 @@
 
 /obj/effect/beam/i_beam/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/beam/i_beam/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	master = null
 	return ..()
 
@@ -159,7 +159,7 @@
 	master?.trigger_beam()
 	qdel(src)
 
-/obj/effect/beam/i_beam/process()
+/obj/effect/beam/i_beam/periodic_step()
 	if(loc?.density || !master)
 		qdel(src)
 		return

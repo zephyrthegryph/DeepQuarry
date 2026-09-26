@@ -23,7 +23,7 @@
 
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/reagent_refinery/pump/process()
+/obj/machinery/reagent_refinery/pump/machine_step()
 	if(!anchored)
 		return
 

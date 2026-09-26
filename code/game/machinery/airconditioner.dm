@@ -89,7 +89,6 @@
 #define MODE_COOLING 2
 
 /obj/machinery/power/thermoregulator
-	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "thermal regulator"
 	desc = "A massive machine that can either add or remove thermal energy from the surrounding environment. Must be secured onto a powered wire node to function."
 	icon = 'icons/obj/machines/thermoregulator_vr.dmi'
@@ -291,7 +290,7 @@
 /obj/machinery/power/thermoregulator/proc/hibernate_until_temperature_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
 	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_TEMPERATURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 
 /obj/machinery/power/thermoregulator/proc/gas_wake_condition()
 	var/datum/gas_mixture/environment = loc?.return_air()
@@ -302,7 +301,7 @@
 
 /obj/machinery/power/thermoregulator/proc/wake_for_state_change()
 	clear_gas_dependency()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/power/thermoregulator/proc/change_mode(new_mode = MODE_IDLE)
 	if(mode == new_mode)

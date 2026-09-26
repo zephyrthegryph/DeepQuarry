@@ -38,18 +38,18 @@
 
 /obj/item/melee/artifact_blade/Initialize(mapload) //We will never spawn without xenoarch or SOMEONE unearthing us.
 	. = ..()
-	//START_PROCESSING(SSobj, src) //We could start processing here, but let's wait until someone touches us. Uncomment this if more stuff is added and you want it to do spooky passive things.
+	//PERIODIC_START(src, PERIODIC_SLOW) //We could start processing here, but let's wait until someone touches us. Uncomment this if more stuff is added and you want it to do spooky passive things.
 
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
 	if(stored_blood && user == last_touched)
 		. += span_cult("You can sense the blade has about " + span_bold("[stored_blood]") + " lifeforce contained within it.")
 
-/obj/item/melee/artifact_blade/process()
+/obj/item/melee/artifact_blade/periodic_step()
 	if(!last_touched || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
 	if(!last_touched || last_touched.stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		last_touched = null
 		return
 	if(loc == last_touched && (last_touched.life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
@@ -159,7 +159,7 @@
 	if((user != last_touched) && !iscultist(user) && ishuman(user))
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
 		last_touched = user
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/melee/artifact_blade/attack_self(mob/user)
 	. = ..(user)

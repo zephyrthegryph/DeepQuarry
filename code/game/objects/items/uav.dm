@@ -60,7 +60,7 @@
 	QDEL_NULL(cell)
 	QDEL_NULL(ion_trail)
 	LAZYCLEARLIST(masters)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/uav/examine(mob/user)
@@ -182,7 +182,7 @@
 		if(UAV_PACKED)
 			icon_state = "[initial(icon_state)]_packed"
 
-/obj/item/uav/process()
+/obj/item/uav/periodic_step()
 	if(cell?.use(power_per_process) != power_per_process)
 		visible_message(span_warning("[src] sputters and thuds to the ground, inert."))
 		playsound(src, 'sound/items/drop/metalboots.ogg', 75, 1)
@@ -247,7 +247,7 @@
 	update_icon()
 	start_hover()
 	set_light_on(TRUE)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	no_masters_time = 0
 	visible_message(span_notice("[nickname] buzzes and lifts into the air."))
 
@@ -260,7 +260,7 @@
 	stop_hover()
 	set_light_on(FALSE)
 	LAZYCLEARLIST(masters)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	visible_message(span_notice("[nickname] gracefully settles onto the ground."))
 
 //////////////// Helpers

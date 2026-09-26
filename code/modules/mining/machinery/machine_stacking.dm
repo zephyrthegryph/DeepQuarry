@@ -125,9 +125,9 @@
 
 /obj/machinery/mineral/stacking_machine/proc/wake_processing()
 	if(speed_process)
-		START_PROCESSING(SSfastprocess, src)
+		PERIODIC_START(src, PERIODIC_FAST)
 	else
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 /obj/machinery/mineral/stacking_machine/proc/toggle_speed(forced)
 	if(forced)
@@ -135,13 +135,13 @@
 	else
 		speed_process = !speed_process // switching gears
 	if(speed_process) // high gear
-		STOP_MACHINE_PROCESSING(src)
-		START_PROCESSING(SSfastprocess, src)
+		MACHINE_SLEEP(src)
+		PERIODIC_START(src, PERIODIC_FAST)
 	else // low gear
-		STOP_PROCESSING(SSfastprocess, src)
-		START_MACHINE_PROCESSING(src)
+		PERIODIC_STOP(src)
+		MACHINE_WAKE(src)
 
-/obj/machinery/mineral/stacking_machine/process()
+/obj/machinery/mineral/stacking_machine/machine_step()
 	var/did_work = FALSE
 	if (src.output && src.input)
 		var/turf/T = get_turf(input)

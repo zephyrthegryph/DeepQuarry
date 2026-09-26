@@ -14,7 +14,6 @@
 
 	var/canister_color = "yellow"
 	var/can_label = 1
-	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 	/// Cached from the last perform(): TRUE once valve_open is off and neither a reaction nor
 	/// the material vessel is doing anything, mirroring the settle check the old process() made
 	/// right before it called hibernate_until_gas_changes(). Read by
@@ -438,11 +437,7 @@ update_flag
 					release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
 					log_open()
 			valve_open = !valve_open
-			if(polls)
-				clear_gas_dependency()
-				START_MACHINE_PROCESSING(src)
-			else
-				om_changed(src, CHANGE_MACHINE_SETTINGS)
+			om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = TRUE
 		if("eject")
 			if(holding)

@@ -10,7 +10,7 @@
 	return ForceContractDisease(new /datum/disease/appendicitis)
 
 /*
-/obj/item/organ/internal/appendix/process()
+/obj/item/organ/internal/appendix/periodic_step()
 	..()
 
 	if(!inflamed || !owner)

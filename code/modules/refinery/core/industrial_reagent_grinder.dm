@@ -94,7 +94,7 @@
 	update_icon()
 	return TRUE
 
-/obj/machinery/reagent_refinery/grinder/process()
+/obj/machinery/reagent_refinery/grinder/machine_step()
 	if(!anchored)
 		return
 

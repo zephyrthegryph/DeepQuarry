@@ -39,7 +39,7 @@
 	if(ispath(loaded))
 		loaded = new loaded(src)
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 	if(capacitor)
 		power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -47,7 +47,7 @@
 	update_icon()
 
 /obj/item/gun/magnetic/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	QDEL_NULL(cell)
 	QDEL_NULL(loaded)
 	QDEL_NULL(capacitor)
@@ -56,7 +56,7 @@
 /obj/item/gun/magnetic/get_cell()
 	return cell
 
-/obj/item/gun/magnetic/process()
+/obj/item/gun/magnetic/periodic_step()
 	if(capacitor)
 		if(cell)
 			if(capacitor.charge < capacitor.max_charge && cell.checked_use(power_per_tick))

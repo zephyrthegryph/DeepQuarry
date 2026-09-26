@@ -490,10 +490,10 @@
 
 /obj/item/borg/combat/shield/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/borg/combat/shield/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/borg/combat/shield/attack_self(mob/living/user)
@@ -502,7 +502,7 @@
 		return TRUE
 	set_shield_level()
 
-/obj/item/borg/combat/shield/process()
+/obj/item/borg/combat/shield/periodic_step()
 	if(active)
 		if(flash_count && (last_flash + shield_refresh < world.time))
 			flash_count = 0

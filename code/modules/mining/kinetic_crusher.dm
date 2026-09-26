@@ -231,16 +231,16 @@
 
 /obj/item/kinetic_crusher/machete/gauntlets/equipped()
 	. = ..()
-	START_PROCESSING(SSprocessing, src)
+	PERIODIC_START(src, PERIODIC_SECOND)
 
 /obj/item/kinetic_crusher/machete/gauntlets/dropped(mob/user, equipping, slot)
 	ready_toggle(TRUE)
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/kinetic_crusher/machete/gauntlets/Destroy()
 	. = ..()
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 
 /obj/item/kinetic_crusher/machete/gauntlets/attack_self(mob/user)
 	. = ..(user)
@@ -248,7 +248,7 @@
 		return TRUE
 	ready_toggle()
 
-/obj/item/kinetic_crusher/machete/gauntlets/process()
+/obj/item/kinetic_crusher/machete/gauntlets/periodic_step()
 	if(wielded) // are we supposed to be wielded
 		if(!offhand) // does our offhand exist
 			ready_toggle(TRUE) // no? well, shit

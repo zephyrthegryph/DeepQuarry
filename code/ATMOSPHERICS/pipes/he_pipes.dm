@@ -57,7 +57,7 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/wake_from_gas()
 	unregister_gas_dependencies()
 	stable_temperature_cycles = 0
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/heat_exchange_actionable()
 	var/datum/gas_mixture/pipe_air = parent?.air

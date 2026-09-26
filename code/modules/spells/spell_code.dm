@@ -62,7 +62,8 @@
 	//still_recharging_msg = span_notice("[name] is still recharging.")
 	charge_counter = charge_max
 
-/datum/spell/process()
+/// Recharges one charge per tick until full.
+/datum/spell/proc/start_recharge()
 	spawn while(charge_counter < charge_max)
 		charge_counter++
 		sleep(1)
@@ -256,7 +257,7 @@
 		switch(charge_type)
 			if(Sp_RECHARGE)
 				charge_counter = 0 //doesn't start recharging until the targets selecting ends
-				src.process()
+				start_recharge()
 				return 1
 			if(Sp_CHARGES)
 				charge_counter-- //returns the charge if the targets selecting fails

@@ -51,9 +51,9 @@
 		lit = TRUE
 		visible_message(flavor_text)
 		set_light(CANDLE_LUM)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/flame/candle/process()
+/obj/item/flame/candle/periodic_step()
 	if(!lit)
 		return
 	wax--
@@ -129,10 +129,10 @@
 	. = ..()
 	light(span_notice("\The [src] mysteriously lights itself!."))
 
-/obj/item/flame/candle/everburn/process()
+/obj/item/flame/candle/everburn/periodic_step()
 	// The permanent light has no fuel state to advance. Leaving it in SSobj also
 	// exposed its turf as a 700 K hotspot forever, keeping whole atmos regions awake.
 	return PROCESS_KILL
 
-/obj/item/flame/candle/candelabra/everburn/process()
+/obj/item/flame/candle/candelabra/everburn/periodic_step()
 	return PROCESS_KILL

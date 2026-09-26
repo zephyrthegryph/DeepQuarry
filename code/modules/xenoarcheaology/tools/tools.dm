@@ -242,13 +242,13 @@
 
 /obj/item/beacon_locator/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/beacon_locator/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/beacon_locator/process()
+/obj/item/beacon_locator/periodic_step()
 	if(target_radio)
 		set_dir(get_dir(src,target_radio))
 		switch(get_dist(src,target_radio))

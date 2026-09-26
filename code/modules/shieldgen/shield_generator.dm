@@ -296,7 +296,7 @@
 	upkeep_multiplier = new_upkeep * power_coefficient
 
 
-/obj/machinery/power/shield_generator/process()
+/obj/machinery/power/shield_generator/machine_step()
 	upkeep_power_usage = 0
 	power_usage = 0
 

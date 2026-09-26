@@ -144,7 +144,7 @@
 			"metrics" = list("eer" = -1, "integrity" = 0),
 			"detail" = "Supermatter telemetry ended",
 		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	QDEL_NULL(soundloop)
 	return ..()
 
@@ -346,7 +346,7 @@
 			GLOB.global_announcer.autosay(alert_msg, "Supermatter Monitor")
 			public_alert = FALSE
 
-/obj/machinery/power/supermatter/process()
+/obj/machinery/power/supermatter/machine_step()
 
 	var/turf/L = loc
 

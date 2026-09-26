@@ -42,7 +42,7 @@
 		if(neighbor.seed == src.seed)
 			LAZYREMOVE(neighbor.neighbors, T)
 
-/obj/effect/plant/process()
+/obj/effect/plant/periodic_step()
 
 	// Something is very wrong, kill ourselves.
 	if(!seed)

@@ -208,7 +208,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		noisy = TRUE
 	return was_on != on
 
-/obj/machinery/telecomms/process()
+/obj/machinery/telecomms/machine_step()
 	if(thermal_timer)
 		deltimer(thermal_timer)
 		thermal_timer = null
@@ -238,12 +238,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 /obj/machinery/telecomms/proc/thermal_check_due()
 	thermal_timer = null
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 /obj/machinery/telecomms/power_change()
 	var/changed = ..()
 	if(changed)
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 	return changed
 
 /obj/machinery/telecomms/emp_act(severity, recursive)
@@ -253,12 +253,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	if(prob(100/severity))
 		if(!(stat & EMPED))
 			stat |= EMPED
-			START_MACHINE_PROCESSING(src)
+			MACHINE_WAKE(src)
 			playsound(src, 'sound/machines/tcomms/tcomms_pulse.ogg', 70, 1, 30)
 			var/duration = (300 * 10)/severity
 			spawn(rand(duration - 20, duration + 20)) // Takes a long time for the machines to reboot.
 				stat &= ~EMPED
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 
 /obj/machinery/telecomms/proc/checkheat(elapsed_cycles = 1)
 	if(QDELETED(src))

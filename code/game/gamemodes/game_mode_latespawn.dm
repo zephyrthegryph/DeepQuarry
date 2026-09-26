@@ -11,7 +11,7 @@
 			usable_templates |= A
 	return usable_templates
 
-///process()
+///periodic_step()
 ///Called by the gameticker
 /datum/game_mode/process()
 	// Slow this down a bit so latejoiners have a chance of being antags.

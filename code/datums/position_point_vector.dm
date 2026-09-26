@@ -197,15 +197,15 @@
 	var/paused = FALSE
 
 /datum/point/vector/processed/Destroy()
-	STOP_PROCESSING(SSprojectiles, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /datum/point/vector/processed/proc/start()
 	last_process = world.time
 	last_move = world.time
-	START_PROCESSING(SSprojectiles, src)
+	PERIODIC_START(src, PERIODIC_PROJECTILES)
 
-/datum/point/vector/processed/process()
+/datum/point/vector/processed/periodic_step()
 	if(paused)
 		last_move += world.time - last_process
 		last_process = world.time
@@ -213,4 +213,4 @@
 	var/needed_time = world.time - last_move
 	last_process = world.time
 	last_move = world.time
-	increment(needed_time / SSprojectiles.wait)
+	increment(needed_time) // was needed_time / SSprojectiles.wait, and that wait was 1

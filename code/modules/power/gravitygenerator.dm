@@ -363,7 +363,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 // Charge/Discharge and turn on/off gravity when you reach 0/100 percent.
 // Also emit radiation and handle the overlays.
-/obj/machinery/gravity_generator/main/process()
+/obj/machinery/gravity_generator/main/machine_step()
 	if(stat & BROKEN)
 		return
 	if(charging_state != POWER_IDLE)

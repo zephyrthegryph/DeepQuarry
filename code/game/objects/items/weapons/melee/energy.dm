@@ -461,11 +461,11 @@
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	set_light(lrange, lpower, lcolor)
 
 /obj/item/melee/energy/blade/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/item/melee/energy/blade/attack_self(mob/user)
@@ -475,7 +475,7 @@
 	user.drop_from_inventory(src)
 	QDEL_IN(src, 1)
 
-/obj/item/melee/energy/blade/process()
+/obj/item/melee/energy/blade/periodic_step()
 	if(!creator || loc != creator || !creator.item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))

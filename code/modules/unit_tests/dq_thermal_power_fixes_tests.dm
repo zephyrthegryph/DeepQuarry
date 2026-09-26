@@ -25,8 +25,8 @@
 	var/cool_gain = cool.get_temperature() - before
 	TEST_ASSERT(cool_gain < hot_gain, "a room-temperature exposure with a large volume heated the window as much as a hot one ([cool_gain] vs [hot_gain])")
 
-/// Q11: the machine roster removes by swapping the last entry into the hole,
-/// and every entry keeps its own slot index.
+/// Q11 (was the SSmachines roster; roadmap S5): MACHINE_WAKE gives a machine step work on the
+/// machine pipeline, MACHINE_SLEEP ends it, and neither disturbs another machine.
 /datum/unit_test/dq_machine_roster_swap_remove
 
 /datum/unit_test/dq_machine_roster_swap_remove/Run()
@@ -34,22 +34,14 @@
 	var/list/machines = list()
 	for(var/i in 1 to 3)
 		var/obj/machinery/M = allocate(/obj/machinery, T)
-		START_MACHINE_PROCESSING(M)
+		MACHINE_WAKE(M)
 		machines += M
 	var/obj/machinery/middle = machines[2]
-	STOP_MACHINE_PROCESSING(middle)
-	TEST_ASSERT(!(middle in SSmachines.processing_machines), "stopped machine is still on the roster")
-	TEST_ASSERT(!(middle.datum_flags & DF_ISPROCESSING), "stopped machine kept DF_ISPROCESSING")
-	TEST_ASSERT_EQUAL(middle.machine_processing_index, 0, "stopped machine kept a roster slot")
-	for(var/i in 1 to length(SSmachines.processing_machines))
-		var/obj/machinery/listed = SSmachines.processing_machines[i]
-		if(!istype(listed))
-			continue
-		TEST_ASSERT_EQUAL(listed.machine_processing_index, i, "[listed.type] records slot [listed.machine_processing_index] but sits in slot [i]")
-	STOP_MACHINE_PROCESSING(middle)
-	START_MACHINE_PROCESSING(middle)
-	TEST_ASSERT_EQUAL(SSmachines.processing_machines[middle.machine_processing_index], middle, "restarted machine's slot does not hold it")
-	TEST_ASSERT_EQUAL(middle.machine_processing_pass, SSmachines.machine_run_pass, "machine started mid-pass would be polled in the same pass")
+	MACHINE_SLEEP(middle)
+	TEST_ASSERT(!machine_stepping(middle), "stopped machine still has step work")
+	TEST_ASSERT(machine_stepping(machines[1]) && machine_stepping(machines[3]), "stopping one machine stopped another")
+	MACHINE_WAKE(middle)
+	TEST_ASSERT(machine_stepping(middle), "restarted machine has no step work")
 
 /// B8: a wall's heat transfer coefficient follows its material instead of
 /// always clamping to the maximum.
@@ -86,14 +78,14 @@
 	valve.subscribe_network_keys()
 
 	// Held steady, and with a change on another network, the valve sleeps; its own network wakes it.
-	SSreactor.trace(valve)
+	om_woken_trace(valve)
 	react_test_ticks(4)
-	var/before = SSreactor.traced_wakes(valve)
+	var/before = om_woken_traced_count(valve)
 	wake_automatic_shutoff_valves(theirs)
 	react_test_ticks(4)
-	TEST_ASSERT_EQUAL(SSreactor.traced_wakes(valve), before, "a change on another network woke the valve")
-	SSreactor.untrace(valve)
-	var/failure = react_wake_test(valve, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
+	TEST_ASSERT_EQUAL(om_woken_traced_count(valve), before, "a change on another network woke the valve")
+	om_woken_untrace(valve)
+	var/failure = om_wake_test(valve, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
 	TEST_ASSERT(!failure, failure)
 
 	valve.network_node1 = null

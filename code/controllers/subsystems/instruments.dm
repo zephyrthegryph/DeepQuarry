@@ -1,7 +1,8 @@
-PROCESSING_SUBSYSTEM_DEF(instruments)
+/// Instrument data and sound-channel bookkeeping. Playing songs run on the instruments continuous
+/// lane (PERIODIC_INSTRUMENTS, code/datums/om/periodic.dm), not here.
+SUBSYSTEM_DEF(instruments)
 	name = "Instruments"
-	wait = 0.5
-	flags = SS_KEEP_TIMING
+	flags = SS_NO_FIRE
 	priority = FIRE_PRIORITY_INSTRUMENTS
 	/// List of all instrument data, associative id = datum
 	var/static/list/datum/instrument/instrument_data = list()
@@ -24,18 +25,18 @@ PROCESSING_SUBSYSTEM_DEF(instruments)
 		SUSTAIN_EXPONENTIAL,
 	)
 
-/datum/controller/subsystem/processing/instruments/Initialize()
+/datum/controller/subsystem/instruments/Initialize()
 	initialize_instrument_data()
 	synthesizer_instrument_ids = get_allowed_instrument_ids()
 	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/processing/instruments/proc/on_song_new(datum/song/S)
+/datum/controller/subsystem/instruments/proc/on_song_new(datum/song/S)
 	songs += S
 
-/datum/controller/subsystem/processing/instruments/proc/on_song_del(datum/song/S)
+/datum/controller/subsystem/instruments/proc/on_song_del(datum/song/S)
 	songs -= S
 
-/datum/controller/subsystem/processing/instruments/proc/initialize_instrument_data()
+/datum/controller/subsystem/instruments/proc/initialize_instrument_data()
 	for(var/path in subtypesof(/datum/instrument))
 		var/datum/instrument/I = path
 		if(initial(I.abstract_type) == path)
@@ -48,10 +49,10 @@ PROCESSING_SUBSYSTEM_DEF(instruments)
 		instrument_data[I.id] = I
 		CHECK_TICK
 
-/datum/controller/subsystem/processing/instruments/proc/get_instrument(id_or_path)
+/datum/controller/subsystem/instruments/proc/get_instrument(id_or_path)
 	return instrument_data["[id_or_path]"]
 
-/datum/controller/subsystem/processing/instruments/proc/reserve_instrument_channel(datum/instrument/I)
+/datum/controller/subsystem/instruments/proc/reserve_instrument_channel(datum/instrument/I)
 	if(current_instrument_channels > max_instrument_channels)
 		return
 	. = SSsounds.reserve_sound_channel(I)

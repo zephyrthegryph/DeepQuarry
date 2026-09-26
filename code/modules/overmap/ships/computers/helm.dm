@@ -53,7 +53,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 			R.fields["y"] = S.y
 			LAZYSET(known_sectors, S.name, R)
 
-/obj/machinery/computer/ship/helm/process()
+/obj/machinery/computer/ship/helm/machine_step()
 	..()
 	if(!autopilot || !dx || !dy || autopilot_disabled || !linked || !using_map)
 		return PROCESS_KILL
@@ -265,7 +265,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 			else
 				autopilot = !autopilot
 			if(autopilot)
-				START_MACHINE_PROCESSING(src)
+				MACHINE_WAKE(src)
 			. = TRUE
 
 		if("apilot_lock")

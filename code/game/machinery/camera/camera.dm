@@ -37,7 +37,7 @@
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
 	var/affected_by_emp_until = 0
-	/// The REACT_AT token for next_camera_deadline(), and the deadline it was set for.
+	/// The OM_WAKE_AT timer for next_camera_deadline(), and the deadline it was set for.
 	var/tmp/camera_timer_token
 	var/tmp/camera_timer_at = 0
 
@@ -96,8 +96,8 @@
 	network = null
 	return ..()
 
-// A camera sleeps on one REACT_AT for its earliest deadline (EMP recovery, the motion alarm
-// delay) and on signals from the mobs it tracks; it never polls (reactor.md §9).
+// A camera sleeps on one OM_WAKE_AT for its earliest deadline (EMP recovery, the motion alarm
+// delay) and on signals from the mobs it tracks; it never polls.
 
 /// The earliest pending deadline (world.time), or 0 for none.
 /obj/machinery/camera/proc/next_camera_deadline()
@@ -115,15 +115,15 @@
 	if(deadline == camera_timer_at && (!isnull(camera_timer_token) || !deadline))
 		return
 	if(!isnull(camera_timer_token))
-		REACT_CANCEL(src, camera_timer_token)
+		OM_WAKE_CANCEL(src)
 		camera_timer_token = null
 	camera_timer_at = deadline
 	if(deadline)
-		camera_timer_token = REACT_AT(src, deadline)
+		camera_timer_token = OM_WAKE_AT(src, deadline)
 
-/obj/machinery/camera/on_react(reason, source, source_kind)
+/obj/machinery/camera/om_woken(reason)
 	. = ..()
-	if(!(reason & REACT_REASON_TIMER))
+	if(!(reason & OM_WOKEN_TIMER))
 		return
 	camera_timer_token = null
 	camera_timer_at = 0
@@ -135,7 +135,7 @@
 	check_motion_alarm()
 	schedule_camera_timer()
 
-/obj/machinery/camera/react_sleep_violation()
+/obj/machinery/camera/om_sleep_violation()
 	var/deadline = next_camera_deadline()
 	if(deadline && (isnull(camera_timer_token) || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"

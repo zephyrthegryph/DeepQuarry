@@ -71,7 +71,7 @@
 
 	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
 
-/obj/machinery/pump/process()
+/obj/machinery/pump/machine_step()
 	if(!on)
 		return
 

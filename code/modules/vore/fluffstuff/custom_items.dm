@@ -557,13 +557,13 @@
 
 /obj/item/clothing/accessory/collar/khcrystal/Destroy() //Waitwaitwait
 	if(state == 1)
-		process() //Nownownow
+		periodic_step() //Nownownow
 	return ..() //Okfine
 
-/obj/item/clothing/accessory/collar/khcrystal/process()
+/obj/item/clothing/accessory/collar/khcrystal/periodic_step()
 	check_owner()
 	if((state > 1) || !owner)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 
 /obj/item/clothing/accessory/collar/khcrystal/attack_self(mob/user)
 	. = ..(user)
@@ -577,7 +577,7 @@
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/check_owner()
 	//He's dead, jim
@@ -732,7 +732,7 @@
 /obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
 	ambulance = !(ambulance)
 	if(ambulance)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		item_state = "tempestsaddlebag-amb"
 		icon_state = "tempestbag-amb"
 		if (ismob(loc))
@@ -750,9 +750,9 @@
 		set_light(0)
 		soundloop.stop()
 
-/obj/item/storage/backpack/saddlebag/tempest/process()
+/obj/item/storage/backpack/saddlebag/tempest/periodic_step()
 	if(!ambulance)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		return
 	if(world.time - ambulance_last_switch > 15)
 		ambulance_state = !(ambulance_state)

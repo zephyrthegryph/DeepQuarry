@@ -43,7 +43,7 @@
 	return 0
 
 /obj/machinery/status_display/supply_display/watched_shuttle()
-	return mode == STATUS_DISPLAY_CUSTOM ? REACT_SHUTTLE_SUPPLY : ..()
+	return mode == STATUS_DISPLAY_CUSTOM ? KEY_SHUTTLE_SUPPLY : ..()
 
 /obj/machinery/status_display/supply_display/receive_signal/(datum/signal/signal)
 	if(signal.data["command"] == "supply")

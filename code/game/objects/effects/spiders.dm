@@ -81,19 +81,19 @@
 /obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	. = ..()
 	get_light_and_color(parent)
 
 /obj/effect/spider/eggcluster/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	if(istype(loc, /obj/item/organ/external))
 		var/obj/item/organ/external/O = loc
 		O.implants -= src
 
 	return ..()
 
-/obj/effect/spider/eggcluster/process()
+/obj/effect/spider/eggcluster/periodic_step()
 	amount_grown += rand(0,2)
 	if(amount_grown >= 100)
 		var/num = rand(spiders_min, spiders_max)
@@ -150,7 +150,7 @@
 	. = ..()
 	pixel_x = rand(6,-6)
 	pixel_y = rand(6,-6)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	//50% chance to grow up
 	if(amount_grown != -1 && prob(50))
 		amount_grown = 1
@@ -158,7 +158,7 @@
 
 /obj/effect/spider/spiderling/Destroy()
 	walk(src, 0) // Because we might have called walk_to, we must stop the walk loop or BYOND keeps an internal reference to us forever.
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/effect/spider/spiderling/Bump(atom/user)
@@ -172,7 +172,7 @@
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 	..()
 
-/obj/effect/spider/spiderling/process()
+/obj/effect/spider/spiderling/periodic_step()
 	if(travelling_in_vent)
 		if(istype(src.loc, /turf))
 			travelling_in_vent = 0

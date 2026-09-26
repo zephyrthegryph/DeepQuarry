@@ -35,11 +35,11 @@
 
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/technomancer_core/Destroy()
 	dismiss_all_summons()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 // Add the spell buttons to the HUD.
@@ -77,7 +77,7 @@
 	energy = min(energy + amount, max_energy)
 	return 1
 
-/obj/item/technomancer_core/process()
+/obj/item/technomancer_core/periodic_step()
 	var/old_energy = energy
 	regenerate()
 	pay_dues()

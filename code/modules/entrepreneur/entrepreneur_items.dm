@@ -340,9 +340,9 @@
 /obj/item/entrepreneur/emf/Initialize(mapload)
 	. = ..()
 	emf = rand(1,100)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/entrepreneur/emf/process()
+/obj/item/entrepreneur/emf/periodic_step()
 	search_for_ghosts()
 
 /obj/item/entrepreneur/emf/attack_self(mob/user)

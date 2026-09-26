@@ -43,7 +43,7 @@
 		return INITIALIZE_HINT_QDEL
 
 /obj/structure/simple_door/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	update_nearby_tiles()
 	return ..()
 
@@ -63,7 +63,7 @@
 	else
 		set_opacity(1)
 	if(material.products_need_process())
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	update_nearby_tiles(need_rebuild=1)
 
 /obj/structure/simple_door/get_material()
@@ -226,7 +226,7 @@
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("The [src] is destroyed!"))
 
-/obj/structure/simple_door/process()
+/obj/structure/simple_door/periodic_step()
 	// material.radioactivity moved to a component; query the helper.
 	var/rad = dq_material_radioactivity(material)
 	if(!rad)
@@ -263,10 +263,10 @@
 
 /obj/structure/simple_door/uranium/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_URANIUM)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 // Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
-/obj/structure/simple_door/uranium/process()
+/obj/structure/simple_door/uranium/periodic_step()
 	radiate()
 
 /obj/structure/simple_door/uranium/proc/radiate()

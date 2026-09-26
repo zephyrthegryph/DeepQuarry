@@ -114,7 +114,7 @@
 		noisy = FALSE
 	update_icon()
 
-/obj/machinery/pda_multicaster/process()
+/obj/machinery/pda_multicaster/machine_step()
 	update_power()
 	return PROCESS_KILL
 

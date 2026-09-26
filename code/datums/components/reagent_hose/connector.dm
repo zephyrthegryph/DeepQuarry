@@ -30,10 +30,10 @@
 
 	// A disconnected, empty connector has no time-based work. connect() wakes it.
 	if(my_hose || reagents.total_volume)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /datum/component/hose_connector/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	UnregisterSignal(carrier, COMSIG_ATOM_EXAMINE)
 	UnregisterSignal(carrier, COMSIG_MOVABLE_MOVED)
 	UnregisterSignal(carrier, COMSIG_HOSE_FORCEPUMP)
@@ -61,7 +61,7 @@
 /datum/component/hose_connector/proc/connected_reagents()
 	return carrier.reagents
 
-/datum/component/hose_connector/process()
+/datum/component/hose_connector/periodic_step()
 	// Return reagents to source if no hose, lossy to avoid exploits
 	if(!my_hose)
 		if(reagents.total_volume)
@@ -86,7 +86,7 @@
 	SIGNAL_HANDLER
 	if(!my_hose)
 		return
-	process()
+	periodic_step()
 	if(makes_gurgles && prob(5))
 		carrier.visible_message(span_infoplain(span_bold("\The [carrier]") + " gurgles as it pumps fluid."))
 
@@ -109,7 +109,7 @@
 /datum/component/hose_connector/proc/connect(datum/hose/H = null)
 	my_hose = H
 	if(my_hose)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 /datum/component/hose_connector/proc/setup_hoses(datum/component/hose_connector/target, distancetonode, mob/user)
 	if(!target || QDELETED(target))
@@ -163,8 +163,8 @@
 	my_hose = null
 	// Flush the connector immediately, then leave the object subsystem. There is
 	// no reason to wait up to one SSobj period merely to discover disconnection.
-	process()
-	STOP_PROCESSING(SSobj, src)
+	periodic_step()
+	PERIODIC_STOP(src)
 
 /datum/component/hose_connector/proc/on_examine(datum/source, mob/user, list/examine_texts)
 	SIGNAL_HANDLER

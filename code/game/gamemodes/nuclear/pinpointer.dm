@@ -21,7 +21,7 @@
 
 /obj/item/pinpointer/Destroy()
 	active = 0
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 /obj/item/pinpointer/attack_self(mob/user)
@@ -32,15 +32,15 @@
 		return
 	if(!active)
 		active = TRUE
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		to_chat(user, span_notice("You activate the pinpointer"))
 	else
 		active = FALSE
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer"))
 
-/obj/item/pinpointer/process()
+/obj/item/pinpointer/periodic_step()
 	if(!active)
 		return PROCESS_KILL
 
@@ -78,7 +78,7 @@
 	var/turf/location = null
 	var/obj/target = null
 
-/obj/item/pinpointer/advpinpointer/process()
+/obj/item/pinpointer/advpinpointer/periodic_step()
 	if(!active)
 		return PROCESS_KILL
 	if(mode == 0)
@@ -201,7 +201,7 @@
 		return TRUE
 	if(!active)
 		active = 1
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		if(!mode)
 			workdisk()
 			to_chat(user, span_notice("Authentication Disk Locator active."))
@@ -210,11 +210,11 @@
 			to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		active = 0
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
-/obj/item/pinpointer/nukeop/process()
+/obj/item/pinpointer/nukeop/periodic_step()
 	if(!active)
 		return PROCESS_KILL
 
@@ -290,15 +290,15 @@
 		return TRUE
 	if(!active)
 		active = TRUE
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 		to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		active = FALSE
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
-/obj/item/pinpointer/shuttle/process()
+/obj/item/pinpointer/shuttle/periodic_step()
 	if(!active)
 		return PROCESS_KILL
 

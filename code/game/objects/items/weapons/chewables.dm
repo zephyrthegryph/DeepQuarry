@@ -42,17 +42,17 @@
 	if(slot == slot_wear_mask)
 		var/mob/living/carbon/human/C = user
 		if(C.check_has_mouth())
-			START_PROCESSING(SSprocessing, src)
+			PERIODIC_START(src, PERIODIC_SECOND)
 		else
 			to_chat(user, span_notice("You don't have a mouth, and can't make much use of \the [src]."))
 
 /obj/item/clothing/mask/chewable/dropped(mob/user, equipping, slot)
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 	..()
 
 /obj/item/clothing/mask/chewable/Destroy()
 	. = ..()
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 
 /obj/item/clothing/mask/chewable/proc/chew()
 	chewtime--
@@ -62,9 +62,9 @@
 			if (src == C.get_equipped_item(SLOT_ID_MASK) && C.check_has_mouth())
 				reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.2)
 		else
-			STOP_PROCESSING(SSprocessing, src)
+			PERIODIC_STOP(src)
 
-/obj/item/clothing/mask/chewable/process()
+/obj/item/clothing/mask/chewable/periodic_step()
 	chew()
 	if(chewtime < 1)
 		spitout()
@@ -101,7 +101,7 @@
 					M.update_inv_l_hand(0)
 					M.update_inv_r_hand(1)
 					M.put_in_hands(butt)
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 	qdel(src)
 
 /obj/item/clothing/mask/chewable/tobacco/cheap
@@ -263,7 +263,7 @@
 	wrapped = TRUE
 	var/list/victims = null
 
-/obj/item/clothing/mask/chewable/candy/lolli/process()
+/obj/item/clothing/mask/chewable/candy/lolli/periodic_step()
 	chew()
 	if(chewtime < 1)
 		spitout(0)
@@ -371,7 +371,7 @@
 	filling = list(REAGENT_ID_SUGAR = 2, REAGENT_ID_CHOCOLATE = 5)
 	type_butt = null
 
-/obj/item/clothing/mask/chewable/candy/pocky/process()
+/obj/item/clothing/mask/chewable/candy/pocky/periodic_step()
 	chew()
 	if(chewtime < 1)
 		if(ismob(loc))

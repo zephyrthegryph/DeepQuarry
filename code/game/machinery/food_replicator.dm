@@ -1,4 +1,5 @@
 /obj/machinery/food_replicator
+	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "Food Replicator"
 	icon = 'icons/obj/machines/food_replicator.dmi'
@@ -199,15 +200,17 @@
 	if(printing)
 		add_overlay("printing")
 
-/obj/machinery/food_replicator/process()
+/// Reconciles its power draw with its state on every power or break change; printing sets its
+/// own draw while it runs.
+/obj/machinery/food_replicator/machine_step()
 	if(stat & (NOPOWER|BROKEN|EMPED))
 		update_use_power(USE_POWER_OFF)
-		return
+		return PROCESS_KILL
 	if(printing)
 		update_use_power(USE_POWER_ACTIVE)
-		return
-	else
-		use_power = USE_POWER_IDLE
+		return PROCESS_KILL
+	use_power = USE_POWER_IDLE
+	return PROCESS_KILL
 
 /obj/machinery/food_replicator/RefreshParts()
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)

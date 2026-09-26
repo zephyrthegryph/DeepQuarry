@@ -21,7 +21,7 @@
 	anchored = TRUE
 	var/generation_rate = 350000
 
-/obj/machinery/power/generator/generated_station/process()
+/obj/machinery/power/generator/generated_station/machine_step()
 	if(stat & BROKEN)
 		return
 	add_avail(generation_rate)

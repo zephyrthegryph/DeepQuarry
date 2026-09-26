@@ -10,7 +10,7 @@
 	var/datum/shuttle/autodock/ferry/arrivals/shuttle = new /datum/shuttle/autodock/ferry/arrivals/unit_test("Unit Test Arrivals")
 	TEST_ASSERT(shuttle.always_process, "arrivals shuttle does not request idle processing from SSshuttles")
 	var/obj/machinery/computer/shuttle_control/arrivals/console = new(null)
-	TEST_ASSERT_EQUAL(console.process(), PROCESS_KILL, "arrivals console still polls an idle shuttle")
+	TEST_ASSERT_EQUAL(console.machine_step(), PROCESS_KILL, "arrivals console still polls an idle shuttle")
 	qdel(console)
 	qdel(shuttle)
 
@@ -215,7 +215,7 @@
 	TEST_ASSERT(shuttle in SSshuttles.active_process_shuttles, "always-processing arrivals shuttle is absent from the active processing set")
 	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
 	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")
-	TEST_ASSERT_EQUAL(console.process(), PROCESS_KILL, "arrivals console still performs idle polling instead of hibernating")
+	TEST_ASSERT_EQUAL(console.machine_step(), PROCESS_KILL, "arrivals console still performs idle polling instead of hibernating")
 	TEST_ASSERT_NOTNULL(shuttle.landmark_station, "arrivals shuttle has no station landmark")
 	var/total_o2_before = 0
 	var/pressurized_turfs_before = 0

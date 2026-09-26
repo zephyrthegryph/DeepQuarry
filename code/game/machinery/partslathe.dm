@@ -139,7 +139,7 @@
 		to_chat(user, span_warning("\The [src] cannot hold more [S.name]."))
 	return 1
 
-/obj/machinery/partslathe/process()
+/obj/machinery/partslathe/machine_step()
 	..()
 	if(stat)
 		update_icon()

@@ -203,7 +203,7 @@
 		node = null
 	if(reference == connected_device || !connected_device)
 		on = 0
-		STOP_MACHINE_PROCESSING(src)
+		MACHINE_SLEEP(src)
 
 	update_underlays()
 

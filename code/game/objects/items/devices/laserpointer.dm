@@ -211,7 +211,7 @@
 	if(energy <= max_energy)
 		if(!recharging)
 			recharging = TRUE
-			START_PROCESSING(SSobj, src)
+			PERIODIC_START(src, PERIODIC_SLOW)
 		if(energy <= 0)
 			to_chat(user, span_warning("You've overused the battery of [src], now it needs time to recharge!"))
 			recharge_locked = TRUE
@@ -222,7 +222,7 @@
 /obj/item/laser_pointer/proc/reset_laser_icon()
 	icon_state = initial(icon_state)
 
-/obj/item/laser_pointer/process()
+/obj/item/laser_pointer/periodic_step()
 	if(prob(20 - recharge_locked*5))
 		energy++
 		if(energy >= max_energy)

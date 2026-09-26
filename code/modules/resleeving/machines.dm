@@ -58,7 +58,7 @@
 	attempting = 0
 	return 1
 
-/obj/machinery/clonepod/transhuman/process()
+/obj/machinery/clonepod/transhuman/machine_step()
 	var/mob/living/occupant = get_occupant()
 	if(stat & NOPOWER)
 		if(occupant)
@@ -190,7 +190,7 @@
 				store_rating = store_rating * rating
 	max_res_amount = store_rating
 
-/obj/machinery/transhuman/synthprinter/process()
+/obj/machinery/transhuman/synthprinter/machine_step()
 	if(stat & NOPOWER)
 		if(busy)
 			busy = 0

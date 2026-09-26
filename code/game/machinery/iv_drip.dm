@@ -44,14 +44,14 @@
 	if(attached)
 		visible_message("[attached] is detached from \the [src]")
 		attached = null
-		STOP_MACHINE_PROCESSING(src)
+		MACHINE_SLEEP(src)
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		visible_message("[usr] attaches \the [src] to \the [over_object].")
 		attached = over_object
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 		update_icon()
 
 
@@ -83,7 +83,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 
-/obj/machinery/iv_drip/process()
+/obj/machinery/iv_drip/machine_step()
 	set background = 1
 	if(!attached)
 		return PROCESS_KILL

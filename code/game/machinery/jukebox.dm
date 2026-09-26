@@ -44,7 +44,7 @@
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
 
-/obj/machinery/media/jukebox/process()
+/obj/machinery/media/jukebox/machine_step()
 	if(!playing)
 		return PROCESS_KILL
 	if(inoperable())
@@ -295,7 +295,7 @@
 
 /obj/machinery/media/jukebox/proc/StopPlaying()
 	playing = 0
-	STOP_MACHINE_PROCESSING(src)
+	MACHINE_SLEEP(src)
 	update_use_power(USE_POWER_IDLE)
 	update_icon()
 	start_stop_song()
@@ -304,7 +304,7 @@
 	if(!current_track)
 		return
 	playing = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	update_use_power(USE_POWER_ACTIVE)
 	update_icon()
 	start_stop_song()

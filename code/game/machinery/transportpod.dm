@@ -22,7 +22,10 @@
 	slot_id = OCCUPANT_SLOT_TRANSPORTPOD
 	name = "transport pod"
 
-/obj/machinery/transportpod/process()
+/// Launches once an occupant confirms; until then it sleeps.
+/obj/machinery/transportpod/machine_step()
+	if(!in_transit || !SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
+		return PROCESS_KILL
 	if(SLOT_ITEM(src, OCCUPANT_SLOT_TRANSPORTPOD))
 		if(in_transit)
 			var/locNum = rand(1, 8) //pick a random location
@@ -68,6 +71,7 @@
 	update_icon()
 	if(tgui_alert(O, "Are you sure you're ready to launch?", "Transport Pod", list("Yes", "No")) == "Yes")
 		in_transit = 1
+		MACHINE_WAKE(src)
 		playsound(src, HYPERSPACE_WARMUP)
 	else
 		go_out()

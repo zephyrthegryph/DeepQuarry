@@ -23,7 +23,7 @@
 	if(deployed)
 		update_icon()
 	ghost_reporter = new(null)
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 	var/static/list/ghost_signals = list(
 		COMSIG_GLOB_GHOST_CAPTURED = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_spectral_experiment),
@@ -37,7 +37,7 @@
 		experiment_signals = ghost_signals)
 
 /obj/item/ghost_trap/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	var/mob/our_entity = captured_entity?.resolve()
 	if(our_entity)
 		REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
@@ -93,7 +93,7 @@
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
 
-/obj/item/ghost_trap/process()
+/obj/item/ghost_trap/periodic_step()
 	if(captured_entity)
 		var/mob/our_entity = captured_entity.resolve()
 		if(our_entity && our_entity.loc != src)

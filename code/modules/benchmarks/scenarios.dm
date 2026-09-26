@@ -318,7 +318,6 @@
 /datum/benchmark/sm_soak/Run()
 	wait_for_assets()
 	if(param("profile_types", 0))
-		SSmachines.profile_machine_types = TRUE
 		SSexplosions.profile_atom_types = TRUE
 	mark("before")
 	var/blasts = param("blasts", 4)
@@ -348,8 +347,6 @@
 		recovered_for = checkpoint
 		end_window("recovery[checkpoint]")
 		mark("recovery[checkpoint]")
-		if(SSmachines.profile_machine_types)
-			SSmachines.dump_machine_profile()
 	detail("drain_samples", drains)
 	detail("garbage", SSgarbage.performance_diagnostics())
 

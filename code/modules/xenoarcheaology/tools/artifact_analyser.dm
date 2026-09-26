@@ -120,7 +120,7 @@
 					atom_say("Scanning begun.")
 			return TRUE
 
-/obj/machinery/artifact_analyser/process()
+/obj/machinery/artifact_analyser/machine_step()
 	if(scan_in_progress && world.time > scan_completion_time)
 		scan_in_progress = 0
 

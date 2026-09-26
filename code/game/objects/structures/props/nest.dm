@@ -22,7 +22,7 @@
 /obj/structure/prop/nest/Initialize(mapload)
 	. = ..()
 	den_mobs = list()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	last_spawn = world.time
 	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
 		var/delayshift_clamp = spawn_delay / 10
@@ -31,7 +31,7 @@
 
 /obj/structure/prop/nest/Destroy()
 	den_mobs = null
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
 /obj/structure/prop/nest/attack_hand(mob/living/user) // Used to tell the player that this isn't useful for anything.
@@ -39,7 +39,7 @@
 	if(user && prob(disturbance_spawn_chance))
 		spawn_creature(get_turf(src))
 
-/obj/structure/prop/nest/process()
+/obj/structure/prop/nest/periodic_step()
 	update_creatures()
 	if(world.time > last_spawn + spawn_delay)
 		spawn_creature(get_turf(src))

@@ -222,9 +222,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/Destroy()
 	unregister_diagnostics()
-	SSmaterial_services.unqueue(src)
-	if(SSmaterial_services.currentrun)
-		SSmaterial_services.currentrun -= src
+	om_cancel_after(src, /datum/om/behaviour/material_service)
 	clear_watches()
 	if(owner?.material_service == src)
 		owner.material_service = null
@@ -239,13 +237,13 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		return
 	var/due = world.time + delay
 	if(!timer)
-		SSmaterial_services.queue(src, due)
+		om_after(src, delay, /datum/om/behaviour/material_service)
 		next_update = due
 		timer = TRUE
 	else
 		if(due < next_update)
 			next_update = due
-			SSmaterial_services.queue(src, due)
+			om_after(src, delay, /datum/om/behaviour/material_service)
 
 /datum/material_service/proc/clear_watches()
 	if(watched_turf)
@@ -470,9 +468,21 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	return accepted
 
 /datum/material_service/proc/tick()
-	SSmaterial_services.unqueue(src)
+	om_cancel_after(src, /datum/om/behaviour/material_service)
 	timer = null
 	advance()
+
+/// Material exposure work: one deadline per service on the core wheel (was SSmaterial_services'
+/// heap). Setting it again moves it; deletion cancels it with the entity.
+/datum/om/behaviour/material_service
+	name = "material exposure"
+	lane = LANE_BACKGROUND
+
+/datum/om/behaviour/material_service/on_deadline(datum/material_service/service)
+	if(QDELETED(service))
+		return
+	service.timer = FALSE
+	service.advance()
 
 /datum/material_service/proc/advance()
 	if(updating || QDELETED(owner))

@@ -60,7 +60,7 @@
 		return
 	INVOKE_ASYNC(src, PROC_REF(sequence_step))
 
-/datum/looping_sound/sequence/react_sleep_violation()
+/datum/looping_sound/sequence/om_sleep_violation()
 	if(stepping)
 		return null
 	return ..()
@@ -72,7 +72,7 @@
 	if(QDELETED(src) || !running)
 		return
 	cancel_loop_timer()
-	loop_token = REACT_AT(src, world.time + next_iteration_delay)
+	loop_token = OM_WAKE_AT(src, world.time + next_iteration_delay)
 
 #define MORSE_DOT	"*" // Yes this is an asterisk but its easier to see on a computer compared to a period.
 #define MORSE_DASH	"-"

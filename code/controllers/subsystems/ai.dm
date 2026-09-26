@@ -71,7 +71,7 @@ SUBSYSTEM_DEF(ai)
 // --- Calm-brain hibernation on mob-chunk keys (reactor.md §9, S2) ---------------------------------
 
 /// A calm brain stops strategic processing until a mob moves in a chunk within its vision
-/// (REACT_KEY_MOB_CHUNK). FALSE if it has a threat, a behavior or a player.
+/// (KEY_MOB_CHUNK). FALSE if it has a threat, a behavior or a player.
 /datum/ai_brain/proc/hibernate_calm()
 	var/turf/T = get_turf(holder)
 	if(!T || primary_threat || active_behavior_type || holder.client)
@@ -80,15 +80,15 @@ SUBSYSTEM_DEF(ai)
 	var/list/keys = list()
 	for(var/cx in MOB_CHUNK_COORD(max(T.x - vision_range, 1)) to MOB_CHUNK_COORD(T.x + vision_range))
 		for(var/cy in MOB_CHUNK_COORD(max(T.y - vision_range, 1)) to MOB_CHUNK_COORD(T.y + vision_range))
-			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, cx, cy), REACT_CHUNK_ANY_MOB)
-	react_sleep_tokens = SSreactor.sleep_on_keys(src, keys)
+			keys += list(KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, cx, cy), KEY_CHUNK_ANY_MOB)
+	react_sleep_tokens = om_sleep_on_keys(src, keys)
 	manage_processing(0)
 	return TRUE
 
 /// Drops the chunk subscriptions without waking (Destroy, or before re-subscribing).
 /datum/ai_brain/proc/cancel_chunk_sleep()
 	if(react_sleep_tokens)
-		SSreactor.cancel_keys(src, react_sleep_tokens)
+		om_cancel_keys(src, react_sleep_tokens)
 		react_sleep_tokens = null
 
 /// Wakes a hibernating brain now. No-op unless it sleeps on chunk keys.
@@ -101,12 +101,12 @@ SUBSYSTEM_DEF(ai)
 	next_strategic_at = 0
 	manage_processing(DQAI_PROCESSING)
 
-/datum/ai_brain/on_react(reason, source, source_kind)
-	if(reason & REACT_REASON_KEY)
+/datum/ai_brain/om_woken(reason)
+	if(reason & OM_WOKEN_KEY)
 		wake_from_chunks()
 
 /// Asleep with a threat in hand: it should be awake.
-/datum/ai_brain/react_sleep_violation()
+/datum/ai_brain/om_sleep_violation()
 	if(!react_sleep_tokens || (process_flags & DQAI_PROCESSING))
 		return null
 	if(primary_threat)

@@ -161,7 +161,7 @@
 				to_chat(user, span_warning("Turbine not connected."))
 				stat |= BROKEN
 
-/obj/machinery/compressor/process()
+/obj/machinery/compressor/machine_step()
 	if(!turbine)
 		stat = BROKEN
 	if(stat & BROKEN || panel_open)
@@ -255,7 +255,7 @@
 				to_chat(user, span_warning("Compressor not connected."))
 				stat |= BROKEN
 
-/obj/machinery/power/turbine/process()
+/obj/machinery/power/turbine/machine_step()
 	if(!compressor)
 		stat = BROKEN
 	if((stat & BROKEN) || panel_open)

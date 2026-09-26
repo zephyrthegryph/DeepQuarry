@@ -136,7 +136,7 @@
 /obj/machinery/mining/drill/loaded
 	cell = /obj/item/cell/high
 
-/obj/machinery/mining/drill/process()
+/obj/machinery/mining/drill/machine_step()
 
 	if(need_player_check)
 		return

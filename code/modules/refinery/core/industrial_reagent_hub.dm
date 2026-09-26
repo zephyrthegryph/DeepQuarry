@@ -18,7 +18,7 @@
 	update_neighbours()
 	update_icon()
 
-/obj/machinery/reagent_refinery/hub/process()
+/obj/machinery/reagent_refinery/hub/machine_step()
 	if(!anchored)
 		return
 

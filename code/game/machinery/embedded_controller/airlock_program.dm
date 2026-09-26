@@ -184,7 +184,7 @@
 
 
 
-/datum/embedded_program/airlock/process()
+/datum/embedded_program/airlock/periodic_step()
 	if(!state) //Idle
 		if(target_state)
 			switch(target_state)

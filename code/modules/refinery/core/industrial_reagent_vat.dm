@@ -17,7 +17,7 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/reagent_refinery/vat/process()
+/obj/machinery/reagent_refinery/vat/machine_step()
 	if(length(BUCKLED_MOBS(src)) && reagents.total_volume > 0)
 		for(var/mob/living/L in BUCKLED_MOBS(src))
 			reagents.trans_to(L, 1) // Soak in the juices

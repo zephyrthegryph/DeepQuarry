@@ -4,7 +4,7 @@
 
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
 		var/new_chem = pick(SSchemistry.chemical_reagents)
 		if(new_chem in GLOB.obtainable_chemical_blacklist)
@@ -14,10 +14,10 @@
 			break
 
 /obj/item/reagent_containers/glass/replenishing/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/reagent_containers/glass/replenishing/process()
+/obj/item/reagent_containers/glass/replenishing/periodic_step()
 	reagents.add_reagent(spawning_id, 0.3)
 
 //a talking gas mask!
@@ -28,13 +28,13 @@
 
 /obj/item/clothing/mask/gas/poltergeist/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/clothing/mask/gas/poltergeist/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/clothing/mask/gas/poltergeist/process()
+/obj/item/clothing/mask/gas/poltergeist/periodic_step()
 	if(length(heard_talk) && isliving(src.loc) && prob(10))
 		var/mob/living/M = src.loc
 		M.say(DEFAULTPICK(heard_talk, null))
@@ -64,13 +64,13 @@
 
 /obj/item/vampiric/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/vampiric/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/vampiric/process()
+/obj/item/vampiric/periodic_step()
 	//see if we've identified anyone nearby
 	if(world.time - last_bloodcall > bloodcall_interval && length(nearby_mobs))
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
@@ -156,14 +156,14 @@
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	loc_last_process = src.loc
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/effect/decal/cleanable/blood/splatter/animated/process()
+/obj/effect/decal/cleanable/blood/splatter/animated/periodic_step()
 	if(target_turf && src.loc != target_turf)
 		step_towards(src,target_turf)
 		if(src.loc == loc_last_process)
@@ -191,13 +191,13 @@
 
 /obj/effect/shadow_wight/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/shadow_wight/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/effect/shadow_wight/process()
+/obj/effect/shadow_wight/periodic_step()
 	if(src.loc)
 		src.loc = get_turf(pick(orange(1,src)))
 		var/mob/living/carbon/M = locate() in src.loc
@@ -222,7 +222,7 @@
 
 			src.loc = null
 	else
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 		qdel(src) //Let's not just sit in nullspace forever, yeah?
 
 /obj/effect/shadow_wight/Bump(atom/obstacle)

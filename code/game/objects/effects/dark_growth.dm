@@ -111,10 +111,10 @@
 /obj/structure/prop/dark_node/Initialize(mapload)
 	. = ..()
 	set_light(light_range, -20, "#FFFFFF")
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/structure/prop/dark_node/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	for(var/obj/effect/dark/dark_tile in children_effects)
 		dark_tile.unlinked()
 	return ..()
@@ -155,7 +155,7 @@
 				continue
 			LAZYADD(linked_node.children_effects, new_dark_tile)
 
-/obj/structure/prop/dark_node/process()
+/obj/structure/prop/dark_node/periodic_step()
 	//set background = 1
 
 	if(!(locate(/obj/effect/dark) in get_turf(src)))

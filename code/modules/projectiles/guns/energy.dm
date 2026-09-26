@@ -32,7 +32,7 @@
 	. = ..()
 	if(self_recharge)
 		power_supply = new /obj/item/cell/device/weapon(src)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	else
 		if(cell_type)
 			power_supply = new cell_type(src)
@@ -45,7 +45,7 @@
 
 /obj/item/gun/energy/Destroy()
 	if(self_recharge)
-		STOP_PROCESSING(SSobj, src)
+		PERIODIC_STOP(src)
 	if(power_supply?.loc == src && !QDELETED(power_supply))
 		qdel(power_supply)
 	power_supply = null
@@ -54,7 +54,7 @@
 /obj/item/gun/energy/get_cell()
 	return power_supply
 
-/obj/item/gun/energy/process()
+/obj/item/gun/energy/periodic_step()
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
 		if(world.time > last_shot + charge_delay)	//Doesn't work if you've fired recently
 			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
@@ -124,7 +124,7 @@
 	if(!power_supply.checked_use(enhanced_cost)) return null
 	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
 	if(self_recharge)
-		START_PROCESSING(SSobj, src)
+		PERIODIC_START(src, PERIODIC_SLOW)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used.update_ammo_hud(M, src)
@@ -244,7 +244,7 @@
 	if(power_supply == null)
 		power_supply = new /obj/item/cell/device/weapon(src)
 	self_recharge = 1
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/item/gun/energy/get_description_interaction()

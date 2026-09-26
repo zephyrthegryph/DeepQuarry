@@ -159,7 +159,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	flick("holopadload", src)
 	A.holo = src
 	if(LAZYLEN(masters))
-		START_MACHINE_PROCESSING(src)
+		MACHINE_WAKE(src)
 
 	// Let the AI experience area ambiences too
 	var/area/ar = get_area(hologram.loc)
@@ -176,7 +176,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		icon_state = "holopad0"
 	return 1
 
-/obj/machinery/hologram/holopad/process()
+/obj/machinery/hologram/holopad/machine_step()
 	for (var/mob/living/silicon/ai/master in masters)
 		var/active_ai = (master && !master.stat && master.client && ACTIVE_EYE(master))//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
 		if((stat & NOPOWER) || !active_ai)

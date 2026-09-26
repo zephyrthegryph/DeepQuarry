@@ -135,7 +135,7 @@
 	if(. && !issilicon(ui.user))
 		playsound(src, "terminal_type", 50, 1)
 
-/obj/machinery/computer/ship/sensors/process()
+/obj/machinery/computer/ship/sensors/machine_step()
 	..()
 	refresh_sensor_light()
 	return PROCESS_KILL
@@ -220,9 +220,9 @@
 	update_use_power(!use_power)
 	update_icon()
 	refresh_linked_consoles()
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
-/obj/machinery/shipsensors/process()
+/obj/machinery/shipsensors/machine_step()
 	if(use_power) //can't run in non-vacuum
 		if(!in_vacuum())
 			toggle()

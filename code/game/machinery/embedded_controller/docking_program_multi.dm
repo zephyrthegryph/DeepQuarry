@@ -178,7 +178,7 @@
 		if ("finish_undocking")
 			docking_enabled = 0
 
-/datum/embedded_program/airlock/multi_docking/process()
+/datum/embedded_program/airlock/multi_docking/periodic_step()
 	..()
 
 	if (docking_enabled && !response_sent)

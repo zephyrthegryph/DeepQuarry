@@ -65,7 +65,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		return
 	. = 1
 
-/obj/machinery/power/fusion_core/process()
+/obj/machinery/power/fusion_core/machine_step()
 	if((stat & BROKEN) || !powernet || !owned_field)
 		Shutdown()
 
@@ -78,7 +78,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 
 		spawn(1)
 			if(!QDELETED(owned_field))
-				owned_field.process()
+				owned_field.periodic_step()
 				owned_field.stability_monitor()
 				owned_field.radiation_scale()
 				owned_field.temp_dump()

@@ -11,9 +11,9 @@
 
 /obj/item/stack/material/supermatter/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/stack/material/supermatter/process()
+/obj/item/stack/material/supermatter/periodic_step()
 	radiate()
 	..()
 
@@ -35,7 +35,7 @@
 	active = FALSE
 
 /obj/item/stack/material/supermatter/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	return ..()
 
 

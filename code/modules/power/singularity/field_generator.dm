@@ -75,7 +75,7 @@
 	AddElement(/datum/element/climbable)
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
 
-/obj/machinery/field_generator/process()
+/obj/machinery/field_generator/machine_step()
 	if(Varedit_start == 1)
 		if(active == 0)
 			active = 1
@@ -204,7 +204,7 @@
 
 /obj/machinery/field_generator/proc/turn_on()
 	active = 1
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 	warming_up = 1
 	spawn(1)
 		while (warming_up<3 && active)
@@ -278,7 +278,7 @@
 	spawn(4)
 		setup_field(8)
 	src.active = 2
-	START_MACHINE_PROCESSING(src)
+	MACHINE_WAKE(src)
 
 
 /obj/machinery/field_generator/proc/setup_field(NSEW)

@@ -62,7 +62,7 @@
 	SSflight_operations?.register_vessel(src)
 
 /obj/effect/overmap/visitable/ship/Destroy()
-	STOP_PROCESSING(SSprocessing, src)
+	PERIODIC_STOP(src)
 	remove_vis_overlay(vector)
 	SSshuttles.ships -= src
 	if(SSflight_operations && flight_vessel_id)
@@ -142,7 +142,7 @@
 		return
 	// If it is now still, stopped moving
 	else if(still)
-		STOP_PROCESSING(SSprocessing, src)
+		PERIODIC_STOP(src)
 		for(var/zz in map_z)
 			SSstarmover.toggle_move_stars(zz)
 		if(last_sound + sound_cooldown >= world.time)
@@ -154,8 +154,8 @@
 
 	// If it started moving
 	else
-		START_PROCESSING(SSprocessing, src)
-		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(SSprocessing.wait), 1) //Down to whatever decimal
+		PERIODIC_START(src, PERIODIC_SECOND)
+		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
 		for(var/zz in map_z)
 			SSstarmover.toggle_move_stars(zz, fore_dir)
 		if(last_sound + sound_cooldown >= world.time)
@@ -184,7 +184,7 @@
 /obj/effect/overmap/visitable/ship/proc/accelerate(direction, accel_limit)
 	return
 
-/obj/effect/overmap/visitable/ship/process(wait)
+/obj/effect/overmap/visitable/ship/periodic_step(wait)
 	adjust_speed(-speed[1], -speed[2])
 	return PROCESS_KILL
 

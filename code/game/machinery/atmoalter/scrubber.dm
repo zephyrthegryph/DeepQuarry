@@ -17,7 +17,6 @@
 
 	var/minrate = 0
 	var/maxrate = 10 * ONE_ATMOSPHERE
-	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 
 	var/list/scrubbing_gas = list(GAS_PHORON, GAS_CO2, GAS_N2O, GAS_VOLATILE_FUEL, GAS_CH4)
 
@@ -35,10 +34,7 @@
 	if(prob(50/severity))
 		on = !on
 		if(on)
-			if(polls)
-				START_MACHINE_PROCESSING(src)
-			else
-				om_changed(src, CHANGE_MACHINE_SETTINGS)
+			om_changed(src, CHANGE_MACHINE_SETTINGS)
 		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/update_icon()
@@ -148,10 +144,7 @@
 		if("power")
 			on = !on
 			if(on)
-				if(polls)
-					START_MACHINE_PROCESSING(src)
-				else
-					om_changed(src, CHANGE_MACHINE_SETTINGS)
+				om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = TRUE
 		if("eject")
 			if(holding)

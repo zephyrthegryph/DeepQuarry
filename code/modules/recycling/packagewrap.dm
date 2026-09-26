@@ -113,13 +113,13 @@
 
 /obj/item/packageWrap/borg/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/packageWrap/borg/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/packageWrap/borg/process()
+/obj/item/packageWrap/borg/periodic_step()
 	if(recharge_ticker < 5)
 		recharge_ticker ++
 		return

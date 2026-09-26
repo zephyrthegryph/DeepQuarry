@@ -106,7 +106,7 @@
 
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
-	START_PROCESSING(SSobj, src)
+	PERIODIC_START(src, PERIODIC_SLOW)
 	AddComponent(/datum/component/recursive_move)
 	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(moved_event))
 	if(always_on)
@@ -117,7 +117,7 @@
 
 /obj/item/shield_projector/Destroy()
 	destroy_shields()
-	STOP_PROCESSING(SSobj, src)
+	PERIODIC_STOP(src)
 	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 	return ..()
 
@@ -226,7 +226,7 @@
 
 	on ? create_shields() : destroy_shields() // Harmless if called when in the wrong state.
 
-/obj/item/shield_projector/process()
+/obj/item/shield_projector/periodic_step()
 	if(get_integrity() < max_integrity && ( (last_damaged_time + shield_regen_delay) < world.time) )
 		adjust_health(shield_regen_amount)
 		if(always_on && !active) // Make shields as soon as possible if this is set.
@@ -388,7 +388,7 @@
 	var/obj/item/mecha_parts/mecha_equipment/combat_shield/my_tool = null
 	special_handling = TRUE
 
-/obj/item/shield_projector/line/exosuit/process()
+/obj/item/shield_projector/line/exosuit/periodic_step()
 	..()
 	if((my_tool && loc != my_tool) && (my_mecha && loc != my_mecha))
 		forceMove(my_tool)

@@ -251,10 +251,10 @@
 /// Organ processing.
 /datum/om/stage/life/guts/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
 	for(var/obj/item/organ/OR in self.internal_organs)
-		OR.process()
+		OR.periodic_step()
 
 	for(var/obj/item/organ/OR in self.organs)
-		OR.process()
+		OR.periodic_step()
 
 /// Only mobs carrying real organ objects process them (most list organ paths for butchery).
 /datum/om/stage/life/guts/idle(mob/living/simple_mob/self)
