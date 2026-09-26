@@ -14,18 +14,16 @@
 		return // Already doing it.
 	processing = TRUE
 	playsound(src, 'sound/machines/juicer.ogg', 50, 1)
-	for(var/atom/movable/AM in to_be_processed)
-		extract(AM)
-		sleep(1 SECONDS)
+	process_next()
 
-	while(monkeys_recycled >= 1)
-		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		monkeys_recycled -= 1
-		sleep(1 SECOND)
-
-	processing = FALSE
-	playsound(src, 'sound/machines/ding.ogg', 50, 1)
+/obj/machinery/processor/monkey/output_next()
+	if(monkeys_recycled < 1)
+		finish_processing()
+		return
+	new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
+	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	monkeys_recycled -= 1
+	om_after(src, 1 SECOND, PROC_REF(output_next))
 
 /obj/machinery/processor/monkey/extract(atom/movable/AM)
 	if(istype(AM, /mob/living/carbon/human))
@@ -34,7 +32,6 @@
 		LAZYREMOVE(to_be_processed, M)
 		qdel(M)
 		monkeys_recycled++
-		sleep(1 SECOND)
 
 /obj/machinery/processor/monkey/can_insert(atom/movable/AM)
 	if(istype(AM, /mob/living/carbon/human))

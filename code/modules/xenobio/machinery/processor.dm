@@ -80,16 +80,33 @@
 		return // Already doing it.
 	processing = TRUE
 	playsound(src, 'sound/machines/juicer.ogg', 50, 1)
-	for(var/atom/movable/AM in to_be_processed)
-		extract(AM)
-		sleep(1 SECONDS)
+	process_next()
 
-	while(monkeys_recycled >= 4)
-		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		monkeys_recycled -= 4
-		sleep(1 SECOND)
+/// Extracts the next queued thing, one a second (plus a second per slime core), then the cubes.
+/obj/machinery/processor/proc/process_next()
+	var/atom/movable/AM = LAZYACCESS(to_be_processed, 1)
+	if(!AM)
+		output_next()
+		return
+	var/wait = 1 SECOND
+	var/mob/living/simple_mob/slime/S = AM
+	if(istype(S))
+		wait += S.cores * (1 SECOND)
+	extract(AM)
+	LAZYREMOVE(to_be_processed, AM)
+	om_after(src, wait, PROC_REF(process_next))
 
+/// One monkey cube a second while four monkeys' worth is recycled.
+/obj/machinery/processor/proc/output_next()
+	if(monkeys_recycled < 4)
+		finish_processing()
+		return
+	new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
+	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	monkeys_recycled -= 4
+	om_after(src, 1 SECOND, PROC_REF(output_next))
+
+/obj/machinery/processor/proc/finish_processing()
 	processing = FALSE
 	playsound(src, 'sound/machines/ding.ogg', 50, 1)
 
@@ -97,10 +114,9 @@
 	if(istype(AM, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/S = AM
 		while(S.cores)
-			var/atom/new_core = new S.coretype(get_turf(src))
-			playsound(src, 'sound/effects/splat.ogg', 50, 1)
+			new S.coretype(get_turf(src))
 			S.cores--
-			sleep(1 SECOND)
+		playsound(src, 'sound/effects/splat.ogg', 50, 1)
 		LAZYREMOVE(to_be_processed, S)
 		qdel(S)
 
@@ -110,7 +126,6 @@
 		LAZYREMOVE(to_be_processed, M)
 		qdel(M)
 		monkeys_recycled++
-		sleep(1 SECOND)
 
 /obj/machinery/processor/proc/can_insert(atom/movable/AM)
 	if(istype(AM, /mob/living/simple_mob/slime))
