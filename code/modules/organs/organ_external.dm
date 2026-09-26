@@ -616,10 +616,9 @@
 					if(children && children.len)
 						var/brute_on_children = brute_third / children.len
 						var/burn_on_children = burn_third / children.len
-						spawn()
-							for(var/obj/item/organ/external/C in children)
-								if(!C.is_stump())
-									C.apply_wound_damage(brute_on_children, burn_on_children, FALSE, FALSE, null, forbidden_limbs, 1) //Splits the damage to each individual 'child', incase multiple exist.
+						for(var/obj/item/organ/external/C in children)
+							if(!C.is_stump())
+								C.apply_wound_damage(brute_on_children, burn_on_children, FALSE, FALSE, null, forbidden_limbs, 1) //Splits the damage to each individual 'child', incase multiple exist.
 					parent.apply_wound_damage(brute_third, burn_third, FALSE, FALSE, null, forbidden_limbs, 1)
 	return update_icon()
 
@@ -1152,13 +1151,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 			stump.update_damages()
 		victim?.body?.on_status_changed()
 
-	spawn(1)
-		if(istype(victim))
-			victim.UpdateDamageIcon()
-			victim.update_icons_body()
-		else
-			victim.update_icons()
-		dir = 2
+	om_after(victim, 1, /proc/droplimb_refresh_icons, victim)
+	dir = 2
 
 	var/atom/droploc = victim.drop_location()
 	switch(disintegrate)
@@ -1555,8 +1549,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		spark_system.set_up(5, 0, victim)
 		spark_system.attach(owner)
 		spark_system.start()
-		spawn(10)
-			qdel(spark_system)
+		om_qdel_after(spark_system, 1 SECOND)
 		qdel(src)
 
 	victim.refresh_modular_limb_verbs()
@@ -1714,3 +1707,12 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/digitize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
 	robotize(company, skip_prosthetics, keep_organs)
+
+/// A tick after a limb comes off, the body's icons catch up.
+/proc/droplimb_refresh_icons(mob/living/victim)
+	if(ishuman(victim))
+		var/mob/living/carbon/human/H = victim
+		H.UpdateDamageIcon()
+		H.update_icons_body()
+	else
+		victim.update_icons()

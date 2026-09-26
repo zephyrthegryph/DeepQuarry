@@ -316,8 +316,7 @@
 			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_EAR_L))
 			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_EAR_R))
 			owner.drop_from_inventory(owner.get_equipped_item(SLOT_ID_MASK))
-			spawn(1)
-				owner.update_hair()
+			om_after(owner, 1, TYPE_PROC_REF(/mob/living/carbon/human, update_hair))
 	get_icon()
 	..()
 
