@@ -18,6 +18,6 @@ mod metrics;
 mod pipes;
 mod power;
 pub mod propagate;
-pub mod reactor;
 pub mod registry;
+mod sched;
 pub mod world;

@@ -16,7 +16,7 @@
 // convention (one parameter per Regulator setting plus both bodies'
 // state); an item-level #[allow] doesn't reach the warning, which is
 // emitted inside ::byondapi::bind's own macro expansion (see
-// ffi/src/reactor.rs's file-level allow and its comment for the same
+// ffi/src/sched.rs's file-level allow and its comment for the same
 // reason).
 #![allow(clippy::too_many_arguments)]
 

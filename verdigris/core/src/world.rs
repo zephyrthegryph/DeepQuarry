@@ -47,6 +47,10 @@
 //! synchronously and dispatches the **worker phase** frame on the pool. The
 //! two phases run in lockstep, one step per tick at most; DM never waits.
 
+mod subscriptions;
+
+pub use subscriptions::Subscription;
+
 use std::any::{Any, TypeId};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap};
@@ -1571,6 +1575,7 @@ impl WorldBuilder {
             wakes: Vec::new(),
             threshold_crossings: Vec::new(),
             violations: Vec::new(),
+            subs: subscriptions::Subscriptions::default(),
         })
     }
 }
@@ -1684,6 +1689,8 @@ pub struct World {
     wakes: Vec<Wake>,
     threshold_crossings: Vec<ThresholdCrossing>,
     violations: Vec<Violation>,
+    /// DM timers, keys, rate models and watch records.
+    subs: subscriptions::Subscriptions,
 }
 
 impl World {
@@ -2321,6 +2328,15 @@ impl World {
     /// `0.0` for one that isn't (a region, a field cell).
     pub fn push_event<E: crate::event::Event>(&mut self, entity: f32, event: &E) {
         self.events.push(entity, event);
+    }
+
+    /// Evaluates main-owned kinds' watches now: DM writes their rows
+    /// synchronously, so a watch on one need not wait for the next step
+    /// (the scheduler's per-tick drain calls this).
+    pub fn evaluate_main_watches(&mut self) {
+        for k in &mut self.kinds {
+            k.after_main(&self.main, &mut self.wakes, &mut self.threshold_crossings);
+        }
     }
 
     /// Every component-kind watch wake fired since the last drain (feed

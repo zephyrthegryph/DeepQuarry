@@ -371,6 +371,14 @@ impl EntityTable {
         self.slot(entity).is_ok()
     }
 
+    /// The live entity in slot `index`, if any (a store row's entity).
+    #[must_use]
+    pub fn at(&self, index: u32) -> Option<EntityId> {
+        let slot = self.slots.get(index as usize)?;
+        slot.live.as_ref()?;
+        EntityId::new(index, slot.generation)
+    }
+
     /// Live entities.
     #[must_use]
     pub const fn len(&self) -> usize {

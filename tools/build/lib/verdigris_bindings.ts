@@ -655,8 +655,6 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
     dm += `#define ${kindDefine} ${comp.kind}\n`;
     dm += `/// The code the generic vg_component_* binds take for ${structName}.\n`;
     dm += `#define ${codeDefine} ${code}\n`;
-    dm += `/// ${structName}'s watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).\n`;
-    dm += `#define REACT_DOMAIN_${upper} (VG_WORLD_KIND_BASE | ${codeDefine})\n`;
     for (const f of comp.fields) {
       dm += `#define VG_${upper}_FIELD_${f.name.toUpperCase()} ${f.id}\n`;
     }

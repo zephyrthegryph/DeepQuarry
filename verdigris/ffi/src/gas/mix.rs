@@ -562,8 +562,15 @@ pub fn watch(sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId)> 
     if refs.iter().any(|r| matches!(r, MixRef::Turf(_))) {
         bail!("a gas watch takes turf gas or other mixtures, not both");
     }
-    let loaded: Vec<(u32, Option<Mixture>)> = refs.iter().map(|&r| (r.id(), load(r))).collect();
-    with_mixes(|m| {
+    watch_mirrored(sub, lane, cond, ids).map(|id| (1, id))
+}
+
+/// Registers `cond` on the mirror port (any handles, turf cells included:
+/// their mirror is refreshed from DM's own view at each drain) and primes
+/// it with the current values, so a write right after registering fires.
+fn watch_mirrored(sub: Subscriber, lane: Lane, cond: &Cond, ids: Vec<u32>) -> Result<WatchId> {
+    let loaded: Vec<(u32, Option<Mixture>)> = ids.iter().map(|&h| (h, MixRef::from_id(h).and_then(load))).collect();
+    let (id, primed) = with_mixes(|m| {
         let id = m.port.watch(sub, lane, cond).map_err(|e| eyre!("{e:?}"))?;
         for (h, mix) in loaded {
             *m.watched.entry(h).or_default() += 1;
@@ -572,8 +579,19 @@ pub fn watch(sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId)> 
             }
         }
         m.cells.insert(id, ids);
-        Ok((1, id))
-    })
+        Ok::<_, eyre::Report>((id, evaluate(m)))
+    })?;
+    HELD.with_borrow_mut(|h| h.2.extend(primed));
+    Ok(id)
+}
+
+/// Runs the mirror port's watches once.
+fn evaluate(m: &mut Mixes) -> Vec<Wake> {
+    let mut outbox: Outbox<GasCell> = Outbox::default();
+    m.port.dispatch(&mut m.state);
+    m.state.evaluate(&m.probes, &mut outbox);
+    m.port.filter(&mut outbox);
+    outbox.wakes().to_vec()
 }
 
 /// Removes a watch [`watch`] returned.
@@ -610,25 +628,28 @@ fn take_wakes() -> Vec<Wake> {
             ..w
         })
         .collect();
+    // Turf cells change on the worker: refresh their mirrors from DM's view.
+    let turfs: Vec<u32> = with_mixes(|m| m.watched.keys().copied().filter(|&h| h >= TURF_BASE).collect());
+    let fresh: Vec<(u32, GasCell)> = turfs.into_iter().filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?)))).collect();
     with_mixes(|m| {
-        let mut outbox: Outbox<GasCell> = Outbox::default();
-        m.port.dispatch(&mut m.state);
-        m.state.evaluate(&m.probes, &mut outbox);
-        m.port.filter(&mut outbox);
-        out.extend_from_slice(outbox.wakes());
+        for (h, c) in fresh {
+            m.probes.set(h, c);
+        }
+        out.extend(evaluate(m));
     });
+    out.extend(HELD.with_borrow_mut(|h| std::mem::take(&mut h.2)));
     out
 }
 
 thread_local! {
     /// Wakes collected for one side (reactor or dirty) while draining the
     /// other: every drain takes both.
-    static HELD: RefCell<(Vec<Wake>, Vec<Wake>)> = const { RefCell::new((Vec::new(), Vec::new())) };
+    static HELD: RefCell<(Vec<Wake>, Vec<Wake>, Vec<Wake>)> = const { RefCell::new((Vec::new(), Vec::new(), Vec::new())) };
 }
 
 fn split_wakes() {
     let wakes = take_wakes();
-    HELD.with_borrow_mut(|(reactor, dirty)| {
+    HELD.with_borrow_mut(|(reactor, dirty, _)| {
         for w in wakes {
             if w.subscriber == DIRTY {
                 dirty.push(w)
@@ -642,7 +663,7 @@ fn split_wakes() {
 /// The reactor's gas wakes since the last call.
 pub fn reactor_wakes(out: &mut Vec<Wake>) {
     split_wakes();
-    HELD.with_borrow_mut(|(reactor, _)| out.append(reactor));
+    HELD.with_borrow_mut(|(reactor, _, _)| out.append(reactor));
 }
 
 /// Dirty-change bits DM machinery interest masks use.
@@ -674,8 +695,8 @@ pub fn watch_dirty(id: u32, mask: u8) {
         cell: id,
         mask: bits,
     };
-    if let Ok(w) = watch(DIRTY, Lane::Normal, &cond) {
-        with_mixes(|m| m.dirty.insert(id, pack(w)));
+    if let Ok(w) = watch_mirrored(DIRTY, Lane::Normal, &cond, vec![id]) {
+        with_mixes(|m| m.dirty.insert(id, pack((1, w))));
     }
 }
 
@@ -714,7 +735,7 @@ pub fn drain_observations() -> Vec<f32> {
     };
     split_wakes();
     let mut masks: Vec<(u32, u8)> = Vec::new();
-    HELD.with_borrow_mut(|(_, dirty)| {
+    HELD.with_borrow_mut(|(_, dirty, _)| {
         for w in dirty.drain(..) {
             let mask = DIRTY_CHANNELS
                 .iter()

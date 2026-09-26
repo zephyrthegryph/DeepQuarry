@@ -64,7 +64,7 @@
 	TEST_ASSERT(PD.asleep_on_keys(), "idle point defense did not sleep on the meteor key")
 	TEST_ASSERT_NULL(PD.react_sleep_violation(), "an idle point defense reported a violation")
 	// The meteor key is what /obj/effect/meteor publishes on Initialize and Destroy.
-	var/failure = react_wake_test(PD, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_react_publish), REACT_KEY_METEORS, 1, REACT_KEY_CHANGED))
+	var/failure = react_wake_test(PD, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_world_publish), REACT_KEY_METEORS, 1, REACT_KEY_CHANGED))
 	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_s2_wake_disposal

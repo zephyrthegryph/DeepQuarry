@@ -12,6 +12,8 @@
 	var/tmp/vg_heat = 0
 	/// Which power component kind (a VG_POWER_* define), or 0.
 	var/tmp/vg_power = 0
+	/// Which test_domain component kind (a VG_TEST_DOMAIN_* define), or 0.
+	var/tmp/vg_test_domain = 0
 
 /// Binds this datum's gas component (if the type declares one) and
 /// returns the (possibly newly created) entity handle. Overridden per
@@ -49,13 +51,23 @@
 /datum/proc/vg_reconcile_power()
 	return list()
 
+/// Binds this datum's test_domain component (if the type declares one) and
+/// returns the (possibly newly created) entity handle. Overridden per
+/// bound type below.
+/datum/proc/vg_bind_test_domain(entity)
+	return entity
+
+/// Reconciler (§7): mismatches between this datum's declared inputs and
+/// what Rust has stored for its test_domain component, repairing as it goes.
+/// Overridden per bound type below.
+/datum/proc/vg_reconcile_test_domain()
+	return list()
+
 // ---- Pump (gas kind 1, owner worker; verdigris/domains/gas/src/kind/pump.rs) ----
 
 #define VG_GAS_PUMP 1
 /// The code the generic vg_component_* binds take for Pump.
 #define VG_KIND_PUMP 1
-/// Pump's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_PUMP (VG_WORLD_KIND_BASE | VG_KIND_PUMP)
 #define VG_PUMP_FIELD_TARGET_PRESSURE 0
 #define VG_PUMP_FIELD_POWER_RATING 1
 #define VG_PUMP_FIELD_ON 2
@@ -165,8 +177,6 @@
 #define VG_GAS_GASMIX 2
 /// The code the generic vg_component_* binds take for GasMix.
 #define VG_KIND_GASMIX 2
-/// GasMix's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_GASMIX (VG_WORLD_KIND_BASE | VG_KIND_GASMIX)
 #define VG_GASMIX_FIELD_MOLES 0
 #define VG_GASMIX_FIELD_TEMPERATURE 1
 #define VG_GASMIX_FIELD_VOLUME 2
@@ -246,8 +256,6 @@
 #define VG_GAS_DEVICEFLOW 3
 /// The code the generic vg_component_* binds take for DeviceFlow.
 #define VG_KIND_DEVICEFLOW 3
-/// DeviceFlow's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_DEVICEFLOW (VG_WORLD_KIND_BASE | VG_KIND_DEVICEFLOW)
 #define VG_DEVICEFLOW_FIELD_DEVICE 0
 #define VG_DEVICEFLOW_FIELD_GASES 1
 #define VG_DEVICEFLOW_FIELD_RATE_KIND 2
@@ -332,8 +340,6 @@
 #define VG_GAS_DEVICEVALVE 4
 /// The code the generic vg_component_* binds take for DeviceValve.
 #define VG_KIND_DEVICEVALVE 4
-/// DeviceValve's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_DEVICEVALVE (VG_WORLD_KIND_BASE | VG_KIND_DEVICEVALVE)
 #define VG_DEVICEVALVE_FIELD_DEVICE 0
 #define VG_DEVICEVALVE_FIELD_OPEN 1
 
@@ -364,8 +370,6 @@
 #define VG_HEAT_HEATBODY 1
 /// The code the generic vg_component_* binds take for HeatBody.
 #define VG_KIND_HEATBODY 513
-/// HeatBody's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_HEATBODY (VG_WORLD_KIND_BASE | VG_KIND_HEATBODY)
 #define VG_HEATBODY_FIELD_CAPACITY 0
 #define VG_HEATBODY_FIELD_ENERGY 1
 #define VG_HEATBODY_FIELD_POWER 2
@@ -473,8 +477,6 @@
 #define VG_HEAT_SOLIDCOUPLING 2
 /// The code the generic vg_component_* binds take for SolidCoupling.
 #define VG_KIND_SOLIDCOUPLING 514
-/// SolidCoupling's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_SOLIDCOUPLING (VG_WORLD_KIND_BASE | VG_KIND_SOLIDCOUPLING)
 #define VG_SOLIDCOUPLING_FIELD_BODY 0
 #define VG_SOLIDCOUPLING_FIELD_CELL 1
 #define VG_SOLIDCOUPLING_FIELD_CONDUCTANCE 2
@@ -531,8 +533,6 @@
 #define VG_HEAT_BODYCOUPLING 3
 /// The code the generic vg_component_* binds take for BodyCoupling.
 #define VG_KIND_BODYCOUPLING 515
-/// BodyCoupling's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_BODYCOUPLING (VG_WORLD_KIND_BASE | VG_KIND_BODYCOUPLING)
 #define VG_BODYCOUPLING_FIELD_BODY 0
 #define VG_BODYCOUPLING_FIELD_OTHER 1
 #define VG_BODYCOUPLING_FIELD_CONDUCTANCE 2
@@ -589,8 +589,6 @@
 #define VG_HEAT_GASCOUPLING 4
 /// The code the generic vg_component_* binds take for GasCoupling.
 #define VG_KIND_GASCOUPLING 516
-/// GasCoupling's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_GASCOUPLING (VG_WORLD_KIND_BASE | VG_KIND_GASCOUPLING)
 #define VG_GASCOUPLING_FIELD_BODY 0
 #define VG_GASCOUPLING_FIELD_KIND 1
 #define VG_GASCOUPLING_FIELD_TARGET 2
@@ -657,8 +655,6 @@
 #define VG_HEAT_REGULATOR 5
 /// The code the generic vg_component_* binds take for Regulator.
 #define VG_KIND_REGULATOR 517
-/// Regulator's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_REGULATOR (VG_WORLD_KIND_BASE | VG_KIND_REGULATOR)
 #define VG_REGULATOR_FIELD_CONTROLLED 0
 #define VG_REGULATOR_FIELD_OTHER 1
 #define VG_REGULATOR_FIELD_TARGET 2
@@ -773,8 +769,6 @@
 #define VG_HEAT_MOBHEAT 6
 /// The code the generic vg_component_* binds take for MobHeat.
 #define VG_KIND_MOBHEAT 518
-/// MobHeat's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_MOBHEAT (VG_WORLD_KIND_BASE | VG_KIND_MOBHEAT)
 #define VG_MOBHEAT_FIELD_CAPACITY 0
 #define VG_MOBHEAT_FIELD_TEMPERATURE 1
 #define VG_MOBHEAT_FIELD_METABOLIC_WATTS 2
@@ -911,8 +905,6 @@
 #define VG_POWER_PRODUCER 2
 /// The code the generic vg_component_* binds take for Producer.
 #define VG_KIND_PRODUCER 258
-/// Producer's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_PRODUCER (VG_WORLD_KIND_BASE | VG_KIND_PRODUCER)
 #define VG_PRODUCER_FIELD_SUPPLY 0
 #define VG_PRODUCER_FIELD_PULSE 1
 
@@ -951,8 +943,6 @@
 #define VG_POWER_APC 3
 /// The code the generic vg_component_* binds take for Apc.
 #define VG_KIND_APC 259
-/// Apc's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_APC (VG_WORLD_KIND_BASE | VG_KIND_APC)
 #define VG_APC_FIELD_ACTIVE 0
 #define VG_APC_FIELD_HAS_CELL 1
 #define VG_APC_FIELD_FAILED 2
@@ -1187,8 +1177,6 @@
 #define VG_POWER_SMES 4
 /// The code the generic vg_component_* binds take for Smes.
 #define VG_KIND_SMES 260
-/// Smes's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_SMES (VG_WORLD_KIND_BASE | VG_KIND_SMES)
 #define VG_SMES_FIELD_INPUT_ENABLED 0
 #define VG_SMES_FIELD_OUTPUT_ENABLED 1
 #define VG_SMES_FIELD_INPUT_LEVEL 2
@@ -1279,8 +1267,6 @@
 #define VG_POWER_SMESINPUTTERMINAL 5
 /// The code the generic vg_component_* binds take for SmesInputTerminal.
 #define VG_KIND_SMESINPUTTERMINAL 261
-/// SmesInputTerminal's watch domain for REACT_ON/REACT_WHEN (cells are vg_entity handles).
-#define REACT_DOMAIN_SMESINPUTTERMINAL (VG_WORLD_KIND_BASE | VG_KIND_SMESINPUTTERMINAL)
 #define VG_SMESINPUTTERMINAL_FIELD_UNIT 0
 
 /obj/machinery/power/terminal/smes_input
@@ -1299,6 +1285,36 @@
 
 /obj/machinery/power/terminal/smes_input/vg_bind_power(entity)
 	return vg_component_bind(entity, VG_KIND_SMESINPUTTERMINAL, list(VG_SMESINPUTTERMINAL_FIELD_UNIT, init_unit))
+
+// ---- Probe (test_domain kind 1, owner main; verdigris/ffi/src/sched.rs) ----
+
+#define VG_TEST_DOMAIN_PROBE 1
+/// The code the generic vg_component_* binds take for Probe.
+#define VG_KIND_PROBE 3841
+#define VG_PROBE_FIELD_KPA 0
+#define VG_PROBE_FIELD_KELVIN 1
+
+/// Creates (`entity` 0) or replaces (otherwise) a bare Probe
+/// row and returns its entity handle -- never a DM object (this
+/// component declares no `dm` type).
+/proc/vg_bind_probe(entity, kpa, kelvin)
+	return vg_component_bind(entity, VG_KIND_PROBE, list(VG_PROBE_FIELD_KPA, kpa, VG_PROBE_FIELD_KELVIN, kelvin))
+
+/// kPa;.
+/proc/get_probe_kpa(entity)
+	return vg_component_get(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KPA, 0) // kPa
+
+/// Returns the stored value.
+/proc/set_probe_kpa(entity, value)
+	return vg_component_set(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KPA, -1, value)
+
+/// K;.
+/proc/get_probe_kelvin(entity)
+	return vg_component_get(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KELVIN, 0) // K
+
+/// Returns the stored value.
+/proc/set_probe_kelvin(entity, value)
+	return vg_component_set(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KELVIN, -1, value)
 
 /// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_gas_reaction_ready(reaction)
@@ -1343,6 +1359,8 @@
 		entity = vg_bind_heat(entity)
 	if(vg_power)
 		entity = vg_bind_power(entity)
+	if(vg_test_domain)
+		entity = vg_bind_test_domain(entity)
 	vg_entity = entity
 
 /// Every declared-input mismatch across every bound domain (§7). SSvg's
@@ -1357,6 +1375,8 @@
 		mismatches += vg_reconcile_heat()
 	if(vg_power)
 		mismatches += vg_reconcile_power()
+	if(vg_test_domain)
+		mismatches += vg_reconcile_test_domain()
 	return mismatches
 
 /// Drains and dispatches every typed event since the last call (§4.8).

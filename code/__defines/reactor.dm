@@ -15,7 +15,8 @@
 #define REACT_CMP_ABOVE 0
 #define REACT_CMP_BELOW 1
 
-// --- Probe domain channels (verdigris/ffi/src/reactor.rs). A channel's reason bit is (1 << id).
+// --- Probe channels (the test Probe component, verdigris/ffi/src/sched.rs). A channel's
+// reason bit is (1 << id).
 #define CH_PROBE_PRESSURE 0
 #define CH_PROBE_TEMPERATURE 1
 #define CH_BIT(ch) (1 << (ch))
@@ -29,15 +30,13 @@
 #define CH_GAS_PLASMA 4
 #define CH_GAS_CARBON_DIOXIDE 5
 
-// --- Rust entity handles: a domain and a cell in one exact number (domain < 16, cell < 2^20).
-// Gas handles are negative: -(gas handle + 1), where the gas handle (< 2^24) is a
-// /datum/gas_mixture's arena_id(): a turf's air names its gas field cell, anything
-// else a main-owned mixture.
-#define REACT_HANDLE(domain, cell) ((domain) * 1048576 + (cell))
-#define REACT_HANDLE_DOMAIN(handle) ((handle) < 0 ? REACT_DOMAIN_GAS : round((handle) / 1048576))
-#define REACT_HANDLE_CELL(handle) ((handle) < 0 ? (-(handle) - 1) : (handle) % 1048576)
+// --- Watch handles: what a watch names, as list(code, cell). `code` is a component kind
+// (VG_KIND_*, cells are vg_entity values) or VG_GAS_HANDLES (cells are gas arena ids).
+#define REACT_HANDLE(code, cell) list(code, cell)
+#define REACT_HANDLE_CODE(handle) ((handle)[1])
+#define REACT_HANDLE_CELL(handle) ((handle)[2])
 /// The watch handle of a gas mixture (a turf's air, a tank, a canister).
-#define REACT_GAS(mixture) (-((mixture).arena_id() + 1))
+#define REACT_GAS(mixture) list(VG_GAS_HANDLES, (mixture).arena_id())
 
 // --- DM-owned key kinds (§4). A key is (kind, id); the id is a registry id, never a string.
 /// Keys used only by the reactor's own tests.
@@ -143,7 +142,7 @@
 /// `why` says why this cannot be a watch or a timer; the profiler lists it.
 #define REACT_EVERY(D, period, why) SSreactor.every(D, period, why)
 /// DM-owned state under key (kind, id) changed; `mask` says which parts.
-#define REACT_PUBLISH(kind, id, mask) vg_react_publish(kind, id, mask)
+#define REACT_PUBLISH(kind, id, mask) vg_world_publish(kind, id, mask)
 /// Wake when key (kind, id) is published with any bit of `mask`.
 #define REACT_ON_KEY(D, kind, id, mask) SSreactor.on_key(D, kind, id, mask)
 /// Drop one subscription, timer or continuous declaration.
@@ -154,15 +153,15 @@
 // --- Rate models (§5). Rates are per second; the wheel runs in ticks.
 #define REACT_PER_TICK(per_second) ((per_second) * world.tick_lag / 10)
 /// A quantity changing at `per_second` from `v0`, clamped to [lo, hi] (null: unbounded).
-#define RATE_LINEAR(v0, per_second, lo, hi) vg_rate_linear(v0, REACT_PER_TICK(per_second), lo, hi)
+#define RATE_LINEAR(v0, per_second, lo, hi) vg_world_rate_linear(v0, REACT_PER_TICK(per_second), lo, hi)
 /// A quantity relaxing toward `target` with rate constant `k_per_second`.
-#define RATE_RELAX(v0, target, k_per_second) vg_rate_relax(v0, target, REACT_PER_TICK(k_per_second))
+#define RATE_RELAX(v0, target, k_per_second) vg_world_rate_relax(v0, target, REACT_PER_TICK(k_per_second))
 /// A store with named inflow/outflow terms (RATE_SET_TERM).
-#define RATE_SUM(v0, lo, hi) vg_rate_sum(v0, lo, hi)
-#define RATE_READ(model) vg_rate_read(model)
-#define RATE_SET(model, value) vg_rate_set(model, value)
-#define RATE_SET_RATE(model, per_second) vg_rate_set_rate(model, REACT_PER_TICK(per_second))
-#define RATE_SET_TERM(model, term, per_second) vg_rate_set_term(model, term, REACT_PER_TICK(per_second))
-#define RATE_REMOVE(model) vg_rate_remove(model)
+#define RATE_SUM(v0, lo, hi) vg_world_rate_sum(v0, lo, hi)
+#define RATE_READ(model) vg_world_rate_read(model)
+#define RATE_SET(model, value) vg_world_rate_set(model, value)
+#define RATE_SET_RATE(model, per_second) vg_world_rate_set_rate(model, REACT_PER_TICK(per_second))
+#define RATE_SET_TERM(model, term, per_second) vg_world_rate_set_term(model, term, REACT_PER_TICK(per_second))
+#define RATE_REMOVE(model) vg_world_rate_remove(model)
 /// Wake D at the exact tick the model enters `cmp level` (at once if it already holds).
 #define REACT_RATE(D, model, cmp, level) SSreactor.on_rate(D, model, cmp, level)

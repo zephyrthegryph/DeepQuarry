@@ -1,10 +1,10 @@
 /**
  * # SSreactor
  *
- * The one scheduler on the DM side (doc/rewrite/reactor.md). Rust (verdigris/ffi/src/reactor.rs)
+ * The one scheduler on the DM side (doc/rewrite/reactor.md). Rust (the world's scheduler, verdigris/ffi/src/sched.rs)
  * holds every subscription, the timer wheel, the rate models, the DM-owned keys and the wake
  * lanes; a datum holds only its registry index, `reactor_id`. Each tick this subsystem makes one
- * bind call, `vg_react_step`, and calls `on_react(reason, source, source_kind)` on every
+ * bind call, `vg_world_step`, and calls `on_react(reason, source, source_kind)` on every
  * subscriber it returns, at most once per lane per tick with the reasons merged. It then runs
  * the continuous lane: declared work (`REACT_EVERY`) scaled by the seconds since its last run.
  *
@@ -28,7 +28,7 @@ SUBSYSTEM_DEF(reactor)
 
 	/// Normal plus background wakes delivered per tick (urgent wakes are never limited).
 	var/budget = 2000
-	/// This tick's flat wake list from vg_react_step, and where dispatch has reached.
+	/// This tick's flat wake list from vg_world_step, and where dispatch has reached.
 	var/list/pending
 	var/pending_index = 1
 	/// The wheel tick of the last step, and of the one before it (tests check precision).
@@ -99,7 +99,7 @@ SUBSYSTEM_DEF(reactor)
 		var/start = TICK_USAGE_REAL
 		previous_step_tick = step_tick
 		step_tick = tick_of(world.time)
-		pending = vg_react_step(step_tick, budget)
+		pending = vg_world_step(step_tick, budget)
 		pending_index = 1
 		last_wakes = length(pending) / REACT_WAKE_STRIDE
 		last_dispatch_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
@@ -166,7 +166,7 @@ SUBSYSTEM_DEF(reactor)
 	var/id = D.reactor_id
 	if(!id)
 		return
-	vg_react_clear(id)
+	vg_world_clear(id)
 	var/list/tokens = continuous_by_id["[id]"]
 	if(tokens)
 		for(var/token in tokens)
@@ -179,7 +179,7 @@ SUBSYSTEM_DEF(reactor)
 // --- Subscriptions -------------------------------------------------------------------------
 
 /datum/controller/subsystem/reactor/proc/on_change(datum/D, handle, mask, lane = REACT_LANE_NORMAL)
-	return vg_react_watch_changed(REACT_HANDLE_DOMAIN(handle), REACT_ID(D), lane, REACT_HANDLE_CELL(handle), mask)
+	return vg_world_watch_changed(REACT_HANDLE_CODE(handle), REACT_ID(D), lane, REACT_HANDLE_CELL(handle), mask)
 
 /// REACT_WHEN: registers a COND_* condition. Rust checks it (channel, unit, levels) and
 /// raises a runtime with context if it is invalid.
@@ -188,28 +188,28 @@ SUBSYSTEM_DEF(reactor)
 	switch(condition[1])
 		if(REACT_COND_THRESHOLD)
 			var/handle = condition[2]
-			return vg_react_watch_threshold(REACT_HANDLE_DOMAIN(handle), id, lane, REACT_HANDLE_CELL(handle), condition[3], condition[4], condition[5], condition[6], condition[7])
+			return vg_world_watch_threshold(REACT_HANDLE_CODE(handle), id, lane, REACT_HANDLE_CELL(handle), condition[3], condition[4], condition[5], condition[6], condition[7])
 		if(REACT_COND_BAND)
 			var/handle = condition[2]
-			return vg_react_watch_band(REACT_HANDLE_DOMAIN(handle), id, lane, REACT_HANDLE_CELL(handle), condition[3], condition[4], condition[5])
+			return vg_world_watch_band(REACT_HANDLE_CODE(handle), id, lane, REACT_HANDLE_CELL(handle), condition[3], condition[4], condition[5])
 		if(REACT_COND_DIFFERENCE)
 			var/handle_a = condition[2]
 			var/handle_b = condition[3]
-			if(REACT_HANDLE_DOMAIN(handle_a) != REACT_HANDLE_DOMAIN(handle_b))
-				CRASH("REACT_WHEN difference across domains")
-			return vg_react_watch_difference(REACT_HANDLE_DOMAIN(handle_a), id, lane, REACT_HANDLE_CELL(handle_a), REACT_HANDLE_CELL(handle_b), condition[4], condition[5], condition[6], condition[7], condition[8])
+			if(REACT_HANDLE_CODE(handle_a) != REACT_HANDLE_CODE(handle_b))
+				CRASH("REACT_WHEN difference across watch codes")
+			return vg_world_watch_difference(REACT_HANDLE_CODE(handle_a), id, lane, REACT_HANDLE_CELL(handle_a), REACT_HANDLE_CELL(handle_b), condition[4], condition[5], condition[6], condition[7], condition[8])
 	CRASH("REACT_WHEN: unknown condition [condition[1]]")
 
 /// REACT_AT: wakes `D` (reason REACT_REASON_TIMER, source the returned token) at the first
 /// tick at or after world.time `time`.
 /datum/controller/subsystem/reactor/proc/at(datum/D, time, lane = REACT_LANE_NORMAL)
-	return vg_react_at(REACT_ID(D), lane, tick_of(time))
+	return vg_world_at(REACT_ID(D), lane, tick_of(time))
 
 /datum/controller/subsystem/reactor/proc/on_key(datum/D, kind, id, mask, lane = REACT_LANE_NORMAL)
-	return vg_react_on_key(REACT_ID(D), kind, id, mask, lane)
+	return vg_world_on_key(REACT_ID(D), kind, id, mask, lane)
 
 /datum/controller/subsystem/reactor/proc/on_rate(datum/D, model, cmp, level, lane = REACT_LANE_NORMAL)
-	return vg_rate_watch(model, REACT_ID(D), lane, cmp, level)
+	return vg_world_rate_watch(model, REACT_ID(D), lane, cmp, level)
 
 /// REACT_CANCEL. Continuous tokens are negative and live here; the rest live in Rust.
 /datum/controller/subsystem/reactor/proc/cancel(datum/D, token)
@@ -227,7 +227,7 @@ SUBSYSTEM_DEF(reactor)
 				continuous_by_id -= "[entry.owner_id]"
 		entry.cancelled = TRUE
 		return TRUE
-	return !!vg_react_cancel(token)
+	return !!vg_world_cancel(token)
 
 // --- Sleeping on keys (S2) -------------------------------------------------------------------
 
@@ -395,9 +395,9 @@ SUBSYSTEM_DEF(reactor)
 	if(!(reason & (REACT_REASON_CONDITION|REACT_REASON_TIMER|REACT_REASON_KEY|REACT_REASON_RATE)))
 		counts[REACT_CLASS_CHANGED]++
 
-/// Rust-side counters (vg_react_stats) by name.
+/// Rust-side counters (vg_world_sched_stats) by name.
 /datum/controller/subsystem/reactor/proc/rust_stats()
-	var/list/v = vg_react_stats()
+	var/list/v = vg_world_sched_stats()
 	var/static/list/names = list("timers_pending", "timers_fired", "crossings_fired", "publications", "models", "keys", "subscriptions", "wakes_received", "wakes_merged", "wakes_delivered", "wakes_deferred", "watch_wakes", "backlog_urgent", "backlog_normal", "backlog_background", "step_us")
 	. = list()
 	for(var/i in 1 to min(length(v), length(names)))

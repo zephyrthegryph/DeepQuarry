@@ -5,6 +5,23 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /// Waits `ticks` MC ticks (SSreactor fires every tick).
+/// A test probe entity (a Probe component, verdigris/ffi/src/sched.rs) by a test's own
+/// number, created on first use.
+/proc/react_test_probe(cell)
+	var/static/list/probes = list()
+	var/entity = probes["[cell]"]
+	if(!entity || !vg_component_has(entity, VG_KIND_PROBE))
+		entity = vg_component_bind(0, VG_KIND_PROBE, list())
+		probes["[cell]"] = entity
+	return entity
+
+/proc/react_test_probe_set(cell, kpa, kelvin)
+	var/entity = react_test_probe(cell)
+	vg_component_set(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KPA, -1, kpa)
+	vg_component_set(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KELVIN, -1, kelvin)
+
+#define REACT_PROBE(cell) REACT_HANDLE(VG_KIND_PROBE, react_test_probe(cell))
+
 /proc/react_test_ticks(ticks)
 	sleep(world.tick_lag * ticks)
 
@@ -80,7 +97,7 @@
 	TEST_ASSERT(wake[4] >= deadline_tick, "fired at tick [wake[4]], before its tick [deadline_tick]")
 	TEST_ASSERT(wake[5] < deadline_tick, "fired at tick [wake[4]], not the first step at or after [deadline_tick] (previous step [wake[5]])")
 	TEST_ASSERT(!REACT_CANCEL(S, token), "a fired timer's token was still live")
-	TEST_ASSERT_EQUAL(vg_react_subscriptions(S.reactor_id), 0, "a fired timer kept its subscription")
+	TEST_ASSERT_EQUAL(vg_world_subscriptions(S.reactor_id), 0, "a fired timer kept its subscription")
 	// A deadline already past fires at the next step.
 	REACT_AT(S, world.time - 5 SECONDS)
 	react_test_ticks(2)
@@ -154,17 +171,17 @@
 	var/datum/react_test_subscriber/S = new
 	REACT_AT(S, world.time + 2 * world.tick_lag)
 	REACT_ON_KEY(S, REACT_KEY_TEST, REACT_ID(S), 1)
-	REACT_ON(S, REACT_HANDLE(REACT_DOMAIN_PROBE, 40), CH_BIT(CH_PROBE_PRESSURE))
+	REACT_ON(S, REACT_PROBE(40), CH_BIT(CH_PROBE_PRESSURE))
 	var/every = REACT_EVERY(S, 1, "test: clear on destroy")
 	var/id = S.reactor_id
-	TEST_ASSERT_EQUAL(vg_react_subscriptions(id), 3, "subscriptions before qdel")
+	TEST_ASSERT_EQUAL(vg_world_subscriptions(id), 3, "subscriptions before qdel")
 	TEST_ASSERT(SSreactor.continuous["[every]"], "continuous declaration missing")
 	REACT_PUBLISH(REACT_KEY_TEST, id, 1)
 	qdel(S)
 	TEST_ASSERT_EQUAL(S.reactor_id, 0, "Destroy() did not release the registry index")
-	TEST_ASSERT_EQUAL(vg_react_subscriptions(id), 0, "Destroy() left subscriptions in Rust")
+	TEST_ASSERT_EQUAL(vg_world_subscriptions(id), 0, "Destroy() left subscriptions in Rust")
 	TEST_ASSERT(!SSreactor.continuous["[every]"], "Destroy() left a continuous declaration")
-	vg_react_probe_set(40, 500, 300)
+	react_test_probe_set(40, 500, 300)
 	react_test_ticks(4)
 	TEST_ASSERT_EQUAL(length(S.wakes), 0, "a destroyed subscriber was woken")
 	TEST_ASSERT_EQUAL(length(S.every_runs), 0, "a destroyed subscriber's continuous work ran")
@@ -244,33 +261,33 @@
 
 /datum/unit_test/dq_reactor_probe_watches/Run()
 	for(var/cell in 50 to 54)
-		vg_react_probe_set(cell, 100, 293)
+		react_test_probe_set(cell, 100, 293)
 	react_test_ticks(2)
 	var/datum/react_test_subscriber/changed = allocate(/datum/react_test_subscriber)
 	var/datum/react_test_subscriber/hot = allocate(/datum/react_test_subscriber)
 	var/datum/react_test_subscriber/band = allocate(/datum/react_test_subscriber)
 	var/datum/react_test_subscriber/door = allocate(/datum/react_test_subscriber)
-	REACT_ON(changed, REACT_HANDLE(REACT_DOMAIN_PROBE, 50), CH_BIT(CH_PROBE_PRESSURE))
-	REACT_WHEN(hot, COND_ABOVE(REACT_HANDLE(REACT_DOMAIN_PROBE, 51), CH_PROBE_TEMPERATURE, 400))
-	REACT_WHEN(band, COND_BAND(REACT_HANDLE(REACT_DOMAIN_PROBE, 52), CH_PROBE_PRESSURE, list(50, 150)))
-	REACT_WHEN(door, COND_DIFFERENCE(REACT_HANDLE(REACT_DOMAIN_PROBE, 53), REACT_HANDLE(REACT_DOMAIN_PROBE, 54), CH_PROBE_PRESSURE, 50))
+	REACT_ON(changed, REACT_PROBE(50), CH_BIT(CH_PROBE_PRESSURE))
+	REACT_WHEN(hot, COND_ABOVE(REACT_PROBE(51), CH_PROBE_TEMPERATURE, 400))
+	REACT_WHEN(band, COND_BAND(REACT_PROBE(52), CH_PROBE_PRESSURE, list(50, 150)))
+	REACT_WHEN(door, COND_DIFFERENCE(REACT_PROBE(53), REACT_PROBE(54), CH_PROBE_PRESSURE, 50))
 	react_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(changed.wakes), 0, "Changed fired at registration")
 	TEST_ASSERT_EQUAL(length(hot.wakes), 0, "Threshold fired while below")
 	TEST_ASSERT_EQUAL(length(band.wakes), 1, "Band reports its starting band once")
 	TEST_ASSERT_EQUAL(length(door.wakes), 0, "Difference fired with no difference")
-	vg_react_probe_set(50, 100.2, 293) // inside the 0.5 kPa hysteresis
+	react_test_probe_set(50, 100.2, 293) // inside the 0.5 kPa hysteresis
 	react_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(changed.wakes), 0, "Changed fired inside its hysteresis")
-	vg_react_probe_set(50, 110, 293)
-	vg_react_probe_set(51, 100, 500)
-	vg_react_probe_set(52, 200, 293)
-	vg_react_probe_set(54, 200, 293)
+	react_test_probe_set(50, 110, 293)
+	react_test_probe_set(51, 100, 500)
+	react_test_probe_set(52, 200, 293)
+	react_test_probe_set(54, 200, 293)
 	react_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(changed.wakes), 1, "Changed wakes")
 	var/list/wake = changed.wakes[1]
 	TEST_ASSERT(wake[1] & CH_BIT(CH_PROBE_PRESSURE), "Changed reason [wake[1]] lacks the pressure bit")
-	TEST_ASSERT_EQUAL(wake[2], 50, "a watch wake's source is the cell")
+	TEST_ASSERT_EQUAL(wake[2], react_test_probe(50), "a watch wake's source is the watched entity")
 	TEST_ASSERT_EQUAL(length(hot.wakes), 1, "Threshold wakes")
 	wake = hot.wakes[1]
 	TEST_ASSERT(wake[1] & REACT_REASON_CONDITION, "Threshold reason lacks REACT_REASON_CONDITION")
@@ -282,7 +299,7 @@
 	// Rust rejects a bad channel at registration.
 	var/rejected = FALSE
 	try
-		REACT_WHEN(hot, COND_ABOVE(REACT_HANDLE(REACT_DOMAIN_PROBE, 51), 9, 1))
+		REACT_WHEN(hot, COND_ABOVE(REACT_PROBE(51), 9, 1))
 	catch
 		rejected = TRUE
 	TEST_ASSERT(rejected, "a condition on a missing channel was accepted")
@@ -321,7 +338,7 @@
 	TEST_ASSERT(RATE_REMOVE(model), "removing a live model failed")
 	TEST_ASSERT(!RATE_REMOVE(model), "removed a model twice")
 	TEST_ASSERT(RATE_REMOVE(store), "removing the store failed")
-	TEST_ASSERT_EQUAL(vg_react_subscriptions(S.reactor_id), 0, "a removed model kept its watches")
+	TEST_ASSERT_EQUAL(vg_world_subscriptions(S.reactor_id), 0, "a removed model kept its watches")
 
 /// The audit reports a subscriber sleeping through its input; wake counts are bounded and
 /// reach the profiler and the Rust metrics.
@@ -362,7 +379,7 @@
 
 /datum/react_test_gauge/New(cell)
 	src.cell = cell
-	REACT_ON(src, REACT_HANDLE(REACT_DOMAIN_PROBE, cell), CH_BIT(CH_PROBE_PRESSURE))
+	REACT_ON(src, REACT_PROBE(cell), CH_BIT(CH_PROBE_PRESSURE))
 
 /datum/react_test_gauge/on_react(reason, source, source_kind)
 	last_pressure = source
@@ -370,14 +387,14 @@
 /datum/unit_test/dq_reactor_wake_test_helper
 
 /datum/unit_test/dq_reactor_wake_test_helper/Run()
-	vg_react_probe_set(60, 100, 293)
+	react_test_probe_set(60, 100, 293)
 	var/datum/react_test_gauge/gauge = allocate(/datum/react_test_gauge, 60)
-	var/failure = react_wake_test(gauge, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_react_probe_set), 60, 150, 293))
+	var/failure = react_wake_test(gauge, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(react_test_probe_set), 60, 150, 293))
 	TEST_ASSERT(!failure, failure)
 	// And the helper catches a subscriber that misses its input.
-	vg_react_probe_set(61, 100, 293)
+	react_test_probe_set(61, 100, 293)
 	var/datum/react_test_gauge/deaf = allocate(/datum/react_test_gauge, 61)
-	failure = react_wake_test(deaf, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_react_probe_set), 62, 150, 293))
+	failure = react_wake_test(deaf, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(react_test_probe_set), 62, 150, 293))
 	TEST_ASSERT(findtext(failure, "did not wake"), "the helper passed a subscriber that missed its input")
 
 #endif

@@ -20,7 +20,7 @@
 //! | `vg_world_violations()` | conservation violations since the last call, as text |
 //! | `vg_world_laws()` | per-law activity statistics, as text |
 //!
-//! Watches on component rows go through the reactor's generic watch binds
+//! Watches on component rows go through the scheduler's generic watch binds
 //! with the kind's registry id (`VG_WORLD_KIND_BASE | code`) and entity
 //! handles as cells.
 //!
@@ -74,6 +74,7 @@ fn register(b: &mut WorldBuilder) -> Fields {
         vg_core::component::Ownership::Main,
         crate::propagate::RadiationLayer::default(),
     );
+    b.add_component::<crate::sched::Probe>();
     b.add_component::<vg_gas::kind::pump::Pump>();
     b.add_component::<vg_gas::kind::gas_mix::GasMix>();
     b.conserve("gas_moles", Tolerance::default());
@@ -155,8 +156,8 @@ fn build() -> Result<World> {
             vg_core::world::kind_code(vg_core::component::domain_id(schema.domain), schema.kind);
         registry::register_domain(world_kind_domain(code), Box::new(WorldKind { kind }));
     }
-    // Gas handles as a reactor watch domain (turf cells and main mixtures).
-    registry::register_domain(crate::reactor::DOMAIN_GAS, Box::new(crate::gas::GasDomain));
+    // Gas handles (turf cells, main and pipe mixtures) as a watch port.
+    registry::register_domain(world_kind_domain(crate::sched::GAS_HANDLES), Box::new(crate::gas::GasDomain));
     Ok(world)
 }
 
@@ -215,9 +216,17 @@ impl DomainRegistry for WorldEntities {
         .unwrap_or_default()
     }
 
+    /// Component watch wakes, with DM's `vg_entity` value as the source
+    /// (the stores report the entity's slot).
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {
         let _ = with_world(|w| {
-            w.drain_wakes(out);
+            let mut wakes = Vec::new();
+            w.drain_wakes(&mut wakes);
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            out.extend(wakes.into_iter().filter_map(|wk| {
+                let e = w.entities().at(wk.source)?;
+                Some(Wake { source: entity::entity_value(e) as u32, ..wk })
+            }));
             Ok(())
         });
     }

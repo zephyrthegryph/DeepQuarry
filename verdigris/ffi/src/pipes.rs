@@ -41,7 +41,7 @@
 // vg_pipe_device_set/set_turf's argument count is inherent to the DM call
 // convention (an id/two endpoints plus a flow law's four parameters,
 // matching the pre-port `rust_device_operation` shape); see
-// `ffi/src/reactor.rs`'s file-level allow and its comment for why an
+// `ffi/src/sched.rs`'s file-level allow and its comment for why an
 // item-level one doesn't reach the warning (emitted inside
 // `::byondapi::bind`'s own macro expansion).
 #![allow(clippy::too_many_arguments)]
