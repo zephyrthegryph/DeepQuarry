@@ -146,7 +146,6 @@ fn build() -> Result<World> {
     let world = b.build().map_err(|e| eyre!("world build: {e}"))?;
     crate::heat::install_field(fields.heat);
     crate::gas::install(fields.turf_gas);
-    vg_gas::world::install_pipe_access(Box::new(crate::pipes::FfiPipeAccess));
     registry::register_domain(
         u32::try_from(WORLD_DOMAIN).unwrap_or(7),
         Box::new(WorldEntities),

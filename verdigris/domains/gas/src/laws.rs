@@ -166,12 +166,16 @@ impl Law for CellVisualChangeLaw {
 	const PERIOD: Period = Period::Frame;
 
 	fn step(ctx: &mut LawCtx<'_, Cell<TurfGas>, Cell<TurfGas>>, _dt: Seconds) -> Settle {
-		let vis = ctx.reads.value.vis;
-		if vis != ctx.reads.value.last_vis && !ctx.reads.reservoir {
+		let (vis, last) = (ctx.reads.value.vis, ctx.reads.value.last_vis);
+		// A DM write (`flags::TOUCHED`) may have replaced DM's own visuals,
+		// so a touched cell with anything visible (now or before) re-emits.
+		let touched = ctx.reads.value.flags & crate::cell::flags::TOUCHED != 0;
+		if !ctx.reads.reservoir && (vis != last || (touched && (vis != 0 || last != 0))) {
 			let cell = ctx.index();
 			ctx.emit(GasEvent::CellVisualChange { cell, vis });
 			ctx.writes.value.last_vis = vis;
 		}
+		ctx.writes.value.flags &= !crate::cell::flags::TOUCHED;
 		Settle::Active
 	}
 }

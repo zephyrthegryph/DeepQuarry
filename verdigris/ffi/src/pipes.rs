@@ -23,7 +23,7 @@
 //! `rust_device_id`), kept as thread-local maps to the `World` entities
 //! that actually hold them -- DM never sees a `vg_entity` value for a pipe
 //! port or device. A region's DM-facing handle is a compacted slot (not
-//! its raw arena bits, which can exceed `vg_gas::world::MixRef::Pipe`'s
+//! its raw arena bits, which can exceed `MixRef::Pipe`'s
 //! 21-bit address budget), the one piece of bookkeeping this module keeps
 //! that `PipeNet` also needed for the same reason -- not for revision or
 //! idle-skip tracking, which `NetworkHost`/`World` already provide
@@ -33,7 +33,7 @@
 //! network and `vg-gas`'s own turf field, each with its own storage
 //! (`rust_architecture.md` step 6 is what turns the turf field into a real
 //! `FieldKind` and this into a `RegionCell<Pipes, TurfGas>` device law);
-//! for now [`pipe_step_devices`] calls `vg_gas::world::with_world` for the
+//! for now [`pipe_step_devices`] calls `crate::gas` for the
 //! turf side directly, the same cross-crate shape heat's `GasExchange`
 //! already uses for the same reason (gas is not on the shared `World`
 //! yet).
@@ -58,9 +58,9 @@ use vg_core::world::World;
 use vg_gas::device::{self, Flow, StepReport};
 use vg_gas::kind::device::{DeviceFlow, DeviceValve};
 use vg_gas::pipes::{PipeGas, Pipes};
-use vg_gas::world::MixRef;
+use crate::gas::mix::{self, MixRef};
 
-use crate::gas::{region_of_slot, REGION_SLOTS};
+use crate::gas::REGION_SLOTS;
 use crate::world::{list, num, whole, with_world};
 
 thread_local! {
@@ -70,43 +70,6 @@ thread_local! {
     /// (`RUST_PIPE_OP_REMOVE_TO_MIXTURE`'s replacement), read back when its
     /// `Released` event drains at [`pipe_commit`].
     static RELEASE_TARGETS: RefCell<HashMap<u32, MixRef>> = RefCell::new(HashMap::new());
-}
-
-/// The [`vg_gas::world::PipeAccess`] bridge (this module's own docs):
-/// installed once (`crate::world::build`) so `vg-gas`'s generic
-/// `MixRef::Pipe` accessors (`load`/`store`/`revision`, so every existing
-/// `/datum/gas_mixture` proc keeps working on a pipe-bound mixture) reach
-/// the pipe network this module owns on the shared `World`.
-pub struct FfiPipeAccess;
-
-impl vg_gas::world::PipeAccess for FfiPipeAccess {
-    fn probe(&self, slot: u32) -> Option<(PipeGas, f64)> {
-        let region = region_of_slot(slot)?;
-        with_world(|w| -> Result<Option<(PipeGas, f64)>> {
-            let Ok(host) = w.network::<Pipes>() else { return Ok(None) };
-            let Ok(r) = host.network().region(region) else { return Ok(None) };
-            Ok(Some((*r.payload(), *r.summary())))
-        })
-        .ok()
-        .flatten()
-    }
-
-    fn apply(&self, slot: u32, gas: &PipeGas) {
-        let Some(region) = region_of_slot(slot) else { return };
-        let gas = *gas;
-        let _ = with_world(|w| -> Result<()> {
-            let _ = w.edit_network::<Pipes>(move |host| {
-                let _ = host.set_payload(region, gas);
-            });
-            Ok(())
-        });
-    }
-
-    fn revision(&self, slot: u32) -> u32 {
-        let Some(region) = region_of_slot(slot) else { return 0 };
-        #[allow(clippy::cast_possible_truncation)]
-        with_world(|w| -> Result<u32> { Ok(w.network::<Pipes>().map(|h| h.region_revision(region) as u32).unwrap_or(0)) }).unwrap_or(0)
-    }
 }
 
 fn port_entity(port_id: u32) -> Option<EntityId> {
@@ -162,12 +125,7 @@ fn gas_from_handle(handle: &ByondValue) -> PipeGas {
     let Some(mix_ref) = num(handle).ok().and_then(MixRef::from_f32) else {
         return PipeGas::default();
     };
-    vg_gas::world::with_world(|gw| {
-        let Some(mix) = gw.load(mix_ref) else {
-            return PipeGas::default();
-        };
-        PipeGas::from_amounts(&vg_gas::world::amounts_of(&mix), mix.get_temperature())
-    })
+    mix::load(mix_ref).map_or_else(PipeGas::default, |m| PipeGas::from_amounts(&mix::amounts_of(&m), m.get_temperature()))
 }
 
 /// Removes a port; its gas share is released, to `mixture_handle` if given
@@ -294,7 +252,7 @@ fn pipe_commit() -> Result<ByondValue> {
     // Released gas goes to its target outside the world borrow: a turf or
     // pipe target reaches the world again.
     for (target, payload) in released {
-        vg_gas::world::with_world(|gw| gw.add_amounts(target, &payload.amounts(), payload.temperature));
+        mix::add_amounts(target, &payload.amounts(), payload.temperature);
     }
     list(out)
 }
@@ -414,7 +372,7 @@ fn device_laws(w: &World, device_e: EntityId) -> (Vec<Flow>, bool) {
 
 /// Runs every device edge's flow(s)/valve once for `dt` seconds -- region
 /// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
-/// through `vg_gas::world`'s turf accessors (this module's own docs) --
+/// through `crate::gas`'s turf accessors (this module's own docs) --
 /// and returns a flat `id, moles, power_w, target_reached` list per device
 /// that moved something or drew power.
 #[auxmacros::bind("/proc/vg_pipe_step_devices")]

@@ -30,12 +30,12 @@
 // Numeric registry (@dm-define constants in the Rust sources).
 
 /// Every face a mask can block (`NORTH|SOUTH|EAST|WEST|UP|DOWN`).
-// verdigris/ffi/src/gas.rs
+// verdigris/ffi/src/gas/mod.rs
 #define AIR_BLOCK_ALL 63
 
 /// Mask argument meaning "keep the mask Rust already has for this turf"
 /// (any negative mask does).
-// verdigris/ffi/src/gas.rs
+// verdigris/ffi/src/gas/mod.rs
 #define AIR_BLOCK_KEEP -1
 
 /// Normal human core body temperature, 37 °C in K. The one body temperature:
@@ -49,25 +49,26 @@
 // verdigris/domains/heat/src/consts.rs
 #define FIRE_MINIMUM_TEMPERATURE_TO_EXIST 373.15
 
-// verdigris/domains/gas/src/gas.rs
+// verdigris/ffi/src/gas/mix.rs
 #define GAS_DEPENDENCY_COMPOSITION 4
 
 /// Floats per record returned by `drain_dirty_gas_observations`.
-// verdigris/domains/gas/src/lib.rs
+// verdigris/ffi/src/gas/mix.rs
 #define GAS_DEPENDENCY_OBSERVATION_STRIDE 15
 
-// verdigris/domains/gas/src/gas.rs
+/// Dirty-change bits DM machinery interest masks use.
+// verdigris/ffi/src/gas/mix.rs
 #define GAS_DEPENDENCY_PRESSURE 1
 
-// verdigris/domains/gas/src/gas.rs
+// verdigris/ffi/src/gas/mix.rs
 #define GAS_DEPENDENCY_TEMPERATURE 2
 
 /// Main-owned mixtures use handles `0..PIPE_BASE`.
-// verdigris/domains/gas/src/world.rs
+// verdigris/ffi/src/gas/mix.rs
 #define GAS_HANDLE_PIPE_BASE 2097152
 
 /// Turf cells use `TURF_BASE + cell`.
-// verdigris/domains/gas/src/world.rs
+// verdigris/ffi/src/gas/mix.rs
 #define GAS_HANDLE_TURF_BASE 4194304
 
 /// `/datum/gas/antinoblium`.
@@ -164,7 +165,7 @@
 
 /// Floats per mixture in `read_mixtures`: pressure, temperature, volume,
 /// total moles, heat capacity, then the moles of every gas by ID.
-// verdigris/domains/gas/src/lib.rs
+// verdigris/ffi/src/gas/binds.rs
 #define GAS_READ_HEADER 5
 
 /// Heat capacity DM gives vacuum (`HEAT_CAPACITY_VACUUM`), J/K: the capacity
@@ -272,7 +273,7 @@
 #define REGULATOR_MODE_HEAT 0
 
 /// Registration flag DM passes for a simulated turf.
-// verdigris/ffi/src/gas.rs
+// verdigris/ffi/src/gas/mod.rs
 #define SIMULATION_ANY 3
 
 /// Stefan-Boltzmann constant, W/(m^2*K^4). Written out in decimal
@@ -332,77 +333,77 @@
 // Binds.
 
 /// Args: (amount). Adds the given amount to each gas.
-// /datum/gas_mixture/proc/add (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/add (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_add_hook(src_ref, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:add_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
 
 /// Args: (heat). Adds a given amount of heat to the mixture, i.e. in joules taking into account capacity.
-// /datum/gas_mixture/proc/adjust_heat (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/adjust_heat (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_adjust_heat_hook(src_ref, temp)
 	var/static/__f = load_ext(VERDIGRIS, "byond:adjust_heat_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
 
 /// Args: (gas_id, moles). Adjusts the given gas's amount by the given amount, e.g. (GAS_O2, -0.1) will remove 0.1 moles of oxygen from the mixture.
-// /datum/gas_mixture/proc/adjust_moles (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/adjust_moles (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_adjust_moles_hook(src_ref, id_val, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, id_val, num_val)
 
 /// Args: (gas_id, moles, temp). Adjusts the given gas's amount by the given amount, with that gas being treated as if it is at the given temperature.
-// /datum/gas_mixture/proc/adjust_moles_temp (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/adjust_moles_temp (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_adjust_moles_temp_hook(src_ref, id_val, num_val, temp_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:adjust_moles_temp_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, id_val, num_val, temp_val)
 
 /// Args: (gas_id_1, amount_1, gas_id_2, amount_2, ...). As adjust_moles, but with variadic arguments.
-// /datum/gas_mixture/proc/adjust_multi (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/adjust_multi (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_adjust_multi_hook(...)
 	var/static/__f = load_ext(VERDIGRIS, "byond:adjust_multi_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(arglist(args))
 
 /// Returns: the turfs this turf shares air with (face neighbours only).
-// /proc/atmos_adjacent_turfs (verdigris/ffi/src/gas.rs)
+// /proc/atmos_adjacent_turfs (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_atmos_adjacent_turfs(turf)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_adjacent_turfs_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
 
 /// Batched form of `atmos_adjacent_turfs`: a list of lists, one per turf.
-// /proc/atmos_adjacent_turfs_bulk (verdigris/ffi/src/gas.rs)
+// /proc/atmos_adjacent_turfs_bulk (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_atmos_adjacent_turfs_bulk(turfs)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_adjacent_turfs_bulk_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turfs)
 
 /// Args: (ms). Runs callbacks until time limit is reached. If time limit is omitted, runs all callbacks.
-// /proc/process_atmos_callbacks (verdigris/domains/gas/src/lib.rs)
+// /proc/process_atmos_callbacks (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_atmos_callback_handle(remaining)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_callback_handle_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(remaining)
 
 /// Diagnostic: list(registered, mask, z-level links, zero-based z).
-// /proc/atmos_cell_info (verdigris/ffi/src/gas.rs)
+// /proc/atmos_cell_info (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_atmos_cell_info(turf)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_cell_info_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
 
 /// Returns: the direction bits (NORTH..DOWN) across which this turf shares air.
-// /proc/atmos_open_dirs (verdigris/ffi/src/gas.rs)
+// /proc/atmos_open_dirs (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_atmos_open_dirs(turf)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_open_dirs_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
 
 /// Returns: whether two turfs are face neighbours that share air.
-// /proc/atmos_turfs_share (verdigris/ffi/src/gas.rs)
+// /proc/atmos_turfs_share (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_atmos_turfs_share(first, second)
 	var/static/__f = load_ext(VERDIGRIS, "byond:atmos_turfs_share_ffi")
 	VG_COUNT_FFI_CALL
@@ -410,7 +411,7 @@
 
 /// `list(main mixtures live, main slots, 0, 0, 0, world frames, pending
 /// callbacks, 0, 0, 0)` for SSair's stat panel and the benchmarks.
-// /datum/controller/subsystem/air/proc/auxmos_diagnostics (verdigris/ffi/src/gas.rs)
+// /datum/controller/subsystem/air/proc/auxmos_diagnostics (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_auxmos_diagnostics()
 	var/static/__f = load_ext(VERDIGRIS, "byond:auxmos_diagnostics_ffi")
 	VG_COUNT_FFI_CALL
@@ -418,7 +419,7 @@
 
 /// Flat operation list: pipe mixture, environment mixture, exposed pipe
 /// volume. Returns one boolean residual per exposed face.
-// /proc/auxmos_batch_mingle (verdigris/domains/gas/src/lib.rs)
+// /proc/auxmos_batch_mingle (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_batch_mingle_hook(operations)
 	var/static/__f = load_ext(VERDIGRIS, "byond:batch_mingle_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -426,7 +427,7 @@
 
 /// Flat operation list: source handle, sink handle, requested moles. Returns
 /// one actual mole count per operation after shared-source clamping.
-// /proc/auxmos_batch_transfer (verdigris/domains/gas/src/lib.rs)
+// /proc/auxmos_batch_transfer (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_batch_transfer_hook(operations)
 	var/static/__f = load_ext(VERDIGRIS, "byond:batch_transfer_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -435,21 +436,21 @@
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
 /// `vg_pipe_upsert`/`vg_pipe_commit`, `verdigris/ffi/src/pipes.rs`). The
 /// datum's own slot is freed.
-// /datum/gas_mixture/proc/__bind_handle (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/__bind_handle (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_bind_handle(src_ref, handle)
 	var/static/__f = load_ext(VERDIGRIS, "byond:bind_handle_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, handle)
 
 /// Clears the gas mixture my removing all of its gases.
-// /datum/gas_mixture/proc/clear (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/clear (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_clear_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:clear_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Returns: true if the two mixtures are different enough for processing, false otherwise.
-// /datum/gas_mixture/proc/compare (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/compare (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_compare_hook(src_ref, other)
 	var/static/__f = load_ext(VERDIGRIS, "byond:compare_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -520,20 +521,20 @@
 	return call_ext(__f)(max_x, max_y, max_z)
 
 /// Arg: (mixture). Makes src into a copy of the argument mixture.
-// /datum/gas_mixture/proc/copy_from (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/copy_from (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_copy_from_hook(src_ref, giver)
 	var/static/__f = load_ext(VERDIGRIS, "byond:copy_from_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, giver)
 
 /// Args: (coefficient). Divides all gases by this amount.
-// /datum/gas_mixture/proc/divide (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/divide (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_divide_hook(src_ref, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:divide_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
 
-// /proc/drain_dirty_gas_mixtures (verdigris/domains/gas/src/lib.rs)
+// /proc/drain_dirty_gas_mixtures (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_drain_dirty_gas_mixtures()
 	var/static/__f = load_ext(VERDIGRIS, "byond:drain_dirty_gas_mixtures_ffi")
 	VG_COUNT_FFI_CALL
@@ -544,7 +545,7 @@
 /// FFI once per value. Flat stride: id, mask, revision, pressure,
 /// temperature, volume, o2, co2, plasma, methane, n2o, volatile_fuel,
 /// miasma, zauker, total_moles.
-// /proc/drain_dirty_gas_observations (verdigris/domains/gas/src/lib.rs)
+// /proc/drain_dirty_gas_observations (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_drain_dirty_gas_observations()
 	var/static/__f = load_ext(VERDIGRIS, "byond:drain_dirty_gas_observations_ffi")
 	VG_COUNT_FFI_CALL
@@ -623,14 +624,14 @@
 	return call_ext(__f)(entity)
 
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
-// /proc/equalize_all_gases_in_list (verdigris/domains/gas/src/lib.rs)
+// /proc/equalize_all_gases_in_list (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_equalize_all_hook(gas_list)
 	var/static/__f = load_ext(VERDIGRIS, "byond:equalize_all_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(gas_list)
 
 /// Args: (mixture). Makes `src` a copy of `mixture`, with volumes taken into account.
-// /datum/gas_mixture/proc/equalize_with (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/equalize_with (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_equalize_with_hook(src_ref, total)
 	var/static/__f = load_ext(VERDIGRIS, "byond:equalize_with_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -647,7 +648,7 @@
 /// gas movement (a caller-owned pair of `DeviceFlow` rows does that).
 /// Returns `list(total_transfer_moles, filterable_moles,
 /// unfilterable_moles, power_draw)`, or `null` when nothing should move.
-// /proc/vg_filter_transfer (verdigris/domains/gas/src/lib.rs)
+// /proc/vg_filter_transfer (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_filter_transfer(source, sink_filtered, sink_clean, filtering, requested, available_power, efficiency)
 	var/static/__f = load_ext(VERDIGRIS, "byond:filter_transfer_ffi")
 	VG_COUNT_FFI_CALL
@@ -662,21 +663,21 @@
 /// output's mask matches. Returns `list(total_transfer_moles, power_draw,
 /// clean_moles, output_1_moles, output_2_moles, ...)` in `outputs`' own
 /// iteration order, or `null` when nothing should move.
-// /proc/vg_filter_transfer_multi (verdigris/domains/gas/src/lib.rs)
+// /proc/vg_filter_transfer_multi (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_filter_transfer_multi(source, outputs, sink_clean, requested, available_power, efficiency)
 	var/static/__f = load_ext(VERDIGRIS, "byond:filter_transfer_multi_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(source, outputs, sink_clean, requested, available_power, efficiency)
 
 /// For updating reagent gas fire products, do not use for now.
-// /proc/finalize_gas_refs (verdigris/domains/gas/src/lib.rs)
+// /proc/finalize_gas_refs (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_finalize_gas_refs()
 	var/static/__f = load_ext(VERDIGRIS, "byond:finalize_gas_refs_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
 /// Args: (temperature). Returns: how much fuel for fire is in the mixture at the given temperature. If temperature is omitted, just uses current temperature instead.
-// /datum/gas_mixture/proc/get_fuel_amount (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/get_fuel_amount (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_fuel_amount_hook(src_ref, temp)
 	var/static/__f = load_ext(VERDIGRIS, "byond:fuel_amount_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -685,7 +686,7 @@
 /// Test hook: runs `frames` world steps to completion, one after another,
 /// deterministically (no wall clock). Their events reach DM through
 /// `vg_drain_events()`.
-// /proc/gas_run_frames (verdigris/ffi/src/gas.rs)
+// /proc/gas_run_frames (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_gas_run_frames(frames)
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_run_frames_ffi")
 	VG_COUNT_FFI_CALL
@@ -696,7 +697,7 @@
 /// 0, 0, 0)`: the world's frame metrics in the layout SSair's stat panel,
 /// the profiler and the benchmarks read (the zeros were the old gas-only
 /// driver's own counters).
-// /proc/gas_stats (verdigris/ffi/src/gas.rs)
+// /proc/gas_stats (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_gas_stats()
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_stats_ffi")
 	VG_COUNT_FFI_CALL
@@ -711,7 +712,7 @@
 	return call_ext(__f)(limit_x, limit_y, iterations, initial_wall_cell)
 
 /// Args: (flag). As get_gases(), but only returns gases with the given flag.
-// /datum/gas_mixture/proc/get_by_flag (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/get_by_flag (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_get_by_flag_hook(src_ref, flag_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:get_by_flag_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -720,14 +721,14 @@
 /// Returns: a flat list `id, moles, id, moles, ...` of every gas present in the
 /// mixture, with numeric `GAS_ID_*` IDs. One call replaces a get_gases() plus a
 /// get_moles() per gas.
-// /datum/gas_mixture/proc/get_gases (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/get_gases (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_get_gases_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:get_gases_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Args: (gas_id). Returns: the amount of substance of the given gas, in moles.
-// /datum/gas_mixture/proc/get_moles (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/get_moles (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_get_moles_hook(src_ref, gas_id)
 	var/static/__f = load_ext(VERDIGRIS, "byond:get_moles_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -812,7 +813,7 @@
 	return call_ext(__f)(h)
 
 /// Returns: Heat capacity, in J/K (probably).
-// /datum/gas_mixture/proc/heat_capacity (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/heat_capacity (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_heat_cap_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_cap_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -953,35 +954,35 @@
 	return call_ext(__f)(on_body, index, watch_generation, payload)
 
 /// This turf's gas revision (bumped whenever its gas changes).
-// /turf/proc/air_revision (verdigris/ffi/src/gas.rs)
+// /turf/proc/air_revision (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_hook_air_revision(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_air_revision_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Returns: the amount of gas mixtures that are attached to a byond gas mixture.
-// /datum/controller/subsystem/air/proc/get_amt_gas_mixes (verdigris/domains/gas/src/lib.rs)
+// /datum/controller/subsystem/air/proc/get_amt_gas_mixes (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_hook_amt_gas_mixes()
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_amt_gas_mixes_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
 /// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
-// /proc/auxtools_atmos_init (verdigris/ffi/src/gas.rs)
+// /proc/auxtools_atmos_init (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_hook_init(gas_data)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_init_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(gas_data)
 
 /// Returns: the total amount of gas mixtures in the arena, including "free" ones.
-// /datum/controller/subsystem/air/proc/get_max_gas_mixes (verdigris/domains/gas/src/lib.rs)
+// /datum/controller/subsystem/air/proc/get_max_gas_mixes (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_hook_max_gas_mixes()
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_max_gas_mixes_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
 /// The mixture's gas revision (bumped whenever its gas changes).
-// /datum/gas_mixture/proc/revision (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/revision (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_hook_mix_revision(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_mix_revision_ffi")
 	VG_COUNT_FFI_CALL
@@ -991,7 +992,7 @@
 /// turf's gas and publishes its air-block mask (`AIR_BLOCK_KEEP` keeps the
 /// current one). Reads blocks_air, air, immutable_atmos, planetary_atmos and
 /// initial_gas_mix.
-// /turf/proc/update_air_ref (verdigris/ffi/src/gas.rs)
+// /turf/proc/update_air_ref (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_hook_register_turf(src_ref, flag, mask)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_register_turf_ffi")
 	VG_COUNT_FFI_CALL
@@ -999,28 +1000,28 @@
 
 /// Bulk registration for round start and map loads. Args: (turfs, flag),
 /// where `turfs` is an assoc list of turf -> air-block mask.
-// /proc/_auxmos_register_turfs_bulk (verdigris/ffi/src/gas.rs)
+// /proc/_auxmos_register_turfs_bulk (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_hook_register_turfs_bulk(list, flag)
 	var/static/__f = load_ext(VERDIGRIS, "byond:hook_register_turfs_bulk_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(list, flag)
 
 /// Marks the mix as immutable, meaning it will never change. This cannot be undone.
-// /datum/gas_mixture/proc/mark_immutable (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/mark_immutable (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_mark_immutable_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:mark_immutable_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Args: (mixture). Merges the gas from the giver into src, without modifying the giver mix.
-// /datum/gas_mixture/proc/merge (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/merge (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_merge_hook(src_ref, giver)
 	var/static/__f = load_ext(VERDIGRIS, "byond:merge_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, giver)
 
 /// Args: (min_heat_cap). Sets the mix's minimum heat capacity.
-// /datum/gas_mixture/proc/set_min_heat_capacity (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/set_min_heat_capacity (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_min_heat_cap_hook(src_ref, arg_min)
 	var/static/__f = load_ext(VERDIGRIS, "byond:min_heat_cap_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -1034,35 +1035,35 @@
 /// [`filter_transfer`]. Returns `list(total_transfer_moles,
 /// power_draw, source_1_moles, source_2_moles, ...)` in `sources`' own
 /// iteration order, or `null` when nothing should move.
-// /proc/vg_mix_transfer (verdigris/domains/gas/src/lib.rs)
+// /proc/vg_mix_transfer (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_mix_transfer(sources, sink, requested, available_power, efficiency)
 	var/static/__f = load_ext(VERDIGRIS, "byond:mix_transfer_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(sources, sink, requested, available_power, efficiency)
 
 /// Args: (coefficient). Multiplies all gases by this amount.
-// /datum/gas_mixture/proc/multiply (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/multiply (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_multiply_hook(src_ref, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:multiply_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
 
 /// Args: (temperature). Returns: how much oxidizer for fire is in the mixture at the given temperature. If temperature is omitted, just uses current temperature instead.
-// /datum/gas_mixture/proc/get_oxidation_power (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/get_oxidation_power (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_oxidation_power_hook(src_ref, temp)
 	var/static/__f = load_ext(VERDIGRIS, "byond:oxidation_power_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
 
 /// Returns: true. Parses gas strings like "o2=2500;plasma=5000;TEMP=370" and turns src mixes into the parsed gas mixture, invalid patterns will be ignored
-// /datum/gas_mixture/proc/__auxtools_parse_gas_string (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/__auxtools_parse_gas_string (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_parse_gas_string(src_ref, string)
 	var/static/__f = load_ext(VERDIGRIS, "byond:parse_gas_string_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, string)
 
 /// Args: (gas_id). Returns the heat capacity from the given gas, in J/K (probably).
-// /datum/gas_mixture/proc/partial_heat_capacity (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/partial_heat_capacity (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_partial_heat_capacity(src_ref, gas_id)
 	var/static/__f = load_ext(VERDIGRIS, "byond:partial_heat_capacity_ffi")
 	VG_COUNT_FFI_CALL
@@ -1154,7 +1155,7 @@
 
 /// Runs every device edge's flow(s)/valve once for `dt` seconds -- region
 /// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
-/// through `vg_gas::world`'s turf accessors (this module's own docs) --
+/// through `crate::gas`'s turf accessors (this module's own docs) --
 /// and returns a flat `id, moles, power_w, target_reached` list per device
 /// that moved something or drew power.
 // /proc/vg_pipe_step_devices (verdigris/ffi/src/pipes.rs)
@@ -1384,7 +1385,7 @@
 	return call_ext(__f)(sub)
 
 /// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
-// /datum/gas_mixture/proc/react (verdigris/ffi/src/gas.rs)
+// /datum/gas_mixture/proc/react (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_react_hook(src_ref, holder)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -1480,7 +1481,7 @@
 /// volume, total moles, heat capacity) followed by `GAS_ID_COUNT` mole counts.
 /// A null or unregistered entry reads as all zeroes. Used by DM loops that used
 /// to call several getters per mixture.
-// /proc/read_mixtures (verdigris/domains/gas/src/lib.rs)
+// /proc/read_mixtures (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_read_mixtures(mixtures)
 	var/static/__f = load_ext(VERDIGRIS, "byond:read_mixtures_ffi")
 	VG_COUNT_FFI_CALL
@@ -1488,77 +1489,77 @@
 
 /// Gives a new `/datum/gas_mixture` a main-owned slot sized from its
 /// `initial_volume`, and writes the handle into it.
-// /datum/gas_mixture/proc/__gasmixture_register (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/__gasmixture_register (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_register_gasmixture_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:register_gasmixture_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Args: (mixture, flag, amount). Takes `amount` from src that have the given `flag` and puts them into the given `mixture`. Returns: 0 if gas didn't have any with that flag, 1 if it did.
-// /datum/gas_mixture/proc/__remove_by_flag (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/__remove_by_flag (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_remove_by_flag_hook(src_ref, into, flag_val, amount_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:remove_by_flag_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, into, flag_val, amount_val)
 
 /// Args: (mixture, amount). Takes the given amount of gas from src and puts it into the argument mixture. Amount is amount of substance in moles.
-// /datum/gas_mixture/proc/__remove (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/__remove (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_remove_hook(src_ref, into, amount_arg)
 	var/static/__f = load_ext(VERDIGRIS, "byond:remove_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, into, amount_arg)
 
 /// Args: (mixture, ratio). Takes the given ratio of gas from src and puts it into the argument mixture. Ratio is a number between 0 and 1.
-// /datum/gas_mixture/proc/__remove_ratio (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/__remove_ratio (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_remove_ratio_hook(src_ref, into, ratio_arg)
 	var/static/__f = load_ext(VERDIGRIS, "byond:remove_ratio_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, into, ratio_arg)
 
 /// Returns: the mix's pressure, in kilopascals.
-// /datum/gas_mixture/proc/return_pressure (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/return_pressure (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_return_pressure_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:return_pressure_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Returns: the mix's temperature, in kelvins.
-// /datum/gas_mixture/proc/return_temperature (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/return_temperature (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_return_temperature_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:return_temperature_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Returns: the mix's volume, in liters.
-// /datum/gas_mixture/proc/return_volume (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/return_volume (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_return_volume_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:return_volume_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Args: (mixture, ratio, gas_list). Takes gases given by `gas_list` and moves `ratio` amount of those gases from `src` into `mixture`.
-// /datum/gas_mixture/proc/scrub_into (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/scrub_into (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_scrub_into_hook(src_ref, into, ratio_v, gas_list)
 	var/static/__f = load_ext(VERDIGRIS, "byond:scrub_into_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, into, ratio_v, gas_list)
 
 /// Args: (gas_id, moles). Sets the amount of substance of the given gas, in moles.
-// /datum/gas_mixture/proc/set_moles (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/set_moles (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_set_moles_hook(src_ref, gas_id, amt_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_moles_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, gas_id, amt_val)
 
 /// Args: (temperature). Sets the temperature of the mixture. Will be set to 2.7 if it's too low.
-// /datum/gas_mixture/proc/set_temperature (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/set_temperature (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_set_temperature_hook(src_ref, arg_temp)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_temperature_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, arg_temp)
 
 /// Args: (volume). Sets the volume of the gas.
-// /datum/gas_mixture/proc/set_volume (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/set_volume (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_set_volume_hook(src_ref, vol_arg)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_volume_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -1566,7 +1567,7 @@
 
 /// Args: (links). One entry per z-level: the `UP`/`DOWN` bits of the levels
 /// air may cross into. Vertical faces open only between linked levels.
-// /datum/controller/subsystem/air/proc/auxmos_set_z_links (verdigris/ffi/src/gas.rs)
+// /datum/controller/subsystem/air/proc/auxmos_set_z_links (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_set_z_links(links)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_z_links_ffi")
 	VG_COUNT_FFI_CALL
@@ -1585,14 +1586,14 @@
 	return call_ext(__f)(handle, topology, loads, warm, generation)
 
 /// Args: (amount). Subtracts the given amount from each gas.
-// /datum/gas_mixture/proc/subtract (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/subtract (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_subtract_hook(src_ref, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:subtract_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
 
 /// Returns: the mix's thermal energy, the product of the mixture's heat capacity and its temperature.
-// /datum/gas_mixture/proc/thermal_energy (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/thermal_energy (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_thermal_energy_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:thermal_energy_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -1600,28 +1601,28 @@
 
 /// Diagnostic invariant for shuttle and atmos tests: the turf's air datum
 /// names its field cell (or the shared vacuum), and the cell is in the field.
-// /proc/_auxmos_topology_matches (verdigris/ffi/src/gas.rs)
+// /proc/_auxmos_topology_matches (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_topology_matches(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:topology_matches_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Returns: Amount of substance, in moles.
-// /datum/gas_mixture/proc/total_moles (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/total_moles (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_total_moles_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:total_moles_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
 /// Args: (mixture, amount). Takes the `amount` given and transfers it from `src` to `mixture`.
-// /datum/gas_mixture/proc/transfer_to (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/transfer_to (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_transfer_hook(src_ref, other, moles)
 	var/static/__f = load_ext(VERDIGRIS, "byond:transfer_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, other, moles)
 
 /// Args: (mixture, ratio). Transfers `ratio` of `src` to `mixture`.
-// /datum/gas_mixture/proc/transfer_ratio_to (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/transfer_ratio_to (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_transfer_ratio_hook(src_ref, other, ratio)
 	var/static/__f = load_ext(VERDIGRIS, "byond:transfer_ratio_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -1629,7 +1630,7 @@
 
 /// Diagnostic: whether the turf's gas is still moving (some open edge is
 /// not settled).
-// /turf/proc/auxmos_is_atmos_active (verdigris/ffi/src/gas.rs)
+// /turf/proc/auxmos_is_atmos_active (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_turf_active_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:turf_active_hook_ffi")
 	VG_COUNT_FFI_CALL
@@ -1640,7 +1641,7 @@
 /// only, `rust_architecture.md` §4.8), not a turf reference the way the
 /// old flat encoding did -- `on_gas_cell_*` handlers call this once to
 /// resolve it.
-// /proc/vg_turf_of (verdigris/ffi/src/gas.rs)
+// /proc/vg_turf_of (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_turf_of(cell)
 	var/static/__f = load_ext(VERDIGRIS, "byond:turf_of_ffi")
 	VG_COUNT_FFI_CALL
@@ -1648,20 +1649,20 @@
 
 /// Frees a mixture's main-owned slot. Turf and pipe gas outlive their datums
 /// (the cell and the region own it).
-// /datum/gas_mixture/proc/__gasmixture_unregister (verdigris/domains/gas/src/lib.rs)
+// /datum/gas_mixture/proc/__gasmixture_unregister (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_unregister_gasmixture_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:unregister_gasmixture_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref)
 
-// /proc/unwatch_dirty_gas_mixture (verdigris/domains/gas/src/lib.rs)
+// /proc/unwatch_dirty_gas_mixture (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_unwatch_dirty_gas_mixture(id)
 	var/static/__f = load_ext(VERDIGRIS, "byond:unwatch_dirty_gas_mixture_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(id)
 
 /// For updating reaction informations for auxmos, only call this when it is changed.
-// /datum/controller/subsystem/air/proc/auxtools_update_reactions (verdigris/ffi/src/gas.rs)
+// /datum/controller/subsystem/air/proc/auxtools_update_reactions (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_update_reactions()
 	var/static/__f = load_ext(VERDIGRIS, "byond:update_reactions_ffi")
 	VG_COUNT_FFI_CALL
@@ -1777,7 +1778,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-// /proc/watch_dirty_gas_mixture (verdigris/domains/gas/src/lib.rs)
+// /proc/watch_dirty_gas_mixture (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_watch_dirty_gas_mixture(id, interest_mask)
 	var/static/__f = load_ext(VERDIGRIS, "byond:watch_dirty_gas_mixture_ffi")
 	VG_COUNT_FFI_CALL

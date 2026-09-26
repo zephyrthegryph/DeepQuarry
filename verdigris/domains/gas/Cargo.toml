@@ -13,19 +13,13 @@ edition = "2021"
 default = ["turf_processing"]
 turf_processing = []
 
-# Tracing exposes a local port — opt-in only.
-tracy = ["dep:tracing-tracy", "dep:tracing-subscriber", "dep:tracing"]
-
 [lib]
 # DQEdit: was ["cdylib"] upstream; we link auxmos into libverdigris.so as an rlib
 # so BYOND loads exactly one library. See code/ATMOSPHERICS/README.md.
 crate-type = ["rlib"]
 
 [dependencies]
-byondapi = { workspace = true }
 eyre = { workspace = true }
-auxcallback = { path = "../../ffi/callback" }
-auxmacros = { path = "../../ffi/macros" }
 vg-core = { path = "../../core" }
 itertools = "0.14.0"
 float-ord = "0.3.2"
@@ -35,12 +29,8 @@ ahash = "0.8.11"
 hashbrown = "0.15.2"
 atomic_float = "1.1.0"
 bitflags = "2.6.0"
-nom = "7.1.3"
 # DQEdit: mimalloc removed — the global allocator is set in the cdylib (verdigris) crate, not here.
 
-tracing = { version = "0.1.41", optional = true }
-tracing-tracy = { version = "0.11.4", optional = true }
-tracing-subscriber = { version = "0.3.19", optional = true }
 
 [dev-dependencies]
 proptest = "1.5"

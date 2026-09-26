@@ -492,7 +492,7 @@ impl Mixture {
 	}
 	/// Returns a tuple with oxidation power and fuel amount of this gas mixture.
 	pub fn get_burnability(&self) -> (f32, f32) {
-		use crate::types::FireInfo;
+		use crate::gas::types::FireInfo;
 		super::with_gas_info(|gas_info| {
 			self.moles
 				.iter()
@@ -536,7 +536,7 @@ impl Mixture {
 		&self,
 		gas_info: &[super::GasType],
 	) -> (Vec<SpecificFireInfo>, Vec<SpecificFireInfo>) {
-		use crate::types::FireInfo;
+		use crate::gas::types::FireInfo;
 		self.moles
 			.iter()
 			.zip(gas_info)

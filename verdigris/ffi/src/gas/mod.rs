@@ -8,6 +8,10 @@
 //! `verdigris/domains/gas/src/lib.rs` pending its own move here
 //! (`rust_architecture.md` §8.5 step 6); this module is the first slice.
 
+mod binds;
+pub(crate) mod mix;
+mod parser;
+
 use std::cell::Cell;
 
 use byondapi::prelude::*;
@@ -18,128 +22,22 @@ use vg_core::network::RegionId;
 use vg_core::outbox::{Lane, Subscriber, Wake, WatchId};
 use vg_core::registry::DomainRegistry;
 use vg_core::slot::RawHandle;
-use vg_core::watch::revision::Counter;
 use vg_core::watch::Cond;
 use vg_core::world::{World, WorldBuilder};
-use vg_gas::cell::{GasCell, GasCmd, TurfGas, N, Q};
+use vg_gas::cell::{GasCell, GasCmd, TurfGas, Q};
 use vg_gas::gas::constants::{ReactionReturn, CELL_VOLUME};
-use vg_gas::gas::{self, with_mix, Mixture};
+use vg_gas::gas;
 use vg_gas::laws::{CellReactionReadyLaw, CellVisualChangeLaw, SpacewindLaw};
 use vg_gas::pipes::{PipeGas, Pipes};
 use vg_gas::reaction::{Reaction, ReactionIdentifier, ReactionPriority};
-use vg_gas::world::{MainsAccess, MixRef, PIPE_BASE, TURF_BASE};
 
+use self::mix::{with_mix, MixRef};
 use crate::world::with_world;
-
-// --- Main-owned mixtures -------------------------------------------------
-//
-// The DLL's own slab for every main-owned `/datum/gas_mixture` (a tank, a
-// lung, a canister, a device buffer or scratch mixture): FFI state, the
-// same as the reaction table and the pipe region slots above. `vg_gas::
-// world::GasWorld` (still the active engine for turf/pipe gas -- see that
-// module's own docs) reaches it through the installed [`MainsAccess`]
-// bridge instead of owning it directly (`Mains` there is now a stateless
-// facade over this).
-
-struct Slot {
-    mix: Mixture,
-    revision: Counter,
-    live: bool,
-}
-
-#[derive(Default)]
-struct MainsStore {
-    slots: std::cell::RefCell<Vec<Slot>>,
-    free: std::cell::RefCell<Vec<u32>>,
-    live: std::cell::Cell<usize>,
-}
-
-impl MainsAccess for MainsStore {
-    fn alloc(&self, mix: Mixture) -> Option<u32> {
-        self.live.set(self.live.get() + 1);
-        if let Some(i) = self.free.borrow_mut().pop() {
-            let mut slots = self.slots.borrow_mut();
-            let slot = &mut slots[i as usize];
-            slot.mix = mix;
-            slot.revision.bump();
-            slot.live = true;
-            return Some(i);
-        }
-        let mut slots = self.slots.borrow_mut();
-        let i = u32::try_from(slots.len()).ok()?;
-        if i >= PIPE_BASE {
-            self.live.set(self.live.get() - 1);
-            return None;
-        }
-        slots.push(Slot {
-            mix,
-            revision: Counter::new(),
-            live: true,
-        });
-        Some(i)
-    }
-
-    fn free(&self, i: u32) {
-        let mut slots = self.slots.borrow_mut();
-        if let Some(slot) = slots.get_mut(i as usize) {
-            if slot.live {
-                slot.live = false;
-                slot.mix = Mixture::new();
-                slot.revision.bump();
-                self.free.borrow_mut().push(i);
-                self.live.set(self.live.get() - 1);
-            }
-        }
-    }
-
-    fn get(&self, i: u32) -> Option<Mixture> {
-        self.slots
-            .borrow()
-            .get(i as usize)
-            .filter(|s| s.live)
-            .map(|s| s.mix.clone())
-    }
-
-    fn set(&self, i: u32, mix: Mixture) {
-        let mut slots = self.slots.borrow_mut();
-        if let Some(s) = slots.get_mut(i as usize) {
-            if s.live {
-                s.mix = mix;
-                s.revision.bump();
-            }
-        }
-    }
-
-    fn revision(&self, i: u32) -> u32 {
-        self.slots.borrow().get(i as usize).map_or(0, |s| s.revision.get())
-    }
-
-    fn live(&self) -> usize {
-        self.live.get()
-    }
-
-    fn capacity(&self) -> usize {
-        self.slots.borrow().len()
-    }
-
-    fn totals(&self) -> [f64; Q] {
-        let mut out = [0.0; Q];
-        for s in self.slots.borrow().iter().filter(|s| s.live) {
-            let m = s.mix.moles_array();
-            for (o, v) in out.iter_mut().zip(m) {
-                *o += f64::from(v);
-            }
-            out[N] += f64::from(s.mix.thermal_energy());
-        }
-        out
-    }
-}
-
 
 // --- Pipe region slot compaction ----------------------------------------
 //
 // A pipe region's DM-facing handle is a compacted slot, not its raw arena
-// bits (which can exceed `vg_gas::world::MixRef::Pipe`'s 21-bit address
+// bits (which can exceed `mix::MixRef::Pipe`'s 21-bit address
 // budget) -- the one piece of bookkeeping the old hand-rolled `PipeNet`
 // also needed for the same reason, not for revision or idle-skip
 // tracking, which `NetworkHost`/`World` already provide generically. This
@@ -439,11 +337,10 @@ pub(crate) fn register(b: &mut WorldBuilder) -> FieldKey<TurfGas> {
 /// (`crate::world::build`): a rebuilt world starts with no mixtures.
 pub(crate) fn install(key: FieldKey<TurfGas>) {
     TURF.with(|t| t.set(Some(key)));
-    vg_gas::world::install_turf_access(Box::new(FfiTurfAccess));
-    vg_gas::world::install_mains_access(Box::new(MainsStore::default()));
+    mix::reset();
 }
 
-fn turf_key() -> Result<FieldKey<TurfGas>> {
+pub(crate) fn turf_key() -> Result<FieldKey<TurfGas>> {
     TURF.with(Cell::get).ok_or_else(|| eyre!("turf gas field not installed"))
 }
 
@@ -452,7 +349,7 @@ fn geom_of(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Geom {
 }
 
 /// A turf cell's gas and geometry as DM sees them now.
-fn turf_read(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Option<(GasCell, Geom)> {
+pub(crate) fn turf_read(w: &World, key: FieldKey<TurfGas>, cell: u32) -> Option<(GasCell, Geom)> {
     let g = w.sim().port_ref(key.geometry).read(cell)?;
     Some((w.read_cell(key, cell)?, g))
 }
@@ -506,30 +403,13 @@ fn unregister_cell(w: &mut World, key: FieldKey<TurfGas>, cell: u32) {
     }
 }
 
-/// `MixRef::Turf` for the gas binds still in `vg-gas` (`vg_gas::world::
-/// TurfAccess`). Never called with the world borrowed.
-struct FfiTurfAccess;
-
-impl vg_gas::world::TurfAccess for FfiTurfAccess {
-    fn read(&self, cell: u32) -> Option<(GasCell, Geom)> {
-        with_world(|w| Ok(turf_read(w, turf_key()?, cell))).ok().flatten()
-    }
-
-    fn submit(&self, cell: u32, cmd: GasCmd) {
-        let _ = with_world(|w| {
-            let key = turf_key()?;
-            w.submit_cell(key, cell, cmd).map_err(|e| eyre!("{e}"))
-        });
-    }
-}
-
 /// A turf cell's gas as a pipe device's side (`crate::pipes`' vents and
 /// scrubbers): its gas and volume.
 pub(crate) fn turf_device_probe(w: &World, cell: u32) -> Option<(PipeGas, f64)> {
     let (c, g) = turf_read(w, turf_key().ok()?, cell)?;
     let volume = if g.capacity > 0.0 { g.capacity } else { CELL_VOLUME };
-    let mix = vg_gas::world::mixture_of_cell(&c, volume);
-    Some((PipeGas::from_amounts(&vg_gas::world::amounts_of(&mix), mix.get_temperature()), f64::from(volume)))
+    let mix = mix::mixture_of_cell(&c, volume);
+    Some((PipeGas::from_amounts(&mix::amounts_of(&mix), mix.get_temperature()), f64::from(volume)))
 }
 
 /// Applies a device step's result to turf `cell`: the difference from what
@@ -617,10 +497,10 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
             Ok(())
         });
     }
-    let Some(mix) = vg_gas::world::with_world(|gw| gw.load(r)) else {
+    let Some(mix) = mix::load(r) else {
         bail!("turf air has no gas mixture ({r:?})");
     };
-    let mut value = vg_gas::world::cell_of_mixture(&mix);
+    let mut value = mix::cell_of_mixture(&mix);
     if mix.is_immutable() || is_set(src.read_number_id(byond_string!("immutable_atmos"))) {
         value.flags |= vg_gas::cell::flags::IMMUTABLE;
         // Shared vacuum: the datum stays main-owned.
@@ -637,7 +517,7 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         Ok(())
     })?;
     if let MixRef::Main(slot) = r {
-        vg_gas::world::with_world(|gw| gw.mains.free(slot));
+        mix::free(slot);
     }
     MixRef::Turf(cell).store(&mut air)?;
     Ok(())
@@ -829,7 +709,7 @@ fn gas_stats() -> Result<ByondValue> {
 /// callbacks, 0, 0, 0)` for SSair's stat panel and the benchmarks.
 #[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
 fn auxmos_diagnostics() -> Result<ByondValue> {
-    let (live, slots) = vg_gas::world::with_world(|gw| (gw.mains.live(), gw.mains.capacity()));
+    let (live, slots) = mix::counts();
     let frames = with_world(|w| Ok(w.frame()))?;
     #[allow(clippy::cast_precision_loss)]
     crate::world::list([
@@ -863,19 +743,9 @@ fn gas_run_frames(frames: ByondValue) -> Result<ByondValue> {
 
 // --- Gas handles as a reactor watch domain -----------------------------------
 
-/// Gas as a reactor domain: `REACT_ON` / `REACT_WHEN` on gas handles (turf
-/// gas by its turf's air handle, or a main-owned mixture). One kind of
-/// handle per condition: port 0 is the turf field's cell watches, port 1
-/// the main mixtures'.
+/// Gas as a reactor domain: `REACT_ON` / `REACT_WHEN` on gas handles
+/// ([`mix::watch`]).
 pub(crate) struct GasDomain;
-
-fn cond_cells(cond: &Cond, out: &mut Vec<u32>) {
-    match cond {
-        Cond::Changed { cell, .. } | Cond::Threshold { cell, .. } | Cond::Band { cell, .. } | Cond::ThresholdSet { cell, .. } => out.push(*cell),
-        Cond::Difference { a, b, .. } => out.extend([*a, *b]),
-        Cond::Any(cs) | Cond::All(cs) => cs.iter().for_each(|c| cond_cells(c, out)),
-    }
-}
 
 impl DomainRegistry for GasDomain {
     fn channels(&self) -> Vec<vg_core::channel::ChannelInfo> {
@@ -883,33 +753,14 @@ impl DomainRegistry for GasDomain {
     }
 
     fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> std::result::Result<(u8, WatchId), String> {
-        let mut ids = Vec::new();
-        cond_cells(cond, &mut ids);
-        if ids.iter().all(|&id| matches!(MixRef::from_id(id), Some(MixRef::Turf(_)))) {
-            let cells = crate::world::map_cells(cond, &|id| Ok(id - TURF_BASE))?;
-            return with_world(|w| w.watch_cells::<TurfGas>(sub, lane, &cells).map_err(|e| eyre!("{e}")))
-                .map(|id| (0, id))
-                .map_err(|e| e.to_string());
-        }
-        vg_gas::world::with_world(|gw| gw.watch(sub, lane, cond)).map(|id| (1, id)).map_err(|e| e.to_string())
+        mix::watch(sub, lane, cond).map_err(|e| e.to_string())
     }
 
     fn unwatch(&mut self, port: u8, id: WatchId) {
-        if port == 0 {
-            let _ = with_world(|w| w.unwatch_cells::<TurfGas>(id).map_err(|e| eyre!("{e}")));
-        } else {
-            vg_gas::world::with_world(|gw| gw.unwatch(id));
-        }
+        mix::unwatch(port, id);
     }
 
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {
-        let mut turf = Vec::new();
-        let _ = with_world(|w| {
-            w.drain_field_wakes::<TurfGas>(&mut turf);
-            Ok(())
-        });
-        // A turf wake's source is its cell; DM knows it by the gas handle.
-        out.extend(turf.into_iter().map(|w| Wake { source: MixRef::Turf(w.source).id(), ..w }));
-        vg_gas::world::with_world(|gw| gw.take_wakes(out));
+        mix::reactor_wakes(out);
     }
 }

@@ -462,7 +462,9 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	OXYGEN: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_OXYGEN],
 	PLASMA: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_PLASMA],
 	CARBON_DIOXIDE: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_CARBON_DIOXIDE],
+	COMPOSITION: Vector(22)<Moles> hysteresis 0.05 => |c, o| o.copy_from_slice(&c.moles),
 }}
+const _: () = assert!(N == 22, "gas_ch::COMPOSITION's width is the gas count");
 
 /// Visible-gas signature: which gases are visible and at which step. The
 /// thresholds are registry data (`gate.rs`); a zero signature is "nothing

@@ -6,8 +6,6 @@
 //! (pinned view) and its reservoir ledger. Cells are `f32`, so each check
 //! allows a small relative error.
 
-use std::cell::RefCell;
-
 use proptest::prelude::*;
 use vg_core::field::{FieldConfig, FieldKey, FieldState, Geom};
 use vg_core::grid::{BlockKind, Dir, GridDims};
@@ -16,9 +14,7 @@ use vg_core::world::{World, WorldBuilder, WorldConfig};
 
 use crate::cell::{GasCell, GasCmd, TurfGas, N, Q};
 use crate::gas::ids::{GAS_NITROGEN, GAS_OXYGEN, GAS_PLASMA};
-use crate::gas::Mixture;
 use crate::laws::{CellReactionReadyLaw, CellVisualChangeLaw, GasEvent, SpacewindLaw};
-use crate::world::{MainsAccess, MixRef, TurfAccess};
 
 const X: u32 = 20;
 const Y: u32 = 20;
@@ -206,13 +202,6 @@ proptest! {
 		prop_assert!(close(&before, &after, 1e-4).is_ok(), "{:?}", close(&before, &after, 1e-4));
 	}
 
-	#[test]
-	fn dm_writes_conserve(seed in 1u64..u64::MAX, ops in proptest::collection::vec(
-		(0u8..8, 0u8..20, 0u8..20, 0.5f32..40.0), 1..60)
-	) {
-		let r = dm_writes(seed, &ops);
-		prop_assert!(r.is_ok(), "{:?}", r);
-	}
 }
 
 #[test]
@@ -301,156 +290,30 @@ fn a_planet_cell_relaxes_back_to_its_atmosphere() {
 	assert!((end.moles[GAS_OXYGEN] - base.moles[GAS_OXYGEN]).abs() < 0.1, "{end:?}");
 }
 
-// --- DM writes through the gas world's mixture layer ------------------------
-
-/// A `MainsAccess` double (no `vg-ffi`, so no `MainsStore`): a plain slab.
-#[derive(Default)]
-struct TestMains(RefCell<Vec<Option<Mixture>>>);
-
-impl MainsAccess for TestMains {
-	fn alloc(&self, mix: Mixture) -> Option<u32> {
-		let mut v = self.0.borrow_mut();
-		v.push(Some(mix));
-		u32::try_from(v.len() - 1).ok()
-	}
-
-	fn free(&self, i: u32) {
-		if let Some(s) = self.0.borrow_mut().get_mut(i as usize) {
-			*s = None;
-		}
-	}
-
-	fn get(&self, i: u32) -> Option<Mixture> {
-		self.0.borrow().get(i as usize).cloned().flatten()
-	}
-
-	fn set(&self, i: u32, mix: Mixture) {
-		if let Some(s) = self.0.borrow_mut().get_mut(i as usize) {
-			*s = Some(mix);
-		}
-	}
-
-	fn revision(&self, _i: u32) -> u32 {
-		0
-	}
-
-	fn live(&self) -> usize {
-		self.0.borrow().iter().flatten().count()
-	}
-
-	fn capacity(&self) -> usize {
-		self.0.borrow().len()
-	}
-
-	fn totals(&self) -> [f64; Q] {
-		let mut out = [0.0; Q];
-		for m in self.0.borrow().iter().flatten() {
-			for (o, v) in out.iter_mut().zip(m.moles_array()) {
-				*o += f64::from(v);
-			}
-			out[N] += f64::from(m.thermal_energy());
-		}
-		out
-	}
-}
-
-type Shared = std::rc::Rc<RefCell<Rig>>;
-
-/// `TurfAccess` over a test [`Rig`], as `vg-ffi` bridges it to the DLL's
-/// world.
-struct TestTurfs(Shared);
-
-impl TurfAccess for TestTurfs {
-	fn read(&self, cell: u32) -> Option<(GasCell, Geom)> {
-		let r = self.0.borrow();
-		let g = r.w.sim().port_ref(r.key.geometry).read(cell)?;
-		Some((r.read(cell)?, g))
-	}
-
-	fn submit(&self, cell: u32, cmd: GasCmd) {
-		let mut r = self.0.borrow_mut();
-		let key = r.key;
-		let _ = r.w.submit_cell(key, cell, cmd);
-	}
-}
-
-fn gas<T>(f: impl FnOnce(&mut crate::world::GasWorld) -> T) -> T {
-	crate::world::with_world(f)
-}
-
-fn dm_writes(seed: u64, ops: &[(u8, u8, u8, f32)]) -> Result<(), String> {
-	crate::world::install_mains_access(Box::new(TestMains::default()));
-	let mut rig = Rig::new(X, Y);
-	build(&mut rig, seed, false);
-	let rig: Shared = std::rc::Rc::new(RefCell::new(rig));
-	crate::world::install_turf_access(Box::new(TestTurfs(rig.clone())));
-
-	let tank = gas(|w| w.mains.alloc(Mixture::from_vol(70.0))).unwrap();
-	rig.borrow_mut().run(1);
-	let totals = || {
-		let mut t = rig.borrow_mut().totals();
-		for (a, b) in t.iter_mut().zip(gas(|w| w.mains.totals())) {
-			*a += b;
-		}
-		t
-	};
-	let mut expected = totals();
-	for &(kind, x, y, amount) in ops {
-		let c = cell(1 + u32::from(x) % (X - 2), 1 + u32::from(y) % (Y - 2));
-		let turf = MixRef::Turf(c);
-		let Some(before) = gas(|w| w.load(turf)) else { continue };
-		let node = {
-			let r = rig.borrow();
-			r.w.sim().port_ref(r.key.geometry).read(c).unwrap_or_default().is_node()
-		};
-		if before.volume <= 0.0 || !node {
-			continue;
-		}
-		let mut after = before.clone();
-		match kind % 3 {
-			0 => {
-				// Add plasma at 400 K (a canister release).
-				let mut add = Mixture::from_vol(2500.0);
-				add.set_moles(GAS_PLASMA, amount);
-				add.set_temperature(400.0);
-				expected[GAS_PLASMA] += f64::from(amount);
-				expected[N] += f64::from(amount * 200.0 * 400.0);
-				after.merge(&add);
-				gas(|w| w.store(turf, &before, &after));
-			}
-			1 => {
-				// Remove a fraction into the tank (a scrubber, a breath).
-				let tank_ref = MixRef::Main(tank);
-				let tank_before = gas(|w| w.load(tank_ref)).unwrap();
-				let mut t = tank_before.clone();
-				t.merge(&after.remove_ratio((amount / 100.0).clamp(0.0, 1.0)));
-				gas(|w| {
-					w.store(turf, &before, &after);
-					w.store(tank_ref, &tank_before, &t);
-				});
-			}
-			_ => {
-				// Heat it (set_temperature: energy comes from outside).
-				expected[N] += f64::from(before.heat_capacity()) * f64::from(amount);
-				after.set_temperature(before.get_temperature() + amount);
-				gas(|w| w.store(turf, &before, &after));
-			}
-		}
-		if kind % 3 == 0 {
-			rig.borrow_mut().run(1);
-		}
-	}
-	rig.borrow_mut().run(3);
-	let end = totals();
-	// Heat added by set_temperature is only approximately what DM saw (the
-	// cell's capacity may have moved by a frame), so allow for it.
-	close(&expected, &end, 2e-3)
-}
-
+/// DM's writes are field commands with absolute amounts: whatever they
+/// add, the field's totals gain exactly that, frames later.
 #[test]
-fn dm_writes_conserve_through_the_turf_bridge() {
-	let ops: Vec<(u8, u8, u8, f32)> = (0..120u32)
-		.map(|i| ((i * 7 % 13) as u8, (i * 5) as u8, (i * 3) as u8, (i % 17) as f32 + 1.0))
-		.collect();
-	dm_writes(3, &ops).unwrap();
+fn dm_deltas_conserve() {
+	let mut r = Rig::new(X, Y);
+	build(&mut r, 3, false);
+	r.run(1);
+	let mut expected = r.totals();
+	for i in 0..120u32 {
+		let c = cell(1 + i * 5 % (X - 2), 1 + i * 3 % (Y - 2));
+		let Some(v) = r.read(c) else { continue };
+		let mut d = [0.0f32; Q];
+		d[GAS_PLASMA] = (i % 17) as f32 + 1.0;
+		d[GAS_OXYGEN] = -(v.moles[GAS_OXYGEN] * 0.1);
+		d[N] = 1000.0;
+		if r.w.sim().port_ref(r.key.geometry).read(c).unwrap_or_default().is_node() && r.w.submit_cell(r.key, c, GasCmd::Delta(d)).is_ok() {
+			for (e, v) in expected.iter_mut().zip(d) {
+				*e += f64::from(v);
+			}
+		}
+		if i % 3 == 0 {
+			r.run(1);
+		}
+	}
+	r.run(3);
+	close(&expected, &r.totals(), 1e-4).unwrap();
 }

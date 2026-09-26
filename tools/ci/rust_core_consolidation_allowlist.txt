@@ -1,19 +1,5 @@
 # Known current offenders for tools/ci/check_rust_core_consolidation.py
-# (doc/rewrite/rust_architecture.md §2, §7's migration order). Format:
-# <path>:<category>  # branch/plan that removes it. Remove an entry once it
-# no longer matches; a stale entry fails the check too, so the list only
-# shrinks as domains migrate. Target (§7 "definition of done"): empty.
-
-# --- gas (M2: device flow law now; PipeGas on NetworkHost, GasMix
-# main-owned component, delete world.rs host/pipes.rs/Mains/Signature-Dirty/
-# lib.rs binds, next) ---
-verdigris/domains/gas/Cargo.toml:byondapi_dep  # M2/gas rewrite: the legacy ~60-bind gas mixture API DM calls directly still needs byondapi; becomes a GasMix component + queries, then the dependency moves to vg-ffi only.
-verdigris/domains/gas/src/lib.rs:bind_attr  # M2/gas rewrite: the legacy ~60-bind gas mixture API; becomes a GasMix component + queries (§5), and lib.rs shrinks to the generated surface.
-verdigris/domains/gas/src/gate.rs:thread_local  # M2/gas rewrite: main-thread gate cache; folds into the unified entity/component store's main-thread ownership model.
-verdigris/domains/gas/src/world.rs:dirty_set  # M2/gas rewrite: gas's own Signature/Dirty change tracking; replaced by core::watch (§4.7) -- this is the exact duplication rust_architecture.md §1's table names.
-verdigris/domains/gas/src/world.rs:key_map  # M2/gas rewrite: GasWorld's probes/watched/dirty/masks maps; replaced by NetworkHost/EntityTable-keyed storage and the unified Grid's block layers (§4.5, §4.6).
-verdigris/domains/gas/src/world.rs:thread_local  # M2/gas rewrite: the thread-local GasWorld owner; folds into the one per-DLL Sim/driver.
-verdigris/domains/gas/src/world.rs:vec_f32_return  # M2/gas rewrite: drain_observations/tick/run_frames's flat Vec<f32> encoding; replaced by typed events (§4.8) once the R10 generator lands.
-
-# heat's allowlist is now empty (rewrite/heat-r10 finished the world.rs/
-# mob.rs migration onto the one per-DLL driver and typed events).
+# (doc/rewrite/rust_architecture.md §2, §8). Format:
+# <path>:<category>  # branch/plan that removes it. A stale entry fails the
+# check too. Every domain is on the generic core: this list is empty and
+# stays empty.

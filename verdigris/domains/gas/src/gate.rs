@@ -4,11 +4,8 @@
 //!
 //! DM registers reactions and gases once at boot (and on the rare
 //! `update_reactions`). The table is immutable once built and published as
-//! an `Arc`; frame threads keep a thread-local copy and only touch the lock
-//! when the version moves, so the per-cell check is lock-free.
+//! an `Arc` behind an uncontended read lock.
 
-use std::cell::RefCell;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
 use crate::cell::{heat_capacity, temperature_of, GasCell, N};
@@ -131,37 +128,20 @@ impl Gate {
 }
 
 static GATE: RwLock<Option<Arc<Gate>>> = RwLock::new(None);
-static VERSION: AtomicU64 = AtomicU64::new(0);
-
-thread_local! {
-	static CACHE: RefCell<(u64, Option<Arc<Gate>>)> = const { RefCell::new((u64::MAX, None)) };
-}
 
 /// Publishes a new gate (boot, reaction updates).
 pub fn install(gate: Gate) {
-	*GATE
-		.write()
-		.unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Arc::new(gate));
-	VERSION.fetch_add(1, Ordering::Release);
+	*GATE.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Arc::new(gate));
 }
 
 /// The current gate, if one is installed.
 #[must_use]
 pub fn current() -> Option<Arc<Gate>> {
-	GATE.read()
-		.unwrap_or_else(std::sync::PoisonError::into_inner)
-		.clone()
+	GATE.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
 }
 
 fn with<T>(f: impl FnOnce(&Gate) -> T) -> Option<T> {
-	CACHE.with(|c| {
-		let mut c = c.borrow_mut();
-		let v = VERSION.load(Ordering::Acquire);
-		if c.0 != v {
-			*c = (v, current());
-		}
-		c.1.as_deref().map(f)
-	})
+	GATE.read().unwrap_or_else(std::sync::PoisonError::into_inner).as_deref().map(f)
 }
 
 /// Whether any registered reaction's requirements hold for the cell.
