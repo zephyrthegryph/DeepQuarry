@@ -33,12 +33,7 @@
 
 	active = 1
 
-	spawn(1)
-		if(suit_overlay_active)
-			suit_overlay = suit_overlay_active
-		else
-			suit_overlay = null
-		holder.update_icon()
+	om_after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	if(!jets.on)
 		jets.toggle()

@@ -190,12 +190,7 @@
 		return 0
 	active = 1
 
-	spawn(1)
-		if(suit_overlay_active)
-			suit_overlay = suit_overlay_active
-		else
-			suit_overlay = null
-		holder.update_icon()
+	om_after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	return 1
 
@@ -207,13 +202,7 @@
 
 	active = 0
 
-	spawn(1)
-		if(suit_overlay_inactive)
-			suit_overlay = suit_overlay_inactive
-		else
-			suit_overlay = null
-		if(holder)
-			holder.update_icon()
+	om_after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	return 1
 
@@ -348,3 +337,11 @@
 		name = "[charge.display_name] ([charge.charges]C) - Change"
 		return 1
 	return 0
+
+/// The suit overlay follows the module's state, a tick after it changes.
+/obj/item/rig_module/proc/refresh_suit_overlay()
+	if(active)
+		suit_overlay = suit_overlay_active
+	else
+		suit_overlay = suit_overlay_inactive
+	holder?.update_icon()

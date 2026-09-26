@@ -391,9 +391,7 @@
 	M.client?.screen -= booting_L
 	qdel(booting_L)
 	booting_R.icon_state = "boot_done"
-	spawn(40)
-		M.client?.screen -= booting_R
-		qdel(booting_R)
+	om_after(M, 4 SECONDS, /proc/rig_boot_hud_clear, M, booting_R)
 
 	if(canremove)
 		for(var/obj/item/rig_module/module in installed_modules)
@@ -973,3 +971,8 @@
 #undef ONLY_DEPLOY
 #undef ONLY_RETRACT
 #undef SEAL_DELAY
+
+/// The boot-up HUD's last piece leaves the screen once the seals finish.
+/proc/rig_boot_hud_clear(mob/M, atom/movable/screen/booting_R)
+	M.client?.screen -= booting_R
+	qdel(booting_R)

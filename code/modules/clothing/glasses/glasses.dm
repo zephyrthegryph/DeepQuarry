@@ -571,8 +571,7 @@ BLIND     // can't see anything
 			// Don't cure being nearsighted
 			if(!(M.disabilities & NEARSIGHTED))
 				M.disabilities |= NEARSIGHTED
-				spawn(100)
-					M.disabilities &= ~NEARSIGHTED
+				om_after(M, 10 SECONDS, TYPE_PROC_REF(/mob, cure_temporary_disability), NEARSIGHTED)
 
 /obj/item/clothing/glasses/thermal/Initialize(mapload)
 	. = ..()

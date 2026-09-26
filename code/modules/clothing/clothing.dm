@@ -1509,8 +1509,7 @@
 
 	recent_struggle = 1
 
-	spawn(100)
-		recent_struggle = 0
+	om_after(src, 10 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "recent_struggle", 0)
 
 	if(ishuman(src.loc)) //Is this on a person?
 		var/mob/living/carbon/human/H = src.loc
