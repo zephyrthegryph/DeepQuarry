@@ -1,0 +1,6645 @@
+{
+ "id": "20260926T233521_7a33a8f24e_boot-perf-explosion-profile",
+ "timestamp": "2026-09-26T23:35:21.446Z",
+ "commit": "7a33a8f24e",
+ "branch": "rewrite/boot-perf",
+ "dirty_files": 7,
+ "host": "DESKTOP-OQOKGJ0",
+ "platform": "win32",
+ "kind": "bench",
+ "label": "boot-perf-explosion-profile",
+ "map": "Southern Cross",
+ "defines": [
+  "CITESTING_FULL_MAP"
+ ],
+ "scenarios_requested": [
+  "explosion_dense"
+ ],
+ "args": [],
+ "iterations": [
+  {
+   "byond_version": "516.1687",
+   "map": "Southern Cross",
+   "world": {
+    "maxx": 256,
+    "maxy": 256,
+    "maxz": 6,
+    "fps": 40
+   },
+   "init_seconds": 115.931,
+   "subsystem_init_ms": {
+    "Access": 2,
+    "Assets": 2665,
+    "Atmospherics": 34251,
+    "Atoms": 66148,
+    "Chemistry": 12,
+    "Circuit": 61,
+    "Contracts": 5,
+    "Early Assets": 420,
+    "Flight Operations": 17,
+    "HoloMiniMaps": 1818,
+    "Instruments": 19,
+    "Job": 5,
+    "Lighting": 8104,
+    "Machines": 52,
+    "Mapping": 317,
+    "Media Tracks": 1,
+    "nerdle": 6,
+    "Persistence": 54,
+    "Plants": 20,
+    "Points of Interest": 1,
+    "Profiler": 2,
+    "Properties": 3,
+    "Radio": 52,
+    "Research": 162,
+    "Robot Sprites": 12,
+    "Server Tasks": 3,
+    "Shuttles": 404,
+    "Supply": 15,
+    "Wiki": 1055,
+    "Xenoarch": 73
+   },
+   "total_runtimes": 24,
+   "scenarios": {
+    "explosion_dense": {
+     "id": "explosion_dense",
+     "description": "Devastation-7 explosion on the most furnished station block (bench_devastation; bench_x/y/z override the site)",
+     "status": "passed",
+     "duration_seconds": 40.3812,
+     "runtimes": 19,
+     "metrics": {
+      "before_explosion_private_mb": {
+       "value": 2236.6,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_heap_mb": {
+       "value": 681.283,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_heap_peak_mb": {
+       "value": 1837.91,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "before_explosion_rust_untagged_mb": {
+       "value": 681.252,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "explosion_seconds": {
+       "value": 19.05,
+       "unit": "s",
+       "better": "none"
+      },
+      "explosion_tick_avg": {
+       "value": 79.0203,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_p95": {
+       "value": 112,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_p99": {
+       "value": 168,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_tick_max": {
+       "value": 1006.93,
+       "unit": "%",
+       "better": "lower"
+      },
+      "explosion_overruns": {
+       "value": 51,
+       "unit": "ticks",
+       "better": "lower"
+      },
+      "explosion_overrun_ratio": {
+       "value": 0.0706371,
+       "unit": "ratio",
+       "better": "lower"
+      },
+      "explosion_tps": {
+       "value": 37.9849,
+       "unit": "tps",
+       "better": "higher"
+      },
+      "explosion_ffi_calls": {
+       "value": 40426,
+       "unit": "calls",
+       "better": "lower"
+      },
+      "explosion_air_ms": {
+       "value": 442.056,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_air_ms_per_s": {
+       "value": 23.205,
+       "unit": "ms/s",
+       "better": "lower"
+      },
+      "explosion_machines_ms_per_s": {
+       "value": 16.5361,
+       "unit": "ms/s",
+       "better": "lower"
+      },
+      "explosion_ffi_calls_per_s": {
+       "value": 2122.1,
+       "unit": "calls/s",
+       "better": "lower"
+      },
+      "explosion_reactor_wakes": {
+       "value": 1776,
+       "unit": "wakes",
+       "better": "lower"
+      },
+      "after_explosion_private_mb": {
+       "value": 2232.9,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_heap_mb": {
+       "value": 646.286,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_heap_peak_mb": {
+       "value": 1837.91,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "after_explosion_rust_untagged_mb": {
+       "value": 646.286,
+       "unit": "MB",
+       "better": "lower"
+      },
+      "explosion_resolve_wall_ms": {
+       "value": 17881.2,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_lighting_settle_wall_ms": {
+       "value": 6.25,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_prepare_ms": {
+       "value": 74.7547,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_turf_resolve_ms": {
+       "value": 725.787,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_atom_collect_ms": {
+       "value": 37.8415,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_atom_resolve_ms": {
+       "value": 8220.56,
+       "unit": "ms",
+       "better": "lower"
+      },
+      "explosion_turfs_resolved": {
+       "value": 1926,
+       "unit": "turfs",
+       "better": "none"
+      },
+      "explosion_atoms_resolved": {
+       "value": 4021,
+       "unit": "atoms",
+       "better": "none"
+      },
+      "explosion_qdels": {
+       "value": 9899,
+       "unit": "qdels",
+       "better": "none"
+      }
+     },
+     "details": {
+      "site": {
+       "x": 128,
+       "y": 178,
+       "z": 2,
+       "area": "The Security - Brig",
+       "block_turfs": 841,
+       "block_walls": 169,
+       "block_movables": 1489,
+       "block_objs": 1489,
+       "block_machines": 621
+      },
+      "explosion_subsystems": {
+       "AI": {
+        "fires": 9,
+        "avg_cost_ms": 0.230057,
+        "estimated_total_ms": 2.07052,
+        "tick_usage": 0.920229,
+        "tick_overrun": 0
+       },
+       "AI (Fast)": {
+        "fires": 72,
+        "avg_cost_ms": 0.00749903,
+        "estimated_total_ms": 0.53993,
+        "tick_usage": 0.0299961,
+        "tick_overrun": 0
+       },
+       "Alarm": {
+        "fires": 9,
+        "avg_cost_ms": 0.161731,
+        "estimated_total_ms": 1.45558,
+        "tick_usage": 0.646923,
+        "tick_overrun": 0
+       },
+       "Asset Loading": {
+        "fires": 7,
+        "avg_cost_ms": 28.768,
+        "estimated_total_ms": 201.376,
+        "tick_usage": 115.072,
+        "tick_overrun": 815.337
+       },
+       "Atmospherics": {
+        "fires": 34,
+        "avg_cost_ms": 13.0016,
+        "estimated_total_ms": 442.056,
+        "tick_usage": 52.0066,
+        "tick_overrun": 44.6274
+       },
+       "Behaviours": {
+        "fires": 719,
+        "avg_cost_ms": 0.145891,
+        "estimated_total_ms": 104.896,
+        "tick_usage": 0.583565,
+        "tick_overrun": 0
+       },
+       "Burning": {
+        "fires": 18,
+        "avg_cost_ms": 0.00899425,
+        "estimated_total_ms": 0.161896,
+        "tick_usage": 0.035977,
+        "tick_overrun": 0
+       },
+       "Character Setup": {
+        "fires": 18,
+        "avg_cost_ms": 0.00677733,
+        "estimated_total_ms": 0.121992,
+        "tick_usage": 0.0271093,
+        "tick_overrun": 0
+       },
+       "Chat": {
+        "fires": 709,
+        "avg_cost_ms": 0.00604534,
+        "estimated_total_ms": 4.28615,
+        "tick_usage": 0.0241814,
+        "tick_overrun": 0
+       },
+       "Database": {
+        "fires": 72,
+        "avg_cost_ms": 0.0169563,
+        "estimated_total_ms": 1.22085,
+        "tick_usage": 0.0678252,
+        "tick_overrun": 0
+       },
+       "Datum Component System": {
+        "fires": 18,
+        "avg_cost_ms": 0.0124702,
+        "estimated_total_ms": 0.224463,
+        "tick_usage": 0.0498806,
+        "tick_overrun": 0
+       },
+       "Events": {
+        "fires": 9,
+        "avg_cost_ms": 0.0413448,
+        "estimated_total_ms": 0.372103,
+        "tick_usage": 0.165379,
+        "tick_overrun": 0
+       },
+       "Expedition": {
+        "fires": 9,
+        "avg_cost_ms": 0.00796884,
+        "estimated_total_ms": 0.0717196,
+        "tick_usage": 0.0318754,
+        "tick_overrun": 0
+       },
+       "Explosions": {
+        "fires": 4,
+        "avg_cost_ms": 1450.11,
+        "estimated_total_ms": 5800.44,
+        "tick_usage": 5800.44,
+        "tick_overrun": 6.56379
+       },
+       "Fast Processing": {
+        "fires": 90,
+        "avg_cost_ms": 0.0106467,
+        "estimated_total_ms": 0.958207,
+        "tick_usage": 0.042587,
+        "tick_overrun": 0
+       },
+       "Flight Operations": {
+        "fires": 18,
+        "avg_cost_ms": 0.109059,
+        "estimated_total_ms": 1.96306,
+        "tick_usage": 0.436235,
+        "tick_overrun": 0
+       },
+       "Garbage": {
+        "fires": 9,
+        "avg_cost_ms": 7.35434,
+        "estimated_total_ms": 66.1891,
+        "tick_usage": 29.4174,
+        "tick_overrun": 0
+       },
+       "Input": {
+        "fires": 722,
+        "avg_cost_ms": 0.00775141,
+        "estimated_total_ms": 5.59652,
+        "tick_usage": 0.0310056,
+        "tick_overrun": 0
+       },
+       "Instruments": {
+        "fires": 346,
+        "avg_cost_ms": 0.00835641,
+        "estimated_total_ms": 2.89132,
+        "tick_usage": 0.0334257,
+        "tick_overrun": 0
+       },
+       "Lighting": {
+        "fires": 356,
+        "avg_cost_ms": 0.0092175,
+        "estimated_total_ms": 3.28143,
+        "tick_usage": 0.03687,
+        "tick_overrun": 0
+       },
+       "Lobby Art": {
+        "fires": 9,
+        "avg_cost_ms": 0.0097365,
+        "estimated_total_ms": 0.0876285,
+        "tick_usage": 0.038946,
+        "tick_overrun": 0
+       },
+       "Loot Icon Generation": {
+        "fires": 36,
+        "avg_cost_ms": 0.00638278,
+        "estimated_total_ms": 0.22978,
+        "tick_usage": 0.0255311,
+        "tick_overrun": 0
+       },
+       "Machines": {
+        "fires": 9,
+        "avg_cost_ms": 35.0015,
+        "estimated_total_ms": 315.014,
+        "tick_usage": 140.006,
+        "tick_overrun": 1.27334
+       },
+       "Material exposure": {
+        "fires": 18,
+        "avg_cost_ms": 21.263,
+        "estimated_total_ms": 382.735,
+        "tick_usage": 85.0521,
+        "tick_overrun": 0
+       },
+       "Mobs": {
+        "fires": 9,
+        "avg_cost_ms": 0.00656184,
+        "estimated_total_ms": 0.0590565,
+        "tick_usage": 0.0262473,
+        "tick_overrun": 0
+       },
+       "Motion Tracker": {
+        "fires": 18,
+        "avg_cost_ms": 0.0095562,
+        "estimated_total_ms": 0.172012,
+        "tick_usage": 0.0382248,
+        "tick_overrun": 0
+       },
+       "Obj Tab Items": {
+        "fires": 181,
+        "avg_cost_ms": 0.00663225,
+        "estimated_total_ms": 1.20044,
+        "tick_usage": 0.026529,
+        "tick_overrun": 0
+       },
+       "Objects": {
+        "fires": 9,
+        "avg_cost_ms": 0.385276,
+        "estimated_total_ms": 3.46748,
+        "tick_usage": 1.5411,
+        "tick_overrun": 0
+       },
+       "Pai": {
+        "fires": 5,
+        "avg_cost_ms": 0.011579,
+        "estimated_total_ms": 0.0578949,
+        "tick_usage": 0.0463159,
+        "tick_overrun": 0
+       },
+       "Ping": {
+        "fires": 5,
+        "avg_cost_ms": 0.00913704,
+        "estimated_total_ms": 0.0456852,
+        "tick_usage": 0.0365482,
+        "tick_overrun": 0
+       },
+       "Planets": {
+        "fires": 9,
+        "avg_cost_ms": 0.00808045,
+        "estimated_total_ms": 0.072724,
+        "tick_usage": 0.0323218,
+        "tick_overrun": 0
+       },
+       "Plants": {
+        "fires": 3,
+        "avg_cost_ms": 0.00953798,
+        "estimated_total_ms": 0.0286139,
+        "tick_usage": 0.0381519,
+        "tick_overrun": 0
+       },
+       "Points of Interest": {
+        "fires": 18,
+        "avg_cost_ms": 0.00640707,
+        "estimated_total_ms": 0.115327,
+        "tick_usage": 0.0256283,
+        "tick_overrun": 0
+       },
+       "Priority Status Effects": {
+        "fires": 359,
+        "avg_cost_ms": 0.00663353,
+        "estimated_total_ms": 2.38144,
+        "tick_usage": 0.0265341,
+        "tick_overrun": 0
+       },
+       "Processing": {
+        "fires": 18,
+        "avg_cost_ms": 0.00842738,
+        "estimated_total_ms": 0.151693,
+        "tick_usage": 0.0337095,
+        "tick_overrun": 0
+       },
+       "Projectiles": {
+        "fires": 709,
+        "avg_cost_ms": 0.00936305,
+        "estimated_total_ms": 6.6384,
+        "tick_usage": 0.0374522,
+        "tick_overrun": 0
+       },
+       "Radiation": {
+        "fires": 36,
+        "avg_cost_ms": 0.147106,
+        "estimated_total_ms": 5.29583,
+        "tick_usage": 0.588425,
+        "tick_overrun": 0
+       },
+       "Reactor": {
+        "fires": 696,
+        "avg_cost_ms": 0.22523,
+        "estimated_total_ms": 156.76,
+        "tick_usage": 0.900921,
+        "tick_overrun": 0
+       },
+       "Reflectors": {
+        "fires": 36,
+        "avg_cost_ms": 0.00702023,
+        "estimated_total_ms": 0.252728,
+        "tick_usage": 0.0280809,
+        "tick_overrun": 0
+       },
+       "Research": {
+        "fires": 18,
+        "avg_cost_ms": 0.0321052,
+        "estimated_total_ms": 0.577894,
+        "tick_usage": 0.128421,
+        "tick_overrun": 0
+       },
+       "Runechat": {
+        "fires": 709,
+        "avg_cost_ms": 0.0166064,
+        "estimated_total_ms": 11.774,
+        "tick_usage": 0.0664257,
+        "tick_overrun": 0
+       },
+       "Server Tasks": {
+        "fires": 30,
+        "avg_cost_ms": 0.014224,
+        "estimated_total_ms": 0.426721,
+        "tick_usage": 0.0568962,
+        "tick_overrun": 0
+       },
+       "Shuttle Star Movement": {
+        "fires": 180,
+        "avg_cost_ms": 0.00630853,
+        "estimated_total_ms": 1.13554,
+        "tick_usage": 0.0252341,
+        "tick_overrun": 0
+       },
+       "Shuttles": {
+        "fires": 9,
+        "avg_cost_ms": 0.191398,
+        "estimated_total_ms": 1.72258,
+        "tick_usage": 0.765593,
+        "tick_overrun": 0
+       },
+       "Speech Controller": {
+        "fires": 722,
+        "avg_cost_ms": 0.00966318,
+        "estimated_total_ms": 6.97681,
+        "tick_usage": 0.0386527,
+        "tick_overrun": 0
+       },
+       "Stat Panels": {
+        "fires": 46,
+        "avg_cost_ms": 0.170227,
+        "estimated_total_ms": 7.83043,
+        "tick_usage": 0.680907,
+        "tick_overrun": 0
+       },
+       "Supply": {
+        "fires": 1,
+        "avg_cost_ms": 0.010497,
+        "estimated_total_ms": 0.010497,
+        "tick_usage": 0.0419878,
+        "tick_overrun": 0
+       },
+       "tgui": {
+        "fires": 20,
+        "avg_cost_ms": 0.00674758,
+        "estimated_total_ms": 0.134952,
+        "tick_usage": 0.0269903,
+        "tick_overrun": 0
+       },
+       "Throwing": {
+        "fires": 709,
+        "avg_cost_ms": 0.00749721,
+        "estimated_total_ms": 5.31552,
+        "tick_usage": 0.0299889,
+        "tick_overrun": 0
+       },
+       "Ticker": {
+        "fires": 9,
+        "avg_cost_ms": 0.0398307,
+        "estimated_total_ms": 0.358476,
+        "tick_usage": 0.159323,
+        "tick_overrun": 0
+       },
+       "Time Tracking": {
+        "fires": 2,
+        "avg_cost_ms": 0.308569,
+        "estimated_total_ms": 0.617138,
+        "tick_usage": 1.23428,
+        "tick_overrun": 0
+       },
+       "Timer": {
+        "fires": 712,
+        "avg_cost_ms": 0.0556445,
+        "estimated_total_ms": 39.6189,
+        "tick_usage": 0.222578,
+        "tick_overrun": 0
+       },
+       "Transfer": {
+        "fires": 18,
+        "avg_cost_ms": 0.0143274,
+        "estimated_total_ms": 0.257894,
+        "tick_usage": 0.0573097,
+        "tick_overrun": 0
+       },
+       "Turf Processing": {
+        "fires": 9,
+        "avg_cost_ms": 0.0631386,
+        "estimated_total_ms": 0.568248,
+        "tick_usage": 0.252555,
+        "tick_overrun": 0
+       },
+       "Verb Manager": {
+        "fires": 722,
+        "avg_cost_ms": 0.00952489,
+        "estimated_total_ms": 6.87697,
+        "tick_usage": 0.0380996,
+        "tick_overrun": 0
+       },
+       "Verdigris Bindings": {
+        "fires": 2,
+        "avg_cost_ms": 1.02181,
+        "estimated_total_ms": 2.04361,
+        "tick_usage": 4.08722,
+        "tick_overrun": 0
+       },
+       "Vote": {
+        "fires": 18,
+        "avg_cost_ms": 0.00556811,
+        "estimated_total_ms": 0.100226,
+        "tick_usage": 0.0222724,
+        "tick_overrun": 0
+       }
+      },
+      "explosion_reactor": {
+       "subscribers": 24056,
+       "total_wakes": 5332,
+       "last_wakes": 0,
+       "dispatch_ms": 0.1785,
+       "continuous_ms": 0.00270003,
+       "wakes_by_type": {
+        "/datum/looping_sound/tcomms": {
+         "timer": 195
+        },
+        "/datum/looping_sound/geiger/wall": {
+         "timer": 50
+        },
+        "/datum/looping_sound/supermatter": {
+         "timer": 5
+        },
+        "/obj/machinery/atmospherics/valve/shutoff": {
+         "timer": 33,
+         "key": 33
+        },
+        "/datum/looping_sound/fridge": {
+         "timer": 90
+        },
+        "/datum/looping_sound/generator": {
+         "timer": 85
+        },
+        "/obj/machinery/light/small": {
+         "timer": 4,
+         "key": 411
+        },
+        "/obj/machinery/light": {
+         "timer": 44,
+         "key": 1627
+        },
+        "/obj/machinery/light/spot": {
+         "key": 29
+        },
+        "/obj/machinery/light/floortube": {
+         "key": 4
+        },
+        "/datum/rule_binding": {
+         "key": 2718
+        },
+        "/obj/machinery/door/airlock/external": {
+         "timer": 2
+        },
+        "/datum/looping_sound/alarm/decompression_alarm": {
+         "timer": 19
+        }
+       },
+       "continuous_declared": [],
+       "continuous_by_type": [],
+       "rust": {
+        "timers_pending": 116,
+        "timers_fired": 560,
+        "crossings_fired": 0,
+        "publications": 3348,
+        "models": 0,
+        "keys": 22457,
+        "subscriptions": 77924,
+        "wakes_received": 5382,
+        "wakes_merged": 50,
+        "wakes_delivered": 5332,
+        "wakes_deferred": 0,
+        "watch_wakes": 0,
+        "backlog_urgent": 0,
+        "backlog_normal": 0,
+        "backlog_background": 0,
+        "step_us": 150.8
+       },
+       "window_wakes": 1776
+      },
+      "explosion_outliers": [
+       {
+        "world_time": 456.75,
+        "usage": 151.186,
+        "overrun": 51.186,
+        "top_subsystem": "Behaviours",
+        "top_usage": 148.046,
+        "maptick": 0.0449371,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0316
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0439999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0436
+         },
+         {
+          "name": "Timer",
+          "usage": 0.072
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.798
+         },
+         {
+          "name": "Behaviours",
+          "usage": 148.046
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.15041
+         }
+        ]
+       },
+       {
+        "world_time": 466.25,
+        "usage": 154.126,
+        "overrun": 54.1264,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 91.3384,
+        "maptick": 0.04496,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0272
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.03
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0288
+         },
+         {
+          "name": "Timer",
+          "usage": 0.588
+         },
+         {
+          "name": "Reactor",
+          "usage": 20.4304
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.926
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0839996
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0296001
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0472012
+         },
+         {
+          "name": "Lighting",
+          "usage": 4.0308
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0340004
+         },
+         {
+          "name": "Explosions",
+          "usage": 32.954
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 91.3384
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.578
+         }
+        ]
+       },
+       {
+        "world_time": 469.25,
+        "usage": 106.457,
+        "overrun": 6.4568,
+        "top_subsystem": "Explosions",
+        "top_usage": 101.903,
+        "maptick": 0.0527802,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0224
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0316
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0272001
+         },
+         {
+          "name": "Timer",
+          "usage": 0.4788
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.7008
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.9536
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0743999
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0275998
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0415998
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0427999
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0339999
+         },
+         {
+          "name": "Explosions",
+          "usage": 101.903
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.1188
+         }
+        ]
+       },
+       {
+        "world_time": 472.25,
+        "usage": 101.848,
+        "overrun": 1.848,
+        "top_subsystem": "Explosions",
+        "top_usage": 49.2368,
+        "maptick": 0.0392075,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.028
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0420001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0396
+         },
+         {
+          "name": "Timer",
+          "usage": 0.498
+         },
+         {
+          "name": "Reactor",
+          "usage": 6.2584
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.7044
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0867996
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0327997
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.052
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0396004
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0307999
+         },
+         {
+          "name": "Explosions",
+          "usage": 91.2196
+         },
+         {
+          "name": "Instruments",
+          "usage": 0.0592003
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.7568
+         }
+        ]
+       },
+       {
+        "world_time": 476.75,
+        "usage": 130.35,
+        "overrun": 30.3496,
+        "top_subsystem": "Behaviours",
+        "top_usage": 109.638,
+        "maptick": 0.0376205,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0416
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0568
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0492001
+         },
+         {
+          "name": "Timer",
+          "usage": 12.3136
+         },
+         {
+          "name": "Reactor",
+          "usage": 6.1596
+         },
+         {
+          "name": "Behaviours",
+          "usage": 109.638
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.09039
+         }
+        ]
+       },
+       {
+        "world_time": 477,
+        "usage": 114.759,
+        "overrun": 14.7592,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 78.8148,
+        "maptick": 0.0375671,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0768
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0347999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0416
+         },
+         {
+          "name": "Timer",
+          "usage": 1.6128
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.5068
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.0124
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0756001
+         },
+         {
+          "name": "Chat",
+          "usage": 0.026
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0432
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0363998
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0423999
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0316
+         },
+         {
+          "name": "Stat Panels",
+          "usage": 1.0664
+         },
+         {
+          "name": "Explosions",
+          "usage": 24.8148
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0372009
+         },
+         {
+          "name": "Objects",
+          "usage": 1.998
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 78.8148
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.4876
+         }
+        ]
+       },
+       {
+        "world_time": 480.25,
+        "usage": 1006.93,
+        "overrun": 906.929,
+        "top_subsystem": "Explosions",
+        "top_usage": 986.776,
+        "maptick": 0.0364227,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0324001
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0436001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0392003
+         },
+         {
+          "name": "Timer",
+          "usage": 0.5788
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.790401
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.584
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0627995
+         },
+         {
+          "name": "Chat",
+          "usage": 0.026
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0383997
+         },
+         {
+          "name": "Lighting",
+          "usage": 8.5208
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0380001
+         },
+         {
+          "name": "Explosions",
+          "usage": 986.776
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 8.39917
+         }
+        ]
+       },
+       {
+        "world_time": 482,
+        "usage": 119.505,
+        "overrun": 19.5052,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 76.6292,
+        "maptick": 0.035614,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0392001
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0611999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0588
+         },
+         {
+          "name": "Timer",
+          "usage": 7.9288
+         },
+         {
+          "name": "Reactor",
+          "usage": 5.5444
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.7208
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0572014
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0216007
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0324001
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0251999
+         },
+         {
+          "name": "Lighting",
+          "usage": 2.0964
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0256004
+         },
+         {
+          "name": "Explosions",
+          "usage": 22.5324
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0348015
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 76.6292
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.6972
+         }
+        ]
+       },
+       {
+        "world_time": 487.25,
+        "usage": 112.585,
+        "overrun": 12.5848,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 52.5208,
+        "maptick": 0.0329971,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0303999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0396
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.038
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0699999
+         },
+         {
+          "name": "Reactor",
+          "usage": 5.1632
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.6372
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0748005
+         },
+         {
+          "name": "Chat",
+          "usage": 0.026
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0436001
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0432005
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0312004
+         },
+         {
+          "name": "Explosions",
+          "usage": 31.2512
+         },
+         {
+          "name": "Material exposure",
+          "usage": 18.6104
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 52.5208
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.0052
+         }
+        ]
+       },
+       {
+        "world_time": 489.25,
+        "usage": 112.452,
+        "overrun": 12.4524,
+        "top_subsystem": "Explosions",
+        "top_usage": 41.35,
+        "maptick": 0.0325165,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.03
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0400001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0408
+         },
+         {
+          "name": "Timer",
+          "usage": 2.472
+         },
+         {
+          "name": "Reactor",
+          "usage": 6.994
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.6784
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0895996
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0383997
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0479994
+         },
+         {
+          "name": "Lighting",
+          "usage": 16.0568
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0408001
+         },
+         {
+          "name": "Explosions",
+          "usage": 82.1484
+         },
+         {
+          "name": "Pai",
+          "usage": 0.0648003
+         },
+         {
+          "name": "Instruments",
+          "usage": 0.0571976
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.65321
+         }
+        ]
+       },
+       {
+        "world_time": 491.5,
+        "usage": 590.429,
+        "overrun": 490.429,
+        "top_subsystem": "Explosions",
+        "top_usage": 578.467,
+        "maptick": 0.0358505,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0339999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0464
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0408
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0756
+         },
+         {
+          "name": "Reactor",
+          "usage": 2.6204
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.4128
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0884004
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0344
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0492001
+         },
+         {
+          "name": "Lighting",
+          "usage": 6.0992
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0380001
+         },
+         {
+          "name": "Explosions",
+          "usage": 578.467
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.42242
+         }
+        ]
+       },
+       {
+        "world_time": 492.5,
+        "usage": 117.722,
+        "overrun": 17.722,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 77.8448,
+        "maptick": 0.0345535,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.034
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0444
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0383999
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0776
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.492
+         },
+         {
+          "name": "Behaviours",
+          "usage": 4.0032
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0784006
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0288
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0472002
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0459995
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0312004
+         },
+         {
+          "name": "Explosions",
+          "usage": 30.676
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 77.8448
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.28001
+         }
+        ]
+       },
+       {
+        "world_time": 496.75,
+        "usage": 141.689,
+        "overrun": 41.6892,
+        "top_subsystem": "Behaviours",
+        "top_usage": 138.886,
+        "maptick": 0.0307617,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0319999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0384001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.036
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0652
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.8244
+         },
+         {
+          "name": "Behaviours",
+          "usage": 138.886
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.80759
+         }
+        ]
+       },
+       {
+        "world_time": 502.25,
+        "usage": 211.697,
+        "overrun": 111.697,
+        "top_subsystem": "Explosions",
+        "top_usage": 202.088,
+        "maptick": 0.0319977,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.03
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0339999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0303999
+         },
+         {
+          "name": "Timer",
+          "usage": 5.7656
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.802001
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.392
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0688
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0248003
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0404005
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0396004
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0275993
+         },
+         {
+          "name": "Explosions",
+          "usage": 202.088
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.35318
+         }
+        ]
+       },
+       {
+        "world_time": 507,
+        "usage": 110.646,
+        "overrun": 10.646,
+        "top_subsystem": "Explosions",
+        "top_usage": 64.5808,
+        "maptick": 0.0276108,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0348001
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0424
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0384001
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0707999
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.2512
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.9576
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0588002
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0204
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0328002
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0264001
+         },
+         {
+          "name": "Lighting",
+          "usage": 0.0516
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0364003
+         },
+         {
+          "name": "Explosions",
+          "usage": 104.836
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0443993
+         },
+         {
+          "name": "Shuttle Star Movement",
+          "usage": 0.0315971
+         },
+         {
+          "name": "Instruments",
+          "usage": 0.0456009
+         },
+         {
+          "name": "Character Setup",
+          "usage": 0.0247993
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.042
+         }
+        ]
+       },
+       {
+        "world_time": 513,
+        "usage": 129.879,
+        "overrun": 29.8788,
+        "top_subsystem": "Lighting",
+        "top_usage": 96.2656,
+        "maptick": 0.0331268,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0332
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0376
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.038
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0668
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.122
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.6568
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0788
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0204
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0312004
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0223999
+         },
+         {
+          "name": "Lighting",
+          "usage": 101.532
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0424004
+         },
+         {
+          "name": "Stat Panels",
+          "usage": 0.6324
+         },
+         {
+          "name": "Explosions",
+          "usage": 22.2332
+         },
+         {
+          "name": "Transfer",
+          "usage": 0.0599976
+         },
+         {
+          "name": "Loot Icon Generation",
+          "usage": 0.0251999
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0375977
+         },
+         {
+          "name": "Shuttle Star Movement",
+          "usage": 0.0292015
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.1792
+         }
+        ]
+       },
+       {
+        "world_time": 513.5,
+        "usage": 136.572,
+        "overrun": 36.572,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 79.2216,
+        "maptick": 0.0305405,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0259999
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0312001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0332
+         },
+         {
+          "name": "Timer",
+          "usage": 0.7388
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.7508
+         },
+         {
+          "name": "Behaviours",
+          "usage": 1.1768
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0555997
+         },
+         {
+          "name": "Chat",
+          "usage": 0.0212002
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0327997
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0247998
+         },
+         {
+          "name": "Lighting",
+          "usage": 4.11
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0299997
+         },
+         {
+          "name": "Explosions",
+          "usage": 47.7968
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 79.2216
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.52242
+         }
+        ]
+       },
+       {
+        "world_time": 516.75,
+        "usage": 159.554,
+        "overrun": 59.5544,
+        "top_subsystem": "Behaviours",
+        "top_usage": 156.423,
+        "maptick": 0.0337296,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.034
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0391999
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0376
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0688
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.04
+         },
+         {
+          "name": "Behaviours",
+          "usage": 156.423
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 1.91199
+         }
+        ]
+       },
+       {
+        "world_time": 524,
+        "usage": 110.216,
+        "overrun": 10.216,
+        "top_subsystem": "Atmospherics",
+        "top_usage": 75.4496,
+        "maptick": 0.0434761,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0392001
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0464
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.0395999
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0712
+         },
+         {
+          "name": "Reactor",
+          "usage": 1.1516
+         },
+         {
+          "name": "Behaviours",
+          "usage": 0.4176
+         },
+         {
+          "name": "Runechat",
+          "usage": 0.0576
+         },
+         {
+          "name": "Chat",
+          "usage": 0.02
+         },
+         {
+          "name": "Projectiles",
+          "usage": 0.0304003
+         },
+         {
+          "name": "Priority Status Effects",
+          "usage": 0.0228
+         },
+         {
+          "name": "Lighting",
+          "usage": 7.2284
+         },
+         {
+          "name": "Throwing",
+          "usage": 0.0852003
+         },
+         {
+          "name": "Explosions",
+          "usage": 21.842
+         },
+         {
+          "name": "Research",
+          "usage": 0.127197
+         },
+         {
+          "name": "Obj Tab Items",
+          "usage": 0.0300026
+         },
+         {
+          "name": "Atmospherics",
+          "usage": 75.4496
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 3.55721
+         }
+        ]
+       },
+       {
+        "world_time": 536.75,
+        "usage": 159.552,
+        "overrun": 59.5516,
+        "top_subsystem": "Behaviours",
+        "top_usage": 155.188,
+        "maptick": 0.0290337,
+        "breakdown": [
+         {
+          "name": "Input",
+          "usage": 0.0424
+         },
+         {
+          "name": "Verb Manager",
+          "usage": 0.0464001
+         },
+         {
+          "name": "Speech Controller",
+          "usage": 0.3716
+         },
+         {
+          "name": "Timer",
+          "usage": 0.0851998
+         },
+         {
+          "name": "Reactor",
+          "usage": 0.9496
+         },
+         {
+          "name": "Behaviours",
+          "usage": 155.188
+         },
+         {
+          "name": "BYOND / pre-MC / external",
+          "usage": 2.8688
+         }
+        ]
+       }
+      ],
+      "explosion_worst_tick": {
+       "world_time": 480.25,
+       "usage": 1006.93,
+       "overrun": 906.929,
+       "top_subsystem": "Explosions",
+       "top_usage": 986.776,
+       "maptick": 0.0364227,
+       "breakdown": [
+        {
+         "name": "Input",
+         "usage": 0.0324001
+        },
+        {
+         "name": "Verb Manager",
+         "usage": 0.0436001
+        },
+        {
+         "name": "Speech Controller",
+         "usage": 0.0392003
+        },
+        {
+         "name": "Timer",
+         "usage": 0.5788
+        },
+        {
+         "name": "Reactor",
+         "usage": 0.790401
+        },
+        {
+         "name": "Behaviours",
+         "usage": 1.584
+        },
+        {
+         "name": "Runechat",
+         "usage": 0.0627995
+        },
+        {
+         "name": "Chat",
+         "usage": 0.026
+        },
+        {
+         "name": "Projectiles",
+         "usage": 0.0383997
+        },
+        {
+         "name": "Lighting",
+         "usage": 8.5208
+        },
+        {
+         "name": "Throwing",
+         "usage": 0.0380001
+        },
+        {
+         "name": "Explosions",
+         "usage": 986.776
+        },
+        {
+         "name": "BYOND / pre-MC / external",
+         "usage": 8.39917
+        }
+       ]
+      },
+      "explosion_epoch": {
+       "phase": "idle",
+       "pending": 0,
+       "prepared": 0,
+       "current": 0,
+       "signals": 0,
+       "epoch_submissions": 10,
+       "epoch_prepare_ms": 74.7547,
+       "epoch_resolve_ms": 725.787,
+       "epoch_turfs_prepared": 1942,
+       "epoch_turfs_resolved": 1926,
+       "epoch_visuals": 29,
+       "epoch_atoms_resolved": 4021,
+       "epoch_atoms_deduplicated": 8,
+       "epoch_blast_batches": 639,
+       "epoch_atom_collect_ms": 37.8415,
+       "epoch_atom_resolve_ms": 8220.56,
+       "deferred_turf_updates": 0,
+       "deferred_appearance_updates": 0,
+       "last_epoch_wall_ms": 17875,
+       "topology_batch_open": 0
+      },
+      "lighting_fires": 357,
+      "destroy_types_by_count": [
+       {
+        "type": "/datum/contract_event",
+        "qdels": 2254,
+        "inclusive_ms": 161.66
+       },
+       {
+        "type": "/datum/contract_opportunity_observation",
+        "qdels": 2193,
+        "inclusive_ms": 140.67
+       },
+       {
+        "type": "/datum/timedevent",
+        "qdels": 983,
+        "inclusive_ms": 56.01
+       },
+       {
+        "type": "/datum/material_service",
+        "qdels": 773,
+        "inclusive_ms": 102.81
+       },
+       {
+        "type": "/datum/gas_mixture",
+        "qdels": 726,
+        "inclusive_ms": 0.38
+       },
+       {
+        "type": "/datum/lighting_corner",
+        "qdels": 434,
+        "inclusive_ms": 23.12
+       },
+       {
+        "type": "/datum/weakref",
+        "qdels": 397,
+        "inclusive_ms": 122.62
+       },
+       {
+        "type": "/datum/gas_mixture/turf",
+        "qdels": 361,
+        "inclusive_ms": 18.37
+       },
+       {
+        "type": "/obj/effect/effect/sparks",
+        "qdels": 315,
+        "inclusive_ms": 76.34
+       },
+       {
+        "type": "/datum/state_context",
+        "qdels": 131,
+        "inclusive_ms": 6.76
+       },
+       {
+        "type": "/turf/simulated/floor/tiled",
+        "qdels": 103,
+        "inclusive_ms": 20.33
+       },
+       {
+        "type": "/turf/simulated/wall",
+        "qdels": 94,
+        "inclusive_ms": 19.42
+       },
+       {
+        "type": "/datum/ledger",
+        "qdels": 90,
+        "inclusive_ms": 5.24
+       },
+       {
+        "type": "/obj/effect/expl_particles",
+        "qdels": 82,
+        "inclusive_ms": 25.39
+       },
+       {
+        "type": "/datum/light_source",
+        "qdels": 79,
+        "inclusive_ms": 11.08
+       },
+       {
+        "type": "/datum/latent_entry",
+        "qdels": 59,
+        "inclusive_ms": 3.06
+       },
+       {
+        "type": "/image",
+        "qdels": 57,
+        "inclusive_ms": 4.58
+       },
+       {
+        "type": "/datum/effect/effect/system/spark_spread",
+        "qdels": 47,
+        "inclusive_ms": 2.92
+       },
+       {
+        "type": "/obj/effect/effect/smoke",
+        "qdels": 42,
+        "inclusive_ms": 6.54
+       },
+       {
+        "type": "/obj/item/storage/internal",
+        "qdels": 32,
+        "inclusive_ms": 8.48
+       },
+       {
+        "type": "/turf/simulated/floor/tiled/dark",
+        "qdels": 31,
+        "inclusive_ms": 6.05
+       },
+       {
+        "type": "/datum/rule_binding",
+        "qdels": 30,
+        "inclusive_ms": 7.02
+       },
+       {
+        "type": "/turf/simulated/floor/plating",
+        "qdels": 26,
+        "inclusive_ms": 5.96
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/supply",
+        "qdels": 22,
+        "inclusive_ms": 11.39
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers",
+        "qdels": 22,
+        "inclusive_ms": 11.31
+       },
+       {
+        "type": "/obj/structure/cable/green",
+        "qdels": 21,
+        "inclusive_ms": 8.37
+       },
+       {
+        "type": "/datum/component/overlay_lighting",
+        "qdels": 19,
+        "inclusive_ms": 12.85
+       },
+       {
+        "type": "/obj/effect/overlay/light_visible",
+        "qdels": 19,
+        "inclusive_ms": 2.58
+       },
+       {
+        "type": "/obj/effect/abstract/directional_lighting",
+        "qdels": 19,
+        "inclusive_ms": 4.86
+       },
+       {
+        "type": "/obj/effect/abstract/light_spot",
+        "qdels": 19,
+        "inclusive_ms": 2.32
+       },
+       {
+        "type": "/obj/effect/overlay/light_cone",
+        "qdels": 19,
+        "inclusive_ms": 2.29
+       },
+       {
+        "type": "/obj/structure/window/reinforced",
+        "qdels": 16,
+        "inclusive_ms": 7.43
+       },
+       {
+        "type": "/obj/item/grenade/flashbang",
+        "qdels": 14,
+        "inclusive_ms": 3.42
+       },
+       {
+        "type": "/obj/item/projectile/bullet/shotgun/beanbag",
+        "qdels": 13,
+        "inclusive_ms": 1.93
+       },
+       {
+        "type": "/obj/item/ammo_casing/a12g/beanbag",
+        "qdels": 12,
+        "inclusive_ms": 3.54
+       },
+       {
+        "type": "/obj/item/clothing/accessory/tie/blue_clip",
+        "qdels": 12,
+        "inclusive_ms": 2.14
+       },
+       {
+        "type": "/obj/item/clothing/accessory/tie/red_long",
+        "qdels": 10,
+        "inclusive_ms": 1.82
+       },
+       {
+        "type": "/datum/reagents",
+        "qdels": 9,
+        "inclusive_ms": 0.57
+       },
+       {
+        "type": "/obj/structure/window/reinforced/polarized",
+        "qdels": 8,
+        "inclusive_ms": 6.23
+       },
+       {
+        "type": "/datum/pipeline",
+        "qdels": 7,
+        "inclusive_ms": 0.5
+       }
+      ],
+      "destroy_types_by_inclusive_ms": [
+       {
+        "type": "/datum/contract_event",
+        "qdels": 2254,
+        "inclusive_ms": 161.66
+       },
+       {
+        "type": "/datum/contract_opportunity_observation",
+        "qdels": 2193,
+        "inclusive_ms": 140.67
+       },
+       {
+        "type": "/datum/weakref",
+        "qdels": 397,
+        "inclusive_ms": 122.62
+       },
+       {
+        "type": "/datum/material_service",
+        "qdels": 773,
+        "inclusive_ms": 102.81
+       },
+       {
+        "type": "/obj/effect/effect/sparks",
+        "qdels": 315,
+        "inclusive_ms": 76.34
+       },
+       {
+        "type": "/datum/timedevent",
+        "qdels": 983,
+        "inclusive_ms": 56.01
+       },
+       {
+        "type": "/obj/effect/expl_particles",
+        "qdels": 82,
+        "inclusive_ms": 25.39
+       },
+       {
+        "type": "/datum/lighting_corner",
+        "qdels": 434,
+        "inclusive_ms": 23.12
+       },
+       {
+        "type": "/turf/simulated/floor/tiled",
+        "qdels": 103,
+        "inclusive_ms": 20.33
+       },
+       {
+        "type": "/turf/simulated/wall",
+        "qdels": 94,
+        "inclusive_ms": 19.42
+       },
+       {
+        "type": "/datum/gas_mixture/turf",
+        "qdels": 361,
+        "inclusive_ms": 18.37
+       },
+       {
+        "type": "/datum/component/overlay_lighting",
+        "qdels": 19,
+        "inclusive_ms": 12.85
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/supply",
+        "qdels": 22,
+        "inclusive_ms": 11.39
+       },
+       {
+        "type": "/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers",
+        "qdels": 22,
+        "inclusive_ms": 11.31
+       },
+       {
+        "type": "/datum/light_source",
+        "qdels": 79,
+        "inclusive_ms": 11.08
+       },
+       {
+        "type": "/obj/item/storage/internal",
+        "qdels": 32,
+        "inclusive_ms": 8.48
+       },
+       {
+        "type": "/obj/structure/cable/green",
+        "qdels": 21,
+        "inclusive_ms": 8.37
+       },
+       {
+        "type": "/obj/item/storage/box/flashbangs",
+        "qdels": 2,
+        "inclusive_ms": 8.16
+       },
+       {
+        "type": "/obj/structure/window/reinforced",
+        "qdels": 16,
+        "inclusive_ms": 7.43
+       },
+       {
+        "type": "/obj/machinery/door/firedoor/border_only",
+        "qdels": 5,
+        "inclusive_ms": 7.15
+       },
+       {
+        "type": "/datum/rule_binding",
+        "qdels": 30,
+        "inclusive_ms": 7.02
+       },
+       {
+        "type": "/datum/state_context",
+        "qdels": 131,
+        "inclusive_ms": 6.76
+       },
+       {
+        "type": "/obj/effect/effect/smoke",
+        "qdels": 42,
+        "inclusive_ms": 6.54
+       },
+       {
+        "type": "/obj/structure/window/reinforced/polarized",
+        "qdels": 8,
+        "inclusive_ms": 6.23
+       },
+       {
+        "type": "/turf/simulated/floor/tiled/dark",
+        "qdels": 31,
+        "inclusive_ms": 6.05
+       },
+       {
+        "type": "/turf/simulated/floor/plating",
+        "qdels": 26,
+        "inclusive_ms": 5.96
+       },
+       {
+        "type": "/datum/ledger",
+        "qdels": 90,
+        "inclusive_ms": 5.24
+       },
+       {
+        "type": "/obj/item/storage/box/holobadge",
+        "qdels": 2,
+        "inclusive_ms": 5.04
+       },
+       {
+        "type": "/obj/effect/abstract/directional_lighting",
+        "qdels": 19,
+        "inclusive_ms": 4.86
+       },
+       {
+        "type": "/image",
+        "qdels": 57,
+        "inclusive_ms": 4.58
+       },
+       {
+        "type": "/obj/item/ammo_magazine/m12gdrumjack/beanbag",
+        "qdels": 3,
+        "inclusive_ms": 4.18
+       },
+       {
+        "type": "/obj/machinery/firealarm",
+        "qdels": 2,
+        "inclusive_ms": 3.98
+       },
+       {
+        "type": "/obj/item/ammo_casing/a12g/beanbag",
+        "qdels": 12,
+        "inclusive_ms": 3.54
+       },
+       {
+        "type": "/obj/item/grenade/flashbang",
+        "qdels": 14,
+        "inclusive_ms": 3.42
+       },
+       {
+        "type": "/datum/latent_entry",
+        "qdels": 59,
+        "inclusive_ms": 3.06
+       },
+       {
+        "type": "/datum/effect/effect/system/spark_spread",
+        "qdels": 47,
+        "inclusive_ms": 2.92
+       },
+       {
+        "type": "/obj/item/clothing/suit/storage/hooded/wintercoat/security",
+        "qdels": 2,
+        "inclusive_ms": 2.89
+       },
+       {
+        "type": "/obj/item/clothing/head/det/grey",
+        "qdels": 3,
+        "inclusive_ms": 2.66
+       },
+       {
+        "type": "/obj/item/clothing/head/helmet/dermal",
+        "qdels": 2,
+        "inclusive_ms": 2.59
+       },
+       {
+        "type": "/obj/effect/overlay/light_visible",
+        "qdels": 19,
+        "inclusive_ms": 2.58
+       }
+      ],
+      "explosion_proc_profile": {
+       "top_self": {
+        "/datum/contract_opportunity_window/proc/signal_snapshot": {
+         "name": "/datum/contract_opportunity_window/proc/signal_snapshot",
+         "self": 3.462,
+         "total": 3.462,
+         "real": 3.411,
+         "over": 0.029,
+         "calls": 2343
+        },
+        "/datum/lighting_object/proc/update": {
+         "name": "/datum/lighting_object/proc/update",
+         "self": 0.431,
+         "total": 0.479,
+         "real": 0.483,
+         "over": 0.039,
+         "calls": 6385
+        },
+        "/proc/vg_gas_tick": {
+         "name": "/proc/vg_gas_tick",
+         "self": 0.398,
+         "total": 0.398,
+         "real": 0.398,
+         "over": 0.336,
+         "calls": 34
+        },
+        "/proc/vg_react_step": {
+         "name": "/proc/vg_react_step",
+         "self": 0.362,
+         "total": 0.362,
+         "real": 0.336,
+         "over": 0,
+         "calls": 696
+        },
+        "/datum/controller/master/proc/RunQueue": {
+         "name": "/datum/controller/master/proc/RunQueue",
+         "self": 0.341,
+         "total": 13.937,
+         "real": 13.945,
+         "over": 0.001,
+         "calls": 722
+        },
+        "/world/Error": {
+         "name": "/world/Error",
+         "self": 0.334,
+         "total": 0.346,
+         "real": 0.345,
+         "over": 0.317,
+         "calls": 9
+        },
+        "/proc/get_mobs_and_objs_in_view_fast": {
+         "name": "/proc/get_mobs_and_objs_in_view_fast",
+         "self": 0.331,
+         "total": 0.512,
+         "real": 0.517,
+         "over": 0.006,
+         "calls": 319
+        },
+        "/datum/light_source/proc/update_corners": {
+         "name": "/datum/light_source/proc/update_corners",
+         "self": 0.315,
+         "total": 0.469,
+         "real": 0.464,
+         "over": 0,
+         "calls": 815
+        },
+        "/datum/contract_opportunity_window/proc/prune": {
+         "name": "/datum/contract_opportunity_window/proc/prune",
+         "self": 0.288,
+         "total": 0.288,
+         "real": 0.312,
+         "over": 0.001,
+         "calls": 2343
+        },
+        "/datum/controller/subsystem/contracts/proc/publish_event": {
+         "name": "/datum/controller/subsystem/contracts/proc/publish_event",
+         "self": 0.251,
+         "total": 4.824,
+         "real": 4.827,
+         "over": 0.002,
+         "calls": 2343
+        },
+        "/atom/proc/add_overlay": {
+         "name": "/atom/proc/add_overlay",
+         "self": 0.236,
+         "total": 0.253,
+         "real": 0.277,
+         "over": 0.028,
+         "calls": 8150
+        },
+        "/atom/proc/visible_message": {
+         "name": "/atom/proc/visible_message",
+         "self": 0.183,
+         "total": 0.707,
+         "real": 0.709,
+         "over": 0.002,
+         "calls": 319
+        },
+        "/proc/contract_report_station_damage": {
+         "name": "/proc/contract_report_station_damage",
+         "self": 0.173,
+         "total": 5.166,
+         "real": 5.152,
+         "over": 0,
+         "calls": 4307
+        },
+        "/datum/contract_opportunity_window/proc/revise": {
+         "name": "/datum/contract_opportunity_window/proc/revise",
+         "self": 0.173,
+         "total": 0.408,
+         "real": 0.424,
+         "over": 0,
+         "calls": 2343
+        },
+        "/datum/property_registry/proc/base_provider": {
+         "name": "/datum/property_registry/proc/base_provider",
+         "self": 0.169,
+         "total": 0.175,
+         "real": 0.208,
+         "over": 0.031,
+         "calls": 31910
+        },
+        "/proc/destroy_transaction": {
+         "name": "/proc/destroy_transaction",
+         "self": 0.168,
+         "total": 1.023,
+         "real": 1.041,
+         "over": 0.014,
+         "calls": 9113
+        },
+        "/proc/dview": {
+         "name": "/proc/dview",
+         "self": 0.155,
+         "total": 0.155,
+         "real": 0.153,
+         "over": 0.002,
+         "calls": 328
+        },
+        "/proc/dq_property": {
+         "name": "/proc/dq_property",
+         "self": 0.142,
+         "total": 0.654,
+         "real": 0.674,
+         "over": 0.006,
+         "calls": 30195
+        },
+        "/obj/machinery/atmospherics/valve/shutoff/proc/find_leaks": {
+         "name": "/obj/machinery/atmospherics/valve/shutoff/proc/find_leaks",
+         "self": 0.133,
+         "total": 0.133,
+         "real": 0.134,
+         "over": 0.009,
+         "calls": 15
+        },
+        "/proc/REF": {
+         "name": "/proc/REF",
+         "self": 0.125,
+         "total": 0.127,
+         "real": 0.15,
+         "over": 0.001,
+         "calls": 37538
+        },
+        "/datum/light_source/proc/get_turfs_in_range": {
+         "name": "/datum/light_source/proc/get_turfs_in_range",
+         "self": 0.116,
+         "total": 0.116,
+         "real": 0.117,
+         "over": 0,
+         "calls": 815
+        },
+        "/datum/controller/master/proc/CheckQueue": {
+         "name": "/datum/controller/master/proc/CheckQueue",
+         "self": 0.098,
+         "total": 0.128,
+         "real": 0.154,
+         "over": 0,
+         "calls": 722
+        },
+        "/atom/proc/take_damage": {
+         "name": "/atom/proc/take_damage",
+         "self": 0.088,
+         "total": 7.494,
+         "real": 7.501,
+         "over": 0.003,
+         "calls": 4307
+        },
+        "/atom/proc/cut_overlays": {
+         "name": "/atom/proc/cut_overlays",
+         "self": 0.083,
+         "total": 0.083,
+         "real": 0.075,
+         "over": 0,
+         "calls": 6274
+        },
+        "/obj/proc/material_totals": {
+         "name": "/obj/proc/material_totals",
+         "self": 0.082,
+         "total": 0.239,
+         "real": 0.201,
+         "over": 0.003,
+         "calls": 8834
+        },
+        "/proc/_checked_send_signal": {
+         "name": "/proc/_checked_send_signal",
+         "self": 0.081,
+         "total": 0.105,
+         "real": 0.133,
+         "over": 0.003,
+         "calls": 42141
+        },
+        "/obj/proc/get_material_template": {
+         "name": "/obj/proc/get_material_template",
+         "self": 0.081,
+         "total": 0.109,
+         "real": 0.098,
+         "over": 0.004,
+         "calls": 40208
+        },
+        "/proc/qdel": {
+         "name": "/proc/qdel",
+         "self": 0.079,
+         "total": 1.135,
+         "real": 1.138,
+         "over": 0.006,
+         "calls": 13583
+        },
+        "/datum/proc/Destroy": {
+         "name": "/datum/proc/Destroy",
+         "self": 0.076,
+         "total": 0.131,
+         "real": 0.154,
+         "over": 0.004,
+         "calls": 8716
+        },
+        "/datum/controller/subsystem/explosions/proc/deliver_blast_batches": {
+         "name": "/datum/controller/subsystem/explosions/proc/deliver_blast_batches",
+         "self": 0.073,
+         "total": 8.235,
+         "real": 8.223,
+         "over": 0,
+         "calls": 934
+        },
+        "/proc/vg_pipenet_step_devices": {
+         "name": "/proc/vg_pipenet_step_devices",
+         "self": 0.067,
+         "total": 0.067,
+         "real": 0.07,
+         "over": 0.004,
+         "calls": 34
+        },
+        "/datum/controller/subsystem/air/proc/rust_materialize_pipe_region": {
+         "name": "/datum/controller/subsystem/air/proc/rust_materialize_pipe_region",
+         "self": 0.067,
+         "total": 0.136,
+         "real": 0.135,
+         "over": 0.064,
+         "calls": 16
+        },
+        "/datum/controller/subsystem/contracts/proc/observe_opportunity_event": {
+         "name": "/datum/controller/subsystem/contracts/proc/observe_opportunity_event",
+         "self": 0.066,
+         "total": 4.315,
+         "real": 4.288,
+         "over": 0,
+         "calls": 2343
+        },
+        "/obj/proc/material_id_for_role": {
+         "name": "/obj/proc/material_id_for_role",
+         "self": 0.06,
+         "total": 0.11,
+         "real": 0.105,
+         "over": 0.003,
+         "calls": 18672
+        },
+        "/datum/controller/subsystem/garbage/proc/HandleQueue": {
+         "name": "/datum/controller/subsystem/garbage/proc/HandleQueue",
+         "self": 0.059,
+         "total": 0.059,
+         "real": 0.058,
+         "over": 0,
+         "calls": 27
+        },
+        "/datum/controller/subsystem/lighting/fire": {
+         "name": "/datum/controller/subsystem/lighting/fire",
+         "self": 0.057,
+         "total": 1.066,
+         "real": 1.065,
+         "over": 0,
+         "calls": 963
+        },
+        "/atom/proc/receive_damage": {
+         "name": "/atom/proc/receive_damage",
+         "self": 0.056,
+         "total": 7.598,
+         "real": 7.606,
+         "over": 0,
+         "calls": 3901
+        },
+        "/datum/contract_opportunity_rule/proc/snapshots": {
+         "name": "/datum/contract_opportunity_rule/proc/snapshots",
+         "self": 0.055,
+         "total": 3.517,
+         "real": 3.46,
+         "over": 0.001,
+         "calls": 2343
+        },
+        "/datum/contract_event/New": {
+         "name": "/datum/contract_event/New",
+         "self": 0.053,
+         "total": 0.112,
+         "real": 0.127,
+         "over": 0,
+         "calls": 2343
+        },
+        "/proc/state_schema_for": {
+         "name": "/proc/state_schema_for",
+         "self": 0.052,
+         "total": 0.052,
+         "real": 0.061,
+         "over": 0.036,
+         "calls": 1212
+        },
+        "/datum/state_context/proc/encode_delta": {
+         "name": "/datum/state_context/proc/encode_delta",
+         "self": 0.05,
+         "total": 0.157,
+         "real": 0.147,
+         "over": 0.05,
+         "calls": 136
+        },
+        "/datum/controller/subsystem/air/proc/rust_step_pipe_devices": {
+         "name": "/datum/controller/subsystem/air/proc/rust_step_pipe_devices",
+         "self": 0.049,
+         "total": 0.126,
+         "real": 0.125,
+         "over": 0.004,
+         "calls": 34
+        },
+        "/datum/contract_event/proc/is_valid": {
+         "name": "/datum/contract_event/proc/is_valid",
+         "self": 0.048,
+         "total": 0.069,
+         "real": 0.083,
+         "over": 0,
+         "calls": 2343
+        },
+        "/datum/controller/subsystem/proc/ignite": {
+         "name": "/datum/controller/subsystem/proc/ignite",
+         "self": 0.047,
+         "total": 13.559,
+         "real": 13.54,
+         "over": 0,
+         "calls": 11169
+        },
+        "/area/proc/get_cameras": {
+         "name": "/area/proc/get_cameras",
+         "self": 0.047,
+         "total": 0.047,
+         "real": 0.037,
+         "over": 0,
+         "calls": 52
+        },
+        "/proc/vg_heat_tick": {
+         "name": "/proc/vg_heat_tick",
+         "self": 0.046,
+         "total": 0.046,
+         "real": 0.044,
+         "over": 0.022,
+         "calls": 34
+        },
+        "/proc/dq_lifecycle_time": {
+         "name": "/proc/dq_lifecycle_time",
+         "self": 0.044,
+         "total": 0.048,
+         "real": 0.067,
+         "over": 0.003,
+         "calls": 58086
+        },
+        "/datum/rule_binding/proc/evaluate_rules": {
+         "name": "/datum/rule_binding/proc/evaluate_rules",
+         "self": 0.042,
+         "total": 0.794,
+         "real": 0.789,
+         "over": 0,
+         "calls": 2754
+        },
+        "/datum/material_template/proc/role_amounts": {
+         "name": "/datum/material_template/proc/role_amounts",
+         "self": 0.041,
+         "total": 0.042,
+         "real": 0.037,
+         "over": 0.002,
+         "calls": 5858
+        },
+        "/datum/pred_node/cmp/test": {
+         "name": "/datum/pred_node/cmp/test",
+         "self": 0.04,
+         "total": 0.149,
+         "real": 0.172,
+         "over": 0,
+         "calls": 10160
+        },
+        "/atom/proc/deal_damage": {
+         "name": "/atom/proc/deal_damage",
+         "self": 0.039,
+         "total": 7.679,
+         "real": 7.681,
+         "over": 0,
+         "calls": 3927
+        },
+        "/datum/contract_opportunity_observation/New": {
+         "name": "/datum/contract_opportunity_observation/New",
+         "self": 0.037,
+         "total": 0.059,
+         "real": 0.045,
+         "over": 0,
+         "calls": 2343
+        },
+        "/datum/controller/subsystem/explosions/proc/queue_blast": {
+         "name": "/datum/controller/subsystem/explosions/proc/queue_blast",
+         "self": 0.036,
+         "total": 0.036,
+         "real": 0.031,
+         "over": 0,
+         "calls": 4086
+        },
+        "/datum/lighting_corner/proc/update_objects": {
+         "name": "/datum/lighting_corner/proc/update_objects",
+         "self": 0.036,
+         "total": 0.067,
+         "real": 0.065,
+         "over": 0,
+         "calls": 4666
+        },
+        "/proc/dq_lifecycle_clear_links": {
+         "name": "/proc/dq_lifecycle_clear_links",
+         "self": 0.034,
+         "total": 0.053,
+         "real": 0.061,
+         "over": 0.001,
+         "calls": 9113
+        },
+        "/proc/dq_impact_response": {
+         "name": "/proc/dq_impact_response",
+         "self": 0.034,
+         "total": 0.034,
+         "real": 0.045,
+         "over": 0.003,
+         "calls": 2739
+        },
+        "/turf/proc/set_luminosity": {
+         "name": "/turf/proc/set_luminosity",
+         "self": 0.033,
+         "total": 0.048,
+         "real": 0.048,
+         "over": 0,
+         "calls": 6655
+        },
+        "/proc/vg_power_step": {
+         "name": "/proc/vg_power_step",
+         "self": 0.032,
+         "total": 0.032,
+         "real": 0.033,
+         "over": 0,
+         "calls": 9
+        },
+        "/datum/controller/subsystem/garbage/proc/Queue": {
+         "name": "/datum/controller/subsystem/garbage/proc/Queue",
+         "self": 0.032,
+         "total": 0.033,
+         "real": 0.028,
+         "over": 0.005,
+         "calls": 7278
+        },
+        "/datum/contract_event/proc/value": {
+         "name": "/datum/contract_event/proc/value",
+         "self": 0.031,
+         "total": 0.032,
+         "real": 0.049,
+         "over": 0,
+         "calls": 35119
+        },
+        "/datum/rule_binding/proc/check": {
+         "name": "/datum/rule_binding/proc/check",
+         "self": 0.031,
+         "total": 0.486,
+         "real": 0.477,
+         "over": 0,
+         "calls": 12098
+        },
+        "/atom/proc/receive_explosion": {
+         "name": "/atom/proc/receive_explosion",
+         "self": 0.031,
+         "total": 7.715,
+         "real": 7.707,
+         "over": 0,
+         "calls": 4082
+        },
+        "/datum/controller/subsystem/proc/enqueue": {
+         "name": "/datum/controller/subsystem/proc/enqueue",
+         "self": 0.03,
+         "total": 0.03,
+         "real": 0.03,
+         "over": 0,
+         "calls": 9369
+        },
+        "/proc/getCardinalAirInfo": {
+         "name": "/proc/getCardinalAirInfo",
+         "self": 0.029,
+         "total": 0.041,
+         "real": 0.039,
+         "over": 0,
+         "calls": 1407
+        },
+        "/datum/material_service/proc/rebind": {
+         "name": "/datum/material_service/proc/rebind",
+         "self": 0.029,
+         "total": 0.111,
+         "real": 0.109,
+         "over": 0,
+         "calls": 704
+        },
+        "/proc/vg_read_mixtures": {
+         "name": "/proc/vg_read_mixtures",
+         "self": 0.028,
+         "total": 0.03,
+         "real": 0.032,
+         "over": 0,
+         "calls": 2814
+        },
+        "/datum/predicate/proc/check": {
+         "name": "/datum/predicate/proc/check",
+         "self": 0.027,
+         "total": 0.457,
+         "real": 0.462,
+         "over": 0,
+         "calls": 12098
+        },
+        "/datum/material_service/proc/advance": {
+         "name": "/datum/material_service/proc/advance",
+         "self": 0.027,
+         "total": 0.309,
+         "real": 0.305,
+         "over": 0,
+         "calls": 706
+        },
+        "/proc/dq_lifecycle_link_table": {
+         "name": "/proc/dq_lifecycle_link_table",
+         "self": 0.026,
+         "total": 0.026,
+         "real": 0.034,
+         "over": 0.002,
+         "calls": 18226
+        },
+        "/proc/om_watch_republish_mixture": {
+         "name": "/proc/om_watch_republish_mixture",
+         "self": 0.026,
+         "total": 0.036,
+         "real": 0.033,
+         "over": 0,
+         "calls": 1915
+        },
+        "/proc/dq_rules_publish": {
+         "name": "/proc/dq_rules_publish",
+         "self": 0.026,
+         "total": 0.062,
+         "real": 0.064,
+         "over": 0.001,
+         "calls": 4437
+        },
+        "/atom/proc/run_atom_armor": {
+         "name": "/atom/proc/run_atom_armor",
+         "self": 0.026,
+         "total": 0.379,
+         "real": 0.346,
+         "over": 0,
+         "calls": 4307
+        },
+        "/obj/proc/material_for_role": {
+         "name": "/obj/proc/material_for_role",
+         "self": 0.026,
+         "total": 0.087,
+         "real": 0.065,
+         "over": 0,
+         "calls": 10536
+        },
+        "/proc/deepCopyList": {
+         "name": "/proc/deepCopyList",
+         "self": 0.024,
+         "total": 0.024,
+         "real": 0.03,
+         "over": 0.001,
+         "calls": 4702
+        },
+        "/datum/pred_node/rel/test": {
+         "name": "/datum/pred_node/rel/test",
+         "self": 0.024,
+         "total": 0.241,
+         "real": 0.238,
+         "over": 0,
+         "calls": 3477
+        },
+        "/proc/material_template_singleton": {
+         "name": "/proc/material_template_singleton",
+         "self": 0.023,
+         "total": 0.025,
+         "real": 0.036,
+         "over": 0,
+         "calls": 31912
+        },
+        "/datum/controller/subsystem/proc/dequeue": {
+         "name": "/datum/controller/subsystem/proc/dequeue",
+         "self": 0.023,
+         "total": 0.024,
+         "real": 0.035,
+         "over": 0,
+         "calls": 9367
+        },
+        "/datum/controller/subsystem/timer/fire": {
+         "name": "/datum/controller/subsystem/timer/fire",
+         "self": 0.023,
+         "total": 0.287,
+         "real": 0.287,
+         "over": 0,
+         "calls": 1439
+        },
+        "/datum/weakref/proc/resolve": {
+         "name": "/datum/weakref/proc/resolve",
+         "self": 0.023,
+         "total": 0.023,
+         "real": 0.024,
+         "over": 0,
+         "calls": 7202
+        },
+        "/turf/simulated/floor/update_icon": {
+         "name": "/turf/simulated/floor/update_icon",
+         "self": 0.023,
+         "total": 0.145,
+         "real": 0.146,
+         "over": 0,
+         "calls": 1980
+        },
+        "/proc/dq_impact_response_for_matter": {
+         "name": "/proc/dq_impact_response_for_matter",
+         "self": 0.022,
+         "total": 0.04,
+         "real": 0.049,
+         "over": 0,
+         "calls": 2883
+        },
+        "/datum/controller/subsystem/explosions/fire": {
+         "name": "/datum/controller/subsystem/explosions/fire",
+         "self": 0.022,
+         "total": 9.15,
+         "real": 9.141,
+         "over": 0.001,
+         "calls": 1019
+        },
+        "/datum/controller/subsystem/reactor/proc/dispatch_pending": {
+         "name": "/datum/controller/subsystem/reactor/proc/dispatch_pending",
+         "self": 0.022,
+         "total": 0.498,
+         "real": 0.485,
+         "over": 0,
+         "calls": 738
+        },
+        "/datum/property_provider/material/proc/from_matter": {
+         "name": "/datum/property_provider/material/proc/from_matter",
+         "self": 0.022,
+         "total": 0.029,
+         "real": 0.031,
+         "over": 0.001,
+         "calls": 6392
+        },
+        "/turf/open/air_block_mask": {
+         "name": "/turf/open/air_block_mask",
+         "self": 0.022,
+         "total": 0.028,
+         "real": 0.018,
+         "over": 0,
+         "calls": 669
+        },
+        "/obj/machinery/door/firedoor/proc/firedoor_atmos_signature": {
+         "name": "/obj/machinery/door/firedoor/proc/firedoor_atmos_signature",
+         "self": 0.022,
+         "total": 0.106,
+         "real": 0.099,
+         "over": 0,
+         "calls": 1295
+        },
+        "/turf/simulated/floor/proc/make_plating": {
+         "name": "/turf/simulated/floor/proc/make_plating",
+         "self": 0.022,
+         "total": 0.069,
+         "real": 0.066,
+         "over": 0,
+         "calls": 139
+        },
+        "/proc/getOPressureDifferential": {
+         "name": "/proc/getOPressureDifferential",
+         "self": 0.021,
+         "total": 0.041,
+         "real": 0.035,
+         "over": 0,
+         "calls": 1407
+        },
+        "/proc/dq_lifecycle_teardown": {
+         "name": "/proc/dq_lifecycle_teardown",
+         "self": 0.021,
+         "total": 0.028,
+         "real": 0.038,
+         "over": 0,
+         "calls": 9113
+        },
+        "/datum/controller/subsystem/explosions/proc/fire_resolve_explosions": {
+         "name": "/datum/controller/subsystem/explosions/proc/fire_resolve_explosions",
+         "self": 0.021,
+         "total": 0.714,
+         "real": 0.717,
+         "over": 0,
+         "calls": 1926
+        },
+        "/datum/om/scheduler/proc/run_pass": {
+         "name": "/datum/om/scheduler/proc/run_pass",
+         "self": 0.021,
+         "total": 0.598,
+         "real": 0.632,
+         "over": 0,
+         "calls": 719
+        },
+        "/datum/lighting_corner/proc/update_lumcount": {
+         "name": "/datum/lighting_corner/proc/update_lumcount",
+         "self": 0.021,
+         "total": 0.022,
+         "real": 0.03,
+         "over": 0,
+         "calls": 26377
+        },
+        "/obj/machinery/power/apc/proc/power_event": {
+         "name": "/obj/machinery/power/apc/proc/power_event",
+         "self": 0.021,
+         "total": 0.021,
+         "real": 0.014,
+         "over": 0,
+         "calls": 2829
+        },
+        "/proc/state_canonicalize": {
+         "name": "/proc/state_canonicalize",
+         "self": 0.02,
+         "total": 0.105,
+         "real": 0.102,
+         "over": 0.018,
+         "calls": 4698
+        },
+        "/datum/proc/RegisterSignal": {
+         "name": "/datum/proc/RegisterSignal",
+         "self": 0.02,
+         "total": 0.021,
+         "real": 0.04,
+         "over": 0,
+         "calls": 6133
+        },
+        "/datum/om/scheduler/proc/run_ring": {
+         "name": "/datum/om/scheduler/proc/run_ring",
+         "self": 0.02,
+         "total": 0.537,
+         "real": 0.553,
+         "over": 0.001,
+         "calls": 2157
+        },
+        "/obj/proc/impact_response": {
+         "name": "/obj/proc/impact_response",
+         "self": 0.02,
+         "total": 0.167,
+         "real": 0.154,
+         "over": 0,
+         "calls": 3227
+        },
+        "/proc/emit_contract_event": {
+         "name": "/proc/emit_contract_event",
+         "self": 0.019,
+         "total": 4.954,
+         "real": 4.976,
+         "over": 0,
+         "calls": 2343
+        },
+        "/datum/proc/_clear_signal_refs": {
+         "name": "/datum/proc/_clear_signal_refs",
+         "self": 0.019,
+         "total": 0.02,
+         "real": 0.019,
+         "over": 0,
+         "calls": 8716
+        },
+        "/datum/damage_packet/proc/release": {
+         "name": "/datum/damage_packet/proc/release",
+         "self": 0.019,
+         "total": 0.019,
+         "real": 0.024,
+         "over": 0.001,
+         "calls": 3901
+        },
+        "/datum/contract_event/Destroy": {
+         "name": "/datum/contract_event/Destroy",
+         "self": 0.019,
+         "total": 0.053,
+         "real": 0.07,
+         "over": 0,
+         "calls": 2254
+        },
+        "/obj/ex_act": {
+         "name": "/obj/ex_act",
+         "self": 0.019,
+         "total": 7.759,
+         "real": 7.75,
+         "over": 0,
+         "calls": 4082
+        },
+        "/proc/vg_heat_cap_hook": {
+         "name": "/proc/vg_heat_cap_hook",
+         "self": 0.018,
+         "total": 0.018,
+         "real": 0.014,
+         "over": 0.002,
+         "calls": 2435
+        },
+        "/datum/controller/subsystem/explosions/proc/cached_explosion_resistance": {
+         "name": "/datum/controller/subsystem/explosions/proc/cached_explosion_resistance",
+         "self": 0.018,
+         "total": 0.018,
+         "real": 0.011,
+         "over": 0,
+         "calls": 1916
+        },
+        "/datum/controller/subsystem/contracts/proc/next_infrastructure_revision": {
+         "name": "/datum/controller/subsystem/contracts/proc/next_infrastructure_revision",
+         "self": 0.018,
+         "total": 0.02,
+         "real": 0.018,
+         "over": 0,
+         "calls": 2317
+        },
+        "/datum/contract_opportunity_observation/Destroy": {
+         "name": "/datum/contract_opportunity_observation/Destroy",
+         "self": 0.018,
+         "total": 0.052,
+         "real": 0.042,
+         "over": 0,
+         "calls": 2193
+        },
+        "/turf/simulated/is_outdoors": {
+         "name": "/turf/simulated/is_outdoors",
+         "self": 0.018,
+         "total": 0.018,
+         "real": 0.023,
+         "over": 0,
+         "calls": 10070
+        },
+        "/proc/get_turf_pixel": {
+         "name": "/proc/get_turf_pixel",
+         "self": 0.017,
+         "total": 0.017,
+         "real": 0.015,
+         "over": 0,
+         "calls": 815
+        },
+        "/proc/dq_ledger_contribution": {
+         "name": "/proc/dq_ledger_contribution",
+         "self": 0.017,
+         "total": 0.284,
+         "real": 0.291,
+         "over": 0.002,
+         "calls": 338
+        },
+        "/proc/dq_lifecycle_effects": {
+         "name": "/proc/dq_lifecycle_effects",
+         "self": 0.017,
+         "total": 0.02,
+         "real": 0.027,
+         "over": 0,
+         "calls": 9113
+        },
+        "/proc/dq_rules_binding_replacing": {
+         "name": "/proc/dq_rules_binding_replacing",
+         "self": 0.017,
+         "total": 0.045,
+         "real": 0.042,
+         "over": 0.002,
+         "calls": 4307
+        },
+        "/datum/property_provider/material/instance_value": {
+         "name": "/datum/property_provider/material/instance_value",
+         "self": 0.017,
+         "total": 0.194,
+         "real": 0.175,
+         "over": 0.001,
+         "calls": 5951
+        },
+        "/atom/movable/proc/doMove": {
+         "name": "/atom/movable/proc/doMove",
+         "self": 0.017,
+         "total": 0.037,
+         "real": 0.029,
+         "over": 0.002,
+         "calls": 896
+        },
+        "/turf/get_interior_temperature": {
+         "name": "/turf/get_interior_temperature",
+         "self": 0.017,
+         "total": 0.059,
+         "real": 0.051,
+         "over": 0,
+         "calls": 2408
+        },
+        "/proc/vg_get_moles_hook": {
+         "name": "/proc/vg_get_moles_hook",
+         "self": 0.016,
+         "total": 0.016,
+         "real": 0.027,
+         "over": 0,
+         "calls": 9035
+        },
+        "/datum/controller/subsystem/reactor/fire": {
+         "name": "/datum/controller/subsystem/reactor/fire",
+         "self": 0.016,
+         "total": 0.88,
+         "real": 0.829,
+         "over": 0,
+         "calls": 738
+        },
+        "/datum/proc/UnregisterSignal": {
+         "name": "/datum/proc/UnregisterSignal",
+         "self": 0.016,
+         "total": 0.016,
+         "real": 0.03,
+         "over": 0.001,
+         "calls": 3581
+        },
+        "/datum/gas_mixture/proc/get_moles": {
+         "name": "/datum/gas_mixture/proc/get_moles",
+         "self": 0.016,
+         "total": 0.032,
+         "real": 0.041,
+         "over": 0,
+         "calls": 9035
+        },
+        "/datum/property_provider/type_var/type_value": {
+         "name": "/datum/property_provider/type_var/type_value",
+         "self": 0.016,
+         "total": 0.022,
+         "real": 0.016,
+         "over": 0,
+         "calls": 5837
+        },
+        "/datum/pred_node/proc/first_failure": {
+         "name": "/datum/pred_node/proc/first_failure",
+         "self": 0.016,
+         "total": 0.165,
+         "real": 0.186,
+         "over": 0,
+         "calls": 10160
+        },
+        "/datum/property_registry/proc/type_table": {
+         "name": "/datum/property_registry/proc/type_table",
+         "self": 0.016,
+         "total": 0.061,
+         "real": 0.06,
+         "over": 0.005,
+         "calls": 588
+        },
+        "/turf/proc/ChangeTurf": {
+         "name": "/turf/proc/ChangeTurf",
+         "self": 0.016,
+         "total": 0.234,
+         "real": 0.24,
+         "over": 0,
+         "calls": 270
+        },
+        "/obj/proc/material_service_event": {
+         "name": "/obj/proc/material_service_event",
+         "self": 0.016,
+         "total": 0.128,
+         "real": 0.154,
+         "over": 0.001,
+         "calls": 3995
+        },
+        "/proc/WEAKREF": {
+         "name": "/proc/WEAKREF",
+         "self": 0.015,
+         "total": 0.024,
+         "real": 0.025,
+         "over": 0,
+         "calls": 3151
+        },
+        "/proc/GetBelow": {
+         "name": "/proc/GetBelow",
+         "self": 0.015,
+         "total": 0.028,
+         "real": 0.034,
+         "over": 0,
+         "calls": 14840
+        },
+        "/datum/controller/subsystem/proc/update_nextfire": {
+         "name": "/datum/controller/subsystem/proc/update_nextfire",
+         "self": 0.015,
+         "total": 0.015,
+         "real": 0.018,
+         "over": 0,
+         "calls": 9367
+        },
+        "/datum/radio_frequency/proc/send_to_filter": {
+         "name": "/datum/radio_frequency/proc/send_to_filter",
+         "self": 0.015,
+         "total": 0.03,
+         "real": 0.033,
+         "over": 0,
+         "calls": 296
+        },
+        "/datum/state_context/proc/pristine_lists": {
+         "name": "/datum/state_context/proc/pristine_lists",
+         "self": 0.015,
+         "total": 0.083,
+         "real": 0.066,
+         "over": 0.012,
+         "calls": 62
+        },
+        "/datum/material_service/proc/initialize_thermal_stock": {
+         "name": "/datum/material_service/proc/initialize_thermal_stock",
+         "self": 0.015,
+         "total": 0.043,
+         "real": 0.028,
+         "over": 0,
+         "calls": 774
+        },
+        "/datum/material_template/proc/default_material": {
+         "name": "/datum/material_template/proc/default_material",
+         "self": 0.015,
+         "total": 0.016,
+         "real": 0.02,
+         "over": 0,
+         "calls": 16827
+        },
+        "/datum/pred_node/group/all/first_failure": {
+         "name": "/datum/pred_node/group/all/first_failure",
+         "self": 0.015,
+         "total": 0.105,
+         "real": 0.107,
+         "over": 0,
+         "calls": 1539
+        },
+        "/atom/movable/Initialize": {
+         "name": "/atom/movable/Initialize",
+         "self": 0.015,
+         "total": 0.067,
+         "real": 0.072,
+         "over": 0.004,
+         "calls": 1263
+        },
+        "/turf/open/heat_has_air": {
+         "name": "/turf/open/heat_has_air",
+         "self": 0.015,
+         "total": 0.015,
+         "real": 0.01,
+         "over": 0,
+         "calls": 3347
+        },
+        "/obj/impact_factor": {
+         "name": "/obj/impact_factor",
+         "self": 0.015,
+         "total": 0.296,
+         "real": 0.27,
+         "over": 0,
+         "calls": 3903
+        },
+        "/proc/vg_drain_dirty_gas_observations": {
+         "name": "/proc/vg_drain_dirty_gas_observations",
+         "self": 0.014,
+         "total": 0.014,
+         "real": 0.013,
+         "over": 0,
+         "calls": 9
+        },
+        "/proc/contract_atom_is_station_infrastructure": {
+         "name": "/proc/contract_atom_is_station_infrastructure",
+         "self": 0.014,
+         "total": 0.015,
+         "real": 0.008,
+         "over": 0,
+         "calls": 4307
+        },
+        "/proc/dq_rules_for_type": {
+         "name": "/proc/dq_rules_for_type",
+         "self": 0.014,
+         "total": 0.021,
+         "real": 0.01,
+         "over": 0.006,
+         "calls": 2187
+        },
+        "/datum/timedevent/New": {
+         "name": "/datum/timedevent/New",
+         "self": 0.014,
+         "total": 0.019,
+         "real": 0.023,
+         "over": 0,
+         "calls": 1078
+        },
+        "/datum/armor/proc/soak_key": {
+         "name": "/datum/armor/proc/soak_key",
+         "self": 0.014,
+         "total": 0.038,
+         "real": 0.031,
+         "over": 0,
+         "calls": 3901
+        },
+        "/atom/proc/build_appearance_list": {
+         "name": "/atom/proc/build_appearance_list",
+         "self": 0.014,
+         "total": 0.016,
+         "real": 0.038,
+         "over": 0.001,
+         "calls": 8244
+        },
+        "/atom/proc/update_integrity": {
+         "name": "/atom/proc/update_integrity",
+         "self": 0.014,
+         "total": 0.83,
+         "real": 0.845,
+         "over": 0,
+         "calls": 4543
+        },
+        "/atom/movable/Move": {
+         "name": "/atom/movable/Move",
+         "self": 0.014,
+         "total": 0.14,
+         "real": 0.138,
+         "over": 0,
+         "calls": 997
+        },
+        "/area/proc/atmosalert": {
+         "name": "/area/proc/atmosalert",
+         "self": 0.014,
+         "total": 0.08,
+         "real": 0.083,
+         "over": 0,
+         "calls": 18
+        },
+        "/turf/simulated/wall/proc/update_connections": {
+         "name": "/turf/simulated/wall/proc/update_connections",
+         "self": 0.014,
+         "total": 0.092,
+         "real": 0.084,
+         "over": 0,
+         "calls": 259
+        },
+        "/proc/mutable_appearance": {
+         "name": "/proc/mutable_appearance",
+         "self": 0.013,
+         "total": 0.014,
+         "real": 0.013,
+         "over": 0.001,
+         "calls": 1658
+        },
+        "/proc/damage_packet": {
+         "name": "/proc/damage_packet",
+         "self": 0.013,
+         "total": 0.013,
+         "real": 0.015,
+         "over": 0.001,
+         "calls": 3901
+        },
+        "/proc/material_gas_corrosion_load": {
+         "name": "/proc/material_gas_corrosion_load",
+         "self": 0.013,
+         "total": 0.03,
+         "real": 0.022,
+         "over": 0,
+         "calls": 946
+        },
+        "/datum/controller/subsystem/material_services/proc/swap_scheduled": {
+         "name": "/datum/controller/subsystem/material_services/proc/swap_scheduled",
+         "self": 0.013,
+         "total": 0.022,
+         "real": 0.018,
+         "over": 0,
+         "calls": 2482
+        },
+        "/datum/controller/subsystem/material_services/proc/unqueue": {
+         "name": "/datum/controller/subsystem/material_services/proc/unqueue",
+         "self": 0.013,
+         "total": 0.039,
+         "real": 0.031,
+         "over": 0,
+         "calls": 1465
+        },
+        "/datum/om/scheduler/proc/run_lane": {
+         "name": "/datum/om/scheduler/proc/run_lane",
+         "self": 0.013,
+         "total": 0.568,
+         "real": 0.587,
+         "over": 0,
+         "calls": 3595
+        }
+       },
+       "top_total": {
+        "/datum/controller/master/proc/RunQueue": {
+         "name": "/datum/controller/master/proc/RunQueue",
+         "self": 0.341,
+         "total": 13.937,
+         "real": 13.945,
+         "over": 0.001,
+         "calls": 722
+        },
+        "/datum/controller/subsystem/proc/ignite": {
+         "name": "/datum/controller/subsystem/proc/ignite",
+         "self": 0.047,
+         "total": 13.559,
+         "real": 13.54,
+         "over": 0,
+         "calls": 11169
+        },
+        "/datum/controller/subsystem/explosions/fire": {
+         "name": "/datum/controller/subsystem/explosions/fire",
+         "self": 0.022,
+         "total": 9.15,
+         "real": 9.141,
+         "over": 0.001,
+         "calls": 1019
+        },
+        "/datum/controller/subsystem/explosions/proc/deliver_blast_batches": {
+         "name": "/datum/controller/subsystem/explosions/proc/deliver_blast_batches",
+         "self": 0.073,
+         "total": 8.235,
+         "real": 8.223,
+         "over": 0,
+         "calls": 934
+        },
+        "/obj/ex_act": {
+         "name": "/obj/ex_act",
+         "self": 0.019,
+         "total": 7.759,
+         "real": 7.75,
+         "over": 0,
+         "calls": 4082
+        },
+        "/atom/proc/receive_explosion": {
+         "name": "/atom/proc/receive_explosion",
+         "self": 0.031,
+         "total": 7.715,
+         "real": 7.707,
+         "over": 0,
+         "calls": 4082
+        },
+        "/atom/proc/deal_damage": {
+         "name": "/atom/proc/deal_damage",
+         "self": 0.039,
+         "total": 7.679,
+         "real": 7.681,
+         "over": 0,
+         "calls": 3927
+        },
+        "/atom/proc/receive_damage": {
+         "name": "/atom/proc/receive_damage",
+         "self": 0.056,
+         "total": 7.598,
+         "real": 7.606,
+         "over": 0,
+         "calls": 3901
+        },
+        "/atom/proc/take_damage": {
+         "name": "/atom/proc/take_damage",
+         "self": 0.088,
+         "total": 7.494,
+         "real": 7.501,
+         "over": 0.003,
+         "calls": 4307
+        },
+        "/proc/contract_report_station_damage": {
+         "name": "/proc/contract_report_station_damage",
+         "self": 0.173,
+         "total": 5.166,
+         "real": 5.152,
+         "over": 0,
+         "calls": 4307
+        },
+        "/proc/emit_contract_event": {
+         "name": "/proc/emit_contract_event",
+         "self": 0.019,
+         "total": 4.954,
+         "real": 4.976,
+         "over": 0,
+         "calls": 2343
+        },
+        "/datum/controller/subsystem/contracts/proc/publish_event": {
+         "name": "/datum/controller/subsystem/contracts/proc/publish_event",
+         "self": 0.251,
+         "total": 4.824,
+         "real": 4.827,
+         "over": 0.002,
+         "calls": 2343
+        },
+        "/datum/controller/subsystem/contracts/proc/observe_opportunity_event": {
+         "name": "/datum/controller/subsystem/contracts/proc/observe_opportunity_event",
+         "self": 0.066,
+         "total": 4.315,
+         "real": 4.288,
+         "over": 0,
+         "calls": 2343
+        },
+        "/datum/contract_opportunity_rule/proc/snapshots": {
+         "name": "/datum/contract_opportunity_rule/proc/snapshots",
+         "self": 0.055,
+         "total": 3.517,
+         "real": 3.46,
+         "over": 0.001,
+         "calls": 2343
+        },
+        "/datum/contract_opportunity_window/proc/signal_snapshot": {
+         "name": "/datum/contract_opportunity_window/proc/signal_snapshot",
+         "self": 3.462,
+         "total": 3.462,
+         "real": 3.411,
+         "over": 0.029,
+         "calls": 2343
+        },
+        "/proc/qdel": {
+         "name": "/proc/qdel",
+         "self": 0.079,
+         "total": 1.135,
+         "real": 1.138,
+         "over": 0.006,
+         "calls": 13583
+        },
+        "/datum/controller/subsystem/lighting/fire": {
+         "name": "/datum/controller/subsystem/lighting/fire",
+         "self": 0.057,
+         "total": 1.066,
+         "real": 1.065,
+         "over": 0,
+         "calls": 963
+        },
+        "/proc/destroy_transaction": {
+         "name": "/proc/destroy_transaction",
+         "self": 0.168,
+         "total": 1.023,
+         "real": 1.041,
+         "over": 0.014,
+         "calls": 9113
+        },
+        "/datum/controller/subsystem/reactor/fire": {
+         "name": "/datum/controller/subsystem/reactor/fire",
+         "self": 0.016,
+         "total": 0.88,
+         "real": 0.829,
+         "over": 0,
+         "calls": 738
+        },
+        "/atom/proc/update_integrity": {
+         "name": "/atom/proc/update_integrity",
+         "self": 0.014,
+         "total": 0.83,
+         "real": 0.845,
+         "over": 0,
+         "calls": 4543
+        },
+        "/datum/rule_binding/proc/evaluate": {
+         "name": "/datum/rule_binding/proc/evaluate",
+         "self": 0.005,
+         "total": 0.808,
+         "real": 0.812,
+         "over": 0,
+         "calls": 2754
+        },
+        "/datum/rule_binding/proc/evaluate_rules": {
+         "name": "/datum/rule_binding/proc/evaluate_rules",
+         "self": 0.042,
+         "total": 0.794,
+         "real": 0.789,
+         "over": 0,
+         "calls": 2754
+        },
+        "/datum/controller/subsystem/air/fire": {
+         "name": "/datum/controller/subsystem/air/fire",
+         "self": 0,
+         "total": 0.725,
+         "real": 0.725,
+         "over": 0,
+         "calls": 41
+        },
+        "/datum/controller/subsystem/explosions/proc/fire_resolve_explosions": {
+         "name": "/datum/controller/subsystem/explosions/proc/fire_resolve_explosions",
+         "self": 0.021,
+         "total": 0.714,
+         "real": 0.717,
+         "over": 0,
+         "calls": 1926
+        },
+        "/atom/proc/visible_message": {
+         "name": "/atom/proc/visible_message",
+         "self": 0.183,
+         "total": 0.707,
+         "real": 0.709,
+         "over": 0.002,
+         "calls": 319
+        },
+        "/proc/dq_property": {
+         "name": "/proc/dq_property",
+         "self": 0.142,
+         "total": 0.654,
+         "real": 0.674,
+         "over": 0.006,
+         "calls": 30195
+        },
+        "/datum/controller/subsystem/behaviours/fire": {
+         "name": "/datum/controller/subsystem/behaviours/fire",
+         "self": 0.003,
+         "total": 0.612,
+         "real": 0.647,
+         "over": 0,
+         "calls": 719
+        },
+        "/datum/om/scheduler/proc/run_pass": {
+         "name": "/datum/om/scheduler/proc/run_pass",
+         "self": 0.021,
+         "total": 0.598,
+         "real": 0.632,
+         "over": 0,
+         "calls": 719
+        },
+        "/datum/om/scheduler/proc/run_lane": {
+         "name": "/datum/om/scheduler/proc/run_lane",
+         "self": 0.013,
+         "total": 0.568,
+         "real": 0.587,
+         "over": 0,
+         "calls": 3595
+        },
+        "/proc/dq_rules_settle": {
+         "name": "/proc/dq_rules_settle",
+         "self": 0.003,
+         "total": 0.549,
+         "real": 0.561,
+         "over": 0,
+         "calls": 1392
+        },
+        "/datum/om/scheduler/proc/run_ring": {
+         "name": "/datum/om/scheduler/proc/run_ring",
+         "self": 0.02,
+         "total": 0.537,
+         "real": 0.553,
+         "over": 0.001,
+         "calls": 2157
+        },
+        "/datum/om/scheduler/proc/run_slot": {
+         "name": "/datum/om/scheduler/proc/run_slot",
+         "self": 0.003,
+         "total": 0.517,
+         "real": 0.537,
+         "over": 0.001,
+         "calls": 247
+        },
+        "/proc/get_mobs_and_objs_in_view_fast": {
+         "name": "/proc/get_mobs_and_objs_in_view_fast",
+         "self": 0.331,
+         "total": 0.512,
+         "real": 0.517,
+         "over": 0.006,
+         "calls": 319
+        },
+        "/datum/controller/subsystem/reactor/proc/dispatch_pending": {
+         "name": "/datum/controller/subsystem/reactor/proc/dispatch_pending",
+         "self": 0.022,
+         "total": 0.498,
+         "real": 0.485,
+         "over": 0,
+         "calls": 738
+        },
+        "/datum/rule_binding/proc/check": {
+         "name": "/datum/rule_binding/proc/check",
+         "self": 0.031,
+         "total": 0.486,
+         "real": 0.477,
+         "over": 0,
+         "calls": 12098
+        },
+        "/datum/lighting_object/proc/update": {
+         "name": "/datum/lighting_object/proc/update",
+         "self": 0.431,
+         "total": 0.479,
+         "real": 0.483,
+         "over": 0.039,
+         "calls": 6385
+        },
+        "/datum/light_source/proc/update_corners": {
+         "name": "/datum/light_source/proc/update_corners",
+         "self": 0.315,
+         "total": 0.469,
+         "real": 0.464,
+         "over": 0,
+         "calls": 815
+        },
+        "/datum/predicate/proc/check": {
+         "name": "/datum/predicate/proc/check",
+         "self": 0.027,
+         "total": 0.457,
+         "real": 0.462,
+         "over": 0,
+         "calls": 12098
+        },
+        "/proc/dq_ledger": {
+         "name": "/proc/dq_ledger",
+         "self": 0.002,
+         "total": 0.44,
+         "real": 0.444,
+         "over": 0,
+         "calls": 1824
+        },
+        "/datum/contract_opportunity_window/proc/revise": {
+         "name": "/datum/contract_opportunity_window/proc/revise",
+         "self": 0.173,
+         "total": 0.408,
+         "real": 0.424,
+         "over": 0,
+         "calls": 2343
+        },
+        "/proc/vg_gas_tick": {
+         "name": "/proc/vg_gas_tick",
+         "self": 0.398,
+         "total": 0.398,
+         "real": 0.398,
+         "over": 0.336,
+         "calls": 34
+        },
+        "/atom/proc/latent_blast": {
+         "name": "/atom/proc/latent_blast",
+         "self": 0,
+         "total": 0.394,
+         "real": 0.397,
+         "over": 0,
+         "calls": 3
+        },
+        "/atom/New": {
+         "name": "/atom/New",
+         "self": 0.006,
+         "total": 0.387,
+         "real": 0.388,
+         "over": 0.002,
+         "calls": 1533
+        },
+        "/datum/controller/subsystem/atoms/proc/InitAtom": {
+         "name": "/datum/controller/subsystem/atoms/proc/InitAtom",
+         "self": 0.011,
+         "total": 0.38,
+         "real": 0.385,
+         "over": 0.002,
+         "calls": 1533
+        },
+        "/atom/proc/run_atom_armor": {
+         "name": "/atom/proc/run_atom_armor",
+         "self": 0.026,
+         "total": 0.379,
+         "real": 0.346,
+         "over": 0,
+         "calls": 4307
+        },
+        "/proc/vg_react_step": {
+         "name": "/proc/vg_react_step",
+         "self": 0.362,
+         "total": 0.362,
+         "real": 0.336,
+         "over": 0,
+         "calls": 696
+        },
+        "/atom/proc/propagate_damage": {
+         "name": "/atom/proc/propagate_damage",
+         "self": 0.005,
+         "total": 0.349,
+         "real": 0.352,
+         "over": 0.001,
+         "calls": 346
+        },
+        "/proc/_stack_trace": {
+         "name": "/proc/_stack_trace",
+         "self": 0.001,
+         "total": 0.347,
+         "real": 0.348,
+         "over": 0,
+         "calls": 9
+        },
+        "/datum/om/scheduler/proc/error": {
+         "name": "/datum/om/scheduler/proc/error",
+         "self": 0,
+         "total": 0.347,
+         "real": 0.348,
+         "over": 0,
+         "calls": 9
+        },
+        "/world/Error": {
+         "name": "/world/Error",
+         "self": 0.334,
+         "total": 0.346,
+         "real": 0.345,
+         "over": 0.317,
+         "calls": 9
+        },
+        "/datum/ledger/proc/note_enter": {
+         "name": "/datum/ledger/proc/note_enter",
+         "self": 0.009,
+         "total": 0.344,
+         "real": 0.35,
+         "over": 0.002,
+         "calls": 338
+        },
+        "/datum/controller/subsystem/machines/fire": {
+         "name": "/datum/controller/subsystem/machines/fire",
+         "self": 0.001,
+         "total": 0.335,
+         "real": 0.334,
+         "over": 0,
+         "calls": 71
+        },
+        "/datum/ledger/proc/sync": {
+         "name": "/datum/ledger/proc/sync",
+         "self": 0.002,
+         "total": 0.335,
+         "real": 0.341,
+         "over": 0,
+         "calls": 1009
+        },
+        "/turf/simulated/floor/ex_act": {
+         "name": "/turf/simulated/floor/ex_act",
+         "self": 0.008,
+         "total": 0.335,
+         "real": 0.341,
+         "over": 0,
+         "calls": 1398
+        },
+        "/datum/controller/subsystem/material_services/fire": {
+         "name": "/datum/controller/subsystem/material_services/fire",
+         "self": 0.007,
+         "total": 0.333,
+         "real": 0.332,
+         "over": 0,
+         "calls": 67
+        },
+        "/obj/structure/window/on_update_integrity": {
+         "name": "/obj/structure/window/on_update_integrity",
+         "self": 0.004,
+         "total": 0.324,
+         "real": 0.333,
+         "over": 0,
+         "calls": 484
+        },
+        "/turf/simulated/wall/ex_act": {
+         "name": "/turf/simulated/wall/ex_act",
+         "self": 0,
+         "total": 0.324,
+         "real": 0.329,
+         "over": 0,
+         "calls": 415
+        },
+        "/obj/machinery/door/on_update_integrity": {
+         "name": "/obj/machinery/door/on_update_integrity",
+         "self": 0.006,
+         "total": 0.311,
+         "real": 0.3,
+         "over": 0,
+         "calls": 350
+        },
+        "/datum/material_service/proc/advance": {
+         "name": "/datum/material_service/proc/advance",
+         "self": 0.027,
+         "total": 0.309,
+         "real": 0.305,
+         "over": 0,
+         "calls": 706
+        },
+        "/obj/structure/window/proc/integrity_message": {
+         "name": "/obj/structure/window/proc/integrity_message",
+         "self": 0.003,
+         "total": 0.299,
+         "real": 0.311,
+         "over": 0,
+         "calls": 484
+        },
+        "/obj/impact_factor": {
+         "name": "/obj/impact_factor",
+         "self": 0.015,
+         "total": 0.296,
+         "real": 0.27,
+         "over": 0,
+         "calls": 3903
+        },
+        "/datum/contract_opportunity_window/proc/prune": {
+         "name": "/datum/contract_opportunity_window/proc/prune",
+         "self": 0.288,
+         "total": 0.288,
+         "real": 0.312,
+         "over": 0.001,
+         "calls": 2343
+        },
+        "/datum/controller/subsystem/timer/fire": {
+         "name": "/datum/controller/subsystem/timer/fire",
+         "self": 0.023,
+         "total": 0.287,
+         "real": 0.287,
+         "over": 0,
+         "calls": 1439
+        },
+        "/proc/dq_ledger_contribution": {
+         "name": "/proc/dq_ledger_contribution",
+         "self": 0.017,
+         "total": 0.284,
+         "real": 0.291,
+         "over": 0.002,
+         "calls": 338
+        },
+        "/datum/controller/subsystem/air/proc/process_pipenets": {
+         "name": "/datum/controller/subsystem/air/proc/process_pipenets",
+         "self": 0,
+         "total": 0.279,
+         "real": 0.281,
+         "over": 0,
+         "calls": 34
+        },
+        "/datum/rule_binding/on_react": {
+         "name": "/datum/rule_binding/on_react",
+         "self": 0.005,
+         "total": 0.279,
+         "real": 0.268,
+         "over": 0,
+         "calls": 1362
+        },
+        "/proc/dq_latent_probe_blast": {
+         "name": "/proc/dq_latent_probe_blast",
+         "self": 0.001,
+         "total": 0.277,
+         "real": 0.282,
+         "over": 0.001,
+         "calls": 69
+        },
+        "/datum/rule_binding/rule_wake": {
+         "name": "/datum/rule_binding/rule_wake",
+         "self": 0.002,
+         "total": 0.274,
+         "real": 0.267,
+         "over": 0,
+         "calls": 1362
+        },
+        "/datum/controller/subsystem/machines/proc/process_machinery": {
+         "name": "/datum/controller/subsystem/machines/proc/process_machinery",
+         "self": 0.01,
+         "total": 0.272,
+         "real": 0.271,
+         "over": 0,
+         "calls": 71
+        },
+        "/datum/rule_binding/proc/fire": {
+         "name": "/datum/rule_binding/proc/fire",
+         "self": 0.007,
+         "total": 0.267,
+         "real": 0.261,
+         "over": 0,
+         "calls": 515
+        },
+        "/datum/rule/proc/fire": {
+         "name": "/datum/rule/proc/fire",
+         "self": 0.004,
+         "total": 0.259,
+         "real": 0.258,
+         "over": 0,
+         "calls": 515
+        },
+        "/atom/proc/add_overlay": {
+         "name": "/atom/proc/add_overlay",
+         "self": 0.236,
+         "total": 0.253,
+         "real": 0.277,
+         "over": 0.028,
+         "calls": 8150
+        },
+        "/datum/pred_node/rel/first_failure": {
+         "name": "/datum/pred_node/rel/first_failure",
+         "self": 0.006,
+         "total": 0.247,
+         "real": 0.246,
+         "over": 0,
+         "calls": 3477
+        },
+        "/datum/pred_node/rel/test": {
+         "name": "/datum/pred_node/rel/test",
+         "self": 0.024,
+         "total": 0.241,
+         "real": 0.238,
+         "over": 0,
+         "calls": 3477
+        },
+        "/obj/proc/material_totals": {
+         "name": "/obj/proc/material_totals",
+         "self": 0.082,
+         "total": 0.239,
+         "real": 0.201,
+         "over": 0.003,
+         "calls": 8834
+        },
+        "/turf/proc/ChangeTurf": {
+         "name": "/turf/proc/ChangeTurf",
+         "self": 0.016,
+         "total": 0.234,
+         "real": 0.24,
+         "over": 0,
+         "calls": 270
+        },
+        "/datum/callback/proc/InvokeAsync": {
+         "name": "/datum/callback/proc/InvokeAsync",
+         "self": 0.006,
+         "total": 0.233,
+         "real": 0.192,
+         "over": 0,
+         "calls": 982
+        },
+        "/datum/state_context/proc/serialize_datum": {
+         "name": "/datum/state_context/proc/serialize_datum",
+         "self": 0.002,
+         "total": 0.229,
+         "real": 0.234,
+         "over": 0.002,
+         "calls": 136
+        },
+        "/turf/simulated/wall/update_icon": {
+         "name": "/turf/simulated/wall/update_icon",
+         "self": 0.005,
+         "total": 0.21,
+         "real": 0.223,
+         "over": 0,
+         "calls": 731
+        },
+        "/world/proc/ImmediateInvokeAsync": {
+         "name": "/world/proc/ImmediateInvokeAsync",
+         "self": 0.001,
+         "total": 0.204,
+         "real": 326.686,
+         "over": 0,
+         "calls": 465
+        },
+        "/datum/property_provider/material/instance_value": {
+         "name": "/datum/property_provider/material/instance_value",
+         "self": 0.017,
+         "total": 0.194,
+         "real": 0.175,
+         "over": 0.001,
+         "calls": 5951
+        },
+        "/proc/state_serialize": {
+         "name": "/proc/state_serialize",
+         "self": 0.002,
+         "total": 0.191,
+         "real": 0.192,
+         "over": 0.002,
+         "calls": 69
+        },
+        "/obj/machinery/power/apc/ex_act": {
+         "name": "/obj/machinery/power/apc/ex_act",
+         "self": 0,
+         "total": 0.187,
+         "real": 0.181,
+         "over": 0,
+         "calls": 28
+        },
+        "/datum/state_context/proc/serialize_root": {
+         "name": "/datum/state_context/proc/serialize_root",
+         "self": 0.001,
+         "total": 0.186,
+         "real": 0.185,
+         "over": 0.001,
+         "calls": 69
+        },
+        "/turf/simulated/wall/proc/dismantle_wall": {
+         "name": "/turf/simulated/wall/proc/dismantle_wall",
+         "self": 0.002,
+         "total": 0.182,
+         "real": 0.176,
+         "over": 0,
+         "calls": 92
+        },
+        "/datum/property_registry/proc/base_provider": {
+         "name": "/datum/property_registry/proc/base_provider",
+         "self": 0.169,
+         "total": 0.175,
+         "real": 0.208,
+         "over": 0.031,
+         "calls": 31910
+        },
+        "/turf/simulated/wall/atom_destruction": {
+         "name": "/turf/simulated/wall/atom_destruction",
+         "self": 0.001,
+         "total": 0.17,
+         "real": 0.165,
+         "over": 0,
+         "calls": 83
+        },
+        "/datum/om/pipeline/proc/run_frame": {
+         "name": "/datum/om/pipeline/proc/run_frame",
+         "self": 0.005,
+         "total": 0.167,
+         "real": 0.184,
+         "over": 0,
+         "calls": 345
+        },
+        "/obj/proc/impact_response": {
+         "name": "/obj/proc/impact_response",
+         "self": 0.02,
+         "total": 0.167,
+         "real": 0.154,
+         "over": 0,
+         "calls": 3227
+        },
+        "/datum/pred_node/proc/first_failure": {
+         "name": "/datum/pred_node/proc/first_failure",
+         "self": 0.016,
+         "total": 0.165,
+         "real": 0.186,
+         "over": 0,
+         "calls": 10160
+        },
+        "/obj/machinery/camera/ex_act": {
+         "name": "/obj/machinery/camera/ex_act",
+         "self": 0.001,
+         "total": 0.164,
+         "real": 0.168,
+         "over": 0,
+         "calls": 42
+        },
+        "/datum/state_context/proc/encode_delta": {
+         "name": "/datum/state_context/proc/encode_delta",
+         "self": 0.05,
+         "total": 0.157,
+         "real": 0.147,
+         "over": 0.05,
+         "calls": 136
+        },
+        "/proc/dview": {
+         "name": "/proc/dview",
+         "self": 0.155,
+         "total": 0.155,
+         "real": 0.153,
+         "over": 0.002,
+         "calls": 328
+        },
+        "/datum/controller/subsystem/air/proc/rust_commit_pending_pipenets": {
+         "name": "/datum/controller/subsystem/air/proc/rust_commit_pending_pipenets",
+         "self": 0.001,
+         "total": 0.153,
+         "real": 0.153,
+         "over": 0.001,
+         "calls": 35
+        },
+        "/datum/controller/subsystem/air/proc/rust_apply_pipe_topology": {
+         "name": "/datum/controller/subsystem/air/proc/rust_apply_pipe_topology",
+         "self": 0.001,
+         "total": 0.152,
+         "real": 0.153,
+         "over": 0.001,
+         "calls": 6
+        },
+        "/datum/pred_node/cmp/test": {
+         "name": "/datum/pred_node/cmp/test",
+         "self": 0.04,
+         "total": 0.149,
+         "real": 0.172,
+         "over": 0,
+         "calls": 10160
+        },
+        "/obj/machinery/atom_destruction": {
+         "name": "/obj/machinery/atom_destruction",
+         "self": 0,
+         "total": 0.149,
+         "real": 0.151,
+         "over": 0,
+         "calls": 47
+        },
+        "/obj/Destroy": {
+         "name": "/obj/Destroy",
+         "self": 0.005,
+         "total": 0.146,
+         "real": 0.149,
+         "over": 0.001,
+         "calls": 846
+        },
+        "/turf/simulated/floor/update_icon": {
+         "name": "/turf/simulated/floor/update_icon",
+         "self": 0.023,
+         "total": 0.145,
+         "real": 0.146,
+         "over": 0,
+         "calls": 1980
+        },
+        "/atom/movable/Move": {
+         "name": "/atom/movable/Move",
+         "self": 0.014,
+         "total": 0.14,
+         "real": 0.138,
+         "over": 0,
+         "calls": 997
+        },
+        "/atom/proc/rule_break": {
+         "name": "/atom/proc/rule_break",
+         "self": 0.001,
+         "total": 0.138,
+         "real": 0.138,
+         "over": 0,
+         "calls": 69
+        },
+        "/datum/controller/subsystem/air/proc/rust_materialize_pipe_region": {
+         "name": "/datum/controller/subsystem/air/proc/rust_materialize_pipe_region",
+         "self": 0.067,
+         "total": 0.136,
+         "real": 0.135,
+         "over": 0.064,
+         "calls": 16
+        },
+        "/obj/machinery/atmospherics/valve/shutoff/on_react": {
+         "name": "/obj/machinery/atmospherics/valve/shutoff/on_react",
+         "self": 0.001,
+         "total": 0.134,
+         "real": 0.135,
+         "over": 0,
+         "calls": 32
+        },
+        "/obj/machinery/atmospherics/valve/shutoff/proc/check_leaks": {
+         "name": "/obj/machinery/atmospherics/valve/shutoff/proc/check_leaks",
+         "self": 0,
+         "total": 0.133,
+         "real": 0.134,
+         "over": 0,
+         "calls": 32
+        },
+        "/obj/machinery/atmospherics/valve/shutoff/proc/find_leaks": {
+         "name": "/obj/machinery/atmospherics/valve/shutoff/proc/find_leaks",
+         "self": 0.133,
+         "total": 0.133,
+         "real": 0.134,
+         "over": 0.009,
+         "calls": 15
+        },
+        "/datum/proc/Destroy": {
+         "name": "/datum/proc/Destroy",
+         "self": 0.076,
+         "total": 0.131,
+         "real": 0.154,
+         "over": 0.004,
+         "calls": 8716
+        },
+        "/atom/movable/Destroy": {
+         "name": "/atom/movable/Destroy",
+         "self": 0.005,
+         "total": 0.131,
+         "real": 0.135,
+         "over": 0.003,
+         "calls": 852
+        },
+        "/datum/callback/proc/Invoke": {
+         "name": "/datum/callback/proc/Invoke",
+         "self": 0.008,
+         "total": 0.13,
+         "real": 0.142,
+         "over": 0,
+         "calls": 1653
+        },
+        "/datum/controller/master/proc/CheckQueue": {
+         "name": "/datum/controller/master/proc/CheckQueue",
+         "self": 0.098,
+         "total": 0.128,
+         "real": 0.154,
+         "over": 0,
+         "calls": 722
+        },
+        "/obj/proc/material_service_event": {
+         "name": "/obj/proc/material_service_event",
+         "self": 0.016,
+         "total": 0.128,
+         "real": 0.154,
+         "over": 0.001,
+         "calls": 3995
+        },
+        "/proc/REF": {
+         "name": "/proc/REF",
+         "self": 0.125,
+         "total": 0.127,
+         "real": 0.15,
+         "over": 0.001,
+         "calls": 37538
+        },
+        "/datum/controller/subsystem/air/proc/rust_step_pipe_devices": {
+         "name": "/datum/controller/subsystem/air/proc/rust_step_pipe_devices",
+         "self": 0.049,
+         "total": 0.126,
+         "real": 0.125,
+         "over": 0.004,
+         "calls": 34
+        },
+        "/datum/effect/effect/system/spark_spread/proc/emit_one_spark": {
+         "name": "/datum/effect/effect/system/spark_spread/proc/emit_one_spark",
+         "self": 0.007,
+         "total": 0.124,
+         "real": 245.429,
+         "over": 0,
+         "calls": 345
+        },
+        "/datum/om/stage/machine/power/alarm/perform": {
+         "name": "/datum/om/stage/machine/power/alarm/perform",
+         "self": 0,
+         "total": 0.122,
+         "real": 0.13,
+         "over": 0,
+         "calls": 26
+        },
+        "/obj/machinery/door/firedoor/process": {
+         "name": "/obj/machinery/door/firedoor/process",
+         "self": 0.006,
+         "total": 0.121,
+         "real": 0.126,
+         "over": 0,
+         "calls": 112
+        },
+        "/obj/machinery/alarm/proc/scan_atmo": {
+         "name": "/obj/machinery/alarm/proc/scan_atmo",
+         "self": 0.001,
+         "total": 0.118,
+         "real": 0.12,
+         "over": 0,
+         "calls": 18
+        },
+        "/turf/simulated/wall/on_update_integrity": {
+         "name": "/turf/simulated/wall/on_update_integrity",
+         "self": 0.001,
+         "total": 0.118,
+         "real": 0.131,
+         "over": 0,
+         "calls": 404
+        },
+        "/atom/proc/rule_destroy": {
+         "name": "/atom/proc/rule_destroy",
+         "self": 0,
+         "total": 0.117,
+         "real": 0.118,
+         "over": 0,
+         "calls": 30
+        },
+        "/datum/light_source/proc/get_turfs_in_range": {
+         "name": "/datum/light_source/proc/get_turfs_in_range",
+         "self": 0.116,
+         "total": 0.116,
+         "real": 0.117,
+         "over": 0,
+         "calls": 815
+        },
+        "/datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers": {
+         "name": "/datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers",
+         "self": 0.001,
+         "total": 0.114,
+         "real": 0.114,
+         "over": 0,
+         "calls": 36
+        },
+        "/datum/weakref/Destroy": {
+         "name": "/datum/weakref/Destroy",
+         "self": 0.002,
+         "total": 0.114,
+         "real": 0.101,
+         "over": 0,
+         "calls": 397
+        },
+        "/datum/contract_event/New": {
+         "name": "/datum/contract_event/New",
+         "self": 0.053,
+         "total": 0.112,
+         "real": 0.127,
+         "over": 0,
+         "calls": 2343
+        },
+        "/datum/material_service/proc/rebind": {
+         "name": "/datum/material_service/proc/rebind",
+         "self": 0.029,
+         "total": 0.111,
+         "real": 0.109,
+         "over": 0,
+         "calls": 704
+        },
+        "/obj/proc/material_id_for_role": {
+         "name": "/obj/proc/material_id_for_role",
+         "self": 0.06,
+         "total": 0.11,
+         "real": 0.105,
+         "over": 0.003,
+         "calls": 18672
+        },
+        "/proc/dq_has_tag": {
+         "name": "/proc/dq_has_tag",
+         "self": 0.009,
+         "total": 0.109,
+         "real": 0.123,
+         "over": 0.002,
+         "calls": 7436
+        },
+        "/obj/proc/get_material_template": {
+         "name": "/obj/proc/get_material_template",
+         "self": 0.081,
+         "total": 0.109,
+         "real": 0.098,
+         "over": 0.004,
+         "calls": 40208
+        },
+        "/obj/item/impact_response": {
+         "name": "/obj/item/impact_response",
+         "self": 0.005,
+         "total": 0.108,
+         "real": 0.096,
+         "over": 0,
+         "calls": 674
+        },
+        "/datum/controller/subsystem/explosions/proc/flush_deferred_turf_updates": {
+         "name": "/datum/controller/subsystem/explosions/proc/flush_deferred_turf_updates",
+         "self": 0.003,
+         "total": 0.106,
+         "real": 0.106,
+         "over": 0,
+         "calls": 18
+        },
+        "/obj/machinery/door/firedoor/proc/firedoor_atmos_signature": {
+         "name": "/obj/machinery/door/firedoor/proc/firedoor_atmos_signature",
+         "self": 0.022,
+         "total": 0.106,
+         "real": 0.099,
+         "over": 0,
+         "calls": 1295
+        },
+        "/proc/_checked_send_signal": {
+         "name": "/proc/_checked_send_signal",
+         "self": 0.081,
+         "total": 0.105,
+         "real": 0.133,
+         "over": 0.003,
+         "calls": 42141
+        },
+        "/proc/state_canonicalize": {
+         "name": "/proc/state_canonicalize",
+         "self": 0.02,
+         "total": 0.105,
+         "real": 0.102,
+         "over": 0.018,
+         "calls": 4698
+        },
+        "/datum/pred_node/group/all/first_failure": {
+         "name": "/datum/pred_node/group/all/first_failure",
+         "self": 0.015,
+         "total": 0.105,
+         "real": 0.107,
+         "over": 0,
+         "calls": 1539
+        },
+        "/obj/proc/deconstruct": {
+         "name": "/obj/proc/deconstruct",
+         "self": 0,
+         "total": 0.102,
+         "real": 0.107,
+         "over": 0,
+         "calls": 96
+        },
+        "/obj/atom_destruction": {
+         "name": "/obj/atom_destruction",
+         "self": 0,
+         "total": 0.102,
+         "real": 0.107,
+         "over": 0,
+         "calls": 96
+        },
+        "/datum/state_context/proc/list_matches_baseline": {
+         "name": "/datum/state_context/proc/list_matches_baseline",
+         "self": 0.001,
+         "total": 0.101,
+         "real": 0.089,
+         "over": 0.001,
+         "calls": 309
+        },
+        "/proc/om_watch_dispatch_gas": {
+         "name": "/proc/om_watch_dispatch_gas",
+         "self": 0.012,
+         "total": 0.099,
+         "real": 0.098,
+         "over": 0,
+         "calls": 898
+        },
+        "/datum/ledger/proc/latent_add": {
+         "name": "/datum/ledger/proc/latent_add",
+         "self": 0.007,
+         "total": 0.098,
+         "real": 0.098,
+         "over": 0.004,
+         "calls": 153
+        },
+        "/obj/machinery/door/firedoor/proc/hibernate_until_air_changes": {
+         "name": "/obj/machinery/door/firedoor/proc/hibernate_until_air_changes",
+         "self": 0.009,
+         "total": 0.095,
+         "real": 0.102,
+         "over": 0,
+         "calls": 112
+        },
+        "/obj/item/material_totals": {
+         "name": "/obj/item/material_totals",
+         "self": 0.007,
+         "total": 0.095,
+         "real": 0.081,
+         "over": 0.002,
+         "calls": 4969
+        },
+        "/proc/dq_latent_resolve": {
+         "name": "/proc/dq_latent_resolve",
+         "self": 0.002,
+         "total": 0.093,
+         "real": 0.093,
+         "over": 0.001,
+         "calls": 204
+        },
+        "/obj/structure/table/take_damage": {
+         "name": "/obj/structure/table/take_damage",
+         "self": 0.001,
+         "total": 0.093,
+         "real": 0.088,
+         "over": 0,
+         "calls": 129
+        },
+        "/turf/simulated/wall/proc/update_connections": {
+         "name": "/turf/simulated/wall/proc/update_connections",
+         "self": 0.014,
+         "total": 0.092,
+         "real": 0.084,
+         "over": 0,
+         "calls": 259
+        },
+        "/obj/machinery/alarm/proc/apply_danger_level": {
+         "name": "/obj/machinery/alarm/proc/apply_danger_level",
+         "self": 0,
+         "total": 0.091,
+         "real": 0.088,
+         "over": 0,
+         "calls": 18
+        },
+        "/proc/om_watch_arm_value": {
+         "name": "/proc/om_watch_arm_value",
+         "self": 0.007,
+         "total": 0.09,
+         "real": 0.107,
+         "over": 0,
+         "calls": 626
+        },
+        "/turf/simulated/Initialize": {
+         "name": "/turf/simulated/Initialize",
+         "self": 0.002,
+         "total": 0.088,
+         "real": 0.085,
+         "over": 0,
+         "calls": 270
+        },
+        "/obj/proc/material_for_role": {
+         "name": "/obj/proc/material_for_role",
+         "self": 0.026,
+         "total": 0.087,
+         "real": 0.065,
+         "over": 0,
+         "calls": 10536
+        },
+        "/datum/material_service/New": {
+         "name": "/datum/material_service/New",
+         "self": 0.007,
+         "total": 0.085,
+         "real": 0.085,
+         "over": 0,
+         "calls": 774
+        },
+        "/datum/ledger/proc/latent_set_count": {
+         "name": "/datum/ledger/proc/latent_set_count",
+         "self": 0.004,
+         "total": 0.083,
+         "real": 0.083,
+         "over": 0.001,
+         "calls": 212
+        },
+        "/datum/state_context/proc/list_baseline_of": {
+         "name": "/datum/state_context/proc/list_baseline_of",
+         "self": 0,
+         "total": 0.083,
+         "real": 0.067,
+         "over": 0,
+         "calls": 303
+        },
+        "/datum/state_context/proc/pristine_lists": {
+         "name": "/datum/state_context/proc/pristine_lists",
+         "self": 0.015,
+         "total": 0.083,
+         "real": 0.066,
+         "over": 0.012,
+         "calls": 62
+        }
+       }
+      }
+     },
+     "phases": [
+      {
+       "name": "before_explosion",
+       "world_time": 364.25,
+       "realtime": 850853,
+       "process": {
+        "t": 162.713,
+        "private_mb": 2236.6,
+        "working_set_mb": 2113.2,
+        "cpu_seconds": 187.48
+       },
+       "rust": {
+        "alloc.core.current_bytes": 0,
+        "alloc.core.peak_bytes": 0,
+        "alloc.devices.current_bytes": 0,
+        "alloc.devices.peak_bytes": 0,
+        "alloc.ffi.current_bytes": 0,
+        "alloc.ffi.peak_bytes": 0,
+        "alloc.gas.current_bytes": 0,
+        "alloc.gas.peak_bytes": 0,
+        "alloc.heap.current_bytes": 714377000,
+        "alloc.heap.peak_bytes": 1927190000,
+        "alloc.heat.current_bytes": 0,
+        "alloc.heat.peak_bytes": 0,
+        "alloc.layout.current_bytes": 0,
+        "alloc.layout.peak_bytes": 0,
+        "alloc.power.current_bytes": 0,
+        "alloc.power.peak_bytes": 0,
+        "alloc.total.current_bytes": 714345000,
+        "alloc.untagged.current_bytes": 714345000,
+        "alloc.untagged.peak_bytes": 1927190000,
+        "jobs.pending": 0,
+        "reactor.backlog.background": 0,
+        "reactor.backlog.normal": 0,
+        "reactor.backlog.urgent": 0,
+        "reactor.crossings_fired": 0,
+        "reactor.keys": 22287,
+        "reactor.models": 0,
+        "reactor.publications": 1872,
+        "reactor.step_us": 161.2,
+        "reactor.subscriptions": 77531,
+        "reactor.timers_fired": 315,
+        "reactor.timers_pending": 97,
+        "reactor.wakes_deferred": 0,
+        "reactor.wakes_delivered": 3556,
+        "reactor.wakes_merged": 34,
+        "reactor.wakes_received": 3590,
+        "reactor.watch_wakes": 0
+       }
+      },
+      {
+       "name": "after_explosion",
+       "world_time": 545,
+       "realtime": 851044,
+       "process": {
+        "t": 181.975,
+        "private_mb": 2232.9,
+        "working_set_mb": 2113,
+        "cpu_seconds": 233.44
+       },
+       "rust": {
+        "alloc.core.current_bytes": 0,
+        "alloc.core.peak_bytes": 0,
+        "alloc.devices.current_bytes": 0,
+        "alloc.devices.peak_bytes": 0,
+        "alloc.ffi.current_bytes": 0,
+        "alloc.ffi.peak_bytes": 0,
+        "alloc.gas.current_bytes": 0,
+        "alloc.gas.peak_bytes": 0,
+        "alloc.heap.current_bytes": 677680000,
+        "alloc.heap.peak_bytes": 1927190000,
+        "alloc.heat.current_bytes": 0,
+        "alloc.heat.peak_bytes": 0,
+        "alloc.layout.current_bytes": 0,
+        "alloc.layout.peak_bytes": 0,
+        "alloc.power.current_bytes": 0,
+        "alloc.power.peak_bytes": 0,
+        "alloc.total.current_bytes": 677680000,
+        "alloc.untagged.current_bytes": 677680000,
+        "alloc.untagged.peak_bytes": 1927190000,
+        "jobs.pending": 0,
+        "reactor.backlog.background": 0,
+        "reactor.backlog.normal": 0,
+        "reactor.backlog.urgent": 0,
+        "reactor.crossings_fired": 0,
+        "reactor.keys": 22457,
+        "reactor.models": 0,
+        "reactor.publications": 3348,
+        "reactor.step_us": 150.8,
+        "reactor.subscriptions": 77924,
+        "reactor.timers_fired": 560,
+        "reactor.timers_pending": 116,
+        "reactor.wakes_deferred": 0,
+        "reactor.wakes_delivered": 5332,
+        "reactor.wakes_merged": 50,
+        "reactor.wakes_received": 5382,
+        "reactor.watch_wakes": 0
+       }
+      }
+     ]
+    }
+   },
+   "iteration": 1,
+   "warmup": false,
+   "process": {
+    "samples": 196,
+    "peak_private_mb": 3677.3,
+    "final_private_mb": 76.2,
+    "peak_working_set_mb": 3482.8,
+    "cpu_seconds": 253.19,
+    "wall_seconds": 198.333
+   },
+   "process_samples": [
+    {
+     "t": 0.5,
+     "private_mb": 34.3,
+     "working_set_mb": 28.2,
+     "cpu_seconds": 0.36
+    },
+    {
+     "t": 1.509,
+     "private_mb": 34.3,
+     "working_set_mb": 49.2,
+     "cpu_seconds": 1.45
+    },
+    {
+     "t": 2.525,
+     "private_mb": 59.4,
+     "working_set_mb": 73.8,
+     "cpu_seconds": 2.41
+    },
+    {
+     "t": 3.545,
+     "private_mb": 174.1,
+     "working_set_mb": 187.1,
+     "cpu_seconds": 3.39
+    },
+    {
+     "t": 4.558,
+     "private_mb": 178.1,
+     "working_set_mb": 191,
+     "cpu_seconds": 4.41
+    },
+    {
+     "t": 5.567,
+     "private_mb": 218.1,
+     "working_set_mb": 231,
+     "cpu_seconds": 5.31
+    },
+    {
+     "t": 6.58,
+     "private_mb": 287.4,
+     "working_set_mb": 300.2,
+     "cpu_seconds": 6.31
+    },
+    {
+     "t": 7.588,
+     "private_mb": 360.5,
+     "working_set_mb": 373.1,
+     "cpu_seconds": 7.28
+    },
+    {
+     "t": 8.598,
+     "private_mb": 433.8,
+     "working_set_mb": 446.3,
+     "cpu_seconds": 8.28
+    },
+    {
+     "t": 9.612,
+     "private_mb": 505.5,
+     "working_set_mb": 517.8,
+     "cpu_seconds": 9.28
+    },
+    {
+     "t": 10.627,
+     "private_mb": 575,
+     "working_set_mb": 587.2,
+     "cpu_seconds": 10.28
+    },
+    {
+     "t": 11.639,
+     "private_mb": 651,
+     "working_set_mb": 663,
+     "cpu_seconds": 11.27
+    },
+    {
+     "t": 12.653,
+     "private_mb": 696.9,
+     "working_set_mb": 710.8,
+     "cpu_seconds": 12.23
+    },
+    {
+     "t": 13.664,
+     "private_mb": 720.9,
+     "working_set_mb": 734.8,
+     "cpu_seconds": 13.22
+    },
+    {
+     "t": 14.672,
+     "private_mb": 738.1,
+     "working_set_mb": 751.9,
+     "cpu_seconds": 14.19
+    },
+    {
+     "t": 15.691,
+     "private_mb": 739.7,
+     "working_set_mb": 753.2,
+     "cpu_seconds": 14.3
+    },
+    {
+     "t": 16.713,
+     "private_mb": 758.6,
+     "working_set_mb": 769.9,
+     "cpu_seconds": 15.25
+    },
+    {
+     "t": 17.718,
+     "private_mb": 762.6,
+     "working_set_mb": 776.3,
+     "cpu_seconds": 16.22
+    },
+    {
+     "t": 18.73,
+     "private_mb": 767.7,
+     "working_set_mb": 781.2,
+     "cpu_seconds": 17.13
+    },
+    {
+     "t": 19.748,
+     "private_mb": 771.1,
+     "working_set_mb": 784.5,
+     "cpu_seconds": 18.11
+    },
+    {
+     "t": 20.761,
+     "private_mb": 777,
+     "working_set_mb": 790.3,
+     "cpu_seconds": 19.11
+    },
+    {
+     "t": 21.769,
+     "private_mb": 781.7,
+     "working_set_mb": 794.8,
+     "cpu_seconds": 20.13
+    },
+    {
+     "t": 22.784,
+     "private_mb": 788.1,
+     "working_set_mb": 800.7,
+     "cpu_seconds": 21.13
+    },
+    {
+     "t": 23.798,
+     "private_mb": 798.2,
+     "working_set_mb": 810.8,
+     "cpu_seconds": 22.13
+    },
+    {
+     "t": 24.811,
+     "private_mb": 798.6,
+     "working_set_mb": 811.3,
+     "cpu_seconds": 23.09
+    },
+    {
+     "t": 25.821,
+     "private_mb": 817.3,
+     "working_set_mb": 829.7,
+     "cpu_seconds": 24.09
+    },
+    {
+     "t": 26.832,
+     "private_mb": 817.4,
+     "working_set_mb": 829.8,
+     "cpu_seconds": 25.11
+    },
+    {
+     "t": 27.846,
+     "private_mb": 817.5,
+     "working_set_mb": 829.9,
+     "cpu_seconds": 26.06
+    },
+    {
+     "t": 28.859,
+     "private_mb": 817.5,
+     "working_set_mb": 830,
+     "cpu_seconds": 27.05
+    },
+    {
+     "t": 29.872,
+     "private_mb": 822.4,
+     "working_set_mb": 834.8,
+     "cpu_seconds": 28.03
+    },
+    {
+     "t": 30.879,
+     "private_mb": 827.1,
+     "working_set_mb": 838.3,
+     "cpu_seconds": 28.98
+    },
+    {
+     "t": 31.895,
+     "private_mb": 833.8,
+     "working_set_mb": 845,
+     "cpu_seconds": 29.97
+    },
+    {
+     "t": 32.905,
+     "private_mb": 837.7,
+     "working_set_mb": 848.8,
+     "cpu_seconds": 30.95
+    },
+    {
+     "t": 33.92,
+     "private_mb": 844.7,
+     "working_set_mb": 855.8,
+     "cpu_seconds": 31.95
+    },
+    {
+     "t": 34.929,
+     "private_mb": 849.2,
+     "working_set_mb": 859.8,
+     "cpu_seconds": 32.97
+    },
+    {
+     "t": 35.941,
+     "private_mb": 852.7,
+     "working_set_mb": 863.5,
+     "cpu_seconds": 33.98
+    },
+    {
+     "t": 36.953,
+     "private_mb": 858.4,
+     "working_set_mb": 869.1,
+     "cpu_seconds": 34.94
+    },
+    {
+     "t": 37.965,
+     "private_mb": 862.7,
+     "working_set_mb": 873.5,
+     "cpu_seconds": 35.91
+    },
+    {
+     "t": 38.98,
+     "private_mb": 868.3,
+     "working_set_mb": 879.1,
+     "cpu_seconds": 36.86
+    },
+    {
+     "t": 39.998,
+     "private_mb": 874.9,
+     "working_set_mb": 885.5,
+     "cpu_seconds": 37.86
+    },
+    {
+     "t": 41.016,
+     "private_mb": 877.8,
+     "working_set_mb": 888.4,
+     "cpu_seconds": 38.84
+    },
+    {
+     "t": 42.022,
+     "private_mb": 879.1,
+     "working_set_mb": 889.9,
+     "cpu_seconds": 39.78
+    },
+    {
+     "t": 43.035,
+     "private_mb": 885,
+     "working_set_mb": 895.8,
+     "cpu_seconds": 40.8
+    },
+    {
+     "t": 44.048,
+     "private_mb": 889.8,
+     "working_set_mb": 900.3,
+     "cpu_seconds": 41.81
+    },
+    {
+     "t": 45.061,
+     "private_mb": 895.4,
+     "working_set_mb": 906,
+     "cpu_seconds": 42.77
+    },
+    {
+     "t": 46.083,
+     "private_mb": 900.3,
+     "working_set_mb": 908.8,
+     "cpu_seconds": 43.72
+    },
+    {
+     "t": 47.091,
+     "private_mb": 906.4,
+     "working_set_mb": 914.9,
+     "cpu_seconds": 44.7
+    },
+    {
+     "t": 48.107,
+     "private_mb": 910.7,
+     "working_set_mb": 919,
+     "cpu_seconds": 45.72
+    },
+    {
+     "t": 49.12,
+     "private_mb": 918.6,
+     "working_set_mb": 926.9,
+     "cpu_seconds": 46.73
+    },
+    {
+     "t": 50.126,
+     "private_mb": 920.7,
+     "working_set_mb": 929,
+     "cpu_seconds": 47.75
+    },
+    {
+     "t": 51.135,
+     "private_mb": 923.6,
+     "working_set_mb": 931.9,
+     "cpu_seconds": 48.73
+    },
+    {
+     "t": 52.148,
+     "private_mb": 926.3,
+     "working_set_mb": 934.3,
+     "cpu_seconds": 49.75
+    },
+    {
+     "t": 53.159,
+     "private_mb": 928.4,
+     "working_set_mb": 936.4,
+     "cpu_seconds": 50.67
+    },
+    {
+     "t": 54.175,
+     "private_mb": 931.1,
+     "working_set_mb": 939,
+     "cpu_seconds": 51.67
+    },
+    {
+     "t": 55.188,
+     "private_mb": 933.5,
+     "working_set_mb": 941.5,
+     "cpu_seconds": 52.63
+    },
+    {
+     "t": 56.211,
+     "private_mb": 936.2,
+     "working_set_mb": 943.3,
+     "cpu_seconds": 53.5
+    },
+    {
+     "t": 57.221,
+     "private_mb": 938,
+     "working_set_mb": 945.5,
+     "cpu_seconds": 54.47
+    },
+    {
+     "t": 58.238,
+     "private_mb": 939.6,
+     "working_set_mb": 947.3,
+     "cpu_seconds": 55.44
+    },
+    {
+     "t": 59.251,
+     "private_mb": 941.9,
+     "working_set_mb": 949.6,
+     "cpu_seconds": 56.42
+    },
+    {
+     "t": 60.265,
+     "private_mb": 944.2,
+     "working_set_mb": 952,
+     "cpu_seconds": 57.38
+    },
+    {
+     "t": 61.274,
+     "private_mb": 949.1,
+     "working_set_mb": 955.3,
+     "cpu_seconds": 58.34
+    },
+    {
+     "t": 62.293,
+     "private_mb": 951,
+     "working_set_mb": 957.7,
+     "cpu_seconds": 59.3
+    },
+    {
+     "t": 63.309,
+     "private_mb": 953.3,
+     "working_set_mb": 960.2,
+     "cpu_seconds": 60.25
+    },
+    {
+     "t": 64.318,
+     "private_mb": 955.4,
+     "working_set_mb": 962.3,
+     "cpu_seconds": 61.16
+    },
+    {
+     "t": 65.335,
+     "private_mb": 957.2,
+     "working_set_mb": 964.3,
+     "cpu_seconds": 62.16
+    },
+    {
+     "t": 66.346,
+     "private_mb": 959.2,
+     "working_set_mb": 966.4,
+     "cpu_seconds": 63.16
+    },
+    {
+     "t": 67.354,
+     "private_mb": 961.2,
+     "working_set_mb": 968.5,
+     "cpu_seconds": 64.13
+    },
+    {
+     "t": 68.369,
+     "private_mb": 967.2,
+     "working_set_mb": 970.5,
+     "cpu_seconds": 65.08
+    },
+    {
+     "t": 69.38,
+     "private_mb": 970.1,
+     "working_set_mb": 973.4,
+     "cpu_seconds": 66.05
+    },
+    {
+     "t": 70.402,
+     "private_mb": 972.6,
+     "working_set_mb": 975.9,
+     "cpu_seconds": 67.05
+    },
+    {
+     "t": 71.422,
+     "private_mb": 975.2,
+     "working_set_mb": 978.6,
+     "cpu_seconds": 68.02
+    },
+    {
+     "t": 72.432,
+     "private_mb": 978.3,
+     "working_set_mb": 981.9,
+     "cpu_seconds": 69
+    },
+    {
+     "t": 73.447,
+     "private_mb": 981.5,
+     "working_set_mb": 985.4,
+     "cpu_seconds": 69.94
+    },
+    {
+     "t": 74.455,
+     "private_mb": 985.2,
+     "working_set_mb": 989,
+     "cpu_seconds": 70.92
+    },
+    {
+     "t": 75.467,
+     "private_mb": 989.3,
+     "working_set_mb": 993.8,
+     "cpu_seconds": 71.89
+    },
+    {
+     "t": 76.479,
+     "private_mb": 992.9,
+     "working_set_mb": 996,
+     "cpu_seconds": 72.89
+    },
+    {
+     "t": 77.487,
+     "private_mb": 993.6,
+     "working_set_mb": 998.3,
+     "cpu_seconds": 73.86
+    },
+    {
+     "t": 78.502,
+     "private_mb": 997.9,
+     "working_set_mb": 1002.4,
+     "cpu_seconds": 74.84
+    },
+    {
+     "t": 79.514,
+     "private_mb": 1002.2,
+     "working_set_mb": 1006.6,
+     "cpu_seconds": 75.8
+    },
+    {
+     "t": 80.526,
+     "private_mb": 1008.4,
+     "working_set_mb": 1012.8,
+     "cpu_seconds": 76.8
+    },
+    {
+     "t": 81.541,
+     "private_mb": 1012.8,
+     "working_set_mb": 1017.1,
+     "cpu_seconds": 77.77
+    },
+    {
+     "t": 82.558,
+     "private_mb": 1014.3,
+     "working_set_mb": 1018.6,
+     "cpu_seconds": 78.72
+    },
+    {
+     "t": 83.576,
+     "private_mb": 1015.3,
+     "working_set_mb": 1019.6,
+     "cpu_seconds": 79.67
+    },
+    {
+     "t": 84.588,
+     "private_mb": 1018.6,
+     "working_set_mb": 1022.8,
+     "cpu_seconds": 80.64
+    },
+    {
+     "t": 85.6,
+     "private_mb": 1021.3,
+     "working_set_mb": 1025.3,
+     "cpu_seconds": 81.64
+    },
+    {
+     "t": 86.618,
+     "private_mb": 1068.8,
+     "working_set_mb": 1063.1,
+     "cpu_seconds": 82.61
+    },
+    {
+     "t": 87.637,
+     "private_mb": 1101.6,
+     "working_set_mb": 1093,
+     "cpu_seconds": 83.63
+    },
+    {
+     "t": 88.656,
+     "private_mb": 1158.4,
+     "working_set_mb": 1140.5,
+     "cpu_seconds": 84.64
+    },
+    {
+     "t": 89.671,
+     "private_mb": 1170.4,
+     "working_set_mb": 1158.3,
+     "cpu_seconds": 85.66
+    },
+    {
+     "t": 90.681,
+     "private_mb": 1284.3,
+     "working_set_mb": 1235.6,
+     "cpu_seconds": 86.63
+    },
+    {
+     "t": 91.696,
+     "private_mb": 1284.8,
+     "working_set_mb": 1254.5,
+     "cpu_seconds": 87.59
+    },
+    {
+     "t": 92.71,
+     "private_mb": 1305.3,
+     "working_set_mb": 1255.2,
+     "cpu_seconds": 88.59
+    },
+    {
+     "t": 93.716,
+     "private_mb": 1305.9,
+     "working_set_mb": 1255.8,
+     "cpu_seconds": 89.58
+    },
+    {
+     "t": 94.735,
+     "private_mb": 1307.2,
+     "working_set_mb": 1257,
+     "cpu_seconds": 90.59
+    },
+    {
+     "t": 95.752,
+     "private_mb": 1307.8,
+     "working_set_mb": 1257.6,
+     "cpu_seconds": 91.59
+    },
+    {
+     "t": 96.76,
+     "private_mb": 1308.6,
+     "working_set_mb": 1258.4,
+     "cpu_seconds": 92.58
+    },
+    {
+     "t": 97.771,
+     "private_mb": 1309.4,
+     "working_set_mb": 1259.1,
+     "cpu_seconds": 93.59
+    },
+    {
+     "t": 98.786,
+     "private_mb": 1309.8,
+     "working_set_mb": 1259.5,
+     "cpu_seconds": 94.56
+    },
+    {
+     "t": 99.798,
+     "private_mb": 1310.3,
+     "working_set_mb": 1260,
+     "cpu_seconds": 95.58
+    },
+    {
+     "t": 100.81,
+     "private_mb": 1310.5,
+     "working_set_mb": 1260.3,
+     "cpu_seconds": 96.55
+    },
+    {
+     "t": 101.823,
+     "private_mb": 1310.5,
+     "working_set_mb": 1260.3,
+     "cpu_seconds": 97.55
+    },
+    {
+     "t": 102.842,
+     "private_mb": 1310.5,
+     "working_set_mb": 1260.3,
+     "cpu_seconds": 98.52
+    },
+    {
+     "t": 103.856,
+     "private_mb": 1310.5,
+     "working_set_mb": 1260.3,
+     "cpu_seconds": 99.53
+    },
+    {
+     "t": 104.873,
+     "private_mb": 1310.8,
+     "working_set_mb": 1260.5,
+     "cpu_seconds": 100.36
+    },
+    {
+     "t": 105.894,
+     "private_mb": 1311,
+     "working_set_mb": 1260.6,
+     "cpu_seconds": 101.39
+    },
+    {
+     "t": 106.92,
+     "private_mb": 1311.2,
+     "working_set_mb": 1260.9,
+     "cpu_seconds": 102.28
+    },
+    {
+     "t": 107.936,
+     "private_mb": 1311.5,
+     "working_set_mb": 1261.2,
+     "cpu_seconds": 103.13
+    },
+    {
+     "t": 108.956,
+     "private_mb": 1312.3,
+     "working_set_mb": 1262,
+     "cpu_seconds": 104
+    },
+    {
+     "t": 109.963,
+     "private_mb": 1312.3,
+     "working_set_mb": 1262,
+     "cpu_seconds": 104.89
+    },
+    {
+     "t": 110.982,
+     "private_mb": 1312.3,
+     "working_set_mb": 1262,
+     "cpu_seconds": 105.83
+    },
+    {
+     "t": 111.995,
+     "private_mb": 1312.3,
+     "working_set_mb": 1262,
+     "cpu_seconds": 106.73
+    },
+    {
+     "t": 113.019,
+     "private_mb": 1312.3,
+     "working_set_mb": 1262,
+     "cpu_seconds": 107.67
+    },
+    {
+     "t": 114.032,
+     "private_mb": 1312.6,
+     "working_set_mb": 1262.2,
+     "cpu_seconds": 108.59
+    },
+    {
+     "t": 115.051,
+     "private_mb": 1312.6,
+     "working_set_mb": 1262.2,
+     "cpu_seconds": 109.52
+    },
+    {
+     "t": 116.066,
+     "private_mb": 1312.6,
+     "working_set_mb": 1262.2,
+     "cpu_seconds": 110.5
+    },
+    {
+     "t": 117.081,
+     "private_mb": 1312.6,
+     "working_set_mb": 1262.2,
+     "cpu_seconds": 111.45
+    },
+    {
+     "t": 118.101,
+     "private_mb": 1313.2,
+     "working_set_mb": 1262.9,
+     "cpu_seconds": 112.44
+    },
+    {
+     "t": 119.109,
+     "private_mb": 1313.5,
+     "working_set_mb": 1263.2,
+     "cpu_seconds": 113.41
+    },
+    {
+     "t": 120.118,
+     "private_mb": 1316.6,
+     "working_set_mb": 1266.3,
+     "cpu_seconds": 114.36
+    },
+    {
+     "t": 121.141,
+     "private_mb": 1333.5,
+     "working_set_mb": 1282.5,
+     "cpu_seconds": 115.34
+    },
+    {
+     "t": 122.155,
+     "private_mb": 1334.2,
+     "working_set_mb": 1282.9,
+     "cpu_seconds": 116.31
+    },
+    {
+     "t": 123.174,
+     "private_mb": 1342.7,
+     "working_set_mb": 1291.5,
+     "cpu_seconds": 117.27
+    },
+    {
+     "t": 124.189,
+     "private_mb": 1350.9,
+     "working_set_mb": 1299.4,
+     "cpu_seconds": 118.22
+    },
+    {
+     "t": 125.207,
+     "private_mb": 1355.1,
+     "working_set_mb": 1303.6,
+     "cpu_seconds": 119.19
+    },
+    {
+     "t": 126.228,
+     "private_mb": 1359.6,
+     "working_set_mb": 1307.9,
+     "cpu_seconds": 120.17
+    },
+    {
+     "t": 127.246,
+     "private_mb": 1376.8,
+     "working_set_mb": 1324.8,
+     "cpu_seconds": 121.14
+    },
+    {
+     "t": 128.256,
+     "private_mb": 1386.8,
+     "working_set_mb": 1334.7,
+     "cpu_seconds": 122.11
+    },
+    {
+     "t": 129.267,
+     "private_mb": 1409.3,
+     "working_set_mb": 1354.9,
+     "cpu_seconds": 123.05
+    },
+    {
+     "t": 130.278,
+     "private_mb": 1403.2,
+     "working_set_mb": 1350.8,
+     "cpu_seconds": 123.69
+    },
+    {
+     "t": 131.302,
+     "private_mb": 1411.3,
+     "working_set_mb": 1358.3,
+     "cpu_seconds": 124.58
+    },
+    {
+     "t": 132.308,
+     "private_mb": 1516.1,
+     "working_set_mb": 1460.6,
+     "cpu_seconds": 125.86
+    },
+    {
+     "t": 133.321,
+     "private_mb": 2245.1,
+     "working_set_mb": 2084.2,
+     "cpu_seconds": 129
+    },
+    {
+     "t": 134.333,
+     "private_mb": 2808.9,
+     "working_set_mb": 2635.3,
+     "cpu_seconds": 132.2
+    },
+    {
+     "t": 135.345,
+     "private_mb": 2811.6,
+     "working_set_mb": 2636.6,
+     "cpu_seconds": 134.73
+    },
+    {
+     "t": 136.353,
+     "private_mb": 3002.3,
+     "working_set_mb": 2822.8,
+     "cpu_seconds": 137.03
+    },
+    {
+     "t": 137.363,
+     "private_mb": 3138.9,
+     "working_set_mb": 2942,
+     "cpu_seconds": 138.75
+    },
+    {
+     "t": 138.373,
+     "private_mb": 2696.9,
+     "working_set_mb": 2470.5,
+     "cpu_seconds": 140.45
+    },
+    {
+     "t": 139.393,
+     "private_mb": 3042.2,
+     "working_set_mb": 2852.3,
+     "cpu_seconds": 142.45
+    },
+    {
+     "t": 140.399,
+     "private_mb": 3201.2,
+     "working_set_mb": 3011.2,
+     "cpu_seconds": 144.48
+    },
+    {
+     "t": 141.408,
+     "private_mb": 3124.7,
+     "working_set_mb": 2899.9,
+     "cpu_seconds": 146.28
+    },
+    {
+     "t": 142.429,
+     "private_mb": 3143.5,
+     "working_set_mb": 2954,
+     "cpu_seconds": 148.06
+    },
+    {
+     "t": 143.451,
+     "private_mb": 3234.9,
+     "working_set_mb": 3045.8,
+     "cpu_seconds": 150.3
+    },
+    {
+     "t": 144.457,
+     "private_mb": 3318.3,
+     "working_set_mb": 3130.5,
+     "cpu_seconds": 152.17
+    },
+    {
+     "t": 145.492,
+     "private_mb": 3383.6,
+     "working_set_mb": 3192.7,
+     "cpu_seconds": 153.89
+    },
+    {
+     "t": 146.491,
+     "private_mb": 3474.6,
+     "working_set_mb": 3281.9,
+     "cpu_seconds": 155.81
+    },
+    {
+     "t": 147.503,
+     "private_mb": 3527.1,
+     "working_set_mb": 3333.2,
+     "cpu_seconds": 157.56
+    },
+    {
+     "t": 148.523,
+     "private_mb": 3677.3,
+     "working_set_mb": 3482.8,
+     "cpu_seconds": 159.34
+    },
+    {
+     "t": 149.531,
+     "private_mb": 3612.1,
+     "working_set_mb": 3421.2,
+     "cpu_seconds": 161.3
+    },
+    {
+     "t": 150.542,
+     "private_mb": 3656.8,
+     "working_set_mb": 3465.8,
+     "cpu_seconds": 163.09
+    },
+    {
+     "t": 151.565,
+     "private_mb": 3470.1,
+     "working_set_mb": 3322.8,
+     "cpu_seconds": 165.42
+    },
+    {
+     "t": 152.577,
+     "private_mb": 3440.7,
+     "working_set_mb": 3365.1,
+     "cpu_seconds": 167.7
+    },
+    {
+     "t": 153.585,
+     "private_mb": 3457.1,
+     "working_set_mb": 3387.6,
+     "cpu_seconds": 170.55
+    },
+    {
+     "t": 154.605,
+     "private_mb": 3435.9,
+     "working_set_mb": 3391.7,
+     "cpu_seconds": 172.48
+    },
+    {
+     "t": 155.615,
+     "private_mb": 3442.3,
+     "working_set_mb": 3393.9,
+     "cpu_seconds": 174.55
+    },
+    {
+     "t": 156.632,
+     "private_mb": 3442.3,
+     "working_set_mb": 3395.6,
+     "cpu_seconds": 176.48
+    },
+    {
+     "t": 157.644,
+     "private_mb": 3440.7,
+     "working_set_mb": 3394.7,
+     "cpu_seconds": 179.02
+    },
+    {
+     "t": 158.653,
+     "private_mb": 3445.9,
+     "working_set_mb": 3393,
+     "cpu_seconds": 180.73
+    },
+    {
+     "t": 159.662,
+     "private_mb": 2813.6,
+     "working_set_mb": 2763.5,
+     "cpu_seconds": 182.33
+    },
+    {
+     "t": 160.683,
+     "private_mb": 2154.2,
+     "working_set_mb": 2060.3,
+     "cpu_seconds": 183.48
+    },
+    {
+     "t": 161.701,
+     "private_mb": 2224,
+     "working_set_mb": 2103.3,
+     "cpu_seconds": 185.55
+    },
+    {
+     "t": 162.713,
+     "private_mb": 2236.6,
+     "working_set_mb": 2113.2,
+     "cpu_seconds": 187.48
+    },
+    {
+     "t": 163.723,
+     "private_mb": 2238.7,
+     "working_set_mb": 2114.2,
+     "cpu_seconds": 189.59
+    },
+    {
+     "t": 164.735,
+     "private_mb": 2235,
+     "working_set_mb": 2112.8,
+     "cpu_seconds": 192.3
+    },
+    {
+     "t": 165.745,
+     "private_mb": 2238.9,
+     "working_set_mb": 2113,
+     "cpu_seconds": 195.08
+    },
+    {
+     "t": 166.756,
+     "private_mb": 2234.9,
+     "working_set_mb": 2112.8,
+     "cpu_seconds": 197.47
+    },
+    {
+     "t": 167.77,
+     "private_mb": 2235.5,
+     "working_set_mb": 2113,
+     "cpu_seconds": 199.69
+    },
+    {
+     "t": 168.799,
+     "private_mb": 2235.6,
+     "working_set_mb": 2115.1,
+     "cpu_seconds": 202.14
+    },
+    {
+     "t": 169.792,
+     "private_mb": 2239.1,
+     "working_set_mb": 2115.3,
+     "cpu_seconds": 204.83
+    },
+    {
+     "t": 170.804,
+     "private_mb": 2235.7,
+     "working_set_mb": 2115.3,
+     "cpu_seconds": 207.59
+    },
+    {
+     "t": 171.831,
+     "private_mb": 2239.2,
+     "working_set_mb": 2115.4,
+     "cpu_seconds": 210.16
+    },
+    {
+     "t": 172.847,
+     "private_mb": 2239.2,
+     "working_set_mb": 2115.5,
+     "cpu_seconds": 212.28
+    },
+    {
+     "t": 173.857,
+     "private_mb": 2236.1,
+     "working_set_mb": 2115.9,
+     "cpu_seconds": 214.94
+    },
+    {
+     "t": 174.869,
+     "private_mb": 2236.1,
+     "working_set_mb": 2114.3,
+     "cpu_seconds": 217.44
+    },
+    {
+     "t": 175.879,
+     "private_mb": 2239.6,
+     "working_set_mb": 2114.4,
+     "cpu_seconds": 219.88
+    },
+    {
+     "t": 176.961,
+     "private_mb": 2236.1,
+     "working_set_mb": 2114.5,
+     "cpu_seconds": 222.73
+    },
+    {
+     "t": 177.931,
+     "private_mb": 2236.2,
+     "working_set_mb": 2114.5,
+     "cpu_seconds": 224.61
+    },
+    {
+     "t": 178.942,
+     "private_mb": 2234.6,
+     "working_set_mb": 2112.9,
+     "cpu_seconds": 226.8
+    },
+    {
+     "t": 179.954,
+     "private_mb": 2234.6,
+     "working_set_mb": 2113,
+     "cpu_seconds": 229.13
+    },
+    {
+     "t": 180.966,
+     "private_mb": 2234.6,
+     "working_set_mb": 2113.1,
+     "cpu_seconds": 231.23
+    },
+    {
+     "t": 181.975,
+     "private_mb": 2232.9,
+     "working_set_mb": 2113,
+     "cpu_seconds": 233.44
+    },
+    {
+     "t": 182.99,
+     "private_mb": 2233.8,
+     "working_set_mb": 2114,
+     "cpu_seconds": 235.11
+    },
+    {
+     "t": 184.004,
+     "private_mb": 2235.9,
+     "working_set_mb": 2114.6,
+     "cpu_seconds": 237.58
+    },
+    {
+     "t": 185.028,
+     "private_mb": 2235.9,
+     "working_set_mb": 2114.6,
+     "cpu_seconds": 239.08
+    },
+    {
+     "t": 186.039,
+     "private_mb": 2237.7,
+     "working_set_mb": 2116.4,
+     "cpu_seconds": 240.7
+    },
+    {
+     "t": 187.061,
+     "private_mb": 2236,
+     "working_set_mb": 2114.7,
+     "cpu_seconds": 242.14
+    },
+    {
+     "t": 188.074,
+     "private_mb": 2234.3,
+     "working_set_mb": 2114.7,
+     "cpu_seconds": 243.67
+    },
+    {
+     "t": 189.08,
+     "private_mb": 2235.3,
+     "working_set_mb": 2116.2,
+     "cpu_seconds": 245.2
+    },
+    {
+     "t": 190.087,
+     "private_mb": 2235.3,
+     "working_set_mb": 2116.2,
+     "cpu_seconds": 246.2
+    },
+    {
+     "t": 191.109,
+     "private_mb": 2235.3,
+     "working_set_mb": 2116.2,
+     "cpu_seconds": 247.19
+    },
+    {
+     "t": 192.123,
+     "private_mb": 2235.3,
+     "working_set_mb": 2116.2,
+     "cpu_seconds": 248.17
+    },
+    {
+     "t": 193.135,
+     "private_mb": 2012.9,
+     "working_set_mb": 1995.7,
+     "cpu_seconds": 249.17
+    },
+    {
+     "t": 194.149,
+     "private_mb": 1709.1,
+     "working_set_mb": 1694.1,
+     "cpu_seconds": 250.17
+    },
+    {
+     "t": 195.164,
+     "private_mb": 1427.3,
+     "working_set_mb": 1408.6,
+     "cpu_seconds": 251.14
+    },
+    {
+     "t": 196.176,
+     "private_mb": 1139.6,
+     "working_set_mb": 1120.5,
+     "cpu_seconds": 252.11
+    },
+    {
+     "t": 197.191,
+     "private_mb": 147.4,
+     "working_set_mb": 154.1,
+     "cpu_seconds": 253.11
+    },
+    {
+     "t": 198.194,
+     "private_mb": 76.2,
+     "working_set_mb": 83.8,
+     "cpu_seconds": 253.19
+    }
+   ],
+   "profiles": [
+    "data/bench/profiles/20260926T233521_7a33a8f24e_boot-perf-explosion-profile/iteration1/profiler-50.json",
+    "data/bench/profiles/20260926T233521_7a33a8f24e_boot-perf-explosion-profile/iteration1/sendmaps-50.json"
+   ]
+  }
+ ],
+ "summary": {
+  "process": {
+   "peak_private_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 3677.3,
+    "mean": 3677.3,
+    "min": 3677.3,
+    "max": 3677.3,
+    "stdev": 0,
+    "values": [
+     3677.3
+    ]
+   },
+   "final_private_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 76.2,
+    "mean": 76.2,
+    "min": 76.2,
+    "max": 76.2,
+    "stdev": 0,
+    "values": [
+     76.2
+    ]
+   },
+   "cpu_seconds": {
+    "unit": "s",
+    "better": "lower",
+    "n": 1,
+    "median": 253.19,
+    "mean": 253.19,
+    "min": 253.19,
+    "max": 253.19,
+    "stdev": 0,
+    "values": [
+     253.19
+    ]
+   },
+   "wall_seconds": {
+    "unit": "s",
+    "better": "lower",
+    "n": 1,
+    "median": 198.333,
+    "mean": 198.333,
+    "min": 198.333,
+    "max": 198.333,
+    "stdev": 0,
+    "values": [
+     198.333
+    ]
+   },
+   "init_seconds": {
+    "unit": "s",
+    "better": "lower",
+    "n": 1,
+    "median": 115.931,
+    "mean": 115.931,
+    "min": 115.931,
+    "max": 115.931,
+    "stdev": 0,
+    "values": [
+     115.931
+    ]
+   },
+   "runtimes": {
+    "unit": "runtimes",
+    "better": "lower",
+    "n": 1,
+    "median": 24,
+    "mean": 24,
+    "min": 24,
+    "max": 24,
+    "stdev": 0,
+    "values": [
+     24
+    ]
+   }
+  },
+  "explosion_dense": {
+   "before_explosion_private_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 2236.6,
+    "mean": 2236.6,
+    "min": 2236.6,
+    "max": 2236.6,
+    "stdev": 0,
+    "values": [
+     2236.6
+    ]
+   },
+   "before_explosion_rust_heap_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 681.283,
+    "mean": 681.283,
+    "min": 681.283,
+    "max": 681.283,
+    "stdev": 0,
+    "values": [
+     681.283
+    ]
+   },
+   "before_explosion_rust_heap_peak_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 1837.91,
+    "mean": 1837.91,
+    "min": 1837.91,
+    "max": 1837.91,
+    "stdev": 0,
+    "values": [
+     1837.91
+    ]
+   },
+   "before_explosion_rust_untagged_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 681.252,
+    "mean": 681.252,
+    "min": 681.252,
+    "max": 681.252,
+    "stdev": 0,
+    "values": [
+     681.252
+    ]
+   },
+   "explosion_seconds": {
+    "unit": "s",
+    "better": "none",
+    "n": 1,
+    "median": 19.05,
+    "mean": 19.05,
+    "min": 19.05,
+    "max": 19.05,
+    "stdev": 0,
+    "values": [
+     19.05
+    ]
+   },
+   "explosion_tick_avg": {
+    "unit": "%",
+    "better": "lower",
+    "n": 1,
+    "median": 79.0203,
+    "mean": 79.0203,
+    "min": 79.0203,
+    "max": 79.0203,
+    "stdev": 0,
+    "values": [
+     79.0203
+    ]
+   },
+   "explosion_tick_p95": {
+    "unit": "%",
+    "better": "lower",
+    "n": 1,
+    "median": 112,
+    "mean": 112,
+    "min": 112,
+    "max": 112,
+    "stdev": 0,
+    "values": [
+     112
+    ]
+   },
+   "explosion_tick_p99": {
+    "unit": "%",
+    "better": "lower",
+    "n": 1,
+    "median": 168,
+    "mean": 168,
+    "min": 168,
+    "max": 168,
+    "stdev": 0,
+    "values": [
+     168
+    ]
+   },
+   "explosion_tick_max": {
+    "unit": "%",
+    "better": "lower",
+    "n": 1,
+    "median": 1006.93,
+    "mean": 1006.93,
+    "min": 1006.93,
+    "max": 1006.93,
+    "stdev": 0,
+    "values": [
+     1006.93
+    ]
+   },
+   "explosion_overruns": {
+    "unit": "ticks",
+    "better": "lower",
+    "n": 1,
+    "median": 51,
+    "mean": 51,
+    "min": 51,
+    "max": 51,
+    "stdev": 0,
+    "values": [
+     51
+    ]
+   },
+   "explosion_overrun_ratio": {
+    "unit": "ratio",
+    "better": "lower",
+    "n": 1,
+    "median": 0.0706371,
+    "mean": 0.0706371,
+    "min": 0.0706371,
+    "max": 0.0706371,
+    "stdev": 0,
+    "values": [
+     0.0706371
+    ]
+   },
+   "explosion_tps": {
+    "unit": "tps",
+    "better": "higher",
+    "n": 1,
+    "median": 37.9849,
+    "mean": 37.9849,
+    "min": 37.9849,
+    "max": 37.9849,
+    "stdev": 0,
+    "values": [
+     37.9849
+    ]
+   },
+   "explosion_ffi_calls": {
+    "unit": "calls",
+    "better": "lower",
+    "n": 1,
+    "median": 40426,
+    "mean": 40426,
+    "min": 40426,
+    "max": 40426,
+    "stdev": 0,
+    "values": [
+     40426
+    ]
+   },
+   "explosion_air_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 1,
+    "median": 442.056,
+    "mean": 442.056,
+    "min": 442.056,
+    "max": 442.056,
+    "stdev": 0,
+    "values": [
+     442.056
+    ]
+   },
+   "explosion_air_ms_per_s": {
+    "unit": "ms/s",
+    "better": "lower",
+    "n": 1,
+    "median": 23.205,
+    "mean": 23.205,
+    "min": 23.205,
+    "max": 23.205,
+    "stdev": 0,
+    "values": [
+     23.205
+    ]
+   },
+   "explosion_machines_ms_per_s": {
+    "unit": "ms/s",
+    "better": "lower",
+    "n": 1,
+    "median": 16.5361,
+    "mean": 16.5361,
+    "min": 16.5361,
+    "max": 16.5361,
+    "stdev": 0,
+    "values": [
+     16.5361
+    ]
+   },
+   "explosion_ffi_calls_per_s": {
+    "unit": "calls/s",
+    "better": "lower",
+    "n": 1,
+    "median": 2122.1,
+    "mean": 2122.1,
+    "min": 2122.1,
+    "max": 2122.1,
+    "stdev": 0,
+    "values": [
+     2122.1
+    ]
+   },
+   "explosion_reactor_wakes": {
+    "unit": "wakes",
+    "better": "lower",
+    "n": 1,
+    "median": 1776,
+    "mean": 1776,
+    "min": 1776,
+    "max": 1776,
+    "stdev": 0,
+    "values": [
+     1776
+    ]
+   },
+   "after_explosion_private_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 2232.9,
+    "mean": 2232.9,
+    "min": 2232.9,
+    "max": 2232.9,
+    "stdev": 0,
+    "values": [
+     2232.9
+    ]
+   },
+   "after_explosion_rust_heap_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 646.286,
+    "mean": 646.286,
+    "min": 646.286,
+    "max": 646.286,
+    "stdev": 0,
+    "values": [
+     646.286
+    ]
+   },
+   "after_explosion_rust_heap_peak_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 1837.91,
+    "mean": 1837.91,
+    "min": 1837.91,
+    "max": 1837.91,
+    "stdev": 0,
+    "values": [
+     1837.91
+    ]
+   },
+   "after_explosion_rust_untagged_mb": {
+    "unit": "MB",
+    "better": "lower",
+    "n": 1,
+    "median": 646.286,
+    "mean": 646.286,
+    "min": 646.286,
+    "max": 646.286,
+    "stdev": 0,
+    "values": [
+     646.286
+    ]
+   },
+   "explosion_resolve_wall_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 1,
+    "median": 17881.2,
+    "mean": 17881.2,
+    "min": 17881.2,
+    "max": 17881.2,
+    "stdev": 0,
+    "values": [
+     17881.2
+    ]
+   },
+   "explosion_lighting_settle_wall_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 1,
+    "median": 6.25,
+    "mean": 6.25,
+    "min": 6.25,
+    "max": 6.25,
+    "stdev": 0,
+    "values": [
+     6.25
+    ]
+   },
+   "explosion_prepare_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 1,
+    "median": 74.7547,
+    "mean": 74.7547,
+    "min": 74.7547,
+    "max": 74.7547,
+    "stdev": 0,
+    "values": [
+     74.7547
+    ]
+   },
+   "explosion_turf_resolve_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 1,
+    "median": 725.787,
+    "mean": 725.787,
+    "min": 725.787,
+    "max": 725.787,
+    "stdev": 0,
+    "values": [
+     725.787
+    ]
+   },
+   "explosion_atom_collect_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 1,
+    "median": 37.8415,
+    "mean": 37.8415,
+    "min": 37.8415,
+    "max": 37.8415,
+    "stdev": 0,
+    "values": [
+     37.8415
+    ]
+   },
+   "explosion_atom_resolve_ms": {
+    "unit": "ms",
+    "better": "lower",
+    "n": 1,
+    "median": 8220.56,
+    "mean": 8220.56,
+    "min": 8220.56,
+    "max": 8220.56,
+    "stdev": 0,
+    "values": [
+     8220.56
+    ]
+   },
+   "explosion_turfs_resolved": {
+    "unit": "turfs",
+    "better": "none",
+    "n": 1,
+    "median": 1926,
+    "mean": 1926,
+    "min": 1926,
+    "max": 1926,
+    "stdev": 0,
+    "values": [
+     1926
+    ]
+   },
+   "explosion_atoms_resolved": {
+    "unit": "atoms",
+    "better": "none",
+    "n": 1,
+    "median": 4021,
+    "mean": 4021,
+    "min": 4021,
+    "max": 4021,
+    "stdev": 0,
+    "values": [
+     4021
+    ]
+   },
+   "explosion_qdels": {
+    "unit": "qdels",
+    "better": "none",
+    "n": 1,
+    "median": 9899,
+    "mean": 9899,
+    "min": 9899,
+    "max": 9899,
+    "stdev": 0,
+    "values": [
+     9899
+    ]
+   }
+  }
+ },
+ "failures": [
+  "iteration 2: the world wrote no benchmark results",
+  "iteration 3: the world wrote no benchmark results"
+ ]
+}

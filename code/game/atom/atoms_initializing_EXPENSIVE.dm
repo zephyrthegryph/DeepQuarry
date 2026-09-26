@@ -14,7 +14,15 @@
 	var/start_tick = world.time
 	#endif
 
+	#ifdef BENCHMARK_DEEP_PROFILE
+	var/bench_depth = benchmark_init_frame_begin()
+	#endif
+
 	var/result = A.Initialize(arglist(arguments))
+
+	#ifdef BENCHMARK_DEEP_PROFILE
+	var/list/bench_init_mark = benchmark_init_frame_mark(bench_depth)
+	#endif
 
 	#ifdef UNIT_TESTS
 	if(start_tick != world.time)
@@ -55,6 +63,10 @@
 			location.ledger?.note_enter(A)
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables
 			created_atoms += A.get_all_contents()
+
+	#ifdef BENCHMARK_DEEP_PROFILE
+	benchmark_init_frame_end(bench_depth, the_type, bench_init_mark)
+	#endif
 
 	return qdeleted || QDELING(A)
 

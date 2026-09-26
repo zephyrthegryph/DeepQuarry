@@ -15,7 +15,14 @@ SUBSYSTEM_DEF(profiler)
 	return msg
 
 /datum/controller/subsystem/profiler/Initialize()
-	if(CONFIG_GET(flag/auto_profile))
+	#ifdef BENCHMARK
+	// `bench --profile`: profile the rest of boot too (Profiler initializes in
+	// INITSTAGE_FIRST, before map load); boot_profile dumps it.
+	var/bench_profile = text2num(world.params?["bench_profile"] || "0")
+	#else
+	var/bench_profile = FALSE
+	#endif
+	if(CONFIG_GET(flag/auto_profile) || bench_profile)
 		StartProfiling()
 	else
 		StopProfiling() //Stop the early start profiler

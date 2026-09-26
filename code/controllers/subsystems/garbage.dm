@@ -434,7 +434,13 @@ SUBSYSTEM_DEF(garbage)
 	// used to be called directly.
 	var/start_time = world.time
 	var/start_tick = world.tick_usage
+	#ifdef BENCHMARK_DEEP_PROFILE
+	var/bench_depth = benchmark_qdel_frame_begin()
+	#endif
 	var/hint = destroy_transaction(to_delete, force, trash)
+	#ifdef BENCHMARK_DEEP_PROFILE
+	benchmark_qdel_frame_end(bench_depth, trash.name, TICK_USAGE_TO_MS(start_tick))
+	#endif
 
 	if(world.time != start_time)
 		trash.slept_destroy++
