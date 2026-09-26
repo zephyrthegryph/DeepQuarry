@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1231 in 988 files. qdel total: 2969 in 1174 files.
+# Destroy total: 1226 in 983 files. qdel total: 2971 in 1177 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -33,7 +33,6 @@ code/ATMOSPHERICS/environmental/LINDA_fire.dm 2
 code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm 1
 code/ATMOSPHERICS/gasmixtures/gas_mixture.dm 1
 code/ATMOSPHERICS/pipes/cap.dm 1
-code/ATMOSPHERICS/pipes/he_pipes.dm 1
 code/ATMOSPHERICS/pipes/manifold.dm 1
 code/ATMOSPHERICS/pipes/manifold4w.dm 1
 code/ATMOSPHERICS/pipes/pipe_base.dm 1
@@ -106,7 +105,6 @@ code/datums/components/materials/machine_shim.dm 1
 code/datums/components/materials/material_container.dm 1
 code/datums/components/materials/remote_materials.dm 1
 code/datums/components/mind_host.dm 1
-code/datums/components/orbiter.dm 1
 code/datums/components/overlay_lighting.dm 1
 code/datums/components/radioactive_exposure.dm 1
 code/datums/components/reagent_hose/connector.dm 1
@@ -283,7 +281,6 @@ code/game/mecha/equipment/tools/powertool.dm 1
 code/game/mecha/equipment/tools/rcd.dm 1
 code/game/mecha/equipment/tools/shield.dm 1
 code/game/mecha/equipment/tools/shield_omni.dm 2
-code/game/mecha/equipment/tools/sleeper.dm 1
 code/game/mecha/mecha.dm 1
 code/game/mecha/mecha_actions.dm 1
 code/game/mecha/space/hoverpod.dm 1
@@ -354,7 +351,6 @@ code/game/objects/items/devices/tvcamera.dm 2
 code/game/objects/items/devices/vacpack.dm 1
 code/game/objects/items/ghost_hunting/trap.dm 1
 code/game/objects/items/ghost_hunting/weapons.dm 1
-code/game/objects/items/leash.dm 1
 code/game/objects/items/poi_items.dm 2
 code/game/objects/items/robobag.dm 1
 code/game/objects/items/shooting_range.dm 1
@@ -680,7 +676,6 @@ code/modules/mob/_modifiers/modifiers.dm 2
 code/modules/mob/dead/observer/observer.dm 1
 code/modules/mob/freelook/ai/eye.dm 1
 code/modules/mob/freelook/ai/update_triggers.dm 1
-code/modules/mob/freelook/eye.dm 1
 code/modules/mob/freelook/update_triggers.dm 3
 code/modules/mob/freelook/visualnet.dm 1
 code/modules/mob/holder.dm 1
@@ -1058,8 +1053,6 @@ code/datums/chat_message.dm 5
 code/datums/cinematics/_cinematic.dm 1
 code/datums/cogbar.dm 4
 code/datums/components/_component.dm 3
-code/datums/components/animations/dizzy.dm 4
-code/datums/components/animations/jittery.dm 4
 code/datums/components/antags/changeling/helpers/absorbed_dna.dm 1
 code/datums/components/antags/changeling/helpers/generic_equip_procs.dm 10
 code/datums/components/antags/changeling/powers/absorb.dm 1
@@ -1081,7 +1074,6 @@ code/datums/components/materials/machine_shim.dm 5
 code/datums/components/materials/material_container.dm 5
 code/datums/components/materials/remote_materials.dm 1
 code/datums/components/mind_host.dm 2
-code/datums/components/orbiter.dm 2
 code/datums/components/overlay_lighting.dm 3
 code/datums/components/radiation_countdown.dm 1
 code/datums/components/radioactive_exposure.dm 1
@@ -1094,6 +1086,7 @@ code/datums/components/sparse_vars/update_on_z.dm 1
 code/datums/components/species/shadekin/powers/dark_maw.dm 6
 code/datums/components/species/shadekin/shadekin.dm 1
 code/datums/components/structures/bluespace_connection.dm 1
+code/datums/components/tethered_item.dm 1
 code/datums/components/traits/crowd_detection.dm 1
 code/datums/components/traits/drippy.dm 1
 code/datums/components/traits/gargoyle.dm 1
@@ -1113,6 +1106,8 @@ code/datums/managed_browsers/feedback_viewer.dm 1
 code/datums/mind.dm 2
 code/datums/modules.dm 1
 code/datums/observation/helpers.dm 1
+code/datums/om/prompt.dm 5
+code/datums/om/relation.dm 2
 code/datums/outfits/costumes/halloween.dm 1
 code/datums/outfits/horror_killers.dm 1
 code/datums/outfits/jobs/command.dm 1
@@ -1517,7 +1512,7 @@ code/modules/admin/game_panel_panel.dm 1
 code/modules/admin/holder2.dm 4
 code/modules/admin/modify_robot.dm 16
 code/modules/admin/permissionedit.dm 25
-code/modules/admin/player_effects.dm 7
+code/modules/admin/player_effects.dm 6
 code/modules/admin/player_notes.dm 1
 code/modules/admin/player_panel_tgui.dm 1
 code/modules/admin/round_status_panel.dm 1
@@ -1547,6 +1542,8 @@ code/modules/asset_cache/assets/preferences.dm 1
 code/modules/asset_cache/assets/spritesheets/vending.dm 1
 code/modules/autowiki/autowiki.dm 1
 code/modules/benchmarks/_benchmark.dm 2
+code/modules/benchmarks/life_sweep.dm 1
+code/modules/benchmarks/om_dispatch.dm 2
 code/modules/benchmarks/scenarios.dm 1
 code/modules/blob/blob.dm 2
 code/modules/blob2/blobs/base_blob.dm 4
@@ -1784,11 +1781,12 @@ code/modules/mob/living/carbon/human/species/xenomorphs/alien_powers.dm 1
 code/modules/mob/living/carbon/human/update_icons.dm 11
 code/modules/mob/living/carbon/resist.dm 1
 code/modules/mob/living/inventory.dm 3
+code/modules/mob/living/life/statuses.dm 2
 code/modules/mob/living/living.dm 4
 code/modules/mob/living/living_defense.dm 1
 code/modules/mob/living/logout.dm 2
 code/modules/mob/living/say.dm 1
-code/modules/mob/living/silicon/ai/ai.dm 7
+code/modules/mob/living/silicon/ai/ai.dm 8
 code/modules/mob/living/silicon/ai/malf.dm 1
 code/modules/mob/living/silicon/ai/multicam.dm 5
 code/modules/mob/living/silicon/pai/death.dm 2
@@ -1993,7 +1991,7 @@ code/modules/power/smes_construction.dm 2
 code/modules/power/solar.dm 5
 code/modules/power/supermatter/supermatter.dm 4
 code/modules/power/tesla/coil.dm 1
-code/modules/power/tesla/energy_ball.dm 4
+code/modules/power/tesla/energy_ball.dm 3
 code/modules/power/tesla/tesla_act.dm 5
 code/modules/power/tracker.dm 1
 code/modules/power/turbine.dm 1

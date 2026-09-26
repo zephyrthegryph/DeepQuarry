@@ -260,15 +260,15 @@ the entity's run order sees changes raised earlier in the same run.
 A bucketed wheel of `(rec, behaviour id, generation, due)` entries, one
 decisecond per bucket, 1024 buckets. No datum per timer, no signal, no FFI.
 
-- `om_after(E, delay, B, sub = 0)` calls `B.on_deadline(E)` after `delay`
+- `om_deadline(E, delay, B, sub = 0)` calls `B.on_deadline(E)` after `delay`
   deciseconds. One deadline per (entity, behaviour, sub-key); calling again
   replaces it. `om_cancel_after(E, B, sub)`, `om_cancel_all_after(E, B)`,
   `om_deadline_pending(E, B, sub)`. The key is `bid + sub * OM_DL_SUB`, so firing
   one decodes it with no search: sub 0 is `on_deadline`, `OM_DL_THROTTLE` a
   `min_interval` wake, `OM_DL_STAGE + n` a pipeline stage's rewake
   (`on_keyed_deadline`).
-- `om_after(E, delay, proc, args...)` (a proc, not a behaviour, as the third argument)
-  is the one-shot call of §4.11, on the same wheel (`timer.dm`).
+- `om_after(E, delay, proc, args...)` is the one-shot call of §4.11, built on
+  `om_deadline` (`timer.dm`).
 - A stale generation or a torn-down entity is skipped when its bucket comes
   round. An entry further out than one wheel turn stays in its bucket until due.
 - Clocked behaviours store the target in local time and re-check at fire. A

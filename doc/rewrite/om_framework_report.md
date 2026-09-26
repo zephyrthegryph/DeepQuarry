@@ -89,7 +89,7 @@ relation to the actor. Nothing sleeps.
 **UI binds** (`ui.dm`). A bound UI field is a derived value with channels: the UI refreshes
 when a channel it reads changes, not every tick.
 
-**Clocks** (`deadline.dm`). `om_after(E, delay, owner, key)` makes deadlines keyed by entity,
+**Clocks** (`deadline.dm`). `om_deadline(E, delay, owner, key)` makes deadlines keyed by entity,
 owner and key. Scheduling the same key again replaces the old deadline. They are stored in a
 timing wheel. Stage rewakes, status expiry, task completion and `min_interval` throttling all
 use them. The world clock and a mob's own clock (stasis slows it) are separate: Life reads

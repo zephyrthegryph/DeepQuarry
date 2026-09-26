@@ -100,7 +100,7 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/// A deadline set with a sub-key (om_after(E, delay, B, sub)), sub >= OM_DL_STAGE.
+/// A deadline set with a sub-key (om_deadline(E, delay, B, sub)), sub >= OM_DL_STAGE.
 /datum/om/behaviour/proc/on_keyed_deadline(datum/E, sub)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
