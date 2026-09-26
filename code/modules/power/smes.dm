@@ -151,7 +151,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/proc/add_nearby_terminals()
 	for(var/d in GLOB.cardinal)
 		var/turf/T = get_step(src, d)
-		for(var/obj/machinery/power/terminal/term in T)
+		for(var/obj/machinery/power/terminal/smes_input/term in T)
 			if(term && term.dir == turn(d, 180) && !term.master)
 				LAZYOR(terminals, term)
 				term.master = src
