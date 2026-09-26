@@ -29,6 +29,10 @@
 	SEND_SIGNAL(D, COMSIG_QDELETING, force)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_GUARD, tick)
 
+	// Phase 2 for datums that aren't atoms: leave registries (atoms leave in
+	// their own phase 2, through dematerialize).
+	dq_lifecycle_leave_registries(D)
+
 	if(isatom(D))
 		var/atom/movable/AM = D
 		if(ismovable(AM))

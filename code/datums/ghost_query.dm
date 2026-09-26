@@ -18,7 +18,7 @@
 /// Begin the ghost asking
 /datum/ghost_query/proc/query()
 	// First, ask all the ghosts who want to be asked.
-	for(var/mob/observer/dead/D as anything in GLOB.observer_mob_list)
+	for(var/mob/observer/dead/D as anything in REGISTRY_MEMBERS(REGISTRY_OBSERVERS))
 		if(evaluate_candidate(D))
 			ask_question(D)
 

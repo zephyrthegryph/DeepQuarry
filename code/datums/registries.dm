@@ -8,7 +8,13 @@ GLOBAL_LIST_INIT(registries, build_registries())
 /// The lists are the registries' own, so a read costs one lookup.
 GLOBAL_LIST_INIT(registry_members, registry_member_lists())
 /// type -> the registries its instances join (an empty list for most types).
-GLOBAL_LIST_EMPTY(registries_by_type)
+/// The same list as registries_by_type_table(), which works before GLOB is
+/// built (datums created while globals initialize join registries too).
+GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
+
+/proc/registries_by_type_table()
+	var/static/list/by_type = list()
+	return by_type
 
 /proc/build_registries()
 	// GLOB is still being built while globals initialize, so the shared
@@ -39,7 +45,7 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 /// read as an always-empty list.
 /proc/get_registry(id)
 	RETURN_TYPE(/datum/registry)
-	var/datum/registry/registry = GLOB.registries[id]
+	var/datum/registry/registry = build_registries()[id]
 	if(!registry)
 		CRASH("unknown registry [id]")
 	return registry
@@ -61,24 +67,45 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 	var/list/member_keys
 	/// Set on registries that file members by registry_key().
 	var/keyed = FALSE
+	/// Set on registries whose members join and leave by state (alive, logged
+	/// in, switched on) through registry_join()/registry_leave(), instead of
+	/// for their whole materialized life. Declared types may join; everyone
+	/// leaves automatically when dematerialized or deleted.
+	var/conditional = FALSE
+	/// Conditional registries only: member -> TRUE, for O(1) membership.
+	var/list/present
 
 /datum/registry/New()
 	members = list()
 	if(keyed)
 		members_by_key = list()
 		member_keys = list()
+	if(conditional)
+		present = list()
 
-/// Joins a member. Only /atom/join_registries() calls this.
-/datum/registry/proc/add(atom/member)
+/// Joins a member. Only join_registries() and registry_join() call this.
+/datum/registry/proc/add(datum/member)
+	if(conditional)
+		if(present[member])
+			return
+		present[member] = TRUE
 	members += member
 	if(keyed)
 		file_member(member)
 
-/// Leaves a member. Only /atom/leave_registries() calls this.
-/datum/registry/proc/remove(atom/member)
+/// Leaves a member. Only leave_registries() and registry_leave() call this.
+/datum/registry/proc/remove(datum/member)
+	if(conditional)
+		if(!present[member])
+			return
+		present -= member
 	members -= member
 	if(keyed)
 		unfile_member(member)
+
+/// TRUE if `member` is in this registry.
+/datum/registry/proc/has(datum/member)
+	return conditional ? !!present[member] : (member in members)
 
 /// The live member list, in join order. Read-only.
 /datum/registry/proc/members()
@@ -95,7 +122,7 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 	unfile_member(member)
 	file_member(member)
 
-/datum/registry/proc/file_member(atom/member)
+/datum/registry/proc/file_member(datum/member)
 	PRIVATE_PROC(TRUE)
 	var/key = member.registry_key(id)
 	member_keys[member] = key
@@ -103,7 +130,7 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 		return
 	LAZYADD(members_by_key[key], member)
 
-/datum/registry/proc/unfile_member(atom/member)
+/datum/registry/proc/unfile_member(datum/member)
 	PRIVATE_PROC(TRUE)
 	var/key = member_keys[member]
 	member_keys -= member
@@ -117,22 +144,24 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 
 /// Adds the ids of every registry this type's instances join to `ids`.
 /// Declare with REGISTRY_MEMBERSHIP(); overrides must call parent.
-/atom/proc/declare_registries(list/ids)
+/datum/proc/declare_registries(list/ids)
 	SHOULD_CALL_PARENT(TRUE)
 	return
 
 /// Instance-level opt-out, decided by state set in Initialize() and fixed for
-/// the object's life (e.g. an energy ball's miniballs). Keep it rare and cheap.
-/atom/proc/skips_registry(registry_id)
+/// the object's life (e.g. an energy ball's miniballs, a preview dummy). Keep
+/// it rare and cheap.
+/datum/proc/skips_registry(registry_id)
 	return FALSE
 
 /// A keyed registry files this member under the returned key (null: unfiled).
-/atom/proc/registry_key(registry_id)
+/datum/proc/registry_key(registry_id)
 	return null
 
-/// The registries this atom's type joins, cached per type.
-/atom/proc/type_registries()
-	var/list/cached = GLOB.registries_by_type[type]
+/// The registries this datum's type joins, cached per type.
+/datum/proc/type_registries()
+	var/list/by_type = registries_by_type_table()
+	var/list/cached = by_type[type]
 	if(cached)
 		return cached
 	var/list/ids = list()
@@ -140,19 +169,65 @@ GLOBAL_LIST_EMPTY(registries_by_type)
 	cached = list()
 	for(var/id in ids)
 		cached |= get_registry(id)
-	GLOB.registries_by_type[type] = cached
+	by_type[type] = cached
 	return cached
 
-/// Joins the declared registries. Only /atom/on_materialize() calls this.
-/atom/proc/join_registries()
-	PRIVATE_PROC(TRUE)
+/// Joins the declared (non-conditional) registries. /atom/on_materialize()
+/// calls this; a datum that isn't an atom calls it from its own New().
+/datum/proc/join_registries()
 	for(var/datum/registry/registry as anything in type_registries())
-		if(!skips_registry(registry.id))
+		if(!registry.conditional && !skips_registry(registry.id))
 			registry.add(src)
 
-/// Leaves the declared registries. Only /atom/on_dematerialize() calls this.
-/atom/proc/leave_registries()
-	PRIVATE_PROC(TRUE)
+/// Leaves every declared registry, conditional ones included.
+/// /atom/on_dematerialize() calls this; the destroy transaction calls it for
+/// every other datum (dq_lifecycle_leave_registries()), so a deleted member
+/// is never left behind and nothing removes itself by hand.
+/datum/proc/leave_registries()
 	for(var/datum/registry/registry as anything in type_registries())
 		if(!skips_registry(registry.id))
 			registry.remove(src)
+
+/// Puts `member` in conditional registry `id` (idempotent). Its type must
+/// declare REGISTRY_MEMBERSHIP() for `id`. It leaves again with
+/// registry_leave(), or by itself when dematerialized or deleted.
+/proc/registry_join(id, datum/member)
+	var/datum/registry/registry = get_registry(id)
+	if(!member || QDELETED(member))
+		return FALSE
+	if(!registry.conditional)
+		CRASH("registry_join() on [id], which isn't conditional: declare REGISTRY_MEMBERSHIP() instead")
+	if(!(registry in member.type_registries()))
+		CRASH("[member.type] joins [id] without declaring REGISTRY_MEMBERSHIP()")
+	if(member.skips_registry(id))
+		return FALSE
+	registry.add(member)
+	return TRUE
+
+/// Takes `member` out of conditional registry `id` (a no-op if it isn't in).
+/proc/registry_leave(id, datum/member)
+	var/datum/registry/registry = get_registry(id)
+	if(member)
+		registry.remove(member)
+
+/// registry_join() when `in_it`, registry_leave() otherwise.
+/proc/registry_set(id, datum/member, in_it)
+	if(in_it)
+		return registry_join(id, member)
+	registry_leave(id, member)
+	return FALSE
+
+/// TRUE if `member` is in registry `id`.
+/proc/registry_has(id, datum/member)
+	var/datum/registry/registry = get_registry(id)
+	return registry.has(member)
+
+/// Destroy transaction, phase 2 for datums that aren't atoms (atoms leave on
+/// dematerialize): drop `D` from every registry its type declares.
+/proc/dq_lifecycle_leave_registries(datum/D)
+	if(isatom(D))
+		return
+	var/list/registries = registries_by_type_table()[D.type]
+	if(registries && !length(registries))
+		return // cached: this type joins nothing
+	D.leave_registries()
