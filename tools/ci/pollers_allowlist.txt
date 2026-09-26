@@ -1,15 +1,6 @@
 # Polling ratchet (tools/ci/pollers_lint.py): <file> <process() defs> <START_*PROCESSING calls>.
 # A file may not exceed its counts; files not listed may have none. Lower it as types migrate:
 # `python tools/ci/pollers_lint.py --update`.
-# Totals: 11 process() definitions, 0 START_PROCESSING/START_MACHINE_PROCESSING calls.
-code/game/gamemodes/game_mode_latespawn.dm 1 0
-code/game/gamemodes/meteor/meteor.dm 1 0
-code/modules/events/event.dm 1 0
-code/modules/events/event_container.dm 1 0
-code/modules/gamemaster/event2/event.dm 1 0
-code/modules/gamemaster/event2/events/legacy/legacy.dm 1 0
+# Totals: 2 process() definitions, 0 START_PROCESSING/START_MACHINE_PROCESSING calls.
 code/modules/planet/planet.dm 1 0
 code/modules/planet/weather.dm 1 0
-code/modules/shuttles/shuttle_arrivals.dm 1 0
-code/modules/shuttles/shuttle_autodock.dm 1 0
-code/modules/shuttles/shuttles_web.dm 1 0

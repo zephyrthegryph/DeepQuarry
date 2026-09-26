@@ -310,3 +310,33 @@
 	TEST_ASSERT_EQUAL(M.loc, T, "the held mob was not released onto the turf")
 
 #endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// Random events (was SSevents' fire loop): an active event steps on the slow lane until it is
+/// killed; the event containers keep the random-event clock there.
+/datum/unit_test/dq_om_events_on_lanes
+
+/datum/unit_test/dq_om_events_on_lanes/Run()
+	var/datum/event_meta/EM = new(EVENT_LEVEL_MUNDANE, "Lane test", /datum/event/nothing, 0, add_to_queue = FALSE)
+	var/datum/event/E = new /datum/event/nothing(EM)
+	TEST_ASSERT(E.periodic_pipe == PERIODIC_SLOW, "a new event is not on the slow lane")
+	E.kill()
+	TEST_ASSERT(!PERIODIC_RUNNING(E), "a killed event kept its lane")
+	SSevents.finished_events -= E
+	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
+		var/datum/event_container/EC = SSevents.event_containers[i]
+		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not keeping its clock")
+
+/// Shuttles (was SSshuttles' fire loop): a shuttle with work is on the slow lane, an idle one is not.
+/datum/unit_test/dq_om_shuttles_on_lanes
+
+/datum/unit_test/dq_om_shuttles_on_lanes/Run()
+	for(var/name in SSshuttles.shuttles)
+		var/datum/shuttle/S = SSshuttles.shuttles[name]
+		if(!(S.flags & SHUTTLE_FLAGS_PROCESS))
+			continue
+		var/working = S.always_process || S.process_state != IDLE_STATE
+		TEST_ASSERT_EQUAL(!!S.periodic_pipe, working, "shuttle [name]: lane [S.periodic_pipe] but working [working]")
+
+#endif
