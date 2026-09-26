@@ -208,20 +208,19 @@
 							MI.drop_from_inventory(II, dest.loc)
 					var/obj/effect/landmark/finaldest = pick(GLOB.awayabductors)
 					MI.forceMove(finaldest.loc)
-					sleep(1)
-					MI.status_at_least(EFFECT_PARALYZED, 10)
-					MI.status_at_least(EFFECT_SLEEPING, 10)
-					MI << 'sound/effects/bamf.ogg'
-					to_chat(MI,span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))
+					om_after(MI, 0.1 SECONDS, TYPE_PROC_REF(/mob/living, abduction_arrived))
 				for(var/obj/item/I in L)
 					if(istype(I,/obj/item/implant) || istype(I,/obj/item/nif))
 						continue
 					L.drop_from_inventory(I, dest.loc)
 			var/obj/effect/landmark/finaldest = pick(GLOB.awayabductors)
 			L.forceMove(finaldest.loc)
-			sleep(1)
-			L.status_at_least(EFFECT_PARALYZED, 10)
-			L.status_at_least(EFFECT_SLEEPING, 10)
-			L << 'sound/effects/bamf.ogg'
-			to_chat(L,span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))
+			om_after(L, 0.1 SECONDS, TYPE_PROC_REF(/mob/living, abduction_arrived))
 	return
+
+/// Knocked out on arrival from an abductor portal.
+/mob/living/proc/abduction_arrived()
+	status_at_least(EFFECT_PARALYZED, 10)
+	status_at_least(EFFECT_SLEEPING, 10)
+	src << 'sound/effects/bamf.ogg'
+	to_chat(src, span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))

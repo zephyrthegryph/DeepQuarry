@@ -53,29 +53,31 @@
 	if(WT.remove_fuel(0, user))
 		playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
 		user.visible_message("\The [user] starts to deconstruct \the [src].", "You start to deconstruct \the [src].", "You hear welding")
-		if(do_after(user, 2 SECONDS, target = src))
-			if(QDELETED(src) || !WT.isOn())
-				return ITEM_INTERACT_BLOCKING
-			var/obj/structure/ladder_assembly/A
-			to_chat(user, "You deconstruct \the [src].")
-			if(target_up)
-				target_up.visible_message("\The [target_up] deconstructs from below")
-				A = new /obj/structure/ladder_assembly(target_up.loc)
-				A.state = LADDER_CONSTRUCTION_WELDED
-				A.anchored = TRUE
-				qdel(target_up)
-			if(target_down)
-				target_down.visible_message("\The [target_down] deconstructs from above")
-				A = new /obj/structure/ladder_assembly(target_down.loc)
-				A.state = LADDER_CONSTRUCTION_WELDED
-				A.anchored = TRUE
-				qdel(target_down)
-			A = new /obj/structure/ladder_assembly(loc)
-			A.state = LADDER_CONSTRUCTION_WRENCHED
-			A.anchored = TRUE
-			qdel(src)
+		om_do_after(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
+
+/obj/structure/ladder/proc/deconstruct_done(mob/user, obj/item/weldingtool/WT)
+	if(!WT.isOn())
+		return
+	var/obj/structure/ladder_assembly/A
+	to_chat(user, "You deconstruct \the [src].")
+	if(target_up)
+		target_up.visible_message("\The [target_up] deconstructs from below")
+		A = new /obj/structure/ladder_assembly(target_up.loc)
+		A.state = LADDER_CONSTRUCTION_WELDED
+		A.anchored = TRUE
+		qdel(target_up)
+	if(target_down)
+		target_down.visible_message("\The [target_down] deconstructs from above")
+		A = new /obj/structure/ladder_assembly(target_down.loc)
+		A.state = LADDER_CONSTRUCTION_WELDED
+		A.anchored = TRUE
+		qdel(target_down)
+	A = new /obj/structure/ladder_assembly(loc)
+	A.state = LADDER_CONSTRUCTION_WRENCHED
+	A.anchored = TRUE
+	qdel(src)
 
 /obj/structure/ladder/attack_hand(mob/M)
 	if(!M.may_climb_ladders(src))
@@ -144,13 +146,16 @@
 		var/mob/living/carbon/human/MS = M
 		climb_modifier = MS.species.climb_mult
 
-	if(do_after(M, (climb_time * climb_modifier), target = src))
-		var/turf/T = get_turf(target_ladder)
-		for(var/atom/A in T)
-			if(!A.CanPass(M, M.loc, 1.5, 0))
-				to_chat(M, span_notice("\The [A] is blocking \the [src]."))
-				return FALSE
-		return M.forceMove(T) // Fixes adminspawned ladders
+	om_do_after(M, (climb_time * climb_modifier), src, src, PROC_REF(climb_done), list(M, target_ladder))
+	return FALSE
+
+/obj/structure/ladder/proc/climb_done(mob/M, obj/target_ladder)
+	var/turf/T = get_turf(target_ladder)
+	for(var/atom/A in T)
+		if(!A.CanPass(M, M.loc, 1.5, 0))
+			to_chat(M, span_notice("\The [A] is blocking \the [src]."))
+			return
+	M.forceMove(T) // Fixes adminspawned ladders
 
 /obj/structure/ladder/CanPass(obj/mover, turf/source, height, airflow)
 	return airflow || !density

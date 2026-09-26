@@ -52,20 +52,26 @@
 				return ITEM_INTERACT_BLOCKING
 			playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
 			user.visible_message("\The [user] starts to weld \the [src] to the floor.", "You start to weld \the [src] to the floor.", "You hear welding")
-			if(do_after(user, 2 SECONDS, target = src) && !QDELETED(src) && WT.isOn())
-				state = LADDER_CONSTRUCTION_WELDED
-				to_chat(user, "You weld \the [src] to the floor.")
-				try_construct(user)
+			om_do_after(user, 2 SECONDS, src, src, PROC_REF(weld_done), list(user, WT, LADDER_CONSTRUCTION_WRENCHED))
 		if(LADDER_CONSTRUCTION_WELDED)
 			if(!WT.remove_fuel(0, user))
 				to_chat(user, span_warning("You need more welding fuel to complete this task."))
 				return ITEM_INTERACT_BLOCKING
 			playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
 			user.visible_message("\The [user] starts to cut \the [src] free from the floor.", "You start to cut \the [src] free from the floor.", "You hear welding")
-			if(do_after(user, 2 SECONDS, target = src) && !QDELETED(src) && WT.isOn())
-				state = LADDER_CONSTRUCTION_WRENCHED
-				to_chat(user, "You cut \the [src] free from the floor.")
+			om_do_after(user, 2 SECONDS, src, src, PROC_REF(weld_done), list(user, WT, LADDER_CONSTRUCTION_WELDED))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/ladder_assembly/proc/weld_done(mob/user, obj/item/weldingtool/WT, from_state)
+	if(!WT.isOn() || state != from_state)
+		return
+	if(from_state == LADDER_CONSTRUCTION_WRENCHED)
+		state = LADDER_CONSTRUCTION_WELDED
+		to_chat(user, "You weld \the [src] to the floor.")
+		try_construct(user)
+	else
+		state = LADDER_CONSTRUCTION_WRENCHED
+		to_chat(user, "You cut \the [src] free from the floor.")
 
 // Try to construct this into a real stairway.
 // It must have a matching ladder assembly above and/or below, and both must be welded in place
