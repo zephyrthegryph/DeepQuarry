@@ -50,10 +50,11 @@
 /// PERIODIC_START. Like the old process(), a body that sleeps doesn't hold up the frame.
 /datum/proc/periodic_step(delta)
 	set waitfor = FALSE
-	return process(delta) // MIGRATION BRIDGE: removed once no process() override is left
+	return PROCESS_KILL
 
-/// MIGRATION BRIDGE: the old processing-subsystem entry point. Types not yet converted still
-/// define process(); periodic_step() reaches it until they are renamed.
+/// What the subsystems that still own their own schedule call on their datums (SSevents,
+/// SSplanets, SSshuttles, SSticker's game mode, tgui windows, database queries). Nothing on a
+/// periodic lane uses it (tools/ci/pollers_lint.py counts the overrides).
 /datum/proc/process()
 	set waitfor = FALSE
 	return PROCESS_KILL

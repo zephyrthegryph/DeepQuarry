@@ -243,3 +243,22 @@
 	igniter.on = FALSE
 
 #endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// Alarm handlers (was SSalarm): a raised alarm starts its handler on the slow lane; with no alarm
+/// left it stops, and an idle handler never runs.
+/datum/unit_test/dq_om_alarm_handler_park_wake
+
+/datum/unit_test/dq_om_alarm_handler_park_wake/Run()
+	var/datum/alarm_handler/AH = GLOB.power_alarm
+	var/obj/item/origin = allocate(/obj/item, test_floor())
+	if(!length(AH.alarms))
+		PERIODIC_STOP(AH)
+	AH.triggerAlarm(origin, origin, duration = 1)
+	TEST_ASSERT(AH.periodic_pipe == PERIODIC_SLOW, "raising an alarm did not start its handler")
+	AH.clearAlarm(origin, origin)
+	if(!length(AH.alarms))
+		TEST_ASSERT_EQUAL(AH.periodic_step(20), PROCESS_KILL, "a handler with no alarms kept stepping")
+
+#endif
