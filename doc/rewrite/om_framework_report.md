@@ -229,7 +229,45 @@ requires the mob to be conscious and in range and the target to exist) and retur
 
 ## 5. Performance
 
-PERF
+One benchmark after all the work: `life_sweep,om_dispatch`, 3 counted boots per side after a
+warm-up, `--arg=seconds=30 -DLIFE_CYCLE_DS=20 -DLIFE_NO_PROFILE -DOM_NO_STAGE_PROFILE`, sides run
+one after the other. Base is `rewrite/life-om` 7f9640613e (Life's hand-written loop); new is
+f295901848. Medians of 3.
+
+| metric | base | new | new / base |
+|---|---|---|---|
+| h128 Life us per frame | 2121 | 1897 | 0.89 |
+| h128 tick avg / p95 / p99 (% of tick) | 26.2 / 76 / 117 | 15.8 / 22 / 27 | |
+| h128 overruns | 19 | 0 | |
+| h128 frames delivered | 1956 | 1922 | 0.98 |
+| mix Life us per frame | 1272 | 1282 | 1.01 |
+| mix tick p95 / p99 | 17 / 21 | 17 / 21 | |
+| mix parked mobs | 384 | 384 | |
+| machines ms per s (h128 / mix) | 0.68 / 0.49 | 0.61 / 0.53 | |
+| reference loop (`om_dispatch_process_ns_per_call`, same code both sides) | 1345 ns | 1061 ns | 0.79 |
+
+The machine ran faster during the new side: the reference loop, which is identical code on
+both sides, was 21% quicker. Normalised by it, h128 Life per frame is about 1.13x base and mix
+about 1.28x. The raw numbers show no regression, and the h128 tick tail is far lower (p99
+27 vs 117 %; the base side had 19 overruns). The truth is between those two readings: the
+runner costs slightly more per frame than the hand loop did, and the core's lane budgeting
+keeps the tick smoother.
+
+`om_dispatch` pipeline micro-benchmark: 5000 entities, 8 stages, against a hand frame loop
+over 8 flyweights with an idle rule each.
+
+| per entity | hand loop | runner called directly | runner from the ring |
+|---|---|---|---|
+| all 8 awake | 9.9 us | 16.9 us | 18.4 us |
+| 7 of 8 idle | 3.0 us | 5.7 us | 7.6 us |
+
+Solving the two rows: the runner adds about **0.6 us per awake stage** (target 0.8: met) and
+about **2.1 us fixed per entity frame** when called directly (target 2: at the limit), with the
+ring adding about 2 us more. Idle stages cost nothing. Earlier runs on this branch, before the
+per-entity frame and the local-count work, measured 6 us fixed and 1.7 us per stage.
+
+Tests: the full suite passes, 1111 passed and 0 failed. DreamChecker reports 16 errors on the
+branch against 22 on base, and none of them come from stages.
 
 ## 6. Known limitations
 
