@@ -11,7 +11,7 @@
 	var/finished = 0
 	var/last_change = 0
 
-/datum/stockEvent/process()
+/datum/stockEvent/proc/event_tick()
 	if (finished)
 		return
 	if (world.time > next_phase)

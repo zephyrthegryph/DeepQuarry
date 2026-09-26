@@ -101,7 +101,7 @@
 #define LIFT_WAITING_A 2	// Waiting 15ds after arrival to announce, then goto LIFT_WAITING_B
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
-/datum/turbolift/process()
+/datum/turbolift/periodic_step()
 	if(world.time < next_process)
 		return
 	switch(busy_state)
