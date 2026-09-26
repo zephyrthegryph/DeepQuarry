@@ -1546,6 +1546,7 @@ impl WorldBuilder {
         }
 
         let sim = self.sim.build()?;
+        let kind_count = self.kinds.len();
         Ok(World {
             pacer: Pacer::new(self.config.dt, self.config.backlog_cap),
             config: self.config,
@@ -1572,7 +1573,7 @@ impl WorldBuilder {
             owed: 0,
             frame: 0,
             events: EventSink::new(),
-            wakes: Vec::new(),
+            wakes: (0..kind_count).map(|_| Vec::new()).collect(),
             threshold_crossings: Vec::new(),
             violations: Vec::new(),
             subs: subscriptions::Subscriptions::default(),
@@ -1686,7 +1687,8 @@ pub struct World {
     /// Steps completed by the main phase (== frames dispatched).
     frame: u64,
     events: EventSink,
-    wakes: Vec<Wake>,
+    /// Fired watch wakes, per component kind.
+    wakes: Vec<Vec<Wake>>,
     threshold_crossings: Vec<ThresholdCrossing>,
     violations: Vec<Violation>,
     /// DM timers, keys, rate models and watch records.
@@ -1730,7 +1732,7 @@ impl World {
             &mut self.wakes,
             &mut self.threshold_crossings,
         );
-        for k in kinds.iter_mut() {
+        for (k, wakes) in kinds.iter_mut().zip(wakes.iter_mut()) {
             k.begin_tick(sim, main, wakes, crossings);
         }
         for (f, out) in self.field_watches.iter().zip(&mut self.field_wakes) {
@@ -1771,8 +1773,8 @@ impl World {
             self.events.append(&mut o.events);
             self.violations.append(&mut o.violations);
         }
-        for k in &mut self.kinds {
-            k.after_main(&self.main, &mut self.wakes, &mut self.threshold_crossings);
+        for (k, wakes) in self.kinds.iter_mut().zip(self.wakes.iter_mut()) {
+            k.after_main(&self.main, wakes, &mut self.threshold_crossings);
         }
         // Worker phase.
         let (main, kinds, networks) = (&mut self.main, &mut self.kinds, &mut self.networks);
@@ -2334,8 +2336,8 @@ impl World {
     /// synchronously, so a watch on one need not wait for the next step
     /// (the scheduler's per-tick drain calls this).
     pub fn evaluate_main_watches(&mut self) {
-        for k in &mut self.kinds {
-            k.after_main(&self.main, &mut self.wakes, &mut self.threshold_crossings);
+        for (k, wakes) in self.kinds.iter_mut().zip(self.wakes.iter_mut()) {
+            k.after_main(&self.main, wakes, &mut self.threshold_crossings);
         }
     }
 
@@ -2344,7 +2346,16 @@ impl World {
     /// ([`drain_field_wakes`](Self::drain_field_wakes)): their sources are
     /// cells, not entity rows.
     pub fn drain_wakes(&mut self, out: &mut Vec<Wake>) {
-        out.append(&mut self.wakes);
+        for w in &mut self.wakes {
+            out.append(w);
+        }
+    }
+
+    /// The watch wakes of component `kind` fired since the last drain.
+    pub fn drain_kind_wakes(&mut self, kind: KindId, out: &mut Vec<Wake>) {
+        if let Some(w) = self.wakes.get_mut(usize::from(kind)) {
+            out.append(w);
+        }
     }
 
     /// Every wake of field `K`'s cell watches fired since the last drain

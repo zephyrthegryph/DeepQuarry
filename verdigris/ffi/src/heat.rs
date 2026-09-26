@@ -972,7 +972,9 @@ fn heat_take_wakes() -> Result<ByondValue> {
     let mut flat = Vec::new();
     with_world(|w| {
         let mut wakes = Vec::new();
-        w.drain_wakes(&mut wakes);
+        if let Ok(body) = kind_of(w, "HeatBody") {
+            w.drain_kind_wakes(body, &mut wakes);
+        }
         w.drain_field_wakes::<SolidHeat>(&mut wakes);
         flat.push(wakes.len() as f32);
         for wk in wakes {

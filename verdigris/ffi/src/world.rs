@@ -154,6 +154,11 @@ fn build() -> Result<World> {
         Box::new(WorldEntities),
     );
     for (kind, schema) in world.schemas() {
+        // Heat's bodies are watched through heat's own binds, which drain
+        // that kind's wakes (`crate::heat`).
+        if world.kind_of::<vg_heat::HeatBody>() == Some(kind) {
+            continue;
+        }
         let code =
             vg_core::world::kind_code(vg_core::component::domain_id(schema.domain), schema.kind);
         registry::register_domain(world_kind_domain(code), Box::new(WorldKind { kind }));
@@ -217,21 +222,6 @@ impl DomainRegistry for WorldEntities {
         })
         .unwrap_or_default()
     }
-
-    /// Component watch wakes, with DM's `vg_entity` value as the source
-    /// (the stores report the entity's slot).
-    fn take_wakes(&mut self, out: &mut Vec<Wake>) {
-        let _ = with_world(|w| {
-            let mut wakes = Vec::new();
-            w.drain_wakes(&mut wakes);
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            out.extend(wakes.into_iter().filter_map(|wk| {
-                let e = w.entities().at(wk.source)?;
-                Some(Wake { source: entity::entity_value(e) as u32, ..wk })
-            }));
-            Ok(())
-        });
-    }
 }
 
 /// One world component kind as a reactor watch port: cells are entity
@@ -282,6 +272,21 @@ impl DomainRegistry for WorldKind {
 
     fn unwatch(&mut self, _port: u8, id: WatchId) {
         let _ = with_world(|w| Ok(w.unwatch(self.kind, id)));
+    }
+
+    /// This kind's watch wakes, with DM's `vg_entity` value as the source
+    /// (the stores report the entity's slot).
+    fn take_wakes(&mut self, out: &mut Vec<Wake>) {
+        let _ = with_world(|w| {
+            let mut wakes = Vec::new();
+            w.drain_kind_wakes(self.kind, &mut wakes);
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            out.extend(wakes.into_iter().filter_map(|wk| {
+                let e = w.entities().at(wk.source)?;
+                Some(Wake { source: entity::entity_value(e) as u32, ..wk })
+            }));
+            Ok(())
+        });
     }
 }
 
