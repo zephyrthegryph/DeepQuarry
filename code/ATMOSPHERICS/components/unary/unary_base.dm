@@ -12,15 +12,9 @@
 	var/datum/pipe_network/network
 
 	var/welded = FALSE //defining this here for ventcrawl stuff
-	/// Arena dependencies captured while this device is absent from SSmachines.
-	var/sleeping_turf_mixture_id
-	var/sleeping_turf_revision = -1
-	var/sleeping_turf_pressure = 0
-	var/sleeping_turf_moles = 0
-	var/sleeping_pipe_mixture_id
-	var/sleeping_pipe_revision = -1
-	var/sleeping_pipe_pressure = 0
-	var/sleeping_pipe_moles = 0
+	/// Change mask this device cares about on both mixtures it watches while hibernating
+	/// (code/datums/om/watch.dm om_watch_arm_revision(); most unary devices only ever act on
+	/// a pressure change, so that's the default).
 	var/gas_dependency_mask = GAS_DEPENDENCY_PRESSURE
 
 /obj/machinery/atmospherics/unary/Initialize(mapload)
@@ -29,71 +23,26 @@
 	air_contents = new
 	air_contents.set_volume(200)
 
-/obj/machinery/atmospherics/unary/proc/register_gas_dependencies(datum/weakref/WR)
+/// Arms a "wake on any change" watch on both mixtures this device cares about (its turf and its
+/// own pipe contents) and stops polling. Re-arming always replaces the previous watch, so a
+/// caller never needs to diff the mixture id itself first.
+/obj/machinery/atmospherics/unary/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
-	var/new_turf_mixture_id = environment?.arena_id()
-	if(sleeping_turf_mixture_id != new_turf_mixture_id)
-		SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-		sleeping_turf_mixture_id = new_turf_mixture_id
-		SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	if(environment)
-		sleeping_turf_revision = environment.revision()
-		sleeping_turf_pressure = environment.return_pressure()
-		sleeping_turf_moles = environment.total_moles()
-	else
-		sleeping_turf_revision = -1
-		sleeping_turf_pressure = 0
-		sleeping_turf_moles = 0
-	var/new_pipe_mixture_id = air_contents?.arena_id()
-	if(sleeping_pipe_mixture_id != new_pipe_mixture_id)
-		SSmachines.unsubscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
-		sleeping_pipe_mixture_id = new_pipe_mixture_id
-		SSmachines.subscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
-	if(air_contents)
-		sleeping_pipe_revision = air_contents.revision()
-		sleeping_pipe_pressure = air_contents.return_pressure()
-		sleeping_pipe_moles = air_contents.total_moles()
-	else
-		sleeping_pipe_revision = -1
-		sleeping_pipe_pressure = 0
-		sleeping_pipe_moles = 0
+	om_watch_arm_revision(src, "turf", environment?.arena_id(), gas_dependency_mask, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = environment?.revision())
+	om_watch_arm_revision(src, "pipe", air_contents?.arena_id(), gas_dependency_mask, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = air_contents?.revision())
 
-/obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies(datum/weakref/WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
-	sleeping_turf_mixture_id = null
-	sleeping_turf_revision = -1
-	sleeping_turf_pressure = 0
-	sleeping_turf_moles = 0
-	sleeping_pipe_mixture_id = null
-	sleeping_pipe_revision = -1
-	sleeping_pipe_pressure = 0
-	sleeping_pipe_moles = 0
+/obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies()
+	om_watch_disarm(src, "turf")
+	om_watch_disarm(src, "pipe")
 
-/obj/machinery/atmospherics/unary/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
-	if(!(change_mask & gas_dependency_mask))
-		return FALSE
-	var/observed_revision = observation && observation_index ? observation[observation_index + 2] : null
-	if(mixture_id == sleeping_turf_mixture_id)
-		if(!isnull(observed_revision))
-			sleeping_turf_pressure = observation[observation_index + 3]
-			sleeping_turf_moles = observation[observation_index + 14]
-			return observed_revision != sleeping_turf_revision
-		var/datum/gas_mixture/environment = return_air()
-		return !environment || environment.arena_id() != sleeping_turf_mixture_id || environment.revision() != sleeping_turf_revision
-	if(mixture_id == sleeping_pipe_mixture_id)
-		if(!isnull(observed_revision))
-			sleeping_pipe_pressure = observation[observation_index + 3]
-			sleeping_pipe_moles = observation[observation_index + 14]
-			return observed_revision != sleeping_pipe_revision
-		return !air_contents || air_contents.arena_id() != sleeping_pipe_mixture_id || air_contents.revision() != sleeping_pipe_revision
-	return TRUE
-
-/obj/machinery/atmospherics/unary/gas_dependency_interest_mask()
-	return gas_dependency_mask
+/// The wake action for both watches armed above: re-enter process() the same way the deleted
+/// gas_dependency_changed()/wake_gas_subscriber() pair used to.
+/obj/machinery/atmospherics/unary/proc/wake_from_gas()
+	unregister_gas_dependencies()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/unary/proc/invalidate_gas_dependencies()
-	SSmachines.wake_vent(WEAKREF(src))
+	om_watch_invalidate(src)
 
 /obj/machinery/atmospherics/unary/update_use_power(new_use_power)
 	if(use_power == new_use_power)
@@ -114,25 +63,11 @@
 
 /obj/machinery/atmospherics/unary/Destroy()
 	rust_unregister_pipe_topology()
-	// Sleeping devices are held through weakrefs, but their subscription buckets
-	// and arena watches must be removed synchronously. Leaving these until the
-	// next dirty publication kept deleted injectors alive in GC diagnostics.
-	//
-	// WEAKREF(src) cannot be used here: qdel() sets gc_destroyed before calling
-	// Destroy(), and WEAKREF() refuses to hand out a weakref to a QDELETED datum
-	// (it just returns null). That silently no-ops every cleanup below. Read the
-	// weakref this device already holds instead -- register_gas_dependencies()/
-	// hibernate_vent() always create one before a device can be asleep, and
-	// /datum/Destroy() (called via ..() below) doesn't null it out until after
-	// we're done with it.
-	var/datum/weakref/self_ref = weak_reference
-	unregister_gas_dependencies(self_ref)
-	// A device destroyed while asleep must also drop out of the sleeping/hibernating
-	// registries directly -- those are only cleared on wake, and Destroy() is not
-	// guaranteed to route through a wake first.
-	if(self_ref?.reference)
-		SSmachines.sleeping_gas_devices -= self_ref.reference
-		SSmachines.hibernating_vents -= self_ref.reference
+	// om_watch_disarm_all() (called from /obj/machinery/Destroy() below, via ..()) removes
+	// every watch this device holds keyed by its own ref string (code/datums/om/watch.dm) --
+	// no weakref needed, so unlike the old subscribe_gas_dependency() transport this doesn't
+	// race qdel() setting gc_destroyed before Destroy() runs.
+	SSmachines.hibernating_vents -= REF(src)
 	// Disconnect/qdel BEFORE ..() so node deref is valid.
 	var/datum/pipe_network/old_network = network
 	if(old_network?.normal_members)

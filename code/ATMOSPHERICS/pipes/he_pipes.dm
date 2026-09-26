@@ -41,38 +41,21 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/get_init_dirs()
 	return ..() | initialize_directions_he
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/register_gas_dependencies(datum/weakref/WR)
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = loc?.return_air()
 	var/datum/gas_mixture/pipe_air = parent?.air
-	sleeping_turf_mixture_id = environment?.arena_id()
-	sleeping_turf_revision = environment?.revision() || -1
-	sleeping_pipe_mixture_id = pipe_air?.arena_id()
-	sleeping_pipe_revision = pipe_air?.revision() || -1
-	SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	SSmachines.subscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
+	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_from_gas))
+	om_watch_arm_revision(src, "turf", environment?.arena_id(), GAS_DEPENDENCY_TEMPERATURE, wake_callback = wake, current_revision = environment?.revision())
+	om_watch_arm_revision(src, "pipe", pipe_air?.arena_id(), GAS_DEPENDENCY_TEMPERATURE, wake_callback = wake, current_revision = pipe_air?.revision())
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/unregister_gas_dependencies(datum/weakref/WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
-	sleeping_turf_mixture_id = null
-	sleeping_turf_revision = -1
-	sleeping_pipe_mixture_id = null
-	sleeping_pipe_revision = -1
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/unregister_gas_dependencies()
+	om_watch_disarm(src, "turf")
+	om_watch_disarm(src, "pipe")
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE))
-		return FALSE
-	if(mixture_id == sleeping_turf_mixture_id)
-		var/datum/gas_mixture/environment = loc?.return_air()
-		if(!environment || environment.arena_id() != sleeping_turf_mixture_id)
-			return TRUE
-		return heat_exchange_actionable()
-	if(mixture_id == sleeping_pipe_mixture_id)
-		var/datum/gas_mixture/pipe_air = parent?.air
-		if(!pipe_air || pipe_air.arena_id() != sleeping_pipe_mixture_id)
-			return TRUE
-		return heat_exchange_actionable()
-	return TRUE
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/wake_from_gas()
+	unregister_gas_dependencies()
+	stable_temperature_cycles = 0
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/heat_exchange_actionable()
 	var/datum/gas_mixture/pipe_air = parent?.air
@@ -94,19 +77,15 @@
 		environment_temperature = environment?.return_temperature()
 	return !isnull(environment_temperature) && abs(environment_temperature - pipe_temperature) > minimum_temperature_difference
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/Destroy()
-	unregister_gas_dependencies(WEAKREF(src))
-	return ..()
-
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	SSmachines.wake_gas_subscriber(WEAKREF(src))
+	om_watch_invalidate(src)
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking)
 	return // Heat-exchange pipes cannot leak.
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/disconnect(obj/machinery/atmospherics/reference)
-	SSmachines.wake_gas_subscriber(WEAKREF(src))
+	om_watch_invalidate(src)
 	return ..()
 
 // Use initialize_directions_he to connect to neighbors instead.

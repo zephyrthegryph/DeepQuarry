@@ -106,8 +106,6 @@
 	var/on = 0
 	var/target_temp = T20C
 	var/mode = MODE_IDLE
-	var/sleeping_mixture_id
-	var/sleeping_mixture_revision = -1
 	/// Fraction of the Carnot COP this unit's pump achieves (H4, the
 	/// generic vg_heat_regulator_step -- rust_core.md §15's "the heat
 	/// regulator" row). Was a bespoke `removed.return_temperature()/TN60C`
@@ -288,34 +286,12 @@
 	update_icon()
 
 /obj/machinery/power/thermoregulator/proc/hibernate_until_temperature_changes()
-	var/datum/weakref/WR = WEAKREF(src)
 	var/datum/gas_mixture/environment = loc.return_air()
-	sleeping_mixture_id = environment?.arena_id()
-	sleeping_mixture_revision = environment?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	om_watch_arm_revision(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_TEMPERATURE, wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)), current_revision = environment?.revision())
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/power/thermoregulator/proc/clear_gas_dependency()
-	var/datum/weakref/WR = WEAKREF(src)
-	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_id = null
-	sleeping_mixture_revision = -1
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
-
-/obj/machinery/power/thermoregulator/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE) || mixture_id != sleeping_mixture_id || !on)
-		return FALSE
-	var/datum/gas_mixture/environment = loc.return_air()
-	if(!environment || environment.arena_id() != sleeping_mixture_id)
-		return TRUE
-	if(environment.revision() == sleeping_mixture_revision)
-		return FALSE
-	return abs(environment.return_temperature() - target_temp) >= 1
-
-/obj/machinery/power/thermoregulator/gas_dependency_interest_mask()
-	return GAS_DEPENDENCY_TEMPERATURE
+	om_watch_disarm(src, "gas")
 
 /obj/machinery/power/thermoregulator/proc/wake_for_state_change()
 	clear_gas_dependency()

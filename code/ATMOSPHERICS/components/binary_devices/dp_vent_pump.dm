@@ -41,12 +41,6 @@
 	//1: Do not pass external_pressure_bound
 	//2: Do not pass input_pressure_min
 	//4: Do not pass output_pressure_max
-	var/sleeping_turf_mixture_id
-	var/sleeping_turf_revision = -1
-	var/sleeping_input_mixture_id
-	var/sleeping_input_revision = -1
-	var/sleeping_output_mixture_id
-	var/sleeping_output_revision = -1
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Initialize(mapload)
 	. = ..()
@@ -58,7 +52,6 @@
 	icon = null
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Destroy()
-	clear_gas_dependencies()
 	unregister_radio(src, frequency)
 	. = ..()
 
@@ -171,60 +164,21 @@
 
 	return 1
 
+/// Arms a "wake on any pressure change" watch on all three mixtures this device pumps between
+/// (its turf and both of its own ports) and stops polling. gas_dependency_mask restricts this to
+/// GAS_DEPENDENCY_PRESSURE, the only class of change that could move get_pressure_delta().
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/hibernate_until_gas_changes()
-	var/datum/weakref/WR = WEAKREF(src)
 	var/datum/gas_mixture/environment = loc.return_air()
-	sleeping_turf_mixture_id = environment?.arena_id()
-	sleeping_turf_revision = environment?.revision() || -1
-	sleeping_input_mixture_id = air1?.arena_id()
-	sleeping_input_revision = air1?.revision() || -1
-	sleeping_output_mixture_id = air2?.arena_id()
-	sleeping_output_revision = air2?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
-	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
+	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_for_state_change))
+	om_watch_arm_revision(src, "turf", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = environment?.revision())
+	om_watch_arm_revision(src, "input", air1?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = air1?.revision())
+	om_watch_arm_revision(src, "output", air2?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = air2?.revision())
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/clear_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
-	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_input_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_output_mixture_id, WR)
-	sleeping_turf_mixture_id = null
-	sleeping_turf_revision = -1
-	sleeping_input_mixture_id = null
-	sleeping_input_revision = -1
-	sleeping_output_mixture_id = null
-	sleeping_output_revision = -1
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !use_power || (stat & (NOPOWER|BROKEN)))
-		return FALSE
-	var/datum/gas_mixture/environment = loc.return_air()
-	if(mixture_id == sleeping_turf_mixture_id)
-		if(!environment || environment.arena_id() != sleeping_turf_mixture_id)
-			return TRUE
-		if(environment.revision() == sleeping_turf_revision)
-			return FALSE
-	else if(mixture_id == sleeping_input_mixture_id)
-		if(!air1 || air1.arena_id() != sleeping_input_mixture_id)
-			return TRUE
-		if(air1.revision() == sleeping_input_revision)
-			return FALSE
-	else if(mixture_id == sleeping_output_mixture_id)
-		if(!air2 || air2.arena_id() != sleeping_output_mixture_id)
-			return TRUE
-		if(air2.revision() == sleeping_output_revision)
-			return FALSE
-	else
-		return FALSE
-	if(!environment || get_pressure_delta(environment) <= 0.5)
-		return FALSE
-	var/datum/gas_mixture/source = pump_direction ? air1 : environment
-	return source && source.total_moles() >= MINIMUM_MOLES_TO_PUMP
+	om_watch_disarm(src, "turf")
+	om_watch_disarm(src, "input")
+	om_watch_disarm(src, "output")
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/wake_for_state_change()
 	clear_gas_dependencies()

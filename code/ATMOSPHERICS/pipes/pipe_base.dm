@@ -11,10 +11,6 @@
 	/// Pipelines which cache this pipe as a boundary edge. A pipe can be an edge
 	/// of several foreign pipelines, so `parent` alone is not sufficient ownership.
 	var/list/datum/pipeline/edge_pipelines
-	var/leak_sleeping_turf_mixture_id
-	var/leak_sleeping_turf_revision = -1
-	var/leak_sleeping_pipe_mixture_id
-	var/leak_sleeping_pipe_revision = -1
 
 	layer = PIPES_LAYER
 	use_power = USE_POWER_OFF
@@ -170,43 +166,29 @@
 /obj/machinery/atmospherics/pipe/proc/unregister_edge_pipeline(datum/pipeline/edge_owner)
 	LAZYREMOVE(edge_pipelines, edge_owner)
 
+/// Arms a "wake on any change" watch on both mixtures either side of the leak. A leaking pipe
+/// whose network is intact batches into that network's own dirty transaction on wake instead of
+/// re-entering process() itself (matching the deleted wake_gas_subscriber()'s pipe branch);
+/// otherwise it just re-enters process() directly.
 /obj/machinery/atmospherics/pipe/proc/hibernate_stable_leak()
 	clear_leak_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
 	var/datum/gas_mixture/environment = loc?.return_air()
 	var/datum/gas_mixture/pipe_air = parent?.air
-	leak_sleeping_turf_mixture_id = environment?.arena_id()
-	leak_sleeping_turf_revision = environment?.revision() || -1
-	leak_sleeping_pipe_mixture_id = pipe_air?.arena_id()
-	leak_sleeping_pipe_revision = pipe_air?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(leak_sleeping_turf_mixture_id, WR)
-	SSmachines.subscribe_gas_dependency(leak_sleeping_pipe_mixture_id, WR)
+	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_from_leak))
+	om_watch_arm_revision(src, "leak_turf", environment?.arena_id(), GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = environment?.revision())
+	om_watch_arm_revision(src, "leak_pipe", pipe_air?.arena_id(), GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = pipe_air?.revision())
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/pipe/proc/clear_leak_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
-	SSmachines.unsubscribe_gas_dependency(leak_sleeping_turf_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(leak_sleeping_pipe_mixture_id, WR)
-	leak_sleeping_turf_mixture_id = null
-	leak_sleeping_turf_revision = -1
-	leak_sleeping_pipe_mixture_id = null
-	leak_sleeping_pipe_revision = -1
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+	om_watch_disarm(src, "leak_turf")
+	om_watch_disarm(src, "leak_pipe")
 
-/obj/machinery/atmospherics/pipe/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_ALL) || !leaking)
-		return FALSE
-	var/datum/gas_mixture/environment = loc?.return_air()
-	var/datum/gas_mixture/pipe_air = parent?.air
-	if(!environment || !pipe_air)
-		return TRUE
-	if(mixture_id == leak_sleeping_turf_mixture_id && environment.revision() == leak_sleeping_turf_revision)
-		return FALSE
-	if(mixture_id == leak_sleeping_pipe_mixture_id && pipe_air.revision() == leak_sleeping_pipe_revision)
-		return FALSE
-	return leak_needs_equalization(pipe_air, environment)
+/obj/machinery/atmospherics/pipe/proc/wake_from_leak()
+	clear_leak_gas_dependencies()
+	if(leaking && parent?.network)
+		parent.network.mark_leak_dirty()
+		return
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/pipe/proc/leak_needs_equalization(datum/gas_mixture/pipe_air, datum/gas_mixture/environment)
 	if(!pipe_air || !environment)

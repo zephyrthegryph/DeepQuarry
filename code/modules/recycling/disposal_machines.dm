@@ -36,8 +36,6 @@
 	active_power_usage = 2200	//the pneumatic pump power. 3 HP ~ 2200W
 	idle_power_usage = 100
 	var/stat_tracking = TRUE
-	var/sleeping_turf_mixture_id
-	var/sleeping_turf_revision = -1
 	var/power_retry_timer
 	flags = REMOTEVIEW_ON_ENTER
 
@@ -99,34 +97,16 @@
 	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
-	var/datum/weakref/WR = WEAKREF(src)
 	var/datum/gas_mixture/environment = loc.return_air()
-	sleeping_turf_mixture_id = environment?.arena_id()
-	sleeping_turf_revision = environment?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
+	om_watch_arm_revision(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = environment?.revision())
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/disposal/proc/clear_gas_dependency()
-	var/datum/weakref/WR = WEAKREF(src)
-	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	sleeping_turf_mixture_id = null
-	sleeping_turf_revision = -1
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+	om_watch_disarm(src, "gas")
 
-/obj/machinery/disposal/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || mixture_id != sleeping_turf_mixture_id || mode != DISPOSALMODE_CHARGING || (stat & (NOPOWER|BROKEN)))
-		return FALSE
-	var/datum/gas_mixture/environment = loc.return_air()
-	if(!environment || environment.arena_id() != sleeping_turf_mixture_id)
-		return TRUE
-	if(environment.revision() == sleeping_turf_revision)
-		return FALSE
-	return can_pressurize_from(environment)
-
-/obj/machinery/disposal/gas_dependency_interest_mask()
-	return GAS_DEPENDENCY_PRESSURE
+/obj/machinery/disposal/proc/wake_from_gas()
+	clear_gas_dependency()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/disposal/proc/can_pressurize_from(datum/gas_mixture/environment)
 	if(!air_contents || !environment || environment.return_temperature() <= 0 || environment.total_moles() < MINIMUM_MOLES_TO_PUMP)

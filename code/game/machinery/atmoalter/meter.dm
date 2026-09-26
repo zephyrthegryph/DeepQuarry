@@ -10,8 +10,6 @@
 	var/frequency = 0
 	var/id
 	var/open = FALSE
-	var/sleeping_mixture_id
-	var/sleeping_pressure_revision = -1
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 15
 
@@ -21,7 +19,6 @@
 		target = select_target()
 
 /obj/machinery/meter/Destroy()
-	unregister_gas_dependency(WEAKREF(src))
 	LAZYCLEARLIST(pipes_on_turf)
 	target = null
 	return ..()
@@ -35,34 +32,28 @@
 		P = locate(/obj/machinery/atmospherics/pipe) in loc
 	return P
 
-/obj/machinery/meter/proc/register_gas_dependency(datum/weakref/WR)
+/// Radio meters publish their numeric reading on every material pressure change (a revision
+/// watch); local-only meters need wake only when their discrete needle sprite changes (a value
+/// watch on pressure_icon_state()). Both paths are event-driven; neither needs a permanent
+/// heartbeat.
+/obj/machinery/meter/proc/register_gas_dependency()
 	var/datum/gas_mixture/environment = target?.return_air()
-	sleeping_mixture_id = environment?.arena_id()
-	sleeping_pressure_revision = environment?.revision() || -1
-	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
-
-/obj/machinery/meter/proc/unregister_gas_dependency(datum/weakref/WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_id = null
-	sleeping_pressure_revision = -1
-
-/obj/machinery/meter/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_PRESSURE))
-		return FALSE
-	var/datum/gas_mixture/environment = target?.return_air()
-	if(!environment || environment.arena_id() != mixture_id)
-		return TRUE
-	if(environment.revision() == sleeping_pressure_revision)
-		return FALSE
-	// Radio meters publish their numeric reading on every material pressure
-	// change. Local-only meters need wake only when their discrete needle sprite
-	// changes. Both paths are event-driven; neither needs a permanent heartbeat.
+	var/mixture_id = environment?.arena_id()
+	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_from_gas))
 	if(frequency)
-		return TRUE
-	return pressure_icon_state(environment) != icon_state
+		om_watch_arm_revision(src, "gas", mixture_id, GAS_DEPENDENCY_PRESSURE, wake_callback = wake, current_revision = environment?.revision())
+	else
+		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(current_pressure_icon_state)), wake_callback = wake)
 
-/obj/machinery/meter/gas_dependency_interest_mask()
-	return GAS_DEPENDENCY_PRESSURE
+/obj/machinery/meter/proc/unregister_gas_dependency()
+	om_watch_disarm(src, "gas")
+
+/obj/machinery/meter/proc/wake_from_gas()
+	unregister_gas_dependency()
+	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/meter/proc/current_pressure_icon_state()
+	return pressure_icon_state(target?.return_air())
 
 /obj/machinery/meter/proc/pressure_icon_state(datum/gas_mixture/environment)
 	if(!environment)

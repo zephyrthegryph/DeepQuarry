@@ -170,10 +170,19 @@
 	update_icon()
 	return 1
 
-/obj/machinery/atmospherics/unary/freezer/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
-		return FALSE
-	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() > set_temperature
+/// A band watch (code/datums/om/watch.dm, "any gas quantity" generalization) on its own pipe
+/// contents' temperature crossing set_temperature, in place of the base unary "wake on any
+/// change" revision watch: the freezer only ever has work to do once the gas it's cooling warms
+/// back past its thermostat, so this skips every harmless composition/pressure wake in between.
+/obj/machinery/atmospherics/unary/freezer/register_gas_dependencies()
+	var/mixture_id = air_contents?.arena_id()
+	if(isnull(mixture_id))
+		return
+	var/list/datum/om_watch_band/bands = list(new /datum/om_watch_band("temperature", TRUE, set_temperature, 2))
+	om_watch_arm_bands(src, "pipe", mixture_id, bands, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+
+/obj/machinery/atmospherics/unary/freezer/unregister_gas_dependencies()
+	om_watch_disarm(src, "pipe")
 
 //upgrading parts
 /obj/machinery/atmospherics/unary/freezer/RefreshParts()

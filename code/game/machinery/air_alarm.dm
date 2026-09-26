@@ -122,10 +122,6 @@
 
 	var/datum/looping_sound/alarm/decompression_alarm/soundloop // Looping Alarms
 	var/atmoswarn = FALSE // Looping Alarms
-	var/sleeping_mixture_id
-	var/sleeping_mixture_revision = -1
-	/// Control-relevant atmospheric state captured when dependency sleeping begins.
-	var/sleeping_alarm_signature
 	/// Reused scratch output for threshold evaluation. Air alarms are numerous;
 	/// allocating a list for every harmless Rust publication dominated wake scans.
 	var/list/sleeping_signature_levels
@@ -166,7 +162,6 @@
 	soundloop = new(list(src), FALSE)
 
 /obj/machinery/alarm/Destroy()
-	SSmachines.wake_gas_subscriber(WEAKREF(src))
 	unregister_radio(src, frequency)
 	qdel(wires)
 	wires = null
@@ -290,54 +285,19 @@
 // the OM machine pipeline. The scan/regulate/election logic that used to live in process() is
 // unchanged, just relocated to /datum/om/stage/machine/power/alarm/perform().
 
-/obj/machinery/alarm/proc/register_gas_dependencies(datum/weakref/WR)
+/// Composition is only actionable when it crosses one of the alarm's TLV bands, so this arms an
+/// om_watch value watch (code/datums/om/watch.dm) on atmospheric_control_signature() rather than
+/// waking on every harmless room-air diffusion revision bump.
+/obj/machinery/alarm/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
-	var/new_mixture_id = environment?.arena_id()
-	if(sleeping_mixture_id != new_mixture_id)
-		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-		sleeping_mixture_id = new_mixture_id
-	// Hibernation is also the idempotent repair path after a wake. The mixture
-	// may be unchanged while the scheduler-side subscription was removed, so
-	// always ensure the registration exists.
-	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_revision = environment ? environment.revision() : -1
-	sleeping_alarm_signature = environment ? atmospheric_control_signature(environment) : null
+	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(current_control_signature)), channel = CHANGE_MACHINE_GAS)
 
-/obj/machinery/alarm/proc/unregister_gas_dependencies(datum/weakref/WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_id = null
-	sleeping_mixture_revision = -1
-	sleeping_alarm_signature = null
+/obj/machinery/alarm/proc/unregister_gas_dependencies()
+	om_watch_disarm(src, "gas")
 
-/obj/machinery/alarm/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
-	if(!(change_mask & GAS_DEPENDENCY_ALL) || mixture_id != sleeping_mixture_id)
-		return FALSE
-	// Composition is only actionable when it crosses one of the alarm's TLV
-	// bands. The Rust observation below contains every gas this controller can
-	// display, so unconditional composition wakes merely turned harmless room-air
-	// diffusion into six full alarm scans per Machines fire.
-	if(observation && observation_index)
-		var/current_revision = observation[observation_index + 2]
-		if(current_revision == sleeping_mixture_revision)
-			return FALSE
-		var/current_signature = atmospheric_control_signature_observation(observation, observation_index)
-		if(current_signature != sleeping_alarm_signature)
-			return TRUE
-		sleeping_mixture_revision = current_revision
-		return FALSE
+/obj/machinery/alarm/proc/current_control_signature()
 	var/datum/gas_mixture/environment = return_air()
-	if(!environment || environment.arena_id() != sleeping_mixture_id)
-		return TRUE
-	var/current_revision = environment.revision()
-	if(current_revision == sleeping_mixture_revision)
-		return FALSE
-	var/current_signature = atmospheric_control_signature(environment)
-	if(current_signature != sleeping_alarm_signature)
-		return TRUE
-	// Harmless diffusion changed the mixture without crossing a gameplay or
-	// control threshold. Advance the captured revision and remain asleep.
-	sleeping_mixture_revision = current_revision
-	return FALSE
+	return environment ? atmospheric_control_signature(environment) : null
 
 /obj/machinery/alarm/proc/atmospheric_control_signature(datum/gas_mixture/environment)
 	LAZYINITLIST(sleeping_signature_levels)
@@ -385,7 +345,7 @@
 	return current_danger | (calculated_pressure_level << 2) | (temperature_action << 4) | (cycle_ready << 6)
 
 /obj/machinery/alarm/proc/invalidate_gas_dependencies()
-	SSmachines.wake_gas_subscriber(WEAKREF(src))
+	om_watch_invalidate(src)
 
 /obj/machinery/alarm/update_use_power(new_use_power)
 	if(use_power == new_use_power)

@@ -22,7 +22,6 @@
 	var/datum/pipe_network/network
 
 	var/on = 0
-	var/sleeping_device_mixture_id
 	use_power = USE_POWER_OFF
 	level = 1
 
@@ -85,39 +84,24 @@
 	hibernate_until_device_changes()
 	return PROCESS_KILL
 
+/// Arms a raw forwarder (code/datums/om/watch.dm om_watch_arm_raw()): the connector has no local
+/// work to perform when its device's gas changes, only a side effect (enroll the shared pipenet
+/// for reconciliation), so it never needs to wake into process() over this -- it forwards every
+/// notification straight to on_device_gas_changed() and stays parked.
 /obj/machinery/atmospherics/portables_connector/proc/hibernate_until_device_changes()
 	var/datum/gas_mixture/device_air = connected_device?.air_contents
 	if(!device_air)
 		return
-	var/datum/weakref/WR = WEAKREF(src)
-	sleeping_device_mixture_id = device_air.arena_id()
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_device_mixture_id, WR)
+	om_watch_arm_raw(src, "device", device_air.arena_id(), GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(on_device_gas_changed)))
 
 /obj/machinery/atmospherics/portables_connector/proc/clear_gas_dependency()
-	var/datum/weakref/WR = WEAKREF(src)
-	if(isnull(sleeping_device_mixture_id))
-		if(WR?.reference)
-			SSmachines.sleeping_gas_devices.Remove(WR.reference)
-		return
-	SSmachines.unsubscribe_gas_dependency(sleeping_device_mixture_id, WR)
-	sleeping_device_mixture_id = null
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+	om_watch_disarm(src, "device")
 
-/obj/machinery/atmospherics/portables_connector/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_ALL))
-		return FALSE
-	var/datum/gas_mixture/device_air = connected_device?.air_contents
-	if(!on || !device_air || device_air.arena_id() != mixture_id)
-		return TRUE
-	// The connector has no local work to perform. Its sole responsibility on a
-	// device-side mutation is enrolling the shared pipenet for reconciliation.
-	// Do that directly and leave the connector subscribed instead of scheduling
-	// a machinery callback that immediately goes back to sleep.
+/obj/machinery/atmospherics/portables_connector/proc/on_device_gas_changed(mixture_id, change_mask, list/observation, observation_index)
+	if(!on || !connected_device)
+		return
 	if(network)
 		network.mark_dirty()
-	return FALSE
 
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/portables_connector/get_neighbor_nodes_for_init()

@@ -499,7 +499,7 @@
 	service.rebind()
 	TEST_ASSERT(length(service.mixture_ids), "The test must actually subscribe to a real atmosphere")
 	for(var/subscribed_id in service.mixture_ids)
-		TEST_ASSERT(REF(service) in SSmachines.material_gas_subscribers["[subscribed_id]"], "Material subscriptions must use the coalesced mixture registry")
+		TEST_ASSERT(om_watch_armed(service, "gas[subscribed_id]"), "Material subscriptions must use the coalesced mixture registry")
 	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
 	SSmaterial_services.unqueue(service)
 	service.timer = FALSE
@@ -519,10 +519,7 @@
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
 	TEST_ASSERT(!SSmaterial_services.scheduled_indices[reference], "Deleting an assembly must remove its queued exposure work")
 	for(var/id in ids)
-		var/list/subscribers = SSmachines.gas_mixture_subscribers["[id]"]
-		TEST_ASSERT(!(reference in subscribers), "Deleted assemblies must release mixture subscriptions")
-		var/list/material_subscribers = SSmachines.material_gas_subscribers["[id]"]
-		TEST_ASSERT(!(reference in material_subscribers), "Deleted assemblies must release coalesced material subscriptions")
+		TEST_ASSERT(!GLOB.om_gas_watches_by_mixture["[id]"], "Deleted assemblies must release mixture subscriptions")
 
 /datum/unit_test/dq_material_gas_publication_filtering
 
@@ -536,11 +533,11 @@
 	service.mixture_pressures = list("[mixture_id]" = ONE_ATMOSPHERE)
 	service.mixture_corrosion = list("[mixture_id]" = 0)
 	var/list/pressure_jitter = list(mixture_id, GAS_DEPENDENCY_PRESSURE, 2, ONE_ATMOSPHERE + 5, T20C, CELL_VOLUME, 22, 82, 0, 0, 0, 0, 0, 0, 104)
-	TEST_ASSERT(!service.gas_dependency_changed(mixture_id, GAS_DEPENDENCY_PRESSURE, pressure_jitter, 1), "Harmless pressure-only publication must not wake an ordinary machine")
+	TEST_ASSERT(!service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_PRESSURE, pressure_jitter, 1), "Harmless pressure-only publication must not wake an ordinary machine")
 	var/list/clean_composition = list(mixture_id, GAS_DEPENDENCY_COMPOSITION, 3, ONE_ATMOSPHERE, T20C, CELL_VOLUME, 21, 83, 0, 0, 0, 0, 0, 0, 104)
-	TEST_ASSERT(!service.gas_dependency_changed(mixture_id, GAS_DEPENDENCY_COMPOSITION, clean_composition, 1), "Non-corrosive room-air mixing must not wake an ordinary machine")
+	TEST_ASSERT(!service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_COMPOSITION, clean_composition, 1), "Non-corrosive room-air mixing must not wake an ordinary machine")
 	var/list/plasma_exposure = list(mixture_id, GAS_DEPENDENCY_COMPOSITION, 4, ONE_ATMOSPHERE, T20C, CELL_VOLUME, 20, 82, 2, 0, 0, 0, 0, 0, 104)
-	TEST_ASSERT(service.gas_dependency_changed(mixture_id, GAS_DEPENDENCY_COMPOSITION, plasma_exposure, 1), "A newly corrosive atmosphere must wake the material service")
+	TEST_ASSERT(service.gas_notify_actionable(mixture_id, GAS_DEPENDENCY_COMPOSITION, plasma_exposure, 1), "A newly corrosive atmosphere must wake the material service")
 	qdel(machine)
 
 	var/obj/machinery/portable_atmospherics/canister/canister = new(run_loc_floor_bottom_left)
@@ -548,7 +545,7 @@
 	TEST_ASSERT(service.gas_dependency_interest_mask() & GAS_DEPENDENCY_PRESSURE, "Pressure vessels must retain pressure-change subscriptions")
 	service.mixture_pressures = list("1" = 0, "2" = 0)
 	var/list/dangerous_pressure = list(1, GAS_DEPENDENCY_PRESSURE, 5, 100 * ONE_ATMOSPHERE, T20C, 1000, 0, 0, 0, 0, 0, 0, 0, 0, 100)
-	TEST_ASSERT(service.gas_dependency_changed(1, GAS_DEPENDENCY_PRESSURE, dangerous_pressure, 1), "A pressure vessel must wake when differential load approaches its material limit")
+	TEST_ASSERT(service.gas_notify_actionable(1, GAS_DEPENDENCY_PRESSURE, dangerous_pressure, 1), "A pressure vessel must wake when differential load approaches its material limit")
 	qdel(canister)
 
 /datum/unit_test/dq_material_service_due_heap

@@ -86,13 +86,6 @@
 		return
 	SSmachines.hibernate_vent(src)
 
-/obj/machinery/atmospherics/unary/outlet_injector/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
-		return FALSE
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return FALSE
-	return air_contents && air_contents.return_temperature() > 0 && air_contents.total_moles() >= MINIMUM_MOLES_TO_PUMP
-
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
 	if(injecting || (stat & NOPOWER))
 		return 0

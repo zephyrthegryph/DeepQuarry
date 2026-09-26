@@ -90,13 +90,6 @@
 
 	return 1
 
-/obj/machinery/atmospherics/unary/heat_exchanger/gas_dependency_changed(mixture_id, change_mask)
-	if(!..() || !partner)
-		return FALSE
-	if(air_contents.heat_capacity() <= 0 || partner.air_contents.heat_capacity() <= 0)
-		return FALSE
-	return abs(air_contents.return_temperature() - partner.air_contents.return_temperature()) > 0.1
-
 /obj/machinery/atmospherics/unary/heat_exchanger/wrench_act(mob/user, obj/item/W)
 	var/turf/T = src.loc
 	if (level==1 && isturf(T) && !T.is_plating())

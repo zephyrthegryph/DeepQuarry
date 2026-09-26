@@ -219,20 +219,13 @@
 
 /// The elected main alarm (per area) is the only one that scans and regulates;
 /// followers park until elect_main_air_alarm() (an ownership change) wakes a
-/// replacement. Gas wakes go through the alarm's own signature-diff
-/// gas_dependency_changed() (air_alarm.dm) rather than om_watch_gas()
-/// (code/datums/om/watch.dm): an air alarm's TLV table has several bands per
-/// gas plus a temperature/pressure signature, and the existing
-/// revision+signature compare already fires on exactly the crossings a band
-/// set would — re-deriving that as generic bands would duplicate, not
-/// improve, an already-tested check, for a device whose false-negative cost
-/// (a missed atmosphere alarm) is unusually high. It reaches the OM pipeline
-/// through the one bridge point: SSmachines' wake_gas_subscriber() and
-/// elect_main_air_alarm() now call om_changed(A, CHANGE_MACHINE_GAS /
-/// CHANGE_MACHINE_SETTINGS) instead of START_MACHINE_PROCESSING() once
-/// A.polls is FALSE. Active temperature regulation has no "room reached
-/// target" event, so it keeps running every pipeline tick (idle() below)
-/// until scan_atmo() reports the room has settled.
+/// replacement. Gas wakes go through om_watch_arm_value() (air_alarm.dm
+/// register_gas_dependencies(), code/datums/om/watch.dm): an air alarm's TLV table has several
+/// bands per gas plus a temperature/pressure signature, condensed into one comparable
+/// atmospheric_control_signature() value so the watch fires only on exactly the crossings a
+/// full band set would, not on every harmless room-air diffusion tick. Active temperature
+/// regulation has no "room reached target" event, so it keeps running every pipeline tick
+/// (idle() below) until scan_atmo() reports the room has settled.
 /datum/om/stage/machine/power/alarm
 	of = /obj/machinery/alarm
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_OCCUPANT | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
@@ -246,18 +239,18 @@
 		M.alarm_area.elect_main_air_alarm()
 		MA = M.alarm_area.main_air_alarm?.resolve() // try again
 	if(!MA || (M.stat & (NOPOWER|BROKEN)) || M.shorted || MA.shorted)
-		SSmachines.hibernate_air_alarm(M)
+		M.register_gas_dependencies()
 		return STAGE_IDLE
 	// Only the elected controller scans and regulates. The main alarm publishes
 	// the area's danger/icon state to every display.
 	if(MA != M)
-		SSmachines.hibernate_air_alarm(M, FALSE)
+		M.unregister_gas_dependencies()
 		return STAGE_IDLE
 	if(!get_turf(M))
 		return STAGE_IDLE
 	M.scan_atmo()
 	if(!M.regulating_temperature)
-		SSmachines.hibernate_air_alarm(M)
+		M.register_gas_dependencies()
 	return STAGE_IDLE
 
 /datum/om/stage/machine/power/alarm/idle(obj/machinery/alarm/M)
@@ -270,13 +263,12 @@
 /// reagent_distillery) still have their own real process() overrides and stay polling.
 ///
 /// Wakes on the valve, the holding tank and the connection (all raise
-/// CHANGE_MACHINE_SETTINGS today; canister.dm), plus any gas change on either mixture it
-/// touches through the existing subscribe_gas_dependency()/gas_dependency_changed() transport
-/// (air_alarm.dm's neighbour section explains why that stays hand-rolled rather than becoming
-/// om_watch_gas() bands here too: a canister's wake condition is "any composition, pressure or
-/// temperature change", which is exactly what the dirty-mixture watch already delivers, not a
-/// single threshold edge). hibernate_until_gas_changes() (unchanged) re-arms that subscription
-/// every time perform() settles.
+/// CHANGE_MACHINE_SETTINGS today; canister.dm), plus a gas watch armed by
+/// hibernate_until_gas_changes() (portable_atmospherics.dm/canister.dm, code/datums/om/watch.dm)
+/// every time perform() settles: "any change" while free-standing or connected with the valve
+/// open (the canister's own react_or_update()/pipenet membership needs to re-run on literally
+/// any composition/pressure/temperature change), or a value watch on desired_update_flag() while
+/// closed and pipenet-connected (only the displayed gauge band matters then).
 /datum/om/stage/machine/power/canister
 	of = /obj/machinery/portable_atmospherics/canister
 	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS

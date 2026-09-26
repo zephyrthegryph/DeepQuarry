@@ -188,38 +188,17 @@
 	var/on = 1
 	var/alert = 0
 	var/previousPressure
-	var/sleeping_mixture_id
-	var/sleeping_mixture_revision = -1
 
-/obj/machinery/airlock_sensor/proc/register_gas_dependencies(datum/weakref/WR)
+/obj/machinery/airlock_sensor/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
-	sleeping_mixture_id = environment?.arena_id()
-	sleeping_mixture_revision = environment?.revision() || -1
-	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	om_watch_arm_revision(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = environment?.revision())
 
-/obj/machinery/airlock_sensor/proc/unregister_gas_dependencies(datum/weakref/WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_id = null
-	sleeping_mixture_revision = -1
+/obj/machinery/airlock_sensor/proc/unregister_gas_dependencies()
+	om_watch_disarm(src, "gas")
 
-/obj/machinery/airlock_sensor/gas_dependency_changed(mixture_id, change_mask)
-	if(!on || mixture_id != sleeping_mixture_id || !(change_mask & GAS_DEPENDENCY_PRESSURE))
-		return FALSE
-	var/datum/gas_mixture/environment = return_air()
-	if(!environment || environment.arena_id() != sleeping_mixture_id)
-		return TRUE
-	var/current_revision = environment.revision()
-	if(current_revision == sleeping_mixture_revision)
-		return FALSE
-	// process() transmits pressure rounded to 0.1 kPa. A change that leaves the
-	// transmitted value identical cannot affect an airlock controller or icon.
-	if(round(environment.return_pressure(), 0.1) == previousPressure)
-		sleeping_mixture_revision = current_revision
-		return FALSE
-	return TRUE
-
-/obj/machinery/airlock_sensor/gas_dependency_interest_mask()
-	return GAS_DEPENDENCY_PRESSURE
+/obj/machinery/airlock_sensor/proc/wake_from_gas()
+	unregister_gas_dependencies()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/airlock_sensor/update_icon()
 	if(panel_open)
@@ -290,7 +269,6 @@
 	set_frequency(frequency)
 
 /obj/machinery/airlock_sensor/Destroy()
-	SSmachines.wake_gas_subscriber(WEAKREF(src))
 	if(SSradio)
 		SSradio.remove_object(src,frequency)
 	return ..()

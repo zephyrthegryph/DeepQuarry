@@ -94,10 +94,19 @@
 	update_icon()
 	return 1
 
-/obj/machinery/atmospherics/unary/heater/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
-		return FALSE
-	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature
+/// A band watch (code/datums/om/watch.dm, "any gas quantity" generalization) on its own pipe
+/// contents' temperature crossing set_temperature, in place of the base unary "wake on any
+/// change" revision watch: the heater only ever has work to do once the gas it's heating cools
+/// back past its thermostat.
+/obj/machinery/atmospherics/unary/heater/register_gas_dependencies()
+	var/mixture_id = air_contents?.arena_id()
+	if(isnull(mixture_id))
+		return
+	var/list/datum/om_watch_band/bands = list(new /datum/om_watch_band("temperature", FALSE, set_temperature, 2))
+	om_watch_arm_bands(src, "pipe", mixture_id, bands, wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+
+/obj/machinery/atmospherics/unary/heater/unregister_gas_dependencies()
+	om_watch_disarm(src, "pipe")
 
 /obj/machinery/atmospherics/unary/heater
 	silicon_use = SILICON_USE_UI

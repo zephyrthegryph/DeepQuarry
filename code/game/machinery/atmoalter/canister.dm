@@ -165,15 +165,21 @@
 	else
 		. |= 32
 
-/obj/machinery/portable_atmospherics/canister/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
-		return FALSE
-	// An attached closed canister's gas reactions and pipe membership are owned
-	// by the pipenet. Its machinery process only needs to refresh the gauge when
-	// the pressure crosses a displayed band.
+// An attached closed canister's gas reactions and pipe membership are owned by the pipenet.
+// Its OM pipeline stage only needs to refresh the gauge when the pressure crosses a displayed
+// band, so it watches desired_update_flag() (an om_watch value watch) instead of "any change"
+// in that state; otherwise it falls back to the portable_atmospherics base "any change" watch.
+/obj/machinery/portable_atmospherics/canister/hibernate_until_gas_changes()
 	if(connected_port && !valve_open)
-		return desired_update_flag() != update_flag
-	return TRUE
+		var/mixture_id = air_contents?.arena_id()
+		if(isnull(mixture_id))
+			return
+		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(current_update_flag)), wake_callback = CALLBACK(src, PROC_REF(wake_om_pipeline)))
+		return
+	return ..()
+
+/obj/machinery/portable_atmospherics/canister/proc/current_update_flag()
+	return desired_update_flag()
 
 /obj/machinery/portable_atmospherics/canister/update_icon()
 /*

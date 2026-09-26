@@ -36,8 +36,6 @@
 	// 32 for carbon dioxide concentration
 
 	var/datum/radio_frequency/radio_connection
-	var/sleeping_mixture_id
-	var/sleeping_mixture_revision = -1
 
 /obj/machinery/air_sensor/update_icon()
 	icon_state = "gsensor[on]"
@@ -89,36 +87,19 @@
 		mask |= GAS_DEPENDENCY_COMPOSITION
 	return mask
 
-/obj/machinery/air_sensor/gas_dependency_interest_mask()
-	return dependency_mask()
-
-/obj/machinery/air_sensor/proc/register_gas_dependencies(datum/weakref/WR)
+/obj/machinery/air_sensor/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
-	var/new_mixture_id = environment?.arena_id()
-	if(sleeping_mixture_id != new_mixture_id)
-		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-		sleeping_mixture_id = new_mixture_id
-	// Re-hibernation must repair a missing scheduler subscription even when the
-	// sensor is still observing the same authoritative mixture.
-	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_revision = environment ? environment.revision() : -1
+	om_watch_arm_revision(src, "gas", environment?.arena_id(), dependency_mask(), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)), current_revision = environment?.revision())
 
-/obj/machinery/air_sensor/proc/unregister_gas_dependencies(datum/weakref/WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_id = null
-	sleeping_mixture_revision = -1
+/obj/machinery/air_sensor/proc/unregister_gas_dependencies()
+	om_watch_disarm(src, "gas")
 
-/obj/machinery/air_sensor/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
-	if(!(change_mask & dependency_mask()) || mixture_id != sleeping_mixture_id)
-		return FALSE
-	var/observed_revision = observation && observation_index ? observation[observation_index + 2] : null
-	if(!isnull(observed_revision))
-		return observed_revision != sleeping_mixture_revision
-	var/datum/gas_mixture/environment = return_air()
-	return !environment || environment.arena_id() != sleeping_mixture_id || environment.revision() != sleeping_mixture_revision
+/obj/machinery/air_sensor/proc/wake_from_gas()
+	unregister_gas_dependencies()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/air_sensor/proc/invalidate_gas_dependencies()
-	SSmachines.wake_gas_subscriber(WEAKREF(src))
+	om_watch_invalidate(src)
 
 /obj/machinery/air_sensor/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -136,7 +117,6 @@
 		set_frequency(frequency)
 
 /obj/machinery/air_sensor/Destroy()
-	SSmachines.wake_gas_subscriber(WEAKREF(src))
 	if(SSradio)
 		SSradio.remove_object(src,frequency)
 	. = ..()

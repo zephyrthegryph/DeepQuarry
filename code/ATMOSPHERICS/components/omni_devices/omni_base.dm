@@ -24,8 +24,6 @@
 	var/underlays_current[4]
 
 	var/list/ports = new()
-	var/list/sleeping_mixture_ids
-	var/list/sleeping_mixture_revisions
 
 /obj/machinery/atmospherics/omni/Initialize(mapload)
 	. = ..()
@@ -83,44 +81,22 @@
 		update_icon()
 		wake_for_state_change()
 
+/// Arms a "wake on any change" watch on every port this device has gas in, keyed by the port's
+/// index so re-arming never has to diff which port used to hold which mixture.
 /obj/machinery/atmospherics/omni/proc/hibernate_until_gas_changes()
 	clear_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
-	sleeping_mixture_ids = list()
-	sleeping_mixture_revisions = list()
-	for(var/datum/omni_port/P in ports)
+	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_for_state_change))
+	for(var/i in 1 to length(ports))
+		var/datum/omni_port/P = ports[i]
 		var/mixture_id = P.air?.arena_id()
 		if(isnull(mixture_id))
 			continue
-		var/key = "[mixture_id]"
-		sleeping_mixture_ids[key] = mixture_id
-		sleeping_mixture_revisions[key] = P.air.revision()
-		SSmachines.subscribe_gas_dependency(mixture_id, WR)
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
+		om_watch_arm_revision(src, "port[i]", mixture_id, GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = P.air.revision())
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
-	for(var/key in sleeping_mixture_ids)
-		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_ids[key], WR)
-	sleeping_mixture_ids = null
-	sleeping_mixture_revisions = null
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
-
-/obj/machinery/atmospherics/omni/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_ALL) || !use_power || (stat & (NOPOWER|BROKEN)))
-		return FALSE
-	var/key = "[mixture_id]"
-	if(isnull(sleeping_mixture_ids?[key]))
-		return FALSE
-	for(var/datum/omni_port/P in ports)
-		if(P.air?.arena_id() != mixture_id)
-			continue
-		if(P.air.revision() == sleeping_mixture_revisions[key])
-			return FALSE
-		return can_process_gas()
-	return TRUE
+	for(var/i in 1 to length(ports))
+		om_watch_disarm(src, "port[i]")
 
 /obj/machinery/atmospherics/omni/proc/can_process_gas()
 	return TRUE

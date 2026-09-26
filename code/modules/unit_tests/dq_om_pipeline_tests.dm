@@ -600,8 +600,7 @@
 	for(var/i in 1 to 3)
 		om_run_frame_now(C, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "a closed, unreactive canister parks")
-	var/datum/weakref/canister_ref = WEAKREF(C)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[canister_ref.reference], "parking armed a gas-mixture watch")
+	TEST_ASSERT(om_watch_armed(C), "parking armed a gas-mixture watch")
 	C.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	for(var/gas_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
@@ -612,7 +611,7 @@
 	// subscription before this test regains execution (see the equivalent check in
 	// dq_idle_portables_connectors_and_displays_hibernate, dq_atmos_tests.dm). Both states prove
 	// delivery; being neither unparked nor resubscribed is stale.
-	TEST_ASSERT(!S.parked || (SSmachines.sleeping_gas_devices[canister_ref.reference] && !isnull(C.sleeping_mixture_id)), \
+	TEST_ASSERT(!S.parked || om_watch_armed(C), \
 		"a gas-mixture change on the watched mixture wakes the canister")
 	for(var/i in 1 to 3)
 		om_run_frame_now(C, /datum/om/pipeline/machine)
