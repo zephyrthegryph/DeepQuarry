@@ -177,8 +177,7 @@ Implant Specifics:<BR>"}
 		if(4)
 			delay = rand(0.5*60*10,1*60*10)	//from .5 to 1 minutes of free time
 
-	spawn(delay)
-		malfunction--
+	om_after(src, delay, PROC_REF(malfunction_recover))
 
 //////////////////////////////
 //	Death Explosive Implant
@@ -330,8 +329,7 @@ Implant Specifics:<BR>"}
 						activate()		//50% chance of bye bye
 					else
 						meltdown()		//50% chance of implant disarming
-	spawn (20)
-		malfunction--
+	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 /obj/item/implant/explosive/islegal()
 	return 0
@@ -340,18 +338,7 @@ Implant Specifics:<BR>"}
 	if (ishuman(imp_in) && part)
 		imp_in.visible_message(span_warning("Something beeps inside [imp_in][part ? "'s [part.name]" : ""]!"))
 		playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
-		spawn(25)
-			if (ishuman(imp_in) && part)
-				//No tearing off these parts since it's pretty much killing
-				//and you can't replace groins
-				if (istype(part,/obj/item/organ/external/chest) ||	\
-					istype(part,/obj/item/organ/external/groin) ||	\
-					istype(part,/obj/item/organ/external/head))
-					part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
-				else
-					part.droplimb(0,DROPLIMB_BLUNT)
-			explosion(get_turf(imp_in), -1, -1, 1, 3)
-			qdel(src)
+		om_after(src, 25, PROC_REF(small_boom_goes))
 
 //////////////////////////////
 //	Chemical Implant
@@ -401,8 +388,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	if(!src.reagents.total_volume)
 		to_chat(R, "You hear a faint click from your chest.")
 		playsound(R, 'sound/weapons/empty.ogg', 10, 1)
-		spawn(0)
-			qdel(src)
+		om_qdel_after(src, 0)
 	return
 
 /obj/item/implant/chem/emp_act(severity, recursive)
@@ -425,8 +411,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			if(prob(20))
 				activate(5)
 
-	spawn(20)
-		malfunction--
+	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 //////////////////////////////
 //	Loyalty Implant
@@ -587,8 +572,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			malfunction = MALFUNCTION_PERMANENT
 		STOP_PROCESSING(SSobj, src)
 
-	spawn(20)
-		malfunction--
+	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 /obj/item/implant/death_alarm/post_implant(mob/source as mob)
 	mobname = source.real_name
@@ -861,3 +845,20 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 		new nif_payload(target.nif,laws)
 		to_chat(target, span_notice("((OOC NOTE: Commands that go against server rules should be disregarded and ahelped.))"))
 		to_chat(target, span_notice("((OOC NOTE: If you did not agree to this, you are not compelled to follow the laws.))"))
+
+/// om_after() target: one step of a temporary malfunction wears off.
+/obj/item/implant/proc/malfunction_recover()
+	malfunction--
+
+/obj/item/implant/explosive/proc/small_boom_goes()
+	if (ishuman(imp_in) && part)
+		//No tearing off these parts since it's pretty much killing
+		//and you can't replace groins
+		if (istype(part,/obj/item/organ/external/chest) ||	\
+			istype(part,/obj/item/organ/external/groin) ||	\
+			istype(part,/obj/item/organ/external/head))
+			part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
+		else
+			part.droplimb(0,DROPLIMB_BLUNT)
+	explosion(get_turf(imp_in), -1, -1, 1, 3)
+	qdel(src)

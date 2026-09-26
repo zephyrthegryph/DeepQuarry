@@ -35,9 +35,7 @@
 			L.updateOverlays(src.loc)
 	if(istype(loc, /turf/simulated/open))
 		var/turf/simulated/open/O = loc
-		spawn(1)
-			if(istype(O)) // If we built a new floor with the lattice, the open turf won't exist anymore.
-				O.update() // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
+		om_after(O, 1, TYPE_PROC_REF(/turf/simulated/open, update)) // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
 	. = ..()
 
 /obj/structure/lattice/attackby(obj/item/C as obj, mob/user as mob)
@@ -62,20 +60,7 @@
 /obj/structure/lattice/proc/updateOverlays()
 	//if(!(istype(src.loc, /turf/space)))
 	//	qdel(src)
-	spawn(1)
-		cut_overlays()
-
-		var/dir_sum = 0
-
-		for (var/direction in GLOB.cardinal)
-			if(locate(/obj/structure/lattice, get_step(src, direction)))
-				dir_sum += direction
-			else
-				if(!(istype(get_step(src, direction), /turf/space)))
-					dir_sum += direction
-
-		icon_state = "lattice[dir_sum]"
-		return
+	om_after(src, 1, PROC_REF(update_overlays_now))
 
 // Moves upgrading lattices to their own proc for other stuff to call. Also makes them instant.
 /obj/structure/lattice/proc/upgrade(obj/item/stack/rods/R, mob/user)
@@ -84,3 +69,18 @@
 	src.alpha = 0 // Note: I don't know why this is set, Eris did it, just trusting for now. ~Leshana
 	new /obj/structure/catwalk(src.loc)
 	qdel(src)
+
+/obj/structure/lattice/proc/update_overlays_now()
+	cut_overlays()
+
+	var/dir_sum = 0
+
+	for (var/direction in GLOB.cardinal)
+		if(locate(/obj/structure/lattice, get_step(src, direction)))
+			dir_sum += direction
+		else
+			if(!(istype(get_step(src, direction), /turf/space)))
+				dir_sum += direction
+
+	icon_state = "lattice[dir_sum]"
+	return

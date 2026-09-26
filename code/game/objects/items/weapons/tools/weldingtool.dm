@@ -348,8 +348,7 @@
 				// Don't cure being nearsighted
 				if(!(H.disabilities & NEARSIGHTED))
 					user.disabilities |= NEARSIGHTED
-					spawn(100)
-						user.disabilities &= ~NEARSIGHTED
+					om_after(user, 10 SECONDS, TYPE_PROC_REF(/mob, cure_temporary_disability), NEARSIGHTED)
 	return
 
 /obj/item/weldingtool/is_hot()

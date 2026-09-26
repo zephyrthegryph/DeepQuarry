@@ -76,13 +76,13 @@
 	to_chat(M, span_cult("You are <b>[R]</b>, the remnant of some distant species, mechanical or flesh, living or dead."))
 	R.ckey = M.ckey
 	visible_message(span_cult("As \the [src] shudders, it glows before lifting itself with three shimmering limbs!"))
-	spawn(3 SECONDS)
-		to_chat(R,span_notice("Many of your tools are standard drone devices, however others provide you with particular benefits."))
-		to_chat(R,span_notice("Unlike standard drones, you are capable of utilizing 'zero point wells', found in your 'spells' tab."))
-		to_chat(R,span_notice("Here you will also find your replication ability(s), depending on the type of drone you are."))
-		to_chat(R,span_notice("Gunners have a special anti-personnel gun capable of shocking or punching through armor with low damage."))
-		to_chat(R,span_notice("Impalers have an energy-lance."))
-		to_chat(R,span_notice("General drones have the unique ability to produce one of each of these two types of shells per generation."))
+	om_after(R, 3 SECONDS, TYPE_PROC_REF(/datum, om_chat),
+		span_notice("Many of your tools are standard drone devices, however others provide you with particular benefits."),
+		span_notice("Unlike standard drones, you are capable of utilizing 'zero point wells', found in your 'spells' tab."),
+		span_notice("Here you will also find your replication ability(s), depending on the type of drone you are."),
+		span_notice("Gunners have a special anti-personnel gun capable of shocking or punching through armor with low damage."),
+		span_notice("Impalers have an energy-lance."),
+		span_notice("General drones have the unique ability to produce one of each of these two types of shells per generation."))
 	if(!QDELETED(src))
 		qdel(src)
 

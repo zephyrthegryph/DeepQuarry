@@ -183,8 +183,7 @@
 				C.visible_message(span_warning("[C] pounces on the light!"), span_warning("You pounce on the light!"))
 				step_towards(C, targloc)
 				C.lay_down()
-				spawn(1 SECOND)
-					C.lay_down()
+				om_after(C, 1 SECOND, "lay_down")
 			else
 				C.set_dir(get_dir(C,targloc))
 				C.visible_message(span_notice("[C] watches the light."), span_notice("Your attention is drawn to the mysterious glowing dot."))

@@ -87,8 +87,7 @@ Implant Specifics:<BR>"}
 				if(!robotic_brain)
 					to_chat(L, span_warning("Your [brain_location] aches."))
 
-	spawn(delay)
-		malfunction--
+	om_after(src, delay, PROC_REF(malfunction_recover))
 
 /obj/item/implant/neural/meltdown()
 	..()

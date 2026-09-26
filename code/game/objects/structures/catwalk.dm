@@ -39,10 +39,7 @@
 	return ..()
 
 /obj/structure/catwalk/proc/update_falling()
-	spawn(1) //We get called in Destroy() and things. We might not be gone yet, so let's just put this off.
-		if(istype(loc, /turf/simulated/open))
-			var/turf/simulated/open/O = loc
-			O.update() //Will cause anything on the open turf to fall if it should
+	if(istype(loc, /turf/simulated/open)) om_after(loc, 1, TYPE_PROC_REF(/turf/simulated/open, update)) //We get called in Destroy() and things: the open turf, not us, owns the update.
 
 /obj/structure/catwalk/proc/redraw_nearby_catwalks()
 	for(var/direction in GLOB.alldirs)

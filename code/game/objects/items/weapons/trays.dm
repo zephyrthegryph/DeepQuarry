@@ -29,11 +29,7 @@
 		I.loc = M.loc
 		LAZYREMOVE(carrying, I)
 		if(isturf(I.loc))
-			spawn()
-				for(var/i = 1, i <= rand(1,2), i++)
-					if(I)
-						step(I, pick(NORTH,SOUTH,EAST,WEST))
-						sleep(rand(2,4))
+			I.scatter_steps(rand(1, 2))
 
 
 	if(CLUMSY_FAIL_CHANCE(user))              //What if he's a clown?
@@ -154,19 +150,17 @@
 	if(equipping)
 		return ..() //Don't bother searching if we're just being put in a pocket/in hands.
 	..()
+	om_after(src, 0, PROC_REF(spill_where_dropped)) //Allows the tray to update location, rather than just checking against mob's location
+
+/obj/item/tray/proc/spill_where_dropped()
 	var/noTable = null
+	if(isturf(loc) && !(locate(/obj/structure/table) in loc))
+		noTable = 1
 
-	spawn() //Allows the tray to update location, rather than just checking against mob's location
-		if(isturf(loc) && !(locate(/obj/structure/table) in loc))
-			noTable = 1
-
-		if(isturf(loc) && !(locate(/mob/living) in loc))
-			cut_overlays()
-			for(var/obj/item/I in carrying)
-				I.forceMove(loc)
-				LAZYREMOVE(carrying, I)
-				if(noTable)
-					for(var/i = 1, i <= rand(1,2), i++)
-						if(I)
-							step(I, pick(NORTH,SOUTH,EAST,WEST))
-							sleep(rand(2,4))
+	if(isturf(loc) && !(locate(/mob/living) in loc))
+		cut_overlays()
+		for(var/obj/item/I in carrying)
+			I.forceMove(loc)
+			LAZYREMOVE(carrying, I)
+			if(noTable)
+				I.scatter_steps(rand(1, 2))

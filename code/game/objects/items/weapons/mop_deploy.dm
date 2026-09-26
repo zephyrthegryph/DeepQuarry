@@ -59,7 +59,7 @@
 	if(.)
 		return TRUE
 	user.drop_from_inventory(src)
-	spawn(1) if(!QDELETED(src)) qdel(src)
+	om_qdel_after(src, 1)
 
 /obj/item/mop_deploy/process()
 	if(!creator || loc != creator || !creator.item_is_in_hands(src))
@@ -74,4 +74,4 @@
 			LAZYREMOVE(host.pinned, src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
-		spawn(1) if(!QDELETED(src)) qdel(src)
+		om_qdel_after(src, 1)

@@ -76,9 +76,7 @@
 		for(var/atom/A in get_turf(hit_atom))
 			src.reagents.touch(A)
 		src.icon_state = "burst"
-		spawn(5)
-			if(src)
-				qdel(src)
+		om_qdel_after(src, 5)
 	return
 
 /obj/item/toy/balloon/update_icon()
@@ -2156,11 +2154,7 @@
 	if(cooldown < world.time)
 		cooldown = world.time + 1800 //3 minutes
 		user.visible_message(span_warning("[user] presses a button on [src]"), span_notice("You activate [src], it plays a loud noise!"), span_notice("You hear the click of a button."))
-		spawn(5) //gia said so
-			icon_state = "nuketoy"
-			playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
-			VARSET_IN(src, icon_state, "nuketoycool", 135)
-			VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))
+		om_after(src, 5, PROC_REF(alarm_sequence)) //gia said so
 	else
 		var/timeleft = (cooldown - world.time)
 		to_chat(user, span_warning("Nothing happens, and") + " '[round(timeleft/10)]' " + span_warning("appears on a small display."))
@@ -2238,9 +2232,7 @@
 		atom_say("Hiss!")
 		var/list/possible_sounds = list('sound/voice/hiss1.ogg', 'sound/voice/hiss2.ogg', 'sound/voice/hiss3.ogg', 'sound/voice/hiss4.ogg')
 		playsound(get_turf(src), pick(possible_sounds), 50, 1)
-		spawn(45)
-			if(src)
-				icon_state = "[initial(icon_state)]"
+		om_after(src, 45, TYPE_PROC_REF(/datum, om_set_var), "icon_state", "[initial(icon_state)]")
 	else
 		to_chat(user, span_warning("The string on [src] hasn't rewound all the way!"))
 		return
@@ -2930,3 +2922,9 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
+
+/obj/item/toy/nuke/proc/alarm_sequence()
+	icon_state = "nuketoy"
+	playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
+	VARSET_IN(src, icon_state, "nuketoycool", 135)
+	VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))

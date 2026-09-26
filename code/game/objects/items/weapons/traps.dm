@@ -237,8 +237,7 @@
 				"You hear the rustling of [material.name]."
 				)
 			playsound(src, 'sound/items/Wirecutter.ogg',70, 1)
-			spawn(2)
-				playsound(src, 'sound/items/Wirecutter.ogg',40, 1)
+			om_after(src, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/items/Wirecutter.ogg', 40, 1)
 			user.drop_from_inventory(src)
 			forceMove(get_turf(src))
 			anchored = TRUE

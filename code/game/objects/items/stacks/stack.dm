@@ -419,9 +419,8 @@
 				user.put_in_hands(F)
 				src.add_fingerprint(user)
 				F.add_fingerprint(user)
-				spawn(0)
-					if (src && user.check_current_machine(src))
-						src.interact(user)
+				if (src && user.check_current_machine(src))
+					src.interact(user)
 	else
 		..()
 	return

@@ -53,11 +53,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	//If dropped, put ourselves out
 	//not before lighting up the turf we land on, though.
 	if(lit)
-		spawn(0)
-			var/turf/location = loc
-			if(istype(location))
-				location.hotspot_expose(700, 5)
-			burn_out()
+		om_after(src, 0, PROC_REF(burn_out_where_dropped))
 	return ..()
 
 /obj/item/flame/match/proc/light(mob/user)
@@ -1146,3 +1142,10 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	if (location)
 		location.hotspot_expose(700, 5)
 	return
+
+/// Lights up the turf the match landed on, then goes out.
+/obj/item/flame/match/proc/burn_out_where_dropped()
+	var/turf/location = loc
+	if(istype(location))
+		location.hotspot_expose(700, 5)
+	burn_out()

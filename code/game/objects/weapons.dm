@@ -1,6 +1,5 @@
 /obj/item/Bump(mob/M as mob)
-	spawn(0)
-		..()
+	..()
 	return
 
 /obj/item/melee

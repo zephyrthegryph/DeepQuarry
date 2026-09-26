@@ -136,13 +136,15 @@
 	icon_state = "wallet-emp"
 	update_icon()
 
-	spawn(200)
-		if(src)
-			icon_state = original_state
-			update_icon()
+	om_after(src, 20 SECONDS, PROC_REF(emp_recovered), original_state)
 
 /obj/item/storage/wallet/womens
 	name = "women's wallet"
 	desc = "A stylish wallet typically used by women."
 	icon_state = "girl_wallet"
 	item_state_slots = list(slot_r_hand_str = "wowallet", slot_l_hand_str = "wowallet")
+
+/obj/item/storage/wallet/poly/proc/emp_recovered(original_state)
+	if(src)
+		icon_state = original_state
+		update_icon()

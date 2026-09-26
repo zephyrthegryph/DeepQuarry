@@ -188,13 +188,7 @@
 	cooldown = 1
 	update_icon()
 
-	spawn(delay)
-		if(cooldown)
-			cooldown = 0
-			update_icon()
-
-			make_announcement("beeps, \"Unit is re-energized.\"", "notice")
-			playsound(src, 'sound/machines/defib_ready.ogg', 50, 0)
+	om_after(src, delay, PROC_REF(recharged))
 
 /obj/item/shockpaddles/update_held_icon()
 	var/mob/living/M = loc
@@ -716,3 +710,11 @@
 
 #undef DEFIB_TIME_LIMIT
 #undef DEFIB_TIME_LOSS
+
+/obj/item/shockpaddles/proc/recharged()
+	if(cooldown)
+		cooldown = 0
+		update_icon()
+
+		make_announcement("beeps, \"Unit is re-energized.\"", "notice")
+		playsound(src, 'sound/machines/defib_ready.ogg', 50, 0)

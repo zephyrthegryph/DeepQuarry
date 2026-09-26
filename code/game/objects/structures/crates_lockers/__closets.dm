@@ -435,7 +435,7 @@
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] [attack_message] the [src]!"))
 	dump_contents()
-	spawn(1) qdel(src)
+	om_after(src, 1, TYPE_PROC_REF(/datum, om_qdel_self))
 	return 1
 
 /obj/structure/closet/proc/req_breakout()

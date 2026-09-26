@@ -73,18 +73,23 @@
 
 /obj/machinery/holoplant/proc/flicker()
 	interference = TRUE
-	spawn(0)
-		cut_overlays()
-		set_light(0)
-		sleep(rand(2,4))
+	flicker_frame(FALSE)
+	var/delay = rand(2,4)
+	om_after(src, delay, PROC_REF(flicker_frame), TRUE)
+	delay += rand(2,4)
+	om_after(src, delay, PROC_REF(flicker_frame), FALSE)
+	delay += rand(2,4)
+	om_after(src, delay, PROC_REF(flicker_frame), TRUE, TRUE)
+
+/// One frame of a flicker: the plant shown or hidden; the last frame ends the interference.
+/obj/machinery/holoplant/proc/flicker_frame(shown, last)
+	if(shown)
 		add_overlay(plant)
 		set_light(2)
-		sleep(rand(2,4))
+	else
 		cut_overlays()
 		set_light(0)
-		sleep(rand(2,4))
-		add_overlay(plant)
-		set_light(2)
+	if(last)
 		interference = FALSE
 
 /obj/machinery/holoplant/proc/prepare_icon(state)

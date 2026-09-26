@@ -223,7 +223,7 @@
 			windoor.density = FALSE
 			if(created_name)
 				windoor.name = created_name
-			spawn(0)
+			spawn(0) // S7 keeps: door close() sleeps (doors, track 1d)
 				windoor.close()
 
 			if(src.electronics.one_access)
@@ -245,7 +245,7 @@
 			windoor.density = FALSE
 			if(created_name)
 				windoor.name = created_name
-			spawn(0)
+			spawn(0) // S7 keeps: door close() sleeps (doors, track 1d)
 				windoor.close()
 
 			if(src.electronics.one_access)

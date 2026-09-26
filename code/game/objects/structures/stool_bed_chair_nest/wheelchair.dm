@@ -125,12 +125,7 @@
 		if(pulling.loc == src.loc) // We moved onto the wheelchair? Revert!
 			pulling.forceMove(T)
 		else
-			spawn(0)
-				if(get_dist(src, pulling) > 1) // We are too far away? Losing control.
-					om_unlink(src, pulling, /datum/om/relation/pulling)
-				pulling = PULLING(src)
-				if(pulling)
-					pulling.set_dir(get_dir(pulling, src)) // When everything is right, face the wheelchair
+			om_after(src, 0, PROC_REF(check_pulled_along))
 	if(bloodiness)
 		create_track()
 	driving = 0
@@ -256,6 +251,15 @@
 		var/obj/item/wheelchair/R = new folded_type(get_turf(src))
 		R.name = src.name
 		R.color = src.color
-		spawn(0)
-			qdel(src)
+		om_qdel_after(src, 0)
 		return
+
+/obj/structure/bed/chair/wheelchair/proc/check_pulled_along()
+	var/mob/living/pulling = PULLING(src)
+	if(!pulling)
+		return
+	if(get_dist(src, pulling) > 1) // We are too far away? Losing control.
+		om_unlink(src, pulling, /datum/om/relation/pulling)
+	pulling = PULLING(src)
+	if(pulling)
+		pulling.set_dir(get_dir(pulling, src)) // When everything is right, face the wheelchair

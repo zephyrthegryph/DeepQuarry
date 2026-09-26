@@ -75,20 +75,19 @@
 /obj/item/extinguisher/proc/propel_object(obj/O, mob/user, movementdirection)
 	if(O.anchored) return
 
-	var/obj/structure/bed/chair/C
-	if(istype(O, /obj/structure/bed/chair))
-		C = O
+	// Six pushes slowing down (each sets a chair's propelled countdown), then three more.
+	var/list/move_speed = list(1, 1, 1, 2, 2, 3, 3, 3, 3)
+	var/delay = 0
+	for(var/i in 1 to 9)
+		om_after(O, delay, TYPE_PROC_REF(/obj, extinguisher_propel_step), user, movementdirection, i <= 6 ? 6 - i : null)
+		delay += move_speed[i]
 
-	var/list/move_speed = list(1, 1, 1, 2, 2, 3)
-	for(var/i in 1 to 6)
-		if(C) C.propelled = (6-i)
-		O.Move(get_step(user,movementdirection), movementdirection)
-		sleep(move_speed[i])
-
-	//additional movement
-	for(var/i in 1 to 3)
-		O.Move(get_step(user,movementdirection), movementdirection)
-		sleep(3)
+/// One push of an extinguisher's recoil on the thing its user sits on.
+/obj/proc/extinguisher_propel_step(mob/user, movementdirection, propelled)
+	var/obj/structure/bed/chair/C = src
+	if(istype(C) && !isnull(propelled))
+		C.propelled = propelled
+	Move(get_step(user, movementdirection), movementdirection)
 
 /obj/item/extinguisher/afterattack(atom/target, mob/user, flag)
 	//TODO; Add support for reagents in water.
@@ -115,8 +114,7 @@
 		var/direction = get_dir(src,target)
 
 		if(BUCKLED(user) && isobj(BUCKLED(user)))
-			spawn(0)
-				propel_object(BUCKLED(user), user, turn(direction,180))
+			propel_object(BUCKLED(user), user, turn(direction,180))
 
 		var/turf/T = get_turf(target)
 		var/turf/T1 = get_step(T,turn(direction, 90))
@@ -125,19 +123,7 @@
 		var/list/the_targets = list(T,T1,T2)
 
 		for(var/a = 1 to spray_particles)
-			spawn(0)
-				if(!src || !reagents.total_volume) return
-
-				var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(src))
-				var/turf/my_target
-				if(a <= the_targets.len)
-					my_target = the_targets[a]
-				else
-					my_target = pick(the_targets)
-				W.create_reagents(spray_amount)
-				reagents.trans_to_obj(W, spray_amount)
-				W.set_color()
-				W.set_up(my_target)
+			spray_particle(a, the_targets)
 
 		if((istype(user.loc, /turf/space)) || (user.lastarea.get_gravity() == 0))
 			user.inertia_dir = get_dir(target, user)
@@ -145,3 +131,17 @@
 	else
 		return ..()
 	return
+
+/obj/item/extinguisher/proc/spray_particle(a, list/the_targets)
+	if(!src || !reagents.total_volume) return
+
+	var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(src))
+	var/turf/my_target
+	if(a <= the_targets.len)
+		my_target = the_targets[a]
+	else
+		my_target = pick(the_targets)
+	W.create_reagents(spray_amount)
+	reagents.trans_to_obj(W, spray_amount)
+	W.set_color()
+	W.set_up(my_target)

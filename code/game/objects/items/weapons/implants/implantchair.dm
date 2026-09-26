@@ -42,14 +42,11 @@
 				injecting = 1
 				go_out()
 				ready = 0
-				spawn(injection_cooldown)
-					ready = 1
+				om_after(src, injection_cooldown, TYPE_PROC_REF(/datum, om_set_var), "ready", 1)
 
 		if(href_list["replenish"])
 			ready = 0
-			spawn(replenish_cooldown)
-				add_implants()
-				ready = 1
+			om_after(src, replenish_cooldown, PROC_REF(replenished))
 
 		src.updateUsrDialog(usr)
 		src.add_fingerprint(usr)
@@ -164,3 +161,7 @@
 		return TRUE
 	put_mob(user)
 	return TRUE
+
+/obj/machinery/implantchair/proc/replenished()
+	add_implants()
+	ready = 1

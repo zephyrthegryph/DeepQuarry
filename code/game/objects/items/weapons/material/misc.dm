@@ -150,8 +150,7 @@
 				target.Move(get_step(target,get_dir(user,target)))
 		if(I_GRAB)
 			var/turf/STurf = get_turf(target)
-			spawn(2)
-				playsound(STurf, 'sound/effects/snap.ogg', 60, 1)
+			om_after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/snap.ogg', 60, 1)
 			target.visible_message(span_critical("\The [src] yanks \the [target] towards \the [user]!"))
 			target.throw_at(get_turf(get_step(user,get_dir(user,target))), 2, 1, src)
 

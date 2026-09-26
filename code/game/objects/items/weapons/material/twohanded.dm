@@ -77,8 +77,7 @@
 		return ..()
 	..()
 	if(wielded)
-		spawn(0)
-			update_held_icon()
+		update_held_icon()
 
 /*
  * Fireaxe

@@ -78,8 +78,7 @@
 
 		target.add_overlay(image_overlay)
 		to_chat(user, "Bomb has been planted. Timer counting down from [timer].")
-		spawn(timer*10)
-			explode(get_turf(target))
+		om_after(src, timer SECONDS, PROC_REF(explode), get_turf(target))
 
 /obj/item/plastique/proc/explode(location)
 	if(!target)

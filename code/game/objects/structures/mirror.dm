@@ -136,7 +136,7 @@
 				GLOB.raiders.equip(vox)
 				if(user.mind)
 					user.mind.transfer_to(vox)
-				spawn(1)
+				spawn(1) // S7 keeps: tgui_input_text() sleeps (prompts, S10)
 					var/newname = sanitizeSafe(tgui_input_text(vox,"Enter a name, or leave blank for the default name.", "Name change","", MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 					if(!newname || newname == "")
 						var/datum/language/L = GLOB.all_languages[vox.species.default_language]

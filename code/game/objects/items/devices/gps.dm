@@ -173,10 +173,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	emped = TRUE
 	update_icon()
 
-	spawn(duration)
-		emped = FALSE
-		update_icon()
-		visible_message("\The [src] appears to be functional again.")
+	om_after(src, duration, PROC_REF(emp_recovered))
 
 /obj/item/gps/update_icon()
 	cut_overlays()
@@ -455,3 +452,8 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	hide_signal = TRUE
 	can_hide_signal = TRUE
 	theme = "syndicate"
+
+/obj/item/gps/proc/emp_recovered()
+	emped = FALSE
+	update_icon()
+	visible_message("\The [src] appears to be functional again.")

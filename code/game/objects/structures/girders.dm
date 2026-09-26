@@ -97,7 +97,7 @@
 		return 0
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] [attack_message] the [src]!"))
-	spawn(1) dismantle()
+	om_after(src, 1, PROC_REF(dismantle))
 	return 1
 
 /obj/structure/girder/bullet_act(obj/item/projectile/Proj)

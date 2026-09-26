@@ -49,5 +49,4 @@
 
 		if(timed)
 			timing = 1
-			spawn(time_limit)
-				toggle_lock()
+			om_after(src, time_limit, PROC_REF(toggle_lock))

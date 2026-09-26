@@ -119,8 +119,7 @@
 		if(contents.len)	return 0
 		visible_message("[usr] folds up the [src.name]")
 		var/folded = new item_path(get_turf(src))
-		spawn(0)
-			qdel(src)
+		om_qdel_after(src, 0)
 		return folded
 
 /obj/structure/closet/body_bag/relaymove(mob/user,direction)

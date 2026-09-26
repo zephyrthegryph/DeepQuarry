@@ -87,12 +87,11 @@
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
 		if(do_after(user, 2 SECONDS, target = GRAB_TARGET(G)))
 			affecting.forceMove(loc)
-			spawn(0)
-				if(buckle_mob(affecting))
-					affecting.visible_message(\
-						span_danger("[affecting.name] is buckled to [src] by [user.name]!"),\
-						span_danger("You are buckled to [src] by [user.name]!"),\
-						span_notice("You hear metal clanking."))
+			if(buckle_mob(affecting))
+				affecting.visible_message(\
+					span_danger("[affecting.name] is buckled to [src] by [user.name]!"),\
+					span_danger("You are buckled to [src] by [user.name]!"),\
+					span_notice("You hear metal clanking."))
 			qdel(I)
 
 
