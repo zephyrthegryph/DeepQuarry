@@ -42,6 +42,8 @@
 		/obj/machinery/air_sensor,
 		/obj/machinery/meter,
 		/obj/machinery/computer/general_air_control/fuel_injection,
+		/obj/machinery/portable_atmospherics/hydroponics,
+		/obj/machinery/portable_atmospherics/powered/reagent_distillery,
 	)
 	behaviours = list(/datum/om/pipeline/machine)
 
@@ -389,7 +391,8 @@
 	woken_by = "power_change(); atom_break()/atom_fix(); wrenching; settings and topology (START_MACHINE_PROCESSING()); its gas watch"
 
 /datum/om/stage/machine/power/step/perform(obj/machinery/M, datum/om/frame/machine/F)
-	if(M.machine_step() == PROCESS_KILL)
+	M.step_active = M.machine_step() != PROCESS_KILL
+	if(!M.step_active)
 		return STAGE_IDLE
 
 /// Settled when it can't act (step_has_work(), each device's own eligibility rule) or when it is
@@ -422,3 +425,13 @@
 
 /datum/om/stage/machine/power/step/huge_scrubber
 	of = /obj/machinery/portable_atmospherics/powered/scrubber/huge
+
+/// Hydroponics trays: a frame per growth cycle while something is growing or soaking in; between
+/// cycles the tray parks on its growth timer (schedule_growth_wake()), and reagent or seed changes
+/// wake it through START_MACHINE_PROCESSING().
+/datum/om/stage/machine/power/step/hydroponics
+	of = /obj/machinery/portable_atmospherics/hydroponics
+
+/// The distillery: every frame while on (heating, pumping beakers); off, it parks until toggled.
+/datum/om/stage/machine/power/step/reagent_distillery
+	of = /obj/machinery/portable_atmospherics/powered/reagent_distillery

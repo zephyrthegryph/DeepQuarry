@@ -1,4 +1,4 @@
-/obj/machinery/portable_atmospherics/hydroponics/process()
+/obj/machinery/portable_atmospherics/hydroponics/machine_step()
 	if(growth_timer)
 		deltimer(growth_timer)
 		growth_timer = null

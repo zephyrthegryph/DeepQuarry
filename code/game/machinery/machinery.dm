@@ -135,6 +135,8 @@ Class Procs:
 	var/tmp/gas_dependency_wake_count = 0
 	/// Monotonic diagnostic counter: START_MACHINE_PROCESSING() wakes of a pipeline (polls = FALSE) machine.
 	var/tmp/machine_wake_count = 0
+	/// FALSE once machine_step() returned PROCESS_KILL; the step stage parks it (machine_pipeline.dm).
+	var/tmp/step_active = TRUE
 	/// Slot in SSmachines.processing_machines while DF_ISPROCESSING is set; lets
 	/// hibernation swap-remove in O(1).
 	var/tmp/machine_processing_index = 0
@@ -234,8 +236,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /// TRUE when machine_step() would have work to do right now: the device's own eligibility rule,
 /// the same test its gas watch arms. The machine pipeline's step stage reads it as its idle rule.
+/// The default: whatever its last machine_step() said (anything but PROCESS_KILL keeps it running).
 /obj/machinery/proc/step_has_work()
-	return FALSE
+	return step_active
 
 /obj/machinery/emp_act(severity, recursive)
 	if(material_emp_resistance && prob(material_emp_resistance))

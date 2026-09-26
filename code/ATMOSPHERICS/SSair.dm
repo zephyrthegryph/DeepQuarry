@@ -21,9 +21,6 @@ SUBSYSTEM_DEF(air)
 	// list (nothing was ever registered) so the dispatcher's hot loop only
 	// touches code that does work.
 	var/cost_turfs = 0
-	/// Always 0: hotspots burn on their own OM pipeline now (LINDA_fire.dm, /datum/om/pipeline/hotspot),
-	/// costed under its lane. Kept for the profiler/time_track columns that read it.
-	var/cost_hotspots = 0
 	var/cost_groups = 0
 	var/cost_highpressure = 0
 	var/cost_superconductivity = 0

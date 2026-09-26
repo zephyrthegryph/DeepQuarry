@@ -1,6 +1,7 @@
 #define AGE_MOD_MAX 10 // Define for age_mod sanity check as a define to allow for easy tweaking.
 
 /obj/machinery/portable_atmospherics/hydroponics
+	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "hydroponics tray"
 	desc = "A tray usually full of fluid for growing plants."
 	icon = 'icons/obj/hydroponics_machines.dmi'

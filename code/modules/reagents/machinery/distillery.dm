@@ -4,6 +4,7 @@
  */
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery
+	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "chemical distillery"
 	desc = "A complex machine utilizing state-of-the-art components to mix chemicals at different temperatures. Can be attached to a connector port to utilize gasses."
 	use_power = USE_POWER_IDLE
@@ -295,7 +296,7 @@
 		chan = power_channel
 	A.use_power_oneoff(amount, chan)
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/process()
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/machine_step()
 	react_or_update()
 
 	var/run_pump = FALSE

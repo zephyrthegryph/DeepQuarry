@@ -64,7 +64,6 @@ SUBSYSTEM_DEF(profiler)
 	subsystems["machines"] += list("material_graphs" = material_graphs)
 	subsystems["atmos"] += list(
 		"dm_stage_average_ms" = list(
-			"hotspots" = SSair.cost_hotspots,
 			"high_pressure" = SSair.cost_highpressure,
 			"superconductivity" = SSair.cost_superconductivity,
 			"pipenets" = SSair.cost_pipenets,
