@@ -82,9 +82,7 @@
 	set_trait(TRAIT_MUTAGENIC_REAG,       null)         // Reagents considered uniquely 'mutagenic' by a plant. This should be an associated list, or null. Examples in tray.dm
 	set_trait(TRAIT_TOXIC_REAG,           null)         // Reagents considered uniquely 'toxic' by a plant. This should be an associated list, or null. Examples in tray.dm
 
-	spawn(5)
-		sleep(-1)
-		update_growth_stages()
+	om_after(src, 0.5 SECONDS, PROC_REF(update_growth_stages))
 
 /datum/seed/proc/get_trait(trait)
 	return traits["[trait]"]

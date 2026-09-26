@@ -30,20 +30,21 @@
 	held_type = /obj/item/shovel
 	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel
 
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/fill_in_done(mob/user)
+	user.visible_message(span_notice("\The [user] fills in \the [src]."))
+	qdel(src)
+
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
-		if(do_after(user, 3 SECONDS, target = src) && !QDELETED(src))
-			user.visible_message(span_notice("\The [user] fills in \the [src]."))
-			qdel(src)
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
 		return TRUE
 	if(!seed)
 		var/choice= tgui_alert(user, "Do you want to destroy the growplot?", "Destroy growplot?" , list("Yes", "No"))
 		if(!choice||choice=="No")
 			return TRUE
 		user.visible_message("[user] starts dispersing the [src]...", runemessage = "disperses the [src]")
-		if(do_after(user, 5 SECONDS, target = src))
-			qdel(src)
+		om_do_after(user, 5 SECONDS, src, src, TYPE_PROC_REF(/datum, om_delete_self))
 	else
 		to_chat(user, span_notice("There is something growing here."))
 	return TRUE
