@@ -134,3 +134,68 @@
 	qdel(victim)
 	TEST_ASSERT(QDELETED(victim), "setup: the victim should be deleted")
 	TEST_ASSERT(QDELETED(G), "the grab item should be deleted along with its target")
+
+// ---------------------------------------------------------------- pulling
+
+/// Pulling something establishes the pulling relation: pulling/pulledby agree
+/// with the direct relation lookup.
+/datum/unit_test/dq_om_relation_pulling_establishes
+
+/datum/unit_test/dq_om_relation_pulling_establishes/Run()
+	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
+	puller.start_pulling(pulled)
+	TEST_ASSERT_EQUAL(puller.pulling, pulled, "puller.pulling should be the pulled mob")
+	TEST_ASSERT_EQUAL(pulled.pulledby, puller, "pulled.pulledby should be the puller")
+	TEST_ASSERT_EQUAL(om_relation_of(puller, /datum/om/relation/pulling), pulled, "om_relation_of should agree with the pulling var")
+	TEST_ASSERT_NOTNULL(dq_test_find_edge(puller, pulled, /datum/om/relation/pulling), "an edge should exist between puller and pulled")
+
+/// Hard-deleting the puller clears the pulled mob's pulledby, with no
+/// dangling reference left behind.
+/datum/unit_test/dq_om_relation_pulling_breaks_on_source_delete
+
+/datum/unit_test/dq_om_relation_pulling_breaks_on_source_delete/Run()
+	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
+	puller.start_pulling(pulled)
+	TEST_ASSERT_EQUAL(puller.pulling, pulled, "setup: start_pulling should succeed")
+	qdel(puller)
+	TEST_ASSERT(QDELETED(puller), "setup: the puller should be deleted")
+	TEST_ASSERT_NULL(pulled.pulledby, "pulled.pulledby should be cleared once the puller is deleted")
+
+/// Hard-deleting the pulled atom clears the puller's pulling var, with no
+/// dangling reference left behind.
+/datum/unit_test/dq_om_relation_pulling_breaks_on_target_delete
+
+/datum/unit_test/dq_om_relation_pulling_breaks_on_target_delete/Run()
+	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
+	puller.start_pulling(pulled)
+	TEST_ASSERT_EQUAL(puller.pulling, pulled, "setup: start_pulling should succeed")
+	qdel(pulled)
+	TEST_ASSERT(QDELETED(pulled), "setup: the pulled mob should be deleted")
+	TEST_ASSERT_NULL(puller.pulling, "puller.pulling should be cleared once the pulled mob is deleted")
+
+/// break_if = in_range(1) unlinks the edge outright once puller and pulled
+/// end up more than one tile apart, replacing the hand-rolled distance check
+/// that used to live in /atom/movable/Move() (atoms_movable.dm).
+/datum/unit_test/dq_om_relation_pulling_breaks_on_range
+
+/datum/unit_test/dq_om_relation_pulling_breaks_on_range/Run()
+	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
+	puller.start_pulling(pulled)
+	var/datum/om/edge/edge = dq_test_find_edge(puller, pulled, /datum/om/relation/pulling)
+	TEST_ASSERT_NOTNULL(edge, "setup: an edge should exist between puller and pulled")
+
+	var/turf/away = locate(pulled.x + 5, pulled.y, pulled.z)
+	TEST_ASSERT_NOTNULL(away, "setup: needs a turf 5 tiles east of the pulled mob")
+	puller.forceMove(away)
+	TEST_ASSERT(get_dist(puller, pulled) > 1, "setup: puller should now be more than one tile from pulled")
+
+	om_edge_refresh(edge)
+
+	TEST_ASSERT_NULL(puller.pulling, "puller.pulling should be cleared once out of range")
+	TEST_ASSERT_NULL(pulled.pulledby, "pulled.pulledby should be cleared once out of range")
+	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
+	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")

@@ -204,9 +204,9 @@ part "declared relation fields: core-owned"
 # never assign to them; a bypass write goes stale the moment the relation itself changes
 # and desyncs from the edge it is supposed to mirror. Extend this field list as more
 # relations declare one (doc/rewrite/object_model_core.md, "relations").
-if $grep -n '\.(buckled|buckled_mobs|affecting|grabbed_by)\s*[|&+*/-]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v 'var/' | grep -v 'om-field-exempt' | grep -vE ':[0-9]+:[[:space:]]*//'; then
+if $grep -n '\.(buckled|buckled_mobs|affecting|grabbed_by|pulling|pulledby)\s*[|&+*/-]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v 'var/' | grep -v 'om-field-exempt' | grep -vE ':[0-9]+:[[:space:]]*//'; then
 	echo
-	echo -e "${RED}ERROR: direct write to a declared relation field outside code/datums/om/. Establish/break the relation with om_link()/om_unlink() instead -- the core is the only writer of buckled/buckled_mobs and /obj/item/grab's affecting/grabbed_by.${NC}"
+	echo -e "${RED}ERROR: direct write to a declared relation field outside code/datums/om/. Establish/break the relation with om_link()/om_unlink() instead -- the core is the only writer of buckled/buckled_mobs, /obj/item/grab's affecting/grabbed_by, and pulling/pulledby.${NC}"
 	FAILED=1
 fi;
 

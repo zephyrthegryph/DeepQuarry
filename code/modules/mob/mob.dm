@@ -610,10 +610,9 @@
 			visible_message(span_warning("\The [src] lets go of \the [H]."), span_notice("You let go of \the [H]."), exclude_mobs = list(H))
 			if(!H.stat)
 				to_chat(H, span_warning("\The [src] lets go of you."))
-		pulling.pulledby = null
-		pulling = null
-		if(pullin)
-			pullin.icon_state = "pull0"
+		// The pulling relation's on_unlink() (code/datums/om/library.dm) clears
+		// pulling/pulledby and resets the pull HUD icon.
+		om_unlink(src, pulling, /datum/om/relation/pulling)
 
 /mob/proc/start_pulling(atom/movable/AM)
 
@@ -680,12 +679,11 @@
 		if(pulling_old == AM)
 			return
 
-	pulling = AM
-	AM.pulledby = src
-	om_changed(src, CHANGE_MOB_STATUS) // pulling
-
-	if(pullin)
-		pullin.icon_state = "pull1"
+	// The pulling relation (code/datums/om/library.dm) sets pulling/pulledby,
+	// the pull HUD icon and the status channel raise as its on_link() side
+	// effects; target_single means it also drops AM's previous puller, if any.
+	if(!istype(om_link(src, AM, /datum/om/relation/pulling), /datum/om/edge))
+		return
 
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
@@ -702,11 +700,6 @@
 		if(H.pull_can_damage())
 			to_chat(src, span_danger(span_large("Pulling \the [H] in their current condition could easily worsen their injuries.")))
 
-	//Attempted fix for people flying away through space when cuffed and dragged.
-	if(ismob(AM))
-		var/mob/pulled = AM
-		pulled.inertia_dir = 0
-
 // We have pulled something before, so we should be able to safely continue pulling it. This proc is only for portals!
 /mob/proc/continue_pulling(atom/movable/AM)
 
@@ -716,14 +709,12 @@
 	if (AM.anchored)
 		return
 
-	pulling = AM
-	AM.pulledby = src
-	om_changed(src, CHANGE_MOB_STATUS) // pulling
-
-	if(pullin)
-		pullin.icon_state = "pull1"
-
-	//Attempted fix for people flying away through space when cuffed and dragged.
+	// The pulling relation (code/datums/om/library.dm) sets pulling/pulledby
+	// and the pull HUD icon as its on_link() side effects, but only the first
+	// time this source/target pair links -- re-affirm the inertia reset
+	// unconditionally here since continue_pulling() exists specifically for
+	// discontinuous jumps (portals, multi-z, redgates) where it matters every time.
+	om_link(src, AM, /datum/om/relation/pulling)
 	if(ismob(AM))
 		var/mob/pulled = AM
 		pulled.inertia_dir = 0

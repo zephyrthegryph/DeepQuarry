@@ -192,6 +192,40 @@
 	active_if = /datum/om/check/powered
 	include = list(/datum/om/bundle/stasis)
 
+/// mob -> the atom/movable it is pulling. Both sides are exclusive
+/// (source_single/target_single with the default OM_REL_REPLACE), so a new
+/// puller taking something automatically drops whoever pulled it before --
+/// closing a latent bug the hand-rolled version had, where a second puller's
+/// start_pulling() overwrote pulledby without the first puller's own
+/// `pulling` var ever being cleared. break_if = in_range(1) replaces the
+/// hand-rolled "Break pulling if we are too far to pull now" check that used
+/// to live in /atom/movable/Move() (atoms_movable.dm).
+/datum/om/relation/pulling
+	name = "pull"
+	source_single = TRUE
+	target_single = TRUE
+	source_ref_field = "pulling"
+	target_ref_field = "pulledby"
+	break_if = CHECK(/datum/om/check/in_range, 1)
+
+/datum/om/relation/pulling/on_link(mob/source, atom/movable/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(!istype(source) || !istype(target))
+		return
+	om_changed(source, CHANGE_MOB_STATUS)
+	if(source.pullin)
+		source.pullin.icon_state = "pull1"
+	if(ismob(target))
+		var/mob/pulled = target
+		pulled.inertia_dir = 0
+
+/datum/om/relation/pulling/on_unlink(mob/source, atom/movable/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && !QDELETED(source))
+		om_changed(source, CHANGE_MOB_STATUS)
+		if(source.pullin)
+			source.pullin.icon_state = "pull0"
+
 /// consumer -> power source.
 /datum/om/relation/powered_by
 	name = "power source"

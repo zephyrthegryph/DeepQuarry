@@ -454,9 +454,9 @@
 			// Call our thingy to inform everyone we moved
 			Moved(oldloc, NONE, TRUE)
 
-		// Break pulling if we are too far to pull now.
-		if(pulledby && (pulledby.z != src.z || get_dist(pulledby, src) > 1))
-			pulledby.stop_pulling()
+		// The pulling relation's break_if = in_range(1) (code/datums/om/library.dm)
+		// unlinks pulling/pulledby on its own once the live scheduler re-checks
+		// it, replacing the hand-rolled distance/z check that used to live here.
 
 		// We moved
 		return TRUE
