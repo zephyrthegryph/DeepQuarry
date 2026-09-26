@@ -103,7 +103,16 @@ fn register(b: &mut WorldBuilder) -> vg_core::field::FieldKey<vg_heat::SolidHeat
 }
 
 fn build() -> Result<World> {
-    let mut b = WorldBuilder::new(WorldConfig::default());
+    // dt matches `SSvg`'s own `wait` (`code/controllers/subsystems/vg.dm`):
+    // gas needs the whole shared World paced at its own real-time cadence
+    // (turf venting/decompression), and `vg_world_tick()` is the only
+    // driver -- rather than add a second, gas-only tick caller, `SSvg`'s
+    // `wait` moved from 10 seconds to 0.5, and this `dt` moved with it
+    // (`rust_architecture.md` §8.5 step 6).
+    let mut b = WorldBuilder::new(WorldConfig {
+        dt: vg_core::units::Seconds(0.5),
+        ..WorldConfig::default()
+    });
     let heat_field = register(&mut b);
     let world = b.build().map_err(|e| eyre!("world build: {e}"))?;
     crate::heat::install_field(heat_field);

@@ -35,7 +35,7 @@
  */
 SUBSYSTEM_DEF(vg)
 	name = "Verdigris Bindings"
-	wait = 10 SECONDS
+	wait = 0.5 SECONDS
 	priority = FIRE_PRIORITY_VG
 	flags = SS_BACKGROUND
 	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
@@ -48,11 +48,13 @@ SUBSYSTEM_DEF(vg)
 	var/list/entities_by_index = list()
 	/// Where the production sweep left off.
 	var/sweep_index = 1
-	/// Atoms checked per fire(). §7: 5,000 atoms over 60s is ~85/s; at the
-	/// default 10s `wait` that is about 850 per fire — this stays well
-	/// under that so a single fire() never dominates a tick, and covers a
-	/// smaller population (the common case) within one lap easily.
-	var/sweep_batch = 100
+	/// Atoms checked per fire(). Scaled against `wait` to keep the same
+	/// atoms/s reconciliation rate as before `wait` dropped from 10
+	/// seconds to 0.5 (rust_architecture.md step 6: gas needs `vg_world_tick()`
+	/// paced for its own real-time cadence, and this is the one driver, so
+	/// `wait` itself moved instead of adding a second tick caller) — 100
+	/// atoms per 10s was ~10/s; 5 per 0.5s keeps that rate.
+	var/sweep_batch = 5
 
 	/// COUNT metric (§12): must stay 0. Repairs this sweep / lifetime.
 	var/last_repairs = 0

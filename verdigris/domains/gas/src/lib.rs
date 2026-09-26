@@ -12,6 +12,7 @@ pub mod laws;
 pub mod kind;
 mod parser;
 pub mod pipes;
+pub mod planet;
 mod reaction;
 pub mod turf;
 pub mod world;
