@@ -78,7 +78,7 @@
 		eligible++
 		TEST_ASSERT(design.material_template, "Ordinary design [design.id] ([design.type]) lost its material blueprint")
 		var/datum/material_template/blueprint = material_template_singleton(design.material_template)
-		var/list/defaults = blueprint.resolve()
+		var/list/defaults = om_resolve(blueprint)
 		TEST_ASSERT(defaults, "Ordinary design [design.id] has unresolvable standard materials")
 		var/list/effective = design.effective_materials(defaults)
 		var/slot_total = 0
@@ -146,7 +146,7 @@
 		var/datum/material_template/slots = material_template_for_application(application)
 		var/slots_total = SHEET_MATERIAL_AMOUNT * 4
 		TEST_ASSERT(length(slots.roles), "Application [application] must define physical parts")
-		var/list/defaults = slots.resolve()
+		var/list/defaults = om_resolve(slots)
 		for(var/role in slots.roles)
 			var/list/variant = defaults.Copy()
 			variant[role] = defaults[role] == MAT_DIAMOND ? MAT_WOOD : MAT_DIAMOND
@@ -857,8 +857,8 @@
 	TEST_ASSERT_EQUAL(length(graph.edges), 1, "Real cable connectivity should produce one reduced edge")
 	var/list/sources = list()
 	var/list/consumers = list()
-	sources[WEAKREF(start)] = 10000
-	consumers[WEAKREF(end)] = 10000
+	sources[om_handle(start)] = 10000
+	consumers[om_handle(end)] = 10000
 	graph.resolve_loads(sources, consumers)
 	TEST_ASSERT(graph.loss_watts > 0, "A real loaded ordinary cable must have positive resistance loss")
 	graph.deposit_losses(12000)

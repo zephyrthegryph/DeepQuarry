@@ -34,7 +34,7 @@ UNSAVED = {"tmp", "static", "global", "const"}
 REF_ROOTS = ("/datum", "/atom", "/obj", "/mob", "/turf", "/area", "/image",
              "/icon", "/client", "/sound", "/matrix", "/mutable_appearance",
              "/savefile", "/regex", "/database", "/exception", "/callback",
-             "/weakref", "/decl")
+             "/decl")
 # Types the serializer encodes by registry ID (code/datums/state/codecs.dm,
 # /datum/state_codec/registry). Keep in step with state_registry_id().
 REGISTRY_TYPES = ("/datum/material", "/datum/decl", "/decl", "/datum/species")

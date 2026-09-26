@@ -11,14 +11,13 @@ Every object-typed var on a datum is declared as exactly one kind:
     REF_PAIR             two-sided, kept in sync by link_set()/link_clear() --
                          declared_pair_vars()
     REF_BACKLIST         membership in another object's list -- declared_backlist_vars()
-    weak                 var/datum/weakref/... -- resolved on read, never cleaned
+    handle               a text var holding om_handle(x) -- resolved on read, never cleaned
     tmp cache            `tmp` (or `static`/`global`/`const`) -- scrubbed or shared,
                          not a per-instance relationship at all
 
 This finds every var declared directly on a type (not inherited -- each var is
 only ever checked at the type that first declares it) whose declared type is
-an object reference, that isn't `tmp`/`static`/`global`/`const` and isn't a
-`/datum/weakref`, and checks whether the *same file* declares that type's
+an object reference, that isn't `tmp`/`static`/`global`/`const`, and checks whether the *same file* declares that type's
 declared_owned_vars() / declared_owned_list_vars() / declared_pair_vars() /
 declared_backlist_vars() mentioning the var by name. A var that isn't
 mentioned in any of those is undeclared.
@@ -29,7 +28,7 @@ holder's contents never need a declared_*_vars() entry and are never flagged.
 
 Medical, body, organs, surgery, protean and mind_body are included like
 everything else (doc sec 7). tools/ci/scheduler_lints.py's LC-refs count is
-the stricter successor (tmp and weakref vars count there too).
+the stricter successor (tmp vars count there too).
 
 Legacy undeclared vars everywhere else are listed per file with a count in
 tools/ci/declared_refs_allowlist.txt, the same ratchet C11/campaign lints
@@ -154,7 +153,7 @@ def scan_file(path):
         mods, vtype, name, _is_list = parsed
         if mods & UNSAVED_MODS:
             continue
-        if not under(vtype, REF_ROOTS) or under(vtype, ("/datum/weakref",)):
+        if not under(vtype, REF_ROOTS):
             continue
         if name in declared.get(cur_type, ()):
             continue
@@ -195,7 +194,7 @@ def write_allowlist(counts):
         "# Undeclared object-typed vars (roadmap L2, doc/rewrite/lifecycle.md sec 4).",
         "# tools/ci/declared_refs_lint.py reads this file: a file may not exceed its",
         "# count, and files not listed may have none. Declare the var as REF_OWNED/",
-        "# REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or a weakref) and",
+        "# REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and",
         "# lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.",
         "# Total: %d vars in %d files." % (sum(counts.values()), len(counts)),
     ]
@@ -226,7 +225,7 @@ def main(argv):
             failures.append(
                 "%s has %d undeclared object-typed var(s), allowed %d. Declare each as "
                 "REF_OWNED/REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (code/datums/lifecycle/links.dm), "
-                "tmp, or a weakref:\n    %s" % (rel, counts[rel], limit, "\n    ".join(where))
+                "tmp, or an OM handle:\n    %s" % (rel, counts[rel], limit, "\n    ".join(where))
             )
         elif counts[rel] < limit:
             lowered.append("%s: %d (allowlist says %d)" % (rel, counts[rel], limit))
