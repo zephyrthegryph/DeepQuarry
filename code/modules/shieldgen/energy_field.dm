@@ -171,12 +171,14 @@
 	affected_shields |= src
 	i--
 	if(i)
-		spawn(2)
-			for(var/direction in GLOB.cardinal)
-				var/turf/T = get_step(src, direction)
-				if(T) // Incase we somehow stepped off the map.
-					for(var/obj/effect/energy_field/F in T)
-						if(!(F in affected_shields))
-							F.impact_effect(i, affected_shields) // Spread the effect to them.
+		om_after(src, 2, PROC_REF(spread_impact), i, affected_shields)
+
+/obj/effect/energy_field/proc/spread_impact(i, list/affected_shields)
+	for(var/direction in GLOB.cardinal)
+		var/turf/T = get_step(src, direction)
+		if(T) // Incase we somehow stepped off the map.
+			for(var/obj/effect/energy_field/F in T)
+				if(!(F in affected_shields))
+					F.impact_effect(i, affected_shields) // Spread the effect to them.
 
 #undef FIELD_INTEGRITY_PER_RENWICK

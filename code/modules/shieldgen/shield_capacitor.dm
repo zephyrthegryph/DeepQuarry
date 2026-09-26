@@ -61,11 +61,10 @@
 
 	if(anchored)
 		START_MACHINE_PROCESSING(src)
-		spawn(0)
-			for(var/obj/machinery/shield_gen/gen in range(1, src))
-				if(get_dir(src, gen) == src.dir)
-					owned_gen = gen
-					LAZYOR(owned_gen.capacitors, src)
+		for(var/obj/machinery/shield_gen/gen in range(1, src))
+			if(get_dir(src, gen) == src.dir)
+				owned_gen = gen
+				LAZYOR(owned_gen.capacitors, src)
 	else
 		if(owned_gen && (src in owned_gen.capacitors))
 			LAZYREMOVE(owned_gen.capacitors, src)

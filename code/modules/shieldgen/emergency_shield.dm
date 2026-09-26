@@ -69,13 +69,13 @@
 		receive_weapon_hit(W, user)
 
 	set_opacity(1)
-	spawn(20) if(!QDELETED(src)) set_opacity(0)
+	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
 	return FALSE
 
 /obj/machinery/shield/bullet_act(obj/item/projectile/Proj)
 	..()
 	set_opacity(1)
-	spawn(20) if(!QDELETED(src)) set_opacity(0)
+	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
 
 /obj/machinery/shield/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	//Let everyone know we've been hit!
@@ -86,7 +86,7 @@
 
 	//The shield becomes dense to absorb the blow.. purely asthetic.
 	set_opacity(1)
-	spawn(20) if(!QDELETED(src)) set_opacity(0)
+	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
 
 	..()
 

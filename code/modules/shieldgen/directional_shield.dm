@@ -110,9 +110,7 @@
 	AddComponent(/datum/component/recursive_move)
 	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(moved_event))
 	if(always_on)
-		spawn(0)
-			if(!QDELETED(src))
-				create_shields()
+		om_after(src, 0, PROC_REF(create_shields))
 	return ..()
 
 /obj/item/shield_projector/Destroy()

@@ -122,14 +122,10 @@
 		if(!src.state == 1)
 			src.active = 0
 			return
-		spawn(1)
-			setup_field(1)
-		spawn(2)
-			setup_field(2)
-		spawn(3)
-			setup_field(4)
-		spawn(4)
-			setup_field(8)
+		om_after(src, 1, PROC_REF(setup_field), 1)
+		om_after(src, 2, PROC_REF(setup_field), 2)
+		om_after(src, 3, PROC_REF(setup_field), 4)
+		om_after(src, 4, PROC_REF(setup_field), 8)
 		src.active = 2
 	if(src.active >= 1)
 		if(src.power == 0)

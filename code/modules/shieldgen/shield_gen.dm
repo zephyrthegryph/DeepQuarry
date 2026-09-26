@@ -84,13 +84,12 @@
 	if(active)
 		toggle()
 	if(anchored)
-		spawn(0)
-			for(var/obj/machinery/shield_capacitor/cap in range(1, src))
-				if(cap.owned_gen)
-					continue
-				if(get_dir(cap, src) == cap.dir && src.anchored)
-					LAZYOR(capacitors, cap)
-					cap.owned_gen = src
+		for(var/obj/machinery/shield_capacitor/cap in range(1, src))
+			if(cap.owned_gen)
+				continue
+			if(get_dir(cap, src) == cap.dir && src.anchored)
+				LAZYOR(capacitors, cap)
+				cap.owned_gen = src
 	else
 		for(var/obj/machinery/shield_capacitor/capacitor in capacitors)
 			capacitor.owned_gen = null
