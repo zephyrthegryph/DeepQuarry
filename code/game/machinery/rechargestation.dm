@@ -326,7 +326,7 @@
 		add_fingerprint(R)
 		if(!R.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 			return
-		occupant = R
+		om_link(R, src, /datum/om/relation/occupant_of)
 		START_MACHINE_PROCESSING(src)
 		update_icon()
 		return 1
@@ -340,7 +340,7 @@
 		add_fingerprint(P)
 		if(!P.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 			return
-		occupant = P
+		om_link(P, src, /datum/om/relation/occupant_of)
 		START_MACHINE_PROCESSING(src)
 		update_icon()
 		return 1
@@ -351,7 +351,7 @@
 			add_fingerprint(H)
 			if(!H.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 				return
-			occupant = H
+			om_link(H, src, /datum/om/relation/occupant_of)
 			START_MACHINE_PROCESSING(src)
 			update_icon()
 			return 1
@@ -362,7 +362,7 @@
 	if(!occupant)
 		return
 	slot_remove(occupant, get_turf(src))
-	occupant = null
+	om_unlink(occupant, src, /datum/om/relation/occupant_of)
 	update_icon()
 
 /obj/machinery/recharge_station/power_change()

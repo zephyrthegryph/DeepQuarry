@@ -486,7 +486,7 @@
 		M.stop_pulling()
 		M.forceMove(src)
 		update_use_power(USE_POWER_ACTIVE)
-		occupant = M
+		om_link(M, src, /datum/om/relation/occupant_of)
 		START_MACHINE_PROCESSING(src)
 		occupant.cozyloop.start() // Cozy Music
 		update_icon()
@@ -494,12 +494,13 @@
 /obj/machinery/sleeper/proc/go_out()
 	if(!occupant || occupant.loc != src)
 		occupant?.cozyloop?.stop() // Cozy Music
-		occupant = null // JUST IN CASE
+		if(occupant)
+			om_unlink(occupant, src, /datum/om/relation/occupant_of) // JUST IN CASE
 		return
 	occupant.set_stasis(null, src)
 	occupant.forceMove(get_turf(src))
 	occupant.cozyloop.stop() // Cozy Music
-	occupant = null
+	om_unlink(occupant, src, /datum/om/relation/occupant_of)
 	for(var/atom/movable/A in src) // In case an object was dropped inside or something
 		if(A == beaker || A == circuit)
 			continue

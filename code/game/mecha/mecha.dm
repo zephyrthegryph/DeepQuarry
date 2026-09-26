@@ -1721,7 +1721,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			return 0
 		user.drop_from_inventory(mmi_as_oc)
 		var/mob/brainmob = mmi_occupant
-		occupant = brainmob
+		om_link(brainmob, src, /datum/om/relation/occupant_of)
 		brainmob.forceMove(src) //should allow relaymove
 		brainmob.canmove = 1
 		mmi_as_oc.loc = src
@@ -2034,7 +2034,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
 			return
-		src.occupant = H
+		om_link(H, src, /datum/om/relation/occupant_of)
 		START_PROCESSING(SSobj, src)
 		src.add_fingerprint(H)
 		src.verbs += /obj/mecha/verb/eject
@@ -2158,7 +2158,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
 		occupant.in_enclosed_vehicle = 0
-		occupant = null
+		om_unlink(occupant, src, /datum/om/relation/occupant_of)
 		update_icon()
 		set_dir(dir_in)
 		verbs -= /obj/mecha/verb/eject

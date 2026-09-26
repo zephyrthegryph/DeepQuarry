@@ -40,7 +40,8 @@
 		log_world("## MISC a [src] didn't find an input plate.")
 
 /obj/machinery/gibber/Destroy()
-	occupant = null
+	// occupant_of's teardown (destroy transaction phase 5, before Destroy())
+	// already cleared occupant if one was present.
 	return ..()
 
 /obj/machinery/gibber/slot_def_types()
@@ -156,7 +157,7 @@
 		if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
 			return
 		user.visible_message(span_danger("[user] stuffs [victim] into the gibber!"))
-		src.occupant = victim
+		om_link(victim, src, /datum/om/relation/occupant_of)
 		update_icon()
 
 /obj/machinery/gibber/verb/eject()
@@ -176,7 +177,7 @@
 	for(var/obj/O in src)
 		O.loc = src.loc
 	slot_remove(src.occupant, get_turf(src))
-	src.occupant = null
+	om_unlink(src.occupant, src, /datum/om/relation/occupant_of)
 	update_icon()
 	return
 
@@ -223,8 +224,10 @@
 	src.occupant.ghostize()
 
 	spawn(gib_time)
-		occupant.gib()
-		occupant = null
+		var/mob/living/gibbed = occupant
+		gibbed.gib()
+		if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains).
+			om_unlink(occupant, src, /datum/om/relation/occupant_of)
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
 		operating = 0
 		if(LAZYLEN(byproducts))

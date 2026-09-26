@@ -267,7 +267,7 @@
 		occupant.bodytemperature = 261									  // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
 	unbuckle_mob(occupant, force = TRUE)
 	occupant.cozyloop.stop() // Cozy Music
-	occupant = null
+	om_unlink(occupant, src, /datum/om/relation/occupant_of)
 	update_use_power(USE_POWER_IDLE)
 	SStgui.update_uis(src)
 	return
@@ -293,7 +293,7 @@
 	M.extinguish_mob()
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
-	occupant = M
+	om_link(M, src, /datum/om/relation/occupant_of)
 	if(on)
 		START_MACHINE_PROCESSING(src)
 	occupant.cozyloop.start() // Cozy Music

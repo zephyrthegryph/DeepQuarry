@@ -5376,7 +5376,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(H, "human alloc failed")
 
 	// Force the mob into the cryo cell's occupant slot.
-	C.occupant = H
+	om_link(H, C, /datum/om/relation/occupant_of)
 	H.forceMove(C)
 	H.bodytemperature = T20C // warm starting body temp
 	var/initial_bodytemp = H.bodytemperature
@@ -5388,7 +5388,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(H.bodytemperature < initial_bodytemp, \
 		"cryo didn't cool mob: bodytemp [initial_bodytemp] → [H.bodytemperature]")
 
-	C.occupant = null
+	om_unlink(H, C, /datum/om/relation/occupant_of)
 	H.forceMove(T)
 	qdel(C)
 

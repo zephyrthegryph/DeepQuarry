@@ -724,10 +724,12 @@
 
 	return
 
-/obj/machinery/cryopod/proc/set_occupant(new_occupant)
+/obj/machinery/cryopod/proc/set_occupant(mob/new_occupant)
 	if(new_occupant)
 		START_MACHINE_PROCESSING(src)
-	occupant = new_occupant
+		om_link(new_occupant, src, /datum/om/relation/occupant_of)
+	else if(occupant)
+		om_unlink(occupant, src, /datum/om/relation/occupant_of)
 	name = initial(name)
 	if(occupant)
 		name = "[name] ([occupant])"

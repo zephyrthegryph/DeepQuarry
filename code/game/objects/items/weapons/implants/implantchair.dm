@@ -96,7 +96,7 @@
 	if(injecting)
 		implant(src.occupant)
 		injecting = 0
-	src.occupant = null
+	om_unlink(src.occupant, src, /datum/om/relation/occupant_of)
 	icon_state = "implantchair"
 	return
 
@@ -112,7 +112,7 @@
 	if(!M.move_into(src, OCCUPANT_SLOT_IMPLANT_CHAIR, usr))
 		to_chat(usr, span_warning("\The [src] won't take [M]!"))
 		return
-	src.occupant = M
+	om_link(M, src, /datum/om/relation/occupant_of)
 	src.add_fingerprint(usr)
 	icon_state = "implantchair_on"
 	return 1

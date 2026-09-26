@@ -85,10 +85,20 @@
 	name = "wearer"
 	source_single = TRUE
 
-/// mob -> the seat, vehicle or machine it occupies.
+/// mob -> the seat, vehicle or machine it occupies. target_ref_field makes
+/// the core the sole writer of the machine's `occupant` var: Sleeper.dm,
+/// cryo.dm, cryopod.dm, mecha.dm and the rest each used to hand-set
+/// `occupant = M` on entry with no COMSIG_QDELETING hook, so hard-deleting
+/// the occupant mid-occupancy (an explosion, an admin action) left `occupant`
+/// pointing at a QDELETED mob until the next unrelated write happened to
+/// overwrite it. The move-in/out mechanics (forceMove, UI, music, chemistry,
+/// icons) stay exactly where they are in each machine -- only the bare field
+/// write is now om_link()/om_unlink().
 /datum/om/relation/occupant_of
 	name = "seat"
 	source_single = TRUE
+	target_single = TRUE
+	target_ref_field = "occupant"
 	include = list(/datum/om/bundle/occupant_seat)
 
 /// mob -> what it is buckled to. `source_ref_field`/`target_list_field` make the
@@ -225,6 +235,32 @@
 		om_changed(source, CHANGE_MOB_STATUS)
 		if(source.pullin)
 			source.pullin.icon_state = "pull0"
+
+/// implant -> the external organ it is embedded in. source_ref_field/
+/// target_list_field make the core the sole writer of the implant's `part`
+/// and the organ's `implants` list; on_link()/on_unlink() keep only the
+/// `imp_in` (host mob) side effect, since it has no reverse list of its own
+/// to double-check against. Previously both sides were hand-maintained
+/// (/obj/item/implant/Destroy() and /obj/item/organ/external/Destroy() each
+/// cleaned up their own half); now hard-deleting either one tears the whole
+/// link down automatically, including `imp_in`, which used to only get
+/// cleared by the organ's Destroy() -- so directly hard-deleting the host mob
+/// without going through organ removal left `imp_in` dangling.
+/datum/om/relation/implanted_in
+	name = "implant site"
+	source_single = TRUE
+	source_ref_field = "part"
+	target_list_field = "implants"
+
+/datum/om/relation/implanted_in/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && istype(target))
+		source.imp_in = target.owner
+
+/datum/om/relation/implanted_in/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(source) && !QDELETED(source))
+		source.imp_in = null
 
 /// consumer -> power source.
 /datum/om/relation/powered_by
