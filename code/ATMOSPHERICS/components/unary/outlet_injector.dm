@@ -6,6 +6,7 @@
 	icon = 'icons/atmos/injector.dmi'
 	icon_state = "map_injector"
 	pipe_state = "injector"
+	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
 	name = "air injector"
 	desc = "Passively injects air into its surroundings. Has a valve attached to it that can control flow rate."
@@ -55,14 +56,14 @@
 	if(old_stat != stat)
 		update_icon()
 
-/obj/machinery/atmospherics/unary/outlet_injector/process()
+/obj/machinery/atmospherics/unary/outlet_injector/machine_step()
 	..()
 
 	last_power_draw = 0
 	last_flow_rate = 0
 
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	var/power_draw = -1
@@ -76,7 +77,7 @@
 		// Power, turf publication, and network dirtiness are finalized by the
 		// subsystem's single atomic Rust transfer commit.
 	else
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	return 1
@@ -84,11 +85,10 @@
 /obj/machinery/atmospherics/unary/outlet_injector/pump_transaction_committed(actual_moles)
 	if(actual_moles >= MINIMUM_MOLES_TO_PUMP)
 		return
-	SSmachines.hibernate_vent(src)
+	register_gas_dependencies()
 
-/obj/machinery/atmospherics/unary/outlet_injector/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
-		return FALSE
+/// The same test process() makes before it pumps: powered, on, and holding enough warm gas.
+/obj/machinery/atmospherics/unary/outlet_injector/gas_wake_condition()
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
 		return FALSE
 	return air_contents && air_contents.return_temperature() > 0 && air_contents.total_moles() >= MINIMUM_MOLES_TO_PUMP

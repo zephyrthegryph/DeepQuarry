@@ -133,6 +133,10 @@ Class Procs:
 	var/material_emp_resistance = 0
 	/// Monotonic diagnostic counter for exact dependency-wake assertions.
 	var/tmp/gas_dependency_wake_count = 0
+	/// Monotonic diagnostic counter: START_MACHINE_PROCESSING() wakes of a pipeline (polls = FALSE) machine.
+	var/tmp/machine_wake_count = 0
+	/// FALSE once machine_step() returned PROCESS_KILL; the step stage parks it (machine_pipeline.dm).
+	var/tmp/step_active = TRUE
 	/// Slot in SSmachines.processing_machines while DF_ISPROCESSING is set; lets
 	/// hibernation swap-remove in O(1).
 	var/tmp/machine_processing_index = 0
@@ -182,6 +186,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /obj/machinery/Destroy()
 	cancel_sleep_keys()
+	om_watch_disarm_all(src)
 	if(!speed_process)
 		STOP_MACHINE_PROCESSING(src)
 	else
@@ -217,16 +222,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/process() // Steady power usage is handled separately. If you dont use process why are you here?
 	return PROCESS_KILL
 
-/// Whether a dirty gas notification makes a sleeping machine actionable.
-/// Gas-dependent subtypes override this; the conservative default preserves
-/// correctness for newly subscribed machinery until it supplies a filter.
-/obj/machinery/proc/gas_dependency_changed(mixture_id, change_mask)
-	return TRUE
+/// One frame of DM-side work for a machine on the machine pipeline (machine_pipeline.dm,
+/// /datum/om/stage/machine/power/step): the same contract process() had on SSmachines' roster.
+/// Return PROCESS_KILL when there is nothing left to do -- the stage idles and the machine parks
+/// until a channel (power_change(), settings, START_MACHINE_PROCESSING()) or a gas watch wakes it.
+/// Anything else keeps it running every MACHINE_PIPELINE_INTERVAL.
+/obj/machinery/proc/machine_step()
+	return PROCESS_KILL
 
-/// Change classes this machine can act on while sleeping. Rust uses the
-/// aggregate mask to avoid publishing irrelevant notifications into DM.
-/obj/machinery/proc/gas_dependency_interest_mask()
-	return GAS_DEPENDENCY_ALL
+/// TRUE when machine_step() would have work to do right now: the device's own eligibility rule,
+/// the same test its gas watch arms. The machine pipeline's step stage reads it as its idle rule.
+/// The default: whatever its last machine_step() said (anything but PROCESS_KILL keeps it running).
+/obj/machinery/proc/step_has_work()
+	return step_active
 
 /obj/machinery/emp_act(severity, recursive)
 	if(material_emp_resistance && prob(material_emp_resistance))

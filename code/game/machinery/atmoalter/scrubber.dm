@@ -17,6 +17,7 @@
 
 	var/minrate = 0
 	var/maxrate = 10 * ONE_ATMOSPHERE
+	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 
 	var/list/scrubbing_gas = list(GAS_PHORON, GAS_CO2, GAS_N2O, GAS_VOLATILE_FUEL, GAS_CH4)
 
@@ -34,7 +35,10 @@
 	if(prob(50/severity))
 		on = !on
 		if(on)
-			START_MACHINE_PROCESSING(src)
+			if(polls)
+				START_MACHINE_PROCESSING(src)
+			else
+				om_changed(src, CHANGE_MACHINE_SETTINGS)
 		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/update_icon()
@@ -53,8 +57,13 @@
 
 	return
 
-/obj/machinery/portable_atmospherics/powered/scrubber/process()
-	..()
+// Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
+// section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
+// process() roster. The body below is unchanged, just relocated to
+// /datum/om/stage/machine/power/portable_scrubber/perform(); it never hibernates on its own (it
+// runs every tick while `on`, exactly as process() did), so idle() there is simply `!on`.
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/scrubber_step()
+	react_or_update()
 	if(!on)
 		return PROCESS_KILL
 
@@ -139,7 +148,10 @@
 		if("power")
 			on = !on
 			if(on)
-				START_MACHINE_PROCESSING(src)
+				if(polls)
+					START_MACHINE_PROCESSING(src)
+				else
+					om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = TRUE
 		if("eject")
 			if(holding)
@@ -162,6 +174,8 @@
 	anchored = TRUE
 	volume = 500000
 	volume_rate = 7000
+	// Its own machine_step() (anchored/power checks every frame while on), on the machine
+	// pipeline's step/huge_* stage (machine_pipeline.dm) rather than the base portable stages.
 
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 50 // //internal circuitry, friction losses and stuff
@@ -213,7 +227,7 @@
 	if (old_stat != stat)
 		update_icon()
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/process()
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/machine_step()
 	if(!anchored || (stat & (NOPOWER|BROKEN)))
 		on = 0
 		last_flow_rate = 0
@@ -274,3 +288,6 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_warning("The bolts are too tight for you to unscrew!"))
 	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/step_has_work()
+	return on && anchored && !(stat & (NOPOWER|BROKEN))

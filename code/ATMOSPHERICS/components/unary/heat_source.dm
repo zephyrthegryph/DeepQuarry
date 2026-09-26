@@ -65,14 +65,14 @@
 	return
 
 
-/obj/machinery/atmospherics/unary/heater/process()
+/obj/machinery/atmospherics/unary/heater/machine_step()
 	..()
 
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
 	if(stat & (NOPOWER|BROKEN) || !use_power)
 		heating = 0
 		update_icon()
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	if(network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
@@ -87,16 +87,16 @@
 		network.mark_dirty()
 	else
 		heating = 0
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		update_icon()
 		return PROCESS_KILL
 
 	update_icon()
 	return 1
 
-/obj/machinery/atmospherics/unary/heater/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
-		return FALSE
+/// Eligibility rule for waking from gas (unary_base.dm register_gas_dependencies()): the same
+/// test process() makes before it heats anything.
+/obj/machinery/atmospherics/unary/heater/gas_wake_condition()
 	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature
 
 /obj/machinery/atmospherics/unary/heater

@@ -34,6 +34,7 @@
 			A.shock(usr, 50)
 			A.shorted = !mend
 			A.update_icon()
+			om_changed(A, CHANGE_MACHINE_SETTINGS)
 
 		if(WIRE_AI_CONTROL)
 			A.aidisabled = !mend
@@ -60,6 +61,7 @@
 				A.shorted = TRUE
 				for(var/obj/machinery/alarm/AA in A.alarm_area)
 					AA.update_icon()
+				om_changed(A, CHANGE_MACHINE_SETTINGS)
 			addtimer(CALLBACK(src, PROC_REF(clear_short)), 20 MINUTES, TIMER_DELETE_ME)
 
 		if(WIRE_AI_CONTROL)
@@ -86,3 +88,4 @@
 	if(A && A.shorted)
 		A.shorted = FALSE
 		A.update_icon()
+		om_changed(A, CHANGE_MACHINE_SETTINGS)

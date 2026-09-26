@@ -10,6 +10,9 @@ Pipelines + Other Objects -> Pipe network
 
 */
 /obj/machinery/atmospherics
+	/// No atmospherics object polls: pipes and Rust-edge devices have no DM work, and the devices
+	/// that do run machine_step() on the machine pipeline (machine_pipeline.dm).
+	polls = FALSE
 	material_template = /datum/material_template/pressure
 	material_total = SHEET_MATERIAL_AMOUNT
 	anchored = TRUE
@@ -210,7 +213,7 @@ Pipelines + Other Objects -> Pipe network
 
 	return node.pipe_color
 
-/obj/machinery/atmospherics/process()
+/obj/machinery/atmospherics/machine_step()
 	if(being_loaded)
 		return
 	last_flow_rate = 0

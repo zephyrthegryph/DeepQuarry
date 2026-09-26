@@ -86,13 +86,13 @@
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/die()
 	qdel(src)
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/process()
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/machine_step()
 	if(!seed)
 		qdel(src)
-		return
+		return PROCESS_KILL
 	else if(name=="plant")
 		name = seed.display_name
-	..()
+	return ..()
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/Destroy()
 	// Check if we're masking a decal that needs to be visible again.

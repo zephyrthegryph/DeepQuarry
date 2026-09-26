@@ -251,11 +251,11 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	if(watched_turf)
 		UnregisterSignal(watched_turf, COMSIG_TURF_CHANGE)
 		watched_turf = null
-	// WEAKREF refuses a datum already marked QDELETED. Destroy must use the
-	// existing subscription identity rather than trying to create it again.
-	var/datum/weakref/reference = weak_reference
+	// om_watch_disarm() keys off this datum's own ref string (code/datums/om/watch.dm), not a
+	// weakref, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
+	// to work around here.
 	for(var/id in mixture_ids)
-		SSmachines.unsubscribe_gas_dependency(id, reference)
+		om_watch_disarm(src, "gas[id]")
 	mixture_ids = null
 	mixture_pressures = null
 	mixture_corrosion = null
@@ -293,11 +293,15 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		mask |= GAS_DEPENDENCY_PRESSURE
 	return mask
 
-/// Filter Rust's compact gas publication before entering the exposure queue.
-/// This is deliberately a semantic threshold, not a timer: cumulative changes
-/// are compared with the cached latest state and a dangerous pressure crossing
-/// wakes immediately.
-/datum/material_service/proc/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
+/// Raw forwarder (om_watch_arm_raw(), code/datums/om/watch.dm) for one watched mixture: filters
+/// Rust's compact gas publication before entering the exposure queue. This is deliberately a
+/// semantic threshold, not a timer: cumulative changes are compared with the cached latest state
+/// and a dangerous pressure crossing wakes immediately.
+/datum/material_service/proc/on_gas_notify(mixture_id, change_mask, list/observation, observation_index)
+	if(gas_notify_actionable(mixture_id, change_mask, observation, observation_index) && !timer)
+		environment_changed(FALSE)
+
+/datum/material_service/proc/gas_notify_actionable(mixture_id, change_mask, list/observation, observation_index)
 	if(!observation || !observation_index)
 		return TRUE
 	var/new_pressure = observation[observation_index + 3]
@@ -353,13 +357,13 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		next_ids |= air_id
 		next_pressures["[air_id]"] = air.return_pressure()
 		next_corrosion["[air_id]"] = material_gas_corrosion_load(air)
-	var/datum/weakref/reference = WEAKREF(src)
+	var/interest_mask = gas_dependency_interest_mask()
 	for(var/id in mixture_ids)
 		if(!(id in next_ids))
-			SSmachines.unsubscribe_gas_dependency(id, reference)
+			om_watch_disarm(src, "gas[id]")
 	for(var/id in next_ids)
 		if(!(id in mixture_ids))
-			SSmachines.subscribe_gas_dependency(id, reference)
+			om_watch_arm_raw(src, "gas[id]", id, interest_mask, CALLBACK(src, PROC_REF(on_gas_notify)))
 	mixture_ids = next_ids
 	mixture_pressures = next_pressures
 	mixture_corrosion = next_corrosion

@@ -16,6 +16,34 @@
 		/obj/machinery/cell_charger,
 		/obj/machinery/power/apc,
 		/obj/machinery/power/smes,
+		/obj/machinery/firealarm,
+		/obj/machinery/alarm,
+		/obj/machinery/portable_atmospherics/canister,
+		/obj/machinery/portable_atmospherics/powered/pump,
+		/obj/machinery/portable_atmospherics/powered/scrubber,
+		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
+		// flow law is a Rust device edge (vent pumps and scrubbers, pumps, valves, passive gates)
+		// and plain pipes have no DM work at all and don't join.
+		/obj/machinery/atmospherics/unary/freezer,
+		/obj/machinery/atmospherics/unary/heater,
+		/obj/machinery/atmospherics/unary/heat_exchanger,
+		/obj/machinery/atmospherics/unary/outlet_injector,
+		/obj/machinery/atmospherics/unary/cryo_cell,
+		/obj/machinery/atmospherics/binary/dp_vent_pump,
+		/obj/machinery/atmospherics/binary/algae_farm,
+		/obj/machinery/atmospherics/omni,
+		/obj/machinery/atmospherics/trinary/atmos_filter,
+		/obj/machinery/atmospherics/trinary/mixer,
+		/obj/machinery/atmospherics/portables_connector,
+		/obj/machinery/atmospherics/pipeturbine,
+		/obj/machinery/atmospherics/pipe/simple/heat_exchanging,
+		/obj/machinery/power/turbinemotor,
+		/obj/machinery/power/thermoregulator,
+		/obj/machinery/air_sensor,
+		/obj/machinery/meter,
+		/obj/machinery/computer/general_air_control/fuel_injection,
+		/obj/machinery/portable_atmospherics/hydroponics,
+		/obj/machinery/portable_atmospherics/powered/reagent_distillery,
 	)
 	behaviours = list(/datum/om/pipeline/machine)
 
@@ -175,3 +203,235 @@
 
 /datum/om/stage/machine/power/smes/idle(obj/machinery/power/smes/M)
 	return M.power_settled()
+
+// ---------------------------------------------------------------- fire alarms
+
+/// Hotspots are meant to reach an alarm without polling (nothing repeats the
+/// detecting scan once armed); the only genuine per-tick work left is a
+/// lockdown countdown that nothing in this fork currently starts (only the
+/// sibling /obj/machinery/partyalarm has a live "timing" caller). There is no
+/// publish/subscribe event for "world.time advanced", so a running countdown
+/// rewakes on the pipeline's own cadence (MACHINE_PIPELINE_INTERVAL, 2s)
+/// instead of a dedicated timer — the one rewake_delay fallback in this family.
+/datum/om/stage/machine/power/firealarm
+	of = /obj/machinery/firealarm
+
+/datum/om/stage/machine/power/firealarm/perform(obj/machinery/firealarm/M, datum/om/frame/machine/F)
+	if(M.stat & (NOPOWER|BROKEN))
+		return STAGE_IDLE
+
+	if(M.timing)
+		if(M.time > 0)
+			M.time = max(M.time - (MACHINE_PIPELINE_INTERVAL / 10), 0)
+		if(M.time <= 0)
+			M.alarm()
+			M.time = 0
+			M.timing = 0
+
+	if(M.detecting && (locate(/obj/effect/hotspot) in M.loc))
+		M.alarm()
+
+	return STAGE_IDLE
+
+/// Settled once there's no countdown left running; a fresh alarm still gets
+/// one perform() (from Initialize's first frame) before it parks.
+/datum/om/stage/machine/power/firealarm/idle(obj/machinery/firealarm/M)
+	return !M.timing
+
+// ---------------------------------------------------------------- air alarms
+
+/// The elected main alarm (per area) is the only one that scans and regulates;
+/// followers park until elect_main_air_alarm() (an ownership change) wakes a
+/// replacement. Gas wakes go through om_watch_arm_value() (air_alarm.dm
+/// register_gas_dependencies(), code/datums/om/watch.dm): an air alarm's TLV table has several
+/// bands per gas plus a temperature/pressure signature, condensed into one comparable
+/// atmospheric_control_signature() value so the watch fires only on exactly the crossings a
+/// full band set would, not on every harmless room-air diffusion tick. Active temperature
+/// regulation has no "room reached target" event, so it keeps running every pipeline tick
+/// (idle() below) until scan_atmo() reports the room has settled.
+/datum/om/stage/machine/power/alarm
+	of = /obj/machinery/alarm
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_OCCUPANT | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
+	woken_by = "power_change(); atom_break()/atom_fix(); wire shorts; TLV/thermostat settings; elect_main_air_alarm(); a watched gas crossing"
+
+/datum/om/stage/machine/power/alarm/perform(obj/machinery/alarm/M, datum/om/frame/machine/F)
+	if(!M.alarm_area)
+		return STAGE_IDLE
+	var/obj/machinery/alarm/MA = M.alarm_area.main_air_alarm?.resolve()
+	if(!MA)
+		M.alarm_area.elect_main_air_alarm()
+		MA = M.alarm_area.main_air_alarm?.resolve() // try again
+	if(!MA || (M.stat & (NOPOWER|BROKEN)) || M.shorted || MA.shorted)
+		M.register_gas_dependencies()
+		return STAGE_IDLE
+	// Only the elected controller scans and regulates. The main alarm publishes
+	// the area's danger/icon state to every display.
+	if(MA != M)
+		M.unregister_gas_dependencies()
+		return STAGE_IDLE
+	if(!get_turf(M))
+		return STAGE_IDLE
+	M.scan_atmo()
+	if(!M.regulating_temperature)
+		M.register_gas_dependencies()
+	return STAGE_IDLE
+
+/datum/om/stage/machine/power/alarm/idle(obj/machinery/alarm/M)
+	return !M.regulating_temperature
+
+// ---------------------------------------------------------------- canisters
+
+/// Only canister is on this pipeline (see the NOTE in portable_atmospherics.dm): the other
+/// portable_atmospherics subtypes (powered/pump, powered/scrubber, hydroponics,
+/// reagent_distillery) still have their own real process() overrides and stay polling.
+///
+/// Wakes on the valve, the holding tank and the connection (all raise
+/// CHANGE_MACHINE_SETTINGS today; canister.dm), plus a gas watch armed by
+/// hibernate_until_gas_changes() (portable_atmospherics.dm/canister.dm, code/datums/om/watch.dm)
+/// every time perform() settles: "any change" while free-standing or connected with the valve
+/// open (the canister's own react_or_update()/pipenet membership needs to re-run on literally
+/// any composition/pressure/temperature change), or a value watch on desired_update_flag() while
+/// closed and pipenet-connected (only the displayed gauge band matters then).
+/datum/om/stage/machine/power/canister
+	of = /obj/machinery/portable_atmospherics/canister
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
+	woken_by = "power_change(); atom_break()/atom_fix(); valve/label/eject topic actions; a subscribed gas mixture changing"
+
+/datum/om/stage/machine/power/canister/perform(obj/machinery/portable_atmospherics/canister/M, datum/om/frame/machine/F)
+	if(M.destroyed)
+		M.om_settled = TRUE
+		return STAGE_IDLE
+
+	var/turf/canister_turf = get_turf(M)
+	var/datum/gas_mixture/canister_environment = canister_turf ? canister_turf.return_air() : null
+	M.material_observe_gases(M.air_contents, canister_environment)
+
+	var/reaction_result = M.react_or_update()
+	var/material_active = M.process_material_vessel()
+	if(M.destroyed)
+		M.om_settled = TRUE
+		return STAGE_IDLE
+
+	if(M.valve_open)
+		var/datum/gas_mixture/environment = M.holding ? M.holding.air_contents : M.loc.return_air()
+		var/env_pressure = environment.return_pressure()
+		var/pressure_delta = M.release_pressure - env_pressure
+
+		if((M.air_contents.return_temperature() > 0) && (pressure_delta > 0))
+			var/transfer_moles = calculate_transfer_moles(M.air_contents, environment, pressure_delta)
+			transfer_moles = min(transfer_moles, (M.release_flow_rate/M.air_contents.return_volume())*M.air_contents.total_moles()) //flow rate limit
+
+			var/returnval = pump_gas_passive(M, M.air_contents, environment, transfer_moles)
+			if(returnval >= 0)
+				M.update_icon()
+				// pump_gas_passive directly mutates the turf's air mix via the gas_mixture
+				// reference returned by loc.return_air(); it doesn't know what type of sink
+				// it's writing to, so it can't enroll a turf in SSair.active_turfs. Without
+				// this, under LINDA the gas lands on the turf but never spreads (active_turfs
+				// stays empty) and the gas overlay never updates (update_visuals is never
+				// called).
+				if(!M.holding && isturf(M.loc))
+					var/turf/open/T = M.loc
+					if(istype(T))
+						T.update_visuals()
+						T.air_update_turf(FALSE, FALSE)
+
+	M.can_label = M.air_contents.return_pressure() < 1
+
+	M.om_settled = !M.valve_open && reaction_result == NO_REACTION && !material_active
+	if(M.om_settled)
+		M.hibernate_until_gas_changes()
+	return STAGE_IDLE
+
+/datum/om/stage/machine/power/canister/idle(obj/machinery/portable_atmospherics/canister/M)
+	return M.om_settled
+
+// ---------------------------------------------------------------- portable pumps and scrubbers
+
+/// Neither device ever hibernates on its own: both keep running every tick while `on`, exactly
+/// as their old process() did (no "target pressure reached" event exists), and idle() is simply
+/// `!on`. `huge` subtypes are NOT migrated (they keep their own real process() override that
+/// checks anchored/power every tick regardless of `on`) and set polls = TRUE back to opt out of
+/// this pipeline's parent-type registration; they still get a (harmless, permanently-idle)
+/// generic /datum/om/stage/machine/power frame alongside their unaffected SSmachines polling.
+/datum/om/stage/machine/power/portable_pump
+	of = /obj/machinery/portable_atmospherics/powered/pump
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
+	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
+
+/datum/om/stage/machine/power/portable_pump/perform(obj/machinery/portable_atmospherics/powered/pump/M, datum/om/frame/machine/F)
+	M.pump_step()
+	return STAGE_IDLE
+
+/datum/om/stage/machine/power/portable_pump/idle(obj/machinery/portable_atmospherics/powered/pump/M)
+	return !M.on
+
+/datum/om/stage/machine/power/portable_scrubber
+	of = /obj/machinery/portable_atmospherics/powered/scrubber
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
+	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
+
+/datum/om/stage/machine/power/portable_scrubber/perform(obj/machinery/portable_atmospherics/powered/scrubber/M, datum/om/frame/machine/F)
+	M.scrubber_step()
+	return STAGE_IDLE
+
+/datum/om/stage/machine/power/portable_scrubber/idle(obj/machinery/portable_atmospherics/powered/scrubber/M)
+	return !M.on
+
+// ---------------------------------------------------------------- machine_step devices
+
+/// The generic stage for a machine whose DM-side work is one machine_step() (machinery.dm): the
+/// body its old process() had, run once per frame while it has work. PROCESS_KILL idles the stage
+/// and the machine parks; it wakes on its channels, on START_MACHINE_PROCESSING() (which raises
+/// CHANGE_EXPLICIT for a polls = FALSE machine, machines.dm), or on a gas watch it armed when it
+/// settled (code/datums/om/watch.dm) -- never on a cadence it doesn't need.
+/datum/om/stage/machine/power/step
+	of = /obj/machinery/atmospherics
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
+	woken_by = "power_change(); atom_break()/atom_fix(); wrenching; settings and topology (START_MACHINE_PROCESSING()); its gas watch"
+
+/datum/om/stage/machine/power/step/perform(obj/machinery/M, datum/om/frame/machine/F)
+	M.step_active = M.machine_step() != PROCESS_KILL
+	if(!M.step_active)
+		return STAGE_IDLE
+
+/// Settled when it can't act (step_has_work(), each device's own eligibility rule) or when it is
+/// parked on the gas watch that states that rule -- the watch is its wake producer. A parked device
+/// with work and no armed watch is a lost wake, which the OM audit reports.
+/datum/om/stage/machine/power/step/idle(obj/machinery/M)
+	return om_watch_armed(M) || !M.step_has_work()
+
+/datum/om/stage/machine/power/step/turbinemotor
+	of = /obj/machinery/power/turbinemotor
+
+/datum/om/stage/machine/power/step/thermoregulator
+	of = /obj/machinery/power/thermoregulator
+
+/datum/om/stage/machine/power/step/air_sensor
+	of = /obj/machinery/air_sensor
+
+/datum/om/stage/machine/power/step/meter
+	of = /obj/machinery/meter
+
+/// Runs every frame while its automation is on (it re-reads the latest sensor broadcasts and
+/// commands the injectors) -- the one timed machine_step here; off, it parks.
+/datum/om/stage/machine/power/step/fuel_injection
+	of = /obj/machinery/computer/general_air_control/fuel_injection
+
+/// The stationary "huge" portable pump/scrubber: their own machine_step() (anchored/power checks
+/// every frame while on), not the base portable pump/scrubber stages above.
+/datum/om/stage/machine/power/step/huge_pump
+	of = /obj/machinery/portable_atmospherics/powered/pump/huge
+
+/datum/om/stage/machine/power/step/huge_scrubber
+	of = /obj/machinery/portable_atmospherics/powered/scrubber/huge
+
+/// Hydroponics trays: a frame per growth cycle while something is growing or soaking in; between
+/// cycles the tray parks on its growth timer (schedule_growth_wake()), and reagent or seed changes
+/// wake it through START_MACHINE_PROCESSING().
+/datum/om/stage/machine/power/step/hydroponics
+	of = /obj/machinery/portable_atmospherics/hydroponics
+
+/// The distillery: every frame while on (heating, pumping beakers); off, it parks until toggled.
+/datum/om/stage/machine/power/step/reagent_distillery
+	of = /obj/machinery/portable_atmospherics/powered/reagent_distillery

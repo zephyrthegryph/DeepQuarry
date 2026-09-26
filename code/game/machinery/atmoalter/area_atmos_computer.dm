@@ -63,6 +63,7 @@
 				return TRUE
 			S.on = !S.on
 			S.update_icon()
+			START_MACHINE_PROCESSING(S)
 			. = TRUE
 		if("allon")
 			INVOKE_ASYNC(src, PROC_REF(toggle_all), TRUE)
@@ -84,6 +85,7 @@
 			continue
 		S.on = on
 		S.update_icon()
+		START_MACHINE_PROCESSING(S)
 		CHECK_TICK
 
 /obj/machinery/computer/area_atmos/proc/validscrubber(obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber as obj)

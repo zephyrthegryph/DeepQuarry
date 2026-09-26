@@ -49,7 +49,7 @@
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
 
-/obj/machinery/power/thermoregulator/southerncross/process()
+/obj/machinery/power/thermoregulator/southerncross/machine_step()
 	if(!on)
 		return PROCESS_KILL
 	if(!powernet)
@@ -89,6 +89,7 @@
 #define MODE_COOLING 2
 
 /obj/machinery/power/thermoregulator
+	polls = FALSE // machine pipeline (machine_pipeline.dm, machine_step())
 	name = "thermal regulator"
 	desc = "A massive machine that can either add or remove thermal energy from the surrounding environment. Must be secured onto a powered wire node to function."
 	icon = 'icons/obj/machines/thermoregulator_vr.dmi'
@@ -106,8 +107,6 @@
 	var/on = 0
 	var/target_temp = T20C
 	var/mode = MODE_IDLE
-	var/sleeping_mixture_id
-	var/sleeping_mixture_revision = -1
 	/// Fraction of the Carnot COP this unit's pump achieves (H4, the
 	/// generic vg_heat_regulator_step -- rust_core.md §15's "the heat
 	/// regulator" row). Was a bespoke `removed.return_temperature()/TN60C`
@@ -225,7 +224,7 @@
 	wake_for_state_change()
 	update_icon()
 
-/obj/machinery/power/thermoregulator/process()
+/obj/machinery/power/thermoregulator/machine_step()
 	if(!on)
 		return PROCESS_KILL
 	if(!powernet)
@@ -287,35 +286,19 @@
 	change_mode(MODE_IDLE)
 	update_icon()
 
+/// Wakes only once the room drifts at least a degree from its target while it is on -- the test
+/// process() makes before regulating.
 /obj/machinery/power/thermoregulator/proc/hibernate_until_temperature_changes()
-	var/datum/weakref/WR = WEAKREF(src)
 	var/datum/gas_mixture/environment = loc.return_air()
-	sleeping_mixture_id = environment?.arena_id()
-	sleeping_mixture_revision = environment?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_TEMPERATURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
 	STOP_MACHINE_PROCESSING(src)
 
+/obj/machinery/power/thermoregulator/proc/gas_wake_condition()
+	var/datum/gas_mixture/environment = loc?.return_air()
+	return on && environment && abs(environment.return_temperature() - target_temp) >= 1
+
 /obj/machinery/power/thermoregulator/proc/clear_gas_dependency()
-	var/datum/weakref/WR = WEAKREF(src)
-	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_id = null
-	sleeping_mixture_revision = -1
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
-
-/obj/machinery/power/thermoregulator/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE) || mixture_id != sleeping_mixture_id || !on)
-		return FALSE
-	var/datum/gas_mixture/environment = loc.return_air()
-	if(!environment || environment.arena_id() != sleeping_mixture_id)
-		return TRUE
-	if(environment.revision() == sleeping_mixture_revision)
-		return FALSE
-	return abs(environment.return_temperature() - target_temp) >= 1
-
-/obj/machinery/power/thermoregulator/gas_dependency_interest_mask()
-	return GAS_DEPENDENCY_TEMPERATURE
+	om_watch_disarm(src, "gas")
 
 /obj/machinery/power/thermoregulator/proc/wake_for_state_change()
 	clear_gas_dependency()
@@ -359,3 +342,6 @@
 #undef MODE_IDLE
 #undef MODE_HEATING
 #undef MODE_COOLING
+
+/obj/machinery/power/thermoregulator/step_has_work()
+	return gas_wake_condition()

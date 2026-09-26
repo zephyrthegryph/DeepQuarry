@@ -58,17 +58,20 @@
 	if (!mixing_inputs)
 		mixing_inputs = list(src.air1 = node1_concentration, src.air2 = node2_concentration)
 
-/obj/machinery/atmospherics/trinary/mixer/process()
+/obj/machinery/atmospherics/trinary/mixer/machine_step()
 	..()
 
 	last_power_draw = 0
 	last_flow_rate = 0
 
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return
+		return PROCESS_KILL
 
 	//Figure out the amount of moles to transfer
-	var/transfer_moles = (set_flow_rate*mixing_inputs[air1]/air1.return_volume())*air1.total_moles() + (set_flow_rate*mixing_inputs[air2]/air2.return_volume())*air2.total_moles()
+	var/transfer_moles = mix_transfer_moles()
+	if(transfer_moles <= MINIMUM_MOLES_TO_FILTER)
+		hibernate_until_input_changes()
+		return PROCESS_KILL
 
 	var/power_draw = -1
 	if (transfer_moles > MINIMUM_MOLES_TO_FILTER)
@@ -136,6 +139,7 @@
 			mixing_inputs[air1] = 1.0 - mixing_inputs[air2]
 			. = TRUE
 	update_icon()
+	START_MACHINE_PROCESSING(src) // settings: re-evaluate the mix now
 
 //
 // "T" Orientation - Inputs are on oposite sides instead of adjacent
@@ -156,3 +160,21 @@
 	dir = SOUTH
 	initialize_directions = SOUTH|NORTH|EAST
 	mirrored = TRUE
+
+/obj/machinery/atmospherics/trinary/mixer/proc/mix_transfer_moles()
+	return (set_flow_rate*mixing_inputs[air1]/air1.return_volume())*air1.total_moles() + (set_flow_rate*mixing_inputs[air2]/air2.return_volume())*air2.total_moles()
+
+/// Nothing to mix: park until the inputs hold enough to move (the same test machine_step()
+/// makes). Power and settings changes wake it through their own channels.
+/obj/machinery/atmospherics/trinary/mixer/proc/hibernate_until_input_changes()
+	om_watch_arm_condition(src, "gas", list(air1?.arena_id(), air2?.arena_id()), GAS_DEPENDENCY_COMPOSITION | GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+
+/obj/machinery/atmospherics/trinary/mixer/proc/gas_wake_condition()
+	return use_power && !(stat & (NOPOWER|BROKEN)) && mix_transfer_moles() > MINIMUM_MOLES_TO_FILTER
+
+/obj/machinery/atmospherics/trinary/mixer/proc/wake_from_gas()
+	om_watch_disarm(src, "gas")
+	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/atmospherics/trinary/mixer/step_has_work()
+	return gas_wake_condition()

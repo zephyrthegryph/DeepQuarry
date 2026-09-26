@@ -11,7 +11,13 @@
 
 	var/volume = 0
 	var/destroyed = 0
-	var/sleeping_mixture_id
+	// NOTE: polls stays TRUE (the default) on this base type. Only canister (below) is fully
+	// migrated to the OM machine pipeline; several other subtypes (portable_atmospherics/powered/
+	// pump, .../scrubber, hydroponics, reagent_distillery) still have their own real process()
+	// overrides that were NOT migrated. Setting polls = FALSE here previously cascaded to every
+	// subtype via inheritance and silently stopped those overrides from ever being scheduled —
+	// caught by the OM_AUDIT "MISSED WAKE has work but was idle" failures the test suite raised
+	// for exactly those types. Do not set polls here; set it on the specific subtype you migrate.
 
 	var/start_pressure = ONE_ATMOSPHERE
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
@@ -35,44 +41,41 @@
 	QDEL_NULL(holding)
 	return ..()
 
-/obj/machinery/portable_atmospherics/process()
-	if(!connected_port) //only react when pipe_network will ont it do it for you
+// Shared by the portable devices' own steps (distillery process(), canister's OM pipeline stage
+// (code/game/machinery/machine_pipeline.dm, "canisters" section).
+/obj/machinery/portable_atmospherics/proc/react_or_update()
+	if(!connected_port) //only react when pipe_network will do it for you
 		//Allow for reactions
 		return air_contents.react(src)
-	else
-		update_icon()
+	update_icon()
 	return NO_REACTION
 
+/// Arms a "wake on any change" watch on this device's own gas contents -- process() has no
+/// specific threshold for "done reacting", it just wants to run again the next time anything
+/// touches its mixture.
 /obj/machinery/portable_atmospherics/proc/hibernate_until_gas_changes()
-	var/datum/weakref/WR = WEAKREF(src)
-	sleeping_mixture_id = air_contents?.arena_id()
-	if(isnull(sleeping_mixture_id))
+	var/mixture_id = air_contents?.arena_id()
+	if(isnull(mixture_id))
 		return
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
-	STOP_MACHINE_PROCESSING(src)
+	// polls = FALSE (canister; see machine_pipeline.dm) runs the OM machine pipeline instead of
+	// process(), so its wake is om_changed(), not a re-entry into process().
+	var/datum/callback/wake = polls ? CALLBACK(src, PROC_REF(wake_from_gas)) : CALLBACK(src, PROC_REF(wake_om_pipeline))
+	om_watch_arm_revision(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = air_contents.revision())
+	if(polls)
+		STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/portable_atmospherics/proc/clear_gas_dependency()
-	var/datum/weakref/WR = WEAKREF(src)
-	var/ref_key = WR?.reference
-	if(isnull(sleeping_mixture_id))
-		if(ref_key)
-			SSmachines.sleeping_gas_devices.Remove(ref_key)
-		return
-	if(WR)
-		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
-	sleeping_mixture_id = null
-	if(ref_key)
-		SSmachines.sleeping_gas_devices.Remove(ref_key)
+	om_watch_disarm(src, "gas")
 
-/obj/machinery/portable_atmospherics/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_ALL))
-		return FALSE
-	// A queued notification can race an explicit wake, which clears the local
-	// capture before the old subscriber entry is drained. Treat that stale entry
-	// as actionable so wake_gas_subscriber can clean it; rejecting it strands the
-	// portable asleep until another unrelated mutation.
-	return isnull(sleeping_mixture_id) || mixture_id == sleeping_mixture_id
+/obj/machinery/portable_atmospherics/proc/wake_from_gas()
+	clear_gas_dependency()
+	START_MACHINE_PROCESSING(src)
+
+/// OM machine pipeline (machine_pipeline.dm): a gas crossing raises om_changed() so the pipeline
+/// stage reschedules itself, same as a settings/power change.
+/obj/machinery/portable_atmospherics/proc/wake_om_pipeline()
+	clear_gas_dependency()
+	om_changed(src, CHANGE_MACHINE_GAS)
 
 /obj/machinery/portable_atmospherics/blob_act()
 	qdel(src)
@@ -106,11 +109,14 @@
 
 	//Perform the connection
 	connected_port = new_port
-	clear_gas_dependency()
-	START_MACHINE_PROCESSING(src)
+	if(polls)
+		clear_gas_dependency()
+		START_MACHINE_PROCESSING(src)
+	else
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
 	connected_port.connected_device = src
 	connected_port.on = 1 //Activate port updates
-	START_MACHINE_PROCESSING(connected_port)
+	START_MACHINE_PROCESSING(connected_port) // portables_connector is a pipe device: untouched, still polls
 
 	anchored = TRUE //Prevent movement
 
@@ -130,9 +136,12 @@
 	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port
 	old_port.connected_device = null
 	old_port.on = 0
-	STOP_MACHINE_PROCESSING(old_port)
+	STOP_MACHINE_PROCESSING(old_port) // portables_connector is a pipe device: untouched, still polls
 	connected_port = null
-	START_MACHINE_PROCESSING(src)
+	if(polls)
+		START_MACHINE_PROCESSING(src)
+	else
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 	return 1
 

@@ -14,6 +14,12 @@
 
 	var/canister_color = "yellow"
 	var/can_label = 1
+	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
+	/// Cached from the last perform(): TRUE once valve_open is off and neither a reaction nor
+	/// the material vessel is doing anything, mirroring the settle check the old process() made
+	/// right before it called hibernate_until_gas_changes(). Read by
+	/// /datum/om/stage/machine/power/portable_atmospherics/canister/idle() (machine_pipeline.dm).
+	var/om_settled = FALSE
 	start_pressure = 45 * ONE_ATMOSPHERE
 	pressure_resistance = 7 * ONE_ATMOSPHERE
 	var/temperature_resistance = 1000 + T0C
@@ -159,15 +165,21 @@
 	else
 		. |= 32
 
-/obj/machinery/portable_atmospherics/canister/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
-		return FALSE
-	// An attached closed canister's gas reactions and pipe membership are owned
-	// by the pipenet. Its machinery process only needs to refresh the gauge when
-	// the pressure crosses a displayed band.
+// An attached closed canister's gas reactions and pipe membership are owned by the pipenet.
+// Its OM pipeline stage only needs to refresh the gauge when the pressure crosses a displayed
+// band, so it watches desired_update_flag() (an om_watch value watch) instead of "any change"
+// in that state; otherwise it falls back to the portable_atmospherics base "any change" watch.
+/obj/machinery/portable_atmospherics/canister/hibernate_until_gas_changes()
 	if(connected_port && !valve_open)
-		return desired_update_flag() != update_flag
-	return TRUE
+		var/mixture_id = air_contents?.arena_id()
+		if(isnull(mixture_id))
+			return
+		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(current_update_flag)), wake_callback = CALLBACK(src, PROC_REF(wake_om_pipeline)))
+		return
+	return ..()
+
+/obj/machinery/portable_atmospherics/canister/proc/current_update_flag()
+	return desired_update_flag()
 
 /obj/machinery/portable_atmospherics/canister/update_icon()
 /*
@@ -234,55 +246,10 @@ update_flag
 		src.holding.loc = src.loc
 		src.holding = null
 
-/obj/machinery/portable_atmospherics/canister/process()
-	if (destroyed)
-		return PROCESS_KILL
-	var/turf/canister_turf = get_turf(src)
-	var/datum/gas_mixture/canister_environment = canister_turf ? canister_turf.return_air() : null
-	material_observe_gases(air_contents, canister_environment)
-
-	var/reaction_result = ..()
-	var/material_active = process_material_vessel()
-	if(destroyed)
-		return PROCESS_KILL
-
-	if(valve_open)
-		var/datum/gas_mixture/environment
-		if(holding)
-			environment = holding.air_contents
-		else
-			environment = loc.return_air()
-
-		var/env_pressure = environment.return_pressure()
-		var/pressure_delta = release_pressure - env_pressure
-
-		if((air_contents.return_temperature() > 0) && (pressure_delta > 0))
-			var/transfer_moles = calculate_transfer_moles(air_contents, environment, pressure_delta)
-			transfer_moles = min(transfer_moles, (release_flow_rate/air_contents.return_volume())*air_contents.total_moles()) //flow rate limit
-
-			var/returnval = pump_gas_passive(src, air_contents, environment, transfer_moles)
-			if(returnval >= 0)
-				src.update_icon()
-				// pump_gas_passive directly mutates the turf's air mix via
-				// the gas_mixture reference returned by loc.return_air(); it doesn't
-				// know what type of sink it's writing to, so it can't enroll a turf
-				// in SSair.active_turfs. Without this, under LINDA the gas lands on
-				// the turf but never spreads (active_turfs stays empty) and the gas
-				// overlay never updates (update_visuals is never called).
-				if(!holding && isturf(loc))
-					var/turf/open/T = loc
-					if(istype(T))
-						T.update_visuals()
-						T.air_update_turf(FALSE, FALSE)
-
-	if(air_contents.return_pressure() < 1)
-		can_label = 1
-	else
-		can_label = 0
-
-	if(!valve_open && reaction_result == NO_REACTION && !material_active)
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
+// Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable atmospherics" section):
+// canister inherits polls = FALSE from /obj/machinery/portable_atmospherics. The body that used
+// to live in process() is unchanged, just relocated to
+// /datum/om/stage/machine/power/portable_atmospherics/canister/perform().
 
 
 /obj/machinery/portable_atmospherics/canister/return_air()
@@ -471,8 +438,11 @@ update_flag
 					release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
 					log_open()
 			valve_open = !valve_open
-			clear_gas_dependency()
-			START_MACHINE_PROCESSING(src)
+			if(polls)
+				clear_gas_dependency()
+				START_MACHINE_PROCESSING(src)
+			else
+				om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = TRUE
 		if("eject")
 			if(holding)

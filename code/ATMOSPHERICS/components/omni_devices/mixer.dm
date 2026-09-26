@@ -104,9 +104,9 @@
 
 	return 0
 
-/obj/machinery/atmospherics/omni/mixer/process()
+/obj/machinery/atmospherics/omni/mixer/machine_step()
 	if(!..())
-		return 0
+		return PROCESS_KILL // off or unpowered: its power and settings channels wake it
 
 	//Figure out the amount of moles to transfer
 	var/transfer_moles = 0

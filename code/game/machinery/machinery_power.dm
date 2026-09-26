@@ -147,6 +147,8 @@
 /obj/machinery/proc/update_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
+	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(!power_init_complete)
 		use_power = new_use_power
 		return TRUE // We'll be retallying anyway.

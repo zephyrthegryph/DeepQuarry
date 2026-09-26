@@ -333,10 +333,10 @@
 	// Open the canister to release.
 	C.valve_open = TRUE
 	C.release_pressure = 1000 // high release for fast transfer
-	// Drive the canister's release loop directly. process() (not process_atmos())
-	// is what runs the valve transfer in CHOMP's portable_atmospherics machinery.
+	// Drive the canister's release loop directly: one machine pipeline frame each
+	// (machine_pipeline.dm, power/canister) runs the valve transfer.
 	for(var/i in 1 to 10)
-		C.process()
+		om_run_frame_now(C, /datum/om/pipeline/machine)
 
 	var/final_canister_o2 = C.air_contents.get_moles(/datum/gas/oxygen)
 	var/final_turf_o2 = T.return_air().get_moles(/datum/gas/oxygen)
@@ -1993,7 +1993,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/before_turf = T.air.get_moles(/datum/gas/plasma)
 	C.valve_open = TRUE
 	C.release_pressure = 10 * ONE_ATMOSPHERE
-	C.process()
+	om_run_frame_now(C, /datum/om/pipeline/machine)
 	var/after_canister = C.air_contents.get_moles(/datum/gas/plasma)
 	var/after_turf = T.air.get_moles(/datum/gas/plasma)
 	var/overlay_visible = LAZYLEN(T.atmos_overlay_types) > 0
@@ -2788,11 +2788,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
 	TEST_ASSERT_NOTNULL(pair, "no clear floor for distillery hibernation test")
 	var/obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test/D = new(pair[1])
-	TEST_ASSERT_EQUAL(D.process(), PROCESS_KILL, "settled switched-off distillery kept polling")
-	STOP_MACHINE_PROCESSING(D)
+	TEST_ASSERT_EQUAL(D.machine_step(), PROCESS_KILL, "settled switched-off distillery kept polling")
+	var/distillery_wakes = D.machine_wake_count
 	D.toggle_power(null)
 	TEST_ASSERT(D.on, "distillery toggle did not switch heating on")
-	TEST_ASSERT(D.datum_flags & DF_ISPROCESSING, "distillery toggle did not wake the hibernating machine")
+	TEST_ASSERT(D.machine_wake_count > distillery_wakes, "distillery toggle did not wake the hibernating machine")
 	qdel(D)
 
 /datum/unit_test/dq_airlock_sensor_wakes_on_pressure/Run()
@@ -2806,13 +2806,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	S.process()
 	TEST_ASSERT(!(S in SSmachines.processing_machines), \
 		"stable airlock sensor did not enter gas dependency sleep")
-	T.return_air().adjust_moles(/datum/gas/oxygen, 0.001)
-	TEST_ASSERT(!S.gas_dependency_changed(T.return_air().arena_id(), GAS_DEPENDENCY_PRESSURE), \
-		"sub-display-resolution pressure mutation woke a sleeping airlock sensor")
+	TEST_ASSERT(om_watch_armed(S), "sleeping airlock sensor did not arm a gas watch")
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
-	TEST_ASSERT(S.gas_dependency_changed(T.return_air().arena_id(), GAS_DEPENDENCY_PRESSURE), \
-		"visible pressure mutation was rejected by a sleeping airlock sensor")
-	SSmachines.wake_gas_subscriber(WEAKREF(S))
+	for(var/i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(S in SSmachines.processing_machines)
+			break
 	TEST_ASSERT(S in SSmachines.processing_machines, \
 		"pressure mutation did not wake sleeping airlock sensor")
 	qdel(S)
@@ -3081,7 +3080,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		P.cell.charge = P.cell.maxcharge
 
 	var/before = turf_air.get_moles(/datum/gas/nitrogen)
-	P.process()
+	P.pump_step()
 	var/after = turf_air.get_moles(/datum/gas/nitrogen)
 	TEST_ASSERT(after > before, \
 		"portable pump didn't push N2 to floor: [before] → [after]")
@@ -3118,7 +3117,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/floor_plasma_before = turf_air.get_moles(/datum/gas/plasma)
 	var/tank_plasma_before = S.air_contents.get_moles(/datum/gas/plasma)
-	S.process()
+	S.scrubber_step()
 	var/floor_plasma_after = turf_air.get_moles(/datum/gas/plasma)
 	var/tank_plasma_after = S.air_contents.get_moles(/datum/gas/plasma)
 
@@ -3828,33 +3827,45 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	A.update_area()
 	A.set_initial_TLV()
 	A.alarm_area.main_air_alarm = WEAKREF(A)
-	A.process()
-	var/datum/weakref/alarm_ref = WEAKREF(A)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[alarm_ref.reference], \
-		"stable air alarm did not enter dependency sleep")
+	A.stat &= ~(NOPOWER | BROKEN)
+	A.shorted = FALSE
+	A.scan_atmo()
+	TEST_ASSERT_EQUAL(A.danger_level, 0, \
+		"air alarm flagged danger on a standard breathable atmosphere")
+	// register_gas_dependencies() (air_alarm.dm) arms an om_watch value watch
+	// (code/datums/om/watch.dm) on atmospheric_control_signature() instead of the deleted
+	// hand-rolled revision+signature gas_dependency_changed(): only a TLV/control-band crossing
+	// should raise CHANGE_MACHINE_GAS, not every harmless composition drift.
+	A.register_gas_dependencies()
+	TEST_ASSERT(om_watch_armed(A, "gas"), \
+		"stable air alarm did not arm a gas watch")
+	var/wakes_before = A.gas_dependency_wake_count
 	T.air.adjust_moles(/datum/gas/oxygen, 0.01)
-	TEST_ASSERT(!A.gas_dependency_changed(T.air.arena_id(), GAS_DEPENDENCY_ALL), \
-		"air alarm accepted a gas change that crossed no alarm or control threshold")
+	for(var/i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT_EQUAL(A.gas_dependency_wake_count, wakes_before, \
+		"a harmless composition drift that crossed no alarm or control threshold woke the air alarm")
 	T.air.adjust_moles(/datum/gas/plasma, 50)
-	TEST_ASSERT(A.gas_dependency_changed(T.air.arena_id(), GAS_DEPENDENCY_ALL), \
-		"air alarm rejected a gas change that crossed a danger threshold")
-	SSmachines.wake_gas_subscriber(alarm_ref)
-	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, \
-		"air alarm did not wake after its gas dependency changed")
-	A.process()
+	for(var/i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(A.gas_dependency_wake_count > wakes_before)
+			break
+	TEST_ASSERT(A.gas_dependency_wake_count > wakes_before, \
+		"a gas change that crossed a danger threshold did not wake the air alarm")
+	A.scan_atmo()
 	TEST_ASSERT(A.danger_level > 0, \
-		"air alarm did not rescan after its gas revision changed")
+		"air alarm did not detect a dangerous (plasma-laden) atmosphere after waking")
 	T.air.set_moles(/datum/gas/plasma, 0)
 	T.air.set_temperature(T20C)
-	A.process()
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[alarm_ref.reference], \
-		"air alarm did not return to dependency sleep after atmosphere recovery")
-	T.air.set_temperature(T20C + 0.1)
-	TEST_ASSERT(!A.gas_dependency_changed(T.air.arena_id(), GAS_DEPENDENCY_ALL), \
-		"air alarm accepted a harmless same-band temperature change")
+	A.register_gas_dependencies()
+	wakes_before = A.gas_dependency_wake_count
 	T.air.set_temperature(A.target_temperature + 3)
-	TEST_ASSERT(A.gas_dependency_changed(T.air.arena_id(), GAS_DEPENDENCY_ALL), \
-		"air alarm rejected a temperature change requiring active regulation")
+	for(var/i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(A.gas_dependency_wake_count > wakes_before)
+			break
+	TEST_ASSERT(A.gas_dependency_wake_count > wakes_before, \
+		"a temperature change requiring active regulation did not wake the air alarm")
 	qdel(A)
 
 #ifdef DQ_TEST_AIR_ALARM_RADIO
@@ -3918,26 +3929,20 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	V.external_pressure_bound = T.air.return_pressure() + 50
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
 	vg_drain_dirty_gas_mixtures()
-	SSmachines.hibernate_vent(V)
-	var/datum/weakref/vent_ref = WEAKREF(V)
-	TEST_ASSERT(SSmachines.hibernating_vents[vent_ref.reference], "vent did not register as sleeping")
-	var/turf_mixture_id = V.sleeping_turf_mixture_id
-	var/list/original_subscribers = SSmachines.gas_mixture_subscribers["[turf_mixture_id]"]
+	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
+	V.register_gas_dependencies()
+	var/vent_wakes = V.gas_dependency_wake_count
+	V.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
 	while(!SSmachines.wake_dirty_gas_subscribers())
 		stoplag()
-	TEST_ASSERT(!SSmachines.hibernating_vents[vent_ref.reference], "pressure change did not wake vent")
-	TEST_ASSERT(original_subscribers[vent_ref.reference], "waking discarded the vent's reusable gas subscription")
-	SSmachines.hibernate_vent(V)
-	TEST_ASSERT_EQUAL(SSmachines.gas_mixture_subscribers["[turf_mixture_id]"], original_subscribers, \
-		"re-hibernating replaced an unchanged gas subscriber collection")
-	TEST_ASSERT(SSmachines.gas_mixture_subscribers["[turf_mixture_id]"][vent_ref.reference], \
-		"re-hibernating did not restore the gas subscription")
+	TEST_ASSERT_EQUAL(V.gas_dependency_wake_count, vent_wakes, "a gas change woke a vent pump, which has no DM work")
+	TEST_ASSERT(!om_attached(V, /datum/om/pipeline/machine), "a vent pump joined the machine pipeline")
 
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
-	SSmachines.hibernate_air_alarm(A)
+	A.register_gas_dependencies()
 	var/alarm_wakes_before = A.gas_dependency_wake_count
 	T.air.adjust_moles(/datum/gas/plasma, 1)
 	for(var/alarm_i in 1 to 65536)
@@ -3949,7 +3954,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(A.gas_dependency_wake_count > alarm_wakes_before, "composition change did not wake air alarm")
 
 	var/obj/machinery/air_sensor/S = new(T)
-	SSmachines.hibernate_air_sensor(S)
+	S.register_gas_dependencies()
 	var/sensor_wakes_before = S.gas_dependency_wake_count
 	T.air.set_temperature(T.air.return_temperature() + 5)
 	for(var/sensor_i in 1 to 65536)
@@ -4029,13 +4034,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_circulator_hibernates/Run()
 	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/obj/machinery/atmospherics/binary/circulator/C = new(test_turf)
-	C.recent_moles_transferred = 0
-	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "idle circulator retained timed polling")
+	// No machine step at all: the "running" display times out on a timer re-armed per transfer.
+	TEST_ASSERT(!om_attached(C, /datum/om/pipeline/machine), "circulator joined the machine pipeline with no DM work")
+	TEST_ASSERT(!(C in SSmachines.processing_machines), "circulator polls")
 	C.recent_moles_transferred = 1
 	C.last_worldtime_transfer = world.time
-	TEST_ASSERT_NOTEQUAL(C.process(), PROCESS_KILL, "recently active circulator hibernated before its display timeout")
+	C.expire_transfer_display()
+	TEST_ASSERT_EQUAL(C.recent_moles_transferred, 1, "recently active circulator cleared its display before the timeout")
 	C.last_worldtime_transfer = world.time - 51
-	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "settled circulator retained timed polling")
+	C.expire_transfer_display()
 	TEST_ASSERT_EQUAL(C.recent_moles_transferred, 0, "settled circulator retained stale transfer state")
 	qdel(C)
 
@@ -4052,9 +4059,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	second.air_contents.set_temperature(T20C)
 	first.air_contents.set_moles(/datum/gas/oxygen, 10)
 	second.air_contents.set_moles(/datum/gas/oxygen, 10)
-	TEST_ASSERT_EQUAL(first.process(), PROCESS_KILL, "equilibrated heat exchanger retained timed polling")
+	TEST_ASSERT_EQUAL(first.machine_step(), PROCESS_KILL, "equilibrated heat exchanger retained timed polling")
+	// first watches its own contents and its partner's (heat_exchanger gas_wake_mixtures()):
+	// warming the partner's side is a divergence it can act on.
+	var/exchanger_wakes = first.machine_wake_count
 	second.air_contents.set_temperature(T20C + 10)
-	TEST_ASSERT(first.gas_dependency_changed(second.air_contents.arena_id(), GAS_DEPENDENCY_TEMPERATURE), "temperature divergence did not wake a heat exchanger")
+	for(var/i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(first.machine_wake_count > exchanger_wakes)
+			break
+	TEST_ASSERT(first.machine_wake_count > exchanger_wakes, "temperature divergence did not wake a heat exchanger")
 	qdel(first)
 	qdel(second)
 
@@ -4107,11 +4121,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	G.circ2 = second
 	G.stat = 0
 	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "idle thermoelectric generator retained timed polling")
-	var/datum/weakref/generator_ref = WEAKREF(G)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[generator_ref.reference], "idle thermoelectric generator did not subscribe to its circulator gases")
+	TEST_ASSERT(om_watch_armed(G), "idle thermoelectric generator did not subscribe to its circulator gases")
 	first.air1.set_temperature(T20C)
 	first.air1.adjust_moles(/datum/gas/oxygen, 100)
-	TEST_ASSERT(G.gas_dependency_changed(first.air1.arena_id(), GAS_DEPENDENCY_PRESSURE), "actionable circulator pressure did not invalidate sleeping generator")
 	for(var/generator_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
 		if(G.datum_flags & DF_ISPROCESSING)
@@ -4140,8 +4152,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.density = TRUE
 	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "stable closed firedoor retained timed polling")
-	var/datum/weakref/firedoor_ref = WEAKREF(F)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[firedoor_ref.reference], "closed firedoor did not register gas dependencies")
+	TEST_ASSERT(om_watch_armed(F), "closed firedoor did not register gas dependencies")
 	var/firedoor_wakes_before = F.gas_dependency_wake_count
 	T.air.set_temperature(T.air.return_temperature() + 10)
 	while(!SSmachines.wake_dirty_gas_subscribers())
@@ -4217,20 +4228,17 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
 	var/obj/machinery/meter/M = new(T)
 	M.target = P
-	M.process()
-	var/datum/weakref/meter_ref = WEAKREF(M)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[meter_ref.reference], "idle local meter did not subscribe and hibernate")
-	pipe_air.adjust_moles(/datum/gas/oxygen, 0.0001)
-	TEST_ASSERT(!M.gas_dependency_changed(M.sleeping_mixture_id, GAS_DEPENDENCY_PRESSURE), "sub-display-resolution pressure change woke an idle meter")
+	M.machine_step()
+	TEST_ASSERT(om_watch_armed(M), "idle local meter did not subscribe and hibernate")
+	var/meter_wakes = M.machine_wake_count
 	pipe_air.adjust_moles(/datum/gas/oxygen, 1000)
-	TEST_ASSERT(M.gas_dependency_changed(M.sleeping_mixture_id, GAS_DEPENDENCY_PRESSURE), "display-range pressure change was filtered from an idle meter")
 	// Finish any dirty-gas batch captured by the running subsystem before
 	// consuming the mutation made above. Production does this on successive fires.
 	for(var/meter_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(M.datum_flags & DF_ISPROCESSING)
+		if(M.machine_wake_count > meter_wakes)
 			break
-	TEST_ASSERT(M.datum_flags & DF_ISPROCESSING, "meter did not wake after target pressure changed")
+	TEST_ASSERT(M.machine_wake_count > meter_wakes, "meter did not wake after target pressure changed")
 
 	var/obj/machinery/firealarm/F = new(T)
 	var/fire_result = F.process()
@@ -4248,49 +4256,67 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate/Run()
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for idle machinery hibernation test")
+	// Pump and scrubber run the OM machine pipeline too (machine_pipeline.dm), not process():
+	// a frame stands in for the old direct .process() call, and .parked for PROCESS_KILL.
 	var/obj/machinery/portable_atmospherics/powered/pump/P = new(T)
-	TEST_ASSERT_EQUAL(P.process(), PROCESS_KILL, "powered-off portable pump remained scheduled")
+	var/datum/om/frame/pump_state = om_pipe_state(P, /datum/om/pipeline/machine, TRUE)
+	for(var/i in 1 to 2)
+		om_run_frame_now(P, /datum/om/pipeline/machine)
+	TEST_ASSERT(pump_state.parked, "powered-off portable pump remained scheduled")
 	var/obj/machinery/portable_atmospherics/powered/scrubber/S = new(T)
-	TEST_ASSERT_EQUAL(S.process(), PROCESS_KILL, "powered-off portable scrubber remained scheduled")
+	var/datum/om/frame/scrubber_state = om_pipe_state(S, /datum/om/pipeline/machine, TRUE)
+	for(var/i in 1 to 2)
+		om_run_frame_now(S, /datum/om/pipeline/machine)
+	TEST_ASSERT(scrubber_state.parked, "powered-off portable scrubber remained scheduled")
 	var/obj/machinery/atmospherics/portables_connector/C = new(T)
 	C.on = FALSE
-	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "disconnected portable connector remained scheduled")
+	TEST_ASSERT_EQUAL(C.machine_step(), PROCESS_KILL, "disconnected portable connector remained scheduled")
 	C.connected_device = P
 	C.on = TRUE
 	C.hibernate_until_device_changes()
-	STOP_MACHINE_PROCESSING(C)
+	var/connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
 	P.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/connector_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT(!(C.datum_flags & DF_ISPROCESSING), "connected portable connector scheduled a no-op callback for a device gas change")
+	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "connected portable connector woke for a device gas change it can't act on")
 	C.clear_gas_dependency()
 	C.connected_device = null
 	C.on = FALSE
+	// Canister runs the OM machine pipeline (machine_pipeline.dm), not process(): a frame
+	// stands in for the old direct .process() call, and .parked stands in for
+	// datum_flags & DF_ISPROCESSING.
 	var/obj/machinery/portable_atmospherics/canister/oxygen/canister = new(T)
-	TEST_ASSERT_EQUAL(canister.process(), PROCESS_KILL, "closed inert canister remained scheduled")
-	var/datum/weakref/canister_ref = WEAKREF(canister)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[canister_ref.reference], "closed canister did not subscribe to its gas mixture")
+	var/datum/om/frame/canister_state = om_pipe_state(canister, /datum/om/pipeline/machine, TRUE)
+	for(var/i in 1 to 2)
+		om_run_frame_now(canister, /datum/om/pipeline/machine)
+	TEST_ASSERT(canister_state.parked, "closed inert canister remained scheduled")
+	TEST_ASSERT(om_watch_armed(canister), "closed canister did not subscribe to its gas mixture")
+	// Spawned on the connector, it connected: closed and connected, it watches only its gauge
+	// band (desired_update_flag()), so a change that leaves the gauge alone is not a wake.
+	TEST_ASSERT(canister.connected_port, "canister did not connect to the port it spawned on")
+	var/canister_wakes = canister.gas_dependency_wake_count
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/canister_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(canister.datum_flags & DF_ISPROCESSING)
+	TEST_ASSERT_EQUAL(canister.gas_dependency_wake_count, canister_wakes, "a change inside its gauge band woke a closed connected canister")
+	canister.air_contents.clear()
+	for(var/canister_i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(canister.gas_dependency_wake_count > canister_wakes)
 			break
-	// The live subsystem may consume the wake and settle the inert canister back
-	// to its dependency subscription before this test regains execution. Both
-	// states prove delivery; being neither active nor resubscribed is stale.
-	var/canister_active = canister.datum_flags & DF_ISPROCESSING
-	var/canister_resubscribed = SSmachines.sleeping_gas_devices[canister_ref.reference] && !isnull(canister.sleeping_mixture_id)
-	TEST_ASSERT(canister_active || canister_resubscribed, "closed canister was stranded after its contents changed")
-	STOP_MACHINE_PROCESSING(canister)
+	// The watch fired and queued a pipeline wake (om_changed() enqueues; the frame runs on the
+	// scheduler's next pass, so .parked can't be read synchronously here).
+	TEST_ASSERT_EQUAL(canister.gas_dependency_wake_count, canister_wakes + 1, "emptying a closed connected canister did not wake it exactly once")
+	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1000)
 	canister.connect(C)
-	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "stable connected portable port remained scheduled")
-	STOP_MACHINE_PROCESSING(C)
-	var/datum/weakref/connector_ref = WEAKREF(C)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[connector_ref.reference], "connected portable port did not subscribe to device gas")
+	om_run_frame_now(canister, /datum/om/pipeline/machine)
+	TEST_ASSERT_EQUAL(C.machine_step(), PROCESS_KILL, "stable connected portable port remained scheduled")
+	TEST_ASSERT(om_watch_armed(C), "connected portable port did not subscribe to device gas")
+	connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/connector_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT(!(C.datum_flags & DF_ISPROCESSING), "portable port scheduled a no-op callback after connected-device gas changed")
+	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "portable port woke after connected-device gas changed")
 	var/obj/machinery/status_display/D = new(T)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"
@@ -4582,7 +4608,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(cryo.process(), PROCESS_KILL, "empty cryopod remained scheduled")
 	var/obj/machinery/atmospherics/unary/cryo_cell/cryo_cell = new(T)
 	cryo_cell.on = FALSE
-	TEST_ASSERT_EQUAL(cryo_cell.process(), PROCESS_KILL, "switched-off cryo cell remained scheduled")
+	TEST_ASSERT_EQUAL(cryo_cell.machine_step(), PROCESS_KILL, "switched-off cryo cell remained scheduled")
 	var/obj/machinery/power/sensor/power_sensor = new(T)
 	TEST_ASSERT_EQUAL(power_sensor.process(), PROCESS_KILL, "power sensor polled between history samples")
 	TEST_ASSERT(power_sensor.record_timer, "power sensor did not schedule its next history sample")
@@ -4611,16 +4637,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(injector in SSmachines.processing_machines, "starting a fusion fuel injector did not wake it")
 	var/obj/machinery/atmospherics/binary/algae_farm/algae_farm = new(T)
 	algae_farm.update_use_power(USE_POWER_IDLE)
-	TEST_ASSERT_EQUAL(algae_farm.process(), PROCESS_KILL, "inactive algae farm remained scheduled")
+	TEST_ASSERT_EQUAL(algae_farm.machine_step(), PROCESS_KILL, "inactive algae farm remained scheduled")
 	var/obj/machinery/power/hydromagnetic_trap/magnetic_trap = new(T)
 	TEST_ASSERT_EQUAL(magnetic_trap.process(), PROCESS_KILL, "fieldless hydromagnetic trap remained scheduled")
 	var/obj/machinery/atmospherics/unary/outlet_injector/outlet = new(T)
 	outlet.update_use_power(USE_POWER_OFF)
-	TEST_ASSERT_EQUAL(outlet.process(), PROCESS_KILL, "switched-off outlet injector remained scheduled")
-	var/datum/weakref/outlet_ref = WEAKREF(outlet)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[outlet_ref.reference], "outlet injector did not subscribe before sleeping")
+	TEST_ASSERT_EQUAL(outlet.machine_step(), PROCESS_KILL, "switched-off outlet injector remained scheduled")
+	TEST_ASSERT(om_watch_armed(outlet), "outlet injector did not subscribe before sleeping")
+	var/outlet_wakes = outlet.machine_wake_count
 	outlet.update_use_power(USE_POWER_IDLE)
-	TEST_ASSERT(outlet in SSmachines.processing_machines, "enabling an outlet injector did not wake it")
+	TEST_ASSERT(outlet.machine_wake_count > outlet_wakes, "enabling an outlet injector did not wake it")
 	// M2 (simulation.md §5): the passive gate's flow law is a Rust device
 	// edge stepped every gas tick from SSair, not a DM process() subscriber,
 	// so it is never in SSmachines.processing_machines regardless of state.
@@ -4633,44 +4659,43 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!(gate in SSmachines.processing_machines), "opening a passive gate must not add DM process() scheduling")
 	var/obj/machinery/atmospherics/binary/dp_vent_pump/dual_vent = new(T)
 	dual_vent.update_use_power(USE_POWER_OFF)
-	TEST_ASSERT_EQUAL(dual_vent.process(), PROCESS_KILL, "switched-off dual-port vent remained scheduled")
-	var/datum/weakref/dual_vent_ref = WEAKREF(dual_vent)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[dual_vent_ref.reference], "dual-port vent did not subscribe before sleeping")
+	TEST_ASSERT_EQUAL(dual_vent.machine_step(), PROCESS_KILL, "switched-off dual-port vent remained scheduled")
+	TEST_ASSERT(om_watch_armed(dual_vent), "dual-port vent did not subscribe before sleeping")
+	var/dual_vent_wakes = dual_vent.machine_wake_count
 	dual_vent.update_use_power(USE_POWER_IDLE)
-	TEST_ASSERT(dual_vent in SSmachines.processing_machines, "enabling a dual-port vent did not wake it")
+	TEST_ASSERT(dual_vent.machine_wake_count > dual_vent_wakes, "enabling a dual-port vent did not wake it")
 	var/obj/machinery/disposal/disposal = new(T)
 	disposal.air_contents.clear()
 	var/datum/gas_mixture/disposal_environment = T.return_air()
 	var/datum/gas_mixture/saved_disposal_environment = disposal_environment.copy()
 	disposal_environment.clear()
 	TEST_ASSERT_EQUAL(disposal.process(), PROCESS_KILL, "airless disposal kept retrying pressurization")
-	var/datum/weakref/disposal_ref = WEAKREF(disposal)
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[disposal_ref.reference], "airless disposal did not subscribe before sleeping")
+	TEST_ASSERT(om_watch_armed(disposal), "airless disposal did not subscribe before sleeping")
 	disposal.stat |= NOPOWER
-	TEST_ASSERT(!disposal.gas_dependency_changed(disposal.sleeping_turf_mixture_id, GAS_DEPENDENCY_PRESSURE), "powerless disposal woke for ambient pressure churn")
 	disposal_environment.copy_from(saved_disposal_environment)
 	var/obj/machinery/atmospherics/unary/freezer/freezer = new(T)
 	freezer.update_use_power(USE_POWER_OFF)
-	TEST_ASSERT_EQUAL(freezer.process(), PROCESS_KILL, "switched-off gas freezer remained scheduled")
+	TEST_ASSERT_EQUAL(freezer.machine_step(), PROCESS_KILL, "switched-off gas freezer remained scheduled")
 	var/obj/machinery/atmospherics/unary/heater/gas_heater = new(T)
 	gas_heater.update_use_power(USE_POWER_OFF)
-	TEST_ASSERT_EQUAL(gas_heater.process(), PROCESS_KILL, "switched-off gas heater remained scheduled")
+	TEST_ASSERT_EQUAL(gas_heater.machine_step(), PROCESS_KILL, "switched-off gas heater remained scheduled")
 	var/obj/machinery/power/thermoregulator/regulator = new(T)
 	regulator.on = FALSE
-	TEST_ASSERT_EQUAL(regulator.process(), PROCESS_KILL, "switched-off thermoregulator remained scheduled")
+	TEST_ASSERT_EQUAL(regulator.machine_step(), PROCESS_KILL, "switched-off thermoregulator remained scheduled")
 	STOP_MACHINE_PROCESSING(regulator)
 	regulator.on = TRUE
+	var/regulator_wakes = regulator.machine_wake_count
 	regulator.wake_for_state_change()
-	TEST_ASSERT(regulator in SSmachines.processing_machines, "enabling a thermoregulator did not wake it")
+	TEST_ASSERT(regulator.machine_wake_count > regulator_wakes, "enabling a thermoregulator did not wake it")
 	var/obj/machinery/portable_atmospherics/canister/air/airlock/airlock_canister = new(T)
 	var/obj/machinery/atmospherics/portables_connector/test_port = new(T)
 	airlock_canister.connected_port = test_port
 	airlock_canister.update_flag = airlock_canister.desired_update_flag()
 	airlock_canister.hibernate_until_gas_changes()
-	var/canister_mixture_id = airlock_canister.air_contents.arena_id()
-	TEST_ASSERT(!airlock_canister.gas_dependency_changed(canister_mixture_id, GAS_DEPENDENCY_PRESSURE), "minor connected-canister pressure change caused an irrelevant wake")
+	TEST_ASSERT(om_watch_armed(airlock_canister), "connected closed canister did not arm a gauge-band watch")
+	TEST_ASSERT_EQUAL(airlock_canister.current_update_flag(), airlock_canister.update_flag, "minor connected-canister pressure change caused an irrelevant wake")
 	airlock_canister.air_contents.clear()
-	TEST_ASSERT(airlock_canister.gas_dependency_changed(canister_mixture_id, GAS_DEPENDENCY_PRESSURE), "connected canister did not wake when its gauge band changed")
+	TEST_ASSERT(airlock_canister.current_update_flag() != airlock_canister.update_flag, "connected canister did not wake when its gauge band changed")
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console
@@ -4697,11 +4722,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(atm.process(), PROCESS_KILL, "idle ATM remained scheduled")
 	var/obj/machinery/portable_atmospherics/hydroponics/tray = new(T)
 	tray.lastcycle = world.time
-	TEST_ASSERT_EQUAL(tray.process(), PROCESS_KILL, "stable hydroponics tray polled between growth cycles")
+	TEST_ASSERT_EQUAL(tray.machine_step(), PROCESS_KILL, "stable hydroponics tray polled between growth cycles")
 	TEST_ASSERT(tray.growth_timer, "sleeping hydroponics tray did not schedule its next growth cycle")
-	STOP_MACHINE_PROCESSING(tray)
+	var/tray_wakes = tray.machine_wake_count
 	tray.reagents.add_reagent(REAGENT_ID_WATER, 1)
-	TEST_ASSERT(tray in SSmachines.processing_machines, "reagent mutation did not wake hydroponics tray")
+	TEST_ASSERT(tray.machine_wake_count > tray_wakes, "reagent mutation did not wake hydroponics tray")
 	var/obj/machinery/seed_storage/garden/seed_storage = new(T)
 	seed_storage.seconds_electrified = 0
 	TEST_ASSERT_EQUAL(seed_storage.process(), PROCESS_KILL, "stable seed storage remained scheduled")
@@ -4826,7 +4851,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(conveyor)
 	qdel(conveyor_switch)
 	qdel(outlet)
-	TEST_ASSERT(!SSmachines.sleeping_gas_devices[outlet_ref.reference], "deleted outlet injector remained in the sleeping gas-device registry")
+	TEST_ASSERT(!om_watch_armed(outlet), "deleted outlet injector remained in the sleeping gas-device registry")
 	var/obj/machinery/camera/network/engine/test_camera = new(T)
 	test_camera.update_coverage(1)
 	qdel(test_camera)
@@ -5165,7 +5190,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	M.target = P  // direct assign so select_target search isn't required
 	M.use_power = USE_POWER_IDLE
 	M.stat &= ~(BROKEN | NOPOWER)
-	M.process() // shouldn't crash; should set an icon_state based on pipe pressure
+	M.machine_step() // shouldn't crash; should set an icon_state based on pipe pressure
 
 	// Validate that the meter's target returns the same pressure we set on
 	// the pipeline.
@@ -5317,7 +5342,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/initial_turf_co2 = turf_air.get_moles(/datum/gas/carbon_dioxide)
 
 	// The flow law is a Rust device edge bridging the pipe network and the
-	// turf field; SSair drives it, not V.process()/S.process() (deleted).
+	// turf field; SSair drives it; neither device has a DM step.
 	// Turf CO2 starts above the vent's own external_pressure_bound, so the
 	// vent stays refused until the scrubber (running the same loop) brings
 	// the turf pressure down - give the coupled feedback loop enough
@@ -5382,7 +5407,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.on = TRUE
 
 	for(var/i in 1 to 5)
-		C.process()
+		C.machine_step()
 
 	TEST_ASSERT(H.bodytemperature < initial_bodytemp, \
 		"cryo didn't cool mob: bodytemp [initial_bodytemp] → [H.bodytemperature]")
@@ -5545,10 +5570,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	F.sort_ports()
 	F.use_power = USE_POWER_IDLE
 	F.stat &= ~(NOPOWER | BROKEN)
-	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "empty omni filter retained timed polling")
-	TEST_ASSERT(F.sleeping_mixture_ids, "empty omni filter did not capture gas dependencies")
+	TEST_ASSERT_EQUAL(F.machine_step(), PROCESS_KILL, "empty omni filter retained timed polling")
+	TEST_ASSERT(om_watch_armed(F), "empty omni filter did not capture gas dependencies")
+	var/filter_wakes = F.machine_wake_count
 	F.input.air.adjust_gas(/datum/gas/oxygen, 10)
-	TEST_ASSERT(F.gas_dependency_changed(F.input.air.arena_id(), GAS_DEPENDENCY_ALL), "fed omni filter did not become actionable")
+	for(var/i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(F.machine_wake_count > filter_wakes)
+			break
+	TEST_ASSERT(F.machine_wake_count > filter_wakes, "fed omni filter did not become actionable")
 	qdel(F)
 
 	var/obj/machinery/atmospherics/omni/mixer/M = new(T)
@@ -5560,11 +5590,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	M.sort_ports()
 	M.use_power = USE_POWER_IDLE
 	M.stat &= ~(NOPOWER | BROKEN)
-	TEST_ASSERT_EQUAL(M.process(), PROCESS_KILL, "empty omni mixer retained timed polling")
-	TEST_ASSERT(M.sleeping_mixture_ids, "empty omni mixer did not capture gas dependencies")
+	TEST_ASSERT_EQUAL(M.machine_step(), PROCESS_KILL, "empty omni mixer retained timed polling")
+	TEST_ASSERT(om_watch_armed(M), "empty omni mixer did not capture gas dependencies")
 	var/datum/omni_port/first_input = M.inputs[1]
+	var/mixer_wakes = M.machine_wake_count
 	first_input.air.adjust_gas(/datum/gas/oxygen, 10)
-	TEST_ASSERT(M.gas_dependency_changed(first_input.air.arena_id(), GAS_DEPENDENCY_ALL), "fed omni mixer did not become actionable")
+	for(var/i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(M.machine_wake_count > mixer_wakes)
+			break
+	TEST_ASSERT(M.machine_wake_count > mixer_wakes, "fed omni mixer did not become actionable")
 	qdel(M)
 
 /datum/unit_test/dq_stable_open_pipe_hibernates
@@ -5595,15 +5630,68 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(pipe_ref, "open pipe could not create a weak reference")
 	var/process_result
 	for(var/cycle in 1 to 100)
-		process_result = P.parent.network.process()
+		process_result = P.parent.network.reconcile()
 		if(process_result == PROCESS_KILL)
 			break
 	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, "open pipe leak did not converge and hibernate within 100 cycles")
-	TEST_ASSERT(SSmachines.sleeping_gas_devices[pipe_ref.reference], "equilibrated open pipe did not subscribe before sleeping")
+	TEST_ASSERT(om_watch_armed(P), "equilibrated open pipe did not subscribe before sleeping")
+	var/leak_wakes = P.gas_dependency_wake_count
 	T.air.adjust_moles(/datum/gas/oxygen, 1)
-	TEST_ASSERT(P.gas_dependency_changed(P.leak_sleeping_turf_mixture_id, GAS_DEPENDENCY_ALL), "changed turf gas did not wake an open pipe leak")
+	for(var/i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(P.gas_dependency_wake_count > leak_wakes)
+			break
+		if(!(i % 256))
+			stoplag()
+	// A leaking pipe batches its wake into its network's own dirty transaction
+	// (wake_from_leak(), pipe_base.dm), which the live SSair may already have run
+	// and settled by now; the wake itself is what this checks.
+	TEST_ASSERT(P.gas_dependency_wake_count > leak_wakes, "changed turf gas did not wake an open pipe leak")
 	qdel(P)
 	qdel(P2)
+
+/// Bare test double for dq_om_watch_derived_fires_on_band_crossing: a plain machine with one
+/// exposed numeric field and a wake counter, standing in for "an arbitrary vg/pipeline component
+/// field or any other DM-side computed value" that om_watch_arm_derived() can watch.
+/obj/machinery/dq_om_watch_test_probe
+	var/probe = 0
+	var/wakes = 0
+
+/obj/machinery/dq_om_watch_test_probe/proc/read_probe()
+	return probe
+
+/obj/machinery/dq_om_watch_test_probe/proc/count_wake()
+	wakes++
+
+/// om_watch_arm_derived()/om_watch_recheck() (code/datums/om/watch.dm) is the generic hook for
+/// watching an arbitrary vg/pipeline component field or any other DM-side computed value: no
+/// Rust watch backs it, so the caller re-evaluates it explicitly (the same way a producer raises
+/// a CHANGE_MACHINE_* channel elsewhere). This exercises that mechanism directly, proving a
+/// crossing fires exactly once (with hysteresis holding off a re-fire until the value clears back
+/// past the margin) and a non-crossing change does not fire at all.
+/datum/unit_test/dq_om_watch_derived_fires_on_band_crossing
+
+/datum/unit_test/dq_om_watch_derived_fires_on_band_crossing/Run()
+	var/obj/machinery/dq_om_watch_test_probe/M = new(locate(1, 1, 1))
+	var/list/datum/om_watch_band/bands = list(new /datum/om_watch_band("value", TRUE, 10, 2))
+	om_watch_arm_derived(M, "probe", bands, channel = null, getter = CALLBACK(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, read_probe)), wake_callback = CALLBACK(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, count_wake)))
+	M.probe = 5
+	om_watch_recheck(M, "probe")
+	TEST_ASSERT_EQUAL(M.wakes, 0, "a non-crossing change fired a derived watch")
+	M.probe = 12
+	om_watch_recheck(M, "probe")
+	TEST_ASSERT_EQUAL(M.wakes, 1, "a band crossing did not fire the derived watch")
+	M.probe = 9
+	om_watch_recheck(M, "probe")
+	TEST_ASSERT_EQUAL(M.wakes, 1, "dropping below the edge but still inside the hysteresis margin re-fired the derived watch")
+	M.probe = 8
+	om_watch_recheck(M, "probe")
+	TEST_ASSERT_EQUAL(M.wakes, 2, "clearing the hysteresis margin did not fire the derived watch to report the settle")
+	M.probe = 15
+	om_watch_recheck(M, "probe")
+	TEST_ASSERT_EQUAL(M.wakes, 3, "re-crossing the band after settling did not fire the derived watch again")
+	om_watch_disarm(M, "probe")
+	qdel(M)
 
 
 // =====================================================================
@@ -6232,13 +6320,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	Can.valve_open = TRUE
 	Can.release_pressure = ONE_ATMOSPHERE * 50
 
-	// Run canister.process to release, then drive cells to share into B.
+	// Run canister frames to release, then drive cells to share into B.
 	// Poll: stop looping as soon as both turfs show plasma (the condition
 	// asserted below) rather than always burning the full 8 iterations.
 	var/A_plasma
 	var/B_plasma
 	for(var/i in 1 to 8)
-		Can.process()
+		om_run_frame_now(Can, /datum/om/pipeline/machine)
 		dq_atmos_test_drive_ticks(list(A, B), 1)
 		A_plasma = A_air.get_moles(/datum/gas/plasma)
 		B_plasma = B_air.get_moles(/datum/gas/plasma)
@@ -6505,7 +6593,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/air2_initial = V.air2.total_moles()
 
 	// M2 (simulation.md §5): the flow law is a Rust device edge; SSair
-	// drives it, not V.process() (deleted).
+	// drives it; the device has no DM step.
 	for(var/i in 1 to 5)
 		SSair.rust_step_pipe_devices()
 
@@ -7325,3 +7413,123 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(readings[GAS_READ_MOLES(GAS_ID_OXYGEN)], 4, "batched oxygen moles")
 	TEST_ASSERT_EQUAL(readings[GAS_READ_STRIDE + GAS_READ_TOTAL_MOLES], 0, "a null mixture reads as zero")
 	qdel(mix)
+
+/// A sleeping device's gas watch is its own eligibility rule (om_watch_arm_condition()): a gas
+/// change that leaves the device with nothing to do must not wake it, and the first change that
+/// gives it work must wake it once. Counted on a thermoregulator (temperature deadband) and an
+/// outlet injector (minimum moles to pump).
+/datum/unit_test/dq_gas_watch_wakes_only_when_eligible
+
+/datum/unit_test/dq_gas_watch_wakes_only_when_eligible/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
+	TEST_ASSERT_NOTNULL(pair, "no clear floor for eligibility wake test")
+	var/turf/simulated/floor/T = pair[1]
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.air_update_turf(TRUE, FALSE)
+	T.air.set_temperature(T20C)
+	dq_atmos_test_drain_dependency_queue()
+
+	var/obj/machinery/power/thermoregulator/R = new(T)
+	R.on = TRUE
+	R.target_temp = T20C
+	R.hibernate_until_temperature_changes()
+	TEST_ASSERT(om_watch_armed(R, "gas"), "settled thermoregulator did not arm its eligibility watch")
+	var/regulator_wakes = R.gas_dependency_wake_count
+	T.air.set_temperature(T20C + 0.5)
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes, "sub-degree drift inside the deadband woke a thermoregulator")
+	T.air.set_temperature(T20C + 5)
+	for(var/i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(R.gas_dependency_wake_count > regulator_wakes)
+			break
+		if(!(i % 256))
+			stoplag()
+	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes + 1, "leaving the deadband did not wake the thermoregulator exactly once")
+	qdel(R)
+	T.air.set_temperature(T20C)
+
+	var/obj/machinery/atmospherics/unary/outlet_injector/O = new(T)
+	O.stat &= ~(NOPOWER | BROKEN)
+	O.use_power = USE_POWER_IDLE
+	O.air_contents.clear()
+	O.air_contents.set_temperature(T20C)
+	O.register_gas_dependencies()
+	TEST_ASSERT(om_watch_armed(O, "gas"), "empty outlet injector did not arm its eligibility watch")
+	var/outlet_wakes = O.gas_dependency_wake_count
+	O.air_contents.adjust_moles(/datum/gas/oxygen, MINIMUM_MOLES_TO_PUMP / 10)
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(O.gas_dependency_wake_count, outlet_wakes, "a trace of gas below the pumping minimum woke an outlet injector")
+	O.air_contents.adjust_moles(/datum/gas/oxygen, 10)
+	for(var/i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(O.gas_dependency_wake_count > outlet_wakes)
+			break
+		if(!(i % 256))
+			stoplag()
+	TEST_ASSERT_EQUAL(O.gas_dependency_wake_count, outlet_wakes + 1, "enough gas to pump did not wake the outlet injector exactly once")
+	qdel(O)
+
+/// Wake counting for the pipeline atmos devices: each parks on a watch that states when it can act
+/// (a display that would change, a filter with enough input), so a change it can't act on costs no
+/// wake at all and an actionable one costs exactly one.
+/datum/unit_test/dq_atmos_devices_wake_only_when_actionable
+
+/// Drains dirty gas notifications until `M` has woken past `wakes`, or the queue runs dry.
+/datum/unit_test/dq_atmos_devices_wake_only_when_actionable/proc/deliver(obj/machinery/M, wakes)
+	for(var/i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(M.gas_dependency_wake_count > wakes)
+			return
+		if(!(i % 256))
+			stoplag()
+
+/datum/unit_test/dq_atmos_devices_wake_only_when_actionable/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for the wake-count test")
+	dq_atmos_test_drain_dependency_queue()
+
+	// A local meter: pressure noise below its needle's resolution is not a wake.
+	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
+	var/datum/gas_mixture/pipe_air = P.return_air()
+	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
+	var/obj/machinery/meter/M = new(T)
+	M.target = P
+	M.stat &= ~(BROKEN | NOPOWER)
+	TEST_ASSERT_EQUAL(M.machine_step(), PROCESS_KILL, "a meter kept running after drawing its reading")
+	TEST_ASSERT(om_watch_armed(M, "gas"), "meter did not arm its display watch")
+	var/meter_wakes = M.gas_dependency_wake_count
+	pipe_air.adjust_moles(/datum/gas/oxygen, 0.001)
+	deliver(M, meter_wakes)
+	TEST_ASSERT_EQUAL(M.gas_dependency_wake_count, meter_wakes, "pressure noise below the needle's resolution woke a meter")
+	pipe_air.adjust_moles(/datum/gas/oxygen, 1000)
+	deliver(M, meter_wakes)
+	TEST_ASSERT_EQUAL(M.gas_dependency_wake_count, meter_wakes + 1, "a needle-moving pressure change did not wake the meter exactly once")
+	qdel(M)
+	qdel(P)
+
+	// A trinary filter with nothing to filter: a trace below MINIMUM_MOLES_TO_FILTER is not a wake.
+	var/obj/machinery/atmospherics/trinary/atmos_filter/F = new(T)
+	F.stat &= ~(BROKEN | NOPOWER)
+	F.use_power = USE_POWER_IDLE
+	F.air1.clear()
+	TEST_ASSERT_EQUAL(F.machine_step(), PROCESS_KILL, "an empty filter kept running")
+	TEST_ASSERT(om_watch_armed(F, "gas"), "empty filter did not arm its input watch")
+	var/filter_wakes = F.gas_dependency_wake_count
+	F.air1.adjust_moles(/datum/gas/oxygen, MINIMUM_MOLES_TO_FILTER / 10)
+	deliver(F, filter_wakes)
+	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, filter_wakes, "a trace below the filtering minimum woke a filter")
+	// An unconnected filter's update_icon() switches it off; hold it on as a connected one would be.
+	F.use_power = USE_POWER_IDLE
+	F.air1.adjust_moles(/datum/gas/oxygen, 10)
+	deliver(F, filter_wakes)
+	var/datum/om_watch/filter_watch = om_watch_lookup(F, "gas")
+	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, filter_wakes + 1, "enough input to filter did not wake the filter exactly once 		(stat [F.stat], use_power [F.use_power], condition [F.gas_wake_condition()], watched [json_encode(filter_watch?.mixture_ids)], air1 [F.air1.arena_id()])")
+	qdel(F)

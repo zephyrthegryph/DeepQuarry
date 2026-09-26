@@ -52,7 +52,7 @@
 	. = ..()
 	internal = null
 
-/obj/machinery/atmospherics/binary/algae_farm/process()
+/obj/machinery/atmospherics/binary/algae_farm/machine_step()
 	..()
 	recent_moles_transferred = 0
 
@@ -71,11 +71,11 @@
 	if(stored_material[MAT_ALGAE] < algae_per_mole)
 		ui_error = "Insufficient [material_display_name(MAT_ALGAE)] to process."
 		update_icon()
-		return
+		return PROCESS_KILL // loading or ejecting materials wakes it
 	if(stored_material[MAT_GRAPHITE] + carbon_per_mole > storage_capacity[MAT_GRAPHITE])
 		ui_error = "[material_display_name(MAT_GRAPHITE)] output storage is full."
 		update_icon()
-		return
+		return PROCESS_KILL // loading or ejecting materials wakes it
 	var/moles_to_convert = min(moles_per_tick,\
 		stored_material[MAT_ALGAE] * algae_per_mole,\
 		storage_capacity[MAT_GRAPHITE] - stored_material[MAT_GRAPHITE])
@@ -93,7 +93,8 @@
 	if(co2_moles < MINIMUM_MOLES_TO_FILTER)
 		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
 		update_icon()
-		return
+		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+		return PROCESS_KILL
 
 	// STEP 4 - Consume the resources
 	var/converted_moles = min(co2_moles, moles_per_tick)
@@ -154,6 +155,7 @@
 /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_load_materials(mob/user, obj/item/stack/material/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	try_load_materials(user, held)
+	START_MACHINE_PROCESSING(src)
 	return TRUE
 
 /// Old attackby: the final "anything else" branch.
@@ -246,6 +248,7 @@
 			if(!(matName in stored_material))
 				return
 			eject_materials(matName, 0)
+			START_MACHINE_PROCESSING(src)
 			. = TRUE
 
 // TODO - These should be replaced with materials datum.
@@ -325,3 +328,14 @@
 
 /obj/item/stack/material/algae/ten
 	amount = 10
+
+/// Out of input gas: wake once its input line holds enough of it to convert (the step-3 test).
+/obj/machinery/atmospherics/binary/algae_farm/proc/gas_wake_condition()
+	return LINDA_GAS_AMT(air1, input_gas) + LINDA_GAS_AMT(internal, input_gas) >= MINIMUM_MOLES_TO_FILTER
+
+/obj/machinery/atmospherics/binary/algae_farm/proc/wake_from_gas()
+	om_watch_disarm(src, "gas")
+	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/atmospherics/binary/algae_farm/step_has_work()
+	return gas_wake_condition()

@@ -408,6 +408,7 @@
 		pipeline.network = network
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
 			pipe.parent = pipeline
+			START_MACHINE_PROCESSING(pipe) // a pipe with DM work (HE pipes) re-evaluates on joining; others don't listen
 			pipeline.volume += pipe.volume
 			if(pipe.leaking)
 				pipeline.leaks |= pipe

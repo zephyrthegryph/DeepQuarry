@@ -71,7 +71,11 @@
 	member.register_network_membership(src)
 	return TRUE
 
-/datum/pipe_network/process()
+/// One reconciliation pass for a dirty network, run by SSair's pipenet phase (SSair.dm
+/// process_pipenets()) only while the network is queued (mark_dirty()/mark_leak_dirty()): engineered
+/// pipe materials and the batched leak exchange (vg_batch_mingle_hook). Gas flow itself is Rust.
+/// Returns PROCESS_KILL once settled, which dequeues it.
+/datum/pipe_network/proc/reconcile()
 	var/needs_leak_followup = FALSE
 	//Equalize gases amongst pipe if called for
 	if(update)

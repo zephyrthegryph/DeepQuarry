@@ -71,13 +71,11 @@
 	// left to do it for them.
 
 
-/obj/machinery/atmospherics/unary/cryo_cell/process()
+/obj/machinery/atmospherics/unary/cryo_cell/machine_step()
 	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_CRYO)
 	..()
-	if(!on)
-		return PROCESS_KILL
-	if(!node)
-		return
+	if(!on || !node)
+		return PROCESS_KILL // switching it on, or connecting it, wakes it
 
 	if(air_contents)
 		temperature_archived = air_contents.return_temperature()
@@ -383,3 +381,6 @@
 /datum/data/function/proc/display()
 	return
 
+
+/obj/machinery/atmospherics/unary/cryo_cell/step_has_work()
+	return on && node

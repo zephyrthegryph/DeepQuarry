@@ -32,9 +32,6 @@
 	icon = null
 	alpha = 255
 
-/obj/machinery/atmospherics/pipe/simple/process()
-	return ..()
-
 /obj/machinery/atmospherics/pipe/simple/set_leaking(new_leaking)
 	if(leaking != !!new_leaking)
 		clear_leak_gas_dependencies()

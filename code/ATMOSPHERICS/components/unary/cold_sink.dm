@@ -125,14 +125,14 @@
 	if(.)
 		invalidate_gas_dependencies()
 
-/obj/machinery/atmospherics/unary/freezer/process()
+/obj/machinery/atmospherics/unary/freezer/machine_step()
 	..()
 
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
 	if(stat & (NOPOWER|BROKEN) || !use_power)
 		cooling = 0
 		update_icon()
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		return PROCESS_KILL
 
 	var/air_temperature = air_contents.return_temperature()
@@ -163,16 +163,16 @@
 		network.mark_dirty()
 	else
 		cooling = 0
-		SSmachines.hibernate_vent(src)
+		register_gas_dependencies()
 		update_icon()
 		return PROCESS_KILL
 
 	update_icon()
 	return 1
 
-/obj/machinery/atmospherics/unary/freezer/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
-		return FALSE
+/// Eligibility rule for waking from gas (unary_base.dm register_gas_dependencies()): the same
+/// test process() makes before it cools anything.
+/obj/machinery/atmospherics/unary/freezer/gas_wake_condition()
 	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() > set_temperature
 
 //upgrading parts

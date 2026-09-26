@@ -41,12 +41,6 @@
 	//1: Do not pass external_pressure_bound
 	//2: Do not pass input_pressure_min
 	//4: Do not pass output_pressure_max
-	var/sleeping_turf_mixture_id
-	var/sleeping_turf_revision = -1
-	var/sleeping_input_mixture_id
-	var/sleeping_input_revision = -1
-	var/sleeping_output_mixture_id
-	var/sleeping_output_revision = -1
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Initialize(mapload)
 	. = ..()
@@ -58,7 +52,6 @@
 	icon = null
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Destroy()
-	clear_gas_dependencies()
 	unregister_radio(src, frequency)
 	. = ..()
 
@@ -119,7 +112,7 @@
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/process()
+/obj/machinery/atmospherics/binary/dp_vent_pump/machine_step()
 	..()
 
 	last_power_draw = 0
@@ -171,60 +164,30 @@
 
 	return 1
 
+/// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over the three
+/// mixtures it pumps between -- its turf and both ports -- and stops polling. It wakes only when
+/// process() would move gas: a pressure delta past its deadband and a source worth pumping from.
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/hibernate_until_gas_changes()
-	var/datum/weakref/WR = WEAKREF(src)
 	var/datum/gas_mixture/environment = loc.return_air()
-	sleeping_turf_mixture_id = environment?.arena_id()
-	sleeping_turf_revision = environment?.revision() || -1
-	sleeping_input_mixture_id = air1?.arena_id()
-	sleeping_input_revision = air1?.revision() || -1
-	sleeping_output_mixture_id = air2?.arena_id()
-	sleeping_output_revision = air2?.revision() || -1
-	SSmachines.sleeping_gas_devices[WR.reference] = WR
-	SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
-	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
+	var/list/mixture_ids = list()
+	for(var/datum/gas_mixture/air as anything in list(environment, air1, air2))
+		var/id = air?.arena_id()
+		if(!isnull(id))
+			mixture_ids |= id
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
 	STOP_MACHINE_PROCESSING(src)
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/proc/clear_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
-	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_input_mixture_id, WR)
-	SSmachines.unsubscribe_gas_dependency(sleeping_output_mixture_id, WR)
-	sleeping_turf_mixture_id = null
-	sleeping_turf_revision = -1
-	sleeping_input_mixture_id = null
-	sleeping_input_revision = -1
-	sleeping_output_mixture_id = null
-	sleeping_output_revision = -1
-	if(WR?.reference)
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !use_power || (stat & (NOPOWER|BROKEN)))
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/gas_wake_condition()
+	if(!use_power || (stat & (NOPOWER|BROKEN)))
 		return FALSE
-	var/datum/gas_mixture/environment = loc.return_air()
-	if(mixture_id == sleeping_turf_mixture_id)
-		if(!environment || environment.arena_id() != sleeping_turf_mixture_id)
-			return TRUE
-		if(environment.revision() == sleeping_turf_revision)
-			return FALSE
-	else if(mixture_id == sleeping_input_mixture_id)
-		if(!air1 || air1.arena_id() != sleeping_input_mixture_id)
-			return TRUE
-		if(air1.revision() == sleeping_input_revision)
-			return FALSE
-	else if(mixture_id == sleeping_output_mixture_id)
-		if(!air2 || air2.arena_id() != sleeping_output_mixture_id)
-			return TRUE
-		if(air2.revision() == sleeping_output_revision)
-			return FALSE
-	else
-		return FALSE
+	var/datum/gas_mixture/environment = loc?.return_air()
 	if(!environment || get_pressure_delta(environment) <= 0.5)
 		return FALSE
 	var/datum/gas_mixture/source = pump_direction ? air1 : environment
 	return source && source.total_moles() >= MINIMUM_MOLES_TO_PUMP
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/clear_gas_dependencies()
+	om_watch_disarm(src, "gas")
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/wake_for_state_change()
 	clear_gas_dependencies()
@@ -348,3 +311,6 @@
 #undef PRESSURE_CHECK_EXTERNAL
 #undef PRESSURE_CHECK_INPUT
 #undef PRESSURE_CHECK_OUTPUT
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/step_has_work()
+	return gas_wake_condition()

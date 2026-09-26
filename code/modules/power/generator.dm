@@ -31,7 +31,6 @@
 	var/effective_gen = 0
 	var/lastgenlev = 0
 	var/datum/looping_sound/generator/soundloop
-	var/list/sleeping_mixture_ids
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
@@ -77,29 +76,30 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 				circ1 = null
 				circ2 = null
 
-/obj/machinery/power/generator/proc/register_gas_dependencies(datum/weakref/WR)
-	clear_gas_dependencies(WR)
+/// Wakes only once either circulator loop has a pressure head worth turning -- the test the old
+/// dependency filter made.
+/obj/machinery/power/generator/proc/register_gas_dependencies()
+	clear_gas_dependencies()
 	if(!circ1 || !circ2)
 		return
+	var/list/mixture_ids = list()
 	for(var/datum/gas_mixture/air as anything in list(circ1.air1, circ1.air2, circ2.air1, circ2.air2))
-		var/mixture_id = air?.arena_id()
-		if(isnull(mixture_id) || (mixture_id in sleeping_mixture_ids))
-			continue
-		LAZYADD(sleeping_mixture_ids, mixture_id)
-		SSmachines.subscribe_gas_dependency(mixture_id, WR || WEAKREF(src))
+		var/id = air?.arena_id()
+		if(!isnull(id))
+			mixture_ids |= id
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 
-/obj/machinery/power/generator/proc/clear_gas_dependencies(datum/weakref/WR)
-	if(!length(sleeping_mixture_ids))
-		return
-	WR ||= WEAKREF(src)
-	for(var/mixture_id in sleeping_mixture_ids)
-		SSmachines.unsubscribe_gas_dependency(mixture_id, WR)
-	LAZYCLEARLIST(sleeping_mixture_ids)
-
-/obj/machinery/power/generator/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !circ1 || !circ2)
+/obj/machinery/power/generator/proc/gas_wake_condition()
+	if(!circ1 || !circ2)
 		return FALSE
 	return (circ1.air1.return_pressure() - circ1.air2.return_pressure() > 10) || (circ2.air1.return_pressure() - circ2.air2.return_pressure() > 10)
+
+/obj/machinery/power/generator/proc/clear_gas_dependencies()
+	om_watch_disarm(src, "gas")
+
+/obj/machinery/power/generator/proc/wake_from_gas()
+	clear_gas_dependencies()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/power/generator/update_icon()
 	icon_state = anchored ? "teg-assembled" : "teg-unassembled"

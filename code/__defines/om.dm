@@ -66,6 +66,8 @@
 #define CHANGE_MACHINE_CHARGE (1<<15)
 /// Settings a player or program changed (input/output levels, breakers, modes).
 #define CHANGE_MACHINE_SETTINGS (1<<16)
+/// A watched gas condition crossed a threshold band (code/datums/om/watch.dm).
+#define CHANGE_MACHINE_GAS (1<<17)
 
 // Generic datum family (framework-owned datums: sessions, edges, tasks).
 #define CHANGE_DATUM_A (1<<8)
