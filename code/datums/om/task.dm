@@ -233,7 +233,7 @@
 	if(isnull(soonest))
 		om_cancel_after(rec.owner, B)
 	else
-		om_after(rec.owner, max(soonest - rec.sched.now(), 0), B)
+		om_deadline(rec.owner, max(soonest - rec.sched.now(), 0), B)
 
 /// Internal: completes due tasks (deadline) and re-checks requires (watch wakes).
 /datum/om/behaviour/internal/tasks
