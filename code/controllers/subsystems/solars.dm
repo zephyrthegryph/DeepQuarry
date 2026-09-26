@@ -20,7 +20,7 @@ SUBSYSTEM_DEF(solars)
 /datum/controller/subsystem/solars/fire(resumed)
 	if(!resumed)
 		// Get the list of controllers we need to process
-		current_run = GLOB.solars_list.Copy()
+		current_run = REGISTRY_COPY(REGISTRY_SOLAR_CONTROLS)
 		// Clear secondary process lists so they're fresh for the impending run ahead
 		controller_run.Cut()
 		panel_run.Cut()
@@ -35,7 +35,7 @@ SUBSYSTEM_DEF(solars)
 
 		// Controllers with no network are ignored
 		if(!SC.powernet)
-			GLOB.solars_list.Remove(SC)
+			registry_leave(REGISTRY_SOLAR_CONTROLS, SC)
 			if(MC_TICK_CHECK)
 				return
 			continue

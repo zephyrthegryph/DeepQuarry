@@ -2,7 +2,6 @@
 GLOBAL_DATUM(data_core, /datum/datacore)
 
 
-GLOBAL_LIST_EMPTY(active_diseases)
 GLOBAL_LIST_EMPTY(hud_icon_reference)
 
 GLOBAL_LIST_EMPTY(global_mutations) // List of hidden mutation things.

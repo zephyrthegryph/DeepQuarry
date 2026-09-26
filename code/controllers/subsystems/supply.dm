@@ -304,7 +304,7 @@ SUBSYSTEM_DEF(supply)
 	if(!budget)
 		return 0
 	var/projected = 0
-	for(var/mob/living/carbon/human/employee in GLOB.player_list)
+	for(var/mob/living/carbon/human/employee in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(QDELETED(employee) || employee.stat == DEAD || !employee.mind?.initial_account || department_for_mob(employee) != department)
 			continue
 		var/datum/job/job = SSjob.get_job(employee.job)
@@ -321,7 +321,7 @@ SUBSYSTEM_DEF(supply)
 
 /datum/controller/subsystem/supply/proc/active_department_employee_count(department)
 	var/count = 0
-	for(var/mob/living/carbon/human/employee in GLOB.player_list)
+	for(var/mob/living/carbon/human/employee in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!QDELETED(employee) && employee.stat != DEAD && employee.mind?.initial_account && department_for_mob(employee) == department)
 			count++
 	return count
@@ -375,7 +375,7 @@ SUBSYSTEM_DEF(supply)
 		var/list/employees = list()
 		var/list/pay_due = list()
 		var/total_due = 0
-		for(var/mob/living/carbon/human/employee in GLOB.player_list)
+		for(var/mob/living/carbon/human/employee in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(QDELETED(employee) || employee.stat == DEAD || !employee.mind?.initial_account || department_for_mob(employee) != department)
 				continue
 			var/datum/job/job = SSjob.get_job(employee.job)

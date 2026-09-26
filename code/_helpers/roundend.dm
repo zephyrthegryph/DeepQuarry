@@ -11,7 +11,7 @@
 		send2chat(new /datum/tgs_message_content("[GLOB.round_id ? "Round [GLOB.round_id]" : "The round has"] just ended."), channel_tag)
 	send2adminchat("Server", "Round just ended.")
 
-	for(var/mob/Player in GLOB.player_list)
+	for(var/mob/Player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(Player.mind && !isnewplayer(Player))
 			if(Player.stat != DEAD)
 				var/turf/playerTurf = get_turf(Player)
@@ -35,7 +35,7 @@
 					to_chat(Player, span_filter_system(span_red(span_bold("You did not survive the events on [station_name()]..."))))
 	to_chat(world, span_filter_system("<br>"))
 
-	for (var/mob/living/silicon/ai/aiPlayer in GLOB.mob_list)
+	for (var/mob/living/silicon/ai/aiPlayer in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if (aiPlayer.stat != 2)
 			to_chat(world, span_filter_system(span_bold("[aiPlayer.name]'s laws at the end of the round were:")))
 		else
@@ -50,7 +50,7 @@
 
 	var/dronecount = 0
 
-	for (var/mob/living/silicon/robot/robo in GLOB.mob_list)
+	for (var/mob/living/silicon/robot/robo in REGISTRY_MEMBERS(REGISTRY_MOBS))
 
 		if(istype(robo, /mob/living/silicon/robot/platform))
 			var/mob/living/silicon/robot/platform/tank = robo

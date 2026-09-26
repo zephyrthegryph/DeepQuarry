@@ -37,7 +37,7 @@ SUBSYSTEM_DEF(pai)
 /datum/controller/subsystem/pai/fire(resumed)
 	if(!resumed)
 		pai_ghosts.Cut()
-		current_run = GLOB.observer_mob_list.Copy()
+		current_run = REGISTRY_COPY(REGISTRY_OBSERVERS)
 
 	while(length(current_run))
 		if(MC_TICK_CHECK)
