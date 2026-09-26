@@ -44,6 +44,5 @@
 	P.name = "wormhole"
 	do_after_cooldown()
 	src = null
-	spawn(rand(15 SECONDS, 30 SECONDS))
-		qdel(P)
+	om_qdel_after(P, rand(15 SECONDS, 30 SECONDS))
 	return

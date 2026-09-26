@@ -44,23 +44,22 @@
 		var/list/the_targets = list(T,T1,T2)
 
 		for(var/a = 1 to 5)
-			spawn(0)
-				var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(chassis))
-				var/turf/my_target
-				if(a == 1)
-					my_target = T
-				else if(a == 2)
-					my_target = T1
-				else if(a == 3)
-					my_target = T2
-				else
-					my_target = pick(the_targets)
-				W.create_reagents(10)
-				if(!W || !src)
-					return
-				reagents.trans_to_obj(W, spray_amount)
-				W.set_color()
-				W.set_up(my_target)
+			var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(chassis))
+			var/turf/my_target
+			if(a == 1)
+				my_target = T
+			else if(a == 2)
+				my_target = T1
+			else if(a == 3)
+				my_target = T2
+			else
+				my_target = pick(the_targets)
+			W.create_reagents(10)
+			if(!W || !src)
+				continue
+			reagents.trans_to_obj(W, spray_amount)
+			W.set_color()
+			W.set_up(my_target)
 		return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/extinguisher/get_equip_info()

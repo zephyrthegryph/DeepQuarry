@@ -51,8 +51,7 @@
 			to_chat(E.load,block_message)
 
 	feedback_timer = 1
-	spawn(5 SECONDS) //Without this timer the feedback becomes horribly spamy
-		feedback_timer = 0
+	om_after(src, 5 SECONDS, TYPE_PROC_REF(/datum, om_set_var), "feedback_timer", 0) //Without this timer the feedback becomes horribly spamy
 
 /obj/machinery/mech_sensor/proc/enabled()
 	return on && !(stat & NOPOWER)

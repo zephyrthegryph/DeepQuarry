@@ -61,11 +61,9 @@
 								AD.visible_message(span_danger("\The [chassis] tears \the [AD] open!"))
 						if(!AD.welded)
 							if(AD.density)
-								spawn(0)
-									AD.open(1)
+								AD.open(1)
 							else
-								spawn(0)
-									AD.close(1)
+								AD.close(1)
 				return
 			else
 				occupant_message(span_warning("[target] is firmly secured."))

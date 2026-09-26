@@ -25,12 +25,19 @@
 
 /obj/item/mecha_parts/mecha_equipment/proc/do_after_cooldown(target=1)
 	sleep(equip_cooldown)
-	set_ready_state(TRUE)
-	if(ready_sound) //Kind of like the kinetic accelerator.
-		playsound(src, ready_sound, 50, 1, -1)
+	cooldown_done()
 	if(target && chassis)
 		return 1
 	return 0
+
+/// The cooldown without waiting for it: ready again after equip_cooldown.
+/obj/item/mecha_parts/mecha_equipment/proc/start_cooldown()
+	om_after(src, equip_cooldown, PROC_REF(cooldown_done))
+
+/obj/item/mecha_parts/mecha_equipment/proc/cooldown_done()
+	set_ready_state(TRUE)
+	if(ready_sound) //Kind of like the kinetic accelerator.
+		playsound(src, ready_sound, 50, 1, -1)
 
 /obj/item/mecha_parts/mecha_equipment/examine(mob/user)
 	. = ..()

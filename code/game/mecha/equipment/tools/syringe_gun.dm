@@ -68,34 +68,7 @@
 	S.icon_state = "syringeproj"
 	playsound(src, 'sound/items/syringeproj.ogg', 50, 1)
 	src.mecha_log_message("Launched [S] from [src], targeting [target].")
-	spawn(-1)
-		src = null //if src is deleted, still process the syringe
-		for(var/i=0, i<6, i++)
-			if(!S)
-				break
-			if(step_towards(S,trg))
-				var/list/mobs = list()
-				for(var/mob/living/carbon/M in S.loc)
-					mobs += M
-				var/mob/living/carbon/M = safepick(mobs)
-				if(M)
-					S.icon_state = initial(S.icon_state)
-					S.icon = initial(S.icon)
-					S.reagents.trans_to_mob(M, S.reagents.total_volume, CHEM_BLOOD)
-					M.injure(INJURY_PIERCE, 2, null, S)
-					S.visible_message(span_attack("[M] was hit by the syringe!"))
-					break
-				else if(S.loc == trg)
-					S.icon_state = initial(S.icon_state)
-					S.icon = initial(S.icon)
-					S.update_icon()
-					break
-			else
-				S.icon_state = initial(S.icon_state)
-				S.icon = initial(S.icon)
-				S.update_icon()
-				break
-			sleep(1)
+	S.mech_syringe_flight(trg, 6) // the syringe's own clock: it flies on if the gun is deleted
 	do_after_cooldown()
 	return 1
 
@@ -557,3 +530,31 @@
 	required_type = list(/obj/mecha/medical)
 
 	tooltype = /obj/item/healthanalyzer/advanced
+
+/// A syringe fired from an exosuit syringe gun: a step a tick toward `trg`, for up to `steps_left`
+/// steps, injecting the first carbon mob it lands on.
+/obj/item/reagent_containers/syringe/proc/mech_syringe_flight(turf/trg, steps_left)
+	if(steps_left <= 0)
+		return
+	if(!step_towards(src, trg))
+		icon_state = initial(icon_state)
+		icon = initial(icon)
+		update_icon()
+		return
+	var/list/mobs = list()
+	for(var/mob/living/carbon/M in loc)
+		mobs += M
+	var/mob/living/carbon/M = safepick(mobs)
+	if(M)
+		icon_state = initial(icon_state)
+		icon = initial(icon)
+		reagents.trans_to_mob(M, reagents.total_volume, CHEM_BLOOD)
+		M.injure(INJURY_PIERCE, 2, null, src)
+		visible_message(span_attack("[M] was hit by the syringe!"))
+		return
+	if(loc == trg)
+		icon_state = initial(icon_state)
+		icon = initial(icon)
+		update_icon()
+		return
+	om_after(src, 1, PROC_REF(mech_syringe_flight), trg, steps_left - 1)
