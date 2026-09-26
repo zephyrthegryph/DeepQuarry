@@ -29,7 +29,8 @@
 		stack_trace("Holder was not passed a mob.")
 		return INITIALIZE_HINT_QDEL
 	held.forceMove(src)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	if(isturf(loc) || isbelly(loc))
+		OM_WAKE_AT(src, world.time)
 
 /mob/living/get_status_tab_items()
 	. = ..()
@@ -89,11 +90,16 @@
 		held_mob.vis_flags = original_vis_flags
 		held_mob = null
 		invisibility = INVISIBILITY_ABSTRACT
+		OM_WAKE_AT(src, world.time) // check (and clean up) once the move is over
 	..()
+
+/obj/item/holder/Moved(atom/old_loc)
+	. = ..()
+	if(isturf(loc) || isbelly(loc))
+		OM_WAKE_AT(src, world.time)
 
 /// Dumps the mob if we still hold one, and if we are held by a mob clears us from its inventory.
 /obj/item/holder/Destroy()
-	PERIODIC_STOP(src)
 	if(held_mob)
 		var/mob/cached_mob = held_mob
 		dump_mob()
@@ -103,10 +109,16 @@
 		M.drop_from_inventory(src, loc)
 	. = ..()
 
-/// If the mob somehow leaves the holder, clean us up.
-/obj/item/holder/periodic_step()
+/// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
+/// right after the move that did it (Exited(), Moved()), never polled.
+/obj/item/holder/om_woken(reason)
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))
 		qdel(src)
+
+/obj/item/holder/om_sleep_violation()
+	if((held_mob?.loc != src || isturf(loc) || isbelly(loc)) && !om_wake_pending(src))
+		return "empty or dropped but not cleaning up"
+	return null
 
 /// Releases the mob from inside the holder. Calls forceMove() which calls Exited(). Then does cleanup for the client's eye location.
 /obj/item/holder/proc/dump_mob()
