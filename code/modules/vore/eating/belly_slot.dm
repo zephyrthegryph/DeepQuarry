@@ -25,15 +25,12 @@
 	/// REACT_AT token for the next liquid batch of an empty, generating belly.
 	var/tmp/liquid_timer
 
-/obj/belly/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/belly_interior)
-	return types
-
 /// The inside of a belly: sealed (its own air and temperature), and it reaches the
 /// mobs inside it. Outside effects don't pass the predator's body into it; the
 /// belly's own modes are what act on its contents.
-/datum/slot_def/belly_interior
-	id = BELLY_SLOT_INTERIOR
+/datum/om/relation/slot/belly_interior
+	holder = /obj/belly
+	slot_id = BELLY_SLOT_INTERIOR
 	name = "belly"
 	is_default = TRUE
 	exposure = SLOT_EXPOSURE_SEALED

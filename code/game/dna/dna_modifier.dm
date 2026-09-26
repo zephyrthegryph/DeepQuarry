@@ -81,10 +81,6 @@
 	default_apply_parts()
 	RefreshParts()
 
-/obj/machinery/dna_scannernew/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/occupant/dna_scanner, /datum/slot_def/machine_internals)
-	return types
-
 /// Sealed occupant slot (C8a, containment.md §10). Full blast share: the
 /// scanner's own explosion_contents_severity() used to pass severity through
 /// untouched, so its slot keeps that share instead.
@@ -96,8 +92,9 @@
 /// contents phase, now running before any Destroy() code, would already
 /// have done, silently skipping all of it. Same finding as mecha_pilot
 /// above; same follow-up (an on_unslotted() hook migration, not this pass).
-/datum/slot_def/occupant/dna_scanner
-	id = OCCUPANT_SLOT_DNA_SCANNER
+/datum/om/relation/slot/occupant/dna_scanner
+	holder = /obj/machinery/dna_scannernew
+	slot_id = OCCUPANT_SLOT_DNA_SCANNER
 	name = "DNA scanner"
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
 	drop_policy = SLOT_DROP_HOLDER

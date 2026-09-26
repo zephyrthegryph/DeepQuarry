@@ -230,7 +230,7 @@ GLOBAL_VAR(latent_last_refusal)
 /// merging with an identical entry. Returns the entry.
 /datum/ledger/proc/latent_add(path, n = 1, list/blob = null, slot_id = null)
 	var/id = slot_id || default_id
-	var/datum/slot_def/def = def_by_id(id)
+	var/datum/om/relation/slot/def = def_by_id(id)
 	if(!def || n <= 0)
 		return null
 	var/key = "[id]|[path]|[blob ? state_hash(blob) : ""]"
@@ -293,8 +293,8 @@ GLOBAL_VAR(latent_last_refusal)
 		if(group)
 			. += group
 		return .
-	for(var/datum/slot_def/def as anything in defs)
-		var/list/group = latent[def.id]
+	for(var/datum/om/relation/slot/def as anything in defs)
+		var/list/group = latent[def.slot_id]
 		if(group)
 			. += group
 
@@ -457,7 +457,7 @@ GLOBAL_VAR(latent_last_refusal)
 // ---- Slot definitions ----
 
 /// What one thing of `path` costs in this slot, from type data.
-/datum/slot_def/proc/entry_cost(atom/holder, path)
+/datum/om/relation/slot/proc/entry_cost(atom/holder, path)
 	switch(capacity_model)
 		if(SLOT_CAPACITY_NONE)
 			return 0

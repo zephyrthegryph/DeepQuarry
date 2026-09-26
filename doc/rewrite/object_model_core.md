@@ -464,10 +464,18 @@ reason. `om_unlink(...)`, `om_related(E, rel)` (targets, E is source),
   `grants_target`, `grants_occupant` are held with the edge as source while
   `active_if` passes, re-checked when its `depends_on` channels change on
   either end, and released when the edge goes.
-- **Slots.** A slot def's `om_relation` links a thing to its holder while it
-  is in that slot (ledger enter, exit and reslot), so a slot declares what
-  occupying it gives through that relation's rows. The ledger also raises
-  `CHANGE_CONTENTS` on the holder.
+- **Slots are relations.** `/datum/om/relation/slot` (`code/datums/containment/slot_def.dm`,
+  containment.md §3) is a relation that also owns loc: linking a thing into a
+  slot (a ledger move -- enter, exit, reslot) links it to the holder by that
+  same relation, so a slot gets everything above for free (view fields,
+  `changes` channels, contributes/grants) on top of capacity, exposure and
+  propagation. A slot decl declares `holder` (a type, or list of types)
+  instead of overriding a per-holder proc; the registry groups every decl by
+  its declared holder and resolves a holder instance's group by its
+  `slot_holder_key()` (its own type by default; a mob returns its body plan's
+  type), picking the most-derived declared holder that key is a subtype of --
+  the same resolution a proc-override chain would give. The ledger also
+  raises `CHANGE_CONTENTS` on the holder on every insert and remove.
 
 ## 8. Contributions (section E)
 

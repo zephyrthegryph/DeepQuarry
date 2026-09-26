@@ -68,7 +68,7 @@
 /// Module slot `n` (1-3), computed.
 #define SLOT_ID_MODULE(n) "module_[n]"
 
-// ---- Body slot roles (/datum/slot_def/body/var/roles) ----
+// ---- Body slot roles (/datum/om/relation/slot/body/var/roles) ----
 /// Worn: its item's worn_factors apply (not hands, pockets or restraints).
 #define BODY_SLOT_WORN (1<<0)
 /// Its clothing's armour covers the body parts in body_parts_covered.
@@ -121,7 +121,7 @@
 /// Delete them with the holder (recursively, children first -- L1 phase 3).
 #define SLOT_DROP_DELETE 2
 /// A declared resolver (doc/rewrite/lifecycle.md §3's TRANSFER(resolver))
-/// picks the destination: /datum/slot_def/proc/drop_resolver(). The default
+/// picks the destination: /datum/om/relation/slot/proc/drop_resolver(). The default
 /// resolver is today's behaviour (the holder's own container's default
 /// slot, else spill); override it for anything else -- occupant ejection,
 /// mind transfer, mecha equipment to the mech's turf.
@@ -134,11 +134,11 @@
 #define SLOT_DROP_HOLDER 4
 /// Contents fold into latent entries on a declared successor instead of
 /// staying real (doc/rewrite/lifecycle.md §3's TO_LATENT): debris, wreckage.
-/// /datum/slot_def/proc/latent_successor(holder) names it.
+/// /datum/om/relation/slot/proc/latent_successor(holder) names it.
 #define SLOT_DROP_TO_LATENT 5
 /// Moves into a slot of replace_with()'s successor (doc/rewrite/lifecycle.md
 /// §3's KEEP_WITH(slot)); falls back to SPILL when nothing is replacing the
-/// holder. /datum/slot_def/proc/keep_with_slot() names the destination slot.
+/// holder. /datum/om/relation/slot/proc/keep_with_slot() names the destination slot.
 #define SLOT_DROP_KEEP_WITH 6
 
 // ---- Entry records (the ledger's per-thing list) ----

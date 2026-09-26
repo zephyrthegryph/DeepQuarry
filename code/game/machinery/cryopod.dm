@@ -301,14 +301,11 @@
 		occupant.resting = 1
 	return ..()
 
-/obj/machinery/cryopod/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/occupant/cryopod, /datum/slot_def/machine_internals)
-	return types
-
 /// Sealed: cryosleep is its own environment, same as before (a mob whose loc
 /// became the pod took no heat or damage path either way).
-/datum/slot_def/occupant/cryopod
-	id = OCCUPANT_SLOT_CRYOPOD
+/datum/om/relation/slot/occupant/cryopod
+	holder = /obj/machinery/cryopod
+	slot_id = OCCUPANT_SLOT_CRYOPOD
 	name = "cryopod"
 
 /obj/machinery/cryopod/Initialize(mapload)

@@ -106,7 +106,7 @@
 	var/atom/drop = drop_location()
 	var/list/defs = isnull(slot_id) ? L.defs : list(L.def_by_id(slot_id))
 	. = 0
-	for(var/datum/slot_def/def as anything in defs)
+	for(var/datum/om/relation/slot/def as anything in defs)
 		if(!def)
 			continue
 		for(var/atom/movable/thing as anything in L.slots[def.id].Copy())
@@ -119,7 +119,7 @@
 /// own declared drop_policy) to one thing, through the same forced-move
 /// machinery the destroy transaction's contents phase uses (L1,
 /// code/datums/containment/lifecycle.dm).
-/proc/dq_lifecycle_apply_policy_now(atom/movable/holder, datum/slot_def/def, atom/movable/thing, policy, atom/drop)
+/proc/dq_lifecycle_apply_policy_now(atom/movable/holder, datum/om/relation/slot/def, atom/movable/thing, policy, atom/drop)
 	var/flags = LEDGER_MOVE_FORCED
 	if(policy == SLOT_DROP_DELETE)
 		qdel(thing)

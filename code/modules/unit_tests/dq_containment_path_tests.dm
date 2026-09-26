@@ -37,12 +37,9 @@
 	w_class = ITEMSIZE_NORMAL
 	max_integrity = 10000
 
-/obj/item/dq_path_bag/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_path_bag_interior)
-	return types
-
-/datum/slot_def/dq_path_bag_interior
-	id = "interior"
+/datum/om/relation/slot/dq_path_bag_interior
+	holder = /obj/item/dq_path_sealed
+	slot_id = "interior"
 	exposure = SLOT_EXPOSURE_INTERNAL
 
 /// The same bag lined with armour.
@@ -53,12 +50,9 @@
 /obj/item/dq_path_sealed
 	name = "path test flask"
 
-/obj/item/dq_path_sealed/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_path_sealed_inner, /datum/slot_def/dq_path_bag_interior)
-	return types
-
-/datum/slot_def/dq_path_sealed_inner
-	id = "sealed"
+/datum/om/relation/slot/dq_path_sealed_inner
+	holder = /obj/item/dq_path_sealed
+	slot_id = "sealed"
 	exposure = SLOT_EXPOSURE_SEALED
 
 /// A wearer-like holder with three worn layers that every hit reaches.
@@ -66,25 +60,23 @@
 	name = "path test mannequin"
 	max_integrity = 10000
 
-/obj/item/dq_path_mannequin/slot_def_types()
-	// Declared inner first on purpose: layer order, not declaration order, counts.
-	var/static/list/types = list(/datum/slot_def/dq_path_layer/undersuit, /datum/slot_def/dq_path_layer/suit, /datum/slot_def/dq_path_layer/uniform)
-	return types
-
-/datum/slot_def/dq_path_layer
+/datum/om/relation/slot/dq_path_layer
 	exposure = SLOT_EXPOSURE_EXTERNAL
 	damage_transmission = list(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 
-/datum/slot_def/dq_path_layer/undersuit
-	id = "undersuit"
+/datum/om/relation/slot/dq_path_layer/undersuit
+	holder = /obj/item/dq_path_mannequin
+	slot_id = "undersuit"
 	layer = SLOT_LAYER_UNDERSUIT
 
-/datum/slot_def/dq_path_layer/uniform
-	id = "uniform"
+/datum/om/relation/slot/dq_path_layer/uniform
+	holder = /obj/item/dq_path_mannequin
+	slot_id = "uniform"
 	layer = SLOT_LAYER_UNIFORM
 
-/datum/slot_def/dq_path_layer/suit
-	id = "suit"
+/datum/om/relation/slot/dq_path_layer/suit
+	holder = /obj/item/dq_path_mannequin
+	slot_id = "suit"
 	layer = SLOT_LAYER_SUIT
 
 /obj/structure/closet/dq_path_freezer

@@ -94,7 +94,21 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
 
 ## 3. Slots
 
-**A slot definition** is a shared `/datum/slot_def` that holder types declare. It holds:
+A slot is a relation (`/datum/om/relation/slot`, `object_model_core.md` §7) that
+also owns loc: linking a thing into a slot is a ledger move, and it is also an
+`om_link` to the holder, so a slot gets a relation's declared view fields,
+`changes` channels and `contributes`/`grants` rows for free, on top of what a
+container needs. A slot decl subclasses `/datum/om/relation/slot` and declares
+`holder` (a holder type, or list of them) instead of overriding a per-holder
+proc; the registry (`code/datums/om/registry.dm`,
+`build_slot_holders()`/`slot_group_for()`) builds each holder's slot list once,
+picking the most-derived declared holder type a holder's key
+(`slot_holder_key()`, its own type unless overridden -- a mob's is its body
+plan's type) is a subtype of. This replaced the old
+`/atom/proc/slot_def_types()` override and the standalone `/datum/slot_def`
+base type (both deleted).
+
+**A slot decl** holds:
 - **Accepts:** a constraint ([rules.md §3](rules.md#3-constraints)).
 - **Capacity model:** a count, a volume by size class, or a weight.
 - **Exposure:** external or internal (§3.1).

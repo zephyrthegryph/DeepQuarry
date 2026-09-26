@@ -13,36 +13,54 @@
 // whose drop policy leaves them to the machine's own Destroy (C6 owns them).
 
 /// Machine internals: legacy contents the machine's Destroy handles.
-/datum/slot_def/machine_internals
-	id = CONTAINER_SLOT_INTERNALS
+/datum/om/relation/slot/machine_internals
+	// Every concrete machine (or mech) that also declares its own extra slot
+	// (an occupant, or stock) is named here too, since it registers its own
+	// holder group -- which must still carry internals (containment.md §3).
+	holder = list(
+		/obj/machinery,
+		/obj/machinery/vending,
+		/obj/machinery/smartfridge,
+		/obj/machinery/cryopod,
+		/obj/machinery/recharge_station,
+		/obj/machinery/suit_storage_unit,
+		/obj/machinery/dna_scannernew,
+		/obj/machinery/gibber,
+		/obj/machinery/transhuman/resleever,
+		/obj/machinery/implantchair,
+		/obj/mecha,
+	)
+	slot_id = CONTAINER_SLOT_INTERNALS
 	name = "internals"
 	drop_policy = SLOT_DROP_HOLDER
 	is_default = TRUE
 
 /// Stock: latent records plus real items with unique state. Spilled on destroy.
-/datum/slot_def/stock
-	id = CONTAINER_SLOT_STOCK
+/datum/om/relation/slot/stock
+	holder = /obj/machinery/smartfridge
+	slot_id = CONTAINER_SLOT_STOCK
 	name = "stock"
 	capacity_model = SLOT_CAPACITY_UNITS
 	drop_policy = SLOT_DROP_SPILL
 
 /// Vending stock is deleted with the machine, as it always was: a wrecked
 /// vendor does not shower its whole inventory.
-/datum/slot_def/stock/vending
+/datum/om/relation/slot/stock/vending
+	holder = /obj/machinery/vending
 	drop_policy = SLOT_DROP_DELETE
 
-/datum/slot_def/stock/capacity_for(atom/holder)
+/datum/om/relation/slot/stock/capacity_for(atom/holder)
 	return INFINITY
 
-/datum/slot_def/stock/cost(atom/holder, atom/movable/thing)
+/datum/om/relation/slot/stock/cost(atom/holder, atom/movable/thing)
 	return dq_stock_units(thing)
 
-/datum/slot_def/stock/latent_used(atom/holder)
+/datum/om/relation/slot/stock/latent_used(atom/holder)
 	. = 0
 	for(var/datum/stored_item/I as anything in holder.stock_records())
 		. += I.amount
 
-/datum/slot_def/stock/drop_latent(atom/holder, atom/drop)
+/datum/om/relation/slot/stock/drop_latent(atom/holder, atom/drop)
 	for(var/datum/stored_item/I as anything in holder.stock_records())
 		// The ledger applies the policy to the real ones; the record lets go.
 		LAZYCLEARLIST(I.instances)

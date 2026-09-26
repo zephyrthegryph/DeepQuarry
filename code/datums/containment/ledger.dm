@@ -116,7 +116,7 @@
 /datum/ledger
 	/// The holder. Cleared on Destroy.
 	var/tmp/atom/holder
-	/// The holder type's /datum/slot_def singletons, in declaration order.
+	/// The holder type's /datum/om/relation/slot singletons, in declaration order.
 	var/tmp/list/defs
 	/// Id of the slot legacy moves land in.
 	var/default_id
@@ -159,14 +159,14 @@
 	slots = list()
 	used = list()
 	entries = list()
-	for(var/datum/slot_def/def as anything in defs)
-		slots[def.id] = list()
-		used[def.id] = 0
+	for(var/datum/om/relation/slot/def as anything in defs)
+		slots[def.slot_id] = list()
+		used[def.slot_id] = 0
 		if(def.is_default && !default_id)
-			default_id = def.id
+			default_id = def.slot_id
 	if(!default_id)
-		var/datum/slot_def/first = defs[1]
-		default_id = first.id
+		var/datum/om/relation/slot/first = defs[1]
+		default_id = first.slot_id
 	accumulators = new /list(length(dq_ledger_measure_ids()) + dq_ledger_tag_words())
 
 /datum/ledger/Destroy()
@@ -181,8 +181,8 @@
 	return ..()
 
 /datum/ledger/proc/def_by_id(id)
-	for(var/datum/slot_def/def as anything in defs)
-		if(def.id == id)
+	for(var/datum/om/relation/slot/def as anything in defs)
+		if(def.slot_id == id)
 			return def
 	return null
 
@@ -223,7 +223,7 @@
 	if(!entry)
 		return
 	var/id = entry[LEDGER_E_SLOT]
-	var/datum/slot_def/def = def_by_id(id)
+	var/datum/om/relation/slot/def = def_by_id(id)
 	if(!def?.keyed)
 		return
 	unindex_key(id, entry[LEDGER_E_KEY], thing)
@@ -261,7 +261,7 @@
 		pending_new_slot = null
 	var/flags = pending_flags
 	pending_flags = null
-	var/datum/slot_def/def = def_by_id(id)
+	var/datum/om/relation/slot/def = def_by_id(id)
 	var/cost = def.cost(holder, thing)
 	var/list/snapshot = dq_ledger_contribution(thing)
 	var/key = def.keyed ? thing.slot_key() : null
@@ -289,7 +289,7 @@
 	var/flags = pending_exit_flags
 	pending_exit_flags = null
 	var/id = entry[LEDGER_E_SLOT]
-	var/datum/slot_def/def = def_by_id(id)
+	var/datum/om/relation/slot/def = def_by_id(id)
 	if(def?.keyed)
 		unindex_key(id, entry[LEDGER_E_KEY], thing)
 	entries -= thing
@@ -316,7 +316,7 @@
 	var/list/old_things = slots[old_id]
 	old_things -= thing
 	used[old_id] -= entry[LEDGER_E_COST]
-	var/datum/slot_def/old_def = def_by_id(old_id)
+	var/datum/om/relation/slot/old_def = def_by_id(old_id)
 	if(old_def?.keyed)
 		unindex_key(old_id, entry[LEDGER_E_KEY], thing)
 	holder.on_slot_changed(old_id, thing, FALSE)
@@ -324,7 +324,7 @@
 	om_slot_left(holder, thing, old_def)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, old_id, flags)
-	var/datum/slot_def/def = def_by_id(new_id)
+	var/datum/om/relation/slot/def = def_by_id(new_id)
 	entry[LEDGER_E_SLOT] = new_id
 	entry[LEDGER_E_SERIAL] = ++next_serial
 	entry[LEDGER_E_COST] = def.cost(holder, thing)
@@ -470,7 +470,7 @@
 	for(var/atom/movable/thing as anything in entries)
 		var/list/entry = entries[thing]
 		var/id = entry[LEDGER_E_SLOT]
-		var/datum/slot_def/def = def_by_id(id)
+		var/datum/om/relation/slot/def = def_by_id(id)
 		if(!def?.keyed)
 			continue
 		var/key = entry[LEDGER_E_KEY]
@@ -522,8 +522,8 @@
 /// The state serializer numbers children in this order (code/datums/state/).
 /datum/ledger/proc/ordered()
 	. = list()
-	for(var/datum/slot_def/def as anything in defs)
-		. += slots[def.id]
+	for(var/datum/om/relation/slot/def as anything in defs)
+		. += slots[def.slot_id]
 
 /// Called on the holder whenever a thing enters or leaves one of its slots.
 /// Runs inside the move, so it must not sleep.

@@ -29,19 +29,17 @@
 	name = "containment test box"
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/dq_containment_box/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_test_main, /datum/slot_def/dq_test_pocket)
-	return types
-
-/datum/slot_def/dq_test_main
-	id = "main"
+/datum/om/relation/slot/dq_test_main
+	holder = /obj/item/dq_containment_box
+	slot_id = "main"
 	capacity_model = SLOT_CAPACITY_COUNT
 	capacity = 3
 	accepts = /datum/predicate/dq_test_sharp_only
 	drop_policy = SLOT_DROP_SPILL
 
-/datum/slot_def/dq_test_pocket
-	id = "pocket"
+/datum/om/relation/slot/dq_test_pocket
+	holder = /obj/item/dq_containment_box
+	slot_id = "pocket"
 	drop_policy = SLOT_DROP_TRANSFER
 	is_default = TRUE
 
@@ -274,7 +272,7 @@
 	var/atom/drop = H.drop_location()
 	var/atom/parent = H.loc
 	var/list/expected = list()
-	for(var/datum/slot_def/def as anything in L.defs)
+	for(var/datum/om/relation/slot/def as anything in L.defs)
 		for(var/atom/movable/T as anything in H.slot_contents(def.id))
 			expected[T] = def.drop_policy
 	holders -= H
@@ -577,12 +575,9 @@
 	name = "keyring"
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/dq_containment_keyring/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_test_keyed)
-	return types
-
-/datum/slot_def/dq_test_keyed
-	id = "keyed"
+/datum/om/relation/slot/dq_test_keyed
+	holder = /obj/item/dq_containment_keyring
+	slot_id = "keyed"
 	is_default = TRUE
 	keyed = TRUE
 

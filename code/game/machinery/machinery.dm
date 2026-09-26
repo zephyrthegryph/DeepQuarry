@@ -149,10 +149,6 @@ Class Procs:
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
-/obj/machinery/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/machine_internals)
-	return types
-
 /// The board plus its req_components, as a spawn list (roadmap C6): resolved
 /// lazily into latent entries in CONTAINER_SLOT_INTERNALS the first time
 /// anything asks the ledger an exact question (RefreshParts's rating reads

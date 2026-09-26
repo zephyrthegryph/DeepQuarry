@@ -184,10 +184,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 // Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm): each
 // product is a record with a latent count, and a real item is made only when
 // one is vended. Items stocked by hand stay real when their state is their own.
-/obj/machinery/vending/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/machine_internals, /datum/slot_def/stock/vending)
-	return types
-
 /obj/machinery/vending/stock_records()
 	return product_records
 

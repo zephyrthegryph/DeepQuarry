@@ -44,13 +44,10 @@
 	// already cleared occupant if one was present.
 	return ..()
 
-/obj/machinery/gibber/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/occupant/gibber, /datum/slot_def/machine_internals)
-	return types
-
 /// Sealed occupant slot (C8a, containment.md §10).
-/datum/slot_def/occupant/gibber
-	id = OCCUPANT_SLOT_GIBBER
+/datum/om/relation/slot/occupant/gibber
+	holder = /obj/machinery/gibber
+	slot_id = OCCUPANT_SLOT_GIBBER
 	name = "gibber"
 
 /obj/machinery/gibber/autogibber/Destroy()

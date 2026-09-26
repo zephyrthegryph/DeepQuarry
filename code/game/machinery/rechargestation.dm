@@ -31,13 +31,10 @@
 	cell = default_use_hicell()
 	update_icon()
 
-/obj/machinery/recharge_station/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/occupant/recharge_station, /datum/slot_def/machine_internals)
-	return types
-
 /// Sealed occupant slot (C8a, containment.md §10).
-/datum/slot_def/occupant/recharge_station
-	id = OCCUPANT_SLOT_RECHARGE_STATION
+/datum/om/relation/slot/occupant/recharge_station
+	holder = /obj/machinery/recharge_station
+	slot_id = OCCUPANT_SLOT_RECHARGE_STATION
 	name = "recharge station"
 
 /obj/machinery/recharge_station/proc/has_cell_power()

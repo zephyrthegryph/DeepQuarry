@@ -6,7 +6,7 @@
 // the caller is legacy storage, legacy equip code or a C1 slot.
 //
 // Where they attach:
-//   Slots    /datum/slot_def.accepts (a predicate type) and, for holders that
+//   Slots    /datum/om/relation/slot.accepts (a predicate type) and, for holders that
 //            declare their own, slot_def.holder_constraint (a CONSTRAINT_* kind
 //            read from the holder). Equip slots: equip_slots.dm.
 //   Holders  hold_constraint() on storage and holsters: what goes inside.

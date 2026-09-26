@@ -66,7 +66,7 @@
 	TEST_ASSERT(pred.begin_instant_nom(pred, prey, pred, B), "an instant nom should succeed")
 	TEST_ASSERT_EQUAL(prey.loc, B, "prey should be in the belly")
 	TEST_ASSERT_EQUAL(B.slot_entry_id(prey) ? TRUE : FALSE, TRUE, "prey should hold an entry in the belly's slot")
-	var/datum/slot_def/def = dq_path_slot_of(B, prey)
+	var/datum/om/relation/slot/def = dq_path_slot_of(B, prey)
 	TEST_ASSERT_EQUAL(def?.id, BELLY_SLOT_INTERIOR, "prey should be in the belly interior slot")
 	TEST_ASSERT_EQUAL(def?.exposure, SLOT_EXPOSURE_SEALED, "a belly is sealed")
 	TEST_ASSERT(def?.reaches_mobs, "a belly reaches the mobs inside")

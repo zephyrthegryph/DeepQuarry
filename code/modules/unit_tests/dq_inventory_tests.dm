@@ -350,7 +350,7 @@
 		if(id && H.get_equipped_item(id) != I)
 			TEST_FAIL("[label]: [I] is in [id] but the slot reads [H.get_equipped_item(id)]")
 			return FALSE
-	for(var/datum/slot_def/def as anything in L.defs)
+	for(var/datum/om/relation/slot/def as anything in L.defs)
 		if(def.capacity_model == SLOT_CAPACITY_COUNT && length(L.slots[def.id]) > def.capacity)
 			TEST_FAIL("[label]: [def.id] holds [length(L.slots[def.id])] things")
 			return FALSE

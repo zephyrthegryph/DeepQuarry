@@ -15,12 +15,9 @@
 // destroys its pages, as before. C2: the pages are inside the cover, and a
 // stab goes straight through it. ----
 
-/obj/item/folder/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/folder_pages)
-	return types
-
-/datum/slot_def/folder_pages
-	id = CONTAINER_SLOT_PAGES
+/datum/om/relation/slot/folder_pages
+	holder = /obj/item/folder
+	slot_id = CONTAINER_SLOT_PAGES
 	name = "pages"
 	accepts = /datum/predicate/slot_folder_pages
 	drop_policy = SLOT_DROP_DELETE

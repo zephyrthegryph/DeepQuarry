@@ -17,10 +17,10 @@
 /proc/dq_lifecycle_resolve_minds(atom/movable/root)
 	var/datum/ledger/L = dq_ledger_peek(root)
 	if(L)
-		for(var/datum/slot_def/def as anything in L.defs)
+		for(var/datum/om/relation/slot/def as anything in L.defs)
 			if(!def.is_mind_slot)
 				continue
-			var/list/things = L.slots[def.id]
+			var/list/things = L.slots[def.slot_id]
 			if(!length(things))
 				continue
 			var/atom/drop = root.drop_location()
@@ -42,13 +42,13 @@
 	var/atom/movable/successor = lifecycle_successor
 	// Slot types that keep latent contents of their own (stock records) apply their policy to
 	// them first; the ledger then handles the real things. The L1 move lost this call.
-	for(var/datum/slot_def/def as anything in L.defs)
+	for(var/datum/om/relation/slot/def as anything in L.defs)
 		if(!def.is_mind_slot)
 			def.drop_latent(src, drop)
-	for(var/datum/slot_def/def as anything in L.defs)
+	for(var/datum/om/relation/slot/def as anything in L.defs)
 		if(def.drop_policy == SLOT_DROP_HOLDER || def.is_mind_slot)
 			continue
-		var/list/things = L.slots[def.id]
+		var/list/things = L.slots[def.slot_id]
 		for(var/atom/movable/thing as anything in things.Copy())
 			if(!QDELETED(thing))
 				dq_lifecycle_resolve_slot_entry(src, def, thing, drop, successor)
@@ -63,19 +63,19 @@
 	var/datum/ledger/L = ledger
 	if(!L)
 		// No ledger: phase 3 had nothing to go on, so only holder-kept slot sets are fine.
-		for(var/datum/slot_def/def as anything in dq_slot_defs_for(src))
+		for(var/datum/om/relation/slot/def as anything in dq_slot_defs_for(src))
 			if(def.drop_policy != SLOT_DROP_HOLDER && !def.is_mind_slot)
 				return TRUE
 		return FALSE
-	for(var/datum/slot_def/def as anything in L.defs)
+	for(var/datum/om/relation/slot/def as anything in L.defs)
 		if(def.drop_policy == SLOT_DROP_HOLDER || def.is_mind_slot)
 			continue
-		if(length(L.slots[def.id]) || length(L.latent_list(def.id)))
+		if(length(L.slots[def.slot_id]) || length(L.latent_list(def.slot_id)))
 			return TRUE
 	return FALSE
 
 /// Applies `def`'s policy to the one `thing` already in its slot on `holder`.
-/proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/slot_def/def, atom/movable/thing, atom/drop, atom/movable/successor)
+/proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/om/relation/slot/def, atom/movable/thing, atom/drop, atom/movable/successor)
 	var/flags = LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING
 	switch(def.drop_policy)
 		if(SLOT_DROP_DELETE)
@@ -118,7 +118,7 @@
 /proc/dq_lifecycle_resolve_latent(datum/ledger/L, atom/drop, atom/movable/successor)
 	var/atom/movable/holder = L.holder
 	for(var/datum/latent_entry/entry as anything in L.latent_list())
-		var/datum/slot_def/def = L.def_by_id(entry.slot)
+		var/datum/om/relation/slot/def = L.def_by_id(entry.slot)
 		var/path = entry.path
 		var/list/blob = entry.blob
 		var/n = entry.count

@@ -106,7 +106,7 @@
 
 /// The things in `holder`'s layers further out than slot `def`, outermost
 /// layer first. Empty for an unlayered slot.
-/proc/dq_path_outer_layers(atom/holder, datum/slot_def/def)
+/proc/dq_path_outer_layers(atom/holder, datum/om/relation/slot/def)
 	. = list()
 	if(def.layer == SLOT_LAYER_NONE)
 		return
@@ -114,16 +114,16 @@
 	if(!L)
 		return
 	var/list/outer = list()
-	for(var/datum/slot_def/other as anything in L.defs)
+	for(var/datum/om/relation/slot/other as anything in L.defs)
 		if(other.layer > def.layer)
 			outer += other
 	sortTim(outer, GLOBAL_PROC_REF(cmp_slot_def_layer_dsc))
-	for(var/datum/slot_def/other as anything in outer)
-		var/list/things = L.slots[other.id]
+	for(var/datum/om/relation/slot/other as anything in outer)
+		var/list/things = L.slots[other.slot_id]
 		if(length(things))
 			. += things
 
-/proc/cmp_slot_def_layer_dsc(datum/slot_def/a, datum/slot_def/b)
+/proc/cmp_slot_def_layer_dsc(datum/om/relation/slot/a, datum/om/relation/slot/b)
 	return b.layer - a.layer
 
 /// The slot definition `child` is in on `holder`, or null.
@@ -141,7 +141,7 @@
 /// Holders without slots pass nothing: legacy holders keep their own code
 /// until their track migrates them.
 /proc/dq_path_step(atom/holder, atom/movable/child, effect, kind = 0, penetration = 0)
-	var/datum/slot_def/def = dq_path_slot_of(holder, child)
+	var/datum/om/relation/slot/def = dq_path_slot_of(holder, child)
 	if(!def)
 		return 0
 	if(effect == PATH_EFFECT_GAS)
@@ -195,8 +195,8 @@
 		return 0
 	. = 0
 	var/list/incoming = packet.amounts
-	for(var/datum/slot_def/def as anything in L.defs)
-		var/list/things = L.slots[def.id]
+	for(var/datum/om/relation/slot/def as anything in L.defs)
+		var/list/things = L.slots[def.slot_id]
 		if(!length(things))
 			continue
 		things = things.Copy()

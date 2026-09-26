@@ -1,6 +1,6 @@
 // Storage items (doc/rewrite/containment.md section 8, roadmap C4).
 //
-// A storage item is a holder with one internal slot (/datum/slot_def/storage).
+// A storage item is a holder with one internal slot (/datum/om/relation/slot/storage).
 // Everything goes in and out through the containment ledger (C1):
 //
 //   S.insert_refusal(W, user)            why W can't go in, or null
@@ -58,24 +58,21 @@
 
 // ---- The slot ----
 
-/obj/item/storage/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/storage)
-	return types
-
 /// A storage item's interior. Internal, so it takes C2's default damage and
 /// heat shares. Contents are deleted with the storage, as before.
-/datum/slot_def/storage
-	id = CONTAINER_SLOT_STORAGE
+/datum/om/relation/slot/storage
+	holder = /obj/item/storage
+	slot_id = CONTAINER_SLOT_STORAGE
 	name = "storage"
 	exposure = SLOT_EXPOSURE_INTERNAL
 	capacity_model = SLOT_CAPACITY_UNITS
 	holder_constraint = CONSTRAINT_HOLD
 	drop_policy = SLOT_DROP_DELETE
 
-/datum/slot_def/storage/capacity_for(obj/item/storage/holder)
+/datum/om/relation/slot/storage/capacity_for(obj/item/storage/holder)
 	return holder.max_storage_space
 
-/datum/slot_def/storage/cost(obj/item/storage/holder, atom/movable/thing)
+/datum/om/relation/slot/storage/cost(obj/item/storage/holder, atom/movable/thing)
 	if(isitem(thing))
 		var/obj/item/I = thing
 		return I.get_storage_cost()
@@ -83,16 +80,16 @@
 
 /// Things counted against storage_slots: the real ones plus latent entries
 /// (C5 overrides latent_count()).
-/datum/slot_def/storage/proc/count_used(obj/item/storage/holder)
+/datum/om/relation/slot/storage/proc/count_used(obj/item/storage/holder)
 	var/datum/ledger/L = dq_ledger(holder)
 	var/list/things = L?.slots[id]
 	return length(things) + latent_count(holder)
 
 /// Latent entries in this slot, for the count limit. None until C5.
-/datum/slot_def/storage/proc/latent_count(obj/item/storage/holder)
+/datum/om/relation/slot/storage/proc/latent_count(obj/item/storage/holder)
 	return holder.latent_count(CONTAINER_SLOT_STORAGE)
 
-/datum/slot_def/storage/refusal(obj/item/storage/holder, atom/movable/thing, mob/actor)
+/datum/om/relation/slot/storage/refusal(obj/item/storage/holder, atom/movable/thing, mob/actor)
 	if(!isitem(thing))
 		return "that can't go in a container"
 	var/obj/item/W = thing

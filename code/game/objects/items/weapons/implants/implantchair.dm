@@ -24,13 +24,10 @@
 	. = ..()
 	add_implants()
 
-/obj/machinery/implantchair/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/occupant/implant_chair, /datum/slot_def/machine_internals)
-	return types
-
 /// Sealed occupant slot (C8a, containment.md §10).
-/datum/slot_def/occupant/implant_chair
-	id = OCCUPANT_SLOT_IMPLANT_CHAIR
+/datum/om/relation/slot/occupant/implant_chair
+	holder = /obj/machinery/implantchair
+	slot_id = OCCUPANT_SLOT_IMPLANT_CHAIR
 	name = "implant chair"
 
 

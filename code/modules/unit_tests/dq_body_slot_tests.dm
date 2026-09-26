@@ -4,16 +4,15 @@
 /// The slot ids a holder declares, in order, joined for comparison.
 /proc/dq_test_slot_ids(atom/holder)
 	var/list/ids = list()
-	for(var/datum/slot_def/def as anything in dq_slot_defs_for(holder))
-		ids += def.id
+	for(var/datum/om/relation/slot/def as anything in dq_slot_defs_for(holder))
+		ids += def.slot_id
 	return jointext(ids, ",")
 
-/// The slot ids a list of slot definition paths declares, in order, joined.
-/proc/dq_test_slot_path_ids(list/paths)
+/// The slot ids the group declared for holder key `key`, joined.
+/proc/dq_test_slot_group_ids(key)
 	var/list/ids = list()
-	for(var/path in paths)
-		var/datum/slot_def/def = dq_slot_def(path)
-		ids += def.id
+	for(var/datum/om/relation/slot/def as anything in (om_registry().slot_group_for(key) || list()))
+		ids += def.slot_id
 	return jointext(ids, ",")
 
 /// Each body plan declares the slots its mobs really have.
@@ -23,13 +22,11 @@
 	var/humanoid = jointext(list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_SUIT, SLOT_ID_UNIFORM, SLOT_ID_GLOVES, SLOT_ID_SHOES, SLOT_ID_EYES, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_ID, SLOT_ID_SUIT_STORAGE, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED, SLOT_ID_BODY), ",")
 
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	TEST_ASSERT_EQUAL(H.slot_def_key(), "[H.type]|[H.body.type]", "a mob's slot key should cover its body plan")
+	TEST_ASSERT_EQUAL(H.slot_holder_key(), H.body.type, "a mob's slot key should cover its body plan")
 	TEST_ASSERT_EQUAL(dq_test_slot_ids(H), humanoid, "a humanoid should declare every human inventory slot")
 
 	// Nanoforms are humanoids for equipment.
-	var/datum/body/humanoid/nanoform/nano = new(H)
-	TEST_ASSERT_EQUAL(dq_test_slot_path_ids(nano.slot_def_types()), humanoid, "a nanoform should declare the humanoid slots")
-	qdel(nano)
+	TEST_ASSERT_EQUAL(dq_test_slot_group_ids(/datum/body/humanoid/nanoform), humanoid, "a nanoform should declare the humanoid slots")
 
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT_EQUAL(dq_test_slot_ids(M), jointext(list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BODY), ","), "a simple body should declare hands and its interior")
@@ -42,13 +39,11 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
 	TEST_ASSERT_EQUAL(dq_test_slot_ids(R), jointext(list(SLOT_ID_MODULE_1, SLOT_ID_MODULE_2, SLOT_ID_MODULE_3, SLOT_ID_BODY), ","), "a cyborg should declare its three module slots")
 
-	// Machine bodies that aren't cyborgs, and AI cores, have no slots.
-	var/datum/body/simple/machine/machine = new(H)
-	TEST_ASSERT_NULL(machine.slot_def_types(), "a non-cyborg machine body should declare no slots")
-	qdel(machine)
-	var/datum/body/simple/machine/ai/core = new(H)
-	TEST_ASSERT_NULL(core.slot_def_types(), "an AI core should declare no slots")
-	qdel(core)
+	// Machine bodies that aren't cyborgs, and AI cores, have no slots: a
+	// decoy shares the plain machine body plan with drones, but is keyed by
+	// its own (non-robot) mob type, which declares no slot group.
+	var/mob/living/silicon/decoy/decoy = allocate(/mob/living/silicon/decoy)
+	TEST_ASSERT_NULL(dq_slot_defs_for(decoy), "a non-cyborg machine mob should declare no slots")
 
 /// A missing hand refuses its hand slot; the other hand still works.
 /datum/unit_test/dq_body_slot_missing_hand

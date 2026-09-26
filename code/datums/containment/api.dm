@@ -42,7 +42,7 @@
 	if(!dest)
 		return "[holder] can't hold anything"
 	var/id = slot_id || dest.default_id
-	var/datum/slot_def/def = dest.def_by_id(id)
+	var/datum/om/relation/slot/def = dest.def_by_id(id)
 	if(!def)
 		return "[holder] has no [id]"
 	var/list/entry = dest.entries[thing]
@@ -76,7 +76,7 @@
 	var/list/entry = from?.entries[thing]
 	if(!entry)
 		return null
-	var/datum/slot_def/def = from.def_by_id(entry[LEDGER_E_SLOT])
+	var/datum/om/relation/slot/def = from.def_by_id(entry[LEDGER_E_SLOT])
 	. = def.removal_refusal(source, thing, actor)
 	if(.)
 		return .
@@ -188,13 +188,13 @@
 	if(!L)
 		return 0
 	var/id = slot_id || L.default_id
-	var/datum/slot_def/def = L.def_by_id(id)
+	var/datum/om/relation/slot/def = L.def_by_id(id)
 	return (L.used[id] || 0) + (def ? def.latent_used(src) : 0)
 
 /// The limit of `slot_id` on this holder, or null when it has none.
 /atom/proc/slot_capacity(slot_id)
 	var/datum/ledger/L = dq_ledger(src)
-	var/datum/slot_def/def = L?.def_by_id(slot_id || L.default_id)
+	var/datum/om/relation/slot/def = L?.def_by_id(slot_id || L.default_id)
 	if(!def || def.capacity_model == SLOT_CAPACITY_NONE)
 		return null
 	return def.capacity_for(src)

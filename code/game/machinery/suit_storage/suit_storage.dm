@@ -36,14 +36,11 @@
 		MASK = new mask_type(src)
 	update_icon()
 
-/obj/machinery/suit_storage_unit/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/occupant/suit_storage, /datum/slot_def/machine_internals)
-	return types
-
 /// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay
 /// their own typed vars -- only the person hiding inside is a slot.
-/datum/slot_def/occupant/suit_storage
-	id = OCCUPANT_SLOT_SUIT_STORAGE
+/datum/om/relation/slot/occupant/suit_storage
+	holder = /obj/machinery/suit_storage_unit
+	slot_id = OCCUPANT_SLOT_SUIT_STORAGE
 	name = "suit storage unit"
 
 /obj/machinery/suit_storage_unit/update_icon()

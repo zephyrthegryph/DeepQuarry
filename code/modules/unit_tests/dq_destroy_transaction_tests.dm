@@ -43,10 +43,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /obj/item/dq_destroy_transaction_phase_probe/lifecycle_dematerialize()
 	dq_destroy_transaction_log("dematerialize")
 
-/obj/item/dq_destroy_transaction_phase_probe/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_destroy_transaction_probe_main)
-	return types
-
 /obj/item/dq_destroy_transaction_phase_probe/declared_owned_vars()
 	var/static/list/vars = list("child")
 	return vars
@@ -59,8 +55,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	dq_destroy_transaction_log("destroy")
 	return ..()
 
-/datum/slot_def/dq_destroy_transaction_probe_main
-	id = "main"
+/datum/om/relation/slot/dq_destroy_transaction_probe_main
+	holder = /obj/item/dq_destroy_transaction_phase_probe
+	slot_id = "main"
 	is_default = TRUE
 	drop_policy = SLOT_DROP_SPILL
 
@@ -143,12 +140,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	name = "nesting outer"
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/dq_destroy_transaction_nest_outer/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_destroy_transaction_nest_outer_slot)
-	return types
-
-/datum/slot_def/dq_destroy_transaction_nest_outer_slot
-	id = "child_holder"
+/datum/om/relation/slot/dq_destroy_transaction_nest_outer_slot
+	holder = /obj/item/dq_destroy_transaction_nest_outer
+	slot_id = "child_holder"
 	is_default = TRUE
 	drop_policy = SLOT_DROP_DELETE
 
@@ -156,16 +150,13 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	name = "nesting inner"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/dq_destroy_transaction_nest_inner/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_destroy_transaction_nest_inner_slot)
-	return types
-
 /obj/item/dq_destroy_transaction_nest_inner/Destroy()
 	dq_destroy_transaction_log("inner-destroy")
 	return ..()
 
-/datum/slot_def/dq_destroy_transaction_nest_inner_slot
-	id = "grandchild"
+/datum/om/relation/slot/dq_destroy_transaction_nest_inner_slot
+	holder = /obj/item/dq_destroy_transaction_nest_inner
+	slot_id = "grandchild"
 	is_default = TRUE
 	drop_policy = SLOT_DROP_SPILL
 
@@ -196,17 +187,15 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	w_class = ITEMSIZE_NORMAL
 	var/level_name
 
-/obj/item/dq_destroy_transaction_mind_level/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_destroy_transaction_mind_slot, /datum/slot_def/dq_destroy_transaction_mind_body_slot)
-	return types
-
-/datum/slot_def/dq_destroy_transaction_mind_slot
-	id = "mind"
+/datum/om/relation/slot/dq_destroy_transaction_mind_slot
+	holder = /obj/item/dq_destroy_transaction_mind_level
+	slot_id = "mind"
 	is_mind_slot = TRUE
 	drop_policy = SLOT_DROP_SPILL
 
-/datum/slot_def/dq_destroy_transaction_mind_body_slot
-	id = "body"
+/datum/om/relation/slot/dq_destroy_transaction_mind_body_slot
+	holder = /obj/item/dq_destroy_transaction_mind_level
+	slot_id = "body"
 	is_default = TRUE
 	drop_policy = SLOT_DROP_DELETE
 
@@ -260,19 +249,16 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	name = "occupant holder"
 	anchored = TRUE
 
-/obj/structure/dq_destroy_transaction_occupant_holder/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/dq_destroy_transaction_occupant)
-	return types
-
-/datum/slot_def/dq_destroy_transaction_occupant
-	id = "occupant"
+/datum/om/relation/slot/dq_destroy_transaction_occupant
+	holder = /obj/structure/dq_destroy_transaction_occupant_holder
+	slot_id = "occupant"
 	is_default = TRUE
 	exposure = SLOT_EXPOSURE_SEALED
 	capacity_model = SLOT_CAPACITY_COUNT
 	capacity = 1
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/slot_def/dq_destroy_transaction_occupant/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/om/relation/slot/dq_destroy_transaction_occupant/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	// Occupant machines eject to a turf, not into whatever the holder itself
 	// happens to be sitting in (containment.md §10, lifecycle.md §3).
 	return get_turf(holder)

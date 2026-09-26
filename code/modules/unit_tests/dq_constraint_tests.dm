@@ -200,7 +200,7 @@
 	TEST_ASSERT_NULL(toolbox.insert_refusal(wrench, null), "toolbox taking a wrench")
 
 	// The same answer through a C1 slot declaring the holder's constraint.
-	var/datum/slot_def/dq_test_hold/def = dq_slot_def(/datum/slot_def/dq_test_hold)
+	var/datum/om/relation/slot/dq_test_hold/def = dq_slot_def(/datum/om/relation/slot/dq_test_hold)
 	TEST_ASSERT_EQUAL(def.refusal(wallet, wrench, null), wallet.insert_refusal(wrench, null), "slot_def and storage give the same reason")
 	var/obj/item/spacecash/cash = allocate(/obj/item/spacecash, T)
 	TEST_ASSERT_NULL(def.refusal(wallet, cash, null), "slot_def takes cash into a wallet")
@@ -217,8 +217,8 @@
 	TEST_ASSERT_NULL(dq_constraint_refusal(fitted, CONSTRAINT_HOLD, pen, null), "exact-fit box takes another pen")
 	TEST_ASSERT_NULL(dq_constraint_refusal(box, CONSTRAINT_HOLD, paper, null), "a plain box still takes paper")
 
-/datum/slot_def/dq_test_hold
-	id = "dq_test_hold"
+/datum/om/relation/slot/dq_test_hold
+	slot_id = "dq_test_hold"
 	holder_constraint = CONSTRAINT_HOLD
 
 /datum/unit_test/dq_constraint_equip_reasons/Run()

@@ -33,6 +33,12 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/list/clock_by_id = list()
 	var/list/relations = list()
 	var/list/relation_by_type = list()
+	/// Holder type (as slot_holder_key() returns it) -> ordered list of
+	/// /datum/om/relation/slot instances declared for it (build_slot_holders()).
+	var/list/slot_groups_by_holder = list()
+	/// Every declared holder type, longest-declared-path-first, so
+	/// slot_group_for() finds the most-derived match first.
+	var/list/slot_holder_types = list()
 	var/list/event_types = list()
 	var/list/event_idx = list()
 	/// event idx -> list of behaviour ids handling it (subtypes flattened).
@@ -81,6 +87,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	build_effects()
 	build_named_checks()
 	build_relations()
+	build_slot_holders()
 	build_events()
 	build_stages()
 	build_behaviours()
@@ -358,6 +365,60 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			R.compiled_break_if = om_check_get(R.break_if, src)
 			if(!R.compiled_break_if)
 				error("relation [path]: malformed break_if")
+
+// ---------------------------------------------------------------- slots (containment.md §3)
+
+/// Groups every built /datum/om/relation/slot decl by its declared `holder`
+/// (a type, or list of types), in declaration order (ties on `order`, lowest
+/// first). Replaces the old per-holder-type slot_def_types() override: a
+/// holder's slot list is the group whose key is the most-derived ancestor of
+/// slot_holder_key() among every declared key -- the same resolution a proc
+/// override chain would give, without one.
+/datum/om/registry/proc/build_slot_holders()
+	var/list/order_serial = list()
+	for(var/datum/om/relation/R as anything in relations)
+		if(!istype(R, /datum/om/relation/slot))
+			continue
+		var/datum/om/relation/slot/S = R
+		if(!S.holder)
+			continue
+		var/list/holders = islist(S.holder) ? S.holder : list(S.holder)
+		for(var/h in holders)
+			var/list/group = slot_groups_by_holder[h]
+			if(!group)
+				group = list()
+				slot_groups_by_holder[h] = group
+				slot_holder_types += h
+			group += S
+			order_serial[S] = length(order_serial) + 1
+	// Most-derived holder type first, so slot_group_for()'s first match wins.
+	sortTim(slot_holder_types, GLOBAL_PROC_REF(cmp_slot_holder_type_derived))
+	for(var/h in slot_groups_by_holder)
+		var/list/group = slot_groups_by_holder[h]
+		sortTim(group, /proc/cmp_slot_decl_order)
+
+/proc/cmp_slot_holder_type_derived(a, b)
+	if(a == b)
+		return 0
+	if(ispath(a, b))
+		return -1 // a is a subtype of b: a is more derived, sorts first
+	if(ispath(b, a))
+		return 1
+	return 0
+
+/proc/cmp_slot_decl_order(datum/om/relation/slot/a, datum/om/relation/slot/b)
+	if(a.order != b.order)
+		return a.order - b.order
+	return a.id - b.id
+
+/// The slot decls declared for holder type (or key) `key`, or null: the group
+/// of the most-derived declared holder type that `key` is a subtype of (or
+/// equal to). Null when nothing was declared for it.
+/datum/om/registry/proc/slot_group_for(key)
+	for(var/h in slot_holder_types)
+		if(key == h || ispath(key, h))
+			return slot_groups_by_holder[h]
+	return null
 
 /// Returns a new list: a's entries, then b's (b wins). Neither is modified.
 /proc/om_merge_assoc(list/a, list/b)

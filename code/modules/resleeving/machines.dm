@@ -340,14 +340,11 @@
 /obj/machinery/transhuman/resleever/Destroy()
 	. = ..()
 
-/obj/machinery/transhuman/resleever/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/occupant/resleever, /datum/slot_def/machine_internals)
-	return types
-
 /// Sealed occupant slot (C8a, containment.md §10): the sleever's own field is
 /// the occupant's environment, same as before the ledger tracked it.
-/datum/slot_def/occupant/resleever
-	id = OCCUPANT_SLOT_RESLEEVER
+/datum/om/relation/slot/occupant/resleever
+	holder = /obj/machinery/transhuman/resleever
+	slot_id = OCCUPANT_SLOT_RESLEEVER
 	name = "resleever"
 
 /obj/machinery/transhuman/resleever/proc/set_occupant(mob/living/carbon/human/H)

@@ -140,15 +140,12 @@
 	var/list/holds = list(/obj/item/stack/material)
 	return list(HOLD_ONLY(holds))
 
-/obj/item/storage/bag/sheetsnatcher/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/storage/sheets)
-	return types
-
 /// Sheets only, counted by the sheet rather than by size or slot.
-/datum/slot_def/storage/sheets
+/datum/om/relation/slot/storage/sheets
+	holder = /obj/item/storage/bag/sheetsnatcher
 	capacity_model = SLOT_CAPACITY_NONE
 
-/datum/slot_def/storage/sheets/refusal(obj/item/storage/bag/sheetsnatcher/holder, atom/movable/thing, mob/actor)
+/datum/om/relation/slot/storage/sheets/refusal(obj/item/storage/bag/sheetsnatcher/holder, atom/movable/thing, mob/actor)
 	if(!istype(thing, /obj/item/stack/material))
 		return "it only takes sheets"
 	. = dq_constraint_refusal(holder, CONSTRAINT_HOLD, thing, actor)

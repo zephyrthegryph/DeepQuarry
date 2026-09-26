@@ -508,16 +508,19 @@
 /proc/om_type_has_decl(path)
 	return om_registry().decl_typecache[path]
 
-/// Ledger: `thing` entered one of `holder`'s slots.
-/proc/om_slot_entered(atom/holder, atom/movable/thing, datum/slot_def/def)
+/// Ledger: `thing` entered one of `holder`'s slots. A slot is itself a
+/// relation (thing = source, holder = target): entering one links it, so it
+/// gets the relation's declared view fields, `changes` channels and
+/// contributes/grants for free, on top of the ledger's own bookkeeping.
+/proc/om_slot_entered(atom/holder, atom/movable/thing, datum/om/relation/slot/def)
 	if(holder.om_listen & CHANGE_CONTENTS)
 		om_dispatch_change(holder, CHANGE_CONTENTS)
-	if(def?.om_relation)
-		om_link(thing, holder, def.om_relation)
+	if(def)
+		om_link(thing, holder, def.type)
 
 /// Ledger: `thing` left one of `holder`'s slots.
-/proc/om_slot_left(atom/holder, atom/movable/thing, datum/slot_def/def)
-	if(def?.om_relation && thing.om_rec)
-		om_unlink(thing, holder, def.om_relation)
+/proc/om_slot_left(atom/holder, atom/movable/thing, datum/om/relation/slot/def)
+	if(def && thing.om_rec)
+		om_unlink(thing, holder, def.type)
 	if(holder.om_listen & CHANGE_CONTENTS)
 		om_dispatch_change(holder, CHANGE_CONTENTS)

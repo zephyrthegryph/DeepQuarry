@@ -51,10 +51,6 @@
 // Inserted items whose state serializes and matches the record's fold into
 // its count; items with state of their own stay real in the stock slot.
 // Deconstruction spills everything, latent copies made real.
-/obj/machinery/smartfridge/slot_def_types()
-	var/static/list/types = list(/datum/slot_def/machine_internals, /datum/slot_def/stock)
-	return types
-
 /obj/machinery/smartfridge/stock_records()
 	return item_records
 

@@ -256,15 +256,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 // carry the move through the ledger so paths, drop policy and the future body
 // host interface (C8b) see them; nothing here changes what a hit does today
 // (/obj/mecha/receive_damage doesn't call propagate_damage).
-/obj/mecha/slot_def_types()
-	var/static/list/types = list(
-		/datum/slot_def/occupant/mecha_pilot,
-		/datum/slot_def/mecha_equipment_hardpoint,
-		/datum/slot_def/mecha_cargo,
-		/datum/slot_def/machine_internals, // component parts, cell, internal tank -- Destroy() owns them
-	)
-	return types
-
 /// Sealed: the cabin is the pilot's environment (cabin_air, life support),
 /// same as before the ledger tracked the move.
 ///
@@ -278,8 +269,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /// the slot already empty and silently skip all of that cleanup. Turning
 /// this into a proper TRANSFER(eject_to_turf) belongs with migrating that
 /// cleanup into an on_unslotted() hook (J6) -- domain work, not this pass.
-/datum/slot_def/occupant/mecha_pilot
-	id = MECHA_SLOT_PILOT
+/datum/om/relation/slot/occupant/mecha_pilot
+	holder = /obj/mecha
+	slot_id = MECHA_SLOT_PILOT
 	name = "pilot"
 	drop_policy = SLOT_DROP_HOLDER
 
@@ -293,14 +285,15 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /// forceMoves unconditionally), so resolving this slot's own move first, in
 /// phase 3, is a safe no-op from that loop's point of view -- same
 /// destination either way, so the second move it makes is idempotent.
-/datum/slot_def/mecha_equipment_hardpoint
-	id = MECHA_SLOT_EQUIPMENT
+/datum/om/relation/slot/mecha_equipment_hardpoint
+	holder = /obj/mecha
+	slot_id = MECHA_SLOT_EQUIPMENT
 	name = "hardpoint"
 	exposure = SLOT_EXPOSURE_EXTERNAL
 	capacity_model = SLOT_CAPACITY_NONE
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/slot_def/mecha_equipment_hardpoint/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/om/relation/slot/mecha_equipment_hardpoint/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
 /// Internal: the cargo compartment. Capacity stays with cargo_capacity.
@@ -308,14 +301,15 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /// Destroy()'s own cargo loop forceMoves to get_turf(src) unconditionally,
 /// so this slot resolving to the same turf first is a harmless no-op second
 /// move from that loop's point of view.
-/datum/slot_def/mecha_cargo
-	id = MECHA_SLOT_CARGO
+/datum/om/relation/slot/mecha_cargo
+	holder = /obj/mecha
+	slot_id = MECHA_SLOT_CARGO
 	name = "cargo"
 	exposure = SLOT_EXPOSURE_INTERNAL
 	capacity_model = SLOT_CAPACITY_NONE
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/slot_def/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/om/relation/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
 /obj/mecha/Destroy()

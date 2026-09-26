@@ -193,7 +193,7 @@
 	// The mob's slot list says whether it has the slot; the slot's definition
 	// (its body part, then its equip_slot predicate) whether it takes the item.
 	var/datum/ledger/L = dq_ledger(M)
-	var/datum/slot_def/def = L?.def_by_id(id)
+	var/datum/om/relation/slot/def = L?.def_by_id(id)
 	if(!def)
 		return ishuman(M) ? "you have nowhere to wear it" : "you can't wear things"
 	. = def.refusal(M, I, M)

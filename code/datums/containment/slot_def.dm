@@ -1,15 +1,38 @@
-// Slot definitions (doc/rewrite/containment.md §3).
+// Slot definitions (doc/rewrite/containment.md §3, object_model_core.md).
 //
-// A slot definition is a shared singleton, declared per holder type by
-// overriding /atom/proc/slot_def_types(). It says what the slot accepts (a P2
-// predicate, evaluated with the inserted thing as PRED_TARGET and the mover as
-// PRED_ACTOR), how much it holds, and what the base Destroy() does with its
-// contents. The ledger (ledger.dm) keeps each holder's per-instance state.
+// A slot is a relation (/datum/om/relation/slot) that also owns loc: linking a
+// thing into a slot (a ledger move) links it to the holder by this same
+// relation, so a slot gets everything an ordinary relation gets for free --
+// declared view fields, `changes` channels on link/unlink, on_link/on_unlink
+// for side effects, contributes/grants -- on top of what only a container
+// needs: where the thing physically is, capacity, exposure and propagation.
+//
+// A slot decl is a shared singleton, subtyping /datum/om/relation/slot and
+// declaring `holder` (a holder type, or list of them) instead of overriding
+// /atom/proc/slot_def_types(). The registry (registry.dm) builds each holder
+// type's slot list once, from every decl whose `holder` matches. It says what
+// the slot accepts (a P2 predicate, evaluated with the inserted thing as
+// PRED_TARGET and the mover as PRED_ACTOR), how much it holds, and what the
+// base Destroy() does with its contents. The ledger (ledger.dm) keeps each
+// holder's per-instance state.
 
-/datum/slot_def
-	/// CONTAINER_SLOT_* id, unique among one holder's slots.
-	var/id
-	var/name = "contents"
+/datum/om/relation/slot
+	abstract_type = /datum/om/relation/slot
+	/// CONTAINER_SLOT_* id, unique among one holder's slots. Distinct from the
+	/// relation base's own numeric `id` (the registry's index into `relations`).
+	var/slot_id
+	name = "contents"
+	/// The holder type this slot belongs to, or a list of holder types. The
+	/// registry groups every decl sharing an entry here into one holder's slot
+	/// list (dq_slot_defs_for()), replacing the old slot_def_types() override:
+	/// a holder's own key (slot_holder_key(), by default its type) is matched
+	/// against every declared holder type, most-derived match wins, same as a
+	/// proc override would.
+	var/holder
+	/// Tie-break among a holder's slots when order matters (worn-protection
+	/// layering caches, state serialization numbering): lower first. Ties fall
+	/// back to registration order. Most holders don't need to set this.
+	var/order = 0
 	/// SLOT_EXPOSURE_*.
 	var/exposure = SLOT_EXPOSURE_INTERNAL
 	/// SLOT_CAPACITY_*.
@@ -38,10 +61,6 @@
 	/// registered and has a loc. Body plans declare this on the mind slot
 	/// (DQ Medical, O2). Nothing else may set it.
 	var/is_mind_slot = FALSE
-	/// Object-model relation (/datum/om/relation) linking a thing in this
-	/// slot to the holder while it is here (thing = source, holder = target).
-	/// Its contributes/grants rows are how a slot declares what occupying it gives.
-	var/om_relation
 
 	// ---- Propagation (containment.md §3.2, C2; paths.dm walks these) ----
 	/// SLOT_LAYER_*: order among this holder's layered slots, higher is further
@@ -67,7 +86,7 @@
 /// it has slots, else null (the caller falls back to spill). Override for
 /// anything else: occupant ejection to a turf, mind transfer to a ghost or
 /// MMI, a bellied mob to the predator's turf.
-/datum/slot_def/proc/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/om/relation/slot/proc/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	if(holder.loc && dq_slot_defs_for(holder.loc))
 		return holder.loc
 	return null
@@ -76,57 +95,59 @@
 /// whose ledger gets a latent entry for each thing dropped from this slot,
 /// instead of the thing staying real. Null lets the entry go (debris/wreckage
 /// declares this once it exists; until then TO_LATENT behaves like DELETE).
-/datum/slot_def/proc/latent_successor(atom/holder)
+/datum/om/relation/slot/proc/latent_successor(atom/holder)
 	return null
 
 /// SLOT_DROP_KEEP_WITH's destination slot id on replace_with()'s successor
 /// (doc/rewrite/lifecycle.md §3 and §5). Null names the successor's default
 /// slot.
-/datum/slot_def/proc/keep_with_slot()
+/datum/om/relation/slot/proc/keep_with_slot()
 	return null
 
-/// The singleton for a slot definition type.
+/// The singleton for a slot decl type: the registry's relation instance.
 /proc/dq_slot_def(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(!.)
-		var/datum/slot_def/def = new path
-		if(!def.id)
-			CRASH("slot definition [path] has no id")
-		cache[path] = def
-		. = def
+	RETURN_TYPE(/datum/om/relation/slot)
+	var/datum/om/relation/R = om_registry().relation(path)
+	if(!istype(R, /datum/om/relation/slot))
+		CRASH("[path] is not a /datum/om/relation/slot")
+	return R
 
-/// The slot definitions a holder type declares, in order, or null. Cached per type.
+/// The slot decls a holder declares, in order, or null. Cached per key
+/// (slot_holder_key()). Resolved from the registry's holder groups (built at
+/// boot by /datum/om/registry/proc/build_slot_holders(), registry.dm), unless
+/// the holder overrides slot_relation_overrides() to decide dynamically.
 /proc/dq_slot_defs_for(atom/holder)
 	var/static/list/cache = list()
-	var/key = holder.slot_def_key()
+	var/key = holder.slot_holder_key()
 	. = cache[key]
 	if(isnull(.))
-		var/list/defs = list()
-		for(var/path in holder.slot_def_types())
-			defs += dq_slot_def(path)
+		var/list/defs = holder.slot_relation_overrides()
+		if(isnull(defs))
+			defs = om_registry().slot_group_for(key)
 		. = length(defs) ? defs : FALSE
 		cache[key] = .
 	return . || null
 
-/// Override on a holder type to declare its slots: a list of /datum/slot_def
-/// paths. Return a proc-local static list. The result must depend only on
-/// slot_def_key(), which is the holder's type unless overridden.
-/atom/proc/slot_def_types()
-	return null
-
-/// What a holder's slot set is cached by. Holders whose slots depend on more
-/// than their type (a mob's body plan) return a key covering that too, e.g.
-/// "[type]|[body.plan.type]"; slot_def_types() must then return the set for it.
-/atom/proc/slot_def_key()
+/// What a holder's slot set is cached by. A holder whose slots depend on more
+/// than its own type (a mob's body plan) overrides this to return that type
+/// instead -- the registry's holder groups (build_slot_holders()) are matched
+/// against whatever this returns, not necessarily the holder's own type.
+/atom/proc/slot_holder_key()
 	return type
 
+/// Escape hatch for a holder whose slot set can't be expressed as a static
+/// per-type declaration (a decision that depends on more than the holder's
+/// type or body plan, e.g. an instance flag). Returning null (the default)
+/// means "use the registry's declared groups, keyed by slot_holder_key()".
+/atom/proc/slot_relation_overrides()
+	return null
+
 /// The limit for this holder. Override for per-instance capacities.
-/datum/slot_def/proc/capacity_for(atom/holder)
+/datum/om/relation/slot/proc/capacity_for(atom/holder)
 	return capacity
 
 /// What `thing` costs in this slot, in the capacity model's units.
-/datum/slot_def/proc/cost(atom/holder, atom/movable/thing)
+/datum/om/relation/slot/proc/cost(atom/holder, atom/movable/thing)
 	switch(capacity_model)
 		if(SLOT_CAPACITY_NONE)
 			return 0
@@ -139,7 +160,7 @@
 	return 1
 
 /// Why `thing` can't go in this slot on `holder`, not counting capacity, or null.
-/datum/slot_def/proc/refusal(atom/holder, atom/movable/thing, mob/actor)
+/datum/om/relation/slot/proc/refusal(atom/holder, atom/movable/thing, mob/actor)
 	if(accepts)
 		var/datum/predicate/P = dq_predicate(accepts)
 		. = P.why_not(actor, thing, null)
@@ -150,29 +171,29 @@
 	return null
 
 /// Why `thing` can't leave this slot on `holder`, or null. Default: it can.
-/datum/slot_def/proc/removal_refusal(atom/holder, atom/movable/thing, mob/actor)
+/datum/om/relation/slot/proc/removal_refusal(atom/holder, atom/movable/thing, mob/actor)
 	return null
 
 /// Share of damage kind `kind` passing into this slot, before armour.
-/datum/slot_def/proc/damage_share(kind)
+/datum/om/relation/slot/proc/damage_share(kind)
 	var/list/shares = damage_transmission || dq_path_default_damage(exposure)
 	return shares[kind]
 
 /// Whether gas from the holder's surroundings reaches this slot.
-/datum/slot_def/proc/passes_gas()
+/datum/om/relation/slot/proc/passes_gas()
 	return exposure != SLOT_EXPOSURE_SEALED
 
 /// Whether this slot is inside the holder's shell (the holder's own
 /// insulation and armour cover it).
-/datum/slot_def/proc/is_inside()
+/datum/om/relation/slot/proc/is_inside()
 	return exposure != SLOT_EXPOSURE_EXTERNAL
 
 /// Capacity used by latent contents that have no atom (stock counts, C9).
-/datum/slot_def/proc/latent_used(atom/holder)
+/datum/om/relation/slot/proc/latent_used(atom/holder)
 	return 0
 
 /// Applies the drop policy to latent contents when the holder is destroyed:
 /// materialize them at `drop` or let them go. The ledger then applies the
 /// policy to the real contents. Default: there are none.
-/datum/slot_def/proc/drop_latent(atom/holder, atom/drop)
+/datum/om/relation/slot/proc/drop_latent(atom/holder, atom/drop)
 	return
