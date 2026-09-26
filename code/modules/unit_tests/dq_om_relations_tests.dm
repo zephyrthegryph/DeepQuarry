@@ -478,3 +478,41 @@
 	TEST_ASSERT_EQUAL(ORBIT_TARGET(orbiter), center, "setup: re-orbit should succeed")
 	qdel(center)
 	TEST_ASSERT_NULL(ORBIT_TARGET(orbiter), "deleting the center should end the orbit")
+
+// ---------------------------------------------------------------- leash
+
+/// A leash is two edges (pet -> leash, leash -> holder). Deleting the holder
+/// drops the holder edge, which frees the pet as well.
+/datum/unit_test/dq_om_relation_leash_breaks_with_holder
+
+/datum/unit_test/dq_om_relation_leash_breaks_with_holder/Run()
+	var/mob/living/carbon/human/pet = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/master = allocate(/mob/living/carbon/human)
+	var/obj/item/leash/L = allocate(/obj/item/leash)
+	TEST_ASSERT(istype(om_link(pet, L, /datum/om/relation/leashed_to), /datum/om/edge), "setup: the pet edge should link")
+	TEST_ASSERT(istype(om_link(L, master, /datum/om/relation/leash_held_by), /datum/om/edge), "setup: the holder edge should link")
+	TEST_ASSERT_EQUAL(LEASH_PET(L), pet, "LEASH_PET should be the pet")
+	TEST_ASSERT_EQUAL(LEASH_MASTER(L), master, "LEASH_MASTER should be the holder")
+	TEST_ASSERT_EQUAL(LEASH_OF(pet), L, "LEASH_OF(pet) should be the leash")
+	TEST_ASSERT(pet.alerts && pet.alerts["leashed"], "the pet should get the leashed alert")
+	qdel(master)
+	TEST_ASSERT_NULL(LEASH_MASTER(L), "deleting the holder should drop the holder edge")
+	TEST_ASSERT_NULL(LEASH_OF(pet), "dropping the holder edge should free the pet")
+	TEST_ASSERT(!(pet.alerts && pet.alerts["leashed"]), "the freed pet should lose the leashed alert")
+
+// ---------------------------------------------------------------- tethered items
+
+/// A tethered-item host links its handheld on creation, remakes it if the
+/// handheld is deleted, and takes it down with it when deleted.
+/datum/unit_test/dq_om_relation_tether
+
+/datum/unit_test/dq_om_relation_tether/Run()
+	var/obj/item/defib_kit/kit = allocate(/obj/item/defib_kit)
+	var/obj/item/paddles = TETHERED_HANDHELD(kit)
+	TEST_ASSERT_NOTNULL(paddles, "the kit should have tethered paddles")
+	TEST_ASSERT_EQUAL(TETHER_HOST(paddles), kit, "TETHER_HOST(paddles) should be the kit")
+	qdel(paddles)
+	var/obj/item/remade = TETHERED_HANDHELD(kit)
+	TEST_ASSERT(remade && remade != paddles, "deleting the paddles should remake them")
+	qdel(kit)
+	TEST_ASSERT(QDELETED(remade), "deleting the kit should delete its paddles")

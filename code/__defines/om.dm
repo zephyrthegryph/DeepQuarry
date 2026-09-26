@@ -348,3 +348,13 @@
 #define ORBITERS(A) OM_REL_SOURCES(A, /datum/om/relation/orbiting)
 /// The mob holding grab item `G` (the grab lives in the assailant's hand), or null.
 #define GRAB_ASSAILANT(G) ((G) && ishuman((G).loc) ? (G).loc : null)
+/// The mob leashed to leash item `L`, or null.
+#define LEASH_PET(L) OM_REL_SOURCE(L, /datum/om/relation/leashed_to)
+/// The mob holding leash item `L`, or null.
+#define LEASH_MASTER(L) OM_REL_TARGET(L, /datum/om/relation/leash_held_by)
+/// The leash item `M` is on, or null.
+#define LEASH_OF(M) OM_REL_TARGET(M, /datum/om/relation/leashed_to)
+/// The handheld item tethered to host item `H`, or null.
+#define TETHERED_HANDHELD(H) OM_REL_SOURCE(H, /datum/om/relation/tethered_to)
+/// The host item handheld `I` is tethered to, or null.
+#define TETHER_HOST(I) OM_REL_TARGET(I, /datum/om/relation/tethered_to)

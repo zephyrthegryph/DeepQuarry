@@ -105,7 +105,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 		if((O.item_flags & DROPDEL) || (O.item_flags & NOSTRIP))
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
 			return TRUE
-		if(O.tethered_host_item)
+		if(TETHER_HOST(O))
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
 			return TRUE
 		if(LAZYLEN(O.contents))

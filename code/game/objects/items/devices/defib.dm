@@ -602,19 +602,19 @@
 	Shockpaddles that are linked to a base unit
 */
 /obj/item/shockpaddles/linked/check_charge(charge_amt)
-	var/obj/item/defib_kit/base_unit = tethered_host_item
+	var/obj/item/defib_kit/base_unit = TETHER_HOST(src)
 	return (base_unit.bcell && base_unit.bcell.check_charge(charge_amt))
 
 /obj/item/shockpaddles/linked/get_power_cell()
-	var/obj/item/defib_kit/base_unit = tethered_host_item
+	var/obj/item/defib_kit/base_unit = TETHER_HOST(src)
 	return base_unit?.bcell
 
 /obj/item/shockpaddles/linked/checked_use(charge_amt)
-	var/obj/item/defib_kit/base_unit = tethered_host_item
+	var/obj/item/defib_kit/base_unit = TETHER_HOST(src)
 	return (base_unit.bcell && base_unit.bcell.checked_use(charge_amt))
 
 /obj/item/shockpaddles/linked/make_announcement(message, msg_class)
-	var/obj/item/defib_kit/base_unit = tethered_host_item
+	var/obj/item/defib_kit/base_unit = TETHER_HOST(src)
 	base_unit.audible_message(span_infoplain(span_bold("\The [base_unit]") + " [message]"), span_info("\The [base_unit] vibrates slightly."))
 
 /*
