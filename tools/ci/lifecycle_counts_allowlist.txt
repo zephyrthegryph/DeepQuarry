@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1224 in 981 files. qdel total: 2971 in 1177 files.
+# Destroy total: 1219 in 978 files. qdel total: 2971 in 1177 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -645,7 +645,6 @@ code/modules/maint_recycler/code/maint_recycler.dm 1
 code/modules/maint_recycler/code/maint_vendor.dm 1
 code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm 1
 code/modules/maps/reader.dm 1
-code/modules/maps/verify.dm 1
 code/modules/material_science/material_batch.dm 1
 code/modules/material_science/material_diagnostics.dm 1
 code/modules/material_science/material_machines.dm 1
@@ -675,7 +674,6 @@ code/modules/mob/dead/observer/observer.dm 1
 code/modules/mob/freelook/ai/eye.dm 1
 code/modules/mob/freelook/ai/update_triggers.dm 1
 code/modules/mob/freelook/update_triggers.dm 3
-code/modules/mob/freelook/visualnet.dm 1
 code/modules/mob/holder.dm 1
 code/modules/mob/language/language_panel.dm 1
 code/modules/mob/living/bot/bot.dm 1
@@ -762,7 +760,7 @@ code/modules/modular_computers/NTNet/emails/email_account.dm 1
 code/modules/modular_computers/computers/modular_computer/core.dm 1
 code/modules/modular_computers/file_system/computer_file.dm 1
 code/modules/modular_computers/file_system/program.dm 1
-code/modules/modular_computers/file_system/programs/command/comm.dm 2
+code/modules/modular_computers/file_system/programs/command/comm.dm 1
 code/modules/modular_computers/hardware/_hardware.dm 1
 code/modules/modular_computers/hardware/battery_module.dm 1
 code/modules/modular_computers/hardware/card_slot.dm 1
@@ -798,7 +796,7 @@ code/modules/overmap/events/overmap_event.dm 1
 code/modules/overmap/overmap_object.dm 1
 code/modules/overmap/overmap_shuttle.dm 1
 code/modules/overmap/sectors.dm 1
-code/modules/overmap/ships/computers/helm.dm 2
+code/modules/overmap/ships/computers/helm.dm 1
 code/modules/overmap/ships/computers/sensors.dm 1
 code/modules/overmap/ships/computers/ship.dm 2
 code/modules/overmap/ships/engines/engine.dm 1
@@ -905,7 +903,6 @@ code/modules/refinery/core/industrial_reagent_machines.dm 1
 code/modules/refinery/core/industrial_reagent_reactor.dm 1
 code/modules/research/message_server.dm 2
 code/modules/research/tg/designs.dm 1
-code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm 1
 code/modules/research/tg/experisci/experiment/types/physical_experiment.dm 1
 code/modules/research/tg/machinery/_production.dm 1
 code/modules/research/tg/machinery/destructive_analyzer.dm 1

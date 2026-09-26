@@ -3,7 +3,7 @@
 		return
 	var/admincount = GLOB.admins.len
 	var/playercount = 0
-	for(var/mob/M in GLOB.player_list)
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)
 			playercount += 1
 	if(!SSdbcore.IsConnected())
