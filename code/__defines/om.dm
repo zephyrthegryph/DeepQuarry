@@ -385,6 +385,7 @@
 #define PERIODIC_SLOW /datum/om/pipeline/periodic/slow
 #define PERIODIC_SECOND /datum/om/pipeline/periodic/second
 #define PERIODIC_FAST /datum/om/pipeline/periodic/fast
+#define PERIODIC_PLANTS /datum/om/pipeline/periodic/plants
 #define PERIODIC_PROJECTILES /datum/om/pipeline/periodic/continuous/projectiles
 #define PERIODIC_INSTRUMENTS /datum/om/pipeline/periodic/continuous/instruments
 #define PERIODIC_STATUS_EFFECTS /datum/om/pipeline/periodic/continuous/status_effects

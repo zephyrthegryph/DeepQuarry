@@ -83,6 +83,13 @@
 	delta = 10
 	stages = list(/datum/om/stage/periodic/second)
 
+/// Spreading plants (was SSplants' loop): one growth step every 7.5 s while a vine can grow.
+/datum/om/pipeline/periodic/plants
+	name = "periodic (plants, 7.5 s)"
+	every = 7.5 SECONDS
+	delta = 75
+	stages = list(/datum/om/stage/periodic/plants)
+
 /datum/om/pipeline/periodic/fast
 	name = "periodic (0.2 s)"
 	every = 2
@@ -151,6 +158,9 @@
 
 /datum/om/stage/periodic/fast
 	pipeline = /datum/om/pipeline/periodic/fast
+
+/datum/om/stage/periodic/plants
+	pipeline = /datum/om/pipeline/periodic/plants
 
 /datum/om/stage/periodic/projectiles
 	pipeline = /datum/om/pipeline/periodic/continuous/projectiles
