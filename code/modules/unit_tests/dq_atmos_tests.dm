@@ -4248,10 +4248,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate/Run()
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for idle machinery hibernation test")
+	// Pump and scrubber run the OM machine pipeline too (machine_pipeline.dm), not process():
+	// a frame stands in for the old direct .process() call, and .parked for PROCESS_KILL.
 	var/obj/machinery/portable_atmospherics/powered/pump/P = new(T)
-	TEST_ASSERT_EQUAL(P.process(), PROCESS_KILL, "powered-off portable pump remained scheduled")
+	var/datum/om/frame/pump_state = om_pipe_state(P, /datum/om/pipeline/machine, TRUE)
+	om_run_frame_now(P, /datum/om/pipeline/machine)
+	TEST_ASSERT(pump_state.parked, "powered-off portable pump remained scheduled")
 	var/obj/machinery/portable_atmospherics/powered/scrubber/S = new(T)
-	TEST_ASSERT_EQUAL(S.process(), PROCESS_KILL, "powered-off portable scrubber remained scheduled")
+	var/datum/om/frame/scrubber_state = om_pipe_state(S, /datum/om/pipeline/machine, TRUE)
+	om_run_frame_now(S, /datum/om/pipeline/machine)
+	TEST_ASSERT(scrubber_state.parked, "powered-off portable scrubber remained scheduled")
 	var/obj/machinery/atmospherics/portables_connector/C = new(T)
 	C.on = FALSE
 	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "disconnected portable connector remained scheduled")

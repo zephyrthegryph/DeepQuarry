@@ -12,6 +12,7 @@
 
 	var/pressuremin = 0
 	var/pressuremax = 39.45 * ONE_ATMOSPHERE //The safest level you can get WITHOUT the tank exploding.
+	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 
 	volume = 1000
 
@@ -61,11 +62,19 @@
 
 	target_pressure = rand(0,1300)
 	if(on)
-		START_MACHINE_PROCESSING(src)
+		if(polls)
+			START_MACHINE_PROCESSING(src)
+		else
+			om_changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
-/obj/machinery/portable_atmospherics/powered/pump/process()
-	..()
+// Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
+// section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
+// process() roster. The body below is unchanged, just relocated to
+// /datum/om/stage/machine/power/portable_pump/perform(); it never hibernates on its own (it runs
+// every tick while `on`, exactly as process() did), so idle() there is simply `!on`.
+/obj/machinery/portable_atmospherics/powered/pump/proc/pump_step()
+	react_or_update()
 	if(!on)
 		return PROCESS_KILL
 	var/power_draw = -1
@@ -172,7 +181,10 @@
 		if("power")
 			on = !on
 			if(on)
-				START_MACHINE_PROCESSING(src)
+				if(polls)
+					START_MACHINE_PROCESSING(src)
+				else
+					om_changed(src, CHANGE_MACHINE_SETTINGS)
 			. = 1
 		if("direction")
 			direction_out = !direction_out
@@ -208,6 +220,11 @@
 	icon_state = "siphon:0"
 	anchored = TRUE
 	volume = 500000
+	// NOT migrated: keeps its own real process() override below (checks anchored/power every
+	// tick regardless of `on`, unlike the base pump). polls = TRUE here overrides the base
+	// pump's polls = FALSE so it isn't silently cascaded onto the OM pipeline the way
+	// portable_atmospherics' other subtypes almost were (see the NOTE in portable_atmospherics.dm).
+	polls = TRUE
 
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 50		//internal circuitry, friction losses and stuff

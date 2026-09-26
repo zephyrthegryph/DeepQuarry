@@ -19,6 +19,8 @@
 		/obj/machinery/firealarm,
 		/obj/machinery/alarm,
 		/obj/machinery/portable_atmospherics/canister,
+		/obj/machinery/portable_atmospherics/powered/pump,
+		/obj/machinery/portable_atmospherics/powered/scrubber,
 	)
 	behaviours = list(/datum/om/pipeline/machine)
 
@@ -328,3 +330,35 @@
 
 /datum/om/stage/machine/power/canister/idle(obj/machinery/portable_atmospherics/canister/M)
 	return M.om_settled
+
+// ---------------------------------------------------------------- portable pumps and scrubbers
+
+/// Neither device ever hibernates on its own: both keep running every tick while `on`, exactly
+/// as their old process() did (no "target pressure reached" event exists), and idle() is simply
+/// `!on`. `huge` subtypes are NOT migrated (they keep their own real process() override that
+/// checks anchored/power every tick regardless of `on`) and set polls = TRUE back to opt out of
+/// this pipeline's parent-type registration; they still get a (harmless, permanently-idle)
+/// generic /datum/om/stage/machine/power frame alongside their unaffected SSmachines polling.
+/datum/om/stage/machine/power/portable_pump
+	of = /obj/machinery/portable_atmospherics/powered/pump
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
+	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
+
+/datum/om/stage/machine/power/portable_pump/perform(obj/machinery/portable_atmospherics/powered/pump/M, datum/om/frame/machine/F)
+	M.pump_step()
+	return STAGE_IDLE
+
+/datum/om/stage/machine/power/portable_pump/idle(obj/machinery/portable_atmospherics/powered/pump/M)
+	return !M.on
+
+/datum/om/stage/machine/power/portable_scrubber
+	of = /obj/machinery/portable_atmospherics/powered/scrubber
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
+	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
+
+/datum/om/stage/machine/power/portable_scrubber/perform(obj/machinery/portable_atmospherics/powered/scrubber/M, datum/om/frame/machine/F)
+	M.scrubber_step()
+	return STAGE_IDLE
+
+/datum/om/stage/machine/power/portable_scrubber/idle(obj/machinery/portable_atmospherics/powered/scrubber/M)
+	return !M.on
