@@ -389,13 +389,13 @@
 	viewers = viewer_list
 	view_coordinator = coordinator
 	view_coordinator.look(host_mob)
-	LAZYDISTINCTADD(viewers, WEAKREF(host_mob))
+	LAZYDISTINCTADD(viewers, om_handle(host_mob))
 	RegisterSignal(view_coordinator, COMSIG_REMOTE_VIEW_CLEAR, PROC_REF(handle_forced_endview))
 
 /datum/component/remote_view/viewer_managed/Destroy(force)
 	UnregisterSignal(view_coordinator, COMSIG_REMOTE_VIEW_CLEAR)
 	view_coordinator.unlook(host_mob, FALSE)
-	LAZYREMOVE(viewers, WEAKREF(host_mob))
+	LAZYREMOVE(viewers, om_handle(host_mob))
 	view_coordinator = null
 	viewers = null
 	. = ..()

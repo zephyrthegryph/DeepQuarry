@@ -49,7 +49,7 @@ SUBSYSTEM_DEF(pai)
 			continue
 
 		// Create candidate
-		pai_ghosts[REF(ghost)] = WEAKREF(ghost)
+		pai_ghosts[REF(ghost)] = om_handle(ghost)
 
 /datum/controller/subsystem/pai/proc/get_chassis_list()
 	RETURN_TYPE(/list/datum/pai_sprite)
@@ -98,8 +98,8 @@ SUBSYSTEM_DEF(pai)
 	PRIVATE_PROC(TRUE)
 	if(!ghost_ref)
 		return null
-	var/datum/weakref/WF = pai_ghosts[ghost_ref]
-	return WF?.resolve()
+	var/WF = pai_ghosts[ghost_ref]
+	return om_resolve(WF)
 
 /datum/controller/subsystem/pai/proc/get_invite_list_data()
 	RETURN_TYPE(/list)
@@ -137,8 +137,8 @@ SUBSYSTEM_DEF(pai)
 	if(!(ghost_ref in pai_ghosts))
 		return null
 
-	var/datum/weakref/WF = pai_ghosts[ghost_ref]
-	var/mob/observer/ghost = WF?.resolve()
+	var/WF = pai_ghosts[ghost_ref]
+	var/mob/observer/ghost = om_resolve(WF)
 	if(!istype(ghost) || !ghost.client?.prefs)
 		return null
 

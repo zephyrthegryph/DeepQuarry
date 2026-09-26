@@ -23,7 +23,7 @@
 	var/key
 	var/name				//replaces mob/var/original_name
 	var/mob/living/current
-	var/datum/weakref/original_character //replaces /mob/living/original
+	var/original_character //replaces /mob/living/original
 	var/active = 0
 
 	var/memory
@@ -488,7 +488,7 @@
 		mind.key = key
 	else
 		mind = new /datum/mind(key)
-		mind.original_character = WEAKREF(src)
+		mind.original_character = om_handle(src)
 		if(SSticker)
 			SSticker.minds += mind
 		else

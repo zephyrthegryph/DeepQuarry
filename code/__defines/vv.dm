@@ -25,7 +25,6 @@
 #define VV_BITFIELD "Bitfield"
 #define VV_TEXT_LOCATE "Custom Reference Locate"
 #define VV_PROCCALL_RETVAL "Return Value of Proccall"
-#define VV_WEAKREF "Weak Reference Datum"
 
 #define VV_MSG_MARKED "<br>" + span_small(span_red(span_bold("Marked Object")))
 #define VV_MSG_TAGGED(num) "<br>" + span_small(span_red(span_bold("Tagged Datum #[num]")))
@@ -174,7 +173,6 @@
 #define VK_HK_TURN_AI "turn_ai"
 #define VK_HK_TURN_ROBOT "turn_robot"
 
-#define VV_HK_WEAKREF_RESOLVE "weakref_resolve"
 #define VV_HK_DATUM_REFRESH "datumrefresh"
 
 // Flags for debug_variable() that do little things to what we end up rendering

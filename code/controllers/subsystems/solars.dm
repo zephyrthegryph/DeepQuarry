@@ -42,7 +42,7 @@ SUBSYSTEM_DEF(solars)
 
 		// Update the controller and prepare each of the solar array lists it needs
 		SC.update()
-		controller_run[REF(SC)] = WEAKREF(SC)
+		controller_run[REF(SC)] = om_handle(SC)
 		panel_run[REF(SC)] = SC.get_connected_panels().Copy()
 		panel_sum[REF(SC)] = 0
 
@@ -54,10 +54,10 @@ SUBSYSTEM_DEF(solars)
 	////////////////////////////////////////////////////////////////////////////////
 	while(length(controller_run))
 		var/conkey = controller_run[length(controller_run)]
-		var/datum/weakref/conref= controller_run[conkey]
+		var/conref= controller_run[conkey]
 
 		// Check if the controller still exists
-		var/obj/machinery/power/solar_control/SC = conref?.resolve()
+		var/obj/machinery/power/solar_control/SC = om_resolve(conref)
 		if(!SC)
 			controller_run -= conkey
 			if(MC_TICK_CHECK)

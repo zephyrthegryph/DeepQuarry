@@ -3,7 +3,7 @@
 // per rule, whether the condition held at the last look.
 
 /// REF(object) -> /datum/rule_binding. Keyed by text and holding the owner by
-/// weakref, so a binding is no outside reference to its object (collapse).
+/// OM handle, so a binding is no outside reference to its object (collapse).
 GLOBAL_LIST_EMPTY(dq_rule_bindings)
 
 /proc/dq_rule_binding_of(datum/thing)
@@ -77,7 +77,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 		LAZYSET(binding.nodes, property, .)
 
 /datum/rule_binding
-	var/datum/weakref/owner_ref
+	var/owner_ref
 	/// The owner, resolved for this call. Not held between calls.
 	var/tmp/atom/owner
 	var/owner_key
@@ -101,7 +101,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
-	owner_ref = WEAKREF(owner)
+	owner_ref = om_handle(owner)
 	owner_key = REF(owner)
 	src.owner = owner
 	src.rules = rules
@@ -201,7 +201,7 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 
 /// Resolve the owner for this call; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
-	owner = owner_ref?.resolve()
+	owner = om_resolve(owner_ref)
 	if(!owner || QDELETED(owner))
 		owner = null
 		qdel(src)

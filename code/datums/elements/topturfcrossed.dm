@@ -46,9 +46,9 @@
 			our_old_turf = find_new
 
 /// Forwards the Cross() call from the turf to the object registered
-/datum/component/topturfcrossed/proc/handle_turf_entered(datum/source, datum/weakref/WF, oldloc)
+/datum/component/topturfcrossed/proc/handle_turf_entered(datum/source, WF, oldloc)
 	SIGNAL_HANDLER
-	var/atom/movable/crosser = WF?.resolve()
+	var/atom/movable/crosser = om_resolve(WF)
 	if(QDELETED(crosser) || QDELETED(our_owner))
 		return
 	if(isturf(our_owner.loc))

@@ -7,7 +7,7 @@
  */
 /datum/interaction_menu
 	var/client/owner
-	var/datum/weakref/target_ref
+	var/target_ref
 
 /datum/interaction_menu/New(client/owner)
 	src.owner = owner
@@ -28,13 +28,13 @@
 	var/client/player = user.client
 	if(!player.interaction_menu)
 		player.interaction_menu = new(player)
-	player.interaction_menu.target_ref = WEAKREF(target)
+	player.interaction_menu.target_ref = om_handle(target)
 	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
 	player.interaction_menu.tgui_interact(user)
 	return TRUE
 
 /datum/interaction_menu/proc/target()
-	var/atom/target = target_ref?.resolve()
+	var/atom/target = om_resolve(target_ref)
 	return QDELETED(target) ? null : target
 
 /datum/interaction_menu/tgui_state(mob/user)
