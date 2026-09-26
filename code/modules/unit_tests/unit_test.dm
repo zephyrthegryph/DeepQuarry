@@ -157,14 +157,20 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			CRASH("acquire_unit_test_block: every isolated test block is still in use after 60s -- likely a stuck async teardown.")
 		sleep(1)
 
-/// Resets a block to a clean floor (deletes everything spawned on it, restores
-/// default air/temperature on every open turf, drops any walls a test put up)
-/// and returns it to the pool. Waits for the world's own async teardown paths
-/// so a block is never recycled mid-cleanup.
+/// Resets a block to a clean floor and returns it to the pool once the
+/// world's own async teardown paths (expedition teardown_z) are clear, so a
+/// block is never recycled mid-cleanup. Hands the actual wait off to
+/// _release_unit_test_block_async() via INVOKE_ASYNC: /datum/unit_test/Destroy()
+/// (SHOULD_NOT_SLEEP, like every Destroy()) calls this, and must not block on
+/// a teardown that can take real time -- the pool (UNIT_TEST_BLOCK_POOL_SIZE
+/// entries) is exactly the slack that lets a block finish releasing after its
+/// owning test has already been destroyed.
 /proc/release_unit_test_block(datum/unit_test_block/block, datum/unit_test/test)
 	if(!block)
 		return
+	INVOKE_ASYNC(GLOBAL_PROC, PROC_REF(_release_unit_test_block_async), block, test)
 
+/proc/_release_unit_test_block_async(datum/unit_test_block/block, datum/unit_test/test)
 	// Mirror /datum/unit_test/restore_atmos(): don't hand this block's z back
 	// out while expedition teardown (or anything else async) is still touching
 	// turfs on it.
