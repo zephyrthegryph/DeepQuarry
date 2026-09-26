@@ -105,28 +105,29 @@
 #define RUST_PIPE_OP_REMOVE_TO_MIXTURE 7
 
 // M2 (doc/rewrite/simulation.md §5): pipe-network device edges. Opcodes match
-// verdigris/domains/gas/src/lib.rs's pipenet_device_batch.
+// code/ATMOSPHERICS/rust_pipenets.dm's rust_device_operation.
 #define RUST_DEVICE_OP_SET 1
 #define RUST_DEVICE_OP_REMOVE 2
 #define RUST_DEVICE_OP_SET_TURF 3
+#define RUST_DEVICE_OP_FLOW 4
+#define RUST_DEVICE_OP_VALVE 5
 
-// Flow laws, matching device::DeviceParams::decode's `kind` tag.
-#define RUST_DEVICE_LAW_PUMP 1
-#define RUST_DEVICE_LAW_VOLUME_PUMP 2
-#define RUST_DEVICE_LAW_PASSIVE_GATE 3
-#define RUST_DEVICE_LAW_VALVE 4
-#define RUST_DEVICE_LAW_VENT_PUMP 5
-#define RUST_DEVICE_LAW_SCRUBBER 6
-#define RUST_DEVICE_LAW_INJECTOR 7
-#define RUST_DEVICE_LAW_FILTER 8
-#define RUST_DEVICE_LAW_HEAT_EXCHANGER 9
-#define RUST_DEVICE_LAW_PRESSURE_REGULATOR 10
+// A DeviceFlow row's `rate_kind` (verdigris/domains/gas/src/kind/device.rs's
+// rate_kind mod), rust_architecture.md §8.5 step 6's pipe-device redesign.
+#define RUST_FLOW_VOLUME 0
+#define RUST_FLOW_POWER 1
+#define RUST_FLOW_UNLIMITED 2
 
-// device::Regulate's `mode` tag (passive gate).
-#define RUST_REGULATE_INPUT 0
-#define RUST_REGULATE_OUTPUT 1
-#define RUST_REGULATE_EQUALIZE 2
+// A DeviceFlow row's `direction` (device.rs's direction mod).
+#define RUST_DIR_FORCED 0
+#define RUST_DIR_DOWNHILL 1
 
-// device::VentMode's `mode` tag (vent pump).
-#define RUST_VENT_MODE_RELEASE 0
-#define RUST_VENT_MODE_SIPHON 1
+// A DeviceFlow row's `stop_side` (device.rs's stop_side mod).
+#define RUST_SIDE_A 0
+#define RUST_SIDE_B 1
+
+// A DeviceFlow row's `stop_cmp` (device.rs's stop_cmp mod). NONE: the flow
+// has no stop target (stop_side/stop_kpa are ignored).
+#define RUST_STOP_NONE 0
+#define RUST_STOP_AT_LEAST 1
+#define RUST_STOP_AT_MOST 2

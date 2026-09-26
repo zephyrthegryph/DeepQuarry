@@ -24,7 +24,7 @@ use vg_core::units::Seconds;
 use vg_core::vg;
 
 use crate::cell::{NO_REACTION, TurfGas};
-use crate::device::{self, DeviceParams, StepReport};
+use crate::device::{self, Flow, StepReport};
 use crate::gate;
 use crate::pipes::PipeGas;
 
@@ -42,7 +42,7 @@ const PRESSURE_EVENT_SCALE: f32 = 0.125;
 /// by value.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DeviceReads {
-	pub params: DeviceParams,
+	pub flow: Flow,
 	pub vol_a: f64,
 	pub vol_b: f64,
 }
@@ -70,7 +70,7 @@ impl Law for FlowLaw {
 
 	fn step(ctx: &mut LawCtx<'_, DeviceReads, DeviceSides>, dt: Seconds) -> Settle {
 		let DeviceSides { a, b } = ctx.writes;
-		let report = device::step(&ctx.reads.params, a, ctx.reads.vol_a, b, ctx.reads.vol_b, dt.get() as f32);
+		let report = device::step(&ctx.reads.flow, a, ctx.reads.vol_a, b, ctx.reads.vol_b, dt.get() as f32);
 		if report.moles == 0.0 && report.power_w == 0.0 {
 			Settle::Sleep
 		} else {
@@ -85,8 +85,8 @@ impl DeviceSides {
 	/// decision, for callers (and tests) that want the report `step`
 	/// itself produces, not just whether the edge should keep running.
 	#[must_use]
-	pub fn step_flow(&mut self, params: DeviceParams, vol_a: f64, vol_b: f64, dt: f32) -> (StepReport, Settle) {
-		let report = device::step(&params, &mut self.a, vol_a, &mut self.b, vol_b, dt);
+	pub fn step_flow(&mut self, flow: Flow, vol_a: f64, vol_b: f64, dt: f32) -> (StepReport, Settle) {
+		let report = device::step(&flow, &mut self.a, vol_a, &mut self.b, vol_b, dt);
 		let settle = if report.moles == 0.0 && report.power_w == 0.0 {
 			Settle::Sleep
 		} else {
@@ -319,7 +319,12 @@ mod tests {
 		};
 		let before = sides.a.total() + sides.b.total();
 		let reads = DeviceReads {
-			params: DeviceParams::decode(1, [101.325, 5000.0, 0.0, 0.0]), // pump
+			flow: Flow {
+				gases: 0,
+				rate: device::Rate::Power(5000.0),
+				direction: device::Direction::Forced,
+				stop: Some(device::Target { side: device::Side::B, cmp: device::Cmp::AtLeast, kpa: 101.325 }),
+			},
 			vol_a: 1000.0,
 			vol_b: 1000.0,
 		};
@@ -336,7 +341,12 @@ mod tests {
 			b: PipeGas::default(),
 		};
 		let reads = DeviceReads {
-			params: DeviceParams::None,
+			flow: Flow {
+				gases: 0,
+				rate: device::Rate::Volume(0.0),
+				direction: device::Direction::Forced,
+				stop: None,
+			},
 			vol_a: 1000.0,
 			vol_b: 1000.0,
 		};

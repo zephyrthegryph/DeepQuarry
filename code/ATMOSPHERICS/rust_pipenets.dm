@@ -173,11 +173,18 @@
 
 // ---- M2: device edges (simulation.md §5) ------------------------------
 
-/datum/controller/subsystem/air/proc/rust_device_operation(opcode, id, port_a = 0, port_b = 0, law_kind = 0, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
-	return "[opcode],[id],[port_a],[port_b],[law_kind],[p0],[p1],[p2],[p3];"
+/// One queued device operation. Field meaning depends on `opcode`
+/// (`RUST_DEVICE_OP_*`): `SET`/`SET_TURF` use `f1`/`f2` as the two port ids
+/// (or port id / turf handle); `FLOW` uses all seven as a `DeviceFlow` row
+/// (`rust_architecture.md` §8.5 step 6's pipe-device redesign: gases,
+/// rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa, in that
+/// order -- `RUST_FLOW_*`/`RUST_STOP_*` in `atmospherics.dm`); `VALVE` uses
+/// `f1` as `open`; `REMOVE` uses none.
+/datum/controller/subsystem/air/proc/rust_device_operation(opcode, id, f1 = 0, f2 = 0, f3 = 0, f4 = 0, f5 = 0, f6 = 0, f7 = 0)
+	return "[opcode],[id],[f1],[f2],[f3],[f4],[f5],[f6],[f7];"
 
-/datum/controller/subsystem/air/proc/rust_queue_device_operation(opcode, id, port_a = 0, port_b = 0, law_kind = 0, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
-	rust_device_pending_operations += rust_device_operation(opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3)
+/datum/controller/subsystem/air/proc/rust_queue_device_operation(opcode, id, f1 = 0, f2 = 0, f3 = 0, f4 = 0, f5 = 0, f6 = 0, f7 = 0)
+	rust_device_pending_operations += rust_device_operation(opcode, id, f1, f2, f3, f4, f5, f6, f7)
 
 /datum/controller/subsystem/air/proc/rust_commit_pending_devices()
 	if(!length(rust_device_pending_operations))
@@ -192,35 +199,43 @@
 		var/id = text2num(fields[2])
 		switch(opcode)
 			if(RUST_DEVICE_OP_SET)
-				vg_pipe_device_set(id, text2num(fields[3]), text2num(fields[4]), text2num(fields[5]), text2num(fields[6]), text2num(fields[7]), text2num(fields[8]), text2num(fields[9]))
+				vg_pipe_device_set(id, text2num(fields[3]), text2num(fields[4]))
 			if(RUST_DEVICE_OP_SET_TURF)
-				vg_pipe_device_set_turf(id, text2num(fields[3]), text2num(fields[4]), text2num(fields[5]), text2num(fields[6]), text2num(fields[7]), text2num(fields[8]), text2num(fields[9]))
+				vg_pipe_device_set_turf(id, text2num(fields[3]), text2num(fields[4]))
+			if(RUST_DEVICE_OP_FLOW)
+				vg_pipe_flow_set(id, text2num(fields[3]), text2num(fields[4]), text2num(fields[5]), text2num(fields[6]), text2num(fields[7]), text2num(fields[8]), text2num(fields[9]))
+			if(RUST_DEVICE_OP_VALVE)
+				vg_pipe_valve_set(id, text2num(fields[3]))
 			if(RUST_DEVICE_OP_REMOVE)
 				vg_pipe_device_remove(id)
 
-/// Registers (or replaces) `machine`'s device edge between its two ports
-/// `port_index_a`/`port_index_b` (1-based, `rust_pipe_port_ids` indices),
-/// with the flow law `law_kind`/`p0..p3` (`RUST_DEVICE_LAW_*`). Allocates a
-/// stable device id on first use.
-/obj/machinery/atmospherics/proc/rust_set_device(port_index_a, port_index_b, law_kind, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
-	if(!rust_pipe_port_ids || port_index_a > length(rust_pipe_port_ids) || port_index_b > length(rust_pipe_port_ids))
-		return FALSE
+/// Allocates `src`'s stable device id on first use.
+/obj/machinery/atmospherics/proc/rust_ensure_device_id()
 	if(!rust_device_id)
 		rust_device_id = SSair.next_rust_device_id++
 		if(!SSair.rust_pipe_devices)
 			SSair.rust_pipe_devices = list()
 		SSair.rust_pipe_devices["[rust_device_id]"] = src
-	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET, rust_device_id, rust_pipe_port_ids[port_index_a], rust_pipe_port_ids[port_index_b], law_kind, p0, p1, p2, p3)
+	return rust_device_id
+
+/// Registers (or replaces) `machine`'s device edge between its two ports
+/// `port_index_a`/`port_index_b` (1-based, `rust_pipe_port_ids` indices).
+/// Carries no flow law of its own -- `rust_set_device_flow()`/
+/// `rust_set_device_valve()` attach that afterward.
+/obj/machinery/atmospherics/proc/rust_set_device(port_index_a, port_index_b)
+	if(!rust_pipe_port_ids || port_index_a > length(rust_pipe_port_ids) || port_index_b > length(rust_pipe_port_ids))
+		return FALSE
+	rust_ensure_device_id()
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET, rust_device_id, rust_pipe_port_ids[port_index_a], rust_pipe_port_ids[port_index_b])
 	SSair.rust_commit_pending_devices()
 	return TRUE
 
 /// Registers (or replaces) `machine`'s device edge between its port
 /// `port_index` (1-based, a `rust_pipe_port_ids` index) and the turf gas
-/// mixture `turf_air` faces (a vent pump or scrubber), with the flow law
-/// `law_kind`/`p0..p3` (`RUST_DEVICE_LAW_*`). Allocates a stable device id
-/// on first use. `device::VentPump`/`Scrubber`'s `a` side is the turf, so
-/// pass mode/bounds with that convention.
-/obj/machinery/atmospherics/proc/rust_set_turf_device(port_index, datum/gas_mixture/turf_air, law_kind, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
+/// mixture `turf_air` faces (a vent pump or scrubber). Allocates a stable
+/// device id on first use. `device::VentPump`/`Scrubber`'s `a` side is the
+/// turf, so pass flow fields with that convention.
+/obj/machinery/atmospherics/proc/rust_set_turf_device(port_index, datum/gas_mixture/turf_air)
 	if(!rust_pipe_port_ids || port_index > length(rust_pipe_port_ids) || !turf_air)
 		return FALSE
 	// Space, walls and unsimulated turfs hand back a shared immutable vacuum
@@ -230,12 +245,28 @@
 	if(turf_handle < GAS_HANDLE_TURF_BASE)
 		rust_unregister_device()
 		return FALSE
+	rust_ensure_device_id()
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_handle)
+	SSair.rust_commit_pending_devices()
+	return TRUE
+
+/// Sets (replacing any previous flow) `machine`'s device edge's one flow
+/// law: `gases` a `1 << gas_id` bitset (0: every gas), `rate_kind`/
+/// `direction`/`stop_cmp` the `RUST_FLOW_*`/`RUST_DIR_*`/`RUST_STOP_*`
+/// wire values (`atmospherics.dm`), `stop_side` `RUST_SIDE_A`/`_B`.
+/obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
 	if(!rust_device_id)
-		rust_device_id = SSair.next_rust_device_id++
-		if(!SSair.rust_pipe_devices)
-			SSair.rust_pipe_devices = list()
-		SSair.rust_pipe_devices["[rust_device_id]"] = src
-	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_handle, law_kind, p0, p1, p2, p3)
+		return FALSE
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_FLOW, rust_device_id, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	SSair.rust_commit_pending_devices()
+	return TRUE
+
+/// Sets (replacing any previous one) `machine`'s device edge's valve gate
+/// (a valve or shutoff valve: equalizes while `open`, blocks otherwise).
+/obj/machinery/atmospherics/proc/rust_set_device_valve(open)
+	if(!rust_device_id)
+		return FALSE
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_VALVE, rust_device_id, open)
 	SSair.rust_commit_pending_devices()
 	return TRUE
 

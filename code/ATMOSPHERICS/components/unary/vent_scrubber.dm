@@ -99,7 +99,8 @@
 	for(var/gas_id in scrubbing_gas)
 		mask |= (1 << GAS_IDX(gas_id))
 	var/rate = scrubbing ? MAX_SCRUBBER_FLOWRATE : MAX_SIPHON_FLOWRATE
-	rust_set_turf_device(1, environment, RUST_DEVICE_LAW_SCRUBBER, mask, rate, scrubbing ? 0 : 1)
+	rust_set_turf_device(1, environment)
+	rust_set_device_flow(scrubbing ? mask : 0, RUST_FLOW_VOLUME, rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/rust_device_stepped(moles, power_w, target_reached)
 	last_flow_rate = abs(moles)

@@ -89,7 +89,8 @@ Thus, the two variables affect pump operation are set in New():
 	if((stat & (NOPOWER|BROKEN)) || !get_on())
 		rust_unregister_device()
 		return
-	rust_set_device(1, 2, RUST_DEVICE_LAW_PUMP, get_target_pressure(), get_power_rating())
+	rust_set_device(1, 2)
+	rust_set_device_flow(0, RUST_FLOW_POWER, get_power_rating(), RUST_DIR_FORCED, RUST_SIDE_B, RUST_STOP_AT_LEAST, get_target_pressure())
 
 /// operable comes from anchored and integrity (rust_bindings.md §7's classes
 /// 3-5) through the generated wiring: the atom_break()/atom_fix() hook pushes

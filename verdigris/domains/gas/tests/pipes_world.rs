@@ -10,7 +10,7 @@
 use vg_core::component::Ownership;
 use vg_core::conservation::Tolerance;
 use vg_core::world::{WorldBuilder, WorldConfig};
-use vg_gas::device::{self, DeviceParams};
+use vg_gas::device::{self, Cmp, Direction, Flow, Rate, Side, Target};
 use vg_gas::pipes::{PipeGas, Pipes};
 
 fn builder() -> WorldBuilder {
@@ -85,10 +85,15 @@ fn a_device_edge_moves_gas_between_regions_and_conserves() {
     world.commit_network::<Pipes>();
 
     let device_e = world.entities_mut().bind().unwrap();
-    let params = DeviceParams::decode(1, [101.325, 5000.0, 0.0, 0.0]); // pump
+    let flow = Flow {
+        gases: 0,
+        rate: Rate::Power(5000.0),
+        direction: Direction::Forced,
+        stop: Some(Target { side: Side::B, cmp: Cmp::AtLeast, kpa: 101.325 }),
+    }; // pump
     world
         .edit_network::<Pipes>(move |host| {
-            let _ = host.bind_device(device_e, a, bp, 0, params).unwrap();
+            let _ = host.bind_device(device_e, a, bp, 0, ()).unwrap();
         })
         .unwrap();
 
@@ -110,7 +115,7 @@ fn a_device_edge_moves_gas_between_regions_and_conserves() {
             let (ra_region, rb_region) = (host.network().region(ra).unwrap(), host.network().region(rb).unwrap());
             (ra, rb, *ra_region.summary(), *rb_region.summary(), *ra_region.payload(), *rb_region.payload())
         };
-        let report = device::step(&params, &mut pa, vol_a, &mut pb, vol_b, 1.0);
+        let report = device::step(&flow, &mut pa, vol_a, &mut pb, vol_b, 1.0);
         if report.moles == 0.0 && report.power_w == 0.0 {
             break;
         }

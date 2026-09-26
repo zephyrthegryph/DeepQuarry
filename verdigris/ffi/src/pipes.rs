@@ -55,7 +55,8 @@ use vg_core::entity::EntityId;
 use vg_core::network::{Endpoint, RegionId, Side};
 use vg_core::slot::RawHandle;
 use vg_core::world::World;
-use vg_gas::device::{self, DeviceParams};
+use vg_gas::device::{self, Flow, StepReport};
+use vg_gas::kind::device::{DeviceFlow, DeviceValve};
 use vg_gas::pipes::{PipeGas, Pipes};
 use vg_gas::world::MixRef;
 
@@ -64,6 +65,14 @@ use crate::world::{list, num, whole, with_world};
 thread_local! {
     static PORTS: RefCell<HashMap<u32, EntityId>> = RefCell::new(HashMap::new());
     static DEVICES: RefCell<HashMap<u32, EntityId>> = RefCell::new(HashMap::new());
+    /// DM device id -> its `DeviceFlow` row entities, in the order they were
+    /// added (`rust_architecture.md` §8.5 step 6's pipe-device redesign: a
+    /// device may carry several, composed in this order -- a filter's
+    /// passthrough plus its filtered flow, a mixer's two inputs). Every DM
+    /// device today sets exactly one; the storage doesn't assume that.
+    static DEVICE_FLOWS: RefCell<HashMap<u32, Vec<EntityId>>> = RefCell::new(HashMap::new());
+    /// DM device id -> its `DeviceValve` row entity, at most one.
+    static DEVICE_VALVES: RefCell<HashMap<u32, EntityId>> = RefCell::new(HashMap::new());
     /// A removed port's gas goes here if DM named a target mixture
     /// (`RUST_PIPE_OP_REMOVE_TO_MIXTURE`'s replacement), read back when its
     /// `Released` event drains at [`pipe_commit`].
@@ -343,36 +352,35 @@ fn region_volume(w: &World, raw: u32) -> f32 {
 }
 
 /// Registers (or replaces) a region<->region device edge between two
-/// ports.
+/// ports. Carries no flow law of its own (`rust_architecture.md` §8.5 step
+/// 6's pipe-device redesign): [`pipe_flow_set`]/[`pipe_valve_set`] attach
+/// that afterward, as `DeviceFlow`/`DeviceValve` rows linked to this
+/// device's entity.
 #[auxmacros::bind("/proc/vg_pipe_device_set")]
-fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue, law_kind: ByondValue, p0: ByondValue, p1: ByondValue, p2: ByondValue, p3: ByondValue) -> Result<ByondValue> {
+fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue> {
     let id_n = whole(&id, "id")?;
     let (pa, pb) = (whole(&port_a, "port_a")?, whole(&port_b, "port_b")?);
     let (Some(ea), Some(eb)) = (port_entity(pa), port_entity(pb)) else {
         return Ok(false.into());
     };
-    let params = device_params(&law_kind, &p0, &p1, &p2, &p3)?;
     let ok = with_world(|w| {
         let old = DEVICES.with(|d| d.borrow().get(&id_n).copied());
         let e = if let Some(e) = old { e } else { w.entities_mut().bind().map_err(|e| eyre!("{e}"))? };
         w.edit_network::<Pipes>(move |host| {
-            let _ = host.bind_device(e, ea, eb, 0, params);
+            let _ = host.bind_device(e, ea, eb, 0, ());
         })
         .map_err(|e| eyre!("{e}"))?;
-        let ok = true;
-        if ok {
-            DEVICES.with(|d| d.borrow_mut().insert(id_n, e));
-        }
-        Ok(ok)
+        DEVICES.with(|d| d.borrow_mut().insert(id_n, e));
+        Ok(true)
     })?;
     Ok(ok.into())
 }
 
 /// Registers (or replaces) a device edge between a port and a turf (a vent
 /// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
-/// handle, not a port id.
+/// handle, not a port id. See [`pipe_device_set`]'s own docs on flows.
 #[auxmacros::bind("/proc/vg_pipe_device_set_turf")]
-fn pipe_device_set_turf(id: ByondValue, port_a: ByondValue, turf_mixture_handle: ByondValue, law_kind: ByondValue, p0: ByondValue, p1: ByondValue, p2: ByondValue, p3: ByondValue) -> Result<ByondValue> {
+fn pipe_device_set_turf(id: ByondValue, port_a: ByondValue, turf_mixture_handle: ByondValue) -> Result<ByondValue> {
     let id_n = whole(&id, "id")?;
     let pa = whole(&port_a, "port_a")?;
     let Some(ea) = port_entity(pa) else {
@@ -381,27 +389,76 @@ fn pipe_device_set_turf(id: ByondValue, port_a: ByondValue, turf_mixture_handle:
     let Some(MixRef::Turf(cell)) = num(&turf_mixture_handle).ok().and_then(MixRef::from_f32) else {
         return Ok(false.into());
     };
-    let params = device_params(&law_kind, &p0, &p1, &p2, &p3)?;
     let ok = with_world(|w| {
         let old = DEVICES.with(|d| d.borrow().get(&id_n).copied());
         let e = if let Some(e) = old { e } else { w.entities_mut().bind().map_err(|e| eyre!("{e}"))? };
         w.edit_network::<Pipes>(move |host| {
-            let _ = host.bind_cell_device(e, ea, cell, 0, params);
+            let _ = host.bind_cell_device(e, ea, cell, 0, ());
         })
         .map_err(|e| eyre!("{e}"))?;
-        let ok = true;
-        if ok {
-            DEVICES.with(|d| d.borrow_mut().insert(id_n, e));
-        }
-        Ok(ok)
+        DEVICES.with(|d| d.borrow_mut().insert(id_n, e));
+        Ok(true)
     })?;
     Ok(ok.into())
 }
 
-fn device_params(law_kind: &ByondValue, p0: &ByondValue, p1: &ByondValue, p2: &ByondValue, p3: &ByondValue) -> Result<DeviceParams> {
+/// Sets (replacing any previous flow(s)) a device's one `DeviceFlow`. Every
+/// DM device that sets a flow today configures exactly one per call
+/// (`rust_set_device`'s existing convention: the whole flow spec on every
+/// settings change, not incremental per-field pokes), so this bind mirrors
+/// that instead of handing DM an entity handle to poke fields on
+/// individually -- a future multi-flow device (a filter, a mixer) can add
+/// a second bind that appends instead of replacing, without disturbing
+/// this one.
+#[auxmacros::bind("/proc/vg_pipe_flow_set")]
+fn pipe_flow_set(id: ByondValue, gases: ByondValue, rate_kind: ByondValue, rate: ByondValue, direction: ByondValue, stop_side: ByondValue, stop_cmp: ByondValue, stop_kpa: ByondValue) -> Result<ByondValue> {
+    let id_n = whole(&id, "id")?;
+    let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
+        return Ok(false.into());
+    };
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let kind = num(law_kind)? as u8;
-    Ok(DeviceParams::decode(kind, [num(p0)?, num(p1)?, num(p2)?, num(p3)?]))
+    let row = DeviceFlow {
+        device: device_e.index(),
+        gases: whole(&gases, "gases")?,
+        rate_kind: num(&rate_kind)? as u8,
+        rate: num(&rate)?,
+        direction: num(&direction)? as u8,
+        stop_side: num(&stop_side)? as u8,
+        stop_cmp: num(&stop_cmp)? as u8,
+        stop_kpa: num(&stop_kpa)?,
+    };
+    with_world(|w| {
+        let old = DEVICE_FLOWS.with(|f| f.borrow_mut().remove(&id_n)).unwrap_or_default();
+        for e in old {
+            let _ = w.despawn(e);
+        }
+        let e = w.bind_value(None, row).map_err(|e| eyre!("{e}"))?;
+        DEVICE_FLOWS.with(|f| f.borrow_mut().insert(id_n, vec![e]));
+        Ok(())
+    })?;
+    Ok(true.into())
+}
+
+/// Sets (replacing any previous one) a device's `DeviceValve` gate.
+#[auxmacros::bind("/proc/vg_pipe_valve_set")]
+fn pipe_valve_set(id: ByondValue, open: ByondValue) -> Result<ByondValue> {
+    let id_n = whole(&id, "id")?;
+    let Some(device_e) = DEVICES.with(|d| d.borrow().get(&id_n).copied()) else {
+        return Ok(false.into());
+    };
+    let row = DeviceValve {
+        device: device_e.index(),
+        open: num(&open)? != 0.0,
+    };
+    with_world(|w| {
+        if let Some(old) = DEVICE_VALVES.with(|v| v.borrow_mut().remove(&id_n)) {
+            let _ = w.despawn(old);
+        }
+        let e = w.bind_value(None, row).map_err(|e| eyre!("{e}"))?;
+        DEVICE_VALVES.with(|v| v.borrow_mut().insert(id_n, e));
+        Ok(())
+    })?;
+    Ok(true.into())
 }
 
 #[auxmacros::bind("/proc/vg_pipe_device_remove")]
@@ -410,18 +467,40 @@ fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
     let Some(e) = DEVICES.with(|d| d.borrow_mut().remove(&id_n)) else {
         return Ok(false.into());
     };
+    let flows = DEVICE_FLOWS.with(|f| f.borrow_mut().remove(&id_n)).unwrap_or_default();
+    let valve = DEVICE_VALVES.with(|v| v.borrow_mut().remove(&id_n));
     with_world(|w| {
         w.edit_network::<Pipes>(move |host| host.unbind_device(e)).map_err(|e| eyre!("{e}"))?;
+        for flow_e in flows {
+            let _ = w.despawn(flow_e);
+        }
+        if let Some(valve_e) = valve {
+            let _ = w.despawn(valve_e);
+        }
         Ok(true)
     })
     .map(ByondValue::from)
 }
 
-/// Runs every device edge's flow law once for `dt` seconds -- region<->
-/// region edges directly, region<->turf edges (a vent pump/scrubber)
+/// Every `Flow`/valve-open bound to device `id`, in the order flows were
+/// added (`DEVICE_FLOWS`'s own docs on composing several). Takes `w`
+/// directly (not through [`with_world`]): called from inside
+/// [`pipe_step_devices`]'s own `with_world`, which a nested call would
+/// re-borrow and panic on.
+fn device_laws(w: &World, id: u32) -> (Vec<Flow>, bool) {
+    let flows = DEVICE_FLOWS.with(|f| f.borrow().get(&id).cloned()).unwrap_or_default();
+    let flows = flows.into_iter().filter_map(|e| w.read::<DeviceFlow>(e)).map(|row| row.flow()).collect();
+    let open = DEVICE_VALVES.with(|v| v.borrow().get(&id).copied()).and_then(|e| w.read::<DeviceValve>(e)).is_some_and(|v| v.open);
+    (flows, open)
+}
+
+/// Runs every device edge's flow(s)/valve once for `dt` seconds -- region
+/// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
 /// through `vg_gas::world`'s turf accessors (this module's own docs) --
 /// and returns a flat `id, moles, power_w, target_reached` list per device
-/// that had a law set and moved something or drew power.
+/// that moved something or drew power. Several flows on the same device
+/// compose by running in sequence on the same pair, each seeing the
+/// previous one's result within this tick (`DEVICE_FLOWS`'s own docs).
 #[auxmacros::bind("/proc/vg_pipe_step_devices")]
 fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
     let dt = num(&dt)?;
@@ -429,19 +508,19 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
     let mut out = Vec::new();
     with_world(|w| {
         for (id, e) in devices {
+            let (flows, valve_open) = device_laws(w, id);
+            if flows.is_empty() && !valve_open {
+                continue;
+            }
             let Ok(host) = w.network::<Pipes>() else { continue };
             let Some(dev_id) = host.device_of(e) else { continue };
             let Ok(dev) = host.network().device(dev_id) else { continue };
-            if matches!(dev.data, DeviceParams::None) {
-                continue;
-            }
-            let params = dev.data;
             let (ea, eb) = (dev.a, dev.b);
             drop(host);
             let report = match (ea, eb) {
-                (Endpoint::Node(_), Endpoint::Node(_)) => step_region_region(w, e, params, dt),
-                (Endpoint::Cell(cell), Endpoint::Node(_)) => step_region_turf(w, e, cell, params, dt, true),
-                (Endpoint::Node(_), Endpoint::Cell(cell)) => step_region_turf(w, e, cell, params, dt, false),
+                (Endpoint::Node(_), Endpoint::Node(_)) => step_region_region(w, e, &flows, valve_open, dt),
+                (Endpoint::Cell(cell), Endpoint::Node(_)) => step_region_turf(w, e, cell, &flows, valve_open, dt, true),
+                (Endpoint::Node(_), Endpoint::Cell(cell)) => step_region_turf(w, e, cell, &flows, valve_open, dt, false),
                 _ => None,
             };
             if let Some(report) = report {
@@ -454,7 +533,25 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
     })
 }
 
-fn step_region_region(w: &mut World, device_e: EntityId, params: DeviceParams, dt: f32) -> Option<device::StepReport> {
+/// Runs every flow then the valve gate on `(a, b)` in sequence, folding
+/// into one report: total moles moved (signed a->b), power drawn, and
+/// whether any stop target was reached this tick.
+fn step_all(flows: &[Flow], valve_open: bool, a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, vol_b: f64, dt: f32) -> StepReport {
+    let mut total = StepReport::default();
+    for flow in flows {
+        let r = device::step(flow, a, vol_a, b, vol_b, dt);
+        total.moles += r.moles;
+        total.power_w += r.power_w;
+        total.target_reached |= r.target_reached;
+    }
+    if valve_open {
+        let r = device::step_valve(true, a, vol_a, b, vol_b);
+        total.moles += r.moles;
+    }
+    total
+}
+
+fn step_region_region(w: &mut World, device_e: EntityId, flows: &[Flow], valve_open: bool, dt: f32) -> Option<StepReport> {
     let (ra, rb, vol_a, vol_b, mut pa, mut pb) = {
         let host = w.network::<Pipes>().ok()?;
         let dev_id = host.device_of(device_e)?;
@@ -470,7 +567,7 @@ fn step_region_region(w: &mut World, device_e: EntityId, params: DeviceParams, d
         let region_b = host.network().region(rb).ok()?;
         (ra, rb, *region_a.summary(), *region_b.summary(), *region_a.payload(), *region_b.payload())
     };
-    let report = device::step(&params, &mut pa, vol_a, &mut pb, vol_b, dt);
+    let report = step_all(flows, valve_open, &mut pa, vol_a, &mut pb, vol_b, dt);
     if report.moles != 0.0 || report.power_w != 0.0 {
         let _ = w.edit_network::<Pipes>(move |host| {
             if let Ok(p) = host.payload_mut(ra) {
@@ -484,7 +581,7 @@ fn step_region_region(w: &mut World, device_e: EntityId, params: DeviceParams, d
     Some(report)
 }
 
-fn step_region_turf(w: &mut World, device_e: EntityId, cell: u32, params: DeviceParams, dt: f32, cell_is_a: bool) -> Option<device::StepReport> {
+fn step_region_turf(w: &mut World, device_e: EntityId, cell: u32, flows: &[Flow], valve_open: bool, dt: f32, cell_is_a: bool) -> Option<StepReport> {
     let (region, vol_region, mut region_gas) = {
         let host = w.network::<Pipes>().ok()?;
         let dev_id = host.device_of(device_e)?;
@@ -500,9 +597,9 @@ fn step_region_turf(w: &mut World, device_e: EntityId, cell: u32, params: Device
     let vol_cell = vg_gas::world::with_world(|gw| gw.turf_device_volume(cell)).unwrap_or(vg_gas::gas::constants::CELL_VOLUME.into());
     let mut turf_gas = vg_gas::world::with_world(|gw| gw.turf_device_probe(cell))?;
     let report = if cell_is_a {
-        device::step(&params, &mut turf_gas, vol_cell, &mut region_gas, vol_region, dt)
+        step_all(flows, valve_open, &mut turf_gas, vol_cell, &mut region_gas, vol_region, dt)
     } else {
-        device::step(&params, &mut region_gas, vol_region, &mut turf_gas, vol_cell, dt)
+        step_all(flows, valve_open, &mut region_gas, vol_region, &mut turf_gas, vol_cell, dt)
     };
     if report.moles != 0.0 || report.power_w != 0.0 {
         let _ = w.edit_network::<Pipes>(move |host| {

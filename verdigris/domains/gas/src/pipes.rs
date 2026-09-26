@@ -17,7 +17,6 @@
 use vg_core::network::NetworkKind;
 
 use crate::cell::{heat_capacity, N, Q};
-use crate::device::DeviceParams;
 
 /// A region's gas: moles of each gas and the thermal energy (J).
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -219,8 +218,11 @@ impl NetworkKind for Pipes {
 	/// The region's volume.
 	type Summary = f64;
 	type Payload = PipeGas;
-	/// A device edge's flow law and parameters (`device.rs`).
-	type Device = DeviceParams;
+	/// A device edge's own network-graph data: none. Its flow law and
+	/// parameters live in linked `DeviceFlow`/`DeviceValve` components now
+	/// (`rust_architecture.md` §8.5 step 6's pipe-device redesign; used to
+	/// be `device::DeviceParams` stored right here).
+	type Device = ();
 	type Command = ();
 
 	fn summarize(node: &f32) -> f64 {

@@ -63,15 +63,14 @@
 		rust_unregister_device()
 		flowing = FALSE
 		return
-	var/mode
+	rust_set_device(1, 2)
 	switch(regulate_mode)
 		if(REGULATE_INPUT)
-			mode = RUST_REGULATE_INPUT
+			rust_set_device_flow(0, RUST_FLOW_VOLUME, set_flow_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_MOST, target_pressure)
 		if(REGULATE_OUTPUT)
-			mode = RUST_REGULATE_OUTPUT
+			rust_set_device_flow(0, RUST_FLOW_VOLUME, set_flow_rate, RUST_DIR_FORCED, RUST_SIDE_B, RUST_STOP_AT_LEAST, target_pressure)
 		else
-			mode = RUST_REGULATE_EQUALIZE
-	rust_set_device(1, 2, RUST_DEVICE_LAW_PASSIVE_GATE, mode, target_pressure, set_flow_rate)
+			rust_set_device_flow(0, RUST_FLOW_VOLUME, set_flow_rate, RUST_DIR_DOWNHILL, RUST_SIDE_A, RUST_STOP_NONE, 0)
 
 /obj/machinery/atmospherics/binary/passive_gate/rust_device_stepped(moles, power_w, target_reached)
 	last_flow_rate = abs(moles)
