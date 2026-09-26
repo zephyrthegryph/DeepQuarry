@@ -169,6 +169,59 @@ def check_byondapi_deps(allowed: dict[tuple[str, str], str], used: set[tuple[str
     return failures
 
 
+# Line budgets (rust_architecture.md §2): non-test code lines per domain --
+# non-blank, non-comment lines outside `#[cfg(test)]` items, `tests.rs` and
+# `tests/`. Over budget means infrastructure has leaked into the domain.
+BUDGETS = {"power": 400, "heat": 600, "gas": 1600}
+
+# A domain crate depends on vg-core only: never on byondapi (checked above),
+# the FFI crates, or another domain.
+FORBIDDEN_DEPS = re.compile(r"^\s*(vg-ffi|auxmacros|auxcallback|vg-gas|vg-heat|vg-power)\s*=")
+
+
+def code_lines(path: Path) -> int:
+    n, depth, skip, pending = 0, 0, None, False
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        s = line.strip()
+        if skip is not None:
+            depth += line.count("{") - line.count("}")
+            if depth <= skip:
+                skip = None
+            continue
+        if s.startswith("#[cfg(test)]"):
+            pending = True
+            continue
+        if pending:
+            pending = False
+            opened = line.count("{") - line.count("}")
+            if opened > 0:
+                skip, depth = depth, depth + opened
+            continue
+        depth += line.count("{") - line.count("}")
+        if s and not s.startswith("//"):
+            n += 1
+    return n
+
+
+def check_budgets_and_deps() -> list[str]:
+    failures: list[str] = []
+    for crate_dir in DOMAIN_CRATE_DIRS:
+        name = crate_dir.name
+        files = [p for p in (crate_dir / "src").glob("**/*.rs") if p.name != "tests.rs" and "tests" not in p.parts]
+        total = sum(code_lines(p) for p in files)
+        budget = BUDGETS.get(name)
+        if budget is None:
+            failures.append(f"verdigris/domains/{name}: [budget] no line budget declared for this domain")
+        elif total > budget:
+            failures.append(f"verdigris/domains/{name}: [budget] {total} code lines, budget {budget}")
+        cargo = crate_dir / "Cargo.toml"
+        if cargo.is_file():
+            for line in cargo.read_text(encoding="utf-8", errors="replace").splitlines():
+                if FORBIDDEN_DEPS.match(line) and not line.strip().startswith(name):
+                    failures.append(f"verdigris/domains/{name}/Cargo.toml: [crate_dep] {line.strip()}")
+    return failures
+
+
 def main() -> int:
     allowed = load_allowlist()
     used: set[tuple[str, str]] = set()
@@ -202,6 +255,7 @@ def main() -> int:
                 failures.append(f"{rel}:{lineno}: [reexport_shim] {line.strip()}")
 
     failures.extend(check_byondapi_deps(allowed, used))
+    failures.extend(check_budgets_and_deps())
 
     for key in sorted(set(allowed) - used):
         failures.append(

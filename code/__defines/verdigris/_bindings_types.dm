@@ -381,9 +381,9 @@
 /atom/movable/vg_heat_body/proc/get_ambient()
 	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_AMBIENT, 0) // K
 
-/// unitless, read-only (computed readout).
+/// K, read-only (computed readout).
 /atom/movable/vg_heat_body/get_temperature()
-	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_TEMPERATURE, 0)
+	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_TEMPERATURE, 0) // K
 
 /// Take reconciliation (heat_energy): adds `delta` to what Rust holds now;
 /// returns the part of a removal that was not there.
@@ -1253,15 +1253,15 @@
 /datum/controller/subsystem/vg/proc/on_heat_settled()
 	return
 
-/// power event (verdigris/domains/power/src/events.rs). Generated no-op default; override on SSvg.
+/// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_power_brownout()
 	return
 
-/// power event (verdigris/domains/power/src/events.rs). Generated no-op default; override on SSvg.
+/// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_power_restored()
 	return
 
-/// power event (verdigris/domains/power/src/events.rs). Generated no-op default; override on SSvg.
+/// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
 /datum/controller/subsystem/vg/proc/on_power_apc_channel_changed()
 	return
 

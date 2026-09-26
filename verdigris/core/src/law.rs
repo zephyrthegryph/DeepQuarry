@@ -393,7 +393,8 @@ impl Pacer {
 /// }
 /// ```
 ///
-/// `every <Period>` after the writes sets [`Law::PERIOD`].
+/// `every <Period>` after the writes sets [`Law::PERIOD`]; `Name<G: Bound>`
+/// declares a law generic over one type (a field kind, say).
 #[macro_export]
 macro_rules! law {
     ($(#[$m:meta])* $vis:vis $name:ident($label:literal): $reads:ty => $writes:ty $(, every $period:expr)?, |$ctx:ident, $dt:pat_param| $body:block) => {
@@ -404,6 +405,16 @@ macro_rules! law {
             type Writes = $writes;
             const NAME: &'static str = $label;
             $(const PERIOD: $crate::law::Period = $period;)?
+            fn step($ctx: &mut $crate::law::LawCtx<'_, $reads, $writes>, $dt: $crate::units::Seconds) -> $crate::law::Settle $body
+        }
+    };
+    ($(#[$m:meta])* $vis:vis $name:ident<$g:ident: $bound:path>($label:literal): $reads:ty => $writes:ty, |$ctx:ident, $dt:pat_param| $body:block) => {
+        $(#[$m])*
+        $vis struct $name<$g>(::std::marker::PhantomData<$g>);
+        impl<$g: $bound> $crate::law::Law for $name<$g> {
+            type Reads = $reads;
+            type Writes = $writes;
+            const NAME: &'static str = $label;
             fn step($ctx: &mut $crate::law::LawCtx<'_, $reads, $writes>, $dt: $crate::units::Seconds) -> $crate::law::Settle $body
         }
     };

@@ -16,18 +16,18 @@
 //! [`BODY_SETTLED_K`] of its environment emits [`HeatEvent::Settled`]; the
 //! FFI layer releases it.
 
-use vg_core::field::FieldKind;
 use vg_core::field::law::Cell;
-use vg_core::law::{Law, LawCtx, Settle};
+use vg_core::field::FieldKind;
+use vg_core::law::{LawCtx, Settle};
 use vg_core::query::{Foreign, Foreign2};
 use vg_core::rate::RateModel;
-use vg_core::thermo::{Thermal, ThermalBody, pair_exchange_at_rate_f32, pair_exchange_f32, phase_energy};
+use vg_core::thermo::{pair_exchange_at_rate_f32, pair_exchange_f32, phase_energy, Thermal, ThermalBody};
 use vg_core::units::{HeatCapacity, Kelvin, Seconds};
 use vg_core::vg;
 
 use crate::components::{BodyCoupling, GasCoupling, HeatBody, Regulator, SolidCoupling};
 use crate::consts::{BODY_SETTLED_K, GAS_COUPLING, GAS_COUPLING_MIN_K, RELAX_CAPACITY_RATIO, RELAX_HYSTERESIS_K, RELAX_MAX_INTERVAL, TCMB};
-use crate::solid::{SolidHeat, flags};
+use crate::solid::{flags, SolidHeat};
 
 /// Heat's domain events (`rust_architecture.md` §4.8).
 #[vg::events(domain = heat)]
@@ -44,11 +44,19 @@ pub fn add_body_energy(body: &mut HeatBody, joules: f64) {
 }
 
 fn relax_target(ambient: f64, power: f64, conductance: f64) -> f64 {
-    if conductance > 0.0 { ambient + power / conductance } else { ambient }
+    if conductance > 0.0 {
+        ambient + power / conductance
+    } else {
+        ambient
+    }
 }
 
 fn relax_rate(conductance: f64, capacity: f64) -> f64 {
-    if capacity > 0.0 { conductance / capacity } else { 0.0 }
+    if capacity > 0.0 {
+        conductance / capacity
+    } else {
+        0.0
+    }
 }
 
 /// No sustained power, and DM lets it go.
@@ -94,7 +102,11 @@ fn anchor_relax(body: &mut HeatBody, ambient: f64, conductance: f64, now: f64) -
     }
     let gap = (body.temperature() - relax_target(ambient, body.power, conductance)).abs();
     let settled = f64::from(BODY_SETTLED_K) * 0.5;
-    if gap > settled { due.min(now + (gap / settled).ln() / k) } else { now }
+    if gap > settled {
+        due.min(now + (gap / settled).ln() / k)
+    } else {
+        now
+    }
 }
 
 /// A body's exchange partner.
@@ -132,9 +144,17 @@ where
         if !self.reservoir {
             self.value.add_heat(joules as f32, self.capacity);
         }
-        if self.reservoir || !K::Value::IN_HEAT_TOTAL { joules } else { 0.0 }
+        if self.reservoir || !K::Value::IN_HEAT_TOTAL {
+            joules
+        } else {
+            0.0
+        }
     }
 }
+
+/// A field whose cells are [`Thermal`]: a gas a body or a solid couples to.
+pub trait ThermalField: FieldKind<Value: Thermal> {}
+impl<K: FieldKind<Value: Thermal>> ThermalField for K {}
 
 /// What a coupling step asks of its law's `ctx`.
 enum Outcome {
@@ -197,14 +217,9 @@ fn finish<R, W>(ctx: &mut LawCtx<'_, R, W>, (outcome, booked): (Outcome, f64)) -
     }
 }
 
-/// Body ↔ solid-cell exchange ([`SolidCoupling`]).
-pub struct SolidBodyExchange;
-impl Law for SolidBodyExchange {
-    type Reads = SolidCoupling;
-    type Writes = (Foreign<SolidCoupling, HeatBody>, Foreign2<SolidCoupling, Cell<SolidHeat>>);
-    const NAME: &'static str = "heat_solid_body_exchange";
-
-    fn step(ctx: &mut LawCtx<'_, SolidCoupling, Self::Writes>, dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Body ↔ solid-cell exchange ([`SolidCoupling`]).
+    pub SolidBodyExchange("heat_solid_body_exchange"): SolidCoupling => (Foreign<SolidCoupling, HeatBody>, Foreign2<SolidCoupling, Cell<SolidHeat>>), |ctx, dt| {
         let (now, c) = (ctx.now(), ctx.reads.clone());
         let (Some(body), Some(cell)) = (ctx.writes.0.value.as_mut(), ctx.writes.1.value.as_mut()) else {
             return Settle::Sleep;
@@ -214,15 +229,10 @@ impl Law for SolidBodyExchange {
     }
 }
 
-/// Body ↔ body exchange ([`BodyCoupling`]): a container's interior, `b`
-/// (the "other" side) being `a`'s environment.
-pub struct BodyBodyExchange;
-impl Law for BodyBodyExchange {
-    type Reads = BodyCoupling;
-    type Writes = (Foreign<BodyCoupling, HeatBody>, Foreign2<BodyCoupling, HeatBody>);
-    const NAME: &'static str = "heat_body_body_exchange";
-
-    fn step(ctx: &mut LawCtx<'_, BodyCoupling, Self::Writes>, dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Body ↔ body exchange ([`BodyCoupling`]): a container's interior, `b`
+    /// (the "other" side) being `a`'s environment.
+    pub BodyBodyExchange("heat_body_body_exchange"): BodyCoupling => (Foreign<BodyCoupling, HeatBody>, Foreign2<BodyCoupling, HeatBody>), |ctx, dt| {
         let (now, c) = (ctx.now(), ctx.reads.clone());
         let (Some(a), Some(b)) = (ctx.writes.0.value.as_mut(), ctx.writes.1.value.as_mut()) else {
             return Settle::Sleep;
@@ -232,17 +242,9 @@ impl Law for BodyBodyExchange {
     }
 }
 
-/// Body ↔ turf gas exchange ([`GasCoupling`]) with gas field `G`.
-pub struct BodyGasExchange<G>(std::marker::PhantomData<G>);
-impl<G: FieldKind> Law for BodyGasExchange<G>
-where
-    G::Value: Thermal,
-{
-    type Reads = GasCoupling;
-    type Writes = (Foreign<GasCoupling, HeatBody>, Foreign2<GasCoupling, Cell<G>>);
-    const NAME: &'static str = "heat_body_gas_exchange";
-
-    fn step(ctx: &mut LawCtx<'_, GasCoupling, Self::Writes>, dt: Seconds) -> Settle {
+vg_core::law! {
+    /// Body ↔ turf gas exchange ([`GasCoupling`]) with gas field `G`.
+    pub BodyGasExchange<G: ThermalField>("heat_body_gas_exchange"): GasCoupling => (Foreign<GasCoupling, HeatBody>, Foreign2<GasCoupling, Cell<G>>), |ctx, dt| {
         let (now, c) = (ctx.now(), ctx.reads.clone());
         let (Some(body), Some(gas)) = (ctx.writes.0.value.as_mut(), ctx.writes.1.value.as_mut()) else {
             return Settle::Sleep;
@@ -252,20 +254,12 @@ where
     }
 }
 
-/// A turf's solid ↔ its gas (`OPEN_HEAT_TRANSFER_COEFFICIENT`): each pair
-/// relaxes at `GAS_COUPLING * conductivity` where the solid has air and
-/// they differ by more than [`GAS_COUPLING_MIN_K`]. Runs over the gas
-/// field's active cells (air changing is what drives it).
-pub struct SolidGasExchange<G>(std::marker::PhantomData<G>);
-impl<G: FieldKind> Law for SolidGasExchange<G>
-where
-    G::Value: Thermal,
-{
-    type Reads = ();
-    type Writes = (Cell<G>, Cell<SolidHeat>);
-    const NAME: &'static str = "heat_solid_gas_exchange";
-
-    fn step(ctx: &mut LawCtx<'_, (), Self::Writes>, dt: Seconds) -> Settle {
+vg_core::law! {
+    /// A turf's solid ↔ its gas (`OPEN_HEAT_TRANSFER_COEFFICIENT`): each pair
+    /// relaxes at `GAS_COUPLING * conductivity` where the solid has air and
+    /// they differ by more than [`GAS_COUPLING_MIN_K`]. Runs over the gas
+    /// field's active cells (air changing is what drives it).
+    pub SolidGasExchange<G: ThermalField>("heat_solid_gas_exchange"): () => (Cell<G>, Cell<SolidHeat>), |ctx, dt| {
         let (gas, solid) = &mut ctx.writes;
         if !solid.value.has(flags::AIR) || solid.value.conductivity <= 0.0 || solid.reservoir {
             return Settle::Sleep;
@@ -281,16 +275,11 @@ where
     }
 }
 
-/// The regulator as a heat pump ([`Regulator`]):
-/// [`vg_core::thermo::Regulator::step`] between the controlled body and
-/// the other side.
-pub struct RegulatorHeatPump;
-impl Law for RegulatorHeatPump {
-    type Reads = Regulator;
-    type Writes = (Foreign<Regulator, HeatBody>, Foreign2<Regulator, HeatBody>);
-    const NAME: &'static str = "heat_regulator_pump";
-
-    fn step(ctx: &mut LawCtx<'_, Regulator, Self::Writes>, dt: Seconds) -> Settle {
+vg_core::law! {
+    /// The regulator as a heat pump ([`Regulator`]):
+    /// [`vg_core::thermo::Regulator::step`] between the controlled body and
+    /// the other side.
+    pub RegulatorHeatPump("heat_regulator_pump"): Regulator => (Foreign<Regulator, HeatBody>, Foreign2<Regulator, HeatBody>), |ctx, dt| {
         let settings = ctx.reads.settings();
         let (Some(controlled), Some(other)) = (ctx.writes.0.value.as_mut(), ctx.writes.1.value.as_mut()) else {
             return Settle::Sleep;
@@ -314,27 +303,15 @@ mod tests {
 
     #[test]
     fn add_body_energy_clamps_at_the_tcmb_floor() {
-        let mut b = HeatBody {
-            capacity: 10.0,
-            energy: 10.0 * 300.0,
-            ..Default::default()
-        };
+        let mut b = HeatBody { capacity: 10.0, energy: 10.0 * 300.0, ..Default::default() };
         add_body_energy(&mut b, -1.0e12);
         assert!((b.temperature() - f64::from(TCMB)).abs() < 1e-6);
     }
 
     #[test]
     fn body_body_exchange_conserves_total_energy() {
-        let a = HeatBody {
-            capacity: 10.0,
-            energy: 10.0 * 400.0,
-            ..Default::default()
-        };
-        let b = HeatBody {
-            capacity: 20.0,
-            energy: 20.0 * 300.0,
-            ..Default::default()
-        };
+        let a = HeatBody { capacity: 10.0, energy: 10.0 * 400.0, ..Default::default() };
+        let b = HeatBody { capacity: 20.0, energy: 20.0 * 300.0, ..Default::default() };
         let before = a.energy + b.energy;
         #[allow(clippy::cast_possible_truncation)]
         let (mut a2, mut b2) = (a.clone(), b.clone());
@@ -353,14 +330,7 @@ mod tests {
 
     #[test]
     fn settle_relax_matches_the_exact_exponential_and_conserves_with_the_environment() {
-        let mut body = HeatBody {
-            capacity: 10.0,
-            energy: 10.0 * 400.0,
-            relax: true,
-            since: 0.0,
-            ambient: 300.0,
-            ..Default::default()
-        };
+        let mut body = HeatBody { capacity: 10.0, energy: 10.0 * 400.0, relax: true, since: 0.0, ambient: 300.0, ..Default::default() };
         let conductance = 2.0;
         let before = body.energy;
         let moved = settle_relax(&mut body, conductance, 10.0);
@@ -374,11 +344,7 @@ mod tests {
 
     #[test]
     fn anchor_relax_schedules_the_settle_time_for_a_releasable_body() {
-        let mut body = HeatBody {
-            capacity: 10.0,
-            energy: 10.0 * 400.0,
-            ..Default::default()
-        };
+        let mut body = HeatBody { capacity: 10.0, energy: 10.0 * 400.0, ..Default::default() };
         let due = anchor_relax(&mut body, 300.0, 2.0, 0.0);
         assert!(body.relax);
         assert!(due > 0.0 && due <= f64::from(RELAX_MAX_INTERVAL));

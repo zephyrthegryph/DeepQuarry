@@ -105,57 +105,54 @@ pub const GAS_COUNT: usize = 22;
 
 /// DM type path of each gas, indexed by its ID.
 pub const GAS_PATHS: [&str; GAS_COUNT] = [
-	"/datum/gas/oxygen",
-	"/datum/gas/nitrogen",
-	"/datum/gas/carbon_dioxide",
-	"/datum/gas/plasma",
-	"/datum/gas/water_vapor",
-	"/datum/gas/hypernoblium",
-	"/datum/gas/nitrous_oxide",
-	"/datum/gas/nitrium",
-	"/datum/gas/tritium",
-	"/datum/gas/bz",
-	"/datum/gas/pluoxium",
-	"/datum/gas/miasma",
-	"/datum/gas/freon",
-	"/datum/gas/hydrogen",
-	"/datum/gas/healium",
-	"/datum/gas/proto_nitrate",
-	"/datum/gas/zauker",
-	"/datum/gas/halon",
-	"/datum/gas/helium",
-	"/datum/gas/antinoblium",
-	"/datum/gas/methane",
-	"/datum/gas/volatile_fuel",
+    "/datum/gas/oxygen",
+    "/datum/gas/nitrogen",
+    "/datum/gas/carbon_dioxide",
+    "/datum/gas/plasma",
+    "/datum/gas/water_vapor",
+    "/datum/gas/hypernoblium",
+    "/datum/gas/nitrous_oxide",
+    "/datum/gas/nitrium",
+    "/datum/gas/tritium",
+    "/datum/gas/bz",
+    "/datum/gas/pluoxium",
+    "/datum/gas/miasma",
+    "/datum/gas/freon",
+    "/datum/gas/hydrogen",
+    "/datum/gas/healium",
+    "/datum/gas/proto_nitrate",
+    "/datum/gas/zauker",
+    "/datum/gas/halon",
+    "/datum/gas/helium",
+    "/datum/gas/antinoblium",
+    "/datum/gas/methane",
+    "/datum/gas/volatile_fuel",
 ];
 
 /// The ID of the gas with this DM type path.
 #[must_use]
 pub fn gas_id_for_path(path: &str) -> Option<GasIDX> {
-	GAS_PATHS.iter().position(|p| *p == path)
+    GAS_PATHS.iter().position(|p| *p == path)
 }
 
 /// The DM type path of a gas ID.
 #[must_use]
 pub fn gas_path(idx: GasIDX) -> Option<&'static str> {
-	GAS_PATHS.get(idx).copied()
+    GAS_PATHS.get(idx).copied()
 }
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+    use super::*;
 
-	#[test]
-	fn ids_match_the_path_table() {
-		assert_eq!(gas_id_for_path("/datum/gas/oxygen"), Some(GAS_OXYGEN));
-		assert_eq!(
-			gas_id_for_path("/datum/gas/volatile_fuel"),
-			Some(GAS_VOLATILE_FUEL)
-		);
-		assert_eq!(gas_path(GAS_PLASMA), Some("/datum/gas/plasma"));
-		assert_eq!(gas_path(GAS_COUNT), None);
-		for (idx, path) in GAS_PATHS.iter().enumerate() {
-			assert_eq!(gas_id_for_path(path), Some(idx));
-		}
-	}
+    #[test]
+    fn ids_match_the_path_table() {
+        assert_eq!(gas_id_for_path("/datum/gas/oxygen"), Some(GAS_OXYGEN));
+        assert_eq!(gas_id_for_path("/datum/gas/volatile_fuel"), Some(GAS_VOLATILE_FUEL));
+        assert_eq!(gas_path(GAS_PLASMA), Some("/datum/gas/plasma"));
+        assert_eq!(gas_path(GAS_COUNT), None);
+        for (idx, path) in GAS_PATHS.iter().enumerate() {
+            assert_eq!(gas_id_for_path(path), Some(idx));
+        }
+    }
 }

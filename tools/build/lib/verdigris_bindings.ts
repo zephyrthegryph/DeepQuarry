@@ -438,11 +438,13 @@ export function scanComponents(root: string): { components: Component[]; domainE
             throw new Error(`${rel}: component ${structName} field \`${f.name}\`: config needs a default`);
           }
         }
-        for (const c of args.computed ? stripBrackets(args.computed) : []) {
+        for (const entry of args.computed ? stripBrackets(args.computed) : []) {
+          // `name` or `name: "unit"`.
+          const [c, u] = entry.split(':').map((x) => x.trim());
           fields.push({
             name: c,
             role: 'computed',
-            unit: null,
+            unit: u ? u.replace(/^"|"$/g, '') : null,
             min: null,
             max: null,
             default: null,

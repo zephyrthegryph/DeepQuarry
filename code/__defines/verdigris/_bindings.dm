@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "41e01f78b0dd8125"
+#define VERDIGRIS_ABI "3ed2b997e11fabf2"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -44,8 +44,7 @@
 #define BODYTEMP_NORMAL 310.15
 
 /// Lowest temperature a fire exists at, and phoron's ignition point, K
-/// (100 °C). The gas crate's `FIRE_MINIMUM_TEMPERATURE_TO_EXIST` and
-/// `PLASMA_MINIMUM_BURN_TEMPERATURE` must equal it (tested there).
+/// (100 °C).
 // verdigris/domains/heat/src/consts.rs
 #define FIRE_MINIMUM_TEMPERATURE_TO_EXIST 373.15
 

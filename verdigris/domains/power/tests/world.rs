@@ -116,7 +116,7 @@ fn a_smes_shares_storage_per_terminal_across_two_regions() {
     let discharged = 1_000_000.0 - smes_charge;
     // 50 W of storage-financed load, two ticks (`step_blocking` ran
     // twice), at SMESRATE charge units per watt-tick.
-    let expected = 2.0 * 50.0 * vg_power::components::SMESRATE;
+    let expected = 2.0 * 50.0 * 0.033_33;
     assert!((discharged - expected).abs() < 1e-6, "discharged {discharged}, expected {expected}");
 
     let violations = world.violations();

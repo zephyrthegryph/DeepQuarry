@@ -57,7 +57,8 @@ struct ComponentArgs {
     /// procs taking the entity number directly, instead of per-type ones.
     dm: Option<LitStr>,
     owner_main: bool,
-    computed: Vec<Ident>,
+    /// Computed readouts, each with an optional unit (`name: "K"`).
+    computed: Vec<(Ident, Option<LitStr>)>,
     /// Foreign keys: fields naming another entity's slot, generating
     /// `vg_core::query::LinksTo` (first) and `LinksTo2` (second).
     links: Vec<Ident>,
@@ -94,8 +95,19 @@ impl Parse for ComponentArgs {
                 "computed" => {
                     let content;
                     syn::bracketed!(content in input);
-                    let list: syn::punctuated::Punctuated<Ident, Token![,]> =
-                        content.parse_terminated(Ident::parse, Token![,])?;
+                    let list: syn::punctuated::Punctuated<(Ident, Option<LitStr>), Token![,]> = content.parse_terminated(
+                        |i: ParseStream| {
+                            let name: Ident = i.parse()?;
+                            let unit = if i.peek(Token![:]) {
+                                i.parse::<Token![:]>()?;
+                                Some(i.parse()?)
+                            } else {
+                                None
+                            };
+                            Ok((name, unit))
+                        },
+                        Token![,],
+                    )?;
                     computed = list.into_iter().collect();
                 }
                 "links" => {
@@ -513,7 +525,11 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
     });
 
     // --- Field table ------------------------------------------------------
-    let computed = &args.computed;
+    let computed: Vec<&Ident> = args.computed.iter().map(|(c, _)| c).collect();
+    let computed_unit = |u: &Option<LitStr>| match u {
+        Some(u) => quote! { ::vg_core::component::channel_unit(#u) },
+        None => quote! { ::vg_core::channel::Unit::None },
+    };
     let n_stored = parsed.len();
     let field_schemas = parsed.iter().map(|f| {
         let name = f.ident.to_string();
@@ -543,13 +559,17 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
             }
         }
     });
-    let computed_schemas = computed.iter().map(|c| {
+    let computed_schemas = args.computed.iter().map(|(c, u)| {
         let name = c.to_string();
+        let unit = match u {
+            Some(u) => quote! { ::std::option::Option::Some(#u) },
+            None => quote! { ::std::option::Option::None },
+        };
         quote! {
             ::vg_core::component::FieldSchema {
                 name: #name,
                 role: ::vg_core::component::FieldRole::Computed,
-                unit: ::std::option::Option::None,
+                unit: #unit,
                 len: 1,
                 numeric: true,
                 conserve: ::std::option::Option::None,
@@ -737,13 +757,14 @@ fn expand_inner(args: &ComponentArgs, mut input: syn::ItemStruct) -> syn::Result
             }
         }
     });
-    let computed_channels = computed.iter().map(|c| {
+    let computed_channels = args.computed.iter().map(|(c, u)| {
         let name = c.to_string();
+        let unit = computed_unit(u);
         quote! {
             ::vg_core::channel::ChannelDecl {
                 name: #name,
                 kind: ::vg_core::channel::ValueKind::Scalar,
-                unit: ::vg_core::channel::Unit::None,
+                unit: #unit,
                 hysteresis: 0.0,
                 extract: |v: &#struct_ident, out: &mut [f32]| {
                     #[allow(clippy::cast_possible_truncation)]

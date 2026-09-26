@@ -30,8 +30,7 @@
 //! `MobHeatWorld::set_bands` call: DM registers a `Band` condition through
 //! the same `vg_world_watch`-style bind every other component uses.
 
-use vg_core::law::{Law, LawCtx, Settle};
-use vg_core::units::Seconds;
+use vg_core::law::Settle;
 use vg_core::vg;
 
 use crate::consts::TCMB;
@@ -103,20 +102,12 @@ fn step(b: &mut MobHeat, dt: f64) {
     }
 }
 
-/// `MobHeat`'s flux integration as a [`Law`]: unchanged from the Core A
-/// preview this file already had -- wraps exactly [`step`].
-pub struct MobHeatFlux;
-impl Law for MobHeatFlux {
-    type Reads = ();
-    type Writes = MobHeat;
-    const NAME: &'static str = "heat_mob_flux";
-    fn step(ctx: &mut LawCtx<'_, (), MobHeat>, dt: Seconds) -> Settle {
+vg_core::law! {
+    /// `MobHeat`'s flux integration as a [`Law`]: unchanged from the Core A
+    /// preview this file already had -- wraps exactly [`step`].
+    pub MobHeatFlux("heat_mob_flux"): () => MobHeat, |ctx, dt| {
         step(ctx.writes, dt.0);
-        if ctx.writes.time_scale > 0.0 {
-            Settle::Active
-        } else {
-            Settle::Sleep
-        }
+        if ctx.writes.time_scale > 0.0 { Settle::Active } else { Settle::Sleep }
     }
 }
 

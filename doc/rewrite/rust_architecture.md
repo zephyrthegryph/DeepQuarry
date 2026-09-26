@@ -54,14 +54,16 @@ A domain crate **may not**:
 CI (`tools/ci/check_rust_core_consolidation.py`) enforces every item above. Its
 allow-list may only shrink.
 
-**Line budgets** (non-test code). Exceeding a budget means infrastructure has
-leaked into the domain.
+**Line budgets** (non-test code: non-blank, non-comment lines outside
+`#[cfg(test)]` items, `tests.rs` and `tests/`). Exceeding a budget means
+infrastructure has leaked into the domain. The CI check enforces them, and
+that no domain depends on `byondapi`, the FFI crates or another domain.
 
-| Domain | Today | Budget |
-|---|---|---|
-| power | ~1,600 | **≤ 400** |
-| heat | ~3,000 (plus 600 of binds in gas) | **≤ 600** |
-| gas | ~8,700 | **≤ 1,600** (mixture maths, registry and reaction data dominate) |
+| Domain | 2026-09-23 | Now | Budget |
+|---|---|---|---|
+| power | ~1,240 | 399 | **≤ 400** |
+| heat | ~2,070 | 589 | **≤ 600** |
+| gas | ~6,000 | ~1,490 | **≤ 1,600** |
 
 ## 3. Crate map
 
@@ -450,15 +452,43 @@ About **120 agent-hours** in total. The critical path is **1b → 4 → 6 → 9*
 
 ### 8.3 Status
 
-- **Done on `rewrite/rust-core2`:** 1a, 1b, 1c (every core facility, §8.4),
-  2 (heat's exchange math is core `thermo`'s) and 8 (`gen/layout`, with
-  `structural.rs` and `content.rs` split by pipeline stage). The workspace
-  builds on the host and on i686 (`cargo check --workspace --all-targets`).
-- **Open:** 0, 3, 4, 5, 6, 7, 9. These are domain ports onto the facilities
-  below; §8.5 lists what each port does. No further core work is expected.
-- **Not yet exercised:** nothing here has been run. Per the plan, tests
-  and differential harnesses (step 0) come after the implementation; the
-  crates only compile, with their existing and new unit tests building.
+- **Done on `rewrite/rust-core2`:** every step but 0 (differential
+  harnesses, deferred: domains are covered by their own tests and the
+  focused DM tests). The allow-list is empty and the budgets hold.
+- **Gas (steps 5, 6).** Turf gas is the `TurfGas` field on the shared
+  World (`vg-ffi`'s `gas/mod.rs` registers it with its laws, its watches
+  and the turf binds; air masks are the grid's `Air` layer, z links the
+  grid's, planet relaxation is `FieldKind::relax`). Every
+  `/datum/gas_mixture` handle (`MixRef`), the main-mixture slab and the
+  ~60 legacy binds are `vg-ffi`'s (`gas/mix.rs`, `gas/binds.rs`). Machines'
+  dirty subscriptions and reactor gas watches are core `Changed`/
+  `Threshold` watches over the `TurfGas` channels (with a `COMPOSITION`
+  vector channel): turf cells through the field's watches, main and pipe
+  mixtures through a core `WatchState` over a mirror. `vg-gas` is
+  declarations and laws: no `byondapi`, host-buildable, one registry
+  (`gate.rs`: gases and reaction requirements) and a fixed-size `Mixture`.
+- **Heat (step 4, finished).** Every body coupling runs through one
+  function over an `Env` (a solid cell, a body, a gas cell). A gas is any
+  field whose cells implement `vg_core::thermo::Thermal`, so
+  `SolidGasExchange<G>`/`BodyGasExchange<G>` are generic laws `vg-ffi`
+  registers with `TurfGas`: heat depends on no other domain.
+- **Power (step 3, finished).** Cable reach is computed at bind in
+  `vg-ffi` (DM names turfs by `x, y, z`); the domain keeps the connection
+  rule, the ledger and the laws.
+- **The reactor (step 7).** `ffi/src/reactor.rs` is gone. Subscriptions
+  and rate models are world entities (`World::sched_*`, `rate_*`,
+  `core/src/world/subscriptions.rs`); the timer wheel, keys and wake lanes
+  are the world's; watches go through the watch port of a code (a
+  component kind, or `VG_GAS_HANDLES`); the probe is an ordinary `Probe`
+  component. DM calls the generic `vg_world_*` binds; `REACT_DOMAIN_*` is
+  gone and handles are `list(code, cell)`. DM timers keep tick precision,
+  so they stay on the scheduler's wheel rather than `LawCtx::schedule`
+  (world steps are 0.5 s).
+- **Core additions:** `law!` (a law in one item, generic form too),
+  `rate_store!`, `#[vg::component(links = [..], computed = [x: "K"])]`,
+  `thermo::Thermal`, `FieldKind::relax`, `World::drain_field_wakes`,
+  `World::evaluate_main_watches`, `EntityTable::at`, and component channel
+  names validate (component kinds are watchable).
 
 ### 8.4 Facilities
 

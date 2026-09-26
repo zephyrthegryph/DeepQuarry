@@ -498,3 +498,34 @@ fn world_rate_remove(model: ByondValue) -> Result<ByondValue> {
     };
     with_world(|w: &mut World| Ok(yes(w.rate_remove(e))))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gas::mix::{self, MixRef};
+    use vg_gas::cell::gas_ch;
+    use vg_gas::gas::Mixture;
+
+    #[test]
+    fn a_gas_handle_watch_wakes_through_the_scheduler() {
+        with_world(|_| Ok(())).unwrap();
+        let mut tank = Mixture::from_vol(70.0);
+        tank.set_moles(0, 10.0);
+        tank.set_temperature(293.15);
+        let r = MixRef::Main(mix::alloc(tank.clone()).unwrap());
+        let cond = Cond::Changed { cell: r.id(), mask: gas_ch::PRESSURE.bit() };
+        let (port, id) = registry::with_domain(world_kind_domain(GAS_HANDLES), |d| d.watch(7, Lane::Urgent, &cond)).unwrap().unwrap();
+        with_world(|w| w.sched_watch(7, GAS_HANDLES, port, id).map_err(|e| eyre!("{e}"))).unwrap();
+        let step = |now| {
+            let mut wakes = Vec::new();
+            registry::for_each(|_, d| d.take_wakes(&mut wakes));
+            with_world(|w| Ok(w.sched_step(now, 100, &wakes))).unwrap()
+        };
+        assert!(step(1).is_empty());
+        let mut after = tank.clone();
+        after.set_moles(0, 20.0);
+        mix::store(r, &tank, &after);
+        let woke = step(2);
+        assert_eq!(woke.len(), 1, "{woke:?}");
+    }
+}

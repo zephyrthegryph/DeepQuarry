@@ -26,13 +26,11 @@
 //! - Energy is conserved per step (reservoir inflow is in the ledger); the
 //!   old `to_be_destroyed` write and the 102 K / 300 K sentinels are gone.
 
-use vg_core::field::kernel::{Operand, conduction, exchange_stiffness};
+use vg_core::field::kernel::{conduction, exchange_stiffness, Operand};
 use vg_core::field::{FieldKind, Side};
 use vg_core::owner::{Applied, Domain};
 
-use crate::consts::{
-    RADIATING_AREA, SOLID_SETTLED_K, SPACE_SKY_TEMPERATURE, STEFAN_BOLTZMANN, TCMB,
-};
+use crate::consts::{RADIATING_AREA, SOLID_SETTLED_K, SPACE_SKY_TEMPERATURE, STEFAN_BOLTZMANN, TCMB};
 
 /// Cell flags DM sends with the material values.
 pub mod flags {
@@ -60,25 +58,11 @@ pub struct SolidCell {
 }
 
 impl SolidCell {
-    #[must_use]
-    pub fn at(
-        capacity: f32,
-        temperature: f32,
-        conductivity: f32,
-        emissivity: f32,
-        flags: u8,
-    ) -> Self {
-        Self {
-            energy: capacity * temperature,
-            temperature,
-            conductivity,
-            emissivity,
-            flags,
-        }
+    pub fn at(capacity: f32, temperature: f32, conductivity: f32, emissivity: f32, flags: u8) -> Self {
+        Self { energy: capacity * temperature, temperature, conductivity, emissivity, flags }
     }
 
     /// The temperature for `capacity` (the cached value for a non-node).
-    #[must_use]
     pub fn temperature_in(&self, capacity: f32) -> f32 {
         if capacity > 0.0 {
             self.energy / capacity
@@ -87,7 +71,6 @@ impl SolidCell {
         }
     }
 
-    #[must_use]
     pub const fn has(&self, flag: u8) -> bool {
         self.flags & flag != 0
     }
@@ -115,11 +98,7 @@ pub enum SolidCmd {
     /// Sets the temperature (DM authority: map load, admin, holodeck).
     Set { temperature: f32, capacity: f32 },
     /// Material values.
-    Props {
-        conductivity: f32,
-        emissivity: f32,
-        flags: u8,
-    },
+    Props { conductivity: f32, emissivity: f32, flags: u8 },
     /// The capacity changes from `from` to `to` (a new wall material):
     /// the temperature is kept.
     Rescale { from: f32, to: f32 },
@@ -144,29 +123,18 @@ impl Domain for SolidHeat {
                 }
                 value.energy = next;
             }
-            SolidCmd::Set {
-                temperature,
-                capacity,
-            } => {
+            SolidCmd::Set { temperature, capacity } => {
                 let t = temperature.max(TCMB);
                 value.temperature = t;
                 value.energy = capacity.max(0.0) * t;
             }
-            SolidCmd::Props {
-                conductivity,
-                emissivity,
-                flags,
-            } => {
+            SolidCmd::Props { conductivity, emissivity, flags } => {
                 value.conductivity = conductivity.max(0.0);
                 value.emissivity = emissivity.clamp(0.0, 1.0);
                 value.flags = flags;
             }
             SolidCmd::Rescale { from, to } => {
-                let t = if from > 0.0 {
-                    value.energy / from
-                } else {
-                    value.temperature
-                };
+                let t = if from > 0.0 { value.energy / from } else { value.temperature };
                 value.temperature = t;
                 value.energy = to.max(0.0) * t;
             }
@@ -176,12 +144,7 @@ impl Domain for SolidHeat {
 }
 
 fn operand<'a>(s: &Side<'a, SolidCell>) -> Operand<'a, 1> {
-    Operand {
-        amounts: std::array::from_ref(&s.cell.energy),
-        capacity: s.capacity,
-        inv_capacity: s.inv_capacity,
-        share: s.share,
-    }
+    Operand { amounts: std::array::from_ref(&s.cell.energy), capacity: s.capacity, inv_capacity: s.inv_capacity, share: s.share }
 }
 
 fn is_space(s: &Side<'_, SolidCell>) -> bool {
@@ -189,34 +152,21 @@ fn is_space(s: &Side<'_, SolidCell>) -> bool {
 }
 
 fn temperature(s: &Side<'_, SolidCell>) -> f32 {
-    if is_space(s) {
-        SPACE_SKY_TEMPERATURE
-    } else {
-        s.cell.energy / s.capacity
-    }
+    if is_space(s) { SPACE_SKY_TEMPERATURE } else { s.cell.energy / s.capacity }
 }
 
 /// `C_a C_b / (C_a + C_b)`; for a reservoir side, the other side's capacity
 /// weighted as superconduct.rs did (the reservoir's geometry capacity).
-fn harmonic(a: f32, b: f32) -> f32 {
-    let sum = a + b;
-    if sum > 0.0 { a * b / sum } else { 0.0 }
-}
-
 /// Conductance of a conduction edge, W/K.
-#[must_use]
 pub fn edge_conductance(a: &SolidCell, ca: f32, b: &SolidCell, cb: f32) -> f32 {
-    a.conductivity.min(b.conductivity).max(0.0) * harmonic(ca, cb)
+    // The harmonic mean of the two capacities, over the lesser conductivity.
+    if ca + cb > 0.0 { a.conductivity.min(b.conductivity).max(0.0) * ca * cb / (ca + cb) } else { 0.0 }
 }
 
 /// Net radiated power from a body at `t` to the sky, W (negative: absorbed).
-#[must_use]
 pub fn radiated_power(emissivity: f32, t: f32) -> f64 {
     let (t, sky) = (f64::from(t), f64::from(SPACE_SKY_TEMPERATURE));
-    f64::from(emissivity.clamp(0.0, 1.0))
-        * STEFAN_BOLTZMANN
-        * f64::from(RADIATING_AREA)
-        * (t.powi(4) - sky.powi(4))
+    f64::from(emissivity.clamp(0.0, 1.0)) * STEFAN_BOLTZMANN * f64::from(RADIATING_AREA) * (t.powi(4) - sky.powi(4))
 }
 
 /// Energy a face radiates to space over `dt`, clamped so the body never
@@ -237,11 +187,7 @@ fn radiation(body: &Side<'_, SolidCell>, dt: f32) -> f32 {
     } else {
         q
     };
-    if q > 0.0 {
-        q.min((body.cell.energy * body.share).max(0.0))
-    } else {
-        q
-    }
+    if q > 0.0 { q.min((body.cell.energy * body.share).max(0.0)) } else { q }
 }
 
 impl FieldKind for SolidHeat {
@@ -275,22 +221,14 @@ impl FieldKind for SolidHeat {
         let radiating = |s: &Side<'_, SolidCell>| {
             let t = f64::from(s.cell.energy / s.capacity).max(0.0);
             #[allow(clippy::cast_possible_truncation)]
-            let d = (4.0
-                * f64::from(s.cell.emissivity.clamp(0.0, 1.0))
-                * STEFAN_BOLTZMANN
-                * f64::from(RADIATING_AREA)
-                * t.powi(3)) as f32;
+            let d = (4.0 * f64::from(s.cell.emissivity.clamp(0.0, 1.0)) * STEFAN_BOLTZMANN * f64::from(RADIATING_AREA) * t.powi(3)) as f32;
             d * s.inv_capacity
         };
         match (is_space(&a), is_space(&b)) {
             (true, true) => 0.0,
             (false, true) => radiating(&a),
             (true, false) => radiating(&b),
-            (false, false) => exchange_stiffness(
-                edge_conductance(a.cell, a.capacity, b.cell, b.capacity),
-                a.inv_capacity,
-                b.inv_capacity,
-            ),
+            (false, false) => exchange_stiffness(edge_conductance(a.cell, a.capacity, b.cell, b.capacity), a.inv_capacity, b.inv_capacity),
         }
     }
 
@@ -348,24 +286,15 @@ mod tests {
         let space = SolidCell::at(7_000.0, TCMB, 0.4, 0.0, flags::SPACE);
         let q = SolidHeat::flux(side(&hot, 1_000.0, false), side(&space, 7_000.0, true), 1.0);
         let expect = STEFAN_BOLTZMANN * (800f64.powi(4) - f64::from(SPACE_SKY_TEMPERATURE).powi(4));
-        assert!(
-            (f64::from(q) - expect).abs() < 1e-2 * expect,
-            "{q} vs {expect}"
-        );
-        assert_eq!(
-            SolidHeat::flux(side(&space, 7_000.0, true), side(&hot, 1_000.0, false), 1.0),
-            -q
-        );
+        assert!((f64::from(q) - expect).abs() < 1e-2 * expect, "{q} vs {expect}");
+        assert_eq!(SolidHeat::flux(side(&space, 7_000.0, true), side(&hot, 1_000.0, false), 1.0), -q);
         // A tiny body cannot radiate past the sky temperature in one step.
         let tiny = SolidCell::at(0.01, 800.0, 0.05, 1.0, 0);
         let q = SolidHeat::flux(side(&tiny, 0.01, false), side(&space, 7_000.0, true), 1.0);
         assert!(tiny.energy - q >= 0.01 * SPACE_SKY_TEMPERATURE - 1e-3);
         // At the sky temperature nothing flows and the edge is settled.
         let room = SolidCell::at(1_000.0, SPACE_SKY_TEMPERATURE, 0.05, 1.0, 0);
-        assert!(SolidHeat::settled(
-            side(&room, 1_000.0, false),
-            side(&space, 7_000.0, true)
-        ));
+        assert!(SolidHeat::settled(side(&room, 1_000.0, false), side(&space, 7_000.0, true)));
     }
 
     #[test]
@@ -375,13 +304,7 @@ mod tests {
         assert_eq!(c.energy, 0.0);
         assert_eq!(a.shortfall, 10_000.0);
         let mut c = SolidCell::at(100.0, 300.0, 0.05, 0.9, 0);
-        SolidHeat::apply(
-            &mut c,
-            &SolidCmd::Rescale {
-                from: 100.0,
-                to: 400.0,
-            },
-        );
+        SolidHeat::apply(&mut c, &SolidCmd::Rescale { from: 100.0, to: 400.0 });
         assert_eq!(c.energy, 120_000.0);
         assert_eq!(c.temperature, 300.0);
     }

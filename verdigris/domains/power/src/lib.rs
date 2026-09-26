@@ -8,19 +8,17 @@
 //!   `#[vg::component]` declarations.
 //! - [`kind`]: [`kind::Cables`], the R7 network kind. All region state is
 //!   in [`kind::PowerLedger`], the payload.
-//! - [`laws`]: the pure physics (`apc_tick`, `smes_plan`,
-//!   `smes_charge_in`/`smes_discharge_out`, `storage_input_share`/
+//! - [`laws`]: the pure physics (`apc_tick`, `smes_offer`/`smes_ask`,
+//!   `storage_input_share`/
 //!   `storage_output_share`, `brownout`), each proven by its own tests, and
 //!   the `Law` types (`PowerReset`, `ProducerCredit`, `SmesOutputPlan`/
 //!   `SmesInputPlan`, `ApcTick`, `PowerSettle`, `SmesOutputApply`/
 //!   `SmesInputApply`) that run them over `vg_core`'s driver.
-//! - [`events`][mod@events]: [`events::PowerEvent`].
 
 pub mod components;
-pub mod events;
 pub mod kind;
 pub mod laws;
 
-pub use components::{Apc, Cable, Channel, Producer, Smes, SmesInputTerminal};
-pub use events::PowerEvent;
+pub use components::{Apc, Cable, Producer, Smes, SmesInputTerminal};
 pub use kind::{Cables, PowerLedger, PowerNode};
+pub use laws::PowerEvent;

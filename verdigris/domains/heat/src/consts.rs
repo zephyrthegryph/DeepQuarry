@@ -42,8 +42,7 @@ pub const BODYTEMP_NORMAL: f32 = 310.15;
 /// @dm-define HUMAN_HEAT_CAPACITY
 pub const HUMAN_HEAT_CAPACITY: f32 = 280_000.0;
 /// Lowest temperature a fire exists at, and phoron's ignition point, K
-/// (100 °C). The gas crate's `FIRE_MINIMUM_TEMPERATURE_TO_EXIST` and
-/// `PLASMA_MINIMUM_BURN_TEMPERATURE` must equal it (tested there).
+/// (100 °C).
 /// @dm-define FIRE_MINIMUM_TEMPERATURE_TO_EXIST
 pub const IGNITION_TEMPERATURE: f32 = 373.15;
 

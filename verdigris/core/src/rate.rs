@@ -289,6 +289,33 @@ impl RateStore {
     }
 }
 
+/// Gives components that flatten a [`RateStore`] into `charge`, `capacity`
+/// and `rate` fields (`#[vg::component]` holds numbers only) `cell()`,
+/// `set_cell()` and `with_cell()`.
+#[macro_export]
+macro_rules! rate_store {
+    ($($t:ty),*) => {$(
+        impl $t {
+            #[must_use]
+            pub fn cell(&self) -> $crate::rate::RateStore {
+                $crate::rate::RateStore { charge: self.charge, capacity: self.capacity, rate: self.rate }
+            }
+
+            pub fn set_cell(&mut self, cell: $crate::rate::RateStore) {
+                (self.charge, self.capacity, self.rate) = (cell.charge, cell.capacity, cell.rate);
+            }
+
+            /// Runs `f` on the store and writes it back.
+            pub fn with_cell<R>(&mut self, f: impl FnOnce(&mut $crate::rate::RateStore) -> R) -> R {
+                let mut cell = self.cell();
+                let r = f(&mut cell);
+                self.set_cell(cell);
+                r
+            }
+        }
+    )*};
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

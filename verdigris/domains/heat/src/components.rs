@@ -37,7 +37,7 @@ pub mod gas_kind {
 /// A heat body: an object, machine or container's node
 /// (`temperature.md` §2.2). Its exchange targets are separate
 /// [`SolidCoupling`]/[`BodyCoupling`]/[`GasCoupling`] entities naming it.
-#[vg::component(domain = heat, kind = 1, dm = "/atom/movable/vg_heat_body", owner = worker, computed = [temperature])]
+#[vg::component(domain = heat, kind = 1, dm = "/atom/movable/vg_heat_body", owner = worker, computed = [temperature: "K"])]
 pub struct HeatBody {
     /// J/K.
     #[vg(config, unit = "J/K", range = 0.0001..=1000000000000.0, default = 1.0, on_invalid = clamp)]
@@ -85,24 +85,15 @@ pub struct HeatBody {
 
 impl HeatBody {
     /// The body's own [`vg_core::thermo::Phase`].
-    #[must_use]
     pub fn phase(&self) -> vg_core::thermo::Phase {
         #[allow(clippy::cast_possible_truncation)]
-        vg_core::thermo::Phase {
-            temperature: self.phase_temperature as f32,
-            latent: self.phase_latent as f32,
-        }
+        vg_core::thermo::Phase { temperature: self.phase_temperature as f32, latent: self.phase_latent as f32 }
     }
 
     /// The computed `temperature` readout DM watches and reads, K.
-    #[must_use]
     #[allow(clippy::cast_possible_truncation)]
     pub fn temperature(&self) -> f64 {
-        f64::from(vg_core::thermo::phase_temperature(
-            self.energy as f32,
-            self.capacity as f32,
-            self.phase(),
-        ))
+        f64::from(vg_core::thermo::phase_temperature(self.energy as f32, self.capacity as f32, self.phase()))
     }
 }
 
@@ -205,7 +196,6 @@ pub struct Regulator {
 }
 
 impl Regulator {
-    #[must_use]
     #[allow(clippy::cast_possible_truncation)]
     pub fn settings(&self) -> vg_core::thermo::Regulator {
         vg_core::thermo::Regulator {

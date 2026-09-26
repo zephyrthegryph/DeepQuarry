@@ -21,16 +21,6 @@ pub enum PowerNode {
     Machine,
 }
 
-impl PowerNode {
-    #[must_use]
-    pub const fn as_cable(&self) -> Option<&Cable> {
-        match self {
-            Self::Cable(c) => Some(c),
-            Self::Machine => None,
-        }
-    }
-}
-
 /// A region's live state: what [`crate::laws::PowerPlan`]/
 /// [`crate::laws::PowerSettle`] compute and what the brownout event tracks,
 /// plus the pro-rata totals [`crate::laws::SmesOutputApply`]/
@@ -57,13 +47,6 @@ pub struct PowerLedger {
     pub region_excess: f64,
 }
 
-impl PowerLedger {
-    #[must_use]
-    pub fn netexcess(&self) -> f64 {
-        self.avail - self.load
-    }
-}
-
 /// Cables: node data is a [`PowerNode`] (topology only), the region payload
 /// is [`PowerLedger`].
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -84,10 +67,7 @@ impl NetworkKind for Cables {
         // a split child starts fresh; brown carries over until the next
         // step's law recomputes it, so a mid-step split never flashes a
         // brief false "restored".
-        PowerLedger {
-            brown: payload.brown,
-            ..PowerLedger::default()
-        }
+        PowerLedger { brown: payload.brown, ..PowerLedger::default() }
     }
 
     fn merge(into: &mut PowerLedger, other: PowerLedger) {
@@ -102,14 +82,15 @@ impl NetworkKind for Cables {
     fn connects((a, ca): (&PowerNode, CellId), (b, cb): (&PowerNode, CellId)) -> bool {
         match (a, b) {
             (PowerNode::Cable(a), PowerNode::Cable(b)) => {
+                let has = |c: &crate::Cable, d: u8| c.d1 == d || c.d2 == d;
+                // Same turf: a shared end (two knots share 0); else a reach.
                 if ca == cb {
-                    return a.shares_end(b);
+                    has(b, a.d1) || has(b, a.d2)
+                } else {
+                    a.reach.iter().any(|&(t, need)| t == cb && has(b, need))
                 }
-                a.reach.iter().any(|&(t, need)| t == cb && b.has(need))
             }
-            (PowerNode::Cable(c), PowerNode::Machine) | (PowerNode::Machine, PowerNode::Cable(c)) => {
-                ca == cb && c.is_knot()
-            }
+            (PowerNode::Cable(c), PowerNode::Machine) | (PowerNode::Machine, PowerNode::Cable(c)) => ca == cb && c.d1 == 0,
             (PowerNode::Machine, PowerNode::Machine) => false,
         }
     }

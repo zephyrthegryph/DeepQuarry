@@ -21,23 +21,14 @@ pub const CELL_VOLUME: f32 = 2500.0;
 /// moles in a 2.5 m^3 cell at 101.325 Pa and 20 degC
 pub const MOLES_CELLSTANDARD: f32 = ONE_ATMOSPHERE * CELL_VOLUME / (T20C * R_IDEAL_GAS_EQUATION);
 
-// EXCITED GROUPS
-
 /// Minimum ratio of air that must move to/from a tile
 pub const MINIMUM_AIR_RATIO_TO_MOVE: f32 = 0.001;
 /// Either this must be active
 pub const MINIMUM_MOLES_DELTA_TO_MOVE: f32 = MOLES_CELLSTANDARD * MINIMUM_AIR_RATIO_TO_MOVE;
 /// Minimum temperature difference before group processing is suspended
 pub const MINIMUM_TEMPERATURE_DELTA_TO_SUSPEND: f32 = 4.0;
-/// Minimum temperature difference before the gas temperatures are just set to be equal
-pub const MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER: f32 = 0.5;
 
 // Solid heat transfer constants live in vg-heat (domains/heat/src/consts.rs).
-
-// FIRE
-
-pub const FIRE_MINIMUM_TEMPERATURE_TO_EXIST: f32 = 100.0 + T0C;
-pub const PLASMA_MINIMUM_BURN_TEMPERATURE: f32 = 100.0 + T0C;
 
 // GASES
 
@@ -45,4 +36,3 @@ pub const PLASMA_MINIMUM_BURN_TEMPERATURE: f32 = 100.0 + T0C;
 pub const FACTOR_GAS_VISIBLE_MAX: f32 = 20.0;
 /// Mole step for alpha updates. This means alpha can update at 0.25, 0.5, 0.75 and so on
 pub const MOLES_GAS_VISIBLE_STEP: f32 = 0.25;
-

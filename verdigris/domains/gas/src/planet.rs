@@ -24,19 +24,19 @@ static PLANETS: RwLock<Vec<(String, GasCell)>> = RwLock::new(Vec::new());
 /// # Panics
 /// If the lock is poisoned (a prior panic while holding it).
 pub fn planet_id(key: &str, baseline: GasCell) -> u8 {
-	let mut p = PLANETS.write().unwrap_or_else(std::sync::PoisonError::into_inner);
-	if let Some(id) = p.iter().position(|(k, _)| k == key) {
-		return u8::try_from(id + 1).unwrap_or(0);
-	}
-	if p.len() >= 255 {
-		return 0;
-	}
-	let id = u8::try_from(p.len() + 1).unwrap_or(0);
-	if id == 0 {
-		return 0;
-	}
-	p.push((key.to_owned(), baseline));
-	id
+    let mut p = PLANETS.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+    if let Some(id) = p.iter().position(|(k, _)| k == key) {
+        return u8::try_from(id + 1).unwrap_or(0);
+    }
+    if p.len() >= 255 {
+        return 0;
+    }
+    let id = u8::try_from(p.len() + 1).unwrap_or(0);
+    if id == 0 {
+        return 0;
+    }
+    p.push((key.to_owned(), baseline));
+    id
 }
 
 /// The baseline atmosphere for `id` (`1`-based; `0`/out of range: none),
@@ -46,14 +46,14 @@ pub fn planet_id(key: &str, baseline: GasCell) -> u8 {
 /// planet relaxation had.
 #[must_use]
 pub fn baseline(id: u8) -> Option<GasCell> {
-	if id == 0 {
-		return None;
-	}
-	let p = PLANETS.try_read().ok()?;
-	p.get(usize::from(id) - 1).map(|(_, cell)| *cell)
+    if id == 0 {
+        return None;
+    }
+    let p = PLANETS.try_read().ok()?;
+    p.get(usize::from(id) - 1).map(|(_, cell)| *cell)
 }
 
 #[cfg(test)]
 pub(crate) fn reset_for_test() {
-	PLANETS.write().unwrap_or_else(std::sync::PoisonError::into_inner).clear();
+    PLANETS.write().unwrap_or_else(std::sync::PoisonError::into_inner).clear();
 }

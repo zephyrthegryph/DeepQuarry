@@ -19,76 +19,27 @@
 
 use vg_core::vg;
 
-/// A power channel: equipment, lighting, environment. Per-channel values
-/// are fields keyed by this enum, never a magic index
-/// (`rust_bindings.md` §2).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Channel {
-    Equip,
-    Light,
-    Environ,
-}
+/// `POWERCHAN_*`: a channel's setting, as an APC's `channels` field holds
+/// it (channel 0 equipment, 1 lighting, 2 environment). An out-of-range
+/// byte reads as off: a corrupt save must not crash the tick.
+pub mod setting {
+    pub const OFF: u8 = 0;
+    pub const OFF_AUTO: u8 = 1;
+    pub const ON: u8 = 2;
+    pub const ON_AUTO: u8 = 3;
 
-impl Channel {
-    pub const ALL: [Channel; 3] = [Channel::Equip, Channel::Light, Channel::Environ];
-
-    #[must_use]
-    pub const fn idx(self) -> usize {
-        match self {
-            Channel::Equip => 0,
-            Channel::Light => 1,
-            Channel::Environ => 2,
-        }
-    }
-}
-
-/// `POWERCHAN_*`: a channel's setting, packed as `u8` in a component field.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum ChannelSetting {
-    Off,
-    OffAuto,
-    On,
-    OnAuto,
-}
-
-impl ChannelSetting {
     /// `autoset()`: `on` is 0 force off, 1 allow on, 2 auto-off.
-    #[must_use]
-    pub const fn autoset(self, on: u8) -> Self {
-        match self {
-            Self::OffAuto if on == 1 => Self::OnAuto,
-            Self::On if on == 0 => Self::Off,
-            Self::OnAuto if on == 0 || on == 2 => Self::OffAuto,
+    pub const fn autoset(v: u8, on: u8) -> u8 {
+        match v {
+            OFF_AUTO if on == 1 => ON_AUTO,
+            ON if on == 0 => OFF,
+            ON_AUTO if on == 0 || on == 2 => OFF_AUTO,
             other => other,
         }
     }
 
-    #[must_use]
-    pub const fn powered(self) -> bool {
-        matches!(self, Self::On | Self::OnAuto)
-    }
-
-    /// The packed `u8` a component field stores.
-    #[must_use]
-    pub const fn as_u8(self) -> u8 {
-        match self {
-            Self::Off => 0,
-            Self::OffAuto => 1,
-            Self::On => 2,
-            Self::OnAuto => 3,
-        }
-    }
-
-    /// Unpacks a component field's `u8` (an out-of-range byte is `Off`, not
-    /// a panic: a corrupt save must not crash the tick).
-    #[must_use]
-    pub const fn from_u8(v: u8) -> Self {
-        match v {
-            1 => Self::OffAuto,
-            2 => Self::On,
-            3 => Self::OnAuto,
-            _ => Self::Off,
-        }
+    pub const fn powered(v: u8) -> bool {
+        matches!(v, ON | ON_AUTO)
     }
 }
 
@@ -106,30 +57,6 @@ pub struct Cable {
     /// map: `vg-ffi`).
     pub reach: Vec<(vg_core::grid::CellId, u8)>,
 }
-
-impl Cable {
-    #[must_use]
-    pub const fn is_knot(&self) -> bool {
-        self.d1 == 0
-    }
-
-    #[must_use]
-    pub const fn has(&self, dir: u8) -> bool {
-        self.d1 == dir || self.d2 == dir
-    }
-
-    /// Two cables on the same turf connect when they share a direction
-    /// value (two knots share 0).
-    #[must_use]
-    pub const fn shares_end(&self, other: &Self) -> bool {
-        other.has(self.d1) || other.has(self.d2)
-    }
-}
-
-/// `CELLRATE`: charge units per watt-tick, an APC cell.
-pub const CELLRATE: f64 = 0.002;
-/// `SMESRATE`: charge units per watt-tick, a SMES.
-pub const SMESRATE: f64 = 0.033_33;
 
 /// A registered generator or one-step pulse source, bound to a
 /// [`crate::kind::Cables`] node. `pulse` is a one-shot addition to its
@@ -204,32 +131,6 @@ pub struct Apc {
     pub policy_neutral_allow: [u8; 3],
 }
 
-impl Apc {
-    #[must_use]
-    pub fn cell(&self) -> vg_core::rate::RateStore {
-        vg_core::rate::RateStore {
-            charge: self.charge,
-            capacity: self.capacity,
-            rate: self.rate,
-        }
-    }
-
-    pub fn set_cell(&mut self, cell: vg_core::rate::RateStore) {
-        self.charge = cell.charge;
-        self.capacity = cell.capacity;
-        self.rate = cell.rate;
-    }
-
-    #[must_use]
-    pub fn channel(&self, c: Channel) -> ChannelSetting {
-        ChannelSetting::from_u8(self.channels[c.idx()])
-    }
-
-    pub fn set_channel(&mut self, c: Channel, v: ChannelSetting) {
-        self.channels[c.idx()] = v.as_u8();
-    }
-}
-
 /// A SMES's storage, bound to the unit entity (not itself a network node --
 /// its terminals are). `charge`/`capacity`/`rate` are
 /// `vg_core::rate::RateStore`'s fields, flattened.
@@ -251,23 +152,6 @@ pub struct Smes {
     pub charge: f64,
 }
 
-impl Smes {
-    #[must_use]
-    pub fn cell(&self) -> vg_core::rate::RateStore {
-        vg_core::rate::RateStore {
-            charge: self.charge,
-            capacity: self.capacity,
-            rate: self.rate,
-        }
-    }
-
-    pub fn set_cell(&mut self, cell: vg_core::rate::RateStore) {
-        self.charge = cell.charge;
-        self.capacity = cell.capacity;
-        self.rate = cell.rate;
-    }
-}
-
 /// A SMES's input terminal: its own [`crate::kind::Cables`] node, on its
 /// own region, naming the unit entity that holds the [`Smes`] row. A SMES
 /// may have several (DM's `terminals` list), each sharing pro-rata in
@@ -281,3 +165,4 @@ pub struct SmesInputTerminal {
     pub unit: u32,
 }
 
+vg_core::rate_store!(Apc, Smes);
