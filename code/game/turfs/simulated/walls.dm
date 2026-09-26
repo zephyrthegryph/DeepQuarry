@@ -45,7 +45,18 @@
 	if(!isnull(rmaterialtype))
 		reinf_material = get_material_by_name(rmaterialtype)
 	update_material()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	check_radioactive()
+
+/// A wall radiates on the slow lane only while one of its materials is radioactive; any other wall
+/// never joins it (walls are numerous). Call after its materials change.
+/turf/simulated/wall/proc/check_radioactive()
+	if(wall_radioactivity())
+		PERIODIC_START(src, PERIODIC_SLOW)
+	else
+		PERIODIC_STOP(src)
+
+/turf/simulated/wall/proc/wall_radioactivity()
+	return dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
 
 /turf/simulated/wall/Destroy()
 	PERIODIC_STOP(src)
@@ -294,7 +305,7 @@
 /turf/simulated/wall/proc/radiate()
 	SIGNAL_HANDLER
 	// radioactivity moved to a component on /datum/material.
-	var/total_radiation = dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
+	var/total_radiation = wall_radioactivity()
 	if(!total_radiation)
 		return
 

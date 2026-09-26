@@ -50,6 +50,7 @@
 	else
 		girder_material = newgmaterial
 	update_material()
+	check_radioactive()
 
 /turf/simulated/wall/update_icon()
 	if(!material)
