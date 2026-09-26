@@ -96,9 +96,16 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
 
 A slot is a relation (`/datum/om/relation/slot`, `object_model_core.md` §7) that
 also owns loc: linking a thing into a slot is a ledger move, and it is also an
-`om_link` to the holder, so a slot gets a relation's declared view fields,
-`changes` channels and `contributes`/`grants` rows for free, on top of what a
-container needs. A slot decl subclasses `/datum/om/relation/slot` and declares
+`om_link` to the holder, so a slot gets a relation's `changes` channels and
+`contributes`/`grants` rows for free, on top of what a container needs. There
+are no view fields any more (OM relations step 3): a relation or slot IS the
+state, and the only writer of any legacy var a caller still reads (a
+machine's `occupant`, a mob's `pulling`) is that relation's own `on_link()`/
+`on_unlink()`. Readers go through the accessor macros in `code/__defines/om.dm`
+-- `OM_REL_TARGET`/`OM_REL_SOURCE`/`OM_REL_SOURCES`/`OM_REL_TARGETS` for a bare
+relation, `SLOT_ITEM`/`SLOT_LIST` for a slot, plus the named ones
+(`BUCKLED`, `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`, `GRABBED_BY`, `EYE_OF`) --
+not a plain var, in any new code. A slot decl subclasses `/datum/om/relation/slot` and declares
 `holder` (a holder type, or list of them) instead of overriding a per-holder
 proc; the registry (`code/datums/om/registry.dm`,
 `build_slot_holders()`/`slot_group_for()`) builds each holder's slot list once,
@@ -354,11 +361,12 @@ These are interactions that perform ledger moves, so each one is a single atomic
 
 ## 10. Occupants and mechs (C8, with the body rewrite)
 
-- **Occupant slots** are internal and sealed, and they define the occupant's environment (breathing and temperature).
-  - Sleepers, scanners, cryo, cryopods, the DNA modifier, recharge stations, VR pods, resleevers, the implant chair and the gibber all use them.
-  - Their occupant behaviour belongs to the body rewrite, so this lands after its phases.
+- **Occupant slots** are internal and sealed, and they define the occupant's environment (breathing and temperature). Landed (OM relations step 3), each its own `/datum/om/relation/slot/occupant` subtype with `move_into()`/`slot_remove()` replacing raw `forceMove()`:
+  - Sleepers (`Sleeper.dm`, also the mech-mounted sleeper equipment), scanners (`adv_med.dm`'s body scanner, VR pods in `vr_console.dm`), cryo (`cryo.dm`), cryopods (`cryopod.dm`), the DNA modifier (`dna_modifier.dm`, landed earlier as C8a), the cloning pod (`cloning.dm`), recharge stations (`rechargestation.dm`), resleevers, the suit storage unit (`suit_storage.dm`) and cycler (`suit_cycler.dm`), the implant chair (`implantchair.dm`), the gibber (`gibber.dm`), the transport pod (`transportpod.dm`) and the mech passenger compartment (`passenger.dm`) all use them.
+  - `/datum/om/relation/occupant_of` (the bare, non-slot relation this replaced) is deleted.
+  - The old "eject everything except a hand-kept exclude list" loops (sleeper, VR pod) are gone along with the sleeper's partial-eject bug: everything but the occupant lives in its own default `machine_internals` slot now, so `slot_remove()` on the occupant slot is the only thing that ever leaves on eject.
 - **Mechs**:
-  - The pilot sits in a sealed occupant slot.
+  - The pilot sits in a sealed occupant slot (`/datum/om/relation/slot/occupant/mecha_pilot`, `mecha.dm`), including the MMI path via `move_into()`.
   - Equipment goes on external hardpoint slots.
   - Cargo goes in an internal slot.
   - Damage goes through the body model once the body rewrite adds a body host interface ([damage.md §5](damage.md#5-where-damage-lands)).

@@ -453,6 +453,20 @@ reason. `om_unlink(...)`, `om_related(E, rel)` (targets, E is source),
 
 - Both ends hold the edge. `source_single` / `target_single` set cardinality;
   `conflict` is `OM_REL_REPLACE` or `OM_REL_REFUSE` (with a reason).
+- **No view fields (OM relations step 3).** A relation used to be able to
+  declare `source_ref_field`/`target_ref_field`/`source_list_field`/
+  `target_list_field` (defs.dm) and have the core (`om_field_link()`/
+  `om_field_unlink()` in relation.dm) write a legacy var on link/unlink for
+  free. That generic mechanism is deleted -- a relation or slot IS the state,
+  and any legacy var a caller still reads (a machine's `occupant`, a mob's
+  `buckled`/`pulling`, an item's `affecting`) is now written only by that
+  relation's own `on_link()`/`on_unlink()`, right alongside its other side
+  effects. New code reads through the accessor macros in `code/__defines/om.dm`
+  instead of a plain var: `OM_REL_TARGET(E, rel)` / `OM_REL_SOURCE(E, rel)` /
+  `OM_REL_SOURCES(E, rel)` / `OM_REL_TARGETS(E, rel)` for a bare relation,
+  `SLOT_ITEM(E, slot_id)` / `SLOT_LIST(E, slot_id)` for a slot, plus the named
+  wrappers (`BUCKLED`, `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`, `GRABBED_BY`,
+  `EYE_OF`).
 - **Deletion unlinks.** In the destroy transaction's phase 4 (links), before
   any `Destroy()`, every edge is unlinked. `on_source_delete` /
   `on_target_delete` (`OM_END_UNLINK` or `OM_END_DELETE_OTHER`) apply to the
@@ -467,9 +481,10 @@ reason. `om_unlink(...)`, `om_related(E, rel)` (targets, E is source),
 - **Slots are relations.** `/datum/om/relation/slot` (`code/datums/containment/slot_def.dm`,
   containment.md §3) is a relation that also owns loc: linking a thing into a
   slot (a ledger move -- enter, exit, reslot) links it to the holder by that
-  same relation, so a slot gets everything above for free (view fields,
-  `changes` channels, contributes/grants) on top of capacity, exposure and
-  propagation. A slot decl declares `holder` (a type, or list of types)
+  same relation, so a slot gets everything above for free (`changes`
+  channels, contributes/grants, and its own `on_link()`/`on_unlink()` as the
+  sole writer of any legacy var occupants still expose) on top of capacity,
+  exposure and propagation. A slot decl declares `holder` (a type, or list of types)
   instead of overriding a per-holder proc; the registry groups every decl by
   its declared holder and resolves a holder instance's group by its
   `slot_holder_key()` (its own type by default; a mob returns its body plan's
