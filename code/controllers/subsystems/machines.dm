@@ -815,7 +815,10 @@ SUBSYSTEM_DEF(machines)
 		// them while the device performs its one active pass; sleeping_gas_devices
 		// gates delivery, and hibernation refreshes its revision/signature. This
 		// avoids two arena FFI calls for every harmless pressure notification.
-		START_MACHINE_PROCESSING(A)
+		if(A.polls)
+			START_MACHINE_PROCESSING(A)
+		else
+			om_changed(A, CHANGE_MACHINE_GAS) // OM machine pipeline (machine_pipeline.dm)
 	else if(istype(subscriber, /obj/machinery/air_sensor))
 		var/obj/machinery/air_sensor/S = subscriber
 		START_MACHINE_PROCESSING(S)
@@ -834,8 +837,11 @@ SUBSYSTEM_DEF(machines)
 		START_MACHINE_PROCESSING(C)
 	else if(istype(subscriber, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = subscriber
-		P.clear_gas_dependency()
-		START_MACHINE_PROCESSING(P)
+		if(P.polls)
+			P.clear_gas_dependency()
+			START_MACHINE_PROCESSING(P)
+		else
+			om_changed(P, CHANGE_MACHINE_GAS) // OM machine pipeline (machine_pipeline.dm)
 	else if(istype(subscriber, /obj/machinery/atmospherics/binary/dp_vent_pump))
 		var/obj/machinery/atmospherics/binary/dp_vent_pump/V = subscriber
 		V.clear_gas_dependencies()

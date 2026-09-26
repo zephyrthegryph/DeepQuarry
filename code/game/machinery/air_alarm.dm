@@ -45,7 +45,10 @@
 	var/obj/machinery/alarm/new_main = main_air_alarm.resolve()
 	for(var/obj/machinery/alarm/AA in checks)
 		if(AA == new_main)
-			START_MACHINE_PROCESSING(AA)
+			if(AA.polls)
+				START_MACHINE_PROCESSING(AA)
+			else
+				om_changed(AA, CHANGE_MACHINE_SETTINGS)
 		else
 			AA.invalidate_gas_dependencies()
 		AA.update_icon()
@@ -88,6 +91,7 @@
 	panel_open = FALSE // If it's been screwdrivered open.
 	var/aidisabled = 0
 	var/shorted = 0
+	polls = FALSE // runs on the OM machine pipeline (machine_pipeline.dm), not SSmachines' process() roster
 	circuit = /obj/item/circuitboard/airalarm
 
 	var/mode = AALARM_MODE_SCRUBBING
@@ -281,28 +285,10 @@
 		if(RCON_YES)
 			remote_control = 1
 
-/obj/machinery/alarm/process()
-	if(!alarm_area)
-		return
-	var/obj/machinery/alarm/MA = alarm_area.main_air_alarm?.resolve()
-	if(!MA)
-		alarm_area.elect_main_air_alarm()
-		MA = alarm_area.main_air_alarm?.resolve() // try again
-	if(!MA || (stat & (NOPOWER|BROKEN)) || shorted || MA.shorted)
-		SSmachines.hibernate_air_alarm(src)
-		return
-	// Only the elected controller scans and regulates. The main alarm publishes
-	// the area's danger/icon state to every display, and elect_main_air_alarm()
-	// explicitly wakes a replacement when ownership changes.
-	if(MA != src)
-		SSmachines.hibernate_air_alarm(src, FALSE)
-		return
-	var/turf/location = get_turf(src)
-	if(!location)
-		return
-	scan_atmo()
-	if(!regulating_temperature)
-		SSmachines.hibernate_air_alarm(src)
+// Machine pipeline (code/game/machinery/machine_pipeline.dm, "air alarms" section): `polls =
+// FALSE` (declared with the other vars below) moves this off SSmachines' process() roster onto
+// the OM machine pipeline. The scan/regulate/election logic that used to live in process() is
+// unchanged, just relocated to /datum/om/stage/machine/power/alarm/perform().
 
 /obj/machinery/alarm/proc/register_gas_dependencies(datum/weakref/WR)
 	var/datum/gas_mixture/environment = return_air()
