@@ -121,7 +121,10 @@
 
 //Do not override this proc, instead use the appropiate procs.
 //This proc will handle the calls to the appropiate procs.
-/datum/event/process()
+/// One event step every 2 s while the event is active (New() starts it, kill() ends it).
+/datum/event/periodic_step()
+	if(!processing_active)
+		return
 	if(activeFor > startWhen && activeFor < endWhen)
 		processing_active = FALSE
 		tick()
@@ -169,6 +172,7 @@
 	// event needs to be responsible for this, as stuff like APLUs currently make their own events for curious reasons
 	if(!external_use)
 		SSevents.active_events += src
+		PERIODIC_START(src, PERIODIC_SLOW)
 
 		event_meta = EM
 		severity = event_meta.severity

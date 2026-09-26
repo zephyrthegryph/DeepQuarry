@@ -9,7 +9,8 @@
 
 	var/last_world_time = 0
 
-/datum/event_container/process()
+/// The random-event clock: every 2 s it advances (or, paused, pushes back) the next event.
+/datum/event_container/periodic_step()
 	if(!GLOB.round_start_time)
 		return //don't do events if the round hasn't even started yet
 
