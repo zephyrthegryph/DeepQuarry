@@ -369,8 +369,7 @@
 					to_chat(user, span_warning("You struggle to hold \the [src] steady!"))
 
 	if(recoil)
-		spawn()
-			shake_camera(user, recoil+1, recoil)
+		shake_camera(user, recoil+1, recoil)
 	update_icon()
 
 	if(chambered)

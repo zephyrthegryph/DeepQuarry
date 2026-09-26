@@ -809,8 +809,7 @@
 /obj/item/projectile/proc/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 
 	if(!get_turf(user) && !get_turf(src)) // if both the user of the projectile AND the projectile itself are in nullspace, don't fire, just remove ourselves
-		spawn(1)
-			qdel(src)
+		om_qdel_after(src, 1)
 		return //fire returns nothing, so neither do we need to
 
 	original = target

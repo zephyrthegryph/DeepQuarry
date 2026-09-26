@@ -24,7 +24,7 @@
 
 /obj/item/broken_gun/examine(mob/user)
 	. = ..()
-	spawn()
+	spawn() // S7 keeps: do_after() sleeps (S8)
 		if(get_dist(get_turf(user),get_turf(src)) <= 1)
 			to_chat(user, span_notice("You begin inspecting \the [src]."))
 
