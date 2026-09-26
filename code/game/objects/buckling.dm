@@ -62,22 +62,20 @@
 		stack_trace("Recursive buckle warning: [M] being buckled to self.")
 		return
 
-	M.buckled = src
-	M.facing_dir = null
-	M.set_dir(buckle_dir ? buckle_dir : dir)
-	M.update_canmove()
-	M.update_floating( M.Check_Dense_Object() )
-//	buckled_mob = M
-	buckled_mobs |= M
-
-	if(riding_datum)
-		riding_datum.ridden = src
-		riding_datum.handle_vehicle_offsets()
-	M.update_water()
-
-	post_buckle_mob(M)
-	SEND_SIGNAL(src, COMSIG_MOVABLE_BUCKLE, M, forced)
-	M.throw_alert("buckled", /atom/movable/screen/alert/restrained/buckled, new_master = src)
+	// The relation's on_link() hook (code/datums/om/library.dm,
+	// /datum/om/relation/buckled_to) does the actual buckling: sets M.buckled,
+	// direction, canmove/floating/water, riding offsets, the buckled alert and
+	// buckled_mobs membership. It also owns unbuckling on Destroy() or when M
+	// ends up off our tile, so there's no hand-rolled cleanup here any more.
+	// `forced` doesn't fit the fixed on_link(source, target, edge) signature,
+	// so it's handed across via the singleton relation instance -- link() runs
+	// on_link() synchronously before returning, so there's no re-entrancy risk.
+	var/datum/om/relation/buckled_to/R = om_registry().relation(/datum/om/relation/buckled_to)
+	R.pending_forced = forced
+	var/link_result = om_link(M, src, /datum/om/relation/buckled_to)
+	R.pending_forced = FALSE
+	if(!istype(link_result, /datum/om/edge))
+		return FALSE
 	return TRUE
 
 /atom/movable/proc/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
@@ -89,19 +87,8 @@
 
 	if(buckled_mob && buckled_mob.buckled == src)
 		. = buckled_mob
-		buckled_mob.buckled = null
-		buckled_mob.anchored = initial(buckled_mob.anchored)
-		buckled_mob.update_canmove()
-		buckled_mob.update_floating( buckled_mob.Check_Dense_Object() )
-		buckled_mob.clear_alert("buckled")
-	//	buckled_mob = null
-		buckled_mobs -= buckled_mob
-
-		buckled_mob.update_water()
-		if(riding_datum)
-			riding_datum.restore_position(buckled_mob)
-			riding_datum.handle_vehicle_offsets() // So the person in back goes to the front.
-		post_buckle_mob(.)
+		// on_unlink() (code/datums/om/library.dm) does the actual unbuckling.
+		om_unlink(buckled_mob, src, /datum/om/relation/buckled_to)
 
 /atom/movable/proc/unbuckle_all_mobs(force = FALSE)
 	if(!has_buckled_mobs())

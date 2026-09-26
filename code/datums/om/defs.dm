@@ -189,11 +189,16 @@
 	var/list/grants_occupant
 	/// Check spec (actor = source, target = target); contributions apply only while it passes.
 	var/active_if
+	/// Check spec (actor = source, target = target); the edge is unlinked outright the moment
+	/// it fails (e.g. range or same-z checks) rather than just losing its contributions. Runs
+	/// alongside active_if off the same watched channels.
+	var/break_if
 	/// Bundles whose relation fields (contributes, grants_*) are merged in.
 	var/list/include
 
 	var/id = 0
 	var/datum/om/check/compiled_active_if
+	var/datum/om/check/compiled_break_if
 
 /// Hooks get both ends, never null: an end being deleted is QDELETED but not null.
 /datum/om/relation/proc/on_link(datum/source, datum/target, datum/om/edge/edge)

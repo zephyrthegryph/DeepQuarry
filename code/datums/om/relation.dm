@@ -129,10 +129,10 @@
 
 /proc/om_edge_setup(datum/om/edge/edge)
 	var/datum/om/relation/R = edge.rel
-	if(R.compiled_active_if)
+	if(R.compiled_active_if || R.compiled_break_if)
 		var/datum/om/behaviour/B = om_registry().edge_behaviour
 		om_attach(edge, B)
-		var/mask = R.compiled_active_if.depends_on
+		var/mask = (R.compiled_active_if?.depends_on || 0) | (R.compiled_break_if?.depends_on || 0)
 		if(mask)
 			om_watch(edge, edge.source, mask, B)
 			om_watch(edge, edge.target, mask, B)
@@ -149,6 +149,9 @@
 	var/datum/source = edge.source
 	var/datum/target = edge.target
 	if(!source || !target)
+		return
+	if(R.compiled_break_if && !isnull(R.compiled_break_if.why_not(source, target)))
+		om_unlink_edge(edge)
 		return
 	var/want = !R.compiled_active_if || isnull(R.compiled_active_if.why_not(source, target))
 	if(!want)

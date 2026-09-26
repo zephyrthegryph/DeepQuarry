@@ -354,6 +354,10 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			R.compiled_active_if = om_check_get(R.active_if, src)
 			if(!R.compiled_active_if)
 				error("relation [path]: malformed active_if")
+		if(R.break_if)
+			R.compiled_break_if = om_check_get(R.break_if, src)
+			if(!R.compiled_break_if)
+				error("relation [path]: malformed break_if")
 
 /// Returns a new list: a's entries, then b's (b wins). Neither is modified.
 /proc/om_merge_assoc(list/a, list/b)

@@ -49,8 +49,10 @@
 			var/obj/structure/mob_spawner/S = nest
 			S.get_death_report(src)
 		nest = null
-	if(buckled)
-		buckled.unbuckle_mob(src, TRUE)
+	// buckled is already null here: the buckled_to relation
+	// (code/datums/om/library.dm) unlinked in the destroy transaction's phase
+	// 5 teardown, before Destroy() ran, and its on_unlink() hook did the
+	// unbuckling.
 	if(tf_mob_holder && tf_mob_holder.loc == src)
 		return_player_to_tf_holder("transformed form destroyed")
 		if(isbelly(loc))
