@@ -143,6 +143,46 @@
 			target.riding_datum.handle_vehicle_offsets()
 		target.post_buckle_mob(istype(source) ? source : null)
 
+/// grab item -> the mob it grabs. source_ref_field/target_list_field make the
+/// core the sole writer of /obj/item/grab's `affecting` var and the grabbed
+/// mob's `grabbed_by` list. on_target_delete = OM_END_DELETE_OTHER fixes a
+/// real dangling-reference bug the hand-rolled version had: /obj/item/grab's
+/// own Destroy() only ever cleaned up the affecting-mob side, so hard-deleting
+/// the grabbed mob (it isn't in the grab item's contents -- the item lives in
+/// the assailant's hand) left the grab item's `affecting` pointing at a
+/// QDELETED mob indefinitely. Now the grab item itself is deleted the instant
+/// its target is, which also matches DROPDEL's "this item doesn't outlive the
+/// thing it's for" intent.
+/datum/om/relation/grabbing
+	name = "grab"
+	source_single = TRUE
+	source_ref_field = "affecting"
+	target_list_field = "grabbed_by"
+	on_target_delete = OM_END_DELETE_OTHER
+
+/datum/om/relation/grabbing/on_link(obj/item/grab/source, mob/living/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(!istype(source) || !istype(target))
+		return
+	target.reveal(span_warning("You are revealed as [source.assailant] grabs you."))
+	source.assailant?.reveal(span_warning("You reveal yourself as you grab [target]."))
+	// If the assailant is also currently grabbed by their new victim, both
+	// grabs enter "dancing" (facing each other, e.g. a wrestling clinch).
+	if(source.assailant?.grabbed_by)
+		for(var/obj/item/grab/G in source.assailant.grabbed_by)
+			if(G.assailant == target && G.affecting == source.assailant)
+				G.dancing = TRUE
+				G.adjust_position()
+				source.dancing = TRUE
+	if(source.assailant?.pulling == target)
+		source.assailant.stop_pulling()
+
+/datum/om/relation/grabbing/on_unlink(obj/item/grab/source, mob/living/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(target) && !QDELETED(target))
+		animate(target, pixel_x = initial(target.pixel_x), pixel_y = initial(target.pixel_y), 4, 1, LINEAR_EASING)
+		target.reset_plane_and_layer()
+
 /// mob -> stasis machine. Inhibits the occupant's biological clock while the machine is powered.
 /datum/om/relation/stasis_occupant
 	name = "stasis bed"

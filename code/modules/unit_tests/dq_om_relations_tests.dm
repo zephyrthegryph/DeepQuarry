@@ -88,3 +88,49 @@
 	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
 	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
 	TEST_ASSERT_NULL(om_relation_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
+
+// ---------------------------------------------------------------- grabbing
+
+/// Grabbing a mob establishes the grabbing relation: the grab item's
+/// `affecting` and the victim's `grabbed_by` agree with the direct lookup.
+/datum/unit_test/dq_om_relation_grabbing_establishes
+
+/datum/unit_test/dq_om_relation_grabbing_establishes/Run()
+	var/mob/living/carbon/human/assailant = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
+	var/obj/item/grab/G = allocate(/obj/item/grab, assailant, victim)
+	TEST_ASSERT(!QDELETED(G), "the grab should not immediately self-delete")
+	TEST_ASSERT_EQUAL(G.affecting, victim, "G.affecting should be the victim")
+	TEST_ASSERT(G in victim.grabbed_by, "G should be in the victim's grabbed_by")
+	TEST_ASSERT_EQUAL(om_relation_of(G, /datum/om/relation/grabbing), victim, "om_relation_of should agree with the affecting var")
+	TEST_ASSERT_NOTNULL(dq_test_find_edge(G, victim, /datum/om/relation/grabbing), "an edge should exist between G and the victim")
+
+/// Hard-deleting a grab removes it from the victim's grabbed_by, with no
+/// dangling reference left behind.
+/datum/unit_test/dq_om_relation_grabbing_breaks_on_source_delete
+
+/datum/unit_test/dq_om_relation_grabbing_breaks_on_source_delete/Run()
+	var/mob/living/carbon/human/assailant = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
+	var/obj/item/grab/G = allocate(/obj/item/grab, assailant, victim)
+	TEST_ASSERT(!QDELETED(G), "setup: the grab should not immediately self-delete")
+	qdel(G)
+	TEST_ASSERT(QDELETED(G), "setup: the grab should be deleted")
+	TEST_ASSERT_EQUAL(LAZYLEN(victim.grabbed_by), 0, "the victim should have no grabs left")
+	TEST_ASSERT(!(G in victim.grabbed_by), "the deleted grab should not still be listed")
+
+/// Hard-deleting the grabbed mob deletes the grab item too (on_target_delete
+/// = OM_END_DELETE_OTHER): the item has nothing left to grab, and previously
+/// this left a dangling `affecting` reference to a QDELETED mob forever,
+/// since the grab item lives in the assailant's hand, not the victim's
+/// contents, so ordinary contents-destroy never reached it.
+/datum/unit_test/dq_om_relation_grabbing_breaks_on_target_delete
+
+/datum/unit_test/dq_om_relation_grabbing_breaks_on_target_delete/Run()
+	var/mob/living/carbon/human/assailant = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
+	var/obj/item/grab/G = allocate(/obj/item/grab, assailant, victim)
+	TEST_ASSERT(!QDELETED(G), "setup: the grab should not immediately self-delete")
+	qdel(victim)
+	TEST_ASSERT(QDELETED(victim), "setup: the victim should be deleted")
+	TEST_ASSERT(QDELETED(G), "the grab item should be deleted along with its target")

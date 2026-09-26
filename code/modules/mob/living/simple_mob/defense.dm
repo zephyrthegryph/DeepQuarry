@@ -37,8 +37,9 @@
 
 			L.put_in_active_hand(G)
 
+			// new /obj/item/grab(L, src) already ran Initialize(mapload, src),
+			// which established the grabbing relation (grabbed_by/affecting).
 			G.synch()
-			G.affecting = src
 			LAssailant = L
 
 			L.visible_message(span_warning("\The [L] has grabbed [src] passively!"))

@@ -38,32 +38,22 @@
 /obj/item/grab/Initialize(mapload, mob/victim)
 	. = ..()
 	assailant = loc
-	affecting = victim
 
-	if(!istype(assailant) || !istype(affecting) || affecting.anchored || !assailant.Adjacent(victim))
+	if(!istype(assailant) || !istype(victim) || victim.anchored || !assailant.Adjacent(victim))
 		return INITIALIZE_HINT_QDEL
 
-	LAZYADD(affecting.grabbed_by, src)
-	affecting.reveal(span_warning("You are revealed as [assailant] grabs you."))
-	assailant.reveal(span_warning("You reveal yourself as you grab [affecting]."))
+	// The grabbing relation (code/datums/om/library.dm) is the sole writer of
+	// `affecting`/the victim's `grabbed_by`, and does the reveal messages,
+	// the dancing check and stopping any pull on the victim as its on_link()
+	// side effects.
+	if(!istype(om_link(src, victim, /datum/om/relation/grabbing), /datum/om/edge))
+		return INITIALIZE_HINT_QDEL
 
 	hud = new /atom/movable/screen/grab(src)
 	hud.icon_state = "reinforce"
 	icon_state = "grabbed"
 	hud.name = "reinforce grab"
 	hud.master_ref = WEAKREF(src)
-
-	//check if assailant is grabbed by victim as well
-	if(assailant.grabbed_by)
-		for (var/obj/item/grab/G in assailant.grabbed_by)
-			if(G.assailant == affecting && G.affecting == assailant)
-				G.dancing = 1
-				G.adjust_position()
-				dancing = 1
-
-	//stop pulling the affected
-	if(assailant.pulling == affecting)
-		assailant.stop_pulling()
 
 	adjust_position()
 
@@ -399,11 +389,10 @@
 	return mob_size_difference(A.mob_size, B.mob_size)
 
 /obj/item/grab/Destroy()
-	if(affecting)
-		animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
-		affecting.reset_plane_and_layer()
-		LAZYREMOVE(affecting.grabbed_by, src)
-		affecting = null
+	// The grabbing relation (code/datums/om/library.dm) unlinks -- clearing
+	// `affecting` and this grab's entry in the victim's `grabbed_by`, and
+	// running the pixel/plane reset -- in the destroy transaction's phase 5
+	// teardown, before Destroy() runs.
 	if(assailant)
 		if(assailant.client)
 			assailant.client.screen -= hud

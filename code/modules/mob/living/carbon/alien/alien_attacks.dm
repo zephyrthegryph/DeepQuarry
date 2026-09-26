@@ -19,8 +19,8 @@
 
 			M.put_in_active_hand(G)
 
-			LAZYADD(grabbed_by, G)
-			G.affecting = src
+			// new /obj/item/grab(M, src) already ran Initialize(mapload, src),
+			// which established the grabbing relation (grabbed_by/affecting).
 			G.synch()
 
 			LAssailant = M
