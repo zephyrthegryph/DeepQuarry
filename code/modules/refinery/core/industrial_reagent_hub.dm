@@ -18,7 +18,7 @@
 	update_neighbours()
 	update_icon()
 
-/obj/machinery/reagent_refinery/hub/machine_step()
+/obj/machinery/reagent_refinery/hub/refinery_step()
 	if(!anchored)
 		return
 
@@ -86,3 +86,13 @@
 	. = ..()
 	. += "It is pumping chemicals at a rate of [amount_per_transfer_from_this]u."
 	tutorial(REFINERY_TUTORIAL_HUB|REFINERY_TUTORIAL_NOPOWER, .)
+
+/// Busy while a tanker with reagents sits on it; a tanker rolling on wakes it.
+/obj/machinery/reagent_refinery/hub/refinery_busy()
+	var/obj/vehicle/train/trolley_tank/tanker = locate(/obj/vehicle/train/trolley_tank) in loc
+	return tanker && tanker.reagents.total_volume > 0
+
+/obj/machinery/reagent_refinery/hub/Crossed(atom/movable/AM)
+	. = ..()
+	if(istype(AM, /obj/vehicle/train/trolley_tank))
+		MACHINE_WAKE(src)

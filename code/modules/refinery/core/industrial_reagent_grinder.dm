@@ -94,7 +94,7 @@
 	update_icon()
 	return TRUE
 
-/obj/machinery/reagent_refinery/grinder/machine_step()
+/obj/machinery/reagent_refinery/grinder/refinery_step()
 	if(!anchored)
 		return
 
@@ -161,3 +161,13 @@
 /obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
 	. = ..()
 	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+
+/// Busy while it holds items to grind or an operating conveyor feeds it.
+/obj/machinery/reagent_refinery/grinder/refinery_busy()
+	if(length(holdingitems))
+		return TRUE
+	for(var/D in GLOB.cardinal)
+		var/obj/machinery/conveyor/C = locate() in get_step(src, D)
+		if(C && !C.stat && C.operating && C.dir == GLOB.reverse_dir[D])
+			return TRUE
+	return FALSE

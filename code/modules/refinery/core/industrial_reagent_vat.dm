@@ -17,7 +17,7 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/reagent_refinery/vat/machine_step()
+/obj/machinery/reagent_refinery/vat/refinery_step()
 	if(length(BUCKLED_MOBS(src)) && reagents.total_volume > 0)
 		for(var/mob/living/L in BUCKLED_MOBS(src))
 			reagents.trans_to(L, 1) // Soak in the juices
@@ -118,3 +118,7 @@
 /obj/machinery/reagent_refinery/vat/declare_interactions(list/into)
 	. = ..()
 	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+
+/// Busy while someone is buckled in to soak.
+/obj/machinery/reagent_refinery/vat/refinery_busy()
+	return length(BUCKLED_MOBS(src)) && reagents.total_volume > 0

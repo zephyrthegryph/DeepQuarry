@@ -18,7 +18,7 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/reagent_refinery/mixer/machine_step()
+/obj/machinery/reagent_refinery/mixer/refinery_step()
 	if(!anchored)
 		return
 
@@ -130,3 +130,13 @@
 /obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
 	. = ..()
 	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+
+/// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.
+/obj/machinery/reagent_refinery/mixer/refinery_busy()
+	if(mixer_angle == dir2angle(dir))
+		return reagents.total_volume <= 0
+	if(mixer_angle % 90)
+		return TRUE
+	if(!(locate(/obj/machinery/reagent_refinery) in get_step(src, angle2dir(mixer_angle))))
+		return TRUE
+	return got_input

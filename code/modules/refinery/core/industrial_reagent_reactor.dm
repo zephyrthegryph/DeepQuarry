@@ -36,7 +36,7 @@
 	. = ..()
 	QDEL_NULL(internal_tank)
 
-/obj/machinery/reagent_refinery/reactor/machine_step()
+/obj/machinery/reagent_refinery/reactor/refinery_step()
 	if(!anchored)
 		return
 
@@ -130,3 +130,7 @@
 
 #undef REACTOR_MODE_INTAKE
 #undef REACTOR_MODE_OUTPUT
+
+/// Busy while it holds reagents: it cycles between reacting and draining on its own timer.
+/obj/machinery/reagent_refinery/reactor/refinery_busy()
+	return reagents.total_volume > 0

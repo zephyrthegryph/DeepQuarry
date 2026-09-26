@@ -16,7 +16,7 @@
 	AddElement(/datum/element/climbable)
 	flags |= NOREACT
 
-/obj/machinery/reagent_refinery/waste_processor/machine_step()
+/obj/machinery/reagent_refinery/waste_processor/refinery_step()
 	if(!anchored)
 		return
 
@@ -88,3 +88,7 @@
 /obj/machinery/reagent_refinery/waste/declare_interactions(list/into)
 	. = ..()
 	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+
+/// Busy while it holds waste: it burns it off at random.
+/obj/machinery/reagent_refinery/waste_processor/refinery_busy()
+	return reagents.total_volume > 0

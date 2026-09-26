@@ -17,7 +17,7 @@
 	update_icon()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/reagent_refinery/splitter/machine_step()
+/obj/machinery/reagent_refinery/splitter/refinery_step()
 	if(!anchored)
 		return
 
