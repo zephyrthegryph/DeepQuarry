@@ -26,205 +26,10 @@ use gas::{
 use reaction::react_by_id;
 use world::{with_world, MixRef};
 
-/// Applies one DM pipe-topology transaction to the pipe network and returns
-/// the regions DM must rebuild. Input is semicolon-delimited records of four
-/// comma-separated numbers, `opcode, first, second_or_mixture, volume`, with
-/// opcodes upsert=1, remove=2, connect=3, disconnect=4, clear=5,
-/// remove-to-mixture=7 (`RUST_PIPE_OP_*`). An upserted port's gas moves out
-/// of the mixture it names into the network; a removed port's share of its
-/// region is released into the mixture `remove-to-mixture` names.
-///
-/// Output repeats `region handle, port_count, prior_count, volume, ports...,
-/// prior region handles...`; a volume of -1 marks a region that is gone.
-#[auxmacros::bind("/proc/auxmos_pipenet_topology_batch")]
-fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
-	use pipes::op;
-	let encoded = operations.get_string()?;
-	let mut parsed = Vec::new();
-	for (operation_index, record) in encoded.split_terminator(';').enumerate() {
-		let fields = record.split(',').collect::<Vec<_>>();
-		if fields.len() != 4 {
-			eyre::bail!(
-				"pipenet operation {operation_index} does not contain four fields: {record}"
-			);
-		}
-		let mut n = [0.0f32; 4];
-		for (i, f) in fields.iter().enumerate() {
-			n[i] = f.parse::<f32>().map_err(|error| {
-				eyre::eyre!("invalid pipenet number '{f}' at operation {operation_index}: {error}")
-			})?;
-		}
-		parsed.push(n);
-	}
-	let result = with_world(|w| -> Result<Vec<f32>> {
-		for [opcode, first, second, volume] in parsed {
-			let port = first as u32;
-			match opcode as u8 {
-				op::UPSERT => {
-					let gas = match MixRef::from_f32(second) {
-						Some(MixRef::Main(slot)) => match w.mains.get_mut(slot) {
-							Some(mix) => {
-								let amounts = world::amounts_of(mix);
-								let t = mix.get_temperature();
-								if w.pipes.port(port).is_none() {
-									mix.clear();
-								}
-								pipes::PipeGas::from_amounts(&amounts, t)
-							}
-							None => pipes::PipeGas::default(),
-						},
-						_ => pipes::PipeGas::default(),
-					};
-					let fresh = w.pipes.port(port).is_none();
-					w.pipes.upsert(
-						port,
-						0,
-						volume,
-						if fresh {
-							gas
-						} else {
-							pipes::PipeGas::default()
-						},
-					);
-				}
-				op::REMOVE => {
-					w.pipes.remove(port, None);
-				}
-				op::CONNECT => {
-					if !w.pipes.connect(port, second as u32) {
-						eyre::bail!("invalid pipenet connection {port}<->{}", second as u32);
-					}
-				}
-				op::DISCONNECT => w.pipes.disconnect(port, second as u32),
-				op::CLEAR => {
-					w.pipes.clear();
-				}
-				op::REMOVE_TO_MIXTURE => {
-					let target = MixRef::from_f32(second).map(MixRef::id);
-					w.pipes.remove(port, target);
-				}
-				other => eyre::bail!("unknown pipenet topology opcode {other}"),
-			}
-		}
-		let (transitions, releases) = w.pipes.commit();
-		for release in releases {
-			let Some(target) = release.target.and_then(MixRef::from_id) else {
-				continue;
-			};
-			let amounts = release.gas.amounts();
-			w.add_amounts(target, &amounts, release.gas.temperature);
-		}
-		let mut out = Vec::new();
-		for t in transitions {
-			#[allow(clippy::cast_precision_loss)]
-			out.extend([
-				MixRef::Pipe(t.slot).id() as f32,
-				t.ports.len() as f32,
-				t.prior.len() as f32,
-				if t.retired { -1.0 } else { t.volume },
-			]);
-			#[allow(clippy::cast_precision_loss)]
-			out.extend(t.ports.iter().map(|&p| p as f32));
-			#[allow(clippy::cast_precision_loss)]
-			out.extend(t.prior.iter().map(|&p| MixRef::Pipe(p).id() as f32));
-		}
-		Ok(out)
-	})?;
-	let list = ByondValue::new_list()?;
-	list.write_list(&result.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
-	Ok(list)
-}
-
-/// Applies one DM device-edge transaction (M2, `device.rs`) and returns
-/// nothing; call `pipenet_step_devices` to run them. Input is
-/// semicolon-delimited fixed-width records of nine comma-separated numbers:
-/// `opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3`. Opcodes: add or
-/// replace between two pipe ports = 1 (`port_a`/`port_b` are pipe port ids;
-/// `law_kind`/`p0..p3` decode via [`device::DeviceParams::decode`]), remove
-/// = 2 (only `id` is read), add or replace between a pipe port and a turf
-/// = 3 (`port_a` is a pipe port id, `port_b` is the turf's gas-mixture
-/// handle - a vent pump or scrubber, stepped by
-/// `GasWorld::step_turf_devices`).
-#[auxmacros::bind("/proc/auxmos_pipenet_device_batch")]
-fn pipenet_device_batch(operations: ByondValue) -> Result<ByondValue> {
-	let encoded = operations.get_string()?;
-	let mut parsed = Vec::new();
-	for (operation_index, record) in encoded.split_terminator(';').enumerate() {
-		let fields = record.split(',').collect::<Vec<_>>();
-		if fields.len() != 9 {
-			eyre::bail!("device operation {operation_index} does not contain nine fields: {record}");
-		}
-		let mut n = [0.0f32; 9];
-		for (i, f) in fields.iter().enumerate() {
-			n[i] = f.parse::<f32>().map_err(|error| {
-				eyre::eyre!("invalid device number '{f}' at operation {operation_index}: {error}")
-			})?;
-		}
-		parsed.push(n);
-	}
-	with_world(|w| -> Result<()> {
-		for fields in parsed {
-			let [opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3] = fields;
-			let id = id as u32;
-			match opcode as u8 {
-				1 => {
-					let params = device::DeviceParams::decode(law_kind as u8, [p0, p1, p2, p3]);
-					if !w.pipes.add_device(id, port_a as u32, port_b as u32, params) {
-						eyre::bail!("device {id} could not bind ports {port_a}<->{port_b}");
-					}
-				}
-				2 => {
-					w.pipes.remove_device(id);
-				}
-				3 => {
-					// A pipe port <-> turf device (a vent pump/scrubber): `port_b`
-					// carries the turf's gas-mixture handle, not a pipe port id.
-					let Some(MixRef::Turf(cell)) = MixRef::from_f32(port_b) else {
-						eyre::bail!("device {id}'s turf side is not a turf gas handle: {port_b}");
-					};
-					let params = device::DeviceParams::decode(law_kind as u8, [p0, p1, p2, p3]);
-					if !w.pipes.add_turf_device(id, port_a as u32, cell, params) {
-						eyre::bail!("device {id} could not bind port {port_a} to turf cell {cell}");
-					}
-				}
-				other => eyre::bail!("unknown device opcode {other}"),
-			}
-		}
-		Ok(())
-	})?;
-	Ok(ByondValue::null())
-}
-
-/// Runs every device edge's flow law once (M2, `device.rs`) for `dt`
-/// seconds — region<->region edges (`PipeNet::step_devices`) and
-/// region<->turf edges (`GasWorld::step_turf_devices`, a vent pump or
-/// scrubber facing the R6 gas field) alike — and returns a flat list of
-/// `id, moles, power_w, target_reached` per device that had a law set. `dt`
-/// is normally `SSair`'s tick length in seconds.
-#[auxmacros::bind("/proc/auxmos_pipenet_step_devices")]
-fn pipenet_step_devices(dt: ByondValue) -> Result<ByondValue> {
-	let dt = dt.get_number()?;
-	let steps = with_world(|w| {
-		let mut steps = w.pipes.step_devices(dt);
-		steps.extend(w.step_turf_devices(dt));
-		steps
-	});
-	let mut out = Vec::with_capacity(steps.len() * 4);
-	for s in steps {
-		out.extend([
-			ByondValue::from(s.key as f32),
-			ByondValue::from(s.report.moles as f32),
-			ByondValue::from(s.report.power_w),
-			ByondValue::from(if s.report.target_reached { 1.0 } else { 0.0 }),
-		]);
-	}
-	let list = ByondValue::new_list()?;
-	list.write_list(&out)?;
-	Ok(list)
-}
 
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
-/// `auxmos_pipenet_topology_batch`). The datum's own slot is freed.
+/// `vg_pipe_upsert`/`vg_pipe_commit`, `verdigris/ffi/src/pipes.rs`). The
+/// datum's own slot is freed.
 #[auxmacros::bind("/datum/gas_mixture/proc/__bind_handle")]
 fn bind_handle(mut src: ByondValue, handle: ByondValue) -> Result<ByondValue> {
 	let Some(target) = MixRef::from_f32(handle.get_number()?) else {
@@ -313,9 +118,14 @@ fn unwatch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
 fn auxmos_diagnostics() -> Result<ByondValue> {
 	let gas = turf::diagnostics();
-	// Heat's own diagnostics moved to vg-ffi (`rust_architecture.md` step 4):
-	// this crate no longer hosts a heat world to report on.
+	// Heat's own diagnostics moved to vg-ffi (`rust_architecture.md` step 4);
+	// pipe region/port counts moved there too (step 5, alongside the pipe
+	// network itself): this crate no longer hosts either to report on. Kept
+	// as zeros, not removed, so this list's width (and every existing
+	// index into it) stays the same for callers that haven't moved to a
+	// `vg_pipe_*`/`vg_heat_*` diagnostics bind instead.
 	let heat = (0, 0, 0);
+	let pipes = (0, 0);
 	#[allow(clippy::cast_precision_loss)]
 	let values = gas
 		.into_iter()
@@ -324,6 +134,8 @@ fn auxmos_diagnostics() -> Result<ByondValue> {
 			heat.0,
 			heat.1,
 			heat.2 as usize,
+			pipes.0,
+			pipes.1,
 		])
 		.map(|value| ByondValue::from(value as f32))
 		.collect::<Vec<_>>();

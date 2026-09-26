@@ -11,7 +11,6 @@ use vg_core::sim::Mode;
 use crate::cell::{GasCell, N, Q};
 use crate::gas::ids::{GAS_NITROGEN, GAS_OXYGEN, GAS_PLASMA};
 use crate::gas::Mixture;
-use crate::pipes::PipeGas;
 use crate::world::{GasWorld, MixRef};
 
 const X: u32 = 20;
@@ -270,49 +269,6 @@ proptest! {
 		prop_assert!(r.is_ok(), "{:?}", r);
 	}
 
-	#[test]
-	fn pipe_edits_conserve(ops in proptest::collection::vec((0u8..5, 1u32..12, 1u32..12), 1..80)) {
-		let mut w = GasWorld::default();
-		let mut released = [0.0f64; Q];
-		for (i, &(kind, a, b)) in ops.iter().enumerate() {
-			match kind {
-				0 => {
-					let mut g = PipeGas::default();
-					g.moles[GAS_OXYGEN] = f64::from(a) * 3.0;
-					g.energy = g.moles[GAS_OXYGEN] * 20.0 * 293.0;
-					w.pipes.upsert(a, 0, 50.0 + b as f32 * 10.0, g);
-				}
-				1 => { w.pipes.connect(a, b); }
-				2 => w.pipes.disconnect(a, b),
-				_ => { w.pipes.remove(a, Some(i as u32)); }
-			}
-			let (_, rel) = w.pipes.commit();
-			for r in rel {
-				for (slot, &moles) in released.iter_mut().zip(r.gas.moles.iter()).take(N) {
-					*slot += moles;
-				}
-				released[N] += r.gas.energy;
-			}
-		}
-		let total: f64 = ops.iter().filter(|o| o.0 == 0).count() as f64;
-		let _ = total;
-		// Everything ever added is in a region or was released.
-		let mut added = 0.0;
-		let mut seen = std::collections::HashSet::new();
-		let mut live = std::collections::HashSet::new();
-		for &(kind, a, _) in &ops {
-			if kind == 0 && !live.contains(&a) {
-				added += f64::from(a) * 3.0;
-				live.insert(a);
-				seen.insert(a);
-			}
-			if kind >= 3 {
-				live.remove(&a);
-			}
-		}
-		let held = w.pipes.totals()[GAS_OXYGEN] + released[GAS_OXYGEN];
-		prop_assert!((held - added).abs() < 1e-6 * added.max(1.0), "{held} vs {added}");
-	}
 }
 
 /// Overlay vs fallback (`rust_core.md` §3.11): main-thread cost per tick
@@ -492,63 +448,6 @@ fn nudging_one_cell_wakes_only_its_neighbourhood_and_settles_again() {
 	);
 }
 
-/// M2 (simulation.md §5): a vent pump/scrubber device edge with one side on
-/// a turf (the R6 field) and the other on a pipe region (the R7 network) —
-/// `GasWorld::step_turf_devices`. Siphons a live cell into an empty pipe
-/// region and checks the whole world (field + pipes) still conserves.
-#[test]
-fn step_turf_devices_bridges_pipe_and_field_and_conserves() {
-	use crate::device::DeviceParams;
-	use vg_core::network::Endpoint;
-
-	let mut w = world(Mode::Overlay);
-	build(&mut w, 7, false);
-	w.run_frames(1);
-
-	let mut turf_cell = None;
-	'search: for y in 1..Y - 1 {
-		for x in 1..X - 1 {
-			let c = cell(x, y);
-			if w.load(MixRef::Turf(c)).is_some_and(|m| m.total_moles() > 0.0) {
-				turf_cell = Some(c);
-				break 'search;
-			}
-		}
-	}
-	let turf_cell = turf_cell.expect("a live cell with gas");
-
-	w.pipes.upsert(1, 0, 1000.0, PipeGas::default());
-	w.pipes.commit();
-	let node = w.pipes.port(1).expect("port exists");
-	w.pipes
-		.net
-		.add_device(
-			Endpoint::Cell(turf_cell),
-			Endpoint::Node(node),
-			0,
-			1,
-			// Wire-format kind 5 (vent pump), mode 1 (siphon): decode(kind,
-			// [mode, min_kpa, max_kpa, max_rate_l_s]) - see `device.rs`'s
-			// `DeviceParams::decode` for the field layout.
-			DeviceParams::decode(5, [1.0, 0.0, 1_000_000.0, 1000.0]),
-		)
-		.expect("device added");
-
-	w.run_frames(1);
-	let before = w.totals();
-	for _ in 0..20 {
-		w.step_turf_devices(1.0);
-	}
-	w.run_frames(3);
-	let after = w.totals();
-	assert!(close(&before, &after, 1e-3).is_ok(), "{:?}", close(&before, &after, 1e-3));
-
-	let moved = w.pipes.totals();
-	assert!(
-		moved[GAS_OXYGEN] > 0.0 || moved[GAS_NITROGEN] > 0.0,
-		"the vent pump moved nothing from the turf into the pipe network"
-	);
-}
 
 // --- Differential test: the old Signature/Dirty path vs. a real core watch
 // condition (`rust_architecture.md` §4.7's planned replacement) ------------

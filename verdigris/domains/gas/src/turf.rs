@@ -509,14 +509,15 @@ fn gas_totals() -> Result<ByondValue> {
 }
 
 /// Diagnostics for SSair's stat panel: `list(main mixtures live, main slots,
-/// pipe regions, pipe ports, registered turf cells, field frames)`.
-pub(crate) fn diagnostics() -> [usize; 6] {
+/// registered turf cells, field frames)`. Pipe region/port counts moved
+/// with the pipe network itself onto the shared `vg_core::world::World`
+/// (`rust_architecture.md` step 5); `auxmos_diagnostics` (lib.rs) reports
+/// those from `verdigris/ffi/src/pipes.rs` instead.
+pub(crate) fn diagnostics() -> [usize; 4] {
 	with_world(|w| {
 		[
 			w.mains.live(),
 			w.mains.capacity(),
-			w.pipes.net.region_count(),
-			w.pipes.port_count(),
 			w.field.as_ref().map_or(0, Field::registered),
 			w.field.as_ref().map_or(0, |f| f.frames as usize),
 		]

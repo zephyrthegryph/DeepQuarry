@@ -268,6 +268,30 @@ impl<K: NetworkKind> NetworkHost<K> {
         }
     }
 
+    /// Connects `a`'s and `b`'s nodes directly, bypassing
+    /// [`NetworkKind::connects`]/[`NetworkKind::reach`]'s geometric search:
+    /// for a domain whose topology DM manages explicitly (pipes' `CONNECT`/
+    /// `DISCONNECT` ops) rather than by cell adjacency (cables' own
+    /// connection rule). Queued like any other edit; takes effect at the
+    /// next [`NetworkHost::commit`].
+    ///
+    /// # Errors
+    /// [`NetError::NoEdge`] if either entity has no node here.
+    pub fn connect_entities(&mut self, a: Entity, b: Entity) -> Result<(), NetError> {
+        let (&na, &nb) = (self.nodes.get(&a).ok_or(NetError::NoEdge)?, self.nodes.get(&b).ok_or(NetError::NoEdge)?);
+        self.net.connect(na, nb)?;
+        Ok(())
+    }
+
+    /// Disconnects `a`'s and `b`'s nodes, the reverse of
+    /// [`NetworkHost::connect_entities`]. A no-op if either has no node
+    /// here or they were not connected.
+    pub fn disconnect_entities(&mut self, a: Entity, b: Entity) {
+        if let (Some(&na), Some(&nb)) = (self.nodes.get(&a), self.nodes.get(&b)) {
+            let _ = self.net.disconnect(na, nb);
+        }
+    }
+
     /// Replaces `entity`'s node data in place (a machine's supply or served
     /// demand changed). Connectivity is not re-derived: a change that could
     /// alter [`NetworkKind::connects`] (a cable's shape) is a rebind via

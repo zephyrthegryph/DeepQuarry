@@ -184,7 +184,19 @@
 		return
 	var/operations = rust_device_pending_operations
 	rust_device_pending_operations = ""
-	vg_pipenet_device_batch(operations)
+	for(var/record in splittext(operations, ";"))
+		if(!length(record))
+			continue
+		var/list/fields = splittext(record, ",")
+		var/opcode = text2num(fields[1])
+		var/id = text2num(fields[2])
+		switch(opcode)
+			if(RUST_DEVICE_OP_SET)
+				vg_pipe_device_set(id, text2num(fields[3]), text2num(fields[4]), text2num(fields[5]), text2num(fields[6]), text2num(fields[7]), text2num(fields[8]), text2num(fields[9]))
+			if(RUST_DEVICE_OP_SET_TURF)
+				vg_pipe_device_set_turf(id, text2num(fields[3]), text2num(fields[4]), text2num(fields[5]), text2num(fields[6]), text2num(fields[7]), text2num(fields[8]), text2num(fields[9]))
+			if(RUST_DEVICE_OP_REMOVE)
+				vg_pipe_device_remove(id)
 
 /// Registers (or replaces) `machine`'s device edge between its two ports
 /// `port_index_a`/`port_index_b` (1-based, `rust_pipe_port_ids` indices),
@@ -246,7 +258,7 @@
 	if(!length(rust_pipe_devices))
 		return
 	var/dt = wait / 10
-	var/list/result = vg_pipenet_step_devices(dt)
+	var/list/result = vg_pipe_step_devices(dt)
 	var/cursor = 1
 	while(cursor <= length(result))
 		var/id = result[cursor++]
@@ -305,7 +317,26 @@
 /// never passes through DM: the network pools, splits and releases it, and
 /// each region's air datum is bound to the region's gas handle.
 /datum/controller/subsystem/air/proc/rust_apply_pipe_topology(operations)
-	var/list/result = vg_pipenet_topology_batch(operations)
+	for(var/record in splittext(operations, ";"))
+		if(!length(record))
+			continue
+		var/list/fields = splittext(record, ",")
+		var/opcode = text2num(fields[1])
+		var/first = text2num(fields[2])
+		switch(opcode)
+			if(RUST_PIPE_OP_UPSERT)
+				vg_pipe_upsert(first, text2num(fields[3]), text2num(fields[4]))
+			if(RUST_PIPE_OP_REMOVE)
+				vg_pipe_remove(first, 0)
+			if(RUST_PIPE_OP_CONNECT)
+				vg_pipe_connect(first, text2num(fields[3]))
+			if(RUST_PIPE_OP_DISCONNECT)
+				vg_pipe_disconnect(first, text2num(fields[3]))
+			if(RUST_PIPE_OP_CLEAR)
+				vg_pipe_clear()
+			if(RUST_PIPE_OP_REMOVE_TO_MIXTURE)
+				vg_pipe_remove(first, text2num(fields[3]))
+	var/list/result = vg_pipe_commit()
 	if(!islist(result))
 		CRASH("Rust pipenet topology did not return a region list")
 	var/list/transitions = list()

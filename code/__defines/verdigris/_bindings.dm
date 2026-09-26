@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "a74daba171788f8e"
+#define VERDIGRIS_ABI "9a3c13d9a33252e9"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -449,7 +449,8 @@
 	return call_ext(__f)(operations)
 
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
-/// `auxmos_pipenet_topology_batch`). The datum's own slot is freed.
+/// `vg_pipe_upsert`/`vg_pipe_commit`, `verdigris/ffi/src/pipes.rs`). The
+/// datum's own slot is freed.
 // /datum/gas_mixture/proc/__bind_handle (verdigris/domains/gas/src/lib.rs)
 /proc/vg_bind_handle(src_ref, handle)
 	var/static/__f = load_ext(VERDIGRIS, "byond:bind_handle_ffi")
@@ -1064,49 +1065,89 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, gas_id)
 
-/// Applies one DM device-edge transaction (M2, `device.rs`) and returns
-/// nothing; call `pipenet_step_devices` to run them. Input is
-/// semicolon-delimited fixed-width records of nine comma-separated numbers:
-/// `opcode, id, port_a, port_b, law_kind, p0, p1, p2, p3`. Opcodes: add or
-/// replace between two pipe ports = 1 (`port_a`/`port_b` are pipe port ids;
-/// `law_kind`/`p0..p3` decode via [`device::DeviceParams::decode`]), remove
-/// = 2 (only `id` is read), add or replace between a pipe port and a turf
-/// = 3 (`port_a` is a pipe port id, `port_b` is the turf's gas-mixture
-/// handle - a vent pump or scrubber, stepped by
-/// `GasWorld::step_turf_devices`).
-// /proc/auxmos_pipenet_device_batch (verdigris/domains/gas/src/lib.rs)
-/proc/vg_pipenet_device_batch(operations)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pipenet_device_batch_ffi")
+/// Drops every port (a map reload).
+// /proc/vg_pipe_clear (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_clear()
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_clear_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(operations)
+	return call_ext(__f)()
 
-/// Runs every device edge's flow law once (M2, `device.rs`) for `dt`
-/// seconds — region<->region edges (`PipeNet::step_devices`) and
-/// region<->turf edges (`GasWorld::step_turf_devices`, a vent pump or
-/// scrubber facing the R6 gas field) alike — and returns a flat list of
-/// `id, moles, power_w, target_reached` per device that had a law set. `dt`
-/// is normally `SSair`'s tick length in seconds.
-// /proc/auxmos_pipenet_step_devices (verdigris/domains/gas/src/lib.rs)
-/proc/vg_pipenet_step_devices(dt)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pipenet_step_devices_ffi")
+/// Commits pending topology and returns the regions DM must rebuild, one
+/// header per changed or retired region: `region_slot, port_count,
+/// prior_count, volume, ports..., prior_region_slots...` (`volume < 0`:
+/// the region is gone) -- the exact wire shape `rust_apply_pipe_topology`
+/// already parses.
+// /proc/vg_pipe_commit (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_commit()
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_commit_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Connects two ports' nodes directly (`NetworkHost::connect_entities`,
+/// bypassing any geometric connection rule -- pipes manage topology
+/// explicitly).
+// /proc/vg_pipe_connect (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_connect(port_a, port_b)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_connect_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(port_a, port_b)
+
+// /proc/vg_pipe_device_remove (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_device_remove(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_remove_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
+/// Registers (or replaces) a region<->region device edge between two
+/// ports.
+// /proc/vg_pipe_device_set (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_device_set(id, port_a, port_b, law_kind, p0, p1, p2, p3)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_set_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id, port_a, port_b, law_kind, p0, p1, p2, p3)
+
+/// Registers (or replaces) a device edge between a port and a turf (a vent
+/// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
+/// handle, not a port id.
+// /proc/vg_pipe_device_set_turf (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_device_set_turf(id, port_a, turf_mixture_handle, law_kind, p0, p1, p2, p3)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_set_turf_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id, port_a, turf_mixture_handle, law_kind, p0, p1, p2, p3)
+
+// /proc/vg_pipe_disconnect (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_disconnect(port_a, port_b)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_disconnect_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(port_a, port_b)
+
+/// Removes a port; its gas share is released, to `mixture_handle` if given
+/// (else discarded -- `RUST_PIPE_OP_REMOVE`/`REMOVE_TO_MIXTURE`).
+// /proc/vg_pipe_remove (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_remove(port_id, mixture_handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_remove_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(port_id, mixture_handle)
+
+/// Runs every device edge's flow law once for `dt` seconds -- region<->
+/// region edges directly, region<->turf edges (a vent pump/scrubber)
+/// through `vg_gas::world`'s turf accessors (this module's own docs) --
+/// and returns a flat `id, moles, power_w, target_reached` list per device
+/// that had a law set and moved something or drew power.
+// /proc/vg_pipe_step_devices (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_step_devices(dt)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_step_devices_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(dt)
 
-/// Applies one DM pipe-topology transaction to the pipe network and returns
-/// the regions DM must rebuild. Input is semicolon-delimited records of four
-/// comma-separated numbers, `opcode, first, second_or_mixture, volume`, with
-/// opcodes upsert=1, remove=2, connect=3, disconnect=4, clear=5,
-/// remove-to-mixture=7 (`RUST_PIPE_OP_*`). An upserted port's gas moves out
-/// of the mixture it names into the network; a removed port's share of its
-/// region is released into the mixture `remove-to-mixture` names.
-///
-/// Output repeats `region handle, port_count, prior_count, volume, ports...,
-/// prior region handles...`; a volume of -1 marks a region that is gone.
-// /proc/auxmos_pipenet_topology_batch (verdigris/domains/gas/src/lib.rs)
-/proc/vg_pipenet_topology_batch(operations)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pipenet_topology_batch_ffi")
+/// Adds a port holding the gas from `mixture_handle` (a `datum/gas_mixture`
+/// handle; `0`/invalid: empty), or changes its volume if it already exists.
+/// Mints a fresh entity for a new port. Returns whether it succeeded.
+// /proc/vg_pipe_upsert (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_upsert(port_id, mixture_handle, volume)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_upsert_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(operations)
+	return call_ext(__f)(port_id, mixture_handle, volume)
 
 // /proc/poll_material_power_graph (verdigris/verdigris/src/material_power.rs)
 /proc/vg_poll_material_power_graph(handle)

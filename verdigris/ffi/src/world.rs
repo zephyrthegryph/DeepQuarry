@@ -89,6 +89,16 @@ fn register(b: &mut WorldBuilder) -> vg_core::field::FieldKey<vg_heat::SolidHeat
     let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>();
     let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
 
+    // Pipes (`rust_architecture.md` §6, §8.5, step 5): a main-owned network,
+    // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). Devices
+    // step imperatively from `crate::pipes::pipe_step_devices` (DM's own
+    // `wait`-scaled dt, not the World's fixed law cadence -- see that
+    // module's docs), not a registered `Law`.
+    b.add_network::<vg_gas::pipes::Pipes>(Ownership::Main);
+    b.conserve_network::<vg_gas::pipes::Pipes>();
+    b.conserve("pipe_moles", Tolerance::default());
+    b.conserve("pipe_energy", Tolerance::default());
+
     heat_field
 }
 
@@ -97,6 +107,7 @@ fn build() -> Result<World> {
     let heat_field = register(&mut b);
     let world = b.build().map_err(|e| eyre!("world build: {e}"))?;
     crate::heat::install_field(heat_field);
+    vg_gas::world::install_pipe_access(Box::new(crate::pipes::FfiPipeAccess));
     registry::register_domain(
         u32::try_from(WORLD_DOMAIN).unwrap_or(7),
         Box::new(WorldEntities),

@@ -14,6 +14,7 @@ mod jobs;
 mod layout;
 mod lifecycle;
 mod metrics;
+mod pipes;
 mod power;
 pub mod propagate;
 pub mod reactor;

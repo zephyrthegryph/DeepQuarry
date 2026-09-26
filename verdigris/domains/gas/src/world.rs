@@ -39,10 +39,9 @@ use vg_core::sim::{Mode, Sim, SimBuilder, SimConfig, WatchKey};
 use vg_core::watch::{Cond, WatchPort, WatchState};
 
 use crate::cell::{flags, heat_capacity, GasCell, GasCmd, TurfGas, N, Q};
-use crate::device;
 use crate::gas::constants::{CELL_VOLUME, GAS_MIN_MOLES, TCMB};
 use crate::gas::Mixture;
-use crate::pipes::{self, PipeGas, PipeNet};
+use crate::pipes::PipeGas;
 
 // --- Handles -----------------------------------------------------------------
 
@@ -1156,7 +1155,6 @@ pub struct Stats {
 pub struct GasWorld {
 	pub mains: Mains,
 	pub field: Option<Field>,
-	pub pipes: PipeNet,
 	pub exchange: Arc<Exchange>,
 	dirty: Dirty,
 	mix_watches: MixWatches,
@@ -1173,7 +1171,6 @@ impl Default for GasWorld {
 		Self {
 			mains: Mains::default(),
 			field: None,
-			pipes: PipeNet::new(),
 			exchange: Arc::new(Exchange::default()),
 			dirty: Dirty::default(),
 			mix_watches: MixWatches::new(),
@@ -1229,7 +1226,39 @@ pub fn cell_of_mixture(mix: &Mixture) -> GasCell {
 	cell
 }
 
-fn mixture_of_pipe(gas: &PipeGas, volume: f64) -> Mixture {
+/// Pipe regions live on the shared `vg_core::world::World`
+/// (`rust_architecture.md` §6, §8.5, step 5: `verdigris/ffi/src/pipes.rs`'s
+/// `NetworkHost<Pipes>`), which this crate cannot reach directly (`vg-gas`
+/// has no dependency on `vg-ffi`). `MixRef::Pipe`'s generic accessors
+/// (`load`/`store`/`revision`, so every existing `/datum/gas_mixture` proc
+/// -- `return_temperature`, `merge`, `adjust_gas`, ... -- keeps working on
+/// a pipe-bound mixture unchanged) reach it through this trait instead,
+/// installed once by the FFI crate at DLL init -- the same shape
+/// [`Exchange`]/[`HeatGas`] already bridge gas data *out* to the heat
+/// world; this bridges pipe data *in*.
+pub trait PipeAccess {
+	/// The region's gas and volume (L), by its DM-facing slot.
+	fn probe(&self, slot: u32) -> Option<(PipeGas, f64)>;
+	/// Replaces the region's gas.
+	fn apply(&self, slot: u32, gas: &PipeGas);
+	/// The region's revision (bumped on every write, including this one).
+	fn revision(&self, slot: u32) -> u32;
+}
+
+thread_local! {
+	static PIPE_ACCESS: RefCell<Option<Box<dyn PipeAccess>>> = const { RefCell::new(None) };
+}
+
+/// Installs the pipe-access bridge (`verdigris_init`/DLL load).
+pub fn install_pipe_access(access: Box<dyn PipeAccess>) {
+	PIPE_ACCESS.with_borrow_mut(|p| *p = Some(access));
+}
+
+fn with_pipe_access<T>(f: impl FnOnce(&dyn PipeAccess) -> T) -> Option<T> {
+	PIPE_ACCESS.with_borrow(|p| p.as_deref().map(f))
+}
+
+pub fn mixture_of_pipe(gas: &PipeGas, volume: f64) -> Mixture {
 	Mixture::from_parts(
 		&gas.moles_f32(),
 		gas.temperature_now(),
@@ -1245,8 +1274,8 @@ impl GasWorld {
 		match r {
 			MixRef::Main(i) => self.mains.get(i).cloned(),
 			MixRef::Pipe(s) => {
-				let (gas, volume) = self.pipes.gas(s)?;
-				Some(mixture_of_pipe(gas, volume))
+				let (gas, volume) = with_pipe_access(|p| p.probe(s))??;
+				Some(mixture_of_pipe(&gas, volume))
 			}
 			MixRef::Turf(c) => {
 				let field = self.field.as_ref()?;
@@ -1279,7 +1308,7 @@ impl GasWorld {
 				let (b, a) = (before.moles_array(), after.moles_array());
 				let de = energy_of(after) - energy_of(before);
 				let t = after.get_temperature();
-				if let Some((gas, _)) = self.pipes.gas_mut(s) {
+				if let Some((mut gas, _)) = with_pipe_access(|p| p.probe(s)).flatten() {
 					for i in 0..N {
 						if a[i] != b[i] {
 							gas.moles[i] = (gas.moles[i] + f64::from(a[i] - b[i])).max(0.0);
@@ -1287,6 +1316,7 @@ impl GasWorld {
 					}
 					gas.energy = (gas.energy + de).max(0.0);
 					gas.temperature = t;
+					with_pipe_access(|p| p.apply(s, &gas));
 				}
 				self.touched(r, after);
 			}
@@ -1323,99 +1353,35 @@ impl GasWorld {
 		}
 	}
 
-	/// Steps device edges with a field-cell (turf) endpoint for `dt` seconds
-	/// (M2, `simulation.md` §5): a vent pump or scrubber facing a turf on
-	/// one side and a pipe region on the other. Region<->region edges are
-	/// [`PipeNet::step_devices`]'s job; this one bridges the pipe network
-	/// and the R6 gas field, each with its own storage, through the same
-	/// [`GasWorld::load`]/[`GasWorld::store`] round trip every other turf
-	/// gas write (DM's `adjust_gas`, `merge`, ...) already uses, so a
-	/// device's turf write is exactly as safe as any other.
-	pub fn step_turf_devices(&mut self, dt: f32) -> Vec<pipes::DeviceStep> {
-		use vg_core::network::{Endpoint, Side};
+	/// A turf cell's volume for pipe-device stepping (its solid geometry's
+	/// capacity, or [`CELL_VOLUME`] with none registered).
+	#[must_use]
+	pub fn turf_device_volume(&self, cell: u32) -> Option<f64> {
+		let (_, geom) = self.field.as_ref()?.read(cell)?;
+		Some(f64::from(if geom.capacity > 0.0 { geom.capacity } else { CELL_VOLUME }))
+	}
 
-		let ids: Vec<_> = self.pipes.net.devices().map(|(id, _)| id).collect();
-		let mut out = Vec::with_capacity(ids.len());
-		for id in ids {
-			let Ok(dev) = self.pipes.net.device(id) else {
-				continue;
-			};
-			if matches!(dev.data, device::DeviceParams::None) {
-				continue;
-			}
-			let (cell, node, cell_is_a) = match (dev.a, dev.b) {
-				(Endpoint::Cell(c), Endpoint::Node(n)) => (c, n, true),
-				(Endpoint::Node(n), Endpoint::Cell(c)) => (c, n, false),
-				_ => continue,
-			};
-			let key = dev.key;
-			let params = dev.data;
-			let Side::Region(region) = self.pipes.net.resolve(Endpoint::Node(node)) else {
-				continue;
-			};
+	/// Reads turf `cell`'s gas as [`PipeGas`], for a pipe device edge's turf
+	/// side (`verdigris/ffi/src/pipes.rs`'s device stepping, which owns the
+	/// pipe region side on the shared `vg_core::world::World` and calls
+	/// here for the turf side -- the same [`GasWorld::load`]/
+	/// [`GasWorld::store`] round trip every other turf gas write, DM's
+	/// `adjust_gas`/`merge` included, already uses).
+	#[must_use]
+	pub fn turf_device_probe(&self, cell: u32) -> Option<PipeGas> {
+		let mix = self.load(MixRef::Turf(cell))?;
+		Some(PipeGas::from_amounts(&amounts_of(&mix), mix.get_temperature()))
+	}
 
-			// Idle-skip (M2 follow-up): a settled edge whose region and
-			// turf cell haven't changed since its last step costs nothing
-			// but two revision lookups, the same as `PipeNet::step_devices`
-			// does for region<->region edges.
-			let rev_region_before = self.pipes.region_revision(region);
-			let rev_cell_before = self.revision(MixRef::Turf(cell));
-			let (rev_a_before, rev_b_before) = if cell_is_a {
-				(rev_cell_before, rev_region_before)
-			} else {
-				(rev_region_before, rev_cell_before)
-			};
-			let idx = id.index();
-			if self.pipes.device_asleep(idx, rev_a_before, rev_b_before) {
-				continue;
-			}
-
-			let Ok(r) = self.pipes.net.region(region) else {
-				continue;
-			};
-			let vol_region = *r.summary();
-			let mut region_gas = *r.payload();
-
-			let Some(before_mix) = self.load(MixRef::Turf(cell)) else {
-				continue;
-			};
-			let Some(field) = self.field.as_ref() else {
-				continue;
-			};
-			let Some((_, geom)) = field.read(cell) else {
-				continue;
-			};
-			let vol_cell = f64::from(if geom.capacity > 0.0 { geom.capacity } else { CELL_VOLUME });
-			let mut turf_gas = PipeGas::from_amounts(&amounts_of(&before_mix), before_mix.get_temperature());
-
-			let report = if cell_is_a {
-				device::step(&params, &mut turf_gas, vol_cell, &mut region_gas, vol_region, dt)
-			} else {
-				device::step(&params, &mut region_gas, vol_region, &mut turf_gas, vol_cell, dt)
-			};
-
-			let settled = report.moles == 0.0 && report.power_w == 0.0;
-			if !settled {
-				if let Ok(payload) = self.pipes.net.payload_mut(region) {
-					*payload = region_gas;
-				}
-				self.pipes.touch_region(region);
-				let after_mix = mixture_of_pipe(&turf_gas, vol_cell);
-				self.store(MixRef::Turf(cell), &before_mix, &after_mix);
-			}
-
-			let rev_region_after = self.pipes.region_revision(region);
-			let rev_cell_after = self.revision(MixRef::Turf(cell));
-			let (rev_a_after, rev_b_after) = if cell_is_a {
-				(rev_cell_after, rev_region_after)
-			} else {
-				(rev_region_after, rev_cell_after)
-			};
-			self.pipes.set_device_activity(idx, settled, rev_a_after, rev_b_after);
-
-			out.push(pipes::DeviceStep { key, report });
-		}
-		out
+	/// Applies a device step's result to turf `cell`'s gas (see
+	/// [`GasWorld::turf_device_probe`]): `turf_gas` is the post-step value,
+	/// `volume` the same one [`GasWorld::turf_device_volume`] reported.
+	pub fn turf_device_apply(&mut self, cell: u32, turf_gas: &PipeGas, volume: f64) {
+		let Some(before_mix) = self.load(MixRef::Turf(cell)) else {
+			return;
+		};
+		let after_mix = mixture_of_pipe(turf_gas, volume);
+		self.store(MixRef::Turf(cell), &before_mix, &after_mix);
 	}
 
 	fn touched(&mut self, r: MixRef, after: &Mixture) {
@@ -1434,7 +1400,7 @@ impl GasWorld {
 	pub fn revision(&self, r: MixRef) -> u32 {
 		match r {
 			MixRef::Main(i) => self.mains.revision(i),
-			MixRef::Pipe(s) => self.pipes.revision(s),
+			MixRef::Pipe(s) => with_pipe_access(|p| p.revision(s)).unwrap_or(0),
 			MixRef::Turf(c) => self
 				.field
 				.as_ref()
@@ -1486,7 +1452,7 @@ impl GasWorld {
 				}
 			}
 			MixRef::Pipe(s) => {
-				if let Some((gas, _)) = self.pipes.gas_mut(s) {
+				if let Some((mut gas, _)) = with_pipe_access(|p| p.probe(s)).flatten() {
 					for (moles, &amount) in gas.moles.iter_mut().zip(amounts.iter()).take(N) {
 						*moles = (*moles + f64::from(amount)).max(0.0);
 					}
@@ -1494,6 +1460,7 @@ impl GasWorld {
 					if gas.total() > 0.0 && temperature_hint > 0.0 && gas.energy == 0.0 {
 						gas.temperature = temperature_hint;
 					}
+					with_pipe_access(|p| p.apply(s, &gas));
 				}
 			}
 			MixRef::Main(i) => {
@@ -1846,14 +1813,14 @@ impl GasWorld {
 	}
 
 	/// Totals of every conserved quantity DM and the worker hold: main
-	/// mixtures, pipes, turf cells (pinned view; call after `run_frames`)
-	/// and the field's reservoir ledger. For conservation tests.
+	/// mixtures and turf cells (pinned view; call after `run_frames`) and
+	/// the field's reservoir ledger. For conservation tests. Pipe gas lives
+	/// on the shared `vg_core::world::World` now (`rust_architecture.md`
+	/// step 5) and is checked there (`WorldBuilder::conserve_network::
+	/// <Pipes>`), not by this gas-only diagnostic.
 	#[must_use]
 	pub fn totals(&self) -> [f64; Q] {
 		let mut out = self.mains.totals();
-		for (o, v) in out.iter_mut().zip(self.pipes.totals()) {
-			*o += v;
-		}
 		if let Some(field) = &self.field {
 			let cells = field.sim.port_ref(field.key.cells).pinned();
 			let geom = field.sim.port_ref(field.key.geometry).pinned();
