@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "1a029033396cd263"
+#define VERDIGRIS_ABI "a429627f5b1dbf38"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1126,19 +1126,27 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(port_a, port_b)
 
-/// Links an already-bound `DeviceFlow` row (DM creates and configures the
-/// rest -- `gases`/`rate_kind`/`rate`/`direction`/`stop_side`/`stop_cmp`/
-/// `stop_kpa` -- through the generated `vg_component_*` accessors on its
-/// own `/obj/effect/device_flow_row` instance, no op wire) to device `id`.
-/// The only reason this one field needs a bespoke bind at all: a pipe
-/// port/device's entity is deliberately never exposed to DM as a
-/// `vg_entity` value (this module's own docs), so DM cannot `set_device()`
-/// to it generically the way it would any other component's foreign key.
-// /proc/vg_pipe_flow_link (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_flow_link(flow_entity, id)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_flow_link_ffi")
+/// Removes a `DeviceFlow` row created by [`pipe_flow_set`]. `entity` is the
+/// handle that call returned; a no-op for `0`.
+// /proc/vg_pipe_flow_remove (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_flow_remove(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_flow_remove_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(flow_entity, id)
+	return call_ext(__f)(entity)
+
+/// Creates (when `entity` is 0) or replaces (otherwise) one `DeviceFlow` row
+/// on device `id` and returns its entity handle for DM to hold and pass back
+/// next call. The row is a bare entity with no backing DM object at all --
+/// `DeviceFlow`/`DeviceValve` rows are Rust-internal bookkeeping, never
+/// placed as a `/obj/effect` map atom (`rust_architecture.md` §8.5 step 6's
+/// pipe-device redesign) -- so every field, including the owning device's
+/// link, is set in this one call instead of through the generated
+/// per-type `vg_component_*` accessors a bound atom would otherwise use.
+// /proc/vg_pipe_flow_set (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_flow_set(entity, id, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_flow_set_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, id, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
 
 /// Removes a port; its gas share is released, to `mixture_handle` if given
 /// (else discarded -- `RUST_PIPE_OP_REMOVE`/`REMOVE_TO_MIXTURE`).
@@ -1168,12 +1176,19 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(port_id, mixture_handle, volume)
 
-/// See [`pipe_flow_link`]'s own docs; the same for a `DeviceValve` row.
-// /proc/vg_pipe_valve_link (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_valve_link(valve_entity, id)
-	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_valve_link_ffi")
+/// See [`pipe_flow_remove`]'s own docs; the same for a `DeviceValve` row.
+// /proc/vg_pipe_valve_remove (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_valve_remove(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_valve_remove_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(valve_entity, id)
+	return call_ext(__f)(entity)
+
+/// See [`pipe_flow_set`]'s own docs; the same for a `DeviceValve` row.
+// /proc/vg_pipe_valve_set (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_valve_set(entity, id, open)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_valve_set_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, id, open)
 
 // /proc/poll_material_power_graph (verdigris/verdigris/src/material_power.rs)
 /proc/vg_poll_material_power_graph(handle)

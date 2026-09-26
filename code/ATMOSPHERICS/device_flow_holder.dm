@@ -1,21 +1,22 @@
-/// The DM side of the DeviceFlow/DeviceValve components
+/// Nominal-only DM types for the DeviceFlow/DeviceValve components
 /// (verdigris/domains/gas/src/kind/device.rs, rust_architecture.md §8.5
-/// step 6): each pipe device's flow(s) and optional valve gate are their
-/// own row, bound to one of these holders through the generated
-/// vg_component_* procs, exactly as GasMix binds to /obj/item/gas_mix_holder
-/// (gas_mix_holder.dm's own comment). Never placed on a turf: the holder
-/// only exists to give a row's #[vg::component] a DM type that isn't a
-/// pipe device's own (binding DeviceFlow to /obj/machinery/atmospherics
-/// itself would make the generated set_deviceflow_rate() etc. shadow a
-/// real device's own procs).
+/// step 6). A pipe device's flow(s) and optional valve gate are bare
+/// entities the Rust side allocates directly (`vg_pipe_flow_set()`/
+/// `vg_pipe_valve_set()`, `ffi/src/pipes.rs`, no per-field DM accessors,
+/// no `vg_bind_gas()` call) -- never instantiated, so never placed as an
+/// `/obj` on a turf the way a real map atom would be. `#[vg::component]`
+/// requires a real DM type under `/atom/movable` for its per-field
+/// accessor codegen to have somewhere to declare `vg_entity`/`vg_bind_gas`
+/// (plain `/datum` doesn't carry that plumbing, `rust_architecture.md`
+/// §1/§13); these two exist solely to satisfy that, as dead, unused code.
 /obj/effect/device_flow_row
-	name = "pipe device flow"
+	name = "pipe device flow (never instantiated)"
 	invisibility = INVISIBILITY_ABSTRACT
 	anchored = TRUE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /obj/effect/device_valve_row
-	name = "pipe device valve"
+	name = "pipe device valve (never instantiated)"
 	invisibility = INVISIBILITY_ABSTRACT
 	anchored = TRUE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT

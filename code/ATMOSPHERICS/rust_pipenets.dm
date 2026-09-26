@@ -15,14 +15,14 @@
 	var/list/datum/gas_mixture/rust_unbound_port_air
 	/// M2: this machine's device edge id, or 0 if it has none registered.
 	var/rust_device_id = 0
-	/// This device's one flow law, if it has one (`rust_architecture.md`
-	/// §8.5 step 6's pipe-device redesign: a real DeviceFlow row, linked to
-	/// `rust_device_id` via `vg_pipe_flow_link()`, its fields written
-	/// through the generated `set_*` accessors -- no op wire).
-	var/obj/effect/device_flow_row/rust_flow_row
-	/// This device's valve gate, if it has one (a DeviceValve row, same
-	/// pattern as `rust_flow_row`).
-	var/obj/effect/device_valve_row/rust_valve_row
+	/// This device's one flow law, if it has one: the `vg_pipe_flow_set()`-
+	/// returned entity handle of a bare `DeviceFlow` row (`rust_architecture.md`
+	/// §8.5 step 6's pipe-device redesign) -- not a DM object, never placed
+	/// on the map; 0 means none registered yet.
+	var/rust_flow_entity = 0
+	/// This device's valve gate, if it has one: a bare `DeviceValve` row's
+	/// entity handle, same pattern as `rust_flow_entity`.
+	var/rust_valve_entity = 0
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_count()
 	return 0
@@ -257,45 +257,32 @@
 /// Sets (creating the row on first use) `machine`'s device edge's one flow
 /// law: `gases` a `1 << gas_id` bitset (0: every gas), `rate_kind`/
 /// `direction`/`stop_cmp` the `RUST_FLOW_*`/`RUST_DIR_*`/`RUST_STOP_*`
-/// wire values (`atmospherics.dm`), `stop_side` `RUST_SIDE_A`/`_B`. Writes
-/// go straight through the generated `DeviceFlow` accessors -- no op wire;
-/// only the `.device` link (set once, on creation) goes through the
-/// bespoke `vg_pipe_flow_link()` bind, since a pipe device's own entity is
-/// never exposed to DM as a `vg_entity` value.
+/// wire values (`atmospherics.dm`), `stop_side` `RUST_SIDE_A`/`_B`. The row
+/// is a bare Rust entity with no backing DM object at all (never an
+/// `/obj/effect` placed on the map) -- every field, including the link to
+/// `rust_device_id`, is written in the one `vg_pipe_flow_set()` call.
 /obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
 	if(!rust_device_id)
 		return FALSE
-	if(!rust_flow_row)
-		rust_flow_row = new(get_turf(src))
-		if(!rust_flow_row.vg_entity || !vg_pipe_flow_link(rust_flow_row.vg_entity, rust_device_id))
-			QDEL_NULL(rust_flow_row)
-			return FALSE
-	rust_flow_row.set_gases(gases)
-	rust_flow_row.set_rate_kind(rate_kind)
-	rust_flow_row.set_rate(rate)
-	rust_flow_row.set_direction(direction)
-	rust_flow_row.set_stop_side(stop_side)
-	rust_flow_row.set_stop_cmp(stop_cmp)
-	rust_flow_row.set_stop_kpa(stop_kpa)
-	return TRUE
+	rust_flow_entity = vg_pipe_flow_set(rust_flow_entity, rust_device_id, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	return rust_flow_entity != 0
 
 /// Sets (creating the row on first use) `machine`'s device edge's valve
 /// gate (a valve or shutoff valve: equalizes while `open`, blocks
-/// otherwise). Same link-once/write-through pattern as `rust_set_device_flow()`.
+/// otherwise). Same bare-entity pattern as `rust_set_device_flow()`.
 /obj/machinery/atmospherics/proc/rust_set_device_valve(open)
 	if(!rust_device_id)
 		return FALSE
-	if(!rust_valve_row)
-		rust_valve_row = new(get_turf(src))
-		if(!rust_valve_row.vg_entity || !vg_pipe_valve_link(rust_valve_row.vg_entity, rust_device_id))
-			QDEL_NULL(rust_valve_row)
-			return FALSE
-	rust_valve_row.set_open(open)
-	return TRUE
+	rust_valve_entity = vg_pipe_valve_set(rust_valve_entity, rust_device_id, open)
+	return rust_valve_entity != 0
 
 /obj/machinery/atmospherics/proc/rust_unregister_device()
-	QDEL_NULL(rust_flow_row)
-	QDEL_NULL(rust_valve_row)
+	if(rust_flow_entity)
+		vg_pipe_flow_remove(rust_flow_entity)
+		rust_flow_entity = 0
+	if(rust_valve_entity)
+		vg_pipe_valve_remove(rust_valve_entity)
+		rust_valve_entity = 0
 	if(!rust_device_id)
 		return
 	SSair.rust_queue_device_operation(RUST_DEVICE_OP_REMOVE, rust_device_id)
